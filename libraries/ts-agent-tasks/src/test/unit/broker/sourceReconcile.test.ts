@@ -440,6 +440,24 @@ describe('source-replay: only the feed commits projections', () => {
     expect(await other.repository.readSource('exec')).toSucceedWith(undefined);
   });
 
+  test('per-binding order is kept across the pages of a pass, not only within one', async () => {
+    const h = await sourceHarness({ history: 'source-replay' });
+    h.executor.addJob('j1');
+    await registerJob(h, 'j1');
+    h.executor.change('j1', (j) => (j.step = 1));
+    h.executor.change('j1', (j) => (j.step = 2));
+    // Revisions 1, 3 on the first page and 2 on the second: each page is ordered on its own.
+    const [first, second, third] = h.executor.feed.splice(0);
+    h.executor.feed.push(first, third, second);
+    h.executor.pageSize = 2;
+    expect(await h.broker.reconcile({ sourceId: 'exec' })).toSucceedAndSatisfy((report) => {
+      expect(report.stopped).toBe('order');
+      expect(report.issues.join()).toMatch(/does not follow/);
+      // The first page committed; the cursor did not move past the second.
+      expect(report.cursor).toBe('2');
+    });
+  });
+
   test('a feed entry the broker cannot order across stops the pass', async () => {
     const h = await sourceHarness({ history: 'source-replay' });
     h.executor.addJob('j1');

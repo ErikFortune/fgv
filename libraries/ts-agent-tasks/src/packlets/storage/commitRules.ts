@@ -296,9 +296,10 @@ export function checkPurpose(
   if (purpose !== 'observation' && !canonicallyEqual(current.sourceRevision, draft.sourceRevision)) {
     return fail(`only an observation may change the committed source revision`);
   }
-  if (draft.archived && !current.archived && hasUnsettledCommand(draft)) {
+  if (draft.archived && !current.archived && hasPendingCommand(draft)) {
     return fail(
-      `a task holding an unsettled command cannot be archived; its settlement reservation is still owed`
+      `a task holding an unsettled command, or one awaiting its feed revision, cannot be archived; ` +
+        `its outcome is still owed`
     );
   }
   if (purpose === 'maintenance' && !canonicallyEqual(_semantic(current), _semantic(draft))) {
@@ -504,6 +505,17 @@ export function commandSettlement(
 /** Whether a record or draft holds a command whose dispatch is not settled. */
 export function hasUnsettledCommand(record: ITaskCommitRecord | ITaskRecordDraft): boolean {
   return record.operations.some((op) => op.type === 'command' && op.dispatch !== 'settled');
+}
+
+/**
+ * Whether a record or draft holds a command whose outcome is not final: unsettled, or settled
+ * `accepted` while it awaits the feed revision that confirms it. Such a task cannot be archived —
+ * a tombstone takes no further observation, so the command could never finish.
+ */
+export function hasPendingCommand(record: ITaskCommitRecord | ITaskRecordDraft): boolean {
+  return record.operations.some(
+    (op) => op.type === 'command' && (op.dispatch !== 'settled' || op.awaiting !== undefined)
+  );
 }
 
 /** The source id of a record's binding, if it has one. */

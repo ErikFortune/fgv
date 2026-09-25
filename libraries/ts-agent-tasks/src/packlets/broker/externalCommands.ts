@@ -30,7 +30,7 @@ import { ITaskRepositoryWriter } from '../storage';
 import { AccessContext, subjectOf } from './access';
 import { BrokerCore, canonicallySame, revisionOf, storedOperation } from './core';
 import { changedSinceAuthorized, ok, propagate, taskFailure } from './failures';
-import { applyProjection, compareRevisions } from './observations';
+import { applyProjection, compareRevisions, sameExecution } from './observations';
 import { callSource, sourceOf } from './reconciliation';
 
 /**
@@ -505,6 +505,23 @@ function _answered(
         current.sourceRevision !== undefined
           ? compareRevisions(source, current.sourceRevision, answer.observation.revision)
           : undefined;
+      if (reached !== undefined && reached.isSuccess() && reached.value === 'same') {
+        // The feed already committed this very revision, and will not visit it again: the answer's
+        // projection must be the one committed, or the source contradicted itself and the outcome is
+        // not known.
+        if (!sameExecution(current, answer.observation)) {
+          return {
+            ...now,
+            receipt: _receipt(now.request, {
+              state: 'indeterminate',
+              reason: (
+                `the source answered applied at committed revision ${answer.observation.revision.epoch}/` +
+                `${answer.observation.revision.token} with a different projection`
+              ).slice(0, maxReason)
+            })
+          };
+        }
+      }
       if (
         reached !== undefined &&
         reached.isSuccess() &&

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { Result, captureAsyncResult } from '@fgv/ts-utils';
+import { Result, captureAsyncResult, fail, succeed } from '@fgv/ts-utils';
 import {
   ISourceBinding,
   ISourceObservation,
@@ -187,16 +187,18 @@ interface IPageOutcome {
 }
 
 /**
- * For a `source-replay` feed, each binding's revisions within a page must not go backwards —
- * checked before anything in the page is applied, so a broken page commits nothing. A repeated
- * revision is an at-least-once duplicate, not a break: applying it is `unchanged`, or a contract
- * violation if it carries a different state.
+ * For a `source-replay` feed, each binding's revisions must not go backwards within a pass — across
+ * its pages as well as within one — checked before anything in a page is applied, so a broken page
+ * commits nothing. A repeated revision is an at-least-once duplicate, not a break: applying it is
+ * `unchanged`, or a contract violation if it carries a different state. Returns the revisions seen,
+ * for the next page, or why the page breaks the order.
  */
 function _checkOrder(
   source: ITaskSource,
-  observations: ReadonlyArray<ISourceObservation>
-): string | undefined {
-  const last: Map<string, ISourceRevision> = new Map<string, ISourceRevision>();
+  observations: ReadonlyArray<ISourceObservation>,
+  seen: ReadonlyMap<string, ISourceRevision>
+): Result<ReadonlyMap<string, ISourceRevision>> {
+  const last: Map<string, ISourceRevision> = new Map<string, ISourceRevision>(seen);
   for (const entry of observations) {
     if (entry.observation.state !== 'observed') {
       continue;
@@ -211,15 +213,15 @@ function _checkOrder(
     if (previous !== undefined) {
       const order: Result<SourceRevisionOrder> = compareRevisions(source, revision, previous);
       if (order.isFailure() || (order.value !== 'newer' && order.value !== 'same')) {
-        return (
+        return fail(
           `revision ${revision.epoch}/${revision.token} of one binding does not follow ` +
-          `${previous.epoch}/${previous.token} in the feed`
+            `${previous.epoch}/${previous.token} in the feed`
         );
       }
     }
     last.set(key, revision);
   }
-  return undefined;
+  return succeed(last);
 }
 
 /** Applies one page, in order. For a feed, the first entry that cannot commit stops the page. */
@@ -318,7 +320,8 @@ async function _pass(
     pages: 0,
     complete: true,
     observations: [],
-    issues: []
+    issues: [],
+    order: new Map<string, ISourceRevision>()
   });
 }
 
@@ -332,6 +335,8 @@ interface IPassState {
   readonly complete: boolean;
   readonly observations: ReadonlyArray<ISourceObservationReport>;
   readonly issues: ReadonlyArray<string>;
+  /** For a feed: the last revision this pass has read of each binding, across its pages. */
+  readonly order: ReadonlyMap<string, ISourceRevision>;
 }
 
 function _finish(
@@ -389,14 +394,20 @@ async function _pages(
       `source '${source.id}' listed a binding of source '${foreign.binding.sourceId}'`
     ]);
   }
+  let order: ReadonlyMap<string, ISourceRevision> = state.order;
   if (source.history === 'source-replay') {
-    const broken: string | undefined = _checkOrder(source, page.value.observations);
-    if (broken !== undefined) {
-      return _finish(source, read, 'order', [broken]);
+    const checked = _checkOrder(source, page.value.observations, state.order);
+    if (checked.isFailure()) {
+      return _finish(source, read, 'order', [checked.message]);
     }
+    order = checked.value;
   }
   const applied: IPageOutcome = await _applyPage(core, source, page.value);
-  const seen: IPassState = { ...read, observations: [...read.observations, ...applied.observations] };
+  const seen: IPassState = {
+    ...read,
+    order,
+    observations: [...read.observations, ...applied.observations]
+  };
   const issue: ReadonlyArray<string> = applied.issue !== undefined ? [applied.issue] : [];
   if (applied.stop !== undefined) {
     return _finish(source, seen, applied.stop, issue);

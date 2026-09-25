@@ -4,7 +4,7 @@
  */
 
 import '@fgv/ts-utils-jest';
-import { fail } from '@fgv/ts-utils';
+import { fail, succeed } from '@fgv/ts-utils';
 import {
   ICommandReceipt,
   IStoredCommandOperation,
@@ -630,6 +630,70 @@ describe('source-replay commands', () => {
     const stored = await commandOf(h, 'j1', key);
     expect(stored.receipt.result).toEqual({ state: 'applied', appliedRevision: 3 });
     expect(stored.awaiting).toBeUndefined();
+  });
+
+  test('an applied answer contradicting the committed projection at that revision is indeterminate', async () => {
+    const h = await sourceHarness({ history: 'source-replay' });
+    h.executor.addJob('j1');
+    await registerJob(h, 'j1');
+    expect(await h.broker.reconcile({ sourceId: 'exec' })).toSucceed();
+    const key = op();
+    const dispatch = h.executor.dispatch.bind(h.executor);
+    Object.assign(h.executor, {
+      dispatch: async (...args: Parameters<typeof dispatch>) => {
+        const answer = await dispatch(...args);
+        expect(await h.broker.reconcile({ sourceId: 'exec' })).toSucceed();
+        // The source then reports the revision the feed committed, with other content.
+        return answer.onSuccess((a) =>
+          succeed(
+            a.state === 'applied'
+              ? { ...a, observation: { ...a.observation, details: { ...a.observation.details, step: 99 } } }
+              : a
+          )
+        );
+      }
+    });
+    expect(await run(h, 'j1', 'pause', { reason: 'x' }, key)).toSucceedAndSatisfy((receipt) => {
+      expect(receipt.result).toEqual({
+        state: 'indeterminate',
+        reason: expect.stringMatching(/different projection/)
+      });
+    });
+    expect((await commandOf(h, 'j1', key)).dispatch).toBe('possibly-sent');
+  });
+
+  test('a command still awaiting its feed revision blocks archive of a terminal task', async () => {
+    const h = await sourceHarness({ history: 'source-replay' });
+    h.executor.addJob('j1');
+    await registerJob(h, 'j1');
+    expect(await h.broker.reconcile({ sourceId: 'exec' })).toSucceed();
+    const key = op();
+    const dispatch = h.executor.dispatch.bind(h.executor);
+    Object.assign(h.executor, {
+      // An applied answer at a revision the feed cannot order against, so it is never reached.
+      dispatch: async (...args: Parameters<typeof dispatch>) =>
+        (await dispatch(...args)).onSuccess((a) =>
+          succeed(
+            a.state === 'applied'
+              ? { ...a, observation: { ...a.observation, revision: { epoch: 'elsewhere', token: '1' } } }
+              : a
+          )
+        )
+    });
+    expect(await run(h, 'j1', 'pause', { reason: 'x' }, key)).toSucceed();
+    h.executor.change('j1', (j) => {
+      j.lifecycle = { status: 'cancelled', reason: { code: 'cancelled', summary: 'stop' } };
+    });
+    expect(await h.broker.reconcile({ sourceId: 'exec' })).toSucceed();
+    const record = await recordOf(h, 'j1');
+    expect(record.recordType === 'resolved' && record.task.envelope.lifecycle.status).toBe('cancelled');
+    const stored = await commandOf(h, 'j1', key);
+    expect(stored.dispatch).toBe('settled');
+    expect(stored.awaiting).toBeDefined();
+    const revision = record.recordType === 'resolved' ? record.task.envelope.revision : rev(0);
+    expect(
+      await h.writer.archive({ taskId: tid('j1'), operationId: op(), expectedRevision: revision })
+    ).toFailWithDetail(/awaiting its feed/, { code: 'retention-blocked', retry: 'after-host-action' });
   });
 
   test('an applied answer at a revision the feed already committed applies immediately', async () => {

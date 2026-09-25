@@ -149,7 +149,9 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
   (non-idempotent with no lookup answer, or its source key expired) stays unsettled indefinitely,
   keeping its 64 KiB settlement reservation and blocking `archive` (`retention-blocked`, "unsettled
   command"). Only a later `lookupCommand` that finds it settles it; an ordinary observation does
-  not, and a source with no lookup never will. T8 needs an explicit, audited host disposition for a held command
+  not, and a source with no lookup never will. The same holds for a `source-replay` command settled
+  `accepted` while it awaits a feed revision the feed never reaches (e.g. one reported under an
+  epoch the feed cannot order against): archive is refused while it awaits. T8 needs an explicit, audited host disposition for a held command
   (e.g. "abandoned: outcome unknown") that consumes the reservation without claiming an outcome.
   (2) **T8 — a `source-replay` task registered after the feed passed its revisions.** The feed
   reports an observation for a binding no task holds as `unknown-binding` and the pass moves on,

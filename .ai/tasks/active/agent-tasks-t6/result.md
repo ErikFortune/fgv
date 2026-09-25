@@ -179,6 +179,23 @@ fence) — fixed with three tests and three reverts.
     past an observation that did not commit, so the next pass skipped it. It now stops the cursor
     like a capacity block — the rest of the page is still applied, the page is re-read next pass.
   Both reverts (M23, M24) turn their tests red.
+- **Round 3** — six high; all real:
+  - *Archive while a replay command awaits its feed revision*: the command was `settled` but not
+    final, and a tombstone takes no observation, so it could never confirm. Archive is now refused
+    (broker and storage) while any command is unsettled **or** awaiting.
+  - *Replay `applied` at an already-committed revision settled without comparing projections*: a
+    contradicting answer was receipted `applied`. It is now `indeterminate` (outcome unknown) and
+    stays `possibly-sent`.
+  - *Unbounded source diagnostics into health*: a long failure message failed the health
+    converter, so outage health was never recorded. Bounded in the shared health path.
+  - *Feed order reset per page*: `rev1, rev3 | rev2` passed both pages and checkpointed past a
+    required revision. Per-binding order is now carried across a pass's pages. (Across passes the
+    committed checkpoint is the boundary: the feed is trusted not to re-emit below it.)
+  - *Comparator result not validated*: an answer outside the order union read as `newer`. Now
+    converted against the union in the broker, for every source.
+  - *Settlement claim bundle shape*: open accepted a settlement claim missing a dimension. It now
+    requires every dimension of the bundle, like the closeout and resolution claims.
+  Reverts M25–M31 each turn their test red.
 
 ## Gates
 

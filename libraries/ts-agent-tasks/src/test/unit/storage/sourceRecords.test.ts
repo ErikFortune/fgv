@@ -8,6 +8,7 @@ import { FileTree, JsonObject } from '@fgv/ts-json-base';
 import {
   FileTreeTaskRepository,
   IResolvedTaskCommitRecord,
+  IStoredTaskOperation,
   ITaskCapacityProfile,
   ITaskCommitRequest,
   ITaskRecoveryReport,
@@ -418,6 +419,21 @@ describe('execution claims survive a restart and are validated at open', () => {
       /ownership 'pending', expected 'live'/
     ],
     [
+      'a settlement claim missing a dimension of its bundle',
+      (r) => ({
+        ...r,
+        capacityClaims: claimsOf(r).map((c) =>
+          c.purpose === 'accepted-operation-settlement'
+            ? {
+                ...c,
+                charges: (c.charges as JsonObject[]).filter((x) => x.dimension !== 'resident-payload-bytes')
+              }
+            : c
+        )
+      }),
+      /does not charge 'resident-payload-bytes'/
+    ],
+    [
       'a settlement claim over its bundle',
       (r) => ({
         ...r,
@@ -549,8 +565,23 @@ describe('storage rules for command evolution', () => {
     );
   });
 
-  test('a task holding an unsettled command cannot be archived by storage either', async () => {
-    const { h, record } = await withCommand();
+  test.each([
+    ['an unsettled command', (op: IStoredTaskOperation): IStoredTaskOperation => op],
+    [
+      'a command awaiting its feed revision',
+      (op: IStoredTaskOperation): IStoredTaskOperation =>
+        op.type === 'command'
+          ? {
+              ...op,
+              dispatch: 'settled',
+              receipt: { ...op.receipt, result: { state: 'accepted' } },
+              awaiting: { epoch: 'e1', token: '9' }
+            }
+          : op
+    ]
+  ])('a task holding %s cannot be archived by storage either', async (__, shape) => {
+    const { h, record: original } = await withCommand();
+    const record = { ...original, operations: original.operations.map(shape) };
     h.executor.change('j1', (j) => (j.step = 1));
     const draft = {
       ...maintenance(record, record.operations),
@@ -583,7 +614,7 @@ describe('storage rules for command evolution', () => {
       }
     };
     expect(await h.repository.withWriter((w) => w.commit(archiving))).toFailWith(
-      /unsettled command cannot be archived/
+      /awaiting its feed revision, cannot be archived/
     );
   });
 

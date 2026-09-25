@@ -4,7 +4,7 @@
  */
 
 import { JsonValue } from '@fgv/ts-json-base';
-import { Result, captureResult } from '@fgv/ts-utils';
+import { Converter, Converters, Result, captureResult } from '@fgv/ts-utils';
 import { isRequiredCategory, planUpdates } from '../implementations';
 import {
   IResolvedTaskCommitRecord,
@@ -104,13 +104,34 @@ function _same(a: unknown, b: unknown): boolean {
   return a === undefined || b === undefined ? a === b : canonicallySame(a, b);
 }
 
-/** Orders `a` relative to `b` by the source's own comparator; a throw or failure is a contract issue. */
+/** The four answers a source comparator may give; anything else is a contract issue. */
+const revisionOrder: Converter<SourceRevisionOrder> = Converters.enumeratedValue<SourceRevisionOrder>([
+  'newer',
+  'same',
+  'older',
+  'incomparable'
+]);
+
+/**
+ * Orders `a` relative to `b` by the source's own comparator. A throw, a failure, or an answer outside
+ * the order union is a contract issue — never read as `newer`.
+ */
 export function compareRevisions(
   source: ITaskSource,
   a: ISourceRevision,
   b: ISourceRevision
 ): Result<SourceRevisionOrder> {
-  return captureResult(() => source.compare(a, b)).onSuccess((order) => order);
+  return captureResult(() => source.compare(a, b))
+    .onSuccess((order) => order)
+    .onSuccess((order) => revisionOrder.convert(order));
+}
+
+/** Whether a projection states exactly the execution a resolved record already holds. */
+export function sameExecution(record: IResolvedTaskCommitRecord, projection: ISourceProjection): boolean {
+  return canonicallySame(
+    _execution({ ...record.task.envelope, details: record.task.details }),
+    _execution(projection)
+  );
 }
 
 /**
@@ -363,7 +384,7 @@ async function _applyInWriter(
   }
 
   if (order === 'same') {
-    if (!canonicallySame(_execution({ ...before, details: current.task.details }), _execution(projection))) {
+    if (!sameExecution(current, projection)) {
       return ok(
         _report(
           binding,
@@ -531,9 +552,11 @@ export async function applyHealth(
   core: BrokerCore,
   binding: ISourceBinding,
   state: 'stale' | 'unavailable',
-  reason: string,
+  diagnostic: string,
   outcome: 'source-unavailable' | 'missing'
 ): Promise<TaskResult<ISourceObservationReport>> {
+  // A source's diagnostic is unbounded host text; health carries a bounded summary of it.
+  const reason: string = diagnostic.slice(0, core.converters.bounds.maxSummaryLength);
   const owner = await core.repository.lookupSource(binding);
   if (owner.isFailure()) {
     return propagate(owner);

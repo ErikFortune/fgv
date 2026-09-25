@@ -353,6 +353,23 @@ function _disposition(claim: ITaskCapacityClaim, consumed: boolean): string | un
     : `disposition '${claim.disposition}', expected '${disposition}'`;
 }
 
+/**
+ * Every dimension of the bundle charged. Spending shrinks a charge but never removes it, so a claim
+ * names exactly its bundle's dimensions for its whole life; a missing one would hold nothing where
+ * the path it reserves for still needs room.
+ */
+function _completeBundle(
+  claim: ITaskCapacityClaim,
+  bundle: ReadonlyArray<ITaskCapacityCharge>
+): string | undefined {
+  const missing: ITaskCapacityCharge | undefined = bundle.find(
+    (max) => !claim.charges.some((c) => c.dimension === max.dimension)
+  );
+  return missing !== undefined
+    ? `does not charge '${missing.dimension}', which its bundle reserves`
+    : undefined;
+}
+
 /** Charges within a bundle's maxima, dimension by dimension. */
 function _withinBundle(
   claim: ITaskCapacityClaim,
@@ -398,7 +415,7 @@ function _settlementProblem(
     return `a second settlement claim for command '${claim.operationId}'`;
   }
   seen.add(claim.operationId);
-  return _withinBundle(claim, bundle) ?? _disposition(claim, isSettled);
+  return _completeBundle(claim, bundle) ?? _withinBundle(claim, bundle) ?? _disposition(claim, isSettled);
 }
 
 /**
@@ -448,19 +465,9 @@ function _claimProblem(
   if (claim.purpose === 'first-resolution' && !expected.external) {
     return `a first-resolution claim on a task that was not registered by 'register-external'`;
   }
-  // Spending shrinks a charge but never removes it, so a claim names exactly its bundle's
-  // dimensions for its whole life. A missing one would hold nothing where the closeout path
-  // still needs room.
-  for (const max of bundle) {
-    if (!claim.charges.some((c) => c.dimension === max.dimension)) {
-      return `does not charge '${max.dimension}', which its bundle reserves`;
-    }
-  }
-  for (const charge of claim.charges) {
-    const max: ITaskCapacityCharge | undefined = bundle.find((c) => c.dimension === charge.dimension);
-    if (max === undefined || charge.amount > max.amount) {
-      return `charges ${charge.amount} of '${charge.dimension}', more than its bundle reserves`;
-    }
+  const shape: string | undefined = _completeBundle(claim, bundle) ?? _withinBundle(claim, bundle);
+  if (shape !== undefined) {
+    return shape;
   }
   // A resolved record holds a first-resolution claim only if it was registered unresolved,
   // and then its resolution consumed it.

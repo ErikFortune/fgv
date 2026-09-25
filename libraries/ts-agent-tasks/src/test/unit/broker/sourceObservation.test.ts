@@ -4,6 +4,7 @@
  */
 
 import '@fgv/ts-utils-jest';
+import { fail, succeed } from '@fgv/ts-utils';
 import { Instant, ITaskEnvelope } from '../../../index';
 import { bob, op, rev, tid } from '../../helpers/brokerFixtures';
 import { observedAt, recordOf, registerJob, sourceHarness } from '../../helpers/sourceFixtures';
@@ -276,5 +277,36 @@ describe('push hints', () => {
     expect(
       await h.broker.hint({ sourceId: 'exec' } as unknown as ReturnType<typeof h.executor.binding>)
     ).toFailWith(/observe/);
+  });
+});
+
+describe('host answers the broker does not take on trust', () => {
+  test('a source failure with a long diagnostic still records unavailable health, bounded', async () => {
+    const h = await sourceHarness();
+    h.executor.addJob('j1');
+    await registerJob(h, 'j1');
+    const long = 'x'.repeat(10_000);
+    Object.assign(h.executor, { read: () => fail(long) });
+    expect(await h.broker.observe(tid('j1'))).toSucceedAndSatisfy((report) => {
+      expect(report.outcome).toBe('source-unavailable');
+    });
+    const record = await recordOf(h, 'j1');
+    const health = record.recordType === 'resolved' ? record.task.envelope.observation : undefined;
+    expect(health?.state).toBe('unavailable');
+    expect(health?.state !== 'current' && health?.reason.length).toBeLessThan(long.length);
+  });
+
+  test('a comparator answer outside the order union is a contract violation, never newer', async () => {
+    const h = await sourceHarness();
+    h.executor.addJob('j1');
+    await registerJob(h, 'j1');
+    const before = await recordOf(h, 'j1');
+    h.executor.change('j1', (j) => (j.step = 2));
+    Object.assign(h.source, { compare: () => succeed('bogus') });
+    expect(await h.broker.observe(tid('j1'))).toSucceedAndSatisfy((report) => {
+      expect(report.outcome).toBe('contract-violation');
+      expect(report.message).toMatch(/compare/);
+    });
+    expect(await recordOf(h, 'j1')).toEqual(before);
   });
 });
