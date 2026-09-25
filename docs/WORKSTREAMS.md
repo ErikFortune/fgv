@@ -128,6 +128,58 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
+### `agent-tasks-t7` 🔵 (slice T7 of the agent-tasks plan)
+
+**Status:** 🔵 in flight — branch created off `integration/agent-tasks-v1` at `6a0e6c4ea` (the T6
+landing), brief written, not yet started. Artifacts at `.ai/tasks/active/agent-tasks-t7/`.
+
+**Mission.** Subscriptions, exact issued receipts and acknowledgement: consumer/subscription
+identity with start policies, serialized baseline creation, candidate audiences committed with
+updates, broker preparation around pure rendering, an injected checkpoint store, receipt manifests
+with expiry and pins, and durable exact-ID acknowledgement.
+
+**T7 turns on a seam two slices built reservations against — and the failure mode is silent.**
+`TaskAudienceResolver` is internal and answers "nobody" in production, deliberately: T5 recorded
+that it writes audience links with **no** acknowledgement-evidence reservation, which is why it was
+never a host option. T7 fills it. T5's hand-off requires every accepted update to first reserve its
+per-audience acknowledgement evidence (design §8.6 allocation 2); T6's requires that T7 **spend the
+settlement and replay claims already reserved rather than mint new ones**. Minting instead of
+spending passes every functional test and quietly double-counts capacity against a profile already
+over-subscribed, so the brief requires a test pinning the **charge**, not the behaviour.
+
+**The review gate has a named wrong answer.** *"Verify exact-ID logic rather than max revision."* A
+high-water-mark checkpoint is the tempting implementation and passes almost everything; the plan
+hands over its falsifier — omit a revision-3 attention change, include revision-4 progress, prove
+ack does not clear revision 3. The brief tells the implementer to write that test **first**, so the
+design is forced into exact-ID rather than retrofitted.
+
+**Also inherited:** an update owed to no one is not retained, so filling the seam changes retention
+behaviour for updates that previously vanished — a widening no signature reveals, hence a mandatory
+repo-wide `rush test`. And filling the seam will make `archive`'s `retention-blocked` refusal fire
+far more often; that is **T8's** to resolve, and T7 records what it observes as evidence.
+
+**Capacity.** Running ceiling is 146 at the registration baseline, 128 with one in-flight external
+command per task, against a declared 1,000. T7 adds per-audience acknowledgement evidence and
+per-subscription cleanup preparations; it must restate the arithmetic and amend `TECH_DEBT`, and
+stop and surface if A3 proves unimplementable rather than merely tight.
+
+**Loop expectation.** T7 is squarely an authorization boundary — a receipt is a capability,
+acknowledgement consumes an obligation, a checkpoint is custody. T5 ran seven rounds and T6 six,
+each after a clean layer 1. Expect the same; enumerate every check-then-act window at layer 1 the
+way T6's twelve-window list did.
+
+**Package surface:** `libraries/ts-agent-tasks` only — delivery and storage packlets.
+
+**Out-of-scope:** T8's retention replacement (explicitly, including the `retention-blocked` fallout
+T7 will amplify); T9's `capabilities()` and source-side stop; I1's tool factory; every package
+outside `ts-agent-tasks`; the `ts-utils` `isKeyOf` fix; the three known CI flakes.
+
+**Artifacts stay in `active/`** — this family finalizes at cluster close.
+
+**Landing shape.** PR into `integration/agent-tasks-v1`, not `release`.
+
+**Artifact pointer:** `.ai/tasks/active/agent-tasks-t7/`.
+
 ### `agent-tasks-t6` ✅ (slice T6 of the agent-tasks plan) — landed on the integration branch via [#693](https://github.com/ErikFortune/fgv/pull/693)
 
 **Status:** ✅ shipped 2026-09-25 via [#693](https://github.com/ErikFortune/fgv/pull/693) into

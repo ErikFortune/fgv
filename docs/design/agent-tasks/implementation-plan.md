@@ -202,7 +202,7 @@ Add a layering fixture with an executor-owned payload larger than 64 KiB and a b
 
 **Review gate:** no blind re-execution and no second authoritative lifecycle store. Verify the simulated source actually applies commands; the ingestion compatibility adapter's empty command set supplies no command evidence.
 
-### T7 — Subscriptions, exact issued receipts and acknowledgement
+### T7 — Subscriptions, exact issued receipts and acknowledgement — 🔵 in flight on `claude/agent-tasks-t7`
 
 **Dependencies:** T2, T5, T6. **Affected package:** `ts-agent-tasks` delivery/storage.
 
