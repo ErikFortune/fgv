@@ -128,50 +128,6 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
-### `ai-assist-anthropic-structured-output` 🟢 (ready to start)
-
-**Status:** 🟢 ready — branch created off `release` at `6483841d5` (the #692 landing), brief
-written. Artifacts at `.ai/tasks/active/ai-assist-anthropic-structured-output/`.
-
-**Mission.** Close the **P2** #692 filed: add a non-forcing Anthropic structured-output format,
-declare it by `modelPrefix` for the lines that reject forcing, keep `anthropic-tool-forced` for
-those that accept it, and **then rotate `@anthropic:opus` → `claude-opus-5-5` and
-`@anthropic:fable` → `claude-fable-5-1`.** The rotation is the deliverable; the format work is what
-makes it safe. This completes the four-provider rotation #692 could only do three of.
-
-**Two defects, and the second is live on `release` now.** Claude Opus 5.5 and Fable 5.1 return a 400
-on forced `tool_choice`, and `anthropic-tool-forced` is the only Anthropic mechanism — so the
-successors cannot be aliased. Separately, the `modelPrefix: ''` catch-all **claims those two ids
-support a mechanism that 400s on them**, so a `modelOverride` with `structuredOutput` fails at the
-provider rather than being refused locally, and `onUnsupported` cannot help because the capability
-model cannot express "no capability" under a catch-all.
-
-**Three forks the brief makes explicit rather than leaving to discovery.** *(1)* `tool_choice: auto`
-+ `strict: true` versus Anthropic's structured-outputs feature — `auto` means the model may decline
-to call the tool, weakening the always-get-a-`T` guarantee, so the choice is about guarantees, not
-diff size. *(2)* `StructuredOutputEnforcement` is a **required** report field and `'tool-forced'`
-would be a lie for a non-forcing mechanism — either report `'schema'` or widen a public union,
-which is a deliberate breaking change on an active surface, not a reflex. *(3)* The server-tools
-refusal exists for `anthropic-tool-forced` because the constraint *is* `tools` + `tool_choice`, a
-wire-level clash; a response-format-style mechanism may have no such clash, and **a refusal that no
-longer applies is a capability silently withheld.**
-
-**Live confirmation is the maintainer's gate**, per #692's pattern: no provider credentials in the
-agent's environment, offline-green plus a cited record, and an Anthropic structured-output probe
-added to the testbed's model-tier canary so the maintainer's run exercises this rather than only
-ids.
-
-**Package surface:** `libraries/ts-extras`, `ai-assist` packlet (plus `samples/testbed` for the
-canary probe).
-
-**Out-of-scope:** the other providers' formats; #692's two P3 items; the declined typedoc
-regeneration; the three known CI flakes — one of which is a wall-clock assertion in the very package
-this stream edits.
-
-**Landing shape.** PR into `release`. The TECH_DEBT P2 is **removed** in that PR, not amended.
-
-**Artifact pointer:** `.ai/tasks/active/ai-assist-anthropic-structured-output/`.
-
 ### `personaility-asks-2026-08` (Stream A — the embedding lane) 🟢
 
 **Status:** 🟢 **shipped to `release`** — all five units merged 2026-08-12, plus one unplanned refactor that unblocked them. Nothing published yet; the alpha still has to go out. Artifacts: `.ai/notes/cross-repo-handoffs/personaility-asks-2026-08-triage.md`, `…-reply-2026-08-11-ask-package.md`, `…-status-2026-08-12-stream-a.md`, `…-status-2026-08-12-shipped.md`.
@@ -506,8 +462,8 @@ here so a stream can be found by id without opening them; each archive links bac
 the same "docs ship with the code" rule as everywhere else, so the working ledger never
 accumulates history again.
 
-**[2026-09](workstreams/2026-09.md)** — 7 shipped
-`ai-assist-model-catalog-2026-09` · `prompt-assist-qualifier-stability` · `ai-assist-streaming-cache` · `filetree-atomic-write` · `ai-assist-prompt-caching` · `ai-assist-thinking-anchoring` · `prompt-composition-metadata`
+**[2026-09](workstreams/2026-09.md)** — 8 shipped
+`ai-assist-anthropic-structured-output` · `ai-assist-model-catalog-2026-09` · `prompt-assist-qualifier-stability` · `ai-assist-streaming-cache` · `filetree-atomic-write` · `ai-assist-prompt-caching` · `ai-assist-thinking-anchoring` · `prompt-composition-metadata`
 
 **[2026-08](workstreams/2026-08.md)** — 19 shipped
 `converters-single-line` · `schema-optional-translation` · `json-schema-nullable` · `sqlite-vec-throwaway-clear-statement` · `filetree-faithful-copy` · `ai-assist-structured-output` · `agent-memory-kind-collision-guard` · `sqlite-vec-statement-lifetime` · `fragment-query-scoping` · `agent-memory-derived-state-reconciliation` · `agent-memory-index-partial-read` · `vector-rebuild-report-by-kind` · `sqlite-vec-path-open` · `module-resolution-upgrade` · `publish-tarball-gate` · `ts-utils-async-detailed-result` · `fetch-primitive-threat-model` · `ts-prompt-assist-features` · `async-result-family`

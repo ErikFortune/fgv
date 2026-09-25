@@ -174,6 +174,23 @@ run therefore exercises **both** Anthropic mechanisms live:
 It also gives `claude-fable-5-1` its first plain live row. The seam stays coverage-ignored like
 the existing ones. The classification and verdict logic is covered offline through injected deps.
 
-## 7. Gates
+## 7. Gates (all run 2026-09-25, on the final tree)
 
-*(filled in below as they run)*
+| gate | result |
+|---|---|
+| `rushx build` (ts-extras, testbed) | pass, zero warnings; `etc/ts-extras.api.md` updated for the `AiStructuredOutputFormat` member |
+| `rushx lint` / `rushx fixlint` (ts-extras, testbed) | clean. One `naming-convention` warning on a `_label` test parameter was fixed by switching to object-form `test.each` |
+| `rushx test` (ts-extras) | 3101 pass, 100% statements / branches / functions / lines |
+| `rushx test` (testbed) | 576 pass, 100% |
+| repo-wide `install-run-rush.js test` | **35/35 succeeded, none with warnings** |
+| `rush change --verify --target-branch origin/release` | pass (`@fgv/ts-extras`, `minor`; `samples/testbed` is unpublished) |
+| `verify-capability-docs`, `generate-capability-feed --check`, `verify-esm-entrypoints`, `verify-bundler-resolution`, `verify-tarball-exports` | pass. The last two first needed their autoinstallers installed in this container, as in #692 |
+| layer-1 order | `code-reviewer` ran on the full diff **before** the coverage run. No P1/P2. Two P3s fixed: a registry comment implied array order mattered (matching is longest-prefix), and a doc sentence was split across a line. The first coverage run was already at 100%, so no gap-closure phase and no `c8 ignore` |
+| mutation check | reverting `mergeAnthropicStructuredWire` to `Object.assign` → exactly the effort-merge test fails |
+| Copilot loop | not yet run at the time of writing |
+| live | **none from this environment**; pending the maintainer's `anthropic-model-tiers` run |
+
+## 8. Open items
+
+- **TECH_DEBT P3**: whether web search + `output_config.format` is accepted (§3).
+- **Not done, deliberately**: moving the other Claude lines from forced tool use to JSON outputs (§1).
