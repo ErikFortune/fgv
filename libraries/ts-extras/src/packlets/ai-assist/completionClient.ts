@@ -570,6 +570,29 @@ function extractAnthropicStructuredOutput(content: unknown[]): Result<string> {
   );
 }
 
+/**
+ * Merges a resolved structured-output wire into an Anthropic request body.
+ *
+ * @remarks
+ * A plain `Object.assign` except for `output_config`, which is **merged one level
+ * deep**. Two writers share that object: the adaptive-thinking path puts `effort` in
+ * it, and `'anthropic-output-format'` puts `format` in it. Anthropic's Messages API
+ * reference documents both as optional siblings of one `OutputConfig`
+ * (https://platform.claude.com/docs/en/api/messages/create, fetched 2026-09-25), so
+ * they belong in the same object — and a structured-output call on an always-thinking
+ * model such as `claude-opus-5-5` is exactly the call that carries both. Assigning
+ * would drop the caller's effort with nothing failing.
+ * @internal
+ */
+function mergeAnthropicStructuredWire(body: Record<string, unknown>, wire: JsonObject): void {
+  const { output_config: wireOutputConfig, ...rest } = wire;
+  Object.assign(body, rest);
+  if (isJsonObject(wireOutputConfig)) {
+    const existing = body.output_config;
+    body.output_config = isJsonObject(existing) ? { ...existing, ...wireOutputConfig } : wireOutputConfig;
+  }
+}
+
 /** Calls the Anthropic Messages API with optional tool support. @internal */
 async function callAnthropicCompletion(
   config: IAiApiConfig,
@@ -636,7 +659,7 @@ async function callAnthropicCompletion(
         `this combination must be refused before reaching the adapter`
     );
   }
-  Object.assign(body, structured.wire);
+  mergeAnthropicStructuredWire(body, structured.wire);
 
   if (tools && tools.length > 0) {
     body.tools = toAnthropicTools(tools);

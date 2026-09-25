@@ -124,15 +124,15 @@ describe('AiAssist.registry', () => {
       expect(AiAssist.resolveProviderModel(desc, undefined, 'base')).toSucceedWith('claude-sonnet-5');
     });
 
-    test('advanced tier resolves to claude-opus-5', () => {
-      expect(AiAssist.resolveProviderModel(desc, undefined, 'advanced')).toSucceedWith('claude-opus-5');
+    test('advanced tier resolves to claude-opus-5-5', () => {
+      expect(AiAssist.resolveProviderModel(desc, undefined, 'advanced')).toSucceedWith('claude-opus-5-5');
     });
 
     test('frontier cascades to the advanced id (no frontier key on the descriptor)', () => {
       // The Anthropic map deliberately omits a frontier key, so a frontier request must
       // cascade frontier → advanced → opus. This is the real registry descriptor (not a
       // synthetic one), so it is the live proof of the cascade against shipped defaults.
-      expect(AiAssist.resolveProviderModel(desc, undefined, 'frontier')).toSucceedWith('claude-opus-5');
+      expect(AiAssist.resolveProviderModel(desc, undefined, 'frontier')).toSucceedWith('claude-opus-5-5');
     });
 
     test('the non-tier @anthropic:haiku alias resolves via modelOverride only', () => {
@@ -143,8 +143,33 @@ describe('AiAssist.registry', () => {
 
     test('the non-tier @anthropic:fable alias resolves via modelOverride only', () => {
       expect(AiAssist.resolveProviderModel(desc, '@anthropic:fable', undefined)).toSucceedWith(
-        'claude-fable-5'
+        'claude-fable-5-1'
       );
+    });
+
+    // The capability table, not just the aliases. The two lines that 400 on a forced
+    // tool_choice must resolve to the non-forcing format — including a dated snapshot, which
+    // prefix-matches — and every line that still accepts forcing must keep it. A catch-all
+    // that swallowed the two would compile, resolve, and fail only at the provider.
+    test.each([
+      ['claude-opus-5-5', 'anthropic-output-format'],
+      ['claude-opus-5-5-20260922', 'anthropic-output-format'],
+      ['claude-fable-5-1', 'anthropic-output-format'],
+      ['@anthropic:opus', 'anthropic-output-format'],
+      ['@anthropic:fable', 'anthropic-output-format'],
+      ['claude-opus-5', 'anthropic-tool-forced'],
+      ['claude-fable-5', 'anthropic-tool-forced'],
+      ['claude-sonnet-5', 'anthropic-tool-forced'],
+      ['claude-haiku-4-5-20251001', 'anthropic-tool-forced'],
+      ['claude-opus-4-8', 'anthropic-tool-forced']
+    ] as const)('structured-output capability for %s is %s', (model, format) => {
+      expect(AiAssist.resolveStructuredOutputCapability(desc, model)?.format).toBe(format);
+    });
+
+    test('the rotated ids stay adaptive-thinking models (dash-bounded match on the 5-family prefixes)', () => {
+      for (const id of ['claude-opus-5-5', 'claude-fable-5-1', 'claude-opus-5-5-20260922']) {
+        expect(AiAssist.isAdaptiveThinkingModel(desc, id)).toBe(true);
+      }
     });
 
     test('a raw modelOverride passes through verbatim (no alias resolution)', () => {
@@ -783,6 +808,8 @@ describe('DEFAULT_MODEL_CAPABILITY_CONFIG', () => {
     ['anthropic', 'claude-opus-5'],
     ['anthropic', 'claude-sonnet-5'],
     ['anthropic', 'claude-fable-5'],
+    ['anthropic', 'claude-opus-5-5'],
+    ['anthropic', 'claude-fable-5-1'],
     ['openai', 'gpt-5.6-terra']
   ] as const)('%s tags %s with the thinking capability', (provider, modelId) => {
     const rules = config.perProvider?.[provider] ?? [];

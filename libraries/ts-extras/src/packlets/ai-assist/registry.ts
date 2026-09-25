@@ -66,22 +66,21 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     baseUrl: 'https://api.anthropic.com/v1',
     defaultModel: {
       base: '@anthropic:sonnet', // claude-sonnet-5 (was 'claude-sonnet-4-5-20250929')
-      advanced: '@anthropic:opus' // claude-opus-5
+      advanced: '@anthropic:opus' // claude-opus-5-5
       // no frontier key → a frontier request cascades advanced → opus (see resolveModel)
     },
     aliases: {
       '@anthropic:sonnet': 'claude-sonnet-5', // base tier
-      // HELD at claude-opus-5 / claude-fable-5 (both Active; retirement not sooner than 2027-07-24 /
-      // 2027-06-09). Their successors claude-opus-5-5 and claude-fable-5-1 400 on a forced
-      // `tool_choice` ({type:'any'} / {type:'tool'}), which is this descriptor's only
-      // structured-output mechanism (`anthropic-tool-forced` below) — rotating either would turn
-      // every structured-output call on that alias into a provider 400. Rotate once a
-      // non-forcing structured-output format exists for them.
-      '@anthropic:opus': 'claude-opus-5', // advanced tier (was claude-opus-4-8; opus-5 is the drop-in successor at the same price)
+      // advanced tier (was claude-opus-5, held there in 2026-09 because claude-opus-5-5 400s on a
+      // forced tool_choice; rotated once `anthropic-output-format` below gave it a non-forcing
+      // structured-output mechanism. claude-opus-5 stays Active, retirement not sooner than 2027-07-24)
+      '@anthropic:opus': 'claude-opus-5-5',
       '@anthropic:haiku': 'claude-haiku-4-5-20251001', // NON-tier alias; modelOverride only (retirement not sooner than 2026-10-15)
-      '@anthropic:fable': 'claude-fable-5' // NON-tier alias; modelOverride only
+      // NON-tier alias; modelOverride only (was claude-fable-5, held for the same forced-tool_choice
+      // reason and rotated with opus; claude-fable-5 stays Active, not sooner than 2027-06-09)
+      '@anthropic:fable': 'claude-fable-5-1'
       // NOTE: no thinking/image/embedding keys — Anthropic completions are all text; base
-      // (sonnet-5) and advanced (opus-5) are both thinking-capable, so a thinking-context
+      // (sonnet-5) and advanced (opus-5-5) are both thinking-capable, so a thinking-context
       // call flat-falls to base safely.
     },
     supportedTools: ['web_search'],
@@ -93,9 +92,20 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     // shape; see AiAssist.isAdaptiveThinkingModel. The dash-bounded match also covers
     // claude-opus-5-5 and claude-fable-5-1, which are adaptive-only (always on) as well.
     adaptiveThinkingModelPrefixes: ['claude-sonnet-5', 'claude-opus-5', 'claude-fable-5'],
-    // Anthropic has no response-format field; forced tool use is the mechanism, and
-    // it is uniform across the family — hence one catch-all entry.
-    structuredOutput: [{ modelPrefix: '', format: 'anthropic-tool-forced' }]
+    // Two mechanisms, split by what each line accepts. claude-opus-5-5 and claude-fable-5-1
+    // return a 400 on a forced tool_choice ({type:'any'} / {type:'tool'}): "Forced tool use is
+    // not supported", https://platform.claude.com/docs/en/models/opus-5-5/whats-new-opus-5-5
+    // ("The first three also apply on Claude Fable 5.1"). They get JSON outputs
+    // (`output_config.format`), which both are listed as supporting on
+    // https://platform.claude.com/docs/en/build-with-claude/structured-outputs (both fetched
+    // 2026-09-25). Every other line keeps forced tool use under the catch-all: the '' entry
+    // is only correct because the longer prefixes above it win for the two that reject it.
+    // A future line that rejects forcing must be added here, or it inherits the catch-all's 400.
+    structuredOutput: [
+      { modelPrefix: 'claude-opus-5-5', format: 'anthropic-output-format' },
+      { modelPrefix: 'claude-fable-5-1', format: 'anthropic-output-format' },
+      { modelPrefix: '', format: 'anthropic-tool-forced' }
+    ]
   },
   {
     id: 'google-gemini',

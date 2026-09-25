@@ -405,18 +405,18 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
 
   **Reference**: PR #377 (ts-extras Yaml fix + micro-test pattern landed); original L13 lessons-pending entry; earlier ts-extras `Crypto` bug.
 
-- **[P2] ai-assist Anthropic structured output depends on forced `tool_choice`, which the current Anthropic lines reject — so `@anthropic:opus` / `@anthropic:fable` cannot rotate.**
-  `registry.ts` declares one Anthropic structured-output entry, `{ modelPrefix: '', format: 'anthropic-tool-forced' }`, and `structuredOutput.ts` implements it as a synthetic tool plus `tool_choice: { type: 'tool', name }`. Claude Opus 5.5 and Claude Fable 5.1 return a 400 `invalid_request_error` on `tool_choice` `{type:'any'}` / `{type:'tool'}` ("Forced tool use is not supported", <https://platform.claude.com/docs/en/models/opus-5-5/whats-new-opus-5-5.md>, fetched 2026-09-24). Anthropic's stated replacement is `tool_choice: auto` + `strict: true`, or its structured-outputs feature. Today the catch-all entry claims `claude-opus-5-5` / `claude-fable-5-1` support a mechanism that 400s on them, so a `modelOverride` to either with `structuredOutput` fails at the provider rather than being refused or degraded locally.
-
-  **Trigger**: the next Anthropic rotation (`claude-opus-5` retires not sooner than 2027-07-24, `claude-fable-5` not sooner than 2027-06-09), or the first consumer that needs structured output on either successor.
-
-  **Scope sketch**: add a non-forcing Anthropic `AiStructuredOutputFormat` (structured outputs or strict tool use — read Anthropic's structured-outputs page first), declare it by `modelPrefix` for the lines that reject forcing, keep `anthropic-tool-forced` for the rest, then rotate the two aliases. Until then the provider's 400 is the only signal: the capability model has no way to declare "no capability" for a prefix that sits under a `''` catch-all, so `onUnsupported` cannot apply.
-
-  **Not a P3**: it blocks a tier rotation outright, and the capability table is currently wrong for two real, documented ids.
-
-  **Reference**: `ai-assist-model-catalog-2026-09` stream (`.ai/tasks/completed/2026-09/ai-assist-model-catalog-2026-09/result.md`).
-
 ## P3 — Opportunistic cleanup
+
+- **[P3] ai-assist refuses `anthropic-output-format` structured output with `web_search` on documented grounds that the docs do not settle for web search itself.**
+  `resolveStructuredOutput` (`ts-extras/src/packlets/ai-assist/structuredOutput.ts`) refuses a schema request on `claude-opus-5-5` / `claude-fable-5-1` when `web_search` is on the same request. This is not the forced format's wire clash (`output_config.format` is nowhere near `tools`, and Anthropic documents JSON outputs combined with tools). It rests on citations: web search "always" returns them, and Anthropic documents citations as incompatible with `output_config.format` because they "require interleaving citation blocks with text output". The documented 400 is scoped to citations on user-provided `document` / `search_result` blocks. No fetched page says whether web search's own citations trigger it or are dropped (<https://platform.claude.com/docs/en/build-with-claude/structured-outputs> § "Feature compatibility", <https://platform.claude.com/docs/en/build-with-claude/citations>, <https://platform.claude.com/docs/en/agents-and-tools/tool-use/web-search-tool> § "Citations", all fetched 2026-09-25). If the combination is actually accepted with citations intact, the refusal withholds a working capability.
+
+  **Trigger**: a consumer that wants grounded search and a schema-constrained reply from the same Anthropic call, or an Anthropic doc change that addresses it.
+
+  **Scope sketch**: send one raw request (web search + `output_config.format`) to `claude-opus-5-5` from a keyed environment, outside the library, since the library refuses it. If the call succeeds and the reply still carries citations, drop `anthropic-output-format` from `conflictsWithServerTools`, drop its arm of the comment, and flip the test in `apiClient.structuredOutput.test.ts` § *anthropic output format*. If it 400s, cite the error in the comment and close this entry.
+
+  **Not a P2**: the refusal is loud and names its reason, so nothing fails silently, and no consumer has asked for the combination.
+
+  **Reference**: `ai-assist-anthropic-structured-output` stream (`.ai/tasks/completed/2026-09/ai-assist-anthropic-structured-output/result.md`).
 
 - **[P3] `createChildFile` / `createChildFileBytes` accept a child name containing a path
   separator and silently `joinPaths` it into a nested path.**

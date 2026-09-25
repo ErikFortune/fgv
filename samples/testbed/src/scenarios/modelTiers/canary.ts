@@ -46,6 +46,9 @@
  *      `'none'` bypasses the library gate, so the provider's own rejection keeps the listing
  *      honest in the other direction.
  *    - model-override rows for aliases no tier reaches (`extraModels`)
+ *    - structured-output probes: a schema-mode completion per tier and extra model with
+ *      `onUnsupported: 'fail'` (`structuredOutputProbe`), checked against the registry's declared
+ *      format — the reported enforcement must match it and the reply must satisfy the schema
  *    - one live image generation (`liveImage`, via {@link ITierCanaryDeps.generateImage})
  *    Any probe failure fails the run, the same as a tier failure.
  *
@@ -59,6 +62,7 @@
 
 import { fail, mapResults, succeed } from '@fgv/ts-utils';
 import type { Logging, Result } from '@fgv/ts-utils';
+import { Converters as JsonConverters, JsonSchema } from '@fgv/ts-json-base';
 import { AiAssist } from '@fgv/ts-extras';
 
 /**
@@ -166,7 +170,18 @@ export interface ICanaryCompleteOptions {
    * library's `'none'` gate, so the provider itself answers whether it accepts `'none'`.
    */
   readonly rawNone?: boolean;
+  /** Send this `structuredOutput` request (a structured-output probe). */
+  readonly structuredOutput?: AiAssist.StructuredOutputRequest;
 }
+
+/**
+ * The schema every structured-output probe sends, and validates the reply against — the same
+ * object, so the wire schema and the check cannot drift.
+ * @public
+ */
+export const CANARY_STRUCTURED_SCHEMA: JsonSchema.ISchemaValidator<{ answer: string }> = JsonSchema.object({
+  answer: JsonSchema.string()
+});
 
 /**
  * The live result of one supplementary probe (thinking, extra model, or image).
@@ -189,6 +204,7 @@ export interface ICanaryProbeResults {
   readonly thinking: ReadonlyArray<ICanaryProbeResult>;
   readonly strictNone: ReadonlyArray<ICanaryProbeResult>;
   readonly extraModels: ReadonlyArray<ICanaryProbeResult>;
+  readonly structured: ReadonlyArray<ICanaryProbeResult>;
   readonly image: ReadonlyArray<ICanaryProbeResult>;
 }
 
@@ -245,6 +261,14 @@ export interface ITierCanarySpec {
    * locally, and any other model must answer live. A mismatch either way means the list is wrong.
    */
   readonly strictNoneProbe?: boolean;
+  /**
+   * When true, fire one schema-mode structured-output completion (`onUnsupported: 'fail'`) per
+   * tier and per extra model. The expectation comes from the registry: the response must report
+   * the enforcement the model's declared format implies, and its content must satisfy
+   * {@link CANARY_STRUCTURED_SCHEMA}. A provider 400 is `FAIL(param)` — the declared format is
+   * one the model rejects.
+   */
+  readonly structuredOutputProbe?: boolean;
 }
 
 /**
@@ -398,7 +422,7 @@ export function formatTierCanaryReport(
   probes?: ICanaryProbeResults
 ): string {
   const probeResults = probes
-    ? [...probes.thinking, ...probes.strictNone, ...probes.extraModels, ...probes.image]
+    ? [...probes.thinking, ...probes.strictNone, ...probes.extraModels, ...probes.structured, ...probes.image]
     : [];
   const outcomes = [...liveResults.map((r) => r.outcome), ...probeResults.map((r) => r.outcome)];
   const anyTierFailure = liveResults.some((r) => isRealFailure(r.outcome));
@@ -409,7 +433,7 @@ export function formatTierCanaryReport(
   const verdict = anyTierFailure
     ? 'FAILED — a tier is not chat-completions-callable (wrong endpoint) or resolves to a stale id (see FAIL lines below)'
     : anyProbeFailure
-    ? 'FAILED — a thinking, strict-none, model-override or image probe failed (see FAIL lines below)'
+    ? 'FAILED — a thinking, strict-none, model-override, structured-output or image probe failed (see FAIL lines below)'
     : anyNotRun
     ? 'RESOLVER-VERIFIED; LIVE CANARY PENDING (STOP-FLAG: set the provider API key to run the keyed gate)'
     : anyBlocked
@@ -456,6 +480,7 @@ export function formatTierCanaryReport(
     ...probeSection('Thinking probes (tier + effort):', probes?.thinking ?? []),
     ...probeSection("Strict-none probes (effort none, onUnsupported 'fail'):", probes?.strictNone ?? []),
     ...probeSection('Model-override probes:', probes?.extraModels ?? []),
+    ...probeSection("Structured-output probes (schema, onUnsupported 'fail'):", probes?.structured ?? []),
     ...probeSection('Live image probe:', probes?.image ?? []),
     '',
     `Verdict: ${verdict}`
@@ -606,6 +631,113 @@ function rawNoneProbe(
     : { label, concrete, outcome, detail: result.message };
 }
 
+/**
+ * The enforcement a structured-output probe must report for `concrete`, read off the registry.
+ * `'none'` when the model declares no capability — the probe then expects a local refusal.
+ * @public
+ */
+export function expectedStructuredEnforcement(
+  descriptor: AiAssist.IAiProviderDescriptor,
+  concrete: string
+): AiAssist.StructuredOutputEnforcement {
+  switch (AiAssist.resolveStructuredOutputCapability(descriptor, concrete)?.format) {
+    case undefined:
+      return 'none';
+    case 'anthropic-tool-forced':
+      return 'tool-forced';
+    default:
+      return 'schema';
+  }
+}
+
+/**
+ * Classifies one structured-output probe. A pass needs all three: the call succeeded, the reported
+ * enforcement is the one the registry declares for the model, and the content satisfies
+ * {@link CANARY_STRUCTURED_SCHEMA}. A mock-free live 200 with the wrong enforcement or a
+ * non-conforming reply is exactly the failure a request-shape unit test cannot see.
+ * @public
+ */
+export function classifyStructuredProbe(
+  label: string,
+  concrete: string,
+  expected: AiAssist.StructuredOutputEnforcement,
+  result: Result<AiAssist.IAiCompletionResponse>
+): ICanaryProbeResult {
+  if (result.isFailure()) {
+    return { label, concrete, outcome: classifyThinkingFailure(result.message), detail: result.message };
+  }
+  const reported = result.value.structuredOutput;
+  if (reported !== expected) {
+    return {
+      label,
+      concrete,
+      outcome: 'error',
+      detail: `reported enforcement '${reported}', but the registry declares '${expected}' for this model`
+    };
+  }
+  const parsed = JsonConverters.stringifiedJson(CANARY_STRUCTURED_SCHEMA).convert(result.value.content);
+  return parsed.isSuccess()
+    ? { label, concrete, outcome: 'live-pass', detail: `enforcement '${reported}'` }
+    : {
+        label,
+        concrete,
+        outcome: 'error',
+        detail: `reply does not satisfy the probe schema: ${parsed.message}`
+      };
+}
+
+/**
+ * Runs the structured-output probes: one schema-mode completion per tier and per extra model, each
+ * with `onUnsupported: 'fail'` so a model that declares no capability fails loudly rather than
+ * degrading into a plain-text pass.
+ */
+async function runStructuredOutputProbes(
+  spec: ITierCanarySpec,
+  resolutions: ReadonlyArray<ITierResolution>,
+  extraModels: ReadonlyArray<ICanaryProbeResult>,
+  deps: ITierCanaryDeps
+): Promise<ICanaryProbeResult[]> {
+  const rows: ICanaryProbeResult[] = [];
+  if (!spec.structuredOutputProbe) {
+    return rows;
+  }
+  const structuredOutput: AiAssist.StructuredOutputRequest = {
+    mode: 'schema',
+    schema: CANARY_STRUCTURED_SCHEMA,
+    onUnsupported: 'fail'
+  };
+  // Extra models reuse the model-override rows' already-resolved ids; each row's label is the
+  // model string it was resolved from.
+  const targets: Array<{ label: string; concrete: string; tier: CanaryTier; modelOverride?: string }> = [
+    ...resolutions.map((r) => ({ label: `${r.tier} schema`, concrete: r.concrete, tier: r.tier })),
+    ...extraModels.map((r) => ({
+      label: `${r.label} schema`,
+      concrete: r.concrete,
+      tier: 'base' as const,
+      modelOverride: r.label
+    }))
+  ];
+  for (const target of targets) {
+    if (deps.complete === undefined) {
+      rows.push({ label: target.label, concrete: target.concrete, outcome: 'not-run' });
+      continue;
+    }
+    const result = await deps.complete(target.tier, {
+      structuredOutput,
+      ...(target.modelOverride !== undefined ? { modelOverride: target.modelOverride } : {})
+    });
+    rows.push(
+      classifyStructuredProbe(
+        target.label,
+        target.concrete,
+        expectedStructuredEnforcement(spec.descriptor, target.concrete),
+        result
+      )
+    );
+  }
+  return rows;
+}
+
 /** Resolves (offline) and fires (live) each extra model via `modelOverride`. */
 async function runExtraModelProbes(
   spec: ITierCanarySpec,
@@ -703,6 +835,7 @@ export async function runTierCanary(
   if (extraModelsResult.isFailure()) {
     return fail(`${spec.providerId} tier canary: ${extraModelsResult.message}`);
   }
+  const structured = await runStructuredOutputProbes(spec, resolutions, extraModelsResult.value, deps);
   const image: ICanaryProbeResult[] = [];
   if (spec.liveImage && imageResolution) {
     image.push(
@@ -711,7 +844,13 @@ export async function runTierCanary(
         : imageProbe(imageResolution.concrete, await deps.generateImage())
     );
   }
-  const probes: ICanaryProbeResults = { thinking, strictNone, extraModels: extraModelsResult.value, image };
+  const probes: ICanaryProbeResults = {
+    thinking,
+    strictNone,
+    extraModels: extraModelsResult.value,
+    structured,
+    image
+  };
 
   const report = formatTierCanaryReport(spec, liveResults, imageResolution, probes);
 
@@ -719,8 +858,13 @@ export async function runTierCanary(
   // config (`param-failed`), or a plain `error` — on a tier or on any probe — fails the run.
   // `access-gated` / `param-rejected` (resolver + id correct; access or a completion-path parameter
   // is the blocker) and `not-run` (STOP-FLAG: pending the keyed run) do not.
-  const realFailure = [...liveResults, ...thinking, ...strictNone, ...probes.extraModels, ...image].some(
-    (r) => isRealFailure(r.outcome)
-  );
+  const realFailure = [
+    ...liveResults,
+    ...thinking,
+    ...strictNone,
+    ...probes.extraModels,
+    ...structured,
+    ...image
+  ].some((r) => isRealFailure(r.outcome));
   return realFailure ? fail(report) : succeed(report);
 }
