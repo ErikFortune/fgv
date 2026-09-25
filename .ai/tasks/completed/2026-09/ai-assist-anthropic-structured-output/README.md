@@ -2,7 +2,7 @@
 
 **Shipped**: 2026-09-25 via [#694](https://github.com/ErikFortune/fgv/pull/694), from
 `claude/ai-assist-anthropic-structured-output` against `release`. **Live-verified** by the maintainer's `anthropic-structured-output` (3/3) and
-`anthropic-model-tiers` (11/11) runs on 2026-09-25. Every probe passed, including `output_config.format` on `claude-opus-5-5` and `claude-fable-5-1`
+`anthropic-model-tiers` (11/11, then 15/15 with effort + schema) runs on 2026-09-25. Every probe passed, including `output_config.format` on `claude-opus-5-5` and `claude-fable-5-1`
 (`result.md` §6b). The agent made no live call.
 
 ## Summary
@@ -38,7 +38,6 @@ The stream then rotates `@anthropic:opus` → `claude-opus-5-5` and `@anthropic:
 
 ## Open
 
-- One more `anthropic-model-tiers` run for the effort + schema rows added after the first live runs.
 - TECH_DEBT P3: forced tool + manual thinking on pre-Claude-5 lines, found while adding those rows.
 - The web-search TECH_DEBT P3.
 - The Copilot review loop (layer 2) had not run at close-out.
