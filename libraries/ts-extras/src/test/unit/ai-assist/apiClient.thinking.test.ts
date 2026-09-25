@@ -437,12 +437,13 @@ describe('thinking-config wire encoding (non-streaming)', () => {
 
     test('openai base (gpt-6-luna) still sends none — it accepts it', async () => {
       mockFetchResponse(openAiResponse('ok'));
-      await AiAssist.callProviderCompletion({
+      const result = await AiAssist.callProviderCompletion({
         descriptor: openai,
         apiKey: 'sk',
         ...testPrompt.toRequest(),
         thinking: { effort: 'none' }
       });
+      expect(result).toSucceed();
       expect(sentBody().model).toBe('gpt-6-luna');
       expect(sentBody().reasoning_effort).toBe('none');
     });
@@ -456,6 +457,19 @@ describe('thinking-config wire encoding (non-streaming)', () => {
         thinking: { effort: 'none', onUnsupported: 'fail' }
       });
       expect(result).toFailWith(/thinking effort 'none' is not supported by gpt-6-astra/);
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
+
+    test('xai advanced: none plus temperature fails before the wire, naming the degrade', async () => {
+      const result = await AiAssist.callProviderCompletion({
+        descriptor: xai,
+        apiKey: 'k',
+        ...testPrompt.toRequest(),
+        tier: 'advanced',
+        temperature: 0.7,
+        thinking: { effort: 'none' }
+      });
+      expect(result).toFailWith(/thinking effort 'none' was sent as 'low'.*provider xai: remove temperature/);
       expect(global.fetch).not.toHaveBeenCalled();
     });
 
@@ -474,59 +488,64 @@ describe('thinking-config wire encoding (non-streaming)', () => {
 
     test('an explicit provider block is sent verbatim, unchecked', async () => {
       mockFetchResponse(openAiResponse('ok'));
-      await AiAssist.callProviderCompletion({
+      const sent1 = await AiAssist.callProviderCompletion({
         descriptor: openai,
         apiKey: 'sk',
         ...testPrompt.toRequest(),
         tier: 'frontier',
         thinking: { providers: [{ provider: 'openai', config: { effort: 'none' } }] }
       });
+      expect(sent1).toSucceed();
       expect(sentBody().reasoning_effort).toBe('none');
     });
 
     test('gemini advanced (gemini-3.1-pro-preview): none is sent as the low budget', async () => {
       mockFetchResponse(geminiResponse('ok'));
-      await AiAssist.callProviderCompletion({
+      const sent2 = await AiAssist.callProviderCompletion({
         descriptor: gemini,
         apiKey: 'k',
         ...testPrompt.toRequest(),
         tier: 'advanced',
         thinking: { effort: 'none' }
       });
+      expect(sent2).toSucceed();
       expect((global.fetch as jest.Mock).mock.calls[0][0]).toContain('gemini-3.1-pro-preview');
       expect(sentBody()).toMatchObject({ generationConfig: { thinkingConfig: { thinkingBudget: 1024 } } });
     });
 
     test('gemini base (gemini-3.8-flash) still sends budget 0 — it accepts it', async () => {
       mockFetchResponse(geminiResponse('ok'));
-      await AiAssist.callProviderCompletion({
+      const sent3 = await AiAssist.callProviderCompletion({
         descriptor: gemini,
         apiKey: 'k',
         ...testPrompt.toRequest(),
         thinking: { effort: 'none' }
       });
+      expect(sent3).toSucceed();
       expect(sentBody()).toMatchObject({ generationConfig: { thinkingConfig: { thinkingBudget: 0 } } });
     });
 
     test('xai advanced (grok-4.7): none is sent as low; base (grok-4.3) keeps none', async () => {
       mockFetchResponse(openAiResponse('ok'));
-      await AiAssist.callProviderCompletion({
+      const sent4 = await AiAssist.callProviderCompletion({
         descriptor: xai,
         apiKey: 'k',
         ...testPrompt.toRequest(),
         tier: 'advanced',
         thinking: { effort: 'none' }
       });
+      expect(sent4).toSucceed();
       expect(sentBody()).toMatchObject({ model: 'grok-4.7', reasoning_effort: 'low' });
 
       (global.fetch as jest.Mock).mockClear();
       mockFetchResponse(openAiResponse('ok'));
-      await AiAssist.callProviderCompletion({
+      const sent5 = await AiAssist.callProviderCompletion({
         descriptor: xai,
         apiKey: 'k',
         ...testPrompt.toRequest(),
         thinking: { effort: 'none' }
       });
+      expect(sent5).toSucceed();
       expect(sentBody()).toMatchObject({ model: 'grok-4.3', reasoning_effort: 'none' });
     });
   });

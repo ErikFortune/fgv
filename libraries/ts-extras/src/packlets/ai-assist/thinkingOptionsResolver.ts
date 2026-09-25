@@ -379,6 +379,27 @@ function applyBlock(
 // ============================================================================
 
 /**
+ * The temperature-conflict failure message. When the caller asked for `'none'` and the model
+ * cannot run with thinking off, the effort that conflicts is the `'low'` that `'none'` was
+ * degraded to (see `mergeThinkingConfig`), so the usual advice to "disable thinking" would tell
+ * the caller to do what they already did. That case gets its own message.
+ */
+function temperatureConflict(
+  provider: string,
+  requestedEffort: IThinkingConfig['effort']
+): Result<undefined> {
+  if (requestedEffort === 'none') {
+    return fail(
+      `thinking effort 'none' was sent as 'low' because the model cannot run with thinking off, and ` +
+        `thinking mode is not compatible with temperature on provider ${provider}: remove temperature`
+    );
+  }
+  return fail(
+    `thinking mode is not compatible with temperature on provider ${provider}: remove temperature or disable thinking`
+  );
+}
+
+/**
  * Returns a Result.fail if temperature conflicts with thinking mode for the
  * given provider, otherwise succeed(undefined).
  *
@@ -386,12 +407,16 @@ function applyBlock(
  * effective effort is non-null and non-'none'), and xAI (conservative default
  * pending live verification). Gemini accepts temperature alongside thinking.
  *
+ * `requestedEffort` is the caller's generic effort, before `mergeThinkingConfig` degraded it. It
+ * affects only the failure message, never the decision.
+ *
  * @internal
  */
 export function checkTemperatureConflict(
   resolved: IResolvedThinkingConfig,
   discriminator: ThinkingProviderDiscriminator,
-  temperature: number | undefined
+  temperature: number | undefined,
+  requestedEffort?: IThinkingConfig['effort']
 ): Result<undefined> {
   if (temperature === undefined) {
     return succeed(undefined);
@@ -400,25 +425,19 @@ export function checkTemperatureConflict(
   switch (discriminator) {
     case 'anthropic':
       if (resolved.anthropicEffort !== undefined) {
-        return fail(
-          'thinking mode is not compatible with temperature on provider anthropic: remove temperature or disable thinking'
-        );
+        return temperatureConflict('anthropic', requestedEffort);
       }
       break;
     case 'openai':
       // 'none' disables reasoning; temperature is accepted in that case
       if (resolved.openAiEffort !== undefined && resolved.openAiEffort !== 'none') {
-        return fail(
-          'thinking mode is not compatible with temperature on provider openai: remove temperature or disable thinking'
-        );
+        return temperatureConflict('openai', requestedEffort);
       }
       break;
     case 'xai':
       // Conservative default: fail if xAI effort is active (per D8 — live verification pending)
       if (resolved.xaiEffort !== undefined && resolved.xaiEffort !== 'none') {
-        return fail(
-          'thinking mode is not compatible with temperature on provider xai: remove temperature or disable thinking'
-        );
+        return temperatureConflict('xai', requestedEffort);
       }
       break;
     case 'google':

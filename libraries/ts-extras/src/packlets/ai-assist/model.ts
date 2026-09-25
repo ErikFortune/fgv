@@ -1748,7 +1748,9 @@ export interface IThinkingConfig {
    * @remarks
    * Pass `'fail'` when `'none'` is a correctness requirement (for example, a latency budget or a
    * reply that must not carry reasoning tokens), rather than a preference. Has no effect on any
-   * other effort, or on a model that accepts `'none'`.
+   * other effort, or on a model that accepts `'none'`. A degraded `'none'` is thinking mode, so on
+   * OpenAI and xAI it cannot be combined with `temperature`. That call fails with a message saying
+   * `'none'` was sent as `'low'`.
    */
   readonly onUnsupported?: 'degrade' | 'fail';
   /**

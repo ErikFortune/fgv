@@ -787,6 +787,22 @@ describe('checkTemperatureConflict', () => {
       ).toFailWith(/'none' is not supported by gpt-6-astra/);
     });
 
+    test('a degraded none plus temperature fails with a message that says none was sent as low', () => {
+      expect(
+        mergeThinkingConfig({ effort: 'none' }, 'gpt-6-astra', 'openai', true).onSuccess((resolved) =>
+          checkTemperatureConflict(resolved, 'openai', 0.7, 'none')
+        )
+      ).toFailWith(/thinking effort 'none' was sent as 'low'.*provider openai: remove temperature$/);
+    });
+
+    test('an accepted none plus temperature still passes', () => {
+      expect(
+        mergeThinkingConfig({ effort: 'none' }, 'gpt-6-luna', 'openai', false).onSuccess((resolved) =>
+          checkTemperatureConflict(resolved, 'openai', 0.7, 'none')
+        )
+      ).toSucceed();
+    });
+
     test('leaves none alone when the model accepts it', () => {
       expect(
         mergeThinkingConfig({ effort: 'none', onUnsupported: 'fail' }, 'gpt-6-luna', 'openai', false)

@@ -951,6 +951,22 @@ describe('callProviderCompletionStream', () => {
       expect(body).toMatchObject({ model: 'gpt-6-astra', reasoning_effort: 'low' });
     });
 
+    test("real OpenAI registry descriptor: frontier + effort 'none' + temperature names the degrade", async () => {
+      const openai = AiAssist.getProviderDescriptor('openai').orThrow();
+      const result = await AiAssist.callProviderCompletionStream({
+        descriptor: openai,
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest(),
+        tier: 'frontier',
+        temperature: 0.7,
+        thinking: { effort: 'none' }
+      });
+      expect(result).toFailWith(
+        /thinking effort 'none' was sent as 'low'.*provider openai: remove temperature/
+      );
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
+
     test("real OpenAI registry descriptor: frontier + effort 'none' + onUnsupported 'fail' refuses the stream", async () => {
       const openai = AiAssist.getProviderDescriptor('openai').orThrow();
       const result = await AiAssist.callProviderCompletionStream({

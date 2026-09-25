@@ -262,6 +262,12 @@ newly wired param). The only failures were thinking `'none'`, on three models:
 - **No response-level report of the clamp.** Unlike `structuredOutput`, the completion response does
   not say that `'none'` was sent as `'low'`. A caller who needs the guarantee passes `'fail'`.
   This is a known gap, recorded here rather than built in this PR.
+- **`'none'` + `temperature`** (code-reviewer P2 on the clamp). A degraded `'none'` is thinking
+  mode, so on OpenAI and xAI it now fails the temperature check, where an accepted `'none'`
+  passes. The call still fails, because the model cannot give both "no reasoning" and a custom
+  temperature. But the message now says `'none'` was sent as `'low'`, rather than advising the
+  caller to "disable thinking", which is what they had just asked for. `checkTemperatureConflict`
+  takes the requested effort for the message only. It is tested through both completion paths.
 - Tests pin the wire value per provider on the real descriptors. Breaking either call site
   (`completionClient`, `streamingClient`) turns exactly that site's tests red.
 

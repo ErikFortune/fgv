@@ -847,7 +847,12 @@ export async function callProviderCompletion(
         return fail(mergeResult.message);
       }
       resolvedThinking = mergeResult.value;
-      const conflictResult = checkTemperatureConflict(resolvedThinking, discriminator, temperature);
+      const conflictResult = checkTemperatureConflict(
+        resolvedThinking,
+        discriminator,
+        temperature,
+        thinking.effort
+      );
       if (conflictResult.isFailure()) {
         return fail(conflictResult.message);
       }
