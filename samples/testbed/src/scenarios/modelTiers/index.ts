@@ -113,8 +113,16 @@ function buildLiveComplete(
   }
   const key = apiKey;
   const rawNone = RAW_NONE_BLOCKS[descriptor.id];
-  return (tier: CanaryTier, options?: ICanaryCompleteOptions) =>
-    AiAssist.callProviderCompletion({
+  return (tier: CanaryTier, options?: ICanaryCompleteOptions) => {
+    if (options?.rawNone === true && rawNone === undefined) {
+      // Sending no thinking config here would succeed and read as "the listing is stale".
+      return Promise.resolve(
+        fail<AiAssist.IAiCompletionResponse>(
+          `${descriptor.id}: no raw 'none' block for this provider; add one to RAW_NONE_BLOCKS`
+        )
+      );
+    }
+    return AiAssist.callProviderCompletion({
       descriptor,
       apiKey: key,
       messages: [{ role: 'user', content: CANARY_PROMPT }],
@@ -131,6 +139,7 @@ function buildLiveComplete(
         : {}),
       ...(options?.rawNone === true && rawNone !== undefined ? { thinking: { providers: [rawNone] } } : {})
     });
+  };
 }
 
 /**

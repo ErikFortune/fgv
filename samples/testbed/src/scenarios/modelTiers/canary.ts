@@ -536,7 +536,12 @@ function strictNoneProbe(
           outcome: 'error',
           detail: 'listed as thinking-required, but the call went through'
         }
-      : { label, concrete, outcome: classifyLiveFailure(result.message), detail: result.message };
+      : {
+          label,
+          concrete,
+          outcome: 'error',
+          detail: `listed as thinking-required, but not refused locally: ${result.message}`
+        };
   }
   return completionProbe(label, concrete, result, classifyThinkingFailure);
 }

@@ -569,15 +569,33 @@ describe('runTierCanary (strict-none probes)', () => {
     );
   });
 
-  test('a listed model failing some other way is classified as a live failure', async () => {
+  test.each([
+    {
+      reason: 'a provider parameter rejection',
+      message: 'AI API returned 400: unsupported_value reasoning_effort none'
+    },
+    { reason: 'an access denial', message: 'AI API returned 403: org not verified' }
+  ])('a listed model not refused locally fails on $reason — the gate did not fire', async ({ message }) => {
+    const reached = fail<AiAssist.IAiCompletionResponse>(message);
+    const deps: ITierCanaryDeps = {
+      complete: async (tier: CanaryTier, options?: ICanaryCompleteOptions) =>
+        answer(tier, options, { strict: reached })
+    };
+    const result = await runTierCanary(spec, deps, new Logging.InMemoryLogger());
+    expect(result).toFailWith(
+      /\[FAIL\] frontier none\+fail\s+gpt-6-astra\s+\(listed as thinking-required, but not refused locally: AI API returned/
+    );
+  });
+
+  test('a raw none failing some other way is classified as a live failure', async () => {
     const denied = fail<AiAssist.IAiCompletionResponse>('AI API returned 403: org not verified');
     const deps: ITierCanaryDeps = {
       complete: async (tier: CanaryTier, options?: ICanaryCompleteOptions) =>
-        answer(tier, options, { strict: denied, raw: denied })
+        answer(tier, options, { raw: denied })
     };
     const result = await runTierCanary(spec, deps, new Logging.InMemoryLogger());
     expect(result).toSucceedAndSatisfy((report: string) => {
-      expect(report).toMatch(/\[BLOCKED\(access\)\] frontier none\+fail\s+gpt-6-astra/);
+      expect(report).toMatch(/\[PASS\] frontier none\+fail\s+gpt-6-astra/);
       expect(report).toMatch(/\[BLOCKED\(access\)\] frontier none raw\s+gpt-6-astra/);
     });
   });
