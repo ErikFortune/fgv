@@ -110,7 +110,14 @@ function buildLiveComplete(
       // The completion path takes `tier` verbatim (`undefined` = base).
       tier: tier === 'base' ? undefined : tier,
       ...(options?.modelOverride !== undefined ? { modelOverride: options.modelOverride } : {}),
-      ...(options?.effort !== undefined ? { thinking: { effort: options.effort } } : {})
+      ...(options?.effort !== undefined
+        ? {
+            thinking: {
+              effort: options.effort,
+              ...(options.onUnsupported !== undefined ? { onUnsupported: options.onUnsupported } : {})
+            }
+          }
+        : {})
     });
 }
 
@@ -146,6 +153,7 @@ interface ITierScenarioParams {
   readonly imageTier?: boolean;
   readonly thinkingEfforts?: ReadonlyArray<CanaryThinkingEffort>;
   readonly extraModels?: ReadonlyArray<string>;
+  readonly strictNoneProbe?: boolean;
   /** Fire one live image generation at the `image` tier; `quality` is sent when set. */
   readonly liveImage?: { readonly quality?: AiAssist.AiImageQuality };
   readonly requiredSecrets: readonly ISecretSpec[];
@@ -174,6 +182,7 @@ function makeTierScenario(params: ITierScenarioParams): IScenario {
         imageTier: params.imageTier,
         thinkingEfforts: params.thinkingEfforts,
         extraModels: params.extraModels,
+        strictNoneProbe: params.strictNoneProbe,
         liveImage: params.liveImage !== undefined
       };
 
@@ -219,13 +228,14 @@ export const openaiModelTiersScenario: IScenario = makeTierScenario({
   title: 'OpenAI Model Tiers',
   description:
     'Resolves and (with OPENAI_API_KEY) live-canaries the OpenAI base/advanced/frontier tiers ' +
-    '(gpt-6-luna / gpt-6-sol / gpt-6-astra), probes each with thinking effort none and low, and ' +
+    '(gpt-6-luna / gpt-6-sol / gpt-6-astra), probes each with thinking effort none and low (and none with onUnsupported fail), and ' +
     'fires one live image generation (gpt-image-2.5-sunburst, quality low). Logs each alias -> ' +
     'concrete id. The image may be access-gated — reported BLOCKED, not failed. Web-runnable.',
   tags: ['openai'],
   tiers: ['base', 'advanced', 'frontier'],
   imageTier: true,
   thinkingEfforts: THINKING_PROBE_EFFORTS,
+  strictNoneProbe: true,
   liveImage: { quality: 'low' },
   requiredSecrets: [
     {
@@ -275,12 +285,13 @@ export const geminiModelTiersScenario: IScenario = makeTierScenario({
   description:
     'Resolves and (with GEMINI_API_KEY/GOOGLE_API_KEY) live-canaries the Gemini base/advanced tiers ' +
     'plus a frontier request that cascades to the advanced (pro) id, probes each with thinking ' +
-    'effort none and low, live-canaries @google-gemini:flash-lite, and resolves the image tier ' +
+    'effort none and low (and none with onUnsupported fail), live-canaries @google-gemini:flash-lite, and resolves the image tier ' +
     '(gemini-3.1-flash-image). Logs each alias -> concrete id. Web-runnable.',
   tags: ['gemini', 'google'],
   tiers: ['base', 'advanced', 'frontier'],
   imageTier: true,
   thinkingEfforts: THINKING_PROBE_EFFORTS,
+  strictNoneProbe: true,
   extraModels: ['@google-gemini:flash-lite'],
   requiredSecrets: [
     {
@@ -308,13 +319,14 @@ export const xaiModelTiersScenario: IScenario = makeTierScenario({
   description:
     'Resolves and (with XAI_API_KEY) live-canaries the xAI base/advanced tiers (grok-4.3 / ' +
     'grok-4.7) plus a frontier request that cascades to the advanced (grok-4.7) id, and resolves ' +
-    'the image tier (grok-imagine-image-2.0), probes each tier with thinking effort none and low, ' +
+    'the image tier (grok-imagine-image-2.0), probes each tier with thinking effort none and low (and none with onUnsupported fail), ' +
     'and fires one live image generation with quality medium. Logs each alias -> concrete id. ' +
     'Web-runnable.',
   tags: ['xai', 'grok'],
   tiers: ['base', 'advanced', 'frontier'],
   imageTier: true,
   thinkingEfforts: THINKING_PROBE_EFFORTS,
+  strictNoneProbe: true,
   liveImage: { quality: 'medium' },
   requiredSecrets: [
     {

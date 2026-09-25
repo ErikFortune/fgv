@@ -149,6 +149,8 @@ export interface ICanaryCompleteOptions {
   readonly effort?: CanaryThinkingEffort;
   /** Send this `modelOverride` (an extra-model probe; alias or concrete id) instead of the tier. */
   readonly modelOverride?: string;
+  /** Send `thinking.onUnsupported` alongside `effort` (the strict-none probe sends `'fail'`). */
+  readonly onUnsupported?: 'degrade' | 'fail';
 }
 
 /**
@@ -170,6 +172,7 @@ export interface ICanaryProbeResult {
  */
 export interface ICanaryProbeResults {
   readonly thinking: ReadonlyArray<ICanaryProbeResult>;
+  readonly strictNone: ReadonlyArray<ICanaryProbeResult>;
   readonly extraModels: ReadonlyArray<ICanaryProbeResult>;
   readonly image: ReadonlyArray<ICanaryProbeResult>;
 }
@@ -221,6 +224,12 @@ export interface ITierCanarySpec {
   readonly extraModels?: ReadonlyArray<string>;
   /** When true (and `imageTier` is set), fire one live image generation at the `image` tier. */
   readonly liveImage?: boolean;
+  /**
+   * When true, probe every tier with `effort: 'none'` + `onUnsupported: 'fail'`. The expectation
+   * comes from the registry: a model listed in `thinkingRequiredModelPrefixes` must be refused
+   * locally, and any other model must answer live. A mismatch either way means the list is wrong.
+   */
+  readonly strictNoneProbe?: boolean;
 }
 
 /**
@@ -373,7 +382,9 @@ export function formatTierCanaryReport(
   imageResolution?: IImageResolution,
   probes?: ICanaryProbeResults
 ): string {
-  const probeResults = probes ? [...probes.thinking, ...probes.extraModels, ...probes.image] : [];
+  const probeResults = probes
+    ? [...probes.thinking, ...probes.strictNone, ...probes.extraModels, ...probes.image]
+    : [];
   const outcomes = [...liveResults.map((r) => r.outcome), ...probeResults.map((r) => r.outcome)];
   const anyTierFailure = liveResults.some((r) => isRealFailure(r.outcome));
   const anyProbeFailure = probeResults.some((r) => isRealFailure(r.outcome));
@@ -383,7 +394,7 @@ export function formatTierCanaryReport(
   const verdict = anyTierFailure
     ? 'FAILED — a tier is not chat-completions-callable (wrong endpoint) or resolves to a stale id (see FAIL lines below)'
     : anyProbeFailure
-    ? 'FAILED — a thinking, model-override or image probe failed (see FAIL lines below)'
+    ? 'FAILED — a thinking, strict-none, model-override or image probe failed (see FAIL lines below)'
     : anyNotRun
     ? 'RESOLVER-VERIFIED; LIVE CANARY PENDING (STOP-FLAG: set the provider API key to run the keyed gate)'
     : anyBlocked
@@ -428,6 +439,7 @@ export function formatTierCanaryReport(
     'Live canary (minimal completion per tier):',
     ...liveLines,
     ...probeSection('Thinking probes (tier + effort):', probes?.thinking ?? []),
+    ...probeSection("Strict-none probes (effort none, onUnsupported 'fail'):", probes?.strictNone ?? []),
     ...probeSection('Model-override probes:', probes?.extraModels ?? []),
     ...probeSection('Live image probe:', probes?.image ?? []),
     '',
@@ -480,6 +492,55 @@ async function runThinkingProbes(
       const result = await deps.complete(resolution.tier, { effort });
       rows.push(completionProbe(label, resolution.concrete, result, classifyThinkingFailure));
     }
+  }
+  return rows;
+}
+
+/** The library's local refusal for `'none'` + `onUnsupported: 'fail'` on a thinking-required model. */
+const LOCAL_NONE_REFUSAL: RegExp = /thinking effort 'none' is not supported by/;
+
+/** Classifies one strict-none probe against the registry's expectation for that model. */
+function strictNoneProbe(
+  label: string,
+  concrete: string,
+  listed: boolean,
+  result: Result<AiAssist.IAiCompletionResponse>
+): ICanaryProbeResult {
+  if (listed) {
+    if (result.isFailure() && LOCAL_NONE_REFUSAL.test(result.message)) {
+      return { label, concrete, outcome: 'live-pass', detail: 'refused locally, as listed' };
+    }
+    return result.isSuccess()
+      ? {
+          label,
+          concrete,
+          outcome: 'error',
+          detail: 'listed as thinking-required, but the call went through'
+        }
+      : { label, concrete, outcome: classifyLiveFailure(result.message), detail: result.message };
+  }
+  return completionProbe(label, concrete, result, classifyThinkingFailure);
+}
+
+/** Runs the strict-none probes: one `none` + `onUnsupported: 'fail'` completion per tier. */
+async function runStrictNoneProbes(
+  spec: ITierCanarySpec,
+  resolutions: ReadonlyArray<ITierResolution>,
+  deps: ITierCanaryDeps
+): Promise<ICanaryProbeResult[]> {
+  const rows: ICanaryProbeResult[] = [];
+  if (!spec.strictNoneProbe) {
+    return rows;
+  }
+  for (const resolution of resolutions) {
+    const label = `${resolution.tier} none+fail`;
+    if (deps.complete === undefined) {
+      rows.push({ label, concrete: resolution.concrete, outcome: 'not-run' });
+      continue;
+    }
+    const listed = AiAssist.isThinkingRequiredModel(spec.descriptor, resolution.concrete);
+    const result = await deps.complete(resolution.tier, { effort: 'none', onUnsupported: 'fail' });
+    rows.push(strictNoneProbe(label, resolution.concrete, listed, result));
   }
   return rows;
 }
@@ -576,6 +637,7 @@ export async function runTierCanary(
   }
 
   const thinking = await runThinkingProbes(spec, resolutions, deps);
+  const strictNone = await runStrictNoneProbes(spec, resolutions, deps);
   const extraModelsResult = await runExtraModelProbes(spec, deps, logger);
   if (extraModelsResult.isFailure()) {
     return fail(`${spec.providerId} tier canary: ${extraModelsResult.message}`);
@@ -588,7 +650,7 @@ export async function runTierCanary(
         : imageProbe(imageResolution.concrete, await deps.generateImage())
     );
   }
-  const probes: ICanaryProbeResults = { thinking, extraModels: extraModelsResult.value, image };
+  const probes: ICanaryProbeResults = { thinking, strictNone, extraModels: extraModelsResult.value, image };
 
   const report = formatTierCanaryReport(spec, liveResults, imageResolution, probes);
 
@@ -596,8 +658,8 @@ export async function runTierCanary(
   // config (`param-failed`), or a plain `error` — on a tier or on any probe — fails the run.
   // `access-gated` / `param-rejected` (resolver + id correct; access or a completion-path parameter
   // is the blocker) and `not-run` (STOP-FLAG: pending the keyed run) do not.
-  const realFailure = [...liveResults, ...thinking, ...probes.extraModels, ...image].some((r) =>
-    isRealFailure(r.outcome)
+  const realFailure = [...liveResults, ...thinking, ...strictNone, ...probes.extraModels, ...image].some(
+    (r) => isRealFailure(r.outcome)
   );
   return realFailure ? fail(report) : succeed(report);
 }

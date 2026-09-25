@@ -447,7 +447,7 @@ describe('runTierCanary (thinking probes)', () => {
     const result = await runTierCanary(spec, deps, new Logging.InMemoryLogger());
     expect(result).toFailWith(/\[PASS\] frontier\s+gpt-6-astra/);
     expect(result).toFailWith(/\[FAIL\(param\)\] frontier effort=none\s+gpt-6-astra\s+\(AI API returned 400/);
-    expect(result).toFailWith(/FAILED — a thinking, model-override or image probe failed/);
+    expect(result).toFailWith(/FAILED — a thinking, strict-none, model-override or image probe failed/);
   });
 
   test('an access-gated thinking probe is BLOCKED, not a failure', async () => {
@@ -482,6 +482,87 @@ describe('runTierCanary (thinking probes)', () => {
   });
 });
 
+describe('runTierCanary (strict-none probes)', () => {
+  const REFUSAL =
+    "thinking effort 'none' is not supported by gpt-6-astra: the model cannot run with thinking off";
+  const spec = {
+    providerId: 'openai',
+    descriptor: openai,
+    tiers: ['base', 'frontier'] as ReadonlyArray<CanaryTier>,
+    strictNoneProbe: true
+  };
+
+  test("sends none + onUnsupported 'fail' per tier; a listed model refused locally and an unlisted one answering both pass", async () => {
+    const complete = jest.fn(
+      async (
+        tier: CanaryTier,
+        options?: ICanaryCompleteOptions
+      ): Promise<Result<AiAssist.IAiCompletionResponse>> =>
+        tier === 'frontier' && options?.onUnsupported === 'fail' ? fail(REFUSAL) : pong()
+    );
+    const result = await runTierCanary(spec, { complete }, new Logging.InMemoryLogger());
+    expect(result).toSucceedAndSatisfy((report: string) => {
+      expect(report).toMatch(/Strict-none probes \(effort none, onUnsupported 'fail'\):/);
+      expect(report).toMatch(/\[PASS\] base none\+fail\s+gpt-6-luna/);
+      expect(report).toMatch(/\[PASS\] frontier none\+fail\s+gpt-6-astra\s+\(refused locally, as listed\)/);
+      expect(report).toMatch(/LIVE-VERIFIED/);
+    });
+    expect(complete).toHaveBeenCalledWith('frontier', { effort: 'none', onUnsupported: 'fail' });
+  });
+
+  test('an unlisted model that rejects none is FAIL(param) — it belongs on the list', async () => {
+    const deps: ITierCanaryDeps = {
+      complete: async (tier: CanaryTier, options?: ICanaryCompleteOptions) =>
+        tier === 'base' && options?.onUnsupported === 'fail'
+          ? fail('AI API returned 400: reasoning_effort does not support none')
+          : tier === 'frontier' && options?.onUnsupported === 'fail'
+          ? fail(REFUSAL)
+          : pong()
+    };
+    const result = await runTierCanary(spec, deps, new Logging.InMemoryLogger());
+    expect(result).toFailWith(/\[FAIL\(param\)\] base none\+fail\s+gpt-6-luna/);
+    expect(result).toFailWith(/FAILED — a thinking, strict-none, model-override or image probe failed/);
+  });
+
+  test('a listed model whose call goes through fails — the list is stale', async () => {
+    const result = await runTierCanary(spec, { complete: async () => pong() }, new Logging.InMemoryLogger());
+    expect(result).toFailWith(
+      /\[FAIL\] frontier none\+fail\s+gpt-6-astra\s+\(listed as thinking-required, but the call went through\)/
+    );
+  });
+
+  test('a listed model failing some other way is classified as a live failure', async () => {
+    const deps: ITierCanaryDeps = {
+      complete: async (tier: CanaryTier, options?: ICanaryCompleteOptions) =>
+        tier === 'frontier' && options?.onUnsupported === 'fail'
+          ? fail('AI API returned 403: org not verified')
+          : pong()
+    };
+    const result = await runTierCanary(spec, deps, new Logging.InMemoryLogger());
+    expect(result).toSucceedAndSatisfy((report: string) => {
+      expect(report).toMatch(/\[BLOCKED\(access\)\] frontier none\+fail\s+gpt-6-astra/);
+    });
+  });
+
+  test('keyless, every strict-none probe is PENDING', async () => {
+    const result = await runTierCanary(spec, {}, new Logging.InMemoryLogger());
+    expect(result).toSucceedAndSatisfy((report: string) => {
+      expect(report).toMatch(/\[PENDING\] frontier none\+fail\s+gpt-6-astra/);
+    });
+  });
+
+  test('without strictNoneProbe no strict-none section is produced', async () => {
+    const result = await runTierCanary(
+      { ...spec, strictNoneProbe: false },
+      { complete: async () => pong() },
+      new Logging.InMemoryLogger()
+    );
+    expect(result).toSucceedAndSatisfy((report: string) => {
+      expect(report).not.toMatch(/Strict-none probes/);
+    });
+  });
+});
+
 describe('runTierCanary (model-override probes)', () => {
   const spec = {
     providerId: 'google-gemini',
@@ -511,7 +592,7 @@ describe('runTierCanary (model-override probes)', () => {
     };
     const result = await runTierCanary(spec, deps, new Logging.InMemoryLogger());
     expect(result).toFailWith(/\[FAIL\(id\)\] @google-gemini:flash-lite\s+gemini-3\.5-flash-lite/);
-    expect(result).toFailWith(/FAILED — a thinking, model-override or image probe failed/);
+    expect(result).toFailWith(/FAILED — a thinking, strict-none, model-override or image probe failed/);
   });
 
   test('keyless, the override is resolved and PENDING', async () => {
@@ -715,6 +796,7 @@ describe('model-tier scenarios', () => {
     expect(result).toSucceedAndSatisfy((report: string) => {
       expect(report).toMatch(/\[PENDING\] frontier effort=none\s+gpt-6-astra/);
       expect(report).toMatch(/\[PENDING\] image\s+gpt-image-2\.5-sunburst/);
+      expect(report).toMatch(/\[PENDING\] frontier none\+fail\s+gpt-6-astra/);
       expect(report).not.toMatch(/Model-override probes:/);
     });
   });

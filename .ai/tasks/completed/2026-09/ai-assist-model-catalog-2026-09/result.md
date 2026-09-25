@@ -268,6 +268,11 @@ newly wired param). The only failures were thinking `'none'`, on three models:
   temperature. But the message now says `'none'` was sent as `'low'`, rather than advising the
   caller to "disable thinking", which is what they had just asked for. `checkTemperatureConflict`
   takes the requested effort for the message only. It is tested through both completion paths.
+- **Testbed: a strict-none probe per tier** (OpenAI, Gemini, xAI) sends `effort: 'none'` +
+  `onUnsupported: 'fail'`, and takes its expectation from `isThinkingRequiredModel`. A listed
+  model passes when it is refused locally. An unlisted model passes when it answers live. A 400 on
+  an unlisted model (`FAIL(param)`), or a listed model's call going through, means the
+  `thinkingRequiredModelPrefixes` list no longer matches the provider.
 - Tests pin the wire value per provider on the real descriptors. Breaking either call site
   (`completionClient`, `streamingClient`) turns exactly that site's tests red.
 
