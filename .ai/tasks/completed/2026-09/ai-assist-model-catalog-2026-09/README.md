@@ -49,8 +49,8 @@ honest against the providers.
 
 ## Open
 
-- The Copilot review loop on #692.
 - The P2: a non-forcing Anthropic structured-output format. This unblocks the Anthropic rotation.
-- The P3: GPT Image 2.5 `xhigh`/`max`, the xAI edits reference cap, and the `/^gemini-3/`
-  over-match. (Thinking `'none'` on models that cannot turn thinking off was fixed in this PR;
+- The P3: GPT Image 2.5 `xhigh`/`max`, the xAI edits reference cap, the `/^gemini-3/`
+  over-match, the endpoint-agnostic `'other'`-block effort check, and `gemini-2.5-pro`'s absence
+  from its union. (Thinking `'none'` on models that cannot turn thinking off was fixed in this PR;
   see `result.md` §6a.)
