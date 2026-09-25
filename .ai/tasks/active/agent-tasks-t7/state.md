@@ -58,8 +58,23 @@ says. No missing-input stop.
 
 ## Done
 
-- (in progress) reading complete; design above.
+- Implementation complete (types, converters, storage, broker delivery); all suites green.
+- Tests: delivery/{receipts,subscribe,accounting,checkpoints,windows,crash,retention}, storage/subscriptions,
+  plus migrated T3–T6 suites. Neutered checkpoint store → 17/22 checkpoint tests red (pre-review run).
+- Layer 1 `code-reviewer`: no P1; two P2 (per-task authorization windows in acknowledge and prepare)
+  fixed with record/task-revision fences (W6, W8), each verified red when removed; four dead members removed.
+- Docs: result.md (draft; Gates, revert matrix and review rounds to fill), TECH_DEBT (capacity amendment,
+  T5/T6 hand-offs resolved, new T7→T8 entry), plan status line and WORKSTREAMS entry (with `PRNUM`
+  placeholder to replace once the PR exists), package CAPABILITIES delivery section, router line,
+  design-doc "as implemented" note, change file (`rush change --verify` passes).
 
 ## Next concrete step
 
-Types → converters → storage (consumer records, audience, ledger, owed join) → broker delivery → tests.
+1. Coverage closure to 100% (a subagent is adding tests only; lines it judges unreachable get refactored
+   out of source, never `c8 ignore`).
+2. Full `heft test` zero warnings; `rushx fixlint`; api.md check (`etc/ts-agent-tasks.api.md`).
+3. Revert matrix on the FINAL source (evidence growth, watermark ack, satisfy join at open, read-back,
+   audience verification, epoch/revision fences, W6/W8 fences, neutered store) → fill result.md.
+4. Repo-wide `rebuild` and `test`; verify-esm-entrypoints, verify-bundler-resolution,
+   verify-tarball-exports, capability docs/feed.
+5. Push; open PR into `integration/agent-tasks-v1`; replace `PRNUM`; drive the Copilot loop.
