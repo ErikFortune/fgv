@@ -763,6 +763,43 @@ describe('runTierCanary (structured-output probes)', () => {
     });
   });
 
+  test('structuredOutputEfforts repeats every schema probe with the effort, sending both at once', async () => {
+    const complete = jest.fn(async (tier: CanaryTier, options?: ICanaryCompleteOptions) =>
+      honest(tier, options)
+    );
+    const result = await runTierCanary(
+      { ...spec, structuredOutputEfforts: ['low'] },
+      { complete },
+      new Logging.InMemoryLogger()
+    );
+    expect(result).toSucceedAndSatisfy((report: string) => {
+      expect(report).toMatch(/\[PASS\] base schema\s+claude-sonnet-5/);
+      expect(report).toMatch(
+        /\[PASS\] base schema\+effort=low\s+claude-sonnet-5\s+\(enforcement 'tool-forced'\)/
+      );
+      expect(report).toMatch(
+        /\[PASS\] advanced schema\+effort=low\s+claude-opus-5-5\s+\(enforcement 'schema'\)/
+      );
+      expect(report).toMatch(
+        /\[PASS\] @anthropic:fable schema\+effort=low\s+claude-fable-5-1\s+\(enforcement 'schema'\)/
+      );
+    });
+    const structuredCalls = complete.mock.calls.filter(
+      ([, options]) => options?.structuredOutput !== undefined
+    );
+    // 3 plain + 3 with effort (base, advanced, @anthropic:fable).
+    expect(structuredCalls).toHaveLength(6);
+    const withEffort = structuredCalls.filter(([, options]) => options?.effort !== undefined);
+    expect(withEffort).toHaveLength(3);
+    for (const [, options] of withEffort) {
+      expect(options).toMatchObject({
+        effort: 'low',
+        structuredOutput: { mode: 'schema', onUnsupported: 'fail' }
+      });
+    }
+    expect(withEffort[2]).toEqual(['base', expect.objectContaining({ modelOverride: '@anthropic:fable' })]);
+  });
+
   test('without structuredOutputProbe no structured section is produced', async () => {
     const result = await runTierCanary(
       { ...spec, structuredOutputProbe: false },
@@ -1025,6 +1062,8 @@ describe('model-tier scenarios', () => {
       expect(report).toMatch(/\[PENDING\] base schema\s+claude-sonnet-5/);
       expect(report).toMatch(/\[PENDING\] frontier schema\s+claude-opus-5-5/);
       expect(report).toMatch(/\[PENDING\] @anthropic:fable schema\s+claude-fable-5-1/);
+      expect(report).toMatch(/\[PENDING\] advanced schema\+effort=low\s+claude-opus-5-5/);
+      expect(report).toMatch(/\[PENDING\] @anthropic:fable schema\+effort=low\s+claude-fable-5-1/);
     });
   });
 });

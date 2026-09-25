@@ -23,7 +23,8 @@ summary:
     and a P3 filed for the web-search question. The testbed canary gained a structured-output probe
     per tier plus @anthropic:fable, and the anthropic-structured-output scenario gained opus and
     fable probes. Live-verified by the maintainer's anthropic-structured-output (3/3) and
-    anthropic-model-tiers (11/11) runs on 2026-09-25; effort + format not yet sent live.
+    anthropic-model-tiers (11/11) runs on 2026-09-25. Effort + schema canary rows were added
+    after, pending one more run; adding them surfaced a P3 (forced tool + manual thinking).
   diverged: >
     Fork 3 did not resolve either way the brief anticipated. JSON outputs have no wire or API-level
     clash with tools, but Anthropic documents citations as incompatible with output_config.format,
@@ -57,4 +58,4 @@ keywords:
   - Claude Fable 5.1
   - provider line rotation
   - capability catch-all
-sourceHash: 8789f52eaad295c6 # sha256/16 over brief.md, result.md
+sourceHash: 9ba0344e0281215a # sha256/16 over brief.md, result.md

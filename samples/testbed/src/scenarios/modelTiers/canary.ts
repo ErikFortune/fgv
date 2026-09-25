@@ -48,7 +48,9 @@
  *    - model-override rows for aliases no tier reaches (`extraModels`)
  *    - structured-output probes: a schema-mode completion per tier and extra model with
  *      `onUnsupported: 'fail'` (`structuredOutputProbe`), checked against the registry's declared
- *      format — the reported enforcement must match it and the reply must satisfy the schema
+ *      format — the reported enforcement must match it and the reply must satisfy the schema.
+ *      `structuredOutputEfforts` repeats each with a thinking effort, so the request carries a
+ *      thinking config and a structured-output constraint at once
  *    - one live image generation (`liveImage`, via {@link ITierCanaryDeps.generateImage})
  *    Any probe failure fails the run, the same as a tier failure.
  *
@@ -269,6 +271,14 @@ export interface ITierCanarySpec {
    * one the model rejects.
    */
   readonly structuredOutputProbe?: boolean;
+  /**
+   * Thinking efforts to repeat every structured-output probe with, one extra row per (target,
+   * effort). Such a request carries a thinking config **and** a structured-output constraint at once.
+   * On Anthropic's adaptive models both land in `output_config` (`effort` beside `format`), which is
+   * the combination only a live call can show the provider accepts. A dropped effort is invisible
+   * here — the response does not report it — and is pinned by ts-extras' request-body tests instead.
+   */
+  readonly structuredOutputEfforts?: ReadonlyArray<CanaryThinkingEffort>;
 }
 
 /**
@@ -708,7 +718,7 @@ async function runStructuredOutputProbes(
   };
   // Extra models reuse the model-override rows' already-resolved ids; each row's label is the
   // model string it was resolved from.
-  const targets: Array<{ label: string; concrete: string; tier: CanaryTier; modelOverride?: string }> = [
+  const bases: Array<{ label: string; concrete: string; tier: CanaryTier; modelOverride?: string }> = [
     ...resolutions.map((r) => ({ label: `${r.tier} schema`, concrete: r.concrete, tier: r.tier })),
     ...extraModels.map((r) => ({
       label: `${r.label} schema`,
@@ -717,6 +727,18 @@ async function runStructuredOutputProbes(
       modelOverride: r.label
     }))
   ];
+  const targets: Array<{
+    label: string;
+    concrete: string;
+    tier: CanaryTier;
+    modelOverride?: string;
+    effort?: CanaryThinkingEffort;
+  }> = [
+    ...bases,
+    ...(spec.structuredOutputEfforts ?? []).flatMap((effort) =>
+      bases.map((b) => ({ ...b, label: `${b.label}+effort=${effort}`, effort }))
+    )
+  ];
   for (const target of targets) {
     if (deps.complete === undefined) {
       rows.push({ label: target.label, concrete: target.concrete, outcome: 'not-run' });
@@ -724,7 +746,8 @@ async function runStructuredOutputProbes(
     }
     const result = await deps.complete(target.tier, {
       structuredOutput,
-      ...(target.modelOverride !== undefined ? { modelOverride: target.modelOverride } : {})
+      ...(target.modelOverride !== undefined ? { modelOverride: target.modelOverride } : {}),
+      ...(target.effort !== undefined ? { effort: target.effort } : {})
     });
     rows.push(
       classifyStructuredProbe(

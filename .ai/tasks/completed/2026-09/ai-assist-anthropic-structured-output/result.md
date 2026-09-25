@@ -194,6 +194,21 @@ hostile: it asks for a markdown fence and an extra `funFact` field. So a pass th
 grammar suppressed both, which is a stronger live check than the canary's `{answer}` probe. A new
 offline test pins the scenario's hard-coded expectations to the registry.
 
+**Effort + schema rows (added after the first two live runs).** The canary gained
+`structuredOutputEfforts`. It repeats every structured-output probe with a thinking effort, and the
+Anthropic scenario sets it to `['low']`. On `claude-opus-5-5` / `claude-fable-5-1` that sends
+`output_config: { effort, format }`, the documented-but-never-sent combination (D3). On
+`claude-sonnet-5` it sends a forced tool with adaptive thinking. Anthropic's thinking page
+(<https://platform.claude.com/docs/en/build-with-claude/thinking> § "Thinking with tool use", fetched
+2026-09-25) says forced tool use *"works with adaptive thinking"*. A dropped effort cannot be seen
+live, because the response does not report it. That failure is pinned by the ts-extras
+request-body test (§4). The live rows show the provider accepts the combination.
+
+The same page surfaced a **pre-existing** defect outside this stream: on the manual-thinking lines
+(`@anthropic:haiku`, the 4.x ids), effort + structured output sends a forced tool with
+`thinking.type: enabled`, which that page says is an error. Filed as a TECH_DEBT P3 rather than
+widened into this PR.
+
 ## 6b. Live run (maintainer, 2026-09-25): `anthropic-structured-output`
 
 ```
@@ -228,7 +243,7 @@ applied, not merely accepted. The forced path on `claude-sonnet-5` is unchanged.
 | repo-wide `install-run-rush.js rebuild` | **36/36 succeeded, 0 warnings** |
 | repo-wide `install-run-rush.js test` | **35/35 succeeded, 0 warnings**. The 100% coverage thresholds are enforced inside it |
 | ts-extras tests | 3103 pass (3101 before §9, plus the Mythos wire test and its registry row) |
-| testbed tests (`heft test`) | 576 pass, 100% all metrics; 577 after the structured-output scenario addition above (re-run, lint clean) |
+| testbed tests (`heft test`) | 576 pass, 100% all metrics. After the later additions (the scenario probes, then the effort rows): 577, then 578, each re-run at 100% with lint clean |
 | `eslint` (ts-extras, testbed) | clean; `fixlint` run before the commit |
 | `rush change --verify --target-branch origin/release` | pass (`@fgv/ts-extras`, `minor`; `samples/testbed` is unpublished) |
 | `verify-capability-docs`, `generate-capability-feed --check`, `verify-esm-entrypoints`, `verify-bundler-resolution`, `verify-tarball-exports` | all pass. The last two first needed their autoinstallers installed in this container, as in #692 |
@@ -243,7 +258,8 @@ applied, not merely accepted. The forced path on `claude-sonnet-5` is unchanged.
 - **TECH_DEBT P3**: whether web search + `output_config.format` is accepted (§3).
 - **Not done, deliberately**: moving the other Claude lines from forced tool use to JSON outputs (§1).
 - **Copilot review loop (layer 2)**: not run at close-out.
-- **Live runs**: both passed (§6b). The effort + format combination has **not** been sent live. Neither scenario sends a thinking effort with a schema. It is covered offline only.
+- **Live runs**: both passed (§6b). The effort + format rows were added afterwards (§6) and are pending one more `anthropic-model-tiers` run.
+- **TECH_DEBT P3**: forced tool + manual thinking on pre-Claude-5 lines (§6).
 
 ## 9. Antagonist pass (independent reviewer, 2026-09-25) and what it changed
 
