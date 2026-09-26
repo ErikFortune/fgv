@@ -13,8 +13,8 @@ protected drain behaviour; end-to-end reopen reconciliation; recovery reports an
 
 ## Branch and PR posture
 
-- **Branch:** `claude/agent-tasks-t8`, created off `integration/agent-tasks-v1` at the T7 landing
-  and pushed.
+- **Branch:** `claude/agent-tasks-t8`, created off `integration/agent-tasks-v1` at `064bdff24` —
+  the `release`-up merge immediately following the T7 landing (`76146d4a6`, #695) — and pushed.
 - **PR into `integration/agent-tasks-v1`** — **not `release`.**
 - **Artifacts stay in `.ai/tasks/active/agent-tasks-t8/`.** This family finalizes at **cluster
   close**, not per slice. Do **not** run `/finalize-task`.
