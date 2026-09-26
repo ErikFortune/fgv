@@ -3,7 +3,7 @@
     {
       "packageName": "@fgv/ts-prompt-assist",
       "comment": "BREAKING: replace the regex-only/sync safety pipeline with a pluggable async IScreener model. IPromptSafetyPolicy.screeners replaces suspiciousPatterns/screenedSources/onSuspicious (use createPatternScreener to reproduce the prior behavior); SafeguardFindingKind is now open (BuiltInFindingKind | (string & {})); ISafeguardFinding gains optional metadata + screener fields.",
-      "type": "major"
+      "type": "minor"
     }
   ],
   "packageName": "@fgv/ts-prompt-assist"

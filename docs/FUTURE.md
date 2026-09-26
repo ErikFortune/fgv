@@ -440,7 +440,7 @@ remain manual on a provider rotation and are tracked as a live entry in `docs/TE
 rather than here.
 
 Note the example below is now doubly stale: it cites `gpt-4o` as OpenAI's default, which it has
-not been for two model generations (the line is currently `gpt-5.6-*`, selected by tier).
+not been for three model generations (the line is currently `gpt-6-*`, selected by tier).
 
 *Original entry:*
 

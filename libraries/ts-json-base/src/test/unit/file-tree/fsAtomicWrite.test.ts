@@ -249,6 +249,18 @@ describe.each(atomicTestRoots())('FsFileTreeAccessors atomic writes on $label', 
 describe('FsFileTreeAccessors atomic writes and mutability policy', () => {
   let root: string;
 
+  // The same classification the per-filesystem block above uses, for the same
+  // reason. Most tests here assert a refusal raised BEFORE the `atomicReplace`
+  // capability gate — an immutable tree or a confinement breach — so they hold on
+  // every platform. A test whose expected refusal comes from a check AFTER that
+  // gate needs a qualified root, because otherwise the platform refusal fires
+  // first and the assertion never reaches the check it is about.
+  //
+  // `root` is an mkdtemp child of this base and so shares its filesystem;
+  // qualification is per containing directory, so the base is a sound proxy at
+  // describe time, before `beforeEach` has created `root`.
+  const whenQualified: jest.It = isQualified(atomicTestRoots()[0].base) ? test : test.skip;
+
   beforeEach(() => {
     root = fs.mkdtempSync(path.join(atomicTestRoots()[0].base, 'fgv-atomic-policy-'));
   });
@@ -275,7 +287,13 @@ describe('FsFileTreeAccessors atomic writes and mutability policy', () => {
     expect(fs.readdirSync(root)).toEqual([]);
   });
 
-  test('refuses a file the filter excludes even when its directory is writable', () => {
+  whenQualified('refuses a file the filter excludes even when its directory is writable', () => {
+    // `whenQualified`, not `test`: the filter check sits AFTER the `atomicReplace`
+    // capability gate in `writeFileAtomically`, so on an unqualified root the
+    // refusal is the platform one and this assertion never reaches the filter.
+    // That refusal is already pinned, on every platform, by the unqualified-
+    // filesystem tests below.
+    //
     // The directory qualifies and is mutable, so the refusal can only come from
     // the destination's own mutability check.
     const accessors = new FsFileTreeAccessors({

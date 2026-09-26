@@ -18,11 +18,11 @@ import { toGeminiParameterSchema } from './toolFormats';
  * The name the Anthropic forced-tool path gives its synthetic tool.
  *
  * @remarks
- * Anthropic has no `response_format`; its structured-output mechanism is forced
- * tool use, so a tool must exist to be forced. The name is fgv-owned and never
- * reaches the caller — the structured-output resolver re-serializes the tool's
- * `input` back into `IAiCompletionResponse.content`, so a caller's converter sees
- * a JSON string exactly as it does on every other provider.
+ * Used only by `'anthropic-tool-forced'`: that mechanism forces a tool, so a tool
+ * must exist to be forced. (`'anthropic-output-format'` sends no tool at all.) The
+ * name is fgv-owned and never reaches the caller — the structured-output resolver
+ * re-serializes the tool's `input` back into `IAiCompletionResponse.content`, so a
+ * caller's converter sees a JSON string exactly as it does on every other provider.
  * @public
  */
 export const ANTHROPIC_STRUCTURED_OUTPUT_TOOL_NAME: string = 'fgv_structured_output';
@@ -39,6 +39,11 @@ export interface IResolvedStructuredOutput {
    * Fields to merge into the request, **at the location the format dictates** —
    * the request body for the OpenAI and Anthropic formats, `generationConfig` for
    * Gemini. Empty when `enforcement` is `'none'`.
+   *
+   * `'anthropic-output-format'` puts its field **inside** `output_config`, an object
+   * the adaptive-thinking path also writes (`output_config.effort`). The Anthropic
+   * adapter therefore merges that one key rather than assigning it; a plain
+   * `Object.assign` would silently drop the caller's effort.
    */
   readonly wire: JsonObject;
 }
@@ -84,8 +89,18 @@ function schemaWire(
         enforcement: 'schema',
         wire: { responseMimeType: 'application/json', responseSchema: toGeminiParameterSchema(raw) }
       };
+    case 'anthropic-output-format':
+      // Anthropic's JSON outputs: `output_config.format` with `type: 'json_schema'`
+      // (https://platform.claude.com/docs/en/build-with-claude/structured-outputs).
+      // Constrained decoding against the schema, the reply in the text block — the
+      // same guarantee the OpenAI and Gemini schema formats give, so `'schema'`, not
+      // `'tool-forced'`. No `strict` flag: the constraint is the field's presence.
+      return {
+        enforcement: 'schema',
+        wire: { output_config: { format: { type: 'json_schema', schema: raw } } }
+      };
     case 'anthropic-tool-forced':
-      // Anthropic has no response-format field. The schema becomes a synthetic
+      // The forcing mechanism. The schema becomes a synthetic
       // tool's `input_schema` and `tool_choice` forces it, which is why this is a
       // distinct enforcement value rather than a spelling of `'schema'`: the reply
       // arrives in a `tool_use` block, not as text.
@@ -130,6 +145,12 @@ function jsonObjectWire(
       return { enforcement: 'json-mode', wire: { text: { format: { type: 'json_object' } } } };
     case 'gemini-response-schema':
       return { enforcement: 'json-mode', wire: { responseMimeType: 'application/json' } };
+    case 'anthropic-output-format':
+      // `output_config.format.type` has one documented value, `'json_schema'`, and a
+      // schema is required with it. There is no schema-less JSON mode to map to, and
+      // a stand-in schema cannot be written: `additionalProperties` must be `false`,
+      // so a bare `{ type: 'object' }` would constrain the reply to `{}`.
+      return undefined;
     case 'anthropic-tool-forced':
       // A forced tool needs an input schema to be forced *to*, so there is no
       // schema-less form of this mechanism.
@@ -258,15 +279,16 @@ function isOpenAiStrictFormat(format: IAiStructuredOutputCapability['format']): 
 }
 
 /**
- * Whether a resolved wire claims the provider's tools channel, and therefore
- * genuinely conflicts with server-side tools.
+ * Whether a resolved wire cannot be combined with server-side tools on the same
+ * request.
  *
  * @remarks
  * Asked of the **resolved wire** rather than the declared format, because a format
- * that *would* claim the channel does not claim it when the request degraded to
- * sending nothing. Anthropic + `json-object` is exactly that case: the mode has no
- * expression there, so the wire is empty and there is nothing to conflict with —
- * rejecting it would refuse a request that was about to become harmless.
+ * that *would* conflict does not conflict when the request degraded to sending
+ * nothing. Anthropic + `json-object` is exactly that case, on both Anthropic
+ * formats: the mode has no expression there, so the wire is empty and there is
+ * nothing to conflict with — rejecting it would refuse a request that was about to
+ * become harmless.
  * @internal
  */
 function conflictsWithServerTools(
@@ -275,7 +297,9 @@ function conflictsWithServerTools(
 ): boolean {
   return (
     resolved.enforcement !== 'none' &&
-    (format === 'anthropic-tool-forced' || format === 'gemini-response-schema')
+    (format === 'anthropic-tool-forced' ||
+      format === 'anthropic-output-format' ||
+      format === 'gemini-response-schema')
   );
 }
 
@@ -319,7 +343,7 @@ function effectiveFormat(
  * returned a confidently wrong capability.
  * @param request - The caller's intent, or `undefined` for no request at all.
  * @param serverTools - Server-side tools on the same request, which conflict with
- * structured output on two of the four formats.
+ * structured output on three of the five formats.
  * @param usesResponsesApi - Whether the dispatcher will send this request to the
  * OpenAI Responses API rather than Chat Completions. See {@link effectiveFormat} —
  * the route is not a function of the model alone, so the capability declaration
@@ -391,8 +415,8 @@ export function resolveStructuredOutput(
   } else {
     resolved = jsonObjectWire(format);
     if (resolved === undefined) {
-      // Today this is only `'json-object'` on Anthropic, whose mechanism needs a
-      // schema to force a tool to.
+      // Today this is only `'json-object'` on Anthropic: neither of its mechanisms
+      // has a schema-less form (see `jsonObjectWire`).
       unsupported = `provider '${descriptor.id}' model '${model}' cannot enforce '${request.mode}' structured output`;
     }
   }
@@ -401,9 +425,9 @@ export function resolveStructuredOutput(
     return fallback === 'fail' ? fail(`${unsupported}`) : succeed(NO_STRUCTURED_OUTPUT);
   }
 
-  // Two formats cannot carry structured output and server-side tools at once, for
-  // DIFFERENT reasons — worth separating, because a reader who assumes one
-  // mechanism will reason wrongly about the other.
+  // Three formats cannot carry structured output and server-side tools at once, for
+  // THREE DIFFERENT reasons — worth separating, because a reader who assumes one
+  // mechanism will reason wrongly about the others.
   //
   //   anthropic-tool-forced: a wire-level clash. The constraint IS `tools` +
   //     `tool_choice`, so server tools would be overwritten (and `tool_choice`
@@ -412,14 +436,38 @@ export function resolveStructuredOutput(
   //     `responseSchema` live in `generationConfig`, nowhere near `tools`. It is
   //     an API-level mutual exclusivity Gemini enforces, the same restriction the
   //     client-tool path already pre-empts.
+  //   anthropic-output-format: neither of those. `output_config.format` is nowhere
+  //     near `tools`, and tools as such are compatible with it — Anthropic
+  //     documents JSON outputs combined with (strict) tools in one request, and
+  //     states the grammar applies only to Claude's direct output, not to tool
+  //     calls or results. The clash is a FEATURE-level one, and it is specific to
+  //     the only server tool this adapter sends (`web_search`): web search
+  //     "always" returns citations, and Anthropic documents citations as
+  //     incompatible with `output_config.format` — "citations require
+  //     interleaving citation blocks with text output, which is incompatible with
+  //     the strict JSON schema constraints". The documented 400 names citations on
+  //     user-provided `document` / `search_result` blocks; the pages fetched for
+  //     this format do not say whether web search's own citations trip the same
+  //     400 or are dropped. Either outcome breaks one half of what the caller
+  //     asked for, and the stated reason applies to both, so this is refused up
+  //     front rather than relocated into an opaque provider 400. If a live run
+  //     shows the combination accepted with citations intact, this arm — and only
+  //     this arm — is the one to relax.
+  //     (Sources, fetched 2026-09-25:
+  //     https://platform.claude.com/docs/en/build-with-claude/structured-outputs
+  //     § "Feature compatibility"; .../build-with-claude/citations;
+  //     .../agents-and-tools/tool-use/web-search-tool § "Citations".)
   //
-  // Neither is degradable: silently dropping either half would give the caller
+  // None is degradable: silently dropping either half would give the caller
   // something they did not ask for, and `onUnsupported` speaks to what a model can
   // enforce, not to a caller asking for two incompatible things.
   if (serverTools !== undefined && serverTools.length > 0 && conflictsWithServerTools(format, resolved)) {
     const why =
       format === 'anthropic-tool-forced'
         ? 'Anthropic enforces structured output by forcing a tool, so it cannot be combined with'
+        : format === 'anthropic-output-format'
+        ? 'Anthropic documents its JSON output format (output_config.format) as incompatible with ' +
+          'citations, which web search always returns, so it cannot be combined with'
         : 'Gemini cannot combine a response schema with';
     return fail(
       `${why} server-side tools (${serverTools.map((t) => t.type).join(', ')}) in the same request; ` +

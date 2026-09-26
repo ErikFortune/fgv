@@ -67,6 +67,47 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
 
 ## P2 — Fix before next major feature in affected area
 
+- **[P2] CI reddens for reasons unrelated to the diff — three known causes, each costing an
+  investigation before it is recognised.** Every one was hit during the 2026-09-23/24 publish and
+  agent-tasks cluster work, and each cost a log read to distinguish from a real failure. None
+  affects published output; all of them waste reviewer and agent time and erode the signal that a
+  red check means something.
+
+  **(a) Wall-clock assertions.** `libraries/ts-extras/src/test/unit/md5Normalizer.browser.test.ts:165`
+  asserts `expect(endTime - startTime).toBeLessThan(300)`. It failed CI at **335 ms** on #691 — 12%
+  over a hardcoded threshold on a shared runner — having passed on the same branch nine hours
+  earlier. `TESTING_GUIDELINES.md` already states the rule this breaks: *"A millisecond assertion on
+  a CI runner measures the runner."* Siblings, tightest first: the same file's 300 ms;
+  `ts-extras/.../saferFetchRetry.test.ts:502` at 500 ms; `ts-res` `deltaGenerator.enumeration` at
+  2000 ms and `deltaGenerator.core` at 5000 ms. (`ts-sudoku-lib` has four more, out of scope —
+  that package is leaving this repo.) **Remedy:** assert the property the test is really about —
+  a counter, a call count, an absence of quadratic blowup — or delete the assertion. Raising the
+  threshold buys time and keeps the defect. The existing safer-fetch entry in this file is the same
+  family and should be closed with this one.
+
+  **(b) `rush install` does not retry a dependency fetch.** On #687 the job died in 71 seconds:
+  `onnxruntime-node`'s postinstall hit `ETIMEDOUT`/`ENETUNREACH` fetching its native binary and Rush
+  reported *"Giving up after 1 attempts"*, having built nothing. It reads like a broken lockfile
+  rather than a network blip. **Remedy:** a retry around the install step, or a cached/vendored
+  binary for that package.
+
+  **(c) An Argon2id test mock derives colliding keys from distinct salts.**
+  `libraries/ts-extras/src/test/unit/crypto/keystore/keyStoreArgon2id.test.ts`'s
+  `makeDeterministicKey` folds the salt in as `seed += salt[i] * (i + 1)` — a weighted **sum**. Two
+  different 16-byte salts sharing that sum derive an identical key, so *"returns false when salt does
+  not match"* gets `true`. Roughly **1 run in 7,000** by the spread of that sum. Observed once on
+  #687. **Remedy:** make the mock's derivation depend on salt *content* rather than a weighted sum —
+  hashing the salt bytes, or folding position-sensitively (e.g. `seed = seed * 31 + salt[i]`).
+
+  **Trigger**: the next time any of these reddens a PR, or the next person who has to explain to a
+  reviewer that a red check is not real. **(a) is the one worth doing first** — it is the only one
+  that fires on ordinary runner load rather than needing bad luck or a network fault.
+
+  **Not a P3**: the cost is not the individual failure, it is that a red check stops meaning
+  anything. Three separate "this one isn't real" investigations in two days is the evidence.
+
+  **Reference**: #691 (a), #687 (b and c).
+
 - **[P2] The default capacity profile advertises 1,000 concurrent non-archived tasks and admits
   146 — the two published limits are mutually unreachable.**
   `defaultTaskCapacityLimits` in
@@ -534,6 +575,28 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
 
 ## P3 — Opportunistic cleanup
 
+- **[P3] ai-assist sends a forced `tool_choice` alongside manual extended thinking on pre-Claude-5 Anthropic lines, which Anthropic rejects.**
+  On a model outside `adaptiveThinkingModelPrefixes` (`claude-haiku-4-5-20251001`, which `@anthropic:haiku` reaches, and the `claude-opus-4-*` / `claude-sonnet-4-*` lines), a completion with a thinking `effort` sends `thinking: { type: 'enabled', budget_tokens }`. With `structuredOutput` on the same request, the `''` catch-all adds `anthropic-tool-forced`'s `tool_choice: { type: 'tool' }`. Anthropic's thinking page: *"tool use with manual extended thinking (`thinking: {type: "enabled"}`) only supports `tool_choice: {"type": "auto"}` … or `{"type": "none"}`. Using `{"type": "any"}` or `{"type": "tool", …}` results in an error"* (<https://platform.claude.com/docs/en/build-with-claude/thinking> § "Thinking with tool use", fetched 2026-09-25). Nothing in `resolveStructuredOutput` or the adapter refuses the combination, so it fails at the provider. The same page says forced tool use *"works with adaptive thinking"*, so the Claude 5 lines on the forced format (`claude-sonnet-5`, `claude-opus-5`, `claude-fable-5`) are unaffected.
+
+  **Trigger**: a caller using thinking with structured output on `@anthropic:haiku` or a 4.x `modelOverride`, or the next change to the forced format.
+
+  **Scope sketch**: the cheapest correct fix is to route manual-thinking requests on those lines through `anthropic-output-format` rather than refusing. The structured-outputs page lists `claude-haiku-4-5-20251001`, `claude-opus-4-5` through `4-8`, `claude-sonnet-4-5` and `4-6` as supported, and JSON outputs set no `tool_choice`. A narrower alternative is a thinking-aware conflict check routed through `onUnsupported`. Either needs a request-body test for effort + schema on a manual-thinking id, and a live row (the canary's `structuredOutputEfforts` on an `@anthropic:haiku` extra model would do).
+
+  **Not a P2**: no tier reaches a manual-thinking line, since base and advanced are both adaptive. `@anthropic:haiku` retires not sooner than 2026-10-15, and the failure is a loud provider 400, not a silent one.
+
+  **Reference**: found while adding the effort + schema canary rows in `ai-assist-anthropic-structured-output` (`.ai/tasks/completed/2026-09/ai-assist-anthropic-structured-output/result.md` §6).
+
+- **[P3] ai-assist refuses `anthropic-output-format` structured output with `web_search` on documented grounds that the docs do not settle for web search itself.**
+  `resolveStructuredOutput` (`ts-extras/src/packlets/ai-assist/structuredOutput.ts`) refuses a schema request on `claude-opus-5-5` / `claude-fable-5-1` / `claude-mythos-5-1` when `web_search` is on the same request. This is not the forced format's wire clash (`output_config.format` is nowhere near `tools`, and Anthropic documents JSON outputs combined with tools). It rests on citations: web search "always" returns them, and Anthropic documents citations as incompatible with `output_config.format` because they "require interleaving citation blocks with text output". The documented 400 is scoped to citations on user-provided `document` / `search_result` blocks. No fetched page says whether web search's own citations trigger it or are dropped (<https://platform.claude.com/docs/en/build-with-claude/structured-outputs> § "Feature compatibility", <https://platform.claude.com/docs/en/build-with-claude/citations>, <https://platform.claude.com/docs/en/agents-and-tools/tool-use/web-search-tool> § "Citations", all fetched 2026-09-25). If the combination is actually accepted with citations intact, the refusal withholds a working capability.
+
+  **Trigger**: a consumer that wants grounded search and a schema-constrained reply from the same Anthropic call, or an Anthropic doc change that addresses it.
+
+  **Scope sketch**: send one raw request (web search + `output_config.format`) to `claude-opus-5-5` from a keyed environment, outside the library, since the library refuses it. If the call succeeds and the reply still carries citations, drop `anthropic-output-format` from `conflictsWithServerTools`, drop its arm of the comment, and flip the test in `apiClient.structuredOutput.test.ts` § *anthropic output format*. If it 400s, cite the error in the comment and close this entry.
+
+  **Not a P2**: the refusal is loud and names its reason, so nothing fails silently, and no consumer has asked for the combination.
+
+  **Reference**: `ai-assist-anthropic-structured-output` stream (`.ai/tasks/completed/2026-09/ai-assist-anthropic-structured-output/result.md`).
+
 - **[P3] `createChildFile` / `createChildFileBytes` accept a child name containing a path
   separator and silently `joinPaths` it into a nested path.**
   `DirectoryItem.createChildFile` / `createChildFileBytes`
@@ -958,7 +1021,28 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
 
   **Not a P2**: no shipped-behavior regression; the alias layer's value is precisely bounded and the doc (`LIBRARY_CAPABILITIES.md`, packlet README) states the boundary explicitly. This entry exists so the two manual axes are not forgotten on the next rotation.
 
+  **2026-09 rotation (executed this entry)**: added `/^gpt-6/`, `/^grok-4\.7/`, `/^grok-4\.6/`; bumped the OpenAI/Gemini/xAI/Anthropic thinking unions and the GPT Image / Grok Imagine unions; dropped `o3-deep-research` / `o4-mini-deep-research` (shut down 2026-07-23). It also showed there is a **third** manual axis this entry did not name: the per-model capability declarations (`structuredOutput`, `imageGeneration`, `responsesOnlyModelPrefixes`, `adaptiveThinkingModelPrefixes`). A successor can change what a declared mechanism does — see the P2 Anthropic structured-output entry, which held two aliases back. The id-by-id record, with sources, is in `.ai/tasks/completed/2026-09/ai-assist-model-catalog-2026-09/result.md`.
+
   **Reference**: `ai-assist-model-aliases` design §3 + Tier 2 manual-axis bumps (`.ai/tasks/completed/2026-06/ai-assist-model-aliases/state.md`).
+
+- **[P3] ai-assist provider knobs narrower than the model now allows, and two listModels/registry loose ends.** *(Item 1, the thinking-`'none'` gate, was resolved in #692.)*
+  All documented 2026-09-24 on the pages cited in `.ai/tasks/completed/2026-09/ai-assist-model-catalog-2026-09/result.md`:
+  1. ~~**`'none'` effort has no per-model gate.**~~ **Resolved in #692.** The live testbed run (2026-09-25) confirmed 400s on `gpt-6-astra`, `grok-4.7` and `gemini-3.1-pro-preview`. Descriptors now declare `thinkingRequiredModelPrefixes`, and `IThinkingConfig.onUnsupported` (default `'degrade'`: `'none'` is sent as `'low'`; `'fail'`: refused before the wire) handles the generic `'none'` on them. Two gaps remain. Provider blocks are sent unchecked. Anthropic's always-on models (`claude-opus-5-5`, `claude-fable-5-1`) are not declared, because `'none'` there omits the `thinking` field, which Anthropic accepts.
+  2. **`gpt-image-2.5-*` qualities `xhigh` / `max`** are not expressible: `GptImageQuality` is `low | medium | high | auto`, so `@openai:image` cannot reach them (refused locally, not silently).
+  3. **xAI image edits are capped at 3 reference images** (`imageGenerationClient.ts`); `grok-imagine-image-2.0` accepts "up to five source images for editing" (xAI's `imagine-image-quality-nov-2` migration guide). Refused locally, not silently.
+  4. **`/^gemini-3/` over-matches.** It classifies `gemini-3.8-live`, `*-tts` and `*-transcribe` ids as chat + thinking in `listModels`. This predates the rotation (`gemini-3.1-flash-tts-preview` had it). Detection accumulates across rules, so a sibling rule cannot subtract it; the fix is a narrower pattern.
+  5. **Unconfirmed retirement claim.** A registry comment says `gpt-5.1` was "retired March 2026", yet `OpenAiThinkingModelNames` still lists it, and OpenAI's deprecations page (fetched 2026-09-24) records no `gpt-5.1` shutdown. One of the two is wrong.
+  6. **For the next rotation:** `gemini-3.8-pro` appears in code samples on Google's thinking page but on no model or deprecation page as of 2026-09-24. Check whether it is listed before moving `@google-gemini:pro` off `gemini-3.1-pro-preview`.
+  7. **The `'other'`-block override check does not know the endpoint.** The `'none'` gate stands aside when an applicable `'other'` block carries either OpenAI/xAI effort key (`reasoning_effort` or `reasoning`). Blocks are merged with a shallow `Object.assign`, so a key that *is* on the wire replaces the resolved effort, and key presence is the right test. But Chat Completions sends `reasoning_effort` and Responses sends `reasoning`, and the resolver runs before the endpoint is chosen. A block carrying only the other endpoint's key makes the gate stand aside while the generic `'none'` still reaches the wire. The result is a loud provider 400, and `onUnsupported: 'fail'` does not refuse it locally. The fix threads the chosen endpoint into `resolveThinkingConfig`.
+  8. **`gemini-2.5-pro` is gated but not in `GeminiThinkingModelNames`.** It is in `thinkingRequiredModelPrefixes` for callers who still reach it by `modelOverride`, but the union never listed it (neither did `release`). Google withdrew the 2026-10-16 shutdown and serves the 2.5 line to existing users only (as of 2026-09-24), so it is not a model new projects can pick. Decide at the next rotation: list it in the union, or drop it from the prefixes once Google shuts it down.
+
+  **Trigger**: a testbed run that 400s on item 1, or a consumer asking for the higher qualities / more references.
+
+  **Scope sketch**: item 1 wants a per-model accepted-effort declaration on the descriptor (sibling of `adaptiveThinkingModelPrefixes`) checked before the wire, failing or clamping by an explicit policy. Items 2–3 are additive widenings (a union member; a per-capability `maxReferenceImages`).
+
+  **Not a P2**: none is silent — each is either a loud provider error or a local refusal — and item 1 applies only to an explicit `'none'` request on those tiers.
+
+  **Reference**: `ai-assist-model-catalog-2026-09` stream.
 
 - **[P3] The capability resolvers in `ai-assist/registry.ts` return `| undefined` instead of `Result<T>`, and `undefined` is now three-ways ambiguous.**
   **Two functions, not one** (the original entry named only the first, and its line reference was

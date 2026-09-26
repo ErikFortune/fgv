@@ -411,4 +411,190 @@ describe('thinking-config wire encoding (non-streaming)', () => {
       expect(body.reasoning_effort).toBeUndefined();
     });
   });
+
+  describe("effort 'none' on a model that cannot run with thinking off (real registry descriptors)", () => {
+    const openai = AiAssist.getProviderDescriptor('openai').orThrow();
+    const gemini = AiAssist.getProviderDescriptor('google-gemini').orThrow();
+    const xai = AiAssist.getProviderDescriptor('xai-grok').orThrow();
+
+    function sentBody(): Record<string, unknown> {
+      return JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+    }
+
+    test('openai frontier (gpt-6-astra): none is sent as low by default', async () => {
+      mockFetchResponse(openAiResponse('ok'));
+      const result = await AiAssist.callProviderCompletion({
+        descriptor: openai,
+        apiKey: 'sk',
+        ...testPrompt.toRequest(),
+        tier: 'frontier',
+        thinking: { effort: 'none' }
+      });
+      expect(result).toSucceed();
+      expect(sentBody().model).toBe('gpt-6-astra');
+      expect(sentBody().reasoning_effort).toBe('low');
+    });
+
+    test('openai base (gpt-6-luna) still sends none — it accepts it', async () => {
+      mockFetchResponse(openAiResponse('ok'));
+      const result = await AiAssist.callProviderCompletion({
+        descriptor: openai,
+        apiKey: 'sk',
+        ...testPrompt.toRequest(),
+        thinking: { effort: 'none' }
+      });
+      expect(result).toSucceed();
+      expect(sentBody().model).toBe('gpt-6-luna');
+      expect(sentBody().reasoning_effort).toBe('none');
+    });
+
+    test("onUnsupported: 'fail' refuses before anything is sent", async () => {
+      const result = await AiAssist.callProviderCompletion({
+        descriptor: openai,
+        apiKey: 'sk',
+        ...testPrompt.toRequest(),
+        tier: 'frontier',
+        thinking: { effort: 'none', onUnsupported: 'fail' }
+      });
+      expect(result).toFailWith(/thinking effort 'none' is not supported by gpt-6-astra/);
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
+
+    test('xai advanced: none plus temperature fails before the wire, naming the degrade', async () => {
+      const result = await AiAssist.callProviderCompletion({
+        descriptor: xai,
+        apiKey: 'k',
+        ...testPrompt.toRequest(),
+        tier: 'advanced',
+        temperature: 0.7,
+        thinking: { effort: 'none' }
+      });
+      expect(result).toFailWith(/thinking effort 'none' was sent as 'low'.*provider xai: remove temperature/);
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
+
+    test('none plus a provider block that sets the effort reports the effort actually sent', async () => {
+      const result = await AiAssist.callProviderCompletion({
+        descriptor: openai,
+        apiKey: 'sk',
+        ...testPrompt.toRequest(),
+        tier: 'frontier',
+        temperature: 0.7,
+        thinking: { effort: 'none', providers: [{ provider: 'openai', config: { effort: 'high' } }] }
+      });
+      expect(result).toFailWith(/remove temperature or disable thinking/);
+      expect(result).not.toFailWith(/was sent as 'low'/);
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
+
+    test("an 'other' block that sets reasoning_effort owns the wire: sent as written, temperature allowed", async () => {
+      mockFetchResponse(openAiResponse('ok'));
+      const result = await AiAssist.callProviderCompletion({
+        descriptor: openai,
+        apiKey: 'sk',
+        ...testPrompt.toRequest(),
+        tier: 'frontier',
+        temperature: 0.7,
+        thinking: {
+          effort: 'none',
+          providers: [{ provider: 'other', models: ['gpt-6-astra'], config: { reasoning_effort: 'none' } }]
+        }
+      });
+      expect(result).toSucceed();
+      expect(sentBody()).toMatchObject({ model: 'gpt-6-astra', reasoning_effort: 'none', temperature: 0.7 });
+    });
+
+    test("onUnsupported: 'fail' does not refuse when a typed block sets the effort that goes out", async () => {
+      mockFetchResponse(openAiResponse('ok'));
+      const result = await AiAssist.callProviderCompletion({
+        descriptor: openai,
+        apiKey: 'sk',
+        ...testPrompt.toRequest(),
+        tier: 'frontier',
+        thinking: {
+          effort: 'none',
+          onUnsupported: 'fail',
+          providers: [{ provider: 'openai', config: { effort: 'high' } }]
+        }
+      });
+      expect(result).toSucceed();
+      expect(sentBody()).toMatchObject({ model: 'gpt-6-astra', reasoning_effort: 'high' });
+    });
+
+    test("onUnsupported: 'fail' has no effect on an effort the model accepts", async () => {
+      mockFetchResponse(openAiResponse('ok'));
+      const result = await AiAssist.callProviderCompletion({
+        descriptor: openai,
+        apiKey: 'sk',
+        ...testPrompt.toRequest(),
+        tier: 'frontier',
+        thinking: { effort: 'low', onUnsupported: 'fail' }
+      });
+      expect(result).toSucceed();
+      expect(sentBody().reasoning_effort).toBe('low');
+    });
+
+    test('an explicit provider block is sent verbatim, unchecked', async () => {
+      mockFetchResponse(openAiResponse('ok'));
+      const sent1 = await AiAssist.callProviderCompletion({
+        descriptor: openai,
+        apiKey: 'sk',
+        ...testPrompt.toRequest(),
+        tier: 'frontier',
+        thinking: { providers: [{ provider: 'openai', config: { effort: 'none' } }] }
+      });
+      expect(sent1).toSucceed();
+      expect(sentBody().reasoning_effort).toBe('none');
+    });
+
+    test('gemini advanced (gemini-3.1-pro-preview): none is sent as the low budget', async () => {
+      mockFetchResponse(geminiResponse('ok'));
+      const sent2 = await AiAssist.callProviderCompletion({
+        descriptor: gemini,
+        apiKey: 'k',
+        ...testPrompt.toRequest(),
+        tier: 'advanced',
+        thinking: { effort: 'none' }
+      });
+      expect(sent2).toSucceed();
+      expect((global.fetch as jest.Mock).mock.calls[0][0]).toContain('gemini-3.1-pro-preview');
+      expect(sentBody()).toMatchObject({ generationConfig: { thinkingConfig: { thinkingBudget: 1024 } } });
+    });
+
+    test('gemini base (gemini-3.8-flash) still sends budget 0 — it accepts it', async () => {
+      mockFetchResponse(geminiResponse('ok'));
+      const sent3 = await AiAssist.callProviderCompletion({
+        descriptor: gemini,
+        apiKey: 'k',
+        ...testPrompt.toRequest(),
+        thinking: { effort: 'none' }
+      });
+      expect(sent3).toSucceed();
+      expect(sentBody()).toMatchObject({ generationConfig: { thinkingConfig: { thinkingBudget: 0 } } });
+    });
+
+    test('xai advanced (grok-4.7): none is sent as low; base (grok-4.3) keeps none', async () => {
+      mockFetchResponse(openAiResponse('ok'));
+      const sent4 = await AiAssist.callProviderCompletion({
+        descriptor: xai,
+        apiKey: 'k',
+        ...testPrompt.toRequest(),
+        tier: 'advanced',
+        thinking: { effort: 'none' }
+      });
+      expect(sent4).toSucceed();
+      expect(sentBody()).toMatchObject({ model: 'grok-4.7', reasoning_effort: 'low' });
+
+      (global.fetch as jest.Mock).mockClear();
+      mockFetchResponse(openAiResponse('ok'));
+      const sent5 = await AiAssist.callProviderCompletion({
+        descriptor: xai,
+        apiKey: 'k',
+        ...testPrompt.toRequest(),
+        thinking: { effort: 'none' }
+      });
+      expect(sent5).toSucceed();
+      expect(sentBody()).toMatchObject({ model: 'grok-4.3', reasoning_effort: 'none' });
+    });
+  });
 });

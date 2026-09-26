@@ -50,6 +50,7 @@ import {
   type ModelSpec,
   type ModelSpecKey,
   isAdaptiveThinkingModel,
+  isThinkingRequiredModel,
   isResponsesOnlyModel,
   resolveProviderModel,
   usesMaxCompletionTokensField
@@ -60,7 +61,7 @@ import type { IAiCompletionUsage } from './usageTypes';
 import {
   anthropicEffortToBudgetTokens,
   checkTemperatureConflict,
-  mergeThinkingConfig,
+  resolveThinkingConfig,
   providerDiscriminatorForId,
   type IResolvedThinkingConfig
 } from './thinkingOptionsResolver';
@@ -569,6 +570,29 @@ function extractAnthropicStructuredOutput(content: unknown[]): Result<string> {
   );
 }
 
+/**
+ * Merges a resolved structured-output wire into an Anthropic request body.
+ *
+ * @remarks
+ * A plain `Object.assign` except for `output_config`, which is **merged one level
+ * deep**. Two writers share that object: the adaptive-thinking path puts `effort` in
+ * it, and `'anthropic-output-format'` puts `format` in it. Anthropic's Messages API
+ * reference documents both as optional siblings of one `OutputConfig`
+ * (https://platform.claude.com/docs/en/api/messages/create, fetched 2026-09-25), so
+ * they belong in the same object — and a structured-output call on an always-thinking
+ * model such as `claude-opus-5-5` is exactly the call that carries both. Assigning
+ * would drop the caller's effort with nothing failing.
+ * @internal
+ */
+function mergeAnthropicStructuredWire(body: Record<string, unknown>, wire: JsonObject): void {
+  const { output_config: wireOutputConfig, ...rest } = wire;
+  Object.assign(body, rest);
+  if (isJsonObject(wireOutputConfig)) {
+    const existing = body.output_config;
+    body.output_config = isJsonObject(existing) ? { ...existing, ...wireOutputConfig } : wireOutputConfig;
+  }
+}
+
 /** Calls the Anthropic Messages API with optional tool support. @internal */
 async function callAnthropicCompletion(
   config: IAiApiConfig,
@@ -618,11 +642,13 @@ async function callAnthropicCompletion(
     Object.assign(body, resolvedThinking.otherParams);
   }
 
-  // The structured-output wire carries `tools` + `tool_choice` of its own, so the
-  // server-tool assignment below would clobber it. `resolveStructuredOutput`
-  // refuses that combination up front, which is what makes the two mutually
-  // exclusive — but that is an invariant held in a DIFFERENT FILE, and a future
-  // second Anthropic capability entry (or a relaxed conflict guard) would
+  // The forced-tool wire (`'tool-forced'`) carries `tools` + `tool_choice` of its
+  // own, so the server-tool assignment below would clobber it. (The
+  // `'anthropic-output-format'` wire lives in `output_config` and carries no tools,
+  // which is why this checks the enforcement, not merely that a wire exists.)
+  // `resolveStructuredOutput` refuses forced-tool + server tools up front, which is
+  // what makes the two mutually exclusive — but that is an invariant held in a
+  // DIFFERENT FILE, and a relaxed conflict guard (or a new tools-based format) would
   // reintroduce silent clobbering with nothing failing at this line. So assert it
   // here rather than trusting a comment across a file boundary.
   // Unreachable through the public API — resolveStructuredOutput refuses this
@@ -635,7 +661,7 @@ async function callAnthropicCompletion(
         `this combination must be refused before reaching the adapter`
     );
   }
-  Object.assign(body, structured.wire);
+  mergeAnthropicStructuredWire(body, structured.wire);
 
   if (tools && tools.length > 0) {
     body.tools = toAnthropicTools(tools);
@@ -836,13 +862,22 @@ export async function callProviderCompletion(
   let resolvedThinking: IResolvedThinkingConfig | undefined;
   if (thinking !== undefined) {
     if (discriminator !== undefined) {
-      const mergeResult = mergeThinkingConfig(thinking, model, discriminator);
-      /* c8 ignore next 3 - mergeThinkingConfig always succeeds; defensive guard */
+      const mergeResult = resolveThinkingConfig(
+        thinking,
+        model,
+        discriminator,
+        isThinkingRequiredModel(descriptor, model)
+      );
       if (mergeResult.isFailure()) {
         return fail(mergeResult.message);
       }
-      resolvedThinking = mergeResult.value;
-      const conflictResult = checkTemperatureConflict(resolvedThinking, discriminator, temperature);
+      resolvedThinking = mergeResult.value.resolved;
+      const conflictResult = checkTemperatureConflict(
+        resolvedThinking,
+        discriminator,
+        temperature,
+        mergeResult.value.noneDegraded
+      );
       if (conflictResult.isFailure()) {
         return fail(conflictResult.message);
       }
