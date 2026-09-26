@@ -155,6 +155,15 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
   record reserves E per owed or future link. Full arithmetic: `agent-tasks-t7` `result.md` §
   *Reservation arithmetic*.
 
+  **T8 amendment (2026-09-26) — (a) is not available, and a fourth candidate is.** A reservation
+  guarantees a future step can be paid, so it must be the most that step could need; "charge actual"
+  cannot apply to an update not yet seen. But the most an update can be is *not* `maxUpdateBytes`: an
+  update carries one ≤ 32 KiB envelope plus fixed framing, so no update exceeds **37,417 B** under the
+  defaults, and 64 KiB is unreachable. Reserving the derived schema maximum gives **256** (224 with a
+  command in flight); lowering `maxUpdateBytes` to 40 KiB gives 234; admitting 1,000 at 64 KiB needs
+  437.5 MiB resident. Full table and recommendation: `agent-tasks-t8` `result.md` § *Profile
+  arithmetic*. Decision and M1 run proposed for T8's second PR.
+
   **Trigger**: T8 (profile qualification), or the first consumer sizing a deployment against
   `defaultTaskCapacityLimits`, whichever comes first. **T8 cannot sign off the profile without
   resolving this** — that is the load-bearing reason this is recorded here rather than left in a
@@ -244,6 +253,17 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
   in the write that acknowledges or disposes it.
   **Trigger:** the start of T8. **Reference:** the `agent-tasks-t7` stream's `result.md` §
   *Hand-offs* (at `.ai/tasks/active/agent-tasks-t7/` until the `agent-tasks-v1` cluster finalizes).
+
+- **[P2] `ts-agent-tasks` — T8's second body of work, proposed as its own PR.** The retention
+  mechanism shipped without: the A3 saturation journey for every § 8.6 dimension with exact
+  used/reserved transfers across every crash point (including pending activation and
+  acknowledged-but-unpruned records), lifetime acknowledgement exhaustion on one and across many
+  closed subscriptions, repeated ordinary command identities and rejected-after-admission operations,
+  oversized results and claimed-but-never-resolved registrations at saturation; the profile decision
+  (capacity entry above); the `maxConsumerRecordBytes`/per-subscription-id inconsistency; and the M1
+  cohorts on the final source. **Trigger:** the landing of T8's mechanism PR — M1 must precede any
+  change to `defaultTaskCapacityProfile`, and T9 builds its stop reservations on the same profile.
+  **Reference:** `agent-tasks-t8` `result.md` § *Scope of this PR*.
 
 *(The `checkThreshold` zero-byte-section measure gap (shipped in C2, #669) was fixed by C3 of
 `ai-assist-prompt-caching`: a section with `chars === 0` now contributes `0` to the measured total
