@@ -20,6 +20,9 @@ export const allCapacityClaimPurposes: ReadonlyArray<CapacityClaimPurpose>;
 export const allCapacityDimensions: ReadonlyArray<CapacityDimension>;
 
 // @public
+export const allCommandAbandonmentOrigins: ReadonlyArray<CommandAbandonmentOrigin>;
+
+// @public
 export const allTaskActions: ReadonlyArray<TaskAction>;
 
 // @public
@@ -134,6 +137,9 @@ export function checkListCompletion(listId: TaskId, children: ReadonlyArray<ITas
 export type CheckpointWriteVisibility = 'unchanged' | 'unknown';
 
 // @public
+export type CommandAbandonmentOrigin = 'not-sent' | 'possibly-sent' | 'awaiting-feed';
+
+// @public
 export type CommandRejectionReason = 'denied' | 'unsupported' | 'conflict' | 'invalid-transition' | 'stop-active' | 'idempotency-conflict';
 
 // @public
@@ -149,6 +155,10 @@ export type CommandState = {
 } | {
     readonly state: 'indeterminate';
     readonly reason: string;
+} | {
+    readonly state: 'abandoned';
+    readonly reason: string;
+    readonly from: CommandAbandonmentOrigin;
 };
 
 // @public
@@ -269,7 +279,11 @@ export class FileTreeTaskRepository implements ITaskRepository {
     // (undocumented)
     readonly mode: TaskRepositoryMode;
     static open(params: ITaskRepositoryOpenParams): Promise<TaskResult<TaskRepositoryOpenResult>>;
+    outstanding(request?: {
+        readonly limit?: number;
+    }): TaskResult<ITaskOutstandingReport>;
     get profile(): ITaskCapacityProfile;
+    prunableTasks(request: IListCompletionCandidateQuery): Promise<TaskResult<ReadonlyArray<TaskId>>>;
     query(request: ITaskQuery): Promise<TaskResult<ITaskPage>>;
     queryDue(request: IDueTaskQuery): Promise<TaskResult<ITaskPage>>;
     read(id: TaskId): Promise<TaskResult<TaskRegistrationResult | undefined>>;
@@ -281,8 +295,19 @@ export class FileTreeTaskRepository implements ITaskRepository {
     // (undocumented)
     readonly repositoryId: string;
     subscription(subscriptionId: SubscriptionId): TaskResult<ITaskSubscription | undefined>;
+    supersedable(update: ITaskUpdate, audience: ReadonlyArray<SubscriptionId>): boolean;
     unsettledCommands(request: IListCompletionCandidateQuery): Promise<TaskResult<ReadonlyArray<TaskId>>>;
     withWriter<T>(action: (writer: ITaskRepositoryWriter) => Promise<TaskResult<T>>): Promise<TaskResult<T>>;
+}
+
+// @public
+export interface IAbandonCommandRequest {
+    // (undocumented)
+    readonly operationId: OperationId;
+    // (undocumented)
+    readonly reason: string;
+    // (undocumented)
+    readonly taskId: TaskId;
 }
 
 // @public
@@ -496,6 +521,16 @@ export interface IChangeTaskScopes extends ITaskMutationIdentity {
 }
 
 // @public
+export interface ICloseSubscriptionRequest {
+    // (undocumented)
+    readonly obligations: TaskSubscriptionClosureMode;
+    // (undocumented)
+    readonly reason?: string;
+    // (undocumented)
+    readonly subscriptionId: SubscriptionId;
+}
+
+// @public
 export interface ICommandAwaiting {
     // (undocumented)
     readonly execution: string;
@@ -618,14 +653,24 @@ export interface ICreateTrackedTask {
 
 // @public
 export interface IDeliveryConverters {
+    // (undocumented)
+    readonly abandonCommandRequest: Converter<IAbandonCommandRequest>;
     readonly categories: Converter<ReadonlyArray<UpdateCategory>>;
+    // (undocumented)
+    readonly closeRequest: Converter<ICloseSubscriptionRequest>;
     // (undocumented)
     readonly consumerInventory: Converter<ReadonlyArray<ITaskConsumerInventoryEntry>>;
     // (undocumented)
     readonly consumerInventoryEntry: Converter<ITaskConsumerInventoryEntry>;
     readonly consumerRecord: Converter<ITaskConsumerRecord>;
     // (undocumented)
+    readonly disposeRequest: Converter<IDisposeObligationsRequest>;
+    readonly disposition: Converter<ITaskObligationDisposition>;
+    readonly dispositionReason: Converter<string>;
+    // (undocumented)
     readonly issued: Converter<IIssuedTaskReceipt>;
+    // (undocumented)
+    readonly obligationDisposal: Converter<ITaskObligationDisposal>;
     // (undocumented)
     readonly policy: Converter<ITaskDeliveryPolicy>;
     readonly policyOverrides: Converter<Partial<Omit<ITaskDeliveryPolicy, 'schemaVersion'>>>;
@@ -643,6 +688,18 @@ export interface IDeliveryConverters {
     readonly start: Converter<SubscriptionStart>;
     // (undocumented)
     readonly subscribeRequest: Converter<ISubscribeRequest>;
+    // (undocumented)
+    readonly subscriptionClosure: Converter<ITaskSubscriptionClosure>;
+}
+
+// @public
+export interface IDisposeObligationsRequest {
+    // (undocumented)
+    readonly reason: string;
+    // (undocumented)
+    readonly subscriptionId: SubscriptionId;
+    // (undocumented)
+    readonly updateIds: ReadonlyArray<UpdateId>;
 }
 
 // @public
@@ -1343,6 +1400,14 @@ export interface ITaskChildState {
 }
 
 // @public
+export interface ITaskCleanupReport {
+    // (undocumented)
+    readonly pruned: ReadonlyArray<TaskId>;
+    // (undocumented)
+    readonly unchanged: ReadonlyArray<TaskId>;
+}
+
+// @public
 export interface ITaskCommandDescriptor<P> {
     // (undocumented)
     readonly conditional: boolean;
@@ -1407,6 +1472,8 @@ export interface ITaskConsumerRecord {
     // (undocumented)
     readonly createdAt: Instant;
     // (undocumented)
+    readonly disposed: ReadonlyArray<ITaskObligationDisposition>;
+    // (undocumented)
     readonly formatVersion: 1;
     // (undocumented)
     readonly id: SubscriptionId;
@@ -1425,7 +1492,7 @@ export interface ITaskConsumerRecord {
     // (undocumented)
     readonly start: SubscriptionStart;
     // (undocumented)
-    readonly state: 'active';
+    readonly state: TaskSubscriptionState;
 }
 
 // @public
@@ -1535,11 +1602,23 @@ export interface ITaskDeliveryPolicy {
     // (undocumented)
     readonly categories: ReadonlyArray<UpdateCategory>;
     // (undocumented)
+    readonly coalesceProgress: boolean;
+    // (undocumented)
     readonly durability: 'session' | 'process-crash';
     // (undocumented)
     readonly history: SourceHistoryContract;
     // (undocumented)
     readonly schemaVersion: 1;
+}
+
+// @public
+export interface ITaskDispositionResult {
+    // (undocumented)
+    readonly alreadyDischarged: ReadonlyArray<UpdateId>;
+    // (undocumented)
+    readonly newlyDisposed: ReadonlyArray<UpdateId>;
+    // (undocumented)
+    readonly subscriptionId: SubscriptionId;
 }
 
 // @public
@@ -1741,11 +1820,60 @@ export interface ITaskMutationResult {
 }
 
 // @public
+export interface ITaskObligationDisposal {
+    // (undocumented)
+    readonly expectedRecordRevision: number;
+    // (undocumented)
+    readonly reason: string;
+    // (undocumented)
+    readonly subscriptionId: SubscriptionId;
+    // (undocumented)
+    readonly updateIds: ReadonlyArray<UpdateId>;
+}
+
+// @public
+export interface ITaskObligationDisposition {
+    // (undocumented)
+    readonly reason: string;
+    // (undocumented)
+    readonly updateId: UpdateId;
+}
+
+// @public
 export interface ITaskOutcome {
     // (undocumented)
     readonly artifacts: ReadonlyArray<ITaskReference>;
     // (undocumented)
     readonly summary: string;
+}
+
+// @public
+export interface ITaskOutstandingReport {
+    // (undocumented)
+    readonly awaitingCommands: ReadonlyArray<TaskId>;
+    // (undocumented)
+    readonly pendingRegistrations: ReadonlyArray<{
+        readonly taskId: TaskId;
+        readonly operationId: OperationId;
+    }>;
+    // (undocumented)
+    readonly pendingSubscriptions: ReadonlyArray<{
+        readonly subscriptionId: SubscriptionId;
+        readonly operationId: OperationId;
+    }>;
+    // (undocumented)
+    readonly prunable: ReadonlyArray<TaskId>;
+    // (undocumented)
+    readonly subscriptions: ReadonlyArray<{
+        readonly subscriptionId: SubscriptionId;
+        readonly state: 'active' | 'closed';
+        readonly owed: number;
+        readonly pinned: number;
+    }>;
+    // (undocumented)
+    readonly truncated: boolean;
+    // (undocumented)
+    readonly unsettledCommands: ReadonlyArray<TaskId>;
 }
 
 // @public
@@ -1949,7 +2077,11 @@ export interface ITaskRepository {
     lookupSource(binding: ISourceBinding): Promise<TaskResult<TaskId | undefined>>;
     // (undocumented)
     readonly mode: TaskRepositoryMode;
+    outstanding(request?: {
+        readonly limit?: number;
+    }): TaskResult<ITaskOutstandingReport>;
     readonly profile: ITaskCapacityProfile;
+    prunableTasks(request: IListCompletionCandidateQuery): Promise<TaskResult<ReadonlyArray<TaskId>>>;
     query(request: ITaskQuery): Promise<TaskResult<ITaskPage>>;
     queryDue(request: IDueTaskQuery): Promise<TaskResult<ITaskPage>>;
     read(id: TaskId): Promise<TaskResult<TaskRegistrationResult | undefined>>;
@@ -1961,6 +2093,7 @@ export interface ITaskRepository {
     // (undocumented)
     readonly repositoryId: string;
     subscription(subscriptionId: SubscriptionId): TaskResult<ITaskSubscription | undefined>;
+    supersedable(update: ITaskUpdate, audience: ReadonlyArray<SubscriptionId>): boolean;
     unsettledCommands(request: IListCompletionCandidateQuery): Promise<TaskResult<ReadonlyArray<TaskId>>>;
     withWriter<T>(action: (writer: ITaskRepositoryWriter) => Promise<TaskResult<T>>): Promise<TaskResult<T>>;
 }
@@ -2027,10 +2160,13 @@ export interface ITaskRepositoryOpenParams {
 export interface ITaskRepositoryWriter {
     abandonReceipt(request: ITaskReceiptAbandonment): Promise<TaskResult<ITaskConsumerRecord>>;
     acknowledgeReceipt(request: ITaskReceiptAcknowledgement): Promise<TaskResult<ITaskAcknowledgementCommit>>;
+    closeSubscription(request: ITaskSubscriptionClosure): Promise<TaskResult<ITaskConsumerRecord>>;
     commit(request: ITaskCommitRequest): Promise<TaskResult<ITaskCommitRecord>>;
     commitSource(request: ITaskSourceCommitRequest): Promise<TaskResult<ITaskSourceRecord>>;
+    disposeObligations(request: ITaskObligationDisposal): Promise<TaskResult<ITaskDispositionResult>>;
     extendReplayEnvelope(taskId: TaskId, add: ISourceReplayEnvelope): Promise<TaskResult<ISourceReplayEnvelope>>;
     issueReceipt(request: ITaskReceiptIssue): Promise<TaskResult<ITaskConsumerRecord>>;
+    pruneTask(taskId: TaskId): Promise<TaskResult<ITaskCommitRecord>>;
     raiseCapacityLimits(profile: ITaskCapacityProfile): Promise<TaskResult<ITaskCapacityProfile>>;
     readCommit(id: TaskId): Promise<TaskResult<ITaskCommitRecord | undefined>>;
     readSource(sourceId: string): Promise<TaskResult<ITaskSourceRecord | undefined>>;
@@ -2114,7 +2250,18 @@ export interface ITaskSubscription extends ITaskSubscriptionSpecification {
     // (undocumented)
     readonly recordRevision: number;
     // (undocumented)
-    readonly state: 'active';
+    readonly state: TaskSubscriptionState;
+}
+
+// @public
+export interface ITaskSubscriptionClosure {
+    // (undocumented)
+    readonly expectedRecordRevision: number;
+    // (undocumented)
+    readonly obligations: TaskSubscriptionClosureMode;
+    readonly reason?: string;
+    // (undocumented)
+    readonly subscriptionId: SubscriptionId;
 }
 
 // @public
@@ -2157,6 +2304,9 @@ export interface ITaskUpdate {
     readonly audience: ReadonlyArray<SubscriptionId>;
     // (undocumented)
     readonly category: UpdateCategory;
+    readonly coalesced?: {
+        readonly fromRevision: TaskRevision;
+    };
     // (undocumented)
     readonly id: UpdateId;
     // (undocumented)
@@ -2429,7 +2579,13 @@ export type SourceRead = {
 export type SourceReconcileCoverage = 'all-bindings' | 'active-only';
 
 // @public
-export type SourceReconcileStop = 'page-limit' | 'gap' | 'order' | 'contract-violation' | 'capacity-blocked' | 'source-unavailable' | 'storage';
+export type SourceReconcileStop = 'page-limit'
+/**
+* A `source-replay` feed carried a revision for a binding no task holds: that revision is a required
+* event nothing has committed, so the cursor may not pass it (design § 8.6). Register the binding —
+* the next pass re-reads the page and applies it — before the source emits for it.
+*/
+| 'unregistered-binding' | 'gap' | 'order' | 'contract-violation' | 'capacity-blocked' | 'source-unavailable' | 'storage';
 
 // @public
 export type SourceRevisionOrder = 'older' | 'same' | 'newer' | 'incomparable';
@@ -2454,10 +2610,14 @@ export type TaskAudienceResolver = (before: ITaskEnvelope | undefined, after: IT
 
 // @public
 export class TaskBroker {
+    abandonCommand(binding: IBoundTaskViewParams, request: unknown): Promise<TaskResult<ICommandReceipt>>;
     bind(params: IBoundTaskViewParams): TaskResult<IBoundTaskWriter>;
     bindDelivery(params: IBoundTaskDeliveryParams): TaskResult<IBoundTaskDelivery>;
     bindView(params: IBoundTaskViewParams): TaskResult<IBoundTaskView>;
+    cleanup(request: unknown): Promise<TaskResult<ITaskCleanupReport>>;
+    closeSubscription(binding: IBoundTaskViewParams, request: unknown): Promise<TaskResult<ITaskSubscription>>;
     static create(params: ITaskBrokerCreateParams): Result<TaskBroker>;
+    dispose(binding: IBoundTaskViewParams, request: unknown): Promise<TaskResult<ITaskDispositionResult>>;
     extendReplayEnvelope(taskId: TaskId, add: ISourceReplayEnvelope): Promise<TaskResult<ISourceReplayEnvelope>>;
     hint(binding: ISourceBinding): Promise<TaskResult<ISourceObservationReport>>;
     observe(taskId: TaskId): Promise<TaskResult<ISourceObservationReport>>;
@@ -2667,6 +2827,12 @@ export const taskRevision: Converter<TaskRevision>;
 
 // @public
 export const taskStorageFormatVersion: 1;
+
+// @public
+export type TaskSubscriptionClosureMode = 'retain' | 'dispose';
+
+// @public
+export type TaskSubscriptionState = 'active' | 'closed';
 
 // @public
 export function taskUpdateId(taskId: TaskId, revision: TaskRevision, category: UpdateCategory): UpdateId;

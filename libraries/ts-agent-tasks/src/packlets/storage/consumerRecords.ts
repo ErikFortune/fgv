@@ -770,7 +770,12 @@ export class SubscriptionRecords {
     }
     return this._current(disposal.subscriptionId, disposal.expectedRecordRevision).onSuccess(
       ({ state, record }) => {
-        const evidence: ISubscriptionEvidence = evidenceOf(record);
+        // Expiry releases a receipt's pins (design § 9): an expired manifest pins nothing, and goes in
+        // this write, as issuance would evict it.
+        const issued: ReadonlyArray<IIssuedTaskReceipt> = record.issued.filter(
+          (m) => m.expiresAt > disposal.at
+        );
+        const evidence: ISubscriptionEvidence = evidenceOf({ ...record, issued });
         const newly: UpdateId[] = [];
         const already: UpdateId[] = [];
         for (const updateId of disposal.updateIds) {
@@ -801,7 +806,7 @@ export class SubscriptionRecords {
           state,
           record,
           {
-            issued: record.issued,
+            issued,
             disposed: _withDispositions(record, newly, reason.value),
             baseline: _withoutBaselines(record, newly)
           },

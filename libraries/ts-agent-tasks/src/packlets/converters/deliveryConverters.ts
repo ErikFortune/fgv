@@ -328,7 +328,8 @@ export function buildDeliveryConverters(
       subscriptionId: ids.subscriptionId,
       expectedRecordRevision: nonNegativeSafeInteger,
       updateIds,
-      reason: dispositionReason
+      reason: dispositionReason,
+      at: instant
     });
   const closureRule = <T extends { obligations: TaskSubscriptionClosureMode; reason?: string }>(
     value: T

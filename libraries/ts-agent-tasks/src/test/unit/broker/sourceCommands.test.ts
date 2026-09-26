@@ -540,18 +540,19 @@ describe('abandoning a command whose outcome is unknown', () => {
 
   test('a policy that moves before the write, or a task that keeps moving after authorization, abandons nothing', async () => {
     const { h, key } = await held();
-    h.policy.afterDecision = (r) => {
+    const policy = h.policy;
+    policy.afterDecision = (r) => {
       if (r.action === 'dispose-obligation') {
-        h.policy.epoch = 'epoch-2';
+        policy.epoch = 'epoch-2';
       }
     };
     expect(
       await h.broker.abandonCommand(host(h), { taskId: 'j1', operationId: key, reason: 'r' })
     ).toFailWithDetail(/policy changed/i, expect.objectContaining({ code: 'conflict', retry: 'safe' }));
     // A task that moves after authorization is authorized again; one that never holds still is refused.
-    h.policy.epoch = 'epoch-1';
+    policy.epoch = 'epoch-1';
     let moves = 0;
-    h.policy.afterDecision = async (r) => {
+    policy.afterDecision = async (r) => {
       if (r.action === 'dispose-obligation') {
         moves++;
         h.executor.change('j1', (j) => (j.step = 10 + moves));
@@ -565,7 +566,7 @@ describe('abandoning a command whose outcome is unknown', () => {
     expect((await commandOf(h, 'j1', key)).dispatch).toBe('possibly-sent');
     // Once it holds still, the retry after a single move succeeds.
     let once = false;
-    h.policy.afterDecision = async (r) => {
+    policy.afterDecision = async (r) => {
       if (r.action === 'dispose-obligation' && !once) {
         once = true;
         h.executor.change('j1', (j) => (j.step = 99));

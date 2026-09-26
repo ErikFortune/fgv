@@ -17,6 +17,7 @@ import {
   ITaskConsumerRecord,
   ITaskDispositionResult,
   ITaskSubscription,
+  Instant,
   PageCursor,
   SubscriptionId,
   TaskId,
@@ -159,11 +160,16 @@ async function _disposeOnce(
     if (!access.epochIs(epoch.value)) {
       return _policyMoved<ITaskDispositionResult | undefined>(what);
     }
+    const clock: TaskResult<Instant> = core.now();
+    if (clock.isFailure()) {
+      return propagate<ITaskDispositionResult | undefined>(clock);
+    }
     const disposed = await writer.disposeObligations({
       subscriptionId: request.subscriptionId,
       expectedRecordRevision: record.value.recordRevision,
       updateIds: request.updateIds,
-      reason: request.reason
+      reason: request.reason,
+      at: clock.value
     });
     return disposed.isSuccess()
       ? ok<ITaskDispositionResult | undefined>(disposed.value)

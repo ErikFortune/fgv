@@ -78,7 +78,8 @@ async function dispose(
       subscriptionId: s1,
       expectedRecordRevision: revisionOf(repository),
       updateIds: updateIds as UpdateId[],
-      reason
+      reason,
+      at: at as Instant
     })
   );
 }
@@ -234,6 +235,23 @@ describe('obligation disposition at the storage boundary', () => {
     expect(await owedIds(repository)).toEqual([uid('t', 1, 'lifecycle')]);
   });
 
+  test('an expired receipt pins nothing: it is evicted by the disposal that ends its obligation', async () => {
+    const { repository } = await fixture();
+    await issue(repository, 'd1', [uid('t', 1, 'lifecycle')]);
+    const disposed = await repository.withWriter((w) =>
+      w.disposeObligations({
+        subscriptionId: s1,
+        expectedRecordRevision: revisionOf(repository),
+        updateIds: [uid('t', 1, 'lifecycle')],
+        reason: 'r',
+        at: later
+      })
+    );
+    expect(disposed).toSucceed();
+    const record = (await repository.withWriter((w) => w.readSubscription(s1))).orThrow()!;
+    expect(record.issued).toEqual([]);
+  });
+
   test('an id an unacknowledged receipt names is refused until that receipt is abandoned', async () => {
     const { repository } = await fixture();
     await issue(repository, 'd1', [uid('t', 1, 'lifecycle')]);
@@ -324,7 +342,8 @@ describe('obligation disposition at the storage boundary', () => {
           subscriptionId: 's2' as SubscriptionId,
           expectedRecordRevision: 1,
           updateIds: [base],
-          reason: 'not needed'
+          reason: 'not needed',
+          at: at as Instant
         })
       )
     ).orThrow();
@@ -457,7 +476,8 @@ describe('pruning and archive', () => {
           subscriptionId: 's2' as SubscriptionId,
           expectedRecordRevision: 1,
           updateIds: [base],
-          reason: 'retired'
+          reason: 'retired',
+          at: at as Instant
         })
       )
     ).orThrow();

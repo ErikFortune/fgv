@@ -28,7 +28,6 @@ import {
   ITaskUpdate,
   PageCursor,
   defaultTaskPageLimit,
-  maxTaskPageLimit,
   ITaskOutstandingReport,
   ITaskCapacityClaim,
   ITaskCapacityProfile,
@@ -48,10 +47,8 @@ import {
   ITaskReceiptAbandonment,
   ITaskReceiptAcknowledgement,
   ITaskReceiptIssue,
-  ITaskDispositionResult,
   ITaskObligationDisposal,
   ITaskSubscriptionClosure,
-  ITaskConsumerRecord,
   ITaskSubscription,
   ITaskSubscriptionRegistration,
   OperationId,
@@ -82,7 +79,6 @@ import {
   pendingIdentity,
   registrationIdentity,
   checkUpdates,
-  hasPendingCommand,
   idOf,
   revisionOf,
   sameOperation,
@@ -99,6 +95,7 @@ import {
   recordName,
   utf8Length
 } from './layout';
+import { operationCountFits, parentEdgeFits, raisedProfile } from './graphRules';
 import { CapacityLedger, DimensionAmounts, ILedgerEntry, zeroAmounts } from './ledger';
 import {
   ITaskCommitRequest,
@@ -128,7 +125,7 @@ import {
   evaluateTasks,
   normalizeSelection
 } from './queries';
-import { IVisitCounter } from './sortedKeys';
+import { IVisitCounter, SortedKeySet } from './sortedKeys';
 import { TaskIndex } from './taskIndex';
 import { CursorTable, ICachedRecord, MaterializationGate, RecordCache } from './workingSet';
 import {
@@ -152,7 +149,15 @@ import {
 import { RecordStore } from './recordStore';
 import { SourceRecords } from './sourceRecords';
 import { CheckpointPort } from './checkpoints';
-import { ISubscriptionEvidence, ISubscriptionHost, SubscriptionRecords } from './consumerRecords';
+import { ISubscriptionHost, SubscriptionRecords } from './consumerRecords';
+import {
+  EvidenceReader,
+  checkRetention,
+  dischargedUpdates,
+  isSupersedable,
+  outstandingReport,
+  withoutUpdates
+} from './retention';
 import { DeliveryBook, ITaskDeliveryPlan, newLinks } from './deliveryBook';
 import { subscriptionKey } from './subscriptions';
 import { registerInspector } from './internals';
@@ -370,51 +375,9 @@ export class FileTreeTaskRepository implements ITaskRepository {
 
   /** {@inheritDoc ITaskRepository.outstanding} */
   public outstanding(request?: { readonly limit?: number }): TaskResult<ITaskOutstandingReport> {
-    const limit: number = request?.limit ?? maxTaskPageLimit;
-    if (!Number.isSafeInteger(limit) || limit < 1 || limit > maxTaskPageLimit) {
-      return taskFailure(
-        `outstanding: limit must be an integer from 1 to ${maxTaskPageLimit}`,
-        'invalid',
-        'after-host-action'
-      );
-    }
-    return this._queryable().onSuccess((index) => {
-      let truncated: boolean = false;
-      const bounded = <T>(items: ReadonlyArray<T>): ReadonlyArray<T> => {
-        truncated = truncated || items.length > limit;
-        return items.slice(0, limit);
-      };
-      // Every key in these sets is a task id the index added under that brand.
-      const ids = (keys: ReadonlyArray<string>): ReadonlyArray<TaskId> =>
-        bounded(keys.map((k) => k as TaskId));
-      const retained = [...this._book.subscriptions.values(), ...this._book.closed.values()].sort((a, b) =>
-        a.descriptor.id < b.descriptor.id ? -1 : 1
-      );
-      return ok<ITaskOutstandingReport>({
-        pendingRegistrations: bounded(
-          Array.from(this._pending.values())
-            .map((e) => ({ taskId: e.id as TaskId, operationId: e.operationId }))
-            .sort((a, b) => (a.taskId < b.taskId ? -1 : 1))
-        ),
-        pendingSubscriptions: bounded(
-          Array.from(this._book.pending.values())
-            .map((e) => ({ subscriptionId: e.id, operationId: e.operationId }))
-            .sort((a, b) => (a.subscriptionId < b.subscriptionId ? -1 : 1))
-        ),
-        unsettledCommands: ids(index.unsettledCommands.keys),
-        awaitingCommands: ids(index.awaitingCommands.keys),
-        prunable: ids(index.prunable.keys),
-        subscriptions: bounded(
-          retained.map((state) => ({
-            subscriptionId: state.descriptor.id,
-            state: state.descriptor.state,
-            owed: index.owedCount(state.descriptor.id),
-            pinned: state.pinned.size
-          }))
-        ),
-        truncated
-      });
-    });
+    return this._queryable().onSuccess((index) =>
+      outstandingReport(request?.limit, index, this._pending, this._book)
+    );
   }
 
   /** {@inheritDoc ITaskRepository.capacityStatus} */
@@ -528,39 +491,33 @@ export class FileTreeTaskRepository implements ITaskRepository {
   public async listCompletionCandidates(
     request: IListCompletionCandidateQuery
   ): Promise<TaskResult<ReadonlyArray<TaskId>>> {
-    return this._queryable().onSuccess((index) =>
-      this._convertQuery(this._converters.broker.listCompletion, request).onSuccess((query) => {
-        const keys: ReadonlyArray<string> = index.listCandidates.keys;
-        const start: number = index.listCandidates.startAfter(query.after);
-        // Every key in the set is a task id the index added under that brand.
-        return ok(keys.slice(start, start + query.limit).map((key) => key as TaskId));
-      })
-    );
+    return this._candidates((index) => index.listCandidates, request);
   }
 
   /** {@inheritDoc ITaskRepository.unsettledCommands} */
   public async unsettledCommands(
     request: IListCompletionCandidateQuery
   ): Promise<TaskResult<ReadonlyArray<TaskId>>> {
-    return this._queryable().onSuccess((index) =>
-      this._convertQuery(this._converters.broker.listCompletion, request).onSuccess((query) => {
-        const keys: ReadonlyArray<string> = index.unsettledCommands.keys;
-        const start: number = index.unsettledCommands.startAfter(query.after);
-        // Every key in the set is a task id the index added under that brand.
-        return ok(keys.slice(start, start + query.limit).map((key) => key as TaskId));
-      })
-    );
+    return this._candidates((index) => index.unsettledCommands, request);
   }
 
   /** {@inheritDoc ITaskRepository.prunableTasks} */
   public async prunableTasks(
     request: IListCompletionCandidateQuery
   ): Promise<TaskResult<ReadonlyArray<TaskId>>> {
+    return this._candidates((index) => index.prunable, request);
+  }
+
+  /** One page of an index-maintained candidate set, ordered by id. */
+  private async _candidates(
+    set: (index: TaskIndex) => SortedKeySet,
+    request: IListCompletionCandidateQuery
+  ): Promise<TaskResult<ReadonlyArray<TaskId>>> {
     return this._queryable().onSuccess((index) =>
       this._convertQuery(this._converters.broker.listCompletion, request).onSuccess((query) => {
-        const keys: ReadonlyArray<string> = index.prunable.keys;
-        const start: number = index.prunable.startAfter(query.after);
-        // Every key in the set is a task id the index added under that brand.
+        const keys: ReadonlyArray<string> = set(index).keys;
+        const start: number = set(index).startAfter(query.after);
+        // Every key in these sets is a task id the index added under that brand.
         return ok(keys.slice(start, start + query.limit).map((key) => key as TaskId));
       })
     );
@@ -586,21 +543,7 @@ export class FileTreeTaskRepository implements ITaskRepository {
 
   /** {@inheritDoc ITaskRepository.supersedable} */
   public supersedable(update: ITaskUpdate, audience: ReadonlyArray<SubscriptionId>): boolean {
-    if (update.required || this._index === undefined) {
-      return false;
-    }
-    return update.audience.every((member) => {
-      if (!this._index!.isOwed(member, update.id)) {
-        return true;
-      }
-      const state = this._book.subscriptions.get(member);
-      return (
-        state !== undefined &&
-        state.descriptor.policy.coalesceProgress &&
-        audience.includes(member) &&
-        !state.pinned.has(update.id)
-      );
-    });
+    return this._index !== undefined && isSupersedable(update, audience, this._index, this._book);
   }
 
   /** {@inheritDoc ITaskRepository.subscription} */
@@ -1038,7 +981,9 @@ export class FileTreeTaskRepository implements ITaskRepository {
         this._checkSource(taskId, validated, operationId).onSuccess(() => ok(validated))
       )
       .onSuccess((validated) =>
-        this._checkOperationCount(taskId, validated.operations.length, 2).onSuccess(() => ok(validated))
+        operationCountFits(this.profile, taskId, validated.operations.length, 2).onSuccess(() =>
+          ok(validated)
+        )
       )
       .onSuccess((validated) =>
         pending !== undefined
@@ -1468,116 +1413,22 @@ export class FileTreeTaskRepository implements ITaskRepository {
     });
   }
 
-  /**
-   * The retention rule (design § 9, *Retention*), checked against durable evidence before any
-   * update leaves a record.
-   *
-   * @remarks
-   * An update with an audience may be dropped only when every audience member's checkpoint — read
-   * through the store and verified against what was committed, never the resident index — holds its
-   * id in the exact history (acknowledged or disposed); or when it is a routine update superseded, in
-   * this very commit, by a newer update of its category whose `coalesced` marker records the gap,
-   * and every member still owed it is active, takes coalescing, is in the newer update's audience,
-   * and has no unacknowledged receipt naming it. A checkpoint that cannot be read or verified fences
-   * and refuses: corruption blocks cleanup, it is never skipped.
-   *
-   * A tombstone owes nothing and awaits nothing: archiving is refused while the record would still
-   * retain an update with an audience, while any command is unsettled or awaiting its feed, or while
-   * any subscription is still owed a baseline obligation for the task.
-   */
+  /** The retention rule, decided from each audience member's durable checkpoint. */
   private _checkRetention(
     taskId: TaskId,
     current: ITaskCommitRecord,
     draft: ITaskRecordDraft,
     operationId: OperationId | undefined
   ): TaskResult<true> {
-    const detail = operationId !== undefined ? { operationId } : undefined;
-    const blocked = (message: string): TaskResult<true> =>
-      taskFailure(`commit ${taskId}: ${message}`, 'retention-blocked', 'after-host-action', detail);
-    const before: ReadonlyArray<ITaskUpdate> = updatesOf(current);
-    const next: ReadonlyArray<ITaskUpdate> = updatesOf(draft);
-    const kept: ReadonlySet<string> = new Set(next.map((u) => u.id));
-    const retained: ReadonlySet<string> = new Set(before.map((u) => u.id));
-    const added: ReadonlyArray<ITaskUpdate> = next.filter((u) => !retained.has(u.id));
-    const dropped: ReadonlyArray<ITaskUpdate> = before.filter((u) => !kept.has(u.id));
-
-    // A coalescing marker describes exactly the updates of its category this commit drops: its
-    // `fromRevision` is the earliest revision among them (carried forward from any they had superseded
-    // themselves). A commit adds at most one update per category — update identity is (task, revision,
-    // category) — so no two markers can claim the same drops.
-    for (const update of added) {
-      if (update.coalesced === undefined) {
-        continue;
-      }
-      const superseded: ReadonlyArray<ITaskUpdate> = dropped.filter((u) => u.category === update.category);
-      const from: number = Math.min(...superseded.map((u) => u.coalesced?.fromRevision ?? u.revision));
-      if (superseded.length === 0 || from !== update.coalesced.fromRevision) {
-        return taskFailure(
-          `commit ${taskId}: update ${update.id} marks a gap from revision ${update.coalesced.fromRevision}, ` +
-            `but this commit supersedes ${
-              superseded.length === 0 ? 'no update of its category' : `from revision ${from}`
-            }`,
-          'invalid',
-          'after-host-action',
-          detail
-        );
-      }
-    }
-
-    const evidence: Map<SubscriptionId, ISubscriptionEvidence> = new Map();
-    for (const update of dropped) {
-      for (const member of update.audience) {
-        let held: ISubscriptionEvidence | undefined = evidence.get(member);
-        if (held === undefined) {
-          const read: TaskResult<ISubscriptionEvidence> = this._records.evidence(member);
-          if (read.isFailure()) {
-            return propagate(read);
-          }
-          held = read.value;
-          evidence.set(member, held);
-        }
-        if (held.discharged.has(update.id)) {
-          continue;
-        }
-        const newer: ITaskUpdate | undefined = added.find(
-          (u) => u.category === update.category && u.coalesced !== undefined
-        );
-        const coalescing: boolean =
-          !update.required &&
-          newer !== undefined &&
-          newer.audience.includes(member) &&
-          this._book.subscriptions.get(member)?.descriptor.policy.coalesceProgress === true;
-        if (!coalescing) {
-          // The message names no subscription: it reaches whichever principal made the commit, and
-          // which consumers exist is host knowledge (`outstanding()` reports it to the host).
-          return blocked(`update ${update.id} is still owed; it leaves only once acknowledged or disposed`);
-        }
-        if (held.pinned.has(update.id)) {
-          return blocked(
-            `update ${update.id} is named by an issued receipt that is not acknowledged; it cannot be superseded`
-          );
-        }
-      }
-    }
-
-    const archiving: boolean =
-      draft.recordType === 'resolved' &&
-      draft.archived &&
-      !(current.recordType === 'resolved' && current.archived);
-    if (archiving) {
-      if (next.some((u) => u.audience.length > 0)) {
-        return blocked(`updates are still owed; they must be acknowledged or disposed of first`);
-      }
-      if (hasPendingCommand(draft)) {
-        return blocked(`an external command is unsettled or awaiting its feed; resolve or abandon it first`);
-      }
-      if (this._index!.baselinesOwedFor(taskId) > 0) {
-        return blocked(
-          `a baseline obligation for it is still owed; it must be acknowledged or disposed of first`
-        );
-      }
-    }
-    return ok(true);
+    return checkRetention({
+      taskId,
+      current,
+      draft,
+      operationId,
+      evidence: new EvidenceReader((id) => this._records.evidence(id)),
+      coalesces: (id) => this._book.subscriptions.get(id)?.descriptor.policy.coalesceProgress === true,
+      baselinesOwed: this._index!.baselinesOwedFor(taskId)
+    });
   }
 
   /**
@@ -1598,44 +1449,20 @@ export class FileTreeTaskRepository implements ITaskRepository {
       if (record.recordType !== 'resolved' || record.archived || !projection.known) {
         return ok(record);
       }
-      const evidence: Map<SubscriptionId, ISubscriptionEvidence> = new Map();
-      const prunable: Set<string> = new Set();
-      for (const update of record.updates) {
-        if (update.audience.length === 0) {
-          continue;
-        }
-        let discharged: boolean = true;
-        for (const member of update.audience) {
-          if (!evidence.has(member)) {
-            const held: TaskResult<ISubscriptionEvidence> = this._records.evidence(member);
-            if (held.isFailure()) {
-              return propagate<ITaskCommitRecord>(held);
-            }
-            evidence.set(member, held.value);
-          }
-          discharged = discharged && evidence.get(member)!.discharged.has(update.id);
-        }
-        if (discharged) {
-          prunable.add(update.id);
-        }
-      }
-      if (prunable.size === 0) {
-        return ok(record);
-      }
-      return this._commit({
-        purpose: 'maintenance',
-        taskId: id.value,
-        expectedRevision: record.task.envelope.revision,
-        expectedRecordRevision: record.recordRevision,
-        record: {
-          recordType: 'resolved',
-          task: record.task,
-          ...(record.sourceRevision !== undefined ? { sourceRevision: record.sourceRevision } : {}),
-          operations: record.operations,
-          updates: record.updates.filter((u) => !prunable.has(u.id)),
-          archived: false
-        }
-      });
+      return dischargedUpdates(
+        record.updates,
+        new EvidenceReader((m) => this._records.evidence(m))
+      ).onSuccess((prunable) =>
+        prunable.size === 0
+          ? ok(record)
+          : this._commit({
+              purpose: 'maintenance',
+              taskId: id.value,
+              expectedRevision: record.task.envelope.revision,
+              expectedRecordRevision: record.recordRevision,
+              record: withoutUpdates(record, prunable)
+            })
+      );
     });
   }
 
@@ -1700,7 +1527,8 @@ export class FileTreeTaskRepository implements ITaskRepository {
       const terminal: boolean =
         draft.recordType === 'resolved' && isTerminalTaskStatus(draft.task.envelope.lifecycle.status);
       const archived: boolean = draft.recordType === 'resolved' && draft.archived;
-      const counted: TaskResult<true> = this._checkOperationCount(
+      const counted: TaskResult<true> = operationCountFits(
+        this.profile,
         taskId,
         draft.operations.length,
         archived ? 0 : terminal ? 1 : 2
@@ -1850,34 +1678,11 @@ export class FileTreeTaskRepository implements ITaskRepository {
   // ------------------------------------------------------------------------------------------
 
   private _raiseLimits(requested: ITaskCapacityProfile): TaskResult<ITaskCapacityProfile> {
-    const converted: Result<ITaskCapacityProfile> = this._converters.capacity.profile.convert(requested);
-    if (converted.isFailure()) {
-      return taskFailure(`raiseCapacityLimits: ${converted.message}`, 'invalid', 'after-host-action');
+    const raised: TaskResult<ITaskCapacityProfile> = raisedProfile(this._converters, this.profile, requested);
+    if (raised.isFailure()) {
+      return raised;
     }
-    const profile: ITaskCapacityProfile = converted.value;
-    const stored: ITaskCapacityProfile = this.profile;
-    const lowered: string[] = [];
-    const compare = (
-      group: string,
-      before: Readonly<Record<string, number>>,
-      after: Readonly<Record<string, number>>
-    ): void => {
-      for (const key of Object.keys(before)) {
-        if (after[key] < before[key]) {
-          lowered.push(`${group}.${key}`);
-        }
-      }
-    };
-    compare('limits', stored.limits, profile.limits);
-    compare('perOwner', { ...stored.perOwner }, { ...profile.perOwner });
-    compare('encoded', { ...stored.encoded }, { ...profile.encoded });
-    if (lowered.length > 0) {
-      return taskFailure(
-        `raiseCapacityLimits: lowering limits in place is unsupported (${lowered.join(', ')})`,
-        'unsupported',
-        'after-host-action'
-      );
-    }
+    const profile: ITaskCapacityProfile = raised.value;
     const manifest: ITaskRepositoryManifest = {
       ...this._manifest,
       manifestRevision: this._manifest.manifestRevision + 1,
@@ -1963,70 +1768,13 @@ export class FileTreeTaskRepository implements ITaskRepository {
     });
   }
 
-  /**
-   * The per-task operation limit, with the closeout path's own slots held back.
-   *
-   * @remarks
-   * Every accepted task reserves room for a terminal operation and an archive operation
-   * (`maximumClosureCharges`). The repository-wide ledger holds those as claims; the per-task
-   * bound needs the same protection, or a task could spend its last slot on ordinary work and
-   * be unable to finish. So an ordinary operation may use the limit less the closeout slots
-   * still owed, and a closeout step may use the whole limit.
-   */
-  private _checkOperationCount(taskId: TaskId, count: number, heldBack: number): TaskResult<true> {
-    const limit: number = this.profile.perOwner.maxOperationsPerTask;
-    if (count <= limit - heldBack) {
-      return ok(true);
-    }
-    return taskFailure(
-      `capacity: task ${taskId} would hold ${count} operations; its limit is ${limit}, ` +
-        `of which ${heldBack} are held for closeout`,
-      'backpressure',
-      'after-host-action',
-      {
-        capacity: {
-          reason: 'capacity-exhausted',
-          dimension: 'operations',
-          recordId: taskId,
-          used: count - 1,
-          reserved: heldBack,
-          requested: 1,
-          limit,
-          reclaimableByCleanup: false
-        }
-      }
-    );
-  }
-
-  /** A parent edge must name a live task, and must not close a cycle. */
   private _checkParent(taskId: TaskId, draft: ITaskRecordDraft): TaskResult<true> {
-    const parentId: TaskId | undefined =
-      draft.recordType === 'resolved' ? draft.task.envelope.parentId : draft.reference.parentId;
-    if (parentId === undefined || parentId === this._tasks.get(taskId)?.parentId) {
-      return ok(true);
-    }
-    const seen: Set<TaskId> = new Set<TaskId>([taskId]);
-    let cursor: TaskId | undefined = parentId;
-    while (cursor !== undefined) {
-      if (seen.has(cursor)) {
-        return taskFailure(
-          `task ${taskId}: parent ${parentId} would close a cycle`,
-          'invalid',
-          'after-host-action'
-        );
-      }
-      const parent: ITaskProjection | undefined = this._tasks.get(cursor);
-      if (parent === undefined) {
-        return taskFailure(
-          `task ${taskId}: parent ${cursor} is not a live task`,
-          'invalid',
-          'after-host-action'
-        );
-      }
-      seen.add(cursor);
-      cursor = parent.parentId;
-    }
-    return ok(true);
+    return parentEdgeFits(
+      taskId,
+      draft,
+      (id) => this._tasks.get(id)?.parentId,
+      (id) => this._tasks.has(id)
+    );
   }
 
   /** Completes a record from a draft and validates it through the read-path converter. */

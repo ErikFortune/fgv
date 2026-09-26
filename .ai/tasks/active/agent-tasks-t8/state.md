@@ -148,6 +148,21 @@ lets the next pass apply it. `observed-state` keeps moving on.
   the site; deletion is out of scope under A3. **P3.6** `_taskOf` hand-decodes an update id — kept
   (verified against both encodings); a shared decoder is a follow-up, not a defect.
 
+## Independent persistence/delivery antagonist — applied
+
+- **MED** an expired, never-abandoned manifest still pinned its ids, so `dispose` refused them
+  (explicit error, not absence — but contrary to design § 9 "expiry releases receipt pins"). Fixed:
+  `ITaskObligationDisposal.at`; an expired manifest pins nothing and is evicted by the disposal's own
+  write. Coalescing still treats an expired unacknowledged manifest as a pin (conservative: it keeps
+  more, and the host can abandon); noted for `result.md`.
+- Checked sound by the pass (recorded in its report): checkpoint-before-prune ordering, corruption
+  fences cleanup, `acknowledged ∩ disposed = ∅`, crash cases, archive removes every update with no
+  coalescing exception, baseline gate, closed-audience exclusion, retain/dispose closure, close's
+  in-writer recapture, abandon consumes the settlement claim once, the replay cursor stop, uniform
+  fence-then-commit, `_abandonmentProblem`, `_taskOf` cannot confuse tasks.
+- Lint on the full build also found `repository.ts` over the 2,000-line limit: retention logic moved
+  to `storage/retention.ts`, graph/profile rules to `storage/graphRules.ts`.
+
 ## Split proposal (raised 2026-09-26, orchestrator's decision)
 
 Mechanism is complete at +4,145/−189 over 50 files, before docs, coverage closure and review

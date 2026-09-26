@@ -318,6 +318,8 @@ export interface ITaskObligationDisposal {
   readonly expectedRecordRevision: number;
   readonly updateIds: ReadonlyArray<UpdateId>;
   readonly reason: string;
+  /** Now. A manifest that expires at or before it pins nothing, and is evicted in the same write. */
+  readonly at: Instant;
 }
 
 /**

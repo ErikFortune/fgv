@@ -123,10 +123,11 @@ describe('TaskBroker.dispose', () => {
 
   test('a task that moves after authorization is authorized again, not trusted', async () => {
     const h = await deliveryHarness();
+    const policy = h.policy;
     await subscribed(h, 'sub');
     await track(h.writer, 't');
     let moved = 0;
-    h.policy.afterDecision = async (r) => {
+    policy.afterDecision = async (r) => {
       if (r.action === 'dispose-obligation' && moved < 3) {
         moved++;
         await updateTitle(h, 't', `moved ${moved}`);
@@ -247,10 +248,11 @@ describe('TaskBroker.closeSubscription', () => {
 
   test('dispose captures again when an obligation lands on a task it did not authorize', async () => {
     const h = await deliveryHarness();
+    const policy = h.policy;
     await subscribed(h, 'sub');
     await track(h.writer, 't');
     let added = false;
-    h.policy.afterDecision = async (r) => {
+    policy.afterDecision = async (r) => {
       if (r.action === 'dispose-obligation' && r.task !== undefined && !added) {
         added = true;
         await track(h.writer, 'late');
