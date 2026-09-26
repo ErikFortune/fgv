@@ -128,6 +128,53 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
+### `agent-tasks-t8b` 🟢 (slice T8, PR 2 of 2 — closes T8)
+
+**Status:** 🟢 ready to start. Branched off `integration/agent-tasks-v1` at `cae5d7db4`, the T8 PR 1
+landing ([#698](https://github.com/ErikFortune/fgv/pull/698)). PR targets
+`integration/agent-tasks-v1`, **not `release`** — the cluster promotes as one. Artifacts in
+`.ai/tasks/active/agent-tasks-t8b/`; this family finalizes at cluster close.
+
+**Mission.** The A3 saturation journeys for every § 8.6 dimension with exact used/reserved transfers
+at every crash point; lifetime acknowledgement exhaustion on one subscription and across many closed
+ones; the M1 cohort run on the shipped implementation; and the capacity-profile decision.
+
+**This slice closes T8, and the cluster does not close before it.** PR 1 shipped the mechanism —
+retention, disposition, closure, coalescing, pins, tombstone archive, pruning, command abandonment,
+the outstanding-work report — and said in its own ledger entry that T8's acceptance criteria are not
+met until PR 2 lands. The plan's T8 status line is 🟡 until this PR moves it to ✅.
+
+**The profile decision is the deferred item the whole family has been routing forward.** PR 1 did
+the arithmetic and settled two things worth not re-litigating: a single update **cannot exceed
+37,417 B** (the 32 KiB envelope bound plus fixed framing), so `maxUpdateBytes` at 64 KiB is
+unreachable and the closeout reserves nearly double what the schema permits; and candidate (a),
+"charge actual", is **structurally unavailable** for a forward reservation, because a closeout
+guarantees a terminal step not yet taken and must reserve the most it could need. PR 1 recommends
+**(d) reserve the derived maximum** (ceiling 256, or 224 with an in-flight command) **plus (c)
+advertise the number actually served**. T8b runs M1 first — the plan requires that ordering — then
+confirms or refutes with measurements. `defaultTaskCapacityProfile` is `@public`; the decision ships
+with its evidence and the change itself needs the design authority.
+
+**Package surface.** `libraries/ts-agent-tasks` only, plus `perf/residentMemory.js` runs (not edits),
+this stream's artifacts, the plan's T8 status line and this ledger entry.
+
+**Out of scope.** Reshaping PR 1's mechanism — the split was granted on the basis that this work
+depends on it but reshapes nothing in it; surface it if that proves false. Physical deletion and
+compaction, under A3's finite-history limitation. T9, I1, I2, P1. M1 harness authorship. Every
+package outside `ts-agent-tasks`. `ts-utils`'s `isKeyOf`. The three known CI flakes.
+
+**Review gates — two, as PR 1 had.** Layer 1 `code-reviewer` before coverage closure, then an
+independent persistence/delivery antagonist pass (the plan requires it for T8, and T8 is not closed
+until this lands; on PR 1 it found one MED that four Copilot rounds had not), then the
+implementer-driven Copilot loop.
+
+**Acceptance criteria:** `rushx build` zero warnings, `rushx lint`, `rushx fixlint`; `rushx test` at
+100% with zero `c8 ignore`; `rush change --verify` with a **`minor`** change file; repo-wide
+`rebuild` **and** `test` on the final source; the five verify scripts; no `any`; all three review
+layers recorded; M1 figures pasted; and the plan's T8 line moved to ✅ in this PR.
+
+**Artifact pointer:** `.ai/tasks/active/agent-tasks-t8b/`.
+
 ### `agent-tasks-t8` 🔵 (slice T8 of the agent-tasks plan) — split into two PRs; PR 1 landed via [#698](https://github.com/ErikFortune/fgv/pull/698)
 
 **Status:** 🔵 in flight — **PR 1 of 2 shipped 2026-09-26 via
