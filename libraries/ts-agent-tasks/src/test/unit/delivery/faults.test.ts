@@ -44,7 +44,10 @@ function bindAll(w: ITaskRepositoryWriter): ITaskRepositoryWriter {
     readSubscription: (id) => w.readSubscription(id),
     issueReceipt: (r) => w.issueReceipt(r),
     acknowledgeReceipt: (r) => w.acknowledgeReceipt(r),
-    abandonReceipt: (r) => w.abandonReceipt(r)
+    abandonReceipt: (r) => w.abandonReceipt(r),
+    disposeObligations: (r) => w.disposeObligations(r),
+    closeSubscription: (r) => w.closeSubscription(r),
+    pruneTask: (id) => w.pruneTask(id)
   };
 }
 

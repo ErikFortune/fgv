@@ -88,6 +88,7 @@ import { RecordStore } from './recordStore';
 import { IRootOwnership, acquireRoot } from './rootOwnership';
 import {
   ISubscriptionState,
+  isDrainable,
   preparationBytes,
   subscriptionKey,
   subscriptionState,
@@ -1311,6 +1312,13 @@ function _scanConsumers(params: {
     baselines: new Map()
   };
   const limit: number = recordLimitFor(subscriptionKey(''), profile);
+  // How many retained links name each subscription: with its exact history, what it is still owed.
+  const links: Map<string, number> = new Map();
+  for (const audience of linkDescriptors.values()) {
+    for (const member of audience) {
+      links.set(member, (links.get(member) ?? 0) + 1);
+    }
+  }
   for (const entry of manifest.consumers) {
     // The inventory converter validated the id with the subscription-id syntax.
     const id: SubscriptionId = entry.id as SubscriptionId;
@@ -1388,12 +1396,24 @@ function _scanConsumers(params: {
       }
       out.completed.push(id);
     }
+    // The exact history is acknowledgements and dispositions alike: either discharges a link.
+    const history: ReadonlyArray<UpdateId> = [
+      ...record.acknowledged,
+      ...record.disposed.map((d) => d.updateId)
+    ];
+    const discharged: ReadonlySet<UpdateId> = new Set(history);
+    const satisfied: UpdateId[] = history.filter(
+      (updateId) => linkDescriptors.get(updateId)?.includes(id) === true
+    );
+    const owedBaseline: ReadonlyArray<ITaskUpdate> = record.baseline.filter((b) => !discharged.has(b.id));
+    const owed: number = (links.get(id) ?? 0) - satisfied.length + owedBaseline.length;
     const claimed: Result<true> = checkSubscriptionClaims(record.capacityClaims, {
       subscriptionId: id,
       ownership: 'live',
       preparationBytes: preparationBytes(
         profile,
-        record.issued.map((m) => ({ bytes: valueBytes(m) }))
+        record.issued.map((m) => ({ bytes: valueBytes(m) })),
+        isDrainable(record.state, owed, record.issued)
       )
     });
     if (claimed.isFailure()) {
@@ -1401,14 +1421,9 @@ function _scanConsumers(params: {
       continue;
     }
     out.subscriptions.set(id, subscriptionState(record, read.read.fingerprint, read.read.bytes));
-    const acknowledged: ReadonlySet<UpdateId> = new Set(record.acknowledged);
-    const satisfied: UpdateId[] = record.acknowledged.filter(
-      (updateId) => linkDescriptors.get(updateId)?.includes(id) === true
-    );
     if (satisfied.length > 0) {
       out.satisfied.set(id, satisfied);
     }
-    const owedBaseline: ReadonlyArray<ITaskUpdate> = record.baseline.filter((b) => !acknowledged.has(b.id));
     if (owedBaseline.length > 0) {
       out.baselines.set(id, owedBaseline);
     }

@@ -29,12 +29,14 @@ function record(extra: JsonObject = {}): JsonObject {
       schemaVersion: 1,
       durability: 'session',
       history: 'observed-state',
-      categories: ['attention', 'lifecycle', 'result']
+      categories: ['attention', 'lifecycle', 'result'],
+      coalesceProgress: false
     },
     state: 'active',
     createdAt: at,
     baseline: [],
     acknowledged: [],
+    disposed: [],
     issued: [],
     capacityClaims: [],
     ...extra

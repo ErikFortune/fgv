@@ -177,7 +177,8 @@ export async function subscribe(
       defaults.policy.durability ??
       (core.repository.mode === 'session' ? 'session' : 'process-crash'),
     history: req.policy?.history ?? defaults.policy.history ?? 'observed-state',
-    categories: req.policy?.categories ?? defaults.policy.categories ?? defaultDeliveryCategories
+    categories: req.policy?.categories ?? defaults.policy.categories ?? defaultDeliveryCategories,
+    coalesceProgress: req.policy?.coalesceProgress ?? defaults.policy.coalesceProgress ?? false
   };
   for (let attempt = 1; attempt <= maxDeliveryAttempts; attempt++) {
     const outcome: TaskResult<ITaskSubscription | undefined> = await _subscribeOnce(

@@ -24,6 +24,9 @@ import {
   ITaskEnvelope,
   ITaskEnvironment,
   ITaskReceiptAbandonment,
+  ITaskDispositionResult,
+  ITaskObligationDisposal,
+  ITaskSubscriptionClosure,
   ITaskReceiptAcknowledgement,
   ITaskReceiptIssue,
   ITaskSubscription,
@@ -271,6 +274,30 @@ export interface ITaskRepositoryWriter {
   acknowledgeReceipt(request: ITaskReceiptAcknowledgement): Promise<TaskResult<ITaskAcknowledgementCommit>>;
   /** Removes one issued manifest. What it named stays owed; history it produced stays. */
   abandonReceipt(request: ITaskReceiptAbandonment): Promise<TaskResult<ITaskConsumerRecord>>;
+  /**
+   * Ends obligations of one subscription without acknowledging them: each id joins its `disposed`
+   * history with the reason, discharging it for that subscription alone. (T8.)
+   *
+   * @remarks
+   * Every id must be owed to the subscription now, or already in its history (reported in
+   * `alreadyDischarged`). An id an unacknowledged issued manifest names is refused (`conflict`) —
+   * acknowledge or abandon that receipt first. Converts the reservation each obligation already holds;
+   * it needs no new capacity.
+   */
+  disposeObligations(request: ITaskObligationDisposal): Promise<TaskResult<ITaskDispositionResult>>;
+  /**
+   * Closes a subscription: it joins no audience again and releases its delivery units; `retain`
+   * keeps its owed obligations owed and drainable, `dispose` abandons its unacknowledged manifests and
+   * disposes everything it is owed, in one write. Its record, identity slot and history are retained.
+   * (T8.)
+   */
+  closeSubscription(request: ITaskSubscriptionClosure): Promise<TaskResult<ITaskConsumerRecord>>;
+  /**
+   * Prunes every update of one task whose audience has discharged it, by each audience member's
+   * durable checkpoint, in one maintenance replacement; returns the record unchanged when nothing
+   * qualifies. A checkpoint that cannot be read or verified fences and refuses. (T8.)
+   */
+  pruneTask(taskId: TaskId): Promise<TaskResult<ITaskCommitRecord>>;
 }
 
 /**
@@ -372,6 +399,11 @@ export interface ITaskRepository {
    * the records at open, so a crash between marker and result leaves a discoverable command.
    */
   unsettledCommands(request: IListCompletionCandidateQuery): Promise<TaskResult<ReadonlyArray<TaskId>>>;
+  /**
+   * Tasks retaining an update every audience member has discharged, by the committed checkpoints —
+   * the cleanup candidates — ordered by id. A hint: pruning re-verifies the durable evidence. (T8.)
+   */
+  prunableTasks(request: IListCompletionCandidateQuery): Promise<TaskResult<ReadonlyArray<TaskId>>>;
   /** A source's committed checkpoint record, if it has one. Reads no task record. */
   readSource(sourceId: string): Promise<TaskResult<ITaskSourceRecord | undefined>>;
   /**

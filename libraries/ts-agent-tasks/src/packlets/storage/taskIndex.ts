@@ -199,6 +199,14 @@ export class TaskIndex {
   public readonly listCandidates: SortedKeySet = new SortedKeySet();
   /** Tasks holding an unsettled external command, for the uncertain-command pump. */
   public readonly unsettledCommands: SortedKeySet = new SortedKeySet();
+  /**
+   * Tasks retaining at least one update every audience member of which has discharged it, by the
+   * committed checkpoints this index was built from: the cleanup pump's candidates (T8). A hint —
+   * pruning re-reads the durable evidence before it drops anything.
+   */
+  public readonly prunable: SortedKeySet = new SortedKeySet();
+  /** Per task, how many subscriptions still owe a baseline obligation for it (T8). */
+  private readonly _baselineTasks: Map<TaskId, number> = new Map();
   /** Per parent, how many of its children are resolved (archived or not) and succeeded. */
   private readonly _succeededChildren: Map<TaskId, number> = new Map();
   private readonly _owedKeysByTask: Map<TaskId, ReadonlyArray<string>> = new Map();
@@ -313,6 +321,39 @@ export class TaskIndex {
     } else {
       this._owedKeysByTask.delete(id);
     }
+    this._recheckPrunable(id);
+  }
+
+  /** Re-derives whether a task retains an update every audience member has discharged. */
+  private _recheckPrunable(id: TaskId): void {
+    const discharged: boolean = (this._owedKeysByTask.get(id) ?? []).some(
+      (key) => (this._satisfied.get(key)?.size ?? 0) >= this.owedPayloads.get(key)!.audience.length
+    );
+    if (discharged) {
+      this.prunable.add(id);
+    } else {
+      this.prunable.delete(id);
+    }
+  }
+
+  /** How many subscriptions still owe a baseline obligation for a task. */
+  public baselinesOwedFor(id: TaskId): number {
+    return this._baselineTasks.get(id) ?? 0;
+  }
+
+  /** The exact update ids a subscription is owed, in owed-key order. */
+  public owedIds(subscription: SubscriptionId): ReadonlyArray<UpdateId> {
+    const keys: ReadonlyArray<string> = this.owedBySubscription.get(subscription)?.keys ?? [];
+    return keys.map((key) => this.owedPayload(subscription, key).id);
+  }
+
+  private _countBaseline(id: TaskId, delta: number): void {
+    const count: number = (this._baselineTasks.get(id) ?? 0) + delta;
+    if (count === 0) {
+      this._baselineTasks.delete(id);
+    } else {
+      this._baselineTasks.set(id, count);
+    }
   }
 
   /**
@@ -325,6 +366,7 @@ export class TaskIndex {
       const key: string = baselineKey(update);
       payloads.set(key, update);
       _setIn(this.owedBySubscription, subscription, key);
+      this._countBaseline(update.taskId, 1);
     }
     if (payloads.size > 0) {
       this._baselines.set(subscription, payloads);
@@ -351,6 +393,7 @@ export class TaskIndex {
           satisfied.add(subscription);
           _unsetIn(this.owedBySubscription, subscription, key);
           removed++;
+          this._recheckPrunable(this.owedPayloads.get(key)!.taskId);
         }
         continue;
       }
@@ -358,6 +401,7 @@ export class TaskIndex {
       // owed (acknowledgement re-proves each with `isOwed`; open passes only retained links).
       const bKey: string | undefined = _baselineKeyOf(baseline!, updateId);
       if (bKey !== undefined) {
+        this._countBaseline(baseline!.get(bKey)!.taskId, -1);
         baseline!.delete(bKey);
         _unsetIn(this.owedBySubscription, subscription, bKey);
         removed++;
@@ -412,6 +456,7 @@ export class TaskIndex {
     }
     this.listCandidates.delete(id);
     this.unsettledCommands.delete(id);
+    this.prunable.delete(id);
     if (m.sourceKey !== undefined) {
       this.sources.delete(m.sourceKey);
     }

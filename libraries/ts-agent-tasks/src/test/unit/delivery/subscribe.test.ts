@@ -433,7 +433,8 @@ describe('the persisted delivery policy is authoritative', () => {
       schemaVersion: 1,
       durability: 'session',
       history: 'observed-state',
-      categories: ['attention', 'lifecycle', 'result']
+      categories: ['attention', 'lifecycle', 'result'],
+      coalesceProgress: false
     });
     const later = await reopen(h, { policy: { categories: everyCategory } });
     expect(later.repository.subscription('sub' as SubscriptionId)).toSucceedWith(created);

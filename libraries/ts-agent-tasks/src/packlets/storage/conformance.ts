@@ -4,7 +4,7 @@
  */
 
 import { JsonValue } from '@fgv/ts-json-base';
-import { Result, captureAsyncResult, fail, succeed } from '@fgv/ts-utils';
+import { Result, captureAsyncResult, fail, failWithDetail, succeed } from '@fgv/ts-utils';
 import {
   ConsumerId,
   DeliveryId,
@@ -135,7 +135,8 @@ async function _subscribe(
             schemaVersion: 1,
             durability: repository.mode === 'session' ? 'session' : 'process-crash',
             history: 'observed-state',
-            categories: [...allUpdateCategories].sort()
+            categories: [...allUpdateCategories].sort(),
+            coalesceProgress: false
           }
         },
         baseline: [],
@@ -183,9 +184,21 @@ async function _change(
   lifecycle: TaskLifecycle | undefined,
   archive: boolean = false
 ): Promise<Result<true>> {
+  return (await _commitChange(repository, id, lifecycle, archive)).asResult.onSuccess(() => succeed(true));
+}
+
+async function _commitChange(
+  repository: ITaskRepository,
+  id: string,
+  lifecycle: TaskLifecycle | undefined,
+  archive: boolean
+): Promise<TaskResult<unknown>> {
   const read: TaskResult<ITaskCommitRecord | undefined> = await repository.readCommit(id as TaskId);
   if (read.isFailure() || read.value === undefined || read.value.recordType !== 'resolved') {
-    return fail(`${id}: no resolved record to change`);
+    return failWithDetail(`${id}: no resolved record to change`, {
+      code: 'not-found-or-denied',
+      retry: 'after-host-action'
+    });
   }
   const current = read.value;
   const revision: number = current.task.envelope.revision + 1;
@@ -212,18 +225,16 @@ async function _change(
     updates: [...current.updates, _update(repository, current.task.envelope, envelope, 'lifecycle')],
     archived: archive
   };
-  return (
-    await repository.withWriter((writer) =>
-      writer.commit({
-        purpose: 'operation',
-        operationId,
-        taskId: id as TaskId,
-        expectedRevision: current.task.envelope.revision,
-        expectedRecordRevision: current.recordRevision,
-        record
-      })
-    )
-  ).asResult.onSuccess(() => succeed(true));
+  return repository.withWriter((writer) =>
+    writer.commit({
+      purpose: 'operation',
+      operationId,
+      taskId: id as TaskId,
+      expectedRevision: current.task.envelope.revision,
+      expectedRecordRevision: current.recordRevision,
+      record
+    })
+  );
 }
 
 async function _ids(repository: ITaskRepository, query: ITaskQuery): Promise<Result<string[]>> {
@@ -398,20 +409,22 @@ const checks: ReadonlyArray<{
       ])
   },
   {
-    name: 'owed updates stay listed after their task leaves open work and is archived',
+    name: 'owed updates stay listed after their task leaves open work, and hold its archive',
     run: async (r) =>
       _seq([
         () => _subscribe(r, 'sub', [B]),
         () => _add(r, 'o1', { scopes: [B] }),
         () => _add(r, 'other', { scopes: [A] }),
         () => _change(r, 'o1', succeeded),
-        () => _change(r, 'o1', undefined, true),
+        // A tombstone owes nothing: archive waits for acknowledgement or disposition (T8).
+        async () =>
+          _code('archive while owed', await _commitChange(r, 'o1', undefined, true), 'retention-blocked'),
         async () =>
           (await r.listOwed({ subscription: 'sub' as SubscriptionId })).asResult.onSuccess((page) =>
             _same(
               'owed',
               page.updates.map((u) => u.id),
-              [1, 2, 3].map((n) => taskUpdateId('o1' as TaskId, n as TaskRevision, 'lifecycle'))
+              [1, 2].map((n) => taskUpdateId('o1' as TaskId, n as TaskRevision, 'lifecycle'))
             )
           )
       ])

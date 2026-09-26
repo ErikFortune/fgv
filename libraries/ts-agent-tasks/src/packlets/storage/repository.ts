@@ -46,6 +46,10 @@ import {
   ITaskReceiptAbandonment,
   ITaskReceiptAcknowledgement,
   ITaskReceiptIssue,
+  ITaskDispositionResult,
+  ITaskObligationDisposal,
+  ITaskSubscriptionClosure,
+  ITaskConsumerRecord,
   ITaskSubscription,
   ITaskSubscriptionRegistration,
   OperationId,
@@ -76,6 +80,7 @@ import {
   pendingIdentity,
   registrationIdentity,
   checkUpdates,
+  hasPendingCommand,
   idOf,
   revisionOf,
   sameOperation,
@@ -145,7 +150,7 @@ import {
 import { RecordStore } from './recordStore';
 import { SourceRecords } from './sourceRecords';
 import { CheckpointPort } from './checkpoints';
-import { ISubscriptionHost, SubscriptionRecords } from './consumerRecords';
+import { ISubscriptionEvidence, ISubscriptionHost, SubscriptionRecords } from './consumerRecords';
 import { DeliveryBook, ITaskDeliveryPlan, newLinks } from './deliveryBook';
 import { subscriptionKey } from './subscriptions';
 import { registerInspector } from './internals';
@@ -496,6 +501,20 @@ export class FileTreeTaskRepository implements ITaskRepository {
     );
   }
 
+  /** {@inheritDoc ITaskRepository.prunableTasks} */
+  public async prunableTasks(
+    request: IListCompletionCandidateQuery
+  ): Promise<TaskResult<ReadonlyArray<TaskId>>> {
+    return this._queryable().onSuccess((index) =>
+      this._convertQuery(this._converters.broker.listCompletion, request).onSuccess((query) => {
+        const keys: ReadonlyArray<string> = index.prunable.keys;
+        const start: number = index.prunable.startAfter(query.after);
+        // Every key in the set is a task id the index added under that brand.
+        return ok(keys.slice(start, start + query.limit).map((key) => key as TaskId));
+      })
+    );
+  }
+
   /** {@inheritDoc ITaskRepository.readSource} */
   public async readSource(sourceId: string): Promise<TaskResult<ITaskSourceRecord | undefined>> {
     return this._usable().onSuccess(() =>
@@ -521,7 +540,7 @@ export class FileTreeTaskRepository implements ITaskRepository {
         this._converters.ids.subscriptionId.convert(subscriptionId),
         'invalid',
         'after-host-action'
-      ).onSuccess((id) => ok(this._book.subscriptions.get(id)?.descriptor))
+      ).onSuccess((id) => ok(this._book.stateOf(id)?.descriptor))
     );
   }
 
@@ -810,7 +829,12 @@ export class FileTreeTaskRepository implements ITaskRepository {
       acknowledgeReceipt: async (request: ITaskReceiptAcknowledgement) =>
         guard().onSuccess(() => this._records.acknowledge(request)),
       abandonReceipt: async (request: ITaskReceiptAbandonment) =>
-        guard().onSuccess(() => this._records.abandon(request))
+        guard().onSuccess(() => this._records.abandon(request)),
+      disposeObligations: async (request: ITaskObligationDisposal) =>
+        guard().onSuccess(() => this._records.dispose(request)),
+      closeSubscription: async (request: ITaskSubscriptionClosure) =>
+        guard().onSuccess(() => this._records.close(request)),
+      pruneTask: async (taskId: TaskId) => guard().onSuccess(() => this._prune(taskId))
     };
   }
 
@@ -1367,7 +1391,181 @@ export class FileTreeTaskRepository implements ITaskRepository {
       return this._checkReplacement(current, draft, request)
         .onSuccess(() => this._validateDraft(draft))
         .onSuccess((validated) => this._checkParent(taskId, validated).onSuccess(() => ok(validated)))
+        .onSuccess((validated) =>
+          this._checkRetention(taskId, current, validated, operationId).onSuccess(() => ok(validated))
+        )
         .onSuccess((validated) => this._replace(taskId, read!, validated, operationId, requiredUpdates));
+    });
+  }
+
+  /**
+   * The retention rule (design § 9, *Retention*; T8), checked against durable evidence before any
+   * update leaves a record.
+   *
+   * @remarks
+   * An update with an audience may be dropped only when every audience member's checkpoint — read
+   * through the store and verified against what was committed, never the resident index — holds its
+   * id in the exact history (acknowledged or disposed); or when it is a routine update superseded, in
+   * this very commit, by a newer update of its category whose `coalesced` marker records the gap,
+   * and every member still owed it is active, takes coalescing, is in the newer update's audience,
+   * and has no unacknowledged receipt naming it. A checkpoint that cannot be read or verified fences
+   * and refuses: corruption blocks cleanup, it is never skipped.
+   *
+   * A tombstone owes nothing and awaits nothing: archiving is refused while the record would still
+   * retain an update with an audience, while any command is unsettled or awaiting its feed, or while
+   * any subscription is still owed a baseline obligation for the task.
+   */
+  private _checkRetention(
+    taskId: TaskId,
+    current: ITaskCommitRecord,
+    draft: ITaskRecordDraft,
+    operationId: OperationId | undefined
+  ): TaskResult<true> {
+    const detail = operationId !== undefined ? { operationId } : undefined;
+    const blocked = (message: string): TaskResult<true> =>
+      taskFailure(`commit ${taskId}: ${message}`, 'retention-blocked', 'after-host-action', detail);
+    const before: ReadonlyArray<ITaskUpdate> = updatesOf(current);
+    const next: ReadonlyArray<ITaskUpdate> = updatesOf(draft);
+    const kept: ReadonlySet<string> = new Set(next.map((u) => u.id));
+    const retained: ReadonlySet<string> = new Set(before.map((u) => u.id));
+    const added: ReadonlyArray<ITaskUpdate> = next.filter((u) => !retained.has(u.id));
+    const dropped: ReadonlyArray<ITaskUpdate> = before.filter((u) => !kept.has(u.id));
+
+    // A coalescing marker describes exactly the updates of its category this commit drops.
+    for (const update of added) {
+      if (update.coalesced === undefined) {
+        continue;
+      }
+      const superseded: ReadonlyArray<ITaskUpdate> = dropped.filter((u) => u.category === update.category);
+      const from: number = Math.min(...superseded.map((u) => u.coalesced?.fromRevision ?? u.revision));
+      if (superseded.length === 0 || from !== update.coalesced.fromRevision) {
+        return taskFailure(
+          `commit ${taskId}: update ${update.id} marks a gap from revision ${update.coalesced.fromRevision}, ` +
+            `but this commit supersedes ${
+              superseded.length === 0 ? 'no update of its category' : `from revision ${from}`
+            }`,
+          'invalid',
+          'after-host-action',
+          detail
+        );
+      }
+    }
+
+    const evidence: Map<SubscriptionId, ISubscriptionEvidence> = new Map();
+    for (const update of dropped) {
+      for (const member of update.audience) {
+        let held: ISubscriptionEvidence | undefined = evidence.get(member);
+        if (held === undefined) {
+          const read: TaskResult<ISubscriptionEvidence> = this._records.evidence(member);
+          if (read.isFailure()) {
+            return propagate(read);
+          }
+          held = read.value;
+          evidence.set(member, held);
+        }
+        if (held.discharged.has(update.id)) {
+          continue;
+        }
+        const newer: ITaskUpdate | undefined = added.find(
+          (u) => u.category === update.category && u.coalesced !== undefined
+        );
+        const coalescing: boolean =
+          !update.required &&
+          newer !== undefined &&
+          newer.audience.includes(member) &&
+          this._book.subscriptions.get(member)?.descriptor.policy.coalesceProgress === true;
+        if (!coalescing) {
+          return blocked(
+            `update ${update.id} is still owed to subscription ${member}; it leaves only once acknowledged or disposed`
+          );
+        }
+        if (held.pinned.has(update.id)) {
+          return blocked(
+            `update ${update.id} is named by an issued receipt subscription ${member} has not acknowledged; it ` +
+              `cannot be superseded`
+          );
+        }
+      }
+    }
+
+    const archiving: boolean =
+      draft.recordType === 'resolved' &&
+      draft.archived &&
+      !(current.recordType === 'resolved' && current.archived);
+    if (archiving) {
+      if (next.some((u) => u.audience.length > 0)) {
+        return blocked(`updates are still owed; they must be acknowledged or disposed of first`);
+      }
+      if (hasPendingCommand(draft)) {
+        return blocked(`an external command is unsettled or awaiting its feed; resolve or abandon it first`);
+      }
+      const baselines: number = this._index!.baselinesOwedFor(taskId);
+      if (baselines > 0) {
+        return blocked(
+          `${baselines} subscription(s) are still owed a baseline obligation for it; they must be acknowledged or ` +
+            `disposed of first`
+        );
+      }
+    }
+    return ok(true);
+  }
+
+  /**
+   * Prunes every update of a task that every audience member has discharged, by durable evidence, in
+   * one maintenance replacement. A record with nothing to prune is returned unchanged, unwritten.
+   */
+  private _prune(taskId: TaskId): TaskResult<ITaskCommitRecord> {
+    const id = this._converters.ids.taskId.convert(taskId);
+    if (id.isFailure()) {
+      return taskFailure(`pruneTask: ${id.message}`, 'invalid', 'after-host-action');
+    }
+    const projection: ITaskProjection | undefined = this._tasks.get(id.value);
+    if (projection === undefined) {
+      return taskFailure(`pruneTask ${id.value}: no live task`, 'not-found-or-denied', 'after-host-action');
+    }
+    return this._readCommitted(id.value, true).onSuccess((read) => {
+      const record: ITaskCommitRecord = read!.record;
+      if (record.recordType !== 'resolved' || record.archived || !projection.known) {
+        return ok(record);
+      }
+      const evidence: Map<SubscriptionId, ISubscriptionEvidence> = new Map();
+      const prunable: Set<string> = new Set();
+      for (const update of record.updates) {
+        if (update.audience.length === 0) {
+          continue;
+        }
+        let discharged: boolean = true;
+        for (const member of update.audience) {
+          if (!evidence.has(member)) {
+            const held: TaskResult<ISubscriptionEvidence> = this._records.evidence(member);
+            if (held.isFailure()) {
+              return propagate<ITaskCommitRecord>(held);
+            }
+            evidence.set(member, held.value);
+          }
+          discharged = discharged && evidence.get(member)!.discharged.has(update.id);
+        }
+        if (discharged) {
+          prunable.add(update.id);
+        }
+      }
+      if (prunable.size === 0) {
+        return ok(record);
+      }
+      return this._commit({
+        purpose: 'maintenance',
+        taskId: id.value,
+        expectedRevision: record.task.envelope.revision,
+        expectedRecordRevision: record.recordRevision,
+        record: {
+          recordType: 'resolved',
+          task: record.task,
+          ...(record.sourceRevision !== undefined ? { sourceRevision: record.sourceRevision } : {}),
+          operations: record.operations,
+          updates: record.updates.filter((u) => !prunable.has(u.id)),
+          archived: false
+        }
+      });
     });
   }
 

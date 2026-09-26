@@ -39,7 +39,8 @@ export type CommandRejectionReason =
  * The state of a dispatched command.
  *
  * @remarks
- * The four states are deliberately not collapsible. `accepted` means intent is durably
+ * The four outcome states are deliberately not collapsible, and `abandoned` (T8) is none of them:
+ * a host's explicit end of tracking for a command whose outcome is not known. `accepted` means intent is durably
  * recorded — it does *not* mean applied. `applied` requires an authoritative native
  * commit or a source-confirmed effect reconciled into a committed projection. An
  * ambiguous external send is `indeterminate` and keeps its operation ID, rather than
@@ -50,7 +51,37 @@ export type CommandState =
   | { readonly state: 'rejected'; readonly reason: CommandRejectionReason }
   | { readonly state: 'accepted'; readonly sourceReceipt?: string }
   | { readonly state: 'applied'; readonly appliedRevision: TaskRevision }
-  | { readonly state: 'indeterminate'; readonly reason: string };
+  | { readonly state: 'indeterminate'; readonly reason: string }
+  | {
+      readonly state: 'abandoned';
+      readonly reason: string;
+      readonly from: CommandAbandonmentOrigin;
+    };
+
+/**
+ * What was known about a command when a host abandoned it (T8).
+ *
+ * @remarks
+ * - `not-sent` — the intent was recorded and never dispatched.
+ * - `possibly-sent` — the marker was written; whether the source applied it is unknown.
+ * - `awaiting-feed` — the source answered, and the `source-replay` feed never reached the revision
+ *   that would confirm it.
+ *
+ * `abandoned` is not an outcome. It ends the broker's tracking of the command, and releases its
+ * settlement reservation, without claiming that anything was or was not applied.
+ * @public
+ */
+export type CommandAbandonmentOrigin = 'not-sent' | 'possibly-sent' | 'awaiting-feed';
+
+/**
+ * Every {@link CommandAbandonmentOrigin}.
+ * @public
+ */
+export const allCommandAbandonmentOrigins: ReadonlyArray<CommandAbandonmentOrigin> = [
+  'not-sent',
+  'possibly-sent',
+  'awaiting-feed'
+];
 
 /**
  * The receipt returned for a command request, and retained as its dedup evidence.

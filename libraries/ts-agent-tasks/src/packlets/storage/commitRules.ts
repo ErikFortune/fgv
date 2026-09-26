@@ -398,9 +398,7 @@ export function checkUpdates(
   for (const update of current) {
     const kept: ITaskUpdate | undefined = byId.get(update.id);
     if (kept === undefined) {
-      if (update.required && !maintenance) {
-        return fail(`required update '${update.id}' can only be pruned by maintenance`);
-      }
+      // Whether it may leave is the retention rule's to decide, from durable evidence (T8).
       continue;
     }
     if (!canonicallyEqual(update, kept)) {

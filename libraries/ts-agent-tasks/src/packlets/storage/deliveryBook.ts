@@ -65,7 +65,13 @@ export interface ITaskDeliveryPlan {
  * @internal
  */
 export class DeliveryBook {
+  /** Active subscriptions: every one joins the audiences its selection and categories match. */
   public readonly subscriptions: Map<SubscriptionId, ISubscriptionState>;
+  /**
+   * Closed subscriptions (T8): retained records that join no audience and hold no delivery units, but
+   * still hold the obligations they kept, their history and — while they may drain — a preparation.
+   */
+  public readonly closed: Map<SubscriptionId, ISubscriptionState> = new Map();
   public readonly pending: Map<SubscriptionId, IPendingConsumerEntry>;
   private readonly _potential: Map<TaskId, ReadonlyArray<SubscriptionId>> = new Map();
   private readonly _units: Map<SubscriptionId, number> = new Map();
@@ -91,6 +97,10 @@ export class DeliveryBook {
     const book: DeliveryBook = new DeliveryBook(new Map(), pending);
     for (const id of Array.from(subscriptions.keys()).sort()) {
       const state: ISubscriptionState = subscriptions.get(id)!;
+      if (state.descriptor.state === 'closed') {
+        book.closed.set(id, state);
+        continue;
+      }
       const matched: ReadonlyArray<TaskId> = book._matching(state.selection, index);
       book.activate(state, matched, book._sumUnits(matched, tasks));
     }
@@ -120,9 +130,41 @@ export class DeliveryBook {
     return potential.sort();
   }
 
-  /** An active subscription's delivery units (set when it is activated). */
+  /** A subscription's delivery units: set when it is activated; a closed one holds none. */
   public unitsOf(subscription: SubscriptionId): number {
-    return this._units.get(subscription)!;
+    return this._units.get(subscription) ?? 0;
+  }
+
+  /** A retained subscription's resident state, active or closed. */
+  public stateOf(subscription: SubscriptionId): ISubscriptionState | undefined {
+    return this.subscriptions.get(subscription) ?? this.closed.get(subscription);
+  }
+
+  /** Replaces a retained subscription's resident state, in whichever set holds it. */
+  public setState(state: ISubscriptionState): void {
+    const id: SubscriptionId = state.descriptor.id;
+    (this.closed.has(id) ? this.closed : this.subscriptions).set(id, state);
+  }
+
+  /**
+   * Closes an active subscription whose closed record has committed: it leaves every task's potential
+   * audience and releases its delivery units.
+   */
+  public close(state: ISubscriptionState): void {
+    const id: SubscriptionId = state.descriptor.id;
+    this.subscriptions.delete(id);
+    this._units.delete(id);
+    for (const [taskId, potential] of this._potential) {
+      if (potential.includes(id)) {
+        const rest: ReadonlyArray<SubscriptionId> = potential.filter((s) => s !== id);
+        if (rest.length > 0) {
+          this._potential.set(taskId, rest);
+        } else {
+          this._potential.delete(taskId);
+        }
+      }
+    }
+    this.closed.set(id, state);
   }
 
   /** The potential audience the book holds for a task. */
@@ -133,17 +175,17 @@ export class DeliveryBook {
   /** A subscription's ledger entry as it stands. */
   public entry(subscription: SubscriptionId, index: TaskIndex, profile: ITaskCapacityProfile): ILedgerEntry {
     return subscriptionEntry(
-      this.subscriptions.get(subscription)!,
+      this.stateOf(subscription)!,
       index.owedCount(subscription),
       this.unitsOf(subscription),
       profile
     );
   }
 
-  /** Every active subscription's ledger entry as it stands. */
+  /** Every retained subscription's ledger entry as it stands. */
   public entries(index: TaskIndex, profile: ITaskCapacityProfile): Map<string, ILedgerEntry> {
     const entries: Map<string, ILedgerEntry> = new Map();
-    for (const id of this.subscriptions.keys()) {
+    for (const id of [...this.subscriptions.keys(), ...this.closed.keys()]) {
       entries.set(subscriptionKey(id), this.entry(id, index, profile));
     }
     return entries;
@@ -278,7 +320,8 @@ export class DeliveryBook {
     const units: Map<SubscriptionId, number> = new Map();
     const entries: Map<string, ILedgerEntry> = new Map();
     for (const id of Array.from(affected).sort()) {
-      const state: ISubscriptionState = this.subscriptions.get(id)!;
+      // An audience member of a dropped update may have been closed since; it is still retained.
+      const state: ISubscriptionState = this.stateOf(id)!;
       const total: number =
         this.unitsOf(id) -
         (potentialBefore.includes(id) ? unitsBefore : 0) +
@@ -300,7 +343,9 @@ export class DeliveryBook {
       this._potential.delete(plan.taskId);
     }
     for (const [id, total] of plan.units) {
-      this._units.set(id, total);
+      if (this.subscriptions.has(id)) {
+        this._units.set(id, total);
+      }
     }
   }
 

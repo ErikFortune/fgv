@@ -53,7 +53,7 @@ export interface ISubscriptionState {
   readonly fingerprint: string;
   /** Encoded bytes of that record. */
   readonly bytes: number;
-  /** Exact acknowledgement ids in the record's history. */
+  /** Exact ids in the record's history: acknowledged and disposed. */
   readonly history: number;
   readonly baselineCount: number;
   /** Encoded bytes of every baseline payload not yet acknowledged — the ones the index holds. */
@@ -101,7 +101,7 @@ export function subscriptionState(
     selection: normalizeSelection(record.selection),
     fingerprint,
     bytes,
-    history: record.acknowledged.length,
+    history: record.acknowledged.length + record.disposed.length,
     baselineCount: record.baseline.length,
     // Only an unacknowledged baseline payload is resident: an acknowledged one is released by the
     // index, and stays only in the record, as exact history.
@@ -111,12 +111,12 @@ export function subscriptionState(
   };
 }
 
-/** Encoded bytes of the baseline payloads a record has not acknowledged. */
+/**
+ * Encoded bytes of the baseline payloads a record holds. A baseline payload leaves the record in the
+ * write that acknowledges or disposes it (T8), so every one still held is owed.
+ */
 function _unacknowledgedBytes(record: ITaskConsumerRecord): number {
-  const acknowledged: ReadonlySet<string> = new Set(record.acknowledged);
-  return record.baseline
-    .filter((update) => !acknowledged.has(update.id))
-    .reduce((total, update) => total + valueBytes(update), 0);
+  return record.baseline.reduce((total, update) => total + valueBytes(update), 0);
 }
 
 /** The resident descriptor of one manifest. */
@@ -203,14 +203,34 @@ export function catalogOf(record: ITaskCommitRecord): ICatalogFields | undefined
  * The encoded bytes of the receipt-preparation reservation: room for one maximum manifest, less
  * what the manifests already in the record occupy. Issuing converts it; evicting restores it; so
  * `used + reserved` for a subscription never grows from its first outstanding manifest.
+ *
+ * A subscription that can never prepare again — closed, owed nothing, holding no unacknowledged
+ * manifest — holds none: that is the transient capacity closing it releases (T8).
  * @internal
  */
 export function preparationBytes(
   profile: ITaskCapacityProfile,
-  issued: ReadonlyArray<{ bytes: number }>
+  issued: ReadonlyArray<{ bytes: number }>,
+  drainable: boolean = true
 ): number {
+  if (!drainable) {
+    return 0;
+  }
   const held: number = issued.reduce((total, manifest) => total + manifest.bytes, 0);
   return Math.max(0, profile.encoded.maxIssuedReceiptBytes - held);
+}
+
+/**
+ * Whether a subscription may still prepare a context: it is active, or — closed — it still owes
+ * something or holds a manifest that is not acknowledged.
+ * @internal
+ */
+export function isDrainable(
+  state: ITaskConsumerRecord['state'],
+  owed: number,
+  issued: ReadonlyArray<{ acknowledged: boolean }>
+): boolean {
+  return state === 'active' || owed > 0 || issued.some((m) => !m.acknowledged);
 }
 
 /**
@@ -221,9 +241,10 @@ export function preparationClaim(
   claimId: CapacityClaimId,
   subscriptionId: SubscriptionId,
   profile: ITaskCapacityProfile,
-  issued: ReadonlyArray<{ bytes: number }>
+  issued: ReadonlyArray<{ bytes: number }>,
+  drainable: boolean = true
 ): ITaskCapacityClaim {
-  const bytes: number = preparationBytes(profile, issued);
+  const bytes: number = preparationBytes(profile, issued, drainable);
   return {
     claimVersion: 1,
     claimId,

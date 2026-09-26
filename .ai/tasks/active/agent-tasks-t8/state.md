@@ -7,8 +7,9 @@ be enough to resume cold. Keep it current as you go — it is not a write-once d
 
 ## Status
 
-**Not started.** Branch created and brief placed by the orchestrator 2026-09-26; no implementation
-work has begun.
+**In progress (2026-09-26).** Required reading done — every file exists and every plan section says
+what the brief claims (no missing-input gap). Base builds; `rushx test` green (100 %, ~100 s).
+Design below; falsifier tests are written before the disposition path.
 
 ## Branch
 
@@ -62,9 +63,62 @@ does not transfer to your own work** — T8 unblocking `archive` *is* a widened 
 no signature, so the repo-wide `test` gate in your acceptance criteria is load-bearing and not
 satisfied by this note.
 
+## Design (decided 2026-09-26, against base `064bdff24`)
+
+**Found on the base, and the reason the falsifier matters.** `commitRules.checkUpdates` lets *any*
+`maintenance` commit drop a **required** update with no evidence check, and lets any commit drop a
+non-required one (T7 leaned on this: "a dropped update releases its owed link"). No production path
+does either today (the broker carries every update forward), but it is exactly the "drop it and free
+the slot" implementation waiting to be called. T8 replaces the rule:
+
+- an update with an audience may leave a record only when **every** audience member's durable
+  consumer record — read through the checkpoint store and fingerprint-verified, never the resident
+  index alone — holds its id in `acknowledged` or `disposed`, and no unacknowledged issued manifest
+  in any audience record names it (a pin); or
+- it is a non-required (`progress`/`observation`) update **superseded** in the same commit by a newer
+  update of the same category, every still-owed audience member has `coalesceProgress: true`, and
+  none pins it (coalescing).
+- Nothing else. A consumer record that cannot be read or verified fences and refuses — never skipped.
+
+**Consumer record.** Gains `state: 'active' | 'closed'` and `disposed: [{updateId, reason}]`
+(reason ≤ `maxDispositionReasonBytes`, encoded). `acknowledged ∩ disposed = ∅`; history counts both.
+`maxAcknowledgementEvidenceBytes` must now cover one disposition entry (validated). Acknowledged or
+disposed **baseline** payloads are dropped from the record in the same write (their id stays).
+
+**Disposition** (obligation ends without acknowledgement): storage `disposeObligations`; broker
+`TaskBroker.dispose(binding, request)` — a trusted host operation, policy-checked
+`dispose-obligation` per task, epoch- and record-revision-fenced in the committing writer section,
+like `acknowledge`. Each id must be owed; a pinned id is refused (`conflict`: abandon or acknowledge
+the receipt first). Converts the reservation (owed evidence → history); needs no new capacity.
+
+**Closure**: `TaskBroker.closeSubscription(binding, {subscriptionId, obligations: 'retain'|'dispose',
+reason})`. Closed = leaves every audience and potential audience (future-unit reservation released);
+`retain` keeps owed obligations owed and drainable through its bound delivery (pending/prepare/ack
+still work, prepare presents owed updates only); `dispose` abandons its outstanding manifests and
+disposes every owed id in the same write. The record, its identity slot and its history are retained
+(no recycling). The preparation claim is released once a closed subscription owes nothing.
+
+**Pruning**: storage `pruneTask(taskId)` (maintenance commit dropping every discharged, unpinned
+update); broker `TaskBroker.cleanup({limit})` pump over an index-maintained prunable set (candidate
+list only — storage re-verifies). **Archive** = one atomic replacement to a tombstone with
+`updates: []`; storage refuses an archive while any update is undischarged/pinned, any command is
+unsettled or awaiting, or any subscription is still owed a baseline for the task.
+
+**Held commands**: `TaskBroker.abandonCommand(binding, {taskId, operationId, reason})` — policy
+`dispose-obligation`; settles the command with a new receipt state
+`{state: 'abandoned', reason, from: 'not-sent'|'possibly-sent'|'awaiting-feed'}` — never
+`applied`/`rejected`; consumes the settlement claim. Storage admits `abandoned` only from those states.
+
+**Source-replay registered after the feed passed** — *enforce, by the cursor*: on a `source-replay`
+checkpoint an `unknown-binding` revision stops the pass with the cursor unmoved (design § 8.6: never
+advance a replay cursor over an uncommitted required event) and reports it; registering the binding
+lets the next pass apply it. `observed-state` keeps moving on.
+
+**Coalescing**: policy gains `coalesceProgress` (default `false`).
+
 ## Work log
 
-_(append as you go: what you did, what you learned, what you decided and why)_
+- 2026-09-26: read everything; design above.
 
 ## Open questions for the orchestrator
 

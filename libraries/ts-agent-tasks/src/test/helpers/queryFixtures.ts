@@ -82,7 +82,8 @@ export async function subscribeTo(
   repository: ITaskRepository,
   id: string,
   scopes: ReadonlyArray<ITaskScope>,
-  selection?: Partial<ITaskSelection>
+  selection?: Partial<ITaskSelection>,
+  coalesceProgress: boolean = false
 ): Promise<ITaskConsumerRecord> {
   return (
     await repository.withWriter((w) =>
@@ -98,7 +99,8 @@ export async function subscribeTo(
             schemaVersion: 1,
             durability: repository.mode === 'session' ? 'session' : 'process-crash',
             history: 'observed-state',
-            categories: [...allUpdateCategories].sort()
+            categories: [...allUpdateCategories].sort(),
+            coalesceProgress
           }
         },
         baseline: [],

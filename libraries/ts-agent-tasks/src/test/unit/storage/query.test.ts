@@ -642,7 +642,7 @@ describe('due candidates', () => {
 });
 
 describe('owed updates', () => {
-  test('are listed per subscription, independently of lifecycle, and survive terminal and archive', async () => {
+  test('are listed per subscription, independently of lifecycle, and survive terminal, holding its archive', async () => {
     const { repository } = await sessionRepository();
     const s1 = 's1' as SubscriptionId;
     const s2 = 's2' as SubscriptionId;
@@ -665,15 +665,19 @@ describe('owed updates', () => {
       expect(owed.updates).toEqual([])
     );
 
-    // Terminal, then archived: gone from every lifecycle query, still owed.
-    await change(repository, 'a', {}, { archive: true });
-    expect((await page(repository, { selection: select() })).items.map((i) => i.envelope.id)).toEqual(['c']);
+    // Terminal: out of every open query, still owed — and the obligations hold its archive (T8).
+    expect(
+      (await page(repository, { selection: select({ lifecycleClass: 'open' }) })).items.map(
+        (i) => i.envelope.id
+      )
+    ).toEqual(['c']);
+    await expect(change(repository, 'a', {}, { archive: true })).rejects.toThrow(/still owed/i);
     const after = (await repository.listOwed({ subscription: s1, limit: 2 })).orThrow();
     expect(after.updates.map((u) => u.id)).toEqual(['a:1:0', 'a:2:0']);
     const rest = (
       await repository.listOwed({ subscription: s1, limit: 2, cursor: after.nextCursor })
     ).orThrow();
-    expect(rest.updates.map((u) => u.id)).toEqual(['a:3:6', 'b:1:0']);
+    expect(rest.updates.map((u) => u.id)).toEqual(['b:1:0']);
     expect(rest.nextCursor).toBeUndefined();
   });
 
