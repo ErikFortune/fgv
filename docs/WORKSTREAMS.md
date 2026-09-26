@@ -128,11 +128,36 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
-### `agent-tasks-t8` 🔵 (slice T8 of the agent-tasks plan)
+### `agent-tasks-t8` 🔵 (slice T8 of the agent-tasks plan) — split into two PRs; PR 1 landed via [#698](https://github.com/ErikFortune/fgv/pull/698)
 
-**Status:** 🔵 in flight. Branched off `integration/agent-tasks-v1` at the T7 landing. PR targets
-`integration/agent-tasks-v1`, **not `release`** — the cluster promotes as one. Artifacts stay in
-`.ai/tasks/active/agent-tasks-t8/`; this family finalizes at cluster close, not per slice.
+**Status:** 🔵 in flight — **PR 1 of 2 shipped 2026-09-26 via
+[#698](https://github.com/ErikFortune/fgv/pull/698)** into `integration/agent-tasks-v1` (not
+`release`; the cluster promotes as one). Artifacts stay in `.ai/tasks/active/agent-tasks-t8/`; this
+family finalizes at cluster close, not per slice.
+
+**The split, raised by the implementer and accepted by the orchestrator.** The brief asked for a
+split to be raised if the mechanism was separable from the saturation work. It is:
+
+- **PR 1 ([#698](https://github.com/ErikFortune/fgv/pull/698)), shipped** — disposition
+  (`dispose-obligation`), subscription closure (retain / dispose), `coalesceProgress` coalescing with
+  receipt pins, tombstone archive with pruning, the retention rule in storage, command abandonment
+  (`abandoned {reason, from}`), the source-replay `unregistered-binding` cursor stop,
+  `ITaskRepository.outstanding()`, real-`SIGKILL` crash cases, the host runbook in `CAPABILITIES.md`,
+  and all three review layers. 1,707 tests, 100%, zero `c8 ignore`.
+- **PR 2 (`agent-tasks-t8b`), not started** — the A3 saturation journey for every § 8.6 dimension
+  with exact used/reserved transfers at every crash point, lifetime acknowledgement exhaustion across
+  closed subscriptions, the profile decision, and the M1 cohorts. **T8's acceptance criteria are not
+  met until PR 2 lands**, and the cluster does not close before it.
+
+**The profile arithmetic is delivered (PR 1), the profile change is not.** PR 1 establishes that a
+single update cannot exceed **37,417 B** — the envelope bound plus fixed framing — so
+`maxUpdateBytes` (64 KiB) is unreachable and the closeout reserves 7 × 64 KiB for payloads that can
+never be that large. It also establishes that **candidate (a), "charge actual", is structurally
+unavailable**: a closeout reservation guarantees a terminal step not yet taken, so it must reserve
+the most it could need. The recommendation is **(d) reserve the derived schema maximum** (→ 256
+tasks, 224 with one in-flight command) **plus (c) advertise the number the profile then serves**
+(≈ 200), unless M1 shows the process can afford (b)'s 437.5 MiB. `defaultTaskCapacityProfile` is
+**unchanged**; the change belongs to PR 2, after the M1 run that must precede it.
 
 **Mission.** Retention, backpressure and recovery journeys: explicit obligation disposition and
 consumer closure, safe progress coalescing, issued-receipt pins, tombstone archive with a minimal
