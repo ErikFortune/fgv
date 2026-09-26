@@ -1821,6 +1821,7 @@ export interface ITaskMutationResult {
 
 // @public
 export interface ITaskObligationDisposal {
+    readonly at: Instant;
     // (undocumented)
     readonly expectedRecordRevision: number;
     // (undocumented)

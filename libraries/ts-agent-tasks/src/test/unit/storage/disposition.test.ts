@@ -53,6 +53,13 @@ async function fixture(): Promise<IFixture> {
   return { root, store, repository };
 }
 
+/** A repository with no subscription holding task `n`, whose creation update is owed to no one. */
+async function sessionRepositoryWith(): Promise<{ repository: ITaskRepository }> {
+  const repository = (await FileTreeTaskRepository.initialize(params(memoryRoot(), 'session'))).orThrow();
+  await addTask(repository, 'n', { scopes: [A] });
+  return { repository };
+}
+
 async function reopened(f: IFixture): Promise<ITaskRepository> {
   f.repository.close().orThrow();
   const opened = (
@@ -201,6 +208,81 @@ describe('obligation disposition at the storage boundary', () => {
     const record = (await repository.withWriter((w) => w.readSubscription(s1))).orThrow()!;
     expect(record.disposed).toEqual([{ updateId: uid('t', 1, 'lifecycle'), reason: 'access removed' }]);
     expect(record.acknowledged).toEqual([]);
+  });
+
+  test('dispositions are kept in id order, whatever order they arrive in', async () => {
+    const { repository } = await fixture();
+    await change(repository, 't', { title: 'second' });
+    (await dispose(repository, [uid('t', 2, 'lifecycle')])).orThrow();
+    (await dispose(repository, [uid('t', 1, 'lifecycle')])).orThrow();
+    const record = (await repository.withWriter((w) => w.readSubscription(s1))).orThrow()!;
+    expect(record.disposed.map((d) => d.updateId)).toEqual([
+      uid('t', 1, 'lifecycle'),
+      uid('t', 2, 'lifecycle')
+    ]);
+  });
+
+  test('a routine update still owed to a closed subscription cannot be coalesced away', async () => {
+    const f = await fixture();
+    const repository = f.repository;
+    (await close(repository, 'dispose', 'gone')).orThrow();
+    await subscribeTo(repository, 'c1', [A], undefined, true);
+    await subscribeTo(repository, 'c2', [A], undefined, true);
+    const progress = async (
+      revision: number,
+      drop: boolean,
+      from: number = 2
+    ): Promise<TaskResult<unknown>> => {
+      const current = await recordOf(repository);
+      const env = { ...current.task.envelope, revision: revision as TaskRevision, title: `rev ${revision}` };
+      const operationId = `op-p-${revision}` as OperationId;
+      const audience = repository.audience(current.task.envelope, env, 'progress');
+      return repository.withWriter((w) =>
+        w.commit({
+          purpose: 'operation',
+          operationId,
+          taskId: 't' as TaskId,
+          expectedRevision: current.task.envelope.revision,
+          expectedRecordRevision: current.recordRevision,
+          record: {
+            ...nextDraft(current, { envelope: env, operation: catalogOp(operationId, 'update-tracked', {}) }),
+            updates: [
+              ...current.updates.filter((u) => !(drop && u.category === 'progress')),
+              {
+                id: uid('t', revision, 'progress'),
+                taskId: 't' as TaskId,
+                revision: revision as TaskRevision,
+                category: 'progress',
+                required: false,
+                snapshot: { envelope: env },
+                audience,
+                ...(drop ? { coalesced: { fromRevision: from as TaskRevision } } : {})
+              }
+            ]
+          }
+        })
+      );
+    };
+    expect(await progress(2, false)).toSucceed();
+    // A marker naming the wrong earliest revision is refused before any evidence is read.
+    expect(await progress(3, true, 1)).toFailWithDetail(
+      /marks a gap from revision 1, but this commit supersedes from revision 2/i,
+      expect.objectContaining({ code: 'invalid' })
+    );
+    (
+      await repository.withWriter((w) =>
+        w.closeSubscription({
+          subscriptionId: 'c2' as SubscriptionId,
+          expectedRecordRevision: 1,
+          obligations: 'retain'
+        })
+      )
+    ).orThrow();
+    // c2 still owes revision 2's progress and is closed: it can never be told of the newer one.
+    expect(await progress(3, true)).toFailWithDetail(
+      /is still owed/i,
+      expect.objectContaining({ code: 'retention-blocked' })
+    );
   });
 
   test('a repeat is reported and writes nothing', async () => {
@@ -396,6 +478,23 @@ describe('pruning and archive', () => {
     expect(await repository.prunableTasks({ limit: 10 })).toSucceedWith([]);
   });
 
+  test('pruning skips an update owed to no one, and leaves an archived tombstone as it is', async () => {
+    const { repository } = await fixture();
+    await change(repository, 't', { lifecycle: succeeded });
+    (await dispose(repository, [uid('t', 1, 'lifecycle'), uid('t', 2, 'lifecycle')])).orThrow();
+    expect(await archive(repository)).toSucceed();
+    const tombstone = await recordOf(repository);
+    expect(await repository.withWriter((w) => w.pruneTask('t' as TaskId))).toSucceedAndSatisfy((r) =>
+      expect(r.recordRevision).toBe(tombstone.recordRevision)
+    );
+  });
+
+  test('an update with no audience is never pruned: nothing waits on it', async () => {
+    const { repository } = await sessionRepositoryWith();
+    const record = (await repository.withWriter((w) => w.pruneTask('n' as TaskId))).orThrow();
+    expect(record.recordType === 'resolved' && record.updates.length).toBe(1);
+  });
+
   test('pruning a missing, quarantined or unresolved task', async () => {
     const { repository } = await fixture();
     expect(await repository.withWriter((w) => w.pruneTask('nope' as TaskId))).toFailWithDetail(
@@ -413,7 +512,7 @@ describe('pruning and archive', () => {
     await change(repository, 't', { lifecycle: succeeded });
     // An archive that would keep an owed update, or drop one without evidence, is refused.
     expect(await archive(repository, true)).toFailWithDetail(
-      /still owed/i,
+      /updates are still owed; they must be acknowledged/i,
       expect.objectContaining({ code: 'retention-blocked' })
     );
     expect(await archive(repository)).toFailWithDetail(
@@ -603,9 +702,13 @@ describe('the outstanding-work report', () => {
       truncated: false
     });
     await subscribeTo(repository, 's2', [A]);
+    await subscribeTo(repository, 'a0', [A]);
     (await close(repository, 'retain')).orThrow();
+    expect(repository.outstanding()).toSucceedAndSatisfy((o) =>
+      expect(o.subscriptions.map((x) => x.subscriptionId)).toEqual(['a0', 's1', 's2'])
+    );
     expect(repository.outstanding({ limit: 1 })).toSucceedAndSatisfy((o) => {
-      expect(o.subscriptions).toEqual([{ subscriptionId: s1, state: 'closed', owed: 1, pinned: 1 }]);
+      expect(o.subscriptions).toEqual([{ subscriptionId: 'a0', state: 'active', owed: 0, pinned: 0 }]);
       expect(o.truncated).toBe(true);
     });
     expect(repository.outstanding({ limit: 0 })).toFailWithDetail(

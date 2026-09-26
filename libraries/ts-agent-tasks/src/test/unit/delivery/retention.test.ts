@@ -4,8 +4,17 @@
  */
 
 import '@fgv/ts-utils-jest';
-import { IResolvedTaskCommitRecord, TaskId } from '../../../index';
-import { alpha, op, revisionOf, succeedTask, tid, track } from '../../helpers/brokerFixtures';
+import {
+  FileTreeTaskRepository,
+  IResolvedTaskCommitRecord,
+  TaskBroker,
+  TaskConverters,
+  TaskId,
+  TaskKindRegistry,
+  taskListDescriptor,
+  trackedTaskDescriptor
+} from '../../../index';
+import { alpha, op, registerVendor, revisionOf, succeedTask, tid, track } from '../../helpers/brokerFixtures';
 import {
   IDeliveryHarness,
   committedIn,
@@ -134,6 +143,50 @@ describe('cleanup', () => {
     expect((await recordOf(h, 'u')).updates.map((u) => u.id)).toEqual(['u:2:0', 'u:2:3']);
     expect(committedIn(h.repository, 'resident-payload-bytes')).toBeLessThan(resident);
     expect(await h.broker.cleanup({ limit: 10 })).toSucceedWith({ pruned: [], unchanged: [] });
+  });
+
+  test('prunes an external task, keeping its source revision', async () => {
+    const h = await deliveryHarness();
+    await subscribed(h, 'sub');
+    await registerVendor(h, 'v');
+    const before = await recordOf(h, 'v');
+    expect(before.sourceRevision).toBeDefined();
+    (
+      await h.broker.dispose(
+        { principal: 'alice', scopes: [alpha], authorization: h.policy },
+        { subscriptionId: 'sub', updateIds: before.updates.map((u) => u.id), reason: 'r' }
+      )
+    ).orThrow();
+    expect(await h.broker.cleanup({ limit: 10 })).toSucceedWith({ pruned: [tid('v')], unchanged: [] });
+    const after = await recordOf(h, 'v');
+    expect(after.updates).toEqual([]);
+    expect(after.sourceRevision).toEqual(before.sourceRevision);
+  });
+
+  test('a quarantined task is a candidate cleanup leaves unchanged: its record is never rewritten', async () => {
+    const h = await deliveryHarness();
+    await subscribed(h, 'sub');
+    await registerVendor(h, 'v');
+    const ids = (await recordOf(h, 'v')).updates.map((u) => u.id);
+    (
+      await h.broker.dispose(
+        { principal: 'alice', scopes: [alpha], authorization: h.policy },
+        { subscriptionId: 'sub', updateIds: ids, reason: 'r' }
+      )
+    ).orThrow();
+    h.repository.close().orThrow();
+    const converters = TaskConverters.create().orThrow();
+    const registry = TaskKindRegistry.create(converters.envelopes.snapshot).orThrow();
+    registry.register(trackedTaskDescriptor()).orThrow();
+    registry.register(taskListDescriptor()).orThrow();
+    const opened = (
+      await FileTreeTaskRepository.open({ root: h.root, mode: 'session', environment: h.env, registry })
+    ).orThrow();
+    if (opened.state !== 'ready') {
+      throw new Error('expected a ready repository');
+    }
+    const broker = TaskBroker.create({ repository: opened.repository, environment: h.env }).orThrow();
+    expect(await broker.cleanup({ limit: 10 })).toSucceedWith({ pruned: [], unchanged: [tid('v')] });
   });
 
   test('a malformed request is invalid', async () => {

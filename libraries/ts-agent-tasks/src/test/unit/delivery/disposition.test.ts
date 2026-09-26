@@ -4,7 +4,13 @@
  */
 
 import '@fgv/ts-utils-jest';
-import { IResolvedTaskCommitRecord, ITaskScope, TaskId } from '../../../index';
+import {
+  IResolvedTaskCommitRecord,
+  ITaskScope,
+  TaskId,
+  defaultTaskCapacityProfile,
+  maxTaskPageLimit
+} from '../../../index';
 import { alpha, beta, op, revisionOf, succeedTask, tid, track } from '../../helpers/brokerFixtures';
 import {
   IDeliveryHarness,
@@ -270,6 +276,28 @@ describe('TaskBroker.closeSubscription', () => {
       'late:1:0',
       't:1:0'
     ]);
+  });
+
+  test('dispose authorizes and ends every obligation, across more than one page of them', async () => {
+    const profile = {
+      ...defaultTaskCapacityProfile,
+      limits: { ...defaultTaskCapacityProfile.limits, 'resident-payload-bytes': 256 * 1024 * 1024 }
+    };
+    const h = await deliveryHarness({ profile });
+    await subscribed(h, 'sub');
+    const count = maxTaskPageLimit + 1;
+    for (let i = 0; i < count; i++) {
+      await track(h.writer, `t${String(i).padStart(3, '0')}`);
+    }
+    (
+      await h.broker.closeSubscription(host(h), {
+        subscriptionId: 'sub',
+        obligations: 'dispose',
+        reason: 'retired'
+      })
+    ).orThrow();
+    expect((await consumerRecord(h.repository, 'sub')).disposed).toHaveLength(count);
+    expect(await pendingIds(deliveryOf(h, 'sub'))).toEqual([]);
   });
 
   test('a malformed request is invalid', async () => {

@@ -9,8 +9,6 @@ import {
   DeliveryId,
   IBoundTaskDelivery,
   ITaskFailure,
-  ITaskRepository,
-  ITaskRepositoryWriter,
   SubscriptionId,
   TaskBroker,
   TaskConverters,
@@ -23,6 +21,7 @@ import { alpha, op, succeedTask, tid, track } from '../../helpers/brokerFixtures
 import {
   IDeliveryHarness,
   deliveryHarness,
+  faultyDelivery,
   deliveryOf,
   pendingIds,
   subscribed
@@ -30,50 +29,6 @@ import {
 
 const storageDown = <T>(): TaskResult<T> =>
   failWithDetail<T, ITaskFailure>('storage down', { code: 'storage-unavailable', retry: 'safe' });
-
-function bindAll(w: ITaskRepositoryWriter): ITaskRepositoryWriter {
-  return {
-    readCommit: (id) => w.readCommit(id),
-    register: (r) => w.register(r),
-    commit: (r) => w.commit(r),
-    readSource: (id) => w.readSource(id),
-    commitSource: (r) => w.commitSource(r),
-    extendReplayEnvelope: (id, add) => w.extendReplayEnvelope(id, add),
-    raiseCapacityLimits: (p) => w.raiseCapacityLimits(p),
-    registerSubscription: (r) => w.registerSubscription(r),
-    readSubscription: (id) => w.readSubscription(id),
-    issueReceipt: (r) => w.issueReceipt(r),
-    acknowledgeReceipt: (r) => w.acknowledgeReceipt(r),
-    abandonReceipt: (r) => w.abandonReceipt(r),
-    disposeObligations: (r) => w.disposeObligations(r),
-    closeSubscription: (r) => w.closeSubscription(r),
-    pruneTask: (id) => w.pruneTask(id)
-  };
-}
-
-/**
- * A delivery harness over a repository that misbehaves: `patch` replaces repository methods, and
- * `writerPatch` replaces methods of the writer a gated section receives. Everything else delegates.
- */
-function faultyDelivery(
-  h: IDeliveryHarness,
-  patch: (r: ITaskRepository) => Partial<ITaskRepository>,
-  writerPatch?: (w: ITaskRepositoryWriter) => Partial<ITaskRepositoryWriter>
-): IDeliveryHarness {
-  const real: ITaskRepository = h.repository;
-  const repository: ITaskRepository = Object.assign(Object.create(real), {
-    withWriter: <T>(action: (w: ITaskRepositoryWriter) => Promise<TaskResult<T>>) =>
-      real.withWriter((w) => action(writerPatch !== undefined ? { ...bindAll(w), ...writerPatch(w) } : w)),
-    ...patch(real)
-  });
-  const broker: TaskBroker = TaskBroker.create({
-    repository,
-    environment: h.env,
-    ...(h.defaults !== undefined ? { delivery: h.defaults } : {})
-  }).orThrow();
-  const writer = broker.bind({ principal: 'alice', scopes: [alpha], authorization: h.policy }).orThrow();
-  return { ...h, repository, broker, writer };
-}
 
 describe('subscribe: reads outside and inside the gated section', () => {
   test('a selection capture failure (start: current) is reported', async () => {

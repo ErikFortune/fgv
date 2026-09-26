@@ -159,4 +159,30 @@ describe('context converters', () => {
       expect(context.receipt.convert({ version: 1, included: many })).toFailWith(/exceeds the maximum/i);
     });
   });
+
+  describe('a coalescing marker', () => {
+    test('is carried by a routine update that supersedes earlier revisions', () => {
+      expect(
+        context.update.convert({
+          ...update('t1:3:1', 't1', 3, 'progress', false),
+          coalesced: { fromRevision: 1 }
+        })
+      ).toSucceed();
+    });
+
+    test('is refused on a required update, and must name an earlier revision', () => {
+      expect(
+        context.update.convert({
+          ...update('t1:3:0', 't1', 3, 'lifecycle', true),
+          coalesced: { fromRevision: 1 }
+        })
+      ).toFailWith(/never coalesces/i);
+      expect(
+        context.update.convert({
+          ...update('t1:3:1', 't1', 3, 'progress', false),
+          coalesced: { fromRevision: 3 }
+        })
+      ).toFailWith(/earlier revisions/i);
+    });
+  });
 });

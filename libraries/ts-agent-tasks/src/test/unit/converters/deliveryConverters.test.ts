@@ -88,6 +88,17 @@ describe('consumer record invariants', () => {
     expect(delivery.consumerRecord.convert(record())).toSucceed();
   });
 
+  test('disposed ids must be unique, ascending, and never also acknowledged', () => {
+    const d = (updateId: string): JsonObject => ({ updateId, reason: 'r' });
+    expect(delivery.consumerRecord.convert(record({ disposed: [d('t:1:0'), d('t:2:0')] }))).toSucceed();
+    expect(delivery.consumerRecord.convert(record({ disposed: [d('t:2:0'), d('t:1:0')] }))).toFailWith(
+      /disposed ids must be unique and ascending/
+    );
+    expect(
+      delivery.consumerRecord.convert(record({ acknowledged: ['t:1:0'], disposed: [d('t:1:0')] }))
+    ).toFailWith(/both acknowledged and disposed/);
+  });
+
   test('acknowledged ids must be unique and ascending', () => {
     expect(delivery.consumerRecord.convert(record({ acknowledged: ['t:2:0', 't:1:0'] }))).toFailWith(
       /acknowledged ids must be unique and ascending/

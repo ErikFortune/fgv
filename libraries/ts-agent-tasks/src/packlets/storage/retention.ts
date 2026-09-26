@@ -17,7 +17,7 @@ import {
   TaskResult,
   maxTaskPageLimit
 } from '../types';
-import { hasPendingCommand, updatesOf } from './commitRules';
+import { updatesOf } from './commitRules';
 import { ISubscriptionEvidence } from './consumerRecords';
 import { DeliveryBook } from './deliveryBook';
 import { ok, propagate, taskFailure } from './failures';
@@ -64,9 +64,9 @@ export class EvidenceReader {
  * no unacknowledged receipt naming it. A checkpoint that cannot be read or verified fences and
  * refuses: corruption blocks cleanup, it is never skipped.
  *
- * A tombstone owes nothing and awaits nothing: archiving is refused while the record would still
- * retain an update with an audience, while any command is unsettled or awaiting its feed, or while
- * any subscription is still owed a baseline obligation for the task.
+ * A tombstone owes nothing: archiving is refused while the record would still retain an update with
+ * an audience, or while any subscription is still owed a baseline obligation for the task. (A command
+ * that is unsettled or awaiting its feed is refused earlier, by the commit's purpose rules.)
  *
  * No message names a subscription: a refusal reaches whichever principal made the commit, and which
  * consumers exist is host knowledge (`outstanding()` reports it to the host).
@@ -78,7 +78,7 @@ export function checkRetention(params: {
   readonly draft: ITaskRecordDraft;
   readonly operationId: OperationId | undefined;
   readonly evidence: EvidenceReader;
-  /** Whether a subscription is active and takes coalescing. */
+  /** Whether an active subscription takes coalescing. */
   readonly coalesces: (subscription: SubscriptionId) => boolean;
   readonly baselinesOwed: number;
 }): TaskResult<true> {
@@ -152,9 +152,6 @@ export function checkRetention(params: {
     if (next.some((u) => u.audience.length > 0)) {
       return blocked(`updates are still owed; they must be acknowledged or disposed of first`);
     }
-    if (hasPendingCommand(draft)) {
-      return blocked(`an external command is unsettled or awaiting its feed; resolve or abandon it first`);
-    }
     if (params.baselinesOwed > 0) {
       return blocked(
         `a baseline obligation for it is still owed; it must be acknowledged or disposed of first`
@@ -223,9 +220,8 @@ export function isSupersedable(
   index: TaskIndex,
   book: DeliveryBook
 ): boolean {
-  if (update.required) {
-    return false;
-  }
+  // Asked only about an earlier update of a routine category — `required` follows the category — so
+  // `update` is never required here; the commit refuses a required drop regardless.
   return update.audience.every((member) => {
     if (!index.isOwed(member, update.id)) {
       return true;

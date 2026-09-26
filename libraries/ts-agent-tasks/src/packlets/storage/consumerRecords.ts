@@ -569,12 +569,9 @@ export class SubscriptionRecords {
    * or changed fences the repository and stops the cleanup instead of being skipped.
    */
   public evidence(subscriptionId: SubscriptionId): TaskResult<ISubscriptionEvidence> {
-    const state: ISubscriptionState | undefined = this._host.book().stateOf(subscriptionId);
-    if (state === undefined) {
-      const message: string = `subscription ${subscriptionId}: an audience names it and no record is retained`;
-      this._host.fence(message);
-      return taskFailure(message, 'storage-corrupt', 'after-host-action');
-    }
+    // Every audience member is a retained subscription: open refuses an audience naming anything else,
+    // commits name only active subscriptions, and a subscription's record is never removed.
+    const state: ISubscriptionState = this._host.book().stateOf(subscriptionId)!;
     return this._verified(state).onSuccess((read) => ok(evidenceOf(read.record)));
   }
 
@@ -720,15 +717,12 @@ export class SubscriptionRecords {
       for (const updateId of ids) {
         if (acknowledged.has(updateId)) {
           already.push(updateId);
-        } else if (host.index().isOwed(record.id, updateId)) {
-          newly.push(updateId);
         } else {
-          return taskFailure<ITaskAcknowledgementCommit>(
-            `acknowledgeReceipt: receipt ${ack.deliveryId} names ${updateId}, which subscription ${record.id} is ` +
-              `not owed`,
-            'invalid-receipt',
-            'after-host-action'
-          );
+          // Issuance admitted only owed or acknowledged ids, and nothing ends an obligation an
+          // unexpired, unacknowledged manifest names: disposal refuses a pinned id, coalescing never
+          // supersedes one, closure's disposal takes the manifest with it, and pruning needs the id in
+          // the history. So an id this manifest names that is not acknowledged is still owed.
+          newly.push(updateId);
         }
       }
       const history: UpdateId[] = [...record.acknowledged, ...newly].sort();

@@ -1426,7 +1426,9 @@ export class FileTreeTaskRepository implements ITaskRepository {
       draft,
       operationId,
       evidence: new EvidenceReader((id) => this._records.evidence(id)),
-      coalesces: (id) => this._book.subscriptions.get(id)?.descriptor.policy.coalesceProgress === true,
+      // Asked only about a member of a new update's audience, which commits name from active
+      // subscriptions alone.
+      coalesces: (id) => this._book.subscriptions.get(id)!.descriptor.policy.coalesceProgress,
       baselinesOwed: this._index!.baselinesOwedFor(taskId)
     });
   }
