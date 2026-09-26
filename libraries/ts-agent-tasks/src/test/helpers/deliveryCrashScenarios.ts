@@ -133,3 +133,74 @@ export async function prepareDelivery(dir: string, subscribe: boolean): Promise<
   repository.close();
   return prepared.isSuccess() ? succeed(prepared.value.context.receipt) : fail(prepared.message);
 }
+
+// ---- T8: disposal, cleanup and archive ----
+
+/** The update ids a task's terminal commit owes the subscription, after its baseline. */
+export const retentionIds: ReadonlyArray<string> = ['t:1:initial', 't:2:0', 't:2:3'];
+
+/**
+ * A durable repository in an empty directory: task `t`, subscription `s` (baseline `t:1:initial`),
+ * then `t` succeeded, owing `t:2:0` and `t:2:3`. With `acknowledged`, a receipt covering all three is
+ * prepared and acknowledged, so every obligation is discharged and only cleanup and archive remain.
+ */
+export async function prepareRetention(dir: string, acknowledged: boolean): Promise<Result<true>> {
+  const created = await prepareDelivery(dir, false);
+  if (created.isFailure()) {
+    return fail(created.message);
+  }
+  const opened = await openDelivery(dir, 'prepare-retention');
+  if (opened.isFailure()) {
+    return fail(opened.message);
+  }
+  const o: IOpenedDelivery = opened.value;
+  const writer = o.broker.bind({ principal: 'host', scopes: [alpha], authorization: o.policy }).orThrow();
+  const steps: Result<unknown> = (await runSubscribe(o)).asResult.onSuccess(() => succeed(true));
+  const succeeded: Result<unknown> = steps.isFailure()
+    ? steps
+    : (
+        await writer.execute({
+          taskId: 't' as TaskId,
+          operationId: 'succeed-t' as OperationId,
+          expectedRevision: 1 as never,
+          command: 'succeed',
+          parameters: { outcome: { summary: 'done', artifacts: [] } }
+        })
+      ).asResult;
+  if (succeeded.isFailure() || !acknowledged) {
+    o.repository.close();
+    return succeeded.isFailure() ? fail(succeeded.message) : succeed(true);
+  }
+  const delivery = deliveryIn(o);
+  const prepared = await delivery.prepare();
+  const acked = prepared.isFailure()
+    ? prepared.asResult
+    : (await delivery.acknowledge(prepared.value.context.receipt)).asResult;
+  o.repository.close();
+  return acked.isFailure() ? fail(acked.message) : succeed(true);
+}
+
+/** Disposes every obligation of `s` as `host`. */
+export async function runDispose(opened: IOpenedDelivery): Promise<TaskResult<unknown>> {
+  return opened.broker.dispose(
+    { principal: 'host', scopes: [alpha], authorization: opened.policy },
+    { subscriptionId: 's', updateIds: retentionIds, reason: 'consumer retired' }
+  );
+}
+
+/** One cleanup pass. */
+export async function runCleanup(opened: IOpenedDelivery): Promise<TaskResult<unknown>> {
+  return opened.broker.cleanup({ limit: 10 });
+}
+
+/** Archives `t` under a fixed operation id, so a retry is a replay. */
+export async function runArchive(opened: IOpenedDelivery): Promise<TaskResult<unknown>> {
+  const writer = opened.broker
+    .bind({ principal: 'host', scopes: [alpha], authorization: opened.policy })
+    .orThrow();
+  return writer.archive({
+    taskId: 't' as TaskId,
+    operationId: 'archive-t' as OperationId,
+    expectedRevision: 2 as never
+  });
+}
