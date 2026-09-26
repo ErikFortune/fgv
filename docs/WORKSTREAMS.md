@@ -128,6 +128,54 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
+### `null-prototype-property-guard` 🟢 (bug fix, promoted from a T1 escalation)
+
+**Status:** 🟢 ready to start. Branched off `release` at `bba6af445`. PR targets **`release`** — not
+part of the `agent-tasks-v1` cluster. This stream closes normally, so `/finalize-task` runs in its PR.
+
+**Mission.** Replace every unguarded `obj.hasOwnProperty(key)` in library source with
+`Object.prototype.hasOwnProperty.call(obj, key)`, and enable `no-prototype-builtins` so the class
+cannot recur.
+
+**The defect, reproduced before the brief was written.** `isKeyOf` calls `item.hasOwnProperty(key)`,
+so on an `Object.create(null)` object it **throws instead of answering** — and
+`Converters.strictObject().convert()` throws with it. That is a `Converter` raising a `TypeError`
+where the whole point of the type is to return a `Failure`, reachable from public API by a caller
+passing a null-prototype object, which is an ordinary thing to do with untrusted data precisely
+because it has no prototype to pollute. `JSON.parse` never produces one; a caller does.
+
+**Why a stream and not a one-line commit.** T1 reported one site; a repo-wide grep found **nine in
+library source across four packages** — `ts-utils` (2, including one on the same `strictObject` path
+that T1 did not report), `ts-json` (5), `ts-res-ui-components` (1), `ts-utils-jest` (1, on
+`globalThis`, safe in practice). Fixing the flagged line and stopping is the mistake this repo has
+paid for in two prior contagions. **And `no-prototype-builtins` is configured nowhere**, with lint
+green against nine violations — so the rule is the durable deliverable and the nine fixes are the
+cleanup.
+
+**Compatibility.** Three of the four packages are stability-obligated production surfaces, but the
+change is not breaking in either direction: inputs that work today return the same answer, and inputs
+that currently throw start returning correctly. No signature moves. Change files are **`patch`**, one
+per touched package — four of them.
+
+**Provenance.** Escalated by T1 as *"an upstream robustness gap, escalated rather than fixed"*;
+declined by name by T3, T4 and T5, each correctly, since none owned `ts-utils`. Four consecutive
+declines is why it is a stream rather than a fifth deferral.
+
+**Package surface.** `ts-utils`, `ts-json`, `ts-res-ui-components`, `ts-utils-jest` — the nine call
+sites, their tests, the lint rule, and four change files.
+
+**Out of scope.** Other `Object.prototype` builtins beyond what the rule flags. Inventing a shared
+lint layer if none exists — surface it. Refactoring anything touched.
+
+**Acceptance criteria:** `rushx build` zero warnings, `rushx lint`, `rushx fixlint` and `rushx test` at
+100% in every modified package; four `patch` change files verified with `rush change --verify`;
+repo-wide `rebuild` **and** `test` (the `test` half load-bearing — this widens what a function
+*accepts* without moving a signature, which a rebuild cannot see); the five verify scripts;
+`code-reviewer` then the Copilot loop; each site's test watched failing with the fix reverted;
+`/finalize-task`.
+
+**Artifact pointer:** `.ai/tasks/active/null-prototype-property-guard/`.
+
 ### `personaility-asks-2026-08` (Stream A — the embedding lane) 🟢
 
 **Status:** 🟢 **shipped to `release`** — all five units merged 2026-08-12, plus one unplanned refactor that unblocked them. Nothing published yet; the alpha still has to go out. Artifacts: `.ai/notes/cross-repo-handoffs/personaility-asks-2026-08-triage.md`, `…-reply-2026-08-11-ask-package.md`, `…-status-2026-08-12-stream-a.md`, `…-status-2026-08-12-shipped.md`.
