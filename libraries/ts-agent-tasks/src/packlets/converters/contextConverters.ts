@@ -20,6 +20,7 @@ import {
   UpdateCategory,
   UpdateId,
   allUpdateCategories,
+  isRequiredCategory,
   taskContextLimits
 } from '../types';
 import { IEnvelopeConverters } from './envelopeConverters';
@@ -130,7 +131,9 @@ export function buildContextConverters(
       );
     }
     if (value.coalesced !== undefined) {
-      if (value.required) {
+      // Coalescing is a property of the category, not of the writer's `required` flag: a lifecycle
+      // update marked routine still never supersedes anything.
+      if (value.required || isRequiredCategory(value.category)) {
         return fail(`update ${value.id}: a required update never coalesces`);
       }
       if (value.coalesced.fromRevision >= value.revision) {

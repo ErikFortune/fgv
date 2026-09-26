@@ -187,3 +187,28 @@ Two are already known to be coming:
    six-round Copilot loop, and T8's deliverable list is longer. Raising this early is much cheaper
    than at round eight; it is the orchestrator's decision to take, but yours to raise.
    → **Raised** — see *Split proposal* above.
+
+## Copilot round 1 (#698) — applied except one
+
+- **Coalescing trusted the writer's `required` flag** (three threads: converter, retention rule,
+  `supersedable`). A lifecycle update carrying `required: false` and a `coalesced` marker passed the
+  converter, and the retention rule and `supersedable` then treated it as routine. Fixed at every
+  site: the converter refuses a marker on any required *category*; `checkRetention` and
+  `isSupersedable` decide from `isRequiredCategory(category)`, never the flag. `isRequiredCategory`
+  moved to `types/updates.ts` beside `allUpdateCategories` so the converters can use it (still
+  exported from the package barrel; no consumer outside the package). Not taken: refusing every
+  update whose flag disagrees with its category. The renderer's public input contract accepts such
+  updates (its tests rely on required routine updates and routine lifecycle ones), and once no drop
+  decision reads the flag, the downgrade no longer loses anything.
+- **A disposal with nothing new to dispose did not evict an expired manifest**, so that manifest
+  kept its preparation claim. Fixed: the no-op path writes the filtered `issued` when expiry removed
+  anything. Closure takes no clock; expired manifests there are evicted by the next issuance or
+  disposal, as before.
+- **Declined — a migration for T7-written consumer records.** `ts-agent-tasks` has never been
+  published and is on the active-development list with "breaking changes land freely with no shim"
+  (`.ai/instructions/ACTIVE_DEVELOPMENT.md`). T6 and T7 both changed stored record shapes under
+  `formatVersion: 1` on this integration branch for the same reason. The change file carries
+  `BREAKING:`.
+- Revert checks: each fix's new test goes red with the fix reverted (converter 1/16, pruning 1/4,
+  disposition 1/28). Suite 1,702 tests in 70 suites, 100 % on every metric, zero `c8 ignore`; `rushx
+  build`/`lint` zero warnings.

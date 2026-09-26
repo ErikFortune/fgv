@@ -6,7 +6,7 @@
 import { mergeUpdates } from './retention';
 import { JsonValue } from '@fgv/ts-json-base';
 import { Converter, Converters, Hash, Result, captureResult, succeed } from '@fgv/ts-utils';
-import { isRequiredCategory, planUpdates } from '../implementations';
+import { planUpdates } from '../implementations';
 import {
   IResolvedTaskCommitRecord,
   IResolvedTaskRecordDraft,
@@ -28,6 +28,7 @@ import {
   TaskResult,
   TaskRevision,
   UpdateCategory,
+  isRequiredCategory,
   isTerminalTaskStatus
 } from '../types';
 import { ITaskCommitRequest, ITaskRepository, ITaskRepositoryWriter } from '../storage';

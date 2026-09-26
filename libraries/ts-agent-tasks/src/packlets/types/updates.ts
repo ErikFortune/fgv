@@ -39,6 +39,15 @@ export const allUpdateCategories: ReadonlyArray<UpdateCategory> = [
 ];
 
 /**
+ * Whether an update of a category is required: it must not be coalesced or expire before its
+ * audience has it. Progress and observation freshness are informative only.
+ * @public
+ */
+export function isRequiredCategory(category: UpdateCategory): boolean {
+  return category !== 'progress' && category !== 'observation';
+}
+
+/**
  * One immutable update payload a task commit owes to an audience.
  *
  * @remarks

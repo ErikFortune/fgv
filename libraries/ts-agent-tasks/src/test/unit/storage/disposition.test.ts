@@ -334,6 +334,32 @@ describe('obligation disposition at the storage boundary', () => {
     expect(record.issued).toEqual([]);
   });
 
+  test('a disposal with nothing new to dispose still evicts an expired receipt', async () => {
+    const { repository } = await fixture();
+    await issue(repository, 'd1', [uid('t', 1, 'lifecycle')]);
+    await acknowledge(repository, 'd1');
+    const revision = revisionOf(repository);
+    const disposal = {
+      subscriptionId: s1,
+      updateIds: [uid('t', 1, 'lifecycle')],
+      reason: 'r'
+    };
+    expect(
+      await repository.withWriter((w) =>
+        w.disposeObligations({ ...disposal, expectedRecordRevision: revision, at: at as Instant })
+      )
+    ).toSucceedWith({ subscriptionId: s1, newlyDisposed: [], alreadyDischarged: [uid('t', 1, 'lifecycle')] });
+    expect(revisionOf(repository)).toBe(revision);
+    expect(
+      await repository.withWriter((w) =>
+        w.disposeObligations({ ...disposal, expectedRecordRevision: revision, at: later })
+      )
+    ).toSucceedWith({ subscriptionId: s1, newlyDisposed: [], alreadyDischarged: [uid('t', 1, 'lifecycle')] });
+    expect(revisionOf(repository)).toBe(revision + 1);
+    const record = (await repository.withWriter((w) => w.readSubscription(s1))).orThrow()!;
+    expect(record.issued).toEqual([]);
+  });
+
   test('an id an unacknowledged receipt names is refused until that receipt is abandoned', async () => {
     const { repository } = await fixture();
     await issue(repository, 'd1', [uid('t', 1, 'lifecycle')]);

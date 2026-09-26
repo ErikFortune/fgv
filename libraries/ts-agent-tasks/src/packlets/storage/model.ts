@@ -419,9 +419,10 @@ export interface ITaskRepository {
   ): ReadonlyArray<SubscriptionId>;
   /**
    * Whether a newer routine update of the same category, owed to `audience`, may supersede `update`
-   * (design § 9, coalescing): it is not required, and every member still owed it is active, takes
-   * coalescing, is in `audience`, and has no unacknowledged receipt naming it. Answered from resident
-   * state for planning; the commit re-decides from durable evidence.
+   * (design § 9, coalescing): its category is not required (a required update is never superseded),
+   * and every member still owed it is active, takes coalescing, is in `audience`, and has no
+   * unacknowledged receipt naming it. Answered from resident state for planning; the commit re-decides
+   * from durable evidence.
    */
   supersedable(update: ITaskUpdate, audience: ReadonlyArray<SubscriptionId>): boolean;
   /** A retained subscription's resident descriptor — active or closed, never its history. */

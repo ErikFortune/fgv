@@ -139,3 +139,22 @@ describe('falsifier: an owed update cannot leave a record without durable eviden
     expect(after['resident-payload-bytes']).toBeLessThan(before['resident-payload-bytes']);
   });
 });
+
+describe('supersedable answers by category, never by the flag', () => {
+  test('a required-category update is never supersedable, whatever it says about itself', async () => {
+    const repository = (
+      await FileTreeTaskRepository.initialize(
+        params(memoryRoot(), 'session', { checkpoints: new InMemoryCheckpointStore() })
+      )
+    ).orThrow();
+    await subscribeTo(repository, 's1', [A], undefined, true);
+    await addTask(repository, 't', { scopes: [A] });
+    const current = await record(repository);
+    const owed = (current.recordType === 'resolved' ? current.updates : [])[0];
+    expect(owed.id).toBe(lifecycle1);
+    // Positive control: the same owed update, read as routine, is supersedable for this audience.
+    expect(repository.supersedable({ ...owed, category: 'progress', required: false }, [s1])).toBe(true);
+    expect(repository.supersedable(owed, [s1])).toBe(false);
+    expect(repository.supersedable({ ...owed, required: false }, [s1])).toBe(false);
+  });
+});

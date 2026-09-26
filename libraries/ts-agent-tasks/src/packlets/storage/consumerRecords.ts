@@ -794,7 +794,13 @@ export class SubscriptionRecords {
         }
         const base = { subscriptionId: record.id, alreadyDischarged: already };
         if (newly.length === 0) {
-          return ok<ITaskDispositionResult>({ ...base, newlyDisposed: [] });
+          // Nothing to dispose, but a manifest that expired is still evicted, so it stops holding
+          // its preparation claim.
+          return issued.length === record.issued.length
+            ? ok<ITaskDispositionResult>({ ...base, newlyDisposed: [] })
+            : this._replace(state, record, { issued }).onSuccess(() =>
+                ok<ITaskDispositionResult>({ ...base, newlyDisposed: [] })
+              );
         }
         return this._replace(
           state,

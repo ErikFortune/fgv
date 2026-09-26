@@ -177,6 +177,13 @@ describe('context converters', () => {
           coalesced: { fromRevision: 1 }
         })
       ).toFailWith(/never coalesces/i);
+      // The category decides, not the flag: a lifecycle update marked routine is still required.
+      expect(
+        context.update.convert({
+          ...update('t1:3:0', 't1', 3, 'lifecycle', false),
+          coalesced: { fromRevision: 1 }
+        })
+      ).toFailWith(/never coalesces/i);
       expect(
         context.update.convert({
           ...update('t1:3:1', 't1', 3, 'progress', false),

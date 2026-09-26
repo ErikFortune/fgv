@@ -15,6 +15,7 @@ import {
   SubscriptionId,
   TaskId,
   TaskResult,
+  isRequiredCategory,
   maxTaskPageLimit
 } from '../types';
 import { updatesOf } from './commitRules';
@@ -129,7 +130,7 @@ export function checkRetention(params: {
         (u) => u.category === update.category && u.coalesced !== undefined
       );
       const coalescing: boolean =
-        !update.required &&
+        !isRequiredCategory(update.category) &&
         newer !== undefined &&
         newer.audience.includes(member) &&
         params.coalesces(member);
@@ -209,8 +210,8 @@ export function withoutUpdates(
 }
 
 /**
- * Whether a newer routine update owed to `audience` may supersede `update`, from resident state: it
- * is not required, and every member still owed it is active, takes coalescing, is in `audience`, and
+ * Whether a newer routine update owed to `audience` may supersede `update`, from resident state: its
+ * category is not required, and every member still owed it is active, takes coalescing, is in `audience`, and
  * has no unacknowledged receipt naming it. A plan only — the commit re-decides from durable evidence.
  * @internal
  */
@@ -220,8 +221,9 @@ export function isSupersedable(
   index: TaskIndex,
   book: DeliveryBook
 ): boolean {
-  // Asked only about an earlier update of a routine category — `required` follows the category — so
-  // `update` is never required here; the commit refuses a required drop regardless.
+  if (isRequiredCategory(update.category)) {
+    return false;
+  }
   return update.audience.every((member) => {
     if (!index.isOwed(member, update.id)) {
       return true;
