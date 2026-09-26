@@ -112,6 +112,8 @@ export function buildCapacityConverters(
 ): ICapacityConverters {
   const maxUpdateId: number = bounds.maxIdLength + maxUpdateIdSuffixLength;
   const minimumEvidenceBytes: number = maxUpdateId + 3;
+  // `{"updateId":"","reason":""}` plus the separator before it in its array.
+  const dispositionFraming: number = '{"updateId":"","reason":""},'.length;
   const charge: Converter<ITaskCapacityCharge> = Converters.strictObject<ITaskCapacityCharge>({
     dimension: failures.capacityDimension,
     amount: nonNegativeSafeInteger
@@ -221,6 +223,19 @@ export function buildCapacityConverters(
         maximumSettlementCharges(value).onSuccess((charges) =>
           _fits(charges, value, 'accepted-operation settlement')
         ),
+        // A disposition is exact history just as an acknowledgement is, and discharges the same
+        // reserved evidence slot, so one disposition entry — id, reason and JSON framing — must fit
+        // in that slot, or disposing an obligation would need capacity nobody reserved.
+        value.encoded.maxAcknowledgementEvidenceBytes >=
+        maxUpdateId + value.encoded.maxDispositionReasonBytes + dispositionFraming
+          ? succeed<ReadonlyArray<ITaskCapacityCharge>>([])
+          : fail<ReadonlyArray<ITaskCapacityCharge>>(
+              `capacity profile: maxAcknowledgementEvidenceBytes ${value.encoded.maxAcknowledgementEvidenceBytes} ` +
+                `cannot hold one disposition of a ${maxUpdateId}-byte update id with a ` +
+                `${value.encoded.maxDispositionReasonBytes}-byte reason (at least ${
+                  maxUpdateId + value.encoded.maxDispositionReasonBytes + dispositionFraming
+                })`
+            ),
         // Per task, a registration's own creation operation must fit alongside the closeout's
         // operation slots, which the repository holds back from ordinary work (T3). A profile
         // below that validates here and then refuses every registration forever.

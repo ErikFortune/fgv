@@ -398,9 +398,7 @@ export function checkUpdates(
   for (const update of current) {
     const kept: ITaskUpdate | undefined = byId.get(update.id);
     if (kept === undefined) {
-      if (update.required && !maintenance) {
-        return fail(`required update '${update.id}' can only be pruned by maintenance`);
-      }
+      // Whether it may leave is the retention rule's to decide, from durable evidence.
       continue;
     }
     if (!canonicallyEqual(update, kept)) {
@@ -550,9 +548,23 @@ export function checkCommandEvolution(
   next: ReadonlyArray<IStoredTaskOperation>
 ): Result<true> {
   const byId: Map<string, IStoredTaskOperation> = new Map(next.map((op) => [op.operationId, op]));
+  const prior: ReadonlySet<string> = new Set(current.map((op) => op.operationId));
+  for (const op of next) {
+    // Abandonment ends tracking of a command that exists; nothing is recorded abandoned from the start.
+    if (op.type === 'command' && op.receipt.result.state === 'abandoned' && !prior.has(op.operationId)) {
+      return fail(`command '${op.operationId}': a command cannot be recorded abandoned`);
+    }
+  }
   for (const before of current) {
     const after: IStoredTaskOperation | undefined = byId.get(before.operationId);
     if (before.type !== 'command' || after === undefined || after.type !== 'command') {
+      continue;
+    }
+    const abandoned: string | undefined = _abandonmentProblem(before, after);
+    if (abandoned !== undefined) {
+      return fail(`command '${before.operationId}': ${abandoned}`);
+    }
+    if (after.receipt.result.state === 'abandoned' && before.receipt.result.state !== 'abandoned') {
       continue;
     }
     if (dispatchOrder[after.dispatch] < dispatchOrder[before.dispatch]) {
@@ -576,4 +588,45 @@ export function checkCommandEvolution(
     }
   }
   return succeed(true);
+}
+
+/**
+ * Why a command's move to `abandoned` is not the one abandonment admits, if it is not: only a
+ * command whose outcome is still open — unsettled, or settled `accepted` while awaiting its feed — may
+ * be abandoned; it then settles, stops awaiting, keeps its request and identity, and names what was
+ * known about it. `abandoned` is final like any settled receipt.
+ */
+function _abandonmentProblem(
+  before: IStoredCommandOperation,
+  after: IStoredCommandOperation
+): string | undefined {
+  const result = after.receipt.result;
+  if (result.state !== 'abandoned' || before.receipt.result.state === 'abandoned') {
+    return undefined;
+  }
+  const origin: string | undefined =
+    before.dispatch !== 'settled'
+      ? before.dispatch
+      : before.awaiting !== undefined
+      ? 'awaiting-feed'
+      : undefined;
+  if (origin === undefined) {
+    return `a settled receipt is final; only an unsettled or awaiting command can be abandoned`;
+  }
+  if (result.from !== origin) {
+    return `abandoned from '${result.from}', but it was '${origin}'`;
+  }
+  const same: boolean =
+    after.dispatch === 'settled' &&
+    after.awaiting === undefined &&
+    canonicallyEqual(
+      {
+        ...before,
+        dispatch: undefined,
+        awaiting: undefined,
+        receipt: { ...before.receipt, result: undefined }
+      },
+      { ...after, dispatch: undefined, awaiting: undefined, receipt: { ...after.receipt, result: undefined } }
+    );
+  return same ? undefined : `an abandonment settles the command and changes nothing else about it`;
 }

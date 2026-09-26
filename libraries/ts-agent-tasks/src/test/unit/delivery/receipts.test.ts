@@ -109,6 +109,7 @@ describe('exact-ID acknowledgement: the falsifier', () => {
       'capacityClaims',
       'consumerId',
       'createdAt',
+      'disposed',
       'formatVersion',
       'id',
       'issued',

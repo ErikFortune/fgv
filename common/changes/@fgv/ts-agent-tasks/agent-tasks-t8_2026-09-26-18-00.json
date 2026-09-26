@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-agent-tasks",
+      "comment": "BREAKING: retention. An owed update now leaves a task record only when every audience member's durable checkpoint holds its id as acknowledged or disposed (or it is coalesced for subscriptions that opt in), so archive of an acknowledged task is admitted and archive writes a tombstone with no update payloads. Adds TaskBroker.dispose, closeSubscription, abandonCommand and cleanup; consumer records gain a disposed history and a closed state; delivery policies gain coalesceProgress; command receipts gain an 'abandoned' state; ITaskRepository gains prunableTasks, outstanding and supersedable, and its writer disposeObligations, closeSubscription and pruneTask; a source-replay reconciliation pass stops at a revision for an unregistered binding.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-agent-tasks"
+}

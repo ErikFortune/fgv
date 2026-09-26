@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 
+import { mergeUpdates } from './retention';
 import { JsonValue } from '@fgv/ts-json-base';
 import { Converter } from '@fgv/ts-utils';
 import { planUpdates } from '../implementations';
@@ -26,7 +27,7 @@ import {
   TaskRevision,
   UpdateCategory
 } from '../types';
-import { ITaskRepositoryWriter } from '../storage';
+import { ITaskRepository, ITaskRepositoryWriter } from '../storage';
 import { AccessContext, AccessSubject, subjectOf } from './access';
 import { BrokerCore, canonicallySame, receiptJson, revisionOf, storedOperation } from './core';
 import { changedSinceAuthorized, denied, notFound, ok, propagate, taskFailure } from './failures';
@@ -218,6 +219,7 @@ function _storedReceipt<TReceipt>(
  * @internal
  */
 export function nextDraft(
+  repository: Pick<ITaskRepository, 'supersedable'>,
   current: IResolvedTaskCommitRecord,
   envelope: ITaskEnvelope,
   operation: IStoredTaskOperation,
@@ -229,7 +231,9 @@ export function nextDraft(
     task: { envelope, details: current.task.details },
     ...(current.sourceRevision !== undefined ? { sourceRevision: current.sourceRevision } : {}),
     operations: [...current.operations, operation],
-    updates: [...current.updates, ...updates],
+    // A tombstone retains no update: every one leaves, and the repository admits that only when each
+    // audience member's checkpoint proves it discharged.
+    updates: archived ? updates : mergeUpdates(repository, current.updates, updates),
     archived
   };
 }
@@ -419,7 +423,7 @@ export async function runCatalogMutation<TReceipt extends ITaskMutationResult>(
       taskId,
       expectedRevision: before.revision,
       expectedRecordRevision: current.recordRevision,
-      record: nextDraft(current, after, operation, updates, archived)
+      record: nextDraft(core.repository, current, after, operation, updates, archived)
     });
     return committed.isSuccess()
       ? ok<TReceipt | undefined>(receipt)

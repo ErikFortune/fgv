@@ -117,7 +117,7 @@ describe('committed updates, owed to real subscriptions', () => {
         operationId: op(),
         expectedRevision: await revisionOf(h.repository, 't')
       })
-    ).toFailWith(/updates are still owed/);
+    ).toFailWith(/is still owed/);
   });
 
   test('an unchanged mutation owes nothing', async () => {

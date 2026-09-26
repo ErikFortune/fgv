@@ -15,7 +15,11 @@ import {
   ITaskCapacityClaim,
   ITaskCapacityProfile,
   ITaskConsumerRecord,
+  ITaskDispositionResult,
   ITaskEnvironment,
+  ITaskObligationDisposal,
+  ITaskObligationDisposition,
+  ITaskSubscriptionClosure,
   ITaskReceiptAbandonment,
   ITaskReceiptAcknowledgement,
   ITaskReceiptIssue,
@@ -26,6 +30,7 @@ import {
   SubscriptionId,
   TaskId,
   TaskResult,
+  ITaskUpdate,
   UpdateId,
   allCapacityDimensions,
   allUpdateCategories,
@@ -35,13 +40,14 @@ import {
 import { CheckpointPort, IConsumerRead } from './checkpoints';
 import { DeliveryBook } from './deliveryBook';
 import { classify, mintId, ok, propagate, taskFailure } from './failures';
-import { canonicallyEqual, recordName } from './layout';
+import { canonicallyEqual, recordName, utf8Length } from './layout';
 import { CapacityLedger, DimensionAmounts, ILedgerEntry, zeroAmounts } from './ledger';
 import { ITaskProjection, ledgerEntry, recordLimitFor } from './projection';
 import { normalizeSelection } from './queries';
 import {
   ISubscriptionState,
   historyCommitment,
+  isDrainable,
   preparationClaim,
   selectionMatches,
   subscriptionEntry,
@@ -119,6 +125,14 @@ export class SubscriptionRecords {
     const live: ISubscriptionState | undefined = host.book().subscriptions.get(id);
     if (live !== undefined) {
       return this._replay(live, registration);
+    }
+    if (host.book().closed.has(id)) {
+      return taskFailure(
+        `registerSubscription ${id}: this subscription is closed; a subscription id is never reused`,
+        'conflict',
+        'after-host-action',
+        { operationId }
+      );
     }
     const pending: IPendingConsumerEntry | undefined = host.book().pending.get(id);
     if (pending !== undefined && !this._sameIdentity(pending, registration)) {
@@ -334,6 +348,7 @@ export class SubscriptionRecords {
           createdAt: registration.createdAt,
           baseline: [...registration.baseline].sort((a, b) => (a.id < b.id ? -1 : 1)),
           acknowledged: [],
+          disposed: [],
           issued: [],
           capacityClaims: [
             {
@@ -543,8 +558,21 @@ export class SubscriptionRecords {
     if (converted.isFailure()) {
       return taskFailure(`readSubscription: ${converted.message}`, 'invalid', 'after-host-action');
     }
-    const state: ISubscriptionState | undefined = this._host.book().subscriptions.get(converted.value);
+    const state: ISubscriptionState | undefined = this._host.book().stateOf(converted.value);
     return state === undefined ? ok(undefined) : this._verified(state).onSuccess((read) => ok(read.record));
+  }
+
+  /**
+   * The durable evidence cleanup decides from, for one retained subscription: the ids in its exact
+   * history and the ids an unacknowledged manifest pins. Read through the checkpoint store and checked
+   * against the committed record — never taken from the resident index — so a checkpoint that was lost
+   * or changed fences the repository and stops the cleanup instead of being skipped.
+   */
+  public evidence(subscriptionId: SubscriptionId): TaskResult<ISubscriptionEvidence> {
+    // Every audience member is a retained subscription: open refuses an audience naming anything else,
+    // commits name only active subscriptions, and a subscription's record is never removed.
+    const state: ISubscriptionState = this._host.book().stateOf(subscriptionId)!;
+    return this._verified(state).onSuccess((read) => ok(evidenceOf(read.record)));
   }
 
   // ------------------------------------------------------------------------------------------
@@ -689,22 +717,24 @@ export class SubscriptionRecords {
       for (const updateId of ids) {
         if (acknowledged.has(updateId)) {
           already.push(updateId);
-        } else if (host.index().isOwed(record.id, updateId)) {
-          newly.push(updateId);
         } else {
-          return taskFailure<ITaskAcknowledgementCommit>(
-            `acknowledgeReceipt: receipt ${ack.deliveryId} names ${updateId}, which subscription ${record.id} is ` +
-              `not owed`,
-            'invalid-receipt',
-            'after-host-action'
-          );
+          // Issuance admitted only owed or acknowledged ids, and nothing ends an obligation an
+          // unexpired, unacknowledged manifest names: disposal refuses a pinned id, coalescing never
+          // supersedes one, closure's disposal takes the manifest with it, and pruning needs the id in
+          // the history. So an id this manifest names that is not acknowledged is still owed.
+          newly.push(updateId);
         }
       }
       const history: UpdateId[] = [...record.acknowledged, ...newly].sort();
       const issued: IIssuedTaskReceipt[] = record.issued.map((m) =>
         m.deliveryId === ack.deliveryId ? { ...m, acknowledged: true } : m
       );
-      return this._replace(state, record, { acknowledged: history, issued }, newly).onSuccess((next) =>
+      return this._replace(
+        state,
+        record,
+        { acknowledged: history, issued, baseline: _withoutBaselines(record, newly) },
+        newly
+      ).onSuccess((next) =>
         ok<ITaskAcknowledgementCommit>({
           ...base,
           record: next,
@@ -713,6 +743,137 @@ export class SubscriptionRecords {
         })
       );
     });
+  }
+
+  /**
+   * Ends obligations without acknowledging them: each id joins `disposed` with the reason, and its
+   * reserved acknowledgement evidence becomes that history — no new capacity. Ids already in the exact
+   * history are reported, not written again. An id the subscription is not owed, or one an
+   * unacknowledged issued manifest pins, is refused, changing nothing.
+   */
+  public dispose(request: ITaskObligationDisposal): TaskResult<ITaskDispositionResult> {
+    const host: ISubscriptionHost = this._host;
+    const converted = host.converters.delivery.obligationDisposal.convert(request);
+    if (converted.isFailure()) {
+      return taskFailure(`disposeObligations: ${converted.message}`, 'invalid', 'after-host-action');
+    }
+    const disposal: ITaskObligationDisposal = converted.value;
+    const reason: TaskResult<string> = this._reason(disposal.reason);
+    if (reason.isFailure()) {
+      return propagate(reason);
+    }
+    return this._current(disposal.subscriptionId, disposal.expectedRecordRevision).onSuccess(
+      ({ state, record }) => {
+        // Expiry releases a receipt's pins (design § 9): an expired manifest pins nothing, and goes in
+        // this write, as issuance would evict it.
+        const issued: ReadonlyArray<IIssuedTaskReceipt> = record.issued.filter(
+          (m) => m.expiresAt > disposal.at
+        );
+        const evidence: ISubscriptionEvidence = evidenceOf({ ...record, issued });
+        const newly: UpdateId[] = [];
+        const already: UpdateId[] = [];
+        for (const updateId of disposal.updateIds) {
+          if (evidence.discharged.has(updateId)) {
+            already.push(updateId);
+          } else if (!host.index().isOwed(record.id, updateId)) {
+            return taskFailure<ITaskDispositionResult>(
+              `disposeObligations: subscription ${record.id} is not owed ${updateId}`,
+              'invalid',
+              'after-host-action'
+            );
+          } else if (evidence.pinned.has(updateId)) {
+            return taskFailure<ITaskDispositionResult>(
+              `disposeObligations: ${updateId} is named by an issued receipt that is not acknowledged; ` +
+                `acknowledge or abandon that receipt first`,
+              'conflict',
+              'after-host-action'
+            );
+          } else {
+            newly.push(updateId);
+          }
+        }
+        const base = { subscriptionId: record.id, alreadyDischarged: already };
+        if (newly.length === 0) {
+          // Nothing to dispose, but a manifest that expired is still evicted, so it stops holding
+          // its preparation claim.
+          return issued.length === record.issued.length
+            ? ok<ITaskDispositionResult>({ ...base, newlyDisposed: [] })
+            : this._replace(state, record, { issued }).onSuccess(() =>
+                ok<ITaskDispositionResult>({ ...base, newlyDisposed: [] })
+              );
+        }
+        return this._replace(
+          state,
+          record,
+          {
+            issued,
+            disposed: _withDispositions(record, newly, reason.value),
+            baseline: _withoutBaselines(record, newly)
+          },
+          newly
+        ).onSuccess(() => ok<ITaskDispositionResult>({ ...base, newlyDisposed: newly }));
+      }
+    );
+  }
+
+  /**
+   * Closes a subscription: it joins no audience again and releases its delivery units. `retain` keeps
+   * every owed obligation owed and drainable; `dispose` abandons every unacknowledged manifest and
+   * disposes every owed obligation with the reason, in the same write. Closing a closed subscription
+   * with `retain` changes nothing; with `dispose` it disposes what it still retains.
+   */
+  public close(request: ITaskSubscriptionClosure): TaskResult<ITaskConsumerRecord> {
+    const host: ISubscriptionHost = this._host;
+    const converted = host.converters.delivery.subscriptionClosure.convert(request);
+    if (converted.isFailure()) {
+      return taskFailure(`closeSubscription: ${converted.message}`, 'invalid', 'after-host-action');
+    }
+    const closure: ITaskSubscriptionClosure = converted.value;
+    const reason: TaskResult<string | undefined> =
+      closure.reason === undefined ? ok(undefined) : this._reason(closure.reason);
+    if (reason.isFailure()) {
+      return propagate(reason);
+    }
+    return this._current(closure.subscriptionId, closure.expectedRecordRevision).onSuccess(
+      ({ state, record }) => {
+        const owed: ReadonlyArray<UpdateId> = host.index().owedIds(record.id);
+        // An unacknowledged manifest names obligations `dispose` ends (or, when an overlapping
+        // receipt was acknowledged first, ones already discharged): it can never be acknowledged, so
+        // it goes. An acknowledged one stays valid for replay.
+        const issued: ReadonlyArray<IIssuedTaskReceipt> =
+          closure.obligations === 'dispose' ? record.issued.filter((m) => m.acknowledged) : record.issued;
+        if (closure.obligations === 'retain' || owed.length === 0) {
+          return record.state === 'closed' && issued.length === record.issued.length
+            ? ok(record)
+            : this._replace(state, record, { issued, state: 'closed' });
+        }
+        const disposed: ReadonlyArray<UpdateId> = [...owed].sort();
+        return this._replace(
+          state,
+          record,
+          {
+            state: 'closed',
+            issued,
+            disposed: _withDispositions(record, disposed, reason.value!),
+            baseline: _withoutBaselines(record, disposed)
+          },
+          disposed
+        );
+      }
+    );
+  }
+
+  /** A disposition reason within the stored profile's byte bound, measured as it is encoded. */
+  private _reason(reason: string): TaskResult<string> {
+    const max: number = this._host.profile().encoded.maxDispositionReasonBytes;
+    const bytes: number = utf8Length(JSON.stringify(reason)) - 2;
+    return bytes <= max
+      ? ok(reason)
+      : taskFailure(
+          `disposition reason: ${bytes} bytes encoded, over the bound of ${max}`,
+          'invalid',
+          'after-host-action'
+        );
   }
 
   /** Removes one issued manifest. Its obligations stay owed, and its history, if any, stays. */
@@ -745,10 +906,10 @@ export class SubscriptionRecords {
     subscriptionId: SubscriptionId,
     expectedRecordRevision: number
   ): TaskResult<{ readonly state: ISubscriptionState; readonly record: ITaskConsumerRecord }> {
-    const state: ISubscriptionState | undefined = this._host.book().subscriptions.get(subscriptionId);
+    const state: ISubscriptionState | undefined = this._host.book().stateOf(subscriptionId);
     if (state === undefined) {
       return taskFailure(
-        `subscription ${subscriptionId}: no live subscription`,
+        `subscription ${subscriptionId}: no retained subscription`,
         'not-found-or-denied',
         'after-host-action'
       );
@@ -815,13 +976,17 @@ export class SubscriptionRecords {
   private _replace(
     state: ISubscriptionState,
     record: ITaskConsumerRecord,
-    changes: Pick<ITaskConsumerRecord, 'issued'> & Partial<Pick<ITaskConsumerRecord, 'acknowledged'>>,
+    changes: Pick<ITaskConsumerRecord, 'issued'> &
+      Partial<Pick<ITaskConsumerRecord, 'acknowledged' | 'disposed' | 'baseline' | 'state'>>,
     satisfied: ReadonlyArray<UpdateId> = []
   ): TaskResult<ITaskConsumerRecord> {
     const host: ISubscriptionHost = this._host;
     const profile: ITaskCapacityProfile = host.profile();
     const id: SubscriptionId = record.id;
     const issued: ReadonlyArray<IIssuedTaskReceipt> = changes.issued;
+    const closing: boolean = record.state === 'active' && changes.state === 'closed';
+    const owed: number = host.index().owedCount(id) - satisfied.length;
+    const nextState: ITaskConsumerRecord['state'] = changes.state ?? record.state;
     const preparation: ITaskCapacityClaim = record.capacityClaims.find(
       (c) => c.purpose === 'receipt-preparation'
     )!;
@@ -835,21 +1000,27 @@ export class SubscriptionRecords {
               c.claimId,
               id,
               profile,
-              issued.map((m) => ({ bytes: valueBytes(m) }))
+              issued.map((m) => ({ bytes: valueBytes(m) })),
+              isDrainable(nextState, owed, issued)
             )
           : c
       )
     };
     return this._validated(next).onSuccess((read) => {
-      const nextState: ISubscriptionState = subscriptionState(read.record, read.fingerprint, read.bytes);
-      const owed: number = host.index().owedCount(id) - satisfied.length;
-      const entry: ILedgerEntry = subscriptionEntry(nextState, owed, host.book().unitsOf(id), profile);
+      const written: ISubscriptionState = subscriptionState(read.record, read.fingerprint, read.bytes);
+      // A closing subscription holds no delivery units: that release is part of what is admitted.
+      const units: number = closing ? 0 : host.book().unitsOf(id);
+      const entry: ILedgerEntry = subscriptionEntry(written, owed, units, profile);
       return host
         .ledger()
         .admit(new Map([[subscriptionKey(id), entry]]))
         .onSuccess(() => this._write(id, record.recordRevision, read, undefined))
         .onSuccess(() => {
-          host.book().subscriptions.set(id, nextState);
+          if (closing) {
+            host.book().close(written);
+          } else {
+            host.book().setState(written);
+          }
           host.index().satisfy(id, satisfied);
           host.ledger().apply(new Map([[subscriptionKey(id), host.book().entry(id, host.index(), profile)]]));
           host.committed();
@@ -1001,4 +1172,52 @@ function _entryProblem(
     }
   }
   return undefined;
+}
+
+/**
+ * The durable evidence one subscription record holds for cleanup: every id in its exact history, and
+ * every id an unacknowledged issued manifest names.
+ * @internal
+ */
+export interface ISubscriptionEvidence {
+  readonly discharged: ReadonlySet<UpdateId>;
+  readonly pinned: ReadonlySet<UpdateId>;
+}
+
+/**
+ * The evidence a validated record holds.
+ * @internal
+ */
+export function evidenceOf(record: ITaskConsumerRecord): ISubscriptionEvidence {
+  return {
+    discharged: new Set<UpdateId>([...record.acknowledged, ...record.disposed.map((d) => d.updateId)]),
+    pinned: new Set<UpdateId>(
+      record.issued
+        .filter((m) => !m.acknowledged)
+        .flatMap((m) => m.receipt.included.flatMap((e) => e.updateIds))
+    )
+  };
+}
+
+/** A record's dispositions with `ids` added under one reason, ascending by id. */
+function _withDispositions(
+  record: ITaskConsumerRecord,
+  ids: ReadonlyArray<UpdateId>,
+  reason: string
+): ReadonlyArray<ITaskObligationDisposition> {
+  return [...record.disposed, ...ids.map((updateId) => ({ updateId, reason }))].sort((a, b) =>
+    a.updateId < b.updateId ? -1 : 1
+  );
+}
+
+/**
+ * A record's baseline without the payloads of `ids`: a baseline payload is dropped in the write that
+ * discharges it. Its id stays in the exact history, which is all a replay or a later receipt consults.
+ */
+function _withoutBaselines(
+  record: ITaskConsumerRecord,
+  ids: ReadonlyArray<UpdateId>
+): ReadonlyArray<ITaskUpdate> {
+  const discharged: ReadonlySet<UpdateId> = new Set(ids);
+  return record.baseline.filter((update) => !discharged.has(update.id));
 }

@@ -305,7 +305,7 @@ async function _commit(
     taskId: request.taskId,
     expectedRevision: before.revision,
     expectedRecordRevision: current.recordRevision,
-    record: nextDraft(current, after, operation, updates, false)
+    record: nextDraft(core.repository, current, after, operation, updates, false)
   });
   return committed.isSuccess() ? ok(receipt) : propagate(committed);
 }

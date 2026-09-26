@@ -414,3 +414,39 @@ export interface ITaskRecoveryReport {
   /** Working files of interrupted atomic writes, removed at exclusive open. */
   readonly removedTemporaries: ReadonlyArray<string>;
 }
+
+/**
+ * Every incomplete operation a repository is holding, at one moment — the running counterpart of the
+ * report open produces.
+ *
+ * @remarks
+ * Nothing here is an error. Each entry is preserved state awaiting a host action: a registration or
+ * subscription accepted into the inventory whose record never landed (retry the same request), an
+ * external command whose outcome is unknown (resolve it with the pump, or abandon it), a command
+ * awaiting a feed revision, a task whose discharged payloads cleanup can prune, and each retained
+ * subscription with what it is still owed. Each list is ordered and bounded by the request's limit;
+ * `truncated` says whether any was cut short.
+ * @public
+ */
+export interface ITaskOutstandingReport {
+  readonly pendingRegistrations: ReadonlyArray<{
+    readonly taskId: TaskId;
+    readonly operationId: OperationId;
+  }>;
+  readonly pendingSubscriptions: ReadonlyArray<{
+    readonly subscriptionId: SubscriptionId;
+    readonly operationId: OperationId;
+  }>;
+  readonly unsettledCommands: ReadonlyArray<TaskId>;
+  readonly awaitingCommands: ReadonlyArray<TaskId>;
+  readonly prunable: ReadonlyArray<TaskId>;
+  readonly subscriptions: ReadonlyArray<{
+    readonly subscriptionId: SubscriptionId;
+    readonly state: 'active' | 'closed';
+    /** Obligations still owed: neither acknowledged nor disposed. */
+    readonly owed: number;
+    /** Ids its unacknowledged issued receipts name. */
+    readonly pinned: number;
+  }>;
+  readonly truncated: boolean;
+}

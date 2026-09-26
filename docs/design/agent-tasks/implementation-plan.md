@@ -218,7 +218,7 @@ A3: reserve each accepted update/baseline's future acknowledgement-or-dispositio
 
 **Review gate:** adversarial receipts and checkpoint custody; verify exact-ID logic rather than max revision, and fail-closed behavior of custom checkpoint stores.
 
-### T8 — Retention, backpressure and recovery journeys
+### T8 — Retention, backpressure and recovery journeys — 🟡 retention mechanism implemented on `integration/agent-tasks-v1` ([#698](https://github.com/ErikFortune/fgv/pull/698)); A3 saturation journeys, profile decision and M1 proposed as a second PR
 
 **Dependencies:** T3–T7. **Affected package:** `ts-agent-tasks` storage/delivery/broker.
 

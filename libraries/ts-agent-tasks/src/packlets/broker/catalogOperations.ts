@@ -422,18 +422,15 @@ export async function completion(
   });
 }
 
-/** A task may be archived once it is terminal and owes nothing to anyone. */
+/**
+ * A task may be archived once it is terminal and nothing it awaits is open. Whether every update has
+ * been acknowledged or disposed is the repository's to decide, from durable evidence, in the archiving
+ * commit.
+ */
 function _archivable(record: IResolvedTaskCommitRecord): TaskResult<true> {
   const id: TaskId = record.task.envelope.id;
   if (!isTerminalTaskStatus(record.task.envelope.lifecycle.status)) {
     return taskFailure(`task ${id}: only a terminal task can be archived`, 'conflict', 'after-host-action');
-  }
-  if (record.updates.some((update) => update.audience.length > 0)) {
-    return taskFailure(
-      `task ${id}: updates are still owed; they must be acknowledged or disposed of first`,
-      'retention-blocked',
-      'after-host-action'
-    );
   }
   if (
     record.operations.some(
@@ -450,8 +447,9 @@ function _archivable(record: IResolvedTaskCommitRecord): TaskResult<true> {
 }
 
 /**
- * `archive`: turns a terminal task into its tombstone. Refused while any retained update is still
- * owed to someone — its audience must acknowledge or dispose of it first (T7/T8).
+ * `archive`: turns a terminal task into its tombstone, which retains no update payload. Refused while
+ * any retained update is still owed to someone — its audience must acknowledge or dispose of it first
+ * — while a baseline for it is owed, or while an external command is unsettled or awaiting its feed.
  * @internal
  */
 export async function archive(

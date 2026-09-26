@@ -938,6 +938,14 @@ interface IConsumerRecord {
 > carries its `registration` (operation id, principal) for replay. `prepare` returns
 > `{ context, deliveryId, expiresAt }`; `pending` returns a projected `ITaskDeliveryPage` with a
 > `withheld` count; `abandon(deliveryId)` is added.
+>
+> **As implemented in T8:** the record gains `disposed: [{ updateId, reason }]` (disjoint from
+> `acknowledged`) and `state: 'active' | 'closed'`; the policy gains `coalesceProgress` (default
+> `false`), and a coalescing update records `coalesced: { fromRevision }`. Disposition and closure
+> are trusted host operations (`TaskBroker.dispose`, `closeSubscription`) that also require the
+> binding's `dispose-obligation` permission. Pruning and archive decide from each audience member's
+> checkpoint read through the store, never the resident index. A discharged baseline payload leaves
+> the record in the same write. `.ai/tasks/active/agent-tasks-t8/result.md` has the reasons.
 
 Broker `prepare` is deliberately a service operation around the pure renderer:
 

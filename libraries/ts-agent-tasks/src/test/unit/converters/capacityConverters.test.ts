@@ -16,6 +16,17 @@ import {
 import { claim, converters } from '../../helpers/fixtures';
 
 describe('capacity profile', () => {
+  test('the acknowledgement evidence slot must hold one disposition, reason and all', () => {
+    const encoded = defaultTaskCapacityProfile.encoded;
+    const tooSmall = {
+      ...defaultTaskCapacityProfile,
+      encoded: { ...encoded, maxAcknowledgementEvidenceBytes: 300 }
+    };
+    expect(converters.capacity.profile.convert(tooSmall)).toFailWith(/cannot hold one disposition/i);
+    const shorterReason = { ...tooSmall, encoded: { ...tooSmall.encoded, maxDispositionReasonBytes: 100 } };
+    expect(converters.capacity.profile.convert(shorterReason)).toSucceed();
+  });
+
   test('the default profile round-trips through its converter unchanged', () => {
     expect(converters.capacity.profile.convert(defaultTaskCapacityProfile)).toSucceedWith(
       defaultTaskCapacityProfile
