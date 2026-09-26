@@ -74,13 +74,11 @@ export class FileTreeCheckpointStore implements ITaskCheckpointStore {
         : _revision.convert(current).onSuccess((c) => succeed(c.recordRevision))
     );
     if (held.isFailure() || held.value !== expectedRecordRevision) {
+      const name: string = recordName('consumer', subscriptionId);
       return failWithDetail<true, CheckpointWriteVisibility>(
         held.isFailure()
-          ? `${recordName('consumer', subscriptionId)}: cannot read the current record: ${held.message}`
-          : `${recordName(
-              'consumer',
-              subscriptionId
-            )}: expected record revision ${expectedRecordRevision}, ` + `holding ${held.value}`,
+          ? `${name}: cannot read the current record: ${held.message}`
+          : `${name}: expected record revision ${expectedRecordRevision}, holding ${held.value}`,
         'unchanged'
       );
     }
