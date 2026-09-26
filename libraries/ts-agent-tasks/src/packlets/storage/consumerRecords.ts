@@ -160,7 +160,7 @@ export class SubscriptionRecords {
       );
     }
     return this._mint().onSuccess((activationId) =>
-      this._firstRecord(registration, activationId, undefined, admitted.value.units).onSuccess((first) =>
+      this._firstRecord(registration, activationId, admitted.value.units).onSuccess((first) =>
         this._pend(registration, first).onSuccess((entry) =>
           this._write(id, 0, first.read, operationId).onSuccess(() =>
             this._finish(entry, first, admitted.value.matched, admitted.value.units)
@@ -307,13 +307,12 @@ export class SubscriptionRecords {
 
   /**
    * The first record of a registration and its live ledger entry. Its activation claim carries the
-   * pending reservation's id; when there is no reservation yet, its charges are the record's whole
-   * footprint, which the pending entry then reserves.
+   * given id and the record's whole footprint, which the pending entry then reserves — always
+   * computed, never taken from an entry that may have been changed since it was written.
    */
   private _firstRecord(
     registration: ITaskSubscriptionRegistration,
     activationId: CapacityClaimId,
-    reserved: ITaskCapacityClaim | undefined,
     units: number
   ): TaskResult<{
     readonly record: ITaskConsumerRecord;
@@ -350,9 +349,8 @@ export class SubscriptionRecords {
             preparationClaim(preparationId, id, profile, [])
           ]
         });
-      const estimate: TaskResult<IConsumerRead> =
-        reserved !== undefined ? build(reserved.charges) : build([]);
-      return estimate.onSuccess((first) => {
+      // A first build with no charges measures the record; the second carries its whole footprint.
+      return build([]).onSuccess((first) => {
         const owed: number = first.record.baseline.length;
         const state: ISubscriptionState = subscriptionState(first.record, first.fingerprint, first.bytes);
         if (historyCommitment(state, owed, units) > profile.perOwner.maxAcknowledgementIdsPerSubscription) {
@@ -379,11 +377,10 @@ export class SubscriptionRecords {
             }
           );
         }
-        const charges: ITaskCapacityClaim['charges'] =
-          reserved !== undefined
-            ? reserved.charges
-            : _footprint(subscriptionEntry(state, owed, units, profile));
-        return (reserved !== undefined ? ok(first) : build(charges)).onSuccess((final) => {
+        const charges: ITaskCapacityClaim['charges'] = _footprint(
+          subscriptionEntry(state, owed, units, profile)
+        );
+        return build(charges).onSuccess((final) => {
           const finalState: ISubscriptionState = subscriptionState(
             final.record,
             final.fingerprint,
@@ -481,7 +478,7 @@ export class SubscriptionRecords {
       // committed to first, by re-pending under its fingerprint, and only then written.
       // The reservation is recomputed from this attempt's first record rather than trusted from the
       // entry, and re-admitted when the entry is re-pended below.
-      return this._firstRecord(registration, activation.claimId, undefined, units).onSuccess((first) =>
+      return this._firstRecord(registration, activation.claimId, units).onSuccess((first) =>
         this._pend(registration, first).onSuccess((repended) =>
           this._write(id, 0, first.read, registration.operationId).onSuccess(() =>
             this._finish(repended, first, matched, units)
