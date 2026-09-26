@@ -38,7 +38,7 @@ export type IndexContent =
       readonly automaticList?: boolean;
       /** The record holds an external command whose dispatch is not settled. */
       readonly unsettledCommands?: boolean;
-      /** The record holds a settled command still awaiting its feed revision (T8). */
+      /** The record holds a settled command still awaiting its feed revision. */
       readonly awaitingCommands?: boolean;
     }
   /** Archived: identity, graph edge, final status and source identity only. */
@@ -201,15 +201,15 @@ export class TaskIndex {
   public readonly listCandidates: SortedKeySet = new SortedKeySet();
   /** Tasks holding an unsettled external command, for the uncertain-command pump. */
   public readonly unsettledCommands: SortedKeySet = new SortedKeySet();
-  /** Tasks holding a settled command that awaits its feed revision (T8). */
+  /** Tasks holding a settled command that awaits its feed revision. */
   public readonly awaitingCommands: SortedKeySet = new SortedKeySet();
   /**
    * Tasks retaining at least one update every audience member of which has discharged it, by the
-   * committed checkpoints this index was built from: the cleanup pump's candidates (T8). A hint —
+   * committed checkpoints this index was built from: the cleanup pump's candidates. A hint —
    * pruning re-reads the durable evidence before it drops anything.
    */
   public readonly prunable: SortedKeySet = new SortedKeySet();
-  /** Per task, how many subscriptions still owe a baseline obligation for it (T8). */
+  /** Per task, how many subscriptions still owe a baseline obligation for it. */
   private readonly _baselineTasks: Map<TaskId, number> = new Map();
   /** Per parent, how many of its children are resolved (archived or not) and succeeded. */
   private readonly _succeededChildren: Map<TaskId, number> = new Map();

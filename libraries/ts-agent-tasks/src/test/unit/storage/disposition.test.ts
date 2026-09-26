@@ -398,7 +398,7 @@ describe('pruning and archive', () => {
       expect.objectContaining({ code: 'retention-blocked' })
     );
     expect(await archive(repository)).toFailWithDetail(
-      /still owed to subscription s1/i,
+      /is still owed; it leaves only once acknowledged or disposed/i,
       expect.objectContaining({ code: 'retention-blocked' })
     );
     (await dispose(repository, [uid('t', 1, 'lifecycle'), uid('t', 2, 'lifecycle')])).orThrow();
@@ -448,7 +448,7 @@ describe('pruning and archive', () => {
       )
     ).orThrow();
     expect(await archive(f.repository)).toFailWithDetail(
-      /still owed a baseline/i,
+      /baseline obligation for it is still owed/i,
       expect.objectContaining({ code: 'retention-blocked' })
     );
     (

@@ -416,7 +416,7 @@ const checks: ReadonlyArray<{
         () => _add(r, 'o1', { scopes: [B] }),
         () => _add(r, 'other', { scopes: [A] }),
         () => _change(r, 'o1', succeeded),
-        // A tombstone owes nothing: archive waits for acknowledgement or disposition (T8).
+        // A tombstone owes nothing: archive waits for acknowledgement or disposition.
         async () =>
           _code('archive while owed', await _commitChange(r, 'o1', undefined, true), 'retention-blocked'),
         async () =>

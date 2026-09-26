@@ -68,7 +68,7 @@ export class DeliveryBook {
   /** Active subscriptions: every one joins the audiences its selection and categories match. */
   public readonly subscriptions: Map<SubscriptionId, ISubscriptionState>;
   /**
-   * Closed subscriptions (T8): retained records that join no audience and hold no delivery units, but
+   * Closed subscriptions: retained records that join no audience and hold no delivery units, but
    * still hold the obligations they kept, their history and — while they may drain — a preparation.
    */
   public readonly closed: Map<SubscriptionId, ISubscriptionState> = new Map();

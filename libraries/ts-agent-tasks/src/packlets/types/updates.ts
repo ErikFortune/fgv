@@ -62,7 +62,7 @@ export interface ITaskUpdate {
   /**
    * Present on a routine update that superseded undelivered updates of its category (design § 9,
    * coalescing): the earliest revision it replaced. Everything from there to this revision was not
-   * retained as its own update. (T8.)
+   * retained as its own update.
    */
   readonly coalesced?: { readonly fromRevision: TaskRevision };
 }

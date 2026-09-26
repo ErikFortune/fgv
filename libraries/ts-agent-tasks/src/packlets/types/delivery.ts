@@ -162,7 +162,7 @@ export interface IIssuedTaskReceipt {
  * history. A baseline payload leaves `baseline` in the same write that acknowledges or disposes it;
  * its id stays in the history.
  *
- * (T7: named `ITaskConsumerRecord` to sit beside `ITaskSourceRecord`.)
+ * Named `ITaskConsumerRecord` to sit beside `ITaskSourceRecord`.
  * @public
  */
 export interface ITaskConsumerRecord {
@@ -376,7 +376,7 @@ export interface ICloseSubscriptionRequest {
 }
 
 /**
- * A request to abandon one external command through {@link TaskBroker.abandonCommand}. (T8.)
+ * A request to abandon one external command through {@link TaskBroker.abandonCommand}.
  * @public
  */
 export interface IAbandonCommandRequest {
@@ -386,7 +386,7 @@ export interface IAbandonCommandRequest {
 }
 
 /**
- * What one {@link TaskBroker.cleanup} pass did. (T8.)
+ * What one {@link TaskBroker.cleanup} pass did.
  *
  * @remarks
  * `pruned` tasks had discharged update payloads removed; `unchanged` candidates had nothing the

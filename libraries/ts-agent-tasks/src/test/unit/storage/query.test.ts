@@ -665,7 +665,7 @@ describe('owed updates', () => {
       expect(owed.updates).toEqual([])
     );
 
-    // Terminal: out of every open query, still owed — and the obligations hold its archive (T8).
+    // Terminal: out of every open query, still owed — and the obligations hold its archive.
     expect(
       (await page(repository, { selection: select({ lifecycleClass: 'open' }) })).items.map(
         (i) => i.envelope.id

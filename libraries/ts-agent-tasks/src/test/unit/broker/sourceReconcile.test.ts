@@ -254,7 +254,7 @@ describe('observed-state reconciliation', () => {
   });
 });
 
-describe('source-replay: a feed revision for a binding no task holds (T8)', () => {
+describe('source-replay: a feed revision for a binding no task holds', () => {
   test('stops the pass with the cursor unmoved; registering the binding lets the next pass apply it', async () => {
     const h = await sourceHarness({ history: 'source-replay' });
     h.executor.addJob('j1');
@@ -501,7 +501,7 @@ describe('source-replay: only the feed commits projections', () => {
           ...p,
           observations: p.observations.map((o) => ({
             ...o,
-            // The task's own reference (T8: a feed may not pass a binding no task holds).
+            // The task's own reference — a feed may not pass a binding no task holds.
             binding: {
               ...o.binding,
               reference:

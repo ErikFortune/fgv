@@ -439,7 +439,7 @@ describe('uncertain outcomes', () => {
   });
 });
 
-describe('abandoning a command whose outcome is unknown (T8)', () => {
+describe('abandoning a command whose outcome is unknown', () => {
   const host = (
     h: ISourceHarness
   ): { principal: string; scopes: [typeof alpha]; authorization: typeof h.policy } => ({
@@ -538,7 +538,7 @@ describe('abandoning a command whose outcome is unknown (T8)', () => {
     );
   });
 
-  test('a policy that moves before the write, or a task that moves after authorization, abandons nothing', async () => {
+  test('a policy that moves before the write, or a task that keeps moving after authorization, abandons nothing', async () => {
     const { h, key } = await held();
     h.policy.afterDecision = (r) => {
       if (r.action === 'dispose-obligation') {
@@ -548,20 +548,33 @@ describe('abandoning a command whose outcome is unknown (T8)', () => {
     expect(
       await h.broker.abandonCommand(host(h), { taskId: 'j1', operationId: key, reason: 'r' })
     ).toFailWithDetail(/policy changed/i, expect.objectContaining({ code: 'conflict', retry: 'safe' }));
+    // A task that moves after authorization is authorized again; one that never holds still is refused.
+    h.policy.epoch = 'epoch-1';
+    let moves = 0;
     h.policy.afterDecision = async (r) => {
       if (r.action === 'dispose-obligation') {
-        h.policy.afterDecision = undefined;
-        h.executor.change('j1', (j) => (j.step = 2));
+        moves++;
+        h.executor.change('j1', (j) => (j.step = 10 + moves));
         (await h.broker.observe(tid('j1'))).orThrow();
       }
     };
     expect(
       await h.broker.abandonCommand(host(h), { taskId: 'j1', operationId: key, reason: 'r' })
-    ).toFailWithDetail(
-      /changed after it was authorized/i,
-      expect.objectContaining({ code: 'conflict', retry: 'safe' })
-    );
+    ).toFailWithDetail(/kept changing/i, expect.objectContaining({ code: 'conflict', retry: 'safe' }));
+    expect(moves).toBe(3);
     expect((await commandOf(h, 'j1', key)).dispatch).toBe('possibly-sent');
+    // Once it holds still, the retry after a single move succeeds.
+    let once = false;
+    h.policy.afterDecision = async (r) => {
+      if (r.action === 'dispose-obligation' && !once) {
+        once = true;
+        h.executor.change('j1', (j) => (j.step = 99));
+        (await h.broker.observe(tid('j1'))).orThrow();
+      }
+    };
+    expect(
+      await h.broker.abandonCommand(host(h), { taskId: 'j1', operationId: key, reason: 'r' })
+    ).toSucceed();
   });
 
   test('a malformed request is invalid', async () => {
@@ -873,7 +886,7 @@ describe('source-replay commands', () => {
     expect(
       await h.writer.archive({ taskId: tid('j1'), operationId: op(), expectedRevision: revision })
     ).toFailWithDetail(/awaiting its feed/, { code: 'retention-blocked', retry: 'after-host-action' });
-    // T8: the host abandons the wait; the receipt stays unclaimed, and the task can be archived.
+    // The host abandons the wait; the receipt stays unclaimed, and the task can be archived.
     const abandoned = (
       await h.broker.abandonCommand(
         { principal: 'alice', scopes: [alpha], authorization: h.policy },

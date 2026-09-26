@@ -644,7 +644,7 @@ describe('every commit names exactly the audience the repository computes', () =
 
 /**
  * Commits a non-required progress update owed to `s1`, optionally dropping earlier progress — and, when
- * it drops, optionally marking the gap as coalescing does (T8).
+ * it drops, optionally marking the gap as coalescing does.
  */
 async function progressCommit(
   repository: ITaskRepository,
@@ -903,14 +903,14 @@ describe('issued receipts at the storage boundary', () => {
     expect(inspectRepository(repository)!.evidence.consumerPassReads).toBe(1);
   });
 
-  // T8 replaces T7's rule that any commit may drop a non-required update. A routine update leaves
+  // A routine update leaves
   // undelivered only by coalescing: superseded in the same commit by a marked newer update, for a
   // subscription that takes coalescing, and never while an unacknowledged receipt names it.
   test('an owed routine update is not dropped for a subscription that does not coalesce', async () => {
     expect(await progressCommit(repository, 2, false)).toSucceed();
     const before = held(repository, 'acknowledgement-ids');
     expect(await progressCommit(repository, 3, true)).toFailWithDetail(
-      /still owed to subscription s1/i,
+      /is still owed; it leaves only once acknowledged or disposed/i,
       expect.objectContaining({ code: 'retention-blocked' })
     );
     expect(await owedIds(repository, 's1')).toEqual([uid('t', 1, 'lifecycle'), uid('t', 2, 'progress')]);
@@ -934,7 +934,7 @@ describe('issued receipts at the storage boundary', () => {
       )
     ).orThrow();
     expect(await progressCommit(r, 3, true)).toFailWithDetail(
-      /issued receipt .* has not acknowledged/i,
+      /issued receipt that is not acknowledged/i,
       expect.objectContaining({ code: 'retention-blocked' })
     );
     // An unmarked drop is refused even for a coalescing subscription: the gap must be visible.

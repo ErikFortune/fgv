@@ -23,7 +23,7 @@ import {
 import { committedIn, pendingIds } from '../../helpers/deliveryFixtures';
 
 /**
- * Crashes inside disposal, cleanup and archive (T8), through the real Node FileTree and the default
+ * Crashes inside disposal, cleanup and archive, through the real Node FileTree and the default
  * checkpoint store: a child process opens the durable repository, runs the operation and `SIGKILL`s
  * itself before or after its one rename, or after the operation returned. The parent reopens and
  * asserts that every obligation is either still owed or durably discharged — never neither — and that

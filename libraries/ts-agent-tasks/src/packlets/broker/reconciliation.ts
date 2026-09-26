@@ -270,7 +270,7 @@ async function _applyPage(
       return { observations: reports, stop: 'order', issue: `${report.message}` };
     } else if (replay && outcome === 'unknown-binding' && entry.observation.state === 'observed') {
       // A feed revision no task holds is an uncommitted required event: a task registered for the
-      // binding later would never receive it if the cursor moved past (T8, the T6 hand-off).
+      // binding later would never receive it if the cursor moved past.
       return {
         observations: reports,
         stop: 'unregistered-binding',

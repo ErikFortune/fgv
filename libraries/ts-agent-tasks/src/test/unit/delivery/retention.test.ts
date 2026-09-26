@@ -15,10 +15,9 @@ import {
   subscribed
 } from '../../helpers/deliveryFixtures';
 
-// What unblocks `archive` (T8). T7 left every task a matching subscription covers permanently
-// retention-blocked — even once fully acknowledged — because nothing pruned a stored audience. T8's
-// rule: an archive is one atomic replacement to a tombstone that retains no update payload, admitted
-// only when each audience member's durable checkpoint proves the update acknowledged or disposed.
+// What makes `archive` possible under a subscription: an archive is one atomic replacement to a
+// tombstone that retains no update payload, admitted only when each audience member's durable
+// checkpoint proves every update acknowledged or disposed.
 
 async function archive(h: IDeliveryHarness, id: string = 't'): Promise<unknown> {
   return h.writer.archive({
@@ -33,7 +32,7 @@ async function recordOf(h: IDeliveryHarness, id: string = 't'): Promise<IResolve
 }
 
 describe('archive under a live subscription', () => {
-  // Survives from T7 unchanged: an update owed to no one is never retained.
+  // An update owed to no one is never retained.
   test('with no subscription an update is owed to no one, and a terminal task archives', async () => {
     const h = await deliveryHarness();
     await track(h.writer, 't');
@@ -41,8 +40,7 @@ describe('archive under a live subscription', () => {
     expect(await archive(h)).toSucceed();
   });
 
-  // Changed from T7's "retention-blocked even once fully acknowledged": still refused while owed,
-  // and now admitted once the exact history holds every id.
+  // Refused while owed, and admitted once the exact history holds every id.
   test('a matching subscription holds archive until every update is acknowledged, then releases it', async () => {
     const h = await deliveryHarness();
     await subscribed(h, 'sub');
@@ -107,7 +105,6 @@ describe('archive under a live subscription', () => {
     expect(await archive(h)).toSucceed();
   });
 
-  // Survives from T7 unchanged.
   test('a subscription whose selection does not match the task does not block it', async () => {
     const h = await deliveryHarness();
     await subscribed(h, 'sub', { selection: { parentId: 'nobody' } });

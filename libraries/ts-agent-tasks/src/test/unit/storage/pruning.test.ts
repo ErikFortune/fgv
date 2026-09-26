@@ -21,7 +21,7 @@ import { InMemoryCheckpointStore } from '../../helpers/deliveryFixtures';
 import { addTask, scope, subscribeTo } from '../../helpers/queryFixtures';
 import { at, memoryRoot, nextDraft, params } from '../../helpers/storageFixtures';
 
-// The falsifiers for T8's retention rule, written before the disposition path. A "drop it and free
+// The falsifiers for the retention rule, written before the disposition path. A "drop it and free
 // the slot" implementation passes every functional test of disposition and pruning; these are the
 // tests it fails. Each asserts a refusal *and* that nothing moved: the obligation is still owed and
 // no capacity was released.

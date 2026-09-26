@@ -232,7 +232,7 @@ export function nextDraft(
     ...(current.sourceRevision !== undefined ? { sourceRevision: current.sourceRevision } : {}),
     operations: [...current.operations, operation],
     // A tombstone retains no update: every one leaves, and the repository admits that only when each
-    // audience member's checkpoint proves it discharged (T8).
+    // audience member's checkpoint proves it discharged.
     updates: archived ? updates : mergeUpdates(repository, current.updates, updates),
     archived
   };

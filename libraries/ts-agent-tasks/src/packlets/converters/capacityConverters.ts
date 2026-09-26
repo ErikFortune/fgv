@@ -225,7 +225,7 @@ export function buildCapacityConverters(
         ),
         // A disposition is exact history just as an acknowledgement is, and discharges the same
         // reserved evidence slot, so one disposition entry — id, reason and JSON framing — must fit
-        // in that slot, or disposing an obligation would need capacity nobody reserved (T8).
+        // in that slot, or disposing an obligation would need capacity nobody reserved.
         value.encoded.maxAcknowledgementEvidenceBytes >=
         maxUpdateId + value.encoded.maxDispositionReasonBytes + dispositionFraming
           ? succeed<ReadonlyArray<ITaskCapacityCharge>>([])

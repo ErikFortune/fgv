@@ -266,7 +266,7 @@ describe('exact-ID conversion of reservations', () => {
     (await delivery.acknowledge((await delivery.prepare()).orThrow().context.receipt)).orThrow();
     expect(resident(h.repository)).toBe(0);
     expect(committedIn(h.repository, 'resident-payload-bytes')).toBe(residentBefore - held);
-    // T8: the payloads are pruned in the same write, releasing their update slots; the exact ids stay.
+    // The payloads are pruned in the same write, releasing their update slots; the exact ids stay.
     const record = await consumerRecord(h.repository, 'sub');
     expect(record.baseline).toEqual([]);
     expect(record.acknowledged).toEqual(['a:1:initial', 'b:1:initial']);

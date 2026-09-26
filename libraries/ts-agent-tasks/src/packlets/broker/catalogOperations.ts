@@ -425,7 +425,7 @@ export async function completion(
 /**
  * A task may be archived once it is terminal and nothing it awaits is open. Whether every update has
  * been acknowledged or disposed is the repository's to decide, from durable evidence, in the archiving
- * commit (T8).
+ * commit.
  */
 function _archivable(record: IResolvedTaskCommitRecord): TaskResult<true> {
   const id: TaskId = record.task.envelope.id;
@@ -462,7 +462,7 @@ export async function archive(
     return propagate(converted);
   }
   const request: IArchiveTask = converted.value.value;
-  const archived = await runCatalogMutation(core, ctx, {
+  return runCatalogMutation(core, ctx, {
     action: 'archive',
     operation: 'archive',
     identity: request,
@@ -473,16 +473,4 @@ export async function archive(
       ok({ disposition: 'changed', envelope: current.task.envelope, categories: [], archived: true }),
     receipt: _base
   });
-  // The repository's retention refusal names the subscriptions still owed; a principal is told only
-  // that something is still owed, never which consumers exist.
-  return archived.isFailure() &&
-    archived.detail?.code === 'retention-blocked' &&
-    /subscription/.test(archived.message)
-    ? taskFailure(
-        `task ${request.taskId}: updates are still owed, or a baseline is; they must be acknowledged or disposed of first`,
-        'retention-blocked',
-        'after-host-action',
-        { operationId: request.operationId }
-      )
-    : archived;
 }

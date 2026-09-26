@@ -68,7 +68,7 @@ export interface IDeliveryConverters {
   readonly receiptIssue: Converter<ITaskReceiptIssue>;
   readonly receiptAcknowledgement: Converter<ITaskReceiptAcknowledgement>;
   readonly receiptAbandonment: Converter<ITaskReceiptAbandonment>;
-  /** One disposition entry of a consumer record. (T8.) */
+  /** One disposition entry of a consumer record. */
   readonly disposition: Converter<ITaskObligationDisposition>;
   /** A disposition reason: one non-empty line. Its byte bound is the stored profile's, checked by storage. */
   readonly dispositionReason: Converter<string>;

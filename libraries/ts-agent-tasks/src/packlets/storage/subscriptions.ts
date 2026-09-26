@@ -124,7 +124,7 @@ export function subscriptionState(
 
 /**
  * Encoded bytes of the baseline payloads a record holds. A baseline payload leaves the record in the
- * write that acknowledges or disposes it (T8), so every one still held is owed.
+ * write that acknowledges or disposes it, so every one still held is owed.
  */
 function _unacknowledgedBytes(record: ITaskConsumerRecord): number {
   return record.baseline.reduce((total, update) => total + valueBytes(update), 0);
@@ -216,7 +216,7 @@ export function catalogOf(record: ITaskCommitRecord): ICatalogFields | undefined
  * `used + reserved` for a subscription never grows from its first outstanding manifest.
  *
  * A subscription that can never prepare again — closed, owed nothing, holding no unacknowledged
- * manifest — holds none: that is the transient capacity closing it releases (T8).
+ * manifest — holds none: that is the transient capacity closing it releases.
  * @internal
  */
 export function preparationBytes(

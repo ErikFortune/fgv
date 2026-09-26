@@ -30,7 +30,7 @@ import { BrokerCore } from './core';
 import { fenceHolds, maxDeliveryAttempts } from './delivery';
 import { ok, propagate, taskFailure } from './failures';
 
-// T8: the ways an obligation, a subscription or a command's tracking ends without the normal path —
+// The ways an obligation, a subscription or a command's tracking ends without the normal path —
 // each a trusted host operation that also asks the binding's policy for `dispose-obligation`, and
 // re-proves in its committing writer section that nothing it authorized has moved.
 
@@ -332,6 +332,26 @@ export async function abandonCommand(
     return taskFailure(`abandonCommand: ${converted.message}`, 'invalid', 'after-host-action');
   }
   const request: IAbandonCommandRequest = converted.value;
+  for (let attempt = 1; attempt <= maxDeliveryAttempts; attempt++) {
+    const outcome: TaskResult<ICommandReceipt | undefined> = await _abandonOnce(core, access, request);
+    if (outcome.isFailure() || outcome.value !== undefined) {
+      return outcome.isFailure() ? propagate(outcome) : ok(outcome.value!);
+    }
+  }
+  return taskFailure(
+    `abandonCommand ${request.taskId}: the task kept changing while it was authorized; retry`,
+    'conflict',
+    'safe',
+    { operationId: request.operationId }
+  );
+}
+
+/** One authorize-then-commit attempt; `undefined` when the task moved after authorization. */
+async function _abandonOnce(
+  core: BrokerCore,
+  access: AccessContext,
+  request: IAbandonCommandRequest
+): Promise<TaskResult<ICommandReceipt | undefined>> {
   const what: string = `abandonCommand ${request.taskId}`;
   const epoch: TaskResult<string> = access.epoch();
   if (epoch.isFailure()) {
@@ -348,23 +368,18 @@ export async function abandonCommand(
   return core.gated(async (writer) => {
     const read = await writer.readCommit(request.taskId);
     if (read.isFailure()) {
-      return propagate<ICommandReceipt>(read);
+      return propagate<ICommandReceipt | undefined>(read);
     }
     // Authorized from a record revision; anything committed since is re-presented, not guessed at.
     const current: ITaskCommitRecord = read.value!;
     if (current.recordRevision !== authorized.get(request.taskId)) {
-      return taskFailure<ICommandReceipt>(
-        `${what}: the task changed after it was authorized; retry`,
-        'conflict',
-        'safe',
-        { operationId: request.operationId }
-      );
+      return ok<ICommandReceipt | undefined>(undefined);
     }
     const command = current.operations.find(
       (op): op is IStoredCommandOperation => op.type === 'command' && op.operationId === request.operationId
     );
     if (current.recordType !== 'resolved' || command === undefined) {
-      return taskFailure<ICommandReceipt>(
+      return taskFailure<ICommandReceipt | undefined>(
         `${what}: no command '${request.operationId}'`,
         'not-found-or-denied',
         'after-host-action',
@@ -380,8 +395,8 @@ export async function abandonCommand(
     if (from === undefined) {
       // A settled receipt is final — including an abandonment already recorded, which this repeats.
       return command.receipt.result.state === 'abandoned'
-        ? ok<ICommandReceipt>(command.receipt)
-        : taskFailure<ICommandReceipt>(
+        ? ok<ICommandReceipt | undefined>(command.receipt)
+        : taskFailure<ICommandReceipt | undefined>(
             `${what}: command '${request.operationId}' is settled (${command.receipt.result.state}); there is ` +
               `nothing to abandon`,
             'conflict',
@@ -398,7 +413,7 @@ export async function abandonCommand(
       receipt: { ...command.receipt, result: { state: 'abandoned', reason: request.reason, from } }
     };
     if (!access.epochIs(epoch.value)) {
-      return _policyMoved<ICommandReceipt>(what);
+      return _policyMoved<ICommandReceipt | undefined>(what);
     }
     const resolved: IResolvedTaskCommitRecord = current;
     const committed = await writer.commit({
@@ -416,13 +431,13 @@ export async function abandonCommand(
       }
     });
     if (committed.isFailure()) {
-      return propagate<ICommandReceipt>(committed);
+      return propagate<ICommandReceipt | undefined>(committed);
     }
     core.environment.logger.info(
       `ts-agent-tasks: command '${request.operationId}' of ${request.taskId} abandoned by ${access.principal} ` +
         `(was ${from}): ${request.reason}`
     );
-    return ok(next.receipt);
+    return ok<ICommandReceipt | undefined>(next.receipt);
   });
 }
 

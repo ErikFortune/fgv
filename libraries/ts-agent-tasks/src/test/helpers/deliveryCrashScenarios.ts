@@ -134,7 +134,7 @@ export async function prepareDelivery(dir: string, subscribe: boolean): Promise<
   return prepared.isSuccess() ? succeed(prepared.value.context.receipt) : fail(prepared.message);
 }
 
-// ---- T8: disposal, cleanup and archive ----
+// ---- disposal, cleanup and archive ----
 
 /** The update ids a task's terminal commit owes the subscription, after its baseline. */
 export const retentionIds: ReadonlyArray<string> = ['t:1:initial', 't:2:0', 't:2:3'];

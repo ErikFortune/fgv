@@ -398,7 +398,7 @@ export function checkUpdates(
   for (const update of current) {
     const kept: ITaskUpdate | undefined = byId.get(update.id);
     if (kept === undefined) {
-      // Whether it may leave is the retention rule's to decide, from durable evidence (T8).
+      // Whether it may leave is the retention rule's to decide, from durable evidence.
       continue;
     }
     if (!canonicallyEqual(update, kept)) {
@@ -591,7 +591,7 @@ export function checkCommandEvolution(
 }
 
 /**
- * Why a command's move to `abandoned` is not the one abandonment admits, if it is not (T8): only a
+ * Why a command's move to `abandoned` is not the one abandonment admits, if it is not: only a
  * command whose outcome is still open — unsettled, or settled `accepted` while awaiting its feed — may
  * be abandoned; it then settles, stops awaiting, keeps its request and identity, and names what was
  * known about it. `abandoned` is final like any settled receipt.

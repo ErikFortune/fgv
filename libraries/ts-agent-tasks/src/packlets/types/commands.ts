@@ -39,7 +39,7 @@ export type CommandRejectionReason =
  * The state of a dispatched command.
  *
  * @remarks
- * The four outcome states are deliberately not collapsible, and `abandoned` (T8) is none of them:
+ * The four outcome states are deliberately not collapsible, and `abandoned` is none of them:
  * a host's explicit end of tracking for a command whose outcome is not known. `accepted` means intent is durably
  * recorded — it does *not* mean applied. `applied` requires an authoritative native
  * commit or a source-confirmed effect reconciled into a committed projection. An
@@ -59,7 +59,7 @@ export type CommandState =
     };
 
 /**
- * What was known about a command when a host abandoned it (T8).
+ * What was known about a command when a host abandoned it.
  *
  * @remarks
  * - `not-sent` — the intent was recorded and never dispatched.

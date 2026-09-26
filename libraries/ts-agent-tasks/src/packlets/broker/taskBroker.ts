@@ -148,7 +148,6 @@ export class TaskBroker {
   /**
    * Ends obligations of one subscription without acknowledgement — a trusted host operation, recorded
    * with its reason in the subscription's exact history. See {@link IDisposeObligationsRequest}.
-   * (T8.)
    *
    * @remarks
    * `binding`'s policy must allow `dispose-obligation` on every task the ids name, and the
@@ -168,7 +167,7 @@ export class TaskBroker {
   /**
    * Closes a subscription — a trusted host operation. It joins no audience again; `retain` keeps what
    * it is owed owed and drainable through its bound delivery, `dispose` ends all of it with the
-   * reason. The record and its history are retained, and its id is never reused. (T8.)
+   * reason. The record and its history are retained, and its id is never reused.
    *
    * @remarks
    * `binding`'s policy must allow `dispose-obligation` over the subscription's scopes, and — for
@@ -186,7 +185,7 @@ export class TaskBroker {
    * Abandons one external command whose outcome is not known — never sent, sent with an uncertain
    * outcome and held, or awaiting a feed revision — a trusted host operation. The receipt becomes
    * `abandoned`, naming what was known; it never claims the command was or was not applied. Its
-   * settlement reservation is released and the task can be archived. (T8.)
+   * settlement reservation is released and the task can be archived.
    *
    * @remarks
    * `binding`'s policy must allow `dispose-obligation` on the task. A command already abandoned
@@ -203,7 +202,7 @@ export class TaskBroker {
   /**
    * One cleanup pass — a trusted host operation: prunes the update payloads every audience member has
    * acknowledged or disposed, by each one's durable checkpoint, on up to `limit` candidate tasks.
-   * Ends no obligation and needs no authority beyond the evidence already committed. (T8.)
+   * Ends no obligation and needs no authority beyond the evidence already committed.
    */
   public async cleanup(request: unknown): Promise<TaskResult<ITaskCleanupReport>> {
     return cleanup(this._core, request);

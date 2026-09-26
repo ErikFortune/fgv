@@ -1469,7 +1469,7 @@ export class FileTreeTaskRepository implements ITaskRepository {
   }
 
   /**
-   * The retention rule (design § 9, *Retention*; T8), checked against durable evidence before any
+   * The retention rule (design § 9, *Retention*), checked against durable evidence before any
    * update leaves a record.
    *
    * @remarks
@@ -1501,7 +1501,10 @@ export class FileTreeTaskRepository implements ITaskRepository {
     const added: ReadonlyArray<ITaskUpdate> = next.filter((u) => !retained.has(u.id));
     const dropped: ReadonlyArray<ITaskUpdate> = before.filter((u) => !kept.has(u.id));
 
-    // A coalescing marker describes exactly the updates of its category this commit drops.
+    // A coalescing marker describes exactly the updates of its category this commit drops: its
+    // `fromRevision` is the earliest revision among them (carried forward from any they had superseded
+    // themselves). A commit adds at most one update per category — update identity is (task, revision,
+    // category) — so no two markers can claim the same drops.
     for (const update of added) {
       if (update.coalesced === undefined) {
         continue;
@@ -1545,14 +1548,13 @@ export class FileTreeTaskRepository implements ITaskRepository {
           newer.audience.includes(member) &&
           this._book.subscriptions.get(member)?.descriptor.policy.coalesceProgress === true;
         if (!coalescing) {
-          return blocked(
-            `update ${update.id} is still owed to subscription ${member}; it leaves only once acknowledged or disposed`
-          );
+          // The message names no subscription: it reaches whichever principal made the commit, and
+          // which consumers exist is host knowledge (`outstanding()` reports it to the host).
+          return blocked(`update ${update.id} is still owed; it leaves only once acknowledged or disposed`);
         }
         if (held.pinned.has(update.id)) {
           return blocked(
-            `update ${update.id} is named by an issued receipt subscription ${member} has not acknowledged; it ` +
-              `cannot be superseded`
+            `update ${update.id} is named by an issued receipt that is not acknowledged; it cannot be superseded`
           );
         }
       }
@@ -1569,11 +1571,9 @@ export class FileTreeTaskRepository implements ITaskRepository {
       if (hasPendingCommand(draft)) {
         return blocked(`an external command is unsettled or awaiting its feed; resolve or abandon it first`);
       }
-      const baselines: number = this._index!.baselinesOwedFor(taskId);
-      if (baselines > 0) {
+      if (this._index!.baselinesOwedFor(taskId) > 0) {
         return blocked(
-          `${baselines} subscription(s) are still owed a baseline obligation for it; they must be acknowledged or ` +
-            `disposed of first`
+          `a baseline obligation for it is still owed; it must be acknowledged or disposed of first`
         );
       }
     }

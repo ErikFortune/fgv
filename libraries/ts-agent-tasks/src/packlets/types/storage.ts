@@ -417,7 +417,7 @@ export interface ITaskRecoveryReport {
 
 /**
  * Every incomplete operation a repository is holding, at one moment — the running counterpart of the
- * report open produces (T8).
+ * report open produces.
  *
  * @remarks
  * Nothing here is an error. Each entry is preserved state awaiting a host action: a registration or

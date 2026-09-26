@@ -133,6 +133,21 @@ lets the next pass apply it. `observed-state` keeps moving on.
   `delivery/accounting.test.ts` (acknowledged baseline stays in record → leaves it),
   `broker/sourceReconcile.test.ts` (two-spellings test used an unregistered reference).
 
+## Layer 1 (`code-reviewer`, before coverage closure) — applied
+
+- **P1.1** retention refusals named the subscription in `.message` on every commit path, redacted by
+  a regex only in `archive`. Fixed at the source: storage messages name no subscription (baseline
+  refusal no longer counts subscribers); the broker wrapper is gone.
+- **P1.2** ~40 new `(T8)`/`(T7: …)` tags in comments and test names. Stripped; durable wording kept.
+- **P2.3** coalescing marker aggregation: the "one marker per category per commit" invariant holds
+  structurally (update identity is task+revision+category); a check for it would be dead code, so it
+  is documented at the site instead.
+- **P2.4** `abandonCommand` did not retry a benign revision race like its siblings. Aligned: bounded
+  retry, then `conflict`/`safe`; tests updated (keeps-moving → refused; moves once → succeeds).
+- **P3.5** non-null reads in `cleanup`/`_prune` rest on "no physical deletion" — kept, commented at
+  the site; deletion is out of scope under A3. **P3.6** `_taskOf` hand-decodes an update id — kept
+  (verified against both encodings); a shared decoder is a follow-up, not a defect.
+
 ## Split proposal (raised 2026-09-26, orchestrator's decision)
 
 Mechanism is complete at +4,145/−189 over 50 files, before docs, coverage closure and review
