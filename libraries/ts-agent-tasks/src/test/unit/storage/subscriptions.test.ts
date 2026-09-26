@@ -309,6 +309,74 @@ describe('subscription registration: the ordered inventory protocol', () => {
     ).toBe('s1');
   });
 
+  test("a pending entry whose reservation was altered is caught against its landed record's", async () => {
+    const { root, repository } = await faultyRepository();
+    // The record lands; the manifest never goes live.
+    root.faults.push({ name: 'repository.json', when: 'before', visibility: 'unchanged', skip: 1 });
+    expect(await register(repository, registration('s1'))).toFail();
+    repository.close().orThrow();
+    const manifestFile = root.inner
+      .getChildren()
+      .orThrow()
+      .find((c) => c.name === 'repository.json') as FileTree.IFileTreeFileItem;
+    const manifest = JSON.parse(manifestFile.getRawContents().orThrow());
+    root.inner
+      .writeChildAtomically(
+        'repository.json',
+        JSON.stringify({
+          ...manifest,
+          consumers: manifest.consumers.map((e: Record<string, unknown>) => ({
+            ...e,
+            capacityClaims: (e.capacityClaims as Array<Record<string, unknown>>).map((c) => ({
+              ...c,
+              charges: []
+            }))
+          }))
+        }),
+        { guarantee: 'session' }
+      )
+      .orThrow();
+    expect(codes(await reopened(root))).toEqual([
+      expect.stringMatching(/not its first record: the pending entry's activation reservation is not the one/)
+    ]);
+  });
+
+  test('a resume whose record never landed reserves its own footprint, not what the entry holds', async () => {
+    const { root, repository } = await faultyRepository();
+    root.faults.push({ name: 'consumer-s1.json', when: 'before', visibility: 'unchanged' });
+    expect(await register(repository, registration('s1'))).toFail();
+    repository.close().orThrow();
+    const manifestFile = root.inner
+      .getChildren()
+      .orThrow()
+      .find((c) => c.name === 'repository.json') as FileTree.IFileTreeFileItem;
+    const manifest = JSON.parse(manifestFile.getRawContents().orThrow());
+    // An under-reserved pending entry: the only kind of change open cannot check against a record.
+    root.inner
+      .writeChildAtomically(
+        'repository.json',
+        JSON.stringify({
+          ...manifest,
+          consumers: manifest.consumers.map((e: Record<string, unknown>) => ({
+            ...e,
+            capacityClaims: (e.capacityClaims as Array<Record<string, unknown>>).map((c) => ({
+              ...c,
+              charges: []
+            }))
+          }))
+        }),
+        { guarantee: 'session' }
+      )
+      .orThrow();
+    const r = readyOf(await reopened(root));
+    const record = (await register(r, registration('s1'))).orThrow();
+    const activation = record.capacityClaims.find((c) => c.purpose === 'subscription-activation')!;
+    // The record's whole footprint, which includes at least the receipt-preparation reservation.
+    const charged = (dimension: string): number =>
+      activation.charges.find((c) => c.dimension === dimension)?.amount ?? 0;
+    expect(charged('record-bytes')).toBeGreaterThanOrEqual(r.profile.encoded.maxIssuedReceiptBytes);
+  });
+
   test('a live subscription replays its registration and refuses another', async () => {
     const { repository } = await faultyRepository();
     const first = (await register(repository, registration('s1'))).orThrow();
@@ -486,6 +554,57 @@ describe('every commit names exactly the audience the repository computes', () =
       )
     ).toFailWithDetail(
       /but the subscriptions owed it are \[s1\]/i,
+      expect.objectContaining({ code: 'invalid' })
+    );
+  });
+
+  test('a new update whose snapshot is not the committed state is refused, whatever audience it names', async () => {
+    await addTask(repository, 't', { scopes: [A] });
+    const current = (await repository.readCommit('t' as TaskId)).orThrow()!;
+    const record = current.recordType === 'resolved' ? current : (undefined as never);
+    const env = { ...record.task.envelope, revision: 2 as TaskRevision, title: 'renamed' };
+    // The snapshot claims scope B, which s1 does not cover, so an empty audience would "match" it.
+    const forged = { ...env, scopes: [B] };
+    expect(
+      await repository.withWriter((w) =>
+        w.commit({
+          purpose: 'operation',
+          operationId: 'op-rename' as OperationId,
+          taskId: 't' as TaskId,
+          expectedRevision: 1 as TaskRevision,
+          expectedRecordRevision: record.recordRevision,
+          record: {
+            recordType: 'resolved',
+            task: { envelope: env, details: record.task.details },
+            operations: [
+              ...record.operations,
+              {
+                type: 'catalog',
+                operationId: 'op-rename' as OperationId,
+                operation: 'update-tracked',
+                request: { rename: true },
+                principalKey: 'host',
+                receipt: null
+              }
+            ],
+            updates: [
+              ...record.updates,
+              {
+                id: uid('t', 2, 'progress'),
+                taskId: 't' as TaskId,
+                revision: 2 as TaskRevision,
+                category: 'progress',
+                required: false,
+                snapshot: { envelope: forged },
+                audience: []
+              }
+            ],
+            archived: false
+          }
+        })
+      )
+    ).toFailWithDetail(
+      /carries a snapshot that is not the committed state/i,
       expect.objectContaining({ code: 'invalid' })
     );
   });

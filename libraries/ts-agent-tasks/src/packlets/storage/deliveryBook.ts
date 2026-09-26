@@ -187,9 +187,20 @@ export class DeliveryBook {
       (update) => before === undefined || !previous.has(update.id)
     );
 
+    // An update is only ever added to a resolved record, and describes exactly the state committed
+    // with it: a snapshot that differs — forged scopes or responsibility, say — would decide an
+    // audience for a state the task is not in.
+    const committed: ITaskEnvelope | undefined =
+      next.recordType === 'resolved' ? next.task.envelope : undefined;
     for (const update of added) {
-      // An update is only ever added to a resolved record, whose envelope it describes.
       const after: ITaskEnvelope = update.snapshot.envelope;
+      if (!canonicallyEqual(after, committed)) {
+        return taskFailure(
+          `task ${taskId}: update ${update.id} carries a snapshot that is not the committed state`,
+          'invalid',
+          'after-host-action'
+        );
+      }
       const expected: ReadonlyArray<SubscriptionId> = this.audience(beforeEnvelope, after, update.category);
       if (expected.length > max) {
         return _backpressure(

@@ -262,6 +262,14 @@ the local lint ran (CI red on the round-1 head). Lint now runs on the committed 
 | R3.2 | the acknowledgement's instant was read before the per-task authorization loop, so a receipt that expired during it was judged by the earlier time | fixed: the clock is read inside the committing section, immediately before storage acknowledges (a new window row, W8) | M30 (1; manual: the clock read moved back before authorization) |
 | R3.3 | open bounds an audience's length but does not check its members are live subscriptions | already enforced: open blocks (`integrity`) on any stored audience naming a subscription the inventory does not hold live (`openRepository.ts`, test *"a stored update naming a subscription that is not live blocks open"*). Recomputing the audience a past commit *should* have had is not possible at open — it depended on the subscriptions active at that commit and on its `before` state — and is enforced at commit time instead | — |
 
+**Copilot round 4** — three findings; two real and fixed, one declined by policy:
+
+| # | finding | disposition | revert |
+|---|---|---|---|
+| R4.1 | a new update's audience was computed from its own `snapshot`, which nothing bound to the committed envelope — a forged snapshot (other scopes, responsibility) could carry an audience that "matches" a state the task is not in | fixed: `DeliveryBook.plan` refuses a new update whose snapshot is not canonically the committed envelope, then computes its audience from that | M31 (2) |
+| R4.2 | a pending activation claim's charges were never checked, so a tampered, under-reserved pending entry was accepted and reused | fixed: with a landed record, the pending entry's reservation must equal the one the (fingerprint-verified) record carries — on resume and at open; without one, a resume recomputes the footprint of the record it is about to write and re-admits it by re-pending, instead of trusting the entry. (`_finish` already re-admitted the live entry, so an under-reservation could never over-commit — it could only let other work take the capacity activation was promised) | M32 (2), M33 (1) |
+| R4.3 | the new required encoded bound `maxAcknowledgementEvidenceBytes` makes a T6-written repository's stored profile fail to convert | declined: `ts-agent-tasks` is not on `release` and is listed in `ACTIVE_DEVELOPMENT.md` as taking breaking changes with no shim; no repository written by an earlier slice exists outside tests. T1–T6 changed stored shapes the same way | — |
+
 ## Coverage closure
 
 Closed after layer 1, to 100 % statements/branches/functions/lines with **zero `c8 ignore`**. Branches

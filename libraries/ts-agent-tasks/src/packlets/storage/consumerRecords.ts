@@ -479,7 +479,9 @@ export class SubscriptionRecords {
       }
       // Nothing landed: this attempt's first record (a fresh baseline, a fresh preparation claim) is
       // committed to first, by re-pending under its fingerprint, and only then written.
-      return this._firstRecord(registration, activation.claimId, activation, units).onSuccess((first) =>
+      // The reservation is recomputed from this attempt's first record rather than trusted from the
+      // entry, and re-admitted when the entry is re-pended below.
+      return this._firstRecord(registration, activation.claimId, undefined, units).onSuccess((first) =>
         this._pend(registration, first).onSuccess((repended) =>
           this._write(id, 0, first.read, registration.operationId).onSuccess(() =>
             this._finish(repended, first, matched, units)
@@ -968,9 +970,17 @@ export function firstRecordProblem(read: IConsumerRead, entry: IPendingConsumerE
   if (read.record.recordRevision !== 1) {
     return `it is record revision ${read.record.recordRevision}`;
   }
-  return read.fingerprint === entry.recordFingerprint
+  if (read.fingerprint !== entry.recordFingerprint) {
+    return `its contents are not the first record this registration committed to write`;
+  }
+  // The record is exactly the committed one, so its activation claim carries the reservation the
+  // entry was admitted with; an entry holding anything else was changed after it was written.
+  const activation: ITaskCapacityClaim = read.record.capacityClaims.find(
+    (c) => c.purpose === 'subscription-activation'
+  )!;
+  return canonicallyEqual(activation.charges, entry.capacityClaims[0].charges)
     ? undefined
-    : `its contents are not the first record this registration committed to write`;
+    : `the pending entry's activation reservation is not the one its first record carries`;
 }
 
 /**
