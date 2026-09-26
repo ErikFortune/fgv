@@ -251,6 +251,28 @@ describe('exact-ID conversion of reservations', () => {
     expect(totals(h.repository)['logical-bytes']).toBeLessThanOrEqual(before['logical-bytes']);
   });
 
+  test('an acknowledged baseline payload stops being resident; its record bytes stay, as history', async () => {
+    const h = await deliveryHarness();
+    await track(h.writer, 'a');
+    await track(h.writer, 'b');
+    await subscribed(h, 'sub', { start: 'current' });
+    const resident = (repository: typeof h.repository): number =>
+      inspectRepository(repository)!.ledger.entry('consumer:sub')!.used['resident-payload-bytes'];
+    const held: number = resident(h.repository);
+    expect(held).toBeGreaterThan(0);
+    const residentBefore: number = committedIn(h.repository, 'resident-payload-bytes');
+    const delivery = deliveryOf(h, 'sub');
+    (await delivery.acknowledge((await delivery.prepare()).orThrow().context.receipt)).orThrow();
+    expect(resident(h.repository)).toBe(0);
+    expect(committedIn(h.repository, 'resident-payload-bytes')).toBe(residentBefore - held);
+    // The baseline is still in the record, and still charged there.
+    expect((await consumerRecord(h.repository, 'sub')).baseline).toHaveLength(2);
+    // The same after a restart: the charge is derived from the record, not remembered.
+    const later = await reopen(h);
+    expect(resident(later.repository)).toBe(0);
+    expect(committedIn(later.repository, 'resident-payload-bytes')).toBe(residentBefore - held);
+  });
+
   test('after an acknowledgement and a restart before any cleanup, the join counts it once, as history', async () => {
     const h = await deliveryHarness();
     await subscribed(h, 'sub');

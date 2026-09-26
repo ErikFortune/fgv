@@ -23,10 +23,12 @@ import {
 import { encodeRecord, fingerprintOf, parseJson, recordName } from './layout';
 import { RecordStore } from './recordStore';
 
-/** The one field a compare-and-write needs from whatever is stored. */
-const _revision: Converter<{ readonly recordRevision: number }> = Converters.object<{
+/** The two fields a compare-and-write needs from whatever is stored: whose record, which revision. */
+const _revision: Converter<{ readonly id: string; readonly recordRevision: number }> = Converters.object<{
+  readonly id: string;
   readonly recordRevision: number;
 }>({
+  id: Converters.string,
   recordRevision: Converters.number
 });
 
@@ -66,12 +68,19 @@ export class FileTreeCheckpointStore implements ITaskCheckpointStore {
     if (encoded.isFailure()) {
       return failWithDetail<true, CheckpointWriteVisibility>(encoded.message, 'unchanged');
     }
-    // Compare-and-write: replace only the revision the caller read. A record that moved, appeared or
-    // vanished since is left as it is, and nothing is written.
+    // Compare-and-write: replace only this subscription's record at the revision the caller read. A
+    // record that moved, appeared, vanished, or belongs to another subscription is left as it is, and
+    // nothing is written.
     const held: Result<number> = this.read(subscriptionId).onSuccess((current) =>
       current === undefined
         ? succeed(0)
-        : _revision.convert(current).onSuccess((c) => succeed(c.recordRevision))
+        : _revision
+            .convert(current)
+            .onSuccess((c) =>
+              c.id === subscriptionId
+                ? succeed(c.recordRevision)
+                : fail<number>(`it holds subscription ${c.id}'s record`)
+            )
     );
     if (held.isFailure() || held.value !== expectedRecordRevision) {
       const name: string = recordName('consumer', subscriptionId);

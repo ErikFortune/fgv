@@ -67,6 +67,19 @@ describe('FileTreeCheckpointStore.write', () => {
     expect(store.write('sub-1' as SubscriptionId, 1, { ...validRecord(), recordRevision: 2 })).toSucceed();
   });
 
+  test("another subscription's record at the name is not overwritten, whatever its revision", () => {
+    const { root, store } = faultyStore();
+    root.inner
+      .writeChildAtomically('consumer-sub-1.json', JSON.stringify({ ...validRecord(), id: 'sub-2' }), {
+        guarantee: 'session'
+      })
+      .orThrow();
+    expect(
+      store.write('sub-1' as SubscriptionId, 1, { ...validRecord(), recordRevision: 2 })
+    ).toFailWithDetail(/cannot read the current record: it holds subscription sub-2's record/i, 'unchanged');
+    expect(root.writes).toEqual([]);
+  });
+
   test('a current record that cannot be read or has no revision is not overwritten', () => {
     const { root, store } = faultyStore();
     root.inner

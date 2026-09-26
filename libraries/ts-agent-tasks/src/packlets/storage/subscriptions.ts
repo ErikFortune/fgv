@@ -56,7 +56,7 @@ export interface ISubscriptionState {
   /** Exact acknowledgement ids in the record's history. */
   readonly history: number;
   readonly baselineCount: number;
-  /** Encoded bytes of every retained baseline payload. */
+  /** Encoded bytes of every baseline payload not yet acknowledged — the ones the index holds. */
   readonly baselineBytes: number;
   readonly issued: ReadonlyArray<IIssuedDescriptor>;
   readonly claims: ReadonlyArray<ITaskCapacityClaim>;
@@ -103,10 +103,20 @@ export function subscriptionState(
     bytes,
     history: record.acknowledged.length,
     baselineCount: record.baseline.length,
-    baselineBytes: record.baseline.reduce((total, update) => total + valueBytes(update), 0),
+    // Only an unacknowledged baseline payload is resident: an acknowledged one is released by the
+    // index, and stays only in the record, as exact history.
+    baselineBytes: _unacknowledgedBytes(record),
     issued: record.issued.map(issuedDescriptor),
     claims: record.capacityClaims
   };
+}
+
+/** Encoded bytes of the baseline payloads a record has not acknowledged. */
+function _unacknowledgedBytes(record: ITaskConsumerRecord): number {
+  const acknowledged: ReadonlySet<string> = new Set(record.acknowledged);
+  return record.baseline
+    .filter((update) => !acknowledged.has(update.id))
+    .reduce((total, update) => total + valueBytes(update), 0);
 }
 
 /** The resident descriptor of one manifest. */

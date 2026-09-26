@@ -244,6 +244,16 @@ adversarial coverage, no double counting in the delivery book.
 R1.2 replaces the identity and activation-claim comparisons (the fingerprint covers them) and adds a
 persisted field to the pending inventory entry — additive on an unreleased surface.
 
+**Copilot round 2** — two findings, both real, both fixed and revert-checked:
+
+| # | finding | fix | revert |
+|---|---|---|---|
+| R2.1 | the compare-and-write checked only the current record's revision — another subscription's valid record at the same revision would have been overwritten, and the read-back would then match | the current record's `id` must be this subscription's too; otherwise `unchanged`, nothing written | M27 (1) |
+| R2.2 | an acknowledged baseline payload was still charged as `resident-payload-bytes`, though the index had released it — acknowledged baselines could exhaust the resident budget | the subscription's resident charge counts only unacknowledged baseline payloads; the payload stays in the record (record and logical bytes) as exact history. This is what the arithmetic above already stated | M28 (1) |
+
+Also in this round: a `no-useless-concat` lint warning that the commit hook's prettier created after
+the local lint ran (CI red on the round-1 head). Lint now runs on the committed tree before pushing.
+
 ## Coverage closure
 
 Closed after layer 1, to 100 % statements/branches/functions/lines with **zero `c8 ignore`**. Branches
