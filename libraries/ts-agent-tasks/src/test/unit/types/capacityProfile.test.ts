@@ -80,8 +80,14 @@ describe('maximumClosureCharges', () => {
       defaultTaskEncodedBounds.maxEnvelopeBytes + defaultTaskEncodedBounds.maxDetailBytes;
     const updates: number = 7 * defaultTaskEncodedBounds.maxUpdateBytes;
     const operations: number = 2 * defaultTaskEncodedBounds.maxStoredOperationBytes;
+    // Every reserved link's acknowledgement evidence, which its subscription holds once the link is
+    // committed (T7): logical bytes, never this record's bytes.
+    const evidence: number =
+      7 *
+      defaultTaskPerOwnerLimits.maxAudiencePerUpdate *
+      defaultTaskEncodedBounds.maxAcknowledgementEvidenceBytes;
     expect(charged(charges, 'record-bytes')).toBe(snapshot + updates + operations);
-    expect(charged(charges, 'logical-bytes')).toBe(snapshot + updates + operations);
+    expect(charged(charges, 'logical-bytes')).toBe(snapshot + updates + operations + evidence);
     expect(charged(charges, 'resident-payload-bytes')).toBe(updates);
   });
 
@@ -127,8 +133,11 @@ describe('maximumSettlementCharges', () => {
       defaultTaskEncodedBounds.maxStoredOperationBytes +
       defaultTaskEncodedBounds.maxIssuedReceiptBytes +
       defaultTaskEncodedBounds.maxUpdateBytes;
+    const evidence: number =
+      defaultTaskPerOwnerLimits.maxAudiencePerUpdate *
+      defaultTaskEncodedBounds.maxAcknowledgementEvidenceBytes;
     expect(charged(charges, 'record-bytes')).toBe(bytes);
-    expect(charged(charges, 'logical-bytes')).toBe(bytes);
+    expect(charged(charges, 'logical-bytes')).toBe(bytes + evidence);
     expect(charged(charges, 'resident-payload-bytes')).toBe(defaultTaskEncodedBounds.maxUpdateBytes);
   });
 
@@ -237,7 +246,10 @@ describe('maximumResolutionCharges (T3)', () => {
         { dimension: 'audience-links', amount: categories * audience },
         { dimension: 'acknowledgement-ids', amount: categories * audience },
         { dimension: 'record-bytes', amount: bytes },
-        { dimension: 'logical-bytes', amount: bytes },
+        {
+          dimension: 'logical-bytes',
+          amount: bytes + categories * audience * defaultTaskEncodedBounds.maxAcknowledgementEvidenceBytes
+        },
         { dimension: 'resident-payload-bytes', amount: categories * defaultTaskEncodedBounds.maxUpdateBytes }
       ]);
     });

@@ -8,6 +8,7 @@ export * from './builtinKinds';
 export * from './capacityConverters';
 export * from './commandConverters';
 export * from './contextConverters';
+export * from './deliveryConverters';
 export * from './envelopeConverters';
 export * from './failureConverters';
 export * from './identityConverters';

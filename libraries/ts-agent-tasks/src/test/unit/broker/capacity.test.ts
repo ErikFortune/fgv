@@ -9,8 +9,6 @@ import {
   ITaskCapacityClaim,
   ITaskCapacityProfile,
   ITaskCommitRecord,
-  SubscriptionId,
-  TaskAudienceResolver,
   TaskResult,
   defaultTaskCapacityProfile
 } from '../../../index';
@@ -130,14 +128,13 @@ describe('A3: at ordinary limits, new identities are refused while accepted work
 
   test('resident payload saturation: ordinary owed updates are refused, the reserved terminal path is not', async () => {
     // Every update is owed to one subscriber, so every update charges resident payload.
-    const audience: TaskAudienceResolver = () => ['watcher' as SubscriptionId];
     const setup = async (h: IBrokerHarness): Promise<void> => {
       await track(h.writer, 'a');
       await track(h.writer, 'b');
     };
     // Measure what two accepted tasks hold — two closeout reservations plus their creation
     // updates — then give a fresh repository exactly that much and nothing more.
-    const probe = await brokerHarness({ audience });
+    const probe = await brokerHarness({ watch: true });
     await setup(probe);
     const held = probe.repository
       .capacityStatus()
@@ -145,7 +142,7 @@ describe('A3: at ordinary limits, new identities are refused while accepted work
       .dimensions.find((d) => d.dimension === 'resident-payload-bytes')!;
     const h = await brokerHarness({
       profile: profileWith({ 'resident-payload-bytes': held.used + held.reserved }),
-      audience
+      watch: true
     });
     await setup(h);
     // No new identity fits.

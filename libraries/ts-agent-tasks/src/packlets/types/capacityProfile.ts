@@ -63,6 +63,7 @@ export const defaultTaskEncodedBounds: ITaskEncodedBounds = {
   maxIssuedReceiptBytes: 64 * KiB,
   maxSourceIdentityBytes: 4 * KiB,
   maxDispositionReasonBytes: 256,
+  maxAcknowledgementEvidenceBytes: 512,
   maxQueryDescriptorBytes: 32 * KiB,
   maxSourceCursorBytes: 4 * KiB,
   maxTaskRecordBytes: 8 * MiB,
@@ -115,6 +116,21 @@ function _sum(terms: ReadonlyArray<number>, what: string): Result<number> {
   return succeed(value);
 }
 
+/**
+ * A bundle's logical bytes: its own record growth plus the acknowledgement evidence of every link
+ * it reserves, which the subscriptions those links name will hold until each is acknowledged.
+ */
+function _evidenceLogical(
+  recordBytes: number,
+  links: number,
+  profile: ITaskCapacityProfile,
+  what: string
+): Result<number> {
+  return _product(links, profile.encoded.maxAcknowledgementEvidenceBytes, `${what} evidence bytes`).onSuccess(
+    (evidence) => _sum([recordBytes, evidence], `${what} logical bytes`)
+  );
+}
+
 function _charges(
   entries: ReadonlyArray<readonly [CapacityDimension, number]>
 ): ReadonlyArray<ITaskCapacityCharge> {
@@ -132,6 +148,11 @@ function _charges(
  * replacement, one required payload of each of the seven update categories with their
  * audience links and per-audience acknowledgement evidence, terminal operation
  * evidence, and one archive operation receipt.
+ *
+ * Acknowledgement evidence is `acknowledgement-ids` plus `maxAcknowledgementEvidenceBytes` of
+ * `logical-bytes` per link (T7). When a commit adds those links, their evidence is *spent* from
+ * this claim and held by the subscriptions they name until each exact acknowledgement lands — a
+ * transfer, never a second charge.
  *
  * Closeout is a bounded path, not an unlimited emergency pool. Ordinary progress,
  * repeated attention changes, reassignment, new subscriptions and new command attempts
@@ -164,16 +185,18 @@ export function maximumClosureCharges(
     .onSuccess((parts) =>
       _sum([parts.snapshotBytes, parts.updateBytes, parts.operationBytes], 'closeout record bytes').onSuccess(
         (recordBytes) =>
-          succeed(
-            _charges([
-              ['updates', categories],
-              ['audience-links', parts.links],
-              ['acknowledgement-ids', parts.links],
-              ['operations', 2],
-              ['record-bytes', recordBytes],
-              ['logical-bytes', recordBytes],
-              ['resident-payload-bytes', parts.updateBytes]
-            ])
+          _evidenceLogical(recordBytes, parts.links, profile, 'closeout').onSuccess((logicalBytes) =>
+            succeed(
+              _charges([
+                ['updates', categories],
+                ['audience-links', parts.links],
+                ['acknowledgement-ids', parts.links],
+                ['operations', 2],
+                ['record-bytes', recordBytes],
+                ['logical-bytes', logicalBytes],
+                ['resident-payload-bytes', parts.updateBytes]
+              ])
+            )
           )
       )
     )
@@ -205,15 +228,17 @@ export function maximumSettlementCharges(
     'settlement record bytes'
   )
     .onSuccess((bytes) =>
-      succeed(
-        _charges([
-          ['updates', 1],
-          ['audience-links', audience],
-          ['acknowledgement-ids', audience],
-          ['record-bytes', bytes],
-          ['logical-bytes', bytes],
-          ['resident-payload-bytes', encoded.maxUpdateBytes]
-        ])
+      _evidenceLogical(bytes, audience, profile, 'settlement').onSuccess((logicalBytes) =>
+        succeed(
+          _charges([
+            ['updates', 1],
+            ['audience-links', audience],
+            ['acknowledgement-ids', audience],
+            ['record-bytes', bytes],
+            ['logical-bytes', logicalBytes],
+            ['resident-payload-bytes', encoded.maxUpdateBytes]
+          ])
+        )
       )
     )
     .withErrorFormat((message: string) => `maximumSettlementCharges: ${message}`);
@@ -248,15 +273,17 @@ export function maximumResolutionCharges(
   })
     .onSuccess((parts) =>
       _sum([parts.snapshotBytes, parts.updateBytes], 'resolution record bytes').onSuccess((recordBytes) =>
-        succeed(
-          _charges([
-            ['updates', categories],
-            ['audience-links', parts.links],
-            ['acknowledgement-ids', parts.links],
-            ['record-bytes', recordBytes],
-            ['logical-bytes', recordBytes],
-            ['resident-payload-bytes', parts.updateBytes]
-          ])
+        _evidenceLogical(recordBytes, parts.links, profile, 'resolution').onSuccess((logicalBytes) =>
+          succeed(
+            _charges([
+              ['updates', categories],
+              ['audience-links', parts.links],
+              ['acknowledgement-ids', parts.links],
+              ['record-bytes', recordBytes],
+              ['logical-bytes', logicalBytes],
+              ['resident-payload-bytes', parts.updateBytes]
+            ])
+          )
         )
       )
     )

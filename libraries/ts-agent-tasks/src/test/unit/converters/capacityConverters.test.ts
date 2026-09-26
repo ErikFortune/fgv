@@ -127,14 +127,17 @@ describe('capacity claims', () => {
     });
   });
 
-  test('a subscription-acknowledgement claim is joined by exact subscription and update', () => {
+  test('a subscription-activation claim names only its subscription', () => {
+    expect(
+      converters.capacity.claim.convert(claim('subscription-activation', { subscriptionId: 'sub-1' }))
+    ).toSucceedAndSatisfy((converted) => {
+      expect(converted.purpose === 'subscription-activation' && converted.subscriptionId).toBe('sub-1');
+    });
     expect(
       converters.capacity.claim.convert(
-        claim('subscription-acknowledgement', { subscriptionId: 'sub-1', updateId: 'upd-4' })
+        claim('subscription-activation', { subscriptionId: 'sub-1', updateId: 'upd-4' })
       )
-    ).toSucceedAndSatisfy((converted) => {
-      expect(converted.purpose === 'subscription-acknowledgement' && converted.updateId).toBe('upd-4');
-    });
+    ).toFail();
   });
 
   test('a receipt-preparation claim names only its subscription', () => {
@@ -258,10 +261,7 @@ describe('claim ownership and disposition', () => {
   );
 
   test('reserved-to-used conversion is a disposition change, not a charge change', () => {
-    const reserved: Record<string, JsonValue> = claim('subscription-acknowledgement', {
-      subscriptionId: 'sub-1',
-      updateId: 'upd-4'
-    });
+    const reserved: Record<string, JsonValue> = claim('subscription-activation', { subscriptionId: 'sub-1' });
     expect(converters.capacity.claim.convert({ ...reserved, disposition: 'consumed' })).toSucceedAndSatisfy(
       (consumed) => {
         expect(consumed.charges).toEqual([{ dimension: 'updates', amount: 7 }]);
@@ -593,6 +593,21 @@ describe('a profile must be able to finish the work it can accept', () => {
     expect(converters.capacity.profile.convert(withCursor(1024))).toSucceed();
     expect(converters.capacity.profile.convert(withCursor(maxSourceCursorLength + 1))).toFailWith(
       /over the representable ceiling of 4096/
+    );
+  });
+
+  test('an acknowledgement evidence bound too small to hold one exact update id is refused', () => {
+    const withEvidence = (bytes: number): unknown => ({
+      ...defaultTaskCapacityProfile,
+      encoded: { ...defaultTaskCapacityProfile.encoded, maxAcknowledgementEvidenceBytes: bytes }
+    });
+    expect(
+      converters.capacity.profile.convert(
+        withEvidence(defaultTaskCapacityProfile.encoded.maxAcknowledgementEvidenceBytes)
+      )
+    ).toSucceed();
+    expect(converters.capacity.profile.convert(withEvidence(1))).toFailWith(
+      /cannot hold one exact acknowledgement of a \d+-byte update id/
     );
   });
 });

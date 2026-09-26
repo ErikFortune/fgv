@@ -76,6 +76,12 @@ export interface ILedgerEntry {
   readonly reserved: DimensionAmounts;
   readonly recordLimit: number;
   readonly indeterminate: boolean;
+  /**
+   * A per-owner count checked like `record-bytes`: against this entry's own limit, refused only when
+   * it grows. A subscription's history commitment against `maxAcknowledgementIdsPerSubscription`
+   * (T7).
+   */
+  readonly perOwner?: { readonly amount: number; readonly limit: number };
 }
 
 /**
@@ -136,6 +142,11 @@ export class CapacityLedger {
     for (const [key, entry] of changes) {
       this._entries.set(key, entry);
     }
+  }
+
+  /** The entry held under a key, for inspection. */
+  public entry(key: string): ILedgerEntry | undefined {
+    return this._entries.get(key);
   }
 
   /** Totals of the additive dimensions, with `changes` applied hypothetically. */
@@ -255,6 +266,32 @@ export class CapacityLedger {
         );
       }
     }
+    for (const [key, entry] of changes) {
+      if (entry.perOwner === undefined) {
+        continue;
+      }
+      const before: number = this._entries.get(key)?.perOwner?.amount ?? 0;
+      if (entry.perOwner.amount > before && entry.perOwner.amount > entry.perOwner.limit) {
+        return taskFailure(
+          `capacity: subscription ${entry.recordId} would commit ${entry.perOwner.amount} acknowledgement ` +
+            `ids, over its limit of ${entry.perOwner.limit}`,
+          'backpressure',
+          'after-host-action',
+          {
+            capacity: {
+              reason: 'capacity-exhausted',
+              dimension: 'acknowledgement-ids',
+              recordId: entry.recordId,
+              used: entry.used['acknowledgement-ids'],
+              reserved: entry.perOwner.amount - entry.used['acknowledgement-ids'],
+              requested: entry.perOwner.amount - before,
+              limit: entry.perOwner.limit,
+              reclaimableByCleanup: false
+            }
+          }
+        );
+      }
+    }
     return ok(true);
   }
 
@@ -285,6 +322,9 @@ export class CapacityLedger {
     for (const entry of this._entries.values()) {
       if (entry.used['record-bytes'] + entry.reserved['record-bytes'] > entry.recordLimit) {
         over.push(`record-bytes (${entry.recordId})`);
+      }
+      if (entry.perOwner !== undefined && entry.perOwner.amount > entry.perOwner.limit) {
+        over.push(`acknowledgement-ids (${entry.recordId})`);
       }
     }
     return over;

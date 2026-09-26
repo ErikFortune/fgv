@@ -28,7 +28,6 @@ import {
   OperationId,
   SourceHistoryContract,
   SourceRevisionOrder,
-  TaskAudienceResolver,
   TaskBroker,
   TaskEnvironment,
   TaskId,
@@ -36,13 +35,10 @@ import {
   TaskKindRegistry,
   TaskLifecycle,
   TaskRepositoryMode,
-  noAudience,
   taskListDescriptor,
   trackedTaskDescriptor
 } from '../../index';
-// eslint-disable-next-line @rushstack/packlets/mechanics
-import { createTaskBroker } from '../../packlets/broker/taskBroker';
-import { TestPolicy, alpha, op, tid } from './brokerFixtures';
+import { TestPolicy, alpha, op, tid, watch } from './brokerFixtures';
 import { converters } from './fixtures';
 import { environment, memoryRoot, vendorDescriptor } from './storageFixtures';
 
@@ -492,7 +488,8 @@ export interface ISourceHarnessOptions {
   readonly observationOnly?: boolean;
   readonly lookup?: boolean;
   readonly profile?: ITaskCapacityProfile;
-  readonly audience?: TaskAudienceResolver;
+  /** Subscribe the all-seeing watcher before returning. */
+  readonly watch?: boolean;
   readonly root?: FileTree.IFileTreeDirectoryItem;
   readonly mode?: TaskRepositoryMode;
   /** Attach the source to the broker (default true). */
@@ -542,7 +539,23 @@ export async function sourceHarness(options?: ISourceHarnessOptions): Promise<IS
       ...(options?.profile !== undefined ? { profile: options.profile } : {})
     })
   ).orThrow();
-  return harnessWith(repository, env, root, logger, executor, source, registry, options);
+  const harness: ISourceHarness = harnessWith(
+    repository,
+    env,
+    root,
+    logger,
+    executor,
+    source,
+    registry,
+    options
+  );
+  if (options?.watch === true) {
+    await watch(
+      harness.broker,
+      options.history === 'source-replay' ? { history: 'source-replay' } : undefined
+    );
+  }
+  return harness;
 }
 
 /** A source harness over an existing repository (a reopen). */
@@ -556,10 +569,11 @@ export function harnessWith(
   registry: TaskKindRegistry,
   options?: ISourceHarnessOptions
 ): ISourceHarness {
-  const broker = createTaskBroker(
-    { repository, environment: env, ...(options?.attach === false ? {} : { sources: [source] }) },
-    options?.audience ?? noAudience
-  ).orThrow();
+  const broker = TaskBroker.create({
+    repository,
+    environment: env,
+    ...(options?.attach === false ? {} : { sources: [source] })
+  }).orThrow();
   const policy = new TestPolicy();
   const writer = broker.bind({ principal: 'alice', scopes: [alpha], authorization: policy }).orThrow();
   return { root, repository, broker, policy, writer, env, logger, executor, source, registry };

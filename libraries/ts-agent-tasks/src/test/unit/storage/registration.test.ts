@@ -12,9 +12,11 @@ import {
   ITaskRepository,
   ITaskRepositoryManifest,
   TaskEnvironment,
-  TaskId
+  TaskId,
+  defaultTaskCapacityProfile
 } from '../../../index';
 import { FaultyRoot } from '../../helpers/faultyRoot';
+import { scope, subscribeTo } from '../../helpers/queryFixtures';
 import {
   catalogOp,
   memoryRoot,
@@ -148,6 +150,33 @@ describe('registration — the ordered inventory protocol', () => {
     expect(await reopened.withWriter((w) => w.register(registration('t1')))).toSucceed();
     expect(row(reopened, 'updates').reserved).toBe(7);
     expect(row(reopened, 'retained-tasks').used).toBe(1);
+  });
+
+  test('resuming a pending registration whose audience overflowed while it waited is refused', async () => {
+    // The task is not yet live while pending, so subscribing does not see it — three subscriptions can
+    // cover its scope even though the profile allows only two per update. Finishing the registration
+    // then discovers the overflow the moment it plans the task's own audience.
+    const lean = {
+      ...defaultTaskCapacityProfile,
+      perOwner: { ...defaultTaskCapacityProfile.perOwner, maxAudiencePerUpdate: 2 }
+    };
+    const leanInner = memoryRoot() as FileTree.IAtomicFileTreeDirectoryItem;
+    const leanRoot = new FaultyRoot(leanInner);
+    const leanRepository = (
+      await FileTreeTaskRepository.initialize(params(leanRoot, 'session', { profile: lean }))
+    ).orThrow();
+    leanRoot.faults.push({ name: 'task-t1.json', when: 'before', visibility: 'unchanged' });
+    expect(await leanRepository.withWriter((w) => w.register(registration('t1')))).toFailWithDetail(
+      /before anything became visible/i,
+      code('storage-unavailable')
+    );
+    for (const id of ['s1', 's2', 's3']) {
+      await subscribeTo(leanRepository, id, [scope('alpha')]);
+    }
+    expect(await leanRepository.withWriter((w) => w.register(registration('t1')))).toFailWithDetail(
+      /would be owed to 3 subscriptions, over the limit of 2/i,
+      code('backpressure')
+    );
   });
 
   test('a different registration of a pending identity is refused, and the reservation is not released', async () => {
@@ -359,6 +388,15 @@ describe('registration — the ordered inventory protocol', () => {
       expect(read).not.toHaveProperty('task');
     });
     expect(row(repository, 'updates').reserved).toBe(14);
+  });
+
+  test('an unresolved record carries no updates, so the audience-bound check at open passes trivially', async () => {
+    (await repository.withWriter((w) => w.register(unresolvedRegistration('u1')))).orThrow();
+    repository.close();
+    const reopened = await open(root.inner);
+    expect(await reopened.readCommit('u1' as TaskId)).toSucceedAndSatisfy((record) => {
+      expect(record?.recordType).toBe('unresolved');
+    });
   });
 
   test('an identity mint failure refuses registration before anything is written', async () => {

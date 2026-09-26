@@ -42,10 +42,18 @@ import {
   ITaskSnapshot,
   ISourceReplayEnvelope,
   ITaskSourceRecord,
+  ITaskEnvelope,
+  ITaskReceiptAbandonment,
+  ITaskReceiptAcknowledgement,
+  ITaskReceiptIssue,
+  ITaskSubscription,
+  ITaskSubscriptionRegistration,
   OperationId,
+  SubscriptionId,
   TaskId,
   TaskRegistrationResult,
   TaskResult,
+  UpdateCategory,
   isTerminalTaskStatus
 } from '../types';
 import {
@@ -76,7 +84,7 @@ import {
 import { classify, ok, propagate, taskFailure } from './failures';
 import {
   canonicallyEqual,
-  encodeRecord,
+  encodeValidated,
   fingerprintOf,
   IEncodedRecord,
   manifestName,
@@ -121,7 +129,6 @@ import {
   isTerminalRecord,
   ledgerEntry,
   manifestEntry,
-  opaqueEntry,
   pendingEntry,
   projectRecord,
   taskKey,
@@ -136,6 +143,11 @@ import {
   spendExecutionClaims
 } from './executionClaims';
 import { RecordStore } from './recordStore';
+import { SourceRecords } from './sourceRecords';
+import { CheckpointPort } from './checkpoints';
+import { ISubscriptionHost, SubscriptionRecords } from './consumerRecords';
+import { DeliveryBook, ITaskDeliveryPlan, newLinks } from './deliveryBook';
+import { subscriptionKey } from './subscriptions';
 import { registerInspector } from './internals';
 import { IRootOwnership } from './rootOwnership';
 
@@ -152,17 +164,6 @@ interface IReadRecord {
 
 interface IWriterHandle {
   active: boolean;
-}
-
-/**
- * Encodes a record after running the storage converter over it — the same converter the read
- * path runs — so nothing is written that a restart would refuse to read.
- */
-function _encodeValidated<T>(value: T, convert: (from: unknown) => Result<T>): Result<IEncodedRecord> {
-  return encodeRecord(value)
-    .onSuccess((encoded) => parseJson(encoded.text))
-    .onSuccess((parsed) => convert(parsed))
-    .onSuccess((converted) => encodeRecord(converted));
 }
 
 /**
@@ -213,6 +214,12 @@ export class FileTreeTaskRepository implements ITaskRepository {
   private _generation: number;
   private readonly _issues: string[];
   private _writer: IWriterHandle | undefined;
+  /** Subscriptions and their potential audiences (T7). */
+  private _book: DeliveryBook;
+  private readonly _checkpoints: CheckpointPort;
+  private readonly _defaultCheckpoints: boolean;
+  private readonly _records: SubscriptionRecords;
+  private readonly _sourceRecords: SourceRecords;
 
   private constructor(state: IRepositoryState) {
     this.repositoryId = state.manifest.repositoryId;
@@ -232,7 +239,9 @@ export class FileTreeTaskRepository implements ITaskRepository {
       projections: this._tasks,
       evidence: this._evidence,
       cursorHandles: this._cursors.size,
-      cache: { entries: this._cache.size, charge: this._cache.charge }
+      cache: { entries: this._cache.size, charge: this._cache.charge },
+      book: this._book,
+      ledger: this._ledger
     }));
     this._store = state.store;
     this._ownership = state.ownership;
@@ -257,6 +266,22 @@ export class FileTreeTaskRepository implements ITaskRepository {
     this._generation = 0;
     this._issues = [];
     this._writer = undefined;
+    this._book = state.book;
+    this._checkpoints = state.checkpoints;
+    this._defaultCheckpoints = state.defaultCheckpoints;
+    this._records = new SubscriptionRecords(this._deliveryHost());
+    this._sourceRecords = new SourceRecords({
+      converters: this._converters,
+      store: this._store,
+      profile: () => this.profile,
+      ledger: () => this._ledger,
+      sources: () => this._sources,
+      manifest: () => this._manifest,
+      manifestEntry: (manifest) => this._deliveryHost().manifestEntry(manifest),
+      writeManifest: (manifest) => this._deliveryHost().writeManifest(manifest, undefined),
+      writeFile: (name, text) => this._writeFile(name, text, undefined),
+      fence: (reason) => this._fence(reason)
+    });
   }
 
   /**
@@ -480,6 +505,26 @@ export class FileTreeTaskRepository implements ITaskRepository {
     );
   }
 
+  /** {@inheritDoc ITaskRepository.audience} */
+  public audience(
+    before: ITaskEnvelope | undefined,
+    after: ITaskEnvelope,
+    category: UpdateCategory
+  ): ReadonlyArray<SubscriptionId> {
+    return this._book.audience(before, after, category);
+  }
+
+  /** {@inheritDoc ITaskRepository.subscription} */
+  public subscription(subscriptionId: SubscriptionId): TaskResult<ITaskSubscription | undefined> {
+    return this._usable().onSuccess(() =>
+      classify(
+        this._converters.ids.subscriptionId.convert(subscriptionId),
+        'invalid',
+        'after-host-action'
+      ).onSuccess((id) => ok(this._book.subscriptions.get(id)?.descriptor))
+    );
+  }
+
   /** {@inheritDoc ITaskRepository.rebuildIndexes} */
   public async rebuildIndexes(): Promise<TaskResult<ITaskRepositoryHealth>> {
     if (this._state === 'closed') {
@@ -499,6 +544,7 @@ export class FileTreeTaskRepository implements ITaskRepository {
     this._tasks = new Map();
     this._pending = new Map();
     this._sources = new Map();
+    this._book = new DeliveryBook(new Map(), new Map());
     this._cursors.clear();
     this._cache.clear();
     const scanned = this._store
@@ -512,7 +558,9 @@ export class FileTreeTaskRepository implements ITaskRepository {
           registry: this._registry,
           removed: scanned.value.removed,
           names: scanned.value.names,
-          gate: this._gate
+          gate: this._gate,
+          checkpoints: this._checkpoints,
+          defaultCheckpoints: this._defaultCheckpoints
         });
     if (outcome.isFailure()) {
       this._state = 'unavailable';
@@ -542,6 +590,7 @@ export class FileTreeTaskRepository implements ITaskRepository {
     this._sources = fresh.sources;
     this._ledger = fresh.ledger;
     this._index = fresh.index;
+    this._book = fresh.book;
     this._report = fresh.report;
     this._evidence = fresh.evidence;
     this._issues.splice(0, this._issues.length);
@@ -747,12 +796,71 @@ export class FileTreeTaskRepository implements ITaskRepository {
           )
         ),
       commitSource: async (request: ITaskSourceCommitRequest) =>
-        guard().onSuccess(() => this._commitSource(request)),
+        guard().onSuccess(() => this._sourceRecords.commit(request)),
       extendReplayEnvelope: async (taskId: TaskId, add: ISourceReplayEnvelope) =>
         guard().onSuccess(() => this._extendReplay(taskId, add)),
       raiseCapacityLimits: async (profile: ITaskCapacityProfile) =>
-        guard().onSuccess(() => this._raiseLimits(profile))
+        guard().onSuccess(() => this._raiseLimits(profile)),
+      registerSubscription: async (request: ITaskSubscriptionRegistration) =>
+        guard().onSuccess(() => this._records.register(request)),
+      readSubscription: async (subscriptionId: SubscriptionId) =>
+        guard().onSuccess(() => this._records.read(subscriptionId)),
+      issueReceipt: async (request: ITaskReceiptIssue) =>
+        guard().onSuccess(() => this._records.issue(request)),
+      acknowledgeReceipt: async (request: ITaskReceiptAcknowledgement) =>
+        guard().onSuccess(() => this._records.acknowledge(request)),
+      abandonReceipt: async (request: ITaskReceiptAbandonment) =>
+        guard().onSuccess(() => this._records.abandon(request))
     };
+  }
+
+  /** What the subscription-record operations may reach of this repository. */
+  private _deliveryHost(): ISubscriptionHost {
+    return {
+      converters: this._converters,
+      environment: this._environment,
+      checkpoints: this._checkpoints,
+      durability: this.mode === 'session' ? 'session' : 'process-crash',
+      profile: () => this.profile,
+      ledger: () => this._ledger,
+      index: () => this._index!,
+      tasks: () => this._tasks,
+      book: () => this._book,
+      manifest: () => this._manifest,
+      manifestEntry: (manifest) =>
+        this._encodeManifest(manifest).onSuccess((encoded) => ok(manifestEntry(encoded.bytes, this.profile))),
+      writeManifest: (manifest, operationId) =>
+        this._encodeManifest(manifest).onSuccess((encoded) =>
+          this._writeFile(manifestName, encoded.text, operationId).onSuccess(() => {
+            this._setManifest(manifest);
+            return ok<true>(true);
+          })
+        ),
+      fence: (reason) => this._fence(reason),
+      committed: () => {
+        this._generation++;
+      }
+    };
+  }
+
+  /** Applies a delivery plan whose record committed, and re-derives the entries it touched. */
+  private _commitDelivery(plan: ITaskDeliveryPlan): void {
+    this._book.commit(plan);
+    const entries: Map<string, ILedgerEntry> = new Map();
+    for (const id of plan.units.keys()) {
+      entries.set(subscriptionKey(id), this._book.entry(id, this._index!, this.profile));
+    }
+    this._ledger.apply(entries);
+  }
+
+  /** Plans a commit's effect on subscriptions against the live index. */
+  private _plan(
+    taskId: TaskId,
+    before: ITaskCommitRecord | undefined,
+    next: ITaskCommitRecord,
+    adopted: boolean = false
+  ): TaskResult<ITaskDeliveryPlan> {
+    return this._book.plan({ taskId, before, next, index: this._index!, profile: this.profile, adopted });
   }
 
   // ------------------------------------------------------------------------------------------
@@ -924,14 +1032,17 @@ export class FileTreeTaskRepository implements ITaskRepository {
     return this._encodeManifest(pendingManifest)
       .onSuccess((manifestEncoded) =>
         this._buildRecord(draft, 1, withOwnership(claims.value, 'live')).onSuccess((built) =>
-          this._ledger
-            .admit(
-              new Map<string, ILedgerEntry>([
-                [taskKey(taskId), this._ledgerForRecord(taskId, built.record, built.encoded)],
-                ['repository', manifestEntry(manifestEncoded.bytes, profile)]
-              ])
-            )
-            .onSuccess(() => ok(manifestEncoded))
+          this._plan(taskId, undefined, built.record).onSuccess((plan) =>
+            this._ledger
+              .admit(
+                new Map<string, ILedgerEntry>([
+                  [taskKey(taskId), this._ledgerForRecord(taskId, built.record, built.encoded)],
+                  ['repository', manifestEntry(manifestEncoded.bytes, profile)],
+                  ...plan.entries
+                ])
+              )
+              .onSuccess(() => ok(manifestEncoded))
+          )
         )
       )
       .onSuccess((manifestEncoded) =>
@@ -1043,10 +1154,17 @@ export class FileTreeTaskRepository implements ITaskRepository {
     const profile: ITaskCapacityProfile = this.profile;
     const liveManifest: ITaskRepositoryManifest = this._withEntry({ id: taskId, state: 'live' });
     const recordEntry: ILedgerEntry = this._ledgerForRecord(taskId, built.record, built.encoded);
+    // A record that landed before a crash was written against the subscriptions of its day; one
+    // activated since may be missing from its audiences, and the record is not rewritten for it.
+    const planned: TaskResult<ITaskDeliveryPlan> = this._plan(taskId, undefined, built.record, !writeRecord);
+    if (planned.isFailure()) {
+      return propagate(planned);
+    }
+    const plan: ITaskDeliveryPlan = planned.value;
     // The claims move from the pending entry to the record by the same IDs: the record's
     // entry replaces the pending one, so nothing is charged twice or released early.
     return this._ledger
-      .admit(new Map([[taskKey(taskId), recordEntry]]))
+      .admit(new Map([[taskKey(taskId), recordEntry], ...plan.entries]))
       .onSuccess(() => this._encodeManifest(liveManifest))
       .onSuccess((manifestEncoded) =>
         (writeRecord
@@ -1067,7 +1185,10 @@ export class FileTreeTaskRepository implements ITaskRepository {
               ])
             );
             this._generation++;
-            return this._applyIndex(taskId, built.record, operationId);
+            return this._applyIndex(taskId, built.record, operationId).onSuccess((record) => {
+              this._commitDelivery(plan);
+              return ok(record);
+            });
           })
       );
   }
@@ -1346,6 +1467,12 @@ export class FileTreeTaskRepository implements ITaskRepository {
         for (const dimension of Object.keys(growth) as Array<keyof DimensionAmounts>) {
           growth[dimension] = provisionalEntry.used[dimension] - previous.used[dimension];
         }
+        // The acknowledgement evidence of every link this commit adds is part of its growth, so a
+        // protected step pays for it from its own claim and the subscriptions hold it from there —
+        // a transfer, never a second charge (T7; the T6 hand-off).
+        const links: number = newLinks(record, provisional.record);
+        growth['acknowledgement-ids'] += links;
+        growth['logical-bytes'] += links * this.profile.encoded.maxAcknowledgementEvidenceBytes;
         const next: ITaskCommitRecord = provisional.record;
         // Settlements and the replay envelope spend first, from a shared growth figure each spend
         // reduces, so no two claims are credited with the same growth.
@@ -1380,16 +1507,21 @@ export class FileTreeTaskRepository implements ITaskRepository {
             );
       })
       .onSuccess(({ built, entry }) =>
-        this._ledger
-          .admit(new Map([[taskKey(taskId), entry]]))
-          .onSuccess(() => this._writeFile(recordName('task', taskId), built.encoded.text, operationId))
-          .onSuccess(() => {
-            this._cache.delete(taskId);
-            this._tasks.set(taskId, projectRecord(built.record, true, built.encoded.text));
-            this._ledger.apply(new Map([[taskKey(taskId), entry]]));
-            this._generation++;
-            return this._applyIndex(taskId, built.record, operationId);
-          })
+        this._plan(taskId, record, built.record).onSuccess((plan) =>
+          this._ledger
+            .admit(new Map([[taskKey(taskId), entry], ...plan.entries]))
+            .onSuccess(() => this._writeFile(recordName('task', taskId), built.encoded.text, operationId))
+            .onSuccess(() => {
+              this._cache.delete(taskId);
+              this._tasks.set(taskId, projectRecord(built.record, true, built.encoded.text));
+              this._ledger.apply(new Map([[taskKey(taskId), entry]]));
+              this._generation++;
+              return this._applyIndex(taskId, built.record, operationId).onSuccess((committed) => {
+                this._commitDelivery(plan);
+                return ok(committed);
+              });
+            })
+        )
       );
   }
 
@@ -1424,172 +1556,25 @@ export class FileTreeTaskRepository implements ITaskRepository {
       const { claims, envelope, draft } = extended.value;
       return this._buildRecord(draft, record.recordRevision + 1, claims).onSuccess((built) => {
         const entry: ILedgerEntry = this._ledgerForRecord(taskId, built.record, built.encoded);
-        return this._ledger
-          .admit(new Map([[taskKey(taskId), entry]]))
-          .onSuccess(() => this._writeFile(recordName('task', taskId), built.encoded.text, undefined))
-          .onSuccess(() => {
-            this._cache.delete(taskId);
-            this._tasks.set(taskId, projectRecord(built.record, true, built.encoded.text));
-            this._ledger.apply(new Map([[taskKey(taskId), entry]]));
-            this._generation++;
-            return this._applyIndex(taskId, built.record, undefined);
-          })
-          .onSuccess(() => ok<ISourceReplayEnvelope>(envelope));
+        // More remaining replay revisions are more future links for every subscription covering it.
+        return this._plan(taskId, record, built.record).onSuccess((plan) =>
+          this._ledger
+            .admit(new Map([[taskKey(taskId), entry], ...plan.entries]))
+            .onSuccess(() => this._writeFile(recordName('task', taskId), built.encoded.text, undefined))
+            .onSuccess(() => {
+              this._cache.delete(taskId);
+              this._tasks.set(taskId, projectRecord(built.record, true, built.encoded.text));
+              this._ledger.apply(new Map([[taskKey(taskId), entry]]));
+              this._generation++;
+              return this._applyIndex(taskId, built.record, undefined);
+            })
+            .onSuccess(() => {
+              this._commitDelivery(plan);
+              return ok<ISourceReplayEnvelope>(envelope);
+            })
+        );
       });
     });
-  }
-
-  // ------------------------------------------------------------------------------------------
-  // Source-checkpoint records
-  // ------------------------------------------------------------------------------------------
-
-  /**
-   * Creates or replaces a source's checkpoint record.
-   *
-   * @remarks
-   * Replacement checks the file on disk is still the one this instance committed, as the manifest
-   * does: an out-of-band edit fences rather than being erased. Creation writes the record, then the
-   * live inventory entry. A crash between the two leaves an uninventoried file; a retry of the same
-   * creation adopts it only when it is byte-for-byte what that retry would write, and refuses
-   * anything else — so a crash can never make the cursor lead its committed observations.
-   */
-  private _commitSource(request: ITaskSourceCommitRequest): TaskResult<ITaskSourceRecord> {
-    const converted: Result<{ id: string; current: ISourceRecordState | undefined }> =
-      this._converters.ids.sourceId.convert(request.sourceId).onSuccess((id) => {
-        const cursorBytes: number = utf8Length(request.cursor ?? '');
-        return cursorBytes > this.profile.encoded.maxSourceCursorBytes
-          ? fail(
-              `the cursor is ${cursorBytes} bytes, over the bound of ${this.profile.encoded.maxSourceCursorBytes}`
-            )
-          : succeed({ id, current: this._sources.get(id) });
-      });
-    if (converted.isFailure()) {
-      return taskFailure(`commitSource: ${converted.message}`, 'invalid', 'after-host-action');
-    }
-    const { id, current } = converted.value;
-    const revision: number = current?.record.recordRevision ?? 0;
-    if (request.expectedRecordRevision !== revision) {
-      return taskFailure(
-        `commitSource ${id}: expected record ${request.expectedRecordRevision}, found ${revision}`,
-        'conflict',
-        'reconcile-first'
-      );
-    }
-    if (current !== undefined && current.record.history !== request.history) {
-      return taskFailure(
-        `commitSource ${id}: a source's history contract is fixed ('${current.record.history}')`,
-        'invalid',
-        'after-host-action'
-      );
-    }
-    const record: ITaskSourceRecord = {
-      formatVersion: 1,
-      id,
-      recordRevision: revision + 1,
-      history: request.history,
-      ...(request.cursor !== undefined ? { cursor: request.cursor } : {}),
-      pages: request.pages
-    };
-    const name: string = recordName('source', id);
-    const converter = this._converters.storage.sourceRecord;
-    const encoded: TaskResult<IEncodedRecord> = classify(
-      _encodeValidated(record, (from) => converter.convert(from)),
-      'invalid',
-      'after-host-action'
-    ).withErrorFormat((message) => `commitSource ${id}: ${message}`);
-    if (encoded.isFailure()) {
-      return propagate(encoded);
-    }
-    const entry: ILedgerEntry = opaqueEntry(id, 'source', encoded.value.bytes, this.profile);
-    const key: string = `source:${id}`;
-    if (current !== undefined) {
-      return this._checkSourceOnDisk(name, current)
-        .onSuccess(() => this._ledger.admit(new Map([[key, entry]])))
-        .onSuccess(() => this._writeFile(name, encoded.value.text, undefined))
-        .onSuccess(() => {
-          this._sources.set(id, {
-            record,
-            fingerprint: fingerprintOf(encoded.value.text),
-            bytes: encoded.value.bytes
-          });
-          this._ledger.apply(new Map([[key, entry]]));
-          return ok(record);
-        });
-    }
-    return this._createSource(id, name, record, encoded.value, entry);
-  }
-
-  private _createSource(
-    id: string,
-    name: string,
-    record: ITaskSourceRecord,
-    encoded: IEncodedRecord,
-    entry: ILedgerEntry
-  ): TaskResult<ITaskSourceRecord> {
-    const manifest: ITaskRepositoryManifest = {
-      ...this._manifest,
-      manifestRevision: this._manifest.manifestRevision + 1,
-      sources: [...this._manifest.sources, { id, state: 'live' as const }].sort((a, b) =>
-        a.id < b.id ? -1 : 1
-      )
-    };
-    const listed: Result<ReadonlyArray<string>> = this._store.list();
-    if (listed.isFailure()) {
-      return taskFailure(`commitSource ${id}: ${listed.message}`, 'storage-unavailable', 'safe');
-    }
-    let landed: boolean = false;
-    if (listed.value.includes(name)) {
-      const text: Result<string> = this._store.read(name);
-      if (text.isFailure() || text.value !== encoded.text) {
-        return taskFailure(
-          `commitSource ${id}: ${name} already exists but this repository never committed it, and it is not ` +
-            `this creation's record; it is left untouched`,
-          'conflict',
-          'after-host-action'
-        );
-      }
-      landed = true;
-    }
-    return this._encodeManifest(manifest).onSuccess((manifestEncoded) =>
-      this._ledger
-        .admit(
-          new Map([
-            [`source:${id}`, entry],
-            ['repository', manifestEntry(manifestEncoded.bytes, this.profile)]
-          ])
-        )
-        .onSuccess(() => (landed ? ok<true>(true) : this._writeFile(name, encoded.text, undefined)))
-        .onSuccess(() => this._writeFile(manifestName, manifestEncoded.text, undefined))
-        .onSuccess(() => {
-          this._setManifest(manifest);
-          this._sources.set(id, { record, fingerprint: fingerprintOf(encoded.text), bytes: encoded.bytes });
-          this._ledger.apply(
-            new Map([
-              [`source:${id}`, entry],
-              ['repository', manifestEntry(manifestEncoded.bytes, this.profile)]
-            ])
-          );
-          return ok(record);
-        })
-    );
-  }
-
-  /** A source record must still be the one this instance committed before it is replaced. */
-  private _checkSourceOnDisk(name: string, current: ISourceRecordState): TaskResult<true> {
-    const text: Result<string> = this._store.list().onSuccess(() => this._store.read(name));
-    if (text.isFailure()) {
-      return taskFailure(
-        `${name}: cannot be re-read before rewriting it: ${text.message}`,
-        'storage-unavailable',
-        'safe'
-      );
-    }
-    if (fingerprintOf(text.value) === current.fingerprint) {
-      return ok(true);
-    }
-    const message: string = `${name} differs from the one this repository committed`;
-    this._fence(message);
-    return taskFailure(message, 'storage-corrupt', 'after-host-action');
   }
 
   // ------------------------------------------------------------------------------------------
@@ -1640,6 +1625,8 @@ export class FileTreeTaskRepository implements ITaskRepository {
           this._setManifest(manifest);
           this._ledger.setProfile(profile, (key) => recordLimitFor(key, profile));
           this._ledger.apply(new Map([['repository', manifestEntry(encoded.bytes, profile)]]));
+          // A subscription's per-owner history limit is a profile value too.
+          this._ledger.apply(this._book.entries(this._index!, profile));
           this._generation++;
           return ok(profile);
         })
@@ -1788,7 +1775,7 @@ export class FileTreeTaskRepository implements ITaskRepository {
         : { ...draft, formatVersion: 1, recordRevision, capacityClaims: claims };
     const converter = this._converters.storage.record;
     return classify(
-      _encodeValidated(record, (from) => converter.convert(from)).onSuccess((encoded) =>
+      encodeValidated(record, (from) => converter.convert(from)).onSuccess((encoded) =>
         succeed({ record, encoded })
       ),
       'invalid',
@@ -1817,7 +1804,7 @@ export class FileTreeTaskRepository implements ITaskRepository {
   private _encodeManifest(manifest: ITaskRepositoryManifest): TaskResult<IEncodedRecord> {
     const converter = this._converters.storage.manifest;
     return classify(
-      _encodeValidated(manifest, (from) => converter.convert(from)),
+      encodeValidated(manifest, (from) => converter.convert(from)),
       'invalid',
       'after-host-action'
     );

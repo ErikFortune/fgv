@@ -7,7 +7,8 @@ import { JsonValue } from '@fgv/ts-json-base';
 import { ITaskCapacityClaim, ITaskCapacityProfile } from './capacity';
 import { ICommandReceipt, ICommandRequest } from './commands';
 import { ITaskSnapshot } from './envelope';
-import { OperationId, TaskId } from './ids';
+import { ITaskSubscriptionSpecification } from './delivery';
+import { OperationId, SubscriptionId, TaskId } from './ids';
 import { ISourceRevision, SourceHistoryContract } from './source';
 import { IUnresolvedTaskReference } from './summary';
 import { ITaskUpdate } from './updates';
@@ -255,6 +256,37 @@ export interface IPendingInventoryEntry {
 export type ITaskInventoryEntry = ILiveInventoryEntry | IPendingInventoryEntry;
 
 /**
+ * A pending subscription registration: accepted into the inventory, its record possibly not yet
+ * written, and **not active** — no commit names it in an audience until the entry goes live.
+ *
+ * @remarks
+ * Holds the registration's identity and its `subscription-activation` claim, which reserves the
+ * first record's whole footprint. A crash in this window leaves the reservation held and the
+ * subscription inactive until the same registration is retried. (T7.)
+ * @public
+ */
+export interface IPendingConsumerEntry {
+  readonly id: SubscriptionId;
+  readonly state: 'pending';
+  readonly operationId: OperationId;
+  readonly principalKey: string;
+  readonly specification: ITaskSubscriptionSpecification;
+  /**
+   * The canonical fingerprint of the exact first record this registration committed to write. A
+   * record found at the name is adopted only when it matches, so a landed record whose contents
+   * were altered — its baseline included — is never activated.
+   */
+  readonly recordFingerprint: string;
+  readonly capacityClaims: ReadonlyArray<ITaskCapacityClaim>;
+}
+
+/**
+ * One consumer inventory entry.
+ * @public
+ */
+export type ITaskConsumerInventoryEntry = ILiveInventoryEntry | IPendingConsumerEntry;
+
+/**
  * The repository manifest (`repository.json`): format, identity, the stored capacity
  * policy, and the flat inventory of records that must exist.
  *
@@ -271,23 +303,8 @@ export interface ITaskRepositoryManifest {
   readonly manifestRevision: number;
   readonly profile: ITaskCapacityProfile;
   readonly tasks: ReadonlyArray<ITaskInventoryEntry>;
-  readonly consumers: ReadonlyArray<ITaskInventoryEntry>;
+  readonly consumers: ReadonlyArray<ITaskConsumerInventoryEntry>;
   readonly sources: ReadonlyArray<ITaskInventoryEntry>;
-}
-
-/**
- * The part of a consumer or source record this release validates.
- *
- * @remarks
- * T3 names consumer and source records in the inventory so their absence is detectable; their
- * contents belong to the slices that write them (subscriptions and source reconciliation).
- * Until then storage checks only what it owns — the format version and that the record's id
- * agrees with its filename — and never rewrites them.
- * @public
- */
-export interface ITaskRecordHeader {
-  readonly formatVersion: 1;
-  readonly id: string;
 }
 
 /**
@@ -382,6 +399,16 @@ export interface ITaskRecoveryReport {
   /** Pending registrations whose record was never written; their reservations remain held. */
   readonly pendingRegistrations: ReadonlyArray<{
     readonly taskId: TaskId;
+    readonly operationId: OperationId;
+  }>;
+  /** Pending subscription registrations whose record was present, activated by this open. (T7.) */
+  readonly completedSubscriptions: ReadonlyArray<SubscriptionId>;
+  /**
+   * Pending subscription registrations whose record was never written: inactive, their activation
+   * reservation still held, until the same registration is retried. (T7.)
+   */
+  readonly pendingSubscriptions: ReadonlyArray<{
+    readonly subscriptionId: SubscriptionId;
     readonly operationId: OperationId;
   }>;
   /** Working files of interrupted atomic writes, removed at exclusive open. */

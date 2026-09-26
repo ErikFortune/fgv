@@ -16,8 +16,8 @@ import {
   TaskConverters,
   TaskEnvironment,
   TaskId,
-  TaskResult,
-  noAudience
+  TaskContextRenderer,
+  TaskResult
 } from '../../../index';
 // eslint-disable-next-line @rushstack/packlets/mechanics
 import { BrokerCore } from '../../../packlets/broker/core';
@@ -72,7 +72,12 @@ function bindAll(w: ITaskRepositoryWriter): ITaskRepositoryWriter {
     readSource: (id) => w.readSource(id),
     commitSource: (r) => w.commitSource(r),
     extendReplayEnvelope: (id, add) => w.extendReplayEnvelope(id, add),
-    raiseCapacityLimits: (p) => w.raiseCapacityLimits(p)
+    raiseCapacityLimits: (p) => w.raiseCapacityLimits(p),
+    registerSubscription: (r) => w.registerSubscription(r),
+    readSubscription: (id) => w.readSubscription(id),
+    issueReceipt: (r) => w.issueReceipt(r),
+    acknowledgeReceipt: (r) => w.acknowledgeReceipt(r),
+    abandonReceipt: (r) => w.abandonReceipt(r)
   };
 }
 
@@ -601,7 +606,8 @@ describe('the writer queue and host callbacks', () => {
       repository: undefined as unknown as ITaskRepository,
       environment: undefined as unknown as TaskEnvironment,
       converters: TaskConverters.create().orThrow(),
-      audience: noAudience
+      delivery: { policy: {}, receiptLifetimeMs: 1, maxBaselineTasks: 1 },
+      renderer: TaskContextRenderer.create().orThrow()
     });
     expect(core.toJson(() => 1)).toFail();
     expect(

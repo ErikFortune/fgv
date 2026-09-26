@@ -10,12 +10,14 @@ import {
   ITaskCommitRecord,
   ITaskRepository,
   ITaskRepositoryManifest,
+  ITaskScope,
+  ITaskSelection,
   TaskId,
   defaultTaskCapacityProfile
 } from '../../index';
 // eslint-disable-next-line @rushstack/packlets/mechanics
 import { encodeRecord } from '../../packlets/storage/layout';
-import { ITaskShape, addTask, finishAndArchive } from './queryFixtures';
+import { ITaskShape, addTask, finishAndArchive, subscribeTo } from './queryFixtures';
 import { memoryRoot, params } from './storageFixtures';
 
 /**
@@ -62,12 +64,20 @@ function cohortId(prefix: string, i: number): string {
  */
 export async function seedRepository(
   fixed: ReadonlyArray<{ readonly id: string; readonly shape: ITaskShape }>,
-  cohorts: ReadonlyArray<ICohort>
+  cohorts: ReadonlyArray<ICohort>,
+  subscriptions: ReadonlyArray<{
+    readonly id: string;
+    readonly scopes: ReadonlyArray<ITaskScope>;
+    readonly selection?: Partial<ITaskSelection>;
+  }> = []
 ): Promise<{ root: FileTree.IFileTreeDirectoryItem; repository: ITaskRepository }> {
   const root = memoryRoot();
   const seeding: ITaskRepository = (
     await FileTreeTaskRepository.initialize(params(root, 'session', { profile: cohortProfile }))
   ).orThrow();
+  for (const subscription of subscriptions) {
+    await subscribeTo(seeding, subscription.id, subscription.scopes, subscription.selection);
+  }
   for (const task of fixed) {
     await addTask(seeding, task.id, task.shape);
   }

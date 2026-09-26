@@ -362,8 +362,9 @@ export function evaluateDue(
 }
 
 /**
- * Evaluates one owed-update page for a subscription. Reads only that subscription's owed set:
- * no lifecycle index, and no task history, is consulted.
+ * Evaluates one owed-update page for a subscription. Reads only that subscription's owed set —
+ * its unacknowledged task-update links and baseline obligations — so no lifecycle index, and no
+ * task history, is consulted, and an acknowledged update never reappears.
  */
 export function evaluateOwed(
   index: TaskIndex,
@@ -383,7 +384,7 @@ export function evaluateOwed(
         next = lastIncluded;
         break;
       }
-      items.push(index.owedPayloads.get(key)!);
+      items.push(index.owedPayload(subscription, key));
       lastIncluded = key;
       stream.advance();
     }

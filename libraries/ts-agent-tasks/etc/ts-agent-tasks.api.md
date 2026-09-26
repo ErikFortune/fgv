@@ -46,6 +46,9 @@ export function availableTrackedCommands(status: TaskLifecycleStatus, options: {
 }): ReadonlyArray<TrackedCommand['command']>;
 
 // @public
+export function baselineUpdateId(taskId: TaskId, revision: TaskRevision): UpdateId;
+
+// @public
 export function boundedArrayOf<T>(item: Converter<T>, maxItems: number, description: string): Converter<ReadonlyArray<T>>;
 
 // @public
@@ -70,6 +73,9 @@ export function buildCommandConverters(bounds: ITaskFieldBounds, ids: IIdentityC
 export function buildContextConverters(bounds: ITaskFieldBounds, ids: IIdentityConverters, values: IValueConverters, envelopes: IEnvelopeConverters): IContextConverters;
 
 // @public
+export function buildDeliveryConverters(bounds: ITaskFieldBounds, ids: IIdentityConverters, context: IContextConverters, queries: IQueryConverters, capacity: ICapacityConverters): IDeliveryConverters;
+
+// @public
 export function buildEnvelopeConverters(bounds: ITaskFieldBounds, ids: IIdentityConverters, values: IValueConverters): IEnvelopeConverters;
 
 // @public
@@ -85,7 +91,7 @@ export function buildQueryConverters(bounds: ITaskFieldBounds, ids: IIdentityCon
 export function buildSourceConverters(bounds: ITaskFieldBounds, values: IValueConverters): ISourceConverters;
 
 // @public
-export function buildStorageConverters(bounds: ITaskFieldBounds, ids: IIdentityConverters, values: IValueConverters, envelopes: IEnvelopeConverters, commands: ICommandConverters, capacity: ICapacityConverters, context: IContextConverters): IStorageConverters;
+export function buildStorageConverters(bounds: ITaskFieldBounds, ids: IIdentityConverters, values: IValueConverters, envelopes: IEnvelopeConverters, commands: ICommandConverters, capacity: ICapacityConverters, context: IContextConverters, delivery: IDeliveryConverters): IStorageConverters;
 
 // @public
 export function buildValueConverters(bounds: ITaskFieldBounds, ids: IIdentityConverters): IValueConverters;
@@ -113,7 +119,7 @@ export type CapacityClaimOwner = {
 export type CapacityClaimOwnership = 'pending' | 'live';
 
 // @public
-export type CapacityClaimPurpose = 'terminal-closeout' | 'first-resolution' | 'accepted-operation-settlement' | 'subscription-acknowledgement' | 'receipt-preparation' | 'admitted-source-replay';
+export type CapacityClaimPurpose = 'terminal-closeout' | 'first-resolution' | 'accepted-operation-settlement' | 'subscription-activation' | 'receipt-preparation' | 'admitted-source-replay';
 
 // @public
 export type CapacityDimension = 'retained-tasks' | 'non-archived-tasks' | 'subscriptions' | 'sources' | 'updates' | 'audience-links' | 'acknowledgement-ids' | 'operations' | 'record-bytes' | 'logical-bytes' | 'resident-payload-bytes';
@@ -123,6 +129,9 @@ export const capacityPressureThreshold: number;
 
 // @public
 export function checkListCompletion(listId: TaskId, children: ReadonlyArray<ITaskChildState>, requireChild: boolean): Result<number>;
+
+// @public
+export type CheckpointWriteVisibility = 'unchanged' | 'unknown';
 
 // @public
 export type CommandRejectionReason = 'denied' | 'unsupported' | 'conflict' | 'invalid-transition' | 'stop-active' | 'idempotency-conflict';
@@ -147,6 +156,15 @@ export type ConsumerId = Brand<string, 'ConsumerId'>;
 
 // @public
 export function createTaskCommandHandle<P>(descriptor: ITaskCommandDescriptor<P>): ITaskCommandHandle;
+
+// @public
+export const defaultDeliveryCategories: ReadonlyArray<UpdateCategory>;
+
+// @public
+export const defaultMaxBaselineTasks: number;
+
+// @public
+export const defaultReceiptLifetimeMs: number;
 
 // @public
 export const defaultTaskCapacityLimits: TaskCapacityLimits;
@@ -238,6 +256,7 @@ export class ExternalTaskSource<TDetails> implements ITaskSource {
 
 // @public
 export class FileTreeTaskRepository implements ITaskRepository {
+    audience(before: ITaskEnvelope | undefined, after: ITaskEnvelope, category: UpdateCategory): ReadonlyArray<SubscriptionId>;
     capacityStatus(): TaskResult<ITaskCapacityStatus>;
     childStates(parentId: TaskId): Promise<TaskResult<ReadonlyArray<ITaskChildState>>>;
     close(): Result<boolean>;
@@ -261,12 +280,49 @@ export class FileTreeTaskRepository implements ITaskRepository {
     get report(): ITaskRecoveryReport;
     // (undocumented)
     readonly repositoryId: string;
+    subscription(subscriptionId: SubscriptionId): TaskResult<ITaskSubscription | undefined>;
     unsettledCommands(request: IListCompletionCandidateQuery): Promise<TaskResult<ReadonlyArray<TaskId>>>;
     withWriter<T>(action: (writer: ITaskRepositoryWriter) => Promise<TaskResult<T>>): Promise<TaskResult<T>>;
 }
 
 // @public
+export interface IAcknowledgementResult {
+    // (undocumented)
+    readonly alreadyAcknowledged: ReadonlyArray<UpdateId>;
+    // (undocumented)
+    readonly deliveryId: DeliveryId;
+    // (undocumented)
+    readonly newlyAcknowledged: ReadonlyArray<UpdateId>;
+    // (undocumented)
+    readonly subscriptionId: SubscriptionId;
+}
+
+// @public
 export type IArchiveTask = ITaskMutationIdentity;
+
+// @public
+export interface IBoundTaskDelivery {
+    abandon(deliveryId: DeliveryId): Promise<TaskResult<DeliveryId>>;
+    // (undocumented)
+    acknowledge(receipt: unknown): Promise<TaskResult<IAcknowledgementResult>>;
+    // (undocumented)
+    pending(request?: {
+        readonly limit?: number;
+        readonly cursor?: PageCursor;
+    }): Promise<TaskResult<ITaskDeliveryPage>>;
+    // (undocumented)
+    prepare(budget?: ITaskContextBudget): Promise<TaskResult<IPreparedTaskContext>>;
+    // (undocumented)
+    readonly subscriptionId: SubscriptionId;
+}
+
+// @public
+export interface IBoundTaskDeliveryParams extends IBoundTaskViewParams {
+    // (undocumented)
+    readonly consumerId: ConsumerId;
+    // (undocumented)
+    readonly subscriptionId: SubscriptionId;
+}
 
 // @public
 export interface IBoundTaskPage {
@@ -561,6 +617,35 @@ export interface ICreateTrackedTask {
 }
 
 // @public
+export interface IDeliveryConverters {
+    readonly categories: Converter<ReadonlyArray<UpdateCategory>>;
+    // (undocumented)
+    readonly consumerInventory: Converter<ReadonlyArray<ITaskConsumerInventoryEntry>>;
+    // (undocumented)
+    readonly consumerInventoryEntry: Converter<ITaskConsumerInventoryEntry>;
+    readonly consumerRecord: Converter<ITaskConsumerRecord>;
+    // (undocumented)
+    readonly issued: Converter<IIssuedTaskReceipt>;
+    // (undocumented)
+    readonly policy: Converter<ITaskDeliveryPolicy>;
+    readonly policyOverrides: Converter<Partial<Omit<ITaskDeliveryPolicy, 'schemaVersion'>>>;
+    // (undocumented)
+    readonly receiptAbandonment: Converter<ITaskReceiptAbandonment>;
+    // (undocumented)
+    readonly receiptAcknowledgement: Converter<ITaskReceiptAcknowledgement>;
+    // (undocumented)
+    readonly receiptIssue: Converter<ITaskReceiptIssue>;
+    // (undocumented)
+    readonly registration: Converter<ITaskSubscriptionRegistration>;
+    // (undocumented)
+    readonly specification: Converter<ITaskSubscriptionSpecification>;
+    // (undocumented)
+    readonly start: Converter<SubscriptionStart>;
+    // (undocumented)
+    readonly subscribeRequest: Converter<ISubscribeRequest>;
+}
+
+// @public
 export interface IDueTaskQuery extends ITaskQuery {
     // (undocumented)
     readonly cutoff: Instant;
@@ -668,6 +753,20 @@ export interface IInclusionEntry {
 }
 
 // @public
+export interface IIssuedTaskReceipt {
+    // (undocumented)
+    readonly acknowledged: boolean;
+    // (undocumented)
+    readonly deliveryId: DeliveryId;
+    // (undocumented)
+    readonly expiresAt: Instant;
+    // (undocumented)
+    readonly issuedAt: Instant;
+    // (undocumented)
+    readonly receipt: ITaskInclusionReceipt;
+}
+
+// @public
 export interface IListCompletionCandidateQuery {
     // (undocumented)
     readonly after?: TaskId;
@@ -727,6 +826,23 @@ export interface IOwedUpdateQuery {
 }
 
 // @public
+export interface IPendingConsumerEntry {
+    // (undocumented)
+    readonly capacityClaims: ReadonlyArray<ITaskCapacityClaim>;
+    // (undocumented)
+    readonly id: SubscriptionId;
+    // (undocumented)
+    readonly operationId: OperationId;
+    // (undocumented)
+    readonly principalKey: string;
+    readonly recordFingerprint: string;
+    // (undocumented)
+    readonly specification: ITaskSubscriptionSpecification;
+    // (undocumented)
+    readonly state: 'pending';
+}
+
+// @public
 export interface IPendingInventoryEntry {
     // (undocumented)
     readonly capacityClaims: ReadonlyArray<ITaskCapacityClaim>;
@@ -741,6 +857,16 @@ export interface IPendingInventoryEntry {
     readonly request: JsonValue;
     // (undocumented)
     readonly state: 'pending';
+}
+
+// @public
+export interface IPreparedTaskContext {
+    // (undocumented)
+    readonly context: ITaskContext;
+    // (undocumented)
+    readonly deliveryId: DeliveryId;
+    // (undocumented)
+    readonly expiresAt: Instant;
 }
 
 // @public
@@ -998,8 +1124,6 @@ export interface IStorageConverters {
     readonly draft: Converter<ITaskRecordDraft>;
     readonly formatVersion: Converter<number>;
     // (undocumented)
-    readonly header: Converter<ITaskRecordHeader>;
-    // (undocumented)
     readonly inventoryEntry: Converter<ITaskInventoryEntry>;
     // (undocumented)
     readonly manifest: Converter<ITaskRepositoryManifest>;
@@ -1055,6 +1179,22 @@ export interface IStoredCommandOperation {
 export type IStoredTaskOperation = IStoredCommandOperation | IStoredCatalogOperation;
 
 // @public
+export interface ISubscribeRequest {
+    // (undocumented)
+    readonly consumerId: ConsumerId;
+    // (undocumented)
+    readonly operationId: OperationId;
+    // (undocumented)
+    readonly policy?: Partial<Omit<ITaskDeliveryPolicy, 'schemaVersion'>>;
+    // (undocumented)
+    readonly selection: ITaskSelection;
+    // (undocumented)
+    readonly start: SubscriptionStart;
+    // (undocumented)
+    readonly subscriptionId: SubscriptionId;
+}
+
+// @public
 export interface ITaskAccessRequest {
     // (undocumented)
     readonly action: TaskAction;
@@ -1073,6 +1213,12 @@ export interface ITaskAccessRequest {
 }
 
 // @public
+export interface ITaskAcknowledgementCommit extends IAcknowledgementResult {
+    // (undocumented)
+    readonly record: ITaskConsumerRecord;
+}
+
+// @public
 export interface ITaskAuthorization {
     // (undocumented)
     check(request: ITaskAccessRequest): Promise<Result<boolean>>;
@@ -1083,6 +1229,7 @@ export interface ITaskAuthorization {
 // @public
 export interface ITaskBrokerCreateParams {
     readonly converters?: TaskConverters;
+    readonly delivery?: ITaskDeliveryDefaults;
     // (undocumented)
     readonly environment: ITaskEnvironment;
     readonly repository: ITaskRepository;
@@ -1110,9 +1257,8 @@ export type ITaskCapacityClaim = (ITaskCapacityClaimCommon & {
     readonly taskId: TaskId;
     readonly operationId: OperationId;
 }) | (ITaskCapacityClaimCommon & {
-    readonly purpose: 'subscription-acknowledgement';
+    readonly purpose: 'subscription-activation';
     readonly subscriptionId: SubscriptionId;
-    readonly updateId: UpdateId;
 }) | (ITaskCapacityClaimCommon & {
     readonly purpose: 'receipt-preparation';
     readonly subscriptionId: SubscriptionId;
@@ -1178,6 +1324,14 @@ export interface ITaskCapacityStatus {
 }
 
 // @public
+export interface ITaskCheckpointStore {
+    // (undocumented)
+    readonly durability: 'session' | 'process-crash';
+    read(subscriptionId: SubscriptionId): Result<unknown>;
+    write(subscriptionId: SubscriptionId, expectedRecordRevision: number, record: ITaskConsumerRecord): DetailedResult<true, CheckpointWriteVisibility>;
+}
+
+// @public
 export interface ITaskChildState {
     // (undocumented)
     readonly archived: boolean;
@@ -1235,6 +1389,43 @@ export interface ITaskCommitRequestBase {
     readonly record: ITaskRecordDraft;
     // (undocumented)
     readonly taskId: TaskId;
+}
+
+// @public
+export type ITaskConsumerInventoryEntry = ILiveInventoryEntry | IPendingConsumerEntry;
+
+// @public
+export interface ITaskConsumerRecord {
+    // (undocumented)
+    readonly acknowledged: ReadonlyArray<UpdateId>;
+    // (undocumented)
+    readonly baseline: ReadonlyArray<ITaskUpdate>;
+    // (undocumented)
+    readonly capacityClaims: ReadonlyArray<ITaskCapacityClaim>;
+    // (undocumented)
+    readonly consumerId: ConsumerId;
+    // (undocumented)
+    readonly createdAt: Instant;
+    // (undocumented)
+    readonly formatVersion: 1;
+    // (undocumented)
+    readonly id: SubscriptionId;
+    // (undocumented)
+    readonly issued: ReadonlyArray<IIssuedTaskReceipt>;
+    // (undocumented)
+    readonly policy: ITaskDeliveryPolicy;
+    // (undocumented)
+    readonly recordRevision: number;
+    readonly registration: {
+        readonly operationId: OperationId;
+        readonly principalKey: string;
+    };
+    // (undocumented)
+    readonly selection: ITaskSelection;
+    // (undocumented)
+    readonly start: SubscriptionStart;
+    // (undocumented)
+    readonly state: 'active';
 }
 
 // @public
@@ -1322,7 +1513,38 @@ export interface ITaskConvertersCreateParams {
 }
 
 // @public
+export interface ITaskDeliveryDefaults {
+    readonly maxBaselineTasks?: number;
+    // (undocumented)
+    readonly policy?: Partial<Omit<ITaskDeliveryPolicy, 'schemaVersion'>>;
+    readonly receiptLifetimeMs?: number;
+}
+
+// @public
+export interface ITaskDeliveryPage {
+    // (undocumented)
+    readonly nextCursor?: PageCursor;
+    // (undocumented)
+    readonly updates: ReadonlyArray<ITaskUpdate>;
+    // (undocumented)
+    readonly withheld: number;
+}
+
+// @public
+export interface ITaskDeliveryPolicy {
+    // (undocumented)
+    readonly categories: ReadonlyArray<UpdateCategory>;
+    // (undocumented)
+    readonly durability: 'session' | 'process-crash';
+    // (undocumented)
+    readonly history: SourceHistoryContract;
+    // (undocumented)
+    readonly schemaVersion: 1;
+}
+
+// @public
 export interface ITaskEncodedBounds {
+    readonly maxAcknowledgementEvidenceBytes: number;
     readonly maxConsumerRecordBytes: number;
     readonly maxDetailBytes: number;
     readonly maxDispositionReasonBytes: number;
@@ -1594,6 +1816,39 @@ export interface ITaskReason {
 }
 
 // @public
+export interface ITaskReceiptAbandonment {
+    // (undocumented)
+    readonly deliveryId: DeliveryId;
+    // (undocumented)
+    readonly expectedRecordRevision: number;
+    // (undocumented)
+    readonly subscriptionId: SubscriptionId;
+}
+
+// @public
+export interface ITaskReceiptAcknowledgement {
+    readonly at: Instant;
+    // (undocumented)
+    readonly deliveryId: DeliveryId;
+    // (undocumented)
+    readonly expectedRecordRevision: number;
+    // (undocumented)
+    readonly subscriptionId: SubscriptionId;
+}
+
+// @public
+export interface ITaskReceiptIssue {
+    // (undocumented)
+    readonly expectedRecordRevision: number;
+    // (undocumented)
+    readonly expiresAt: Instant;
+    readonly issuedAt: Instant;
+    readonly receipt: ITaskInclusionReceipt;
+    // (undocumented)
+    readonly subscriptionId: SubscriptionId;
+}
+
+// @public
 export interface ITaskRecordCacheOptions {
     readonly maxEncodedBytes: number;
     readonly maxEntries: number;
@@ -1601,14 +1856,6 @@ export interface ITaskRecordCacheOptions {
 
 // @public
 export type ITaskRecordDraft = IResolvedTaskRecordDraft | IUnresolvedTaskRecordDraft;
-
-// @public
-export interface ITaskRecordHeader {
-    // (undocumented)
-    readonly formatVersion: 1;
-    // (undocumented)
-    readonly id: string;
-}
 
 // @public
 export interface ITaskRecoveryHandle {
@@ -1649,10 +1896,15 @@ export interface ITaskRecoveryOutcome {
 // @public
 export interface ITaskRecoveryReport {
     readonly completedRegistrations: ReadonlyArray<TaskId>;
+    readonly completedSubscriptions: ReadonlyArray<SubscriptionId>;
     // (undocumented)
     readonly issues: ReadonlyArray<ITaskRecoveryIssue>;
     readonly pendingRegistrations: ReadonlyArray<{
         readonly taskId: TaskId;
+        readonly operationId: OperationId;
+    }>;
+    readonly pendingSubscriptions: ReadonlyArray<{
+        readonly subscriptionId: SubscriptionId;
         readonly operationId: OperationId;
     }>;
     readonly removedTemporaries: ReadonlyArray<string>;
@@ -1686,6 +1938,7 @@ export interface ITaskRegistrationRequest {
 
 // @public
 export interface ITaskRepository {
+    audience(before: ITaskEnvelope | undefined, after: ITaskEnvelope, category: UpdateCategory): ReadonlyArray<SubscriptionId>;
     capacityStatus(): TaskResult<ITaskCapacityStatus>;
     childStates(parentId: TaskId): Promise<TaskResult<ReadonlyArray<ITaskChildState>>>;
     close(): Result<boolean>;
@@ -1707,6 +1960,7 @@ export interface ITaskRepository {
     readonly report: ITaskRecoveryReport;
     // (undocumented)
     readonly repositoryId: string;
+    subscription(subscriptionId: SubscriptionId): TaskResult<ITaskSubscription | undefined>;
     unsettledCommands(request: IListCompletionCandidateQuery): Promise<TaskResult<ReadonlyArray<TaskId>>>;
     withWriter<T>(action: (writer: ITaskRepositoryWriter) => Promise<TaskResult<T>>): Promise<TaskResult<T>>;
 }
@@ -1740,7 +1994,7 @@ export interface ITaskRepositoryHealth {
 // @public
 export interface ITaskRepositoryManifest {
     // (undocumented)
-    readonly consumers: ReadonlyArray<ITaskInventoryEntry>;
+    readonly consumers: ReadonlyArray<ITaskConsumerInventoryEntry>;
     // (undocumented)
     readonly formatVersion: 1;
     // (undocumented)
@@ -1757,6 +2011,7 @@ export interface ITaskRepositoryManifest {
 
 // @public
 export interface ITaskRepositoryOpenParams {
+    readonly checkpoints?: ITaskCheckpointStore;
     readonly converters?: TaskConverters;
     // (undocumented)
     readonly environment: ITaskEnvironment;
@@ -1770,13 +2025,18 @@ export interface ITaskRepositoryOpenParams {
 
 // @public
 export interface ITaskRepositoryWriter {
+    abandonReceipt(request: ITaskReceiptAbandonment): Promise<TaskResult<ITaskConsumerRecord>>;
+    acknowledgeReceipt(request: ITaskReceiptAcknowledgement): Promise<TaskResult<ITaskAcknowledgementCommit>>;
     commit(request: ITaskCommitRequest): Promise<TaskResult<ITaskCommitRecord>>;
     commitSource(request: ITaskSourceCommitRequest): Promise<TaskResult<ITaskSourceRecord>>;
     extendReplayEnvelope(taskId: TaskId, add: ISourceReplayEnvelope): Promise<TaskResult<ISourceReplayEnvelope>>;
+    issueReceipt(request: ITaskReceiptIssue): Promise<TaskResult<ITaskConsumerRecord>>;
     raiseCapacityLimits(profile: ITaskCapacityProfile): Promise<TaskResult<ITaskCapacityProfile>>;
     readCommit(id: TaskId): Promise<TaskResult<ITaskCommitRecord | undefined>>;
     readSource(sourceId: string): Promise<TaskResult<ITaskSourceRecord | undefined>>;
+    readSubscription(subscriptionId: SubscriptionId): Promise<TaskResult<ITaskConsumerRecord | undefined>>;
     register(request: ITaskRegistrationRequest): Promise<TaskResult<ITaskCommitRecord>>;
+    registerSubscription(request: ITaskSubscriptionRegistration): Promise<TaskResult<ITaskConsumerRecord>>;
 }
 
 // @public
@@ -1843,6 +2103,46 @@ export interface ITaskSourceRecord {
     readonly pages: number;
     // (undocumented)
     readonly recordRevision: number;
+}
+
+// @public
+export interface ITaskSubscription extends ITaskSubscriptionSpecification {
+    // (undocumented)
+    readonly createdAt: Instant;
+    // (undocumented)
+    readonly id: SubscriptionId;
+    // (undocumented)
+    readonly recordRevision: number;
+    // (undocumented)
+    readonly state: 'active';
+}
+
+// @public
+export interface ITaskSubscriptionRegistration {
+    // (undocumented)
+    readonly baseline: ReadonlyArray<ITaskUpdate>;
+    // (undocumented)
+    readonly createdAt: Instant;
+    // (undocumented)
+    readonly operationId: OperationId;
+    // (undocumented)
+    readonly principalKey: string;
+    // (undocumented)
+    readonly specification: ITaskSubscriptionSpecification;
+    // (undocumented)
+    readonly subscriptionId: SubscriptionId;
+}
+
+// @public
+export interface ITaskSubscriptionSpecification {
+    // (undocumented)
+    readonly consumerId: ConsumerId;
+    // (undocumented)
+    readonly policy: ITaskDeliveryPolicy;
+    // (undocumented)
+    readonly selection: ITaskSelection;
+    // (undocumented)
+    readonly start: SubscriptionStart;
 }
 
 // @public
@@ -1991,6 +2291,9 @@ export interface IWaitingReason extends ITaskReason {
 export const listRefusedCommands: ReadonlyArray<TrackedCommand['command']>;
 
 // @public
+export const mandatoryDeliveryCategories: ReadonlyArray<UpdateCategory>;
+
+// @public
 export function maximumClosureCharges(profile: ITaskCapacityProfile): Result<ReadonlyArray<ITaskCapacityCharge>>;
 
 // @public
@@ -2007,9 +2310,6 @@ export const maxTaskPageLimit: number;
 
 // @public
 export const maxUpdateIdSuffixLength: number;
-
-// @public
-export const noAudience: TaskAudienceResolver;
 
 // @public
 export const nonNegativeAmount: Converter<number>;
@@ -2141,6 +2441,9 @@ export type StoredCommandDispatch = 'not-sent' | 'possibly-sent' | 'settled';
 export type SubscriptionId = Brand<string, 'SubscriptionId'>;
 
 // @public
+export type SubscriptionStart = 'current' | 'from-now';
+
+// @public
 export type TaskAccessRole = 'subject' | 'parent' | 'previous-parent' | 'new-parent';
 
 // @public
@@ -2152,6 +2455,7 @@ export type TaskAudienceResolver = (before: ITaskEnvelope | undefined, after: IT
 // @public
 export class TaskBroker {
     bind(params: IBoundTaskViewParams): TaskResult<IBoundTaskWriter>;
+    bindDelivery(params: IBoundTaskDeliveryParams): TaskResult<IBoundTaskDelivery>;
     bindView(params: IBoundTaskViewParams): TaskResult<IBoundTaskView>;
     static create(params: ITaskBrokerCreateParams): Result<TaskBroker>;
     extendReplayEnvelope(taskId: TaskId, add: ISourceReplayEnvelope): Promise<TaskResult<ISourceReplayEnvelope>>;
@@ -2160,6 +2464,7 @@ export class TaskBroker {
     reconcile(request: ISourceReconcileRequest): Promise<TaskResult<ISourceReconcileReport>>;
     recover(taskId: TaskId): Promise<TaskResult<ITaskRecoveryOutcome>>;
     registerExternal(principal: string, request: unknown): Promise<TaskResult<TaskRegistrationResult>>;
+    subscribe(binding: IBoundTaskViewParams, request: unknown): Promise<TaskResult<ITaskSubscription>>;
 }
 
 // @public
@@ -2207,6 +2512,7 @@ export class TaskConverters {
     readonly commands: ICommandConverters;
     readonly context: IContextConverters;
     static create(params?: ITaskConvertersCreateParams): Result<TaskConverters>;
+    readonly delivery: IDeliveryConverters;
     readonly envelopes: IEnvelopeConverters;
     readonly failures: IFailureConverters;
     readonly ids: IIdentityConverters;

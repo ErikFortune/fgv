@@ -26,6 +26,12 @@ export class SortedKeySet {
     return this._keys;
   }
 
+  /** Whether a key is present. */
+  public has(key: string): boolean {
+    const at: number = this._lowerBound(key);
+    return at < this._keys.length && this._keys[at] === key;
+  }
+
   /** Adds a key. Returns `false` if it was already present. */
   public add(key: string): boolean {
     const at: number = this._lowerBound(key);

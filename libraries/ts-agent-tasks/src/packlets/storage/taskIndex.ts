@@ -15,6 +15,7 @@ import {
   SubscriptionId,
   TaskId,
   TaskLifecycleStatus,
+  UpdateId,
   allUpdateCategories,
   isTerminalTaskStatus
 } from '../types';
@@ -93,6 +94,31 @@ const revisionWidth: number = 16;
 export function owedKey(update: ITaskUpdate): string {
   const revision: string = String(update.revision).padStart(revisionWidth, '0');
   return `${update.taskId}\u0000${revision}\u0000${allUpdateCategories.indexOf(update.category)}`;
+}
+
+/**
+ * The owed-set key of a baseline obligation: it sorts beside the task updates of the same revision.
+ */
+export function baselineKey(update: ITaskUpdate): string {
+  const revision: string = String(update.revision).padStart(revisionWidth, '0');
+  return `${update.taskId}\u0000${revision}\u0000initial`;
+}
+
+const baselineSuffix: string = ':initial';
+
+/**
+ * The baseline key an update id names, if it is a baseline id held here. The encoding is read from
+ * the right, as `baselineUpdateId` writes it, so a task id containing `:` cannot confuse it.
+ */
+function _baselineKeyOf(baseline: ReadonlyMap<string, ITaskUpdate>, updateId: UpdateId): string | undefined {
+  if (!updateId.endsWith(baselineSuffix)) {
+    return undefined;
+  }
+  const rest: string = updateId.slice(0, -baselineSuffix.length);
+  const colon: number = rest.lastIndexOf(':');
+  const revision: string = rest.slice(colon + 1).padStart(revisionWidth, '0');
+  const key: string = `${rest.slice(0, colon)}\u0000${revision}\u0000initial`;
+  return baseline.get(key)?.id === updateId ? key : undefined;
 }
 
 /**
@@ -176,6 +202,12 @@ export class TaskIndex {
   /** Per parent, how many of its children are resolved (archived or not) and succeeded. */
   private readonly _succeededChildren: Map<TaskId, number> = new Map();
   private readonly _owedKeysByTask: Map<TaskId, ReadonlyArray<string>> = new Map();
+  /** Owed key of each retained update with an audience, by update id. */
+  private readonly _keyOfUpdate: Map<UpdateId, string> = new Map();
+  /** Retained links already acknowledged: owed key → the subscriptions that acknowledged it. */
+  private readonly _satisfied: Map<string, Set<SubscriptionId>> = new Map();
+  /** Unacknowledged baseline payloads, by subscription then baseline key. */
+  private readonly _baselines: Map<SubscriptionId, Map<string, ITaskUpdate>> = new Map();
   private readonly _memberships: Map<TaskId, IMemberships> = new Map();
 
   /** The number of tasks the index knows about, in any category. */
@@ -234,14 +266,31 @@ export class TaskIndex {
 
   /**
    * Replaces the owed payloads one task holds: every retained update with a non-empty audience,
-   * listed under each audience subscription.
+   * listed under each audience subscription that has not acknowledged it.
+   *
+   * @remarks
+   * A link a subscription has acknowledged stays *satisfied* while its payload is retained, so a
+   * later commit of the same task — which re-lists all its retained updates — cannot make it owed
+   * again. Satisfaction is by exact update id, never by revision. A link whose payload is no longer
+   * retained is forgotten with it.
    */
   public putOwed(id: TaskId, updates: ReadonlyArray<ITaskUpdate>): void {
+    const retained: Set<string> = new Set<string>();
+    for (const update of updates) {
+      if (update.audience.length > 0) {
+        retained.add(owedKey(update));
+      }
+    }
     for (const key of this._owedKeysByTask.get(id) ?? []) {
-      for (const subscription of this.owedPayloads.get(key)!.audience) {
+      const previous: ITaskUpdate = this.owedPayloads.get(key)!;
+      for (const subscription of previous.audience) {
         _unsetIn(this.owedBySubscription, subscription, key);
       }
       this.owedPayloads.delete(key);
+      this._keyOfUpdate.delete(previous.id);
+      if (!retained.has(key)) {
+        this._satisfied.delete(key);
+      }
     }
     const keys: string[] = [];
     for (const update of updates) {
@@ -251,8 +300,12 @@ export class TaskIndex {
       const key: string = owedKey(update);
       keys.push(key);
       this.owedPayloads.set(key, update);
+      this._keyOfUpdate.set(update.id, key);
+      const satisfied: ReadonlySet<SubscriptionId> | undefined = this._satisfied.get(key);
       for (const subscription of update.audience) {
-        _setIn(this.owedBySubscription, subscription, key);
+        if (satisfied?.has(subscription) !== true) {
+          _setIn(this.owedBySubscription, subscription, key);
+        }
       }
     }
     if (keys.length > 0) {
@@ -260,6 +313,80 @@ export class TaskIndex {
     } else {
       this._owedKeysByTask.delete(id);
     }
+  }
+
+  /**
+   * Lists a subscription's unacknowledged baseline obligations. Their payloads live in the
+   * subscription's record and are resident only while owed.
+   */
+  public putBaseline(subscription: SubscriptionId, baseline: ReadonlyArray<ITaskUpdate>): void {
+    const payloads: Map<string, ITaskUpdate> = new Map<string, ITaskUpdate>();
+    for (const update of baseline) {
+      const key: string = baselineKey(update);
+      payloads.set(key, update);
+      _setIn(this.owedBySubscription, subscription, key);
+    }
+    if (payloads.size > 0) {
+      this._baselines.set(subscription, payloads);
+    }
+  }
+
+  /**
+   * Marks exact update ids as acknowledged by one subscription: each is removed from what it is
+   * owed. A task update's link stays satisfied while its payload is retained; a baseline payload is
+   * released. Every id must be one the subscription is owed. Returns how many owed links this removed.
+   */
+  public satisfy(subscription: SubscriptionId, updateIds: Iterable<UpdateId>): number {
+    let removed: number = 0;
+    const baseline: Map<string, ITaskUpdate> | undefined = this._baselines.get(subscription);
+    for (const updateId of updateIds) {
+      const key: string | undefined = this._keyOfUpdate.get(updateId);
+      if (key !== undefined && this.owedPayloads.get(key)!.audience.includes(subscription)) {
+        let satisfied: Set<SubscriptionId> | undefined = this._satisfied.get(key);
+        if (satisfied === undefined) {
+          satisfied = new Set<SubscriptionId>();
+          this._satisfied.set(key, satisfied);
+        }
+        if (!satisfied.has(subscription)) {
+          satisfied.add(subscription);
+          _unsetIn(this.owedBySubscription, subscription, key);
+          removed++;
+        }
+        continue;
+      }
+      // Not a retained link, so an owed baseline obligation: callers pass only ids the subscription is
+      // owed (acknowledgement re-proves each with `isOwed`; open passes only retained links).
+      const bKey: string | undefined = _baselineKeyOf(baseline!, updateId);
+      if (bKey !== undefined) {
+        baseline!.delete(bKey);
+        _unsetIn(this.owedBySubscription, subscription, bKey);
+        removed++;
+      }
+    }
+    if (baseline !== undefined && baseline.size === 0) {
+      this._baselines.delete(subscription);
+    }
+    return removed;
+  }
+
+  /** The payload an owed key names for a subscription. */
+  public owedPayload(subscription: SubscriptionId, key: string): ITaskUpdate {
+    return this.owedPayloads.get(key) ?? this._baselines.get(subscription)!.get(key)!;
+  }
+
+  /** How many links a subscription is owed. */
+  public owedCount(subscription: SubscriptionId): number {
+    return this.owedBySubscription.get(subscription)?.size ?? 0;
+  }
+
+  /** Whether a subscription is owed an exact update id — a retained, unacknowledged link to it. */
+  public isOwed(subscription: SubscriptionId, updateId: UpdateId): boolean {
+    const key: string | undefined = this._keyOfUpdate.get(updateId);
+    if (key !== undefined) {
+      return this.owedBySubscription.get(subscription)?.has(key) === true;
+    }
+    const baseline: Map<string, ITaskUpdate> | undefined = this._baselines.get(subscription);
+    return baseline !== undefined && _baselineKeyOf(baseline, updateId) !== undefined;
   }
 
   private _remove(id: TaskId): void {

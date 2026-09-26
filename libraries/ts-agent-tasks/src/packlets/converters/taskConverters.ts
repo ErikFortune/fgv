@@ -10,6 +10,7 @@ import { ISourceConverters, buildSourceConverters } from './sourceConverters';
 import { ICapacityConverters, buildCapacityConverters } from './capacityConverters';
 import { ICommandConverters, buildCommandConverters } from './commandConverters';
 import { IContextConverters, buildContextConverters } from './contextConverters';
+import { IDeliveryConverters, buildDeliveryConverters } from './deliveryConverters';
 import { IEnvelopeConverters, buildEnvelopeConverters } from './envelopeConverters';
 import { IFailureConverters, buildFailureConverters } from './failureConverters';
 import { IIdentityConverters, buildIdentityConverters } from './identityConverters';
@@ -88,6 +89,8 @@ export class TaskConverters {
   public readonly storage: IStorageConverters;
   /** Repository query, due-query, owed-update query and page-cursor converters. */
   public readonly queries: IQueryConverters;
+  /** Subscription, consumer-record and delivery-request converters. */
+  public readonly delivery: IDeliveryConverters;
   /** Broker request, receipt and projected-value converters. */
   public readonly broker: IBrokerConverters;
   /** Converters for what an external source returns. */
@@ -102,6 +105,8 @@ export class TaskConverters {
     this.commands = buildCommandConverters(bounds, this.ids);
     this.capacity = buildCapacityConverters(bounds, this.ids, this.values, this.failures);
     this.context = buildContextConverters(bounds, this.ids, this.values, this.envelopes);
+    this.queries = buildQueryConverters(bounds, this.ids, this.values);
+    this.delivery = buildDeliveryConverters(bounds, this.ids, this.context, this.queries, this.capacity);
     this.storage = buildStorageConverters(
       bounds,
       this.ids,
@@ -109,9 +114,9 @@ export class TaskConverters {
       this.envelopes,
       this.commands,
       this.capacity,
-      this.context
+      this.context,
+      this.delivery
     );
-    this.queries = buildQueryConverters(bounds, this.ids, this.values);
     this.broker = buildBrokerConverters(bounds, this.ids, this.values, this.queries);
     this.sources = buildSourceConverters(bounds, this.values);
   }

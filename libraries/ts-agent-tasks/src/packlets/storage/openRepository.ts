@@ -4,18 +4,23 @@
  */
 
 import { FileTree } from '@fgv/ts-json-base';
-import { Converter, Converters, Result, fail, succeed } from '@fgv/ts-utils';
+import { Converter, Converters, Result, captureResult, fail, succeed } from '@fgv/ts-utils';
 import { TaskConverters, taskListDetails } from '../converters';
 import {
+  IPendingConsumerEntry,
   IPendingInventoryEntry,
   IStoredCatalogOperation,
+  ITaskCheckpointStore,
+  ITaskConsumerRecord,
+  ITaskUpdate,
+  SubscriptionId,
+  UpdateId,
   ITaskCapacityProfile,
   ITaskCommitRecord,
   ITaskRecoveryIssue,
   ITaskEnvironment,
   ITaskKindRegistry,
   ITaskRecoveryReport,
-  ITaskRecordHeader,
   ITaskRepositoryManifest,
   ITaskSourceRecord,
   OperationId,
@@ -28,8 +33,12 @@ import {
   taskListKind,
   taskStorageFormatVersion
 } from '../types';
-import { checkTaskClaims, withOwnership } from './claims';
+import { CheckpointPort, FileTreeCheckpointStore, IConsumerRead } from './checkpoints';
+import { checkSubscriptionClaims, checkTaskClaims, withOwnership } from './claims';
+import { firstRecordProblem, pendingEntryOf } from './consumerRecords';
+import { DeliveryBook } from './deliveryBook';
 import {
+  checkAudiences,
   checkBounds,
   checkCreationEvidence,
   checkOperationCount,
@@ -67,15 +76,23 @@ import {
   isTerminalRecord,
   ledgerEntry,
   manifestEntry,
-  opaqueEntry,
+  sourceEntry,
   pendingEntry,
   projectRecord,
+  recordLimitFor,
   taskKey,
   taskRecordLimit,
   taskUsage
 } from './projection';
 import { RecordStore } from './recordStore';
 import { IRootOwnership, acquireRoot } from './rootOwnership';
+import {
+  ISubscriptionState,
+  preparationBytes,
+  subscriptionKey,
+  subscriptionState,
+  valueBytes
+} from './subscriptions';
 import { IndexContent, TaskIndex } from './taskIndex';
 import { MaterializationGate, maxRecordCacheBytes, maxRecordCacheEntries } from './workingSet';
 
@@ -104,6 +121,10 @@ export interface IRepositoryState {
   readonly evidence: IScanEvidence;
   readonly gate: MaterializationGate;
   readonly recordCache?: ITaskRecordCacheOptions;
+  /** Subscriptions, pending registrations and potential audiences (T7). */
+  readonly book: DeliveryBook;
+  readonly checkpoints: CheckpointPort;
+  readonly defaultCheckpoints: boolean;
 }
 
 const modeConverter: Converter<TaskRepositoryMode> = Converters.oneOf<TaskRepositoryMode>([
@@ -132,6 +153,9 @@ interface IAcquired {
   readonly mode: TaskRepositoryMode;
   readonly removed: ReadonlyArray<string>;
   readonly names: ReadonlyArray<string>;
+  readonly checkpoints: CheckpointPort;
+  /** Subscription records live in the root itself, so their files are expected there. */
+  readonly defaultCheckpoints: boolean;
 }
 
 /**
@@ -184,6 +208,21 @@ function _acquireWith(params: ITaskRepositoryOpenParams, converters: TaskConvert
         'after-host-action'
       );
     }
+    // A host store's durability is host data like anything else it answers.
+    const checkpointStore: ITaskCheckpointStore =
+      params.checkpoints ?? new FileTreeCheckpointStore(store.value);
+    const durability: Result<string> = captureResult(() => checkpointStore.durability).onSuccess((d) =>
+      Converters.enumeratedValue<string>(['session', 'process-crash']).convert(d)
+    );
+    if (durability.isFailure() || (guarantee !== 'session' && durability.value !== 'process-crash')) {
+      ownership.value.release();
+      return taskFailure<IAcquired>(
+        `the checkpoint store is not process-crash durable, so it cannot hold the checkpoints of a ` +
+          `process-crash repository`,
+        'unsupported',
+        'after-host-action'
+      );
+    }
     const listed: Result<{ removed: ReadonlyArray<string>; names: ReadonlyArray<string> }> = store.value
       .cleanup()
       .onSuccess((removed) => store.value.list().onSuccess((names) => ok({ removed, names })));
@@ -197,7 +236,9 @@ function _acquireWith(params: ITaskRepositoryOpenParams, converters: TaskConvert
       converters,
       mode: guarantee === 'session' ? 'session' : { durable: 'process-crash' },
       removed: listed.value.removed,
-      names: listed.value.names
+      names: listed.value.names,
+      checkpoints: new CheckpointPort(checkpointStore, converters.delivery.consumerRecord),
+      defaultCheckpoints: params.checkpoints === undefined
     });
   });
 }
@@ -308,11 +349,16 @@ export function initializeRepository(
         },
         gate: new MaterializationGate(),
         recordCache: params.recordCache,
+        book: new DeliveryBook(new Map(), new Map()),
+        checkpoints: acquired.checkpoints,
+        defaultCheckpoints: acquired.defaultCheckpoints,
         report: {
           repositoryId: created.value.manifest.repositoryId,
           issues: [],
           completedRegistrations: [],
           pendingRegistrations: [],
+          completedSubscriptions: [],
+          pendingSubscriptions: [],
           removedTemporaries: acquired.removed
         }
       })
@@ -402,12 +448,6 @@ function _convertVersioned<T>(
   return converted.value;
 }
 
-/** A converted consumer or source record: its header, and the full source record when it is one. */
-interface IOpaqueRecord {
-  readonly header: ITaskRecordHeader;
-  readonly source?: ITaskSourceRecord;
-}
-
 /**
  * Opens an existing repository.
  *
@@ -440,7 +480,8 @@ function _completeRegistrations(
   store: RecordStore,
   converters: TaskConverters,
   scanned: { manifest: ITaskRepositoryManifest; text: string },
-  done: ReadonlySet<string>
+  done: ReadonlySet<string>,
+  doneConsumers: ReadonlySet<string>
 ): TaskResult<{ manifest: ITaskRepositoryManifest; bytes: number; text: string }> {
   const manifest: ITaskRepositoryManifest = scanned.manifest;
   // The one write open performs is fenced like every other manifest rewrite: the manifest on
@@ -463,7 +504,10 @@ function _completeRegistrations(
   const next: ITaskRepositoryManifest = {
     ...manifest,
     manifestRevision: manifest.manifestRevision + 1,
-    tasks: manifest.tasks.map((entry) => (done.has(entry.id) ? { id: entry.id, state: 'live' } : entry))
+    tasks: manifest.tasks.map((entry) => (done.has(entry.id) ? { id: entry.id, state: 'live' } : entry)),
+    consumers: manifest.consumers.map((entry) =>
+      doneConsumers.has(entry.id) ? { id: entry.id, state: 'live' } : entry
+    )
   };
   return classify(
     encodeRecord(next)
@@ -519,7 +563,9 @@ function _scan(
     removed: acquired.removed,
     names: acquired.names,
     expectedProfile: params.profile,
-    gate
+    gate,
+    checkpoints: acquired.checkpoints,
+    defaultCheckpoints: acquired.defaultCheckpoints
   }).onSuccess((outcome) => {
     if (outcome.state === 'blocked') {
       return _recovery(acquired, outcome.report);
@@ -533,7 +579,9 @@ function _scan(
       environment: params.environment,
       mode: acquired.mode,
       gate,
-      recordCache: params.recordCache
+      recordCache: params.recordCache,
+      checkpoints: acquired.checkpoints,
+      defaultCheckpoints: acquired.defaultCheckpoints
     };
     return ok<TaskRepositoryOpenResult>({ state: 'ready', repository: factory(state) });
   });
@@ -554,6 +602,8 @@ export interface IScanInput {
   /** On open, the profile the host expects; any difference refuses. Absent on rebuild. */
   readonly expectedProfile?: ITaskCapacityProfile;
   readonly gate: MaterializationGate;
+  readonly checkpoints: CheckpointPort;
+  readonly defaultCheckpoints: boolean;
 }
 
 /**
@@ -570,6 +620,7 @@ export interface IScanned {
   readonly index: TaskIndex;
   readonly report: ITaskRecoveryReport;
   readonly evidence: IScanEvidence;
+  readonly book: DeliveryBook;
 }
 
 /**
@@ -635,6 +686,8 @@ export function scanRoot(input: IScanInput): TaskResult<ScanOutcome> {
     issues: scan.issues,
     completedRegistrations: [],
     pendingRegistrations: [],
+    completedSubscriptions: [],
+    pendingSubscriptions: [],
     removedTemporaries: acquired.removed
   });
 
@@ -694,6 +747,8 @@ export function scanRoot(input: IScanInput): TaskResult<ScanOutcome> {
   // Pass 1 keeps only which tasks owe updates, and how many links: never a payload.
   const owedTasks: TaskId[] = [];
   let owedDescriptors: number = 0;
+  // Pass 1's owed-link descriptors, which the consumer pass joins acknowledgements against.
+  const linkDescriptors: Map<UpdateId, ReadonlyArray<SubscriptionId>> = new Map();
   const named: Set<string> = new Set<string>([manifestName]);
   // Every task the inventory names live, whether or not its record validated: a child of a
   // parent whose record is already reported broken is not *also* a dangling edge. A pending
@@ -806,6 +861,7 @@ export function scanRoot(input: IScanInput): TaskResult<ScanOutcome> {
     // they do for a draft: a record under its total ceiling can still hold one value over them.
     const bounded: Result<IStoredCatalogOperation> = checkCreationEvidence(record).onSuccess((creation) =>
       checkBounds(record, profile)
+        .onSuccess(() => checkAudiences(record, profile))
         .onSuccess(() => checkOperationCount(record, profile))
         .onSuccess(() => succeed(creation))
     );
@@ -892,6 +948,12 @@ export function scanRoot(input: IScanInput): TaskResult<ScanOutcome> {
     if (links > 0) {
       owedTasks.push(taskId);
       owedDescriptors += links;
+      // A descriptor is the link's identity only — update id and audience — never the payload.
+      for (const update of updatesOf(record)) {
+        if (update.audience.length > 0) {
+          linkDescriptors.set(update.id, update.audience);
+        }
+      }
     }
     tasks.set(taskId, projectRecord(record, known, read.text));
     ledger.apply(
@@ -908,9 +970,50 @@ export function scanRoot(input: IScanInput): TaskResult<ScanOutcome> {
     );
   }
 
-  // ---- consumer records: only what this release owns; source records in full ----
+  // ---- consumer records, one at a time, through the checkpoint store (T7) ----
+  const consumers = _scanConsumers({
+    scan,
+    manifest,
+    profile,
+    checkpoints: input.checkpoints,
+    linkDescriptors,
+    named: input.defaultCheckpoints ? named : undefined,
+    gate,
+    formatVersion: converters.storage.formatVersion
+  });
+  for (const [id, entry] of consumers.pending) {
+    ledger.apply(new Map([[subscriptionKey(id), pendingEntryOf(entry, profile)]]));
+    noteClaims(
+      `pending subscription ${id}`,
+      entry.capacityClaims.map((c) => c.claimId)
+    );
+  }
+  for (const [id, state] of consumers.subscriptions) {
+    noteClaims(
+      `subscription ${id}`,
+      state.claims.map((c) => c.claimId)
+    );
+  }
+  // A link must name a subscription the inventory holds live: an audience member nobody can ever
+  // acknowledge for is an obligation with no owner. (One whose record is already reported broken is
+  // not also reported here.)
+  const liveConsumers: ReadonlySet<string> = new Set<string>([
+    ...manifest.consumers.filter((entry) => entry.state === 'live').map((entry) => entry.id),
+    ...consumers.completed
+  ]);
+  for (const [updateId, audience] of linkDescriptors) {
+    const unknown: SubscriptionId | undefined = audience.find((id) => !liveConsumers.has(id));
+    if (unknown !== undefined) {
+      scan.blocking(
+        'integrity',
+        `update ${updateId}: its audience names ${unknown}, which is not a live subscription`
+      );
+    }
+  }
+
+  // ---- source records, in full ----
   const sources: Map<string, ISourceRecordState> = new Map<string, ISourceRecordState>();
-  const opaque = (kind: 'consumer' | 'source', entries: ITaskRepositoryManifest['consumers']): void => {
+  const opaque = (kind: 'source', entries: ITaskRepositoryManifest['sources']): void => {
     for (const entry of entries) {
       const name: string = recordName(kind, entry.id);
       named.add(name);
@@ -927,8 +1030,7 @@ export function scanRoot(input: IScanInput): TaskResult<ScanOutcome> {
         scan.blocking('record-missing', `${name}: named live by the inventory but missing`, name);
         continue;
       }
-      const limit: number =
-        kind === 'consumer' ? profile.encoded.maxConsumerRecordBytes : profile.encoded.maxSourceRecordBytes;
+      const limit: number = profile.encoded.maxSourceRecordBytes;
       // Counted like every other record parse: a re-entrant read from host accessor code during
       // this pass must see it in flight.
       const materialized = gate.track(() => {
@@ -938,25 +1040,21 @@ export function scanRoot(input: IScanInput): TaskResult<ScanOutcome> {
           converted:
             text === undefined
               ? undefined
-              : _convertVersioned<IOpaqueRecord>(
+              : _convertVersioned<ITaskSourceRecord>(
                   converters,
                   scan,
                   name,
                   text.parsed,
                   (from) =>
-                    kind === 'source'
-                      ? converters.storage.sourceRecord
-                          .convert(from)
-                          .onSuccess((record) =>
-                            utf8Length(record.cursor ?? '') > profile.encoded.maxSourceCursorBytes
-                              ? fail<IOpaqueRecord>(
-                                  `its cursor is over the bound of ${profile.encoded.maxSourceCursorBytes} bytes`
-                                )
-                              : succeed<IOpaqueRecord>({ header: record, source: record })
-                          )
-                      : converters.storage.header
-                          .convert(from)
-                          .onSuccess((header) => succeed<IOpaqueRecord>({ header })),
+                    converters.storage.sourceRecord
+                      .convert(from)
+                      .onSuccess((record) =>
+                        utf8Length(record.cursor ?? '') > profile.encoded.maxSourceCursorBytes
+                          ? fail<ITaskSourceRecord>(
+                              `its cursor is over the bound of ${profile.encoded.maxSourceCursorBytes} bytes`
+                            )
+                          : succeed(record)
+                      ),
                   'record-invalid'
                 )
         };
@@ -966,21 +1064,18 @@ export function scanRoot(input: IScanInput): TaskResult<ScanOutcome> {
       if (read === undefined || converted === undefined) {
         continue;
       }
-      if (converted.header.id !== entry.id) {
-        scan.blocking('record-id-mismatch', `${name}: holds ${kind} ${converted.header.id}`, name);
+      if (converted.id !== entry.id) {
+        scan.blocking('record-id-mismatch', `${name}: holds ${kind} ${converted.id}`, name);
         continue;
       }
-      if (converted.source !== undefined) {
-        sources.set(entry.id, {
-          record: converted.source,
-          fingerprint: fingerprintOf(read.text),
-          bytes: read.bytes
-        });
-      }
-      ledger.apply(new Map([[`${kind}:${entry.id}`, opaqueEntry(entry.id, kind, read.bytes, profile)]]));
+      sources.set(entry.id, {
+        record: converted,
+        fingerprint: fingerprintOf(read.text),
+        bytes: read.bytes
+      });
+      ledger.apply(new Map([[`${kind}:${entry.id}`, sourceEntry(entry.id, read.bytes, profile)]]));
     }
   };
-  opaque('consumer', manifest.consumers);
   opaque('source', manifest.sources);
 
   // ---- anything record-shaped the inventory does not name ----
@@ -1052,6 +1147,21 @@ export function scanRoot(input: IScanInput): TaskResult<ScanOutcome> {
     }
   }
 
+  // ---- the exact-ID join's result, baselines, and the subscriptions' derived ledger entries ----
+  // An acknowledged link is satisfied, never owed and never reserved twice: it is counted once, as
+  // history in its subscription's record.
+  let book: DeliveryBook = new DeliveryBook(new Map(), consumers.pending);
+  if (!scan.isBlocked) {
+    for (const [id, updateIds] of consumers.satisfied) {
+      index.satisfy(id, updateIds);
+    }
+    for (const [id, baseline] of consumers.baselines) {
+      index.putBaseline(id, baseline);
+    }
+    book = DeliveryBook.build(consumers.subscriptions, consumers.pending, index, tasks);
+    ledger.apply(book.entries(index, profile));
+  }
+
   // ---- capacity: a valid repository at its ceiling opens; one over it disagrees with itself ----
   const over: ReadonlyArray<string> = ledger.overLimit();
   if (over.length > 0) {
@@ -1063,23 +1173,29 @@ export function scanRoot(input: IScanInput): TaskResult<ScanOutcome> {
     issues: scan.issues,
     completedRegistrations: completed,
     pendingRegistrations: stillPending,
+    completedSubscriptions: consumers.completed,
+    pendingSubscriptions: consumers.stillPending,
     removedTemporaries: acquired.removed,
     ...extra
   });
 
   if (scan.isBlocked) {
-    return ok<ScanOutcome>({ state: 'blocked', report: report({ completedRegistrations: [] }) });
+    return ok<ScanOutcome>({
+      state: 'blocked',
+      report: report({ completedRegistrations: [], completedSubscriptions: [] })
+    });
   }
 
   // ---- complete registrations that died after their record was written ----
   const completion: TaskResult<{ manifest: ITaskRepositoryManifest; bytes: number; text: string }> =
-    completed.length === 0
+    completed.length === 0 && consumers.completed.length === 0
       ? ok({ manifest, bytes: manifestRead.bytes, text: manifestRead.text })
       : _completeRegistrations(
           store,
           converters,
           { manifest, text: manifestRead.text },
-          new Set<string>(completed)
+          new Set<string>(completed),
+          new Set<string>(consumers.completed)
         );
   if (completion.isFailure()) {
     return propagate(completion);
@@ -1096,6 +1212,7 @@ export function scanRoot(input: IScanInput): TaskResult<ScanOutcome> {
       sources,
       ledger,
       index,
+      book,
       report: report(),
       evidence: {
         taskPassReads: readsBeforeSelected - readsBefore.task,
@@ -1152,3 +1269,149 @@ function _indexContent(record: ITaskCommitRecord, known: boolean): IndexContent 
  * @internal
  */
 export const indexContentOf: (record: ITaskCommitRecord, known: boolean) => IndexContent = _indexContent;
+
+/** What the consumer pass establishes. */
+interface IScannedConsumers {
+  readonly subscriptions: Map<SubscriptionId, ISubscriptionState>;
+  readonly pending: Map<SubscriptionId, IPendingConsumerEntry>;
+  /** Pending registrations whose first record is present and valid: completed by this open. */
+  readonly completed: SubscriptionId[];
+  readonly stillPending: Array<{ subscriptionId: SubscriptionId; operationId: OperationId }>;
+  /** Per subscription, the acknowledged ids that are retained links of it: the exact-ID join. */
+  readonly satisfied: Map<SubscriptionId, UpdateId[]>;
+  /** Per subscription, its unacknowledged baseline obligations. */
+  readonly baselines: Map<SubscriptionId, ReadonlyArray<ITaskUpdate>>;
+}
+
+/**
+ * The consumer pass (design § 7, *Bounded open/rebuild*, step 2): each subscription record read
+ * through the checkpoint store, one at a time, validated, and its exact acknowledgement history
+ * joined against pass 1's owed-link descriptors by update id. Only the join's result, the
+ * unacknowledged baseline and the resident descriptor survive; the history itself is released
+ * with the record.
+ */
+function _scanConsumers(params: {
+  readonly scan: Scan;
+  readonly manifest: ITaskRepositoryManifest;
+  readonly profile: ITaskCapacityProfile;
+  readonly checkpoints: CheckpointPort;
+  readonly linkDescriptors: ReadonlyMap<UpdateId, ReadonlyArray<SubscriptionId>>;
+  /** The expected-file set, when records live in the root. */
+  readonly named: Set<string> | undefined;
+  readonly gate: MaterializationGate;
+  readonly formatVersion: Converter<number>;
+}): IScannedConsumers {
+  const { scan, manifest, profile, checkpoints, linkDescriptors, named, gate, formatVersion } = params;
+  const out: IScannedConsumers = {
+    subscriptions: new Map(),
+    pending: new Map(),
+    completed: [],
+    stillPending: [],
+    satisfied: new Map(),
+    baselines: new Map()
+  };
+  const limit: number = recordLimitFor(subscriptionKey(''), profile);
+  for (const entry of manifest.consumers) {
+    // The inventory converter validated the id with the subscription-id syntax.
+    const id: SubscriptionId = entry.id as SubscriptionId;
+    const name: string = recordName('consumer', id);
+    named?.add(name);
+    const read = gate.track(() => {
+      const value: Result<unknown> = checkpoints.readValue(id);
+      if (value.isFailure()) {
+        scan.blocking('unreadable', value.message, name);
+        return undefined;
+      }
+      if (value.value === undefined) {
+        return { absent: true as const };
+      }
+      const version: Result<number> = formatVersion.convert(value.value);
+      if (version.isSuccess() && version.value !== taskStorageFormatVersion) {
+        scan.blocking(
+          'unknown-format-version',
+          `${name}: storage format ${version.value} is not readable by this release; retained untouched`,
+          name
+        );
+        return undefined;
+      }
+      const accepted: Result<IConsumerRead> = checkpoints.accept(id, value.value);
+      if (accepted.isFailure()) {
+        scan.blocking('record-invalid', `${name}: ${accepted.message}`, name);
+        return undefined;
+      }
+      if (accepted.value.bytes > limit) {
+        scan.blocking(
+          'record-invalid',
+          `${name}: ${accepted.value.bytes} bytes exceeds its ceiling of ${limit}`,
+          name
+        );
+        return undefined;
+      }
+      return { absent: false as const, read: accepted.value };
+    });
+    if (read === undefined) {
+      continue;
+    }
+    if (read.absent) {
+      if (entry.state === 'live') {
+        scan.blocking('record-missing', `${name}: named live by the inventory but missing`, name);
+        continue;
+      }
+      const claimed: Result<true> = checkSubscriptionClaims(entry.capacityClaims, {
+        subscriptionId: id,
+        ownership: 'pending'
+      });
+      if (claimed.isFailure()) {
+        scan.blocking('integrity', `${name}: pending registration: ${claimed.message}`, name);
+        continue;
+      }
+      scan.advisory(
+        'pending-registration',
+        `subscription ${id}: registration '${entry.operationId}' was accepted into the inventory but its ` +
+          `record was never written; it is inactive until the same registration is retried`,
+        name
+      );
+      out.pending.set(id, entry);
+      out.stillPending.push({ subscriptionId: id, operationId: entry.operationId });
+      continue;
+    }
+    const record: ITaskConsumerRecord = read.read.record;
+    if (entry.state === 'pending') {
+      const problem: string | undefined = firstRecordProblem(read.read, entry);
+      if (problem !== undefined) {
+        scan.blocking(
+          'integrity',
+          `${name}: present for pending registration '${entry.operationId}' but is not its first record: ${problem}`,
+          name
+        );
+        continue;
+      }
+      out.completed.push(id);
+    }
+    const claimed: Result<true> = checkSubscriptionClaims(record.capacityClaims, {
+      subscriptionId: id,
+      ownership: 'live',
+      preparationBytes: preparationBytes(
+        profile,
+        record.issued.map((m) => ({ bytes: valueBytes(m) }))
+      )
+    });
+    if (claimed.isFailure()) {
+      scan.blocking('integrity', `${name}: ${claimed.message}`, name);
+      continue;
+    }
+    out.subscriptions.set(id, subscriptionState(record, read.read.fingerprint, read.read.bytes));
+    const acknowledged: ReadonlySet<UpdateId> = new Set(record.acknowledged);
+    const satisfied: UpdateId[] = record.acknowledged.filter(
+      (updateId) => linkDescriptors.get(updateId)?.includes(id) === true
+    );
+    if (satisfied.length > 0) {
+      out.satisfied.set(id, satisfied);
+    }
+    const owedBaseline: ReadonlyArray<ITaskUpdate> = record.baseline.filter((b) => !acknowledged.has(b.id));
+    if (owedBaseline.length > 0) {
+      out.baselines.set(id, owedBaseline);
+    }
+  }
+  return out;
+}

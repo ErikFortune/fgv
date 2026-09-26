@@ -15,7 +15,7 @@ on its own, and importing it has no side effects.
 
 ## What ships today
 
-Six things: the **vocabulary** (the `types` and `converters` packlets), the **snapshot-only
+Seven things: the **vocabulary** (the `types` and `converters` packlets), the **snapshot-only
 context entry point** (the `context` packlet), **durable task storage** (the `storage` packlet:
 `FileTreeTaskRepository`), **indexed selection** over that storage — scope/lifecycle queries,
 due candidates and owed updates answered from resident indexes, with keyset paging, a staged
@@ -23,7 +23,9 @@ rebuild and a reusable conformance suite for custom repositories — and the **b
 (`TaskBroker`): principal-bound views and writers, tracked work and task lists, hierarchy and
 reassignment, with authorization at every read and mutation — and **external sources**
 (`ITaskSource`, `ExternalTaskSource`): observation, paged reconciliation, recovery and command
-dispatch for work a source executes, with the source owning execution truth. Delivery, tools and
+dispatch for work a source executes, with the source owning execution truth — and **delivery**
+(`TaskBroker.subscribe`, `bindDelivery`): subscriptions with persisted policies, receipt manifests
+issued before a context is returned, and exact-ID acknowledgement. Retention/pruning, tools and
 prompt integration follow in later slices, and are deliberately absent from the export surface
 rather than stubbed.
 
@@ -346,7 +348,8 @@ task's `terminal-closeout` claim, so at a saturated profile new identities are r
 
 **Host operations.** `registerExternal(principal, request)` registers an externally executed task
 with host-supplied scopes and binding — unresolved until its first observation, or resolved from
-an `initialObservation`. An update owed to no one is not retained; subscriptions arrive later.
+an `initialObservation`. An update owed to no one is not retained; who an update is owed to is
+decided by storage from the active subscriptions (below), never by the caller.
 
 ## External sources — `ITaskSource`, `ExternalTaskSource`
 
@@ -405,6 +408,63 @@ payload stays in the executor, and terminal presentation never dereferences it.
 **Capacity.** Each in-flight external command holds a settlement reservation (64 KiB of resident
 payload at the default profile) until it settles; see `docs/TECH_DEBT.md` for the effective
 ceiling this implies.
+
+## Delivery — subscriptions, issued receipts, exact acknowledgement
+
+**A consumer learns about task changes by subscribing; it acknowledges only what it was actually
+shown.** The host subscribes; a principal then works a bound delivery (`IBoundTaskDelivery`:
+`pending`, `prepare`, `acknowledge`, `abandon`).
+
+```ts
+await broker.subscribe(
+  { principal: 'host', scopes: [projectScope], authorization: policy },
+  { subscriptionId, operationId, consumerId, selection: { scopes: [projectScope], lifecycleClass: 'all' },
+    start: 'current' /* or 'from-now' */, policy: { categories: ['attention', 'lifecycle', 'result'] } }
+);
+const delivery = broker.bindDelivery({ principal: 'agent:ada', scopes: [projectScope], authorization: policy,
+  subscriptionId, consumerId }).orThrow();
+const { context } = (await delivery.prepare({ maxItems: 20, maxDepth: 3, maxChars: 8000 })).orThrow();
+// … the host processes `context` (model call, etc.) …
+await delivery.acknowledge(context.receipt); // only after the host's own success boundary
+```
+
+**Audience is storage's.** An update is owed to an active subscription iff its category is in the
+subscription's `policy.categories` (`attention`, `lifecycle`, `result` are always included) and the
+selection matched the task **before or after** the commit — so an open-only or filtered subscription
+still receives the update that takes a task out of it. Storage recomputes every new update's
+audience inside the commit and refuses a caller-chosen one. **The persisted policy is
+authoritative:** broker `delivery` defaults apply only when a subscription is created.
+
+**`start: 'current'`** baselines every selected task the principal may see, at its committed state,
+with no gap to a concurrent commit (the capture is re-verified inside the activating writer and
+redone if anything moved). A selection larger than the baseline bound is refused, never truncated.
+
+**Receipts are capabilities.** `prepare` renders purely, then commits the receipt's exact manifest
+(keyed by a fresh delivery id, with an expiry) before returning the context; if issuance fails,
+nothing acknowledgeable is returned. `acknowledge(receipt)` accepts only a receipt that matches, in
+full canonical form, an unexpired manifest this subscription issued — a fabricated, modified,
+shortened, enlarged, foreign-subscription or foreign-store receipt, a snapshot-only receipt, or a
+replay after expiry all get the same `invalid-receipt` answer. A copied valid receipt replays
+(`alreadyAcknowledged`), consuming nothing twice. `abandon(deliveryId)` releases a manifest.
+
+**Exact IDs, never a watermark.** A subscription stores the exact set of update ids it has
+acknowledged. A receipt that omitted revision 3 and included revision 4 clears only revision 4.
+Every task in a receipt is re-authorized (read + `acknowledge`) at acknowledgement, and fenced
+against change until the commit; revocation blocks delivery, it never acknowledges.
+
+**Checkpoint custody.** Subscriptions persist through `ITaskCheckpointStore` (synchronous; default
+`FileTreeCheckpointStore` in the repository root; inject one via `checkpoints` at
+`initialize`/`open`). A store's success is checked, not believed: every write is read back, and a
+store that reports a write it does not hold, answers another record, throws, or cannot say whether
+a write landed fences the repository. A `process-crash` repository refuses a `session` store.
+
+**Capacity.** Each audience link's acknowledgement evidence (one id + 512 B) is spent from the
+claims that already reserved it (closeout, resolution, settlement, replay) and held by the
+subscription until its exact id lands in lifetime history. At most `maxAudiencePerUpdate`
+subscriptions may cover one task. Each subscription holds a 64 KiB receipt-preparation reservation;
+a `current` baseline holds each covered task's payload until acknowledged — see
+`docs/TECH_DEBT.md` for the effective ceiling. **Archive is refused (`retention-blocked`) for any
+task a subscription covers, even once acknowledged, until retention/pruning ships.**
 
 ## Rendering task context without a broker
 
@@ -623,8 +683,8 @@ fragment is caught at the mint rather than at the filename.
 
 ## Not in scope
 
-No subscription, delivery service, acknowledgement, retention
-or pruning policy, cascade stop, tool factory or prompt integration **yet** — those are later
+No retention or pruning policy, subscription closure or disposition, cascade stop, tool factory
+or prompt integration **yet** — those are later
 slices, and their absence from the export surface is deliberate. **Permanently** out of scope: an input-request/answer protocol, a task runner or
 scheduler, an executor, a retry policy, cross-repository parenting, execution migration,
 multi-process ownership, general event sourcing, and dependency DAGs.

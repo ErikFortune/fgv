@@ -4,7 +4,7 @@
  */
 
 import { CapacityDimension } from './failure';
-import { CapacityClaimId, OperationId, SubscriptionId, TaskId, UpdateId } from './ids';
+import { CapacityClaimId, OperationId, SubscriptionId, TaskId } from './ids';
 import { ISourceReplayEnvelope } from './source';
 
 /**
@@ -35,6 +35,15 @@ export interface ITaskEncodedBounds {
   readonly maxSourceIdentityBytes: number;
   /** Maximum encoded bytes of one disposition reason. */
   readonly maxDispositionReasonBytes: number;
+  /**
+   * Maximum encoded bytes one exact acknowledgement or disposition adds to a subscription's record.
+   *
+   * @remarks
+   * The unit of *acknowledgement evidence* (design § 8.6, protected allocation 2): every audience
+   * link a commit adds reserves one acknowledgement id and this many bytes before it is accepted, so
+   * the acknowledgement that later discharges it never needs new capacity. (T7: added.)
+   */
+  readonly maxAcknowledgementEvidenceBytes: number;
   /** Maximum encoded bytes of one normalized selection or query descriptor. */
   readonly maxQueryDescriptorBytes: number;
   /** Maximum encoded bytes of one source cursor or revision token. */
@@ -106,19 +115,27 @@ export interface ITaskCapacityCharge {
  * @remarks
  * These six purposes are exactly the protected allocations: a task's terminal closeout,
  * an unresolved registration's first resolution, an accepted operation's settlement, a
- * subscription's exact acknowledgement or disposition, a prepared receipt manifest, and an
- * admitted source replay envelope.
+ * subscription's activation, a subscription's reusable receipt preparation, and an admitted
+ * source replay envelope.
  *
  * `first-resolution` was added by T3. Design §8.6 requires that "any unresolved
  * registration also reserves first resolution and the path through terminal closeout" —
  * two bundles, not one — and T1's five purposes had nowhere to put the first.
+ *
+ * `subscription-activation` replaced T1's `subscription-acknowledgement` in T7. A stored claim per
+ * (subscription, update) would be committed in the task record and consumed in the consumer record —
+ * two records, the cross-record ambiguity §8.6 warns against. Instead the audience link *is* the
+ * reservation: a commit that adds links spends their acknowledgement evidence from the task's own
+ * claims, and the subscription's ledger entry holds it, derived from its owed links, until the exact
+ * ID lands in its history. What a subscription does need a stored claim for is the window between
+ * its pending inventory entry and its live record, which is what `subscription-activation` holds.
  * @public
  */
 export type CapacityClaimPurpose =
   | 'terminal-closeout'
   | 'first-resolution'
   | 'accepted-operation-settlement'
-  | 'subscription-acknowledgement'
+  | 'subscription-activation'
   | 'receipt-preparation'
   | 'admitted-source-replay';
 
@@ -184,9 +201,9 @@ export interface ITaskCapacityClaimCommon {
  * conversion failure rather than an overspend.
  *
  * Each variant carries the identities needed to reconstruct its consumption after a
- * crash: an acknowledgement claim is joined by its exact update and subscription, so a
- * committed acknowledgement is counted as history rather than also as an unused
- * reservation.
+ * crash. Acknowledgement evidence is not a claim at all: it is joined by exact update ID and
+ * subscription at open, so a committed acknowledgement is counted as history rather than also
+ * as an unused reservation.
  * @public
  */
 export type ITaskCapacityClaim =
@@ -205,9 +222,8 @@ export type ITaskCapacityClaim =
       readonly operationId: OperationId;
     })
   | (ITaskCapacityClaimCommon & {
-      readonly purpose: 'subscription-acknowledgement';
+      readonly purpose: 'subscription-activation';
       readonly subscriptionId: SubscriptionId;
-      readonly updateId: UpdateId;
     })
   | (ITaskCapacityClaimCommon & {
       readonly purpose: 'receipt-preparation';
@@ -261,7 +277,7 @@ export const allCapacityClaimPurposes: ReadonlyArray<CapacityClaimPurpose> = [
   'terminal-closeout',
   'first-resolution',
   'accepted-operation-settlement',
-  'subscription-acknowledgement',
+  'subscription-activation',
   'receipt-preparation',
   'admitted-source-replay'
 ];

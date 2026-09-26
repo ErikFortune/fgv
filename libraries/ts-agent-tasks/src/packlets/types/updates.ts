@@ -62,11 +62,12 @@ export interface ITaskUpdate {
 }
 
 /**
- * The longest suffix {@link taskUpdateId} appends to a task id: a separator, up to sixteen
- * revision digits (`Number.MAX_SAFE_INTEGER` has sixteen), a separator and one ordinal digit.
+ * The longest suffix {@link taskUpdateId} or {@link baselineUpdateId} appends to a task id: a
+ * separator, up to sixteen revision digits (`Number.MAX_SAFE_INTEGER` has sixteen), a separator and
+ * either one ordinal digit or the word `initial`. (T7: grew from 19 for the baseline suffix.)
  * @public
  */
-export const maxUpdateIdSuffixLength: number = 19;
+export const maxUpdateIdSuffixLength: number = 25;
 
 /**
  * The canonical identity of the update a task owes for one `(revision, category)`.
@@ -85,4 +86,19 @@ export const maxUpdateIdSuffixLength: number = 19;
  */
 export function taskUpdateId(taskId: TaskId, revision: TaskRevision, category: UpdateCategory): UpdateId {
   return `${taskId}:${revision}:${allUpdateCategories.indexOf(category)}` as UpdateId;
+}
+
+/**
+ * The identity of a subscription's baseline obligation for one task revision (design § 9:
+ * `(subscriptionId, taskId, revision, 'initial')`).
+ *
+ * @remarks
+ * The encoding is `<taskId>:<revision>:initial`. A baseline obligation lives in, and is acknowledged
+ * through, its own subscription's record, so the subscription is the namespace rather than part of
+ * the string. It can never equal a {@link taskUpdateId}: that suffix ends in a digit, this one in a
+ * word.
+ * @public
+ */
+export function baselineUpdateId(taskId: TaskId, revision: TaskRevision): UpdateId {
+  return `${taskId}:${revision}:initial` as UpdateId;
 }

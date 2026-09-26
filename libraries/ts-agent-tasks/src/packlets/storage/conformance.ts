@@ -6,6 +6,8 @@
 import { JsonValue } from '@fgv/ts-json-base';
 import { Result, captureAsyncResult, fail, succeed } from '@fgv/ts-utils';
 import {
+  ConsumerId,
+  DeliveryId,
   IResolvedTaskRecordDraft,
   ISourceBinding,
   ITaskCommitRecord,
@@ -24,6 +26,8 @@ import {
   TaskResult,
   TaskRevision,
   UpdateCategory,
+  UpdateId,
+  allUpdateCategories,
   taskListDetailVersion,
   taskListKind,
   taskUpdateId,
@@ -69,7 +73,6 @@ interface IShape {
   /** Registers a `fgv.task-list@1` with this completion instead of a tracked task. */
   readonly list?: 'manual' | 'all-children-succeeded';
   readonly lifecycle?: TaskLifecycle;
-  readonly audience?: ReadonlyArray<string>;
   readonly binding?: ISourceBinding;
 }
 
@@ -94,10 +97,12 @@ function _envelope(id: string, revision: number, shape: IShape): ITaskEnvelope {
   };
 }
 
+/** An update owed to exactly the audience the repository computes, as every commit's must be. */
 function _update(
+  repository: ITaskRepository,
+  before: ITaskEnvelope | undefined,
   envelope: ITaskEnvelope,
-  category: UpdateCategory,
-  audience: ReadonlyArray<string>
+  category: UpdateCategory
 ): ITaskUpdate {
   return {
     id: taskUpdateId(envelope.id, envelope.revision, category),
@@ -106,11 +111,41 @@ function _update(
     category,
     required: true,
     snapshot: { envelope },
-    audience: audience as ReadonlyArray<SubscriptionId>
+    audience: repository.audience(before, envelope, category)
   };
 }
 
-function _registration(id: string, shape: IShape): ITaskRegistrationRequest {
+/** Subscribes `id` to everything in `scopes`, from now, through the writer. */
+async function _subscribe(
+  repository: ITaskRepository,
+  id: string,
+  scopes: ReadonlyArray<ITaskScope>
+): Promise<Result<true>> {
+  return (
+    await repository.withWriter((writer) =>
+      writer.registerSubscription({
+        subscriptionId: id as SubscriptionId,
+        operationId: `subscribe-${id}` as OperationId,
+        principalKey: 'conformance',
+        specification: {
+          consumerId: `consumer-${id}` as ConsumerId,
+          selection: { scopes, lifecycleClass: 'all' },
+          start: 'from-now',
+          policy: {
+            schemaVersion: 1,
+            durability: repository.mode === 'session' ? 'session' : 'process-crash',
+            history: 'observed-state',
+            categories: [...allUpdateCategories].sort()
+          }
+        },
+        baseline: [],
+        createdAt: at
+      })
+    )
+  ).asResult.onSuccess(() => succeed(true));
+}
+
+function _registration(repository: ITaskRepository, id: string, shape: IShape): ITaskRegistrationRequest {
   const request: JsonValue = { taskId: id };
   const envelope: ITaskEnvelope = _envelope(id, 1, shape);
   return {
@@ -130,7 +165,7 @@ function _registration(id: string, shape: IShape): ITaskRegistrationRequest {
           receipt: null
         }
       ],
-      updates: [_update(envelope, 'lifecycle', shape.audience ?? [])],
+      updates: [_update(repository, undefined, envelope, 'lifecycle')],
       archived: false
     }
   };
@@ -138,7 +173,7 @@ function _registration(id: string, shape: IShape): ITaskRegistrationRequest {
 
 async function _add(repository: ITaskRepository, id: string, shape: IShape = {}): Promise<Result<true>> {
   return (
-    await repository.withWriter((writer) => writer.register(_registration(id, shape)))
+    await repository.withWriter((writer) => writer.register(_registration(repository, id, shape)))
   ).asResult.onSuccess(() => succeed(true));
 }
 
@@ -174,7 +209,7 @@ async function _change(
         receipt: null
       }
     ],
-    updates: [...current.updates, _update(envelope, 'lifecycle', [])],
+    updates: [...current.updates, _update(repository, current.task.envelope, envelope, 'lifecycle')],
     archived: archive
   };
   return (
@@ -366,7 +401,9 @@ const checks: ReadonlyArray<{
     name: 'owed updates stay listed after their task leaves open work and is archived',
     run: async (r) =>
       _seq([
-        () => _add(r, 'o1', { audience: ['sub'] }),
+        () => _subscribe(r, 'sub', [B]),
+        () => _add(r, 'o1', { scopes: [B] }),
+        () => _add(r, 'other', { scopes: [A] }),
         () => _change(r, 'o1', succeeded),
         () => _change(r, 'o1', undefined, true),
         async () =>
@@ -374,10 +411,76 @@ const checks: ReadonlyArray<{
             _same(
               'owed',
               page.updates.map((u) => u.id),
-              [taskUpdateId('o1' as TaskId, 1 as TaskRevision, 'lifecycle')]
+              [1, 2, 3].map((n) => taskUpdateId('o1' as TaskId, n as TaskRevision, 'lifecycle'))
             )
           )
       ])
+  },
+  {
+    name: 'an update may be owed only to the audience the repository computes',
+    run: async (r) =>
+      _seq([
+        () => _subscribe(r, 'sub', [A]),
+        async () => {
+          const envelope: ITaskEnvelope = _envelope('forged', 1, {});
+          const request: ITaskRegistrationRequest = _registration(r, 'forged', {});
+          const forged: ITaskRegistrationRequest = {
+            ...request,
+            record: {
+              ...(request.record as IResolvedTaskRecordDraft),
+              updates: [{ ..._update(r, undefined, envelope, 'lifecycle'), audience: [] }]
+            }
+          };
+          return _code('omitted audience', await r.withWriter((w) => w.register(forged)), 'invalid');
+        }
+      ])
+  },
+  {
+    name: 'an acknowledged update is owed no more, by exact id, and a later commit does not revive it',
+    run: async (r) => {
+      const first: UpdateId = taskUpdateId('k' as TaskId, 1 as TaskRevision, 'lifecycle');
+      const second: UpdateId = taskUpdateId('k' as TaskId, 2 as TaskRevision, 'lifecycle');
+      return _seq([
+        () => _subscribe(r, 'sub', [A]),
+        () => _add(r, 'k'),
+        async () =>
+          (
+            await r.withWriter((w) =>
+              w.issueReceipt({
+                subscriptionId: 'sub' as SubscriptionId,
+                expectedRecordRevision: 1,
+                receipt: {
+                  version: 1,
+                  deliveryId: 'd1' as DeliveryId,
+                  included: [{ taskId: 'k' as TaskId, revision: 1 as TaskRevision, updateIds: [first] }]
+                },
+                issuedAt: at,
+                expiresAt: later(60)
+              })
+            )
+          ).asResult,
+        async () =>
+          (
+            await r.withWriter((w) =>
+              w.acknowledgeReceipt({
+                subscriptionId: 'sub' as SubscriptionId,
+                expectedRecordRevision: 2,
+                deliveryId: 'd1' as DeliveryId,
+                at
+              })
+            )
+          ).asResult.onSuccess((ack) => _same('newly acknowledged', ack.newlyAcknowledged, [first])),
+        () => _change(r, 'k', succeeded),
+        async () =>
+          (await r.listOwed({ subscription: 'sub' as SubscriptionId })).asResult.onSuccess((page) =>
+            _same(
+              'owed after acknowledgement',
+              page.updates.map((u) => u.id),
+              [second]
+            )
+          )
+      ]);
+    }
   },
   {
     name: 'archive removes the task from queries, never its identity or source binding',
@@ -406,7 +509,9 @@ const checks: ReadonlyArray<{
             'a second task bound to the same reference',
             await r.withWriter((writer) =>
               writer.register(
-                _registration('dup', { binding: { sourceId: 'conf', referenceVersion: 1, reference: 'x' } })
+                _registration(r, 'dup', {
+                  binding: { sourceId: 'conf', referenceVersion: 1, reference: 'x' }
+                })
               )
             ),
             'conflict'

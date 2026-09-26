@@ -8,9 +8,7 @@ import {
   IResolvedTaskCommitRecord,
   ITaskEnvelope,
   SubscriptionId,
-  TaskAudienceResolver,
   UpdateCategory,
-  noAudience,
   planUpdates
 } from '../../../index';
 import {
@@ -24,28 +22,12 @@ import {
   revisionOf,
   succeedTask,
   tid,
-  track
+  track,
+  watch
 } from '../../helpers/brokerFixtures';
 import { envelope } from '../../helpers/storageFixtures';
 
 const sub = (id: string): SubscriptionId => id as SubscriptionId;
-
-/**
- * A stand-in for T7's subscription matching: "assigned to ada" and "assigned to bob" selections,
- * matched before and after each change, as design §8.3 requires.
- */
-const byAssignee: TaskAudienceResolver = (before, after) => {
-  const audience: SubscriptionId[] = [];
-  for (const envelopeOf of [before, after]) {
-    if (envelopeOf?.responsibility?.key === 'ada') {
-      audience.push(sub('ada-watch'));
-    }
-    if (envelopeOf?.responsibility?.key === 'bob') {
-      audience.push(sub('bob-watch'));
-    }
-  }
-  return audience;
-};
 
 async function record(h: IBrokerHarness, id: string): Promise<IResolvedTaskCommitRecord> {
   const found = (await h.repository.readCommit(tid(id))).orThrow()!;
@@ -58,7 +40,7 @@ async function record(h: IBrokerHarness, id: string): Promise<IResolvedTaskCommi
 describe('update planning', () => {
   test('an update owed to no one is not retained', () => {
     const e: ITaskEnvelope = envelope('t', 2);
-    expect(planUpdates(undefined, e, ['lifecycle'], noAudience)).toEqual([]);
+    expect(planUpdates(undefined, e, ['lifecycle'], () => [])).toEqual([]);
   });
 
   test('one update per category, sorted distinct audience, required by category', () => {
@@ -79,10 +61,13 @@ describe('update planning', () => {
   });
 });
 
-describe('committed updates, with a subscription seam', () => {
+describe('committed updates, owed to real subscriptions', () => {
   let h: IBrokerHarness;
   beforeEach(async () => {
-    h = await brokerHarness({ audience: byAssignee });
+    h = await brokerHarness();
+    // "Assigned to ada" and "assigned to bob", matched before and after each change (design § 8.3).
+    await watch(h.broker, { id: 'ada-watch', selection: { responsibility: ada } });
+    await watch(h.broker, { id: 'bob-watch', selection: { responsibility: bob } });
   });
 
   test('reassignment carries an assignment update owed to both the old and new assignee', async () => {

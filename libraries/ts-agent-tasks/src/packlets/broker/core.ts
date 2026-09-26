@@ -4,8 +4,9 @@
  */
 
 import { Converters as JsonConverters, JsonObject, JsonValue } from '@fgv/ts-json-base';
-import { Hash, Result } from '@fgv/ts-utils';
-import { TaskConverters } from '../converters';
+import { Hash, Result, captureResult } from '@fgv/ts-utils';
+import { TaskContextRenderer } from '../context';
+import { TaskConverters, instant } from '../converters';
 import { TaskAudienceResolver } from '../implementations';
 import {
   IReassignmentResult,
@@ -13,6 +14,7 @@ import {
   ITaskMutationResult,
   ITaskSource,
   ITaskCommitRecord,
+  DeliveryId,
   ITaskEnvironment,
   Instant,
   OperationId,
@@ -21,6 +23,7 @@ import {
   TaskRevision
 } from '../types';
 import { ITaskRepository, ITaskRepositoryWriter } from '../storage';
+import { IResolvedDeliveryDefaults } from './delivery';
 import { ok, taskFailure } from './failures';
 import { ViewCursorTable } from './viewCursors';
 import { WriterQueue } from './writerQueue';
@@ -95,7 +98,12 @@ export class BrokerCore {
   public readonly repository: ITaskRepository;
   public readonly environment: ITaskEnvironment;
   public readonly converters: TaskConverters;
+  /** Who is owed an update: the repository's own subscriptions, which its commits verify against. */
   public readonly audience: TaskAudienceResolver;
+  /** Delivery defaults for new subscriptions and issued receipts. */
+  public readonly delivery: IResolvedDeliveryDefaults;
+  /** The pure renderer preparation wraps. Its projection is identity: input arrives projected. */
+  public readonly renderer: TaskContextRenderer;
   /** The attached sources, by id. A task whose source is not here is left exactly as it is. */
   public readonly sources: ReadonlyMap<string, ITaskSource>;
   public readonly cursors: ViewCursorTable = new ViewCursorTable();
@@ -110,14 +118,35 @@ export class BrokerCore {
     readonly repository: ITaskRepository;
     readonly environment: ITaskEnvironment;
     readonly converters: TaskConverters;
-    readonly audience: TaskAudienceResolver;
+    readonly delivery: IResolvedDeliveryDefaults;
+    readonly renderer: TaskContextRenderer;
     readonly sources?: ReadonlyMap<string, ITaskSource>;
   }) {
-    this.repository = params.repository;
+    const repository: ITaskRepository = params.repository;
+    this.repository = repository;
     this.environment = params.environment;
     this.converters = params.converters;
-    this.audience = params.audience;
+    this.audience = (before, after, category) => repository.audience(before, after, category);
+    this.delivery = params.delivery;
+    this.renderer = params.renderer;
     this.sources = params.sources ?? new Map();
+  }
+
+  /** A fresh delivery id from the host's id factory. */
+  public mintDeliveryId(): TaskResult<DeliveryId> {
+    const minted: Result<DeliveryId> = captureResult(() => this.environment.newId())
+      .onSuccess((raw) => raw)
+      .onSuccess((raw) => this.converters.ids.deliveryId.convert(raw));
+    return minted.isSuccess()
+      ? ok(minted.value)
+      : taskFailure(`delivery id: ${minted.message}`, 'storage-unavailable', 'safe');
+  }
+
+  /** The canonical instant `ms` milliseconds after `from`. */
+  public later(from: Instant, ms: number): Result<Instant> {
+    return captureResult(() => new Date(Date.parse(from) + ms).toISOString()).onSuccess((text) =>
+      instant.convert(text)
+    );
   }
 
   /**

@@ -102,6 +102,18 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
   reservation until something settles it — see the T6 hand-off entry below. Whichever resolution
   T8 picks must size these two claims too.
 
+  **T7 amendment (2026-09-25) — resident per registration unchanged; baselines and evidence add
+  terms.** T7 charges each audience link's acknowledgement evidence (1 acknowledgement id + E =
+  512 B logical) and spends it from the claims above on protected steps. Closeout now reserves
+  224 links × 512 B = 112 KiB more `logical-bytes` (1,168 KiB per registration → 448 on
+  `logical-bytes`; 224 acknowledgement ids → 892) — both looser than resident, so the ceiling stays
+  **146 / 128**. New: a `current` subscription holds one baseline payload (≤ 64 KiB resident) per
+  covered task until acknowledged, so with `k` such subscriptions covering every task the worst case
+  is ⌊64 MiB / (448 KiB + 64 KiB·k)⌋ — **128** at k = 1, **113** at k = 1 with one in-flight command.
+  Each subscription also holds a 64 KiB receipt-preparation reservation (record + logical) and its
+  record reserves E per owed or future link. Full arithmetic: `agent-tasks-t7` `result.md` §
+  *Reservation arithmetic*.
+
   **Trigger**: T8 (profile qualification), or the first consumer sizing a deployment against
   `defaultTaskCapacityLimits`, whichever comes first. **T8 cannot sign off the profile without
   resolving this** — that is the load-bearing reason this is recorded here rather than left in a
@@ -129,11 +141,9 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
 
 - **[P2] `ts-agent-tasks` broker hand-offs T5 left for T6/T7/T8 by design — each has a trigger
   that is the next slice's first step.**
-  (1) **T7:** updates are planned per mutation, but an update owed to no one is not retained, and
-  audiences come from an *internal* `TaskAudienceResolver` seam (`createTaskBroker`, not exported from the package) that answers
-  "nobody" in production. When subscriptions fill it, every accepted update must first reserve its
-  per-audience acknowledgement evidence (design §8.6 allocation 2) — the seam writes audience links
-  with no such reservation today, which is why it is not a host option. (2) **T8:** `archive`
+  (1) ~~**T7:** audiences come from an internal seam that answers "nobody"; filling it must reserve
+  per-audience acknowledgement evidence first.~~ **Resolved by T7** — storage computes and verifies
+  every audience and charges its evidence in the accepting commit; the seam is removed. (2) **T8:** `archive`
   refuses a task while any retained update has a non-empty audience (`retention-blocked`); T8
   replaces that with acknowledgement/disposition evidence and pruning. (3) ~~**T6:** an external
   task's commands are `rejected: unsupported` and recorded under their key until dispatch exists.~~
@@ -158,9 +168,9 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
   so revisions emitted before registration are never replayed into the task. Hosts must register
   (or register with an `initialObservation`) before the source emits for that binding; T8's
   recovery journeys should either enforce that ordering or detect the gap.
-  (3) **T7 — audience charges on the T6 claims.** Settlement and replay claims reserve
-  `maxAudiencePerUpdate` links/acknowledgement ids per update, but the audience seam still
-  answers "nobody"; when T7 fills it, it must spend these reservations rather than mint new ones.
+  (3) ~~**T7 — audience charges on the T6 claims.**~~ **Resolved by T7** — the evidence is spent
+  from these claims, pinned by the charge (`agent-tasks-t7` `result.md` § *How the T6 claims were
+  spent*).
   (4) **T9 — `ITaskSource.capabilities()` and the source side of a stop.** Design §5 lists
   `capabilities()`; T6 omitted it (commands are declared by the kind registry, which is the one
   authority T6 needed). A cascade stop that must ask a source to stop is T9's to add, together
@@ -168,6 +178,21 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
   **Trigger:** the start of T7, T8 and T9 respectively. **Reference:** the `agent-tasks-t6`
   stream's `result.md` § *Hand-offs* (at `.ai/tasks/active/agent-tasks-t6/` until the
   `agent-tasks-v1` cluster finalizes).
+
+- **[P2] `ts-agent-tasks` delivery hand-offs T7 left for T8 — each is T8's to decide.**
+  (1) **`archive` is `retention-blocked` for every task a subscription covers, even fully
+  acknowledged.** The inherited rule refuses archive while any retained update names an audience,
+  and T7 never prunes a stored audience; with one matching subscription no covered task can ever be
+  archived. T8's pruning against exact acknowledgement history and disposition evidence is what
+  unblocks it (evidence: `delivery/retention.test.ts`). (2) **Profile inconsistency:** a
+  subscription record reserves E (512 B) record bytes per owed or future link, so
+  `maxConsumerRecordBytes` (8 MiB) admits ≈16,384 while `maxAcknowledgementIdsPerSubscription`
+  advertises 50,000. (3) **Subscription closure and disposition** (`closed`, `disposed`,
+  `coalesceProgress`) and the capacity each releases — T7 subscriptions are only ever active, and
+  their exact history is a lifetime charge. (4) Baseline payloads of `current` subscriptions hold
+  resident bytes until acknowledged (sized in the capacity entry above).
+  **Trigger:** the start of T8. **Reference:** the `agent-tasks-t7` stream's `result.md` §
+  *Hand-offs* (at `.ai/tasks/active/agent-tasks-t7/` until the `agent-tasks-v1` cluster finalizes).
 
 *(The `checkThreshold` zero-byte-section measure gap (shipped in C2, #669) was fixed by C3 of
 `ai-assist-prompt-caching`: a section with `chars === 0` now contributes `0` to the measured total

@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-agent-tasks",
+      "comment": "Add subscriptions and exact acknowledgement: TaskBroker.subscribe (persisted delivery policy, current or from-now start with a gap-free baseline) and TaskBroker.bindDelivery (pending, prepare, acknowledge, abandon). Storage now computes and verifies every update's audience, charges each link's acknowledgement evidence by spending the closeout, resolution, settlement and replay claims, persists subscriptions as consumer records through an injected synchronous ITaskCheckpointStore (default FileTreeCheckpointStore) whose writes are read back and fenced, commits each receipt's exact manifest before a context is returned, and acknowledges only the exact update ids an unexpired issued receipt names. ITaskRepository gains audience and subscription; its writer gains registerSubscription, readSubscription, issueReceipt, acknowledgeReceipt and abandonReceipt. Capacity: maxAcknowledgementEvidenceBytes added; the subscription-acknowledgement claim purpose is replaced by subscription-activation; maxUpdateIdSuffixLength widened to 25. The internal audience-resolver seam and the unused ITaskRecordHeader are removed.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-agent-tasks"
+}
