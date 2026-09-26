@@ -83,7 +83,7 @@ Pinned by the charge, not the behaviour — `accounting.test.ts`:
 | W5 | activation ↔ a concurrent commit | both in the single writer: a commit before activation is in the baseline (W1), after it owes the subscription |
 | W6 | prepare: capture owed + current tasks, authorize, project, render (outside the writer) → issue | inside the writer: epoch, the consumer's record revision (an acknowledgement or issue by anyone moves it, so every owed id the render included is still owed), and **the task revision of every current task the capture disclosed** (added after layer 1); otherwise re-render, 3 attempts then `conflict`/`safe`. Storage independently refuses a manifest naming an id the subscription is neither owed nor has acknowledged (`invalid-receipt`, safe to retry) |
 | W7 | issue → host processing → acknowledge | the manifest is committed before the context is returned; any issuance failure returns nothing acknowledgeable; acknowledgement happens only when the host presents the receipt after its own processing boundary. Abort = never presented = nothing acknowledged |
-| W8 | acknowledge: canonical manifest match → per-entry authorization (outside the writer) → commit | a second gated section re-matches the manifest (abandoned/expired since), rechecks the epoch, and **re-reads every authorized task's record revision** (added after layer 1; a moved task re-runs the whole round, 3 attempts, then `conflict`/`safe`) before storage acknowledges with the consumer's expected record revision |
+| W8 | acknowledge: canonical manifest match → per-entry authorization (outside the writer) → commit | a second gated section re-matches the manifest (abandoned/expired since), rechecks the epoch, and **re-reads every authorized task's record revision** (added after layer 1; a moved task re-runs the whole round, 3 attempts, then `conflict`/`safe`) before storage acknowledges with the consumer's expected record revision; **the expiry instant is read inside that section** (Copilot round 3), so a receipt that expired during authorization is refused |
 | W9 | storage ack/issue/abandon: read consumer record → write | the read is fingerprint-verified against committed state; the write carries the expected record revision; the write is read back and a store that reports a write it does not hold fences the repository (`storage-corrupt`); `unknown` visibility fences and answers `reconcile-first` |
 | W10 | abandon | in-writer read then abandon with the expected record revision |
 | W11 | open → consumer state | open reads each named record through the store, refuses a stray, missing, foreign or over-ceiling record, joins exact history into satisfied links, and uses the **persisted** policy — changed host defaults do not reach an existing subscription |
@@ -253,6 +253,14 @@ persisted field to the pending inventory entry — additive on an unreleased sur
 
 Also in this round: a `no-useless-concat` lint warning that the commit hook's prettier created after
 the local lint ran (CI red on the round-1 head). Lint now runs on the committed tree before pushing.
+
+**Copilot round 3** — three findings; two real and fixed, one already enforced:
+
+| # | finding | disposition | revert |
+|---|---|---|---|
+| R3.1 | `subscribe` sent the selection's scopes to the policy without confining them to the binding's selectors — a binding over `alpha` could subscribe over `beta`, reserving and retaining updates it can never see | fixed: a selection scope outside the binding is `invalid` before the policy is asked, as `changeScopes` already does | M29 (1) |
+| R3.2 | the acknowledgement's instant was read before the per-task authorization loop, so a receipt that expired during it was judged by the earlier time | fixed: the clock is read inside the committing section, immediately before storage acknowledges (a new window row, W8) | M30 (1; manual: the clock read moved back before authorization) |
+| R3.3 | open bounds an audience's length but does not check its members are live subscriptions | already enforced: open blocks (`integrity`) on any stored audience naming a subscription the inventory does not hold live (`openRepository.ts`, test *"a stored update naming a subscription that is not live blocks open"*). Recomputing the audience a past commit *should* have had is not possible at open — it depended on the subscriptions active at that commit and on its `before` state — and is enforced at commit time instead | — |
 
 ## Coverage closure
 

@@ -291,6 +291,30 @@ describe('no subscribe/mutate gap', () => {
     expect((await consumerRecord(h.repository, 'sub')).baseline).toEqual([]);
   });
 
+  test("a selection naming a scope outside the binding's selectors is refused before anything is asked", async () => {
+    const h = await deliveryHarness();
+    const policy: TestPolicy = h.policy;
+    const asked: number = policy.calls.length;
+    expect(
+      await h.broker.subscribe(
+        { principal: 'alice', scopes: [alpha], authorization: policy },
+        {
+          subscriptionId: 'sub',
+          operationId: 'subscribe-sub',
+          consumerId: 'consumer-sub',
+          selection: { scopes: [alpha, beta], lifecycleClass: 'all' },
+          start: 'from-now',
+          policy: { categories: everyCategory }
+        }
+      )
+    ).toFailWithDetail(
+      /scope project\/beta is outside this binding's selectors/i,
+      expect.objectContaining({ code: 'invalid' })
+    );
+    expect(policy.calls.length).toBe(asked);
+    expect(h.repository.subscription('sub' as SubscriptionId)).toSucceedWith(undefined);
+  });
+
   test('a principal without subscribe authority is refused', async () => {
     const h = await deliveryHarness();
     h.policy.deny.push((r) => r.action === 'subscribe');

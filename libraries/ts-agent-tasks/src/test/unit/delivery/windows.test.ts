@@ -111,6 +111,31 @@ describe('acknowledge: a task reassigned between authorization and commit', () =
   });
 });
 
+describe('acknowledge: expiry is judged at the commit, not before authorization', () => {
+  test('a receipt that expires while its tasks are being authorized is refused, and nothing is acknowledged', async () => {
+    const h = await deliveryHarness();
+    const policy: TestPolicy = h.policy;
+    await track(h.writer, 't');
+    await subscribed(h, 'sub', { start: 'current', categories: ['attention', 'lifecycle', 'result'] });
+    const delivery = deliveryOf(h, 'sub');
+    const prepared = (await delivery.prepare()).orThrow();
+    let fired: boolean = false;
+    policy.afterDecision = () => {
+      // The clock passes the receipt's expiry while the authorization loop is in flight.
+      if (!fired) {
+        fired = true;
+        h.clock.now = Date.parse(prepared.expiresAt) + 1;
+      }
+    };
+    expect(await delivery.acknowledge(prepared.context.receipt)).toFailWithDetail(
+      /expired/i,
+      expect.objectContaining({ code: 'invalid-receipt' })
+    );
+    expect(fired).toBe(true);
+    expect(await pendingIds(delivery)).toEqual([baselineUpdateId('t' as TaskId, 1 as TaskRevision)]);
+  });
+});
+
 describe('prepare: a current task reassigned between capture and issue', () => {
   test('is recaptured, so the context never discloses the state the principal may no longer see', async () => {
     const h = await deliveryHarness();

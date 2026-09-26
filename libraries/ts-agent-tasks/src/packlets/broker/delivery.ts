@@ -20,6 +20,7 @@ import {
   ITaskEnvelope,
   ITaskInclusionReceipt,
   ITaskPage,
+  ITaskScope,
   ITaskSubscription,
   ITaskSummary,
   ITaskUpdate,
@@ -155,6 +156,17 @@ export async function subscribe(
     return taskFailure(`subscribe: ${converted.message}`, 'invalid', 'after-host-action');
   }
   const req: ISubscribeRequest = converted.value;
+  // A binding's scopes bound everything it may name: a subscription over a scope it cannot select
+  // would reserve and retain updates this principal can never see or acknowledge.
+  const outside: ITaskScope | undefined = req.selection.scopes.find((scope) => !access.selects(scope));
+  if (outside !== undefined) {
+    return taskFailure(
+      `subscribe: scope ${outside.namespace}/${outside.key} is outside this binding's selectors`,
+      'invalid',
+      'after-host-action',
+      { operationId: req.operationId }
+    );
+  }
   const defaults: IResolvedDeliveryDefaults = core.delivery;
   // Every field comes from the converted request or from defaults `TaskBroker.create` converted, and
   // the policy has no rule across fields, so the assembled policy needs no second conversion.
@@ -394,10 +406,6 @@ export class BoundTaskDelivery implements IBoundTaskDelivery {
     if (epoch.isFailure()) {
       return propagate(epoch);
     }
-    const clock: TaskResult<Instant> = this._core.now();
-    if (clock.isFailure()) {
-      return propagate(clock);
-    }
     // Each entry's task is authorized from its committed record, and the record revision that
     // decided it is fenced: the section that commits re-reads every one.
     const fence: Map<TaskId, number> = new Map();
@@ -431,6 +439,12 @@ export class BoundTaskDelivery implements IBoundTaskDelivery {
         return held.isFailure()
           ? propagate<IAcknowledgementResult | undefined>(held)
           : ok<IAcknowledgementResult | undefined>(undefined);
+      }
+      // The instant the acknowledgement commits, read here rather than before the authorization
+      // above: a receipt that expired while its tasks were being authorized is expired.
+      const clock: TaskResult<Instant> = this._core.now();
+      if (clock.isFailure()) {
+        return propagate<IAcknowledgementResult | undefined>(clock);
       }
       const committed = await writer.acknowledgeReceipt({
         subscriptionId: this.subscriptionId,
