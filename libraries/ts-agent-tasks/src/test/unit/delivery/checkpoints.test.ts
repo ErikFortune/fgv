@@ -452,6 +452,31 @@ describe('durability: a weak checkpoint cannot be paired with durable task state
     }
   });
 
+  test('the default store: a same-subscription, same-revision record changed at rest is fenced, never overwritten', async () => {
+    const h = await deliveryHarness();
+    await subscribed(h, 'sub');
+    await track(h.writer, 'a');
+    const file = (): FileTree.IFileTreeFileItem =>
+      h.root
+        .getChildren()
+        .orThrow()
+        .find((c) => c.name === 'consumer-sub.json') as FileTree.IFileTreeFileItem;
+    const stored = JSON.parse(file().getRawContents().orThrow());
+    // Same id, same revision — only its contents differ from what the repository committed.
+    const altered = JSON.stringify({ ...stored, createdAt: '2020-01-01T00:00:00.000Z' });
+    (h.root as FileTree.IAtomicFileTreeDirectoryItem)
+      .writeChildAtomically('consumer-sub.json', altered, { guarantee: 'session' })
+      .orThrow();
+    // Every write is preceded, in the same synchronous writer section, by a read verified against the
+    // committed fingerprint: the change is caught there, before the store's compare-and-write runs.
+    expect(await deliveryOf(h, 'sub').prepare()).toFailWithDetail(
+      /the checkpoint store returned record 1, not the record 1 this repository committed/i,
+      expect.objectContaining({ code: 'storage-corrupt' })
+    );
+    expect(h.repository.health().state).toBe('unavailable');
+    expect(file().getRawContents().orThrow()).toBe(altered);
+  });
+
   test('the default durable store keeps subscriptions in the root, strictly decoded', async () => {
     const { root } = nodeRoot();
     const h = await deliveryHarness({ root, mode: { durable: 'process-crash' } });

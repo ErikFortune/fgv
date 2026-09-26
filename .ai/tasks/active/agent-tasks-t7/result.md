@@ -270,6 +270,12 @@ the local lint ran (CI red on the round-1 head). Lint now runs on the committed 
 | R4.2 | a pending activation claim's charges were never checked, so a tampered, under-reserved pending entry was accepted and reused | fixed: with a landed record, the pending entry's reservation must equal the one the (fingerprint-verified) record carries — on resume and at open; without one, a resume recomputes the footprint of the record it is about to write and re-admits it by re-pending, instead of trusting the entry. (`_finish` already re-admitted the live entry, so an under-reservation could never over-commit — it could only let other work take the capacity activation was promised) | M32 (2), M33 (1) |
 | R4.3 | the new required encoded bound `maxAcknowledgementEvidenceBytes` makes a T6-written repository's stored profile fail to convert | declined: `ts-agent-tasks` is not on `release` and is listed in `ACTIVE_DEVELOPMENT.md` as taking breaking changes with no shim; no repository written by an earlier slice exists outside tests. T1–T6 changed stored shapes the same way | — |
 
+**Copilot round 5** — one finding, not reproducible; a test now pins why:
+
+| # | finding | disposition |
+|---|---|---|
+| R5.1 | the default store's compare-and-write checks only `id` and `recordRevision`, so a same-subscription, same-revision record with altered contents would be overwritten and the read-back would match | not reachable: every store write is preceded, in the same synchronous writer section under the root's single-writer lock, by `_current`/`_verified`, which re-reads the record and compares its canonical fingerprint with the committed one — an altered record fences there (`storage-corrupt`) before `write` is called. New test *"the default store: a same-subscription, same-revision record changed at rest is fenced, never overwritten"* shows the fence and that the altered file is left as found. Pushing the fingerprint into the store contract would duplicate that check in every host store |
+
 ## Coverage closure
 
 Closed after layer 1, to 100 % statements/branches/functions/lines with **zero `c8 ignore`**. Branches
