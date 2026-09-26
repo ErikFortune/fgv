@@ -14,7 +14,7 @@ import {
   OperationId,
   TaskResult
 } from '../../../index';
-import { bob, bindWriter, op, rev, tid } from '../../helpers/brokerFixtures';
+import { alpha, bob, bindWriter, op, rev, tid } from '../../helpers/brokerFixtures';
 import {
   ISourceHarness,
   harnessWith,
@@ -75,7 +75,10 @@ function hooked(
             readSubscription: (id) => w.readSubscription(id),
             issueReceipt: (r) => w.issueReceipt(r),
             acknowledgeReceipt: (r) => w.acknowledgeReceipt(r),
-            abandonReceipt: (r) => w.abandonReceipt(r)
+            abandonReceipt: (r) => w.abandonReceipt(r),
+            disposeObligations: (r) => w.disposeObligations(r),
+            closeSubscription: (r) => w.closeSubscription(r),
+            pruneTask: (id) => w.pruneTask(id)
           }) as never
       )
   });
@@ -436,6 +439,154 @@ describe('uncertain outcomes', () => {
   });
 });
 
+describe('abandoning a command whose outcome is unknown', () => {
+  const host = (
+    h: ISourceHarness
+  ): { principal: string; scopes: [typeof alpha]; authorization: typeof h.policy } => ({
+    principal: 'alice',
+    scopes: [alpha],
+    authorization: h.policy
+  });
+
+  /** A held command: a non-idempotent cancel whose answer was lost, on a task the source then cancelled. */
+  async function held(): Promise<{ h: ISourceHarness; key: OperationId }> {
+    const h = await ready();
+    const key = op('cancel-j1');
+    h.executor.loseNextResponse = true;
+    expect(await run(h, 'j1', 'cancel', { reason: 'x' }, key)).toSucceed();
+    h.executor.change('j1', (j) => (j.step = 1));
+    expect(await h.broker.observe(tid('j1'))).toSucceed();
+    expect((await commandOf(h, 'j1', key)).dispatch).toBe('possibly-sent');
+    return { h, key };
+  }
+
+  test('ends tracking without claiming an outcome, releases the settlement reservation, and unblocks archive', async () => {
+    const { h, key } = await held();
+    const settlements = (): number =>
+      h.repository
+        .capacityStatus()
+        .orThrow()
+        .dimensions.find((d) => d.dimension === 'resident-payload-bytes')!.reserved;
+    const reservedBefore = settlements();
+    expect(h.repository.outstanding()).toSucceedAndSatisfy((o) =>
+      expect(o.unsettledCommands).toEqual([tid('j1')])
+    );
+    const receipt = (
+      await h.broker.abandonCommand(host(h), {
+        taskId: 'j1',
+        operationId: key,
+        reason: 'abandoned: outcome unknown'
+      })
+    ).orThrow();
+    // The falsifier for "cleanup invents an outcome": the receipt is neither applied nor rejected.
+    expect(receipt.result).toEqual({
+      state: 'abandoned',
+      reason: 'abandoned: outcome unknown',
+      from: 'possibly-sent'
+    });
+    const stored = await commandOf(h, 'j1', key);
+    expect(stored.dispatch).toBe('settled');
+    expect(stored.receipt.result.state).toBe('abandoned');
+    expect(settlements()).toBe(reservedBefore - 64 * 1024);
+    // The pump no longer sees it; archive proceeds.
+    expect(await h.repository.unsettledCommands({ limit: 10 })).toSucceedWith([]);
+    const record = await recordOf(h, 'j1');
+    const revision = record.recordType === 'resolved' ? record.task.envelope.revision : rev(0);
+    expect(
+      await h.writer.archive({ taskId: tid('j1'), operationId: op(), expectedRevision: revision })
+    ).toSucceed();
+    // Nothing was resent: the executor applied the lost cancel exactly once.
+    expect(h.executor.jobs.get('j1')!.applied.filter((a) => a.startsWith('cancel'))).toHaveLength(1);
+  });
+
+  test('a repeat returns the recorded abandonment; a settled command is not abandoned', async () => {
+    const { h, key } = await held();
+    const first = (
+      await h.broker.abandonCommand(host(h), { taskId: 'j1', operationId: key, reason: 'r1' })
+    ).orThrow();
+    expect(
+      await h.broker.abandonCommand(host(h), { taskId: 'j1', operationId: key, reason: 'r2' })
+    ).toSucceedWith(first);
+    const settled = op('pause-j2');
+    h.executor.addJob('j2');
+    await registerJob(h, 'j2');
+    expect(await run(h, 'j2', 'pause', { reason: 'x' }, settled)).toSucceed();
+    expect(
+      await h.broker.abandonCommand(host(h), { taskId: 'j2', operationId: settled, reason: 'r' })
+    ).toFailWithDetail(/is settled \(applied\)/i, expect.objectContaining({ code: 'conflict' }));
+    expect(
+      await h.broker.abandonCommand(host(h), { taskId: 'j2', operationId: op('nope'), reason: 'r' })
+    ).toFailWithDetail(/no command/i, expect.objectContaining({ code: 'not-found-or-denied' }));
+  });
+
+  test('without dispose-obligation authority nothing is abandoned', async () => {
+    const { h, key } = await held();
+    h.policy.denyOn('dispose-obligation', 'j1');
+    expect(
+      await h.broker.abandonCommand(host(h), { taskId: 'j1', operationId: key, reason: 'r' })
+    ).toFailWithDetail(
+      /not found or not permitted/i,
+      expect.objectContaining({ code: 'not-found-or-denied' })
+    );
+    expect((await commandOf(h, 'j1', key)).dispatch).toBe('possibly-sent');
+    // A hidden task gets the same answer as a missing one.
+    expect(
+      await h.broker.abandonCommand(host(h), { taskId: 'ghost', operationId: key, reason: 'r' })
+    ).toFailWithDetail(
+      /not found or not permitted/i,
+      expect.objectContaining({ code: 'not-found-or-denied' })
+    );
+  });
+
+  test('a policy that moves before the write, or a task that keeps moving after authorization, abandons nothing', async () => {
+    const { h, key } = await held();
+    const policy = h.policy;
+    policy.afterDecision = (r) => {
+      if (r.action === 'dispose-obligation') {
+        policy.epoch = 'epoch-2';
+      }
+    };
+    expect(
+      await h.broker.abandonCommand(host(h), { taskId: 'j1', operationId: key, reason: 'r' })
+    ).toFailWithDetail(/policy changed/i, expect.objectContaining({ code: 'conflict', retry: 'safe' }));
+    // A task that moves after authorization is authorized again; one that never holds still is refused.
+    policy.epoch = 'epoch-1';
+    let moves = 0;
+    policy.afterDecision = async (r) => {
+      if (r.action === 'dispose-obligation') {
+        moves++;
+        h.executor.change('j1', (j) => (j.step = 10 + moves));
+        (await h.broker.observe(tid('j1'))).orThrow();
+      }
+    };
+    expect(
+      await h.broker.abandonCommand(host(h), { taskId: 'j1', operationId: key, reason: 'r' })
+    ).toFailWithDetail(/kept changing/i, expect.objectContaining({ code: 'conflict', retry: 'safe' }));
+    expect(moves).toBe(3);
+    expect((await commandOf(h, 'j1', key)).dispatch).toBe('possibly-sent');
+    // Once it holds still, the retry after a single move succeeds.
+    let once = false;
+    policy.afterDecision = async (r) => {
+      if (r.action === 'dispose-obligation' && !once) {
+        once = true;
+        h.executor.change('j1', (j) => (j.step = 99));
+        (await h.broker.observe(tid('j1'))).orThrow();
+      }
+    };
+    expect(
+      await h.broker.abandonCommand(host(h), { taskId: 'j1', operationId: key, reason: 'r' })
+    ).toSucceed();
+  });
+
+  test('a malformed request is invalid', async () => {
+    const { h } = await held();
+    expect(await h.broker.abandonCommand(host(h), { taskId: 'j1' })).toFailWithDetail(
+      /abandonCommand/i,
+      expect.objectContaining({ code: 'invalid' })
+    );
+  });
+});
+
 describe('authority at the dispatch boundary', () => {
   test('authority revoked after intent and before dispatch settles the command denied; nothing is sent', async () => {
     const h = await ready();
@@ -729,10 +880,30 @@ describe('source-replay commands', () => {
     const stored = await commandOf(h, 'j1', key);
     expect(stored.dispatch).toBe('settled');
     expect(stored.awaiting).toBeDefined();
+    expect(h.repository.outstanding()).toSucceedAndSatisfy((o) =>
+      expect(o.awaitingCommands).toEqual([tid('j1')])
+    );
     const revision = record.recordType === 'resolved' ? record.task.envelope.revision : rev(0);
     expect(
       await h.writer.archive({ taskId: tid('j1'), operationId: op(), expectedRevision: revision })
     ).toFailWithDetail(/awaiting its feed/, { code: 'retention-blocked', retry: 'after-host-action' });
+    // The host abandons the wait; the receipt stays unclaimed, and the task can be archived.
+    const abandoned = (
+      await h.broker.abandonCommand(
+        { principal: 'alice', scopes: [alpha], authorization: h.policy },
+        { taskId: 'j1', operationId: key, reason: 'the feed will never reach it' }
+      )
+    ).orThrow();
+    expect(abandoned.result).toEqual({
+      state: 'abandoned',
+      reason: 'the feed will never reach it',
+      from: 'awaiting-feed'
+    });
+    expect((await commandOf(h, 'j1', key)).awaiting).toBeUndefined();
+    expect(h.repository.outstanding()).toSucceedAndSatisfy((o) => expect(o.awaitingCommands).toEqual([]));
+    expect(
+      await h.writer.archive({ taskId: tid('j1'), operationId: op(), expectedRevision: revision })
+    ).toSucceed();
   });
 
   test('an applied answer at a revision the feed already committed applies immediately', async () => {

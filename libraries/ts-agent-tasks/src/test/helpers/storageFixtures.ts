@@ -241,7 +241,12 @@ export function nextDraft(
       : {}),
     operations:
       change.operation !== undefined ? [...current.operations, change.operation] : current.operations,
-    updates: change.dropUpdates === true ? [] : [...current.updates, ...added],
+    // A tombstone carries no updates: archiving drops those nobody is owed (and is refused while any
+    // is still owed).
+    updates:
+      change.dropUpdates === true
+        ? []
+        : [...current.updates, ...added].filter((u) => change.archived !== true || u.audience.length > 0),
     archived: change.archived ?? current.archived
   };
 }

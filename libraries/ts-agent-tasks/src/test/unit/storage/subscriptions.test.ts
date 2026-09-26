@@ -56,7 +56,8 @@ function registration(
         schemaVersion: 1,
         durability: 'session',
         history: 'observed-state',
-        categories: [...allUpdateCategories].sort()
+        categories: [...allUpdateCategories].sort(),
+        coalesceProgress: false
       }
     },
     baseline: [],
@@ -641,11 +642,15 @@ describe('every commit names exactly the audience the repository computes', () =
   });
 });
 
-/** Commits a non-required progress update owed to `s1`, optionally dropping earlier progress. */
+/**
+ * Commits a non-required progress update owed to `s1`, optionally dropping earlier progress — and, when
+ * it drops, optionally marking the gap as coalescing does.
+ */
 async function progressCommit(
   repository: ITaskRepository,
   revision: number,
-  drop: boolean
+  drop: boolean,
+  marked: boolean = drop
 ): Promise<TaskResult<unknown>> {
   const current = (await repository.readCommit('t' as TaskId)).orThrow()!;
   const record = current.recordType === 'resolved' ? current : (undefined as never);
@@ -681,7 +686,18 @@ async function progressCommit(
             category: 'progress',
             required: false,
             snapshot: { envelope: env },
-            audience: ['s1'] as SubscriptionId[]
+            audience: ['s1'] as SubscriptionId[],
+            ...(marked
+              ? {
+                  coalesced: {
+                    fromRevision: Math.min(
+                      ...record.updates
+                        .filter((u) => u.category === 'progress')
+                        .map((u) => u.coalesced?.fromRevision ?? u.revision)
+                    ) as TaskRevision
+                  }
+                }
+              : {})
           }
         ],
         archived: false
@@ -866,7 +882,7 @@ describe('issued receipts at the storage boundary', () => {
           at: at as Instant
         })
       )
-    ).toFailWithDetail(/no live subscription/i, expect.objectContaining({ code: 'not-found-or-denied' }));
+    ).toFailWithDetail(/no retained subscription/i, expect.objectContaining({ code: 'not-found-or-denied' }));
     expect(await ack(at as Instant)).toSucceedAndSatisfy((c) =>
       expect(c).toEqual(expect.objectContaining({ newlyAcknowledged: [uid('t', 1, 'lifecycle')] }))
     );
@@ -887,31 +903,73 @@ describe('issued receipts at the storage boundary', () => {
     expect(inspectRepository(repository)!.evidence.consumerPassReads).toBe(1);
   });
 
-  // A non-required update may be dropped by any commit (coalescing); the drop releases its owed
-  // link without acknowledging it, so a manifest that already named it can no longer be honoured.
-  test('an owed update a later commit drops is released, and a receipt that named it is refused', async () => {
+  // A routine update leaves
+  // undelivered only by coalescing: superseded in the same commit by a marked newer update, for a
+  // subscription that takes coalescing, and never while an unacknowledged receipt names it.
+  test('an owed routine update is not dropped for a subscription that does not coalesce', async () => {
     expect(await progressCommit(repository, 2, false)).toSucceed();
+    const before = held(repository, 'acknowledgement-ids');
+    expect(await progressCommit(repository, 3, true)).toFailWithDetail(
+      /is still owed; it leaves only once acknowledged or disposed/i,
+      expect.objectContaining({ code: 'retention-blocked' })
+    );
+    expect(await owedIds(repository, 's1')).toEqual([uid('t', 1, 'lifecycle'), uid('t', 2, 'progress')]);
+    expect(held(repository, 'acknowledgement-ids')).toBe(before);
+  });
+
+  test('a coalescing subscription: a pinned update is not superseded; once unpinned it is, with the gap marked', async () => {
+    const { repository: r } = await faultyRepository();
+    await subscribeTo(r, 's1', [A], undefined, true);
+    await addTask(r, 't', { scopes: [A] });
+    expect(await progressCommit(r, 2, false)).toSucceed();
     (
-      await issue(receipt('d1', [{ taskId: 't', revision: 2, updateIds: [uid('t', 2, 'progress')] }]))
-    ).orThrow();
-    const owedBefore: number = held(repository, 'acknowledgement-ids');
-    expect(await progressCommit(repository, 3, true)).toSucceed();
-    expect(await owedIds(repository, 's1')).toEqual([uid('t', 1, 'lifecycle'), uid('t', 3, 'progress')]);
-    // One link released, one added: the subscription's owed reservation is unchanged in size.
-    expect(held(repository, 'acknowledgement-ids')).toBe(owedBefore);
-    expect(
-      await repository.withWriter((w) =>
-        w.acknowledgeReceipt({
+      await r.withWriter((w) =>
+        w.issueReceipt({
           subscriptionId: 's1' as SubscriptionId,
-          expectedRecordRevision: 2,
-          deliveryId: 'd1' as DeliveryId,
-          at: at as Instant
+          expectedRecordRevision: 1,
+          receipt: receipt('d1', [{ taskId: 't', revision: 2, updateIds: [uid('t', 2, 'progress')] }]),
+          issuedAt: at as Instant,
+          expiresAt: later(60)
         })
       )
-    ).toFailWithDetail(
-      /names t:2:\S+, which subscription s1 is not owed/i,
-      expect.objectContaining({ code: 'invalid-receipt' })
+    ).orThrow();
+    expect(await progressCommit(r, 3, true)).toFailWithDetail(
+      /issued receipt that is not acknowledged/i,
+      expect.objectContaining({ code: 'retention-blocked' })
     );
+    // An unmarked drop is refused even for a coalescing subscription: the gap must be visible.
+    (
+      await r.withWriter((w) =>
+        w.abandonReceipt({
+          subscriptionId: 's1' as SubscriptionId,
+          expectedRecordRevision: 2,
+          deliveryId: 'd1' as DeliveryId
+        })
+      )
+    ).orThrow();
+    expect(await progressCommit(r, 3, true, false)).toFailWithDetail(
+      /still owed/i,
+      expect.objectContaining({ code: 'retention-blocked' })
+    );
+    const before = held(r, 'acknowledgement-ids');
+    expect(await progressCommit(r, 3, true)).toSucceed();
+    expect(await owedIds(r, 's1')).toEqual([uid('t', 1, 'lifecycle'), uid('t', 3, 'progress')]);
+    // One link released without an acknowledgement, one added: the reservation is unchanged in size.
+    expect(held(r, 'acknowledgement-ids')).toBe(before);
+    const retained = (await r.readCommit('t' as TaskId)).orThrow()!;
+    expect(retained.recordType === 'resolved' && retained.updates.map((u) => u.coalesced)).toEqual([
+      undefined,
+      { fromRevision: 2 }
+    ]);
+    // A marker must describe what the commit actually supersedes.
+    expect(await progressCommit(r, 4, false, true)).toFailWithDetail(
+      /marks a gap from revision 2, but this commit supersedes no update/i,
+      expect.objectContaining({ code: 'invalid' })
+    );
+    // And a chain carries the earliest revision forward.
+    expect(await progressCommit(r, 4, true)).toSucceed();
+    const chained = (await r.readCommit('t' as TaskId)).orThrow()!;
+    expect(chained.recordType === 'resolved' && chained.updates[1].coalesced).toEqual({ fromRevision: 2 });
   });
 
   test("a subscription owed nothing cannot issue another subscription's owed update", async () => {
@@ -929,7 +987,7 @@ describe('issued receipts at the storage boundary', () => {
     ).toFailWithDetail(/t:1:0/i, expect.objectContaining({ code: 'invalid-receipt' }));
   });
 
-  test('a drop releases its owed link inside admission: drop-and-add fits a subscription at its limit', async () => {
+  test('a coalescing drop releases its owed link inside admission: drop-and-add fits a subscription at its limit', async () => {
     // s1 covers open `t` (1 unit × 7 categories) and is owed t:1:0 and t:2:progress: a commitment of 9.
     const r = (
       await FileTreeTaskRepository.initialize(
@@ -941,7 +999,7 @@ describe('issued receipts at the storage boundary', () => {
         })
       )
     ).orThrow();
-    await subscribeTo(r, 's1', [A]);
+    await subscribeTo(r, 's1', [A], undefined, true);
     await addTask(r, 't', { scopes: [A] });
     expect(await progressCommit(r, 2, false)).toSucceed();
     expect(inspectRepository(r)!.ledger.entry('consumer:s1')!.perOwner!.amount).toBe(9);

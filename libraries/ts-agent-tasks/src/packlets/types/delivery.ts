@@ -8,7 +8,16 @@ import { IBoundTaskViewParams } from './broker';
 import { ITaskCapacityClaim } from './capacity';
 import { ITaskContext, ITaskContextBudget, ITaskInclusionReceipt } from './context';
 import { TaskResult } from './failure';
-import { ConsumerId, DeliveryId, Instant, OperationId, PageCursor, SubscriptionId, UpdateId } from './ids';
+import {
+  ConsumerId,
+  DeliveryId,
+  Instant,
+  OperationId,
+  PageCursor,
+  SubscriptionId,
+  TaskId,
+  UpdateId
+} from './ids';
 import { ITaskSelection } from './query';
 import { SourceHistoryContract } from './source';
 import { ITaskUpdate, UpdateCategory } from './updates';
@@ -66,10 +75,16 @@ export const defaultDeliveryCategories: ReadonlyArray<UpdateCategory> = [
  * - `categories` — the update categories the subscription is owed, ascending and unique; always a
  *   superset of {@link mandatoryDeliveryCategories}.
  *
+ * - `coalesceProgress` — the subscription accepts that routine (non-required) `progress` and
+ *   `observation` updates it has not yet been delivered may be superseded by a newer update of the
+ *   same category for the same task, rather than each being retained until acknowledged. Required
+ *   categories never coalesce, and nothing an unacknowledged issued receipt names is ever superseded.
+ *   A superseding update records the earliest revision it replaced (`ITaskUpdate.coalesced`), so the
+ *   gap is visible rather than silent.
+ *
  * (T7: the design sketch's `requiredCategories` is named `categories` here, because membership in
  * it is what makes a subscription part of an update's audience; whether an update is *required* —
- * cannot be coalesced or expire — remains a property of its category. The sketch's
- * `coalesceProgress` is T8's: this release never coalesces.)
+ * cannot be coalesced or expire — remains a property of its category.)
  * @public
  */
 export interface ITaskDeliveryPolicy {
@@ -77,7 +92,36 @@ export interface ITaskDeliveryPolicy {
   readonly durability: 'session' | 'process-crash';
   readonly history: SourceHistoryContract;
   readonly categories: ReadonlyArray<UpdateCategory>;
+  readonly coalesceProgress: boolean;
 }
+
+/**
+ * One obligation a subscription ended without acknowledging it (design § 9, *Retention*): the exact
+ * update id and the host's reason — consumer retired, access removed, explicit abandonment.
+ *
+ * @remarks
+ * A disposition is history, exactly like an acknowledgement: it discharges the obligation for this
+ * subscription alone, consumes the acknowledgement-evidence slot the obligation already reserved,
+ * and is retained for the record's life. An id is in `acknowledged` or `disposed`, never both.
+ * `reason` is bounded by the profile's `maxDispositionReasonBytes`.
+ * @public
+ */
+export interface ITaskObligationDisposition {
+  readonly updateId: UpdateId;
+  readonly reason: string;
+}
+
+/**
+ * Whether a subscription still joins audiences.
+ *
+ * @remarks
+ * - `active` — every matching commit owes it the categories it takes.
+ * - `closed` — it joins no audience again. Obligations it kept at closure stay owed and remain
+ *   drainable through its bound delivery; its record, identity slot and exact history are retained
+ *   (no recycling in v1).
+ * @public
+ */
+export type TaskSubscriptionState = 'active' | 'closed';
 
 /**
  * One exact issued-receipt manifest: the complete inclusion the renderer produced for one
@@ -113,9 +157,12 @@ export interface IIssuedTaskReceipt {
  * whose audience is this subscription alone. `capacityClaims` holds the activation claim (consumed
  * once the record is live) and the receipt-preparation claim.
  *
- * (T7: named `ITaskConsumerRecord` to sit beside `ITaskSourceRecord`. The design sketch's `disposed`
- * set and a `closed` state belong to T8's disposition and closure, and are not part of this release's
- * record.)
+ * `disposed` holds the obligations it ended without acknowledging, each with its reason, strictly
+ * ascending by id and disjoint from `acknowledged`. Together they are the subscription's exact
+ * history. A baseline payload leaves `baseline` in the same write that acknowledges or disposes it;
+ * its id stays in the history.
+ *
+ * Named `ITaskConsumerRecord` to sit beside `ITaskSourceRecord`.
  * @public
  */
 export interface ITaskConsumerRecord {
@@ -128,10 +175,11 @@ export interface ITaskConsumerRecord {
   readonly selection: ITaskSelection;
   readonly start: SubscriptionStart;
   readonly policy: ITaskDeliveryPolicy;
-  readonly state: 'active';
+  readonly state: TaskSubscriptionState;
   readonly createdAt: Instant;
   readonly baseline: ReadonlyArray<ITaskUpdate>;
   readonly acknowledged: ReadonlyArray<UpdateId>;
+  readonly disposed: ReadonlyArray<ITaskObligationDisposition>;
   readonly issued: ReadonlyArray<IIssuedTaskReceipt>;
   readonly capacityClaims: ReadonlyArray<ITaskCapacityClaim>;
 }
@@ -153,7 +201,7 @@ export interface ITaskSubscriptionSpecification {
  */
 export interface ITaskSubscription extends ITaskSubscriptionSpecification {
   readonly id: SubscriptionId;
-  readonly state: 'active';
+  readonly state: TaskSubscriptionState;
   readonly recordRevision: number;
   readonly createdAt: Instant;
 }
@@ -254,6 +302,103 @@ export interface ITaskReceiptAbandonment {
   readonly subscriptionId: SubscriptionId;
   readonly expectedRecordRevision: number;
   readonly deliveryId: DeliveryId;
+}
+
+/**
+ * Ends obligations of one subscription without acknowledging them (storage level).
+ *
+ * @remarks
+ * Every id must be one the subscription is owed now, or already in its exact history (reported, not
+ * written again). An id an unacknowledged issued manifest names is refused: acknowledge or abandon
+ * that receipt first, so an obligation in flight is never ended behind the host's back.
+ * @public
+ */
+export interface ITaskObligationDisposal {
+  readonly subscriptionId: SubscriptionId;
+  readonly expectedRecordRevision: number;
+  readonly updateIds: ReadonlyArray<UpdateId>;
+  readonly reason: string;
+  /** Now. A manifest that expires at or before it pins nothing, and is evicted in the same write. */
+  readonly at: Instant;
+}
+
+/**
+ * What a disposal did: the ids it added to `disposed`, and those already in the exact history.
+ * @public
+ */
+export interface ITaskDispositionResult {
+  readonly subscriptionId: SubscriptionId;
+  readonly newlyDisposed: ReadonlyArray<UpdateId>;
+  readonly alreadyDischarged: ReadonlyArray<UpdateId>;
+}
+
+/**
+ * How a closing subscription ends what it is still owed (design § 9: "closing a subscription must
+ * choose to retain owed work or disposition it explicitly").
+ *
+ * @remarks
+ * - `retain` — every owed obligation stays owed, and drainable through the subscription's bound
+ *   delivery; tasks carrying them stay unarchivable until each is acknowledged or disposed.
+ * - `dispose` — every outstanding issued manifest is abandoned and every owed obligation is disposed
+ *   with `reason`, in the same write.
+ * @public
+ */
+export type TaskSubscriptionClosureMode = 'retain' | 'dispose';
+
+/**
+ * Closes one subscription (storage level).
+ * @public
+ */
+export interface ITaskSubscriptionClosure {
+  readonly subscriptionId: SubscriptionId;
+  readonly expectedRecordRevision: number;
+  readonly obligations: TaskSubscriptionClosureMode;
+  /** The disposition reason `dispose` records; required for it, ignored by `retain`. */
+  readonly reason?: string;
+}
+
+/**
+ * A request to end obligations through {@link TaskBroker.dispose}.
+ * @public
+ */
+export interface IDisposeObligationsRequest {
+  readonly subscriptionId: SubscriptionId;
+  readonly updateIds: ReadonlyArray<UpdateId>;
+  readonly reason: string;
+}
+
+/**
+ * A request to close a subscription through {@link TaskBroker.closeSubscription}.
+ * @public
+ */
+export interface ICloseSubscriptionRequest {
+  readonly subscriptionId: SubscriptionId;
+  readonly obligations: TaskSubscriptionClosureMode;
+  readonly reason?: string;
+}
+
+/**
+ * A request to abandon one external command through {@link TaskBroker.abandonCommand}.
+ * @public
+ */
+export interface IAbandonCommandRequest {
+  readonly taskId: TaskId;
+  readonly operationId: OperationId;
+  readonly reason: string;
+}
+
+/**
+ * What one {@link TaskBroker.cleanup} pass did.
+ *
+ * @remarks
+ * `pruned` tasks had discharged update payloads removed; `unchanged` candidates had nothing the
+ * durable evidence would let go. Cleanup ends no obligation — pruning removes only payloads every
+ * audience member already acknowledged or disposed.
+ * @public
+ */
+export interface ITaskCleanupReport {
+  readonly pruned: ReadonlyArray<TaskId>;
+  readonly unchanged: ReadonlyArray<TaskId>;
 }
 
 /**

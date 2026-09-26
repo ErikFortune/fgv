@@ -6,7 +6,9 @@
 import { Converters as JsonConverters } from '@fgv/ts-json-base';
 import { Converter, Converters } from '@fgv/ts-utils';
 import {
+  CommandAbandonmentOrigin,
   CommandRejectionReason,
+  allCommandAbandonmentOrigins,
   CommandState,
   ICommandReceipt,
   ICommandRequest,
@@ -72,6 +74,11 @@ export function buildCommandConverters(
     indeterminate: Converters.strictObject<Extract<CommandState, { state: 'indeterminate' }>>({
       state: Converters.literal('indeterminate'),
       reason
+    }),
+    abandoned: Converters.strictObject<Extract<CommandState, { state: 'abandoned' }>>({
+      state: Converters.literal('abandoned'),
+      reason,
+      from: Converters.enumeratedValue<CommandAbandonmentOrigin>(allCommandAbandonmentOrigins)
     })
   });
 

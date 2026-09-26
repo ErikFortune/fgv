@@ -177,7 +177,8 @@ export async function subscribe(
       defaults.policy.durability ??
       (core.repository.mode === 'session' ? 'session' : 'process-crash'),
     history: req.policy?.history ?? defaults.policy.history ?? 'observed-state',
-    categories: req.policy?.categories ?? defaults.policy.categories ?? defaultDeliveryCategories
+    categories: req.policy?.categories ?? defaults.policy.categories ?? defaultDeliveryCategories,
+    coalesceProgress: req.policy?.coalesceProgress ?? defaults.policy.coalesceProgress ?? false
   };
   for (let attempt = 1; attempt <= maxDeliveryAttempts; attempt++) {
     const outcome: TaskResult<ITaskSubscription | undefined> = await _subscribeOnce(
@@ -434,7 +435,7 @@ export class BoundTaskDelivery implements IBoundTaskDelivery {
           'safe'
         );
       }
-      const held: TaskResult<boolean> = await _fenceHolds(writer, fence);
+      const held: TaskResult<boolean> = await fenceHolds(writer, fence);
       if (held.isFailure() || !held.value) {
         return held.isFailure()
           ? propagate<IAcknowledgementResult | undefined>(held)
@@ -478,7 +479,7 @@ export class BoundTaskDelivery implements IBoundTaskDelivery {
     if (record.isFailure()) {
       return propagate(record);
     }
-    // Bound to a live subscription; one only ever leaves by T8's closure.
+    // Bound to a retained subscription, active or closed; records are never removed.
     const live: ITaskConsumerRecord = record.value!;
     const manifest = live.issued.find((m) => m.deliveryId === deliveryId);
     return manifest !== undefined && canonicallySame(manifest.receipt, presented)
@@ -524,7 +525,7 @@ export class BoundTaskDelivery implements IBoundTaskDelivery {
     if (subscription.isFailure()) {
       return propagate(subscription);
     }
-    // Bound to a live subscription; one only ever leaves by T8's closure.
+    // Bound to a retained subscription, active or closed; records are never removed.
     const captured: ITaskSubscription = subscription.value!;
     const input = await this._captureInput(captured);
     if (input.isFailure()) {
@@ -562,7 +563,7 @@ export class BoundTaskDelivery implements IBoundTaskDelivery {
         return ok<IPreparedTaskContext | undefined>(undefined);
       }
       // A current task the capture authorized and disclosed may have been reassigned since.
-      const held: TaskResult<boolean> = await _fenceHolds(writer, fence, 'task');
+      const held: TaskResult<boolean> = await fenceHolds(writer, fence, 'task');
       if (held.isFailure() || !held.value) {
         return held.isFailure()
           ? propagate<IPreparedTaskContext | undefined>(held)
@@ -624,10 +625,22 @@ export class BoundTaskDelivery implements IBoundTaskDelivery {
     if (disclosed.isFailure()) {
       return propagate(disclosed);
     }
-    const current = await core.repository.query({
-      selection: subscription.selection,
-      limit: maxTaskPageLimit
-    });
+    // A closed subscription is drained, not followed: it is presented what it is still owed, and no
+    // current state of a selection it has left.
+    const current: TaskResult<ITaskPage> =
+      subscription.state === 'closed'
+        ? ok<ITaskPage>({
+            items: [],
+            unresolved: [],
+            generation: 0,
+            completeness: 'complete',
+            freshness: 'native-current',
+            issues: []
+          })
+        : await core.repository.query({
+            selection: subscription.selection,
+            limit: maxTaskPageLimit
+          });
     if (current.isFailure()) {
       return propagate(current);
     }
@@ -716,8 +729,9 @@ export class BoundTaskDelivery implements IBoundTaskDelivery {
 /**
  * Whether every fenced task's committed record, re-read through the writer, is still at the revision
  * that was authorized — its record revision, or with `'task'`, its task revision.
+ * @internal
  */
-async function _fenceHolds(
+export async function fenceHolds(
   writer: ITaskRepositoryWriter,
   fence: ReadonlyMap<TaskId, number>,
   revision: 'record' | 'task' = 'record'

@@ -251,7 +251,7 @@ describe('exact-ID conversion of reservations', () => {
     expect(totals(h.repository)['logical-bytes']).toBeLessThanOrEqual(before['logical-bytes']);
   });
 
-  test('an acknowledged baseline payload stops being resident; its record bytes stay, as history', async () => {
+  test('an acknowledged baseline payload leaves the record in the acknowledging write; its id stays, as history', async () => {
     const h = await deliveryHarness();
     await track(h.writer, 'a');
     await track(h.writer, 'b');
@@ -261,12 +261,16 @@ describe('exact-ID conversion of reservations', () => {
     const held: number = resident(h.repository);
     expect(held).toBeGreaterThan(0);
     const residentBefore: number = committedIn(h.repository, 'resident-payload-bytes');
+    const updatesBefore: number = committedIn(h.repository, 'updates');
     const delivery = deliveryOf(h, 'sub');
     (await delivery.acknowledge((await delivery.prepare()).orThrow().context.receipt)).orThrow();
     expect(resident(h.repository)).toBe(0);
     expect(committedIn(h.repository, 'resident-payload-bytes')).toBe(residentBefore - held);
-    // The baseline is still in the record, and still charged there.
-    expect((await consumerRecord(h.repository, 'sub')).baseline).toHaveLength(2);
+    // The payloads are pruned in the same write, releasing their update slots; the exact ids stay.
+    const record = await consumerRecord(h.repository, 'sub');
+    expect(record.baseline).toEqual([]);
+    expect(record.acknowledged).toEqual(['a:1:initial', 'b:1:initial']);
+    expect(committedIn(h.repository, 'updates')).toBe(updatesBefore - 2);
     // The same after a restart: the charge is derived from the record, not remembered.
     const later = await reopen(h);
     expect(resident(later.repository)).toBe(0);

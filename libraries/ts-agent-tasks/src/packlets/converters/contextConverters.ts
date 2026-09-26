@@ -20,6 +20,7 @@ import {
   UpdateCategory,
   UpdateId,
   allUpdateCategories,
+  isRequiredCategory,
   taskContextLimits
 } from '../types';
 import { IEnvelopeConverters } from './envelopeConverters';
@@ -116,7 +117,10 @@ export function buildContextConverters(
     // closeout arithmetic reserves that many links per payload.
     audience: boundedArrayOf(ids.subscriptionId, bounds.maxReferences, 'update audience').withConstraint(
       _uniqueSubscriptions
-    )
+    ),
+    coalesced: Converters.strictObject<{ fromRevision: ITaskUpdate['revision'] }>({
+      fromRevision: taskRevision
+    }).optional()
   }).withConstraint((value: ITaskUpdate): Result<ITaskUpdate> => {
     // The payload must be the state the update names. An update for revision 3 carrying a
     // revision-4 snapshot would render one thing and be receipted as another.
@@ -125,6 +129,16 @@ export function buildContextConverters(
       return fail(
         `update ${value.id}: names ${value.taskId}@${value.revision} but carries ${envelope.id}@${envelope.revision}`
       );
+    }
+    if (value.coalesced !== undefined) {
+      // Coalescing is a property of the category, not of the writer's `required` flag: a lifecycle
+      // update marked routine still never supersedes anything.
+      if (value.required || isRequiredCategory(value.category)) {
+        return fail(`update ${value.id}: a required update never coalesces`);
+      }
+      if (value.coalesced.fromRevision >= value.revision) {
+        return fail(`update ${value.id}: it can only supersede earlier revisions`);
+      }
     }
     return succeed(value);
   });

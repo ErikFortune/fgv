@@ -63,7 +63,10 @@ function watched(
             readSubscription: (id) => w.readSubscription(id),
             issueReceipt: (r) => w.issueReceipt(r),
             acknowledgeReceipt: (r) => w.acknowledgeReceipt(r),
-            abandonReceipt: (r) => w.abandonReceipt(r)
+            abandonReceipt: (r) => w.abandonReceipt(r),
+            disposeObligations: (r) => w.disposeObligations(r),
+            closeSubscription: (r) => w.closeSubscription(r),
+            pruneTask: (id) => w.pruneTask(id)
           }) as never
       )
   });
@@ -248,6 +251,28 @@ describe('observed-state reconciliation', () => {
     const h = await sourceHarness();
     expect(await h.broker.reconcile({ sourceId: 'exec', maxPages: 0 })).toFailWith(/reconcile/);
     expect(await h.broker.reconcile({ sourceId: 'exec', extra: 1 } as never)).toFailWith(/reconcile/);
+  });
+});
+
+describe('source-replay: a feed revision for a binding no task holds', () => {
+  test('stops the pass with the cursor unmoved; registering the binding lets the next pass apply it', async () => {
+    const h = await sourceHarness({ history: 'source-replay' });
+    h.executor.addJob('j1');
+    h.executor.change('j1', (j) => (j.step = 2)); // the feed now holds revisions 1 and 2
+    const first = (await h.broker.reconcile({ sourceId: 'exec' })).orThrow();
+    expect(first.stopped).toBe('unregistered-binding');
+    expect(first.complete).toBe(false);
+    expect(first.observations.map((o) => o.outcome)).toEqual(['unknown-binding']);
+    expect(first.issues.join(' ')).toMatch(/no task holds; register it/);
+    expect((await h.repository.readSource('exec')).orThrow()?.cursor).toBeUndefined();
+    // Registered after the source emitted: nothing it emitted is lost.
+    await registerJob(h, 'j1');
+    const second = (await h.broker.reconcile({ sourceId: 'exec' })).orThrow();
+    expect(second.stopped).toBeUndefined();
+    const record = await recordOf(h, 'j1');
+    expect(record.recordType === 'resolved' && record.task.details).toEqual(
+      expect.objectContaining({ step: 2 })
+    );
   });
 });
 
@@ -476,7 +501,14 @@ describe('source-replay: only the feed commits projections', () => {
           ...p,
           observations: p.observations.map((o) => ({
             ...o,
-            binding: { ...o.binding, reference: cursor === undefined ? { x: 1, y: 2 } : { y: 2, x: 1 } }
+            // The task's own reference — a feed may not pass a binding no task holds.
+            binding: {
+              ...o.binding,
+              reference:
+                cursor === undefined
+                  ? o.binding.reference
+                  : Object.fromEntries(Object.entries(o.binding.reference as Record<string, never>).reverse())
+            }
           }))
         })
       );

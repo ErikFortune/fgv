@@ -3,7 +3,14 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { ITaskEnvelope, ITaskUpdate, SubscriptionId, UpdateCategory, taskUpdateId } from '../types';
+import {
+  ITaskEnvelope,
+  ITaskUpdate,
+  SubscriptionId,
+  UpdateCategory,
+  isRequiredCategory,
+  taskUpdateId
+} from '../types';
 
 /**
  * Who is owed an update: the subscriptions whose selection matched the task before **or** after
@@ -18,15 +25,6 @@ export type TaskAudienceResolver = (
   after: ITaskEnvelope,
   category: UpdateCategory
 ) => ReadonlyArray<SubscriptionId>;
-
-/**
- * Whether an update of a category is required: it must not be coalesced or expire before its
- * audience has it. Progress and observation freshness are informative only.
- * @public
- */
-export function isRequiredCategory(category: UpdateCategory): boolean {
-  return category !== 'progress' && category !== 'observation';
-}
 
 /**
  * The immutable updates a committed revision owes, one per category, each carrying the

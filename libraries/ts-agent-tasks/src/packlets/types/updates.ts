@@ -39,6 +39,15 @@ export const allUpdateCategories: ReadonlyArray<UpdateCategory> = [
 ];
 
 /**
+ * Whether an update of a category is required: it must not be coalesced or expire before its
+ * audience has it. Progress and observation freshness are informative only.
+ * @public
+ */
+export function isRequiredCategory(category: UpdateCategory): boolean {
+  return category !== 'progress' && category !== 'observation';
+}
+
+/**
  * One immutable update payload a task commit owes to an audience.
  *
  * @remarks
@@ -59,6 +68,12 @@ export interface ITaskUpdate {
   readonly required: boolean;
   readonly snapshot: ITaskSummary;
   readonly audience: ReadonlyArray<SubscriptionId>;
+  /**
+   * Present on a routine update that superseded undelivered updates of its category (design § 9,
+   * coalescing): the earliest revision it replaced. Everything from there to this revision was not
+   * retained as its own update.
+   */
+  readonly coalesced?: { readonly fromRevision: TaskRevision };
 }
 
 /**

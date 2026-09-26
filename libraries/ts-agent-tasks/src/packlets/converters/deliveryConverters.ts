@@ -5,7 +5,15 @@
 
 import { Converter, Converters, Result, fail, succeed } from '@fgv/ts-utils';
 import {
+  IAbandonCommandRequest,
+  ICloseSubscriptionRequest,
+  IDisposeObligationsRequest,
   IIssuedTaskReceipt,
+  ITaskObligationDisposal,
+  ITaskObligationDisposition,
+  ITaskSubscriptionClosure,
+  TaskSubscriptionClosureMode,
+  TaskSubscriptionState,
   ILiveInventoryEntry,
   IPendingConsumerEntry,
   ISubscribeRequest,
@@ -60,6 +68,15 @@ export interface IDeliveryConverters {
   readonly receiptIssue: Converter<ITaskReceiptIssue>;
   readonly receiptAcknowledgement: Converter<ITaskReceiptAcknowledgement>;
   readonly receiptAbandonment: Converter<ITaskReceiptAbandonment>;
+  /** One disposition entry of a consumer record. */
+  readonly disposition: Converter<ITaskObligationDisposition>;
+  /** A disposition reason: one non-empty line. Its byte bound is the stored profile's, checked by storage. */
+  readonly dispositionReason: Converter<string>;
+  readonly obligationDisposal: Converter<ITaskObligationDisposal>;
+  readonly subscriptionClosure: Converter<ITaskSubscriptionClosure>;
+  readonly disposeRequest: Converter<IDisposeObligationsRequest>;
+  readonly closeRequest: Converter<ICloseSubscriptionRequest>;
+  readonly abandonCommandRequest: Converter<IAbandonCommandRequest>;
 }
 
 /** Whether values are strictly ascending — unique and in canonical order. */
@@ -125,8 +142,22 @@ export function buildDeliveryConverters(
     schemaVersion: Converters.literal<1>(1),
     durability,
     history,
-    categories
+    categories,
+    coalesceProgress: Converters.boolean
   });
+  const dispositionReason: Converter<string> = boundedSingleLine(
+    bounds.maxSummaryLength,
+    'disposition reason'
+  );
+  const disposition: Converter<ITaskObligationDisposition> =
+    Converters.strictObject<ITaskObligationDisposition>({
+      updateId: ids.updateId,
+      reason: dispositionReason
+    });
+  const subscriptionState: Converter<TaskSubscriptionState> =
+    Converters.enumeratedValue<TaskSubscriptionState>(['active', 'closed']);
+  const closureMode: Converter<TaskSubscriptionClosureMode> =
+    Converters.enumeratedValue<TaskSubscriptionClosureMode>(['retain', 'dispose']);
 
   const specification: Converter<ITaskSubscriptionSpecification> =
     Converters.strictObject<ITaskSubscriptionSpecification>({
@@ -164,10 +195,11 @@ export function buildDeliveryConverters(
     selection: queries.selection,
     start,
     policy,
-    state: Converters.literal('active'),
+    state: subscriptionState,
     createdAt: instant,
     baseline: Converters.arrayOf(context.update),
     acknowledged: Converters.arrayOf(ids.updateId),
+    disposed: Converters.arrayOf(disposition),
     issued: Converters.arrayOf(issued),
     capacityClaims: capacity.claims
   }).withConstraint((value: ITaskConsumerRecord): Result<ITaskConsumerRecord> => {
@@ -175,6 +207,16 @@ export function buildDeliveryConverters(
     // An exact history is a set. A repeat would count one acknowledgement twice; order is canonical.
     if (!_ascending(value.acknowledged)) {
       return fail(`${what}: acknowledged ids must be unique and ascending`);
+    }
+    // Dispositions are history too: one entry per id, canonical order, and never an id that was also
+    // acknowledged — an obligation ends once.
+    if (!_ascending(value.disposed.map((d) => d.updateId))) {
+      return fail(`${what}: disposed ids must be unique and ascending`);
+    }
+    const acknowledged: ReadonlySet<string> = new Set<string>(value.acknowledged);
+    const both = value.disposed.find((d) => acknowledged.has(d.updateId));
+    if (both !== undefined) {
+      return fail(`${what}: ${both.updateId} is both acknowledged and disposed`);
     }
     if (!_ascending(value.issued.map((m) => m.deliveryId))) {
       return fail(`${what}: issued receipts must be unique and ascending by delivery id`);
@@ -231,7 +273,8 @@ export function buildDeliveryConverters(
     Converters.strictObject<Partial<Omit<ITaskDeliveryPolicy, 'schemaVersion'>>>({
       durability: durability.optional(),
       history: history.optional(),
-      categories: categories.optional()
+      categories: categories.optional(),
+      coalesceProgress: Converters.boolean.optional()
     });
 
   const subscribeRequest: Converter<ISubscribeRequest> = Converters.strictObject<ISubscribeRequest>({
@@ -274,7 +317,61 @@ export function buildDeliveryConverters(
       deliveryId: ids.deliveryId
     });
 
+  const updateIds: Converter<ReadonlyArray<ITaskObligationDisposal['updateIds'][number]>> =
+    Converters.arrayOf(ids.updateId).withConstraint((value) =>
+      value.length > 0 && _ascending(value)
+        ? succeed(value)
+        : fail(`update ids must be non-empty, unique and ascending`)
+    );
+  const obligationDisposal: Converter<ITaskObligationDisposal> =
+    Converters.strictObject<ITaskObligationDisposal>({
+      subscriptionId: ids.subscriptionId,
+      expectedRecordRevision: nonNegativeSafeInteger,
+      updateIds,
+      reason: dispositionReason,
+      at: instant
+    });
+  const closureRule = <T extends { obligations: TaskSubscriptionClosureMode; reason?: string }>(
+    value: T
+  ): Result<T> =>
+    value.obligations === 'dispose' && value.reason === undefined
+      ? fail(`closing with 'dispose' requires the disposition reason it records`)
+      : succeed(value);
+  const subscriptionClosure: Converter<ITaskSubscriptionClosure> =
+    Converters.strictObject<ITaskSubscriptionClosure>({
+      subscriptionId: ids.subscriptionId,
+      expectedRecordRevision: nonNegativeSafeInteger,
+      obligations: closureMode,
+      reason: dispositionReason.optional()
+    }).withConstraint(closureRule);
+  const disposeRequest: Converter<IDisposeObligationsRequest> =
+    Converters.strictObject<IDisposeObligationsRequest>({
+      subscriptionId: ids.subscriptionId,
+      updateIds,
+      reason: dispositionReason
+    });
+  const closeRequest: Converter<ICloseSubscriptionRequest> =
+    Converters.strictObject<ICloseSubscriptionRequest>({
+      subscriptionId: ids.subscriptionId,
+      obligations: closureMode,
+      reason: dispositionReason.optional()
+    }).withConstraint(closureRule);
+
+  const abandonCommandRequest: Converter<IAbandonCommandRequest> =
+    Converters.strictObject<IAbandonCommandRequest>({
+      taskId: ids.taskId,
+      operationId: ids.operationId,
+      reason: dispositionReason
+    });
+
   return {
+    abandonCommandRequest,
+    disposition,
+    dispositionReason,
+    obligationDisposal,
+    subscriptionClosure,
+    disposeRequest,
+    closeRequest,
     start,
     categories,
     policy,

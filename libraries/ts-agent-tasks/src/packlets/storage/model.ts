@@ -22,8 +22,13 @@ import {
   ITaskCommitRecord,
   ITaskConsumerRecord,
   ITaskEnvelope,
+  ITaskOutstandingReport,
+  ITaskUpdate,
   ITaskEnvironment,
   ITaskReceiptAbandonment,
+  ITaskDispositionResult,
+  ITaskObligationDisposal,
+  ITaskSubscriptionClosure,
   ITaskReceiptAcknowledgement,
   ITaskReceiptIssue,
   ITaskSubscription,
@@ -271,6 +276,29 @@ export interface ITaskRepositoryWriter {
   acknowledgeReceipt(request: ITaskReceiptAcknowledgement): Promise<TaskResult<ITaskAcknowledgementCommit>>;
   /** Removes one issued manifest. What it named stays owed; history it produced stays. */
   abandonReceipt(request: ITaskReceiptAbandonment): Promise<TaskResult<ITaskConsumerRecord>>;
+  /**
+   * Ends obligations of one subscription without acknowledging them: each id joins its `disposed`
+   * history with the reason, discharging it for that subscription alone.
+   *
+   * @remarks
+   * Every id must be owed to the subscription now, or already in its history (reported in
+   * `alreadyDischarged`). An id an unacknowledged issued manifest names is refused (`conflict`) —
+   * acknowledge or abandon that receipt first. Converts the reservation each obligation already holds;
+   * it needs no new capacity.
+   */
+  disposeObligations(request: ITaskObligationDisposal): Promise<TaskResult<ITaskDispositionResult>>;
+  /**
+   * Closes a subscription: it joins no audience again and releases its delivery units; `retain`
+   * keeps its owed obligations owed and drainable, `dispose` abandons its unacknowledged manifests and
+   * disposes everything it is owed, in one write. Its record, identity slot and history are retained.
+   */
+  closeSubscription(request: ITaskSubscriptionClosure): Promise<TaskResult<ITaskConsumerRecord>>;
+  /**
+   * Prunes every update of one task whose audience has discharged it, by each audience member's
+   * durable checkpoint, in one maintenance replacement; returns the record unchanged when nothing
+   * qualifies. A checkpoint that cannot be read or verified fences and refuses.
+   */
+  pruneTask(taskId: TaskId): Promise<TaskResult<ITaskCommitRecord>>;
 }
 
 /**
@@ -372,6 +400,12 @@ export interface ITaskRepository {
    * the records at open, so a crash between marker and result leaves a discoverable command.
    */
   unsettledCommands(request: IListCompletionCandidateQuery): Promise<TaskResult<ReadonlyArray<TaskId>>>;
+  /**
+   * Tasks retaining an update every audience member has discharged, by the committed checkpoints —
+   * the cleanup candidates — ordered by id. A hint: pruning re-verifies the durable evidence, and
+   * leaves an update an unacknowledged receipt still names.
+   */
+  prunableTasks(request: IListCompletionCandidateQuery): Promise<TaskResult<ReadonlyArray<TaskId>>>;
   /** A source's committed checkpoint record, if it has one. Reads no task record. */
   readSource(sourceId: string): Promise<TaskResult<ITaskSourceRecord | undefined>>;
   /**
@@ -384,7 +418,15 @@ export interface ITaskRepository {
     after: ITaskEnvelope,
     category: UpdateCategory
   ): ReadonlyArray<SubscriptionId>;
-  /** A live subscription's resident descriptor — never its history. */
+  /**
+   * Whether a newer routine update of the same category, owed to `audience`, may supersede `update`
+   * (design § 9, coalescing): its category is not required (a required update is never superseded),
+   * and every member still owed it is active, takes coalescing, is in `audience`, and has no
+   * unacknowledged receipt naming it. Answered from resident state for planning; the commit re-decides
+   * from durable evidence.
+   */
+  supersedable(update: ITaskUpdate, audience: ReadonlyArray<SubscriptionId>): boolean;
+  /** A retained subscription's resident descriptor — active or closed, never its history. */
   subscription(subscriptionId: SubscriptionId): TaskResult<ITaskSubscription | undefined>;
   /**
    * Discards the resident indexes and rebuilds them from the committed records, in bounded
@@ -397,6 +439,13 @@ export interface ITaskRepository {
    * Refused (`conflict`, `retry: 'safe'`) while a writer is active.
    */
   rebuildIndexes(): Promise<TaskResult<ITaskRepositoryHealth>>;
+  /**
+   * Every incomplete operation the repository holds, each list bounded by `limit` (default and maximum
+   * 200): pending registrations and subscriptions, unsettled and feed-awaiting commands, prunable
+   * tasks, and what each retained subscription is still owed. Answered from resident state. Trusted
+   * host API.
+   */
+  outstanding(request?: { readonly limit?: number }): TaskResult<ITaskOutstandingReport>;
   /** Trusted host capacity status. Never for a model-facing tool. */
   capacityStatus(): TaskResult<ITaskCapacityStatus>;
   health(): ITaskRepositoryHealth;

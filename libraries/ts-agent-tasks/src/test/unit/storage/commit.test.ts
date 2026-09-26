@@ -245,7 +245,7 @@ describe('one-task atomic replacement', () => {
     ).toFailWithDetail(/adds exactly its own operation 'op-2'/i, code('invalid'));
   });
 
-  test('a committed update is immutable, and a required one is pruned only by maintenance', async () => {
+  test('a committed update is immutable; one owed to no one may leave with any commit', async () => {
     const draft = nextDraft(created, {
       envelope: { revision: rev(2) },
       operation: catalogOp('op-2', 'update-tracked', {})
@@ -257,9 +257,6 @@ describe('one-task atomic replacement', () => {
       expectedRevision: rev(1),
       expectedRecordRevision: 1
     };
-    expect(
-      await write(repository, (w) => w.commit({ ...request, record: { ...draft, updates: [] } }))
-    ).toFailWithDetail(/required update 't1:1:0' can only be pruned by maintenance/i, code('invalid'));
     const changed = [{ ...draft.updates[0], required: false }];
     expect(
       await write(repository, (w) => w.commit({ ...request, record: { ...draft, updates: changed } }))
@@ -276,7 +273,8 @@ describe('one-task atomic replacement', () => {
         w.commit({ ...request, record: { ...draft, updates: [...draft.updates, stale] } })
       )
     ).toFailWithDetail(/must be for the committed revision 2/i, code('invalid'));
-    // An optional update may be dropped by an ordinary commit.
+    // An update owed to no one — optional or required — may be dropped by an ordinary commit: nobody
+    // could ever acknowledge it, so the retention rule has nothing to wait for.
     const optional = (
       await write(repository, (w) =>
         w.commit({
@@ -297,7 +295,7 @@ describe('one-task atomic replacement', () => {
           taskId: t1,
           expectedRevision: rev(2),
           expectedRecordRevision: 2,
-          record: { ...draft3, updates: draft3.updates.filter((u) => u.required) }
+          record: { ...draft3, updates: [] }
         })
       )
     ).toSucceed();

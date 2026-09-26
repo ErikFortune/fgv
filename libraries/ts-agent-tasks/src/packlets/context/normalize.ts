@@ -201,6 +201,7 @@ export class InputNormalizer {
           revision: update.revision,
           category: update.category,
           required: update.required,
+          ...(update.coalesced !== undefined ? { coalesced: update.coalesced } : {}),
           audience: [...update.audience].sort(compareOrdinal)
         });
       })
