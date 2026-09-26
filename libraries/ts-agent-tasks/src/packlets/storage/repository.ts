@@ -28,6 +28,8 @@ import {
   ITaskUpdate,
   PageCursor,
   defaultTaskPageLimit,
+  maxTaskPageLimit,
+  ITaskOutstandingReport,
   ITaskCapacityClaim,
   ITaskCapacityProfile,
   ITaskCapacityStatus,
@@ -364,6 +366,55 @@ export class FileTreeTaskRepository implements ITaskRepository {
   /** {@inheritDoc ITaskRepository.readCommit} */
   public async readCommit(id: TaskId): Promise<TaskResult<ITaskCommitRecord | undefined>> {
     return this._readCommitted(id).onSuccess((read) => ok(read?.record));
+  }
+
+  /** {@inheritDoc ITaskRepository.outstanding} */
+  public outstanding(request?: { readonly limit?: number }): TaskResult<ITaskOutstandingReport> {
+    const limit: number = request?.limit ?? maxTaskPageLimit;
+    if (!Number.isSafeInteger(limit) || limit < 1 || limit > maxTaskPageLimit) {
+      return taskFailure(
+        `outstanding: limit must be an integer from 1 to ${maxTaskPageLimit}`,
+        'invalid',
+        'after-host-action'
+      );
+    }
+    return this._queryable().onSuccess((index) => {
+      let truncated: boolean = false;
+      const bounded = <T>(items: ReadonlyArray<T>): ReadonlyArray<T> => {
+        truncated = truncated || items.length > limit;
+        return items.slice(0, limit);
+      };
+      // Every key in these sets is a task id the index added under that brand.
+      const ids = (keys: ReadonlyArray<string>): ReadonlyArray<TaskId> =>
+        bounded(keys.map((k) => k as TaskId));
+      const retained = [...this._book.subscriptions.values(), ...this._book.closed.values()].sort((a, b) =>
+        a.descriptor.id < b.descriptor.id ? -1 : 1
+      );
+      return ok<ITaskOutstandingReport>({
+        pendingRegistrations: bounded(
+          Array.from(this._pending.values())
+            .map((e) => ({ taskId: e.id as TaskId, operationId: e.operationId }))
+            .sort((a, b) => (a.taskId < b.taskId ? -1 : 1))
+        ),
+        pendingSubscriptions: bounded(
+          Array.from(this._book.pending.values())
+            .map((e) => ({ subscriptionId: e.id, operationId: e.operationId }))
+            .sort((a, b) => (a.subscriptionId < b.subscriptionId ? -1 : 1))
+        ),
+        unsettledCommands: ids(index.unsettledCommands.keys),
+        awaitingCommands: ids(index.awaitingCommands.keys),
+        prunable: ids(index.prunable.keys),
+        subscriptions: bounded(
+          retained.map((state) => ({
+            subscriptionId: state.descriptor.id,
+            state: state.descriptor.state,
+            owed: index.owedCount(state.descriptor.id),
+            pinned: state.pinned.size
+          }))
+        ),
+        truncated
+      });
+    });
   }
 
   /** {@inheritDoc ITaskRepository.capacityStatus} */

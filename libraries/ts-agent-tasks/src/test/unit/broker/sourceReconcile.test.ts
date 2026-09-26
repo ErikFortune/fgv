@@ -254,6 +254,28 @@ describe('observed-state reconciliation', () => {
   });
 });
 
+describe('source-replay: a feed revision for a binding no task holds (T8)', () => {
+  test('stops the pass with the cursor unmoved; registering the binding lets the next pass apply it', async () => {
+    const h = await sourceHarness({ history: 'source-replay' });
+    h.executor.addJob('j1');
+    h.executor.change('j1', (j) => (j.step = 2)); // the feed now holds revisions 1 and 2
+    const first = (await h.broker.reconcile({ sourceId: 'exec' })).orThrow();
+    expect(first.stopped).toBe('unregistered-binding');
+    expect(first.complete).toBe(false);
+    expect(first.observations.map((o) => o.outcome)).toEqual(['unknown-binding']);
+    expect(first.issues.join(' ')).toMatch(/no task holds; register it/);
+    expect((await h.repository.readSource('exec')).orThrow()?.cursor).toBeUndefined();
+    // Registered after the source emitted: nothing it emitted is lost.
+    await registerJob(h, 'j1');
+    const second = (await h.broker.reconcile({ sourceId: 'exec' })).orThrow();
+    expect(second.stopped).toBeUndefined();
+    const record = await recordOf(h, 'j1');
+    expect(record.recordType === 'resolved' && record.task.details).toEqual(
+      expect.objectContaining({ step: 2 })
+    );
+  });
+});
+
 describe('source-replay: only the feed commits projections', () => {
   test('a latest revision-3 hint before feed revision 2 commits revision 2 first, then 3', async () => {
     const h = await sourceHarness({ history: 'source-replay', watch: true });
@@ -479,7 +501,14 @@ describe('source-replay: only the feed commits projections', () => {
           ...p,
           observations: p.observations.map((o) => ({
             ...o,
-            binding: { ...o.binding, reference: cursor === undefined ? { x: 1, y: 2 } : { y: 2, x: 1 } }
+            // The task's own reference (T8: a feed may not pass a binding no task holds).
+            binding: {
+              ...o.binding,
+              reference:
+                cursor === undefined
+                  ? o.binding.reference
+                  : Object.fromEntries(Object.entries(o.binding.reference as Record<string, never>).reverse())
+            }
           }))
         })
       );

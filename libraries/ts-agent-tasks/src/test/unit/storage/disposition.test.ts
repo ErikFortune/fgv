@@ -566,3 +566,31 @@ describe('subscription closure at the storage boundary', () => {
     expect(await owedIds(again)).toEqual([]);
   });
 });
+
+describe('the outstanding-work report', () => {
+  test('names every incomplete operation the repository holds, bounded', async () => {
+    const { repository } = await fixture();
+    await addTask(repository, 'u', { scopes: [A] });
+    (await dispose(repository, [uid('t', 1, 'lifecycle')])).orThrow();
+    await issue(repository, 'd1', [uid('u', 1, 'lifecycle')]);
+    expect(repository.outstanding()).toSucceedWith({
+      pendingRegistrations: [],
+      pendingSubscriptions: [],
+      unsettledCommands: [],
+      awaitingCommands: [],
+      prunable: ['t' as TaskId],
+      subscriptions: [{ subscriptionId: s1, state: 'active', owed: 1, pinned: 1 }],
+      truncated: false
+    });
+    await subscribeTo(repository, 's2', [A]);
+    (await close(repository, 'retain')).orThrow();
+    expect(repository.outstanding({ limit: 1 })).toSucceedAndSatisfy((o) => {
+      expect(o.subscriptions).toEqual([{ subscriptionId: s1, state: 'closed', owed: 1, pinned: 1 }]);
+      expect(o.truncated).toBe(true);
+    });
+    expect(repository.outstanding({ limit: 0 })).toFailWithDetail(
+      /limit/i,
+      expect.objectContaining({ code: 'invalid' })
+    );
+  });
+});

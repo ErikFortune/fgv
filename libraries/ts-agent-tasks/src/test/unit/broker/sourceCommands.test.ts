@@ -468,6 +468,9 @@ describe('abandoning a command whose outcome is unknown (T8)', () => {
         .orThrow()
         .dimensions.find((d) => d.dimension === 'resident-payload-bytes')!.reserved;
     const reservedBefore = settlements();
+    expect(h.repository.outstanding()).toSucceedAndSatisfy((o) =>
+      expect(o.unsettledCommands).toEqual([tid('j1')])
+    );
     const receipt = (
       await h.broker.abandonCommand(host(h), {
         taskId: 'j1',
@@ -863,6 +866,9 @@ describe('source-replay commands', () => {
     const stored = await commandOf(h, 'j1', key);
     expect(stored.dispatch).toBe('settled');
     expect(stored.awaiting).toBeDefined();
+    expect(h.repository.outstanding()).toSucceedAndSatisfy((o) =>
+      expect(o.awaitingCommands).toEqual([tid('j1')])
+    );
     const revision = record.recordType === 'resolved' ? record.task.envelope.revision : rev(0);
     expect(
       await h.writer.archive({ taskId: tid('j1'), operationId: op(), expectedRevision: revision })
@@ -880,6 +886,7 @@ describe('source-replay commands', () => {
       from: 'awaiting-feed'
     });
     expect((await commandOf(h, 'j1', key)).awaiting).toBeUndefined();
+    expect(h.repository.outstanding()).toSucceedAndSatisfy((o) => expect(o.awaitingCommands).toEqual([]));
     expect(
       await h.writer.archive({ taskId: tid('j1'), operationId: op(), expectedRevision: revision })
     ).toSucceed();

@@ -22,6 +22,7 @@ import {
   ITaskCommitRecord,
   ITaskConsumerRecord,
   ITaskEnvelope,
+  ITaskOutstandingReport,
   ITaskUpdate,
   ITaskEnvironment,
   ITaskReceiptAbandonment,
@@ -437,6 +438,13 @@ export interface ITaskRepository {
    * Refused (`conflict`, `retry: 'safe'`) while a writer is active.
    */
   rebuildIndexes(): Promise<TaskResult<ITaskRepositoryHealth>>;
+  /**
+   * Every incomplete operation the repository holds, each list bounded by `limit` (default and maximum
+   * 200): pending registrations and subscriptions, unsettled and feed-awaiting commands, prunable
+   * tasks, and what each retained subscription is still owed. Answered from resident state. Trusted
+   * host API. (T8.)
+   */
+  outstanding(request?: { readonly limit?: number }): TaskResult<ITaskOutstandingReport>;
   /** Trusted host capacity status. Never for a model-facing tool. */
   capacityStatus(): TaskResult<ITaskCapacityStatus>;
   health(): ITaskRepositoryHealth;

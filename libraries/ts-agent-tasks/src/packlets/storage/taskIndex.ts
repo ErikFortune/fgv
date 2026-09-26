@@ -38,6 +38,8 @@ export type IndexContent =
       readonly automaticList?: boolean;
       /** The record holds an external command whose dispatch is not settled. */
       readonly unsettledCommands?: boolean;
+      /** The record holds a settled command still awaiting its feed revision (T8). */
+      readonly awaitingCommands?: boolean;
     }
   /** Archived: identity, graph edge, final status and source identity only. */
   | { readonly category: 'archived'; readonly envelope: ITaskEnvelope }
@@ -199,6 +201,8 @@ export class TaskIndex {
   public readonly listCandidates: SortedKeySet = new SortedKeySet();
   /** Tasks holding an unsettled external command, for the uncertain-command pump. */
   public readonly unsettledCommands: SortedKeySet = new SortedKeySet();
+  /** Tasks holding a settled command that awaits its feed revision (T8). */
+  public readonly awaitingCommands: SortedKeySet = new SortedKeySet();
   /**
    * Tasks retaining at least one update every audience member of which has discharged it, by the
    * committed checkpoints this index was built from: the cleanup pump's candidates (T8). A hint —
@@ -456,6 +460,7 @@ export class TaskIndex {
     }
     this.listCandidates.delete(id);
     this.unsettledCommands.delete(id);
+    this.awaitingCommands.delete(id);
     this.prunable.delete(id);
     if (m.sourceKey !== undefined) {
       this.sources.delete(m.sourceKey);
@@ -613,6 +618,9 @@ export class TaskIndex {
     this.summaries.set(id, { envelope });
     if (content.unsettledCommands === true) {
       this.unsettledCommands.add(id);
+    }
+    if (content.awaitingCommands === true) {
+      this.awaitingCommands.add(id);
     }
     this._memberships.set(id, {
       category: 'summary',

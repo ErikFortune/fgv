@@ -1256,11 +1256,15 @@ function _indexContent(record: ITaskCommitRecord, known: boolean): IndexContent 
       .onSuccess((details) => succeed(details.completion === 'all-children-succeeded'))
       .orDefault(false);
   const unsettled: boolean = hasUnsettledCommand(record);
+  const awaiting: boolean = record.operations.some(
+    (op) => op.type === 'command' && op.dispatch === 'settled' && op.awaiting !== undefined
+  );
   return {
     category: 'summary',
     envelope,
     ...(automaticList ? { automaticList } : {}),
-    ...(unsettled ? { unsettledCommands: true } : {})
+    ...(unsettled ? { unsettledCommands: true } : {}),
+    ...(awaiting ? { awaitingCommands: true } : {})
   };
 }
 

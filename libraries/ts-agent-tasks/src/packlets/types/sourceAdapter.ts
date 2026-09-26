@@ -221,6 +221,12 @@ export interface ISourceObservationReport {
  */
 export type SourceReconcileStop =
   | 'page-limit'
+  /**
+   * A `source-replay` feed carried a revision for a binding no task holds: that revision is a required
+   * event nothing has committed, so the cursor may not pass it (design § 8.6). Register the binding —
+   * the next pass re-reads the page and applies it — before the source emits for it. (T8.)
+   */
+  | 'unregistered-binding'
   | 'gap'
   | 'order'
   | 'contract-violation'
