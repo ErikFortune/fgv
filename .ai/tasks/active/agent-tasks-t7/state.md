@@ -70,7 +70,8 @@ says. No missing-input stop.
 
 ## Next concrete step
 
-All gates green on the final source; PR [#695](https://github.com/ErikFortune/fgv/pull/695) open into
-`integration/agent-tasks-v1`. Revert matrix (22 rows) and coverage closure recorded in result.md.
-Now: drive the Copilot loop (expect a long one — authorization boundary); fold each round's fixes in
-with a revert check, update result.md § Review per round.
+PR [#695](https://github.com/ErikFortune/fgv/pull/695) open into `integration/agent-tasks-v1`. Copilot
+loop stopped at 6 rounds on diminishing returns (rounds 1–4 substantive, 5 non-reproducing, 6 empty);
+every round recorded in result.md § Review. Remaining: repo-wide rebuild + test on the final source,
+refresh Gates and the PR body, then keep the PR watched (hourly check-in) until merged — merging is the
+orchestrator's call, not this stream's.

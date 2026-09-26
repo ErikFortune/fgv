@@ -276,6 +276,18 @@ the local lint ran (CI red on the round-1 head). Lint now runs on the committed 
 |---|---|---|
 | R5.1 | the default store's compare-and-write checks only `id` and `recordRevision`, so a same-subscription, same-revision record with altered contents would be overwritten and the read-back would match | not reachable: every store write is preceded, in the same synchronous writer section under the root's single-writer lock, by `_current`/`_verified`, which re-reads the record and compares its canonical fingerprint with the committed one — an altered record fences there (`storage-corrupt`) before `write` is called. New test *"the default store: a same-subscription, same-revision record changed at rest is fenced, never overwritten"* shows the fence and that the altered file is left as found. Pushing the fingerprint into the store contract would duplicate that check in every host store |
 
+**Copilot round 6** — no findings. Its summary names only areas (receipt expiry, checkpoint
+validation, replay accounting, reservation sizing), each of which maps to an item fixed in rounds 1–5;
+there is no concrete comment and no "previously missed" block.
+
+**Copilot review loop driven by the implementer; stopped at 6 rounds on diminishing returns.** Rounds
+1–4 each found real defects (ten fixed, one declined by policy, one already enforced); round 5's one
+finding did not reproduce and is pinned by a test; round 6 is empty. As with T5 and T6, every real
+finding was an ordering or custody defect behind a check that was already present — a revision that
+was not compared, a clock read in the wrong place, a reservation trusted rather than recomputed.
+
+Revert matrix additions from the loop (each run red on the source it fixed): M23–M33 above, 11 rows.
+
 ## Coverage closure
 
 Closed after layer 1, to 100 % statements/branches/functions/lines with **zero `c8 ignore`**. Branches
