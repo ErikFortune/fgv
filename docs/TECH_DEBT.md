@@ -184,9 +184,11 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
   that is the next slice's first step.**
   (1) ~~**T7:** audiences come from an internal seam that answers "nobody"; filling it must reserve
   per-audience acknowledgement evidence first.~~ **Resolved by T7** — storage computes and verifies
-  every audience and charges its evidence in the accepting commit; the seam is removed. (2) **T8:** `archive`
+  every audience and charges its evidence in the accepting commit; the seam is removed. (2) ~~**T8:** `archive`
   refuses a task while any retained update has a non-empty audience (`retention-blocked`); T8
-  replaces that with acknowledgement/disposition evidence and pruning. (3) ~~**T6:** an external
+  replaces that with acknowledgement/disposition evidence and pruning.~~ **Resolved by T8** — an
+  update leaves a record only on each audience member's durable acknowledgement or disposition, and
+  archive writes a tombstone with no payloads (`agent-tasks-t8` `result.md`). (3) ~~**T6:** an external
   task's commands are `rejected: unsupported` and recorded under their key until dispatch exists.~~
   **Resolved by T6** — external commands dispatch through their source (see the next entry for
   what T6 hands on). (4) **T9:** no stop latch is checked by list completion or relationship operations yet.
@@ -196,7 +198,9 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
 
 - **[P2] `ts-agent-tasks` source hand-offs T6 left for T7/T8/T9 — each is the named slice's to
   decide, and none is safe to leave implicit.**
-  (1) **T8 — held commands never settle on their own.** A `possibly-sent` command the pump holds
+  (1) ~~**T8 — held commands never settle on their own.**~~ **Resolved by T8** —
+  `TaskBroker.abandonCommand` settles a held, never-sent or feed-awaiting command as
+  `{ state: 'abandoned', from }`, releasing its reservation without claiming an outcome. A `possibly-sent` command the pump holds
   (non-idempotent with no lookup answer, or its source key expired) stays unsettled indefinitely,
   keeping its 64 KiB settlement reservation and blocking `archive` (`retention-blocked`, "unsettled
   command"). Only a later `lookupCommand` that finds it settles it; an ordinary observation does
@@ -204,7 +208,10 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
   `accepted` while it awaits a feed revision the feed never reaches (e.g. one reported under an
   epoch the feed cannot order against): archive is refused while it awaits. T8 needs an explicit, audited host disposition for a held command
   (e.g. "abandoned: outcome unknown") that consumes the reservation without claiming an outcome.
-  (2) **T8 — a `source-replay` task registered after the feed passed its revisions.** The feed
+  (2) ~~**T8 — a `source-replay` task registered after the feed passed its revisions.**~~
+  **Resolved by T8, by enforcement** — a `source-replay` pass stops with the cursor unmoved at a
+  revision for a binding no task holds (`stopped: 'unregistered-binding'`); registering the binding
+  lets the next pass apply it. The feed
   reports an observation for a binding no task holds as `unknown-binding` and the pass moves on,
   so revisions emitted before registration are never replayed into the task. Hosts must register
   (or register with an `initialObservation`) before the source emits for that binding; T8's
@@ -221,17 +228,20 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
   `agent-tasks-v1` cluster finalizes).
 
 - **[P2] `ts-agent-tasks` delivery hand-offs T7 left for T8 — each is T8's to decide.**
-  (1) **`archive` is `retention-blocked` for every task a subscription covers, even fully
-  acknowledged.** The inherited rule refuses archive while any retained update names an audience,
+  *(T8: (1), (3) and (4) resolved — see each; (2) stays open with the profile qualification.)*
+  (1) ~~**`archive` is `retention-blocked` for every task a subscription covers, even fully
+  acknowledged.**~~ *Resolved by T8.* The inherited rule refuses archive while any retained update names an audience,
   and T7 never prunes a stored audience; with one matching subscription no covered task can ever be
   archived. T8's pruning against exact acknowledgement history and disposition evidence is what
   unblocks it (evidence: `delivery/retention.test.ts`). (2) **Profile inconsistency:** a
   subscription record reserves E (512 B) record bytes per owed or future link, so
   `maxConsumerRecordBytes` (8 MiB) admits ≈16,384 while `maxAcknowledgementIdsPerSubscription`
-  advertises 50,000. (3) **Subscription closure and disposition** (`closed`, `disposed`,
-  `coalesceProgress`) and the capacity each releases — T7 subscriptions are only ever active, and
-  their exact history is a lifetime charge. (4) Baseline payloads of `current` subscriptions hold
-  resident bytes until acknowledged (sized in the capacity entry above).
+  advertises 50,000. (3) ~~**Subscription closure and disposition** (`closed`, `disposed`,
+  `coalesceProgress`) and the capacity each releases~~ *Resolved by T8* — closure releases the
+  future-update reservation and, once nothing is owed, the preparation claim; exact history stays a
+  lifetime charge. (4) ~~Baseline payloads of `current` subscriptions hold resident bytes until
+  acknowledged~~ *Resolved by T8* — a baseline payload leaves the record, and the resident charge,
+  in the write that acknowledges or disposes it.
   **Trigger:** the start of T8. **Reference:** the `agent-tasks-t7` stream's `result.md` §
   *Hand-offs* (at `.ai/tasks/active/agent-tasks-t7/` until the `agent-tasks-v1` cluster finalizes).
 
