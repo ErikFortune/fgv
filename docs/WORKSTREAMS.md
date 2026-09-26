@@ -144,16 +144,25 @@ retention, disposition, closure, coalescing, pins, tombstone archive, pruning, c
 the outstanding-work report — and said in its own ledger entry that T8's acceptance criteria are not
 met until PR 2 lands. The plan's T8 status line is 🟡 until this PR moves it to ✅.
 
-**The profile decision is the deferred item the whole family has been routing forward.** PR 1 did
-the arithmetic and settled two things worth not re-litigating: a single update **cannot exceed
-37,417 B** (the 32 KiB envelope bound plus fixed framing), so `maxUpdateBytes` at 64 KiB is
-unreachable and the closeout reserves nearly double what the schema permits; and candidate (a),
-"charge actual", is **structurally unavailable** for a forward reservation, because a closeout
-guarantees a terminal step not yet taken and must reserve the most it could need. PR 1 recommends
-**(d) reserve the derived maximum** (ceiling 256, or 224 with an in-flight command) **plus (c)
-advertise the number actually served**. T8b runs M1 first — the plan requires that ordering — then
-confirms or refutes with measurements. `defaultTaskCapacityProfile` is `@public`; the decision ships
-with its evidence and the change itself needs the design authority.
+**The profile decision has been taken (2026-09-26), so T8b implements rather than recommends.** PR 1
+established that a single update cannot exceed **37,417 B** — the 32 KiB envelope bound plus fixed
+framing — so `maxUpdateBytes` at 64 KiB was never reachable and the closeout reserved nearly double
+what the schema permits; and that candidate (a), "charge actual", is **structurally unavailable** for
+a forward reservation. The decision is six changes, **every one a raise or a code correction, nothing
+lowered anywhere**: the closeout reserves the derived maximum (a code change, not a profile edit);
+`resident-payload-bytes` 64 MiB → **384 MiB**, the first value at which 1,000 is true in every
+modelled mix (1,537 plain / 1,345 with an in-flight command / 1,195 with a command and a `current`
+subscription); `non-archived-tasks` stays 1,000, now reachable; `maxConsumerRecordBytes` 8 MiB →
+**32 MiB**, resolving T7's hand-off 2 upward; `maxAcknowledgementIdsPerSubscription` stays 50,000, now
+covered. Narrowing to five categories is not taken. Nothing is lowered because v1 can raise a stored
+limit and cannot lower one — that asymmetry is what "room to tune" means here. **M1 still runs first,
+and a refutation is a finding to report, not a number to adjust.**
+
+**T8b also opens with phase 0: a designed extraction of
+`storage/repository.ts`** (1993 lines, 7 of headroom), in its own green commit before any A3 work.
+That file is the sixth instance of the promoted `max-lines` P1, whose own post-mortem is that the
+remedy is always chosen under pressure after a red check on an unrelated PR. The other four files
+near the cap are in packages outside T8b's surface and stay on the P1 entry.
 
 **Package surface.** `libraries/ts-agent-tasks` only, plus `perf/residentMemory.js` runs (not edits),
 this stream's artifacts, the plan's T8 status line and this ledger entry.

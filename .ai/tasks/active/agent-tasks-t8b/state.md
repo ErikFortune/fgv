@@ -45,15 +45,29 @@ Orchestrator re-ran on PR 1's final source, independently of its own claims:
   identical, so this is the same protection; the 2-test gap is the reconstruction, not the claim.
 - CI green on `5e0f01e41`, the merged head.
 
-## The one thing held for the design authority
+## The profile decision — taken, so you implement rather than recommend
 
-**The capacity-profile change.** PR 1 delivered the arithmetic and a recommendation — (d) reserve
-the derived 37,417 B schema maximum, plus (c) advertise the number the profile then serves — and
-deliberately left `defaultTaskCapacityProfile` unchanged. That is correct and stays correct here:
-**deliver the decision with its evidence and stop.** The orchestrator takes it to the design
-authority.
+PR 1 delivered the arithmetic and held the change for the design authority. **The decision came back
+on 2026-09-26 and is in `brief.md` § *Deliverable 3*.** Six changes, every one a raise or a code
+correction, nothing lowered anywhere:
 
-The ordering the plan imposes: **M1 runs before the profile decision, not after it.**
+| | change |
+|---|---|
+| 1 | (d) as a **code** change: the closeout reserves the derived 37,417 B schema maximum, not `maxUpdateBytes` — applied consistently to the command and baseline charges too |
+| 2 | `resident-payload-bytes` 64 MiB → **384 MiB** |
+| 3 | `non-archived-tasks` stays **1,000**, now reachable in every modelled mix |
+| 4 | `maxConsumerRecordBytes` 8 MiB → **32 MiB** (resolves T7's hand-off 2 upward) |
+| 5 | `maxAcknowledgementIdsPerSubscription` stays **50,000**, now covered |
+| 6 | `maxUpdateBytes` stays **64 KiB**; the 37,417 B schema maximum is documented beside it |
+
+`(d-double-prime)` — five categories instead of seven — is **not taken**.
+
+**The instruction was: best guess, documented, room to tune.** So the documentation is a deliverable
+(brief § *The documentation is a deliverable, not a side effect*), and "room to tune" is why no limit
+is lowered: v1 can raise a stored limit and cannot lower one.
+
+**M1 still runs first**, and the plan's ordering is unchanged. If M1 refutes 384 MiB or refutes (d),
+that is a finding to report — not a number to quietly adjust, and not a measurement to bend.
 
 ## Work log
 
@@ -63,11 +77,10 @@ _(append as you go: what you did, what you learned, what you decided and why)_
 
 _(anything you cannot resolve from the brief, the plan or the code — raise it here and surface it)_
 
-Two are known to be coming:
+Both of the ones PR 1 raised are now **answered** — see *The profile decision* above. Nothing is
+currently held for the design authority.
 
-1. **The profile change itself** — see above. Held by design, not by omission.
-2. **Candidate (d″)** — reserving five categories rather than seven, which would give a ceiling of
-   358. It needs a proof that no single commit can produce `assignment` or `relationship` alongside
-   a terminal transition. PR 1 judged it plausible but declined to claim it, because shrinking "at
-   most seven categories" is a design statement. If you can prove it from the code, show the proof;
-   if it needs a design decision, route it.
+If something new needs deciding, the two things worth knowing about how this stream's decisions get
+made: numeric choices come back as "best guess, documented, room to tune" rather than as open
+questions, and a lowering of any stored limit is treated as effectively irreversible, so proposals
+that need one should say so prominently.

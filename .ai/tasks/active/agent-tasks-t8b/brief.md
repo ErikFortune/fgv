@@ -44,6 +44,32 @@ suites PR 1 named. **Treat PR 1's mechanism as sound and do not reshape it** —
 on the explicit basis that this work depends on the mechanism but on nothing in it being reshaped.
 If you find you *must* reshape it, that is a finding worth surfacing, not a licence to proceed.
 
+## Phase 0 — refactor the files without headroom, first, in their own commit
+
+`docs/TECH_DEBT.md` carries a **P1**: the 2000-line `max-lines` cap is collected as a per-stream
+toll, discovered as a red check on a PR whose actual change is unrelated, with the remedy chosen
+"in the worst possible frame of mind." Five streams have paid it. You are not going to be the sixth.
+
+**`libraries/ts-agent-tasks/src/packlets/storage/repository.ts` is at 1993 lines — 7 of headroom**,
+and your work is in storage. Nothing else in this package is close; the next largest source file is
+`openRepository.ts` at 1436, and the largest test file is 1467.
+
+**Do this before any A3 work, as its own commit**, so the extraction is designed rather than
+extracted under pressure:
+
+- Choose the seam on its merits, not on what fits. The P1 entry's own post-mortem is that every
+  previous extraction was "not *designed*, it was the seam that fit" — one candidate in `ts-utils`
+  had to be abandoned after finding a circular import it would have introduced.
+- Keep the public surface byte-identical: `etc/ts-agent-tasks.api.md` should not move. If it does,
+  you have changed the surface, which is a different change and wants saying out loud.
+- Land it green — `rushx build` zero warnings, `rushx lint`, full suite — before starting phase 1.
+- Record the seam and why you chose it in `result.md`, and **update the P1 entry's sweep table**.
+
+Out of scope here: the other four files near the cap (`ts-utils/test/unit/result.test.ts` 1989,
+`ts-json-base/test/unit/jsonCompatible.test.ts` 1982, `ts-extras/.../keyStore.test.ts` 1945,
+`ts-agent-memory/.../fileTreeMemoryStore.ts` 1907). They are in packages outside your surface and
+stay on the P1 entry for a separate chore.
+
 ## Deliverable 1 — the A3 saturation journeys
 
 The plan's paragraph is the specification; it is dense, so here it is decomposed.
@@ -94,7 +120,7 @@ Paste the actual figures into `result.md`. A green check is not a measurement.
 **The plan's ordering is load-bearing:** *"Run final M1 cohorts on this implementation before
 accepting its default profile."* M1 comes before the profile decision, not after it.
 
-## Deliverable 3 — the profile decision
+## Deliverable 3 — the profile: the numbers are decided; you implement and document them
 
 This is the one the whole family has deferred, and PR 1 did the arithmetic so you don't have to
 re-derive it. From `.ai/tasks/active/agent-tasks-t8/result.md` § *Profile arithmetic*:
@@ -117,31 +143,83 @@ re-derive it. From `.ai/tasks/active/agent-tasks-t8/result.md` § *Profile arith
 | (b) raise `resident-payload-bytes` | 448 KiB | 1,000 needs **437.5 MiB** | | |
 | (c) lower `non-archived-tasks` | — | honest value 146 / 128 | | |
 
-PR 1's recommendation is **(d) + (c)**. Your job is to run M1 first and then either confirm it with
-measurements or show why it is wrong.
+### The decision, taken by the design authority 2026-09-26
 
-**(d″) needs a proof PR 1 declined to claim:** that no single commit can produce `assignment` or
-`relationship` alongside a terminal transition. Plausible — those are catalog operations and never
-terminal — but shrinking "at most seven categories" is a *design statement*, not an optimisation.
-If you can prove it from the code, say so and show the proof; if it needs a design decision, route
-it rather than assuming it.
+**Six changes. Every one is a raise or a code correction — nothing is lowered anywhere.** That is
+deliberate: v1 supports `raiseCapacityLimits` and refuses to lower a stored limit in place
+(`graphRules.ts`: *"lowering limits in place is unsupported"*), with no migration escape hatch. A
+lowering is therefore free only until a repository exists, and permanent afterwards. Avoiding
+lowerings entirely is what keeps every number tunable.
 
-**Also yours: the subscription-record inconsistency** (T7's hand-off 2, restated by PR 1).
-`maxConsumerRecordBytes / E` = 8 MiB / 512 B = **16,384** owed-or-future links, against
-`maxAcknowledgementIdsPerSubscription` advertising **50,000**. Either lower the per-subscription id
-limit to ≈16,000 or raise the consumer-record bound to ≥ 25 MiB. Decide it with the rest of the
-profile, with the arithmetic shown.
+1. **Take (d), as a code change to the reservation, not a profile edit.** The closeout reserves the
+   **derived schema maximum of 37,417 B** per category instead of `maxUpdateBytes`. Apply the same
+   correction consistently to the in-flight-command charge and the `current`-baseline charge — PR 1's
+   table does, which is why it reads 224 and 199 at 64 MiB rather than 204 and 170.
+2. **`resident-payload-bytes`: 64 MiB → 384 MiB.**
+3. **`non-archived-tasks`: stays 1,000** — and under (1) and (2) it is now *reachable*, which is the
+   whole point. It stops being an aspiration and becomes a limit.
+4. **`maxConsumerRecordBytes`: 8 MiB → 32 MiB.** This resolves T7's hand-off 2 in the raisable
+   direction. 50,000 ids x 512 B = 24.41 MiB, so 32 MiB covers the advertised id limit plus the
+   64 KiB preparation claim and any baselines.
+5. **`maxAcknowledgementIdsPerSubscription`: stays 50,000**, now covered rather than unreachable.
+6. **`maxUpdateBytes`: stays 64 KiB.** Lowering it to the derived bound is the closed direction and
+   (1) removes the reason to want it. **Document the 37,417 B schema maximum beside it** so the next
+   reader does not re-derive it.
 
-### Do not change the published profile without the round-trip
+**(d-double-prime) is not taken.** Seven categories stands. Narrowing to five needs a claim that no
+commit produces `assignment` or `relationship` alongside a terminal transition, and that is a design
+statement rather than an optimisation — (1) and (2) make it unnecessary.
 
-`defaultTaskCapacityLimits` and `defaultTaskCapacityProfile` are `@public`, and the number is what
-consumers size against. **Deliver the decision with its evidence and stop there**; the orchestrator
-takes it to the design authority. PR 1 held this line correctly and so must you.
+### What 384 MiB buys, and why generous is the safe direction here
 
-The one thing that makes this cheap: the profile's own docstring already calls it *"proposed …
-not measured safe maxima"*, pending *"the planned residency and reopen measurements before the
-profile is advertised"*. Those measurements are yours. Correcting the number now costs nothing
-downstream — which is an argument for correcting it, not for correcting it silently.
+With the unit at 37,417 B applied consistently:
+
+| budget | plain registration | + 1 in-flight command | + command + 1 `current` sub |
+|---|---|---|---|
+| 64 MiB (today) | 256 | 224 | 199 |
+| 128 MiB | 512 | 448 | 398 |
+| 256 MiB | 1,024 | 896 | 797 |
+| 320 MiB | 1,281 | 1,120 | 996 |
+| **384 MiB (taken)** | **1,537** | **1,345** | **1,195** |
+
+384 MiB is the first value where **1,000 is true in every mix we model**, so the advertised limit
+needs no "concurrent constraints, not simultaneous promises" asterisk. 320 MiB lands at 996 in the
+heaviest mix, which is worse than either neighbour — honest-looking but caveated.
+
+**Why a generous default is not the irreversible direction.** The freeze applies to a *repository*,
+not to the default: the profile is stamped into the manifest at create, and the default binds only
+repositories created without an explicit one. Changing the default later is always free for future
+repositories. So a generous default risks exactly one thing — that a repository created under it
+cannot later be given a *tighter* guard — and that is the benign direction, because an unapproached
+ceiling costs nothing. A too-tight default is the one that strands a repository.
+
+**Reproduce the table before you rely on it.** It is arithmetic, and arithmetic in a brief is a claim
+like any other. If your numbers differ from mine, say so rather than matching them.
+
+### The documentation is a deliverable, not a side effect
+
+The instruction from the design authority was: *best guess, documented, room to tune.* So:
+
+- **`capacityProfile.ts`** — every changed value carries, at its site, what it admits and the unit it
+  derives from. The 37,417 B schema maximum is named where `maxUpdateBytes` is declared.
+- **The profile docstrings** currently say *"proposed ... not measured safe maxima"*, pending *"the
+  planned residency and reopen measurements before the profile is advertised."* **Those measurements
+  are yours** (deliverable 2). After M1, either that wording is earned and should change, or it is
+  not and should say what is still missing. Do not leave it describing a state that has passed.
+- **`CAPABILITIES.md`** — the host runbook PR 1 shipped quotes capacity figures. Re-check every one.
+- **The `docs/TECH_DEBT.md` capacity entry** is the record of this problem across five slices.
+  **Close it** — with the decision, the numbers and the arithmetic — rather than amending it a fifth
+  time. If something remains open, what remains belongs in a new, smaller entry.
+- **How to tune it later**, stated once and plainly: `raiseCapacityLimits` for an existing
+  repository; an explicit profile at `initialize` for a new one; the default for everything else.
+
+### M1 still runs first
+
+The plan's ordering stands and these numbers do not pre-empt it. **M1 measures, and if it refutes
+384 MiB — or refutes (d) — that is a finding, not a deviation.** Report it and stop; do not quietly
+adjust the numbers to match a measurement, and do not adjust a measurement to match the numbers. The
+harness's frozen manifest predates this profile change, so **if a cohort misses because the budget
+moved, say so plainly and do not edit the manifest.**
 
 ## Review gates — this PR has the same two as PR 1
 
@@ -190,6 +268,11 @@ so the loop may well be shorter. Judge on the finding profile, not the count.
 - [ ] **The plan's T8 status line moves from 🟡 to ✅, and the ledger's `agent-tasks-t8` entry is
       closed out** — this PR completes T8, so the docs that say it is partial become wrong when it
       lands. Write them as shipped *in this PR*; a PR cannot observe its own merge
+- [ ] **Phase 0 landed as its own green commit before any A3 work**, with the seam recorded and the
+      P1 sweep table updated
+- [ ] **Every profile number is documented at its site**, the profile docstrings no longer describe a
+      pre-measurement state, `CAPABILITIES.md`'s runbook figures are re-checked, and the TECH_DEBT
+      capacity entry is **closed** rather than amended a fifth time
 
 ## Skills to load, and when
 
@@ -229,8 +312,10 @@ verbatim. It must record:
 - the transient-vs-permanent capacity distinction, demonstrated rather than asserted
 - **M1's four cohort figures, pasted**, with the `fixture` residency check stated and any manifest
   miss reported as a miss
-- **the profile decision with its evidence** — the recommendation, the measurements behind it, the
-  `(d″)` proof or the reason it needs a design decision, and the subscription-record resolution
+- **the six profile changes as implemented**, each with what it admits, and **M1's measurements either
+  confirming 384 MiB and (d) or refuting them** — a refutation is a finding to report, not a number
+  to quietly adjust
+- **the seam chosen in phase 0 and why**, plus the updated `max-lines` sweep table
 - confirmation that T8's acceptance criteria are now met, item by item against the plan
 - anything belonging to T9/I1/I2/P1, routed durably
 
