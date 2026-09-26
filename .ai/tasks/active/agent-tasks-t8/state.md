@@ -51,10 +51,16 @@ Orchestrator re-ran on the T7 final source, independently of T7's own claims:
   `delivery/checkpoints.test.ts` go red when the injected store stops persisting; T7's artifact had
   reported "22 of 28" and was corrected.
 
-A repo-wide `rush rebuild` was started on `064bdff24` after the `release`-up merge. **Check its
-outcome before assuming the base is clean** — if it is not recorded below, it was not confirmed.
+- [x] **repo-wide `rush rebuild` on `064bdff24`: exit 0, zero warnings, all 31 projects, 4m06s**
+      (orchestrator, 2026-09-26). Your base compiles clean.
 
-- [ ] repo-wide `rush rebuild` on `064bdff24`: _result not yet recorded_
+A repo-wide `rush test` was **not** run on the merge, deliberately. The `release`-up merge is the
+union of two independently CI-green trees and its only conflict resolution was in
+`docs/TECH_DEBT.md`; nothing in `ts-agent-tasks` consumes `ts-extras`, so the merge introduces no new
+call path and widens no accepted set. A rebuild is the right gate for that shape. **This reasoning
+does not transfer to your own work** — T8 unblocking `archive` *is* a widened accepted set that moves
+no signature, so the repo-wide `test` gate in your acceptance criteria is load-bearing and not
+satisfied by this note.
 
 ## Work log
 
