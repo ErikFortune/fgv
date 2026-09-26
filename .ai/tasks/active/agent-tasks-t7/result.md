@@ -303,12 +303,14 @@ acknowledgement and makes a receipt that named it `invalid-receipt`.
 
 ## Gates
 
-`rushx build` (zero warnings), `rushx lint`, `rushx fixlint` (no changes), `rushx test` — **1,587
-tests, 100 % statements/branches/functions/lines, zero `c8 ignore`**. `rush change --verify
---target-branch origin/integration/agent-tasks-v1`; repo-wide `rush rebuild` and `rush test` (both
-exit 0); `verify-capability-docs`, `generate-capability-feed --check`, `verify-esm-entrypoints`,
-`verify-bundler-resolution`, `verify-tarball-exports` — all pass on the final source. PR:
-[#695](https://github.com/ErikFortune/fgv/pull/695).
+On the final source (after the Copilot loop): `rushx build` (zero warnings), `rushx lint`,
+`rushx fixlint` (no changes), `rushx test` — **1,603 tests, 100 % statements/branches/functions/lines,
+zero `c8 ignore`**. `rush change --verify --target-branch origin/integration/agent-tasks-v1`;
+repo-wide `rush rebuild` and `rush test` (both exit 0, no "success with warnings");
+`verify-capability-docs`, `generate-capability-feed --check`, `verify-esm-entrypoints`,
+`verify-bundler-resolution`, `verify-tarball-exports` — all pass. CI green on every pushed head from
+round 2 on (the round-1 head was red on a `no-useless-concat` warning the commit hook's reformat
+introduced; fixed). PR: [#695](https://github.com/ErikFortune/fgv/pull/695).
 
 ## Hand-offs (routed to `docs/TECH_DEBT.md`)
 
