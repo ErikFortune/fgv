@@ -147,7 +147,7 @@ subscription was owed can be archived in T7.
 | exact-ID falsifier | `receipts.test.ts` falsifier + *"an old receipt cannot consume an obligation committed after it was issued"* |
 | adversarial receipts | fabricated id, modified task/revision/update list, shortened, enlarged, duplicates, foreign subscription, foreign store, snapshot-only, malformed, replay before ack / after ack / after expiry, abandoned — one `invalid-receipt` answer, and the record unchanged |
 | fail-closed custom stores | `checkpoints.test.ts`: throwing, stale, foreign, garbage, fail-unchanged, fail-unknown, not-a-result, and a store that **stops persisting** — no acknowledgeable context, no reported acknowledgement |
-| neutered double goes red | making `InMemoryCheckpointStore.write` store nothing turns **22 of 28** checkpoint tests red (final source) |
+| neutered double goes red | making `InMemoryCheckpointStore.write` store nothing turns **26 of the 33** tests in `delivery/checkpoints.test.ts` red, and nothing else in the suite (orchestrator re-run on the final source, 2026-09-26). The 7 that stay green are the six `durability:` tests, which use the default `FileTreeCheckpointStore` rather than the injected double, and *"a store that stores nothing for a brand-new subscription is caught by the read-back"*, which already asserts this behaviour |
 | host processing precedes checkpoint commit | *"prepare writes a manifest and acknowledges nothing; the renderer writes nothing"*; abort / abstention tests |
 | no subscribe/mutate gap | W1 tests: terminal transition and task creation in the gap, bounded recapture, epoch move |
 | B's baseline independent of A's acks | `subscribe.test.ts` |
@@ -187,12 +187,18 @@ its tests red (failing tests in parentheses):
 | M18 | storage: acknowledging an id no longer owed | 1 |
 | M19 | a session store accepted under a process-crash repository | 1 |
 | M20 | per-subscription history limit off | 2 |
-| M21 | test double: the checkpoint store stops persisting | 22 |
+| M21 | test double: the checkpoint store stops persisting | 26 |
 | M22 | a dropped update releases no owed link at admission | 1 |
 
 M8 and M22 turned nothing red on the first run: the epoch test only asserted success, and no test
 exercised a drop at the admission limit. Both tests were strengthened (the new epoch now hides the
 task; a drop-and-add at exactly the per-subscription limit) and re-run red.
+
+M21's figure is corrected from a re-measurement. This artifact first reported "22 of 28"; an
+orchestrator re-run of the same neuter on the final source (2026-09-26) gives **26 of 33**, with the
+rest of the 1,603-test suite green. The protection is real and slightly more load-bearing than
+first stated, but the original denominator did not name a suite anyone could re-count, which is how
+a figure nobody can reproduce gets believed. Quote a suite and a total, not a bare ratio.
 
 ## Deviations from the design sketch
 
