@@ -128,6 +128,69 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
+### `agent-tasks-t8` 🔵 (slice T8 of the agent-tasks plan)
+
+**Status:** 🔵 in flight. Branched off `integration/agent-tasks-v1` at the T7 landing. PR targets
+`integration/agent-tasks-v1`, **not `release`** — the cluster promotes as one. Artifacts stay in
+`.ai/tasks/active/agent-tasks-t8/`; this family finalizes at cluster close, not per slice.
+
+**Mission.** Retention, backpressure and recovery journeys: explicit obligation disposition and
+consumer closure, safe progress coalescing, issued-receipt pins, tombstone archive with a minimal
+resident projection, full A3 capacity accounting and protected drain behaviour, end-to-end reopen
+reconciliation, recovery reports and index repair.
+
+**T8 is the slice that makes `archive` possible at all.** `archive` refuses a terminal task while
+any retained update names a non-empty audience (`retention-blocked`). Before T7 that never fired in
+production, because the audience seam answered "nobody". T7 filled the seam — so today, with one
+matching subscription, **every task it covers is retention-blocked, and stays blocked after every id
+has been acknowledged**, because T7 never prunes a stored audience (pinned by
+`delivery/retention.test.ts`). T8's pruning against exact acknowledgement history and disposition
+evidence is what unblocks it. Two consequences: some existing `retention-blocked` tests pin the
+behaviour T8 replaces and must be re-decided per test rather than preserved; and unblocking archive
+is a widened accepted set that moves no signature, so the repo-wide `rush test` gate is load-bearing
+(a rebuild is a compiler and cannot see it).
+
+**Disposition is the hard half, and it fails silently.** An obligation ends either by
+acknowledgement (T7: the exact id lands in the consumer's history) or by disposition — it ends
+*without* the consumer ever acknowledging it. The tempting implementation is "drop it and free the
+reservation", which is indistinguishable in every functional test from a correct one. The plan's
+standard: every recovery case is preserved state, an explicit incomplete operation, or an explicit
+error — **never unexplained absence**; and cleanup may not invent successful outcomes, abandon
+obligations without authority, or bypass stop blockers. Three dispositions are already routed here
+by name: a held `possibly-sent` command that never settles on its own (T6), a closed or revoked
+subscription's obligations (T7), and a `source-replay` task registered after the feed passed its
+revisions (T6).
+
+**T8 cannot sign off the capacity profile without resolving the 7× overstatement.**
+`defaultTaskCapacityLimits` advertises `'non-archived-tasks': 1000`; the reservation arithmetic
+admits **146**, or 128 with one in-flight command per task, or 113 with a `current` subscription as
+well. T8 delivers the arithmetic for each candidate resolution with its number and a recommendation;
+the profile change itself needs an orchestrator round-trip, since the surface is `@public`. M1's
+harness already exists (`perf/residentMemory.js`, authored in T4, manifest frozen 2026-09-23) — T8
+runs its four cohorts on the final source and pastes the figures.
+
+**Package surface.** `libraries/ts-agent-tasks` only — `storage/`, `delivery/`, `broker/`, their
+types, converters and tests; plus the package's host runbook documentation, this stream's artifacts,
+the plan's T8 status line and this ledger entry.
+
+**Out of scope.** Physical deletion and inventory/acknowledgement/dedup compaction (only under A3's
+explicit finite-history limitation). T9 (cascade stop, `ITaskSource.capabilities()`, the source side
+of a stop). I1, I2, P1. M1 harness authorship. Every package outside `ts-agent-tasks`. `ts-utils`'s
+`isKeyOf`. The three known CI flakes.
+
+**Review gates — this slice has two.** Layer 1 `code-reviewer` before coverage closure, then **an
+independent persistence/delivery antagonist pass**, which the plan requires for T8 specifically and
+for no other slice in this family. Then the implementer-driven Copilot loop. T5 ran seven rounds, T6
+six, T7 six, each finding real ordering and custody defects after a clean layer 1; disposition is an
+authorization boundary, so expect the same.
+
+**Acceptance criteria:** `rushx build` zero warnings, `rushx lint`, `rushx fixlint`; `rushx test` at
+100% with zero `c8 ignore`; `rush change --verify --target-branch origin/integration/agent-tasks-v1`;
+repo-wide `rebuild` **and** `test` on the final source; the five verify scripts; no `any`; all three
+review layers recorded.
+
+**Artifact pointer:** `.ai/tasks/active/agent-tasks-t8/`.
+
 ### `agent-tasks-t7` ✅ (slice T7 of the agent-tasks plan) — landed on the integration branch via [#695](https://github.com/ErikFortune/fgv/pull/695)
 
 **Status:** ✅ shipped 2026-09-25 via [#695](https://github.com/ErikFortune/fgv/pull/695) into
