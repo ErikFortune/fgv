@@ -232,3 +232,16 @@ finding and two summary-only ones (not posted as threads), all verified and appl
 - Revert checks: each new test goes red with its fix reverted (disposition 1/30, renderer 1/71,
   disposition 1/30). Suite 1,705 tests in 70 suites, 100 % every metric, zero `c8 ignore`; `rushx
   build`/`lint` zero warnings.
+
+## Copilot round 3 (#698) — applied
+
+- **A discharged update an open receipt still names could leave** (retention rule, cleanup's
+  discharged set, `supersedable`). With overlapping receipts, acknowledging the newer one puts the id
+  in the exact history while the older unacknowledged manifest still names it; pruning or archive then
+  dropped the payload, contrary to design § 9 ("pruned only after … no live receipt pins it") and § 8
+  ("a satisfied update still pinned by a live receipt remains protected"). Fixed at all three sites;
+  cleanup reports such a task `unchanged`; `prunableTasks` documents that it is a hint that may name
+  one. The candidate index itself does not track pins — pruning re-decides from durable evidence.
+- Two duplicated words ("owed owed") in `CAPABILITIES.md` and a `TaskBroker` doc comment.
+- Revert checks: disposition 1/31, disposition 1/31, pruning 1/5. Suite 1,707 tests, 100 % every
+  metric, zero `c8 ignore`; one unreachable `?.` replaced by a non-null read with its invariant.

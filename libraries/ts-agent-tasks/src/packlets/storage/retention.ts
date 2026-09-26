@@ -124,6 +124,14 @@ export function checkRetention(params: {
         return propagate(held);
       }
       if (held.value.discharged.has(update.id)) {
+        // Discharged, but an unacknowledged receipt still names it — an overlapping receipt was
+        // acknowledged first. A live receipt keeps its payload until it is acknowledged, abandoned
+        // or expires and is evicted.
+        if (held.value.pinned.has(update.id)) {
+          return blocked(
+            `update ${update.id} is named by an issued receipt that is not acknowledged; it cannot leave yet`
+          );
+        }
         continue;
       }
       const newer: ITaskUpdate | undefined = added.find(
@@ -171,8 +179,9 @@ export function checkRetention(params: {
 }
 
 /**
- * The ids of the updates every audience member has discharged, by durable evidence: what cleanup may
- * prune. An update owed to no one is left for the ordinary commit path.
+ * The ids of the updates every audience member has discharged and no member's unacknowledged receipt
+ * names, by durable evidence: what cleanup may prune. An update owed to no one is left for the
+ * ordinary commit path.
  * @internal
  */
 export function dischargedUpdates(
@@ -190,7 +199,7 @@ export function dischargedUpdates(
       if (held.isFailure()) {
         return propagate(held);
       }
-      all = all && held.value.discharged.has(update.id);
+      all = all && held.value.discharged.has(update.id) && !held.value.pinned.has(update.id);
     }
     if (all) {
       discharged.add(update.id);
@@ -219,8 +228,9 @@ export function withoutUpdates(
 
 /**
  * Whether a newer routine update owed to `audience` may supersede `update`, from resident state: its
- * category is not required, and every member still owed it is active, takes coalescing, is in `audience`, and
- * has no unacknowledged receipt naming it. A plan only — the commit re-decides from durable evidence.
+ * category is not required, no member has an unacknowledged receipt naming it, and every member still
+ * owed it is active, takes coalescing and is in `audience`. A plan only — the commit re-decides from
+ * durable evidence.
  * @internal
  */
 export function isSupersedable(
@@ -234,7 +244,9 @@ export function isSupersedable(
   }
   return update.audience.every((member) => {
     if (!index.isOwed(member, update.id)) {
-      return true;
+      // Discharged: supersedable unless a live receipt still names it. Every audience member is a
+      // retained subscription, active or closed: open refuses an audience naming any other.
+      return !book.stateOf(member)!.pinned.has(update.id);
     }
     const state = book.subscriptions.get(member);
     return (

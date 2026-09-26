@@ -157,4 +157,54 @@ describe('supersedable answers by category, never by the flag', () => {
     expect(repository.supersedable(owed, [s1])).toBe(false);
     expect(repository.supersedable({ ...owed, required: false }, [s1])).toBe(false);
   });
+
+  test('a discharged update an open receipt still names is not supersedable', async () => {
+    const repository = (
+      await FileTreeTaskRepository.initialize(
+        params(memoryRoot(), 'session', { checkpoints: new InMemoryCheckpointStore() })
+      )
+    ).orThrow();
+    await subscribeTo(repository, 's1', [A], undefined, true);
+    await addTask(repository, 't', { scopes: [A] });
+    const current = await record(repository);
+    const owed = (current.recordType === 'resolved' ? current.updates : [])[0];
+    // The owed update read as routine, so only the pin decides.
+    const asRoutine = { ...owed, category: 'progress' as const, required: false };
+    const receipt = (deliveryId: string): never =>
+      ({
+        version: 1,
+        deliveryId,
+        included: [{ taskId: 't', revision: 1, updateIds: [lifecycle1] }]
+      } as never);
+    let revision = 1;
+    for (const deliveryId of ['d1', 'd2']) {
+      (
+        await repository.withWriter((w) =>
+          w.issueReceipt({
+            subscriptionId: s1,
+            expectedRecordRevision: revision++,
+            receipt: receipt(deliveryId),
+            issuedAt: at as Instant,
+            expiresAt: later
+          })
+        )
+      ).orThrow();
+    }
+    const ack = async (deliveryId: string): Promise<void> => {
+      (
+        await repository.withWriter((w) =>
+          w.acknowledgeReceipt({
+            subscriptionId: s1,
+            expectedRecordRevision: revision++,
+            deliveryId: deliveryId as DeliveryId,
+            at: at as Instant
+          })
+        )
+      ).orThrow();
+    };
+    await ack('d2');
+    expect(repository.supersedable(asRoutine, [s1])).toBe(false);
+    await ack('d1');
+    expect(repository.supersedable(asRoutine, [s1])).toBe(true);
+  });
 });

@@ -491,6 +491,38 @@ describe('pruning and archive', () => {
     expect(again.recordRevision).toBe(pruned.recordRevision);
   });
 
+  test('a discharged update an open receipt still names stays until that receipt is settled', async () => {
+    const { repository } = await fixture();
+    // Overlapping receipts: acknowledging the newer one discharges the id the older one names.
+    await issue(repository, 'd1', [uid('t', 1, 'lifecycle')]);
+    await issue(repository, 'd2', [uid('t', 1, 'lifecycle')]);
+    await acknowledge(repository, 'd2');
+    expect(await owedIds(repository)).toEqual([]);
+    const held = (await repository.withWriter((w) => w.pruneTask('t' as TaskId))).orThrow();
+    expect(held.recordType === 'resolved' && held.updates.map((u) => u.id)).toEqual([
+      uid('t', 1, 'lifecycle')
+    ]);
+    const current = await recordOf(repository);
+    expect(
+      await repository.withWriter((w) =>
+        w.commit({
+          purpose: 'maintenance',
+          taskId: 't' as TaskId,
+          expectedRevision: current.task.envelope.revision,
+          expectedRecordRevision: current.recordRevision,
+          record: nextDraft(current, { dropUpdates: true })
+        })
+      )
+    ).toFailWithDetail(
+      /issued receipt that is not acknowledged/i,
+      expect.objectContaining({ code: 'retention-blocked' })
+    );
+    // Once the older receipt is acknowledged too, the payload may go.
+    await acknowledge(repository, 'd1');
+    const pruned = (await repository.withWriter((w) => w.pruneTask('t' as TaskId))).orThrow();
+    expect(pruned.recordType === 'resolved' && pruned.updates).toEqual([]);
+  });
+
   test('pruning drops only what every audience member discharged', async () => {
     const { repository } = await fixture();
     await subscribeTo(repository, 's2', [A]);

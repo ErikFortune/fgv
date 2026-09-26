@@ -166,7 +166,7 @@ export class TaskBroker {
 
   /**
    * Closes a subscription — a trusted host operation. It joins no audience again; `retain` keeps what
-   * it is owed owed and drainable through its bound delivery, `dispose` ends all of it with the
+   * it is owed and drainable through its bound delivery, `dispose` ends all of it with the
    * reason. The record and its history are retained, and its id is never reused.
    *
    * @remarks

@@ -402,7 +402,8 @@ export interface ITaskRepository {
   unsettledCommands(request: IListCompletionCandidateQuery): Promise<TaskResult<ReadonlyArray<TaskId>>>;
   /**
    * Tasks retaining an update every audience member has discharged, by the committed checkpoints —
-   * the cleanup candidates — ordered by id. A hint: pruning re-verifies the durable evidence.
+   * the cleanup candidates — ordered by id. A hint: pruning re-verifies the durable evidence, and
+   * leaves an update an unacknowledged receipt still names.
    */
   prunableTasks(request: IListCompletionCandidateQuery): Promise<TaskResult<ReadonlyArray<TaskId>>>;
   /** A source's committed checkpoint record, if it has one. Reads no task record. */

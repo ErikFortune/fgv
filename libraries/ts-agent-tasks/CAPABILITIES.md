@@ -482,7 +482,7 @@ pressure, not cleanup — ends one. Both land in the subscription's exact histor
   the obligation already reserved; it needs no new capacity.
 - **`TaskBroker.closeSubscription(binding, { subscriptionId, obligations, reason? })`** — the
   subscription joins no audience again and releases its future-update reservation. `retain` keeps
-  what it is owed owed, drainable through its bound delivery (a closed subscription's `prepare`
+  what it is owed, drainable through its bound delivery (a closed subscription's `prepare`
   presents only what it is still owed); `dispose` abandons its unacknowledged receipts and disposes
   everything it is owed, with `reason`. Its record, identity slot and history are retained; its id
   is never reused. Once a closed subscription owes nothing it releases its 64 KiB preparation.
