@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-agent-tasks",
+      "comment": "Internal: the repository's committed-files layer (manifest fingerprint, classified atomic writes, fingerprint-verified record reads) moves to its own module; no public surface change.",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-agent-tasks"
+}

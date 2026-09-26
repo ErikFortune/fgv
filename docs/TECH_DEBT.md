@@ -485,6 +485,28 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
   there. The `storeIdentity` / `storeCoverage` / `vectorRecordSource` boundaries are all defensible,
   but none of them was chosen; they were the smallest thing that fit.
 
+  **Re-swept 2026-09-26 by `agent-tasks-t8b`, before its first change** (same command). The three
+  `ai-assist` files at 1997–2000 are gone from the list (split since); `ts-agent-tasks`'
+  `storage/repository.ts` had arrived at **1993**, and was refactored *before* the stream's work
+  rather than inside it — its committed-files layer (manifest fingerprint, classified atomic writes,
+  fingerprint-verified record reads) moved to `storage/committedFiles.ts`, chosen because it is a
+  layer the class calls down into through two callbacks rather than a protocol that would need a
+  twenty-member host into the class's state (`agent-tasks-t8b` `result.md` § *Phase 0*). **1808**
+  after; `etc/ts-agent-tasks.api.md` byte-identical.
+
+  | lines | file | headroom |
+  |---|---|---|
+  | 1989 | `ts-utils/src/test/unit/result.test.ts` | 11 |
+  | 1982 | `ts-json-base/src/test/unit/jsonCompatible.test.ts` | 18 |
+  | 1945 | `ts-extras/src/test/unit/crypto/keystore/keyStore.test.ts` | 55 |
+  | 1907 | `ts-agent-memory/src/packlets/store/fileTreeMemoryStore.ts` | 93 |
+  | 1899 | `ts-prompt-assist/src/test/unit/foundation.test.ts` | 101 |
+  | 1870 | `ts-extras/src/test/unit/ai-assist/apiClient.structuredOutput.test.ts` | 130 |
+  | 1849 | `ts-extras/src/packlets/ai-assist/model.ts` | 151 |
+  | 1808 | `ts-agent-tasks/src/packlets/storage/repository.ts` | 192 (was 7) |
+
+  The first four remain this entry's open work, for a chore outside any feature stream.
+
   *(Superseded framing, kept for the measurement trail:)* **1995 lines as of
   `agent-memory-derived-state-reconciliation` (2026-08-15)** — the headroom
   narrowed again, and by the mechanism this entry predicted. It was 1991 after
