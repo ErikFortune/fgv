@@ -193,6 +193,24 @@ pending-command check in archive (the purpose rules refuse it first), and a `?.`
 audience member of a new update (commits name only active subscriptions). Each site carries the
 invariant as a comment.
 
+## Revert checks — on the final source
+
+Each row mutates one protection, rebuilds, runs the full suite (1,700 tests, 70 suites), and restores.
+A protection no test notices is a protection nobody has located; every row goes red.
+
+| # | protection reverted | red of 1,700 | suites |
+|---|---|---|---|
+| M1 | retention rule off (any owed update may leave) | 15 | broker/updates, delivery/disposition, delivery/retention, storage/conformance, storage/disposition, storage/pruning, storage/query, storage/subscriptions |
+| M2 | unreadable/missing evidence skipped instead of fencing | 1 | storage/pruning |
+| M3 | disposition skips the `dispose-obligation` policy | 8 | broker/sourceCommands, delivery/disposition, delivery/dispositionFaults |
+| M4 | disposition ignores unacknowledged receipt pins | 1 | storage/disposition |
+| M5 | abandonment admitted from any command state | 3 | storage/abandonment |
+| M6 | source replay passes a revision for an unregistered binding | 1 | broker/sourceReconcile |
+| M7 | closure keeps the subscription in audiences | 3 | delivery/disposition, storage/disposition |
+| M8 | expired receipts still pin at disposal | 1 | storage/disposition |
+| M9 | coalescing ignores receipt pins | 1 | storage/subscriptions |
+| M10 | archive ignores owed baseline obligations | 1 | storage/disposition |
+
 ## Hand-offs (routed to `docs/TECH_DEBT.md`)
 
 1. **PR 2 / T8b** — A3 saturation journeys, the profile decision above, M1 cohorts, the
