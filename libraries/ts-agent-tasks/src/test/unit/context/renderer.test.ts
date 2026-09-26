@@ -212,6 +212,19 @@ describe('TaskContextRenderer', () => {
       });
     });
 
+    test('one update id carrying two different coalescing gaps is a conflict', () => {
+      const parts = {
+        updates: [
+          { ...update('u1', 't1', 3, 'progress', false), coalesced: { fromRevision: 1 } },
+          { ...update('u1', 't1', 3, 'progress', false), coalesced: { fromRevision: 2 } }
+        ]
+      };
+      expect(renderer.render(input(parts))).toFailWithDetail(/conflicting values for one update id/i, {
+        code: 'conflict',
+        retry: 'after-host-action'
+      });
+    });
+
     test('one update id carrying two different updates is a conflict', () => {
       const parts = {
         updates: [update('u1', 't1', 2, 'progress', false), update('u1', 't1', 2, 'progress', true)]

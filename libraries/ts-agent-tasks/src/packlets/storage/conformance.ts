@@ -222,7 +222,11 @@ async function _commitChange(
         receipt: null
       }
     ],
-    updates: [...current.updates, _update(repository, current.task.envelope, envelope, 'lifecycle')],
+    // A tombstone carries no updates: an archive drops those nobody is owed, and is refused while
+    // any is still owed.
+    updates: [...current.updates, _update(repository, current.task.envelope, envelope, 'lifecycle')].filter(
+      (u) => !archive || u.audience.length > 0
+    ),
     archived: archive
   };
   return repository.withWriter((writer) =>

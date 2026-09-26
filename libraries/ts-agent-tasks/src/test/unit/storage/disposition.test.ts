@@ -674,6 +674,22 @@ describe('subscription closure at the storage boundary', () => {
     expect(revisionOf(repository)).toBe(revision);
   });
 
+  test('dispose abandons an open receipt even when nothing is owed any more', async () => {
+    const { repository } = await fixture();
+    // Overlapping receipts: the newer one is acknowledged, discharging the id the older one names.
+    await issue(repository, 'd1', [uid('t', 1, 'lifecycle')]);
+    await issue(repository, 'd2', [uid('t', 1, 'lifecycle')]);
+    await acknowledge(repository, 'd2');
+    expect(await owedIds(repository)).toEqual([]);
+    const closed = (await close(repository, 'dispose', 'consumer retired')).orThrow();
+    expect(closed.state).toBe('closed');
+    expect(closed.issued.map((m) => m.deliveryId)).toEqual(['d2']);
+    expect(closed.disposed).toEqual([]);
+    const revision = revisionOf(repository);
+    expect(await close(repository, 'dispose', 'again')).toSucceed();
+    expect(revisionOf(repository)).toBe(revision);
+  });
+
   test('dispose on a retained closed subscription ends what it kept', async () => {
     const { repository } = await fixture();
     (await close(repository, 'retain')).orThrow();
@@ -709,6 +725,41 @@ describe('subscription closure at the storage boundary', () => {
     await acknowledge(repository, 'd1');
     const again = await reopened({ ...f, repository });
     expect(await owedIds(again)).toEqual([]);
+  });
+});
+
+describe('an archived tombstone carries no updates', () => {
+  test('archive is refused while it would keep an update, even one owed to no one', async () => {
+    // No subscription exists, so nothing is owed and the retention rule has nothing to refuse.
+    const { repository } = await sessionRepositoryWith();
+    const current = await recordOf(repository, 'n');
+    const revision = (current.task.envelope.revision + 1) as TaskRevision;
+    const draft = nextDraft(current, {
+      envelope: { revision, lifecycle: succeeded },
+      operation: catalogOp('op-archive', 'archive', {}),
+      archived: true
+    });
+    const kept = {
+      id: taskUpdateId('n' as TaskId, revision, 'lifecycle'),
+      taskId: 'n' as TaskId,
+      revision,
+      category: 'lifecycle' as const,
+      required: true,
+      snapshot: { envelope: draft.task.envelope },
+      audience: []
+    };
+    expect(
+      await repository.withWriter((w) =>
+        w.commit({
+          purpose: 'operation',
+          operationId: 'op-archive' as never,
+          taskId: 'n' as TaskId,
+          expectedRevision: current.task.envelope.revision,
+          expectedRecordRevision: current.recordRevision,
+          record: { ...draft, updates: [kept] }
+        })
+      )
+    ).toFailWithDetail(/tombstone carries no updates/i, expect.objectContaining({ code: 'invalid' }));
   });
 });
 

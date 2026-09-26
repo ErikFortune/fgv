@@ -212,3 +212,23 @@ Two are already known to be coming:
 - Revert checks: each fix's new test goes red with the fix reverted (converter 1/16, pruning 1/4,
   disposition 1/28). Suite 1,702 tests in 70 suites, 100 % on every metric, zero `c8 ignore`; `rushx
   build`/`lint` zero warnings.
+
+## Copilot round 2 (#698) — applied
+
+CI green on `1103ea93`; round 1's five threads recorded as resolved. One posted "previously missed"
+finding and two summary-only ones (not posted as threads), all verified and applied:
+
+- **Closing with `dispose` when nothing is owed kept open receipts.** Reachable with overlapping
+  receipts: the newer one acknowledged discharges the id the older one names, so nothing is owed and
+  the no-op path left the older manifest holding its preparation claim. Now `dispose` always drops
+  unacknowledged manifests; the no-op applies only when that changes nothing.
+- **Context normalization ignored `coalesced`** when merging copies of one update id, so two copies
+  claiming different gaps collapsed silently. The marker is now part of the consistency key; copies
+  that disagree are a conflict.
+- **An archive could keep an update owed to no one**, so the tombstone was not payload-free. Storage
+  now refuses an archiving commit that keeps any update (`invalid`). The test fixtures and the
+  shipped conformance helper (`_commitChange`) had archived while keeping such updates; they now drop
+  them. `runTaskRepositoryConformance` has no consumer outside the package.
+- Revert checks: each new test goes red with its fix reverted (disposition 1/30, renderer 1/71,
+  disposition 1/30). Suite 1,705 tests in 70 suites, 100 % every metric, zero `c8 ignore`; `rushx
+  build`/`lint` zero warnings.

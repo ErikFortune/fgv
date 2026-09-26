@@ -837,10 +837,15 @@ export class SubscriptionRecords {
     return this._current(closure.subscriptionId, closure.expectedRecordRevision).onSuccess(
       ({ state, record }) => {
         const owed: ReadonlyArray<UpdateId> = host.index().owedIds(record.id);
+        // An unacknowledged manifest names obligations `dispose` ends (or, when an overlapping
+        // receipt was acknowledged first, ones already discharged): it can never be acknowledged, so
+        // it goes. An acknowledged one stays valid for replay.
+        const issued: ReadonlyArray<IIssuedTaskReceipt> =
+          closure.obligations === 'dispose' ? record.issued.filter((m) => m.acknowledged) : record.issued;
         if (closure.obligations === 'retain' || owed.length === 0) {
-          return record.state === 'closed'
+          return record.state === 'closed' && issued.length === record.issued.length
             ? ok(record)
-            : this._replace(state, record, { issued: record.issued, state: 'closed' });
+            : this._replace(state, record, { issued, state: 'closed' });
         }
         const disposed: ReadonlyArray<UpdateId> = [...owed].sort();
         return this._replace(
@@ -848,9 +853,7 @@ export class SubscriptionRecords {
           record,
           {
             state: 'closed',
-            // An unacknowledged manifest names obligations that are now disposed: it could never be
-            // acknowledged, so it goes too. An acknowledged one stays valid for replay.
-            issued: record.issued.filter((m) => m.acknowledged),
+            issued,
             disposed: _withDispositions(record, disposed, reason.value!),
             baseline: _withoutBaselines(record, disposed)
           },

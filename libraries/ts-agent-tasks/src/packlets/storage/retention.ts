@@ -153,6 +153,14 @@ export function checkRetention(params: {
     if (next.some((u) => u.audience.length > 0)) {
       return blocked(`updates are still owed; they must be acknowledged or disposed of first`);
     }
+    if (next.length > 0) {
+      return taskFailure(
+        `commit ${taskId}: an archived tombstone carries no updates`,
+        'invalid',
+        'after-host-action',
+        detail
+      );
+    }
     if (params.baselinesOwed > 0) {
       return blocked(
         `a baseline obligation for it is still owed; it must be acknowledged or disposed of first`

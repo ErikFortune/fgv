@@ -171,12 +171,19 @@ export async function change(
     archived: options.archive ?? false
   });
   const env: ITaskEnvelope = draft.task.envelope;
+  const added = owed(
+    repository,
+    current.task.envelope,
+    env,
+    options.archive === true ? 'relationship' : 'lifecycle'
+  );
+  // A tombstone carries no updates: archive only ever drops what nobody is owed.
   const withUpdate: IResolvedTaskRecordDraft = {
     ...draft,
-    updates: [
-      ...draft.updates,
-      owed(repository, current.task.envelope, env, options.archive === true ? 'relationship' : 'lifecycle')
-    ]
+    updates:
+      options.archive === true
+        ? [...draft.updates, added].filter((u) => u.audience.length > 0)
+        : [...draft.updates, added]
   };
   return (
     await repository.withWriter((w) =>
