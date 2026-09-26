@@ -7,7 +7,7 @@ be enough to resume cold. Keep it current as you go — it is not a write-once d
 
 ## Status
 
-**In progress (2026-09-26).** Required reading done — every file exists and every plan section says
+**In progress (2026-09-26) — mechanism complete; docs/review/coverage next; split proposed.** Required reading done — every file exists and every plan section says
 what the brief claims (no missing-input gap). Base builds; `rushx test` green (100 %, ~100 s).
 Design below; falsifier tests are written before the disposition path.
 
@@ -119,6 +119,29 @@ lets the next pass apply it. `observed-state` keeps moving on.
 ## Work log
 
 - 2026-09-26: read everything; design above.
+- Falsifiers first (`storage/pruning.test.ts`): on the base, a maintenance commit dropped an owed
+  required update and freed its capacity (**red**); a prune after the checkpoint store lost the
+  record succeeded (**red**). Both green after the retention rule (commit f4f652a1 on this branch).
+- Storage mechanism (f4f652a1), broker surface (2b4b0ec9), source-replay cursor stop + outstanding
+  report, real-Node crash cases for dispose/cleanup/archive. Full suite green (1,665 tests) on each.
+- Re-decided T7/T3 tests that pinned the replaced behaviour — recorded for `result.md`:
+  `delivery/retention.test.ts` (rewritten: 2 survive, the "blocked even once acknowledged" test is
+  inverted), `storage/subscriptions.test.ts` (3: drop-releases-link → refused unless coalescing;
+  drop-and-add at limit → needs a coalescing subscription), `storage/commit.test.ts` (required
+  pruned only by maintenance → any commit may drop an update owed to no one),
+  `storage/query.test.ts` + `conformance.ts` check (owed survives archive → owed holds archive),
+  `delivery/accounting.test.ts` (acknowledged baseline stays in record → leaves it),
+  `broker/sourceReconcile.test.ts` (two-spellings test used an unregistered reference).
+
+## Split proposal (raised 2026-09-26, orchestrator's decision)
+
+Mechanism is complete at +4,145/−189 over 50 files, before docs, coverage closure and review
+rounds. The remaining deliverables — the full A3 saturation-journey matrix for every § 8.6
+dimension with exact used/reserved transfers across crash points, the profile arithmetic and
+decision, and the M1 cohort run — are a second, separable body of work that depends on the
+mechanism but on nothing in it being reshaped. **Proposed:** PR 1 = mechanism + host runbook +
+its reviews (this branch); PR 2 = A3 journeys + profile qualification + M1, off `integration`
+after PR 1 lands. I am continuing PR 1's docs/review/coverage work, which is needed either way.
 
 ## Open questions for the orchestrator
 
@@ -133,3 +156,4 @@ Two are already known to be coming:
 2. **A split, if the diff outgrows one reviewable PR.** T7 was 83 files and +12,111/−605 with a
    six-round Copilot loop, and T8's deliverable list is longer. Raising this early is much cheaper
    than at round eight; it is the orchestrator's decision to take, but yours to raise.
+   → **Raised** — see *Split proposal* above.
