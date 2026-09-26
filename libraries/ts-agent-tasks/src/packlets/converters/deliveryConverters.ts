@@ -5,6 +5,7 @@
 
 import { Converter, Converters, Result, fail, succeed } from '@fgv/ts-utils';
 import {
+  IAbandonCommandRequest,
   ICloseSubscriptionRequest,
   IDisposeObligationsRequest,
   IIssuedTaskReceipt,
@@ -75,6 +76,7 @@ export interface IDeliveryConverters {
   readonly subscriptionClosure: Converter<ITaskSubscriptionClosure>;
   readonly disposeRequest: Converter<IDisposeObligationsRequest>;
   readonly closeRequest: Converter<ICloseSubscriptionRequest>;
+  readonly abandonCommandRequest: Converter<IAbandonCommandRequest>;
 }
 
 /** Whether values are strictly ascending — unique and in canonical order. */
@@ -354,7 +356,15 @@ export function buildDeliveryConverters(
       reason: dispositionReason.optional()
     }).withConstraint(closureRule);
 
+  const abandonCommandRequest: Converter<IAbandonCommandRequest> =
+    Converters.strictObject<IAbandonCommandRequest>({
+      taskId: ids.taskId,
+      operationId: ids.operationId,
+      reason: dispositionReason
+    });
+
   return {
+    abandonCommandRequest,
     disposition,
     dispositionReason,
     obligationDisposal,

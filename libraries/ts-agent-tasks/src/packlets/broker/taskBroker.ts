@@ -9,6 +9,9 @@ import { TaskContextRenderer } from '../context';
 import {
   IBoundTaskDelivery,
   IBoundTaskDeliveryParams,
+  ICommandReceipt,
+  ITaskCleanupReport,
+  ITaskDispositionResult,
   IBoundTaskView,
   IBoundTaskViewParams,
   IBoundTaskWriter,
@@ -39,6 +42,7 @@ import {
   defaultReceiptLifetimeMs,
   subscribe
 } from './delivery';
+import { abandonCommand, cleanup, closeSubscription, disposeObligations } from './disposition';
 import { extendReplayEnvelope, registerExternal } from './creation';
 import { observeBinding, observeTask, reconcileSource, recoverTask } from './reconciliation';
 import { ok, propagate as propagateTask, taskFailure } from './failures';
@@ -139,6 +143,70 @@ export class TaskBroker {
   ): Promise<TaskResult<ITaskSubscription>> {
     const access: TaskResult<AccessContext> = this._access(binding);
     return access.isFailure() ? propagateTask(access) : subscribe(this._core, access.value, request);
+  }
+
+  /**
+   * Ends obligations of one subscription without acknowledgement — a trusted host operation, recorded
+   * with its reason in the subscription's exact history. See {@link IDisposeObligationsRequest}.
+   * (T8.)
+   *
+   * @remarks
+   * `binding`'s policy must allow `dispose-obligation` on every task the ids name, and the
+   * subscription's selection must lie within its selectors; otherwise the answer is
+   * `not-found-or-denied`. Every id must be owed now or already discharged; an id an unacknowledged
+   * issued receipt names is refused until that receipt is acknowledged or abandoned. The obligation
+   * ends for this subscription alone and consumes the evidence slot it already reserved.
+   */
+  public async dispose(
+    binding: IBoundTaskViewParams,
+    request: unknown
+  ): Promise<TaskResult<ITaskDispositionResult>> {
+    const access: TaskResult<AccessContext> = this._access(binding);
+    return access.isFailure() ? propagateTask(access) : disposeObligations(this._core, access.value, request);
+  }
+
+  /**
+   * Closes a subscription — a trusted host operation. It joins no audience again; `retain` keeps what
+   * it is owed owed and drainable through its bound delivery, `dispose` ends all of it with the
+   * reason. The record and its history are retained, and its id is never reused. (T8.)
+   *
+   * @remarks
+   * `binding`'s policy must allow `dispose-obligation` over the subscription's scopes, and — for
+   * `dispose` — on every task it is owed an update of.
+   */
+  public async closeSubscription(
+    binding: IBoundTaskViewParams,
+    request: unknown
+  ): Promise<TaskResult<ITaskSubscription>> {
+    const access: TaskResult<AccessContext> = this._access(binding);
+    return access.isFailure() ? propagateTask(access) : closeSubscription(this._core, access.value, request);
+  }
+
+  /**
+   * Abandons one external command whose outcome is not known — never sent, sent with an uncertain
+   * outcome and held, or awaiting a feed revision — a trusted host operation. The receipt becomes
+   * `abandoned`, naming what was known; it never claims the command was or was not applied. Its
+   * settlement reservation is released and the task can be archived. (T8.)
+   *
+   * @remarks
+   * `binding`'s policy must allow `dispose-obligation` on the task. A command already abandoned
+   * returns its receipt; any other settled command is `conflict`.
+   */
+  public async abandonCommand(
+    binding: IBoundTaskViewParams,
+    request: unknown
+  ): Promise<TaskResult<ICommandReceipt>> {
+    const access: TaskResult<AccessContext> = this._access(binding);
+    return access.isFailure() ? propagateTask(access) : abandonCommand(this._core, access.value, request);
+  }
+
+  /**
+   * One cleanup pass — a trusted host operation: prunes the update payloads every audience member has
+   * acknowledged or disposed, by each one's durable checkpoint, on up to `limit` candidate tasks.
+   * Ends no obligation and needs no authority beyond the evidence already committed. (T8.)
+   */
+  public async cleanup(request: unknown): Promise<TaskResult<ITaskCleanupReport>> {
+    return cleanup(this._core, request);
   }
 
   /**

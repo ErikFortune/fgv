@@ -22,6 +22,7 @@ import {
   ITaskCommitRecord,
   ITaskConsumerRecord,
   ITaskEnvelope,
+  ITaskUpdate,
   ITaskEnvironment,
   ITaskReceiptAbandonment,
   ITaskDispositionResult,
@@ -416,7 +417,14 @@ export interface ITaskRepository {
     after: ITaskEnvelope,
     category: UpdateCategory
   ): ReadonlyArray<SubscriptionId>;
-  /** A live subscription's resident descriptor — never its history. */
+  /**
+   * Whether a newer routine update of the same category, owed to `audience`, may supersede `update`
+   * (design § 9, coalescing): it is not required, and every member still owed it is active, takes
+   * coalescing, is in `audience`, and has no unacknowledged receipt naming it. Answered from resident
+   * state for planning; the commit re-decides from durable evidence. (T8.)
+   */
+  supersedable(update: ITaskUpdate, audience: ReadonlyArray<SubscriptionId>): boolean;
+  /** A retained subscription's resident descriptor — active or closed, never its history. */
   subscription(subscriptionId: SubscriptionId): TaskResult<ITaskSubscription | undefined>;
   /**
    * Discards the resident indexes and rebuilds them from the committed records, in bounded

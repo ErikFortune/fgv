@@ -8,7 +8,16 @@ import { IBoundTaskViewParams } from './broker';
 import { ITaskCapacityClaim } from './capacity';
 import { ITaskContext, ITaskContextBudget, ITaskInclusionReceipt } from './context';
 import { TaskResult } from './failure';
-import { ConsumerId, DeliveryId, Instant, OperationId, PageCursor, SubscriptionId, UpdateId } from './ids';
+import {
+  ConsumerId,
+  DeliveryId,
+  Instant,
+  OperationId,
+  PageCursor,
+  SubscriptionId,
+  TaskId,
+  UpdateId
+} from './ids';
 import { ITaskSelection } from './query';
 import { SourceHistoryContract } from './source';
 import { ITaskUpdate, UpdateCategory } from './updates';
@@ -364,6 +373,30 @@ export interface ICloseSubscriptionRequest {
   readonly subscriptionId: SubscriptionId;
   readonly obligations: TaskSubscriptionClosureMode;
   readonly reason?: string;
+}
+
+/**
+ * A request to abandon one external command through {@link TaskBroker.abandonCommand}. (T8.)
+ * @public
+ */
+export interface IAbandonCommandRequest {
+  readonly taskId: TaskId;
+  readonly operationId: OperationId;
+  readonly reason: string;
+}
+
+/**
+ * What one {@link TaskBroker.cleanup} pass did. (T8.)
+ *
+ * @remarks
+ * `pruned` tasks had discharged update payloads removed; `unchanged` candidates had nothing the
+ * durable evidence would let go. Cleanup ends no obligation — pruning removes only payloads every
+ * audience member already acknowledged or disposed.
+ * @public
+ */
+export interface ITaskCleanupReport {
+  readonly pruned: ReadonlyArray<TaskId>;
+  readonly unchanged: ReadonlyArray<TaskId>;
 }
 
 /**

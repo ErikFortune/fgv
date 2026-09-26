@@ -533,6 +533,25 @@ export class FileTreeTaskRepository implements ITaskRepository {
     return this._book.audience(before, after, category);
   }
 
+  /** {@inheritDoc ITaskRepository.supersedable} */
+  public supersedable(update: ITaskUpdate, audience: ReadonlyArray<SubscriptionId>): boolean {
+    if (update.required || this._index === undefined) {
+      return false;
+    }
+    return update.audience.every((member) => {
+      if (!this._index!.isOwed(member, update.id)) {
+        return true;
+      }
+      const state = this._book.subscriptions.get(member);
+      return (
+        state !== undefined &&
+        state.descriptor.policy.coalesceProgress &&
+        audience.includes(member) &&
+        !state.pinned.has(update.id)
+      );
+    });
+  }
+
   /** {@inheritDoc ITaskRepository.subscription} */
   public subscription(subscriptionId: SubscriptionId): TaskResult<ITaskSubscription | undefined> {
     return this._usable().onSuccess(() =>

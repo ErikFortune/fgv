@@ -19,7 +19,8 @@ import {
   SubscriptionId,
   TaskId,
   TaskLifecycleStatus,
-  UpdateCategory
+  UpdateCategory,
+  UpdateId
 } from '../types';
 import { DimensionAmounts, ILedgerEntry, heldCharges, zeroAmounts } from './ledger';
 import { utf8Length } from './layout';
@@ -60,6 +61,11 @@ export interface ISubscriptionState {
   readonly baselineBytes: number;
   readonly issued: ReadonlyArray<IIssuedDescriptor>;
   readonly claims: ReadonlyArray<ITaskCapacityClaim>;
+  /**
+   * Update ids an unacknowledged manifest names: its pins (design § 7 keeps pin membership resident).
+   * Planning reads them; cleanup still decides from the durable record.
+   */
+  readonly pinned: ReadonlySet<UpdateId>;
 }
 
 /**
@@ -107,7 +113,12 @@ export function subscriptionState(
     // index, and stays only in the record, as exact history.
     baselineBytes: _unacknowledgedBytes(record),
     issued: record.issued.map(issuedDescriptor),
-    claims: record.capacityClaims
+    claims: record.capacityClaims,
+    pinned: new Set(
+      record.issued
+        .filter((m) => !m.acknowledged)
+        .flatMap((m) => m.receipt.included.flatMap((e) => e.updateIds))
+    )
   };
 }
 

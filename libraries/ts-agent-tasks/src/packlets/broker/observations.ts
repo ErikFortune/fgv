@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 
+import { mergeUpdates } from './retention';
 import { JsonValue } from '@fgv/ts-json-base';
 import { Converter, Converters, Hash, Result, captureResult, succeed } from '@fgv/ts-utils';
 import { isRequiredCategory, planUpdates } from '../implementations';
@@ -29,7 +30,7 @@ import {
   UpdateCategory,
   isTerminalTaskStatus
 } from '../types';
-import { ITaskCommitRequest, ITaskRepositoryWriter } from '../storage';
+import { ITaskCommitRequest, ITaskRepository, ITaskRepositoryWriter } from '../storage';
 import { BrokerCore, canonicalKey, canonicallySame } from './core';
 import { codeOf, ok, propagate, taskFailure } from './failures';
 
@@ -217,6 +218,7 @@ function _confirmAwaiting(
 
 /** A resolved record replaced by an observation: execution fields from the source, catalog kept. */
 function _resolvedDraft(
+  repository: Pick<ITaskRepository, 'supersedable'>,
   current: IResolvedTaskCommitRecord,
   envelope: ITaskEnvelope,
   details: JsonValue,
@@ -229,7 +231,7 @@ function _resolvedDraft(
     task: { envelope, details },
     ...(sourceRevision !== undefined ? { sourceRevision } : {}),
     operations,
-    updates: [...current.updates, ...updates],
+    updates: mergeUpdates(repository, current.updates, updates),
     archived: current.archived
   };
 }
@@ -441,6 +443,7 @@ async function _applyInWriter(
           expectedRevision: before.revision,
           expectedRecordRevision: current.recordRevision,
           record: _resolvedDraft(
+            core.repository,
             current,
             after,
             current.task.details,
@@ -470,6 +473,7 @@ async function _applyInWriter(
           expectedRevision: before.revision,
           expectedRecordRevision: current.recordRevision,
           record: _resolvedDraft(
+            core.repository,
             current,
             after,
             current.task.details,
@@ -526,7 +530,15 @@ async function _applyInWriter(
     expectedRevision: before.revision,
     expectedRecordRevision: current.recordRevision,
     ...(mode === 'feed' ? { requiredUpdates: _required(categories) } : {}),
-    record: _resolvedDraft(current, next, projection.details, projection.revision, operations, updates)
+    record: _resolvedDraft(
+      core.repository,
+      current,
+      next,
+      projection.details,
+      projection.revision,
+      operations,
+      updates
+    )
   });
 }
 
@@ -632,6 +644,7 @@ export async function applyHealth(
         expectedRevision: before.revision,
         expectedRecordRevision: current.recordRevision,
         record: _resolvedDraft(
+          core.repository,
           current,
           after,
           current.task.details,
