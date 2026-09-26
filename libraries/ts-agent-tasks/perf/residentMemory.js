@@ -242,7 +242,11 @@ async function commit(repository, id, patch, archive) {
               receipt: null
             }
           ],
-          updates: current.updates,
+          // T8b harness correction (2026-09-26), outside the frozen manifest: since T8 PR 1 (#698) an
+          // archive writes a tombstone with no updates and storage refuses one that keeps any. Every
+          // update here is owed to no one, so dropping them at archive is what the real path does.
+          // No prediction, threshold or fixture shape changed; see agent-tasks-t8b result.md § M1.
+          updates: archive ? [] : current.updates,
           archived: archive
         }
       })
