@@ -25,9 +25,12 @@ reassignment, with authorization at every read and mutation — and **external s
 (`ITaskSource`, `ExternalTaskSource`): observation, paged reconciliation, recovery and command
 dispatch for work a source executes, with the source owning execution truth — and **delivery**
 (`TaskBroker.subscribe`, `bindDelivery`): subscriptions with persisted policies, receipt manifests
-issued before a context is returned, and exact-ID acknowledgement. Retention/pruning, tools and
-prompt integration follow in later slices, and are deliberately absent from the export surface
-rather than stubbed.
+issued before a context is returned, and exact-ID acknowledgement — and **retention**
+(`TaskBroker.dispose`, `closeSubscription`, `abandonCommand`, `cleanup`): obligations end only by
+acknowledgement or an authorized, recorded disposition, pruning and archive decide from durable
+checkpoints, and every incomplete operation is reportable. Cascade stop, tools and prompt
+integration follow in later slices, and are deliberately absent from the export surface rather
+than stubbed.
 
 ## Storing tasks durably — `FileTreeTaskRepository`
 
@@ -162,8 +165,7 @@ envelope schema) blocks open and is left byte-identical. A structurally valid ta
 not registered is **quarantined**: an advisory issue, readable through `readCommit`, `read` fails
 `unknown-kind-version`, commits are refused, and the file is never rewritten. Files the inventory
 does not name are reported and left alone. Consumer and source records are named in the
-inventory now so their absence is detectable; this release validates only their header
-(`ITaskRecordHeader`) and never writes them.
+inventory, so their absence is detectable, and are validated in full at open.
 
 **Capacity is admitted before anything is written.** Every registration reserves its whole
 terminal closeout (`maximumClosureCharges`), and an unresolved one its first resolution as well
@@ -462,9 +464,89 @@ a write landed fences the repository. A `process-crash` repository refuses a `se
 claims that already reserved it (closeout, resolution, settlement, replay) and held by the
 subscription until its exact id lands in lifetime history. At most `maxAudiencePerUpdate`
 subscriptions may cover one task. Each subscription holds a 64 KiB receipt-preparation reservation;
-a `current` baseline holds each covered task's payload until acknowledged — see
-`docs/TECH_DEBT.md` for the effective ceiling. **Archive is refused (`retention-blocked`) for any
-task a subscription covers, even once acknowledged, until retention/pruning ships.**
+a `current` baseline holds each covered task's payload until acknowledged or disposed — see
+`docs/TECH_DEBT.md` for the effective ceiling.
+
+## Retention — disposition, closure, pruning and archive
+
+**An obligation ends in exactly two ways: the consumer acknowledges its exact id, or a host
+disposes of it with a recorded reason.** Nothing else — not expiry, not revocation, not capacity
+pressure, not cleanup — ends one. Both land in the subscription's exact history
+(`ITaskConsumerRecord.acknowledged` / `.disposed`), which is retained for the record's life.
+
+- **`TaskBroker.dispose(binding, { subscriptionId, updateIds, reason })`** — a trusted host
+  operation; `binding`'s policy must also allow `dispose-obligation` on every task the ids name.
+  Every id must be owed now (or already discharged — reported, not rewritten); an id an
+  unacknowledged issued receipt names is refused until that receipt is acknowledged or abandoned.
+  The reason is bounded by the profile's `maxDispositionReasonBytes`. It converts the evidence slot
+  the obligation already reserved; it needs no new capacity.
+- **`TaskBroker.closeSubscription(binding, { subscriptionId, obligations, reason? })`** — the
+  subscription joins no audience again and releases its future-update reservation. `retain` keeps
+  what it is owed owed, drainable through its bound delivery (a closed subscription's `prepare`
+  presents only what it is still owed); `dispose` abandons its unacknowledged receipts and disposes
+  everything it is owed, with `reason`. Its record, identity slot and history are retained; its id
+  is never reused. Once a closed subscription owes nothing it releases its 64 KiB preparation.
+- **`TaskBroker.abandonCommand(binding, { taskId, operationId, reason })`** — ends tracking of an
+  external command whose outcome is not known (never sent, sent-and-held, or awaiting a
+  `source-replay` feed revision). The receipt becomes `{ state: 'abandoned', reason, from }`: it
+  never claims the command was or was not applied. The settlement reservation is released.
+- **Coalescing** — a subscription created with `policy.coalesceProgress: true` accepts that an
+  undelivered routine (`progress`/`observation`) update may be superseded by a newer one of the same
+  category, which records the gap in `ITaskUpdate.coalesced`. Required categories never coalesce,
+  and an update an unacknowledged receipt names is never superseded. Default `false`.
+
+**Pruning and archive decide from durable evidence, never from the resident index.** An update
+leaves a task record only when every audience member's checkpoint — read through the store and
+verified against what was committed — holds its id in the exact history (or it is coalesced as
+above). A checkpoint that cannot be read or verified **fences the repository and stops cleanup**;
+it is never skipped. `TaskBroker.cleanup({ limit })` prunes discharged payloads (the candidates
+come from `ITaskRepository.prunableTasks`). `archive` writes a tombstone that retains **no** update
+payload, and is refused (`retention-blocked`) while any update or baseline for the task is still
+owed, or any command is unsettled or awaiting its feed. The refusal a principal sees never names a
+subscription.
+
+**A `source-replay` feed never passes a binding no task holds.** A pass that meets a revision for
+an unregistered binding stops with the cursor unmoved (`stopped: 'unregistered-binding'`);
+registering the binding lets the next pass apply it. Register `source-replay` tasks before the
+source emits for them — the stop makes a missed ordering visible instead of silently lost.
+
+**Every incomplete operation is reportable.** `ITaskRepository.outstanding({ limit })` lists pending
+registrations and subscriptions (retry the same request), unsettled and feed-awaiting commands
+(`resolveCommands`, or `abandonCommand`), prunable tasks (`cleanup`) and each retained
+subscription's owed and pinned counts. Open's `ITaskRecoveryReport` remains the record of what open
+found and completed; `rebuildIndexes()` rebuilds every index above from the records.
+
+## Host runbook — capacity pressure and a full repository
+
+The limits are finite by design (a finite history horizon; see `docs/design/agent-tasks/`
+§ 8.6). There is **no supported deletion, identity reset, compaction or cross-root migration** —
+out-of-band file deletion is corruption, not maintenance, and open will report it as such.
+
+1. **Watch.** Poll `repository.capacityStatus()`. `pressure` means some dimension's
+   `used + reserved` is at or past 80% of its limit; `limitingRecordIds` names what holds it.
+   `draining` means a dimension has no headroom: ordinary growth that needs it is refused with
+   `backpressure` (`ICapacityFailure.reclaimableByCleanup` says whether cleanup could help).
+   `admission-blocked` means an `indeterminate` claim fences all growth — that is recovery, not
+   capacity: close and reopen, and read the recovery report.
+2. **Stop new admissions** at your own layer before the repository has to refuse them: stop
+   creating tasks, subscriptions and new command attempts. Everything already accepted keeps its
+   reservation — completing work, settling accepted commands, acknowledging, disposing, cleanup
+   and archive stay callable at a full repository.
+3. **Drain what is reclaimable**, in order: finish or cancel accepted tasks; settle commands
+   (`resolveCommands`), or abandon those whose outcome will never be known (`abandonCommand`);
+   have consumers prepare and acknowledge, abandon stale receipts, and dispose of or close
+   subscriptions that will never drain (`dispose`, `closeSubscription`); run `cleanup`; archive
+   terminal tasks. `outstanding()` lists each of these. This releases non-archived slots, payload
+   and receipt capacity — **not** retained identities, exact acknowledgement/disposition ids or
+   operation dedup evidence, which never shrink in v1.
+4. **At a lifetime ceiling** (retained tasks, subscriptions, sources, acknowledgement ids,
+   operations) the choices are: keep the repository available for reads and drain and accept no
+   further growth; or, after reviewing host memory and disk, **raise** the stored limits explicitly
+   with `raiseCapacityLimits` — which postpones exhaustion, it does not remove it. A drained
+   repository can be closed to release its memory; its files remain valid.
+5. **Never** delete record files, edit `repository.json`, or rotate to a new root to "free space":
+   each is either corruption open will refuse, or a loss of the obligations and history the
+   repository exists to keep.
 
 ## Rendering task context without a broker
 
@@ -683,8 +765,7 @@ fragment is caught at the mint rather than at the filename.
 
 ## Not in scope
 
-No retention or pruning policy, subscription closure or disposition, cascade stop, tool factory
-or prompt integration **yet** — those are later
+No cascade stop, tool factory or prompt integration **yet** — those are later
 slices, and their absence from the export surface is deliberate. **Permanently** out of scope: an input-request/answer protocol, a task runner or
 scheduler, an executor, a retry policy, cross-repository parenting, execution migration,
 multi-process ownership, general event sourcing, and dependency DAGs.
