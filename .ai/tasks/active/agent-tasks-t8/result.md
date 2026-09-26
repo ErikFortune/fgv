@@ -180,11 +180,16 @@ P2 coalescing-marker aggregation (invariant is structural; documented), P2 `aban
 **Independent persistence/delivery antagonist** — `state.md` § *Independent … antagonist*: one MED
 (expired receipts still pinned at disposal; fixed), and the list of recovery cases it checked sound.
 
-**Copilot** — see the PR.
+**Copilot** — four rounds on #698. Rounds 1–3 each found real defects (coalescing trusted the
+`required` flag; expired manifests not evicted on a no-op disposal; closure-dispose kept open
+receipts when nothing was owed; tombstones could keep audience-less updates; normalization ignored
+`coalesced`; a live receipt did not protect a discharged update). All applied except a storage-format
+migration, declined (unpublished package). Round 4 found nothing; loop stopped on diminishing
+returns. Details in `state.md`.
 
 ## Coverage closure
 
-100 % statements/branches/functions/lines, **zero `c8 ignore`**, 1,700 tests in 70 suites (`rushx
+100 % statements/branches/functions/lines, **zero `c8 ignore`**, 1,707 tests in 70 suites (`rushx
 test` in `libraries/ts-agent-tasks`). Branches that could not execute were removed, not tested: an
 evidence lookup for an audience member no book holds (open refuses such an audience), an
 acknowledgement of an id neither acknowledged nor owed (nothing ends an obligation a live manifest
@@ -195,21 +200,27 @@ invariant as a comment.
 
 ## Revert checks — on the final source
 
-Each row mutates one protection, rebuilds, runs the full suite (1,700 tests, 70 suites), and restores.
-A protection no test notices is a protection nobody has located; every row goes red.
+Re-run on the final source after the Copilot loop (`a5c11e68`). Each row mutates one protection,
+rebuilds, runs the full suite (1,707 tests, 70 suites), and restores. A protection no test notices
+is a protection nobody has located; every row goes red.
 
-| # | protection reverted | red of 1,700 | suites |
+| # | protection reverted | red of 1,707 | suites |
 |---|---|---|---|
-| M1 | retention rule off (any owed update may leave) | 15 | broker/updates, delivery/disposition, delivery/retention, storage/conformance, storage/disposition, storage/pruning, storage/query, storage/subscriptions |
+| M1 | retention rule off (any owed update may leave) | 17 | broker/updates, delivery/disposition, delivery/retention, storage/conformance, storage/disposition, storage/pruning, storage/query, storage/subscriptions |
 | M2 | unreadable/missing evidence skipped instead of fencing | 1 | storage/pruning |
 | M3 | disposition skips the `dispose-obligation` policy | 8 | broker/sourceCommands, delivery/disposition, delivery/dispositionFaults |
 | M4 | disposition ignores unacknowledged receipt pins | 1 | storage/disposition |
 | M5 | abandonment admitted from any command state | 3 | storage/abandonment |
 | M6 | source replay passes a revision for an unregistered binding | 1 | broker/sourceReconcile |
 | M7 | closure keeps the subscription in audiences | 3 | delivery/disposition, storage/disposition |
-| M8 | expired receipts still pin at disposal | 1 | storage/disposition |
+| M8 | expired receipts still pin at disposal | 2 | storage/disposition |
 | M9 | coalescing ignores receipt pins | 1 | storage/subscriptions |
 | M10 | archive ignores owed baseline obligations | 1 | storage/disposition |
+| M11 | a discharged update leaves while a live receipt names it | 1 | storage/disposition |
+
+Repo-wide on the same source: `rush rebuild` 37 operations and `rush test` 36 operations, exit 0,
+zero errors, zero NUL padding; the only "warning" line is Rush's pre-existing Git-tracked-symlink
+notice.
 
 ## Hand-offs (routed to `docs/TECH_DEBT.md`)
 
