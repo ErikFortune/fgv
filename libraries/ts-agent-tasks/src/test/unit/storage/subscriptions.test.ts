@@ -88,6 +88,16 @@ function readyOf(opened: TaskRepositoryOpenResult): ITaskRepository {
   return opened.repository;
 }
 
+/** The issue codes and messages of an open that required recovery; `[]` when it opened ready. */
+function codes(opened: TaskRepositoryOpenResult): string[] {
+  if (opened.state !== 'recovery-required') {
+    opened.repository.close();
+    return [];
+  }
+  opened.recovery.close();
+  return opened.recovery.report.issues.map((i) => `${i.code}: ${i.message}`);
+}
+
 function held(repository: ITaskRepository, dimension: string): number {
   const row = repository
     .capacityStatus()
@@ -226,6 +236,77 @@ describe('subscription registration: the ordered inventory protocol', () => {
       /not this registration's first record \(it is record revision 2\)/i,
       expect.objectContaining({ code: 'conflict' })
     );
+  });
+
+  test('a landed first record whose baseline was altered is never adopted — on resume or at open', async () => {
+    const { root, repository } = await faultyRepository();
+    await addTask(repository, 't', { scopes: [A] });
+    const commit = (await repository.readCommit('t' as TaskId)).orThrow()!;
+    const envelope = commit.recordType === 'resolved' ? commit.task.envelope : (undefined as never);
+    const request: ITaskSubscriptionRegistration = {
+      ...registration('s1'),
+      specification: { ...registration('s1').specification, start: 'current' },
+      baseline: [
+        {
+          id: 't:1:initial' as UpdateId,
+          taskId: 't' as TaskId,
+          revision: 1 as TaskRevision,
+          category: 'lifecycle',
+          required: true,
+          snapshot: { envelope },
+          audience: ['s1' as SubscriptionId]
+        }
+      ]
+    };
+    // The record lands; the manifest never goes live.
+    root.faults.push({ name: 'repository.json', when: 'before', visibility: 'unchanged', skip: 1 });
+    expect(await register(repository, request)).toFail();
+    const file = (): FileTree.IFileTreeFileItem =>
+      root.inner
+        .getChildren()
+        .orThrow()
+        .find((c) => c.name === 'consumer-s1.json') as FileTree.IFileTreeFileItem;
+    const landed = JSON.parse(file().getRawContents().orThrow());
+    // Same identity, same revision, same claims — only the baseline's payload is forged.
+    const forged = {
+      ...landed,
+      baseline: [
+        {
+          ...landed.baseline[0],
+          snapshot: { envelope: { ...landed.baseline[0].snapshot.envelope, title: 'forged' } }
+        }
+      ]
+    };
+    root.inner
+      .writeChildAtomically('consumer-s1.json', JSON.stringify(forged), { guarantee: 'session' })
+      .orThrow();
+    expect(await register(repository, request)).toFailWithDetail(
+      /its contents are not the first record this registration committed to write/i,
+      expect.objectContaining({ code: 'conflict' })
+    );
+    expect(repository.subscription('s1' as SubscriptionId)).toSucceedWith(undefined);
+    repository.close().orThrow();
+    expect(codes(await reopened(root))).toEqual([
+      expect.stringMatching(/integrity: .*not its first record: its contents are not the first record/)
+    ]);
+  });
+
+  test('a resume whose record never landed commits to its own first record before writing it', async () => {
+    const { root, repository } = await faultyRepository();
+    root.faults.push({ name: 'consumer-s1.json', when: 'before', visibility: 'unchanged' });
+    expect(await register(repository, registration('s1'))).toFail();
+    const before = inspectRepository(repository)!.book.pending.get('s1' as SubscriptionId)!.recordFingerprint;
+    const record = (await register(repository, registration('s1'))).orThrow();
+    // The retry minted a new preparation claim, so its first record — and the fingerprint the pending
+    // entry committed to before writing it — differ from the first attempt's.
+    expect(record.capacityClaims.length).toBe(2);
+    expect(before).toMatch(/^\d+:[0-9a-f]+$/);
+    repository.close().orThrow();
+    expect(
+      readyOf(await reopened(root))
+        .subscription('s1' as SubscriptionId)
+        .orThrow()?.id
+    ).toBe('s1');
   });
 
   test('a live subscription replays its registration and refuses another', async () => {
@@ -815,15 +896,6 @@ describe('subscription records at open', () => {
     return reopened(root);
   }
 
-  function codes(opened: TaskRepositoryOpenResult): string[] {
-    if (opened.state !== 'recovery-required') {
-      opened.repository.close();
-      return [];
-    }
-    opened.recovery.close();
-    return opened.recovery.report.issues.map((i) => `${i.code}: ${i.message}`);
-  }
-
   test('a preparation claim that does not match the manifests blocks', async () => {
     expect(
       codes(
@@ -961,7 +1033,7 @@ describe('subscription records at open', () => {
     const stray = (await register(other, registration('s1', [B]))).orThrow();
     write('consumer-s1.json', stray);
     expect(codes(await reopened(root))).toEqual([
-      expect.stringMatching(/integrity: .*not its first record: its registration or specification differs/)
+      expect.stringMatching(/integrity: .*not its first record: its contents are not the first record/)
     ]);
     write('consumer-s1.json', {
       ...stray,
@@ -969,7 +1041,7 @@ describe('subscription records at open', () => {
       capacityClaims: stray.capacityClaims
     });
     expect(codes(await reopened(root))).toEqual([
-      expect.stringMatching(/integrity: .*its activation claim differs/)
+      expect.stringMatching(/integrity: .*its contents are not the first record/)
     ]);
   });
 

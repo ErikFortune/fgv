@@ -219,7 +219,7 @@ task; a drop-and-add at exactly the per-subscription limit) and re-run red.
 
 ## Review
 
-*(Layer 1 and the Copilot loop — filled below as rounds complete.)*
+*(Layer 1 below; the Copilot loop after it, round by round.)*
 
 **Layer 1 (`code-reviewer`, before coverage closure).** No P1. Two P2, both fixed:
 1. `acknowledge` re-checked the epoch in its committing section but not per-task authorization — a
@@ -232,6 +232,17 @@ task; a drop-and-add at exactly the per-subscription limit) and re-run red.
 P3: four dead members removed (`selectionOf`, `DeliveryBook.fitsHistory`, `TaskIndex.owedLinksOf`,
 `CapacityLedger.remove`). Confirmed correct by the reviewer: exact-ID path, fail-closed store handling,
 adversarial coverage, no double counting in the delivery book.
+
+**Copilot round 1** — three findings, all real, all fixed (each revert-checked red on the fixed source):
+
+| # | finding | fix | revert |
+|---|---|---|---|
+| R1.1 | the default `FileTreeCheckpointStore.write` ignored `expectedRecordRevision`, so an out-of-band record could be overwritten before the read-back, which would then match | compare-and-write: the current record's revision is read first; a mismatch, an unreadable record or one with no revision is `unchanged` and nothing is written | M23 (1) |
+| R1.2 | adopting a landed first record checked only revision, identity and the activation claim id — a same-identity record with a forged **baseline** would be activated | the pending inventory entry now carries `recordFingerprint`, the canonical fingerprint of the exact first record it committed to write; a landed record is adopted (on resume, and completed at open) only when it matches. A resume whose record never landed re-pends under its own new first record before writing it | M24 (3) |
+| R1.3 | `CheckpointPort.readValue` captured only the call to `store.read` and chained on its raw answer, so a non-Result answer threw outside the capture | the answer is interpreted inside the capture; a value JSON cannot express is a failed read, not "no record" | M25 (3), M26 (1) |
+
+R1.2 replaces the identity and activation-claim comparisons (the fingerprint covers them) and adds a
+persisted field to the pending inventory entry — additive on an unreleased surface.
 
 ## Coverage closure
 

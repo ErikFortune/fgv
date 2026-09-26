@@ -200,6 +200,9 @@ export function buildDeliveryConverters(
     operationId: ids.operationId,
     principalKey,
     specification,
+    recordFingerprint: Converters.string.withConstraint((f) => /^\d+:[0-9a-f]+$/.test(f), {
+      description: 'a record fingerprint'
+    }),
     capacityClaims: capacity.claims
   });
   const consumerInventoryEntry: Converter<ITaskConsumerInventoryEntry> =

@@ -47,6 +47,40 @@ function faultyStore(): { root: FaultyRoot; store: FileTreeCheckpointStore } {
 }
 
 describe('FileTreeCheckpointStore.write', () => {
+  test('writes only over the revision the caller read', () => {
+    const { root, store } = faultyStore();
+    expect(store.write('sub-1' as SubscriptionId, 1, validRecord())).toFailWithDetail(
+      /expected record revision 1, holding 0/i,
+      'unchanged'
+    );
+    expect(store.write('sub-1' as SubscriptionId, 0, validRecord())).toSucceed();
+    // A second creation, or a replacement of a revision the store no longer holds, writes nothing.
+    root.clearWrites();
+    expect(store.write('sub-1' as SubscriptionId, 0, validRecord())).toFailWithDetail(
+      /expected record revision 0, holding 1/i,
+      'unchanged'
+    );
+    expect(
+      store.write('sub-1' as SubscriptionId, 2, { ...validRecord(), recordRevision: 3 })
+    ).toFailWithDetail(/expected record revision 2, holding 1/i, 'unchanged');
+    expect(root.writes).toEqual([]);
+    expect(store.write('sub-1' as SubscriptionId, 1, { ...validRecord(), recordRevision: 2 })).toSucceed();
+  });
+
+  test('a current record that cannot be read or has no revision is not overwritten', () => {
+    const { root, store } = faultyStore();
+    root.inner
+      .writeChildAtomically('consumer-sub-1.json', JSON.stringify({ nonsense: true }), {
+        guarantee: 'session'
+      })
+      .orThrow();
+    expect(store.write('sub-1' as SubscriptionId, 0, validRecord())).toFailWithDetail(
+      /cannot read the current record/i,
+      'unchanged'
+    );
+    expect(root.writes).toEqual([]);
+  });
+
   test('a record that cannot be canonicalized is refused before anything is written', () => {
     const { root, store } = faultyStore();
     const broken = { ...validRecord(), createdAt: (() => 'not json') as unknown as Instant };
@@ -58,7 +92,13 @@ describe('FileTreeCheckpointStore.write', () => {
 
   test('a creation write that lands but whose re-listing fails is reported unknown', () => {
     const { root, store } = faultyStore();
-    root.failChildren = true;
+    // The compare-and-write read lists the root first; only the re-listing after the write fails.
+    const real = root.writeChildAtomically.bind(root);
+    root.writeChildAtomically = (...args: Parameters<typeof real>): ReturnType<typeof real> => {
+      const written = real(...args);
+      root.failChildren = true;
+      return written;
+    };
     const written = store.write('sub-1' as SubscriptionId, 0, validRecord());
     expect(written.isFailure()).toBe(true);
     expect(written.detail).toBe('unknown');

@@ -56,7 +56,11 @@ export type CheckpointFault =
   /** `write` returns something that is not a result. */
   | 'not-a-result'
   /** `write` stores honestly, and every `read` after it fails. */
-  | 'fail-read-back';
+  | 'fail-read-back'
+  /** `read` returns something that is not a result. */
+  | 'read-not-a-result'
+  /** `read` answers a value JSON cannot express. */
+  | 'read-not-json';
 
 /**
  * A host checkpoint store over a map, which persists across repository reopen when the same
@@ -93,6 +97,10 @@ export class InMemoryCheckpointStore implements ITaskCheckpointStore {
       }
       case 'garbage':
         return succeed({ nonsense: true });
+      case 'read-not-a-result':
+        return { value: this.records.get(subscriptionId) } as unknown as Result<unknown>;
+      case 'read-not-json':
+        return succeed(() => this.records.get(subscriptionId));
       case 'fail-read-back':
         return this._wrote
           ? fail('checkpoint store read failed')

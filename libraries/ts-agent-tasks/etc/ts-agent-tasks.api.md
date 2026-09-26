@@ -835,6 +835,7 @@ export interface IPendingConsumerEntry {
     readonly operationId: OperationId;
     // (undocumented)
     readonly principalKey: string;
+    readonly recordFingerprint: string;
     // (undocumented)
     readonly specification: ITaskSubscriptionSpecification;
     // (undocumented)

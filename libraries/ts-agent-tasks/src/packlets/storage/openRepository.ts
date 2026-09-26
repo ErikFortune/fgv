@@ -1377,7 +1377,7 @@ function _scanConsumers(params: {
     }
     const record: ITaskConsumerRecord = read.read.record;
     if (entry.state === 'pending') {
-      const problem: string | undefined = firstRecordProblem(record, entry);
+      const problem: string | undefined = firstRecordProblem(read.read, entry);
       if (problem !== undefined) {
         scan.blocking(
           'integrity',

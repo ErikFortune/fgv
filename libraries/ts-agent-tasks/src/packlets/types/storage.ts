@@ -271,6 +271,12 @@ export interface IPendingConsumerEntry {
   readonly operationId: OperationId;
   readonly principalKey: string;
   readonly specification: ITaskSubscriptionSpecification;
+  /**
+   * The canonical fingerprint of the exact first record this registration committed to write. A
+   * record found at the name is adopted only when it matches, so a landed record whose contents
+   * were altered — its baseline included — is never activated.
+   */
+  readonly recordFingerprint: string;
   readonly capacityClaims: ReadonlyArray<ITaskCapacityClaim>;
 }
 

@@ -402,7 +402,7 @@ export class SubscriptionRecords {
   /** Step 1: the pending inventory entry, holding the activation reservation. */
   private _pend(
     registration: ITaskSubscriptionRegistration,
-    first: { readonly record: ITaskConsumerRecord }
+    first: { readonly record: ITaskConsumerRecord; readonly read: IConsumerRead }
   ): TaskResult<IPendingConsumerEntry> {
     const host: ISubscriptionHost = this._host;
     const id: SubscriptionId = registration.subscriptionId;
@@ -415,6 +415,7 @@ export class SubscriptionRecords {
       operationId: registration.operationId,
       principalKey: registration.principalKey,
       specification: registration.specification,
+      recordFingerprint: first.read.fingerprint,
       capacityClaims: [{ ...activation, ownership: 'pending', disposition: 'reserved' }]
     };
     const manifest: ITaskRepositoryManifest = _withConsumer(host.manifest(), entry);
@@ -454,7 +455,7 @@ export class SubscriptionRecords {
     const activation: ITaskCapacityClaim = entry.capacityClaims[0];
     return this._read(id).onSuccess((landed) => {
       if (landed !== undefined) {
-        const problem: string | undefined = firstRecordProblem(landed.record, entry);
+        const problem: string | undefined = firstRecordProblem(landed, entry);
         if (problem !== undefined) {
           return taskFailure<ITaskConsumerRecord>(
             `registerSubscription ${id}: the checkpoint store holds a record that is not this registration's ` +
@@ -476,9 +477,13 @@ export class SubscriptionRecords {
           units
         );
       }
+      // Nothing landed: this attempt's first record (a fresh baseline, a fresh preparation claim) is
+      // committed to first, by re-pending under its fingerprint, and only then written.
       return this._firstRecord(registration, activation.claimId, activation, units).onSuccess((first) =>
-        this._write(id, 0, first.read, registration.operationId).onSuccess(() =>
-          this._finish(entry, first, matched, units)
+        this._pend(registration, first).onSuccess((repended) =>
+          this._write(id, 0, first.read, registration.operationId).onSuccess(() =>
+            this._finish(repended, first, matched, units)
+          )
         )
       );
     });
@@ -959,36 +964,13 @@ export function pendingEntryOf(entry: IPendingConsumerEntry, profile: ITaskCapac
  * Why a stored record is not a pending registration's first record, if it is not.
  * @internal
  */
-export function firstRecordProblem(
-  record: ITaskConsumerRecord,
-  entry: IPendingConsumerEntry
-): string | undefined {
-  const activation: ITaskCapacityClaim | undefined = record.capacityClaims.find(
-    (c) => c.purpose === 'subscription-activation'
-  );
-  if (record.recordRevision !== 1) {
-    return `it is record revision ${record.recordRevision}`;
+export function firstRecordProblem(read: IConsumerRead, entry: IPendingConsumerEntry): string | undefined {
+  if (read.record.recordRevision !== 1) {
+    return `it is record revision ${read.record.recordRevision}`;
   }
-  if (
-    !canonicallyEqual(
-      {
-        registration: record.registration,
-        specification: {
-          consumerId: record.consumerId,
-          selection: record.selection,
-          start: record.start,
-          policy: record.policy
-        }
-      },
-      {
-        registration: { operationId: entry.operationId, principalKey: entry.principalKey },
-        specification: entry.specification
-      }
-    )
-  ) {
-    return `its registration or specification differs`;
-  }
-  return activation?.claimId === entry.capacityClaims[0].claimId ? undefined : `its activation claim differs`;
+  return read.fingerprint === entry.recordFingerprint
+    ? undefined
+    : `its contents are not the first record this registration committed to write`;
 }
 
 /**

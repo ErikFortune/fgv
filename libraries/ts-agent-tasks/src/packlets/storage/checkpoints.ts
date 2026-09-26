@@ -5,6 +5,7 @@
 
 import {
   Converter,
+  Converters,
   DetailedResult,
   Result,
   captureResult,
@@ -21,6 +22,13 @@ import {
 } from '../types';
 import { encodeRecord, fingerprintOf, parseJson, recordName } from './layout';
 import { RecordStore } from './recordStore';
+
+/** The one field a compare-and-write needs from whatever is stored. */
+const _revision: Converter<{ readonly recordRevision: number }> = Converters.object<{
+  readonly recordRevision: number;
+}>({
+  recordRevision: Converters.number
+});
 
 /**
  * The default checkpoint store: each subscription's record in the repository's own root, written
@@ -57,6 +65,24 @@ export class FileTreeCheckpointStore implements ITaskCheckpointStore {
     const encoded = encodeRecord(record);
     if (encoded.isFailure()) {
       return failWithDetail<true, CheckpointWriteVisibility>(encoded.message, 'unchanged');
+    }
+    // Compare-and-write: replace only the revision the caller read. A record that moved, appeared or
+    // vanished since is left as it is, and nothing is written.
+    const held: Result<number> = this.read(subscriptionId).onSuccess((current) =>
+      current === undefined
+        ? succeed(0)
+        : _revision.convert(current).onSuccess((c) => succeed(c.recordRevision))
+    );
+    if (held.isFailure() || held.value !== expectedRecordRevision) {
+      return failWithDetail<true, CheckpointWriteVisibility>(
+        held.isFailure()
+          ? `${recordName('consumer', subscriptionId)}: cannot read the current record: ${held.message}`
+          : `${recordName(
+              'consumer',
+              subscriptionId
+            )}: expected record revision ${expectedRecordRevision}, ` + `holding ${held.value}`,
+        'unchanged'
+      );
     }
     const written = this._store.write(recordName('consumer', subscriptionId), encoded.value.text);
     if (written.isFailure()) {
@@ -122,12 +148,25 @@ export class CheckpointPort {
    * the store holds none. Open reads this way so it can tell a newer storage format from damage.
    */
   public readValue(subscriptionId: SubscriptionId): Result<unknown> {
-    return captureResult(() => this.store.read(subscriptionId))
-      .onSuccess((inner) => inner)
-      .onSuccess((value) =>
-        value === undefined
+    // As with `write`, the store's answer is interpreted inside the capture: one that returns
+    // something that is not a result, or a value that is not JSON, fails the read.
+    return captureResult(() => {
+      const inner = this.store.read(subscriptionId);
+      if (inner.isFailure()) {
+        return { ok: false as const, message: String(inner.message) };
+      }
+      // `null` is "no record"; a value JSON cannot express (a function, say) stringifies to undefined.
+      const text: string | undefined | null = inner.value === undefined ? null : JSON.stringify(inner.value);
+      return { ok: true as const, text };
+    })
+      .onSuccess((answer) =>
+        !answer.ok
+          ? fail<unknown>(answer.message)
+          : answer.text === null
           ? succeed<unknown>(undefined)
-          : captureResult(() => JSON.stringify(value)).onSuccess((text) => parseJson(text))
+          : answer.text === undefined
+          ? fail<unknown>(`the checkpoint store returned a value that is not JSON`)
+          : parseJson(answer.text)
       )
       .withErrorFormat((message) => `checkpoint ${subscriptionId}: ${message}`);
   }

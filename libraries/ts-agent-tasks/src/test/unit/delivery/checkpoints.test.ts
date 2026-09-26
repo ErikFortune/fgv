@@ -289,7 +289,7 @@ describe('a checkpoint store misbehaving at the edges of a write', () => {
     expect(h.repository.health().state).toBe('unavailable');
   });
 
-  test('a resumed registration refuses a landed first record that carries no activation claim', async () => {
+  test('a resumed registration refuses a landed first record it did not commit to (here: no activation claim)', async () => {
     const store = new InMemoryCheckpointStore();
     const h = await deliveryHarness({ checkpoints: store });
     store.fault = 'fail-unchanged';
@@ -307,10 +307,53 @@ describe('a checkpoint store misbehaving at the edges of a write', () => {
       capacityClaims: landed.capacityClaims.filter((c) => c.purpose !== 'subscription-activation')
     });
     expect(await subscribeAs(h, 'sub')).toFailWithDetail(
-      /not this registration's first record \(its activation claim differs\)/i,
+      /not this registration's first record \(its contents are not the first record this registration committed to write\)/i,
       expect.objectContaining({ code: 'conflict' })
     );
   });
+});
+
+describe('a store whose read answer is not a result, or not JSON, fails closed', () => {
+  test.each<[CheckpointFault, RegExp]>([
+    ['read-not-a-result', /checkpoint sub: /i],
+    ['read-not-json', /returned a value that is not JSON/i]
+  ])('%s: an operation fences instead of throwing', async (fault, message) => {
+    const store = new InMemoryCheckpointStore();
+    const h = await deliveryHarness({ checkpoints: store });
+    await subscribed(h, 'sub');
+    await track(h.writer, 'a');
+    store.fault = fault;
+    expect(await deliveryOf(h, 'sub').prepare()).toFailWithDetail(
+      message,
+      expect.objectContaining({ code: 'storage-corrupt' })
+    );
+    expect(h.repository.health().state).toBe('unavailable');
+  });
+
+  test.each<CheckpointFault>(['read-not-a-result', 'read-not-json'])(
+    '%s: an open is blocked instead of throwing',
+    async (fault) => {
+      const store = new InMemoryCheckpointStore();
+      const h = await deliveryHarness({ checkpoints: store });
+      await subscribed(h, 'sub');
+      h.repository.close().orThrow();
+      store.fault = fault;
+      const { env } = clockedEnvironment(h.clock);
+      const opened = (
+        await FileTreeTaskRepository.open({
+          root: h.root,
+          mode: 'session',
+          environment: env,
+          registry: brokerRegistry(),
+          checkpoints: store
+        })
+      ).orThrow();
+      expect(opened.state).toBe('recovery-required');
+      if (opened.state === 'recovery-required') {
+        opened.recovery.close();
+      }
+    }
+  );
 });
 
 describe('durability: a weak checkpoint cannot be paired with durable task state', () => {
