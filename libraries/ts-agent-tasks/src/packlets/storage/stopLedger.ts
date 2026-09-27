@@ -22,8 +22,12 @@ import { IStopFacts } from './stopBook';
 // it is a stored claim: it is derived from the root's intents and the targets' records, like every
 // other ledger figure, so open recomputes it and nothing can drift.
 
-/** A worst-case UTF-8 width per UTF-16 unit of free single-line text: a three-byte BMP character. */
-const worstBytesPerUnit: number = 3;
+/**
+ * A worst-case encoded width per UTF-16 unit of free single-line text. A BMP character is at most three
+ * UTF-8 bytes, but a lone surrogate — which a single-line bound admits — is written by the record
+ * encoder as a six-byte `\uXXXX` escape. Control characters, the only other escaped units, are refused.
+ */
+const worstBytesPerUnit: number = 6;
 
 function _longest(values: ReadonlyArray<string>): string {
   return values.reduce((a, b) => (b.length > a.length ? b : a));
@@ -35,8 +39,8 @@ function _longest(values: ReadonlyArray<string>): string {
  * @remarks
  * Identifiers are ASCII by their syntax and bounded by the default identifier bound, which
  * construction may lower and never raise, so it is a ceiling for every repository. Free single-line
- * text — a source revision's epoch and token, a contract version — is counted at three bytes per
- * unit. Every other field is fixed framing.
+ * text — a source revision's epoch and token, a contract version — is counted at its widest encoding,
+ * six bytes per unit. Every other field is fixed framing.
  * @internal
  */
 export function maximumStopTargetBytes(): number {

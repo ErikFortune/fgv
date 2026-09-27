@@ -589,7 +589,7 @@ written) if any of it does not fit: **no target is dispatched to because an earl
 accepted attempt then lands, and the stop can be released, at a full repository; a *fresh* attempt
 is new admission and may be refused with `IStopResult.capacity`. The reservation is derived from the
 records, never stored, and shrinks as attempts land and targets are confirmed. It is large: with 400
-plain registrations under the default profile, a stop covers at most 211 of them (pinned by test),
+plain registrations under the default profile, a stop covers at most 210 of them (pinned by test),
 bound by `logical-bytes`.
 
 **Settlement.** Archiving the root of a `satisfied` cancel whose targets are all terminal settles

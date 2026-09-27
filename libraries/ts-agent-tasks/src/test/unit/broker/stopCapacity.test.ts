@@ -262,7 +262,7 @@ describe('A3 — a stop reserves for every target before it is accepted', () => 
     expect(second.state).toBe('blocked');
   });
 
-  test('under the default profile, 400 registered tasks admit a stop over at most 211 of them — bound by logical bytes', async () => {
+  test('under the default profile, 400 registered tasks admit a stop over at most 210 of them — bound by logical bytes', async () => {
     // Each target reserves one attempt bundle — 643,625 logical bytes — on top of the 976 KiB closeout
     // every registration already holds (T8b: 536 plain registrations, bound by logical bytes). Pinned by
     // search, not arithmetic: shrink the subtree one child at a time until the stop is admitted.
@@ -294,6 +294,6 @@ describe('A3 — a stop reserves for every target before it is accepted', () => 
       size--;
     }
     expect(refusal).toBe('logical-bytes');
-    expect(size).toBe(211);
+    expect(size).toBe(210);
   }, 300000);
 });

@@ -988,6 +988,48 @@ const T9_ROWS = [
     '      target.stableSourceEvidence !== undefined)',
     '      target.attempt > 0)',
     T9
+  ),
+  m(
+    'T9-47 a feed-confirmed command loses its stop marker',
+    B + 'observations.ts',
+    '      ...kept,\n      receipt: contradicted',
+    "      type: 'command',\n      operationId: op.operationId,\n      request: op.request,\n      principalKey: op.principalKey,\n      dispatch: op.dispatch,\n      receipt: contradicted",
+    T9
+  ),
+  m(
+    "T9-48 a native key held by something else is taken as this stop's refusal",
+    B + 'stopPump.ts',
+    '    return this._isOwn(storedOperation(after, this.targets[i].operationId))',
+    '    return this._isOwn(storedOperation(after, this.targets[i].operationId)) || !after.archived',
+    T9
+  ),
+  m(
+    "T9-49 a target's command key may be the stop's own operation id",
+    C + 'stopConverters.ts',
+    '    if (target.operationId === intent.id) {',
+    '    if (target.operationId === intent.id && intent.id.length < 0) {',
+    T9
+  ),
+  m(
+    'T9-50 two stops of one record may share a command key',
+    C + 'stopConverters.ts',
+    '    if (shared !== undefined) {',
+    '    if (shared !== undefined && intent.id.length < 0) {',
+    T9
+  ),
+  m(
+    'T9-51 a registration may carry a stop',
+    S + 'stopRules.ts',
+    "  if (draft.recordType === 'resolved' && (draft.stops ?? []).length > 0) {",
+    "  if (draft.recordType === 'resolved' && (draft.stops ?? []).length < 0) {",
+    T9
+  ),
+  m(
+    'T9-52 free text is sized at three bytes per unit',
+    S + 'stopLedger.ts',
+    'const worstBytesPerUnit: number = 6;',
+    'const worstBytesPerUnit: number = 3;',
+    T9
   )
 ];
 

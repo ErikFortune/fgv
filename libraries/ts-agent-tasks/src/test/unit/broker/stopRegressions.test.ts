@@ -12,8 +12,10 @@ import { failWithDetail, succeedWithDetail } from '@fgv/ts-utils';
 import {
   FileTreeTaskRepository,
   IResolvedTaskCommitRecord,
+  IResolvedTaskRecordDraft,
   ITaskCapacityProfile,
   ITaskFailure,
+  OperationId,
   TaskId,
   defaultTaskCapacityProfile
 } from '../../../index';
@@ -36,7 +38,7 @@ import {
   sourceRegistry
 } from '../../helpers/sourceFixtures';
 import { converters } from '../../helpers/fixtures';
-import { environment, memoryRoot } from '../../helpers/storageFixtures';
+import { environment, memoryRoot, registration } from '../../helpers/storageFixtures';
 import {
   CapabilityScript,
   faultyWriter,
@@ -563,5 +565,58 @@ describe('T9 Copilot round 3 regressions', () => {
         })
       )
     ).toFailWith(/target job is recorded confirmed, and nothing holds it stopped/);
+  });
+});
+
+// Copilot, round 4 on #701.
+describe('T9 Copilot round 4 regressions', () => {
+  test('a source-replay stop command confirmed by the feed keeps its marker, and its stop completes', async () => {
+    const h = await sourceHarness({ history: 'source-replay', capabilities: new CapabilityScript().ask });
+    await node(h.writer, 'root', { stopPolicy: 'cascade-pause' });
+    h.executor.addJob('job');
+    await registerJob(h, 'job', { parentId: tid('root') });
+    expect(await h.broker.reconcile({ sourceId: 'exec' })).toSucceed();
+    const accepted = (await stop(h, h.writer, 'root', 'pause')).orThrow();
+    (await pump(h.writer, accepted)).orThrow();
+    const key = (await persisted(h, accepted)).targets[1].operationId;
+    // Applied ahead of the feed: accepted, awaiting the revision the feed will carry.
+    expect((await recordOf(h, 'job')).operations.find((o) => o.operationId === key)).toMatchObject({
+      awaiting: expect.anything(),
+      stop: { intentId: accepted.intentId }
+    });
+    expect(await h.broker.reconcile({ sourceId: 'exec' })).toSucceed();
+    expect((await recordOf(h, 'job')).operations.find((o) => o.operationId === key)).toMatchObject({
+      receipt: { result: { state: 'applied' } },
+      stop: { rootId: 'root', intentId: accepted.intentId }
+    });
+    expect((await pump(h.writer, accepted)).orThrow().state).toBe('satisfied');
+  });
+
+  test('a registration carrying a stop is refused', async () => {
+    const h = await brokerHarness();
+    const request = registration('n');
+    const draft = request.record as IResolvedTaskRecordDraft;
+    const withStop = {
+      ...request,
+      record: {
+        ...draft,
+        stops: [
+          {
+            id: 's' as OperationId,
+            rootId: tid('n'),
+            mode: 'pause' as const,
+            requestedBy: 'alice',
+            targets: [
+              { taskId: tid('n'), attempt: 1, operationId: 'k' as OperationId, state: 'unexamined' as const }
+            ],
+            state: 'pending' as const,
+            topologyGeneration: 0
+          }
+        ]
+      }
+    };
+    expect(await h.repository.withWriter((writer) => writer.register(withStop))).toFailWith(
+      /a registration carries no stop/
+    );
   });
 });

@@ -89,21 +89,34 @@ function _intentInvariants(intent: IStopIntent): Result<IStopIntent> {
     if (keys.has(target.operationId)) {
       return fail(`stop ${intent.id}: command key '${target.operationId}' names two targets`);
     }
+    if (target.operationId === intent.id) {
+      return fail(`stop ${intent.id}: a target's command key is the stop's own operation id`);
+    }
     tasks.add(target.taskId);
     keys.add(target.operationId);
   }
   return succeed(intent);
 }
 
-/** A record's intents: each once, all of one root, and never two latching intents of one mode. */
+/**
+ * A record's intents: each once, all of one root, never two latching intents of one mode, and every
+ * command key used once across them all.
+ */
 function _intentsInvariants(intents: ReadonlyArray<IStopIntent>): Result<ReadonlyArray<IStopIntent>> {
   const ids: Set<string> = new Set<string>();
+  const keys: Set<string> = new Set<string>();
   const latching: Set<StopMode> = new Set<StopMode>();
   for (const intent of intents) {
     if (ids.has(intent.id)) {
       return fail(`stop ${intent.id}: recorded twice`);
     }
     ids.add(intent.id);
+    // A command key names one attempt in the whole record: across every stop, reports included.
+    const shared = intent.targets.find((target) => keys.has(target.operationId));
+    if (shared !== undefined) {
+      return fail(`stop ${intent.id}: command key '${shared.operationId}' is another stop's in this record`);
+    }
+    intent.targets.forEach((target) => keys.add(target.operationId));
     if (intent.rootId !== intents[0].rootId) {
       return fail(`stop ${intent.id}: a record holds only the stops of its own task`);
     }

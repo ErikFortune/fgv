@@ -236,13 +236,13 @@ describe('storage enforces how a stop is accepted and how it evolves', () => {
       expect(await raw(h, await root(h), { stops: [bump(2, accepted.targets[1].operationId)] })).toFailWith(
         /moves forward by one|needs a key no attempt holds/
       );
-      // A key another latching stop's attempt holds is not fresh either.
-      const cancel = await persisted(h, (await stop(h, h.writer, 'root', 'cancel')).orThrow());
-      const now = await root(h);
-      expect(await raw(h, now, { stops: [bump(2, cancel.targets[1].operationId), cancel] })).toFailWith(
+      // A key another root's latching stop is attempting with is not fresh either.
+      await node(h.writer, 'r2', { stopPolicy: 'cascade-pause' });
+      const other = await persisted(h, (await stop(h, h.writer, 'r2', 'pause')).orThrow());
+      expect(await raw(h, await root(h), { stops: [bump(2, other.targets[0].operationId)] })).toFailWith(
         /needs a key no attempt holds/
       );
-      expect(await raw(h, await root(h), { stops: [bump(2, op('fresh')), cancel] })).toSucceed();
+      expect(await raw(h, await root(h), { stops: [bump(2, op('fresh'))] })).toSucceed();
     });
 
     test("a stop command is admitted only as a live attempt of its own intent, and a stop's key cannot be taken", async () => {
@@ -326,17 +326,31 @@ describe('the intent converters hold a stop to its structure', () => {
   });
 
   test('a record holds only its own stops, and one latching stop per mode', () => {
-    expect(converters.stops.intents.convert([base, { ...base, id: 't' }])).toFailWith(
+    const rekeyed = (suffix: string): IStopIntent['targets'] =>
+      base.targets.map((t) => ({ ...t, operationId: `${t.operationId}-${suffix}` as OperationId }));
+    expect(converters.stops.intents.convert([base, { ...base, id: 't', targets: rekeyed('t') }])).toFailWith(
       /second latching pause/
     );
+    // A command key names one attempt in the whole record, whichever stop holds it.
+    expect(
+      converters.stops.intents.convert([base, { ...base, id: 't', mode: 'cancel', state: 'released' }])
+    ).toFailWith(/command key .* is another stop's in this record/);
+    expect(
+      converters.stops.intent.convert({
+        ...base,
+        targets: [{ ...base.targets[0], operationId: base.id }, base.targets[1]]
+      })
+    ).toFailWith(/a target's command key is the stop's own operation id/);
     expect(converters.stops.intents.convert([base, base])).toFailWith(/recorded twice/);
     expect(
       converters.stops.intents.convert([
         base,
-        { ...base, id: 't', rootId: 'x', targets: [{ ...base.targets[0], taskId: 'x' }] }
+        { ...base, id: 't', rootId: 'x', targets: [{ ...rekeyed('x')[0], taskId: 'x' }] }
       ])
     ).toFailWith(/only the stops of its own task/);
-    expect(converters.stops.intents.convert([base, { ...base, id: 't', state: 'released' }])).toSucceed();
+    expect(
+      converters.stops.intents.convert([base, { ...base, id: 't', state: 'released', targets: rekeyed('r') }])
+    ).toSucceed();
   });
 });
 
@@ -512,12 +526,15 @@ describe('storage refuses what the broker refuses first, whatever writes it', ()
   });
 
   test('a new stop cannot take a key another stop is attempting with', async () => {
+    // Another root's stop is attempting with this key: across records, the latch book is the check.
+    await node(h.writer, 'r2', { stopPolicy: 'cascade-pause' });
+    const other = await persisted(h, (await stop(h, h.writer, 'r2', 'pause')).orThrow());
     const key = op('cancel');
     const cancel = intent(key, ['root', 'a', 'L'], { mode: 'cancel' });
     const clash = {
       ...cancel,
       targets: cancel.targets.map((t, i) =>
-        i === 1 ? { ...t, operationId: accepted.targets[1].operationId } : { ...t, operationId: op('k') }
+        i === 1 ? { ...t, operationId: other.targets[0].operationId } : { ...t, operationId: op('k') }
       )
     };
     const r = await root(h);

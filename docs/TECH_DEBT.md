@@ -292,7 +292,7 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
   decide whether the latch outlives it. **Trigger:** the first host that needs to archive such a
   root. (2) **The attempt bundle uses schema maxima**: one `maxStoredOperationBytes` for the command
   plus a full `maximumSettlementCharges` — 643,625 logical bytes per target under the default
-  profile, so 400 plain registrations admit a stop over at most 211 of them. A stop's own command is
+  profile, so 400 plain registrations admit a stop over at most 210 of them. A stop's own command is
   broker-composed and much smaller than the schema maximum; a derived maximum (as `maximumUpdateBytes`
   does for updates) would shrink the reservation severalfold, but must also bound the source-designated
   parameters. **Trigger:** a consumer that needs larger stops under the default profile.

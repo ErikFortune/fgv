@@ -45,10 +45,16 @@ function _parentOf(record: ITaskCommitRecord | ITaskRecordDraft): TaskId | undef
 }
 
 /**
- * Checks a registration against the freeze: no new task under a latched parent.
+ * Checks a registration against the stop rules: it carries no stop, and no new task is registered
+ * under a latched parent.
  * @internal
  */
 export function checkStopRegistration(book: StopBook, draft: ITaskRecordDraft): Result<true> {
+  // A stop is accepted only by its own operation on a live root, reserved as it is accepted: a first
+  // record carries none.
+  if (draft.recordType === 'resolved' && (draft.stops ?? []).length > 0) {
+    return fail(`a registration carries no stop; a stop is accepted only by its own operation`);
+  }
   const parentId: TaskId | undefined = _parentOf(draft);
   return parentId !== undefined && book.isLatched(parentId)
     ? _refuse(`task ${parentId} is under a stop latch and takes no new child`)

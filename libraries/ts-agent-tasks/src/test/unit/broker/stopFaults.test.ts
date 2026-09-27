@@ -341,6 +341,55 @@ describe('a repository that contradicts itself is not trusted', () => {
     }
   );
 
+  test("a native target whose key is held by something that is not this stop's command gets a new attempt", async () => {
+    const h = await nativeTree();
+    const accepted = (await stop(h, h.writer, 'root', 'pause')).orThrow();
+    const key = (await persisted(h, accepted)).targets[1].operationId;
+    const faulty = faultyWriter(h, {
+      writerPatch: (w) => ({
+        readCommit: readOf(
+          (i) => w.readCommit(i),
+          'c',
+          async (real) => {
+            const c = (await real(tid('c'))).orThrow() as IResolvedTaskCommitRecord;
+            return found({ ...c, operations: [...c.operations, { ...c.operations[0], operationId: key }] });
+          }
+        )
+      })
+    });
+    expect((await pump(faulty, accepted)).orThrow().state).toBe('pending');
+    expect((await persisted(h, accepted)).targets[1].attempt).toBe(2);
+    expect(await statusOf(h, 'c')).toBe('pending');
+  });
+
+  test('a native landing its target no longer shows is not taken as this stop refused: a new attempt is made', async () => {
+    const h = await nativeTree();
+    const accepted = (await stop(h, h.writer, 'root', 'pause')).orThrow();
+    const key = (await persisted(h, accepted)).targets[1].operationId;
+    const faulty = faultyWriter(h, {
+      writerPatch: (w) => ({
+        readCommit: readOf(
+          (i) => w.readCommit(i),
+          'c',
+          async (real) => {
+            const c = (await real(tid('c'))).orThrow() as IResolvedTaskCommitRecord;
+            // After the landing: read back running, and without the command that landed.
+            return found(
+              c.operations.some((o) => o.operationId === key)
+                ? {
+                    ...(running(c) as IResolvedTaskCommitRecord),
+                    operations: c.operations.filter((o) => o.operationId !== key)
+                  }
+                : c
+            );
+          }
+        )
+      })
+    });
+    (await pump(faulty, accepted)).orThrow();
+    expect((await persisted(h, accepted)).targets[1].attempt).toBe(2);
+  });
+
   test('a native command that lands without stopping its target is refused, never confirmed', async () => {
     const h = await nativeTree();
     const accepted = (await stop(h, h.writer, 'root', 'pause')).orThrow();

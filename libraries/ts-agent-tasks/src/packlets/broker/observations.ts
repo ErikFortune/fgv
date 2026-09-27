@@ -188,10 +188,14 @@ function _confirmAwaiting(
   taskRevision: TaskRevision
 ): ReadonlyArray<IStoredTaskOperation> {
   return operations.map((op) => {
-    if (op.type !== 'command' || op.awaiting === undefined || op.receipt.result.state !== 'accepted') {
+    if (op.type !== 'command' || op.receipt.result.state !== 'accepted') {
       return op;
     }
-    const awaiting = op.awaiting;
+    // Everything but the wait is kept — a stop's marker included, which is what identifies its landing.
+    const { awaiting, ...kept } = op;
+    if (awaiting === undefined) {
+      return op;
+    }
     const order: Result<SourceRevisionOrder> = compareRevisions(
       source,
       projection.revision,
@@ -206,11 +210,7 @@ function _confirmAwaiting(
         .onSuccess((digest) => succeed(digest !== awaiting.execution))
         .orDefault(true);
     return {
-      type: 'command',
-      operationId: op.operationId,
-      request: op.request,
-      principalKey: op.principalKey,
-      dispatch: op.dispatch,
+      ...kept,
       receipt: contradicted
         ? op.receipt
         : { ...op.receipt, result: { state: 'applied', appliedRevision: taskRevision } }

@@ -11,7 +11,7 @@ be enough to resume cold. Keep it current as you go.
 85 suites, **1,968 passed / 0 failed**, 100 % on every metric, zero `c8 ignore`, lint clean,
 `fixlint` no-op. Layer 1 and the semantic antagonist both ran on `e55f0d5e`; the antagonist's seven
 findings (H1, M1–M4, L1, L2) are fixed in `c5e4ceb7`, each with a regression. `result.md` drafted.
-Next: revert matrix on the final source (`perf/mutationMatrix.js`, T9 rows T9-1…T9-46 added) →
+Next: revert matrix on the final source (`perf/mutationMatrix.js`, T9 rows T9-1…T9-52 added) →
 repo-wide rebuild/test + verify scripts → PR into `integration/agent-tasks-v1` → plan status line
 and ledger entry as shipped → Copilot loop.
 
@@ -152,8 +152,8 @@ archive of such a root is simply `retention-blocked`.
   flags, encoded size) — not the full intent with its evidence (design § 7).
 
 **Capacity figures reproduced (not trusted):** attempt bundle 643,625 logical bytes / 627,241
-record bytes / 37,417 resident under the default profile; max target encoding 1,834 B, intent
-framing 6,538 B. Executable pin: 400 plain registrations admit a stop over at most **211** of them,
+record bytes / 37,417 resident under the default profile; max target encoding 2,986 B, intent
+framing 12,682 B (six bytes per free-text unit since Copilot round 4). Executable pin: 400 plain registrations admit a stop over at most **210** of them,
 refused on `logical-bytes`. Arithmetic estimate (not pinned): a stop over an entire repository of
 *n* plain tasks fits for n ≲ 325.
 
@@ -205,3 +205,11 @@ partly fixed: storage now also requires stable-stop evidence for a non-terminal 
 (T9-46) and refuses one with no lifecycle; "pass evidence" in storage declined, reasoning in the thread
 (targets verifiably stopped is what satisfied means; external evidence is revalidated per broker
 instance before a standing guarantee is presented).
+
+**Round 4 (on `0d51e479`)** — five findings, all real, fixed together: a source-replay stop command lost
+its marker when the feed confirmed it (T9-47); a native target whose key another operation holds stayed
+`refused` forever — now superseded (T9-48), and a target key may not equal the stop's own operation id
+(T9-49); command keys were unique per intent but not across a record's intents (T9-50); a registration
+could carry a stop, unfunded (T9-51); free text was sized at three bytes per unit, but the encoder
+writes a lone surrogate as a six-byte escape (T9-52). The last moves the figures: max target encoding
+2,986 B, intent framing 12,682 B, and the pin 400 → **210** targets (was 211). Bundle unchanged.

@@ -92,8 +92,8 @@ external child, and bypass through update tools and the raw writer.
 
 Reproduced from source, not taken from the brief: one attempt bundle = one operation + one
 `maxStoredOperationBytes` + one `maximumSettlementCharges` = **643,625 logical / 627,241 record /
-37,417 resident bytes** under the default profile; maximum target encoding 1,834 B, intent framing
-6,538 B.
+37,417 resident bytes** under the default profile; maximum target encoding 2,986 B, intent framing
+12,682 B (free text counted at six bytes per unit, the width of a JSON-escaped lone surrogate).
 
 - **Reserved before acceptance, for every target.** Each unlanded, unconfirmed attempt on a live
   target funds one bundle: the additive dimensions on the root's ledger entry, `record-bytes` (a
@@ -111,7 +111,7 @@ Reproduced from source, not taken from the brief: one attempt bundle = one opera
   supersession) is new admission and fails with a visible `IStopResult.capacity` blocker, the old
   attempt standing. A capacity refusal is made safe to return (no record id, no figures of a record
   the caller may not see — M2).
-- **What binds first.** A stop changes it: 400 plain registrations admit a stop over **at most 211**
+- **What binds first.** A stop changes it: 400 plain registrations admit a stop over **at most 210**
   of them, refused on `logical-bytes` (pinned by test, found by search). Arithmetic estimate, not
   pinned: a stop over a whole repository of *n* plain tasks fits for n ≲ 325. The bundle uses schema
   maxima; tightening it is routed (TECH_DEBT, stop hand-off 2).
@@ -121,7 +121,7 @@ Reproduced from source, not taken from the brief: one attempt bundle = one opera
 **Judged to belong with the M1 production-profile cohort, not added here.** What T9 adds to resident
 state is the latch book: per latching intent a projection of ids, keys, confirmed flags and encoded
 size (never the evidence, § 7), a latch entry per target, and an entry per marked command. Its size
-is proportional to the targets of latching intents, which the reservation already bounds (211 of
+is proportional to the targets of latching intents, which the reservation already bounds (210 of
 400 above) and which deterministic tests pin structurally. Measuring its bytes is a harness change
 against a frozen manifest; a cohort would need a prediction stated before the run, and the honest
 prediction depends on the production profile the remaining M1 run qualifies. Routed:

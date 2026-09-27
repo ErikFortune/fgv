@@ -19,6 +19,7 @@ import {
   IStopResult,
   IStopTarget,
   IStoredCommandOperation,
+  IStoredTaskOperation,
   ITaskCommitRecord,
   ITaskFailure,
   ITaskSource,
@@ -231,10 +232,25 @@ class StopPass {
     if (committed.value === undefined) {
       return ok(this._unfinished());
     }
-    // Landed — by this pass or by another caller first. Not stopped: the command was refused, and a
-    // retry could not change a native refusal.
+    // Landed — by this pass or by another caller first. Not stopped: this stop's command was refused,
+    // and a retry could not change a native refusal. A key held by anything else never carried this
+    // stop's command at all: a definite non-effect, re-attempted under a new key.
     const after: IResolvedTaskCommitRecord = committed.value;
-    return ok(targetStopped(mode, after) ? this._confirmed(i, after) : this._with(i, 'refused'));
+    if (targetStopped(mode, after)) {
+      return ok(this._confirmed(i, after));
+    }
+    return this._isOwn(storedOperation(after, this.targets[i].operationId))
+      ? ok(this._with(i, 'refused'))
+      : this._supersede(i, 'refused');
+  }
+
+  /** Whether a stored operation is this stop's own command: its marker names this root and intent. */
+  private _isOwn(op: IStoredTaskOperation | undefined): op is IStoredCommandOperation {
+    return (
+      op?.type === 'command' &&
+      op.stop?.rootId === this._intent.rootId &&
+      op.stop.intentId === this._intent.id
+    );
   }
 
   /** A failure an effect met: capacity is a visible blocker; a moved authorization retries next pass. */
@@ -422,11 +438,7 @@ class StopPass {
     if (landed === undefined) {
       return this._dispatch(i, record, source, binding, capabilities, designation);
     }
-    if (
-      landed.type !== 'command' ||
-      landed.stop?.rootId !== this._intent.rootId ||
-      landed.stop.intentId !== this._intent.id
-    ) {
+    if (!this._isOwn(landed)) {
       // The key was taken by something that is not this stop's command: a definite non-effect.
       return this._supersede(i, 'refused');
     }
