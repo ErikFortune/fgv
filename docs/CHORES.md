@@ -83,6 +83,69 @@ merge**, not as a post-merge follow-up.
 
 ### Queued — unbatched
 
+#### Coverage to 100% — the four non-UX libraries — 🅿️ **parked until the `agent-tasks-v1` cluster lands**
+
+**Filed 2026-09-27. Do not start before the cluster closes** — `ts-utils` and `ts-json` are on the
+critical path of every slice still to run (T9, I1, I2, P1), and a coverage stream editing them
+concurrently would collide for no gain.
+
+**Why this exists.** `CLAUDE.md` and `TESTING_GUIDELINES.md` both state "100% test coverage is
+required." It is enforced only where a package configures it. Six do not:
+
+| package | configured minimum | actual |
+|---|---|---|
+| `ts-utils` | 98 | 99.27 stmts / 99.64 br |
+| `ts-utils-jest` | 97 | **100 across the board — already there** |
+| `ts-web-extras` | 95 | 100 stmts / 99.58 br |
+| `ts-json` | 90 (branches) | 99.95 stmts / 99.85 br |
+| `ts-app-shell` | **0** | *(separate chore — see below)* |
+| `ts-res-ui-components` | **0** | *(separate chore — see below)* |
+
+So the standard every stream brief quotes is, for these packages, aspirational. Surfaced by the
+`null-prototype-property-guard` stream's finalize antagonist, which correctly declined to claim 100%
+and recorded the unmet gate instead of quietly passing.
+
+**Scope: this chore covers the four non-UX libraries only.** Measured on `release` at `30713277c`.
+
+**The work is very unevenly distributed — it is mostly one file.**
+
+| package | file | uncovered |
+|---|---|---|
+| `ts-utils` | `hash/converters.ts` | **0% — lines 1–52, entirely untested** |
+| `ts-utils` | `hash/crcNormalizer.ts` | 73.72% — lines 32–62 |
+| `ts-utils` | `logging/bootLogger.ts` | 92.98% stmts, **81.81% functions** — lines 154–159, 165–170 |
+| `ts-utils` | `collections/aggregatedResultMap.ts` | 99.35% — lines 801–808 |
+| `ts-utils` | `collections/readOnlyConvertingResultMap.ts` | 99.07% — lines 302, 304–305 |
+| `ts-web-extras` | `file-tree` packlet | 99.38% branches |
+| `ts-json` | `editor` packlet | 99.86% stmts / 99.53% branches |
+| `ts-utils-jest` | — | none; **raise the threshold to 100 and stop** |
+
+**A file at 0% in `ts-utils`** — the package whose `CAPABILITIES.md` says "start here" — is the
+finding worth leading with. `hash/converters.ts` is 52 lines that no test executes.
+
+**Acceptance.** Each package reaches 100% on every metric **and its `coverageThreshold` is raised to
+100**, so the gate holds afterwards. Raising the threshold without closing the gap, or closing the
+gap without raising the threshold, each leaves the same hole open.
+
+**Follow `TESTING_GUIDELINES.md` § *Coverage Gap Resolution* in order:** scenario-driven tests
+first, then `code-reviewer`, *then* coverage closure. A `c8 ignore` is a last resort needing
+approval — and a 0%-covered file is a functional-test gap, not a directive candidate.
+
+**Watch the `max-lines` P1.** `ts-utils/src/test/unit/result.test.ts` is at 1989 of 2000 and
+`ts-json-base/test/unit/jsonCompatible.test.ts` at 1982. A coverage chore adds test lines by
+definition; check the file before growing it.
+
+#### Coverage for the two UX packages — 🅿️ **parked, separate chore, own branch**
+
+**Filed 2026-09-27, deliberately split from the chore above.** `ts-app-shell` and
+`ts-res-ui-components` both configure a coverage threshold of **0** — no gate at all.
+
+They are split off because **coverage on UX components was materially harder the last time this was
+looked at**, and bundling them would let that difficulty stall four libraries that are within a
+percent of done. Expect this one to need a real conversation about what is worth testing in a React
+component tree, rather than a mechanical gap-closing pass — start it on its own branch and size it
+before committing to 100 as the target.
+
 #### ~~`mutableFsTree` permission test cannot pass as root~~ — ✅ resolved 2026-09-19
 
 Fixed in `@fgv/ts-json-base` (#673), which removed the blocking failure — all 36 packages execute,
