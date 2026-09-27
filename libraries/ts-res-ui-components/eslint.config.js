@@ -10,6 +10,8 @@ module.exports = [
   {
     // Override specific rules if needed
     rules: {
+      // obj.hasOwnProperty(k) throws on null-prototype objects; use Object.prototype.hasOwnProperty.call
+      'no-prototype-builtins': 'error',
       '@rushstack/packlets/mechanics': 'warn',
       // Disable no-new-null rule for React components where null is conventional
       '@rushstack/no-new-null': 'off'

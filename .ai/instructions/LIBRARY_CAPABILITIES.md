@@ -184,6 +184,7 @@ markers.*
 
 <!-- BEGIN GENERATED: recent-additions -->
 
+- **2026-09-26** — A converter handed an Object.create(null) value now returns a Result instead of throwing — isKeyOf, strictObject and six ts-json /… ([#700](https://github.com/ErikFortune/fgv/pull/700)) · `ts-utils` `ts-json` `ts-res-ui-components` `ts-utils-jest`
 - **2026-09-25** — Anthropic structured output works on Claude Opus 5.5 and Fable 5.1 via JSON outputs instead of a forced tool call, and the advanced… ([#694](https://github.com/ErikFortune/fgv/pull/694)) · `ts-extras`
 - **2026-09-24** — ai-assist's tier and image aliases now point at GPT-6, Gemini 3.8 Flash and Grok 4.7, each id cited from a fetched provider page… ([#692](https://github.com/ErikFortune/fgv/pull/692)) · `ts-extras`
 - **2026-09-23** — A tool-augmented or streamed chat turn can now carry prompt-cache breakpoints and a routing key, closing the one remaining hole… ([#688](https://github.com/ErikFortune/fgv/pull/688)) · `ts-extras`
@@ -193,8 +194,7 @@ markers.*
 - **2026-09-07** — Thinking config loses a required provider field that gated nothing, and gains 'none' — the cross-provider spelling for off that… ([#667](https://github.com/ErikFortune/fgv/pull/667)) · `ts-extras`
 - **2026-09-02** — Shipped: a rendered template, and a resolved prompt, can now say what they are made of — order, absolute size and binding… ([#663](https://github.com/ErikFortune/fgv/pull/663)) · `ts-extras` `ts-prompt-assist`
 - **2026-08-28** — A string can now declare that it must be one printable line — and the name says shape, not safety, because no converter can promise… · `ts-utils`
-- **2026-08-23** — Shipped: an opt-in that hoists the optionals a schema already proves safe to hoist, rather than a boolean asserting they are. ([#659](https://github.com/ErikFortune/fgv/pull/659)) · `ts-extras` `ts-json-base`
 
-*Showing the 10 most recent of 46. Per-package history is in each `CAPABILITIES.md`.*
+*Showing the 10 most recent of 47. Per-package history is in each `CAPABILITIES.md`.*
 
 <!-- END GENERATED: recent-additions -->

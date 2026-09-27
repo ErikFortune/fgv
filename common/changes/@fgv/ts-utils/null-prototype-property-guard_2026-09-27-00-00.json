@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-utils",
+      "comment": "Fix isKeyOf and Converters.strictObject throwing TypeError on null-prototype objects: use Object.prototype.hasOwnProperty.call instead of obj.hasOwnProperty. strictObject().convert() now returns a Success or Failure for an Object.create(null) source instead of throwing. Enable the no-prototype-builtins lint rule.",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@fgv/ts-utils"
+}

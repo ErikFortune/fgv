@@ -168,6 +168,19 @@ describe('Utils module', () => {
       expect(isKeyOf(2, obj)).toBe(false);
       expect(isKeyOf(Symbol('symbol'), obj)).toBe(false);
     });
+
+    test('reports own properties of an object with a null prototype', () => {
+      const nullProto: Record<string | number | symbol, string> = Object.create(null);
+      nullProto.string = 'string value';
+      nullProto[1] = 'number value';
+      nullProto[sym] = 'symbol value';
+
+      expect(isKeyOf('string', nullProto)).toBe(true);
+      expect(isKeyOf(1, nullProto)).toBe(true);
+      expect(isKeyOf(sym, nullProto)).toBe(true);
+      expect(isKeyOf('String', nullProto)).toBe(false);
+      expect(isKeyOf(2, nullProto)).toBe(false);
+    });
   });
 
   describe('pick function', () => {
