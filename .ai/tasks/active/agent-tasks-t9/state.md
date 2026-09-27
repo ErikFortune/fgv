@@ -11,7 +11,7 @@ be enough to resume cold. Keep it current as you go.
 85 suites, **1,968 passed / 0 failed**, 100 % on every metric, zero `c8 ignore`, lint clean,
 `fixlint` no-op. Layer 1 and the semantic antagonist both ran on `e55f0d5e`; the antagonist's seven
 findings (H1, M1–M4, L1, L2) are fixed in `c5e4ceb7`, each with a regression. `result.md` drafted.
-Next: revert matrix on the final source (`perf/mutationMatrix.js`, T9 rows T9-1…T9-41 added) →
+Next: revert matrix on the final source (`perf/mutationMatrix.js`, T9 rows T9-1…T9-46 added) →
 repo-wide rebuild/test + verify scripts → PR into `integration/agent-tasks-v1` → plan status line
 and ledger entry as shipped → Copilot loop.
 
@@ -188,3 +188,20 @@ existing pause needs the declared stable contract, not a command, and a later re
 command is `unsupported`; *fixture casts an untrusted capability value* — intentional, the fixture
 hands the broker unvalidated source output, which the converter under test must refuse.
 Matrix rows T9-18, T9-30, T9-33…T9-37 re-run on `638e0515`: all red.
+
+**Round 2 (on `558a807f`)** — three findings, all fixed in `e1587371`: a possibly-sent command recorded
+before a latch was resendable under it (now `held`, unwritten, resent after release — T9-38); open did
+not check that a latching intent names exactly its root's subtree (now blocking — T9-39); the ledger's
+revert-row range was stale. Found while fixing: a raise of `maxOperationsPerTask` could make the stop
+bundle unrepresentable after stops existed — `initialize` and `raiseCapacityLimits` now refuse such a
+profile and a stored one blocks open when stops are held (T9-40, T9-41).
+
+**Round 3 (on `e1587371`)** — four findings, fixed in `0d51e479`: a landed command matched on intent id
+alone (now root and intent — T9-42); an unvisited target's stale entry could overwrite newer progress
+(the summary now takes only visited targets — T9-43), and, found while fixing, an incomplete pass that
+learned nothing withdrew a concurrent complete pass's verdict (now left standing — T9-44); an archived
+record could hold a latching stop (refused by the record converter — T9-45); a forged `satisfied` —
+partly fixed: storage now also requires stable-stop evidence for a non-terminal external confirmation
+(T9-46) and refuses one with no lifecycle; "pass evidence" in storage declined, reasoning in the thread
+(targets verifiably stopped is what satisfied means; external evidence is revalidated per broker
+instance before a standing guarantee is presented).
