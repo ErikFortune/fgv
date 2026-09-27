@@ -11,7 +11,7 @@ be enough to resume cold. Keep it current as you go.
 85 suites, **1,968 passed / 0 failed**, 100 % on every metric, zero `c8 ignore`, lint clean,
 `fixlint` no-op. Layer 1 and the semantic antagonist both ran on `e55f0d5e`; the antagonist's seven
 findings (H1, M1–M4, L1, L2) are fixed in `c5e4ceb7`, each with a regression. `result.md` drafted.
-Next: revert matrix on the final source (`perf/mutationMatrix.js`, T9 rows T9-1…T9-56 added) →
+Next: revert matrix on the final source (`perf/mutationMatrix.js`, T9 rows T9-1…T9-60 added) →
 repo-wide rebuild/test + verify scripts → PR into `integration/agent-tasks-v1` → plan status line
 and ledger entry as shipped → Copilot loop.
 
@@ -227,3 +227,15 @@ target must now be confirmable (for a cancel: terminal) at the archive (T9-55). 
 intent keeps (target states, evidence) — storage now requires a release to change only the state
 (T9-56); the ledger's revert range stopped at T9-52 (now T9-1…T9-56). Findings per round: 5 → 3 → 1
 substantive.
+
+**Round 7 (on `91c3c5d4`)** — two findings, both real ordering defects:
+- `presentStop` read targets and asked the policy with no recheck, so an inspection (or a write's
+  response) could describe a released latch or mix two policies. It now takes the caller's authorizing
+  epoch, re-reads the root afterwards, redoes the presentation from the intent as it now stands (up to
+  three times), and refuses one that spanned a policy change (T9-58, T9-59). `inspectStop` captures its
+  epoch before its root visibility check. The pump, whose pass can legitimately span a policy change,
+  presents under the policy standing at presentation time with the root's visibility rechecked under
+  it, so its result contract is unchanged (T9-60).
+- A marked command was admitted under any unlanded attempt, including a confirmed one, which holds no
+  reservation. It must now be funded (`StopBook.attempt` exposes `funded`) (T9-57).
+Findings per round: 5 → 3 → 1 → 2.

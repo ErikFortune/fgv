@@ -179,13 +179,13 @@ export class StopBook {
     return this._latches.has(taskId);
   }
 
-  /** The live attempt under a command key, if one is. */
+  /** The live attempt under a command key, if one is, and whether it still holds a reservation. */
   public attempt(operationId: OperationId):
     | {
         readonly rootId: TaskId;
         readonly intentId: OperationId;
         readonly taskId: TaskId;
-        readonly landed: boolean;
+        readonly funded: boolean;
       }
     | undefined {
     const attempt: IAttempt | undefined = this._attempts.get(operationId);

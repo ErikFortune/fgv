@@ -95,11 +95,12 @@ export function checkStopAdmission(params: {
     const attempt = book.attempt(op.operationId);
     if (prior === undefined) {
       if (op.stop !== undefined) {
-        // A marked command is a live, unlanded attempt of this task, and of exactly the intent it
-        // names. Nothing is dispatched for an intent that was released, or for a superseded attempt.
+        // A marked command is a live, funded attempt of this task, and of exactly the intent it
+        // names: its command lands out of that attempt's reservation. Nothing is dispatched for an
+        // intent that was released, a superseded attempt, or a target already confirmed.
         if (
           attempt === undefined ||
-          attempt.landed ||
+          !attempt.funded ||
           attempt.taskId !== taskId ||
           attempt.rootId !== op.stop.rootId ||
           attempt.intentId !== op.stop.intentId

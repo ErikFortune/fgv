@@ -15,6 +15,8 @@ import {
   IResolvedTaskRecordDraft,
   IStopIntent,
   IStopLatch,
+  IStopResult,
+  ITaskCommitRecord,
   ITaskCapacityProfile,
   ITaskFailure,
   OperationId,
@@ -845,5 +847,179 @@ describe('T9 Copilot round 6 regressions', () => {
     };
     expect(await release(rewritten)).toFailWith(/a release keeps the report as it stood/);
     expect(await release({ ...pending, state: 'released' })).toSucceed();
+  });
+});
+
+// Copilot, round 7 on #701.
+describe('T9 Copilot round 7 regressions', () => {
+  async function paused(): Promise<{ readonly h: IBrokerHarness; readonly accepted: IStopResult }> {
+    const h = await brokerHarness();
+    await node(h.writer, 'root', { stopPolicy: 'cascade-pause' });
+    await node(h.writer, 'c', { parentId: 'root' });
+    return { h, accepted: (await stop(h, h.writer, 'root', 'pause')).orThrow() };
+  }
+  const inspect = (
+    h: IBrokerHarness,
+    accepted: IStopResult
+  ): ReturnType<IBrokerHarness['writer']['inspectStop']> =>
+    h.writer.inspectStop({ taskId: tid('root'), intentId: accepted.intentId });
+
+  /** Runs `effect` once, when the policy is first asked whether `id` may be read. */
+  function onReadOf(h: IBrokerHarness, id: string, effect: () => void | Promise<void>): void {
+    let done = false;
+    h.policy.afterDecision = async (r) => {
+      if (!done && r.action === 'read' && r.task?.envelope.id === id) {
+        done = true;
+        await effect();
+      }
+    };
+  }
+
+  test('an inspection a release overtakes presents the released stop, not the latch it no longer holds', async () => {
+    const { h, accepted } = await paused();
+    onReadOf(h, 'c', async () => {
+      (await release(h, h.writer, accepted)).orThrow();
+    });
+    expect((await inspect(h, accepted)).orThrow().state).toBe('released');
+  });
+
+  test('an inspection that spans a policy change is refused, not answered under two policies', async () => {
+    const { h, accepted } = await paused();
+    onReadOf(h, 'c', () => {
+      h.policy.epoch = 'epoch-2';
+    });
+    expect(await inspect(h, accepted)).toFailWith(
+      /the authorization policy changed while stop .* was being presented/
+    );
+    expect((await inspect(h, accepted)).orThrow().state).toBe('pending');
+  });
+
+  test('an intent that keeps moving is not presented from any one version: the caller asks again', async () => {
+    const { h, accepted } = await paused();
+    let generation = 0;
+    const moving = faultyWriter(h, {
+      patch: (r) => ({
+        readCommit: async (id: TaskId) => {
+          const read = (await r.readCommit(id)).orThrow() as IResolvedTaskCommitRecord;
+          return id === 'root'
+            ? succeedWithDetail<IResolvedTaskCommitRecord, ITaskFailure>({
+                ...read,
+                stops: read.stops!.map((i) => ({ ...i, topologyGeneration: ++generation }))
+              })
+            : succeedWithDetail<IResolvedTaskCommitRecord, ITaskFailure>(read);
+        }
+      })
+    });
+    expect(await moving.inspectStop({ taskId: tid('root'), intentId: accepted.intentId })).toFailWith(
+      /stop .* changed while stop .* was being presented; ask again/
+    );
+  });
+
+  test('a root that cannot be read again, or is gone, after the presentation is not presented', async () => {
+    const { h, accepted } = await paused();
+    for (const [answer, expected] of [
+      [
+        failWithDetail<ITaskCommitRecord | undefined, ITaskFailure>('storage down', {
+          code: 'storage-unavailable',
+          retry: 'safe'
+        }),
+        /storage down/
+      ],
+      [succeedWithDetail<ITaskCommitRecord | undefined, ITaskFailure>(undefined), /task root changed while/]
+    ] as const) {
+      let presented = false;
+      onReadOf(h, 'c', () => {
+        presented = true;
+      });
+      const faulty = faultyWriter(h, {
+        patch: (r) => ({
+          readCommit: async (id: TaskId) => (presented && id === 'root' ? answer : r.readCommit(id))
+        })
+      });
+      expect(await faulty.inspectStop({ taskId: tid('root'), intentId: accepted.intentId })).toFailWith(
+        expected
+      );
+    }
+  });
+
+  test('an inspection needs a policy epoch', async () => {
+    const { h, accepted } = await paused();
+    h.policy.epoch = 42 as unknown as string;
+    expect(await inspect(h, accepted)).toFailWith(/policy epoch unavailable/);
+  });
+
+  test("a pump presents its outcome under the policy standing now, the root's visibility included", async () => {
+    for (const [change, expected] of [
+      [(h: IBrokerHarness) => h.policy.hide('root'), /not found or not visible/],
+      [
+        (h: IBrokerHarness) => {
+          h.policy.epoch = 42 as unknown as string;
+        },
+        /policy epoch unavailable/
+      ]
+    ] as const) {
+      const { h, accepted } = await paused();
+      h.policy.afterDecision = (r) => {
+        if (r.action === 'stop' && r.role === 'stop-target' && r.task?.envelope.id === 'c') {
+          change(h);
+        }
+      };
+      expect(await pump(h.writer, accepted)).toFailWith(expected);
+    }
+  });
+
+  test('a stop command under an attempt that no longer holds a reservation is refused', async () => {
+    const h = await brokerHarness();
+    await node(h.writer, 'root', { stopPolicy: 'cascade-pause' });
+    await node(h.writer, 'c', { parentId: 'root' });
+    // Already paused: the stop confirms the child without sending it anything.
+    await command(h, h.writer, 'c', 'pause', { reason: { code: 'held', summary: 'held' } });
+    const accepted = (await stop(h, h.writer, 'root', 'pause')).orThrow();
+    expect((await pump(h.writer, accepted)).orThrow().state).toBe('satisfied');
+    const intent = await persisted(h, accepted);
+    const key = intent.targets[1].operationId;
+    const c = (await h.repository.readCommit(tid('c'))).orThrow() as IResolvedTaskCommitRecord;
+    expect(c.operations.some((o) => o.operationId === key)).toBe(false);
+    const request = {
+      taskId: tid('c'),
+      operationId: key,
+      expectedRevision: c.task.envelope.revision,
+      command: 'pause',
+      parameters: { reason: 'x' }
+    };
+    expect(
+      await h.repository.withWriter((writer) =>
+        writer.commit({
+          purpose: 'operation',
+          operationId: key,
+          taskId: tid('c'),
+          expectedRevision: c.task.envelope.revision,
+          expectedRecordRevision: c.recordRevision,
+          record: {
+            recordType: 'resolved',
+            task: c.task,
+            operations: [
+              ...c.operations,
+              {
+                type: 'command',
+                operationId: key,
+                request,
+                principalKey: 'alice',
+                dispatch: 'settled',
+                receipt: {
+                  taskId: tid('c'),
+                  operationId: key,
+                  command: 'pause',
+                  result: { state: 'accepted' }
+                },
+                stop: { rootId: tid('root'), intentId: intent.id }
+              }
+            ],
+            updates: c.updates,
+            archived: false
+          }
+        })
+      )
+    ).toFailWith(/is not a live attempt of stop/);
   });
 });

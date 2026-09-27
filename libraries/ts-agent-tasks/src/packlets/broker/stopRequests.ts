@@ -35,7 +35,7 @@ import {
 import { AccessContext, subjectOf } from './access';
 import { confirmUnchanged, isSameCatalog, readExisting } from './catalogMutation';
 import { convertRequest, isNativeKind } from './catalogOperations';
-import { BrokerCore, revisionOf, storedOperation } from './core';
+import { BrokerCore, canonicallySame, revisionOf, storedOperation } from './core';
 import { changedSinceAuthorized, denied, notFound, ok, propagate, taskFailure } from './failures';
 
 /**
@@ -80,9 +80,65 @@ function _projected(target: IStopTarget): IProjectedStopTarget {
   };
 }
 
+/** How many times a presentation is retried on a moving intent before the caller is asked to retry. */
+const presentationAttempts: number = 3;
+
 /**
  * An intent's result, as one principal may see it — degraded live where the records now contradict
- * it.
+ * it — answered about one version of the intent under one policy.
+ *
+ * @remarks
+ * Presenting reads every target and asks the policy about each, so a pump, a release or a policy
+ * change can land meanwhile. The root is read again afterwards: a presentation of an intent that has
+ * since moved is redone from the intent as it now stands, a few times at most, and one made under a
+ * policy other than `epoch` — the one the caller authorized the root under — is refused rather than
+ * returned: it would mix what two policies let this principal see.
+ * @internal
+ */
+export async function presentStop(
+  core: BrokerCore,
+  ctx: AccessContext,
+  epoch: string,
+  intent: IStopIntent,
+  capacity?: ICapacityFailure
+): Promise<TaskResult<IStopResult>> {
+  let current: IStopIntent = intent;
+  for (let attempt = 0; attempt < presentationAttempts; attempt++) {
+    const presented = await _present(core, ctx, current, capacity);
+    if (presented.isFailure()) {
+      return presented;
+    }
+    const again = await core.repository.readCommit(current.rootId);
+    if (again.isFailure()) {
+      return propagate(again);
+    }
+    if (!ctx.epochIs(epoch)) {
+      return _unpresented('the authorization policy', current.id);
+    }
+    const now: IStopIntent | undefined =
+      again.value !== undefined ? intentOf(again.value, current.id) : undefined;
+    if (now === undefined) {
+      return _unpresented(`task ${current.rootId}`, current.id);
+    }
+    if (canonicallySame(now, current)) {
+      return presented;
+    }
+    current = now;
+  }
+  return _unpresented(`stop ${intent.id}`, intent.id);
+}
+
+/** A presentation that could not be answered about one version of its intent under one policy. */
+function _unpresented<T>(what: string, intentId: OperationId): TaskResult<T> {
+  return taskFailure<T>(
+    `${what} changed while stop ${intentId} was being presented; ask again for its current result`,
+    'conflict',
+    'safe'
+  );
+}
+
+/**
+ * One presentation of one version of an intent.
  *
  * @remarks
  * The persisted summary is allowed to lag the target records (design § 10 step 4), but a
@@ -92,9 +148,8 @@ function _projected(target: IStopTarget): IProjectedStopTarget {
  * broker instance has revalidated that evidence (a contract that held before a restart is not
  * evidence it holds now). Only visible targets are listed; a hidden one that is not confirmed sets
  * `restrictedWorkRemains` and nothing else.
- * @internal
  */
-export async function presentStop(
+async function _present(
   core: BrokerCore,
   ctx: AccessContext,
   intent: IStopIntent,
@@ -228,7 +283,7 @@ async function _replay(
       { operationId: stored.operationId }
     );
   }
-  const presented = await presentStop(core, ctx, intent);
+  const presented = await presentStop(core, ctx, epoch, intent);
   if (presented.isFailure()) {
     return presented;
   }
@@ -463,7 +518,7 @@ export async function requestStop(
     return _safeFailure(accepted);
   }
   return accepted.value !== undefined
-    ? presentStop(core, ctx, accepted.value)
+    ? presentStop(core, ctx, epoch.value, accepted.value)
     : requestStop(core, ctx, input);
 }
 
@@ -575,7 +630,7 @@ export async function releaseStop(
     return propagate(released);
   }
   return released.value !== undefined
-    ? presentStop(core, ctx, released.value)
+    ? presentStop(core, ctx, epoch.value, released.value)
     : releaseStop(core, ctx, input);
 }
 
@@ -633,6 +688,10 @@ export async function inspectStop(
     return propagate(converted);
   }
   const request: IStopInspectRequest = converted.value.value;
+  const epoch = ctx.epoch();
+  if (epoch.isFailure()) {
+    return propagate(epoch);
+  }
   const read = await readExisting(core, request.taskId);
   if (read.isFailure()) {
     return propagate(read);
@@ -647,5 +706,5 @@ export async function inspectStop(
         'not-found-or-denied',
         'after-host-action'
       )
-    : presentStop(core, ctx, intent);
+    : presentStop(core, ctx, epoch.value, intent);
 }

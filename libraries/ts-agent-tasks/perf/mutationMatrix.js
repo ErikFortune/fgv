@@ -1058,6 +1058,34 @@ const T9_ROWS = [
     '    if (!canonicallyEqual({ ...was, state: now.state }, now)) {',
     '    if (!canonicallyEqual({ ...was, state: now.state }, now) && now.id.length < 0) {',
     T9
+  ),
+  m(
+    'T9-57 a stop command may land under an attempt that holds no reservation',
+    S + 'stopRules.ts',
+    '          !attempt.funded ||',
+    '          (!attempt.funded && attempt.taskId.length < 0) ||',
+    T9
+  ),
+  m(
+    'T9-58 a presentation is returned about an intent that has since moved',
+    B + 'stopRequests.ts',
+    '    if (canonicallySame(now, current)) {',
+    '    if (canonicallySame(now, now)) {',
+    T9
+  ),
+  m(
+    'T9-59 a presentation is returned across a policy change',
+    B + 'stopRequests.ts',
+    '    if (!ctx.epochIs(epoch)) {',
+    '    if (!ctx.epochIs(epoch) && epoch.length < 0) {',
+    T9
+  ),
+  m(
+    'T9-60 a pump presents under a policy that no longer shows its root',
+    B + 'stopPump.ts',
+    '    return notFound(intent.rootId);',
+    '    return presentStop(core, ctx, epoch.value, intent, capacity);',
+    T9
   )
 ];
 
