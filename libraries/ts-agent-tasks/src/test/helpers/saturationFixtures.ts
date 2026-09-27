@@ -151,9 +151,12 @@ export async function emptyWorld(
 export async function reopenWorld(w: IWorld): Promise<IWorld> {
   w.repository.close().orThrow();
   const { env, logger } = worldEnvironment(w.counter);
+  // The reopened repository writes through a fresh fault injector, so a fault a test injects after the
+  // reopen reaches it — a crash test that reopens and crashes again must not be crashing nothing.
+  const faulty: FaultyRoot = new FaultyRoot(w.inner as unknown as FileTree.IAtomicFileTreeDirectoryItem);
   const opened = (
     await FileTreeTaskRepository.open({
-      root: w.inner,
+      root: faulty,
       mode: 'session',
       environment: env,
       registry: w.registry
@@ -162,9 +165,8 @@ export async function reopenWorld(w: IWorld): Promise<IWorld> {
   if (opened.state !== 'ready') {
     throw new Error(`reopenWorld: recovery required: ${JSON.stringify(opened.recovery.report.issues)}`);
   }
-  const faulty: FaultyRoot = new FaultyRoot(w.inner as unknown as FileTree.IAtomicFileTreeDirectoryItem);
   return {
-    ...harnessWith(opened.repository, env, w.inner, logger, w.executor, w.source, w.registry),
+    ...harnessWith(opened.repository, env, faulty, logger, w.executor, w.source, w.registry),
     inner: w.inner,
     faulty,
     counter: w.counter

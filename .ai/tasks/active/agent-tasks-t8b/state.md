@@ -128,6 +128,12 @@ adopted/coalesced updates; every journey write under `when:'after'` with `unknow
 visibility (reopen + retry converge exactly) and the three activation writes — beyond the suite's
 `before`/`unchanged` injection.
 
+## Copilot loop on #699
+
+| round | head | main list | previously-missed / summary | disposition |
+|---|---|---|---|---|
+| 1 | `4b5f54d1` | none | summary: "the saturation fixture has an unresolved moderate issue that can make post-reopen crash tests ineffective" | **real** — `reopenWorld` opened over the raw root and returned a `FaultyRoot` nothing wrote through, so a fault injected after a reopen never fired. Fixed; a test pins it (red before the fix) |
+
 ## Open questions for the orchestrator
 
 _(anything you cannot resolve from the brief, the plan or the code — raise it here and surface it)_

@@ -530,3 +530,13 @@ describe('the default profile (T8)', () => {
     expect(ledger.entry('task:t')!.recordLimit).toBe(8 * 1024 * 1024);
   });
 });
+
+describe('the fixture', () => {
+  test('a reopened world still writes through its fault injector, so a second crash is a real one', async () => {
+    const w: IWorld = await reopenWorld(await populatedWorld());
+    w.faulty.clearWrites();
+    w.faulty.faults.push({ name: /.*/, when: 'before', visibility: 'unchanged' });
+    expect(await journey[index('complete the largest task')].run(w)).toFail();
+    expect(w.faulty.writes).toEqual(['task-t.json']);
+  });
+});
