@@ -5,6 +5,7 @@
 
 import { Result } from '@fgv/ts-utils';
 import {
+  IStopTarget,
   IStoredTaskOperation,
   ITaskCapacityProfile,
   ITaskCommitRecord,
@@ -99,7 +100,7 @@ export function planStopCommit(params: {
       purpose,
       added,
       subtree: () => index.subtree(taskId, defaultMaxStopTargets),
-      stopped: (mode, id) => _stopped(mode, tasks.get(id)!)
+      confirmable: (mode, target) => _confirmable(mode, tasks.get(target.taskId)!, target)
     })
   );
   if (checked.isFailure()) {
@@ -120,13 +121,23 @@ export function planStopCommit(params: {
 }
 
 /**
- * Whether a task, as its projection holds it, is in a mode's stopped set. A task list has no own work:
- * paused by its children. Every target is live — a latched task is never archived or pruned.
+ * Whether a target may be recorded confirmed: its task, as its projection holds it, is in the mode's
+ * stopped set — a task list, which has no own work, is paused by its children — and an external task
+ * that is not terminal is held there only by a stable stop its source declared, whose evidence the
+ * confirmation carries. Every target is live: a latched task is never archived or pruned.
  */
-function _stopped(mode: StopMode, projection: ITaskProjection): boolean {
+function _confirmable(mode: StopMode, projection: ITaskProjection, target: IStopTarget): boolean {
+  const status = projection.status;
+  if (status === undefined) {
+    return false;
+  }
+  const stopped: boolean =
+    (mode === 'pause' && projection.kind === taskListKind) || isStoppedFor(mode, status);
   return (
-    projection.status !== undefined &&
-    ((mode === 'pause' && projection.kind === taskListKind) || isStoppedFor(mode, projection.status))
+    stopped &&
+    (projection.external !== true ||
+      isTerminalTaskStatus(status) ||
+      target.stableSourceEvidence !== undefined)
   );
 }
 

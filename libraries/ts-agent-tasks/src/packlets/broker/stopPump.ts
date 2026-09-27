@@ -137,6 +137,8 @@ async function _latching(
  */
 class StopPass {
   public readonly targets: IStopTarget[];
+  /** The targets this pass established something about; the rest it only carried from the intent. */
+  public readonly visited: Set<number> = new Set<number>();
   public complete: boolean = true;
   public capacity: ICapacityFailure | undefined = undefined;
   private readonly _core: BrokerCore;
@@ -180,6 +182,7 @@ class StopPass {
       ...extra
     };
     this.targets[i] = target;
+    this.visited.add(i);
     return { target };
   }
 
@@ -419,7 +422,11 @@ class StopPass {
     if (landed === undefined) {
       return this._dispatch(i, record, source, binding, capabilities, designation);
     }
-    if (landed.type !== 'command' || landed.stop?.intentId !== this._intent.id) {
+    if (
+      landed.type !== 'command' ||
+      landed.stop?.rootId !== this._intent.rootId ||
+      landed.stop.intentId !== this._intent.id
+    ) {
       // The key was taken by something that is not this stop's command: a definite non-effect.
       return this._supersede(i, 'refused');
     }
@@ -711,13 +718,14 @@ class StopPass {
       return ok(this._unfinished());
     }
     this.targets[i] = superseded.value;
+    this.visited.add(i);
     return ok({ target: superseded.value });
   }
 }
 
 /**
- * What the summary records for one target: the pass's finding, unless another caller superseded the
- * attempt meanwhile (then that caller's entry stands), or the pass confirmed a target that has left
+ * What the summary records for one target: the pass's finding for a target it visited, unless another
+ * caller superseded the attempt meanwhile (then that caller's entry stands), or the pass confirmed a target that has left
  * the stopped set since — a source may report a restart between a visit and the summary — in which
  * case the persisted entry stands and the next pass sees the violation. Storage refuses a confirmed
  * target that is not stopped, so the summary never records one.
@@ -726,10 +734,16 @@ async function _kept(
   writer: Pick<ITaskRepositoryWriter, 'readCommit'>,
   mode: IStopIntent['mode'],
   mine: IStopTarget,
-  found: IStopTarget
+  found: IStopTarget,
+  visited: boolean
 ): Promise<TaskResult<IStopTarget>> {
-  if (found.attempt !== mine.attempt || found.state !== 'confirmed' || canonicallySame(found, mine)) {
-    return ok(found.attempt === mine.attempt ? found : mine);
+  // A target the pass did not visit carries only what the intent held when the pass began; another
+  // caller may have recorded progress since, which that stale copy must not overwrite.
+  if (!visited || found.attempt !== mine.attempt) {
+    return ok(mine);
+  }
+  if (found.state !== 'confirmed' || canonicallySame(found, mine)) {
+    return ok(found);
   }
   const read = await writer.readCommit(found.taskId);
   if (read.isFailure()) {
@@ -777,13 +791,20 @@ async function _persist(
     }
     const targets: IStopTarget[] = [];
     for (let j = 0; j < now.targets.length; j++) {
-      const kept = await _kept(writer, intent.mode, now.targets[j], pass.targets[j]);
+      const kept = await _kept(writer, intent.mode, now.targets[j], pass.targets[j], pass.visited.has(j));
       if (kept.isFailure()) {
         return propagate(kept);
       }
       targets.push(kept.value);
     }
-    const next: IStopIntent = { ...now, targets, state: _derive(targets, pass.complete, topologyHeld) };
+    // A pass that did not visit every target, and changed none, has no verdict to give: it leaves the
+    // intent's standing — which a complete pass, perhaps a concurrent one, established — as it is.
+    const learned: boolean = pass.complete || !topologyHeld || !canonicallySame(targets, now.targets);
+    const next: IStopIntent = {
+      ...now,
+      targets,
+      state: learned ? _derive(targets, pass.complete, topologyHeld) : now.state
+    };
     if (canonicallySame(now, next)) {
       return ok({ intent: now, fresh: true });
     }

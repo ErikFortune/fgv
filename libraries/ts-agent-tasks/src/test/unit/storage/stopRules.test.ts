@@ -594,7 +594,7 @@ describe('the rules hold an unresolved record to nothing: it has no lifecycle an
           draft,
           purpose,
           subtree: () => succeed([tid('u')]),
-          stopped: () => false
+          confirmable: () => false
         })
       ).toSucceed();
     }

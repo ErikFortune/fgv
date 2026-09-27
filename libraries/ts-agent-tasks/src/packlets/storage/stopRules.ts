@@ -7,6 +7,7 @@ import { Converter, Converters, Result, fail, succeed } from '@fgv/ts-utils';
 import {
   IStopIntent,
   IStopLatch,
+  IStopTarget,
   IStoredTaskOperation,
   ITaskCommitRecord,
   ITaskRecordDraft,
@@ -165,7 +166,8 @@ function _identity(intent: IStopIntent): unknown {
  * - `released` only by the operation releasing it; `settled` only by archiving a satisfied cancel
  *   whose every target is confirmed.
  * - A target's attempt moves forward by at most one, always with a fresh key that no live attempt
- *   holds; a target is recorded `confirmed` only while it is in the mode's stopped set.
+ *   holds; a target is recorded `confirmed` only while it is in the mode's stopped set, and an external
+ *   one that is not terminal only with its source's stable-stop evidence.
  * - A source observation changes no intent.
  * @internal
  */
@@ -178,8 +180,11 @@ export function checkStopEvolution(params: {
   readonly added?: IStoredTaskOperation;
   /** The authoritative subtree of this task, root first, breadth-first with id tie breaks. */
   readonly subtree: () => Result<ReadonlyArray<TaskId>>;
-  /** Whether a task, as the repository holds it now, is in a mode's stopped set. */
-  readonly stopped: (mode: StopMode, taskId: TaskId) => boolean;
+  /**
+   * Whether a target may be recorded confirmed: its task, as the repository holds it now, is in the
+   * mode's stopped set — and an external one is held there by its source's declared stable stop.
+   */
+  readonly confirmable: (mode: StopMode, target: IStopTarget) => boolean;
 }): Result<true> {
   const { book, current, draft, purpose, added } = params;
   const before: ReadonlyArray<IStopIntent> = current.recordType === 'resolved' ? current.stops ?? [] : [];
@@ -194,7 +199,7 @@ export function checkStopEvolution(params: {
     return fail(`a stop is evidence and cannot be dropped`);
   }
   for (let i = 0; i < before.length; i++) {
-    const checked: Result<true> = _evolved(before[i], after[i], draft, added, book, params.stopped);
+    const checked: Result<true> = _evolved(before[i], after[i], draft, added, book, params.confirmable);
     if (checked.isFailure()) {
       return checked;
     }
@@ -241,7 +246,7 @@ function _evolved(
   draft: ITaskRecordDraft,
   added: IStoredTaskOperation | undefined,
   book: StopBook,
-  stopped: (mode: StopMode, taskId: TaskId) => boolean
+  confirmable: (mode: StopMode, target: IStopTarget) => boolean
 ): Result<true> {
   if (!canonicallyEqual(_identity(was), _identity(now))) {
     return fail(`stop ${was.id}: its identity and target set are immutable`);
@@ -284,8 +289,8 @@ function _evolved(
     }
     // A confirmation — and its evidence — is recorded only while the target is actually stopped: it
     // releases the attempt's reservation, so it is not the summary's to assert.
-    if (b.state === 'confirmed' && !canonicallyEqual(a, b) && !stopped(was.mode, b.taskId)) {
-      return fail(`stop ${was.id}: target ${b.taskId} is recorded confirmed, and it is not stopped`);
+    if (b.state === 'confirmed' && !canonicallyEqual(a, b) && !confirmable(was.mode, b)) {
+      return fail(`stop ${was.id}: target ${b.taskId} is recorded confirmed, and nothing holds it stopped`);
     }
   }
   return succeed(true);

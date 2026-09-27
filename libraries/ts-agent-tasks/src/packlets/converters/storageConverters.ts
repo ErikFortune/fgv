@@ -28,6 +28,7 @@ import {
   TaskId,
   TaskRevision,
   allTaskCatalogOperationTypes,
+  isLatchingStopState,
   isTerminalTaskStatus,
   taskUpdateId
 } from '../types';
@@ -149,6 +150,14 @@ function _resolvedInvariants<
   const foreign = (value.stops ?? []).find((intent) => intent.rootId !== envelope.id);
   if (foreign !== undefined) {
     return fail(`task ${envelope.id}: holds stop ${foreign.id} of ${foreign.rootId}`);
+  }
+  // An archive settles a satisfied cancel and is refused under any other latching stop: a tombstone
+  // keeps only released and settled reports, and never a latch it could not enforce.
+  const standing = value.archived
+    ? (value.stops ?? []).find((intent) => isLatchingStopState(intent.state))
+    : undefined;
+  if (standing !== undefined) {
+    return fail(`task ${envelope.id}: an archived record holds stop ${standing.id}, still ${standing.state}`);
   }
   return _operationsBelongTo(envelope.id, value.operations)
     .onSuccess(() => _updatesBelongTo(envelope.id, envelope.revision, value.updates))

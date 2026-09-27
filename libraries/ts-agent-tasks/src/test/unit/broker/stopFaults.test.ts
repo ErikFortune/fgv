@@ -69,7 +69,12 @@ function running(record: ITaskCommitRecord): ITaskCommitRecord {
 }
 
 /** An operation holding `key` in `record`: not a command, an unmarked command, or another stop's. */
-function held(record: IResolvedTaskCommitRecord, key: OperationId, holder: string): IStoredTaskOperation {
+function held(
+  record: IResolvedTaskCommitRecord,
+  key: OperationId,
+  holder: string,
+  intentId: OperationId
+): IStoredTaskOperation {
   if (holder === 'catalog') {
     return { ...record.operations[0], operationId: key };
   }
@@ -87,7 +92,9 @@ function held(record: IResolvedTaskCommitRecord, key: OperationId, holder: strin
     principalKey: 'alice',
     dispatch: 'settled',
     receipt: { taskId: request.taskId, operationId: key, command: 'pause', result: { state: 'accepted' } },
-    ...(holder === 'foreign' ? { stop: { rootId: tid('root'), intentId: 'another' as OperationId } } : {})
+    ...(holder === 'foreign' ? { stop: { rootId: tid('root'), intentId: 'another' as OperationId } } : {}),
+    // The same intent id under another root is another stop: intent ids are scoped to their root.
+    ...(holder === 'elsewhere' ? { stop: { rootId: tid('elsewhere'), intentId } } : {})
   };
 }
 
@@ -358,7 +365,8 @@ describe('a repository that contradicts itself is not trusted', () => {
   test.each([
     ['an operation that is not a command', 'catalog'],
     ['a command without a stop marker', 'unmarked'],
-    ["another stop's command", 'foreign']
+    ["another stop's command", 'foreign'],
+    ['a command of the same intent id under another root', 'elsewhere']
   ])('an attempt key held by %s gets a new attempt', async (__, holder) => {
     const h = await withJobs();
     const accepted = (await stop(h, h.writer, 'root', 'pause')).orThrow();
@@ -370,7 +378,7 @@ describe('a repository that contradicts itself is not trusted', () => {
           'job',
           async (real) => {
             const j = (await real(tid('job'))).orThrow() as IResolvedTaskCommitRecord;
-            return found({ ...j, operations: [...j.operations, held(j, key, holder)] });
+            return found({ ...j, operations: [...j.operations, held(j, key, holder, accepted.intentId)] });
           }
         )
       })

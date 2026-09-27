@@ -17,7 +17,16 @@ import {
   TaskId,
   defaultTaskCapacityProfile
 } from '../../../index';
-import { TestPolicy, alpha, bindWriter, brokerHarness, op, tid } from '../../helpers/brokerFixtures';
+import {
+  TestPolicy,
+  alpha,
+  bindWriter,
+  brokerHarness,
+  command,
+  op,
+  revisionOf,
+  tid
+} from '../../helpers/brokerFixtures';
 import {
   ISourceHarness,
   harnessWith,
@@ -26,6 +35,7 @@ import {
   sourceHarness,
   sourceRegistry
 } from '../../helpers/sourceFixtures';
+import { converters } from '../../helpers/fixtures';
 import { environment, memoryRoot } from '../../helpers/storageFixtures';
 import {
   CapabilityScript,
@@ -321,7 +331,7 @@ describe('T9 Copilot round 1 regressions', () => {
           }
         })
       )
-    ).toFailWith(/target c is recorded confirmed, and it is not stopped/);
+    ).toFailWith(/target c is recorded confirmed, and nothing holds it stopped/);
   });
 
   describe('a target confirmed by a pass that leaves the stopped set before the summary', () => {
@@ -438,5 +448,120 @@ describe('T9 Copilot round 2 regressions', () => {
     (await release(h, h.writer, accepted)).orThrow();
     (await h.writer.resolveCommands({ limit: 10 })).orThrow();
     expect(h.executor.dispatches.get(key)).toBe(2);
+  });
+});
+
+// Copilot, round 3 on #701.
+describe('T9 Copilot round 3 regressions', () => {
+  test('a bounded pass racing a complete one neither overwrites its progress nor withdraws its verdict', async () => {
+    const h = await withJob();
+    const accepted = (await stop(h, h.writer, 'root', 'pause')).orThrow();
+    // While the bounded pass is authorizing its first target, a complete pass runs to satisfaction.
+    const policy = h.policy;
+    let raced = false;
+    policy.afterDecision = async (r) => {
+      if (!raced && r.action === 'stop' && r.role === 'stop-target' && r.task?.envelope.id === 'root') {
+        raced = true;
+        expect((await pump(h.writer, accepted)).orThrow().state).toBe('satisfied');
+      }
+    };
+    // One unit: the bounded pass spends it on the root and cannot so much as ask the job's source.
+    const bounded = (await pump(h.writer, accepted, 1)).orThrow();
+    policy.afterDecision = undefined;
+    const stored = await persisted(h, accepted);
+    expect(stored.targets.map((t) => t.state)).toEqual(['confirmed', 'confirmed']);
+    expect(stored.state).toBe('satisfied');
+    expect(bounded.targets.map((t) => t.state)).toEqual(['confirmed', 'confirmed']);
+  });
+
+  test('an archived record holding a latching stop is not a record this repository wrote', async () => {
+    const h = await brokerHarness();
+    await node(h.writer, 'r', { stopPolicy: 'cascade-cancel' });
+    await command(h, h.writer, 'r', 'cancel', { reason: { code: 'done', summary: 'done' } });
+    (
+      await h.writer.archive({
+        taskId: tid('r'),
+        operationId: op(),
+        expectedRevision: await revisionOf(h.repository, 'r')
+      })
+    ).orThrow();
+    const archived = (await h.repository.readCommit(tid('r'))).orThrow() as IResolvedTaskCommitRecord;
+    expect(converters.storage.record.convert(JSON.parse(JSON.stringify(archived)))).toSucceed();
+    const latching = {
+      id: 's',
+      rootId: 'r',
+      mode: 'cancel',
+      requestedBy: 'alice',
+      targets: [{ taskId: 'r', attempt: 1, operationId: 'k', state: 'unexamined' }],
+      state: 'pending',
+      topologyGeneration: 0
+    };
+    expect(
+      converters.storage.record.convert({ ...JSON.parse(JSON.stringify(archived)), stops: [latching] })
+    ).toFailWith(/an archived record holds stop s, still pending/);
+  });
+
+  test('storage refuses to record an external target confirmed without its stable-stop evidence', async () => {
+    const h = await withJob();
+    h.executor.change('job', (j) => {
+      j.lifecycle = { status: 'paused', reason: { code: 'manual', summary: 'held' } };
+    });
+    (await h.broker.observe(tid('job'))).orThrow();
+    const accepted = await persisted(h, (await stop(h, h.writer, 'root', 'cancel')).orThrow());
+    const paused = await persisted(h, (await stop(h, h.writer, 'root', 'pause')).orThrow());
+    const root = (await h.repository.readCommit(tid('root'))).orThrow() as IResolvedTaskCommitRecord;
+    const forged = {
+      ...paused,
+      targets: paused.targets.map((t, i) => (i === 1 ? { ...t, state: 'confirmed' as const } : t))
+    };
+    expect(
+      await h.repository.withWriter((writer) =>
+        writer.commit({
+          purpose: 'maintenance',
+          taskId: tid('root'),
+          expectedRevision: root.task.envelope.revision,
+          expectedRecordRevision: root.recordRevision,
+          record: {
+            recordType: 'resolved',
+            task: root.task,
+            operations: root.operations,
+            updates: root.updates,
+            archived: false,
+            stops: [accepted, forged]
+          }
+        })
+      )
+    ).toFailWith(/target job is recorded confirmed, and nothing holds it stopped/);
+  });
+
+  test('storage refuses to record a target confirmed that has no lifecycle yet', async () => {
+    const h = await sourceHarness({ capabilities: new CapabilityScript().ask });
+    await node(h.writer, 'root', { stopPolicy: 'cascade-pause' });
+    h.executor.addJob('job');
+    await registerJob(h, 'job', { parentId: tid('root'), unresolved: true });
+    const paused = await persisted(h, (await stop(h, h.writer, 'root', 'pause')).orThrow());
+    const root = (await h.repository.readCommit(tid('root'))).orThrow() as IResolvedTaskCommitRecord;
+    const forged = {
+      ...paused,
+      targets: paused.targets.map((t, i) => (i === 1 ? { ...t, state: 'confirmed' as const } : t))
+    };
+    expect(
+      await h.repository.withWriter((writer) =>
+        writer.commit({
+          purpose: 'maintenance',
+          taskId: tid('root'),
+          expectedRevision: root.task.envelope.revision,
+          expectedRecordRevision: root.recordRevision,
+          record: {
+            recordType: 'resolved',
+            task: root.task,
+            operations: root.operations,
+            updates: root.updates,
+            archived: false,
+            stops: [forged]
+          }
+        })
+      )
+    ).toFailWith(/target job is recorded confirmed, and nothing holds it stopped/);
   });
 });

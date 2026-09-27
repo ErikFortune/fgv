@@ -908,7 +908,7 @@ const T9_ROWS = [
   m(
     'T9-35 storage lets the summary record a target confirmed that is not stopped',
     S + 'stopRules.ts',
-    "    if (b.state === 'confirmed' && !canonicallyEqual(a, b) && !stopped(was.mode, b.taskId)) {",
+    "    if (b.state === 'confirmed' && !canonicallyEqual(a, b) && !confirmable(was.mode, b)) {",
     "    if (b.state === 'confirmed' && !canonicallyEqual(a, b) && b.attempt < 0) {",
     T9
   ),
@@ -952,6 +952,41 @@ const T9_ROWS = [
     S + 'openRepository.ts',
     '.onSuccess((profile) => stopAttemptBundle(profile).onSuccess(() => succeed(profile)))',
     '.onSuccess((profile) => succeed(profile))',
+    T9
+  ),
+  m(
+    "T9-42 a landed command is this stop's when only its intent id matches",
+    B + 'stopPump.ts',
+    '      landed.stop?.rootId !== this._intent.rootId ||',
+    '      landed.stop?.rootId === undefined ||',
+    T9
+  ),
+  m(
+    'T9-43 an unvisited target overwrites newer progress in the summary',
+    B + 'stopPump.ts',
+    '  if (!visited || found.attempt !== mine.attempt) {',
+    '  if (found.attempt !== mine.attempt) {',
+    T9
+  ),
+  m(
+    'T9-44 a bounded pass that learned nothing withdraws the verdict',
+    B + 'stopPump.ts',
+    '      state: learned ? _derive(targets, pass.complete, topologyHeld) : now.state',
+    '      state: _derive(targets, pass.complete, topologyHeld)',
+    T9
+  ),
+  m(
+    'T9-45 an archived record may hold a latching stop',
+    C + 'storageConverters.ts',
+    '  if (standing !== undefined) {',
+    '  if (standing !== undefined && standing.id.length < 0) {',
+    T9
+  ),
+  m(
+    'T9-46 an external target is confirmed without stable-stop evidence',
+    S + 'stopAdmission.ts',
+    '      target.stableSourceEvidence !== undefined)',
+    '      target.attempt > 0)',
     T9
   )
 ];
