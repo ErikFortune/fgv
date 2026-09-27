@@ -122,7 +122,7 @@ describe('the admission freeze while a stop latches', () => {
         operationId: op(),
         expectedRevision: await revisionOf(h.repository, 'c')
       })
-    ).toFailWith(/under stop .* must settle or be released first/);
+    ).toFailWith(/under another task's stop latch, which must settle or be released first/);
   });
 
   test('storage refuses the bypass itself: a raw writer commit that moves a latched task', async () => {

@@ -143,6 +143,13 @@ export type CapacityDimension = 'retained-tasks' | 'non-archived-tasks' | 'subsc
 export const capacityPressureThreshold: number;
 
 // @public
+export function carriedStops(record: {
+    readonly stops?: ReadonlyArray<IStopIntent>;
+}): {
+    readonly stops?: ReadonlyArray<IStopIntent>;
+};
+
+// @public
 export function checkListCompletion(listId: TaskId, children: ReadonlyArray<ITaskChildState>, requireChild: boolean): Result<number>;
 
 // @public

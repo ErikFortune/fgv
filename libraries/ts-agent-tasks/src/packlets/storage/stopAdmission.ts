@@ -42,11 +42,11 @@ export interface IStopCommitPlan {
   readonly units: ReadonlyMap<TaskId, { readonly before: number; readonly after: number }>;
 }
 
-/** Operation slots a task holds for its closeout: the terminal transition and the archive. */
+/**
+ * Operation slots a task holds for its closeout: the terminal transition and the archive. Asked only of
+ * a task gaining an attempt, which is never archived — an archived target's attempt is not funded.
+ */
 function _closeoutHeld(projection: ITaskProjection): number {
-  if (projection.archived) {
-    return 0;
-  }
   return projection.status !== undefined && isTerminalTaskStatus(projection.status) ? 1 : 2;
 }
 
@@ -107,11 +107,20 @@ export function planStopCommit(params: {
     );
   }
 
-  const bundle: TaskResult<DimensionAmounts> = _bundle(profile);
-  if (bundle.isFailure()) {
-    return propagate(bundle);
-  }
-  const reserve = (facts: IStopFacts): DimensionAmounts => stopReserve(facts, bundle.value, profile);
+  return _bundle(profile).onSuccess((bundle) => _plan(book, ledger, tasks, profile, taskId, draft, bundle));
+}
+
+/** The stop plan of a checked replacement, given the profile's attempt bundle. */
+function _plan(
+  book: StopBook,
+  ledger: CapacityLedger,
+  tasks: ReadonlyMap<TaskId, ITaskProjection>,
+  profile: ITaskCapacityProfile,
+  taskId: TaskId,
+  draft: ITaskRecordDraft,
+  bundle: DimensionAmounts
+): TaskResult<IStopCommitPlan> {
+  const reserve = (facts: IStopFacts): DimensionAmounts => stopReserve(facts, bundle, profile);
   const preview: ReadonlyMap<TaskId, IStopFacts> = book.preview(taskId, stopContentOf(draft));
   const own: IStopFacts = preview.get(taskId)!;
   const entries: Map<string, ILedgerEntry> = new Map();

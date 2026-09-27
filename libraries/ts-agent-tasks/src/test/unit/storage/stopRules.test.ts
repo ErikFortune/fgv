@@ -6,15 +6,27 @@
 import '@fgv/ts-utils-jest';
 import {
   IResolvedTaskCommitRecord,
+  IResolvedTaskRecordDraft,
   IStopIntent,
+  IStoredCatalogOperation,
   IStoredTaskOperation,
   ITaskCommitRecord,
+  ITaskEnvelope,
+  ITaskRecordDraft,
+  ITaskRepository,
   OperationId,
   TaskResult
 } from '../../../index';
-import { IBrokerHarness, brokerHarness, op, tid } from '../../helpers/brokerFixtures';
+import { IBrokerHarness, alpha, brokerHarness, op, tid } from '../../helpers/brokerFixtures';
 import { converters } from '../../helpers/fixtures';
-import { node, persisted, pump, stop } from '../../helpers/stopFixtures';
+import { recordOf, registerJob, sourceHarness } from '../../helpers/sourceFixtures';
+import { CapabilityScript, node, persisted, pump, release, stop } from '../../helpers/stopFixtures';
+import { registration, unresolvedRegistration } from '../../helpers/storageFixtures';
+import { succeed } from '@fgv/ts-utils';
+// eslint-disable-next-line @rushstack/packlets/mechanics
+import { StopBook } from '../../../packlets/storage/stopBook';
+// eslint-disable-next-line @rushstack/packlets/mechanics
+import { checkStopAdmission, checkStopEvolution } from '../../../packlets/storage/stopRules';
 
 async function root(h: IBrokerHarness, id: string = 'root'): Promise<IResolvedTaskCommitRecord> {
   return (await h.repository.readCommit(tid(id))).orThrow() as IResolvedTaskCommitRecord;
@@ -62,9 +74,9 @@ async function raw(
 
 function stopOp(
   id: OperationId,
-  operation: 'stop' | 'release-stop' = 'stop',
+  operation: IStoredCatalogOperation['operation'] = 'stop',
   intentId?: string
-): IStoredTaskOperation {
+): IStoredCatalogOperation {
   return {
     type: 'catalog',
     operationId: id,
@@ -201,6 +213,19 @@ describe('storage enforces how a stop is accepted and how it evolves', () => {
       );
     });
 
+    test('a released stop stays as evidence, unchanged, beside the next one', async () => {
+      const released = (
+        await release(h, h.writer, { rootId: tid('root'), intentId: accepted.id } as never)
+      ).orThrow();
+      expect(released.state).toBe('released');
+      const again = (await stop(h, h.writer, 'root', 'pause')).orThrow();
+      const r = await root(h);
+      expect(r.stops!.map((i) => [i.id, i.state])).toEqual([
+        [accepted.id, 'released'],
+        [again.intentId, 'pending']
+      ]);
+    });
+
     test('an attempt moves forward by one, with a key no attempt holds', async () => {
       const bump = (attempt: number, key: OperationId): IStopIntent => ({
         ...accepted,
@@ -293,6 +318,13 @@ describe('the intent converters hold a stop to its structure', () => {
     expect(converters.stops.intent.convert(value)).toFailWith(expected);
   });
 
+  test('no more targets than the bound', () => {
+    const many = Array.from({ length: 1001 }, (__, i) => (i === 0 ? 'root' : `t${i}`));
+    expect(converters.stops.intent.convert(intent('s' as OperationId, many))).toFailWith(
+      /1001 targets, over the bound of 1000/
+    );
+  });
+
   test('a record holds only its own stops, and one latching stop per mode', () => {
     expect(converters.stops.intents.convert([base, { ...base, id: 't' }])).toFailWith(
       /second latching pause/
@@ -305,5 +337,269 @@ describe('the intent converters hold a stop to its structure', () => {
       ])
     ).toFailWith(/only the stops of its own task/);
     expect(converters.stops.intents.convert([base, { ...base, id: 't', state: 'released' }])).toSucceed();
+  });
+});
+
+/** Commits any draft over `current` through the raw writer. */
+async function commitDraft(
+  h: { readonly repository: ITaskRepository },
+  current: ITaskCommitRecord,
+  draft: ITaskRecordDraft,
+  purpose: 'operation' | 'observation' | 'maintenance',
+  operationId?: OperationId
+): Promise<TaskResult<ITaskCommitRecord>> {
+  const base = {
+    taskId: current.recordType === 'resolved' ? current.task.envelope.id : current.reference.id,
+    expectedRevision:
+      current.recordType === 'resolved' ? current.task.envelope.revision : current.reference.revision,
+    expectedRecordRevision: current.recordRevision,
+    record: draft
+  };
+  return h.repository.withWriter(async (writer) =>
+    purpose === 'operation'
+      ? writer.commit({ ...base, purpose, operationId: operationId! })
+      : purpose === 'observation'
+      ? writer.commit({ ...base, purpose })
+      : writer.commit({ ...base, purpose })
+  );
+}
+
+/** The resolved record `current` as a draft, with `change` applied. */
+function redrafted(
+  current: IResolvedTaskCommitRecord,
+  change: Partial<IResolvedTaskRecordDraft>
+): IResolvedTaskRecordDraft {
+  return {
+    recordType: 'resolved',
+    task: current.task,
+    ...(current.sourceRevision !== undefined ? { sourceRevision: current.sourceRevision } : {}),
+    operations: current.operations,
+    updates: current.updates,
+    archived: current.archived,
+    ...(current.stops !== undefined ? { stops: current.stops } : {}),
+    ...change
+  };
+}
+
+/** `current` with its envelope changed and its revision advanced. */
+function moved(
+  current: IResolvedTaskCommitRecord,
+  envelope: Partial<ITaskEnvelope>
+): IResolvedTaskCommitRecord['task'] {
+  return {
+    ...current.task,
+    envelope: {
+      ...current.task.envelope,
+      ...envelope,
+      revision: (current.task.envelope.revision + 1) as ITaskEnvelope['revision']
+    }
+  };
+}
+
+function command(
+  record: IResolvedTaskCommitRecord,
+  id: OperationId,
+  dispatch: 'not-sent' | 'possibly-sent'
+): IStoredTaskOperation {
+  const request = {
+    taskId: record.task.envelope.id,
+    operationId: id,
+    expectedRevision: record.task.envelope.revision,
+    command: 'advance',
+    parameters: { steps: 1 }
+  };
+  return {
+    type: 'command',
+    operationId: id,
+    request,
+    principalKey: 'alice',
+    dispatch,
+    receipt: { taskId: request.taskId, operationId: id, command: 'advance', result: { state: 'accepted' } }
+  };
+}
+
+describe('storage refuses what the broker refuses first, whatever writes it', () => {
+  let h: IBrokerHarness;
+  let accepted: IStopIntent;
+  beforeEach(async () => {
+    h = await brokerHarness();
+    await node(h.writer, 'root', { stopPolicy: 'cascade-cancel' });
+    await node(h.writer, 'a', { parentId: 'root' });
+    await node(h.writer, 'L', { parentId: 'root', list: true });
+    await node(h.writer, 'x');
+    await node(h.writer, 'y', { parentId: 'x' });
+    accepted = await persisted(h, (await stop(h, h.writer, 'root', 'pause')).orThrow());
+  });
+
+  test('no new task is registered under a latched parent', async () => {
+    const request = registration('n', { envelope: { parentId: tid('root'), scopes: [alpha] } });
+    expect(await h.repository.withWriter((writer) => writer.register(request))).toFailWith(
+      /stop-active: task root is under a stop latch and takes no new child/
+    );
+  });
+
+  test('a latched list does not complete', async () => {
+    const list = await root(h, 'L');
+    const key = op('complete');
+    expect(
+      await commitDraft(
+        h,
+        list,
+        redrafted(list, { operations: [...list.operations, stopOp(key, 'complete-list')] }),
+        'operation',
+        key
+      )
+    ).toFailWith(/stop-active: list L is under a stop latch and cannot complete/);
+  });
+
+  test('a latched task is not moved; nothing moves under a latched parent; elsewhere, moves are free', async () => {
+    const a = await root(h, 'a');
+    const x = await root(h, 'x');
+    const y = await root(h, 'y');
+    const move = async (
+      record: IResolvedTaskCommitRecord,
+      parentId: string | undefined
+    ): Promise<TaskResult<ITaskCommitRecord>> => {
+      const key = op('move');
+      const task = moved(record, { parentId: parentId !== undefined ? tid(parentId) : undefined });
+      return commitDraft(
+        h,
+        record,
+        redrafted(record, { task, operations: [...record.operations, stopOp(key, 'stop')] }),
+        'operation',
+        key
+      );
+    };
+    expect(await move(a, 'x')).toFailWith(/stop-active: task a is under a stop latch and cannot be moved/);
+    expect(await move(x, 'root')).toFailWith(
+      /stop-active: task root is under a stop latch and takes no new child/
+    );
+    expect(await move(y, undefined)).not.toFailWith(/stop-active/);
+  });
+
+  test('an observation does not change a stop', async () => {
+    const r = await root(h);
+    expect(
+      await commitDraft(
+        h,
+        r,
+        redrafted(r, {
+          sourceRevision: { epoch: 'x', token: '1' },
+          stops: [{ ...accepted, state: 'blocked' }]
+        }),
+        'observation'
+      )
+    ).toFailWith(/an observation cannot change a stop/);
+  });
+
+  test('a latched task is not archived, even by a raw writer', async () => {
+    const a = await root(h, 'a');
+    const key = op('archive');
+    const task = moved(a, { lifecycle: { status: 'cancelled', reason: { code: 'x', summary: 'x' } } });
+    expect(
+      await commitDraft(
+        h,
+        a,
+        redrafted(a, {
+          task,
+          archived: true,
+          operations: [...a.operations, stopOp(key, 'archive')]
+        }),
+        'operation',
+        key
+      )
+    ).toFailWith(/stop-active: task a is under a stop latch and cannot be archived/);
+  });
+
+  test('a new stop cannot take a key another stop is attempting with', async () => {
+    const key = op('cancel');
+    const cancel = intent(key, ['root', 'a', 'L'], { mode: 'cancel' });
+    const clash = {
+      ...cancel,
+      targets: cancel.targets.map((t, i) =>
+        i === 1 ? { ...t, operationId: accepted.targets[1].operationId } : { ...t, operationId: op('k') }
+      )
+    };
+    const r = await root(h);
+    expect(
+      await commitDraft(
+        h,
+        r,
+        redrafted(r, { stops: [accepted, clash], operations: [...r.operations, stopOp(key)] }),
+        'operation',
+        key
+      )
+    ).toFailWith(/is already a live attempt/);
+  });
+});
+
+describe('storage holds external tasks to the freeze too', () => {
+  test('no new command is sent to a latched external task, and none recorded before the latch is sent', async () => {
+    const h = await sourceHarness({ capabilities: new CapabilityScript().ask });
+    await node(h.writer, 'root', { stopPolicy: 'cascade-pause' });
+    h.executor.addJob('job');
+    await registerJob(h, 'job', { parentId: tid('root') });
+    // Recorded before the stop, not yet sent.
+    const before = (await recordOf(h, 'job')) as IResolvedTaskCommitRecord;
+    const early = op('early');
+    (
+      await commitDraft(
+        h,
+        before,
+        redrafted(before, { operations: [...before.operations, command(before, early, 'not-sent')] }),
+        'operation',
+        early
+      )
+    ).orThrow();
+    (await stop(h, h.writer, 'root', 'pause')).orThrow();
+    const job = (await recordOf(h, 'job')) as IResolvedTaskCommitRecord;
+    const late = op('late');
+    expect(
+      await commitDraft(
+        h,
+        job,
+        redrafted(job, { operations: [...job.operations, command(job, late, 'not-sent')] }),
+        'operation',
+        late
+      )
+    ).toFailWith(/stop-active: task job is under a stop latch; no new command is dispatched to its source/);
+    const marked = job.operations.map((o) =>
+      o.operationId === early ? { ...o, dispatch: 'possibly-sent' as const } : o
+    );
+    expect(await commitDraft(h, job, redrafted(job, { operations: marked }), 'maintenance')).toFailWith(
+      /stop-active: task job is under a stop latch; a command recorded before it is not sent/
+    );
+  });
+});
+
+describe('the rules hold an unresolved record to nothing: it has no lifecycle and carries no stop', () => {
+  test('admission and evolution pass an unresolved record through', async () => {
+    const h = await brokerHarness();
+    (await h.repository.withWriter((writer) => writer.register(unresolvedRegistration('u')))).orThrow();
+    const current = (await h.repository.readCommit(tid('u'))).orThrow()!;
+    const draft: ITaskRecordDraft = {
+      recordType: 'unresolved',
+      reference: current.recordType === 'unresolved' ? current.reference : (undefined as never),
+      operations: current.operations
+    };
+    const book = new StopBook(() => false);
+    for (const purpose of ['operation', 'maintenance'] as const) {
+      expect(
+        checkStopAdmission({ book, taskId: tid('u'), current, draft, purpose, external: true })
+      ).toSucceed();
+      expect(
+        checkStopEvolution({ book, current, draft, purpose, subtree: () => succeed([tid('u')]) })
+      ).toSucceed();
+    }
+  });
+});
+
+describe('the repository answers for stops without records', () => {
+  test('the subtree of no live task is refused', async () => {
+    const h = await brokerHarness();
+    await node(h.writer, 'root', { stopPolicy: 'cascade-pause' });
+    (await stop(h, h.writer, 'root', 'pause')).orThrow();
+    expect(h.repository.subtree(tid('nobody'), 10)).toFailWith(/subtree: no live task nobody/);
+    expect(h.repository.stopLatches(tid('root'))).toHaveLength(1);
   });
 });

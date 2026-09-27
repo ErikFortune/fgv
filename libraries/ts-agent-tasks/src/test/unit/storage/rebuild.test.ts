@@ -109,6 +109,7 @@ describe('rebuildIndexes', () => {
       state: string;
       index: TaskIndex | undefined;
       handles: number;
+      latches: ReadonlyArray<unknown>;
       calls: Array<Promise<TaskResult<unknown>>>;
     }> = [];
     root.onRead = (name) => {
@@ -118,6 +119,7 @@ describe('rebuildIndexes', () => {
           state: repository.health().state,
           index: inspection.index,
           handles: inspection.cursorHandles,
+          latches: repository.stopLatches('a' as TaskId),
           // Each call is evaluated synchronously, here, mid-scan; awaited afterwards.
           calls: [
             repository.query({ selection: { scopes: [A], lifecycleClass: 'all' } }),
@@ -134,6 +136,7 @@ describe('rebuildIndexes', () => {
     expect(seen[0].state).toBe('rebuilding');
     expect(seen[0].index).toBeUndefined();
     expect(seen[0].handles).toBe(0);
+    expect(seen[0].latches).toEqual([]);
     const [query, nested, writer] = await Promise.all(seen[0].calls);
     expect(query).toFailWithDetail(
       /being rebuilt/i,

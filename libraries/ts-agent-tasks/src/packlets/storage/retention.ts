@@ -16,7 +16,8 @@ import {
   TaskId,
   TaskResult,
   isRequiredCategory,
-  maxTaskPageLimit
+  maxTaskPageLimit,
+  carriedStops
 } from '../types';
 import { updatesOf } from './commitRules';
 import { ISubscriptionEvidence } from './consumerRecords';
@@ -223,7 +224,7 @@ export function withoutUpdates(
     operations: record.operations,
     updates: record.updates.filter((u) => !ids.has(u.id)),
     archived: record.archived,
-    ...(record.stops !== undefined ? { stops: record.stops } : {})
+    ...carriedStops(record)
   };
 }
 

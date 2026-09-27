@@ -1169,23 +1169,21 @@ export function scanRoot(input: IScanInput): TaskResult<ScanOutcome> {
   // Every task is indexed now, so which attempts could still land is known.
   index.stops.recount();
   const holders: ReadonlyArray<TaskId> = scan.isBlocked ? [] : index.stops.holders();
-  if (holders.length > 0) {
-    const bundle: Result<DimensionAmounts> = stopAttemptBundle(profile);
-    for (const taskId of holders) {
-      const key: string = taskKey(taskId);
-      const entry: ILedgerEntry | undefined = ledger.entry(key);
-      if (entry === undefined || bundle.isFailure()) {
-        scan.blocking(
-          'integrity',
-          `task ${taskId}: ${
-            bundle.isFailure() ? bundle.message : 'a stop names it as a target, and no such task is live'
-          }`
-        );
-        continue;
-      }
-      const reserve: DimensionAmounts = stopReserve(index.stops.facts(taskId), bundle.value, profile);
-      ledger.apply(new Map([[key, withStopReserve(entry, zeroAmounts(), reserve)]]));
+  // A stop was accepted under this profile only if its bundle was representable, so it still is.
+  const bundle: DimensionAmounts | undefined =
+    holders.length > 0 ? stopAttemptBundle(profile).orDefault() : undefined;
+  for (const taskId of holders) {
+    const key: string = taskKey(taskId);
+    const entry: ILedgerEntry | undefined = ledger.entry(key);
+    if (entry === undefined || bundle === undefined) {
+      scan.blocking(
+        'integrity',
+        `task ${taskId}: a stop names it, and its reservation cannot be derived — no such task is live`
+      );
+      continue;
     }
+    const reserve: DimensionAmounts = stopReserve(index.stops.facts(taskId), bundle, profile);
+    ledger.apply(new Map([[key, withStopReserve(entry, zeroAmounts(), reserve)]]));
   }
 
   // ---- capacity: a valid repository at its ceiling opens; one over it disagrees with itself ----

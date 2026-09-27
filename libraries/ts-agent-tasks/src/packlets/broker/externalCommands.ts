@@ -25,7 +25,8 @@ import {
   SourceRevisionOrder,
   TaskId,
   TaskResult,
-  TaskRevision
+  TaskRevision,
+  carriedStops
 } from '../types';
 import { ITaskRepositoryWriter } from '../storage';
 import { AccessContext, subjectOf } from './access';
@@ -75,7 +76,7 @@ function _draft(
     operations,
     updates: current.updates,
     archived: current.archived,
-    ...(current.stops !== undefined ? { stops: current.stops } : {})
+    ...carriedStops(current)
   };
 }
 
@@ -326,13 +327,14 @@ export async function dispatchIntent(
     // A command recorded before a stop latch is not sent under it; a stop's own command is not sent
     // once its intent no longer latches — release stops future coordinated attempts.
     const latches = core.repository.stopLatches(taskId);
+    const marker = now.stop;
     const refused: CommandState | undefined = !permitted
       ? { state: 'rejected', reason: 'denied' }
-      : now.stop === undefined
+      : marker === undefined
       ? latches.length > 0
         ? { state: 'rejected', reason: 'stop-active' }
         : undefined
-      : latches.some((l) => l.rootId === now.stop!.rootId && l.intentId === now.stop!.intentId)
+      : latches.some((l) => l.rootId === marker.rootId && l.intentId === marker.intentId)
       ? undefined
       : { state: 'rejected', reason: 'conflict' };
     const next: IStoredCommandOperation =

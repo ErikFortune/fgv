@@ -29,7 +29,8 @@ import {
   TaskRevision,
   UpdateCategory,
   isRequiredCategory,
-  isTerminalTaskStatus
+  isTerminalTaskStatus,
+  carriedStops
 } from '../types';
 import { ITaskCommitRequest, ITaskRepository, ITaskRepositoryWriter } from '../storage';
 import { BrokerCore, canonicalKey, canonicallySame } from './core';
@@ -234,7 +235,7 @@ function _resolvedDraft(
     operations,
     updates: mergeUpdates(repository, current.updates, updates),
     archived: current.archived,
-    ...(current.stops !== undefined ? { stops: current.stops } : {})
+    ...carriedStops(current)
   };
 }
 

@@ -114,7 +114,10 @@ export function checkStopAdmission(params: {
     }
   }
 
-  if (purpose === 'observation') {
+  // A source is authoritative over the work it executes: its observation of a stopped task running
+  // degrades the stop rather than being refused. That exemption is for external tasks only — a native
+  // task has no source, and an observation-purpose commit of one is still held to the freeze.
+  if (purpose === 'observation' && external) {
     return succeed(true);
   }
   const parentBefore: TaskId | undefined = _parentOf(current);
@@ -225,7 +228,7 @@ function _afterArchive(current: ITaskCommitRecord, draft: ITaskRecordDraft, book
   return standing === undefined
     ? succeed(true)
     : _refuse(
-        `task ${taskId} is under stop ${standing.intentId} of ${standing.rootId} and cannot be archived`
+        `task ${taskId} is under a stop latch and cannot be archived until the stop settles or is released`
       );
 }
 

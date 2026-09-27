@@ -4,6 +4,7 @@
  */
 
 import { JsonValue } from '@fgv/ts-json-base';
+import { DetailedFailure, failWithDetail } from '@fgv/ts-utils';
 import {
   ICapacityFailure,
   IProjectedStopTarget,
@@ -18,6 +19,7 @@ import {
   IStoredCatalogOperation,
   IStoredTaskOperation,
   ITaskCommitRecord,
+  ITaskFailure,
   OperationId,
   StopIntentState,
   StopMode,
@@ -27,13 +29,14 @@ import {
   isLatchingStopState,
   isStoppedFor,
   isTerminalTaskStatus,
-  taskListKind
+  taskListKind,
+  carriedStops
 } from '../types';
 import { AccessContext, subjectOf } from './access';
 import { confirmUnchanged, isSameCatalog, readExisting } from './catalogMutation';
 import { convertRequest, isNativeKind } from './catalogOperations';
 import { BrokerCore, revisionOf, storedOperation } from './core';
-import { changedSinceAuthorized, codeOf, denied, notFound, ok, propagate, taskFailure } from './failures';
+import { changedSinceAuthorized, denied, notFound, ok, propagate, taskFailure } from './failures';
 
 /**
  * The key a broker instance tracks one intent's revalidation under.
@@ -58,10 +61,7 @@ export function intentOf(record: ITaskCommitRecord, intentId: OperationId): ISto
  * target it is satisfied by its children, which are targets of their own.
  * @internal
  */
-export function targetStopped(mode: StopMode, record: ITaskCommitRecord): boolean {
-  if (record.recordType !== 'resolved') {
-    return false;
-  }
+export function targetStopped(mode: StopMode, record: IResolvedTaskCommitRecord): boolean {
   const envelope = record.task.envelope;
   return (
     (mode === 'pause' && envelope.kind === taskListKind) || isStoppedFor(mode, envelope.lifecycle.status)
@@ -78,18 +78,6 @@ function _projected(target: IStopTarget): IProjectedStopTarget {
     ...(target.confirmedRevision !== undefined ? { confirmedRevision: target.confirmedRevision } : {}),
     ...(target.violation !== undefined ? { violation: target.violation } : {})
   };
-}
-
-/** Reads a target for presentation: a quarantined record reads as absent — it is not stopped. */
-async function _readTarget(
-  core: BrokerCore,
-  taskId: TaskId
-): Promise<TaskResult<ITaskCommitRecord | undefined>> {
-  const read = await core.repository.readCommit(taskId);
-  if (read.isFailure() && codeOf(read) === 'unknown-kind-version') {
-    return ok(undefined);
-  }
-  return read;
 }
 
 /**
@@ -117,26 +105,29 @@ export async function presentStop(
   let restricted: boolean = false;
   const visible: IProjectedStopTarget[] = [];
   for (const target of intent.targets) {
-    const read = await _readTarget(core, target.taskId);
+    const read = await core.repository.readCommit(target.taskId);
     if (read.isFailure()) {
       return propagate(read);
     }
     const record: ITaskCommitRecord | undefined = read.value;
+    // A confirmed target was resolved when it was confirmed, and a resolved record stays resolved.
+    const resolved: IResolvedTaskCommitRecord | undefined =
+      record?.recordType === 'resolved' ? record : undefined;
     let presented: IProjectedStopTarget = _projected(target);
     if (
       latching &&
       target.state === 'confirmed' &&
-      (record === undefined || !targetStopped(intent.mode, record))
+      (resolved === undefined || !targetStopped(intent.mode, resolved))
     ) {
       degraded = true;
       presented = {
         ...presented,
         state: 'indeterminate',
-        ...(record !== undefined && record.recordType === 'resolved'
+        ...(resolved !== undefined
           ? {
               violation: {
-                observedRevision: record.task.envelope.revision,
-                observedStatus: record.task.envelope.lifecycle.status
+                observedRevision: resolved.task.envelope.revision,
+                observedStatus: resolved.task.envelope.lifecycle.status
               }
             }
           : {})
@@ -244,21 +235,73 @@ async function _replay(
   return confirmUnchanged(core, ctx, epoch, taskId, record, presented.value, stored.operationId);
 }
 
-/** The draft of a root with its intents replaced and one operation added. */
-function _draft(
+/**
+ * `stops` with `next` in place of the intent of the same id, or appended when it is new.
+ * @internal
+ */
+export function withIntent(
+  stops: ReadonlyArray<IStopIntent> | undefined,
+  next: IStopIntent
+): ReadonlyArray<IStopIntent> {
+  const all: ReadonlyArray<IStopIntent> = stops ?? [];
+  return all.some((intent) => intent.id === next.id)
+    ? all.map((intent) => (intent.id === next.id ? next : intent))
+    : [...all, next];
+}
+
+/**
+ * A replacement of `current` with its operations or its stops changed, and everything else kept.
+ * @internal
+ */
+export function redraft(
   current: IResolvedTaskCommitRecord,
-  operation: IStoredCatalogOperation,
-  stops: ReadonlyArray<IStopIntent>
+  change: {
+    readonly operations?: ReadonlyArray<IStoredTaskOperation>;
+    readonly stops?: ReadonlyArray<IStopIntent>;
+  }
 ): IResolvedTaskRecordDraft {
   return {
     recordType: 'resolved',
     task: current.task,
     ...(current.sourceRevision !== undefined ? { sourceRevision: current.sourceRevision } : {}),
-    operations: [...current.operations, operation],
+    operations: change.operations ?? current.operations,
     updates: current.updates,
     archived: current.archived,
-    stops
+    ...carriedStops(change.stops !== undefined ? change : current)
   };
+}
+
+/**
+ * A capacity refusal met by a stop, as a principal may see it. A stop reaches targets its principal
+ * may not see, and a per-record refusal names the record and its figures, so those are dropped: the
+ * dimension is kept. A repository-wide refusal names no task and passes as it is.
+ * @internal
+ */
+export function stopCapacity(failure: ICapacityFailure | undefined): ICapacityFailure | undefined {
+  if (failure === undefined || failure.recordId === undefined) {
+    return failure;
+  }
+  return {
+    reason: failure.reason,
+    dimension: failure.dimension,
+    used: 0,
+    reserved: 0,
+    requested: failure.requested,
+    limit: failure.limit,
+    reclaimableByCleanup: failure.reclaimableByCleanup
+  };
+}
+
+/** A stop's failure, with any capacity refusal made safe to return (see {@link stopCapacity}). */
+function _safeFailure<T>(failure: DetailedFailure<unknown, ITaskFailure>): TaskResult<T> {
+  const capacity: ICapacityFailure | undefined = failure.detail?.capacity;
+  if (capacity === undefined || capacity.recordId === undefined) {
+    return propagate(failure);
+  }
+  return failWithDetail<T, ITaskFailure>(
+    `capacity: a target of the stop has no room for its attempt ('${capacity.dimension}'); nothing was written`,
+    { ...failure.detail!, capacity: stopCapacity(capacity)! }
+  );
 }
 
 /** The refusal for a stale expected revision. */
@@ -339,21 +382,16 @@ export async function requestStop(
     if (reread.isFailure()) {
       return propagate<IStopIntent | undefined>(reread);
     }
-    const found: ITaskCommitRecord | undefined = reread.value;
-    if (found !== undefined && storedOperation(found, operationId) !== undefined) {
-      return ok<IStopIntent | undefined>(undefined);
-    }
-    if (
-      found === undefined ||
-      found.recordType !== 'resolved' ||
-      revisionOf(found) !== request.expectedRevision
-    ) {
+    const current: ITaskCommitRecord | undefined = reread.value;
+    if (current?.recordType !== 'resolved') {
       return changedSinceAuthorized<IStopIntent | undefined>(`task ${taskId}`, operationId);
     }
-    const current: IResolvedTaskCommitRecord = found;
-    const again = _stoppable(current, mode, operationId);
-    if (again.isFailure()) {
-      return propagate<IStopIntent | undefined>(again);
+    if (storedOperation(current, operationId) !== undefined) {
+      return ok<IStopIntent | undefined>(undefined);
+    }
+    // At the authorized revision the envelope — kind, policy, archived state — is the one admitted.
+    if (revisionOf(current) !== request.expectedRevision) {
+      return changedSinceAuthorized<IStopIntent | undefined>(`task ${taskId}`, operationId);
     }
     const existing: IStopIntent | undefined = (current.stops ?? []).find(
       (intent) => intent.mode === mode && isLatchingStopState(intent.state)
@@ -412,14 +450,17 @@ export async function requestStop(
       taskId,
       expectedRevision: current.task.envelope.revision,
       expectedRecordRevision: current.recordRevision,
-      record: _draft(current, operation, [...(current.stops ?? []), intent])
+      record: redraft(current, {
+        operations: [...current.operations, operation],
+        stops: withIntent(current.stops, intent)
+      })
     });
     return committed.isSuccess()
       ? ok<IStopIntent | undefined>(intent)
       : propagate<IStopIntent | undefined>(committed);
   });
   if (accepted.isFailure()) {
-    return propagate(accepted);
+    return _safeFailure(accepted);
   }
   return accepted.value !== undefined
     ? presentStop(core, ctx, accepted.value)
@@ -487,25 +528,23 @@ export async function releaseStop(
     if (reread.isFailure()) {
       return propagate<IStopIntent | undefined>(reread);
     }
-    const found: ITaskCommitRecord | undefined = reread.value;
-    if (found !== undefined && storedOperation(found, operationId) !== undefined) {
-      return ok<IStopIntent | undefined>(undefined);
-    }
-    if (
-      found === undefined ||
-      found.recordType !== 'resolved' ||
-      revisionOf(found) !== request.expectedRevision
-    ) {
+    const current: ITaskCommitRecord | undefined = reread.value;
+    if (current?.recordType !== 'resolved') {
       return changedSinceAuthorized<IStopIntent | undefined>(`task ${taskId}`, operationId);
     }
-    const current: IResolvedTaskCommitRecord = found;
+    if (storedOperation(current, operationId) !== undefined) {
+      return ok<IStopIntent | undefined>(undefined);
+    }
+    if (revisionOf(current) !== request.expectedRevision) {
+      return changedSinceAuthorized<IStopIntent | undefined>(`task ${taskId}`, operationId);
+    }
+    // The intent's own state moves without a semantic revision — another release, a pump — so it is
+    // checked again here.
     const again = _releasable(current, intentId, operationId);
     if (again.isFailure()) {
       return propagate<IStopIntent | undefined>(again);
     }
-    const stops: ReadonlyArray<IStopIntent> = (current.stops ?? []).map((intent) =>
-      intent.id === intentId ? { ...intent, state: 'released' } : intent
-    );
+    const next: IStopIntent = { ...again.value, state: 'released' };
     const operation: IStoredCatalogOperation = {
       type: 'catalog',
       operationId,
@@ -523,10 +562,13 @@ export async function releaseStop(
       taskId,
       expectedRevision: current.task.envelope.revision,
       expectedRecordRevision: current.recordRevision,
-      record: _draft(current, operation, stops)
+      record: redraft(current, {
+        operations: [...current.operations, operation],
+        stops: withIntent(current.stops, next)
+      })
     });
     return committed.isSuccess()
-      ? ok<IStopIntent | undefined>(intentOf(committed.value, intentId))
+      ? ok<IStopIntent | undefined>(next)
       : propagate<IStopIntent | undefined>(committed);
   });
   if (released.isFailure()) {
@@ -542,7 +584,7 @@ function _releasable(
   record: ITaskCommitRecord,
   intentId: OperationId,
   operationId: OperationId
-): TaskResult<true> {
+): TaskResult<IStopIntent> {
   const intent: IStopIntent | undefined = intentOf(record, intentId);
   const id: TaskId = record.recordType === 'resolved' ? record.task.envelope.id : record.reference.id;
   if (intent === undefined) {
@@ -573,7 +615,7 @@ function _releasable(
       { operationId }
     );
   }
-  return ok(true);
+  return ok(intent);
 }
 
 /**

@@ -333,9 +333,10 @@ export class StopBook {
     const key: string = _intentKey(intent.rootId, intent.id);
     touched.add(intent.rootId);
     for (const target of intent.targets) {
-      const latches: Map<string, IStopLatch> | undefined = this._latches.get(target.taskId);
-      latches?.delete(key);
-      if (latches?.size === 0) {
+      // Latched when this intent was added: a removal only ever mirrors an earlier add.
+      const latches: Map<string, IStopLatch> = this._latches.get(target.taskId)!;
+      latches.delete(key);
+      if (latches.size === 0) {
         this._latches.delete(target.taskId);
       }
       const attempt: IAttempt | undefined = this._attempts.get(target.operationId);
@@ -373,9 +374,10 @@ export class StopBook {
   }
 
   private _removeMarked(taskId: TaskId, marked: IMarkedStopCommand, touched: Set<TaskId>): void {
-    const held: Map<OperationId, IMarkedStopCommand> | undefined = this._marked.get(taskId);
-    held?.delete(marked.operationId);
-    if (held?.size === 0) {
+    // Held when this command was added: a removal only ever mirrors an earlier add.
+    const held: Map<OperationId, IMarkedStopCommand> = this._marked.get(taskId)!;
+    held.delete(marked.operationId);
+    if (held.size === 0) {
       this._marked.delete(taskId);
     }
     const attempt: IAttempt | undefined = this._attempts.get(marked.operationId);

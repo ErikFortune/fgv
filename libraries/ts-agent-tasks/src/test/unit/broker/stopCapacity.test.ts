@@ -18,8 +18,7 @@ import {
   brokerRegistry,
   harnessOver,
   op,
-  tid,
-  watch
+  tid
 } from '../../helpers/brokerFixtures';
 import { environment, memoryRoot } from '../../helpers/storageFixtures';
 import { ISourceHarness, registerJob, sourceHarness } from '../../helpers/sourceFixtures';
@@ -169,7 +168,10 @@ describe('A3 — a stop reserves for every target before it is accepted', () => 
       ).orThrow();
     }
     const refused = await stop(h, h.writer, 'root', 'pause');
-    expect(refused).toFailWith(/task a would hold 3 operations; its limit is 5, of which 3 are held/);
+    expect(refused).toFailWith(
+      /a target of the stop has no room for its attempt \('operations'\); nothing was written/
+    );
+    expect(refused.isFailure() && refused.detail?.capacity?.dimension).toBe('operations');
     const root = (await h.repository.readCommit(tid('root'))).orThrow()!;
     expect(root.recordType === 'resolved' && root.stops).toBeUndefined();
   });

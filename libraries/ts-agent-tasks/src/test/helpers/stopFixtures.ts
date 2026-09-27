@@ -6,6 +6,10 @@
 import { Result, fail, succeed } from '@fgv/ts-utils';
 import {
   IBoundTaskWriter,
+  ITaskRepositoryWriter,
+  ITaskSource,
+  TaskBroker,
+  TaskEnvironment,
   IResolvedTaskCommitRecord,
   ISourceBinding,
   ISourceCapabilities,
@@ -17,7 +21,8 @@ import {
   StopMode,
   TaskResult
 } from '../../index';
-import { op, revisionOf, tid } from './brokerFixtures';
+import { TestPolicy, alpha, op, revisionOf, tid } from './brokerFixtures';
+import { bindAll } from './deliveryFixtures';
 
 /** A source's stop declaration, scriptable per test: a value, or a failure, or a throw. */
 export class CapabilityScript {
@@ -137,4 +142,37 @@ export function states(result: IStopResult): Record<string, string> {
     out[target.taskId] = target.state;
   }
   return out;
+}
+
+/**
+ * A writer over the same records through a repository that misbehaves: `patch` replaces repository
+ * methods, `writerPatch` replaces methods of the writer a gated section receives, and `environment`
+ * replaces the broker's environment. Everything else delegates.
+ */
+export function faultyWriter(
+  h: {
+    readonly repository: ITaskRepository;
+    readonly env: TaskEnvironment;
+    readonly policy: TestPolicy;
+    readonly source?: ITaskSource;
+  },
+  faults: {
+    readonly patch?: (r: ITaskRepository) => Partial<ITaskRepository>;
+    readonly writerPatch?: (w: ITaskRepositoryWriter) => Partial<ITaskRepositoryWriter>;
+    readonly environment?: TaskEnvironment;
+  }
+): IBoundTaskWriter {
+  const real: ITaskRepository = h.repository;
+  const writerPatch = faults.writerPatch;
+  const repository: ITaskRepository = Object.assign(Object.create(real), {
+    withWriter: <T>(action: (w: ITaskRepositoryWriter) => Promise<TaskResult<T>>) =>
+      real.withWriter((w) => action(writerPatch !== undefined ? { ...bindAll(w), ...writerPatch(w) } : w)),
+    ...(faults.patch !== undefined ? faults.patch(real) : {})
+  });
+  const broker: TaskBroker = TaskBroker.create({
+    repository,
+    environment: faults.environment ?? h.env,
+    ...(h.source !== undefined ? { sources: [h.source] } : {})
+  }).orThrow();
+  return broker.bind({ principal: 'alice', scopes: [alpha], authorization: h.policy }).orThrow();
 }

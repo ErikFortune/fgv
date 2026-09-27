@@ -390,7 +390,8 @@ export interface ITaskRepository {
   subtree(rootId: TaskId, limit: number): TaskResult<ReadonlyArray<TaskId>>;
   /**
    * The stop latches a task is under, from the resident stop book — rebuilt from the records before a
-   * reopened repository accepts a write. Every commit is also checked against them. (T9.)
+   * reopened repository accepts a write. Every commit is also checked against them. None while the
+   * index is being rebuilt, when no write is accepted either. (T9.)
    */
   stopLatches(taskId: TaskId): ReadonlyArray<IStopLatch>;
   /**

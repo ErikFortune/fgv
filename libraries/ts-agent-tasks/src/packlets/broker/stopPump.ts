@@ -12,7 +12,6 @@ import {
   ICommandReceipt,
   ICommandRequest,
   IResolvedTaskCommitRecord,
-  IResolvedTaskRecordDraft,
   ISourceBinding,
   ISourceCapabilities,
   IStopIntent,
@@ -35,15 +34,24 @@ import {
   isTerminalTaskStatus,
   taskListKind
 } from '../types';
+import { ITaskRepositoryWriter } from '../storage';
 import { AccessContext, subjectOf } from './access';
 import { readExisting } from './catalogMutation';
 import { convertRequest, isNativeKind } from './catalogOperations';
 import { commitTrackedCommand } from './commands';
 import { BrokerCore, canonicallySame, storedOperation } from './core';
 import { CommandPermit, authorizationSubject, dispatchIntent, resolveCommand } from './externalCommands';
-import { changedSinceAuthorized, codeOf, denied, notFound, ok, propagate, taskFailure } from './failures';
+import { changedSinceAuthorized, denied, notFound, ok, propagate, taskFailure } from './failures';
 import { callSource, observeTask, sourceOf } from './reconciliation';
-import { intentOf, presentStop, stopKey, targetStopped } from './stopRequests';
+import {
+  intentOf,
+  presentStop,
+  redraft,
+  stopCapacity,
+  stopKey,
+  targetStopped,
+  withIntent
+} from './stopRequests';
 
 /** A stop's command is sent under `stop` authority on its target, never `command` authority. */
 const stopPermit: CommandPermit = (ctx, record) => ctx.may('stop', subjectOf(record), 'stop-target');
@@ -68,10 +76,19 @@ function _derive(
   complete: boolean,
   topologyHeld: boolean
 ): StopIntentState {
-  if (!topologyHeld || targets.some((target) => isStopBlocker(target.state))) {
+  if (!topologyHeld || targets.some(_blocks)) {
     return 'blocked';
   }
   return complete && targets.every((target) => target.state === 'confirmed') ? 'satisfied' : 'pending';
+}
+
+/**
+ * Whether a target keeps its intent blocked: a blocker state, or a stable stop its source contradicted
+ * that is not confirmed again yet (design § 10 step 7: the intent is marked blocked while it is
+ * reconciled under current authority).
+ */
+function _blocks(target: IStopTarget): boolean {
+  return isStopBlocker(target.state) || (target.violation !== undefined && target.state !== 'confirmed');
 }
 
 /** The reason every stop command carries: what it is an attempt of. */
@@ -83,6 +100,29 @@ function _reason(core: BrokerCore, intent: IStopIntent): { readonly code: string
       core.converters.bounds.maxSummaryLength
     )
   };
+}
+
+/** A root's record and the one intent a pass is about, as they are now. */
+interface ILatching {
+  readonly root: IResolvedTaskCommitRecord;
+  readonly intent: IStopIntent;
+}
+
+/** Reads an intent's root and finds the intent in it; `undefined` when the root no longer holds it. */
+async function _latching(
+  writer: Pick<ITaskRepositoryWriter, 'readCommit'>,
+  intent: IStopIntent
+): Promise<TaskResult<ILatching | undefined>> {
+  const read = await writer.readCommit(intent.rootId);
+  if (read.isFailure()) {
+    return propagate(read);
+  }
+  const root: ITaskCommitRecord | undefined = read.value;
+  if (root?.recordType !== 'resolved') {
+    return ok(undefined);
+  }
+  const now: IStopIntent | undefined = intentOf(root, intent.id);
+  return ok(now !== undefined ? { root, intent: now } : undefined);
 }
 
 /**
@@ -156,11 +196,10 @@ class StopPass {
     const taskId: TaskId = this.targets[i].taskId;
     const read = await this._core.repository.readCommit(taskId);
     if (read.isFailure()) {
-      // A quarantined target — a kind this host does not register — is not stoppable here.
-      return codeOf(read) === 'unknown-kind-version' ? ok(this._with(i, 'unavailable')) : propagate(read);
+      return propagate(read);
     }
     const record: ITaskCommitRecord | undefined = read.value;
-    if (record === undefined || record.recordType === 'unresolved') {
+    if (record?.recordType !== 'resolved') {
       // No lifecycle is known: never confirmed by anything but an observation.
       return ok(this._with(i, 'unavailable'));
     }
@@ -182,13 +221,6 @@ class StopPass {
       // Held by the latch from here: a native task cannot leave the stopped set while it stands.
       return ok(this._confirmed(i, record));
     }
-    const target: IStopTarget = this.targets[i];
-    const landed = storedOperation(record, target.operationId);
-    if (landed !== undefined) {
-      // The attempt landed and the task is not stopped: the command was refused (or its key was not
-      // this stop's to begin with). A retry could not change a native refusal.
-      return ok(this._with(i, 'refused'));
-    }
     if (!this._spend()) {
       return ok({ unfinished: true });
     }
@@ -199,46 +231,57 @@ class StopPass {
     if (committed.value === undefined) {
       return ok(this._unfinished());
     }
-    const after: ITaskCommitRecord = committed.value;
-    return ok(
-      after.recordType === 'resolved' && targetStopped(mode, after)
-        ? this._confirmed(i, after)
-        : this._with(i, 'refused')
-    );
+    // Landed — by this pass or by another caller first. Not stopped: the command was refused, and a
+    // retry could not change a native refusal.
+    const after: IResolvedTaskCommitRecord = committed.value;
+    return ok(targetStopped(mode, after) ? this._confirmed(i, after) : this._with(i, 'refused'));
   }
 
   /** A failure an effect met: capacity is a visible blocker; a moved authorization retries next pass. */
   private _failed(failure: DetailedFailure<unknown, ITaskFailure>): TaskResult<Visit> {
-    const code = codeOf(failure);
-    if (code === 'backpressure') {
-      this.capacity = failure.detail?.capacity;
+    const detail: ITaskFailure | undefined = failure.detail;
+    if (detail?.code === 'backpressure') {
+      this.capacity = stopCapacity(detail.capacity);
       return ok(this._unfinished());
     }
-    if (code === 'conflict') {
+    if (detail?.code === 'conflict') {
       return ok(this._unfinished());
     }
     return propagate(failure);
   }
 
-  /** Whether the root's intent, as it is now under the writer, still latches this attempt. */
-  private async _stillOurs(
-    read: (id: TaskId) => Promise<TaskResult<ITaskCommitRecord | undefined>>,
-    target: IStopTarget
-  ): Promise<TaskResult<boolean>> {
-    const root = await read(this._intent.rootId);
+  /**
+   * Under the writer: the root and its intent, when the intent still latches target `i` at this pass's
+   * attempt — not released or settled meanwhile, and not superseded by another caller.
+   */
+  private async _ours(writer: ITaskRepositoryWriter, i: number): Promise<TaskResult<ILatching | undefined>> {
+    const root = await _latching(writer, this._intent);
     if (root.isFailure()) {
       return propagate(root);
     }
-    const now: IStopIntent | undefined =
-      root.value !== undefined ? intentOf(root.value, this._intent.id) : undefined;
-    const theirs: IStopTarget | undefined = now?.targets.find((t) => t.taskId === target.taskId);
     return ok(
-      now !== undefined &&
-        isLatchingStopState(now.state) &&
-        theirs !== undefined &&
-        theirs.attempt === target.attempt &&
-        theirs.operationId === target.operationId
+      root.value !== undefined &&
+        isLatchingStopState(root.value.intent.state) &&
+        root.value.intent.targets[i].attempt === this.targets[i].attempt
+        ? root.value
+        : undefined
     );
+  }
+
+  /** Under the writer: target `i`'s record, when its attempt is still this pass's to make. */
+  private async _current(
+    writer: ITaskRepositoryWriter,
+    i: number
+  ): Promise<TaskResult<IResolvedTaskCommitRecord | undefined>> {
+    const ours = await this._ours(writer, i);
+    if (ours.isFailure() || ours.value === undefined) {
+      return ours.isFailure() ? propagate(ours) : ok(undefined);
+    }
+    const reread = await writer.readCommit(this.targets[i].taskId);
+    if (reread.isFailure()) {
+      return propagate(reread);
+    }
+    return ok(reread.value?.recordType === 'resolved' ? reread.value : undefined);
   }
 
   /**
@@ -248,45 +291,31 @@ class StopPass {
   private async _stopNative(
     i: number,
     record: IResolvedTaskCommitRecord
-  ): Promise<TaskResult<ITaskCommitRecord | undefined>> {
+  ): Promise<TaskResult<IResolvedTaskCommitRecord | undefined>> {
     const target: IStopTarget = this.targets[i];
     const core: BrokerCore = this._core;
-    const command: TrackedCommand = {
-      command: this._intent.mode,
-      parameters: { reason: _reason(core, this._intent) }
-    };
-    return core.gated(async (writer): Promise<TaskResult<ITaskCommitRecord | undefined>> => {
-      const ours = await this._stillOurs((id) => writer.readCommit(id), target);
-      if (ours.isFailure() || !ours.value) {
-        return ours.isFailure() ? propagate(ours) : ok(undefined);
+    const reason = _reason(core, this._intent);
+    const command: TrackedCommand = { command: this._intent.mode, parameters: { reason } };
+    return core.gated(async (writer): Promise<TaskResult<IResolvedTaskCommitRecord | undefined>> => {
+      const current = await this._current(writer, i);
+      if (current.isFailure() || current.value === undefined) {
+        return current;
       }
-      const reread = await writer.readCommit(target.taskId);
-      if (reread.isFailure()) {
-        return propagate(reread);
+      if (storedOperation(current.value, target.operationId) !== undefined) {
+        return current;
       }
-      const current: ITaskCommitRecord | undefined = reread.value;
-      if (current === undefined || current.recordType !== 'resolved' || current.archived) {
-        return ok(undefined);
-      }
-      if (storedOperation(current, target.operationId) !== undefined) {
-        return ok(current);
-      }
-      if (!canonicallySame(authorizationSubject(record), authorizationSubject(current))) {
+      if (!canonicallySame(authorizationSubject(record), authorizationSubject(current.value))) {
         return changedSinceAuthorized(`task ${target.taskId}`, target.operationId);
-      }
-      const parameters = core.toJson(command.parameters);
-      if (parameters.isFailure()) {
-        return propagate(parameters);
       }
       const request: ICommandRequest = {
         taskId: target.taskId,
         operationId: target.operationId,
-        expectedRevision: current.task.envelope.revision,
+        expectedRevision: current.value.task.envelope.revision,
         command: command.command,
-        parameters: parameters.value
+        parameters: { reason: { code: reason.code, summary: reason.summary } }
       };
-      const outcome = evaluateTrackedCommand(current.task.envelope, command, {
-        list: current.task.envelope.kind === taskListKind
+      const outcome = evaluateTrackedCommand(current.value.task.envelope, command, {
+        list: current.value.task.envelope.kind === taskListKind
       });
       // After the last await and immediately before the write.
       if (!this._ctx.epochIs(this._epoch)) {
@@ -296,7 +325,7 @@ class StopPass {
         core,
         writer,
         this._ctx.principal,
-        current,
+        current.value,
         request,
         outcome,
         {
@@ -304,7 +333,7 @@ class StopPass {
           intentId: this._intent.id
         }
       );
-      return receipt.isFailure() ? propagate(receipt) : writer.readCommit(target.taskId);
+      return receipt.isFailure() ? propagate(receipt) : this._current(writer, i);
     });
   }
 
@@ -456,8 +485,13 @@ class StopPass {
       case 'rejected':
         // A source revision conflict is definite and without effect: a new attempt, with a new key and
         // a fresh precondition. Any other refusal is one a retry cannot change.
+        if (result.reason === 'denied') {
+          // Refused at the dispatch boundary, so never sent: a definite non-effect. This visit already
+          // found `stop` authority on the target again, so a new attempt may be made under it.
+          return this._supersede(i, 'denied');
+        }
         if (result.reason !== 'conflict') {
-          return ok(this._with(i, result.reason === 'denied' ? 'denied' : 'refused'));
+          return ok(this._with(i, 'refused'));
         }
         // The precondition was stale. Refresh the task from its source first, so the new attempt is
         // sent against the revision current now — a retry of the old precondition would conflict again.
@@ -488,7 +522,7 @@ class StopPass {
       return propagate(read);
     }
     const record: ITaskCommitRecord | undefined = read.value;
-    if (record === undefined || record.recordType !== 'resolved') {
+    if (record?.recordType !== 'resolved') {
       return ok(this._with(i, 'unavailable'));
     }
     if (targetStopped(this._intent.mode, record)) {
@@ -568,18 +602,11 @@ class StopPass {
     type Recorded = IRecordedIntent;
     const target: IStopTarget = this.targets[i];
     return this._core.gated(async (writer): Promise<TaskResult<Recorded | undefined>> => {
-      const ours = await this._stillOurs((id) => writer.readCommit(id), target);
-      if (ours.isFailure() || !ours.value) {
-        return ours.isFailure() ? propagate(ours) : ok(undefined);
+      const read = await this._current(writer, i);
+      if (read.isFailure() || read.value === undefined) {
+        return read.isFailure() ? propagate(read) : ok(undefined);
       }
-      const reread = await writer.readCommit(target.taskId);
-      if (reread.isFailure()) {
-        return propagate(reread);
-      }
-      const current: ITaskCommitRecord | undefined = reread.value;
-      if (current === undefined || current.recordType !== 'resolved' || current.archived) {
-        return ok(undefined);
-      }
+      const current: IResolvedTaskCommitRecord = read.value;
       const existing = storedOperation(current, target.operationId);
       if (existing !== undefined) {
         return existing.type === 'command' ? ok({ record: current, command: existing }) : ok(undefined);
@@ -609,15 +636,6 @@ class StopPass {
         receipt,
         stop: { rootId: this._intent.rootId, intentId: this._intent.id }
       };
-      const draft: IResolvedTaskRecordDraft = {
-        recordType: 'resolved',
-        task: current.task,
-        ...(current.sourceRevision !== undefined ? { sourceRevision: current.sourceRevision } : {}),
-        operations: [...current.operations, command],
-        updates: current.updates,
-        archived: current.archived,
-        ...(current.stops !== undefined ? { stops: current.stops } : {})
-      };
       if (!this._ctx.epochIs(this._epoch)) {
         return changedSinceAuthorized('the authorization policy', target.operationId);
       }
@@ -627,15 +645,10 @@ class StopPass {
         taskId: target.taskId,
         expectedRevision: current.task.envelope.revision,
         expectedRecordRevision: current.recordRevision,
-        record: draft
+        record: redraft(current, { operations: [...current.operations, command] })
       });
-      if (committed.isFailure()) {
-        return propagate(committed);
-      }
-      // The draft is resolved, and so is what storage committed from it.
-      return committed.value.recordType === 'resolved'
-        ? ok({ record: committed.value, command })
-        : ok(undefined);
+      // The record authority was decided against: the dispatch boundary re-reads the command itself.
+      return committed.isSuccess() ? ok({ record: current, command }) : propagate(committed);
     });
   }
 
@@ -652,22 +665,9 @@ class StopPass {
     }
     const core: BrokerCore = this._core;
     const superseded = await core.gated(async (writer): Promise<TaskResult<IStopTarget | undefined>> => {
-      const root = await writer.readCommit(this._intent.rootId);
-      if (root.isFailure()) {
-        return propagate(root);
-      }
-      const current: ITaskCommitRecord | undefined = root.value;
-      const now: IStopIntent | undefined =
-        current !== undefined ? intentOf(current, this._intent.id) : undefined;
-      const index: number = now?.targets.findIndex((t) => t.taskId === target.taskId) ?? -1;
-      if (
-        current === undefined ||
-        current.recordType !== 'resolved' ||
-        now === undefined ||
-        !isLatchingStopState(now.state) ||
-        now.targets[index].attempt !== target.attempt
-      ) {
-        return ok(undefined);
+      const ours = await this._ours(writer, i);
+      if (ours.isFailure() || ours.value === undefined) {
+        return ours.isFailure() ? propagate(ours) : ok(undefined);
       }
       const key = core.mintOperationId();
       if (key.isFailure()) {
@@ -681,33 +681,24 @@ class StopPass {
         ...(target.violation !== undefined ? { violation: target.violation } : {})
       };
       // A satisfied intent with a target re-attempting is satisfied no longer.
-      const stops = (current.stops ?? []).map(
-        (intent): IStopIntent =>
-          intent.id === now.id
-            ? {
-                ...intent,
-                state: intent.state === 'satisfied' ? 'pending' : intent.state,
-                targets: intent.targets.map((t, j) => (j === index ? next : t))
-              }
-            : intent
-      );
+      const was: IStopIntent = ours.value.intent;
+      const intent: IStopIntent = {
+        ...was,
+        // Every target of a satisfied intent is confirmed, and a confirmed target is superseded only
+        // for a violation: a supersession leaves no intent satisfied.
+        state: next.violation !== undefined ? 'blocked' : was.state,
+        targets: was.targets.map((t, j) => (j === i ? next : t))
+      };
       if (!this._ctx.epochIs(this._epoch)) {
         return changedSinceAuthorized('the authorization policy');
       }
+      const root: IResolvedTaskCommitRecord = ours.value.root;
       const committed = await writer.commit({
         purpose: 'maintenance',
-        taskId: current.task.envelope.id,
-        expectedRevision: current.task.envelope.revision,
-        expectedRecordRevision: current.recordRevision,
-        record: {
-          recordType: 'resolved',
-          task: current.task,
-          ...(current.sourceRevision !== undefined ? { sourceRevision: current.sourceRevision } : {}),
-          operations: current.operations,
-          updates: current.updates,
-          archived: current.archived,
-          stops
-        }
+        taskId: root.task.envelope.id,
+        expectedRevision: root.task.envelope.revision,
+        expectedRecordRevision: root.recordRevision,
+        record: redraft(root, { stops: withIntent(root.stops, intent) })
       });
       return committed.isSuccess() ? ok<IStopTarget | undefined>(next) : propagate(committed);
     });
@@ -736,55 +727,52 @@ async function _persist(
   intent: IStopIntent,
   pass: StopPass,
   topologyHeld: boolean
-): Promise<TaskResult<IStopIntent>> {
-  return core.gated(async (writer): Promise<TaskResult<IStopIntent>> => {
-    const root = await writer.readCommit(intent.rootId);
+): Promise<TaskResult<IPersisted>> {
+  return core.gated(async (writer): Promise<TaskResult<IPersisted>> => {
+    const root = await _latching(writer, intent);
     if (root.isFailure()) {
       return propagate(root);
     }
-    const current: ITaskCommitRecord | undefined = root.value;
-    const now: IStopIntent | undefined = current !== undefined ? intentOf(current, intent.id) : undefined;
-    if (current === undefined || current.recordType !== 'resolved' || now === undefined) {
+    if (root.value === undefined) {
       return taskFailure(
         `task ${intent.rootId}: its stop ${intent.id} is gone`,
         'storage-corrupt',
         'after-host-action'
       );
     }
+    const now: IStopIntent = root.value.intent;
     if (!isLatchingStopState(now.state)) {
       // Released or settled while the pass ran: nothing this pass learned changes that.
-      return ok(now);
+      return ok({ intent: now, fresh: false });
     }
     const targets: ReadonlyArray<IStopTarget> = now.targets.map((mine, j) =>
-      pass.targets[j].attempt === mine.attempt && pass.targets[j].operationId === mine.operationId
-        ? pass.targets[j]
-        : mine
+      pass.targets[j].attempt === mine.attempt ? pass.targets[j] : mine
     );
     const next: IStopIntent = { ...now, targets, state: _derive(targets, pass.complete, topologyHeld) };
     if (canonicallySame(now, next)) {
-      return ok(now);
+      return ok({ intent: now, fresh: true });
     }
-    // A summary decided under a moved policy would record authority decisions nobody holds now.
+    // A summary decided under a moved policy would record authority decisions nobody holds now: this
+    // pass's findings are discarded, and nothing it saw counts as revalidated.
     if (!ctx.epochIs(epoch)) {
-      return ok(now);
+      return ok({ intent: now, fresh: false });
     }
+    const current: IResolvedTaskCommitRecord = root.value.root;
     const committed = await writer.commit({
       purpose: 'maintenance',
       taskId: intent.rootId,
       expectedRevision: current.task.envelope.revision,
       expectedRecordRevision: current.recordRevision,
-      record: {
-        recordType: 'resolved',
-        task: current.task,
-        ...(current.sourceRevision !== undefined ? { sourceRevision: current.sourceRevision } : {}),
-        operations: current.operations,
-        updates: current.updates,
-        archived: current.archived,
-        stops: (current.stops ?? []).map((i) => (i.id === intent.id ? next : i))
-      }
+      record: redraft(current, { stops: withIntent(current.stops, next) })
     });
-    return committed.isSuccess() ? ok(next) : propagate(committed);
+    return committed.isSuccess() ? ok({ intent: next, fresh: true }) : propagate(committed);
   });
+}
+
+/** What {@link _persist} left: the intent as it stands, and whether it is this pass's finding. */
+interface IPersisted {
+  readonly intent: IStopIntent;
+  readonly fresh: boolean;
 }
 
 /**
@@ -860,11 +848,13 @@ export async function reconcileStop(
   if (persisted.isFailure()) {
     return propagate(persisted);
   }
+  // Revalidated only by this pass's own finding, as persisted: a satisfied intent this pass could not
+  // record — or that it merely found standing — proves nothing about the sources now.
   const key: string = stopKey(intent.rootId, intent.id);
-  if (persisted.value.state === 'satisfied' && pass.complete) {
+  if (persisted.value.fresh && persisted.value.intent.state === 'satisfied' && pass.complete) {
     core.revalidatedStops.add(key);
   } else {
     core.revalidatedStops.delete(key);
   }
-  return presentStop(core, ctx, persisted.value, pass.capacity);
+  return presentStop(core, ctx, persisted.value.intent, pass.capacity);
 }

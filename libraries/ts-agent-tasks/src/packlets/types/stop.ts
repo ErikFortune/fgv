@@ -349,3 +349,14 @@ export const defaultMaxStopTargets: number = 1000;
  * @public
  */
 export const defaultStopPumpLimit: number = 50;
+
+/**
+ * The stops a replacement of a record carries forward. Every draft built from a record keeps its
+ * intents — storage refuses a replacement that drops one — so every draft builder spreads this.
+ * @public
+ */
+export function carriedStops(record: { readonly stops?: ReadonlyArray<IStopIntent> }): {
+  readonly stops?: ReadonlyArray<IStopIntent>;
+} {
+  return record.stops !== undefined ? { stops: record.stops } : {};
+}

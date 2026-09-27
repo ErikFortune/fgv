@@ -84,11 +84,11 @@ export function refuseUnderLatch(
   what: string,
   operationId?: ITaskMutationResult['operationId']
 ): TaskResult<true> {
-  const latch = core.repository.stopLatches(taskId)[0];
-  return latch === undefined
+  // The refusal names only the task the caller asked about: the stop's root may be one it cannot see.
+  return core.repository.stopLatches(taskId).length === 0
     ? ok(true)
     : taskFailure(
-        `stop-active: task ${taskId} is under stop ${latch.intentId} of ${latch.rootId}; ${what}`,
+        `stop-active: task ${taskId} is under a stop latch; ${what}`,
         'conflict',
         'after-host-action',
         operationId !== undefined ? { operationId } : undefined
@@ -535,11 +535,9 @@ async function settleStops(
   const id: TaskId = current.task.envelope.id;
   const blocked = (why: string): TaskResult<ReadonlyArray<IStopIntent> | undefined> =>
     taskFailure(`task ${id}: ${why}`, 'retention-blocked', 'after-host-action');
-  const foreign = core.repository.stopLatches(id).find((latch) => latch.rootId !== id);
-  if (foreign !== undefined) {
-    return blocked(
-      `it is under stop ${foreign.intentId} of ${foreign.rootId}, which must settle or be released first`
-    );
+  if (core.repository.stopLatches(id).some((latch) => latch.rootId !== id)) {
+    // Never named: the stop's root may be one the caller cannot see.
+    return blocked(`it is under another task's stop latch, which must settle or be released first`);
   }
   if (current.stops === undefined) {
     return ok(undefined);
