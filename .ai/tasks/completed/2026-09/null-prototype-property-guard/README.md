@@ -1,6 +1,6 @@
 # `null-prototype-property-guard` — a converter that throws is not a converter
 
-**Shipped 2026-09-27 via #PRNUM.** `@fgv/ts-utils`, `@fgv/ts-json`, `@fgv/ts-res-ui-components`,
+**Shipped 2026-09-27 via #700.** `@fgv/ts-utils`, `@fgv/ts-json`, `@fgv/ts-res-ui-components`,
 `@fgv/ts-utils-jest`. Bug fix; `patch` in all four.
 
 ---

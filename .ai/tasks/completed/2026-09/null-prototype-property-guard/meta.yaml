@@ -1,7 +1,7 @@
 id: null-prototype-property-guard
 status: shipped
 packages: ['@fgv/ts-utils', '@fgv/ts-json', '@fgv/ts-res-ui-components', '@fgv/ts-utils-jest']
-prs: [PRNUM]
+prs: [700]
 opened: 2026-09-26
 closed: 2026-09-27
 summary:
@@ -50,4 +50,4 @@ relatedStreams:
     relationship: >
       escalated the isKeyOf defect (result.md item 6) as an upstream gap it did not own; T3, T4 and
       T5 each declined it by name before it became this stream
-sourceHash: HASH # sha256/16 over brief.md, result.md, state.md
+sourceHash: 7a4e94373a2742a6 # sha256/16 over brief.md, result.md, state.md
