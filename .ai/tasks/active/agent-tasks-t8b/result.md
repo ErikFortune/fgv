@@ -347,7 +347,12 @@ One MED (the runbook said expiry releases an orphaned receipt's pin; it does not
 behaviour carried as a P3. Four LOW — figure precision and wording fixed, one P4. Detail and the list
 of recovery cases it checked sound are in `state.md`.
 
-**Copilot.** Loop on #699 — recorded in `state.md` as it runs.
+**Copilot.** Four rounds on #699, driven by the implementer; stopped at 4 on diminishing returns —
+round 4's main list *and* previously-missed block were both empty. Round 1: one real fixture defect
+(`reopenWorld` handed back a fault injector nothing wrote through), fixed with a test that was red
+before it. Round 2: three stale doc statements from its previously-missed block, fixed. Round 3: one
+HIGH that does not reproduce (no raise can shrink a bundle; bundles are monotone in their bounds and
+lowering is refused) — replied and resolved. Detail in `state.md`.
 
 ## Gates, on `f69e1c08`
 
