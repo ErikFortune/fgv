@@ -1093,6 +1093,34 @@ const T9_ROWS = [
     '      canonicallyEqual({ ...was, state: now.state }, now) &&',
     '      (canonicallyEqual({ ...was, state: now.state }, now) || now.id.length > 0) &&',
     T9
+  ),
+  m(
+    'T9-62 a confirmed target may be rolled back to pending under the same attempt',
+    S + 'stopRules.ts',
+    "      (b.state === 'pending' || b.state === 'unexamined')",
+    "      (b.state === 'pending' || b.state === 'unexamined') &&\n      a.taskId.length < 0",
+    T9
+  ),
+  m(
+    'T9-63 open keeps an unsettled stop command that is not its stop attempt',
+    S + 'stopBook.ts',
+    '        if (!command.settled && latching && !own) {',
+    '        if (!command.settled && latching && !own && taskId.length < 0) {',
+    T9
+  ),
+  m(
+    'T9-64 open treats a command of a released stop as a stray',
+    S + 'stopBook.ts',
+    '        const latching: boolean = this.latchingOf(command.rootId).some((i) => i.id === command.intentId);',
+    '        const latching: boolean = this.latchingOf(command.rootId).length >= 0;',
+    T9
+  ),
+  m(
+    "T9-65 open treats a superseded attempt's settled command as a stray",
+    S + 'stopBook.ts',
+    "        settled: op.dispatch === 'settled'",
+    '        settled: op.dispatch.length < 0',
+    T9
   )
 ];
 

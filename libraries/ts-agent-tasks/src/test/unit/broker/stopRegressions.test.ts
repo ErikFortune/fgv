@@ -1093,3 +1093,142 @@ describe('T9 Copilot round 8 regressions', () => {
     expect(await settle({ ...cancel, state: 'settled' })).toSucceed();
   });
 });
+
+// Copilot, round 9 on #701.
+describe('T9 Copilot round 9 regressions', () => {
+  test('storage refuses returning a confirmed target to pending under the same attempt', async () => {
+    const h = await brokerHarness();
+    await node(h.writer, 'root', { stopPolicy: 'cascade-pause' });
+    await node(h.writer, 'c', { parentId: 'root' });
+    const accepted = (await stop(h, h.writer, 'root', 'pause')).orThrow();
+    expect((await pump(h.writer, accepted)).orThrow().state).toBe('satisfied');
+    const satisfied = await persisted(h, accepted);
+    const root = (await h.repository.readCommit(tid('root'))).orThrow() as IResolvedTaskCommitRecord;
+    for (const state of ['pending', 'unexamined'] as const) {
+      const rolledBack: IStopIntent = {
+        ...satisfied,
+        state: 'pending',
+        targets: satisfied.targets.map((t, i) =>
+          i === 1 ? { taskId: t.taskId, attempt: t.attempt, operationId: t.operationId, state } : t
+        )
+      };
+      expect(
+        await h.repository.withWriter((writer) =>
+          writer.commit({
+            purpose: 'maintenance',
+            taskId: tid('root'),
+            expectedRevision: root.task.envelope.revision,
+            expectedRecordRevision: root.recordRevision,
+            record: {
+              recordType: 'resolved',
+              task: root.task,
+              operations: root.operations,
+              updates: root.updates,
+              archived: false,
+              stops: [rolledBack]
+            }
+          })
+        )
+      ).toFailWith(/target c was confirmed, and is not returned to (pending|unexamined)/);
+    }
+  });
+
+  describe('open refuses an unsettled stop command that is not its latching stop attempt', () => {
+    /** A job whose pause command was left possibly-sent, in a closed repository. */
+    async function uncertainStop(released?: true): Promise<{
+      readonly inner: ReturnType<typeof memoryRoot>;
+      readonly h: ISourceHarness;
+    }> {
+      const inner = memoryRoot();
+      const h = await sourceHarness({ capabilities: new CapabilityScript().ask, root: inner });
+      await node(h.writer, 'root', { stopPolicy: 'cascade-pause' });
+      h.executor.addJob('job');
+      await registerJob(h, 'job', { parentId: tid('root') });
+      const accepted = (await stop(h, h.writer, 'root', 'pause')).orThrow();
+      h.executor.down = true;
+      (await pump(h.writer, accepted)).orThrow();
+      h.executor.down = false;
+      const key = (await persisted(h, accepted)).targets[1].operationId;
+      expect((await recordOf(h, 'job')).operations.find((o) => o.operationId === key)).toMatchObject({
+        dispatch: 'possibly-sent',
+        stop: { intentId: accepted.intentId }
+      });
+      if (released) {
+        (await release(h, h.writer, accepted)).orThrow();
+      }
+      h.repository.close();
+      return { inner, h };
+    }
+
+    async function reopen(
+      inner: ReturnType<typeof memoryRoot>,
+      h: ISourceHarness
+    ): Promise<Awaited<ReturnType<typeof FileTreeTaskRepository.open>>> {
+      return FileTreeTaskRepository.open({
+        root: inner,
+        mode: 'session',
+        environment: environment('r9').env,
+        registry: sourceRegistry(h.source)
+      });
+    }
+
+    /** Moves the job's stop command to another key: no stop's attempt. */
+    function strayed(inner: ReturnType<typeof memoryRoot>): void {
+      const root = inner as FileTree.IAtomicFileTreeDirectoryItem & FileTree.IMutableFileTreeDirectoryItem;
+      const file = root
+        .getChildren()
+        .orThrow()
+        .find((f) => f.name === 'task-job.json') as FileTree.IFileTreeFileItem;
+      const text = file.getRawContents().orThrow();
+      const job = JSON.parse(text);
+      const key: string = job.operations.find((o: { stop?: unknown }) => o.stop !== undefined).operationId;
+      // Everywhere the record names it — the command, its request and receipt, its settlement claim.
+      const moved = text.split(JSON.stringify(key)).join(JSON.stringify('stray'));
+      root.writeChildAtomically('task-job.json', moved, { guarantee: 'session' }).orThrow();
+    }
+
+    test('its own attempt, uncertain, opens ready', async () => {
+      const { inner, h } = await uncertainStop();
+      expect((await reopen(inner, h)).orThrow().state).toBe('ready');
+    });
+
+    test('under a key no attempt of its stop holds, open is blocked', async () => {
+      const { inner, h } = await uncertainStop();
+      strayed(inner);
+      const opened = (await reopen(inner, h)).orThrow();
+      expect(opened.state).toBe('recovery-required');
+      if (opened.state === 'recovery-required') {
+        opened.recovery.close();
+        expect(opened.recovery.report.issues.map((i) => i.message)).toEqual(
+          expect.arrayContaining([
+            expect.stringMatching(/task job: command 'stray' names stop .* and is not that stop's attempt/)
+          ])
+        );
+      }
+    });
+
+    test('the settled command of a superseded attempt is history, and opens ready', async () => {
+      const inner = memoryRoot();
+      const h = await sourceHarness({ capabilities: new CapabilityScript().ask, root: inner });
+      await node(h.writer, 'root', { stopPolicy: 'cascade-cancel' });
+      h.executor.addJob('job');
+      await registerJob(h, 'job', { parentId: tid('root') });
+      h.executor.change('job', (j) => {
+        j.step = 3;
+      });
+      const accepted = (await stop(h, h.writer, 'root', 'cancel')).orThrow();
+      expect(states((await pump(h.writer, accepted)).orThrow()).job).toBe('refused');
+      (await pump(h.writer, accepted)).orThrow();
+      const superseded = await persisted(h, accepted);
+      expect(superseded.targets[1].attempt).toBe(2);
+      h.repository.close();
+      expect((await reopen(inner, h)).orThrow().state).toBe('ready');
+    });
+
+    test('naming a stop that no longer latches, it is history and opens ready', async () => {
+      const { inner, h } = await uncertainStop(true);
+      strayed(inner);
+      expect((await reopen(inner, h)).orThrow().state).toBe('ready');
+    });
+  });
+});

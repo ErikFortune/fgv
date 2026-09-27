@@ -22,6 +22,8 @@ export interface IMarkedStopCommand {
   readonly operationId: OperationId;
   readonly rootId: TaskId;
   readonly intentId: OperationId;
+  /** Whether its outcome is recorded: an unsettled one may still be sent. */
+  readonly settled: boolean;
 }
 
 /**
@@ -78,7 +80,12 @@ export function stopContentOf(record: ITaskCommitRecord | ITaskRecordDraft): ISt
   const marked: IMarkedStopCommand[] = [];
   for (const op of record.operations) {
     if (op.type === 'command' && op.stop !== undefined) {
-      marked.push({ operationId: op.operationId, rootId: op.stop.rootId, intentId: op.stop.intentId });
+      marked.push({
+        operationId: op.operationId,
+        rootId: op.stop.rootId,
+        intentId: op.stop.intentId,
+        settled: op.dispatch === 'settled'
+      });
     }
   }
   return latching.length === 0 && marked.length === 0 ? undefined : { latching, marked };
@@ -190,6 +197,32 @@ export class StopBook {
     | undefined {
     const attempt: IAttempt | undefined = this._attempts.get(operationId);
     return attempt === undefined ? undefined : { ...attempt };
+  }
+
+  /**
+   * Unsettled stop commands that name a latching intent and are not its live attempt on the task that
+   * holds them. Storage admits a stop command only as its intent's funded attempt, and an attempt is
+   * superseded only once its command has settled, so a record holding one was not written by this
+   * repository — and it could be sent under authority no stop holds. A command whose intent no longer
+   * latches is history, and never sent.
+   */
+  public strays(): ReadonlyArray<{ readonly taskId: TaskId; readonly command: IMarkedStopCommand }> {
+    const strays: { readonly taskId: TaskId; readonly command: IMarkedStopCommand }[] = [];
+    for (const [taskId, held] of this._marked) {
+      for (const command of held.values()) {
+        const latching: boolean = this.latchingOf(command.rootId).some((i) => i.id === command.intentId);
+        const attempt: IAttempt | undefined = this._attempts.get(command.operationId);
+        const own: boolean =
+          attempt !== undefined &&
+          attempt.taskId === taskId &&
+          attempt.rootId === command.rootId &&
+          attempt.intentId === command.intentId;
+        if (!command.settled && latching && !own) {
+          strays.push({ taskId, command });
+        }
+      }
+    }
+    return strays;
   }
 
   /** The latching intents a task is the root of. */

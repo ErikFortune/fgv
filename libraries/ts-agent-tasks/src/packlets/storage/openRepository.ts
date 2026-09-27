@@ -1188,6 +1188,17 @@ export function scanRoot(input: IScanInput): TaskResult<ScanOutcome> {
       }
     }
   }
+  // An unsettled stop command that is not its latching intent's attempt could be sent under stop
+  // authority no stop holds; storage never writes one.
+  if (!scan.isBlocked) {
+    for (const stray of index.stops.strays()) {
+      scan.blocking(
+        'integrity',
+        `task ${stray.taskId}: command '${stray.command.operationId}' names stop ${stray.command.intentId} ` +
+          `of ${stray.command.rootId}, and is not that stop's attempt on this task`
+      );
+    }
+  }
   const holders: ReadonlyArray<TaskId> = scan.isBlocked ? [] : index.stops.holders();
   const derived: Result<true> =
     holders.length === 0

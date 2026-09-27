@@ -11,7 +11,7 @@ be enough to resume cold. Keep it current as you go.
 85 suites, **1,968 passed / 0 failed**, 100 % on every metric, zero `c8 ignore`, lint clean,
 `fixlint` no-op. Layer 1 and the semantic antagonist both ran on `e55f0d5e`; the antagonist's seven
 findings (H1, M1–M4, L1, L2) are fixed in `c5e4ceb7`, each with a regression. `result.md` drafted.
-Next: revert matrix on the final source (`perf/mutationMatrix.js`, T9 rows T9-1…T9-61 added) →
+Next: revert matrix on the final source (`perf/mutationMatrix.js`, T9 rows T9-1…T9-65 added) →
 repo-wide rebuild/test + verify scripts → PR into `integration/agent-tasks-v1` → plan status line
 and ledger entry as shipped → Copilot loop.
 
@@ -248,3 +248,17 @@ Findings per round: 5 → 3 → 1 → 2.
 - A raw settlement could rewrite the report it keeps (same-attempt target fields). Settlement now
   changes only the state, like a release (T9-61; T9-55 re-pointed to `was.targets`).
 Findings per round: 5 → 3 → 1 → 2 → 2.
+
+**Round 9 (on `a615a336`)** — two findings, both about what a raw writer or a forged file can do:
+- A maintenance commit could return a confirmed target to `pending`/`unexamined` under the same
+  attempt, rolling back the report with no finding. Refused now (T9-62). Narrower than the finding
+  asked: the broker itself leaves `confirmed` under the same attempt for findings — `indeterminate`
+  with a violation, `unsupported` when a contract is withdrawn, `unavailable` when the source is not
+  attached — and those stay allowed. Re-driving the old key afterwards is safe by construction: an
+  unlanded key has never carried a command, and a landed one is resolved through its command, never
+  re-sent.
+- Open indexed an unsettled marked command that is not its latching intent's attempt on its task
+  without complaint, and it could then be sent under stop-target authority. Open now blocks on it
+  (`StopBook.strays`, T9-63). Commands of a stop that no longer latches, and settled commands of a
+  superseded attempt, are history and still open ready (T9-64, T9-65).
+Findings per round: 5 → 3 → 1 → 2 → 2 → 2.

@@ -308,6 +308,16 @@ function _evolved(
     ) {
       return fail(`stop ${was.id}: target ${a.taskId}'s new attempt needs a key no attempt holds`);
     }
+    // A confirmed attempt leaves confirmation under the same key only for a finding — a violation, a
+    // withdrawn contract, a source no longer attached — never back to a state that records none: that
+    // would roll the report back with nothing to show for it.
+    if (
+      a.state === 'confirmed' &&
+      b.attempt === a.attempt &&
+      (b.state === 'pending' || b.state === 'unexamined')
+    ) {
+      return fail(`stop ${was.id}: target ${a.taskId} was confirmed, and is not returned to ${b.state}`);
+    }
     // A confirmation — and its evidence — is recorded only while the target is actually stopped: it
     // releases the attempt's reservation, so it is not the summary's to assert.
     if (b.state === 'confirmed' && !canonicallyEqual(a, b) && !confirmable(was.mode, b)) {
