@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-json",
+      "comment": "Fix JsonEditor.mergeObjectInPlace, mergeDefaultJsonConverterOptions, contextFromConverterOptions and JsonContextHelper.mergeContext throwing TypeError on null-prototype inputs: use Object.prototype.hasOwnProperty.call instead of obj.hasOwnProperty. Enable the no-prototype-builtins lint rule.",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@fgv/ts-json"
+}

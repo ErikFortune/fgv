@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-utils-jest",
+      "comment": "Use Object.prototype.hasOwnProperty.call when probing the Jest global, and enable the no-prototype-builtins lint rule. No behavior change.",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@fgv/ts-utils-jest"
+}
