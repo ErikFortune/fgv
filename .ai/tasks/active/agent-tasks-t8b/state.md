@@ -106,6 +106,25 @@ extracted method against `cae5d7db4` (verbatim moves). **No P1, no P2.** Three P
 | `widestUpdate()` hardcodes 128 | now `defaultTaskFieldBounds.maxIdLength` |
 | `reclaimableByCleanup` wording says "true only while … releases"; the proxy can over-promise when a reservation is later spent in full | docstrings (`failure.ts`, `ledger.ts`) now say *could*, and that a fully spent reservation releases nothing |
 
+## Independent persistence/delivery antagonist, 2026-09-26, on `4c5c4af7`
+
+Every finding reproduced by a scratch test it ran (kept outside the tree). Dispositions:
+
+| finding | sev | disposition |
+|---|---|---|
+| **H1** `raiseCapacityLimits` may raise `encoded`/`perOwner` bounds; stored closeout/resolution/settlement claims keep their old unit, so accepted work can be refused its terminal write (repro: raise `maxEnvelopeBytes` to 60 KiB, then a terminal commit is refused on resident bytes). (d) widened it: before, the unit was `maxUpdateBytes`, which an envelope raise stayed under | HIGH | **fixed** — `graphRules.ts` `reservationsHold`: a raise that grows any bundle charge, the evidence size or the receipt size is refused `unsupported`, naming it; `maxUpdateBytes` and every `limits` value stay raisable. Tests in `lifetime.test.ts`; matrix row T8b-7 |
+| **H2** a pending `current` activation whose record landed, then failed cleanly to go live, is completed by retry or open from that landed baseline; commits made in between were in no audience and are never owed (repro: title change and a new task while pending → both absent after reopen) | HIGH | **fixed** — `consumerRecords.ts` `frozenBy` + `repository._plan`: while such a record is landed-but-not-live, commits to tasks its selection covers are refused `conflict` naming the subscription; retry, reopen or rebuild completes it with a still-exact baseline. `from-now` and not-landed registrations freeze nothing. T7 code, not PR 1's mechanism. Tests in `lifetime.test.ts`; matrix row T8b-8 |
+| **M** runbook said an orphaned receipt pins "until it expires"; expiry evicts nothing — only a later issue/disposition does, and `cleanup` does neither | MED | **docs fixed** (`CAPABILITIES.md`: abandon it). The behaviour (and `outstanding()` listing a task as prunable that cleanup will not prune) → TECH_DEBT P3 |
+| L: 1,537 ignores the creation update's own bytes (true ≈ 1,534); 536 is for minimal tasks | LOW | docs now say "about 1,530" and "at most 536 … of minimal size" |
+| L: baselines are never checked against `maxUpdateBytes`, and the profile converter lacks `maxUpdateBytes ≥ derived` | LOW | TECH_DEBT P4 (read, not run) |
+| L: `_reclaimable` counts a pending registration's claims and closeout operation slots, which draining turns into history | LOW | already hedged to "could" after layer 1; kept |
+| L: "stored claims fail at open" depends on the data (a consumed settlement with remainder ≤ 37,417 passes) | LOW | wording corrected in `result.md` |
+
+Checked sound by it: `maximumUpdateBytes` against the strict converters and resident measurement;
+adopted/coalesced updates; every journey write under `when:'after'` with `unknown`/`replaced`
+visibility (reopen + retry converge exactly) and the three activation writes — beyond the suite's
+`before`/`unchanged` injection.
+
 ## Open questions for the orchestrator
 
 _(anything you cannot resolve from the brief, the plan or the code — raise it here and surface it)_

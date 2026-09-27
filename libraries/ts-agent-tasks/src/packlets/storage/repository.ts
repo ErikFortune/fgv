@@ -901,6 +901,15 @@ export class FileTreeTaskRepository implements ITaskRepository {
     next: ITaskCommitRecord,
     adopted: boolean = false
   ): TaskResult<ITaskDeliveryPlan> {
+    const frozen: SubscriptionId | undefined = this._records.frozenBy(before, next);
+    if (frozen !== undefined) {
+      return taskFailure(
+        `task ${taskId}: subscription ${frozen}'s activation is incomplete — its first record is written ` +
+          `but it is not live; retry its registration, or reopen, before changing a task it selects`,
+        'conflict',
+        'after-host-action'
+      );
+    }
     return this._book.plan({ taskId, before, next, index: this._index!, profile: this.profile, adopted });
   }
 

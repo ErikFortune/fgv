@@ -116,8 +116,9 @@ It is per record, not aggregate, and every other record kind keeps its own bound
 8 MiB, source 1 MiB), so it changes no other ceiling. It is a raise, in the decision's direction, but it
 is a seventh number, and the orchestrator may want to call it that.
 
-**Stored claims.** `checkTaskClaims` requires each claim to be at most its bundle, so a claim minted
-before (1) exceeds the new bundle and fails open. The package is unpublished and lives on the
+**Stored claims.** `checkTaskClaims` requires each claim to be at most its bundle, so a reserved claim
+minted before (1) exceeds the new bundle and fails open (a consumed one whose remainder happens to be
+within 37,417 bytes passes — harmless, but the rule depends on the data). The package is unpublished and lives on the
 integration branch; no migration, the posture PR 1 took for its format change. Disclosed as BREAKING in
 the change file.
 

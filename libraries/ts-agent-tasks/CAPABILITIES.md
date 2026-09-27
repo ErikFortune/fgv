@@ -541,8 +541,10 @@ out-of-band file deletion is corruption, not maintenance, and open will report i
    subscriptions that will never drain (`dispose`, `closeSubscription`); run `cleanup`; archive
    terminal tasks. `outstanding()` lists each of these. Two things that look stuck and are not:
    a receipt prepared by a process that stopped before acknowledging it is held by nobody and pins
-   what it names until it expires — find it in the subscription's record (`issued`, unacknowledged)
-   and `abandon` it; and at the default 8,000-character context budget an older revision of a
+   what it names — **expiry alone does not release it**: an expired manifest stops pinning only when
+   the next receipt issue or disposition on that subscription evicts it, and `cleanup` does neither,
+   while `outstanding()` still counts it as `pinned` — so find it in the subscription's record
+   (`issued`, unacknowledged) and `abandon` it; and at the default 8,000-character context budget an older revision of a
    maximum-size task never fits beside its current one, so it stays owed until a delivery prepares
    with a larger budget or the host disposes of it. Neither is ever dropped. This releases non-archived slots, payload
    and receipt capacity — **not** retained identities, exact acknowledgement/disposition ids or
@@ -552,12 +554,16 @@ out-of-band file deletion is corruption, not maintenance, and open will report i
    further growth; or, after reviewing host memory and disk, **raise** the stored limits explicitly
    with `raiseCapacityLimits` — which postpones exhaustion, it does not remove it. A drained
    repository can be closed to release its memory; its files remain valid.
-   **Sizing the default.** Under `defaultTaskCapacityProfile`, `logical-bytes` fills first: 536
-   plain tracked registrations, each reserving about 976 KiB for its closeout. `non-archived-tasks`
-   (1,000) is not reachable there; `resident-payload-bytes` (384 MiB) would admit 1,537, and
-   `audience-links` / `acknowledgement-ids` (200,000, 224 per registration) 892. A host expecting
-   more concurrent work raises those three together, at `initialize` for a new repository or with
-   `raiseCapacityLimits` for an existing one; a stored limit can be raised, never lowered.
+   **Sizing the default.** Under `defaultTaskCapacityProfile`, `logical-bytes` fills first: at most
+   536 plain tracked registrations of minimal size — each reserves about 976 KiB for its closeout,
+   and larger envelopes, details and ids fill it sooner. `non-archived-tasks` (1,000) is not
+   reachable there; `resident-payload-bytes` (384 MiB) would admit about 1,530, and `audience-links`
+   / `acknowledgement-ids` (200,000, 224 per registration) 892. A host expecting more concurrent work
+   raises those three together, at `initialize` for a new repository or with `raiseCapacityLimits`
+   for an existing one; a stored limit can be raised, never lowered. **`raiseCapacityLimits` refuses
+   a raise that grows what an existing reservation covers** — the envelope, details or stored-operation
+   bound, the audience per update, the evidence or receipt size — because claims already minted would
+   no longer cover the work they protect; choose those at `initialize`.
 5. **Never** delete record files, edit `repository.json`, or rotate to a new root to "free space":
    each is either corruption open will refuse, or a loss of the obligations and history the
    repository exists to keep.

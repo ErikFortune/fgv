@@ -181,6 +181,26 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
 
   **Reference**: `agent-tasks-t8b` `result.md`.
 
+- **[P3] An expired, orphaned receipt keeps pinning until something evicts it, and `outstanding()`
+  calls its task prunable.** Pin evidence ignores `expiresAt`; an expired unacknowledged manifest is
+  evicted only by the next `issueReceipt`, `disposeObligations` or `abandonReceipt` on that
+  subscription — `cleanup` does none of them — so a receipt whose process died pins its updates
+  indefinitely on an otherwise idle subscription, while `outstanding().prunable` lists the task and
+  `cleanup` reports it `unchanged` with no reason. Nothing is lost and the runbook names the remedy
+  (abandon it), but "expire … receipt pins" in design §8.6 implies expiry is enough.
+
+  **Trigger**: a host that relies on expiry to drain. **Scope sketch**: either treat an expired
+  unacknowledged manifest as not pinning at prune time (disposal already does, since T8 PR 1's
+  antagonist finding), or have `cleanup` evict expired manifests; and keep `prunable` consistent with
+  what cleanup will do. **Reference**: `agent-tasks-t8b` `state.md` § *antagonist*.
+
+- **[P4] A baseline is never checked against `maxUpdateBytes`, and a profile may set `maxUpdateBytes`
+  below an envelope plus framing.** `_checkBaseline` has no size check, so under such a profile a
+  baseline can exceed both `maxUpdateBytes` and `maximumUpdateBytes(profile)`. It is charged at its
+  actual size, so nothing is under-reserved; the bound is simply not the bound it says. **Scope
+  sketch**: check baselines like updates, or require `maxUpdateBytes ≥ maxEnvelopeBytes + framing`
+  in the profile converter. **Reference**: `agent-tasks-t8b` antagonist (from reading, not run).
+
 - **[P4] `source-replay` envelope validation still measures against `maxUpdateBytes`.**
   `storage/claims.ts` `replayCharges` refuses an envelope whose declared bytes exceed
   `n × maxUpdateBytes`. Since T8 the reservation unit is `maximumUpdateBytes` (37,417 B at the

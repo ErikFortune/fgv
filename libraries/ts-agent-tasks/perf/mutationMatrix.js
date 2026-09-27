@@ -645,6 +645,20 @@ const MUTATIONS = [
     '  return ledgerEntry(entry.id, used, entry.capacityClaims, recordLimit);',
     '  return ledgerEntry(entry.id, used, [], recordLimit);',
     T8B
+  ),
+  m(
+    'T8b-7 a raise may grow what existing reservations cover',
+    S + 'graphRules.ts',
+    '    grown.length === 0',
+    '    grown.length >= 0',
+    T8B
+  ),
+  m(
+    'T8b-8 a landed activation freezes nothing',
+    S + 'repository.ts',
+    '    const frozen: SubscriptionId | undefined = this._records.frozenBy(before, next);',
+    '    const frozen: SubscriptionId | undefined = undefined;',
+    T8B
   )
 ];
 

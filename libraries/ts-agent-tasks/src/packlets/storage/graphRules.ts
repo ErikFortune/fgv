@@ -3,10 +3,19 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { Result } from '@fgv/ts-utils';
+import { Result, mapResults, succeed } from '@fgv/ts-utils';
 import { TaskConverters } from '../converters';
-import { ITaskCapacityProfile, ITaskRecordDraft, TaskId, TaskResult } from '../types';
-import { ok, taskFailure } from './failures';
+import {
+  ITaskCapacityCharge,
+  ITaskCapacityProfile,
+  ITaskRecordDraft,
+  TaskId,
+  TaskResult,
+  maximumClosureCharges,
+  maximumResolutionCharges,
+  maximumSettlementCharges
+} from '../types';
+import { classify, ok, taskFailure } from './failures';
 
 // Rules a write is checked against that need only the profile and the live graph.
 
@@ -126,5 +135,63 @@ export function raisedProfile(
       'after-host-action'
     );
   }
-  return ok(profile);
+  return reservationsHold(stored, profile).onSuccess(() => ok(profile));
+}
+
+/**
+ * Refuses a raise that would grow what a reservation must cover (T8).
+ *
+ * @remarks
+ * Every stored claim was minted from the profile of its day — a closeout, first-resolution or
+ * settlement bundle, a link's acknowledgement evidence, a subscription's receipt preparation — and is
+ * never recomputed. A raise that grows any of those sizes (a larger envelope, details or stored
+ * operation bound, a wider audience) would let already-accepted work produce more than its claim
+ * reserved, and its terminal write could then be refused: the deadlock the reservation exists to
+ * prevent. Those values are chosen at `initialize`. Raising `maxUpdateBytes` alone changes no
+ * reservation, since each reserves the derived update maximum.
+ */
+function reservationsHold(stored: ITaskCapacityProfile, raised: ITaskCapacityProfile): TaskResult<true> {
+  const bundles = (
+    profile: ITaskCapacityProfile
+  ): Result<ReadonlyArray<ReadonlyArray<ITaskCapacityCharge>>> =>
+    mapResults([
+      maximumClosureCharges(profile),
+      maximumResolutionCharges(profile),
+      maximumSettlementCharges(profile)
+    ]);
+  const names: ReadonlyArray<string> = ['closeout', 'first-resolution', 'settlement'];
+  return classify(
+    bundles(stored).onSuccess((before) =>
+      bundles(raised).onSuccess((after) => {
+        const grown: string[] = [];
+        after.forEach((charges, i) => {
+          for (const charge of charges) {
+            // A bundle charges the same dimensions under every profile; only the amounts move.
+            const was: number = before[i].find((c) => c.dimension === charge.dimension)!.amount;
+            if (charge.amount > was) {
+              grown.push(`${names[i]} ${charge.dimension}`);
+            }
+          }
+        });
+        for (const key of ['maxAcknowledgementEvidenceBytes', 'maxIssuedReceiptBytes'] as const) {
+          if (raised.encoded[key] > stored.encoded[key]) {
+            grown.push(`encoded.${key}`);
+          }
+        }
+        return succeed(grown);
+      })
+    ),
+    'invalid',
+    'after-host-action'
+  ).onSuccess((grown) =>
+    grown.length === 0
+      ? ok<true>(true)
+      : taskFailure<true>(
+          `raiseCapacityLimits: this raise grows what existing reservations were computed to cover ` +
+            `(${grown.join(', ')}); work already accepted could then be refused its closeout. Choose ` +
+            `these bounds at initialize`,
+          'unsupported',
+          'after-host-action'
+        )
+  );
 }

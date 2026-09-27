@@ -35,13 +35,16 @@ import {
   hostBinding,
   journey,
   newCommand,
+  newSubscription,
   newTask,
   owedIds,
   populate,
+  populateBase,
   populatedWorld,
   reopenWorld,
   runJourney,
   saturatedWorld,
+  subscribeLate,
   totalsOf
 } from '../../helpers/saturationFixtures';
 
@@ -487,5 +490,115 @@ describe('reopen at the ceiling', () => {
     expect(await owedIds(deliveryIn(reopened, 'late'))).toHaveLength(2);
     await runJourney(reopened);
     expect(await newTask(reopened)).toSucceed();
+  });
+});
+
+describe('a raise cannot outgrow the reservations already held (antagonist HIGH-1)', () => {
+  const raise = async (
+    w: IWorld,
+    change: (p: ITaskCapacityProfile) => ITaskCapacityProfile
+  ): Promise<TaskResult<unknown>> =>
+    w.repository.withWriter((writer) => writer.raiseCapacityLimits(change(w.repository.profile)));
+
+  test.each([
+    ['maxEnvelopeBytes', /closeout resident-payload-bytes/],
+    ['maxDetailBytes', /closeout record-bytes/],
+    ['maxStoredOperationBytes', /closeout record-bytes/],
+    ['maxAcknowledgementEvidenceBytes', /closeout logical-bytes|encoded\.maxAcknowledgementEvidenceBytes/],
+    ['maxIssuedReceiptBytes', /settlement record-bytes|encoded\.maxIssuedReceiptBytes/]
+  ] as const)('raising %s is refused: accepted work could not finish on its claims', async (bound, named) => {
+    const w: IWorld = await populatedWorld();
+    const before: Totals = totalsOf(w.repository);
+    expect(
+      await raise(w, (p) => ({ ...p, encoded: { ...p.encoded, [bound]: p.encoded[bound] * 2 } }))
+    ).toFailWithDetail(named, expect.objectContaining({ code: 'unsupported' }));
+    expect(w.repository.profile).toEqual(defaultTaskCapacityProfile);
+    expect(totalsOf(w.repository)).toEqual(before);
+  });
+
+  test('raising the audience per update is refused the same way', async () => {
+    const w: IWorld = await emptyWorld(withLimits({}, { maxAudiencePerUpdate: 16 }));
+    expect(
+      await raise(w, (p) => ({ ...p, perOwner: { ...p.perOwner, maxAudiencePerUpdate: 32 } }))
+    ).toFailWithDetail(/closeout audience-links/, expect.objectContaining({ code: 'unsupported' }));
+  });
+
+  test('raising maxUpdateBytes alone, or any limit, changes no reservation and is admitted', async () => {
+    const w: IWorld = await populatedWorld();
+    expect(
+      await raise(w, (p) => ({
+        ...p,
+        limits: { ...p.limits, 'logical-bytes': p.limits['logical-bytes'] * 3 },
+        encoded: { ...p.encoded, maxUpdateBytes: p.encoded.maxUpdateBytes * 2 }
+      }))
+    ).toSucceed();
+    // And the accepted work still finishes on the claims it holds.
+    await runJourney(w);
+  });
+});
+
+describe('an activation whose record landed freezes what its baseline covers (antagonist HIGH-2)', () => {
+  /** A world whose late `current` subscription wrote its first record but was not marked live. */
+  async function landedNotLive(): Promise<IWorld> {
+    const w: IWorld = await populateBase(await emptyWorld());
+    // The pending entry and the consumer record land; the live entry fails having changed nothing.
+    w.faulty.faults.push({ name: 'repository.json', when: 'before', visibility: 'unchanged', skip: 1 });
+    expect(await subscribeLate(w)).toFail();
+    expect(w.repository.health().state).toBe('ready');
+    return w;
+  }
+
+  const setTitle = async (w: IWorld, id: string, title: string): Promise<TaskResult<unknown>> =>
+    w.writer.updateTracked({
+      taskId: tid(id),
+      operationId: op(),
+      expectedRevision: await revisionOf(w.repository, id),
+      patch: { title }
+    });
+
+  test('a change to a task the baseline covers, or a new one it would cover, is refused — never silently missed', async () => {
+    const w: IWorld = await landedNotLive();
+    expect(await setTitle(w, 't', 'moved on')).toFailWithDetail(
+      /subscription late's activation is incomplete/,
+      expect.objectContaining({ code: 'conflict' })
+    );
+    expect(await newTask(w)).toFailWithDetail(
+      /subscription late's activation is incomplete/,
+      expect.anything()
+    );
+    // Retrying the registration completes it from the landed record — whose baseline is still exact.
+    expect(await subscribeLate(w)).toSucceed();
+    expect(await owedIds(deliveryIn(w, 'late'))).toEqual(['j:1:initial', 't:1:initial']);
+    // And the work goes on, owed to it as to any live subscription.
+    expect(await setTitle(w, 't', 'moved on')).toSucceed();
+    expect(await owedIds(deliveryIn(w, 'late'))).toEqual(['j:1:initial', 't:1:initial', 't:2:1']);
+  });
+
+  test('a reopen completes the landed activation and lifts the freeze', async () => {
+    const w: IWorld = await landedNotLive();
+    const reopened: IWorld = await reopenWorld(w);
+    expect(await owedIds(deliveryIn(reopened, 'late'))).toEqual(['j:1:initial', 't:1:initial']);
+    expect(await newTask(reopened)).toSucceed();
+    expect(await owedIds(deliveryIn(reopened, 'late'))).toEqual(['j:1:initial', 't:1:initial', 'u:1:0']);
+  });
+
+  test('a from-now registration freezes nothing, and a record that never landed is rebuilt fresh on retry', async () => {
+    const w: IWorld = await populateBase(await emptyWorld());
+    w.faulty.faults.push({ name: 'consumer-late.json', when: 'before', visibility: 'unchanged' });
+    expect(await subscribeLate(w)).toFail();
+    expect(await setTitle(w, 't', 'moved on')).toSucceed();
+    expect(await subscribeLate(w)).toSucceed();
+    expect(await owedIds(deliveryIn(w, 'late'))).toEqual(['j:1:initial', 't:2:initial']);
+
+    const f: IWorld = await populateBase(await emptyWorld());
+    f.faulty.faults.push({ name: 'repository.json', when: 'before', visibility: 'unchanged', skip: 1 });
+    expect(await newSubscription(f)).toFail();
+    expect(await setTitle(f, 't', 'moved on')).toSucceed();
+  });
+
+  test('a rebuild completes it too, and the freeze follows', async () => {
+    const w: IWorld = await landedNotLive();
+    expect(await w.repository.rebuildIndexes()).toSucceed();
+    expect(await setTitle(w, 't', 'moved on')).toSucceed();
   });
 });

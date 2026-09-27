@@ -32,16 +32,19 @@ const MiB: number = 1024 * 1024;
  *
  * **What the defaults admit.** Limits are checked together and the first to fill governs. Every
  * registration reserves its terminal closeout (`maximumClosureCharges`), about 976 KiB of
- * `logical-bytes`, so under these defaults **`logical-bytes` binds first**: 536 plain tracked
- * registrations, fewer with commands in flight or subscriptions holding baselines. The
+ * `logical-bytes`, so under these defaults **`logical-bytes` binds first**: at most 536 plain tracked
+ * registrations of minimal size, fewer with larger tasks, commands in flight or subscriptions holding
+ * baselines. The
  * `non-archived-tasks` limit of 1,000 is therefore not reachable under the default profile; it is
  * a ceiling for a host that raises `logical-bytes`, `audience-links` and `acknowledgement-ids`
  * (each 224 per registration), not a promise this profile keeps.
  *
- * **Tuning.** Every default here may be raised: an existing repository through the writer's
+ * **Tuning.** Every limit here may be raised: an existing repository through the writer's
  * `raiseCapacityLimits` (the profile is stored at initialization and a stored limit can be
  * raised, never lowered, in v1); a new repository by passing an explicit profile to
- * `initialize`. The default binds only repositories created without one, so changing it later
+ * `initialize`. The bounds a reservation is computed from — envelope, details, stored operation,
+ * audience per update, evidence and receipt size — are the exception: an existing repository refuses
+ * to raise them, since the claims it already holds would no longer cover their work. The default binds only repositories created without one, so changing it later
  * never reinterprets an existing repository.
  * @public
  */
@@ -61,8 +64,9 @@ export const defaultTaskCapacityLimits: TaskCapacityLimits = {
   'logical-bytes': 512 * MiB,
   // Owed and pinned update payloads are held in memory at their encoded size, plus reservations for
   // payloads not yet written. Each registration reserves 7 x 37,417 B (see `maximumUpdateBytes`), so
-  // this admits 1,537 plain registrations, 1,345 with one command in flight each, 1,195 with a
-  // command and one `current` subscription's baseline each. Raised from 64 MiB (T8), where it
+  // by its closeout alone this admits 1,537 plain registrations — about 1,530 counting each creation
+  // update's own bytes — 1,345 with one command in flight each, 1,195 with a command and one
+  // `current` subscription's baseline each. Raised from 64 MiB (T8), where it
   // bound first; `logical-bytes` now binds before it.
   'resident-payload-bytes': 384 * MiB
 };

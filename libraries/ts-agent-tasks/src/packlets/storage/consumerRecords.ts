@@ -7,6 +7,7 @@ import { DetailedResult, Result } from '@fgv/ts-utils';
 import { TaskConverters } from '../converters';
 import {
   CapacityClaimId,
+  ITaskCommitRecord,
   CheckpointWriteVisibility,
   IIssuedTaskReceipt,
   IInclusionEntry,
@@ -46,6 +47,8 @@ import { ITaskProjection, ledgerEntry, recordLimitFor } from './projection';
 import { normalizeSelection } from './queries';
 import {
   ISubscriptionState,
+  catalogMatches,
+  catalogOf,
   historyCommitment,
   isDrainable,
   preparationClaim,
@@ -99,9 +102,52 @@ const activationSlack: number = 256;
  */
 export class SubscriptionRecords {
   private readonly _host: ISubscriptionHost;
+  /**
+   * Pending registrations whose first record has landed but which are not live: the step that marks
+   * them live failed cleanly, so the repository is still usable. Resident only; see
+   * {@link SubscriptionRecords.frozenBy}.
+   */
+  private readonly _landed: Set<SubscriptionId> = new Set<SubscriptionId>();
 
   public constructor(host: ISubscriptionHost) {
     this._host = host;
+  }
+
+  /**
+   * The pending `current` registration, if any, whose landed first record a commit between `before`
+   * and `next` would make stale (T8).
+   *
+   * @remarks
+   * Once a `current` subscription's first record has landed, its baseline is fixed: a retry of the
+   * registration, and open, complete the activation from that record as it stands. A pending
+   * subscription is in no audience, so a commit it would have been owed made between the landing and
+   * the completion would never reach it, and nothing would say so. The commit is refused instead,
+   * until the registration is retried or the repository reopened — each of which completes it. A
+   * registration whose record has not landed builds a fresh baseline on retry and freezes nothing; nor
+   * does a `from-now` one, which is owed nothing from before it is live.
+   */
+  public frozenBy(
+    before: ITaskCommitRecord | undefined,
+    next: ITaskCommitRecord
+  ): SubscriptionId | undefined {
+    const book: DeliveryBook = this._host.book();
+    for (const id of Array.from(this._landed)) {
+      const entry: IPendingConsumerEntry | undefined = book.pending.get(id);
+      if (entry === undefined) {
+        // Completed since — by a rebuild, which completes every landed registration.
+        this._landed.delete(id);
+        continue;
+      }
+      if (entry.specification.start !== 'current') {
+        continue;
+      }
+      const selection = normalizeSelection(entry.specification.selection);
+      const touched = [before === undefined ? undefined : catalogOf(before), catalogOf(next)];
+      if (touched.some((fields) => fields !== undefined && catalogMatches(selection, fields))) {
+        return id;
+      }
+    }
+    return undefined;
   }
 
   // ------------------------------------------------------------------------------------------
@@ -517,35 +563,43 @@ export class SubscriptionRecords {
     const host: ISubscriptionHost = this._host;
     const id: SubscriptionId = entry.id;
     const manifest: ITaskRepositoryManifest = _withConsumer(host.manifest(), { id, state: 'live' });
-    return host.manifestEntry(manifest).onSuccess((manifestEntry) =>
-      host
-        .ledger()
-        .admit(
-          new Map([
-            [subscriptionKey(id), first.entry],
-            ['repository', manifestEntry]
-          ])
-        )
-        .onSuccess(() => host.writeManifest(manifest, entry.operationId))
-        .onSuccess(() => {
-          const state: ISubscriptionState = subscriptionState(
-            first.record,
-            first.read.fingerprint,
-            first.read.bytes
-          );
-          host.book().pending.delete(id);
-          host.book().activate(state, matched, units);
-          host.index().putBaseline(id, first.record.baseline);
-          host.ledger().apply(
+    // The first record has landed. Until the entry is live, commits its baseline depends on are held.
+    this._landed.add(id);
+    const finished: TaskResult<ITaskConsumerRecord> = host
+      .manifestEntry(manifest)
+      .onSuccess((manifestEntry) =>
+        host
+          .ledger()
+          .admit(
             new Map([
-              [subscriptionKey(id), host.book().entry(id, host.index(), host.profile())],
+              [subscriptionKey(id), first.entry],
               ['repository', manifestEntry]
             ])
-          );
-          host.committed();
-          return ok(first.record);
-        })
-    );
+          )
+          .onSuccess(() => host.writeManifest(manifest, entry.operationId))
+          .onSuccess(() => {
+            const state: ISubscriptionState = subscriptionState(
+              first.record,
+              first.read.fingerprint,
+              first.read.bytes
+            );
+            host.book().pending.delete(id);
+            host.book().activate(state, matched, units);
+            host.index().putBaseline(id, first.record.baseline);
+            host.ledger().apply(
+              new Map([
+                [subscriptionKey(id), host.book().entry(id, host.index(), host.profile())],
+                ['repository', manifestEntry]
+              ])
+            );
+            host.committed();
+            return ok(first.record);
+          })
+      );
+    if (finished.isSuccess()) {
+      this._landed.delete(id);
+    }
+    return finished;
   }
 
   // ------------------------------------------------------------------------------------------
