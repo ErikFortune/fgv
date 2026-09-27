@@ -31,6 +31,9 @@ summary:
     ts-utils 99.27 % and ts-json 99.95 %, with ts-res-ui-components configured at a 0 threshold.
     Coverage is identical on release, the uncovered lines are pre-existing and outside this stream's
     sites, and they were left alone as out of scope.
+    (5) Copilot's first round found an adjacent bug in the ts-res-ui-components deletion loop: `key in
+    delta` on a plain object dropped deletions of Object.prototype-named keys such as toString. The
+    `in` operator is invisible to no-prototype-builtins. It was fixed in this PR and pinned by a test.
   sourceLine: '**Shipped:** `isKeyOf`, `Converters.strictObject` and six other property probes no longer throw on a null-prototype object — a converter handed `Object.create(null)` now returns a `Result` — and `no-prototype-builtins` gates the four packages that carried the class.'
   headline: >
     A converter handed an Object.create(null) value now returns a Result instead of throwing —
@@ -53,4 +56,4 @@ relatedStreams:
     relationship: >
       escalated the isKeyOf defect (result.md item 6) as an upstream gap it did not own; T3, T4 and
       T5 each declined it by name before it became this stream
-sourceHash: 1874555d7846be12 # sha256/16 over brief.md, result.md, state.md
+sourceHash: b65c9ca9325062e0 # sha256/16 over brief.md, result.md, state.md

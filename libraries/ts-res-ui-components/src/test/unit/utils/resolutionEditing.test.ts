@@ -203,6 +203,16 @@ describe('resolutionEditing utilities', () => {
       expect(result.orThrow()).toBeDefined();
     });
 
+    test('marks a deleted property named like an Object.prototype member as deleted', () => {
+      const resolvedValue = { toString: 'text', constructor: 'ctor', keep: 'same' };
+      const editedValue = { keep: 'same' };
+
+      expect(computeResourceDelta(undefined, resolvedValue, editedValue)).toSucceedWith({
+        toString: null,
+        constructor: null
+      });
+    });
+
     test('marks every property of a null-prototype resolved object as deleted when replaced by a non-object', () => {
       const resolvedValue = Object.assign(Object.create(null), { message: 'Hello', extra: 'field' });
 

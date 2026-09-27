@@ -56,6 +56,19 @@ throwing" claim. The `code-reviewer` pass caught it (P2). Both guards now check 
 `jsonConverter.test.ts` › *treats a null options object like omitted options* pins it; with the
 earlier guard restored it fails with `TypeError: Cannot convert undefined or null to object`.
 
+## An adjacent bug Copilot caught in the same loop
+
+Copilot's first review round found a bug in `computeResourceDelta`'s deletion walk, the loop the
+`ts-res-ui-components` fix sits in. The walk skipped a key when `key in delta`. `delta` is a plain
+`{}`, so for a deleted property named `toString` or `constructor` the check was true through the
+prototype chain and the deletion was dropped. With both of those deleted, the function reported no
+change at all (`null`). This is the same class as the stream's defect: asking the prototype chain
+when the question is about own properties. The `in` operator is invisible to
+`no-prototype-builtins`, though, which is why the site sweep did not find it. It is now fixed with
+`Object.prototype.hasOwnProperty.call(delta, key)` and pinned by `resolutionEditing.test.ts` ›
+*marks a deleted property named like an Object.prototype member as deleted*. That test was watched
+red before the fix (received `null`).
+
 ## The lint gate — and the shared layer that does not exist
 
 - `no-prototype-builtins` was absent from the **effective** config, not just unset in repo files:

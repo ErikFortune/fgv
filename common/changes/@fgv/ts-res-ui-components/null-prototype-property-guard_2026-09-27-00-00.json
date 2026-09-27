@@ -2,7 +2,7 @@
   "changes": [
     {
       "packageName": "@fgv/ts-res-ui-components",
-      "comment": "Fix computeResourceDelta throwing TypeError when a null-prototype resolved object is replaced by a non-object: use Object.prototype.hasOwnProperty.call instead of obj.hasOwnProperty. Enable the no-prototype-builtins lint rule.",
+      "comment": "Fix computeResourceDelta throwing TypeError when a null-prototype resolved object is replaced by a non-object, and dropping the deletion of a property named like an Object.prototype member (e.g. toString): use Object.prototype.hasOwnProperty.call instead of obj.hasOwnProperty and the `in` operator. Enable the no-prototype-builtins lint rule.",
       "type": "patch"
     }
   ],

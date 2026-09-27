@@ -48,7 +48,7 @@ rushstack profile does not include it, which is why lint stayed green through ni
 recorded as a P2 in `docs/TECH_DEBT.md`. The other 29 packages have no violations today, but
 nothing stops a new one.
 
-## Two things worth carrying elsewhere
+## Three things worth carrying elsewhere
 
 - **A reported site is a sample, not the population.** One site was reported. A grep found nine,
   including a second on the same `strictObject` path that the report missed. The lint rule is what
@@ -58,6 +58,11 @@ nothing stops a new one.
   a `null` options object from a JavaScript caller throw. That is a regression inside a fix whose
   whole claim was "nothing that returns starts throwing". The `code-reviewer` pass caught it before
   the PR opened, and a test now pins it.
+
+- **The rule cannot see everything in the class.** Copilot found `key in delta` in the same
+  `ts-res-ui-components` loop. It asks the prototype chain an own-property question, so a deleted
+  `toString` was dropped from the delta. `no-prototype-builtins` does not flag the `in` operator.
+  The rule stops the throwing form; it does not stop this one.
 
 ## Open
 
