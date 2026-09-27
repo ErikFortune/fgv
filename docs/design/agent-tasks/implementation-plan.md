@@ -218,7 +218,7 @@ A3: reserve each accepted update/baseline's future acknowledgement-or-dispositio
 
 **Review gate:** adversarial receipts and checkpoint custody; verify exact-ID logic rather than max revision, and fail-closed behavior of custom checkpoint stores.
 
-### T8 — Retention, backpressure and recovery journeys — 🟡 retention mechanism implemented on `integration/agent-tasks-v1` ([#698](https://github.com/ErikFortune/fgv/pull/698)); A3 saturation journeys, profile decision and M1 proposed as a second PR
+### T8 — Retention, backpressure and recovery journeys — ✅ implemented on `integration/agent-tasks-v1`: retention mechanism ([#698](https://github.com/ErikFortune/fgv/pull/698)); A3 saturation journeys, the capacity profile and M1 on this implementation ([#699](https://github.com/ErikFortune/fgv/pull/699))
 
 **Dependencies:** T3–T7. **Affected package:** `ts-agent-tasks` storage/delivery/broker.
 
@@ -323,7 +323,7 @@ The ingestion adapter advertises no execution commands. It can validate current/
 
 Each implementation slice starts with behavior-driven positive, negative, boundary and integration tests. Run the repository's `code-reviewer` pass **before** closing coverage gaps; resolve findings, then reach meaningful 100% statements, branches, functions and lines in each affected package. Use `@fgv/ts-utils-jest`, Result assertions and setup-only throwing. Do not paper over failures, add public test-only exports, or use coverage ignores without the repository-required approval. Use typed lower-boundary fakes to inject real error paths; do not fake a Result implementation or mock away the contract being tested.
 
-### M1 — Resident-memory and reopen/rebuild qualification (planned)
+### M1 — Resident-memory and reopen/rebuild qualification — early run at T4; run on T8's implementation before its default profile ([#699](https://github.com/ErikFortune/fgv/pull/699), `agent-tasks-t8b` `result.md`); the production-profile cohort and the stop-state cohort (after T9) remain
 
 **Dependencies:** first useful run after T4; complete matrix after T7/T8 and stop-state cohort after T9. **Future artifact:** `libraries/ts-agent-tasks/perf/residentMemory.js`, invoked on demand against the built package with `node --expose-gc`. Follow [Measurement Harnesses](../../../.ai/instructions/TESTING_GUIDELINES.md#measurement-harnesses) and the [agent-memory precedent](../../../libraries/ts-agent-memory/perf/residentMemory.js). No harness, fixtures, result artifact or measurements are created/run by this design amendment.
 

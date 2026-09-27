@@ -3,7 +3,6 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { FileTree } from '@fgv/ts-json-base';
 import {
   Converter,
   Converters,
@@ -34,7 +33,6 @@ import {
   ITaskCapacityStatus,
   ITaskCommitRecord,
   ITaskEnvironment,
-  ITaskInventoryEntry,
   ITaskKindRegistry,
   ITaskRecordDraft,
   IStoredCatalogOperation,
@@ -88,7 +86,6 @@ import { classify, ok, propagate, taskFailure } from './failures';
 import {
   canonicallyEqual,
   encodeValidated,
-  fingerprintOf,
   IEncodedRecord,
   manifestName,
   parseJson,
@@ -127,7 +124,7 @@ import {
 } from './queries';
 import { IVisitCounter, SortedKeySet } from './sortedKeys';
 import { TaskIndex } from './taskIndex';
-import { CursorTable, ICachedRecord, MaterializationGate, RecordCache } from './workingSet';
+import { CursorTable, MaterializationGate, RecordCache } from './workingSet';
 import {
   ITaskProjection,
   isTerminalRecord,
@@ -162,16 +159,12 @@ import { DeliveryBook, ITaskDeliveryPlan, newLinks } from './deliveryBook';
 import { subscriptionKey } from './subscriptions';
 import { registerInspector } from './internals';
 import { IRootOwnership } from './rootOwnership';
+import { CommittedFiles, IReadRecord } from './committedFiles';
 
 /** The validated purpose of a commit, and the operation it records when there is one. */
 interface ICommitKind {
   readonly purpose: ITaskCommitRequest['purpose'];
   readonly operationId?: OperationId;
-}
-
-interface IReadRecord {
-  readonly record: ITaskCommitRecord;
-  readonly encoded: IEncodedRecord;
 }
 
 interface IWriterHandle {
@@ -215,8 +208,7 @@ export class FileTreeTaskRepository implements ITaskRepository {
   private readonly _cache: RecordCache;
   private readonly _cursors: CursorTable;
   private readonly _visits: IVisitCounter;
-  private _manifest: ITaskRepositoryManifest;
-  private _manifestFingerprint: string;
+  private readonly _files: CommittedFiles;
   /**
    * Validates a commit's purpose rather than trusting it: a commit that is none of the three
    * would pass every purpose-keyed check as if it were an unevidenced semantic change.
@@ -264,8 +256,19 @@ export class FileTreeTaskRepository implements ITaskRepository {
     this._pending = state.pending;
     this._sources = state.sources;
     this._ledger = state.ledger;
-    this._manifest = state.manifest;
-    this._manifestFingerprint = fingerprintOf(state.manifestText);
+    this._files = new CommittedFiles(
+      {
+        store: state.store,
+        converters: state.converters,
+        cache: this._cache,
+        gate: this._gate,
+        projections: () => this._tasks,
+        usable: () => this._usable(),
+        fence: (reason) => this._fence(reason)
+      },
+      state.manifest,
+      state.manifestText
+    );
     this._commitKind = Converters.discriminatedObject<ICommitKind>('purpose', {
       operation: Converters.object<ICommitKind>({
         purpose: Converters.literal('operation'),
@@ -288,10 +291,10 @@ export class FileTreeTaskRepository implements ITaskRepository {
       profile: () => this.profile,
       ledger: () => this._ledger,
       sources: () => this._sources,
-      manifest: () => this._manifest,
+      manifest: () => this._files.manifest,
       manifestEntry: (manifest) => this._deliveryHost().manifestEntry(manifest),
       writeManifest: (manifest) => this._deliveryHost().writeManifest(manifest, undefined),
-      writeFile: (name, text) => this._writeFile(name, text, undefined),
+      writeFile: (name, text) => this._files.write(name, text, undefined),
       fence: (reason) => this._fence(reason)
     });
   }
@@ -325,7 +328,7 @@ export class FileTreeTaskRepository implements ITaskRepository {
 
   /** {@inheritDoc ITaskRepository.profile} */
   public get profile(): ITaskCapacityProfile {
-    return this._manifest.profile;
+    return this._files.manifest.profile;
   }
 
   /** {@inheritDoc ITaskRepository.registry} */
@@ -344,7 +347,7 @@ export class FileTreeTaskRepository implements ITaskRepository {
 
   /** {@inheritDoc ITaskRepository.read} */
   public async read(id: TaskId): Promise<TaskResult<TaskRegistrationResult | undefined>> {
-    return this._readCommitted(id).onSuccess((read) => {
+    return this._files.readCommitted(id).onSuccess((read) => {
       if (read === undefined) {
         return ok(undefined);
       }
@@ -370,7 +373,7 @@ export class FileTreeTaskRepository implements ITaskRepository {
 
   /** {@inheritDoc ITaskRepository.readCommit} */
   public async readCommit(id: TaskId): Promise<TaskResult<ITaskCommitRecord | undefined>> {
-    return this._readCommitted(id).onSuccess((read) => ok(read?.record));
+    return this._files.readCommitted(id).onSuccess((read) => ok(read?.record));
   }
 
   /** {@inheritDoc ITaskRepository.outstanding} */
@@ -615,8 +618,7 @@ export class FileTreeTaskRepository implements ITaskRepository {
       );
     }
     const fresh = outcome.value.scanned;
-    this._manifest = fresh.manifest;
-    this._manifestFingerprint = fingerprintOf(fresh.manifestText);
+    this._files.reset(fresh.manifest, fresh.manifestText);
     this._tasks = fresh.tasks;
     this._pending = fresh.pending;
     this._sources = fresh.sources;
@@ -818,7 +820,7 @@ export class FileTreeTaskRepository implements ITaskRepository {
         : taskFailure('writer: this handle is no longer active', 'invalid', 'after-host-action');
     return {
       readCommit: async (id: TaskId) =>
-        guard().onSuccess(() => this._readCommitted(id, true).onSuccess((read) => ok(read?.record))),
+        guard().onSuccess(() => this._files.readCommitted(id, true).onSuccess((read) => ok(read?.record))),
       register: async (request: ITaskRegistrationRequest) => guard().onSuccess(() => this._register(request)),
       commit: async (request: ITaskCommitRequest) => guard().onSuccess(() => this._commit(request)),
       readSource: async (sourceId: string) =>
@@ -863,13 +865,15 @@ export class FileTreeTaskRepository implements ITaskRepository {
       index: () => this._index!,
       tasks: () => this._tasks,
       book: () => this._book,
-      manifest: () => this._manifest,
+      manifest: () => this._files.manifest,
       manifestEntry: (manifest) =>
-        this._encodeManifest(manifest).onSuccess((encoded) => ok(manifestEntry(encoded.bytes, this.profile))),
+        this._files
+          .encodeManifest(manifest)
+          .onSuccess((encoded) => ok(manifestEntry(encoded.bytes, this.profile))),
       writeManifest: (manifest, operationId) =>
-        this._encodeManifest(manifest).onSuccess((encoded) =>
-          this._writeFile(manifestName, encoded.text, operationId).onSuccess(() => {
-            this._setManifest(manifest);
+        this._files.encodeManifest(manifest).onSuccess((encoded) =>
+          this._files.write(manifestName, encoded.text, operationId).onSuccess(() => {
+            this._files.setManifest(manifest);
             return ok<true>(true);
           })
         ),
@@ -897,6 +901,15 @@ export class FileTreeTaskRepository implements ITaskRepository {
     next: ITaskCommitRecord,
     adopted: boolean = false
   ): TaskResult<ITaskDeliveryPlan> {
+    const frozen: SubscriptionId | undefined = this._records.frozenBy(before, next);
+    if (frozen !== undefined) {
+      return taskFailure(
+        `task ${taskId}: subscription ${frozen}'s activation is incomplete — its first record is written ` +
+          `but it is not live; retry its registration, or reopen, before changing a task it selects`,
+        'conflict',
+        'after-host-action'
+      );
+    }
     return this._book.plan({ taskId, before, next, index: this._index!, profile: this.profile, adopted });
   }
 
@@ -1063,12 +1076,13 @@ export class FileTreeTaskRepository implements ITaskRepository {
       ...identity,
       capacityClaims: claims.value
     };
-    const pendingManifest: ITaskRepositoryManifest = this._withEntry(entry);
+    const pendingManifest: ITaskRepositoryManifest = this._files.withEntry(entry);
 
     // Preflight the widest state the protocol passes through: the record written while its
     // pending entry (and the request it carries) is still in the manifest. The final state,
     // with the request cleared, is no larger.
-    return this._encodeManifest(pendingManifest)
+    return this._files
+      .encodeManifest(pendingManifest)
       .onSuccess((manifestEncoded) =>
         this._buildRecord(draft, 1, withOwnership(claims.value, 'live')).onSuccess((built) =>
           this._plan(taskId, undefined, built.record).onSuccess((plan) =>
@@ -1085,8 +1099,8 @@ export class FileTreeTaskRepository implements ITaskRepository {
         )
       )
       .onSuccess((manifestEncoded) =>
-        this._writeFile(manifestName, manifestEncoded.text, operationId).onSuccess(() => {
-          this._setManifest(pendingManifest);
+        this._files.write(manifestName, manifestEncoded.text, operationId).onSuccess(() => {
+          this._files.setManifest(pendingManifest);
           this._pending.set(taskId, entry);
           // The manifest that now holds the pending entry, request and claims is the committed
           // one; if the record write then fails cleanly, the repository stays usable and must
@@ -1157,18 +1171,9 @@ export class FileTreeTaskRepository implements ITaskRepository {
     return this._finishRegistration(taskId, operationId, landed.value, false);
   }
 
-  /** Reads a task record's text, refusing it before any parse when it is over the record bound. */
-  private _readBounded(name: string): Result<{ text: string; bytes: number }> {
-    const limit: number = taskRecordLimit(this.profile);
-    return this._store.read(name).onSuccess((text) => {
-      const bytes: number = utf8Length(text);
-      return bytes > limit ? fail(`${name}: ${bytes} bytes exceeds ${limit}`) : succeed({ text, bytes });
-    });
-  }
-
   /** Reads a landed record and checks it is exactly the pending registration's first record. */
   private _readLanded(name: string, entry: IPendingInventoryEntry): Result<IReadRecord> {
-    return this._readBounded(name).onSuccess(({ text }) =>
+    return this._files.readBounded(name).onSuccess(({ text }) =>
       parseJson(text)
         .onSuccess((parsed) => this._converters.storage.record.convert(parsed))
         .onSuccess((record) =>
@@ -1191,7 +1196,7 @@ export class FileTreeTaskRepository implements ITaskRepository {
     writeRecord: boolean
   ): TaskResult<ITaskCommitRecord> {
     const profile: ITaskCapacityProfile = this.profile;
-    const liveManifest: ITaskRepositoryManifest = this._withEntry({ id: taskId, state: 'live' });
+    const liveManifest: ITaskRepositoryManifest = this._files.withEntry({ id: taskId, state: 'live' });
     const recordEntry: ILedgerEntry = this._ledgerForRecord(taskId, built.record, built.encoded);
     // A record that landed before a crash was written against the subscriptions of its day; one
     // activated since may be missing from its audiences, and the record is not rewritten for it.
@@ -1204,17 +1209,17 @@ export class FileTreeTaskRepository implements ITaskRepository {
     // entry replaces the pending one, so nothing is charged twice or released early.
     return this._ledger
       .admit(new Map([[taskKey(taskId), recordEntry], ...plan.entries]))
-      .onSuccess(() => this._encodeManifest(liveManifest))
+      .onSuccess(() => this._files.encodeManifest(liveManifest))
       .onSuccess((manifestEncoded) =>
         (writeRecord
-          ? this._writeFile(recordName('task', taskId), built.encoded.text, operationId).onSuccess(() =>
-              this._relist(operationId)
-            )
+          ? this._files
+              .write(recordName('task', taskId), built.encoded.text, operationId)
+              .onSuccess(() => this._files.relist(operationId))
           : ok<true>(true)
         )
-          .onSuccess(() => this._writeFile(manifestName, manifestEncoded.text, operationId))
+          .onSuccess(() => this._files.write(manifestName, manifestEncoded.text, operationId))
           .onSuccess(() => {
-            this._setManifest(liveManifest);
+            this._files.setManifest(liveManifest);
             this._pending.delete(taskId);
             this._tasks.set(taskId, projectRecord(built.record, true, built.encoded.text));
             this._ledger.apply(
@@ -1241,7 +1246,7 @@ export class FileTreeTaskRepository implements ITaskRepository {
     operationId: OperationId,
     identity: IRegistrationIdentity
   ): TaskResult<ITaskCommitRecord> {
-    return this._readCommitted(taskId, true).onSuccess((read) => {
+    return this._files.readCommitted(taskId, true).onSuccess((read) => {
       const record: ITaskCommitRecord = read!.record;
       // Only the record's creation evidence — its first operation — can answer a registration
       // replay, and it is compared with the whole registration identity, first-record type
@@ -1264,7 +1269,7 @@ export class FileTreeTaskRepository implements ITaskRepository {
           { operationId }
         );
       }
-      return this._reestablish(read!, operationId).onSuccess(() => ok(record));
+      return this._files.reestablish(read!, operationId).onSuccess(() => ok(record));
     });
   }
 
@@ -1318,7 +1323,7 @@ export class FileTreeTaskRepository implements ITaskRepository {
       );
     }
 
-    return this._readCommitted(taskId, true).onSuccess((read) => {
+    return this._files.readCommitted(taskId, true).onSuccess((read) => {
       const current: ITaskCommitRecord = read!.record;
 
       // Replay is checked before the preconditions: a lost-response retry carries the revision
@@ -1342,7 +1347,7 @@ export class FileTreeTaskRepository implements ITaskRepository {
               { operationId }
             );
           }
-          return this._reestablish(read!, operationId).onSuccess(() => ok(current));
+          return this._files.reestablish(read!, operationId).onSuccess(() => ok(current));
         }
       }
 
@@ -1378,7 +1383,7 @@ export class FileTreeTaskRepository implements ITaskRepository {
             return h.state === 'current' ? { state: h.state } : { state: h.state, reason: h.reason };
           };
           if (canonicallyEqual(health(current), health(draft))) {
-            return this._reestablish(read!, undefined).onSuccess(() => ok(current));
+            return this._files.reestablish(read!, undefined).onSuccess(() => ok(current));
           }
         }
       }
@@ -1446,7 +1451,7 @@ export class FileTreeTaskRepository implements ITaskRepository {
     if (projection === undefined) {
       return taskFailure(`pruneTask ${id.value}: no live task`, 'not-found-or-denied', 'after-host-action');
     }
-    return this._readCommitted(id.value, true).onSuccess((read) => {
+    return this._files.readCommitted(id.value, true).onSuccess((read) => {
       const record: ITaskCommitRecord = read!.record;
       if (record.recordType !== 'resolved' || record.archived || !projection.known) {
         return ok(record);
@@ -1608,7 +1613,7 @@ export class FileTreeTaskRepository implements ITaskRepository {
         this._plan(taskId, record, built.record).onSuccess((plan) =>
           this._ledger
             .admit(new Map([[taskKey(taskId), entry], ...plan.entries]))
-            .onSuccess(() => this._writeFile(recordName('task', taskId), built.encoded.text, operationId))
+            .onSuccess(() => this._files.write(recordName('task', taskId), built.encoded.text, operationId))
             .onSuccess(() => {
               this._cache.delete(taskId);
               this._tasks.set(taskId, projectRecord(built.record, true, built.encoded.text));
@@ -1641,7 +1646,7 @@ export class FileTreeTaskRepository implements ITaskRepository {
         'after-host-action'
       );
     }
-    return this._readCommitted(taskId, true).onSuccess((read) => {
+    return this._files.readCommitted(taskId, true).onSuccess((read) => {
       const record: ITaskCommitRecord = read!.record;
       const extended = extendReplayClaims(record, added.value.envelope, added.value.charges);
       if (extended.isFailure()) {
@@ -1658,7 +1663,7 @@ export class FileTreeTaskRepository implements ITaskRepository {
         return this._plan(taskId, record, built.record).onSuccess((plan) =>
           this._ledger
             .admit(new Map([[taskKey(taskId), entry], ...plan.entries]))
-            .onSuccess(() => this._writeFile(recordName('task', taskId), built.encoded.text, undefined))
+            .onSuccess(() => this._files.write(recordName('task', taskId), built.encoded.text, undefined))
             .onSuccess(() => {
               this._cache.delete(taskId);
               this._tasks.set(taskId, projectRecord(built.record, true, built.encoded.text));
@@ -1686,18 +1691,18 @@ export class FileTreeTaskRepository implements ITaskRepository {
     }
     const profile: ITaskCapacityProfile = raised.value;
     const manifest: ITaskRepositoryManifest = {
-      ...this._manifest,
-      manifestRevision: this._manifest.manifestRevision + 1,
+      ...this._files.manifest,
+      manifestRevision: this._files.manifest.manifestRevision + 1,
       profile
     };
     // Preflighted like every other write, against the policy being committed: the manifest
     // that stores the new profile must itself fit it, or the next open would find it over.
-    return this._encodeManifest(manifest).onSuccess((encoded) =>
+    return this._files.encodeManifest(manifest).onSuccess((encoded) =>
       this._ledger
         .admit(new Map([['repository', manifestEntry(encoded.bytes, profile)]]), profile)
-        .onSuccess(() => this._writeFile(manifestName, encoded.text, undefined))
+        .onSuccess(() => this._files.write(manifestName, encoded.text, undefined))
         .onSuccess(() => {
-          this._setManifest(manifest);
+          this._files.setManifest(manifest);
           this._ledger.setProfile(profile, (key) => recordLimitFor(key, profile));
           this._ledger.apply(new Map([['repository', manifestEntry(encoded.bytes, profile)]]));
           // A subscription's per-owner history limit is a profile value too.
@@ -1808,186 +1813,5 @@ export class FileTreeTaskRepository implements ITaskRepository {
       record.capacityClaims,
       taskRecordLimit(this.profile)
     );
-  }
-
-  private _withEntry(entry: ITaskInventoryEntry): ITaskRepositoryManifest {
-    const others: ReadonlyArray<ITaskInventoryEntry> = this._manifest.tasks.filter((e) => e.id !== entry.id);
-    return {
-      ...this._manifest,
-      manifestRevision: this._manifest.manifestRevision + 1,
-      tasks: [...others, entry].sort((a, b) => (a.id < b.id ? -1 : 1))
-    };
-  }
-
-  private _encodeManifest(manifest: ITaskRepositoryManifest): TaskResult<IEncodedRecord> {
-    const converter = this._converters.storage.manifest;
-    return classify(
-      encodeValidated(manifest, (from) => converter.convert(from)),
-      'invalid',
-      'after-host-action'
-    );
-  }
-
-  private _setManifest(manifest: ITaskRepositoryManifest): void {
-    this._manifest = manifest;
-  }
-
-  /**
-   * One atomic write at the repository's guarantee, classified by what a reader can now see.
-   *
-   * @remarks
-   * `'unchanged'` is positive evidence nothing happened: the failure is safe to retry and no
-   * in-memory state moves. `'replaced'` or `'unknown'` means the write may have landed: the
-   * repository fences itself and reports `commit-indeterminate` with the operation ID the host
-   * resolves it by, after a reopen that reads what is actually on disk. A failed call is never
-   * treated as proof that nothing happened (design §8.2).
-   */
-  private _writeFile(name: string, text: string, operationId: OperationId | undefined): TaskResult<true> {
-    if (name === manifestName) {
-      const current: TaskResult<true> = this._checkManifest(operationId);
-      if (current.isFailure()) {
-        return current;
-      }
-    }
-    const written = this._store.write(name, text);
-    if (written.isSuccess()) {
-      if (name === manifestName) {
-        this._manifestFingerprint = fingerprintOf(text);
-      }
-      return ok(true);
-    }
-    // A store that fails without classifying the failure has told us nothing about what a
-    // reader can see, which is exactly 'unknown'.
-    const visibility: FileTree.IAtomicWriteFailure['visibility'] = written.detail?.visibility ?? 'unknown';
-    const stage: string = written.detail?.stage ?? 'unclassified';
-    if (visibility === 'unchanged') {
-      return taskFailure(
-        `${name}: write failed before anything became visible: ${written.message}`,
-        'storage-unavailable',
-        'safe',
-        operationId !== undefined ? { operationId } : undefined
-      );
-    }
-    this._fence(`${name}: write outcome is ${visibility} after '${stage}'`);
-    return operationId !== undefined
-      ? taskFailure(
-          `${name}: the write may have landed (${visibility}): ${written.message}`,
-          'commit-indeterminate',
-          'reconcile-first',
-          { operationId }
-        )
-      : taskFailure(
-          `${name}: the write may have landed (${visibility}): ${written.message}`,
-          'storage-unavailable',
-          'reconcile-first'
-        );
-  }
-
-  /**
-   * The manifest is committed state as much as a task record is: before it is rewritten, the
-   * one on disk must still be the one this instance last wrote or read. Anything else is an
-   * out-of-band change — an entry removed, a policy edited — and rewriting over it would erase
-   * it, so the repository fences instead.
-   */
-  private _checkManifest(operationId: OperationId | undefined): TaskResult<true> {
-    const detail = operationId !== undefined ? { operationId } : undefined;
-    // Re-list first: a store may hand out file items that snapshot their content.
-    const text: Result<string> = this._store.list().onSuccess(() => this._store.read(manifestName));
-    if (text.isFailure()) {
-      return taskFailure(
-        `${manifestName}: cannot be re-read before rewriting it: ${text.message}`,
-        'storage-unavailable',
-        'safe',
-        detail
-      );
-    }
-    if (fingerprintOf(text.value) === this._manifestFingerprint) {
-      return ok(true);
-    }
-    const message: string = `${manifestName} differs from the one this repository committed`;
-    this._fence(message);
-    return taskFailure(message, 'storage-corrupt', 'after-host-action', detail);
-  }
-
-  private _relist(operationId: OperationId): TaskResult<true> {
-    const listed: Result<ReadonlyArray<string>> = this._store.list();
-    if (listed.isSuccess()) {
-      return ok(true);
-    }
-    this._fence(`relist failed after a committed write: ${listed.message}`);
-    return taskFailure(
-      `relist failed after a committed write: ${listed.message}`,
-      'commit-indeterminate',
-      'reconcile-first',
-      { operationId }
-    );
-  }
-
-  /**
-   * Re-establishes the flush boundary of an already-committed record on replay, by atomically
-   * rewriting it byte for byte (design §8.2). A replay after a failure at the directory flush
-   * would otherwise report success for a record whose directory entry was never flushed.
-   * Nothing semantic changes: same text, same record revision.
-   */
-  private _reestablish(read: IReadRecord, operationId: OperationId | undefined): TaskResult<true> {
-    const name: string = recordName('task', idOf(read.record));
-    return this._writeFile(name, read.encoded.text, operationId)
-      .onSuccess(() => this._encodeManifest(this._manifest))
-      .onSuccess((encoded) => this._writeFile(manifestName, encoded.text, operationId));
-  }
-
-  /**
-   * Reads a live task's record from disk and checks it is still the record this instance
-   * committed. A record that disagrees is out-of-band change or loss, and fences.
-   */
-  /**
-   * Reads a live task's record. `uncached` reads the file even when the cache holds the record:
-   * every writer path uses it, because a write's precondition must be checked against what is
-   * on disk — a cached copy cannot notice that the file changed out of band, and a write over it
-   * would erase that change instead of fencing.
-   */
-  private _readCommitted(id: TaskId, uncached: boolean = false): TaskResult<IReadRecord | undefined> {
-    const usable: TaskResult<true> = this._usable();
-    if (usable.isFailure()) {
-      return propagate(usable);
-    }
-    const projection: ITaskProjection | undefined = this._tasks.get(id);
-    if (projection === undefined) {
-      return ok(undefined);
-    }
-    const cached: ICachedRecord | undefined = uncached
-      ? undefined
-      : this._cache.get(id, projection.recordRevision, projection.fingerprint);
-    if (cached !== undefined) {
-      return ok(cached);
-    }
-    const name: string = recordName('task', id);
-    return this._gate.run(`read ${id}`, () => {
-      const read: Result<IReadRecord> = this._readBounded(name).onSuccess(({ text, bytes }) =>
-        parseJson(text)
-          .onSuccess((parsed) => this._converters.storage.record.convert(parsed))
-          .onSuccess((record) => {
-            if (idOf(record) !== id || record.recordRevision !== projection.recordRevision) {
-              return fail<IReadRecord>(
-                `${name}: holds ${idOf(record)} record ${record.recordRevision}, expected ${id} record ${
-                  projection.recordRevision
-                }`
-              );
-            }
-            if (fingerprintOf(text) !== projection.fingerprint) {
-              return fail<IReadRecord>(
-                `${name}: record ${record.recordRevision} differs from the one this repository committed`
-              );
-            }
-            return ok<IReadRecord>({ record, encoded: { text, bytes } });
-          })
-      );
-      if (read.isFailure()) {
-        this._fence(read.message);
-        return taskFailure<IReadRecord | undefined>(read.message, 'storage-corrupt', 'after-host-action');
-      }
-      this._cache.put(id, read.value, projection.fingerprint);
-      return ok<IReadRecord | undefined>(read.value);
-    });
   }
 }

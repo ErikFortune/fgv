@@ -128,10 +128,36 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
-### `agent-tasks-t8` 🔵 (slice T8 of the agent-tasks plan) — split into two PRs; PR 1 landed via [#698](https://github.com/ErikFortune/fgv/pull/698)
+### `agent-tasks-t8b` ✅ (shipped 2026-09-26 via [#699](https://github.com/ErikFortune/fgv/pull/699)) — slice T8, PR 2 of 2; closes T8
 
-**Status:** 🔵 in flight — **PR 1 of 2 shipped 2026-09-26 via
-[#698](https://github.com/ErikFortune/fgv/pull/698)** into `integration/agent-tasks-v1` (not
+**Status:** ✅ shipped into `integration/agent-tasks-v1` (not `release`; the cluster promotes as one).
+Artifacts in `.ai/tasks/active/agent-tasks-t8b/`; this family finalizes at cluster close.
+
+**What shipped.** Phase 0 extracted `storage/committedFiles.ts` from `repository.ts` (1,993 → 1,808,
+API report unchanged). M1 ran on this implementation before the profile changed — after a disclosed
+one-line harness seed correction — and all four cohorts passed. The six profile changes: the closeout,
+first-resolution and settlement reservations use `maximumUpdateBytes` (the derived 37,417 B, not
+64 KiB); `resident-payload-bytes` 384 MiB; `maxConsumerRecordBytes` 32 MiB (with the per-record
+`record-bytes` ceiling raised alongside, without which it was inert). The A3 saturation journeys for
+every §8.6 dimension with exact transfers at every crash point, lifetime acknowledgement exhaustion, and
+the rest of the plan's saturation list.
+
+**The finding the decision did not anticipate.** Built, the default profile admits **536** plain
+registrations, bound by `logical-bytes`, not 1,000. The design authority chose to ship the six changes
+and document 536; a P3 carries the open question.
+
+**Fixed along the way:** `reclaimableByCleanup` misreported lifetime dimensions held as reservations;
+the antagonist's two HIGHs — `raiseCapacityLimits` could outgrow held reservations, and a landed-but-not-live
+`current` activation silently missed commits.
+
+**Review:** layer 1 (no P1/P2); independent persistence/delivery antagonist (2 HIGH fixed, 1 MED docs
++ P3); Copilot loop on #699. Detail in `result.md`.
+
+### `agent-tasks-t8` ✅ (slice T8 of the agent-tasks plan) — shipped in two PRs: [#698](https://github.com/ErikFortune/fgv/pull/698) and [#699](https://github.com/ErikFortune/fgv/pull/699)
+
+**Status:** ✅ **both PRs shipped 2026-09-26** — PR 1 via
+[#698](https://github.com/ErikFortune/fgv/pull/698), PR 2 (`agent-tasks-t8b`) via
+[#699](https://github.com/ErikFortune/fgv/pull/699) — into `integration/agent-tasks-v1` (not
 `release`; the cluster promotes as one). Artifacts stay in `.ai/tasks/active/agent-tasks-t8/`; this
 family finalizes at cluster close, not per slice.
 
@@ -144,20 +170,16 @@ split to be raised if the mechanism was separable from the saturation work. It i
   (`abandoned {reason, from}`), the source-replay `unregistered-binding` cursor stop,
   `ITaskRepository.outstanding()`, real-`SIGKILL` crash cases, the host runbook in `CAPABILITIES.md`,
   and all three review layers. 1,707 tests, 100%, zero `c8 ignore`.
-- **PR 2 (`agent-tasks-t8b`), not started** — the A3 saturation journey for every § 8.6 dimension
-  with exact used/reserved transfers at every crash point, lifetime acknowledgement exhaustion across
-  closed subscriptions, the profile decision, and the M1 cohorts. **T8's acceptance criteria are not
-  met until PR 2 lands**, and the cluster does not close before it.
+- **PR 2 (`agent-tasks-t8b`), shipped via [#699](https://github.com/ErikFortune/fgv/pull/699)** — the
+  A3 saturation journey for every § 8.6 dimension with exact used/reserved transfers at every crash
+  point, lifetime acknowledgement exhaustion across closed subscriptions, the profile decision, and the
+  M1 cohorts. With it, T8's acceptance criteria are met (see its entry above).
 
-**The profile arithmetic is delivered (PR 1), the profile change is not.** PR 1 establishes that a
-single update cannot exceed **37,417 B** — the envelope bound plus fixed framing — so
-`maxUpdateBytes` (64 KiB) is unreachable and the closeout reserves 7 × 64 KiB for payloads that can
-never be that large. It also establishes that **candidate (a), "charge actual", is structurally
-unavailable**: a closeout reservation guarantees a terminal step not yet taken, so it must reserve
-the most it could need. The recommendation is **(d) reserve the derived schema maximum** (→ 256
-tasks, 224 with one in-flight command) **plus (c) advertise the number the profile then serves**
-(≈ 200), unless M1 shows the process can afford (b)'s 437.5 MiB. `defaultTaskCapacityProfile` is
-**unchanged**; the change belongs to PR 2, after the M1 run that must precede it.
+**The profile arithmetic came from PR 1; the profile change shipped in PR 2.** PR 1 established that a
+single update cannot exceed **37,417 B** — the envelope bound plus fixed framing — and that
+**candidate (a), "charge actual", is structurally unavailable** for a forward reservation. PR 2
+implemented (d) and the design authority's other five changes, after M1; built, the default admits
+536 plain registrations, bound by `logical-bytes` (see the `agent-tasks-t8b` entry above).
 
 **Mission.** Retention, backpressure and recovery journeys: explicit obligation disposition and
 consumer closure, safe progress coalescing, issued-receipt pins, tombstone archive with a minimal
