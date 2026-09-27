@@ -7,8 +7,10 @@ be enough to resume cold. Keep it current as you go.
 
 ## Status
 
-**Not started.** Branch created and brief placed by the orchestrator 2026-09-26. No implementation
-work has begun.
+**Implementation committed and pushed (2026-09-27); gates in progress.** Nine sites fixed, rule
+enabled in the four touched packages, eight regression tests watched red, four `patch` change files
+verified. Pending: code-reviewer findings, repo-wide rebuild + test, verify scripts, PR, Copilot loop,
+`/finalize-task`.
 
 ## Branch
 
@@ -50,7 +52,34 @@ than a nicety.
 
 ## Work log
 
-_(append as you go)_
+- **2026-09-27 — site list verified.** `git grep -nE "\.(hasOwnProperty|isPrototypeOf|propertyIsEnumerable)\("`
+  over every tracked file, minus `Object.prototype` forms: **9 in library source** (exactly the brief's
+  table) + **4 in ts-utils tests** (`test/helpers/jest/index.ts:9`, `converters.basic.test.ts:552,737`,
+  `validation/recordOf.test.ts:72`) = 13. No `isPrototypeOf` / `propertyIsEnumerable` anywhere.
+  All four test hits are incidental (not the subject of the test) and were rewritten so the rule
+  goes clean in `ts-utils`.
+- **Rule absent from the effective config**, not just unset in repo files: `eslint --print-config`
+  in `ts-utils` shows no `no-prototype-builtins`; the rushstack profile does not include it.
+- **No shared lint layer.** 33 per-package `eslint.config.js` (8 distinct variants); the
+  `heft-dual-rig` has no ESLint config. **Surfaced to the user, who chose: enable in the four touched
+  packages, defer the shared layer.** Recorded as a P2 in `docs/TECH_DEBT.md`.
+- **Rule verified to fire:** with only the config change applied and source reverted, `eslint src`
+  reports ts-utils 6, ts-json 5, ts-utils-jest 1, ts-res-ui-components 1 (= 13); 0 after the fix.
+  Heft's `build:lint` step fails the build on a reintroduced site.
+- **Watched-fail, per site** (revert one line, rule temporarily `off` so the build proceeds, run the
+  package's affected suites, restore): each revert turned red exactly the tests named in `result.md`
+  and nothing else in those suites.
+- **`ts-utils-jest` `isJestGlobal`** is module-private and called only on `global` at import; no
+  null-prototype value can reach it, so it has no watched-fail test. Covered by the rule only.
+- **T1's `result.md` is not on `release`** — it exists on `integration/agent-tasks-v1` (and the
+  t8/t8b branches). Read § item 6 from there. It cannot be edited from this PR without adding a
+  file the base does not have; the closure is recorded in this stream's `result.md` instead.
+- **Coverage:** `ts-utils` (99.27 % stmts) and `ts-json` (99.95 %) are below 100 % on the base too;
+  every uncovered line is pre-existing and identical with and without this change
+  (`ts-json` `jsonEditor.ts:358-359` is in a touched file but unrelated and unchanged). Each
+  package's configured threshold passes.
+- **Formatting:** the repo pins prettier 2.8.8 (pre-commit `rush prettier`); a newer `npx prettier`
+  wanted to reformat pre-existing lines in `objectConverter.ts` — reverted, diff is the fix only.
 
 ## Two things to expect that are not defects
 

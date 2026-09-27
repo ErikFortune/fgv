@@ -67,6 +67,28 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
 
 ## P2 — Fix before next major feature in affected area
 
+- **[P2] No shared ESLint layer — `no-prototype-builtins` is on in 4 of 33 packages.**
+  Every project carries its own flat `eslint.config.js` (33 files, 8 distinct variants) extending
+  `@rushstack/eslint-config/flat/profile/node`; the `heft-dual-rig` carries no ESLint config. So a
+  rule the whole repo should follow has to be copied into 33 files, and a new package starts without
+  it. `null-prototype-property-guard` fixed nine `obj.hasOwnProperty(k)` sites and enabled
+  `no-prototype-builtins` as an error **only in the four packages it touched** (`ts-utils`, `ts-json`,
+  `ts-res-ui-components`, `ts-utils-jest`). The other 29 have zero violations today (verified by
+  `git grep` on 2026-09-27), so nothing is broken — but nothing stops the class recurring there.
+
+  **Trigger**: the next rule that should apply repo-wide, or the first `hasOwnProperty` /
+  `isPrototypeOf` / `propertyIsEnumerable` call on an object in an ungated package.
+
+  **Scope sketch**: a single shared config module (in the rig, or a small private
+  `@fgv/eslint-config` package) exporting the common rule set, which each `eslint.config.js` spreads
+  after the rushstack profile; move `no-prototype-builtins` there and drop the four per-package
+  copies. Mechanical across 33 files, but it touches every package, so it is its own small stream.
+
+  **Not a P3**: the rule is the durable half of a shipped fix, and 29 packages currently lack it.
+
+  **Reference**: `null-prototype-property-guard` (2026-09-27); decision (by the user, when surfaced) to enable in the
+  four touched packages and defer the shared layer.
+
 - **[P2] CI reddens for reasons unrelated to the diff — three known causes, each costing an
   investigation before it is recognised.** Every one was hit during the 2026-09-23/24 publish and
   agent-tasks cluster work, and each cost a log read to distinguish from a real failure. None
