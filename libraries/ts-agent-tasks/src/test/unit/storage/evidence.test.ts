@@ -475,12 +475,12 @@ describe('copilot round 2: evidence that must hold for a whole lifetime', () => 
   test("a profile whose per-record bound cannot hold a task's own reservation is refused", async () => {
     const profile = {
       ...defaultTaskCapacityProfile,
-      encoded: { ...defaultTaskCapacityProfile.encoded, maxTaskRecordBytes: 1000000 }
+      encoded: { ...defaultTaskCapacityProfile.encoded, maxTaskRecordBytes: 800000 }
     };
     expect(
       await FileTreeTaskRepository.initialize(params(memoryRoot(), 'session', { profile }))
     ).toFailWithDetail(
-      /terminal closeout needs \d+ of 'record-bytes' but the limit is 1000000/,
+      /terminal closeout needs \d+ of 'record-bytes' but the limit is 800000/,
       code('invalid')
     );
   });

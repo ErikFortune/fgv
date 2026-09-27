@@ -15,8 +15,22 @@ import {
   defaultTaskPerOwnerLimits,
   maximumClosureCharges,
   maximumResolutionCharges,
-  maximumSettlementCharges
+  maximumSettlementCharges,
+  maximumUpdateBytes,
+  ITaskUpdate,
+  SubscriptionId,
+  TaskId,
+  TaskRevision,
+  taskUpdateId
 } from '../../../index';
+// eslint-disable-next-line @rushstack/packlets/mechanics
+import { encodeRecord } from '../../../packlets/storage/layout';
+import { converters } from '../../helpers/fixtures';
+import { envelope } from '../../helpers/storageFixtures';
+
+const MiB: number = 1024 * 1024;
+/** The derived schema maximum of one update under the default profile (T8). */
+const unit: number = maximumUpdateBytes(defaultTaskCapacityProfile).orThrow();
 
 function charged(charges: ReadonlyArray<ITaskCapacityCharge>, dimension: CapacityDimension): number {
   const entry: ITaskCapacityCharge | undefined = charges.find((c) => c.dimension === dimension);
@@ -25,7 +39,7 @@ function charged(charges: ReadonlyArray<ITaskCapacityCharge>, dimension: Capacit
 }
 
 describe('default profile', () => {
-  test('publishes the proposed initial limits', () => {
+  test('publishes the default limits', () => {
     expect(defaultTaskCapacityProfile.profileVersion).toBe(1);
     expect(defaultTaskCapacityProfile.limits['retained-tasks']).toBe(10000);
     expect(defaultTaskCapacityProfile.limits['non-archived-tasks']).toBe(1000);
@@ -33,7 +47,16 @@ describe('default profile', () => {
     expect(defaultTaskCapacityProfile.limits.sources).toBe(128);
     expect(defaultTaskCapacityProfile.limits.updates).toBe(20000);
     expect(defaultTaskCapacityProfile.limits['audience-links']).toBe(200000);
-    expect(defaultTaskCapacityProfile.limits['logical-bytes']).toBe(512 * 1024 * 1024);
+    expect(defaultTaskCapacityProfile.limits['logical-bytes']).toBe(512 * MiB);
+  });
+
+  test('carries the T8 decisions: raised payload and consumer bounds, update bound unchanged', () => {
+    expect(defaultTaskCapacityProfile.limits['resident-payload-bytes']).toBe(384 * MiB);
+    expect(defaultTaskCapacityProfile.limits['record-bytes']).toBe(32 * MiB);
+    expect(defaultTaskEncodedBounds.maxConsumerRecordBytes).toBe(32 * MiB);
+    expect(defaultTaskEncodedBounds.maxTaskRecordBytes).toBe(8 * MiB);
+    expect(defaultTaskEncodedBounds.maxUpdateBytes).toBe(64 * 1024);
+    expect(defaultTaskPerOwnerLimits.maxAcknowledgementIdsPerSubscription).toBe(50000);
   });
 
   test('non-archived is a strict subset of retained, so archiving can never free an identity', () => {
@@ -78,7 +101,8 @@ describe('maximumClosureCharges', () => {
   test('reserves schema maxima, not an optimistic final size', () => {
     const snapshot: number =
       defaultTaskEncodedBounds.maxEnvelopeBytes + defaultTaskEncodedBounds.maxDetailBytes;
-    const updates: number = 7 * defaultTaskEncodedBounds.maxUpdateBytes;
+    // The derived schema maximum of an update, not maxUpdateBytes (T8).
+    const updates: number = 7 * unit;
     const operations: number = 2 * defaultTaskEncodedBounds.maxStoredOperationBytes;
     // Every reserved link's acknowledgement evidence, which its subscription holds once the link is
     // committed (T7): logical bytes, never this record's bytes.
@@ -132,13 +156,13 @@ describe('maximumSettlementCharges', () => {
     const bytes: number =
       defaultTaskEncodedBounds.maxStoredOperationBytes +
       defaultTaskEncodedBounds.maxIssuedReceiptBytes +
-      defaultTaskEncodedBounds.maxUpdateBytes;
+      unit;
     const evidence: number =
       defaultTaskPerOwnerLimits.maxAudiencePerUpdate *
       defaultTaskEncodedBounds.maxAcknowledgementEvidenceBytes;
     expect(charged(charges, 'record-bytes')).toBe(bytes);
     expect(charged(charges, 'logical-bytes')).toBe(bytes + evidence);
-    expect(charged(charges, 'resident-payload-bytes')).toBe(defaultTaskEncodedBounds.maxUpdateBytes);
+    expect(charged(charges, 'resident-payload-bytes')).toBe(unit);
   });
 
   test('settlement is strictly cheaper than closeout', () => {
@@ -162,7 +186,13 @@ describe('inexact charges fail rather than reserving the wrong amount', () => {
   }
 
   test('a profile whose update bytes overflow the safe range fails the closeout charge', () => {
-    expect(maximumClosureCharges(withEncoded({ maxUpdateBytes: Number.MAX_SAFE_INTEGER }))).toFailWith(
+    // The unit is at most the envelope bound plus framing, so a vast maxUpdateBytes no longer
+    // reaches the product; a vast envelope bound reaches the unit itself.
+    expect(maximumClosureCharges(withEncoded({ maxEnvelopeBytes: Number.MAX_SAFE_INTEGER }))).toFailWith(
+      /maximumUpdateBytes: derived update bytes: .*not exactly representable/i
+    );
+    const huge: number = Math.floor(Number.MAX_SAFE_INTEGER / 2);
+    expect(maximumClosureCharges(withEncoded({ maxEnvelopeBytes: huge, maxUpdateBytes: huge }))).toFailWith(
       /maximumClosureCharges: closeout update bytes: .*not exactly representable/i
     );
   });
@@ -190,7 +220,7 @@ describe('inexact charges fail rather than reserving the wrong amount', () => {
         ...defaultTaskCapacityProfile,
         perOwner: { ...defaultTaskPerOwnerLimits, maxAudiencePerUpdate: Number.MAX_SAFE_INTEGER }
       })
-    ).toFailWith(/closeout audience links: .*not exactly representable/i);
+    ).toFailWith(/not exactly representable/i);
   });
 
   test('a record-bytes total that overflows only when summed fails', () => {
@@ -209,18 +239,18 @@ describe('inexact charges fail rather than reserving the wrong amount', () => {
   });
 
   test('the first-resolution charge fails the same way, on each of its terms', () => {
-    expect(maximumResolutionCharges(withEncoded({ maxUpdateBytes: Number.MAX_SAFE_INTEGER }))).toFailWith(
-      /maximumResolutionCharges: resolution update bytes: .*not exactly representable/i
-    );
+    const huge: number = Math.floor(Number.MAX_SAFE_INTEGER / 2);
+    expect(
+      maximumResolutionCharges(withEncoded({ maxEnvelopeBytes: huge, maxUpdateBytes: huge }))
+    ).toFailWith(/maximumResolutionCharges: resolution update bytes: .*not exactly representable/i);
     expect(
       maximumResolutionCharges(
         withEncoded({ maxEnvelopeBytes: Number.MAX_SAFE_INTEGER, maxDetailBytes: Number.MAX_SAFE_INTEGER })
       )
     ).toFailWith(/resolution snapshot bytes/i);
-    const half: number = Math.floor(Number.MAX_SAFE_INTEGER / 2);
     expect(
       maximumResolutionCharges(
-        withEncoded({ maxEnvelopeBytes: half, maxDetailBytes: 1, maxUpdateBytes: Math.floor(half / 7) + 1 })
+        withEncoded({ maxEnvelopeBytes: 1, maxDetailBytes: Number.MAX_SAFE_INTEGER - 100 })
       )
     ).toFailWith(/resolution record bytes/i);
     expect(
@@ -228,7 +258,7 @@ describe('inexact charges fail rather than reserving the wrong amount', () => {
         ...defaultTaskCapacityProfile,
         perOwner: { ...defaultTaskPerOwnerLimits, maxAudiencePerUpdate: Number.MAX_SAFE_INTEGER }
       })
-    ).toFailWith(/resolution audience links/i);
+    ).toFailWith(/not exactly representable/i);
   });
 });
 
@@ -240,7 +270,7 @@ describe('maximumResolutionCharges (T3)', () => {
       const bytes: number =
         defaultTaskEncodedBounds.maxEnvelopeBytes +
         defaultTaskEncodedBounds.maxDetailBytes +
-        categories * defaultTaskEncodedBounds.maxUpdateBytes;
+        categories * unit;
       expect(charges).toEqual([
         { dimension: 'updates', amount: categories },
         { dimension: 'audience-links', amount: categories * audience },
@@ -250,7 +280,7 @@ describe('maximumResolutionCharges (T3)', () => {
           dimension: 'logical-bytes',
           amount: bytes + categories * audience * defaultTaskEncodedBounds.maxAcknowledgementEvidenceBytes
         },
-        { dimension: 'resident-payload-bytes', amount: categories * defaultTaskEncodedBounds.maxUpdateBytes }
+        { dimension: 'resident-payload-bytes', amount: categories * unit }
       ]);
     });
   });
@@ -260,5 +290,72 @@ describe('maximumResolutionCharges (T3)', () => {
       expect(charges.map((c) => c.dimension)).not.toContain('operations');
       expect(charges.map((c) => c.dimension)).not.toContain('retained-tasks');
     });
+  });
+});
+
+describe('maximumUpdateBytes (T8)', () => {
+  const widest = 'x'.repeat(128);
+  /** The widest update the converters accept: every id at its bound, a full audience, a coalescing marker. */
+  function widestUpdate(): { update: ITaskUpdate; envelopeBytes: number } {
+    const env = envelope(widest, Number.MAX_SAFE_INTEGER);
+    const update: ITaskUpdate = {
+      id: taskUpdateId(widest as TaskId, Number.MAX_SAFE_INTEGER as TaskRevision, 'progress'),
+      taskId: widest as TaskId,
+      revision: Number.MAX_SAFE_INTEGER as TaskRevision,
+      category: 'progress',
+      required: false,
+      snapshot: { envelope: env },
+      audience: Array.from(
+        { length: 32 },
+        (unused: unknown, i: number) => `${String(i).padStart(2, '0')}${'s'.repeat(126)}` as SubscriptionId
+      ),
+      coalesced: { fromRevision: (Number.MAX_SAFE_INTEGER - 1) as TaskRevision }
+    };
+    return { update, envelopeBytes: encodeRecord(env).orThrow().bytes };
+  }
+
+  test('is 37,417 bytes under the default profile — below the 64 KiB maxUpdateBytes', () => {
+    expect(unit).toBe(37417);
+    expect(unit).toBeLessThan(defaultTaskEncodedBounds.maxUpdateBytes);
+  });
+
+  test('bounds the widest update the converters accept, with the envelope at its own bound', () => {
+    const { update, envelopeBytes } = widestUpdate();
+    expect(converters.context.update.convert(update)).toSucceed();
+    const encoded: number = encodeRecord(update).orThrow().bytes;
+    // Grown to a maximum-size envelope, this update is exactly as large as a real one can be.
+    const atEnvelopeBound: number = encoded - envelopeBytes + defaultTaskEncodedBounds.maxEnvelopeBytes;
+    expect(atEnvelopeBound).toBeLessThanOrEqual(unit);
+    // Tight: the only slack is what cannot coexist — a longer category name than one that coalesces
+    // ('relationship' vs 'progress'), and the widest update-id suffix ('initial' vs one ordinal digit).
+    expect(unit - atEnvelopeBound).toBe('relationship'.length - 'progress'.length + ('initial'.length - 1));
+  });
+
+  test('follows the envelope and audience bounds of the profile', () => {
+    const lean: ITaskCapacityProfile = {
+      ...defaultTaskCapacityProfile,
+      perOwner: { ...defaultTaskPerOwnerLimits, maxAudiencePerUpdate: 2 },
+      encoded: { ...defaultTaskEncodedBounds, maxEnvelopeBytes: 1024 }
+    };
+    // 30 fewer audience members of 131 bytes each, and 31,744 fewer envelope bytes.
+    expect(maximumUpdateBytes(lean)).toSucceedWith(unit - 30 * 131 - (32 * 1024 - 1024));
+  });
+
+  test('is never more than maxUpdateBytes: a profile that sets it lower keeps its own figure', () => {
+    expect(
+      maximumUpdateBytes({
+        ...defaultTaskCapacityProfile,
+        encoded: { ...defaultTaskEncodedBounds, maxUpdateBytes: 20000 }
+      })
+    ).toSucceedWith(20000);
+  });
+
+  test('fails rather than returning an inexact figure', () => {
+    expect(
+      maximumUpdateBytes({
+        ...defaultTaskCapacityProfile,
+        perOwner: { ...defaultTaskPerOwnerLimits, maxAudiencePerUpdate: Number.MAX_SAFE_INTEGER }
+      })
+    ).toFailWith(/maximumUpdateBytes: derived audience bytes: .*not exactly representable/i);
   });
 });

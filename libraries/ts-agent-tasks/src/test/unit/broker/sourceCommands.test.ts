@@ -12,7 +12,9 @@ import {
   ITaskRepository,
   ITaskRepositoryWriter,
   OperationId,
-  TaskResult
+  TaskResult,
+  defaultTaskCapacityProfile,
+  maximumUpdateBytes
 } from '../../../index';
 import { alpha, bob, bindWriter, op, rev, tid } from '../../helpers/brokerFixtures';
 import {
@@ -487,7 +489,8 @@ describe('abandoning a command whose outcome is unknown', () => {
     const stored = await commandOf(h, 'j1', key);
     expect(stored.dispatch).toBe('settled');
     expect(stored.receipt.result.state).toBe('abandoned');
-    expect(settlements()).toBe(reservedBefore - 64 * 1024);
+    // The settlement reserved one owed result at the derived update maximum (T8); abandoning frees it.
+    expect(settlements()).toBe(reservedBefore - maximumUpdateBytes(defaultTaskCapacityProfile).orThrow());
     // The pump no longer sees it; archive proceeds.
     expect(await h.repository.unsettledCommands({ limit: 10 })).toSucceedWith([]);
     const record = await recordOf(h, 'j1');

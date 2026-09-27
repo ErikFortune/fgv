@@ -11,7 +11,8 @@ import {
   allCapacityDimensions,
   capacityPressureThreshold,
   defaultTaskCapacityProfile,
-  maxSourceCursorLength
+  maxSourceCursorLength,
+  maximumUpdateBytes
 } from '../../../index';
 import { claim, converters } from '../../helpers/fixtures';
 
@@ -566,13 +567,11 @@ describe('a profile must be able to finish the work it can accept', () => {
     // Seven update payloads fit; the settlement bundle's stored operation plus receipt
     // does not. The two bundles are checked independently for exactly this reason.
     const encoded = defaultTaskCapacityProfile.encoded;
+    // Both bundles reserve an update at its derived schema maximum, not at maxUpdateBytes (T8).
+    const unit: number = maximumUpdateBytes(defaultTaskCapacityProfile).orThrow();
     const closeoutBytes: number =
-      encoded.maxEnvelopeBytes +
-      encoded.maxDetailBytes +
-      7 * encoded.maxUpdateBytes +
-      2 * encoded.maxStoredOperationBytes;
-    const settlementBytes: number =
-      encoded.maxStoredOperationBytes + encoded.maxIssuedReceiptBytes + encoded.maxUpdateBytes;
+      encoded.maxEnvelopeBytes + encoded.maxDetailBytes + 7 * unit + 2 * encoded.maxStoredOperationBytes;
+    const settlementBytes: number = encoded.maxStoredOperationBytes + encoded.maxIssuedReceiptBytes + unit;
     expect(settlementBytes).toBeLessThan(closeoutBytes);
     expect(
       converters.capacity.profile.convert({
@@ -590,7 +589,7 @@ describe('a profile must be able to finish the work it can accept', () => {
     expect(
       converters.capacity.profile.convert({
         ...defaultTaskCapacityProfile,
-        encoded: { ...defaultTaskCapacityProfile.encoded, maxUpdateBytes: Number.MAX_SAFE_INTEGER }
+        encoded: { ...defaultTaskCapacityProfile.encoded, maxEnvelopeBytes: Number.MAX_SAFE_INTEGER }
       })
     ).toFailWith(/not exactly representable/i);
   });
