@@ -155,7 +155,8 @@ export class CapacityLedger {
    * dimension; for a lifetime one, only while some task holds part of it as a reservation — a
    * closeout, settlement, resolution or replay claim, whose unspent remainder its task releases when
    * it is archived (T8). A subscription's reserved evidence for an owed link is not such a part: it
-   * becomes exact history whether the link is acknowledged or disposed.
+   * becomes exact history whether the link is acknowledged or disposed. "Could": a reservation its task
+   * then spends in full releases nothing, and that is not knowable at refusal time.
    */
   private _reclaimable(dimension: CapacityDimension): boolean {
     if (reclaimable.has(dimension)) {

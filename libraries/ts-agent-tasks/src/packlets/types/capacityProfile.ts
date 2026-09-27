@@ -209,6 +209,8 @@ function _charges(
  * @public
  */
 export function maximumUpdateBytes(profile: ITaskCapacityProfile): Result<number> {
+  // Field bounds are not part of the profile. Construction may lower them and never raise them, so the
+  // default identifier bound is a ceiling for every repository's converters.
   const idLength: number = defaultTaskFieldBounds.maxIdLength;
   const id: string = 'x'.repeat(idLength);
   const longest: string = allUpdateCategories.reduce((a, b) => (b.length > a.length ? b : a));

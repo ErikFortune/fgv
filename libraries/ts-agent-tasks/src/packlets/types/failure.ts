@@ -48,8 +48,9 @@ export const allCapacityDimensions: ReadonlyArray<CapacityDimension> = [
  * `reclaimableByCleanup` is what tells a host whether draining would help. It is always true for a
  * transient dimension. For a lifetime one — retained identities, exact acknowledgement history,
  * dedup evidence, subscriptions and sources, none of which cleanup releases once used — it is true
- * only while part of the committed figure is a task's reservation, whose unspent remainder archiving
- * that task releases.
+ * while part of the committed figure is a task's reservation, whose unspent remainder archiving that
+ * task releases. It says draining *could* release some of it, not how much: a reservation the task
+ * then spends in full releases nothing.
  * @public
  */
 export interface ICapacityFailure {

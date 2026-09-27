@@ -12,6 +12,7 @@ import {
   allUpdateCategories,
   defaultTaskCapacityProfile,
   defaultTaskEncodedBounds,
+  defaultTaskFieldBounds,
   defaultTaskPerOwnerLimits,
   maximumClosureCharges,
   maximumResolutionCharges,
@@ -294,7 +295,7 @@ describe('maximumResolutionCharges (T3)', () => {
 });
 
 describe('maximumUpdateBytes (T8)', () => {
-  const widest = 'x'.repeat(128);
+  const widest = 'x'.repeat(defaultTaskFieldBounds.maxIdLength);
   /** The widest update the converters accept: every id at its bound, a full audience, a coalescing marker. */
   function widestUpdate(): { update: ITaskUpdate; envelopeBytes: number } {
     const env = envelope(widest, Number.MAX_SAFE_INTEGER);
@@ -307,7 +308,10 @@ describe('maximumUpdateBytes (T8)', () => {
       snapshot: { envelope: env },
       audience: Array.from(
         { length: 32 },
-        (unused: unknown, i: number) => `${String(i).padStart(2, '0')}${'s'.repeat(126)}` as SubscriptionId
+        (unused: unknown, i: number) =>
+          `${String(i).padStart(2, '0')}${'s'.repeat(
+            defaultTaskFieldBounds.maxIdLength - 2
+          )}` as SubscriptionId
       ),
       coalesced: { fromRevision: (Number.MAX_SAFE_INTEGER - 1) as TaskRevision }
     };
