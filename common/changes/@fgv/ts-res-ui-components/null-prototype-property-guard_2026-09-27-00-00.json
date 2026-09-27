@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-res-ui-components",
+      "comment": "Fix computeResourceDelta throwing TypeError when a null-prototype resolved object is replaced by a non-object: use Object.prototype.hasOwnProperty.call instead of obj.hasOwnProperty. Enable the no-prototype-builtins lint rule.",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@fgv/ts-res-ui-components"
+}

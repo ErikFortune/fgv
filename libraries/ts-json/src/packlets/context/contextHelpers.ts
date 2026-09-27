@@ -154,9 +154,9 @@ export class JsonContextHelper {
           vars: add.vars ?? baseContext.vars,
           refs: add.refs ?? baseContext.refs
         };
-        if (add.hasOwnProperty('extendVars')) {
+        if (Object.prototype.hasOwnProperty.call(add, 'extendVars')) {
           rtrn.extendVars = add.extendVars;
-        } else if (baseContext.hasOwnProperty('extendVars')) {
+        } else if (Object.prototype.hasOwnProperty.call(baseContext, 'extendVars')) {
           rtrn.extendVars = baseContext.extendVars;
         }
         return succeed(rtrn);

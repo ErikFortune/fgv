@@ -154,7 +154,10 @@ export function mergeDefaultJsonConverterOptions(
 ): IJsonConverterOptions {
   const haveVars = partial?.vars !== undefined;
   const haveRefs = partial?.refs !== undefined;
-  const extender = partial?.hasOwnProperty('extendVars') ? partial.extendVars : defaultExtendVars;
+  const extender =
+    partial !== undefined && Object.prototype.hasOwnProperty.call(partial, 'extendVars')
+      ? partial.extendVars
+      : defaultExtendVars;
   const haveExtender = extender !== undefined;
   const namesDefault = partial?.useNameTemplates ?? haveVars;
   const conditionsDefault = partial?.useConditionalNames ?? namesDefault;
@@ -197,7 +200,7 @@ export function contextFromConverterOptions(
   if (partial?.refs) {
     context.refs = partial.refs;
   }
-  if (partial?.hasOwnProperty('extendVars')) {
+  if (partial !== undefined && Object.prototype.hasOwnProperty.call(partial, 'extendVars')) {
     context.extendVars = partial.extendVars;
   }
   return context.vars || context.refs || context.extendVars ? context : undefined;

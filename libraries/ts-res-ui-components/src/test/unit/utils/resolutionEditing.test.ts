@@ -202,6 +202,15 @@ describe('resolutionEditing utilities', () => {
       expect(result).toSucceed();
       expect(result.orThrow()).toBeDefined();
     });
+
+    test('marks every property of a null-prototype resolved object as deleted when replaced by a non-object', () => {
+      const resolvedValue = Object.assign(Object.create(null), { message: 'Hello', extra: 'field' });
+
+      expect(computeResourceDelta(undefined, resolvedValue, 42)).toSucceedWith({
+        message: null,
+        extra: null
+      });
+    });
   });
 
   describe('createCandidateDeclarations', () => {

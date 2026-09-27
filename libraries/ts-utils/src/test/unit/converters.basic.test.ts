@@ -549,7 +549,7 @@ describe('Basic converters', () => {
 
       // make sure our source object looks as expected
       expect(srcObject.base1).toBe(100);
-      expect(srcObject.hasOwnProperty('base1')).toBe(false);
+      expect(Object.prototype.hasOwnProperty.call(srcObject, 'base1')).toBe(false);
       expect(srcObject.p4).toBe(10);
 
       [
@@ -734,7 +734,7 @@ describe('Basic converters', () => {
 
       // make sure our source object looks as expected
       expect(srcObject.base1).toBe(100);
-      expect(srcObject.hasOwnProperty('base1')).toBe(false);
+      expect(Object.prototype.hasOwnProperty.call(srcObject, 'base1')).toBe(false);
       expect(srcObject.p4).toBe(10);
 
       [
@@ -1424,6 +1424,39 @@ describe('Basic converters', () => {
           prop1: 'hello'
         })
       );
+    });
+  });
+
+  describe('object converters with a null-prototype source', () => {
+    const fields = {
+      prop1: Converters.string,
+      prop2: Converters.string
+    };
+
+    function nullProto(values: Record<string, unknown>): Record<string, unknown> {
+      return Object.assign(Object.create(null), values);
+    }
+
+    test('object converts a null-prototype source', () => {
+      expect(Converters.object(fields).convert(nullProto({ prop1: 'hello', prop2: 'world' }))).toSucceedWith({
+        prop1: 'hello',
+        prop2: 'world'
+      });
+    });
+
+    test('strictObject converts a null-prototype source', () => {
+      expect(
+        Converters.strictObject(fields).convert(nullProto({ prop1: 'hello', prop2: 'world' }))
+      ).toSucceedWith({
+        prop1: 'hello',
+        prop2: 'world'
+      });
+    });
+
+    test('strictObject fails rather than throws for extra properties on a null-prototype source', () => {
+      expect(
+        Converters.strictObject(fields).convert(nullProto({ prop1: 'hello', prop2: 'world', prop3: 'extra' }))
+      ).toFailWith(/prop3: unexpected property/i);
     });
   });
 

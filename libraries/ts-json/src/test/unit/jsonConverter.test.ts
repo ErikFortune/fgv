@@ -125,6 +125,25 @@ describe('JsonConverter module', () => {
       };
       expect(mergeDefaultJsonConverterOptions({ vars: {}, extendVars: undefined })).toEqual(expected);
     });
+
+    test('honors extendVars supplied on a null-prototype options object', () => {
+      const extendVars: TemplateVarsExtendFunction = (b, v) => defaultExtendVars(b, v);
+      const withExtender: Partial<IJsonConverterOptions> = Object.assign(Object.create(null), {
+        vars: {},
+        extendVars
+      });
+      expect(mergeDefaultJsonConverterOptions(withExtender)).toEqual(
+        expect.objectContaining({ useMultiValueTemplateNames: true, extendVars })
+      );
+
+      const withoutExtender: Partial<IJsonConverterOptions> = Object.assign(Object.create(null), {
+        vars: {},
+        extendVars: undefined
+      });
+      expect(mergeDefaultJsonConverterOptions(withoutExtender)).toEqual(
+        expect.objectContaining({ useMultiValueTemplateNames: false, extendVars: undefined })
+      );
+    });
   });
 
   describe('contextFromConverterOptions function', () => {
@@ -139,6 +158,11 @@ describe('JsonConverter module', () => {
 
     test('returns undefined if no vars, refs or extendVars are defined', () => {
       expect(contextFromConverterOptions({})).toBeUndefined();
+    });
+
+    test('propagates extendVars from a null-prototype options object', () => {
+      const options: Partial<IJsonConverterOptions> = Object.assign(Object.create(null), { extendVars });
+      expect(contextFromConverterOptions(options)).toEqual({ extendVars });
     });
   });
 
