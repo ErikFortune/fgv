@@ -528,7 +528,8 @@ describe('storage refuses what the broker refuses first, whatever writes it', ()
   test('a new stop cannot take a key another stop is attempting with', async () => {
     // Another root's stop is attempting with this key: across records, the latch book is the check.
     await node(h.writer, 'r2', { stopPolicy: 'cascade-pause' });
-    const other = await persisted(h, (await stop(h, h.writer, 'r2', 'pause')).orThrow());
+    const otherStop = (await stop(h, h.writer, 'r2', 'pause')).orThrow();
+    const other = await persisted(h, otherStop);
     const key = op('cancel');
     const cancel = intent(key, ['root', 'a', 'L'], { mode: 'cancel' });
     const clash = {
@@ -547,6 +548,11 @@ describe('storage refuses what the broker refuses first, whatever writes it', ()
         key
       )
     ).toFailWith(/is already a live attempt/);
+    // Refused before the book previews the draft: the other stop's latch and attempt are untouched.
+    expect(h.repository.stopLatches(tid('r2'))).toEqual([
+      { rootId: 'r2', intentId: other.id, mode: 'pause' }
+    ]);
+    expect((await pump(h.writer, otherStop)).orThrow().state).toBe('satisfied');
   });
 });
 
