@@ -1048,8 +1048,8 @@ const T9_ROWS = [
   m(
     'T9-55 storage settles a cancel from its summary alone',
     S + 'stopRules.ts',
-    "      now.targets.every((target) => target.state === 'confirmed' && confirmable(was.mode, target));",
-    "      now.targets.every((target) => target.state === 'confirmed');",
+    "      was.targets.every((target) => target.state === 'confirmed' && confirmable(was.mode, target));",
+    "      was.targets.every((target) => target.state === 'confirmed');",
     T9
   ),
   m(
@@ -1081,10 +1081,17 @@ const T9_ROWS = [
     T9
   ),
   m(
-    'T9-60 a pump presents under a policy that no longer shows its root',
-    B + 'stopPump.ts',
-    '    return notFound(intent.rootId);',
-    '    return presentStop(core, ctx, epoch.value, intent, capacity);',
+    'T9-60 a presentation is returned about a root this principal can no longer see',
+    B + 'stopRequests.ts',
+    '    if (!(await ctx.sees(subjectOf(again.value!)))) {',
+    '    if (!(await ctx.sees(subjectOf(again.value!))) && epoch.length < 0) {',
+    T9
+  ),
+  m(
+    'T9-61 a raw settlement may rewrite the report it keeps',
+    S + 'stopRules.ts',
+    '      canonicallyEqual({ ...was, state: now.state }, now) &&',
+    '      (canonicallyEqual({ ...was, state: now.state }, now) || now.id.length > 0) &&',
     T9
   )
 ];

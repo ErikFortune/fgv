@@ -919,27 +919,21 @@ export async function reconcileStop(
   } else {
     core.revalidatedStops.delete(key);
   }
-  return _presentNow(core, ctx, root, persisted.value.intent, pass.capacity);
+  return _presentNow(core, ctx, persisted.value.intent, pass.capacity);
 }
 
 /**
  * A pass's outcome, answered under the policy standing now. A pass can span a policy change — its
- * findings are then discarded, and what it returns is the intent as stored — so the answer is given,
- * root visibility included, under one policy: the current one, not the one the pass began under.
+ * findings are then discarded, and what it returns is the intent as stored — so the answer is given
+ * under one policy, the current one, not the one the pass began under; the presentation asks about
+ * the root's visibility again under it.
  */
 async function _presentNow(
   core: BrokerCore,
   ctx: AccessContext,
-  root: ITaskCommitRecord,
   intent: IStopIntent,
   capacity?: ICapacityFailure
 ): Promise<TaskResult<IStopResult>> {
   const epoch = ctx.epoch();
-  if (epoch.isFailure()) {
-    return propagate(epoch);
-  }
-  if (!(await ctx.sees(subjectOf(root)))) {
-    return notFound(intent.rootId);
-  }
-  return presentStop(core, ctx, epoch.value, intent, capacity);
+  return epoch.isFailure() ? propagate(epoch) : presentStop(core, ctx, epoch.value, intent, capacity);
 }

@@ -287,9 +287,11 @@ function _evolved(
       was.state === 'satisfied' &&
       draft.recordType === 'resolved' &&
       draft.archived &&
+      // A settled intent is kept as its report: settling changes its state and nothing it found.
+      canonicallyEqual({ ...was, state: now.state }, now) &&
       // Judged on the targets as they stand at the archive, not on the summary: a target confirmed
       // earlier may have been observed running since.
-      now.targets.every((target) => target.state === 'confirmed' && confirmable(was.mode, target));
+      was.targets.every((target) => target.state === 'confirmed' && confirmable(was.mode, target));
     if (!settles) {
       return fail(`stop ${was.id}: only an archive of its root settles a satisfied cancel`);
     }

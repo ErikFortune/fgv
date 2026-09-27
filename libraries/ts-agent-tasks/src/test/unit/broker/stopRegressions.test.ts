@@ -1023,3 +1023,73 @@ describe('T9 Copilot round 7 regressions', () => {
     ).toFailWith(/is not a live attempt of stop/);
   });
 });
+
+// Copilot, round 8 on #701.
+describe('T9 Copilot round 8 regressions', () => {
+  test('an inspection whose root is hidden while it is presented is not found', async () => {
+    const h = await brokerHarness();
+    await node(h.writer, 'root', { stopPolicy: 'cascade-pause' });
+    await node(h.writer, 'c', { parentId: 'root' });
+    const accepted = (await stop(h, h.writer, 'root', 'pause')).orThrow();
+    let hidden = false;
+    h.policy.afterDecision = (r) => {
+      if (!hidden && r.action === 'read' && r.task?.envelope.id === 'c') {
+        hidden = true;
+        h.policy.hide('root');
+      }
+    };
+    expect(await h.writer.inspectStop({ taskId: tid('root'), intentId: accepted.intentId })).toFailWith(
+      /not found or not visible/
+    );
+  });
+
+  test('storage refuses a raw settlement that rewrites the report it keeps', async () => {
+    const h = await brokerHarness();
+    await node(h.writer, 'root', { stopPolicy: 'cascade-cancel' });
+    await node(h.writer, 'c', { parentId: 'root' });
+    const accepted = (await stop(h, h.writer, 'root', 'cancel')).orThrow();
+    expect((await pump(h.writer, accepted)).orThrow().state).toBe('satisfied');
+    const cancel = await persisted(h, accepted);
+    const root = (await h.repository.readCommit(tid('root'))).orThrow() as IResolvedTaskCommitRecord;
+    const settle = (stops: IStopIntent): ReturnType<typeof h.repository.withWriter> => {
+      const operationId = op('archive');
+      return h.repository.withWriter((writer) =>
+        writer.commit({
+          purpose: 'operation',
+          operationId,
+          taskId: tid('root'),
+          expectedRevision: root.task.envelope.revision,
+          expectedRecordRevision: root.recordRevision,
+          record: {
+            recordType: 'resolved',
+            task: root.task,
+            operations: [
+              ...root.operations,
+              {
+                type: 'catalog',
+                operationId,
+                operation: 'archive',
+                request: { taskId: 'root' },
+                principalKey: 'alice',
+                receipt: {}
+              }
+            ],
+            updates: root.updates,
+            archived: true,
+            stops: [stops]
+          }
+        })
+      );
+    };
+    // Same attempts, every target still confirmed and terminal: only what the report says was found moves.
+    const rewritten: IStopIntent = {
+      ...cancel,
+      state: 'settled',
+      targets: cancel.targets.map((t, i) =>
+        i === 1 ? { ...t, confirmedRevision: (t.confirmedRevision! + 100) as typeof t.confirmedRevision } : t
+      )
+    };
+    expect(await settle(rewritten)).toFailWith(/only an archive of its root settles a satisfied cancel/);
+    expect(await settle({ ...cancel, state: 'settled' })).toSucceed();
+  });
+});

@@ -11,7 +11,7 @@ be enough to resume cold. Keep it current as you go.
 85 suites, **1,968 passed / 0 failed**, 100 % on every metric, zero `c8 ignore`, lint clean,
 `fixlint` no-op. Layer 1 and the semantic antagonist both ran on `e55f0d5e`; the antagonist's seven
 findings (H1, M1–M4, L1, L2) are fixed in `c5e4ceb7`, each with a regression. `result.md` drafted.
-Next: revert matrix on the final source (`perf/mutationMatrix.js`, T9 rows T9-1…T9-60 added) →
+Next: revert matrix on the final source (`perf/mutationMatrix.js`, T9 rows T9-1…T9-61 added) →
 repo-wide rebuild/test + verify scripts → PR into `integration/agent-tasks-v1` → plan status line
 and ledger entry as shipped → Copilot loop.
 
@@ -239,3 +239,12 @@ substantive.
 - A marked command was admitted under any unlanded attempt, including a confirmed one, which holds no
   reservation. It must now be funded (`StopBook.attempt` exposes `funded`) (T9-57).
 Findings per round: 5 → 3 → 1 → 2.
+
+**Round 8 (on `d94ed0f6`)** — one finding and one "previously missed", both real:
+- A presentation re-read the root but did not ask about its visibility again: a root hidden or
+  re-scoped mid-presentation moves no intent and no epoch. `presentStop` now asks `sees` of the root as
+  re-read and answers not-found (T9-60 re-pointed there; the pump's own pre-check became redundant and
+  was removed).
+- A raw settlement could rewrite the report it keeps (same-attempt target fields). Settlement now
+  changes only the state, like a release (T9-61; T9-55 re-pointed to `was.targets`).
+Findings per round: 5 → 3 → 1 → 2 → 2.

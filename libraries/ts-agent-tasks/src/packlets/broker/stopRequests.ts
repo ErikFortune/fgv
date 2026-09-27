@@ -90,9 +90,10 @@ const presentationAttempts: number = 3;
  * @remarks
  * Presenting reads every target and asks the policy about each, so a pump, a release or a policy
  * change can land meanwhile. The root is read again afterwards: a presentation of an intent that has
- * since moved is redone from the intent as it now stands, a few times at most, and one made under a
- * policy other than `epoch` — the one the caller authorized the root under — is refused rather than
- * returned: it would mix what two policies let this principal see.
+ * since moved is redone from the intent as it now stands, a few times at most; one whose root this
+ * principal can no longer see is not found; and one made under a policy other than `epoch` — the one
+ * the caller authorized the root under — is refused rather than returned: it would mix what two
+ * policies let this principal see.
  * @internal
  */
 export async function presentStop(
@@ -112,13 +113,18 @@ export async function presentStop(
     if (again.isFailure()) {
       return propagate(again);
     }
-    if (!ctx.epochIs(epoch)) {
-      return _unpresented('the authorization policy', current.id);
-    }
     const now: IStopIntent | undefined =
       again.value !== undefined ? intentOf(again.value, current.id) : undefined;
     if (now === undefined) {
       return _unpresented(`task ${current.rootId}`, current.id);
+    }
+    // The root is asked about again as it now stands (an intent names it, so it is present): a
+    // re-scope or a hidden root moves no intent and no epoch, and must not be answered through.
+    if (!(await ctx.sees(subjectOf(again.value!)))) {
+      return notFound(current.rootId);
+    }
+    if (!ctx.epochIs(epoch)) {
+      return _unpresented('the authorization policy', current.id);
     }
     if (canonicallySame(now, current)) {
       return presented;
