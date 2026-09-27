@@ -406,3 +406,37 @@ describe('T9 Copilot round 1 regressions', () => {
     expect((await persisted(h, accepted)).targets[1].attempt).toBe(1);
   });
 });
+
+// Copilot, round 2 on #701.
+describe('T9 Copilot round 2 regressions', () => {
+  test('a possibly-sent command recorded before a latch is not resent under it, and is after release', async () => {
+    const h = await sourceHarness({ capabilities: new CapabilityScript().ask, lookup: true });
+    await node(h.writer, 'root', { stopPolicy: 'cascade-pause' });
+    h.executor.addJob('job');
+    await registerJob(h, 'job', { parentId: tid('root') });
+    // A deduplicating command whose send failed: uncertain, eligible for a resend by its key.
+    h.executor.down = true;
+    const key = op('pause');
+    const job = (await recordOf(h, 'job')) as IResolvedTaskCommitRecord;
+    (
+      await h.writer.execute({
+        taskId: tid('job'),
+        operationId: key,
+        expectedRevision: job.task.envelope.revision,
+        command: 'pause',
+        parameters: { reason: 'operator' }
+      })
+    ).orThrow();
+    h.executor.down = false;
+    const accepted = (await stop(h, h.writer, 'root', 'pause')).orThrow();
+    const report = (await h.writer.resolveCommands({ limit: 10 })).orThrow();
+    expect(report.resolutions).toEqual([expect.objectContaining({ operationId: key, action: 'held' })]);
+    expect(h.executor.dispatches.get(key)).toBe(1);
+    expect((await recordOf(h, 'job')).operations.find((o) => o.operationId === key)).toMatchObject({
+      dispatch: 'possibly-sent'
+    });
+    (await release(h, h.writer, accepted)).orThrow();
+    (await h.writer.resolveCommands({ limit: 10 })).orThrow();
+    expect(h.executor.dispatches.get(key)).toBe(2);
+  });
+});

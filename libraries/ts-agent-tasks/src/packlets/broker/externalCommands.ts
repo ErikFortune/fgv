@@ -15,6 +15,7 @@ import {
   IResolvedTaskCommitRecord,
   IResolvedTaskRecordDraft,
   ISourceBinding,
+  IStopLatch,
   IStoredCommandOperation,
   IStoredTaskOperation,
   ITaskCommandHandle,
@@ -821,13 +822,18 @@ export async function resolveCommand(
     record.task.envelope.detailVersion,
     command.request.command
   );
-  // A stop's command whose intent no longer latches is not resent: release stops coordinated retries.
+  // A resend is a dispatch, so it is held to the freeze as a first send is. A command recorded before a
+  // stop latched its task is not resent under the latch: it stays uncertain, unwritten, and is
+  // resolved again once no latch stands.
+  const latches: ReadonlyArray<IStopLatch> = core.repository.stopLatches(taskId);
   const stop = command.stop;
+  if (stop === undefined && latches.length > 0) {
+    return done('held', command.receipt.result);
+  }
+  // A stop's command whose intent no longer latches is not resent: release stops coordinated retries.
   const retired: boolean =
     stop !== undefined &&
-    !core.repository
-      .stopLatches(taskId)
-      .some((latch) => latch.rootId === stop.rootId && latch.intentId === stop.intentId);
+    !latches.some((latch) => latch.rootId === stop.rootId && latch.intentId === stop.intentId);
   const expired: boolean =
     command.receipt.result.state === 'indeterminate' &&
     command.receipt.result.reason.startsWith(keyExpiredPrefix);

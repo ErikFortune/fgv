@@ -925,6 +925,34 @@ const T9_ROWS = [
     '        if ((await observeTask(this._core, record.task.envelope.id)).isFailure()) {',
     '        if ((await observeTask(this._core, record.task.envelope.id)).isFailure() && record.archived) {',
     T9
+  ),
+  m(
+    'T9-38 a command recorded before a latch is resent under it',
+    B + 'externalCommands.ts',
+    '  if (stop === undefined && latches.length > 0) {',
+    '  if (stop === undefined && latches.length < 0) {',
+    T9
+  ),
+  m(
+    'T9-39 open accepts a latching stop that does not name its subtree',
+    S + 'openRepository.ts',
+    '        if (!canonicallyEqual(tree.orDefault([]), named)) {',
+    '        if (!canonicallyEqual(named, named)) {',
+    T9
+  ),
+  m(
+    'T9-40 a raise may make every stop unreservable',
+    S + 'graphRules.ts',
+    '  if (stops.isFailure()) {',
+    '  if (stops.isFailure() && profile.profileVersion < 0) {',
+    T9
+  ),
+  m(
+    'T9-41 initialize accepts a profile under which no stop can be reserved',
+    S + 'openRepository.ts',
+    '.onSuccess((profile) => stopAttemptBundle(profile).onSuccess(() => succeed(profile)))',
+    '.onSuccess((profile) => succeed(profile))',
+    T9
   )
 ];
 

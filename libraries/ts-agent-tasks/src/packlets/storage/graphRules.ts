@@ -16,6 +16,7 @@ import {
   maximumSettlementCharges
 } from '../types';
 import { classify, ok, taskFailure } from './failures';
+import { stopAttemptBundle } from './stopLedger';
 
 // Rules a write is checked against that need only the profile and the live graph.
 
@@ -113,6 +114,11 @@ export function raisedProfile(
     return taskFailure(`raiseCapacityLimits: ${converted.message}`, 'invalid', 'after-host-action');
   }
   const profile: ITaskCapacityProfile = converted.value;
+  // A raise under which a stop could no longer be reserved would strand every stop that stands.
+  const stops: Result<unknown> = stopAttemptBundle(profile);
+  if (stops.isFailure()) {
+    return taskFailure(`raiseCapacityLimits: ${stops.message}`, 'invalid', 'after-host-action');
+  }
   const lowered: string[] = [];
   const compare = (
     group: string,

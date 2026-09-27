@@ -81,13 +81,62 @@ describe('open rebuilds the stops, and refuses records that could not have been 
     );
   });
 
+  test('a latching stop that does not name its whole subtree blocks open: the omitted child would be unfrozen', async () => {
+    const root = await twoStops();
+    const p = JSON.parse(text(root, 'task-p.json'));
+    p.stops[0].targets = [p.stops[0].targets[0]];
+    root.writeChildAtomically('task-p.json', JSON.stringify(p), { guarantee: 'session' }).orThrow();
+    expect(blockingMessages(await reopen(root))).toEqual(
+      expect.arrayContaining([
+        expect.stringMatching(/task p: stop .* does not name the subtree its latch freezes/)
+      ])
+    );
+  });
+
   test('a stop naming a task that does not exist blocks open', async () => {
     const root = await twoStops();
     const p = JSON.parse(text(root, 'task-p.json'));
     p.stops[0].targets[1].taskId = 'ghost';
     root.writeChildAtomically('task-p.json', JSON.stringify(p), { guarantee: 'session' }).orThrow();
     expect(blockingMessages(await reopen(root))).toEqual(
-      expect.arrayContaining([expect.stringMatching(/task ghost: a stop names it.* no such task is live/)])
+      expect.arrayContaining([
+        expect.stringMatching(/task p: stop .* does not name the subtree its latch freezes/)
+      ])
+    );
+  });
+});
+
+describe('a profile under which no stop could be reserved', () => {
+  const wide: ITaskCapacityProfile = {
+    ...defaultTaskCapacityProfile,
+    perOwner: { ...defaultTaskCapacityProfile.perOwner, maxOperationsPerTask: 2 ** 40 }
+  };
+
+  test('is refused at initialize and as a raise', async () => {
+    expect(
+      await FileTreeTaskRepository.initialize({
+        root: memoryRoot(),
+        mode: 'session',
+        environment: environment('w').env,
+        registry: brokerRegistry(),
+        profile: wide
+      })
+    ).toFailWith(/stop reservation: .* is not exactly representable/);
+    const h = await brokerHarness();
+    expect(await h.repository.withWriter((writer) => writer.raiseCapacityLimits(wide))).toFailWith(
+      /raiseCapacityLimits: stop reservation/
+    );
+  });
+
+  test('stored by a repository that holds stops blocks open', async () => {
+    const root = await twoStops();
+    const manifest = JSON.parse(text(root, 'repository.json'));
+    manifest.profile.perOwner.maxOperationsPerTask = 2 ** 40;
+    root
+      .writeChildAtomically('repository.json', JSON.stringify(manifest), { guarantee: 'session' })
+      .orThrow();
+    expect(blockingMessages(await reopen(root))).toEqual(
+      expect.arrayContaining([expect.stringMatching(/stops are held, and the stored profile reserves none/)])
     );
   });
 });
