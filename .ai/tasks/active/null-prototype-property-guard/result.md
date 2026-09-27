@@ -84,10 +84,12 @@ now return.
 | per-package `rushx test` | pass. Coverage is **not 100 % in `ts-utils` (99.27 %) or `ts-json` (99.95 %) — on `release` either**. Every uncovered line is pre-existing and identical with and without this change; each package's configured threshold passes. `ts-res-ui-components` measures 46.57 % against a configured threshold of 0 — also pre-existing. |
 | `rush change --verify` | 4 change files found |
 | repo-wide `rush rebuild` | exit 0, no `SUCCESS WITH WARNINGS` |
-| repo-wide `rush test` | _see below_ |
+| repo-wide `rush test` | **35/35 succeeded, exit 0** (third run). Two earlier runs failed for reasons outside this diff, recorded rather than hidden: run 1 had nine projects fail to resolve `@fgv/ts-utils` types, because `heft test --clean` was being run concurrently in `ts-json` and `ts-utils` (by this session and the reviewer) and deleted build output mid-run; it did not recur. Run 2 hit `docs/TECH_DEBT.md` P2 (c), the Argon2id mock salt-collision flake in `ts-extras` (*returns false when salt does not match*), which blocked 19 downstream projects. |
 | `verify-capability-docs` | 0 failed |
 | `generate-capability-feed --check` | 0 stale |
-| `verify-esm-entrypoints` / `verify-bundler-resolution` / `verify-tarball-exports` | _see below_ |
+| `verify-esm-entrypoints` | 23 checked, 0 failed |
+| `verify-bundler-resolution` | 19 checked, 0 failed (after installing its `rush-bundler-check` autoinstaller, absent in this container) |
+| `verify-tarball-exports` | 25 packages, 199 manifest paths, 0 failed (after installing `rush-pack-check`) |
 | `code-reviewer` | one P2 (the `null` regression above), fixed. No P1. No P3. |
 
 ## T1's escalation — closed
