@@ -2,7 +2,7 @@
 
 **Shipped:** Agent-task capacity is qualified end to end: every §8.6 dimension saturates, refuses growth and still completes, drains, archives and reopens with exact transfers at every crash point; reservations use an update's derived 37,417-byte maximum; and the default profile says what it admits — 536 plain registrations, bound by logical bytes.
 
-_Sections below are filled as each phase lands; review and revert sections come last._
+PR: [#699](https://github.com/ErikFortune/fgv/pull/699) into `integration/agent-tasks-v1`. Written 2026-09-26.
 
 ---
 
@@ -302,3 +302,73 @@ many-closed-subscriptions test pins the other side: with every task archived, th
 context budget an older revision of a maximum-size task can never be delivered beside its current one.
 It stays owed (never dropped); a larger budget or a disposition discharges it. Pinned by *delivery at
 the default context budget*; the journey drains with a 20,000-character budget.
+
+---
+
+## T8's acceptance criteria, item by item (implementation plan § T8)
+
+| criterion | where it is met |
+|---|---|
+| No undelivered required terminal/attention update expires; transient hints can expire harmlessly | PR 1 (retention rule; disposition model); this PR: an orphaned expired receipt still pins and never drops anything (runbook, P3) |
+| Checkpoint commits precede update pruning | PR 1 (`storage/pruning`, M1 revert row); this PR's prune transfer test reads evidence before release |
+| Consumer corruption blocks cleanup | PR 1 (`storage/pruning` evidence-missing fence) |
+| Closed/revoked subscriptions retain or explicitly dispose obligations | PR 1 (`closeSubscription` retain/dispose); this PR's journey closes one each way at every ceiling |
+| Unknown source/kind does not erase the task | T6/T3 quarantine (unchanged); never-resolved external task keeps both bundles (`lifetime.test.ts`) |
+| Bound state/operations do not silently evict dedup evidence | operations `used` never shrinks (transient-vs-lifetime test: 6 of 6 kept); repeated identities replay at no cost |
+| Durable registration plus observation obligations survive all qualified process-crash windows | PR 1 real-`SIGKILL` cases; this PR: every journey write boundary and all three activation writes (`before`/`unchanged`), plus the antagonist's `after`/`unknown`/`replaced` sweep, rebuild exactly and converge |
+| Tests list (failure around checkpoint/cleanup, cursor lag, outage, corruption, issued-vs-coalescing, max-record/issuance/obligation/dedup capacities) | PR 1 for the failure windows; this PR for the capacity list: every dimension saturated, record-bytes on the largest record, pinned receipts, lifetime ack exhaustion |
+| For every §8.6 dimension: saturate, reject growth, complete the largest task, settle an uncertain command, ack/dispose every update, prune, archive, close, reopen; exact transfers at every crash point incl. pending activation and acknowledged-but-unpruned | `saturation.test.ts` (§ *A3* above) |
+| Transient vs identity/ack/dedup ceilings | *transient capacity comes back …* and the per-dimension `reclaimableByCleanup` test |
+| An admitted required event needs no new unreserved ack space | `lifetime.test.ts` |
+| Lifetime ack exhaustion on one and across many closed subscriptions | `lifetime.test.ts` |
+| Repeated command identities, rejected-after-admission, pinned receipts, oversized results, claimed-but-never-resolved registrations | `lifetime.test.ts` |
+| Cleanup cannot invent outcomes, abandon without authority, or bypass stop blockers | `lifetime.test.ts` *cleanup at the ceiling* — the stop *latch* is T9's (routed below) |
+| Host runbook in package docs | PR 1, re-checked and corrected here |
+| Run final M1 cohorts on this implementation before accepting its default profile | § *M1* above — run on `60db3e8d`, before `c0b515b0` changed the profile |
+| Review gate: independent persistence/delivery antagonist; every recovery case preserved, explicit incomplete or explicit error | § *Review* below; both HIGHs were exactly "unexplained absence" or its precondition, and are fixed |
+
+## Review
+
+**Layer 1 (`code-reviewer`, on `c08d5971`, before the coverage re-check).** No P1, no P2. It re-ran
+lint and the suite, confirmed the phase-0 API report unchanged, re-derived 37,417 and diffed every
+extracted method (verbatim moves). Three P3s, applied in `82f45d21` — detail in `state.md`.
+
+**Independent persistence/delivery antagonist (on `4c5c4af7`).** Every finding reproduced by a scratch
+test it ran. Two HIGH, both fixed in `f69e1c08` with regression tests and revert rows:
+
+- **H1** — `raiseCapacityLimits` accepted raises of bounds existing reservations were minted from, so
+  already-accepted work could be refused its terminal write. (d) widened it (the unit used to be
+  `maxUpdateBytes`, which an envelope raise stayed under). Now refused, naming what would grow.
+- **H2** — a `current` activation whose record landed but did not go live was later completed from that
+  baseline; commits made in between reached it through no audience and were silently missing. Now
+  such commits are refused until the registration is retried or the repository reopened.
+
+One MED (the runbook said expiry releases an orphaned receipt's pin; it does not) — docs fixed, the
+behaviour carried as a P3. Four LOW — figure precision and wording fixed, one P4. Detail and the list
+of recovery cases it checked sound are in `state.md`.
+
+**Copilot.** Loop on #699 — recorded in `state.md` as it runs.
+
+## Gates, on `f69e1c08`
+
+- `heft build --clean` zero warnings; `eslint src` and `--fix` clean; `heft test` **72 suites,
+  1,790 passed, 0 failed**, 100 % statements/branches/functions/lines, zero `c8 ignore`.
+- Repo-wide `rush rebuild` **37 operations** and `rush test` **36 operations**, exit 0; the only
+  warning is Rush's pre-existing Git-tracked-symlink notice.
+- `rush change --verify --target-branch origin/integration/agent-tasks-v1` passes (change file
+  `minor`, `BREAKING:` prefix).
+- `verify-capability-docs`, `generate-capability-feed --check`, `verify-esm-entrypoints` (24 checked),
+  `verify-bundler-resolution` (20), `verify-tarball-exports` (26 packages, 205 paths): 0 failed.
+
+## Hand-offs (routed to `docs/TECH_DEBT.md` in this PR)
+
+- **P3** the default profile's 1,000 is a ceiling `logical-bytes` never lets it reach (the decision's
+  open question).
+- **P3** at the default context budget an older revision of a maximum-size task is never deliverable.
+- **P3** an expired orphaned receipt keeps pinning until evicted; `outstanding()` calls its task prunable.
+- **P4** `source-replay` envelope validation still measures against `maxUpdateBytes`.
+- **P4** baselines are not checked against `maxUpdateBytes`.
+- **T9** — unchanged: the stop latch (cascade stop, `capabilities()`); "cleanup cannot bypass stop
+  blockers" is proven here for the blocker that exists (an unsettled command) and is T9's for the latch.
+- **Six mutation-matrix rows already stale on the base** (M13, M20, M23, M34, M39, M49) — left as found;
+  they predate this slice.

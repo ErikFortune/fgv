@@ -128,66 +128,36 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
-### `agent-tasks-t8b` 🟢 (slice T8, PR 2 of 2 — closes T8)
+### `agent-tasks-t8b` ✅ (shipped 2026-09-26 via [#699](https://github.com/ErikFortune/fgv/pull/699)) — slice T8, PR 2 of 2; closes T8
 
-**Status:** 🟢 ready to start. Branched off `integration/agent-tasks-v1` at `cae5d7db4`, the T8 PR 1
-landing ([#698](https://github.com/ErikFortune/fgv/pull/698)). PR targets
-`integration/agent-tasks-v1`, **not `release`** — the cluster promotes as one. Artifacts in
-`.ai/tasks/active/agent-tasks-t8b/`; this family finalizes at cluster close.
+**Status:** ✅ shipped into `integration/agent-tasks-v1` (not `release`; the cluster promotes as one).
+Artifacts in `.ai/tasks/active/agent-tasks-t8b/`; this family finalizes at cluster close.
 
-**Mission.** The A3 saturation journeys for every § 8.6 dimension with exact used/reserved transfers
-at every crash point; lifetime acknowledgement exhaustion on one subscription and across many closed
-ones; the M1 cohort run on the shipped implementation; and the capacity-profile decision.
+**What shipped.** Phase 0 extracted `storage/committedFiles.ts` from `repository.ts` (1,993 → 1,808,
+API report unchanged). M1 ran on this implementation before the profile changed — after a disclosed
+one-line harness seed correction — and all four cohorts passed. The six profile changes: the closeout,
+first-resolution and settlement reservations use `maximumUpdateBytes` (the derived 37,417 B, not
+64 KiB); `resident-payload-bytes` 384 MiB; `maxConsumerRecordBytes` 32 MiB (with the per-record
+`record-bytes` ceiling raised alongside, without which it was inert). The A3 saturation journeys for
+every §8.6 dimension with exact transfers at every crash point, lifetime acknowledgement exhaustion, and
+the rest of the plan's saturation list.
 
-**This slice closes T8, and the cluster does not close before it.** PR 1 shipped the mechanism —
-retention, disposition, closure, coalescing, pins, tombstone archive, pruning, command abandonment,
-the outstanding-work report — and said in its own ledger entry that T8's acceptance criteria are not
-met until PR 2 lands. The plan's T8 status line is 🟡 until this PR moves it to ✅.
+**The finding the decision did not anticipate.** Built, the default profile admits **536** plain
+registrations, bound by `logical-bytes`, not 1,000. The design authority chose to ship the six changes
+and document 536; a P3 carries the open question.
 
-**The profile decision has been taken (2026-09-26), so T8b implements rather than recommends.** PR 1
-established that a single update cannot exceed **37,417 B** — the 32 KiB envelope bound plus fixed
-framing — so `maxUpdateBytes` at 64 KiB was never reachable and the closeout reserved nearly double
-what the schema permits; and that candidate (a), "charge actual", is **structurally unavailable** for
-a forward reservation. The decision is six changes, **every one a raise or a code correction, nothing
-lowered anywhere**: the closeout reserves the derived maximum (a code change, not a profile edit);
-`resident-payload-bytes` 64 MiB → **384 MiB**, the first value at which 1,000 is true in every
-modelled mix (1,537 plain / 1,345 with an in-flight command / 1,195 with a command and a `current`
-subscription); `non-archived-tasks` stays 1,000, now reachable; `maxConsumerRecordBytes` 8 MiB →
-**32 MiB**, resolving T7's hand-off 2 upward; `maxAcknowledgementIdsPerSubscription` stays 50,000, now
-covered. Narrowing to five categories is not taken. Nothing is lowered because v1 can raise a stored
-limit and cannot lower one — that asymmetry is what "room to tune" means here. **M1 still runs first,
-and a refutation is a finding to report, not a number to adjust.**
+**Fixed along the way:** `reclaimableByCleanup` misreported lifetime dimensions held as reservations;
+the antagonist's two HIGHs — `raiseCapacityLimits` could outgrow held reservations, and a landed-but-not-live
+`current` activation silently missed commits.
 
-**T8b also opens with phase 0: a designed extraction of
-`storage/repository.ts`** (1993 lines, 7 of headroom), in its own green commit before any A3 work.
-That file is the sixth instance of the promoted `max-lines` P1, whose own post-mortem is that the
-remedy is always chosen under pressure after a red check on an unrelated PR. The other four files
-near the cap are in packages outside T8b's surface and stay on the P1 entry.
+**Review:** layer 1 (no P1/P2); independent persistence/delivery antagonist (2 HIGH fixed, 1 MED docs
++ P3); Copilot loop on #699. Detail in `result.md`.
 
-**Package surface.** `libraries/ts-agent-tasks` only, plus `perf/residentMemory.js` runs (not edits),
-this stream's artifacts, the plan's T8 status line and this ledger entry.
+### `agent-tasks-t8` ✅ (slice T8 of the agent-tasks plan) — shipped in two PRs: [#698](https://github.com/ErikFortune/fgv/pull/698) and [#699](https://github.com/ErikFortune/fgv/pull/699)
 
-**Out of scope.** Reshaping PR 1's mechanism — the split was granted on the basis that this work
-depends on it but reshapes nothing in it; surface it if that proves false. Physical deletion and
-compaction, under A3's finite-history limitation. T9, I1, I2, P1. M1 harness authorship. Every
-package outside `ts-agent-tasks`. `ts-utils`'s `isKeyOf`. The three known CI flakes.
-
-**Review gates — two, as PR 1 had.** Layer 1 `code-reviewer` before coverage closure, then an
-independent persistence/delivery antagonist pass (the plan requires it for T8, and T8 is not closed
-until this lands; on PR 1 it found one MED that four Copilot rounds had not), then the
-implementer-driven Copilot loop.
-
-**Acceptance criteria:** `rushx build` zero warnings, `rushx lint`, `rushx fixlint`; `rushx test` at
-100% with zero `c8 ignore`; `rush change --verify` with a **`minor`** change file; repo-wide
-`rebuild` **and** `test` on the final source; the five verify scripts; no `any`; all three review
-layers recorded; M1 figures pasted; and the plan's T8 line moved to ✅ in this PR.
-
-**Artifact pointer:** `.ai/tasks/active/agent-tasks-t8b/`.
-
-### `agent-tasks-t8` 🔵 (slice T8 of the agent-tasks plan) — split into two PRs; PR 1 landed via [#698](https://github.com/ErikFortune/fgv/pull/698)
-
-**Status:** 🔵 in flight — **PR 1 of 2 shipped 2026-09-26 via
-[#698](https://github.com/ErikFortune/fgv/pull/698)** into `integration/agent-tasks-v1` (not
+**Status:** ✅ **both PRs shipped 2026-09-26** — PR 1 via
+[#698](https://github.com/ErikFortune/fgv/pull/698), PR 2 (`agent-tasks-t8b`) via
+[#699](https://github.com/ErikFortune/fgv/pull/699) — into `integration/agent-tasks-v1` (not
 `release`; the cluster promotes as one). Artifacts stay in `.ai/tasks/active/agent-tasks-t8/`; this
 family finalizes at cluster close, not per slice.
 
@@ -200,10 +170,10 @@ split to be raised if the mechanism was separable from the saturation work. It i
   (`abandoned {reason, from}`), the source-replay `unregistered-binding` cursor stop,
   `ITaskRepository.outstanding()`, real-`SIGKILL` crash cases, the host runbook in `CAPABILITIES.md`,
   and all three review layers. 1,707 tests, 100%, zero `c8 ignore`.
-- **PR 2 (`agent-tasks-t8b`), not started** — the A3 saturation journey for every § 8.6 dimension
-  with exact used/reserved transfers at every crash point, lifetime acknowledgement exhaustion across
-  closed subscriptions, the profile decision, and the M1 cohorts. **T8's acceptance criteria are not
-  met until PR 2 lands**, and the cluster does not close before it.
+- **PR 2 (`agent-tasks-t8b`), shipped via [#699](https://github.com/ErikFortune/fgv/pull/699)** — the
+  A3 saturation journey for every § 8.6 dimension with exact used/reserved transfers at every crash
+  point, lifetime acknowledgement exhaustion across closed subscriptions, the profile decision, and the
+  M1 cohorts. With it, T8's acceptance criteria are met (see its entry above).
 
 **The profile arithmetic is delivered (PR 1), the profile change is not.** PR 1 establishes that a
 single update cannot exceed **37,417 B** — the envelope bound plus fixed framing — so
