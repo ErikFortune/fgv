@@ -45,9 +45,11 @@ export const allCapacityDimensions: ReadonlyArray<CapacityDimension> = [
  * Structured detail accompanying a `backpressure` failure.
  *
  * @remarks
- * `reclaimableByCleanup` is what tells a host whether draining would help or whether
- * the limiting dimension is a lifetime one — retained identities, exact acknowledgement
- * history and dedup evidence are not released by cleanup.
+ * `reclaimableByCleanup` is what tells a host whether draining would help. It is always true for a
+ * transient dimension. For a lifetime one — retained identities, exact acknowledgement history,
+ * dedup evidence, subscriptions and sources, none of which cleanup releases once used — it is true
+ * only while part of the committed figure is a task's reservation, whose unspent remainder archiving
+ * that task releases.
  * @public
  */
 export interface ICapacityFailure {

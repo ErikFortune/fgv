@@ -150,6 +150,25 @@ export class CapacityLedger {
   }
 
   /** Totals of the additive dimensions, with `changes` applied hypothetically. */
+  /**
+   * Whether draining could release part of a dimension's committed figure: always for a transient
+   * dimension; for a lifetime one, only while some task holds part of it as a reservation — a
+   * closeout, settlement, resolution or replay claim, whose unspent remainder its task releases when
+   * it is archived (T8). A subscription's reserved evidence for an owed link is not such a part: it
+   * becomes exact history whether the link is acknowledged or disposed.
+   */
+  private _reclaimable(dimension: CapacityDimension): boolean {
+    if (reclaimable.has(dimension)) {
+      return true;
+    }
+    for (const [key, entry] of this._entries) {
+      if (key.startsWith('task:') && entry.reserved[dimension] > 0) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   private _totals(changes?: ReadonlyMap<string, ILedgerEntry>): {
     used: DimensionAmounts;
     reserved: DimensionAmounts;
@@ -230,7 +249,7 @@ export class CapacityLedger {
                 reserved: before.reserved[dimension],
                 requested: committedAfter - committedBefore,
                 limit: limits[dimension],
-                reclaimableByCleanup: reclaimable.has(dimension)
+                reclaimableByCleanup: this._reclaimable(dimension)
               }
             }
           );
