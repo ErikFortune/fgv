@@ -26,6 +26,7 @@ import { TaskLifecycleStatus } from './lifecycle';
 import { ISourceBinding, ISourceProjection, RecoveryDeclaration, SourceHistoryDeclaration } from './source';
 import { ICommandResolutionReport, ICommandResolutionRequest } from './sourceAdapter';
 import { TaskListCompletion } from './builtins';
+import { IReleaseStop, IStopInspectRequest, IStopReconcileRequest, IStopRequest, IStopResult } from './stop';
 
 /**
  * A request to create a tracked task through a bound writer.
@@ -241,6 +242,11 @@ export interface IBoundTaskView {
   readonly principal: string;
   query(request: IBoundTaskQuery): Promise<TaskResult<IBoundTaskPage>>;
   inspect(id: TaskId): Promise<TaskResult<TaskInspection>>;
+  /**
+   * One cascade stop's current result, as this principal may see it: the root must be visible, and
+   * only visible targets are listed. Reading it performs no effect. (T9.)
+   */
+  inspectStop(request: IStopInspectRequest): Promise<TaskResult<IStopResult>>;
 }
 
 /**
@@ -293,6 +299,23 @@ export interface IBoundTaskWriter extends IBoundTaskView {
    * deduplicate. Repository open never runs it.
    */
   resolveCommands(request: ICommandResolutionRequest): Promise<TaskResult<ICommandResolutionReport>>;
+  /**
+   * Accepts a cascade stop of a task and its whole authoritative subtree (design § 10). The intent,
+   * its complete target set and each target's command key are persisted — and the subtree frozen —
+   * before anything is dispatched; nothing is dispatched here. **Acceptance is not completion**: the
+   * result is `pending` until {@link IBoundTaskWriter.reconcileStop} confirms every target. (T9.)
+   */
+  requestStop(request: IStopRequest): Promise<TaskResult<IStopResult>>;
+  /**
+   * Releases a stop's latch. Applied stops are not undone and commands already sent are not
+   * retracted; nothing resumes. A cancel whose root is terminal cannot be released. (T9.)
+   */
+  releaseStop(request: IReleaseStop): Promise<TaskResult<IStopResult>>;
+  /**
+   * The host's stop pump: one bounded pass over one intent under current authority — dispatching,
+   * resolving and confirming — then the latest result. Installs no timer and starts no work. (T9.)
+   */
+  reconcileStop(request: IStopReconcileRequest): Promise<TaskResult<IStopResult>>;
 }
 
 /**

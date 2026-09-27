@@ -18,6 +18,7 @@ import {
   IListCompletionCandidateQuery,
   IOwedUpdatePage,
   ITaskChildState,
+  IStopLatch,
   IOwedUpdateQuery,
   IPendingInventoryEntry,
   ISourceBinding,
@@ -124,6 +125,9 @@ import {
 } from './queries';
 import { IVisitCounter, SortedKeySet } from './sortedKeys';
 import { TaskIndex } from './taskIndex';
+import { IStopCommitPlan, planStopCommit, withCurrentStopReserve } from './stopAdmission';
+import { withStopReserve } from './stopLedger';
+import { checkStopRegistration } from './stopRules';
 import { CursorTable, MaterializationGate, RecordCache } from './workingSet';
 import {
   ITaskProjection,
@@ -495,6 +499,20 @@ export class FileTreeTaskRepository implements ITaskRepository {
     request: IListCompletionCandidateQuery
   ): Promise<TaskResult<ReadonlyArray<TaskId>>> {
     return this._candidates((index) => index.listCandidates, request);
+  }
+
+  /** {@inheritDoc ITaskRepository.subtree} */
+  public subtree(rootId: TaskId, limit: number): TaskResult<ReadonlyArray<TaskId>> {
+    return this._queryable().onSuccess((index) =>
+      this._tasks.has(rootId)
+        ? classify(index.subtree(rootId, limit), 'invalid', 'after-host-action')
+        : taskFailure(`subtree: no live task ${rootId}`, 'not-found-or-denied', 'after-host-action')
+    );
+  }
+
+  /** {@inheritDoc ITaskRepository.stopLatches} */
+  public stopLatches(taskId: TaskId): ReadonlyArray<IStopLatch> {
+    return this._index?.stops.latches(taskId) ?? [];
   }
 
   /** {@inheritDoc ITaskRepository.unsettledCommands} */
@@ -899,7 +917,8 @@ export class FileTreeTaskRepository implements ITaskRepository {
     taskId: TaskId,
     before: ITaskCommitRecord | undefined,
     next: ITaskCommitRecord,
-    adopted: boolean = false
+    adopted: boolean = false,
+    stopUnits?: IStopCommitPlan['units']
   ): TaskResult<ITaskDeliveryPlan> {
     const frozen: SubscriptionId | undefined = this._records.frozenBy(before, next);
     if (frozen !== undefined) {
@@ -910,7 +929,15 @@ export class FileTreeTaskRepository implements ITaskRepository {
         'after-host-action'
       );
     }
-    return this._book.plan({ taskId, before, next, index: this._index!, profile: this.profile, adopted });
+    return this._book.plan({
+      taskId,
+      before,
+      next,
+      index: this._index!,
+      profile: this.profile,
+      adopted,
+      ...(stopUnits !== undefined ? { stopUnits } : {})
+    });
   }
 
   // ------------------------------------------------------------------------------------------
@@ -990,6 +1017,11 @@ export class FileTreeTaskRepository implements ITaskRepository {
 
     return this._validateDraft(draft)
       .onSuccess((validated) => this._checkParent(taskId, validated).onSuccess(() => ok(validated)))
+      .onSuccess((validated) =>
+        classify(checkStopRegistration(this._index!.stops, validated), 'conflict', 'after-host-action')
+          .withErrorFormat((message) => `register ${taskId}: ${message}`)
+          .onSuccess(() => ok(validated))
+      )
       .onSuccess((validated) =>
         this._checkSource(taskId, validated, operationId).onSuccess(() => ok(validated))
       )
@@ -1414,7 +1446,9 @@ export class FileTreeTaskRepository implements ITaskRepository {
         .onSuccess((validated) =>
           this._checkRetention(taskId, current, validated, operationId).onSuccess(() => ok(validated))
         )
-        .onSuccess((validated) => this._replace(taskId, read!, validated, operationId, requiredUpdates));
+        .onSuccess((validated) =>
+          this._replace(taskId, read!, validated, operationId, requiredUpdates, request.purpose)
+        );
     });
   }
 
@@ -1525,10 +1559,27 @@ export class FileTreeTaskRepository implements ITaskRepository {
     current: IReadRecord,
     draft: ITaskRecordDraft,
     operationId: OperationId | undefined,
-    requiredUpdates: number = 0
+    requiredUpdates: number,
+    purpose: ITaskCommitRequest['purpose']
   ): TaskResult<ITaskCommitRecord> {
     const record: ITaskCommitRecord = current.record;
     const recordRevision: number = record.recordRevision + 1;
+    // The admission freeze and the stop reservations this replacement moves (T9).
+    const stop: TaskResult<IStopCommitPlan> = planStopCommit({
+      index: this._index!,
+      ledger: this._ledger,
+      tasks: this._tasks,
+      profile: this.profile,
+      taskId,
+      current: record,
+      draft,
+      purpose,
+      operationId,
+      external: this._tasks.get(taskId)!.external === true
+    });
+    if (stop.isFailure()) {
+      return propagate(stop);
+    }
     if (draft.operations.length > record.operations.length) {
       // Closeout slots still owed after this step: the archive, and before that the terminal.
       const terminal: boolean =
@@ -1538,7 +1589,7 @@ export class FileTreeTaskRepository implements ITaskRepository {
         this.profile,
         taskId,
         draft.operations.length,
-        archived ? 0 : terminal ? 1 : 2
+        (archived ? 0 : terminal ? 1 : 2) + stop.value.held
       );
       if (counted.isFailure()) {
         return propagate(counted);
@@ -1609,23 +1660,24 @@ export class FileTreeTaskRepository implements ITaskRepository {
               ok({ built, entry: this._ledgerForRecord(taskId, built.record, built.encoded) })
             );
       })
-      .onSuccess(({ built, entry }) =>
-        this._plan(taskId, record, built.record).onSuccess((plan) =>
+      .onSuccess(({ built, entry: base }) => {
+        const entry: ILedgerEntry = withStopReserve(base, zeroAmounts(), stop.value.after);
+        return this._plan(taskId, record, built.record, false, stop.value.units).onSuccess((plan) =>
           this._ledger
-            .admit(new Map([[taskKey(taskId), entry], ...plan.entries]))
+            .admit(new Map([[taskKey(taskId), entry], ...stop.value.entries, ...plan.entries]))
             .onSuccess(() => this._files.write(recordName('task', taskId), built.encoded.text, operationId))
             .onSuccess(() => {
               this._cache.delete(taskId);
               this._tasks.set(taskId, projectRecord(built.record, true, built.encoded.text));
-              this._ledger.apply(new Map([[taskKey(taskId), entry]]));
+              this._ledger.apply(new Map([[taskKey(taskId), entry], ...stop.value.entries]));
               this._generation++;
               return this._applyIndex(taskId, built.record, operationId).onSuccess((committed) => {
                 this._commitDelivery(plan);
                 return ok(committed);
               });
             })
-        )
-      );
+        );
+      });
   }
 
   /** {@inheritDoc ITaskRepositoryWriter.extendReplayEnvelope} */
@@ -1657,26 +1709,32 @@ export class FileTreeTaskRepository implements ITaskRepository {
         );
       }
       const { claims, envelope, draft } = extended.value;
-      return this._buildRecord(draft, record.recordRevision + 1, claims).onSuccess((built) => {
-        const entry: ILedgerEntry = this._ledgerForRecord(taskId, built.record, built.encoded);
-        // More remaining replay revisions are more future links for every subscription covering it.
-        return this._plan(taskId, record, built.record).onSuccess((plan) =>
-          this._ledger
-            .admit(new Map([[taskKey(taskId), entry], ...plan.entries]))
-            .onSuccess(() => this._files.write(recordName('task', taskId), built.encoded.text, undefined))
-            .onSuccess(() => {
-              this._cache.delete(taskId);
-              this._tasks.set(taskId, projectRecord(built.record, true, built.encoded.text));
-              this._ledger.apply(new Map([[taskKey(taskId), entry]]));
-              this._generation++;
-              return this._applyIndex(taskId, built.record, undefined);
-            })
-            .onSuccess(() => {
-              this._commitDelivery(plan);
-              return ok<ISourceReplayEnvelope>(envelope);
-            })
-        );
-      });
+      return this._buildRecord(draft, record.recordRevision + 1, claims).onSuccess((built) =>
+        withCurrentStopReserve(
+          this._index!,
+          this.profile,
+          taskId,
+          this._ledgerForRecord(taskId, built.record, built.encoded)
+        ).onSuccess((entry) =>
+          // More remaining replay revisions are more future links for every subscription covering it.
+          this._plan(taskId, record, built.record).onSuccess((plan) =>
+            this._ledger
+              .admit(new Map([[taskKey(taskId), entry], ...plan.entries]))
+              .onSuccess(() => this._files.write(recordName('task', taskId), built.encoded.text, undefined))
+              .onSuccess(() => {
+                this._cache.delete(taskId);
+                this._tasks.set(taskId, projectRecord(built.record, true, built.encoded.text));
+                this._ledger.apply(new Map([[taskKey(taskId), entry]]));
+                this._generation++;
+                return this._applyIndex(taskId, built.record, undefined);
+              })
+              .onSuccess(() => {
+                this._commitDelivery(plan);
+                return ok<ISourceReplayEnvelope>(envelope);
+              })
+          )
+        )
+      );
     });
   }
 

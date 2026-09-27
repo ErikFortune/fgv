@@ -21,7 +21,12 @@ import {
   IListCompletionRequest,
   IReassignTask,
   IReassignmentResult,
+  IReleaseStop,
   IReparentTask,
+  IStopInspectRequest,
+  IStopReconcileRequest,
+  IStopRequest,
+  IStopResult,
   ITaskMutationResult,
   IUpdateTrackedTask,
   TaskId,
@@ -36,6 +41,8 @@ import { createNative } from './creation';
 import { resolveCommands } from './externalCommands';
 import { reconcileListCompletions } from './listCompletion';
 import { inspectView, queryView } from './reads';
+import { reconcileStop } from './stopPump';
+import { inspectStop, releaseStop, requestStop } from './stopRequests';
 
 /**
  * A read-only view bound to one principal.
@@ -63,6 +70,10 @@ export class BoundTaskView implements IBoundTaskView {
 
   public inspect(id: TaskId): Promise<TaskResult<TaskInspection>> {
     return inspectView(this._core, this._access, id);
+  }
+
+  public inspectStop(request: IStopInspectRequest): Promise<TaskResult<IStopResult>> {
+    return inspectStop(this._core, this._access, request);
   }
 }
 
@@ -115,5 +126,17 @@ export class BoundTaskWriter extends BoundTaskView implements IBoundTaskWriter {
 
   public resolveCommands(request: ICommandResolutionRequest): Promise<TaskResult<ICommandResolutionReport>> {
     return resolveCommands(this._core, this._access, request);
+  }
+
+  public requestStop(request: IStopRequest): Promise<TaskResult<IStopResult>> {
+    return requestStop(this._core, this._access, request);
+  }
+
+  public releaseStop(request: IReleaseStop): Promise<TaskResult<IStopResult>> {
+    return releaseStop(this._core, this._access, request);
+  }
+
+  public reconcileStop(request: IStopReconcileRequest): Promise<TaskResult<IStopResult>> {
+    return reconcileStop(this._core, this._access, request);
   }
 }

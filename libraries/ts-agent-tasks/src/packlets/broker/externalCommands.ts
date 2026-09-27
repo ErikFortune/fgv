@@ -13,6 +13,7 @@ import {
   ICommandResolutionReport,
   ICommandResolutionRequest,
   IResolvedTaskCommitRecord,
+  IResolvedTaskRecordDraft,
   ISourceBinding,
   IStoredCommandOperation,
   IStoredTaskOperation,
@@ -66,26 +67,23 @@ function _withCommand(
 function _draft(
   current: IResolvedTaskCommitRecord,
   operations: ReadonlyArray<IStoredTaskOperation>
-): {
-  readonly recordType: 'resolved';
-  readonly task: IResolvedTaskCommitRecord['task'];
-  readonly sourceRevision?: IResolvedTaskCommitRecord['sourceRevision'];
-  readonly operations: ReadonlyArray<IStoredTaskOperation>;
-  readonly updates: IResolvedTaskCommitRecord['updates'];
-  readonly archived: boolean;
-} {
+): IResolvedTaskRecordDraft {
   return {
     recordType: 'resolved',
     task: current.task,
     ...(current.sourceRevision !== undefined ? { sourceRevision: current.sourceRevision } : {}),
     operations,
     updates: current.updates,
-    archived: current.archived
+    archived: current.archived,
+    ...(current.stops !== undefined ? { stops: current.stops } : {})
   };
 }
 
-/** What an authorization decision about a task depends on: its catalog placement, not its execution. */
-function _authorizationSubject(record: IResolvedTaskCommitRecord): unknown {
+/**
+ * What an authorization decision about a task depends on: its catalog placement, not its execution.
+ * @internal
+ */
+export function authorizationSubject(record: IResolvedTaskCommitRecord): unknown {
   const envelope = record.task.envelope;
   return {
     id: envelope.id,
@@ -199,12 +197,13 @@ export async function executeExternal(
   if (bound.isFailure()) {
     return propagate(bound);
   }
-  const refusal: CommandState | undefined =
+  const decided: CommandState | undefined =
     prepared.handle === undefined
       ? { state: 'rejected', reason: 'unsupported' }
       : revisionOf(record) !== request.expectedRevision
       ? { state: 'rejected', reason: 'conflict' }
       : undefined;
+  let refusal: CommandState | undefined = decided;
 
   type Intent = ICommandInRecord | 'replay';
   const intent = await core.gated(async (writer): Promise<TaskResult<Intent>> => {
@@ -222,6 +221,12 @@ export async function executeExternal(
     }
     if (!ctx.epochIs(epoch)) {
       return changedSinceAuthorized<Intent>('the authorization policy', operationId);
+    }
+    // Under a stop latch no new command reaches the task's source: a start or resume in any spelling
+    // would be a new execution attempt the broker controls (design § 10 step 2). Decided here, under the
+    // writer, where the latch is current.
+    if (refusal === undefined && core.repository.stopLatches(taskId).length > 0) {
+      refusal = { state: 'rejected', reason: 'stop-active' };
     }
     const receipt: ICommandReceipt = _receipt(prepared.stored, refusal ?? { state: 'accepted' });
     const operation: IStoredCommandOperation = {
@@ -255,6 +260,22 @@ export async function executeExternal(
 }
 
 /**
+ * Whether a principal may send a recorded command now: asked at the dispatch boundary and again before
+ * a resend. An ordinary command needs `command` authority on its task; a stop's command needs `stop`
+ * authority on it as a target (T9).
+ * @internal
+ */
+export type CommandPermit = (
+  ctx: AccessContext,
+  record: IResolvedTaskCommitRecord,
+  command: IStoredCommandOperation
+) => Promise<boolean>;
+
+/** The ordinary permit: `command` authority on the task, for this command. */
+const commandPermit: CommandPermit = (ctx, record, command) =>
+  ctx.may('command', subjectOf(record), 'subject', { command: command.request.command });
+
+/**
  * The dispatch boundary for a recorded intent (and the pump's path for one never sent).
  *
  * 1. Re-check authority **now** — outside the writer, with a fresh epoch. A principal no longer
@@ -271,7 +292,8 @@ export async function dispatchIntent(
   ctx: AccessContext,
   record: IResolvedTaskCommitRecord,
   command: IStoredCommandOperation,
-  bound: { readonly source: ITaskSource; readonly binding: ISourceBinding }
+  bound: { readonly source: ITaskSource; readonly binding: ISourceBinding },
+  permit?: CommandPermit
 ): Promise<TaskResult<ICommandReceipt>> {
   const taskId: TaskId = record.task.envelope.id;
   const operationId = command.operationId;
@@ -279,9 +301,7 @@ export async function dispatchIntent(
   if (epoch.isFailure()) {
     return propagate(epoch);
   }
-  const permitted: boolean = await ctx.may('command', subjectOf(record), 'subject', {
-    command: command.request.command
-  });
+  const permitted: boolean = await (permit ?? commandPermit)(ctx, record, command);
 
   const marked = await core.gated(async (writer): Promise<TaskResult<IMarked>> => {
     const read = await _readCommand(writer, taskId, operationId);
@@ -297,19 +317,28 @@ export async function dispatchIntent(
     // Authority was decided against the subject as read before the writer; a catalog change since
     // (scopes, responsibility, placement) could change that answer. Execution fields may move
     // freely — a source observation is not an authorization input.
-    if (!canonicallySame(_authorizationSubject(record), _authorizationSubject(current))) {
+    if (!canonicallySame(authorizationSubject(record), authorizationSubject(current))) {
       return _unsent<IMarked>(`task ${taskId}`, operationId);
     }
     if (!ctx.epochIs(epoch.value)) {
       return _unsent<IMarked>('the authorization policy', operationId);
     }
-    const next: IStoredCommandOperation = permitted
-      ? { ...now, dispatch: 'possibly-sent' }
-      : {
-          ...now,
-          dispatch: 'settled',
-          receipt: _receipt(now.request, { state: 'rejected', reason: 'denied' })
-        };
+    // A command recorded before a stop latch is not sent under it; a stop's own command is not sent
+    // once its intent no longer latches — release stops future coordinated attempts.
+    const latches = core.repository.stopLatches(taskId);
+    const refused: CommandState | undefined = !permitted
+      ? { state: 'rejected', reason: 'denied' }
+      : now.stop === undefined
+      ? latches.length > 0
+        ? { state: 'rejected', reason: 'stop-active' }
+        : undefined
+      : latches.some((l) => l.rootId === now.stop!.rootId && l.intentId === now.stop!.intentId)
+      ? undefined
+      : { state: 'rejected', reason: 'conflict' };
+    const next: IStoredCommandOperation =
+      refused === undefined
+        ? { ...now, dispatch: 'possibly-sent' }
+        : { ...now, dispatch: 'settled', receipt: _receipt(now.request, refused) };
     const committed = await writer.commit({
       purpose: 'maintenance',
       taskId,
@@ -318,7 +347,7 @@ export async function dispatchIntent(
       record: _draft(current, _withCommand(current, next))
     });
     return committed.isSuccess()
-      ? ok<IMarked>({ send: permitted, command: next, record: current })
+      ? ok<IMarked>({ send: refused === undefined, command: next, record: current })
       : propagate<IMarked>(committed);
   });
   if (marked.isFailure()) {
@@ -396,7 +425,7 @@ async function _resendGate(
     if (read.isFailure() || read.value.command.dispatch === 'settled') {
       return read;
     }
-    if (!canonicallySame(_authorizationSubject(record), _authorizationSubject(read.value.record))) {
+    if (!canonicallySame(authorizationSubject(record), authorizationSubject(read.value.record))) {
       return _unresent(`task ${taskId}`, command.operationId);
     }
     return ctx.epochIs(epoch) ? read : _unresent('the authorization policy', command.operationId);
@@ -717,7 +746,7 @@ export async function resolveCommands(
     }
     for (const op of record.operations) {
       if (op.type === 'command' && op.dispatch !== 'settled') {
-        const resolution = await _resolveOne(core, ctx, record, op);
+        const resolution = await resolveCommand(core, ctx, record, op);
         if (resolution.isFailure()) {
           return propagate(resolution);
         }
@@ -728,11 +757,17 @@ export async function resolveCommands(
   return ok({ resolutions });
 }
 
-async function _resolveOne(
+/**
+ * Resolves one unsettled command under a permit — the uncertain-command pump's step, and a stop pump's
+ * for its own commands (T9).
+ * @internal
+ */
+export async function resolveCommand(
   core: BrokerCore,
   ctx: AccessContext,
   record: IResolvedTaskCommitRecord,
-  command: IStoredCommandOperation
+  command: IStoredCommandOperation,
+  permit: CommandPermit = commandPermit
 ): Promise<TaskResult<ICommandResolution>> {
   const taskId: TaskId = record.task.envelope.id;
   const operationId = command.operationId;
@@ -746,7 +781,7 @@ async function _resolveOne(
   if (epoch.isFailure()) {
     return propagate(epoch);
   }
-  if (!(await ctx.may('command', subjectOf(record), 'subject', { command: command.request.command }))) {
+  if (!(await permit(ctx, record, command))) {
     return done('denied');
   }
   const bound = sourceOf(core, record);
@@ -755,7 +790,7 @@ async function _resolveOne(
   }
   const { source, binding } = bound.value;
   if (command.dispatch === 'not-sent') {
-    const sent = await dispatchIntent(core, ctx, record, command, bound.value);
+    const sent = await dispatchIntent(core, ctx, record, command, bound.value, permit);
     return sent.isFailure() ? propagate(sent) : done('dispatched', sent.value.result);
   }
 
@@ -786,10 +821,17 @@ async function _resolveOne(
     record.task.envelope.detailVersion,
     command.request.command
   );
+  // A stop's command whose intent no longer latches is not resent: release stops coordinated retries.
+  const stop = command.stop;
+  const retired: boolean =
+    stop !== undefined &&
+    !core.repository
+      .stopLatches(taskId)
+      .some((latch) => latch.rootId === stop.rootId && latch.intentId === stop.intentId);
   const expired: boolean =
     command.receipt.result.state === 'indeterminate' &&
     command.receipt.result.reason.startsWith(keyExpiredPrefix);
-  if (handle.isSuccess() && handle.value.idempotency === 'source-key' && !expired) {
+  if (handle.isSuccess() && handle.value.idempotency === 'source-key' && !expired && !retired) {
     // The source deduplicates this key: resending it cannot apply the effect twice. A resend is still
     // a dispatch, so it passes the same boundary a first send does.
     const gate = await _resendGate(core, ctx, epoch.value, record, command);

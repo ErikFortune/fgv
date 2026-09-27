@@ -10,6 +10,7 @@ import { planUpdates } from '../implementations';
 import {
   IResolvedTaskCommitRecord,
   IResolvedTaskRecordDraft,
+  IStopIntent,
   IStoredCatalogOperation,
   IStoredTaskOperation,
   ITaskAccessRequest,
@@ -44,6 +45,8 @@ export type CatalogChange =
       readonly envelope: ITaskEnvelope;
       readonly categories: ReadonlyArray<UpdateCategory>;
       readonly archived?: boolean;
+      /** The root's stops after the change, when it changes them (an archive settling a cancel). */
+      readonly stops?: ReadonlyArray<IStopIntent>;
     };
 
 /**
@@ -224,7 +227,8 @@ export function nextDraft(
   envelope: ITaskEnvelope,
   operation: IStoredTaskOperation,
   updates: ReadonlyArray<ITaskUpdate>,
-  archived: boolean
+  archived: boolean,
+  stops: ReadonlyArray<IStopIntent> | undefined = current.stops
 ): IResolvedTaskRecordDraft {
   return {
     recordType: 'resolved',
@@ -234,7 +238,8 @@ export function nextDraft(
     // A tombstone retains no update: every one leaves, and the repository admits that only when each
     // audience member's checkpoint proves it discharged.
     updates: archived ? updates : mergeUpdates(repository, current.updates, updates),
-    archived
+    archived,
+    ...(stops !== undefined ? { stops } : {})
   };
 }
 
@@ -423,7 +428,15 @@ export async function runCatalogMutation<TReceipt extends ITaskMutationResult>(
       taskId,
       expectedRevision: before.revision,
       expectedRecordRevision: current.recordRevision,
-      record: nextDraft(core.repository, current, after, operation, updates, archived)
+      record: nextDraft(
+        core.repository,
+        current,
+        after,
+        operation,
+        updates,
+        archived,
+        change.value.disposition === 'changed' ? change.value.stops ?? current.stops : current.stops
+      )
     });
     return committed.isSuccess()
       ? ok<TReceipt | undefined>(receipt)

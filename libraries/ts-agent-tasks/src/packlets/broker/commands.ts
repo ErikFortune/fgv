@@ -11,6 +11,7 @@ import {
   ICommandReceipt,
   ICommandRequest,
   IResolvedTaskCommitRecord,
+  IStopCommandMarker,
   IStoredCommandOperation,
   IStoredTaskOperation,
   ITaskCommandHandle,
@@ -19,6 +20,7 @@ import {
   ITaskUpdate,
   TaskResult,
   TrackedCommand,
+  latchRefusesMove,
   TrackedTaskCommandName,
   taskListKind,
   trackedTaskCommandNames
@@ -235,18 +237,29 @@ export async function execute(
     if (found === undefined || found.recordType !== 'resolved' || revisionOf(found) !== revisionOf(record)) {
       return changedSinceAuthorized<ICommandReceipt | undefined>(`task ${taskId}`, operationId);
     }
-    const outcome: Outcome =
+    const evaluated: Outcome =
       plan.kind === 'refuse'
         ? { disposition: 'refused', reason: plan.reason }
         : evaluateTrackedCommand(found.task.envelope, plan.command, {
             list: found.task.envelope.kind === taskListKind
           });
+    // The admission freeze, decided on the states under the writer where the latches are current: a
+    // start, a resume or a move out of the stopped set is refused however it is spelled (T9).
+    const outcome: Outcome =
+      evaluated.disposition === 'changed' &&
+      latchRefusesMove(
+        core.repository.stopLatches(taskId),
+        found.task.envelope.lifecycle.status,
+        evaluated.envelope.lifecycle.status
+      )
+        ? { disposition: 'refused', reason: 'stop-active' }
+        : evaluated;
     // After the last await and immediately before the commit, which awaits nothing before it
     // writes: the policy must still be the one the command was authorized under.
     if (!ctx.epochIs(epoch.value)) {
       return changedSinceAuthorized<ICommandReceipt | undefined>('the authorization policy', operationId);
     }
-    return _commit(core, writer, ctx.principal, found, storedRequest, outcome);
+    return commitTrackedCommand(core, writer, ctx.principal, found, storedRequest, outcome);
   });
   if (outcome.isFailure()) {
     return propagate(outcome);
@@ -254,19 +267,27 @@ export async function execute(
   return outcome.value !== undefined ? ok(outcome.value) : execute(core, ctx, input);
 }
 
-/** A transition, or a refusal decided before evaluation. */
-type Outcome =
+/**
+ * A transition, or a refusal decided before evaluation.
+ * @internal
+ */
+export type Outcome =
   | TrackedTransition
-  | { readonly disposition: 'refused'; readonly reason: 'unsupported' | 'conflict' };
+  | { readonly disposition: 'refused'; readonly reason: 'unsupported' | 'conflict' | 'stop-active' };
 
-/** Records the outcome under the operation id, advancing the task only when it changed. */
-async function _commit(
+/**
+ * Records a tracked command's outcome under its operation id, advancing the task only when it
+ * changed. A stop's command carries its intent's marker (T9).
+ * @internal
+ */
+export async function commitTrackedCommand(
   core: BrokerCore,
   writer: ITaskRepositoryWriter,
   principal: string,
   current: IResolvedTaskCommitRecord,
   request: ICommandRequest,
-  outcome: Outcome
+  outcome: Outcome,
+  stop?: IStopCommandMarker
 ): Promise<TaskResult<ICommandReceipt>> {
   const before: ITaskEnvelope = current.task.envelope;
   let after: ITaskEnvelope = before;
@@ -297,7 +318,8 @@ async function _commit(
     request,
     principalKey: principal,
     dispatch: 'settled',
-    receipt
+    receipt,
+    ...(stop !== undefined ? { stop } : {})
   };
   const committed = await writer.commit({
     purpose: 'operation',

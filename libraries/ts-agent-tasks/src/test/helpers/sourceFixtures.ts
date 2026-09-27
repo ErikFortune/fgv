@@ -16,6 +16,7 @@ import {
   IBoundTaskWriter,
   ICommandRequest,
   ISourceBinding,
+  ISourceCapabilities,
   ISourceReplayEnvelope,
   ISourceRevision,
   ITaskCapacityProfile,
@@ -392,7 +393,11 @@ interface IAdvanceParameters {
  */
 export function controllableSource(
   executor: SimulatedExecutor,
-  options?: { readonly lookup?: boolean }
+  options?: {
+    readonly lookup?: boolean;
+    /** The source's stop declaration (T9); absent, the source stops nothing. */
+    readonly capabilities?: (binding: ISourceBinding) => Promise<Result<ISourceCapabilities>>;
+  }
 ): ExternalTaskSource<IJobDetails> {
   const reasonSchema: JsonSchema.ISchemaValidator<IReasonParameters> = JsonSchema.object({
     reason: JsonSchema.string()
@@ -438,7 +443,8 @@ export function controllableSource(
       command('cancel', reasonSchema, 'none', true),
       command('advance', advanceSchema, 'none', false)
     ],
-    ...(options?.lookup === true ? { lookupCommand: async (__, r) => executor.lookup(r) } : {})
+    ...(options?.lookup === true ? { lookupCommand: async (__, r) => executor.lookup(r) } : {}),
+    ...(options?.capabilities !== undefined ? { capabilities: options.capabilities } : {})
   }).orThrow();
 }
 
@@ -485,6 +491,8 @@ export interface ISourceHarness {
 /** Options for {@link sourceHarness}. */
 export interface ISourceHarnessOptions {
   readonly history?: SourceHistoryContract;
+  /** The controllable source's stop declaration (T9). */
+  readonly capabilities?: (binding: ISourceBinding) => Promise<Result<ISourceCapabilities>>;
   readonly observationOnly?: boolean;
   readonly lookup?: boolean;
   readonly profile?: ITaskCapacityProfile;
@@ -517,7 +525,10 @@ export async function sourceHarness(options?: ISourceHarnessOptions): Promise<IS
   const source =
     options?.observationOnly === true
       ? observationOnlySource(executor)
-      : controllableSource(executor, options?.lookup === true ? { lookup: true } : undefined);
+      : controllableSource(executor, {
+          ...(options?.lookup === true ? { lookup: true } : {}),
+          ...(options?.capabilities !== undefined ? { capabilities: options.capabilities } : {})
+        });
   const registry = sourceRegistry(source);
   const root = options?.root ?? memoryRoot();
   const base = environment('s');
@@ -588,6 +599,7 @@ export async function registerJob(
     readonly envelope?: ISourceReplayEnvelope;
     readonly scopes?: ReadonlyArray<ITaskScope>;
     readonly operationId?: OperationId;
+    readonly parentId?: TaskId;
   }
 ): Promise<TaskId> {
   const replay = h.executor.history === 'source-replay';
@@ -602,6 +614,7 @@ export async function registerJob(
       scopes: options?.scopes ?? [alpha],
       binding: h.executor.binding(job),
       recovery: 'reattach',
+      ...(options?.parentId !== undefined ? { parentId: options.parentId } : {}),
       ...(replay
         ? {
             history: {

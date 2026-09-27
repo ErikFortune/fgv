@@ -233,7 +233,8 @@ function _resolvedDraft(
     ...(sourceRevision !== undefined ? { sourceRevision } : {}),
     operations,
     updates: mergeUpdates(repository, current.updates, updates),
-    archived: current.archived
+    archived: current.archived,
+    ...(current.stops !== undefined ? { stops: current.stops } : {})
   };
 }
 

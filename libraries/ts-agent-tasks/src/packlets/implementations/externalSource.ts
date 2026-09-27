@@ -19,6 +19,7 @@ import { createTaskCommandHandle } from '../converters';
 import {
   ICommandRequest,
   ISourceBinding,
+  ISourceCapabilities,
   ISourceProjection,
   ISourceReconcilePage,
   ISourceRevision,
@@ -126,6 +127,11 @@ export interface IExternalTaskSourceParams<TDetails> {
     binding: ISourceBinding,
     request: ICommandRequest
   ) => Promise<Result<ExternalCommandResult<TDetails> | { readonly state: 'not-found' }>>;
+  /**
+   * What the source declares about stopping a binding — the cascade-stop opt-in (T9). Without it the
+   * source stops nothing, and its tasks are `unsupported` stop targets.
+   */
+  readonly capabilities?: (binding: ISourceBinding) => Promise<Result<ISourceCapabilities>>;
 }
 
 /** Host code as a task result: a failure or a throw is an unavailable source. */
@@ -172,6 +178,8 @@ export class ExternalTaskSource<TDetails> implements ITaskSource {
   public readonly id: string;
   /** {@inheritDoc ITaskSource.history} */
   public readonly history: SourceHistoryContract;
+  /** {@inheritDoc ITaskSource.capabilities} */
+  public readonly capabilities?: (binding: ISourceBinding) => Promise<TaskResult<ISourceCapabilities>>;
   /** {@inheritDoc ITaskSource.lookupCommand} */
   public readonly lookupCommand?: (
     binding: ISourceBinding,
@@ -189,6 +197,12 @@ export class ExternalTaskSource<TDetails> implements ITaskSource {
     this.history = params.history;
     this._params = params;
     this._commands = commands;
+    // Without a declaration the member is absent, and a stop finds the source's tasks unsupported.
+    const capabilities = params.capabilities;
+    if (capabilities !== undefined) {
+      this.capabilities = (b: ISourceBinding): Promise<TaskResult<ISourceCapabilities>> =>
+        _host(`${this.id} capabilities`, () => capabilities(b));
+    }
     // Without a lookup the member is absent, and the broker holds an uncertain command it cannot
     // deduplicate rather than ask.
     const lookup = params.lookupCommand;

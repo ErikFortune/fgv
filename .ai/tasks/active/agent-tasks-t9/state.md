@@ -62,7 +62,74 @@ same instruction is in your brief, and it applies to every number there.**
 
 ## Work log
 
-_(append as you go: what you did, what you learned, what you decided and why)_
+### 2026-09-27 — required reading done; no gap found
+
+Brief, design § 10 (and §§ 4–8 where § 10 leans on them), plan § T9 / A2 row / gate row 9,
+`docs/TECH_DEBT.md` T5 (4) and T6 (4) hand-offs, T5/T6/T8/T8b `result.md`. Every file exists and
+each plan section says what the brief claims. Numbers reproduced from source rather than trusted:
+the default profile constants in `types/capacityProfile.ts` match the 536 / `logical-bytes` claim's
+inputs (976 KiB closeout per registration against 512 MiB); the executable pin is T8b's test.
+
+### Design decisions (the working model — see result.md for the final record)
+
+**Where the intent lives.** `IResolvedTaskCommitRecord.stops?: ReadonlyArray<IStopIntent>` on the
+root's own record (design § 8.3 has `stop?: IStopIntent`; an array because § 10 says overlapping
+intents are represented independently — at most one *latching* intent per mode per root). Released
+and settled intents stay in the array as evidence. The intent is **not** envelope state: a stop
+changes no semantic revision, and public lifecycle keeps describing the root's own execution
+(§ 10 step 3: "No status field falsely represents tree-wide completion").
+
+**Latching states.** `pending | blocked | satisfied` latch; `released | settled` do not.
+
+**Where the freeze is enforced: storage, under the writer.** Every broker path funnels into
+`writer.commit` / `writer.register`, so the repository refuses (operation-purpose commits only —
+a source observation is authoritative and exempt):
+- a registration whose parent is latched; a parent change of a latched task or into a latched task;
+- a lifecycle move to `running`, or out of the latch's required stopped set, on a latched task;
+- a new external command op on a latched task, or a marker-less op squatting on a live attempt id;
+- `complete-list` on a latched list (T5 hand-off 4);
+- a stop-marked op that is not a live, unlanded attempt of a latching intent (no dispatch after
+  release, structurally);
+- intent evolution that drops, re-identifies or forges an intent; a new intent whose targets are
+  not exactly the authoritative subtree (root first, then breadth-first by id).
+The latch book is part of the `TaskIndex`, so open and `rebuildIndexes` rebuild it from records
+**before** the repository accepts any write. The broker also pre-checks for clear refusals
+(`stop-active` receipts), but storage is the guarantee.
+
+**Stable per-target command ids: minted and persisted, not derived.** § 10 asks for tuple encoding
+of `(intent, target, mode, attempt)`; two 128-char ids cannot fit the 128-char operation-id bound.
+The property that matters — the same key across restarts — comes from persisting the minted id in
+the root intent before any dispatch. The target's stored command carries a `stop` marker
+`{ rootId, intentId }` so a landing is recognized only when both the id and the marker match.
+
+**Capacity (A3), derived rather than stored — the same "derived and discardable" rule the ledger
+already follows.** Per target, a bundle `B` = one operation + `maxStoredOperationBytes` +
+`maximumSettlementCharges` (covers a native pause/cancel commit, and an external intent commit
+plus the settlement claim T6 mints for it). For each latching intent's *unlanded* attempt, the
+root's ledger entry reserves `B`'s additive dimensions and the target's entry reserves `B`'s
+`record-bytes` (that dimension is per record). A landing commit on the target is admitted with
+both entries changed in one vector check, so it nets to zero. Root-side headroom — the intent's
+maximum encoded growth plus one release operation — is also derived from the root record. The
+per-task operation cap holds a slot per unlanded attempt and per latching intent's release.
+Subscription delivery units add one per unlanded attempt on a covered task. Nothing here is a new
+claim purpose; open recomputes all of it from records.
+
+**Acceptance ≠ completion.** `requestStop` persists the intent with every target `unexamined` and
+returns `pending`; it dispatches nothing. `reconcileStop` is the bounded host pump. Satisfaction
+needs a pass that visited every target and found each `confirmed`; presentation degrades live when
+a confirmed target's current record left the stopped set, and withholds `satisfied` for an intent
+relying on external stable-stop evidence until this broker instance has revalidated it.
+
+**Sources.** `ITaskSource.capabilities?` is optional: absent means nothing is stoppable
+(`unsupported`). Capabilities name the stop command and its parameters (`pauseCommand` /
+`cancelCommand`) instead of § 5's `commands: string[]`, because the kind registry is already the
+command authority (T6) and a stop needs parameters, which a name alone cannot supply.
+
+**Lists.** A list has no own work: as a pause target it is confirmed without a command; as a cancel
+target it is cancelled.
+
+**Deferred and routed:** explicit abandonment of a blocked cancel (§ 10 step 8 "may record") —
+archive of such a root is simply `retention-blocked`.
 
 ## Open questions for the orchestrator
 

@@ -222,7 +222,8 @@ export function withoutUpdates(
     ...(record.sourceRevision !== undefined ? { sourceRevision: record.sourceRevision } : {}),
     operations: record.operations,
     updates: record.updates.filter((u) => !ids.has(u.id)),
-    archived: record.archived
+    archived: record.archived,
+    ...(record.stops !== undefined ? { stops: record.stops } : {})
   };
 }
 

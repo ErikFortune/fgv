@@ -60,7 +60,9 @@ export function sameOperation(a: IStoredTaskOperation, b: IStoredTaskOperation):
     type: op.type,
     operation: op.type === 'catalog' ? op.operation : undefined,
     principalKey: op.principalKey,
-    request: op.request
+    request: op.request,
+    // A stop command's marker is part of what it is: an attempt of that intent, and of no other.
+    stop: op.type === 'command' ? op.stop : undefined
   });
   return canonicallyEqual(identity(a), identity(b));
 }

@@ -10,6 +10,7 @@ import {
   IDueTaskQuery,
   IListCompletionCandidateQuery,
   ITaskChildState,
+  IStopLatch,
   IOwedUpdatePage,
   IOwedUpdateQuery,
   ISourceBinding,
@@ -381,6 +382,17 @@ export interface ITaskRepository {
    * host API: it is not an authorization boundary and says nothing about who may see a child.
    */
   childStates(parentId: TaskId): Promise<TaskResult<ReadonlyArray<ITaskChildState>>>;
+  /**
+   * The authoritative subtree of a live task — itself first, then breadth-first with task-id tie
+   * breaks — over every retained descendant, archived, unresolved and quarantined ones included, from
+   * the resident graph. Fails `invalid` when it holds more than `limit` tasks: never truncated. (T9.)
+   */
+  subtree(rootId: TaskId, limit: number): TaskResult<ReadonlyArray<TaskId>>;
+  /**
+   * The stop latches a task is under, from the resident stop book — rebuilt from the records before a
+   * reopened repository accepts a write. Every commit is also checked against them. (T9.)
+   */
+  stopLatches(taskId: TaskId): ReadonlyArray<IStopLatch>;
   /**
    * List-completion candidates, ordered by id: open task lists that complete automatically, have
    * at least one child, and whose every child — archived ones included — has succeeded.

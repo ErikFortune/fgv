@@ -36,6 +36,7 @@ import { ICommandConverters } from './commandConverters';
 import { IContextConverters } from './contextConverters';
 import { IDeliveryConverters } from './deliveryConverters';
 import { IEnvelopeConverters } from './envelopeConverters';
+import { IStopConverters } from './stopConverters';
 import { IIdentityConverters } from './identityConverters';
 import {
   boundedSingleLine,
@@ -133,7 +134,7 @@ function _updatesBelongTo(
 }
 
 function _resolvedInvariants<
-  T extends Pick<IResolvedTaskCommitRecord, 'task' | 'operations' | 'updates' | 'archived'>
+  T extends Pick<IResolvedTaskCommitRecord, 'task' | 'operations' | 'updates' | 'archived' | 'stops'>
 >(value: T): Result<T> {
   const envelope = value.task.envelope;
   // A task's creation operation is dedup evidence for its whole retained lifetime, and an
@@ -143,6 +144,11 @@ function _resolvedInvariants<
   }
   if (value.archived && !isTerminalTaskStatus(envelope.lifecycle.status)) {
     return fail(`task ${envelope.id}: only a terminal task can be archived`);
+  }
+  // A record holds the stops its own task is the root of, and no other's.
+  const foreign = (value.stops ?? []).find((intent) => intent.rootId !== envelope.id);
+  if (foreign !== undefined) {
+    return fail(`task ${envelope.id}: holds stop ${foreign.id} of ${foreign.rootId}`);
   }
   return _operationsBelongTo(envelope.id, value.operations)
     .onSuccess(() => _updatesBelongTo(envelope.id, envelope.revision, value.updates))
@@ -177,7 +183,8 @@ export function buildStorageConverters(
   commands: ICommandConverters,
   capacity: ICapacityConverters,
   context: IContextConverters,
-  delivery: IDeliveryConverters
+  delivery: IDeliveryConverters,
+  stops: IStopConverters
 ): IStorageConverters {
   const principalKey: Converter<string> = boundedSingleLine(bounds.maxSummaryLength, 'principal key');
   const recordRevision: Converter<number> = positiveSafeInteger;
@@ -192,7 +199,8 @@ export function buildStorageConverters(
     awaiting: Converters.strictObject<ICommandAwaiting>({
       revision: values.sourceRevision,
       execution: boundedSingleLine(64, 'execution digest')
-    }).optional()
+    }).optional(),
+    stop: stops.marker.optional()
   }).withConstraint((stored: IStoredCommandOperation) =>
     // `awaiting` means "settled accepted until the feed reaches this revision": on any other command
     // it is a state nothing would ever resolve.
@@ -228,7 +236,8 @@ export function buildStorageConverters(
       operations,
       updates,
       capacityClaims: capacity.claims,
-      archived: Converters.boolean
+      archived: Converters.boolean,
+      stops: stops.intents.optional()
     }).withConstraint(_resolvedInvariants);
 
   const unresolvedRecord: Converter<IUnresolvedTaskCommitRecord> =
@@ -253,7 +262,8 @@ export function buildStorageConverters(
       sourceRevision: values.sourceRevision.optional(),
       operations,
       updates,
-      archived: Converters.boolean
+      archived: Converters.boolean,
+      stops: stops.intents.optional()
     }).withConstraint(_resolvedInvariants),
     unresolved: Converters.strictObject<IUnresolvedTaskRecordDraft>({
       recordType: Converters.literal('unresolved'),

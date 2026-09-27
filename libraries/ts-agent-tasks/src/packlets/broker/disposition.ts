@@ -433,7 +433,8 @@ async function _abandonOnce(
         ...(resolved.sourceRevision !== undefined ? { sourceRevision: resolved.sourceRevision } : {}),
         operations: resolved.operations.map((op) => (op.operationId === command.operationId ? next : op)),
         updates: resolved.updates,
-        archived: resolved.archived
+        archived: resolved.archived,
+        ...(resolved.stops !== undefined ? { stops: resolved.stops } : {})
       }
     });
     if (committed.isFailure()) {

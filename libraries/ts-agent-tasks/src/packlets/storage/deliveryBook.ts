@@ -102,7 +102,7 @@ export class DeliveryBook {
         continue;
       }
       const matched: ReadonlyArray<TaskId> = book._matching(state.selection, index);
-      book.activate(state, matched, book._sumUnits(matched, tasks));
+      book.activate(state, matched, book._sumUnits(matched, tasks, index));
     }
     return book;
   }
@@ -215,6 +215,11 @@ export class DeliveryBook {
      * Each must still name only subscriptions owed the update.
      */
     readonly adopted?: boolean;
+    /**
+     * Tasks whose unlanded stop attempts this commit changes, with the counts before and after: each
+     * attempt is one delivery unit of the task it targets (T9). The committed task may be among them.
+     */
+    readonly stopUnits?: ReadonlyMap<TaskId, { readonly before: number; readonly after: number }>;
   }): TaskResult<ITaskDeliveryPlan> {
     const { taskId, before, next, index, profile } = params;
     const max: number = profile.perOwner.maxAudiencePerUpdate;
@@ -292,8 +297,19 @@ export class DeliveryBook {
     }
 
     const potentialBefore: ReadonlyArray<SubscriptionId> = this.potentialFor(taskId);
-    const unitsBefore: number = before === undefined ? 0 : deliveryUnits(before);
-    const unitsAfter: number = deliveryUnits(next);
+    const ownStop = params.stopUnits?.get(taskId);
+    const unitsBefore: number = (before === undefined ? 0 : deliveryUnits(before)) + (ownStop?.before ?? 0);
+    const unitsAfter: number = deliveryUnits(next) + (ownStop?.after ?? 0);
+    // Another task's stop units change without its record changing: every subscription that could be
+    // owed its updates holds one unit more or less per attempt.
+    const stopDelta: Map<SubscriptionId, number> = new Map();
+    for (const [other, units] of params.stopUnits ?? []) {
+      if (other !== taskId) {
+        for (const id of this.potentialFor(other)) {
+          stopDelta.set(id, (stopDelta.get(id) ?? 0) + units.after - units.before);
+        }
+      }
+    }
     const owedDelta: Map<SubscriptionId, number> = new Map();
     const bump = (id: SubscriptionId, by: number): void => {
       owedDelta.set(id, (owedDelta.get(id) ?? 0) + by);
@@ -316,7 +332,12 @@ export class DeliveryBook {
       }
     }
 
-    const affected: Set<SubscriptionId> = new Set([...potentialBefore, ...potential, ...owedDelta.keys()]);
+    const affected: Set<SubscriptionId> = new Set([
+      ...potentialBefore,
+      ...potential,
+      ...owedDelta.keys(),
+      ...stopDelta.keys()
+    ]);
     const units: Map<SubscriptionId, number> = new Map();
     const entries: Map<string, ILedgerEntry> = new Map();
     for (const id of Array.from(affected).sort()) {
@@ -325,7 +346,8 @@ export class DeliveryBook {
       const total: number =
         this.unitsOf(id) -
         (potentialBefore.includes(id) ? unitsBefore : 0) +
-        (potential.includes(id) ? unitsAfter : 0);
+        (potential.includes(id) ? unitsAfter : 0) +
+        (stopDelta.get(id) ?? 0);
       units.set(id, total);
       entries.set(
         subscriptionKey(id),
@@ -393,7 +415,7 @@ export class DeliveryBook {
         );
       }
     }
-    return ok({ matched, units: this._sumUnits(matched, tasks) });
+    return ok({ matched, units: this._sumUnits(matched, tasks, index) });
   }
 
   /** Activates a subscription whose record is live: it joins the audience of every task it covers. */
@@ -422,9 +444,17 @@ export class DeliveryBook {
     return matched.sort();
   }
 
-  private _sumUnits(matched: ReadonlyArray<TaskId>, tasks: ReadonlyMap<TaskId, ITaskProjection>): number {
-    // Matched tasks are live and non-archived, so each carries its units.
-    return matched.reduce((total, taskId) => total + tasks.get(taskId)!.deliveryUnits!, 0);
+  private _sumUnits(
+    matched: ReadonlyArray<TaskId>,
+    tasks: ReadonlyMap<TaskId, ITaskProjection>,
+    index: TaskIndex
+  ): number {
+    // Matched tasks are live and non-archived, so each carries its units. Each unlanded stop attempt
+    // on a task is one more future commit that may owe the subscription an update (T9).
+    return matched.reduce(
+      (total, taskId) => total + tasks.get(taskId)!.deliveryUnits! + index.stops.unlandedOn(taskId),
+      0
+    );
   }
 }
 

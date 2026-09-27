@@ -21,6 +21,7 @@ import {
 } from '../types';
 import { encodeRecord } from './layout';
 import { SortedKeySet } from './sortedKeys';
+import { IStopContent, StopBook } from './stopBook';
 
 /**
  * What one task contributes to the index, by category (design §7, *Resident state*).
@@ -40,6 +41,8 @@ export type IndexContent =
       readonly unsettledCommands?: boolean;
       /** The record holds a settled command still awaiting its feed revision. */
       readonly awaitingCommands?: boolean;
+      /** The latching stops it is the root of, and the stop commands it holds (T9). */
+      readonly stop?: IStopContent;
     }
   /** Archived: identity, graph edge, final status and source identity only. */
   | { readonly category: 'archived'; readonly envelope: ITaskEnvelope }
@@ -52,6 +55,8 @@ export type IndexContent =
       readonly parentId?: TaskId;
       readonly binding?: ISourceBinding;
       readonly archived: boolean;
+      /** A quarantined root's latching stops still latch: its latch is not the kind's to lift. */
+      readonly stop?: IStopContent;
     };
 
 /**
@@ -209,6 +214,8 @@ export class TaskIndex {
    * pruning re-reads the durable evidence before it drops anything.
    */
   public readonly prunable: SortedKeySet = new SortedKeySet();
+  /** Every latching stop's latches and live attempts (T9): rebuilt with the index, before any write. */
+  public readonly stops: StopBook = new StopBook((id) => this._memberships.get(id)?.category === 'archived');
   /** Per task, how many subscriptions still owe a baseline obligation for it. */
   private readonly _baselineTasks: Map<TaskId, number> = new Map();
   /** Per parent, how many of its children are resolved (archived or not) and succeeded. */
@@ -270,10 +277,36 @@ export class TaskIndex {
       if (holder !== undefined && holder !== id) {
         return fail<true>(`task ${id}: its source binding is already bound to task ${holder}`);
       }
+      const stop: IStopContent | undefined =
+        content.category === 'summary' || content.category === 'quarantined' ? content.stop : undefined;
+      const collision: string | undefined = this.stops.collision(id, stop);
+      if (collision !== undefined) {
+        return fail<true>(
+          `task ${id}: stop command key '${collision}' is already a live attempt of another stop`
+        );
+      }
       this._remove(id);
       this._add(id, content, source);
+      this.stops.put(id, stop);
       return succeed<true>(true);
     });
+  }
+
+  /**
+   * The authoritative subtree of a task — itself first, then breadth-first with task-id tie breaks —
+   * over every retained child: archived, unresolved and quarantined ones included. Never filtered.
+   * Fails, rather than truncating, when it holds more than `limit` tasks.
+   */
+  public subtree(rootId: TaskId, limit: number): Result<ReadonlyArray<TaskId>> {
+    const order: TaskId[] = [rootId];
+    for (let i = 0; i < order.length; i++) {
+      const children: ReadonlyArray<TaskId> = Array.from(this.children.get(order[i]) ?? []).sort();
+      order.push(...children);
+      if (order.length > limit) {
+        return fail(`the subtree of ${rootId} holds more than ${limit} tasks`);
+      }
+    }
+    return succeed(order);
   }
 
   /**

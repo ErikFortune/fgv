@@ -62,7 +62,8 @@ import {
   recordName,
   utf8Length
 } from './layout';
-import { CapacityLedger } from './ledger';
+import { CapacityLedger, DimensionAmounts, ILedgerEntry, zeroAmounts } from './ledger';
+import { stopAttemptBundle, stopReserve, withStopReserve } from './stopLedger';
 import {
   ITaskRecordCacheOptions,
   ITaskRecoveryHandle,
@@ -94,6 +95,7 @@ import {
   subscriptionState,
   valueBytes
 } from './subscriptions';
+import { IStopContent, stopContentOf } from './stopBook';
 import { IndexContent, TaskIndex } from './taskIndex';
 import { MaterializationGate, maxRecordCacheBytes, maxRecordCacheEntries } from './workingSet';
 
@@ -1163,6 +1165,29 @@ export function scanRoot(input: IScanInput): TaskResult<ScanOutcome> {
     ledger.apply(book.entries(index, profile));
   }
 
+  // ---- the stop reservations, derived from the intents and the attempts that landed (T9) ----
+  // Every task is indexed now, so which attempts could still land is known.
+  index.stops.recount();
+  const holders: ReadonlyArray<TaskId> = scan.isBlocked ? [] : index.stops.holders();
+  if (holders.length > 0) {
+    const bundle: Result<DimensionAmounts> = stopAttemptBundle(profile);
+    for (const taskId of holders) {
+      const key: string = taskKey(taskId);
+      const entry: ILedgerEntry | undefined = ledger.entry(key);
+      if (entry === undefined || bundle.isFailure()) {
+        scan.blocking(
+          'integrity',
+          `task ${taskId}: ${
+            bundle.isFailure() ? bundle.message : 'a stop names it as a target, and no such task is live'
+          }`
+        );
+        continue;
+      }
+      const reserve: DimensionAmounts = stopReserve(index.stops.facts(taskId), bundle.value, profile);
+      ledger.apply(new Map([[key, withStopReserve(entry, zeroAmounts(), reserve)]]));
+    }
+  }
+
   // ---- capacity: a valid repository at its ceiling opens; one over it disagrees with itself ----
   const over: ReadonlyArray<string> = ledger.overLimit();
   if (over.length > 0) {
@@ -1229,6 +1254,7 @@ export function scanRoot(input: IScanInput): TaskResult<ScanOutcome> {
 
 /** What a validated record contributes to the index. */
 function _indexContent(record: ITaskCommitRecord, known: boolean): IndexContent {
+  const stop: IStopContent | undefined = stopContentOf(record);
   if (!known) {
     const source = record.recordType === 'resolved' ? record.task.envelope : record.reference;
     return {
@@ -1236,7 +1262,8 @@ function _indexContent(record: ITaskCommitRecord, known: boolean): IndexContent 
       scopes: source.scopes,
       ...(source.parentId !== undefined ? { parentId: source.parentId } : {}),
       ...(source.binding !== undefined ? { binding: source.binding } : {}),
-      archived: record.recordType === 'resolved' && record.archived
+      archived: record.recordType === 'resolved' && record.archived,
+      ...(stop !== undefined ? { stop } : {})
     };
   }
   if (record.recordType === 'unresolved') {
@@ -1264,7 +1291,8 @@ function _indexContent(record: ITaskCommitRecord, known: boolean): IndexContent 
     envelope,
     ...(automaticList ? { automaticList } : {}),
     ...(unsettled ? { unsettledCommands: true } : {}),
-    ...(awaiting ? { awaitingCommands: true } : {})
+    ...(awaiting ? { awaitingCommands: true } : {}),
+    ...(stop !== undefined ? { stop } : {})
   };
 }
 

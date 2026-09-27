@@ -15,6 +15,7 @@ import { IEnvelopeConverters, buildEnvelopeConverters } from './envelopeConverte
 import { IFailureConverters, buildFailureConverters } from './failureConverters';
 import { IIdentityConverters, buildIdentityConverters } from './identityConverters';
 import { IStorageConverters, buildStorageConverters } from './storageConverters';
+import { IStopConverters, buildStopConverters } from './stopConverters';
 import { IQueryConverters, buildQueryConverters } from './queryConverters';
 import { IValueConverters, buildValueConverters } from './valueConverters';
 
@@ -95,6 +96,8 @@ export class TaskConverters {
   public readonly broker: IBrokerConverters;
   /** Converters for what an external source returns. */
   public readonly sources: ISourceConverters;
+  /** Cascade-stop intent, request and source-capability converters (T9). */
+  public readonly stops: IStopConverters;
 
   private constructor(bounds: ITaskFieldBounds) {
     this.bounds = bounds;
@@ -107,6 +110,7 @@ export class TaskConverters {
     this.context = buildContextConverters(bounds, this.ids, this.values, this.envelopes);
     this.queries = buildQueryConverters(bounds, this.ids, this.values);
     this.delivery = buildDeliveryConverters(bounds, this.ids, this.context, this.queries, this.capacity);
+    this.stops = buildStopConverters(bounds, this.ids, this.values);
     this.storage = buildStorageConverters(
       bounds,
       this.ids,
@@ -115,7 +119,8 @@ export class TaskConverters {
       this.commands,
       this.capacity,
       this.context,
-      this.delivery
+      this.delivery,
+      this.stops
     );
     this.broker = buildBrokerConverters(bounds, this.ids, this.values, this.queries);
     this.sources = buildSourceConverters(bounds, this.values);
