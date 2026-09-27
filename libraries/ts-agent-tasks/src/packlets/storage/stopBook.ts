@@ -25,12 +25,30 @@ export interface IMarkedStopCommand {
 }
 
 /**
+ * The coordination projection of one latching intent — what stays resident (design § 7): its
+ * identity, mode, each target's current key and whether it is confirmed, and its encoded size. Target
+ * evidence is read from the root's record on demand, never held here.
+ * @internal
+ */
+export interface ILatchingIntent {
+  readonly id: OperationId;
+  readonly rootId: TaskId;
+  readonly mode: IStopIntent['mode'];
+  readonly bytes: number;
+  readonly targets: ReadonlyArray<{
+    readonly taskId: TaskId;
+    readonly operationId: OperationId;
+    readonly confirmed: boolean;
+  }>;
+}
+
+/**
  * What one task record contributes to the stop book: the latching intents it is the root of, and the
  * marked stop commands it holds.
  * @internal
  */
 export interface IStopContent {
-  readonly latching: ReadonlyArray<IStopIntent>;
+  readonly latching: ReadonlyArray<ILatchingIntent>;
   readonly marked: ReadonlyArray<IMarkedStopCommand>;
 }
 
@@ -43,9 +61,20 @@ export function stopContentOf(record: ITaskCommitRecord | ITaskRecordDraft): ISt
   if (record.recordType !== 'resolved' || record.archived) {
     return undefined;
   }
-  const latching: ReadonlyArray<IStopIntent> = (record.stops ?? []).filter((intent) =>
-    isLatchingStopState(intent.state)
-  );
+  const latching: ReadonlyArray<ILatchingIntent> = (record.stops ?? [])
+    .filter((intent) => isLatchingStopState(intent.state))
+    .map((intent) => ({
+      id: intent.id,
+      rootId: intent.rootId,
+      mode: intent.mode,
+      // The canonical encoding's length: only key order differs from `JSON.stringify`.
+      bytes: utf8Length(JSON.stringify(intent)),
+      targets: intent.targets.map((target) => ({
+        taskId: target.taskId,
+        operationId: target.operationId,
+        confirmed: target.state === 'confirmed'
+      }))
+    }));
   const marked: IMarkedStopCommand[] = [];
   for (const op of record.operations) {
     if (op.type === 'command' && op.stop !== undefined) {
@@ -164,13 +193,13 @@ export class StopBook {
   }
 
   /** The latching intents a task is the root of. */
-  public latchingOf(rootId: TaskId): ReadonlyArray<IStopIntent> {
+  public latchingOf(rootId: TaskId): ReadonlyArray<ILatchingIntent> {
     return this._content.get(rootId)?.latching ?? [];
   }
 
   /** The facts a task's stop reservation is derived from. */
   public facts(taskId: TaskId): IStopFacts {
-    const latching: ReadonlyArray<IStopIntent> = this.latchingOf(taskId);
+    const latching: ReadonlyArray<ILatchingIntent> = this.latchingOf(taskId);
     const unlandedOn: number = this._unlandedOn.get(taskId) ?? 0;
     const unlandedOf: number = this._unlandedOf.get(taskId) ?? 0;
     if (latching.length === 0 && unlandedOn === 0 && unlandedOf === 0) {
@@ -181,7 +210,7 @@ export class StopBook {
       unlandedOf,
       latching: latching.length,
       intentTargets: latching.reduce((total, intent) => total + intent.targets.length, 0),
-      intentBytes: latching.reduce((total, intent) => total + utf8Length(JSON.stringify(intent)), 0)
+      intentBytes: latching.reduce((total, intent) => total + intent.bytes, 0)
     };
   }
 
@@ -270,7 +299,7 @@ export class StopBook {
     return marked !== undefined && marked.rootId === attempt.rootId && marked.intentId === attempt.intentId;
   }
 
-  private _addIntent(intent: IStopIntent, touched: Set<TaskId>): void {
+  private _addIntent(intent: ILatchingIntent, touched: Set<TaskId>): void {
     const key: string = _intentKey(intent.rootId, intent.id);
     const latch: IStopLatch = { rootId: intent.rootId, intentId: intent.id, mode: intent.mode };
     touched.add(intent.rootId);
@@ -285,7 +314,7 @@ export class StopBook {
         rootId: intent.rootId,
         intentId: intent.id,
         taskId: target.taskId,
-        confirmed: target.state === 'confirmed',
+        confirmed: target.confirmed,
         landed: false,
         funded: false
       };
@@ -300,7 +329,7 @@ export class StopBook {
     }
   }
 
-  private _removeIntent(intent: IStopIntent, touched: Set<TaskId>): void {
+  private _removeIntent(intent: ILatchingIntent, touched: Set<TaskId>): void {
     const key: string = _intentKey(intent.rootId, intent.id);
     touched.add(intent.rootId);
     for (const target of intent.targets) {

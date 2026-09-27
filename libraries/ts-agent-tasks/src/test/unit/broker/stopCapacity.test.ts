@@ -226,4 +226,39 @@ describe('A3 — a stop reserves for every target before it is accepted', () => 
     expect((await persisted(h, second)).targets[1].attempt).toBe(1);
     expect(second.state).toBe('blocked');
   });
+
+  test('under the default profile, 400 registered tasks admit a stop over at most 211 of them — bound by logical bytes', async () => {
+    // Each target reserves one attempt bundle — 643,625 logical bytes — on top of the 976 KiB closeout
+    // every registration already holds (T8b: 536 plain registrations, bound by logical bytes). Pinned by
+    // search, not arithmetic: shrink the subtree one child at a time until the stop is admitted.
+    const h = await brokerHarness();
+    await node(h.writer, 'root', { stopPolicy: 'cascade-pause' });
+    for (let i = 1; i < 400; i++) {
+      await node(h.writer, `c${String(i).padStart(3, '0')}`, { parentId: 'root' });
+    }
+    let size = 400;
+    let refusal: unknown;
+    for (;;) {
+      const attempt = await stop(h, h.writer, 'root', 'pause');
+      if (attempt.isSuccess()) {
+        expect(attempt.value.targets).toHaveLength(size);
+        break;
+      }
+      refusal = attempt.detail?.capacity?.dimension;
+      const child = `c${String(size - 1).padStart(3, '0')}`;
+      const revision = (await h.repository.readCommit(tid(child))).orThrow()!;
+      (
+        await h.writer.reparent({
+          taskId: tid(child),
+          operationId: op(),
+          expectedRevision:
+            revision.recordType === 'resolved' ? revision.task.envelope.revision : (0 as never),
+          parent: 'root'
+        })
+      ).orThrow();
+      size--;
+    }
+    expect(refusal).toBe('logical-bytes');
+    expect(size).toBe(211);
+  }, 300000);
 });
