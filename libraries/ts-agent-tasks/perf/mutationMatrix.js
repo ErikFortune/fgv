@@ -929,8 +929,8 @@ const T9_ROWS = [
   m(
     'T9-38 a command recorded before a latch is resent under it',
     B + 'externalCommands.ts',
-    '  if (stop === undefined && latches.length > 0) {',
-    '  if (stop === undefined && latches.length < 0) {',
+    "    return latches.length > 0 ? 'held' : undefined;",
+    "    return latches.length < 0 ? 'held' : undefined;",
     T9
   ),
   m(
@@ -957,8 +957,8 @@ const T9_ROWS = [
   m(
     "T9-42 a landed command is this stop's when only its intent id matches",
     B + 'stopPump.ts',
-    '      landed.stop?.rootId !== this._intent.rootId ||',
-    '      landed.stop?.rootId === undefined ||',
+    '      op.stop?.rootId === this._intent.rootId &&',
+    '      op.stop?.rootId !== undefined &&',
     T9
   ),
   m(
@@ -1029,6 +1029,27 @@ const T9_ROWS = [
     S + 'stopLedger.ts',
     'const worstBytesPerUnit: number = 6;',
     'const worstBytesPerUnit: number = 3;',
+    T9
+  ),
+  m(
+    'T9-53 the resend gate does not recheck the latches',
+    B + 'externalCommands.ts',
+    '    return withheld !== undefined ? ok(withheld) : read;',
+    '    return withheld !== undefined && epoch.length < 0 ? ok(withheld) : read;',
+    T9
+  ),
+  m(
+    "T9-54 storage lets a raw commit release a terminal root's cancel",
+    S + 'stopRules.ts',
+    "    if (was.mode === 'cancel' && confirmable(was.mode, was.targets[0])) {",
+    "    if (was.mode === 'cancel' && confirmable(was.mode, was.targets[0]) && now.id.length < 0) {",
+    T9
+  ),
+  m(
+    'T9-55 storage settles a cancel from its summary alone',
+    S + 'stopRules.ts',
+    "      now.targets.every((target) => target.state === 'confirmed' && confirmable(was.mode, target));",
+    "      now.targets.every((target) => target.state === 'confirmed');",
     T9
   )
 ];

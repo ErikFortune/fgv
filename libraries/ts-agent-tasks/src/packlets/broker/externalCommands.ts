@@ -420,9 +420,9 @@ async function _resendGate(
   epoch: string,
   record: IResolvedTaskCommitRecord,
   command: IStoredCommandOperation
-): Promise<TaskResult<ICommandInRecord>> {
+): Promise<TaskResult<ICommandInRecord | Withheld>> {
   const taskId: TaskId = record.task.envelope.id;
-  return core.gated(async (writer): Promise<TaskResult<ICommandInRecord>> => {
+  return core.gated(async (writer): Promise<TaskResult<ICommandInRecord | Withheld>> => {
     const read = await _readCommand(writer, taskId, command.operationId);
     if (read.isFailure() || read.value.command.dispatch === 'settled') {
       return read;
@@ -430,8 +430,30 @@ async function _resendGate(
     if (!canonicallySame(authorizationSubject(record), authorizationSubject(read.value.record))) {
       return _unresent(`task ${taskId}`, command.operationId);
     }
-    return ctx.epochIs(epoch) ? read : _unresent('the authorization policy', command.operationId);
+    if (!ctx.epochIs(epoch)) {
+      return _unresent('the authorization policy', command.operationId);
+    }
+    // The latches are current only here: one installed while this gate was queued withholds the resend.
+    const withheld: Withheld | undefined = _withheld(core, taskId, read.value.command);
+    return withheld !== undefined ? ok(withheld) : read;
   });
+}
+
+/**
+ * Why the stop latches on a task withhold a resend: an ordinary command recorded before a latch is
+ * `held` under it, and a stop's command whose intent no longer latches is `retired`.
+ */
+type Withheld = 'held' | 'retired';
+
+function _withheld(core: BrokerCore, taskId: TaskId, command: IStoredCommandOperation): Withheld | undefined {
+  const latches: ReadonlyArray<IStopLatch> = core.repository.stopLatches(taskId);
+  const stop = command.stop;
+  if (stop === undefined) {
+    return latches.length > 0 ? 'held' : undefined;
+  }
+  return latches.some((latch) => latch.rootId === stop.rootId && latch.intentId === stop.intentId)
+    ? undefined
+    : 'retired';
 }
 
 /** The refusal at the resend boundary: the command stays uncertain and eligible for the next pass. */
@@ -824,25 +846,41 @@ export async function resolveCommand(
   );
   // A resend is a dispatch, so it is held to the freeze as a first send is. A command recorded before a
   // stop latched its task is not resent under the latch: it stays uncertain, unwritten, and is
-  // resolved again once no latch stands.
-  const latches: ReadonlyArray<IStopLatch> = core.repository.stopLatches(taskId);
-  const stop = command.stop;
-  if (stop === undefined && latches.length > 0) {
+  // resolved again once no latch stands. A stop's command whose intent no longer latches is not
+  // resent: release stops coordinated retries. Checked here and again at the resend gate.
+  const withheld: Withheld | undefined = _withheld(core, taskId, command);
+  if (withheld === 'held') {
     return done('held', command.receipt.result);
   }
-  // A stop's command whose intent no longer latches is not resent: release stops coordinated retries.
-  const retired: boolean =
-    stop !== undefined &&
-    !latches.some((latch) => latch.rootId === stop.rootId && latch.intentId === stop.intentId);
   const expired: boolean =
     command.receipt.result.state === 'indeterminate' &&
     command.receipt.result.reason.startsWith(keyExpiredPrefix);
-  if (handle.isSuccess() && handle.value.idempotency === 'source-key' && !expired && !retired) {
+  // Not resent: an uncertain command is held, and recorded as held once.
+  const holdOrSettle = async (): Promise<TaskResult<ICommandResolution>> => {
+    if (
+      command.receipt.result.state === 'indeterminate' &&
+      (command.receipt.result.reason.startsWith(heldPrefix) || expired)
+    ) {
+      return done('held', command.receipt.result);
+    }
+    const held = await settleCommand(core, source, binding, taskId, command, {
+      state: 'indeterminate',
+      reason: heldPrefix
+    });
+    return held.isFailure() ? propagate(held) : done('held', held.value.result);
+  };
+  if (handle.isSuccess() && handle.value.idempotency === 'source-key' && !expired && withheld === undefined) {
     // The source deduplicates this key: resending it cannot apply the effect twice. A resend is still
     // a dispatch, so it passes the same boundary a first send does.
     const gate = await _resendGate(core, ctx, epoch.value, record, command);
     if (gate.isFailure()) {
       return propagate(gate);
+    }
+    if (gate.value === 'held') {
+      return done('held', command.receipt.result);
+    }
+    if (gate.value === 'retired') {
+      return holdOrSettle();
     }
     if (gate.value.command.dispatch === 'settled') {
       return done('resolved', gate.value.command.receipt.result);
@@ -858,15 +896,5 @@ export async function resolveCommand(
       resent.value.result
     );
   }
-  if (
-    command.receipt.result.state === 'indeterminate' &&
-    (command.receipt.result.reason.startsWith(heldPrefix) || expired)
-  ) {
-    return done('held', command.receipt.result);
-  }
-  const held = await settleCommand(core, source, binding, taskId, command, {
-    state: 'indeterminate',
-    reason: heldPrefix
-  });
-  return held.isFailure() ? propagate(held) : done('held', held.value.result);
+  return holdOrSettle();
 }

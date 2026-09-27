@@ -213,3 +213,12 @@ its marker when the feed confirmed it (T9-47); a native target whose key another
 could carry a stop, unfunded (T9-51); free text was sized at three bytes per unit, but the encoder
 writes a lone surrogate as a six-byte escape (T9-52). The last moves the figures: max target encoding
 2,986 B, intent framing 12,682 B, and the pin 400 → **210** targets (was 211). Bundle unchanged.
+
+**Round 5 (on `3fdc7560`)** — three findings, all real, fixed together: the resend path checked the
+latches before queuing on the writer, so a latch installed while the resend gate waited let an
+ordinary command recorded before it be resent — the gate now rechecks and holds it, and retires a
+stop's command whose intent was released meanwhile (T9-53; T9-38 re-pointed to the shared
+`_withheld`); storage let a raw commit release a cancel whose root is terminal — now refused per
+commit, not only in `releaseStop` (T9-54); storage settled a satisfied cancel from its summary — each
+target must now be confirmable (for a cancel: terminal) at the archive (T9-55). T9-42 re-pointed to
+`_isOwn` (stale since round 4). All four round-5 regressions red with the fixes reverted.

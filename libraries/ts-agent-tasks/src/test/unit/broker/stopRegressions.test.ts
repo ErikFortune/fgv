@@ -13,6 +13,8 @@ import {
   FileTreeTaskRepository,
   IResolvedTaskCommitRecord,
   IResolvedTaskRecordDraft,
+  IStopIntent,
+  IStopLatch,
   ITaskCapacityProfile,
   ITaskFailure,
   OperationId,
@@ -20,10 +22,12 @@ import {
   defaultTaskCapacityProfile
 } from '../../../index';
 import {
+  IBrokerHarness,
   TestPolicy,
   alpha,
   bindWriter,
   brokerHarness,
+  brokerRegistry,
   command,
   op,
   revisionOf,
@@ -618,5 +622,180 @@ describe('T9 Copilot round 4 regressions', () => {
     expect(await h.repository.withWriter((writer) => writer.register(withStop))).toFailWith(
       /a registration carries no stop/
     );
+  });
+});
+
+// Copilot, round 5 on #701.
+describe('T9 Copilot round 5 regressions', () => {
+  /** A deduplicating command left possibly-sent: its send failed, and it is eligible for a resend. */
+  async function uncertain(h: ISourceHarness, key: OperationId, send: () => Promise<unknown>): Promise<void> {
+    h.executor.down = true;
+    await send();
+    h.executor.down = false;
+    expect((await recordOf(h, 'job')).operations.find((o) => o.operationId === key)).toMatchObject({
+      dispatch: 'possibly-sent'
+    });
+  }
+
+  /** A writer that sees `outside` as the task's latches until its resend gate reads inside the writer. */
+  function latchesMoveAtTheGate(
+    h: ISourceHarness,
+    outside: ReadonlyArray<IStopLatch>
+  ): ReturnType<typeof faultyWriter> {
+    let queued = true;
+    return faultyWriter(h, {
+      patch: (r) => ({
+        stopLatches: (id: TaskId) => (queued && id === 'job' ? outside : r.stopLatches(id))
+      }),
+      writerPatch: (w) => ({
+        readCommit: async (id: TaskId) => {
+          queued = false;
+          return w.readCommit(id);
+        }
+      })
+    });
+  }
+
+  test('a latch installed while a resend waits at its gate holds the ordinary command, unsent', async () => {
+    const h = await sourceHarness({ capabilities: new CapabilityScript().ask });
+    await node(h.writer, 'root', { stopPolicy: 'cascade-pause' });
+    h.executor.addJob('job');
+    await registerJob(h, 'job', { parentId: tid('root') });
+    const key = op('pause');
+    await uncertain(h, key, async () =>
+      h.writer.execute({
+        taskId: tid('job'),
+        operationId: key,
+        expectedRevision: await revisionOf(h.repository, 'job'),
+        command: 'pause',
+        parameters: { reason: 'operator' }
+      })
+    );
+    (await stop(h, h.writer, 'root', 'pause')).orThrow();
+    const report = (await latchesMoveAtTheGate(h, []).resolveCommands({ limit: 10 })).orThrow();
+    expect(report.resolutions).toEqual([expect.objectContaining({ operationId: key, action: 'held' })]);
+    expect(h.executor.dispatches.get(key)).toBe(1);
+  });
+
+  test("a release landing while a stop's resend waits at its gate retires the command, unsent", async () => {
+    const h = await sourceHarness({ capabilities: new CapabilityScript().ask });
+    await node(h.writer, 'root', { stopPolicy: 'cascade-pause' });
+    h.executor.addJob('job');
+    await registerJob(h, 'job', { parentId: tid('root') });
+    const accepted = (await stop(h, h.writer, 'root', 'pause')).orThrow();
+    const key = (await persisted(h, accepted)).targets[1].operationId;
+    await uncertain(h, key, () => pump(h.writer, accepted));
+    const latched = h.repository.stopLatches(tid('job'));
+    (await release(h, h.writer, accepted)).orThrow();
+    const report = (await latchesMoveAtTheGate(h, latched).resolveCommands({ limit: 10 })).orThrow();
+    expect(report.resolutions).toEqual([expect.objectContaining({ operationId: key, action: 'held' })]);
+    expect(h.executor.dispatches.get(key)).toBe(1);
+  });
+
+  async function satisfiedCancel(): Promise<{ readonly h: IBrokerHarness; readonly cancel: IStopIntent }> {
+    const h = await brokerHarness();
+    await node(h.writer, 'root', { stopPolicy: 'cascade-cancel' });
+    await node(h.writer, 'c', { parentId: 'root' });
+    const accepted = (await stop(h, h.writer, 'root', 'cancel')).orThrow();
+    expect((await pump(h.writer, accepted)).orThrow().state).toBe('satisfied');
+    return { h, cancel: await persisted(h, accepted) };
+  }
+
+  test("storage refuses a raw commit releasing a terminal root's cancel", async () => {
+    const { h, cancel } = await satisfiedCancel();
+    const root = (await h.repository.readCommit(tid('root'))).orThrow() as IResolvedTaskCommitRecord;
+    const operationId = op('release');
+    expect(
+      await h.repository.withWriter((writer) =>
+        writer.commit({
+          purpose: 'operation',
+          operationId,
+          taskId: tid('root'),
+          expectedRevision: root.task.envelope.revision,
+          expectedRecordRevision: root.recordRevision,
+          record: {
+            recordType: 'resolved',
+            task: root.task,
+            operations: [
+              ...root.operations,
+              {
+                type: 'catalog',
+                operationId,
+                operation: 'release-stop',
+                request: { taskId: 'root', intentId: cancel.id },
+                principalKey: 'alice',
+                receipt: { intentId: cancel.id, state: 'released' }
+              }
+            ],
+            updates: root.updates,
+            archived: false,
+            stops: [{ ...cancel, state: 'released' }]
+          }
+        })
+      )
+    ).toFailWith(/a cancel of a terminal root is not released/);
+  });
+
+  test('storage settles a cancel only from its targets as they are now, not from its summary', async () => {
+    const inner = memoryRoot() as FileTree.IAtomicFileTreeDirectoryItem &
+      FileTree.IMutableFileTreeDirectoryItem;
+    const h = await brokerHarness({ root: inner });
+    await node(h.writer, 'root', { stopPolicy: 'cascade-cancel' });
+    await node(h.writer, 'c', { parentId: 'root' });
+    const accepted = (await stop(h, h.writer, 'root', 'cancel')).orThrow();
+    expect((await pump(h.writer, accepted)).orThrow().state).toBe('satisfied');
+    const cancel = await persisted(h, accepted);
+    h.repository.close();
+    // On disk, the target is no longer terminal: the summary's confirmation is stale.
+    const file = inner
+      .getChildren()
+      .orThrow()
+      .find((f) => f.name === 'task-c.json') as FileTree.IFileTreeFileItem;
+    const c = JSON.parse(file.getRawContents().orThrow());
+    c.task.envelope.lifecycle = { status: 'running' };
+    inner.writeChildAtomically('task-c.json', JSON.stringify(c), { guarantee: 'session' }).orThrow();
+    const opened = (
+      await FileTreeTaskRepository.open({
+        root: inner,
+        mode: 'session',
+        environment: environment('r5').env,
+        registry: brokerRegistry()
+      })
+    ).orThrow();
+    if (opened.state !== 'ready') {
+      throw new Error(`expected a ready repository, got ${opened.state}`);
+    }
+    const repository = opened.repository;
+    const root = (await repository.readCommit(tid('root'))).orThrow() as IResolvedTaskCommitRecord;
+    const operationId = op('archive');
+    expect(
+      await repository.withWriter((writer) =>
+        writer.commit({
+          purpose: 'operation',
+          operationId,
+          taskId: tid('root'),
+          expectedRevision: root.task.envelope.revision,
+          expectedRecordRevision: root.recordRevision,
+          record: {
+            recordType: 'resolved',
+            task: root.task,
+            operations: [
+              ...root.operations,
+              {
+                type: 'catalog',
+                operationId,
+                operation: 'archive',
+                request: { taskId: 'root' },
+                principalKey: 'alice',
+                receipt: {}
+              }
+            ],
+            updates: root.updates,
+            archived: true,
+            stops: [{ ...cancel, state: 'settled' }]
+          }
+        })
+      )
+    ).toFailWith(/only an archive of its root settles a satisfied cancel/);
   });
 });

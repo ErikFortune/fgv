@@ -269,6 +269,12 @@ function _evolved(
     if (!releasing) {
       return fail(`stop ${was.id}: released only by the operation that releases it`);
     }
+    // A cancel's stopped set is the terminal set, so its root (the first target) is confirmable exactly
+    // when it is terminal now — and a cancel of a terminal root holds that tree terminal: releasing it
+    // would reopen the tree.
+    if (was.mode === 'cancel' && confirmable(was.mode, was.targets[0])) {
+      return fail(`stop ${was.id}: a cancel of a terminal root is not released; that would reopen the tree`);
+    }
   }
   if (now.state === 'settled') {
     const settles: boolean =
@@ -276,7 +282,9 @@ function _evolved(
       was.state === 'satisfied' &&
       draft.recordType === 'resolved' &&
       draft.archived &&
-      now.targets.every((target) => target.state === 'confirmed');
+      // Judged on the targets as they stand at the archive, not on the summary: a target confirmed
+      // earlier may have been observed running since.
+      now.targets.every((target) => target.state === 'confirmed' && confirmable(was.mode, target));
     if (!settles) {
       return fail(`stop ${was.id}: only an archive of its root settles a satisfied cancel`);
     }
