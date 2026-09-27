@@ -7,6 +7,9 @@ be enough to resume cold. Keep it current as you go — it is not a write-once d
 
 ## Status
 
+**Complete.** All gates green, the revert matrix re-run clean on the final source, the Copilot loop
+stopped at round 4 (empty). PR #699 is mergeable and waits on its reviewers. Earlier status line kept below.
+
 **Implementation complete; final gates running.** Phase 0 (`60db3e8d`), M1 (`48b5c7ad`), profile
 (`c0b515b0`), A3 suites (`c08d5971`), layer-1 P3s (`82f45d21`), antagonist fixes (`f69e1c08`). In
 flight: full 100-row revert matrix on `f69e1c08` (on a package copy), repo-wide `rebuild` + `test`.

@@ -365,6 +365,37 @@ lowering is refused) — replied and resolved. Detail in `state.md`.
 - `verify-capability-docs`, `generate-capability-feed --check`, `verify-esm-entrypoints` (24 checked),
   `verify-bundler-resolution` (20), `verify-tarball-exports` (26 packages, 205 paths): 0 failed.
 
+## Revert matrix — on the final source
+
+`perf/mutationMatrix.js` on a copy of the package at `f69e1c08` (the last source change; later commits
+touch only tests' fixture wiring and docs), all 100 rows. Each row neuters one protection, rebuilds and
+runs its suites. **Rows 1–17 were re-run on a quiet machine**: the first pass overlapped the repo-wide
+`rush rebuild`, which cleaned the dependency outputs the copy links to, and those rows read "did not
+build" or "0 red" for that reason alone. Merged result: `revert-matrix-f69e1c08.json` beside this file.
+
+**100 rows: 93 red; 6 stale on the base; 1 zero-red by an earlier disposition.**
+
+- The seven rows phase 0 moved, re-pointed to `committedFiles.ts`: M1 42, M2 26, M3 3, M4 7, M7 3,
+  M29 2, M54 1 red.
+- **T8b's eight rows**, suites `storage|capacity|delivery/(saturation|lifetime)`:
+
+| row | protection reverted | red |
+|---|---|---|
+| T8b-1 | reservations use `maxUpdateBytes` again | 8 |
+| T8b-2 | the per-record ceiling caps the consumer bound at 8 MiB | 2 |
+| T8b-3 | `reclaimableByCleanup` is static per dimension | 2 |
+| T8b-4 | archive keeps its closeout remainder reserved | 39 |
+| T8b-5 | a subscription's baselines are not charged | 1 |
+| T8b-6 | a pending registration holds no reservation | 14 |
+| T8b-7 | a raise may grow what existing reservations cover | 6 |
+| T8b-8 | a landed activation freezes nothing | 1 |
+
+- **Stale on the base** (`cae5d7db4`, verified by `--check` there, before any change of this slice):
+  M13, M20, M23, M34, M49 (pattern found 0 times) and M39 (found 3 times). Left as found.
+- **M91** (a source record limited as a task record) is 0 red, as T3's `result.md` dispositioned it.
+- T8b-5 and T8b-8 each rest on one test, and M54 on one. Each is a test written to fail on exactly that
+  protection, so that is enough, but it is thin.
+
 ## Hand-offs (routed to `docs/TECH_DEBT.md` in this PR)
 
 - **P3** the default profile's 1,000 is a ceiling `logical-bytes` never lets it reach (the decision's
