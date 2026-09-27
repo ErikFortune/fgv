@@ -128,12 +128,23 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
-### `agent-tasks-t9` 🟢 (slice T9 of the agent-tasks plan)
+### `agent-tasks-t9` ✅ (shipped 2026-09-27 via [#701](https://github.com/ErikFortune/fgv/pull/701)) — slice T9 of the agent-tasks plan
 
-**Status:** 🟢 ready to start. Branched off `integration/agent-tasks-v1` at `ea6b6f38b`, the
-`release`-up merge following T8's close. PR targets `integration/agent-tasks-v1`, **not `release`**
-— the cluster promotes as one. Artifacts in `.ai/tasks/active/agent-tasks-t9/`; this family
-finalizes at cluster close.
+**Status:** ✅ shipped into `integration/agent-tasks-v1` (not `release`; the cluster promotes as one).
+Branched at `ea6b6f38b`. Artifacts in `.ai/tasks/active/agent-tasks-t9/`; this family finalizes at
+cluster close.
+
+**What shipped.** `requestStop` / `reconcileStop` / `releaseStop` / `inspectStop`: the complete
+authoritative subtree captured in the writer (≤ 1,000 targets, refused never truncated), minted
+per-target attempt keys persisted in the root's record before any dispatch, and nothing dispatched at
+acceptance. A storage-enforced admission freeze rebuilt before a reopened repository accepts a write.
+A bounded host pump that confirms each target under current `stop-target` authority and never
+satisfies a stop a pass did not fully visit. `ITaskSource.capabilities()` with a declared stable-stop
+contract, revalidated per broker instance. A3 reservations for every target derived from the records
+(the no-partial-dispatch proof: one byte short, nothing written). Both inherited hand-offs (T5 latch
+gap, T6 `capabilities()`) resolved. The semantic antagonist's seven findings were fixed with
+regressions; revert rows T9-1…T9-32 were added to `perf/mutationMatrix.js`. The M1 stop-state cohort
+was judged to belong with the production-profile run (routed). Detail: `result.md`.
 
 **Mission.** Persistent cascade stop with admission enforcement: root + transitive target capture,
 persisted latch and target operation identities, bounded host-driven reconciliation, current

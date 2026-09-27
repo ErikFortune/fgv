@@ -234,7 +234,7 @@ Record the host runbook in the package documentation at implementation time: sta
 
 **Review gate:** independent persistence/delivery antagonist pass; every recovery case must be either preserved state/obligation, explicit incomplete operation, or explicit error—never unexplained absence. This closes durable library correctness before integration polish.
 
-### T9 — Persistent cascade stop with admission enforcement
+### T9 — Persistent cascade stop with admission enforcement — ✅ implemented on `integration/agent-tasks-v1` ([#701](https://github.com/ErikFortune/fgv/pull/701))
 
 **Dependencies:** T5, T6, T8, A2. **Affected package:** `ts-agent-tasks` broker/implementations/storage.
 

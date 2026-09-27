@@ -2,7 +2,7 @@
 
 **Shipped:** A cascade pause or cancel is a persisted, honestly reported intent — the repository freezes the whole authoritative subtree before a reopened store accepts a write, reserves every target's command before accepting the stop, and a host-driven pump confirms each target under current authority, never rounding a partial stop up to success.
 
-PR: _(filled on open)_ into `integration/agent-tasks-v1`. Written 2026-09-27.
+PR: [#701](https://github.com/ErikFortune/fgv/pull/701) into `integration/agent-tasks-v1`. Written 2026-09-27.
 
 ---
 
