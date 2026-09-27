@@ -175,15 +175,11 @@ split to be raised if the mechanism was separable from the saturation work. It i
   point, lifetime acknowledgement exhaustion across closed subscriptions, the profile decision, and the
   M1 cohorts. With it, T8's acceptance criteria are met (see its entry above).
 
-**The profile arithmetic is delivered (PR 1), the profile change is not.** PR 1 establishes that a
-single update cannot exceed **37,417 B** — the envelope bound plus fixed framing — so
-`maxUpdateBytes` (64 KiB) is unreachable and the closeout reserves 7 × 64 KiB for payloads that can
-never be that large. It also establishes that **candidate (a), "charge actual", is structurally
-unavailable**: a closeout reservation guarantees a terminal step not yet taken, so it must reserve
-the most it could need. The recommendation is **(d) reserve the derived schema maximum** (→ 256
-tasks, 224 with one in-flight command) **plus (c) advertise the number the profile then serves**
-(≈ 200), unless M1 shows the process can afford (b)'s 437.5 MiB. `defaultTaskCapacityProfile` is
-**unchanged**; the change belongs to PR 2, after the M1 run that must precede it.
+**The profile arithmetic came from PR 1; the profile change shipped in PR 2.** PR 1 established that a
+single update cannot exceed **37,417 B** — the envelope bound plus fixed framing — and that
+**candidate (a), "charge actual", is structurally unavailable** for a forward reservation. PR 2
+implemented (d) and the design authority's other five changes, after M1; built, the default admits
+536 plain registrations, bound by `logical-bytes` (see the `agent-tasks-t8b` entry above).
 
 **Mission.** Retention, backpressure and recovery journeys: explicit obligation disposition and
 consumer closure, safe progress coalescing, issued-receipt pins, tombstone archive with a minimal

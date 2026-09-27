@@ -158,6 +158,10 @@ lowerings entirely is what keeps every number tunable.
 2. **`resident-payload-bytes`: 64 MiB → 384 MiB.**
 3. **`non-archived-tasks`: stays 1,000** — and under (1) and (2) it is now *reachable*, which is the
    whole point. It stops being an aspiration and becomes a limit.
+   *(Implementer's note, 2026-09-26: this premise did not hold once built — `logical-bytes` binds
+   first, at 536 plain registrations. Put to the design authority, who chose to ship the six changes
+   and document 536; see `result.md` § *Profile* and `state.md` § *Work log*. The decision text above
+   is kept as it was given.)*
 4. **`maxConsumerRecordBytes`: 8 MiB → 32 MiB.** This resolves T7's hand-off 2 in the raisable
    direction. 50,000 ids x 512 B = 24.41 MiB, so 32 MiB covers the advertised id limit plus the
    64 KiB preparation claim and any baselines.

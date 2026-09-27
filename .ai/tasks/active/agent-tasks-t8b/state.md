@@ -58,7 +58,7 @@ correction, nothing lowered anywhere:
 |---|---|
 | 1 | (d) as a **code** change: the closeout reserves the derived 37,417 B schema maximum, not `maxUpdateBytes` — applied consistently to the command and baseline charges too |
 | 2 | `resident-payload-bytes` 64 MiB → **384 MiB** |
-| 3 | `non-archived-tasks` stays **1,000**, now reachable in every modelled mix |
+| 3 | `non-archived-tasks` stays **1,000** — decided as reachable in every modelled mix; **built, it is not: `logical-bytes` binds at 536** (work log; shipped and documented as such) |
 | 4 | `maxConsumerRecordBytes` 8 MiB → **32 MiB** (resolves T7's hand-off 2 upward) |
 | 5 | `maxAcknowledgementIdsPerSubscription` stays **50,000**, now covered |
 | 6 | `maxUpdateBytes` stays **64 KiB**; the 37,417 B schema maximum is documented beside it |
@@ -133,6 +133,7 @@ visibility (reopen + retry converge exactly) and the three activation writes —
 | round | head | main list | previously-missed / summary | disposition |
 |---|---|---|---|---|
 | 1 | `4b5f54d1` | none | summary: "the saturation fixture has an unresolved moderate issue that can make post-reopen crash tests ineffective" | **real** — `reopenWorld` opened over the raw root and returned a `FaultyRoot` nothing wrote through, so a fault injected after a reopen never fired. Fixed; a test pins it (red before the fix) |
+| 2 | `431ded16` | none | **3 previously missed (LOW)**: stale "1,000 reachable" in `brief.md` and `state.md`; stale "profile change not delivered" in the `agent-tasks-t8` ledger entry. Summary also names "the ledger reclaimability issue" with no finding attached | all three fixed (the brief's decision text kept, annotated rather than rewritten). The reclaimability line matches the layer-1 P3 / antagonist LOW already dispositioned: the flag says *could*, documented as not knowing whether a reservation will be spent in full |
 
 ## Open questions for the orchestrator
 
