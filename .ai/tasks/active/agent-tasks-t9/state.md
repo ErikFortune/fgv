@@ -7,8 +7,13 @@ be enough to resume cold. Keep it current as you go.
 
 ## Status
 
-**Not started.** Branch created and brief placed by the orchestrator 2026-09-27, immediately after
-T8 closed. No implementation work has begun.
+**Reviews done, coverage closed; revert matrix running; PR next.** (2026-09-27.) Head `c5e4ceb7`:
+85 suites, **1,968 passed / 0 failed**, 100 % on every metric, zero `c8 ignore`, lint clean,
+`fixlint` no-op. Layer 1 and the semantic antagonist both ran on `e55f0d5e`; the antagonist's seven
+findings (H1, M1–M4, L1, L2) are fixed in `c5e4ceb7`, each with a regression. `result.md` drafted.
+Next: revert matrix on the final source (`perf/mutationMatrix.js`, T9 rows T9-1…T9-32 added) →
+repo-wide rebuild/test + verify scripts → PR into `integration/agent-tasks-v1` → plan status line
+and ledger entry as shipped → Copilot loop.
 
 ## Branch
 
@@ -130,6 +135,27 @@ target it is cancelled.
 
 **Deferred and routed:** explicit abandonment of a blocked cancel (§ 10 step 8 "may record") —
 archive of such a root is simply `retention-blocked`.
+
+**Revisions made while testing (each caught by a test):**
+- Archived descendants would each have reserved a full attempt bundle they can never use; the book
+  now funds only attempts that could still land — not landed, target not archived, target not
+  confirmed. A confirmed external target that restarts is re-stopped under a *new* attempt (new
+  admission). `StopBook.recount()` after open's first pass, because a root may be indexed before
+  its archived targets.
+- Superseding a target of a `satisfied` intent must move the intent back to `pending` (the record
+  converter refused `satisfied` with an unconfirmed target).
+- A terminal external target is confirmed before any source call (a source with no declaration
+  must not make a terminal target `unsupported`).
+- A conflict-rejected attempt refreshes the task from its source before the new attempt, or the
+  new attempt would carry the same stale precondition.
+- The resident book keeps a coordination projection of each latching intent (ids, keys, confirmed
+  flags, encoded size) — not the full intent with its evidence (design § 7).
+
+**Capacity figures reproduced (not trusted):** attempt bundle 643,625 logical bytes / 627,241
+record bytes / 37,417 resident under the default profile; max target encoding 1,834 B, intent
+framing 6,538 B. Executable pin: 400 plain registrations admit a stop over at most **211** of them,
+refused on `logical-bytes`. Arithmetic estimate (not pinned): a stop over an entire repository of
+*n* plain tasks fits for n ≲ 325.
 
 ## Open questions for the orchestrator
 

@@ -573,6 +573,10 @@ asked on every pass. A confirmed external pause records its evidence — source,
 confirming revision — and a later observation that contradicts it records a `violation` and
 re-stops under a new attempt. **No library assertion manufactures external fencing.**
 
+**Custom repositories and draft builders.** A replacement of a record must keep its stops — storage
+refuses one that drops an intent — so build drafts with `...carriedStops(record)`. A repository
+implements `subtree(rootId, limit)` (refused, never truncated, over the limit) and `stopLatches(taskId)`.
+
 **Idempotency.** A target's attempt and key are persisted before anything is sent; a restart finds
 the effect in the target's own record under that key. A definitely rejected source revision
 conflict gets a new persisted attempt and key, sent against a refreshed revision; an uncertain one
