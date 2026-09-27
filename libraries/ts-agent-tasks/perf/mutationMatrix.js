@@ -1051,6 +1051,13 @@ const T9_ROWS = [
     "      now.targets.every((target) => target.state === 'confirmed' && confirmable(was.mode, target));",
     "      now.targets.every((target) => target.state === 'confirmed');",
     T9
+  ),
+  m(
+    'T9-56 a raw release may rewrite the report it keeps',
+    S + 'stopRules.ts',
+    '    if (!canonicallyEqual({ ...was, state: now.state }, now)) {',
+    '    if (!canonicallyEqual({ ...was, state: now.state }, now) && now.id.length < 0) {',
+    T9
   )
 ];
 

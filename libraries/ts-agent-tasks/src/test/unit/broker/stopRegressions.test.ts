@@ -799,3 +799,51 @@ describe('T9 Copilot round 5 regressions', () => {
     ).toFailWith(/only an archive of its root settles a satisfied cancel/);
   });
 });
+
+// Copilot, round 6 on #701.
+describe('T9 Copilot round 6 regressions', () => {
+  test('storage refuses a raw release that rewrites the report it keeps', async () => {
+    const h = await brokerHarness();
+    await node(h.writer, 'root', { stopPolicy: 'cascade-pause' });
+    await node(h.writer, 'c', { parentId: 'root' });
+    const pending = await persisted(h, (await stop(h, h.writer, 'root', 'pause')).orThrow());
+    const root = (await h.repository.readCommit(tid('root'))).orThrow() as IResolvedTaskCommitRecord;
+    const release = (stops: IStopIntent): ReturnType<typeof h.repository.withWriter> => {
+      const operationId = op('release');
+      return h.repository.withWriter((writer) =>
+        writer.commit({
+          purpose: 'operation',
+          operationId,
+          taskId: tid('root'),
+          expectedRevision: root.task.envelope.revision,
+          expectedRecordRevision: root.recordRevision,
+          record: {
+            recordType: 'resolved',
+            task: root.task,
+            operations: [
+              ...root.operations,
+              {
+                type: 'catalog',
+                operationId,
+                operation: 'release-stop',
+                request: { taskId: 'root', intentId: pending.id },
+                principalKey: 'alice',
+                receipt: { intentId: pending.id, state: 'released' }
+              }
+            ],
+            updates: root.updates,
+            archived: false,
+            stops: [stops]
+          }
+        })
+      );
+    };
+    const rewritten: IStopIntent = {
+      ...pending,
+      state: 'released',
+      targets: pending.targets.map((t, i) => (i === 1 ? { ...t, state: 'refused' as const } : t))
+    };
+    expect(await release(rewritten)).toFailWith(/a release keeps the report as it stood/);
+    expect(await release({ ...pending, state: 'released' })).toSucceed();
+  });
+});

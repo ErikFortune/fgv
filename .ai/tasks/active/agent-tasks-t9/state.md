@@ -11,7 +11,7 @@ be enough to resume cold. Keep it current as you go.
 85 suites, **1,968 passed / 0 failed**, 100 % on every metric, zero `c8 ignore`, lint clean,
 `fixlint` no-op. Layer 1 and the semantic antagonist both ran on `e55f0d5e`; the antagonist's seven
 findings (H1, M1–M4, L1, L2) are fixed in `c5e4ceb7`, each with a regression. `result.md` drafted.
-Next: revert matrix on the final source (`perf/mutationMatrix.js`, T9 rows T9-1…T9-52 added) →
+Next: revert matrix on the final source (`perf/mutationMatrix.js`, T9 rows T9-1…T9-56 added) →
 repo-wide rebuild/test + verify scripts → PR into `integration/agent-tasks-v1` → plan status line
 and ledger entry as shipped → Copilot loop.
 
@@ -222,3 +222,8 @@ stop's command whose intent was released meanwhile (T9-53; T9-38 re-pointed to t
 commit, not only in `releaseStop` (T9-54); storage settled a satisfied cancel from its summary — each
 target must now be confirmable (for a cancel: terminal) at the archive (T9-55). T9-42 re-pointed to
 `_isOwn` (stale since round 4). All four round-5 regressions red with the fixes reverted.
+
+**Round 6 (on `d3e62758`)** — two findings: a raw release commit could rewrite the report the released
+intent keeps (target states, evidence) — storage now requires a release to change only the state
+(T9-56); the ledger's revert range stopped at T9-52 (now T9-1…T9-56). Findings per round: 5 → 3 → 1
+substantive.

@@ -269,6 +269,10 @@ function _evolved(
     if (!releasing) {
       return fail(`stop ${was.id}: released only by the operation that releases it`);
     }
+    // A released intent is kept as its report: releasing changes its state and nothing it found.
+    if (!canonicallyEqual({ ...was, state: now.state }, now)) {
+      return fail(`stop ${was.id}: a release keeps the report as it stood`);
+    }
     // A cancel's stopped set is the terminal set, so its root (the first target) is confirmable exactly
     // when it is terminal now — and a cancel of a terminal root holds that tree terminal: releasing it
     // would reopen the tree.
