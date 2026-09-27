@@ -167,9 +167,7 @@ describe('requestStop — acceptance is not completion', () => {
     const h = await brokerHarness();
     await node(h.writer, 'root', { stopPolicy: 'cascade-cancel' });
     const pause = (await stop(h, h.writer, 'root', 'pause')).orThrow();
-    expect(await stop(h, h.writer, 'root', 'pause')).toFailWith(
-      new RegExp(`stop ${pause.intentId} already holds a pause`)
-    );
+    expect(await stop(h, h.writer, 'root', 'pause')).toFailWith(/already holds a pause latch/);
     const cancel = (await stop(h, h.writer, 'root', 'cancel')).orThrow();
     expect(cancel.intentId).not.toBe(pause.intentId);
     const record = (await h.repository.readCommit(tid('root'))).orThrow()!;
