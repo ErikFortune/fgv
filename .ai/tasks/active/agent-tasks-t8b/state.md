@@ -94,9 +94,9 @@ that is a finding to report — not a number to quietly adjust, and not a measur
   exceed the new bundles and fail open. Package unpublished; disclosed as BREAKING, no migration (the
   same posture PR 1 took).
 
-## Layer 1 — `code-reviewer`, 2026-09-26, on `ea1ecd8`-era source (after A3, before coverage re-check)
+## Layer 1 — `code-reviewer`, 2026-09-26, on `c08d5971` (after the A3 suites, before the coverage re-check)
 
-Reran lint and the full suite itself (70 suites of the package's own count at the time, 1,779 green,
+Reran lint and the full suite itself (1,779 green,
 100 %), confirmed the phase-0 API report unchanged, re-derived 37,417 independently, diffed every
 extracted method against `cae5d7db4` (verbatim moves). **No P1, no P2.** Three P3s, all applied:
 
