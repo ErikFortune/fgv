@@ -47,12 +47,13 @@ The four traversal rules are implemented as stated: the subtree is captured from
 | W2 | `releaseStop`: authorization, `_releasable`, revision — outside | in the writer: re-read; same key → replay; revision; `_releasable` **again** (an intent's state moves without a semantic revision — another release, a pump); epoch before the commit |
 | W3 | a replayed request or release | `isSameCatalog`, re-authorization of the action, and `confirmUnchanged` (revision + epoch in the writer) before the evolving result is released |
 | W4 | pump: `stop` on the root at the start (epoch captured before the first question); per-target `stop-target` authorization at each visit | in the writer, for a native commit and for an external intent record alike (`_current`): the intent still latches and the attempt is unchanged; the target re-read; its authorization subject unchanged; epoch immediately before the write |
-| W5 | the dispatch boundary under `stop` authority (`dispatchIntent` with the stop permit) | in the writer: command still `not-sent`; subject unchanged; epoch; the **latch/marker gate** — an unmarked command under a latch settles `stop-active`, a stop's command whose intent no longer latches settles `conflict`; storage's key rule: a marked command must be a live, unlanded attempt of the intent it names |
-| W6 | an uncertain stop command resolved by its key (`resolveCommand` with the stop permit) | T6's resolution windows, unchanged |
+| W5 | the dispatch boundary (`dispatchIntent`); authority is decided by the command's marker on every path (`_permitted`: a marked command needs `stop` as `stop-target`, an unmarked one `command`) | in the writer: command still `not-sent`; subject unchanged; epoch; the **latch/marker gate** — an unmarked command under a latch settles `stop-active`, a stop's command whose intent no longer latches settles `conflict`; storage's key rule: a marked command must be its intent's **funded** attempt on that task (T9-57) |
+| W6 | an uncertain command resent by its key (`resolveCommand` → `_resendGate`) | in the writer: subject, epoch, and **the latches again** — an unmarked command latched while the gate was queued is held, a stop's command whose intent was released meanwhile is retired (T9-53) |
 | W7 | supersession, decided from a visit (and, for a conflict, a fresh observation) | in the writer: the intent still latches and the attempt is still the one decided on (`_ours`); a key minted; epoch; storage: attempt +1, key held by no attempt |
 | W8 | the pass's findings → the root's summary | in the writer: the intent re-read; released/settled meanwhile → findings discarded; merged target by target by attempt (a target another caller superseded keeps that caller's entry); **epoch moved → discarded, and nothing counts as revalidated** (H1) |
 | W9 | revalidation of stable evidence | marked only from a result this pass itself persisted `satisfied`, from a complete pass, under an unchanged epoch |
-| W10 | presentation from a lagging summary | reads each target's current record; no write |
+| W10 | presentation (`presentStop`) reads every target and asks the policy about each | afterwards: the root re-read; its visibility asked again of the record as it stands (not found if hidden or re-scoped — T9-60); a moved intent re-presented from its current version, at most three times (T9-58); a policy other than the caller's authorizing epoch refused, retry-safe (T9-59). The pump presents under the policy current at presentation time |
+| W14 | a raw `withWriter` commit, bypassing the broker entirely | storage's per-commit stop rules: a release or a settlement changes the intent's state and nothing else (T9-56, T9-61); a terminal root's cancel is never released (T9-54); a settlement needs every target confirmable now (T9-55); a confirmed target never returns to `pending`/`unexamined` under its attempt (T9-62). Open refuses an unsettled stop command that is not its latching intent's attempt (T9-63) |
 | W11 | archive of a satisfied cancel's root | in the writer: every target re-read and required terminal **now** |
 | W12 | catalog operations under a latch (create, reparent, complete, archive) | the broker's pre-check is for a clear refusal only; storage re-checks inside the same commit, which is the guarantee (revert row T9-32 shows the storage refusal standing alone) |
 | W13 | capacity preflight → the write | planned and applied in the same synchronous storage commit: no await between |
@@ -167,11 +168,50 @@ injected storage failures and self-contradicting repositories, source refusals, 
 request-edge suite, and raw-writer storage-rule tests. Two non-null assertions in `StopBook` state
 the invariant that a removal mirrors an earlier add.
 
-**Layer 3 — Copilot.** _(filled from the loop on the PR)_
+**Layer 3 — Copilot, ten rounds, stopped at the 10-round cap.** Every finding was reproduced
+against the code before it was acted on. Each fix has a regression test that fails with the fix
+reverted, and a revert row. Per round, findings acted on / declined:
+
+| round | on | findings | fixed | declined, with reasons in the thread |
+|---|---|---|---|---|
+| 1 | `4075b901` | 4 inline + summary items | 5 (T9-33…T9-37) | contract-version change; paused target confirmed without a command; fixture cast |
+| 2 | `558a807f` | 3 | 3, plus 2 found while fixing (T9-38…T9-41) | — |
+| 3 | `e1587371` | 4 | 4, plus 1 found while fixing (T9-42…T9-46) | "pass evidence" in storage (a satisfied summary means verifiably stopped targets; external evidence is revalidated per broker instance) |
+| 4 | `0d51e479` | 5 | 5 (T9-47…T9-52) | a storage-side key preflight (acceptance already refuses a held key) |
+| 5 | `3fdc7560` | 3 | 3 (T9-53…T9-55) | — |
+| 6 | `d3e62758` | 2 | 2 (T9-56; ledger range) | — |
+| 7 | `91c3c5d4` | 2 + 1 description nit | 3 (T9-57…T9-60) | — |
+| 8 | `d94ed0f6` | 1 + 1 previously missed | 2 (T9-60, T9-61) | — |
+| 9 | `a615a336` | 2 | 2, the first narrower than asked (T9-62…T9-65) | a blanket "no same-attempt exit from confirmed": the broker leaves `confirmed` under the same attempt for three findings (violation, withdrawn contract, unattached source) |
+| 10 | `dc1aae25` | 3 new | 0 code; 1 pinned by a stronger test | key collision before preview (already refused before the preview — test extended); contract identity on revalidation (a pass re-confirms from a fresh observation under the current declaration, which is the revalidation § 10 step 6 asks for); "unfunded" landed command (a landed command's settlement is reserved by its own claim, not the attempt's) |
+
+The loop behaved as the repo's rules predict for an authorization/ordering surface: layer 1 found no
+P1 and layer 2 seven defects, yet rounds 1–9 each found at least one real ordering or
+raw-writer defect. From round 5 on, every finding concerned what a **raw writer or a forged file**
+could do, or a check placed before an `await` rather than after it. Round 10 produced none that
+survived verification. It stopped at the cap, not on diminishing returns; had the cap not
+applied, round 10's profile (three findings, none reproducing) is the diminishing-returns signal.
 
 ## Gates, on the final source
 
-_(filled after the final run)_
+All on `2fdf7289` (the final source; the Copilot loop's last change), 2026-09-27.
+
+| gate | result |
+|---|---|
+| `heft test` (ts-agent-tasks) | 85 suites, **2,009 passed, 0 failed**; 100% statements, branches, functions, lines; zero `c8 ignore` |
+| `heft build` (ts-agent-tasks) | no warnings |
+| `rushx lint` / `fixlint` | clean; `fixlint` changes nothing |
+| `rush change --verify --target-branch origin/integration/agent-tasks-v1` | exit 0 (change file typed `minor`) |
+| `node common/scripts/install-run-rush.js rebuild` | 37 projects, exit 0, no build warnings (3 min 51 s; the only "Warning" in the log is Rush's standing note on a git-tracked symlink) |
+| `node common/scripts/install-run-rush.js test` | SUCCESS: 36 operations; 1 no-op (`typedoc-compact-theme`, defines no work) (8 min 0 s) |
+| `verify-capability-docs` | 24/24 libraries documented, 75 reflexes checked, 0 failed |
+| `generate-capability-feed --check` | 0 stale |
+| `verify-esm-entrypoints` | 24 checked, 0 failed |
+| `verify-bundler-resolution` | 20 checked, 0 failed (after `install-autoinstaller --name rush-bundler-check`) |
+| `verify-tarball-exports` | 26 packages, 205 manifest paths, 0 failed (after `install-autoinstaller --name rush-pack-check`) |
+
+The repo-wide rebuild and test ran on `dc1aae25`; `2fdf7289` changes one test file in this package,
+which nothing else depends on, and the package suite above was re-run on it.
 
 ## Revert matrix — on the final source
 

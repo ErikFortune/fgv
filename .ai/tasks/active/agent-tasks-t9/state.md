@@ -7,13 +7,12 @@ be enough to resume cold. Keep it current as you go.
 
 ## Status
 
-**Reviews done, coverage closed; revert matrix running; PR next.** (2026-09-27.) Head `c5e4ceb7`:
-85 suites, **1,968 passed / 0 failed**, 100 % on every metric, zero `c8 ignore`, lint clean,
-`fixlint` no-op. Layer 1 and the semantic antagonist both ran on `e55f0d5e`; the antagonist's seven
-findings (H1, M1–M4, L1, L2) are fixed in `c5e4ceb7`, each with a regression. `result.md` drafted.
-Next: revert matrix on the final source (`perf/mutationMatrix.js`, T9 rows T9-1…T9-65 added) →
-repo-wide rebuild/test + verify scripts → PR into `integration/agent-tasks-v1` → plan status line
-and ledger entry as shipped → Copilot loop.
+**All three review layers done; final gates green; full revert matrix running.** (2026-09-27.)
+PR #701 open into `integration/agent-tasks-v1`, head `2fdf7289`. Copilot loop stopped at the 10-round
+cap (rounds below). Package suite 85 suites, **2,009 passed / 0 failed**, 100 % on every metric, zero
+`c8 ignore`; lint clean; repo-wide rebuild + test green; all verify scripts 0 failed. Revert rows
+T9-1…T9-65. Remaining: the full revert matrix on `2fdf7289` (running on a copy) → `result.md`
+§ Revert matrix → push → orchestrator review.
 
 ## Branch
 
@@ -262,3 +261,15 @@ Findings per round: 5 → 3 → 1 → 2 → 2.
   (`StopBook.strays`, T9-63). Commands of a stop that no longer latches, and settled commands of a
   superseded attempt, are history and still open ready (T9-64, T9-65).
 Findings per round: 5 → 3 → 1 → 2 → 2 → 2.
+
+**Round 10 (on `dc1aae25`) — the cap.** Three new findings, none reproduced as a defect:
+key collision before preview (already refused in `checkStopEvolution`, before the preview; the
+existing test now also pins that the other stop is untouched — `2fdf7289`); contract identity on
+revalidation (a pass re-confirms from a fresh observation under the current declaration: the
+revalidation § 10 step 6 asks for); an "unfunded" landed command (its settlement is reserved by its own
+claim). Replied in each thread. **Copilot loop stopped at the 10-round cap.**
+
+Final gates on `2fdf7289`: package suite 2,009 passed / 100% / zero `c8 ignore`; repo-wide rebuild
+and test green (on `dc1aae25`; `2fdf7289` touches one test file of a package nothing depends on);
+all five verify scripts 0 failed; change file verified. Full revert matrix running on a fresh copy of
+`2fdf7289` — `result.md` § Revert matrix to be filled from it.
