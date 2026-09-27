@@ -10,10 +10,13 @@ import {
   ITaskCommitRecord,
   ITaskRecordDraft,
   OperationId,
+  StopMode,
   TaskId,
   TaskResult,
   defaultMaxStopTargets,
-  isTerminalTaskStatus
+  isStoppedFor,
+  isTerminalTaskStatus,
+  taskListKind
 } from '../types';
 import { classify, ok, propagate, taskFailure } from './failures';
 import { operationCountFits } from './graphRules';
@@ -95,7 +98,8 @@ export function planStopCommit(params: {
       draft,
       purpose,
       added,
-      subtree: () => index.subtree(taskId, defaultMaxStopTargets)
+      subtree: () => index.subtree(taskId, defaultMaxStopTargets),
+      stopped: (mode, id) => _stopped(mode, tasks.get(id)!)
     })
   );
   if (checked.isFailure()) {
@@ -107,7 +111,28 @@ export function planStopCommit(params: {
     );
   }
 
-  return _bundle(profile).onSuccess((bundle) => _plan(book, ledger, tasks, profile, taskId, draft, bundle));
+  const preview: ReadonlyMap<TaskId, IStopFacts> = book.preview(taskId, stopContentOf(draft));
+  // A commit that touches no stop reserves nothing, whatever the profile's attempt bundle would be.
+  if (preview.size === 1 && _idle(preview.get(taskId)!) && _idle(book.facts(taskId))) {
+    return ok({ held: 0, before: zeroAmounts(), after: zeroAmounts(), entries: new Map(), units: new Map() });
+  }
+  return _bundle(profile).onSuccess((bundle) => _plan(book, ledger, tasks, profile, taskId, preview, bundle));
+}
+
+/**
+ * Whether a task, as its projection holds it, is in a mode's stopped set. A task list has no own work:
+ * paused by its children. Every target is live — a latched task is never archived or pruned.
+ */
+function _stopped(mode: StopMode, projection: ITaskProjection): boolean {
+  return (
+    projection.status !== undefined &&
+    ((mode === 'pause' && projection.kind === taskListKind) || isStoppedFor(mode, projection.status))
+  );
+}
+
+/** Whether a task's stop facts are all zero: it roots no latching stop and no attempt is bound for it. */
+function _idle(facts: IStopFacts): boolean {
+  return facts.unlandedOn + facts.unlandedOf + facts.latching + facts.intentTargets === 0;
 }
 
 /** The stop plan of a checked replacement, given the profile's attempt bundle. */
@@ -117,11 +142,10 @@ function _plan(
   tasks: ReadonlyMap<TaskId, ITaskProjection>,
   profile: ITaskCapacityProfile,
   taskId: TaskId,
-  draft: ITaskRecordDraft,
+  preview: ReadonlyMap<TaskId, IStopFacts>,
   bundle: DimensionAmounts
 ): TaskResult<IStopCommitPlan> {
   const reserve = (facts: IStopFacts): DimensionAmounts => stopReserve(facts, bundle, profile);
-  const preview: ReadonlyMap<TaskId, IStopFacts> = book.preview(taskId, stopContentOf(draft));
   const own: IStopFacts = preview.get(taskId)!;
   const entries: Map<string, ILedgerEntry> = new Map();
   const units: Map<TaskId, { before: number; after: number }> = new Map();
@@ -171,7 +195,10 @@ export function withCurrentStopReserve(
   taskId: TaskId,
   entry: ILedgerEntry
 ): TaskResult<ILedgerEntry> {
-  return _bundle(profile).onSuccess((bundle) =>
-    ok(withStopReserve(entry, zeroAmounts(), stopReserve(index.stops.facts(taskId), bundle, profile)))
-  );
+  const facts: IStopFacts = index.stops.facts(taskId);
+  return _idle(facts)
+    ? ok(entry)
+    : _bundle(profile).onSuccess((bundle) =>
+        ok(withStopReserve(entry, zeroAmounts(), stopReserve(facts, bundle, profile)))
+      );
 }

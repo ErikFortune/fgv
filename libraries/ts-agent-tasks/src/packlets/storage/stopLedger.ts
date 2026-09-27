@@ -10,6 +10,7 @@ import {
   allStopIntentStates,
   allStopTargetStates,
   allTaskStatuses,
+  defaultMaxStopTargets,
   defaultTaskFieldBounds,
   maximumSettlementCharges
 } from '../types';
@@ -100,8 +101,33 @@ export function stopAttemptBundle(profile: ITaskCapacityProfile): Result<Dimensi
     bundle.operations += 1;
     bundle['record-bytes'] += profile.encoded.maxStoredOperationBytes;
     bundle['logical-bytes'] += profile.encoded.maxStoredOperationBytes;
-    return _safe(bundle, 'stop attempt bundle');
+    return _safe(bundle, 'stop attempt bundle').onSuccess(() => _bounded(bundle, profile));
   });
+}
+
+/**
+ * The most attempts a task's stop facts can count at once. As a root: its latching intents — one per
+ * mode — times the target bound. As a target: the attempts bound for it, each of which holds one of
+ * its operation slots, so at most the per-task operation limit.
+ */
+function _maximumAttempts(profile: ITaskCapacityProfile): number {
+  return Math.max(2 * defaultMaxStopTargets, profile.perOwner.maxOperationsPerTask);
+}
+
+/**
+ * The bundle, once every reservation {@link stopReserve} can derive from it is known to be exactly
+ * representable: at most the most attempts times the bundle plus one intent's framing, one target's
+ * encoding and one release operation — each counted at most that many times.
+ */
+function _bounded(bundle: DimensionAmounts, profile: ITaskCapacityProfile): Result<DimensionAmounts> {
+  const most: number = _maximumAttempts(profile);
+  const each: number =
+    maximumStopFramingBytes() + maximumStopTargetBytes() + 1 + profile.encoded.maxStoredOperationBytes;
+  const ceiling: DimensionAmounts = zeroAmounts();
+  for (const dimension of allCapacityDimensions) {
+    ceiling[dimension] = most * (bundle[dimension] + each);
+  }
+  return _safe(ceiling, 'stop reservation').onSuccess(() => succeed(bundle));
 }
 
 function _safe(amounts: DimensionAmounts, what: string): Result<DimensionAmounts> {
@@ -123,8 +149,8 @@ function _safe(amounts: DimensionAmounts, what: string): Result<DimensionAmounts
  *   always record what it learns, and a host can always release, at a full repository.
  * - As a **target**: the `record-bytes` of one attempt bundle per unlanded attempt that targets it.
  *
- * Every figure is at most a bundle times a count of targets no larger than the target bound times the
- * per-task operation limit, well inside the safe-integer range for any profile whose bundle is.
+ * Every figure is exactly representable: {@link stopAttemptBundle} yields a bundle only when the
+ * largest reservation any count of attempts could derive from it is.
  * @internal
  */
 export function stopReserve(

@@ -262,19 +262,19 @@ export async function executeExternal(
 
 /**
  * Whether a principal may send a recorded command now: asked at the dispatch boundary and again before
- * a resend. An ordinary command needs `command` authority on its task; a stop's command needs `stop`
- * authority on it as a target (T9).
- * @internal
+ * a resend. Decided by the command itself, so no caller can ask the wrong question: an ordinary command
+ * needs `command` authority on its task; a stop's command — one carrying a stop marker — needs `stop`
+ * authority on it as a target (T9), whichever path sends it.
  */
-export type CommandPermit = (
+function _permitted(
   ctx: AccessContext,
   record: IResolvedTaskCommitRecord,
   command: IStoredCommandOperation
-) => Promise<boolean>;
-
-/** The ordinary permit: `command` authority on the task, for this command. */
-const commandPermit: CommandPermit = (ctx, record, command) =>
-  ctx.may('command', subjectOf(record), 'subject', { command: command.request.command });
+): Promise<boolean> {
+  return command.stop !== undefined
+    ? ctx.may('stop', subjectOf(record), 'stop-target')
+    : ctx.may('command', subjectOf(record), 'subject', { command: command.request.command });
+}
 
 /**
  * The dispatch boundary for a recorded intent (and the pump's path for one never sent).
@@ -293,8 +293,7 @@ export async function dispatchIntent(
   ctx: AccessContext,
   record: IResolvedTaskCommitRecord,
   command: IStoredCommandOperation,
-  bound: { readonly source: ITaskSource; readonly binding: ISourceBinding },
-  permit?: CommandPermit
+  bound: { readonly source: ITaskSource; readonly binding: ISourceBinding }
 ): Promise<TaskResult<ICommandReceipt>> {
   const taskId: TaskId = record.task.envelope.id;
   const operationId = command.operationId;
@@ -302,7 +301,7 @@ export async function dispatchIntent(
   if (epoch.isFailure()) {
     return propagate(epoch);
   }
-  const permitted: boolean = await (permit ?? commandPermit)(ctx, record, command);
+  const permitted: boolean = await _permitted(ctx, record, command);
 
   const marked = await core.gated(async (writer): Promise<TaskResult<IMarked>> => {
     const read = await _readCommand(writer, taskId, operationId);
@@ -760,7 +759,7 @@ export async function resolveCommands(
 }
 
 /**
- * Resolves one unsettled command under a permit — the uncertain-command pump's step, and a stop pump's
+ * Resolves one unsettled command under the authority it needs — the uncertain-command pump's step, and a stop pump's
  * for its own commands (T9).
  * @internal
  */
@@ -768,8 +767,7 @@ export async function resolveCommand(
   core: BrokerCore,
   ctx: AccessContext,
   record: IResolvedTaskCommitRecord,
-  command: IStoredCommandOperation,
-  permit: CommandPermit = commandPermit
+  command: IStoredCommandOperation
 ): Promise<TaskResult<ICommandResolution>> {
   const taskId: TaskId = record.task.envelope.id;
   const operationId = command.operationId;
@@ -783,7 +781,7 @@ export async function resolveCommand(
   if (epoch.isFailure()) {
     return propagate(epoch);
   }
-  if (!(await permit(ctx, record, command))) {
+  if (!(await _permitted(ctx, record, command))) {
     return done('denied');
   }
   const bound = sourceOf(core, record);
@@ -792,7 +790,7 @@ export async function resolveCommand(
   }
   const { source, binding } = bound.value;
   if (command.dispatch === 'not-sent') {
-    const sent = await dispatchIntent(core, ctx, record, command, bound.value, permit);
+    const sent = await dispatchIntent(core, ctx, record, command, bound.value);
     return sent.isFailure() ? propagate(sent) : done('dispatched', sent.value.result);
   }
 

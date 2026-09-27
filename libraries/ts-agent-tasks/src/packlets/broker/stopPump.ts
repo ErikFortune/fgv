@@ -40,7 +40,7 @@ import { readExisting } from './catalogMutation';
 import { convertRequest, isNativeKind } from './catalogOperations';
 import { commitTrackedCommand } from './commands';
 import { BrokerCore, canonicallySame, storedOperation } from './core';
-import { CommandPermit, authorizationSubject, dispatchIntent, resolveCommand } from './externalCommands';
+import { authorizationSubject, dispatchIntent, resolveCommand } from './externalCommands';
 import { changedSinceAuthorized, denied, notFound, ok, propagate, taskFailure } from './failures';
 import { callSource, observeTask, sourceOf } from './reconciliation';
 import {
@@ -52,9 +52,6 @@ import {
   targetStopped,
   withIntent
 } from './stopRequests';
-
-/** A stop's command is sent under `stop` authority on its target, never `command` authority. */
-const stopPermit: CommandPermit = (ctx, record) => ctx.may('stop', subjectOf(record), 'stop-target');
 
 /** A stop command's intent, as recorded in its target. */
 interface IRecordedIntent {
@@ -465,8 +462,8 @@ class StopPass {
       }
       const resolved =
         command.dispatch === 'not-sent'
-          ? await dispatchIntent(this._core, this._ctx, record, command, { source, binding }, stopPermit)
-          : await resolveCommand(this._core, this._ctx, record, command, stopPermit);
+          ? await dispatchIntent(this._core, this._ctx, record, command, { source, binding })
+          : await resolveCommand(this._core, this._ctx, record, command);
       if (resolved.isFailure()) {
         return this._failed(resolved);
       }
@@ -498,7 +495,10 @@ class StopPass {
         if (!this._spend()) {
           return ok(this._with(i, 'refused'));
         }
-        await observeTask(this._core, record.task.envelope.id);
+        // Without a fresh revision a new attempt would carry the same stale precondition.
+        if ((await observeTask(this._core, record.task.envelope.id)).isFailure()) {
+          return ok(this._with(i, 'refused'));
+        }
         return this._supersede(i, 'refused');
       case 'applied':
         // Applied, and the task is not stopped: it restarted — a new attempt re-stops it.
@@ -580,7 +580,7 @@ class StopPass {
     }
     const { record: now, command } = recorded.value;
     if (command.dispatch === 'not-sent') {
-      const sent = await dispatchIntent(this._core, this._ctx, now, command, { source, binding }, stopPermit);
+      const sent = await dispatchIntent(this._core, this._ctx, now, command, { source, binding });
       if (sent.isFailure()) {
         return this._failed(sent);
       }
@@ -716,6 +716,30 @@ class StopPass {
 }
 
 /**
+ * What the summary records for one target: the pass's finding, unless another caller superseded the
+ * attempt meanwhile (then that caller's entry stands), or the pass confirmed a target that has left
+ * the stopped set since — a source may report a restart between a visit and the summary — in which
+ * case the persisted entry stands and the next pass sees the violation. Storage refuses a confirmed
+ * target that is not stopped, so the summary never records one.
+ */
+async function _kept(
+  writer: Pick<ITaskRepositoryWriter, 'readCommit'>,
+  mode: IStopIntent['mode'],
+  mine: IStopTarget,
+  found: IStopTarget
+): Promise<TaskResult<IStopTarget>> {
+  if (found.attempt !== mine.attempt || found.state !== 'confirmed' || canonicallySame(found, mine)) {
+    return ok(found.attempt === mine.attempt ? found : mine);
+  }
+  const read = await writer.readCommit(found.taskId);
+  if (read.isFailure()) {
+    return propagate(read);
+  }
+  const record: ITaskCommitRecord | undefined = read.value;
+  return ok(record?.recordType === 'resolved' && targetStopped(mode, record) ? found : mine);
+}
+
+/**
  * Persists a pass's findings into the root's summary — merged, target by target, onto the intent as it
  * is now: a target whose attempt another caller superseded meanwhile keeps that caller's entry. Written
  * only when something changed, and only under the authorization the pass ran with.
@@ -745,17 +769,23 @@ async function _persist(
       // Released or settled while the pass ran: nothing this pass learned changes that.
       return ok({ intent: now, fresh: false });
     }
-    const targets: ReadonlyArray<IStopTarget> = now.targets.map((mine, j) =>
-      pass.targets[j].attempt === mine.attempt ? pass.targets[j] : mine
-    );
+    // A summary decided under a moved policy would record authority decisions nobody holds now: this
+    // pass's findings are discarded, and nothing it saw counts as revalidated — even when they would
+    // change nothing.
+    if (!ctx.epochIs(epoch)) {
+      return ok({ intent: now, fresh: false });
+    }
+    const targets: IStopTarget[] = [];
+    for (let j = 0; j < now.targets.length; j++) {
+      const kept = await _kept(writer, intent.mode, now.targets[j], pass.targets[j]);
+      if (kept.isFailure()) {
+        return propagate(kept);
+      }
+      targets.push(kept.value);
+    }
     const next: IStopIntent = { ...now, targets, state: _derive(targets, pass.complete, topologyHeld) };
     if (canonicallySame(now, next)) {
       return ok({ intent: now, fresh: true });
-    }
-    // A summary decided under a moved policy would record authority decisions nobody holds now: this
-    // pass's findings are discarded, and nothing it saw counts as revalidated.
-    if (!ctx.epochIs(epoch)) {
-      return ok({ intent: now, fresh: false });
     }
     const current: IResolvedTaskCommitRecord = root.value.root;
     const committed = await writer.commit({

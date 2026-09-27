@@ -8,10 +8,13 @@
 
 import '@fgv/ts-utils-jest';
 import { FileTree } from '@fgv/ts-json-base';
+import { failWithDetail, succeedWithDetail } from '@fgv/ts-utils';
 import {
   FileTreeTaskRepository,
   IResolvedTaskCommitRecord,
   ITaskCapacityProfile,
+  ITaskFailure,
+  TaskId,
   defaultTaskCapacityProfile
 } from '../../../index';
 import { TestPolicy, alpha, bindWriter, brokerHarness, op, tid } from '../../helpers/brokerFixtures';
@@ -24,7 +27,18 @@ import {
   sourceRegistry
 } from '../../helpers/sourceFixtures';
 import { environment, memoryRoot } from '../../helpers/storageFixtures';
-import { CapabilityScript, node, persisted, pump, release, states, stop } from '../../helpers/stopFixtures';
+import {
+  CapabilityScript,
+  faultyWriter,
+  node,
+  persisted,
+  pump,
+  release,
+  states,
+  stop
+} from '../../helpers/stopFixtures';
+// eslint-disable-next-line @rushstack/packlets/mechanics
+import { stopAttemptBundle } from '../../../packlets/storage/stopLedger';
 
 async function withJob(
   root?: FileTree.IFileTreeDirectoryItem
@@ -215,5 +229,180 @@ describe('T9 antagonist regressions', () => {
     expect(retried.state).not.toBe('satisfied');
     expect((await pump(h.writer, accepted)).orThrow().state).toBe('satisfied');
     expect(h.executor.jobs.get('job')!.lifecycle.status).toBe('paused');
+  });
+});
+
+// Copilot, round 1 on #701: each finding's corrected behaviour.
+describe('T9 Copilot round 1 regressions', () => {
+  /** A job whose stop command is recorded and never sent: the policy moved at the dispatch boundary. */
+  async function unsent(): Promise<{ h: ISourceHarness; key: string }> {
+    const h = await withJob();
+    const accepted = (await stop(h, h.writer, 'root', 'pause')).orThrow();
+    let decisions = 0;
+    const policy = h.policy;
+    policy.afterDecision = (r) => {
+      if (
+        r.action === 'stop' &&
+        r.role === 'stop-target' &&
+        r.task?.envelope.id === 'job' &&
+        ++decisions === 2
+      ) {
+        policy.epoch = 'epoch-2';
+      }
+    };
+    (await pump(h.writer, accepted)).orThrow();
+    policy.afterDecision = undefined;
+    return { h, key: (await persisted(h, accepted)).targets[1].operationId };
+  }
+
+  test("a stop's command is resolved only under stop authority on its target, whichever path sends it", async () => {
+    const { h, key } = await unsent();
+    // Ordinary command authority stands; stop authority on the target is withdrawn.
+    h.policy.deny.push(
+      (r) => r.action === 'stop' && r.role === 'stop-target' && r.task?.envelope.id === 'job'
+    );
+    const report = (await h.writer.resolveCommands({ limit: 10 })).orThrow();
+    expect(report.resolutions).toEqual([expect.objectContaining({ operationId: key, action: 'denied' })]);
+    expect(h.executor.dispatches.size).toBe(0);
+  });
+
+  test('a pass that changes nothing under a moved policy revalidates nothing', async () => {
+    const h = await withJob();
+    const accepted = (await stop(h, h.writer, 'root', 'pause')).orThrow();
+    expect((await pump(h.writer, accepted)).orThrow().state).toBe('satisfied');
+    // A second broker instance over the same repository has revalidated nothing yet.
+    const other = harnessWith(h.repository, h.env, h.root, h.logger, h.executor, h.source, h.registry);
+    const policy = other.policy;
+    policy.afterDecision = (r) => {
+      if (r.action === 'stop' && r.role === 'stop-target' && r.task?.envelope.id === 'job') {
+        policy.epoch = 'epoch-2';
+      }
+    };
+    expect((await pump(other.writer, accepted)).orThrow().state).toBe('pending');
+    policy.afterDecision = undefined;
+    expect(
+      (await other.writer.inspectStop({ taskId: tid('root'), intentId: accepted.intentId })).orThrow().state
+    ).toBe('pending');
+    expect((await pump(other.writer, accepted)).orThrow().state).toBe('satisfied');
+  });
+
+  test('a profile whose largest stop reservation is not representable yields no attempt bundle', () => {
+    const wide: ITaskCapacityProfile = {
+      ...defaultTaskCapacityProfile,
+      perOwner: { ...defaultTaskCapacityProfile.perOwner, maxOperationsPerTask: 2 ** 40 }
+    };
+    expect(stopAttemptBundle(wide)).toFailWith(/stop reservation: .* is not exactly representable/);
+  });
+
+  test('storage refuses a summary that records a target confirmed while it is not stopped', async () => {
+    const h = await brokerHarness();
+    await node(h.writer, 'root', { stopPolicy: 'cascade-pause' });
+    await node(h.writer, 'c', { parentId: 'root' });
+    const accepted = await persisted(h, (await stop(h, h.writer, 'root', 'pause')).orThrow());
+    const root = (await h.repository.readCommit(tid('root'))).orThrow() as IResolvedTaskCommitRecord;
+    const forged = {
+      ...accepted,
+      targets: accepted.targets.map((t, i) => (i === 1 ? { ...t, state: 'confirmed' as const } : t))
+    };
+    expect(
+      await h.repository.withWriter((writer) =>
+        writer.commit({
+          purpose: 'maintenance',
+          taskId: tid('root'),
+          expectedRevision: root.task.envelope.revision,
+          expectedRecordRevision: root.recordRevision,
+          record: {
+            recordType: 'resolved',
+            task: root.task,
+            operations: root.operations,
+            updates: root.updates,
+            archived: false,
+            stops: [forged]
+          }
+        })
+      )
+    ).toFailWith(/target c is recorded confirmed, and it is not stopped/);
+  });
+
+  describe('a target confirmed by a pass that leaves the stopped set before the summary', () => {
+    async function withLaterTarget(): Promise<ISourceHarness> {
+      const h = await withJob();
+      await node(h.writer, 'z', { parentId: 'root' });
+      return h;
+    }
+
+    test('is not recorded confirmed: the summary keeps what it held', async () => {
+      const h = await withLaterTarget();
+      const accepted = (await stop(h, h.writer, 'root', 'pause')).orThrow();
+      const policy = h.policy;
+      policy.afterDecision = async (r) => {
+        if (r.action === 'stop' && r.role === 'stop-target' && r.task?.envelope.id === 'z') {
+          policy.afterDecision = undefined;
+          h.executor.change('job', (j) => {
+            j.lifecycle = { status: 'running' };
+          });
+          (await h.broker.observe(tid('job'))).orThrow();
+        }
+      };
+      const result = (await pump(h.writer, accepted)).orThrow();
+      expect((await persisted(h, accepted)).targets[1].state).toBe('unexamined');
+      expect(result.state).not.toBe('satisfied');
+    });
+
+    test.each([
+      ['cannot be read, fails the pass', 'fail'],
+      ['reads as gone, is not recorded confirmed', 'gone']
+    ])('whose record %s', async (__, how) => {
+      const h = await withLaterTarget();
+      // The job is already paused: nothing is written to it, so the summary is the first to re-read it.
+      h.executor.change('job', (j) => {
+        j.lifecycle = { status: 'paused', reason: { code: 'manual', summary: 'held' } };
+      });
+      (await h.broker.observe(tid('job'))).orThrow();
+      const accepted = (await stop(h, h.writer, 'root', 'pause')).orThrow();
+      const faulty = faultyWriter(h, {
+        writerPatch: (w) => ({
+          readCommit: async (id: TaskId) =>
+            id !== 'job'
+              ? w.readCommit(id)
+              : how === 'fail'
+              ? failWithDetail<never, ITaskFailure>('storage down', {
+                  code: 'storage-unavailable',
+                  retry: 'safe'
+                })
+              : succeedWithDetail<undefined, ITaskFailure>(undefined)
+        })
+      });
+      const result = await pump(faulty, accepted);
+      if (how === 'fail') {
+        expect(result).toFailWith(/storage down/);
+      } else {
+        expect(result).toSucceed();
+        expect((await persisted(h, accepted)).targets[1].state).toBe('unexamined');
+      }
+    });
+  });
+
+  test('a conflict whose refresh fails is not re-attempted on the stale precondition', async () => {
+    const h = await withJob();
+    h.executor.change('job', (j) => {
+      j.step = 3;
+    });
+    const accepted = (await stop(h, h.writer, 'root', 'cancel')).orThrow();
+    expect(states((await pump(h.writer, accepted)).orThrow()).job).toBe('refused');
+    let reads = 0;
+    const faulty = faultyWriter(h, {
+      patch: (r) => ({
+        readCommit: async (id: TaskId) =>
+          id === 'job' && ++reads === 2
+            ? failWithDetail<never, ITaskFailure>('storage down', {
+                code: 'storage-unavailable',
+                retry: 'safe'
+              })
+            : r.readCommit(id)
+      })
+    });
+    expect(states((await pump(faulty, accepted)).orThrow()).job).toBe('refused');
+    expect((await persisted(h, accepted)).targets[1].attempt).toBe(1);
   });
 });

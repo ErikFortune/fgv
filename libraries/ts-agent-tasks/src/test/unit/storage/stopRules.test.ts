@@ -588,7 +588,14 @@ describe('the rules hold an unresolved record to nothing: it has no lifecycle an
         checkStopAdmission({ book, taskId: tid('u'), current, draft, purpose, external: true })
       ).toSucceed();
       expect(
-        checkStopEvolution({ book, current, draft, purpose, subtree: () => succeed([tid('u')]) })
+        checkStopEvolution({
+          book,
+          current,
+          draft,
+          purpose,
+          subtree: () => succeed([tid('u')]),
+          stopped: () => false
+        })
       ).toSucceed();
     }
   });

@@ -873,7 +873,7 @@ const T9_ROWS = [
   m(
     'T9-30 a conflict is re-attempted without refreshing the precondition',
     B + 'stopPump.ts',
-    '        await observeTask(this._core, record.task.envelope.id);\n',
+    "        if ((await observeTask(this._core, record.task.envelope.id)).isFailure()) {\n          return ok(this._with(i, 'refused'));\n        }\n",
     '',
     T9
   ),
@@ -889,6 +889,41 @@ const T9_ROWS = [
     B + 'catalogOperations.ts',
     '  return core.repository.stopLatches(taskId).length === 0',
     '  return core.repository.stopLatches(taskId).length >= 0',
+    T9
+  ),
+  m(
+    "T9-33 a stop's command is sent under ordinary command authority",
+    B + 'externalCommands.ts',
+    '  return command.stop !== undefined',
+    '  return command.request.command.length < 0',
+    T9
+  ),
+  m(
+    'T9-34 the largest reservation a bundle can derive is not checked',
+    S + 'stopLedger.ts',
+    "  return _safe(ceiling, 'stop reservation').onSuccess(() => succeed(bundle));",
+    '  return succeed(bundle);',
+    T9
+  ),
+  m(
+    'T9-35 storage lets the summary record a target confirmed that is not stopped',
+    S + 'stopRules.ts',
+    "    if (b.state === 'confirmed' && !canonicallyEqual(a, b) && !stopped(was.mode, b.taskId)) {",
+    "    if (b.state === 'confirmed' && !canonicallyEqual(a, b) && b.attempt < 0) {",
+    T9
+  ),
+  m(
+    'T9-36 the summary records a confirmation the target no longer holds',
+    B + 'stopPump.ts',
+    "  return ok(record?.recordType === 'resolved' && targetStopped(mode, record) ? found : mine);",
+    '  return ok(record === undefined ? mine : found);',
+    T9
+  ),
+  m(
+    'T9-37 a conflict is re-attempted when its refresh failed',
+    B + 'stopPump.ts',
+    '        if ((await observeTask(this._core, record.task.envelope.id)).isFailure()) {',
+    '        if ((await observeTask(this._core, record.task.envelope.id)).isFailure() && record.archived) {',
     T9
   )
 ];

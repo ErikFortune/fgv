@@ -11,6 +11,7 @@ import {
   ITaskCommitRecord,
   ITaskRecordDraft,
   OperationId,
+  StopMode,
   TaskId,
   TaskLifecycleStatus,
   isLatchingStopState,
@@ -164,7 +165,7 @@ function _identity(intent: IStopIntent): unknown {
  * - `released` only by the operation releasing it; `settled` only by archiving a satisfied cancel
  *   whose every target is confirmed.
  * - A target's attempt moves forward by at most one, always with a fresh key that no live attempt
- *   holds.
+ *   holds; a target is recorded `confirmed` only while it is in the mode's stopped set.
  * - A source observation changes no intent.
  * @internal
  */
@@ -177,6 +178,8 @@ export function checkStopEvolution(params: {
   readonly added?: IStoredTaskOperation;
   /** The authoritative subtree of this task, root first, breadth-first with id tie breaks. */
   readonly subtree: () => Result<ReadonlyArray<TaskId>>;
+  /** Whether a task, as the repository holds it now, is in a mode's stopped set. */
+  readonly stopped: (mode: StopMode, taskId: TaskId) => boolean;
 }): Result<true> {
   const { book, current, draft, purpose, added } = params;
   const before: ReadonlyArray<IStopIntent> = current.recordType === 'resolved' ? current.stops ?? [] : [];
@@ -191,7 +194,7 @@ export function checkStopEvolution(params: {
     return fail(`a stop is evidence and cannot be dropped`);
   }
   for (let i = 0; i < before.length; i++) {
-    const checked: Result<true> = _evolved(before[i], after[i], draft, added, book);
+    const checked: Result<true> = _evolved(before[i], after[i], draft, added, book, params.stopped);
     if (checked.isFailure()) {
       return checked;
     }
@@ -237,7 +240,8 @@ function _evolved(
   now: IStopIntent,
   draft: ITaskRecordDraft,
   added: IStoredTaskOperation | undefined,
-  book: StopBook
+  book: StopBook,
+  stopped: (mode: StopMode, taskId: TaskId) => boolean
 ): Result<true> {
   if (!canonicallyEqual(_identity(was), _identity(now))) {
     return fail(`stop ${was.id}: its identity and target set are immutable`);
@@ -277,6 +281,11 @@ function _evolved(
       (b.operationId === a.operationId || book.attempt(b.operationId) !== undefined)
     ) {
       return fail(`stop ${was.id}: target ${a.taskId}'s new attempt needs a key no attempt holds`);
+    }
+    // A confirmation — and its evidence — is recorded only while the target is actually stopped: it
+    // releases the attempt's reservation, so it is not the summary's to assert.
+    if (b.state === 'confirmed' && !canonicallyEqual(a, b) && !stopped(was.mode, b.taskId)) {
+      return fail(`stop ${was.id}: target ${b.taskId} is recorded confirmed, and it is not stopped`);
     }
   }
   return succeed(true);

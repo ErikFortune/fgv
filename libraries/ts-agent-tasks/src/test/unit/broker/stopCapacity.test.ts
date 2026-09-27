@@ -146,6 +146,39 @@ describe('A3 — a stop reserves for every target before it is accepted', () => 
     expect((await pump(r.writer, result)).orThrow().state).toBe('satisfied');
   });
 
+  test("extending a stopped target's replay envelope keeps its stop reservation, exactly as reopen derives it", async () => {
+    const inner: FileTree.IFileTreeDirectoryItem = memoryRoot();
+    const h = await sourceHarness({
+      history: 'source-replay',
+      capabilities: new CapabilityScript().ask,
+      root: inner
+    });
+    await node(h.writer, 'root', { stopPolicy: 'cascade-pause' });
+    h.executor.addJob('j1');
+    await registerJob(h, 'j1', {
+      parentId: tid('root'),
+      envelope: { remainingRequiredUpdates: 2, remainingRequiredBytes: 0 }
+    });
+    (await stop(h, h.writer, 'root', 'pause')).orThrow();
+    (
+      await h.broker.extendReplayEnvelope(tid('j1'), {
+        remainingRequiredUpdates: 1,
+        remainingRequiredBytes: 0
+      })
+    ).orThrow();
+    const live = h.repository.capacityStatus().orThrow();
+    h.repository.close();
+    const opened = (
+      await FileTreeTaskRepository.open({
+        root: inner,
+        mode: 'session',
+        environment: environment('ext').env,
+        registry: h.registry
+      })
+    ).orThrow();
+    expect(opened.state === 'ready' && opened.repository.capacityStatus()).toSucceedWith(live);
+  });
+
   test('a target without an operation slot for its attempt refuses the stop before anything is written', async () => {
     const tight: ITaskCapacityProfile = {
       ...defaultTaskCapacityProfile,
