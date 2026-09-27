@@ -56,4 +56,4 @@ relatedStreams:
     relationship: >
       escalated the isKeyOf defect (result.md item 6) as an upstream gap it did not own; T3, T4 and
       T5 each declined it by name before it became this stream
-sourceHash: b65c9ca9325062e0 # sha256/16 over brief.md, result.md, state.md
+sourceHash: 476ce29319230708 # sha256/16 over brief.md, result.md, state.md

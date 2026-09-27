@@ -35,7 +35,8 @@ else in those suites. The exception is `isKeyOf`, which every field-reading conv
 reverting it also turns the converter tests red.
 
 Every test asserts the **correct answer**, not just the absence of a throw. Eight sites are pinned
-by **11 new tests**, and each site's test was watched red. The `mergeDefaultJsonConverterOptions` test
+by **11 new tests**, and each site's test was watched red. A 12th test pins the adjacent
+`computeResourceDelta` bug that Copilot found (below), for **12 new tests in all**. The `mergeDefaultJsonConverterOptions` test
 also checks the case where the own property is present but `undefined`, because
 `hasOwnProperty` is exactly what tells that apart from an absent property.
 

@@ -75,6 +75,11 @@ nothing stops a new one.
 
 ## Notes
 
+- `state.md` still reads "gates in progress". That is deliberate: it is the in-flight log, and
+  `/finalize-task` does not allow correcting it after the fact. `result.md` and this README are the
+  record of what completed.
+- Copilot's second round also noticed that `jsonThreeWayDiff` drops an own `__proto__` key. It is a
+  separate defect in `ts-json`'s diff, recorded as a P3 in `docs/TECH_DEBT.md` rather than fixed here.
 - The generated capability feed stamps this stream's converter-centric headline into all four
   packages' `CAPABILITIES.md` files, including `ts-utils-jest`, where nothing changed behaviourally.
   That is the generator's per-package fan-out. It is left as is rather than special-cased.

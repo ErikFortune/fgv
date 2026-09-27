@@ -470,6 +470,30 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
 
 ## P3 — Opportunistic cleanup
 
+- **[P3] `jsonThreeWayDiff` silently drops an own `__proto__` key.**
+  `libraries/ts-json/src/packlets/diff/threeWayDiff.ts` builds `onlyInA` / `onlyInB` / `unchanged`
+  as plain objects by assignment. `onlyInA['__proto__'] = value` sets the prototype instead of
+  creating a property. So an own `__proto__` key, which `JSON.parse('{"__proto__": …}')` produces,
+  vanishes from every side of the diff. Downstream,
+  `ts-res-ui-components` `computeResourceDelta` then reports a resource whose only change is
+  deleting `__proto__` as unchanged (`null`). Verified 2026-09-27 against the built packages.
+
+  **Trigger**: any diff or delta consumer that must round-trip arbitrary JSON keys, or the next
+  change to `threeWayDiff.ts`.
+
+  **Scope sketch**: decide first whether the diff should represent `__proto__` at all. `JsonEditor`
+  deliberately skips `__proto__` / `constructor` / `prototype` as a prototype-pollution guard, so
+  "drop it" may be the intended policy, in which case it should be explicit and documented rather
+  than an accident of assignment. If it should be kept, build the result objects with
+  `Object.create(null)` or `Object.defineProperty` and add a round-trip test.
+
+  **Not a P2**: it needs a key almost no resource carries, and the failure is a missed deletion,
+  not corruption.
+
+  **Reference**: Copilot round-2 summary on #700 (`null-prototype-property-guard`), which noted it
+  without a thread. It was out of that stream's scope, being a different defect in a different
+  package.
+
 - **[P3] ai-assist sends a forced `tool_choice` alongside manual extended thinking on pre-Claude-5 Anthropic lines, which Anthropic rejects.**
   On a model outside `adaptiveThinkingModelPrefixes` (`claude-haiku-4-5-20251001`, which `@anthropic:haiku` reaches, and the `claude-opus-4-*` / `claude-sonnet-4-*` lines), a completion with a thinking `effort` sends `thinking: { type: 'enabled', budget_tokens }`. With `structuredOutput` on the same request, the `''` catch-all adds `anthropic-tool-forced`'s `tool_choice: { type: 'tool' }`. Anthropic's thinking page: *"tool use with manual extended thinking (`thinking: {type: "enabled"}`) only supports `tool_choice: {"type": "auto"}` … or `{"type": "none"}`. Using `{"type": "any"}` or `{"type": "tool", …}` results in an error"* (<https://platform.claude.com/docs/en/build-with-claude/thinking> § "Thinking with tool use", fetched 2026-09-25). Nothing in `resolveStructuredOutput` or the adapter refuses the combination, so it fails at the provider. The same page says forced tool use *"works with adaptive thinking"*, so the Claude 5 lines on the forced format (`claude-sonnet-5`, `claude-opus-5`, `claude-fable-5`) are unaffected.
 
