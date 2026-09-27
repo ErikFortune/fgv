@@ -17,7 +17,7 @@
  *             the run edits source, so a copy keeps the working tree clean while it runs; give
  *             the copy a `node_modules` symlink to this package's)
  *   --out     write the results as JSON
- *   M…        run only the named rows
+ *   M…        run only the named rows (T8b's rows are named T8b-…)
  *
  * The one rule that matters: a row whose pattern is not found exactly once, or whose mutant does
  * not build, is reported UNVERIFIED — never as "nothing went red". A mutation that silently fails
@@ -38,32 +38,39 @@ const { spawnSync } = require('child_process');
 const S = 'src/packlets/storage/';
 const C = 'src/packlets/converters/';
 
-function m(name, file, from, to) {
-  return { name, file, from, to };
+/** The suites a row runs: the storage and capacity suites unless the row names others. */
+const STORAGE = 'storage|capacity';
+
+function m(name, file, from, to, tests = STORAGE) {
+  return { name, file, from, to, tests };
 }
+
+/** T8b's rows run these suites: the saturation journeys live in delivery. */
+const T8B = 'storage|capacity|delivery/(saturation|lifetime)';
+const T = 'src/packlets/types/';
 
 const MUTATIONS = [
   m(
     'M1 skip the pending-inventory write',
     S + 'repository.ts',
-    'this._writeFile(manifestName, manifestEncoded.text, operationId).onSuccess(() => {',
+    'this._files.write(manifestName, manifestEncoded.text, operationId).onSuccess(() => {',
     'ok(true).onSuccess(() => {'
   ),
   m(
     'M2 mark live before writing the record',
     S + 'repository.ts',
-    "        (writeRecord\n          ? this._writeFile(recordName('task', taskId), built.encoded.text, operationId).onSuccess(() =>\n              this._relist(operationId)\n            )",
-    "        (writeRecord\n          ? this._writeFile(manifestName, manifestEncoded.text, operationId)\n              .onSuccess(() => this._writeFile(recordName('task', taskId), built.encoded.text, operationId))\n              .onSuccess(() => this._relist(operationId))"
+    "        (writeRecord\n          ? this._files\n              .write(recordName('task', taskId), built.encoded.text, operationId)\n              .onSuccess(() => this._files.relist(operationId))",
+    "        (writeRecord\n          ? this._files\n              .write(manifestName, manifestEncoded.text, operationId)\n              .onSuccess(() => this._files.write(recordName('task', taskId), built.encoded.text, operationId))\n              .onSuccess(() => this._files.relist(operationId))"
   ),
   m(
     "M3 treat visibility 'unknown' as unchanged",
-    S + 'repository.ts',
+    S + 'committedFiles.ts',
     "    if (visibility === 'unchanged') {",
     "    if (visibility !== 'replaced') {"
   ),
   m(
     'M4 never fence (every failure treated as unchanged)',
-    S + 'repository.ts',
+    S + 'committedFiles.ts',
     "    if (visibility === 'unchanged') {",
     '    if (visibility.length > 0) {'
   ),
@@ -81,8 +88,8 @@ const MUTATIONS = [
   ),
   m(
     'M7 skip the flush-boundary rewrite on replay',
-    S + 'repository.ts',
-    '    return this._writeFile(name, read.encoded.text, operationId)\n      .onSuccess(() => this._encodeManifest(this._manifest))\n      .onSuccess((encoded) => this._writeFile(manifestName, encoded.text, operationId));',
+    S + 'committedFiles.ts',
+    '    return this.write(name, read.encoded.text, operationId)\n      .onSuccess(() => this.encodeManifest(this._manifest))\n      .onSuccess((encoded) => this.write(manifestName, encoded.text, operationId));',
     '    return ok<true>(true);'
   ),
   m(
@@ -213,7 +220,7 @@ const MUTATIONS = [
   ),
   m(
     'M29 read-back compares revision only',
-    S + 'repository.ts',
+    S + 'committedFiles.ts',
     '            if (fingerprintOf(text) !== projection.fingerprint) {',
     "            if (fingerprintOf(text) === 'never') {"
   ),
@@ -363,8 +370,8 @@ const MUTATIONS = [
   ),
   m(
     'M54 the manifest is rewritten without checking it',
-    S + 'repository.ts',
-    '    if (fingerprintOf(text.value) === this._manifestFingerprint) {',
+    S + 'committedFiles.ts',
+    '    if (fingerprintOf(text.value) === this._fingerprint) {',
     '    if (fingerprintOf(text.value).length > 0) {'
   ),
   m(
@@ -594,6 +601,50 @@ const MUTATIONS = [
     S + 'ledger.ts',
     '    this._profile = profile;\n    for (const [key',
     '    this._profile = this._profile ?? profile;\n    for (const [key'
+  ),
+
+  // ---- T8b: the derived update maximum, the raised profile, and what the saturation journeys prove.
+  m(
+    'T8b-1 reservations use maxUpdateBytes again',
+    T + 'capacityProfile.ts',
+    '    .onSuccess((derived) => succeed(Math.min(derived, profile.encoded.maxUpdateBytes)))',
+    '    .onSuccess(() => succeed(profile.encoded.maxUpdateBytes))',
+    T8B
+  ),
+  m(
+    'T8b-2 the per-record ceiling caps the consumer bound at 8 MiB',
+    T + 'capacityProfile.ts',
+    "  'record-bytes': 32 * MiB,",
+    "  'record-bytes': 8 * MiB,",
+    T8B
+  ),
+  m(
+    'T8b-3 reclaimableByCleanup is static per dimension',
+    S + 'ledger.ts',
+    "      if (key.startsWith('task:') && entry.reserved[dimension] > 0) {",
+    "      if (key === 'never' && entry.reserved[dimension] > 0) {",
+    T8B
+  ),
+  m(
+    'T8b-4 archive keeps its closeout remainder reserved',
+    S + 'repository.ts',
+    "        claims = spendClaim(claims, 'terminal-closeout', growth, true);",
+    "        claims = spendClaim(claims, 'terminal-closeout', growth, false);",
+    T8B
+  ),
+  m(
+    "T8b-5 a subscription's baselines are not charged",
+    S + 'subscriptions.ts',
+    "  used['resident-payload-bytes'] = state.baselineBytes;",
+    "  used['resident-payload-bytes'] = 0;",
+    T8B
+  ),
+  m(
+    'T8b-6 a pending registration holds no reservation',
+    S + 'projection.ts',
+    '  return ledgerEntry(entry.id, used, entry.capacityClaims, recordLimit);',
+    '  return ledgerEntry(entry.id, used, [], recordLimit);',
+    T8B
   )
 ];
 
@@ -618,10 +669,10 @@ function occurrences(text, pattern) {
   return text.split(pattern).length - 1;
 }
 
-function runSuites(pkg) {
+function runSuites(pkg, tests) {
   const out = spawnSync(
     'node_modules/.bin/heft',
-    ['test', '--clean', '--disable-code-coverage', '--test-path-pattern', 'storage|capacity'],
+    ['test', '--clean', '--disable-code-coverage', '--test-path-pattern', tests],
     { cwd: pkg, encoding: 'utf8', maxBuffer: 256 * 1024 * 1024 }
   );
   return `${out.stdout}${out.stderr}`;
@@ -664,7 +715,7 @@ function main() {
         source.replace(row.from, () => row.to)
       );
       try {
-        result = classify(runSuites(args.pkg));
+        result = classify(runSuites(args.pkg, row.tests));
       } finally {
         fs.writeFileSync(file, source);
       }

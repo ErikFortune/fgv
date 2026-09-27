@@ -407,9 +407,10 @@ incomparable epoch included; `unavailable` marks observation health; `resumable`
 are reported and change nothing. Records hold the bounded projection only; an executor-owned
 payload stays in the executor, and terminal presentation never dereferences it.
 
-**Capacity.** Each in-flight external command holds a settlement reservation (64 KiB of resident
-payload at the default profile) until it settles; see `docs/TECH_DEBT.md` for the effective
-ceiling this implies.
+**Capacity.** Each in-flight external command holds a settlement reservation until it settles: one
+owed result at the derived update maximum (`maximumUpdateBytes` — 37,417 bytes of resident payload
+at the default profile) plus its stored operation and receipt. The default profile's remarks give the
+ceilings this implies.
 
 ## Delivery — subscriptions, issued receipts, exact acknowledgement
 
@@ -525,7 +526,9 @@ out-of-band file deletion is corruption, not maintenance, and open will report i
 1. **Watch.** Poll `repository.capacityStatus()`. `pressure` means some dimension's
    `used + reserved` is at or past 80% of its limit; `limitingRecordIds` names what holds it.
    `draining` means a dimension has no headroom: ordinary growth that needs it is refused with
-   `backpressure` (`ICapacityFailure.reclaimableByCleanup` says whether cleanup could help).
+   `backpressure`. `ICapacityFailure.reclaimableByCleanup` says whether draining could release any
+   of it: always for a transient dimension; for a lifetime one only while some task still holds part
+   of it as a reservation, whose unspent remainder archiving that task gives back.
    `admission-blocked` means an `indeterminate` claim fences all growth — that is recovery, not
    capacity: close and reopen, and read the recovery report.
 2. **Stop new admissions** at your own layer before the repository has to refuse them: stop
@@ -536,7 +539,12 @@ out-of-band file deletion is corruption, not maintenance, and open will report i
    (`resolveCommands`), or abandon those whose outcome will never be known (`abandonCommand`);
    have consumers prepare and acknowledge, abandon stale receipts, and dispose of or close
    subscriptions that will never drain (`dispose`, `closeSubscription`); run `cleanup`; archive
-   terminal tasks. `outstanding()` lists each of these. This releases non-archived slots, payload
+   terminal tasks. `outstanding()` lists each of these. Two things that look stuck and are not:
+   a receipt prepared by a process that stopped before acknowledging it is held by nobody and pins
+   what it names until it expires — find it in the subscription's record (`issued`, unacknowledged)
+   and `abandon` it; and at the default 8,000-character context budget an older revision of a
+   maximum-size task never fits beside its current one, so it stays owed until a delivery prepares
+   with a larger budget or the host disposes of it. Neither is ever dropped. This releases non-archived slots, payload
    and receipt capacity — **not** retained identities, exact acknowledgement/disposition ids or
    operation dedup evidence, which never shrink in v1.
 4. **At a lifetime ceiling** (retained tasks, subscriptions, sources, acknowledgement ids,
@@ -544,6 +552,12 @@ out-of-band file deletion is corruption, not maintenance, and open will report i
    further growth; or, after reviewing host memory and disk, **raise** the stored limits explicitly
    with `raiseCapacityLimits` — which postpones exhaustion, it does not remove it. A drained
    repository can be closed to release its memory; its files remain valid.
+   **Sizing the default.** Under `defaultTaskCapacityProfile`, `logical-bytes` fills first: 536
+   plain tracked registrations, each reserving about 976 KiB for its closeout. `non-archived-tasks`
+   (1,000) is not reachable there; `resident-payload-bytes` (384 MiB) would admit 1,537, and
+   `audience-links` / `acknowledgement-ids` (200,000, 224 per registration) 892. A host expecting
+   more concurrent work raises those three together, at `initialize` for a new repository or with
+   `raiseCapacityLimits` for an existing one; a stored limit can be raised, never lowered.
 5. **Never** delete record files, edit `repository.json`, or rotate to a new root to "free space":
    each is either corruption open will refuse, or a loss of the obligations and history the
    repository exists to keep.
@@ -715,14 +729,19 @@ forward. Zone-free and offset-qualified spellings fail; hosts normalize before t
 defaults cannot silently reinterpret a repository on reopen. It names a limit for each of eleven
 `CapacityDimension`s, per-owner sub-limits, and the encoded-size maxima every reservation is
 computed from — bytes are canonical UTF-8 lengths, never estimated heap sizes.
-`defaultTaskCapacityProfile` publishes the proposed initial limits; **they are engineering
-defaults, not measured safe maxima.** `maximumClosureCharges(profile)` and
-`maximumSettlementCharges(profile)` compute the protected completion and settlement charges from
-the profile alone, which is what lets admission reserve room to *finish* accepted work before
+`defaultTaskCapacityProfile` publishes the default limits (T8, 2026-09-26); **they are engineering
+defaults, not measured safe maxima for a host**, and their remarks say what each admits and which
+fills first. `maximumClosureCharges(profile)`, `maximumResolutionCharges(profile)` and
+`maximumSettlementCharges(profile)` compute the protected completion, first-resolution and
+settlement charges from the profile alone, which is what lets admission reserve room to *finish* accepted work before
 accepting it — a ceiling without that room could refuse the terminal write that would free
 capacity. Both are `Result`-valued and **fail rather than return an inexact figure** when a
 profile's bounds push a product or sum past the safe-integer range: a charge is an admission
-input, so "approximately the maximum" is not a usable answer.
+input, so "approximately the maximum" is not a usable answer. **Each reserves an update payload at
+`maximumUpdateBytes(profile)`, not at `maxUpdateBytes`:** an update is one envelope — bounded by
+`maxEnvelopeBytes` — plus fixed framing, so it can never exceed 37,417 bytes under the defaults
+however large `maxUpdateBytes` is. **Do not reserve `maxUpdateBytes` for a future update**; it bounds
+what storage accepts, not what an update can be.
 
 **A capacity status reports every dimension exactly once.** The converter enforces both halves —
 a duplicated row is ambiguous, and a missing one would silently read as a dimension under no

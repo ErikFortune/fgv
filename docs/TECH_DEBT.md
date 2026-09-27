@@ -108,86 +108,88 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
 
   **Reference**: #691 (a), #687 (b and c).
 
-- **[P2] The default capacity profile advertises 1,000 concurrent non-archived tasks and admits
-  146 — the two published limits are mutually unreachable.**
-  `defaultTaskCapacityLimits` in
-  `libraries/ts-agent-tasks/src/packlets/types/capacityProfile.ts` declares both
-  `'non-archived-tasks': 1000` and `'resident-payload-bytes': 64 * MiB`. Every registration's
-  closeout reserves `allUpdateCategories.length × encoded.maxUpdateBytes` of
-  `resident-payload-bytes` — 7 categories × 64 KiB = 448 KiB — so the payload limit is exhausted
-  at ⌊64 MiB / 448 KiB⌋ = **146** registrations. The `agent-tasks-t4` implementer confirmed it
-  empirically: the 147th registration is refused. Verified independently at orchestration time
-  from the three constants.
+- **[P2 → CLOSED 2026-09-26 by `agent-tasks-t8b`] The default capacity profile advertised 1,000
+  concurrent non-archived tasks and admitted 146.** Recorded across five slices (T4 found it, T6 and
+  T7 added the command and baseline terms, T8 PR 1 did the arithmetic). **Closed by decision, not
+  amended again.** What was decided, what shipped, and what it admits:
 
-  This is not the ordinary "maxima are concurrent constraints, not a promise that every maximum
-  can be reached together" caveat the implementation plan states at §328. That caveat covers
-  limits that trade against each other under unusual mixes. Here the headline limit is
-  unreachable by a factor of ~7 under *ordinary* use — registering tasks and nothing else — so a
-  consumer sizing against the advertised number is wrong before they start.
+  | | decision (design authority, 2026-09-26) | as shipped |
+  |---|---|---|
+  | 1 | reserve the update's **derived schema maximum**, not `maxUpdateBytes` | `maximumUpdateBytes(profile)` = `maxEnvelopeBytes` + fixed framing = **37,417 B** at the defaults; closeout, first resolution and settlement all reserve it |
+  | 2 | `resident-payload-bytes` 64 → **384 MiB** | done |
+  | 3 | `non-archived-tasks` stays 1,000 | done — but see below: not reachable under the defaults |
+  | 4 | `maxConsumerRecordBytes` 8 → **32 MiB** | done, with the per-record `record-bytes` ceiling raised 8 → 32 MiB alongside, without which it was capped at 8 MiB |
+  | 5 | `maxAcknowledgementIdsPerSubscription` stays 50,000 | done — 50,000 × 512 B = 24.41 MiB, now covered |
+  | 6 | `maxUpdateBytes` stays 64 KiB, the 37,417 B maximum documented beside it | done |
 
-  **Not introduced by T4**, which surfaced it and correctly declined to fix it: the arithmetic
-  belongs to T1/T3's reservation model and the profile to T8's qualification.
+  **The arithmetic.** Per plain registration the closeout reserves 7 × 37,417 B = 255.8 KiB of
+  resident payload (was 448 KiB): 1,537 registrations at 384 MiB (1,345 with one in-flight command
+  each, 1,195 with a command and one `current` subscription's baseline). The same registration
+  reserves **~976 KiB of `logical-bytes`** (32 + 64 KiB snapshot, 7 × 37,417 B of updates,
+  2 × 256 KiB of operation evidence, 224 × 512 B of acknowledgement evidence) and **224
+  `audience-links` / `acknowledgement-ids`**. Measured (`agent-tasks-t8b` saturation suite, *the
+  default profile*): **536 plain registrations, refused by `logical-bytes`** (512 MiB); links and ids
+  would bind next at 892.
 
-  **T6 amendment (2026-09-24) — the per-registration figure is unchanged; in-flight commands
-  lower the ceiling further.** T6 adds two reservations, neither charged at registration of an
-  ordinary task: (1) an `accepted-operation-settlement` claim per **in-flight external command**
-  (reserved when the intent is recorded, before dispatch; consumed when the command settles),
-  charging `maxUpdateBytes` = **64 KiB** of `resident-payload-bytes` (plus one update, 32 audience
-  links/acknowledgement ids, and stored-operation + receipt + update record bytes); (2) an
-  `admitted-source-replay` claim on a task registered against a `source-replay` source, charging
-  exactly the finite envelope the host declares (`remainingRequiredBytes` resident, ≤ 64 KiB per
-  declared update). So the registration baseline stays **448 KiB → 146**. With one in-flight
-  command per task it is 448 + 64 = 512 KiB → ⌊64 MiB / 512 KiB⌋ = **128**; each further
-  concurrent in-flight command on a task costs another 64 KiB, and a `source-replay` task costs
-  its envelope on top. A command held as uncertain (non-idempotent, or its key expired) keeps its
-  reservation until something settles it — see the T6 hand-off entry below. Whichever resolution
-  T8 picks must size these two claims too.
+  **The finding that remains, and was decided rather than fixed.** The decision's table modelled
+  `resident-payload-bytes` alone; with it raised, `logical-bytes` binds first, so "1,000 is true in
+  every modelled mix" does not hold. Raising `logical-bytes` to 1.5 GiB and `audience-links` /
+  `acknowledgement-ids` to 300,000 would make it hold (probe: 1,339 plain registrations; the heaviest
+  mix needs 1,353 MiB and 257,000 links). **Asked 2026-09-26; the answer was to ship the six changes
+  and document 536**, which `defaultTaskCapacityLimits`' remarks and the `CAPABILITIES.md` runbook now
+  do. The open question is carried by the smaller entry below.
 
-  **T7 amendment (2026-09-25) — resident per registration unchanged; baselines and evidence add
-  terms.** T7 charges each audience link's acknowledgement evidence (1 acknowledgement id + E =
-  512 B logical) and spends it from the claims above on protected steps. Closeout now reserves
-  224 links × 512 B = 112 KiB more `logical-bytes` (1,168 KiB per registration → 448 on
-  `logical-bytes`; 224 acknowledgement ids → 892) — both looser than resident, so the ceiling stays
-  **146 / 128**. New: a `current` subscription holds one baseline payload (≤ 64 KiB resident) per
-  covered task until acknowledged, so with `k` such subscriptions covering every task the worst case
-  is ⌊64 MiB / (448 KiB + 64 KiB·k)⌋ — **128** at k = 1, **113** at k = 1 with one in-flight command.
-  Each subscription also holds a 64 KiB receipt-preparation reservation (record + logical) and its
-  record reserves E per owed or future link. Full arithmetic: `agent-tasks-t7` `result.md` §
-  *Reservation arithmetic*.
+  **Reference**: `.ai/tasks/active/agent-tasks-t8b/result.md` § *Profile*; the history of this
+  entry is in `agent-tasks-t4` … `agent-tasks-t8` `result.md` files and
+  [#687](https://github.com/ErikFortune/fgv/pull/687).
 
-  **T8 amendment (2026-09-26) — (a) is not available, and a fourth candidate is.** A reservation
-  guarantees a future step can be paid, so it must be the most that step could need; "charge actual"
-  cannot apply to an update not yet seen. But the most an update can be is *not* `maxUpdateBytes`: an
-  update carries one ≤ 32 KiB envelope plus fixed framing, so no update exceeds **37,417 B** under the
-  defaults, and 64 KiB is unreachable. Reserving the derived schema maximum gives **256** (224 with a
-  command in flight); lowering `maxUpdateBytes` to 40 KiB gives 234; admitting 1,000 at 64 KiB needs
-  437.5 MiB resident. Full table and recommendation: `agent-tasks-t8` `result.md` § *Profile
-  arithmetic*. Decision and M1 run proposed for T8's second PR.
+- **[P3] The default profile's `non-archived-tasks` (1,000) is a ceiling `logical-bytes` never lets it
+  reach.** Under `defaultTaskCapacityProfile` 536 plain registrations fill `logical-bytes`; the
+  1,000 is reachable only for a host that raises `logical-bytes`, `audience-links` and
+  `acknowledgement-ids` together. That is documented at the profile site and in the runbook, and it
+  errs in the safe direction — every limit here can still be raised in place, none lowered.
 
-  **Trigger**: T8 (profile qualification), or the first consumer sizing a deployment against
-  `defaultTaskCapacityLimits`, whichever comes first. **T8 cannot sign off the profile without
-  resolving this** — that is the load-bearing reason this is recorded here rather than left in a
-  stream artifact.
+  **Trigger**: the first consumer sizing a deployment above ~500 concurrent tasks, or M1's
+  production-profile cohort (the plan's "report absolute steady-state and peak memory for the
+  production profile's limiting fixtures"), whichever comes first.
 
-  **Scope sketch**: three candidate resolutions, and the choice is a design decision, not a
-  cleanup. (a) The closeout reserve is worst-case-per-category and may be far larger than any
-  real task needs — charge actual rather than maximum, if the reservation model permits it.
-  (b) Raise `resident-payload-bytes` to whatever actually admits 1,000 (≈448 MiB), which may be
-  an honest number or may reveal that 1,000 was never the right target. (c) Lower
-  `'non-archived-tasks'` to the number the profile can actually serve, and say so. Note the
-  surface is `@public` and its own docstring already calls the profile *proposed* pending
-  "the planned residency and reopen measurements before the profile is advertised" — so
-  correcting it now costs nothing downstream.
+  **Scope sketch**: decide whether the default should admit its own headline figure. The raises that
+  would (logical-bytes 1.5 GiB, links/ids 300,000) are measured in `agent-tasks-t8b` `result.md`;
+  the cost is a larger on-disk logical budget for every repository created under the default.
 
-  **Not a P3**: a published default that overstates capacity by 7× is a sizing error consumers
-  inherit silently, and the failure surfaces as refused registrations in production rather than
-  at build time.
+  **Not a P2**: nothing is wrong or unsafe — the limit that binds is reported exactly, with
+  `reclaimableByCleanup`, and the documentation says which binds.
 
-  **Reference**: [#687](https://github.com/ErikFortune/fgv/pull/687), and the T4 stream's
-  `result.md` § the orchestrator decision item — at
-  `.ai/tasks/active/agent-tasks-t4/` today, moving to
-  `.ai/tasks/completed/<month>/agent-tasks-t4/` when the `agent-tasks-v1` cluster finalizes
-  (this family finalizes at cluster close, not per slice). The PR link is the stable anchor.
+  **Reference**: `agent-tasks-t8b` `result.md` § *Profile*.
+
+- **[P3] At the default context budget an older revision of a maximum-size task can never be
+  delivered.** `defaultTaskContextBudget` is 8,000 characters; the renderer shows a task's current
+  revision before an owed older one, and a task at the field bounds (4,096-character description,
+  2,048-character summary) needs more than that for both. The older update stays owed — never
+  dropped — and every `prepare` at the default omits it, so a consumer that only ever prepares at the
+  default never acknowledges it; a larger budget or a host disposition discharges it.
+
+  **Trigger**: a consumer that cannot drain a subscription at the default budget, or I1's tool factory
+  choosing a budget for model-facing delivery.
+
+  **Scope sketch**: either raise the default budget to fit two maximum-size revisions, or have the
+  renderer surface an obligation it can never fit (an omission reason distinct from "over budget
+  this time") so a host can act on it. `saturation.test.ts` *delivery at the default context budget*
+  pins today's behaviour.
+
+  **Not a P2**: nothing is lost and the runbook names the remedy; it costs a drain that looks stuck.
+
+  **Reference**: `agent-tasks-t8b` `result.md`.
+
+- **[P4] `source-replay` envelope validation still measures against `maxUpdateBytes`.**
+  `storage/claims.ts` `replayCharges` refuses an envelope whose declared bytes exceed
+  `n × maxUpdateBytes`. Since T8 the reservation unit is `maximumUpdateBytes` (37,417 B at the
+  defaults), so an envelope declaring more than `n × 37,417` bytes is accepted and reserves bytes its
+  updates can never use. It over-reserves the host's own declaration and nothing else, which is why
+  T8b left it rather than narrow what the check accepts inside a profile change.
+
+  **Trigger**: the next change to replay envelopes. **Scope sketch**: measure against
+  `maximumUpdateBytes(profile)`. **Reference**: `agent-tasks-t8b` `state.md` work log.
 
 - **[P2] `ts-agent-tasks` broker hand-offs T5 left for T6/T7/T8 by design — each has a trigger
   that is the next slice's first step.**
@@ -211,8 +213,8 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
   `TaskBroker.abandonCommand` settles a held, never-sent or feed-awaiting command as
   `{ state: 'abandoned', from }`, releasing its reservation without claiming an outcome. A `possibly-sent` command the pump holds
   (non-idempotent with no lookup answer, or its source key expired) stays unsettled indefinitely,
-  keeping its 64 KiB settlement reservation and blocking `archive` (`retention-blocked`, "unsettled
-  command"). Only a later `lookupCommand` that finds it settles it; an ordinary observation does
+  keeping its settlement reservation (one update at `maximumUpdateBytes` since T8b) and blocking
+  `archive` (`retention-blocked`, "unsettled command"). Only a later `lookupCommand` that finds it settles it; an ordinary observation does
   not, and a source with no lookup never will. The same holds for a `source-replay` command settled
   `accepted` while it awaits a feed revision the feed never reaches (e.g. one reported under an
   epoch the feed cannot order against): archive is refused while it awaits. T8 needs an explicit, audited host disposition for a held command
@@ -254,16 +256,10 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
   **Trigger:** the start of T8. **Reference:** the `agent-tasks-t7` stream's `result.md` §
   *Hand-offs* (at `.ai/tasks/active/agent-tasks-t7/` until the `agent-tasks-v1` cluster finalizes).
 
-- **[P2] `ts-agent-tasks` — T8's second body of work, proposed as its own PR.** The retention
-  mechanism shipped without: the A3 saturation journey for every § 8.6 dimension with exact
-  used/reserved transfers across every crash point (including pending activation and
-  acknowledged-but-unpruned records), lifetime acknowledgement exhaustion on one and across many
-  closed subscriptions, repeated ordinary command identities and rejected-after-admission operations,
-  oversized results and claimed-but-never-resolved registrations at saturation; the profile decision
-  (capacity entry above); the `maxConsumerRecordBytes`/per-subscription-id inconsistency; and the M1
-  cohorts on the final source. **Trigger:** the landing of T8's mechanism PR — M1 must precede any
-  change to `defaultTaskCapacityProfile`, and T9 builds its stop reservations on the same profile.
-  **Reference:** `agent-tasks-t8` `result.md` § *Scope of this PR*.
+*(`ts-agent-tasks` — T8's second body of work: **retired 2026-09-26 by `agent-tasks-t8b`**, which
+delivered the A3 saturation journeys with exact transfers at every crash point, lifetime
+acknowledgement exhaustion, the remaining saturation cases, the M1 cohorts and the profile decision.
+What it left open is carried by the three smaller entries after the closed capacity entry above.)*
 
 *(The `checkThreshold` zero-byte-section measure gap (shipped in C2, #669) was fixed by C3 of
 `ai-assist-prompt-caching`: a section with `chars === 0` now contributes `0` to the measured total
