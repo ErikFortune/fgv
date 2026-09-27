@@ -67,10 +67,10 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
 
 ## P2 — Fix before next major feature in affected area
 
-- **[P2] No shared ESLint layer — `no-prototype-builtins` is on in 4 of 33 packages.**
+- **[P2] No shared ESLint layer — `no-prototype-builtins` is on in 4 of the 33 projects with an ESLint config.**
   Every project carries its own flat `eslint.config.js` (33 files, 8 distinct variants) extending
   `@rushstack/eslint-config/flat/profile/node`; the `heft-dual-rig` carries no ESLint config. So a
-  rule the whole repo should follow has to be copied into 33 files, and a new package starts without
+  rule the whole repo should follow has to be copied into 33 files (six more projects have no ESLint config at all), and a new package starts without
   it. `null-prototype-property-guard` fixed nine `obj.hasOwnProperty(k)` sites and enabled
   `no-prototype-builtins` as an error **only in the four packages it touched** (`ts-utils`, `ts-json`,
   `ts-res-ui-components`, `ts-utils-jest`). The other 29 have zero violations today (verified by

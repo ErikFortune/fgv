@@ -20,6 +20,9 @@ Converters.strictObject({ prop1: Converters.string, prop2: Converters.string }).
 // after:  Success { prop1: 'a', prop2: 'b' }; an extra property is a Failure, not a throw
 ```
 
+The same held for plain `Converters.object`, and for every other converter that reads a field
+through `isKeyOf` (`recordOf`, `discriminatedObject`, the transform converters).
+
 `JSON.parse` never produces a null-prototype object, so wire data never hit this. A caller
 does, and it is an ordinary thing to do with untrusted data, precisely because such an object has
 no prototype to pollute.
@@ -55,6 +58,21 @@ nothing stops a new one.
   a `null` options object from a JavaScript caller throw. That is a regression inside a fix whose
   whole claim was "nothing that returns starts throwing". The `code-reviewer` pass caught it before
   the PR opened, and a test now pins it.
+
+## Open
+
+- **The shared ESLint layer.** Recorded as a P2 in `docs/TECH_DEBT.md`.
+- **T1 handoff.** Whoever finalizes `agent-tasks-v1` should point `agent-tasks-t1/result.md`
+  item 6 at this stream. That file is not on `release`, so this PR could not do it.
+- **Coverage.** The brief's 100 % gate was not met in `ts-utils` (99.27 %) or `ts-json` (99.95 %).
+  Coverage is identical on `release`, and every uncovered line is pre-existing and outside this
+  stream's sites.
+
+## Notes
+
+- The generated capability feed stamps this stream's converter-centric headline into all four
+  packages' `CAPABILITIES.md` files, including `ts-utils-jest`, where nothing changed behaviourally.
+  That is the generator's per-package fan-out. It is left as is rather than special-cased.
 
 ## Artifacts
 

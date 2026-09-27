@@ -17,7 +17,7 @@ over every tracked file. **Nine in library source — exactly the brief's table*
 
 | package | site | public entry that reached it | regression test | watched red |
 |---|---|---|---|---|
-| `ts-utils` | `packlets/base/utils.ts:48` `isKeyOf` | `isKeyOf`, and every converter that uses it | `utils.test.ts` › isKeyOf › *reports own properties of an object with a null prototype* | ✅ (also turns the three converter tests below red) |
+| `ts-utils` | `packlets/base/utils.ts:48` `isKeyOf` | `isKeyOf`, and every converter that uses it | `utils.test.ts` › isKeyOf › *reports own properties of an object with a null prototype* | ✅ (also turns red the two `strictObject` tests in the next row and `converters.basic.test.ts` › *object converts a null-prototype source*, which reaches `isKeyOf` through `field()`; plain `Converters.object` and every other `isKeyOf`-using converter threw too) |
 | `ts-utils` | `packlets/conversion/objectConverter.ts:247` strict check | `Converters.strictObject().convert()` | `converters.basic.test.ts` › *object converters with a null-prototype source* › *strictObject converts…* and *strictObject fails rather than throws for extra properties…* | ✅ — `isKeyOf`'s own test stays green, so these two are what pin this line |
 | `ts-json` | `packlets/editor/jsonEditor.ts:281` | `JsonEditor.mergeObjectInPlace` | `jsonEditor.test.ts` › mergeObjectInPlace › *merges own properties from a null-prototype source* | ✅ |
 | `ts-json` | `packlets/converters/jsonConverter.ts:157` | `mergeDefaultJsonConverterOptions` | `jsonConverter.test.ts` › *honors extendVars supplied on a null-prototype options object* | ✅ |
@@ -30,11 +30,13 @@ over every tracked file. **Nine in library source — exactly the brief's table*
 **How "watched red" was done.** Each fix was reverted on its own, with `no-prototype-builtins`
 temporarily set to `off` in that package (with the rule on, Heft's `build:lint` step fails the build
 before any test runs, which is itself evidence the gate works). The package's affected suites were
-run, and the fix and the rule restored. Each revert turned red exactly the tests in its row and
-nothing else in those suites.
+run, and the fix and the rule restored. Each revert turned red the tests in its row and nothing
+else in those suites. The exception is `isKeyOf`, which every field-reading converter calls, so
+reverting it also turns the converter tests red.
 
-Every test asserts the **correct answer**, not just the absence of a throw. The `extendVars` tests
-also check the case where the own property is present but `undefined`, because
+Every test asserts the **correct answer**, not just the absence of a throw. Eight sites are pinned
+by **11 new tests**, and each site's test was watched red. The `mergeDefaultJsonConverterOptions` test
+also checks the case where the own property is present but `undefined`, because
 `hasOwnProperty` is exactly what tells that apart from an absent property.
 
 **Test-code hits (4), all incidental rather than the subject of their test**, rewritten so the rule
@@ -91,6 +93,8 @@ now return.
 | `verify-bundler-resolution` | 19 checked, 0 failed (after installing its `rush-bundler-check` autoinstaller, absent in this container) |
 | `verify-tarball-exports` | 25 packages, 199 manifest paths, 0 failed (after installing `rush-pack-check`) |
 | `code-reviewer` | one P2 (the `null` regression above), fixed. No P1. No P3. |
+| Copilot loop | requested when #700 opened; outcome recorded on the PR |
+| **100 % coverage (brief gate)** | **not met, and not met on `release` either**; see the per-package row. Not closed here, because the uncovered lines are pre-existing and outside this stream's sites. |
 
 ## T1's escalation — closed
 
