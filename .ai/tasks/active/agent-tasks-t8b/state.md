@@ -7,8 +7,8 @@ be enough to resume cold. Keep it current as you go — it is not a write-once d
 
 ## Status
 
-**Not started.** Branch created and brief placed by the orchestrator 2026-09-26, immediately after
-T8 PR 1 landed. No implementation work has begun.
+**In progress.** Phase 0 (`60db3e8d`), M1 (`48b5c7ad`) and the profile change (`c0b515b0`) are
+pushed. Next: the A3 saturation journeys (deliverable 1), then docs, reviews, PR.
 
 ## Branch
 
@@ -71,7 +71,28 @@ that is a finding to report — not a number to quietly adjust, and not a measur
 
 ## Work log
 
-_(append as you go: what you did, what you learned, what you decided and why)_
+- **Phase 0** — `CommittedFiles` extracted (`storage/committedFiles.ts`); `repository.ts` 1993 → 1808.
+  API report byte-identical; 70 suites / 1,707 green. Seam rationale in `result.md` § *Phase 0*.
+- **M1** — the T4 harness failed at its seed step: since #698 archive must write a tombstone with no
+  updates, and the harness archived with `updates: current.updates`. One-line seed correction outside
+  the frozen manifest (no prediction/threshold touched), disclosed in the file and `result.md`. Run on
+  `60db3e8d` (pre-profile): all four cohorts pass, raw output `m1-run-60db3e8d.json`.
+- **Profile** — reproduced the brief's resident table exactly. **Finding:** with (d) + 384 MiB the
+  plain-registration ceiling is **536**, bound by `logical-bytes` (512 MiB; ~976 KiB closeout each);
+  `audience-links`/`acknowledgement-ids` (200,000; 224 each) would bind at 892. Asked the user
+  2026-09-26: options were add three raises (logical 1.5 GiB, links/ids 300,000) or implement the six
+  and document 536. **Answer: six only, document 536.** Documented at the profile site.
+- **Change 4 mechanism** — `recordLimitFor` caps every record at `min(limits['record-bytes'], own
+  bound)`, and `record-bytes` was 8 MiB, so `maxConsumerRecordBytes` 32 MiB alone was inert. Raised
+  `record-bytes` to 32 MiB as the mechanism of change 4 (task/inventory/source keep 8/8/1 MiB).
+  Disclose in the PR; the orchestrator may treat it as a seventh change.
+- **(d) scope** — applied to closeout, first resolution and settlement (the three bundles reserving an
+  update payload). The `current`-baseline charge is actual bytes, so it needs no change. The
+  source-replay consistency check (`declared ≤ n × maxUpdateBytes`) is left as is: it reserves the
+  declared bytes, not the unit, so it over-reserves nothing; tightening it would narrow what it accepts.
+- **Stored claims** — `checkTaskClaims` requires each claim ≤ its bundle; claims minted before (d)
+  exceed the new bundles and fail open. Package unpublished; disclosed as BREAKING, no migration (the
+  same posture PR 1 took).
 
 ## Open questions for the orchestrator
 
