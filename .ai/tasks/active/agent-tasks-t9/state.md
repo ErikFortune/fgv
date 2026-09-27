@@ -169,3 +169,22 @@ Two are anticipated:
 2. **Whether the A2 semantics need a design amendment.** A2 is approved and explicit, but it was
    written before T6's sources and T8's capacity model existed. If a stop cannot be expressed within
    it, the plan's own instruction applies: *"amend the design openly rather than weaken guarantees."*
+
+## Copilot loop (#701)
+
+**Round 1 (on `4075b901`)** — four inline findings, all real, fixed in `638e0515` with regressions
+and revert rows T9-33…T9-37: (1) the generic resolver sent a stop's command under ordinary `command`
+authority → the permit is now decided by the command's marker on every path; (2) the summary's epoch
+check followed the unchanged fast path → moved before it; (3) reservation products unchecked for
+overflow → the bundle is yielded only when `max(2000, maxOperationsPerTask) × (bundle + framing +
+target + release)` is safe, and a commit touching no stop needs no bundle; (4) storage accepted a
+summary recording an unstopped target `confirmed` → refused, and the pump keeps the persisted entry
+for a target that left the stopped set between visit and summary. Summary-only items: *failed
+observation → supersession on a stale revision* — real, fixed in the same commit (T9-37);
+*contract-version change re-confirmed silently* — no change: a confirmation is always made under the
+declaration asked for on that pass and records its version, so a changed contract is re-evaluated,
+not carried; *paused external target confirmed without a pause command* — no change: holding an
+existing pause needs the declared stable contract, not a command, and a later restart without a
+command is `unsupported`; *fixture casts an untrusted capability value* — intentional, the fixture
+hands the broker unvalidated source output, which the converter under test must refuse.
+Matrix rows T9-18, T9-30, T9-33…T9-37 re-run on `638e0515`: all red.
