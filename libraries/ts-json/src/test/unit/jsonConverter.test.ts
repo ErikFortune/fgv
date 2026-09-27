@@ -164,6 +164,12 @@ describe('JsonConverter module', () => {
       const options: Partial<IJsonConverterOptions> = Object.assign(Object.create(null), { extendVars });
       expect(contextFromConverterOptions(options)).toEqual({ extendVars });
     });
+
+    test('treats a null options object like omitted options', () => {
+      const nullOptions = null as unknown as Partial<IJsonConverterOptions>;
+      expect(contextFromConverterOptions(nullOptions)).toBeUndefined();
+      expect(mergeDefaultJsonConverterOptions(nullOptions)).toEqual(mergeDefaultJsonConverterOptions());
+    });
   });
 
   describe('convertOptionsToEditor function', () => {

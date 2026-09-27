@@ -155,7 +155,7 @@ export function mergeDefaultJsonConverterOptions(
   const haveVars = partial?.vars !== undefined;
   const haveRefs = partial?.refs !== undefined;
   const extender =
-    partial !== undefined && Object.prototype.hasOwnProperty.call(partial, 'extendVars')
+    partial !== undefined && partial !== null && Object.prototype.hasOwnProperty.call(partial, 'extendVars')
       ? partial.extendVars
       : defaultExtendVars;
   const haveExtender = extender !== undefined;
@@ -200,7 +200,11 @@ export function contextFromConverterOptions(
   if (partial?.refs) {
     context.refs = partial.refs;
   }
-  if (partial !== undefined && Object.prototype.hasOwnProperty.call(partial, 'extendVars')) {
+  if (
+    partial !== undefined &&
+    partial !== null &&
+    Object.prototype.hasOwnProperty.call(partial, 'extendVars')
+  ) {
     context.extendVars = partial.extendVars;
   }
   return context.vars || context.refs || context.extendVars ? context : undefined;
