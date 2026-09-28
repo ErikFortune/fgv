@@ -108,6 +108,14 @@ active surface.
   copy of the final source.
 - Routed to `docs/TECH_DEBT.md`: unframed details (I2), `JsonSchema.integer` has no range.
 
+### 2026-09-28 — preliminary matrix (pre-format source; the final run is still owed)
+
+17 of 18 rows red. **I1a-18 came back `0 red` and the mutant was at fault, not the protection:**
+`.optional().withConstraint(b => b !== undefined)` is a no-op, because `strictObject` never invokes
+an absent optional field's converter. Re-pointed to drop `.optional()` → **4 red** (renderer,
+converter, and two tool suites). The rule "a `0 red` row is a finding" held — the finding was about
+the mutant.
+
 ## Open questions for the orchestrator
 
 _(raise here and surface, rather than reconstructing intent and proceeding)_

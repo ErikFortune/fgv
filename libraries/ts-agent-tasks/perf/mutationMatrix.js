@@ -1282,7 +1282,7 @@ const I1A_ROWS = [
     'I1a-18 the renderer requires a binding a bound view never emits',
     C + 'contextConverters.ts',
     '      binding: values.sourceBinding.optional(),',
-    '      binding: values.sourceBinding.optional().withConstraint((b) => b !== undefined),',
+    '      binding: values.sourceBinding,',
     I1A
   )
 ];
