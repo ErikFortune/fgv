@@ -136,7 +136,38 @@ The evidence for I1's gate *"read-only use has no mutation dependency"*:
 
 ## Revert matrix — run on final source
 
-_(filled in below from `perf/mutationMatrix.js --pkg <copy>` on the final source)_
+**Preliminary run** — `perf/mutationMatrix.js --pkg <copy> I1a-1 … I1a-18`, suites
+`tools/|publicSurface|context/|converters/contextConverters`. It ran on the source *before* the
+pre-commit hook's `rush prettier` pass (formatting only), so it is **not** the final-source run. That
+run is owed once the Copilot loop settles, and replaces this table.
+
+| row | verdict | suites that went red |
+|---|---|---|
+| I1a-1 task_query execute trusts its arguments | 3 red | execute re-validates its arguments with no harness in front › task_query refuses malformed values and out-of-range limits<br>execute re-validates its arguments with no harness in front › task_query refuses surplus fields — a principal, scope or consumer above all<br>failure messages are bounded › the cut never splits a surrogate pair |
+| I1a-2 task_inspect execute trusts its arguments | 1 red | execute re-validates its arguments with no harness in front › task_inspect refuses surplus fields and malformed ids |
+| I1a-3 a limit above the context budget reaches the view | 2 red | execute re-validates its arguments with no harness in front › task_query refuses malformed values and out-of-range limits<br>failure messages are bounded › a short message is returned whole |
+| I1a-4 the query request skips the view's request converter | 1 red | execute re-validates its arguments with no harness in front › task_query refuses malformed values and out-of-range limits |
+| I1a-5 tasks the text omitted are not named | 2 red | a page is bounded by default › a task below the depth budget is named as omitted<br>a page is bounded by default › tasks the text had no room for are named, so paging skips nothing unannounced |
+| I1a-6 tasks the text abbreviated are not named | 1 red | a page is bounded by default › a task shown with its prose dropped is named as abbreviated |
+| I1a-7 details are returned whatever their size | 1 red | an inspection is bounded › details are returned only when the host exposes them and they fit › one character over, none of them is returned and the omission is said |
+| I1a-8 failure messages are not truncated | 4 red | a view that rejects or throws fails the call through the same bounded message › when the view rejects<br>a view that rejects or throws fails the call through the same bounded message › when the view throws synchronously<br>failure messages are bounded › a message echoing a huge argument is cut to the bound<br>failure messages are bounded › the cut never splits a surrogate pair |
+| I1a-9 truncation may split a surrogate pair | 1 red | failure messages are bounded › the cut never splits a surrogate pair |
+| I1a-10 a view's rejection reaches the model unformatted | 2 red | a view that rejects or throws fails the call through the same bounded message › when the view rejects<br>a view that rejects or throws fails the call through the same bounded message › when the view throws synchronously |
+| I1a-11 a view's rejection escapes the capture | 2 red | a view that rejects or throws fails the call through the same bounded message › when the view rejects<br>a view that rejects or throws fails the call through the same bounded message › when the view throws synchronously |
+| I1a-12 a page with more after it is rendered as complete input | 1 red | a page is bounded by default › with no limit, a page holds the context budget of tasks, and paging reaches every task once |
+| I1a-13 a budget below the framing reserve is accepted at build time | 1 red | createTaskTools › refuses a budget that could never render, before the model ever calls |
+| I1a-14 the tool budget admits surplus properties | 1 red | createTaskTools › refuses a budget that could never render, before the model ever calls |
+| I1a-15 an inspected task with no room is reported complete | 2 red | an inspection is bounded › a task with no room at all is reported omitted, never returned raw<br>the details budget is independent of the context budget › details that fit are returned even for a task whose text had no room |
+| I1a-16 an inspected unresolved task with no room is reported complete | 1 red | an inspection is bounded › a task with no room at all is reported omitted, never returned raw |
+| I1a-17 a rendered unresolved diagnostic is not counted as shown | 1 red | task tools read through the bound view › an unresolved registration is shown as a diagnostic, and no source binding ever leaves |
+| I1a-18 the renderer requires a binding a bound view never emits | 4 red (re-pointed mutant; first mutant 0 red — see below) | TaskContextRenderer › rendered fields › an unresolved reference with no binding — as a bound view projects it — renders the same<br>an inspection is bounded › a task with no room at all is reported omitted, never returned raw<br>context converters › unresolved reference › as the renderer accepts it, the binding is optional and nothing else is<br>task tools read through the bound view › an unresolved registration is shown as a diagnostic, and no source binding ever leaves |
+
+**18 rows, 0 UNVERIFIED, 0 `0 red`** after one correction. I1a-18 first came back `0 red`: its mutant
+(`.optional().withConstraint(b => b !== undefined)`) was a no-op, because `strictObject` never calls
+an absent optional field's converter. The protection was guarded; the mutant was not a mutant.
+Dropping `.optional()` turns 4 tests red. No row needed `paired(...)`: the one defence-in-depth pair
+(schema revalidation backed by `boundQuery`, backed by the view's own converter) is separated by the
+tests' "the view was never called" assertion, which I1a-1 and I1a-4 each turn red on their own.
 
 ## Review
 
