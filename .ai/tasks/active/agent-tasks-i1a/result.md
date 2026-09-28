@@ -136,10 +136,10 @@ The evidence for I1's gate *"read-only use has no mutation dependency"*:
 
 ## Revert matrix — run on final source
 
-**Preliminary run** — `perf/mutationMatrix.js --pkg <copy> I1a-1 … I1a-18`, suites
-`tools/|publicSurface|context/|converters/contextConverters`. It ran on the source *before* the
-pre-commit hook's `rush prettier` pass (formatting only), so it is **not** the final-source run. That
-run is owed once the Copilot loop settles, and replaces this table.
+**Final run on final source** — `perf/mutationMatrix.js --pkg <copy of HEAD e693ed11> I1a-1 … I1a-18`,
+2026-09-28, suites `tools/|publicSurface|context/|converters/contextConverters`. The copy was
+`git archive` of the head and `diff -r` identical to the working tree before and after the run.
+31 red tests across 18 rows.
 
 | row | verdict | suites that went red |
 |---|---|---|
@@ -160,9 +160,9 @@ run is owed once the Copilot loop settles, and replaces this table.
 | I1a-15 an inspected task with no room is reported complete | 2 red | an inspection is bounded › a task with no room at all is reported omitted, never returned raw<br>the details budget is independent of the context budget › details that fit are returned even for a task whose text had no room |
 | I1a-16 an inspected unresolved task with no room is reported complete | 1 red | an inspection is bounded › a task with no room at all is reported omitted, never returned raw |
 | I1a-17 a rendered unresolved diagnostic is not counted as shown | 1 red | task tools read through the bound view › an unresolved registration is shown as a diagnostic, and no source binding ever leaves |
-| I1a-18 the renderer requires a binding a bound view never emits | 4 red (re-pointed mutant; first mutant 0 red — see below) | TaskContextRenderer › rendered fields › an unresolved reference with no binding — as a bound view projects it — renders the same<br>an inspection is bounded › a task with no room at all is reported omitted, never returned raw<br>context converters › unresolved reference › as the renderer accepts it, the binding is optional and nothing else is<br>task tools read through the bound view › an unresolved registration is shown as a diagnostic, and no source binding ever leaves |
+| I1a-18 the renderer requires a binding a bound view never emits | 4 red | TaskContextRenderer › rendered fields › an unresolved reference with no binding — as a bound view projects it — renders the same<br>an inspection is bounded › a task with no room at all is reported omitted, never returned raw<br>context converters › unresolved reference › as the renderer accepts it, the binding is optional and nothing else is<br>task tools read through the bound view › an unresolved registration is shown as a diagnostic, and no source binding ever leaves |
 
-**18 rows, 0 UNVERIFIED, 0 `0 red`** after one correction. I1a-18 first came back `0 red`: its mutant
+**18 rows, 0 UNVERIFIED, 0 `0 red`.** One row needed correcting first, in the preliminary run (on pre-format source): I1a-18 first came back `0 red`: its mutant
 (`.optional().withConstraint(b => b !== undefined)`) was a no-op, because `strictObject` never calls
 an absent optional field's converter. The protection was guarded; the mutant was not a mutant.
 Dropping `.optional()` turns 4 tests red. No row needed `paired(...)`: the one defence-in-depth pair
