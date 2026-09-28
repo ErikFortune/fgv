@@ -9,10 +9,10 @@ be enough to resume cold. Keep it current as you go.
 
 **All three review layers done; final gates green; full revert matrix running.** (2026-09-27.)
 PR #701 open into `integration/agent-tasks-v1`, head `2fdf7289`. Copilot loop stopped at the 10-round
-cap (rounds below). Package suite 85 suites, **2,009 passed / 0 failed**, 100 % on every metric, zero
-`c8 ignore`; lint clean; repo-wide rebuild + test green; all verify scripts 0 failed. Revert rows
-T9-1…T9-65. Remaining: the full revert matrix on `2fdf7289` (running on a copy) → `result.md`
-§ Revert matrix → push → orchestrator review.
+cap (rounds below). Package suite 85 suites, **2,011 passed / 0 failed**, 100 % on every metric, zero
+`c8 ignore`; lint clean; repo-wide rebuild + test green; all verify scripts 0 failed. Full revert
+matrix run: 166 rows, 158 red, 6 stale-on-base, M91 (T3 disposition) and T9-24 (equivalent) at 0 —
+see `result.md` § Revert matrix. **Ready for orchestrator review.**
 
 ## Branch
 
@@ -273,3 +273,11 @@ Final gates on `2fdf7289`: package suite 2,009 passed / 100% / zero `c8 ignore`;
 and test green (on `dc1aae25`; `2fdf7289` touches one test file of a package nothing depends on);
 all five verify scripts 0 failed; change file verified. Full revert matrix running on a fresh copy of
 `2fdf7289` — `result.md` § Revert matrix to be filled from it.
+
+**Full revert matrix (on `2fdf7289`).** 165 rows: 154 red, 6 stale-on-base UNVERIFIED, M91 0 red (T3),
+and four T9 rows at 0 red, investigated: T9-13/T9-14 were masked by a test that overflowed the root
+and a target at once (tests split; now 2 and 1 red); T9-26 was masked by storage's forward-by-one rule
+and no test drove the stale-supersede path (race test added; row made a paired row with its backstop,
+2 red; backstop row T9-66, 1 red); T9-24 is an equivalent mutation (a pass stops early only at a target
+still needing an effect, never `confirmed`). M2's regression moved to the same non-overlapping
+profile. Package suite 2,011 passed after the follow-up.

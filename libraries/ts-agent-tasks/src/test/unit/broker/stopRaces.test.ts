@@ -217,6 +217,26 @@ describe('an external target, raced', () => {
     expect((await persisted(h, accepted)).targets[1].attempt).toBe(2);
     expect((await pump(h.writer, accepted)).orThrow().state).toBe('satisfied');
   });
+  test('a pass whose attempt another caller superseded meanwhile makes no attempt of its own', async () => {
+    const h = await withJob();
+    h.executor.change('job', (j) => {
+      j.step = 3;
+    });
+    const accepted = (await stop(h, h.writer, 'root', 'cancel')).orThrow();
+    expect(states((await pump(h.writer, accepted)).orThrow()).job).toBe('refused');
+    // While this pass is deciding to supersede the refused attempt, another pass supersedes it first.
+    let theirs: string | undefined;
+    onNth(h, stopOn('job'), 1, async () => {
+      (await pump(h.writer, accepted)).orThrow();
+      theirs = (await persisted(h, accepted)).targets[1].operationId;
+    });
+    expect(await pump(h.writer, accepted)).toSucceed();
+    calm(h);
+    const target = (await persisted(h, accepted)).targets[1];
+    expect(target.attempt).toBe(2);
+    expect(target.operationId).toBe(theirs);
+  });
+
   test('a policy that moved before a supersession: the refused attempt stands, and no new one is made', async () => {
     const h = await withJob();
     h.executor.change('job', (j) => {

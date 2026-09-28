@@ -29,7 +29,7 @@ The four traversal rules are implemented as stated: the subtree is captured from
 |---|---|---|
 | 1 | `requestStop` persists the intent `pending`, every target `unexamined`, and **dispatches nothing** | `stopAcceptance` *"persists the whole authoritative subtree, root first then breadth-first by id, and dispatches nothing"* |
 | 2 | storage refuses a new intent whose targets are not **exactly** the authoritative subtree, whoever computed it | `stopRules` *"a stop that skips a child is refused, whatever computed it"*; revert rows T9-1 (storage) and T9-2 (broker capture) |
-| 3 | a pass limited by its budget cannot satisfy: `satisfied` needs a pass that visited every target and found each `confirmed` | `stopPump` *"a bounded pass stops at its limit…"*; revert row T9-24 |
+| 3 | a pass limited by its budget cannot satisfy: `satisfied` needs a pass that visited every target and found each `confirmed` | `stopPump` *"a bounded pass stops at its limit…"*. Revert row T9-24 is an **equivalent mutation** (see § Revert matrix): a pass stops early only at a target that still needs an effect, which is never `confirmed`, so "every target confirmed" already implies a complete pass |
 | 4 | a receipt is not a stop: an `accepted` command is `pending` until the source's state shows the stop | `stopSources` *"a receipt is not a stop"* |
 | 5 | an external target is `confirmed` only under a **declared stable stop**, with its evidence; a sampled pause is `unsupported` | `stopSources` *"a sampled pause…"* |
 | 6 | observation-only / undeclared children are `unsupported`, a blocker | `stopSources`, `stopPump` *"an external child without a stop declaration blocks; the native effects stand, with no rollback"* |
@@ -198,7 +198,7 @@ All on `2fdf7289` (the final source; the Copilot loop's last change), 2026-09-27
 
 | gate | result |
 |---|---|
-| `heft test` (ts-agent-tasks) | 85 suites, **2,009 passed, 0 failed**; 100% statements, branches, functions, lines; zero `c8 ignore` |
+| `heft test` (ts-agent-tasks) | 85 suites, **2,011 passed, 0 failed**; 100% statements, branches, functions, lines; zero `c8 ignore` (on `2fdf7289` 2,009; the two added by the matrix follow-up below are tests only) |
 | `heft build` (ts-agent-tasks) | no warnings |
 | `rushx lint` / `fixlint` | clean; `fixlint` changes nothing |
 | `rush change --verify --target-branch origin/integration/agent-tasks-v1` | exit 0 (change file typed `minor`) |
@@ -215,7 +215,30 @@ which nothing else depends on, and the package suite above was re-run on it.
 
 ## Revert matrix — on the final source
 
-_(filled from `perf/mutationMatrix.js`)_
+Full run of `perf/mutationMatrix.js --pkg <copy>` on `2fdf7289`, 2026-09-27/28 (≈ 3 h 50 min):
+**165 rows — 154 red, 6 UNVERIFIED, 5 at 0 red.** Output kept as `matrix-2fdf7289.json` (scratch).
+
+- **6 UNVERIFIED** — M13, M20, M23, M34, M39, M49: their patterns no longer occur (or occur three
+  times, M39) on the base branch. Stale before this slice, as T8b's `result.md` records; not T9's to
+  re-point.
+- **M91, 0 red** — dispositioned by T3 (`agent-tasks-t3/result.md` item 4) and re-confirmed by T8b.
+  T9 does not touch `recordLimitFor`.
+- **Four T9 rows at 0 red — each investigated, three fixed:**
+
+| row | why it was green | what changed | re-run |
+|---|---|---|---|
+| T9-13 (a target's operation slot is preflighted) | the test used a 5-operation profile, under which the **root** was also over its own slot limit — so the stop was refused by the root's check whatever the target's did | the test now uses 6 operations, where the root fits exactly and only the target overflows | 2 red |
+| T9-14 (the committed task holds slots for its attempt and release) | the mirror of the above: the target's check refused the same stop | a new test in which only the **root** overflows (one update more than its four held slots allow) | 1 red |
+| T9-26 (a pass whose attempt another caller superseded writes nothing) | **masked by design**: storage's forward-by-one rule refuses a stale supersession as a conflict, which ends the pass unfinished exactly as the broker's check does — and no test drove the stale path at all | a deterministic race test (`stopRaces` *"a pass whose attempt another caller superseded meanwhile makes no attempt of its own"*), and the row made a **paired** row that reverts the check with its storage backstop (the matrix script gained `paired(...)` for this); the backstop has its own row, **T9-66** | 2 red; T9-66 1 red |
+| T9-24 (`satisfied` needs a complete pass) | **equivalent mutation**: a pass is incomplete only when a visit stops at a target that still needs an effect (no budget, a conflict, a capacity refusal), and such a target is never `confirmed`; an unvisited target keeps its stored entry, which a pass that stops early did not change. So "every target confirmed" already implies a complete pass, and removing `complete &&` changes no outcome | none: the check states the rule, and stays. The property itself is pinned by the bounded-pass tests | 0 red (expected) |
+
+The M2 regression used the same doubly-overflowing profile, so it could not show which target's
+refusal was being sanitized; it now uses the 6-operation profile too. Rows whose red sets included
+the changed tests (T9-2, T9-20) and T9-12 were re-run on the final source with the four above:
+**T9-2 193 red, T9-12 4, T9-13 2, T9-14 1, T9-20 3, T9-24 0, T9-26 2, T9-66 1.**
+
+**Final standing, 166 rows:** 158 red; 6 UNVERIFIED stale-on-base; M91 0 red (T3 disposition); T9-24
+0 red (equivalent, above). Of the **66 T9 rows, 65 are red** and one is an equivalent mutation.
 
 ## Hand-offs (routed to `docs/TECH_DEBT.md` in this PR)
 

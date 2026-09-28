@@ -132,14 +132,15 @@ describe('T9 antagonist regressions', () => {
   });
 
   test('M2: a capacity refusal at acceptance names no target and none of its figures', async () => {
+    // Six slots: the root fits exactly, so the refusal is the hidden target's alone.
     const tight: ITaskCapacityProfile = {
       ...defaultTaskCapacityProfile,
-      perOwner: { ...defaultTaskCapacityProfile.perOwner, maxOperationsPerTask: 5 }
+      perOwner: { ...defaultTaskCapacityProfile.perOwner, maxOperationsPerTask: 6 }
     };
     const h = await brokerHarness({ profile: tight });
     await node(h.writer, 'root', { stopPolicy: 'cascade-pause' });
     await node(h.writer, 'secret', { parentId: 'root' });
-    for (const title of ['one', 'two']) {
+    for (const title of ['one', 'two', 'three']) {
       const r = (await h.repository.readCommit(tid('secret'))).orThrow() as IResolvedTaskCommitRecord;
       (
         await h.writer.updateTracked({

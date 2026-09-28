@@ -143,7 +143,7 @@ satisfies a stop a pass did not fully visit. `ITaskSource.capabilities()` with a
 contract, revalidated per broker instance. A3 reservations for every target derived from the records
 (the no-partial-dispatch proof: one byte short, nothing written). Both inherited hand-offs (T5 latch
 gap, T6 `capabilities()`) resolved. The semantic antagonist's seven findings were fixed with
-regressions, as were the Copilot loop's; revert rows T9-1…T9-65 were added to `perf/mutationMatrix.js`. The M1 stop-state cohort
+regressions, as were the Copilot loop's; revert rows T9-1…T9-66 were added to `perf/mutationMatrix.js`. The M1 stop-state cohort
 was judged to belong with the production-profile run (routed). Detail: `result.md`.
 
 **Mission.** Persistent cascade stop with admission enforcement: root + transitive target capture,

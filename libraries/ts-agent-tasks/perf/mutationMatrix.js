@@ -42,7 +42,16 @@ const C = 'src/packlets/converters/';
 const STORAGE = 'storage|capacity';
 
 function m(name, file, from, to, tests = STORAGE) {
-  return { name, file, from, to, tests };
+  return { name, edits: [{ file, from, to }], tests };
+}
+
+/**
+ * A row for a guard that a later layer deliberately backs up: reverting the guard alone is masked by
+ * construction, so the row reverts the guard **and** its backstop, and names both. The backstop has
+ * its own single-edit row.
+ */
+function paired(name, edits, tests = STORAGE) {
+  return { name, edits, tests };
 }
 
 /** T8b's rows run these suites: the saturation journeys live in delivery. */
@@ -842,11 +851,23 @@ const T9_ROWS = [
     '      // After the last await and immediately before the write.\n      if (this._epoch.length < 0) {',
     T9
   ),
-  m(
-    'T9-26 an attempt another caller superseded is written anyway',
-    B + 'stopPump.ts',
-    '        root.value.intent.targets[i].attempt === this.targets[i].attempt',
-    '        root.value.intent.targets[i].attempt >= 0',
+  // The broker's own check is backed by storage's forward-by-one rule (T9-66): a stale pass's
+  // supersession is refused as a conflict, which ends the pass unfinished exactly as the check does.
+  // Reverting the check alone is masked by that design, so this row reverts both.
+  paired(
+    'T9-26 an attempt another caller superseded is written anyway (with its storage backstop)',
+    [
+      {
+        file: B + 'stopPump.ts',
+        from: '        root.value.intent.targets[i].attempt === this.targets[i].attempt',
+        to: '        root.value.intent.targets[i].attempt >= 0'
+      },
+      {
+        file: S + 'stopRules.ts',
+        from: '    if (b.attempt === a.attempt ? b.operationId !== a.operationId : b.attempt !== a.attempt + 1) {',
+        to: '    if (b.attempt < 0) {'
+      }
+    ],
     T9
   ),
   m(
@@ -1121,6 +1142,13 @@ const T9_ROWS = [
     "        settled: op.dispatch === 'settled'",
     '        settled: op.dispatch.length < 0',
     T9
+  ),
+  m(
+    'T9-66 storage lets an attempt move other than forward by one, with a new key',
+    S + 'stopRules.ts',
+    '    if (b.attempt === a.attempt ? b.operationId !== a.operationId : b.attempt !== a.attempt + 1) {',
+    '    if (b.attempt < 0) {',
+    T9
   )
 ];
 
@@ -1179,23 +1207,35 @@ function main() {
   );
   const results = [];
   for (const row of rows) {
-    const file = path.join(args.pkg, row.file);
-    const source = fs.readFileSync(file, 'utf8');
-    const count = occurrences(source, row.from);
+    const files = row.edits.map((edit) => {
+      const file = path.join(args.pkg, edit.file);
+      return { ...edit, file, source: fs.readFileSync(file, 'utf8') };
+    });
+    const miss = files.find((edit) => occurrences(edit.source, edit.from) !== 1);
     let result;
-    if (count !== 1) {
-      result = { verdict: `UNVERIFIED: pattern found ${count} times`, red: [] };
+    if (miss !== undefined) {
+      result = { verdict: `UNVERIFIED: pattern found ${occurrences(miss.source, miss.from)} times`, red: [] };
     } else if (args.check) {
       result = { verdict: 'pattern ok', red: [] };
     } else {
-      fs.writeFileSync(
-        file,
-        source.replace(row.from, () => row.to)
-      );
+      // Edits to one file apply in turn, each against the text the previous one left.
+      const mutated = new Map();
+      for (const edit of files) {
+        const text = mutated.has(edit.file) ? mutated.get(edit.file) : edit.source;
+        mutated.set(
+          edit.file,
+          text.replace(edit.from, () => edit.to)
+        );
+      }
+      for (const [file, text] of mutated) {
+        fs.writeFileSync(file, text);
+      }
       try {
         result = classify(runSuites(args.pkg, row.tests));
       } finally {
-        fs.writeFileSync(file, source);
+        for (const edit of files) {
+          fs.writeFileSync(edit.file, edit.source);
+        }
       }
     }
     results.push({ name: row.name, ...result });

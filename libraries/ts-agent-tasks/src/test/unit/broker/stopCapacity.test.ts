@@ -18,6 +18,7 @@ import {
   brokerRegistry,
   harnessOver,
   op,
+  revisionOf,
   tid
 } from '../../helpers/brokerFixtures';
 import { environment, memoryRoot } from '../../helpers/storageFixtures';
@@ -179,27 +180,25 @@ describe('A3 — a stop reserves for every target before it is accepted', () => 
     expect(opened.state === 'ready' && opened.repository.capacityStatus()).toSucceedWith(live);
   });
 
-  test('a target without an operation slot for its attempt refuses the stop before anything is written', async () => {
-    const tight: ITaskCapacityProfile = {
-      ...defaultTaskCapacityProfile,
-      perOwner: { ...defaultTaskCapacityProfile.perOwner, maxOperationsPerTask: 5 }
-    };
-    const h = await brokerHarness({ profile: tight });
-    await node(h.writer, 'root', { stopPolicy: 'cascade-pause' });
-    await node(h.writer, 'a', { parentId: 'root' });
-    // Creation plus two ordinary operations: with its closeout's two slots held, `a` is full.
-    for (const title of ['one', 'two']) {
-      const revision = (await h.repository.readCommit(tid('a'))).orThrow()!;
+  // Six operations per task: the root holds creation and the stop, and keeps four slots — its closeout
+  // (two), its own attempt and its release — so it fits exactly. Each test overflows one task only.
+  const six: ITaskCapacityProfile = {
+    ...defaultTaskCapacityProfile,
+    perOwner: { ...defaultTaskCapacityProfile.perOwner, maxOperationsPerTask: 6 }
+  };
+  async function retitled(h: IBrokerHarness, id: string, times: number): Promise<void> {
+    for (let i = 0; i < times; i++) {
       (
         await h.writer.updateTracked({
-          taskId: tid('a'),
+          taskId: tid(id),
           operationId: op(),
-          expectedRevision:
-            revision.recordType === 'resolved' ? revision.task.envelope.revision : (0 as never),
-          patch: { title }
+          expectedRevision: await revisionOf(h.repository, id),
+          patch: { title: `${id}-${i}` }
         })
       ).orThrow();
     }
+  }
+  async function refusedCleanly(h: IBrokerHarness): Promise<void> {
     const refused = await stop(h, h.writer, 'root', 'pause');
     expect(refused).toFailWith(
       /a target of the stop has no room for its attempt \('operations'\); nothing was written/
@@ -207,6 +206,25 @@ describe('A3 — a stop reserves for every target before it is accepted', () => 
     expect(refused.isFailure() && refused.detail?.capacity?.dimension).toBe('operations');
     const root = (await h.repository.readCommit(tid('root'))).orThrow()!;
     expect(root.recordType === 'resolved' && root.stops).toBeUndefined();
+  }
+
+  test('a target without an operation slot for its attempt refuses the stop before anything is written', async () => {
+    const h = await brokerHarness({ profile: six });
+    await node(h.writer, 'root', { stopPolicy: 'cascade-pause' });
+    await node(h.writer, 'a', { parentId: 'root' });
+    // Creation plus three updates: with its closeout's two slots, `a` has none left for an attempt.
+    await retitled(h, 'a', 3);
+    await refusedCleanly(h);
+  });
+
+  test('a root without slots for its own attempt and release refuses the stop before anything is written', async () => {
+    const h = await brokerHarness({ profile: six });
+    await node(h.writer, 'root', { stopPolicy: 'cascade-pause' });
+    await node(h.writer, 'a', { parentId: 'root' });
+    // One update more than the root can carry alongside the stop and the four slots it keeps; `a` is
+    // untouched and has room.
+    await retitled(h, 'root', 1);
+    await refusedCleanly(h);
   });
 
   test('subscriptions covering the targets are owed each stop effect, from the reservation', async () => {
