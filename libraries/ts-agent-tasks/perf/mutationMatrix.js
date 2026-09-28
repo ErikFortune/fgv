@@ -1218,8 +1218,8 @@ const I1A_ROWS = [
   m(
     'I1a-9 truncation may split a surrogate pair',
     TL + 'taskTools.ts',
-    '? maxMessageChars - 1 : maxMessageChars;',
-    '? maxMessageChars : maxMessageChars;',
+    '    ? maxMessageChars - 1\n    : maxMessageChars;',
+    '    ? maxMessageChars\n    : maxMessageChars;',
     I1A
   ),
   m(
