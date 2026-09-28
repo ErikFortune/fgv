@@ -137,10 +137,11 @@ The evidence for I1's gate *"read-only use has no mutation dependency"*:
 
 ## Revert matrix — run on final source
 
-**Final run on final source** — `perf/mutationMatrix.js --pkg <copy of HEAD e693ed11> I1a-1 … I1a-18`,
-2026-09-28, suites `tools/|publicSurface|context/|converters/contextConverters`. The copy was
-`git archive` of the head and `diff -r` identical to the working tree before and after the run.
-31 red tests across 18 rows.
+**Final run on final source** — `perf/mutationMatrix.js --pkg <copy of HEAD 301a09f1> I1a-1 … I1a-19`,
+2026-09-28, suites `tools/|publicSurface|context/|converters/contextConverters`, after Copilot
+round 1 changed the source. Each copy was `git archive` of the head and `diff -r` identical to the
+working tree. A container restart interrupted the run after row 15; rows 16–19 ran on a fresh copy
+of the same commit, and the working tree was confirmed restored. **33 red tests across 19 rows.**
 
 | row | verdict | suites that went red |
 |---|---|---|
@@ -151,10 +152,10 @@ The evidence for I1's gate *"read-only use has no mutation dependency"*:
 | I1a-5 tasks the text omitted are not named | 2 red | a page is bounded by default › a task below the depth budget is named as omitted<br>a page is bounded by default › tasks the text had no room for are named, so paging skips nothing unannounced |
 | I1a-6 tasks the text abbreviated are not named | 1 red | a page is bounded by default › a task shown with its prose dropped is named as abbreviated |
 | I1a-7 details are returned whatever their size | 1 red | an inspection is bounded › details are returned only when the host exposes them and they fit › one character over, none of them is returned and the omission is said |
-| I1a-8 failure messages are not truncated | 4 red | a view that rejects or throws fails the call through the same bounded message › when the view rejects<br>a view that rejects or throws fails the call through the same bounded message › when the view throws synchronously<br>failure messages are bounded › a message echoing a huge argument is cut to the bound<br>failure messages are bounded › the cut never splits a surrogate pair |
+| I1a-8 failure messages are not truncated | 2 red | failure messages are bounded › a message echoing a huge argument is cut to the bound<br>failure messages are bounded › the cut never splits a surrogate pair |
 | I1a-9 truncation may split a surrogate pair | 1 red | failure messages are bounded › the cut never splits a surrogate pair |
-| I1a-10 a view's rejection reaches the model unformatted | 2 red | a view that rejects or throws fails the call through the same bounded message › when the view rejects<br>a view that rejects or throws fails the call through the same bounded message › when the view throws synchronously |
-| I1a-11 a view's rejection escapes the capture | 2 red | a view that rejects or throws fails the call through the same bounded message › when the view rejects<br>a view that rejects or throws fails the call through the same bounded message › when the view throws synchronously |
+| I1a-10 what a view threw reaches the model | 2 red | a failure tells the model a code, never host text › when the view rejects, the model is told only that it failed<br>a failure tells the model a code, never host text › when the view throws synchronously, the model is told only that it failed |
+| I1a-11 a view's rejection escapes the capture | 2 red | a failure tells the model a code, never host text › when the view rejects, the model is told only that it failed<br>a failure tells the model a code, never host text › when the view throws synchronously, the model is told only that it failed |
 | I1a-12 a page with more after it is rendered as complete input | 1 red | a page is bounded by default › with no limit, a page holds the context budget of tasks, and paging reaches every task once |
 | I1a-13 a budget below the framing reserve is accepted at build time | 1 red | createTaskTools › refuses a budget that could never render, before the model ever calls |
 | I1a-14 the tool budget admits surplus properties | 1 red | createTaskTools › refuses a budget that could never render, before the model ever calls |
@@ -162,8 +163,9 @@ The evidence for I1's gate *"read-only use has no mutation dependency"*:
 | I1a-16 an inspected unresolved task with no room is reported complete | 1 red | an inspection is bounded › a task with no room at all is reported omitted, never returned raw |
 | I1a-17 a rendered unresolved diagnostic is not counted as shown | 1 red | task tools read through the bound view › an unresolved registration is shown as a diagnostic, and no source binding ever leaves |
 | I1a-18 the renderer requires a binding a bound view never emits | 4 red | TaskContextRenderer › rendered fields › an unresolved reference with no binding — as a bound view projects it — renders the same<br>an inspection is bounded › a task with no room at all is reported omitted, never returned raw<br>context converters › unresolved reference › as the renderer accepts it, the binding is optional and nothing else is<br>task tools read through the bound view › an unresolved registration is shown as a diagnostic, and no source binding ever leaves |
+| I1a-19 a classified failure's host message reaches the model | 4 red | a failing projector fails the call — it never yields more › the renderer's projection failing fails the call, with no partial page<br>a failing projector fails the call — it never yields more › the view's details projector failing fails the inspection<br>a failing projector fails the call — it never yields more › the view's envelope projector throwing or failing fails query and inspect<br>a failure tells the model a code, never host text › a classified failure is its code and a fixed description; its message goes to the host |
 
-**18 rows, 0 UNVERIFIED, 0 `0 red`.** One row needed correcting first, in the preliminary run (on pre-format source): I1a-18 first came back `0 red`: its mutant
+**19 rows, 0 UNVERIFIED, 0 `0 red`.** One row needed correcting first, in the preliminary run (on pre-format source): I1a-18 first came back `0 red`: its mutant
 (`.optional().withConstraint(b => b !== undefined)`) was a no-op, because `strictObject` never calls
 an absent optional field's converter. The protection was guarded; the mutant was not a mutant.
 Dropping `.optional()` turns 4 tests red. No row needed `paired(...)`: the one defence-in-depth pair
@@ -222,8 +224,7 @@ model-facing failure path is a disclosure surface, not a formatting one.
 
 ## Gates
 
-Run locally on `87d880cf` (package source identical to the PR's code head at the time). A later
-source change re-runs the affected rows here.
+Run locally on `301a09f1` — the source after Copilot round 1.
 
 | gate | result |
 |---|---|
@@ -231,11 +232,11 @@ source change re-runs the affected rows here.
 | `rushx build` (package) | clean, **zero warnings**; `etc/ts-agent-tasks.api.md` updated and checked in |
 | `rushx lint` / `rushx fixlint` | clean; fixlint a no-op before commit |
 | `rushx test` (package) | **2,060 passed; 100 % statements, branches, functions, lines; zero `c8 ignore`** |
-| `rush rebuild` (repo-wide) | exit 0 (3 min 49 s) — required: the build graph gained an edge |
-| `rush test` (repo-wide) | exit 0 (7 min 37 s) — required: the renderer accepts a wider set |
+| `rush rebuild` (repo-wide) | exit 0 (4 min 12 s) — required: the build graph gained an edge |
+| `rush test` (repo-wide) | exit 0 (8 min 17 s) — required: the renderer accepts a wider set |
 | `verify-capability-docs.mjs` | router 21,338/24,000, 24/24 documented, 75 reflexes, 0 failed |
 | `generate-capability-feed.mjs --check` | 0 stale |
 | `verify-esm-entrypoints.mjs` | 24 checked, 0 failed |
 | `verify-bundler-resolution.mjs` | 20 checked, 0 failed |
 | `verify-tarball-exports.mjs` | 26 packages, 205 paths, 0 failed |
-| CI `build` on `87d880cf` | success |
+| CI `build` on `301a09f1` | success |
