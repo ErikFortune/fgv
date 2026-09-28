@@ -178,4 +178,20 @@ _(recorded on the PR as it happens)_
 
 ## Gates
 
-_(recorded after the final run)_
+Run locally on `87d880cf` (package source identical to the PR's code head at the time). A later
+source change re-runs the affected rows here.
+
+| gate | result |
+|---|---|
+| `rush change --verify --target-branch origin/integration/agent-tasks-v1` | change file found (`minor`) |
+| `rushx build` (package) | clean, **zero warnings**; `etc/ts-agent-tasks.api.md` updated and checked in |
+| `rushx lint` / `rushx fixlint` | clean; fixlint a no-op before commit |
+| `rushx test` (package) | **2,058 passed; 100 % statements, branches, functions, lines; zero `c8 ignore`** |
+| `rush rebuild` (repo-wide) | exit 0 (3 min 49 s) — required: the build graph gained an edge |
+| `rush test` (repo-wide) | exit 0 (7 min 37 s) — required: the renderer accepts a wider set |
+| `verify-capability-docs.mjs` | router 21,338/24,000, 24/24 documented, 75 reflexes, 0 failed |
+| `generate-capability-feed.mjs --check` | 0 stale |
+| `verify-esm-entrypoints.mjs` | 24 checked, 0 failed |
+| `verify-bundler-resolution.mjs` | 20 checked, 0 failed |
+| `verify-tarball-exports.mjs` | 26 packages, 205 paths, 0 failed |
+| CI `build` on `87d880cf` | success |

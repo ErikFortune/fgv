@@ -8,7 +8,7 @@ be enough to resume cold. Keep it current as you go.
 ## Status
 
 **Implemented; revert matrix running; PR next (implementer, 2026-09-28).** Required reading done;
-every file on the list exists and plan § I1 says what the brief claims. Package suite 2,060+ passing
+every file on the list exists and plan § I1 says what the brief claims. Package suite 2,058 passing
 at 100 % with zero `c8 ignore`; lint clean; layer-1 review done (no P1; P2-1 fixed). `result.md`
 drafted — matrix table, Copilot rounds and gate results still to fill.
 
