@@ -8,7 +8,7 @@ be enough to resume cold. Keep it current as you go.
 ## Status
 
 **PR open (#702); every gate green; waiting on Copilot (2026-09-28).** CI green on the head;
-local package suite 2,058 passing at 100 % with zero `c8 ignore`; repo-wide rebuild and test exit 0;
+local package suite 2,060 passing at 100 % with zero `c8 ignore`; repo-wide rebuild and test exit 0;
 five verify scripts 0 failed; final revert matrix on the head's source: 18 rows, 31 red tests, 0
 UNVERIFIED or `0 red`. Layer 1 done. **Layer 2 (Copilot) has not produced a review after two
 requests** — if a Copilot round changes source, re-run the affected matrix rows.

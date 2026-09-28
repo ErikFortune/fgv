@@ -44,7 +44,7 @@ analogue here, because there is no unbounded default to fall back to:
 | `omitted`, `abbreviated` | ids from the page, so ≤ page size × `maxIdLength` |
 | `details` | returned only if `JSON.stringify(details).length ≤ budget.maxDetailsChars`; otherwise `detailsOmitted: 'too-large'` and **none** of them |
 | `commands` | the registry's command names for this kind |
-| failure messages | cut at 500 UTF-16 units, never inside a surrogate pair |
+| failure messages | a view/rendering failure is the code plus a fixed description (host text to `logger` only); an argument failure is cut at 500 UTF-16 units, never inside a surrogate pair |
 | `issues` | the view's one generic line |
 
 **Paging skips nothing unannounced.** Bounding text creates a trap the precedent never faced: the
@@ -60,8 +60,9 @@ fails closed, identity pinned). Both already fail; the tool propagates the failu
 partial page. "Yield less" was rejected for a concrete reason: dropping one item from a page
 misstates completeness *and* advances the cursor past a task the model never saw — the same trap
 as above, with no id to announce it. Failing is visible to the host and to the model, and consistent
-with T2's and T5's no-fallback contracts. A view that rejects or throws (host code) fails through
-the same bounded, tool-prefixed message.
+with T2's and T5's no-fallback contracts. **What the model is told about a failure is its code and a
+fixed description, never the underlying message** (Copilot round 1): a projector's error text, a
+storage detail or a thrown exception goes only to the optional host `logger`.
 
 **`TaskContextRenderer` was reused, and did not quite fit — see below.** Its receipt is discarded:
 the tools acknowledge nothing.
@@ -176,10 +177,10 @@ tests' "the view was never called" assertion, which I1a-1 and I1a-4 each turn re
 Coverage reached 100% from the scenario tests alone; no gap-closure pass was needed or run.
 **No P1.**
 
-- **P2-1 (fixed):** a view that rejects or throws — host code — reached the model through
-  `thenOnSuccess`'s own capture, **unprefixed and untruncated**. `_read` now captures the call and
-  formats the failure like any other. Tests drive a rejecting and a synchronously throwing view with
-  a 5,000-character message containing a connection string. Matrix rows I1a-10 and I1a-11 pin it.
+- **P2-1 (fixed, then fixed properly in Copilot round 1):** a view that rejects or throws — host
+  code — reached the model through `thenOnSuccess`'s own capture, **unprefixed and untruncated**.
+  The layer-1 fix captured it and prefixed and truncated it. That bounded the text but still
+  disclosed it; see round 1.
 - **P2-2 (addressed in this PR):** docs, change file and artifacts were not yet written at review
   time. The `package.json` ordering it queried is `rush add`'s own output.
 - **P3-a (documented):** details can be returned for a task whose text was omitted — the two budgets
@@ -193,7 +194,19 @@ Coverage reached 100% from the scenario tests alone; no gap-closure pass was nee
 
 ### Layer 2 — Copilot
 
-_(recorded on the PR as it happens)_
+The first request did not register (no reviewer listed after 35 minutes); the second produced round 1.
+
+**Round 1 — one high, two medium; all real, all fixed.**
+
+| finding | fix |
+|---|---|
+| **(high)** the model-facing boundary prefixed and truncated failures but still forwarded the raw message from the view, a projector or a thrown host error — a connection string reached the model, as layer 1's own test demonstrated. Truncation bounds a disclosure; it does not prevent one | every failure the view or the rendering reports now reaches the model as `<tool>: <code>: <fixed description>` (a `Record<TaskFailureCode, string>`, so a new code cannot be missed); a rejection or throw as `<tool>: the task view failed`; an unclassified failure as `<tool>: the request failed`. The underlying message goes to a new optional `logger` (`Logging.ILogger`) — `warn` for a reported failure, `error` for a throw. Only argument-validation failures, which describe the model's own input, are passed through (still cut at 500). Tests: rejecting and throwing views, three classified codes carrying a filesystem path, an unclassified failure, and the projector-failure tests now assert the fixed message plus the logger's copy. New matrix rows I1a-10 (re-pointed) and I1a-19 |
+| **(medium)** the Gemini capture checked names and an `objectContaining` shape, so a serializer dropping descriptions, enums or required members would pass | the test now pins both complete `function_declarations` entries. Recorded while writing it: **Gemini's dialect drops `additionalProperties`**, so on Gemini the schemas' closure is enforced by validation (harness, then `execute`), not stated on the wire |
+| **(medium)** the PR description said the final revert matrix was still owed while `result.md` recorded it | PR description reconciled; the matrix has been re-run on this round's source (below) |
+
+Layer 1 and Copilot round 1 found the same defect twice at different depths: layer 1 saw an
+*unbounded* message, fixed the bound, and left the *disclosure*. Worth carrying into I1b: a
+model-facing failure path is a disclosure surface, not a formatting one.
 
 ## Routed beyond this slice
 
@@ -217,7 +230,7 @@ source change re-runs the affected rows here.
 | `rush change --verify --target-branch origin/integration/agent-tasks-v1` | change file found (`minor`) |
 | `rushx build` (package) | clean, **zero warnings**; `etc/ts-agent-tasks.api.md` updated and checked in |
 | `rushx lint` / `rushx fixlint` | clean; fixlint a no-op before commit |
-| `rushx test` (package) | **2,058 passed; 100 % statements, branches, functions, lines; zero `c8 ignore`** |
+| `rushx test` (package) | **2,060 passed; 100 % statements, branches, functions, lines; zero `c8 ignore`** |
 | `rush rebuild` (repo-wide) | exit 0 (3 min 49 s) — required: the build graph gained an edge |
 | `rush test` (repo-wide) | exit 0 (7 min 37 s) — required: the renderer accepts a wider set |
 | `verify-capability-docs.mjs` | router 21,338/24,000, 24/24 documented, 75 reflexes, 0 failed |

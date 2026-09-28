@@ -5,21 +5,30 @@
 
 import '@fgv/ts-utils-jest';
 import { JsonValue } from '@fgv/ts-json-base';
-import { fail, succeed } from '@fgv/ts-utils';
+import { Logging, fail, failWithDetail, succeed } from '@fgv/ts-utils';
 import {
   IBoundTaskView,
+  ITaskFailure,
   ITaskContextBudget,
   ITaskInspectResolvedToolResult,
   ITaskProjector,
   ITaskQueryToolResult,
   ITaskToolBudget,
   TaskContextRenderer,
+  TaskFailureCode,
+  TaskResult,
   defaultTaskContextBudget,
   defaultTaskProjector,
   defaultTaskToolBudget
 } from '../../../index';
 import { IBrokerHarness, brokerHarness, op, registerVendor, tid, track } from '../../helpers/brokerFixtures';
 import { bindReader, inspect, query, shownIds, taskTools } from '../../helpers/toolFixtures';
+
+/** What the model is told when a projector fails: the code and its fixed description, nothing more. */
+const REFUSED_QUERY: RegExp =
+  /^task_query: invalid: the request was refused, or a task could not be presented$/;
+const REFUSED_INSPECT: RegExp =
+  /^task_inspect: invalid: the request was refused, or a task could not be presented$/;
 
 const reserve: number = TaskContextRenderer.create().orThrow().framingReserve;
 
@@ -209,11 +218,12 @@ describe('a failing projector fails the call — it never yields more', () => {
       { envelope: (e) => succeed({ ...e, extra: true } as never) }
     ];
     for (const projector of projectors) {
-      const tools = taskTools({ view: bindReader(h, { projector }) });
-      for (const result of [await query(tools, {}), await inspect(tools, { taskId: 't1' })]) {
-        expect(result).toFailWith(/projection failed/);
-        expect(result.isFailure() && result.message).not.toContain('secret title');
-      }
+      const logger = new Logging.InMemoryLogger('detail');
+      const tools = taskTools({ view: bindReader(h, { projector }), logger });
+      expect(await query(tools, {})).toFailWith(REFUSED_QUERY);
+      expect(await inspect(tools, { taskId: 't1' })).toFailWith(REFUSED_INSPECT);
+      // The projector's own message is the host's, never the model's.
+      expect(logger.logged.filter((line) => /projection failed/.test(line))).toHaveLength(2);
     }
   });
 
@@ -224,8 +234,10 @@ describe('a failing projector fails the call — it never yields more', () => {
         throw new Error('details down');
       }
     };
-    const tools = taskTools({ view: bindReader(h, { projector }) });
-    expect(await inspect(tools, { taskId: 't1' })).toFailWith(/^task_inspect: invalid: .*projection failed/);
+    const logger = new Logging.InMemoryLogger('detail');
+    const tools = taskTools({ view: bindReader(h, { projector }), logger });
+    expect(await inspect(tools, { taskId: 't1' })).toFailWith(REFUSED_INSPECT);
+    expect(logger.logged.some((line) => /details down/.test(line))).toBe(true);
   });
 
   test("the renderer's projection failing fails the call, with no partial page", async () => {
@@ -239,10 +251,8 @@ describe('a failing projector fails the call — it never yields more', () => {
     ];
     for (const renderer of renderers) {
       const tools = taskTools({ view: bindReader(h), renderer });
-      expect(await query(tools, {})).toFailWith(/^task_query: invalid: .*projection failed/);
-      expect(await inspect(tools, { taskId: 't1' })).toFailWith(
-        /^task_inspect: invalid: .*projection failed/
-      );
+      expect(await query(tools, {})).toFailWith(REFUSED_QUERY);
+      expect(await inspect(tools, { taskId: 't1' })).toFailWith(REFUSED_INSPECT);
     }
   });
 
@@ -294,8 +304,7 @@ describe('failure messages are bounded', () => {
   });
 });
 
-describe('a view that rejects or throws fails the call through the same bounded message', () => {
-  const suffix: string = '… (truncated)';
+describe('a failure tells the model a code, never host text', () => {
   const internals: string = `connection string postgres://secret ${'z'.repeat(5000)}`;
 
   test.each([
@@ -306,22 +315,59 @@ describe('a view that rejects or throws fails the call through the same bounded 
         throw new Error(internals);
       }
     ]
-  ])('when the view %s', async (__how, misbehave) => {
+  ])('when the view %s, the model is told only that it failed', async (__how, misbehave) => {
     const view: IBoundTaskView = {
       principal: 'alice',
       query: misbehave,
       inspect: misbehave,
       inspectStop: misbehave
     };
-    const tools = taskTools({ view });
-    const results = [
-      [/^task_query: connection string/, await query(tools, {})],
-      [/^task_inspect: connection string/, await inspect(tools, { taskId: 't1' })]
-    ] as const;
-    for (const [pattern, result] of results) {
-      expect(result).toFailWith(pattern);
-      expect(result.isFailure() && result.message.length).toBe(500 + suffix.length);
+    const logger = new Logging.InMemoryLogger('detail');
+    const tools = taskTools({ view, logger });
+    expect(await query(tools, {})).toFailWith(/^task_query: the task view failed$/);
+    expect(await inspect(tools, { taskId: 't1' })).toFailWith(/^task_inspect: the task view failed$/);
+    // What the view threw is the host's to see.
+    expect(logger.logged.filter((line) => line.includes('postgres://secret'))).toHaveLength(2);
+    // Without a logger the text is discarded, and the model is told the same thing.
+    const quiet = taskTools({ view });
+    expect(await query(quiet, {})).toFailWith(/^task_query: the task view failed$/);
+  });
+
+  test('a classified failure is its code and a fixed description; its message goes to the host', async () => {
+    const leaky =
+      (code: TaskFailureCode): (() => Promise<TaskResult<never>>) =>
+      async (): Promise<TaskResult<never>> =>
+        failWithDetail<never, ITaskFailure>(`storage at /srv/secret/tasks refused: ${code}`, {
+          code,
+          retry: 'safe'
+        });
+    for (const code of ['storage-corrupt', 'conflict', 'cursor-stale'] as const) {
+      const logger = new Logging.InMemoryLogger('detail');
+      const view: IBoundTaskView = {
+        principal: 'alice',
+        query: leaky(code),
+        inspect: leaky(code),
+        inspectStop: leaky(code)
+      };
+      const tools = taskTools({ view, logger });
+      for (const result of [await query(tools, {}), await inspect(tools, { taskId: 't1' })]) {
+        expect(result.isFailure() && result.message.includes(`: ${code}: `)).toBe(true);
+        expect(result.isFailure() && result.message).not.toContain('/srv/secret');
+      }
+      expect(logger.logged.filter((line) => line.includes('/srv/secret'))).toHaveLength(2);
     }
+  });
+
+  test('an unclassified failure says only that the request failed', async () => {
+    const view: IBoundTaskView = {
+      principal: 'alice',
+      query: async () => fail<never>('at /srv/secret') as TaskResult<never>,
+      inspect: async () => fail<never>('at /srv/secret') as TaskResult<never>,
+      inspectStop: async () => fail<never>('at /srv/secret') as TaskResult<never>
+    };
+    const tools = taskTools({ view });
+    expect(await query(tools, {})).toFailWith(/^task_query: the request failed$/);
+    expect(await inspect(tools, { taskId: 't1' })).toFailWith(/^task_inspect: the request failed$/);
   });
 });
 

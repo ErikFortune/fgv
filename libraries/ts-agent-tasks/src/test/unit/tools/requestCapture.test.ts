@@ -149,27 +149,64 @@ describe('the task tools reach the outbound request', () => {
     ]);
   });
 
-  test('Gemini: both tools are function declarations carrying their parameters', async () => {
+  test('Gemini: both tools are function declarations with their complete sanitized schemas', async () => {
     const bodies = captureRequests([geminiDone]);
     await runTurn('google-gemini', [tools.query, tools.inspect]);
     const declarations = toolsOf(bodies[0]).flatMap((t) => (t.function_declarations ?? []) as JsonObject[]);
-    expect(declarations.map((d) => d.name)).toEqual(['task_query', 'task_inspect']);
-    expect(declarations[1]).toEqual({
-      name: 'task_inspect',
-      description: tools.inspect.config.description,
-      parameters: expect.objectContaining({
-        type: 'object',
-        properties: { taskId: expect.objectContaining({ type: 'string' }) },
-        required: ['taskId']
-      })
-    });
-    expect(Object.keys((declarations[0].parameters as JsonObject).properties as JsonObject)).toEqual([
-      'responsibility',
-      'parentId',
-      'lifecycleClass',
-      'statuses',
-      'limit',
-      'cursor'
+    // Gemini's dialect drops `additionalProperties`, so on this provider a closed schema is enforced
+    // by validation (the harness's, then `execute`'s), not stated on the wire. Everything else —
+    // descriptions, enums, item types, required members — must arrive intact.
+    expect(declarations).toEqual([
+      {
+        name: 'task_query',
+        description: tools.query.config.description,
+        parameters: {
+          type: 'object',
+          properties: {
+            responsibility: {
+              type: 'object',
+              properties: {
+                namespace: { type: 'string', description: 'The responsible party namespace, e.g. "agent".' },
+                key: { type: 'string', description: 'The responsible party key within its namespace.' }
+              },
+              required: ['namespace', 'key'],
+              description: 'Only tasks assigned to this responsible party.'
+            },
+            parentId: { type: 'string', description: 'Only direct children of this task.' },
+            lifecycleClass: {
+              type: 'string',
+              enum: ['open', 'terminal', 'all'],
+              description: 'Only open tasks, only terminal tasks, or all (the default).'
+            },
+            statuses: {
+              type: 'array',
+              items: {
+                type: 'string',
+                enum: ['pending', 'running', 'waiting', 'paused', 'succeeded', 'failed', 'cancelled'],
+                description: 'A lifecycle status.'
+              },
+              description: 'Only tasks in one of these lifecycle statuses.'
+            },
+            limit: {
+              type: 'integer',
+              description: 'The most tasks to return, from 1 to 20. Defaults to 20.'
+            },
+            cursor: {
+              type: 'string',
+              description: 'The nextCursor of a previous task_query, to continue after it.'
+            }
+          }
+        }
+      },
+      {
+        name: 'task_inspect',
+        description: tools.inspect.config.description,
+        parameters: {
+          type: 'object',
+          properties: { taskId: { type: 'string', description: 'The id of the task to inspect.' } },
+          required: ['taskId']
+        }
+      }
     ]);
   });
 

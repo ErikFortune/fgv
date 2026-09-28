@@ -5,13 +5,13 @@
 
 import { AiAssist } from '@fgv/ts-extras';
 import { JsonSchema } from '@fgv/ts-json-base';
-import { Converters, DetailedResult, Result, captureAsyncResult, fail, succeed } from '@fgv/ts-utils';
+import { Converters, Logging, Result, captureAsyncResult, fail, succeed } from '@fgv/ts-utils';
 import { TaskContextRenderer } from '../context';
 import {
   IBoundTaskQuery,
   IBoundTaskView,
-  ITaskFailure,
   ITaskToolBudget,
+  TaskFailureCode,
   TaskId,
   TaskResult,
   defaultTaskToolBudget
@@ -38,11 +38,18 @@ export interface ICreateTaskToolsParams {
   readonly renderer?: TaskContextRenderer;
   /** Output bounds. Defaults to {@link defaultTaskToolBudget}. */
   readonly budget?: ITaskToolBudget;
+  /**
+   * Where the full text of a failure the view or the rendering reports goes. The model is told only
+   * the failure's code and a fixed description, never the underlying message, which can carry host
+   * text — a projector's error, a storage path, a thrown exception. Without a logger that text is
+   * discarded.
+   */
+  readonly logger?: Logging.ILogger;
 }
 
 /**
- * The most characters of a failure message a tool returns. A converter's message can echo the
- * model's own argument, which has no length limit of its own.
+ * The most characters of an argument-validation failure a tool returns. Those messages are about the
+ * model's own arguments and can echo them, which have no length limit of their own.
  */
 const maxMessageChars: number = 500;
 
@@ -53,15 +60,37 @@ const readOnlyAnnotations: AiAssist.IAiToolAnnotations = {
   openWorldHint: false
 };
 
+/**
+ * What the model is told for each failure the view or the rendering reports. The underlying message
+ * is host-side text and never reaches the model: it goes to the host's logger.
+ */
+const modelFacingFailures: Readonly<Record<TaskFailureCode, string>> = {
+  invalid: 'the request was refused, or a task could not be presented',
+  'not-found-or-denied': 'the task is not found or not visible',
+  conflict: 'tasks changed while this was being answered; retry',
+  unsupported: 'the request is not supported',
+  'storage-unavailable': 'task storage is unavailable; retry later',
+  'storage-corrupt': 'task storage could not be read',
+  'commit-indeterminate': 'the outcome of an earlier operation is not yet known; retry later',
+  'source-unavailable': 'a task source is unavailable; retry later',
+  'source-gap': 'a task source could not be read completely',
+  'unknown-kind-version': 'a task has a kind this host does not recognize',
+  'invalid-receipt': 'the request was refused',
+  'cursor-stale': 'the cursor is no longer valid; query again without it',
+  'retention-blocked': 'the request was refused',
+  backpressure: 'task storage is at capacity; retry later'
+};
+
 interface IToolContext {
   readonly view: IBoundTaskView;
   readonly renderer: TaskContextRenderer;
   readonly budget: ITaskToolBudget;
+  readonly logger?: Logging.ILogger;
 }
 
-/** A failure as the model sees it: named by tool, classified when classified, and bounded. */
-function _message(tool: string, message: string, detail?: ITaskFailure): string {
-  const full: string = `${tool}: ${detail !== undefined ? `${detail.code}: ` : ''}${message}`;
+/** An argument-validation failure as the model sees it: named by tool, and bounded. */
+function _message(tool: string, message: string): string {
+  const full: string = `${tool}: ${message}`;
   if (full.length <= maxMessageChars) {
     return full;
   }
@@ -72,23 +101,37 @@ function _message(tool: string, message: string, detail?: ITaskFailure): string 
   return `${full.slice(0, cut)}… (truncated)`;
 }
 
-/** Reduces a task result to the plain result a tool returns, its failure classified and bounded. */
-function _toolResult<T>(tool: string, result: DetailedResult<T, ITaskFailure>): Result<T> {
-  return result.isSuccess() ? succeed(result.value) : fail(_message(tool, result.message, result.detail));
+/**
+ * Reduces a task result to what the model is told. A failure becomes its code and a fixed
+ * description; its message goes to the host's logger.
+ */
+function _toolResult<T>(ctx: IToolContext, tool: string, result: TaskResult<T>): Result<T> {
+  if (result.isSuccess()) {
+    return succeed(result.value);
+  }
+  ctx.logger?.warn(`${tool}: ${result.message}`);
+  const code: TaskFailureCode | undefined = result.detail?.code;
+  return fail(
+    code !== undefined ? `${tool}: ${code}: ${modelFacingFailures[code]}` : `${tool}: the request failed`
+  );
 }
 
 /**
  * Asks the view and presents its answer. A view that rejects or throws — host code, whatever it
- * implements — fails the call through the same classified, bounded message as any other failure.
+ * implements — fails the call with a fixed message; what it threw goes to the host's logger.
  */
 async function _read<T, TOut>(
+  ctx: IToolContext,
   tool: string,
   ask: () => Promise<TaskResult<T>>,
   present: (value: T) => TaskResult<TOut>
 ): Promise<Result<TOut>> {
   return (await captureAsyncResult(async () => (await ask()).onSuccess(present)))
-    .withErrorFormat((message) => _message(tool, message))
-    .onSuccess((result) => _toolResult(tool, result));
+    .onFailure((message) => {
+      ctx.logger?.error(`${tool}: the task view threw: ${message}`);
+      return fail(`${tool}: the task view failed`);
+    })
+    .onSuccess((result) => _toolResult(ctx, tool, result));
 }
 
 /** The view query a model's arguments describe, validated by the view's own request converter. */
@@ -135,6 +178,7 @@ function _queryTool(ctx: IToolContext): AiAssist.IAiClientTool {
         .withErrorFormat((message) => _message(name, `invalid arguments: ${message}`))
         .thenOnSuccess((request) =>
           _read(
+            ctx,
             name,
             () => ctx.view.query(request),
             (page) => presentPage(ctx.renderer, ctx.budget, page)
@@ -163,6 +207,7 @@ function _inspectTool(ctx: IToolContext): AiAssist.IAiClientTool {
         .withErrorFormat((message) => _message(name, `invalid arguments: ${message}`))
         .thenOnSuccess((id: TaskId) =>
           _read(
+            ctx,
             name,
             () => ctx.view.inspect(id),
             (inspection) => presentInspection(ctx.renderer, ctx.budget, inspection)
@@ -210,9 +255,12 @@ function _budget(renderer: TaskContextRenderer, budget: ITaskToolBudget): Result
  * `budget.context`, never as a raw envelope; a page is at most `budget.context.maxItems` tasks;
  * details are returned only when their JSON fits `budget.maxDetailsChars`, a budget independent of
  * the context text's. A projector that fails — the view's or the renderer's — fails the call:
- * nothing is returned in its place, and nothing falls back to a less-projected value. Failure
- * messages are bounded, and are the view's own, which T5 made indistinguishable for a hidden task
- * and a foreign id; a host projector's failure message is included in them.
+ * nothing is returned in its place, and nothing falls back to a less-projected value.
+ *
+ * **A failure tells the model a code, never host text.** A failure the view or the rendering
+ * reports reaches the model as its code and a fixed description; the underlying message — which can
+ * carry a projector's error, a storage detail or a thrown exception — goes only to `logger`. Only a
+ * failure of the model's own arguments is described in full, cut at 500 characters.
  *
  * **What is framed and what is not.** Task state reaches the model only inside the renderer's
  * framed, escaped context text. Details are the host projector's JSON, returned as structured data
@@ -226,7 +274,7 @@ export function createTaskTools(
     params.renderer !== undefined ? succeed(params.renderer) : TaskContextRenderer.create();
   return renderer.onSuccess((r) =>
     _budget(r, params.budget ?? defaultTaskToolBudget).onSuccess((budget) => {
-      const ctx: IToolContext = { view: params.view, renderer: r, budget };
+      const ctx: IToolContext = { view: params.view, renderer: r, budget, logger: params.logger };
       return succeed([_queryTool(ctx), _inspectTool(ctx)]);
     })
   );

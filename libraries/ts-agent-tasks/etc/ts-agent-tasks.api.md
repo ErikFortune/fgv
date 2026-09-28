@@ -681,6 +681,7 @@ export interface ICreateTaskList extends ICreateTrackedTask {
 // @public
 export interface ICreateTaskToolsParams {
     readonly budget?: ITaskToolBudget;
+    readonly logger?: Logging.ILogger;
     readonly renderer?: TaskContextRenderer;
     readonly view: IBoundTaskView;
 }

@@ -1223,10 +1223,10 @@ const I1A_ROWS = [
     I1A
   ),
   m(
-    "I1a-10 a view's rejection reaches the model unformatted",
+    'I1a-10 what a view threw reaches the model',
     TL + 'taskTools.ts',
-    '    .withErrorFormat((message) => _message(tool, message))\n',
-    '    .withErrorFormat((message) => message)\n',
+    '      return fail(`${tool}: the task view failed`);',
+    '      return fail(`${tool}: ${message}`);',
     I1A
   ),
   m(
@@ -1283,6 +1283,13 @@ const I1A_ROWS = [
     C + 'contextConverters.ts',
     '      binding: values.sourceBinding.optional(),',
     '      binding: values.sourceBinding,',
+    I1A
+  ),
+  m(
+    "I1a-19 a classified failure's host message reaches the model",
+    TL + 'taskTools.ts',
+    '`${tool}: ${code}: ${modelFacingFailures[code]}`',
+    '`${tool}: ${code}: ${result.message}`',
     I1A
   )
 ];

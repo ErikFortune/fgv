@@ -675,11 +675,15 @@ const turn = AiAssist.executeClientToolTurn({ descriptor, apiKey, messages, clie
   page is at most `budget.context.maxItems` tasks. A task on the page that the text omitted or
   abbreviated is **named by id** in `omitted` / `abbreviated`, so paging on `nextCursor` never skips
   a task unannounced. Details come back only when their JSON fits `budget.maxDetailsChars` (default
-  4,000), otherwise `detailsOmitted: 'too-large'` and none of them. Failure messages are cut at 500
-  characters.
+  4,000), otherwise `detailsOmitted: 'too-large'` and none of them.
 - **A failing projector fails the call.** The view's `ITaskProjector` and the renderer's projection
   both fail closed; the tool returns the failure and no partial page. Nothing falls back to a less
-  projected value, and a view that rejects or throws fails through the same bounded message.
+  projected value.
+- **A failure tells the model a code, never host text.** A failure the view or the rendering reports
+  reaches the model as `<tool>: <code>: <fixed description>`; a view that rejects or throws, as
+  `<tool>: the task view failed`. The underlying message — a projector's error, a storage detail, an
+  exception — goes only to the optional `logger`. Only a failure of the model's own arguments is
+  described in full, cut at 500 characters.
 - **What is framed.** Task state is framed and escaped inside the context text. Details are the host
   projector's JSON, returned beside it as structured data and neither framed nor escaped — a host
   that exposes details chooses their content.
