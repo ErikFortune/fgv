@@ -128,6 +128,68 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
+### `agent-tasks-i1a` 🟢 (slice I1a of four — the tool factory and the read-only surface)
+
+**Status:** 🟢 ready to start. Branched off `integration/agent-tasks-v1` at `9b1af1821`, the T9
+landing. PR targets `integration/agent-tasks-v1`, **not `release`**. Artifacts in
+`.ai/tasks/active/agent-tasks-i1a/`; this family finalizes at cluster close.
+
+**I1 is split into four slices, decided up front** (plan § I1). T7 and T9 each landed at 65+ files
+and +11,000 lines with the review loop still finding structural defects at round 6+; this
+decomposition exists so that does not happen a third time. Each slice adds exactly one authority
+surface: **I1a** the packlet, factory and read-only surface; **I1b** tracked and reassignment
+mutation opt-ins; **I1c** statically generated typed command tools; **I1d** stop tools (the only one
+needing T9).
+
+**Mission (I1a).** A `tools` packlet whose factory produces `@fgv/ts-extras` `IAiClientTool`s over a
+bound task view — **read-only only**, `query` and `inspect`. Bounded outputs by default. Schema
+revalidation inside `execute`.
+
+**Why read-only and nothing else.** I1's own review gate says *"read-only use has no mutation
+dependency."* Shipping the read surface with **no mutation code in the package** is the strongest
+available proof of that; I1b then demonstrates the property holds by adding mutations on top, rather
+than asserting a separation inside one large diff. The seam is already in the types —
+`IBoundTaskView` is `query` / `inspect` / `inspectStop`, every mutating operation is on
+`IBoundTaskWriter`. If this slice needs a writer member, that is a finding, not a scope to widen.
+
+**The precedent, and the defect not to copy.** `ts-agent-memory`'s `memoryTools.ts` is the shape to
+follow, and the review gate names its flaw: the *permissive full-body fallback*. Its own docstrings
+concede that *"the built-in default projection returns the full body regardless"* of the detail tier,
+so the model gets unbounded bodies unless the host opts into bounding. **In I1 bounding is the
+default** — there must be no path where a missing or failing host callback yields an unbounded
+result, and a projector that throws must yield *less*, not more.
+
+**The test the plan singles out:** capture the ai-assist outbound request and assert the tools were
+really sent. Mocking a tool-call response proves nothing about whether the tool was offered — this
+is the C-phase lesson, where a stream reported live success while client tools had never been merged
+into the request `tools` array and 100% coverage sat on the response side.
+
+**First dependency beyond the foundations.** `ts-agent-tasks` depends only on `@fgv/ts-json-base`,
+`@fgv/ts-utils` and `tslib`; this slice adds `@fgv/ts-extras` via `rush add -p`, matching
+`ts-agent-memory`'s posture.
+
+**Package surface.** `libraries/ts-agent-tasks` only — the new `tools` packlet, its types, converters
+and tests; the dependency; `CAPABILITIES.md`; this stream's artifacts, the plan's I1a status line and
+this ledger entry.
+
+**Out of scope.** Everything in I1b/I1c/I1d — mutation opt-ins, generated command tools, stop tools,
+`inspectStop`, and the forged-actor / revoked-authority cases that need a mutation to revoke
+authority for. Every package outside `ts-agent-tasks`. The three known CI flakes. The parked coverage
+chores.
+
+**Review gates.** Layer 1 `code-reviewer` before coverage closure, then the Copilot loop. No separate
+antagonist pass — that was T8's and T9's, for persistence and cascade semantics. A schema-and-
+projection surface should run a shorter loop than T9's ten rounds; if it does not, that is worth
+surfacing, because here it would mean something different.
+
+**Acceptance criteria:** `rushx build` zero warnings, `rushx lint`, `rushx fixlint`; `rushx test` at
+100% with zero `c8 ignore`; a **`minor`** change file; repo-wide `rebuild` **and** `test` on the final
+source (the build graph changes); the five verify scripts; no `any`; **revert-matrix rows run on
+final source with per-row suite names**; both review layers recorded; and the plan line plus this
+entry written as shipped in the PR itself.
+
+**Artifact pointer:** `.ai/tasks/active/agent-tasks-i1a/`.
+
 ### `agent-tasks-t9` ✅ (shipped 2026-09-27 via [#701](https://github.com/ErikFortune/fgv/pull/701)) — slice T9 of the agent-tasks plan
 
 **Status:** ✅ shipped into `integration/agent-tasks-v1` (not `release`; the cluster promotes as one).
