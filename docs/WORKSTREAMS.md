@@ -128,6 +128,73 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
+### `agent-tasks-t9` ✅ (shipped 2026-09-27 via [#701](https://github.com/ErikFortune/fgv/pull/701)) — slice T9 of the agent-tasks plan
+
+**Status:** ✅ shipped into `integration/agent-tasks-v1` (not `release`; the cluster promotes as one).
+Branched at `ea6b6f38b`. Artifacts in `.ai/tasks/active/agent-tasks-t9/`; this family finalizes at
+cluster close.
+
+**What shipped.** `requestStop` / `reconcileStop` / `releaseStop` / `inspectStop`: the complete
+authoritative subtree captured in the writer (≤ 1,000 targets, refused never truncated), minted
+per-target attempt keys persisted in the root's record before any dispatch, and nothing dispatched at
+acceptance. A storage-enforced admission freeze rebuilt before a reopened repository accepts a write.
+A bounded host pump that confirms each target under current `stop-target` authority and never
+satisfies a stop a pass did not fully visit. `ITaskSource.capabilities()` with a declared stable-stop
+contract, revalidated per broker instance. A3 reservations for every target derived from the records
+(the no-partial-dispatch proof: one byte short, nothing written). Both inherited hand-offs (T5 latch
+gap, T6 `capabilities()`) resolved. The semantic antagonist's seven findings were fixed with
+regressions, as were the Copilot loop's; revert rows T9-1…T9-66 were added to `perf/mutationMatrix.js`. The M1 stop-state cohort
+was judged to belong with the production-profile run (routed). Detail: `result.md`.
+
+**Mission.** Persistent cascade stop with admission enforcement: root + transitive target capture,
+persisted latch and target operation identities, bounded host-driven reconciliation, current
+per-target authority, classified partial outcomes, stable-stop source declaration and explicit
+pause-latch release — with the full-hierarchy admission gate enforced on reopen before any mutation.
+
+**Everything hard about T9 follows from one sentence of amendment A2:** a cascade stop is *"a best
+attempt with an observable result … acceptance remains distinct from completion. No all-or-nothing
+execution promise; no silent skipped children."* A stop is not a transaction. It is an intent that
+is persisted, partially satisfied and honestly reported, and the failure mode is a design that
+quietly rounds a partial result up to a success. The review gate names that rounding exactly: **no
+"success with skipped child" fallback.**
+
+**Four traversal rules that each invert a reasonable instinct**, all from design § 10: traversal is
+authoritative and **not** visibility-filtered (a target the caller cannot see is still a target,
+even though `IStopResult.targets` is view-filtered); a descendant's `stopPolicy: 'none'` does **not**
+block ancestor traversal, it governs requests *originating* there; no display-depth budget limits
+traversal; and the preset is only available where this repository owns complete tree membership.
+
+**Two inherited hand-offs.** From T5: no stop latch is checked by list completion or relationship
+operations — precisely the paths a caller would use to get around a freeze. From T6:
+`ITaskSource.capabilities()` and the source side of a stop, which T6 omitted deliberately; the
+stable-stop contract is declared here.
+
+**A3's distinctive requirement:** prove that **no partial dispatch** occurs merely because later
+targets lack reserved capacity. Reserve for all targets, then dispatch. A stop that reaches three of
+five and then discovers it cannot pay has already changed the world.
+
+**Package surface.** `libraries/ts-agent-tasks` only — `broker/`, `implementations/`, `storage/`,
+their types, converters and tests; plus this stream's artifacts, the plan's T9 status line and this
+ledger entry.
+
+**Out of scope.** I1's tool factory (which needs T9 *only* for opting into stop tools), I2, P1.
+Reshaping T8's retention or capacity work. Every package outside `ts-agent-tasks`. The three known
+CI flakes. The parked coverage-to-100% chores.
+
+**Review gates — three layers, and the middle one is named by the plan.** Layer 1 `code-reviewer`
+before coverage closure; then a **semantic review against design § 10 plus the cascade adversarial
+journey**; then the implementer-driven Copilot loop. A stop *is* an authority — to freeze admission,
+to end others' work, to refuse a mutation — so the authorization-boundary loop expectation applies:
+T5 ran seven rounds, T6 six, T7 six, T8 PR 1 four plus an antagonist that found two HIGHs the loop
+had not.
+
+**Acceptance criteria:** `rushx build` zero warnings, `rushx lint`, `rushx fixlint`; `rushx test` at
+100% with zero `c8 ignore`; a **`minor`** change file verified with `rush change --verify`;
+repo-wide `rebuild` **and** `test` on the final source; the five verify scripts; no `any`; all three
+review layers recorded; and the plan's T9 line plus this entry written as shipped in the PR itself.
+
+**Artifact pointer:** `.ai/tasks/active/agent-tasks-t9/`.
+
 ### `agent-tasks-t8b` ✅ (shipped 2026-09-26 via [#699](https://github.com/ErikFortune/fgv/pull/699)) — slice T8, PR 2 of 2; closes T8
 
 **Status:** ✅ shipped into `integration/agent-tasks-v1` (not `release`; the cluster promotes as one).

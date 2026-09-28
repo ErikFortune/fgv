@@ -16,7 +16,8 @@ import {
   ITaskRecordDraft,
   OperationId,
   TaskId,
-  TaskResult
+  TaskResult,
+  carriedStops
 } from '../types';
 import { ISourceReplayAdmission, mintSettlementClaim, replayCharges, spendOne } from './claims';
 import { commandSettlement, sourceIdOf } from './commitRules';
@@ -228,7 +229,8 @@ export function extendReplayClaims(
           ...(record.sourceRevision !== undefined ? { sourceRevision: record.sourceRevision } : {}),
           operations: record.operations,
           updates: record.updates,
-          archived: record.archived
+          archived: record.archived,
+          ...carriedStops(record)
         }
       : { recordType: 'unresolved', reference: record.reference, operations: record.operations };
   return succeed({ claims, envelope, draft });

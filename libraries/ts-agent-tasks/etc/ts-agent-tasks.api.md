@@ -23,6 +23,15 @@ export const allCapacityDimensions: ReadonlyArray<CapacityDimension>;
 export const allCommandAbandonmentOrigins: ReadonlyArray<CommandAbandonmentOrigin>;
 
 // @public
+export const allStopIntentStates: ReadonlyArray<StopIntentState>;
+
+// @public
+export const allStopModes: ReadonlyArray<StopMode>;
+
+// @public
+export const allStopTargetStates: ReadonlyArray<StopTargetState>;
+
+// @public
 export const allTaskActions: ReadonlyArray<TaskAction>;
 
 // @public
@@ -94,7 +103,10 @@ export function buildQueryConverters(bounds: ITaskFieldBounds, ids: IIdentityCon
 export function buildSourceConverters(bounds: ITaskFieldBounds, values: IValueConverters): ISourceConverters;
 
 // @public
-export function buildStorageConverters(bounds: ITaskFieldBounds, ids: IIdentityConverters, values: IValueConverters, envelopes: IEnvelopeConverters, commands: ICommandConverters, capacity: ICapacityConverters, context: IContextConverters, delivery: IDeliveryConverters): IStorageConverters;
+export function buildStopConverters(bounds: ITaskFieldBounds, ids: IIdentityConverters, values: IValueConverters): IStopConverters;
+
+// @public
+export function buildStorageConverters(bounds: ITaskFieldBounds, ids: IIdentityConverters, values: IValueConverters, envelopes: IEnvelopeConverters, commands: ICommandConverters, capacity: ICapacityConverters, context: IContextConverters, delivery: IDeliveryConverters, stops: IStopConverters): IStorageConverters;
 
 // @public
 export function buildValueConverters(bounds: ITaskFieldBounds, ids: IIdentityConverters): IValueConverters;
@@ -129,6 +141,13 @@ export type CapacityDimension = 'retained-tasks' | 'non-archived-tasks' | 'subsc
 
 // @public
 export const capacityPressureThreshold: number;
+
+// @public
+export function carriedStops(record: {
+    readonly stops?: ReadonlyArray<IStopIntent>;
+}): {
+    readonly stops?: ReadonlyArray<IStopIntent>;
+};
 
 // @public
 export function checkListCompletion(listId: TaskId, children: ReadonlyArray<ITaskChildState>, requireChild: boolean): Result<number>;
@@ -174,7 +193,13 @@ export const defaultDeliveryCategories: ReadonlyArray<UpdateCategory>;
 export const defaultMaxBaselineTasks: number;
 
 // @public
+export const defaultMaxStopTargets: number;
+
+// @public
 export const defaultReceiptLifetimeMs: number;
+
+// @public
+export const defaultStopPumpLimit: number;
 
 // @public
 export const defaultTaskCapacityLimits: TaskCapacityLimits;
@@ -251,6 +276,7 @@ export type ExternalRecovery<TDetails> = {
 
 // @public
 export class ExternalTaskSource<TDetails> implements ITaskSource {
+    readonly capabilities?: (binding: ISourceBinding) => Promise<TaskResult<ISourceCapabilities>>;
     static command<TDetails, P>(descriptor: ITaskCommandDescriptor<P>, apply: (binding: ISourceBinding, parameters: P, request: ICommandRequest, expectedSourceRevision?: ISourceRevision) => Promise<Result<ExternalCommandResult<TDetails>>>): IExternalCommand<TDetails>;
     get commandHandles(): ReadonlyArray<ITaskCommandHandle>;
     compare(a: ISourceRevision, b: ISourceRevision): Result<SourceRevisionOrder>;
@@ -294,7 +320,9 @@ export class FileTreeTaskRepository implements ITaskRepository {
     get report(): ITaskRecoveryReport;
     // (undocumented)
     readonly repositoryId: string;
+    stopLatches(taskId: TaskId): ReadonlyArray<IStopLatch>;
     subscription(subscriptionId: SubscriptionId): TaskResult<ITaskSubscription | undefined>;
+    subtree(rootId: TaskId, limit: number): TaskResult<ReadonlyArray<TaskId>>;
     supersedable(update: ITaskUpdate, audience: ReadonlyArray<SubscriptionId>): boolean;
     unsettledCommands(request: IListCompletionCandidateQuery): Promise<TaskResult<ReadonlyArray<TaskId>>>;
     withWriter<T>(action: (writer: ITaskRepositoryWriter) => Promise<TaskResult<T>>): Promise<TaskResult<T>>;
@@ -384,6 +412,7 @@ export interface IBoundTaskQuery {
 export interface IBoundTaskView {
     // (undocumented)
     inspect(id: TaskId): Promise<TaskResult<TaskInspection>>;
+    inspectStop(request: IStopInspectRequest): Promise<TaskResult<IStopResult>>;
     // (undocumented)
     readonly principal: string;
     // (undocumented)
@@ -422,8 +451,11 @@ export interface IBoundTaskWriter extends IBoundTaskView {
     reassign(request: IReassignTask): Promise<TaskResult<IReassignmentResult>>;
     // (undocumented)
     reconcileListCompletions(request: IListCompletionRequest): Promise<TaskResult<IListCompletionReport>>;
+    reconcileStop(request: IStopReconcileRequest): Promise<TaskResult<IStopResult>>;
+    releaseStop(request: IReleaseStop): Promise<TaskResult<IStopResult>>;
     // (undocumented)
     reparent(request: IReparentTask): Promise<TaskResult<ITaskMutationResult>>;
+    requestStop(request: IStopRequest): Promise<TaskResult<IStopResult>>;
     resolveCommands(request: ICommandResolutionRequest): Promise<TaskResult<ICommandResolutionReport>>;
     // (undocumented)
     updateTracked(request: IUpdateTrackedTask): Promise<TaskResult<ITaskMutationResult>>;
@@ -744,6 +776,7 @@ export interface IExternalPage<TDetails> {
 
 // @public
 export interface IExternalTaskSourceParams<TDetails> {
+    readonly capabilities?: (binding: ISourceBinding) => Promise<Result<ISourceCapabilities>>;
     // (undocumented)
     readonly commands?: ReadonlyArray<IExternalCommand<TDetails>>;
     // (undocumented)
@@ -927,6 +960,9 @@ export interface IPreparedTaskContext {
 }
 
 // @public
+export type IProjectedStopTarget = Omit<IStopTarget, 'stableSourceEvidence'>;
+
+// @public
 export type IProjectedTaskEnvelope = Omit<ITaskEnvelope, 'binding'>;
 
 // @public
@@ -998,6 +1034,18 @@ export interface IRegisterExternalTask {
 }
 
 // @public
+export interface IReleaseStop {
+    // (undocumented)
+    readonly expectedRevision: TaskRevision;
+    // (undocumented)
+    readonly intentId: OperationId;
+    // (undocumented)
+    readonly operationId: OperationId;
+    // (undocumented)
+    readonly taskId: TaskId;
+}
+
+// @public
 export interface IReparentTask extends ITaskMutationIdentity {
     // (undocumented)
     readonly parent: {
@@ -1021,6 +1069,7 @@ export interface IResolvedTaskCommitRecord {
     readonly recordType: 'resolved';
     // (undocumented)
     readonly sourceRevision?: ISourceRevision;
+    readonly stops?: ReadonlyArray<IStopIntent>;
     // (undocumented)
     readonly task: ITaskSnapshot;
     // (undocumented)
@@ -1037,6 +1086,7 @@ export interface IResolvedTaskRecordDraft {
     readonly recordType: 'resolved';
     // (undocumented)
     readonly sourceRevision?: ISourceRevision;
+    readonly stops?: ReadonlyArray<IStopIntent>;
     // (undocumented)
     readonly task: ITaskSnapshot;
     // (undocumented)
@@ -1052,6 +1102,9 @@ export interface IResponsibility {
 }
 
 // @public
+export function isLatchingStopState(state: StopIntentState): boolean;
+
+// @public
 export interface ISourceBinding {
     // (undocumented)
     readonly reference: JsonValue;
@@ -1059,6 +1112,20 @@ export interface ISourceBinding {
     readonly referenceVersion: number;
     // (undocumented)
     readonly sourceId: string;
+}
+
+// @public
+export interface ISourceCapabilities {
+    // (undocumented)
+    readonly cancel: 'unsupported' | 'terminal-absorbing';
+    // (undocumented)
+    readonly cancelCommand?: ISourceStopCommand;
+    // (undocumented)
+    readonly contractVersion: string;
+    // (undocumented)
+    readonly pause: 'unsupported' | 'sampled' | 'stable-until-explicit-resume';
+    // (undocumented)
+    readonly pauseCommand?: ISourceStopCommand;
 }
 
 // @public
@@ -1170,10 +1237,172 @@ export interface ISourceRevision {
 }
 
 // @public
+export interface ISourceStopCommand {
+    // (undocumented)
+    readonly command: string;
+    // (undocumented)
+    readonly parameters: JsonValue;
+}
+
+// @public
 export function isRequiredCategory(category: UpdateCategory): boolean;
 
 // @public
+export function isStopBlocker(state: StopTargetState): boolean;
+
+// @public
+export function isStoppedFor(mode: StopMode, status: TaskLifecycleStatus): boolean;
+
+// @public
+export interface IStableStopEvidence {
+    // (undocumented)
+    readonly contractVersion: string;
+    // (undocumented)
+    readonly sourceId: string;
+    // (undocumented)
+    readonly sourceRevision: ISourceRevision;
+}
+
+// @public
 export function isTerminalTaskStatus(status: TaskLifecycleStatus): boolean;
+
+// @public
+export interface IStopCommandMarker {
+    // (undocumented)
+    readonly intentId: OperationId;
+    // (undocumented)
+    readonly rootId: TaskId;
+}
+
+// @public
+export interface IStopConverters {
+    // (undocumented)
+    readonly capabilities: Converter<ISourceCapabilities>;
+    // (undocumented)
+    readonly inspect: Converter<IStopInspectRequest>;
+    readonly intent: Converter<IStopIntent>;
+    readonly intents: Converter<ReadonlyArray<IStopIntent>>;
+    // (undocumented)
+    readonly intentState: Converter<StopIntentState>;
+    // (undocumented)
+    readonly marker: Converter<IStopCommandMarker>;
+    // (undocumented)
+    readonly mode: Converter<StopMode>;
+    // (undocumented)
+    readonly projectedTarget: Converter<IProjectedStopTarget>;
+    // (undocumented)
+    readonly reconcile: Converter<IStopReconcileRequest>;
+    // (undocumented)
+    readonly release: Converter<IReleaseStop>;
+    // (undocumented)
+    readonly request: Converter<IStopRequest>;
+    // (undocumented)
+    readonly target: Converter<IStopTarget>;
+    // (undocumented)
+    readonly targetState: Converter<StopTargetState>;
+}
+
+// @public
+export interface IStopInspectRequest {
+    // (undocumented)
+    readonly intentId: OperationId;
+    // (undocumented)
+    readonly taskId: TaskId;
+}
+
+// @public
+export interface IStopIntent {
+    // (undocumented)
+    readonly id: OperationId;
+    // (undocumented)
+    readonly mode: StopMode;
+    // (undocumented)
+    readonly requestedBy: string;
+    // (undocumented)
+    readonly rootId: TaskId;
+    // (undocumented)
+    readonly state: StopIntentState;
+    // (undocumented)
+    readonly targets: ReadonlyArray<IStopTarget>;
+    // (undocumented)
+    readonly topologyGeneration: number;
+}
+
+// @public
+export interface IStopLatch {
+    // (undocumented)
+    readonly intentId: OperationId;
+    // (undocumented)
+    readonly mode: StopMode;
+    // (undocumented)
+    readonly rootId: TaskId;
+}
+
+// @public
+export interface IStopReconcileRequest {
+    // (undocumented)
+    readonly intentId: OperationId;
+    // (undocumented)
+    readonly limit?: number;
+    // (undocumented)
+    readonly taskId: TaskId;
+}
+
+// @public
+export interface IStopRequest {
+    // (undocumented)
+    readonly expectedRevision: TaskRevision;
+    // (undocumented)
+    readonly mode: StopMode;
+    // (undocumented)
+    readonly operationId: OperationId;
+    // (undocumented)
+    readonly taskId: TaskId;
+}
+
+// @public
+export interface IStopResult {
+    // (undocumented)
+    readonly capacity?: ICapacityFailure;
+    // (undocumented)
+    readonly intentId: OperationId;
+    // (undocumented)
+    readonly mode: StopMode;
+    // (undocumented)
+    readonly restrictedWorkRemains: boolean;
+    // (undocumented)
+    readonly rootId: TaskId;
+    // (undocumented)
+    readonly state: StopIntentState;
+    // (undocumented)
+    readonly targets: ReadonlyArray<IProjectedStopTarget>;
+}
+
+// @public
+export interface IStopTarget {
+    // (undocumented)
+    readonly attempt: number;
+    // (undocumented)
+    readonly confirmedRevision?: TaskRevision;
+    // (undocumented)
+    readonly operationId: OperationId;
+    // (undocumented)
+    readonly stableSourceEvidence?: IStableStopEvidence;
+    // (undocumented)
+    readonly state: StopTargetState;
+    // (undocumented)
+    readonly taskId: TaskId;
+    // (undocumented)
+    readonly violation?: IStopViolation;
+}
+
+// @public
+export interface IStopViolation {
+    // (undocumented)
+    readonly observedRevision: TaskRevision;
+    // (undocumented)
+    readonly observedStatus: TaskLifecycleStatus;
+}
 
 // @public
 export interface IStorageConverters {
@@ -1228,6 +1457,7 @@ export interface IStoredCommandOperation {
     readonly receipt: ICommandReceipt;
     // (undocumented)
     readonly request: ICommandRequest;
+    readonly stop?: IStopCommandMarker;
     // (undocumented)
     readonly type: 'command';
 }
@@ -2093,7 +2323,9 @@ export interface ITaskRepository {
     readonly report: ITaskRecoveryReport;
     // (undocumented)
     readonly repositoryId: string;
+    stopLatches(taskId: TaskId): ReadonlyArray<IStopLatch>;
     subscription(subscriptionId: SubscriptionId): TaskResult<ITaskSubscription | undefined>;
+    subtree(rootId: TaskId, limit: number): TaskResult<ReadonlyArray<TaskId>>;
     supersedable(update: ITaskUpdate, audience: ReadonlyArray<SubscriptionId>): boolean;
     unsettledCommands(request: IListCompletionCandidateQuery): Promise<TaskResult<ReadonlyArray<TaskId>>>;
     withWriter<T>(action: (writer: ITaskRepositoryWriter) => Promise<TaskResult<T>>): Promise<TaskResult<T>>;
@@ -2208,6 +2440,7 @@ export interface ITaskSnapshot<T = JsonValue> {
 
 // @public
 export interface ITaskSource {
+    capabilities?(binding: ISourceBinding): Promise<TaskResult<ISourceCapabilities>>;
     compare(a: ISourceRevision, b: ISourceRevision): Result<SourceRevisionOrder>;
     dispatch(binding: ISourceBinding, request: ICommandRequest, expectedSourceRevision?: ISourceRevision): Promise<TaskResult<SourceCommandResult>>;
     readonly history: SourceHistoryContract;
@@ -2439,6 +2672,9 @@ export interface IWaitingReason extends ITaskReason {
 }
 
 // @public
+export function latchRefusesMove(latches: ReadonlyArray<IStopLatch>, from: TaskLifecycleStatus, to: TaskLifecycleStatus): boolean;
+
+// @public
 export const listRefusedCommands: ReadonlyArray<TrackedCommand['command']>;
 
 // @public
@@ -2595,6 +2831,15 @@ export type SourceReconcileStop = 'page-limit'
 export type SourceRevisionOrder = 'older' | 'same' | 'newer' | 'incomparable';
 
 // @public
+export type StopIntentState = 'pending' | 'blocked' | 'satisfied' | 'released' | 'settled';
+
+// @public
+export type StopMode = 'pause' | 'cancel';
+
+// @public
+export type StopTargetState = 'unexamined' | 'pending' | 'confirmed' | 'unsupported' | 'denied' | 'unavailable' | 'refused' | 'indeterminate';
+
+// @public
 export type StoredCommandDispatch = 'not-sent' | 'possibly-sent' | 'settled';
 
 // @public
@@ -2604,7 +2849,7 @@ export type SubscriptionId = Brand<string, 'SubscriptionId'>;
 export type SubscriptionStart = 'current' | 'from-now';
 
 // @public
-export type TaskAccessRole = 'subject' | 'parent' | 'previous-parent' | 'new-parent';
+export type TaskAccessRole = 'subject' | 'parent' | 'previous-parent' | 'new-parent' | 'stop-target';
 
 // @public
 export type TaskAction = 'read' | 'create' | 'update-tracked' | 'command' | 'reassign' | 'change-scopes' | 'reparent' | 'subscribe' | 'acknowledge' | 'stop' | 'release-stop' | 'complete-list' | 'dispose-obligation' | 'archive';
@@ -2682,6 +2927,7 @@ export class TaskConverters {
     readonly ids: IIdentityConverters;
     readonly queries: IQueryConverters;
     readonly sources: ISourceConverters;
+    readonly stops: IStopConverters;
     readonly storage: IStorageConverters;
     readonly values: IValueConverters;
 }

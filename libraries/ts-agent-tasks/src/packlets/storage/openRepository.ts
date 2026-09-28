@@ -28,6 +28,7 @@ import {
   TaskInventoryRecordKind,
   TaskRecoveryIssueCode,
   TaskResult,
+  defaultMaxStopTargets,
   defaultTaskCapacityProfile,
   taskListDetailVersion,
   taskListKind,
@@ -62,7 +63,8 @@ import {
   recordName,
   utf8Length
 } from './layout';
-import { CapacityLedger } from './ledger';
+import { CapacityLedger, DimensionAmounts, ILedgerEntry, zeroAmounts } from './ledger';
+import { stopAttemptBundle, stopReserve, withStopReserve } from './stopLedger';
 import {
   ITaskRecordCacheOptions,
   ITaskRecoveryHandle,
@@ -94,6 +96,7 @@ import {
   subscriptionState,
   valueBytes
 } from './subscriptions';
+import { IStopContent, stopContentOf } from './stopBook';
 import { IndexContent, TaskIndex } from './taskIndex';
 import { MaterializationGate, maxRecordCacheBytes, maxRecordCacheEntries } from './workingSet';
 
@@ -277,6 +280,8 @@ export function initializeRepository(
     const created: Result<{ manifest: ITaskRepositoryManifest; text: string; bytes: number }> =
       converters.capacity.profile
         .convert(params.profile ?? defaultTaskCapacityProfile)
+        // A profile under which no stop could be reserved is refused before anything is written.
+        .onSuccess((profile) => stopAttemptBundle(profile).onSuccess(() => succeed(profile)))
         .onSuccess((profile) =>
           mintId(params.environment)
             .onSuccess((raw) => converters.ids.identifier.convert(raw))
@@ -1163,6 +1168,55 @@ export function scanRoot(input: IScanInput): TaskResult<ScanOutcome> {
     ledger.apply(book.entries(index, profile));
   }
 
+  // ---- the stop reservations, derived from the intents and the attempts that landed (T9) ----
+  // Every task is indexed now, so which attempts could still land is known.
+  index.stops.recount();
+  // A latching stop covers exactly its root's subtree: the freeze admits no edge in or out of it, so
+  // an intent that names anything else was not written by this repository. Its latch would leave a
+  // descendant unfrozen, so the repository does not open for writes.
+  if (!scan.isBlocked) {
+    for (const rootId of index.stops.holders()) {
+      for (const intent of index.stops.latchingOf(rootId)) {
+        const tree = index.subtree(rootId, defaultMaxStopTargets);
+        const named: ReadonlyArray<TaskId> = intent.targets.map((target) => target.taskId);
+        if (!canonicallyEqual(tree.orDefault([]), named)) {
+          scan.blocking(
+            'integrity',
+            `task ${rootId}: stop ${intent.id} does not name the subtree its latch freezes`
+          );
+        }
+      }
+    }
+  }
+  // An unsettled stop command that is not its latching intent's attempt could be sent under stop
+  // authority no stop holds; storage never writes one.
+  if (!scan.isBlocked) {
+    for (const stray of index.stops.strays()) {
+      scan.blocking(
+        'integrity',
+        `task ${stray.taskId}: command '${stray.command.operationId}' names stop ${stray.command.intentId} ` +
+          `of ${stray.command.rootId}, and is not that stop's attempt on this task`
+      );
+    }
+  }
+  const holders: ReadonlyArray<TaskId> = scan.isBlocked ? [] : index.stops.holders();
+  const derived: Result<true> =
+    holders.length === 0
+      ? succeed(true)
+      : stopAttemptBundle(profile).onSuccess((bundle) => {
+          for (const taskId of holders) {
+            const key: string = taskKey(taskId);
+            // Every holder is live: a latching stop names exactly its root's subtree, checked above.
+            const entry: ILedgerEntry = ledger.entry(key)!;
+            const reserve: DimensionAmounts = stopReserve(index.stops.facts(taskId), bundle, profile);
+            ledger.apply(new Map([[key, withStopReserve(entry, zeroAmounts(), reserve)]]));
+          }
+          return succeed<true>(true);
+        });
+  if (derived.isFailure()) {
+    scan.blocking('integrity', `stops are held, and the stored profile reserves none: ${derived.message}`);
+  }
+
   // ---- capacity: a valid repository at its ceiling opens; one over it disagrees with itself ----
   const over: ReadonlyArray<string> = ledger.overLimit();
   if (over.length > 0) {
@@ -1229,6 +1283,7 @@ export function scanRoot(input: IScanInput): TaskResult<ScanOutcome> {
 
 /** What a validated record contributes to the index. */
 function _indexContent(record: ITaskCommitRecord, known: boolean): IndexContent {
+  const stop: IStopContent | undefined = stopContentOf(record);
   if (!known) {
     const source = record.recordType === 'resolved' ? record.task.envelope : record.reference;
     return {
@@ -1236,7 +1291,8 @@ function _indexContent(record: ITaskCommitRecord, known: boolean): IndexContent 
       scopes: source.scopes,
       ...(source.parentId !== undefined ? { parentId: source.parentId } : {}),
       ...(source.binding !== undefined ? { binding: source.binding } : {}),
-      archived: record.recordType === 'resolved' && record.archived
+      archived: record.recordType === 'resolved' && record.archived,
+      ...(stop !== undefined ? { stop } : {})
     };
   }
   if (record.recordType === 'unresolved') {
@@ -1264,7 +1320,8 @@ function _indexContent(record: ITaskCommitRecord, known: boolean): IndexContent 
     envelope,
     ...(automaticList ? { automaticList } : {}),
     ...(unsettled ? { unsettledCommands: true } : {}),
-    ...(awaiting ? { awaitingCommands: true } : {})
+    ...(awaiting ? { awaitingCommands: true } : {}),
+    ...(stop !== undefined ? { stop } : {})
   };
 }
 

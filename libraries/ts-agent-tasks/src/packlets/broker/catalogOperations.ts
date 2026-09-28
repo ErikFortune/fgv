@@ -14,6 +14,7 @@ import {
   IReassignmentResult,
   IReparentTask,
   IResolvedTaskCommitRecord,
+  IStopIntent,
   ITaskCommitRecord,
   ITaskEnvelope,
   ITaskMutationResult,
@@ -22,10 +23,12 @@ import {
   TaskAccessRole,
   TaskId,
   TaskResult,
+  isLatchingStopState,
   isTerminalTaskStatus,
   taskListKind,
   trackedTaskKind
 } from '../types';
+import { ITaskRepositoryWriter } from '../storage';
 import { AccessContext, scopeKey, subjectOf } from './access';
 import { CatalogChange, IRelatedTask, readExisting, runCatalogMutation } from './catalogMutation';
 import { BrokerCore } from './core';
@@ -66,6 +69,29 @@ function _native(record: IResolvedTaskCommitRecord): TaskResult<true> {
           `its presentation`,
         'unsupported',
         'after-host-action'
+      );
+}
+
+/**
+ * Refuses an operation on a task under a stop latch (design § 10 step 2), from the repository's
+ * resident latches. Asked inside the writer, where they are current; storage refuses the commit in any
+ * case, and this names the refusal.
+ * @internal
+ */
+export function refuseUnderLatch(
+  core: BrokerCore,
+  taskId: TaskId,
+  what: string,
+  operationId?: ITaskMutationResult['operationId']
+): TaskResult<true> {
+  // The refusal names only the task the caller asked about: the stop's root may be one it cannot see.
+  return core.repository.stopLatches(taskId).length === 0
+    ? ok(true)
+    : taskFailure(
+        `stop-active: task ${taskId} is under a stop latch; ${what}`,
+        'conflict',
+        'after-host-action',
+        operationId !== undefined ? { operationId } : undefined
       );
 }
 
@@ -353,6 +379,13 @@ export async function reparent(
           return propagate(open);
         }
       }
+      // Out of, within or into a stopped subtree: refused while the latch holds.
+      const frozen = refuseUnderLatch(core, envelope.id, 'it cannot be moved').onSuccess(() =>
+        target !== undefined ? refuseUnderLatch(core, target, 'it takes no new child') : ok<true>(true)
+      );
+      if (frozen.isFailure()) {
+        return propagate(frozen);
+      }
       const next: ITaskEnvelope = withEnvelopeFields(envelope, { parentId: target });
       // The cycle check runs in the same writer section, in the commit, against the current graph.
       return ok({ disposition: 'changed', envelope: next, categories: ['relationship'] });
@@ -407,6 +440,11 @@ export async function completion(
   requireChild: boolean
 ): Promise<TaskResult<CatalogChange>> {
   const envelope: ITaskEnvelope = current.task.envelope;
+  // Automatic or explicit, a list under a stop latch does not complete (T5's hand-off to T9).
+  const frozen = refuseUnderLatch(core, envelope.id, 'it cannot complete');
+  if (frozen.isFailure()) {
+    return propagate(frozen);
+  }
   const children = await core.repository.childStates(envelope.id);
   if (children.isFailure()) {
     return propagate(children);
@@ -469,8 +507,68 @@ export async function archive(
     request: converted.value.json,
     receiptConverter: core.converters.broker.mutationResult,
     admit: (record) => _archivable(record),
-    evaluate: async (current): Promise<TaskResult<CatalogChange>> =>
-      ok({ disposition: 'changed', envelope: current.task.envelope, categories: [], archived: true }),
+    evaluate: async (current, __, writer): Promise<TaskResult<CatalogChange>> =>
+      (await settleStops(core, current, writer)).onSuccess((stops) =>
+        ok<CatalogChange>({
+          disposition: 'changed',
+          envelope: current.task.envelope,
+          categories: [],
+          archived: true,
+          ...(stops !== undefined ? { stops } : {})
+        })
+      ),
     receipt: _base
   });
+}
+
+/**
+ * The stops an archive leaves in its tombstone (design § 10 step 8): a satisfied cancel whose every
+ * target is terminal **now** becomes `settled`, its report and the terminal graph kept. Any other
+ * latching stop refuses the archive — a blocked cancel is never archived as a successful stop, and a
+ * pause is released first — and so does a latch held by an ancestor's stop.
+ */
+async function settleStops(
+  core: BrokerCore,
+  current: IResolvedTaskCommitRecord,
+  writer: ITaskRepositoryWriter
+): Promise<TaskResult<ReadonlyArray<IStopIntent> | undefined>> {
+  const id: TaskId = current.task.envelope.id;
+  const blocked = (why: string): TaskResult<ReadonlyArray<IStopIntent> | undefined> =>
+    taskFailure(`task ${id}: ${why}`, 'retention-blocked', 'after-host-action');
+  if (core.repository.stopLatches(id).some((latch) => latch.rootId !== id)) {
+    // Never named: the stop's root may be one the caller cannot see.
+    return blocked(`it is under another task's stop latch, which must settle or be released first`);
+  }
+  if (current.stops === undefined) {
+    return ok(undefined);
+  }
+  const settled: IStopIntent[] = [];
+  for (const intent of current.stops) {
+    if (!isLatchingStopState(intent.state)) {
+      settled.push(intent);
+      continue;
+    }
+    if (intent.mode !== 'cancel' || intent.state !== 'satisfied') {
+      return blocked(
+        `stop ${intent.id} is a ${intent.state} ${intent.mode}; only a satisfied cancel settles with an archive`
+      );
+    }
+    // Revisit every target under the writer: a satisfied summary is not taken on trust.
+    for (const target of intent.targets) {
+      const read = await writer.readCommit(target.taskId);
+      if (read.isFailure()) {
+        return propagate(read);
+      }
+      const record = read.value;
+      if (
+        record === undefined ||
+        record.recordType !== 'resolved' ||
+        !isTerminalTaskStatus(record.task.envelope.lifecycle.status)
+      ) {
+        return blocked(`stop ${intent.id} has a target that is not terminal; it cannot settle`);
+      }
+    }
+    settled.push({ ...intent, state: 'settled' });
+  }
+  return ok(settled);
 }

@@ -244,7 +244,10 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
   archive writes a tombstone with no payloads (`agent-tasks-t8` `result.md`). (3) ~~**T6:** an external
   task's commands are `rejected: unsupported` and recorded under their key until dispatch exists.~~
   **Resolved by T6** — external commands dispatch through their source (see the next entry for
-  what T6 hands on). (4) **T9:** no stop latch is checked by list completion or relationship operations yet.
+  what T6 hands on). (4) ~~**T9:** no stop latch is checked by list completion or relationship operations yet.~~
+  **Resolved by T9** — the repository refuses list completion, new children, reparenting and archive
+  of a latched task on every commit, and the broker names each refusal `stop-active`
+  (`agent-tasks-t9` `result.md` § *The admission freeze*).
   **Trigger:** the start of T6, T7, T8 and T9 respectively. **Reference:** the `agent-tasks-t5`
   stream's `result.md` § *What a later slice must decide* (at `.ai/tasks/active/agent-tasks-t5/`
   until the `agent-tasks-v1` cluster finalizes).
@@ -272,13 +275,30 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
   (3) ~~**T7 — audience charges on the T6 claims.**~~ **Resolved by T7** — the evidence is spent
   from these claims, pinned by the charge (`agent-tasks-t7` `result.md` § *How the T6 claims were
   spent*).
-  (4) **T9 — `ITaskSource.capabilities()` and the source side of a stop.** Design §5 lists
-  `capabilities()`; T6 omitted it (commands are declared by the kind registry, which is the one
-  authority T6 needed). A cascade stop that must ask a source to stop is T9's to add, together
-  with whatever capability report it needs.
+  (4) ~~**T9 — `ITaskSource.capabilities()` and the source side of a stop.**~~ **Resolved by T9** —
+  an optional `capabilities(binding)` declares the stable-stop contract (`pause`, `cancel`,
+  `contractVersion`) and names the kind's command for each mode; asked on every stop pass, its
+  evidence revalidated after reopen.
   **Trigger:** the start of T7, T8 and T9 respectively. **Reference:** the `agent-tasks-t6`
   stream's `result.md` § *Hand-offs* (at `.ai/tasks/active/agent-tasks-t6/` until the
   `agent-tasks-v1` cluster finalizes).
+
+- **[P2] `ts-agent-tasks` stop hand-offs T9 left open — each named with the slice or trigger that
+  owns it.**
+  (1) **Explicit abandonment of a blocked cancel** (design § 10 step 8: "explicit disposition *may*
+  record abandonment"). Not built: a root whose cancel stays `blocked` — an observation-only child
+  that never terminates, say — is simply `retention-blocked` at archive, and its tree stays frozen.
+  The disposition must retain the unresolved partial-stop report and never claim success, and must
+  decide whether the latch outlives it. **Trigger:** the first host that needs to archive such a
+  root. (2) **The attempt bundle uses schema maxima**: one `maxStoredOperationBytes` for the command
+  plus a full `maximumSettlementCharges` — 643,625 logical bytes per target under the default
+  profile, so 400 plain registrations admit a stop over at most 210 of them. A stop's own command is
+  broker-composed and much smaller than the schema maximum; a derived maximum (as `maximumUpdateBytes`
+  does for updates) would shrink the reservation severalfold, but must also bound the source-designated
+  parameters. **Trigger:** a consumer that needs larger stops under the default profile.
+  (3) **M1's stop-state cohort** is not run by T9: see `agent-tasks-t9` `result.md` § *M1*.
+  **Trigger:** the M1 production-profile cohort run. **Reference:** `agent-tasks-t9` `result.md`
+  (at `.ai/tasks/active/agent-tasks-t9/` until the `agent-tasks-v1` cluster finalizes).
 
 - **[P2] `ts-agent-tasks` delivery hand-offs T7 left for T8 — each is T8's to decide.**
   *(T8: (1), (3) and (4) resolved — see each; (2) stays open with the profile qualification.)*

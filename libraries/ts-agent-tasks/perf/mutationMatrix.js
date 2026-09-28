@@ -17,7 +17,7 @@
  *             the run edits source, so a copy keeps the working tree clean while it runs; give
  *             the copy a `node_modules` symlink to this package's)
  *   --out     write the results as JSON
- *   M…        run only the named rows (T8b's rows are named T8b-…)
+ *   M…        run only the named rows (T8b's rows are named T8b-…, T9's T9-…)
  *
  * The one rule that matters: a row whose pattern is not found exactly once, or whose mutant does
  * not build, is reported UNVERIFIED — never as "nothing went red". A mutation that silently fails
@@ -42,7 +42,16 @@ const C = 'src/packlets/converters/';
 const STORAGE = 'storage|capacity';
 
 function m(name, file, from, to, tests = STORAGE) {
-  return { name, file, from, to, tests };
+  return { name, edits: [{ file, from, to }], tests };
+}
+
+/**
+ * A row for a guard that a later layer deliberately backs up: reverting the guard alone is masked by
+ * construction, so the row reverts the guard **and** its backstop, and names both. The backstop has
+ * its own single-edit row.
+ */
+function paired(name, edits, tests = STORAGE) {
+  return { name, edits, tests };
 }
 
 /** T8b's rows run these suites: the saturation journeys live in delivery. */
@@ -662,6 +671,489 @@ const MUTATIONS = [
   )
 ];
 
+/** T9's rows run the stop suites, and the storage-converter suite for the record invariants. */
+const T9 = 'broker/stop|storage/stop|converters/storage';
+const B = 'src/packlets/broker/';
+
+const T9_ROWS = [
+  m(
+    'T9-1 a new intent need not be the authoritative subtree (a skipped child)',
+    S + 'stopRules.ts',
+    '    return canonicallyEqual(ids, captured)',
+    '    return canonicallyEqual(captured, captured)',
+    T9
+  ),
+  m(
+    'T9-2 the broker captures all but the last descendant',
+    B + 'stopRequests.ts',
+    '    for (const target of subtree.value) {',
+    '    for (const target of subtree.value.slice(0, -1)) {',
+    T9
+  ),
+  m(
+    'T9-3 storage lets a latched task move out of the stopped set',
+    S + 'stopRules.ts',
+    'latchRefusesMove(latches, from, to)',
+    'latchRefusesMove([], from, to)',
+    T9
+  ),
+  m(
+    'T9-4 storage registers a child under a latched parent',
+    S + 'stopRules.ts',
+    '  return parentId !== undefined && book.isLatched(parentId)',
+    "  return parentId !== undefined && book.isLatched('' as TaskId)",
+    T9
+  ),
+  m(
+    'T9-5 storage lets a latched list complete',
+    S + 'stopRules.ts',
+    "op.operation === 'complete-list' && latches.length > 0",
+    "op.operation === 'complete-list' && latches.length < 0",
+    T9
+  ),
+  m(
+    'T9-6 a marked command need not be a live attempt (dispatch after release)',
+    S + 'stopRules.ts',
+    "          return fail(`command '${op.operationId}' is not a live attempt of stop ${op.stop.intentId}`);",
+    '          continue;',
+    T9
+  ),
+  m(
+    'T9-7 a new external command is recorded under a latch',
+    S + 'stopRules.ts',
+    "external && latches.length > 0 && op.dispatch !== 'settled'",
+    "external && latches.length < 0 && op.dispatch !== 'settled'",
+    T9
+  ),
+  m(
+    'T9-8 a command recorded before the latch is sent under it',
+    S + 'stopRules.ts',
+    "      op.dispatch === 'possibly-sent' &&\n      latches.length > 0",
+    "      op.dispatch === 'possibly-sent' &&\n      latches.length < 0",
+    T9
+  ),
+  m(
+    'T9-9 an intent may be dropped',
+    S + 'stopRules.ts',
+    '  if (after.length < before.length) {',
+    '  if (after.length < 0) {',
+    T9
+  ),
+  m(
+    'T9-10 storage archives a latched task',
+    S + 'stopRules.ts',
+    '  return standing === undefined',
+    '  return standing === undefined || taskId.length > 0',
+    T9
+  ),
+  m(
+    'T9-11 (M3) any observation is exempt from the freeze, native too',
+    S + 'stopRules.ts',
+    "  if (purpose === 'observation' && external) {",
+    "  if (purpose === 'observation') {",
+    T9
+  ),
+  m(
+    'T9-12 (A3) a stop reserves nothing for its attempts',
+    S + 'stopLedger.ts',
+    "      bundle[dimension] * (dimension === 'record-bytes' ? facts.unlandedOn : facts.unlandedOf);",
+    "      0 * bundle[dimension] * (dimension === 'record-bytes' ? facts.unlandedOn : facts.unlandedOf);",
+    T9
+  ),
+  m(
+    "T9-13 (A3) a target's operation slot is not preflighted",
+    S + 'stopAdmission.ts',
+    '    if (facts.unlandedOn + facts.latching > was.unlandedOn + was.latching) {',
+    '    if (facts.unlandedOn < 0) {',
+    T9
+  ),
+  m(
+    'T9-14 (A3) the committed task holds no slot for its attempts and release',
+    S + 'repository.ts',
+    '(archived ? 0 : terminal ? 1 : 2) + stop.value.held',
+    '(archived ? 0 : terminal ? 1 : 2) + 0 * stop.value.held',
+    T9
+  ),
+  m(
+    'T9-15 reopen derives no stop reservation',
+    S + 'openRepository.ts',
+    '  for (const taskId of holders) {',
+    '  for (const taskId of holders.slice(holders.length)) {',
+    T9
+  ),
+  m(
+    'T9-16 the index feeds no stop content to the latch book',
+    S + 'taskIndex.ts',
+    '      this.stops.put(id, stop);',
+    '      this.stops.put(id, undefined);',
+    T9
+  ),
+  m(
+    'T9-17 two stops may share an attempt key',
+    S + 'taskIndex.ts',
+    '      const collision: string | undefined = this.stops.collision(id, stop);',
+    '      const collision: string | undefined = undefined;',
+    T9
+  ),
+  m(
+    'T9-18 (H1) findings under a moved policy count as revalidated',
+    B + 'stopPump.ts',
+    '    if (!ctx.epochIs(epoch)) {\n      return ok({ intent: now, fresh: false });',
+    '    if (!ctx.epochIs(epoch)) {\n      return ok({ intent: now, fresh: true });',
+    T9
+  ),
+  m(
+    'T9-19 (M1) a freeze refusal names the stop root',
+    B + 'catalogOperations.ts',
+    '`stop-active: task ${taskId} is under a stop latch; ${what}`',
+    '`stop-active: task ${taskId} is under a stop latch of ${core.repository.stopLatches(taskId)[0]?.rootId}; ${what}`',
+    T9
+  ),
+  m(
+    'T9-20 (M2) a capacity refusal at acceptance is returned as storage gave it',
+    B + 'stopRequests.ts',
+    '  if (capacity === undefined || capacity.recordId === undefined) {',
+    '  if (capacity === undefined || capacity.dimension !== undefined) {',
+    T9
+  ),
+  m(
+    'T9-21 (M4) abandoning a stop command drops its marker',
+    B + 'disposition.ts',
+    '      ...(command.stop !== undefined ? { stop: command.stop } : {})',
+    '      ...(command.stop !== undefined ? {} : {})',
+    T9
+  ),
+  m(
+    'T9-22 (L1) a violation not yet re-confirmed does not block',
+    B + 'stopPump.ts',
+    "return isStopBlocker(target.state) || (target.violation !== undefined && target.state !== 'confirmed');",
+    'return isStopBlocker(target.state);',
+    T9
+  ),
+  m(
+    'T9-23 (L2) a dispatch-boundary denial is not re-attempted',
+    B + 'stopPump.ts',
+    "          return this._supersede(i, 'denied');",
+    "          return ok(this._with(i, 'denied'));",
+    T9
+  ),
+  m(
+    'T9-24 a bounded pass that did not visit every target can be satisfied',
+    B + 'stopPump.ts',
+    "  return complete && targets.every((target) => target.state === 'confirmed') ? 'satisfied' : 'pending';",
+    "  return targets.every((target) => target.state === 'confirmed') ? 'satisfied' : 'pending';",
+    T9
+  ),
+  m(
+    'T9-25 no epoch recheck before a native stop write',
+    B + 'stopPump.ts',
+    '      // After the last await and immediately before the write.\n      if (!this._ctx.epochIs(this._epoch)) {',
+    '      // After the last await and immediately before the write.\n      if (this._epoch.length < 0) {',
+    T9
+  ),
+  // The broker's own check is backed by storage's forward-by-one rule (T9-66): a stale pass's
+  // supersession is refused as a conflict, which ends the pass unfinished exactly as the check does.
+  // Reverting the check alone is masked by that design, so this row reverts both.
+  paired(
+    'T9-26 an attempt another caller superseded is written anyway (with its storage backstop)',
+    [
+      {
+        file: B + 'stopPump.ts',
+        from: '        root.value.intent.targets[i].attempt === this.targets[i].attempt',
+        to: '        root.value.intent.targets[i].attempt >= 0'
+      },
+      {
+        file: S + 'stopRules.ts',
+        from: '    if (b.attempt === a.attempt ? b.operationId !== a.operationId : b.attempt !== a.attempt + 1) {',
+        to: '    if (b.attempt < 0) {'
+      }
+    ],
+    T9
+  ),
+  m(
+    'T9-27 a stop command whose intent no longer latches is still sent',
+    B + 'externalCommands.ts',
+    '      : latches.some((l) => l.rootId === marker.rootId && l.intentId === marker.intentId)',
+    '      : latches.length === 0 || latches.some((l) => l.rootId === marker.rootId)',
+    T9
+  ),
+  m(
+    'T9-28 presentation never degrades a confirmed target that left the stopped set',
+    B + 'stopRequests.ts',
+    "      target.state === 'confirmed' &&",
+    "      target.state === 'confirmed' && target.attempt < 0 &&",
+    T9
+  ),
+  m(
+    'T9-29 stable-stop evidence needs no revalidation by this broker instance',
+    B + 'stopRequests.ts',
+    "    : intent.state === 'satisfied' && unrevalidated",
+    "    : intent.state === 'satisfied' && unrevalidated && degraded",
+    T9
+  ),
+  m(
+    'T9-30 a conflict is re-attempted without refreshing the precondition',
+    B + 'stopPump.ts',
+    "        if ((await observeTask(this._core, record.task.envelope.id)).isFailure()) {\n          return ok(this._with(i, 'refused'));\n        }\n",
+    '',
+    T9
+  ),
+  m(
+    'T9-31 a terminal external target waits on its source',
+    B + 'stopPump.ts',
+    '    if (isTerminalTaskStatus(record.task.envelope.lifecycle.status)) {',
+    "    if (isTerminalTaskStatus('running')) {",
+    T9
+  ),
+  m(
+    'T9-32 the broker does not pre-check the latch (storage refuses instead)',
+    B + 'catalogOperations.ts',
+    '  return core.repository.stopLatches(taskId).length === 0',
+    '  return core.repository.stopLatches(taskId).length >= 0',
+    T9
+  ),
+  m(
+    "T9-33 a stop's command is sent under ordinary command authority",
+    B + 'externalCommands.ts',
+    '  return command.stop !== undefined',
+    '  return command.request.command.length < 0',
+    T9
+  ),
+  m(
+    'T9-34 the largest reservation a bundle can derive is not checked',
+    S + 'stopLedger.ts',
+    "  return _safe(ceiling, 'stop reservation').onSuccess(() => succeed(bundle));",
+    '  return succeed(bundle);',
+    T9
+  ),
+  m(
+    'T9-35 storage lets the summary record a target confirmed that is not stopped',
+    S + 'stopRules.ts',
+    "    if (b.state === 'confirmed' && !canonicallyEqual(a, b) && !confirmable(was.mode, b)) {",
+    "    if (b.state === 'confirmed' && !canonicallyEqual(a, b) && b.attempt < 0) {",
+    T9
+  ),
+  m(
+    'T9-36 the summary records a confirmation the target no longer holds',
+    B + 'stopPump.ts',
+    "  return ok(record?.recordType === 'resolved' && targetStopped(mode, record) ? found : mine);",
+    '  return ok(record === undefined ? mine : found);',
+    T9
+  ),
+  m(
+    'T9-37 a conflict is re-attempted when its refresh failed',
+    B + 'stopPump.ts',
+    '        if ((await observeTask(this._core, record.task.envelope.id)).isFailure()) {',
+    '        if ((await observeTask(this._core, record.task.envelope.id)).isFailure() && record.archived) {',
+    T9
+  ),
+  m(
+    'T9-38 a command recorded before a latch is resent under it',
+    B + 'externalCommands.ts',
+    "    return latches.length > 0 ? 'held' : undefined;",
+    "    return latches.length < 0 ? 'held' : undefined;",
+    T9
+  ),
+  m(
+    'T9-39 open accepts a latching stop that does not name its subtree',
+    S + 'openRepository.ts',
+    '        if (!canonicallyEqual(tree.orDefault([]), named)) {',
+    '        if (!canonicallyEqual(named, named)) {',
+    T9
+  ),
+  m(
+    'T9-40 a raise may make every stop unreservable',
+    S + 'graphRules.ts',
+    '  if (stops.isFailure()) {',
+    '  if (stops.isFailure() && profile.profileVersion < 0) {',
+    T9
+  ),
+  m(
+    'T9-41 initialize accepts a profile under which no stop can be reserved',
+    S + 'openRepository.ts',
+    '.onSuccess((profile) => stopAttemptBundle(profile).onSuccess(() => succeed(profile)))',
+    '.onSuccess((profile) => succeed(profile))',
+    T9
+  ),
+  m(
+    "T9-42 a landed command is this stop's when only its intent id matches",
+    B + 'stopPump.ts',
+    '      op.stop?.rootId === this._intent.rootId &&',
+    '      op.stop?.rootId !== undefined &&',
+    T9
+  ),
+  m(
+    'T9-43 an unvisited target overwrites newer progress in the summary',
+    B + 'stopPump.ts',
+    '  if (!visited || found.attempt !== mine.attempt) {',
+    '  if (found.attempt !== mine.attempt) {',
+    T9
+  ),
+  m(
+    'T9-44 a bounded pass that learned nothing withdraws the verdict',
+    B + 'stopPump.ts',
+    '      state: learned ? _derive(targets, pass.complete, topologyHeld) : now.state',
+    '      state: _derive(targets, pass.complete, topologyHeld)',
+    T9
+  ),
+  m(
+    'T9-45 an archived record may hold a latching stop',
+    C + 'storageConverters.ts',
+    '  if (standing !== undefined) {',
+    '  if (standing !== undefined && standing.id.length < 0) {',
+    T9
+  ),
+  m(
+    'T9-46 an external target is confirmed without stable-stop evidence',
+    S + 'stopAdmission.ts',
+    '      target.stableSourceEvidence !== undefined)',
+    '      target.attempt > 0)',
+    T9
+  ),
+  m(
+    'T9-47 a feed-confirmed command loses its stop marker',
+    B + 'observations.ts',
+    '      ...kept,\n      receipt: contradicted',
+    "      type: 'command',\n      operationId: op.operationId,\n      request: op.request,\n      principalKey: op.principalKey,\n      dispatch: op.dispatch,\n      receipt: contradicted",
+    T9
+  ),
+  m(
+    "T9-48 a native key held by something else is taken as this stop's refusal",
+    B + 'stopPump.ts',
+    '    return this._isOwn(storedOperation(after, this.targets[i].operationId))',
+    '    return this._isOwn(storedOperation(after, this.targets[i].operationId)) || !after.archived',
+    T9
+  ),
+  m(
+    "T9-49 a target's command key may be the stop's own operation id",
+    C + 'stopConverters.ts',
+    '    if (target.operationId === intent.id) {',
+    '    if (target.operationId === intent.id && intent.id.length < 0) {',
+    T9
+  ),
+  m(
+    'T9-50 two stops of one record may share a command key',
+    C + 'stopConverters.ts',
+    '    if (shared !== undefined) {',
+    '    if (shared !== undefined && intent.id.length < 0) {',
+    T9
+  ),
+  m(
+    'T9-51 a registration may carry a stop',
+    S + 'stopRules.ts',
+    "  if (draft.recordType === 'resolved' && (draft.stops ?? []).length > 0) {",
+    "  if (draft.recordType === 'resolved' && (draft.stops ?? []).length < 0) {",
+    T9
+  ),
+  m(
+    'T9-52 free text is sized at three bytes per unit',
+    S + 'stopLedger.ts',
+    'const worstBytesPerUnit: number = 6;',
+    'const worstBytesPerUnit: number = 3;',
+    T9
+  ),
+  m(
+    'T9-53 the resend gate does not recheck the latches',
+    B + 'externalCommands.ts',
+    '    return withheld !== undefined ? ok(withheld) : read;',
+    '    return withheld !== undefined && epoch.length < 0 ? ok(withheld) : read;',
+    T9
+  ),
+  m(
+    "T9-54 storage lets a raw commit release a terminal root's cancel",
+    S + 'stopRules.ts',
+    "    if (was.mode === 'cancel' && confirmable(was.mode, was.targets[0])) {",
+    "    if (was.mode === 'cancel' && confirmable(was.mode, was.targets[0]) && now.id.length < 0) {",
+    T9
+  ),
+  m(
+    'T9-55 storage settles a cancel from its summary alone',
+    S + 'stopRules.ts',
+    "      was.targets.every((target) => target.state === 'confirmed' && confirmable(was.mode, target));",
+    "      was.targets.every((target) => target.state === 'confirmed');",
+    T9
+  ),
+  m(
+    'T9-56 a raw release may rewrite the report it keeps',
+    S + 'stopRules.ts',
+    '    if (!canonicallyEqual({ ...was, state: now.state }, now)) {',
+    '    if (!canonicallyEqual({ ...was, state: now.state }, now) && now.id.length < 0) {',
+    T9
+  ),
+  m(
+    'T9-57 a stop command may land under an attempt that holds no reservation',
+    S + 'stopRules.ts',
+    '          !attempt.funded ||',
+    '          (!attempt.funded && attempt.taskId.length < 0) ||',
+    T9
+  ),
+  m(
+    'T9-58 a presentation is returned about an intent that has since moved',
+    B + 'stopRequests.ts',
+    '    if (canonicallySame(now, current)) {',
+    '    if (canonicallySame(now, now)) {',
+    T9
+  ),
+  m(
+    'T9-59 a presentation is returned across a policy change',
+    B + 'stopRequests.ts',
+    '    if (!ctx.epochIs(epoch)) {',
+    '    if (!ctx.epochIs(epoch) && epoch.length < 0) {',
+    T9
+  ),
+  m(
+    'T9-60 a presentation is returned about a root this principal can no longer see',
+    B + 'stopRequests.ts',
+    '    if (!(await ctx.sees(subjectOf(again.value!)))) {',
+    '    if (!(await ctx.sees(subjectOf(again.value!))) && epoch.length < 0) {',
+    T9
+  ),
+  m(
+    'T9-61 a raw settlement may rewrite the report it keeps',
+    S + 'stopRules.ts',
+    '      canonicallyEqual({ ...was, state: now.state }, now) &&',
+    '      (canonicallyEqual({ ...was, state: now.state }, now) || now.id.length > 0) &&',
+    T9
+  ),
+  m(
+    'T9-62 a confirmed target may be rolled back to pending under the same attempt',
+    S + 'stopRules.ts',
+    "      (b.state === 'pending' || b.state === 'unexamined')",
+    "      (b.state === 'pending' || b.state === 'unexamined') &&\n      a.taskId.length < 0",
+    T9
+  ),
+  m(
+    'T9-63 open keeps an unsettled stop command that is not its stop attempt',
+    S + 'stopBook.ts',
+    '        if (!command.settled && latching && !own) {',
+    '        if (!command.settled && latching && !own && taskId.length < 0) {',
+    T9
+  ),
+  m(
+    'T9-64 open treats a command of a released stop as a stray',
+    S + 'stopBook.ts',
+    '        const latching: boolean = this.latchingOf(command.rootId).some((i) => i.id === command.intentId);',
+    '        const latching: boolean = this.latchingOf(command.rootId).length >= 0;',
+    T9
+  ),
+  m(
+    "T9-65 open treats a superseded attempt's settled command as a stray",
+    S + 'stopBook.ts',
+    "        settled: op.dispatch === 'settled'",
+    '        settled: op.dispatch.length < 0',
+    T9
+  ),
+  m(
+    'T9-66 storage lets an attempt move other than forward by one, with a new key',
+    S + 'stopRules.ts',
+    '    if (b.attempt === a.attempt ? b.operationId !== a.operationId : b.attempt !== a.attempt + 1) {',
+    '    if (b.attempt < 0) {',
+    T9
+  )
+];
+
+MUTATIONS.push(...T9_ROWS);
+
 function parseArgs(argv) {
   const args = { check: false, pkg: path.resolve(__dirname, '..'), out: undefined, only: [] };
   for (let i = 0; i < argv.length; i++) {
@@ -715,23 +1207,35 @@ function main() {
   );
   const results = [];
   for (const row of rows) {
-    const file = path.join(args.pkg, row.file);
-    const source = fs.readFileSync(file, 'utf8');
-    const count = occurrences(source, row.from);
+    const files = row.edits.map((edit) => {
+      const file = path.join(args.pkg, edit.file);
+      return { ...edit, file, source: fs.readFileSync(file, 'utf8') };
+    });
+    const miss = files.find((edit) => occurrences(edit.source, edit.from) !== 1);
     let result;
-    if (count !== 1) {
-      result = { verdict: `UNVERIFIED: pattern found ${count} times`, red: [] };
+    if (miss !== undefined) {
+      result = { verdict: `UNVERIFIED: pattern found ${occurrences(miss.source, miss.from)} times`, red: [] };
     } else if (args.check) {
       result = { verdict: 'pattern ok', red: [] };
     } else {
-      fs.writeFileSync(
-        file,
-        source.replace(row.from, () => row.to)
-      );
+      // Edits to one file apply in turn, each against the text the previous one left.
+      const mutated = new Map();
+      for (const edit of files) {
+        const text = mutated.has(edit.file) ? mutated.get(edit.file) : edit.source;
+        mutated.set(
+          edit.file,
+          text.replace(edit.from, () => edit.to)
+        );
+      }
+      for (const [file, text] of mutated) {
+        fs.writeFileSync(file, text);
+      }
       try {
         result = classify(runSuites(args.pkg, row.tests));
       } finally {
-        fs.writeFileSync(file, source);
+        for (const edit of files) {
+          fs.writeFileSync(edit.file, edit.source);
+        }
       }
     }
     results.push({ name: row.name, ...result });

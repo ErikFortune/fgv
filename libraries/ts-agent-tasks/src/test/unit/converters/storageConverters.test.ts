@@ -86,6 +86,20 @@ describe('storage record converters', () => {
     );
   });
 
+  test('a record holds only the stops its own task is the root of', () => {
+    const record = resolvedRecord();
+    const foreign = {
+      id: 's1',
+      rootId: 't2',
+      mode: 'pause',
+      requestedBy: 'alice',
+      targets: [{ taskId: 't2', attempt: 1, operationId: 'k1', state: 'unexamined' }],
+      state: 'pending',
+      topologyGeneration: 0
+    };
+    expect(storage.record.convert({ ...record, stops: [foreign] })).toFailWith(/t1: holds stop s1 of t2/);
+  });
+
   test('an update for another task, or a future revision, is refused', () => {
     const record = resolvedRecord();
     const foreign = update(envelope('t2', 1), 'lifecycle');

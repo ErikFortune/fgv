@@ -33,7 +33,7 @@ import {
 import { ITaskRepositoryWriter } from '../storage';
 import { AccessContext, subjectOf } from './access';
 import { IRelatedTask, confirmUnchanged, isSameCatalog, readExisting } from './catalogMutation';
-import { checkParentOpen, convertRequest, readParent } from './catalogOperations';
+import { checkParentOpen, convertRequest, readParent, refuseUnderLatch } from './catalogOperations';
 import { BrokerCore, receiptJson, revisionOf } from './core';
 import { changedSinceAuthorized, denied, notFound, ok, propagate, taskFailure } from './failures';
 
@@ -72,6 +72,7 @@ function _committedReceipt(core: BrokerCore, record: ITaskCommitRecord): TaskRes
  * @internal
  */
 export async function recheckParent(
+  core: BrokerCore,
   writer: ITaskRepositoryWriter,
   parent: IRelatedTask | undefined,
   childId: TaskId,
@@ -87,7 +88,11 @@ export async function recheckParent(
   if (again.value === undefined || revisionOf(again.value) !== revisionOf(parent.record)) {
     return changedSinceAuthorized(`the parent of ${childId}`, operationId);
   }
-  return checkParentOpen(again.value, parent.role);
+  // A stop does not move its root's revision, so the latch is checked here, under the writer, where it
+  // is current: an edge arriving after a stop captured the tree is refused (T9).
+  return checkParentOpen(again.value, parent.role).onSuccess(() =>
+    refuseUnderLatch(core, parent.id, `it takes no new child`, operationId)
+  );
 }
 
 /**
@@ -197,7 +202,7 @@ export async function createNative(
   }
 
   return core.gated(async (writer) => {
-    const parentNow = await recheckParent(writer, parent, taskId, operationId);
+    const parentNow = await recheckParent(core, writer, parent, taskId, operationId);
     if (parentNow.isFailure()) {
       return propagate<ITaskMutationResult>(parentNow);
     }
@@ -345,7 +350,7 @@ export async function registerExternal(
     parent = { id: request.parentId, role: 'parent', record: read.value };
   }
   const registered = await core.gated(async (writer) => {
-    const parentNow = await recheckParent(writer, parent, taskId, operationId);
+    const parentNow = await recheckParent(core, writer, parent, taskId, operationId);
     if (parentNow.isFailure()) {
       return propagate<ITaskMutationResult>(parentNow);
     }

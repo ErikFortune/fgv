@@ -10,6 +10,7 @@ import { ITaskSnapshot } from './envelope';
 import { ITaskSubscriptionSpecification } from './delivery';
 import { OperationId, SubscriptionId, TaskId } from './ids';
 import { ISourceRevision, SourceHistoryContract } from './source';
+import { IStopCommandMarker, IStopIntent } from './stop';
 import { IUnresolvedTaskReference } from './summary';
 import { ITaskUpdate } from './updates';
 
@@ -94,6 +95,12 @@ export interface IStoredCommandOperation {
    * optional — no record written before T6 carries it.)
    */
   readonly awaiting?: ICommandAwaiting;
+  /**
+   * Present on a cascade stop's command: the intent this command is an attempt of. Storage admits a
+   * marked command only as a live, not yet landed attempt of a latching intent, and a landing is
+   * recognized only when the id and the marker both match. (T9: additive and optional.)
+   */
+  readonly stop?: IStopCommandMarker;
 }
 
 /**
@@ -150,6 +157,13 @@ export interface IResolvedTaskCommitRecord {
   readonly updates: ReadonlyArray<ITaskUpdate>;
   readonly capacityClaims: ReadonlyArray<ITaskCapacityClaim>;
   readonly archived: boolean;
+  /**
+   * The cascade stops this task is the root of, latching or not (design § 8.3, § 10). An intent is
+   * never removed: a released or settled one is retained as the stop's report. (T9: additive and
+   * optional — a record with no stop omits it. § 8.3 sketched one `stop`; overlapping intents are
+   * represented independently, so this holds up to one latching intent per mode.)
+   */
+  readonly stops?: ReadonlyArray<IStopIntent>;
 }
 
 /**
@@ -191,6 +205,11 @@ export interface IResolvedTaskRecordDraft {
   readonly operations: ReadonlyArray<IStoredTaskOperation>;
   readonly updates: ReadonlyArray<ITaskUpdate>;
   readonly archived: boolean;
+  /**
+   * The record's cascade stops. A draft that omits intents the record holds is refused: an intent is
+   * evidence and is never dropped.
+   */
+  readonly stops?: ReadonlyArray<IStopIntent>;
 }
 
 /**

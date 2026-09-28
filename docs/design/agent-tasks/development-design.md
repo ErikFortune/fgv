@@ -1025,6 +1025,38 @@ New descendants are **rejected while a stop is pending, blocked or satisfied**, 
 
 An explicit host pump `reconcileStop(intentId)` performs bounded work and returns the latest result; it does not install a timer, start a task, or invoke a model. Blocked intents remain durable and inspectable until resolved/released/dispositioned under policy. Observation-only ingestion cannot validate this command path; the simulated source in the proving ground must do so.
 
+**As implemented (T9, 2026-09-27).** The types above ship as written, with these recorded
+differences — none weakens a guarantee; each is the smallest change that let a guarantee be
+enforced. The package's `CAPABILITIES.md` is authoritative for the shipped surface.
+
+- **`stops`, not `stop`**, on the root record (§ 8.3): overlapping intents are represented
+  independently, so a root holds up to one latching intent per mode, and released/settled intents
+  stay as reports. An intent is coordination state *beside* the envelope: it changes no semantic
+  revision and emits no envelope update. The owed updates a stop produces are its targets' own
+  lifecycle updates, through the ordinary command path.
+- **Per-target command keys are minted and persisted, not tuple-derived.** Two 128-character ids
+  cannot fit one 128-character operation id; the property that matters — the same key across a
+  restart — comes from persisting the minted key in the root intent before any dispatch. The
+  target's stored command carries a `stop` marker (`IStopCommandMarker`), and a landing counts only
+  when key and marker both match.
+- **The admission freeze is enforced by storage**, on every operation commit and registration, and
+  rebuilt with the index before a reopened repository accepts a write. Source observations are
+  exempt: a source is authoritative, and a stopped task it reports running degrades the stop.
+- **`ISourceCapabilities` names the stop commands** (`pauseCommand` / `cancelCommand`, with their
+  parameters) instead of carrying `commands: string[]` — the kind registry is already the command
+  authority (T6), and a stop needs parameters a name cannot supply. `capabilities()` is optional:
+  a source without it stops nothing.
+- **`IStopTarget` gains `violation`**, the durable record of a stable stop a source later
+  contradicted — the "required recovery issue" of step 7, kept on the target so it is inspectable
+  and never silently lost. **`IStopResult` gains `rootId`, `mode` and `capacity`**, and presents
+  targets without `stableSourceEvidence` (it names source internals).
+- **Capacity is derived, not claimed**: each unlanded, unconfirmed, non-archived attempt reserves
+  one bundle (the additive dimensions on the root, `record-bytes` on the target), and each latching
+  intent reserves its growth to the widest target encoding plus a release operation. Nothing new is
+  stored; open recomputes it.
+- **Not built**: explicit abandonment of a blocked cancel ("may record") — routed to
+  `docs/TECH_DEBT.md`; such a root is `retention-blocked` at archive.
+
 ## 11. Tools and prompt integration
 
 ### ai-assist factory

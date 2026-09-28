@@ -23,7 +23,8 @@ import {
   TaskId,
   TaskResult,
   UpdateId,
-  maxTaskPageLimit
+  maxTaskPageLimit,
+  carriedStops
 } from '../types';
 import { ITaskRepositoryWriter } from '../storage';
 import { AccessContext, subjectOf } from './access';
@@ -416,7 +417,9 @@ async function _abandonOnce(
       request: command.request,
       principalKey: command.principalKey,
       dispatch: 'settled',
-      receipt: { ...command.receipt, result: { state: 'abandoned', reason: request.reason, from } }
+      receipt: { ...command.receipt, result: { state: 'abandoned', reason: request.reason, from } },
+      // A stop's command keeps its marker: it is part of what the command is (T9).
+      ...(command.stop !== undefined ? { stop: command.stop } : {})
     };
     if (!access.epochIs(epoch.value)) {
       return _policyMoved<ICommandReceipt | undefined>(what);
@@ -433,7 +436,8 @@ async function _abandonOnce(
         ...(resolved.sourceRevision !== undefined ? { sourceRevision: resolved.sourceRevision } : {}),
         operations: resolved.operations.map((op) => (op.operationId === command.operationId ? next : op)),
         updates: resolved.updates,
-        archived: resolved.archived
+        archived: resolved.archived,
+        ...carriedStops(resolved)
       }
     });
     if (committed.isFailure()) {

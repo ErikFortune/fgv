@@ -50,6 +50,12 @@ export interface ITaskProjection {
   readonly external?: boolean;
   /** The task was admitted with a finite `source-replay` envelope. Absent when archived. */
   readonly sourceReplay?: boolean;
+  /**
+   * Stored operations the record holds: what a stop checks a target's operation slots against
+   * before it binds an attempt to it (T9). Absent when archived — an archived task is never a stop's
+   * target to bind — so the archived projection keeps its minimal shape.
+   */
+  readonly operations?: number;
 }
 
 /**
@@ -76,7 +82,9 @@ export function projectRecord(record: ITaskCommitRecord, known: boolean, text: s
       archived: record.archived,
       known,
       fingerprint,
-      ...(record.archived ? {} : { ...delivery, external: envelope.binding !== undefined })
+      ...(record.archived
+        ? {}
+        : { ...delivery, external: envelope.binding !== undefined, operations: record.operations.length })
     };
   }
   const reference = record.reference;
@@ -91,6 +99,7 @@ export function projectRecord(record: ITaskCommitRecord, known: boolean, text: s
     archived: false,
     known,
     fingerprint,
+    operations: record.operations.length,
     ...delivery,
     external: true
   };

@@ -62,7 +62,7 @@ export const allTaskActions: ReadonlyArray<TaskAction> = [
  * task out from under this one".
  * @public
  */
-export type TaskAccessRole = 'subject' | 'parent' | 'previous-parent' | 'new-parent';
+export type TaskAccessRole = 'subject' | 'parent' | 'previous-parent' | 'new-parent' | 'stop-target';
 
 /**
  * One question put to a host's authorization policy.

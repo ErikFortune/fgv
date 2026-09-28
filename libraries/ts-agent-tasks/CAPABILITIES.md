@@ -28,9 +28,11 @@ dispatch for work a source executes, with the source owning execution truth — 
 issued before a context is returned, and exact-ID acknowledgement — and **retention**
 (`TaskBroker.dispose`, `closeSubscription`, `abandonCommand`, `cleanup`): obligations end only by
 acknowledgement or an authorized, recorded disposition, pruning and archive decide from durable
-checkpoints, and every incomplete operation is reportable. Cascade stop, tools and prompt
-integration follow in later slices, and are deliberately absent from the export surface rather
-than stubbed.
+checkpoints, and every incomplete operation is reportable — and **cascade stop**
+(`requestStop`, `reconcileStop`, `releaseStop`): a persisted pause or cancel of a task and its whole
+authoritative subtree, a frozen subtree while it latches, and an honest partial result. Tools and
+prompt integration follow in later slices, and are deliberately absent from the export surface
+rather than stubbed.
 
 ## Storing tasks durably — `FileTreeTaskRepository`
 
@@ -517,6 +519,83 @@ registrations and subscriptions (retry the same request), unsettled and feed-awa
 subscription's owed and pinned counts. Open's `ITaskRecoveryReport` remains the record of what open
 found and completed; `rebuildIndexes()` rebuilds every index above from the records.
 
+## Cascade stop — `requestStop`, `reconcileStop`, `releaseStop`
+
+**A stop is not a transaction.** It is a persisted intent, satisfied target by target and reported
+honestly: accepted is not completed, applied effects are never rolled back because another target
+refuses, and there is no "success with a skipped child". (Design § 10; plan amendment A2.)
+
+- **`writer.requestStop({ taskId, expectedRevision, operationId, mode })`** — `mode` is `pause` or
+  `cancel`. The root must be a broker-managed tracked task or list whose `stopPolicy` permits the
+  mode (`cascade-pause` permits a pause; `cascade-cancel` both). Inside the writer the **complete
+  authoritative subtree** is captured — root first, then breadth-first by id, hidden, archived,
+  unresolved and external descendants included, whatever their own `stopPolicy` — and persisted in
+  the root's record with a minted command key per target. More than 1,000 targets is refused, never
+  truncated. **Nothing is dispatched**: the result is `pending`, every target `unexamined`.
+- **`writer.reconcileStop({ taskId, intentId, limit? })`** — the host pump: one pass that revisits
+  every target under **current** authority (`stop` on the root, `stop` as `stop-target` on each
+  target — a delegated stop reaches targets the principal cannot see), sends each mode's own command
+  through the ordinary command path, resolves uncertain ones by their key, confirms, and persists
+  the root's summary. `limit` (default 50) bounds its effects — source calls and commands; reading
+  records is free. Only a pass that visited every target can make the stop `satisfied`. It starts
+  no work and installs no timer; nothing runs it but the host.
+- **`writer.releaseStop({ taskId, expectedRevision, operationId, intentId })`** — ends the latch.
+  A pause may be released with blockers standing; nothing resumes and nothing sent is retracted. A
+  cancel whose root is terminal cannot be released (that would reopen the tree).
+- **`view.inspectStop({ taskId, intentId })`** — the current result, no effects.
+
+**Target states.** `confirmed` — the state satisfies the mode and holds (a native task by the
+latch; an external one by its source's **declared stable stop**). `pending` — a command is accepted
+or on its way: **a receipt is not a stop**. Blockers — `unsupported` (observation-only, no
+declaration, or only a *sampled* pause), `denied`, `unavailable`, `refused`, `indeterminate` — keep
+the stop `blocked`, never satisfied. A task list has no own work: as a pause target it is confirmed
+without a command.
+
+**The result** (`IStopResult`) lists only targets the caller may see; the intent is never filtered.
+`restrictedWorkRemains` says, with no counts or ids, that a hidden target is not confirmed. A
+presentation never overstates: a confirmed target whose record has since left the stopped set is
+shown `indeterminate` with its `violation`, and a satisfied stop resting on external evidence is
+shown `pending` after a restart until a pass revalidates the source's declaration.
+
+**The admission freeze** — enforced by the repository on every commit, rebuilt from the records
+before a reopened repository accepts a write. While a stop latches: no new child anywhere in the
+subtree (create, register, reparent in); no reparent of a latched task; no move to `running` (start,
+resume) and no move out of the stopped set (`paused → waiting` under a pause) — decided on states,
+so no command spelling bypasses it (a native command answers `rejected: stop-active`); no new
+command to a latched external task's source, and a command recorded before the latch is settled
+`stop-active` rather than sent; a latched list does not complete; a latched task is not archived.
+Source observations are exempt — a source restarting a stopped task degrades the stop instead.
+
+**Sources opt in** with `ITaskSource.capabilities(binding)` (`ExternalTaskSource`: `capabilities`):
+`pause: 'stable-until-explicit-resume' | 'sampled' | 'unsupported'`, `cancel: 'terminal-absorbing' |
+'unsupported'`, a `contractVersion`, and the kind's command (with parameters) for each mode. It is
+asked on every pass. A confirmed external pause records its evidence — source, contract version,
+confirming revision — and a later observation that contradicts it records a `violation` and
+re-stops under a new attempt. **No library assertion manufactures external fencing.**
+
+**Custom repositories and draft builders.** A replacement of a record must keep its stops — storage
+refuses one that drops an intent — so build drafts with `...carriedStops(record)`. A repository
+implements `subtree(rootId, limit)` (refused, never truncated, over the limit) and `stopLatches(taskId)`.
+
+**Idempotency.** A target's attempt and key are persisted before anything is sent; a restart finds
+the effect in the target's own record under that key. A definitely rejected source revision
+conflict gets a new persisted attempt and key, sent against a refreshed revision; an uncertain one
+keeps its key until resolved. Released stops' commands are never resent.
+
+**Capacity (A3).** Acceptance reserves, for every target, one attempt bundle — an operation, a
+stored operation and a command settlement (**643,625 logical bytes under the default profile**) —
+plus the intent's own growth and its release, and refuses the whole stop (`backpressure`, nothing
+written) if any of it does not fit: **no target is dispatched to because an earlier one fit**. Every
+accepted attempt then lands, and the stop can be released, at a full repository; a *fresh* attempt
+is new admission and may be refused with `IStopResult.capacity`. The reservation is derived from the
+records, never stored, and shrinks as attempts land and targets are confirmed. It is large: with 400
+plain registrations under the default profile, a stop covers at most 210 of them (pinned by test),
+bound by `logical-bytes`.
+
+**Settlement.** Archiving the root of a `satisfied` cancel whose targets are all terminal settles
+it, keeping the report and the terminal graph. A blocked cancel is never archived as a successful
+stop (`retention-blocked`); a latching pause is released first.
+
 ## Host runbook — capacity pressure and a full repository
 
 The limits are finite by design (a finite history horizon; see `docs/design/agent-tasks/`
@@ -790,8 +869,9 @@ fragment is caught at the mint rather than at the filename.
 
 ## Not in scope
 
-No cascade stop, tool factory or prompt integration **yet** — those are later
-slices, and their absence from the export surface is deliberate. **Permanently** out of scope: an input-request/answer protocol, a task runner or
+No tool factory or prompt integration **yet** — those are later slices, and their absence from
+the export surface is deliberate. Explicit abandonment of a blocked cancel is not built (see
+`docs/TECH_DEBT.md`). **Permanently** out of scope: an input-request/answer protocol, a task runner or
 scheduler, an executor, a retry policy, cross-repository parenting, execution migration,
 multi-process ownership, general event sourcing, and dependency DAGs.
 

@@ -109,6 +109,12 @@ export class BrokerCore {
   public readonly cursors: ViewCursorTable = new ViewCursorTable();
   /** The pump's continuations: the candidate they resume after never leaves the broker. */
   public readonly pumpCursors: ViewCursorTable<TaskId> = new ViewCursorTable<TaskId>('pump');
+  /**
+   * The stops whose external stable-stop evidence this broker instance has revalidated in a full pump
+   * pass. Nothing persists it: after a reopen every such stop is presented unsatisfied until a pass
+   * revalidates its evidence against the sources as they are now (design § 10 step 6).
+   */
+  public readonly revalidatedStops: Set<string> = new Set<string>();
   private readonly _queue: WriterQueue = new WriterQueue();
   /** One reconciliation pass per source at a time: the tail of each source's chain. */
   private readonly _sourcePasses: Map<string, Promise<unknown>> = new Map();
@@ -140,6 +146,16 @@ export class BrokerCore {
     return minted.isSuccess()
       ? ok(minted.value)
       : taskFailure(`delivery id: ${minted.message}`, 'storage-unavailable', 'safe');
+  }
+
+  /** A fresh operation id from the host's id factory: a stop attempt's command key. */
+  public mintOperationId(): TaskResult<OperationId> {
+    const minted: Result<OperationId> = captureResult(() => this.environment.newId())
+      .onSuccess((raw) => raw)
+      .onSuccess((raw) => this.converters.ids.operationId.convert(raw));
+    return minted.isSuccess()
+      ? ok(minted.value)
+      : taskFailure(`operation id: ${minted.message}`, 'storage-unavailable', 'safe');
   }
 
   /** The canonical instant `ms` milliseconds after `from`. */

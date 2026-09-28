@@ -7,6 +7,7 @@ import { Result } from '@fgv/ts-utils';
 import { ICommandRequest, CommandState } from './commands';
 import { TaskResult } from './failure';
 import { OperationId, TaskId, TaskRevision } from './ids';
+import { ISourceCapabilities } from './stop';
 import {
   ISourceBinding,
   ISourceProjection,
@@ -165,6 +166,13 @@ export interface ITaskSource {
   recover(binding: ISourceBinding): Promise<TaskResult<RecoveryResult>>;
   /** Optional: resolves an uncertain command by its key. Never a model tool. */
   lookupCommand?(binding: ISourceBinding, request: ICommandRequest): Promise<TaskResult<SourceCommandLookup>>;
+  /**
+   * Optional: what the source declares about stopping one binding — a cascade stop's opt-in
+   * (design § 10 step 6). A source without it stops nothing: its tasks are `unsupported` stop
+   * targets, which block satisfaction. Asked on every stop pass, never cached across a restart.
+   * (T9: design § 5 lists it; T6 left it for the stop slice.)
+   */
+  capabilities?(binding: ISourceBinding): Promise<TaskResult<ISourceCapabilities>>;
 }
 
 /**
