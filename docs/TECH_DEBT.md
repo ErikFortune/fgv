@@ -685,6 +685,43 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
 
 ## P3 — Opportunistic cleanup
 
+- **[P3] `task_inspect` returns a task's details as unframed host JSON beside the framed context.**
+  `libraries/ts-agent-tasks/src/packlets/tools/presentation.ts`. Task state reaches the model only
+  inside `TaskContextRenderer`'s framed, escaped text; details, when the view's `ITaskProjector`
+  exposes them, are returned as structured JSON beside it — size-bounded (`maxDetailsChars`) but not
+  framed, and without the renderer's escaping of invisible and frame-breaking characters. Documented
+  on `ITaskInspectResolvedToolResult` and in `CAPABILITIES.md`: a host that exposes details chooses
+  their content. The renderer's escaping (`quoteData`) is internal to the `context` packlet, so
+  reusing it would need a new public primitive.
+
+  **Trigger**: I2 (prompt trust framing is its review gate), or a host exposing details it does not
+  control.
+
+  **Scope sketch**: decide whether details are data to be framed like task prose. If so, publish an
+  escaping helper from `context` (or render details inside the framed text) and route them through
+  it; if not, record that as the design.
+
+  **Not a P4**: it is a trust-framing asymmetry on a model-facing surface, not a doc gap.
+
+  **Reference**: `agent-tasks-i1a` layer-1 review P3-b; `.ai/tasks/active/agent-tasks-i1a/result.md`.
+
+- **[P3] `JsonSchema.integer` cannot state a range, so `task_query`'s `limit` bound is prose on the
+  wire.** `libraries/ts-json-base/src/packlets/json-schema-builder/factories.ts` has no
+  `minimum` / `maximum`. `task_query` enforces `1 ≤ limit ≤ budget.context.maxItems` inside `execute`
+  and says so in the property's description, but the emitted schema cannot, so a provider that
+  constrains arguments by schema cannot constrain this one.
+
+  **Trigger**: the next tool schema that needs a numeric range (I1b–I1c are likely), or any
+  `JsonSchema` change.
+
+  **Scope sketch**: additive `minimum` / `maximum` (and `exclusive*`) options on `number` /
+  `integer`, emitted by `toJson()` and enforced by the validator; check each provider's schema
+  sanitizer (Gemini's in particular) passes them through. Then state the bound in the schema.
+
+  **Not a P4**: the runtime check holds, but the wire contract under-describes the tool.
+
+  **Reference**: `agent-tasks-i1a`.
+
 - **[P3] `jsonThreeWayDiff` silently drops an own `__proto__` key.**
   `libraries/ts-json/src/packlets/diff/threeWayDiff.ts` builds `onlyInA` / `onlyInB` / `unchanged`
   as plain objects by assignment. `onlyInA['__proto__'] = value` sets the prototype instead of

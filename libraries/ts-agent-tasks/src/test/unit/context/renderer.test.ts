@@ -7,6 +7,7 @@ import '@fgv/ts-utils-jest';
 import { JsonObject } from '@fgv/ts-json-base';
 import { Result, fail, omit, succeed } from '@fgv/ts-utils';
 import {
+  IContextUnresolvedReference,
   ITaskContext,
   ITaskContextBudget,
   ITaskSummary,
@@ -882,6 +883,15 @@ describe('TaskContextRenderer', () => {
       });
     });
 
+    test('an unresolved reference with no binding — as a bound view projects it — renders the same', () => {
+      const withBinding = renderer.render(input({ unresolved: [unresolved('x1')] })).orThrow();
+      const projected = omit(unresolved('x1'), ['binding']);
+      expect(renderer.render(input({ unresolved: [projected] }))).toSucceedAndSatisfy((context) => {
+        expect(context.text).toBe(withBinding.text);
+        expect(context.diagnostics).toEqual(withBinding.diagnostics);
+      });
+    });
+
     test('unresolved references render as diagnostics without binding or revision', () => {
       expect(renderer.render(input({ unresolved: [unresolved('x1')] }))).toSucceedAndSatisfy((context) => {
         expect(parseRecords(context).filter((r) => r.section === '[diagnostics]')).toEqual([
@@ -1090,7 +1100,7 @@ describe('TaskContextRenderer', () => {
 
     test('unresolved references go through their own projection before rendering', () => {
       const unresolvedProjection = jest.fn(
-        (r: IUnresolvedTaskReference): Result<IUnresolvedTaskReference> =>
+        (r: IContextUnresolvedReference): Result<IContextUnresolvedReference> =>
           succeed({ ...omit(r, ['parentId']), title: 'withheld', reason: 'withheld' })
       );
       const redacting: TaskContextRenderer = TaskContextRenderer.create({ unresolvedProjection }).orThrow();

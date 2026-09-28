@@ -17,7 +17,7 @@ import {
   ITaskReference,
   ITaskSummary,
   ITaskUpdate,
-  IUnresolvedTaskReference,
+  IContextUnresolvedReference,
   TaskContextOmissionReason,
   TaskContextPresentation,
   TaskContextProjection,
@@ -85,7 +85,7 @@ interface IUnresolvedItem {
   readonly taskId: TaskId;
   /** The registration record's revision: a sort key only, never rendered or receipted. */
   readonly revision: TaskRevision;
-  readonly reference: IUnresolvedTaskReference;
+  readonly reference: IContextUnresolvedReference;
   readonly depth: number;
   readonly rank: number;
 }
@@ -414,16 +414,18 @@ export class TaskContextRenderer {
       .withFailureDetail(invalidDetail);
   }
 
-  private _projectUnresolved(reference: IUnresolvedTaskReference): TaskResult<IUnresolvedTaskReference> {
+  private _projectUnresolved(
+    reference: IContextUnresolvedReference
+  ): TaskResult<IContextUnresolvedReference> {
     // The same contract as `_project`: captured, re-validated, identity pinned, no fallback.
     return captureResult(() => this._unresolvedProjection(reference))
       .onSuccess((projected) => projected)
-      .onSuccess((projected) => this.converters.context.unresolvedReference.convert(projected))
+      .onSuccess((projected) => this.converters.context.contextUnresolvedReference.convert(projected))
       .onSuccess((projected) =>
         projected.id !== reference.id ||
         projected.revision !== reference.revision ||
         projected.kind !== reference.kind
-          ? fail<IUnresolvedTaskReference>(
+          ? fail<IContextUnresolvedReference>(
               `projection changed identity to ${projected.kind} ${projected.id}@${projected.revision}`
             )
           : succeed(projected)
@@ -440,7 +442,7 @@ export class TaskContextRenderer {
 
   private _itemsFrom(
     revisions: ReadonlyArray<IRevisionCandidate>,
-    unresolvedReferences: ReadonlyArray<IUnresolvedTaskReference>
+    unresolvedReferences: ReadonlyArray<IContextUnresolvedReference>
   ): TaskResult<ReadonlyArray<Item>> {
     return allTaskResults(revisions.map((c) => this._project(c))).onSuccess((projected) => {
       // A task's place in the tree comes from its newest supplied revision, which is its

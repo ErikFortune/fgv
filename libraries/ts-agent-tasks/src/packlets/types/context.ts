@@ -5,6 +5,7 @@
 
 import { Result } from '@fgv/ts-utils';
 import { DeliveryId, TaskId, TaskKind, TaskRevision, UpdateId } from './ids';
+import { ISourceBinding } from './source';
 import { ITaskSummary, IUnresolvedTaskReference } from './summary';
 import { ITaskUpdate } from './updates';
 
@@ -95,6 +96,21 @@ export interface ITaskInclusionReceipt {
 export type TaskInputCompleteness = 'complete' | 'partial';
 
 /**
+ * An unresolved reference as the renderer accepts it: an {@link IUnresolvedTaskReference} whose
+ * source binding is optional.
+ *
+ * @remarks
+ * The renderer never presents a binding, so it does not require one. A host holding the full
+ * reference passes it as it is; a bound view, which never emits a binding, passes its projected
+ * reference without inventing one. The binding is optional here only: a stored reference still
+ * requires it.
+ * @public
+ */
+export type IContextUnresolvedReference = Omit<IUnresolvedTaskReference, 'binding'> & {
+  readonly binding?: ISourceBinding;
+};
+
+/**
  * What a host hands the renderer: already-authorized, already-selected task values.
  *
  * @remarks
@@ -107,7 +123,7 @@ export type TaskInputCompleteness = 'complete' | 'partial';
  */
 export interface ITaskContextInput {
   readonly tasks: ReadonlyArray<ITaskSummary>;
-  readonly unresolved?: ReadonlyArray<IUnresolvedTaskReference>;
+  readonly unresolved?: ReadonlyArray<IContextUnresolvedReference>;
   readonly updates?: ReadonlyArray<ITaskUpdate>;
   readonly deliveryId?: DeliveryId;
   readonly completeness: TaskInputCompleteness;
@@ -231,5 +247,5 @@ export type TaskContextProjection = (summary: ITaskSummary) => Result<ITaskSumma
  * @public
  */
 export type TaskContextUnresolvedProjection = (
-  reference: IUnresolvedTaskReference
-) => Result<IUnresolvedTaskReference>;
+  reference: IContextUnresolvedReference
+) => Result<IContextUnresolvedReference>;

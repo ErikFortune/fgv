@@ -73,6 +73,18 @@ describe('context converters', () => {
       expect(context.unresolvedReference.convert(omit(unresolved('x1'), ['binding']))).toFail();
       expect(context.unresolvedReference.convert(unresolved('x1', { reason: '' }))).toFailWith(/empty/i);
     });
+
+    test('as the renderer accepts it, the binding is optional and nothing else is', () => {
+      const withoutBinding = omit(unresolved('x1'), ['binding']);
+      expect(context.contextUnresolvedReference.convert(unresolved('x1'))).toSucceed();
+      expect(context.contextUnresolvedReference.convert(withoutBinding)).toSucceedAndSatisfy((reference) => {
+        expect(reference).toEqual(withoutBinding);
+      });
+      expect(context.contextUnresolvedReference.convert({ ...withoutBinding, extra: 1 })).toFail();
+      expect(context.contextUnresolvedReference.convert(omit(withoutBinding, ['reason']))).toFail();
+      // The storage-facing converter is unchanged: a persisted reference keeps its binding.
+      expect(context.unresolvedReference.convert(withoutBinding)).toFail();
+    });
   });
 
   describe('input', () => {

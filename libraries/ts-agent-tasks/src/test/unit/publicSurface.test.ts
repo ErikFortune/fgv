@@ -23,6 +23,16 @@ describe('public surface', () => {
     expect(names.filter((n) => /^fs|filesystem/i.test(n))).toEqual([]);
   });
 
+  test('exports one model-tool factory (I1a), whose tools only read', () => {
+    const names: ReadonlyArray<string> = Object.keys(TaskLib);
+    expect(names.filter((n) => /tool/i.test(n)).sort()).toEqual(['createTaskTools', 'defaultTaskToolBudget']);
+    const view = {} as TaskLib.IBoundTaskView;
+    const tools = TaskLib.createTaskTools({ view }).orThrow();
+    expect(tools.map((t) => t.config.name)).toEqual(['task_query', 'task_inspect']);
+    // No acknowledgement, mutation or stop tool: receipts are the host's, and I1b–d add the rest.
+    expect(tools.every((t) => t.config.annotations?.readOnlyHint === true)).toBe(true);
+  });
+
   test('exports no deferred input-request or answer protocol', () => {
     const names: ReadonlyArray<string> = Object.keys(TaskLib);
     expect(names.filter((n) => /inputrequest|answer|inbox|continuation/i.test(n))).toEqual([]);

@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-agent-tasks",
+      "comment": "Read-only model tools (I1a): createTaskTools({ view, renderer?, budget? }) builds task_query and task_inspect as @fgv/ts-extras AiAssist.IAiClientTools over an IBoundTaskView, calling only its query and inspect. Closed schemas with no principal, scope or consumer member; every execute re-validates its arguments; authority is asked per call. Output is bounded by default: tasks reach the model only as TaskContextRenderer text within ITaskToolBudget.context, tasks the text omitted or abbreviated are named by id, details are returned only within maxDetailsChars, failure messages are cut at 500 characters, and a failing projector fails the call. Adds a dependency on @fgv/ts-extras. The renderer now accepts an unresolved reference without its binding (IContextUnresolvedReference, TaskConverters.context.contextUnresolvedReference); TaskContextUnresolvedProjection takes and returns that type. The stored-reference converter is unchanged.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-agent-tasks"
+}

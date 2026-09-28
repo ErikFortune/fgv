@@ -7,8 +7,10 @@ be enough to resume cold. Keep it current as you go.
 
 ## Status
 
-**Not started.** Branch created and brief placed by the orchestrator 2026-09-28, immediately after
-T9 landed. No implementation work has begun.
+**Implemented; revert matrix running; PR next (implementer, 2026-09-28).** Required reading done;
+every file on the list exists and plan § I1 says what the brief claims. Package suite 2,060+ passing
+at 100 % with zero `c8 ignore`; lint clean; layer-1 review done (no P1; P2-1 fixed). `result.md`
+drafted — matrix table, Copilot rounds and gate results still to fill.
 
 ## Branch
 
@@ -61,7 +63,50 @@ Orchestrator re-ran on T9's final source, independently of its claims:
 
 ## Work log
 
-_(append as you go: what you did, what you learned, what you decided and why)_
+### 2026-09-28 — reading and design
+
+**Shape.** New `tools` packlet. `createTaskTools({ view, renderer?, budget? })` →
+`Result<ReadonlyArray<AiAssist.IAiClientTool>>` with exactly two tools, `task_query` and
+`task_inspect`. The factory takes an `IBoundTaskView` and calls nothing on it; each `execute`
+revalidates its arguments with its own schema, then calls `view.query` / `view.inspect` — authority
+is asked per call, never cached. No selection parameter: which mutation tools exist and how they are
+opted into is I1b's to spell.
+
+**Bounding reuses T2's renderer.** Every task the model sees reaches it as `TaskContextRenderer`
+text (bounded by the context budget, escaped, framed). A page item the renderer omitted or
+abbreviated is named by id (`omitted` / `abbreviated`) so the model can `task_inspect` it — without
+that, `nextCursor` would silently skip past tasks the text dropped. The receipt is discarded:
+tools acknowledge nothing. `limit` is 1..`budget.context.maxItems`, default the maximum; out of
+range fails. Details (only present when the host's `ITaskProjector.details` opted in) are included
+only when their JSON is within `budget.maxDetailsChars`; otherwise `detailsOmitted: 'too-large'`.
+Failure messages are truncated to a fixed bound (a converter echoes the model's own input).
+
+**Failing projector → the call fails.** Both projectors on the path (the view's `ITaskProjector`,
+the renderer's projection) already fail closed; the tool propagates the failure and returns no
+partial page. "Yield less" was rejected: dropping one item from a page misstates completeness and
+advances the cursor past a task the model never saw.
+
+**Misfit found in the renderer (surfaced, and extended rather than worked around).** A bound view
+emits `IProjectedUnresolvedReference` — no `binding`, by design — but the renderer's input requires
+`IUnresolvedTaskReference`, binding included, which it then never renders. Fabricating a binding
+would be a workaround. The extension: the renderer accepts an unresolved reference whose binding is
+optional, through a **new, separate** converter — `context.unresolvedReference` is also the
+*storage* converter for persisted records (`storageConverters.ts`), and widening it would let a
+stored reference lose its binding. Touches `types/context.ts`, `contextConverters.ts`,
+`context/renderer.ts`, `context/normalize.ts` — outside the tools packlet, inside the package, on an
+active surface.
+
+### 2026-09-28 — implementation, layer 1, matrix
+
+- Scenario tests came out at 100 % coverage without a closure pass.
+- The Gemini capture test first found no tools: the wire key is `function_declarations`. The test
+  was wrong, not the tools — recorded in `result.md` because it is the failure mode the test exists
+  to catch, and it was investigated before being believed.
+- Layer 1 (`code-reviewer`): no P1. P2-1 — a rejecting/throwing view reached the model unprefixed
+  and untruncated through `thenOnSuccess`'s own capture — fixed with `_read`. P3s documented or fixed.
+- Revert matrix: 18 rows (`I1a-1`…`I1a-18`) added to `perf/mutationMatrix.js`, run with `--pkg` on a
+  copy of the final source.
+- Routed to `docs/TECH_DEBT.md`: unframed details (I2), `JsonSchema.integer` has no range.
 
 ## Open questions for the orchestrator
 
