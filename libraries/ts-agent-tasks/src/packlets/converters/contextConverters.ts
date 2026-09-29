@@ -6,6 +6,7 @@
 import { Converters as JsonConverters, JsonValue } from '@fgv/ts-json-base';
 import { Converter, Converters, Result, fail, succeed } from '@fgv/ts-utils';
 import {
+  IContextUnresolvedReference,
   IInclusionEntry,
   ITaskContextBudget,
   ITaskContextInput,
@@ -51,6 +52,13 @@ export interface IContextConverters {
   readonly updateCategory: Converter<UpdateCategory>;
   readonly update: Converter<ITaskUpdate>;
   readonly unresolvedReference: Converter<IUnresolvedTaskReference>;
+  /**
+   * An unresolved reference as the renderer accepts it: the same fields, with the binding optional.
+   * The renderer never presents a binding, so a bound view's projected reference — which has none —
+   * converts here. Storage uses `unresolvedReference` instead, where the binding stays required;
+   * the two are separate so the renderer's leniency can never reach a persisted record.
+   */
+  readonly contextUnresolvedReference: Converter<IContextUnresolvedReference>;
   readonly completeness: Converter<TaskInputCompleteness>;
   readonly input: Converter<ITaskContextInput>;
   /** Shape only. The renderer additionally rejects a `maxChars` below its framing reserve. */
@@ -157,6 +165,20 @@ export function buildContextConverters(
       reason: boundedText(bounds.maxSummaryLength, 'unresolved reason')
     });
 
+  const contextUnresolvedReference: Converter<IContextUnresolvedReference> =
+    Converters.strictObject<IContextUnresolvedReference>({
+      id: ids.taskId,
+      revision: taskRevision,
+      kind: ids.taskKind,
+      detailVersion: positiveSafeInteger,
+      title: boundedSingleLine(bounds.maxTitleLength, 'title'),
+      parentId: ids.taskId.optional(),
+      responsibility: values.responsibility.optional(),
+      scopes: values.scopes,
+      binding: values.sourceBinding.optional(),
+      reason: boundedText(bounds.maxSummaryLength, 'unresolved reason')
+    });
+
   const completeness: Converter<TaskInputCompleteness> = Converters.enumeratedValue<TaskInputCompleteness>([
     'complete',
     'partial'
@@ -165,7 +187,7 @@ export function buildContextConverters(
   const max: number = taskContextLimits.maxInputEntries;
   const input: Converter<ITaskContextInput> = Converters.strictObject<ITaskContextInput>({
     tasks: boundedArrayOf(presentable, max, 'context tasks'),
-    unresolved: boundedArrayOf(unresolvedReference, max, 'context unresolved references').optional(),
+    unresolved: boundedArrayOf(contextUnresolvedReference, max, 'context unresolved references').optional(),
     updates: boundedArrayOf(update, max, 'context updates').optional(),
     deliveryId: ids.deliveryId.optional(),
     completeness
@@ -229,6 +251,7 @@ export function buildContextConverters(
     updateCategory,
     update,
     unresolvedReference,
+    contextUnresolvedReference,
     completeness,
     input,
     budget,

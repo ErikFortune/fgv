@@ -4,6 +4,7 @@
 
 ```ts
 
+import { AiAssist } from '@fgv/ts-extras';
 import { Brand } from '@fgv/ts-utils';
 import { Converter } from '@fgv/ts-utils';
 import { DetailedResult } from '@fgv/ts-utils';
@@ -187,6 +188,9 @@ export type ConsumerId = Brand<string, 'ConsumerId'>;
 export function createTaskCommandHandle<P>(descriptor: ITaskCommandDescriptor<P>): ITaskCommandHandle;
 
 // @public
+export function createTaskTools(params: ICreateTaskToolsParams): Result<ReadonlyArray<AiAssist.IAiClientTool>>;
+
+// @public
 export const defaultDeliveryCategories: ReadonlyArray<UpdateCategory>;
 
 // @public
@@ -227,6 +231,9 @@ export const defaultTaskPerOwnerLimits: ITaskPerOwnerLimits;
 
 // @public
 export const defaultTaskProjector: ITaskProjector;
+
+// @public
+export const defaultTaskToolBudget: ITaskToolBudget;
 
 // @public
 export type DeliveryId = Brand<string, 'DeliveryId'>;
@@ -643,6 +650,7 @@ export interface IContextConverters {
     readonly budget: Converter<ITaskContextBudget>;
     // (undocumented)
     readonly completeness: Converter<TaskInputCompleteness>;
+    readonly contextUnresolvedReference: Converter<IContextUnresolvedReference>;
     // (undocumented)
     readonly inclusionEntry: Converter<IInclusionEntry>;
     // (undocumented)
@@ -660,9 +668,22 @@ export interface IContextConverters {
 }
 
 // @public
+export type IContextUnresolvedReference = Omit<IUnresolvedTaskReference, 'binding'> & {
+    readonly binding?: ISourceBinding;
+};
+
+// @public
 export interface ICreateTaskList extends ICreateTrackedTask {
     // (undocumented)
     readonly completion: TaskListCompletion;
+}
+
+// @public
+export interface ICreateTaskToolsParams {
+    readonly budget?: ITaskToolBudget;
+    readonly logger?: Logging.ILogger;
+    readonly renderer?: TaskContextRenderer;
+    readonly view: IBoundTaskView;
 }
 
 // @public
@@ -1777,7 +1798,7 @@ export interface ITaskContextInput {
     // (undocumented)
     readonly tasks: ReadonlyArray<ITaskSummary>;
     // (undocumented)
-    readonly unresolved?: ReadonlyArray<IUnresolvedTaskReference>;
+    readonly unresolved?: ReadonlyArray<IContextUnresolvedReference>;
     // (undocumented)
     readonly updates?: ReadonlyArray<ITaskUpdate>;
 }
@@ -1972,6 +1993,34 @@ export interface ITaskInclusionReceipt {
 }
 
 // @public
+export interface ITaskInspectResolvedToolResult {
+    // (undocumented)
+    readonly archived: boolean;
+    // (undocumented)
+    readonly commands: ReadonlyArray<string>;
+    // (undocumented)
+    readonly context: string;
+    // (undocumented)
+    readonly details?: JsonValue;
+    // (undocumented)
+    readonly detailsOmitted?: 'too-large';
+    // (undocumented)
+    readonly presentation: TaskToolPresentation;
+    // (undocumented)
+    readonly state: 'resolved';
+}
+
+// @public
+export interface ITaskInspectUnresolvedToolResult {
+    // (undocumented)
+    readonly context: string;
+    // (undocumented)
+    readonly presentation: TaskToolPresentation;
+    // (undocumented)
+    readonly state: 'unresolved';
+}
+
+// @public
 export type ITaskInventoryEntry = ILiveInventoryEntry | IPendingInventoryEntry;
 
 // @public
@@ -2162,6 +2211,24 @@ export interface ITaskQuery {
     readonly limit?: number;
     // (undocumented)
     readonly selection: ITaskSelection;
+}
+
+// @public
+export interface ITaskQueryToolResult {
+    // (undocumented)
+    readonly abbreviated: ReadonlyArray<TaskId>;
+    // (undocumented)
+    readonly completeness: 'complete' | 'partial';
+    // (undocumented)
+    readonly context: string;
+    // (undocumented)
+    readonly freshness: 'native-current' | 'source-projection';
+    // (undocumented)
+    readonly issues: ReadonlyArray<string>;
+    // (undocumented)
+    readonly nextCursor?: PageCursor;
+    // (undocumented)
+    readonly omitted: ReadonlyArray<TaskId>;
 }
 
 // @public
@@ -2530,6 +2597,14 @@ export interface ITaskSubscriptionSpecification {
 export interface ITaskSummary {
     // (undocumented)
     readonly envelope: ITaskEnvelope;
+}
+
+// @public
+export interface ITaskToolBudget {
+    // (undocumented)
+    readonly context: ITaskContextBudget;
+    // (undocumented)
+    readonly maxDetailsChars: number;
 }
 
 // @public
@@ -2911,7 +2986,7 @@ export class TaskContextRenderer {
 export type TaskContextSection = 'attention' | 'updates' | 'current';
 
 // @public
-export type TaskContextUnresolvedProjection = (reference: IUnresolvedTaskReference) => Result<IUnresolvedTaskReference>;
+export type TaskContextUnresolvedProjection = (reference: IContextUnresolvedReference) => Result<IContextUnresolvedReference>;
 
 // @public
 export class TaskConverters {
@@ -2970,6 +3045,9 @@ export type TaskInspection = {
     readonly state: 'unresolved';
     readonly reference: IProjectedUnresolvedReference;
 };
+
+// @public
+export type TaskInspectToolResult = ITaskInspectResolvedToolResult | ITaskInspectUnresolvedToolResult;
 
 // @public
 export type TaskInventoryRecordKind = 'task' | 'consumer' | 'source';
@@ -3083,6 +3161,9 @@ export type TaskSubscriptionClosureMode = 'retain' | 'dispose';
 
 // @public
 export type TaskSubscriptionState = 'active' | 'closed';
+
+// @public
+export type TaskToolPresentation = TaskContextPresentation | 'omitted';
 
 // @public
 export function taskUpdateId(taskId: TaskId, revision: TaskRevision, category: UpdateCategory): UpdateId;

@@ -15,7 +15,7 @@ on its own, and importing it has no side effects.
 
 ## What ships today
 
-Seven things: the **vocabulary** (the `types` and `converters` packlets), the **snapshot-only
+Eight things: the **vocabulary** (the `types` and `converters` packlets), the **snapshot-only
 context entry point** (the `context` packlet), **durable task storage** (the `storage` packlet:
 `FileTreeTaskRepository`), **indexed selection** over that storage — scope/lifecycle queries,
 due candidates and owed updates answered from resident indexes, with keyset paging, a staged
@@ -30,8 +30,10 @@ issued before a context is returned, and exact-ID acknowledgement — and **rete
 acknowledgement or an authorized, recorded disposition, pruning and archive decide from durable
 checkpoints, and every incomplete operation is reportable — and **cascade stop**
 (`requestStop`, `reconcileStop`, `releaseStop`): a persisted pause or cancel of a task and its whole
-authoritative subtree, a frozen subtree while it latches, and an honest partial result. Tools and
-prompt integration follow in later slices, and are deliberately absent from the export surface
+authoritative subtree, a frozen subtree while it latches, and an honest partial result — and
+**read-only model tools** (`createTaskTools`): `task_query` and `task_inspect` as ai-assist client
+tools over a principal-bound view, with bounded output by default. Mutation, command and stop tools
+and prompt integration follow in later slices, and are deliberately absent from the export surface
 rather than stubbed.
 
 ## Storing tasks durably — `FileTreeTaskRepository`
@@ -647,6 +649,56 @@ out-of-band file deletion is corruption, not maintenance, and open will report i
    each is either corruption open will refuse, or a loss of the obligations and history the
    repository exists to keep.
 
+## Model tools — `createTaskTools`
+
+**Two read-only `AiAssist.IAiClientTool`s over one principal-bound view**, ready to hand to
+`AiAssist.executeClientToolTurn`: `task_query` (a page of the tasks the view may read, narrowed by
+responsible party, parent, lifecycle class or status) and `task_inspect` (one task, its currently
+available commands, and its details when the host exposes them). The factory takes an
+`IBoundTaskView` — never a writer, never the broker — and the tools call only its `query` and
+`inspect`.
+
+```ts
+const view = broker.bindView({ principal: 'agent:ada', scopes, authorization }).orThrow();
+const tools = createTaskTools({ view }).orThrow();
+const turn = AiAssist.executeClientToolTurn({ descriptor, apiKey, messages, clientTools: tools });
+```
+
+- **Nothing the model supplies can widen what it sees.** Neither schema has a principal, scope or
+  consumer member; both are closed, so a surplus property fails rather than being ignored; and each
+  `execute` re-validates its arguments, because a direct call reaches it with no harness in front.
+  Filters only narrow, through the view's own strict request converter.
+- **Authority is live.** Building the tools calls nothing on the view. Every call asks the view,
+  which asks the host's policy then — a read revoked between two calls hides the task on the second.
+- **Bounded by default, not by opt-in.** Tasks reach the model only as `TaskContextRenderer` text
+  within `budget.context` (default: 20 items, depth 3, 8,000 characters), never as raw envelopes. A
+  page is at most `budget.context.maxItems` tasks. A task on the page that the text omitted or
+  abbreviated is **named by id** in `omitted` / `abbreviated`, so paging on `nextCursor` never skips
+  a task unannounced. Details come back only when their JSON fits `budget.maxDetailsChars` (default
+  4,000), otherwise `detailsOmitted: 'too-large'` and none of them.
+- **A failing projector fails the call.** The view's `ITaskProjector` and the renderer's projection
+  both fail closed; the tool returns the failure and no partial page. Nothing falls back to a less
+  projected value.
+- **A failure tells the model a code, never host text.** A failure the view or the rendering reports
+  reaches the model as `<tool>: <code>: <fixed description>`; a view that rejects or throws, as
+  `<tool>: the task view failed`. The underlying message — a projector's error, a storage detail, an
+  exception — goes only to the optional `logger`. Only a failure of the model's own arguments is
+  described in full, cut at 500 characters.
+  **A view's whole answer is converted before anything reads it**, since any `IBoundTaskView` may be
+  passed: a page must be exactly a page (projected items and references, at most the `limit` asked for,
+  a well-formed cursor, known completeness and freshness, string issues), an inspection exactly a
+  resolved or an unresolved one. An answer that does not convert fails the call; a view's `issues`
+  reach the model as one fixed line; an unknown failure code is reported as no code at all.
+- **What is framed.** Task state is framed and escaped inside the context text. Details are the host
+  projector's JSON, returned beside it as structured data and neither framed nor escaped — a host
+  that exposes details chooses their content.
+- **Supply `renderer`** built with the broker's converters when the host's field bounds are not the
+  defaults: its converters also validate the model's arguments, and a task the view returns must
+  never be refused by the renderer.
+
+**Not here:** tools that mutate (tracked updates, reassignment), typed command tools and stop tools
+(later slices), and any acknowledgement tool — receipts are the host's, never the model's.
+
 ## Rendering task context without a broker
 
 **`TaskContextRenderer` is a complete snapshot-only entry point.** A host hands it
@@ -723,7 +775,9 @@ must not describe something other than what was rendered), and a failing or thro
 fails the render with **no fallback to the unprojected value**. `defaultTaskContextProjection`
 removes the source binding and nothing else. Unresolved references get their own seam,
 `TaskContextUnresolvedProjection`, with the same contract; its projected `parentId` is the one
-the visible tree uses, so a host that hides a parent hides it for diagnostics too.
+the visible tree uses, so a host that hides a parent hides it for diagnostics too. The renderer
+accepts an unresolved reference with or without its binding (`IContextUnresolvedReference`), so a
+bound view's projected reference renders as it is; a *stored* reference still requires one.
 
 **Also here:** `ITaskSummary`, `ITaskUpdate` (one immutable payload per `(task, revision,
 category)`, its snapshot pinned to the revision it names) and `IUnresolvedTaskReference` (a
@@ -869,8 +923,8 @@ fragment is caught at the mint rather than at the filename.
 
 ## Not in scope
 
-No tool factory or prompt integration **yet** — those are later slices, and their absence from
-the export surface is deliberate. Explicit abandonment of a blocked cancel is not built (see
+No mutation, command or stop tools and no prompt integration **yet** — those are later slices, and
+their absence from the export surface is deliberate. Explicit abandonment of a blocked cancel is not built (see
 `docs/TECH_DEBT.md`). **Permanently** out of scope: an input-request/answer protocol, a task runner or
 scheduler, an executor, a retry policy, cross-repository parenting, execution migration,
 multi-process ownership, general event sourcing, and dependency DAGs.

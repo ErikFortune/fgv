@@ -128,6 +128,35 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
+### `agent-tasks-i1a` ✅ (shipped 2026-09-28 via [#702](https://github.com/ErikFortune/fgv/pull/702)) — slice I1a of four: the tool factory and the read-only surface
+
+**Status:** ✅ shipped into `integration/agent-tasks-v1` (not `release`; the cluster promotes as one).
+Branched at `9b1af1821`. Artifacts in `.ai/tasks/active/agent-tasks-i1a/`; this family finalizes at
+cluster close. **I1 is split into four slices, decided up front** (plan § I1): I1a read-only, I1b
+tracked/reassignment mutation opt-ins, I1c generated typed command tools, I1d stop tools.
+
+**What shipped.** `createTaskTools({ view, renderer?, budget? })`: `task_query` and `task_inspect`
+as `@fgv/ts-extras` `IAiClientTool`s over an `IBoundTaskView`, calling only its `query` and
+`inspect` — **no `IBoundTaskWriter` reference in the packlet**, which is the evidence for I1's gate
+*"read-only use has no mutation dependency."* Closed schemas with no principal/scope/consumer
+member; `execute` re-validates; authority asked per call. **Bounded by default** — the precedent's
+permissive full-body fallback has no analogue: tasks reach the model only as `TaskContextRenderer`
+text, page items the text dropped are named by id so paging skips nothing, details only within
+budget, failure messages cut at 500, and a failing projector fails the call. Adds the `@fgv/ts-extras`
+dependency.
+
+**Found and extended, not worked around:** the renderer required a `binding` on unresolved
+references that a bound view never emits. It now accepts `IContextUnresolvedReference` through a
+separate converter; the storage converter still requires the binding.
+
+**Evidence.** Outbound request capture through `executeClientToolTurn` for Anthropic, OpenAI and
+Gemini, with a no-tools control; revert-matrix rows `I1a-1`…`I1a-31`; layer 1 no P1 (one P2 fixed:
+a rejecting view's message reached the model unbounded); Copilot round 1's high finding took that
+further — **the model is told a failure's code, never host text**, which goes to an optional logger. Routed: unframed details (I2), no integer
+range in `JsonSchema` (`docs/TECH_DEBT.md`).
+
+**Artifact pointer:** `.ai/tasks/active/agent-tasks-i1a/`.
+
 ### `agent-tasks-t9` ✅ (shipped 2026-09-27 via [#701](https://github.com/ErikFortune/fgv/pull/701)) — slice T9 of the agent-tasks plan
 
 **Status:** ✅ shipped into `integration/agent-tasks-v1` (not `release`; the cluster promotes as one).

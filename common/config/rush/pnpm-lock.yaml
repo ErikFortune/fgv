@@ -305,6 +305,9 @@ importers:
 
   ../../libraries/ts-agent-tasks:
     dependencies:
+      '@fgv/ts-extras':
+        specifier: workspace:*
+        version: link:../ts-extras
       '@fgv/ts-json-base':
         specifier: workspace:*
         version: link:../ts-json-base

@@ -17,7 +17,7 @@
  *             the run edits source, so a copy keeps the working tree clean while it runs; give
  *             the copy a `node_modules` symlink to this package's)
  *   --out     write the results as JSON
- *   M…        run only the named rows (T8b's rows are named T8b-…, T9's T9-…)
+ *   M…        run only the named rows (T8b's rows are named T8b-…, T9's T9-…, I1a's I1a-…)
  *
  * The one rule that matters: a row whose pattern is not found exactly once, or whose mutant does
  * not build, is reported UNVERIFIED — never as "nothing went red". A mutation that silently fails
@@ -1153,6 +1153,232 @@ const T9_ROWS = [
 ];
 
 MUTATIONS.push(...T9_ROWS);
+
+/** I1a's rows run the tool suites, the public-surface suite and the renderer and its converters. */
+const I1A = 'tools/|publicSurface|context/|converters/contextConverters';
+const TL = 'src/packlets/tools/';
+
+const I1A_ROWS = [
+  m(
+    'I1a-1 task_query execute trusts its arguments',
+    TL + 'taskTools.ts',
+    '      schema\n        .convert(args)\n',
+    '      succeed(args as ITaskQueryToolArgs)\n',
+    I1A
+  ),
+  m(
+    'I1a-2 task_inspect execute trusts its arguments',
+    TL + 'taskTools.ts',
+    '      taskInspectSchema\n        .convert(args)\n',
+    '      succeed(args as ITaskInspectToolArgs)\n',
+    I1A
+  ),
+  m(
+    'I1a-3 a limit above the context budget reaches the view',
+    TL + 'taskTools.ts',
+    '  if (limit < 1 || limit > maxItems) {',
+    '  if (limit < 1 && limit > maxItems) {',
+    I1A
+  ),
+  m(
+    "I1a-4 the query request skips the view's request converter",
+    TL + 'taskTools.ts',
+    '  return ctx.renderer.converters.broker.boundQuery\n    .convert({',
+    '  return Converters.generic<IBoundTaskQuery>((from) => succeed(from as IBoundTaskQuery))\n    .convert({',
+    I1A
+  ),
+  m(
+    'I1a-5 tasks the text omitted are not named',
+    TL + 'presentation.ts',
+    '        omitted: ids.filter((id) => !shown.has(id)),',
+    '        omitted: ids.filter((id) => id.length < 0),',
+    I1A
+  ),
+  m(
+    'I1a-6 tasks the text abbreviated are not named',
+    TL + 'presentation.ts',
+    "        abbreviated: ids.filter((id) => shown.get(id) === 'abbreviated'),",
+    '        abbreviated: ids.filter((id) => id.length < 0),',
+    I1A
+  ),
+  m(
+    'I1a-7 details are returned whatever their size',
+    TL + 'presentation.ts',
+    '          : details.length <= budget.maxDetailsChars',
+    '          : details.length >= 0',
+    I1A
+  ),
+  m(
+    'I1a-8 failure messages are not truncated',
+    TL + 'taskTools.ts',
+    '  if (full.length <= maxMessageChars) {',
+    '  if (full.length >= 0) {',
+    I1A
+  ),
+  m(
+    'I1a-9 truncation may split a surrogate pair',
+    TL + 'taskTools.ts',
+    '    ? maxMessageChars - 1\n    : maxMessageChars;',
+    '    ? maxMessageChars\n    : maxMessageChars;',
+    I1A
+  ),
+  m(
+    'I1a-10 what a view threw reaches the model',
+    TL + 'taskTools.ts',
+    '      return fail(`${tool}: the task view failed`);',
+    '      return fail(`${tool}: ${message}`);',
+    I1A
+  ),
+  m(
+    "I1a-11 a view's rejection escapes the capture",
+    TL + 'taskTools.ts',
+    '  return (await captureAsyncResult(async () => (await ask()).onSuccess(present)))',
+    '  return succeed(await ask().then((r) => r.onSuccess(present)))',
+    I1A
+  ),
+  m(
+    'I1a-12 a page with more after it is rendered as complete input',
+    TL + 'presentation.ts',
+    "completeness: whole ? 'complete' : 'partial' }",
+    "completeness: whole ? 'complete' : 'complete' }",
+    I1A
+  ),
+  m(
+    'I1a-13 a budget below the framing reserve is accepted at build time',
+    TL + 'taskTools.ts',
+    '      valid.context.maxChars < renderer.framingReserve',
+    '      valid.context.maxChars < 0',
+    I1A
+  ),
+  m(
+    'I1a-14 the tool budget admits surplus properties',
+    TL + 'taskTools.ts',
+    '  return Converters.strictObject<ITaskToolBudget>({',
+    '  return Converters.object<ITaskToolBudget>({',
+    I1A
+  ),
+  m(
+    'I1a-15 an inspected task with no room is reported complete',
+    TL + 'presentation.ts',
+    "        presentation: _presentations(context).get(inspection.envelope.id) ?? 'omitted',",
+    "        presentation: _presentations(context).get(inspection.envelope.id) ?? 'complete',",
+    I1A
+  ),
+  m(
+    'I1a-16 an inspected unresolved task with no room is reported complete',
+    TL + 'presentation.ts',
+    "          presentation: _presentations(context).get(inspection.reference.id) ?? 'omitted'",
+    "          presentation: _presentations(context).get(inspection.reference.id) ?? 'complete'",
+    I1A
+  ),
+  m(
+    'I1a-17 a rendered unresolved diagnostic is not counted as shown',
+    TL + 'presentation.ts',
+    "    shown.set(diagnostic.id, 'complete');",
+    "    shown.set(diagnostic.id.length < 0 ? diagnostic.id : '', 'complete');",
+    I1A
+  ),
+  m(
+    'I1a-18 the renderer requires a binding a bound view never emits',
+    C + 'contextConverters.ts',
+    '      binding: values.sourceBinding.optional(),',
+    '      binding: values.sourceBinding,',
+    I1A
+  ),
+  m(
+    "I1a-19 a classified failure's host message reaches the model",
+    TL + 'taskTools.ts',
+    '`${tool}: ${code}: ${modelFacingFailures[code]}`',
+    '`${tool}: ${code}: ${result.message}`',
+    I1A
+  ),
+  m(
+    "I1a-20 a view's issue text reaches the model",
+    TL + 'presentation.ts',
+    '        issues: page.issues.length > 0 ? [pageIssueLine] : []',
+    '        issues: page.issues',
+    I1A
+  ),
+  m(
+    "I1a-21 a view's cursor reaches the model unchecked",
+    TL + 'viewAnswers.ts',
+    '      nextCursor: converters.queries.pageCursor.optional(),',
+    '      nextCursor: (Converters.generic((v: unknown) => succeed(v)).optional() as never),',
+    I1A
+  ),
+  m(
+    "I1a-22 a view's failure code is trusted",
+    TL + 'taskTools.ts',
+    '  const code: TaskFailureCode | undefined = ctx.renderer.converters.failures.failureCode\n    .convert(result.detail?.code)\n    .orDefault();',
+    '  const code: TaskFailureCode | undefined = result.detail?.code;',
+    I1A
+  ),
+  m(
+    "I1a-23 a page's completeness is trusted",
+    TL + 'viewAnswers.ts',
+    "      completeness: Converters.enumeratedValue<IBoundTaskPage['completeness']>(['complete', 'partial']),",
+    '      completeness: (Converters.generic((v: unknown) => succeed(v)) as never),',
+    I1A
+  ),
+  m(
+    "I1a-24 a page's freshness is trusted",
+    TL + 'viewAnswers.ts',
+    "      freshness: Converters.enumeratedValue<IBoundTaskPage['freshness']>([\n        'native-current',\n        'source-projection'\n      ]),",
+    '      freshness: (Converters.generic((v: unknown) => succeed(v)) as never),',
+    I1A
+  ),
+  m(
+    "I1a-25 an inspection's command names are trusted",
+    TL + 'viewAnswers.ts',
+    "    commands: boundedArrayOf(converters.commands.commandName, maxInspectionCommands, 'commands')",
+    '    commands: (Converters.generic((v: unknown) => succeed(v)) as never)',
+    I1A
+  ),
+  m(
+    "I1a-26 an inspection's archived flag is trusted",
+    TL + 'viewAnswers.ts',
+    '    archived: Converters.boolean,',
+    '    archived: (Converters.generic((v: unknown) => succeed(v)) as never),',
+    I1A
+  ),
+  m(
+    "I1a-27 an inspection's state is trusted",
+    TL + 'viewAnswers.ts',
+    "    state: Converters.literal('resolved'),",
+    '    state: (Converters.generic((v: unknown) => succeed(v)) as never),',
+    I1A
+  ),
+  m(
+    'I1a-28 a page may hold more tasks than were asked for',
+    TL + 'viewAnswers.ts',
+    '        value.items.length + value.unresolved.length > limit',
+    '        value.items.length + value.unresolved.length > limit + 1000',
+    I1A
+  ),
+  m(
+    "I1a-29 a page's issues are trusted",
+    TL + 'viewAnswers.ts',
+    "      issues: boundedArrayOf(Converters.string, maxPageIssues, 'page issues')",
+    '      issues: (Converters.generic((v: unknown) => succeed(v)) as never)',
+    I1A
+  ),
+  m(
+    'I1a-30 a page may carry fields it does not have',
+    TL + 'viewAnswers.ts',
+    '    Converters.strictObject<IBoundTaskPage>({',
+    '    Converters.object<IBoundTaskPage>({',
+    I1A
+  ),
+  m(
+    'I1a-31 an inspection is read without being converted',
+    TL + 'taskTools.ts',
+    "_answer(ctx.answers.inspection, answer, 'inspection')",
+    "_answer(Converters.generic((v: unknown) => succeed(v)) as unknown as typeof ctx.answers.inspection, answer, 'inspection')",
+    I1A
+  )
+];
+
+MUTATIONS.push(...I1A_ROWS);
 
 function parseArgs(argv) {
   const args = { check: false, pkg: path.resolve(__dirname, '..'), out: undefined, only: [] };

@@ -25,5 +25,6 @@ export * from './sourceAdapter';
 export * from './stop';
 export * from './storage';
 export * from './summary';
+export * from './tools';
 export * from './trackedCommands';
 export * from './updates';

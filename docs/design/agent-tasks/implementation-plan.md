@@ -252,7 +252,27 @@ A3: preflight/reserve root and per-target settlement, required audiences and per
 
 ## 6. Integration and proving ground
 
-### I1 — ai-assist tool factory
+### I1 — ai-assist tool factory — split into four slices (orchestrator decision, 2026-09-28)
+
+**I1a — ✅ implemented on `integration/agent-tasks-v1` ([#702](https://github.com/ErikFortune/fgv/pull/702)).** I1b, I1c, I1d not started.
+
+**The split.** T7 and T9 each landed at 65+ files and +11,000 lines, and in both the review loop was
+still doing structural work at round 6+. I1 is decomposed up front rather than mid-loop. Each slice
+adds exactly one authority surface, and each is independently shippable and reviewable:
+
+| slice | adds | depends on |
+|---|---|---|
+| **I1a** | the `tools` packlet and factory; the **read-only** surface (`query`, `inspect`); bounded outputs; schema revalidation inside `execute`; the `@fgv/ts-extras` dependency | T5–T8 |
+| **I1b** | tracked + reassignment **mutation opt-ins**, disabled by default | I1a |
+| **I1c** | statically generated **typed command tools** from the registry | I1a, I1b |
+| **I1d** | **stop tools** — the T9 opt-in | I1a, I1b, **T9** |
+
+**Why I1a is read-only and nothing else.** This slice's own review gate says *"read-only use has no
+mutation dependency."* Shipping the read surface with no mutation code in the package is the
+strongest available proof of that property — I1b then demonstrates the independence holds by adding
+mutations on top of an already-shipped read-only surface, rather than asserting a separation inside
+one large diff. The seam is already visible in the types: `IBoundTaskView` is `query` / `inspect` /
+`inspectStop`, and every mutating operation lives on `IBoundTaskWriter`.
 
 **Dependencies:** T5–T8 (T9 only for opting into stop tools). **Affected package:** `ts-agent-tasks` tools. No ai-assist provider changes expected.
 

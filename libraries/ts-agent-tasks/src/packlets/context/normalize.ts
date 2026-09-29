@@ -9,7 +9,7 @@ import {
   ITaskEnvelope,
   ITaskFailure,
   ITaskUpdate,
-  IUnresolvedTaskReference,
+  IContextUnresolvedReference,
   ObservationHealth,
   TaskId,
   TaskResult,
@@ -39,7 +39,7 @@ export interface INormalizedInput {
   /** Ordered by task ID, then revision. */
   readonly revisions: ReadonlyArray<IRevisionCandidate>;
   /** Ordered by task ID. */
-  readonly unresolved: ReadonlyArray<IUnresolvedTaskReference>;
+  readonly unresolved: ReadonlyArray<IContextUnresolvedReference>;
 }
 
 interface IRevisionGroup {
@@ -283,20 +283,20 @@ export class InputNormalizer {
   }
 
   private _unresolved(
-    references: ReadonlyArray<IUnresolvedTaskReference>,
+    references: ReadonlyArray<IContextUnresolvedReference>,
     revisions: ReadonlyArray<IRevisionCandidate>
-  ): TaskResult<IUnresolvedTaskReference[]> {
+  ): TaskResult<IContextUnresolvedReference[]> {
     const resolved: Set<string> = new Set<string>(revisions.map((r) => r.taskId));
     return allTaskResults(
       Array.from(_groupBy(references, (r) => r.id).values()).map((group) => {
         const label: string = `unresolved ${group[0].id}`;
         if (resolved.has(group[0].id)) {
-          return _conflict<IUnresolvedTaskReference>(`${label}: also supplied as resolved state`);
+          return _conflict<IContextUnresolvedReference>(`${label}: also supplied as resolved state`);
         }
         return allTaskResults(group.map((reference) => this._canonical(label, reference))).onSuccess((keys) =>
           keys.some((k) => k !== keys[0])
-            ? _conflict<IUnresolvedTaskReference>(`${label}: conflicting values for one task`)
-            : succeedWithDetail<IUnresolvedTaskReference, ITaskFailure>(group[0])
+            ? _conflict<IContextUnresolvedReference>(`${label}: conflicting values for one task`)
+            : succeedWithDetail<IContextUnresolvedReference, ITaskFailure>(group[0])
         );
       })
     ).onSuccess((unresolved) => succeedWithDetail(unresolved.sort((a, b) => compareOrdinal(a.id, b.id))));
