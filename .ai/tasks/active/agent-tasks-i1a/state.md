@@ -7,11 +7,12 @@ be enough to resume cold. Keep it current as you go.
 
 ## Status
 
-**PR open (#702); Copilot round 1 fixed; every gate green on `301a09f1` (2026-09-28).** CI green;
-package suite 2,062 passing at 100 % with zero `c8 ignore`; repo-wide rebuild and test exit 0; five
-verify scripts 0 failed; revert matrix on `301a09f1`: 19 rows, 33 red tests, 0 UNVERIFIED or `0 red`.
-Round 1 (1 high, 2 medium) all fixed; CodeRabbit's one finding withdrawn by CodeRabbit. Next: Copilot
-round 2. If a round changes source, re-run the matrix on the new head.
+**PR open (#702); Copilot rounds 1–2 fixed; every gate green on `1d95da46` (2026-09-29).** CI
+green; package suite 2,062 passing at 100 % with zero `c8 ignore`; repo-wide rebuild and test exit 0;
+five verify scripts 0 failed; revert matrix on `1d95da46`: 21 rows, 36 red tests, 0 UNVERIFIED or
+`0 red`. Round 1: 1 high + 2 medium; round 2: 2 low + 1 previously-missed + a real unposted headline
+finding (view issue text / cursor), all fixed. Next: Copilot round 3. If a round changes source,
+re-run the matrix on the new head.
 
 ## Branch
 

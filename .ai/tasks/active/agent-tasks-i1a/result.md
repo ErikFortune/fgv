@@ -137,11 +137,12 @@ The evidence for I1's gate *"read-only use has no mutation dependency"*:
 
 ## Revert matrix — run on final source
 
-**Final run on final source** — `perf/mutationMatrix.js --pkg <copy of HEAD 301a09f1> I1a-1 … I1a-19`,
-2026-09-28, suites `tools/|publicSurface|context/|converters/contextConverters`, after Copilot
-round 1 changed the source. Each copy was `git archive` of the head and `diff -r` identical to the
-working tree. A container restart interrupted the run after row 15; rows 16–19 ran on a fresh copy
-of the same commit, and the working tree was confirmed restored. **33 red tests across 19 rows.**
+**Final run on final source** — `perf/mutationMatrix.js --pkg <copy of HEAD 1d95da46> I1a-1 … I1a-21`,
+2026-09-29, suites `tools/|publicSurface|context/|converters/contextConverters`, after Copilot
+round 2 changed the source. The copy was `git archive` of the head and `diff -r` identical to the
+working tree before and after. **36 red tests across 21 rows.** (I1a-8 turns 2 red here, not the
+4 it did before round 1: view failures no longer pass through the truncation path at all, so only the
+argument-failure tests depend on it.)
 
 | row | verdict | suites that went red |
 |---|---|---|
@@ -163,9 +164,11 @@ of the same commit, and the working tree was confirmed restored. **33 red tests 
 | I1a-16 an inspected unresolved task with no room is reported complete | 1 red | an inspection is bounded › a task with no room at all is reported omitted, never returned raw |
 | I1a-17 a rendered unresolved diagnostic is not counted as shown | 1 red | task tools read through the bound view › an unresolved registration is shown as a diagnostic, and no source binding ever leaves |
 | I1a-18 the renderer requires a binding a bound view never emits | 4 red | TaskContextRenderer › rendered fields › an unresolved reference with no binding — as a bound view projects it — renders the same<br>an inspection is bounded › a task with no room at all is reported omitted, never returned raw<br>context converters › unresolved reference › as the renderer accepts it, the binding is optional and nothing else is<br>task tools read through the bound view › an unresolved registration is shown as a diagnostic, and no source binding ever leaves |
-| I1a-19 a classified failure's host message reaches the model | 4 red | a failing projector fails the call — it never yields more › the renderer's projection failing fails the call, with no partial page<br>a failing projector fails the call — it never yields more › the view's details projector failing fails the inspection<br>a failing projector fails the call — it never yields more › the view's envelope projector throwing or failing fails query and inspect<br>a failure tells the model a code, never host text › a classified failure is its code and a fixed description; its message goes to the host |
+| I1a-19 a classified failure's host message reaches the model | 5 red | a failing projector fails the call — it never yields more › the renderer's projection failing fails the call, with no partial page<br>a failing projector fails the call — it never yields more › the view's details projector failing fails the inspection<br>a failing projector fails the call — it never yields more › the view's envelope projector throwing or failing fails query and inspect<br>a failure tells the model a code, never host text › a classified failure is its code and a fixed description; its message goes to the host<br>what a page carries besides the rendered text is checked, not trusted › a malformed cursor from the view fails the call rather than reaching the model |
+| I1a-20 a view's issue text reaches the model | 1 red | what a page carries besides the rendered text is checked, not trusted › a view's issue text reaches the host, and the model is told one fixed line |
+| I1a-21 a view's cursor reaches the model unchecked | 1 red | what a page carries besides the rendered text is checked, not trusted › a malformed cursor from the view fails the call rather than reaching the model |
 
-**19 rows, 0 UNVERIFIED, 0 `0 red`.** One row needed correcting first, in the preliminary run (on pre-format source): I1a-18 first came back `0 red`: its mutant
+**21 rows, 0 UNVERIFIED, 0 `0 red`.** One row needed correcting first, in the preliminary run (on pre-format source): I1a-18 first came back `0 red`: its mutant
 (`.optional().withConstraint(b => b !== undefined)`) was a no-op, because `strictObject` never calls
 an absent optional field's converter. The protection was guarded; the mutant was not a mutant.
 Dropping `.optional()` turns 4 tests red. No row needed `paired(...)`: the one defence-in-depth pair
@@ -234,7 +237,7 @@ model-facing failure path is a disclosure surface, not a formatting one.
 
 ## Gates
 
-Run locally on `301a09f1` — the source after Copilot round 1.
+Run locally on `1d95da46` — the source after Copilot round 2.
 
 | gate | result |
 |---|---|
@@ -242,11 +245,11 @@ Run locally on `301a09f1` — the source after Copilot round 1.
 | `rushx build` (package) | clean, **zero warnings**; `etc/ts-agent-tasks.api.md` updated and checked in |
 | `rushx lint` / `rushx fixlint` | clean; fixlint a no-op before commit |
 | `rushx test` (package) | **2,062 passed; 100 % statements, branches, functions, lines; zero `c8 ignore`** |
-| `rush rebuild` (repo-wide) | exit 0 (4 min 12 s) — required: the build graph gained an edge |
-| `rush test` (repo-wide) | exit 0 (8 min 17 s) — required: the renderer accepts a wider set |
+| `rush rebuild` (repo-wide) | exit 0 (4 min 6 s) — required: the build graph gained an edge |
+| `rush test` (repo-wide) | exit 0 (8 min 20 s) — required: the renderer accepts a wider set |
 | `verify-capability-docs.mjs` | router 21,338/24,000, 24/24 documented, 75 reflexes, 0 failed |
 | `generate-capability-feed.mjs --check` | 0 stale |
 | `verify-esm-entrypoints.mjs` | 24 checked, 0 failed |
 | `verify-bundler-resolution.mjs` | 20 checked, 0 failed |
 | `verify-tarball-exports.mjs` | 26 packages, 205 paths, 0 failed |
-| CI `build` on `301a09f1` | success |
+| CI `build` on `1d95da46` | success |
