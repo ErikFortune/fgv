@@ -2265,14 +2265,6 @@ export interface ITaskReason {
 }
 
 // @public
-export interface ITaskReassignToolResult extends ITaskMutationToolResult {
-    // (undocumented)
-    readonly current?: IResponsibility;
-    // (undocumented)
-    readonly previous?: IResponsibility;
-}
-
-// @public
 export interface ITaskReceiptAbandonment {
     // (undocumented)
     readonly deliveryId: DeliveryId;

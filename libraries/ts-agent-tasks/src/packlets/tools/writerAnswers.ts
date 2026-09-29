@@ -12,6 +12,7 @@ import {
   OperationId,
   TaskId,
   TaskMutationDisposition,
+  TaskRevision,
   allUpdateCategories
 } from '../types';
 
@@ -22,6 +23,13 @@ import {
 export interface IExpectedReceipt {
   readonly taskId: TaskId;
   readonly operationId: OperationId;
+  /**
+   * The revision the change was asked against; absent for a creation, whose receipt is revision 1,
+   * `changed`. A change's receipt is one revision on when `changed` and the same revision when
+   * `unchanged` — anything else is not the answer to this request, and its revision would mislead
+   * the model's next `expectedRevision`.
+   */
+  readonly expectedRevision?: TaskRevision;
 }
 
 /**
@@ -39,7 +47,8 @@ export interface IWriterAnswerConverters {
   mutation(expected: IExpectedReceipt): Converter<ITaskMutationResult>;
   /**
    * A reassignment's receipt, for exactly this task and operation, whose current party is the one
-   * asked for — absent for an unassignment.
+   * asked for — absent for an unassignment. `responsibility` is the tool's own copy, never the object
+   * handed to the writer.
    */
   reassignment(
     expected: IExpectedReceipt & { readonly responsibility: IResponsibility | 'unassigned' }
@@ -51,12 +60,24 @@ function _sameParty(a: IResponsibility | undefined, b: IResponsibility | undefin
   return a === undefined || b === undefined ? a === b : a.namespace === b.namespace && a.key === b.key;
 }
 
-/** A constraint: the receipt is for the task and operation asked about. */
+/**
+ * A constraint: the receipt is for the task and operation asked about, at the revision that request
+ * could have produced.
+ */
 function _identified<T extends ITaskMutationResult>(expected: IExpectedReceipt): (value: T) => Result<T> {
-  return (value: T): Result<T> =>
-    value.taskId !== expected.taskId || value.operationId !== expected.operationId
-      ? fail(`the receipt is for ${value.taskId} / ${value.operationId}, not the operation asked for`)
-      : succeed(value);
+  return (value: T): Result<T> => {
+    if (value.taskId !== expected.taskId || value.operationId !== expected.operationId) {
+      return fail(`the receipt is for ${value.taskId} / ${value.operationId}, not the operation asked for`);
+    }
+    const revision: number =
+      expected.expectedRevision === undefined
+        ? 1
+        : expected.expectedRevision + (value.disposition === 'changed' ? 1 : 0);
+    const disposition: boolean = expected.expectedRevision !== undefined || value.disposition === 'changed';
+    return value.revision === revision && disposition
+      ? succeed(value)
+      : fail(`a ${value.disposition} receipt at revision ${value.revision} does not answer this request`);
+  };
 }
 
 /**

@@ -11,7 +11,8 @@ import {
   ITaskFailure,
   ITaskMutationResult,
   OperationId,
-  TaskId
+  TaskId,
+  allUpdateCategories
 } from '../../../index';
 import { IBrokerHarness, bob, brokerHarness, track, watch } from '../../helpers/brokerFixtures';
 import { IToolSet, call, mutatingTools, toolSet } from '../../helpers/toolFixtures';
@@ -181,13 +182,15 @@ describe("a writer's answer is checked the way a view's answer is", () => {
     return mutatingTools(h, scriptedWriter(h.writer, answer).writer, { logger });
   }
 
-  test('a receipt for another task, another operation, or with fields a receipt lacks fails the call', async () => {
+  test('a receipt for another task, operation or revision, or with fields a receipt lacks, fails the call', async () => {
     const cases: ReadonlyArray<Record<string, unknown>> = [
       { taskId: 'someone-else' },
       { operationId: 'another-op' },
       { disposition: 'maybe' },
       { revision: 0 },
-      { updateIds: ['u:1:0', 'u:1:1', 'u:1:2', 'u:1:3', 'u:1:4', 'u:1:5', 'u:1:6', 'u:1:7', 'u:1:8'] },
+      { updateIds: Array.from({ length: allUpdateCategories.length + 1 }, (__v, i) => `t1:2:${i}`) },
+      { revision: 5 },
+      { disposition: 'unchanged' },
       { binding: { sourceId: 'acme' } }
     ];
     for (const extra of cases) {
@@ -197,8 +200,9 @@ describe("a writer's answer is checked the way a view's answer is", () => {
         ['task_update', update],
         ['task_reassign', reassign]
       ] as const) {
+        // The change may have been committed, so the model is told the outcome is not known.
         expect(await call(tools, name, args)).toFailWith(
-          `${name}: invalid: the request was refused, or a task could not be presented`
+          `${name}: commit-indeterminate: the outcome is not known: a change may or may not have been applied; inspect before retrying`
         );
       }
     }
@@ -210,16 +214,38 @@ describe("a writer's answer is checked the way a view's answer is", () => {
     const tools = over((__m, request) =>
       honest(request, { current: { namespace: 'agent', key: 'mallory' } })
     );
-    expect(await call(tools, 'task_reassign', reassign)).toFailWith(/^task_reassign: invalid: /);
+    expect(await call(tools, 'task_reassign', reassign)).toFailWith(/^task_reassign: commit-indeterminate: /);
     const unassigned = over((__m, request) => honest(request, { current: bob }));
     expect(await call(unassigned, 'task_reassign', { ...reassign, responsibility: null })).toFailWith(
-      /^task_reassign: invalid: /
+      /^task_reassign: commit-indeterminate: /
     );
     const silent = over((__m, request) => honest(request));
-    expect(await call(silent, 'task_reassign', reassign)).toFailWith(/^task_reassign: invalid: /);
+    expect(await call(silent, 'task_reassign', reassign)).toFailWith(
+      /^task_reassign: commit-indeterminate: /
+    );
+    // The party checked is the tool's own copy: a writer that rewrites the request it was handed
+    // cannot move what the receipt is checked against.
+    const rewriting = over((__m, request) => {
+      (request as { responsibility: unknown }).responsibility = { namespace: 'agent', key: 'mallory' };
+      return honest(request, { current: { namespace: 'agent', key: 'mallory' } });
+    });
+    expect(await call(rewriting, 'task_reassign', reassign)).toFailWith(
+      /^task_reassign: commit-indeterminate: /
+    );
+    const right = over((__m, request) => honest(request, { current: bob }));
+    expect(await call(right, 'task_reassign', reassign)).toSucceed();
+    const unchanged = over((__m, request) =>
+      honest(request, { current: bob, revision: 1, disposition: 'unchanged' })
+    );
+    expect(await call(unchanged, 'task_reassign', reassign)).toSucceedWith({
+      taskId: 't1',
+      revision: 1,
+      disposition: 'unchanged'
+    } as never);
   });
 
   test('a writer that throws, rejects or fails with host text tells the model only a code', async () => {
+    // A throw or rejection may follow a commit, so it too says the outcome is not known.
     const secret = 'postgres://admin:hunter2@db';
     const answers: ReadonlyArray<() => unknown> = [
       () => {
@@ -239,31 +265,40 @@ describe("a writer's answer is checked the way a view's answer is", () => {
       expect(result).toFailWith(/^task_update: /);
       expect(result).not.toFailWith(/hunter2/);
     }
-    expect(logger.logged.filter((line) => line.includes('hunter2'))).toHaveLength(4);
+    expect(await call(over(answers[0]), 'task_create', { title: 'x' })).toFailWith(
+      'task_create: the task writer failed; the change may or may not have been applied — inspect before retrying'
+    );
+    expect(logger.logged.filter((line) => line.includes('hunter2'))).toHaveLength(5);
   });
 
   test('the model is told the task, its revision and the disposition — never update ids or the operation id', async () => {
     await watch(h.broker);
-    const tools = mutatingTools(h);
-    const created = (await call<Record<string, unknown>>(tools, 'task_create', { title: 'x' })).orThrow();
-    const updated = (await call<Record<string, unknown>>(tools, 'task_update', update)).orThrow();
-    const moved = (
-      await call<Record<string, unknown>>(tools, 'task_reassign', { ...reassign, expectedRevision: 2 })
-    ).orThrow();
-    expect(Object.keys(created).sort()).toEqual(['disposition', 'revision', 'taskId']);
-    expect(Object.keys(updated).sort()).toEqual(['disposition', 'revision', 'taskId']);
-    expect(Object.keys(moved).sort()).toEqual(['current', 'disposition', 'revision', 'taskId']);
-    // The writer did retain updates for the watcher: the model is not told so.
-    expect(
+    // Forward to the real writer, keeping what it answered: the watcher is owed updates.
+    const answered: Array<Record<string, unknown>> = [];
+    const forwarding = scriptedWriter(h.writer, async (method, request) => {
+      const real = (await (h.writer as unknown as Record<string, (r: unknown) => Promise<Result<unknown>>>)[
+        method
+      ](request)) as Result<Record<string, unknown>>;
+      answered.push(real.orThrow());
+      return real;
+    });
+    const tools = mutatingTools(h, forwarding.writer);
+    const results = [
+      (await call<Record<string, unknown>>(tools, 'task_create', { title: 'x' })).orThrow(),
+      (await call<Record<string, unknown>>(tools, 'task_update', update)).orThrow(),
       (
-        await h.writer.updateTracked({
-          taskId: 't1' as TaskId,
-          operationId: 'host' as OperationId,
-          expectedRevision: 3 as never,
-          patch: { title: 'y' }
-        })
-      ).orThrow().updateIds.length
-    ).toBeGreaterThan(0);
+        await call<Record<string, unknown>>(tools, 'task_reassign', { ...reassign, expectedRevision: 2 })
+      ).orThrow()
+    ];
+    expect(answered.map((receipt) => (receipt.updateIds as unknown[]).length > 0)).toEqual([
+      true,
+      true,
+      true
+    ]);
+    expect(answered[2]).toEqual(expect.objectContaining({ current: bob }));
+    for (const result of results) {
+      expect(Object.keys(result).sort()).toEqual(['disposition', 'revision', 'taskId']);
+    }
   });
 });
 
@@ -314,6 +349,45 @@ describe('ids the host mints', () => {
     expect(logger.logged.filter((line) => line.includes('passwd'))).toHaveLength(4);
     expect((await h.writer.inspect('t1' as TaskId)).orThrow()).toEqual(
       expect.objectContaining({ envelope: expect.objectContaining({ revision: 1 }) })
+    );
+  });
+
+  test('without a logger, a minting failure is still reported to the model as a fixed line', async () => {
+    const tools = toolSet({
+      view: h.writer,
+      mutations: {
+        writer: h.writer,
+        environment: {
+          newTaskId: () => fail('id service down'),
+          newOperationId: () => fail('id service down')
+        },
+        enable: ['tracked']
+      }
+    });
+    expect(await call(tools, 'task_create', { title: 'x' })).toFailWith('task_create: the request failed');
+  });
+
+  test('a minted task id that collides with a hidden task is refused like any unseen task', async () => {
+    await track(h.writer, 'secret');
+    h.policy.hide('secret');
+    let n = 0;
+    const tools = over({
+      newTaskId: () => succeed('secret' as TaskId),
+      newOperationId: () => succeed(`op-${++n}` as OperationId)
+    });
+    expect(await call(tools, 'task_create', { title: 'x' })).toFailWith(
+      'task_create: not-found-or-denied: the task is not found or not visible, or this is not permitted on it'
+    );
+  });
+
+  test("an environment that repeats an operation id gets a conflict, never another operation's receipt", async () => {
+    const tools = over({
+      newTaskId: () => fail('unused'),
+      newOperationId: () => succeed('same-op' as OperationId)
+    });
+    expect(await call(tools, 'task_update', update)).toSucceed();
+    expect(await call(tools, 'task_update', { ...update, expectedRevision: 2, title: 'y' })).toFailWith(
+      /^task_update: conflict: /
     );
   });
 });

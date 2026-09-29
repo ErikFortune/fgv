@@ -7,9 +7,10 @@ import '@fgv/ts-utils-jest';
 import { Result } from '@fgv/ts-utils';
 import {
   IBoundTaskWriter,
+  defaultTaskProjector,
+  withEnvelopeFields,
   ITaskInspectResolvedToolResult,
   ITaskMutationToolResult,
-  ITaskReassignToolResult,
   TaskInspectToolResult
 } from '../../../index';
 import {
@@ -228,25 +229,27 @@ describe('task_reassign', () => {
 
   test('reassigns, and unassigns only when null is given explicitly', async () => {
     expect(
-      await call<ITaskReassignToolResult>(tools, 'task_reassign', {
+      await call<ITaskMutationToolResult>(tools, 'task_reassign', {
         taskId: 't1',
         expectedRevision: 1,
         responsibility: bob
       })
-    ).toSucceedWith({
-      taskId: 't1',
-      revision: 2,
-      disposition: 'changed',
-      previous: ada,
-      current: bob
-    } as never);
+    ).toSucceedWith({ taskId: 't1', revision: 2, disposition: 'changed' } as ITaskMutationToolResult);
+    expect((await h.writer.inspect('t1' as never)).orThrow()).toEqual(
+      expect.objectContaining({ envelope: expect.objectContaining({ responsibility: bob }) })
+    );
     expect(
-      await call<ITaskReassignToolResult>(tools, 'task_reassign', {
+      await call<ITaskMutationToolResult>(tools, 'task_reassign', {
         taskId: 't1',
         expectedRevision: 2,
         responsibility: null
       })
-    ).toSucceedWith({ taskId: 't1', revision: 3, disposition: 'changed', previous: bob } as never);
+    ).toSucceedWith({ taskId: 't1', revision: 3, disposition: 'changed' } as ITaskMutationToolResult);
+    expect((await h.writer.inspect('t1' as never)).orThrow()).toEqual(
+      expect.objectContaining({
+        envelope: expect.not.objectContaining({ responsibility: expect.anything() })
+      })
+    );
     // An omitted party is an argument error, never an unassignment.
     expect(await call(tools, 'task_reassign', { taskId: 't1', expectedRevision: 3 })).toFailWith(
       /^task_reassign: invalid arguments/
@@ -300,6 +303,31 @@ describe('task_reassign', () => {
     expect(
       await call(tools, 'task_reassign', { taskId: 't1', expectedRevision: 7, responsibility: bob })
     ).toFailWith(/^task_reassign: conflict: /);
+  });
+
+  test('the previous party is never returned: a projector may withhold it from this principal', async () => {
+    const withheld = bindWriter(h, {
+      projector: {
+        envelope: (envelope) =>
+          defaultTaskProjector.envelope(withEnvelopeFields(envelope, { responsibility: undefined }))
+      }
+    });
+    const tools = mutatingTools(h, withheld);
+    const inspected = (
+      await call<Record<string, unknown>>(tools, 'task_inspect', { taskId: 't1' })
+    ).orThrow();
+    expect(JSON.stringify(inspected)).not.toContain('"ada"');
+    const moved = await call(tools, 'task_reassign', {
+      taskId: 't1',
+      expectedRevision: 1,
+      responsibility: bob
+    });
+    expect(moved).toSucceedWith({
+      taskId: 't1',
+      revision: 2,
+      disposition: 'changed'
+    } as ITaskMutationToolResult);
+    expect(JSON.stringify(moved.orThrow())).not.toContain('ada');
   });
 });
 

@@ -10,13 +10,12 @@ import {
   ICreateTrackedTask,
   IReassignTask,
   IReassignmentResult,
-  IResponsibility,
   IUpdateTrackedTask,
   ITaskEnvironment,
   ITaskFailure,
   ITaskMutationResult,
   ITaskMutationToolResult,
-  ITaskReassignToolResult,
+  TaskMutationToolGroup,
   OperationId,
   TaskId,
   TaskResult
@@ -29,7 +28,14 @@ import {
   taskReassignSchema,
   taskUpdateSchema
 } from './schemas';
-import { IToolContext, argumentMessage, askView, convertAnswer, hostFailure } from './toolSupport';
+import {
+  IToolContext,
+  argumentMessage,
+  askView,
+  convertAnswer,
+  hostFailure,
+  writerFailed
+} from './toolSupport';
 import { IWriterAnswerConverters } from './writerAnswers';
 
 /**
@@ -68,9 +74,12 @@ const changeAnnotations: AiAssist.IAiToolAnnotations = {
  * a failure or a malformed id is the host's fault and never reaches the model as text.
  */
 function _mint<T>(mint: () => Result<T>, converter: Converter<T>): Result<T> {
-  return captureResult(mint)
-    .onSuccess((minted) => minted)
-    .onSuccess((raw) => converter.convert(raw));
+  return (
+    captureResult(mint)
+      // `captureResult` wraps the host's `Result` in another; this unwraps it.
+      .onSuccess((minted) => minted)
+      .onSuccess((raw) => converter.convert(raw))
+  );
 }
 
 /**
@@ -83,7 +92,12 @@ function _operationId(ctx: IMutationToolContext, tool: string): Result<Operation
   );
 }
 
-/** What the model is told a mutation did: never the operation id, never the update ids. */
+/**
+ * What the model is told a mutation did: the task, its revision and whether it changed. Never the
+ * operation id, never the update ids (which say whether anyone else is subscribed), and — for a
+ * reassignment — never the previous party, which comes from the unprojected envelope: a host
+ * projector may withhold a task's responsibility from this principal.
+ */
 function _presentMutation(receipt: ITaskMutationResult): TaskResult<ITaskMutationToolResult> {
   return succeedWithDetail<ITaskMutationToolResult, ITaskFailure>({
     taskId: receipt.taskId,
@@ -108,7 +122,9 @@ async function _mutate<TRequest, TReceipt, TOut>(
       ctx,
       tool,
       () => ask(request),
-      (answer) => convertAnswer(receipt, answer, 'receipt').onSuccess(present)
+      (answer) =>
+        convertAnswer(receipt, answer, "writer's receipt", 'commit-indeterminate').onSuccess(present),
+      writerFailed
     )
   );
 }
@@ -177,7 +193,14 @@ function _updateTool(ctx: IMutationToolContext): AiAssist.IAiClientTool {
         })
         .withErrorFormat((message) => argumentMessage(name, `invalid arguments: ${message}`))
         .onSuccess((request) =>
-          succeed({ request, receipt: ctx.receipts.mutation({ taskId: request.taskId, operationId }) })
+          succeed({
+            request,
+            receipt: ctx.receipts.mutation({
+              taskId: request.taskId,
+              operationId,
+              expectedRevision: request.expectedRevision
+            })
+          })
         )
     );
   return {
@@ -223,19 +246,16 @@ function _reassignTool(ctx: IMutationToolContext): AiAssist.IAiClientTool {
             receipt: ctx.receipts.reassignment({
               taskId: request.taskId,
               operationId,
-              responsibility: request.responsibility
+              expectedRevision: request.expectedRevision,
+              // The tool's own copy: the request object is handed to the writer, which could change it.
+              responsibility:
+                args.responsibility === null
+                  ? 'unassigned'
+                  : { namespace: args.responsibility.namespace, key: args.responsibility.key }
             })
           })
         )
     );
-  const present = (receipt: IReassignmentResult): TaskResult<ITaskReassignToolResult> =>
-    succeedWithDetail<ITaskReassignToolResult, ITaskFailure>({
-      taskId: receipt.taskId,
-      revision: receipt.revision,
-      disposition: receipt.disposition,
-      ...(receipt.previous !== undefined ? { previous: _party(receipt.previous) } : {}),
-      ...(receipt.current !== undefined ? { current: _party(receipt.current) } : {})
-    });
   return {
     config: {
       type: 'client_tool',
@@ -256,14 +276,9 @@ function _reassignTool(ctx: IMutationToolContext): AiAssist.IAiClientTool {
           .withErrorFormat((message) => argumentMessage(name, `invalid arguments: ${message}`))
           .onSuccess(plan),
         (request) => ctx.writer.reassign(request),
-        present
+        _presentMutation
       )
   };
-}
-
-/** A responsible party as the model is shown one: its two fields, nothing else. */
-function _party(party: IResponsibility): IResponsibility {
-  return { namespace: party.namespace, key: party.key };
 }
 
 /**
@@ -273,7 +288,7 @@ function _party(party: IResponsibility): IResponsibility {
  */
 export function mutationTools(
   ctx: IMutationToolContext,
-  groups: ReadonlySet<string>
+  groups: ReadonlySet<TaskMutationToolGroup>
 ): ReadonlyArray<AiAssist.IAiClientTool> {
   return [
     ...(groups.has('tracked') ? [_createTool(ctx), _updateTool(ctx)] : []),

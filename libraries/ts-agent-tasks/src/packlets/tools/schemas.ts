@@ -30,6 +30,15 @@ export interface ITaskInspectToolArgs {
   readonly taskId: string;
 }
 
+/** A responsible party's two members, as every schema that names one spells them. */
+const responsibilityProperties: {
+  readonly namespace: JsonSchema.ISchemaValidator<string>;
+  readonly key: JsonSchema.ISchemaValidator<string>;
+} = {
+  namespace: JsonSchema.string({ description: 'The responsible party namespace, e.g. "agent".' }),
+  key: JsonSchema.string({ description: 'The responsible party key within its namespace.' })
+};
+
 /**
  * The `task_query` parameter schema — the wire schema and the validator `execute` re-runs.
  * @param maxItems - The largest page the tool will ask for, stated in the `limit` description.
@@ -38,13 +47,9 @@ export interface ITaskInspectToolArgs {
 export function taskQuerySchema(maxItems: number): JsonSchema.ISchemaValidator<ITaskQueryToolArgs> {
   return JsonSchema.object({
     responsibility: JsonSchema.optional(
-      JsonSchema.object(
-        {
-          namespace: JsonSchema.string({ description: 'The responsible party namespace, e.g. "agent".' }),
-          key: JsonSchema.string({ description: 'The responsible party key within its namespace.' })
-        },
-        { description: 'Only tasks assigned to this responsible party.' }
-      )
+      JsonSchema.object(responsibilityProperties, {
+        description: 'Only tasks assigned to this responsible party.'
+      })
     ),
     parentId: JsonSchema.optional(JsonSchema.string({ description: 'Only direct children of this task.' })),
     lifecycleClass: JsonSchema.optional(
@@ -117,13 +122,7 @@ export const taskCreateSchema: JsonSchema.ISchemaValidator<ITaskCreateToolArgs> 
     JsonSchema.string({ description: 'Create the task as a child of this open task.' })
   ),
   responsibility: JsonSchema.optional(
-    JsonSchema.object(
-      {
-        namespace: JsonSchema.string({ description: 'The responsible party namespace, e.g. "agent".' }),
-        key: JsonSchema.string({ description: 'The responsible party key within its namespace.' })
-      },
-      { description: 'The party responsible for the new task.' }
-    )
+    JsonSchema.object(responsibilityProperties, { description: 'The party responsible for the new task.' })
   )
 });
 
@@ -184,8 +183,7 @@ export const taskUpdateSchema: JsonSchema.ISchemaValidator<ITaskUpdateToolArgs> 
 export interface ITaskReassignToolArgs {
   readonly taskId: string;
   readonly expectedRevision: number;
-  // `null` is the JSON value the model sends to unassign, not a JS sentinel.
-  // eslint-disable-next-line @rushstack/no-new-null
+  // eslint-disable-next-line @rushstack/no-new-null -- the JSON null a model sends to unassign, as `JsonSchema.object({ nullable: true })` validates it
   readonly responsibility: { readonly namespace: string; readonly key: string } | null;
 }
 
@@ -198,11 +196,8 @@ export interface ITaskReassignToolArgs {
  */
 export const taskReassignSchema: JsonSchema.ISchemaValidator<ITaskReassignToolArgs> = JsonSchema.object({
   ...identityProperties,
-  responsibility: JsonSchema.object(
-    {
-      namespace: JsonSchema.string({ description: 'The responsible party namespace, e.g. "agent".' }),
-      key: JsonSchema.string({ description: 'The responsible party key within its namespace.' })
-    },
-    { nullable: true, description: 'The party to make responsible, or null to unassign the task.' }
-  )
+  responsibility: JsonSchema.object(responsibilityProperties, {
+    nullable: true,
+    description: 'The party to make responsible, or null to unassign the task.'
+  })
 });

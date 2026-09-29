@@ -51,7 +51,8 @@ const modelFacingFailures: Readonly<Record<TaskFailureCode, string>> = {
   unsupported: 'the request is not supported',
   'storage-unavailable': 'task storage is unavailable; retry later',
   'storage-corrupt': 'task storage could not be read',
-  'commit-indeterminate': 'the outcome of an earlier operation is not yet known; retry later',
+  'commit-indeterminate':
+    'the outcome is not known: a change may or may not have been applied; inspect before retrying',
   'source-unavailable': 'a task source is unavailable; retry later',
   'source-gap': 'a task source could not be read completely',
   'unknown-kind-version': 'a task has a kind this host does not recognize',
@@ -111,34 +112,56 @@ function _toolResult<T>(ctx: IToolContext, tool: string, result: TaskResult<T>):
  * of its interface, so its answer is not trusted; one that does not convert fails the call, and the
  * converter's message — which can quote the answer — goes to the host's logger with the rest of the
  * failure.
+ * @param code - What the model is told. A view's malformed answer is `invalid`; a writer's is
+ * `commit-indeterminate`, because the change it describes may already have been committed.
  * @internal
  */
-export function convertAnswer<T>(converter: Converter<T>, answer: unknown, what: string): TaskResult<T> {
+export function convertAnswer<T>(
+  converter: Converter<T>,
+  answer: unknown,
+  what: string,
+  code: TaskFailureCode = 'invalid'
+): TaskResult<T> {
   const converted: Result<T> = converter.convert(answer);
   return converted.isSuccess()
     ? succeedWithDetail<T, ITaskFailure>(converted.value)
-    : failWithDetail<T, ITaskFailure>(`the view returned a malformed ${what}: ${converted.message}`, {
-        code: 'invalid',
+    : failWithDetail<T, ITaskFailure>(`malformed ${what}: ${converted.message}`, {
+        code,
         retry: 'after-host-action'
       });
 }
 
 /**
+ * What the model is told when a view rejects or throws.
+ * @internal
+ */
+export const viewFailed: string = 'the task view failed';
+
+/**
+ * What the model is told when a writer rejects or throws: the change may already be committed, and
+ * a mutation tool mints fresh ids on every call, so a blind retry of a creation could duplicate it.
+ * @internal
+ */
+export const writerFailed: string =
+  'the task writer failed; the change may or may not have been applied — inspect before retrying';
+
+/**
  * Asks the view (or the writer, which is the same binding) and presents its answer. One that
- * rejects or throws — host code, whatever it implements — fails the call with a fixed message; what
- * it threw goes to the host's logger.
+ * rejects or throws — host code, whatever it implements — fails the call with the fixed `failed`
+ * message; what it threw goes to the host's logger.
  * @internal
  */
 export async function askView<T, TOut>(
   ctx: IToolContext,
   tool: string,
   ask: () => Promise<TaskResult<T>>,
-  present: (value: T) => TaskResult<TOut>
+  present: (value: T) => TaskResult<TOut>,
+  failed: string = viewFailed
 ): Promise<Result<TOut>> {
   return (await captureAsyncResult(async () => (await ask()).onSuccess(present)))
     .onFailure((message) => {
-      ctx.logger?.error(`${tool}: the task view threw: ${message}`);
-      return fail(`${tool}: the task view failed`);
+      ctx.logger?.error(`${tool}: the task view or writer threw: ${message}`);
+      return fail(`${tool}: ${failed}`);
     })
     .onSuccess((result) => _toolResult(ctx, tool, result));
 }

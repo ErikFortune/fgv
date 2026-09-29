@@ -4,7 +4,6 @@
  */
 
 import { JsonValue } from '@fgv/ts-json-base';
-import { IResponsibility } from './common';
 import { ITaskContextBudget, TaskContextPresentation, defaultTaskContextBudget } from './context';
 import { PageCursor, TaskId, TaskRevision } from './ids';
 import { TaskMutationDisposition } from './broker';
@@ -122,7 +121,7 @@ export type TaskMutationToolGroup = 'tracked' | 'reassign';
 export const allTaskMutationToolGroups: ReadonlyArray<TaskMutationToolGroup> = ['tracked', 'reassign'];
 
 /**
- * What `task_create` and `task_update` return to the model.
+ * What `task_create`, `task_update` and `task_reassign` return to the model.
  *
  * @remarks
  * The task's id, its revision after the call, and whether the call changed it. `revision` is what a
@@ -135,14 +134,4 @@ export interface ITaskMutationToolResult {
   readonly taskId: TaskId;
   readonly revision: TaskRevision;
   readonly disposition: TaskMutationDisposition;
-}
-
-/**
- * What `task_reassign` returns to the model: a {@link ITaskMutationToolResult} and the responsible
- * party before and after. An absent party is unassigned.
- * @public
- */
-export interface ITaskReassignToolResult extends ITaskMutationToolResult {
-  readonly previous?: IResponsibility;
-  readonly current?: IResponsibility;
 }

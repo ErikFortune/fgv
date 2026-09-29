@@ -144,7 +144,7 @@ function _queryTool(ctx: IToolContext): AiAssist.IAiClientTool {
             name,
             () => ctx.view.query(request),
             (answer) =>
-              convertAnswer(ctx.answers.page(limit), answer, 'page').onSuccess((page) => {
+              convertAnswer(ctx.answers.page(limit), answer, "view's page").onSuccess((page) => {
                 if (page.issues.length > 0) {
                   ctx.logger?.warn(`${name}: the view reported: ${page.issues.join('; ')}`);
                 }
@@ -179,7 +179,7 @@ function _inspectTool(ctx: IToolContext): AiAssist.IAiClientTool {
             name,
             () => ctx.view.inspect(id),
             (answer) =>
-              convertAnswer(ctx.answers.inspection, answer, 'inspection').onSuccess((inspection) =>
+              convertAnswer(ctx.answers.inspection, answer, "view's inspection").onSuccess((inspection) =>
                 presentInspection(ctx.renderer, ctx.budget, inspection)
               )
           )
