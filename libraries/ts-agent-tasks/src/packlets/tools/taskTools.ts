@@ -181,7 +181,12 @@ function _queryTool(ctx: IToolContext): AiAssist.IAiClientTool {
             ctx,
             name,
             () => ctx.view.query(request),
-            (page) => presentPage(ctx.renderer, ctx.budget, page)
+            (page) => {
+              if (page.issues.length > 0) {
+                ctx.logger?.warn(`${name}: the view reported: ${page.issues.join('; ')}`);
+              }
+              return presentPage(ctx.renderer, ctx.budget, page);
+            }
           )
         )
   };

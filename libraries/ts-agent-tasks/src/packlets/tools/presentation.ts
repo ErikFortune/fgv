@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { succeedWithDetail } from '@fgv/ts-utils';
+import { failWithDetail, succeedWithDetail } from '@fgv/ts-utils';
 import { TaskContextRenderer } from '../context';
 import {
   IBoundTaskPage,
@@ -20,6 +20,15 @@ import {
 } from '../types';
 
 /**
+ * The one issue line the model is told when the view reports any. A view's own issue text is host
+ * text — the broker's is already this line, but any `IBoundTaskView` may be passed — so it goes to the
+ * host's logger, never to the model.
+ * @internal
+ */
+export const pageIssueLine: string =
+  'some tasks within this view could not be read; the page may be incomplete';
+
+/**
  * Presents one page of a bound view's query: the page rendered as bounded context, with every task
  * the rendering left out or shortened named, so paging past the page skips nothing unannounced.
  * @internal
@@ -29,6 +38,17 @@ export function presentPage(
   budget: ITaskToolBudget,
   page: IBoundTaskPage
 ): TaskResult<ITaskQueryToolResult> {
+  // The cursor is handed back to the model and returned by it: it must be the bounded identifier a
+  // cursor is, whatever view produced it.
+  if (
+    page.nextCursor !== undefined &&
+    renderer.converters.queries.pageCursor.convert(page.nextCursor).isFailure()
+  ) {
+    return failWithDetail<ITaskQueryToolResult, ITaskFailure>(
+      `the view returned a malformed page cursor (${page.nextCursor.length} characters)`,
+      { code: 'invalid', retry: 'after-host-action' }
+    );
+  }
   // A page with more after it is part of a larger selection, which the rendering must say.
   const whole: boolean = page.completeness === 'complete' && page.nextCursor === undefined;
   return renderer
@@ -49,7 +69,7 @@ export function presentPage(
         ...(page.nextCursor !== undefined ? { nextCursor: page.nextCursor } : {}),
         completeness: page.completeness,
         freshness: page.freshness,
-        issues: page.issues
+        issues: page.issues.length > 0 ? [pageIssueLine] : []
       });
     });
 }

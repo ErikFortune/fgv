@@ -684,6 +684,8 @@ const turn = AiAssist.executeClientToolTurn({ descriptor, apiKey, messages, clie
   `<tool>: the task view failed`. The underlying message — a projector's error, a storage detail, an
   exception — goes only to the optional `logger`. Only a failure of the model's own arguments is
   described in full, cut at 500 characters.
+  The same holds for what a page carries besides its text: a view's `issues` reach the model as one
+  fixed line, and a `nextCursor` that is not a well-formed cursor fails the call.
 - **What is framed.** Task state is framed and escaped inside the context text. Details are the host
   projector's JSON, returned beside it as structured data and neither framed nor escaped — a host
   that exposes details chooses their content.

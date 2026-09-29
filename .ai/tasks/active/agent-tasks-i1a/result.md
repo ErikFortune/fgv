@@ -23,7 +23,7 @@
   `ts-agent-memory`.
 - **Renderer extension** (outside the packlet, inside the package — see *The renderer did not fit*).
 
-Files: `src/packlets/tools/{taskTools,presentation,schemas,index}.ts` (227 / 107 / 77 / 6 lines —
+Files: `src/packlets/tools/{taskTools,presentation,schemas,index}.ts` (286 / 127 / 77 / 6 lines —
 nowhere near the cap), `src/packlets/types/tools.ts`, four test suites under `src/test/unit/tools/`
 plus a `toolFixtures.ts` helper.
 
@@ -206,6 +206,16 @@ The first request did not register (no reviewer listed after 35 minutes); the se
 | **(medium)** the Gemini capture checked names and an `objectContaining` shape, so a serializer dropping descriptions, enums or required members would pass | the test now pins both complete `function_declarations` entries. Recorded while writing it: **Gemini's dialect drops `additionalProperties`**, so on Gemini the schemas' closure is enforced by validation (harness, then `execute`), not stated on the wire |
 | **(medium)** the PR description said the final revert matrix was still owed while `result.md` recorded it | PR description reconciled; the matrix has been re-run on this round's source (below) |
 
+**Round 2 — two low posted, one "previously missed", and a headline naming two more; three real.**
+
+| finding | disposition |
+|---|---|
+| (low) `result.md` gave `taskTools.ts` as 227 lines; it is 286 after round 1 | fixed |
+| (low) the ledger said the matrix ran `I1a-1`…`I1a-18` | fixed (now `…I1a-21`) |
+| (previously missed, low) `contextUnresolvedReference`'s doc linked `unresolvedReference` — the storage converter with the opposite contract — as if it were its base | fixed: the doc now says what differs and why the two are separate |
+| (headline only, not posted) "unbounded issue text" | **real, and the same class as round 1's high**: `task_query` passed the view's `issues` strings through verbatim. The broker only ever emits one generic line, but `createTaskTools` accepts any `IBoundTaskView`, so a host's view could put unbounded host text in front of the model. Now the model gets one fixed line when there are any, and the view's text goes to `logger`. The sibling hunted while there: `nextCursor` was also passed through unchecked, and is now converted as a page cursor (a malformed one fails the call as `invalid`). New tests; new matrix rows I1a-20, I1a-21 |
+| (headline only) "surrogate-pair error truncation" | re-examined, **no defect**: the cut backs off one unit when it would land on a low surrogate, pinned by *the cut never splits a surrogate pair* and matrix row I1a-9 |
+
 Layer 1 and Copilot round 1 found the same defect twice at different depths: layer 1 saw an
 *unbounded* message, fixed the bound, and left the *disclosure*. Worth carrying into I1b: a
 model-facing failure path is a disclosure surface, not a formatting one.
@@ -231,7 +241,7 @@ Run locally on `301a09f1` — the source after Copilot round 1.
 | `rush change --verify --target-branch origin/integration/agent-tasks-v1` | change file found (`minor`) |
 | `rushx build` (package) | clean, **zero warnings**; `etc/ts-agent-tasks.api.md` updated and checked in |
 | `rushx lint` / `rushx fixlint` | clean; fixlint a no-op before commit |
-| `rushx test` (package) | **2,060 passed; 100 % statements, branches, functions, lines; zero `c8 ignore`** |
+| `rushx test` (package) | **2,062 passed; 100 % statements, branches, functions, lines; zero `c8 ignore`** |
 | `rush rebuild` (repo-wide) | exit 0 (4 min 12 s) — required: the build graph gained an edge |
 | `rush test` (repo-wide) | exit 0 (8 min 17 s) — required: the renderer accepts a wider set |
 | `verify-capability-docs.mjs` | router 21,338/24,000, 24/24 documented, 75 reflexes, 0 failed |

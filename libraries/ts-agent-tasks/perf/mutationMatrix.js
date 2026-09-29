@@ -1291,6 +1291,20 @@ const I1A_ROWS = [
     '`${tool}: ${code}: ${modelFacingFailures[code]}`',
     '`${tool}: ${code}: ${result.message}`',
     I1A
+  ),
+  m(
+    "I1a-20 a view's issue text reaches the model",
+    TL + 'presentation.ts',
+    '        issues: page.issues.length > 0 ? [pageIssueLine] : []',
+    '        issues: page.issues',
+    I1A
+  ),
+  m(
+    "I1a-21 a view's cursor reaches the model unchecked",
+    TL + 'presentation.ts',
+    '    renderer.converters.queries.pageCursor.convert(page.nextCursor).isFailure()',
+    '    renderer.converters.queries.pageCursor.convert(page.nextCursor).isFailure() &&\n    page.nextCursor.length < 0',
+    I1A
   )
 ];
 

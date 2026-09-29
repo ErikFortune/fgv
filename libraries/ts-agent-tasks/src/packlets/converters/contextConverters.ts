@@ -53,8 +53,10 @@ export interface IContextConverters {
   readonly update: Converter<ITaskUpdate>;
   readonly unresolvedReference: Converter<IUnresolvedTaskReference>;
   /**
-   * An unresolved reference as the renderer accepts it: {@link IContextConverters.unresolvedReference}
-   * with the binding optional. Never used for storage, where the binding is required.
+   * An unresolved reference as the renderer accepts it: the same fields, with the binding optional.
+   * The renderer never presents a binding, so a bound view's projected reference — which has none —
+   * converts here. Storage uses `unresolvedReference` instead, where the binding stays required;
+   * the two are separate so the renderer's leniency can never reach a persisted record.
    */
   readonly contextUnresolvedReference: Converter<IContextUnresolvedReference>;
   readonly completeness: Converter<TaskInputCompleteness>;

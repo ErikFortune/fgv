@@ -5,8 +5,9 @@
 
 import '@fgv/ts-utils-jest';
 import { JsonValue } from '@fgv/ts-json-base';
-import { Logging, fail, failWithDetail, succeed } from '@fgv/ts-utils';
+import { Logging, fail, failWithDetail, succeed, succeedWithDetail } from '@fgv/ts-utils';
 import {
+  IBoundTaskPage,
   IBoundTaskView,
   ITaskFailure,
   ITaskContextBudget,
@@ -14,6 +15,7 @@ import {
   ITaskProjector,
   ITaskQueryToolResult,
   ITaskToolBudget,
+  PageCursor,
   TaskContextRenderer,
   TaskFailureCode,
   TaskResult,
@@ -368,6 +370,57 @@ describe('a failure tells the model a code, never host text', () => {
     const tools = taskTools({ view });
     expect(await query(tools, {})).toFailWith(/^task_query: the request failed$/);
     expect(await inspect(tools, { taskId: 't1' })).toFailWith(/^task_inspect: the request failed$/);
+  });
+});
+
+describe('what a page carries besides the rendered text is checked, not trusted', () => {
+  /** A view whose query answers with the given page, whatever view wrote it. */
+  function pageView(page: IBoundTaskPage): IBoundTaskView {
+    const unused = async (): Promise<never> => {
+      throw new Error('not used');
+    };
+    return {
+      principal: 'alice',
+      query: async () => succeedWithDetail(page),
+      inspect: unused,
+      inspectStop: unused
+    };
+  }
+  const empty: IBoundTaskPage = {
+    items: [],
+    unresolved: [],
+    completeness: 'complete',
+    freshness: 'native-current',
+    issues: []
+  };
+
+  test("a view's issue text reaches the host, and the model is told one fixed line", async () => {
+    const logger = new Logging.InMemoryLogger('detail');
+    const tools = taskTools({
+      view: pageView({ ...empty, issues: [`record /srv/secret/t1.json unreadable ${'x'.repeat(10000)}`] }),
+      logger
+    });
+    expect(await query(tools, {})).toSucceedAndSatisfy((page) => {
+      expect(page.issues).toEqual([
+        'some tasks within this view could not be read; the page may be incomplete'
+      ]);
+    });
+    expect(logger.logged.some((line) => line.includes('/srv/secret/t1.json'))).toBe(true);
+    // Without a logger the view's text is discarded, and the model is told the same line.
+    const quiet = taskTools({ view: pageView({ ...empty, issues: ['/srv/secret'] }) });
+    expect((await query(quiet, {})).orThrow().issues).toEqual([
+      'some tasks within this view could not be read; the page may be incomplete'
+    ]);
+    // A page with no issues says none.
+    expect((await query(taskTools({ view: pageView(empty) }), {})).orThrow().issues).toEqual([]);
+  });
+
+  test('a malformed cursor from the view fails the call rather than reaching the model', async () => {
+    const logger = new Logging.InMemoryLogger('detail');
+    const bogus = `../${'c'.repeat(5000)}` as PageCursor;
+    const tools = taskTools({ view: pageView({ ...empty, nextCursor: bogus }), logger });
+    expect(await query(tools, {})).toFailWith(REFUSED_QUERY);
+    expect(logger.logged.some((line) => /malformed page cursor/.test(line))).toBe(true);
   });
 });
 

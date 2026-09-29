@@ -150,8 +150,9 @@ references that a bound view never emits. It now accepts `IContextUnresolvedRefe
 separate converter; the storage converter still requires the binding.
 
 **Evidence.** Outbound request capture through `executeClientToolTurn` for Anthropic, OpenAI and
-Gemini, with a no-tools control; revert-matrix rows `I1a-1`…`I1a-18`; layer 1 no P1 (one P2 fixed:
-a rejecting view's message reached the model unbounded). Routed: unframed details (I2), no integer
+Gemini, with a no-tools control; revert-matrix rows `I1a-1`…`I1a-21`; layer 1 no P1 (one P2 fixed:
+a rejecting view's message reached the model unbounded); Copilot round 1's high finding took that
+further — **the model is told a failure's code, never host text**, which goes to an optional logger. Routed: unframed details (I2), no integer
 range in `JsonSchema` (`docs/TECH_DEBT.md`).
 
 **Artifact pointer:** `.ai/tasks/active/agent-tasks-i1a/`.

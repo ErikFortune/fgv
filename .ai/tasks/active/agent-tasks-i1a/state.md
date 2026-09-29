@@ -8,7 +8,7 @@ be enough to resume cold. Keep it current as you go.
 ## Status
 
 **PR open (#702); Copilot round 1 fixed; every gate green on `301a09f1` (2026-09-28).** CI green;
-package suite 2,060 passing at 100 % with zero `c8 ignore`; repo-wide rebuild and test exit 0; five
+package suite 2,062 passing at 100 % with zero `c8 ignore`; repo-wide rebuild and test exit 0; five
 verify scripts 0 failed; revert matrix on `301a09f1`: 19 rows, 33 red tests, 0 UNVERIFIED or `0 red`.
 Round 1 (1 high, 2 medium) all fixed; CodeRabbit's one finding withdrawn by CodeRabbit. Next: Copilot
 round 2. If a round changes source, re-run the matrix on the new head.
