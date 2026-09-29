@@ -5,31 +5,48 @@
 
 import { AiAssist } from '@fgv/ts-extras';
 import { JsonSchema } from '@fgv/ts-json-base';
-import {
-  Converter,
-  Converters,
-  Logging,
-  Result,
-  captureAsyncResult,
-  fail,
-  failWithDetail,
-  succeed,
-  succeedWithDetail
-} from '@fgv/ts-utils';
+import { Converters, Logging, Result, fail, succeed } from '@fgv/ts-utils';
 import { TaskContextRenderer } from '../context';
 import {
   IBoundTaskQuery,
   IBoundTaskView,
-  ITaskFailure,
+  IBoundTaskWriter,
+  ITaskEnvironment,
   ITaskToolBudget,
-  TaskFailureCode,
   TaskId,
-  TaskResult,
+  TaskMutationToolGroup,
+  allTaskMutationToolGroups,
   defaultTaskToolBudget
 } from '../types';
+import { mutationTools } from './mutationTools';
 import { presentInspection, presentPage } from './presentation';
 import { ITaskInspectToolArgs, ITaskQueryToolArgs, taskInspectSchema, taskQuerySchema } from './schemas';
-import { IViewAnswerConverters, buildViewAnswerConverters } from './viewAnswers';
+import { IToolContext, argumentMessage, askView, convertAnswer } from './toolSupport';
+import { buildViewAnswerConverters } from './viewAnswers';
+import { buildWriterAnswerConverters } from './writerAnswers';
+
+/**
+ * The mutation tools a host opts into, and what they need to run.
+ * @remarks
+ * Opting in makes tools available to the model; it authorizes nothing. Every call is authorized by
+ * `writer`'s policy when it runs, exactly as a direct call to the writer would be.
+ * @public
+ */
+export interface ITaskMutationToolOptions {
+  /**
+   * The writer every mutation goes through. It must be the very object passed as `view`: the
+   * revision the model reads is then the revision the writer checks, under one principal, one set
+   * of scopes and one policy.
+   */
+  readonly writer: IBoundTaskWriter;
+  /**
+   * Mints each call's operation id, and a new task's id. The model never supplies either. Usually
+   * the host's `TaskEnvironment`.
+   */
+  readonly environment: Pick<ITaskEnvironment, 'newTaskId' | 'newOperationId'>;
+  /** The tool groups to offer. An empty list offers none. */
+  readonly enable: ReadonlyArray<TaskMutationToolGroup>;
+}
 
 /**
  * Parameters for {@link createTaskTools}.
@@ -57,13 +74,12 @@ export interface ICreateTaskToolsParams {
    * discarded.
    */
   readonly logger?: Logging.ILogger;
+  /**
+   * Mutation tools to offer beside the read tools. Absent — the default — offers none: the tools
+   * are exactly `task_query` and `task_inspect`.
+   */
+  readonly mutations?: ITaskMutationToolOptions;
 }
-
-/**
- * The most characters of an argument-validation failure a tool returns. Those messages are about the
- * model's own arguments and can echo them, which have no length limit of their own.
- */
-const maxMessageChars: number = 500;
 
 const readOnlyAnnotations: AiAssist.IAiToolAnnotations = {
   readOnlyHint: true,
@@ -71,100 +87,6 @@ const readOnlyAnnotations: AiAssist.IAiToolAnnotations = {
   idempotentHint: true,
   openWorldHint: false
 };
-
-/**
- * What the model is told for each failure the view or the rendering reports. The underlying message
- * is host-side text and never reaches the model: it goes to the host's logger.
- */
-const modelFacingFailures: Readonly<Record<TaskFailureCode, string>> = {
-  invalid: 'the request was refused, or a task could not be presented',
-  'not-found-or-denied': 'the task is not found or not visible',
-  conflict: 'tasks changed while this was being answered; retry',
-  unsupported: 'the request is not supported',
-  'storage-unavailable': 'task storage is unavailable; retry later',
-  'storage-corrupt': 'task storage could not be read',
-  'commit-indeterminate': 'the outcome of an earlier operation is not yet known; retry later',
-  'source-unavailable': 'a task source is unavailable; retry later',
-  'source-gap': 'a task source could not be read completely',
-  'unknown-kind-version': 'a task has a kind this host does not recognize',
-  'invalid-receipt': 'the request was refused',
-  'cursor-stale': 'the cursor is no longer valid; query again without it',
-  'retention-blocked': 'the request was refused',
-  backpressure: 'task storage is at capacity; retry later'
-};
-
-interface IToolContext {
-  readonly view: IBoundTaskView;
-  readonly renderer: TaskContextRenderer;
-  readonly answers: IViewAnswerConverters;
-  readonly budget: ITaskToolBudget;
-  readonly logger?: Logging.ILogger;
-}
-
-/** An argument-validation failure as the model sees it: named by tool, and bounded. */
-function _message(tool: string, message: string): string {
-  const full: string = `${tool}: ${message}`;
-  if (full.length <= maxMessageChars) {
-    return full;
-  }
-  // Never cut a surrogate pair in half.
-  const cut: number = /[\udc00-\udfff]/.test(full.charAt(maxMessageChars))
-    ? maxMessageChars - 1
-    : maxMessageChars;
-  return `${full.slice(0, cut)}… (truncated)`;
-}
-
-/**
- * Reduces a task result to what the model is told. A failure becomes its code and a fixed
- * description; its message goes to the host's logger.
- */
-function _toolResult<T>(ctx: IToolContext, tool: string, result: TaskResult<T>): Result<T> {
-  if (result.isSuccess()) {
-    return succeed(result.value);
-  }
-  ctx.logger?.warn(`${tool}: ${result.message}`);
-  // The view is any `IBoundTaskView`, so its failure detail is checked, not trusted: a code outside
-  // the known set is treated as no code at all.
-  const code: TaskFailureCode | undefined = ctx.renderer.converters.failures.failureCode
-    .convert(result.detail?.code)
-    .orDefault();
-  return fail(
-    code !== undefined ? `${tool}: ${code}: ${modelFacingFailures[code]}` : `${tool}: the request failed`
-  );
-}
-
-/**
- * Converts what the view answered before anything reads it. The view is any `IBoundTaskView`, so its
- * answer is not trusted; one that does not convert fails the call, and the converter's message — which
- * can quote the answer — goes to the host's logger with the rest of the failure.
- */
-function _answer<T>(converter: Converter<T>, answer: unknown, what: string): TaskResult<T> {
-  const converted: Result<T> = converter.convert(answer);
-  return converted.isSuccess()
-    ? succeedWithDetail<T, ITaskFailure>(converted.value)
-    : failWithDetail<T, ITaskFailure>(`the view returned a malformed ${what}: ${converted.message}`, {
-        code: 'invalid',
-        retry: 'after-host-action'
-      });
-}
-
-/**
- * Asks the view and presents its answer. A view that rejects or throws — host code, whatever it
- * implements — fails the call with a fixed message; what it threw goes to the host's logger.
- */
-async function _read<T, TOut>(
-  ctx: IToolContext,
-  tool: string,
-  ask: () => Promise<TaskResult<T>>,
-  present: (value: T) => TaskResult<TOut>
-): Promise<Result<TOut>> {
-  return (await captureAsyncResult(async () => (await ask()).onSuccess(present)))
-    .onFailure((message) => {
-      ctx.logger?.error(`${tool}: the task view threw: ${message}`);
-      return fail(`${tool}: the task view failed`);
-    })
-    .onSuccess((result) => _toolResult(ctx, tool, result));
-}
 
 /** A view query and the page size it asks for, which is also the most a page may answer with. */
 interface IQueryPlan {
@@ -215,14 +137,14 @@ function _queryTool(ctx: IToolContext): AiAssist.IAiClientTool {
       schema
         .convert(args)
         .onSuccess((typed) => _queryRequest(ctx, typed))
-        .withErrorFormat((message) => _message(name, `invalid arguments: ${message}`))
+        .withErrorFormat((message) => argumentMessage(name, `invalid arguments: ${message}`))
         .thenOnSuccess(({ request, limit }) =>
-          _read(
+          askView(
             ctx,
             name,
             () => ctx.view.query(request),
             (answer) =>
-              _answer(ctx.answers.page(limit), answer, 'page').onSuccess((page) => {
+              convertAnswer(ctx.answers.page(limit), answer, 'page').onSuccess((page) => {
                 if (page.issues.length > 0) {
                   ctx.logger?.warn(`${name}: the view reported: ${page.issues.join('; ')}`);
                 }
@@ -250,14 +172,14 @@ function _inspectTool(ctx: IToolContext): AiAssist.IAiClientTool {
       taskInspectSchema
         .convert(args)
         .onSuccess((typed: ITaskInspectToolArgs) => ctx.renderer.converters.ids.taskId.convert(typed.taskId))
-        .withErrorFormat((message) => _message(name, `invalid arguments: ${message}`))
+        .withErrorFormat((message) => argumentMessage(name, `invalid arguments: ${message}`))
         .thenOnSuccess((id: TaskId) =>
-          _read(
+          askView(
             ctx,
             name,
             () => ctx.view.inspect(id),
             (answer) =>
-              _answer(ctx.answers.inspection, answer, 'inspection').onSuccess((inspection) =>
+              convertAnswer(ctx.answers.inspection, answer, 'inspection').onSuccess((inspection) =>
                 presentInspection(ctx.renderer, ctx.budget, inspection)
               )
           )
@@ -286,12 +208,41 @@ function _budget(renderer: TaskContextRenderer, budget: ITaskToolBudget): Result
 }
 
 /**
- * Builds the read-only task tools over a principal-bound view — `task_query` and `task_inspect` —
- * ready to hand to `AiAssist.executeClientToolTurn`.
+ * Validates a host's mutation opt-in: the writer must be the view, and the groups known ones. Asks
+ * nothing of the writer or the environment — opting in is not authorizing.
+ */
+function _mutationGroups(
+  view: IBoundTaskView,
+  mutations: ITaskMutationToolOptions | undefined
+): Result<ReadonlySet<TaskMutationToolGroup>> {
+  if (mutations === undefined) {
+    return succeed(new Set<TaskMutationToolGroup>());
+  }
+  if (mutations.writer !== view) {
+    return fail('task tools: mutations.writer must be the view the tools read through');
+  }
+  return Converters.arrayOf(Converters.enumeratedValue<TaskMutationToolGroup>(allTaskMutationToolGroups))
+    .convert(mutations.enable)
+    .onSuccess((groups) => succeed(new Set(groups)))
+    .withErrorFormat((message) => `task tools: invalid mutations.enable: ${message}`);
+}
+
+/**
+ * Builds the task tools over a principal-bound view, ready to hand to
+ * `AiAssist.executeClientToolTurn`: `task_query` and `task_inspect`, and — only when the host opts
+ * in through `mutations` — `task_create`, `task_update` and `task_reassign`.
  *
  * @remarks
- * **Read-only, with no mutation dependency.** The tools take an {@link IBoundTaskView} and call only
- * its `query` and `inspect`.
+ * **Read-only by default, with no mutation dependency.** Without `mutations` the tools take an
+ * {@link IBoundTaskView} and call only its `query` and `inspect`.
+ *
+ * **Mutations are opt-in, and opting in authorizes nothing.** With `mutations`, each opted-in tool
+ * calls one writer method — `createTracked`, `updateTracked` or `reassign` — and the writer's policy
+ * decides every call when it runs. The model supplies no operation id and no new task id (the tool
+ * mints both), no scope and no source binding. A change to an existing task carries the revision
+ * `task_inspect` returned as its `expectedRevision`, and the writer refuses it if the task has moved
+ * since. A writer's receipt is converted, and must be for the task and operation asked about, before
+ * anything reads it; the model is told the task id, revision and disposition, never update ids.
  *
  * **Nothing the model supplies can widen what it sees.** Neither schema has a principal, scope or
  * consumer member, both are closed (a surplus property fails), and every `execute` re-validates its
@@ -322,15 +273,29 @@ export function createTaskTools(
   const renderer: Result<TaskContextRenderer> =
     params.renderer !== undefined ? succeed(params.renderer) : TaskContextRenderer.create();
   return renderer.onSuccess((r) =>
-    _budget(r, params.budget ?? defaultTaskToolBudget).onSuccess((budget) => {
-      const ctx: IToolContext = {
-        view: params.view,
-        renderer: r,
-        answers: buildViewAnswerConverters(r.converters),
-        budget,
-        logger: params.logger
-      };
-      return succeed([_queryTool(ctx), _inspectTool(ctx)]);
-    })
+    _budget(r, params.budget ?? defaultTaskToolBudget).onSuccess((budget) =>
+      _mutationGroups(params.view, params.mutations).onSuccess((groups) => {
+        const ctx: IToolContext = {
+          view: params.view,
+          renderer: r,
+          answers: buildViewAnswerConverters(r.converters),
+          budget,
+          logger: params.logger
+        };
+        const mutations: ReadonlyArray<AiAssist.IAiClientTool> =
+          params.mutations !== undefined && groups.size > 0
+            ? mutationTools(
+                {
+                  ...ctx,
+                  writer: params.mutations.writer,
+                  environment: params.mutations.environment,
+                  receipts: buildWriterAnswerConverters(r.converters)
+                },
+                groups
+              )
+            : [];
+        return succeed([_queryTool(ctx), _inspectTool(ctx), ...mutations]);
+      })
+    )
   );
 }

@@ -72,11 +72,14 @@ describe('task tools read through the bound view', () => {
       expect(resolved.commands).toContain('start');
       expect(resolved.details).toBeUndefined();
       expect(resolved.detailsOmitted).toBeUndefined();
+      // The revision the view read — what a mutation tool takes back as its expected revision.
+      expect(resolved.revision).toBe(1);
       expect(Object.keys(resolved).sort()).toEqual([
         'archived',
         'commands',
         'context',
         'presentation',
+        'revision',
         'state'
       ]);
     });
