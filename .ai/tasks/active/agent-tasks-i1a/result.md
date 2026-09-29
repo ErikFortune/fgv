@@ -273,6 +273,13 @@ the latter indexes its arm table with the raw discriminator (an inherited key su
 would be found). Matrix rows I1a-21 and I1a-23 … I1a-26 re-pointed at the converter fields; new rows
 I1a-27 … I1a-31.
 
+**Round 5 (on `9e081180`, the round-4 code) — no findings.** The review lists nothing open, marks
+round 4's thread resolved, and names nothing as previously missed. Every review thread on the PR is
+resolved. Its headline says "four moderate findings remain unresolved", but the review names none,
+and no unresolved thread exists to match it. No source changed, so the round-4 matrix and gates stand.
+
+**Loop stopped at 5 rounds on diminishing returns:** round 5 produced no findings.
+
 Layer 1 and Copilot round 1 found the same defect twice at different depths: layer 1 saw an
 *unbounded* message, fixed the bound, and left the *disclosure*. Worth carrying into I1b: a
 model-facing failure path is a disclosure surface, not a formatting one.

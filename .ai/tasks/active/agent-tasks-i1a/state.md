@@ -7,12 +7,12 @@ be enough to resume cold. Keep it current as you go.
 
 ## Status
 
-**PR open (#702); Copilot rounds 1–4 fixed; every gate green on `b145428f` (2026-09-29).** CI
+**PR open (#702); Copilot rounds 1–4 fixed, round 5 clean, loop stopped; every gate green on `b145428f` (2026-09-29).** CI
 green; package suite 2,068 passing at 100 % with zero `c8 ignore`; repo-wide rebuild and test exit 0;
 five verify scripts 0 failed; revert matrix on `b145428f`: 31 rows, 53 red tests, 0 UNVERIFIED or
 `0 red` (two mutants corrected — see `result.md`). Round 4 fixed the trusted-view-answer class at the
-root (`viewAnswers.ts`). Next: Copilot round 5. If a round changes source, re-run the matrix on the
-new head.
+root (`viewAnswers.ts`). The Copilot loop stopped at 5 rounds on diminishing returns (round 5: no
+findings). Waiting on review and merge.
 
 ## Branch
 
