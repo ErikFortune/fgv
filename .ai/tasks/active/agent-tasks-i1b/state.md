@@ -1,6 +1,6 @@
 # State — `agent-tasks-i1b`
 
-**Status:** PR #703 open; all local gates green; Copilot loop in progress (see result.md § Layer 2).
+**Status:** PR #703 open, CI green, all threads resolved. Copilot loop stopped at 2 rounds on diminishing returns (result.md § Layer 2). Waiting only on merge.
 
 ## Where things stand
 

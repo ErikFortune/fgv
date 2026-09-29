@@ -325,6 +325,12 @@ posting at 22:37.
 No source line a matrix row targets moved (the change is a string and a comment), so the round-1 matrix
 stands; `--check` confirms every I1 row's pattern.
 
+**Loop stopped at 2 rounds on diminishing returns.** Round 1 found a genuine high (an unclassified
+writer failure read as a refusal) and a medium in the same unknown-outcome class. Round 2 found no
+authorization or ordering defect at all — one finding was the accuracy of a model-facing sentence, the
+other a stale doc line — which is the signal `CODING_STANDARDS.md` names for stopping, on an
+authorization boundary as elsewhere. Every review thread is resolved.
+
 ## Routed beyond this slice
 
 - `docs/TECH_DEBT.md` **[P3]** integer ranges unstated on the wire — **the trigger fired here**
