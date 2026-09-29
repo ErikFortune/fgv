@@ -726,6 +726,24 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
 
   **Reference**: `agent-tasks-i1a`.
 
+- **[P3] Six storage rows of `ts-agent-tasks`' revert matrix no longer apply.**
+  `node libraries/ts-agent-tasks/perf/mutationMatrix.js --check` reports `M13`, `M20`, `M23`, `M34`,
+  `M49` (pattern found 0 times) and `M39` (found 3 times) as `UNVERIFIED`: later refactors of
+  `src/packlets/storage/` moved the lines they mutate. The script's own header says a moved line's row
+  is re-pointed, not deleted — these were not. Their protections are unmeasured by the matrix until
+  they are. Present at the I1a landing (`387969ed`), found by I1b's `--check`; I1b touches no storage
+  source, so it did not re-point them.
+
+  **Trigger**: the next stream that touches `src/packlets/storage/`, or any matrix run that selects
+  storage rows.
+
+  **Scope sketch**: for each row, find the protection's current line, re-point `from`/`to`, run the row
+  and confirm the tests it names go red (the I1a/I1b lesson: a row can be red for the wrong reason).
+
+  **Not a P4**: an UNVERIFIED row is a protection nobody is checking.
+
+  **Reference**: `agent-tasks-i1b` result.md § Revert matrix.
+
 - **[P3] Nothing enforces that I1c's generated command tool names avoid the fixed task tool names.**
   `createTaskTools` emits a fixed set — `task_query`, `task_inspect`, `task_create`, `task_update`,
   `task_reassign` — and a test pins them distinct. Generated command tools (I1c) will be named from
