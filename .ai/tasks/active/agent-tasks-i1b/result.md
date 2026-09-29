@@ -307,4 +307,20 @@ Coverage then reached 100 % with one added test (a minting failure with no logge
 
 ## Gates
 
-*(filled in from the final run)*
+Run locally. Package gates on `452be00d` (final source); repo-wide on `3959070d`, whose source differs
+only by one test line in `mutationBoundary.test.ts`.
+
+| gate | result |
+|---|---|
+| `rush change --verify --target-branch origin/integration/agent-tasks-v1` | change file found (`minor`) |
+| `rushx build` (package) | clean, **zero warnings**; `etc/ts-agent-tasks.api.md` updated and checked in |
+| `rushx lint` / `rushx fixlint` | clean; fixlint applied before each commit (via the pre-commit prettier hook and `eslint --fix`) |
+| `rushx test` (package) | **91 suites, 2,113 tests passed; 100 % statements, branches, functions, lines; zero `c8 ignore`** |
+| `rush rebuild` (repo-wide) | exit 0, no warnings (4 min 3 s) — required: `task_inspect`'s result widened |
+| `rush test` (repo-wide) | exit 0 (7 min 5 s) |
+| `verify-capability-docs.mjs` | router 21,531/24,000, 24/24 documented, 75 reflexes, 0 failed |
+| `generate-capability-feed.mjs --check` | 0 stale |
+| `verify-esm-entrypoints.mjs` | 24 checked, 0 failed |
+| `verify-bundler-resolution.mjs` | 20 checked, 0 failed (after `install-autoinstaller --name rush-bundler-check`) |
+| `verify-tarball-exports.mjs` | 26 packages, 205 paths, 0 failed (after `install-autoinstaller --name rush-pack-check`) |
+| revert matrix | 29 rows, 67 red tests, 0 UNVERIFIED, 0 `0 red` (above) |
