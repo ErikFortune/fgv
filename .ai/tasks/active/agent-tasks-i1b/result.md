@@ -150,9 +150,10 @@ lines; host text goes only to `logger`.
 | `not-found-or-denied: the task is not found or not visible, or this is not permitted on it` | missing task; hidden task; hidden or foreign parent on create; visible task whose action the policy denies; create denied; forged party denied | **nothing distinguishing**: the same line for all of them, with no id (tested: hidden vs foreign for update, reassign and create's parent; hidden child of a visible parent; denied-but-visible vs foreign) |
 | `conflict: the task changed, or does not accept this change now; inspect it again before deciding whether to retry` | stale `expectedRevision`; changed after authorization; archived tombstone; terminal parent; stop latch; repeated operation id | only reached **after** the subject is visible and the action authorized (`runCatalogMutation` steps 2–4; `createNative` checks `mayCreate` and the parent's `sees`/`may` first), so it describes a task the caller may act on |
 | `unsupported: the request is not supported` | unresolved subject; non-native kind for a tracked update | same ordering: a visible, authorized subject |
-| `commit-indeterminate: the outcome is not known: a change may or may not have been applied; inspect before retrying` | broker's own indeterminate commit, **or a writer receipt that fails conversion** | nothing about other tasks; tells the model a blind retry may duplicate |
-| `<tool>: the task writer failed; the change may or may not have been applied — inspect before retrying` | writer throws or rejects | as above |
-| `<tool>: the request failed` | the host environment fails, throws or mints a malformed id; an unclassified failure | nothing; the environment's text (a socket path in the test) goes to the log |
+| `commit-indeterminate: the outcome is not known: a change may or may not have been applied` + note | broker's own indeterminate commit, **or a writer receipt that fails conversion** | nothing about other tasks. The note is `; inspect the task before retrying` for a change, and for a creation `; if the task was created its id is <minted id>: inspect that id before creating it again` (Copilot round 1) |
+| `the task writer failed; the change may or may not have been applied` + note | writer throws or rejects | as above |
+| `the request failed; the change may or may not have been applied` + note | writer fails with no known code (Copilot round 1) | as above |
+| `<tool>: the request failed` | the host environment fails, throws or mints a malformed id — before anything is sent | nothing; the environment's text (a socket path in the test) goes to the log |
 | `storage-*`, `backpressure`, `retention-blocked`, … | the repository | fixed text only |
 
 The `not-found-or-denied` and `conflict` descriptions were reworded from I1a's read-only phrasing
@@ -289,7 +290,13 @@ Coverage then reached 100 % with one added test (a minting failure with no logge
 
 ### Layer 2 — Copilot
 
-*(in progress)*
+**Round 1 (on `fc789c9b`) — one high, one medium; both real, both fixed.** Both are the unknown-outcome
+class layer-1 P2-2 opened, found one level further.
+
+| finding | fix |
+|---|---|
+| **(high)** a writer failure with **no known code** reached the model as `the request failed`, a refusal — but a custom writer can commit and then return a bare `fail(...)`, and the next create mints fresh ids, so a retry could duplicate | failure wording is now per tool family (`IFailureWording`: `thrown`, `unclassified`, `unknownOutcome`). Reads keep I1a's text exactly. Mutations say the change may or may not have been applied for a throw, an unclassified failure, and `commit-indeterminate` (which a malformed receipt reports). A **classified** failure other than `commit-indeterminate` is the writer's own account of the outcome and gets no note. Tests pin all four update texts and both create texts. Matrix row I1b-23 |
+| **(medium)** "inspect before retrying" gave a create no way to inspect: the minted id was lost with the failure | an unknown-outcome creation now names the id the task has if it was created. **This discloses nothing about other tasks**: the id was minted by the host, not chosen by the model; `task_inspect` answers a task this principal cannot see exactly as a missing one; and a collision with a hidden task is refused (`not-found-or-denied`, a determinate code) before anything is committed, so it never reaches this path. Test: a writer that commits then throws — the named id inspects as `resolved`; a writer that throws before committing — the named id is refused with exactly the hidden-task text. Change tools need no id: a retry carries the revision it read, which an applied change has moved. Matrix row I1b-24 |
 
 ## Routed beyond this slice
 

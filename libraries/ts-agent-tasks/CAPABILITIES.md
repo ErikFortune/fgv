@@ -734,10 +734,14 @@ const tools = createTaskTools({
   model is told `{ taskId, revision, disposition }` only: never update ids (they say whether anyone
   else is subscribed), never the operation id, never the previous party (it comes from the
   unprojected envelope).
-- **An unknown outcome is said to be unknown.** A writer that throws, rejects or answers with a
-  malformed receipt may already have committed, and each call mints fresh ids, so a blind retry of a
-  creation could duplicate it: the model is told the change may or may not have been applied, and
-  to inspect before retrying.
+- **An unknown outcome is said to be unknown, with a way to find out.** A writer that throws,
+  rejects, fails without a known code, answers with a malformed receipt or reports
+  `commit-indeterminate` may already have committed, and each call mints fresh ids, so a blind retry
+  of a creation could duplicate it. The model is told the change may or may not have been applied —
+  and, for `task_create`, the id the task has if it was created, to inspect before creating it again.
+  Naming that id discloses nothing: it was minted, not chosen, and `task_inspect` answers a hidden
+  task exactly as a missing one. For an update or reassignment, inspecting is enough: a retry carries
+  the revision it read, which an applied change has moved.
 - **Refusals disclose nothing a read would not.** A hidden task, a hidden parent, a foreign id and a
   permitted-to-read-but-not-to-change task all produce the same `not-found-or-denied` line.
 

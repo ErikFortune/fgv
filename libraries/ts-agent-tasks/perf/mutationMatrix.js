@@ -1225,7 +1225,7 @@ const I1A_ROWS = [
   m(
     'I1a-10 what a view threw reaches the model',
     TL + 'toolSupport.ts',
-    '      return fail(`${tool}: ${failed}`);',
+    "      return fail(`${tool}: ${wording.thrown}${wording.unknownOutcome ?? ''}`);",
     '      return fail(`${tool}: ${message}`);',
     I1A
   ),
@@ -1497,9 +1497,9 @@ const I1B_ROWS = [
   ),
   m(
     "I1b-14 a writer's throw reads as a view failure, not an unknown outcome",
-    MT,
-    '      writerFailed\n    )',
-    "      'the task view failed'\n    )",
+    TL + 'toolSupport.ts',
+    "  thrown: 'the task writer failed; the change may or may not have been applied',",
+    "  thrown: 'the task view failed',",
     I1B
   ),
   m(
@@ -1543,6 +1543,20 @@ const I1B_ROWS = [
     MT,
     '.onSuccess((raw) => converter.convert(raw))',
     '.onSuccess((raw) => succeed(raw))',
+    I1B
+  ),
+  m(
+    "I1b-23 a mutation's unclassified failure reads as a refusal, not an unknown outcome",
+    TL + 'toolSupport.ts',
+    "  unclassified: 'the request failed; the change may or may not have been applied'",
+    "  unclassified: 'the request failed'",
+    I1B
+  ),
+  m(
+    'I1b-24 a creation whose outcome is unknown does not name the id it would have',
+    MT,
+    '    unknownOutcome: `; if the task was created its id is ${taskId}: inspect that id before creating it again`',
+    '    unknownOutcome: `; inspect before creating it again${taskId.slice(0, 0)}`',
     I1B
   ),
   m(

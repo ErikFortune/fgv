@@ -200,9 +200,12 @@ describe("a writer's answer is checked the way a view's answer is", () => {
         ['task_update', update],
         ['task_reassign', reassign]
       ] as const) {
-        // The change may have been committed, so the model is told the outcome is not known.
+        // The change may have been committed, so the model is told the outcome is not known — and,
+        // for a creation, the id the task would have.
         expect(await call(tools, name, args)).toFailWith(
-          `${name}: commit-indeterminate: the outcome is not known: a change may or may not have been applied; inspect before retrying`
+          name === 'task_create'
+            ? /^task_create: commit-indeterminate: the outcome is not known: a change may or may not have been applied; if the task was created its id is b-\d+: inspect that id before creating it again$/
+            : `${name}: commit-indeterminate: the outcome is not known: a change may or may not have been applied; inspect the task before retrying`
         );
       }
     }
@@ -260,16 +263,57 @@ describe("a writer's answer is checked the way a view's answer is", () => {
         }),
       () => fail(secret)
     ];
-    for (const answer of answers) {
-      const tools = over(() => answer());
-      const result = await call(tools, 'task_update', update);
-      expect(result).toFailWith(/^task_update: /);
-      expect(result).not.toFailWith(/hunter2/);
+    const updateTexts: ReadonlyArray<string> = [
+      'task_update: the task writer failed; the change may or may not have been applied; inspect the task before retrying',
+      'task_update: the task writer failed; the change may or may not have been applied; inspect the task before retrying',
+      // A classified failure is the writer's own account of the outcome, so no note is added.
+      'task_update: storage-unavailable: task storage is unavailable; retry later',
+      // No code at all: the writer may have committed before it failed.
+      'task_update: the request failed; the change may or may not have been applied; inspect the task before retrying'
+    ];
+    for (const [i, answer] of answers.entries()) {
+      expect(
+        await call(
+          over(() => answer()),
+          'task_update',
+          update
+        )
+      ).toFailWith(updateTexts[i]);
     }
     expect(await call(over(answers[0]), 'task_create', { title: 'x' })).toFailWith(
-      'task_create: the task writer failed; the change may or may not have been applied — inspect before retrying'
+      /^task_create: the task writer failed; the change may or may not have been applied; if the task was created its id is b-\d+: inspect that id before creating it again$/
     );
-    expect(logger.logged.filter((line) => line.includes('hunter2'))).toHaveLength(5);
+    expect(await call(over(answers[3]), 'task_create', { title: 'x' })).toFailWith(
+      /^task_create: the request failed; the change may or may not have been applied; if the task was created its id is b-\d+: inspect that id before creating it again$/
+    );
+    expect(logger.logged.filter((line) => line.includes('hunter2'))).toHaveLength(6);
+  });
+
+  test('a creation whose outcome is unknown names the id, and inspecting it says whether it happened', async () => {
+    const idIn = (result: Result<unknown>): string =>
+      /its id is ([^:]+):/.exec(result.isFailure() ? result.message : '')?.[1] ?? '';
+    // The writer commits, then throws: the task exists, and the id the model was given finds it.
+    const committed = over(async (__m, request) => {
+      (await h.writer.createTracked(request as never)).orThrow();
+      throw new Error('connection reset after commit');
+    });
+    const afterCommit = await call(committed, 'task_create', { title: 'x' });
+    expect(await call(committed, 'task_inspect', { taskId: idIn(afterCommit) })).toSucceedAndSatisfy(
+      (inspected: unknown) => {
+        expect(inspected).toEqual(expect.objectContaining({ state: 'resolved', revision: 1 }));
+      }
+    );
+    // The writer throws before committing: the id finds nothing, refused exactly like a hidden task.
+    await track(h.writer, 'hidden');
+    h.policy.hide('hidden');
+    const lost = over(() => {
+      throw new Error('connection refused');
+    });
+    const beforeCommit = await call(lost, 'task_create', { title: 'x' });
+    const notThere = await call(lost, 'task_inspect', { taskId: idIn(beforeCommit) });
+    const hidden = await call(lost, 'task_inspect', { taskId: 'hidden' });
+    expect(notThere).toFailWith(/^task_inspect: not-found-or-denied: /);
+    expect(notThere.isFailure() && notThere.message).toEqual(hidden.isFailure() && hidden.message);
   });
 
   test('the model is told the task, its revision and the disposition — never update ids or the operation id', async () => {

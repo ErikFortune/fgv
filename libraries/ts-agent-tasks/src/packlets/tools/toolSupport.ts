@@ -51,8 +51,7 @@ const modelFacingFailures: Readonly<Record<TaskFailureCode, string>> = {
   unsupported: 'the request is not supported',
   'storage-unavailable': 'task storage is unavailable; retry later',
   'storage-corrupt': 'task storage could not be read',
-  'commit-indeterminate':
-    'the outcome is not known: a change may or may not have been applied; inspect before retrying',
+  'commit-indeterminate': 'the outcome is not known: a change may or may not have been applied',
   'source-unavailable': 'a task source is unavailable; retry later',
   'source-gap': 'a task source could not be read completely',
   'unknown-kind-version': 'a task has a kind this host does not recognize',
@@ -89,10 +88,40 @@ export function hostFailure<T>(ctx: IToolContext, tool: string, message: string)
 }
 
 /**
+ * How a tool words the failures whose text is its own rather than a code's.
+ * @internal
+ */
+export interface IFailureWording {
+  /** What the model is told when the view or writer rejects or throws. */
+  readonly thrown: string;
+  /** What the model is told for a failure that carries no known code. */
+  readonly unclassified: string;
+  /**
+   * Appended to every failure whose outcome is unknown — a throw, an unclassified failure, or
+   * `commit-indeterminate` — so the model can find out what happened.
+   */
+  readonly unknownOutcome?: string;
+}
+
+/**
+ * The wording for a read: nothing a read does can have been applied.
+ * @internal
+ */
+export const viewWording: IFailureWording = {
+  thrown: 'the task view failed',
+  unclassified: 'the request failed'
+};
+
+/**
  * Reduces a task result to what the model is told. A failure becomes its code and a fixed
  * description; its message goes to the host's logger.
  */
-function _toolResult<T>(ctx: IToolContext, tool: string, result: TaskResult<T>): Result<T> {
+function _toolResult<T>(
+  ctx: IToolContext,
+  tool: string,
+  result: TaskResult<T>,
+  wording: IFailureWording
+): Result<T> {
   if (result.isSuccess()) {
     return succeed(result.value);
   }
@@ -102,8 +131,12 @@ function _toolResult<T>(ctx: IToolContext, tool: string, result: TaskResult<T>):
   const code: TaskFailureCode | undefined = ctx.renderer.converters.failures.failureCode
     .convert(result.detail?.code)
     .orDefault();
+  const note: string =
+    code === undefined || code === 'commit-indeterminate' ? wording.unknownOutcome ?? '' : '';
   return fail(
-    code !== undefined ? `${tool}: ${code}: ${modelFacingFailures[code]}` : `${tool}: the request failed`
+    (code !== undefined
+      ? `${tool}: ${code}: ${modelFacingFailures[code]}`
+      : `${tool}: ${wording.unclassified}`) + note
   );
 }
 
@@ -132,23 +165,20 @@ export function convertAnswer<T>(
 }
 
 /**
- * What the model is told when a view rejects or throws.
+ * The wording for a mutation: a writer that throws, rejects or fails without a known code may already
+ * have committed, and a mutation tool mints fresh ids on every call, so a blind retry of a creation
+ * could duplicate it.
  * @internal
  */
-export const viewFailed: string = 'the task view failed';
-
-/**
- * What the model is told when a writer rejects or throws: the change may already be committed, and
- * a mutation tool mints fresh ids on every call, so a blind retry of a creation could duplicate it.
- * @internal
- */
-export const writerFailed: string =
-  'the task writer failed; the change may or may not have been applied — inspect before retrying';
+export const writerWording: IFailureWording = {
+  thrown: 'the task writer failed; the change may or may not have been applied',
+  unclassified: 'the request failed; the change may or may not have been applied'
+};
 
 /**
  * Asks the view (or the writer, which is the same binding) and presents its answer. One that
- * rejects or throws — host code, whatever it implements — fails the call with the fixed `failed`
- * message; what it threw goes to the host's logger.
+ * rejects or throws — host code, whatever it implements — fails the call with `wording.thrown`;
+ * what it threw goes to the host's logger.
  * @internal
  */
 export async function askView<T, TOut>(
@@ -156,12 +186,12 @@ export async function askView<T, TOut>(
   tool: string,
   ask: () => Promise<TaskResult<T>>,
   present: (value: T) => TaskResult<TOut>,
-  failed: string = viewFailed
+  wording: IFailureWording = viewWording
 ): Promise<Result<TOut>> {
   return (await captureAsyncResult(async () => (await ask()).onSuccess(present)))
     .onFailure((message) => {
       ctx.logger?.error(`${tool}: the task view or writer threw: ${message}`);
-      return fail(`${tool}: ${failed}`);
+      return fail(`${tool}: ${wording.thrown}${wording.unknownOutcome ?? ''}`);
     })
-    .onSuccess((result) => _toolResult(ctx, tool, result));
+    .onSuccess((result) => _toolResult(ctx, tool, result, wording));
 }

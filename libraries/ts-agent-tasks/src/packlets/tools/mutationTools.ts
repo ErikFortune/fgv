@@ -29,12 +29,13 @@ import {
   taskUpdateSchema
 } from './schemas';
 import {
+  IFailureWording,
   IToolContext,
   argumentMessage,
   askView,
   convertAnswer,
   hostFailure,
-  writerFailed
+  writerWording
 } from './toolSupport';
 import { IWriterAnswerConverters } from './writerAnswers';
 
@@ -53,6 +54,30 @@ export interface IMutationToolContext extends IToolContext {
 interface IPlannedMutation<TRequest, TReceipt> {
   readonly request: TRequest;
   readonly receipt: Converter<TReceipt>;
+  /** How this call's failures are worded, including what to do when its outcome is unknown. */
+  readonly wording: IFailureWording;
+}
+
+/**
+ * The wording for a change to an existing task. Retrying it is safe once inspected: a retry carries
+ * the revision it read, which a change that was applied has moved.
+ */
+const changeWording: IFailureWording = {
+  ...writerWording,
+  unknownOutcome: '; inspect the task before retrying'
+};
+
+/**
+ * The wording for a creation. The new task's id was minted by the tool, not the model, so a retry
+ * cannot be recognized as one: the model is told the id it would have, to inspect it. That discloses
+ * nothing about other tasks — `task_inspect` answers a task this principal cannot see exactly as one
+ * that does not exist, and a collision with a hidden task is refused before anything is committed.
+ */
+function _creationWording(taskId: TaskId): IFailureWording {
+  return {
+    ...writerWording,
+    unknownOutcome: `; if the task was created its id is ${taskId}: inspect that id before creating it again`
+  };
 }
 
 const creationAnnotations: AiAssist.IAiToolAnnotations = {
@@ -117,14 +142,14 @@ async function _mutate<TRequest, TReceipt, TOut>(
   ask: (request: TRequest) => Promise<TaskResult<unknown>>,
   present: (receipt: TReceipt) => TaskResult<TOut>
 ): Promise<Result<TOut>> {
-  return planned.thenOnSuccess(({ request, receipt }) =>
+  return planned.thenOnSuccess(({ request, receipt, wording }) =>
     askView(
       ctx,
       tool,
       () => ask(request),
       (answer) =>
         convertAnswer(receipt, answer, "writer's receipt", 'commit-indeterminate').onSuccess(present),
-      writerFailed
+      wording
     )
   );
 }
@@ -144,7 +169,11 @@ function _createTool(ctx: IMutationToolContext): AiAssist.IAiClientTool {
             .convert({ ...args, taskId, operationId })
             .withErrorFormat((message) => argumentMessage(name, `invalid arguments: ${message}`))
             .onSuccess((request) =>
-              succeed({ request, receipt: ctx.receipts.mutation({ taskId, operationId }) })
+              succeed({
+                request,
+                receipt: ctx.receipts.mutation({ taskId, operationId }),
+                wording: _creationWording(taskId)
+              })
             )
         )
       );
@@ -199,7 +228,8 @@ function _updateTool(ctx: IMutationToolContext): AiAssist.IAiClientTool {
               taskId: request.taskId,
               operationId,
               expectedRevision: request.expectedRevision
-            })
+            }),
+            wording: changeWording
           })
         )
     );
@@ -252,7 +282,8 @@ function _reassignTool(ctx: IMutationToolContext): AiAssist.IAiClientTool {
                 args.responsibility === null
                   ? 'unassigned'
                   : { namespace: args.responsibility.namespace, key: args.responsibility.key }
-            })
+            }),
+            wording: changeWording
           })
         )
     );
