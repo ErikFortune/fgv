@@ -197,26 +197,25 @@ ai-assist's own `executeClientToolTurn` with the real provider descriptors:
 
 ## Revert matrix — run on final source
 
-**Final run** — `perf/mutationMatrix.js --pkg <git-archive copy> I1b-1 … I1b-22` plus the seven I1a rows
-this slice re-pointed (`I1a-8, 9, 10, 11, 19, 22, 31` — the failure path moved to `toolSupport.ts`),
-suites `tools/|publicSurface` (I1b) and I1a's own. **67 red tests across 29 rows; 0 UNVERIFIED, 0 `0 red`.**
+**Final run** — `perf/mutationMatrix.js --pkg <git-archive copy of e068ab15> I1b-1 … I1b-24` plus the
+seven I1a rows this slice re-pointed (`I1a-8, 9, 10, 11, 19, 22, 31` — the failure path moved to
+`toolSupport.ts`), after Copilot round 1 changed the shared failure path. **74 red tests across
+31 rows; 0 UNVERIFIED, 0 `0 red`.**
 
-- 28 rows ran on a copy of `3959070d`; **I1b-10 was re-run on a copy of `5f71d575`** (the final
-  source, `diff -r` identical to the working tree). The only difference between the two is one test
-  line — the fix I1b-10's first verdict forced (below) — so the other 28 rows' verdicts stand.
-- **I1b-10 first came back `0 red`, and the protection was real; the test was not.** Its mutant checks
-  the reassignment receipt against the request object handed to the writer instead of the tool's own
-  copy. The test's rewriting writer *replaced* `request.responsibility`, and the mutant had already
-  captured the old object's reference — so the mutant was invisible. A writer that edits the party
-  **in place** is exactly what the copy defends against; the test now does that, and the row turns
-  exactly that test red.
-- **A first attempt ran concurrently with the repo-wide rebuild** and reported `I1b-1…3` as
-  `did not build`: the rebuild had removed `ts-json-base`'s declarations mid-run. That run was
-  discarded whole (its I1a verdicts included) and everything re-run with nothing else building.
+- **Two earlier runs, both kept honest.** The first ran concurrently with the repo-wide rebuild and
+  reported `I1b-1…3` as `did not build` — the rebuild had removed `ts-json-base`'s declarations
+  mid-run. It was discarded whole. The second (29 rows on `3959070d`) found **I1b-10 at `0 red`**:
+  the protection was real, the test was not. The mutant checks the reassignment receipt against the
+  request object handed to the writer instead of the tool's own copy; the test's rewriting writer
+  *replaced* `request.responsibility`, and the mutant had already captured the old object — so it was
+  invisible. The test now rewrites the party **in place**, which is exactly what the copy defends
+  against, and the row turns that test red.
+- **I1b-23 and I1b-24** are Copilot round 1's protections (unclassified mutation failure reported as
+  unknown; an unknown creation names the id it would have).
 - Paired rows: **I1b-4** and **I1b-5**. A model-supplied operation id or new task id is refused by the
   closed schema *and* would be ignored anyway, because the tool builds the writer's request from named
-  fields and its own minted ids. Reverting either alone (I1b-1/2 revert the schema) is caught by the
-  surplus-field tests; the pair reverts both and shows the id would then be **honoured**.
+  fields and its own minted ids. Reverting the schema alone (I1b-1/2) is caught by the surplus-field
+  tests; the pair reverts both and shows the id would then be **honoured**.
 - Not in the matrix (structural, asserted by test rather than by a single guard line): building the
   tools touches neither the writer nor the environment; the tools reach only five binding members.
 - The storage rows `M13, M20, M23, M34, M39, M49` report `UNVERIFIED` under `--check` on this branch
@@ -227,9 +226,9 @@ suites `tools/|publicSurface` (I1b) and I1a's own. **67 red tests across 29 rows
 |---|---|---|
 | I1a-8 failure messages are not truncated | 2 red | failure messages are bounded › a message echoing a huge argument is cut to the bound<br>failure messages are bounded › the cut never splits a surrogate pair |
 | I1a-9 truncation may split a surrogate pair | 1 red | failure messages are bounded › the cut never splits a surrogate pair |
-| I1a-10 what a view threw reaches the model | 3 red | a failure tells the model a code, never host text › when the view rejects, the model is told only that it failed<br>a failure tells the model a code, never host text › when the view throws synchronously, the model is told only that it failed<br>a writer's answer is checked the way a view's answer is › a writer that throws, rejects or fails with host text tells the model only a code |
-| I1a-11 a view's rejection escapes the capture | 3 red | a failure tells the model a code, never host text › when the view rejects, the model is told only that it failed<br>a failure tells the model a code, never host text › when the view throws synchronously, the model is told only that it failed<br>a writer's answer is checked the way a view's answer is › a writer that throws, rejects or fails with host text tells the model only a code |
-| I1a-19 a classified failure's host message reaches the model | 18 red | a failing projector fails the call — it never yields more › the renderer's projection failing fails the call, with no partial page<br>a failing projector fails the call — it never yields more › the view's details projector failing fails the inspection<br>a failing projector fails the call — it never yields more › the view's envelope projector throwing or failing fails query and inspect<br>a failure tells the model a code, never host text › a classified failure is its code and a fixed description; its message goes to the host<br>a view is any IBoundTaskView: every field it returns to the model is checked › a page whose completeness or freshness is not a known value fails the call<br>a view is any IBoundTaskView: every field it returns to the model is checked › an inspection whose commands or archived flag are malformed fails the call<br>a view's whole answer is converted before anything reads it › a page holding more tasks than were asked for fails, rather than widening the bound<br>a view's whole answer is converted before anything reads it › an inspection whose state is neither resolved nor unresolved fails, never reads as resolved<br>a view's whole answer is converted before anything reads it › malformed issues, or a field a page does not have, fail the call<br>a writer's answer is checked the way a view's answer is › a receipt for another task, operation or revision, or with fields a receipt lacks, fails the call<br>a writer's answer is checked the way a view's answer is › a writer that throws, rejects or fails with host text tells the model only a code<br>ids the host mints › a minted task id that collides with a hidden task is refused like any unseen task<br>task_create › a creation the policy refuses is refused, and says no more than a missing task would<br>task_create › a hidden parent and a foreign parent are refused identically<br>task_update › a stale revision is refused, and the task is left as it is<br>task_update › an unresolved external task takes no update, and the refusal names no binding<br>task_update › an update the policy refuses on a visible task says no more than a missing task would<br>what a page carries besides the rendered text is checked, not trusted › a malformed cursor from the view fails the call rather than reaching the model |
+| I1a-10 what a view threw reaches the model | 4 red | a failure tells the model a code, never host text › when the view rejects, the model is told only that it failed<br>a failure tells the model a code, never host text › when the view throws synchronously, the model is told only that it failed<br>a writer's answer is checked the way a view's answer is › a creation whose outcome is unknown names the id, and inspecting it says whether it happened<br>a writer's answer is checked the way a view's answer is › a writer that throws, rejects or fails with host text tells the model only a code |
+| I1a-11 a view's rejection escapes the capture | 4 red | a failure tells the model a code, never host text › when the view rejects, the model is told only that it failed<br>a failure tells the model a code, never host text › when the view throws synchronously, the model is told only that it failed<br>a writer's answer is checked the way a view's answer is › a creation whose outcome is unknown names the id, and inspecting it says whether it happened<br>a writer's answer is checked the way a view's answer is › a writer that throws, rejects or fails with host text tells the model only a code |
+| I1a-19 a classified failure's host message reaches the model | 19 red | a failing projector fails the call — it never yields more › the renderer's projection failing fails the call, with no partial page<br>a failing projector fails the call — it never yields more › the view's details projector failing fails the inspection<br>a failing projector fails the call — it never yields more › the view's envelope projector throwing or failing fails query and inspect<br>a failure tells the model a code, never host text › a classified failure is its code and a fixed description; its message goes to the host<br>a view is any IBoundTaskView: every field it returns to the model is checked › a page whose completeness or freshness is not a known value fails the call<br>a view is any IBoundTaskView: every field it returns to the model is checked › an inspection whose commands or archived flag are malformed fails the call<br>a view's whole answer is converted before anything reads it › a page holding more tasks than were asked for fails, rather than widening the bound<br>a view's whole answer is converted before anything reads it › an inspection whose state is neither resolved nor unresolved fails, never reads as resolved<br>a view's whole answer is converted before anything reads it › malformed issues, or a field a page does not have, fail the call<br>a writer's answer is checked the way a view's answer is › a creation whose outcome is unknown names the id, and inspecting it says whether it happened<br>a writer's answer is checked the way a view's answer is › a receipt for another task, operation or revision, or with fields a receipt lacks, fails the call<br>a writer's answer is checked the way a view's answer is › a writer that throws, rejects or fails with host text tells the model only a code<br>ids the host mints › a minted task id that collides with a hidden task is refused like any unseen task<br>task_create › a creation the policy refuses is refused, and says no more than a missing task would<br>task_create › a hidden parent and a foreign parent are refused identically<br>task_update › a stale revision is refused, and the task is left as it is<br>task_update › an unresolved external task takes no update, and the refusal names no binding<br>task_update › an update the policy refuses on a visible task says no more than a missing task would<br>what a page carries besides the rendered text is checked, not trusted › a malformed cursor from the view fails the call rather than reaching the model |
 | I1a-22 a view's failure code is trusted | 1 red | a view is any IBoundTaskView: every field it returns to the model is checked › a failure code outside the known set is treated as no code at all |
 | I1a-31 an inspection is read without being converted | 2 red | a view is any IBoundTaskView: every field it returns to the model is checked › an inspection whose commands or archived flag are malformed fails the call<br>a view's whole answer is converted before anything reads it › an inspection whose state is neither resolved nor unresolved fails, never reads as resolved |
 | I1b-1 task_create execute trusts its arguments | 2 red | execute re-validates its arguments with no harness in front › a model cannot name the new task id, a scope, a stop policy or anything that grants authority<br>execute re-validates its arguments with no harness in front › a model-supplied operation id is refused, never honoured |
@@ -254,6 +253,8 @@ suites `tools/|publicSurface` (I1b) and I1a's own. **67 red tests across 29 rows
 | I1b-20 a minting throw escapes the tool | 1 red | ids the host mints › an environment that fails, throws or mints a malformed id fails the call, and names nothing |
 | I1b-21 a minted id is not converted | 1 red | ids the host mints › an environment that fails, throws or mints a malformed id fails the call, and names nothing |
 | I1b-22 task_inspect does not return the revision it read | 1 red | task_update › changes a task at the revision task_inspect returned, and returns the next revision |
+| I1b-23 a mutation's unclassified failure reads as a refusal, not an unknown outcome | 1 red | a writer's answer is checked the way a view's answer is › a writer that throws, rejects or fails with host text tells the model only a code |
+| I1b-24 a creation whose outcome is unknown does not name the id it would have | 3 red | a writer's answer is checked the way a view's answer is › a creation whose outcome is unknown names the id, and inspecting it says whether it happened<br>a writer's answer is checked the way a view's answer is › a receipt for another task, operation or revision, or with fields a receipt lacks, fails the call<br>a writer's answer is checked the way a view's answer is › a writer that throws, rejects or fails with host text tells the model only a code |
 
 ## Review
 
@@ -314,15 +315,17 @@ class layer-1 P2-2 opened, found one level further.
 
 ## Gates
 
-Run locally. Package gates on `452be00d` (final source); repo-wide on `3959070d`, whose source differs
-only by one test line in `mutationBoundary.test.ts`.
+Run locally. Package gates and the matrix on `e068ab15` (after Copilot round 1); repo-wide rebuild and
+test on `3959070d`. Round 1 changed only `tools/` wording and its tests — no type, signature or export
+moved (`etc/ts-agent-tasks.api.md` unchanged), and no other package consumes the tool messages — so the
+repo-wide gates stand; CI's `build` runs the whole repo on every head regardless.
 
 | gate | result |
 |---|---|
 | `rush change --verify --target-branch origin/integration/agent-tasks-v1` | change file found (`minor`) |
 | `rushx build` (package) | clean, **zero warnings**; `etc/ts-agent-tasks.api.md` updated and checked in |
 | `rushx lint` / `rushx fixlint` | clean; fixlint applied before each commit (via the pre-commit prettier hook and `eslint --fix`) |
-| `rushx test` (package) | **91 suites, 2,113 tests passed; 100 % statements, branches, functions, lines; zero `c8 ignore`** |
+| `rushx test` (package) | **91 suites, 2,114 tests passed; 100 % statements, branches, functions, lines; zero `c8 ignore`** |
 | `rush rebuild` (repo-wide) | exit 0, no warnings (4 min 3 s) — required: `task_inspect`'s result widened |
 | `rush test` (repo-wide) | exit 0 (7 min 5 s) |
 | `verify-capability-docs.mjs` | router 21,531/24,000, 24/24 documented, 75 reflexes, 0 failed |
@@ -330,4 +333,4 @@ only by one test line in `mutationBoundary.test.ts`.
 | `verify-esm-entrypoints.mjs` | 24 checked, 0 failed |
 | `verify-bundler-resolution.mjs` | 20 checked, 0 failed (after `install-autoinstaller --name rush-bundler-check`) |
 | `verify-tarball-exports.mjs` | 26 packages, 205 paths, 0 failed (after `install-autoinstaller --name rush-pack-check`) |
-| revert matrix | 29 rows, 67 red tests, 0 UNVERIFIED, 0 `0 red` (above) |
+| revert matrix | 31 rows, 74 red tests, 0 UNVERIFIED, 0 `0 red`, on `e068ab15` (above) |
