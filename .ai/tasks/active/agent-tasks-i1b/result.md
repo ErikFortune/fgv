@@ -313,6 +313,12 @@ class layer-1 P2-2 opened, found one level further.
 | **(high)** a writer failure with **no known code** reached the model as `the request failed`, a refusal — but a custom writer can commit and then return a bare `fail(...)`, and the next create mints fresh ids, so a retry could duplicate | failure wording is now per tool family (`IFailureWording`: `thrown`, `unclassified`, `unknownOutcome`). Reads keep I1a's text exactly. Mutations say the change may or may not have been applied for a throw, an unclassified failure, and `commit-indeterminate` (which a malformed receipt reports). A **classified** failure other than `commit-indeterminate` is the writer's own account of the outcome and gets no note. Tests pin all four update texts and both create texts. Matrix row I1b-23 |
 | **(medium)** "inspect before retrying" gave a create no way to inspect: the minted id was lost with the failure | an unknown-outcome creation now names the id the task has if it was created. **This discloses nothing about other tasks**: the id was minted by the host, not chosen by the model; `task_inspect` answers a task this principal cannot see exactly as a missing one; and a collision with a hidden task is refused (`not-found-or-denied`, a determinate code) before anything is committed, so it never reaches this path. Test: a writer that commits then throws — the named id inspects as `resolved`; a writer that throws before committing — the named id is refused with exactly the hidden-task text. Change tools need no id: a retry carries the revision it read, which an applied change has moved. Matrix row I1b-24 |
 
+**Round 2 — requested, not yet run.** Requested at 16:32, 16:48, 17:21 and 18:23 UTC on the round-1
+head and later heads; no Copilot review run appeared on the PR for any of the first three (I1a saw the
+same once: its first request did not register). CI is green and every review thread is resolved in the
+meantime. The loop is **not** stopped: round 1 found a genuine high on an authorization boundary, which
+per `CODING_STANDARDS.md` is not a point to call diminishing returns.
+
 ## Routed beyond this slice
 
 - `docs/TECH_DEBT.md` **[P3]** integer ranges unstated on the wire — **the trigger fired here**
