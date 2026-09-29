@@ -137,11 +137,11 @@ The evidence for I1's gate *"read-only use has no mutation dependency"*:
 
 ## Revert matrix — run on final source
 
-**Final run on final source** — `perf/mutationMatrix.js --pkg <copy of HEAD 1d95da46> I1a-1 … I1a-21`,
+**Final run on final source** — `perf/mutationMatrix.js --pkg <copy of HEAD 38217da7> I1a-1 … I1a-26`,
 2026-09-29, suites `tools/|publicSurface|context/|converters/contextConverters`, after Copilot
-round 2 changed the source. The copy was `git archive` of the head and `diff -r` identical to the
-working tree before and after. **36 red tests across 21 rows.** (I1a-8 turns 2 red here, not the
-4 it did before round 1: view failures no longer pass through the truncation path at all, so only the
+round 3 changed the source. The copy was `git archive` of the head and `diff -r` identical to the
+working tree before and after. **43 red tests across 26 rows.** (I1a-8 turns 2 red, not the 4 it
+did before round 1: view failures no longer pass through the truncation path, so only the
 argument-failure tests depend on it.)
 
 | row | verdict | suites that went red |
@@ -164,11 +164,16 @@ argument-failure tests depend on it.)
 | I1a-16 an inspected unresolved task with no room is reported complete | 1 red | an inspection is bounded › a task with no room at all is reported omitted, never returned raw |
 | I1a-17 a rendered unresolved diagnostic is not counted as shown | 1 red | task tools read through the bound view › an unresolved registration is shown as a diagnostic, and no source binding ever leaves |
 | I1a-18 the renderer requires a binding a bound view never emits | 4 red | TaskContextRenderer › rendered fields › an unresolved reference with no binding — as a bound view projects it — renders the same<br>an inspection is bounded › a task with no room at all is reported omitted, never returned raw<br>context converters › unresolved reference › as the renderer accepts it, the binding is optional and nothing else is<br>task tools read through the bound view › an unresolved registration is shown as a diagnostic, and no source binding ever leaves |
-| I1a-19 a classified failure's host message reaches the model | 5 red | a failing projector fails the call — it never yields more › the renderer's projection failing fails the call, with no partial page<br>a failing projector fails the call — it never yields more › the view's details projector failing fails the inspection<br>a failing projector fails the call — it never yields more › the view's envelope projector throwing or failing fails query and inspect<br>a failure tells the model a code, never host text › a classified failure is its code and a fixed description; its message goes to the host<br>what a page carries besides the rendered text is checked, not trusted › a malformed cursor from the view fails the call rather than reaching the model |
+| I1a-19 a classified failure's host message reaches the model | 7 red | a failing projector fails the call — it never yields more › the renderer's projection failing fails the call, with no partial page<br>a failing projector fails the call — it never yields more › the view's details projector failing fails the inspection<br>a failing projector fails the call — it never yields more › the view's envelope projector throwing or failing fails query and inspect<br>a failure tells the model a code, never host text › a classified failure is its code and a fixed description; its message goes to the host<br>a view is any IBoundTaskView: every field it returns to the model is checked › a page whose completeness or freshness is not a known value fails the call<br>a view is any IBoundTaskView: every field it returns to the model is checked › an inspection whose commands or archived flag are malformed fails the call<br>what a page carries besides the rendered text is checked, not trusted › a malformed cursor from the view fails the call rather than reaching the model |
 | I1a-20 a view's issue text reaches the model | 1 red | what a page carries besides the rendered text is checked, not trusted › a view's issue text reaches the host, and the model is told one fixed line |
 | I1a-21 a view's cursor reaches the model unchecked | 1 red | what a page carries besides the rendered text is checked, not trusted › a malformed cursor from the view fails the call rather than reaching the model |
+| I1a-22 a view's failure code is trusted | 1 red | a view is any IBoundTaskView: every field it returns to the model is checked › a failure code outside the known set is treated as no code at all |
+| I1a-23 a page's completeness is trusted | 1 red | a view is any IBoundTaskView: every field it returns to the model is checked › a page whose completeness or freshness is not a known value fails the call |
+| I1a-24 a page's freshness is trusted | 1 red | a view is any IBoundTaskView: every field it returns to the model is checked › a page whose completeness or freshness is not a known value fails the call |
+| I1a-25 an inspection's command names are trusted | 1 red | a view is any IBoundTaskView: every field it returns to the model is checked › an inspection whose commands or archived flag are malformed fails the call |
+| I1a-26 an inspection's archived flag is trusted | 1 red | a view is any IBoundTaskView: every field it returns to the model is checked › an inspection whose commands or archived flag are malformed fails the call |
 
-**21 rows, 0 UNVERIFIED, 0 `0 red`.** One row needed correcting first, in the preliminary run (on pre-format source): I1a-18 first came back `0 red`: its mutant
+**26 rows, 0 UNVERIFIED, 0 `0 red`.** One row needed correcting first, in the preliminary run (on pre-format source): I1a-18 first came back `0 red`: its mutant
 (`.optional().withConstraint(b => b !== undefined)`) was a no-op, because `strictObject` never calls
 an absent optional field's converter. The protection was guarded; the mutant was not a mutant.
 Dropping `.optional()` turns 4 tests red. No row needed `paired(...)`: the one defence-in-depth pair
@@ -253,7 +258,7 @@ model-facing failure path is a disclosure surface, not a formatting one.
 
 ## Gates
 
-Run locally on `1d95da46` — the source after Copilot round 2.
+Run locally on `38217da7` — the source after Copilot round 3.
 
 | gate | result |
 |---|---|
@@ -261,11 +266,11 @@ Run locally on `1d95da46` — the source after Copilot round 2.
 | `rushx build` (package) | clean, **zero warnings**; `etc/ts-agent-tasks.api.md` updated and checked in |
 | `rushx lint` / `rushx fixlint` | clean; fixlint a no-op before commit |
 | `rushx test` (package) | **2,065 passed; 100 % statements, branches, functions, lines; zero `c8 ignore`** |
-| `rush rebuild` (repo-wide) | exit 0 (4 min 6 s) — required: the build graph gained an edge |
-| `rush test` (repo-wide) | exit 0 (8 min 20 s) — required: the renderer accepts a wider set |
+| `rush rebuild` (repo-wide) | exit 0 (4 min 8 s) — required: the build graph gained an edge |
+| `rush test` (repo-wide) | exit 0 (8 min 15 s) — required: the renderer accepts a wider set |
 | `verify-capability-docs.mjs` | router 21,338/24,000, 24/24 documented, 75 reflexes, 0 failed |
 | `generate-capability-feed.mjs --check` | 0 stale |
 | `verify-esm-entrypoints.mjs` | 24 checked, 0 failed |
 | `verify-bundler-resolution.mjs` | 20 checked, 0 failed |
 | `verify-tarball-exports.mjs` | 26 packages, 205 paths, 0 failed |
-| CI `build` on `1d95da46` | success |
+| CI `build` on `38217da7` | success |
