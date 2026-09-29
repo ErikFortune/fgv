@@ -5,7 +5,8 @@
 
 import { JsonValue } from '@fgv/ts-json-base';
 import { ITaskContextBudget, TaskContextPresentation, defaultTaskContextBudget } from './context';
-import { PageCursor, TaskId } from './ids';
+import { PageCursor, TaskId, TaskRevision } from './ids';
+import { TaskMutationDisposition } from './broker';
 
 /**
  * Bounds on what one task tool call returns to a model.
@@ -61,6 +62,9 @@ export interface ITaskQueryToolResult {
  * What `task_inspect` returns to the model for a resolved task.
  *
  * @remarks
+ * `revision` is the revision the view read. A mutation tool takes it back as `expectedRevision`,
+ * and the writer refuses the change if the task has moved since: a stale inspection is the model's
+ * to refresh, never overwritten by the tool.
  * `commands` are those the view reports available for this call. `details` appears only when the
  * view's projector exposes details and their JSON fits the budget; when it does not fit,
  * `detailsOmitted` says so and no part of them is returned. The details budget is independent of
@@ -73,6 +77,7 @@ export interface ITaskInspectResolvedToolResult {
   readonly state: 'resolved';
   readonly context: string;
   readonly presentation: TaskToolPresentation;
+  readonly revision: TaskRevision;
   readonly archived: boolean;
   readonly commands: ReadonlyArray<string>;
   readonly details?: JsonValue;
@@ -94,3 +99,39 @@ export interface ITaskInspectUnresolvedToolResult {
  * @public
  */
 export type TaskInspectToolResult = ITaskInspectResolvedToolResult | ITaskInspectUnresolvedToolResult;
+
+/**
+ * A group of mutation tools a host can opt into.
+ *
+ * @remarks
+ * - `tracked` — `task_create` (a tracked task, optionally under a parent and with a responsible
+ *   party) and `task_update` (a tracked task's title, description and progress).
+ * - `reassign` — `task_reassign` (a task's responsible party).
+ *
+ * Opting in makes a tool available; it authorizes nothing. Every call is authorized by the bound
+ * writer's policy when it runs.
+ * @public
+ */
+export type TaskMutationToolGroup = 'tracked' | 'reassign';
+
+/**
+ * Every {@link TaskMutationToolGroup}.
+ * @public
+ */
+export const allTaskMutationToolGroups: ReadonlyArray<TaskMutationToolGroup> = ['tracked', 'reassign'];
+
+/**
+ * What `task_create`, `task_update` and `task_reassign` return to the model.
+ *
+ * @remarks
+ * The task's id, its revision after the call, and whether the call changed it. `revision` is what a
+ * further mutation passes as `expectedRevision`. The writer's operation id and update ids are not
+ * returned: the model never supplies an operation id, and which updates were retained says whether
+ * anyone else is subscribed to the task.
+ * @public
+ */
+export interface ITaskMutationToolResult {
+  readonly taskId: TaskId;
+  readonly revision: TaskRevision;
+  readonly disposition: TaskMutationDisposition;
+}

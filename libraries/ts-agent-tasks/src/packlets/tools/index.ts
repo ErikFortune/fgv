@@ -3,4 +3,4 @@
  * SPDX-License-Identifier: MIT
  */
 
-export { ICreateTaskToolsParams, createTaskTools } from './taskTools';
+export { ICreateTaskToolsParams, ITaskMutationToolOptions, createTaskTools } from './taskTools';

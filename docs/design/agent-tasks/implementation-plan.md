@@ -254,7 +254,10 @@ A3: preflight/reserve root and per-target settlement, required audiences and per
 
 ### I1 — ai-assist tool factory — split into four slices (orchestrator decision, 2026-09-28)
 
-**I1a — ✅ implemented on `integration/agent-tasks-v1` ([#702](https://github.com/ErikFortune/fgv/pull/702)).** I1b, I1c, I1d not started.
+**I1a — ✅ implemented on `integration/agent-tasks-v1` ([#702](https://github.com/ErikFortune/fgv/pull/702)).**
+**I1b — ✅ implemented on `integration/agent-tasks-v1` ([#703](https://github.com/ErikFortune/fgv/pull/703)):** opt-in
+`task_create` / `task_update` / `task_reassign`; `task_inspect` returns the revision a change passes
+back as `expectedRevision`. I1c, I1d not started.
 
 **The split.** T7 and T9 each landed at 65+ files and +11,000 lines, and in both the review loop was
 still doing structural work at round 6+. I1 is decomposed up front rather than mid-loop. Each slice

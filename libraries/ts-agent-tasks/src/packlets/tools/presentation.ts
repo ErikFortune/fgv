@@ -95,6 +95,7 @@ export function presentInspection(
         state: 'resolved',
         context: context.text,
         presentation: _presentations(context).get(inspection.envelope.id) ?? 'omitted',
+        revision: inspection.envelope.revision,
         archived: inspection.archived,
         commands: inspection.commands,
         ...(details === undefined

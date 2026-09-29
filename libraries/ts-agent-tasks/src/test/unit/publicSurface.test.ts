@@ -23,13 +23,18 @@ describe('public surface', () => {
     expect(names.filter((n) => /^fs|filesystem/i.test(n))).toEqual([]);
   });
 
-  test('exports one model-tool factory (I1a), whose tools only read', () => {
+  test('exports one model-tool factory, whose tools only read unless mutations are opted into', () => {
     const names: ReadonlyArray<string> = Object.keys(TaskLib);
-    expect(names.filter((n) => /tool/i.test(n)).sort()).toEqual(['createTaskTools', 'defaultTaskToolBudget']);
+    expect(names.filter((n) => /tool/i.test(n)).sort()).toEqual([
+      'allTaskMutationToolGroups',
+      'createTaskTools',
+      'defaultTaskToolBudget'
+    ]);
     const view = {} as TaskLib.IBoundTaskView;
     const tools = TaskLib.createTaskTools({ view }).orThrow();
     expect(tools.map((t) => t.config.name)).toEqual(['task_query', 'task_inspect']);
-    // No acknowledgement, mutation or stop tool: receipts are the host's, and I1b–d add the rest.
+    // No acknowledgement, mutation or stop tool by default: receipts are the host's, mutations are
+    // I1b's opt-in, and I1c–d add the rest.
     expect(tools.every((t) => t.config.annotations?.readOnlyHint === true)).toBe(true);
   });
 

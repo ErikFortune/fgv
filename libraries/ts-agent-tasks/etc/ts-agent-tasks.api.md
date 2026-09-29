@@ -45,6 +45,9 @@ export const allTaskFailureCodes: ReadonlyArray<TaskFailureCode>;
 export const allTaskLifecycleClasses: ReadonlyArray<TaskLifecycleClass>;
 
 // @public
+export const allTaskMutationToolGroups: ReadonlyArray<TaskMutationToolGroup>;
+
+// @public
 export const allTaskStatuses: ReadonlyArray<TaskLifecycleStatus>;
 
 // @public
@@ -682,6 +685,7 @@ export interface ICreateTaskList extends ICreateTrackedTask {
 export interface ICreateTaskToolsParams {
     readonly budget?: ITaskToolBudget;
     readonly logger?: Logging.ILogger;
+    readonly mutations?: ITaskMutationToolOptions;
     readonly renderer?: TaskContextRenderer;
     readonly view: IBoundTaskView;
 }
@@ -2007,6 +2011,8 @@ export interface ITaskInspectResolvedToolResult {
     // (undocumented)
     readonly presentation: TaskToolPresentation;
     // (undocumented)
+    readonly revision: TaskRevision;
+    // (undocumented)
     readonly state: 'resolved';
 }
 
@@ -2096,6 +2102,23 @@ export interface ITaskMutationResult {
     readonly taskId: TaskId;
     // (undocumented)
     readonly updateIds: ReadonlyArray<UpdateId>;
+}
+
+// @public
+export interface ITaskMutationToolOptions {
+    readonly enable: ReadonlyArray<TaskMutationToolGroup>;
+    readonly environment: Pick<ITaskEnvironment, 'newTaskId' | 'newOperationId'>;
+    readonly writer: IBoundTaskWriter;
+}
+
+// @public
+export interface ITaskMutationToolResult {
+    // (undocumented)
+    readonly disposition: TaskMutationDisposition;
+    // (undocumented)
+    readonly revision: TaskRevision;
+    // (undocumented)
+    readonly taskId: TaskId;
 }
 
 // @public
@@ -3113,6 +3136,9 @@ export const taskListKind: TaskKind;
 
 // @public
 export type TaskMutationDisposition = 'changed' | 'unchanged';
+
+// @public
+export type TaskMutationToolGroup = 'tracked' | 'reassign';
 
 // @public
 export type TaskRecoveryIssueCode = 'manifest-missing' | 'manifest-invalid' | 'unreadable' | 'unknown-format-version' | 'record-invalid' | 'record-missing' | 'record-id-mismatch' | 'integrity' | 'unknown-kind' | 'unexpected-record' | 'pending-registration';

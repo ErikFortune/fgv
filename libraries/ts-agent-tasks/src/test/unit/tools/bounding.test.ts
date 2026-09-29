@@ -421,7 +421,7 @@ describe('what a page carries besides the rendered text is checked, not trusted'
     const bogus = `../${'c'.repeat(5000)}` as PageCursor;
     const tools = taskTools({ view: pageView({ ...empty, nextCursor: bogus }), logger });
     expect(await query(tools, {})).toFailWith(REFUSED_QUERY);
-    expect(logger.logged.some((line) => /malformed page: .*cursor/i.test(line))).toBe(true);
+    expect(logger.logged.some((line) => /malformed view's page: .*cursor/i.test(line))).toBe(true);
   });
 });
 

@@ -31,10 +31,11 @@ acknowledgement or an authorized, recorded disposition, pruning and archive deci
 checkpoints, and every incomplete operation is reportable — and **cascade stop**
 (`requestStop`, `reconcileStop`, `releaseStop`): a persisted pause or cancel of a task and its whole
 authoritative subtree, a frozen subtree while it latches, and an honest partial result — and
-**read-only model tools** (`createTaskTools`): `task_query` and `task_inspect` as ai-assist client
-tools over a principal-bound view, with bounded output by default. Mutation, command and stop tools
-and prompt integration follow in later slices, and are deliberately absent from the export surface
-rather than stubbed.
+**model tools** (`createTaskTools`): `task_query` and `task_inspect` as ai-assist client tools over a
+principal-bound view, with bounded output by default, and — only when the host opts in —
+`task_create`, `task_update` and `task_reassign` over the same binding's writer. Command and stop
+tools and prompt integration follow in later slices, and are deliberately absent from the export
+surface rather than stubbed.
 
 ## Storing tasks durably — `FileTreeTaskRepository`
 
@@ -651,12 +652,13 @@ out-of-band file deletion is corruption, not maintenance, and open will report i
 
 ## Model tools — `createTaskTools`
 
-**Two read-only `AiAssist.IAiClientTool`s over one principal-bound view**, ready to hand to
+**Two read-only `AiAssist.IAiClientTool`s over one principal-bound view** by default, ready to hand to
 `AiAssist.executeClientToolTurn`: `task_query` (a page of the tasks the view may read, narrowed by
 responsible party, parent, lifecycle class or status) and `task_inspect` (one task, its currently
 available commands, and its details when the host exposes them). The factory takes an
-`IBoundTaskView` — never a writer, never the broker — and the tools call only its `query` and
-`inspect`.
+`IBoundTaskView` — never the broker. Without `mutations` the tools call only its `query` and
+`inspect`; a bound writer can be passed as the view (it is one), and must be, to opt mutations in
+(below).
 
 ```ts
 const view = broker.bindView({ principal: 'agent:ada', scopes, authorization }).orThrow();
@@ -696,8 +698,60 @@ const turn = AiAssist.executeClientToolTurn({ descriptor, apiKey, messages, clie
   defaults: its converters also validate the model's arguments, and a task the view returns must
   never be refused by the renderer.
 
-**Not here:** tools that mutate (tracked updates, reassignment), typed command tools and stop tools
-(later slices), and any acknowledgement tool — receipts are the host's, never the model's.
+### Mutation tools — opt-in, and opting in authorizes nothing
+
+Without `mutations` the factory builds exactly `task_query` and `task_inspect`. With it, the host
+opts groups in over the **same** binding it reads through:
+
+```ts
+const writer = broker.bind({ principal: 'agent:ada', scopes, authorization }).orThrow();
+const tools = createTaskTools({
+  view: writer, // a writer is a view
+  mutations: { writer, environment, enable: ['tracked', 'reassign'] } // environment: the host's TaskEnvironment
+}).orThrow(); // task_query, task_inspect, task_create, task_update, task_reassign
+```
+
+| group | tool | writer method | the model supplies |
+|---|---|---|---|
+| `tracked` | `task_create` | `createTracked` | title; optional description, parent id, responsible party |
+| `tracked` | `task_update` | `updateTracked` | task id, `expectedRevision`; title, description, progress, `clear` |
+| `reassign` | `task_reassign` | `reassign` | task id, `expectedRevision`; a party, or `null` to unassign |
+
+- **`writer` must be the very object passed as `view`** (checked at build time): the revision the
+  model reads is the revision the writer checks, under one principal, scope set and policy.
+- **Opting in authorizes nothing.** Building the tools touches neither the writer nor the
+  environment. Every call is authorized by the writer's policy when it runs — including which
+  responsible party a model may name (`targetResponsibility`), which is the policy's to decide.
+- **The revision is the model's to read.** `task_inspect` returns the `revision` it read; a change
+  passes it back as `expectedRevision`, and the writer refuses it (`conflict`) if the task has moved
+  since. The tool never reads a revision on the model's behalf — that would turn the precondition
+  into last-write-wins.
+- **The model never names an id it could misuse.** Every call's `operationId` and a new task's id are
+  minted through `environment`, so a model can neither occupy a key a host pump would mint nor probe
+  a hidden task by colliding with its id. Schemas are closed: a model-supplied `operationId`,
+  `taskId` (on create), scope, stop policy, lifecycle, attention reference or source binding fails.
+- **A writer's receipt is checked like a view's answer**: strictly converted, for the task,
+  operation and revision asked about, and — for a reassignment — naming the party asked for. The
+  model is told `{ taskId, revision, disposition }` only: never update ids (they say whether anyone
+  else is subscribed), never the operation id, never the previous party (it comes from the
+  unprojected envelope).
+- **An unknown outcome is said to be unknown, with a way to find out.** A writer that throws,
+  rejects, fails without a known code, answers with a malformed receipt or reports
+  `commit-indeterminate` may already have committed, and each call mints fresh ids, so a blind retry
+  of a creation could duplicate it. The model is told the change may or may not have been applied —
+  and, for `task_create`, the id the task has if it was created, to inspect before creating it again.
+  Naming that id discloses nothing: it was minted, not chosen, and `task_inspect` answers a hidden
+  task exactly as a missing one. For an update or reassignment a retry is safe either way: it carries
+  the same `expectedRevision`, so it is refused if the change moved the task, and changes nothing if
+  the change was a no-op (committed `unchanged`, revision unmoved).
+- **Refusals disclose nothing a read would not.** A hidden task, a hidden parent, a foreign id and a
+  permitted-to-read-but-not-to-change task all produce the same `not-found-or-denied` line.
+
+**Not here:** `createTaskList`, scope changes, reparenting, list completion, archive, command
+execution (I1c's typed command tools), stop tools (I1d), external registration or source binding,
+and any acknowledgement tool — receipts are the host's, never the model's. Fixed tool names are
+`task_query`, `task_inspect`, `task_create`, `task_update`, `task_reassign`; generated command tools
+must not reuse them.
 
 ## Rendering task context without a broker
 

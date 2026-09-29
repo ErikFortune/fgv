@@ -8,6 +8,7 @@ import { Result } from '@fgv/ts-utils';
 import {
   IBoundTaskView,
   IBoundTaskViewParams,
+  IBoundTaskWriter,
   ICreateTaskToolsParams,
   ITaskQueryToolResult,
   TaskInspectToolResult,
@@ -76,4 +77,46 @@ export function shownIds(context: string): string[] {
       const record = JSON.parse(line) as { task?: string; unresolved?: string };
       return record.task ?? record.unresolved ?? '';
     });
+}
+
+/** Every tool the factory built, by name, failing loudly on a missing one. */
+export interface IToolSet {
+  readonly names: ReadonlyArray<string>;
+  get(name: string): AiAssist.IAiClientTool;
+}
+
+/** Builds the tools and indexes them by name. */
+export function toolSet(params: ICreateTaskToolsParams): IToolSet {
+  const tools = createTaskTools(params).orThrow();
+  return {
+    names: tools.map((t) => t.config.name),
+    get: (name: string): AiAssist.IAiClientTool => {
+      const tool = tools.find((t) => t.config.name === name);
+      if (tool === undefined) {
+        throw new Error(`no tool named ${name}`);
+      }
+      return tool;
+    }
+  };
+}
+
+/**
+ * The tools over a writer with every mutation group opted in — the writer is both the view and the
+ * writer, as the factory requires.
+ */
+export function mutatingTools(
+  harness: IBrokerHarness,
+  writer: IBoundTaskWriter = harness.writer,
+  extra?: Partial<ICreateTaskToolsParams>
+): IToolSet {
+  return toolSet({
+    view: writer,
+    mutations: { writer, environment: harness.env, enable: ['tracked', 'reassign'] },
+    ...extra
+  });
+}
+
+/** Runs one named tool directly — no harness in front — and types its success value. */
+export async function call<T>(tools: IToolSet, name: string, args: unknown): Promise<Result<T>> {
+  return (await tools.get(name).execute(args)) as Result<T>;
 }

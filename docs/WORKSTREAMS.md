@@ -128,6 +128,36 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
+### `agent-tasks-i1b` ✅ (shipped 2026-09-29 via [#703](https://github.com/ErikFortune/fgv/pull/703)) — slice I1b of four: mutation opt-ins, disabled by default
+
+**Status:** ✅ shipped into `integration/agent-tasks-v1` (not `release`; the cluster promotes as one).
+Branched at `96ebc0d1d` (the I1a landing). Artifacts in `.ai/tasks/active/agent-tasks-i1b/`; this
+family finalizes at cluster close.
+
+**What shipped.** `createTaskTools({ …, mutations?: { writer, environment, enable } })`. Without
+`mutations` the tools are exactly `task_query` and `task_inspect` (asserted by name in the factory
+test and in the captured outbound request). `enable: ['tracked']` adds `task_create` /
+`task_update` (`createTracked` / `updateTracked`); `['reassign']` adds `task_reassign`. `writer` must
+be the very object passed as `view`. Opting in authorizes nothing: build touches neither writer nor
+environment, and every call is authorized by the writer's policy when it runs.
+
+**The revision decision: widen the read surface.** `task_inspect` returns the `revision` it read and
+a change passes it back as `expectedRevision`; the writer's own precondition refuses a stale one.
+Rejected: the tool reading the revision itself (last-write-wins across the tool's read-write window,
+with nothing to detect a concurrent host change) and refusing the surface (the precondition already
+exists end to end; only the read surface lacked a field).
+
+**Evidence.** The tool mints every `operationId` **and a new task's id** (a model-chosen id colliding
+with a hidden task would disclose it); closed schemas refuse either from the model. A writer's receipt
+is strictly converted and must match the task, operation and revision asked about; the model sees
+`{ taskId, revision, disposition }` only — no update ids, no previous party (layer-1 P2: it came from
+the unprojected envelope). Unknown outcomes are reported as unknown. Outbound capture for
+Anthropic, OpenAI and Gemini with mutations on and off; revert-matrix rows `I1b-1`…`I1b-22`, with
+I1a's moved rows re-pointed and re-run. Routed: integer ranges on the wire (re-armed for I1c) and
+the generated-tool name namespace (I1c), both in `docs/TECH_DEBT.md`.
+
+**Artifact pointer:** `.ai/tasks/active/agent-tasks-i1b/`.
+
 ### `agent-tasks-i1a` ✅ (shipped 2026-09-28 via [#702](https://github.com/ErikFortune/fgv/pull/702)) — slice I1a of four: the tool factory and the read-only surface
 
 **Status:** ✅ shipped into `integration/agent-tasks-v1` (not `release`; the cluster promotes as one).

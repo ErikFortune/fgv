@@ -18,7 +18,7 @@ import '@fgv/ts-utils-jest';
 import { AiAssist } from '@fgv/ts-extras';
 import { JsonObject } from '@fgv/ts-json-base';
 import { IBrokerHarness, brokerHarness, track } from '../../helpers/brokerFixtures';
-import { ITaskToolPair, bindReader, shownIds, taskTools } from '../../helpers/toolFixtures';
+import { ITaskToolPair, bindReader, mutatingTools, shownIds, taskTools } from '../../helpers/toolFixtures';
 
 type Body = Record<string, unknown>;
 
@@ -242,5 +242,115 @@ describe('the task tools reach the outbound request', () => {
     // Refused by the harness's own validation against the tool's schema, naming the surplus field.
     expect(message).toMatch(/principal/);
     expect(message).not.toContain('task-context');
+  });
+});
+
+describe('mutation tools reach the outbound request only when opted into', () => {
+  let h: IBrokerHarness;
+
+  beforeEach(async () => {
+    h = await brokerHarness();
+    await track(h.writer, 't1');
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  const mutating = ['task_query', 'task_inspect', 'task_create', 'task_update', 'task_reassign'];
+
+  test('disabled: a writer passed as the view still offers exactly the two read tools', async () => {
+    const tools = taskTools({ view: h.writer });
+    const bodies = captureRequests([anthropicStop, responsesDone]);
+    await runTurn('anthropic', [tools.query, tools.inspect]);
+    await runTurn('openai', [tools.query, tools.inspect]);
+    expect(toolsOf(bodies[0]).map((t) => t.name)).toEqual(['task_query', 'task_inspect']);
+    expect(toolsOf(bodies[1]).map((t) => t.name)).toEqual(['task_query', 'task_inspect']);
+  });
+
+  test('enabled — Anthropic: all five are in the request, each with its exact wire schema', async () => {
+    const tools = mutatingTools(h);
+    const bodies = captureRequests([anthropicStop]);
+    await runTurn(
+      'anthropic',
+      mutating.map((name) => tools.get(name))
+    );
+    expect(toolsOf(bodies[0])).toEqual(
+      mutating.map((name) => ({
+        name,
+        description: tools.get(name).config.description,
+        input_schema: tools.get(name).config.parametersSchema.toJson()
+      }))
+    );
+  });
+
+  test('enabled — OpenAI Responses: all five are function tools with their exact wire schemas', async () => {
+    const tools = mutatingTools(h);
+    const bodies = captureRequests([responsesDone]);
+    await runTurn(
+      'openai',
+      mutating.map((name) => tools.get(name))
+    );
+    expect(toolsOf(bodies[0]).filter((t) => t.type === 'function')).toEqual(
+      mutating.map((name) => ({
+        type: 'function',
+        name,
+        description: tools.get(name).config.description,
+        parameters: tools.get(name).config.parametersSchema.toJson()
+      }))
+    );
+  });
+
+  test('enabled — Gemini: all five are function declarations', async () => {
+    const tools = mutatingTools(h);
+    const bodies = captureRequests([geminiDone]);
+    await runTurn(
+      'google-gemini',
+      mutating.map((name) => tools.get(name))
+    );
+    const declarations = toolsOf(bodies[0]).flatMap((t) => (t.function_declarations ?? []) as JsonObject[]);
+    expect(declarations.map((d) => d.name)).toEqual(mutating);
+  });
+
+  test('round trip: an update at the inspected revision runs through the writer', async () => {
+    const tools = mutatingTools(h);
+    captureRequests([
+      anthropicCalls('toolu_1', 'task_update', { taskId: 't1', expectedRevision: 1, title: 'renamed' }),
+      anthropicStop
+    ]);
+    const { events } = await runTurn(
+      'anthropic',
+      mutating.map((name) => tools.get(name))
+    );
+    const result = events.find((e) => e.type === 'client-tool-result');
+    expect(result).toEqual(expect.objectContaining({ toolName: 'task_update', isError: false }));
+    expect(JSON.parse((result as AiAssist.IAiStreamToolUseComplete).result)).toEqual({
+      taskId: 't1',
+      revision: 2,
+      disposition: 'changed'
+    });
+  });
+
+  test('round trip: a call naming its own operation id is refused before it runs', async () => {
+    const tools = mutatingTools(h);
+    captureRequests([
+      anthropicCalls('toolu_1', 'task_update', {
+        taskId: 't1',
+        expectedRevision: 1,
+        title: 'renamed',
+        operationId: 'complete-list-r1'
+      }),
+      anthropicStop
+    ]);
+    const { events } = await runTurn(
+      'anthropic',
+      mutating.map((name) => tools.get(name))
+    );
+    const result = events.find((e) => e.type === 'client-tool-result');
+    expect(result).toEqual(expect.objectContaining({ toolName: 'task_update', isError: true }));
+    expect((result as AiAssist.IAiStreamToolUseComplete).result).toMatch(/operationId/);
+    expect((await h.writer.inspect('t1' as never)).orThrow()).toEqual(
+      expect.objectContaining({ envelope: expect.objectContaining({ revision: 1 }) })
+    );
   });
 });
