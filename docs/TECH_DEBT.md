@@ -717,6 +717,11 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
   converters but unstated on the wire. I1b's package surface is `ts-agent-tasks` only, and the fix is
   a `ts-json-base` extension. **Re-armed for I1c**, whose generated command tools must encode the
   registry's parameter types — take it there, or as its own chore before I1c.
+  **I1c (2026-09-29): not taken, and the trigger is narrower than it looked.** A generated command
+  tool carries the command's *registered* schema unchanged, so any range in it is the registering
+  host's to state, and this package cannot add one. What remains ours is the envelope's
+  `expectedRevision` (≥ 1), now on six tools. The fix is still a `ts-json-base` extension outside a
+  `ts-agent-tasks` slice's surface; take it as its own chore.
 
   **Scope sketch**: additive `minimum` / `maximum` (and `exclusive*`) options on `number` /
   `integer`, emitted by `toJson()` and enforced by the validator; check each provider's schema
@@ -744,7 +749,11 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
 
   **Reference**: `agent-tasks-i1b` result.md § Revert matrix.
 
-- **[P3] Nothing enforces that I1c's generated command tool names avoid the fixed task tool names.**
+- ~~**[P3] Nothing enforces that I1c's generated command tool names avoid the fixed task tool names.**~~
+  **Resolved by I1c (2026-09-29)** — generated names default to `task_command_<command>`; a name equal
+  to any of the five fixed names is refused whether or not that tool is offered, and two commands
+  under one name refuse the whole tool set at build time (`fixedTaskToolNames`, `commandTools.ts`).
+  I1d must add its stop tool names to that list. Original entry follows.
   `createTaskTools` emits a fixed set — `task_query`, `task_inspect`, `task_create`, `task_update`,
   `task_reassign` — and a test pins them distinct. Generated command tools (I1c) will be named from
   the registry, and a command named, say, `update` must not become a second `task_update`: ai-assist
@@ -757,6 +766,26 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
   only once generated names exist, which is why I1b did not add it.
 
   **Not a P4**: a collision would silently shadow a tool the host opted into.
+
+- **[P3] `fgv.tracked@1`'s transitions cannot be offered as model tools: the kind registers no
+  command schemas.** I1c generates command tools from the kind registry, and `trackedTaskDescriptor()`
+  registers no commands — its eleven transitions (`start`, `succeed`, `fail`, `cancel`, …) have
+  converters (`TaskConverters.broker.trackedCommand`) but no `JsonSchema`, so there is nothing typed to
+  put on the wire. A model can create and edit a tracked task (I1b) but cannot move its lifecycle. The
+  plan's I1 test list names "tracked and simulated external command outcomes"; I1c tests the external
+  ones end to end, and tracked outcomes only through I1b's mutation tools.
+
+  **Trigger**: a consumer that wants a model to drive a tracked task's lifecycle.
+
+  **Scope sketch**: give each tracked command a wire schema that agrees with its converter (a fixture
+  obligation, as for `detailSchema`), register them on `fgv.tracked@1` so they are the registry's
+  like any other kind's, and decide which transitions a model may be offered at all — `succeed` and
+  `fail` carry outcomes a host may not want a model to assert. Then they are ordinary
+  `ITaskCommandToolSpec`s.
+
+  **Not a P4**: a whole class of commands is unreachable from the tool surface the plan describes.
+
+  **Reference**: `.ai/tasks/active/agent-tasks-i1c/result.md`.
 
   **Reference**: `agent-tasks-i1b`; `.ai/tasks/active/agent-tasks-i1b/result.md`.
 

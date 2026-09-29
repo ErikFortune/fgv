@@ -201,3 +201,38 @@ export const taskReassignSchema: JsonSchema.ISchemaValidator<ITaskReassignToolAr
     description: 'The party to make responsible, or null to unassign the task.'
   })
 });
+
+/**
+ * The arguments a generated command tool accepts: the task, the revision the model last read, and
+ * the command's parameters.
+ * @remarks
+ * No operation id, command name, principal or source precondition: the tool mints the id, the command
+ * is the tool's, and a conditional command's precondition is the one the broker commits when it
+ * dispatches. The schema is closed.
+ * @internal
+ */
+export interface ITaskCommandToolArgs {
+  readonly taskId: string;
+  readonly expectedRevision: number;
+  /**
+   * Optional to the type system only — the registered schema is erased to `unknown`, which admits
+   * `undefined`. On the wire, and in validation, it is exactly as required as the registered schema
+   * makes it.
+   */
+  readonly parameters?: unknown;
+}
+
+/**
+ * A generated command tool's parameter schema — the wire schema and the validator `execute` re-runs.
+ * `parameters` is the command's registered schema, unchanged.
+ * @internal
+ */
+export function taskCommandSchema(
+  parameters: JsonSchema.ISchemaValidator<unknown>
+): JsonSchema.ISchemaValidator<ITaskCommandToolArgs> {
+  return JsonSchema.object({
+    taskId: JsonSchema.string({ description: 'The id of the task to send the command to.' }),
+    expectedRevision: identityProperties.expectedRevision,
+    parameters
+  });
+}

@@ -4,12 +4,18 @@
  */
 
 import '@fgv/ts-utils-jest';
-import { JsonValue } from '@fgv/ts-json-base';
-import { fail } from '@fgv/ts-utils';
+import { JsonObject, JsonSchema, JsonValue } from '@fgv/ts-json-base';
+import { fail, succeed } from '@fgv/ts-utils';
 import {
   IBoundTaskView,
   IBoundTaskWriter,
+  ITaskCommandToolSpec,
   ITaskEnvironment,
+  ITaskKindDescriptor,
+  ITaskKindRegistry,
+  TaskKind,
+  TaskKindRegistry,
+  createTaskCommandHandle,
   ITaskToolBudget,
   TaskMutationToolGroup,
   TaskContextRenderer,
@@ -18,6 +24,8 @@ import {
   defaultTaskToolBudget
 } from '../../../index';
 import { IBrokerHarness, brokerHarness, track } from '../../helpers/brokerFixtures';
+import { converters } from '../../helpers/fixtures';
+import { SimulatedExecutor, controllableSource, jobDescriptor } from '../../helpers/sourceFixtures';
 import { bindReader, inspect, query, taskTools, toolSet } from '../../helpers/toolFixtures';
 
 /** A view that fails the test on any use at all. */
@@ -454,5 +462,260 @@ describe('execute re-validates its arguments with no harness in front', () => {
     expect(await query(tools, { limit: 20 })).toSucceed();
     expect(await inspect(tools, { taskId: 't1' })).toSucceed();
     expect(calls).toEqual(['query', 'query', 'inspect']);
+  });
+});
+
+describe('command tools', () => {
+  const executor = new SimulatedExecutor('exec', 'observed-state');
+  const source = controllableSource(executor);
+  const job = 'sim.job' as TaskKind;
+  const other = 'sim.other' as TaskKind;
+
+  /** A registry with the job kind, and — unless told otherwise — a second kind with the same commands. */
+  function registry(extra?: ReadonlyArray<ITaskKindDescriptor<unknown>>): TaskKindRegistry {
+    const reg = TaskKindRegistry.create(converters.envelopes.snapshot).orThrow();
+    reg.register(jobDescriptor(source)).orThrow();
+    reg.register(jobDescriptor(source, other)).orThrow();
+    for (const descriptor of extra ?? []) {
+      reg.register(descriptor).orThrow();
+    }
+    return reg;
+  }
+
+  function spec(command: string, extra?: Partial<ITaskCommandToolSpec>): ITaskCommandToolSpec {
+    return { kind: job, detailVersion: 1, command, ...extra };
+  }
+
+  function build(
+    enable: ReadonlyArray<ITaskCommandToolSpec>,
+    over: ITaskKindRegistry = registry(),
+    extra?: Partial<Parameters<typeof createTaskTools>[0]>
+  ): ReturnType<typeof createTaskTools> {
+    return createTaskTools({
+      view: untouchableWriter,
+      commands: { writer: untouchableWriter, registry: over, environment: untouchableIds, enable },
+      ...extra
+    });
+  }
+
+  /** A kind whose commands are named as given, each with an empty parameter schema. */
+  function named(kind: string, ...names: string[]): ITaskKindDescriptor<unknown> {
+    return {
+      ...jobDescriptor(source, kind as TaskKind),
+      commands: names.map((name) =>
+        createTaskCommandHandle({
+          name,
+          parameters: JsonSchema.object({}),
+          encode: () => succeed({}),
+          idempotency: 'none',
+          conditional: false
+        })
+      )
+    } as ITaskKindDescriptor<unknown>;
+  }
+
+  test('absent or empty, no command tool is offered', () => {
+    expect(build([])).toSucceedAndSatisfy((tools) => {
+      expect(tools.map((t) => t.config.name)).toEqual(['task_query', 'task_inspect']);
+    });
+  });
+
+  test('offers one tool per named command, in the order named, without touching the writer, minting or asking the policy', () => {
+    expect(build([spec('resume'), spec('pause'), spec('advance')])).toSucceedAndSatisfy((tools) => {
+      expect(tools.map((t) => t.config.name)).toEqual([
+        'task_query',
+        'task_inspect',
+        'task_command_resume',
+        'task_command_pause',
+        'task_command_advance'
+      ]);
+    });
+    // Beside the mutation tools, after them, and every name distinct.
+    expect(
+      build([spec('pause')], registry(), {
+        mutations: { writer: untouchableWriter, environment: untouchableIds, enable: ['tracked', 'reassign'] }
+      })
+    ).toSucceedAndSatisfy((tools) => {
+      const names = tools.map((t) => t.config.name);
+      expect(names).toEqual([
+        'task_query',
+        'task_inspect',
+        'task_create',
+        'task_update',
+        'task_reassign',
+        'task_command_pause'
+      ]);
+      expect(new Set(names).size).toBe(names.length);
+    });
+  });
+
+  test('generation asks the registry, and only for the commands named', () => {
+    const asked: string[] = [];
+    const base = registry();
+    const recording: ITaskKindRegistry = new Proxy(base, {
+      get(target: ITaskKindRegistry, property: string | symbol): unknown {
+        if (property === 'getCommand') {
+          return (kind: TaskKind, version: number, name: string) => {
+            asked.push(`${kind}@${version}:${name}`);
+            return target.getCommand(kind, version, name);
+          };
+        }
+        return Reflect.get(target, property, target);
+      }
+    });
+    expect(
+      build([spec('pause'), spec('cancel', { kind: other, name: 'other_cancel' })], recording)
+    ).toSucceed();
+    expect(asked).toEqual(['sim.job@1:pause', 'sim.other@1:cancel']);
+  });
+
+  test('refuses a command the registry does not hold — an undeclared command, kind or version', () => {
+    expect(build([spec('teleport')])).toFailWith(
+      /invalid commands\.enable: sim\.job@1 'teleport': .*no command/
+    );
+    expect(build([spec('pause', { kind: 'sim.none' as TaskKind })])).toFailWith(/sim\.none@1 'pause'/);
+    expect(build([spec('pause', { detailVersion: 2 })])).toFailWith(/sim\.job@2 'pause'/);
+  });
+
+  test('refuses a malformed offer, and a writer that is not the view', () => {
+    for (const enable of [
+      'pause',
+      [{ ...spec('pause'), principal: 'bob' }],
+      [spec('pause', { detailVersion: 0 })],
+      [spec('pause', { detailVersion: 1.5 })],
+      [spec('pause', { kind: 'not a kind' as TaskKind })],
+      [spec('not a command')],
+      [spec('pause', { name: 7 as unknown as string })],
+      [spec('pause', { description: 7 as unknown as string })],
+      [undefined]
+    ]) {
+      expect(build(enable as unknown as ReadonlyArray<ITaskCommandToolSpec>)).toFailWith(
+        /invalid commands\.enable/
+      );
+    }
+    const otherView: IBoundTaskView = new Proxy({} as IBoundTaskView, untouchableHandler);
+    expect(
+      createTaskTools({
+        view: otherView,
+        commands: { writer: untouchableWriter, registry: registry(), environment: untouchableIds, enable: [] }
+      })
+    ).toFailWith(/commands\.writer must be the view/);
+  });
+
+  test('a generated name may not be a fixed tool’s, whether or not that tool is offered', () => {
+    for (const name of ['task_query', 'task_inspect', 'task_create', 'task_update', 'task_reassign']) {
+      expect(build([spec('pause', { name })])).toFailWith(
+        `task tools: invalid commands.enable: sim.job@1 'pause': tool name '${name}' is a fixed task tool's`
+      );
+    }
+  });
+
+  test('a generated name must be one every provider accepts', () => {
+    for (const name of ['', 'has space', '7starts_with_digit', 'task.dot', `t${'x'.repeat(64)}`]) {
+      expect(build([spec('pause', { name })])).toFailWith(/is not one every provider accepts/);
+    }
+    expect(build([spec('pause', { name: `t${'x'.repeat(63)}` })])).toSucceed();
+    expect(build([spec('pause', { name: '_pause-now' })])).toSucceed();
+  });
+
+  test('two commands under one name refuse the whole set — including two kinds registering the same command', () => {
+    expect(build([spec('pause'), spec('pause')])).toFailWith(
+      /'task_command_pause' is taken by both sim\.job@1 'pause' and sim\.job@1 'pause'; name one of them/
+    );
+    expect(build([spec('pause'), spec('pause', { kind: other })])).toFailWith(
+      /'task_command_pause' is taken by both sim\.job@1 'pause' and sim\.other@1 'pause'/
+    );
+    expect(build([spec('pause'), spec('resume', { name: 'task_command_pause' })])).toFailWith(
+      /is taken by both/
+    );
+    // Naming one of them resolves it.
+    expect(build([spec('pause'), spec('pause', { kind: other, name: 'other_pause' })])).toSucceedAndSatisfy(
+      (tools) => {
+        expect(tools.map((t) => t.config.name).slice(2)).toEqual(['task_command_pause', 'other_pause']);
+      }
+    );
+  });
+
+  test('a default name replaces what a provider would refuse, and a clash that makes is refused too', () => {
+    const reg = registry([named('sim.dotted', 'ops.retry:now', 'a.b', 'a_b')]);
+    const dotted = (command: string): ITaskCommandToolSpec =>
+      spec(command, { kind: 'sim.dotted' as TaskKind });
+    expect(build([dotted('ops.retry:now')], reg)).toSucceedAndSatisfy((tools) => {
+      expect(tools[2].config.name).toBe('task_command_ops_retry_now');
+    });
+    expect(build([dotted('a.b'), dotted('a_b')], reg)).toFailWith(/'task_command_a_b' is taken by both/);
+  });
+
+  test('a registry that throws refuses the set', () => {
+    const throwing = new Proxy(registry(), {
+      get(): never {
+        throw new Error('registry down');
+      }
+    });
+    expect(build([spec('pause')], throwing)).toFailWith(/sim\.job@1 'pause': registry down/);
+  });
+
+  test('a command tool carries the registered parameter schema on the wire, closed as registered', () => {
+    const tools = build([spec('pause'), spec('resume')]).orThrow();
+    const envelope = {
+      taskId: { type: 'string', description: 'The id of the task to send the command to.' },
+      expectedRevision: {
+        type: 'integer',
+        description:
+          'The revision task_inspect last returned for this task. The change is refused if the task has ' +
+          'changed since; inspect it again and decide afresh.'
+      }
+    };
+    expect(tools[2].config.parametersSchema.toJson()).toEqual({
+      type: 'object',
+      properties: {
+        ...envelope,
+        parameters: {
+          type: 'object',
+          properties: { reason: { type: 'string' } },
+          required: ['reason'],
+          additionalProperties: false
+        }
+      },
+      required: ['taskId', 'expectedRevision', 'parameters'],
+      additionalProperties: false
+    });
+    expect(tools[3].config.parametersSchema.toJson()).toEqual({
+      type: 'object',
+      properties: {
+        ...envelope,
+        parameters: { type: 'object', properties: {}, additionalProperties: false }
+      },
+      required: ['taskId', 'expectedRevision', 'parameters'],
+      additionalProperties: false
+    });
+    // The parameters are the registry's own schema, not a copy of it.
+    const handle = registry().getCommand(job, 1, 'pause').orThrow();
+    expect((tools[2].config.parametersSchema.toJson().properties as JsonObject).parameters).toEqual(
+      handle.parameters.toJson()
+    );
+  });
+
+  test('command tools are annotated as open-world writes, and describe what their result means', () => {
+    const tools = build([
+      spec('pause'),
+      spec('cancel', { description: 'Cancel a simulated job.' })
+    ]).orThrow();
+    for (const tool of tools.slice(2)) {
+      expect(tool.config.annotations).toEqual({
+        readOnlyHint: false,
+        destructiveHint: true,
+        idempotentHint: false,
+        openWorldHint: true
+      });
+    }
+    const tail =
+      "Pass the revision task_inspect returned. 'accepted' means the task's executor has the command, not " +
+      "that it has taken effect; 'applied' means it has. If the outcome is not known, do not send it " +
+      'again: the host settles it.';
+    expect(tools[2].config.description).toBe(
+      `Send the 'pause' command to a task of kind sim.job that you can see. ${tail}`
+    );
+    expect(tools[3].config.description).toBe(`Cancel a simulated job. ${tail}`);
   });
 });

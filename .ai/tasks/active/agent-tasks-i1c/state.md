@@ -1,6 +1,6 @@
 # State — `agent-tasks-i1c`
 
-**Status:** brief written, not started.
+**Status:** implemented and tested locally; layer-1 review in progress; not yet committed or pushed.
 
 ## Where things stand
 
@@ -46,6 +46,23 @@ Reserved tool names, pinned distinct by a test: `task_query`, `task_inspect`, `t
 
 Both in `docs/TECH_DEBT.md`.
 
+## Decisions taken (detail in `result.md` once written)
+
+1. Schema exposure: **option 1** — `ITaskCommandHandle.parameters: JsonSchema.ISchemaValidator<unknown>`.
+   Option 2 cannot be composed into an `IAiClientTool` (needs a validator, not JSON); option 3 is not
+   from the registry.
+2. Receipt states: accepted/applied are results; rejections are fixed code lines (`denied` →
+   `not-found-or-denied`; stop-active / invalid-transition / idempotency-conflict → `conflict`);
+   indeterminate, abandoned, malformed receipts, throws and every writer failure except
+   `not-found-or-denied` → one "outcome unknown — do not send it again" line. Free text → logger.
+3. Idempotency: fresh id per call; the model must not resend; the pump resends under the same key.
+4. Namespace: `task_command_<command>` default, host `name` override, fixed names reserved always,
+   clash refuses the set.
+5. Kind check: the tool inspects first and sends only to its own kind@version.
+
 ## Resume instructions
 
-`brief.md` plus this file is enough to start cold. Nothing is implemented; there is no partial work.
+`brief.md` plus this file. Code is in the working tree (`tools/commandTools.ts` et al.). Remaining:
+layer-1 findings, coverage closure (one branch: abandoned receipt with no logger), revert-matrix I1c
+rows, gates, result.md, plan/ledger lines, commit, push, PR into `integration/agent-tasks-v1`,
+Copilot loop via `@copilot review` comment.

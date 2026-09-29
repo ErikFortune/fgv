@@ -16,12 +16,20 @@ import { TaskKind } from './ids';
  * Erasure is by converter closure, never a cast: {@link ITaskCommandHandle.validate}
  * closes over the descriptor's own schema and encoder, so the parameter type never
  * escapes the registration call that knew it.
+ *
+ * `parameters` is the registered schema itself, readable so a model can be offered it
+ * (I1c's generated command tools compose it into their wire schema). Reading it produces
+ * no canonical parameters: what is stored, deduplicated against and dispatched is only
+ * ever `validate`'s output, and the broker runs `validate` on every request it is handed —
+ * whatever a caller did with the schema first.
  * @public
  */
 export interface ITaskCommandHandle {
   readonly name: string;
   readonly idempotency: 'source-key' | 'none';
   readonly conditional: boolean;
+  /** The registered parameter schema: the wire schema a model is offered, and a validator. */
+  readonly parameters: JsonSchema.ISchemaValidator<unknown>;
   /**
    * Validates caller-supplied parameters through the registered schema and re-encodes
    * them, yielding the canonical JSON form that is deduplicated and stored.

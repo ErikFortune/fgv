@@ -10,6 +10,10 @@ import {
   IBoundTaskViewParams,
   IBoundTaskWriter,
   ICreateTaskToolsParams,
+  ITaskCommandToolSpec,
+  ITaskEnvironment,
+  ITaskKindRegistry,
+  TaskKind,
   ITaskQueryToolResult,
   TaskInspectToolResult,
   createTaskTools
@@ -119,4 +123,33 @@ export function mutatingTools(
 /** Runs one named tool directly — no harness in front — and types its success value. */
 export async function call<T>(tools: IToolSet, name: string, args: unknown): Promise<Result<T>> {
   return (await tools.get(name).execute(args)) as Result<T>;
+}
+
+/** The job kind's four commands, offered as tools under their default names. */
+export const jobCommandSpecs: ReadonlyArray<ITaskCommandToolSpec> = [
+  'pause',
+  'resume',
+  'cancel',
+  'advance'
+].map((command) => ({ kind: 'sim.job' as TaskKind, detailVersion: 1, command }));
+
+/**
+ * The tools over a source harness's writer with the job kind's commands offered — the writer is both
+ * the view and the writer, as the factory requires.
+ */
+export function commandingTools(
+  h: {
+    readonly writer: IBoundTaskWriter;
+    readonly registry: ITaskKindRegistry;
+    readonly env: Pick<ITaskEnvironment, 'newOperationId'>;
+  },
+  writer: IBoundTaskWriter = h.writer,
+  extra?: Partial<ICreateTaskToolsParams>,
+  enable: ReadonlyArray<ITaskCommandToolSpec> = jobCommandSpecs
+): IToolSet {
+  return toolSet({
+    view: writer,
+    commands: { writer, registry: h.registry, environment: h.env, enable },
+    ...extra
+  });
 }

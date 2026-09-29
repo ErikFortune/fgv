@@ -368,6 +368,27 @@ describe('command handles', () => {
     expect(handle.getCommand('grow')).toFailWith(/test\.widget@1: no command 'grow'/i);
   });
 
+  test('the handle exposes the registered schema itself — readable as a wire schema, never a source of canonical parameters', () => {
+    const command = createTaskCommandHandle<IGrowParameters>({
+      name: 'grow',
+      parameters: growSchema,
+      // Canonicalizes: what is stored is the encoder's form, which the schema also admits.
+      encode: (parameters: IGrowParameters): Result<JsonValue> => succeed({ by: Math.abs(parameters.by) }),
+      idempotency: 'none',
+      conditional: false
+    });
+    expect(command.parameters).toBe(growSchema);
+    expect(command.parameters.toJson()).toEqual({
+      type: 'object',
+      properties: { by: { type: 'integer', description: 'how much to grow by' } },
+      required: ['by'],
+      additionalProperties: false
+    });
+    // The schema validates the raw value; only `validate` yields the canonical form.
+    expect(command.parameters.validate({ by: -3 })).toSucceedWith({ by: -3 });
+    expect(command.validate({ by: -3 })).toSucceedWith({ by: 3 });
+  });
+
   test('validate runs the registered schema and re-encodes canonical parameters', () => {
     const command = growHandle();
     expect(command.validate({ by: 3 })).toSucceedWith({ by: 3 });

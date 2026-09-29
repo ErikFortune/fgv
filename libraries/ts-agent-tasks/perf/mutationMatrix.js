@@ -17,7 +17,7 @@
  *             the run edits source, so a copy keeps the working tree clean while it runs; give
  *             the copy a `node_modules` symlink to this package's)
  *   --out     write the results as JSON
- *   M…        run only the named rows (T8b's rows are named T8b-…, T9's T9-…, I1a's I1a-…, I1b's I1b-…)
+ *   M…        run only the named rows (T8b's rows are named T8b-…, T9's T9-…, I1a's I1a-…, I1b's I1b-…, I1c's I1c-…)
  *
  * The one rule that matters: a row whose pattern is not found exactly once, whose mutant does not
  * build, or whose run reports no failure count at all, is reported UNVERIFIED — never as "nothing
@@ -1570,6 +1570,187 @@ const I1B_ROWS = [
 ];
 
 MUTATIONS.push(...I1B_ROWS);
+
+/** I1c's rows run the tool suites, the public-surface suite and the registry suite. */
+const I1C = 'tools/|publicSurface|converters/kindRegistry';
+const CT = TL + 'commandTools.ts';
+
+const I1C_ROWS = [
+  m(
+    'I1c-1 a command tool execute trusts its arguments',
+    CT,
+    '      schema\n        .convert(args)\n',
+    '      succeed(args as ITaskCommandToolArgs)\n',
+    I1C
+  ),
+  paired(
+    "I1c-2 a model's operation id is honoured (schema closure and the tool's own id both reverted)",
+    [
+      {
+        file: CT,
+        from: '      schema\n        .convert(args)\n',
+        to: '      succeed(args as ITaskCommandToolArgs)\n'
+      },
+      {
+        file: CT,
+        from: '          taskId,\n          operationId,\n          expectedRevision: args.expectedRevision,',
+        to:
+          '          taskId,\n          operationId: (args as unknown as { operationId?: OperationId }).operationId ?? operationId,\n' +
+          '          expectedRevision: args.expectedRevision,'
+      }
+    ],
+    I1C
+  ),
+  m(
+    'I1c-3 a command is sent to a task of any kind',
+    CT,
+    '        convertAnswer(ctx.answers.inspection, answer, "view\'s inspection").onSuccess((inspection) =>\n          _ofKind(tool, inspection)\n        )',
+    '        convertAnswer(ctx.answers.inspection, answer, "view\'s inspection").onSuccess(() =>\n          succeedWithDetail<true, ITaskFailure>(true)\n        )',
+    I1C
+  ),
+  m(
+    'I1c-4 the kind check ignores the detail version',
+    CT,
+    '  return kind === tool.spec.kind && detailVersion === tool.spec.detailVersion\n',
+    '  return kind === tool.spec.kind && detailVersion > 0\n',
+    I1C
+  ),
+  m(
+    "I1c-5 a rejection's reason reaches the model verbatim (denied, stop-active)",
+    CT,
+    '      return told(fail(codeLine(tool, rejectionCodes[result.reason])));',
+    '      return told(fail(`${tool}: rejected: ${result.reason}`));',
+    I1C
+  ),
+  m(
+    "I1c-6 a source's receipt text reaches the model",
+    CT,
+    "      return told(succeed({ taskId: receipt.taskId, state: 'accepted' }));",
+    "      return told(succeed({ ...result, taskId: receipt.taskId, state: 'accepted' } as TaskCommandToolResult));",
+    I1C
+  ),
+  m(
+    "I1c-7 an indeterminate command's reason reaches the model",
+    CT,
+    '      return told(fail(`${tool}: ${unknownCommandLine}`));',
+    '      return told(fail(`${tool}: ${result.reason}`));',
+    I1C
+  ),
+  m(
+    "I1c-8 an abandoned command's reason reaches the model",
+    CT,
+    '          `${tool}: the outcome is not known, and the host no longer tracks this command; inspect the ` +',
+    '          `${tool}: ${result.reason}: the outcome is not known, and the host no longer tracks this command; inspect the ` +',
+    I1C
+  ),
+  m(
+    "I1c-9 a writer's conflict or invalid after the intent was recorded reads as a known refusal",
+    CT,
+    "  determinate: ['not-found-or-denied']",
+    "  determinate: ['not-found-or-denied', 'conflict', 'invalid']",
+    I1C
+  ),
+  m(
+    'I1c-10 a receipt for another task, operation or command is accepted',
+    WA,
+    '          value.taskId !== expected.taskId ||\n          value.operationId !== expected.operationId ||\n          value.command !== expected.command\n',
+    '          value.taskId === undefined\n',
+    I1C
+  ),
+  m(
+    'I1c-11 an applied receipt may precede the revision asked against',
+    WA,
+    "        return value.result.state === 'applied' && value.result.appliedRevision < expected.expectedRevision\n",
+    "        return value.result.state === 'applied' && value.result.appliedRevision < 0\n",
+    I1C
+  ),
+  m(
+    "I1c-12 a command writer's throw reads as a view failure, not an unknown outcome",
+    CT,
+    '  thrown: unknownCommandLine,',
+    "  thrown: 'the task view failed',",
+    I1C
+  ),
+  m(
+    'I1c-13 an unknown outcome is worded by its code, not as one line',
+    TL + 'toolSupport.ts',
+    '  if (unknown && wording.unknownLine !== undefined) {',
+    "  if (unknown && wording.unknownLine === '') {",
+    I1C
+  ),
+  m(
+    'I1c-14 the command writer need not be the view',
+    TL + 'taskTools.ts',
+    '  if (options.writer !== ctx.view) {',
+    '  if (options.writer === undefined) {',
+    I1C
+  ),
+  m(
+    "I1c-15 a generated tool may take a fixed tool's name",
+    CT,
+    '      return fixedTaskToolNames.includes(name)\n',
+    "      return name === ''\n",
+    I1C
+  ),
+  m(
+    'I1c-16 two commands under one name: last one wins',
+    CT,
+    '        if (other !== undefined) {\n',
+    "        if (other !== undefined && tool.name === '') {\n",
+    I1C
+  ),
+  m(
+    'I1c-17 a name a provider refuses is accepted',
+    CT,
+    '      if (!toolNamePattern.test(name)) {',
+    "      if (name === '\\u0000') {",
+    I1C
+  ),
+  m(
+    "I1c-18 a minting failure's host text reaches the model",
+    CT,
+    '    .onFailure((message) => hostFailure(ctx, tool, `could not mint an operation id: ${message}`));',
+    '    .onFailure((message) => fail<OperationId>(`${tool}: ${message}`));',
+    I1C
+  ),
+  m(
+    'I1c-19 a minted operation id is not converted',
+    CT,
+    '    .onSuccess((raw) => ctx.renderer.converters.ids.operationId.convert(raw))\n',
+    '    .onSuccess((raw) => succeed(raw))\n',
+    I1C
+  ),
+  m(
+    "I1c-20 an encoder failure's host text reaches the model",
+    CT,
+    '            .onFailure((message) => hostFailure(ctx, name, `could not encode the parameters: ${message}`))',
+    '            .onFailure((message) => fail<JsonValue>(`${name}: ${message}`))',
+    I1C
+  ),
+  m(
+    "I1c-21 the model's raw parameters are sent, not the registered encoder's canonical form",
+    CT,
+    '            .onSuccess((parameters) => succeed({ typed, taskId, parameters }))',
+    '            .onSuccess(() => succeed({ typed, taskId, parameters: typed.parameters as JsonValue }))',
+    I1C
+  ),
+  m(
+    'I1c-22 the wire schema carries an arbitrary payload, not the registered schema',
+    TL + 'schemas.ts',
+    '    expectedRevision: identityProperties.expectedRevision,\n    parameters\n',
+    '    expectedRevision: identityProperties.expectedRevision,\n    parameters: JsonSchema.object({})\n',
+    I1C
+  ),
+  m(
+    'I1c-23 an offer that does not convert is accepted element by element (arrayOf drops undefined)',
+    CT,
+    '  return Converters.arrayOf(spec)\n',
+    '  return Converters.arrayOf(Converters.generic<ITaskCommandToolSpec>((from) => (from === undefined ? succeed(undefined as never) : spec.convert(from))))\n',
+    I1C
+  )
+];
+
+MUTATIONS.push(...I1C_ROWS);
 
 function parseArgs(argv) {
   const args = { check: false, pkg: path.resolve(__dirname, '..'), out: undefined, only: [] };

@@ -33,9 +33,10 @@ checkpoints, and every incomplete operation is reportable — and **cascade stop
 authoritative subtree, a frozen subtree while it latches, and an honest partial result — and
 **model tools** (`createTaskTools`): `task_query` and `task_inspect` as ai-assist client tools over a
 principal-bound view, with bounded output by default, and — only when the host opts in —
-`task_create`, `task_update` and `task_reassign` over the same binding's writer. Command and stop
-tools and prompt integration follow in later slices, and are deliberately absent from the export
-surface rather than stubbed.
+`task_create`, `task_update` and `task_reassign` over the same binding's writer, and one typed tool
+per registered command the host names, its wire schema the command's registered parameter schema.
+Stop tools and prompt integration follow in later slices, and are deliberately absent from the
+export surface rather than stubbed.
 
 ## Storing tasks durably — `FileTreeTaskRepository`
 
@@ -747,11 +748,59 @@ const tools = createTaskTools({
 - **Refusals disclose nothing a read would not.** A hidden task, a hidden parent, a foreign id and a
   permitted-to-read-but-not-to-change task all produce the same `not-found-or-denied` line.
 
-**Not here:** `createTaskList`, scope changes, reparenting, list completion, archive, command
-execution (I1c's typed command tools), stop tools (I1d), external registration or source binding,
-and any acknowledgement tool — receipts are the host's, never the model's. Fixed tool names are
-`task_query`, `task_inspect`, `task_create`, `task_update`, `task_reassign`; generated command tools
-must not reuse them.
+**Not here:** `createTaskList`, scope changes, reparenting, list completion, archive, stop tools
+(I1d), external registration or source binding, the uncertain-command pump, and any acknowledgement
+tool — receipts are the host's, never the model's.
+
+### Command tools — one typed tool per registered command the host names
+
+```ts
+const tools = createTaskTools({
+  view: writer,
+  commands: {
+    writer, // the very object passed as view
+    registry, // the registry the broker's repository was opened with
+    environment, // mints each call's operation id
+    enable: [{ kind: 'acme.job', detailVersion: 1, command: 'pause' }]
+  }
+}).orThrow(); // task_query, task_inspect, task_command_pause
+```
+
+- **Typed by the registry.** Each named command is looked up in `registry` when the tools are built
+  (an unregistered kind, version or command refuses the set), and its tool's wire schema is
+  `{ taskId, expectedRevision, parameters }` with `parameters` the command's **registered** schema —
+  `ITaskCommandHandle.parameters` — not an arbitrary payload. Closed at every level the registered
+  schema is closed. `execute` re-validates, then canonicalizes through the handle's `validate`.
+- **Offering is not authorizing.** Building asks the registry, never the writer, the environment or
+  the policy. Every call goes through the writer's `execute`, which asks the policy then: command
+  authority revoked after build refuses the next call, and nothing is sent.
+- **Only its own kind's command.** A command name is per kind, so the tool inspects the task first
+  and sends only to a task of exactly its kind and detail version (both immutable for a task);
+  anything else is `unsupported`, and nothing is sent.
+- **The model names no key and no precondition.** The tool mints the operation id; the schema has no
+  `operationId`, command name, principal, scope or source precondition — a conditional command's
+  precondition is the one the broker commits when it dispatches.
+- **What the model is told.** `{ taskId, state: 'accepted' }` — the executor has it, not that it has
+  taken effect — or `{ taskId, state: 'applied', revision }`. A rejection is a fixed code line:
+  `denied` reads exactly as a missing or hidden task; `stop-active`, `invalid-transition` and
+  `idempotency-conflict` read as `conflict` (naming a stop is the stop tools' to disclose);
+  `unsupported` as itself. A source's receipt text and an indeterminate or abandoned reason go to
+  `logger`, never to the model.
+- **An unknown outcome means: do not send it again.** An `indeterminate` receipt, a malformed
+  receipt, a writer that throws, and every writer failure except `not-found-or-denied` read as one
+  line — the outcome is not known, the host settles it, do not send it again. Once a command's
+  intent is recorded the broker may still send it (`resolveCommands`), and later failures carry
+  ordinary codes (`conflict`, `invalid`), so the tool cannot tell "nothing recorded" from "recorded,
+  not yet sent". **A model resend is a new command under a new key**: a `source-key` source
+  deduplicates the *same* key, which is what makes the pump's resend safe and a model's unsafe.
+- **Names.** Default `task_command_<command>`, with any character a provider rejects replaced by `_`;
+  or `name` per command. A name may not be a fixed tool's — `task_query`, `task_inspect`,
+  `task_create`, `task_update`, `task_reassign` — whether or not that tool is offered, and two
+  commands under one name (two kinds registering the same command, say) refuse the whole set at
+  build time: the host names one. Never last-one-wins.
+- **Coverage:** commands come from the registry, so only kinds that register commands — external
+  kinds, through `ExternalTaskSource.commandHandles` — have them. `fgv.tracked@1` registers none
+  (its transitions have names but no registered schemas), so tracked transitions are not offered.
 
 ## Rendering task context without a broker
 
@@ -977,8 +1026,8 @@ fragment is caught at the mint rather than at the filename.
 
 ## Not in scope
 
-No mutation, command or stop tools and no prompt integration **yet** — those are later slices, and
-their absence from the export surface is deliberate. Explicit abandonment of a blocked cancel is not built (see
+No stop tools and no prompt integration **yet** — those are later slices, and their absence from
+the export surface is deliberate. Explicit abandonment of a blocked cancel is not built (see
 `docs/TECH_DEBT.md`). **Permanently** out of scope: an input-request/answer protocol, a task runner or
 scheduler, an executor, a retry policy, cross-repository parenting, execution migration,
 multi-process ownership, general event sourcing, and dependency DAGs.

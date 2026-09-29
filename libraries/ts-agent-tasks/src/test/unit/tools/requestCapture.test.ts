@@ -18,7 +18,16 @@ import '@fgv/ts-utils-jest';
 import { AiAssist } from '@fgv/ts-extras';
 import { JsonObject } from '@fgv/ts-json-base';
 import { IBrokerHarness, brokerHarness, track } from '../../helpers/brokerFixtures';
-import { ITaskToolPair, bindReader, mutatingTools, shownIds, taskTools } from '../../helpers/toolFixtures';
+import { ISourceHarness, registerJob, sourceHarness } from '../../helpers/sourceFixtures';
+import {
+  ITaskToolPair,
+  bindReader,
+  commandingTools,
+  mutatingTools,
+  shownIds,
+  taskTools,
+  toolSet
+} from '../../helpers/toolFixtures';
 
 type Body = Record<string, unknown>;
 
@@ -352,5 +361,140 @@ describe('mutation tools reach the outbound request only when opted into', () =>
     expect((await h.writer.inspect('t1' as never)).orThrow()).toEqual(
       expect.objectContaining({ envelope: expect.objectContaining({ revision: 1 }) })
     );
+  });
+});
+
+describe('command tools reach the outbound request only when offered', () => {
+  let h: ISourceHarness;
+
+  beforeEach(async () => {
+    h = await sourceHarness();
+    h.executor.addJob('j1');
+    await registerJob(h, 'j1');
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  const offered = [
+    'task_query',
+    'task_inspect',
+    'task_command_pause',
+    'task_command_resume',
+    'task_command_cancel',
+    'task_command_advance'
+  ];
+
+  test('not offered: a writer passed as the view offers exactly the two read tools', async () => {
+    const tools = toolSet({ view: h.writer });
+    const bodies = captureRequests([anthropicStop]);
+    await runTurn(
+      'anthropic',
+      tools.names.map((name) => tools.get(name))
+    );
+    expect(toolsOf(bodies[0]).map((t) => t.name)).toEqual(['task_query', 'task_inspect']);
+  });
+
+  test('offered — Anthropic: every command tool is in the request with the registered parameter schema', async () => {
+    const tools = commandingTools(h);
+    expect(tools.names).toEqual(offered);
+    const bodies = captureRequests([anthropicStop]);
+    await runTurn(
+      'anthropic',
+      offered.map((name) => tools.get(name))
+    );
+    expect(toolsOf(bodies[0])).toEqual(
+      offered.map((name) => ({
+        name,
+        description: tools.get(name).config.description,
+        input_schema: tools.get(name).config.parametersSchema.toJson()
+      }))
+    );
+    // On the wire, the pause tool's parameters are the registered schema — not an arbitrary payload.
+    const pause = toolsOf(bodies[0]).find((t) => t.name === 'task_command_pause')!;
+    expect((pause.input_schema as JsonObject).properties).toEqual(
+      expect.objectContaining({
+        parameters: {
+          type: 'object',
+          properties: { reason: { type: 'string' } },
+          required: ['reason'],
+          additionalProperties: false
+        }
+      })
+    );
+  });
+
+  test('offered — OpenAI Responses: every command tool is a function tool with its exact schema', async () => {
+    const tools = commandingTools(h);
+    const bodies = captureRequests([responsesDone]);
+    await runTurn(
+      'openai',
+      offered.map((name) => tools.get(name))
+    );
+    expect(toolsOf(bodies[0]).filter((t) => t.type === 'function')).toEqual(
+      offered.map((name) => ({
+        type: 'function',
+        name,
+        description: tools.get(name).config.description,
+        parameters: tools.get(name).config.parametersSchema.toJson()
+      }))
+    );
+  });
+
+  test('offered — Gemini: every command tool is a function declaration', async () => {
+    const tools = commandingTools(h);
+    const bodies = captureRequests([geminiDone]);
+    await runTurn(
+      'google-gemini',
+      offered.map((name) => tools.get(name))
+    );
+    const declarations = toolsOf(bodies[0]).flatMap((t) => (t.function_declarations ?? []) as JsonObject[]);
+    expect(declarations.map((d) => d.name)).toEqual(offered);
+  });
+
+  test('round trip: a streamed command call is applied by the executor, and the model is told so', async () => {
+    const tools = commandingTools(h);
+    captureRequests([
+      anthropicCalls('toolu_1', 'task_command_pause', {
+        taskId: 'j1',
+        expectedRevision: 1,
+        parameters: { reason: 'hold' }
+      }),
+      anthropicStop
+    ]);
+    const { events } = await runTurn(
+      'anthropic',
+      offered.map((name) => tools.get(name))
+    );
+    const result = events.find((e) => e.type === 'client-tool-result');
+    expect(result).toEqual(expect.objectContaining({ toolName: 'task_command_pause', isError: false }));
+    expect(JSON.parse((result as AiAssist.IAiStreamToolUseComplete).result)).toEqual({
+      taskId: 'j1',
+      state: 'applied',
+      revision: 2
+    });
+    expect(h.executor.jobs.get('j1')!.applied).toHaveLength(1);
+  });
+
+  test('round trip: a streamed call naming its own operation id is refused before anything is sent', async () => {
+    const tools = commandingTools(h);
+    captureRequests([
+      anthropicCalls('toolu_1', 'task_command_pause', {
+        taskId: 'j1',
+        expectedRevision: 1,
+        parameters: { reason: 'hold' },
+        operationId: 'complete-list-r1'
+      }),
+      anthropicStop
+    ]);
+    const { events } = await runTurn(
+      'anthropic',
+      offered.map((name) => tools.get(name))
+    );
+    const result = events.find((e) => e.type === 'client-tool-result');
+    expect(result).toEqual(expect.objectContaining({ toolName: 'task_command_pause', isError: true }));
+    expect((result as AiAssist.IAiStreamToolUseComplete).result).toMatch(/operationId/);
+    expect(h.executor.dispatches.size).toBe(0);
   });
 });
