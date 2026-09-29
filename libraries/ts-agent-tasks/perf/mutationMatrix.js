@@ -17,7 +17,7 @@
  *             the run edits source, so a copy keeps the working tree clean while it runs; give
  *             the copy a `node_modules` symlink to this package's)
  *   --out     write the results as JSON
- *   M…        run only the named rows (T8b's rows are named T8b-…, T9's T9-…, I1a's I1a-…)
+ *   M…        run only the named rows (T8b's rows are named T8b-…, T9's T9-…, I1a's I1a-…, I1b's I1b-…)
  *
  * The one rule that matters: a row whose pattern is not found exactly once, or whose mutant does
  * not build, is reported UNVERIFIED — never as "nothing went red". A mutation that silently fails
@@ -1210,28 +1210,28 @@ const I1A_ROWS = [
   ),
   m(
     'I1a-8 failure messages are not truncated',
-    TL + 'taskTools.ts',
+    TL + 'toolSupport.ts',
     '  if (full.length <= maxMessageChars) {',
     '  if (full.length >= 0) {',
     I1A
   ),
   m(
     'I1a-9 truncation may split a surrogate pair',
-    TL + 'taskTools.ts',
+    TL + 'toolSupport.ts',
     '    ? maxMessageChars - 1\n    : maxMessageChars;',
     '    ? maxMessageChars\n    : maxMessageChars;',
     I1A
   ),
   m(
     'I1a-10 what a view threw reaches the model',
-    TL + 'taskTools.ts',
-    '      return fail(`${tool}: the task view failed`);',
+    TL + 'toolSupport.ts',
+    '      return fail(`${tool}: ${failed}`);',
     '      return fail(`${tool}: ${message}`);',
     I1A
   ),
   m(
     "I1a-11 a view's rejection escapes the capture",
-    TL + 'taskTools.ts',
+    TL + 'toolSupport.ts',
     '  return (await captureAsyncResult(async () => (await ask()).onSuccess(present)))',
     '  return succeed(await ask().then((r) => r.onSuccess(present)))',
     I1A
@@ -1287,7 +1287,7 @@ const I1A_ROWS = [
   ),
   m(
     "I1a-19 a classified failure's host message reaches the model",
-    TL + 'taskTools.ts',
+    TL + 'toolSupport.ts',
     '`${tool}: ${code}: ${modelFacingFailures[code]}`',
     '`${tool}: ${code}: ${result.message}`',
     I1A
@@ -1308,7 +1308,7 @@ const I1A_ROWS = [
   ),
   m(
     "I1a-22 a view's failure code is trusted",
-    TL + 'taskTools.ts',
+    TL + 'toolSupport.ts',
     '  const code: TaskFailureCode | undefined = ctx.renderer.converters.failures.failureCode\n    .convert(result.detail?.code)\n    .orDefault();',
     '  const code: TaskFailureCode | undefined = result.detail?.code;',
     I1A
@@ -1372,13 +1372,189 @@ const I1A_ROWS = [
   m(
     'I1a-31 an inspection is read without being converted',
     TL + 'taskTools.ts',
-    "_answer(ctx.answers.inspection, answer, 'inspection')",
-    "_answer(Converters.generic((v: unknown) => succeed(v)) as unknown as typeof ctx.answers.inspection, answer, 'inspection')",
+    'convertAnswer(ctx.answers.inspection, answer, "view\'s inspection")',
+    'convertAnswer(Converters.generic((v: unknown) => succeed(v)) as unknown as typeof ctx.answers.inspection, answer, "view\'s inspection")',
     I1A
   )
 ];
 
 MUTATIONS.push(...I1A_ROWS);
+
+/** I1b's rows run the tool suites and the public-surface suite. */
+const I1B = 'tools/|publicSurface';
+const MT = TL + 'mutationTools.ts';
+const WA = TL + 'writerAnswers.ts';
+
+const I1B_ROWS = [
+  m(
+    'I1b-1 task_create execute trusts its arguments',
+    MT,
+    '        taskCreateSchema\n          .convert(args)\n',
+    '        succeed(args as ITaskCreateToolArgs)\n',
+    I1B
+  ),
+  m(
+    'I1b-2 task_update execute trusts its arguments',
+    MT,
+    '        taskUpdateSchema\n          .convert(args)\n',
+    '        succeed(args as ITaskUpdateToolArgs)\n',
+    I1B
+  ),
+  m(
+    'I1b-3 task_reassign execute trusts its arguments',
+    MT,
+    '        taskReassignSchema\n          .convert(args)\n',
+    '        succeed(args as ITaskReassignToolArgs)\n',
+    I1B
+  ),
+  paired(
+    "I1b-4 a model's operation id is honoured (schema closure and the tool's own id both reverted)",
+    [
+      {
+        file: MT,
+        from: '        taskUpdateSchema\n          .convert(args)\n',
+        to: '        succeed(args as ITaskUpdateToolArgs)\n'
+      },
+      {
+        file: MT,
+        from: '          taskId: args.taskId,\n          operationId,\n          expectedRevision: args.expectedRevision,\n          patch: {',
+        to: '          taskId: args.taskId,\n          operationId: (args as unknown as { operationId?: OperationId }).operationId ?? operationId,\n          expectedRevision: args.expectedRevision,\n          patch: {'
+      }
+    ],
+    I1B
+  ),
+  paired(
+    "I1b-5 a model's new task id is honoured (schema closure and the minted id both reverted)",
+    [
+      {
+        file: MT,
+        from: '        taskCreateSchema\n          .convert(args)\n',
+        to: '        succeed(args as ITaskCreateToolArgs)\n'
+      },
+      {
+        file: MT,
+        from: '.convert({ ...args, taskId, operationId })',
+        to: '.convert({ taskId, operationId, ...args })'
+      }
+    ],
+    I1B
+  ),
+  m(
+    "I1b-6 a writer's receipt is read without being converted",
+    MT,
+    "convertAnswer(receipt, answer, \"writer's receipt\", 'commit-indeterminate')",
+    'succeedWithDetail<never, ITaskFailure>(answer as never)',
+    I1B
+  ),
+  m(
+    'I1b-7 a receipt for another task or operation is accepted',
+    WA,
+    '    if (value.taskId !== expected.taskId || value.operationId !== expected.operationId) {',
+    '    if (value.taskId === undefined) {',
+    I1B
+  ),
+  m(
+    "I1b-8 a receipt's revision is not tied to the request",
+    WA,
+    '    return value.revision === revision && disposition\n',
+    '    return value.revision === revision || disposition\n',
+    I1B
+  ),
+  m(
+    'I1b-9 a reassignment receipt may name another party',
+    WA,
+    "fail('the receipt names a responsible party other than the one asked for')",
+    'succeed(value)',
+    I1B
+  ),
+  m(
+    'I1b-10 the party is checked against the request object the writer was handed',
+    MT,
+    "              responsibility:\n                args.responsibility === null\n                  ? 'unassigned'\n                  : { namespace: args.responsibility.namespace, key: args.responsibility.key }",
+    '              responsibility: request.responsibility',
+    I1B
+  ),
+  m(
+    "I1b-11 a receipt's update ids are unbounded",
+    WA,
+    "boundedArrayOf(converters.ids.updateId, allUpdateCategories.length, 'update ids')",
+    "boundedArrayOf(converters.ids.updateId, allUpdateCategories.length * 1000, 'update ids')",
+    I1B
+  ),
+  m(
+    'I1b-12 update ids reach the model',
+    MT,
+    '    disposition: receipt.disposition\n  });',
+    '    disposition: receipt.disposition,\n    ...{ updateIds: receipt.updateIds }\n  });',
+    I1B
+  ),
+  m(
+    "I1b-13 a writer's malformed receipt reads as a refusal, not an unknown outcome",
+    MT,
+    "convertAnswer(receipt, answer, \"writer's receipt\", 'commit-indeterminate')",
+    "convertAnswer(receipt, answer, \"writer's receipt\", 'invalid')",
+    I1B
+  ),
+  m(
+    "I1b-14 a writer's throw reads as a view failure, not an unknown outcome",
+    MT,
+    '      writerFailed\n    )',
+    "      'the task view failed'\n    )",
+    I1B
+  ),
+  m(
+    'I1b-15 the mutation writer need not be the view',
+    TL + 'taskTools.ts',
+    '  if (mutations.writer !== view) {',
+    '  if (mutations.writer === undefined) {',
+    I1B
+  ),
+  m(
+    'I1b-16 an unknown mutation group is accepted',
+    TL + 'taskTools.ts',
+    'Converters.enumeratedValue<TaskMutationToolGroup>(allTaskMutationToolGroups)',
+    "Converters.enumeratedValue<TaskMutationToolGroup>([...allTaskMutationToolGroups, 'execute', 'stop', 'changeScopes'] as TaskMutationToolGroup[])",
+    I1B
+  ),
+  m(
+    'I1b-17 tracked tools are offered without their opt-in',
+    MT,
+    "groups.has('tracked')",
+    'groups.size >= 0',
+    I1B
+  ),
+  m(
+    'I1b-18 the reassign tool is offered without its opt-in',
+    MT,
+    "groups.has('reassign')",
+    'groups.size >= 0',
+    I1B
+  ),
+  m(
+    "I1b-19 a minting failure's host text reaches the model",
+    TL + 'toolSupport.ts',
+    '  return fail(`${tool}: the request failed`);',
+    '  return fail(`${tool}: ${message}`);',
+    I1B
+  ),
+  m('I1b-20 a minting throw escapes the tool', MT, '    captureResult(mint)\n', '    succeed(mint())\n', I1B),
+  m(
+    'I1b-21 a minted id is not converted',
+    MT,
+    '.onSuccess((raw) => converter.convert(raw))',
+    '.onSuccess((raw) => succeed(raw))',
+    I1B
+  ),
+  m(
+    'I1b-22 task_inspect does not return the revision it read',
+    TL + 'presentation.ts',
+    '        revision: inspection.envelope.revision,\n',
+    '        revision: (0 * inspection.envelope.revision + 1) as typeof inspection.envelope.revision,\n',
+    I1B
+  )
+];
+
+MUTATIONS.push(...I1B_ROWS);
 
 function parseArgs(argv) {
   const args = { check: false, pkg: path.resolve(__dirname, '..'), out: undefined, only: [] };
