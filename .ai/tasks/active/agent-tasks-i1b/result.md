@@ -150,7 +150,7 @@ lines; host text goes only to `logger`.
 | `not-found-or-denied: the task is not found or not visible, or this is not permitted on it` | missing task; hidden task; hidden or foreign parent on create; visible task whose action the policy denies; create denied; forged party denied | **nothing distinguishing**: the same line for all of them, with no id (tested: hidden vs foreign for update, reassign and create's parent; hidden child of a visible parent; denied-but-visible vs foreign) |
 | `conflict: the task changed, or does not accept this change now; inspect it again before deciding whether to retry` | stale `expectedRevision`; changed after authorization; archived tombstone; terminal parent; stop latch; repeated operation id | only reached **after** the subject is visible and the action authorized (`runCatalogMutation` steps 2–4; `createNative` checks `mayCreate` and the parent's `sees`/`may` first), so it describes a task the caller may act on |
 | `unsupported: the request is not supported` | unresolved subject; non-native kind for a tracked update | same ordering: a visible, authorized subject |
-| `commit-indeterminate: the outcome is not known: a change may or may not have been applied` + note | broker's own indeterminate commit, **or a writer receipt that fails conversion** | nothing about other tasks. The note is `; inspect the task before retrying` for a change, and for a creation `; if the task was created its id is <minted id>: inspect that id before creating it again` (Copilot round 1) |
+| `commit-indeterminate: the outcome is not known: a change may or may not have been applied` + note | broker's own indeterminate commit, **or a writer receipt that fails conversion** | nothing about other tasks. The note for a change is `; inspect the task before retrying — a retry at the same expectedRevision is refused if the change moved the task, and changes nothing if it did not` (Copilot round 2), and for a creation `; if the task was created its id is <minted id>: inspect that id before creating it again` (Copilot round 1) |
 | `the task writer failed; the change may or may not have been applied` + note | writer throws or rejects | as above |
 | `the request failed; the change may or may not have been applied` + note | writer fails with no known code (Copilot round 1) | as above |
 | `<tool>: the request failed` | the host environment fails, throws or mints a malformed id — before anything is sent | nothing; the environment's text (a socket path in the test) goes to the log |
@@ -313,13 +313,17 @@ class layer-1 P2-2 opened, found one level further.
 | **(high)** a writer failure with **no known code** reached the model as `the request failed`, a refusal — but a custom writer can commit and then return a bare `fail(...)`, and the next create mints fresh ids, so a retry could duplicate | failure wording is now per tool family (`IFailureWording`: `thrown`, `unclassified`, `unknownOutcome`). Reads keep I1a's text exactly. Mutations say the change may or may not have been applied for a throw, an unclassified failure, and `commit-indeterminate` (which a malformed receipt reports). A **classified** failure other than `commit-indeterminate` is the writer's own account of the outcome and gets no note. Tests pin all four update texts and both create texts. Matrix row I1b-23 |
 | **(medium)** "inspect before retrying" gave a create no way to inspect: the minted id was lost with the failure | an unknown-outcome creation now names the id the task has if it was created. **This discloses nothing about other tasks**: the id was minted by the host, not chosen by the model; `task_inspect` answers a task this principal cannot see exactly as a missing one; and a collision with a hidden task is refused (`not-found-or-denied`, a determinate code) before anything is committed, so it never reaches this path. Test: a writer that commits then throws — the named id inspects as `resolved`; a writer that throws before committing — the named id is refused with exactly the hidden-task text. Change tools need no id: a retry carries the revision it read, which an applied change has moved. Matrix row I1b-24 |
 
-**Round 2 — requested, not yet run.** Requested at 16:32, 16:48, 17:21 and 18:23 UTC on the round-1
-head and later heads; no Copilot review run appeared on the PR for any of the first three (I1a saw the
-same once: its first request did not register). CI is green and every review thread is resolved in the
-meantime. **As of 19:25 UTC none of the four requests has produced a review run**; the API request is
-evidently not registering on this PR, so re-requesting stopped there — round 2 needs a manual trigger
-from the PR page (Reviewers → Copilot). The loop is **not** stopped: round 1 found a genuine high on an authorization boundary, which
-per `CODING_STANDARDS.md` is not a point to call diminishing returns.
+**Round 2 (on `a2db061e`) — one medium, one low; both real, both fixed.** It did not run on four API
+requests (16:32, 16:48, 17:21, 18:23 UTC) and ran after an `@copilot review` comment at 19:41 UTC,
+posting at 22:37.
+
+| finding | fix |
+|---|---|
+| **(medium)** the change tools' unknown-outcome note — and the comment on it — claimed an applied change always moves the revision. A no-op (a repeated patch, the current party) commits as `unchanged` with the revision unmoved, so inspection cannot tell "not applied" from "applied as a no-op" | the note now states the actual guarantee: *a retry at the same expectedRevision is refused if the change moved the task, and changes nothing if it did not*. The comment says inspection cannot, and need not, distinguish the two. **Declined: host-side reconciliation before a retry.** A retry is safe in both cases by the writer's own precondition — it can never apply a second, different change. What it can do is record another operation against the record, which is no different from the model calling a no-op update twice, and the record's operation capacity is the host's existing, finite bound (T8b); the tool adds nothing there. Tests pin the new text on all four update paths |
+| **(low)** `CAPABILITIES.md` still said the factory takes "never a writer" and calls only read methods | now: without `mutations` the tools call only `query` and `inspect`; a bound writer can be passed as the view, and must be to opt mutations in. The unknown-outcome bullet is corrected the same way as the medium |
+
+No source line a matrix row targets moved (the change is a string and a comment), so the round-1 matrix
+stands; `--check` confirms every I1 row's pattern.
 
 ## Routed beyond this slice
 

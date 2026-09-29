@@ -59,12 +59,15 @@ interface IPlannedMutation<TRequest, TReceipt> {
 }
 
 /**
- * The wording for a change to an existing task. Retrying it is safe once inspected: a retry carries
- * the revision it read, which a change that was applied has moved.
+ * The wording for a change to an existing task. A retry is safe whatever happened: it carries the
+ * revision the call was asked against, so a change that moved the task refuses the retry (`conflict`),
+ * and a change that altered nothing — committed as `unchanged`, revision unmoved — alters nothing
+ * again. Inspection alone cannot tell "not applied" from "applied as a no-op", and does not need to.
  */
 const changeWording: IFailureWording = {
   ...writerWording,
-  unknownOutcome: '; inspect the task before retrying'
+  unknownOutcome:
+    '; inspect the task before retrying — a retry at the same expectedRevision is refused if the change moved the task, and changes nothing if it did not'
 };
 
 /**

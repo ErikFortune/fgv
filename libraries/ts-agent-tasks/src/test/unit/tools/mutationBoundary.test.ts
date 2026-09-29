@@ -205,7 +205,7 @@ describe("a writer's answer is checked the way a view's answer is", () => {
         expect(await call(tools, name, args)).toFailWith(
           name === 'task_create'
             ? /^task_create: commit-indeterminate: the outcome is not known: a change may or may not have been applied; if the task was created its id is b-\d+: inspect that id before creating it again$/
-            : `${name}: commit-indeterminate: the outcome is not known: a change may or may not have been applied; inspect the task before retrying`
+            : `${name}: commit-indeterminate: the outcome is not known: a change may or may not have been applied; inspect the task before retrying — a retry at the same expectedRevision is refused if the change moved the task, and changes nothing if it did not`
         );
       }
     }
@@ -264,12 +264,12 @@ describe("a writer's answer is checked the way a view's answer is", () => {
       () => fail(secret)
     ];
     const updateTexts: ReadonlyArray<string> = [
-      'task_update: the task writer failed; the change may or may not have been applied; inspect the task before retrying',
-      'task_update: the task writer failed; the change may or may not have been applied; inspect the task before retrying',
+      'task_update: the task writer failed; the change may or may not have been applied; inspect the task before retrying — a retry at the same expectedRevision is refused if the change moved the task, and changes nothing if it did not',
+      'task_update: the task writer failed; the change may or may not have been applied; inspect the task before retrying — a retry at the same expectedRevision is refused if the change moved the task, and changes nothing if it did not',
       // A classified failure is the writer's own account of the outcome, so no note is added.
       'task_update: storage-unavailable: task storage is unavailable; retry later',
       // No code at all: the writer may have committed before it failed.
-      'task_update: the request failed; the change may or may not have been applied; inspect the task before retrying'
+      'task_update: the request failed; the change may or may not have been applied; inspect the task before retrying — a retry at the same expectedRevision is refused if the change moved the task, and changes nothing if it did not'
     ];
     for (const [i, answer] of answers.entries()) {
       expect(

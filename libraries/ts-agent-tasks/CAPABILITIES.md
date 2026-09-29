@@ -656,8 +656,9 @@ out-of-band file deletion is corruption, not maintenance, and open will report i
 `AiAssist.executeClientToolTurn`: `task_query` (a page of the tasks the view may read, narrowed by
 responsible party, parent, lifecycle class or status) and `task_inspect` (one task, its currently
 available commands, and its details when the host exposes them). The factory takes an
-`IBoundTaskView` — never a writer, never the broker — and the tools call only its `query` and
-`inspect`.
+`IBoundTaskView` — never the broker. Without `mutations` the tools call only its `query` and
+`inspect`; a bound writer can be passed as the view (it is one), and must be, to opt mutations in
+(below).
 
 ```ts
 const view = broker.bindView({ principal: 'agent:ada', scopes, authorization }).orThrow();
@@ -740,8 +741,9 @@ const tools = createTaskTools({
   of a creation could duplicate it. The model is told the change may or may not have been applied —
   and, for `task_create`, the id the task has if it was created, to inspect before creating it again.
   Naming that id discloses nothing: it was minted, not chosen, and `task_inspect` answers a hidden
-  task exactly as a missing one. For an update or reassignment, inspecting is enough: a retry carries
-  the revision it read, which an applied change has moved.
+  task exactly as a missing one. For an update or reassignment a retry is safe either way: it carries
+  the same `expectedRevision`, so it is refused if the change moved the task, and changes nothing if
+  the change was a no-op (committed `unchanged`, revision unmoved).
 - **Refusals disclose nothing a read would not.** A hidden task, a hidden parent, a foreign id and a
   permitted-to-read-but-not-to-change task all produce the same `not-found-or-denied` line.
 
