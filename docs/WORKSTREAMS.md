@@ -128,7 +128,7 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
-### `agent-tasks-i1b` ✅ (shipped 2026-09-29 via [#PRNUM](https://github.com/ErikFortune/fgv/pull/PRNUM)) — slice I1b of four: mutation opt-ins, disabled by default
+### `agent-tasks-i1b` ✅ (shipped 2026-09-29 via [#703](https://github.com/ErikFortune/fgv/pull/703)) — slice I1b of four: mutation opt-ins, disabled by default
 
 **Status:** ✅ shipped into `integration/agent-tasks-v1` (not `release`; the cluster promotes as one).
 Branched at `96ebc0d1d` (the I1a landing). Artifacts in `.ai/tasks/active/agent-tasks-i1b/`; this

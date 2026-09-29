@@ -1,6 +1,6 @@
 # State — `agent-tasks-i1b`
 
-**Status:** implemented; layer 1 done (no P1, 3 P2 resolved); package gates green (2,113+ tests, 100 %, lint clean, 0 `c8 ignore`); matrix and repo-wide rebuild/test running; PR not yet opened.
+**Status:** PR #703 open; all local gates green; Copilot loop in progress (see result.md § Layer 2).
 
 ## Where things stand
 
@@ -8,7 +8,7 @@
 |---|---|
 | brief | `.ai/tasks/active/agent-tasks-i1b/brief.md` — complete |
 | branch | `claude/agent-tasks-i1b` off `integration/agent-tasks-v1` at I1a (`96ebc0d1`) |
-| PR | none yet — target `integration/agent-tasks-v1` |
+| PR | [#703](https://github.com/ErikFortune/fgv/pull/703) into `integration/agent-tasks-v1` |
 
 ## Decisions taken (argued in full in `result.md` when written)
 
@@ -42,7 +42,7 @@
 Tests (`mutations.test.ts`, `mutationBoundary.test.ts`, factory/requestCapture/reads/publicSurface
 extended); layer 1 (see result.md); matrix rows `I1b-1…22` added, I1a rows re-pointed to
 `toolSupport.ts`; CAPABILITIES + router shortcut; change file (`minor`, verified); plan status and
-ledger entry (PR number placeholder `PRNUM` — replace once the PR exists); TECH_DEBT routing.
+ledger entry (PR number placeholder `703` — replace once the PR exists); TECH_DEBT routing.
 
 Layer-1 changes after the decisions above: the model no longer sees `previous`/`current`
 (`ITaskReassignToolResult` removed); malformed writer receipts → `commit-indeterminate`; writer
@@ -54,4 +54,4 @@ throw → "may or may not have been applied"; receipt revision tied to the reque
    plus re-pointed `I1a-8,9,10,11,19,22,31`). Re-run any row that ran during the repo-wide rebuild if
    its verdict looks off.
 2. Repo-wide rebuild + test → result.md gates; other gates (`verify-*`, feed check).
-3. Push, open PR into `integration/agent-tasks-v1`, replace `PRNUM`, request Copilot, drive loop.
+3. Push, open PR into `integration/agent-tasks-v1`, replace `703`, request Copilot, drive loop.
