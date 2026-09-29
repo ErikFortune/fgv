@@ -226,7 +226,8 @@ describe("a writer's answer is checked the way a view's answer is", () => {
     // The party checked is the tool's own copy: a writer that rewrites the request it was handed
     // cannot move what the receipt is checked against.
     const rewriting = over((__m, request) => {
-      (request as { responsibility: unknown }).responsibility = { namespace: 'agent', key: 'mallory' };
+      // In place: the party object the writer was handed is rewritten, not replaced.
+      (request.responsibility as { key: string }).key = 'mallory';
       return honest(request, { current: { namespace: 'agent', key: 'mallory' } });
     });
     expect(await call(rewriting, 'task_reassign', reassign)).toFailWith(
