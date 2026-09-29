@@ -216,6 +216,20 @@ seven I1a rows this slice re-pointed (`I1a-8, 9, 10, 11, 19, 22, 31` — the fai
   closed schema *and* would be ignored anyway, because the tool builds the writer's request from named
   fields and its own minted ids. Reverting the schema alone (I1b-1/2) is caught by the surplus-field
   tests; the pair reverts both and shows the id would then be **honoured**.
+- **The runner itself had a hole, found by the orchestrator's gating re-run and fixed here.**
+  `classify()` fell back to a `'? red'` verdict whenever the run produced no `Failures: <n>` line,
+  and the summary filter treated only `UNVERIFIED*` and exactly `'0 red'` as a problem — so a row
+  that counted *nothing* was reported as a pass, and the runner exited 0. The case is easy to hit:
+  a `--pkg` copy made without the `node_modules` symlink the usage notes call for runs no tests at
+  all, and three rows came back `? red` / "0 UNVERIFIED or 0 red". Such a run is not evidence in
+  either direction, so it is now `UNVERIFIED: the run reported no failure count`, which the summary
+  counts and which exits 1 (both verified: the same deps-less copy now reports UNVERIFIED and the
+  runner exits 1; a correctly linked copy is unaffected). The header's stated rule was widened to
+  match. **No I1b or I1a row's verdict changes** — every row in the table above was run on a
+  correctly linked copy and reported a real count.
+- **Three rows re-verified independently** on a `git archive` copy of `02cdbe20d` with
+  `node_modules` linked, by the orchestrator: I1b-10 (1 red), I1b-12 (7 red), I1b-22 (1 red) —
+  identical counts and identical test names to the table above.
 - Not in the matrix (structural, asserted by test rather than by a single guard line): building the
   tools touches neither the writer nor the environment; the tools reach only five binding members.
 - The storage rows `M13, M20, M23, M34, M39, M49` report `UNVERIFIED` under `--check` on this branch

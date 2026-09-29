@@ -19,9 +19,10 @@
  *   --out     write the results as JSON
  *   M…        run only the named rows (T8b's rows are named T8b-…, T9's T9-…, I1a's I1a-…, I1b's I1b-…)
  *
- * The one rule that matters: a row whose pattern is not found exactly once, or whose mutant does
- * not build, is reported UNVERIFIED — never as "nothing went red". A mutation that silently fails
- * to apply looks exactly like a protection nothing depends on (F2's lesson, on its two flushes).
+ * The one rule that matters: a row whose pattern is not found exactly once, whose mutant does not
+ * build, or whose run reports no failure count at all, is reported UNVERIFIED — never as "nothing
+ * went red". A mutation that silently fails to apply looks exactly like a protection nothing
+ * depends on (F2's lesson, on its two flushes).
  * A row that builds and leaves every test green is reported `0 red`, and is a finding: either the
  * protection is untested or it is not load-bearing.
  *
@@ -1613,7 +1614,13 @@ function classify(text) {
   }
   const red = Array.from(new Set(Array.from(text.matchAll(/● (.+)/g), (match) => match[1].trim()))).sort();
   const failures = /Failures: (\d+)/.exec(text);
-  return { verdict: `${failures ? failures[1] : '?'} red`, red };
+  if (failures === null) {
+    // The suite reported no failure count at all, so this run counted nothing. It is not evidence
+    // either way, and must never read as a pass: a copy missing its `node_modules` symlink lands
+    // here, and used to be reported as `? red`, which the summary's filter let through.
+    return { verdict: 'UNVERIFIED: the run reported no failure count', red };
+  }
+  return { verdict: `${failures[1]} red`, red };
 }
 
 function main() {
