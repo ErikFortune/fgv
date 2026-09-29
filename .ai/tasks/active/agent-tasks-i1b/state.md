@@ -1,6 +1,6 @@
 # State — `agent-tasks-i1b`
 
-**Status:** implementing. Source written and compiling; tests next.
+**Status:** implemented; layer 1 done (no P1, 3 P2 resolved); package gates green (2,113+ tests, 100 %, lint clean, 0 `c8 ignore`); matrix and repo-wide rebuild/test running; PR not yet opened.
 
 ## Where things stand
 
@@ -37,7 +37,21 @@
 7. **Namespace:** fixed names `task_query|inspect|create|update|reassign`; I1c must not generate
    any of them — route to I1c in TECH_DEBT.
 
+## Done
+
+Tests (`mutations.test.ts`, `mutationBoundary.test.ts`, factory/requestCapture/reads/publicSurface
+extended); layer 1 (see result.md); matrix rows `I1b-1…22` added, I1a rows re-pointed to
+`toolSupport.ts`; CAPABILITIES + router shortcut; change file (`minor`, verified); plan status and
+ledger entry (PR number placeholder `PRNUM` — replace once the PR exists); TECH_DEBT routing.
+
+Layer-1 changes after the decisions above: the model no longer sees `previous`/`current`
+(`ITaskReassignToolResult` removed); malformed writer receipts → `commit-indeterminate`; writer
+throw → "may or may not have been applied"; receipt revision tied to the request.
+
 ## Next
 
-Tests (new `mutations.test.ts`; extend `factory.test.ts:43`, `requestCapture.test.ts`), layer-1
-review, coverage, matrix rows `I1b-*`, docs (CAPABILITIES, plan status, ledger, TECH_DEBT), change file.
+1. Matrix results → result.md (run: `node perf/mutationMatrix.js --pkg <git-archive copy> I1b-1..22`
+   plus re-pointed `I1a-8,9,10,11,19,22,31`). Re-run any row that ran during the repo-wide rebuild if
+   its verdict looks off.
+2. Repo-wide rebuild + test → result.md gates; other gates (`verify-*`, feed check).
+3. Push, open PR into `integration/agent-tasks-v1`, replace `PRNUM`, request Copilot, drive loop.
