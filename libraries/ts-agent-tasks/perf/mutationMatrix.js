@@ -1303,7 +1303,7 @@ const I1A_ROWS = [
     "I1a-21 a view's cursor reaches the model unchecked",
     TL + 'viewAnswers.ts',
     '      nextCursor: converters.queries.pageCursor.optional(),',
-    '      nextCursor: (Converters.generic((v: unknown) => succeed(v)) as never),',
+    '      nextCursor: (Converters.generic((v: unknown) => succeed(v)).optional() as never),',
     I1A
   ),
   m(
@@ -1373,7 +1373,7 @@ const I1A_ROWS = [
     'I1a-31 an inspection is read without being converted',
     TL + 'taskTools.ts',
     "_answer(ctx.answers.inspection, answer, 'inspection')",
-    "_answer((Converters.generic((v: unknown) => succeed(v)) as never), answer, 'inspection')",
+    "_answer(Converters.generic((v: unknown) => succeed(v)) as unknown as typeof ctx.answers.inspection, answer, 'inspection')",
     I1A
   )
 ];
