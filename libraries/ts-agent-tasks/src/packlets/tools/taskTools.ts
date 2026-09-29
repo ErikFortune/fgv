@@ -110,7 +110,11 @@ function _toolResult<T>(ctx: IToolContext, tool: string, result: TaskResult<T>):
     return succeed(result.value);
   }
   ctx.logger?.warn(`${tool}: ${result.message}`);
-  const code: TaskFailureCode | undefined = result.detail?.code;
+  // The view is any `IBoundTaskView`, so its failure detail is checked, not trusted: a code outside
+  // the known set is treated as no code at all.
+  const code: TaskFailureCode | undefined = ctx.renderer.converters.failures.failureCode
+    .convert(result.detail?.code)
+    .orDefault();
   return fail(
     code !== undefined ? `${tool}: ${code}: ${modelFacingFailures[code]}` : `${tool}: the request failed`
   );

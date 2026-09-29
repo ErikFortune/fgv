@@ -219,6 +219,22 @@ The first request did not register (no reviewer listed after 35 minutes); the se
 | (headline only, not posted) "unbounded issue text" | **real, and the same class as round 1's high**: `task_query` passed the view's `issues` strings through verbatim. The broker only ever emits one generic line, but `createTaskTools` accepts any `IBoundTaskView`, so a host's view could put unbounded host text in front of the model. Now the model gets one fixed line when there are any, and the view's text goes to `logger`. The sibling hunted while there: `nextCursor` was also passed through unchecked, and is now converted as a page cursor (a malformed one fails the call as `invalid`). New tests; new matrix rows I1a-20, I1a-21 |
 | (headline only) "surrogate-pair error truncation" | re-examined, **no defect**: the cut backs off one unit when it would land on a low surrogate, pinned by *the cut never splits a surrogate pair* and matrix row I1a-9 |
 
+**Round 3 — one high, real; and its class swept.**
+
+`IBoundTaskView` is a public interface a host can implement, and the tools trusted the failure
+`detail.code` it returned: a forged code went into the model's message verbatim (and produced an
+`undefined` description). The code is now converted against the known set; anything else is treated
+as no code at all (`<tool>: the request failed`).
+
+This is round 2's defect again — a field the view returns reaching the model unchecked — so the fix
+was not the one field but **every field of the view's answer that is not already converted by the
+renderer**: the page's `completeness` and `freshness` (enumerated values), the inspection's `commands`
+(command-name identifiers, at most 100) and `archived` (a boolean). Each malformed value fails the
+call with the fixed `invalid` message; the field's name goes to the log, never its value. What the
+renderer already converts (envelopes, unresolved references), what round 2 covered (`issues`,
+`nextCursor`), and `details` (host JSON, size-bounded, documented as unframed) complete the list —
+no field of a view's answer now reaches the model unconverted. New matrix rows I1a-22 … I1a-26.
+
 Layer 1 and Copilot round 1 found the same defect twice at different depths: layer 1 saw an
 *unbounded* message, fixed the bound, and left the *disclosure*. Worth carrying into I1b: a
 model-facing failure path is a disclosure surface, not a formatting one.
@@ -244,7 +260,7 @@ Run locally on `1d95da46` — the source after Copilot round 2.
 | `rush change --verify --target-branch origin/integration/agent-tasks-v1` | change file found (`minor`) |
 | `rushx build` (package) | clean, **zero warnings**; `etc/ts-agent-tasks.api.md` updated and checked in |
 | `rushx lint` / `rushx fixlint` | clean; fixlint a no-op before commit |
-| `rushx test` (package) | **2,062 passed; 100 % statements, branches, functions, lines; zero `c8 ignore`** |
+| `rushx test` (package) | **2,065 passed; 100 % statements, branches, functions, lines; zero `c8 ignore`** |
 | `rush rebuild` (repo-wide) | exit 0 (4 min 6 s) — required: the build graph gained an edge |
 | `rush test` (repo-wide) | exit 0 (8 min 20 s) — required: the renderer accepts a wider set |
 | `verify-capability-docs.mjs` | router 21,338/24,000, 24/24 documented, 75 reflexes, 0 failed |

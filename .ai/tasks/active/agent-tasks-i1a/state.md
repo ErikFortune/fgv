@@ -8,7 +8,7 @@ be enough to resume cold. Keep it current as you go.
 ## Status
 
 **PR open (#702); Copilot rounds 1–2 fixed; every gate green on `1d95da46` (2026-09-29).** CI
-green; package suite 2,062 passing at 100 % with zero `c8 ignore`; repo-wide rebuild and test exit 0;
+green; package suite 2,065 passing at 100 % with zero `c8 ignore`; repo-wide rebuild and test exit 0;
 five verify scripts 0 failed; revert matrix on `1d95da46`: 21 rows, 36 red tests, 0 UNVERIFIED or
 `0 red`. Round 1: 1 high + 2 medium; round 2: 2 low + 1 previously-missed + a real unposted headline
 finding (view issue text / cursor), all fixed. Next: Copilot round 3. If a round changes source,

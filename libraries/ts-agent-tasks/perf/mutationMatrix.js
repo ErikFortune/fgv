@@ -1305,6 +1305,41 @@ const I1A_ROWS = [
     '    renderer.converters.queries.pageCursor.convert(page.nextCursor).isFailure()',
     '    renderer.converters.queries.pageCursor.convert(page.nextCursor).isFailure() &&\n    page.nextCursor.length < 0',
     I1A
+  ),
+  m(
+    "I1a-22 a view's failure code is trusted",
+    TL + 'taskTools.ts',
+    '  const code: TaskFailureCode | undefined = ctx.renderer.converters.failures.failureCode\n    .convert(result.detail?.code)\n    .orDefault();',
+    '  const code: TaskFailureCode | undefined = result.detail?.code;',
+    I1A
+  ),
+  m(
+    "I1a-23 a page's completeness is trusted",
+    TL + 'presentation.ts',
+    "  return _checked(pageCompleteness.convert(page.completeness), 'page completeness')",
+    "  return _checked(Converters.string.convert(page.completeness), 'page completeness')",
+    I1A
+  ),
+  m(
+    "I1a-24 a page's freshness is trusted",
+    TL + 'presentation.ts',
+    "    .onSuccess(() => _checked(pageFreshness.convert(page.freshness), 'page freshness'))",
+    "    .onSuccess(() => _checked(Converters.string.convert(page.freshness), 'page freshness'))",
+    I1A
+  ),
+  m(
+    "I1a-25 an inspection's command names are trusted",
+    TL + 'presentation.ts',
+    "    boundedArrayOf(renderer.converters.commands.commandName, maxInspectionCommands, 'commands').convert(",
+    '    Converters.arrayOf(Converters.string).convert(',
+    I1A
+  ),
+  m(
+    "I1a-26 an inspection's archived flag is trusted",
+    TL + 'presentation.ts',
+    "    .onSuccess(() => _checked(Converters.boolean.convert(inspection.archived), 'archived flag'))",
+    "    .onSuccess(() => _checked(Converters.boolean.convert(inspection.archived === true), 'archived flag'))",
+    I1A
   )
 ];
 

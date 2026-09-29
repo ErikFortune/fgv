@@ -18,6 +18,7 @@ import {
   PageCursor,
   TaskContextRenderer,
   TaskFailureCode,
+  TaskInspection,
   TaskResult,
   defaultTaskContextBudget,
   defaultTaskProjector,
@@ -421,6 +422,84 @@ describe('what a page carries besides the rendered text is checked, not trusted'
     const tools = taskTools({ view: pageView({ ...empty, nextCursor: bogus }), logger });
     expect(await query(tools, {})).toFailWith(REFUSED_QUERY);
     expect(logger.logged.some((line) => /malformed page cursor/.test(line))).toBe(true);
+  });
+});
+
+describe('a view is any IBoundTaskView: every field it returns to the model is checked', () => {
+  const secret: string = 'postgres://secret';
+
+  test('a failure code outside the known set is treated as no code at all', async () => {
+    const forged = async (): Promise<TaskResult<never>> =>
+      failWithDetail<never, ITaskFailure>('boom', {
+        code: secret as unknown as TaskFailureCode,
+        retry: 'safe'
+      });
+    const view: IBoundTaskView = { principal: 'alice', query: forged, inspect: forged, inspectStop: forged };
+    const tools = taskTools({ view });
+    expect(await query(tools, {})).toFailWith(/^task_query: the request failed$/);
+    expect(await inspect(tools, { taskId: 't1' })).toFailWith(/^task_inspect: the request failed$/);
+  });
+
+  test('a page whose completeness or freshness is not a known value fails the call', async () => {
+    const base: IBoundTaskPage = {
+      items: [],
+      unresolved: [],
+      completeness: 'complete',
+      freshness: 'native-current',
+      issues: []
+    };
+    const unused = async (): Promise<never> => {
+      throw new Error('not used');
+    };
+    for (const page of [
+      { ...base, completeness: secret as unknown as IBoundTaskPage['completeness'] },
+      { ...base, freshness: secret as unknown as IBoundTaskPage['freshness'] }
+    ]) {
+      const view: IBoundTaskView = {
+        principal: 'alice',
+        query: async () => succeedWithDetail(page),
+        inspect: unused,
+        inspectStop: unused
+      };
+      const result = await query(taskTools({ view }), {});
+      expect(result).toFailWith(REFUSED_QUERY);
+    }
+  });
+
+  test('an inspection whose commands or archived flag are malformed fails the call', async () => {
+    const h = await brokerHarness();
+    await track(h.writer, 't1');
+    const real = (await bindReader(h).inspect(tid('t1'))).orThrow();
+    const inspections: ReadonlyArray<TaskInspection> = [
+      { ...real, commands: [secret] } as TaskInspection,
+      { ...real, commands: Array.from({ length: 101 }, (__, i) => `c${i}`) } as TaskInspection,
+      { ...real, archived: secret as unknown as boolean } as TaskInspection
+    ];
+    for (const inspection of inspections) {
+      const unused = async (): Promise<never> => {
+        throw new Error('not used');
+      };
+      const view: IBoundTaskView = {
+        principal: 'alice',
+        query: unused,
+        inspect: async () => succeedWithDetail(inspection),
+        inspectStop: unused
+      };
+      const result = await inspect(taskTools({ view }), { taskId: 't1' });
+      expect(result).toFailWith(REFUSED_INSPECT);
+    }
+    // A real inspection passes the same checks, at the cap exactly.
+    const atCap = { ...real, commands: Array.from({ length: 100 }, (__, i) => `c${i}`) } as TaskInspection;
+    const unused = async (): Promise<never> => {
+      throw new Error('not used');
+    };
+    const view: IBoundTaskView = {
+      principal: 'alice',
+      query: unused,
+      inspect: async () => succeedWithDetail(atCap),
+      inspectStop: unused
+    };
+    expect(await inspect(taskTools({ view }), { taskId: 't1' })).toSucceed();
   });
 });
 
