@@ -421,7 +421,7 @@ describe('what a page carries besides the rendered text is checked, not trusted'
     const bogus = `../${'c'.repeat(5000)}` as PageCursor;
     const tools = taskTools({ view: pageView({ ...empty, nextCursor: bogus }), logger });
     expect(await query(tools, {})).toFailWith(REFUSED_QUERY);
-    expect(logger.logged.some((line) => /malformed page cursor/.test(line))).toBe(true);
+    expect(logger.logged.some((line) => /malformed page: .*cursor/i.test(line))).toBe(true);
   });
 });
 
@@ -500,6 +500,82 @@ describe('a view is any IBoundTaskView: every field it returns to the model is c
       inspectStop: unused
     };
     expect(await inspect(taskTools({ view }), { taskId: 't1' })).toSucceed();
+  });
+});
+
+describe("a view's whole answer is converted before anything reads it", () => {
+  const unused = async (): Promise<never> => {
+    throw new Error('not used');
+  };
+  const pageOf = (page: unknown): IBoundTaskView => ({
+    principal: 'alice',
+    query: async () => succeedWithDetail(page as IBoundTaskPage),
+    inspect: unused,
+    inspectStop: unused
+  });
+  const base: IBoundTaskPage = {
+    items: [],
+    unresolved: [],
+    completeness: 'complete',
+    freshness: 'native-current',
+    issues: []
+  };
+
+  test('an inspection whose state is neither resolved nor unresolved fails, never reads as resolved', async () => {
+    const h = await brokerHarness();
+    await track(h.writer, 't1');
+    const real = (await bindReader(h).inspect(tid('t1'))).orThrow();
+    for (const forged of [
+      { ...real, state: 'bogus' },
+      { ...real, state: 'unresolved' },
+      { ...real, extra: 'postgres://secret' }
+    ]) {
+      const view: IBoundTaskView = {
+        principal: 'alice',
+        query: unused,
+        inspect: async () => succeedWithDetail(forged as unknown as TaskInspection),
+        inspectStop: unused
+      };
+      expect(await inspect(taskTools({ view }), { taskId: 't1' })).toFailWith(REFUSED_INSPECT);
+    }
+  });
+
+  test('a page holding more tasks than were asked for fails, rather than widening the bound', async () => {
+    const h = await brokerHarness();
+    for (const id of ['a', 'b', 'c']) {
+      await track(h.writer, id);
+    }
+    const full = (await bindReader(h).query({ limit: 3 })).orThrow();
+    // The tool asks for two; the view answers with three.
+    const tools = taskTools({ view: pageOf(full) });
+    expect(await query(tools, { limit: 2 })).toFailWith(REFUSED_QUERY);
+    // Asked for three, the same page is accepted.
+    expect(await query(tools, { limit: 3 })).toSucceed();
+    // The bound is on items and unresolved references together, not on each list alone.
+    await registerVendor(h, 'job', { unresolved: true });
+    const mixed = (await bindReader(h).query({ limit: 4 })).orThrow();
+    expect(mixed.items).toHaveLength(3);
+    expect(mixed.unresolved).toHaveLength(1);
+    const mixedTools = taskTools({ view: pageOf(mixed) });
+    expect(await query(mixedTools, { limit: 3 })).toFailWith(REFUSED_QUERY);
+    expect(await query(mixedTools, { limit: 4 })).toSucceed();
+  });
+
+  test('malformed issues, or a field a page does not have, fail the call', async () => {
+    for (const page of [
+      { ...base, issues: 'postgres://secret' },
+      { ...base, issues: [7] },
+      { ...base, issues: Array.from({ length: 101 }, () => 'x') },
+      { ...base, extra: 'postgres://secret' }
+    ]) {
+      expect(await query(taskTools({ view: pageOf(page) }), {})).toFailWith(REFUSED_QUERY);
+    }
+    expect(
+      await query(
+        taskTools({ view: pageOf({ ...base, issues: Array.from({ length: 100 }, () => 'x') }) }),
+        {}
+      )
+    ).toSucceed();
   });
 });
 

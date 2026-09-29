@@ -23,8 +23,8 @@
   `ts-agent-memory`.
 - **Renderer extension** (outside the packlet, inside the package — see *The renderer did not fit*).
 
-Files: `src/packlets/tools/{taskTools,presentation,schemas,index}.ts` (286 / 127 / 77 / 6 lines —
-nowhere near the cap), `src/packlets/types/tools.ts`, four test suites under `src/test/unit/tools/`
+Files: `src/packlets/tools/{taskTools,presentation,viewAnswers,schemas,index}.ts` (336 / 118 / 87 /
+77 / 6 lines — nowhere near the cap; `viewAnswers.ts` added in round 4), `src/packlets/types/tools.ts`, four test suites under `src/test/unit/tools/`
 plus a `toolFixtures.ts` helper.
 
 ## The factory shape, and how bounding is the default
@@ -240,6 +240,28 @@ renderer already converts (envelopes, unresolved references), what round 2 cover
 `nextCursor`), and `details` (host JSON, size-bounded, documented as unframed) complete the list —
 no field of a view's answer now reaches the model unconverted. New matrix rows I1a-22 … I1a-26.
 
+**Round 4 — one medium posted and two "previously missed", all the same class a third time; fixed
+at the root.**
+
+The posted finding: `inspection.state` was used as a discriminator unchecked, so a view answering
+`state: 'bogus'` fell into the resolved branch and reached the model looking like a real task. The two
+previously missed: a page holding more tasks than the `limit` asked for was accepted, so `omitted` /
+`abbreviated` were bounded by whatever the view sent; and `issues` was read without being checked as a
+bounded string array.
+
+Rounds 2, 3 and 4 were one defect found three times, one field per round: **the tools trusted the
+shape of a view's answer**. Patching field by field had not converged, so round 4 fixes the cause. A new
+`viewAnswers.ts` holds strict converters for a view's whole answer — the page (strict object, projected
+items and references, **at most the requested `limit` together**, a page cursor, enumerated
+completeness/freshness, at most 100 string issues) and the inspection (`oneOf` a strict resolved or a
+strict unresolved shape; the resolved one pins `state`, commands, `archived` and details). **Nothing
+reads a view's answer until it has converted**; the per-field checks of rounds 2 and 3 are gone,
+subsumed. The converter's message can quote the answer, so it goes to the logger only; the model sees
+the fixed `invalid` line. `oneOf` over literal-pinned arms rather than `discriminatedObject`, because
+the latter indexes its arm table with the raw discriminator (an inherited key such as `constructor`
+would be found). Matrix rows I1a-21 and I1a-23 … I1a-26 re-pointed at the converter fields; new rows
+I1a-27 … I1a-31.
+
 Layer 1 and Copilot round 1 found the same defect twice at different depths: layer 1 saw an
 *unbounded* message, fixed the bound, and left the *disclosure*. Worth carrying into I1b: a
 model-facing failure path is a disclosure surface, not a formatting one.
@@ -265,7 +287,7 @@ Run locally on `38217da7` — the source after Copilot round 3.
 | `rush change --verify --target-branch origin/integration/agent-tasks-v1` | change file found (`minor`) |
 | `rushx build` (package) | clean, **zero warnings**; `etc/ts-agent-tasks.api.md` updated and checked in |
 | `rushx lint` / `rushx fixlint` | clean; fixlint a no-op before commit |
-| `rushx test` (package) | **2,065 passed; 100 % statements, branches, functions, lines; zero `c8 ignore`** |
+| `rushx test` (package) | **2,068 passed; 100 % statements, branches, functions, lines; zero `c8 ignore`** |
 | `rush rebuild` (repo-wide) | exit 0 (4 min 8 s) — required: the build graph gained an edge |
 | `rush test` (repo-wide) | exit 0 (8 min 15 s) — required: the renderer accepts a wider set |
 | `verify-capability-docs.mjs` | router 21,338/24,000, 24/24 documented, 75 reflexes, 0 failed |

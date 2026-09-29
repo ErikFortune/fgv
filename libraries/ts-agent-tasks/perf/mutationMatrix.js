@@ -1183,8 +1183,8 @@ const I1A_ROWS = [
   m(
     "I1a-4 the query request skips the view's request converter",
     TL + 'taskTools.ts',
-    '  return ctx.renderer.converters.broker.boundQuery.convert({',
-    '  return Converters.generic<IBoundTaskQuery>((from) => succeed(from as IBoundTaskQuery)).convert({',
+    '  return ctx.renderer.converters.broker.boundQuery\n    .convert({',
+    '  return Converters.generic<IBoundTaskQuery>((from) => succeed(from as IBoundTaskQuery))\n    .convert({',
     I1A
   ),
   m(
@@ -1301,9 +1301,9 @@ const I1A_ROWS = [
   ),
   m(
     "I1a-21 a view's cursor reaches the model unchecked",
-    TL + 'presentation.ts',
-    '    renderer.converters.queries.pageCursor.convert(page.nextCursor).isFailure()',
-    '    renderer.converters.queries.pageCursor.convert(page.nextCursor).isFailure() &&\n    page.nextCursor.length < 0',
+    TL + 'viewAnswers.ts',
+    '      nextCursor: converters.queries.pageCursor.optional(),',
+    '      nextCursor: (Converters.generic((v: unknown) => succeed(v)) as never),',
     I1A
   ),
   m(
@@ -1315,30 +1315,65 @@ const I1A_ROWS = [
   ),
   m(
     "I1a-23 a page's completeness is trusted",
-    TL + 'presentation.ts',
-    "  return _checked(pageCompleteness.convert(page.completeness), 'page completeness')",
-    "  return _checked(Converters.string.convert(page.completeness), 'page completeness')",
+    TL + 'viewAnswers.ts',
+    "      completeness: Converters.enumeratedValue<IBoundTaskPage['completeness']>(['complete', 'partial']),",
+    '      completeness: (Converters.generic((v: unknown) => succeed(v)) as never),',
     I1A
   ),
   m(
     "I1a-24 a page's freshness is trusted",
-    TL + 'presentation.ts',
-    "    .onSuccess(() => _checked(pageFreshness.convert(page.freshness), 'page freshness'))",
-    "    .onSuccess(() => _checked(Converters.string.convert(page.freshness), 'page freshness'))",
+    TL + 'viewAnswers.ts',
+    "      freshness: Converters.enumeratedValue<IBoundTaskPage['freshness']>([\n        'native-current',\n        'source-projection'\n      ]),",
+    '      freshness: (Converters.generic((v: unknown) => succeed(v)) as never),',
     I1A
   ),
   m(
     "I1a-25 an inspection's command names are trusted",
-    TL + 'presentation.ts',
-    "    boundedArrayOf(renderer.converters.commands.commandName, maxInspectionCommands, 'commands').convert(",
-    '    Converters.arrayOf(Converters.string).convert(',
+    TL + 'viewAnswers.ts',
+    "    commands: boundedArrayOf(converters.commands.commandName, maxInspectionCommands, 'commands')",
+    '    commands: (Converters.generic((v: unknown) => succeed(v)) as never)',
     I1A
   ),
   m(
     "I1a-26 an inspection's archived flag is trusted",
-    TL + 'presentation.ts',
-    "    .onSuccess(() => _checked(Converters.boolean.convert(inspection.archived), 'archived flag'))",
-    "    .onSuccess(() => _checked(Converters.boolean.convert(inspection.archived === true), 'archived flag'))",
+    TL + 'viewAnswers.ts',
+    '    archived: Converters.boolean,',
+    '    archived: (Converters.generic((v: unknown) => succeed(v)) as never),',
+    I1A
+  ),
+  m(
+    "I1a-27 an inspection's state is trusted",
+    TL + 'viewAnswers.ts',
+    "    state: Converters.literal('resolved'),",
+    '    state: (Converters.generic((v: unknown) => succeed(v)) as never),',
+    I1A
+  ),
+  m(
+    'I1a-28 a page may hold more tasks than were asked for',
+    TL + 'viewAnswers.ts',
+    '        value.items.length + value.unresolved.length > limit',
+    '        value.items.length + value.unresolved.length > limit + 1000',
+    I1A
+  ),
+  m(
+    "I1a-29 a page's issues are trusted",
+    TL + 'viewAnswers.ts',
+    "      issues: boundedArrayOf(Converters.string, maxPageIssues, 'page issues')",
+    '      issues: (Converters.generic((v: unknown) => succeed(v)) as never)',
+    I1A
+  ),
+  m(
+    'I1a-30 a page may carry fields it does not have',
+    TL + 'viewAnswers.ts',
+    '    Converters.strictObject<IBoundTaskPage>({',
+    '    Converters.object<IBoundTaskPage>({',
+    I1A
+  ),
+  m(
+    'I1a-31 an inspection is read without being converted',
+    TL + 'taskTools.ts',
+    "_answer(ctx.answers.inspection, answer, 'inspection')",
+    "_answer((Converters.generic((v: unknown) => succeed(v)) as never), answer, 'inspection')",
     I1A
   )
 ];

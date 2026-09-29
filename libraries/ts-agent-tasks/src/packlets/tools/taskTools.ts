@@ -5,11 +5,22 @@
 
 import { AiAssist } from '@fgv/ts-extras';
 import { JsonSchema } from '@fgv/ts-json-base';
-import { Converters, Logging, Result, captureAsyncResult, fail, succeed } from '@fgv/ts-utils';
+import {
+  Converter,
+  Converters,
+  Logging,
+  Result,
+  captureAsyncResult,
+  fail,
+  failWithDetail,
+  succeed,
+  succeedWithDetail
+} from '@fgv/ts-utils';
 import { TaskContextRenderer } from '../context';
 import {
   IBoundTaskQuery,
   IBoundTaskView,
+  ITaskFailure,
   ITaskToolBudget,
   TaskFailureCode,
   TaskId,
@@ -18,6 +29,7 @@ import {
 } from '../types';
 import { presentInspection, presentPage } from './presentation';
 import { ITaskInspectToolArgs, ITaskQueryToolArgs, taskInspectSchema, taskQuerySchema } from './schemas';
+import { IViewAnswerConverters, buildViewAnswerConverters } from './viewAnswers';
 
 /**
  * Parameters for {@link createTaskTools}.
@@ -84,6 +96,7 @@ const modelFacingFailures: Readonly<Record<TaskFailureCode, string>> = {
 interface IToolContext {
   readonly view: IBoundTaskView;
   readonly renderer: TaskContextRenderer;
+  readonly answers: IViewAnswerConverters;
   readonly budget: ITaskToolBudget;
   readonly logger?: Logging.ILogger;
 }
@@ -121,6 +134,21 @@ function _toolResult<T>(ctx: IToolContext, tool: string, result: TaskResult<T>):
 }
 
 /**
+ * Converts what the view answered before anything reads it. The view is any `IBoundTaskView`, so its
+ * answer is not trusted; one that does not convert fails the call, and the converter's message — which
+ * can quote the answer — goes to the host's logger with the rest of the failure.
+ */
+function _answer<T>(converter: Converter<T>, answer: unknown, what: string): TaskResult<T> {
+  const converted: Result<T> = converter.convert(answer);
+  return converted.isSuccess()
+    ? succeedWithDetail<T, ITaskFailure>(converted.value)
+    : failWithDetail<T, ITaskFailure>(`the view returned a malformed ${what}: ${converted.message}`, {
+        code: 'invalid',
+        retry: 'after-host-action'
+      });
+}
+
+/**
  * Asks the view and presents its answer. A view that rejects or throws — host code, whatever it
  * implements — fails the call with a fixed message; what it threw goes to the host's logger.
  */
@@ -138,8 +166,14 @@ async function _read<T, TOut>(
     .onSuccess((result) => _toolResult(ctx, tool, result));
 }
 
+/** A view query and the page size it asks for, which is also the most a page may answer with. */
+interface IQueryPlan {
+  readonly request: IBoundTaskQuery;
+  readonly limit: number;
+}
+
 /** The view query a model's arguments describe, validated by the view's own request converter. */
-function _queryRequest(ctx: IToolContext, args: ITaskQueryToolArgs): Result<IBoundTaskQuery> {
+function _queryRequest(ctx: IToolContext, args: ITaskQueryToolArgs): Result<IQueryPlan> {
   const maxItems: number = ctx.budget.context.maxItems;
   const limit: number = args.limit ?? maxItems;
   if (limit < 1 || limit > maxItems) {
@@ -151,11 +185,13 @@ function _queryRequest(ctx: IToolContext, args: ITaskQueryToolArgs): Result<IBou
     ...(args.lifecycleClass !== undefined ? { lifecycleClass: args.lifecycleClass } : {}),
     ...(args.statuses !== undefined ? { statuses: args.statuses } : {})
   };
-  return ctx.renderer.converters.broker.boundQuery.convert({
-    ...(Object.keys(filter).length > 0 ? { filter } : {}),
-    limit,
-    ...(args.cursor !== undefined ? { cursor: args.cursor } : {})
-  });
+  return ctx.renderer.converters.broker.boundQuery
+    .convert({
+      ...(Object.keys(filter).length > 0 ? { filter } : {}),
+      limit,
+      ...(args.cursor !== undefined ? { cursor: args.cursor } : {})
+    })
+    .onSuccess((request) => succeed({ request, limit }));
 }
 
 function _queryTool(ctx: IToolContext): AiAssist.IAiClientTool {
@@ -180,17 +216,18 @@ function _queryTool(ctx: IToolContext): AiAssist.IAiClientTool {
         .convert(args)
         .onSuccess((typed) => _queryRequest(ctx, typed))
         .withErrorFormat((message) => _message(name, `invalid arguments: ${message}`))
-        .thenOnSuccess((request) =>
+        .thenOnSuccess(({ request, limit }) =>
           _read(
             ctx,
             name,
             () => ctx.view.query(request),
-            (page) => {
-              if (page.issues.length > 0) {
-                ctx.logger?.warn(`${name}: the view reported: ${page.issues.join('; ')}`);
-              }
-              return presentPage(ctx.renderer, ctx.budget, page);
-            }
+            (answer) =>
+              _answer(ctx.answers.page(limit), answer, 'page').onSuccess((page) => {
+                if (page.issues.length > 0) {
+                  ctx.logger?.warn(`${name}: the view reported: ${page.issues.join('; ')}`);
+                }
+                return presentPage(ctx.renderer, ctx.budget, page);
+              })
           )
         )
   };
@@ -219,7 +256,10 @@ function _inspectTool(ctx: IToolContext): AiAssist.IAiClientTool {
             ctx,
             name,
             () => ctx.view.inspect(id),
-            (inspection) => presentInspection(ctx.renderer, ctx.budget, inspection)
+            (answer) =>
+              _answer(ctx.answers.inspection, answer, 'inspection').onSuccess((inspection) =>
+                presentInspection(ctx.renderer, ctx.budget, inspection)
+              )
           )
         )
   };
@@ -283,7 +323,13 @@ export function createTaskTools(
     params.renderer !== undefined ? succeed(params.renderer) : TaskContextRenderer.create();
   return renderer.onSuccess((r) =>
     _budget(r, params.budget ?? defaultTaskToolBudget).onSuccess((budget) => {
-      const ctx: IToolContext = { view: params.view, renderer: r, budget, logger: params.logger };
+      const ctx: IToolContext = {
+        view: params.view,
+        renderer: r,
+        answers: buildViewAnswerConverters(r.converters),
+        budget,
+        logger: params.logger
+      };
       return succeed([_queryTool(ctx), _inspectTool(ctx)]);
     })
   );

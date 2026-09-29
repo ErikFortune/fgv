@@ -3,9 +3,8 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { Converter, Converters, Result, failWithDetail, succeedWithDetail } from '@fgv/ts-utils';
+import { succeedWithDetail } from '@fgv/ts-utils';
 import { TaskContextRenderer } from '../context';
-import { boundedArrayOf } from '../converters';
 import {
   IBoundTaskPage,
   ITaskContext,
@@ -30,59 +29,12 @@ export const pageIssueLine: string =
   'some tasks within this view could not be read; the page may be incomplete';
 
 /**
- * The most command names an inspection returns. A kind's command table is small; a longer list did
- * not come from a registry, and is refused rather than passed on.
- * @internal
- */
-export const maxInspectionCommands: number = 100;
-
-const pageCompleteness: Converter<IBoundTaskPage['completeness']> = Converters.enumeratedValue<
-  IBoundTaskPage['completeness']
->(['complete', 'partial']);
-const pageFreshness: Converter<IBoundTaskPage['freshness']> = Converters.enumeratedValue<
-  IBoundTaskPage['freshness']
->(['native-current', 'source-projection']);
-
-/**
- * A value the view returned that the model would see, checked rather than trusted: the view is any
- * `IBoundTaskView`. A value that does not convert fails the call; its message names the field only.
- */
-function _checked<T>(converted: Result<T>, what: string): TaskResult<T> {
-  return converted.isSuccess()
-    ? succeedWithDetail<T, ITaskFailure>(converted.value)
-    : failWithDetail<T, ITaskFailure>(`the view returned a malformed ${what}`, {
-        code: 'invalid',
-        retry: 'after-host-action'
-      });
-}
-
-/**
  * Presents one page of a bound view's query: the page rendered as bounded context, with every task
- * the rendering left out or shortened named, so paging past the page skips nothing unannounced.
+ * the rendering left out or shortened named, so paging past the page skips nothing unannounced. The
+ * page has already been converted (`IViewAnswerConverters.page`).
  * @internal
  */
 export function presentPage(
-  renderer: TaskContextRenderer,
-  budget: ITaskToolBudget,
-  page: IBoundTaskPage
-): TaskResult<ITaskQueryToolResult> {
-  // The cursor is handed back to the model and returned by it: it must be the bounded identifier a
-  // cursor is, whatever view produced it.
-  if (
-    page.nextCursor !== undefined &&
-    renderer.converters.queries.pageCursor.convert(page.nextCursor).isFailure()
-  ) {
-    return failWithDetail<ITaskQueryToolResult, ITaskFailure>(
-      `the view returned a malformed page cursor (${page.nextCursor.length} characters)`,
-      { code: 'invalid', retry: 'after-host-action' }
-    );
-  }
-  return _checked(pageCompleteness.convert(page.completeness), 'page completeness')
-    .onSuccess(() => _checked(pageFreshness.convert(page.freshness), 'page freshness'))
-    .onSuccess(() => _renderPage(renderer, budget, page));
-}
-
-function _renderPage(
   renderer: TaskContextRenderer,
   budget: ITaskToolBudget,
   page: IBoundTaskPage
@@ -114,7 +66,8 @@ function _renderPage(
 
 /**
  * Presents one inspection: the task rendered as bounded context, and — for a resolved task — its
- * available commands and, when they fit the budget, its details.
+ * available commands and, when they fit the budget, its details. The inspection has already been
+ * converted (`IViewAnswerConverters.inspection`).
  * @internal
  */
 export function presentInspection(
@@ -133,20 +86,8 @@ export function presentInspection(
         })
       );
   }
-  const commands: TaskResult<ReadonlyArray<string>> = _checked(
-    boundedArrayOf(renderer.converters.commands.commandName, maxInspectionCommands, 'commands').convert(
-      inspection.commands
-    ),
-    'command list'
-  );
-  return commands
-    .onSuccess(() => _checked(Converters.boolean.convert(inspection.archived), 'archived flag'))
-    .onSuccess(() =>
-      renderer.render(
-        { tasks: [{ envelope: inspection.envelope }], completeness: 'complete' },
-        budget.context
-      )
-    )
+  return renderer
+    .render({ tasks: [{ envelope: inspection.envelope }], completeness: 'complete' }, budget.context)
     .onSuccess((context) => {
       const details: string | undefined =
         inspection.details !== undefined ? JSON.stringify(inspection.details) : undefined;
