@@ -316,7 +316,9 @@ class layer-1 P2-2 opened, found one level further.
 **Round 2 — requested, not yet run.** Requested at 16:32, 16:48, 17:21 and 18:23 UTC on the round-1
 head and later heads; no Copilot review run appeared on the PR for any of the first three (I1a saw the
 same once: its first request did not register). CI is green and every review thread is resolved in the
-meantime. The loop is **not** stopped: round 1 found a genuine high on an authorization boundary, which
+meantime. **As of 19:25 UTC none of the four requests has produced a review run**; the API request is
+evidently not registering on this PR, so re-requesting stopped there — round 2 needs a manual trigger
+from the PR page (Reviewers → Copilot). The loop is **not** stopped: round 1 found a genuine high on an authorization boundary, which
 per `CODING_STANDARDS.md` is not a point to call diminishing returns.
 
 ## Routed beyond this slice
