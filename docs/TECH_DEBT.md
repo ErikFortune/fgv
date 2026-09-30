@@ -767,6 +767,8 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
 
   **Not a P4**: a collision would silently shadow a tool the host opted into.
 
+  **Reference**: `agent-tasks-i1b`; `.ai/tasks/active/agent-tasks-i1b/result.md`.
+
 - **[P3] A command receipt does not say whether an `accepted` intent has been dispatched.**
   `dispatchIntent` (`broker/externalCommands.ts`) returns the stored receipt unchanged when another
   caller — the `resolveCommands` pump, racing the original `execute` — already holds the
@@ -805,8 +807,6 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
   **Not a P4**: a whole class of commands is unreachable from the tool surface the plan describes.
 
   **Reference**: `.ai/tasks/active/agent-tasks-i1c/result.md`.
-
-  **Reference**: `agent-tasks-i1b`; `.ai/tasks/active/agent-tasks-i1b/result.md`.
 
 - **[P3] `jsonThreeWayDiff` silently drops an own `__proto__` key.**
   `libraries/ts-json/src/packlets/diff/threeWayDiff.ts` builds `onlyInA` / `onlyInB` / `unchanged`

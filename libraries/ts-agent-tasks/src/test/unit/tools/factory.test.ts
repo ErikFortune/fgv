@@ -644,7 +644,7 @@ describe('command tools', () => {
     );
   });
 
-  test('a default name replaces what a provider would refuse, and a clash that makes is refused too', () => {
+  test('a default name replaces what a provider would refuse, and a clash the replacement causes is refused too', () => {
     const reg = registry([named('sim.dotted', 'ops.retry:now', 'a.b', 'a_b')]);
     const dotted = (command: string): ITaskCommandToolSpec =>
       spec(command, { kind: 'sim.dotted' as TaskKind });

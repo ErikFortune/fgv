@@ -269,6 +269,23 @@ describe('a writer’s answer is checked, and says no more than a fixed line', (
     expect(logger.logged.some((line) => /malformed writer's receipt/.test(line))).toBe(true);
   });
 
+  test('a writer that rewrites the request in place cannot move what its receipt is checked against', async () => {
+    const rewrites: ReadonlyArray<Record<string, unknown>> = [
+      { operationId: 'rewritten' },
+      { command: 'cancel' },
+      { taskId: 'j2' }
+    ];
+    for (const rewrite of rewrites) {
+      // Rewrites the request it was handed, then answers for the rewritten request. Checked against the
+      // tool's own copy of the identity, none of them answers this call.
+      const tools = over((request) => {
+        Object.assign(request, rewrite);
+        return receipt(request, { state: 'applied', appliedRevision: 2 as never });
+      });
+      expect(await call(tools, 'task_command_pause', pause)).toFailWith(unknownLine);
+    }
+  });
+
   test('an applied receipt at a revision before the one asked against is an unknown outcome; at or after, a result', async () => {
     const at = (appliedRevision: number): IToolSet =>
       over((request) => receipt(request, { state: 'applied', appliedRevision: appliedRevision as never }));

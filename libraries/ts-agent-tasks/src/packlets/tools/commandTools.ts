@@ -94,8 +94,9 @@ interface ICommandTool {
  * **Not sending it again is the point.** Every call mints a fresh operation id, so a second call is a
  * second command. A `source-key` source deduplicates the *same* key, which is what makes the pump's
  * resend safe; a model's resend carries a new one, and could apply the command twice. A `none`
- * command — or one whose key the source has forgotten — is never resent by the pump at all: it is
- * held until the host abandons it, which is exactly the case a blind resend would duplicate.
+ * command — or one whose key the source has forgotten — is never resent by the pump at all: a
+ * source with a lookup may resolve it by asking; without one it is held until the host abandons it.
+ * Either way it is exactly the case a blind resend would duplicate.
  */
 const unknownCommandLine: string =
   'the outcome is not known: the command may or may not have been recorded or applied, and the host ' +
@@ -316,32 +317,35 @@ async function _send(
         })
         .withErrorFormat((message) => argumentMessage(name, `invalid arguments: ${message}`))
     )
-    .thenOnSuccess(async (request: ICommandRequest) =>
-      (
-        await askView(
-          ctx,
-          name,
-          () => ctx.writer.execute(request),
-          (answer) =>
-            convertAnswer(
-              ctx.receipts.command({
-                taskId: request.taskId,
-                operationId: request.operationId,
-                command: request.command,
-                expectedRevision: request.expectedRevision
-              }),
-              answer,
-              "writer's receipt",
-              'commit-indeterminate'
-            ).onSuccess((receipt) => _presentCommand(ctx, name, receipt)),
-          commandWording
+    .thenOnSuccess(async (request: ICommandRequest) => {
+      // What the receipt must describe, captured before the writer is handed the request: any
+      // `IBoundTaskWriter` may be passed, and one that rewrote the request in place would otherwise
+      // move the very identity its receipt is checked against.
+      const receipt = ctx.receipts.command({
+        taskId: request.taskId,
+        operationId: request.operationId,
+        command: request.command,
+        expectedRevision: request.expectedRevision
+      });
+      return (
+        (
+          await askView(
+            ctx,
+            name,
+            () => ctx.writer.execute(request),
+            (answer) =>
+              convertAnswer(receipt, answer, "writer's receipt", 'commit-indeterminate').onSuccess(
+                (receipt) => _presentCommand(ctx, name, receipt)
+              ),
+            commandWording
+          )
         )
-      )
-        // `_presentCommand` answers with the model-facing result *inside* a success, so that a
-        // rejection's fixed line is not re-read by the failure classification as an unclassified
-        // writer failure; this unwraps it.
-        .onSuccess((told) => told)
-    );
+          // `_presentCommand` answers with the model-facing result *inside* a success, so that a
+          // rejection's fixed line is not re-read by the failure classification as an unclassified
+          // writer failure; this unwraps it.
+          .onSuccess((told) => told)
+      );
+    });
 }
 
 function _commandTool(ctx: ICommandToolContext, tool: ICommandTool): AiAssist.IAiClientTool {

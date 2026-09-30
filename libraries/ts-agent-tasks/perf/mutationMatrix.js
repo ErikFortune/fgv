@@ -1737,6 +1737,13 @@ const I1C_ROWS = [
     I1C
   ),
   m(
+    'I1c-25 the receipt is checked against the request object the writer was handed',
+    CT,
+    '      const receipt = ctx.receipts.command({\n        taskId: request.taskId,\n        operationId: request.operationId,\n        command: request.command,\n        expectedRevision: request.expectedRevision\n      });',
+    '      const receipt = ctx.receipts.command(request);',
+    I1C
+  ),
+  m(
     'I1c-22 the wire schema carries an arbitrary payload, not the registered schema',
     TL + 'schemas.ts',
     '    expectedRevision: identityProperties.expectedRevision,\n    parameters\n',

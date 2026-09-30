@@ -281,8 +281,8 @@ function _mutationGroups(
  * `accepted` or `applied`, a refusal as a fixed code line (`denied` reads exactly as a missing task),
  * and otherwise that the outcome is not known and it must not send the command again — for a
  * `source-key` command the host's `resolveCommands` pump resends under the same key; a `none` command
- * is held, never resent, until the host abandons it. No text a source or host wrote reaches the
- * model. A generated name may not be a fixed tool's, and two may not clash: the set is refused at
+ * is never resent — the pump resolves it through the source's lookup, or holds it until the host
+ * abandons it. No text a source or host wrote reaches the model. A generated name may not be a fixed tool's, and two may not clash: the set is refused at
  * build time.
  *
  * **Nothing the model supplies can widen what it sees.** Neither schema has a principal, scope or
