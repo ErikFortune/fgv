@@ -15,6 +15,7 @@ import {
   ITaskKindRegistry,
   TaskKind,
   TaskKindRegistry,
+  allTaskMutationToolGroups,
   createTaskCommandHandle,
   ITaskToolBudget,
   TaskMutationToolGroup,
@@ -24,6 +25,8 @@ import {
   defaultTaskToolBudget
 } from '../../../index';
 import { IBrokerHarness, brokerHarness, track } from '../../helpers/brokerFixtures';
+// eslint-disable-next-line @rushstack/packlets/mechanics -- the reserved list is internal; it is tested against what the factory builds
+import { fixedTaskToolNames } from '../../../packlets/tools/commandTools';
 import { converters } from '../../helpers/fixtures';
 import { SimulatedExecutor, controllableSource, jobDescriptor } from '../../helpers/sourceFixtures';
 import { bindReader, inspect, query, taskTools, toolSet } from '../../helpers/toolFixtures';
@@ -602,6 +605,11 @@ describe('command tools', () => {
     ).toFailWith(/commands\.writer must be the view/);
   });
 
+  test('the reserved names are exactly the fixed tools the factory builds — a renamed or added tool cannot go stale', () => {
+    const fixed = withMutations(allTaskMutationToolGroups).names;
+    expect([...fixedTaskToolNames].sort()).toEqual([...fixed].sort());
+  });
+
   test('a generated name may not be a fixed tool’s, whether or not that tool is offered', () => {
     for (const name of ['task_query', 'task_inspect', 'task_create', 'task_update', 'task_reassign']) {
       expect(build([spec('pause', { name })])).toFailWith(
@@ -710,9 +718,9 @@ describe('command tools', () => {
       });
     }
     const tail =
-      "Pass the revision task_inspect returned. 'accepted' means the task's executor has the command, not " +
-      "that it has taken effect; 'applied' means it has. If the outcome is not known, do not send it " +
-      'again: the host settles it.';
+      "Pass the revision task_inspect returned. 'accepted' means the command is recorded for the task's " +
+      "executor, not that it has taken effect; 'applied' means it has. If the outcome is not known, do " +
+      'not send it again.';
     expect(tools[2].config.description).toBe(
       `Send the 'pause' command to a task of kind sim.job that you can see. ${tail}`
     );

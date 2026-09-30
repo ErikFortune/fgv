@@ -767,6 +767,25 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
 
   **Not a P4**: a collision would silently shadow a tool the host opted into.
 
+- **[P3] A command receipt does not say whether an `accepted` intent has been dispatched.**
+  `dispatchIntent` (`broker/externalCommands.ts`) returns the stored receipt unchanged when another
+  caller — the `resolveCommands` pump, racing the original `execute` — already holds the
+  `possibly-sent` marker. That receipt is the intent's provisional `accepted`, and its dispatch may
+  still end `indeterminate`. `ICommandReceipt` carries no dispatch state, so I1c's command tools cannot
+  tell this from a source's settled `accepted`; they word `accepted` as "recorded for the executor" and
+  say nothing about delivery. Harmless for the model (it is told not to resend either way), but a
+  host reading receipts has the same blind spot.
+
+  **Trigger**: a consumer that acts on `accepted` as "the source has it", or the next change to
+  `ICommandReceipt`.
+
+  **Scope sketch**: return the command's dispatch state beside the receipt from `execute`, or return
+  a distinct in-flight state when the caller did not own the send.
+
+  **Not a P4**: a receipt state reads as stronger than the broker knows it to be.
+
+  **Reference**: `agent-tasks-i1c` layer-1 review P2-2.
+
 - **[P3] `fgv.tracked@1`'s transitions cannot be offered as model tools: the kind registers no
   command schemas.** I1c generates command tools from the kind registry, and `trackedTaskDescriptor()`
   registers no commands — its eleven transitions (`start`, `succeed`, `fail`, `cancel`, …) have

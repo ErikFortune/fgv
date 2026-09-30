@@ -94,11 +94,13 @@ interface ICommandTool {
  *
  * **Not sending it again is the point.** Every call mints a fresh operation id, so a second call is a
  * second command. A `source-key` source deduplicates the *same* key, which is what makes the pump's
- * resend safe; a model's resend carries a new one, and could apply the command twice.
+ * resend safe; a model's resend carries a new one, and could apply the command twice. A `none`
+ * command — or one whose key the source has forgotten — is never resent by the pump at all: it is
+ * held until the host abandons it, which is exactly the case a blind resend would duplicate.
  */
 const unknownCommandLine: string =
   'the outcome is not known: the command may or may not have been recorded or applied, and the host ' +
-  'settles any that was — do not send it again; inspect the task later';
+  'resolves or abandons any that was — do not send it again; inspect the task later';
 
 /**
  * The wording for a command. Only a refusal of the task itself (`not-found-or-denied`, which the broker
@@ -177,8 +179,9 @@ export function resolveCommandTools(
   enable: unknown
 ): Result<ReadonlyArray<ICommandTool>> {
   const converters = ctx.renderer.converters;
-  // Each element is converted by the strict spec converter itself: an element that converted to
-  // `undefined` would be dropped by `arrayOf`, silently shrinking the offer.
+  // Each element is converted by the strict spec converter itself. (`arrayOf` drops an element its
+  // item converter turns into `undefined`, so an identity item converter would let `[undefined]`
+  // through as an empty offer; a strict object never converts to `undefined`.)
   const spec = Converters.strictObject<ITaskCommandToolSpec>({
     kind: converters.ids.taskKind,
     detailVersion: Converters.number.withConstraint((n) => Number.isSafeInteger(n) && n > 0),
@@ -213,9 +216,16 @@ export function resolveCommandTools(
  * (storage refuses a replacement that changes either), so nothing can move between this read and
  * the command.
  */
-function _ofKind(tool: ICommandTool, inspection: TaskInspection): TaskResult<true> {
-  const { kind, detailVersion } =
+function _ofKind(tool: ICommandTool, taskId: TaskId, inspection: TaskInspection): TaskResult<true> {
+  const { id, kind, detailVersion } =
     inspection.state === 'resolved' ? inspection.envelope : inspection.reference;
+  if (id !== taskId) {
+    // Any `IBoundTaskView` may be passed: an inspection of another task is a malformed answer.
+    return failWithDetail<true, ITaskFailure>(`the view answered for ${id}, not ${taskId}`, {
+      code: 'invalid',
+      retry: 'after-host-action'
+    });
+  }
   return kind === tool.spec.kind && detailVersion === tool.spec.detailVersion
     ? succeedWithDetail<true, ITaskFailure>(true)
     : failWithDetail<true, ITaskFailure>(
@@ -225,7 +235,10 @@ function _ofKind(tool: ICommandTool, inspection: TaskInspection): TaskResult<tru
 }
 
 /**
- * What the model is told a command did. Taken — `accepted` or `applied` — is a result; a rejection is a
+ * What the model is told a command did. Taken — `accepted` or `applied` — is a result. `accepted` is
+ * the broker's receipt as it is: usually the source's answer, but a caller that finds another caller
+ * already sending the same intent is handed the intent's provisional `accepted`, whose dispatch may
+ * still end `indeterminate` (`docs/TECH_DEBT.md`). Either way the model must not resend it; a rejection is a
  * fixed code line; an `indeterminate` or `abandoned` command is an unknown outcome. Every free-form
  * string a receipt carries — a source's receipt, an indeterminate or abandoned reason — goes to the
  * host's logger and nowhere else.
@@ -253,13 +266,9 @@ function _presentCommand(
       ctx.logger?.warn(`${tool}: indeterminate: ${result.reason}`);
       return told(fail(`${tool}: ${unknownCommandLine}`));
     default:
+      // Abandoned is not an outcome either: the host stopped tracking a command it could not settle.
       ctx.logger?.warn(`${tool}: abandoned (${result.from}): ${result.reason}`);
-      return told(
-        fail(
-          `${tool}: the outcome is not known, and the host no longer tracks this command; inspect the ` +
-            'task before deciding whether to send it again'
-        )
-      );
+      return told(fail(`${tool}: ${unknownCommandLine}`));
   }
 }
 
@@ -290,7 +299,7 @@ async function _send(
       () => ctx.view.inspect(taskId),
       (answer) =>
         convertAnswer(ctx.answers.inspection, answer, "view's inspection").onSuccess((inspection) =>
-          _ofKind(tool, inspection)
+          _ofKind(tool, taskId, inspection)
         )
     )
   )
@@ -326,7 +335,11 @@ async function _send(
             ).onSuccess((receipt) => _presentCommand(ctx, name, receipt)),
           commandWording
         )
-      ).onSuccess((told) => told)
+      )
+        // `_presentCommand` answers with the model-facing result *inside* a success, so that a
+        // rejection's fixed line is not re-read by the failure classification as an unclassified
+        // writer failure; this unwraps it.
+        .onSuccess((told) => told)
     );
 }
 
@@ -341,9 +354,9 @@ function _commandTool(ctx: ICommandToolContext, tool: ICommandTool): AiAssist.IA
       type: 'client_tool',
       name,
       description:
-        `${lead} Pass the revision task_inspect returned. 'accepted' means the task's executor has the ` +
-        "command, not that it has taken effect; 'applied' means it has. If the outcome is not known, do " +
-        'not send it again: the host settles it.',
+        `${lead} Pass the revision task_inspect returned. 'accepted' means the command is recorded for ` +
+        "the task's executor, not that it has taken effect; 'applied' means it has. If the outcome is " +
+        'not known, do not send it again.',
       parametersSchema: schema,
       annotations: commandAnnotations
     },

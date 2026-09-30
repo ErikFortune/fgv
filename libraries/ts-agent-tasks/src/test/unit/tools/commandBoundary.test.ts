@@ -31,7 +31,7 @@ import { IToolSet, call, commandingTools, toolSet } from '../../helpers/toolFixt
 
 const unknownLine =
   'task_command_pause: the outcome is not known: the command may or may not have been recorded or ' +
-  'applied, and the host settles any that was — do not send it again; inspect the task later';
+  'applied, and the host resolves or abandons any that was — do not send it again; inspect the task later';
 
 /** A writer whose `execute` records its request and answers with whatever the test scripts. */
 function scriptedWriter(
@@ -219,13 +219,26 @@ describe('a writer’s answer is checked, and says no more than a fixed line', (
       'task_command_pause',
       pause
     );
-    expect(abandoned).toFailWith(
-      'task_command_pause: the outcome is not known, and the host no longer tracks this command; ' +
-        'inspect the task before deciding whether to send it again'
-    );
+    expect(abandoned).toFailWith(unknownLine);
     expect(logger.logged.some((line) => line.includes('rcpt-9'))).toBe(true);
     expect(logger.logged.filter((line) => line.includes(secret))).toHaveLength(2);
     expect(logger.logged.some((line) => line.includes('possibly-sent'))).toBe(true);
+  });
+
+  test("with no logger, a receipt's free text is simply dropped", async () => {
+    for (const result of [
+      { state: 'abandoned', reason: 'x', from: 'not-sent' },
+      { state: 'indeterminate', reason: 'x' },
+      { state: 'rejected', reason: 'denied' },
+      { state: 'accepted', sourceReceipt: 'r' }
+    ] as ReadonlyArray<CommandState>) {
+      const quiet = commandingTools(
+        h,
+        scriptedWriter(h.writer, (request) => receipt(request, result)).writer
+      );
+      const told = await call(quiet, 'task_command_pause', pause);
+      expect(JSON.stringify(told)).not.toMatch(/"x"|"r"/);
+    }
   });
 
   test('a receipt for another task, operation or command, or with a surplus field, is an unknown outcome', async () => {
@@ -366,6 +379,17 @@ describe('what the tool reads before it sends', () => {
     );
     expect(await call(commandingTools(h, writer), 'task_command_pause', pause)).toFailWith(
       'task_command_pause: unsupported: the request is not supported'
+    );
+    expect(executed).toEqual([]);
+  });
+
+  test('an inspection of another task is a malformed answer, and nothing is sent', async () => {
+    h.executor.addJob('j2');
+    await registerJob(h, 'j2');
+    const j2 = (await h.writer.inspect('j2' as never)).orThrow();
+    const { writer, executed } = inspecting(() => succeedWithDetail<TaskInspection, ITaskFailure>(j2));
+    expect(await call(commandingTools(h, writer), 'task_command_pause', pause)).toFailWith(
+      /^task_command_pause: invalid: /
     );
     expect(executed).toEqual([]);
   });

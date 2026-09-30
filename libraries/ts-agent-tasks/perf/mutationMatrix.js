@@ -1604,7 +1604,7 @@ const I1C_ROWS = [
   m(
     'I1c-3 a command is sent to a task of any kind',
     CT,
-    '        convertAnswer(ctx.answers.inspection, answer, "view\'s inspection").onSuccess((inspection) =>\n          _ofKind(tool, inspection)\n        )',
+    '        convertAnswer(ctx.answers.inspection, answer, "view\'s inspection").onSuccess((inspection) =>\n          _ofKind(tool, taskId, inspection)\n        )',
     '        convertAnswer(ctx.answers.inspection, answer, "view\'s inspection").onSuccess(() =>\n          succeedWithDetail<true, ITaskFailure>(true)\n        )',
     I1C
   ),
@@ -1632,15 +1632,15 @@ const I1C_ROWS = [
   m(
     "I1c-7 an indeterminate command's reason reaches the model",
     CT,
-    '      return told(fail(`${tool}: ${unknownCommandLine}`));',
-    '      return told(fail(`${tool}: ${result.reason}`));',
+    '      ctx.logger?.warn(`${tool}: indeterminate: ${result.reason}`);\n      return told(fail(`${tool}: ${unknownCommandLine}`));',
+    '      ctx.logger?.warn(`${tool}: indeterminate: ${result.reason}`);\n      return told(fail(`${tool}: ${result.reason}`));',
     I1C
   ),
   m(
     "I1c-8 an abandoned command's reason reaches the model",
     CT,
-    '          `${tool}: the outcome is not known, and the host no longer tracks this command; inspect the ` +',
-    '          `${tool}: ${result.reason}: the outcome is not known, and the host no longer tracks this command; inspect the ` +',
+    '      ctx.logger?.warn(`${tool}: abandoned (${result.from}): ${result.reason}`);\n      return told(fail(`${tool}: ${unknownCommandLine}`));',
+    '      ctx.logger?.warn(`${tool}: abandoned (${result.from}): ${result.reason}`);\n      return told(fail(`${tool}: ${result.reason}`));',
     I1C
   ),
   m(
@@ -1732,6 +1732,13 @@ const I1C_ROWS = [
     CT,
     '            .onSuccess((parameters) => succeed({ typed, taskId, parameters }))',
     '            .onSuccess(() => succeed({ typed, taskId, parameters: typed.parameters as JsonValue }))',
+    I1C
+  ),
+  m(
+    'I1c-24 an inspection of another task is accepted as the task asked about',
+    CT,
+    '  if (id !== taskId) {',
+    '  if (id === undefined) {',
     I1C
   ),
   m(

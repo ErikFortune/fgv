@@ -780,19 +780,21 @@ const tools = createTaskTools({
 - **The model names no key and no precondition.** The tool mints the operation id; the schema has no
   `operationId`, command name, principal, scope or source precondition — a conditional command's
   precondition is the one the broker commits when it dispatches.
-- **What the model is told.** `{ taskId, state: 'accepted' }` — the executor has it, not that it has
-  taken effect — or `{ taskId, state: 'applied', revision }`. A rejection is a fixed code line:
+- **What the model is told.** `{ taskId, state: 'accepted' }` — recorded for the executor, not that
+  it has taken effect (in one race, not even that it has been sent yet) — or `{ taskId, state: 'applied', revision }`. A rejection is a fixed code line:
   `denied` reads exactly as a missing or hidden task; `stop-active`, `invalid-transition` and
   `idempotency-conflict` read as `conflict` (naming a stop is the stop tools' to disclose);
   `unsupported` as itself. A source's receipt text and an indeterminate or abandoned reason go to
   `logger`, never to the model.
 - **An unknown outcome means: do not send it again.** An `indeterminate` receipt, a malformed
   receipt, a writer that throws, and every writer failure except `not-found-or-denied` read as one
-  line — the outcome is not known, the host settles it, do not send it again. Once a command's
-  intent is recorded the broker may still send it (`resolveCommands`), and later failures carry
-  ordinary codes (`conflict`, `invalid`), so the tool cannot tell "nothing recorded" from "recorded,
-  not yet sent". **A model resend is a new command under a new key**: a `source-key` source
-  deduplicates the *same* key, which is what makes the pump's resend safe and a model's unsafe.
+  line — the outcome is not known, the host resolves or abandons it, do not send it again. Once a
+  command's intent is recorded the broker may still send it (`resolveCommands`), and later failures
+  carry ordinary codes (`conflict`, `invalid`), so the tool cannot tell "nothing recorded" from
+  "recorded, not yet sent". **A model resend is a new command under a new key**: a `source-key`
+  source deduplicates the *same* key, which is what makes the pump's resend safe and a model's
+  unsafe; a `none` command the pump never resends at all — it looks it up, or holds it until the
+  host abandons it. An `abandoned` receipt reads as the same unknown line.
 - **Names.** Default `task_command_<command>`, with any character a provider rejects replaced by `_`;
   or `name` per command. A name may not be a fixed tool's — `task_query`, `task_inspect`,
   `task_create`, `task_update`, `task_reassign` — whether or not that tool is offered, and two

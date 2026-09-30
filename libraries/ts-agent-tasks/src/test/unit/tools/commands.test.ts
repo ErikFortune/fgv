@@ -25,7 +25,7 @@ const conflictLine = (tool: string): string =>
 
 const unknownLine = (tool: string): string =>
   `${tool}: the outcome is not known: the command may or may not have been recorded or applied, and ` +
-  'the host settles any that was — do not send it again; inspect the task later';
+  'the host resolves or abandons any that was — do not send it again; inspect the task later';
 
 async function ready(options?: Parameters<typeof sourceHarness>[0]): Promise<ISourceHarness> {
   const h = await sourceHarness(options);
@@ -191,6 +191,27 @@ describe('idempotency: a model must not resend a command whose outcome is unknow
     // One key, applied once: the source deduplicates the pump's lookup under the key it already holds.
     expect(Array.from(h.executor.dispatches.keys())).toHaveLength(1);
     expect(h.executor.jobs.get('j1')!.applied).toHaveLength(1);
+  });
+
+  test('a none command whose response was lost is never resent: held without a lookup, looked up with one', async () => {
+    for (const lookup of [false, true]) {
+      const h = await ready({ lookup });
+      const tools = commandingTools(h);
+      h.executor.loseNextResponse = true;
+      expect(
+        await call(tools, 'task_command_advance', {
+          taskId: 'j1',
+          expectedRevision: 1,
+          parameters: { steps: 1 }
+        })
+      ).toFailWith(unknownLine('task_command_advance'));
+      expect(await h.writer.resolveCommands({ limit: 10 })).toSucceedAndSatisfy((report) => {
+        // Without a lookup nothing can resolve it until the host abandons it.
+        expect(report.resolutions.map((r) => r.action)).toEqual([lookup ? 'resolved' : 'held']);
+      });
+      expect(Array.from(h.executor.dispatches.values())).toEqual([1]);
+      expect(h.executor.jobs.get('j1')!.step).toBe(1);
+    }
   });
 
   test('a model resend is a new command under a new key — so after a lost response it applies twice', async () => {
