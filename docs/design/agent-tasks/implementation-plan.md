@@ -257,7 +257,12 @@ A3: preflight/reserve root and per-target settlement, required audiences and per
 **I1a — ✅ implemented on `integration/agent-tasks-v1` ([#702](https://github.com/ErikFortune/fgv/pull/702)).**
 **I1b — ✅ implemented on `integration/agent-tasks-v1` ([#703](https://github.com/ErikFortune/fgv/pull/703)):** opt-in
 `task_create` / `task_update` / `task_reassign`; `task_inspect` returns the revision a change passes
-back as `expectedRevision`. I1c, I1d not started.
+back as `expectedRevision`.
+**I1c — ✅ implemented on `integration/agent-tasks-v1` ([#704](https://github.com/ErikFortune/fgv/pull/704)):**
+one opt-in tool per registered command a host names, its wire schema the registered parameter schema
+(`ITaskCommandHandle.parameters`); a command whose outcome is unknown is never resent by the model.
+`fgv.tracked@1` registers no command schemas, so its transitions are not offered (`docs/TECH_DEBT.md`).
+I1d not started.
 
 **The split.** T7 and T9 each landed at 65+ files and +11,000 lines, and in both the review loop was
 still doing structural work at round 6+. I1 is decomposed up front rather than mid-loop. Each slice
