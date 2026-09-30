@@ -11,13 +11,16 @@ import {
   IBoundTaskQuery,
   IBoundTaskView,
   IBoundTaskWriter,
+  ITaskCommandToolSpec,
   ITaskEnvironment,
+  ITaskKindRegistry,
   ITaskToolBudget,
   TaskId,
   TaskMutationToolGroup,
   allTaskMutationToolGroups,
   defaultTaskToolBudget
 } from '../types';
+import { commandTools, resolveCommandTools } from './commandTools';
 import { mutationTools } from './mutationTools';
 import { presentInspection, presentPage } from './presentation';
 import { ITaskInspectToolArgs, ITaskQueryToolArgs, taskInspectSchema, taskQuerySchema } from './schemas';
@@ -46,6 +49,28 @@ export interface ITaskMutationToolOptions {
   readonly environment: Pick<ITaskEnvironment, 'newTaskId' | 'newOperationId'>;
   /** The tool groups to offer. An empty list offers none. */
   readonly enable: ReadonlyArray<TaskMutationToolGroup>;
+}
+
+/**
+ * The registered commands a host offers the model as tools, and what they need to run.
+ * @remarks
+ * Offering a command makes a tool available; it authorizes nothing. Every call is authorized by
+ * `writer`'s policy when it runs, exactly as a direct `execute` would be.
+ * @public
+ */
+export interface ITaskCommandToolOptions {
+  /** The writer every command goes through. It must be the very object passed as `view`. */
+  readonly writer: IBoundTaskWriter;
+  /**
+   * The registry each offered command is looked up in, for its parameter schema — the one the
+   * broker's repository was opened with. The broker validates every command against its own
+   * registry whatever the tool offered, so a mismatched one can only make a call fail.
+   */
+  readonly registry: ITaskKindRegistry;
+  /** Mints each call's operation id. The model never supplies one. Usually the host's `TaskEnvironment`. */
+  readonly environment: Pick<ITaskEnvironment, 'newOperationId'>;
+  /** The commands to offer, one tool each, in this order. An empty list offers none. */
+  readonly enable: ReadonlyArray<ITaskCommandToolSpec>;
 }
 
 /**
@@ -79,6 +104,10 @@ export interface ICreateTaskToolsParams {
    * are exactly `task_query` and `task_inspect`.
    */
   readonly mutations?: ITaskMutationToolOptions;
+  /**
+   * Registered commands to offer as tools. Absent — the default — offers none.
+   */
+  readonly commands?: ITaskCommandToolOptions;
 }
 
 const readOnlyAnnotations: AiAssist.IAiToolAnnotations = {
@@ -230,7 +259,8 @@ function _mutationGroups(
 /**
  * Builds the task tools over a principal-bound view, ready to hand to
  * `AiAssist.executeClientToolTurn`: `task_query` and `task_inspect`, and — only when the host opts
- * in through `mutations` — `task_create`, `task_update` and `task_reassign`.
+ * in through `mutations` — `task_create`, `task_update` and `task_reassign`, and — only when it opts
+ * in through `commands` — one tool per registered command it names.
  *
  * @remarks
  * **Read-only by default, with no mutation dependency.** Without `mutations` the tools take an
@@ -243,6 +273,17 @@ function _mutationGroups(
  * `task_inspect` returned as its `expectedRevision`, and the writer refuses it if the task has moved
  * since. A writer's receipt is converted, and must be for the task and operation asked about, before
  * anything reads it; the model is told the task id, revision and disposition, never update ids.
+ *
+ * **Commands are opt-in, typed by the registry, and never resent by the model.** Each offered command
+ * is looked up in `commands.registry` when the tools are built, and its tool's wire schema carries the
+ * command's registered parameter schema. A call is sent through the writer's `execute` with a minted
+ * operation id, only to a task of the command's own kind and detail version; the model is told
+ * `accepted` or `applied`, a refusal as a fixed code line (`denied` reads exactly as a missing task),
+ * and otherwise that the outcome is not known and it must not send the command again — for a
+ * `source-key` command the host's `resolveCommands` pump resends under the same key; a `none` command
+ * is never resent — the pump resolves it through the source's lookup, or holds it until the host
+ * abandons it. No text a source or host wrote reaches the model. A generated name may not be a fixed tool's, and two may not clash: the set is refused at
+ * build time.
  *
  * **Nothing the model supplies can widen what it sees.** Neither schema has a principal, scope or
  * consumer member, both are closed (a surplus property fails), and every `execute` re-validates its
@@ -282,6 +323,7 @@ export function createTaskTools(
           budget,
           logger: params.logger
         };
+        const receipts = buildWriterAnswerConverters(r.converters);
         const mutations: ReadonlyArray<AiAssist.IAiClientTool> =
           params.mutations !== undefined && groups.size > 0
             ? mutationTools(
@@ -289,13 +331,42 @@ export function createTaskTools(
                   ...ctx,
                   writer: params.mutations.writer,
                   environment: params.mutations.environment,
-                  receipts: buildWriterAnswerConverters(r.converters)
+                  receipts
                 },
                 groups
               )
             : [];
-        return succeed([_queryTool(ctx), _inspectTool(ctx), ...mutations]);
+        return _commands(ctx, params.commands, receipts).onSuccess((commands) =>
+          succeed([_queryTool(ctx), _inspectTool(ctx), ...mutations, ...commands])
+        );
       })
     )
+  );
+}
+
+/**
+ * Builds the command tools a host offered. The writer must be the view; each command is looked up in
+ * the registry — never the policy — and the names must be free. Asks nothing of the writer or the
+ * environment: offering a command is not authorizing it.
+ */
+function _commands(
+  ctx: IToolContext,
+  options: ITaskCommandToolOptions | undefined,
+  receipts: ReturnType<typeof buildWriterAnswerConverters>
+): Result<ReadonlyArray<AiAssist.IAiClientTool>> {
+  if (options === undefined) {
+    return succeed([]);
+  }
+  if (options.writer !== ctx.view) {
+    return fail('task tools: commands.writer must be the view the tools read through');
+  }
+  const commandCtx = {
+    ...ctx,
+    writer: options.writer,
+    environment: options.environment,
+    receipts
+  };
+  return resolveCommandTools(commandCtx, options.registry, options.enable).onSuccess((tools) =>
+    succeed(commandTools(commandCtx, tools))
   );
 }

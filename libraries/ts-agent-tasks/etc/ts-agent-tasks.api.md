@@ -684,6 +684,7 @@ export interface ICreateTaskList extends ICreateTrackedTask {
 // @public
 export interface ICreateTaskToolsParams {
     readonly budget?: ITaskToolBudget;
+    readonly commands?: ITaskCommandToolOptions;
     readonly logger?: Logging.ILogger;
     readonly mutations?: ITaskMutationToolOptions;
     readonly renderer?: TaskContextRenderer;
@@ -1684,7 +1685,30 @@ export interface ITaskCommandHandle {
     readonly idempotency: 'source-key' | 'none';
     // (undocumented)
     readonly name: string;
+    readonly parameters: JsonSchema.ISchemaValidator<unknown>;
     validate(parameters: unknown): Result<JsonValue>;
+}
+
+// @public
+export interface ITaskCommandToolOptions {
+    readonly enable: ReadonlyArray<ITaskCommandToolSpec>;
+    readonly environment: Pick<ITaskEnvironment, 'newOperationId'>;
+    readonly registry: ITaskKindRegistry;
+    readonly writer: IBoundTaskWriter;
+}
+
+// @public
+export interface ITaskCommandToolSpec {
+    // (undocumented)
+    readonly command: string;
+    // (undocumented)
+    readonly description?: string;
+    // (undocumented)
+    readonly detailVersion: number;
+    // (undocumented)
+    readonly kind: TaskKind;
+    // (undocumented)
+    readonly name?: string;
 }
 
 // @public
@@ -2984,6 +3008,16 @@ export type TaskCapacityState = 'ok' | 'pressure' | 'admission-blocked' | 'drain
 
 // @public
 export type TaskCatalogOperationType = 'create-tracked' | 'create-list' | 'register-external' | 'update-tracked' | 'reassign' | 'change-scopes' | 'reparent' | 'stop' | 'release-stop' | 'archive' | 'complete-list';
+
+// @public
+export type TaskCommandToolResult = {
+    readonly taskId: TaskId;
+    readonly state: 'accepted';
+} | {
+    readonly taskId: TaskId;
+    readonly state: 'applied';
+    readonly revision: TaskRevision;
+};
 
 // @public
 export const taskContextLimits: ITaskContextLimits;

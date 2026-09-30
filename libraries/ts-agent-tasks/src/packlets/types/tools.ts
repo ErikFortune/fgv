@@ -5,7 +5,7 @@
 
 import { JsonValue } from '@fgv/ts-json-base';
 import { ITaskContextBudget, TaskContextPresentation, defaultTaskContextBudget } from './context';
-import { PageCursor, TaskId, TaskRevision } from './ids';
+import { PageCursor, TaskId, TaskKind, TaskRevision } from './ids';
 import { TaskMutationDisposition } from './broker';
 
 /**
@@ -135,3 +135,43 @@ export interface ITaskMutationToolResult {
   readonly revision: TaskRevision;
   readonly disposition: TaskMutationDisposition;
 }
+
+/**
+ * One registered command a host offers the model as a tool.
+ *
+ * @remarks
+ * The command is looked up in the kind registry when the tools are built — its kind, detail
+ * version and command name must be registered — and the tool's wire schema carries that command's registered
+ * parameter schema. The tool sends the command only to tasks of exactly this kind and detail version.
+ *
+ * `name` is the tool's name. It defaults to `task_command_` followed by the command name, with every
+ * character a provider does not accept in a tool name replaced by `_`. It may not be one of the fixed
+ * task tool names, whether or not those tools are offered, and no two command tools may share one: a
+ * clash — including two kinds that register the same command name — refuses the whole tool set when
+ * it is built, and the host names one of them.
+ *
+ * `description`, when given, replaces the first sentence of the tool's description; the sentences
+ * that say what the result means are always appended.
+ * @public
+ */
+export interface ITaskCommandToolSpec {
+  readonly kind: TaskKind;
+  readonly detailVersion: number;
+  readonly command: string;
+  readonly name?: string;
+  readonly description?: string;
+}
+
+/**
+ * What a command tool returns to the model when the command was taken: `accepted` — the command is
+ * recorded for the task's executor, which does **not** mean it has taken effect (nor, in one race,
+ * that it has been sent yet) — or `applied`, with the task's revision at which it took effect.
+ *
+ * @remarks
+ * A refusal, and a command whose outcome is not known, are tool failures instead. A source's own
+ * receipt text and a held command's reason are never returned; they go to the host's logger.
+ * @public
+ */
+export type TaskCommandToolResult =
+  | { readonly taskId: TaskId; readonly state: 'accepted' }
+  | { readonly taskId: TaskId; readonly state: 'applied'; readonly revision: TaskRevision };

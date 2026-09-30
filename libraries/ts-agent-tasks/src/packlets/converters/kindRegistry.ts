@@ -24,7 +24,9 @@ import {
  * This is the single point at which a command's parameter type leaves the type system,
  * and it leaves through a closure rather than a cast: `validate` captures the
  * descriptor's own schema and encoder, so the only way to produce canonical parameters
- * is to have passed that schema.
+ * is to have passed that schema. `parameters` exposes the schema itself, erased to
+ * `unknown` — readable as a wire schema and usable as a validator, but never a source of
+ * canonical parameters, which only `validate` produces.
  * @public
  */
 export function createTaskCommandHandle<P>(descriptor: ITaskCommandDescriptor<P>): ITaskCommandHandle {
@@ -32,6 +34,7 @@ export function createTaskCommandHandle<P>(descriptor: ITaskCommandDescriptor<P>
     name: descriptor.name,
     idempotency: descriptor.idempotency,
     conditional: descriptor.conditional,
+    parameters: descriptor.parameters,
     validate: (parameters: unknown): Result<JsonValue> =>
       // `captureResult` because `encode` is host code: a descriptor whose encoder throws
       // must produce a failure, not escape the Result-valued boundary this handle

@@ -101,6 +101,17 @@ export interface IFailureWording {
    * `commit-indeterminate` — so the model can find out what happened.
    */
   readonly unknownOutcome?: string;
+  /**
+   * When present, the only codes whose outcome is known: every other classified failure is an unknown
+   * outcome too, and is worded as one. Absent, only `commit-indeterminate` is (a view's or a catalog
+   * writer's failure codes each say what happened).
+   */
+  readonly determinate?: ReadonlyArray<TaskFailureCode>;
+  /**
+   * When present, what the model is told for every unknown outcome, in place of the code and its
+   * description — for a tool whose unknown outcomes all call for the same action.
+   */
+  readonly unknownLine?: string;
 }
 
 /**
@@ -131,13 +142,23 @@ function _toolResult<T>(
   const code: TaskFailureCode | undefined = ctx.renderer.converters.failures.failureCode
     .convert(result.detail?.code)
     .orDefault();
-  const note: string =
-    code === undefined || code === 'commit-indeterminate' ? wording.unknownOutcome ?? '' : '';
-  return fail(
-    (code !== undefined
-      ? `${tool}: ${code}: ${modelFacingFailures[code]}`
-      : `${tool}: ${wording.unclassified}`) + note
-  );
+  const unknown: boolean =
+    code === undefined ||
+    code === 'commit-indeterminate' ||
+    (wording.determinate !== undefined && !wording.determinate.includes(code));
+  if (unknown && wording.unknownLine !== undefined) {
+    return fail(`${tool}: ${wording.unknownLine}`);
+  }
+  const note: string = unknown ? wording.unknownOutcome ?? '' : '';
+  return fail((code !== undefined ? codeLine(tool, code) : `${tool}: ${wording.unclassified}`) + note);
+}
+
+/**
+ * What the model is told for a failure code: the code and its fixed description, never host text.
+ * @internal
+ */
+export function codeLine(tool: string, code: TaskFailureCode): string {
+  return `${tool}: ${code}: ${modelFacingFailures[code]}`;
 }
 
 /**

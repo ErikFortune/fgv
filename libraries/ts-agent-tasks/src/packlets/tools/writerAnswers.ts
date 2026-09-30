@@ -6,6 +6,7 @@
 import { Converter, Converters, Result, fail, succeed } from '@fgv/ts-utils';
 import { TaskConverters, boundedArrayOf, taskRevision } from '../converters';
 import {
+  ICommandReceipt,
   IReassignmentResult,
   IResponsibility,
   ITaskMutationResult,
@@ -53,6 +54,23 @@ export interface IWriterAnswerConverters {
   reassignment(
     expected: IExpectedReceipt & { readonly responsibility: IResponsibility | 'unassigned' }
   ): Converter<IReassignmentResult>;
+  /**
+   * A command's receipt, for exactly this task, operation and command. An `applied` receipt's
+   * revision may not precede the one the command was asked against: a command that took effect did so
+   * on that revision or — once the task's source had moved it on — a later one.
+   */
+  command(expected: IExpectedCommandReceipt): Converter<ICommandReceipt>;
+}
+
+/**
+ * What a command tool asked the writer for, which its receipt must describe.
+ * @internal
+ */
+export interface IExpectedCommandReceipt {
+  readonly taskId: TaskId;
+  readonly operationId: OperationId;
+  readonly command: string;
+  readonly expectedRevision: TaskRevision;
 }
 
 /** Whether two optional responsible parties are the same party. */
@@ -111,6 +129,24 @@ export function buildWriterAnswerConverters(converters: TaskConverters): IWriter
             )
               ? succeed(value)
               : fail('the receipt names a responsible party other than the one asked for')
-        )
+        ),
+    command: (expected) =>
+      converters.commands.receipt.withConstraint((value: ICommandReceipt): Result<ICommandReceipt> => {
+        if (
+          value.taskId !== expected.taskId ||
+          value.operationId !== expected.operationId ||
+          value.command !== expected.command
+        ) {
+          return fail(
+            `the receipt is for ${value.taskId} / ${value.operationId} / ${value.command}, not the command asked for`
+          );
+        }
+        return value.result.state === 'applied' && value.result.appliedRevision < expected.expectedRevision
+          ? fail(
+              `an applied receipt at revision ${value.result.appliedRevision} precedes the revision ` +
+                `${expected.expectedRevision} it was asked against`
+            )
+          : succeed(value);
+      })
   };
 }

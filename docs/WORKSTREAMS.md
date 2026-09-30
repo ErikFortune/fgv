@@ -128,6 +128,33 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
+### `agent-tasks-i1c` ✅ (shipped 2026-09-30 via [#704](https://github.com/ErikFortune/fgv/pull/704)) — slice I1c of four: generated typed command tools
+
+**Status:** ✅ shipped into `integration/agent-tasks-v1` (not `release`; the cluster promotes as one).
+Branched at `6344c1acb` (the I1b landing). Artifacts in `.ai/tasks/active/agent-tasks-i1c/`; this
+family finalizes at cluster close.
+
+**What shipped.** `createTaskTools({ …, commands?: { writer, registry, environment, enable } })`: one
+tool per `ITaskCommandToolSpec { kind, detailVersion, command, name?, description? }`, looked up in
+the registry at build time, wire schema `{ taskId, expectedRevision, parameters }` with `parameters`
+the **registered** schema. Absent, none (asserted by name in the factory test and the captured
+outbound request). `execute` is the sixth binding member the packlet reaches.
+
+**The schema decision: expose the validator.** `ITaskCommandHandle.parameters` (option 1). Exposing
+only the `toJson()` form cannot be composed into an ai-assist tool, which takes a validator;
+host-supplied schemas are not the registry's. The broker runs `validate` on every request, so
+reading the schema produces no canonical parameters and weakens nothing it relies on.
+
+**Evidence.** Rejections are fixed code lines — `denied` reads as a missing task, `stop-active` as
+`conflict`; source receipt text and indeterminate/abandoned reasons go only to the logger. Every
+unknown outcome — including writer `conflict`/`invalid` after the intent was recorded — reads as one
+"do not send it again" line: a model resend is a new key, and applies twice (tested). A tool sends
+only to a task of its own kind and version. Generated names avoid the five fixed names and a clash
+refuses the set. Revert-matrix rows `I1c-1`…`I1c-25` (`I1c-20` retired). Copilot round 1 made the writer the single canonicalization boundary (a non-idempotent encoder ran twice); round 2 made the receipt identity the tool's own copy. Routed: the `accepted`-before-dispatch race,
+tracked transitions with no registered schemas — both in `docs/TECH_DEBT.md`.
+
+**Artifact pointer:** `.ai/tasks/active/agent-tasks-i1c/`.
+
 ### `agent-tasks-i1b` ✅ (shipped 2026-09-29 via [#703](https://github.com/ErikFortune/fgv/pull/703)) — slice I1b of four: mutation opt-ins, disabled by default
 
 **Status:** ✅ shipped into `integration/agent-tasks-v1` (not `release`; the cluster promotes as one).
