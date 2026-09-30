@@ -150,7 +150,7 @@ reading the schema produces no canonical parameters and weakens nothing it relie
 unknown outcome — including writer `conflict`/`invalid` after the intent was recorded — reads as one
 "do not send it again" line: a model resend is a new key, and applies twice (tested). A tool sends
 only to a task of its own kind and version. Generated names avoid the five fixed names and a clash
-refuses the set. Revert-matrix rows `I1c-1`…`I1c-24`. Routed: the `accepted`-before-dispatch race,
+refuses the set. Revert-matrix rows `I1c-1`…`I1c-25` (`I1c-20` retired). Copilot round 1 made the writer the single canonicalization boundary (a non-idempotent encoder ran twice); round 2 made the receipt identity the tool's own copy. Routed: the `accepted`-before-dispatch race,
 tracked transitions with no registered schemas — both in `docs/TECH_DEBT.md`.
 
 **Artifact pointer:** `.ai/tasks/active/agent-tasks-i1c/`.
