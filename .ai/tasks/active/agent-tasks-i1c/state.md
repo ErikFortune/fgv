@@ -1,6 +1,6 @@
 # State — `agent-tasks-i1c`
 
-**Status:** implemented and tested locally; layer-1 review in progress; not yet committed or pushed.
+**Status:** implemented, layer 1 done, all gates green, matrix run; PR #704 open; Copilot loop in progress.
 
 ## Where things stand
 

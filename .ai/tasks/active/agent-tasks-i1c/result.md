@@ -187,7 +187,54 @@ tests build over proxies that throw on any access).
 
 ## Revert matrix — run on final source
 
-*Filled in from the run below.*
+**Run** — `perf/mutationMatrix.js --pkg <git-archive copy of 7179d1ee, node_modules symlinked> I1c-1 … I1c-24`,
+after the layer-1 fixes and the repo-wide rebuild had finished (not concurrently: I1b's first run was
+corrupted by a rebuild removing dependencies mid-run). **24 rows, 73 red tests; 0 UNVERIFIED, 0 `0 red`,
+runner exit 0.** `--check` on the final tree: every I1c pattern found exactly once (the six storage
+rows `M13 M20 M23 M34 M39 M49` stay UNVERIFIED — pre-existing, already routed in `docs/TECH_DEBT.md`).
+
+- **Every row is red on a test that names its protection**, read row by row below.
+- **I1c-2 is paired, and its second half is masked** — the same shape as I1b-4. With the schema
+  closure and the tool's own id both reverted, the tests that go red are the surplus-field ones,
+  which fail on the first assertion (the call *succeeds*) before anything could observe which id
+  was sent. So the pair proves the closure is load-bearing; it does not separately prove the minted
+  id would be ignored. That half is structural: the request is built from named fields and the
+  minted `operationId`, never by spreading `args` (read, not measured).
+- **I1c-21 needed a new test.** The mutant (send the model's raw parameters instead of the encoder's
+  canonical form) was invisible to every existing test, because the simulated source's encoder is the
+  identity. `commandBoundary.test.ts` › *what is sent is the canonical form…* registers a trimming
+  encoder, and turns the row red.
+- **I1c-22 is broad by nature** (emptying the wire schema refuses every call that carries
+  parameters): 31 red, the first three listed.
+- I1c-24 is layer-1 P3's protection (an inspection of another task).
+
+| row | verdict | suites that went red |
+|---|---|---|
+| I1c-1 a command tool execute trusts its arguments | 2 red | execute re-validates its arguments with no harness in front › parameters are checked by the registered schema, closed as registered<br>execute re-validates its arguments with no harness in front › the model cannot name an operation id, the command, a principal, a scope or a precondition |
+| I1c-2 a model's operation id is honoured (schema closure and the tool's own id both reverted) | 2 red | execute re-validates its arguments with no harness in front › parameters are checked by the registered schema, closed as registered<br>execute re-validates its arguments with no harness in front › the model cannot name an operation id, the command, a principal, a scope or a precondition |
+| I1c-3 a command is sent to a task of any kind | 3 red | a command tool sends a registered command, and reports only what the receipt says › a task of another kind is refused before anything is sent — a tool is its own kind’s command<br>what the tool reads before it sends › a task of the command’s kind at another detail version is refused, and nothing is sent<br>what the tool reads before it sends › an inspection of another task is a malformed answer, and nothing is sent |
+| I1c-4 the kind check ignores the detail version | 1 red | what the tool reads before it sends › a task of the command’s kind at another detail version is refused, and nothing is sent |
+| I1c-5 a rejection's reason reaches the model verbatim (denied, stop-active) | 6 red | a command tool sends a registered command, and reports only what the receipt says › a command the policy denies on a visible task reads exactly as a hidden task and a foreign id<br>a command tool sends a registered command, and reports only what the receipt says › a source rejection is a known outcome: an invalid transition reads as conflict<br>a command tool sends a registered command, and reports only what the receipt says › a stale revision is refused as conflict, and nothing is sent<br>a command tool sends a registered command, and reports only what the receipt says › an unresolved registration of the kind is sent, and the broker refuses it as unsupported<br>a writer’s answer is checked, and says no more than a fixed line › every rejection reason is a fixed code line; denied reads as a missing task, stop-active as conflict<br>capability checks are live — offering a command is not authorizing it › command authority revoked after the tools are built is refused at the next call, and nothing is sent |
+| I1c-6 a source's receipt text reaches the model | 4 red | a command tool sends a registered command, and reports only what the receipt says › accepted with no logger still tells the model accepted, and nothing more<br>a command tool sends a registered command, and reports only what the receipt says › accepted: the model is told only 'accepted' — the source's receipt text goes to the host<br>a writer’s answer is checked, and says no more than a fixed line › the free text a receipt carries — a source receipt, a reason — never reaches the model<br>a writer’s answer is checked, and says no more than a fixed line › with no logger, a receipt's free text is simply dropped |
+| I1c-7 an indeterminate command's reason reaches the model | 5 red | a command tool sends a registered command, and reports only what the receipt says › indeterminate: the model is told the outcome is unknown and not to resend — never the source's reason<br>a writer’s answer is checked, and says no more than a fixed line › the free text a receipt carries — a source receipt, a reason — never reaches the model<br>idempotency: a model must not resend a command whose outcome is unknown › a lost response is unknown to the model; the pump settles it under the same key, applied once<br>idempotency: a model must not resend a command whose outcome is unknown › a model resend is a new command under a new key — so after a lost response it applies twice<br>idempotency: a model must not resend a command whose outcome is unknown › a none command whose response was lost is never resent: held without a lookup, looked up with one |
+| I1c-8 an abandoned command's reason reaches the model | 1 red | a writer’s answer is checked, and says no more than a fixed line › the free text a receipt carries — a source receipt, a reason — never reaches the model |
+| I1c-9 a writer's conflict or invalid after the intent was recorded reads as a known refusal | 1 red | a writer’s answer is checked, and says no more than a fixed line › every writer failure but a refusal of the task is an unknown outcome — a command may already be recorded |
+| I1c-10 a receipt for another task, operation or command is accepted | 1 red | a writer’s answer is checked, and says no more than a fixed line › a receipt for another task, operation or command, or with a surplus field, is an unknown outcome |
+| I1c-11 an applied receipt may precede the revision asked against | 1 red | a writer’s answer is checked, and says no more than a fixed line › an applied receipt at a revision before the one asked against is an unknown outcome; at or after, a result |
+| I1c-12 a command writer's throw reads as a view failure, not an unknown outcome | 1 red | a writer’s answer is checked, and says no more than a fixed line › a writer that throws or rejects is an unknown outcome, and what it threw goes to the host |
+| I1c-13 an unknown outcome is worded by its code, not as one line | 3 red | a writer’s answer is checked, and says no more than a fixed line › a receipt for another task, operation or command, or with a surplus field, is an unknown outcome<br>a writer’s answer is checked, and says no more than a fixed line › an applied receipt at a revision before the one asked against is an unknown outcome; at or after, a result<br>a writer’s answer is checked, and says no more than a fixed line › every writer failure but a refusal of the task is an unknown outcome — a command may already be recorded |
+| I1c-14 the command writer need not be the view | 1 red | command tools › refuses a malformed offer, and a writer that is not the view |
+| I1c-15 a generated tool may take a fixed tool's name | 1 red | command tools › a generated name may not be a fixed tool’s, whether or not that tool is offered |
+| I1c-16 two commands under one name: last one wins | 2 red | command tools › a default name replaces what a provider would refuse, and a clash that makes is refused too<br>command tools › two commands under one name refuse the whole set — including two kinds registering the same command |
+| I1c-17 a name a provider refuses is accepted | 1 red | command tools › a generated name must be one every provider accepts |
+| I1c-18 a minting failure's host text reaches the model | 1 red | what the host supplies fails as the host’s, and names nothing › an environment that fails, throws or mints a malformed id fails the call before anything is sent |
+| I1c-19 a minted operation id is not converted | 1 red | what the host supplies fails as the host’s, and names nothing › an environment that fails, throws or mints a malformed id fails the call before anything is sent |
+| I1c-20 an encoder failure's host text reaches the model | 1 red | what the host supplies fails as the host’s, and names nothing › a registered encoder that fails is the host’s failure, and nothing is sent |
+| I1c-21 the model's raw parameters are sent, not the registered encoder's canonical form | 1 red | what the host supplies fails as the host’s, and names nothing › what is sent is the canonical form the registered encoder produces, not the model’s raw value |
+| I1c-22 the wire schema carries an arbitrary payload, not the registered schema | 31 red | 31 tests across the command tool suites (every call carrying parameters fails the emptied schema), including: a command tool sends a registered command, and reports only what the receipt says › a command the policy denies on a visible task reads exactly as a hidden task and a foreign id<br>a command tool sends a registered command, and reports only what the receipt says › a stale revision is refused as conflict, and nothing is sent<br>a command tool sends a registered command, and reports only what the receipt says › a task of another kind is refused before anything is sent — a tool is its own kind’s command |
+| I1c-23 an offer that does not convert is accepted element by element (arrayOf drops undefined) | 1 red | command tools › refuses a malformed offer, and a writer that is not the view |
+| I1c-24 an inspection of another task is accepted as the task asked about | 1 red | what the tool reads before it sends › an inspection of another task is a malformed answer, and nothing is sent |
+
 
 ## Review
 
@@ -237,4 +284,19 @@ Coverage then reached 100 % with one added test (receipt free text with no logge
 
 ## Gates
 
-*Filled in as they complete.*
+Run locally on the final source (`7179d1ee` for code; later commits are docs only).
+
+| gate | result |
+|---|---|
+| `rush change --verify --target-branch origin/integration/agent-tasks-v1` | change file found (`minor`, `BREAKING (implementers only):`) |
+| `rushx build` (package) | clean, **zero warnings**; `etc/ts-agent-tasks.api.md` updated and checked in |
+| `rushx lint` / fixlint | clean; prettier via the pre-commit hook |
+| `rushx test` (package) | **93 suites, 2,167 tests passed; 100 % statements, branches, functions, lines; zero `c8 ignore`** |
+| `rush rebuild` (repo-wide) | exit 0 (3 min 33 s) — required: `ITaskCommandHandle` widened |
+| `rush test` (repo-wide) | exit 0 (7 min 3 s) |
+| `verify-capability-docs.mjs` | 24/24 documented, 75 reflexes, 0 failed |
+| `generate-capability-feed.mjs --check` | 0 stale |
+| `verify-esm-entrypoints.mjs` | 24 checked, 0 failed |
+| `verify-bundler-resolution.mjs` | 20 checked, 0 failed |
+| `verify-tarball-exports.mjs` | 26 packages, 205 paths, 0 failed |
+| revert matrix | 24 rows, 73 red tests, 0 UNVERIFIED, 0 `0 red` (above) |
