@@ -1720,18 +1720,13 @@ const I1C_ROWS = [
     '    .onSuccess((raw) => succeed(raw))\n',
     I1C
   ),
+  // I1c-20 retired by Copilot round 1: the tool no longer runs the encoder, so it has no encoder
+  // failure of its own to word; the writer's is an ordinary failure (I1c-13 covers its wording).
   m(
-    "I1c-20 an encoder failure's host text reaches the model",
+    'I1c-21 the tool encodes the parameters as well as the writer (a non-idempotent encoder runs twice)',
     CT,
-    '            .onFailure((message) => hostFailure(ctx, name, `could not encode the parameters: ${message}`))',
-    '            .onFailure((message) => fail<JsonValue>(`${name}: ${message}`))',
-    I1C
-  ),
-  m(
-    "I1c-21 the model's raw parameters are sent, not the registered encoder's canonical form",
-    CT,
-    '            .onSuccess((parameters) => succeed({ typed, taskId, parameters }))',
-    '            .onSuccess(() => succeed({ typed, taskId, parameters: typed.parameters as JsonValue }))',
+    '          parameters: args.parameters\n',
+    '          parameters: tool.handle.validate(args.parameters).orDefault(args.parameters as never)\n',
     I1C
   ),
   m(

@@ -8,7 +8,7 @@
 |---|---|
 | brief | `.ai/tasks/active/agent-tasks-i1c/brief.md` — complete |
 | branch | `claude/agent-tasks-i1c`, cut off `integration/agent-tasks-v1` at the I1b landing (`6344c1acb`) |
-| PR | none |
+| PR | [#704](https://github.com/ErikFortune/fgv/pull/704) into `integration/agent-tasks-v1` |
 | base | `integration/agent-tasks-v1` — **not `release`** |
 
 ## Predecessors

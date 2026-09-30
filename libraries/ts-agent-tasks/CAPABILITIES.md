@@ -770,7 +770,10 @@ const tools = createTaskTools({
   (an unregistered kind, version or command refuses the set), and its tool's wire schema is
   `{ taskId, expectedRevision, parameters }` with `parameters` the command's **registered** schema —
   `ITaskCommandHandle.parameters` — not an arbitrary payload. Closed at every level the registered
-  schema is closed. `execute` re-validates, then canonicalizes through the handle's `validate`.
+  schema is closed: stated on the wire for Anthropic and OpenAI; Gemini's dialect drops
+  `additionalProperties`, so there closure is enforced by validation only — the harness's, then
+  `execute`'s, which re-validates every call. The tool sends the parameters as the schema accepted
+  them; the writer canonicalizes them, once, through the handle's `validate`.
 - **Offering is not authorizing.** Building asks the registry, never the writer, the environment or
   the policy. Every call goes through the writer's `execute`, which asks the policy then: command
   authority revoked after build refuses the next call, and nothing is sent.

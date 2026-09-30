@@ -451,6 +451,50 @@ describe('command tools reach the outbound request only when offered', () => {
     );
     const declarations = toolsOf(bodies[0]).flatMap((t) => (t.function_declarations ?? []) as JsonObject[]);
     expect(declarations.map((d) => d.name)).toEqual(offered);
+    // The complete sanitized declarations: Gemini's dialect drops `additionalProperties`, so on this
+    // provider closure is enforced by validation (the harness's, then `execute`'s), not on the wire.
+    // Everything else — the registered parameter schema above all — must arrive intact.
+    const envelope = {
+      taskId: { type: 'string', description: 'The id of the task to send the command to.' },
+      expectedRevision: {
+        type: 'integer',
+        description:
+          'The revision task_inspect last returned for this task. The change is refused if the task has ' +
+          'changed since; inspect it again and decide afresh.'
+      }
+    };
+    const declared = (parameters: JsonObject): JsonObject => ({
+      type: 'object',
+      properties: { ...envelope, parameters },
+      required: ['taskId', 'expectedRevision', 'parameters']
+    });
+    const reason = { type: 'object', properties: { reason: { type: 'string' } }, required: ['reason'] };
+    expect(declarations.slice(2)).toEqual([
+      {
+        name: 'task_command_pause',
+        description: tools.get('task_command_pause').config.description,
+        parameters: declared(reason)
+      },
+      {
+        name: 'task_command_resume',
+        description: tools.get('task_command_resume').config.description,
+        parameters: declared({ type: 'object', properties: {} })
+      },
+      {
+        name: 'task_command_cancel',
+        description: tools.get('task_command_cancel').config.description,
+        parameters: declared(reason)
+      },
+      {
+        name: 'task_command_advance',
+        description: tools.get('task_command_advance').config.description,
+        parameters: declared({
+          type: 'object',
+          properties: { steps: { type: 'integer' } },
+          required: ['steps']
+        })
+      }
+    ]);
   });
 
   test('round trip: a streamed command call is applied by the executor, and the model is told so', async () => {

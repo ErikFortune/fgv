@@ -11,10 +11,12 @@
 
 import '@fgv/ts-utils-jest';
 import { JsonSchema, JsonValue } from '@fgv/ts-json-base';
-import { Converters, Logging, fail, failWithDetail, succeed, succeedWithDetail } from '@fgv/ts-utils';
+import { Logging, Result, fail, failWithDetail, succeed, succeedWithDetail } from '@fgv/ts-utils';
 import {
   CommandRejectionReason,
   CommandState,
+  ExternalTaskSource,
+  FileTreeTaskRepository,
   IBoundTaskWriter,
   ICommandReceipt,
   ICommandRequest,
@@ -23,11 +25,20 @@ import {
   TaskInspection,
   TaskKind,
   TaskKindRegistry,
-  createTaskCommandHandle
+  trackedTaskDescriptor
 } from '../../../index';
 import { converters } from '../../helpers/fixtures';
-import { ISourceHarness, registerJob, sourceHarness } from '../../helpers/sourceFixtures';
-import { IToolSet, call, commandingTools, toolSet } from '../../helpers/toolFixtures';
+import {
+  IJobDetails,
+  ISourceHarness,
+  SimulatedExecutor,
+  harnessWith,
+  jobDescriptor,
+  registerJob,
+  sourceHarness
+} from '../../helpers/sourceFixtures';
+import { environment, memoryRoot } from '../../helpers/storageFixtures';
+import { IToolSet, call, commandingTools } from '../../helpers/toolFixtures';
 
 const unknownLine =
   'task_command_pause: the outcome is not known: the command may or may not have been recorded or ' +
@@ -437,86 +448,76 @@ describe('what the host supplies fails as the host’s, and names nothing', () =
     expect(h.executor.dispatches.size).toBe(0);
   });
 
-  test('what is sent is the canonical form the registered encoder produces, not the model’s raw value', async () => {
-    const h = await sourceHarness();
-    h.executor.addJob('j1');
-    await registerJob(h, 'j1');
-    const kind = 'sim.job' as TaskKind;
-    const registry = TaskKindRegistry.create(converters.envelopes.snapshot).orThrow();
-    registry
-      .register({
-        kind,
-        detailVersion: 1,
-        details: Converters.strictObject<Record<string, never>>({}),
-        encode: () => succeed({}),
-        commands: [
-          createTaskCommandHandle<{ readonly reason: string }>({
-            name: 'pause',
-            parameters: JsonSchema.object({ reason: JsonSchema.string() }),
-            encode: (p) => succeed({ reason: p.reason.trim() }),
+  let tagged: JsonValue[] = [];
+
+  /**
+   * A broker over a real repository whose job kind's `tag` command runs `encode` — prefixing, so not
+   * idempotent — or failing, as `encode` says.
+   */
+  async function tagging(encode: (label: string) => Result<JsonValue>): Promise<ISourceHarness> {
+    const executor = new SimulatedExecutor('exec', 'observed-state');
+    const received: JsonValue[] = [];
+    const source = ExternalTaskSource.create<IJobDetails>({
+      id: executor.sourceId,
+      history: executor.history,
+      encodeDetails: (d) => succeed({ step: d.step, ref: d.ref }),
+      compare: (a, b) => executor.compare(a, b),
+      read: async (binding) => executor.read(binding),
+      feed: async (cursor) => executor.page(cursor),
+      recover: async (binding) => executor.recover(binding),
+      commands: [
+        ExternalTaskSource.command<IJobDetails, { readonly label: string }>(
+          {
+            name: 'tag',
+            parameters: JsonSchema.object({ label: JsonSchema.string() }),
+            encode: (p) => encode(p.label),
             idempotency: 'none',
             conditional: false
-          })
-        ]
-      })
-      .orThrow();
-    const { writer, sent } = scriptedWriter(h.writer, (request) =>
-      receipt(request, { state: 'applied', appliedRevision: 1 as never })
-    );
-    const tools = toolSet({
-      view: writer,
-      commands: {
-        writer,
-        registry,
-        environment: h.env,
-        enable: [{ kind, detailVersion: 1, command: 'pause' }]
-      }
-    });
+          },
+          async (binding, parameters, request) => {
+            received.push({ ...parameters });
+            return executor.dispatch(binding, request, { ...parameters }, false);
+          }
+        )
+      ]
+    }).orThrow();
+    const registry = TaskKindRegistry.create(converters.envelopes.snapshot).orThrow();
+    registry.register(trackedTaskDescriptor()).orThrow();
+    registry.register(jobDescriptor(source)).orThrow();
+    const root = memoryRoot();
+    const { env, logger } = environment('e');
+    const repository = (
+      await FileTreeTaskRepository.initialize({ root, mode: 'session', environment: env, registry })
+    ).orThrow();
+    const h = harnessWith(repository, env, root, logger, executor, source, registry);
+    h.executor.addJob('j1');
+    await registerJob(h, 'j1');
+    tagged = received;
+    return h;
+  }
+  const tagSpec = { kind: 'sim.job' as TaskKind, detailVersion: 1, command: 'tag' };
+
+  test('the registered encoder runs exactly once, in the writer — the tool sends what the schema accepted', async () => {
+    const h = await tagging((label) => succeed({ label: `prefix:${label}` }));
+    const tools = commandingTools(h, h.writer, undefined, [tagSpec]);
     expect(
-      await call(tools, 'task_command_pause', { ...pause, parameters: { reason: '  hold  ' } })
-    ).toSucceed();
-    expect(sent.map((r) => r.parameters)).toEqual([{ reason: 'hold' }]);
+      await call(tools, 'task_command_tag', { taskId: 'j1', expectedRevision: 1, parameters: { label: 'x' } })
+    ).toSucceedWith({ taskId: 'j1', state: 'applied', revision: 2 });
+    // Once: a tool that also encoded would have sent `prefix:prefix:x`.
+    expect(tagged).toEqual([{ label: 'prefix:x' }]);
   });
 
-  test('a registered encoder that fails is the host’s failure, and nothing is sent', async () => {
-    const h = await sourceHarness();
-    h.executor.addJob('j1');
-    await registerJob(h, 'j1');
-    const kind = 'sim.encoder' as TaskKind;
-    const registry = TaskKindRegistry.create(converters.envelopes.snapshot).orThrow();
-    registry
-      .register({
-        kind,
-        detailVersion: 1,
-        details: Converters.strictObject<Record<string, never>>({}),
-        encode: () => succeed({}),
-        commands: [
-          createTaskCommandHandle({
-            name: 'pause',
-            parameters: JsonSchema.object({ reason: JsonSchema.string() }),
-            encode: (): ReturnType<typeof fail<JsonValue>> => fail('encoder at /srv/enc refused'),
-            idempotency: 'none',
-            conditional: false
-          })
-        ]
-      })
-      .orThrow();
+  test('a registered encoder that fails is refused by the writer, before anything is recorded or sent', async () => {
+    const h = await tagging(() => fail('encoder at /srv/enc refused'));
     const logger = new Logging.InMemoryLogger('detail');
-    const { writer, sent } = scriptedWriter(h.writer, () => fail('never'));
-    const tools = toolSet({
-      view: writer,
-      logger,
-      commands: {
-        writer,
-        registry,
-        environment: h.env,
-        enable: [{ kind, detailVersion: 1, command: 'pause' }]
-      }
-    });
-    expect(await call(tools, 'task_command_pause', pause)).toFailWith(
-      'task_command_pause: the request failed'
-    );
+    const tools = commandingTools(h, h.writer, { logger }, [tagSpec]);
+    // The writer's `invalid` cannot be told from one after an intent was recorded, so the model hears
+    // the unknown line — the safe direction — and never the host's text.
+    expect(
+      await call(tools, 'task_command_tag', { taskId: 'j1', expectedRevision: 1, parameters: { label: 'x' } })
+    ).toFailWith(unknownLine.replace('task_command_pause', 'task_command_tag'));
     expect(logger.logged.some((line) => line.includes('/srv/enc'))).toBe(true);
-    expect(sent).toEqual([]);
+    expect(tagged).toEqual([]);
+    expect(h.executor.dispatches.size).toBe(0);
   });
 });

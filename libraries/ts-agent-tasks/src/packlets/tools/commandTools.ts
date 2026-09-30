@@ -4,7 +4,6 @@
  */
 
 import { AiAssist } from '@fgv/ts-extras';
-import { JsonValue } from '@fgv/ts-json-base';
 import {
   Converters,
   Result,
@@ -282,14 +281,13 @@ function _operationId(ctx: ICommandToolContext, tool: string): Result<OperationI
 
 /**
  * Sends one command: the task must be of this tool's kind, then the writer is asked with a minted
- * operation id and the canonical parameters, and its receipt is converted before anything reads it.
+ * operation id and the schema-validated parameters, and its receipt is converted before anything reads it.
  */
 async function _send(
   ctx: ICommandToolContext,
   tool: ICommandTool,
   taskId: TaskId,
-  args: ITaskCommandToolArgs,
-  parameters: JsonValue
+  args: ITaskCommandToolArgs
 ): Promise<Result<TaskCommandToolResult>> {
   const name: string = tool.name;
   return (
@@ -311,7 +309,10 @@ async function _send(
           operationId,
           expectedRevision: args.expectedRevision,
           command: tool.handle.name,
-          parameters
+          // The parameters exactly as the registered schema accepted them. The writer canonicalizes
+          // them — once — through the registered handle's `validate`; encoding here as well would
+          // apply an encoder that need not be idempotent twice.
+          parameters: args.parameters
         })
         .withErrorFormat((message) => argumentMessage(name, `invalid arguments: ${message}`))
     )
@@ -370,15 +371,7 @@ function _commandTool(ctx: ICommandToolContext, tool: ICommandTool): AiAssist.IA
             .onSuccess((taskId) => succeed({ typed, taskId }))
         )
         .withErrorFormat((message) => argumentMessage(name, `invalid arguments: ${message}`))
-        .onSuccess(({ typed, taskId }) =>
-          // The registered schema already accepted these parameters; this is the handle's encoding,
-          // which is host code. Its failure is the host's, and says nothing to the model.
-          tool.handle
-            .validate(typed.parameters)
-            .onFailure((message) => hostFailure(ctx, name, `could not encode the parameters: ${message}`))
-            .onSuccess((parameters) => succeed({ typed, taskId, parameters }))
-        )
-        .thenOnSuccess(({ typed, taskId, parameters }) => _send(ctx, tool, taskId, typed, parameters))
+        .thenOnSuccess(({ typed, taskId }) => _send(ctx, tool, taskId, typed))
   };
 }
 
