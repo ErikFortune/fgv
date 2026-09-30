@@ -297,7 +297,18 @@ Round 1 found a genuine high that layer 1 did not, so the loop continues.
 
 Round 2 again found a real high — an ordering defect of exactly the class `CODING_STANDARDS.md`
 predicts on authorization boundaries (a value read after the `await` it should precede). The loop
-continues.
+continued.
+
+**Round 3 (on `bca0c361`) — no findings.** Posted 02:12 UTC, twenty minutes after an `@copilot review`
+comment plus an API request. Its overview lists all seven round-2 findings as resolved, **"Findings:
+None"**, and no "not posted" or suppressed block; its only note is that the command-dispatch,
+authorization and uncertain-outcome semantics warrant a final human review.
+
+**Loop stopped at 3 rounds on diminishing returns.** Rounds 1 and 2 each found a genuine high on the
+external-dispatch boundary (double encoding, then a receipt identity read after the writer had the
+request) — so a two-round stop, I1b's, would have been wrong here. Round 3 found nothing at all, not
+even a nitpick, which is the signal `CODING_STANDARDS.md` names. Every review thread is resolved. CI
+is green on every head from `89d990c8` to `bca0c361`.
 
 ## Routed beyond this slice
 

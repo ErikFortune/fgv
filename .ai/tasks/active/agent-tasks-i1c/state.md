@@ -1,7 +1,8 @@
 # State — `agent-tasks-i1c`
 
-**Status:** implemented; layer 1 done; all gates green; revert matrix run on final source; PR #704
-open; Copilot loop in progress (round 2 addressed).
+**Status:** complete pending merge. Layer 1 done; all gates green; revert matrix run on final source;
+Copilot loop stopped at 3 rounds (round 3: no findings); CI green; every thread resolved. PR #704 waits
+on human review.
 
 ## Where things stand
 
@@ -29,8 +30,7 @@ open; Copilot loop in progress (round 2 addressed).
 
 ## Resume instructions
 
-Remaining work is only the Copilot loop and merge: read the latest Copilot review on #704, fix real
-findings (run package build/lint/test and, if source moved, the I1c matrix rows on a `git archive`
-copy with a `node_modules` symlink), record the round in `result.md` § Layer 2, reply to and resolve
-each thread, re-request with an `@copilot review` comment, and stop on diminishing returns. Do not run
-`/finalize-task` — the family finalizes at cluster close.
+Nothing remains but human review and merge of #704. If a reviewer asks for changes: fix, run package
+build/lint/test and — if source moved — the I1c matrix rows on a `git archive` copy with a
+`node_modules` symlink, record it in `result.md`, reply and resolve. Do not run `/finalize-task` — the
+family finalizes at cluster close.
