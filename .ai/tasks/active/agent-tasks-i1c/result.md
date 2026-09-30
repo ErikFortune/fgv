@@ -23,7 +23,7 @@ and this family finalizes at cluster close. Written 2026-09-30.
 - **Contract change:** `ITaskCommandHandle.parameters: JsonSchema.ISchemaValidator<unknown>`, set by
   `createTaskCommandHandle`. No other implementer exists in `libraries/`, `tools/` or `samples/`
   (`grep -rl ITaskCommandHandle`: five files, all in this package's `src/packlets`).
-- **Files:** `tools/commandTools.ts` (new, ~390 lines), `tools/schemas.ts`, `tools/writerAnswers.ts`
+- **Files:** `tools/commandTools.ts` (new, ~380 lines), `tools/schemas.ts`, `tools/writerAnswers.ts`
   (`command` receipt converter), `tools/toolSupport.ts` (`IFailureWording.determinate` /
   `unknownLine`, `codeLine`), `tools/taskTools.ts`, `tools/index.ts`, `types/tools.ts`,
   `types/registry.ts`, `converters/kindRegistry.ts`. Nothing in `storage/` or `broker/` changed.
@@ -61,9 +61,11 @@ and this family finalizes at cluster close. Written 2026-09-30.
   commands, `createTaskCommandHandle` checks **one** half: the *encoded* form must re-validate against
   the schema (an encoder that changes shape is refused). What remains a fixture obligation is the rest:
   that the schema admits exactly the inputs the host's `apply` can act on, and that the encoder is
-  total over what the schema admits. An encoder that fails on a schema-valid value is a host failure
-  the tool reports as `the request failed` (tested) — the model is told nothing it could act on,
-  because nothing about its input was wrong by the schema it was offered.
+  total over what the schema admits. The tool **does not run the encoder**: it sends the parameters as
+  the schema accepted them, and the writer canonicalizes them once (Copilot round 1 — running it in the
+  tool too applied a non-idempotent encoder twice). An encoder that fails on a schema-valid value is
+  therefore refused by the writer before anything is recorded, and the model hears the unknown line —
+  the tool cannot tell that `invalid` from one after an intent — with the host's text in the log only.
 
 ## What the model is told for each `CommandState`, and what goes to `logger`
 
@@ -179,7 +181,7 @@ tests build over proxies that throw on any access).
 | window | what was read or decided before | what re-checks after |
 |---|---|---|
 | factory build → every call | the offered commands, their handles and names | nothing about authority is captured: every call goes to the writer, which asks the policy then (revoked-after-build refused, denied-at-build allowed later — both tested) |
-| `execute` args → `handle.validate` → `inspect` | validated args, canonical parameters | the encoder runs before any task read and does not depend on the task, so it discloses nothing |
+| `execute` args → `inspect` | schema-validated args | nothing the tool decides depends on them beyond shape; the writer canonicalizes the parameters itself, once |
 | `await view.inspect` → `await writer.execute` | the task's kind and detail version | **nothing needs to**: storage refuses any replacement that changes id, kind or detail version, and first resolution preserves both (`commitRules.ts`). Visibility, command authority, revision, archive, stop latch and epoch are all re-decided inside `execute` — the inspection is never trusted for authorization |
 | mint → `await writer.execute` | a fresh operation id | none needed: the id is fresh; the writer re-converts the request |
 | `await writer.execute` → reading the receipt | the requested task, operation, command and `expectedRevision`, captured before the call | `writerAnswers.command` checks the receipt against those captured values |
@@ -187,25 +189,26 @@ tests build over proxies that throw on any access).
 
 ## Revert matrix — run on final source
 
-**Run** — `perf/mutationMatrix.js --pkg <git-archive copy of 7179d1ee, node_modules symlinked> I1c-1 … I1c-24`,
-after the layer-1 fixes and the repo-wide rebuild had finished (not concurrently: I1b's first run was
-corrupted by a rebuild removing dependencies mid-run). **24 rows, 73 red tests; 0 UNVERIFIED, 0 `0 red`,
-runner exit 0.** `--check` on the final tree: every I1c pattern found exactly once (the six storage
-rows `M13 M20 M23 M34 M39 M49` stay UNVERIFIED — pre-existing, already routed in `docs/TECH_DEBT.md`).
+**Final run** — `perf/mutationMatrix.js --pkg <git-archive copy of c0f82d98, node_modules symlinked>`,
+rows `I1c-1 … I1c-24` less the retired `I1c-20`, after Copilot round 1 changed `commandTools.ts`.
+**23 rows, 75 red tests; 0 UNVERIFIED, 0 `0 red`, runner exit 0.** An earlier run on `7179d1ee`
+(24 rows, 73 red) is superseded: round 1 removed the code two of its rows mutated. `--check` on the
+final tree: every I1c pattern found exactly once (the six storage rows `M13 M20 M23 M34 M39 M49` stay
+UNVERIFIED — pre-existing, routed in `docs/TECH_DEBT.md`). Not run concurrently with any rebuild.
 
 - **Every row is red on a test that names its protection**, read row by row below.
 - **I1c-2 is paired, and its second half is masked** — the same shape as I1b-4. With the schema
   closure and the tool's own id both reverted, the tests that go red are the surplus-field ones,
-  which fail on the first assertion (the call *succeeds*) before anything could observe which id
+  which fail on their first assertion (the call *succeeds*) before anything could observe which id
   was sent. So the pair proves the closure is load-bearing; it does not separately prove the minted
   id would be ignored. That half is structural: the request is built from named fields and the
   minted `operationId`, never by spreading `args` (read, not measured).
-- **I1c-21 needed a new test.** The mutant (send the model's raw parameters instead of the encoder's
-  canonical form) was invisible to every existing test, because the simulated source's encoder is the
-  identity. `commandBoundary.test.ts` › *what is sent is the canonical form…* registers a trimming
-  encoder, and turns the row red.
+- **I1c-20 retired, I1c-21 re-pointed by Copilot round 1.** The tool no longer runs the encoder, so
+  it has no encoder failure of its own to word (the writer's is an ordinary failure, covered by
+  I1c-13). I1c-21 now reverts to the defect round 1 found — the tool encoding as well as the writer —
+  and goes red only on the end-to-end prefix-encoder test.
 - **I1c-22 is broad by nature** (emptying the wire schema refuses every call that carries
-  parameters): 31 red, the first three listed.
+  parameters); the first three red tests are listed.
 - I1c-24 is layer-1 P3's protection (an inspection of another task).
 
 | row | verdict | suites that went red |
@@ -218,23 +221,21 @@ rows `M13 M20 M23 M34 M39 M49` stay UNVERIFIED — pre-existing, already routed 
 | I1c-6 a source's receipt text reaches the model | 4 red | a command tool sends a registered command, and reports only what the receipt says › accepted with no logger still tells the model accepted, and nothing more<br>a command tool sends a registered command, and reports only what the receipt says › accepted: the model is told only 'accepted' — the source's receipt text goes to the host<br>a writer’s answer is checked, and says no more than a fixed line › the free text a receipt carries — a source receipt, a reason — never reaches the model<br>a writer’s answer is checked, and says no more than a fixed line › with no logger, a receipt's free text is simply dropped |
 | I1c-7 an indeterminate command's reason reaches the model | 5 red | a command tool sends a registered command, and reports only what the receipt says › indeterminate: the model is told the outcome is unknown and not to resend — never the source's reason<br>a writer’s answer is checked, and says no more than a fixed line › the free text a receipt carries — a source receipt, a reason — never reaches the model<br>idempotency: a model must not resend a command whose outcome is unknown › a lost response is unknown to the model; the pump settles it under the same key, applied once<br>idempotency: a model must not resend a command whose outcome is unknown › a model resend is a new command under a new key — so after a lost response it applies twice<br>idempotency: a model must not resend a command whose outcome is unknown › a none command whose response was lost is never resent: held without a lookup, looked up with one |
 | I1c-8 an abandoned command's reason reaches the model | 1 red | a writer’s answer is checked, and says no more than a fixed line › the free text a receipt carries — a source receipt, a reason — never reaches the model |
-| I1c-9 a writer's conflict or invalid after the intent was recorded reads as a known refusal | 1 red | a writer’s answer is checked, and says no more than a fixed line › every writer failure but a refusal of the task is an unknown outcome — a command may already be recorded |
+| I1c-9 a writer's conflict or invalid after the intent was recorded reads as a known refusal | 2 red | a writer’s answer is checked, and says no more than a fixed line › every writer failure but a refusal of the task is an unknown outcome — a command may already be recorded<br>what the host supplies fails as the host’s, and names nothing › a registered encoder that fails is refused by the writer, before anything is recorded or sent |
 | I1c-10 a receipt for another task, operation or command is accepted | 1 red | a writer’s answer is checked, and says no more than a fixed line › a receipt for another task, operation or command, or with a surplus field, is an unknown outcome |
 | I1c-11 an applied receipt may precede the revision asked against | 1 red | a writer’s answer is checked, and says no more than a fixed line › an applied receipt at a revision before the one asked against is an unknown outcome; at or after, a result |
 | I1c-12 a command writer's throw reads as a view failure, not an unknown outcome | 1 red | a writer’s answer is checked, and says no more than a fixed line › a writer that throws or rejects is an unknown outcome, and what it threw goes to the host |
-| I1c-13 an unknown outcome is worded by its code, not as one line | 3 red | a writer’s answer is checked, and says no more than a fixed line › a receipt for another task, operation or command, or with a surplus field, is an unknown outcome<br>a writer’s answer is checked, and says no more than a fixed line › an applied receipt at a revision before the one asked against is an unknown outcome; at or after, a result<br>a writer’s answer is checked, and says no more than a fixed line › every writer failure but a refusal of the task is an unknown outcome — a command may already be recorded |
+| I1c-13 an unknown outcome is worded by its code, not as one line | 4 red | a writer’s answer is checked, and says no more than a fixed line › a receipt for another task, operation or command, or with a surplus field, is an unknown outcome<br>a writer’s answer is checked, and says no more than a fixed line › an applied receipt at a revision before the one asked against is an unknown outcome; at or after, a result<br>a writer’s answer is checked, and says no more than a fixed line › every writer failure but a refusal of the task is an unknown outcome — a command may already be recorded<br>what the host supplies fails as the host’s, and names nothing › a registered encoder that fails is refused by the writer, before anything is recorded or sent |
 | I1c-14 the command writer need not be the view | 1 red | command tools › refuses a malformed offer, and a writer that is not the view |
 | I1c-15 a generated tool may take a fixed tool's name | 1 red | command tools › a generated name may not be a fixed tool’s, whether or not that tool is offered |
 | I1c-16 two commands under one name: last one wins | 2 red | command tools › a default name replaces what a provider would refuse, and a clash that makes is refused too<br>command tools › two commands under one name refuse the whole set — including two kinds registering the same command |
 | I1c-17 a name a provider refuses is accepted | 1 red | command tools › a generated name must be one every provider accepts |
 | I1c-18 a minting failure's host text reaches the model | 1 red | what the host supplies fails as the host’s, and names nothing › an environment that fails, throws or mints a malformed id fails the call before anything is sent |
 | I1c-19 a minted operation id is not converted | 1 red | what the host supplies fails as the host’s, and names nothing › an environment that fails, throws or mints a malformed id fails the call before anything is sent |
-| I1c-20 an encoder failure's host text reaches the model | 1 red | what the host supplies fails as the host’s, and names nothing › a registered encoder that fails is the host’s failure, and nothing is sent |
-| I1c-21 the model's raw parameters are sent, not the registered encoder's canonical form | 1 red | what the host supplies fails as the host’s, and names nothing › what is sent is the canonical form the registered encoder produces, not the model’s raw value |
-| I1c-22 the wire schema carries an arbitrary payload, not the registered schema | 31 red | 31 tests across the command tool suites (every call carrying parameters fails the emptied schema), including: a command tool sends a registered command, and reports only what the receipt says › a command the policy denies on a visible task reads exactly as a hidden task and a foreign id<br>a command tool sends a registered command, and reports only what the receipt says › a stale revision is refused as conflict, and nothing is sent<br>a command tool sends a registered command, and reports only what the receipt says › a task of another kind is refused before anything is sent — a tool is its own kind’s command |
+| I1c-21 the tool encodes the parameters as well as the writer (a non-idempotent encoder runs twice) | 1 red | what the host supplies fails as the host’s, and names nothing › the registered encoder runs exactly once, in the writer — the tool sends what the schema accepted |
+| I1c-22 the wire schema carries an arbitrary payload, not the registered schema | 32 red | 32 tests across the command tool suites (every call carrying parameters fails the emptied schema), including: a command tool sends a registered command, and reports only what the receipt says › a command the policy denies on a visible task reads exactly as a hidden task and a foreign id<br>a command tool sends a registered command, and reports only what the receipt says › a stale revision is refused as conflict, and nothing is sent<br>a command tool sends a registered command, and reports only what the receipt says › a task of another kind is refused before anything is sent — a tool is its own kind’s command |
 | I1c-23 an offer that does not convert is accepted element by element (arrayOf drops undefined) | 1 red | command tools › refuses a malformed offer, and a writer that is not the view |
 | I1c-24 an inspection of another task is accepted as the task asked about | 1 red | what the tool reads before it sends › an inspection of another task is a malformed answer, and nothing is sent |
-
 
 ## Review
 
@@ -265,7 +266,19 @@ Coverage then reached 100 % with one added test (receipt free text with no logge
 
 ### Layer 2 — Copilot
 
-*In progress.*
+The `@copilot review` comment (00:24 UTC) produced nothing for an hour. One API request was then sent
+at 01:25, and the review posted at 01:30. Which of the two triggered it is not known.
+
+**Round 1 (on `89d990c8`) — one high, one medium, two low; all real, all fixed in `c0f82d98`.**
+
+| finding | fix |
+|---|---|
+| **(high)** the tool ran `handle.validate` — and so the registered encoder — and the writer ran it again in `prepareExternal`. Encoders must re-validate, not be idempotent, so a prefixing encoder was applied twice | the tool sends the schema-validated parameters; the writer is the single canonicalization boundary. End-to-end test through a real broker with a prefixing `tag` command: the executor receives `prefix:x`. **Why layer 1 and the matrix missed it:** the canonicalization test's encoder trimmed whitespace, which is idempotent, so the defect and the protection looked the same. The matrix row that "protected" canonical encoding (old I1c-21) was protecting the bug. A failing encoder is now the writer's `invalid`, read as the unknown line (tested) |
+| **(medium)** the Gemini capture asserted only command names, so a dropped parameter schema would pass | the complete sanitized declarations of all four command tools are asserted as literals |
+| **(low)** `state.md` said PR "none" beside a status naming #704 | fixed |
+| **(low)** CAPABILITIES called the wire schema closed; Gemini's dialect strips `additionalProperties` | qualified: stated on the wire for Anthropic and OpenAI, enforced by validation only for Gemini |
+
+Round 1 found a genuine high that layer 1 did not, so the loop continues.
 
 ## Routed beyond this slice
 
@@ -284,7 +297,7 @@ Coverage then reached 100 % with one added test (receipt free text with no logge
 
 ## Gates
 
-Run locally on the final source (`7179d1ee` for code; later commits are docs only).
+Run locally. Package gates on `c0f82d98` (after Copilot round 1); the repo-wide rebuild and test on `7179d1ee` — round 1 moved no type, signature or export (`etc/ts-agent-tasks.api.md` unchanged) and no other package consumes the tool code, and CI's `build` runs the whole repo on every head.
 
 | gate | result |
 |---|---|
@@ -299,4 +312,4 @@ Run locally on the final source (`7179d1ee` for code; later commits are docs onl
 | `verify-esm-entrypoints.mjs` | 24 checked, 0 failed |
 | `verify-bundler-resolution.mjs` | 20 checked, 0 failed |
 | `verify-tarball-exports.mjs` | 26 packages, 205 paths, 0 failed |
-| revert matrix | 24 rows, 73 red tests, 0 UNVERIFIED, 0 `0 red` (above) |
+| revert matrix | 23 rows, 75 red tests, 0 UNVERIFIED, 0 `0 red`, on `c0f82d98` (above) |
