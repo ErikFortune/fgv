@@ -22,7 +22,10 @@ and this family finalizes at cluster close. Written 2026-09-30.
   `{ taskId, state: 'applied', revision }`. Everything else is a tool failure (below).
 - **Contract change:** `ITaskCommandHandle.parameters: JsonSchema.ISchemaValidator<unknown>`, set by
   `createTaskCommandHandle`. No other implementer exists in `libraries/`, `tools/` or `samples/`
-  (`grep -rl ITaskCommandHandle`: five files, all in this package's `src/packlets`).
+  (`grep -rl ITaskCommandHandle --include=*.ts libraries/ tools/ samples/`: six files, all in this
+  package's `src/packlets` — `types/registry.ts`, `converters/kindRegistry.ts`,
+  `implementations/externalSource.ts`, `broker/commands.ts`, `broker/externalCommands.ts`,
+  `tools/commandTools.ts`).
 - **Files:** `tools/commandTools.ts` (new, ~380 lines), `tools/schemas.ts`, `tools/writerAnswers.ts`
   (`command` receipt converter), `tools/toolSupport.ts` (`IFailureWording.determinate` /
   `unknownLine`, `codeLine`), `tools/taskTools.ts`, `tools/index.ts`, `types/tools.ts`,
