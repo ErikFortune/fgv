@@ -1,6 +1,7 @@
 # State — `agent-tasks-m1-stop`
 
-**Status:** brief written, not started.
+**Status:** predictions frozen in `MANIFEST` (commit "perf(ts-agent-tasks): freeze M1 stop and
+production-profile predictions"), before any cohort code or run. Harness cohorts next.
 
 ## Where things stand
 
@@ -11,50 +12,40 @@
 | PR | none |
 | base | `integration/agent-tasks-v1` — **not `release`** |
 
-## Scope
+## Brief premises checked against source (before predicting)
 
-M1's two remaining cohorts, per the plan's own M1 heading (*"the production-profile cohort and the
-stop-state cohort (after T9) remain"*):
+The brief asked for its `record-bytes` arithmetic to be reproduced or refuted. Refuted, three ways —
+recorded in `MANIFEST.predictions.stop.premise`:
 
-1. **Stop-state** — what a persisted cascade stop costs, resident and on disk.
-2. **Production-profile** — qualify the profile at its *actual* earliest limiting dimension.
+1. **Breadth is capped at 1,000 targets** by `defaultMaxStopTargets` (`types/stop.ts`), refused never
+   truncated (`broker/stopRequests.ts`, `converters/stopConverters.ts`). Not a capacity dimension. The
+   brief's "10,000 targets under one root" cannot exist; the 10,000-target arm is 10 roots x 1,000.
+2. **The root is a task record**, bounded at **8 MiB** (`maxTaskRecordBytes`), not `record-bytes`'
+   32 MiB — `recordLimitFor` takes the minimum (T8b result § (4)'s mechanism).
+3. **A target carries no source identity.** `IStableStopEvidence` is sourceId + contractVersion +
+   epoch + token, each <= 128 characters. The 4 KiB `maxSourceIdentityBytes` binding reference lives
+   on the target's own record. Schema-maximum target = 2,986 B (`maximumStopTargetBytes`).
 
-A **measurement** stream: it extends `perf/residentMemory.js`, prints machine-dependent numbers, and
-is explicitly not a Jest test, not in coverage and not a CI threshold.
+Consequence: one stop cannot reach `record-bytes` (<= 1,000 x 2,986 B < 3 MiB). What the root record
+bounds is **repetition** — released/settled intents stay on the root (T9 result § model table).
+Under the default profile `logical-bytes` binds breadth first (643,625 B reserved per target; T9:
+210 of 400; whole-repo ≈ 325).
 
-## Parallelism
+These are not a STOP under the missing-input rule: the brief explicitly anticipated its arithmetic
+might be wrong and asked for it to be checked; every required-reading file exists and says what the
+brief cites it for. Reported to the user in the PR and `result.md`.
 
-Runs beside **`agent-tasks-i2`**, which owns the new `packlets/prompt/`. This stream owns `perf/`.
-Neither touches the other's files. Shared-substrate collisions (plan, ledger, `CAPABILITIES.md`) are
-resolved by merging whichever lands first, as `agent-tasks-tracked-commands` did.
+## Plan (cohorts as frozen)
 
-Not blocked by, and does not block, I2 or P1.
-
-## Verified inputs (checked, not assumed)
-
-- `perf/residentMemory.js` exists at 792 lines with cohorts `fixture`, `archived`, `terminal`, `peak`,
-  a `MANIFEST` frozen before its first run, three recorded `amendments`, `--reps` / `--cohorts` /
-  `--out`, a fresh `node --expose-gc` child per arm and random-hex payloads.
-- `stops?: ReadonlyArray<IStopIntent>` is persisted **on the root task's commit record**
-  (`types/storage.ts:166, 212`).
-- `IStopTarget` = `{ taskId, attempt, operationId, state, confirmedRevision?, stableSourceEvidence?,
-  violation? }`; `IStableStopEvidence` = `{ sourceId, contractVersion, sourceRevision }`.
-- `allCapacityDimensions` has **eleven** members and **none is stop-specific** — no dimension counts
-  intents, targets or latches.
-- `record-bytes` default is **32 MiB** (`types/capacityProfile.ts:63`).
-- T8b's built profile refuses the **537th** registration on `logical-bytes`; `saturation.test.ts` pins
-  536 admitted.
-
-## The open question
-
-At what subtree breadth does a cascade stop become limited, and by which dimension? Since the whole
-target list lives in the root's record and nothing counts targets, `record-bytes` is the suspect. The
-brief carries the orchestrator's rough reckoning — that bare targets leave `record-bytes` far above the
-task-count limit, but maximal 4 KiB source identities with `stableSourceEvidence` could bring it
-*below* — and labels it explicitly as arithmetic to reproduce or refute, not a result. The
-orchestrator's capacity arithmetic was wrong once before (modelled `resident-payload-bytes`, the build
-bound on `logical-bytes` at half the asserted figure).
+- **stop** (fixture profile): shapes 1x100, 1x1000, 10x1000 x states none/accepted/satisfied/released;
+  max-id arms; external-evidence arms (none/satisfied x small/max, released-max); settled (cancel +
+  archive root); breadth refusal at 1,001; repetition until refused (fixture 36/128-char, default
+  200 targets); retain control; release peak/latency.
+- **productionProfile** (default profile): empty, plain, churn, owed, fanout, history (+control),
+  consumer, evidence (+control), unresolved (+ unresolved-stop search, whole-repo stop search),
+  inventory (+ full-summary and buffering controls).
 
 ## Resume instructions
 
-`brief.md` plus this file is enough to start cold. Nothing is implemented.
+`brief.md` plus this file. Predictions are frozen: any change after a recorded run goes in
+`MANIFEST.amendments` with date, reason and what did not change.
