@@ -53,7 +53,9 @@ export const fixedTaskToolNames: ReadonlyArray<string> = [
   'task_inspect',
   'task_create',
   'task_update',
-  'task_reassign'
+  'task_reassign',
+  'task_stop',
+  'task_stop_inspect'
 ];
 
 /**
@@ -121,8 +123,9 @@ const commandWording: IFailureWording = {
  * - `denied` reads exactly as a task that is missing or not visible, the line I1a and I1b give every
  *   refusal of authority: telling a model it is not permitted would restore the distinction that line
  *   removed.
- * - `stop-active` reads as `conflict`: naming it would tell the model a stop exists on the task, which
- *   is the stop tools' surface to disclose, not this one's.
+ * - `stop-active` reads as `conflict`, whether or not the host offers the stop tools: a latch on a task
+ *   can come from a stop on an ancestor this principal cannot see, and no tool's answers change with
+ *   which other tools are offered. A model that requested a stop inspects it with `task_stop_inspect`.
  * - `invalid-transition` and `idempotency-conflict` read as `conflict` too: the task does not accept
  *   the command now, and inspecting it says why as far as this principal may see.
  */

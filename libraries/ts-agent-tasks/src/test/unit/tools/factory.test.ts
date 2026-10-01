@@ -19,6 +19,7 @@ import {
   createTaskCommandHandle,
   ITaskToolBudget,
   TaskMutationToolGroup,
+  StopMode,
   TaskContextRenderer,
   createTaskTools,
   defaultTaskContextBudget,
@@ -57,6 +58,18 @@ function withMutations(enable: ReadonlyArray<TaskMutationToolGroup>): ReturnType
   return toolSet({
     view: untouchableWriter,
     mutations: { writer: untouchableWriter, environment: untouchableIds, enable }
+  });
+}
+
+/** The tools with stops opted in over the untouchable writer. */
+function withStops(
+  enable: ReadonlyArray<StopMode>,
+  mutations: ReadonlyArray<TaskMutationToolGroup> = []
+): ReturnType<typeof toolSet> {
+  return toolSet({
+    view: untouchableWriter,
+    mutations: { writer: untouchableWriter, environment: untouchableIds, enable: mutations },
+    stops: { writer: untouchableWriter, environment: untouchableIds, enable }
   });
 }
 
@@ -161,9 +174,89 @@ describe('createTaskTools', () => {
   });
 
   test('every fixed tool name is distinct — the namespace generated command tools must avoid', () => {
-    const names = withMutations(['tracked', 'reassign']).names;
+    const names = withStops(['pause', 'cancel'], ['tracked', 'reassign']).names;
     expect(new Set(names).size).toBe(names.length);
-    expect(names.every((n) => /^task_[a-z]+$/.test(n))).toBe(true);
+    expect(names.every((n) => /^task_[a-z]+(_[a-z]+)?$/.test(n))).toBe(true);
+    expect(names.some((n) => n.startsWith('task_command_'))).toBe(false);
+  });
+
+  test('stop tools are absent by default and for an empty opt-in; any mode offers both, after the mutations', () => {
+    expect(withStops([]).names).toEqual(['task_query', 'task_inspect']);
+    for (const enable of [
+      ['pause'],
+      ['cancel'],
+      ['pause', 'cancel'],
+      ['cancel', 'pause', 'cancel']
+    ] as const) {
+      expect(withStops(enable).names).toEqual([
+        'task_query',
+        'task_inspect',
+        'task_stop',
+        'task_stop_inspect'
+      ]);
+    }
+    expect(withStops(['pause'], ['tracked', 'reassign']).names).toEqual([
+      'task_query',
+      'task_inspect',
+      'task_create',
+      'task_update',
+      'task_reassign',
+      'task_stop',
+      'task_stop_inspect'
+    ]);
+  });
+
+  test('task_stop is a write; task_stop_inspect is a read', () => {
+    const tools = withStops(['pause', 'cancel']);
+    expect(tools.get('task_stop').config.annotations).toEqual({
+      readOnlyHint: false,
+      destructiveHint: true,
+      idempotentHint: false,
+      openWorldHint: false
+    });
+    expect(tools.get('task_stop_inspect').config.annotations).toEqual({
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false
+    });
+  });
+
+  test('task_stop names the modes it offers, and says it records rather than carries out a stop', () => {
+    const tail =
+      'Pass the revision task_inspect returned; only a task whose stop policy permits it can be stopped. ' +
+      'This records the stop and freezes the tree — nothing in it may start or resume — but the host ' +
+      "carries it out: the result is pending until then. Returns the stop's intentId; follow it with " +
+      'task_stop_inspect. A stop cannot be released with these tools.';
+    const lead = (verb: string): string =>
+      `${verb} a task and every task under it — including tasks you cannot see. ${tail}`;
+    expect(withStops(['pause', 'cancel']).get('task_stop').config.description).toBe(lead('Pause or cancel'));
+    expect(withStops(['pause']).get('task_stop').config.description).toBe(lead('Pause'));
+    expect(withStops(['cancel']).get('task_stop').config.description).toBe(lead('Cancel'));
+  });
+
+  test('refuses a stop opt-in whose writer is not the view, or that names an unknown mode', () => {
+    const otherView: IBoundTaskView = new Proxy({} as IBoundTaskView, untouchableHandler);
+    for (const enable of [['pause'], []] as const) {
+      expect(
+        createTaskTools({
+          view: otherView,
+          stops: { writer: untouchableWriter, environment: untouchableIds, enable }
+        })
+      ).toFailWith(/stops\.writer must be the view/);
+    }
+    for (const enable of [['halt'], ['release'], 'pause', [undefined]]) {
+      expect(
+        createTaskTools({
+          view: untouchableWriter,
+          stops: {
+            writer: untouchableWriter,
+            environment: untouchableIds,
+            enable: enable as unknown as ReadonlyArray<StopMode>
+          }
+        })
+      ).toFailWith(/invalid stops\.enable/);
+    }
   });
 
   test('refuses a budget that could never render, before the model ever calls', () => {
@@ -260,7 +353,7 @@ describe('wire schemas', () => {
   });
 
   test('no schema can name a principal, scope, consumer, actor, operation, binding or lifecycle', () => {
-    const all = withMutations(['tracked', 'reassign']);
+    const all = withStops(['pause', 'cancel'], ['tracked', 'reassign']);
     for (const name of all.names) {
       const keys: Set<string> = allKeys(all.get(name).config.parametersSchema.toJson() as JsonValue);
       for (const forbidden of [
@@ -278,7 +371,8 @@ describe('wire schemas', () => {
         'lifecycle',
         'status',
         'stopPolicy',
-        'attention'
+        'attention',
+        'requestedBy'
       ]) {
         expect(keys.has(forbidden)).toBe(false);
       }
@@ -372,6 +466,76 @@ describe('mutation wire schemas', () => {
       required: ['taskId', 'expectedRevision', 'responsibility'],
       additionalProperties: false
     });
+  });
+});
+
+describe('stop wire schemas', () => {
+  const identity = {
+    taskId: { type: 'string', description: 'The id of the task to stop, with every task under it.' },
+    expectedRevision: {
+      type: 'integer',
+      description:
+        'The revision task_inspect last returned for this task. The change is refused if the task has ' +
+        'changed since; inspect it again and decide afresh.'
+    }
+  };
+
+  test('task_stop emits a closed schema whose mode is exactly the modes offered', () => {
+    const cases: ReadonlyArray<[ReadonlyArray<StopMode>, JsonObject]> = [
+      [
+        ['cancel', 'pause'],
+        {
+          type: 'string',
+          enum: ['pause', 'cancel'],
+          description: 'pause holds the tree stopped until the host releases it; cancel ends it for good.'
+        }
+      ],
+      [
+        ['pause'],
+        {
+          type: 'string',
+          enum: ['pause'],
+          description: 'pause holds the tree stopped until the host releases it.'
+        }
+      ],
+      [['cancel'], { type: 'string', enum: ['cancel'], description: 'cancel ends the tree for good.' }]
+    ];
+    for (const [enable, mode] of cases) {
+      expect(withStops(enable).get('task_stop').config.parametersSchema.toJson()).toEqual({
+        type: 'object',
+        properties: { ...identity, mode },
+        required: ['taskId', 'expectedRevision', 'mode'],
+        additionalProperties: false
+      });
+    }
+  });
+
+  test('task_stop_inspect emits a closed schema: the root, the intent and an optional continuation', () => {
+    expect(withStops(['pause']).get('task_stop_inspect').config.parametersSchema.toJson()).toEqual({
+      type: 'object',
+      properties: {
+        taskId: { type: 'string', description: 'The id of the task the stop was requested on.' },
+        intentId: { type: 'string', description: 'The intentId task_stop returned.' },
+        after: {
+          type: 'string',
+          description: 'The nextAfter of a previous result, to list the targets after it.'
+        }
+      },
+      required: ['taskId', 'intentId'],
+      additionalProperties: false
+    });
+  });
+
+  test('only task_stop_inspect names an intent; no schema names an operation id or a stop limit', () => {
+    const tools = withStops(['pause', 'cancel']);
+    const stopKeys = allKeys(tools.get('task_stop').config.parametersSchema.toJson() as JsonValue);
+    const inspectKeys = allKeys(tools.get('task_stop_inspect').config.parametersSchema.toJson() as JsonValue);
+    expect(stopKeys.has('intentId')).toBe(false);
+    for (const keys of [stopKeys, inspectKeys]) {
+      for (const forbidden of ['operationId', 'limit', 'principal', 'scopes', 'actor', 'consumer']) {
+        expect(keys.has(forbidden)).toBe(false);
+      }
+    }
   });
 });
 
@@ -606,12 +770,20 @@ describe('command tools', () => {
   });
 
   test('the reserved names are exactly the fixed tools the factory builds — a renamed or added tool cannot go stale', () => {
-    const fixed = withMutations(allTaskMutationToolGroups).names;
+    const fixed = withStops(['pause', 'cancel'], allTaskMutationToolGroups).names;
     expect([...fixedTaskToolNames].sort()).toEqual([...fixed].sort());
   });
 
   test('a generated name may not be a fixed tool’s, whether or not that tool is offered', () => {
-    for (const name of ['task_query', 'task_inspect', 'task_create', 'task_update', 'task_reassign']) {
+    for (const name of [
+      'task_query',
+      'task_inspect',
+      'task_create',
+      'task_update',
+      'task_reassign',
+      'task_stop',
+      'task_stop_inspect'
+    ]) {
       expect(build([spec('pause', { name })])).toFailWith(
         `task tools: invalid commands.enable: sim.job@1 'pause': tool name '${name}' is a fixed task tool's`
       );

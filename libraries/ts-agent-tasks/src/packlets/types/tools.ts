@@ -5,8 +5,9 @@
 
 import { JsonValue } from '@fgv/ts-json-base';
 import { ITaskContextBudget, TaskContextPresentation, defaultTaskContextBudget } from './context';
-import { PageCursor, TaskId, TaskKind, TaskRevision } from './ids';
+import { OperationId, PageCursor, TaskId, TaskKind, TaskRevision } from './ids';
 import { TaskMutationDisposition } from './broker';
+import { IStopViolation, StopIntentState, StopMode, StopTargetState } from './stop';
 
 /**
  * Bounds on what one task tool call returns to a model.
@@ -175,3 +176,50 @@ export interface ITaskCommandToolSpec {
 export type TaskCommandToolResult =
   | { readonly taskId: TaskId; readonly state: 'accepted' }
   | { readonly taskId: TaskId; readonly state: 'applied'; readonly revision: TaskRevision };
+
+/**
+ * One target of a stop as `task_stop` and `task_stop_inspect` show it to the model: the task, where it
+ * stands, and — when present — the revision its stopped state was confirmed at and a violation of a
+ * stable stop.
+ *
+ * @remarks
+ * A target's attempt number and command key are not shown. The model never supplies an operation id,
+ * so a command key is of no use to it, and the attempt counts the host's retries against a source.
+ * @public
+ */
+export interface ITaskStopToolTarget {
+  readonly taskId: TaskId;
+  readonly state: StopTargetState;
+  readonly confirmedRevision?: TaskRevision;
+  readonly violation?: IStopViolation;
+}
+
+/**
+ * What `task_stop` and `task_stop_inspect` return to the model: one stop as this principal may see
+ * it, its targets a page at a time.
+ *
+ * @remarks
+ * `intentId` names the stop; `task_stop_inspect` takes it back. `taskId` is the stop's root.
+ *
+ * `counts` counts every target this principal may see, by state — states with none are left out —
+ * over the whole stop, not the page. `targets` is one page of those targets, in the stop's own order
+ * (root first, then breadth-first), at most the tool budget's `context.maxItems`. `remaining` is how
+ * many visible targets follow the page; when there are any, `nextAfter` names the page's last target,
+ * and `task_stop_inspect` continues after it. Nothing is dropped: every visible target is on some page.
+ *
+ * `restrictedWorkRemains` says, without counts or identities, that some target this principal cannot
+ * see is not confirmed. A host capacity refusal the stop met is never returned: it goes to the host's
+ * logger, and the affected target's own state says it is blocked.
+ * @public
+ */
+export interface ITaskStopToolResult {
+  readonly intentId: OperationId;
+  readonly taskId: TaskId;
+  readonly mode: StopMode;
+  readonly state: StopIntentState;
+  readonly counts: Readonly<Partial<Record<StopTargetState, number>>>;
+  readonly targets: ReadonlyArray<ITaskStopToolTarget>;
+  readonly remaining: number;
+  readonly nextAfter?: TaskId;
+  readonly restrictedWorkRemains: boolean;
+}

@@ -688,6 +688,7 @@ export interface ICreateTaskToolsParams {
     readonly logger?: Logging.ILogger;
     readonly mutations?: ITaskMutationToolOptions;
     readonly renderer?: TaskContextRenderer;
+    readonly stops?: ITaskStopToolOptions;
     readonly view: IBoundTaskView;
 }
 
@@ -2587,6 +2588,47 @@ export interface ITaskSourceRecord {
     readonly pages: number;
     // (undocumented)
     readonly recordRevision: number;
+}
+
+// @public
+export interface ITaskStopToolOptions {
+    readonly enable: ReadonlyArray<StopMode>;
+    readonly environment: Pick<ITaskEnvironment, 'newOperationId'>;
+    readonly writer: IBoundTaskWriter;
+}
+
+// @public
+export interface ITaskStopToolResult {
+    // (undocumented)
+    readonly counts: Readonly<Partial<Record<StopTargetState, number>>>;
+    // (undocumented)
+    readonly intentId: OperationId;
+    // (undocumented)
+    readonly mode: StopMode;
+    // (undocumented)
+    readonly nextAfter?: TaskId;
+    // (undocumented)
+    readonly remaining: number;
+    // (undocumented)
+    readonly restrictedWorkRemains: boolean;
+    // (undocumented)
+    readonly state: StopIntentState;
+    // (undocumented)
+    readonly targets: ReadonlyArray<ITaskStopToolTarget>;
+    // (undocumented)
+    readonly taskId: TaskId;
+}
+
+// @public
+export interface ITaskStopToolTarget {
+    // (undocumented)
+    readonly confirmedRevision?: TaskRevision;
+    // (undocumented)
+    readonly state: StopTargetState;
+    // (undocumented)
+    readonly taskId: TaskId;
+    // (undocumented)
+    readonly violation?: IStopViolation;
 }
 
 // @public

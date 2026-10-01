@@ -15,13 +15,16 @@ import {
   ITaskEnvironment,
   ITaskKindRegistry,
   ITaskToolBudget,
+  StopMode,
   TaskId,
   TaskMutationToolGroup,
+  allStopModes,
   allTaskMutationToolGroups,
   defaultTaskToolBudget
 } from '../types';
 import { commandTools, resolveCommandTools } from './commandTools';
 import { mutationTools } from './mutationTools';
+import { stopTools } from './stopTools';
 import { presentInspection, presentPage } from './presentation';
 import { ITaskInspectToolArgs, ITaskQueryToolArgs, taskInspectSchema, taskQuerySchema } from './schemas';
 import { IToolContext, argumentMessage, askView, convertAnswer } from './toolSupport';
@@ -74,6 +77,27 @@ export interface ITaskCommandToolOptions {
 }
 
 /**
+ * The cascade-stop tools a host opts into, and what they need to run.
+ * @remarks
+ * Opting in offers `task_stop` — for exactly the modes in `enable` — and `task_stop_inspect`. It
+ * authorizes nothing: every stop is authorized by `writer`'s policy when it runs, exactly as a direct
+ * `requestStop` would be. Releasing a stop and running the stop pump are never offered to a model:
+ * a model may apply the brakes; only the host lifts them, and only the host carries a stop out.
+ * @public
+ */
+export interface ITaskStopToolOptions {
+  /** The writer every stop goes through. It must be the very object passed as `view`. */
+  readonly writer: IBoundTaskWriter;
+  /**
+   * Mints each stop's operation id, which is also the stop's intent id. The model never supplies
+   * one. Usually the host's `TaskEnvironment`.
+   */
+  readonly environment: Pick<ITaskEnvironment, 'newOperationId'>;
+  /** The modes `task_stop` offers. An empty list offers no stop tool. */
+  readonly enable: ReadonlyArray<StopMode>;
+}
+
+/**
  * Parameters for {@link createTaskTools}.
  * @public
  */
@@ -108,6 +132,10 @@ export interface ICreateTaskToolsParams {
    * Registered commands to offer as tools. Absent — the default — offers none.
    */
   readonly commands?: ITaskCommandToolOptions;
+  /**
+   * Cascade-stop tools to offer. Absent — the default — offers none.
+   */
+  readonly stops?: ITaskStopToolOptions;
 }
 
 const readOnlyAnnotations: AiAssist.IAiToolAnnotations = {
@@ -260,11 +288,12 @@ function _mutationGroups(
  * Builds the task tools over a principal-bound view, ready to hand to
  * `AiAssist.executeClientToolTurn`: `task_query` and `task_inspect`, and — only when the host opts
  * in through `mutations` — `task_create`, `task_update` and `task_reassign`, and — only when it opts
- * in through `commands` — one tool per registered command it names.
+ * in through `stops` — `task_stop` and `task_stop_inspect`, and — only when it opts in through
+ * `commands` — one tool per registered command it names.
  *
  * @remarks
- * **Read-only by default, with no mutation dependency.** Without `mutations` the tools take an
- * {@link IBoundTaskView} and call only its `query` and `inspect`.
+ * **Read-only by default, with no mutation dependency.** Without `mutations`, `stops` or `commands`
+ * the tools take an {@link IBoundTaskView} and call only its `query` and `inspect`.
  *
  * **Mutations are opt-in, and opting in authorizes nothing.** With `mutations`, each opted-in tool
  * calls one writer method — `createTracked`, `updateTracked` or `reassign` — and the writer's policy
@@ -284,6 +313,14 @@ function _mutationGroups(
  * is never resent — the pump resolves it through the source's lookup, or holds it until the host
  * abandons it. No text a source or host wrote reaches the model. A generated name may not be a fixed tool's, and two may not clash: the set is refused at
  * build time.
+ *
+ * **Stops are opt-in, and a model may only apply them.** With `stops`, `task_stop` calls the writer's
+ * `requestStop` for the modes offered, with a minted operation id that becomes the stop's `intentId`,
+ * and `task_stop_inspect` calls the view's `inspectStop`. A stop is recorded and its tree frozen; the
+ * host's `reconcileStop` pump carries it out, and only the host releases it — neither is a model tool.
+ * Targets reach the model a page at a time (at most `budget.context.maxItems`), each as its id, state,
+ * confirmed revision and any violation; never its command key, and never a capacity refusal, which goes
+ * to `logger`. Every other tool answers a stop latch as `conflict`, as it does without the stop tools.
  *
  * **Nothing the model supplies can widen what it sees.** Neither schema has a principal, scope or
  * consumer member, both are closed (a surplus property fails), and every `execute` re-validates its
@@ -336,8 +373,10 @@ export function createTaskTools(
                 groups
               )
             : [];
-        return _commands(ctx, params.commands, receipts).onSuccess((commands) =>
-          succeed([_queryTool(ctx), _inspectTool(ctx), ...mutations, ...commands])
+        return _stops(ctx, params.stops).onSuccess((stops) =>
+          _commands(ctx, params.commands, receipts).onSuccess((commands) =>
+            succeed([_queryTool(ctx), _inspectTool(ctx), ...mutations, ...stops, ...commands])
+          )
         );
       })
     )
@@ -369,4 +408,32 @@ function _commands(
   return resolveCommandTools(commandCtx, options.registry, options.enable).onSuccess((tools) =>
     succeed(commandTools(commandCtx, tools))
   );
+}
+
+/**
+ * Builds the stop tools a host opted into. The writer must be the view, and the modes known ones.
+ * Asks nothing of the writer or the environment: offering a stop is not authorizing it.
+ */
+function _stops(
+  ctx: IToolContext,
+  options: ITaskStopToolOptions | undefined
+): Result<ReadonlyArray<AiAssist.IAiClientTool>> {
+  if (options === undefined) {
+    return succeed([]);
+  }
+  if (options.writer !== ctx.view) {
+    return fail('task tools: stops.writer must be the view the tools read through');
+  }
+  return Converters.arrayOf(Converters.enumeratedValue<StopMode>(allStopModes))
+    .convert(options.enable)
+    .withErrorFormat((message) => `task tools: invalid stops.enable: ${message}`)
+    .onSuccess((enabled) => {
+      // In one fixed order, whatever order and repetition the host gave.
+      const modes: ReadonlyArray<StopMode> = allStopModes.filter((mode) => enabled.includes(mode));
+      return succeed(
+        modes.length === 0
+          ? []
+          : stopTools({ ...ctx, writer: options.writer, environment: options.environment, modes })
+      );
+    });
 }
