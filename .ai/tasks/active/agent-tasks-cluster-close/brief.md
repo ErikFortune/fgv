@@ -28,12 +28,24 @@ agent-tasks-i2  agent-tasks-tracked-commands  agent-tasks-m1-stop  agent-tasks-p
 **Finalize exactly those eighteen and leave every other entry in `.ai/tasks/active/` alone**, whatever
 it is and whenever it arrived. Known at the time of writing: `agent-memory-mcp-server`,
 `library-capabilities-split`, `mistakes-log`, `task-corpus-index` (the last two are standing artifacts
-rather than streams), plus `personality-intake` and `orchestrator-handoff`, both of which are expected
-to land on this same integration branch while you work. **More may appear** — the rule is the
-eighteen-item list above, not a count of what remains. If you find an entry you cannot classify from
-its own `brief.md`, leave it and say so in `result.md`; do not finalize it to tidy the directory.
+rather than streams), plus `orchestrator-handoff`, which is expected to land on this same integration
+branch while you work. **More may appear** — the rule is the eighteen-item list above, not a count of
+what remains. If you find an entry you cannot classify from its own `brief.md`, leave it and say so in
+`result.md`; do not finalize it to tidy the directory.
 
-**Bucket:** `.ai/tasks/completed/2026-10/` (new; the existing buckets run 2026-05 … 2026-09).
+**Bucket:** `.ai/tasks/completed/2026-10/` — **it already exists and is not yours alone.** The
+`personality-intake` stream finalized itself into it ahead of you (PR #711), so:
+
+- `.ai/tasks/completed/2026-10/` already holds `personality-intake/`. **Add the eighteen beside it;
+  do not touch it**, and do not treat the bucket as new.
+- **`docs/workstreams/2026-10.md` already exists** and already carries the `personality-intake` entry.
+  **Append the eighteen to it — do not create it, and do not overwrite it.** An earlier draft of this
+  brief told you to create it; that was true when written and is now false.
+- `docs/WORKSTREAMS.md`'s `## Shipped streams` index already carries a `personality-intake` line.
+  Leave it.
+
+If the integration branch has advanced further by the time you open the PR, merge it in and re-check
+these three files before asserting any gate about them.
 
 ## Use `/finalize-task`
 
@@ -84,10 +96,14 @@ Where one capability spans several streams, the headline goes on the stream that
 remember the feed links `prs[0]`, so pick the stream whose first PR a reader should land on — and the
 siblings get none.
 
-**Verify the script tolerates a `meta.yaml` with no headline** before relying on it: all 63 existing
-streams have one, so the absent path may be untested. The script already counts "unusable" sourceLines
-separately, which suggests it does, but check rather than assume. If it does not, that is a **script
-bug to fix in this PR** — the rule is the user's and the script serves it, not the other way round.
+**Verify the script tolerates a `meta.yaml` with no headline** before relying on it. When this brief
+was first written, all 63 completed streams had one and the absent path looked untested. It has since
+been exercised once: `personality-intake` (PR #711) shipped a `meta.yaml` with a deliberately blank
+`sourceLine` and reported `generate-capability-feed --check` → 0 stale. **That is one data point from
+another agent's run, not a gate you have run** — reproduce it yourself on your own tree before relying
+on it, and read that `meta.yaml` as the worked example of the shape. If the absent path turns out to
+be broken for the many-streams case, that is a **script bug to fix in this PR** — the rule is the
+user's and the script serves it, not the other way round.
 
 **Record the rule durably, in this PR.** It is a standing principle, not a decision about this cluster,
 and the next finalization will otherwise re-derive it from scratch — or default to one line per stream,
@@ -105,7 +121,8 @@ and you report the resulting `LIBRARY_CAPABILITIES.md` size.
 `docs/WORKSTREAMS.md` carries the in-flight entries plus a `## Shipped streams` index (line ~1278);
 `docs/workstreams/<YYYY-MM>.md` holds the archived per-month entries (2026-06 … 2026-09 exist).
 
-- Create `docs/workstreams/2026-10.md` and move the eighteen entries into it.
+- **Append** the eighteen entries to `docs/workstreams/2026-10.md`, which already exists and already
+  holds `personality-intake` (see § Bucket above). Do not create or overwrite it.
 - Leave the index lines in `docs/WORKSTREAMS.md` under `## Shipped streams`.
 - The in-flight section should end up with no agent-tasks stream in it.
 
