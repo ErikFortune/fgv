@@ -104,8 +104,8 @@ const ROWS = [
   m(
     'I2-13 met is inferred from silence',
     CP,
-    'composition.totalMeasured === undefined',
-    'composition.totalMeasured === -1'
+    '    composition.totalMeasured !== undefined &&',
+    '    composition.totalMeasured !== -1 &&'
   ),
   m(
     'I2-14 the breakpoint plan need not end at the task slot',
@@ -223,6 +223,12 @@ const ROWS = [
     CP,
     'if (!Number.isInteger(section.chars) || section.chars < 0) {',
     'if (section.chars === -1000) {'
+  ),
+  m(
+    'I2-36 met needs no valid minimum from the request',
+    CP,
+    '    Number.isFinite(minimum) &&\n    minimum >= 0;',
+    '    minimum !== -1;'
   )
 ];
 

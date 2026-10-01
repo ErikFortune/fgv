@@ -184,7 +184,15 @@ export async function checkTaskPrompt(params: ICheckTaskPromptParams): Promise<R
     .onSuccess((inner: Result<IResolvedPrompt>) => inner)
     .withErrorFormat((message: string) => `${label}: resolve failed: ${message}`)
     .onSuccess((prompt: IResolvedPrompt) =>
-      captureResult(() => _check(prompt, params.context, slot, params.cacheHints))
+      captureResult(() =>
+        _check(
+          prompt,
+          params.context,
+          slot,
+          params.cacheHints,
+          params.composition?.cacheDiagnostics?.minCacheablePrefixTokens
+        )
+      )
         .onSuccess((checked: Result<ICheckedTaskPrompt>) => checked)
         .withErrorFormat((message: string) => `${label}: ${message}`)
     );
@@ -194,12 +202,13 @@ function _check(
   resolved: IResolvedPrompt,
   context: ITaskContext,
   slot: SlotName,
-  hints: IToCacheRequestHints | undefined
+  hints: IToCacheRequestHints | undefined,
+  minimum: number | undefined
 ): Result<ICheckedTaskPrompt> {
   return _availableComposition(resolved)
     .onSuccess((composition: IPromptComposition) =>
       _taskSlot(resolved.body, composition, context.text, slot).onSuccess((span: ITaskPromptSlotSpan) =>
-        _threshold(composition).onSuccess((threshold: ITaskPromptThreshold) =>
+        _threshold(composition, minimum).onSuccess((threshold: ITaskPromptThreshold) =>
           _cacheRequest(composition, span, hints).onSuccess((cacheRequest: AiAssist.IAiCacheRequest) =>
             succeed({ span, threshold, cacheRequest })
           )
@@ -303,10 +312,13 @@ function _taskSlot(
 
 /**
  * Check 4: every finding is handled — threshold findings classified, every other kind refused. `met`
- * is reported only when a measure was supplied and neither threshold finding fired, never inferred
- * from silence alone.
+ * is reported only when the request supplied a measure and a valid minimum and neither threshold
+ * finding fired, never inferred from silence alone.
  */
-function _threshold(composition: IPromptComposition): Result<ITaskPromptThreshold> {
+function _threshold(
+  composition: IPromptComposition,
+  minimum: number | undefined
+): Result<ITaskPromptThreshold> {
   const findings: ReadonlyArray<IPromptCacheFinding> = composition.cacheFindings;
   const refused: ReadonlyArray<IPromptCacheFinding> = findings.filter(
     (finding: IPromptCacheFinding) =>
@@ -331,10 +343,20 @@ function _threshold(composition: IPromptComposition): Result<ITaskPromptThreshol
   if (below !== undefined) {
     return succeed({ verdict: 'below', detail: below.detail });
   }
+  // Silence is evidence only when this request asked for a judgement: a measure, and a minimum to
+  // judge against. A library answering with neither finding otherwise is not taken as a verdict.
+  const judged: boolean =
+    composition.totalMeasured !== undefined &&
+    minimum !== undefined &&
+    Number.isFinite(minimum) &&
+    minimum >= 0;
   return succeed(
-    composition.totalMeasured === undefined
-      ? { verdict: 'unknown', detail: 'the composition was not measured, so the prefix size was not judged' }
-      : { verdict: 'met' }
+    judged
+      ? { verdict: 'met' }
+      : {
+          verdict: 'unknown',
+          detail: 'no measure and minimum were both supplied, so the prefix size was not judged'
+        }
   );
 }
 

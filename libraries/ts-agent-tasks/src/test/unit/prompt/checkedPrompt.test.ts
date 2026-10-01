@@ -141,12 +141,34 @@ describe('met is never inferred from silence', () => {
       ...r,
       composition: { ...r.composition!, cacheFindings: [] }
     }));
+    const minimumOnly = { cacheDiagnostics: { minCacheablePrefixTokens: 1 } };
+    expect(await check(lib, { composition: minimumOnly })).toSucceedAndSatisfy((checked) => {
+      expect(checked.threshold.verdict).toBe('unknown');
+    });
     expect(await check(lib)).toSucceedAndSatisfy((checked) => {
       expect(checked.threshold).toEqual({
         verdict: 'unknown',
-        detail: expect.stringMatching(/not measured/)
+        detail: expect.stringMatching(/not judged/)
       });
     });
+  });
+});
+
+describe('met needs a judgement the request asked for', () => {
+  test('measured, but no valid minimum, and a library reporting no threshold finding: unknown', async () => {
+    const lib = new EditingLibrary(await library([standardRecord()]), (r) => ({
+      ...r,
+      composition: { ...r.composition!, cacheFindings: [] }
+    }));
+    for (const minCacheablePrefixTokens of [undefined, Number.NaN, -1]) {
+      const composition = {
+        measure,
+        ...(minCacheablePrefixTokens !== undefined ? { cacheDiagnostics: { minCacheablePrefixTokens } } : {})
+      };
+      expect(await check(lib, { composition })).toSucceedAndSatisfy((checked) => {
+        expect(checked.threshold.verdict).toBe('unknown');
+      });
+    }
   });
 });
 
