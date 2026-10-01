@@ -187,8 +187,9 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
   and disk budget much.
 
   **Decided 2026-10-01 (user): keep the default profile as shipped. Closed.** ~500 concurrent tasks
-  is sufficient for the foreseeable future, so the measured ceiling of 520–533 live tasks is accepted
-  and the ~1.5 GiB of logical budget per repository that admitting 1,000 would cost is not bought.
+  is sufficient for the foreseeable future, so the measured ceiling — 519–532 live tasks admitted,
+  refused at the 520th–533rd — is accepted, and the ~1.5 GiB of logical budget per repository that
+  admitting 1,000 would cost is not bought.
   `capacityProfile.ts` is untouched. The declared `non-archived-tasks: 1000` **stays as it is**, and
   stays documented as unreachable under the default's own `logical-bytes`: it is accurate once read
   with the concurrent-constraints note, and it is the direction that can be raised in place rather
