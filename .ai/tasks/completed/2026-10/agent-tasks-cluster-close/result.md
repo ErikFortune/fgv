@@ -73,10 +73,13 @@ its audit-trail value; `personality-intake` (#711) did exactly that, and its `''
 skipped by accident: the trailing `# comment` defeated the quoted-string regex, so the field read as
 absent, not as empty. The brief's one data point was therefore not evidence that the path worked.
 `generate-capability-feed.mjs` now treats an explicitly empty `headline` (`''`, `""` or bare,
-optionally commented) as "not in the feed", and tolerates a trailing comment on quoted `headline` /
-`sourceLine`. Existing output is unchanged (`--check` 0 stale before the metadata landed); the
-run now reports `50 usable, 11 unusable, 15 opted out`. `personality-intake` now reads as
-"empty, and no artifactLoss explains why" in `--verbose` (not fatal) — honest, and left for its owner.
+optionally commented) as "not in the feed", honours the older spelling — an empty `sourceLine`
+carrying a comment that gives the reason — as the same opt-out (so `personality-intake` is untouched
+and still out), and tolerates a trailing comment on quoted `headline` / `sourceLine`. Existing output
+is unchanged (`--check` 0 stale before the metadata landed), and the set of unusable streams is
+exactly the ten it was before this PR. On the final tree: `50 usable, 10 unusable, 17 opted out`
+(the fifteen siblings, this stream, `personality-intake`). The comment-tolerance half was a Copilot
+round-1 catch: without the second rule it turned `personality-intake` into a false "unusable".
 
 **Recorded durably** in the script's header (*One line per capability, not one per stream*) and in
 `/finalize-task`'s `headline` guidance.
@@ -130,7 +133,7 @@ eighteen; the two known traps (t8b's "routed in this PR", t8's "unexpired") not 
 
 The eighteen entries moved verbatim from `docs/WORKSTREAMS.md`'s *Active workstreams* to
 `docs/workstreams/2026-10.md` below `personality-intake` (paths rewritten to `completed/2026-10/`),
-and the index line now names nineteen. The in-flight section holds no agent-tasks stream.
+and the index line now names twenty (the eighteen, `personality-intake` and this stream). The in-flight section holds no agent-tasks stream.
 
 Archived verbatim, the entries carried claims their slices' results contradict, so the archive
 opens the block with **Corrections at archive time**: wrong ship dates in six entries (t5, t7, t8,
@@ -180,7 +183,7 @@ that do not reproduce from their own tables.
 near the 8 MiB record and 50,000-id ceilings (the cold-history bound fails there; the consumer
 worst case is extrapolated); M1's history-growth and cache-saturation cohorts; anything about
 provider cache hits or live providers; runtime agreement between a host's command schemas and
-converters; and, for six slices, final gates or matrices on the exact merged head (each says which
+converters; and, for seven slices (T5, T9, I1a–I1d, TC), final gates or matrices on the exact merged head (each says which
 head and why; CI was green on every head). Five of T6's brief acceptance items have no evidence line
 in T6's `result.md`. **Nothing was re-run at the close** except `mutationMatrix.js --check`, which
 shows pattern presence only (run by the I1c/I1d/TC drafting agent: all those rows ok; the six storage
@@ -196,7 +199,7 @@ to revert. The gate is not silently unmet: it does not apply.
 | gate | result |
 |---|---|
 | `rush change --verify --target-branch origin/integration/agent-tasks-v1` | **fails without a change file** — the regenerated `libraries/ts-agent-tasks/CAPABILITIES.md` makes `@fgv/ts-agent-tasks` a touched project (docs/ and .ai/ alone touch none). One `type: none` change file added; passes |
-| `generate-capability-feed --check` | 0 stale (50 usable, 11 unusable, 15 opted out) |
+| `generate-capability-feed --check` | 0 stale (50 usable, 10 unusable, 17 opted out), re-run on the final tree |
 | `verify-capability-docs` | pass; router **22,071 / 24,000** chars |
 | `verify-esm-entrypoints` / `verify-bundler-resolution` / `verify-tarball-exports` | pass — 24 checked / 20 checked / 26 packages, 205 manifest paths; 0 failed each |
 | `rushx build/lint/test` in touched packages | the only touched package file is `CAPABILITIES.md` (generated docs); no source, so none applies — covered by the repo-wide rebuild below |
@@ -213,7 +216,13 @@ to revert. The gate is not silently unmet: it does not apply.
 **Layer 1** was run as the brief asked — one question, not a general review: three independent
 `code-reviewer` agents, six streams each, asked whether any summary claims something its `result.md`
 does not support, defaulting to "wrong" under uncertainty (findings above). **Layer 2:**
-COPILOT_PLACEHOLDER
+Copilot, on #712. **Trigger:** the `request_copilot_review` API call fired
+(review within ~5 minutes); no `@copilot review` comment was needed or posted — the same as I2 and P1,
+the reverse of I1b. *Round 1* — one medium, three lows, all real and all fixed: the parser change
+turned `personality-intake`'s deliberate blank into a false "unusable" (fixed by honouring the older
+spelling as an opt-out, not by editing that stream); two stale figures in this file (the index count,
+the feed totals); and § 8's evidence taxonomy repeating the "on the final source" claim this close had
+just corrected in T5's summary. ROUND2_PLACEHOLDER
 
 ## Still owed before promotion
 

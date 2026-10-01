@@ -49,8 +49,9 @@
 // it keeps its verbatim audit-trail value. That opt-out did not exist before the agent-tasks
 // cluster close: the only way to stay out of the feed was to blank `sourceLine`, which destroys the
 // property it exists for (personality-intake had to, and its `''` was in fact only skipped because
-// the trailing `# comment` defeated the quoted-string match). An ABSENT `headline` still falls back
-// to `sourceLine`, so the 63 streams that predate this are unaffected.
+// the trailing `# comment` defeated the quoted-string match). That older spelling — an empty
+// `sourceLine` with a comment giving the reason — is honoured as an opt-out too. An ABSENT `headline`
+// still falls back to `sourceLine`, so the 63 streams that predate this are unaffected.
 //
 // TWO MODES
 //
@@ -106,6 +107,12 @@ function readMeta(text, bucket) {
   const hQuote = text.match(/^\s+headline:\s*(['"])([\s\S]*?)\1\s*(?:#.*)?$/m);
   // Explicit opt-out: `headline: ''`, `headline: ""` or a bare `headline:`, optionally commented.
   if (/^\s+headline:\s*(?:''|""|)\s*(?:#.*)?$/m.test(text)) {
+    return { id, status, opened: opened ?? bucket, prs, packages, sourceLine: undefined, optedOut: true, bucket };
+  }
+  // The pre-existing spelling of the same intent: an empty `sourceLine` that carries a comment saying
+  // why (personality-intake, #711). Blank-with-a-reason is a decision, like `artifactLoss`, not a
+  // defect — reported as an opt-out rather than as unusable. A bare empty `sourceLine` still reports.
+  if (/^\s+sourceLine:\s*(?:''|"")\s*#.*$/m.test(text)) {
     return { id, status, opened: opened ?? bucket, prs, packages, sourceLine: undefined, optedOut: true, bucket };
   }
   const headline = hBlock
