@@ -453,6 +453,33 @@ So **R2 is not the safe, independent one-liner §4 called it** — it converts a
 
 ---
 
+### `system-one-decisions` 🔵
+
+**Status:** 🔵 **Phase A (design) complete 2026-10-01**; Phase B triage next. Design-triage-implement.
+Every phase lands on `integration/system-one-decisions` (off `release` `30713277c`). The orchestrator
+opens the cluster-close PR to `release` after Phase C.
+**Substrate:** `.ai/tasks/active/system-one-decisions-design/{brief.md, state.md, result.md}`
+**Design:** `docs/design/system-one-decisions/design.md`
+**Package surface (Phase A):** docs only. **Proposed for Phase C:** a new
+`@fgv/ts-extras-system-one` (name provisional, OQ-2).
+
+**Mission.** Decide whether and how fgv supports System-1 decision models. These return typed answers
+with probabilities, such as hosted Jev and local CLM-8B.
+
+**Phase A findings:**
+
+- **The pressure test is overturned.** The wire has an official MIT TS SDK, `@typesafe-ai/sdk`, with
+  `baseURL`/`fetch` overrides. It is the `ts-extras-ollama` shape, not a new one.
+- **No fgv interface.** The backend is picked by URL.
+- **CLM-8B is not viable on a laptop inner loop.** It needs an NVIDIA GPU with vLLM, and the GGUF is
+  heads only.
+- **Upstream CLM silently truncates the question away**, so fgv refuses at a mandatory caller bound.
+
+**Phase B gate:** OQ-1, a committed first consumer. The prompt-assist screener fits as-is. With no
+consumer, the outcome is "not yet".
+
+---
+
 ## Shipped streams
 
 The full entries are archived by month under [`docs/workstreams/`](workstreams/). This index is

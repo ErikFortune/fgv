@@ -1,53 +1,42 @@
 # State — `system-one-decisions-design` (Phase A)
 
-**Status:** brief written, not started.
+**Status:** Phase A complete. The design and `result.md` are written. The PR goes to
+`integration/system-one-decisions` (not `release`). Do **not** run `/finalize-task`: this stream
+finalizes at cluster close, after Phase C.
 
 ## Where things stand
 
 | | |
 |---|---|
-| brief | `.ai/tasks/active/system-one-decisions-design/brief.md` — complete |
-| integration branch | `integration/system-one-decisions`, off `release` HEAD (`30713277c`), pushed |
-| this branch | `claude/system-one-decisions-design`, off that integration branch |
-| PR | none — targets `integration/system-one-decisions`, **not `release`** |
+| brief | `brief.md`, complete |
+| design | `docs/design/system-one-decisions/design.md`, complete |
+| result | `result.md`, complete |
+| integration branch | `integration/system-one-decisions`, off `release` HEAD (`30713277c`) |
+| this branch | `claude/system-one-decisions-design` |
+| ledger | `docs/WORKSTREAMS.md` § `system-one-decisions` |
 
-## Shape
+## Headline decisions (detail in design §1)
 
-Phase A of a **design-triage-implement** stream. Phase A design → Phase B triage → Phase C
-implementation, all onto `integration/system-one-decisions`; the orchestrator opens the cluster-close
-PR to `release` when implementation completes. **Phase A design never lands on `release` as its own
-commit.**
+1. **Pressure test overturned.** Wrap `@typesafe-ai/sdk` (the official TS SDK, MIT, zero
+   dependencies, with `baseURL`/`fetch`). This is the `ts-extras-ollama` shape.
+2. **No fgv interface.** The backend is chosen by `baseUrl` plus `model` at construction.
+3. **CLM-8B is not viable on a laptop inner loop.** The GGUF is heads only.
+4. **Refuse at a mandatory caller-declared input bound.** Upstream CLM silently cuts the question
+   (derived, and corroborated).
 
-## The question
+## Network posture observed in Phase A
 
-Whether and how fgv supports **System-1 decision models** — typed values with probabilities rather
-than generated text — with open, locally-hostable **CLM-8B** as the driving implementation and hosted
-**Jev** (TypeSafe AI) as what it claims compatibility with. Motivation: Jev is hosted and so unusable
-in an inner loop.
+- Reachable: huggingface.co, raw.githubusercontent.com, PyPI, npm.
+- Blocked (403): github.com web, API and codeload; typesafe.ai and docs.typesafe.ai.
 
-**Output is a design document only.** "Not yet" or "not this way" is a legitimate result.
+## Next
 
-## Open at the start of Phase A
+Phase B triage works design §12 (OQ-1..OQ-9). OQ-1 (a committed consumer) decides between "implement"
+and "not yet".
 
-1. **Does the user's "just wrap the library" assumption hold?** The orchestrator thinks not: every
-   fgv Result-integration-boundary wraps an *npm* library in-process, and CLM ships only Python plus
-   an HTTP server. Phase A confirms or overturns that.
-2. **Interface or client?** CLM claims Jev request compatibility and `openjev` is a third
-   implementation — which looks like fgv's cross-runtime-interface case. Against it: one verified
-   implementation plus an unviewable hosted API may not justify an interface.
-3. **Is it viable for an inner loop at all?** `clm-serve` wants vLLM serving Qwen3-8B on an NVIDIA
-   GPU under Linux. The GGUF conversion may lower that floor; unverified.
-4. **The 2048-token state bound truncates silently** — against repo convention on unannounced
-   dropping.
+## Gate runs
 
-## Blocked for the orchestrator, to confirm in Phase A
-
-`huggingface.co` is blocked by the orchestrator's egress proxy; the user is attempting to open it for
-the Phase A agent. Four things to confirm from the model card: the **weights** licence (the base is
-Qwen3-8B — its terms govern the pair), the exact request/response JSON, whether the 2048-token bound
-is configurable and what truncation does, and whether the GGUF conversion carries the custom heads.
-**If still blocked: mark unverified and continue — do not infer and present as fact.**
-
-## Resume instructions
-
-`brief.md` plus this file is enough to start cold. Nothing is done.
+- `git diff --name-only origin/integration/system-one-decisions...`: docs and task artifacts only. No
+  `src/`, no `package.json`, no lockfile.
+- `rush change --verify --target-branch origin/integration/system-one-decisions`: run before the
+  commit; result recorded in the PR body.
