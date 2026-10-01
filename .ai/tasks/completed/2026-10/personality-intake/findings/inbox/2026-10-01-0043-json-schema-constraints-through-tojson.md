@@ -15,7 +15,7 @@
 >
 > Carry them through to `toJson()` wherever the provider wire formats accept them. Where a provider's strict mode forbids a keyword, fold it into the property's description instead."
 
-Example from the note: "The model is shown `{\"n\":{\"type\":\"number\"}}` for a server that declared `{type:number, minimum:1, maximum:10, default:3}`, so it cannot know the range; the server then rejects the call and the round is wasted."
+Example from the note: "The model is shown `{"n":{"type":"number"}}` for a server that declared `{type:number, minimum:1, maximum:10, default:3}`, so it cannot know the range; the server then rejects the call and the round is wasted."
 
 ## Stated motivation
 
@@ -38,4 +38,4 @@ None stated.
 
 ## Observations (intake agent's, not the requester's)
 
-- `fromJson.ts`'s header comment (`integration/agent-tasks-v1` @ `2a95fbb2`) states "Pure annotations (`title`, `default`, `examples`, draft-07 `format`) carry no validation semantics and are intentionally ignored" — i.e. part of what is asked for is currently a documented design choice, not an oversight.
+- `fromJson.ts`'s header comment (`integration/agent-tasks-v1` @ `2a95fbb2`) states "Pure annotations (`title`, `default`, `examples`, draft-07 `format`) carry no validation semantics and are intentionally ignored". This covers four of the ten keywords the request names.

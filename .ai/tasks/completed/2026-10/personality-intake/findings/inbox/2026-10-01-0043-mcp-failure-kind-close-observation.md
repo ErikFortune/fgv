@@ -22,7 +22,7 @@ Proposed shape (note): "(a) A `DetailedResult` (or a `kind` on the failure) dist
 
 Note: "`callMcpTool` prefixes transport and protocol failures with `callMcpTool '<name>':` but leaves a tool's own `isError` text unprefixed … — deliberately, for the model's sake — so the prefix is the only signal."
 
-Evidence (note): "[spike] after `SIGKILL` of the stdio child: `callMcpTool 'echo': Not connected`, `listMcpTools: Not connected`. After an HTTP server restart: `Streamable HTTP error … \"Bad Request: No valid session ID provided\"`. Neither is reported until a call is made; neither re-initializes. No test covers either."
+Evidence (note): "[spike] after `SIGKILL` of the stdio child: `callMcpTool 'echo': Not connected`, `listMcpTools: Not connected`. After an HTTP server restart: `Streamable HTTP error … "Bad Request: No valid session ID provided"`. Neither is reported until a call is made; neither re-initializes. No test covers either."
 
 ## Stated constraints or acceptance
 

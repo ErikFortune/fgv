@@ -38,4 +38,4 @@ None stated.
 
 ## Observations (intake agent's, not the requester's)
 
-- None.
+- fgv `docs/FUTURE.md:398` already records this gap: "**Multimodal tool-result passthrough.** `callMcpTool` projects non-text content blocks to a `[<type> block]` summary; …".

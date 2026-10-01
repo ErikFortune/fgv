@@ -20,7 +20,7 @@ Suggested wording from the note ("Roughly this, in your words"):
 
 > "We resolve it on our side through one seam that answers record-or-withdrawn (`Persistence.Memory.Store.resolveDerivedFrom` in `@fgv/personaility`), so the only thing left contradicting the rule is the field's own doc, which we cannot edit."
 
-Note: "'Back-link' reads as a pointer a caller can follow. Nothing on the field says what a caller gets when the record it names is gone, and in practice it is often gone."
+Note: "\"Back-link\" reads as a pointer a caller can follow. Nothing on the field says what a caller gets when the record it names is gone, and in practice it is often gone."
 
 ## Stated constraints or acceptance
 

@@ -38,4 +38,4 @@ None stated beyond the plan phases it blocks (P2, P3).
 
 ## Observations (intake agent's, not the requester's)
 
-- `saferFetchJson` / `saferFetchBytes` + `addressGuard` / `blockPrivateNetworks` exist in `ts-extras` (LIBRARY_CAPABILITIES index); the stated no-buffering constraint is the point where those existing buffered entry points may not fit directly.
+- `saferFetchJson` / `saferFetchBytes` + `addressGuard` / `blockPrivateNetworks` exist in `ts-extras` (LIBRARY_CAPABILITIES index). They return a buffered JSON or bytes result; the request's stated constraint is that the guarded path must not buffer.

@@ -26,7 +26,7 @@ Note on the drift: "the avatar sampler returns the first option when every weigh
 
 ## Stated constraints or acceptance
 
-- > "Needed back: the primitive and its edge rules (zero weights, all-zero, the last candidate winning by elimination)."
+- > "Needed back: the primitive and its edge rules (zero weights, all-zero, the last candidate winning by elimination). Both sites adopt it on the bump that carries it."
 - Note: "the last candidate winning by elimination so a point at the top of the range cannot fall off the end".
 - Adoption plan (note): "`appearanceSampler.ts` calls the pure form with its hash ratio, keeping its stored draws stable."
 - Verified against `@fgv/ts-random` 5.1.0-57: "`pickNext` / `pickRandom` / `pickSequential` are uniform; no method takes weights."
