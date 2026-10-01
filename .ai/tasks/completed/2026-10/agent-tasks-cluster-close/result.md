@@ -33,12 +33,13 @@ no stream needed a `prHistory`.
 
 `t8` and `t8b` each carry only their own PR and point at each other through `relatedStreams`.
 
-**Nothing lost in the move.** All 63 files the eighteen active directories held at the integration
-base moved byte-identical (`git diff -M100%`: 63 `R100`), plus 18 `meta.yaml` and 18 `README.md`.
-One archived file was then edited on purpose: `agent-tasks-p1/p1Matrix.js` resolves the testbed's
-`node_modules` relative to its own directory, which is one level deeper after the move, so
-`'../../../../'` became `'../../../../../'`; its usage comment and `i2Matrix.js`'s now name the new
-path. Without that the P1 matrix — cited by the release evidence — would no longer run.
+**Nothing lost in the move.** The eighteen active directories held 63 files at the integration
+base. On the final tree, **61 are byte-identical** (`git diff -M100%`: 61 `R100`) and **two are
+deliberately edited**, plus 18 `meta.yaml` and 18 `README.md`. The two edits:
+`agent-tasks-p1/p1Matrix.js` resolves the testbed's `node_modules` relative to its own directory,
+which is one level deeper after the move, so `'../../../../'` became `'../../../../../'`, and its
+usage comment names the new path; `agent-tasks-i2/i2Matrix.js` changes only its usage comment, to the
+new path. Without the first the P1 matrix — cited by the release evidence — would no longer run.
 
 **`.ai/tasks/active/` afterwards** holds no agent-tasks slice. Left untouched, as the brief requires:
 `agent-memory-mcp-server`, `library-capabilities-split`, `mistakes-log`, `task-corpus-index` — every
@@ -204,7 +205,7 @@ to revert. The gate is not silently unmet: it does not apply.
 | `verify-esm-entrypoints` / `verify-bundler-resolution` / `verify-tarball-exports` | pass — 24 checked / 20 checked / 26 packages, 205 manifest paths; 0 failed each |
 | `rushx build/lint/test` in touched packages | the only touched package file is `CAPABILITIES.md` (generated docs); no source, so none applies — covered by the repo-wide rebuild below |
 | no `src/` file changed | `git diff --name-only origin/integration/agent-tasks-v1... | grep '/src/'` → empty |
-| migration complete | 63 × `R100` + 18 `meta.yaml` + 18 `README.md`; no agent-tasks slice left in `active/` |
+| migration complete | 61 × `R100` + 2 archived matrix scripts edited for their new path + 18 `meta.yaml` + 18 `README.md`; no agent-tasks slice left in `active/` |
 
 **Gate run** (local, after `rush install`): repo-wide `rush rebuild` — **SUCCESS, 37 operations**,
 4 min 17 s, no warnings; then the three export verifiers in CI's order, all 0 failed. Repo-wide
@@ -228,7 +229,13 @@ just corrected in T5's summary. *Round 2* — two lows plus one
 cluster-close handoff, the original kept and marked superseded); and — the one that mattered — **my
 `PRNUM` → `712` substitution had also rewritten a literal `PRNUM` placeholder in T7's archived
 `state.md`**, an in-flight artifact the finalize skill says never to edit. Restored from the base;
-all 61 archived non-script files are again `R100`. Round 3 was requested on the push carrying these fixes; its outcome is on the PR thread and, if it changes anything, in a later commit here.
+all 61 archived non-script files are again `R100`. *Round 3* — one low plus five "previously missed", all one defect
+class and all fixed: this paragraph deferring the round-3 outcome to the PR thread; and the "63
+byte-identical" migration claim, still repeated in `meta.yaml`, this file's move paragraph and gate
+table, and the archive's entry, after two archived scripts had been edited for their new path (true
+count: 61 `R100` + 2 edited); plus the PR description's opt-out count (16 → 17). **Loop stopped at
+three rounds on diminishing returns:** round 1 found a real parser defect, round 2 a real artifact
+corruption, round 3 only stale counts — each of which this close had itself introduced.
 
 ## Still owed before promotion
 

@@ -15,7 +15,8 @@ summary:
     capability rather than one per stream, and record that rule durably. One PR into
     integration/agent-tasks-v1; no source changes; no promotion.
   shipped: >
-    All eighteen migrated (63 archived files byte-identical, plus a meta.yaml and README.md
+    All eighteen migrated (61 archived files byte-identical, two matrix scripts edited only for
+    their new path, plus a meta.yaml and README.md
     each), every summary checked against its result.md by independent antagonist passes; three
     feed lines (t1 the library, i1a model tools, i2 checked prompt composition) and fifteen
     explicit opt-outs; § 8 "Evidence at the cluster close" mapping the twelve release suites to
