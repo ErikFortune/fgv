@@ -184,7 +184,16 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
   at the 443rd beside 9,000 archived; at refusal 97–99% of it is reservation — the repository holds
   5–13 MB written.
   Resident cost is small (~12.7 MiB heap at 529 owed tasks), so admitting 1,000 costs memory little
-  and disk budget much. **Open for the decision**; nothing in `capacityProfile.ts` changed.
+  and disk budget much.
+
+  **Decided 2026-10-01 (user): keep the default profile as shipped. Closed.** ~500 concurrent tasks
+  is sufficient for the foreseeable future, so the measured ceiling of 520–533 live tasks is accepted
+  and the ~1.5 GiB of logical budget per repository that admitting 1,000 would cost is not bought.
+  `capacityProfile.ts` is untouched. The declared `non-archived-tasks: 1000` **stays as it is**, and
+  stays documented as unreachable under the default's own `logical-bytes`: it is accurate once read
+  with the concurrent-constraints note, and it is the direction that can be raised in place rather
+  than lowered. A host that genuinely needs 1,000 raises `logical-bytes`, `audience-links` and
+  `acknowledgement-ids` together; `agent-tasks-m1-stop` `result.md` has the figures to size it.
 
 - **[P3] `ts-agent-tasks` a released or settled stop keeps ~1 KB per target resident, and stops on one
   root are never compacted.** After release the stop book keeps one marked-command entry per paused
@@ -829,6 +838,86 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
   **Not a P4**: a value that changes silently on serialization is a correctness hazard, not a doc gap.
 
   **Reference**: `.ai/tasks/active/agent-tasks-i2/result.md` § The framing decision.
+
+- **[P3] `@fgv/ts-agent-tasks` needs a global `structuredClone`, and says so nowhere.**
+  The broker clones every authorization request (`broker/access.ts`), and projections
+  (`broker/projection.ts`) and checkpoint records (`storage/checkpoints.ts`), with the global
+  `structuredClone`. Node ≥ 17 and current browsers have it; jsdom does not. Under jsdom the first
+  policy check throws, a throwing check is (correctly) a denial, and every operation fails
+  *"'create' is not permitted"* — the cause is only in the logger's warning. Found by P1: the testbed's
+  Jest environment is jsdom, and `samples/testbed/config/jest.setup.js` now polyfills it.
+
+  **Trigger**: the next host that tests under jsdom, or any `ts-agent-tasks` touch to those files.
+
+  **Scope sketch**: either state the requirement in `CAPABILITIES.md` / the README, or clone with a
+  JSON-value copy the package owns — every cloned value is JSON already.
+
+  **Not a P4**: the failure is silent at the call site and reads as an authorization decision.
+
+  **Reference**: `.ai/tasks/active/agent-tasks-p1/result.md` § finding 1.
+
+- **[P3] Query work is observable only through an internal module.**
+  `ts-agent-tasks` promises that query, due and owed work stays tied to matching candidates as history
+  grows; its own counter suite measures candidate visits through `packlets/storage/internals`
+  (`inspectRepository`). From outside the package the only evidence is task-record reads, which a host
+  sees only by subclassing the FileTree accessor it injects — P1's scenario does exactly that, and can
+  show zero reads and identical results, but not visits tied to matches.
+
+  **Trigger**: a consumer that needs to verify query cost in its own deployment, or M1's follow-up.
+
+  **Scope sketch**: an exported, read-only work counter on `ITaskRepository` (or a `work` field on a
+  page) — candidate visits and record reads since open.
+
+  **Not a P2**: the guarantee itself is pinned by `storage/counters.test.ts`; this is observability.
+
+  **Reference**: `.ai/tasks/active/agent-tasks-p1/result.md` § finding 2.
+
+- **[P3] ai-assist has no per-call transport, so capturing a request means replacing `fetch`.**
+  `AiAssist.callProviderCompletion` calls the global `fetch`. A host that wants to see the request its
+  builders produce without a network call — the testbed's `memoryToolsGate` and P1's `agentTasks`
+  scenarios, and `ts-agent-tasks`' own `prompt/outbound.test.ts` — substitutes `globalThis.fetch` for
+  the call, which `CODING_STANDARDS.md` lists as a workaround to avoid.
+
+  **Trigger**: the next consumer that captures or proxies ai-assist requests.
+
+  **Scope sketch**: an optional `fetch` (or transport) parameter on the completion/stream calls,
+  defaulting to the global — additive, on an active surface.
+
+  **Not a P4**: three call sites already work around it.
+
+  **Reference**: `.ai/tasks/active/agent-tasks-p1/result.md` § finding 3.
+
+- **[P3] P1's revert-matrix rows live outside `perf/mutationMatrix.js`.**
+  `.ai/tasks/active/agent-tasks-p1/p1Matrix.js` holds rows `P1-1…P1-10`, which mutate the library and
+  run both `journey/` and the testbed's `agentTasks` suite, because P1 ran beside the M1 stop-state
+  cohort, which owned `perf/`. Same hazard as I2's rows: a refactor can re-point one script's patterns
+  and leave the other's stale, and the directory migrates at cluster close.
+
+  **Trigger**: the M1 stop-state cohort lands, or cluster close — whichever is first.
+
+  **Scope sketch**: fold the rows into `MUTATIONS` with the testbed linkage as an option, or keep the
+  testbed rows as a separate documented script under `perf/`; run `--check`.
+
+  **Not a P4**: a stale row is a protection nobody is checking.
+
+  **Reference**: `.ai/tasks/active/agent-tasks-p1/result.md` § Revert matrix.
+
+- **[P3] A `ts-extras` KeyStore Argon2id test is flaky: its fake KDF cannot tell random salts apart.**
+  `libraries/ts-extras/src/test/unit/crypto/keystore/keyStoreArgon2id.test.ts` › *returns false when
+  salt does not match* draws a second random salt and expects verification to fail. The test's
+  `makeDeterministicKey` folds the salt into its seed as `sum(salt[i] * (i + 1))`, a range of ~35k
+  values concentrated near its mean, so two random salts occasionally collide and the "wrong" salt
+  derives the same key. Seen red once in P1's repo-wide `rush test` (2026-10-01), on a branch that does
+  not touch `ts-extras`; it then blocks every downstream project's tests.
+
+  **Trigger**: the next red run, or any `ts-extras` crypto touch.
+
+  **Scope sketch**: make the mismatched salt deterministically different (change one byte of the stored
+  salt, which always moves the weighted sum), or hash the salt in the fake KDF.
+
+  **Not a P4**: an intermittent red on an unrelated package blocks CI for everyone downstream.
+
+  **Reference**: `.ai/tasks/active/agent-tasks-p1/result.md` § Gates.
 
 - **[P3] `JsonSchema.integer` cannot state a range, so `task_query`'s `limit` bound is prose on the
   wire.** `libraries/ts-json-base/src/packlets/json-schema-builder/factories.ts` has no
