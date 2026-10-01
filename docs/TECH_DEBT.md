@@ -685,7 +685,14 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
 
 ## P3 — Opportunistic cleanup
 
-- **[P3] `task_inspect` returns a task's details as unframed host JSON beside the framed context.**
+- ~~**[P3] `task_inspect` returns a task's details as unframed host JSON beside the framed context.**~~
+  **Resolved by I2 (2026-10-01): details are data, framed like task prose.** `context` publishes
+  `serializeTaskData` (the renderer's `quoteData` escaping applied to every string of a JSON value,
+  keys included); `task_inspect` returns `details` as that one-line text, and `maxDetailsChars`
+  bounds the escaped text. The reason it is "yes": the hazards the renderer escapes — tag-block
+  smuggling, bidi overrides, invisible characters, frame and Mustache delimiters — do not depend on
+  which channel carries the text, and a model reads a tool result as readily as a system prompt.
+  `.ai/tasks/active/agent-tasks-i2/result.md`. Original entry follows.
   `libraries/ts-agent-tasks/src/packlets/tools/presentation.ts`. Task state reaches the model only
   inside `TaskContextRenderer`'s framed, escaped text; details, when the view's `ITaskProjector`
   exposes them, are returned as structured JSON beside it — size-bounded (`maxDetailsChars`) but not
@@ -704,6 +711,37 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
   **Not a P4**: it is a trust-framing asymmetry on a model-facing surface, not a doc gap.
 
   **Reference**: `agent-tasks-i1a` layer-1 review P3-b; `.ai/tasks/active/agent-tasks-i1a/result.md`.
+
+- **[P3] I2's revert-matrix rows live outside `perf/mutationMatrix.js`.**
+  `.ai/tasks/active/agent-tasks-i2/i2Matrix.js` holds rows `I2-1…I2-36` with the same mechanics as
+  `libraries/ts-agent-tasks/perf/mutationMatrix.js`, because I2 ran beside the M1 stop-state cohort,
+  which owned `perf/`. Two scripts means a refactor that moves a protected line can re-point one and
+  leave the other's rows stale, and the artifact directory migrates at cluster close.
+
+  **Trigger**: the M1 stop-state cohort lands, or cluster close — whichever is first.
+
+  **Scope sketch**: move the thirty-six rows into `MUTATIONS` (suite pattern
+  `prompt/|context/|tools/|publicSurface`), run `--check`, delete the I2 script.
+
+  **Not a P4**: a stale row is a protection nobody is checking.
+
+  **Reference**: `.ai/tasks/active/agent-tasks-i2/result.md` § Revert matrix.
+
+- **[P3] `JsonConverters.jsonValue` admits `Infinity`, which has no JSON form.**
+  `@fgv/ts-json-base`: `Converters.jsonValue.convert(Infinity)` succeeds (and `JSON.stringify` then
+  writes `null`), while `NaN` is refused. Found by I2: a view's details pass that converter, so a
+  projector returning `{ ratio: Infinity }` reached `task_inspect`. `serializeTaskData` now refuses it
+  there; other consumers of `jsonValue` still accept a value they will silently change on output.
+
+  **Trigger**: any consumer that round-trips `jsonValue` output through `JSON.stringify`, or a
+  `ts-json-base` touch.
+
+  **Scope sketch**: decide whether `jsonValue` should refuse non-finite numbers (consistent with its
+  `NaN` refusal) — a behaviour change on an established surface, so a repo-wide `rush test`.
+
+  **Not a P4**: a value that changes silently on serialization is a correctness hazard, not a doc gap.
+
+  **Reference**: `.ai/tasks/active/agent-tasks-i2/result.md` § The framing decision.
 
 - **[P3] `JsonSchema.integer` cannot state a range, so `task_query`'s `limit` bound is prose on the
   wire.** `libraries/ts-json-base/src/packlets/json-schema-builder/factories.ts` has no
