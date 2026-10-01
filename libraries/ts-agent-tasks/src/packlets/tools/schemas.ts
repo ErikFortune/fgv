@@ -4,7 +4,13 @@
  */
 
 import { JsonSchema } from '@fgv/ts-json-base';
-import { TaskLifecycleClass, TaskLifecycleStatus, allTaskLifecycleClasses, allTaskStatuses } from '../types';
+import {
+  StopMode,
+  TaskLifecycleClass,
+  TaskLifecycleStatus,
+  allTaskLifecycleClasses,
+  allTaskStatuses
+} from '../types';
 
 /**
  * The arguments `task_query` accepts: narrowing filters and paging, nothing else.
@@ -236,3 +242,62 @@ export function taskCommandSchema(
     parameters
   });
 }
+
+/**
+ * The arguments `task_stop` accepts: the root, the revision the model last read, and the mode.
+ * @remarks
+ * No operation id, principal or scope: the tool mints the id — which becomes the stop's `intentId` —
+ * and the bound writer supplies the rest. The schema is closed.
+ * @internal
+ */
+export interface ITaskStopToolArgs {
+  readonly taskId: string;
+  readonly expectedRevision: number;
+  readonly mode: StopMode;
+}
+
+/**
+ * The `task_stop` parameter schema — the wire schema and the validator `execute` re-runs.
+ * @param modes - The modes the host offers; `mode` accepts exactly these.
+ * @internal
+ */
+export function taskStopSchema(
+  modes: ReadonlyArray<StopMode>
+): JsonSchema.ISchemaValidator<ITaskStopToolArgs> {
+  return JsonSchema.object({
+    taskId: JsonSchema.string({ description: 'The id of the task to stop, with every task under it.' }),
+    expectedRevision: identityProperties.expectedRevision,
+    mode: JsonSchema.enumOf([...modes], {
+      description:
+        modes.length > 1
+          ? 'pause holds the tree stopped until the host releases it; cancel ends it for good.'
+          : modes[0] === 'pause'
+          ? 'pause holds the tree stopped until the host releases it.'
+          : 'cancel ends the tree for good.'
+    })
+  });
+}
+
+/**
+ * The arguments `task_stop_inspect` accepts: the stop's root, its intent id, and where to continue.
+ * @internal
+ */
+export interface ITaskStopInspectToolArgs {
+  readonly taskId: string;
+  readonly intentId: string;
+  readonly after?: string;
+}
+
+/**
+ * The `task_stop_inspect` parameter schema — the wire schema and the validator `execute` re-runs.
+ * @internal
+ */
+export const taskStopInspectSchema: JsonSchema.ISchemaValidator<ITaskStopInspectToolArgs> = JsonSchema.object(
+  {
+    taskId: JsonSchema.string({ description: 'The id of the task the stop was requested on.' }),
+    intentId: JsonSchema.string({ description: 'The intentId task_stop returned.' }),
+    after: JsonSchema.optional(
+      JsonSchema.string({ description: 'The nextAfter of a previous result, to list the targets after it.' })
+    )
+  }
+);

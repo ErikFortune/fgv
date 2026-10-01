@@ -722,6 +722,8 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
   host's to state, and this package cannot add one. What remains ours is the envelope's
   `expectedRevision` (≥ 1), now on six tools. The fix is still a `ts-json-base` extension outside a
   `ts-agent-tasks` slice's surface; take it as its own chore.
+  **I1d (2026-10-01): fired again, not taken** — `task_stop` adds a seventh `expectedRevision`. Its
+  `mode` enum and `task_stop_inspect`'s ids need no range. Same disposition: its own chore.
 
   **Scope sketch**: additive `minimum` / `maximum` (and `exclusive*`) options on `number` /
   `integer`, emitted by `toJson()` and enforced by the validator; check each provider's schema
@@ -753,7 +755,7 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
   **Resolved by I1c (2026-09-29)** — generated names default to `task_command_<command>`; a name equal
   to any of the five fixed names is refused whether or not that tool is offered, and two commands
   under one name refuse the whole tool set at build time (`fixedTaskToolNames`, `commandTools.ts`).
-  I1d must add its stop tool names to that list. Original entry follows.
+  I1d added `task_stop` and `task_stop_inspect` to that list (2026-10-01). Original entry follows.
   `createTaskTools` emits a fixed set — `task_query`, `task_inspect`, `task_create`, `task_update`,
   `task_reassign` — and a test pins them distinct. Generated command tools (I1c) will be named from
   the registry, and a command named, say, `update` must not become a second `task_update`: ai-assist
@@ -768,6 +770,26 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
   **Not a P4**: a collision would silently shadow a tool the host opted into.
 
   **Reference**: `agent-tasks-i1b`; `.ai/tasks/active/agent-tasks-i1b/result.md`.
+
+- **[P3] A model can name only the stops it requested: a bound view cannot list a task's stops.**
+  `task_stop_inspect` takes an `intentId`, and the only place a model learns one is `task_stop`'s
+  result (or its unknown-outcome line). `IBoundTaskView` has `inspectStop(taskId, intentId)` but no way
+  to ask which stops a visible task is the root of, and `task_inspect` does not report them. So a model
+  cannot see a stop another principal — or an earlier conversation — placed on a task it can see,
+  unless the host puts the id in its context. The safe direction (I1d deliberately keeps `stop-active`
+  as `conflict` everywhere, so a latch from a hidden ancestor is never disclosed), but a real gap for a
+  host that wants a model to reason about stops it did not request.
+
+  **Trigger**: a consumer that wants a model to see existing stops on tasks it can read.
+
+  **Scope sketch**: an additive view read — the stops a visible root holds, each presented exactly as
+  `inspectStop` presents it (only visible targets, `restrictedWorkRemains`) — then either a field on
+  `task_inspect` or a `task_stop_inspect` that takes a root alone. A latch inherited from an ancestor
+  must stay undisclosed unless that ancestor is visible.
+
+  **Not a P4**: a model-facing surface under-reports state the principal is entitled to read.
+
+  **Reference**: `.ai/tasks/active/agent-tasks-i1d/result.md`.
 
 - **[P3] A command receipt does not say whether an `accepted` intent has been dispatched.**
   `dispatchIntent` (`broker/externalCommands.ts`) returns the stored receipt unchanged when another

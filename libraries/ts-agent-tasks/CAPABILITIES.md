@@ -34,9 +34,10 @@ authoritative subtree, a frozen subtree while it latches, and an honest partial 
 **model tools** (`createTaskTools`): `task_query` and `task_inspect` as ai-assist client tools over a
 principal-bound view, with bounded output by default, and — only when the host opts in —
 `task_create`, `task_update` and `task_reassign` over the same binding's writer, and one typed tool
-per registered command the host names, its wire schema the command's registered parameter schema.
-Stop tools and prompt integration follow in later slices, and are deliberately absent from the
-export surface rather than stubbed.
+per registered command the host names, its wire schema the command's registered parameter schema,
+and `task_stop` / `task_stop_inspect`, which let a model request and read a cascade stop — never
+release it or carry it out. Prompt integration follows in a later slice, and is deliberately absent
+from the export surface rather than stubbed.
 
 ## Storing tasks durably — `FileTreeTaskRepository`
 
@@ -657,7 +658,7 @@ out-of-band file deletion is corruption, not maintenance, and open will report i
 `AiAssist.executeClientToolTurn`: `task_query` (a page of the tasks the view may read, narrowed by
 responsible party, parent, lifecycle class or status) and `task_inspect` (one task, its currently
 available commands, and its details when the host exposes them). The factory takes an
-`IBoundTaskView` — never the broker. Without `mutations` the tools call only its `query` and
+`IBoundTaskView` — never the broker. Without `mutations`, `stops` or `commands` the tools call only its `query` and
 `inspect`; a bound writer can be passed as the view (it is one), and must be, to opt mutations in
 (below).
 
@@ -748,8 +749,8 @@ const tools = createTaskTools({
 - **Refusals disclose nothing a read would not.** A hidden task, a hidden parent, a foreign id and a
   permitted-to-read-but-not-to-change task all produce the same `not-found-or-denied` line.
 
-**Not here:** `createTaskList`, scope changes, reparenting, list completion, archive, stop tools
-(I1d), external registration or source binding, the uncertain-command pump, and any acknowledgement
+**Not here:** `createTaskList`, scope changes, reparenting, list completion, archive, external
+registration or source binding, the uncertain-command pump, and any acknowledgement
 tool — receipts are the host's, never the model's.
 
 ### Command tools — one typed tool per registered command the host names
@@ -787,7 +788,7 @@ const tools = createTaskTools({
 - **What the model is told.** `{ taskId, state: 'accepted' }` — recorded for the executor, not that
   it has taken effect (in one race, not even that it has been sent yet) — or `{ taskId, state: 'applied', revision }`. A rejection is a fixed code line:
   `denied` reads exactly as a missing or hidden task; `stop-active`, `invalid-transition` and
-  `idempotency-conflict` read as `conflict` (naming a stop is the stop tools' to disclose);
+  `idempotency-conflict` read as `conflict` (whether or not the stop tools are offered — see below);
   `unsupported` as itself. A source's receipt text and an indeterminate or abandoned reason go to
   `logger`, never to the model.
 - **An unknown outcome means: do not send it again.** An `indeterminate` receipt, a malformed
@@ -801,7 +802,8 @@ const tools = createTaskTools({
   host abandons it. An `abandoned` receipt reads as the same unknown line.
 - **Names.** Default `task_command_<command>`, with any character a provider rejects replaced by `_`;
   or `name` per command. A name may not be a fixed tool's — `task_query`, `task_inspect`,
-  `task_create`, `task_update`, `task_reassign` — whether or not that tool is offered, and two
+  `task_create`, `task_update`, `task_reassign`, `task_stop`, `task_stop_inspect` — whether or not
+  that tool is offered, and two
   commands under one name (two kinds registering the same command, say) refuse the whole set at
   build time: the host names one. Never last-one-wins.
 - **Coverage:** commands come from the registry, so a kind has command tools exactly when it
@@ -855,6 +857,59 @@ status and only the commands now available).
   Anthropic and OpenAI receive it as `{ type: 'object', properties: {}, additionalProperties: false }`;
   Gemini receives `{ type: 'object', properties: {} }` (its dialect drops `additionalProperties`),
   and whether Gemini's API accepts a nested object with no properties has not been verified live.
+
+### Stop tools — a model may apply the brakes; only the host lifts them
+
+```ts
+const tools = createTaskTools({
+  view: writer,
+  stops: {
+    writer, // the very object passed as view
+    environment, // mints each stop's operation id — which is its intentId
+    enable: ['pause'] // the modes task_stop offers; [] offers no stop tool
+  }
+}).orThrow(); // task_query, task_inspect, task_stop, task_stop_inspect
+
+// The model's stop is recorded and its tree frozen; the host carries it out:
+await writer.reconcileStop({ taskId, intentId }); // the pump — a host call, never a model tool
+```
+
+| broker operation | model tool | why |
+|---|---|---|
+| `requestStop` | `task_stop` (opt-in, per mode) | records the intent and freezes the tree; dispatches nothing. Authorized by the policy's `stop` on the root at every call |
+| `inspectStop` | `task_stop_inspect` | a read; needs only the root to be visible |
+| `releaseStop` | **none** | un-freezes admission over a whole subtree, including targets this principal cannot see, and accepts a partial stop as the host's decision. The result names no requester, so a tool could not even restrict a model to its own stops |
+| `reconcileStop` | **none** | the host's pump: it dispatches stop commands to external sources. Its timing and repetition are the host's scheduling, exactly as for `resolveCommands` |
+
+- **Schemas.** `task_stop`: `{ taskId, expectedRevision, mode }`, `mode` an enum of exactly the
+  modes enabled. `task_stop_inspect`: `{ taskId, intentId, after? }`. Both closed; no operation id,
+  limit, principal or scope. `execute` re-validates every call.
+- **The intent id is disclosed, and grants nothing.** It is the operation id the tool minted for the
+  request, returned so the model can name the stop. Every tool still mints its own operation id, so
+  the model can never replay or occupy a key with it; inspecting a stop needs only that its root is
+  visible, which the model could already learn. Target command keys and attempt numbers are not
+  returned.
+- **What the model is told.** `{ intentId, taskId, mode, state, counts, targets, remaining,
+  nextAfter?, restrictedWorkRemains }`: `counts` over every visible target by state; `targets` one
+  page (at most `budget.context.maxItems`) of `{ taskId, state, confirmedRevision?, violation? }` in
+  the stop's order; `task_stop_inspect` with `after: nextAfter` continues. A target that cannot be
+  found visible on the page boundary — hidden since, or never a target — reads alike, as
+  `cursor-stale`. A hidden target that is not confirmed sets `restrictedWorkRemains`, without counts or
+  identities. A capacity refusal is never returned: it goes to `logger`, and the target's own state
+  (`unavailable`) says it is blocked.
+- **Known and unknown outcomes.** Only `unsupported` (the stop policy does not permit the mode),
+  which the broker decides before it writes, is a plain code line. Every other failure may follow an
+  accepted stop — `not-found-or-denied` included, when the root is hidden between the commit and the
+  presentation — so its line ends with the intent id the stop would have, and an instruction to
+  inspect it before asking again. A denied, hidden and missing task still read alike: the same line,
+  differing only in the would-be id. A retry is harmless — a second stop of a mode already latched on
+  the task is refused.
+- **`stop-active` is never disclosed.** Every other tool answers a latch as `conflict` whether or not
+  the stop tools are offered: a latch can come from a stop on an ancestor this principal cannot see,
+  and no tool's answers depend on which other tools the host enabled.
+- **A registered command named like a stop** (`pause`, `cancel`) may be offered beside the stop
+  tools. It is a different operation — one task, the kind's own command, `command` authority — and
+  the latch still refuses whatever it would do that a stop forbids.
 
 ## Rendering task context without a broker
 
@@ -1082,8 +1137,8 @@ fragment is caught at the mint rather than at the filename.
 
 ## Not in scope
 
-No stop tools and no prompt integration **yet** — those are later slices, and their absence from
-the export surface is deliberate. Explicit abandonment of a blocked cancel is not built (see
+No prompt integration **yet** — that is a later slice (I2), and its absence from the export surface
+is deliberate. No model tool releases a stop or runs the stop pump, by design (see *Stop tools*). Explicit abandonment of a blocked cancel is not built (see
 `docs/TECH_DEBT.md`). **Permanently** out of scope: an input-request/answer protocol, a task runner or
 scheduler, an executor, a retry policy, cross-repository parenting, execution migration,
 multi-process ownership, general event sourcing, and dependency DAGs.

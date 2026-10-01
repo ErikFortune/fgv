@@ -14,6 +14,7 @@ import {
   ITaskEnvironment,
   ITaskKindRegistry,
   TaskKind,
+  StopMode,
   ITaskQueryToolResult,
   TaskInspectToolResult,
   createTaskTools
@@ -150,6 +151,23 @@ export function commandingTools(
   return toolSet({
     view: writer,
     commands: { writer, registry: h.registry, environment: h.env, enable },
+    ...extra
+  });
+}
+
+/**
+ * The tools over a writer with the stop tools opted in for `enable` — the writer is both the view and
+ * the writer, as the factory requires.
+ */
+export function stoppingTools(
+  h: { readonly writer: IBoundTaskWriter; readonly env: Pick<ITaskEnvironment, 'newOperationId'> },
+  writer: IBoundTaskWriter = h.writer,
+  extra?: Partial<ICreateTaskToolsParams>,
+  enable: ReadonlyArray<StopMode> = ['pause', 'cancel']
+): IToolSet {
+  return toolSet({
+    view: writer,
+    stops: { writer, environment: h.env, enable },
     ...extra
   });
 }
