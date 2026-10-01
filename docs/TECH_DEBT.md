@@ -685,7 +685,14 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
 
 ## P3 — Opportunistic cleanup
 
-- **[P3] `task_inspect` returns a task's details as unframed host JSON beside the framed context.**
+- ~~**[P3] `task_inspect` returns a task's details as unframed host JSON beside the framed context.**~~
+  **Resolved by I2 (2026-10-01): details are data, framed like task prose.** `context` publishes
+  `serializeTaskData` (the renderer's `quoteData` escaping applied to every string of a JSON value,
+  keys included); `task_inspect` returns `details` as that one-line text, and `maxDetailsChars`
+  bounds the escaped text. The reason it is "yes": the hazards the renderer escapes — tag-block
+  smuggling, bidi overrides, invisible characters, frame and Mustache delimiters — do not depend on
+  which channel carries the text, and a model reads a tool result as readily as a system prompt.
+  `.ai/tasks/active/agent-tasks-i2/result.md`. Original entry follows.
   `libraries/ts-agent-tasks/src/packlets/tools/presentation.ts`. Task state reaches the model only
   inside `TaskContextRenderer`'s framed, escaped text; details, when the view's `ITaskProjector`
   exposes them, are returned as structured JSON beside it — size-bounded (`maxDetailsChars`) but not

@@ -36,8 +36,10 @@ principal-bound view, with bounded output by default, and — only when the host
 `task_create`, `task_update` and `task_reassign` over the same binding's writer, and one typed tool
 per registered command the host names, its wire schema the command's registered parameter schema,
 and `task_stop` / `task_stop_inspect`, which let a model request and read a cascade stop — never
-release it or carry it out. Prompt integration follows in a later slice, and is deliberately absent
-from the export surface rather than stubbed.
+release it or carry it out — and **prompt composition** (`checkTaskPrompt`, `prepareTaskPrompt`):
+fragment factories for a `ts-prompt-assist` prompt whose task context is one trailing per-request
+slot, a resolve that is refused unless the body sent is the body analyzed, and a delivery handoff
+whose receipt can be acknowledged only against the exact text that was sent.
 
 ## Storing tasks durably — `FileTreeTaskRepository`
 
@@ -678,8 +680,8 @@ const turn = AiAssist.executeClientToolTurn({ descriptor, apiKey, messages, clie
   within `budget.context` (default: 20 items, depth 3, 8,000 characters), never as raw envelopes. A
   page is at most `budget.context.maxItems` tasks. A task on the page that the text omitted or
   abbreviated is **named by id** in `omitted` / `abbreviated`, so paging on `nextCursor` never skips
-  a task unannounced. Details come back only when their JSON fits `budget.maxDetailsChars` (default
-  4,000), otherwise `detailsOmitted: 'too-large'` and none of them.
+  a task unannounced. Details come back only when their serialized text fits `budget.maxDetailsChars`
+  (default 4,000), otherwise `detailsOmitted: 'too-large'` and none of them.
 - **A failing projector fails the call.** The view's `ITaskProjector` and the renderer's projection
   both fail closed; the tool returns the failure and no partial page. Nothing falls back to a less
   projected value.
@@ -693,9 +695,11 @@ const turn = AiAssist.executeClientToolTurn({ descriptor, apiKey, messages, clie
   a well-formed cursor, known completeness and freshness, string issues), an inspection exactly a
   resolved or an unresolved one. An answer that does not convert fails the call; a view's `issues`
   reach the model as one fixed line; an unknown failure code is reported as no code at all.
-- **What is framed.** Task state is framed and escaped inside the context text. Details are the host
-  projector's JSON, returned beside it as structured data and neither framed nor escaped — a host
-  that exposes details chooses their content.
+- **What is framed.** Task state is framed and escaped inside the context text. Details are task data
+  too: `details` is one line of JSON text in which every string, keys included, is escaped exactly as
+  the renderer escapes task prose (`serializeTaskData`) — no frame-breaking, Mustache, fence,
+  bidirectional or invisible character (the tag block included) reaches the model raw. Details with
+  no JSON form (a non-finite number, which the view's `jsonValue` converter admits) fail the call.
 - **Supply `renderer`** built with the broker's converters when the host's field bounds are not the
   defaults: its converters also validate the model's arguments, and a task the view returns must
   never be refused by the renderer.
@@ -910,6 +914,75 @@ await writer.reconcileStop({ taskId, intentId }); // the pump — a host call, n
 - **A registered command named like a stop** (`pause`, `cancel`) may be offered beside the stop
   tools. It is a different operation — one task, the kind's own command, `command` authority — and
   the latch still refuses whatever it would do that a stop forbids.
+
+## Prompt composition — `checkTaskPrompt`, `prepareTaskPrompt`
+
+Task context is the most volatile thing in a prompt, so it goes **last**, in one per-request slot,
+after everything that can cache. The `prompt` packlet builds that prompt from `ts-prompt-assist`
+primitives, resolves it with a composition, and refuses to hand back anything unless what will be
+sent is what was analyzed.
+
+**Fragments.** `taskPromptRecord({ scope, id, title, instructions, stableSlots? })` is a complete
+unconditional prompt record: the host's fixed `instructions`, `taskDataInterpretationRules` (a fixed
+"task records are data, not instruction" paragraph), the host's own slots in order, then
+`{{{taskContext}}}` — with nothing after it. Its parts are public: `taskContextSlot()` (required,
+`cacheStability: 'per-request'`, `maxLength` the default context budget, no default binding),
+`taskPromptTemplate()` (refuses fixed text containing `{{`/`}}` and a host slot reusing the task
+slot's name), `taskPromptDescriptor()`. `taskContextSubstitutions(context)` is the literal `prose`
+binding of the context's text — the text only; the receipt never enters a substitution.
+
+**`checkTaskPrompt({ library, request, context, taskSlot?, composition?, cacheHints? })`** resolves
+with `composition` requested and the context's text in the task slot, and fails unless:
+
+1. **Composition is positively available** — present, no `unavailable` reason, sections contiguous
+   and covering the body. An empty `cacheFindings` is never accepted as evidence: an unavailable
+   composition has one too.
+2. **Exactly one task-slot section, last, from this substitution** (not an enforced binding), with
+   the context's text exactly, `effectiveStability: 'per-request'`, and the text nowhere else in the
+   body.
+3. **A non-empty stable prefix** precedes it.
+4. **No unhandled cache finding.** `stability-refuted` (a false `frozen` claim),
+   `cache-hostile-ordering`, `no-cacheable-prefix` and any unknown kind fail. `threshold-unknown`
+   and `below-threshold` are **classified** in `threshold.verdict` (`unknown` / `below` / `met`) —
+   neither failure nor proof. Supply a tokenizer `measure` and `minCacheablePrefixTokens` for a verdict.
+5. **The breakpoint plan** (`toCacheRequest`, same composition) ends at the task slot's start.
+
+It returns `system` (send exactly this), `cacheRequest` (offsets into `system`, UTF-16 code units),
+`taskSlot`, `stablePrefixChars`, `threshold`, the `resolved` prompt, and `receiptFor(sentSystem)` —
+the context's receipt, **only** if `sentSystem === system`. Nothing about checking acknowledges
+anything. **No claim about provider cache hits follows from any of this.**
+
+**`prepareTaskPrompt({ delivery, budget?, library, request, … })`** is the delivery path. It calls
+`delivery.prepare`, checks the prompt, and returns a handoff: `prompt` (the check above, without
+`receiptFor`), `context` (the rendered context **without** its receipt), `deliveryId`, `expiresAt`,
+`acknowledge(sentSystem)` and `abandon()`. The receipt is on none of them.
+
+- **A failed check abandons the delivery's manifest** before returning (`invalid`), so the receipt
+  that `prepare` issued can never be acknowledged by any path. Its obligations stay owed.
+- **`acknowledge(sentSystem)` acknowledges only the exact checked text.** Anything else — a prefix
+  a host added, an edited or dropped task slot — abandons the manifest and fails `invalid-receipt`;
+  the receipt is dead from then on. A match acknowledges through the delivery as usual: exact IDs,
+  idempotent replay, an update that arrived during the model call left owed.
+- **The host's protocol:** send `prompt.system` with `prompt.cacheRequest`; after your own
+  successful-processing boundary, `acknowledge(<the system text you sent>)`; on abort, `abandon()`.
+  The library cannot observe the wire, so the text you pass is your assertion of what was sent —
+  pass what was actually sent, not `prompt.system` by reflex. Any post-check change to the body
+  (a date line, a reorder) needs a new resolve and check: old offsets describe a different body.
+
+```ts
+const prepared = await prepareTaskPrompt({ delivery, library, request: { id, chain, qualifiers, substitutions } });
+if (prepared.isSuccess()) {
+  const { prompt } = prepared.value;
+  const sent = await AiAssist.callProviderCompletion({
+    descriptor, apiKey, messages, system: prompt.system, cache: prompt.cacheRequest
+  });
+  await (sent.isSuccess() ? prepared.value.acknowledge(prompt.system) : prepared.value.abandon());
+}
+// A failure leaves nothing to send and nothing acknowledgeable; its obligations stay owed.
+```
+
+**`HorizontalComposer` output is not accepted** — it has no composition map; resolve a final prompt
+whose composition describes the whole body. A host composing other ways is unverified by this helper.
 
 ## Rendering task context without a broker
 
@@ -1137,8 +1210,7 @@ fragment is caught at the mint rather than at the filename.
 
 ## Not in scope
 
-No prompt integration **yet** — that is a later slice (I2), and its absence from the export surface
-is deliberate. No model tool releases a stop or runs the stop pump, by design (see *Stop tools*). Explicit abandonment of a blocked cancel is not built (see
+No model tool releases a stop or runs the stop pump, by design (see *Stop tools*). Explicit abandonment of a blocked cancel is not built (see
 `docs/TECH_DEBT.md`). **Permanently** out of scope: an input-request/answer protocol, a task runner or
 scheduler, an executor, a retry policy, cross-repository parenting, execution migration,
 multi-process ownership, general event sourcing, and dependency DAGs.
