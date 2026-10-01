@@ -713,14 +713,14 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
   **Reference**: `agent-tasks-i1a` layer-1 review P3-b; `.ai/tasks/active/agent-tasks-i1a/result.md`.
 
 - **[P3] I2's revert-matrix rows live outside `perf/mutationMatrix.js`.**
-  `.ai/tasks/active/agent-tasks-i2/i2Matrix.js` holds rows `I2-1…I2-30` with the same mechanics as
+  `.ai/tasks/active/agent-tasks-i2/i2Matrix.js` holds rows `I2-1…I2-36` with the same mechanics as
   `libraries/ts-agent-tasks/perf/mutationMatrix.js`, because I2 ran beside the M1 stop-state cohort,
   which owned `perf/`. Two scripts means a refactor that moves a protected line can re-point one and
   leave the other's rows stale, and the artifact directory migrates at cluster close.
 
   **Trigger**: the M1 stop-state cohort lands, or cluster close — whichever is first.
 
-  **Scope sketch**: move the thirty rows into `MUTATIONS` (suite pattern
+  **Scope sketch**: move the thirty-six rows into `MUTATIONS` (suite pattern
   `prompt/|context/|tools/|publicSurface`), run `--check`, delete the I2 script.
 
   **Not a P4**: a stale row is a protection nobody is checking.

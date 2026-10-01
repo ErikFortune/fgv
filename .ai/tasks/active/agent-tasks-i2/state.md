@@ -1,7 +1,7 @@
 # State — `agent-tasks-i2`
 
-**Status:** PR open, CI green before round 1; Copilot round 1 (7 findings) fixed; matrix re-running
-on the round-1 source; round 2 to request after it lands.
+**Status:** complete — PR open and green; Copilot loop stopped after 2 rounds (diminishing returns),
+every finding resolved; 36-row matrix all red on the final source `5cb380e0`. Waiting on merge.
 
 ## Where things stand
 
@@ -25,13 +25,13 @@ on the round-1 source; round 2 to request after it lands.
 
 - Layer 1 `code-reviewer`: no P1; resolved.
 - Copilot: `@copilot review` comments did not register (12:20, 13:41 UTC); the API request did.
-  Round 1: 1 high, 3 medium, 3 low — all fixed (`result.md` § Layer 2).
+  Round 1: 1 high, 3 medium, 3 low — all fixed. Round 2: 4 low + 1 headline-only — all fixed.
+  Stopped after 2 rounds on diminishing returns (`result.md` § Layer 2).
 
 ## Remaining
 
-- Matrix on the round-1 source: `node .ai/tasks/active/agent-tasks-i2/i2Matrix.js --pkg <git-archive copy>`
-  (copy needs `node_modules` symlinked). **Never without `--pkg`.** Rows I2-1…I2-35.
-- Reply to and resolve the seven round-1 threads; request round 2; stop on diminishing returns.
+Nothing in this slice. On merge: nothing to finalize (the family finalizes at cluster close). The two
+routed items are in `docs/TECH_DEBT.md`.
 
 ## Resume instructions
 

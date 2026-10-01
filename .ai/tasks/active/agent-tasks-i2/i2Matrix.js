@@ -147,7 +147,7 @@ const ROWS = [
     'I2-20 a mismatched send after acknowledgement abandons it',
     HO,
     'if (receipt.isSuccess() || acknowledged) {',
-    'if (receipt.isSuccess()) {'
+    'if (receipt.isSuccess() || (acknowledged && sentSystem.length < 0)) {'
   ),
   m(
     'I2-21 details reach the model unescaped',

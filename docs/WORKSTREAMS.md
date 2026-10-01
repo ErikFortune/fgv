@@ -150,7 +150,7 @@ details are data — `task_inspect` returns them escaped like task prose; the TE
 **Evidence.** Real `PromptLibrary`, renderer and broker delivery; outbound bodies captured from
 ai-assist's own builders (Anthropic, OpenAI, a tool-use turn). Progress-only pair: identical prefix
 block, breakpoint `[391]` UTF-16 units; empty set, astral text, repeated text. Matrix rows
-`I2-1…I2-30` (in the stream directory — `perf/` was M1's). Routed: fold those rows into
+`I2-1…I2-36` (in the stream directory — `perf/` was M1's). Routed: fold those rows into
 `perf/mutationMatrix.js`; `jsonValue` admits `Infinity`.
 
 **Artifact pointer:** `.ai/tasks/active/agent-tasks-i2/`.
