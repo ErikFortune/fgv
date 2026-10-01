@@ -17,7 +17,8 @@
  *             the run edits source, so a copy keeps the working tree clean while it runs; give
  *             the copy a `node_modules` symlink to this package's)
  *   --out     write the results as JSON
- *   M…        run only the named rows (T8b's rows are named T8b-…, T9's T9-…, I1a's I1a-…, I1b's I1b-…, I1c's I1c-…)
+ *   M…        run only the named rows (T8b's rows are named T8b-…, T9's T9-…, I1a's I1a-…, I1b's I1b-…, I1c's I1c-…,
+ *             I1d's I1d-…)
  *
  * The one rule that matters: a row whose pattern is not found exactly once, whose mutant does not
  * build, or whose run reports no failure count at all, is reported UNVERIFIED — never as "nothing
@@ -1681,8 +1682,9 @@ const I1C_ROWS = [
   m(
     'I1c-14 the command writer need not be the view',
     TL + 'taskTools.ts',
-    '  if (options.writer !== ctx.view) {',
-    '  if (options.writer === undefined) {',
+    // Extended by I1d, whose stop opt-in has the same guard.
+    "  if (options.writer !== ctx.view) {\n    return fail('task tools: commands.writer",
+    "  if (options.writer === undefined) {\n    return fail('task tools: commands.writer",
     I1C
   ),
   m(
@@ -1708,16 +1710,18 @@ const I1C_ROWS = [
   ),
   m(
     "I1c-18 a minting failure's host text reaches the model",
-    CT,
-    '    .onFailure((message) => hostFailure(ctx, tool, `could not mint an operation id: ${message}`));',
-    '    .onFailure((message) => fail<OperationId>(`${tool}: ${message}`));',
+    // Re-pointed by I1d: the minting moved to `toolSupport.ts`, shared with the stop tools.
+    TL + 'toolSupport.ts',
+    '      .onFailure((message) => hostFailure(ctx, tool, `could not mint an operation id: ${message}`))',
+    '      .onFailure((message) => fail<OperationId>(`${tool}: ${message}`))',
     I1C
   ),
   m(
     'I1c-19 a minted operation id is not converted',
-    CT,
-    '    .onSuccess((raw) => ctx.renderer.converters.ids.operationId.convert(raw))\n',
-    '    .onSuccess((raw) => succeed(raw))\n',
+    // Re-pointed by I1d, as I1c-18.
+    TL + 'toolSupport.ts',
+    '      .onSuccess((raw) => ctx.renderer.converters.ids.operationId.convert(raw))\n',
+    '      .onSuccess((raw) => succeed(raw))\n',
     I1C
   ),
   // I1c-20 retired by Copilot round 1: the tool no longer runs the encoder, so it has no encoder
@@ -1760,6 +1764,170 @@ const I1C_ROWS = [
 ];
 
 MUTATIONS.push(...I1C_ROWS);
+
+const I1D = 'tools/|publicSurface';
+const ST = TL + 'stopTools.ts';
+
+const I1D_ROWS = [
+  m(
+    'I1d-1 task_stop execute trusts its arguments',
+    ST,
+    '      schema\n        .convert(args)\n',
+    '      succeed(args as ITaskStopToolArgs)\n',
+    I1D
+  ),
+  paired(
+    'I1d-2 task_stop_inspect execute trusts its arguments (schema closure and the strict id conversion both reverted)',
+    [
+      {
+        file: ST,
+        from: '      taskStopInspectSchema\n        .convert(args)\n',
+        to: '      succeed(args as ITaskStopInspectToolArgs)\n'
+      },
+      {
+        file: ST,
+        from: '    Converters.strictObject<IStopInspection>({',
+        to: '    Converters.object<IStopInspection>({'
+      }
+    ],
+    I1D
+  ),
+  m(
+    "I1d-3 a stop result's intent id is not checked",
+    ST,
+    '      value.intentId !== expected.intentId ||\n',
+    '      false ||\n',
+    I1D
+  ),
+  m(
+    "I1d-4 a stop result's root is not checked",
+    ST,
+    '      value.rootId !== expected.taskId ||\n',
+    '      false ||\n',
+    I1D
+  ),
+  m(
+    "I1d-5 a stop request's result may be of another mode",
+    ST,
+    '      (expected.mode !== undefined && value.mode !== expected.mode)\n',
+    '      false\n',
+    I1D
+  ),
+  m(
+    'I1d-6 the result is checked against the request object the writer was handed',
+    ST,
+    '        const expected: IExpectedStop = { taskId: stop.taskId, intentId: stop.operationId, mode: stop.mode };',
+    '        const expected: IExpectedStop = { get taskId() { return stop.taskId; }, get intentId() { return stop.operationId; }, get mode() { return stop.mode; } };',
+    I1D
+  ),
+  m(
+    'I1d-7 a result listing a target twice is accepted',
+    ST,
+    '      if (seen.has(target.taskId)) {',
+    '      if (seen.has(target.taskId) && seen.size < 0) {',
+    I1D
+  ),
+  m(
+    "I1d-8 a target's command key and attempt reach the model",
+    ST,
+    '    .map((target) => ({\n      taskId: target.taskId,',
+    '    .map((target) => ({\n      ...target,\n      taskId: target.taskId,',
+    I1D
+  ),
+  m(
+    'I1d-9 a capacity refusal reaches the model',
+    ST,
+    '    restrictedWorkRemains: result.restrictedWorkRemains\n  });',
+    '    restrictedWorkRemains: result.restrictedWorkRemains,\n    ...(result.capacity !== undefined ? { capacity: result.capacity } : {})\n  } as ITaskStopToolResult);',
+    I1D
+  ),
+  m(
+    'I1d-10 a denial is a known outcome, though it can follow the commit (layer-1 P2-1)',
+    ST,
+    "    determinate: ['unsupported'],",
+    "    determinate: ['not-found-or-denied', 'unsupported'],",
+    I1D
+  ),
+  m(
+    'I1d-11 every classified failure of a stop request is a known outcome',
+    ST,
+    "    determinate: ['unsupported'],\n",
+    '',
+    I1D
+  ),
+  m(
+    'I1d-12 an unknown outcome does not tell the model the intent id',
+    ST,
+    "      `; the stop may or may not have been accepted — if it was, its intentId is ${intentId}: ` +\n      'inspect it with task_stop_inspect before requesting it again'",
+    "      ''",
+    I1D
+  ),
+  m(
+    'I1d-13 a page of targets is not bounded',
+    ST,
+    '    .slice(start, start + ctx.budget.context.maxItems)\n',
+    '    .slice(start)\n',
+    I1D
+  ),
+  m(
+    'I1d-14 a continuation that is not a visible target silently starts again from the top',
+    ST,
+    '  if (start === 0 && after !== undefined) {',
+    '  if (start < 0) {',
+    I1D
+  ),
+  m(
+    'I1d-15 counts are over the page, not the whole stop',
+    ST,
+    '  for (const target of result.targets) {\n    counts',
+    '  for (const target of result.targets.slice(start, start + ctx.budget.context.maxItems)) {\n    counts',
+    I1D
+  ),
+  m(
+    'I1d-16 the stop writer need not be the view',
+    TL + 'taskTools.ts',
+    "  if (options.writer !== ctx.view) {\n    return fail('task tools: stops.writer",
+    "  if (options.writer === undefined) {\n    return fail('task tools: stops.writer",
+    I1D
+  ),
+  m(
+    'I1d-17 the offered modes are not converted',
+    TL + 'taskTools.ts',
+    '  return Converters.arrayOf(Converters.enumeratedValue<StopMode>(allStopModes))\n    .convert(options.enable)\n',
+    '  return succeed([...options.enable])\n',
+    I1D
+  ),
+  m(
+    'I1d-18 task_stop offers every mode, not only the ones enabled',
+    ST,
+    '  const schema = taskStopSchema(ctx.modes);',
+    "  const schema = taskStopSchema(['pause', 'cancel']);",
+    I1D
+  ),
+  m(
+    'I1d-19 the stop tool names are not reserved',
+    CT,
+    "  'task_reassign',\n  'task_stop',\n  'task_stop_inspect'\n];",
+    "  'task_reassign'\n];",
+    I1D
+  ),
+  m(
+    'I1d-20 a result whose targets are empty or not led by the root is accepted (Copilot round 1)',
+    ST,
+    '    if (value.targets.length === 0 || value.targets[0].taskId !== value.rootId) {',
+    '    if (value.targets.length < 0) {',
+    I1D
+  ),
+  m(
+    'I1d-21 a satisfied result over unconfirmed work is accepted (Copilot round 2)',
+    ST,
+    "      (value.state === 'satisfied' || value.state === 'settled') &&\n",
+    '      value.targets.length < 0 &&\n',
+    I1D
+  )
+];
+
+MUTATIONS.push(...I1D_ROWS);
 
 function parseArgs(argv) {
   const args = { check: false, pkg: path.resolve(__dirname, '..'), out: undefined, only: [] };

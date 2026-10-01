@@ -8,13 +8,22 @@ import {
   Logging,
   Result,
   captureAsyncResult,
+  captureResult,
   fail,
   failWithDetail,
   succeed,
   succeedWithDetail
 } from '@fgv/ts-utils';
 import { TaskContextRenderer } from '../context';
-import { IBoundTaskView, ITaskFailure, ITaskToolBudget, TaskFailureCode, TaskResult } from '../types';
+import {
+  IBoundTaskView,
+  ITaskEnvironment,
+  ITaskFailure,
+  ITaskToolBudget,
+  OperationId,
+  TaskFailureCode,
+  TaskResult
+} from '../types';
 import { IViewAnswerConverters } from './viewAnswers';
 
 /**
@@ -85,6 +94,26 @@ export function argumentMessage(tool: string, message: string): string {
 export function hostFailure<T>(ctx: IToolContext, tool: string, message: string): Result<T> {
   ctx.logger?.error(`${tool}: ${message}`);
   return fail(`${tool}: the request failed`);
+}
+
+/**
+ * A fresh operation id for one call, minted through the host's environment and converted. The model
+ * never names one. Host code, so a throw is captured; a failure or a malformed id is the host's fault
+ * and reaches the model only as `<tool>: the request failed`.
+ * @internal
+ */
+export function mintOperationId(
+  ctx: IToolContext,
+  environment: Pick<ITaskEnvironment, 'newOperationId'>,
+  tool: string
+): Result<OperationId> {
+  return (
+    captureResult(() => environment.newOperationId())
+      // `captureResult` wraps the host's `Result` in another; this unwraps it.
+      .onSuccess((minted) => minted)
+      .onSuccess((raw) => ctx.renderer.converters.ids.operationId.convert(raw))
+      .onFailure((message) => hostFailure(ctx, tool, `could not mint an operation id: ${message}`))
+  );
 }
 
 /**

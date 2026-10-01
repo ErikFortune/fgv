@@ -7,5 +7,6 @@ export {
   ICreateTaskToolsParams,
   ITaskCommandToolOptions,
   ITaskMutationToolOptions,
+  ITaskStopToolOptions,
   createTaskTools
 } from './taskTools';

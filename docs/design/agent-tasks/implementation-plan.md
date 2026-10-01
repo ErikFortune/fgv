@@ -252,7 +252,7 @@ A3: preflight/reserve root and per-target settlement, required audiences and per
 
 ## 6. Integration and proving ground
 
-### I1 — ai-assist tool factory — split into four slices (orchestrator decision, 2026-09-28)
+### I1 — ai-assist tool factory — ✅ implemented on `integration/agent-tasks-v1`, all four slices ([#702](https://github.com/ErikFortune/fgv/pull/702), [#703](https://github.com/ErikFortune/fgv/pull/703), [#704](https://github.com/ErikFortune/fgv/pull/704), [#706](https://github.com/ErikFortune/fgv/pull/706)) — split into four slices (orchestrator decision, 2026-09-28)
 
 **I1a — ✅ implemented on `integration/agent-tasks-v1` ([#702](https://github.com/ErikFortune/fgv/pull/702)).**
 **I1b — ✅ implemented on `integration/agent-tasks-v1` ([#703](https://github.com/ErikFortune/fgv/pull/703)):** opt-in
@@ -262,7 +262,10 @@ back as `expectedRevision`.
 one opt-in tool per registered command a host names, its wire schema the registered parameter schema
 (`ITaskCommandHandle.parameters`); a command whose outcome is unknown is never resent by the model.
 `fgv.tracked@1` registers no command schemas, so its transitions are not offered (`docs/TECH_DEBT.md`).
-I1d not started.
+**I1d — ✅ implemented on `integration/agent-tasks-v1` ([#706](https://github.com/ErikFortune/fgv/pull/706)):** opt-in `task_stop` (`requestStop`, per
+mode) and `task_stop_inspect` (`inspectStop`); `releaseStop` and `reconcileStop` are deliberately
+not model-reachable — a model may apply a stop, only the host carries it out or lifts it.
+`stop-active` stays `conflict` in every tool whatever the host enables. **I1 is complete.**
 
 **The split.** T7 and T9 each landed at 65+ files and +11,000 lines, and in both the review loop was
 still doing structural work at round 6+. I1 is decomposed up front rather than mid-loop. Each slice

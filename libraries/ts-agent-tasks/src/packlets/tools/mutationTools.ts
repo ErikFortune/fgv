@@ -35,6 +35,7 @@ import {
   askView,
   convertAnswer,
   hostFailure,
+  mintOperationId,
   writerWording
 } from './toolSupport';
 import { IWriterAnswerConverters } from './writerAnswers';
@@ -115,9 +116,7 @@ function _mint<T>(mint: () => Result<T>, converter: Converter<T>): Result<T> {
  * a model can neither replay another principal's receipt nor occupy a key a host pump would mint.
  */
 function _operationId(ctx: IMutationToolContext, tool: string): Result<OperationId> {
-  return _mint(() => ctx.environment.newOperationId(), ctx.renderer.converters.ids.operationId).onFailure(
-    (message) => hostFailure(ctx, tool, `could not mint an operation id: ${message}`)
-  );
+  return mintOperationId(ctx, ctx.environment, tool);
 }
 
 /**

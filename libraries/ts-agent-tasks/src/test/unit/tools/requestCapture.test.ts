@@ -18,6 +18,7 @@ import '@fgv/ts-utils-jest';
 import { AiAssist } from '@fgv/ts-extras';
 import { JsonObject } from '@fgv/ts-json-base';
 import { IBrokerHarness, brokerHarness, track } from '../../helpers/brokerFixtures';
+import { node } from '../../helpers/stopFixtures';
 import { ISourceHarness, registerJob, sourceHarness } from '../../helpers/sourceFixtures';
 import {
   ITaskToolPair,
@@ -25,6 +26,7 @@ import {
   commandingTools,
   mutatingTools,
   shownIds,
+  stoppingTools,
   taskTools,
   toolSet
 } from '../../helpers/toolFixtures';
@@ -540,5 +542,163 @@ describe('command tools reach the outbound request only when offered', () => {
     expect(result).toEqual(expect.objectContaining({ toolName: 'task_command_pause', isError: true }));
     expect((result as AiAssist.IAiStreamToolUseComplete).result).toMatch(/operationId/);
     expect(h.executor.dispatches.size).toBe(0);
+  });
+});
+
+describe('stop tools reach the outbound request only when opted into', () => {
+  let h: IBrokerHarness;
+
+  beforeEach(async () => {
+    h = await brokerHarness();
+    await node(h.writer, 'root', { stopPolicy: 'cascade-cancel' });
+    await node(h.writer, 'a', { parentId: 'root' });
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  const stopping = ['task_query', 'task_inspect', 'task_stop', 'task_stop_inspect'];
+
+  test('not opted into: a writer passed as the view offers exactly the two read tools', async () => {
+    const tools = stoppingTools(h, h.writer, undefined, []);
+    expect(tools.names).toEqual(['task_query', 'task_inspect']);
+    const bodies = captureRequests([anthropicStop]);
+    await runTurn(
+      'anthropic',
+      tools.names.map((name) => tools.get(name))
+    );
+    expect(toolsOf(bodies[0]).map((t) => t.name)).toEqual(['task_query', 'task_inspect']);
+  });
+
+  test('opted into — Anthropic: both stop tools are in the request, each with its exact wire schema', async () => {
+    const tools = stoppingTools(h);
+    expect(tools.names).toEqual(stopping);
+    const bodies = captureRequests([anthropicStop]);
+    await runTurn(
+      'anthropic',
+      stopping.map((name) => tools.get(name))
+    );
+    expect(toolsOf(bodies[0])).toEqual(
+      stopping.map((name) => ({
+        name,
+        description: tools.get(name).config.description,
+        input_schema: tools.get(name).config.parametersSchema.toJson()
+      }))
+    );
+  });
+
+  test('opted into — OpenAI Responses: both stop tools are function tools with their exact wire schemas', async () => {
+    const tools = stoppingTools(h);
+    const bodies = captureRequests([responsesDone]);
+    await runTurn(
+      'openai',
+      stopping.map((name) => tools.get(name))
+    );
+    expect(toolsOf(bodies[0]).filter((t) => t.type === 'function')).toEqual(
+      stopping.map((name) => ({
+        type: 'function',
+        name,
+        description: tools.get(name).config.description,
+        parameters: tools.get(name).config.parametersSchema.toJson()
+      }))
+    );
+  });
+
+  test('opted into — Gemini: both stop tools are function declarations with their complete sanitized schemas', async () => {
+    const tools = stoppingTools(h, h.writer, undefined, ['pause']);
+    const bodies = captureRequests([geminiDone]);
+    await runTurn(
+      'google-gemini',
+      stopping.map((name) => tools.get(name))
+    );
+    const declarations = toolsOf(bodies[0]).flatMap((t) => (t.function_declarations ?? []) as JsonObject[]);
+    expect(declarations.slice(2)).toEqual([
+      {
+        name: 'task_stop',
+        description: tools.get('task_stop').config.description,
+        parameters: {
+          type: 'object',
+          properties: {
+            taskId: { type: 'string', description: 'The id of the task to stop, with every task under it.' },
+            expectedRevision: {
+              type: 'integer',
+              description:
+                'The revision task_inspect last returned for this task. The change is refused if the task has ' +
+                'changed since; inspect it again and decide afresh.'
+            },
+            mode: {
+              type: 'string',
+              enum: ['pause'],
+              description: 'pause holds the tree stopped until the host releases it.'
+            }
+          },
+          required: ['taskId', 'expectedRevision', 'mode']
+        }
+      },
+      {
+        name: 'task_stop_inspect',
+        description: tools.get('task_stop_inspect').config.description,
+        parameters: {
+          type: 'object',
+          properties: {
+            taskId: { type: 'string', description: 'The id of the task the stop was requested on.' },
+            intentId: { type: 'string', description: 'The intentId task_stop returned.' },
+            after: {
+              type: 'string',
+              description: 'The nextAfter of a previous result, to list the targets after it.'
+            }
+          },
+          required: ['taskId', 'intentId']
+        }
+      }
+    ]);
+  });
+
+  test('round trip: a streamed stop is recorded, and the model is told it is pending with its intent id', async () => {
+    const tools = stoppingTools(h);
+    captureRequests([
+      anthropicCalls('toolu_1', 'task_stop', { taskId: 'root', expectedRevision: 1, mode: 'pause' }),
+      anthropicStop
+    ]);
+    const { events } = await runTurn(
+      'anthropic',
+      stopping.map((name) => tools.get(name))
+    );
+    const result = events.find((e) => e.type === 'client-tool-result');
+    expect(result).toEqual(expect.objectContaining({ toolName: 'task_stop', isError: false }));
+    const told = JSON.parse((result as AiAssist.IAiStreamToolUseComplete).result) as {
+      intentId: string;
+      state: string;
+      counts: object;
+    };
+    expect(told.state).toBe('pending');
+    expect(told.counts).toEqual({ unexamined: 2 });
+    expect(
+      (await h.writer.inspectStop({ taskId: 'root' as never, intentId: told.intentId as never })).orThrow()
+        .state
+    ).toBe('pending');
+  });
+
+  test('round trip: a streamed stop naming its own operation id is refused before anything is written', async () => {
+    const tools = stoppingTools(h);
+    captureRequests([
+      anthropicCalls('toolu_1', 'task_stop', {
+        taskId: 'root',
+        expectedRevision: 1,
+        mode: 'pause',
+        operationId: 'complete-list-r1'
+      }),
+      anthropicStop
+    ]);
+    const { events } = await runTurn(
+      'anthropic',
+      stopping.map((name) => tools.get(name))
+    );
+    const result = events.find((e) => e.type === 'client-tool-result');
+    expect(result).toEqual(expect.objectContaining({ toolName: 'task_stop', isError: true }));
+    expect((result as AiAssist.IAiStreamToolUseComplete).result).toMatch(/operationId/);
+    const record = (await h.repository.readCommit('root' as never)).orThrow()!;
+    expect(record.recordType === 'resolved' && record.stops).toBeUndefined();
   });
 });
