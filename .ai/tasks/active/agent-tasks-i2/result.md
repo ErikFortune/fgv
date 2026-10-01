@@ -159,9 +159,47 @@ and `t2`, then `t1` at revision 4 with completed 7, everything else equal.
 
 Rows `I2-1`…`I2-30` in `.ai/tasks/active/agent-tasks-i2/i2Matrix.js` (outside `perf/`, which the M1
 cohort owned during this slice — folding them into `perf/mutationMatrix.js` is in `docs/TECH_DEBT.md`).
-Suites `prompt/|context/|tools/|publicSurface`. **Results: see below.**
+Suites `prompt/|context/|tools/|publicSurface`, run 2026-10-01 with `--pkg` on a `git archive` copy
+of `91436488` (`diff -r` identical to the working tree; no library source changed after it), copy's
+`node_modules` symlinked to the package's.
 
-MATRIX_RESULTS
+**30 rows, 0 UNVERIFIED, 0 `0 red`; 143 red tests in all.** One row needed correcting first:
+**I2-2 did not build** on the first pass (its mutant compared against a cast that left `composition`
+possibly undefined below it). Re-pointed to replace the refusal with an empty-but-valid composition,
+and re-run on the same copy: 1 red. A row that does not build is no evidence either way.
+
+| row | verdict | tests that went red |
+|---|---|---|
+| I2-1 an unavailable composition is accepted | 1 red | composition must be positively available › deliberately unavailable composition, with empty findings, fails |
+| I2-2 a missing composition is not refused by name | 1 red | composition must be positively available › a library answering with no composition fails |
+| I2-3 a gap between sections is accepted | 1 red | composition must be positively available › sections with a gap, or that do not cover the body, fail |
+| I2-4 sections need not cover the body | 1 red | composition must be positively available › sections with a gap, or that do not cover the body, fail |
+| I2-5 a repeated task slot is accepted | 1 red | the task slot: exactly one, last, per-request, carrying the whole issued context › a repeated task slot fails |
+| I2-6 the task slot need not be last | 1 red | the task slot: exactly one, last, per-request, carrying the whole issued context › anything after the task slot fails — no trailing literal, no trailing slot |
+| I2-7 a slot filled by an enforced binding or a default is accepted | 2 red | the task slot: exactly one, last, per-request, carrying the whole issued context › a slot reporting any other source fails<br>the task slot: exactly one, last, per-request, carrying the whole issued context › an enforced binding overriding the task slot fails |
+| I2-8 the slot's text need not be the context's | 1 red | the task slot: exactly one, last, per-request, carrying the whole issued context › a slot whose text is not the context's, exactly, fails |
+| I2-9 the context may also appear elsewhere in the body | 1 red | the task slot: exactly one, last, per-request, carrying the whole issued context › the context appearing anywhere else in the body fails: it must be included exactly once |
+| I2-10 the task slot may claim better than per-request | 1 red | the task slot: exactly one, last, per-request, carrying the whole issued context › a false frozen claim on the task slot fails |
+| I2-11 an empty stable prefix is accepted | 1 red | the task slot: exactly one, last, per-request, carrying the whole issued context › a body that is only the task context has no stable prefix, and fails |
+| I2-12 refusing cache findings are ignored | 3 red | cache findings are handled: ordering and refutation fail the check › a false frozen declaration on a host slot fails<br>cache findings are handled: ordering and refutation fail the check › intentionally cache-hostile placement fails<br>cache findings are handled: ordering and refutation fail the check › volatile content ahead of everything leaves no cacheable prefix, and fails |
+| I2-13 met is inferred from silence | 1 red | met is never inferred from silence › no threshold finding, but nothing measured: unknown, not met |
+| I2-14 the breakpoint plan need not end at the task slot | 1 red | cache findings are handled: ordering and refutation fail the check › a plan whose breakpoints do not end at the task slot fails |
+| I2-15 the receipt is released against any sent text | 6 red | a changed or dropped task slot prevents acknowledging the original receipt › a refusal is classified invalid-receipt<br>a changed or dropped task slot prevents acknowledging the original receipt › text sent that differs from the checked body is refused, and the receipt is dead from then on<br>a checked handoff › after an acknowledgement, a mismatched send is refused without killing the idempotent replay<br>the outbound system body is the analyzed body, with its breakpoint where the plan put it › a host that mutates the body after the check sends what the plan does not describe — and gets no receipt<br>… and 2 more |
+| I2-16 the host's substitutions may fill the task slot | 1 red | the task slot: exactly one, last, per-request, carrying the whole issued context › the host's substitutions may not name the task slot |
+| I2-17 a failed check leaves the issued receipt live | 2 red | a changed or dropped task slot prevents acknowledging the original receipt › a prompt that drops the task slot fails the prepare, and the issued receipt is abandoned<br>when the delivery itself fails › if abandoning after a failed check also fails, the failure says so |
+| I2-18 a mismatched send leaves the receipt live | 2 red | a changed or dropped task slot prevents acknowledging the original receipt › text sent that differs from the checked body is refused, and the receipt is dead from then on<br>when the delivery itself fails › if abandoning after a mismatched send also fails, the failure says so |
+| I2-19 the handoff hands back the context with its receipt | 1 red | a checked handoff › carries the prepared context in its trailing slot, and no receipt anywhere |
+| I2-20 a mismatched send after acknowledgement abandons it | 1 red | a checked handoff › after an acknowledgement, a mismatched send is refused without killing the idempotent replay |
+| I2-21 details reach the model unescaped | 2 red | an inspection is bounded › details are returned only when the host exposes them and they fit › the bound counts the escaped text the model is shown, not the raw JSON<br>details are task data: framed and escaped like task prose › no frame-breaking or invisible character reaches the model raw, and the text parses back exactly |
+| I2-22 the details budget counts raw JSON, not the escaped text | 1 red | an inspection is bounded › details are returned only when the host exposes them and they fit › the bound counts the escaped text the model is shown, not the raw JSON |
+| I2-23 a non-finite number is serialized | 2 red | details are task data: framed and escaped like task prose › details with no JSON form fail the inspection; why goes to the host, not the model<br>serializeTaskData › a number with no JSON form fails, naming where it was |
+| I2-24 a cycle is not detected | 1 red | serializeTaskData › a value that contains itself fails; one shared twice, without a cycle, does not |
+| I2-25 serialized task-data strings are not escaped | 3 red | an inspection is bounded › details are returned only when the host exposes them and they fit › the bound counts the escaped text the model is shown, not the raw JSON<br>details are task data: framed and escaped like task prose › no frame-breaking or invisible character reaches the model raw, and the text parses back exactly<br>serializeTaskData › strings — keys included — are escaped as the renderer escapes task prose |
+| I2-26 the template puts the task slot first | 35 red | a changed or dropped task slot prevents acknowledging the original receipt › a host abandoning the handoff leaves its receipt unacknowledgeable<br>a changed or dropped task slot prevents acknowledging the original receipt › a refusal is classified invalid-receipt<br>a changed or dropped task slot prevents acknowledging the original receipt › text sent that differs from the checked body is refused, and the receipt is dead from then on<br>a checked handoff › acknowledging with the exact text sent discharges exactly what was included; a replay is idempotent<br>… and 31 more |
+| I2-27 fixed text may form a Mustache tag | 2 red | taskPromptDescriptor and taskPromptRecord › the record is unconditional and its template follows the declared slot order<br>taskPromptTemplate › refuses fixed text that could form a Mustache tag |
+| I2-28 slot names are not validated | 1 red | taskPromptTemplate › refuses a slot name that is not a Mustache name, since it is interpolated into the template |
+| I2-29 the task slot is declared frozen | 31 red | a changed or dropped task slot prevents acknowledging the original receipt › a host abandoning the handoff leaves its receipt unacknowledgeable<br>a changed or dropped task slot prevents acknowledging the original receipt › a refusal is classified invalid-receipt<br>a changed or dropped task slot prevents acknowledging the original receipt › text sent that differs from the checked body is refused, and the receipt is dead from then on<br>a checked handoff › acknowledging with the exact text sent discharges exactly what was included; a replay is idempotent<br>… and 27 more |
+| I2-30 the substitution carries the receipt | 35 red | a changed or dropped task slot prevents acknowledging the original receipt › a host abandoning the handoff leaves its receipt unacknowledgeable<br>a changed or dropped task slot prevents acknowledging the original receipt › a refusal is classified invalid-receipt<br>a changed or dropped task slot prevents acknowledging the original receipt › text sent that differs from the checked body is refused, and the receipt is dead from then on<br>a checked handoff › acknowledging with the exact text sent discharges exactly what was included; a replay is idempotent<br>… and 31 more |
 
 ## Review
 
@@ -214,4 +252,20 @@ receipts. The surface for it:
 
 ## Gate results
 
-GATES
+Run on the final library source (`91436488`; later commits change only docs and this directory).
+
+| gate | result |
+|---|---|
+| `rushx build` (`heft build --clean`) | Finished, **zero warnings** |
+| `rushx lint` / `rushx fixlint` | clean; `fixlint` run before the final source commit |
+| `rushx test` | **2394 tests**, 100% statements / branches / functions / lines, **0 `c8 ignore`** in `src/packlets` |
+| this slice's suites | `prompt/checkedPrompt` 31, `prompt/handoff` 12, `prompt/fragments` 11, `prompt/outbound` 8, `context/taskData` 7, `tools/bounding` 31 (3 new), plus one each added to `publicSurface` and amended in `context/purity` |
+| `rush change --verify --target-branch origin/integration/agent-tasks-v1` | passes; change file `minor`, `BREAKING:` prefix |
+| repo-wide `install-run-rush.js rebuild` | exit 0, no warnings |
+| repo-wide `install-run-rush.js test` | exit 0 (37 projects) — required: `task_inspect` changes what it returns |
+| `verify-capability-docs` | 22,038 / 24,000 chars, 0 failed |
+| `generate-capability-feed --check` | 0 stale |
+| `verify-esm-entrypoints` | 24 checked, 0 failed |
+| `verify-bundler-resolution` | 20 checked, 0 failed |
+| `verify-tarball-exports` | 26 packages, 205 manifest paths, 0 failed |
+| revert matrix | 30 rows, all red (above) |
