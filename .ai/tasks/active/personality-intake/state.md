@@ -31,6 +31,33 @@ ai-assist). Every file cites its issue, and the long-form note the issue links t
    `design/mcp-tools` @ `bf76480` (the MCP and JSON-schema notes and the execute-signal note),
    `working` @ `af01a90` (weighted pick, `derivedFrom`), `integration/v2` @ `04c9280` (ErikFortune/personaility#648's note).
 
+## Sweep against fgv repo state (2026-10-01, after capture)
+
+Asked: are any of the 17 already done in fgv but not yet published (so still open on the
+PersonAIlity side)? **Result: none are. All 17 remain open.**
+
+**Refs checked** (every remote branch with commits since 2026-09-19): `release` @ `30713277`,
+`integration/agent-tasks-v1` @ `2a95fbb2` (contains `release`), `claude/agent-tasks-cluster-close`,
+`claude/system-one-decisions-design`, `integration/system-one-decisions`,
+`claude/coverage-to-100-nonux`, `prerelease`, `erik/tasks`. Also checked: the open fgv PRs (ErikFortune/fgv#710,
+ErikFortune/fgv#711, and the dependabot/release PRs). None of them touches these packages for these asks. And
+`git log --all` pickaxe/grep for each item's symbols.
+
+| issue | raised | evidence it is still open |
+|---|---|---|
+| ErikFortune/personaility#648 | 2026-08-30 | `crypto-utils/index.browser.ts` exports `fromBase64` but not `fromBase64Strict` on every ref; no commit on any branch changes that line. `ts-web-extras` still calls it at `browserCryptoProvider.ts:354` and `httpTreeAccessors.ts:471`. |
+| ErikFortune/personaility#669 | 2026-09-27 | `ts-random/src` has no `weight` on any ref; `CAPABILITIES.md` lists only `nextBoolean(trueProbability)` as "weighted boolean". |
+| ErikFortune/personaility#670 | 2026-09-28 | `envelope.ts:33-39` docstring unchanged ("Scope-qualified back-link to the source record…") on every ref; no `withdrawn` / `dereferenc` wording. |
+| ErikFortune/personaility#671–ErikFortune/personaility#678 | 2026-10-01 | `ts-extras-mcp/src` has no `timeoutMs` / `RequestOptions` / `AbortSignal`, `fetch` passthrough, `onClose`, `terminateSession`, `structuredContent` / `resource_link`, `outputSchema` / `onToolsChanged`, `authProvider`, or public transport seam on any ref. |
+| ErikFortune/personaility#679–ErikFortune/personaility#683 | 2026-10-01 | `fromJson.ts` `FORBIDDEN_KEYWORDS` still includes `$ref`, `anyOf`, `oneOf`, `pattern`; `factories.ts` `additionalProperties` is still `boolean` on the object factory; no change to these files on any branch since the asks. |
+| ErikFortune/personaility#684 | 2026-10-01 | `toolTypes.ts:185` still `execute: (args: TParams) => Promise<Result<unknown>>` on every ref. |
+
+**Where the expectation probably came from.** Only three of the 17 predate the 2026-10-01
+cluster (ErikFortune/personaility#648, ErikFortune/personaility#669, ErikFortune/personaility#670). The asks that fgv *did* deliver are among the
+28 **closed** `fgv-ask` issues, which this intake excluded. The fgv side records several of those
+deliveries explicitly (e.g. `.ai/notes/cross-repo-handoffs/personaility-reply-2026-08-23-*`,
+`docs/workstreams/2026-08.md`). Those closed issues were not swept against fgv by this pass.
+
 ## Excluded, and why. The orchestrator should check these
 
 - **28 closed `fgv-ask` issues** (ErikFortune/personaility#585–ErikFortune/personaility#668, the closed ones). Closed in the source repo, so not
