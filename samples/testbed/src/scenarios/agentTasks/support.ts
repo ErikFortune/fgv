@@ -62,10 +62,11 @@ export interface IToolAnswer {
   readonly revision?: number;
 }
 
-const toolAnswer: Converter<IToolAnswer> = Converters.strictObject<IToolAnswer>(
-  { taskId: Converters.string, state: Converters.string, revision: Converters.number },
-  { optionalFields: ['revision'] }
-);
+const toolAnswer: Converter<IToolAnswer> = Converters.strictObject<IToolAnswer>({
+  taskId: Converters.string,
+  state: Converters.string,
+  revision: Converters.number.optional()
+});
 
 /**
  * A tool's answer: its converted result, or the code word its failure line carries

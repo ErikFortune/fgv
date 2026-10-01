@@ -225,6 +225,14 @@ function main() {
     link(args);
     return;
   }
+  const ids = ROWS.map((row) => row.name.split(' ')[0]);
+  const unknown = args.only.filter((id) => !ids.includes(id));
+  if (unknown.length > 0) {
+    // A typo must not read as a clean run of zero rows.
+    console.error(`unknown row(s): ${unknown.join(', ')}; rows are ${ids.join(', ')}`);
+    process.exitCode = 1;
+    return;
+  }
   const rows = ROWS.filter((row) => args.only.length === 0 || args.only.includes(row.name.split(' ')[0]));
   const results = [];
   for (const row of rows) {

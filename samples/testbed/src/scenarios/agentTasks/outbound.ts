@@ -53,10 +53,10 @@ const systemMember: Converter<ReadonlyArray<ICapturedSystemBlock>> = Converters.
 >([
   Converters.string.map((text) => succeed([{ text, cached: false }])),
   Converters.arrayOf(
-    Converters.object<IWireBlock>(
-      { text: Converters.string, cache_control: JsonConverters.jsonObject },
-      { optionalFields: ['cache_control'] }
-    )
+    Converters.object<IWireBlock>({
+      text: Converters.string,
+      cache_control: JsonConverters.jsonObject.optional()
+    })
   ).map((blocks) => succeed(blocks.map((b) => ({ text: b.text, cached: b.cache_control !== undefined }))))
 ]);
 

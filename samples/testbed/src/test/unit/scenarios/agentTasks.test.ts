@@ -358,6 +358,39 @@ describe('the journey report', () => {
     ]);
   });
 
+  test('every check is pinned: those not asserted above, by value', () => {
+    const open = ['crawl', 'due-later', 'due-soon', 'plan', 'review'];
+    const pinned: ReadonlyArray<[string, string, unknown]> = [
+      ['1', 'plan carries both scopes', 2],
+      ['1', 'crawl runs', 'running'],
+      ['2', 'both receipts cover the same tasks', ['crawl', 'plan', 'review']],
+      [
+        '3',
+        'tools offered',
+        ['task_query', 'task_inspect', 'task_command_start', 'job_pause', 'job_resume', 'job_advance']
+      ],
+      ['3', 'review unchanged by the rejection', ['waiting', 2]],
+      ['3', 'after the executor applies it, the observation shows it', { step: 1, ref: 'sim/crawl' }],
+      ['3', 'crawl is paused', 'paused'],
+      ['3', 'resume crawl: applied', { taskId: 'crawl', state: 'applied', revision: 4 }],
+      ['3', 'advance crawl, response lost: unknown', 'the outcome is not known'],
+      ['4', 'the attention update is owed', true],
+      ['5', 'after reopen, the source answers for the child', 'unchanged'],
+      ['6', 'open results are the same set at 0, 60 and 180 terminal tasks', [open, open, open]],
+      ['6', 'due results likewise', [['due-soon'], ['due-soon'], ['due-soon']]],
+      ['7', 'accepted, nothing dispatched', ['pending', 0]],
+      ['7', 'the controllable child really paused', 'paused'],
+      ['7', 'released', 'released'],
+      ['7', 'admission is ordinary again', 'succeeded'],
+      ['7-uncertain', 'the next pass resolves it', ['satisfied', 'confirmed']]
+    ];
+    for (const [step, name, value] of pinned) {
+      expect([step, name, observed(report, step, name)]).toEqual([step, name, value]);
+    }
+    // A check added to the journey without a pin here changes this count, and must be pinned.
+    expect(report.steps.reduce((n, s) => n + s.checks.length, 0)).toBe(105);
+  });
+
   test('is deterministic: a second run observes exactly the same values', async () => {
     expect(await runAgentTasksJourney()).toSucceedWith(report);
   });
@@ -582,7 +615,7 @@ describe('the journey helpers', () => {
     expect(await callTool([], 'task_query', {})).toBe('no tool task_query');
   });
 
-  test('a check records undefined as null, and a value with no JSON form visibly', () => {
+  test('a check records undefined as null, and a value with no JSON form never passes', () => {
     const recorder = new StepRecorder('x', 'x');
     recorder.check('absent', undefined, null);
     recorder.check('a function', () => 1, 'x');
@@ -591,10 +624,16 @@ describe('the journey helpers', () => {
       () => 1,
       () => 2
     );
+    recorder.check('NaN is not null', Number.NaN, null);
+    recorder.check('a nested Infinity is not null', [1, { r: Number.POSITIVE_INFINITY }], [1, { r: null }]);
+    recorder.check('the display marker is an ordinary string', '<not JSON>', '<not JSON>');
     expect(recorder.finish().checks.map((c) => [c.observed, c.passed])).toEqual([
       [null, true],
       ['<not JSON>', false],
-      ['<not JSON>', false]
+      ['<not JSON>', false],
+      ['<not JSON>', false],
+      ['<not JSON>', false],
+      ['<not JSON>', true]
     ]);
   });
 });

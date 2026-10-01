@@ -212,7 +212,20 @@ with no detail, and the line's code word is fixed by the tool; that is what a mo
 would have passed for the wrong reason; and two non-JSON values compared equal. A check involving a
 non-JSON value now never passes.
 
-**Layer 2 (Copilot):** COPILOT_RESULTS
+**Layer 2 (Copilot), round 1** (the bare `@copilot review` comment did nothing in 50 minutes; the API
+request then did). Seven findings, all verified and fixed:
+
+| finding | fix |
+|---|---|
+| high — `JSON.stringify` writes `NaN`/`Infinity` as `null`, so an invalid observation could pass against an expected `null` | a replacer refuses non-finite numbers at any depth; top-level and nested cases tested |
+| high — the `<not JSON>` sentinel is a valid string, so a real value of that string never passes | validity is carried by the conversion `Result`, never inferred from a value; the marker is display-only; tested |
+| medium — about a third of the checks were asserted only by the blanket `report.passed` | every one of them pinned by value, plus a check-count guard (105), so a new check cannot land unpinned |
+| medium — an unknown matrix row selector ran zero rows and exited clean | unknown selectors are refused, exit 1 |
+| low — `COPILOT_RESULTS` placeholder unresolved | this section |
+| low ×2 — `optionalFields` invisible to the type checker | `.optional()` on the field converters |
+
+The two highs are the same class as the defects layer 1's coverage pass found in `report.ts` — the
+recorder decides what "passed" means, and every check in the journey rests on it.
 
 ## Gates
 
@@ -223,7 +236,7 @@ Run on the committed source after the review fixes and prettier.
 | `rushx build` (`heft build --clean`), both packages | finished, **zero warnings** |
 | `rushx lint`, both packages | clean (`eslint` on the formatted source after the pre-commit prettier pass) |
 | `rushx test` — `ts-agent-tasks` | **2,407 tests** (I2's 2,401 + 6 in `journey/`), 100 % statements / branches / functions / lines, **0 `c8 ignore`** in `src/packlets` |
-| `rushx test` — `samples/testbed` | **608 tests** across 26 suites (30 in `agentTasks`), under the package's own config: jsdom, global 100 % thresholds, with its existing `coveragePathIgnorePatterns`; `src/scenarios/agentTasks` is **not** ignored and is at 100 % on all four metrics, 0 `c8 ignore` |
+| `rushx test` — `samples/testbed` | **609 tests** across 26 suites (31 in `agentTasks`), under the package's own config: jsdom, global 100 % thresholds, with its existing `coveragePathIgnorePatterns`; `src/scenarios/agentTasks` is **not** ignored and is at 100 % on all four metrics, 0 `c8 ignore` |
 | `rush change --verify --target-branch origin/integration/agent-tasks-v1` | passes; `ts-agent-tasks` and `testbed` change files, both `none` (test-only / private sample) |
 | repo-wide `install-run-rush.js rebuild` | **SUCCESS, 37 operations**, no warnings |
 | repo-wide `install-run-rush.js test` | **SUCCESS, 36 operations** + 1 no-op (`typedoc-compact-theme`). The first run failed one unrelated `ts-extras` test (flaky, root-caused, routed) and blocked 20 downstream projects; the re-run is the complete one |

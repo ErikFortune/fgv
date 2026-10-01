@@ -52,21 +52,27 @@ function sameValue(a: JsonValue, b: JsonValue): boolean {
   return left.isSuccess() && right.isSuccess() && left.value === right.value;
 }
 
-/** What a value with no JSON form is recorded as. A check involving one never passes. */
+/** What a value with no JSON form is displayed as. Whether a check passed never reads it. */
 const notJson: string = '<not JSON>';
+
+/** Refuses a number with no JSON form, which `JSON.stringify` would otherwise write as `null`. */
+function finiteOnly(__key: string, value: unknown): unknown {
+  if (typeof value === 'number' && !Number.isFinite(value)) {
+    throw new Error(`${value} has no JSON form`);
+  }
+  return value;
+}
 
 /**
  * A value as JSON — what the report can hold and print. Library values (readonly arrays,
  * interface-typed records) are JSON at runtime. `undefined` becomes `null`, and a property whose
- * value is `undefined` is dropped, exactly as `JSON.stringify` does; a value with no JSON form
- * (a function, a non-finite number) is recorded as {@link notJson}.
+ * value is `undefined` is dropped, exactly as `JSON.stringify` does. A value with no JSON form — a
+ * function, or a non-finite number at any depth — fails, rather than being rewritten into one.
  */
-function toJson(value: unknown): JsonValue {
-  // Not `orDefault`: a successful `null` is a value here, and `orDefault` would replace it.
-  const json: Result<JsonValue> = captureResult(
-    () => JSON.parse(JSON.stringify(value ?? null)) as unknown
+function toJson(value: unknown): Result<JsonValue> {
+  return captureResult(
+    () => JSON.parse(JSON.stringify(value ?? null, finiteOnly) as string) as unknown
   ).onSuccess((parsed) => (parsed === null ? succeed(null) : JsonConverters.jsonValue.convert(parsed)));
-  return json.isSuccess() ? json.value : notJson;
 }
 
 /** Collects one step's checks. */
@@ -82,10 +88,17 @@ export class StepRecorder {
 
   /** Records what was observed against what the design says it should be. */
   public check(name: string, observed: unknown, expected: unknown): void {
-    const o: JsonValue = toJson(observed);
-    const e: JsonValue = toJson(expected);
-    const passed: boolean = o !== notJson && e !== notJson && sameValue(o, e);
-    this._checks.push({ name, observed: o, expected: e, passed });
+    const o: Result<JsonValue> = toJson(observed);
+    const e: Result<JsonValue> = toJson(expected);
+    // Validity is carried by the results, never inferred from a value: a real '<not JSON>' string is
+    // an ordinary value, and a value with no JSON form never passes.
+    const passed: boolean = o.isSuccess() && e.isSuccess() && sameValue(o.value, e.value);
+    this._checks.push({
+      name,
+      observed: o.isSuccess() ? o.value : notJson,
+      expected: e.isSuccess() ? e.value : notJson,
+      passed
+    });
   }
 
   public finish(): IJourneyStep {
