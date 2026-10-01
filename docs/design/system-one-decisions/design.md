@@ -6,8 +6,8 @@ only: no package, no dependency, no change under any `src/`. Every external fact
 together, but not seen end to end), **reported** (a third party says it, and the source could not be
 read here), or **unverified**. Nothing here was run. There was no GPU, and no System-1 server answered
 a request in this phase.
-**Amended 2026-10-01** with the user's answers to OQ-1 (the consumer will experiment, and adoption depends on performance) and OQ-3 (production runs Qwen locally; development connects to a remote Jev or openjev).
-OQ-10 (Qwen runs on vLLM on an Olares One, probably, and on Ollama elsewhere) was answered the same day; see §7.1 item 6 and OQ-12. See §1 decision 6, §7.1, and §8 `meta`.
+**Amended 2026-10-01** with the user's answers to OQ-1 (the consumer will experiment, and adoption depends on performance) and OQ-3 (production runs Qwen locally; development connects to a remote Jev or openjev). See §1 decision 6, §7.1, and §8 `meta`.
+OQ-10 (Qwen runs on vLLM on an Olares One, probably, and on Ollama elsewhere) was answered the same day; see §7.1 item 6 and OQ-12.
 **Date:** 2026-10-01. **Inspected checkout:** `30713277c` (`release` HEAD, the base of
 `integration/system-one-decisions`). `ts-agent-tasks` was read from `origin/integration/agent-tasks-v1`
 at `2a95fbb2`.
