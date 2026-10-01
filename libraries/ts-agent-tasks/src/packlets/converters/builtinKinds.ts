@@ -201,7 +201,8 @@ function _trackedCommand(name: TrackedTaskCommandName): ITaskCommandHandle {
  * **What a host enables with these.** Every reference a command carries — `set-attention`'s list, a
  * reason's `attention`, an outcome's `artifacts` — is accepted on syntax alone: nothing checks that it
  * names anything real, so a model can assert a reference it made up. `succeed`, `fail` and `cancel`
- * record an outcome and a terminal state on the host's behalf, and a terminal state is final.
+ * record a terminal state on the host's behalf, and a terminal state is final; `succeed` always
+ * records an outcome, `fail` and `cancel` record one only when it is sent.
  * @public
  */
 export function trackedTaskDescriptor(): ITaskKindDescriptor<TrackedTaskDetails> {

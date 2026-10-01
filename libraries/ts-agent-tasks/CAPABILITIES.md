@@ -830,14 +830,15 @@ status and only the commands now available).
   are `{ namespace, key }` pairs that nothing resolves: the broker checks identifier syntax, length
   and count, never that a reference names something real. A model can assert a reference it made
   up, and a non-empty `attention` makes the task's baseline delivery category `attention`. I1b
-  withheld `attention` from `task_update` for this reason; offering any of those eight commands
-  offers the capability back. Enable them only where the host either supplies every reference the
+  withheld `attention` from `task_update` for this reason; offering any of those six commands
+  (`wait`, `pause`, `succeed`, `fail`, `cancel`, `set-attention`) offers the capability back. Enable them only where the host either supplies every reference the
   model may use or treats a model-asserted reference as untrusted. (`defaultTaskProjector` removes
   outcome artifacts from views; it does not remove `attention`.)
-- **`succeed`, `fail` and `cancel` assert an outcome on the host's behalf, and are final.** A
-  terminal state is absorbing — no command leaves it — and the outcome's summary and artifacts are
-  stored as the task's result. Enable them where the model's word is the host's record of whether
-  the work was done.
+- **`succeed`, `fail` and `cancel` assert a final state on the host's behalf.** A terminal state is
+  absorbing — no command leaves it. `succeed` always carries an outcome; `fail` and `cancel` carry a
+  reason and *may* carry one. Whatever outcome is sent — its summary and artifacts — is stored as the
+  task's result. Enable them where the model's word is the host's record of whether the work was
+  done.
 - **Two validators, one authority.** The broker validates a tracked command with its own converter,
   never through the registered schema, and that converter is authoritative. The schemas agree with
   it on shape (pinned by fixtures in both directions), but the wire subset has no lengths, patterns

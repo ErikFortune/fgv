@@ -147,15 +147,17 @@ external `resume`. Routed P3 (`docs/TECH_DEBT.md`), with the likely fix in `pack
   is already per command. No command was judged one that must never be tool-reachable.
 - **References are accepted on syntax alone.** Not only `set-attention`: every reason's `attention`
   (`wait`, `pause`, `fail`, `cancel`) and every outcome's `artifacts` (`succeed`, `fail`, `cancel`)
-  are references — eight of the eleven commands. Verified: nothing in `broker/` or
+  are references — six distinct commands of the eleven (`wait`, `pause`, `succeed`, `fail`, `cancel`,
+  `set-attention`). Verified: nothing in `broker/` or
   `implementations/` resolves a reference; the converter checks namespace identifier syntax, a
   single-line bounded key, and the count. A model can assert one it made up, and a non-empty
   `attention` makes the task's baseline delivery category `attention` (`delivery.ts`). I1b withheld
-  `attention` from `task_update` for exactly this; offering any of the eight offers it back.
+  `attention` from `task_update` for exactly this; offering any of the six offers it back.
   `defaultTaskProjector` strips outcome artifacts from views but not `attention`. The wire
   descriptions also tell the model to use only references the host gave it — advice, not a control.
-- **`succeed`, `fail`, `cancel` assert an outcome on the host's behalf and are final** — terminal
-  states are absorbing, and the outcome is stored as the task's result.
+- **`succeed`, `fail`, `cancel` assert a final state on the host's behalf** — terminal states are
+  absorbing. `succeed` always carries an outcome; `fail` and `cancel` may, and any outcome sent is
+  stored as the task's result.
 
 ## Every check-then-act window in the diff
 
@@ -213,7 +215,19 @@ re-run alone on the same source — 10 red. `--check` on the final tree: every T
 
 ### Layer 2 — Copilot
 
-*(in progress)*
+Triggered by an `@copilot review` comment plus an API request (00:30 UTC); posted 00:34.
+
+**Round 1 (on `26c5ed83`) — two medium, four low; all real, all fixed in the next push.**
+
+| finding | fix |
+|---|---|
+| **(medium)** the e2e suite cast captured request bodies (`JSON.parse(…) as Body`, `tools as JsonObject[]`) | every captured value goes through `JsonConverters.jsonObject` / `arrayOf(jsonObject)`; a missing tool fails loudly by name instead of a `!` |
+| **(medium)** the same for Gemini's nested `function_declarations` | the same converters |
+| **(low ×3)** "eight" reference-bearing commands double-counted `fail` and `cancel` (in `CAPABILITIES.md`, `result.md`, the ledger) | six: `wait`, `pause`, `succeed`, `fail`, `cancel`, `set-attention` — now named where the count is given |
+| **(low)** the descriptor TSDoc (and `CAPABILITIES.md`, the ledger) said all three terminal commands record an outcome | `succeed` always does; `fail` and `cancel` only when one is sent |
+
+No source behaviour changed, so the matrix rows' patterns are untouched (`--check`: all TC rows found
+once) and the results above stand. Package suite re-run: 95 suites, 2,276 tests, 100 %.
 
 ## Routed beyond this slice
 

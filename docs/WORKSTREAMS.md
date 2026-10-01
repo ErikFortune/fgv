@@ -147,8 +147,9 @@ converter enforces and one coercion only it performs.
 
 **Evidence.** End to end through a real broker and a streamed model turn: each command moves the
 task and `task_inspect` reports it. Stale revision and unavailable transition are I1c's fixed
-conflict line, naming no status. Hazards documented for hosts: references (8 of 11 commands) are
-accepted on syntax alone; `succeed`/`fail`/`cancel` assert final outcomes. Matrix rows `TC-1…TC-11`.
+conflict line, naming no status. Hazards documented for hosts: references (6 of 11 commands) are
+accepted on syntax alone; `succeed`/`fail`/`cancel` assert a final state (an outcome always for
+`succeed`, optionally for `fail`/`cancel`). Matrix rows `TC-1…TC-11`.
 Routed: the unknown-line for converter-only refusals (I1d's), Gemini empty nested objects,
 `fgv.task-list@1` commands, a `ts-utils` `null → {}` quirk.
 

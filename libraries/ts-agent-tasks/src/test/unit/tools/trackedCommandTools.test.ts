@@ -12,6 +12,7 @@
  */
 
 import '@fgv/ts-utils-jest';
+import { Converters } from '@fgv/ts-utils';
 import { AiAssist } from '@fgv/ts-extras';
 import { Converters as JsonConverters, JsonObject } from '@fgv/ts-json-base';
 import {
@@ -306,7 +307,26 @@ describe('what a refused tracked command tells the model — no new disclosure c
 // Through a model turn
 // ------------------------------------------------------------------------------------------
 
-type Body = Record<string, unknown>;
+type Body = JsonObject;
+
+/** A captured value as a JSON object — converted, never asserted. */
+function obj(value: unknown): JsonObject {
+  return JsonConverters.jsonObject.convert(value).orThrow();
+}
+
+/** A captured array of JSON objects (absent reads as empty) — converted, never asserted. */
+function objects(value: unknown): JsonObject[] {
+  return value === undefined ? [] : Converters.arrayOf(JsonConverters.jsonObject).convert(value).orThrow();
+}
+
+/** The captured tool or declaration named `name`, failing loudly when it was not sent. */
+function named(items: ReadonlyArray<JsonObject>, name: string): JsonObject {
+  const found = items.find((item) => item.name === name);
+  if (found === undefined) {
+    throw new Error(`nothing named ${name} was sent`);
+  }
+  return found;
+}
 
 /** Stubs `fetch`: records each request body and answers with one SSE stream per call, in turn. */
 function captureRequests(streams: ReadonlyArray<string>): Body[] {
@@ -314,7 +334,7 @@ function captureRequests(streams: ReadonlyArray<string>): Body[] {
   const encoder = new TextEncoder();
   let n = 0;
   jest.spyOn(global, 'fetch').mockImplementation(async (__url, init) => {
-    bodies.push(JSON.parse(String(init?.body)) as Body);
+    bodies.push(obj(JSON.parse(String(init?.body))));
     const sse = streams[Math.min(n++, streams.length - 1)];
     return {
       ok: true,
@@ -375,7 +395,7 @@ function anthropicCalls(id: string, name: string, args: object): string {
 }
 
 function toolsOf(body: Body | undefined): JsonObject[] {
-  return (body?.tools ?? []) as JsonObject[];
+  return objects(body?.tools);
 }
 
 describe('through a model turn', () => {
@@ -420,15 +440,9 @@ describe('through a model turn', () => {
       'anthropic',
       offered.map((name) => tools.get(name))
     );
-    const anthropicStart = toolsOf(bodies[0]).find((t) => t.name === 'task_command_start')!;
-    expect((anthropicStart.input_schema as JsonObject).properties).toEqual(
-      expect.objectContaining({ parameters: emptyParameters })
-    );
-    expect((anthropicStart.input_schema as JsonObject).required).toEqual([
-      'taskId',
-      'expectedRevision',
-      'parameters'
-    ]);
+    const anthropicSchema = obj(named(toolsOf(bodies[0]), 'task_command_start').input_schema);
+    expect(anthropicSchema.properties).toEqual(expect.objectContaining({ parameters: emptyParameters }));
+    expect(anthropicSchema.required).toEqual(['taskId', 'expectedRevision', 'parameters']);
 
     jest.restoreAllMocks();
     bodies = captureRequests([responsesDone]);
@@ -436,10 +450,8 @@ describe('through a model turn', () => {
       'openai',
       offered.map((name) => tools.get(name))
     );
-    const openaiStart = toolsOf(bodies[0]).find((t) => t.name === 'task_command_start')!;
-    expect((openaiStart.parameters as JsonObject).properties).toEqual(
-      expect.objectContaining({ parameters: emptyParameters })
-    );
+    const openaiSchema = obj(named(toolsOf(bodies[0]), 'task_command_start').parameters);
+    expect(openaiSchema.properties).toEqual(expect.objectContaining({ parameters: emptyParameters }));
   });
 
   test('Gemini receives the empty-parameter commands as an object with no properties — sanitized, not live-verified', async () => {
@@ -448,12 +460,12 @@ describe('through a model turn', () => {
       'google-gemini',
       offered.map((name) => tools.get(name))
     );
-    const declarations = toolsOf(bodies[0]).flatMap((t) => (t.function_declarations ?? []) as JsonObject[]);
-    const start = declarations.find((d) => d.name === 'task_command_start')!;
+    const declarations = toolsOf(bodies[0]).flatMap((t) => objects(t.function_declarations));
+    const start = named(declarations, 'task_command_start');
     // Gemini's dialect drops `additionalProperties`; what remains is an OBJECT with empty properties.
     // Whether Gemini's API accepts a nested OBJECT with no properties is not established here
     // (docs/TECH_DEBT.md).
-    expect(((start.parameters as JsonObject).properties as JsonObject).parameters).toEqual({
+    expect(obj(obj(start.parameters).properties).parameters).toEqual({
       type: 'object',
       properties: {},
       description: 'No parameters: start a pending task.'
