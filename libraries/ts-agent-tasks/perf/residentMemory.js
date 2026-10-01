@@ -11,6 +11,10 @@
  * (`src/test/unit/storage/counters.test.ts`); nothing here replaces it.
  *
  *   node perf/residentMemory.js [--reps 5] [--cohorts fixture,archived,terminal,peak] [--out f.json]
+ *   node perf/residentMemory.js --cohorts fixture,stop,productionProfile [--reps 5] [--out f.json]
+ *
+ * The stop-state and production-profile cohorts (agent-tasks-m1-stop) live in `stopCohort.js` and
+ * `profileCohort.js` over `m1Support.js`; they are not in the default list because they take hours.
  *
  * Requires a built `lib/` (`rushx build`). The parent never measures anything itself: every
  * number comes from a fresh child process (`node --expose-gc`), and every arm of every cohort
@@ -404,7 +408,9 @@ async function seed(dir, spec) {
       mode: 'session',
       environment: environment(pkg),
       registry: registry(pkg),
-      profile: fixtureProfile(pkg)
+      // `spec.profile` is the production-profile cohort's (agent-tasks-m1-stop); absent, as for every
+      // frozen cohort, the fixture profile.
+      profile: spec.profile !== undefined ? spec.profile(pkg) : fixtureProfile(pkg)
     })
   ).orThrow();
   for (let i = 0; i < spec.fixed; i++) {
@@ -880,7 +886,43 @@ function main() {
         }`
     );
   }
+  for (const [name, key] of [
+    ['stop', 'stop'],
+    ['productionProfile', 'profile']
+  ]) {
+    if (cohorts.includes(name)) {
+      const ran = m1Cohorts()[key].run(reps);
+      report.raw[name] = ran.raw;
+      report.results[name] = ran.results;
+      const verdicts = Object.entries(ran.results.verdicts)
+        .map(([k, v]) => `${k} ${v ? 'PASS' : 'MISS'}`)
+        .join(', ');
+      console.error(`\n${name}: ${verdicts}`);
+    }
+  }
   emit(report, outFile);
+}
+
+/** The agent-tasks-m1-stop cohorts, given this harness's shared machinery. */
+function m1Cohorts() {
+  const base = {
+    lib,
+    hex,
+    settle,
+    nodeRoot,
+    sampledRoot,
+    fixtureProfile,
+    child,
+    withRoot,
+    stat,
+    median,
+    fmt,
+    seed,
+    measure,
+    COHORTS
+  };
+  const m1 = require('./m1Support')(base);
+  return { m1, stop: require('./stopCohort')(base, m1), profile: require('./profileCohort')(base, m1) };
 }
 
 function emit(report, outFile) {
@@ -908,7 +950,24 @@ async function childMain(mode, args) {
   return fixtureCheck();
 }
 
-if (['seed', 'measure', 'fixture'].includes(process.argv[2])) {
+async function m1ChildMain(mode, args) {
+  if (typeof global.gc !== 'function') {
+    throw new Error('children run with --expose-gc');
+  }
+  const cohorts = m1Cohorts();
+  const owner = cohorts.stop.modes.includes(mode) ? cohorts.stop : cohorts.profile;
+  return owner.childMain(mode, args);
+}
+
+if (process.argv[2] === 'm1') {
+  m1ChildMain(process.argv[3], process.argv.slice(4)).then(
+    (result) => console.log(JSON.stringify(result)),
+    (error) => {
+      console.error(error);
+      process.exit(1);
+    }
+  );
+} else if (['seed', 'measure', 'fixture'].includes(process.argv[2])) {
   childMain(process.argv[2], process.argv.slice(3)).then(
     (result) => console.log(JSON.stringify(result)),
     (error) => {
