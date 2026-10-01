@@ -287,8 +287,8 @@ function _inspectStopTool(ctx: IStopToolContext): AiAssist.IAiClientTool {
       name,
       description:
         "Read a stop's current state: the stop, and a page of the tasks under it you can see with where " +
-        'each stands. Continue with nextAfter. It says only that some task you cannot see is not yet ' +
-        'stopped, never which.',
+        'each stands. Continue with nextAfter. It says only that some task you cannot see is not ' +
+        'confirmed as stopped, never which.',
       parametersSchema: taskStopInspectSchema,
       annotations: inspectAnnotations
     },
