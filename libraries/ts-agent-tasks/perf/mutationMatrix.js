@@ -1782,10 +1782,10 @@ const TC_ROWS = [
     TCS
   ),
   m(
-    "TC-3 a reason's attention is dropped from the schema (schema narrower than the converter)",
+    "TC-3 a reason's attention refuses every real reference (schema narrower than the converter)",
     BK,
     '  attention: JsonSchema.optional(attentionSchema)\n};',
-    '  attention: JsonSchema.optional(JsonSchema.array(JsonSchema.string()))\n};',
+    '  attention: JsonSchema.optional(\n    JsonSchema.array(\n      JsonSchema.object({ namespace: JsonSchema.string(), key: JsonSchema.string(), x: JsonSchema.string() })\n    )\n  )\n};',
     TCS
   ),
   m(

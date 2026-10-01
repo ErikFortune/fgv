@@ -261,7 +261,7 @@ back as `expectedRevision`.
 **I1c — ✅ implemented on `integration/agent-tasks-v1` ([#704](https://github.com/ErikFortune/fgv/pull/704)):**
 one opt-in tool per registered command a host names, its wire schema the registered parameter schema
 (`ITaskCommandHandle.parameters`); a command whose outcome is unknown is never resent by the model.
-**Tracked commands — ✅ implemented on `integration/agent-tasks-v1` (`agent-tasks-tracked-commands`, PR pending):**
+**Tracked commands — ✅ implemented on `integration/agent-tasks-v1` (`agent-tasks-tracked-commands`, [#705](https://github.com/ErikFortune/fgv/pull/705)):**
 `trackedTaskDescriptor()` registers all eleven `fgv.tracked@1` transitions with `JsonSchema` parameter
 schemas, so I1c's generator offers them with no change to the tool packlet; a model can now move a
 tracked task's lifecycle, not only create and edit it.

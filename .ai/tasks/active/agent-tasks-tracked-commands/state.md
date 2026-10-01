@@ -1,51 +1,31 @@
 # State — `agent-tasks-tracked-commands`
 
-**Status:** brief written, not started. Awaiting the I1c landing before the branch is cut.
+**Status:** implemented; PR [#705](https://github.com/ErikFortune/fgv/pull/705) open into
+`integration/agent-tasks-v1`. Layer 1 done; Copilot loop in progress.
 
 ## Where things stand
 
 | | |
 |---|---|
-| brief | `.ai/tasks/active/agent-tasks-tracked-commands/brief.md` — complete |
-| branch | **not yet cut.** `claude/agent-tasks-tracked-commands` off `integration/agent-tasks-v1` at the I1c landing |
-| PR | none |
-| base | `integration/agent-tasks-v1` — **not `release`** |
+| brief | `brief.md` — complete |
+| branch | `claude/agent-tasks-tracked-commands`, cut off `integration/agent-tasks-v1` at `d1be4d2fa` |
+| PR | [#705](https://github.com/ErikFortune/fgv/pull/705) — base `integration/agent-tasks-v1`, **not `release`** |
+| result | `result.md` — decision, fixtures, e2e, disclosure, review, routing, gates |
 
-## Why this stream exists
+## Decisions taken
 
-I1c ships command tools generated from the kind registry, but `fgv.tracked@1` registers **no
-commands** — its eleven transitions have converters and no `JsonSchema`. So a model can create and
-edit a tracked task (I1b) but cannot move its lifecycle. I1c routed this as a P3 with "a consumer
-that wants a model to drive a tracked task's lifecycle" as the trigger; **the user chose to fix it
-proactively instead** (2026-09-30), so it is a designed slice, not debt repayment.
+- **Option 1 — two validators, agreement as a fixture obligation.** `_prepare` unchanged; the
+  converter is authoritative. Argued against unification in `result.md`.
+- **All eleven registered**; the host's `enable` list chooses. No command withheld.
+- **`idempotency: 'none'`, `conditional: false`** — inert on native paths (layer-1 P2-1).
 
-`trackedTaskDescriptor()`'s own docstring already anticipated this: the command names are vocabulary
-T1 owns, and *"their parameter schemas belong to the slice that implements the transitions they
-name."* This is that slice.
+## Remaining
 
-## What is already built (verified, do not rebuild)
+- Copilot loop (trigger with an `@copilot review` comment; the API trigger is unreliable).
+- Keep the matrix results in `result.md` current if a review round moves `builtinKinds.ts`.
+- Do **not** run `/finalize-task`; the family finalizes at cluster close.
 
-- `broker/commands.ts` → `_prepare` accepts native tracked commands, validates the name against
-  `trackedTaskCommandNames`, converts through `trackedCommand`, refuses a stale `expectedRevision`;
-  `evaluateTrackedCommand` / `commitTrackedCommand` apply it.
-- `broker/reads.ts` reports `availableTrackedCommands`, which `task_inspect` surfaces.
-- I1c's generator builds a tool per `ITaskCommandToolSpec` from the registry.
+## Do not touch
 
-Missing: the registrations themselves.
-
-## The open decision
-
-**`_prepare` never consults the registry** — it validates with `core.converters.broker.trackedCommand`
-directly. Registering schemas therefore creates two validation paths with **no runtime cross-check**
-(weaker than the external case, where `createTaskCommandHandle` checks that the encoded form
-re-validates). Either accept a pure fixture obligation, per the `detailSchema` precedent, or unify
-`_prepare` onto the registered handle. Set out in the brief; undecided on purpose.
-
-## Parallelism
-
-Runs alongside **I1d**, which owns `packlets/tools/` and `fixedTaskToolNames`. This stream must touch
-neither. Needing a tools change is a collision to surface, not a scope to take.
-
-## Resume instructions
-
-`brief.md` plus this file is enough to start cold. Nothing is implemented.
+`packlets/tools/` and `fixedTaskToolNames` (I1d's). Matrix row TC-11 only mutates
+`tools/commandTools.ts` in a throwaway copy; re-point it if I1d moves `rejectionCodes`.

@@ -167,7 +167,25 @@ against copies captured before the writer). The tests exercise them unchanged.
 
 ## Revert matrix — run on final source
 
-*(filled in below after the run)*
+`perf/mutationMatrix.js --pkg <git-archive copy of 4b087df9, node_modules symlinked> TC-1 … TC-11`,
+not concurrent with any rebuild (the repo-wide rebuild and test had finished first). **11 rows, 0
+UNVERIFIED, 0 `0 red`.** The first run reported TC-3 UNVERIFIED (its mutant did not type-check
+against the annotated `reasonProperties`); it was re-pointed to a type-compatible narrowing and
+re-run alone on the same source — 10 red. `--check` on the final tree: every TC pattern found once.
+
+| row | red | the named protections that went red (selection; full list in the run log) |
+|---|---|---|
+| TC-1 fgv.tracked@1 registers no commands | 106 | every registration, wire-literal and e2e test — the tools cannot even be built |
+| TC-2 ten of eleven registered (one without its schema) | 26 | *exactly trackedTaskCommandNames, in its order*; *each is reachable through a registry*; the e2e suites that build all eleven |
+| TC-3 a reason's `attention` refuses every real reference | 10 | *pause accepts a reason with attention on both sides*; *wait accepts every optional member*; wait/pause/fail/cancel wire literals; *the schema admits every canonical form…* |
+| TC-4 `succeed`'s outcome optional in the schema | 3 | *succeed refuses no outcome on both sides*; *succeed: the wire schema is pinned*; *each is reachable through a registry* |
+| TC-5 `fail` requires an outcome | 5 | *fail accepts a reason and no outcome on both sides*; e2e *fail and cancel are terminal…*; wire literal; canonical-form row |
+| TC-6 `start` an open object | 8 | *start refuses a surplus property on both sides*; *a shape the schema refuses never reaches the writer*; *Anthropic and OpenAI receive the empty-parameter commands as an empty closed object*; wire literal |
+| TC-7 `wait` takes a plain reason | 7 | e2e *start → wait → resume → pause → succeed*; *wait accepts every optional member*; both `notBefore` only-schema rows |
+| TC-8 `set-attention` a single reference | 9 | e2e *the set-\* commands change the field…*; *set-attention accepts two references*; *refuses a single reference, not a list* |
+| TC-9 a tracked handle registers `source-key` | 1 | *each registers as the inert dispatch values…* |
+| TC-10 stale `expectedRevision` evaluated, not refused (`_prepare`) | 1 | *a stale expectedRevision is refused as conflict, and the task does not move* |
+| TC-11 `invalid-transition` reaches the model by name (`tools/commandTools.ts`, mutated in the copy only) | 1 | *a transition unavailable from the current status is the fixed conflict line, naming no status* |
 
 ## Review
 
@@ -211,4 +229,20 @@ against copies captured before the writer). The tests exercise them unchanged.
 
 ## Gates
 
-*(filled in below)*
+Run locally on `645120a2` (source identical to the head that follows; later commits touch only
+`perf/` and docs).
+
+| gate | result |
+|---|---|
+| `rush change --verify --target-branch origin/integration/agent-tasks-v1` | change file found (`minor`) |
+| `rushx build` (package) | clean, **zero warnings**; `etc/ts-agent-tasks.api.md` unchanged |
+| `rushx lint` / fixlint | clean; pre-commit prettier |
+| `rushx test` (package) | **95 suites, 2,276 tests; 100 % statements, branches, functions, lines; zero `c8 ignore`** |
+| `rush rebuild` (repo-wide) | exit 0 (3 min 44 s) |
+| `rush test` (repo-wide) | exit 0 (7 min 19 s) — run although option 1 was taken: `trackedTaskDescriptor()` now returns more, a behaviour change no compiler sees (no other package depends on `ts-agent-tasks`) |
+| `verify-capability-docs.mjs` | 24/24 documented, 75 reflexes, 0 failed |
+| `generate-capability-feed.mjs --check` | 0 stale |
+| `verify-esm-entrypoints.mjs` | 24 checked, 0 failed |
+| `verify-bundler-resolution.mjs` | 20 checked, 0 failed |
+| `verify-tarball-exports.mjs` | 26 packages, 205 paths, 0 failed |
+| revert matrix | 11 rows, 0 UNVERIFIED, 0 `0 red` (above) |
