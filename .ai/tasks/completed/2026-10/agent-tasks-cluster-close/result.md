@@ -198,12 +198,15 @@ to revert. The gate is not silently unmet: it does not apply.
 | `rush change --verify --target-branch origin/integration/agent-tasks-v1` | **fails without a change file** — the regenerated `libraries/ts-agent-tasks/CAPABILITIES.md` makes `@fgv/ts-agent-tasks` a touched project (docs/ and .ai/ alone touch none). One `type: none` change file added; passes |
 | `generate-capability-feed --check` | 0 stale (50 usable, 11 unusable, 15 opted out) |
 | `verify-capability-docs` | pass; router **22,071 / 24,000** chars |
-| `verify-esm-entrypoints` / `verify-bundler-resolution` / `verify-tarball-exports` | see *Gate run* below |
+| `verify-esm-entrypoints` / `verify-bundler-resolution` / `verify-tarball-exports` | pass — 24 checked / 20 checked / 26 packages, 205 manifest paths; 0 failed each |
 | `rushx build/lint/test` in touched packages | the only touched package file is `CAPABILITIES.md` (generated docs); no source, so none applies — covered by the repo-wide rebuild below |
 | no `src/` file changed | `git diff --name-only origin/integration/agent-tasks-v1... | grep '/src/'` → empty |
 | migration complete | 63 × `R100` + 18 `meta.yaml` + 18 `README.md`; no agent-tasks slice left in `active/` |
 
-GATE_RUN_PLACEHOLDER
+**Gate run** (local, after `rush install`): repo-wide `rush rebuild` — **SUCCESS, 37 operations**,
+4 min 17 s, no warnings; then the three export verifiers in CI's order, all 0 failed. Repo-wide
+`rush test` was not run: nothing here changes what any function accepts, returns or classifies
+(`CODING_STANDARDS.md`'s trigger for it), and no source changed.
 
 ## Review
 
