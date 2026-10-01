@@ -85,7 +85,14 @@ const MANIFEST = {
       '128-character id overflowed its bound. The clone path now writes a fresh random claim id of the ' +
       'same length. Those five arms alone were re-run (--only, --merge) and analysed together with the ' +
       "first run's other arms, whose clones keep suffixed claim ids of at most 41 characters — no verdict " +
-      'reads a claim id. No prediction, threshold or fixture shape changed.'
+      'reads a claim id. No prediction, threshold or fixture shape changed.',
+    '2026-10-01 (agent-tasks-m1-stop), after both recorded runs: the m1 measuring child sampled its ' +
+      '"after close" residual from the async frame that opened the repository, which a suspended frame ' +
+      'keeps alive (heap snapshot: GC roots -> stack -> open result -> repository -> TaskIndex). Every ' +
+      "m1 arm's afterClose in those runs is inflated by its own index; a diagnostic with the open in an " +
+      'inner frame gives the owed corpus 1.18 MiB instead of 13.17 MiB. The open now runs in an inner ' +
+      'frame. The residual is not a prediction, no predicted sample is affected (the repository is live ' +
+      'at each), and the runs were not repeated for it.'
   ],
   extensions: {
     stated: '2026-10-01, before any run of the stop or productionProfile cohorts, on e662da68c',

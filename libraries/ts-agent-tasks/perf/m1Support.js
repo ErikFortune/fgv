@@ -430,8 +430,18 @@ module.exports = function support(base) {
    * close. `action(repository, peak, out)` may add fields; it must drop what it holds.
    */
   async function openMeasure(dir, world, action) {
-    const { pkg, internals } = base.lib();
     const baseline = settle();
+    // Everything that touches the repository runs in an inner frame: a suspended async frame keeps
+    // the values it awaited, so sampling "after close" from the frame that opened the repository
+    // measures the harness holding it (heap snapshot: stack -> open result -> repository -> index).
+    const out = await openAndMeasure(dir, world, action, baseline);
+    out.afterClose = settle();
+    out.maxRssKiB = process.resourceUsage().maxRSS;
+    return out;
+  }
+
+  async function openAndMeasure(dir, world, action, baseline) {
+    const { pkg, internals } = base.lib();
     const peak = { heapUsed: 0 };
     resetPeak(peak);
     sampleJsonBoundaries(peak);
@@ -485,8 +495,6 @@ module.exports = function support(base) {
     repository.close().orThrow();
     repository = undefined;
     sampling = undefined;
-    out.afterClose = settle();
-    out.maxRssKiB = process.resourceUsage().maxRSS;
     return out;
   }
 
