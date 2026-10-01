@@ -788,25 +788,63 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
 
   **Reference**: `agent-tasks-i1c` layer-1 review P2-2.
 
-- **[P3] `fgv.tracked@1`'s transitions cannot be offered as model tools: the kind registers no
-  command schemas.** I1c generates command tools from the kind registry, and `trackedTaskDescriptor()`
-  registers no commands — its eleven transitions (`start`, `succeed`, `fail`, `cancel`, …) have
-  converters (`TaskConverters.broker.trackedCommand`) but no `JsonSchema`, so there is nothing typed to
-  put on the wire. A model can create and edit a tracked task (I1b) but cannot move its lifecycle. The
-  plan's I1 test list names "tracked and simulated external command outcomes"; I1c tests the external
-  ones end to end, and tracked outcomes only through I1b's mutation tools.
+- **[P3] A command tool tells the model "do not send it again" for a native command the broker
+  refused before recording anything.** `fgv.tracked@1`'s registered schemas cannot state the
+  converter's bounds (the `JsonSchema` subset has no lengths, patterns or ranges), so a
+  schema-valid value — an empty or two-line title, a code outside identifier syntax, a
+  non-canonical `notBefore`, `total` below `completed`, too many references — reaches the writer,
+  whose `_prepare` (`broker/commands.ts`) refuses it as `invalid` **before any write**. I1c's tool
+  (`tools/commandTools.ts`) reads every writer failure except `not-found-or-denied` as the unknown
+  line, which is right for an external command (an intent may already be recorded) and wrong here:
+  nothing was recorded, and the model could correct the value. The safe direction — a model told
+  to stop does not double-apply anything — so a usability gap, not a safety one. Pinned:
+  `trackedCommandTools.test.ts` › *a value only the converter refuses…*.
 
-  **Trigger**: a consumer that wants a model to drive a tracked task's lifecycle.
+  **Trigger**: I1d, which owns `packlets/tools/` — or the first consumer whose model hits it.
 
-  **Scope sketch**: give each tracked command a wire schema that agrees with its converter (a fixture
-  obligation, as for `detailSchema`), register them on `fgv.tracked@1` so they are the registry's
-  like any other kind's, and decide which transitions a model may be offered at all — `succeed` and
-  `fail` carry outcomes a host may not want a model to assert. Then they are ordinary
-  `ITaskCommandToolSpec`s.
+  **Scope sketch**: either the writer distinguishes "refused, nothing recorded" in its failure
+  detail and the tool reads that as a determinate `invalid` line, or the tool treats `invalid` as
+  determinate for a native kind (every native refusal precedes the writer section). A fixed line,
+  never the converter's message — it names bounds and values.
 
-  **Not a P4**: a whole class of commands is unreachable from the tool surface the plan describes.
+  **Not a P4**: the model is told the opposite of the truth about whether to retry.
 
-  **Reference**: `.ai/tasks/active/agent-tasks-i1c/result.md`.
+  **Reference**: `agent-tasks-tracked-commands` (`.ai/tasks/active/agent-tasks-tracked-commands/result.md`).
+
+- **[P3] Gemini has not been shown to accept a nested object schema with no properties.** `start`
+  and `resume` (and any registered command with no parameters) put `parameters: { type: 'object',
+  properties: {} }` inside the command tool's declaration once the Gemini adapter
+  (`ts-extras` `toolFormats.ts`, `toGeminiParameterSchema`) has dropped `additionalProperties`.
+  Gemini's OpenAPI-subset `parameters` has historically refused an `OBJECT` with empty `properties`
+  ("should be non-empty for OBJECT type"); whether that applies to a nested property today is not
+  established, and no test here can call the live API. I1c already sent the same shape for an
+  external `resume`. Pinned as sent: `trackedCommandTools.test.ts` › *Gemini receives…*.
+
+  **Trigger**: the first live Gemini run that offers a no-parameter command tool.
+
+  **Scope sketch**: verify live. If refused, the likeliest fix is in `packlets/tools/`: omit
+  `parameters` from a command tool's envelope when the registered schema has no properties, and
+  supply `{}` to the writer. (The adapter cannot drop the property alone — the tool's validator
+  would then refuse the call.)
+
+  **Not a P4**: if Gemini refuses, every tool set offering one of these commands fails on Gemini.
+
+  **Reference**: `agent-tasks-tracked-commands`.
+
+- **[P3] `fgv.task-list@1` registers no commands, so a model cannot cancel, fail or edit a list
+  through command tools.** A list accepts `fail`, `cancel` and the `set-*` commands through
+  `execute` (`listRefusedCommands` excludes only the own-work transitions), but
+  `taskListDescriptor()` registers none, and I1c's tools are per kind. Not taken by
+  `agent-tasks-tracked-commands`, whose brief is `fgv.tracked@1`.
+
+  **Trigger**: a consumer that wants a model to close or edit a task list.
+
+  **Scope sketch**: register the six list-accepted commands on `taskListDescriptor()` with the same
+  schemas (they are the same converter) and extend the agreement fixtures to the list registration.
+
+  **Not a P4**: a class of commands the broker supports is unreachable from the tool surface.
+
+  **Reference**: `agent-tasks-tracked-commands`.
 
 - **[P3] `jsonThreeWayDiff` silently drops an own `__proto__` key.**
   `libraries/ts-json/src/packlets/diff/threeWayDiff.ts` builds `onlyInA` / `onlyInB` / `unchanged`
@@ -1329,6 +1367,23 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
   **Reference**: PR #329 review — pattern pre-existed the PR, absolved from that review.
 
 ## P4 — Doc / minor consistency
+
+- **[P4] An object converter with no fields converts `null` to `{}`.** `@fgv/ts-utils`
+  `Converters.object({})` and `Converters.strictObject({})` both succeed on `null` with `{}`; an
+  object converter with any field refuses `null` ("Cannot convert field … from non-object null").
+  `JsonSchema.object({})` inherits it. Observed through `fgv.tracked@1`'s `start` / `resume`, where
+  schema and converter agree (both canonicalize `null` to `{}`), so nothing disagrees and nothing
+  unsafe is stored — but "strict empty object" does not mean "an object".
+
+  **Trigger**: the next change to the `ts-utils` object converters.
+
+  **Scope sketch**: refuse a non-object (`null`, array) before the field loop, as the non-empty case
+  already does in effect. Established surface: check consumers that rely on `null → {}` first.
+
+  **Not a P5**: there is no P5; it is a semantic quirk on an established surface, recorded so it is
+  not rediscovered.
+
+  **Reference**: `agent-tasks-tracked-commands` — `trackedCommandSchemas.test.ts` pins it as agreed.
 
 - **[P4] `mutableFsTree` `permission-denied for read-only file` test fails when the test container runs as root.**
   `@fgv/ts-json-base` `mutableFsTree` suite — one test expects `chmod`-based read-only enforcement to block a write. When the test container runs as root (the default in the cloud-agent harness), `chmod` is advisory; the kernel lets root write read-only files regardless. Reproduces on the `release` baseline; **not a regression** from any recent stream. Surfaced (and explicitly dispositioned as unrelated) during the `capture-async-result-upgrade` full-repo `rush test` sweep (PR #433).

@@ -469,8 +469,10 @@ describe('built-in kinds', () => {
   });
 
   test('an empty command registry is supported', () => {
+    // fgv.task-list@1 registers no commands; fgv.tracked@1 registers its eleven
+    // (trackedCommandSchemas.test.ts).
     const registry: TaskKindRegistry = newRegistry();
-    const handle = registry.register(trackedTaskDescriptor()).orThrow();
+    const handle = registry.register(taskListDescriptor()).orThrow();
     expect(handle.commandNames).toEqual([]);
   });
 });

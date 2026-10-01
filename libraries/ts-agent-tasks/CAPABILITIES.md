@@ -803,9 +803,56 @@ const tools = createTaskTools({
   `task_create`, `task_update`, `task_reassign` — whether or not that tool is offered, and two
   commands under one name (two kinds registering the same command, say) refuse the whole set at
   build time: the host names one. Never last-one-wins.
-- **Coverage:** commands come from the registry, so only kinds that register commands — external
-  kinds, through `ExternalTaskSource.commandHandles` — have them. `fgv.tracked@1` registers none
-  (its transitions have names but no registered schemas), so tracked transitions are not offered.
+- **Coverage:** commands come from the registry, so a kind has command tools exactly when it
+  registers commands: external kinds through `ExternalTaskSource.commandHandles`, and
+  `fgv.tracked@1`, whose `trackedTaskDescriptor()` registers all eleven transitions (below).
+  `fgv.task-list@1` registers none.
+
+#### Tracked commands as tools — what a host is enabling
+
+```ts
+const enable = (['start', 'wait', 'resume', 'set-progress'] as const).map((command) => ({
+  kind: trackedTaskKind,
+  detailVersion: trackedTaskDetailVersion,
+  command
+}));
+// task_command_start, task_command_wait, task_command_resume, task_command_set-progress
+```
+
+All eleven are registered; **which a model is offered is the host's `enable` list**, one entry per
+command — nothing is withheld at registration, because a schema withheld there would be withheld
+from every host, including one driving its own trusted actor. A call moves the task through the
+same transition table as `execute` (`applied` with the new revision; `task_inspect` reports the new
+status and only the commands now available).
+
+- **References are accepted on syntax alone.** `set-attention`'s list, every reason's `attention`
+  (`wait`, `pause`, `fail`, `cancel`) and every outcome's `artifacts` (`succeed`, `fail`, `cancel`)
+  are `{ namespace, key }` pairs that nothing resolves: the broker checks identifier syntax, length
+  and count, never that a reference names something real. A model can assert a reference it made
+  up, and a non-empty `attention` makes the task's baseline delivery category `attention`. I1b
+  withheld `attention` from `task_update` for this reason; offering any of those eight commands
+  offers the capability back. Enable them only where the host either supplies every reference the
+  model may use or treats a model-asserted reference as untrusted. (`defaultTaskProjector` removes
+  outcome artifacts from views; it does not remove `attention`.)
+- **`succeed`, `fail` and `cancel` assert an outcome on the host's behalf, and are final.** A
+  terminal state is absorbing — no command leaves it — and the outcome's summary and artifacts are
+  stored as the task's result. Enable them where the model's word is the host's record of whether
+  the work was done.
+- **Two validators, one authority.** The broker validates a tracked command with its own converter,
+  never through the registered schema, and that converter is authoritative. The schemas agree with
+  it on shape (pinned by fixtures in both directions), but the wire subset has no lengths, patterns
+  or ranges, so a schema-valid value can still be refused: an empty or multi-line title, a code
+  outside identifier syntax, a `notBefore` that is not canonical `YYYY-MM-DDTHH:mm:ss.sssZ`, a
+  negative amount, `total` below `completed`, too many references. The broker records nothing for
+  such a value, but the tool reads every writer failure other than a refusal of the task as an
+  unknown outcome, so the model is told not to resend (`docs/TECH_DEBT.md`).
+- **Inert dispatch values.** Each tracked handle registers `idempotency: 'none'` and
+  `conditional: false`. Both describe an external source's dispatch and are read on no native
+  path; they are the values that authorize nothing.
+- **Empty parameters.** `start` and `resume` take `{}` — an empty closed object on the wire.
+  Anthropic and OpenAI receive it as `{ type: 'object', properties: {}, additionalProperties: false }`;
+  Gemini receives `{ type: 'object', properties: {} }` (its dialect drops `additionalProperties`),
+  and whether Gemini's API accepts a nested object with no properties has not been verified live.
 
 ## Rendering task context without a broker
 
@@ -952,10 +999,10 @@ only way to produce canonical parameters is to have passed that schema.
 
 **Built-ins.** `fgv.tracked@1` has *empty strict* details — every field a tracked task needs is
 already an envelope field, and a second place to put them would be a second authority. Its eleven
-command **names** are `trackedTaskCommandNames` (narrow transitions plus typed metadata updates;
-no external `setStatus`); their parameter schemas belong to the slice that implements the
-transitions. `fgv.task-list@1` adds `{ completion: 'manual' | 'all-children-succeeded' }`.
-An empty command registry is supported.
+commands are `trackedTaskCommandNames` (narrow transitions plus typed metadata updates; no external
+`setStatus`), each registered with a `JsonSchema` parameter schema so it can be offered as a command
+tool. `fgv.task-list@1` adds `{ completion: 'manual' | 'all-children-succeeded' }` and registers no
+commands — an empty command registry is supported.
 
 **Bounds are constructor-lowerable, never raisable.** `TaskConverters.create({ bounds })` builds
 the whole converter set against `ITaskFieldBounds` (title 256, description 4096, summaries 2048,
