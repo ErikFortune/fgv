@@ -43,8 +43,8 @@ const ROWS = [
   m(
     'I2-2 a missing composition is not refused by name',
     CP,
-    'if (composition === undefined) {',
-    "if (composition === ('never' as unknown as IPromptComposition)) {"
+    "return fail('the resolve returned no composition, so nothing about the body was analyzed');",
+    'return succeed({ totalChars: resolved.body.length, sections: [], cacheFindings: [] });'
   ),
   m(
     'I2-3 a gap between sections is accepted',
