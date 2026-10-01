@@ -154,7 +154,37 @@ placement, for the same reason). Each row mutates the **library** source in a co
 to the mutated copy). The workspace is never edited. Control (unmutated copies): `journey/` 6/6,
 scenario 30/30.
 
-MATRIX_RESULTS
+Ten rows, **all red** on the committed source (`7387fc7b`'s library source; the copies were diffed
+against the workspace before the run). Scenario counts include the two "checks bite" tests and the CLI
+smoke, which go red under any regression by design (each expects an exact set of failing checks, or
+all passing).
+
+| row | mutation | red: `journey/` | red: scenario | what failed |
+|---|---|---|---|---|
+| P1-1 | scope union: the merged stream advances only the first stream holding a key | 1 | 14 | the step-1 contract test; the scenario **halts** — step 2's subscription baseline refuses the duplicate (*"baseline: task plan appears twice"*), so every report test fails |
+| P1-2 | the pump resends an uncertain `none` command | 0 | 14 | the scenario **halts** at step 3 — the resent command settles `applied`, so the host's abandonment fails (*"command … is settled (applied); there is nothing to abandon"*) |
+| P1-3 | an abbreviated item receipts its update ids | 0 | 5 | step 4 — the omitted attention update is acknowledged |
+| P1-4 | a write from an older revision is accepted — **both** revision checks | 1 | 5 | the step-5 contract test; step 5's stale-write check |
+| P1-5 | a due query ignores its cutoff — the index bound **and** the re-check | 0 | 5 | step 6's due checks |
+| P1-6 | a latched parent takes a new child — the broker **and** storage refusals | 1 | 14 | the step-7 contract test; the scenario **halts** at step 7's reopen — open's own validation finds the admitted child (*"recovery required: 1 issue"*), a third layer the mutant did not remove |
+| P1-7 | a source with no stop opt-in is confirmed instead of blocking | 1 | 5 | the step-7 contract test; step 7's blocked-pass check |
+| P1-8 | recovered finished work is refused instead of recorded | 1 | 5 | the step-8 contract test; step 8's outcomes and owed checks |
+| P1-9 | an unreachable source is recorded as `stale`, not `unavailable` | 0 | 5 | step 8's observation-health check |
+| P1-10 | a send that *starts with* the checked body acknowledges it | 0 | 5 | step 9's modified-send check |
+
+**Three single-layer mutants were equivalent, and that is a finding about the rows, not the tests.**
+The first run of P1-4, P1-5 and P1-6 mutated one check each and stayed `0 red`: the package guards
+each of those properties twice — a stale revision before and again inside the writer; a due cutoff in
+the index stream's upper bound and in the per-candidate test; a latched parent in the broker
+(`refuseUnderLatch`) and in storage (`checkStopRegistration`). Removing one layer changes no behaviour,
+so no test could see it. The rows now remove every layer (the script's `mm` rows), and each goes red.
+The trap the brief names — a row green while protecting the bug — has a sibling here: a row `0 red`
+while protecting nothing, because the fixture could not tell the mutant from the original.
+
+**Which suite carries which row.** The library's `journey/` suite catches the five rows whose step it
+composes (1, 5, 7 twice, 8); the scenario catches all ten. Rows P1-2, P1-3, P1-5, P1-9, P1-10 are
+caught by the scenario and, for the library, by the dedicated suites the per-step table names — not by
+`journey/`, which deliberately does not repeat them.
 
 ## Review
 
@@ -186,13 +216,30 @@ non-JSON value now never passes.
 
 ## Gates
 
-GATE_RESULTS
+Run on the committed source after the review fixes and prettier.
+
+| gate | result |
+|---|---|
+| `rushx build` (`heft build --clean`), both packages | finished, **zero warnings** |
+| `rushx lint`, both packages | clean (`eslint` on the formatted source after the pre-commit prettier pass) |
+| `rushx test` — `ts-agent-tasks` | **2,407 tests** (I2's 2,401 + 6 in `journey/`), 100 % statements / branches / functions / lines, **0 `c8 ignore`** in `src/packlets` |
+| `rushx test` — `samples/testbed` | **608 tests** across 26 suites (30 in `agentTasks`), under the package's own config: jsdom, global 100 % thresholds, with its existing `coveragePathIgnorePatterns`; `src/scenarios/agentTasks` is **not** ignored and is at 100 % on all four metrics, 0 `c8 ignore` |
+| `rush change --verify --target-branch origin/integration/agent-tasks-v1` | passes; `ts-agent-tasks` and `testbed` change files, both `none` (test-only / private sample) |
+| repo-wide `install-run-rush.js rebuild` | **SUCCESS, 37 operations**, no warnings |
+| repo-wide `install-run-rush.js test` | **SUCCESS, 36 operations** + 1 no-op (`typedoc-compact-theme`). The first run failed one unrelated `ts-extras` test (flaky, root-caused, routed) and blocked 20 downstream projects; the re-run is the complete one |
+| `verify-capability-docs` | 22,038 / 24,000 chars, 0 failed |
+| `generate-capability-feed --check` | 0 stale |
+| `verify-esm-entrypoints` | 24 checked, 0 failed |
+| `verify-bundler-resolution` | 20 checked, 0 failed (autoinstaller installed first) |
+| `verify-tarball-exports` | 26 packages, 205 manifest paths, 0 failed (autoinstaller installed first) |
+| revert matrix | 10 rows on final source, all red (above) |
+| no `any`; fallible operations return `Result` | yes — the journey's halting helpers throw only inside `captureAsyncResult` |
 
 ## Routed
 
 - `docs/TECH_DEBT.md`: `structuredClone` runtime requirement (finding 1); no exported query-work
   counter (finding 2); ai-assist has no per-call transport (finding 3); fold `P1-1…P1-10` into
-  `perf/mutationMatrix.js`.
+  `perf/mutationMatrix.js`; a flaky `ts-extras` KeyStore Argon2id test (seen in the repo-wide run).
 
 ## What the cluster still owes before promotion
 

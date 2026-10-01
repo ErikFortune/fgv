@@ -33,8 +33,23 @@ const { spawnSync } = require('child_process');
 
 const PK = 'src/packlets/';
 
+/** One edit: replace `from` (which must occur exactly once) with `to` in `file`. */
+function e(file, from, to) {
+  return { file: PK + file, from, to };
+}
+
+/** A row of one edit. */
 function m(name, file, from, to) {
-  return { name, file: PK + file, from, to };
+  return { name, edits: [e(file, from, to)] };
+}
+
+/**
+ * A row of several edits, applied together. Used where the package guards one property at more than
+ * one layer — a single-layer mutant there is equivalent (the other layer still refuses), and a
+ * `0 red` from it would say nothing about the tests.
+ */
+function mm(name, ...edits) {
+  return { name, edits };
 }
 
 const ROWS = [
@@ -56,23 +71,44 @@ const ROWS = [
     "updateIds: r.presentation === 'complete' ? r.item.updates.map((u) => u.id) : []",
     'updateIds: r.item.updates.map((u) => u.id)'
   ),
-  m(
-    'P1-4 (step 5) a write from an older revision is accepted',
-    'broker/catalogMutation.ts',
-    '  if (revisionOf(record) !== expectedRevision) {\n    return _stale(mutation.identity, record);',
-    '  if (revisionOf(record) < expectedRevision) {\n    return _stale(mutation.identity, record);'
+  mm(
+    'P1-4 (step 5) a write from an older revision is accepted (both revision checks)',
+    e(
+      'broker/catalogMutation.ts',
+      '  if (revisionOf(record) !== expectedRevision) {\n    return _stale(mutation.identity, record);',
+      '  if (revisionOf(record) < expectedRevision) {\n    return _stale(mutation.identity, record);'
+    ),
+    e(
+      'broker/catalogMutation.ts',
+      "found.recordType !== 'resolved' || revisionOf(found) !== expectedRevision) {",
+      "found.recordType !== 'resolved' || revisionOf(found) < expectedRevision) {"
+    )
   ),
-  m(
-    'P1-5 (step 6) a due query ignores its cutoff',
-    'storage/queries.ts',
-    '      lifecycle.reason.notBefore <= cutoff &&',
-    "      lifecycle.reason.notBefore !== '' &&"
+  mm(
+    'P1-5 (step 6) a due query ignores its cutoff (the index bound and the re-check)',
+    e(
+      'storage/queries.ts',
+      '  const upper: string = `${cutoff}\\u0001`;',
+      "  const upper: string = '\\uffff';"
+    ),
+    e(
+      'storage/queries.ts',
+      '      lifecycle.reason.notBefore <= cutoff &&',
+      "      lifecycle.reason.notBefore !== '' &&"
+    )
   ),
-  m(
-    'P1-6 (step 7) a latched parent takes a new child',
-    'storage/stopRules.ts',
-    '  return parentId !== undefined && book.isLatched(parentId)',
-    '  return parentId !== undefined && book.isLatched(parentId) && false'
+  mm(
+    'P1-6 (step 7) a latched parent takes a new child (the broker and storage refusals)',
+    e(
+      'broker/creation.ts',
+      '    refuseUnderLatch(core, parent.id, `it takes no new child`, operationId)',
+      '    ok<true>(true)'
+    ),
+    e(
+      'storage/stopRules.ts',
+      '  return parentId !== undefined && book.isLatched(parentId)',
+      '  return parentId !== undefined && book.isLatched(parentId) && false'
+    )
   ),
   m(
     'P1-7 (step 7) a source with no stop opt-in is confirmed rather than blocking',
@@ -192,24 +228,28 @@ function main() {
   const rows = ROWS.filter((row) => args.only.length === 0 || args.only.includes(row.name.split(' ')[0]));
   const results = [];
   for (const row of rows) {
-    const file = path.join(args.pkg, row.file);
-    const source = fs.readFileSync(file, 'utf8');
-    const count = occurrences(source, row.from);
+    const files = Array.from(new Set(row.edits.map((edit) => edit.file)));
+    const originals = new Map(files.map((f) => [f, fs.readFileSync(path.join(args.pkg, f), 'utf8')]));
+    const counts = row.edits.map((edit) => occurrences(originals.get(edit.file), edit.from));
     let result;
-    if (count !== 1) {
-      result = { verdict: `UNVERIFIED: pattern found ${count} times`, red: [] };
+    if (counts.some((c) => c !== 1)) {
+      result = { verdict: `UNVERIFIED: patterns found ${counts.join('/')} times`, red: [] };
     } else if (args.check) {
       result = { verdict: 'pattern ok', red: [] };
     } else {
-      fs.writeFileSync(
-        file,
-        source.replace(row.from, () => row.to)
-      );
+      const mutated = new Map(originals);
+      for (const edit of row.edits) {
+        mutated.set(
+          edit.file,
+          mutated.get(edit.file).replace(edit.from, () => edit.to)
+        );
+      }
       try {
+        for (const [f, text] of mutated) fs.writeFileSync(path.join(args.pkg, f), text);
         const pkgText = runPackage(args.pkg);
         result = classify(pkgText, runTestbed(args.testbed));
       } finally {
-        fs.writeFileSync(file, source);
+        for (const [f, text] of originals) fs.writeFileSync(path.join(args.pkg, f), text);
       }
     }
     results.push({ name: row.name, ...result });

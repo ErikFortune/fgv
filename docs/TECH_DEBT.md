@@ -806,6 +806,23 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
 
   **Reference**: `.ai/tasks/active/agent-tasks-p1/result.md` § Revert matrix.
 
+- **[P3] A `ts-extras` KeyStore Argon2id test is flaky: its fake KDF cannot tell random salts apart.**
+  `libraries/ts-extras/src/test/unit/crypto/keystore/keyStoreArgon2id.test.ts` › *returns false when
+  salt does not match* draws a second random salt and expects verification to fail. The test's
+  `makeDeterministicKey` folds the salt into its seed as `sum(salt[i] * (i + 1))`, a range of ~35k
+  values concentrated near its mean, so two random salts occasionally collide and the "wrong" salt
+  derives the same key. Seen red once in P1's repo-wide `rush test` (2026-10-01), on a branch that does
+  not touch `ts-extras`; it then blocks every downstream project's tests.
+
+  **Trigger**: the next red run, or any `ts-extras` crypto touch.
+
+  **Scope sketch**: make the mismatched salt deterministically different (change one byte of the stored
+  salt, which always moves the weighted sum), or hash the salt in the fake KDF.
+
+  **Not a P4**: an intermittent red on an unrelated package blocks CI for everyone downstream.
+
+  **Reference**: `.ai/tasks/active/agent-tasks-p1/result.md` § Gates.
+
 - **[P3] `JsonSchema.integer` cannot state a range, so `task_query`'s `limit` bound is prose on the
   wire.** `libraries/ts-json-base/src/packlets/json-schema-builder/factories.ts` has no
   `minimum` / `maximum`. `task_query` enforces `1 ≤ limit ≤ budget.context.maxItems` inside `execute`
