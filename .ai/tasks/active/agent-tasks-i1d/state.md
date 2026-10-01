@@ -1,6 +1,6 @@
 # State — `agent-tasks-i1d`
 
-**Status:** implemented; layer-1 review in progress. Not yet pushed past the brief commit.
+**Status:** PR #706 open; layer 1 done (3 P2s fixed); Copilot loop round 1 requested.
 
 ## Where things stand
 
@@ -38,12 +38,11 @@
 
 ## Remaining
 
-- Resolve layer-1 findings; coverage to 100 % with zero `c8 ignore`.
-- I1d rows in `perf/mutationMatrix.js`; run on final source with `--pkg` + `node_modules` symlink.
-- Gates (build zero warnings, lint, fixlint, change verify, repo-wide rebuild, capability/ESM/
-  bundler/tarball verifiers).
-- `result.md`; ledger entry in `docs/WORKSTREAMS.md`; `docs/TECH_DEBT.md` routing; open PR into
-  `integration/agent-tasks-v1`; Copilot loop via `@copilot review` comments.
+- Copilot loop (`@copilot review` comments; stop on a nitpicky round).
+- Repo-wide rebuild (running) and the ESM / bundler / tarball verifiers.
+- The final revert-matrix run of `I1d-1`…`I1d-19` and `I1c-14/18/19` on the final source.
+  A preliminary run gave 21/22 red; `I1d-16`'s mutant failed lint and has been fixed since.
+- Finish `result.md`: the review summary, the matrix table and the gates.
 
 ## Resume instructions
 
