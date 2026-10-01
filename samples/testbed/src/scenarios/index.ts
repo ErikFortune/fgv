@@ -10,6 +10,7 @@
  */
 
 import type { IScenario } from '../shell';
+import { agentTasksScenario } from './agentTasks';
 import { anthropicClientToolsScenario } from './anthropicClientTools';
 import { crossProviderEmbeddingSearchScenario } from './crossProviderEmbeddingSearch';
 import { gateDenyClientToolsScenario } from './gateDenyClientTools';
@@ -69,5 +70,6 @@ export const scenarios: readonly IScenario[] = [
   anthropicStructuredOutputScenario,
   geminiStructuredOutputScenario,
   xaiStructuredOutputScenario,
-  xaiCacheProbeScenario
+  xaiCacheProbeScenario,
+  agentTasksScenario
 ];

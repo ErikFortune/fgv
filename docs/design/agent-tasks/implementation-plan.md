@@ -329,7 +329,16 @@ the new `serializeTaskData`. Decisions and evidence: `.ai/tasks/active/agent-tas
 
 **Review gate:** prompt trust framing, composition availability, exact inclusion and outbound-wire evidence. `HorizontalComposer` output alone cannot satisfy this gate at the inspected baseline.
 
-### P1 — Credential-free public-API proving ground
+### P1 — Credential-free public-API proving ground — ✅ implemented on `integration/agent-tasks-v1` ([#PRNUM](https://github.com/ErikFortune/fgv/pull/PRNUM))
+
+**Shipped:** `samples/testbed/src/scenarios/agentTasks` (scenario `agent-tasks`, CLI-only) drives all
+nine steps below, plus cancel and uncertain-dispatch branches, through the package's exports alone —
+a testable core whose every claim is a check with the value it observed, and a thin CLI bootstrap.
+`ts-agent-tasks`' `journey/publicJourney.test.ts` pins, through the public barrel, the six compositions
+no existing suite did. Evidence, the per-step assertion map, the simulation list and three surface
+findings (an undocumented `structuredClone` requirement, query work observable only internally, no
+ai-assist transport seam): `.ai/tasks/active/agent-tasks-p1/result.md`.
+
 
 **Dependencies:** T8, T9, I1, I2. **Affected packages:** `samples/testbed` and `ts-agent-tasks` public contract/journey tests.
 

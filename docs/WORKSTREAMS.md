@@ -128,6 +128,32 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
+### `agent-tasks-p1` ✅ (shipped 2026-10-01 via [#PRNUM](https://github.com/ErikFortune/fgv/pull/PRNUM)) — slice P1: the credential-free public-API proving ground
+
+**Status:** ✅ shipped into `integration/agent-tasks-v1` (not `release`; the cluster promotes as one).
+Branched at `8e9916b88` (the I2 landing). Ran beside `agent-tasks-m1-stop`, which owns `perf/`.
+Artifacts in `.ai/tasks/active/agent-tasks-p1/`; this family finalizes at cluster close.
+
+**What shipped.** `samples/testbed/src/scenarios/agentTasks` — the plan's nine-step journey driven
+from outside the package through its exports: tracked and external work under overlapping scopes,
+two subscriptions with broker and snapshot-only rendering, typed command tools across every receipt
+state with source-key dedup and a held non-idempotent command, exact acknowledgement while work moves,
+reassignment then reopen, due cutoffs and query reads as history grows, cascade pause/cancel/uncertain
+with host-resolved blockers and separate release and resume, recovery after reopen, and a checked
+final prompt captured off the wire. Each claim is a check recording what it observed; the scenario's
+tests assert those values. Six library contract tests (`journey/`) pin the compositions no existing
+suite did. `ts-agent-tasks` now has its first consumer outside its own directory.
+
+**The decisions.** *Assertion split:* library suites own behaviour; `journey/` owns the missing
+compositions; the scenario owns "composes from outside the package"; the CLI smoke owns registration
+and output. *Core:* `runAgentTasksJourney` returns a report; the bootstrap only renders it.
+
+**Findings.** The broker needs a global `structuredClone` (jsdom lacks it; every check then reads as a
+denial); query work is observable only through an internal module; ai-assist has no transport seam.
+All routed to `docs/TECH_DEBT.md`. Matrix rows `P1-1…P1-10` in the stream directory (`perf/` was M1's).
+
+**Artifact pointer:** `.ai/tasks/active/agent-tasks-p1/`.
+
 ### `agent-tasks-i2` ✅ (shipped 2026-10-01 via [#707](https://github.com/ErikFortune/fgv/pull/707)) — slice I2: prompt fragments and the final composition check
 
 **Status:** ✅ shipped into `integration/agent-tasks-v1` (not `release`; the cluster promotes as one).

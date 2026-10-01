@@ -743,6 +743,69 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
 
   **Reference**: `.ai/tasks/active/agent-tasks-i2/result.md` § The framing decision.
 
+- **[P3] `@fgv/ts-agent-tasks` needs a global `structuredClone`, and says so nowhere.**
+  The broker clones every authorization request (`broker/access.ts`), and projections
+  (`broker/projection.ts`) and checkpoint records (`storage/checkpoints.ts`), with the global
+  `structuredClone`. Node ≥ 17 and current browsers have it; jsdom does not. Under jsdom the first
+  policy check throws, a throwing check is (correctly) a denial, and every operation fails
+  *"'create' is not permitted"* — the cause is only in the logger's warning. Found by P1: the testbed's
+  Jest environment is jsdom, and `samples/testbed/config/jest.setup.js` now polyfills it.
+
+  **Trigger**: the next host that tests under jsdom, or any `ts-agent-tasks` touch to those files.
+
+  **Scope sketch**: either state the requirement in `CAPABILITIES.md` / the README, or clone with a
+  JSON-value copy the package owns — every cloned value is JSON already.
+
+  **Not a P4**: the failure is silent at the call site and reads as an authorization decision.
+
+  **Reference**: `.ai/tasks/active/agent-tasks-p1/result.md` § finding 1.
+
+- **[P3] Query work is observable only through an internal module.**
+  `ts-agent-tasks` promises that query, due and owed work stays tied to matching candidates as history
+  grows; its own counter suite measures candidate visits through `packlets/storage/internals`
+  (`inspectRepository`). From outside the package the only evidence is task-record reads, which a host
+  sees only by subclassing the FileTree accessor it injects — P1's scenario does exactly that, and can
+  show zero reads and identical results, but not visits tied to matches.
+
+  **Trigger**: a consumer that needs to verify query cost in its own deployment, or M1's follow-up.
+
+  **Scope sketch**: an exported, read-only work counter on `ITaskRepository` (or a `work` field on a
+  page) — candidate visits and record reads since open.
+
+  **Not a P2**: the guarantee itself is pinned by `storage/counters.test.ts`; this is observability.
+
+  **Reference**: `.ai/tasks/active/agent-tasks-p1/result.md` § finding 2.
+
+- **[P3] ai-assist has no per-call transport, so capturing a request means replacing `fetch`.**
+  `AiAssist.callProviderCompletion` calls the global `fetch`. A host that wants to see the request its
+  builders produce without a network call — the testbed's `memoryToolsGate` and P1's `agentTasks`
+  scenarios, and `ts-agent-tasks`' own `prompt/outbound.test.ts` — substitutes `globalThis.fetch` for
+  the call, which `CODING_STANDARDS.md` lists as a workaround to avoid.
+
+  **Trigger**: the next consumer that captures or proxies ai-assist requests.
+
+  **Scope sketch**: an optional `fetch` (or transport) parameter on the completion/stream calls,
+  defaulting to the global — additive, on an active surface.
+
+  **Not a P4**: three call sites already work around it.
+
+  **Reference**: `.ai/tasks/active/agent-tasks-p1/result.md` § finding 3.
+
+- **[P3] P1's revert-matrix rows live outside `perf/mutationMatrix.js`.**
+  `.ai/tasks/active/agent-tasks-p1/p1Matrix.js` holds rows `P1-1…P1-10`, which mutate the library and
+  run both `journey/` and the testbed's `agentTasks` suite, because P1 ran beside the M1 stop-state
+  cohort, which owned `perf/`. Same hazard as I2's rows: a refactor can re-point one script's patterns
+  and leave the other's stale, and the directory migrates at cluster close.
+
+  **Trigger**: the M1 stop-state cohort lands, or cluster close — whichever is first.
+
+  **Scope sketch**: fold the rows into `MUTATIONS` with the testbed linkage as an option, or keep the
+  testbed rows as a separate documented script under `perf/`; run `--check`.
+
+  **Not a P4**: a stale row is a protection nobody is checking.
+
+  **Reference**: `.ai/tasks/active/agent-tasks-p1/result.md` § Revert matrix.
+
 - **[P3] `JsonSchema.integer` cannot state a range, so `task_query`'s `limit` bound is prose on the
   wire.** `libraries/ts-json-base/src/packlets/json-schema-builder/factories.ts` has no
   `minimum` / `maximum`. `task_query` enforces `1 ≤ limit ≤ budget.context.maxItems` inside `execute`

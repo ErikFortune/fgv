@@ -1,56 +1,39 @@
 # State — `agent-tasks-p1`
 
-**Status:** brief written, not started.
+**Status:** implemented; gates and the revert matrix run on final source; PR open into
+`integration/agent-tasks-v1`; Copilot loop in progress. See `result.md` for everything shipped.
 
 ## Where things stand
 
 | | |
 |---|---|
-| brief | `.ai/tasks/active/agent-tasks-p1/brief.md` — complete |
-| branch | `claude/agent-tasks-p1`, cut off `integration/agent-tasks-v1` at `8e9916b88` (the I2 landing) |
-| PR | none |
+| brief | `brief.md` — complete |
+| branch | `claude/agent-tasks-p1`, cut off `integration/agent-tasks-v1` at `8e9916b88` |
+| PR | see `result.md` § Gates (number filled in after creation) |
 | base | `integration/agent-tasks-v1` — **not `release`** |
+| result | `result.md` |
+| matrix | `p1Matrix.js` (here, not `perf/`, which M1 owns) |
 
-**The last implementation stream before the cluster promotes to `release` as one landing.**
+## The two decisions, taken
 
-## Dependencies and parallelism
+1. **Assertion split** — library suites own behaviour; new `journey/publicJourney.test.ts` owns the six
+   compositions no suite pinned; the scenario owns "composes from outside the package" with every
+   check's observed value asserted in `agentTasks.test.ts`; the CLI smoke owns registration/output.
+2. **Core** — `runAgentTasksJourney(options?)` → `Result<IJourneyReport>`; `index.ts` only renders.
 
-P1's declared dependencies are **T8, T9, I1, I2** — all landed. **M1 is not among them**, so this runs
-beside `agent-tasks-m1-stop`, which owns `libraries/ts-agent-tasks/perf/`. This stream owns
-`samples/testbed/src/scenarios/agentTasks` and `ts-agent-tasks`' public contract/journey tests.
+## Things a resumer must know
 
-M1 measures and does not modify, so it cannot change P1's inputs. If M1 recommends a capacity-profile
-change, that reaches the user as a decision rather than a commit.
-
-## Open decisions this slice must take
-
-1. **Where each assertion lives.** The plan names both `samples/testbed` *and* `ts-agent-tasks` public
-   contract/journey tests, and asks for the scenario core unit-tested and CLI registration
-   smoke-tested. The split must be argued: library contract tests survive the sample being deleted;
-   scenario tests do not. No claimed behaviour may rest on printed output alone.
-2. **What the scenario's testable core is**, with a thin enough CLI bootstrap that the core's tests
-   carry the evidence.
-
-## The structural consequence worth tracking
-
-**Nothing outside `libraries/ts-agent-tasks/` imports it today** — verified. That is why I2 could
-change `task_inspect`'s `details` from host JSON to escaped text for free, two days after I1a shipped
-it. P1 ends that: once the scenario lands, `ts-agent-tasks` has a `samples/` consumer, and
-`CODING_STANDARDS.md` records four consecutive streams breaking `samples/testbed` on interface
-widening — one of them a source file, not a test double. After P1, the repo-wide rebuild checkbox
-genuinely bites for this package.
-
-## Verified inputs (checked, not assumed)
-
-- `ITaskEnvironmentParams` takes `clock: () => number` and `newId: () => Result<string>`
-  (`types/environment.ts`), so the fixed clock and deterministic id factory are first-class.
-- The scenario registry is a manual `readonly` array with an explicit import per scenario
-  (`samples/testbed/src/scenarios/index.ts`), currently ~24 scenarios.
-- `samples/testbed/src/test/unit/scenarios.test.ts` has a committed **snapshot** that adding a
-  scenario will change.
-- `samples/testbed` is a Rush project with **`shouldPublish: false`**; 26 test files exist.
-- Credential-free precedents in the registry: `gateDenyClientTools`, `memoryToolsGate`.
+- **The testbed's Jest environment is jsdom**, which lacks `structuredClone`; the library needs it
+  (finding 1). `config/jest.setup.js` polyfills it. A plain `npx jest` defaults to node and hides this —
+  always run the suite through `heft test` / `rushx test`.
+- **`Result.orDefault` treats a successful `null` as absent.** `report.ts` checks `isSuccess()` instead.
+- **Update ids encode the category as an index** (`plan:3:4`), so tests build them with `taskUpdateId`.
+- **A substituted executor is a factory** (`IWorldOptions.executor: () => SimulatedExecutor`), because
+  branches 5–9 each seed their own world.
+- **Matrix copies**: build them fresh before each run (`p1Matrix.js` header); never run without `--pkg`
+  and `--testbed`, and never reuse a copy from an interrupted run.
 
 ## Resume instructions
 
-`brief.md` plus this file is enough to start cold. Nothing is implemented.
+If the PR is open: drive the Copilot loop (bare `@copilot review` comment), fix findings, re-run the
+affected gates and, for any library-adjacent change, the matrix. Keep `result.md` § Review current.
