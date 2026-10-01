@@ -1,6 +1,6 @@
 # State — `agent-tasks-i1d`
 
-**Status:** PR #706 open; layer 1 done (3 P2s fixed); Copilot rounds 1 and 2 addressed; round 3 next.
+**Status:** complete on PR #706, awaiting merge. Layer 1 found 3 P2s, all fixed. The Copilot loop stopped at 3 rounds on diminishing returns. The final matrix and every gate are recorded in `result.md`.
 
 ## Where things stand
 
@@ -38,12 +38,8 @@
 
 ## Remaining
 
-- Copilot loop (`@copilot review` comments; stop on a nitpicky round).
-- Repo-wide rebuild and the ESM / bundler / tarball verifiers: passed on `d575f0d8`.
-- The final revert-matrix run of every I1d row (`I1d-1`…`I1d-21`) and `I1c-14/18/19` on the final
-  source. A preliminary run gave 21/22 red; `I1d-16`'s mutant failed lint, has been fixed, and is
-  red on rerun. `I1d-20` (Copilot round 1) and `I1d-21` (round 2) are new since.
-- Finish `result.md`: the review summary, the matrix table and the gates.
+Nothing in this slice. The PR waits on review and merge into `integration/agent-tasks-v1`. The
+family finalizes at cluster close; do **not** run `/finalize-task` here.
 
 ## Resume instructions
 

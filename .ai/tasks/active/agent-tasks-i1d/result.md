@@ -189,4 +189,152 @@ writer section.
 `registerExternal`, `createTaskList`, `releaseStop`, `reconcileStop`. I1c's assertion (six, with every
 stop method untouched when the stop tools are not offered) stands unchanged.
 
-<!-- REVIEW, MATRIX, GATES: filled in below as they complete -->
+## Revert matrix — run on final source
+
+**Final run:** `perf/mutationMatrix.js --pkg <git-archive copy of 1abeb60f, node_modules symlinked>`.
+It covered every I1d row (`I1d-1` to `I1d-21`), the three I1c rows this slice re-pointed
+(`I1c-14/18/19`), and `I1b-19/20/21`, which guard the minting the mutation tools now share.
+**27 rows, 56 red tests; 0 UNVERIFIED, 0 at `0 red`; runner exit 0.** It was not run alongside
+any rebuild. `--check` on the final tree finds every pattern exactly once. The six storage rows
+`M13 M20 M23 M34 M39 M49` stay UNVERIFIED; they predate this slice and are routed in
+`docs/TECH_DEBT.md`.
+
+An earlier run on `37181bde` (22 rows) is superseded. Three things changed after it:
+
+- `I1d-16`'s mutant failed lint ("comparing to itself"). It now mutates to `=== undefined`.
+- Copilot rounds 1 and 2 added `I1d-20` and `I1d-21`.
+- Round 3 moved the mutation tools' minting into `toolSupport.ts`.
+
+Per-row notes:
+
+- **I1d-2 is paired, and its schema half is masked.** The tool converts the model's ids with a strict
+  object converter after the schema. Reverting the schema closure alone leaves that converter
+  refusing a surplus field, so the row reverts both. As with I1c-2, the pair shows that at least one
+  of the two is load-bearing; it does not prove each half separately. The closure is also pinned on
+  the wire by the literal schema assertions.
+- **I1d-4 goes red on one test only:** the in-place rewrite of `taskId`. Every other test of a wrong
+  root also fails the root-first check (I1d-20), which by itself refuses a result whose first target
+  is not its root. The two checks back each other up. The rewrite test isolates `rootId` by listing
+  only the rewritten root as a target.
+- **I1d-6 is red on the in-place rewrite test.** That test answers honestly for the rewritten request,
+  and lists only the rewritten root, so the identity check is the only check that can refuse it.
+  Layer-1 P2-2 found the `taskId` case non-discriminating; it was fixed before this run.
+- **I1d-8 is broad by nature.** Spreading a target leaks its key and attempt into every end-to-end
+  result, so 5 tests go red.
+
+| row | verdict | suites that went red (first three) |
+|---|---|---|
+| I1d-1 task_stop execute trusts its arguments | 3 red | execute re-validates its arguments with no harness in front › task_stop: malformed values are the model’s to fix, and reach nothing<br>execute re-validates its arguments with no harness in front › task_stop: the model cannot name an operation id, an intent, a principal, a scope or a policy<br>task_stop — a model requests a stop, and the host carries it out › only the offered modes are accepted, and the refusal reaches nothing |
+| I1d-2 task_stop_inspect execute trusts its arguments (schema closure and the strict id conversion both reverted) | 1 red | execute re-validates its arguments with no harness in front › task_stop_inspect: surplus fields and malformed ids fail, and reach nothing |
+| I1d-3 a stop result's intent id is not checked | 3 red | a writer’s or view’s answer is checked, and says no more than a fixed line › a result for another stop or root is a malformed answer for an inspection<br>a writer’s or view’s answer is checked, and says no more than a fixed line › a result for another stop, root or mode — or malformed — is an unknown outcome for a request<br>a writer’s or view’s answer is checked, and says no more than a fixed line › a writer that rewrites the request in place cannot move what its result is checked against |
+| I1d-4 a stop result's root is not checked | 1 red | a writer’s or view’s answer is checked, and says no more than a fixed line › a writer that rewrites the request in place cannot move what its result is checked against |
+| I1d-5 a stop request's result may be of another mode | 2 red | a writer’s or view’s answer is checked, and says no more than a fixed line › a result for another stop, root or mode — or malformed — is an unknown outcome for a request<br>a writer’s or view’s answer is checked, and says no more than a fixed line › a writer that rewrites the request in place cannot move what its result is checked against |
+| I1d-6 the result is checked against the request object the writer was handed | 1 red | a writer’s or view’s answer is checked, and says no more than a fixed line › a writer that rewrites the request in place cannot move what its result is checked against |
+| I1d-7 a result listing a target twice is accepted | 1 red | a writer’s or view’s answer is checked, and says no more than a fixed line › a result for another stop, root or mode — or malformed — is an unknown outcome for a request |
+| I1d-8 a target's command key and attempt reach the model | 5 red | task_stop — a model requests a stop, and the host carries it out › a stop is recorded and frozen, nothing is dispatched, and the host pump then confirms it<br>task_stop — a model requests a stop, and the host carries it out › an external child is sent its stop by the host pump, and the model sees it confirmed<br>what the model is told of a stop result › a capacity refusal is never told: the model sees the target states; the host gets the dimension<br>(and 2 more) |
+| I1d-9 a capacity refusal reaches the model | 1 red | what the model is told of a stop result › a capacity refusal is never told: the model sees the target states; the host gets the dimension |
+| I1d-10 a denial is a known outcome, though it can follow the commit (layer-1 P2-1) | 3 red | a writer’s or view’s answer is checked, and says no more than a fixed line › only a refusal of the stop itself is a known outcome — a denial can follow the commit<br>task_stop — a model requests a stop, and the host carries it out › a root hidden after the stop committed reads as not found — and the model is still told the intent id<br>task_stop — a model requests a stop, and the host carries it out › a stop the policy denies reads exactly as a hidden task and a missing id, and nothing is written |
+| I1d-11 every classified failure of a stop request is a known outcome | 5 red | a writer’s or view’s answer is checked, and says no more than a fixed line › only a refusal of the stop itself is a known outcome — a denial can follow the commit<br>task_stop — a model requests a stop, and the host carries it out › a root hidden after the stop committed reads as not found — and the model is still told the intent id<br>task_stop — a model requests a stop, and the host carries it out › a second stop of a latched mode is refused; the first stands and is inspected by its own id<br>(and 2 more) |
+| I1d-12 an unknown outcome does not tell the model the intent id | 8 red | a writer’s or view’s answer is checked, and says no more than a fixed line › a result for another stop, root or mode — or malformed — is an unknown outcome for a request<br>a writer’s or view’s answer is checked, and says no more than a fixed line › a writer that rewrites the request in place cannot move what its result is checked against<br>a writer’s or view’s answer is checked, and says no more than a fixed line › a writer that throws or rejects is an unknown outcome, and what it threw goes to the host<br>(and 5 more) |
+| I1d-13 a page of targets is not bounded | 1 red | task_stop_inspect — paging the targets › targets come a page at a time, in the stop’s order; nothing is dropped and the counts are whole |
+| I1d-14 a continuation that is not a visible target silently starts again from the top | 1 red | task_stop_inspect — paging the targets › continuing after a target hidden since, or never a target, reads alike: start again |
+| I1d-15 counts are over the page, not the whole stop | 1 red | task_stop_inspect — paging the targets › targets come a page at a time, in the stop’s order; nothing is dropped and the counts are whole |
+| I1d-16 the stop writer need not be the view | 1 red | createTaskTools › refuses a stop opt-in whose writer is not the view, or that names an unknown mode |
+| I1d-17 the offered modes are not converted | 1 red | createTaskTools › refuses a stop opt-in whose writer is not the view, or that names an unknown mode |
+| I1d-18 task_stop offers every mode, not only the ones enabled | 3 red | stop tools reach the outbound request only when opted into › opted into — Gemini: both stop tools are function declarations with their complete sanitized schemas<br>stop wire schemas › task_stop emits a closed schema whose mode is exactly the modes offered<br>task_stop — a model requests a stop, and the host carries it out › only the offered modes are accepted, and the refusal reaches nothing |
+| I1d-19 the stop tool names are not reserved | 2 red | command tools › a generated name may not be a fixed tool’s, whether or not that tool is offered<br>command tools › the reserved names are exactly the fixed tools the factory builds — a renamed or added tool cannot go stale |
+| I1d-20 a result whose targets are empty or not led by the root is accepted (Copilot round 1) | 1 red | a writer’s or view’s answer is checked, and says no more than a fixed line › a result for another stop, root or mode — or malformed — is an unknown outcome for a request |
+| I1d-21 a satisfied result over unconfirmed work is accepted (Copilot round 2) | 1 red | a writer’s or view’s answer is checked, and says no more than a fixed line › a result for another stop, root or mode — or malformed — is an unknown outcome for a request |
+| I1c-14 the command writer need not be the view | 1 red | command tools › refuses a malformed offer, and a writer that is not the view |
+| I1c-18 a minting failure's host text reaches the model | 3 red | ids the host mints › an environment that fails, throws or mints a malformed id fails the call, and names nothing<br>what the host supplies fails as the host’s, and names nothing › an environment that fails, throws or mints a malformed id fails the call before anything is sent |
+| I1c-19 a minted operation id is not converted | 3 red | ids the host mints › an environment that fails, throws or mints a malformed id fails the call, and names nothing<br>what the host supplies fails as the host’s, and names nothing › an environment that fails, throws or mints a malformed id fails the call before anything is sent |
+| I1b-19 a minting failure's host text reaches the model | 4 red | ids the host mints › an environment that fails, throws or mints a malformed id fails the call, and names nothing<br>ids the host mints › without a logger, a minting failure is still reported to the model as a fixed line<br>what the host supplies fails as the host’s, and names nothing › an environment that fails, throws or mints a malformed id fails the call before anything is sent |
+| I1b-20 a minting throw escapes the tool | 1 red | ids the host mints › an environment that fails, throws or mints a malformed id fails the call, and names nothing |
+| I1b-21 a minted id is not converted | 1 red | ids the host mints › an environment that fails, throws or mints a malformed id fails the call, and names nothing |
+
+## Review
+
+### Layer 1 — `code-reviewer`, before coverage closure
+
+The authorization-boundary questions were put to it directly: every check-then-act window, free-text
+channels, intent-id disclosure, the determinate/unknown split, paging, build-time behaviour, the
+release/pump/`stop-active` decisions, and test discrimination.
+
+**No P1. Three P2, all fixed. P3s applied or dispositioned.**
+
+- **P2-1 (fixed): `not-found-or-denied` can follow the commit.** `presentStop` re-reads the root, and
+  answers not found if it was hidden after the commit. The model would have been told "not found"
+  for a stop that froze a tree. Now only `unsupported` is a known outcome. Tested through the real
+  broker with a policy that hides the root the moment it authorizes the stop. Matrix row `I1d-10`.
+- **P2-2 (fixed): one rewrite-test case could not discriminate.** The `taskId` case's answer listed
+  `[a, a]`, which the duplicate check would refuse anyway. It now lists only the rewritten root.
+- **P2-3 (fixed): operation-id minting was copied three times.** It is now `mintOperationId` in
+  `toolSupport.ts`. Copilot round 3 noticed that the mutation tools' copy had survived; it now goes
+  through the helper too. `I1c-18/19` were re-pointed, and `I1c-14`'s pattern was extended because
+  `_stops` repeats its guard.
+- **P3 applied:**
+  - The paging "nothing is dropped" claim is now scoped to one stop as it stands.
+  - "Blocked" was corrected to the target state `unavailable`.
+  - "An empty list offers neither tool."
+  - `environment` must mint **unguessable** ids, because `task_stop_inspect` treats an intent id as
+    the name it reads by.
+  - A weak name-regex test was dropped; the exact-name assertions carry it.
+- **P3 dispositioned:**
+  - The `cursor-stale` line says "query again", which is slightly off for an inspection. It is kept:
+    it is honest, and fixed text.
+  - A stale revision over-warns ("may have been accepted"). That is the harmless direction, and it
+    follows from the code rule.
+  - A host wanting an inspect-only stop surface must still pass a writer. Recorded here, not built.
+
+### Layer 2 — Copilot
+
+The first round was requested by an `@copilot review` comment and an API request. Each later round
+used a comment plus a request.
+
+| round | on | findings | outcome |
+|---|---|---|---|
+| 1 | `58c27c5d` | **medium:** the result converter accepted an empty target list, or one not led by the root; **low ×2:** `CAPABILITIES.md` and `result.md` still called `not-found-or-denied` determinate | fixed in `1fa3a477` (root-first check, both shapes tested, `I1d-20`), with the duplicate-target fixture led by the root in `d8428c63` |
+| 2 | `d8428c63` | **medium:** two malformed-answer fixtures were not led by the root, so they failed for the wrong reason; **overview:** a `satisfied`/`settled` result over unconfirmed or hidden work was accepted; **low ×2:** the stale row range in the ledger and `state.md` | fixed in `95212ab4`. A presentation never overstates; this mirrors the persisted intent's invariant. Covers `satisfied` and `settled`. `I1d-21` |
+| 3 | `95212ab4` | **no new findings.** Two listed as previously missed: the mutation tools' own minting copy (medium, a refactor), and "not yet stopped" in `task_stop_inspect`'s description (low; a hidden target can be permanently blocked) | both fixed in `1abeb60f` |
+
+**Loop stopped at 3 rounds on diminishing returns.** Rounds 1 and 2 each found a real gap in how the
+tool trusts a writer's answer: a malformed target list, then an overstated stop. This is the class
+this boundary predicts. Round 3 found nothing new, and its two missed items were a refactor and a
+wording, not a correctness defect. Every review thread is answered and resolved. CI `build` is green
+on every head from `faa63b84` to `1abeb60f`.
+
+## Routed beyond this slice
+
+- `docs/TECH_DEBT.md` **[P3]**, new: *A model can name only the stops it requested: a bound view
+  cannot list a task's stops.*
+- `docs/TECH_DEBT.md`, *integer ranges on the wire*: fired again and not taken. `task_stop` adds a
+  seventh `expectedRevision`.
+- `docs/TECH_DEBT.md`, *generated tool names avoid the fixed names*: annotated. I1d added its two
+  names.
+- **I1 is complete.** All four slices have shipped. The plan's I1 heading, the I1d status line and
+  the ledger entry are written as shipped in this PR. Nothing is owed to I2 or P1 from this slice
+  beyond the routed entry above.
+
+## Gates
+
+The package gates and the matrix ran on the final source, `1abeb60f`. The repo-wide rebuild and the
+verifiers ran on `d575f0d8`. Every later commit changes only `ts-agent-tasks`, mostly its tool code
+and tests. The exported surface (`etc/ts-agent-tasks.api.md`) is unchanged since that rebuild, no
+other package consumes the tool code, and CI's `build` runs the whole repo on every head.
+
+| gate | result |
+|---|---|
+| `rush change --verify --target-branch origin/integration/agent-tasks-v1` | change file found, typed `minor` |
+| `rushx build` (package) | clean, **zero warnings**; `etc/ts-agent-tasks.api.md` updated and checked in |
+| `rushx lint` / `fixlint` | clean; `fixlint` changes nothing; prettier via the pre-commit hook |
+| `rushx test` (package) | **95 suites, 2,212 tests passed, 0 failed; 100 % statements, branches, functions, lines; zero `c8 ignore`** |
+| `rush rebuild` (repo-wide) | 37 operations, exit 0, no build warnings (4 min 26 s). The one "Warning" is Rush's standing note on a git-tracked symlink |
+| repo-wide `rush test` | **not run.** Nothing outside this package changes what it accepts or classifies; the new surface is opt-in and new |
+| `verify-capability-docs.mjs` | 24/24 documented, 75 reflexes, 0 failed |
+| `generate-capability-feed.mjs --check` | 0 stale |
+| `verify-esm-entrypoints.mjs` | 24 checked, 0 failed |
+| `verify-bundler-resolution.mjs` | 20 checked, 0 failed |
+| `verify-tarball-exports.mjs` | 26 packages, 205 paths, 0 failed |
+| revert matrix | 27 rows, 56 red tests, 0 UNVERIFIED, 0 `0 red`, on `1abeb60f` (above) |
+| CI `build` | green on every head, including `1abeb60f` |
+
