@@ -45,15 +45,12 @@ summary:
     (IStoredCommandOperation.awaiting?, additive, so old records read unchanged). It omitted
     ITaskSource.capabilities() and deferred it to T9. The dereference decision was confirmed by
     evidence rather than pushed back on. The six-round Copilot loop changed behaviour well beyond
-    the brief:
-    - archive is refused while any command is unsettled or awaiting a feed revision
-    - a contradicting or contract-violating applied answer stays indeterminate with its reservation held
-    - a page naming another source's binding is a contract violation before anything applies
-    - feed order is carried across a pass's pages and keyed canonically
-    - awaiting now carries a digest of the answer's execution projection
-    - a task holding a replay claim commits projections only in feed mode
-    - a duplicate feed revision is a no-op rather than a stuck cursor
-    A post-layer-1 self-audit of the windows table found W4 (the pump's resend was unfenced).
+    the brief: archive is refused while any command is unsettled or awaiting a feed revision; a
+    contradicting or contract-violating applied answer stays indeterminate with its reservation
+    held; a page naming another source's binding is a contract violation before anything applies;
+    feed order is carried across a pass's pages and keyed canonically; awaiting carries a digest of
+    the answer's execution projection; a task holding a replay claim commits projections only in
+    feed mode; a duplicate feed revision is a no-op rather than a stuck cursor. A post-layer-1 self-audit of the windows table found W4 (the pump's resend was unfenced).
     New capacity arithmetic lowers the effective ceiling to 128 with one in-flight command per task.
   sourceLine: '**Shipped:** External task sources — a typed `ExternalTaskSource` helper and the `ITaskSource` contract, observations ordered by the source''s own revision comparator, paged reconciliation whose cursor advances only after the page''s projections commit, recovery over every recovery outcome, and external commands that reserve their settlement before dispatch, record accepted apart from applied, and hold an uncertain non-idempotent command rather than resend it.'
 keywords:
