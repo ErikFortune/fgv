@@ -3,7 +3,6 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { JsonValue } from '@fgv/ts-json-base';
 import { ITaskContextBudget, TaskContextPresentation, defaultTaskContextBudget } from './context';
 import { OperationId, PageCursor, TaskId, TaskKind, TaskRevision } from './ids';
 import { TaskMutationDisposition } from './broker';
@@ -15,7 +14,7 @@ import { IStopViolation, StopIntentState, StopMode, StopTargetState } from './st
  * @remarks
  * `context` bounds every task presentation: tasks reach the model only as rendered context text,
  * and `context.maxItems` is also the largest page a query may ask for. `maxDetailsChars` bounds the
- * JSON text of a task's details, counted in UTF-16 code units; details over it are omitted and the
+ * serialized, escaped JSON text of a task's details (`serializeTaskData`), counted in UTF-16 code units; details over it are omitted and the
  * omission is reported.
  * @public
  */
@@ -67,11 +66,12 @@ export interface ITaskQueryToolResult {
  * and the writer refuses the change if the task has moved since: a stale inspection is the model's
  * to refresh, never overwritten by the tool.
  * `commands` are those the view reports available for this call. `details` appears only when the
- * view's projector exposes details and their JSON fits the budget; when it does not fit,
+ * view's projector exposes details and their serialized text fits the budget; when it does not fit,
  * `detailsOmitted` says so and no part of them is returned. The details budget is independent of
- * the context budget, so details can be returned for a task whose text was omitted. Unlike
- * `context`, details are the host projector's JSON as it produced it — structured data, not framed
- * or escaped text.
+ * the context budget, so details can be returned for a task whose text was omitted. Details are
+ * task data exactly like the prose in `context`: one line of JSON text, every string in it escaped
+ * as the renderer escapes task prose (`serializeTaskData`), never structured data a host's JSON
+ * passes through unescaped.
  * @public
  */
 export interface ITaskInspectResolvedToolResult {
@@ -81,7 +81,7 @@ export interface ITaskInspectResolvedToolResult {
   readonly revision: TaskRevision;
   readonly archived: boolean;
   readonly commands: ReadonlyArray<string>;
-  readonly details?: JsonValue;
+  readonly details?: string;
   readonly detailsOmitted?: 'too-large';
 }
 

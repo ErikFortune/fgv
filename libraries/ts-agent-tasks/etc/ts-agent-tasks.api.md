@@ -9,10 +9,22 @@ import { Brand } from '@fgv/ts-utils';
 import { Converter } from '@fgv/ts-utils';
 import { DetailedResult } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
+import { IPromptCompositionOptions } from '@fgv/ts-prompt-assist';
+import { IPromptDescriptor } from '@fgv/ts-prompt-assist';
+import { IPromptResolveRequest } from '@fgv/ts-prompt-assist';
+import { IPromptSlot } from '@fgv/ts-prompt-assist';
+import { IResolvedPrompt } from '@fgv/ts-prompt-assist';
+import { IStoredPromptRecord } from '@fgv/ts-prompt-assist';
+import { IToCacheRequestHints } from '@fgv/ts-prompt-assist';
 import { JsonSchema } from '@fgv/ts-json-base';
 import { JsonValue } from '@fgv/ts-json-base';
 import { Logging } from '@fgv/ts-utils';
+import { PromptCacheStability } from '@fgv/ts-prompt-assist';
+import { PromptId } from '@fgv/ts-prompt-assist';
+import { PromptSubstitutions } from '@fgv/ts-prompt-assist';
 import { Result } from '@fgv/ts-utils';
+import { ScopeKey } from '@fgv/ts-prompt-assist';
+import { SlotName } from '@fgv/ts-prompt-assist';
 
 // @public
 export const allCapacityClaimPurposes: ReadonlyArray<CapacityClaimPurpose>;
@@ -160,6 +172,9 @@ export function checkListCompletion(listId: TaskId, children: ReadonlyArray<ITas
 export type CheckpointWriteVisibility = 'unchanged' | 'unknown';
 
 // @public
+export function checkTaskPrompt(params: ICheckTaskPromptParams): Promise<Result<ICheckedTaskPrompt>>;
+
+// @public
 export type CommandAbandonmentOrigin = 'not-sent' | 'possibly-sent' | 'awaiting-feed';
 
 // @public
@@ -219,6 +234,9 @@ export const defaultTaskContextBudget: ITaskContextBudget;
 
 // @public
 export function defaultTaskContextProjection(summary: ITaskSummary): Result<ITaskSummary>;
+
+// @public
+export const defaultTaskContextSlotName: SlotName;
 
 // @public
 export const defaultTaskEncodedBounds: ITaskEncodedBounds;
@@ -560,6 +578,23 @@ export interface IChangeTaskScopes extends ITaskMutationIdentity {
     readonly add?: ReadonlyArray<ITaskScope>;
     // (undocumented)
     readonly remove?: ReadonlyArray<ITaskScope>;
+}
+
+// @public
+export interface ICheckedTaskPrompt extends ITaskPromptCheck {
+    receiptFor(sentSystem: string): Result<ITaskInclusionReceipt>;
+}
+
+// @public
+export interface ICheckTaskPromptParams {
+    readonly cacheHints?: IToCacheRequestHints;
+    readonly composition?: IPromptCompositionOptions;
+    readonly context: ITaskContext;
+    // (undocumented)
+    readonly library: ITaskPromptLibrary;
+    // (undocumented)
+    readonly request: ITaskPromptRequest;
+    readonly taskSlot?: SlotName;
 }
 
 // @public
@@ -984,6 +1019,13 @@ export interface IPreparedTaskContext {
     readonly deliveryId: DeliveryId;
     // (undocumented)
     readonly expiresAt: Instant;
+}
+
+// @public
+export interface IPrepareTaskPromptParams extends Omit<ICheckTaskPromptParams, 'context'> {
+    readonly budget?: ITaskContextBudget;
+    // (undocumented)
+    readonly delivery: IBoundTaskDelivery;
 }
 
 // @public
@@ -1855,6 +1897,14 @@ export interface ITaskContextRendererCreateParams {
 }
 
 // @public
+export interface ITaskContextSlotParams {
+    // (undocumented)
+    readonly description?: string;
+    readonly maxLength?: number;
+    readonly name?: SlotName;
+}
+
+// @public
 export interface ITaskConvertersCreateParams {
     readonly bounds?: Partial<ITaskFieldBounds>;
 }
@@ -2030,7 +2080,7 @@ export interface ITaskInspectResolvedToolResult {
     // (undocumented)
     readonly context: string;
     // (undocumented)
-    readonly details?: JsonValue;
+    readonly details?: string;
     // (undocumented)
     readonly detailsOmitted?: 'too-large';
     // (undocumented)
@@ -2249,6 +2299,97 @@ export interface ITaskProjector {
     details?(snapshot: ITaskSnapshot): Result<JsonValue>;
     // (undocumented)
     envelope(envelope: ITaskEnvelope): Result<IProjectedTaskEnvelope>;
+}
+
+// @public
+export interface ITaskPromptCheck {
+    readonly cacheRequest: AiAssist.IAiCacheRequest;
+    readonly resolved: IResolvedPrompt;
+    readonly stablePrefixChars: number;
+    readonly system: string;
+    readonly taskSlot: ITaskPromptSlotSpan;
+    // (undocumented)
+    readonly threshold: ITaskPromptThreshold;
+}
+
+// @public
+export interface ITaskPromptDescriptorParams {
+    // (undocumented)
+    readonly description?: string;
+    // (undocumented)
+    readonly id: PromptId;
+    readonly stableSlots?: ReadonlyArray<IPromptSlot>;
+    readonly surface?: string;
+    readonly taskSlot?: IPromptSlot;
+    // (undocumented)
+    readonly title: string;
+}
+
+// @public
+export interface ITaskPromptHandoff {
+    abandon(): Promise<TaskResult<DeliveryId>>;
+    acknowledge(sentSystem: string): Promise<TaskResult<IAcknowledgementResult>>;
+    // (undocumented)
+    readonly context: TaskContextView;
+    // (undocumented)
+    readonly deliveryId: DeliveryId;
+    // (undocumented)
+    readonly expiresAt: Instant;
+    // (undocumented)
+    readonly prompt: ITaskPromptCheck;
+}
+
+// @public
+export interface ITaskPromptLibrary {
+    // (undocumented)
+    resolve(request: IPromptResolveRequest): Promise<Result<IResolvedPrompt>>;
+}
+
+// @public
+export interface ITaskPromptRecordParams extends ITaskPromptDescriptorParams {
+    // (undocumented)
+    readonly dataRules?: string;
+    // (undocumented)
+    readonly instructions: string;
+    // (undocumented)
+    readonly scope: ScopeKey;
+}
+
+// @public
+export interface ITaskPromptRequest {
+    readonly cacheStability?: ReadonlyMap<SlotName, PromptCacheStability>;
+    // (undocumented)
+    readonly chain: IPromptResolveRequest['chain'];
+    // (undocumented)
+    readonly id: IPromptResolveRequest['id'];
+    // (undocumented)
+    readonly qualifiers: IPromptResolveRequest['qualifiers'];
+    readonly substitutions?: PromptSubstitutions;
+}
+
+// @public
+export interface ITaskPromptSlotSpan {
+    // (undocumented)
+    readonly chars: number;
+    // (undocumented)
+    readonly name: SlotName;
+    // (undocumented)
+    readonly start: number;
+}
+
+// @public
+export interface ITaskPromptTemplateParams {
+    readonly dataRules?: string;
+    readonly instructions: string;
+    readonly stableSlots?: ReadonlyArray<SlotName>;
+    readonly taskSlot?: SlotName;
+}
+
+// @public
+export interface ITaskPromptThreshold {
+    readonly detail?: string;
+    // (undocumented)
+    readonly verdict: 'unknown' | 'below' | 'met';
 }
 
 // @public
@@ -2909,6 +3050,9 @@ export function planUpdates(before: ITaskEnvelope | undefined, after: ITaskEnvel
 export const positiveSafeInteger: Converter<number>;
 
 // @public
+export function prepareTaskPrompt(params: IPrepareTaskPromptParams): Promise<TaskResult<ITaskPromptHandoff>>;
+
+// @public
 export type RecoveryDeclaration = 'reattach' | 'host-resume' | 'not-recoverable';
 
 // @public
@@ -2929,6 +3073,11 @@ export type RecoveryResult = {
 
 // @public
 export function runTaskRepositoryConformance(factory: TaskRepositoryFactory): Promise<Result<ITaskRepositoryConformanceReport>>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-agent-tasks" does not have an export "quoteData"
+//
+// @public
+export function serializeTaskData(value: JsonValue): Result<string>;
 
 // @public
 export type SourceCommandLookup = SourceCommandResult | {
@@ -3085,7 +3234,16 @@ export class TaskContextRenderer {
 export type TaskContextSection = 'attention' | 'updates' | 'current';
 
 // @public
+export function taskContextSlot(params?: ITaskContextSlotParams): IPromptSlot;
+
+// @public
+export function taskContextSubstitutions(context: Pick<ITaskContext, 'text'>, slot?: SlotName): PromptSubstitutions;
+
+// @public
 export type TaskContextUnresolvedProjection = (reference: IContextUnresolvedReference) => Result<IContextUnresolvedReference>;
+
+// @public
+export type TaskContextView = Omit<ITaskContext, 'receipt'>;
 
 // @public
 export class TaskConverters {
@@ -3105,6 +3263,9 @@ export class TaskConverters {
     readonly storage: IStorageConverters;
     readonly values: IValueConverters;
 }
+
+// @public
+export const taskDataInterpretationRules: string;
 
 // @public
 export class TaskEnvironment implements ITaskEnvironment {
@@ -3215,6 +3376,15 @@ export type TaskMutationDisposition = 'changed' | 'unchanged';
 
 // @public
 export type TaskMutationToolGroup = 'tracked' | 'reassign';
+
+// @public
+export function taskPromptDescriptor(params: ITaskPromptDescriptorParams): Result<IPromptDescriptor>;
+
+// @public
+export function taskPromptRecord(params: ITaskPromptRecordParams): Result<IStoredPromptRecord>;
+
+// @public
+export function taskPromptTemplate(params: ITaskPromptTemplateParams): Result<string>;
 
 // @public
 export type TaskRecoveryIssueCode = 'manifest-missing' | 'manifest-invalid' | 'unreadable' | 'unknown-format-version' | 'record-invalid' | 'record-missing' | 'record-id-mismatch' | 'integrity' | 'unknown-kind' | 'unexpected-record' | 'pending-registration';

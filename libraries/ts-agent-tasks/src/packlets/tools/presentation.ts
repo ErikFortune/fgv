@@ -3,8 +3,9 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { succeedWithDetail } from '@fgv/ts-utils';
-import { TaskContextRenderer } from '../context';
+import { JsonValue } from '@fgv/ts-json-base';
+import { Result, failWithDetail, succeedWithDetail } from '@fgv/ts-utils';
+import { TaskContextRenderer, serializeTaskData } from '../context';
 import {
   IBoundTaskPage,
   ITaskContext,
@@ -88,23 +89,41 @@ export function presentInspection(
   }
   return renderer
     .render({ tasks: [{ envelope: inspection.envelope }], completeness: 'complete' }, budget.context)
-    .onSuccess((context) => {
-      const details: string | undefined =
-        inspection.details !== undefined ? JSON.stringify(inspection.details) : undefined;
-      return succeedWithDetail<TaskInspectToolResult, ITaskFailure>({
-        state: 'resolved',
-        context: context.text,
-        presentation: _presentations(context).get(inspection.envelope.id) ?? 'omitted',
-        revision: inspection.envelope.revision,
-        archived: inspection.archived,
-        commands: inspection.commands,
-        ...(details === undefined
-          ? {}
-          : details.length <= budget.maxDetailsChars
-          ? { details: inspection.details }
-          : { detailsOmitted: 'too-large' })
+    .onSuccess((context) =>
+      _details(inspection.details).onSuccess((details) =>
+        succeedWithDetail<TaskInspectToolResult, ITaskFailure>({
+          state: 'resolved',
+          context: context.text,
+          presentation: _presentations(context).get(inspection.envelope.id) ?? 'omitted',
+          revision: inspection.envelope.revision,
+          archived: inspection.archived,
+          commands: inspection.commands,
+          ...(details === undefined
+            ? {}
+            : details.length <= budget.maxDetailsChars
+            ? { details }
+            : { detailsOmitted: 'too-large' })
+        })
+      )
+    );
+}
+
+/**
+ * A task's details as the model is shown them: one line of JSON in which every string is escaped
+ * exactly as the renderer escapes task prose ({@link serializeTaskData}). Details with no JSON form
+ * fail the call, classified `invalid`.
+ */
+function _details(details: JsonValue | undefined): TaskResult<string | undefined> {
+  if (details === undefined) {
+    return succeedWithDetail<string | undefined, ITaskFailure>(undefined);
+  }
+  const serialized: Result<string> = serializeTaskData(details);
+  return serialized.isSuccess()
+    ? succeedWithDetail<string | undefined, ITaskFailure>(serialized.value)
+    : failWithDetail<string | undefined, ITaskFailure>(`details: ${serialized.message}`, {
+        code: 'invalid',
+        retry: 'after-host-action'
       });
-    });
 }
 
 /** How the rendering presented each task it included; an unresolved diagnostic is always whole. */

@@ -311,6 +311,9 @@ importers:
       '@fgv/ts-json-base':
         specifier: workspace:*
         version: link:../ts-json-base
+      '@fgv/ts-prompt-assist':
+        specifier: workspace:*
+        version: link:../ts-prompt-assist
       '@fgv/ts-utils':
         specifier: workspace:*
         version: link:../ts-utils

@@ -3,6 +3,9 @@
  * SPDX-License-Identifier: MIT
  */
 
+import { JsonValue } from '@fgv/ts-json-base';
+import { Result, fail, mapResults, succeed } from '@fgv/ts-utils';
+
 /**
  * A value the renderer serializes into one data record.
  * @internal
@@ -83,4 +86,55 @@ export function serializeRecord(value: RecordValue): string {
     }
   }
   return `{${fields.join(',')}}`;
+}
+
+/**
+ * Serializes any JSON value as one line of JSON in which every string — keys included — is quoted
+ * by {@link quoteData}, so no character of task data can escape the frame it is placed in.
+ *
+ * @remarks
+ * The published form of the escaping {@link TaskContextRenderer} applies to task prose, for task
+ * data a host presents to a model outside the rendered text (`task_inspect`'s details). The result
+ * parses back with `JSON.parse` to a value equal to the input, except that `undefined` object fields
+ * are skipped as `JSON.stringify` skips them. A number that is not finite has no JSON form and
+ * fails rather than becoming `null`; so does any value that is not JSON at all.
+ * @public
+ */
+export function serializeTaskData(value: JsonValue): Result<string> {
+  return _serializeData(value as unknown, '');
+}
+
+function _serializeData(value: unknown, path: string): Result<string> {
+  if (value === null || typeof value === 'boolean') {
+    return succeed(String(value));
+  }
+  if (typeof value === 'string') {
+    return succeed(quoteData(value));
+  }
+  if (typeof value === 'number') {
+    return Number.isFinite(value)
+      ? succeed(JSON.stringify(value))
+      : fail(`task data${path}: ${value} is not a finite number`);
+  }
+  if (Array.isArray(value)) {
+    return mapResults(
+      value.map((item: unknown, index: number) => _serializeData(item, `${path}[${index}]`))
+    ).onSuccess((items: ReadonlyArray<string>) => succeed(`[${items.join(',')}]`));
+  }
+  if (typeof value === 'object' && _isPlainObject(value)) {
+    const fields: Result<string>[] = Object.entries(value)
+      .filter(([, field]: [string, unknown]) => field !== undefined)
+      .map(([key, field]: [string, unknown]) =>
+        _serializeData(field, `${path}.${key}`).onSuccess((text: string) =>
+          succeed(`${quoteData(key)}:${text}`)
+        )
+      );
+    return mapResults(fields).onSuccess((items: ReadonlyArray<string>) => succeed(`{${items.join(',')}}`));
+  }
+  return fail(`task data${path}: not a JSON value`);
+}
+
+function _isPlainObject(value: object): boolean {
+  const prototype: unknown = Object.getPrototypeOf(value);
+  return prototype === Object.prototype || prototype === null;
 }

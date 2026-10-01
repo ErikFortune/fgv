@@ -333,7 +333,7 @@ function _mutationGroups(
  *
  * **Bounded by default.** Every task reaches the model as `TaskContextRenderer` text within
  * `budget.context`, never as a raw envelope; a page is at most `budget.context.maxItems` tasks;
- * details are returned only when their JSON fits `budget.maxDetailsChars`, a budget independent of
+ * details are returned only when their serialized text fits `budget.maxDetailsChars`, a budget independent of
  * the context text's. A projector that fails — the view's or the renderer's — fails the call:
  * nothing is returned in its place, and nothing falls back to a less-projected value.
  *
@@ -343,8 +343,9 @@ function _mutationGroups(
  * failure of the model's own arguments is described in full, cut at 500 characters.
  *
  * **What is framed and what is not.** Task state reaches the model only inside the renderer's
- * framed, escaped context text. Details are the host projector's JSON, returned as structured data
- * beside the text and neither framed nor escaped: a host exposing details is choosing their content.
+ * framed, escaped context text. Details are task data too: they are returned beside the text as one
+ * line of JSON whose every string is escaped exactly as the renderer escapes task prose
+ * (`serializeTaskData`), so no invisible or frame-breaking character reaches the model raw.
  * @public
  */
 export function createTaskTools(
