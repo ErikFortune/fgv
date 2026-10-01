@@ -394,15 +394,17 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
   **Reference**: `agent-tasks-m1-stop` `result.md` § *Misses* (6).
 
 - **[P2] `ts-agent-tasks` delivery hand-offs T7 left for T8 — each is T8's to decide.**
-  *(T8: (1), (3) and (4) resolved — see each; (2) stays open with the profile qualification.)*
+  *(T8: (1), (3) and (4) resolved — see each. (2) resolved by `agent-tasks-t8b`'s profile change — noted at the cluster close, 2026-10-01.)*
   (1) ~~**`archive` is `retention-blocked` for every task a subscription covers, even fully
   acknowledged.**~~ *Resolved by T8.* The inherited rule refuses archive while any retained update names an audience,
   and T7 never prunes a stored audience; with one matching subscription no covered task can ever be
   archived. T8's pruning against exact acknowledgement history and disposition evidence is what
-  unblocks it (evidence: `delivery/retention.test.ts`). (2) **Profile inconsistency:** a
+  unblocks it (evidence: `delivery/retention.test.ts`). (2) ~~**Profile inconsistency:** a
   subscription record reserves E (512 B) record bytes per owed or future link, so
   `maxConsumerRecordBytes` (8 MiB) admits ≈16,384 while `maxAcknowledgementIdsPerSubscription`
-  advertises 50,000. (3) ~~**Subscription closure and disposition** (`closed`, `disposed`,
+  advertises 50,000.~~ *Resolved by `agent-tasks-t8b`*, which raised `maxConsumerRecordBytes` (and
+  `record-bytes`) to 32 MiB — room for 65,536 links at 512 B — while the per-subscription cap stayed
+  50,000; M1 reached the 50,001st id on the per-subscription cap (`agent-tasks-m1-stop` § *Cohort 2*). (3) ~~**Subscription closure and disposition** (`closed`, `disposed`,
   `coalesceProgress`) and the capacity each releases~~ *Resolved by T8* — closure releases the
   future-update reservation and, once nothing is owed, the preparation claim; exact history stays a
   lifetime charge. (4) ~~Baseline payloads of `current` subscriptions hold resident bytes until
@@ -778,6 +780,57 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
 
 ## P3 — Opportunistic cleanup
 
+- **[P3] `ts-agent-tasks` — deferrals the agent-tasks slices recorded only in their own `result.md`.**
+  Found by the cluster close (`agent-tasks-cluster-close`, 2026-10-01), which read all eighteen
+  slices' results against this file. Each item was left by a slice as "a later slice decides", "a
+  follow-up" or "recorded here, not built", and no later artifact picked it up. None blocks
+  promotion; listed so they are not lost when the slices' directories stop being read. Paths below
+  are under `.ai/tasks/completed/2026-10/`.
+  - **M1's history-growth and cache-saturation cohorts** (the plan's § 8 table: 0/1k/10k/40k ids on
+    one subscription; ten cycles past LRU/cursor/receipt bounds) are unbuilt. Only the plan's M1
+    heading recorded them. (`agent-tasks-m1-stop/result.md` § *Routed*.)
+  - **M1 peak sizing needs an allocation-profile or `--max-old-space-size` arm** before a sampled
+    peak is used to size a host: sampled heap cannot tell unreclaimed garbage from live records.
+    m1-stop added old-space sampling, not this arm. (`agent-tasks-t4/result.md` § *What a later
+    slice must decide*, item 6.)
+  - **A per-source index of reconciliation work** (T4 item 4, left "to T6"; T6 does not address it)
+    and **a distinct failure classification for the read-concurrency refusal**, which today is
+    indistinguishable from a concurrent writer (T4 item 5).
+  - **The snapshot prompt path trusts its context to be one render** — the receipt-to-text pairing is
+    trusted, not verified; verifying needs a text hash in the receipt, a T2/T7 surface change.
+    Documented only on `checkTaskPrompt`. (`agent-tasks-i2/result.md`, layer-1 P2-a.)
+  - **An inspect-only stop surface still needs a writer** — a host that wants a model to watch stops
+    but never request one must still pass a writer. "Recorded here, not built."
+    (`agent-tasks-i1d/result.md` § *Layer 1*, P3.)
+  - **T2's input-size bounds are sanity bounds, not measured** (10,000 entries per list, 200 items
+    per receipt), and **`allTaskResults`** — now used in two files — was to be recorded as a
+    `ts-utils` candidate at close. (`agent-tasks-t2/result.md` § *Things a later slice must decide*.)
+  - **`development-design.md` § 9's tie-break wording** ("task ID and update ID") was flagged by T2
+    for correction and is unchanged.
+  - **Per-owner vs repository-wide limit structure** — T1 called it "T3's call"; T3's result gives
+    it no disposition. (`agent-tasks-t1/result.md` items 4–5.)
+  - **FileTree upstream gaps found by T3:** no child-by-name lookup, and two session repositories
+    over one directory reached via two items are not detected ("Residual, documented").
+    (`agent-tasks-t3/result.md` § *Review*, round 6.)
+  - **A shared decoder for `_taskOf`** (T8 layer-1 P3.6, "a follow-up" in its `state.md`) and the
+    brief's **index repair** deliverable, which neither T8 artifact addresses.
+  - **`rushx coverage` fails in `ts-agent-tasks` with a babel-parser error** (pre-existing at T1;
+    `rushx test` carries the coverage gate). (`agent-tasks-t1/result.md` § *Gate results*.)
+  - **A stale comment in source:** `src/test/unit/journey/publicJourney.test.ts` points at
+    `.ai/tasks/active/agent-tasks-p1/result.md`, now at `.ai/tasks/completed/2026-10/agent-tasks-p1/`.
+    The cluster close changes no `src/` file, so it is left for the next stream to touch that file.
+
+  **Trigger**: each item's own surface — the next stream touching that packlet, measurement or
+  design section. The first two belong with any future M1 run.
+
+  **Scope sketch**: individual; most are a test, a measurement arm or a one-line doc fix. Split an
+  item into its own entry when someone picks it up.
+
+  **Not a P2**: none is a correctness defect in shipped behaviour; each is an unmeasured bound, an
+  unbuilt convenience or a doc drift.
+
+  **Reference**: `agent-tasks-cluster-close` `result.md` § *Recorded nowhere durable*.
+
 - ~~**[P3] `task_inspect` returns a task's details as unframed host JSON beside the framed context.**~~
   **Resolved by I2 (2026-10-01): details are data, framed like task prose.** `context` publishes
   `serializeTaskData` (the renderer's `quoteData` escaping applied to every string of a JSON value,
@@ -949,8 +1002,9 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
   `M49` (pattern found 0 times) and `M39` (found 3 times) as `UNVERIFIED`: later refactors of
   `src/packlets/storage/` moved the lines they mutate. The script's own header says a moved line's row
   is re-pointed, not deleted — these were not. Their protections are unmeasured by the matrix until
-  they are. Present at the I1a landing (`387969ed`), found by I1b's `--check`; I1b touches no storage
-  source, so it did not re-point them.
+  they are. Present at the I1a landing (`387969ed`); first recorded as stale by `agent-tasks-t8b`
+  ("left as found"), routed here by I1b's `--check`; I1b touches no storage source, so it did not
+  re-point them. Still UNVERIFIED at the cluster close (2026-10-01).
 
   **Trigger**: the next stream that touches `src/packlets/storage/`, or any matrix run that selects
   storage rows.
@@ -1033,7 +1087,9 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
   to stop does not double-apply anything — so a usability gap, not a safety one. Pinned:
   `trackedCommandTools.test.ts` › *a value only the converter refuses…*.
 
-  **Trigger**: I1d, which owns `packlets/tools/` — or the first consumer whose model hits it.
+  **Trigger**: ~~I1d, which owns `packlets/tools/`~~ — I1d (#706) neither took nor mentioned it, so
+  that trigger passed unacted (found at the cluster close, 2026-10-01). Now: the next stream that
+  touches `packlets/tools/commandTools.ts`, or the first consumer whose model hits it.
 
   **Also in that file, a stale comment.** `_send`'s comment ("the writer canonicalizes them — once —
   through the registered handle's `validate`") is true for external kinds only; for `fgv.tracked@1`
