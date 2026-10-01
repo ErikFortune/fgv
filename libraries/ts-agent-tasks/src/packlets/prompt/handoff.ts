@@ -61,12 +61,17 @@ export interface ITaskPromptHandoff {
    * If the text sent differs in any way, the delivery's manifest is abandoned before this returns,
    * so the receipt can never be acknowledged by any path, and the failure is `invalid-receipt` —
    * unless this handoff already acknowledged it, in which case the mismatch is refused and the
-   * acknowledged manifest is left alone, so a replay of the exact text stays idempotent. Its
+   * acknowledged manifest is left alone, so a replay of the exact text stays idempotent. A refusal
+   * is terminal in the handoff itself, set before the abandonment is attempted: if abandoning fails,
+   * every later call is still refused. Calls on one handoff run one at a time. Its
    * obligations stay owed, for a later prepare. A matching text is acknowledged by the delivery
    * exactly as `IBoundTaskDelivery.acknowledge` would, replay included.
    */
   acknowledge(sentSystem: string): Promise<TaskResult<IAcknowledgementResult>>;
-  /** Abandons the delivery's manifest without acknowledging: for a host whose call did not complete. */
+  /**
+   * Abandons the delivery's manifest without acknowledging: for a host whose call did not complete.
+   * Every later `acknowledge` is refused, whether or not abandoning succeeded.
+   */
   abandon(): Promise<TaskResult<DeliveryId>>;
 }
 
@@ -106,9 +111,21 @@ function _handoff(
   expiresAt: Instant
 ): ITaskPromptHandoff {
   const { receiptFor, ...prompt } = checked;
-  // Once acknowledged, the manifest's history is what makes a replay idempotent; a later mismatched
-  // send is refused without abandoning it.
+  // `refused` is terminal and set before any await: once a mismatched send or an abandonment has
+  // been seen, no later call releases the receipt, whatever storage answered. `acknowledged` keeps a
+  // later mismatch from abandoning a manifest whose history makes replay idempotent. Operations run
+  // one at a time, so neither flag is ever read while another call is between its check and its act.
+  let refused: boolean = false;
   let acknowledged: boolean = false;
+  let tail: Promise<unknown> = Promise.resolve();
+  const serial = <T>(operation: () => Promise<T>): Promise<T> => {
+    const run: Promise<T> = tail.then(operation, operation);
+    tail = run.then(
+      () => undefined,
+      () => undefined
+    );
+    return run;
+  };
   const view: TaskContextView = {
     text: context.text,
     entries: context.entries,
@@ -120,27 +137,36 @@ function _handoff(
     context: view,
     deliveryId,
     expiresAt,
-    acknowledge: async (sentSystem: string): Promise<TaskResult<IAcknowledgementResult>> => {
-      const receipt: Result<ITaskInclusionReceipt> = receiptFor(sentSystem);
-      if (receipt.isFailure()) {
-        if (acknowledged) {
-          return failWithDetail<IAcknowledgementResult, ITaskFailure>(
-            `acknowledge ${deliveryId}: ${receipt.message}; the delivery was already acknowledged`,
-            { code: 'invalid-receipt', retry: 'after-host-action' }
-          );
+    acknowledge: (sentSystem: string): Promise<TaskResult<IAcknowledgementResult>> =>
+      serial(async () => {
+        const receipt: Result<ITaskInclusionReceipt> = receiptFor(sentSystem);
+        if (receipt.isSuccess() && !refused) {
+          const result: TaskResult<IAcknowledgementResult> = await delivery.acknowledge(receipt.value);
+          acknowledged = acknowledged || result.isSuccess();
+          return result;
         }
+        if (receipt.isSuccess() || acknowledged) {
+          const why: string = receipt.isSuccess()
+            ? 'this handoff was refused or abandoned earlier'
+            : `${receipt.message}; the delivery was already acknowledged`;
+          return failWithDetail<IAcknowledgementResult, ITaskFailure>(`acknowledge ${deliveryId}: ${why}`, {
+            code: 'invalid-receipt',
+            retry: 'after-host-action'
+          });
+        }
+        refused = true;
         const abandoned: TaskResult<DeliveryId> = await delivery.abandon(deliveryId);
         return _refused<IAcknowledgementResult>(
           `acknowledge ${deliveryId}: ${receipt.message}`,
           'invalid-receipt',
           abandoned
         );
-      }
-      const result: TaskResult<IAcknowledgementResult> = await delivery.acknowledge(receipt.value);
-      acknowledged = acknowledged || result.isSuccess();
-      return result;
-    },
-    abandon: (): Promise<TaskResult<DeliveryId>> => delivery.abandon(deliveryId)
+      }),
+    abandon: (): Promise<TaskResult<DeliveryId>> =>
+      serial(() => {
+        refused = true;
+        return delivery.abandon(deliveryId);
+      })
   };
 }
 
@@ -152,6 +178,6 @@ function _refused<T>(
 ): TaskResult<T> {
   const outcome: string = abandoned.isSuccess()
     ? 'the delivery was abandoned, so its receipt can never be acknowledged'
-    : `abandoning the delivery also failed (${abandoned.message}); its receipt expires unacknowledged`;
+    : `abandoning the delivery also failed (${abandoned.message}); this handoff refuses every later acknowledgement and the receipt expires unacknowledged`;
   return failWithDetail<T, ITaskFailure>(`${message}; ${outcome}`, { code, retry: 'after-host-action' });
 }

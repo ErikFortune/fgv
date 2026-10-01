@@ -122,7 +122,7 @@ const ROWS = [
   m(
     "I2-16 the host's substitutions may fill the task slot",
     CP,
-    'slot in params.request.substitutions',
+    'Object.prototype.hasOwnProperty.call(params.request.substitutions, slot)',
     'slot.length < 0'
   ),
   m(
@@ -146,8 +146,8 @@ const ROWS = [
   m(
     'I2-20 a mismatched send after acknowledgement abandons it',
     HO,
-    'if (acknowledged) {',
-    'if (acknowledged && sentSystem.length < 0) {'
+    'if (receipt.isSuccess() || acknowledged) {',
+    'if (receipt.isSuccess()) {'
   ),
   m(
     'I2-21 details reach the model unescaped',
@@ -193,6 +193,36 @@ const ROWS = [
     FR,
     "value: context.text, directive: 'prose'",
     "value: `${context.text}${JSON.stringify(context)}`, directive: 'prose'"
+  ),
+  m(
+    'I2-31 handoff calls are not serialized',
+    HO,
+    'const run: Promise<T> = tail.then(operation, operation);',
+    'const run: Promise<T> = operation();'
+  ),
+  m(
+    'I2-32 a mismatched send is not terminal if its abandonment fails',
+    HO,
+    '        refused = true;\n        const abandoned',
+    '        const abandoned'
+  ),
+  m(
+    "I2-33 the handoff's abandon is not terminal",
+    HO,
+    '        refused = true;\n        return delivery.abandon(deliveryId);',
+    '        return delivery.abandon(deliveryId);'
+  ),
+  m(
+    'I2-34 an inherited property counts as a host substitution of the task slot',
+    CP,
+    'Object.prototype.hasOwnProperty.call(params.request.substitutions, slot)',
+    'slot in params.request.substitutions'
+  ),
+  m(
+    'I2-35 a section length need not be a count of characters',
+    CP,
+    'if (!Number.isInteger(section.chars) || section.chars < 0) {',
+    'if (section.chars === -1000) {'
   )
 ];
 

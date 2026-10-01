@@ -90,7 +90,8 @@ export function serializeRecord(value: RecordValue): string {
 
 /**
  * Serializes any JSON value as one line of JSON in which every string — keys included — is quoted
- * by {@link quoteData}, so no character of task data can escape the frame it is placed in.
+ * the way the renderer quotes task prose, so no character of task data can escape the frame it is
+ * placed in.
  *
  * @remarks
  * The published form of the escaping {@link TaskContextRenderer} applies to task prose, for task

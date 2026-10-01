@@ -3074,8 +3074,6 @@ export type RecoveryResult = {
 // @public
 export function runTaskRepositoryConformance(factory: TaskRepositoryFactory): Promise<Result<ITaskRepositoryConformanceReport>>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-agent-tasks" does not have an export "quoteData"
-//
 // @public
 export function serializeTaskData(value: JsonValue): Result<string>;
 

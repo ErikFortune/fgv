@@ -162,7 +162,10 @@ export interface ICheckedTaskPrompt extends ITaskPromptCheck {
 export async function checkTaskPrompt(params: ICheckTaskPromptParams): Promise<Result<ICheckedTaskPrompt>> {
   const slot: SlotName = params.taskSlot ?? defaultTaskContextSlotName;
   const label: string = `task prompt ${params.request.id}`;
-  if (params.request.substitutions !== undefined && slot in params.request.substitutions) {
+  if (
+    params.request.substitutions !== undefined &&
+    Object.prototype.hasOwnProperty.call(params.request.substitutions, slot)
+  ) {
     return fail(`${label}: the host's substitutions name the task slot '${slot}'; only the context fills it`);
   }
   const request: IPromptResolveRequest = {
@@ -234,6 +237,11 @@ function _availableComposition(resolved: IResolvedPrompt): Result<IPromptComposi
   }
   let offset: number = 0;
   for (const section of composition.sections) {
+    if (!Number.isInteger(section.chars) || section.chars < 0) {
+      return fail(
+        `composition section at ${section.start} has length ${section.chars}, not a count of characters`
+      );
+    }
     if (section.start !== offset) {
       return fail(
         `composition section at ${section.start} does not follow the previous one, which ends at ${offset}`

@@ -37,6 +37,7 @@ class RecordingDelivery implements IBoundTaskDelivery {
   public issued: ITaskInclusionReceipt | undefined;
   public failPrepare: boolean = false;
   public failAbandon: boolean = false;
+  public throwAcknowledge: boolean = false;
   public readonly subscriptionId: IBoundTaskDelivery['subscriptionId'];
   private readonly _inner: IBoundTaskDelivery;
 
@@ -66,6 +67,9 @@ class RecordingDelivery implements IBoundTaskDelivery {
   }
 
   public acknowledge(receipt: unknown): ReturnType<IBoundTaskDelivery['acknowledge']> {
+    if (this.throwAcknowledge) {
+      throw new Error('delivery offline');
+    }
     return this._inner.acknowledge(receipt);
   }
 
@@ -167,7 +171,7 @@ describe('a changed or dropped task slot prevents acknowledging the original rec
     expect(await ready.acknowledge(sent)).toFailWith(/not the checked body.*the delivery was abandoned/);
     expect(await ready.acknowledge(sent)).toFail();
     // Neither the exact text now, nor the receipt itself through the delivery, acknowledges anything.
-    expect(await ready.acknowledge(ready.prompt.system)).toFailWith(/not a receipt this delivery issued/);
+    expect(await ready.acknowledge(ready.prompt.system)).toFailWith(/refused or abandoned earlier/);
     expect(await delivery.acknowledge(delivery.issued)).toFailWith(/not a receipt this delivery issued/);
     expect(await pendingIds(delivery)).toEqual(owed);
   });
@@ -194,7 +198,8 @@ describe('a changed or dropped task slot prevents acknowledging the original rec
   test('a host abandoning the handoff leaves its receipt unacknowledgeable', async () => {
     const ready = (await handoff()).orThrow();
     expect(await ready.abandon()).toSucceedWith(ready.deliveryId);
-    expect(await ready.acknowledge(ready.prompt.system)).toFailWith(/not a receipt this delivery issued/);
+    expect(await delivery.acknowledge(delivery.issued)).toFailWith(/not a receipt this delivery issued/);
+    expect(await ready.acknowledge(ready.prompt.system)).toFailWith(/refused or abandoned earlier/);
   });
 });
 
@@ -214,9 +219,54 @@ describe('when the delivery itself fails', () => {
     );
   });
 
-  test('if abandoning after a mismatched send also fails, the failure says so', async () => {
+  test('if abandoning after a mismatched send also fails, the handoff still refuses every later call', async () => {
     const ready = (await handoff()).orThrow();
     delivery.failAbandon = true;
     expect(await ready.acknowledge('other')).toFailWith(/abandoning the delivery also failed/);
+    delivery.failAbandon = false;
+    // The manifest is still live in storage, but the handoff never releases the receipt again.
+    expect(await ready.acknowledge(ready.prompt.system)).toFailWith(/refused or abandoned earlier/);
+  });
+
+  test('if an explicit abandon fails, the handoff still refuses every later call', async () => {
+    const ready = (await handoff()).orThrow();
+    delivery.failAbandon = true;
+    expect(await ready.abandon()).toFailWith(/storage unavailable/);
+    expect(await ready.acknowledge(ready.prompt.system)).toFailWith(/refused or abandoned earlier/);
+  });
+});
+
+describe('calls on one handoff run one at a time', () => {
+  test('an exact acknowledgement and a mismatched send in flight together: the acknowledgement wins and replay survives', async () => {
+    const ready = (await handoff()).orThrow();
+    const [exact, mismatched] = await Promise.all([
+      ready.acknowledge(ready.prompt.system),
+      ready.acknowledge('something else')
+    ]);
+    expect(exact).toSucceed();
+    expect(mismatched).toFailWith(/already acknowledged/);
+    expect(await ready.acknowledge(ready.prompt.system)).toSucceedAndSatisfy((ack) => {
+      expect(ack.newlyAcknowledged).toEqual([]);
+    });
+  });
+
+  test('a mismatched send issued first refuses an exact acknowledgement issued with it', async () => {
+    const owed = await pendingIds(delivery);
+    const ready = (await handoff()).orThrow();
+    const [mismatched, exact] = await Promise.all([
+      ready.acknowledge('something else'),
+      ready.acknowledge(ready.prompt.system)
+    ]);
+    expect(mismatched).toFailWith(/the delivery was abandoned/);
+    expect(exact).toFailWith(/refused or abandoned earlier/);
+    expect(await pendingIds(delivery)).toEqual(owed);
+  });
+
+  test('a call whose delivery throws does not wedge the calls after it', async () => {
+    const ready = (await handoff()).orThrow();
+    delivery.throwAcknowledge = true;
+    await expect(ready.acknowledge(ready.prompt.system)).rejects.toThrow('delivery offline');
+    delivery.throwAcknowledge = false;
+    expect(await ready.acknowledge(ready.prompt.system)).toSucceed();
   });
 });

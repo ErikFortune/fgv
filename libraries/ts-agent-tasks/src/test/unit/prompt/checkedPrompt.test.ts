@@ -200,6 +200,23 @@ describe('composition must be positively available', () => {
     }));
     expect(await check(total)).toFailWith(/composition covers/);
   });
+
+  test('a section length that is not a count of characters fails, even when the offsets still add up', async () => {
+    const lib = await library([standardRecord()]);
+    // The first section claims extra characters and the next one gives them back: every start still
+    // matches the running offset and the total is still the body's length.
+    for (const [over, under] of [
+      [5, -5],
+      [0.5, -0.5]
+    ]) {
+      const overlapping = editSections(lib, ([first, ...rest]) => [
+        { ...first, chars: first.chars + over },
+        { kind: 'template', start: first.start + first.chars + over, chars: under },
+        ...rest
+      ]);
+      expect(await check(overlapping)).toFailWith(/not a count of characters/);
+    }
+  });
 });
 
 describe('the task slot: exactly one, last, per-request, carrying the whole issued context', () => {
@@ -285,6 +302,19 @@ describe('the task slot: exactly one, last, per-request, carrying the whole issu
   test('a body that is only the task context has no stable prefix, and fails', async () => {
     const lib = await library([recordWithBody('{{{taskContext}}}')]);
     expect(await check(lib)).toFailWith(/no stable prefix/);
+  });
+
+  test('a task slot named like an Object.prototype member is not mistaken for a host substitution', async () => {
+    for (const name of ['toString', 'constructor']) {
+      const slot = name as SlotName;
+      const lib = await library([
+        standardRecord({ taskSlot: { name: slot, description: 't', cacheStability: 'per-request' } })
+      ]);
+      expect(await check(lib, { taskSlot: slot })).toSucceedAndSatisfy((checked) => {
+        expect(checked.taskSlot.name).toBe(name);
+        expect(checked.system.endsWith(two.text)).toBe(true);
+      });
+    }
   });
 
   test("the host's substitutions may not name the task slot", async () => {
