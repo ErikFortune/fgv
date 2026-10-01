@@ -2,7 +2,7 @@
 
 **Shipped:** M1's last two cohorts ran. The default profile fills `logical-bytes` first in every mix that keeps tasks live — written data is 1–2% of it, reservations the rest. Retained tasks fill first only under archive churn, and acknowledgement ids only once history accumulates. A cascade stop's breadth is capped at 1,000 targets, not by any capacity dimension; the root's 8 MiB record caps how often it can be stopped. Six of eighteen frozen predictions missed, and none of them was re-thresholded.
 
-PR: ⟨#NNN⟩ into `integration/agent-tasks-v1`. Written 2026-10-01.
+PR: [#708](https://github.com/ErikFortune/fgv/pull/708) into `integration/agent-tasks-v1`. Written 2026-10-01.
 
 ---
 
@@ -368,11 +368,58 @@ To `docs/TECH_DEBT.md` in this PR:
 
 ## Review
 
-⟨layer 1 summary; Copilot⟩
+**Layer 1 (`code-reviewer`, on `a5254d15`, before any recorded run).** It ran one stop arm through
+the real children and answered the brief's question — *does any arm share state with another, and is
+every delta attributable to one owner?*
+
+- **P1-1 — fixed.** A seed-once arm's measured action (the consumer's acknowledgement rewrite)
+  changed the directory its five measuring children shared. Each child now measures its own copy.
+- **P2s — fixed.**
+  - The release action held the parsed root across its settled sample.
+  - Stop states were never asserted.
+  - Unguarded failures could kill a multi-hour run, and nothing was checkpointed.
+  - The fanout verdict did not require 32 pinned receipts.
+  - Peaks could not tell nursery churn from retention; old-space is now sampled beside heapUsed.
+- **P2s — dispositioned with controls rather than changed verdicts.**
+  - Released-over-none bundled paused-task growth with the stop book. A stop-free paused control
+    arm now separates them.
+  - Settled-over-none mixed policy, terminal children and root archival. A satisfied-cancel arm now
+    separates them.
+  - The 1×100 figures carry fixed per-root costs. The marginal slope is now reported beside them.
+- **P3s.** Applied: breadth names no dimension; repetition counts admission refusals only; the
+  history control must complete its plan; the new cohorts imply the fixture gate; clones get fresh
+  titles; old-space is reported for every peak. Labelled: the evidence difference of differences
+  can include identity-scaled satisfied-only copies.
+
+Not caught by layer 1 (found afterwards and disclosed under *Amendments*): the 128-character
+claim-id overflow, and the after-close residual frame.
+
+**Copilot:** requested on #708 by comment.
 
 ## Gates
 
-⟨build / test / change verify⟩
+On the merged tree (I2 #707 merged in, `1731e10b`):
+- `rushx build`: zero warnings, and the API report is unchanged by this stream.
+- `rushx test`: 102 suites pass, at 100% statements, branches, functions and lines.
+- `rush change --verify --target-branch origin/integration/agent-tasks-v1`: passes. The change file
+  is `type: none`, because nothing in `lib`, `dist` or the published documentation changes.
+- `src/` is unchanged, so lint does not apply; `perf/` is not linted.
+- The harness runs from a built `lib/`, five repetitions per arm, and the parent removes its temp
+  roots (`withRoot`; `/tmp` held no `fgv-tasks-m1-*` after each run).
+
+**After merging I2.** I2 changed only `packlets/prompt/`, a new `context/escaping.ts` and tool
+presentation, none of the storage, broker, delivery or renderer code measured here. So the full
+matrix was not repeated. A representative subset was re-run on the merged build (`cf112be3`):
+fixture gate, 1×1,000 none/accepted/satisfied/released, breadth, default repetition, plain, owed, fanout, unresolved and churn, five reps each (`m1-verify-merged-cf112be3.json`). The results:
+- **Refusal counts and dimensions are identical**: 533 / 530 / 520 / 364 on `logical-bytes`;
+  item 10,000 on `retained-tasks`; cycle 62 on `operations`; 1,001 targets `invalid`.
+- **Root-record bytes are byte-identical.**
+- **Post-GC heap is uniformly 0.06–0.14 MiB lower**, so every per-target difference is unchanged
+  (accepted − none: 0.711 vs 0.728 MiB at 1,000 targets). Uniform means the baseline moved: I2's
+  new modules enlarge the import graph that every "above import" figure is measured from.
+- **The owed receipt peak is 24.2 MiB**, still a miss.
+
+Nothing in the findings changes..
 
 ## Raw data
 
@@ -381,5 +428,6 @@ The JSON beside this file is the raw data for every run.
 - `m1-stop-run-merged-fc381e98.json` holds those five arms re-run, merged with the first run's
   other arms, and the analysis over both.
 - `m1-profile-run-acc4a974.json` is the production-profile run.
+- `m1-verify-merged-cf112be3.json` is the re-check on the build with I2 merged.
 
 The `fixture` gate appears in each file.

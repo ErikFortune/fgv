@@ -128,7 +128,7 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
-### `agent-tasks-m1-stop` ✅ (shipped 2026-10-01 via [#NNN](https://github.com/ErikFortune/fgv/pull/NNN)) — M1's stop-state and production-profile cohorts
+### `agent-tasks-m1-stop` ✅ (shipped 2026-10-01 via [#708](https://github.com/ErikFortune/fgv/pull/708)) — M1's stop-state and production-profile cohorts
 
 **Status:** ✅ shipped into `integration/agent-tasks-v1` (not `release`; the cluster promotes as one).
 Branched at `e662da68c`, beside I2, touching only `perf/` and docs. A measurement stream: no `src/`

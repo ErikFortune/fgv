@@ -1,9 +1,9 @@
 # State — `agent-tasks-m1-stop`
 
-**Status:** predictions frozen (`f09c24a2`, before any cohort code); harness written (`a5254d15`);
-layer-1 review applied (`acc4a974`, one P1 + nine P2, recorded as a manifest amendment, no
-prediction changed). **Recorded run in progress**: `--cohorts fixture,stop` first, then
-`--cohorts fixture,productionProfile`; raw JSON goes beside this file as `m1-*-run-<rev>.json`.
+**Status:** complete. PR [#708](https://github.com/ErikFortune/fgv/pull/708) into
+`integration/agent-tasks-v1`; Copilot review requested by comment. `result.md` holds the record.
+I2 (#707) is merged in, and a re-check on the merged build matches. Remaining: drive the Copilot
+loop, and leave the profile decision with the orchestrator and the user.
 
 ## Where things stand
 
@@ -11,7 +11,7 @@ prediction changed). **Recorded run in progress**: `--cohorts fixture,stop` firs
 |---|---|
 | brief | `.ai/tasks/active/agent-tasks-m1-stop/brief.md` — complete |
 | branch | `claude/agent-tasks-m1-stop`, cut off `integration/agent-tasks-v1` at `e662da68c` |
-| PR | none |
+| PR | [#708](https://github.com/ErikFortune/fgv/pull/708) |
 | base | `integration/agent-tasks-v1` — **not `release`** |
 
 ## Brief premises checked against source (before predicting)
