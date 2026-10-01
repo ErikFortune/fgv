@@ -6,6 +6,7 @@ only: no package, no dependency, no change under any `src/`. Every external fact
 together, but not seen end to end), **reported** (a third party says it, and the source could not be
 read here), or **unverified**. Nothing here was run. There was no GPU, and no System-1 server answered
 a request in this phase.
+**Amended 2026-10-01** with the user's answers to OQ-1 (the consumer will experiment, and adoption depends on performance) and OQ-3 (production runs Qwen locally; development connects to a remote Jev or openjev). See §1 decision 6, §7.1, and §8 `meta`.
 **Date:** 2026-10-01. **Inspected checkout:** `30713277c` (`release` HEAD, the base of
 `integration/system-one-decisions`). `ts-agent-tasks` was read from `origin/integration/agent-tasks-v1`
 at `2a95fbb2`.
@@ -43,9 +44,15 @@ promise behind the question.**
    bound and never truncate**.
 5. **Recommendation for Phase C:** a new package, provisionally `@fgv/ts-extras-system-one`. It is a
    Node-only Result boundary over `@typesafe-ai/sdk` with about five primitives, response validation
-   the SDK does not do, a classified failure detail, and the mandatory input bound (§8). This is
-   conditional on Phase B confirming at least one consumer (§9, OQ-1) and on a live check against a
-   real server before any success is claimed (§10).
+   the SDK does not do, a classified failure detail, and the mandatory input bound (§8). A live check
+   against a real server is required before any success is claimed (§10).
+6. **Deployment topology, decided by the user on 2026-10-01** (§7.1). The deployed environment runs
+   Qwen locally, so CLM runs as a sidecar there. Development machines connect to Jev or openjev
+   running elsewhere. The driving consumer will experiment with the package, and whether it adopts
+   it depends on how it performs. The URL-selected design in decision 2 serves this as it stands.
+   What the topology adds is that **development and production answer with different models.** §7.1
+   names what that does and does not let a developer conclude, and §8 gives the experiment the
+   per-call measurements it needs.
 
 **Out of scope for this design:** consumer integrations, which are each their own stream (§11);
 process management for any sidecar; fine-tuning; images and other openjev extensions.
@@ -314,6 +321,52 @@ the URL, and the README has to say it plainly.
 If the user's inner loop is a laptop *and* they need CLM's specific quality, **this design does not
 serve that use today.** OQ-3 says what would change that.
 
+### 7.1 The decided topology: local in production, remote in development
+
+*The user's decision, 2026-10-01:* the deployed environment can run Qwen locally, so CLM runs as a
+sidecar next to the consumer. Development machines connect to Jev or openjev running elsewhere. Both
+cases are the same client with a different `baseUrl`, `model` and `apiKey`. That configuration is
+written at the composition root, so §6.3 holds: platform `fetch`, and no per-call URL. A remote
+development server is reached over `https` with a real key.
+
+The design above already supports this topology. These are the consequences that have to be designed
+for rather than discovered:
+
+1. **Development and production answer with different models.** Jev and openjev's default models are
+   not CLM. A development run proves plumbing, failure handling and the consumer's control flow. It
+   says **nothing** about production thresholds, because probabilities are model-relative (§3).
+   Production thresholds are tuned against CLM.
+2. **A remote CLM narrows that gap without closing it.** openjev serves CLM under the model id
+   `clm-v0.1` (E21). An openjev instance with that route, or a remote `clm-serve`, gives development
+   the same weights. **The behaviour is still not identical.**
+   - openjev's CLM truncates the *start* of an over-long state, where upstream truncates the end
+     (E16, E21).
+   - openjev defaults to FP8 encoder weights, and reports 98.5% top-option agreement with bf16 (E21).
+
+   The design does not depend on which remote is chosen. It only requires that `model` is never
+   defaulted (§8). The model ids differ across backends (`clm-latest`, `clm-v0.1`, `jev-latest`), and
+   a wrong default fails as `invalid-request` at best.
+3. **Truncation differs per backend, so the input bound must not.** This is why `inputLimit` is a
+   **per-call argument in code, not client configuration** (§6.1). It cannot then vary with the
+   environment, and development refuses exactly the inputs production refuses. Set it from the
+   production backend's bound. Upstream CLM is the strictest relevant one, and the one that cuts the
+   question.
+4. **`confidence` differs per backend** (E7 against E21). A consumer that branches on `confidence`
+   will behave differently in development and production by construction. Branch on `probabilities`.
+5. **The SDK's environment fallbacks.** The SDK reads `TYPESAFE_BASE_URL`, `TYPESAFE_API_KEY` and
+   `TYPESAFE_DEFAULT_MODEL` when values are omitted (E12). The boundary always passes explicit values,
+   so a developer's shell variable cannot silently redirect a deployed client. The composition root
+   chooses the environment, and the SDK never does.
+6. **What runs Qwen in production is a new open question (OQ-10).** CLM's heads were trained on
+   **vLLM**, Qwen3-8B, bf16, last-token-pooled embeddings (E2, E4). If "local Qwen" in the deployed
+   environment means vLLM on an NVIDIA GPU, the supported path applies. If it means anything else
+   (llama.cpp, Ollama, a quantized GGUF), two things are unverified:
+   - embedding parity (E19, E20);
+   - whether `truncate_prompt_tokens` is honoured at all. If it is not, inputs over the bound are
+     either refused or silently mishandled, depending on the server.
+
+   The boundary is indifferent to this. The experiment's results are not.
+
 ## 8. Proposed package contract (Phase C sketch, not code)
 
 `@fgv/ts-extras-system-one`, Node ≥ 20, a direct dependency on `@typesafe-ai/sdk ~0.6.0`, and peer
@@ -322,7 +375,7 @@ dependencies on `@fgv/ts-utils` and `@fgv/ts-json-base`.
 | primitive | wraps | returns |
 |---|---|---|
 | `createSystemOneClient({ baseUrl, model, apiKey, timeoutMs?, retry?, logger? })` | `new TypeSafeClient(...)` | `Result<ISystemOneClient>`. **`baseUrl` and `model` are required**: the SDK defaults (`api.typesafe.ai`, `jev-latest`) would silently send CLM a model it rejects with 422 (E9), and would make the backend choice invisible at the composition root. `logger` is an fgv `ILogger` adapted to the SDK's `Logger`. |
-| `askSystemOne(client, { state, questions, inputLimit, signal? })` | `client.systemOne(...)` | `Promise<DetailedResult<SystemOneResult<Q>, SystemOneFailureReason>>`. Runs the §6.1 bound, then the call, then **response validation** (below). Answer types are inferred from `questions`, reusing the SDK's `ResultFor`. |
+| `askSystemOne(client, { state, questions, inputLimit, signal? })` | `client.systemOne(...).withResponse()` | `Promise<DetailedResult<ISystemOneAnswer<Q>, SystemOneFailureReason>>`. Runs the §6.1 bound, then the call, then **response validation** (below). Returns `{ result, meta }`. `result` is the SDK's `SystemOneResult<Q>`, with answer types inferred from `questions`. `meta` is `{ model, usage, elapsedMs, requestId?, serverTiming? }`, described below. |
 | `listSystemOneModels(client)` | `client.models.list()` | `Promise<Result<ReadonlyArray<ModelCard>>>` |
 | `noul` / `choice` / `score` | re-exports | SDK question builders, so there are no parallel types |
 | `measureSystemOneInput(state, questions)` | — | the per-question and per-criterion lengths that the §6.1 check uses, so a caller can size a budget before calling |
@@ -339,6 +392,24 @@ own questions:
 A mismatch is `'invalid-response'`. A server can return a well-formed answer to a different set of
 questions, and none of the three servers promises otherwise. Use `Converters` / `Validators` per
 `/type-safe-validation`; never a cast.
+
+**Per-call `meta`, there because adoption is decided by measured performance (§1, decision 6).** The consumer's
+experiment needs, for every call:
+
+- the answering `model`, so a development run against Jev is never mistaken for a CLM run;
+- `usage`;
+- `elapsedMs`, client wall time including any SDK retries, measured by the boundary;
+- `requestId`, from `x-typesafe-request-id` when the server sends one;
+- `serverTiming`: the raw `Server-Timing` (openjev) or `X-CLM-Latency-Ms` (CLM) header value,
+  **passed through unparsed**. Each backend formats it differently, and parsing it is the consumer's
+  analysis, not the boundary's.
+
+This is measurement, not policy. Nothing aggregates it, and nothing acts on it.
+
+**Development latency is not production latency.** In development, `elapsedMs` includes a WAN round
+trip to a remote server, which runs a different model on different hardware. Only measurements taken
+against the deployed sidecar say anything about production. Having `serverTiming` next to `elapsedMs`
+is what lets the consumer separate model time from network time.
 
 **`SystemOneFailureReason`:**
 
@@ -379,8 +450,11 @@ the contract above. The question here is only whether any of them would use it.
 | **`ts-agent-tasks`** | **Weaker than the brief claimed** (§2). Available commands are bare names from `task_inspect`. Executing one needs model-written `parameters` (`outcome`, `reason`, `title` …), which a System-1 model cannot produce. There is **no selection seam**: the only chooser is the model making a tool call. | A new host-side seam, for example "rank the available commands" as a pre-filter or verifier ahead of the LLM turn. That is a design change in `ts-agent-tasks`, not an adapter. `start` and `resume` carry no parameters, so a pure choice could execute only those. | **Not a v1 consumer.** At most a verifier or pre-filter, and only after `ts-agent-tasks` decides it wants a selection seam. |
 | **`ts-agent-memory` retrieval** | **Partial.** `IMergeStrategy.merge` is synchronous, does not receive the query, and returns an order (`retrieve/hybridRetriever.ts:24-32`). The only async seam that sees the query is wrapping an `IMemoryRetriever`. There is no reranker interface. | A rerank seam that receives the query, or a wrapping retriever, plus acceptance that rerank probabilities are set-relative (no absolute relevance cut-off) and that each candidate record is truncated at the backend bound (E17). | **Not a v1 consumer.** A plausible later one if a rerank seam is added on its own merits. |
 
-Net: one consumer fits as-is. Without it, this is the "interesting demo" the brief warns about.
-OQ-1 asks Phase B to confirm it.
+Net: one consumer fits as-is. *Resolved 2026-10-01 (OQ-1):* the driving consumer will experiment with
+the package, and whether it adopts it depends on how it performs. That is enough to build it, because
+the package is general on its own terms, and §8's `meta` serves the experiment without bending the
+contract toward one consumer. The experiment's conclusions about whether CLM is good enough belong to
+the consumer. The boundary makes them observable; it does not make them.
 
 ## 10. Validation Phase C must do before claiming anything
 
@@ -392,9 +466,12 @@ No success may be claimed from mocked SSE-style fixtures alone. This is the `TES
    - every failure reason;
    - the input-limit refusal, which must fire before any fetch;
    - validation rejecting a mismatched answer set.
-2. **One live round trip** against a real wire-compatible server, recorded in the stream's
-   `result.md` with backend, model and hardware. Without one, `result.md` says **"not run live"**.
-   The CPU openjev models are the cheapest way to do this, and CLM on a GPU is the most relevant.
+2. **Live round trips, one per topology leg (§7.1)**, each recorded in the stream's `result.md` with
+   backend, model, hardware and the `meta` it returned:
+   - a remote development server (Jev or openjev), over `https` with a key;
+   - CLM on a local sidecar as deployed (`clm-serve` on loopback).
+
+   Any leg that was not run is recorded as **"not run live"**, never inferred from the other leg.
 3. **A test that the request body carries `model`**, since the SDK's default would otherwise hide a
    misconfiguration.
 
@@ -428,17 +505,16 @@ No success may be claimed from mocked SSE-style fixtures alone. This is the `TES
 
 Each question is followed by what would resolve it.
 
-1. **OQ-1 — Is there a committed first consumer?** §9 says the prompt-assist screener fits as-is.
-   *Resolved by:* the user or orchestrator confirming a screener (or another named consumer) will
-   adopt it. If none will, this design's recommendation becomes **"not yet"**: ship nothing, and keep
-   this document as the plan.
+1. **OQ-1 — Is there a committed first consumer? RESOLVED 2026-10-01 (user).** The driving consumer
+   will experiment with the package, and adoption depends on performance. Phase C proceeds. Its
+   consequence for the design is §8's per-call `meta`.
 2. **OQ-2 — Package name.** `@fgv/ts-extras-system-one` is provisional. *Resolved by:* triage. The
    constraints are §6.4's: not `-clm`, and not vendor-named if the backend is the consumer's choice.
-3. **OQ-3 — Can CLM run on the user's inner-loop machine?** *Resolved by:* a usage fact the design
-   cannot observe. What is the inner-loop hardware: a Linux NVIDIA box, or an Apple-silicon laptop?
-   If it is the laptop, one experiment settles it: `clm-serve --emb-url` against
-   `llama-server --pooling last` on a Qwen3-8B GGUF, compared with vLLM on a GPU over a fixed question
-   set. If the user does not need CLM specifically, §7's table already answers this.
+3. **OQ-3 — Can CLM run on the user's inner-loop machine? RESOLVED 2026-10-01 (user), by changing the
+   question.** CLM runs in the deployed environment, which can host Qwen. Development machines
+   connect to Jev or openjev running elsewhere. Nobody needs CLM on a laptop, so the llama.cpp laptop
+   experiment is dropped. The consequences are in §7.1. What remains open is what runs Qwen in
+   deployment (OQ-10).
 4. **OQ-4 — Recommended `maxChars` per backend.** *Resolved by:* measuring Qwen3-tokenizer token
    counts against character counts on representative states (task context, prompt slot values,
    memory records), then picking a value with a stated margin. The ModernBERT and Gemma tokenizers
@@ -460,6 +536,17 @@ Each question is followed by what would resolve it.
 9. **OQ-9 — SDK pin and churn.** Releases so far are 0.5.7 and 0.6.0, three weeks apart.
    *Resolved by:* triage choosing `~0.6.0` or an exact pin, and whether a minor bump needs a review
    gate.
+10. **OQ-10 — What serves Qwen3-8B in the deployed environment?** (§7.1, item 6.) It matters if it is
+    vLLM on NVIDIA, the path CLM was trained and verified against. If it is anything else (llama.cpp,
+    Ollama, a quantized model), the experiment is measuring an unverified encoder path, and
+    `truncate_prompt_tokens` may not be honoured. *Resolved by:* a usage fact from the deployment owner.
+    If the answer is not vLLM, also run a parity check of the deployed encoder against vLLM bf16 over
+    a fixed question set before the experiment's numbers are trusted. This does not block Phase C,
+    because the boundary is indifferent to it. It does block reading the experiment's results.
+11. **OQ-11 — Which remote does development use for performance comparisons?** Jev gives the hosted
+    comparison. An openjev or `clm-serve` instance serving CLM gives the same weights as production
+    (with the differences listed in §7.1, item 2). *Resolved by:* the consumer's experiment plan. The
+    package supports any of them unchanged.
 
 ## 13. Revert matrix
 

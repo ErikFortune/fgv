@@ -31,8 +31,11 @@ finalizes at cluster close, after Phase C.
 
 ## Next
 
-Phase B triage works design §12 (OQ-1..OQ-9). OQ-1 (a committed consumer) decides between "implement"
-and "not yet".
+The user answered OQ-1 and OQ-3 on 2026-10-01. The consumer will experiment, and adoption depends on
+performance. Production runs Qwen locally, and development connects to a remote Jev or openjev. Both
+answers are folded into the design (§1 decision 6, §7.1, §8 `meta`), and **Phase C proceeds.** Phase B
+triage works the remaining open questions: OQ-2, OQ-4 to OQ-9, and the new OQ-10 (what serves Qwen in
+deployment) and OQ-11 (which remote development uses).
 
 ## Gate runs
 

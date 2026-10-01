@@ -72,18 +72,40 @@ on one model does not carry to another.
 - `TaskContextRenderer` omissions are **counted**, not named.
 - The default port the brief gave was the encoder's port, not the API's.
 
+## User decisions, 2026-10-01 (folded into design §1 decision 6, §7.1, §8 and §12)
+
+- **OQ-1 resolved.** The consumer will experiment with the package, and adoption depends on how it
+  performs. Phase C proceeds. Each call returns `meta`, so the experiment can measure performance:
+  `model`, `usage`, `elapsedMs`, `requestId`, and the raw `serverTiming` header.
+- **OQ-3 resolved.** Production runs Qwen locally, with CLM as a sidecar. Development connects to Jev
+  or openjev running elsewhere. Both are the same client with a different URL, model and key; the
+  design needed no structural change. The consequences that are now designed in:
+  - development and production answer with different models, so development tests plumbing and not
+    thresholds;
+  - an openjev `clm-v0.1` route or a remote `clm-serve` narrows that gap without closing it;
+  - `inputLimit` is per-call code, so development refuses exactly what production refuses;
+  - consumers branch on `probabilities`, never `confidence`;
+  - the boundary passes explicit values, so the SDK's `TYPESAFE_*` environment variables cannot
+    redirect a deployed client;
+  - latency measured in development is not production latency.
+- **New: OQ-10.** What serves Qwen in deployment? If it is not vLLM, the encoder path is unverified,
+  and reading the experiment's numbers waits on a parity check. **OQ-11:** which remote development
+  uses for comparisons.
+
 ## For Phase B, numbered (design §12)
 
-1. OQ-1: is there a committed first consumer? The prompt-assist screener fits as-is. If there is none,
-   the recommendation becomes **"not yet"**.
+1. OQ-1: **resolved.** The consumer will experiment, and adoption depends on performance.
 2. OQ-2: the package name.
-3. OQ-3: the user's inner-loop hardware, and the laptop llama.cpp experiment.
+3. OQ-3: **resolved.** CLM runs in the deployed environment, and development uses a remote server.
 4. OQ-4: a measured `maxChars` per backend.
 5. OQ-5: Jev's semantics (docs are blocked).
 6. OQ-6: SDK behaviour against non-Jev servers.
 7. OQ-7: whether `'unchecked'` survives.
 8. OQ-8: whether the README warns on CLM `score` reliability.
 9. OQ-9: SDK pin and churn policy.
+10. OQ-10: what serves Qwen in deployment. This gates *reading* the experiment, not building the
+    package.
+11. OQ-11: which remote development uses for comparisons.
 
 ## Gates
 

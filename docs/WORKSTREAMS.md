@@ -475,8 +475,14 @@ with probabilities, such as hosted Jev and local CLM-8B.
   heads only.
 - **Upstream CLM silently truncates the question away**, so fgv refuses at a mandatory caller bound.
 
-**Phase B gate:** OQ-1, a committed first consumer. The prompt-assist screener fits as-is. With no
-consumer, the outcome is "not yet".
+**User decisions, 2026-10-01:**
+
+- OQ-1 is resolved: the consumer will experiment, and adoption depends on performance.
+- OQ-3 is resolved: production runs Qwen and CLM locally, and development connects to a remote Jev or
+  openjev.
+
+Phase C proceeds. Phase B works the remaining open questions, including the new OQ-10 (what serves
+Qwen in deployment).
 
 ---
 
