@@ -251,6 +251,17 @@ missed, so the loop continues.
 Round 3 was entirely documentation that followed from round 2's correction — the same fact, propagated
 to every place that stated the old contract. Nothing in it touched behaviour or tests.
 
+**Round 4 (on `6f5d7467`) — "Findings: None".** Posted 00:57. Its overview lists all four round-3
+findings resolved, and one "previously missed" medium in unchanged code: the e2e helper `send` was
+declared `Promise<ReturnType<typeof call<…>>>`, a nested promise (`call` already returns one). Real,
+test-only typing; fixed to `Promise<Result<TaskCommandToolResult>>`.
+
+**Loop stopped at 4 rounds on diminishing returns.** Rounds 1–2 found substantive items (unchecked
+casts at a provider boundary; a public contract this slice made false). Round 3 was that same
+correction propagated through the remaining docs, and round 4 found nothing new in changed code and
+one test-only typing nit. CI `build` green on every head from `4b087df9` to `6f5d7467`; every review
+thread resolved.
+
 No source behaviour changed in any round, so the matrix rows' patterns are untouched (`--check`: all TC rows found
 once) and the results above stand. Package suite after round 2: 95 suites, 2,277 tests, 100 %.
 

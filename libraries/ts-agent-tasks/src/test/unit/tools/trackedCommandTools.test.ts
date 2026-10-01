@@ -12,7 +12,7 @@
  */
 
 import '@fgv/ts-utils-jest';
-import { Converters } from '@fgv/ts-utils';
+import { Converters, Result } from '@fgv/ts-utils';
 import { AiAssist } from '@fgv/ts-extras';
 import { Converters as JsonConverters, JsonObject } from '@fgv/ts-json-base';
 import {
@@ -80,7 +80,7 @@ async function send(
   taskId: string,
   command: string,
   parameters: unknown
-): Promise<ReturnType<typeof call<TaskCommandToolResult>>> {
+): Promise<Result<TaskCommandToolResult>> {
   const { revision } = await inspected(tools, taskId);
   return call<TaskCommandToolResult>(tools, toolName(command), {
     taskId,

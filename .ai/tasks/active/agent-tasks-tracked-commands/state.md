@@ -1,7 +1,8 @@
 # State — `agent-tasks-tracked-commands`
 
 **Status:** implemented; PR [#705](https://github.com/ErikFortune/fgv/pull/705) open into
-`integration/agent-tasks-v1`. Layer 1 done; Copilot loop in progress.
+`integration/agent-tasks-v1`. Layer 1 done; Copilot loop stopped at 4 rounds (diminishing returns); CI green.
+Waiting on review and merge.
 
 ## Where things stand
 
@@ -21,7 +22,6 @@
 
 ## Remaining
 
-- Copilot loop (trigger with an `@copilot review` comment; the API trigger is unreliable).
 - Keep the matrix results in `result.md` current if a review round moves `builtinKinds.ts`.
 - Do **not** run `/finalize-task`; the family finalizes at cluster close.
 
