@@ -1284,6 +1284,9 @@ here so a stream can be found by id without opening them; each archive links bac
 the same "docs ship with the code" rule as everywhere else, so the working ledger never
 accumulates history again.
 
+**[2026-10](workstreams/2026-10.md)** — 1 shipped
+`personality-intake`
+
 **[2026-09](workstreams/2026-09.md)** — 9 shipped
 `null-prototype-property-guard` · `ai-assist-anthropic-structured-output` · `ai-assist-model-catalog-2026-09` · `prompt-assist-qualifier-stability` · `ai-assist-streaming-cache` · `filetree-atomic-write` · `ai-assist-prompt-caching` · `ai-assist-thinking-anchoring` · `prompt-composition-metadata`
 
