@@ -1887,7 +1887,7 @@ const I1D_ROWS = [
     'I1d-16 the stop writer need not be the view',
     TL + 'taskTools.ts',
     "  if (options.writer !== ctx.view) {\n    return fail('task tools: stops.writer",
-    "  if (options.writer !== options.writer) {\n    return fail('task tools: stops.writer",
+    "  if (options.writer === undefined) {\n    return fail('task tools: stops.writer",
     I1D
   ),
   m(
