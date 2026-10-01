@@ -161,7 +161,7 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
   and document 536**, which `defaultTaskCapacityLimits`' remarks and the `CAPABILITIES.md` runbook now
   do. The open question is carried by the smaller entry below.
 
-  **Reference**: `.ai/tasks/active/agent-tasks-t8b/result.md` § *Profile*; the history of this
+  **Reference**: `.ai/tasks/completed/2026-10/agent-tasks-t8b/result.md` § *Profile*; the history of this
   entry is in `agent-tasks-t4` … `agent-tasks-t8` `result.md` files and
   [#687](https://github.com/ErikFortune/fgv/pull/687).
 
@@ -293,8 +293,7 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
   of a latched task on every commit, and the broker names each refusal `stop-active`
   (`agent-tasks-t9` `result.md` § *The admission freeze*).
   **Trigger:** the start of T6, T7, T8 and T9 respectively. **Reference:** the `agent-tasks-t5`
-  stream's `result.md` § *What a later slice must decide* (at `.ai/tasks/active/agent-tasks-t5/`
-  until the `agent-tasks-v1` cluster finalizes).
+  stream's `result.md` § *What a later slice must decide* (at `.ai/tasks/completed/2026-10/agent-tasks-t5/`).
 
 - **[P2] `ts-agent-tasks` source hand-offs T6 left for T7/T8/T9 — each is the named slice's to
   decide, and none is safe to leave implicit.**
@@ -324,8 +323,7 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
   `contractVersion`) and names the kind's command for each mode; asked on every stop pass, its
   evidence revalidated after reopen.
   **Trigger:** the start of T7, T8 and T9 respectively. **Reference:** the `agent-tasks-t6`
-  stream's `result.md` § *Hand-offs* (at `.ai/tasks/active/agent-tasks-t6/` until the
-  `agent-tasks-v1` cluster finalizes).
+  stream's `result.md` § *Hand-offs* (at `.ai/tasks/completed/2026-10/agent-tasks-t6/`).
 
 - **[P2] `ts-agent-tasks` stop hand-offs T9 left open — each named with the slice or trigger that
   owns it.**
@@ -343,8 +341,7 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
   (3) ~~**M1's stop-state cohort** is not run by T9~~ *Resolved by `agent-tasks-m1-stop`* (2026-10-01):
   run, with the stop's resident and on-disk cost per target, latch and evidence record, and its
   bounds — breadth by the 1,000-target cap, repetition by the root's record (`record-bytes`) or
-  per-task `operations`. **Reference:** `agent-tasks-t9` `result.md` (at `.ai/tasks/active/agent-tasks-t9/`
-  until the `agent-tasks-v1` cluster finalizes) and `agent-tasks-m1-stop` `result.md`.
+  per-task `operations`. **Reference:** `agent-tasks-t9` `result.md` (at `.ai/tasks/completed/2026-10/agent-tasks-t9/`) and `agent-tasks-m1-stop` `result.md`.
 
 - **[P2] `ts-agent-tasks` receipt preparation's working set follows owed volume, not the receipt.**
   `BoundTaskDelivery.prepare` (`broker/delivery.ts`) gathers up to `maxPreparedUpdates` (1,000) owed
@@ -412,7 +409,7 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
   acknowledged~~ *Resolved by T8* — a baseline payload leaves the record, and the resident charge,
   in the write that acknowledges or disposes it.
   **Trigger:** the start of T8. **Reference:** the `agent-tasks-t7` stream's `result.md` §
-  *Hand-offs* (at `.ai/tasks/active/agent-tasks-t7/` until the `agent-tasks-v1` cluster finalizes).
+  *Hand-offs* (at `.ai/tasks/completed/2026-10/agent-tasks-t7/`).
 
 *(`ts-agent-tasks` — T8's second body of work: **retired 2026-09-26 by `agent-tasks-t8b`**, which
 delivered the A3 saturation journeys with exact transfers at every crash point, lifetime
@@ -788,7 +785,7 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
   bounds the escaped text. The reason it is "yes": the hazards the renderer escapes — tag-block
   smuggling, bidi overrides, invisible characters, frame and Mustache delimiters — do not depend on
   which channel carries the text, and a model reads a tool result as readily as a system prompt.
-  `.ai/tasks/active/agent-tasks-i2/result.md`. Original entry follows.
+  `.ai/tasks/completed/2026-10/agent-tasks-i2/result.md`. Original entry follows.
   `libraries/ts-agent-tasks/src/packlets/tools/presentation.ts`. Task state reaches the model only
   inside `TaskContextRenderer`'s framed, escaped text; details, when the view's `ITaskProjector`
   exposes them, are returned as structured JSON beside it — size-bounded (`maxDetailsChars`) but not
@@ -806,10 +803,10 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
 
   **Not a P4**: it is a trust-framing asymmetry on a model-facing surface, not a doc gap.
 
-  **Reference**: `agent-tasks-i1a` layer-1 review P3-b; `.ai/tasks/active/agent-tasks-i1a/result.md`.
+  **Reference**: `agent-tasks-i1a` layer-1 review P3-b; `.ai/tasks/completed/2026-10/agent-tasks-i1a/result.md`.
 
 - **[P3] I2's revert-matrix rows live outside `perf/mutationMatrix.js`.**
-  `.ai/tasks/active/agent-tasks-i2/i2Matrix.js` holds rows `I2-1…I2-36` with the same mechanics as
+  `.ai/tasks/completed/2026-10/agent-tasks-i2/i2Matrix.js` holds rows `I2-1…I2-36` with the same mechanics as
   `libraries/ts-agent-tasks/perf/mutationMatrix.js`, because I2 ran beside the M1 stop-state cohort,
   which owned `perf/`. Two scripts means a refactor that moves a protected line can re-point one and
   leave the other's rows stale, and the artifact directory migrates at cluster close.
@@ -821,7 +818,7 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
 
   **Not a P4**: a stale row is a protection nobody is checking.
 
-  **Reference**: `.ai/tasks/active/agent-tasks-i2/result.md` § Revert matrix.
+  **Reference**: `.ai/tasks/completed/2026-10/agent-tasks-i2/result.md` § Revert matrix.
 
 - **[P3] `JsonConverters.jsonValue` admits `Infinity`, which has no JSON form.**
   `@fgv/ts-json-base`: `Converters.jsonValue.convert(Infinity)` succeeds (and `JSON.stringify` then
@@ -837,7 +834,7 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
 
   **Not a P4**: a value that changes silently on serialization is a correctness hazard, not a doc gap.
 
-  **Reference**: `.ai/tasks/active/agent-tasks-i2/result.md` § The framing decision.
+  **Reference**: `.ai/tasks/completed/2026-10/agent-tasks-i2/result.md` § The framing decision.
 
 - **[P3] `@fgv/ts-agent-tasks` needs a global `structuredClone`, and says so nowhere.**
   The broker clones every authorization request (`broker/access.ts`), and projections
@@ -854,7 +851,7 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
 
   **Not a P4**: the failure is silent at the call site and reads as an authorization decision.
 
-  **Reference**: `.ai/tasks/active/agent-tasks-p1/result.md` § finding 1.
+  **Reference**: `.ai/tasks/completed/2026-10/agent-tasks-p1/result.md` § finding 1.
 
 - **[P3] Query work is observable only through an internal module.**
   `ts-agent-tasks` promises that query, due and owed work stays tied to matching candidates as history
@@ -870,7 +867,7 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
 
   **Not a P2**: the guarantee itself is pinned by `storage/counters.test.ts`; this is observability.
 
-  **Reference**: `.ai/tasks/active/agent-tasks-p1/result.md` § finding 2.
+  **Reference**: `.ai/tasks/completed/2026-10/agent-tasks-p1/result.md` § finding 2.
 
 - **[P3] ai-assist has no per-call transport, so capturing a request means replacing `fetch`.**
   `AiAssist.callProviderCompletion` calls the global `fetch`. A host that wants to see the request its
@@ -885,10 +882,10 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
 
   **Not a P4**: three call sites already work around it.
 
-  **Reference**: `.ai/tasks/active/agent-tasks-p1/result.md` § finding 3.
+  **Reference**: `.ai/tasks/completed/2026-10/agent-tasks-p1/result.md` § finding 3.
 
 - **[P3] P1's revert-matrix rows live outside `perf/mutationMatrix.js`.**
-  `.ai/tasks/active/agent-tasks-p1/p1Matrix.js` holds rows `P1-1…P1-10`, which mutate the library and
+  `.ai/tasks/completed/2026-10/agent-tasks-p1/p1Matrix.js` holds rows `P1-1…P1-10`, which mutate the library and
   run both `journey/` and the testbed's `agentTasks` suite, because P1 ran beside the M1 stop-state
   cohort, which owned `perf/`. Same hazard as I2's rows: a refactor can re-point one script's patterns
   and leave the other's stale, and the directory migrates at cluster close.
@@ -900,7 +897,7 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
 
   **Not a P4**: a stale row is a protection nobody is checking.
 
-  **Reference**: `.ai/tasks/active/agent-tasks-p1/result.md` § Revert matrix.
+  **Reference**: `.ai/tasks/completed/2026-10/agent-tasks-p1/result.md` § Revert matrix.
 
 - **[P3] A `ts-extras` KeyStore Argon2id test is flaky: its fake KDF cannot tell random salts apart.**
   `libraries/ts-extras/src/test/unit/crypto/keystore/keyStoreArgon2id.test.ts` › *returns false when
@@ -917,7 +914,7 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
 
   **Not a P4**: an intermittent red on an unrelated package blocks CI for everyone downstream.
 
-  **Reference**: `.ai/tasks/active/agent-tasks-p1/result.md` § Gates.
+  **Reference**: `.ai/tasks/completed/2026-10/agent-tasks-p1/result.md` § Gates.
 
 - **[P3] `JsonSchema.integer` cannot state a range, so `task_query`'s `limit` bound is prose on the
   wire.** `libraries/ts-json-base/src/packlets/json-schema-builder/factories.ts` has no
@@ -983,7 +980,7 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
 
   **Not a P4**: a collision would silently shadow a tool the host opted into.
 
-  **Reference**: `agent-tasks-i1b`; `.ai/tasks/active/agent-tasks-i1b/result.md`.
+  **Reference**: `agent-tasks-i1b`; `.ai/tasks/completed/2026-10/agent-tasks-i1b/result.md`.
 
 - **[P3] A model can name only the stops it requested: a bound view cannot list a task's stops.**
   `task_stop_inspect` takes an `intentId`, and the only place a model learns one is `task_stop`'s
@@ -1003,7 +1000,7 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
 
   **Not a P4**: a model-facing surface under-reports state the principal is entitled to read.
 
-  **Reference**: `.ai/tasks/active/agent-tasks-i1d/result.md`.
+  **Reference**: `.ai/tasks/completed/2026-10/agent-tasks-i1d/result.md`.
 
 - **[P3] A command receipt does not say whether an `accepted` intent has been dispatched.**
   `dispatchIntent` (`broker/externalCommands.ts`) returns the stored receipt unchanged when another
@@ -1050,7 +1047,7 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
 
   **Not a P4**: the model is told the opposite of the truth about whether to retry.
 
-  **Reference**: `agent-tasks-tracked-commands` (`.ai/tasks/active/agent-tasks-tracked-commands/result.md`).
+  **Reference**: `agent-tasks-tracked-commands` (`.ai/tasks/completed/2026-10/agent-tasks-tracked-commands/result.md`).
 
 - **[P3] Gemini has not been shown to accept a nested object schema with no properties.** `start`
   and `resume` (and any registered command with no parameters) put `parameters: { type: 'object',

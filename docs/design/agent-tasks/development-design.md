@@ -928,7 +928,7 @@ interface IConsumerRecord {
 `IConsumerCheckpointStore` is injected into the acknowledgement service. The default uses the same FileTree root, capability and writer coordinator. An alternative store must declare and meet at least the task repository's durability profile, capacity/reservation contract and serialized revision replacement. A weak checkpoint store cannot be paired silently with durable task-update deletion. Persist the versioned policy with the subscription; never reconstruct required categories/history from changed host defaults on reopen. Terminal updates and attention are mandatory required delivery, irrespective of optional additional categories; validate that the stored policy expresses this. `source-replay` requires a replayable source and the finite capacity qualification in §8.6 for every covered external binding; admitting an incompatible source into that subscription's selection fails explicitly before registration/association, never downgrades its guarantee. V1 retains exact acknowledged/disposed ID sets while the subscription record is retained, including after closure; neither task archival nor closure compacts them. Load these histories on demand as specified in §7 and charge lifetime count/byte limits. Compaction remains deferred only under §8.6's finite-horizon acceptance; no high-watermark approximation is allowed.
 
 > **As implemented in T7** (the sketch above is the design intent; the shipped types are in
-> `types/delivery.ts`, and `.ai/tasks/active/agent-tasks-t7/result.md` § *Deviations* has the
+> `types/delivery.ts`, and `.ai/tasks/completed/2026-10/agent-tasks-t7/result.md` § *Deviations* has the
 > reasons): the store is `ITaskCheckpointStore`, **synchronous** (`read`, and `write(id,
 > expectedRecordRevision, record)` answering `DetailedResult<true, 'unchanged' | 'unknown'>`), with
 > a declared `durability`; every write is read back and a store that reports a write it does not
@@ -945,7 +945,7 @@ interface IConsumerRecord {
 > are trusted host operations (`TaskBroker.dispose`, `closeSubscription`) that also require the
 > binding's `dispose-obligation` permission. Pruning and archive decide from each audience member's
 > checkpoint read through the store, never the resident index. A discharged baseline payload leaves
-> the record in the same write. `.ai/tasks/active/agent-tasks-t8/result.md` has the reasons.
+> the record in the same write. `.ai/tasks/completed/2026-10/agent-tasks-t8/result.md` has the reasons.
 
 Broker `prepare` is deliberately a service operation around the pure renderer:
 

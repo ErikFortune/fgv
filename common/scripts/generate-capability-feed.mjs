@@ -35,6 +35,23 @@
 // neither simply does not appear in the feed, which is honest; hand-maintaining a separate
 // changelog is the thing being avoided, and fabricating a summary is worse than a gap.
 //
+// ONE LINE PER CAPABILITY, NOT ONE PER STREAM
+//
+// The feed carries one line per externally interesting capability; how the work was broken into
+// streams is not interesting to a consumer (the user's rule, 2026-10-01: "nobody cares how we broke
+// up the work"). When several streams ship one capability, the headline goes on the stream whose
+// first PR a reader should land on (the feed links `prs[0]`), and every sibling opts OUT with an
+// explicitly empty headline:
+//
+//     headline: ''   # sibling slice; the capability's line is on agent-tasks-t1
+//
+// An explicitly empty `headline` means "not in the feed" — `sourceLine` is then not consulted, so
+// it keeps its verbatim audit-trail value. That opt-out did not exist before the agent-tasks
+// cluster close: the only way to stay out of the feed was to blank `sourceLine`, which destroys the
+// property it exists for (personality-intake had to, and its `''` was in fact only skipped because
+// the trailing `# comment` defeated the quoted-string match). An ABSENT `headline` still falls back
+// to `sourceLine`, so the 63 streams that predate this are unaffected.
+//
 // TWO MODES
 //
 //   (default)  rewrite the generated regions in place
@@ -82,9 +99,15 @@ function readMeta(text, bucket) {
   const pkgSrc = pkgInline ? pkgInline[1] : pkgBlock ? pkgBlock[1] : '';
   const packages = [...pkgSrc.matchAll(/['"]?(@fgv\/[a-z0-9-]+)['"]?/g)].map((m) => m[1]);
 
-  // `headline` — the purpose-built field. Same two spellings are accepted as `sourceLine`.
+  // `headline` — the purpose-built field. Same two spellings are accepted as `sourceLine`. A
+  // trailing `# comment` is tolerated on the quoted form (and on `sourceLine`'s): without that, a
+  // commented line silently failed to match and the field read as absent.
   const hBlock = text.match(/^\s+headline:\s*>\s*\n((?:\s{4,}.*\n)+)/m);
-  const hQuote = text.match(/^\s+headline:\s*(['"])([\s\S]*?)\1\s*$/m);
+  const hQuote = text.match(/^\s+headline:\s*(['"])([\s\S]*?)\1\s*(?:#.*)?$/m);
+  // Explicit opt-out: `headline: ''`, `headline: ""` or a bare `headline:`, optionally commented.
+  if (/^\s+headline:\s*(?:''|""|)\s*(?:#.*)?$/m.test(text)) {
+    return { id, status, opened: opened ?? bucket, prs, packages, sourceLine: undefined, optedOut: true, bucket };
+  }
   const headline = hBlock
     ? hBlock[1].split('\n').map((l) => l.trim()).filter(Boolean).join(' ')
     : hQuote
@@ -95,7 +118,7 @@ function readMeta(text, bucket) {
   // adopted the convention later, and a quoted single-line string on the earlier ones. Both are
   // read; neither is preferred.
   const block = text.match(/^\s+sourceLine:\s*>\s*\n((?:\s{4,}.*\n)+)/m);
-  const quoted = text.match(/^\s+sourceLine:\s*(['"])([\s\S]*?)\1\s*$/m);
+  const quoted = text.match(/^\s+sourceLine:\s*(['"])([\s\S]*?)\1\s*(?:#.*)?$/m);
   let sourceLine = block
     ? block[1].split('\n').map((l) => l.trim()).filter(Boolean).join(' ')
     : quoted
@@ -133,6 +156,7 @@ function readMeta(text, bucket) {
 }
 
 const unusable = [];
+const optedOut = [];
 
 async function collectStreams() {
   const out = [];
@@ -145,7 +169,8 @@ async function collectStreams() {
       if (!existsSync(meta)) continue;
       const m = readMeta(readFileSync(meta, 'utf8'), bucket.name);
       if (m.status === 'abandoned') continue;
-      if (m.sourceLine) out.push(m);
+      if (m.optedOut) optedOut.push(m);
+      else if (m.sourceLine) out.push(m);
       else if (m.unusable) unusable.push(m);
     }
   }
@@ -222,7 +247,7 @@ const stale = targets.filter((t) => t.stale);
 
 console.log(
   `generate-capability-feed: ${streams.length} usable sourceLine${streams.length === 1 ? '' : 's'}, ` +
-    `${unusable.length} unusable, ${targets.length} targets, ` +
+    `${unusable.length} unusable, ${optedOut.length} opted out, ${targets.length} targets, ` +
     `${stale.length} ${CHECK ? 'stale' : 'updated'}, ${missing.length} without markers`
 );
 

@@ -4,13 +4,13 @@
 **F1 and F2 are shipped** ([#683](https://github.com/ErikFortune/fgv/pull/683), squashing [#681](https://github.com/ErikFortune/fgv/pull/681) and [#682](https://github.com/ErikFortune/fgv/pull/682)): the upstream `ts-json-base` FileTree atomic-write capability and its qualified Node protocol exist and are on `release`. **T1 is implemented** and lands on `integration/agent-tasks-v1` via
 [#684](https://github.com/ErikFortune/fgv/pull/684) — it is *not* on `release`, and reaches it only
 in the integration branch's squash. **T2 is implemented** on the same branch via
-[#685](https://github.com/ErikFortune/fgv/pull/685), and **T3** via [#686](https://github.com/ErikFortune/fgv/pull/686) — durable mode qualified on Linux ext4/tmpfs by a real-Node crash matrix (`.ai/tasks/active/agent-tasks-t3/result.md`). **Every other T slice, and every I, P and M slice, remains
+[#685](https://github.com/ErikFortune/fgv/pull/685), and **T3** via [#686](https://github.com/ErikFortune/fgv/pull/686) — durable mode qualified on Linux ext4/tmpfs by a real-Node crash matrix (`.ai/tasks/completed/2026-10/agent-tasks-t3/result.md`). **Every other T slice, and every I, P and M slice, remains
 unimplemented and awaits explicit authorization**, taken one slice at a time.
 **Date:** 2026-09-21. **Source inspection:** `d0ec601c6d67a6016a00a33a69ddee18bec6ddb1`.
 **Engineering contract:** [development design](development-design.md).
 **Scope authorities:** [library proposal](fgv-library.md), [adoption proposal](multi-agent-chat-adoption.md), [deferred scope](deferred.md).
 
-This plan document itself changes no production code or consumer repository. **F1's and F2's tests are run and their results recorded** (`.ai/tasks/completed/2026-09/filetree-atomic-write/result.md` — fault injection at every protocol boundary, subprocess crash tests on two filesystems, and fourteen mutations watched to fail), and so are T3's (`.ai/tasks/active/agent-tasks-t3/result.md` — a real-Node crash matrix on ext4 and tmpfs and twenty-six mutations watched to fail). **Every other implementation test below, and the M1 measurement, remained planned and not run when this plan was written**; slices since record their results in their own `result.md`, and M1's runs are recorded under M1 below. Source/document review and the separately attributed consumer execution-record measurements in the adoption proposal are the available evidence; those measurements do not qualify broker limits or memory. The slices are dependency-ordered review units; an incomplete internal slice is not a release claiming all task guarantees.
+This plan document itself changes no production code or consumer repository. **F1's and F2's tests are run and their results recorded** (`.ai/tasks/completed/2026-09/filetree-atomic-write/result.md` — fault injection at every protocol boundary, subprocess crash tests on two filesystems, and fourteen mutations watched to fail), and so are T3's (`.ai/tasks/completed/2026-10/agent-tasks-t3/result.md` — a real-Node crash matrix on ext4 and tmpfs and twenty-six mutations watched to fail). **Every other implementation test below, and the M1 measurement, remained planned and not run when this plan was written**; slices since record their results in their own `result.md`, and M1's runs are recorded under M1 below. Source/document review and the separately attributed consumer execution-record measurements in the adoption proposal are the available evidence; those measurements do not qualify broker limits or memory. The slices are dependency-ordered review units; an incomplete internal slice is not a release claiming all task guarantees.
 
 ## 1. Decisions and approval status
 
@@ -316,7 +316,7 @@ one large diff. The seam is already visible in the types: `IBoundTaskView` is `q
 context exactly once, a stable prefix, no refusing cache finding, breakpoints ending at the slot) and
 `prepareTaskPrompt` (a delivery handoff whose receipt is acknowledged only against the exact text
 sent; a failed check or mismatched send abandons the manifest). `task_inspect` details are framed via
-the new `serializeTaskData`. Decisions and evidence: `.ai/tasks/active/agent-tasks-i2/result.md`.
+the new `serializeTaskData`. Decisions and evidence: `.ai/tasks/completed/2026-10/agent-tasks-i2/result.md`.
 
 
 **Dependencies:** T2, T7, I1. **Affected package:** `ts-agent-tasks` prompt. Existing ts-prompt-assist/ai-assist are consumed unchanged unless a demonstrated upstream bug requires a separately reviewed fix.
@@ -337,7 +337,7 @@ a testable core whose every claim is a check with the value it observed, and a t
 `ts-agent-tasks`' `journey/publicJourney.test.ts` pins, through the public barrel, the six compositions
 no existing suite did. Evidence, the per-step assertion map, the simulation list and three surface
 findings (an undocumented `structuredClone` requirement, query work observable only internally, no
-ai-assist transport seam): `.ai/tasks/active/agent-tasks-p1/result.md`.
+ai-assist transport seam): `.ai/tasks/completed/2026-10/agent-tasks-p1/result.md`.
 
 
 **Dependencies:** T8, T9, I1, I2. **Affected packages:** `samples/testbed` and `ts-agent-tasks` public contract/journey tests.
