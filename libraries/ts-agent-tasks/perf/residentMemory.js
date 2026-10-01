@@ -78,7 +78,14 @@ const MANIFEST = {
       'refusals only, fanout requires 32 pinned receipts, the history control must complete its plan). ' +
       'The shakeouts already showed values outside four frozen ranges (receipt peak, release peak, ' +
       'commands per evidence task, evidence open peak against the sharp bound). No prediction, threshold ' +
-      'or fixture changed in response; the recorded run reports what it finds.'
+      'or fixture changed in response; the recorded run reports what it finds.',
+    '2026-10-01 (agent-tasks-m1-stop), after the first recorded run of the stop cohort (acc4a974): the ' +
+      'five arms with 128-character ids (max-1x1000 none/satisfied/released, retain-control, ' +
+      "repeat.fixtureMax) failed at open, because the clone path suffixed each clone's claim ids and a " +
+      '128-character id overflowed its bound. The clone path now writes a fresh random claim id of the ' +
+      'same length. Those five arms alone were re-run (--only, --merge) and analysed together with the ' +
+      "first run's other arms, whose clones keep suffixed claim ids of at most 41 characters — no verdict " +
+      'reads a claim id. No prediction, threshold or fixture shape changed.'
   ],
   extensions: {
     stated: '2026-10-01, before any run of the stop or productionProfile cohorts, on e662da68c',
@@ -912,7 +919,18 @@ function main() {
           fs.writeFileSync(`${outFile}.partial-${name}.json`, JSON.stringify(raw));
         }
       };
-      const ran = m1Cohorts()[key].run(reps, checkpoint);
+      // `--only a,b --merge earlier.json`: re-run just those arms; take every other arm's raw data
+      // from the earlier report, and analyse the union. The report records both revisions.
+      const only = opt('--only', undefined)?.split(',');
+      const mergeFile = opt('--merge', undefined);
+      const earlier = mergeFile !== undefined ? JSON.parse(fs.readFileSync(mergeFile, 'utf8')) : undefined;
+      if (earlier !== undefined) {
+        report.supplement = {
+          ...(report.supplement ?? {}),
+          [name]: { only, base: mergeFile, baseEnvironment: earlier.environment }
+        };
+      }
+      const ran = m1Cohorts()[key].run(reps, checkpoint, { only, base: earlier?.raw?.[name] });
       report.raw[name] = ran.raw;
       report.results[name] = ran.results;
       const verdicts = Object.entries(ran.results.verdicts)

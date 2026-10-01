@@ -278,8 +278,9 @@ module.exports = function support(base) {
     for (let i = 0; i < count; i++) {
       const id = newId(i);
       let clone = text.split(templateId).join(id);
+      // A fresh random claim id of the same length: a suffix would overflow a 128-character id.
       for (const claimId of claimIds) {
-        clone = clone.split(`"${claimId}"`).join(`"${claimId}x${i}"`);
+        clone = clone.split(`"${claimId}"`).join(`"${hex(claimId.length)}"`);
       }
       const parsed = JSON.parse(clone);
       if (refresh !== undefined) {

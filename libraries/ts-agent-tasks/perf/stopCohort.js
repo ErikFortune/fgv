@@ -453,90 +453,117 @@ module.exports = function stopCohort(base, m1) {
     base.stat(runs.map((r) => r[key].heapUsed - r.baseline.heapUsed));
   const perTarget = (a, b, targets) => (base.median(a) - base.median(b)) / targets;
 
-  function run(reps, checkpoint) {
+  /**
+   * `options.only` re-runs just the named arms (`repeat.<name>` and `breadth` for the bound
+   * series) and `options.base` supplies every other arm from an earlier run's raw data, so one
+   * analysis covers both. Used once, disclosed in result.md, for arms that failed on a harness
+   * defect; the repeated arms are re-run whole, never merged repetition by repetition.
+   */
+  function run(reps, checkpoint, options) {
+    const only = options?.only;
+    const want = (key) => only === undefined || only.includes(key);
     const raw = {};
     const save = () => checkpoint?.(raw);
+    const put = (key, action) => {
+      if (want(key)) {
+        raw[key] = action();
+        save();
+      }
+    };
     const fixture = { profile: 'fixture', mode: 'pause', ids: 'small' };
     for (const shape of ARMS.shapes) {
       for (const state of ARMS.states) {
-        raw[`${shape.name}-${state}`] = arms(
-          reps,
-          { ...fixture, ...shape, state },
-          state === 'satisfied' ? { variant: 'release' } : undefined
+        put(`${shape.name}-${state}`, () =>
+          arms(
+            reps,
+            { ...fixture, ...shape, state },
+            state === 'satisfied' ? { variant: 'release' } : undefined
+          )
         );
-        save();
       }
     }
     // Control for released-over-none: every task paused by its own command, no stop.
     for (const shape of ARMS.shapes.slice(1)) {
-      raw[`${shape.name}-paused`] = arms(reps, { ...fixture, ...shape, state: 'none', pausedControl: true });
-      save();
+      put(`${shape.name}-paused`, () =>
+        arms(reps, { ...fixture, ...shape, state: 'none', pausedControl: true })
+      );
     }
     for (const state of ['none', 'satisfied', 'released']) {
-      raw[`max-1x1000-${state}`] = arms(reps, { ...fixture, ids: 'max', roots: 1, width: 1000, state });
+      put(`max-1x1000-${state}`, () => arms(reps, { ...fixture, ids: 'max', roots: 1, width: 1000, state }));
     }
     // Control for settled: a satisfied cancel whose root is not archived.
-    raw['cancel-satisfied-1x1000'] = arms(reps, {
-      ...fixture,
-      mode: 'cancel',
-      roots: 1,
-      width: 1000,
-      state: 'satisfied'
-    });
-    raw['settled-1x1000'] = arms(reps, {
-      ...fixture,
-      mode: 'cancel',
-      roots: 1,
-      width: 1000,
-      state: 'settled'
-    });
+    put('cancel-satisfied-1x1000', () =>
+      arms(reps, { ...fixture, mode: 'cancel', roots: 1, width: 1000, state: 'satisfied' })
+    );
+    put('settled-1x1000', () =>
+      arms(reps, { ...fixture, mode: 'cancel', roots: 1, width: 1000, state: 'settled' })
+    );
     for (const identity of ['small', 'max']) {
       for (const state of ['none', 'satisfied']) {
-        raw[`ext-${identity}-${state}`] = arms(reps, {
-          ...fixture,
-          roots: 1,
-          width: 1000,
-          state,
-          external: identity,
-          bindingBytes: identity === 'max' ? 4096 : 0
-        });
+        put(`ext-${identity}-${state}`, () =>
+          arms(reps, {
+            ...fixture,
+            roots: 1,
+            width: 1000,
+            state,
+            external: identity,
+            bindingBytes: identity === 'max' ? 4096 : 0
+          })
+        );
       }
     }
-    raw['ext-max-released'] = arms(reps, {
-      ...fixture,
-      roots: 1,
-      width: 1000,
-      state: 'released',
-      external: 'max',
-      bindingBytes: 4096
-    });
-    raw['retain-control'] = arms(
-      reps,
-      { ...fixture, ids: 'max', roots: 10, width: 1000, state: 'satisfied' },
-      { variant: 'retain-control' }
+    put('ext-max-released', () =>
+      arms(reps, {
+        ...fixture,
+        roots: 1,
+        width: 1000,
+        state: 'released',
+        external: 'max',
+        bindingBytes: 4096
+      })
     );
-    save();
-    const breadthRuns = [];
-    const repeatRuns = { fixture: [], fixtureMax: [], default: [] };
+    put('retain-control', () =>
+      arms(
+        reps,
+        { ...fixture, ids: 'max', roots: 10, width: 1000, state: 'satisfied' },
+        { variant: 'retain-control' }
+      )
+    );
+    const series = {
+      breadth: { ...fixture, roots: 1, width: 1001 },
+      'repeat.fixture': { ...fixture, roots: 1, width: 1000 },
+      'repeat.fixtureMax': { ...fixture, ids: 'max', roots: 1, width: 1000 },
+      'repeat.default': { profile: 'default', mode: 'pause', ids: 'small', roots: 1, width: 200 }
+    };
+    const ran = {};
     for (let r = 0; r < reps; r++) {
-      breadthRuns.push(bound('stop-breadth', { ...fixture, roots: 1, width: 1001 }));
-      repeatRuns.fixture.push(bound('stop-repeat', { ...fixture, roots: 1, width: 1000 }));
-      repeatRuns.fixtureMax.push(bound('stop-repeat', { ...fixture, ids: 'max', roots: 1, width: 1000 }));
-      repeatRuns.default.push(
-        bound('stop-repeat', { profile: 'default', mode: 'pause', ids: 'small', roots: 1, width: 200 })
-      );
+      for (const [key, spec] of Object.entries(series)) {
+        if (want(key)) {
+          (ran[key] ??= []).push(bound(key === 'breadth' ? 'stop-breadth' : 'stop-repeat', spec));
+        }
+      }
       process.stderr.write('+');
-      raw.breadth = breadthRuns;
-      raw.repeat = repeatRuns;
+      if (ran.breadth !== undefined) {
+        raw.breadth = ran.breadth;
+      }
+      for (const name of ['fixture', 'fixtureMax', 'default']) {
+        if (ran[`repeat.${name}`] !== undefined) {
+          raw.repeat = { ...(raw.repeat ?? {}), [name]: ran[`repeat.${name}`] };
+        }
+      }
       save();
+    }
+    let merged = raw;
+    if (options?.base !== undefined) {
+      merged = { ...options.base, ...raw, repeat: { ...(options.base.repeat ?? {}), ...(raw.repeat ?? {}) } };
     }
     let results;
     try {
-      results = analyse(raw);
+      results = analyse(merged);
     } catch (error) {
       results = { per: { analyseError: String(error.stack ?? error) }, verdicts: { analysis: false } };
     }
-    return { raw, results };
+    return { raw: merged, rerun: only, results };
   }
 
   function analyse(input) {

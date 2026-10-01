@@ -1,7 +1,9 @@
 # State — `agent-tasks-m1-stop`
 
-**Status:** predictions frozen in `MANIFEST` (commit "perf(ts-agent-tasks): freeze M1 stop and
-production-profile predictions"), before any cohort code or run. Harness cohorts next.
+**Status:** predictions frozen (`f09c24a2`, before any cohort code); harness written (`a5254d15`);
+layer-1 review applied (`acc4a974`, one P1 + nine P2, recorded as a manifest amendment, no
+prediction changed). **Recorded run in progress**: `--cohorts fixture,stop` first, then
+`--cohorts fixture,productionProfile`; raw JSON goes beside this file as `m1-*-run-<rev>.json`.
 
 ## Where things stand
 
@@ -44,6 +46,23 @@ brief cites it for. Reported to the user in the PR and `result.md`.
 - **productionProfile** (default profile): empty, plain, churn, owed, fanout, history (+control),
   consumer, evidence (+control), unresolved (+ unresolved-stop search, whole-repo stop search),
   inventory (+ full-summary and buffering controls).
+
+## Shakeouts (one repetition each, before any recorded run — disclosed, not evidence)
+
+Inside frozen ranges: breadth refusal at 1,001 (`invalid`, no dimension); repetition 1,000 targets
+refused cycle 25 on `record-bytes` (~154 KB/cycle); default 200 targets refused cycle 62 on
+`operations`; evidence 613 B per record at maximal identity; plain 533rd, owed 530th, fanout 520th,
+unresolved 364th, inventory 443rd live — all `logical-bytes`; churn item 10,000 on `retained-tasks`;
+history round 8 on `acknowledgement-ids` with 200 closed subscriptions; whole-repo stop 325;
+unresolved-children stop 251.
+
+Outside frozen ranges (the recorded run decides; no threshold moves): owed receipt prepare+ack peak
+25.5 MiB above settled (≤ 16 MiB frozen); 1,000-target release 19.1 MiB (≤ 16), old-space only
+1.7 MiB — nursery churn; evidence 58 commands per task (50–56 frozen); evidence open peak 140 MiB
+above settled (sharp bound 48 MiB; loose bound ~146 MiB holds).
+
+Harness lessons: `pkill -f <pattern>` also matches the invoking shell — do not use it with a pattern
+that appears in the same command line.
 
 ## Resume instructions
 
