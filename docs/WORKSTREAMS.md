@@ -128,6 +128,42 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
+### `agent-tasks-m1-stop` ✅ (shipped 2026-10-01 via [#NNN](https://github.com/ErikFortune/fgv/pull/NNN)) — M1's stop-state and production-profile cohorts
+
+**Status:** ✅ shipped into `integration/agent-tasks-v1` (not `release`; the cluster promotes as one).
+Branched at `e662da68c`, beside I2, touching only `perf/` and docs. A measurement stream: no `src/`
+change. Artifacts, including the raw JSON of every recorded run, are in
+`.ai/tasks/active/agent-tasks-m1-stop/`; this family finalizes at cluster close.
+
+**What shipped.** `perf/stopCohort.js` and `perf/profileCohort.js` over `perf/m1Support.js`,
+dispatched from `perf/residentMemory.js` (`--cohorts fixture,stop,productionProfile`). The frozen
+cohorts are untouched. Predictions were frozen in `MANIFEST` before any cohort code existed
+(`f09c24a2`). Each change after that is an amendment, and none moved a threshold.
+
+**The brief's premise, refuted from source before predicting.** A stop's breadth is capped at
+1,000 targets by `defaultMaxStopTargets`, not by any capacity dimension. A root is an 8 MiB task
+record, not 32 MiB. A target carries no 4 KiB source identity. So `record-bytes` cannot bound one
+stop's breadth. It bounds **repetition**, since released intents stay on the root: 24 cycles at
+1,000 targets, 11 at 128-character ids. At the default profile's width, `operations` bounds it
+first (61 cycles).
+
+**Findings.**
+- Under the default profile, `logical-bytes` refuses first in every live-task mix: 519–533 live
+  tasks, 97–99% of it reservation, 5–13 MB written. `retained-tasks` binds under archive churn and
+  `acknowledgement-ids` under history. 1,000 non-archived is never reached.
+- 12 of 18 predictions held. The six misses are each a finding with a diagnosis:
+  - a 1×100 disk figure (fixed per-root cost);
+  - the stop book keeps ~1 KB per target after release;
+  - release working space is 19 MiB;
+  - receipt preparation reads 200 task records for one receipt (25 MiB);
+  - a consumer-record rewrite at the 50,000-id cap costs 92 MiB (~28× the record);
+  - open with ~7 MB task records peaks 140 MiB, and maxRSS reaches 274 MiB.
+- Recommendation: keep the default; provision ~140 MiB, or ~300 MiB if records or consumer
+  histories approach their ceilings, plus ≥ 512 MiB of disk and scratch for one largest-record
+  replacement. The 1,000-task decision stays open, with M1's data, in `docs/TECH_DEBT.md`.
+
+**Artifact pointer:** `.ai/tasks/active/agent-tasks-m1-stop/`.
+
 ### `agent-tasks-tracked-commands` ✅ (shipped 2026-10-01 via [#705](https://github.com/ErikFortune/fgv/pull/705)) — fifth I1 slice: `fgv.tracked@1`'s commands registered for command tools
 
 **Status:** ✅ shipped into `integration/agent-tasks-v1` (not `release`; the cluster promotes as one).
