@@ -734,7 +734,8 @@ module.exports = function profileCohort(base, m1) {
     return runs;
   }
 
-  function run(reps, checkpoint) {
+  function run(reps, checkpoint, options) {
+    const want = (key) => options?.only === undefined || options.only.includes(key);
     const raw = new Proxy(
       {},
       {
@@ -745,28 +746,32 @@ module.exports = function profileCohort(base, m1) {
         }
       }
     );
-    raw.empty = runArm(reps, 'empty');
-    raw.plain = runArm(reps, 'plain');
-    raw.churn = runArm(reps, 'churn');
-    raw.owed = runArm(reps, 'owed', 'receipt');
-    raw.fanout = runArm(reps, 'fanout');
-    raw.unresolved = runArm(reps, 'unresolved');
-    raw.inventory = runArm(reps, 'inventory', 'minimal');
-    raw['inventory-full-summary-control'] = runArm(reps, 'inventory', 'full-summary-control');
-    raw['inventory-buffer-control'] = runArm(reps, 'inventory', 'buffer-control');
-    raw.history = runArm(reps, 'history', 'open', { seedOnce: true });
-    raw['history-control'] = runArm(reps, 'history-control', 'open', {
-      seedOnce: true,
-      args: { plan: raw.history.find((r) => r.error === undefined)?.seeded.plan ?? [] }
-    });
-    raw.consumer = runArm(reps, 'consumer', 'consumer-ack', { seedOnce: true });
-    raw.evidence = runArm(reps, 'evidence', 'open', { seedOnce: true });
-    raw['evidence-control'] = runArm(reps, 'evidence-control', 'open', {
-      seedOnce: true,
-      args: { tasks: raw.evidence.find((r) => r.error === undefined)?.seeded.tasks ?? 1 }
-    });
+    if (want('empty')) raw.empty = runArm(reps, 'empty');
+    if (want('plain')) raw.plain = runArm(reps, 'plain');
+    if (want('churn')) raw.churn = runArm(reps, 'churn');
+    if (want('owed')) raw.owed = runArm(reps, 'owed', 'receipt');
+    if (want('fanout')) raw.fanout = runArm(reps, 'fanout');
+    if (want('unresolved')) raw.unresolved = runArm(reps, 'unresolved');
+    if (want('inventory')) raw.inventory = runArm(reps, 'inventory', 'minimal');
+    if (want('inventory-full-summary-control'))
+      raw['inventory-full-summary-control'] = runArm(reps, 'inventory', 'full-summary-control');
+    if (want('inventory-buffer-control'))
+      raw['inventory-buffer-control'] = runArm(reps, 'inventory', 'buffer-control');
+    if (want('history')) raw.history = runArm(reps, 'history', 'open', { seedOnce: true });
+    if (want('history-control'))
+      raw['history-control'] = runArm(reps, 'history-control', 'open', {
+        seedOnce: true,
+        args: { plan: (raw.history ?? []).find((r) => r.error === undefined)?.seeded.plan ?? [] }
+      });
+    if (want('consumer')) raw.consumer = runArm(reps, 'consumer', 'consumer-ack', { seedOnce: true });
+    if (want('evidence')) raw.evidence = runArm(reps, 'evidence', 'open', { seedOnce: true });
+    if (want('evidence-control'))
+      raw['evidence-control'] = runArm(reps, 'evidence-control', 'open', {
+        seedOnce: true,
+        args: { tasks: (raw.evidence ?? []).find((r) => r.error === undefined)?.seeded.tasks ?? 1 }
+      });
     raw.searches = { wholeRepository: [], unresolvedStop: [] };
-    for (let r = 0; r < reps; r++) {
+    for (let r = 0; r < (want('searches') ? reps : 0); r++) {
       raw.searches.wholeRepository.push(
         guarded(() => base.withRoot((dir) => base.child(['m1', 'profile-search', dir, 'whole'])))
       );
