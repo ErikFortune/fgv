@@ -39,15 +39,39 @@ module.exports = function stopCohort(base, m1) {
     };
   }
 
+  /** Pumps until the intent leaves `pending`; returns the last result (a failure included). */
   async function pumpToRest(writer, rootId, intentId) {
     let result;
     for (let pass = 0; pass < 200; pass++) {
-      result = (await writer.reconcileStop({ taskId: rootId, intentId, limit: 1000 })).orThrow();
-      if (result.state !== 'pending') {
+      result = await writer.reconcileStop({ taskId: rootId, intentId, limit: 1000 });
+      if (result.isFailure() || result.value.state !== 'pending') {
         return result;
       }
     }
     return result;
+  }
+
+  function pauseOwn(writer, repository, id, rootId) {
+    return m1.revisionOf(repository, id).then((expectedRevision) =>
+      writer.execute({
+        taskId: id,
+        operationId: hex(36),
+        expectedRevision,
+        command: 'pause',
+        parameters: {
+          reason: { code: 'cascade-stop', summary: `cascade pause of ${rootId} (stop ${hex(36)})` }
+        }
+      })
+    );
+  }
+
+  /** Each clone gets its own random title, in its envelope and every update snapshot. */
+  function freshTitle(parsed) {
+    const title = hex(32);
+    parsed.task.envelope.title = title;
+    for (const update of parsed.updates ?? []) {
+      update.snapshot.envelope.title = title;
+    }
   }
 
   // ----------------------------------------------------------------------------------------------
@@ -78,6 +102,13 @@ module.exports = function stopCohort(base, m1) {
         (
           await writer.createTracked({ taskId: childId, operationId: op(), title: 'child', parentId: rootId })
         ).orThrow();
+        if (spec.pausedControl === true) {
+          // Control, no stop: every task paused by its own command with a stop command's reason —
+          // what a released stop leaves on its targets, minus the stop book and the root's intent.
+          for (const id of [rootId, childId]) {
+            (await pauseOwn(writer, repository, id, rootId)).orThrow();
+          }
+        }
         templates.push({ rootId, childId, record: (await repository.readCommit(childId)).orThrow() });
       } else {
         for (let j = 0; j < spec.width - 1; j++) {
@@ -106,7 +137,15 @@ module.exports = function stopCohort(base, m1) {
       const entries = [];
       for (const { childId, record } of templates) {
         entries.push(
-          ...m1.writeClones(layout, dir, record, childId, spec.width - 2, () => hex(w.widths.task))
+          ...m1.writeClones(
+            layout,
+            dir,
+            record,
+            childId,
+            spec.width - 2,
+            () => hex(w.widths.task),
+            freshTitle
+          )
         );
       }
       m1.addToManifest(layout, dir, entries);
@@ -138,7 +177,7 @@ module.exports = function stopCohort(base, m1) {
         ).orThrow();
         let current = accepted;
         if (spec.state !== 'accepted') {
-          current = await pumpToRest(writer, rootId, accepted.intentId);
+          current = (await pumpToRest(writer, rootId, accepted.intentId)).orThrow();
         }
         if (spec.state === 'released') {
           current = (
@@ -162,6 +201,11 @@ module.exports = function stopCohort(base, m1) {
           current = record.stops.find((s) => s.id === accepted.intentId);
         }
         states.push(current.state);
+        // A stop that stalled short of the arm's state would yield deltas for a state never reached.
+        const expected = spec.state === 'accepted' ? 'pending' : spec.state;
+        if (current.state !== expected) {
+          throw new Error(`root ${rootId}: the stop is ${current.state}, not ${expected}`);
+        }
       }
     }
     timings.stopMs = Date.now() - t;
@@ -221,22 +265,36 @@ module.exports = function stopCohort(base, m1) {
         // A rewrite of each wide root: release every latching intent through the broker.
         let { broker, writer } = m1.brokerOver(pkg, repository, w);
         const releases = [];
-        for (const rootId of roots) {
+        // Only primitives survive into the measured release: the parsed root must be unreachable
+        // before the settled sample.
+        const target = async (rootId) => {
           const record = (await repository.readCommit(rootId)).orThrow();
-          const intent = record.stops.find((s) => s.state === 'satisfied');
+          return {
+            revision: record.task.envelope.revision,
+            intentId: record.stops.find((s) => s.state === 'satisfied').id
+          };
+        };
+        for (const rootId of roots) {
+          const { revision, intentId } = await target(rootId);
           const before = settle().heapUsed;
-          peak.heapUsed = 0;
+          const beforeSpaces = m1.spaces();
+          m1.resetPeak(peak);
           const t = process.hrtime.bigint();
           (
             await writer.releaseStop({
               taskId: rootId,
-              expectedRevision: record.task.envelope.revision,
+              expectedRevision: revision,
               operationId: hex(w.widths.minted),
-              intentId: intent.id
+              intentId
             })
           ).orThrow();
           m1.sample(peak);
-          releases.push({ ms: Number(process.hrtime.bigint() - t) / 1e6, peakAbove: peak.heapUsed - before });
+          releases.push({
+            ms: Number(process.hrtime.bigint() - t) / 1e6,
+            peakAbove: peak.heapUsed - before,
+            oldSpaceAbove: peak.oldSpace - beforeSpaces.oldSpace,
+            largeObjectAbove: peak.largeObject - beforeSpaces.largeObject
+          });
         }
         broker = writer = undefined;
         out.releases = releases;
@@ -303,7 +361,12 @@ module.exports = function stopCohort(base, m1) {
         refused = { cycle: k, ...m1.refusal(accepted) };
         break;
       }
-      const rest = await pumpToRest(writer, rootId, accepted.value.intentId);
+      const pumped = await pumpToRest(writer, rootId, accepted.value.intentId);
+      if (pumped.isFailure()) {
+        refused = { cycle: k, during: 'reconcile', ...m1.refusal(pumped) };
+        break;
+      }
+      const rest = pumped.value;
       const released = await writer.releaseStop({
         taskId: rootId,
         expectedRevision: await m1.revisionOf(repository, rootId),
@@ -363,25 +426,36 @@ module.exports = function stopCohort(base, m1) {
     });
   }
 
+  /** A failed repetition is recorded, not fatal: one bad child must not discard a long run. */
+  function guarded(action) {
+    try {
+      return action();
+    } catch (error) {
+      process.stderr.write('!');
+      return { error: String(error.message ?? error).slice(0, 2000) };
+    }
+  }
+
   function arms(reps, spec, measureSpec) {
     const runs = [];
     for (let r = 0; r < reps; r++) {
-      runs.push(arm(spec, measureSpec));
+      runs.push(guarded(() => arm(spec, measureSpec)));
       process.stderr.write('.');
     }
     return runs;
   }
 
   function bound(kind, spec) {
-    return base.withRoot((dir) => base.child(['m1', kind, dir, JSON.stringify(spec)]));
+    return guarded(() => base.withRoot((dir) => base.child(['m1', kind, dir, JSON.stringify(spec)])));
   }
 
   const heapOf = (runs, key = 'afterOpen') =>
     base.stat(runs.map((r) => r[key].heapUsed - r.baseline.heapUsed));
   const perTarget = (a, b, targets) => (base.median(a) - base.median(b)) / targets;
 
-  function run(reps) {
+  function run(reps, checkpoint) {
     const raw = {};
+    const save = () => checkpoint?.(raw);
     const fixture = { profile: 'fixture', mode: 'pause', ids: 'small' };
     for (const shape of ARMS.shapes) {
       for (const state of ARMS.states) {
@@ -390,11 +464,25 @@ module.exports = function stopCohort(base, m1) {
           { ...fixture, ...shape, state },
           state === 'satisfied' ? { variant: 'release' } : undefined
         );
+        save();
       }
+    }
+    // Control for released-over-none: every task paused by its own command, no stop.
+    for (const shape of ARMS.shapes.slice(1)) {
+      raw[`${shape.name}-paused`] = arms(reps, { ...fixture, ...shape, state: 'none', pausedControl: true });
+      save();
     }
     for (const state of ['none', 'satisfied', 'released']) {
       raw[`max-1x1000-${state}`] = arms(reps, { ...fixture, ids: 'max', roots: 1, width: 1000, state });
     }
+    // Control for settled: a satisfied cancel whose root is not archived.
+    raw['cancel-satisfied-1x1000'] = arms(reps, {
+      ...fixture,
+      mode: 'cancel',
+      roots: 1,
+      width: 1000,
+      state: 'satisfied'
+    });
     raw['settled-1x1000'] = arms(reps, {
       ...fixture,
       mode: 'cancel',
@@ -427,6 +515,7 @@ module.exports = function stopCohort(base, m1) {
       { ...fixture, ids: 'max', roots: 10, width: 1000, state: 'satisfied' },
       { variant: 'retain-control' }
     );
+    save();
     const breadthRuns = [];
     const repeatRuns = { fixture: [], fixtureMax: [], default: [] };
     for (let r = 0; r < reps; r++) {
@@ -437,16 +526,36 @@ module.exports = function stopCohort(base, m1) {
         bound('stop-repeat', { profile: 'default', mode: 'pause', ids: 'small', roots: 1, width: 200 })
       );
       process.stderr.write('+');
+      raw.breadth = breadthRuns;
+      raw.repeat = repeatRuns;
+      save();
     }
-    raw.breadth = breadthRuns;
-    raw.repeat = repeatRuns;
-    return { raw, results: analyse(raw) };
+    let results;
+    try {
+      results = analyse(raw);
+    } catch (error) {
+      results = { per: { analyseError: String(error.stack ?? error) }, verdicts: { analysis: false } };
+    }
+    return { raw, results };
   }
 
-  function analyse(raw) {
+  function analyse(input) {
+    const errors = {};
+    const clean = (runs) => runs.filter((r) => r.error === undefined);
+    const raw = {};
+    for (const [key, value] of Object.entries(input)) {
+      if (Array.isArray(value)) {
+        raw[key] = clean(value);
+        if (raw[key].length < value.length) {
+          errors[key] = value.filter((r) => r.error !== undefined).map((r) => r.error);
+        }
+      } else {
+        raw[key] = Object.fromEntries(Object.entries(value).map(([k, runs]) => [k, clean(runs)]));
+      }
+    }
     const med = (runs, f) => base.median(runs.map(f));
     const verdicts = {};
-    const per = {};
+    const per = { errors };
     for (const shape of ARMS.shapes) {
       const targets = shape.roots * shape.width;
       const none = raw[`${shape.name}-none`];
@@ -498,6 +607,43 @@ module.exports = function stopCohort(base, m1) {
         releases: at('satisfied').flatMap((r) => r.releases ?? [])
       };
     }
+    // Marginal slope 1x100 -> 1x1000 per state: free of the fixed per-root cost the frozen
+    // per-target figures amortize (reported beside them; the 1x100 latch slack is wider than every
+    // range, so that shape cannot fail the latch verdict — do not read it as evidence for it).
+    const slope = (state, f) =>
+      (med(raw[`1x1000-${state}`], f) -
+        med(raw['1x1000-none'], f) -
+        (med(raw[`1x100-${state}`], f) - med(raw['1x100-none'], f))) /
+      900;
+    per.marginal = Object.fromEntries(
+      ['accepted', 'satisfied', 'released'].map((state) => [
+        state,
+        {
+          rootBytes: slope(state, (r) => r.seeded.rootBytes),
+          heap: slope(state, (r) => r.afterOpen.heapUsed - r.baseline.heapUsed)
+        }
+      ])
+    );
+    // released-over-none bundles the stop book with ordinary paused-task growth; the paused
+    // control separates them.
+    per.releasedDecomposition = Object.fromEntries(
+      ARMS.shapes.slice(1).map((shape) => {
+        const targets = shape.roots * shape.width;
+        const h = (state) =>
+          med(raw[`${shape.name}-${state}`], (r) => r.afterOpen.heapUsed - r.baseline.heapUsed);
+        const d = (state) => med(raw[`${shape.name}-${state}`], (r) => r.seeded.disk.tasks);
+        return [
+          shape.name,
+          {
+            pausedOverNone: (h('paused') - h('none')) / targets,
+            stopResidueOverPaused: (h('released') - h('paused')) / targets,
+            diskPausedOverNone: (d('paused') - d('none')) / targets,
+            diskStopResidueOverPaused: (d('released') - d('paused')) / targets,
+            pausedShape: raw[`${shape.name}-paused`][0]?.shape
+          }
+        ];
+      })
+    );
     // Disk per target, predicted ranges (36-hex minted keys, 32-hex task ids).
     const inRange = (v, lo, hi) => v >= lo && v <= hi;
     verdicts.diskPerTarget = ARMS.shapes.every((s) => {
@@ -545,6 +691,8 @@ module.exports = function stopCohort(base, m1) {
       };
     };
     per.evidence = { small: ev('small'), max: ev('max') };
+    // Evidence plus any identity-scaled, satisfied-only copy (the paused observation's new token,
+    // the marked command) — the prediction's wording tolerates both.
     per.evidence.differenceOfDifferences = per.evidence.max.residentDelta - per.evidence.small.residentDelta;
     per.evidence.maxReleasedOverNone = heapMed(raw['ext-max-released']) - heapMed(raw['ext-max-none']);
     verdicts.evidence =
@@ -567,10 +715,15 @@ module.exports = function stopCohort(base, m1) {
       );
     });
     const settled = raw['settled-1x1000'];
+    const cancelled = raw['cancel-satisfied-1x1000'];
     per.settled = {
       states: settled[0].seeded.states,
       residentPerTargetOverNone: (heapMed(settled) - heapMed(raw['1x1000-none'])) / 1000,
-      shape: settled[0].shape
+      // The frozen comparison mixes policy, terminal children and the root's archive; these split it.
+      cancelSatisfiedOverNone: (heapMed(cancelled) - heapMed(raw['1x1000-none'])) / 1000,
+      settledOverCancelSatisfied: (heapMed(settled) - heapMed(cancelled)) / 1000,
+      shape: settled[0].shape,
+      cancelSatisfiedShape: cancelled[0]?.shape
     };
     verdicts.settled =
       settled.every((r) => r.seeded.states.every((s) => s === 'settled')) &&
@@ -589,6 +742,7 @@ module.exports = function stopCohort(base, m1) {
           !r.accepted &&
           !r.rootWritten &&
           r.refusal.code === 'invalid' &&
+          r.refusal.dimension === undefined &&
           /more than 1000 tasks/.test(r.refusal.message)
       ) && raw['1x1000-accepted'].every((r) => r.seeded.states[0] === 'pending' && r.seeded.targets === 1000);
 
@@ -615,7 +769,14 @@ module.exports = function stopCohort(base, m1) {
       default: rep(raw.repeat.default)
     };
     const refusedIn = (runs, dimension, lo, hi) =>
-      runs.every((r) => r.refused?.dimension === dimension && r.refused.cycle >= lo && r.refused.cycle <= hi);
+      runs.length > 0 &&
+      runs.every(
+        (r) =>
+          r.refused?.dimension === dimension &&
+          r.refused.during === undefined &&
+          r.refused.cycle >= lo &&
+          r.refused.cycle <= hi
+      );
     verdicts.repetition =
       refusedIn(raw.repeat.fixture, 'record-bytes', 23, 27) &&
       refusedIn(raw.repeat.fixtureMax, 'record-bytes', 10, 14) &&
@@ -626,7 +787,16 @@ module.exports = function stopCohort(base, m1) {
     per.peak = {
       openPeakSatisfiedOverNone: p10.openPeakAbove.satisfied.median - p10.openPeakAbove.none.median,
       releasePeakAbove: base.stat(p10.releases.concat(per['1x1000'].releases).map((r) => r.peakAbove)),
-      releaseMs: base.stat(p10.releases.concat(per['1x1000'].releases).map((r) => r.ms))
+      releaseMs: base.stat(p10.releases.concat(per['1x1000'].releases).map((r) => r.ms)),
+      releaseOldSpaceAbove: base.stat(
+        p10.releases.concat(per['1x1000'].releases).map((r) => r.oldSpaceAbove ?? NaN)
+      ),
+      openPeakOldSpace: Object.fromEntries(
+        ['none', 'satisfied'].map((s) => [
+          s,
+          base.stat(raw[`10x1000-${s}`].map((r) => r.openPeakSpaces.oldSpace - r.afterOpenSpaces.oldSpace))
+        ])
+      )
     };
     verdicts.peak =
       per.peak.openPeakSatisfiedOverNone <= 4 * MiB && per.peak.releasePeakAbove.max <= 16 * MiB;
@@ -643,6 +813,12 @@ module.exports = function stopCohort(base, m1) {
         r.retainHeld >= 0.5 * r.retainedEncoded - NOISE &&
         r.retainReleased >= 0.8 * r.retainHeld - NOISE &&
         r.retainReleased <= 1.2 * r.retainHeld + NOISE
+    );
+    per.armsMeasured = Object.fromEntries(
+      Object.entries(raw).map(([k, v]) => [
+        k,
+        Array.isArray(v) ? v.length : Object.fromEntries(Object.entries(v).map(([a, b]) => [a, b.length]))
+      ])
     );
     return { per, verdicts };
   }

@@ -177,7 +177,14 @@ module.exports = function profileCohort(base, m1) {
       const record = (await repository.readCommit(template)).orThrow();
       repository.close().orThrow();
       const cloned = 9800;
-      m1.addToManifest(layout, dir, m1.writeClones(layout, dir, record, template, cloned, tid));
+      const freshTitle = (parsed) => {
+        const title = hex(64);
+        parsed.task.envelope.title = title;
+        for (const update of parsed.updates ?? []) {
+          update.snapshot.envelope.title = title;
+        }
+      };
+      m1.addToManifest(layout, dir, m1.writeClones(layout, dir, record, template, cloned, tid, freshTitle));
       ({ repository, writer } = await open());
       const real = await untilRefused(async () => {
         const id = tid();
@@ -249,7 +256,7 @@ module.exports = function profileCohort(base, m1) {
         if (grown.isFailure()) {
           return grown;
         }
-        // Dispose everything owed but this task's newest update: one obligation stays for the
+        // Dispose everything owed but this task's lexicographically last update id: one obligation stays for the
         // measuring process's acknowledgement rewrite.
         const newest = (await owedIds(repository, 'big'))
           .filter((u) => u.startsWith(`${id}:`))
@@ -309,7 +316,7 @@ module.exports = function profileCohort(base, m1) {
   /** Exact lifetime history ids of a subscription, from its consumer record on disk. */
   function historyOf(dir, subscription) {
     const record = JSON.parse(fs.readFileSync(path.join(dir, `consumer-${subscription}.json`), 'utf8'));
-    return record.acknowledged.length + record.disposed.reduce((n, d) => n + d.updateIds.length, 0);
+    return record.acknowledged.length + record.disposed.length;
   }
 
   /**
@@ -319,6 +326,7 @@ module.exports = function profileCohort(base, m1) {
    */
   async function historyRounds({ pkg, broker, repository, writer }, subs, plan) {
     const ran = [];
+    const drainFailures = [];
     let refusal;
     for (let r = 0; r < (plan?.length ?? 1000) && refusal === undefined; r++) {
       const round = { subscriptions: [], tasks: [] };
@@ -351,22 +359,29 @@ module.exports = function profileCohort(base, m1) {
           task.updates += 1;
         }
       }
-      // Drain the round — also after a refusal, so the measured state matches the control's.
+      // Drain the round — also after a refusal, so the measured state matches the control's. A
+      // drain step refused at the ceiling is recorded, not fatal.
+      const drain = async (what, result) => {
+        if (result.isFailure()) {
+          drainFailures.push({ round: r + 1, what, ...m1.refusal(result) });
+        }
+      };
       for (const task of round.tasks) {
-        (await succeedTask(repository, writer, task.id)).orThrow();
+        await drain('succeed', await succeedTask(repository, writer, task.id));
       }
       for (const id of round.subscriptions) {
-        (
+        await drain(
+          'close',
           await broker.closeSubscription(hostBinding, {
             subscriptionId: id,
             obligations: 'dispose',
             reason: 'perf'
           })
-        ).orThrow();
+        );
       }
       await drainCleanup(broker);
       for (const task of round.tasks) {
-        (await archiveTask(repository, writer, task.id)).orThrow();
+        await drain('archive', await archiveTask(repository, writer, task.id));
       }
     }
     const closed = ran.reduce((n, round) => n + round.subscriptions.length, 0);
@@ -375,6 +390,7 @@ module.exports = function profileCohort(base, m1) {
       refusedAt: refusal?.round,
       refusal,
       closedSubscriptions: closed,
+      drainFailures,
       plan: ran.map((round) => round.tasks.map((t) => t.updates))
     };
   }
@@ -589,7 +605,8 @@ module.exports = function profileCohort(base, m1) {
         out.owedBefore = (await owedIds(repository, 'watcher')).length;
         const readsBefore = { ...reads() };
         const before = settle().heapUsed;
-        peak.heapUsed = 0;
+        const beforeSpaces = m1.spaces();
+        m1.resetPeak(peak);
         let t = process.hrtime.bigint();
         let prepared = (await d.prepare()).orThrow();
         m1.sample(peak);
@@ -604,6 +621,8 @@ module.exports = function profileCohort(base, m1) {
         out.acknowledgeMs = Number(process.hrtime.bigint() - t) / 1e6;
         out.acknowledged = acked.acknowledged?.length;
         out.receiptPeakAbove = peak.heapUsed - before;
+        out.receiptOldSpaceAbove = peak.oldSpace - beforeSpaces.oldSpace;
+        out.receiptLargeObjectAbove = peak.largeObject - beforeSpaces.largeObject;
         prepared = d = broker = undefined;
       }
       if (variant === 'consumer-ack') {
@@ -611,7 +630,8 @@ module.exports = function profileCohort(base, m1) {
         const ids = await owedIds(repository, 'big');
         out.consumerBytes = fs.statSync(path.join(dir, 'consumer-big.json')).size;
         const before = settle().heapUsed;
-        peak.heapUsed = 0;
+        const beforeSpaces = m1.spaces();
+        m1.resetPeak(peak);
         const t = process.hrtime.bigint();
         (
           await broker.dispose(hostBinding, { subscriptionId: 'big', updateIds: ids, reason: 'perf' })
@@ -619,6 +639,8 @@ module.exports = function profileCohort(base, m1) {
         m1.sample(peak);
         out.rewriteMs = Number(process.hrtime.bigint() - t) / 1e6;
         out.rewritePeakAbove = peak.heapUsed - before;
+        out.rewriteOldSpaceAbove = peak.oldSpace - beforeSpaces.oldSpace;
+        out.rewriteLargeObjectAbove = peak.largeObject - beforeSpaces.largeObject;
         out.disposed = ids.length;
         broker = undefined;
       }
@@ -643,32 +665,67 @@ module.exports = function profileCohort(base, m1) {
   // ----------------------------------------------------------------------------------------------
 
   /** Seeds once per repetition (or once, for the heavy arms) and measures in fresh children. */
+  /** A failed repetition is recorded, not fatal: one bad child must not discard a long run. */
+  function guarded(action) {
+    try {
+      return action();
+    } catch (error) {
+      process.stderr.write('!');
+      return { error: String(error.message ?? error).slice(0, 2000) };
+    }
+  }
+
   function runArm(reps, fixture, variant, options) {
     const runs = [];
     const once = options?.seedOnce === true;
     const measureIn = (dir, seeded) => {
+      const before = m1.diskOf(dir);
       const measured =
         fixture === 'inventory'
           ? base.child(['measure', dir, variant ?? 'minimal'])
           : base.child(['m1', 'profile-measure', dir, fixture, variant ?? 'open']);
-      return { fixture, variant: variant ?? 'open', seeded, ...measured };
+      const after = m1.diskOf(dir);
+      // An open-only measurement must leave the corpus byte-identical.
+      const diskChanged = after.total !== before.total || after.files !== before.files;
+      return { fixture, variant: variant ?? 'open', seeded, diskChanged, ...measured };
     };
     if (once) {
-      base.withRoot((dir) => {
-        const seeded = base.child(['m1', 'profile-seed', dir, fixture, JSON.stringify(options?.args ?? {})]);
-        for (let r = 0; r < reps; r++) {
-          runs.push(measureIn(dir, seeded));
-          process.stderr.write('.');
-        }
-      });
-      return runs;
+      // Seeded once; every measuring child gets its own copy of the seeded tree, so an action that
+      // writes (the consumer's acknowledgement rewrite) cannot change what the next child measures.
+      const result = guarded(() =>
+        base.withRoot((dir) => {
+          const seeded = base.child([
+            'm1',
+            'profile-seed',
+            dir,
+            fixture,
+            JSON.stringify(options?.args ?? {})
+          ]);
+          const out = [];
+          for (let r = 0; r < reps; r++) {
+            out.push(
+              guarded(() =>
+                base.withRoot((copy) => {
+                  fs.cpSync(dir, copy, { recursive: true });
+                  return measureIn(copy, seeded);
+                })
+              )
+            );
+            process.stderr.write('.');
+          }
+          return out;
+        })
+      );
+      return Array.isArray(result) ? result : [result];
     }
     for (let r = 0; r < reps; r++) {
       runs.push(
-        base.withRoot((dir) =>
-          measureIn(
-            dir,
-            base.child(['m1', 'profile-seed', dir, fixture, JSON.stringify(options?.args ?? {})])
+        guarded(() =>
+          base.withRoot((dir) =>
+            measureIn(
+              dir,
+              base.child(['m1', 'profile-seed', dir, fixture, JSON.stringify(options?.args ?? {})])
+            )
           )
         )
       );
@@ -677,8 +734,17 @@ module.exports = function profileCohort(base, m1) {
     return runs;
   }
 
-  function run(reps) {
-    const raw = {};
+  function run(reps, checkpoint) {
+    const raw = new Proxy(
+      {},
+      {
+        set(target, key, value) {
+          target[key] = value;
+          checkpoint?.(target);
+          return true;
+        }
+      }
+    );
     raw.empty = runArm(reps, 'empty');
     raw.plain = runArm(reps, 'plain');
     raw.churn = runArm(reps, 'churn');
@@ -691,28 +757,49 @@ module.exports = function profileCohort(base, m1) {
     raw.history = runArm(reps, 'history', 'open', { seedOnce: true });
     raw['history-control'] = runArm(reps, 'history-control', 'open', {
       seedOnce: true,
-      args: { plan: raw.history[0].seeded.plan }
+      args: { plan: raw.history.find((r) => r.error === undefined)?.seeded.plan ?? [] }
     });
     raw.consumer = runArm(reps, 'consumer', 'consumer-ack', { seedOnce: true });
     raw.evidence = runArm(reps, 'evidence', 'open', { seedOnce: true });
     raw['evidence-control'] = runArm(reps, 'evidence-control', 'open', {
       seedOnce: true,
-      args: { tasks: raw.evidence[0].seeded.tasks }
+      args: { tasks: raw.evidence.find((r) => r.error === undefined)?.seeded.tasks ?? 1 }
     });
     raw.searches = { wholeRepository: [], unresolvedStop: [] };
     for (let r = 0; r < reps; r++) {
       raw.searches.wholeRepository.push(
-        base.withRoot((dir) => base.child(['m1', 'profile-search', dir, 'whole']))
+        guarded(() => base.withRoot((dir) => base.child(['m1', 'profile-search', dir, 'whole'])))
       );
       raw.searches.unresolvedStop.push(
-        base.withRoot((dir) => base.child(['m1', 'profile-search', dir, 'unresolved']))
+        guarded(() => base.withRoot((dir) => base.child(['m1', 'profile-search', dir, 'unresolved'])))
       );
+      checkpoint?.(raw);
       process.stderr.write('+');
     }
-    return { raw, results: analyse(raw) };
+    const plain = { ...raw };
+    let results;
+    try {
+      results = analyse(plain);
+    } catch (error) {
+      results = { per: { analyseError: String(error.stack ?? error) }, verdicts: { analysis: false } };
+    }
+    return { raw: plain, results };
   }
 
-  function analyse(raw) {
+  function analyse(input) {
+    const errors = {};
+    const clean = (runs) => runs.filter((r) => r.error === undefined);
+    const raw = {};
+    for (const [key, value] of Object.entries(input)) {
+      if (Array.isArray(value)) {
+        raw[key] = clean(value);
+        if (raw[key].length < value.length) {
+          errors[key] = value.filter((r) => r.error !== undefined).map((r) => r.error);
+        }
+      } else {
+        raw[key] = Object.fromEntries(Object.entries(value).map(([k, runs]) => [k, clean(runs)]));
+      }
+    }
     const s = base.stat;
     const heap = (runs, key = 'afterOpen') => s(runs.map((r) => r[key].heapUsed - r.baseline.heapUsed));
     const abs = (runs) => ({
@@ -736,7 +823,7 @@ module.exports = function profileCohort(base, m1) {
       message: runs[0].seeded.refusal?.message,
       seedMs: s(runs.map((r) => r.seeded.seedMs))
     });
-    const per = {};
+    const per = { errors };
     for (const name of [
       'empty',
       'plain',
@@ -772,14 +859,36 @@ module.exports = function profileCohort(base, m1) {
     v.owed = refused('owed', 'logical-bytes', 520, 537) && per.owed.receipt.peakAbove.max <= 16 * MiB;
     per.fanout.pinned = s(raw.fanout.map((r) => r.seeded.pinned));
     per.fanout.overOwed = per.fanout.memory.heapAboveImport.median - per.owed.memory.heapAboveImport.median;
-    v.fanout = refused('fanout', 'logical-bytes', 515, 537) && per.fanout.overOwed <= 8 * MiB;
+    // Heap minus heap is not per-audience cost alone: the two stop at different task counts.
+    per.fanout.taskCounts = {
+      fanout: per.fanout.limit.admitted.median,
+      owed: per.owed.limit.admitted.median
+    };
+    per.fanout.perTask = {
+      fanout: per.fanout.memory.heapAboveImport.median / per.fanout.limit.admitted.median,
+      owed: per.owed.memory.heapAboveImport.median / per.owed.limit.admitted.median
+    };
+    v.fanout =
+      refused('fanout', 'logical-bytes', 515, 537) &&
+      per.fanout.overOwed <= 8 * MiB &&
+      raw.fanout.every((r) => r.seeded.pinned === 32);
     const consumerBytes = raw.history[0].seeded.disk.consumers;
     per.history.closedSubscriptions = raw.history[0].seeded.closedSubscriptions;
     per.history.consumerBytes = consumerBytes;
     per.history.overControl =
       per.history.memory.heapAboveImport.median - per['history-control'].memory.heapAboveImport.median;
     per.history.bound = Math.max(NOISE, 0.05 * consumerBytes) + MiB;
+    const control = raw['history-control'];
+    per.history.controlComplete =
+      control.length > 0 &&
+      control.every(
+        (r) =>
+          r.seeded.refusal === undefined &&
+          JSON.stringify(r.seeded.plan) === JSON.stringify(raw.history[0].seeded.plan)
+      );
+    per.history.drainFailures = raw.history[0].seeded.drainFailures;
     v.history =
+      per.history.controlComplete &&
       refused('history', 'acknowledgement-ids', 7, 9) &&
       per.history.closedSubscriptions < 256 &&
       per.history.overControl <= per.history.bound;
@@ -848,6 +957,8 @@ module.exports = function profileCohort(base, m1) {
     const peakBound = 0.25 * invCold + 16 * MiB;
     const summaryControl = raw['inventory-full-summary-control'];
     const bufferControl = raw['inventory-buffer-control'];
+    // Cold bytes two ways: the whole tree (the bound's input) and archived records alone.
+    per.inventory.coldArchivedOnly = base.median(inv.map((r) => r.seeded.archivedPayloadBytes));
     per.inventory.controls = {
       fullSummaryRetained: s(summaryControl.map((r) => r.afterControl.heapUsed - r.afterOpen.heapUsed)),
       archivedPayloadBytes: summaryControl[0].seeded.archivedPayloadBytes,
@@ -864,6 +975,33 @@ module.exports = function profileCohort(base, m1) {
         (r) => r.afterControl.heapUsed - r.afterOpen.heapUsed >= 0.5 * r.seeded.archivedPayloadBytes - NOISE
       ) &&
       bufferControl.every((r) => r.bufferPeak - r.afterOpen.heapUsed > peakBound);
+    // Old-space beside the frozen heapUsed peaks: tells retention from nursery churn.
+    per.peakSpaces = Object.fromEntries(
+      Object.entries(raw)
+        .filter(([, runs]) => Array.isArray(runs) && runs.length > 0 && runs[0].openPeakSpaces !== undefined)
+        .map(([name, runs]) => [
+          name,
+          {
+            openOldSpaceAbove: s(runs.map((r) => r.openPeakSpaces.oldSpace - r.afterOpenSpaces.oldSpace)),
+            rebuildOldSpaceAbove: s(
+              runs.map((r) => r.rebuildPeakSpaces.oldSpace - r.afterRebuildSpaces.oldSpace)
+            )
+          }
+        ])
+    );
+    if (raw.owed.length > 0) {
+      per.owed.receipt.oldSpaceAbove = s(raw.owed.map((r) => r.receiptOldSpaceAbove));
+      per.owed.receipt.owedBefore = raw.owed[0].owedBefore;
+      per.owed.receipt.prepareReads = raw.owed[0].prepareReads;
+    }
+    if (raw.consumer.length > 0) {
+      per.consumer.rewrite.oldSpaceAbove = s(raw.consumer.map((r) => r.rewriteOldSpaceAbove));
+    }
+    // Open-only measurements must leave their corpus byte-identical.
+    per.diskChangedByOpen = Object.entries(raw)
+      .filter(([name, runs]) => Array.isArray(runs) && !['owed', 'consumer'].includes(name))
+      .filter(([, runs]) => runs.some((r) => r.diskChanged === true))
+      .map(([name]) => name);
     return { per, verdicts: v };
   }
 

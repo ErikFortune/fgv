@@ -67,7 +67,18 @@ const MANIFEST = {
       'dropped before the rebuild is measured; every arm re-run again.',
     '2026-10-01 (agent-tasks-m1-stop), before any run of either new cohort: added predictions.stop and ' +
       'predictions.productionProfile and their fixture declarations under `extensions`. The four ' +
-      'existing predictions, their thresholds, their fixtures and the shared sample method are unchanged.'
+      'existing predictions, their thresholds, their fixtures and the shared sample method are unchanged.',
+    '2026-10-01 (agent-tasks-m1-stop), after one-repetition shakeouts of each new arm and a layer-1 ' +
+      'review, before any recorded run of the new cohorts. Harness only: (1) m1 measuring children also ' +
+      'sample at JSON parse/stringify boundaries of 64 KiB or more and record old-space and large-object ' +
+      'space beside heapUsed, which can only raise an observed peak; verdicts stay on heapUsed; (2) seed-' +
+      'once arms are measured on a per-child copy of the seeded tree, because the consumer arm writes; ' +
+      '(3) report-only controls added (stop-free paused children; a satisfied cancel); (4) verdict code ' +
+      'aligned with the frozen text (breadth names no capacity dimension, repetition counts admission ' +
+      'refusals only, fanout requires 32 pinned receipts, the history control must complete its plan). ' +
+      'The shakeouts already showed values outside four frozen ranges (receipt peak, release peak, ' +
+      'commands per evidence task, evidence open peak against the sharp bound). No prediction, threshold ' +
+      'or fixture changed in response; the recorded run reports what it finds.'
   ],
   extensions: {
     stated: '2026-10-01, before any run of the stop or productionProfile cohorts, on e662da68c',
@@ -748,6 +759,10 @@ function main() {
   };
   const reps = Number(opt('--reps', '5'));
   const cohorts = opt('--cohorts', 'fixture,archived,terminal,peak').split(',');
+  // The agent-tasks-m1-stop cohorts never run without the residency gate before them.
+  if ((cohorts.includes('stop') || cohorts.includes('productionProfile')) && !cohorts.includes('fixture')) {
+    cohorts.unshift('fixture');
+  }
   const outFile = opt('--out', undefined);
 
   const report = {
@@ -891,7 +906,13 @@ function main() {
     ['productionProfile', 'profile']
   ]) {
     if (cohorts.includes(name)) {
-      const ran = m1Cohorts()[key].run(reps);
+      // Raw results so far are checkpointed after every arm: a multi-hour run survives a crash.
+      const checkpoint = (raw) => {
+        if (outFile !== undefined) {
+          fs.writeFileSync(`${outFile}.partial-${name}.json`, JSON.stringify(raw));
+        }
+      };
+      const ran = m1Cohorts()[key].run(reps, checkpoint);
       report.raw[name] = ran.raw;
       report.results[name] = ran.results;
       const verdicts = Object.entries(ran.results.verdicts)

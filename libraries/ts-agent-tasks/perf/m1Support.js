@@ -11,6 +11,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const v8 = require('v8');
 const { FileTree, JsonSchema } = require('@fgv/ts-json-base');
 const { Converters, Logging, succeed, fail } = require('@fgv/ts-utils');
 
@@ -319,11 +320,107 @@ module.exports = function support(base) {
   // The measuring child: open, settle, optional action, rebuild, close
   // ----------------------------------------------------------------------------------------------
 
+  /**
+   * Samples heapUsed (the frozen sample method's figure) and, beside it, old-space and large-object
+   * space, so a high heapUsed peak can be told apart from nursery churn. heapUsed includes garbage
+   * not yet collected: every peak here is a sampled high-water, not an allocator maximum.
+   */
   function sample(peak) {
     const used = process.memoryUsage().heapUsed;
     if (used > peak.heapUsed) {
       peak.heapUsed = used;
     }
+    for (const space of v8.getHeapSpaceStatistics()) {
+      const key =
+        space.space_name === 'old_space'
+          ? 'oldSpace'
+          : space.space_name === 'large_object_space'
+          ? 'largeObject'
+          : undefined;
+      if (key !== undefined && space.space_used_size > (peak[key] ?? 0)) {
+        peak[key] = space.space_used_size;
+      }
+    }
+  }
+
+  // Extra sample points at large JSON parse/stringify boundaries (>= 64 KiB), in m1 measuring
+  // children only: a large record's parse happens between the FileTree proxy's read samples. More
+  // sample points can only raise an observed peak.
+  let sampling;
+  let hooked = false;
+  function sampleJsonBoundaries(peak) {
+    sampling = peak;
+    if (hooked) {
+      return;
+    }
+    hooked = true;
+    const parse = JSON.parse;
+    const stringify = JSON.stringify;
+    JSON.parse = function (text, ...rest) {
+      const value = parse.call(JSON, text, ...rest);
+      if (sampling !== undefined && typeof text === 'string' && text.length >= 65536) {
+        sample(sampling);
+      }
+      return value;
+    };
+    JSON.stringify = function (...args) {
+      const text = stringify.apply(JSON, args);
+      if (sampling !== undefined && typeof text === 'string' && text.length >= 65536) {
+        sample(sampling);
+      }
+      return text;
+    };
+  }
+
+  /**
+   * The frozen `sampledRoot`'s sample points (before and after every file-item call), sampling
+   * old-space and large-object space beside heapUsed.
+   */
+  function sampledRoot(dir, peak) {
+    const inner = nodeRoot(dir);
+    const wrapFile = (file) =>
+      new Proxy(file, {
+        get(target, prop) {
+          const value = target[prop];
+          if (typeof value !== 'function') {
+            return value;
+          }
+          return (...args) => {
+            sample(peak);
+            const result = value.apply(target, args);
+            sample(peak);
+            return result;
+          };
+        }
+      });
+    return new Proxy(inner, {
+      get(target, prop) {
+        const value = target[prop];
+        if (prop === 'getChildren') {
+          return () =>
+            value
+              .call(target)
+              .onSuccess((children) => succeed(children.map((c) => (c.type === 'file' ? wrapFile(c) : c))));
+        }
+        return typeof value === 'function' ? value.bind(target) : value;
+      }
+    });
+  }
+
+  /** Resets a peak to "nothing observed yet". */
+  function resetPeak(peak) {
+    peak.heapUsed = 0;
+    peak.oldSpace = 0;
+    peak.largeObject = 0;
+  }
+
+  /** Old-space and large-object used bytes now, for "above settled" comparisons. */
+  function spaces() {
+    const out = {};
+    for (const space of v8.getHeapSpaceStatistics()) {
+      out[space.space_name] = space.space_used_size;
+    }
+    return { oldSpace: out.old_space, largeObject: out.large_object_space };
   }
 
   /**
@@ -335,16 +432,20 @@ module.exports = function support(base) {
     const { pkg, internals } = base.lib();
     const baseline = settle();
     const peak = { heapUsed: 0 };
+    resetPeak(peak);
+    sampleJsonBoundaries(peak);
     let t = process.hrtime.bigint();
     let repository = await reopen(
       pkg,
       dir,
       { ...world, mode: { durable: 'process-crash' } },
-      base.sampledRoot(dir, peak)
+      sampledRoot(dir, peak)
     );
     const openMs = Number(process.hrtime.bigint() - t) / 1e6;
     const openPeak = peak.heapUsed;
+    const openPeakSpaces = { oldSpace: peak.oldSpace, largeObject: peak.largeObject };
     const afterOpen = settle();
+    const afterOpenSpaces = spaces();
     let inspection = internals.inspectRepository(repository);
     const stops = inspection.index.stops;
     const shape = {
@@ -358,19 +459,31 @@ module.exports = function support(base) {
       materializationHighWater: inspection.gate.highWater
     };
     inspection = undefined;
-    const out = { baseline, afterOpen, openPeak, openMs, shape, capacity: capacityOf(repository) };
+    const out = {
+      baseline,
+      afterOpen,
+      afterOpenSpaces,
+      openPeak,
+      openPeakSpaces,
+      openMs,
+      shape,
+      capacity: capacityOf(repository)
+    };
     if (action !== undefined) {
       await action(repository, peak, out);
       out.afterAction = settle();
     }
-    peak.heapUsed = 0;
+    resetPeak(peak);
     t = process.hrtime.bigint();
     (await repository.rebuildIndexes()).orThrow();
     out.rebuildMs = Number(process.hrtime.bigint() - t) / 1e6;
     out.rebuildPeak = peak.heapUsed;
+    out.rebuildPeakSpaces = { oldSpace: peak.oldSpace, largeObject: peak.largeObject };
     out.afterRebuild = settle();
+    out.afterRebuildSpaces = spaces();
     repository.close().orThrow();
     repository = undefined;
+    sampling = undefined;
     out.afterClose = settle();
     out.maxRssKiB = process.resourceUsage().maxRSS;
     return out;
@@ -394,6 +507,8 @@ module.exports = function support(base) {
     addToManifest,
     diskOf,
     sample,
+    resetPeak,
+    spaces,
     openMeasure
   };
 };
