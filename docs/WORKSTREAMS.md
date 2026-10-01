@@ -128,6 +128,33 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
+### `agent-tasks-i2` ✅ (shipped 2026-10-01 via [#707](https://github.com/ErikFortune/fgv/pull/707)) — slice I2: prompt fragments and the final composition check
+
+**Status:** ✅ shipped into `integration/agent-tasks-v1` (not `release`; the cluster promotes as one).
+Branched at `e662da68c` (the tracked-commands landing, after all of I1). Artifacts in
+`.ai/tasks/active/agent-tasks-i2/`; this family finalizes at cluster close. **P1 depends on it.**
+
+**What shipped.** A `prompt` packlet: `taskPromptRecord` and its parts build a `ts-prompt-assist`
+prompt whose task context is one trailing per-request slot; `checkTaskPrompt` resolves it with a
+composition and refuses unless the composition is positively available, the slot is the one trailing
+section carrying the context exactly once, a stable prefix precedes it, no refusing cache finding
+fired (threshold findings are classified, never failure or proof), and the breakpoint plan ends at the
+slot; `prepareTaskPrompt` wraps a bound delivery. `serializeTaskData` is published from `context`.
+
+**The decisions.** *Receipt binding:* a hash in the receipt (T2/T7 surfaces; acknowledgement never
+sees the body) and composition identity (none exists) were verified unbuildable; the text binding is
+held in the handoff instead — `acknowledge(sentSystem)` requires the exact checked body, and a failed
+check or mismatched send abandons the manifest so the receipt dies by any path. *Details framing:*
+details are data — `task_inspect` returns them escaped like task prose; the TECH_DEBT entry is resolved.
+
+**Evidence.** Real `PromptLibrary`, renderer and broker delivery; outbound bodies captured from
+ai-assist's own builders (Anthropic, OpenAI, a tool-use turn). Progress-only pair: identical prefix
+block, breakpoint `[391]` UTF-16 units; empty set, astral text, repeated text. Matrix rows
+`I2-1…I2-30` (in the stream directory — `perf/` was M1's). Routed: fold those rows into
+`perf/mutationMatrix.js`; `jsonValue` admits `Infinity`.
+
+**Artifact pointer:** `.ai/tasks/active/agent-tasks-i2/`.
+
 ### `agent-tasks-tracked-commands` ✅ (shipped 2026-10-01 via [#705](https://github.com/ErikFortune/fgv/pull/705)) — fifth I1 slice: `fgv.tracked@1`'s commands registered for command tools
 
 **Status:** ✅ shipped into `integration/agent-tasks-v1` (not `release`; the cluster promotes as one).
