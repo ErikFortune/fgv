@@ -102,14 +102,21 @@ describe('rendering has no side effects', () => {
       './normalize',
       './renderer'
     ];
+    const seen: Set<string> = new Set();
     for (const file of fs.readdirSync(dir).filter((f) => f.endsWith('.ts'))) {
       const source: string = fs.readFileSync(path.join(dir, file), 'utf8');
-      const imported: string[] = Array.from(source.matchAll(/from '([^']+)'/g)).map((m) => m[1]);
+      // A type-only import is erased at compile time and can reach nothing at run time.
+      const imported: string[] = Array.from(source.matchAll(/^import (?!type )[^;]*from '([^']+)'/gm)).map(
+        (m) => m[1]
+      );
+      imported.forEach((m) => seen.add(m));
       expect({ file, disallowed: imported.filter((m) => !allowed.includes(m)) }).toEqual({
         file,
         disallowed: []
       });
     }
+    // The scan finds real imports, so an empty disallowed list is not the scan finding nothing.
+    expect(seen).toContain('../converters');
   });
 
   test('rendering does not mutate its input', () => {

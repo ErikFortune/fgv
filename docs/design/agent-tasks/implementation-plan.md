@@ -309,7 +309,15 @@ one large diff. The seam is already visible in the types: `IBoundTaskView` is `q
 
 **Review gate:** reuse of `IAiClientTool` and memory-tool precedent without its permissive full-body fallback; read-only use has no mutation dependency.
 
-### I2 — Prompt fragments and final composition check
+### I2 — Prompt fragments and final composition check — ✅ implemented on `integration/agent-tasks-v1` ([#707](https://github.com/ErikFortune/fgv/pull/707))
+
+**Shipped:** the `prompt` packlet — fragment factories building one trailing per-request task slot,
+`checkTaskPrompt` (resolve with composition; refuse unless available, one trailing slot carrying the
+context exactly once, a stable prefix, no refusing cache finding, breakpoints ending at the slot) and
+`prepareTaskPrompt` (a delivery handoff whose receipt is acknowledged only against the exact text
+sent; a failed check or mismatched send abandons the manifest). `task_inspect` details are framed via
+the new `serializeTaskData`. Decisions and evidence: `.ai/tasks/active/agent-tasks-i2/result.md`.
+
 
 **Dependencies:** T2, T7, I1. **Affected package:** `ts-agent-tasks` prompt. Existing ts-prompt-assist/ai-assist are consumed unchanged unless a demonstrated upstream bug requires a separately reviewed fix.
 

@@ -38,6 +38,19 @@ describe('public surface', () => {
     expect(tools.every((t) => t.config.annotations?.readOnlyHint === true)).toBe(true);
   });
 
+  test('exports the prompt helpers (I2), none of which acknowledges as a side effect of composing', () => {
+    const names: ReadonlyArray<string> = Object.keys(TaskLib);
+    expect(names.filter((n) => /prompt/i.test(n)).sort()).toEqual([
+      'checkTaskPrompt',
+      'prepareTaskPrompt',
+      'taskPromptDescriptor',
+      'taskPromptRecord',
+      'taskPromptTemplate'
+    ]);
+    // The only acknowledgement a prompt helper offers is the handoff's own, taking the text sent.
+    expect(names.filter((n) => /acknowledg/i.test(n))).toEqual([]);
+  });
+
   test('exports no deferred input-request or answer protocol', () => {
     const names: ReadonlyArray<string> = Object.keys(TaskLib);
     expect(names.filter((n) => /inputrequest|answer|inbox|continuation/i.test(n))).toEqual([]);

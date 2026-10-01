@@ -4,3 +4,4 @@
  */
 
 export * from './renderer';
+export { serializeTaskData } from './escaping';
