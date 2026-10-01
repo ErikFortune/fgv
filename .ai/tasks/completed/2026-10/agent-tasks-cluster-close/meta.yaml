@@ -1,0 +1,49 @@
+id: agent-tasks-cluster-close
+status: shipped
+packages: ['@fgv/ts-agent-tasks'] # generated CAPABILITIES.md feed only; no source
+prs: [PRNUM] # written in the PR itself, anticipating its merge
+openPrs: []
+opened: 2026-10-01
+closed: 2026-10-01
+summary:
+  headline: '' # a finalization, not a capability; the cluster's capabilities are on agent-tasks-t1, -i1a and -i2
+  intended: >
+    Finalize exactly eighteen agent-tasks streams (T1–T9 incl. T8b, I1a–I1d, I2,
+    tracked-commands, M1-stop, P1) into .ai/tasks/completed/2026-10/, archive their ledger
+    entries to docs/workstreams/2026-10.md, write the implementation plan's § 8 release
+    evidence from the streams' own results, put one feed line per externally interesting
+    capability rather than one per stream, and record that rule durably. One PR into
+    integration/agent-tasks-v1; no source changes; no promotion.
+  shipped: >
+    All eighteen migrated (63 archived files byte-identical, plus a meta.yaml and README.md
+    each), every summary checked against its result.md by independent antagonist passes; three
+    feed lines (t1 the library, i1a model tools, i2 checked prompt composition) and fifteen
+    explicit opt-outs; § 8 "Evidence at the cluster close" mapping the twelve release suites to
+    cited evidence, M1's qualification gate and P1's three findings; the eighteen ledger entries
+    archived with an errata list; a TECH_DEBT P3 collecting deferrals recorded only in result.md
+    files. LIBRARY_CAPABILITIES.md at 22,071 / 24,000 characters.
+  diverged: >
+    The feed script could not express the rule: an absent headline falls back to sourceLine, so
+    siblings with a verbatim sourceLine would all have entered the feed, and personality-intake's
+    blank sourceLine had been skipped only because a trailing comment defeated the regex. Fixed
+    in this PR (explicit empty headline = opt out). The brief's capacity figure "520–533" and the
+    plan's "519–533" were both loose: 519–532 live tasks are admitted and the refusal lands at
+    the 520th–533rd, for three mixes only. Archiving entries verbatim surfaced wrong claims in
+    them (six early ship dates among others), handled by an errata list rather than edits.
+    p1Matrix.js needed a one-level path fix to keep running after the move.
+  sourceLine: "**Shipped:** the agent-tasks cluster is closed — all eighteen slices finalized into `.ai/tasks/completed/2026-10/` with a checked `meta.yaml` and `README.md` each, their ledger entries archived with an errata list, three capability lines in the feed instead of eighteen, and the plan's § 8 release evidence written from the slices' own results."
+keywords:
+  - cluster close
+  - finalize-task
+  - antagonist pass
+  - capability feed opt-out
+  - one line per capability
+  - release evidence
+  - ledger errata
+  - capacity ceiling 519-532 admitted
+relatedStreams:
+  - { id: agent-tasks-t1, relationship: 'first of the eighteen slices finalized here' }
+  - {
+      id: personality-intake,
+      relationship: 'finalized into the same 2026-10 bucket ahead of this close (#711); left untouched'
+    }
