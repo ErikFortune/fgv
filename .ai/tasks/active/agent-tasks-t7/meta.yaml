@@ -1,0 +1,71 @@
+id: agent-tasks-t7
+status: shipped
+packages: ['@fgv/ts-agent-tasks']
+prs: [695]
+openPrs: []
+opened: 2026-09-25
+closed: 2026-09-26
+summary:
+  intended: >
+    Slice T7 of docs/design/agent-tasks/implementation-plan.md: explicit consumer and subscription
+    identity with start policies, serialized baseline creation, candidate audiences committed with
+    updates, broker preparation around pure rendering, an injected checkpoint store, exact
+    issued-receipt manifests with expiry and pins, and durable exact-ID acknowledgement. Fill the
+    audience seam that T5 left answering "nobody", spending T6's settlement/replay claims rather than
+    minting new ones (pinned by the charge), prove acknowledgement is exact-ID and not a revision
+    watermark (the rev-3 omitted / rev-4 included falsifier), make custom checkpoint stores fail
+    closed, implement A3's reservations, and restate the capacity arithmetic and ceiling.
+  shipped: >
+    Storage-owned subscriptions: a consumer record per subscription, named in the manifest's
+    consumers inventory and persisted through an injected synchronous ITaskCheckpointStore (default
+    FileTreeCheckpointStore). Audience is computed by storage and recomputed inside every commit;
+    the internal createTaskBroker resolver seam and noAudience are gone. TaskBroker.subscribe and
+    TaskBroker.bindDelivery (pending / prepare / acknowledge / abandon). A consumer record holds the
+    exact sorted set of acknowledged update ids; the rev-3/rev-4 falsifier is in receipts.test.ts.
+    Acknowledgement evidence (1 id + 512 B logical per link) is spent from the task's own claims on
+    protected steps, pinned by accounting.test.ts "one charge, not two". Thirteen check-then-act
+    windows (W1-W13) enumerated with their re-checks. Potential-audience cap of 32 active
+    subscriptions per non-archived task (backpressure on audience-links). Resident ceiling
+    unchanged at 146 (128 with one in-flight command); logical-bytes binds at 448 and
+    acknowledgement-ids at 892; a current subscription's baselines add up to 64 KiB per covered
+    task until acknowledged (128 for k = 1). Revert matrix of 22 rows plus 11 from the Copilot loop
+    (M23-M33), each red; neutering the injected checkpoint store turns 26 of 33 tests in
+    delivery/checkpoints.test.ts red. 1,603 tests, 100%, zero c8 ignore. Copilot loop stopped at 6
+    rounds (rounds 1-4 found real defects).
+  diverged: >
+    ITaskCheckpointStore is synchronous rather than as sketched, because the whole storage layer is.
+    T1's unused subscription-acknowledgement claim purpose was replaced by subscription-activation
+    (the owed reservation is derived, so there is no per-link stored claim). The policy's
+    coalesceProgress and the disposed/closed states were not implemented and were routed to T8, so
+    T7 subscriptions are only ever active. Not in the brief: filling the seam made every covered
+    task permanently retention-blocked at archive even once fully acknowledged, so the A3 test that
+    archive and close do not reduce a subscription's lifetime charge could only be shown on tasks
+    owed nothing; and a profile inconsistency surfaced (maxConsumerRecordBytes / 512 B = 16,384 owed
+    links against an advertised 50,000 per-subscription ids), routed to T8 and resolved upward by
+    agent-tasks-t8b. T1 vocabulary revised (maxUpdateIdSuffixLength 19 -> 25, new encoded bound
+    maxAcknowledgementEvidenceBytes, ITaskRecordHeader removed). The neutered-double figure was first
+    reported as "22 of 28" and corrected after an orchestrator re-run to 26 of 33.
+  sourceLine: '**Shipped:** Subscriptions and exact acknowledgement — a host subscribes a consumer to a task selection with a persisted delivery policy and an optional current-state baseline; every accepted update''s audience is computed and verified by storage and its acknowledgement evidence is spent from the claims that already reserved it; a bound delivery prepares a context whose exact receipt manifest is committed before the context is returned, and acknowledges only the exact update ids an unexpired issued receipt named — never a revision watermark — through a checkpoint store that is read back and fenced rather than believed.'
+keywords:
+  - subscriptions
+  - consumer checkpoint store
+  - issued receipt manifest
+  - exact-ID acknowledgement
+  - revision watermark falsifier
+  - audience seam
+  - spend not mint
+  - acknowledgement evidence reservation
+  - potential audience cap
+  - subscription activation crash
+  - baseline capture
+  - check-then-act windows
+relatedStreams:
+  - id: agent-tasks-t6
+    relationship: 'predecessor; T7 spends the settlement and replay claims T6 reserved per update'
+  - id: agent-tasks-t5
+    relationship: 'predecessor; built the internal audience seam T7 filled and removed'
+  - id: agent-tasks-t8
+    relationship: 'successor; received the retention-blocked archive, closure/disposition and profile hand-offs'
+  - id: agent-tasks-t8b
+    relationship: 'resolved T7 hand-off 2 (consumer record bytes vs per-subscription id limit) by raising maxConsumerRecordBytes to 32 MiB'
+sourceHash: e787da7a83dda26e

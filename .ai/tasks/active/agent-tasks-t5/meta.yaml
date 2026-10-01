@@ -1,0 +1,84 @@
+id: agent-tasks-t5
+status: shipped
+packages: ['@fgv/ts-agent-tasks']
+prs: [691]
+openPrs: []
+opened: 2026-09-23
+closed: 2026-09-24
+summary:
+  intended: >
+    Slice T5 of the agent-tasks plan: the broker layer over T4's indexed storage — host-bound views
+    and sanitized projections, create/update of tracked work, task-list completion, scopes and graph
+    integrity, current-authority and policy-epoch checks, and a revisioned responsibility
+    (reassignment) operation, as a typed direct API with no native business I/O. Acceptance bar:
+    parentage, responsibility, visibility and authority remain independent. The review gate is a
+    threat model — authorization at every read and mutation boundary rather than in one wrapper,
+    projector failure without full-data fallback, revocation between check and commit, one writer
+    serializing stale updates and cycle checks, crash-before-list-completion recovered by a rebuilt
+    candidate plus an authorized pump — and A3 reservations without silently worsening the
+    146-task capacity ceiling.
+  shipped: >
+    TaskBroker.create / bind (IBoundTaskWriter) / bindView (IBoundTaskView, a separate object with
+    no mutation method) and the trusted host operation registerExternal. Bound query and inspect
+    produce projected data only; bound writes cover execute, createTracked, createTaskList,
+    updateTracked, reassign, changeScopes, reparent, completeList, archive and the
+    reconcileListCompletions pump. Authorization is checked at every boundary and re-verified inside
+    one serialized writer section (policy epoch captured before the first check, re-read records,
+    epoch rechecked after the section's last await); the projection is structural
+    (IProjectedTaskEnvelope has no binding member; a failing, throwing, widening or substituting
+    projector fails the call). The fgv.tracked@1 transition table (7 statuses x 11 commands), list
+    completion from the complete authoritative child set via a per-parent succeeded-child count and
+    candidate set rebuilt by open/rebuildIndexes, ITaskRepository.childStates and
+    listCompletionCandidates, and buildBrokerConverters. Eight protections reverted on the final
+    source each turned tests red. No T1 member revised, no persisted shape changed, and no new
+    capacity reservation: per-registration total stays 448 KiB and the default ceiling 146.
+  diverged: >
+    The design's sketches were departed from in recorded ways: ITaskAccessRequest.task is an
+    envelope-only ITaskSummary (not ITaskSnapshot) with a role added; null was removed from request
+    shapes (responsibility 'unassigned', parent 'root', patch clear); changeScopes is add/remove
+    within the view rather than a replacement list; IReassignmentResult carries updateIds; the page
+    type omits generation. Updates owed to no one are not retained, so with no subscriptions until
+    T7 the broker writes no update payloads in production and the audience resolver is an internal
+    seam (moved off the public TaskBroker._create to an unexported createTaskBroker in Copilot
+    round 7). Removal of outcome artifact references is defaultTaskProjector's only — a host
+    projector that keeps them is making its own disclosure decision. The seven-round Copilot loop
+    changed the design materially: the epoch capture moved before the first policy question, every
+    replay path gained in-writer confirmation and a restart-on-concurrent-commit, the in-writer
+    epoch check moved to after the last await, queries became fenced by generation, and the pump's
+    continuation became an opaque view-bound PageCursor (breaking the public pump types). A
+    move's previous parent is not re-authorized on replay — a stated limit. Not in the brief: the
+    PR codified CODING_STANDARDS.md's "Authorization boundaries are the same blind spot, and the
+    loop runs longer" section from this run.
+  sourceLine: '**Shipped:** `TaskBroker` — principal-bound views and writers over T4''s indexed repository, with authorization re-verified inside the serialized writer on every mutation, projected views that fail closed, the `fgv.tracked@1` transition table, task lists completed from their complete authoritative child set (explicitly, or by a host pump over a rebuilt candidate index), hierarchy integrity, and reassignment that changes responsibility only. No new capacity reservation.'
+keywords:
+  - task broker
+  - bound view
+  - bound writer
+  - authorization boundary
+  - policy epoch
+  - revalidation in writer
+  - fail-closed projection
+  - projector
+  - disclosure
+  - hidden vs foreign id
+  - tracked transition table
+  - task list completion
+  - completion pump
+  - reassignment
+  - responsibility
+  - reparent cycle check
+  - tombstone parent resolution
+  - replay confirmation
+  - A3 reservations
+relatedStreams:
+  - id: agent-tasks-t4
+    relationship: 'predecessor slice — the indexed repository this brokers over'
+  - id: agent-tasks-t6
+    relationship: 'successor slice — external command dispatch replaces T5''s unsupported external commands'
+  - id: agent-tasks-t7
+    relationship: 'replaced the internal audience seam with subscription matching and reserved acknowledgement evidence'
+  - id: agent-tasks-t8
+    relationship: 'replaced T5''s archive eligibility rule with acknowledgement/disposition evidence'
+  - id: agent-tasks-t9
+    relationship: 'added the stop-latch check list completion and relationship operations lacked'
+sourceHash: 2ad532355aa1ef1a

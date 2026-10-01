@@ -1,0 +1,105 @@
+id: agent-tasks-p1
+status: shipped
+packages: ['@fgv/testbed', '@fgv/ts-agent-tasks']
+prs: [709]
+openPrs: []
+opened: 2026-10-01
+closed: 2026-10-01
+summary:
+  intended: >
+    Slice P1 of the agent-tasks plan is the credential-free public-API proving ground. It is a
+    `samples/testbed` scenario, `agentTasks`, that walks the plan's nine-step journey through
+    `ts-agent-tasks`' exports only, as a testable core plus a thin Node CLI bootstrap, alongside
+    public contract/journey tests in the library. The run had to be deterministic: no credentials,
+    network, downloads, weights, sleeps or wall-clock races. Any gap in the public surface was to be
+    recorded as a finding, not routed around. The stream had two decisions to take: where each
+    assertion lives, and what the scenario's core is. It was also to name, for each step, the
+    assertion that fails on regression.
+  shipped: >
+    `samples/testbed/src/scenarios/agentTasks/` (scenario id `agent-tasks`, CLI-only) has these
+    parts:
+      - `world.ts` holds every simulation and host seam.
+      - `journey.ts` is the testable core: nine steps plus the `7-cancel` and `7-uncertain`
+        branches.
+      - `report.ts` records each check as `{ observed, expected, passed }`.
+      - `outbound.ts` captures the ai-assist request.
+      - A thin `index.ts` bootstrap renders the result.
+    In the library, `journey/publicJourney.test.ts` adds six contract tests through the public
+    barrel. They pin the compositions no existing suite did.
+    `samples/testbed/config/jest.setup.js` polyfills `structuredClone` for jsdom.
+    Nothing in `libraries/ts-agent-tasks/src/packlets` changed.
+    Three surface findings were routed to TECH_DEBT:
+      - an undocumented `structuredClone` requirement;
+      - query work observable only through an internal module;
+      - no ai-assist per-call transport.
+    Revert matrix: 10 rows, all red, against both suites.
+    Tests: `ts-agent-tasks` has 2,407 tests at 100% coverage. `samples/testbed` has 609 tests, 31
+    of them in `agentTasks`, with that scenario at 100%.
+  diverged: >
+    The assertion split has four homes, not the two the plan names:
+      - existing library suites;
+      - a new library `journey/` suite limited to six compositions;
+      - the scenario's tests;
+      - a CLI smoke.
+    The whole journey is not duplicated across them.
+    Two things shipped that the brief never mentioned: a `structuredClone` polyfill in the
+    testbed's jsdom setup, and a flaky `ts-extras` KeyStore Argon2id test, found in the repo-wide
+    run and routed.
+    Three single-layer revert rows (P1-4, P1-5, P1-6) were equivalent mutants at first. The package
+    guards each of those properties twice, so the rows were rewritten to remove every layer.
+    Review hardened the scenario's own pass logic more than its use of the library:
+      - Layer 1 found eight P2s.
+      - Copilot found two highs in `report.ts`: non-finite values serialized as `null`, and a
+        sentinel string.
+      - About a third of the checks had been asserted only by the blanket `report.passed`. They are
+        now pinned by value, with a 105-check guard.
+    Both change files are `none`.
+    The brief's advice to trigger Copilot with a comment did not hold: the bare comment did
+    nothing, and the API request worked. The loop stopped at 3 rounds (7 → 2 → 0 findings).
+  sourceLine: '**Shipped:** A credential-free `samples/testbed` scenario now drives `@fgv/ts-agent-tasks` through all nine steps of the plan''s journey using only the package''s exports — every claim a structured check with the value it observed, and library contract tests pinning the compositions no existing suite did.'
+keywords:
+  - proving ground
+  - public API sufficiency
+  - testbed scenario
+  - nine-step journey
+  - credential-free
+  - deterministic clock and id factory
+  - simulated external executor
+  - source-key dedup
+  - held non-idempotent command
+  - reassignment reopen
+  - cascade pause cancel uncertain
+  - recovery after reopen
+  - outbound request capture
+  - assertion split
+  - first external consumer
+  - structuredClone jsdom
+  - query work observability
+  - fetch transport seam
+  - equivalent mutants
+  - layered guards
+relatedStreams:
+  - id: agent-tasks-i2
+    relationship: >
+      Step 9 drives I2's `prepareTaskPrompt` / `acknowledge(sentSystem)` surface. The branch was cut
+      at the I2 landing (`8e9916b88`).
+  - id: agent-tasks-i1c
+    relationship: >
+      Step 3 drives, end to end through a simulated source, I1c's rule that a model never resends
+      a command and only the host's pump resends a `source-key` command.
+  - id: agent-tasks-i1d
+    relationship: >
+      Step 7 drives I1d's rule that a model may request and read a stop but never release it, and
+      that release and resume are separate operations.
+  - id: agent-tasks-t5
+    relationship: Step 5 (reassignment then reopen) proves T5's bound-authority reassignment from outside the package.
+  - id: agent-tasks-t6
+    relationship: Steps 3 and 8 drive T6's external sources, command dispatch and reconciliation.
+  - id: agent-tasks-t7
+    relationship: Steps 2, 4 and 9 drive T7's subscriptions, issued receipts and exact acknowledgement.
+  - id: agent-tasks-t9
+    relationship: Step 7 and its cancel/uncertain branches drive T9's persistent cascade stop.
+  - id: agent-tasks-m1-stop
+    relationship: >
+      Ran in parallel and owned `perf/`, which is why P1's revert rows live in the stream directory.
+sourceHash: 93fc58a58dd55bb7

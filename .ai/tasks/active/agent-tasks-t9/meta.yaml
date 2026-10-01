@@ -1,0 +1,83 @@
+id: agent-tasks-t9
+status: shipped
+packages: ['@fgv/ts-agent-tasks']
+prs: [701]
+openPrs: []
+opened: 2026-09-27
+closed: 2026-09-28
+summary:
+  intended: >
+    Slice T9 of the agent-tasks implementation plan, under amendment A2: a persistent cascade
+    pause/cancel as a best attempt with an observable result — root plus transitive target capture
+    that is authoritative rather than visibility-filtered, a persisted latch and per-target operation
+    identities, a bounded host-driven reconciliation pump under current per-target authority,
+    classified partial outcomes with no "success with skipped child" fallback, a stable-stop source
+    declaration, explicit pause-latch release, and a full-hierarchy admission freeze enforced on
+    reopen before any mutation. Also: resolve the inherited T5 (latch unchecked by list completion /
+    relationship operations) and T6 (`ITaskSource.capabilities()`) hand-offs; A3 capacity preflight
+    with a test proving no partial dispatch; a semantic antagonist review against design § 10; and a
+    decision on M1's stop-state cohort without editing the frozen harness manifest.
+  shipped: >
+    `requestStop` / `reconcileStop` / `releaseStop` / `inspectStop`. The intent is persisted on the
+    root's record as `stops?: IStopIntent[]` (pending / blocked / satisfied latch; released / settled
+    kept as evidence) with every target `unexamined` and nothing dispatched at acceptance; per-attempt
+    operation ids are minted and persisted before any dispatch. The subtree is captured from the
+    resident graph including hidden, archived, unresolved, quarantined and external descendants,
+    bounded at 1,000 targets and refused, never truncated; storage refuses an intent whose targets are
+    not exactly the authoritative subtree. Eleven distinct acceptance-vs-completion points are
+    recorded, each with its test. The admission freeze is enforced by storage on every commit and
+    survives reopen (the latch book is part of the `TaskIndex`, recounted before open accepts a
+    write). `ITaskSource.capabilities?(binding)` declares the stable-stop contract, validated on every
+    pass and never carried across a restart; a new `stop-target` role. A3: every target's attempt
+    bundle (643,625 logical bytes under the default profile) is reserved before acceptance, derived
+    from the records; one byte short, the stop is refused and no record changes. Both inherited
+    hand-offs resolved. Layer-2 antagonist found seven defects (H1, M1–M4, L1–L2), all fixed;
+    Copilot ran ten rounds and stopped at the cap. Final revert matrix: 166 rows, 158 red; of the 66
+    T9 rows, 65 red and one equivalent mutation. Package suite 85 suites, 2,011 passed, 100 %, zero
+    `c8 ignore`.
+  diverged: >
+    Design § 10 was revised in four places, each argued in result.md: the root carries an array of
+    intents rather than one `stop?`, because overlapping pause/cancel intents are independent; command
+    keys are minted and persisted rather than tuple-encoded, because two 128-char ids cannot fit the
+    128-char operation-id bound; `capabilities()` names a stop command and its parameters per mode
+    rather than § 5's `commands: string[]`; and `IStopTarget` / `IStopResult` gained `violation`,
+    `stableSourceEvidence`, `restrictedWorkRemains` and `capacity`. Explicit abandonment of a blocked
+    cancel (§ 10 step 8 "may") was not built — such a root is `retention-blocked` — and was routed. The
+    M1 stop-state cohort was not added; it was judged to belong with the M1 production-profile run
+    (later done by `agent-tasks-m1-stop`). A stop changes what binds first: 400 plain registrations
+    admit a stop over at most 210 of them, on `logical-bytes`, because the bundle uses schema maxima
+    (routed). The Copilot loop ran to the 10-round cap rather than stopping on diminishing returns,
+    with rounds 5 onward concerning what a raw writer or a forged file could do. The final matrix
+    found four T9 rows green: three were masked tests (fixed), one an equivalent mutation (T9-24,
+    kept), and the matrix script gained `paired(...)`.
+  sourceLine: '**Shipped:** A cascade pause or cancel is a persisted, honestly reported intent — the repository freezes the whole authoritative subtree before a reopened store accepts a write, reserves every target''s command before accepting the stop, and a host-driven pump confirms each target under current authority, never rounding a partial stop up to success.'
+keywords:
+  - cascade stop
+  - pause and cancel subtree
+  - stop latch
+  - admission freeze
+  - acceptance versus completion
+  - no success with skipped child
+  - stable-stop contract
+  - ITaskSource.capabilities
+  - stop-target authority
+  - partial outcome reporting
+  - attempt bundle reservation
+  - no partial dispatch
+  - raw-writer storage rules
+  - stop survives reopen
+  - paired revert rows
+  - equivalent mutation
+  - amendment A2
+relatedStreams:
+  - id: agent-tasks-t5
+    relationship: 'handed T9 the latch gap on list completion and relationship operations (TECH_DEBT T5 (4)), resolved here'
+  - id: agent-tasks-t6
+    relationship: 'handed T9 ITaskSource.capabilities() and the source side of a stop (TECH_DEBT T6 (4)), resolved here'
+  - id: agent-tasks-t8b
+    relationship: 'settled the capacity profile (536 plain registrations on logical-bytes) that T9''s reservations build on'
+  - id: agent-tasks-i1d
+    relationship: 'stop tools over requestStop / reconcileStop / releaseStop / inspectStop'
+  - id: agent-tasks-m1-stop
+    relationship: 'ran the M1 stop-state cohort T9 deferred (TECH_DEBT stop hand-off 3)'
+sourceHash: c297bec142d438fa

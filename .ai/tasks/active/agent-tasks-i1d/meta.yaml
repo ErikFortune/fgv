@@ -1,0 +1,74 @@
+id: agent-tasks-i1d
+status: shipped
+packages: ['@fgv/ts-agent-tasks']
+prs: [706]
+openPrs: []
+opened: 2026-10-01
+closed: 2026-10-01
+summary:
+  intended: >
+    Slice I1d of four, closing I1: let a host opt a model into T9's cascade-stop surface. Decide per
+    operation whether a model may reach inspectStop, requestStop, releaseStop and reconcileStop;
+    answer I1c's deferred stop-active coherence question (disclose when stop tools are enabled, or
+    keep conflict always); decide whether an intentId (an OperationId) may reach the model when I1b
+    and I1c withhold operation ids; bound the unbounded targets list and name omissions the way
+    task_query does; keep ICapacityFailure and free-form host text away from the model; add the stop
+    tool names to fixedTaskToolNames; assert the binding members reached; and prove a stop end to end
+    through the real broker.
+  shipped: >
+    createTaskTools gained stops?: { writer, environment, enable: StopMode[] }. task_stop
+    ({ taskId, expectedRevision, mode }, mode an enum of exactly the enabled modes) calls requestStop
+    with a minted operation id that becomes the stop's intentId; task_stop_inspect
+    ({ taskId, intentId, after? }) calls inspectStop. Both return ITaskStopToolResult with counts
+    over all visible targets and one page of at most budget.context.maxItems targets, continued by
+    nextAfter, a stale continuation failing as cursor-stale. releaseStop and reconcileStop are not
+    model-reachable. stop-active stays conflict in every tool whatever the host enables. The intent
+    id is returned; target command keys and attempts are stripped; capacity is logged as its
+    dimension and never told. Only unsupported is a known outcome of task_stop; every other failure
+    carries the would-be intent id. fixedTaskToolNames gained task_stop and task_stop_inspect;
+    operation-id minting moved to a shared mintOperationId. Eight binding members reached, asserted.
+    Revert matrix: 27 rows, 56 red tests, on final source. Copilot loop stopped at 3 rounds.
+  diverged: >
+    The brief framed the stop-active question as a choice and leaned on inspection as the way a model
+    would find out about a stop; the stream kept conflict everywhere and found that inspection cannot
+    serve that purpose either — a bound view cannot list a task's stops, so a model can name only
+    the stops it requested (routed to TECH_DEBT). inspectStop, the brief's "cheapest to justify"
+    candidate, is offered only beside task_stop rather than on its own, since a model has no other
+    source of an intent id. Layer 1 overturned the first outcome classification: not-found-or-denied
+    can follow the commit, so only unsupported stayed a known outcome. Copilot added two
+    result-converter checks the brief never named — a result must be led by its root, and a
+    satisfied/settled result over unconfirmed work is refused. Shipped beyond the brief: a
+    mintOperationId helper shared with the mutation and command tools (re-pointing I1c matrix rows),
+    and the stated constraint that environment must mint unguessable ids because an intent id is the
+    name task_stop_inspect reads by. Not taken although routed to I1d by the sibling
+    agent-tasks-tracked-commands: the unknown-outcome line for native commands refused before
+    recording anything.
+  sourceLine: '**Shipped:** A host can let a model pause or cancel a task and its whole subtree and then watch the stop, a page of targets at a time — while releasing a stop and carrying it out stay the host''s alone, and no tool''s answers change with which other tools the host enabled.'
+keywords:
+  - cascade stop tools
+  - task_stop
+  - task_stop_inspect
+  - pause cancel subtree
+  - releaseStop not model-reachable
+  - reconcileStop host pump
+  - stop-active disclosure coherence
+  - intentId disclosure
+  - paged stop targets cursor-stale
+  - capacity refusal withheld
+  - known vs unknown outcome after commit
+  - root-first result check
+  - mintOperationId
+  - fixedTaskToolNames
+  - closes I1
+relatedStreams:
+  - id: agent-tasks-t9
+    relationship: 'the cascade-stop design (requestStop / inspectStop / releaseStop / reconcileStop) this slice exposes'
+  - id: agent-tasks-i1c
+    relationship: 'I1 slice 3 of 4 — handed over stop-active, reserved names and the capture-before-await rule'
+  - id: agent-tasks-i1a
+    relationship: 'I1 slice 1 of 4'
+  - id: agent-tasks-i1b
+    relationship: 'I1 slice 2 of 4 — the minting this slice factored into a shared helper'
+  - id: agent-tasks-tracked-commands
+    relationship: 'fifth I1 slice, run in parallel; disjoint file ownership (this slice owned packlets/tools/)'
+sourceHash: 72a647a146446be2

@@ -1,0 +1,83 @@
+id: agent-tasks-t4
+status: shipped
+packages: ['@fgv/ts-agent-tasks']
+prs: [687]
+openPrs: []
+opened: 2026-09-23
+closed: 2026-09-23
+summary:
+  intended: >
+    Slice T4 of docs/design/agent-tasks/implementation-plan.md: indexed selection, paging, due and
+    outstanding discovery over T3's FileTreeTaskRepository. Full resident summaries/indexes for
+    non-archived tasks, a minimal archived identity/graph/source/status projection, an
+    unresolved-reference projection, separately indexed bounded owed/pinned payloads, design §7's
+    bounded caches and working concurrency, staged rebuild with generation and health, bounded
+    keyset pagination, and a reusable conformance suite for custom repositories. Lifetime operation
+    and acknowledgement history to stay on-demand, not resident. Evidence to be counters at 0 /
+    1,000 / 10,000 of unrelated history (archived and non-archived cohorts separately), not
+    timings; the M1 resident-memory harness and its prediction manifest authored here and run early.
+  shipped: >
+    query (scope union deduplicated before paging, lifecycle class plus exact statuses checked
+    against the class, parentId, responsibility), queryDue ((notBefore, taskId) order, equal
+    included), listOwed (per-subscription owed index independent of lifecycle indexes), and
+    lookupSource (canonical source identity for every retained task, archived included, with
+    duplicate bindings refused), all answered from one resident index generation patched by every
+    commit. Server-held cursor handles (limit default 50, max 200; at most 256 handles, five-minute
+    idle expiry, LRU; cursor-stale vs invalid), a 1,024-candidate page budget that returns a cursor
+    rather than a short "exhaustive" answer. Archive drops the summary and lifecycle memberships but
+    keeps identity, parent edge, child adjacency, final status and source identity. A post-commit
+    index failure fences the repository as commit-indeterminate. rebuildIndexes() releases the old
+    generation before a staged scan shared with open and never publishes an empty index as healthy.
+    Record reads gated at four in flight; an optional parsed-record LRU (off by default).
+    runTaskRepositoryConformance(factory). Counter predictions held at 0 / 1,000 / 10,000 (e.g.
+    warm open query 20 visits / 0 reads at every size; archived cohort never visited by terminal,
+    all or child queries; rebuild materialization high-water 1). M1 harness perf/residentMemory.js
+    with a pre-stated manifest; the early run held every prediction (archived 1k->10k increment
+    ratio 0.138 against <= 0.25). No T1 member revised and no persisted shape changed.
+  diverged: >
+    Two items on the plan's test list — "unpruned-but-satisfied descriptors" and "live pins" — were
+    cut to T7 by decision: they need consumer-record content (exact acknowledgements, issued
+    receipts) that does not exist yet, so the consumer pass shipped ordered and counted but with no
+    join, and every audience link on a retained update is listed as owed. The materialization gate
+    refuses with conflict/safe rather than the backpressure first planned in state.md, because T1's
+    failure converter couples backpressure to a capacity dimension a working-space limit lacks.
+    Not in the brief: T4 surfaced that the default capacity profile admits 146 concurrent
+    non-archived tasks, not the advertised 1,000 (each registration's closeout reserves 7 x 64 KiB
+    = 448 KiB of resident-payload-bytes), which forced the counter cohorts and M1 onto a declared
+    raised fixture profile and became a TECH_DEBT P2 later closed by agent-tasks-t8b. The fixture
+    profile as first declared could not hold its own cohorts and was raised before any counter was
+    measured. ITaskRepositoryHealth's runtime state widened with 'rebuilding'. The Copilot loop
+    (5 rounds) found real bound/fencing gaps, including writer preconditions answered from the
+    record cache and an unbounded lookupSource binding.
+  sourceLine: 'Indexed selection over T3''s `FileTreeTaskRepository`. Everything is answered from one resident index generation that every commit patches before it returns success; no query reads a record.'
+keywords:
+  - resident index
+  - keyset pagination
+  - cursor handles
+  - due query
+  - owed updates
+  - source identity lookup
+  - archive projection
+  - staged rebuild
+  - index fence
+  - commit-indeterminate
+  - materialization gate
+  - record cache
+  - repository conformance suite
+  - counter evidence
+  - candidate visits
+  - M1 resident memory harness
+  - prediction manifest
+  - capacity profile 146
+relatedStreams:
+  - id: agent-tasks-t3
+    relationship: 'predecessor slice — the FileTree repository, records and mutation matrix T4 indexes over'
+  - id: agent-tasks-t5
+    relationship: 'successor slice — builds the broker over these indexes and binds cursors to views'
+  - id: agent-tasks-t7
+    relationship: 'owns the consumer-pass join and the unpruned-but-satisfied / live-pin tests T4 deferred'
+  - id: agent-tasks-t8b
+    relationship: 'closed the capacity-profile finding T4 surfaced'
+  - id: agent-tasks-m1-stop
+    relationship: 'the later full M1 run T4 started'
+sourceHash: 7358e0d58b02ba75

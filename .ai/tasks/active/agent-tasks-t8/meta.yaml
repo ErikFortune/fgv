@@ -1,0 +1,70 @@
+id: agent-tasks-t8
+status: shipped
+packages: ['@fgv/ts-agent-tasks']
+prs: [698]
+openPrs: []
+opened: 2026-09-26
+closed: 2026-09-26
+summary:
+  intended: >
+    Slice T8 of docs/design/agent-tasks/implementation-plan.md: explicit obligation disposition and
+    consumer closure, safe progress coalescing, issued-receipt pins, tombstone archive with a
+    minimal resident projection, full A3 capacity accounting and protected drain behaviour,
+    end-to-end reopen reconciliation, recovery reports and index repair. Unblock archive (which T7
+    left permanently retention-blocked under any covering subscription), dispose held commands and
+    closed subscriptions' obligations without inventing outcomes, enforce or detect the
+    source-replay registration gap, run the A3 saturation journeys for every dimension, deliver the
+    profile arithmetic for each candidate with a recommendation (investigating whether "charge
+    actual" is structurally possible), run the M1 cohorts, ship the host runbook, and raise a split
+    if the saturation work proved separable.
+  shipped: >
+    PR 1 of a split the implementer raised: the retention mechanism. The retention rule lives in
+    storage (storage/retention.ts checkRetention, run on every commit): an update with an audience
+    leaves a record only when every audience member's consumer record, read through the checkpoint
+    store and fingerprint-verified, holds its id as acknowledged or disposed, or when it is a
+    routine update superseded by a coalesced-marked update for coalesceProgress subscriptions.
+    Archive writes a payload-free tombstone. Host operations TaskBroker.dispose,
+    closeSubscription (retain / dispose) and abandonCommand (receipt state abandoned, never
+    applied/rejected), each also requiring the policy's dispose-obligation; cleanup pruning;
+    ITaskRepository.outstanding(). Source-replay registered after the feed passed is enforced: the
+    pass stops with the cursor unmoved (unregistered-binding). Twelve check-then-act windows
+    (W1-W12); 10 real-SIGKILL crash cases around dispose, cleanup and archive. Profile arithmetic
+    for every candidate (no published profile change). 1,707 tests in 70 suites, 100%, zero c8
+    ignore; an 11-row revert matrix on the final source, every row red. Layer 1, an independent
+    persistence/delivery antagonist (one MED, fixed) and a 4-round Copilot loop.
+  diverged: >
+    Split into two PRs at the implementer's request and the orchestrator's acceptance: the A3
+    saturation-journey matrix, the profile decision and the M1 cohort run were moved to
+    agent-tasks-t8b and are not claimed here. Found on the base and removed: commitRules let any
+    maintenance commit drop an owed required update with no evidence (the "drop it and free the slot"
+    path the brief warned about). The brief's investigation of candidate (a) concluded it is not
+    available for a forward reservation, and its fourth candidate (lowering maxUpdateBytes) became a
+    new finding: no update can exceed 37,417 B, so 64 KiB is unreachable and the reservation can use
+    the derived schema maximum (d). The recommendation was (d) plus (c) lowering the advertised
+    limit; the design authority instead took (d) plus (b) raising resident-payload-bytes, implemented
+    in agent-tasks-t8b. Source-replay chose enforce over detect. T7/T3 tests that pinned the replaced
+    behaviour were re-decided per test (one inverted, several changed). Index repair, named in the
+    brief's mission, is not addressed by name in result.md.
+  sourceLine: '**Shipped:** Retention — an owed task update now leaves its record only when every audience member''s durable checkpoint holds its exact id as acknowledged or disposed, so archive works under subscriptions and writes a payload-free tombstone; hosts can dispose obligations, close subscriptions, abandon commands whose outcome is unknown and prune discharged payloads, each authorized and recorded, and every incomplete operation is reportable.'
+keywords:
+  - retention rule
+  - obligation disposition
+  - dispose-obligation
+  - subscription closure
+  - progress coalescing
+  - receipt pins
+  - tombstone archive
+  - pruning
+  - command abandonment
+  - unregistered-binding replay stop
+  - outstanding operations report
+  - host capacity runbook
+  - derived update maximum
+relatedStreams:
+  - id: agent-tasks-t8b
+    relationship: 'PR 2 of slice T8 (#699): A3 saturation journeys, M1 cohorts and the profile change; T8 is complete only with both'
+  - id: agent-tasks-t7
+    relationship: 'predecessor; left archive retention-blocked and handed closure/disposition/coalescing to T8'
+  - id: agent-tasks-t6
+    relationship: 'predecessor; handed held possibly-sent commands and the source-replay registration gap to T8'
+sourceHash: 68ee22d57ce34055

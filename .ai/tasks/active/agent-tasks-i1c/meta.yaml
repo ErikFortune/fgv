@@ -1,0 +1,76 @@
+id: agent-tasks-i1c
+status: shipped
+packages: ['@fgv/ts-agent-tasks']
+prs: [704]
+openPrs: []
+opened: 2026-09-30
+closed: 2026-09-30
+summary:
+  intended: >
+    Slice I1c of four: generate one opt-in IAiClientTool per registered task command, from the kind
+    registry, with the registered parameter schema on the wire rather than an arbitrary payload.
+    Decide how the registry exposes a command's schema (validator, toJson() wire form, or
+    host-supplied map), what the model is told for each of CommandState's five shapes (keeping
+    sourceReceipt and both free-form reason strings away from it), what a rejection reason may
+    disclose, whether I1b's fresh-operation-id rule is right for source-key commands, and how
+    generated names avoid the five fixed tool names. Execute becomes the sixth binding member.
+    Stop tools, createTaskList and resolveCommands are explicitly out of scope.
+  shipped: >
+    createTaskTools gained commands?: { writer, registry, environment, enable }, one tool per
+    ITaskCommandToolSpec, wire schema { taskId, expectedRevision, parameters } with parameters the
+    command's registered schema. ITaskCommandHandle gained parameters: ISchemaValidator<unknown>
+    (option 1). Results are only { state: 'accepted' } or { state: 'applied', revision }; rejections
+    are fixed code lines (denied reads as not-found-or-denied; stop-active, invalid-transition and
+    idempotency-conflict read as conflict); indeterminate, abandoned and every other failure read as
+    one "do not send it again" line, with sourceReceipt and reason text going to the logger only.
+    Every call mints a fresh operation id and a model must not resend; the resolveCommands pump is
+    the only correct resend path. Default names task_command_<command>, sanitized and checked
+    against a provider-intersection regex; fixedTaskToolNames reserves the five fixed names whether
+    or not offered, and any clash refuses the whole set at build time. A tool sends only to a task
+    of its own kind and detail version. Exactly six binding members reached, asserted. Revert
+    matrix: 24 rows, 79 red tests, on final source. Copilot loop stopped at 3 rounds.
+  diverged: >
+    The brief presented option 2 (expose only the toJson() wire form) as the one that keeps the
+    closure guarantee by construction; the stream found it cannot work, because an IAiClientTool's
+    parametersSchema must be an ISchemaValidator, and took option 1. The brief suspected I1b's
+    fresh-id rule might defeat source-key dedup; the stream kept fresh minting for a different reason
+    and turned it into a finding: a model must not resend a command at all. Shipped beyond the
+    brief: the kind/detail-version check before sending (a command name is per kind), and a
+    deliberately conservative outcome classification in which every failure except
+    not-found-or-denied reads as unknown, including some that recorded nothing. Copilot reversed two
+    pieces of the first implementation: the tool had run the registered encoder as well as the
+    writer (round 1, high), and read the receipt identity from the request after handing it to the
+    writer (round 2, high); the matrix row that had "protected" canonical encoding (old I1c-21)
+    was protecting the bug and was re-pointed at the defect, and I1c-20 was retired. It also surfaced that fgv.tracked@1 registers no command
+    schemas, so tracked transitions could not be offered as command tools; that was routed and
+    later closed by agent-tasks-tracked-commands.
+  sourceLine: '**Shipped:** A host can offer a model one typed tool per registered task command it names — the command''s registered parameter schema on the wire, sent only to tasks of its own kind, with every refusal a fixed line and every unknown outcome a firm instruction not to send the command again.'
+keywords:
+  - generated command tools
+  - typed tool schemas from a kind registry
+  - ITaskCommandHandle parameters
+  - schema exposure trade-off
+  - command receipt disclosure
+  - sourceReceipt
+  - CommandRejectionReason collapse
+  - not-found-or-denied
+  - unknown outcome do not resend
+  - source-key idempotency
+  - resolveCommands pump
+  - tool name namespace collision
+  - fixedTaskToolNames
+  - double encoding non-idempotent encoder
+  - capture identity before await
+  - revert matrix
+relatedStreams:
+  - id: agent-tasks-i1a
+    relationship: 'I1 slice 1 of 4 — read-only tools and the shared failure path this slice reuses'
+  - id: agent-tasks-i1b
+    relationship: 'I1 slice 2 of 4 — mutation opt-ins; source of the fresh-id and capture-before-await rules'
+  - id: agent-tasks-i1d
+    relationship: 'I1 slice 4 of 4 — stop tools; took the stop-active and reserved-name handoffs'
+  - id: agent-tasks-tracked-commands
+    relationship: 'fifth I1 slice; registered fgv.tracked@1 commands so this generator can offer them'
+  - id: agent-tasks-t6
+    relationship: 'command dispatch and the W1–W3 windows this slice reports as unknown'
+sourceHash: 18580e62e2cceab7
