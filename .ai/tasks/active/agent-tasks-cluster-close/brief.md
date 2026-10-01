@@ -25,9 +25,13 @@ agent-tasks-i1a i1b i1c i1d
 agent-tasks-i2  agent-tasks-tracked-commands  agent-tasks-m1-stop  agent-tasks-p1
 ```
 
-**Leave these four alone** — they are not part of this cluster, and two are standing artifacts rather
-than streams: `agent-memory-mcp-server`, `library-capabilities-split`, `mistakes-log`,
-`task-corpus-index`.
+**Finalize exactly those eighteen and leave every other entry in `.ai/tasks/active/` alone**, whatever
+it is and whenever it arrived. Known at the time of writing: `agent-memory-mcp-server`,
+`library-capabilities-split`, `mistakes-log`, `task-corpus-index` (the last two are standing artifacts
+rather than streams), plus `personality-intake` and `orchestrator-handoff`, both of which are expected
+to land on this same integration branch while you work. **More may appear** — the rule is the
+eighteen-item list above, not a count of what remains. If you find an entry you cannot classify from
+its own `brief.md`, leave it and say so in `result.md`; do not finalize it to tidy the directory.
 
 **Bucket:** `.ai/tasks/completed/2026-10/` (new; the existing buckets run 2026-05 … 2026-09).
 
@@ -139,8 +143,9 @@ qualification gate and P1's three surface findings both belong here, as does the
 - [ ] **No file under any `src/` changed** — verify with `git diff --name-only ...` and say so
 - [ ] Every one of the eighteen migrated, with nothing lost: the migrated directory contains every
       file the active one did, plus `meta.yaml` and `README.md`
-- [ ] `.ai/tasks/active/` contains **only** the four out-of-scope entries afterwards (plus this
-      stream until it finalizes itself)
+- [ ] `.ai/tasks/active/` contains **no agent-tasks stream** afterwards (this one included, once it
+      finalizes itself), and **every out-of-scope entry is still there, untouched** — list them in
+      `result.md`. Do not assert a count; assert that the eighteen are gone and nothing else moved
 - [ ] No revert-matrix rows — there is no protection here to revert. **Say so in `result.md`** rather
       than leaving the gate silently unmet
 
