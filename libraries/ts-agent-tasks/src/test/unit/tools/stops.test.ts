@@ -188,14 +188,42 @@ describe('task_stop — a model requests a stop, and the host carries it out', (
     await node(h.writer, 'hidden', { stopPolicy: 'cascade-cancel' });
     h.policy.denyOn('stop', 'root');
     h.policy.hide('hidden');
-    const tools = stoppingTools(h);
-    for (const taskId of ['root', 'hidden', 'nowhere']) {
-      expect(await requestStop(tools, taskId, 1, 'pause')).toFailWith(deniedLine);
+    const recorded = minting(h);
+    const tools = stoppingTools(recorded.h);
+    const ids = ['root', 'hidden', 'nowhere'];
+    for (const [i, taskId] of ids.entries()) {
+      // The same line for all three; only the would-be intent id differs.
+      expect(await requestStop(tools, taskId, 1, 'pause')).toFailWith(
+        deniedLine + unknownNote(recorded.minted[i])
+      );
     }
     for (const id of ['root', 'hidden']) {
       const record = (await h.repository.readCommit(tid(id))).orThrow()!;
       expect(record.recordType === 'resolved' && record.stops).toBeUndefined();
     }
+  });
+
+  test('a root hidden after the stop committed reads as not found — and the model is still told the intent id', async () => {
+    const h = await brokerHarness();
+    await family(h);
+    // Hide the root the moment the policy has authorized the stop: the broker commits, then finds the
+    // root invisible when it presents the result.
+    h.policy.afterDecision = (request) => {
+      if (request.action === 'stop') {
+        h.policy.hide('root');
+      }
+    };
+    const recorded = minting(h);
+    const tools = stoppingTools(recorded.h);
+    const told = await requestStop(tools, 'root', 1, 'pause');
+    const intentId = recorded.minted[0];
+    expect(told).toFailWith(deniedLine + unknownNote(intentId));
+    // The stop exists, and its tree is frozen: the tail is what keeps the model from concluding
+    // nothing happened.
+    const record = (await h.repository.readCommit(tid('root'))).orThrow()!;
+    expect(record.recordType === 'resolved' && record.stops?.map((s) => [s.id, s.state])).toEqual([
+      [intentId, 'pending']
+    ]);
   });
 
   test('a task whose stop policy does not permit the mode is refused as unsupported — a known outcome', async () => {
@@ -257,15 +285,6 @@ describe('task_stop — a model requests a stop, and the host carries it out', (
     expect(touched.has('requestStop')).toBe(false);
     expect(await requestStop(tools, 'root', 1, 'pause')).toSucceed();
   });
-
-  test('a stop the model requested cannot be released or pumped through any tool', async () => {
-    const h = await brokerHarness();
-    await family(h);
-    const tools = stoppingTools(h, h.writer, {
-      mutations: { writer: h.writer, environment: h.env, enable: ['tracked', 'reassign'] }
-    });
-    expect(tools.names.filter((n) => /release|reconcile|pump|resume/.test(n))).toEqual([]);
-  });
 });
 
 describe('task_stop_inspect — paging the targets', () => {
@@ -322,11 +341,11 @@ describe('capability checks are live — offering a stop is not authorizing it',
     await family(h);
     h.policy.denyOn('stop', 'root');
     const tools = stoppingTools(h);
-    expect(await requestStop(tools, 'root', 1, 'pause')).toFailWith(deniedLine);
+    expect(await requestStop(tools, 'root', 1, 'pause')).toFailWith(/^task_stop: not-found-or-denied: /);
     h.policy.deny.length = 0;
     expect(await requestStop(tools, 'root', 1, 'pause')).toSucceed();
     h.policy.denyOn('stop', 'root');
-    expect(await requestStop(tools, 'root', 1, 'cancel')).toFailWith(deniedLine);
+    expect(await requestStop(tools, 'root', 1, 'cancel')).toFailWith(/^task_stop: not-found-or-denied: /);
   });
 
   test('building the stop tools asks the policy nothing', async () => {

@@ -327,6 +327,7 @@ describe('a writer’s or view’s answer is checked, and says no more than a fi
   });
 
   test('a writer that rewrites the request in place cannot move what its result is checked against', async () => {
+    // Each answer lists only the rewritten root, so the identity check is the only thing that can fail.
     const rewrites: ReadonlyArray<(r: { -readonly [K in keyof IStopRequest]: IStopRequest[K] }) => void> = [
       (r) => (r.taskId = 'a' as TaskId),
       (r) => (r.operationId = 'op-rewritten' as OperationId),
@@ -338,7 +339,9 @@ describe('a writer’s or view’s answer is checked, and says no more than a fi
         original = r.operationId;
         rewrite(r as never);
         // Answers honestly — for the rewritten request.
-        return result(r);
+        return result(r, {
+          targets: [{ taskId: r.taskId, attempt: 1, operationId: 'key-1', state: 'unexamined' }]
+        });
       });
       expect(await call(s.tools, 'task_stop', stopArgs)).toFailWith(
         `task_stop: commit-indeterminate: the outcome is not known: a change may or may not have been applied${unknownNote(
@@ -348,10 +351,8 @@ describe('a writer’s or view’s answer is checked, and says no more than a fi
     }
   });
 
-  test('only a refusal of the task, or of the stop it asks for, is a known outcome', async () => {
+  test('only a refusal of the stop itself is a known outcome — a denial can follow the commit', async () => {
     const lines: Record<string, string> = {
-      'not-found-or-denied':
-        'task_stop: not-found-or-denied: the task is not found or not visible, or this is not permitted on it',
       unsupported: 'task_stop: unsupported: the request is not supported'
     };
     const codes: ReadonlyArray<TaskFailureCode> = [

@@ -8,7 +8,6 @@ import {
   Converter,
   Converters,
   Result,
-  captureResult,
   fail,
   failWithDetail,
   succeed,
@@ -42,7 +41,7 @@ import {
   argumentMessage,
   askView,
   convertAnswer,
-  hostFailure,
+  mintOperationId,
   viewWording
 } from './toolSupport';
 
@@ -80,18 +79,21 @@ const inspectAnnotations: AiAssist.IAiToolAnnotations = {
 };
 
 /**
- * The wording for a stop request. Only the refusals the broker decides before it writes anything —
- * the task is not found, not visible or not permitted, or cannot be the root of this stop — are known
- * outcomes. Every other failure may follow an accepted stop (its presentation can fail after the
- * commit), so the model is told the intent id the stop would have: the tool minted it before asking,
- * and inspecting it says whether the stop exists. A retry is safe either way — a second stop of a
- * mode already latched on the task is refused — but it would be refused, not answered.
+ * The wording for a stop request. Only `unsupported` — the task cannot be the root of this stop,
+ * which the broker decides before it writes anything — is a known outcome. Every other failure may
+ * follow an accepted stop: after the commit the broker presents the stop, and that can fail with a
+ * storage code, with `conflict` when the intent or policy moved meanwhile, and with
+ * `not-found-or-denied` when the root was hidden meanwhile. So the model is told the intent id the
+ * stop would have — the tool minted it before asking, and inspecting it says whether the stop exists.
+ * The tail is the same for a denied, hidden or missing task, so it discloses nothing. A retry is
+ * harmless either way — a second stop of a mode already latched on the task is refused — but it
+ * would be refused, not answered.
  */
 function _stopWording(intentId: OperationId): IFailureWording {
   return {
     thrown: 'the task writer failed',
     unclassified: 'the request failed',
-    determinate: ['not-found-or-denied', 'unsupported'],
+    determinate: ['unsupported'],
     unknownOutcome:
       `; the stop may or may not have been accepted — if it was, its intentId is ${intentId}: ` +
       'inspect it with task_stop_inspect before requesting it again'
@@ -189,14 +191,6 @@ function _presentStop(
   });
 }
 
-/** A fresh operation id for one call, minted by the host and converted. */
-function _operationId(ctx: IStopToolContext, tool: string): Result<OperationId> {
-  return captureResult(() => ctx.environment.newOperationId())
-    .onSuccess((minted) => minted)
-    .onSuccess((raw) => ctx.renderer.converters.ids.operationId.convert(raw))
-    .onFailure((message) => hostFailure(ctx, tool, `could not mint an operation id: ${message}`));
-}
-
 /** The description's lead, naming exactly the modes offered. */
 function _lead(modes: ReadonlyArray<StopMode>): string {
   const verb: string = modes.length > 1 ? 'Pause or cancel' : modes[0] === 'pause' ? 'Pause' : 'Cancel';
@@ -207,7 +201,7 @@ function _stopTool(ctx: IStopToolContext): AiAssist.IAiClientTool {
   const name: string = 'task_stop';
   const schema = taskStopSchema(ctx.modes);
   const request = async (args: ITaskStopToolArgs): Promise<Result<ITaskStopToolResult>> =>
-    _operationId(ctx, name)
+    mintOperationId(ctx, ctx.environment, name)
       .onSuccess((operationId) =>
         ctx.renderer.converters.stops.request
           .convert({

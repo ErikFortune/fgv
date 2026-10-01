@@ -24,7 +24,6 @@ import {
   ITaskEnvironment,
   ITaskFailure,
   ITaskKindRegistry,
-  OperationId,
   TaskCommandToolResult,
   TaskFailureCode,
   TaskId,
@@ -39,7 +38,7 @@ import {
   askView,
   codeLine,
   convertAnswer,
-  hostFailure
+  mintOperationId
 } from './toolSupport';
 import { IWriterAnswerConverters } from './writerAnswers';
 
@@ -275,14 +274,6 @@ function _presentCommand(
   }
 }
 
-/** A fresh operation id for one call, minted by the host and converted. */
-function _operationId(ctx: ICommandToolContext, tool: string): Result<OperationId> {
-  return captureResult(() => ctx.environment.newOperationId())
-    .onSuccess((minted) => minted)
-    .onSuccess((raw) => ctx.renderer.converters.ids.operationId.convert(raw))
-    .onFailure((message) => hostFailure(ctx, tool, `could not mint an operation id: ${message}`));
-}
-
 /**
  * Sends one command: the task must be of this tool's kind, then the writer is asked with a minted
  * operation id and the schema-validated parameters, and its receipt is converted before anything reads it.
@@ -305,7 +296,7 @@ async function _send(
         )
     )
   )
-    .onSuccess(() => _operationId(ctx, name))
+    .onSuccess(() => mintOperationId(ctx, ctx.environment, name))
     .onSuccess((operationId) =>
       ctx.renderer.converters.commands.request
         .convert({

@@ -90,10 +90,12 @@ export interface ITaskStopToolOptions {
   readonly writer: IBoundTaskWriter;
   /**
    * Mints each stop's operation id, which is also the stop's intent id. The model never supplies
-   * one. Usually the host's `TaskEnvironment`.
+   * one. Usually the host's `TaskEnvironment`. The ids must be unguessable: `task_stop_inspect`
+   * reads any stop on a visible root whose id the model can name, so a guessable id would let a model
+   * probe for stops other principals placed.
    */
   readonly environment: Pick<ITaskEnvironment, 'newOperationId'>;
-  /** The modes `task_stop` offers. An empty list offers no stop tool. */
+  /** The modes `task_stop` offers. An empty list offers neither stop tool. */
   readonly enable: ReadonlyArray<StopMode>;
 }
 

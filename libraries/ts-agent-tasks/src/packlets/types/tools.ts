@@ -205,11 +205,14 @@ export interface ITaskStopToolTarget {
  * over the whole stop, not the page. `targets` is one page of those targets, in the stop's own order
  * (root first, then breadth-first), at most the tool budget's `context.maxItems`. `remaining` is how
  * many visible targets follow the page; when there are any, `nextAfter` names the page's last target,
- * and `task_stop_inspect` continues after it. Nothing is dropped: every visible target is on some page.
+ * and `task_stop_inspect` continues after it. Within one stop as it stands, nothing is dropped: every
+ * visible target is on some page. Each page is a fresh read, so a target that became visible since an
+ * earlier page, before its continuation, is on no later page — `counts` then grows, which says to
+ * start again without `after`.
  *
  * `restrictedWorkRemains` says, without counts or identities, that some target this principal cannot
  * see is not confirmed. A host capacity refusal the stop met is never returned: it goes to the host's
- * logger, and the affected target's own state says it is blocked.
+ * logger, and the affected target's own state (`unavailable`) says it could not be attempted.
  * @public
  */
 export interface ITaskStopToolResult {
