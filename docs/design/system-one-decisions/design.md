@@ -6,7 +6,8 @@ only: no package, no dependency, no change under any `src/`. Every external fact
 together, but not seen end to end), **reported** (a third party says it, and the source could not be
 read here), or **unverified**. Nothing here was run. There was no GPU, and no System-1 server answered
 a request in this phase.
-**Amended 2026-10-01** with the user's answers to OQ-1 (the consumer will experiment, and adoption depends on performance) and OQ-3 (production runs Qwen locally; development connects to a remote Jev or openjev). See §1 decision 6, §7.1, and §8 `meta`.
+**Amended 2026-10-01** with the user's answers to OQ-1 (the consumer will experiment, and adoption depends on performance) and OQ-3 (production runs Qwen locally; development connects to a remote Jev or openjev).
+OQ-10 (Qwen runs on vLLM on an Olares One, probably, and on Ollama elsewhere) was answered the same day; see §7.1 item 6 and OQ-12. See §1 decision 6, §7.1, and §8 `meta`.
 **Date:** 2026-10-01. **Inspected checkout:** `30713277c` (`release` HEAD, the base of
 `integration/system-one-decisions`). `ts-agent-tasks` was read from `origin/integration/agent-tasks-v1`
 at `2a95fbb2`.
@@ -83,6 +84,10 @@ process management for any sidecar; fine-tuning; images and other openjev extens
 | E20 | `llama-server` offers `--pooling last` and `/v1/embeddings`, so in principle it could stand in for the vLLM encoder. Not tested, and no parity evidence exists. `truncate_prompt_tokens` is a vLLM field; what `llama-server` does with it is unknown. | flags **verified**; viability **unverified** | llama.cpp `tools/server/README.md:175, 210`. |
 | E21 | **openjev** (`razorback16/openjev`, independent of TypeSafe) claims the same wire, "checked against the live API". It defines **`confidence` as `1 − H(p)/ln K`**, which differs from E7. It lists Jev's errors as `400 api_usage_error` for an unknown model, which differs from CLM's `422`. It serves CLM (FP8: 7.7 GB on an RTX 3090, 99 ms) and an MLX backend on Apple silicon (about 16 GB to load, 23–36 GB in service). It also serves small CPU-capable models (`verdict-1.4` 151M with 512 tokens; `laya-1.0` 421M with 1,024 tokens), and gives a free hosted endpoint (Codiv). | **reported** | openjev README (raw, `main` = `master`). |
 | E22 | CLM `score` questions can ignore the state: "one level winning whatever the state says" (CLM issue #3). | **reported** | openjev README. CLM issues and PRs are blocked (github.com 403). |
+| E24 | **Olares One:** NVIDIA RTX 5090 Mobile with **24 GB GDDR7**, 96 GB DDR5, Core Ultra 9 275HX. | **reported** (secondary) | TechRadar and Notebookcheck coverage. `olares.com/docs/one/spec` is blocked by the egress proxy. |
+| E25 | **Ollama's OpenAI-compatible `EmbedRequest`** has exactly `input`, `model`, `dimensions` and `encoding_format` (`float` or `base64`). It has **no truncation field**, so CLM's `truncate_prompt_tokens` is dropped without error. | **verified** (struct). That an unknown field is silently ignored is **derived** from Go's default JSON decoding. | ollama `openai/openai.go:94-99` (main). |
+| E26 | **Ollama truncates embedding input itself** by default (`truncate` defaults to true). It cuts to `min(context_length, num_ctx)`, **keeping the first tokens** (`tokens[:ctxLen]`), and reserves one token for an appended EOS when the model's `add_eos_token` is set. The default `num_ctx` is chosen by VRAM: 4,096, 32,768 or 262,144. | **verified** | ollama `server/routes.go:1005-1047, 2205-2209`, `api/types.go:610-611` (main). |
+| E27 | Ollama's embed handler requires **no embedding capability**, so a generative Qwen3-8B can be asked for embeddings. **Which pooling it then applies** (CLM needs last-token pooling over Qwen3-8B, E2), and whether the appended EOS becomes the pooled token, is **not established**. | handler **verified**; pooling **unverified** | ollama `server/routes.go:987` (`scheduleRunner(..., []model.Capability{}, ...)`). Ollama's model and runner sources were not at any path I could reach. |
 | E23 | CLM `main` today matches PyPI 0.1.0 in `server.py`, `schema.py`, `embedder.py` and `client.py`; the only differences are a download counter and dict normalisation. **No truncation fix has landed on `main`.** | **verified** | raw `main` against the sdist, diffed. |
 
 Two brief premises turned out to be wrong. Both are recorded here because Phase B will reason from
@@ -357,15 +362,36 @@ for rather than discovered:
    `TYPESAFE_DEFAULT_MODEL` when values are omitted (E12). The boundary always passes explicit values,
    so a developer's shell variable cannot silently redirect a deployed client. The composition root
    chooses the environment, and the SDK never does.
-6. **What runs Qwen in production is a new open question (OQ-10).** CLM's heads were trained on
-   **vLLM**, Qwen3-8B, bf16, last-token-pooled embeddings (E2, E4). If "local Qwen" in the deployed
-   environment means vLLM on an NVIDIA GPU, the supported path applies. If it means anything else
-   (llama.cpp, Ollama, a quantized GGUF), two things are unverified:
-   - embedding parity (E19, E20);
-   - whether `truncate_prompt_tokens` is honoured at all. If it is not, inputs over the bound are
-     either refused or silently mishandled, depending on the server.
+6. **What runs Qwen in production.** *Answered by the user on 2026-10-01: probably vLLM on an Olares
+   One, and Ollama in some other environments.* CLM's heads were trained on vLLM, Qwen3-8B, bf16,
+   last-token-pooled embeddings (E2, E4). The two answers therefore carry very different confidence.
+   - **Olares One with vLLM is the supported path.** 24 GB of VRAM (E24) holds Qwen3-8B in bf16 (about
+     14 GB resident according to E21) with room for the CLM vector cache. Two caveats, both
+     unverified, are OQ-10:
+     - The RTX 5090 is a Blackwell part, which needs a vLLM and CUDA build that supports it.
+     - On a shared device, vLLM's default GPU-memory claim has to be lowered (`--gpu-memory-utilization`),
+       as openjev does for its CLM container (E21).
+   - **Ollama is a different encoder path, and three of its differences are silent.** `clm-serve
+     --emb-url` can point at Ollama's `/v1/embeddings`: the request shape and `encoding_format:
+     base64` are accepted (E25). But:
+     1. **CLM's 2048 bound is not applied.** Ollama drops `truncate_prompt_tokens` (E25) and truncates
+        at its own `num_ctx` instead, keeping the start (E26). Inputs between 2,048 tokens and
+        `num_ctx` are embedded in full, which is longer than anything the heads were served under.
+        Inputs beyond `num_ctx` lose the question, as upstream CLM does.
+     2. **Pooling is unverified** (E27). If Ollama does not pool the last token the way vLLM's pooling
+        runner does, or if it pools an appended EOS, the heads receive different vectors and nothing
+        reports an error.
+     3. **Quantization.** Ollama serves GGUF, usually quantized. The only accuracy figure anywhere is
+        openjev's FP8 result (E21), which says nothing about Q4 or Q8 (E19).
 
-   The boundary is indifferent to this. The experiment's results are not.
+     The model has to be **base Qwen3-8B**. Ollama's library also carries `qwen3-embedding`, which
+     has different weights and on which the heads are meaningless.
+   - **What the boundary contributes, and where its job stops.** Because fgv refuses at the per-call
+     `inputLimit` before any server truncates (§6.1), difference 1 is neutralised for inputs under the
+     limit. Inputs never reach Ollama's longer window or either server's cut. Differences 2 and 3 are
+     encoder fidelity, which an HTTP client cannot observe. **Ollama-backed CLM results are
+     unvalidated until a parity check against vLLM bf16 passes (OQ-12).** The boundary is indifferent
+     to the encoder; the consumer's experiment is not.
 
 ## 8. Proposed package contract (Phase C sketch, not code)
 
@@ -469,7 +495,9 @@ No success may be claimed from mocked SSE-style fixtures alone. This is the `TES
 2. **Live round trips, one per topology leg (§7.1)**, each recorded in the stream's `result.md` with
    backend, model, hardware and the `meta` it returned:
    - a remote development server (Jev or openjev), over `https` with a key;
-   - CLM on a local sidecar as deployed (`clm-serve` on loopback).
+   - CLM on a local sidecar as deployed (`clm-serve` on loopback), **once for each encoder that is
+     actually deployed**: vLLM on the Olares One, and each Ollama setup. A round trip proves the
+     wiring only. Encoder fidelity is OQ-12.
 
    Any leg that was not run is recorded as **"not run live"**, never inferred from the other leg.
 3. **A test that the request body carries `model`**, since the SDK's default would otherwise hide a
@@ -500,6 +528,10 @@ No success may be claimed from mocked SSE-style fixtures alone. This is the `TES
    - a prompt-assist System-1 screener factory;
    - an agent-tasks command-selection seam;
    - an agent-memory rerank seam.
+10. **D10 — An encoder-parity harness** (OQ-12): a `perf/` script that runs a fixed question set
+    against two System-1 endpoints and reports agreement. It uses only the package's public client
+    and needs no new surface. It is a candidate for Phase C if triage wants it to ship with the
+    package rather than live in the consumer.
 
 ## 12. Open questions for Phase B
 
@@ -536,17 +568,28 @@ Each question is followed by what would resolve it.
 9. **OQ-9 — SDK pin and churn.** Releases so far are 0.5.7 and 0.6.0, three weeks apart.
    *Resolved by:* triage choosing `~0.6.0` or an exact pin, and whether a minor bump needs a review
    gate.
-10. **OQ-10 — What serves Qwen3-8B in the deployed environment?** (§7.1, item 6.) It matters if it is
-    vLLM on NVIDIA, the path CLM was trained and verified against. If it is anything else (llama.cpp,
-    Ollama, a quantized model), the experiment is measuring an unverified encoder path, and
-    `truncate_prompt_tokens` may not be honoured. *Resolved by:* a usage fact from the deployment owner.
-    If the answer is not vLLM, also run a parity check of the deployed encoder against vLLM bf16 over
-    a fixed question set before the experiment's numbers are trusted. This does not block Phase C,
-    because the boundary is indifferent to it. It does block reading the experiment's results.
+10. **OQ-10 — What serves Qwen3-8B in the deployed environment? ANSWERED 2026-10-01 (user):
+    probably vLLM on an Olares One, and Ollama elsewhere.** For Olares, two items remain open. Both
+    are setup checks, not design work:
+    - whether the deployed vLLM build supports the RTX 5090, a Blackwell part;
+    - a GPU-memory budget that coexists with the device's other workloads.
+
+    *Resolved by:* the first successful `clm-serve` round trip on the device (§10, item 2). The
+    Ollama environments carry OQ-12.
 11. **OQ-11 — Which remote does development use for performance comparisons?** Jev gives the hosted
     comparison. An openjev or `clm-serve` instance serving CLM gives the same weights as production
     (with the differences listed in §7.1, item 2). *Resolved by:* the consumer's experiment plan. The
     package supports any of them unchanged.
+12. **OQ-12 — Is Ollama-backed CLM faithful to vLLM-backed CLM?** It differs in pooling (E27),
+    quantization (E19) and the truncation window (E25, E26) (§7.1, item 6). *Resolved by:* running the
+    same fixed question set through `clm-serve` twice, once over vLLM bf16 on the Olares and once over
+    each Ollama setup actually deployed (model tag and quantization recorded). Compare top-answer
+    agreement and the per-option probability differences, with the acceptance threshold **written
+    down before the run**, as `TESTING_GUIDELINES.md` § *Measurement Harnesses* requires. Use only
+    inputs inside the `inputLimit`, so truncation is not what is being measured. A run that fails
+    means Ollama environments use a remote vLLM-backed CLM instead. It is not a reason to loosen the
+    threshold. This is the consumer's experiment, but the harness is backend-agnostic. Phase B
+    decides whether it ships as a `perf/` script in the package (D10).
 
 ## 13. Revert matrix
 

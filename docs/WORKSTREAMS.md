@@ -481,8 +481,12 @@ with probabilities, such as hosted Jev and local CLM-8B.
 - OQ-3 is resolved: production runs Qwen and CLM locally, and development connects to a remote Jev or
   openjev.
 
-Phase C proceeds. Phase B works the remaining open questions, including the new OQ-10 (what serves
-Qwen in deployment).
+- OQ-10 is answered: Qwen runs on vLLM on an Olares One (probably), and on Ollama in some other
+  environments.
+
+Phase C proceeds. Phase B works the remaining open questions, including the new OQ-12: whether
+Ollama-backed CLM matches vLLM-backed CLM. Ollama drops CLM's truncation, and its pooling and
+quantization are unverified.
 
 ---
 

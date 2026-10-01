@@ -92,6 +92,21 @@ on one model does not carry to another.
   and reading the experiment's numbers waits on a parity check. **OQ-11:** which remote development
   uses for comparisons.
 
+### Encoder answer, 2026-10-01: vLLM on an Olares One (probably), Ollama elsewhere
+
+- **Olares One (RTX 5090 Mobile, 24 GB; secondary sources) is the supported path.** Qwen3-8B in bf16
+  fits.
+- **Ollama differs from vLLM in three silent ways** (read from Ollama's source):
+  1. It drops CLM's `truncate_prompt_tokens` and truncates at its own `num_ctx` instead, keeping the
+     start.
+  2. Its pooling for a generative Qwen3 is unverified, as is whether an appended EOS becomes the
+     pooled token.
+  3. It serves quantized GGUF models.
+
+  fgv's per-call `inputLimit` neutralises the first. The other two are encoder fidelity, which no HTTP
+  client can see, so Ollama-backed results stay unvalidated until a parity run against vLLM bf16
+  passes (OQ-12). Use base `qwen3:8b`, never `qwen3-embedding`.
+
 ## For Phase B, numbered (design §12)
 
 1. OQ-1: **resolved.** The consumer will experiment, and adoption depends on performance.
@@ -103,9 +118,11 @@ on one model does not carry to another.
 7. OQ-7: whether `'unchecked'` survives.
 8. OQ-8: whether the README warns on CLM `score` reliability.
 9. OQ-9: SDK pin and churn policy.
-10. OQ-10: what serves Qwen in deployment. This gates *reading* the experiment, not building the
-    package.
+10. OQ-10: **answered.** vLLM on an Olares One (probably), Ollama elsewhere. Still to confirm on the
+    Olares: that its vLLM build supports Blackwell, and a GPU-memory budget.
 11. OQ-11: which remote development uses for comparisons.
+12. OQ-12: whether Ollama-backed CLM matches vLLM-backed CLM. This needs a parity run, with its
+    threshold written down before the run (D10: possibly a `perf/` script).
 
 ## Gates
 

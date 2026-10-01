@@ -34,8 +34,9 @@ finalizes at cluster close, after Phase C.
 The user answered OQ-1 and OQ-3 on 2026-10-01. The consumer will experiment, and adoption depends on
 performance. Production runs Qwen locally, and development connects to a remote Jev or openjev. Both
 answers are folded into the design (§1 decision 6, §7.1, §8 `meta`), and **Phase C proceeds.** Phase B
-triage works the remaining open questions: OQ-2, OQ-4 to OQ-9, and the new OQ-10 (what serves Qwen in
-deployment) and OQ-11 (which remote development uses).
+triage works the remaining open questions: OQ-2, OQ-4 to OQ-9, OQ-10 (answered: vLLM on an Olares One, probably, and Ollama elsewhere;
+Blackwell support and the GPU-memory budget still to confirm), OQ-11 (which remote development
+uses), and OQ-12 (whether Ollama-backed CLM matches vLLM-backed CLM).
 
 ## Gate runs
 
