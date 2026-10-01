@@ -179,6 +179,41 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
   would (logical-bytes 1.5 GiB, links/ids 300,000) are measured in `agent-tasks-t8b` `result.md`;
   the cost is a larger on-disk logical budget for every repository created under the default.
 
+  **Trigger fired 2026-10-01** (`agent-tasks-m1-stop`, M1's production-profile cohort). Measured:
+  `logical-bytes` refuses at the 520th–533rd live task in every live mix (plain, owed, fanout), and
+  at the 443rd beside 9,000 archived; at refusal 97–99% of it is reservation — the repository holds
+  5–13 MB written.
+  Resident cost is small (~12.7 MiB heap at 529 owed tasks), so admitting 1,000 costs memory little
+  and disk budget much. **Open for the decision**; nothing in `capacityProfile.ts` changed.
+
+- **[P3] `ts-agent-tasks` a released or settled stop keeps ~1 KB per target resident, and stops on one
+  root are never compacted.** After release the stop book keeps one marked-command entry per paused
+  target until that target is archived: 913–963 B per target over a stop-free paused tree (M1). Every
+  released or settled intent also stays in the root record, so a root admits 24 stop/release cycles
+  at 1,000 targets (then `record-bytes`, its 8 MiB task-record ceiling) and 61 at the default
+  profile's 200 (then the root's `operations` slots).
+
+  **Trigger**: a host that stops the same large tree repeatedly, or holds many once-stopped tasks.
+
+  **Scope sketch**: drop settled marked commands of non-latching intents from the resident book;
+  compact released intents to a summary once their targets are archived.
+
+  **Not a P2**: bounded by the retained-task ceiling and visible as a refusal, never silent.
+
+  **Reference**: `agent-tasks-m1-stop` `result.md` § *Cohort 1*.
+
+- **[P3] `ts-agent-tasks` stop pump cost grows with concurrently latched tasks.** Stop plus pump to
+  satisfied: 19 ms per target at 1×1,000, 46 ms per target at 10×1,000 (M1, descriptive, measured
+  under a concurrent run). Per-commit stop-book work appears to scale with the latched population.
+
+  **Trigger**: a host running several wide stops at once.
+
+  **Scope sketch**: profile the per-commit stop-book recount; index it by root.
+
+  **Not a P2**: a latency, with no correctness or capacity effect.
+
+  **Reference**: `agent-tasks-m1-stop` `result.md` § *Cohort 1*, *Latency*.
+
   **Not a P2**: nothing is wrong or unsafe — the limit that binds is reported exactly, with
   `reclaimableByCleanup`, and the documentation says which binds.
 
@@ -296,9 +331,61 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
   broker-composed and much smaller than the schema maximum; a derived maximum (as `maximumUpdateBytes`
   does for updates) would shrink the reservation severalfold, but must also bound the source-designated
   parameters. **Trigger:** a consumer that needs larger stops under the default profile.
-  (3) **M1's stop-state cohort** is not run by T9: see `agent-tasks-t9` `result.md` § *M1*.
-  **Trigger:** the M1 production-profile cohort run. **Reference:** `agent-tasks-t9` `result.md`
-  (at `.ai/tasks/active/agent-tasks-t9/` until the `agent-tasks-v1` cluster finalizes).
+  (3) ~~**M1's stop-state cohort** is not run by T9~~ *Resolved by `agent-tasks-m1-stop`* (2026-10-01):
+  run, with the stop's resident and on-disk cost per target, latch and evidence record, and its
+  bounds — breadth by the 1,000-target cap, repetition by the root's record (`record-bytes`) or
+  per-task `operations`. **Reference:** `agent-tasks-t9` `result.md` (at `.ai/tasks/active/agent-tasks-t9/`
+  until the `agent-tasks-v1` cluster finalizes) and `agent-tasks-m1-stop` `result.md`.
+
+- **[P2] `ts-agent-tasks` receipt preparation's working set follows owed volume, not the receipt.**
+  `BoundTaskDelivery.prepare` (`broker/delivery.ts`) gathers up to `maxPreparedUpdates` (1,000) owed
+  updates, projects each, and queries a 200-task current page, whatever the context budget. M1's
+  owed fixture (529 terminal tasks, 1,587 owed updates, 4,000-character descriptions): one receipt of
+  ~8,000 characters read **200 task records** and peaked **25.4 MiB** above settled (8.7 MiB
+  old-space), against M1's frozen ≤ 16 MiB. Bounded — by those two constants — but its worst case at
+  maximal envelopes (37,417-byte updates) is not measured.
+
+  **Trigger**: the P1 slice, or a host preparing receipts in a memory-constrained process.
+
+  **Scope sketch**: stop gathering once the budget's inclusion is decided (render incrementally, or
+  bound the candidate window by the budget), and measure the maximal-envelope worst case either way.
+
+  **Not a P3**: it is the per-call working set of the delivery path every consumer runs.
+
+  **Reference**: `agent-tasks-m1-stop` `result.md` § *Misses* (4).
+
+- **[P2] `ts-agent-tasks` a consumer-record rewrite costs ~28× the record's bytes.** At the 50,000-id
+  per-subscription cap (49,954 disposals, a 3.29 MiB record) one acknowledgement rewrite peaked
+  **92.4 MiB** above settled, 58.6 MiB of it old-space, and took 1.3 s; process maxRSS 194 MiB. The
+  whole history is parsed, validated and re-encoded on every rewrite. At maximal evidence (512 B per
+  id) the cap admits a record near 24.4 MiB, under `maxConsumerRecordBytes` (32 MiB): at the observed
+  ratio a transient of several hundred MiB — **extrapolated, not measured**.
+
+  **Trigger**: the profile decision below, or a consumer expected to approach the cap.
+
+  **Scope sketch**: measure the maximal-evidence record first; then either lower the per-subscription
+  cap the default admits, or keep exact history out of the rewrite path (append-only segments).
+
+  **Not a P3**: it is the largest per-operation transient in the default profile, and a host sizes
+  memory by it.
+
+  **Reference**: `agent-tasks-m1-stop` `result.md` § *Misses* (5).
+
+- **[P2] `ts-agent-tasks` open and rebuild working space near the 8 MiB task-record ceiling.** M1's
+  evidence fixture (67 external tasks of ~7 MB, 447.8 MiB on disk, at `logical-bytes`' ceiling)
+  peaked **140 MiB** above settled at open and rebuild (old-space +61.6 MiB, maxRSS 274 MiB), with one
+  record materialized at a time. The cold-history bound M1 qualified on 60 KB records (25% of cold
+  bytes + 16 MiB) does not hold here; V8 collects successive large parses lazily. Settled state is
+  clean.
+
+  **Trigger**: the profile decision, or a host whose records can approach the task-record ceiling.
+
+  **Scope sketch**: document the working-space budget by record size in the runbook; consider a
+  lower default task-record ceiling, or yielding to a collection between large records.
+
+  **Not a P3**: a host provisioning by the qualified bound would be ~110 MiB short.
+
+  **Reference**: `agent-tasks-m1-stop` `result.md` § *Misses* (6).
 
 - **[P2] `ts-agent-tasks` delivery hand-offs T7 left for T8 — each is T8's to decide.**
   *(T8: (1), (3) and (4) resolved — see each; (2) stays open with the profile qualification.)*
