@@ -128,6 +128,38 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
+### `agent-tasks-i1d` ✅ (shipped 2026-10-01 via [#PRNUM](https://github.com/ErikFortune/fgv/pull/PRNUM)) — slice I1d of four: stop tools; **closes I1**
+
+**Status:** ✅ shipped into `integration/agent-tasks-v1` (not `release`; the cluster promotes as one).
+Branched at `d1be4d2fa` (the I1c landing). Artifacts in `.ai/tasks/active/agent-tasks-i1d/`; this
+family finalizes at cluster close. **I1 is complete** — all four slices shipped.
+
+**What shipped.** `createTaskTools({ …, stops?: { writer, environment, enable: StopMode[] } })`:
+`task_stop` (`requestStop`, `mode` an enum of exactly the enabled modes, a minted operation id that
+becomes the stop's `intentId`) and `task_stop_inspect` (`inspectStop`). Absent or empty, neither
+(asserted by name in the factory test and the captured outbound request). Both return
+`ITaskStopToolResult`: counts of the visible targets by state, and one page of them —
+`{ taskId, state, confirmedRevision?, violation? }`, never a command key — continued with
+`nextAfter`. `requestStop` and `inspectStop` are the seventh and eighth binding members reached.
+
+**The decisions.** A model may **request** and **read** a stop, never **release** it or **run the
+pump**: release un-freezes a subtree that includes targets the model cannot see, and the result names
+no requester to confine it to the model's own stops; the pump is the host's scheduling of external
+effects, as I1c held for `resolveCommands`. `stop-active` stays `conflict` in **every** tool whatever
+the host enables — a latch can come from a hidden ancestor's stop, and no tool's answers depend on
+which other tools are offered. The intent id is returned (it grants nothing: no tool takes an
+operation id from the model, and inspection needs only root visibility). A capacity refusal goes to
+the logger only.
+
+**Evidence.** End to end through the real broker: a stop requested by the tool, carried out by the
+host's `reconcileStop` (native tree, and an external child the executor really cancels), observed
+through `task_stop_inspect`. Every failure but `unsupported` carries the would-be intent id —
+layer-1 P2-1 found that a denial can follow the commit (the root hidden before presentation), tested
+through the real broker. Revert-matrix rows `I1d-1`…`I1d-19`; `I1c-14/18/19` re-pointed. Routed: a
+model can name only the stops it requested (`docs/TECH_DEBT.md`).
+
+**Artifact pointer:** `.ai/tasks/active/agent-tasks-i1d/`.
+
 ### `agent-tasks-i1c` ✅ (shipped 2026-09-30 via [#704](https://github.com/ErikFortune/fgv/pull/704)) — slice I1c of four: generated typed command tools
 
 **Status:** ✅ shipped into `integration/agent-tasks-v1` (not `release`; the cluster promotes as one).
