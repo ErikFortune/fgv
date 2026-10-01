@@ -142,6 +142,16 @@ describe('a checked handoff', () => {
     });
   });
 
+  test('after an acknowledgement, a mismatched send is refused without killing the idempotent replay', async () => {
+    const ready = (await handoff()).orThrow();
+    expect(await ready.acknowledge(ready.prompt.system)).toSucceed();
+    expect(await ready.acknowledge('something else')).toFailWith(/already acknowledged/);
+    expect(await ready.acknowledge(ready.prompt.system)).toSucceedAndSatisfy((ack) => {
+      expect(ack.newlyAcknowledged).toEqual([]);
+      expect(ack.alreadyAcknowledged.length).toBeGreaterThan(0);
+    });
+  });
+
   test('the receipt it issued is acknowledgeable directly too — the control for the refusals below', async () => {
     (await handoff()).orThrow();
     expect(await delivery.acknowledge(delivery.issued)).toSucceed();

@@ -135,6 +135,21 @@ describe('threshold-unknown is classified, never a failure and never proof', () 
   });
 });
 
+describe('met is never inferred from silence', () => {
+  test('no threshold finding, but nothing measured: unknown, not met', async () => {
+    const lib = new EditingLibrary(await library([standardRecord()]), (r) => ({
+      ...r,
+      composition: { ...r.composition!, cacheFindings: [] }
+    }));
+    expect(await check(lib)).toSucceedAndSatisfy((checked) => {
+      expect(checked.threshold).toEqual({
+        verdict: 'unknown',
+        detail: expect.stringMatching(/not measured/)
+      });
+    });
+  });
+});
+
 describe('composition must be positively available', () => {
   test('deliberately unavailable composition, with empty findings, fails', async () => {
     // A Mustache section makes the body unsegmentable: prompt-assist reports `unavailable` and
@@ -161,6 +176,14 @@ describe('composition must be positively available', () => {
       composition: undefined
     }));
     expect(await check(lib)).toFailWith(/returned no composition/);
+  });
+
+  test('a composition no check can read fails, rather than throwing', async () => {
+    const lib = new EditingLibrary(await library([standardRecord()]), (r) => ({
+      ...r,
+      composition: { ...r.composition!, sections: undefined as unknown as [] }
+    }));
+    expect(await check(lib)).toFailWith(/^task prompt agent: /);
   });
 
   test('sections with a gap, or that do not cover the body, fail', async () => {

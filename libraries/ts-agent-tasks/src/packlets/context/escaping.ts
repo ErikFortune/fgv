@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { JsonValue } from '@fgv/ts-json-base';
+import type { JsonValue } from '@fgv/ts-json-base';
 import { Result, fail, mapResults, succeed } from '@fgv/ts-utils';
 
 /**
@@ -97,14 +97,15 @@ export function serializeRecord(value: RecordValue): string {
  * data a host presents to a model outside the rendered text (`task_inspect`'s details). The result
  * parses back with `JSON.parse` to a value equal to the input, except that `undefined` object fields
  * are skipped as `JSON.stringify` skips them. A number that is not finite has no JSON form and
- * fails rather than becoming `null`; so does any value that is not JSON at all.
+ * fails rather than becoming `null`; so does any value that is not JSON at all, and a value that
+ * contains itself.
  * @public
  */
 export function serializeTaskData(value: JsonValue): Result<string> {
-  return _serializeData(value as unknown, '');
+  return _serializeData(value, '', new Set<object>());
 }
 
-function _serializeData(value: unknown, path: string): Result<string> {
+function _serializeData(value: unknown, path: string, ancestors: Set<object>): Result<string> {
   if (value === null || typeof value === 'boolean') {
     return succeed(String(value));
   }
@@ -116,20 +117,16 @@ function _serializeData(value: unknown, path: string): Result<string> {
       ? succeed(JSON.stringify(value))
       : fail(`task data${path}: ${value} is not a finite number`);
   }
-  if (Array.isArray(value)) {
-    return mapResults(
-      value.map((item: unknown, index: number) => _serializeData(item, `${path}[${index}]`))
-    ).onSuccess((items: ReadonlyArray<string>) => succeed(`[${items.join(',')}]`));
-  }
-  if (typeof value === 'object' && _isPlainObject(value)) {
-    const fields: Result<string>[] = Object.entries(value)
-      .filter(([, field]: [string, unknown]) => field !== undefined)
-      .map(([key, field]: [string, unknown]) =>
-        _serializeData(field, `${path}.${key}`).onSuccess((text: string) =>
-          succeed(`${quoteData(key)}:${text}`)
-        )
-      );
-    return mapResults(fields).onSuccess((items: ReadonlyArray<string>) => succeed(`{${items.join(',')}}`));
+  if (typeof value === 'object' && (Array.isArray(value) || _isPlainObject(value))) {
+    if (ancestors.has(value)) {
+      return fail(`task data${path}: refers to itself`);
+    }
+    ancestors.add(value);
+    const serialized: Result<string> = Array.isArray(value)
+      ? _serializeArray(value, path, ancestors)
+      : _serializeObject(value, path, ancestors);
+    ancestors.delete(value);
+    return serialized;
   }
   return fail(`task data${path}: not a JSON value`);
 }
@@ -137,4 +134,25 @@ function _serializeData(value: unknown, path: string): Result<string> {
 function _isPlainObject(value: object): boolean {
   const prototype: unknown = Object.getPrototypeOf(value);
   return prototype === Object.prototype || prototype === null;
+}
+
+function _serializeArray(
+  value: ReadonlyArray<unknown>,
+  path: string,
+  ancestors: Set<object>
+): Result<string> {
+  return mapResults(
+    value.map((item: unknown, index: number) => _serializeData(item, `${path}[${index}]`, ancestors))
+  ).onSuccess((items: ReadonlyArray<string>) => succeed(`[${items.join(',')}]`));
+}
+
+function _serializeObject(value: object, path: string, ancestors: Set<object>): Result<string> {
+  const fields: Result<string>[] = Object.entries(value)
+    .filter(([, field]: [string, unknown]) => field !== undefined)
+    .map(([key, field]: [string, unknown]) =>
+      _serializeData(field, `${path}.${key}`, ancestors).onSuccess((text: string) =>
+        succeed(`${quoteData(key)}:${text}`)
+      )
+    );
+  return mapResults(fields).onSuccess((items: ReadonlyArray<string>) => succeed(`{${items.join(',')}}`));
 }

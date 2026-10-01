@@ -17,7 +17,7 @@ import {
   SlotName,
   toCacheRequest
 } from '@fgv/ts-prompt-assist';
-import { Result, captureAsyncResult, fail, succeed } from '@fgv/ts-utils';
+import { Result, captureAsyncResult, captureResult, fail, succeed } from '@fgv/ts-utils';
 import { ITaskContext, ITaskInclusionReceipt } from '../types';
 import { defaultTaskContextSlotName, taskContextSubstitutions } from './fragments';
 
@@ -128,12 +128,6 @@ export interface ICheckedTaskPrompt extends ITaskPromptCheck {
   receiptFor(sentSystem: string): Result<ITaskInclusionReceipt>;
 }
 
-/** The finding kinds that only classify the threshold; every other kind fails the check. */
-const thresholdFindings: ReadonlyMap<string, ITaskPromptThreshold['verdict']> = new Map([
-  ['threshold-unknown', 'unknown'],
-  ['below-threshold', 'below']
-]);
-
 /**
  * Resolves a task prompt and checks that what will be sent is what was analyzed.
  *
@@ -157,6 +151,12 @@ const thresholdFindings: ReadonlyMap<string, ITaskPromptThreshold['verdict']> = 
  *
  * The receipt is never placed in the body, a substitution or the request; it is released only by
  * {@link ICheckedTaskPrompt.receiptFor}. Checking acknowledges nothing.
+ *
+ * **The context is trusted to be one render.** The check binds the context's *text* to the body;
+ * that its *receipt* describes that text is the renderer's guarantee, which holds for a context
+ * passed as it was rendered. A host that assembles a context from two renders defeats it.
+ * {@link prepareTaskPrompt} takes the context from the delivery that issued it, so on that path
+ * nothing is assembled by the host.
  * @public
  */
 export async function checkTaskPrompt(params: ICheckTaskPromptParams): Promise<Result<ICheckedTaskPrompt>> {
@@ -173,17 +173,17 @@ export async function checkTaskPrompt(params: ICheckTaskPromptParams): Promise<R
     composition: params.composition ?? {},
     ...(params.request.cacheStability !== undefined ? { cacheStability: params.request.cacheStability } : {})
   };
-  const resolved: Result<IResolvedPrompt> = await captureAsyncResult(() =>
+  // A host library may throw, or answer with a shape no check expects: both are failures, never throws.
+  const resolved: Result<Result<IResolvedPrompt>> = await captureAsyncResult(() =>
     params.library.resolve(request)
-  ).then((outer: Result<Result<IResolvedPrompt>>) =>
-    outer.onSuccess((inner: Result<IResolvedPrompt>) => inner)
   );
   return resolved
+    .onSuccess((inner: Result<IResolvedPrompt>) => inner)
     .withErrorFormat((message: string) => `${label}: resolve failed: ${message}`)
     .onSuccess((prompt: IResolvedPrompt) =>
-      _check(prompt, params.context, slot, params.cacheHints).withErrorFormat(
-        (message: string) => `${label}: ${message}`
-      )
+      captureResult(() => _check(prompt, params.context, slot, params.cacheHints))
+        .onSuccess((checked: Result<ICheckedTaskPrompt>) => checked)
+        .withErrorFormat((message: string) => `${label}: ${message}`)
     );
 }
 
@@ -196,7 +196,7 @@ function _check(
   return _availableComposition(resolved)
     .onSuccess((composition: IPromptComposition) =>
       _taskSlot(resolved.body, composition, context.text, slot).onSuccess((span: ITaskPromptSlotSpan) =>
-        _threshold(composition.cacheFindings).onSuccess((threshold: ITaskPromptThreshold) =>
+        _threshold(composition).onSuccess((threshold: ITaskPromptThreshold) =>
           _cacheRequest(composition, span, hints).onSuccess((cacheRequest: AiAssist.IAiCacheRequest) =>
             succeed({ span, threshold, cacheRequest })
           )
@@ -293,10 +293,16 @@ function _taskSlot(
   return succeed({ name: slot, start: section.start, chars: section.chars });
 }
 
-/** Check 4: every finding is handled — threshold findings classified, every other kind refused. */
-function _threshold(findings: ReadonlyArray<IPromptCacheFinding>): Result<ITaskPromptThreshold> {
+/**
+ * Check 4: every finding is handled — threshold findings classified, every other kind refused. `met`
+ * is reported only when a measure was supplied and neither threshold finding fired, never inferred
+ * from silence alone.
+ */
+function _threshold(composition: IPromptComposition): Result<ITaskPromptThreshold> {
+  const findings: ReadonlyArray<IPromptCacheFinding> = composition.cacheFindings;
   const refused: ReadonlyArray<IPromptCacheFinding> = findings.filter(
-    (finding: IPromptCacheFinding) => !thresholdFindings.has(finding.kind)
+    (finding: IPromptCacheFinding) =>
+      finding.kind !== 'threshold-unknown' && finding.kind !== 'below-threshold'
   );
   if (refused.length > 0) {
     return fail(
@@ -305,13 +311,22 @@ function _threshold(findings: ReadonlyArray<IPromptCacheFinding>): Result<ITaskP
         .join('; ')}`
     );
   }
-  const classified: IPromptCacheFinding | undefined = findings.find((finding: IPromptCacheFinding) =>
-    thresholdFindings.has(finding.kind)
+  const unknown: IPromptCacheFinding | undefined = findings.find(
+    (finding: IPromptCacheFinding) => finding.kind === 'threshold-unknown'
   );
+  if (unknown !== undefined) {
+    return succeed({ verdict: 'unknown', detail: unknown.detail });
+  }
+  const below: IPromptCacheFinding | undefined = findings.find(
+    (finding: IPromptCacheFinding) => finding.kind === 'below-threshold'
+  );
+  if (below !== undefined) {
+    return succeed({ verdict: 'below', detail: below.detail });
+  }
   return succeed(
-    classified === undefined
-      ? { verdict: 'met' }
-      : { verdict: thresholdFindings.get(classified.kind)!, detail: classified.detail }
+    composition.totalMeasured === undefined
+      ? { verdict: 'unknown', detail: 'the composition was not measured, so the prefix size was not judged' }
+      : { verdict: 'met' }
   );
 }
 

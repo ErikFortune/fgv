@@ -4,6 +4,7 @@
  */
 
 import {
+  Convert,
   ILiteralSlotBinding,
   IPromptDescriptor,
   IPromptSlot,
@@ -13,7 +14,7 @@ import {
   ScopeKey,
   SlotName
 } from '@fgv/ts-prompt-assist';
-import { Result, fail, succeed } from '@fgv/ts-utils';
+import { Result, fail, mapResults, succeed } from '@fgv/ts-utils';
 import { ITaskContext, defaultTaskContextBudget } from '../types';
 
 /**
@@ -100,7 +101,7 @@ export interface ITaskPromptTemplateParams {
  *
  * @remarks
  * Parts are separated by a blank line. Fails if the literal text could form a Mustache tag (`{{` or
- * `}}`), or if a host slot reuses the task slot's name — two interpolations of one name would put
+ * `}}`), if a slot name is not a Mustache name, or if a host slot reuses the task slot's name — two interpolations of one name would put
  * task context in the body twice.
  * @public
  */
@@ -118,7 +119,12 @@ export function taskPromptTemplate(params: ITaskPromptTemplateParams): Result<st
   if (new Set(names).size !== names.length) {
     return fail(`task prompt template: slot names must be distinct, and none may be '${taskSlot}'`);
   }
-  return succeed([...literals, ...names.map((name: SlotName) => `{{{${name}}}}`)].join('\n\n'));
+  // A name is interpolated into the template, so it must be a Mustache name and nothing more.
+  return mapResults(names.map((name: SlotName) => Convert.slotName.convert(name)))
+    .withErrorFormat((message: string) => `task prompt template: ${message}`)
+    .onSuccess((valid: ReadonlyArray<SlotName>) =>
+      succeed([...literals, ...valid.map((name: SlotName) => `{{{${name}}}}`)].join('\n\n'))
+    );
 }
 
 /**

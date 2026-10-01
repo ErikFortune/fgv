@@ -64,6 +64,15 @@ describe('taskPromptTemplate', () => {
     );
     expect(taskPromptTemplate({ instructions: 'x', stableSlots: [notes, notes] })).toFailWith(/distinct/);
   });
+
+  test('refuses a slot name that is not a Mustache name, since it is interpolated into the template', () => {
+    expect(taskPromptTemplate({ instructions: 'x', stableSlots: ['a}}{{b' as SlotName] })).toFailWith(
+      /task prompt template: .*not a valid Mustache name/
+    );
+    expect(taskPromptTemplate({ instructions: 'x', taskSlot: 'x y' as SlotName })).toFailWith(
+      /Mustache name/
+    );
+  });
 });
 
 describe('taskPromptDescriptor and taskPromptRecord', () => {

@@ -52,4 +52,17 @@ describe('serializeTaskData', () => {
     );
     expect(serializeTaskData((() => 1) as unknown as JsonValue)).toFailWith(/not a JSON value/);
   });
+
+  test('a value that contains itself fails; one shared twice, without a cycle, does not', () => {
+    const loop: Record<string, unknown> = { a: 1 };
+    loop.self = { back: loop };
+    expect(serializeTaskData(loop as unknown as JsonValue)).toFailWith(
+      /task data\.self\.back: refers to itself/
+    );
+    const ring: unknown[] = [];
+    ring.push(ring);
+    expect(serializeTaskData(ring as unknown as JsonValue)).toFailWith(/task data\[0\]: refers to itself/);
+    const shared: JsonValue = { x: 'y' };
+    expect(serializeTaskData({ a: shared, b: [shared] })).toSucceedWith('{"a":{"x":"y"},"b":[{"x":"y"}]}');
+  });
 });

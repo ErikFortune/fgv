@@ -59,7 +59,9 @@ export interface ITaskPromptHandoff {
    *
    * @remarks
    * If the text sent differs in any way, the delivery's manifest is abandoned before this returns,
-   * so the receipt can never be acknowledged by any path, and the failure is `invalid-receipt`. Its
+   * so the receipt can never be acknowledged by any path, and the failure is `invalid-receipt` —
+   * unless this handoff already acknowledged it, in which case the mismatch is refused and the
+   * acknowledged manifest is left alone, so a replay of the exact text stays idempotent. Its
    * obligations stay owed, for a later prepare. A matching text is acknowledged by the delivery
    * exactly as `IBoundTaskDelivery.acknowledge` would, replay included.
    */
@@ -104,6 +106,9 @@ function _handoff(
   expiresAt: Instant
 ): ITaskPromptHandoff {
   const { receiptFor, ...prompt } = checked;
+  // Once acknowledged, the manifest's history is what makes a replay idempotent; a later mismatched
+  // send is refused without abandoning it.
+  let acknowledged: boolean = false;
   const view: TaskContextView = {
     text: context.text,
     entries: context.entries,
@@ -118,6 +123,12 @@ function _handoff(
     acknowledge: async (sentSystem: string): Promise<TaskResult<IAcknowledgementResult>> => {
       const receipt: Result<ITaskInclusionReceipt> = receiptFor(sentSystem);
       if (receipt.isFailure()) {
+        if (acknowledged) {
+          return failWithDetail<IAcknowledgementResult, ITaskFailure>(
+            `acknowledge ${deliveryId}: ${receipt.message}; the delivery was already acknowledged`,
+            { code: 'invalid-receipt', retry: 'after-host-action' }
+          );
+        }
         const abandoned: TaskResult<DeliveryId> = await delivery.abandon(deliveryId);
         return _refused<IAcknowledgementResult>(
           `acknowledge ${deliveryId}: ${receipt.message}`,
@@ -125,7 +136,9 @@ function _handoff(
           abandoned
         );
       }
-      return delivery.acknowledge(receipt.value);
+      const result: TaskResult<IAcknowledgementResult> = await delivery.acknowledge(receipt.value);
+      acknowledged = acknowledged || result.isSuccess();
+      return result;
     },
     abandon: (): Promise<TaskResult<DeliveryId>> => delivery.abandon(deliveryId)
   };
