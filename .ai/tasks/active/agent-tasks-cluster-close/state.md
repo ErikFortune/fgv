@@ -33,10 +33,13 @@ per-package history** into each `libraries/<pkg>/CAPABILITIES.md` (so all eighte
 router, whose region is bounded at ten **regardless of stream count** — so the 24,000-character budget
 is unaffected. The router being agent-tasks-heavy for a while is what a rolling feed does.
 
-What remains is editorial: whether every one of the eighteen earns a feed line in the package file,
-when most of T1–T9 read as internal slices of one capability. Normal `/finalize-task` judgement per
-stream — but verify the script tolerates a `meta.yaml` with no headline before relying on that, since
-all 63 existing streams have one.
+**The rule, from the user (2026-10-01): one line per externally interesting capability — nobody cares
+how we broke up the work.** So the feed is a small handful of lines, not eighteen, and the streams
+that added no consumer-visible capability carry a `meta.yaml` with no headline. On a first read that
+means T1–T9 are one recording-and-mediation capability, I1a–I1d plus tracked-commands are the
+model-tool surface, I2 is checked prompt composition, and M1 (measurement) and P1 (a sample and
+proving ground) are not capabilities at all. Verify the script tolerates an absent headline — if not,
+fix the script, since the rule outranks it.
 
 ## Out of scope — leave alone
 

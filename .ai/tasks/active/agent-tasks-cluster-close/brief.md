@@ -61,16 +61,37 @@ the orchestrator's error, corrected before you started.** What the script actual
 So the only consequence is that the router's ten recent slots are agent-tasks-heavy for a while and
 then roll over. That is what a rolling recent-changes feed is for; it is not a problem to solve.
 
-**The one question genuinely worth a judgement** is editorial and applies to the *package* file, not
-the router: do all eighteen deserve a feed line, when a reader experiences most of T1–T9 as internal
-slices of one capability rather than eighteen separate arrivals? Eighteen entries in
-`ts-agent-tasks`' own history is either a useful record or noise, depending on how each is written.
+**The rule, from the user (2026-10-01): one line per externally interesting capability. Nobody cares
+how we broke up the work.**
 
-Use `/finalize-task`'s normal judgement on `headline` per stream: a stream with no consumer-visible
-capability may legitimately have a `meta.yaml` without a feed line — **but verify the script tolerates
-that** before relying on it, since all 63 existing streams have one and the absent case may be
-untested. If it does not tolerate it, write honest headlines for all eighteen and say so; do not
-contort a summary to dodge a script limitation.
+So the feed is **not** eighteen lines. It is as many lines as this cluster added capabilities a
+consumer would care about, and the rest of the eighteen carry a `meta.yaml` with **no headline**. The
+stream count is an implementation detail of how the work was scheduled; it has no place in a file whose
+job is telling a consumer what they can now do.
+
+Apply it yourself — you have read all eighteen results and the orchestrator has not — but as a sanity
+check on the order of magnitude: T1–T9 are slices of one recording-and-mediation capability; I1a–I1d
+and tracked-commands are slices of the model-tool surface; I2 is checked prompt composition; **M1 is
+measurement and qualification evidence, not a capability**; **P1 is a proving ground and a sample, not
+a published capability**. That suggests a small handful of lines, not eighteen. If your reading of the
+results says otherwise, follow the results and say why.
+
+Where one capability spans several streams, the headline goes on the stream that best represents it —
+remember the feed links `prs[0]`, so pick the stream whose first PR a reader should land on — and the
+siblings get none.
+
+**Verify the script tolerates a `meta.yaml` with no headline** before relying on it: all 63 existing
+streams have one, so the absent path may be untested. The script already counts "unusable" sourceLines
+separately, which suggests it does, but check rather than assume. If it does not, that is a **script
+bug to fix in this PR** — the rule is the user's and the script serves it, not the other way round.
+
+**Record the rule durably, in this PR.** It is a standing principle, not a decision about this cluster,
+and the next finalization will otherwise re-derive it from scratch — or default to one line per stream,
+which is what eighteen streams almost produced here. Put it where the next person finalizing a stream
+will actually meet it: `generate-capability-feed.mjs`'s header already explains `headline` vs
+`sourceLine` carefully and is the natural home, and/or the `/finalize-task` skill's guidance on
+`meta.yaml`. One or two sentences, in the user's terms: *the feed carries one line per externally
+interesting capability; how the work was broken into streams is not interesting to a consumer.*
 
 Gates either way: `generate-capability-feed --check` reports 0 stale, `verify-capability-docs` passes,
 and you report the resulting `LIBRARY_CAPABILITIES.md` size.
