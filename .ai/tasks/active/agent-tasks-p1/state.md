@@ -1,7 +1,8 @@
 # State — `agent-tasks-p1`
 
 **Status:** implemented; gates and the revert matrix run on final source; PR open into
-`integration/agent-tasks-v1`; Copilot loop in progress. See `result.md` for everything shipped.
+`integration/agent-tasks-v1`, CI green; Copilot loop stopped at 3 rounds (7 → 2 → 0 findings), all
+threads resolved. Waiting on the orchestrator / a human to merge. See `result.md` for everything shipped.
 
 ## Where things stand
 

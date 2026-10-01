@@ -230,6 +230,10 @@ replacer now refuses functions and symbols at any depth, with object and array c
 matrix control count was stale (30 → 31 scenario tests after round 1); the matrix was re-run on the
 final source and the table above records that run.
 
+**Round 3:** no findings — *"approval recommended"*. **Copilot loop stopped at 3 rounds on
+diminishing returns** (7 → 2 → 0 findings; every finding in rounds 1–2 was in `report.ts`'s pass
+decision or the evidence record, none in the journey's use of the library).
+
 The two highs are the same class as the defects layer 1's coverage pass found in `report.ts` — the
 recorder decides what "passed" means, and every check in the journey rests on it.
 
