@@ -222,7 +222,13 @@ the reverse of I1b. *Round 1* — one medium, three lows, all real and all fixed
 turned `personality-intake`'s deliberate blank into a false "unusable" (fixed by honouring the older
 spelling as an opt-out, not by editing that stream); two stale figures in this file (the index count,
 the feed totals); and § 8's evidence taxonomy repeating the "on the final source" claim this close had
-just corrected in T5's summary. ROUND2_PLACEHOLDER
+just corrected in T5's summary. *Round 2* — two lows plus one
+"previously missed" item, all real and fixed: this placeholder itself; the plan's closing
+"Approval handoff" still telling readers to await authorization and start F1 (now preceded by a
+cluster-close handoff, the original kept and marked superseded); and — the one that mattered — **my
+`PRNUM` → `712` substitution had also rewritten a literal `PRNUM` placeholder in T7's archived
+`state.md`**, an in-flight artifact the finalize skill says never to edit. Restored from the base;
+all 61 archived non-script files are again `R100`. Round 3 was requested on the push carrying these fixes; its outcome is on the PR thread and, if it changes anything, in a later commit here.
 
 ## Still owed before promotion
 

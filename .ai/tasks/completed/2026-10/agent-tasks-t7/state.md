@@ -64,7 +64,7 @@ says. No missing-input stop.
 - Layer 1 `code-reviewer`: no P1; two P2 (per-task authorization windows in acknowledge and prepare)
   fixed with record/task-revision fences (W6, W8), each verified red when removed; four dead members removed.
 - Docs: result.md (draft; Gates, revert matrix and review rounds to fill), TECH_DEBT (capacity amendment,
-  T5/T6 hand-offs resolved, new T7→T8 entry), plan status line and WORKSTREAMS entry (with `712`
+  T5/T6 hand-offs resolved, new T7→T8 entry), plan status line and WORKSTREAMS entry (with `PRNUM`
   placeholder to replace once the PR exists), package CAPABILITIES delivery section, router line,
   design-doc "as implemented" note, change file (`rush change --verify` passes).
 
