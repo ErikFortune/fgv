@@ -19,9 +19,12 @@ import { TaskKind } from './ids';
  *
  * `parameters` is the registered schema itself, readable so a model can be offered it
  * (I1c's generated command tools compose it into their wire schema). Reading it produces
- * no canonical parameters: what is stored, deduplicated against and dispatched is only
- * ever `validate`'s output, and the broker runs `validate` on every request it is handed —
- * whatever a caller did with the schema first.
+ * no canonical parameters: for an externally executed kind, what is stored, deduplicated against
+ * and dispatched is only ever `validate`'s output, and the broker runs `validate` on every request
+ * it is handed — whatever a caller did with the schema first. The broker's own native kinds are the
+ * exception: their commands are converted by the broker's authoritative tracked-command converter,
+ * never through a registered handle, so for `fgv.tracked@1` the registered schema is the wire schema
+ * only, and its agreement with that converter is a fixture obligation.
  * @public
  */
 export interface ITaskCommandHandle {
@@ -32,7 +35,10 @@ export interface ITaskCommandHandle {
   readonly parameters: JsonSchema.ISchemaValidator<unknown>;
   /**
    * Validates caller-supplied parameters through the registered schema and re-encodes
-   * them, yielding the canonical JSON form that is deduplicated and stored.
+   * them. For an externally executed kind this is the canonical JSON form the broker
+   * deduplicates and stores. For a native kind (`fgv.tracked@1`) the broker never calls it:
+   * a value it accepts can still be refused by the broker's own converter, so it is not
+   * the broker's validator there.
    */
   validate(parameters: unknown): Result<JsonValue>;
 }

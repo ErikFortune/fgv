@@ -261,11 +261,16 @@ back as `expectedRevision`.
 **I1c — ✅ implemented on `integration/agent-tasks-v1` ([#704](https://github.com/ErikFortune/fgv/pull/704)):**
 one opt-in tool per registered command a host names, its wire schema the registered parameter schema
 (`ITaskCommandHandle.parameters`); a command whose outcome is unknown is never resent by the model.
-`fgv.tracked@1` registers no command schemas, so its transitions are not offered (`docs/TECH_DEBT.md`).
 **I1d — ✅ implemented on `integration/agent-tasks-v1` ([#706](https://github.com/ErikFortune/fgv/pull/706)):** opt-in `task_stop` (`requestStop`, per
 mode) and `task_stop_inspect` (`inspectStop`); `releaseStop` and `reconcileStop` are deliberately
 not model-reachable — a model may apply a stop, only the host carries it out or lifts it.
 `stop-active` stays `conflict` in every tool whatever the host enables. **I1 is complete.**
+
+**Tracked commands — ✅ implemented on `integration/agent-tasks-v1` (`agent-tasks-tracked-commands`, [#705](https://github.com/ErikFortune/fgv/pull/705)):**
+`trackedTaskDescriptor()` registers all eleven `fgv.tracked@1` transitions with `JsonSchema` parameter
+schemas, so I1c's generator offers them with no change to the tool packlet; a model can now move a
+tracked task's lifecycle, not only create and edit it. A fifth slice, run beside I1d; it retires the
+"`fgv.tracked@1` registers no command schemas" limitation I1c disclosed.
 
 **The split.** T7 and T9 each landed at 65+ files and +11,000 lines, and in both the review loop was
 still doing structural work at round 6+. I1 is decomposed up front rather than mid-loop. Each slice
@@ -277,6 +282,15 @@ adds exactly one authority surface, and each is independently shippable and revi
 | **I1b** | tracked + reassignment **mutation opt-ins**, disabled by default | I1a |
 | **I1c** | statically generated **typed command tools** from the registry | I1a, I1b |
 | **I1d** | **stop tools** — the T9 opt-in | I1a, I1b, **T9** |
+| *tracked commands* | `fgv.tracked@1`'s eleven command **registrations** — data for I1c's generator, no tool code | I1c |
+
+**Why a fifth slice.** I1c generates tools from the registry, and `fgv.tracked@1` registered no
+commands — its transitions had converters but no wire schemas — so the plan's *"tracked and
+simulated external command outcomes"* test was reachable only for external kinds. Closing that is
+registration, not tool code, so it runs beside I1d without touching `packlets/tools/`. Added
+2026-09-30 at the user's direction rather than waiting for a consumer. The broker keeps validating
+native commands with its own converter; the schemas agree with it as a fixture obligation (the
+`detailSchema` precedent), argued in that slice's `result.md`.
 
 **Why I1a is read-only and nothing else.** This slice's own review gate says *"read-only use has no
 mutation dependency."* Shipping the read surface with no mutation code in the package is the

@@ -18,7 +18,7 @@
  *             the copy a `node_modules` symlink to this package's)
  *   --out     write the results as JSON
  *   M…        run only the named rows (T8b's rows are named T8b-…, T9's T9-…, I1a's I1a-…, I1b's I1b-…, I1c's I1c-…,
- *             I1d's I1d-…)
+ *             I1d's I1d-…, agent-tasks-tracked-commands' TC-…)
  *
  * The one rule that matters: a row whose pattern is not found exactly once, whose mutant does not
  * build, or whose run reports no failure count at all, is reported UNVERIFIED — never as "nothing
@@ -1928,6 +1928,92 @@ const I1D_ROWS = [
 ];
 
 MUTATIONS.push(...I1D_ROWS);
+
+/** agent-tasks-tracked-commands' rows run its two suites and the registry suite. */
+const TCS = 'tools/trackedCommandTools|converters/(trackedCommandSchemas|kindRegistry|builtinKinds)';
+const BK = C + 'builtinKinds.ts';
+
+const TC_ROWS = [
+  m(
+    'TC-1 fgv.tracked@1 registers no commands',
+    BK,
+    '    commands: trackedTaskCommandNames.map(_trackedCommand)',
+    '    commands: []',
+    TCS
+  ),
+  m(
+    'TC-2 one tracked command is registered without its schema (ten of eleven)',
+    BK,
+    '    commands: trackedTaskCommandNames.map(_trackedCommand)',
+    '    commands: trackedTaskCommandNames.slice(1).map(_trackedCommand)',
+    TCS
+  ),
+  m(
+    "TC-3 a reason's attention refuses every real reference (schema narrower than the converter)",
+    BK,
+    '  attention: JsonSchema.optional(attentionSchema)\n};',
+    '  attention: JsonSchema.optional(\n    JsonSchema.array(\n      JsonSchema.object({ namespace: JsonSchema.string(), key: JsonSchema.string(), x: JsonSchema.string() })\n    )\n  )\n};',
+    TCS
+  ),
+  m(
+    "TC-4 succeed's outcome is optional in the schema",
+    BK,
+    '    succeed: JsonSchema.object({ outcome: outcomeSchema }),',
+    '    succeed: JsonSchema.object({ outcome: JsonSchema.optional(outcomeSchema) }),',
+    TCS
+  ),
+  m(
+    'TC-5 fail requires an outcome in the schema',
+    BK,
+    '    fail: JsonSchema.object({ reason: reasonSchema, outcome: JsonSchema.optional(outcomeSchema) }),',
+    '    fail: JsonSchema.object({ reason: reasonSchema, outcome: outcomeSchema }),',
+    TCS
+  ),
+  m(
+    'TC-6 start accepts surplus parameters (an open object)',
+    BK,
+    "    start: JsonSchema.object({}, { description: 'No parameters: start a pending task.' }),",
+    "    start: JsonSchema.object({}, { description: 'No parameters: start a pending task.', additionalProperties: true }),",
+    TCS
+  ),
+  m(
+    'TC-7 wait takes a plain reason (notBefore refused by the schema)',
+    BK,
+    '    wait: JsonSchema.object({ reason: waitingReasonSchema }),',
+    '    wait: JsonSchema.object({ reason: reasonSchema }),',
+    TCS
+  ),
+  m(
+    'TC-8 set-attention takes a single reference, not a list',
+    BK,
+    "    'set-attention': JsonSchema.object({ attention: attentionSchema })",
+    "    'set-attention': JsonSchema.object({ attention: referenceSchema })",
+    TCS
+  ),
+  m(
+    'TC-9 a tracked handle registers as safe to resend under the same key',
+    BK,
+    "    idempotency: 'none',",
+    "    idempotency: 'source-key',",
+    TCS
+  ),
+  m(
+    'TC-10 a native command at a stale expectedRevision is evaluated, not refused',
+    'src/packlets/broker/commands.ts',
+    '        revisionOf(record) !== request.expectedRevision',
+    '        revisionOf(record) < 0',
+    TCS
+  ),
+  m(
+    "TC-11 an unavailable tracked transition's reason reaches the model by name",
+    TL + 'commandTools.ts',
+    "  'invalid-transition': 'conflict',",
+    "  'invalid-transition': 'invalid-transition' as TaskFailureCode,",
+    TCS
+  )
+];
+
+MUTATIONS.push(...TC_ROWS);
 
 function parseArgs(argv) {
   const args = { check: false, pkg: path.resolve(__dirname, '..'), out: undefined, only: [] };

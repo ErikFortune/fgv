@@ -128,6 +128,33 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
+### `agent-tasks-tracked-commands` ✅ (shipped 2026-10-01 via [#705](https://github.com/ErikFortune/fgv/pull/705)) — fifth I1 slice: `fgv.tracked@1`'s commands registered for command tools
+
+**Status:** ✅ shipped into `integration/agent-tasks-v1` (not `release`; the cluster promotes as one).
+Branched at `d1be4d2fa` (the I1c landing); ran beside I1d without touching `packlets/tools/`.
+Artifacts in `.ai/tasks/active/agent-tasks-tracked-commands/`; this family finalizes at cluster close.
+
+**What shipped.** `trackedTaskDescriptor()` registers all eleven `trackedTaskCommandNames` with
+`JsonSchema` parameter schemas (a total record, so a twelfth name needs a schema to compile). I1c's
+generator offers them with no tool change; which ones a model gets is the host's `enable` list.
+
+**The decision: two validators, agreement as a fixture obligation.** `_prepare` keeps converting
+through `trackedCommand`, which stays authoritative. Unifying could not remove the obligation — the
+wire subset cannot state the converter's bounds, so the converter would still run behind the schema —
+and would narrow what the broker accepts for host callers and couple `fgv.task-list@1` to
+registration. Fixtures pin both validators' verdicts on 71 values, including 19 the schema admits and
+only the converter refuses (bounds, and a non-finite amount), and one coercion only it performs.
+
+**Evidence.** End to end through a real broker and a streamed model turn: each command moves the
+task and `task_inspect` reports it. Stale revision and unavailable transition are I1c's fixed
+conflict line, naming no status. Hazards documented for hosts: references (6 of 11 commands) are
+accepted on syntax alone; `succeed`/`fail`/`cancel` assert a final state (an outcome always for
+`succeed`, optionally for `fail`/`cancel`). Matrix rows `TC-1…TC-11`.
+Routed: the unknown-line for converter-only refusals (I1d's), Gemini empty nested objects,
+`fgv.task-list@1` commands, a `ts-utils` `null → {}` quirk.
+
+**Artifact pointer:** `.ai/tasks/active/agent-tasks-tracked-commands/`.
+
 ### `agent-tasks-i1d` ✅ (shipped 2026-10-01 via [#706](https://github.com/ErikFortune/fgv/pull/706)) — slice I1d of four: stop tools; **closes I1**
 
 **Status:** ✅ shipped into `integration/agent-tasks-v1` (not `release`; the cluster promotes as one).
