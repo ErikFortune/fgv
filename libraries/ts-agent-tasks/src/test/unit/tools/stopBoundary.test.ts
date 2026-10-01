@@ -268,7 +268,9 @@ describe('a writer’s or view’s answer is checked, and says no more than a fi
         }),
       (r) =>
         result(r, {
+          // Led by the root, so only the repetition is wrong.
           targets: [
+            { taskId: r.taskId, attempt: 1, operationId: 'key-0', state: 'unexamined' },
             { taskId: 'a', attempt: 1, operationId: 'key-1', state: 'unexamined' },
             { taskId: 'a', attempt: 1, operationId: 'key-2', state: 'unexamined' }
           ]
