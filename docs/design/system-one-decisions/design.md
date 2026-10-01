@@ -19,8 +19,8 @@ The question was whether fgv should support **System-1 decision models**, and ho
 return typed values with probabilities instead of generated text. CLM-8B is the open implementation
 driving the question, and TypeSafe AI's hosted Jev is what it claims compatibility with.
 
-The short answer is **yes, in a narrower form than the brief expected, and not with the inner-loop
-promise behind the question.**
+The short answer is **yes, in a narrower form than the brief expected.** CLM runs where the GPU is,
+in the deployed environment, and development machines reach a System-1 server remotely (§7.1).
 
 1. **The user's "just wrap the library" assumption holds, but for a different library.** CLM has
    no JS client. The wire CLM implements, TypeSafe's `POST /v1/systemone`, does: the vendor publishes
@@ -35,11 +35,10 @@ promise behind the question.**
    `endpoint`s. An in-process implementation would change this (§5.3).
 3. **CLM-8B does not serve a laptop inner loop.** Its supported path is vLLM serving Qwen3-8B on an
    NVIDIA GPU. The GGUF conversion does **not** lower that floor: it contains the heads only, and
-   still needs the full 8B encoder in a separate Rust runtime driven from a CLI (§7). The user can
-   still have an inner loop, because the wire is shared. A developer can point the same client at
-   whatever wire-compatible server their machine runs: CLM on a Linux GPU box, openjev's MLX backend
-   on Apple silicon, or a small CPU model behind openjev. In each case it is a different model, with
-   different probabilities.
+   still needs the full 8B encoder in a separate Rust runtime driven from a CLI (§7). Under the
+   topology the user chose (decision 6), this does not matter: development machines call Jev or
+   openjev remotely, and CLM runs only where the GPU is. Development still answers with a different
+   model, and so has different probabilities (§7.1).
 4. **Upstream CLM silently drops the question from an over-long state** (§6.1, derived), and
    openjev reports the same independently. fgv will **refuse at a caller-declared, mandatory input
    bound and never truncate**.
@@ -154,7 +153,8 @@ wire rather than for CLM, where the backend is a construction-time `baseUrl` + `
 
 - *"Hosted in production and local in the inner loop, with consumer code unchanged."* A URL already
   delivers this, and it delivers it without an abstraction. Consumer code holds an `ISystemOneClient`
-  and never learns which server answers.
+  and never learns which server answers. The user's chosen topology is the reverse (local in
+  production, remote in development; §7.1). The argument is symmetric, so it holds unchanged.
 - *"There are three implementations (Jev, CLM, openjev)."* There are three **servers**. In fgv each
   would be the same HTTP client, so an interface would have one implementation. That is the premature
   abstraction `CODING_STANDARDS.md` warns against, and it would make a promise the design cannot keep:
@@ -232,9 +232,10 @@ Why not the alternatives:
 
 ### 6.2 GPU, vLLM, and the inner loop
 
-See §7. **Decision: the package does not depend on, launch, or assume any particular backend.** The
-inner-loop answer is "point it at whatever wire-compatible server your machine can run", and the
-README documents the options it can honestly name, along with their measured or reported floors.
+See §7 and §7.1. **Decision: the package does not depend on, launch, or assume any particular
+backend.** The development answer is "point it at a remote wire-compatible server", as the user
+decided. Production points it at the local CLM sidecar. The README documents the backends it can
+honestly name, along with their measured or reported floors.
 
 ### 6.3 A localhost sidecar and `safer-fetch`
 
@@ -288,7 +289,13 @@ supervision and model download are explicitly out of scope.
 
 ## 7. Inner-loop viability: the honest answer
 
-The user's motivation: Jev is hosted, so it cannot serve an inner loop. CLM is "locally hostable".
+*Status note, 2026-10-01: this section is the Phase A analysis of the brief's original premise, that
+CLM would run on the developer's own machine. The user has since chosen a different topology:
+production runs CLM locally, and development uses a remote server. §7.1 records that decision and
+supersedes this section's conclusions wherever they differ. The floor facts below still hold, and
+they are why the chosen topology is the right one.*
+
+The brief's premise: Jev is hosted, so it cannot serve an inner loop. CLM is "locally hostable".
 
 **For CLM-8B on a developer laptop, the answer is no.**
 
@@ -303,28 +310,29 @@ The user's motivation: Jev is hosted, so it cannot serve an inner loop. CLM is "
 - An unproven laptop path exists. `clm-serve --emb-url` accepts any OpenAI-style embeddings endpoint,
   and `llama-server --embeddings --pooling last` with a quantized Qwen3-8B GGUF could, in principle,
   back it on Apple silicon (E20). Every link in that path is unverified: the vLLM install obstacle,
-  quantization accuracy (E19), `truncate_prompt_tokens` handling, and numeric parity. This is OQ-3.
-  It needs a machine to test on, not reasoning.
+  quantization accuracy (E19), `truncate_prompt_tokens` handling, and numeric parity. OQ-3 dropped
+  this path, since nobody needs CLM on a laptop. Its Ollama analogue in deployment is OQ-12.
 
-**For the user's actual goal, an inner loop with production on hosted Jev, the answer is "yes, but
-not via CLM in particular, and with a caveat that matters."** Because the wire is shared, the design
-in §5 gives the inner loop *any* local wire-compatible server:
+**For development without a local GPU, the answer is "yes, but not via CLM on the developer's
+machine, and with a caveat that matters."** Because the wire is shared, the design in §5 lets
+development use *any* wire-compatible server, local or remote:
 
 | backend | runs on | floor | status |
 |---|---|---|---|
 | CLM via `clm-serve` + vLLM | Linux and NVIDIA | ~8–16 GB VRAM | verified requirement (E4, E19); FP8 figure reported (E21) |
 | openjev, DiffusionGemma, MLX | Apple silicon | ~16 GB to load, 23–36 GB in service | reported (E21) |
 | openjev `verdict-1.4` / `laya-1.0` | CPU | 1.2 / 2.5 GB (GPU figures); 512 / 1,024 tokens | reported (E21) |
-| hosted (Jev; Codiv) | — | — | not an inner loop |
+| remote: hosted Jev, Codiv, or a self-hosted openjev / `clm-serve` | elsewhere | none locally | **the chosen development path** (§7.1), so a WAN round trip is added to every call |
 
 **The caveat:** an inner loop on model X tests **plumbing**: request shape, failure handling, how the
-consumer reacts to a distribution. It does **not** tune **thresholds** for Jev. Probabilities are
-relative to the set (§3), and they are model-specific. A consumer that tunes a 0.8 cut-off against a
-151M CPU model and ships against Jev has tuned nothing. That limit holds whichever model sits behind
+consumer reacts to a distribution. It does **not** tune **thresholds** for production. Probabilities
+are relative to the set (§3), and they are model-specific. A consumer that tunes a 0.8 cut-off against
+Jev, or against a 151M CPU model, and then ships against CLM has tuned nothing. That limit holds whichever model sits behind
 the URL, and the README has to say it plainly.
 
-If the user's inner loop is a laptop *and* they need CLM's specific quality, **this design does not
-serve that use today.** OQ-3 says what would change that.
+Running CLM itself on a laptop is still not served. Under the chosen topology nothing requires it,
+and a remote `clm-serve` or an openjev `clm-v0.1` route gives development the same weights as
+production (§7.1, item 2).
 
 ### 7.1 The decided topology: local in production, remote in development
 
