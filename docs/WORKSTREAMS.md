@@ -128,7 +128,7 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
-### `agent-tasks-i1d` ✅ (shipped 2026-10-01 via [#PRNUM](https://github.com/ErikFortune/fgv/pull/PRNUM)) — slice I1d of four: stop tools; **closes I1**
+### `agent-tasks-i1d` ✅ (shipped 2026-10-01 via [#706](https://github.com/ErikFortune/fgv/pull/706)) — slice I1d of four: stop tools; **closes I1**
 
 **Status:** ✅ shipped into `integration/agent-tasks-v1` (not `release`; the cluster promotes as one).
 Branched at `d1be4d2fa` (the I1c landing). Artifacts in `.ai/tasks/active/agent-tasks-i1d/`; this

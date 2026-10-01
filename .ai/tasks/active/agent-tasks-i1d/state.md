@@ -8,7 +8,7 @@
 |---|---|
 | brief | `.ai/tasks/active/agent-tasks-i1d/brief.md` — complete |
 | branch | `claude/agent-tasks-i1d`, cut off `integration/agent-tasks-v1` at `d1be4d2fa` |
-| PR | none yet |
+| PR | [#706](https://github.com/ErikFortune/fgv/pull/706) |
 | base | `integration/agent-tasks-v1` — **not `release`** |
 
 **This slice closes I1.**
