@@ -184,7 +184,16 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
   at the 443rd beside 9,000 archived; at refusal 97–99% of it is reservation — the repository holds
   5–13 MB written.
   Resident cost is small (~12.7 MiB heap at 529 owed tasks), so admitting 1,000 costs memory little
-  and disk budget much. **Open for the decision**; nothing in `capacityProfile.ts` changed.
+  and disk budget much.
+
+  **Decided 2026-10-01 (user): keep the default profile as shipped. Closed.** ~500 concurrent tasks
+  is sufficient for the foreseeable future, so the measured ceiling of 520–533 live tasks is accepted
+  and the ~1.5 GiB of logical budget per repository that admitting 1,000 would cost is not bought.
+  `capacityProfile.ts` is untouched. The declared `non-archived-tasks: 1000` **stays as it is**, and
+  stays documented as unreachable under the default's own `logical-bytes`: it is accurate once read
+  with the concurrent-constraints note, and it is the direction that can be raised in place rather
+  than lowered. A host that genuinely needs 1,000 raises `logical-bytes`, `audience-links` and
+  `acknowledgement-ids` together; `agent-tasks-m1-stop` `result.md` has the figures to size it.
 
 - **[P3] `ts-agent-tasks` a released or settled stop keeps ~1 KB per target resident, and stops on one
   root are never compacted.** After release the stop book keeps one marked-command entry per paused
