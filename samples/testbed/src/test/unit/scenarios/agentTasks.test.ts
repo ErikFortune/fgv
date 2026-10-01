@@ -627,13 +627,19 @@ describe('the journey helpers', () => {
     recorder.check('NaN is not null', Number.NaN, null);
     recorder.check('a nested Infinity is not null', [1, { r: Number.POSITIVE_INFINITY }], [1, { r: null }]);
     recorder.check('the display marker is an ordinary string', '<not JSON>', '<not JSON>');
+    recorder.check('a nested function is not an absent property', { f: () => 1 }, {});
+    recorder.check('a function in an array is not null', [() => 1], [null]);
+    recorder.check('a nested symbol is not an absent property', { s: Symbol('x') }, {});
     expect(recorder.finish().checks.map((c) => [c.observed, c.passed])).toEqual([
       [null, true],
       ['<not JSON>', false],
       ['<not JSON>', false],
       ['<not JSON>', false],
       ['<not JSON>', false],
-      ['<not JSON>', true]
+      ['<not JSON>', true],
+      ['<not JSON>', false],
+      ['<not JSON>', false],
+      ['<not JSON>', false]
     ]);
   });
 });

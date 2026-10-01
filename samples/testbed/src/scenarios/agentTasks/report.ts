@@ -55,10 +55,17 @@ function sameValue(a: JsonValue, b: JsonValue): boolean {
 /** What a value with no JSON form is displayed as. Whether a check passed never reads it. */
 const notJson: string = '<not JSON>';
 
-/** Refuses a number with no JSON form, which `JSON.stringify` would otherwise write as `null`. */
-function finiteOnly(__key: string, value: unknown): unknown {
+/**
+ * Refuses, at any depth, a value `JSON.stringify` would otherwise rewrite without saying so: a
+ * non-finite number (written as `null`), a function or a symbol (dropped from an object, written as
+ * `null` in an array). An `undefined` property is still dropped, as documented below.
+ */
+function jsonOnly(__key: string, value: unknown): unknown {
   if (typeof value === 'number' && !Number.isFinite(value)) {
     throw new Error(`${value} has no JSON form`);
+  }
+  if (typeof value === 'function' || typeof value === 'symbol') {
+    throw new Error(`a ${typeof value} has no JSON form`);
   }
   return value;
 }
@@ -67,11 +74,11 @@ function finiteOnly(__key: string, value: unknown): unknown {
  * A value as JSON — what the report can hold and print. Library values (readonly arrays,
  * interface-typed records) are JSON at runtime. `undefined` becomes `null`, and a property whose
  * value is `undefined` is dropped, exactly as `JSON.stringify` does. A value with no JSON form — a
- * function, or a non-finite number at any depth — fails, rather than being rewritten into one.
+ * function, symbol or non-finite number at any depth — fails, rather than being rewritten into one.
  */
 function toJson(value: unknown): Result<JsonValue> {
   return captureResult(
-    () => JSON.parse(JSON.stringify(value ?? null, finiteOnly) as string) as unknown
+    () => JSON.parse(JSON.stringify(value ?? null, jsonOnly) as string) as unknown
   ).onSuccess((parsed) => (parsed === null ? succeed(null) : JsonConverters.jsonValue.convert(parsed)));
 }
 

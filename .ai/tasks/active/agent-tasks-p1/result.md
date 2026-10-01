@@ -152,21 +152,21 @@ placement, for the same reason). Each row mutates the **library** source in a co
 `node_modules` symlink), rebuilds it, and runs both the library's `journey/` suite and the testbed's
 `agentTasks` suite against it (`--testbed`, a copy whose `node_modules` links `@fgv/ts-agent-tasks`
 to the mutated copy). The workspace is never edited. Control (unmutated copies): `journey/` 6/6,
-scenario 30/30.
+scenario 31/31.
 
-Ten rows, **all red** on the committed source (`7387fc7b`'s library source; the copies were diffed
-against the workspace before the run). Scenario counts include the two "checks bite" tests and the CLI
+Ten rows, **all red** on the final source (re-run after Copilot round 2, with the library and the
+testbed copies diffed against the workspace before the run). Scenario counts include the two "checks bite" tests and the CLI
 smoke, which go red under any regression by design (each expects an exact set of failing checks, or
 all passing).
 
 | row | mutation | red: `journey/` | red: scenario | what failed |
 |---|---|---|---|---|
-| P1-1 | scope union: the merged stream advances only the first stream holding a key | 1 | 14 | the step-1 contract test; the scenario **halts** — step 2's subscription baseline refuses the duplicate (*"baseline: task plan appears twice"*), so every report test fails |
-| P1-2 | the pump resends an uncertain `none` command | 0 | 14 | the scenario **halts** at step 3 — the resent command settles `applied`, so the host's abandonment fails (*"command … is settled (applied); there is nothing to abandon"*) |
+| P1-1 | scope union: the merged stream advances only the first stream holding a key | 1 | 15 | the step-1 contract test; the scenario **halts** — step 2's subscription baseline refuses the duplicate (*"baseline: task plan appears twice"*), so every report test fails |
+| P1-2 | the pump resends an uncertain `none` command | 0 | 15 | the scenario **halts** at step 3 — the resent command settles `applied`, so the host's abandonment fails (*"command … is settled (applied); there is nothing to abandon"*) |
 | P1-3 | an abbreviated item receipts its update ids | 0 | 5 | step 4 — the omitted attention update is acknowledged |
 | P1-4 | a write from an older revision is accepted — **both** revision checks | 1 | 5 | the step-5 contract test; step 5's stale-write check |
-| P1-5 | a due query ignores its cutoff — the index bound **and** the re-check | 0 | 5 | step 6's due checks |
-| P1-6 | a latched parent takes a new child — the broker **and** storage refusals | 1 | 14 | the step-7 contract test; the scenario **halts** at step 7's reopen — open's own validation finds the admitted child (*"recovery required: 1 issue"*), a third layer the mutant did not remove |
+| P1-5 | a due query ignores its cutoff — the index bound **and** the re-check | 0 | 6 | step 6's due checks |
+| P1-6 | a latched parent takes a new child — the broker **and** storage refusals | 1 | 15 | the step-7 contract test; the scenario **halts** at step 7's reopen — open's own validation finds the admitted child (*"recovery required: 1 issue"*), a third layer the mutant did not remove |
 | P1-7 | a source with no stop opt-in is confirmed instead of blocking | 1 | 5 | the step-7 contract test; step 7's blocked-pass check |
 | P1-8 | recovered finished work is refused instead of recorded | 1 | 5 | the step-8 contract test; step 8's outcomes and owed checks |
 | P1-9 | an unreachable source is recorded as `stale`, not `unavailable` | 0 | 5 | step 8's observation-health check |
@@ -223,6 +223,12 @@ request then did). Seven findings, all verified and fixed:
 | medium — an unknown matrix row selector ran zero rows and exited clean | unknown selectors are refused, exit 1 |
 | low — `COPILOT_RESULTS` placeholder unresolved | this section |
 | low ×2 — `optionalFields` invisible to the type checker | `.optional()` on the field converters |
+
+**Round 2:** two findings, both verified and fixed. Medium — `JSON.stringify` also drops a nested
+function or symbol (and writes one in an array as `null`), so `{ f: () => 1 }` matched `{}`; the
+replacer now refuses functions and symbols at any depth, with object and array cases tested. Low — the
+matrix control count was stale (30 → 31 scenario tests after round 1); the matrix was re-run on the
+final source and the table above records that run.
 
 The two highs are the same class as the defects layer 1's coverage pass found in `report.ts` — the
 recorder decides what "passed" means, and every check in the journey rests on it.
