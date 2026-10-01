@@ -9,7 +9,7 @@
 |---|---|
 | brief | `brief.md` — complete |
 | branch | `claude/agent-tasks-p1`, cut off `integration/agent-tasks-v1` at `8e9916b88` |
-| PR | see `result.md` § Gates (number filled in after creation) |
+| PR | [#709](https://github.com/ErikFortune/fgv/pull/709) |
 | base | `integration/agent-tasks-v1` — **not `release`** |
 | result | `result.md` |
 | matrix | `p1Matrix.js` (here, not `perf/`, which M1 owns) |

@@ -128,7 +128,7 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
-### `agent-tasks-p1` ✅ (shipped 2026-10-01 via [#PRNUM](https://github.com/ErikFortune/fgv/pull/PRNUM)) — slice P1: the credential-free public-API proving ground
+### `agent-tasks-p1` ✅ (shipped 2026-10-01 via [#709](https://github.com/ErikFortune/fgv/pull/709)) — slice P1: the credential-free public-API proving ground
 
 **Status:** ✅ shipped into `integration/agent-tasks-v1` (not `release`; the cluster promotes as one).
 Branched at `8e9916b88` (the I2 landing). Ran beside `agent-tasks-m1-stop`, which owns `perf/`.
