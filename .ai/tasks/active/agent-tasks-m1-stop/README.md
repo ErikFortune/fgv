@@ -14,8 +14,11 @@ frozen predictions:
 **Six of eighteen predictions missed.** Each was diagnosed, harness first, and none was
 re-thresholded.
 
-Under the default profile, `logical-bytes` refuses first in every mix that keeps tasks live, and
-97–99% of it is reservation at refusal. `retained-tasks` binds first only under archive churn.
+Under the default profile, `logical-bytes` refuses first in every mix that keeps tasks live (result.md's
+claim). The refusing ordinals are the 533rd (plain), 530th (owed), 520th (fanout), 364th (unresolved)
+and 443rd live (inventory). For plain, owed, fanout and unresolved, 523.7–535.1 MB of the logical
+budget is reserved and 0.8–12.9 MB written at refusal; for the inventory it is 442.6 MB reserved and
+93.7 MB written. `retained-tasks` binds first only under archive churn.
 `acknowledgement-ids` binds first only once history accumulates.
 
 A stop's breadth is capped at 1,000 targets by `defaultMaxStopTargets`, which is not a capacity
@@ -68,8 +71,8 @@ All of these were routed to `docs/TECH_DEBT.md` in #708, except the last:
 - **P3 updated:** "the default's 1,000 is unreachable". result.md leaves this open for the
   orchestrator and the user. *The current `docs/TECH_DEBT.md` entry records it as "Decided
   2026-10-01 (user): keep the default profile as shipped. Closed."* That text landed with P1's
-  #709, not this stream's PR. The plan's M1 outcome paragraph still says "the profile decision
-  stays open there".
+  #709, not this stream's PR. As merged in #708, the plan's M1 outcome paragraph said "the profile
+  decision stays open there".
 - **T9 hand-off (3) resolved:** the stop-state cohort has run.
 - **New P2s:**
   - the receipt preparation working set;

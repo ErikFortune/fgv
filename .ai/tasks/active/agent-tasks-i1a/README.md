@@ -21,7 +21,8 @@ mutation dependency."*
 
 ## Files changed
 
-All in `@fgv/ts-agent-tasks` (squash `96ebc0d1`, 33 files):
+Squash `96ebc0d1` touched 33 files: 24 under `libraries/ts-agent-tasks` and 9 outside it (docs, change
+file, `LIBRARY_CAPABILITIES.md` and this stream's artifacts). Package files:
 
 - **`src/packlets/tools/` (new):** `taskTools.ts`, `presentation.ts`, `viewAnswers.ts` (added in
   Copilot round 4), `schemas.ts`, `index.ts`. Also `src/packlets/types/tools.ts` (new).
@@ -75,7 +76,7 @@ reflex). `result.md` records lessons that the I1b brief carried forward:
   bound and left the disclosure.
 - **A revert row can be wrong in either direction.** I1a-18's mutant was a no-op, because
   `strictObject` never calls an absent optional field's converter. I1a-21 was red for the wrong
-  reason: dropping `.optional()` made the cursor required.
+  reason: dropping `.optional()` made the cursor required. I1a-31's mutant did not build.
 - **A capture test that finds nothing must be investigated before it is believed.** The Gemini
   tools were under `function_declarations`.
 

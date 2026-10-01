@@ -73,7 +73,7 @@ Routed to `docs/TECH_DEBT.md` in this PR:
   "Hand-offs (routed to `docs/TECH_DEBT.md` in this PR)", but #699's TECH_DEBT diff does not add them;
   the entry that records them was added later by `agent-tasks-i1b` (#703).
 - T7 hand-off (2) is resolved by change 4, but the TECH_DEBT *delivery hand-offs T7 left for T8* entry
-  still lists it as open.
+  listed it as open until the cluster close struck it through (2026-10-01).
 
 ## Lessons codified during the run
 

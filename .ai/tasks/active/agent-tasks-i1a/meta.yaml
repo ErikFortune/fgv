@@ -43,11 +43,12 @@ summary:
     `archived`, `state`, page length). Round 4 fixed the cause rather than the fields: a strict
     converter for the whole view answer, `viewAnswers.ts`, which the brief never mentioned. The
     renderer did not fit a bound view's binding-less unresolved references, so it was extended
-    outside the `tools` packlet, still within the package. The loop ran five rounds, against the
-    brief's expectation of a shorter loop than T9's. On Gemini, schema closure is enforced by
-    validation only, because that dialect drops `additionalProperties`. Two revert rows were
-    wrong on their first run and were corrected: I1a-21 was red for the wrong reason, and
-    I1a-18's mutant was a no-op.
+    outside the `tools` packlet, still within the package. The loop ran five rounds (shorter than
+    T9's ten, as the brief expected), but rounds 1-4 each found a real defect on a surface the
+    brief expected to run short; round 5 had no findings. On Gemini, schema closure is enforced
+    by validation only, because that dialect drops `additionalProperties`. Three revert rows were
+    wrong on a first run and were corrected: I1a-18's mutant was a no-op (preliminary run),
+    I1a-21 was red for the wrong reason, and I1a-31 did not build.
   sourceLine: '**Shipped:** A model can be handed two read-only tools over the agent tasks one principal may see — task_query and task_inspect, ai-assist client tools over a bound view — whose output is bounded by default, never by opt-in.'
 keywords:
   - model tools

@@ -21,7 +21,8 @@ Each has the test that a "success with skipped child" implementation would fail.
 
 ## Files changed
 
-All in `@fgv/ts-agent-tasks` (squash `9b1af182`, 65 files):
+Squash `9b1af182` touched 65 files: 56 under `libraries/ts-agent-tasks` and 9 outside it (docs, change
+file, `LIBRARY_CAPABILITIES.md` and this stream's artifacts). Package files:
 
 - `types/stop.ts` (new): the § 10 vocabulary. `types/broker.ts`, `types/sourceAdapter.ts`
   (`capabilities?`), `types/storage.ts`, `types/authority.ts` (`stop-target`).
@@ -77,7 +78,8 @@ All in `@fgv/ts-agent-tasks` (squash `9b1af182`, 65 files):
 
 ## Lessons codified during the run
 
-No `.ai/instructions/` file was changed by this PR. Three lessons from its revert matrix were
+No coding-standards or guideline file was changed by this PR (the squash touched `.ai/instructions/`
+only for the `LIBRARY_CAPABILITIES.md` reflex). Three lessons from its revert matrix were
 carried into the I1a brief's *Traps* list:
 
 - A single-mutation matrix cannot see a defence-in-depth pair, so `paired(...)` was added.

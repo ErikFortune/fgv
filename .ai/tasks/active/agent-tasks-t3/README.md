@@ -54,6 +54,10 @@ From `result.md` § *Decisions that deviate from, or sharpen, the design text* a
 
 ## Followups
 
+> **Routed at the cluster close (2026-10-01).** Every item below described as recorded nowhere durable
+> (or not in `TECH_DEBT.md`) is now in `docs/TECH_DEBT.md` under *[P3] `ts-agent-tasks` — deferrals the
+> agent-tasks slices recorded only in their own `result.md`*.
+
 | item (from `result.md` § *What a later slice must decide*) | where it went |
 |---|---|
 | T4: resident summaries/indexes; no child-by-name lookup on `IFileTreeDirectoryItem` | Indexes → `agent-tasks-t4`. The FileTree lookup gap: **recorded nowhere durable** (not in `docs/TECH_DEBT.md`) |

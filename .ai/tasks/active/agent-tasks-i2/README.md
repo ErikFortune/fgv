@@ -47,10 +47,11 @@ entry.
 
 - **Receipt binding: candidate 1's binding, held in candidate 3's handoff.** Each candidate was
   checked against source:
-  - **Text hash in the receipt: not buildable within the slice.** `IPromptComposition.sections`
-    does give a canonical slot text. But `ITaskInclusionReceipt` is T2's canonical shape, and T7's
-    `acknowledge` compares it in full against the stored manifest without ever seeing the body.
-    Carrying a hash would change the receipt converter, the manifest and storage.
+  - **Text hash in the receipt: the binding exists, its carrier was out of the slice's surface.**
+    `IPromptComposition.sections` does give a canonical slot text. But `ITaskInclusionReceipt` is
+    T2's canonical shape, and T7's `acknowledge` compares it in full against the stored manifest
+    without ever seeing the body. Carrying a hash would mean changing the receipt converter, the
+    manifest and storage, and `storage/` is out of this slice's surface.
   - **Composition identity: not buildable.** `IPromptComposition` has no id, hash or revision.
   - **What shipped:** the handoff holds the exact checked body and compares it by full string
     equality. A hash would only earn its place if the binding were persisted or transported, and it
@@ -74,6 +75,10 @@ entry.
 
 ## Followups
 
+> **Routed at the cluster close (2026-10-01).** Every item below described as recorded nowhere durable
+> (or not in `TECH_DEBT.md`) is now in `docs/TECH_DEBT.md` under *[P3] `ts-agent-tasks` — deferrals the
+> agent-tasks slices recorded only in their own `result.md`*.
+
 - **Fold rows `I2-1…I2-36` into `perf/mutationMatrix.js`.** Recorded in `docs/TECH_DEBT.md` (P3).
   Its trigger, "the M1 stop-state cohort lands, or cluster close", has now fired.
 - **`JsonConverters.jsonValue` admits `Infinity`.** Recorded in `docs/TECH_DEBT.md` (P3).
@@ -86,7 +91,7 @@ entry.
 
 ## Lessons codified during the run
 
-None were written into `.ai/instructions/` by this stream. Two observations are worth carrying:
+None were written into `.ai/instructions/` by this stream. Three observations are worth carrying:
 
 - **A real library caught what fabricated metadata would have hidden.** The first version of
   `taskPromptTemplate` emitted `{{name}}`, which `ts-prompt-assist` refuses at load.

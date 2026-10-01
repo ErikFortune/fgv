@@ -85,12 +85,13 @@ relatedStreams:
       at the I2 landing (`8e9916b88`).
   - id: agent-tasks-i1c
     relationship: >
-      Step 3 drives, end to end through a simulated source, I1c's rule that a model never resends
-      a command and only the host's pump resends a `source-key` command.
+      Step 3 drives I1c's generated command tools end to end through a simulated source, and the
+      host pump's resend-under-the-same-key and hold behaviour for uncertain commands.
   - id: agent-tasks-i1d
     relationship: >
-      Step 7 drives I1d's rule that a model may request and read a stop but never release it, and
-      that release and resume are separate operations.
+      Step 7 does not use I1d's stop tools: it drives T9's stop through the host writer
+      (`requestStop`, `reconcileStop`, `releaseStop`). I1d is related as the model-facing surface
+      over the same operations.
   - id: agent-tasks-t5
     relationship: Step 5 (reassignment then reopen) proves T5's bound-authority reassignment from outside the package.
   - id: agent-tasks-t6

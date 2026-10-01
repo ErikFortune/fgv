@@ -21,7 +21,8 @@ sees `{ taskId, revision, disposition }`. Nothing in `broker/` or `storage/` cha
 
 ## Files changed
 
-All in `@fgv/ts-agent-tasks` (squash `6344c1ac`, 27 files):
+Squash `6344c1ac` touched 27 files: 19 under `libraries/ts-agent-tasks` and 8 outside it (docs, change
+file, `LIBRARY_CAPABILITIES.md` and this stream's artifacts). Package files:
 
 - **`tools/` (new files):** `mutationTools.ts`, `writerAnswers.ts` and `toolSupport.ts`. The last
   holds I1a's failure path, moved so that both tool families share it.

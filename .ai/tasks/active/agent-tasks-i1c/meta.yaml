@@ -41,9 +41,10 @@ summary:
     pieces of the first implementation: the tool had run the registered encoder as well as the
     writer (round 1, high), and read the receipt identity from the request after handing it to the
     writer (round 2, high); the matrix row that had "protected" canonical encoding (old I1c-21)
-    was protecting the bug and was re-pointed at the defect, and I1c-20 was retired. It also surfaced that fgv.tracked@1 registers no command
-    schemas, so tracked transitions could not be offered as command tools; that was routed and
-    later closed by agent-tasks-tracked-commands.
+    was protecting the bug and was re-pointed at the defect, and I1c-20 was retired. The stream also
+    found that fgv.tracked@1 registers no command schemas, so tracked transitions could not be
+    offered as command tools; that was routed to TECH_DEBT and later closed by
+    agent-tasks-tracked-commands.
   sourceLine: '**Shipped:** A host can offer a model one typed tool per registered task command it names — the command''s registered parameter schema on the wire, sent only to tasks of its own kind, with every refusal a fixed line and every unknown outcome a firm instruction not to send the command again.'
 keywords:
   - generated command tools

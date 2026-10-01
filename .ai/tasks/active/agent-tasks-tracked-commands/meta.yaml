@@ -23,8 +23,9 @@ summary:
     converting through trackedCommand, which stays authoritative. Agreement fixtures pin both
     validators' verdicts on 71 values: 23 both accept, 28 both refuse, 19 only the schema accepts,
     1 only the converter accepts. Handles register idempotency 'none' and conditional false, inert on
-    native paths. End to end through a real broker and a captured Anthropic model turn, each command
-    moves the task and task_inspect reports it; a stale revision and an unavailable transition read
+    native paths. End to end through a real broker, the lifecycle commands move the task and task_inspect
+    reports the new status, the set-* commands change the committed fields, and one captured
+    Anthropic model turn calls task_command_start; a stale revision and an unavailable transition read
     as I1c's fixed conflict line naming no status. Hosts are told that references (six of eleven
     commands) are accepted on syntax alone and that succeed/fail/cancel assert a final state.
     Command-handle and descriptor TSDoc now scope "the broker validates/encodes" to externally
@@ -44,7 +45,7 @@ summary:
     TSDoc false (the broker never calls a native handle's validate), so doc-only edits landed in
     types/registry.ts and types/commands.ts, which the brief did not list. Gemini acceptance of an
     empty nested object and the wrong "do not send it again" line for converter-only refusals were
-    left open and routed, the latter to I1d, which did not take it.
+    left open and routed, the latter to I1d, whose own result.md does not mention it.
   sourceLine: '**Shipped:** A model can now move a tracked task''s lifecycle — `fgv.tracked@1` registers all eleven of its transitions with parameter schemas, so a host offers any of them as typed command tools, one by one, while the broker''s own converter stays the authority on what it accepts.'
 keywords:
   - tracked task lifecycle commands

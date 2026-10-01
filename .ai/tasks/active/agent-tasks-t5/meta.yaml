@@ -29,8 +29,9 @@ summary:
     projector fails the call). The fgv.tracked@1 transition table (7 statuses x 11 commands), list
     completion from the complete authoritative child set via a per-parent succeeded-child count and
     candidate set rebuilt by open/rebuildIndexes, ITaskRepository.childStates and
-    listCompletionCandidates, and buildBrokerConverters. Eight protections reverted on the final
-    source each turned tests red. No T1 member revised, no persisted shape changed, and no new
+    listCompletionCandidates, and buildBrokerConverters. Eight protections reverted in result.md's
+    pre-Copilot revert check each turned tests red, and every later Copilot round records its own
+    revert checks. No T1 member revised, no persisted shape changed, and no new
     capacity reservation: per-registration total stays 448 KiB and the default ceiling 146.
   diverged: >
     The design's sketches were departed from in recorded ways: ITaskAccessRequest.task is an

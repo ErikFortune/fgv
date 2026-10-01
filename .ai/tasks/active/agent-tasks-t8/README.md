@@ -60,12 +60,17 @@ All code is in `@fgv/ts-agent-tasks` (61 files under `libraries/ts-agent-tasks`)
 
 ## Followups
 
+> **Routed at the cluster close (2026-10-01).** Every item below described as recorded nowhere durable
+> (or not in `TECH_DEBT.md`) is now in `docs/TECH_DEBT.md` under *[P3] `ts-agent-tasks` — deferrals the
+> agent-tasks slices recorded only in their own `result.md`*.
+
 - A3 saturation journeys, profile decision, M1 cohorts and T7's subscription-record inconsistency →
   `agent-tasks-t8b` (delivered; the TECH_DEBT "second body of work" entry is retired).
 - Stop latch on list completion and relationship operations → T9 (resolved by `agent-tasks-t9`
   per `docs/TECH_DEBT.md`).
 - Coalescing still treats an expired unacknowledged manifest as a pin (`state.md` § *Independent …
-  antagonist*). The general "pin evidence ignores `expiresAt`" behaviour is now a P3 in
+  antagonist*; retention's `pinned` set is any unacknowledged manifest). `result.md`'s phrase "no
+  unexpired unacknowledged receipt" describes only the disposal path and overstates for coalescing. The general "pin evidence ignores `expiresAt`" behaviour is now a P3 in
   `docs/TECH_DEBT.md` (added by `agent-tasks-t8b`).
 - Layer-1 P3.6 — a shared decoder for `_taskOf`'s hand-decoded update id — was called "a follow-up"
   in `state.md` and is **recorded nowhere durable**.

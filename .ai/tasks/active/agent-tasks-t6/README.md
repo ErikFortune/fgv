@@ -100,21 +100,21 @@ All four hand-offs in result.md § *Hand-offs* were routed in this PR to `docs/T
 
 | owner | hand-off | resolved by |
 |---|---|---|
-| T8 | held commands never settle on their own | `abandonCommand` |
+| T8 | held commands never settle on their own | `abandonCommand` (held, never-sent or feed-awaiting commands); per `docs/TECH_DEBT.md`, a `possibly-sent` command the pump holds still settles only through a later `lookupCommand` |
 | T8 | `source-replay` tasks registered after the feed passed | an `unregistered-binding` stop that leaves the cursor unmoved |
 | T7 | audience charges | spent from T6's claims |
 | T9 | `capabilities()` and the source-side stop | added |
 
 The T4 hand-off of a "per-source enumeration of reconciliation work" is not addressed by name in
-result.md, and is recorded nowhere else.
+result.md; the cluster close (2026-10-01) routed it to `docs/TECH_DEBT.md` (P3, *deferrals the agent-tasks slices recorded only in their own `result.md`*).
 
 ## Lessons codified during the run
 
 No rule was added to `.ai/instructions/` in this PR. T6 applied T5's newly codified
 authorization-boundary guidance. Two observations from result.md:
 
-- **Enumerating the windows at layer 1 found W4.** The self-audit ran after layer 1 had passed
-  with no P1, and W4 (the unfenced resend) was a real defect.
+- **A post-layer-1 self-audit of the windows table found W4.** Layer 1 had passed with no P1; W4
+  (the unfenced resend) was a real defect.
 - **The long, substantive loop was expected and is not evidence that layer 1 was skipped.** Rounds
   1–5 each found real defects, which is the profile that guidance predicts for an ordering surface.
 

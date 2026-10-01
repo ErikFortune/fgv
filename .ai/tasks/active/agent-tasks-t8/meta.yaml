@@ -37,14 +37,17 @@ summary:
     saturation-journey matrix, the profile decision and the M1 cohort run were moved to
     agent-tasks-t8b and are not claimed here. Found on the base and removed: commitRules let any
     maintenance commit drop an owed required update with no evidence (the "drop it and free the slot"
-    path the brief warned about). The brief's investigation of candidate (a) concluded it is not
-    available for a forward reservation, and its fourth candidate (lowering maxUpdateBytes) became a
-    new finding: no update can exceed 37,417 B, so 64 KiB is unreachable and the reservation can use
-    the derived schema maximum (d). The recommendation was (d) plus (c) lowering the advertised
+    path the brief warned about). T8's own investigation concluded candidate (a) is not
+    available for a forward reservation, and evaluating the brief's unnamed fourth candidate
+    (lowering maxUpdateBytes) produced a new finding: no update can exceed 37,417 B, so 64 KiB is
+    unreachable and the reservation can use the derived schema maximum (d). The recommendation was (d) plus (c) lowering the advertised
     limit; the design authority instead took (d) plus (b) raising resident-payload-bytes, implemented
     in agent-tasks-t8b. Source-replay chose enforce over detect. T7/T3 tests that pinned the replaced
     behaviour were re-decided per test (one inverted, several changed). Index repair, named in the
-    brief's mission, is not addressed by name in result.md.
+    brief's mission, is not addressed by name in result.md. Coalescing is pinned by any
+    unacknowledged receipt manifest, expired or not (state.md); result.md's "no unexpired
+    unacknowledged receipt" wording overstates, and only disposal treats an expired manifest as
+    pinning nothing.
   sourceLine: '**Shipped:** Retention — an owed task update now leaves its record only when every audience member''s durable checkpoint holds its exact id as acknowledged or disposed, so archive works under subscriptions and writes a payload-free tombstone; hosts can dispose obligations, close subscriptions, abandon commands whose outcome is unknown and prune discharged payloads, each authorized and recorded, and every incomplete operation is reportable.'
 keywords:
   - retention rule

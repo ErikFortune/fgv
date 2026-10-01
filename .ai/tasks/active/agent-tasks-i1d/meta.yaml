@@ -27,7 +27,9 @@ summary:
     dimension and never told. Only unsupported is a known outcome of task_stop; every other failure
     carries the would-be intent id. fixedTaskToolNames gained task_stop and task_stop_inspect;
     operation-id minting moved to a shared mintOperationId. Eight binding members reached, asserted.
-    Revert matrix: 27 rows, 56 red tests, on final source. Copilot loop stopped at 3 rounds.
+    Revert matrix: 27 rows (I1d-1 to I1d-21, the three I1c rows I1c-14/18/19 it re-pointed, and
+    I1b-19/20/21), 0 UNVERIFIED, run on final source; result.md's headline gives 56 red tests but
+    its per-row verdicts sum to 59, so no total is asserted here. Copilot loop stopped at 3 rounds.
   diverged: >
     The brief framed the stop-active question as a choice and leaned on inspection as the way a model
     would find out about a stop; the stream kept conflict everywhere and found that inspection cannot

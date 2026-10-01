@@ -60,7 +60,7 @@ All four hand-offs went to `docs/TECH_DEBT.md` (*delivery hand-offs T7 left for 
    `agent-tasks-t8`.
 2. `maxConsumerRecordBytes / 512 B` (16,384) below `maxAcknowledgementIdsPerSubscription` (50,000)
    — resolved by `agent-tasks-t8b` (consumer record bound and `record-bytes` raised to 32 MiB);
-   the TECH_DEBT entry still lists item (2) as open, which is stale.
+   the TECH_DEBT entry listed item (2) as open until the cluster close struck it through (2026-10-01).
 3. Closure / disposition / `coalesceProgress` — resolved by `agent-tasks-t8`.
 4. Baseline payloads holding resident bytes until acknowledged — resolved by `agent-tasks-t8`.
 

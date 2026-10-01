@@ -35,11 +35,13 @@ summary:
       - The stop book keeps ~0.9–1.0 KB per target resident after release, until the targets are
         archived.
 
-    Production-profile cohort (default profile): the earliest limiting dimension is `logical-bytes`
-    in every mix that keeps tasks live, with reservations 97–99% of it at refusal. The refusals:
-      - plain: 533rd
-      - owed: 530th
-      - fanout: 520th
+    Production-profile cohort (default profile): result.md reports the earliest limiting dimension
+    as `logical-bytes` in every mix that keeps tasks live. At refusal, written / reserved logical
+    bytes are 5.1 / 531.6 MB (plain), 12.8 / 523.7 (owed), 12.9 / 523.8 (fanout) and 0.8 / 535.1
+    (unresolved), but 93.7 / 442.6 for the inventory. The ordinal refused (not the count admitted):
+      - plain: 533rd (532 admitted)
+      - owed: 530th (529 admitted)
+      - fanout: 520th (519 admitted)
       - unresolved: 364th
       - inventory: 443rd live
       - archive churn: item 10,000, on `retained-tasks`
@@ -60,8 +62,7 @@ summary:
     1,000. `record-bytes` was found to bound stop repetition, not breadth; under the default
     profile, `operations` binds repetition first.
 
-    Six predictions missed, and three of them changed what a host must provision rather than the
-    design:
+    Six predictions missed. Three were routed as new P2s about what a host must provision:
       - the receipt preparation peak
       - the consumer-record rewrite peak
       - open near the 8 MiB task-record ceiling, where the cold-history bound does not hold

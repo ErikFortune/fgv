@@ -32,17 +32,19 @@ summary:
     `{ systemBreakpoints: [391] }`. Revert matrix: 36 rows, all red, 172 red tests, on `5cb380e0`.
   diverged: >
     None of the brief's three receipt-binding candidates shipped as written. Candidate 1's text
-    binding was buildable, but its carrier was not: a hash in the receipt would change T2's receipt
-    converter, T7's manifest and storage, which are outside the slice. Candidate 2 was unbuildable
+    binding was buildable, but its carrier was out of the slice's surface: a hash in the receipt
+    would mean changing the receipt converter, the manifest and storage, and storage/ is outside
+    the slice. Candidate 2 was unbuildable
     because `IPromptComposition` has no identity. What shipped is candidate 1's binding, as full
     string equality, held in candidate 3's handoff rather than in the receipt. The framing decision
     went further than "frame it": details became a string, which breaks hosts reading them as
     objects, and unframeable details now fail the call rather than being omitted. Two
     concurrency/validation fixes changed the handoff's shape after review. Copilot round 1's high
-    led to serializing every call on a handoff and making refusal terminal before the abandonment
-    is awaited. Round 2 made `met` require the request's own minimum. Two things the brief never
-    mentioned were found and routed: `JsonConverters.jsonValue` admits `Infinity`, and the revert
-    rows live outside `perf/mutationMatrix.js`. Finally, the brief's advice to trigger Copilot with
+    led to serializing every call on a handoff, and a round 1 medium to making refusal terminal
+    before the abandonment is awaited. Round 2 made `met` require the request's own minimum. Two things were routed to TECH_DEBT:
+    `JsonConverters.jsonValue` admits `Infinity` (found during the slice), and the revert rows live
+    in the stream directory rather than `perf/mutationMatrix.js`, because the brief left `perf/`
+    to the parallel M1 stream. Finally, the brief's advice to trigger Copilot with
     a comment failed: both comments never registered, and the API request worked.
   sourceLine: '**Shipped:** Agent task context can go into a cacheable prompt as its one trailing per-request slot — composition checked, the body sent required to be the body analyzed — and a delivery''s receipt can be acknowledged only against the exact text that was sent.'
 keywords:

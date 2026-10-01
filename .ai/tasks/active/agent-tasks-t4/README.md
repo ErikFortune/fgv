@@ -59,11 +59,16 @@ All in `libraries/ts-agent-tasks` (`@fgv/ts-agent-tasks`):
   - writer preconditions answered from the record cache
   - an unbounded `lookupSource` binding
   - the conformance runner leaking ownership
-  - two record reads outside the gate or the byte bound
+  - three record reads outside a bound: the consumer/source pass and a resumed registration outside the
+    materialization gate, and a landed-record read without the record-byte bound
 
   Round 5's only finding did not reproduce, so the loop stopped there on diminishing returns.
 
 ## Followups
+
+> **Routed at the cluster close (2026-10-01).** Every item below described as recorded nowhere durable
+> (or not in `TECH_DEBT.md`) is now in `docs/TECH_DEBT.md` under *[P3] `ts-agent-tasks` — deferrals the
+> agent-tasks slices recorded only in their own `result.md`*.
 
 Where each item from result.md § *What a later slice must decide* went:
 

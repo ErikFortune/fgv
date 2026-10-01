@@ -35,7 +35,8 @@ summary:
     no-dereference decision was built against, and a 200 KiB executor payload never appears in any
     record. Registration baseline unchanged at 448 KiB (ceiling 146); each in-flight external
     command reserves a further 64 KiB (128 at one per task). 1,373 tests, 100%, zero c8 ignore;
-    38 protections reverted on the final source, all red.
+    result.md states 38 protections reverted on the final source, all red — but the protections it
+    names are 36 (18 implementation-era, listed, plus M21–M38), so the count does not reproduce.
   diverged: >
     The stale spelling was not in the plan's § 5, as the brief said, but in development-design.md
     § 5 (plus a stray copy in multi-agent-chat-adoption.md). Both were corrected there; the plan's

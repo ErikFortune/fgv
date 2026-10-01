@@ -48,6 +48,10 @@ Recorded in `result.md` § *Decisions that revisit the design sketch*:
 
 ## Followups
 
+> **Routed at the cluster close (2026-10-01).** Every item below described as recorded nowhere durable
+> (or not in `TECH_DEBT.md`) is now in `docs/TECH_DEBT.md` under *[P3] `ts-agent-tasks` — deferrals the
+> agent-tasks slices recorded only in their own `result.md`*.
+
 | item (from `result.md` § *Things a later slice must decide*) | where it went |
 |---|---|
 | T7: baseline obligations vs one-update-per-category | T7 persists a subscription baseline as its own structure (`agent-tasks-t7/result.md`), which sidesteps the collision; T7's result does not cite this item explicitly |

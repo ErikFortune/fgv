@@ -52,6 +52,10 @@ coverage metrics, no coverage directives.
 
 ## Followups
 
+> **Routed at the cluster close (2026-10-01).** Every item below described as recorded nowhere durable
+> (or not in `TECH_DEBT.md`) is now in `docs/TECH_DEBT.md` under *[P3] `ts-agent-tasks` — deferrals the
+> agent-tasks slices recorded only in their own `result.md`*.
+
 | item (from `result.md` § *Things a later slice must decide*) | where it went |
 |---|---|
 | Source-history spelling | Confirmed by T6 — `docs/design/agent-tasks/development-design.md` § *Source-history spelling (confirmed by T6, 2026-09-24)* |

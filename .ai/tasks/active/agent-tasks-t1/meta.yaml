@@ -26,8 +26,9 @@ summary:
     maximumSettlementCharges. converters: TaskConverters.create({ bounds }), TaskKindRegistry and
     createTaskCommandHandle, the two built-in kind descriptors, TaskEnvironment and the bounded
     primitives. 409 tests at 100% on all four metrics, no coverage directives. result.md's
-    declared-vs-exercised table records "15 closed sets, 101 members, every one shape-exercised
-    and roughly half of them choice-unexercised".
+    declared-vs-exercised table says "15 closed sets, 101 members, every one shape-exercised
+    and roughly half of them choice-unexercised" — though the table beneath that line has 18 rows
+    whose member counts sum to 100 (counted at the cluster close; T1 never reconciled the two).
   diverged: >
     The review loop moved T1 from schematizing §8.6 to enforcing parts of it: the two
     closeout/settlement charge functions became Result-valued (an API change, failing on inexact
