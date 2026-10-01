@@ -961,7 +961,8 @@ anything. **No claim about provider cache hits follows from any of this.**
   that `prepare` issued can never be acknowledged by any path. Its obligations stay owed.
 - **`acknowledge(sentSystem)` acknowledges only the exact checked text.** Anything else — a prefix
   a host added, an edited or dropped task slot — abandons the manifest and fails `invalid-receipt`;
-  the receipt is dead from then on. A match acknowledges through the delivery as usual: exact IDs,
+  the receipt is dead from then on — refusal is terminal in the handoff, set before the abandonment is
+  attempted, so it holds even if abandoning fails. Calls on one handoff run one at a time. A match acknowledges through the delivery as usual: exact IDs,
   idempotent replay, an update that arrived during the model call left owed.
 - **The host's protocol:** send `prompt.system` with `prompt.cacheRequest`; after your own
   successful-processing boundary, `acknowledge(<the system text you sent>)`; on abort, `abandon()`.

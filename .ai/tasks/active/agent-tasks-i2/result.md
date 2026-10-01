@@ -152,7 +152,7 @@ and `t2`, then `t1` at revision 4 with completed 7, everything else equal.
 |---|---|
 | `prepareTaskPrompt`: `prepare` issues a manifest → `await` resolve and check → `abandon` on failure | The receipt is never returned during the window, so nothing can acknowledge it. If the manifest expires or is abandoned meanwhile, `abandon` fails and the failure says so ("its receipt expires unacknowledged"); still nothing acknowledgeable was handed out. |
 | `handoff.acknowledge`: compare `sentSystem` → `delivery.acknowledge` | No `await` between them: `receiptFor` is synchronous. Everything after is T7's own fenced path (manifest match, policy epoch, per-task record revisions, inside the writer). |
-| `acknowledged` flag: set after the `await` of a successful acknowledgement | Two calls in flight — one mismatched while a correct one is pending — can abandon a manifest the other is acknowledging. T7's writer serializes them: either the acknowledgement commits first (the later abandon removes the manifest; acknowledged ids stay in the exact history, only replay idempotence is lost) or the abandon does (the acknowledgement is refused). Neither discharges anything not sent. Concurrent acknowledgement of one handoff is host misuse; documented here rather than locked. |
+| handoff state across calls (`refused`, `acknowledged`) | **Copilot round 1 found this window open** — the flag was set after the `await`, so an exact acknowledgement in flight and a mismatched send could interleave and the mismatch abandon the manifest mid-acknowledgement. Now every call on one handoff runs through a serial queue, and `refused` is set **before** the abandonment is awaited, so no flag is ever read while another call sits between its check and its act. A delivery that throws rejects that call only; the queue continues (tested). |
 | `checkTaskPrompt`: `await library.resolve` → checks | The checks run on the returned value only; nothing is read twice. A throwing library, or a check that throws on a malformed answer, is captured as a failure (layer-1 P3-b). |
 
 ## Revert matrix — run on final source
@@ -226,7 +226,22 @@ leave equal); the binding is pinned by the mismatch tests, so no change.
 
 ### Layer 2 — Copilot
 
-LAYER2
+**Round 1 — one high, three medium, three low; all seven real, all fixed.** The first two
+`@copilot review` comments (12:20, 13:41 UTC) never registered; the API request at 14:32 did.
+
+| finding | fix |
+|---|---|
+| **(high)** handoff state updated only after the awaited acknowledgement: an exact acknowledgement and a mismatched send overlapping could abandon the manifest mid-acknowledgement | handoff calls serialized; tests run both orders concurrently (exact first: it succeeds, the mismatch is refused without abandoning, replay survives; mismatch first: it abandons, the exact one is refused, every obligation still owed); a throwing delivery does not wedge the queue. Row I2-31 |
+| **(medium)** a failed abandonment left the handoff live, so a later exact acknowledgement released a still-issued receipt — contradicting "a mismatched send kills the receipt" | `refused` is terminal and set before the abandonment is awaited; `abandon()` sets it too. Tests for both failing-abandon paths. Rows I2-32, I2-33 |
+| (medium) `slot in substitutions` sees inherited properties, so a task slot named `toString` / `constructor` was refused | own-property check; test resolves real prompts with both names. Row I2-34 |
+| (medium) the partition check accepted negative or fractional section lengths whose offsets still added up | each length must be a non-negative integer; test with `+5/−5` and `+0.5/−0.5` pairs that pass the old loop. Row I2-35 |
+| (low) `serializeTaskData`'s TSDoc linked the internal `quoteData`, baking an `ae-unresolved-link` into `api.md` | plain prose; `api.md` regenerated, 0 unresolved links |
+| (low) this section held a placeholder | this table |
+| (low) `state.md` stale | updated |
+
+Layer 1 had flagged the same concurrency window (P3-c) and the fix then stopped at the
+already-acknowledged case; round 1 is the same window one step further — a check-then-act across an
+`await`, exactly the class the brief's trap 3 names. The matrix was re-run on the round-1 source.
 
 ## What P1 can rely on
 

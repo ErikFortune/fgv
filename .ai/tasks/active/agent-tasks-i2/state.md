@@ -1,48 +1,38 @@
 # State — `agent-tasks-i2`
 
-**Status:** implemented; layer-1 review done and resolved; final gates and matrix in progress; PR to
-`integration/agent-tasks-v1` next.
+**Status:** PR open, CI green before round 1; Copilot round 1 (7 findings) fixed; matrix re-running
+on the round-1 source; round 2 to request after it lands.
 
 ## Where things stand
 
 | | |
 |---|---|
 | brief | `.ai/tasks/active/agent-tasks-i2/brief.md` |
-| branch | `claude/agent-tasks-i2`, cut off `integration/agent-tasks-v1` at `e662da68c`; base not moved since |
-| PR | not yet opened |
-| base | `integration/agent-tasks-v1` — **not `release`** |
-| result | `result.md` — decisions written; matrix, layer 2 and gate placeholders to fill |
+| branch | `claude/agent-tasks-i2`, cut off `integration/agent-tasks-v1` at `e662da68c`; base not moved |
+| PR | [#707](https://github.com/ErikFortune/fgv/pull/707) into `integration/agent-tasks-v1` |
+| result | `result.md` — decisions, evidence, matrix, layer 1, layer 2 round 1, gates |
+| plan / ledger | I2 status and `agent-tasks-i2` ledger entry written as shipped via #707 |
 
 ## Decisions taken (see `result.md`)
 
-1. **Receipt binding:** candidate 1's text binding, held in the handoff rather than the receipt
-   (candidates 1-as-briefed and 2 verified unbuildable on the current surfaces), behind candidate 3's
-   handoff. Failed check or mismatched sent text → the delivery manifest is abandoned.
-2. **Details framing:** yes — `serializeTaskData` published from `context`; `task_inspect.details`
-   is the escaped one-line text. TECH_DEBT entry resolved.
+1. **Receipt binding:** candidate 1's text binding held in the handoff (receipt hash and composition
+   identity verified unbuildable), behind candidate 3's handoff. Failed check or mismatched send →
+   manifest abandoned, handoff terminally refused.
+2. **Details framing:** yes — `serializeTaskData`; `task_inspect.details` is escaped text. Debt
+   entry resolved.
 
-## Done
+## Review loop
 
-- `prompt` packlet, `serializeTaskData`, `task_inspect` change; dependency on `@fgv/ts-prompt-assist`.
-- Tests: `prompt/{fragments,checkedPrompt,outbound,handoff}.test.ts`, `context/taskData.test.ts`,
-  additions to `tools/bounding.test.ts`, `publicSurface.test.ts`, `context/purity.test.ts`.
-  Package: 2394 tests, 100% all metrics, 0 `c8 ignore`.
-- Layer-1 `code-reviewer`: no P1; P2/P3 fixed or dispositioned.
-- `rush change --verify` against `origin/integration/agent-tasks-v1`: passes (change file `minor`).
-- Repo-wide `rush rebuild`: exit 0, no warnings. `verify-capability-docs`, `verify-esm-entrypoints`,
-  `generate-capability-feed --check`: pass.
-- CAPABILITIES.md, router line, TECH_DEBT (one resolved, two added).
+- Layer 1 `code-reviewer`: no P1; resolved.
+- Copilot: `@copilot review` comments did not register (12:20, 13:41 UTC); the API request did.
+  Round 1: 1 high, 3 medium, 3 low — all fixed (`result.md` § Layer 2).
 
 ## Remaining
 
-- Repo-wide `rush test` (running); `verify-bundler-resolution`, `verify-tarball-exports` (need their
-  autoinstallers, blocked while rush test holds the lock).
-- Revert matrix on a `git archive` copy: `node .ai/tasks/active/agent-tasks-i2/i2Matrix.js --pkg <copy>`
-  (copy needs `node_modules` symlinked to the package's). **Never without `--pkg`.**
-- Plan § I2 status line, ledger entry (need the PR number), PR, Copilot loop (`@copilot review`
-  comment).
+- Matrix on the round-1 source: `node .ai/tasks/active/agent-tasks-i2/i2Matrix.js --pkg <git-archive copy>`
+  (copy needs `node_modules` symlinked). **Never without `--pkg`.** Rows I2-1…I2-35.
+- Reply to and resolve the seven round-1 threads; request round 2; stop on diminishing returns.
 
 ## Resume instructions
 
-`brief.md` + this file + `result.md`. Code is committed on the branch; nothing is pushed until the
-gates above are green.
+`brief.md` + this file + `result.md`. All code is committed and pushed.
