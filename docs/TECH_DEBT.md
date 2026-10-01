@@ -802,6 +802,11 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
 
   **Trigger**: I1d, which owns `packlets/tools/` — or the first consumer whose model hits it.
 
+  **Also in that file, a stale comment.** `_send`'s comment ("the writer canonicalizes them — once —
+  through the registered handle's `validate`") is true for external kinds only; for `fgv.tracked@1`
+  the writer converts through the broker's own converter and never calls the handle. Not edited by
+  `agent-tasks-tracked-commands`, which may not touch `packlets/tools/`.
+
   **Scope sketch**: either the writer distinguishes "refused, nothing recorded" in its failure
   detail and the tool reads that as a determinate `invalid` line, or the tool treats `invalid` as
   determinate for a native kind (every native refusal precedes the writer section). A fixed line,

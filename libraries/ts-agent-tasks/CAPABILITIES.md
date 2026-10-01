@@ -996,8 +996,10 @@ kind **and** detail version every time. There is no `get<T>(id)` that trusts a c
 type, duplicate `(kind, detailVersion)` registration fails, `convert()` on an unregistered pair
 fails with `unknown-kind-version` rather than being treated as a validated current type, and
 `freeze()` closes the registry when a broker opens. `createTaskCommandHandle<P>` is the same
-erasure for command parameters: it closes over the descriptor's `JsonSchema` and encoder, so the
-only way to produce canonical parameters is to have passed that schema.
+erasure for command parameters: it closes over the descriptor's `JsonSchema` and encoder, so for an
+externally executed kind the only way to produce canonical parameters is to have passed that schema.
+A native kind's handles (`fgv.tracked@1`'s) expose only the wire schema: the broker converts native
+commands with its own converter and never calls their `validate`.
 
 **Built-ins.** `fgv.tracked@1` has *empty strict* details — every field a tracked task needs is
 already an envelope field, and a second place to put them would be a second authority. Its eleven

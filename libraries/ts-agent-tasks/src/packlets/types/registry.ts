@@ -35,7 +35,10 @@ export interface ITaskCommandHandle {
   readonly parameters: JsonSchema.ISchemaValidator<unknown>;
   /**
    * Validates caller-supplied parameters through the registered schema and re-encodes
-   * them, yielding the canonical JSON form that is deduplicated and stored.
+   * them. For an externally executed kind this is the canonical JSON form the broker
+   * deduplicates and stores. For a native kind (`fgv.tracked@1`) the broker never calls it:
+   * a value it accepts can still be refused by the broker's own converter, so it is not
+   * the broker's validator there.
    */
   validate(parameters: unknown): Result<JsonValue>;
 }

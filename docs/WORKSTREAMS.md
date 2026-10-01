@@ -142,8 +142,8 @@ generator offers them with no tool change; which ones a model gets is the host's
 through `trackedCommand`, which stays authoritative. Unifying could not remove the obligation — the
 wire subset cannot state the converter's bounds, so the converter would still run behind the schema —
 and would narrow what the broker accepts for host callers and couple `fgv.task-list@1` to
-registration. Fixtures pin both validators' verdicts on 70 values, including the 18 bounds only the
-converter enforces and one coercion only it performs.
+registration. Fixtures pin both validators' verdicts on 71 values, including 19 the schema admits and
+only the converter refuses (bounds, and a non-finite amount), and one coercion only it performs.
 
 **Evidence.** End to end through a real broker and a streamed model turn: each command moves the
 task and `task_inspect` reports it. Stale revision and unavailable transition are I1c's fixed

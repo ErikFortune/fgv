@@ -238,7 +238,20 @@ push.** Posted 00:43, nine minutes after the request.
 Round 2's substantive point — a public contract statement this slice made false — is the class layer 1
 missed, so the loop continues.
 
-No source behaviour changed in either round, so the matrix rows' patterns are untouched (`--check`: all TC rows found
+**Round 3 (on `8e15f6da`) — four low inline, two low "previously missed"; all real.** Posted 00:51.
+
+| finding | fix |
+|---|---|
+| `ITaskCommandHandle.validate`'s own TSDoc still promised the stored canonical form | it now says the broker never calls it for a native kind, and that a value it accepts can still be refused there |
+| `ITaskCommandDescriptor`'s opening still called the schema the runtime validator; its `encode` sentence was unscoped | both scoped to externally executed kinds; a native descriptor provides the wire schema only |
+| `CAPABILITIES.md`'s registry paragraph still called `createTaskCommandHandle` the only canonicalization path | qualified for external kinds; native handles expose only the wire schema |
+| stale counts: the ledger's 70 values / 18 bounds; `result.md`'s gate row at 2,276 tests | 71 / 19; 2,277 |
+| `tools/commandTools.ts`'s `_send` comment says the writer canonicalizes through the handle's `validate` | true for external kinds only — **not edited** (I1d owns `packlets/tools/`); routed into the I1d `TECH_DEBT` entry |
+
+Round 3 was entirely documentation that followed from round 2's correction — the same fact, propagated
+to every place that stated the old contract. Nothing in it touched behaviour or tests.
+
+No source behaviour changed in any round, so the matrix rows' patterns are untouched (`--check`: all TC rows found
 once) and the results above stand. Package suite after round 2: 95 suites, 2,277 tests, 100 %.
 
 ## Routed beyond this slice
@@ -263,7 +276,7 @@ Run locally on `645120a2` (source identical to the head that follows; later comm
 | `rush change --verify --target-branch origin/integration/agent-tasks-v1` | change file found (`minor`) |
 | `rushx build` (package) | clean, **zero warnings**; `etc/ts-agent-tasks.api.md` unchanged |
 | `rushx lint` / fixlint | clean; pre-commit prettier |
-| `rushx test` (package) | **95 suites, 2,276 tests; 100 % statements, branches, functions, lines; zero `c8 ignore`** |
+| `rushx test` (package) | **95 suites, 2,277 tests (after round 2; 2,276 before); 100 % statements, branches, functions, lines; zero `c8 ignore`** |
 | `rush rebuild` (repo-wide) | exit 0 (3 min 44 s) |
 | `rush test` (repo-wide) | exit 0 (7 min 19 s) — run although option 1 was taken: `trackedTaskDescriptor()` now returns more, a behaviour change no compiler sees (no other package depends on `ts-agent-tasks`) |
 | `verify-capability-docs.mjs` | 24/24 documented, 75 reflexes, 0 failed |

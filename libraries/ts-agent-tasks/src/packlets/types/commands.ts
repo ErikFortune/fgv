@@ -96,7 +96,9 @@ export interface ICommandReceipt {
 
 /**
  * A registered command: one schema that is both the runtime validator and the wire
- * schema a model is offered.
+ * schema a model is offered — for an externally executed kind. A native kind's descriptor
+ * provides the wire schema only: the broker validates and canonicalizes native commands
+ * with its own converter, and runs neither this schema nor `encode`.
  *
  * @remarks
  * `conditional` states whether the command can carry a source precondition, so a host
@@ -104,11 +106,10 @@ export interface ICommandReceipt {
  * deduplicates the same key, which is what makes a safe resend possible after an
  * uncertain dispatch.
  *
- * `encode` produces the canonical parameters that are stored, deduplicated against and
- * dispatched — for an externally executed kind; a native kind's commands are canonicalized by the
- * broker's own converter instead. Because `parameters` is also the wire schema, the encoded form must validate
- * against it again: a descriptor whose encoder changes shape is refused when a command is
- * validated.
+ * For an externally executed kind, `encode` produces the canonical parameters that are stored,
+ * deduplicated against and dispatched, and because `parameters` is also the wire schema, the
+ * encoded form must validate against it again: a descriptor whose encoder changes shape is
+ * refused when a command is validated.
  * @public
  */
 export interface ITaskCommandDescriptor<P> {
