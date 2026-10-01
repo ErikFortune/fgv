@@ -105,9 +105,11 @@ function _stopWording(intentId: OperationId): IFailureWording {
  *
  * @remarks
  * Any `IBoundTaskWriter` (or view) may be passed, so its answer is converted, not trusted: every
- * field strictly, the target list bounded by the most targets a stop may capture and each task named
- * once, and the answer must be for the stop and root asked about — and for a request, the mode asked
- * for. `expected` is the tool's own copy, captured before the writer or view is asked.
+ * field strictly, the target list bounded by the most targets a stop may capture, led by the root
+ * (which is always a target and, since the stop is presented only to a principal that can see its
+ * root, always listed) and naming each task once, and the answer must be for the stop and root asked
+ * about — and for a request, the mode asked for. `expected` is the tool's own copy, captured before
+ * the writer or view is asked.
  */
 function _stopResult(ctx: IToolContext, expected: IExpectedStop): Converter<IStopResult> {
   const stops = ctx.renderer.converters.stops;
@@ -128,6 +130,9 @@ function _stopResult(ctx: IToolContext, expected: IExpectedStop): Converter<ISto
       return fail(
         `the result is for stop ${value.intentId} (${value.mode}) of ${value.rootId}, not the stop asked about`
       );
+    }
+    if (value.targets.length === 0 || value.targets[0].taskId !== value.rootId) {
+      return fail(`the result's targets do not begin with its root ${value.rootId}`);
     }
     const seen: Set<string> = new Set<string>();
     for (const target of value.targets) {

@@ -1910,6 +1910,13 @@ const I1D_ROWS = [
     "  'task_reassign',\n  'task_stop',\n  'task_stop_inspect'\n];",
     "  'task_reassign'\n];",
     I1D
+  ),
+  m(
+    'I1d-20 a result whose targets are empty or not led by the root is accepted (Copilot round 1)',
+    ST,
+    '    if (value.targets.length === 0 || value.targets[0].taskId !== value.rootId) {',
+    '    if (value.targets.length < 0) {',
+    I1D
   )
 ];
 

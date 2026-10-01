@@ -848,11 +848,13 @@ await writer.reconcileStop({ taskId, intentId }); // the pump — a host call, n
   `cursor-stale`. A hidden target that is not confirmed sets `restrictedWorkRemains`, without counts or
   identities. A capacity refusal is never returned: it goes to `logger`, and the target's own state
   (`unavailable`) says it is blocked.
-- **Known and unknown outcomes.** A refusal the broker decides before it writes —
-  `not-found-or-denied` (reading exactly like a missing task) and `unsupported` (the stop policy does
-  not permit the mode) — is a plain code line. Every other failure may follow an accepted stop, so its
-  line ends with the intent id the stop would have, and an instruction to inspect it before asking
-  again. A retry is harmless — a second stop of a mode already latched on the task is refused.
+- **Known and unknown outcomes.** Only `unsupported` (the stop policy does not permit the mode),
+  which the broker decides before it writes, is a plain code line. Every other failure may follow an
+  accepted stop — `not-found-or-denied` included, when the root is hidden between the commit and the
+  presentation — so its line ends with the intent id the stop would have, and an instruction to
+  inspect it before asking again. A denied, hidden and missing task still read alike: the same line,
+  differing only in the would-be id. A retry is harmless — a second stop of a mode already latched on
+  the task is refused.
 - **`stop-active` is never disclosed.** Every other tool answers a latch as `conflict` whether or not
   the stop tools are offered: a latch can come from a stop on an ancestor this principal cannot see,
   and no tool's answers depend on which other tools the host enabled.

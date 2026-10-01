@@ -154,9 +154,8 @@ the converter accepts it and the presenter withholds it (tested with a scripted 
 
 | failure | the model is told |
 |---|---|
-| `not-found-or-denied` | `task_stop: not-found-or-denied: …` — exactly a missing task (tested: denied root, hidden root, missing id) |
-| `unsupported` | `task_stop: unsupported: …` (the root's stop policy does not permit the mode, or it is not a native root) |
-| any other code | its code line **+** `; the stop may or may not have been accepted — if it was, its intentId is <id>: inspect it with task_stop_inspect before requesting it again` |
+| `unsupported` | `task_stop: unsupported: …` (the root's stop policy does not permit the mode, or it is not a native root) — the only known outcome |
+| any other code, `not-found-or-denied` included | its code line **+** `; the stop may or may not have been accepted — if it was, its intentId is <id>: inspect it with task_stop_inspect before requesting it again`. A denied root, a hidden root and a missing id read alike: the same line, differing only in the would-be id (tested) |
 | no known code / a throw / a malformed result | `the request failed` / `the task writer failed` / `commit-indeterminate: …`, each with the same tail |
 
 Every non-determinate case can follow an accepted stop: after the commit, `presentStop` reads every
@@ -165,8 +164,10 @@ presented. A retry is harmless either way — a second stop of a mode already la
 refused `conflict` — but it would not tell the model the first one's id, hence the tail.
 
 `not-found-or-denied` **can** follow a commit in one broker path (the root hidden between the commit
-and the presentation's re-read). The line is then still true — the root is not visible now — and the
-model could not inspect the stop anyway. `unsupported` is produced only before the writer section.
+and the presentation's re-read) — layer-1 P2-1 found it, and it is why that code carries the tail too.
+Tested through the real broker with a policy that hides the root the moment it authorizes the stop:
+the model is told the intent id, and the stop is persisted. `unsupported` is produced only before the
+writer section.
 
 ## Every check-then-act window in the diff
 

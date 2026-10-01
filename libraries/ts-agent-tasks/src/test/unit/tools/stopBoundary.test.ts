@@ -257,6 +257,15 @@ describe('a writer’s or view’s answer is checked, and says no more than a fi
       (r) => result(r, { state: 'finished' }),
       (r) => result(r, { requestedBy: 'alice' }),
       (r) => result(r, { restrictedWorkRemains: 'no' }),
+      // The root is always a target, and always visible to a principal the stop is presented to.
+      (r) => result(r, { targets: [] }),
+      (r) =>
+        result(r, {
+          targets: [
+            { taskId: 'a', attempt: 1, operationId: 'key-1', state: 'unexamined' },
+            { taskId: r.taskId, attempt: 1, operationId: 'key-2', state: 'unexamined' }
+          ]
+        }),
       (r) =>
         result(r, {
           targets: [
