@@ -1,7 +1,7 @@
 id: agent-tasks-cluster-close
 status: shipped
 packages: ['@fgv/ts-agent-tasks'] # generated CAPABILITIES.md feed only; no source
-prs: [PRNUM] # written in the PR itself, anticipating its merge
+prs: [712] # written in the PR itself, anticipating its merge
 openPrs: []
 opened: 2026-10-01
 closed: 2026-10-01

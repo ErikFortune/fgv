@@ -1,6 +1,6 @@
 # agent-tasks-cluster-close — finalizing the eighteen agent-tasks slices
 
-**Shipped**: 2026-10-01 via [PR #PRNUM](https://github.com/ErikFortune/fgv/pull/PRNUM) into
+**Shipped**: 2026-10-01 via [PR #712](https://github.com/ErikFortune/fgv/pull/712) into
 `integration/agent-tasks-v1`.
 
 ## Summary
@@ -47,4 +47,4 @@ See `result.md` § *Still owed before promotion* and the new P3 in `docs/TECH_DE
 ## References
 
 - Brief: `brief.md` · Live state: `state.md` · Exit artifact: `result.md`
-- PR: [#PRNUM](https://github.com/ErikFortune/fgv/pull/PRNUM)
+- PR: [#712](https://github.com/ErikFortune/fgv/pull/712)
