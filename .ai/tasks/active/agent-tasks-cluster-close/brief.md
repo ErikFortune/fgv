@@ -44,32 +44,36 @@ quickly is exactly where an inaccurate one hides.
 `sourceLine`). Read `.ai/tasks/completed/2026-09/ai-assist-prompt-caching/meta.yaml` as the model —
 including its inline comment explaining why its `prs` are not in chronological order.
 
-## The decision this close must take: what the capability feed shows
+## The capability feed — mechanics, and the one editorial question
 
-`common/scripts/generate-capability-feed.mjs` has `ROUTER_LIMIT = 10`, *"bounded so the feed cannot eat
-the router's byte cap"*, and `verify-capability-docs` holds `LIBRARY_CAPABILITIES.md` to 24,000
-characters — it is currently at **22,038**.
+**An earlier draft of this brief claimed the feed forced a hard decision here. It does not; that was
+the orchestrator's error, corrected before you started.** What the script actually does
+(`common/scripts/generate-capability-feed.mjs`, read it):
 
-So if all eighteen streams carry a feed-visible headline, **the ten most recent entries become ten
-agent-tasks lines** and every other package's recent entry is pushed out of the index. That is honest
-— it is what shipped most recently — but it makes the router markedly less useful, and the index's
-whole job is routing.
+- It writes **full per-package history** into each `libraries/<pkg>/CAPABILITIES.md`, filtered by the
+  stream's `packages`. All eighteen entries land in `libraries/ts-agent-tasks/CAPABILITIES.md`
+  automatically, which is correct and needs no decision.
+- It writes only the **ten most recent across all packages** into
+  `.ai/instructions/LIBRARY_CAPABILITIES.md` (`ROUTER_LIMIT = 10`), under a line that already says
+  *"Per-package history is in each `CAPABILITIES.md`."* That region is bounded at ten entries
+  **however many streams exist**, so the 24,000-character router budget is not affected by the count.
 
-Decide, and say why in `result.md`. Options, none verified — **check each is actually what the script
-does before ranking it**:
+So the only consequence is that the router's ten recent slots are agent-tasks-heavy for a while and
+then roll over. That is what a rolling recent-changes feed is for; it is not a problem to solve.
 
-1. **All eighteen get headlines.** Simplest and most faithful; the feed is agent-tasks for a while.
-2. **Only the capability-bearing streams get one**, with the internal slices carrying `meta.yaml` but
-   no feed line — if the script tolerates a missing headline. **Verify that**: all 63 existing streams
-   have one, so the absent case may be untested.
-3. **One synthesized cluster entry** representing the family, with the slices' detail living in
-   `docs/workstreams/2026-10.md`. Closest to how a reader would want it, furthest from the script's
-   current shape.
+**The one question genuinely worth a judgement** is editorial and applies to the *package* file, not
+the router: do all eighteen deserve a feed line, when a reader experiences most of T1–T9 as internal
+slices of one capability rather than eighteen separate arrivals? Eighteen entries in
+`ts-agent-tasks`' own history is either a useful record or noise, depending on how each is written.
 
-Whatever you choose, `generate-capability-feed --check` must report 0 stale and
-`verify-capability-docs` must pass with the index under budget. **If the honest answer is that the
-script needs a change to express the right outcome, that is a finding — surface it rather than
-shaping eighteen summaries around a limitation.**
+Use `/finalize-task`'s normal judgement on `headline` per stream: a stream with no consumer-visible
+capability may legitimately have a `meta.yaml` without a feed line — **but verify the script tolerates
+that** before relying on it, since all 63 existing streams have one and the absent case may be
+untested. If it does not tolerate it, write honest headlines for all eighteen and say so; do not
+contort a summary to dodge a script limitation.
+
+Gates either way: `generate-capability-feed --check` reports 0 stale, `verify-capability-docs` passes,
+and you report the resulting `LIBRARY_CAPABILITIES.md` size.
 
 ## The ledger
 

@@ -25,14 +25,18 @@ Every implementation slice deferred `/finalize-task` to this point, so it all co
 T1–T9 (with T8 in two PRs and T8b), I1a–I1d, tracked-commands, I2, M1's stop/production cohorts, P1.
 Head `2a95fbb21`.
 
-## Open decision
+## The capability feed — no hard decision here
 
-**What the capability feed shows.** `generate-capability-feed.mjs` bounds the feed to 10 entries
-(`ROUTER_LIMIT`) and `verify-capability-docs` holds `LIBRARY_CAPABILITIES.md` to 24,000 characters
-(currently 22,038). Eighteen headlines would make all ten most-recent entries agent-tasks and push
-every other package out of the router. Three options are set out in the brief, **none verified against
-what the script actually does** — the absent-headline case in particular may be untested, since all 63
-existing completed streams have one.
+The brief's first draft claimed one; that was wrong and is corrected. The generator writes **full
+per-package history** into each `libraries/<pkg>/CAPABILITIES.md` (so all eighteen land in
+`ts-agent-tasks`' own file automatically) and only the ten most recent across all packages into the
+router, whose region is bounded at ten **regardless of stream count** — so the 24,000-character budget
+is unaffected. The router being agent-tasks-heavy for a while is what a rolling feed does.
+
+What remains is editorial: whether every one of the eighteen earns a feed line in the package file,
+when most of T1–T9 read as internal slices of one capability. Normal `/finalize-task` judgement per
+stream — but verify the script tolerates a `meta.yaml` with no headline before relying on that, since
+all 63 existing streams have one.
 
 ## Out of scope — leave alone
 
