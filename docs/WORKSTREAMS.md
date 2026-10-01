@@ -155,7 +155,7 @@ the logger only.
 host's `reconcileStop` (native tree, and an external child the executor really cancels), observed
 through `task_stop_inspect`. Every failure but `unsupported` carries the would-be intent id —
 layer-1 P2-1 found that a denial can follow the commit (the root hidden before presentation), tested
-through the real broker. Revert-matrix rows `I1d-1`…`I1d-19`; `I1c-14/18/19` re-pointed. Routed: a
+through the real broker. Revert-matrix rows `I1d-1`…`I1d-21`; `I1c-14/18/19` re-pointed. Routed: a
 model can name only the stops it requested (`docs/TECH_DEBT.md`).
 
 **Artifact pointer:** `.ai/tasks/active/agent-tasks-i1d/`.

@@ -277,9 +277,10 @@ describe('a writer’s or view’s answer is checked, and says no more than a fi
         }),
       (r) =>
         result(r, {
+          // Led by the root, so the source evidence is the only thing wrong.
           targets: [
             {
-              taskId: 'a',
+              taskId: r.taskId,
               attempt: 1,
               operationId: 'key-1',
               state: 'confirmed',
@@ -293,12 +294,23 @@ describe('a writer’s or view’s answer is checked, and says no more than a fi
         }),
       (r) =>
         result(r, {
+          // Led by the root, so the length is the only thing wrong.
           targets: Array.from({ length: 1001 }, (__, i) => ({
-            taskId: `t${i}`,
+            taskId: i === 0 ? r.taskId : `t${i}`,
             attempt: 1,
             operationId: `key-${i}`,
             state: 'unexamined'
           }))
+        }),
+      // A satisfied stop has every target confirmed and no unconfirmed work hidden: the broker never
+      // presents one otherwise, and an overstated stop is the one answer that must not pass.
+      (r) => result(r, { state: 'satisfied' }),
+      (r) => result(r, { state: 'settled' }),
+      (r) =>
+        result(r, {
+          state: 'satisfied',
+          targets: [{ taskId: r.taskId, attempt: 1, operationId: 'key-1', state: 'confirmed' }],
+          restrictedWorkRemains: true
         }),
       () => succeedWithDetail(undefined)
     ];

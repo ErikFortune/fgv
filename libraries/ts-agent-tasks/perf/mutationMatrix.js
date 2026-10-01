@@ -1917,6 +1917,13 @@ const I1D_ROWS = [
     '    if (value.targets.length === 0 || value.targets[0].taskId !== value.rootId) {',
     '    if (value.targets.length < 0) {',
     I1D
+  ),
+  m(
+    'I1d-21 a satisfied result over unconfirmed work is accepted (Copilot round 2)',
+    ST,
+    "      (value.state === 'satisfied' || value.state === 'settled') &&\n",
+    '      value.targets.length < 0 &&\n',
+    I1D
   )
 ];
 
