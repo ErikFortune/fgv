@@ -105,7 +105,8 @@ export interface ICommandReceipt {
  * uncertain dispatch.
  *
  * `encode` produces the canonical parameters that are stored, deduplicated against and
- * dispatched. Because `parameters` is also the wire schema, the encoded form must validate
+ * dispatched — for an externally executed kind; a native kind's commands are canonicalized by the
+ * broker's own converter instead. Because `parameters` is also the wire schema, the encoded form must validate
  * against it again: a descriptor whose encoder changes shape is refused when a command is
  * validated.
  * @public

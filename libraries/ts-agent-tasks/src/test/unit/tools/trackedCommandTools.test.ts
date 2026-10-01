@@ -422,7 +422,12 @@ describe('through a model turn', () => {
       'anthropic',
       offered.map((name) => tools.get(name))
     );
-    const result = events.find((e) => e.type === 'client-tool-result') as AiAssist.IAiStreamToolUseComplete;
+    const result = events.find(
+      (e): e is AiAssist.IAiStreamToolUseComplete => e.type === 'client-tool-result'
+    );
+    if (result === undefined) {
+      throw new Error('the turn produced no client-tool-result');
+    }
     expect(result).toEqual(expect.objectContaining({ toolName: 'task_command_start', isError: false }));
     expect(JSON.parse(result.result)).toEqual({ taskId: 't1', state: 'applied', revision: 2 });
     expect(record(await inspected(tools, 't1'))).toEqual(expect.objectContaining({ status: 'running' }));

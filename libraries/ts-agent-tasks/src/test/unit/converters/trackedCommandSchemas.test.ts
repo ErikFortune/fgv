@@ -403,6 +403,8 @@ const onlySchemaAccepts: ReadonlyArray<[TrackedTaskCommandName, string, unknown]
   ['set-progress', 'a two-line unit', { progress: { unit: 'a\nb' } }],
   ['set-progress', 'an empty progress summary', { progress: { summary: '' } }],
   ['set-progress', 'a negative amount', { progress: { completed: -1 } }],
+  // Not sendable as JSON, but reachable by a direct `execute` call: the schema's number admits it.
+  ['set-progress', 'an infinite amount', { progress: { total: Infinity } }],
   ['set-progress', 'total below completed', { progress: { completed: 3, total: 2 } }],
   ['succeed', 'an empty outcome summary', { outcome: { summary: '', artifacts: [] } }]
 ];

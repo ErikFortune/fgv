@@ -773,7 +773,8 @@ const tools = createTaskTools({
   schema is closed: stated on the wire for Anthropic and OpenAI; Gemini's dialect drops
   `additionalProperties`, so there closure is enforced by validation only — the harness's, then
   `execute`'s, which re-validates every call. The tool sends the parameters as the schema accepted
-  them; the writer canonicalizes them, once, through the handle's `validate`.
+  them; the writer canonicalizes them, once — through the handle's `validate` for an external kind,
+  through the broker's own tracked-command converter for `fgv.tracked@1`.
 - **Offering is not authorizing.** Building asks the registry, never the writer, the environment or
   the policy. Every call goes through the writer's `execute`, which asks the policy then: command
   authority revoked after build refuses the next call, and nothing is sent.

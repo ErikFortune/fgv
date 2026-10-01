@@ -78,7 +78,7 @@ correct and a drifted schema would treat the same.
 |---|---|---|
 | both accept | 23 | every optional member present and absent (`attention`, `notBefore`, `outcome` on `fail`/`cancel`, `description`, `progress`); empty lists (`attention: []`, `artifacts: []`); `progress: {}`; a fractional amount; `total == completed`; a multi-line description (`boundedText`, not single-line); `null` for `start`/`resume` (below) |
 | both refuse | 28 | surplus members at each level (parameters, reason, reference, progress); a waiting-only `notBefore` on a plain reason; `outcome` without `artifacts`; a reason where an outcome belongs; `fail` with no reason; a single reference where a list belongs; `null` for each object member (`reason`, `outcome`, `attention`, `progress`, `description`); wrong scalar types |
-| only the schema accepts | 18 | the bounds the wire cannot state: empty / two-line / over-bound title (`maxTitleLength + 1`, from the fixture bounds); empty description; non-identifier code; empty summary; zone-offset and impossible-date `notBefore`; non-identifier reference namespace; two-line reference key; one reference and one artifact over `maxReferences`; negative amount; `total < completed`; two-line phase and unit; empty progress summary; empty outcome summary |
+| only the schema accepts | 19 | the bounds the wire cannot state: empty / two-line / over-bound title (`maxTitleLength + 1`, from the fixture bounds); empty description; non-identifier code; empty summary; zone-offset and impossible-date `notBefore`; non-identifier reference namespace; two-line reference key; one reference and one artifact over `maxReferences`; negative amount; an infinite amount (not sendable as JSON, reachable by a direct `execute`); `total < completed`; two-line phase and unit; empty progress summary; empty outcome summary |
 | only the converter accepts | 1 | a numeric-string amount (`'3'`): the converter's `Converters.number` coerces, the strict schema refuses — the direction that denies a model nothing it was told it could send |
 
 Plus: every command has at least one accept and one refuse row; and the schema admits the canonical
@@ -226,8 +226,20 @@ Triggered by an `@copilot review` comment plus an API request (00:30 UTC); poste
 | **(low ×3)** "eight" reference-bearing commands double-counted `fail` and `cancel` (in `CAPABILITIES.md`, `result.md`, the ledger) | six: `wait`, `pause`, `succeed`, `fail`, `cancel`, `set-attention` — now named where the count is given |
 | **(low)** the descriptor TSDoc (and `CAPABILITIES.md`, the ledger) said all three terminal commands record an outcome | `succeed` always does; `fail` and `cancel` only when one is sent |
 
-No source behaviour changed, so the matrix rows' patterns are untouched (`--check`: all TC rows found
-once) and the results above stand. Package suite re-run: 95 suites, 2,276 tests, 100 %.
+**Round 2 (on `8e689bf2`) — one medium inline, two points in the overview; all real, fixed in the next
+push.** Posted 00:43, nine minutes after the request.
+
+| finding | fix |
+|---|---|
+| **(medium)** the model-turn test asserted the `client-tool-result` event's type (`as IAiStreamToolUseComplete`) | narrowed by a type predicate on the discriminant, failing loudly when the turn produced none |
+| (overview) a finiteness disagreement the fixtures omit | real: a schema `number` admits `Infinity`, `nonNegativeAmount` refuses it. Not sendable as JSON, but a direct `execute` call can pass it — added to *only the schema accepts* (now 19) |
+| (overview) the native path contradicts the public command-handle contract | real: `ITaskCommandHandle`'s TSDoc said the broker runs `validate` on every request, and `ITaskCommandDescriptor`'s that `encode` produces what is stored — true for external kinds only, and false the moment a native kind registers handles. Both TSDocs, and the I1c bullet in `CAPABILITIES.md`, now say native commands go through the broker's own converter. Doc-only changes in `types/registry.ts` and `types/commands.ts` (`api.md` unchanged) |
+
+Round 2's substantive point — a public contract statement this slice made false — is the class layer 1
+missed, so the loop continues.
+
+No source behaviour changed in either round, so the matrix rows' patterns are untouched (`--check`: all TC rows found
+once) and the results above stand. Package suite after round 2: 95 suites, 2,277 tests, 100 %.
 
 ## Routed beyond this slice
 
