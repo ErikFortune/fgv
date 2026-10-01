@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-agent-tasks",
+      "comment": "M1's stop-state and production-profile cohorts added to the on-demand perf/ harness (perf/stopCohort.js, perf/profileCohort.js). Measurement only: nothing in lib, dist or the published documentation changes.",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-agent-tasks"
+}
