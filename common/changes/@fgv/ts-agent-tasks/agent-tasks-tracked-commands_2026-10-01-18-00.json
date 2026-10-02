@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-agent-tasks",
+      "comment": "trackedTaskDescriptor() now registers all eleven fgv.tracked@1 commands (start, wait, pause, resume, succeed, fail, cancel, set-title, set-description, set-progress, set-attention), each with a JsonSchema parameter schema, so a host can offer them as generated command tools. The broker still validates native commands with its own trackedCommand converter, which stays authoritative; the schemas agree with it on shape and cannot express its bounds.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-agent-tasks"
+}

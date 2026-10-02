@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-agent-tasks",
+      "comment": "Adds public contract/journey tests for the credential-free proving ground (P1): overlapping-scope views, an in-flight context across external completion, reassignment then reopen, a host-resolved stop blocker, recovery after reopen and a prompt handoff beside a foreign receipt — through the public barrel only. Test-only; no surface change.",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-agent-tasks"
+}

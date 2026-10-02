@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-agent-tasks",
+      "comment": "Add TaskBroker: principal-bound views and writers with authorization at every read and mutation, re-verified inside one serialized writer; projected views that fail closed rather than fall back to unprojected data; the fgv.tracked@1 transition table and command receipts; task lists completed from their complete authoritative child set, explicitly or by a host-pumped reconciliation over a rebuilt completion-candidate index; hierarchy rules (no self-parent, cycle or missing parent; immutable terminal edges); and reassignment that changes responsibility only. ITaskRepository gains childStates and listCompletionCandidates.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-agent-tasks"
+}
