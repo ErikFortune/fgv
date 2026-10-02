@@ -8,9 +8,13 @@ read here), or **unverified**. Nothing here was run. There was no GPU, and no Sy
 a request in this phase.
 **Amended 2026-10-01** with the user's answers to OQ-1 (the consumer will experiment, and adoption depends on performance) and OQ-3 (production runs Qwen locally; development connects to a remote Jev or openjev). See §1 decision 6, §7.1, and §8 `meta`.
 OQ-10 (Qwen runs on vLLM on an Olares One, probably, and on Ollama elsewhere) was answered the same day; see §7.1 item 6 and OQ-12.
-**Date:** 2026-10-01. **Inspected checkout:** `30713277c` (`release` HEAD, the base of
-`integration/system-one-decisions`). `ts-agent-tasks` was read from `origin/integration/agent-tasks-v1`
-at `2a95fbb2`.
+**Amended 2026-10-02** by the `system-one-design-antagonist` verification pass: every §2 citation now
+names the ref it was read at, E16 and E27 are split by link, OQ-7 is resolved, and §8 decides the
+`confidence` field. The pass's account, including what it checked and left alone, is
+[`.ai/tasks/active/system-one-design-antagonist/result.md`](../../../.ai/tasks/active/system-one-design-antagonist/result.md).
+**Date:** 2026-10-01. **Inspected checkout:** `16ec1622b`, which carries promoted `release` at
+`febf0b2b4`. `ts-agent-tasks` citations were re-read there; Phase A had read them from
+`origin/integration/agent-tasks-v1` at `2a95fbb2`, a branch that no longer exists.
 **Brief:** [`.ai/tasks/active/system-one-decisions-design/brief.md`](../../../.ai/tasks/active/system-one-decisions-design/brief.md).
 
 ## 1. Decisions and scope
@@ -39,9 +43,12 @@ in the deployed environment, and development machines reach a System-1 server re
    topology the user chose (decision 6), this does not matter: development machines call Jev or
    openjev remotely, and CLM runs only where the GPU is. Development still answers with a different
    model, and so has different probabilities (§7.1).
-4. **Upstream CLM silently drops the question from an over-long state** (§6.1, derived), and
-   openjev reports the same independently. fgv will **refuse at a caller-declared, mandatory input
-   bound and never truncate**.
+4. **Upstream CLM silently drops the question from an over-long state** (§6.1). The vLLM half of that
+   chain is verified at the vLLM releases CLM's recipe can run; the tokenizer half is derived (E16).
+   openjev and the author of CLM's own unmerged fix report the same independently. fgv will **refuse at
+   a caller-declared, mandatory input bound and never truncate**. The decision does not depend on which
+   end is cut: truncation is unreported on the wire either way (E15), so a cut at either end is a
+   silent loss.
 5. **Recommendation for Phase C:** a new package, provisionally `@fgv/ts-extras-system-one`. It is a
    Node-only Result boundary over `@typesafe-ai/sdk` with about five primitives, response validation
    the SDK does not do, a classified failure detail, and the mandatory input bound (§8). A live check
@@ -59,35 +66,55 @@ process management for any sidecar; fine-tuning; images and other openjev extens
 
 ## 2. Source evidence
 
+**Refs.** Every row names the ref it was read at. A line number without a ref is not a citation. A
+released tag or a content hash is preferred wherever the reasoning depends on a version; `main` is
+cited only where the row is *about* `main` (E23). Abbreviations used below:
+
+- **sdist 0.1.0**: the PyPI `contrastive-lm` 0.1.0 sdist, CLM's only release. E23 shows CLM `main`
+  at `bb42c6c` matches it in every file cited here except the line offsets in `engine.py`.
+- **SDK 0.6.0**: the npm `@typesafe-ai/sdk` 0.6.0 tarball. It was still `latest` on 2026-10-02.
+- **openjev `dcd20947`**: `razorback16/openjev` README. The default branch is `main`, there is no
+  `master` branch, and there are no tags, so the commit is the only stable ref.
+- **ollama `v0.35.0`**: the latest Ollama release (commit `cc406939`, 2026-09-28). Phase A read
+  `main`. Its line numbers still matched `v0.35.0` to within a few lines, but by 2026-10-02 `main`
+  (`b0c1ca4f`) had moved the E26 handler about 16 lines further.
+- **vLLM**: CLM declares `vllm>=0.6` (E3), but its own launch recipe needs **0.10.1 or later**, the
+  first release with `--runner` (E3). vLLM rows are therefore read at `v0.10.1` (the floor) and
+  `v0.30.0` (the latest, which an unpinned install resolves to).
+
 | # | Fact | Status | Source |
 |---|---|---|---|
-| E1 | CLM-8B weights are **Apache-2.0**. The base Qwen3-8B is **Apache-2.0**. The deployable pair is therefore Apache-2.0 on both halves. | **verified** | Model card `Contrastive-LM/CLM-v0.1-8B` (sha `e939398d`) § License, plus `cardData.license`. `Qwen/Qwen3-8B` API `cardData.license = apache-2.0` (sha `b968826d`). |
-| E2 | The checkpoint is a single `CLM_v0.1-8B.pt`, 75 MB in the repo. `config.json`: `embedding_dim 4096`, `encoder_pooling last-token`. | **verified** | HF API `siblings` / `usedStorage 75816125`, and `config.json`. |
-| E3 | The Python package is **`contrastive-lm`** 0.1.0 (import name `clm`), Apache-2.0, Python ≥ 3.10. **`vllm>=0.6` is a hard install dependency**, but no module in `src/clm/` imports vLLM; it is reached only over HTTP. | **verified** | PyPI JSON `requires_dist`, read from the sdist; `grep vllm src/clm/*.py` finds only a docstring. |
-| E4 | **Two processes.** `clm-serve` is a FastAPI server on **port 8700** that holds the heads. It calls an OpenAI-compatible `/v1/embeddings` encoder on **port 8090** (vLLM, `--runner pooling`). The brief's "default port 8090" is the encoder, not the API. | **verified** | `server.py:170-171`; model card usage block. |
-| E5 | **Wire, `/v1/systemone`.** Request `{state, model, questions: {id: Question}, temperature?}`. Questions are `noul` (`instructions`, optional `criteria {true, false}`), `choice` (`criteria {label: description}`), and `score` (`criteria` as an ordered list of at least 2 levels). Response `{model, answers, usage {billing_units, input_tokens, output_tokens}}`, plus an `X-CLM-Latency-Ms` header. | **verified** | `server.py:96-119`, `schema.py:75-145`, `client.py`; matches README § API. |
-| E6 | **Answers.** `noul`: `{noul: P(true)}`. `choice`: `{choice, confidence, probabilities}`. `score`: `{score: Σ i·pᵢ, confidence, legend, probabilities}`. Probabilities are a softmax over `scale·cos/temperature` and are **relative to the supplied candidate set**. | **verified** | `schema.py:115-145`, `engine.py:130-136`; model card § Limitations. |
-| E7 | **CLM's `confidence` is top probability minus the mean of the rest.** | **verified** | `schema.py:122-128`. |
-| E8 | **`/v1/rank`** is a CLM-only convenience. It is literally a `choice` question whose criteria are the candidates (`engine.py:138-149`). | **verified** | `engine.py`, `server.py:121-153`. |
-| E9 | **Errors.** CLM returns `401` for a bad key, `422` for a malformed request **or an unknown model**, and `502` when the embedder is unreachable. Auth applies only if `CLM_API_KEY` is set. The server **binds `0.0.0.0` by default**. | **verified** | `server.py:78-80, 113-118, 169`. |
-| E10 | **`@typesafe-ai/sdk` 0.6.0** on npm (published 2026-09-15, created 2026-09-12): MIT, `engines.node >=20`, **no runtime dependencies**, ESM and CJS, `sideEffects: false`. | **verified** | npm registry metadata and tarball `package.json`. |
-| E11 | The SDK's types (`dist/index.d.mts`) encode the same wire as E5/E6 (`NoulQuestion`, `ChoiceQuestion`, `ScoreQuestion`, `SystemOneResult`, `Usage`). It has **no `rank`, and no `temperature` field**, though "additional properties on a request variable are forwarded". | **verified** | `index.d.mts:36-158`. |
-| E12 | `TypeSafeClientConfig` takes `baseURL` (default `https://api.typesafe.ai`, env `TYPESAFE_BASE_URL`), `defaultModel` (default **`jev-latest`**), `fetch`, `timeout` (default 10 s), `retry` (2 retries on 408/429/5xx), `logger`, and `dangerouslyAllowBrowser`. | **verified** | `index.d.mts:203-228`. |
-| E13 | Runtime behaviour: the constructor **throws if no API key is given**, and throws in a browser unless opted in. `systemOne` checks the question count and score arity and then **`JSON.parse`s the response with no validation**. Failures throw a typed `APIError` subclass per status, `APIConnectionError`, `APITimeoutError`, or `APIUserAbortError`. | **verified** | `index.mjs:347-352, 376, 392, 398, 511-512, 681-686`; error classes `index.d.mts:327-375`. |
-| E14 | **Jev's wire shape is what E11 encodes.** Jev's *semantics* are **not visible**: how it defines `confidence`, its token bound, its truncation behaviour, and its error bodies. TypeSafe's docs and blog are blocked by the egress proxy. | **unverified** | `typesafe.ai`, `docs.typesafe.ai`: CONNECT 403. |
-| E15 | **CLM truncation.** `clm-serve --max-tokens` (default 2048, env `CLM_EMB_MAX_TOKENS`) is sent to vLLM as `truncate_prompt_tokens` **with no `truncation_side`**. Configurable: yes. Reported to the caller: no. | **verified** | `server.py:173-174`, `embedder.py:41-43`. |
-| E16 | **Which end is cut.** vLLM falls back to the tokenizer's default side when `truncation_side` is unset. Qwen3-8B's `tokenizer_config.json` sets none. transformers' default is `"right"`, which keeps the first N tokens. CLM builds the state as **context, then the question last** (`schema.py:62-65`). So **an over-long state loses its question.** | **derived** | `vllm/renderers/params.py` (main) on the fallback; Qwen3-8B `tokenizer_config.json` (`truncation_side: null`); `transformers/tokenization_utils_base.py:975`. **Corroborated by openjev's README**: "Upstream CLM cuts the end (see CLM PR #6)". |
-| E17 | Candidate texts (option descriptions) are embedded separately, and each is subject to the same bound. | **verified** | `engine.py:116-128` and `embedder.py`, which handle every text identically. |
-| E18 | **GGUF (`EvoAwaken-Workshop/CLM-v0.1-8B-gguf`) contains the projection heads only**: 17 F32 tensors, 75.5 MB. It "does **not** contain the Qwen3-8B encoder". It runs through the third-party **`rust-model-inference`** CLI (`--jev --clm-head …`) with `Qwen3-8B-BF16.gguf` (16.39 GB). Bitwise parity is claimed only for scalar mode with BF16. | **verified** (card); parity **reported** | GGUF model card, and the HF API for file sizes. |
-| E19 | Qwen3-8B sizes: safetensors 16.38 GB (bf16). GGUF Q8_0 8.71 GB, Q4_K_M 5.03 GB. Whether CLM's heads stay accurate on quantized embeddings is not established anywhere I could read. | sizes **verified**; accuracy **unverified** | HF API (`Qwen/Qwen3-8B`, `unsloth/Qwen3-8B-GGUF`). |
-| E20 | `llama-server` offers `--pooling last` and `/v1/embeddings`, so in principle it could stand in for the vLLM encoder. Not tested, and no parity evidence exists. `truncate_prompt_tokens` is a vLLM field; what `llama-server` does with it is unknown. | flags **verified**; viability **unverified** | llama.cpp `tools/server/README.md:175, 210`. |
-| E21 | **openjev** (`razorback16/openjev`, independent of TypeSafe) claims the same wire, "checked against the live API". It defines **`confidence` as `1 − H(p)/ln K`**, which differs from E7. It lists Jev's errors as `400 api_usage_error` for an unknown model, which differs from CLM's `422`. It serves CLM (FP8: 7.7 GB on an RTX 3090, 99 ms) and an MLX backend on Apple silicon (about 16 GB to load, 23–36 GB in service). It also serves small CPU-capable models (`verdict-1.4` 151M with 512 tokens; `laya-1.0` 421M with 1,024 tokens), and gives a free hosted endpoint (Codiv). | **reported** | openjev README (raw, `main` = `master`). |
-| E22 | CLM `score` questions can ignore the state: "one level winning whatever the state says" (CLM issue #3). | **reported** | openjev README. CLM issues and PRs are blocked (github.com 403). |
+| E1 | CLM-8B weights are **Apache-2.0**. The base Qwen3-8B is **Apache-2.0**. The deployable pair is therefore Apache-2.0 on both halves. | **verified** | Model card `Contrastive-LM/CLM-v0.1-8B` § License, plus `cardData.license`, @ `e939398d`. `Qwen/Qwen3-8B` API `cardData.license = apache-2.0` @ `b968826d`. Both shas were unchanged on 2026-10-02. |
+| E2 | The checkpoint is a single `CLM_v0.1-8B.pt`, 75 MB in the repo. `config.json`: `embedding_dim 4096`, `encoder_pooling last-token`. | **verified** | HF API `siblings` / `usedStorage 75816125`, and `config.json`, @ `e939398d`. |
+| E3 | The Python package is **`contrastive-lm`** 0.1.0 (import name `clm`), Apache-2.0, Python ≥ 3.10. **`vllm>=0.6` is a hard install dependency**, but no module in `src/clm/` imports vLLM; it is reached only over HTTP. CLM's documented encoder launch (`vllm serve Qwen/Qwen3-8B … --runner pooling`) needs **vLLM ≥ 0.10.1**: `--runner` first appears as a CLI flag at `v0.10.1`. The range an install can actually use is 0.10.1–0.30.0, not 0.6–0.30.0. | **verified** | PyPI JSON `requires_dist`; sdist 0.1.0 (`grep vllm src/clm/*.py` finds only the `embedder.py:6` docstring). Recipe: sdist 0.1.0 `README.md:59`, `embedder.py:6`; `serve_qwen3_8b.sh` @ CLM `bb42c6c`. Flag: vLLM `vllm/engine/arg_utils.py:473` @ `v0.10.1`; absent @ `v0.10.0`, where `runner` exists only as a `ModelConfig` field. |
+| E4 | **Two processes.** `clm-serve` is a FastAPI server on **port 8700** that holds the heads. It calls an OpenAI-compatible `/v1/embeddings` encoder on **port 8090** (vLLM, `--runner pooling`). The brief's "default port 8090" is the encoder, not the API. | **verified** | `server.py:170-171` @ sdist 0.1.0; model card usage block @ `e939398d`. |
+| E5 | **Wire, `/v1/systemone`.** Request `{state, model, questions: {id: Question}, temperature?}`. Questions are `noul` (`instructions`, optional `criteria {true, false}`), `choice` (`criteria {label: description}`), and `score` (`criteria` as an ordered list of at least 2 levels). Response `{model, answers, usage {billing_units, input_tokens, output_tokens}}`, plus an `X-CLM-Latency-Ms` header. | **verified** | `server.py:96-119`, `schema.py:75-145`, `client.py` @ sdist 0.1.0; matches its README § API. |
+| E6 | **Answers.** `noul`: `{noul: P(true)}`. `choice`: `{choice, confidence, probabilities}`. `score`: `{score: Σ i·pᵢ, confidence, legend, probabilities}`. Probabilities are a softmax over `scale·cos/temperature` and are **relative to the supplied candidate set**. | **verified** | `schema.py:115-145`, `engine.py:130-136` @ sdist 0.1.0; model card § Limitations @ `e939398d`. |
+| E7 | **CLM's `confidence` is top probability minus the mean of the rest**, clamped to [0, 1]. It is a pure function of the returned `probabilities`. | **verified** | `schema.py:122-128` @ sdist 0.1.0. |
+| E8 | **`/v1/rank`** is a CLM-only convenience. It is literally a `choice` question whose criteria are the candidates. | **verified** | `engine.py:138-149`, `server.py:121-153` @ sdist 0.1.0. |
+| E9 | **Errors.** CLM returns `401` for a bad key, `422` for a malformed request **or an unknown model**, and `502` when the embedder is unreachable **or returns any non-200** (E15's refusal path uses this). Auth applies only if `CLM_API_KEY` is set. The server **binds `0.0.0.0` by default**. | **verified** | `server.py:78-80, 113-118, 169`, `embedder.py:44-49` @ sdist 0.1.0. |
+| E10 | **`@typesafe-ai/sdk` 0.6.0** on npm (published 2026-09-15, created 2026-09-12): MIT, `engines.node >=20`, **no runtime dependencies**, ESM and CJS, `sideEffects: false`. | **verified** | npm registry metadata and tarball `package.json`, SDK 0.6.0. |
+| E11 | The SDK's types encode the same wire as E5/E6 (`NoulQuestion`, `ChoiceQuestion`, `ScoreQuestion`, `SystemOneResult`, `Usage`). It has **no `rank`, and no `temperature` field**, though "additional properties on a request variable are forwarded". It documents `confidence` only as "Reported confidence", with no formula. | **verified** | `dist/index.d.mts:36-158` (forwarding note `:145`; `confidence` `:97-98, 111-112`) @ SDK 0.6.0. |
+| E12 | `TypeSafeClientConfig` takes `baseURL` (default `https://api.typesafe.ai`, env `TYPESAFE_BASE_URL`), `defaultModel` (default **`jev-latest`**), `fetch`, `timeout` (default 10 s), `retry` (2 retries on 408/429/5xx), `logger`, and `dangerouslyAllowBrowser`. | **verified** | `dist/index.d.mts:203-228`, `RetryPolicy` `:161-173` @ SDK 0.6.0. |
+| E13 | Runtime behaviour: the constructor **throws if no API key is given**, and throws in a browser unless opted in. `systemOne` checks the question count and score arity and then **`JSON.parse`s the response with no validation**. Failures throw a typed `APIError` subclass per status, `APIConnectionError`, `APITimeoutError`, or `APIUserAbortError`. | **verified** | `dist/index.mjs:347-352, 376, 392, 398, 511-512, 681-686`; error classes `dist/index.d.mts:327-375` @ SDK 0.6.0. |
+| E14 | **Jev's wire shape is what E11 encodes.** Jev's *semantics* are **not visible**: how it defines `confidence`, its token bound, its truncation behaviour, and its error bodies. TypeSafe's docs and blog are blocked by the egress proxy. | **unverified** | `typesafe.ai`, `docs.typesafe.ai`: CONNECT 403 (re-confirmed 2026-10-02). |
+| E15 | **CLM truncation.** `clm-serve --max-tokens` (default 2048, env `CLM_EMB_MAX_TOKENS`) is sent to vLLM as `truncate_prompt_tokens` **with no `truncation_side`**. Configurable: yes. Reported to the caller: no. **`--max-tokens 0` sends no `truncate_prompt_tokens` at all** (the field is set only when the value is truthy). A value above vLLM's `--max-model-len` is not clamped: vLLM rejects the request, so every call fails with `502` (E9). | **verified** | `server.py:173-174, 203`, `embedder.py:41-43` @ sdist 0.1.0. vLLM `serving_engine.py:299-304` @ `v0.10.1`; `entrypoints/pooling/base/serving.py:238-250` @ `v0.30.0`. |
+| E16 | **Which end is cut**, split by link. Conclusion: **an over-long state loses its question.** | **derived** (E16a verified; E16b has one link unreachable from here) | Rows E16a–E16c. |
+| E16a | *vLLM half.* When a request carries `truncate_prompt_tokens` but no `truncation_side`, vLLM truncates on the tokenizer's own side. At `v0.10.1` the text path calls the tokenizer with `truncation=True, max_length=truncate_prompt_tokens` and passes no side at all. At `v0.30.0` the embeddings request builds `TokenizeParams` with the request's `truncation_side` (`None` from CLM); that again calls the tokenizer with `truncation=True`, and the post-tokenization slice falls back to `tokenizer.truncation_side`, else keeps the first N. vLLM accepts `truncation_side` from `v0.18.0`; CLM does not send it (E15). | **verified** | `vllm/entrypoints/openai/serving_engine.py:532-547` @ `v0.10.1` (same shape at `v0.6.6:235-249` and `v0.14.1:945-979`). `vllm/entrypoints/pooling/base/protocol.py:42, 54-61, 110-136` and `vllm/renderers/params.py:180-185, 327-352, 460-484` @ `v0.30.0`. `params.py` exists from `v0.16.0` through `v0.30.0`; Phase A cited it on `main` with no tag. |
+| E16b | *Tokenizer half.* transformers' default `truncation_side` is `"right"`, which keeps the first N tokens. Qwen3-8B's `tokenizer_config.json` has **no `truncation_side` key**, so it does not override that default. **Not checked:** a fast tokenizer also takes its side from a `truncation` section in `tokenizer.json`, if one exists. Qwen3-8B's `tokenizer.json` is a 11.4 MB LFS object served from `us.aws.cdn.hf.co`, which the egress proxy refuses. | default **verified**; config **verified**; `tokenizer.json` **unverified** (unreachable from here) | `src/transformers/tokenization_utils_base.py:1390` @ `v4.55.0` (vLLM `v0.10.1` requires `>=4.55.0`), `:984` @ `v5.11.0`, `:975` @ `v5.18.0` (vLLM `v0.30.0` requires `>=5.10.4`). `tokenization_utils_fast.py:157-163` @ `v4.55.0` and `tokenization_utils_tokenizers.py:430-436` @ `v5.18.0` read `tokenizer.json`'s `truncation.direction`. `Qwen/Qwen3-8B` `tokenizer_config.json` @ `b968826d`. |
+| E16c | *Position and corroboration.* CLM builds the state as **context, then the question last**. The author of CLM's unmerged PR #6 states the same mechanism in the commit that fixes it: "vLLM falls back to the tokenizer default … 'right' … drops the question that state_text appends last", and sends `truncation_side='left'`. openjev's README says "Upstream CLM cuts the end (see CLM PR #6)". | position **verified**; both statements **reported** | `schema.py:62-65` @ sdist 0.1.0. CLM `refs/pull/6/head` = `11211fc` (read over git; not merged at `bb42c6c`). openjev README:411-413 @ `dcd20947`. |
+| E17 | Candidate texts (option descriptions) are embedded separately, and each is subject to the same bound. | **verified** | `engine.py:116-128` and `embedder.py`, which handle every text identically, @ sdist 0.1.0. |
+| E18 | **GGUF (`EvoAwaken-Workshop/CLM-v0.1-8B-gguf`) contains the projection heads only**: 17 F32 tensors, 75.5 MB. It "does **not** contain" the Qwen3-8B encoder. It runs through the third-party **`rust-model-inference`** CLI (`--jev --clm-head …`) with `Qwen3-8B-BF16.gguf` (16.39 GB). Bitwise parity is claimed only for scalar mode with BF16, against a scalar llama.cpp encoder rather than vLLM. | **verified** (card); parity **reported** | GGUF model card @ `01d33811` (README:27, 33, 81-90), and the HF API for file sizes. |
+| E19 | Qwen3-8B sizes: safetensors 16.38 GB (bf16). GGUF Q8_0 8.71 GB, Q4_K_M 5.03 GB. Whether CLM's heads stay accurate on quantized embeddings is not established anywhere I could read. | sizes **verified**; accuracy **unverified** | HF API, `Qwen/Qwen3-8B` @ `b968826d`, `unsloth/Qwen3-8B-GGUF` @ `a6adef13`. |
+| E20 | `llama-server` offers `--pooling last` and `/v1/embeddings`, so in principle it could stand in for the vLLM encoder. Not tested, and no parity evidence exists. `truncate_prompt_tokens` is a vLLM field; what `llama-server` does with it is unknown. Its `--embedding` flag is documented as "use only with dedicated embedding models". | flags **verified**; viability **unverified** | llama.cpp `tools/server/README.md:175, 210` @ `b11081` (the build Ollama `v0.35.0` pins); unchanged @ `b11347`, the latest tag on 2026-10-02. |
+| E21 | **openjev** (`razorback16/openjev`, independent of TypeSafe) claims the same wire, "checked against the live API". It defines **`confidence` as `1 − H(p)/ln K`**, which differs from E7; it too is a function of the distribution alone. It lists Jev's errors as `400 api_usage_error` for an unknown model, which differs from CLM's `422`. It serves CLM (FP8: 7.7 GB on an RTX 3090, 99 ms; bf16 14.1 GB) and an MLX backend on Apple silicon (about 16 GB to load, 23–36 GB in service). It also serves small CPU-capable models (`verdict-1.4` 151M with 512 tokens; `laya-1.0` 421M with 1,024 tokens), and gives a free hosted endpoint (Codiv). Its `jevk5-0.2` model returns `400` for a read over 16,384 tokens, "never a cut". **openjev's `clm-v0.1` route answers through the same `to_answer`, so it reports `1 − H(p)/ln K` over CLM's weights, not E7's formula**, and it wraps CLM's embedder to keep the end of a long text. | **reported** (README); the `confidence` formula, its use on the `clm-v0.1` route, and the left-truncating wrapper are **verified** in source | openjev README @ `dcd20947`: lines 15-16, 25-28, 85, 99-106, 289-291, 397-403, 467. Source @ `dcd20947`: `openjev/engine.py:434-451`; `openjev/encoders.py:45, 157, 291-302, 315-316`. |
+| E22 | CLM `score` questions can ignore the state: "one level winning whatever the state says" (CLM issue #3). | **reported** | openjev README:417-419 @ `dcd20947`. CLM issues are not git refs, and github.com web and `api.github.com` return 403, so the issue stays unreadable. |
 | E24 | **Olares One:** NVIDIA RTX 5090 Mobile with **24 GB GDDR7**, 96 GB DDR5, Core Ultra 9 275HX. | **reported** (secondary) | TechRadar and Notebookcheck coverage. `olares.com/docs/one/spec` is blocked by the egress proxy. |
-| E25 | **Ollama's OpenAI-compatible `EmbedRequest`** has exactly `input`, `model`, `dimensions` and `encoding_format` (`float` or `base64`). It has **no truncation field**, so CLM's `truncate_prompt_tokens` is dropped without error. | **verified** (struct). That an unknown field is silently ignored is **derived** from Go's default JSON decoding. | ollama `openai/openai.go:94-99` (main). |
-| E26 | **Ollama truncates embedding input itself** by default (`truncate` defaults to true). It cuts to `min(context_length, num_ctx)`, **keeping the first tokens** (`tokens[:ctxLen]`), and reserves one token for an appended EOS when the model's `add_eos_token` is set. The default `num_ctx` is chosen by VRAM: 4,096, 32,768 or 262,144. | **verified** | ollama `server/routes.go:1005-1047, 2205-2209`, `api/types.go:610-611` (main). |
-| E27 | Ollama's embed handler requires **no embedding capability**, so a generative Qwen3-8B can be asked for embeddings. **Which pooling it then applies** (CLM needs last-token pooling over Qwen3-8B, E2), and whether the appended EOS becomes the pooled token, is **not established**. | handler **verified**; pooling **unverified** | ollama `server/routes.go:987` (`scheduleRunner(..., []model.Capability{}, ...)`). Ollama's model and runner sources were not at any path I could reach. |
-| E23 | CLM `main` today matches PyPI 0.1.0 in `server.py`, `schema.py`, `embedder.py` and `client.py`; the only differences are a download counter and dict normalisation. **No truncation fix has landed on `main`.** | **verified** | raw `main` against the sdist, diffed. |
+| E25 | **Ollama's OpenAI-compatible `EmbedRequest`** has exactly `input`, `model`, `dimensions` and `encoding_format` (`float` or `base64`). It has **no truncation field**. The middleware then re-encodes the request as a native `api.EmbedRequest` carrying only `Model`, `Input` and `Dimensions`, so CLM's `truncate_prompt_tokens` cannot reach the handler. | **verified**. That the unknown field is ignored rather than rejected at bind time is **derived** from gin's non-strict `ShouldBindJSON`. | `openai/openai.go:95-100` and `middleware/openai.go:398-430` @ ollama `v0.35.0`. |
+| E26 | **Ollama truncates embedding input itself** by default: the OpenAI path never sets `truncate`, and a nil `truncate` means true. It cuts to `min(context_length, num_ctx)`, **keeping the first tokens** (`tokens[:ctxLen]`). It reserves one token each for a BOS and an EOS that the tokenized input lacks, when the GGUF's `add_bos_token` / `add_eos_token` is true **or absent**. The default `num_ctx` is chosen by VRAM: 4,096 below 23 GiB, 32,768 from 23 GiB, and 262,144 from 47 GiB. | **verified** | `server/routes.go:1002-1047, 2199-2209`, `api/types.go:610-611` @ ollama `v0.35.0`. |
+| E27 | Ollama's embed handler requires **no embedding capability**, so a generative Qwen3-8B can be *asked* for embeddings. | **verified** | `server/routes.go:987` (`scheduleRunner(..., []model.Capability{}, ...)`) @ ollama `v0.35.0`. |
+| E27a | **At `v0.35.0`, asking will probably fail rather than mis-pool.** Ollama runs a GGUF model in a bundled upstream `llama-server`. It passes `--embedding` only when the GGUF carries `<arch>.pooling_type`, and it treats such a model as an embedding model. Without that flag, `llama-server`'s `/v1/embeddings` answers "This server does not support embeddings". llama.cpp's converter writes `pooling_type` only from a sentence-transformers `modules.json`, which `Qwen/Qwen3-8B` does not have. **Not checked:** the metadata of the actual `qwen3:8b` library blob, because `registry.ollama.ai` is unreachable from here. **Not covered:** older Ollama releases. Up to at least `v0.20.0` Ollama used its own runner (`runner/`), whose pooling remains **unverified**. | **derived**; the blob's metadata is **unverified** (unreachable from here) | `llm/llama_server.go:584-590, 863-865, 945` and `fs/gguf/metadata.go:80-91`, `server/images.go:197-200` @ ollama `v0.35.0`; `LLAMA_CPP_VERSION` = `b11081`. llama.cpp `tools/server/server-context.cpp:5390-5394` and `conversion/base.py:2223-2255`, `conversion/qwen.py:66-68, 159-161` @ `b11081`. HF tree `Qwen/Qwen3-8B` @ `b968826d` (no `modules.json`). `llm/llama_server.go` 404 @ `v0.12.0`, `v0.20.0`; 200 @ `v0.30.0`. |
+| E23 | CLM `main` matches PyPI 0.1.0 in `server.py`, `schema.py`, `embedder.py` and `client.py`. The only differences are a download counter and dict normalisation in `engine.py` (`question_to_dict`, +2 lines). **No truncation fix has landed on `main`.** The fix exists only as unmerged PR #6 (E16c). This row is *about* `main` by design: the question it answers is whether a fix has landed upstream ahead of a release. | **verified** | CLM `main` @ `bb42c6c` (2026-09-24; still `HEAD` on 2026-10-02) diffed against sdist 0.1.0. |
 
 Two brief premises turned out to be wrong. Both are recorded here because Phase B will reason from
 them.
@@ -96,11 +123,13 @@ them.
   input shape."* **Partially refuted.** The available commands are bare names returned as data by
   `task_inspect`. The *executable* command tools are fixed when the tools are built, and their
   `parameters` must be written by a model (`succeed {outcome}`, `fail {reason}`, `set-title {title}`
-  and so on). Sources: `types/trackedCommands.ts:18-30`, `tools/schemas.ts:236-243`. See §9.
+  and so on). Sources: `types/trackedCommands.ts:16-31` and `tools/schemas.ts:236-243` in
+  `libraries/ts-agent-tasks/src/packlets/`, @ `release` `febf0b2b4`. The claim is unchanged from the
+  branch Phase A read; only the first range moved. See §9.
 - *"I1a … every omitted page item is named."* **Refuted.** `TaskContextRenderer` always reports
   omissions, but as **counts and reasons**, not identities (`ITaskContextOmissions`,
-  `types/context.ts:176-190`). The 8,000-character default is **verified**
-  (`types/context.ts:33-38`). The convention §6.1 relies on is "nothing is dropped *unannounced*", and
+  `types/context.ts:170-190` @ `release` `febf0b2b4`). The 8,000-character default is **verified**
+  (`defaultTaskContextBudget`, `types/context.ts:30-38`, same ref). The convention §6.1 relies on is "nothing is dropped *unannounced*", and
   that convention holds.
 
 ## 3. What a System-1 decision is, on the wire
@@ -114,7 +143,10 @@ everything downstream:
   technical", not "94% likely billing". Adding a third option changes the number. A threshold tuned
   against one candidate set, or one backend, does not transfer to another.
 - **`confidence` is backend-defined** (E7 against E21; Jev's definition is E14). The field name is
-  shared, and the formula is not. Only `probabilities` is comparable across backends.
+  shared, the formula is not, and nothing in a response says which formula produced it (E11).
+  `probabilities` has one definition on every backend, so it is the only field whose *meaning*
+  carries across backends. Its *values* are still model-relative (the bullet above, and §7). The
+  boundary does not return `confidence` (§8).
 
 ## 4. The pressure test
 
@@ -172,9 +204,9 @@ wire rather than for CLM, where the backend is a construction-time `baseUrl` + `
 ### 5.2 What "spanning Jev" claims, and what it does not
 
 It claims **wire compatibility**, read from the SDK. It does **not** claim **semantic
-compatibility**, which E14 makes unknowable from here. So the package documents `confidence` as
-backend-defined, recommends `probabilities` for any cross-backend logic, and classifies failures by
-HTTP status family rather than by body shape. It promises nothing about Jev's token bound.
+compatibility**, which E14 makes unknowable from here. So the package omits `confidence` from its
+answers (§8), and classifies failures by HTTP status family rather than by body shape. It promises
+nothing about Jev's token bound.
 
 ### 5.3 What would change the decision
 
@@ -206,7 +238,8 @@ truncates.**
 - `askSystemOne` requires `inputLimit: { maxChars: number } | 'unchecked'`. As with safer-fetch's
   `addressGuard`, omitting it is a **compile error**, so every call site's posture can be found with
   one grep. `'unchecked'` exists for backends that are known to refuse rather than truncate, and it
-  names itself.
+  names itself. Such backends exist (OQ-7, resolved), but none is in the decided topology's every
+  leg, so `'unchecked'` is not correct for the driving consumer today.
 - Before sending, the boundary measures, for each question, the length of the state plus
   `instructions` plus the separator. It also measures each criterion description separately. If any
   exceeds the limit, the call fails with reason `'input-over-limit'`, naming the question id, the
@@ -364,8 +397,12 @@ for rather than discovered:
    environment, and development refuses exactly the inputs production refuses. Set it from the
    production backend's bound. Upstream CLM is the strictest relevant one, and the one that cuts the
    question.
-4. **`confidence` differs per backend** (E7 against E21). A consumer that branches on `confidence`
-   will behave differently in development and production by construction. Branch on `probabilities`.
+4. **`confidence` differs per backend** (E7 against E21), and it differs even between two servers
+   serving the same CLM weights: openjev's `clm-v0.1` route reports E21's formula, and `clm-serve`
+   reports E7's. A consumer that branched on it would behave differently in development and
+   production by construction. The boundary therefore does not return it (§8). Thresholds on
+   `probabilities` are still model-relative (item 1), but they keep one meaning on every server, so a
+   development run against openjev's `clm-v0.1` exercises the same quantity production uses.
 5. **The SDK's environment fallbacks.** The SDK reads `TYPESAFE_BASE_URL`, `TYPESAFE_API_KEY` and
    `TYPESAFE_DEFAULT_MODEL` when values are omitted (E12). The boundary always passes explicit values,
    so a developer's shell variable cannot silently redirect a deployed client. The composition root
@@ -379,16 +416,24 @@ for rather than discovered:
      - The RTX 5090 is a Blackwell part, which needs a vLLM and CUDA build that supports it.
      - On a shared device, vLLM's default GPU-memory claim has to be lowered (`--gpu-memory-utilization`),
        as openjev does for its CLM container (E21).
-   - **Ollama is a different encoder path, and three of its differences are silent.** `clm-serve
+   - **Ollama is a different encoder path, with three differences.** Two are silent; the third,
+     on current Ollama, is probably loud instead (item 2 below, amended 2026-10-02). `clm-serve
      --emb-url` can point at Ollama's `/v1/embeddings`: the request shape and `encoding_format:
      base64` are accepted (E25). But:
      1. **CLM's 2048 bound is not applied.** Ollama drops `truncate_prompt_tokens` (E25) and truncates
         at its own `num_ctx` instead, keeping the start (E26). Inputs between 2,048 tokens and
         `num_ctx` are embedded in full, which is longer than anything the heads were served under.
         Inputs beyond `num_ctx` lose the question, as upstream CLM does.
-     2. **Pooling is unverified** (E27). If Ollama does not pool the last token the way vLLM's pooling
-        runner does, or if it pools an appended EOS, the heads receive different vectors and nothing
-        reports an error.
+     2. **Pooling.** *On Ollama `v0.35.0`, the request probably fails outright* (E27a, derived). A
+        base Qwen3-8B GGUF carries no `pooling_type`, so Ollama starts its bundled `llama-server`
+        without `--embedding`, and that server refuses embedding requests. `clm-serve` then answers
+        `502` (E9), and the boundary reports `server`. That is a loud failure, not a silent one, and
+        it means the Ollama leg may not run at all with base `qwen3:8b`. The one unchecked link is
+        the library blob's own metadata. *On older Ollama releases*, which used Ollama's own runner,
+        pooling is still unverified: if it does not pool the last token the way vLLM's pooling runner
+        does, or if it pools an appended EOS, the heads receive different vectors and nothing
+        reports an error. A GGUF that does carry `pooling_type` would be embedded with the pooling it
+        declares, and then the silent version of this difference applies again.
      3. **Quantization.** Ollama serves GGUF, usually quantized. The only accuracy figure anywhere is
         openjev's FP8 result (E21), which says nothing about Q4 or Q8 (E19).
 
@@ -397,7 +442,8 @@ for rather than discovered:
    - **What the boundary contributes, and where its job stops.** Because fgv refuses at the per-call
      `inputLimit` before any server truncates (§6.1), difference 1 is neutralised for inputs under the
      limit. Inputs never reach Ollama's longer window or either server's cut. Differences 2 and 3 are
-     encoder fidelity, which an HTTP client cannot observe. **Ollama-backed CLM results are
+     encoder fidelity, which an HTTP client cannot observe. The exception is difference 2's refusal
+     on current Ollama, which the boundary does surface, as `server`. **Ollama-backed CLM results are
      unvalidated until a parity check against vLLM bf16 passes (OQ-12).** The boundary is indifferent
      to the encoder; the consumer's experiment is not.
 
@@ -409,7 +455,7 @@ dependencies on `@fgv/ts-utils` and `@fgv/ts-json-base`.
 | primitive | wraps | returns |
 |---|---|---|
 | `createSystemOneClient({ baseUrl, model, apiKey, timeoutMs?, retry?, logger? })` | `new TypeSafeClient(...)` | `Result<ISystemOneClient>`. **`baseUrl` and `model` are required**: the SDK defaults (`api.typesafe.ai`, `jev-latest`) would silently send CLM a model it rejects with 422 (E9), and would make the backend choice invisible at the composition root. `logger` is an fgv `ILogger` adapted to the SDK's `Logger`. |
-| `askSystemOne(client, { state, questions, inputLimit, signal? })` | `client.systemOne(...).withResponse()` | `Promise<DetailedResult<ISystemOneAnswer<Q>, SystemOneFailureReason>>`. Runs the §6.1 bound, then the call, then **response validation** (below). Returns `{ result, meta }`. `result` is the SDK's `SystemOneResult<Q>`, with answer types inferred from `questions`. `meta` is `{ model, usage, elapsedMs, requestId?, serverTiming? }`, described below. |
+| `askSystemOne(client, { state, questions, inputLimit, signal? })` | `client.systemOne(...).withResponse()` | `Promise<DetailedResult<ISystemOneAnswer<Q>, SystemOneFailureReason>>`. Runs the §6.1 bound, then the call, then **response validation** (below). Returns `{ result, meta }`. `result` is the SDK's `SystemOneResult<Q>` with `confidence` removed from `choice` and `score` answers (a mapped type over the SDK's, not a parallel definition; see below), with answer types inferred from `questions`. `meta` is `{ model, usage, elapsedMs, requestId?, serverTiming? }`, described below. |
 | `listSystemOneModels(client)` | `client.models.list()` | `Promise<Result<ReadonlyArray<ModelCard>>>` |
 | `noul` / `choice` / `score` | re-exports | SDK question builders, so there are no parallel types |
 | `measureSystemOneInput(state, questions)` | — | the per-question and per-criterion lengths that the §6.1 check uses, so a caller can size a budget before calling |
@@ -426,6 +472,34 @@ own questions:
 A mismatch is `'invalid-response'`. A server can return a well-formed answer to a different set of
 questions, and none of the three servers promises otherwise. Use `Converters` / `Validators` per
 `/type-safe-validation`; never a cast.
+
+**`confidence` is not returned.** *Decided 2026-10-02 by the verification pass.* Phase A made omitting
+`inputLimit` a compile error, but handled `confidence` with advice ("branch on `probabilities`"). The
+two hazards have the same shape: a number whose meaning the consumer cannot see changes with the URL.
+The asymmetry does not survive inspection, so this design closes it. Four options were weighed:
+
+1. *Pass it through, documented* (Phase A). **Rejected.** The decided topology changes the URL
+   between development and production (decision 6). The formula changes even between two servers
+   that serve the same CLM weights (§7.1, item 4). A field that is wrong by construction for the
+   consumer's own experiment is the kind of thing the repo removes rather than documents.
+2. ***Omit it.* Chosen.** Both known definitions, CLM's (E7) and openjev's (E21), are pure functions
+   of the returned `probabilities`. Omitting the field therefore loses no information on either
+   backend. A consumer that wants either can compute it in a line, and the formula is then named in
+   the consumer's own code. The only definition lost is Jev's, which is unknown (E14) and so could
+   not have been interpreted anyway.
+3. *Return it wrapped with its definition.* **Rejected.** The boundary cannot know the definition.
+   The SDK documents it only as "Reported confidence" (E11), Jev's formula is unknown (E14), and a
+   model id does not identify the server: openjev's `clm-v0.1` and `clm-serve`'s `clm-latest` serve
+   the same weights under different formulas. A wrapper would label each number with a guess. That
+   is the promise of equivalence §5.1 already refuses to make through an interface.
+4. *Name it per backend.* **Rejected** for the same reason: it needs the boundary to know which
+   server answered.
+
+Why the asymmetry arose: `inputLimit`'s hazard cannot be seen after the call, because truncation is
+unreported on the wire (E15). It had to be prevented up front. `confidence` can be seen, so
+explaining it looked sufficient. But a visible number that misleads still misleads. Preventing it is
+also cheaper than preventing truncation: the field is simply left out of a projection the boundary
+already builds for response validation.
 
 **Per-call `meta`, there because adoption is decided by measured performance (§1, decision 6).** The consumer's
 experiment needs, for every call:
@@ -467,7 +541,7 @@ the bodies differ by backend (E9 against E21).
 - A browser sibling.
 - Any fgv `ISystemOneDecider` interface (§5.3).
 - Sidecar process management, health supervision, model download.
-- A backend-normalised `confidence`.
+- `confidence` in any form, raw or backend-normalised (D6).
 - Exact token counting.
 - Threshold or decision policy, which belongs to the consumer.
 - Retries beyond passing through the SDK's policy.
@@ -499,7 +573,8 @@ No success may be claimed from mocked SSE-style fixtures alone. This is the `TES
    bodies (E5, E11). Required cases:
    - every failure reason;
    - the input-limit refusal, which must fire before any fetch;
-   - validation rejecting a mismatched answer set.
+   - validation rejecting a mismatched answer set;
+   - a `choice` or `score` answer carrying no `confidence`, whatever the backend sent.
 2. **Live round trips, one per topology leg (§7.1)**, each recorded in the stream's `result.md` with
    backend, model, hardware and the `meta` it returned:
    - a remote development server (Jev or openjev), over `https` with a key;
@@ -528,7 +603,7 @@ No success may be claimed from mocked SSE-style fixtures alone. This is the `TES
    loaded through transformers.js, which is unverified). It would replace the character proxy for
    backends whose tokenizer is known.
 6. **D6 — Backend-normalised confidence**, computed from `probabilities`. This adds opinion, so it
-   waits for a consumer to ask.
+   waits for a consumer to ask. The backends' own `confidence` is not returned at all (§8).
 7. **D7 — A `fetch`-shaped safer-fetch adapter**, for a consumer that needs to reach a System-1 server
    whose URL it does not control.
 8. **D8 — Sidecar process management** (spawn, health, download), as for Ollama.
@@ -566,10 +641,27 @@ Each question is followed by what would resolve it.
    `x-typesafe-request-id`; whether openjev's `529` counts as retryable (the SDK retries `500–599`);
    CLM's `422` on unknown model being classified as `invalid-request`. *Resolved by:* §10.2's live
    round trip plus targeted fixture tests.
-7. **OQ-7 — Is `'unchecked'` safe to offer?** It is meant for backends that refuse rather than
-   truncate, and no backend is verified to do that. *Resolved by:* finding one that refuses (vLLM
-   without `truncate_prompt_tokens` should refuse over-length input, which is unverified). Otherwise,
-   drop `'unchecked'` and make `maxChars` the only form.
+7. **OQ-7 — Is `'unchecked'` safe to offer? RESOLVED 2026-10-02 (verification pass): keep it, and
+   state exactly when it is correct.** This question's own condition, finding a backend that refuses,
+   is met:
+   - **vLLM refuses rather than truncates** when a request carries no `truncate_prompt_tokens`. At
+     `v0.10.1`, `_validate_input` raises "This model's maximum context length is …"
+     (`vllm/entrypoints/openai/serving_engine.py:574-601`). At `v0.30.0`, `_text_len_check` and
+     `_token_len_check` raise the same way (`vllm/renderers/params.py:354-382, 494-519`). **verified.**
+   - vLLM on its own is an encoder, not a `/v1/systemone` server, so it is not a backend this package
+     targets. What reaches the boundary is `clm-serve`, which sends `truncate_prompt_tokens` by default
+     (E15). **`clm-serve --max-tokens 0` sends none** (E15). A `clm-serve` over vLLM deployed that way
+     therefore refuses any input longer than vLLM's `--max-model-len`. The refusal reaches the boundary
+     as `502` (E9), so it is classified as `server`, and it cannot be told apart from an unreachable
+     embedder. **derived** (E15, E9 and the vLLM lines above; not run).
+   - openjev's `jevk5-0.2` returns `400` for a read over 16,384 tokens (E21, **reported**).
+
+   **What this decides.** `'unchecked'` stays. Its README states that it is correct only when *every*
+   backend the call site can reach refuses, and that under `clm-serve --max-tokens 0` a refusal
+   arrives as `server`, not as `input-over-limit`. Under the decided topology that condition does not
+   hold today. Development reaches Jev, whose behaviour is unknown (OQ-5), or openjev's CLM, which
+   truncates the start (E21). Production `clm-serve` truncates unless it runs with `--max-tokens 0`.
+   So the driving consumer uses `{ maxChars }`, and §7.1 item 3 is unchanged.
 8. **OQ-8 — CLM `score` reliability** (E22). This is model quality, not the boundary's concern. Should
    the README warn about it? *Resolved by:* reproducing CLM issue #3 during §10.2. If it reproduces,
    the README carries the warning with the evidence.
@@ -598,6 +690,9 @@ Each question is followed by what would resolve it.
     means Ollama environments use a remote vLLM-backed CLM instead. It is not a reason to loosen the
     threshold. This is the consumer's experiment, but the harness is backend-agnostic. Phase B
     decides whether it ships as a `perf/` script in the package (D10).
+    *Precondition, added 2026-10-02:* on Ollama `v0.35.0` with base `qwen3:8b`, the Ollama leg probably
+    fails before any comparison is possible (E27a). The first step is a single round trip. A refusal
+    there is recorded as a refusal, not as a parity result.
 
 ## 13. Revert matrix
 
