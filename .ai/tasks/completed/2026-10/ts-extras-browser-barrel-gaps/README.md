@@ -1,6 +1,6 @@
 # `ts-extras-browser-barrel-gaps`: `fromBase64Strict` in the browser entry, and a guard for the class
 
-**Shipped 2026-10-02** via ErikFortune/fgv#715 (number anticipated; confirm at merge).
+**Shipped 2026-10-02** via ErikFortune/fgv#717.
 
 ---
 

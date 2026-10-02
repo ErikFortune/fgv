@@ -1,7 +1,7 @@
 id: ts-extras-browser-barrel-gaps
 status: shipped
 packages: ['@fgv/ts-extras', '@fgv/ts-web-extras']
-prs: [715] # anticipated number, written in the PR itself; the orchestrator confirms it when the PR opens
+prs: [717]
 openPrs: []
 opened: 2026-10-02
 closed: 2026-10-02
