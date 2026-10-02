@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-agent-tasks",
+      "comment": "New package: the agent-task vocabulary — bounded common envelope, lifecycle/observation/command/recovery unions, versioned kind and command registry with converter-closure erasure, typed handles, built-in tracked and task-list detail schemas, injected clock/ID/logger seam, and the finite capacity profile, discriminated capacity claims and typed dimension failures and status.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-agent-tasks"
+}

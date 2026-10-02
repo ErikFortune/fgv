@@ -19,6 +19,7 @@ The active/production split is therefore **per-surface, not per-library**. A lib
 | `ts-prompt-assist` | All | New library (v0.1; design + initial implementation in flight via the `ts-prompt-assist` workstream) |
 | `ts-agent-memory` | All | New library (v1 shipped, one close consumer coordinating adoption; treated as still pre-1.0/malleable — breaking changes land freely with no shim, e.g. the 2026-07 rank-axis, scope-qualified-edge, and vector-scoping streams) |
 | `ts-agent-memory-sqlite-vec` | All | Companion to `ts-agent-memory`; carries the same pre-1.0 posture and moves in lockstep with its seams (it implements `IVectorIndex` / `IFragmentVectorIndex`, so a contract change there lands here in the same PR) |
+| `ts-agent-tasks` | All | New library, **not yet on `release`** — being built slice by slice on `integration/agent-tasks-v1` per `docs/design/agent-tasks/implementation-plan.md`. T1 shipped ~101 union members across 15 closed sets with roughly half *choice*-unexercised, so each later slice is the first to exercise part of that vocabulary and **holds explicit licence to revise it**; the slice that revises also updates T1's declared-vs-exercised table. Breaking changes land freely with no shim |
 
 Anything not listed above — including production libraries like `ts-utils`, `ts-res`, `ts-bcp47`, `ts-json`, `ts-json-base`, `ts-random`, `ts-utils-jest`, `ts-res-ui-components` — carries stability obligations. See [Compatibility Rules](#compatibility-rules).
 

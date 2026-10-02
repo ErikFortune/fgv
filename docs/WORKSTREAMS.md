@@ -462,6 +462,9 @@ here so a stream can be found by id without opening them; each archive links bac
 the same "docs ship with the code" rule as everywhere else, so the working ledger never
 accumulates history again.
 
+**[2026-10](workstreams/2026-10.md)** — 20 shipped
+`agent-tasks-cluster-close` · `personality-intake` · `agent-tasks-p1` · `agent-tasks-m1-stop` · `agent-tasks-i2` · `agent-tasks-tracked-commands` · `agent-tasks-i1d` · `agent-tasks-i1c` · `agent-tasks-i1b` · `agent-tasks-i1a` · `agent-tasks-t9` · `agent-tasks-t8b` · `agent-tasks-t8` · `agent-tasks-t7` · `agent-tasks-t6` · `agent-tasks-t5` · `agent-tasks-t4` · `agent-tasks-t3` · `agent-tasks-t2` · `agent-tasks-t1`
+
 **[2026-09](workstreams/2026-09.md)** — 9 shipped
 `null-prototype-property-guard` · `ai-assist-anthropic-structured-output` · `ai-assist-model-catalog-2026-09` · `prompt-assist-qualifier-stability` · `ai-assist-streaming-cache` · `filetree-atomic-write` · `ai-assist-prompt-caching` · `ai-assist-thinking-anchoring` · `prompt-composition-metadata`
 

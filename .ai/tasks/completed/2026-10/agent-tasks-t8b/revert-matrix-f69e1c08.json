@@ -1,0 +1,961 @@
+[
+  {
+    "name": "M1 skip the pending-inventory write",
+    "verdict": "42 red",
+    "red": [
+      "copilot round 1 regressions \u203a a resumed registration is refused, retryably, when four reads are already in flight",
+      "copilot round 1 regressions \u203a a resumed registration reads its landed record inside the materialization gate",
+      "copilot round 1 regressions \u203a a resumed registration refuses an oversized landed file before parsing it",
+      "copilot round 6: open completion and resumed registration \u203a a landed record that is not exactly this registration is refused and left alone",
+      "copilot round 6: open completion and resumed registration \u203a a retry finishes a registration whose record landed but whose live write failed",
+      "mutation-matrix gaps \u203a a resume does not finish over a landed record that carries other claims",
+      "mutation-matrix gaps \u203a a resume does not finish over a landed record that is a later record revision",
+      "open completes only the registrations that need it \u203a other live entries are left exactly as they were",
+      "process-crash acceptance matrix (real Node FileTree) on /dev/shm (qualified) \u203a registration killed at write 1, after-directory-flush (C2): pending, reservations held; the retry resumes with the same claims",
+      "process-crash acceptance matrix (real Node FileTree) on /dev/shm (qualified) \u203a registration killed at write 1, after-rename (C2): pending, reservations held; the retry resumes with the same claims",
+      "process-crash acceptance matrix (real Node FileTree) on /dev/shm (qualified) \u203a registration killed at write 2, after-directory-flush (C4): reopen completes it, counting the claim once",
+      "process-crash acceptance matrix (real Node FileTree) on /dev/shm (qualified) \u203a registration killed at write 2, after-rename (C4): reopen completes it, counting the claim once",
+      "process-crash acceptance matrix (real Node FileTree) on /dev/shm (qualified) \u203a registration killed at write 2, before-open (C3): pending, reservations held; the retry resumes with the same claims",
+      "process-crash acceptance matrix (real Node FileTree) on /dev/shm (qualified) \u203a registration killed at write 2, before-rename (C3): pending, reservations held; the retry resumes with the same claims",
+      "process-crash acceptance matrix (real Node FileTree) on /dev/shm (qualified) \u203a registration killed at write 2, mid-write (C3): pending, reservations held; the retry resumes with the same claims",
+      "process-crash acceptance matrix (real Node FileTree) on /dev/shm (qualified) \u203a registration killed at write 3, after-directory-flush (C6): live; the retry replays without a second charge",
+      "process-crash acceptance matrix (real Node FileTree) on /dev/shm (qualified) \u203a registration killed at write 3, after-rename (C6): live; the retry replays without a second charge",
+      "process-crash acceptance matrix (real Node FileTree) on /dev/shm (qualified) \u203a registration killed at write 3, before-open (C5): reopen completes it, counting the claim once",
+      "process-crash acceptance matrix (real Node FileTree) on /dev/shm (qualified) \u203a registration killed at write 3, before-rename (C5): reopen completes it, counting the claim once",
+      "process-crash acceptance matrix (real Node FileTree) on /dev/shm (qualified) \u203a registration killed at write 3, mid-write (C5): reopen completes it, counting the claim once",
+      "process-crash acceptance matrix (real Node FileTree) on /dev/shm (qualified) \u203a the harness works, and success is returned only after the last directory flush",
+      "process-crash acceptance matrix (real Node FileTree) on /tmp (qualified) \u203a registration killed at write 1, after-directory-flush (C2): pending, reservations held; the retry resumes with the same claims",
+      "process-crash acceptance matrix (real Node FileTree) on /tmp (qualified) \u203a registration killed at write 1, after-rename (C2): pending, reservations held; the retry resumes with the same claims",
+      "process-crash acceptance matrix (real Node FileTree) on /tmp (qualified) \u203a registration killed at write 2, after-directory-flush (C4): reopen completes it, counting the claim once",
+      "process-crash acceptance matrix (real Node FileTree) on /tmp (qualified) \u203a registration killed at write 2, after-rename (C4): reopen completes it, counting the claim once",
+      "process-crash acceptance matrix (real Node FileTree) on /tmp (qualified) \u203a registration killed at write 2, before-open (C3): pending, reservations held; the retry resumes with the same claims",
+      "process-crash acceptance matrix (real Node FileTree) on /tmp (qualified) \u203a registration killed at write 2, before-rename (C3): pending, reservations held; the retry resumes with the same claims",
+      "process-crash acceptance matrix (real Node FileTree) on /tmp (qualified) \u203a registration killed at write 2, mid-write (C3): pending, reservations held; the retry resumes with the same claims",
+      "process-crash acceptance matrix (real Node FileTree) on /tmp (qualified) \u203a registration killed at write 3, after-directory-flush (C6): live; the retry replays without a second charge",
+      "process-crash acceptance matrix (real Node FileTree) on /tmp (qualified) \u203a registration killed at write 3, after-rename (C6): live; the retry replays without a second charge",
+      "process-crash acceptance matrix (real Node FileTree) on /tmp (qualified) \u203a registration killed at write 3, before-open (C5): reopen completes it, counting the claim once",
+      "process-crash acceptance matrix (real Node FileTree) on /tmp (qualified) \u203a registration killed at write 3, before-rename (C5): reopen completes it, counting the claim once",
+      "process-crash acceptance matrix (real Node FileTree) on /tmp (qualified) \u203a registration killed at write 3, mid-write (C5): reopen completes it, counting the claim once",
+      "process-crash acceptance matrix (real Node FileTree) on /tmp (qualified) \u203a the harness works, and success is returned only after the last directory flush",
+      "registration \u2014 the ordered inventory protocol \u203a a failure after the record may have landed fences, carrying the operation id",
+      "registration \u2014 the ordered inventory protocol \u203a a failure before the pending entry is visible accepts nothing and charges nothing",
+      "registration \u2014 the ordered inventory protocol \u203a a pending registration survives reopen, still holding its reservation, and resumes",
+      "registration \u2014 the ordered inventory protocol \u203a pending entry committed, record write fails: reservations stay held, retry resumes with the same claim ids",
+      "registration \u2014 the ordered inventory protocol \u203a record written, live entry lost: open completes the registration and counts the claim once",
+      "registration \u2014 the ordered inventory protocol \u203a writes pending entry, then record, then live entry \u2014 in that order",
+      "stores that fail without classifying \u203a open reports a failed registration completion (replaced) and writes nothing further",
+      "stores that fail without classifying \u203a open reports a failed registration completion (unchanged) and writes nothing further"
+    ]
+  },
+  {
+    "name": "M2 mark live before writing the record",
+    "verdict": "26 red",
+    "red": [
+      "copilot round 1 regressions \u203a a resumed registration is refused, retryably, when four reads are already in flight",
+      "copilot round 1 regressions \u203a a resumed registration reads its landed record inside the materialization gate",
+      "copilot round 6: open completion and resumed registration \u203a a landed record that is not exactly this registration is refused and left alone",
+      "copilot round 6: open completion and resumed registration \u203a a retry finishes a registration whose record landed but whose live write failed",
+      "mutation-matrix gaps \u203a a resume does not finish over a landed record that carries other claims",
+      "mutation-matrix gaps \u203a a resume does not finish over a landed record that is a later record revision",
+      "open completes only the registrations that need it \u203a other live entries are left exactly as they were",
+      "process-crash acceptance matrix (real Node FileTree) on /dev/shm (qualified) \u203a registration killed at write 2, after-directory-flush (C4): reopen completes it, counting the claim once",
+      "process-crash acceptance matrix (real Node FileTree) on /dev/shm (qualified) \u203a registration killed at write 2, after-rename (C4): reopen completes it, counting the claim once",
+      "process-crash acceptance matrix (real Node FileTree) on /dev/shm (qualified) \u203a registration killed at write 3, before-open (C5): reopen completes it, counting the claim once",
+      "process-crash acceptance matrix (real Node FileTree) on /dev/shm (qualified) \u203a registration killed at write 3, before-rename (C5): reopen completes it, counting the claim once",
+      "process-crash acceptance matrix (real Node FileTree) on /dev/shm (qualified) \u203a registration killed at write 3, mid-write (C5): reopen completes it, counting the claim once",
+      "process-crash acceptance matrix (real Node FileTree) on /dev/shm (qualified) \u203a the harness works, and success is returned only after the last directory flush",
+      "process-crash acceptance matrix (real Node FileTree) on /tmp (qualified) \u203a registration killed at write 2, after-directory-flush (C4): reopen completes it, counting the claim once",
+      "process-crash acceptance matrix (real Node FileTree) on /tmp (qualified) \u203a registration killed at write 2, after-rename (C4): reopen completes it, counting the claim once",
+      "process-crash acceptance matrix (real Node FileTree) on /tmp (qualified) \u203a registration killed at write 3, before-open (C5): reopen completes it, counting the claim once",
+      "process-crash acceptance matrix (real Node FileTree) on /tmp (qualified) \u203a registration killed at write 3, before-rename (C5): reopen completes it, counting the claim once",
+      "process-crash acceptance matrix (real Node FileTree) on /tmp (qualified) \u203a registration killed at write 3, mid-write (C5): reopen completes it, counting the claim once",
+      "process-crash acceptance matrix (real Node FileTree) on /tmp (qualified) \u203a the harness works, and success is returned only after the last directory flush",
+      "registration \u2014 the ordered inventory protocol \u203a a failure after the record may have landed fences, carrying the operation id",
+      "registration \u2014 the ordered inventory protocol \u203a a pending registration survives reopen, still holding its reservation, and resumes",
+      "registration \u2014 the ordered inventory protocol \u203a pending entry committed, record write fails: reservations stay held, retry resumes with the same claim ids",
+      "registration \u2014 the ordered inventory protocol \u203a record written, live entry lost: open completes the registration and counts the claim once",
+      "registration \u2014 the ordered inventory protocol \u203a writes pending entry, then record, then live entry \u2014 in that order",
+      "stores that fail without classifying \u203a open reports a failed registration completion (replaced) and writes nothing further",
+      "stores that fail without classifying \u203a open reports a failed registration completion (unchanged) and writes nothing further"
+    ]
+  },
+  {
+    "name": "M3 treat visibility 'unknown' as unchanged",
+    "verdict": "3 red",
+    "red": [
+      "a failed commit is classified by what a reader can now see \u203a 'unknown' fences too \u2014 a failed call is never proof that nothing happened",
+      "raising limits \u203a a limit increase whose outcome is unknown fences the repository",
+      "stores that fail without classifying \u203a a write failure with no classification is treated as unknown visibility, and fences"
+    ]
+  },
+  {
+    "name": "M4 never fence (every failure treated as unchanged)",
+    "verdict": "7 red",
+    "red": [
+      "a failed commit is classified by what a reader can now see \u203a 'replaced' fences, reports commit-indeterminate, and a reopen finds the operation committed",
+      "a failed commit is classified by what a reader can now see \u203a 'unknown' fences too \u2014 a failed call is never proof that nothing happened",
+      "a failed commit is classified by what a reader can now see \u203a a replay whose flush-boundary rewrite fails is itself reported, not silently successful",
+      "an interrupted update \u203a a record write whose outcome is unknown fences; rebuild reads what actually landed",
+      "raising limits \u203a a limit increase whose outcome is unknown fences the repository",
+      "registration \u2014 the ordered inventory protocol \u203a a failure after the record may have landed fences, carrying the operation id",
+      "stores that fail without classifying \u203a a write failure with no classification is treated as unknown visibility, and fences"
+    ]
+  },
+  {
+    "name": "M5 no operation replay (precondition decides)",
+    "verdict": "13 red",
+    "red": [
+      "a failed commit is classified by what a reader can now see \u203a 'replaced' fences, reports commit-indeterminate, and a reopen finds the operation committed",
+      "a failed commit is classified by what a reader can now see \u203a a replay whose flush-boundary rewrite fails is itself reported, not silently successful",
+      "copilot round 2: evidence that must hold for a whole lifetime \u203a the principal is part of an operation: a retry under another principal is a conflict",
+      "copilot round 4: identity held across every boundary \u203a a replay reports success only for what was committed",
+      "one-task atomic replacement \u203a a repeated operation replays: the committed record, no second application",
+      "one-task atomic replacement \u203a an archived tombstone is immutable, readable, and survives reopen",
+      "one-task atomic replacement \u203a the same operation id with a different request is refused",
+      "process-crash acceptance matrix (real Node FileTree) on /dev/shm (qualified) \u203a mutation killed at after-directory-flush (C8): the new record whole \u2014 state, update, operation; the retry is a replay",
+      "process-crash acceptance matrix (real Node FileTree) on /dev/shm (qualified) \u203a mutation killed at after-rename (C8): the new record whole \u2014 state, update, operation; the retry is a replay",
+      "process-crash acceptance matrix (real Node FileTree) on /tmp (qualified) \u203a mutation killed at after-directory-flush (C8): the new record whole \u2014 state, update, operation; the retry is a replay",
+      "process-crash acceptance matrix (real Node FileTree) on /tmp (qualified) \u203a mutation killed at after-rename (C8): the new record whole \u2014 state, update, operation; the retry is a replay",
+      "reads and replays at the edges \u203a a replay of a recorded operation that omits it from the record is a conflict, not a replay",
+      "replay identity is the whole operation \u203a a commit retry that renames the catalog operation is a conflict, not a replay"
+    ]
+  },
+  {
+    "name": "M6 drop the operation-superset check",
+    "verdict": "1 red",
+    "red": ["one-task atomic replacement \u203a dedup evidence is never dropped or rewritten"]
+  },
+  {
+    "name": "M7 skip the flush-boundary rewrite on replay",
+    "verdict": "3 red",
+    "red": [
+      "a failed commit is classified by what a reader can now see \u203a a replay whose flush-boundary rewrite fails is itself reported, not silently successful",
+      "one-task atomic replacement \u203a a repeated operation replays: the committed record, no second application",
+      "registration \u2014 the ordered inventory protocol \u203a an identity already live replays for the same operation, and is refused for any other"
+    ]
+  },
+  {
+    "name": "M8 double-charge on pending -> live",
+    "verdict": "29 red",
+    "red": [
+      "A3: at ordinary limits, new identities are refused while accepted work can still finish \u203a non-archived saturation: replay, child completion, list completion and archive all proceed",
+      "A3: at ordinary limits, new identities are refused while accepted work can still finish \u203a retained identities are a lifetime limit: archive does not release them",
+      "admission \u2014 exact fit and one over \u203a encoded bytes: admission charges the widest state of the protocol; exact fit admits, one byte less refuses",
+      "admission \u2014 exact fit and one over \u203a non-archived slots: refused at the limit, reclaimable by archive",
+      "admission \u2014 exact fit and one over \u203a retained identities: the last slot admits, one more is refused as a lifetime dimension",
+      "capacity status \u203a pressure is reported at 80% of a dimension, counting reservations",
+      "limiting records \u203a are the largest contributors, ties broken by record id, so the report is deterministic",
+      "obligation disposition at the storage boundary \u203a the disposed history is joined at open exactly like acknowledgements",
+      "one-task atomic replacement \u203a closeout spends the task\u2019s own reservation; archive consumes it and releases the non-archived slot",
+      "process-crash acceptance matrix (real Node FileTree) on /dev/shm (qualified) \u203a registration killed at write 1, after-directory-flush (C2): pending, reservations held; the retry resumes with the same claims",
+      "process-crash acceptance matrix (real Node FileTree) on /dev/shm (qualified) \u203a registration killed at write 1, after-rename (C2): pending, reservations held; the retry resumes with the same claims",
+      "process-crash acceptance matrix (real Node FileTree) on /dev/shm (qualified) \u203a registration killed at write 1, before-open (C1): nothing accepted, nothing reserved, the retry registers once",
+      "process-crash acceptance matrix (real Node FileTree) on /dev/shm (qualified) \u203a registration killed at write 1, before-rename (C1): nothing accepted, nothing reserved, the retry registers once",
+      "process-crash acceptance matrix (real Node FileTree) on /dev/shm (qualified) \u203a registration killed at write 1, mid-write (C1): nothing accepted, nothing reserved, the retry registers once",
+      "process-crash acceptance matrix (real Node FileTree) on /dev/shm (qualified) \u203a registration killed at write 2, before-open (C3): pending, reservations held; the retry resumes with the same claims",
+      "process-crash acceptance matrix (real Node FileTree) on /dev/shm (qualified) \u203a registration killed at write 2, before-rename (C3): pending, reservations held; the retry resumes with the same claims",
+      "process-crash acceptance matrix (real Node FileTree) on /dev/shm (qualified) \u203a registration killed at write 2, mid-write (C3): pending, reservations held; the retry resumes with the same claims",
+      "process-crash acceptance matrix (real Node FileTree) on /tmp (qualified) \u203a registration killed at write 1, after-directory-flush (C2): pending, reservations held; the retry resumes with the same claims",
+      "process-crash acceptance matrix (real Node FileTree) on /tmp (qualified) \u203a registration killed at write 1, after-rename (C2): pending, reservations held; the retry resumes with the same claims",
+      "process-crash acceptance matrix (real Node FileTree) on /tmp (qualified) \u203a registration killed at write 1, before-open (C1): nothing accepted, nothing reserved, the retry registers once",
+      "process-crash acceptance matrix (real Node FileTree) on /tmp (qualified) \u203a registration killed at write 1, before-rename (C1): nothing accepted, nothing reserved, the retry registers once",
+      "process-crash acceptance matrix (real Node FileTree) on /tmp (qualified) \u203a registration killed at write 1, mid-write (C1): nothing accepted, nothing reserved, the retry registers once",
+      "process-crash acceptance matrix (real Node FileTree) on /tmp (qualified) \u203a registration killed at write 2, before-open (C3): pending, reservations held; the retry resumes with the same claims",
+      "process-crash acceptance matrix (real Node FileTree) on /tmp (qualified) \u203a registration killed at write 2, before-rename (C3): pending, reservations held; the retry resumes with the same claims",
+      "process-crash acceptance matrix (real Node FileTree) on /tmp (qualified) \u203a registration killed at write 2, mid-write (C3): pending, reservations held; the retry resumes with the same claims",
+      "registration \u2014 the ordered inventory protocol \u203a a pending registration survives reopen, still holding its reservation, and resumes",
+      "registration \u2014 the ordered inventory protocol \u203a an identity already live replays for the same operation, and is refused for any other",
+      "registration \u2014 the ordered inventory protocol \u203a an unresolved registration reserves first resolution as well as closeout, and invents no lifecycle",
+      "registration \u2014 the ordered inventory protocol \u203a pending entry committed, record write fails: reservations stay held, retry resumes with the same claim ids"
+    ]
+  },
+  {
+    "name": "M9 no strict UTF-8 in durable mode",
+    "verdict": "2 red",
+    "red": [
+      "durable mode on the Node filesystem \u203a bytes that are not valid UTF-8 are corruption, never decoded with replacement characters",
+      "roots that are not what they claim \u203a durable mode will not read a record through a store that cannot decode strictly"
+    ]
+  },
+  {
+    "name": "M10 initialize adopts a non-empty root",
+    "verdict": "2 red",
+    "red": [
+      "an empty root is empty of directories too \u203a initialize refuses a root that holds only a directory",
+      "initialize \u203a a non-empty root is refused, and left exactly as it was"
+    ]
+  },
+  {
+    "name": "M11 durable accepted on a session-only root",
+    "verdict": "1 red",
+    "red": [
+      "mode and root qualification \u203a a durable repository is refused on a session-only root, never degraded"
+    ]
+  },
+  {
+    "name": "M12 ledger ignores pending-entry claims",
+    "verdict": "13 red",
+    "red": [
+      "process-crash acceptance matrix (real Node FileTree) on /dev/shm (qualified) \u203a registration killed at write 1, after-directory-flush (C2): pending, reservations held; the retry resumes with the same claims",
+      "process-crash acceptance matrix (real Node FileTree) on /dev/shm (qualified) \u203a registration killed at write 1, after-rename (C2): pending, reservations held; the retry resumes with the same claims",
+      "process-crash acceptance matrix (real Node FileTree) on /dev/shm (qualified) \u203a registration killed at write 2, before-open (C3): pending, reservations held; the retry resumes with the same claims",
+      "process-crash acceptance matrix (real Node FileTree) on /dev/shm (qualified) \u203a registration killed at write 2, before-rename (C3): pending, reservations held; the retry resumes with the same claims",
+      "process-crash acceptance matrix (real Node FileTree) on /dev/shm (qualified) \u203a registration killed at write 2, mid-write (C3): pending, reservations held; the retry resumes with the same claims",
+      "process-crash acceptance matrix (real Node FileTree) on /tmp (qualified) \u203a registration killed at write 1, after-directory-flush (C2): pending, reservations held; the retry resumes with the same claims",
+      "process-crash acceptance matrix (real Node FileTree) on /tmp (qualified) \u203a registration killed at write 1, after-rename (C2): pending, reservations held; the retry resumes with the same claims",
+      "process-crash acceptance matrix (real Node FileTree) on /tmp (qualified) \u203a registration killed at write 2, before-open (C3): pending, reservations held; the retry resumes with the same claims",
+      "process-crash acceptance matrix (real Node FileTree) on /tmp (qualified) \u203a registration killed at write 2, before-rename (C3): pending, reservations held; the retry resumes with the same claims",
+      "process-crash acceptance matrix (real Node FileTree) on /tmp (qualified) \u203a registration killed at write 2, mid-write (C3): pending, reservations held; the retry resumes with the same claims",
+      "registration \u2014 the ordered inventory protocol \u203a a different registration of a pending identity is refused, and the reservation is not released",
+      "registration \u2014 the ordered inventory protocol \u203a a pending registration survives reopen, still holding its reservation, and resumes",
+      "registration \u2014 the ordered inventory protocol \u203a pending entry committed, record write fails: reservations stay held, retry resumes with the same claim ids"
+    ]
+  },
+  {
+    "name": "M13 in-place lowering allowed",
+    "verdict": "UNVERIFIED: pattern found 0 times",
+    "red": []
+  },
+  {
+    "name": "M14 archive does not consume the closeout claim",
+    "verdict": "16 red",
+    "red": [
+      "A3: metadata changes carry claims unchanged \u203a a terminal transition spends the closeout claim; archive consumes it",
+      "one-task atomic replacement \u203a an archived tombstone is immutable, readable, and survives reopen",
+      "one-task atomic replacement \u203a closeout spends the task\u2019s own reservation; archive consumes it and releases the non-archived slot",
+      "rebuildIndexes \u203a rebuilds in staged passes: every task once, then only the records that owe updates",
+      "unrelated archived history \u203a at 0 archived: terminal, all and child queries never visit archived tasks",
+      "unrelated archived history \u203a at 0 archived: the resident shape is the minimal projection",
+      "unrelated archived history \u203a at 0: open read every record once; rebuild re-reads only owed records",
+      "unrelated archived history \u203a at 0: warm open, owed and due work is the fixed set, with no task read",
+      "unrelated archived history \u203a at 1000 archived: terminal, all and child queries never visit archived tasks",
+      "unrelated archived history \u203a at 1000 archived: the resident shape is the minimal projection",
+      "unrelated archived history \u203a at 10000 archived: terminal, all and child queries never visit archived tasks",
+      "unrelated archived history \u203a at 10000 archived: the resident shape is the minimal projection",
+      "unrelated archived history \u203a at 10000: open read every record once; rebuild re-reads only owed records",
+      "unrelated archived history \u203a at 10000: warm open, owed and due work is the fixed set, with no task read",
+      "unrelated archived history \u203a at 1000: open read every record once; rebuild re-reads only owed records",
+      "unrelated archived history \u203a at 1000: warm open, owed and due work is the fixed set, with no task read"
+    ]
+  },
+  {
+    "name": "M15 admission never refuses on a limit",
+    "verdict": "13 red",
+    "red": [
+      "A3: an external command reserves its settlement before dispatch \u203a an accepted uncertain command still settles once the repository is otherwise full",
+      "A3: an external command reserves its settlement before dispatch \u203a without room for the settlement the intent is refused before anything is recorded or sent",
+      "A3: at ordinary limits, new identities are refused while accepted work can still finish \u203a non-archived saturation: replay, child completion, list completion and archive all proceed",
+      "A3: at ordinary limits, new identities are refused while accepted work can still finish \u203a resident payload saturation: ordinary owed updates are refused, the reserved terminal path is not",
+      "A3: at ordinary limits, new identities are refused while accepted work can still finish \u203a retained identities are a lifetime limit: archive does not release them",
+      "A3: observed-state sampling at capacity \u203a a reserved terminal observation commits while ordinary sampling is capacity-blocked",
+      "A3: source-replay envelopes \u203a an envelope larger than the repository can hold is refused as backpressure, not accepted unreserved",
+      "A3: source-replay envelopes \u203a backpressure on a feed revision leaves the cursor where it was",
+      "A3: source-replay envelopes \u203a extension is refused when it does not fit, and for a task that holds no envelope",
+      "a valid repository at its ceiling \u203a reopens in drain mode, and closeout still completes",
+      "admission \u2014 exact fit and one over \u203a encoded bytes: admission charges the widest state of the protocol; exact fit admits, one byte less refuses",
+      "admission \u2014 exact fit and one over \u203a non-archived slots: refused at the limit, reclaimable by archive",
+      "admission \u2014 exact fit and one over \u203a retained identities: the last slot admits, one more is refused as a lifetime dimension"
+    ]
+  },
+  {
+    "name": "M16 open does not complete a pending entry whose record landed",
+    "verdict": "19 red",
+    "red": [
+      "a pending entry completes only against its own registration \u203a the matching registration completes",
+      "a pending registration is not a live parent \u203a a parent whose pending registration completes on open is a live parent",
+      "copilot round 6: open completion and resumed registration \u203a open's completion write is refused safely when the manifest cannot be re-read",
+      "copilot round 6: open completion and resumed registration \u203a open's completion write is refused when the manifest changed after the scan",
+      "open completes only the registrations that need it \u203a other live entries are left exactly as they were",
+      "process-crash acceptance matrix (real Node FileTree) on /dev/shm (qualified) \u203a registration killed at write 2, after-directory-flush (C4): reopen completes it, counting the claim once",
+      "process-crash acceptance matrix (real Node FileTree) on /dev/shm (qualified) \u203a registration killed at write 2, after-rename (C4): reopen completes it, counting the claim once",
+      "process-crash acceptance matrix (real Node FileTree) on /dev/shm (qualified) \u203a registration killed at write 3, before-open (C5): reopen completes it, counting the claim once",
+      "process-crash acceptance matrix (real Node FileTree) on /dev/shm (qualified) \u203a registration killed at write 3, before-rename (C5): reopen completes it, counting the claim once",
+      "process-crash acceptance matrix (real Node FileTree) on /dev/shm (qualified) \u203a registration killed at write 3, mid-write (C5): reopen completes it, counting the claim once",
+      "process-crash acceptance matrix (real Node FileTree) on /tmp (qualified) \u203a registration killed at write 2, after-directory-flush (C4): reopen completes it, counting the claim once",
+      "process-crash acceptance matrix (real Node FileTree) on /tmp (qualified) \u203a registration killed at write 2, after-rename (C4): reopen completes it, counting the claim once",
+      "process-crash acceptance matrix (real Node FileTree) on /tmp (qualified) \u203a registration killed at write 3, before-open (C5): reopen completes it, counting the claim once",
+      "process-crash acceptance matrix (real Node FileTree) on /tmp (qualified) \u203a registration killed at write 3, before-rename (C5): reopen completes it, counting the claim once",
+      "process-crash acceptance matrix (real Node FileTree) on /tmp (qualified) \u203a registration killed at write 3, mid-write (C5): reopen completes it, counting the claim once",
+      "registration \u2014 the ordered inventory protocol \u203a a failure after the record may have landed fences, carrying the operation id",
+      "registration \u2014 the ordered inventory protocol \u203a record written, live entry lost: open completes the registration and counts the claim once",
+      "stores that fail without classifying \u203a open reports a failed registration completion (replaced) and writes nothing further",
+      "stores that fail without classifying \u203a open reports a failed registration completion (unchanged) and writes nothing further"
+    ]
+  },
+  {
+    "name": "M17 open does not reclaim interrupted working files",
+    "verdict": "16 red",
+    "red": [
+      "process-crash acceptance matrix (real Node FileTree) on /dev/shm (qualified) \u203a mutation killed at before-rename (C7): the old record whole; the retry applies once",
+      "process-crash acceptance matrix (real Node FileTree) on /dev/shm (qualified) \u203a mutation killed at mid-write (C7): the old record whole; the retry applies once",
+      "process-crash acceptance matrix (real Node FileTree) on /dev/shm (qualified) \u203a registration killed at write 1, before-rename (C1): nothing accepted, nothing reserved, the retry registers once",
+      "process-crash acceptance matrix (real Node FileTree) on /dev/shm (qualified) \u203a registration killed at write 1, mid-write (C1): nothing accepted, nothing reserved, the retry registers once",
+      "process-crash acceptance matrix (real Node FileTree) on /dev/shm (qualified) \u203a registration killed at write 2, before-rename (C3): pending, reservations held; the retry resumes with the same claims",
+      "process-crash acceptance matrix (real Node FileTree) on /dev/shm (qualified) \u203a registration killed at write 2, mid-write (C3): pending, reservations held; the retry resumes with the same claims",
+      "process-crash acceptance matrix (real Node FileTree) on /dev/shm (qualified) \u203a registration killed at write 3, before-rename (C5): reopen completes it, counting the claim once",
+      "process-crash acceptance matrix (real Node FileTree) on /dev/shm (qualified) \u203a registration killed at write 3, mid-write (C5): reopen completes it, counting the claim once",
+      "process-crash acceptance matrix (real Node FileTree) on /tmp (qualified) \u203a mutation killed at before-rename (C7): the old record whole; the retry applies once",
+      "process-crash acceptance matrix (real Node FileTree) on /tmp (qualified) \u203a mutation killed at mid-write (C7): the old record whole; the retry applies once",
+      "process-crash acceptance matrix (real Node FileTree) on /tmp (qualified) \u203a registration killed at write 1, before-rename (C1): nothing accepted, nothing reserved, the retry registers once",
+      "process-crash acceptance matrix (real Node FileTree) on /tmp (qualified) \u203a registration killed at write 1, mid-write (C1): nothing accepted, nothing reserved, the retry registers once",
+      "process-crash acceptance matrix (real Node FileTree) on /tmp (qualified) \u203a registration killed at write 2, before-rename (C3): pending, reservations held; the retry resumes with the same claims",
+      "process-crash acceptance matrix (real Node FileTree) on /tmp (qualified) \u203a registration killed at write 2, mid-write (C3): pending, reservations held; the retry resumes with the same claims",
+      "process-crash acceptance matrix (real Node FileTree) on /tmp (qualified) \u203a registration killed at write 3, before-rename (C5): reopen completes it, counting the claim once",
+      "process-crash acceptance matrix (real Node FileTree) on /tmp (qualified) \u203a registration killed at write 3, mid-write (C5): reopen completes it, counting the claim once"
+    ]
+  },
+  {
+    "name": "M18 terminal state not absorbing",
+    "verdict": "1 red",
+    "red": ["one-task atomic replacement \u203a terminal state is absorbing"]
+  },
+  {
+    "name": "M19 committed updates mutable",
+    "verdict": "1 red",
+    "red": [
+      "one-task atomic replacement \u203a a committed update is immutable; one owed to no one may leave with any commit"
+    ]
+  },
+  {
+    "name": "M20 a write failure is ignored (success before the boundary)",
+    "verdict": "UNVERIFIED: pattern found 0 times",
+    "red": []
+  },
+  {
+    "name": "M21 first resolution may change catalog metadata",
+    "verdict": "1 red",
+    "red": [
+      "first resolution of an unresolved registration \u203a catalog metadata the registration fixed cannot change on resolution"
+    ]
+  },
+  {
+    "name": "M22 open accepts a pending entry whose record carries other claims",
+    "verdict": "3 red",
+    "red": [
+      "a pending entry completes only against its own registration \u203a same operation and request, but different claims, is not that registration either",
+      "copilot round 2: open validates what claims are, not only which \u203a a pending entry's claims are checked too, and joined to a landed record in full",
+      "open refuses a writable repository over detectable corruption, and rewrites nothing \u203a a pending entry whose present record carries its operation but different claims is not completed"
+    ]
+  },
+  {
+    "name": "M23 per-task operations: no closeout holdback",
+    "verdict": "UNVERIFIED: pattern found 0 times",
+    "red": []
+  },
+  {
+    "name": "M24 observation replay ignores a differing projection",
+    "verdict": "1 red",
+    "red": [
+      "one-task atomic replacement \u203a observation commits are deduplicated by source revision and add no operation"
+    ]
+  },
+  {
+    "name": "M25 profile admits a per-task operation limit below creation + closeout",
+    "verdict": "1 red",
+    "red": [
+      "manifest and inventory converters \u203a a stored profile whose per-task operation limit cannot hold creation plus closeout is refused"
+    ]
+  },
+  {
+    "name": "M26 raiseCapacityLimits skips admission",
+    "verdict": "1 red",
+    "red": [
+      "raising limits \u203a a limit increase whose own manifest would not fit the policy it commits is refused before writing"
+    ]
+  },
+  {
+    "name": "M27 pending completion ignores the creation request",
+    "verdict": "3 red",
+    "red": [
+      "a pending entry completes only against its own registration \u203a same operation id and claims, but a different request, is not that registration",
+      "copilot round 4: identity held across every boundary \u203a open completes a pending entry only when the record matches its principal and catalog operation",
+      "copilot round 8: write-path invariants re-checked where records are trusted \u203a open completes a pending entry only over its first record, not a later revision"
+    ]
+  },
+  {
+    "name": "M28 registration replay finds any operation by id",
+    "verdict": "1 red",
+    "red": [
+      "replay identity is the whole operation \u203a only the first operation is creation evidence, whatever a later one is named"
+    ]
+  },
+  {
+    "name": "M29 read-back compares revision only",
+    "verdict": "2 red",
+    "red": [
+      "bounded working space \u203a writes re-read the record: a cached copy never hides an out-of-band change from a writer",
+      "read-back compares the whole record \u203a an out-of-band edit that keeps the record revision still fences"
+    ]
+  },
+  {
+    "name": "M30 registry freeze result ignored",
+    "verdict": "1 red",
+    "red": [
+      "the registry must actually freeze \u203a initialize and open refuse a registry that will not freeze, and release the root"
+    ]
+  },
+  {
+    "name": "M31 pending entries count as live parents",
+    "verdict": "1 red",
+    "red": [
+      "a pending registration is not a live parent \u203a a child whose parent never got past pending is a dangling edge"
+    ]
+  },
+  {
+    "name": "M32 unresolved read skips quarantine",
+    "verdict": "1 red",
+    "red": [
+      "quarantine covers unresolved records \u203a reading an unresolved record of an unregistered kind fails as unknown-kind-version"
+    ]
+  },
+  {
+    "name": "M33 list drops directories",
+    "verdict": "1 red",
+    "red": [
+      "an empty root is empty of directories too \u203a initialize refuses a root that holds only a directory"
+    ]
+  },
+  {
+    "name": "M34 open skips per-value bounds",
+    "verdict": "UNVERIFIED: pattern found 0 times",
+    "red": []
+  },
+  {
+    "name": "M35 replay identity omits the catalog operation name",
+    "verdict": "1 red",
+    "red": [
+      "replay identity is the whole operation \u203a a commit retry that renames the catalog operation is a conflict, not a replay"
+    ]
+  },
+  {
+    "name": "M36 bounds not re-checked after normalization",
+    "verdict": "1 red",
+    "red": [
+      "the per-value bounds hold for stored records, and for normalized drafts \u203a a kind whose encoder grows the details past their bound is refused, not stored"
+    ]
+  },
+  {
+    "name": "M37 a resolved record may carry no operations",
+    "verdict": "1 red",
+    "red": [
+      "copilot round 2: evidence that must hold for a whole lifetime \u203a a resolved record with no operations is invalid, not a writable task"
+    ]
+  },
+  {
+    "name": "M38 operation identity omits the principal",
+    "verdict": "2 red",
+    "red": [
+      "copilot round 2: evidence that must hold for a whole lifetime \u203a the principal is part of an operation: a retry under another principal is a conflict",
+      "mutation-matrix gaps \u203a a registration retried under another principal is a conflict, not a replay"
+    ]
+  },
+  {
+    "name": "M39 open does not validate record claims",
+    "verdict": "UNVERIFIED: pattern found 3 times",
+    "red": []
+  },
+  {
+    "name": "M40 open does not validate pending-entry claims",
+    "verdict": "5 red",
+    "red": [
+      "copilot round 2: open validates what claims are, not only which \u203a a pending entry's claims are checked too, and joined to a landed record in full",
+      "copilot round 5: the external origin, and pending recovery \u203a a pending entry with no record unresolved but not created by register-external blocks open",
+      "copilot round 5: the external origin, and pending recovery \u203a a pending entry with no record whose operation is not a creation blocks open",
+      "copilot round 5: the external origin, and pending recovery \u203a a pending entry with no record whose request is over its bound blocks open",
+      "mutation-matrix gaps \u203a a pending entry not created by 'register-external' may not hold a first-resolution claim"
+    ]
+  },
+  {
+    "name": "M41 pending join by claim ids only",
+    "verdict": "1 red",
+    "red": [
+      "copilot round 2: open validates what claims are, not only which \u203a a pending entry's claims are checked too, and joined to a landed record in full"
+    ]
+  },
+  {
+    "name": "M42 registration replay rewrites a quarantined record",
+    "verdict": "1 red",
+    "red": [
+      "copilot round 2: evidence that must hold for a whole lifetime \u203a a quarantined record is not rewritten by a registration replay"
+    ]
+  },
+  {
+    "name": "M43 any purpose may resolve a task",
+    "verdict": "1 red",
+    "red": [
+      "first resolution of an unresolved registration \u203a first resolution is an observation: no other purpose can resolve a task"
+    ]
+  },
+  {
+    "name": "M44 source revision may move outside observations",
+    "verdict": "1 red",
+    "red": [
+      "copilot round 2: what each commit purpose may change \u203a outside an observation the committed source revision does not move, or disappear"
+    ]
+  },
+  {
+    "name": "M45 maintenance may change semantic state",
+    "verdict": "1 red",
+    "red": [
+      "copilot round 2: what each commit purpose may change \u203a maintenance changes no semantic state"
+    ]
+  },
+  {
+    "name": "M46 pending manifest growth not counted",
+    "verdict": "1 red",
+    "red": [
+      "registration \u2014 the ordered inventory protocol \u203a a pending registration survives reopen, still holding its reservation, and resumes"
+    ]
+  },
+  {
+    "name": "M47 profile fit ignores the per-record bound",
+    "verdict": "1 red",
+    "red": [
+      "copilot round 2: evidence that must hold for a whole lifetime \u203a a profile whose per-record bound cannot hold a task's own reservation is refused"
+    ]
+  },
+  {
+    "name": "M48 registration may overwrite an unnamed record file",
+    "verdict": "1 red",
+    "red": [
+      "copilot round 3: what open and registration still took on trust \u203a registration never overwrites a record-shaped file the inventory does not name"
+    ]
+  },
+  {
+    "name": "M49 a claim may omit a bundle dimension",
+    "verdict": "UNVERIFIED: pattern found 0 times",
+    "red": []
+  },
+  {
+    "name": "M50 open accepts any first operation",
+    "verdict": "1 red",
+    "red": [
+      "copilot round 3: what open and registration still took on trust \u203a a record's first operation must be its creation evidence"
+    ]
+  },
+  {
+    "name": "M51 an observation may change the catalog or archive",
+    "verdict": "1 red",
+    "red": [
+      "copilot round 4: identity held across every boundary \u203a an observation cannot change catalog metadata or archive the task"
+    ]
+  },
+  {
+    "name": "M52 a pending retry matches on id and request only",
+    "verdict": "2 red",
+    "red": [
+      "copilot round 4: identity held across every boundary \u203a a resumed registration must match the pending creation in full, not only id and request",
+      "registration \u2014 the ordered inventory protocol \u203a a different registration of a pending identity is refused, and the reservation is not released"
+    ]
+  },
+  {
+    "name": "M53 a replay may report uncommitted operations",
+    "verdict": "1 red",
+    "red": [
+      "copilot round 4: identity held across every boundary \u203a a replay reports success only for what was committed"
+    ]
+  },
+  {
+    "name": "M54 the manifest is rewritten without checking it",
+    "verdict": "1 red",
+    "red": [
+      "copilot round 4: identity held across every boundary \u203a the manifest is fenced like a record: an out-of-band edit is never overwritten"
+    ]
+  },
+  {
+    "name": "M55 any task may hold a first-resolution claim",
+    "verdict": "2 red",
+    "red": [
+      "copilot round 5: the external origin, and pending recovery \u203a a first-resolution claim is only ever held by a task registered by register-external",
+      "mutation-matrix gaps \u203a a pending entry not created by 'register-external' may not hold a first-resolution claim"
+    ]
+  },
+  {
+    "name": "M56 registration replay ignores the first-record type",
+    "verdict": "1 red",
+    "red": [
+      "copilot round 5: the external origin, and pending recovery \u203a a registration replay compares the first-record type, before and after first resolution"
+    ]
+  },
+  {
+    "name": "M57 pending entries without a record are not checked",
+    "verdict": "3 red",
+    "red": [
+      "copilot round 5: the external origin, and pending recovery \u203a a pending entry with no record unresolved but not created by register-external blocks open",
+      "copilot round 5: the external origin, and pending recovery \u203a a pending entry with no record whose operation is not a creation blocks open",
+      "copilot round 5: the external origin, and pending recovery \u203a a pending entry with no record whose request is over its bound blocks open"
+    ]
+  },
+  {
+    "name": "M58 a resumed registration overwrites an appeared file",
+    "verdict": "5 red",
+    "red": [
+      "copilot round 1 regressions \u203a a resumed registration refuses an oversized landed file before parsing it",
+      "copilot round 5: the external origin, and pending recovery \u203a a resumed registration never overwrites a record file that appeared while it was pending",
+      "copilot round 6: open completion and resumed registration \u203a a landed record that is not exactly this registration is refused and left alone",
+      "mutation-matrix gaps \u203a a resume does not finish over a landed record that carries other claims",
+      "mutation-matrix gaps \u203a a resume does not finish over a landed record that is a later record revision"
+    ]
+  },
+  {
+    "name": "M59 first resolution may archive",
+    "verdict": "1 red",
+    "red": [
+      "first resolution of an unresolved registration \u203a first resolution cannot archive the task it resolves"
+    ]
+  },
+  {
+    "name": "M60 open completion does not re-check the manifest",
+    "verdict": "1 red",
+    "red": [
+      "copilot round 6: open completion and resumed registration \u203a open's completion write is refused when the manifest changed after the scan"
+    ]
+  },
+  {
+    "name": "M61 a durable claim ignores session holders of the path",
+    "verdict": "2 red",
+    "red": [
+      "durable mode on the Node filesystem \u203a one directory cannot be open as a session and a durable repository at once, either way round",
+      "durable mode on the Node filesystem \u203a the owner guard is by path: a second item over the same directory is the same root"
+    ]
+  },
+  {
+    "name": "M62 a resumed registration never completes a landed record",
+    "verdict": "8 red",
+    "red": [
+      "copilot round 1 regressions \u203a a resumed registration is refused, retryably, when four reads are already in flight",
+      "copilot round 1 regressions \u203a a resumed registration reads its landed record inside the materialization gate",
+      "copilot round 1 regressions \u203a a resumed registration refuses an oversized landed file before parsing it",
+      "copilot round 5: the external origin, and pending recovery \u203a a resumed registration never overwrites a record file that appeared while it was pending",
+      "copilot round 6: open completion and resumed registration \u203a a landed record that is not exactly this registration is refused and left alone",
+      "copilot round 6: open completion and resumed registration \u203a a retry finishes a registration whose record landed but whose live write failed",
+      "mutation-matrix gaps \u203a a resume does not finish over a landed record that carries other claims",
+      "mutation-matrix gaps \u203a a resume does not finish over a landed record that is a later record revision"
+    ]
+  },
+  {
+    "name": "M63 a throwing identity callback escapes",
+    "verdict": "2 red",
+    "red": [
+      "copilot round 7: host callbacks and the writer lifetime \u203a an identity callback that throws during initialize is a failure, and the root is released",
+      "copilot round 7: host callbacks and the writer lifetime \u203a an identity callback that throws during registration refuses safely, with nothing written"
+    ]
+  },
+  {
+    "name": "M64 close releases the root under an active writer",
+    "verdict": "1 red",
+    "red": [
+      "copilot round 7: host callbacks and the writer lifetime \u203a close is refused while a writer callback is active, and succeeds after it returns"
+    ]
+  },
+  {
+    "name": "M65 an unresolved record may carry extra operations",
+    "verdict": "1 red",
+    "red": ["storage record converters \u203a an unresolved record carries its registration operation"]
+  },
+  {
+    "name": "M66 a replacement may reorder the creation operation",
+    "verdict": "1 red",
+    "red": [
+      "copilot round 8: write-path invariants re-checked where records are trusted \u203a a replacement cannot move the creation operation out of first place"
+    ]
+  },
+  {
+    "name": "M67 open ignores the per-task operation limit",
+    "verdict": "2 red",
+    "red": [
+      "copilot round 8: write-path invariants re-checked where records are trusted \u203a open refuses a record over its per-task operation limit: a terminal task holds one",
+      "copilot round 8: write-path invariants re-checked where records are trusted \u203a open refuses a record over its per-task operation limit: an open task holds two closeout slots"
+    ]
+  },
+  {
+    "name": "M68 open completion accepts a later record revision",
+    "verdict": "1 red",
+    "red": [
+      "copilot round 8: write-path invariants re-checked where records are trusted \u203a open completes a pending entry only over its first record, not a later revision"
+    ]
+  },
+  {
+    "name": "M69 raising a profile leaves existing record limits stale",
+    "verdict": "1 red",
+    "red": ["coderabbit review \u203a raising a per-record bound re-limits the records already held, at once"]
+  },
+  {
+    "name": "M70 commit purpose and operation id are trusted",
+    "verdict": "1 red",
+    "red": ["coderabbit review \u203a a commit purpose is validated, not trusted, and so is its operation id"]
+  },
+  {
+    "name": "M71 claim minting bypasses the captured host id",
+    "verdict": "1 red",
+    "red": [
+      "copilot round 7: host callbacks and the writer lifetime \u203a an identity callback that throws during registration refuses safely, with nothing written"
+    ]
+  },
+  {
+    "name": "M72 initialize bypasses the captured host id",
+    "verdict": "1 red",
+    "red": [
+      "copilot round 7: host callbacks and the writer lifetime \u203a an identity callback that throws during initialize is a failure, and the root is released"
+    ]
+  },
+  {
+    "name": "M73 the first-record type ignores a first-resolution claim",
+    "verdict": "1 red",
+    "red": [
+      "mutation-matrix gaps \u203a a registration retried after first resolution still replays as the unresolved registration it was"
+    ]
+  },
+  {
+    "name": "M74 open holds no operations back for closeout",
+    "verdict": "2 red",
+    "red": [
+      "copilot round 8: write-path invariants re-checked where records are trusted \u203a open refuses a record over its per-task operation limit: a terminal task holds one",
+      "copilot round 8: write-path invariants re-checked where records are trusted \u203a open refuses a record over its per-task operation limit: an open task holds two closeout slots"
+    ]
+  },
+  {
+    "name": "M75 a pending entry may name a non-creation operation",
+    "verdict": "1 red",
+    "red": [
+      "copilot round 5: the external origin, and pending recovery \u203a a pending entry with no record whose operation is not a creation blocks open"
+    ]
+  },
+  {
+    "name": "M76 a pending unresolved entry may name any creation",
+    "verdict": "1 red",
+    "red": [
+      "copilot round 5: the external origin, and pending recovery \u203a a pending entry with no record unresolved but not created by register-external blocks open"
+    ]
+  },
+  {
+    "name": "M77 a pending request is not bounded at open",
+    "verdict": "1 red",
+    "red": [
+      "copilot round 5: the external origin, and pending recovery \u203a a pending entry with no record whose request is over its bound blocks open"
+    ]
+  },
+  {
+    "name": "M78 open treats every record as externally registered",
+    "verdict": "1 red",
+    "red": [
+      "copilot round 5: the external origin, and pending recovery \u203a a first-resolution claim is only ever held by a task registered by register-external"
+    ]
+  },
+  {
+    "name": "M79 open treats every pending entry as externally registered",
+    "verdict": "1 red",
+    "red": [
+      "mutation-matrix gaps \u203a a pending entry not created by 'register-external' may not hold a first-resolution claim"
+    ]
+  },
+  {
+    "name": "M80 open completion ignores a failed manifest re-read",
+    "verdict": "1 red",
+    "red": [
+      "copilot round 6: open completion and resumed registration \u203a open's completion write is refused safely when the manifest cannot be re-read"
+    ]
+  },
+  {
+    "name": "M81 a resume finishes over a landed record at a later revision",
+    "verdict": "1 red",
+    "red": [
+      "mutation-matrix gaps \u203a a resume does not finish over a landed record that is a later record revision"
+    ]
+  },
+  {
+    "name": "M82 a resume ignores the landed record's identity",
+    "verdict": "1 red",
+    "red": [
+      "copilot round 6: open completion and resumed registration \u203a a landed record that is not exactly this registration is refused and left alone"
+    ]
+  },
+  {
+    "name": "M83 a resume ignores the landed record's claims",
+    "verdict": "1 red",
+    "red": [
+      "mutation-matrix gaps \u203a a resume does not finish over a landed record that carries other claims"
+    ]
+  },
+  {
+    "name": "M84 registration replay ignores the principal",
+    "verdict": "1 red",
+    "red": [
+      "mutation-matrix gaps \u203a a registration retried under another principal is a conflict, not a replay"
+    ]
+  },
+  {
+    "name": "M85 ownership ignores the item that already holds the root",
+    "verdict": "2 red",
+    "red": [
+      "open \u203a the same root cannot be open twice in one process, and close releases it",
+      "open \u203a two different in-memory roots at the same path are different roots"
+    ]
+  },
+  {
+    "name": "M86 a session claim ignores a durable holder of the path",
+    "verdict": "1 red",
+    "red": [
+      "durable mode on the Node filesystem \u203a one directory cannot be open as a session and a durable repository at once, either way round"
+    ]
+  },
+  {
+    "name": "M87 release leaks a session holder of the path",
+    "verdict": "1 red",
+    "red": [
+      "durable mode on the Node filesystem \u203a one directory cannot be open as a session and a durable repository at once, either way round"
+    ]
+  },
+  {
+    "name": "M88 a commit's operation id is not validated",
+    "verdict": "1 red",
+    "red": ["coderabbit review \u203a a commit purpose is validated, not trusted, and so is its operation id"]
+  },
+  {
+    "name": "M89 the manifest is limited as a task record",
+    "verdict": "2 red",
+    "red": [
+      "raising limits \u203a a limit increase whose own manifest would not fit the policy it commits is refused before writing",
+      "raising limits \u203a initialize refuses a profile whose own manifest would not fit it"
+    ]
+  },
+  {
+    "name": "M90 a consumer record is limited as a task record",
+    "verdict": "1 red",
+    "red": ["subscription records at open \u203a a record over its byte ceiling blocks before it is trusted"]
+  },
+  {
+    "name": "M91 a source record is limited as a task record",
+    "verdict": "0 red",
+    "red": []
+  },
+  {
+    "name": "M92 a raised profile does not reach status",
+    "verdict": "2 red",
+    "red": [
+      "A3: an external command reserves its settlement before dispatch \u203a without room for the settlement the intent is refused before anything is recorded or sent",
+      "raising limits \u203a raises atomically, is stored, and governs after reopen"
+    ]
+  },
+  {
+    "name": "T8b-1 reservations use maxUpdateBytes again",
+    "verdict": "8 red",
+    "red": [
+      "A3 saturation journeys, every \u00a7 8.6 dimension \u203a record-bytes: growth is refused at the ceiling; accepted work completes, drains, archives, closes and reopens exactly",
+      "A3 saturation journeys, every \u00a7 8.6 dimension \u203a record-bytes: the refusal's reclaimableByCleanup says whether the drain releases any of it",
+      "a raise cannot outgrow the reservations already held (antagonist HIGH-1) \u203a raising maxEnvelopeBytes is refused: accepted work could not finish on its claims",
+      "a raise cannot outgrow the reservations already held (antagonist HIGH-1) \u203a raising maxUpdateBytes alone, or any limit, changes no reservation and is admitted",
+      "maximumUpdateBytes (T8) \u203a bounds the widest update the converters accept, with the envelope at its own bound",
+      "maximumUpdateBytes (T8) \u203a follows the envelope and audience bounds of the profile",
+      "maximumUpdateBytes (T8) \u203a is 37,417 bytes under the default profile \u2014 below the 64 KiB maxUpdateBytes",
+      "the default profile (T8) \u203a plain registrations reach 536 and are refused by logical-bytes; resident payload is no longer the first to fill"
+    ]
+  },
+  {
+    "name": "T8b-2 the per-record ceiling caps the consumer bound at 8 MiB",
+    "verdict": "2 red",
+    "red": [
+      "default profile \u203a carries the T8 decisions: raised payload and consumer bounds, update bound unchanged",
+      "the default profile (T8) \u203a a consumer record's ceiling is the raised 32 MiB bound; a task record's stays 8 MiB"
+    ]
+  },
+  {
+    "name": "T8b-3 reclaimableByCleanup is static per dimension",
+    "verdict": "2 red",
+    "red": [
+      "A3 saturation journeys, every \u00a7 8.6 dimension \u203a acknowledgement-ids: the refusal's reclaimableByCleanup says whether the drain releases any of it",
+      "A3 saturation journeys, every \u00a7 8.6 dimension \u203a operations: the refusal's reclaimableByCleanup says whether the drain releases any of it"
+    ]
+  },
+  {
+    "name": "T8b-4 archive keeps its closeout remainder reserved",
+    "verdict": "39 red",
+    "red": [
+      "A3 saturation journeys, every \u00a7 8.6 dimension \u203a acknowledgement-ids: growth is refused at the ceiling; accepted work completes, drains, archives, closes and reopens exactly",
+      "A3 saturation journeys, every \u00a7 8.6 dimension \u203a audience-links: growth is refused at the ceiling; accepted work completes, drains, archives, closes and reopens exactly",
+      "A3 saturation journeys, every \u00a7 8.6 dimension \u203a audience-links: the growth refused at the ceiling is admitted once the drain has run",
+      "A3 saturation journeys, every \u00a7 8.6 dimension \u203a logical-bytes: growth is refused at the ceiling; accepted work completes, drains, archives, closes and reopens exactly",
+      "A3 saturation journeys, every \u00a7 8.6 dimension \u203a logical-bytes: the growth refused at the ceiling is admitted once the drain has run",
+      "A3 saturation journeys, every \u00a7 8.6 dimension \u203a non-archived-tasks: growth is refused at the ceiling; accepted work completes, drains, archives, closes and reopens exactly",
+      "A3 saturation journeys, every \u00a7 8.6 dimension \u203a operations: growth is refused at the ceiling; accepted work completes, drains, archives, closes and reopens exactly",
+      "A3 saturation journeys, every \u00a7 8.6 dimension \u203a operations: the refusal's reclaimableByCleanup says whether the drain releases any of it",
+      "A3 saturation journeys, every \u00a7 8.6 dimension \u203a record-bytes: growth is refused at the ceiling; accepted work completes, drains, archives, closes and reopens exactly",
+      "A3 saturation journeys, every \u00a7 8.6 dimension \u203a resident-payload-bytes: growth is refused at the ceiling; accepted work completes, drains, archives, closes and reopens exactly",
+      "A3 saturation journeys, every \u00a7 8.6 dimension \u203a resident-payload-bytes: the growth refused at the ceiling is admitted once the drain has run",
+      "A3 saturation journeys, every \u00a7 8.6 dimension \u203a retained-tasks: growth is refused at the ceiling; accepted work completes, drains, archives, closes and reopens exactly",
+      "A3 saturation journeys, every \u00a7 8.6 dimension \u203a sources: growth is refused at the ceiling; accepted work completes, drains, archives, closes and reopens exactly",
+      "A3 saturation journeys, every \u00a7 8.6 dimension \u203a subscriptions: growth is refused at the ceiling; accepted work completes, drains, archives, closes and reopens exactly",
+      "A3 saturation journeys, every \u00a7 8.6 dimension \u203a transient capacity comes back; identity, acknowledgement history, dedup evidence, subscriptions and sources never shrink",
+      "A3 saturation journeys, every \u00a7 8.6 dimension \u203a updates: growth is refused at the ceiling; accepted work completes, drains, archives, closes and reopens exactly",
+      "A3: metadata changes carry claims unchanged \u203a a terminal transition spends the closeout claim; archive consumes it",
+      "every crash point of the journey: the ledger rebuilt from disk is the one in memory, and a retry converges \u203a archive j",
+      "every crash point of the journey: the ledger rebuilt from disk is the one in memory, and a retry converges \u203a close late, retaining",
+      "every crash point of the journey: the ledger rebuilt from disk is the one in memory, and a retry converges \u203a close watcher, disposing",
+      "exact transfers, checked against the records\u2019 own claims \u203a archiving j releases its non-archived slot and exactly what its closeout left unspent",
+      "exact transfers, checked against the records\u2019 own claims \u203a archiving t releases its non-archived slot and exactly what its closeout left unspent",
+      "lifetime acknowledgement exhaustion \u203a across many closed subscriptions: closed histories alone reach the repository-wide ceiling, which cleanup cannot reclaim",
+      "lifetime acknowledgement exhaustion \u203a on one subscription: its history fills from drained, archived work, never shrinks, and then refuses new obligations",
+      "one-task atomic replacement \u203a an archived tombstone is immutable, readable, and survives reopen",
+      "one-task atomic replacement \u203a closeout spends the task\u2019s own reservation; archive consumes it and releases the non-archived slot",
+      "rebuildIndexes \u203a rebuilds in staged passes: every task once, then only the records that owe updates",
+      "unrelated archived history \u203a at 0 archived: terminal, all and child queries never visit archived tasks",
+      "unrelated archived history \u203a at 0 archived: the resident shape is the minimal projection",
+      "unrelated archived history \u203a at 0: open read every record once; rebuild re-reads only owed records",
+      "unrelated archived history \u203a at 0: warm open, owed and due work is the fixed set, with no task read",
+      "unrelated archived history \u203a at 1000 archived: terminal, all and child queries never visit archived tasks",
+      "unrelated archived history \u203a at 1000 archived: the resident shape is the minimal projection",
+      "unrelated archived history \u203a at 10000 archived: terminal, all and child queries never visit archived tasks",
+      "unrelated archived history \u203a at 10000 archived: the resident shape is the minimal projection",
+      "unrelated archived history \u203a at 10000: open read every record once; rebuild re-reads only owed records",
+      "unrelated archived history \u203a at 10000: warm open, owed and due work is the fixed set, with no task read",
+      "unrelated archived history \u203a at 1000: open read every record once; rebuild re-reads only owed records",
+      "unrelated archived history \u203a at 1000: warm open, owed and due work is the fixed set, with no task read"
+    ]
+  },
+  {
+    "name": "T8b-5 a subscription's baselines are not charged",
+    "verdict": "1 red",
+    "red": [
+      "exact transfers, checked against the records\u2019 own claims \u203a disposing a subscription\u2019s baselines releases their payload with the obligation"
+    ]
+  },
+  {
+    "name": "T8b-6 a pending registration holds no reservation",
+    "verdict": "14 red",
+    "red": [
+      "claimed but never resolved \u203a a pending registration the process never finished keeps its whole reservation through a full drain, is named, and resumes at no new charge",
+      "process-crash acceptance matrix (real Node FileTree) on /dev/shm (qualified) \u203a registration killed at write 1, after-directory-flush (C2): pending, reservations held; the retry resumes with the same claims",
+      "process-crash acceptance matrix (real Node FileTree) on /dev/shm (qualified) \u203a registration killed at write 1, after-rename (C2): pending, reservations held; the retry resumes with the same claims",
+      "process-crash acceptance matrix (real Node FileTree) on /dev/shm (qualified) \u203a registration killed at write 2, before-open (C3): pending, reservations held; the retry resumes with the same claims",
+      "process-crash acceptance matrix (real Node FileTree) on /dev/shm (qualified) \u203a registration killed at write 2, before-rename (C3): pending, reservations held; the retry resumes with the same claims",
+      "process-crash acceptance matrix (real Node FileTree) on /dev/shm (qualified) \u203a registration killed at write 2, mid-write (C3): pending, reservations held; the retry resumes with the same claims",
+      "process-crash acceptance matrix (real Node FileTree) on /tmp (qualified) \u203a registration killed at write 1, after-directory-flush (C2): pending, reservations held; the retry resumes with the same claims",
+      "process-crash acceptance matrix (real Node FileTree) on /tmp (qualified) \u203a registration killed at write 1, after-rename (C2): pending, reservations held; the retry resumes with the same claims",
+      "process-crash acceptance matrix (real Node FileTree) on /tmp (qualified) \u203a registration killed at write 2, before-open (C3): pending, reservations held; the retry resumes with the same claims",
+      "process-crash acceptance matrix (real Node FileTree) on /tmp (qualified) \u203a registration killed at write 2, before-rename (C3): pending, reservations held; the retry resumes with the same claims",
+      "process-crash acceptance matrix (real Node FileTree) on /tmp (qualified) \u203a registration killed at write 2, mid-write (C3): pending, reservations held; the retry resumes with the same claims",
+      "registration \u2014 the ordered inventory protocol \u203a a different registration of a pending identity is refused, and the reservation is not released",
+      "registration \u2014 the ordered inventory protocol \u203a a pending registration survives reopen, still holding its reservation, and resumes",
+      "registration \u2014 the ordered inventory protocol \u203a pending entry committed, record write fails: reservations stay held, retry resumes with the same claim ids"
+    ]
+  },
+  {
+    "name": "T8b-7 a raise may grow what existing reservations cover",
+    "verdict": "6 red",
+    "red": [
+      "a raise cannot outgrow the reservations already held (antagonist HIGH-1) \u203a raising maxAcknowledgementEvidenceBytes is refused: accepted work could not finish on its claims",
+      "a raise cannot outgrow the reservations already held (antagonist HIGH-1) \u203a raising maxDetailBytes is refused: accepted work could not finish on its claims",
+      "a raise cannot outgrow the reservations already held (antagonist HIGH-1) \u203a raising maxEnvelopeBytes is refused: accepted work could not finish on its claims",
+      "a raise cannot outgrow the reservations already held (antagonist HIGH-1) \u203a raising maxIssuedReceiptBytes is refused: accepted work could not finish on its claims",
+      "a raise cannot outgrow the reservations already held (antagonist HIGH-1) \u203a raising maxStoredOperationBytes is refused: accepted work could not finish on its claims",
+      "a raise cannot outgrow the reservations already held (antagonist HIGH-1) \u203a raising the audience per update is refused the same way"
+    ]
+  },
+  {
+    "name": "T8b-8 a landed activation freezes nothing",
+    "verdict": "1 red",
+    "red": [
+      "an activation whose record landed freezes what its baseline covers (antagonist HIGH-2) \u203a a change to a task the baseline covers, or a new one it would cover, is refused \u2014 never silently missed"
+    ]
+  }
+]

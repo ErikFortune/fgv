@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-agent-tasks",
+      "comment": "BREAKING: capacity profile (T8). Every forward reservation of an update payload (terminal closeout, first resolution, accepted-operation settlement) now reserves the update's derived schema maximum, exposed as maximumUpdateBytes (37,417 bytes under the default profile), instead of maxUpdateBytes; claims minted by an earlier build exceed the new bundle maxima and fail claim validation at open. Default limits raised: resident-payload-bytes 64 MiB to 384 MiB, maxConsumerRecordBytes 8 MiB to 32 MiB, and the per-record record-bytes ceiling 8 MiB to 32 MiB so the consumer bound takes effect. Nothing is lowered. Under the default profile logical-bytes now binds first, at 536 plain registrations. Internal: the repository's committed-files layer moves to its own module. raiseCapacityLimits now refuses a raise that grows what existing reservations cover (envelope, details, stored-operation, audience, evidence or receipt bounds). While a current subscription's first record has landed but it is not yet live, commits to tasks its selection covers are refused until its registration is retried or the repository reopened. A lifetime dimension's reclaimableByCleanup is true while a task still holds part of it as a reservation.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-agent-tasks"
+}

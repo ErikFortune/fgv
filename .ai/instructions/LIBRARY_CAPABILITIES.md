@@ -44,6 +44,7 @@ getting-started material. This index routes; it does not duplicate.
 | [`ts-extras-transformers`](libraries/ts-extras-transformers/CAPABILITIES.md) · [`ts-web-extras-transformers`](libraries/ts-web-extras-transformers/CAPABILITIES.md) | Local HuggingFace models — classify, embed, summarize |
 | [`ts-extras-mcp`](libraries/ts-extras-mcp/CAPABILITIES.md) | MCP server tools → ai-assist client tools |
 | [`ts-extras-ollama`](libraries/ts-extras-ollama/CAPABILITIES.md) | Ollama *native* API — model management, grammar-constrained output |
+| [`ts-agent-tasks`](libraries/ts-agent-tasks/CAPABILITIES.md) | Agent task recording and mediation — envelope, lifecycle/observation/command/recovery unions, kind+command registry, finite capacity model, snapshot-only context renderer with pure inclusion receipts, FileTree task repository with one-record atomic commit, resident-index queries/paging/due/owed, principal-bound broker (authorized projected views, lists, hierarchy, reassignment), external sources (ordered reconciliation, reserved command dispatch, held uncertain outcomes), subscriptions with issued receipts and exact-ID acknowledgement, retention (authorized disposition, subscription closure, command abandonment, evidence-checked pruning and archive, a capacity runbook), cascade stop (persisted intent over the whole subtree, frozen admission, honest partial results), model tools with bounded output — read-only by default, create/update/reassign, typed commands and cascade-stop requests opt-in; checked prompt composition (one trailing per-request task slot, receipt acknowledgeable only against the exact body sent). **Records work; runs no agent loop** |
 | [`ts-agent-memory`](libraries/ts-agent-memory/CAPABILITIES.md) | Agent memory/knowledge vault — records, dedup (`dedupScopeFor`), edges, retrieval, `IVectorIndex` / `IFragmentVectorIndex`, `embedsKind` |
 | [`ts-agent-memory-sqlite-vec`](libraries/ts-agent-memory-sqlite-vec/CAPABILITIES.md) | Durable vector + fragment indexes (SQLite `vec0`) |
 | [`ts-prompt-assist`](libraries/ts-prompt-assist/CAPABILITIES.md) | Conditional prompt authoring, resolution, composition, observation |
@@ -122,6 +123,19 @@ detail. `· pkg` names the owning package.*
 - **Need a text embedding (`text → vector`)?** → `callProviderEmbedding` · `ts-extras-transformers`
 - **Embedding text via a cloud or self-hosted provider?** → `callProviderEmbedding` · `ts-extras`
 - **Calling a self-hosted Ollama or OpenAI-compatible model?** → `executeClientToolTurn` · `ts-extras`
+- **Recording agent work — lifecycle, observations, commands — without building a runner?** → `ITaskEnvelope` `TaskLifecycle` `TaskKindRegistry` `TaskConverters` · `ts-agent-tasks`
+- **Rendering task snapshots into bounded prompt context, with a receipt of exactly what was included?** → `TaskContextRenderer` `ITaskInclusionReceipt` · `ts-agent-tasks`
+- **Persisting agent task state + owed updates so a process crash loses neither?** → `FileTreeTaskRepository` `FileTree` · `ts-agent-tasks`
+- **Selecting agent tasks by scope/lifecycle, due time or owed update without reading records?** → `FileTreeTaskRepository` `runTaskRepositoryConformance` · `ts-agent-tasks`
+- **Giving a principal (model tool, actor) authorized, projected access to agent tasks?** → `TaskBroker` `ITaskAuthorization` `defaultTaskProjector` · `ts-agent-tasks`
+- **Tracking work an external executor runs — its state reconciled, commands dispatched, never set optimistically?** → `ExternalTaskSource` `ITaskSource` `TaskBroker` · `ts-agent-tasks`
+- **Telling a consumer what changed in its tasks, and acknowledging only what it was actually shown?** → `TaskBroker` `IBoundTaskDelivery` `ITaskCheckpointStore` · `ts-agent-tasks`
+- **Pausing or cancelling an agent task and its whole subtree, with an honest partial result?** → `requestStop` `reconcileStop` `releaseStop` `ISourceCapabilities` · `ts-agent-tasks`
+- **Ending an agent-task obligation nobody will acknowledge, or freeing a full task repository?** → `TaskBroker` `dispose` `closeSubscription` `cleanup` · `ts-agent-tasks`
+- **Giving a model read-only, bounded tools over the agent tasks a principal may see?** → `createTaskTools` `IBoundTaskView` · `ts-agent-tasks`
+- **Letting a model create, update or reassign agent tasks, authorized per call?** → `createTaskTools` `ITaskMutationToolOptions` · `ts-agent-tasks`
+- **Letting a model pause or cancel a tree of agent tasks — but never release or carry out the stop?** → `createTaskTools` `ITaskStopToolOptions` · `ts-agent-tasks`
+- **Putting agent task context in a cacheable prompt, acknowledging only what was actually sent?** → `checkTaskPrompt` `prepareTaskPrompt` `taskPromptRecord` · `ts-agent-tasks`
 - **Storing agent memory / a knowledge vault?** → `FileTree` `FileTreeMemoryStore` · `ts-agent-memory`
 - **Semantic recall over that vault** → `InMemoryCosineIndex` `SqliteVecVectorIndex` `SqliteVecFragmentIndex` `FragmentSemanticRetriever` · `ts-agent-memory`
 - **Vector/fragment embeddings must survive a process restart?** → `SqliteVecVectorIndex` `SqliteVecFragmentIndex` · `ts-agent-memory-sqlite-vec`
@@ -184,17 +198,17 @@ markers.*
 
 <!-- BEGIN GENERATED: recent-additions -->
 
+- **2026-10-01** — Agent task context can go into a cacheable prompt as one checked, trailing per-request slot, and a delivery's receipt is… ([#707](https://github.com/ErikFortune/fgv/pull/707)) · `ts-agent-tasks`
+- **2026-09-28** — A host can give a model bounded, per-call-authorized tools over its agent tasks: read-only by default, with create, update… ([#702](https://github.com/ErikFortune/fgv/pull/702)) · `ts-agent-tasks`
 - **2026-09-26** — A converter handed an Object.create(null) value now returns a Result instead of throwing — isKeyOf, strictObject and six ts-json /… ([#700](https://github.com/ErikFortune/fgv/pull/700)) · `ts-utils` `ts-json` `ts-res-ui-components` `ts-utils-jest`
 - **2026-09-25** — Anthropic structured output works on Claude Opus 5.5 and Fable 5.1 via JSON outputs instead of a forced tool call, and the advanced… ([#694](https://github.com/ErikFortune/fgv/pull/694)) · `ts-extras`
 - **2026-09-24** — ai-assist's tier and image aliases now point at GPT-6, Gemini 3.8 Flash and Grok 4.7, each id cited from a fetched provider page… ([#692](https://github.com/ErikFortune/fgv/pull/692)) · `ts-extras`
 - **2026-09-23** — A tool-augmented or streamed chat turn can now carry prompt-cache breakpoints and a routing key, closing the one remaining hole… ([#688](https://github.com/ErikFortune/fgv/pull/688)) · `ts-extras`
 - **2026-09-23** — Shipped: a qualifier axis can declare how often it changes, so a body conditioned only on never-changing axes is no longer refuted… ([#689](https://github.com/ErikFortune/fgv/pull/689)) · `ts-prompt-assist`
+- **2026-09-22** — New @fgv/ts-agent-tasks records agent work without running it: typed task envelopes, a crash-safe FileTree store, and a… ([#684](https://github.com/ErikFortune/fgv/pull/684)) · `ts-agent-tasks`
 - **2026-09-21** — A FileTree can now replace a file such that a reader never sees a torn write, and on a root whose filesystem was actually qualified… ([#682](https://github.com/ErikFortune/fgv/pull/682)) · `ts-json-base`
 - **2026-09-07** — ai-assist now places explicit prompt-cache breakpoints on Anthropic and OpenAI requests built from a ts-prompt-assist resolve… ([#671](https://github.com/ErikFortune/fgv/pull/671)) · `ts-extras` `ts-prompt-assist`
-- **2026-09-07** — Thinking config loses a required provider field that gated nothing, and gains 'none' — the cross-provider spelling for off that… ([#667](https://github.com/ErikFortune/fgv/pull/667)) · `ts-extras`
-- **2026-09-02** — Shipped: a rendered template, and a resolved prompt, can now say what they are made of — order, absolute size and binding… ([#663](https://github.com/ErikFortune/fgv/pull/663)) · `ts-extras` `ts-prompt-assist`
-- **2026-08-28** — A string can now declare that it must be one printable line — and the name says shape, not safety, because no converter can promise… · `ts-utils`
 
-*Showing the 10 most recent of 47. Per-package history is in each `CAPABILITIES.md`.*
+*Showing the 10 most recent of 50. Per-package history is in each `CAPABILITIES.md`.*
 
 <!-- END GENERATED: recent-additions -->

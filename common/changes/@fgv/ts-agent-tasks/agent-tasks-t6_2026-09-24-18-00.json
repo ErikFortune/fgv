@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-agent-tasks",
+      "comment": "Add external source adapters: the ITaskSource contract and the typed ExternalTaskSource helper; source-ordered observation application (stale, duplicate, same-revision conflict, incomparable epoch, freshness refresh, health change); paged reconciliation that commits a source checkpoint record only after every observation of the page committed; source-replay feeds as the only path that moves a replaying source's task, with a finite envelope reserved at registration; external command dispatch (intent with a pre-dispatch settlement reservation, authority rechecked at the dispatch boundary, possibly-sent marker, result merged onto the latest record) and an uncertain-command pump that resends only under a source-deduplicated key and otherwise holds; explicit recovery. ITaskRepository gains registry, unsettledCommands and readSource; its writer gains readSource, commitSource and extendReplayEnvelope; ITaskKindRegistry gains getCommand. RecoveryResult.unrecoverable now carries the source's projection.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-agent-tasks"
+}

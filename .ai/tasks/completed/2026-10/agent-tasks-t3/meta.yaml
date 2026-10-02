@@ -1,0 +1,79 @@
+id: agent-tasks-t3
+status: shipped
+packages: ['@fgv/ts-agent-tasks']
+prs: [686]
+openPrs: []
+opened: 2026-09-23
+closed: 2026-09-23
+summary:
+  headline: '' # one line per capability, not per stream: this slice's capability is carried by agent-tasks-t1's headline
+  intended: >
+    Land slice T3 — FileTree records, durable commit and reopen: injected-root session and durable
+    factories, a private single-writer coordinator, strict JSON storage records, a flat repository
+    inventory, ordered record registration, one-task atomic replacement of state + owed updates +
+    operation, inventory-backed missing-record detection and a diagnostic recovery handle; one
+    implementation with in-memory and Node adapters. Inherit F2's Linux-only 'process-crash'
+    bound without widening it, plus the A3 additions (persisted profile and claims, a derived
+    ledger, writer-side preflight of every dimension, finite-limit increase with no lowering), and
+    run the crash acceptance matrix through the real Node FileTree path against design §8.4. Last
+    cheap moment to revise T1's vocabulary; T1+T2+T3 the intended first squash to release.
+  shipped: >
+    FileTreeTaskRepository over an injected FileTree root (initialize/open factories; open returns
+    ready or recovery-required), mode 'session' | { durable: 'process-crash' } with durable refused
+    before any I/O on a root lacking the capability, withWriter's exclusive lifetime-bound writer
+    (nesting and concurrency refused, no rollback claimed), RFC 8785 canonical records with one
+    converter on write and read paths, the repository.json inventory, pending -> record -> live
+    registration, three commit purposes (operation, observation, maintenance), open-time
+    validation, ITaskRecoveryHandle, and the A3 ledger, admission, capacityStatus() and
+    raiseCapacityLimits. T1 revised: CapacityClaimPurpose 5 -> 6 (first-resolution), reserved
+    claim charges shrink as spent, update identity fixed as <taskId>:<revision>:<ordinal>. Crash
+    matrix C1-C12 run on ext4 and tmpfs (37 tests each plus a skip guard), every prediction held;
+    a checked-in 92-row mutation matrix (perf/mutationMatrix.js). 794 tests, 100% on all four
+    metrics, no c8 ignore.
+  diverged: >
+    Archive tombstones live in the task record only, not also in the inventory as §8.3 says,
+    because both would be an unatomic dual write and a per-mutation inventory rewrite. Consumer and
+    source records were named in the inventory format now but validated only by header, content
+    left to T6/T7. Admission is checked against the protocol's widest state (~1 KiB above the
+    settled footprint). The vocabulary revisions the brief licensed were used (a sixth claim
+    purpose; charge-shrinking semantics replacing T1's disposition-only conversion). Beyond the
+    brief: a per-task operation limit holding closeout slots back, the mutation matrix promoted
+    from a scratchpad script to a checked-in perf/ harness at the orchestrator's request, and a
+    Copilot loop of 8 rounds (45 findings) that reshaped storage identity (full operation identity
+    including principal, fingerprinted read-back, full registration identity on pending entries,
+    manifest re-read fencing). Residual: two session repositories over one real directory through
+    two items are not detected, pending an upstream FileTree capability. Left open: whether T9's
+    stop intent lands as a v1 record field before promotion.
+  sourceLine: '**`FileTreeTaskRepository`** — one repository implementation over an injected `FileTree` root.'
+keywords:
+  - durable task storage
+  - process-crash durability
+  - atomic record replacement
+  - crash-window matrix
+  - SIGKILL harness
+  - ext4 tmpfs overlayfs
+  - mutation matrix
+  - repository inventory manifest
+  - pending registration recovery
+  - capacity ledger
+  - admission preflight
+  - first-resolution claim
+  - operation replay idempotency
+  - flush-boundary rewrite on replay
+  - fencing commit-indeterminate
+  - recovery handle
+  - quarantine unknown kind
+relatedStreams:
+  - id: agent-tasks-cluster-close
+    relationship: cluster parent; finalized at its close
+  - id: agent-tasks-t1
+    relationship: vocabulary T3 revised (claim purpose, disposition semantics, update identity)
+  - id: filetree-atomic-write
+    relationship: upstream F1/F2 atomic-write capability and process-crash qualification T3 builds on
+  - id: agent-tasks-t4
+    relationship: next slice; resident indexes over T3's on-demand reads
+  - id: agent-tasks-t7
+    relationship: owns consumer-record content and claim audiences T3 left empty
+  - id: agent-tasks-t8
+    relationship: re-ran and extended T3's mutation matrix; owns archive-gated-on-acknowledgement
+sourceHash: c4e84c6466a028ea

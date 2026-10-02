@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-agent-tasks",
+      "comment": "BREAKING (implementers only): cascade stop (T9). IBoundTaskWriter gains requestStop, releaseStop and reconcileStop, and IBoundTaskView gains inspectStop; ITaskRepository gains subtree and stopLatches, so a custom repository must implement them; TaskAccessRole gains 'stop-target'. A stop persists its complete authoritative subtree and a minted command key per target in the root's record (IResolvedTaskCommitRecord.stops, optional), reserves every target's command before it is accepted, and freezes the subtree: the repository refuses new children, reparenting, moves to running or out of the stopped set, new external commands, list completion and archive of a latched task, on every commit and after reopen. The host pump confirms each target under current authority; a stop is satisfied only when every target is. ITaskSource gains an optional capabilities() stop declaration (ExternalTaskSource: capabilities); a stop's own commands carry IStoredCommandOperation.stop; carriedStops(record) carries a record's stops into a replacement draft. Records written before read unchanged.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-agent-tasks"
+}
