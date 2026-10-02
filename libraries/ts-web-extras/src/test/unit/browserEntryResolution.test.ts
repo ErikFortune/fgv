@@ -21,12 +21,13 @@
  */
 
 import '@fgv/ts-utils-jest';
+import * as path from 'path';
 
 // The rest of this suite resolves `@fgv/ts-extras` to its Node entry, which exports
 // everything the browser entry omits, so a symbol missing from the browser entry
 // cannot fail anywhere else. These tests load the code under test against the
 // browser entry instead, so that what a browser bundle actually resolves is what runs.
-const BROWSER_ENTRY = '../../../../ts-extras/lib/index.browser.js';
+const BROWSER_ENTRY = path.join(path.dirname(require.resolve('@fgv/ts-extras')), 'index.browser.js');
 
 describe('ts-web-extras against the ts-extras browser entry', () => {
   beforeEach(() => {
@@ -45,9 +46,12 @@ describe('ts-web-extras against the ts-extras browser entry', () => {
     test('round-trips AES-GCM, which reads the Constants namespace', async () => {
       const { BrowserCryptoProvider } = await import('../../packlets/crypto-utils');
       const provider = new BrowserCryptoProvider();
-      const encrypted = (await provider.encrypt('browser entry plaintext', key)).orThrow();
       expect(
-        await provider.decrypt(encrypted.encryptedData, key, encrypted.iv, encrypted.authTag)
+        await (
+          await provider.encrypt('browser entry plaintext', key)
+        ).thenOnSuccess((encrypted) =>
+          provider.decrypt(encrypted.encryptedData, key, encrypted.iv, encrypted.authTag)
+        )
       ).toSucceedWith('browser entry plaintext');
     });
 
@@ -72,17 +76,18 @@ describe('ts-web-extras against the ts-extras browser entry', () => {
           statusText: 'OK',
           json: async () => body,
           text: async () => JSON.stringify(body)
-        } as Response;
+        } as unknown as Response;
       }) as unknown as typeof fetch;
 
-      const accessors = (
+      expect(
         await HttpTreeAccessors.fromHttp({
           baseUrl: 'https://corpus.example/api',
           contentEncoding: 'base64',
           fetchImpl
         })
-      ).orThrow();
-      expect(accessors.getFileBytes('/blob.bin')).toSucceedWith(new Uint8Array([1, 2, 3]));
+      ).toSucceedAndSatisfy((accessors) => {
+        expect(accessors.getFileBytes('/blob.bin')).toSucceedWith(new Uint8Array([1, 2, 3]));
+      });
     });
   });
 });

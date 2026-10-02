@@ -759,10 +759,14 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
   `CryptoUtils.fromBase64Strict` went missing from the browser entry and broke recovery unlock in a
   browser (`ts-extras-browser-barrel-gaps`). The same test now walks every namespace the Node entry
   exports, recursively, and fails on any member absent from the browser entry unless it is on a
-  commented Node-only allowlist (`NodeCryptoProvider`, `EncryptedFilePrivateKeyStorage`,
-  `readCsvFileSync`, `readRecordJarFileSync`, `blockPrivateNetworks`, `nodeHostResolver`). The
-  allowlist is itself checked for staleness. Not covered: members of classes (statics), and
-  anything below a non-namespace value. `ts-web-extras` additionally has one suite that runs the
+  commented Node-only allowlist of seven entries (`NodeCryptoProvider`, `nodeCryptoProvider`,
+  `KeyStore.EncryptedFilePrivateKeyStorage`, `readCsvFileSync`, `readRecordJarFileSync`,
+  `blockPrivateNetworks`, `nodeHostResolver`). The allowlist is itself checked for staleness. The walk
+  descends into every non-array object, including plain data and object instances such as
+  converters, and stops at functions, classes and arrays. Not covered: class members (statics),
+  array contents, and subpath exports whose Node condition the root entry never reaches (e.g.
+  `./hash` → `hash/index.node.js`). An exported object instance whose own keys legitimately differ
+  between runtimes would fail this test and need an allowlist entry. `ts-web-extras` additionally has one suite that runs the
   crypto provider and HTTP tree against the browser entry; the rest of its suite still resolves
   `@fgv/ts-extras` to the Node entry, because several tests compare against `NodeCryptoProvider`.
 
