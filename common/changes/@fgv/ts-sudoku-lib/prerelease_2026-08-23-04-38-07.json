@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "version bump",
+      "type": "none",
+      "packageName": "@fgv/ts-sudoku-lib"
+    }
+  ],
+  "packageName": "@fgv/ts-sudoku-lib",
+  "email": "ErikFortune@outlook.com"
+}
