@@ -49,5 +49,14 @@ if (typeof AbortSignal.timeout !== 'function') {
   };
 }
 
+// jsdom does not provide `structuredClone` (Node >= 17 and current browsers do). @fgv/ts-agent-tasks
+// clones authorization requests, projections and checkpoint records with it — a policy check that
+// throws is a denial, so without it every agent-tasks operation is refused under jsdom. Expose
+// Node's structured-clone algorithm through v8 serialization.
+if (typeof globalThis.structuredClone !== 'function') {
+  const v8 = require('v8');
+  globalThis.structuredClone = (value) => v8.deserialize(v8.serialize(value));
+}
+
 // jest-dom matchers (toBeInTheDocument, etc.)
 require('@testing-library/jest-dom');

@@ -1,11 +1,12 @@
 # Agent tasks — phased implementation plan
 
-**Status:** A1/A2 and finite-horizon capacity amendment A3 approved 2026-09-21; reference-consumer A3 approval is limited to V1 ingestion. Awaiting explicit authorization to implement.
+**Status:** A1/A2 and finite-horizon capacity amendment A3 approved 2026-09-21; reference-consumer A3 approval is limited to V1 ingestion. A1 **amended 2026-09-22** to Linux-only — see § *F2*.
+**F1 and F2 are shipped** ([#683](https://github.com/ErikFortune/fgv/pull/683), squashing [#681](https://github.com/ErikFortune/fgv/pull/681) and [#682](https://github.com/ErikFortune/fgv/pull/682)): the upstream `ts-json-base` FileTree atomic-write capability and its qualified Node protocol exist and are on `release`. **Every T, I, M and P slice is implemented on `integration/agent-tasks-v1`** (T1 [#684](https://github.com/ErikFortune/fgv/pull/684) through P1 [#709](https://github.com/ErikFortune/fgv/pull/709); each slice's heading below names its PR) and **finalized at the cluster close** (`agent-tasks-cluster-close`, 2026-10-01) into `.ai/tasks/completed/2026-10/`. None of it is on `release` until the orchestrator squashes the integration branch. What the slices proved, and what they did not, is § 8 *Release evidence*. M1's history-growth and cache-saturation cohorts remain unbuilt.
 **Date:** 2026-09-21. **Source inspection:** `d0ec601c6d67a6016a00a33a69ddee18bec6ddb1`.
 **Engineering contract:** [development design](development-design.md).
 **Scope authorities:** [library proposal](fgv-library.md), [adoption proposal](multi-agent-chat-adoption.md), [deferred scope](deferred.md).
 
-This plan changes no production code or consumer repository. Every implementation test and M1 measurement below is **planned**, not run. Source/document review and the separately attributed consumer execution-record measurements in the adoption proposal are the available evidence; those measurements do not qualify broker limits or memory. The slices are dependency-ordered review units; an incomplete internal slice is not a release claiming all task guarantees.
+This plan document itself changes no production code or consumer repository. **F1's and F2's tests are run and their results recorded** (`.ai/tasks/completed/2026-09/filetree-atomic-write/result.md` — fault injection at every protocol boundary, subprocess crash tests on two filesystems, and fourteen mutations watched to fail), and so are T3's (`.ai/tasks/completed/2026-10/agent-tasks-t3/result.md` — a real-Node crash matrix on ext4 and tmpfs and twenty-six mutations watched to fail). **Every other implementation test below, and the M1 measurement, remained planned and not run when this plan was written**; slices since record their results in their own `result.md`, and M1's runs are recorded under M1 below. Source/document review and the separately attributed consumer execution-record measurements in the adoption proposal are the available evidence; those measurements do not qualify broker limits or memory. The slices are dependency-ordered review units; an incomplete internal slice is not a release claiming all task guarantees.
 
 ## 1. Decisions and approval status
 
@@ -20,6 +21,18 @@ All three material decisions were approved on 2026-09-21. The user reports orche
 | A3 — approved 2026-09-21; consumer acceptance limited to V1 ingestion | Minimal archived resident projection; on-demand historical evidence; bounded caches/rebuild; design §8.6's finite whole-repository limits and persisted reservations for completing accepted work; explicitly qualified source-replay bounds | Adds capacity accounting, admission and recovery work across T1/T3–T9, a narrow host limit-increase API, and measurements M1. Initial limits remain subject to qualification. The reference consumer accepts a finite horizon for disposable hubs only; its future always-on collective requires a separately approved compaction design before adoption. |
 
 Package naming, lifecycle vocabulary, strict schemas, pagination and receipt issuance are reasoned technical recommendations, not open product discovery. Document acceptance may approve them together. Consumer rollout choices below remain the consumer's responsibility and do not block standalone library implementation.
+
+**Executor-payload dereference — decided 2026-09-24, before T6 rather than during it.** Terminal
+presentation shows the bounded projection only; it never dereferences an executor-owned payload.
+Reaching that payload is a separately-authorized host action. This follows the existing rule in
+`development-design.md` — *references carry identifiers, not automatic dereference permission* — of
+which terminal presentation is now explicitly **not** an exception. The alternative considered was
+dereference-at-presentation under the authorization the update already carried; it was declined
+because it makes presentation a read path against external storage, with its own failure, latency
+and capacity story and a second place payload size must be bounded. The asymmetry decided it:
+permitting dereference later, as an authorized host action, breaks nothing, whereas withdrawing it
+would be a contract change on terminal presentation. The question had been carried undecided through
+T1–T5 and genuinely reached none of them.
 
 **Clarification versus new decision:** retained inventory/graph/source entries grow with archived history; non-archived includes terminal tasks awaiting cleanup; task archival does not erase exact subscription or operation history. Those correct ambiguities in the previous text. Selecting minimal resident projections, staged rather than single-pass rebuild, finite defaults, protected completion claims, replay-source admission bounds and empirical qualification is new design under A3. It is not authorized by A1/A2. The observation's suggested flat-memory prediction is rejected; the relevant prediction is a smaller per-archived-task slope plus bounded payload/history residency.
 
@@ -91,7 +104,7 @@ Qualifying overlayfs remains available as a future slice — it means running th
 
 ## 4. Task foundations and storage
 
-### T1 — Package, values, converters and registry
+### T1 — Package, values, converters and registry — ✅ implemented on `integration/agent-tasks-v1` ([#684](https://github.com/ErikFortune/fgv/pull/684))
 
 **Dependencies:** approved model; F1 contract available. **Affected package:** new `ts-agent-tasks`; Rush project/dependency/version-policy configuration via normal tooling.
 
@@ -105,7 +118,7 @@ Under A3 also define the versioned capacity profile and typed dimension failures
 
 **Review gate:** public contract/dependency review; no deferred input protocol, task runner, source-specific fields or consumer vocabulary. API report and package capability entry describe proposed shipped values accurately when this slice later lands.
 
-### T2 — Pure context and snapshot-only use
+### T2 — Pure context and snapshot-only use — ✅ implemented on `integration/agent-tasks-v1` ([#685](https://github.com/ErikFortune/fgv/pull/685))
 
 **Dependencies:** T1. **Affected package:** `ts-agent-tasks` context/converters.
 
@@ -117,7 +130,7 @@ Under A3 also define the versioned capacity profile and typed dimension failures
 
 **Review gate:** disclosure/omission and receipt semantics; pure API independent of live infrastructure.
 
-### T3 — FileTree records, durable commit and reopen
+### T3 — FileTree records, durable commit and reopen — ✅ implemented on `integration/agent-tasks-v1` ([#686](https://github.com/ErikFortune/fgv/pull/686))
 
 **Dependencies:** T1, **F2**. **Affected package:** `ts-agent-tasks` storage.
 
@@ -135,7 +148,7 @@ Test exact-fit/one-over counts and encoded bytes; old defaults versus stored pol
 
 **Review gate:** inspect task commit contents and return ordering; validate each crash window against design §8.4. Release remains blocked until indexed behavior in T4 and durable obligations in T7–T8 are complete.
 
-### T4 — Indexed selection, paging, due and outstanding discovery
+### T4 — Indexed selection, paging, due and outstanding discovery — ✅ implemented on `integration/agent-tasks-v1` ([#687](https://github.com/ErikFortune/fgv/pull/687))
 
 **Dependencies:** T3. **Affected package:** `ts-agent-tasks` storage/query modules.
 
@@ -151,7 +164,7 @@ Deterministically inspect the internal projection shape and counters: archived s
 
 ## 5. Broker and delivery
 
-### T5 — Bound authority, tracked hierarchy and reassignment
+### T5 — Bound authority, tracked hierarchy and reassignment — ✅ implemented on `integration/agent-tasks-v1` ([#691](https://github.com/ErikFortune/fgv/pull/691))
 
 **Dependencies:** T1, T3, T4. **Affected package:** `ts-agent-tasks` broker/implementations.
 
@@ -167,7 +180,7 @@ Crash after the last child succeeds but before list completion; reopen must rebu
 
 **Review gate:** threat-model/ownership pass, authorization at every read and mutation boundary, source metadata immutability.
 
-### T6 — Source adapters, commands and reconciliation
+### T6 — Source adapters, commands and reconciliation — ✅ implemented on `integration/agent-tasks-v1` ([#693](https://github.com/ErikFortune/fgv/pull/693))
 
 **Dependencies:** T5. **Affected package:** `ts-agent-tasks` implementations/broker/storage.
 
@@ -185,7 +198,7 @@ Add a layering fixture with an executor-owned payload larger than 64 KiB and a b
 
 **Review gate:** no blind re-execution and no second authoritative lifecycle store. Verify the simulated source actually applies commands; the ingestion compatibility adapter's empty command set supplies no command evidence.
 
-### T7 — Subscriptions, exact issued receipts and acknowledgement
+### T7 — Subscriptions, exact issued receipts and acknowledgement — ✅ implemented on `integration/agent-tasks-v1` ([#695](https://github.com/ErikFortune/fgv/pull/695))
 
 **Dependencies:** T2, T5, T6. **Affected package:** `ts-agent-tasks` delivery/storage.
 
@@ -201,7 +214,7 @@ A3: reserve each accepted update/baseline's future acknowledgement-or-dispositio
 
 **Review gate:** adversarial receipts and checkpoint custody; verify exact-ID logic rather than max revision, and fail-closed behavior of custom checkpoint stores.
 
-### T8 — Retention, backpressure and recovery journeys
+### T8 — Retention, backpressure and recovery journeys — ✅ implemented on `integration/agent-tasks-v1`: retention mechanism ([#698](https://github.com/ErikFortune/fgv/pull/698)); A3 saturation journeys, the capacity profile and M1 on this implementation ([#699](https://github.com/ErikFortune/fgv/pull/699))
 
 **Dependencies:** T3–T7. **Affected package:** `ts-agent-tasks` storage/delivery/broker.
 
@@ -217,7 +230,7 @@ Record the host runbook in the package documentation at implementation time: sta
 
 **Review gate:** independent persistence/delivery antagonist pass; every recovery case must be either preserved state/obligation, explicit incomplete operation, or explicit error—never unexplained absence. This closes durable library correctness before integration polish.
 
-### T9 — Persistent cascade stop with admission enforcement
+### T9 — Persistent cascade stop with admission enforcement — ✅ implemented on `integration/agent-tasks-v1` ([#701](https://github.com/ErikFortune/fgv/pull/701))
 
 **Dependencies:** T5, T6, T8, A2. **Affected package:** `ts-agent-tasks` broker/implementations/storage.
 
@@ -235,7 +248,52 @@ A3: preflight/reserve root and per-target settlement, required audiences and per
 
 ## 6. Integration and proving ground
 
-### I1 — ai-assist tool factory
+### I1 — ai-assist tool factory — ✅ implemented on `integration/agent-tasks-v1`, all four slices ([#702](https://github.com/ErikFortune/fgv/pull/702), [#703](https://github.com/ErikFortune/fgv/pull/703), [#704](https://github.com/ErikFortune/fgv/pull/704), [#706](https://github.com/ErikFortune/fgv/pull/706)) — split into four slices (orchestrator decision, 2026-09-28)
+
+**I1a — ✅ implemented on `integration/agent-tasks-v1` ([#702](https://github.com/ErikFortune/fgv/pull/702)).**
+**I1b — ✅ implemented on `integration/agent-tasks-v1` ([#703](https://github.com/ErikFortune/fgv/pull/703)):** opt-in
+`task_create` / `task_update` / `task_reassign`; `task_inspect` returns the revision a change passes
+back as `expectedRevision`.
+**I1c — ✅ implemented on `integration/agent-tasks-v1` ([#704](https://github.com/ErikFortune/fgv/pull/704)):**
+one opt-in tool per registered command a host names, its wire schema the registered parameter schema
+(`ITaskCommandHandle.parameters`); a command whose outcome is unknown is never resent by the model.
+**I1d — ✅ implemented on `integration/agent-tasks-v1` ([#706](https://github.com/ErikFortune/fgv/pull/706)):** opt-in `task_stop` (`requestStop`, per
+mode) and `task_stop_inspect` (`inspectStop`); `releaseStop` and `reconcileStop` are deliberately
+not model-reachable — a model may apply a stop, only the host carries it out or lifts it.
+`stop-active` stays `conflict` in every tool whatever the host enables. **I1 is complete.**
+
+**Tracked commands — ✅ implemented on `integration/agent-tasks-v1` (`agent-tasks-tracked-commands`, [#705](https://github.com/ErikFortune/fgv/pull/705)):**
+`trackedTaskDescriptor()` registers all eleven `fgv.tracked@1` transitions with `JsonSchema` parameter
+schemas, so I1c's generator offers them with no change to the tool packlet; a model can now move a
+tracked task's lifecycle, not only create and edit it. A fifth slice, run beside I1d; it retires the
+"`fgv.tracked@1` registers no command schemas" limitation I1c disclosed.
+
+**The split.** T7 and T9 each landed at 65+ files and +11,000 lines, and in both the review loop was
+still doing structural work at round 6+. I1 is decomposed up front rather than mid-loop. Each slice
+adds exactly one authority surface, and each is independently shippable and reviewable:
+
+| slice | adds | depends on |
+|---|---|---|
+| **I1a** | the `tools` packlet and factory; the **read-only** surface (`query`, `inspect`); bounded outputs; schema revalidation inside `execute`; the `@fgv/ts-extras` dependency | T5–T8 |
+| **I1b** | tracked + reassignment **mutation opt-ins**, disabled by default | I1a |
+| **I1c** | statically generated **typed command tools** from the registry | I1a, I1b |
+| **I1d** | **stop tools** — the T9 opt-in | I1a, I1b, **T9** |
+| *tracked commands* | `fgv.tracked@1`'s eleven command **registrations** — data for I1c's generator, no tool code | I1c |
+
+**Why a fifth slice.** I1c generates tools from the registry, and `fgv.tracked@1` registered no
+commands — its transitions had converters but no wire schemas — so the plan's *"tracked and
+simulated external command outcomes"* test was reachable only for external kinds. Closing that is
+registration, not tool code, so it runs beside I1d without touching `packlets/tools/`. Added
+2026-09-30 at the user's direction rather than waiting for a consumer. The broker keeps validating
+native commands with its own converter; the schemas agree with it as a fixture obligation (the
+`detailSchema` precedent), argued in that slice's `result.md`.
+
+**Why I1a is read-only and nothing else.** This slice's own review gate says *"read-only use has no
+mutation dependency."* Shipping the read surface with no mutation code in the package is the
+strongest available proof of that property — I1b then demonstrates the independence holds by adding
+mutations on top of an already-shipped read-only surface, rather than asserting a separation inside
+one large diff. The seam is already visible in the types: `IBoundTaskView` is `query` / `inspect` /
+`inspectStop`, and every mutating operation lives on `IBoundTaskWriter`.
 
 **Dependencies:** T5–T8 (T9 only for opting into stop tools). **Affected package:** `ts-agent-tasks` tools. No ai-assist provider changes expected.
 
@@ -247,7 +305,15 @@ A3: preflight/reserve root and per-target settlement, required audiences and per
 
 **Review gate:** reuse of `IAiClientTool` and memory-tool precedent without its permissive full-body fallback; read-only use has no mutation dependency.
 
-### I2 — Prompt fragments and final composition check
+### I2 — Prompt fragments and final composition check — ✅ implemented on `integration/agent-tasks-v1` ([#707](https://github.com/ErikFortune/fgv/pull/707))
+
+**Shipped:** the `prompt` packlet — fragment factories building one trailing per-request task slot,
+`checkTaskPrompt` (resolve with composition; refuse unless available, one trailing slot carrying the
+context exactly once, a stable prefix, no refusing cache finding, breakpoints ending at the slot) and
+`prepareTaskPrompt` (a delivery handoff whose receipt is acknowledged only against the exact text
+sent; a failed check or mismatched send abandons the manifest). `task_inspect` details are framed via
+the new `serializeTaskData`. Decisions and evidence: `.ai/tasks/completed/2026-10/agent-tasks-i2/result.md`.
+
 
 **Dependencies:** T2, T7, I1. **Affected package:** `ts-agent-tasks` prompt. Existing ts-prompt-assist/ai-assist are consumed unchanged unless a demonstrated upstream bug requires a separately reviewed fix.
 
@@ -259,7 +325,16 @@ A3: preflight/reserve root and per-target settlement, required audiences and per
 
 **Review gate:** prompt trust framing, composition availability, exact inclusion and outbound-wire evidence. `HorizontalComposer` output alone cannot satisfy this gate at the inspected baseline.
 
-### P1 — Credential-free public-API proving ground
+### P1 — Credential-free public-API proving ground — ✅ implemented on `integration/agent-tasks-v1` ([#709](https://github.com/ErikFortune/fgv/pull/709))
+
+**Shipped:** `samples/testbed/src/scenarios/agentTasks` (scenario `agent-tasks`, CLI-only) drives all
+nine steps below, plus cancel and uncertain-dispatch branches, through the package's exports alone —
+a testable core whose every claim is a check with the value it observed, and a thin CLI bootstrap.
+`ts-agent-tasks`' `journey/publicJourney.test.ts` pins, through the public barrel, the six compositions
+no existing suite did. Evidence, the per-step assertion map, the simulation list and three surface
+findings (an undocumented `structuredClone` requirement, query work observable only internally, no
+ai-assist transport seam): `.ai/tasks/completed/2026-10/agent-tasks-p1/result.md`.
+
 
 **Dependencies:** T8, T9, I1, I2. **Affected packages:** `samples/testbed` and `ts-agent-tasks` public contract/journey tests.
 
@@ -306,7 +381,9 @@ The ingestion adapter advertises no execution commands. It can validate current/
 
 Each implementation slice starts with behavior-driven positive, negative, boundary and integration tests. Run the repository's `code-reviewer` pass **before** closing coverage gaps; resolve findings, then reach meaningful 100% statements, branches, functions and lines in each affected package. Use `@fgv/ts-utils-jest`, Result assertions and setup-only throwing. Do not paper over failures, add public test-only exports, or use coverage ignores without the repository-required approval. Use typed lower-boundary fakes to inject real error paths; do not fake a Result implementation or mock away the contract being tested.
 
-### M1 — Resident-memory and reopen/rebuild qualification (planned)
+### M1 — Resident-memory and reopen/rebuild qualification — early run at T4; run on T8's implementation before its default profile ([#699](https://github.com/ErikFortune/fgv/pull/699), `agent-tasks-t8b` `result.md`); stop-state and production-profile cohorts run ([#708](https://github.com/ErikFortune/fgv/pull/708), `agent-tasks-m1-stop` `result.md`); the history-growth and cache-saturation rows of the table below remain unbuilt
+
+**Outcome of the stop-state and production-profile cohorts** (`agent-tasks-m1-stop`, frozen predictions in `perf/residentMemory.js`): 12 of 18 predictions held and six missed, each reported as a miss with its diagnosis and consequence — no threshold moved. Under the default profile `logical-bytes` refuses first in every live-task mix it was measured on — at the 520th–533rd live task for the plain, owed and fanout mixes (519–532 admitted; at refusal 97–99% of the budget is reservation), the 364th with unresolved children and the 443rd live beside 9,000 archived, `retained-tasks` under archive churn and `acknowledgement-ids` under accumulated history; `non-archived-tasks` is never reached. A stop's breadth is bounded by the 1,000-target cap (no capacity dimension), and its root's 8 MiB record bounds repetition (24 cycles at 1,000 targets), or the root's `operations` at the default profile's width. Largest measured working sets: 274 MiB maxRSS at open with ~7 MB task records at the logical ceiling, 194 MiB for a consumer-record rewrite at the 50,000-id cap. Those two working sets, and receipt preparation's, are routed to `docs/TECH_DEBT.md`. **The profile decision was taken 2026-10-01: the user kept the default profile as shipped** (`docs/TECH_DEBT.md`, recorded via [#709](https://github.com/ErikFortune/fgv/pull/709)); the evidence is summarized under *Release evidence* below.
 
 **Dependencies:** first useful run after T4; complete matrix after T7/T8 and stop-state cohort after T9. **Future artifact:** `libraries/ts-agent-tasks/perf/residentMemory.js`, invoked on demand against the built package with `node --expose-gc`. Follow [Measurement Harnesses](../../../.ai/instructions/TESTING_GUIDELINES.md#measurement-harnesses) and the [agent-memory precedent](../../../libraries/ts-agent-memory/perf/residentMemory.js). No harness, fixtures, result artifact or measurements are created/run by this design amendment.
 
@@ -364,4 +441,48 @@ For code slices, run `rushx build`, `rushx lint`, `rushx test` and coverage in a
 
 At implementation close, load the repository's finalize-task skill before any closing PR, update the shared workstream/design/capability artifacts in that implementation change, and follow the normal internal/external review process. That later workflow must not cause this design task to alter ledgers, production code, dependencies or proposals: the current authorized output is only these two documents, with no commit or PR.
 
-**Approval handoff:** A1, A2 and A3 are approved; consumer acceptance of A3's finite horizon is limited to disposable V1 ingestion hubs. The future autonomous collective requires a separate compaction design before adoption. Approval and consumer execution-record byte measurements do not certify the broker's memory profile; M1 supplies that later evidence. Await explicit implementation authorization and start F1 as an isolated upstream FileTree slice, followed by F2's Node implementation and crash qualification before a durable task path is advertised. These adoption clarifications do not block F1/F2 or authorize consumer rollout. Branch/squash operations and shared orchestration artifacts remain with the user/orchestrator.
+#### Evidence at the cluster close (2026-10-01)
+
+Written at the `agent-tasks-cluster-close` from the eighteen streams' own `result.md` files, not from memory. A citation `T3 § Crash-window matrix` means `.ai/tasks/completed/2026-10/agent-tasks-t3/result.md`, that section; `I1a`…`I1d`, `TC` (`agent-tasks-tracked-commands`), `I2`, `M1s` (`agent-tasks-m1-stop`) and `P1` likewise. Where a slice's `result.md` disagrees with itself, the discrepancy is stated rather than resolved silently; the full list is in `agent-tasks-cluster-close` `result.md`. **Evidence is from merged slices on `integration/agent-tasks-v1`; nothing here was re-run at the close** except `mutationMatrix.js --check` (pattern presence only).
+
+Four kinds of evidence, kept separate because they prove different things:
+
+- **Deterministic tests** — Jest suites in the package's gate (100% statements, branches, functions and lines, zero `c8 ignore` in every slice that recorded it). The package suite grew from 409 tests (T1 § *What shipped*) to 2,407 (P1 § *Gates*).
+- **Fault injection** — real-Node `SIGKILL` crash matrices and injected-storage/injected-writer faults.
+- **Revert (mutation) matrices** — each protection reverted on a copy of the slice's source and its tests watched go red; each slice names the head it ran on, which is not always its merged head (T5's eight-row check preceded its seven Copilot rounds; see the last bullet under *What this evidence does not establish*): `perf/mutationMatrix.js` (T3 onwards), plus `i2Matrix.js` and `p1Matrix.js` beside their artifacts (routed to fold in, `docs/TECH_DEBT.md`).
+- **Measurement** — M1 (`perf/residentMemory.js`): machine-dependent, sampled, not a CI threshold (§ M1 above, *Two different evidence lanes*).
+
+| Suite | Deterministic tests | Fault injection / revert matrix | Measurement | Not established |
+|---|---|---|---|---|
+| Values/typed extensions | Every closed set converts each member and rejects unknowns; registry erasure through converter closures (T1 § *Which test establishes…*). Strict receipt/answer converters on every tool (I1a § *Round 4*, I1b, I1c). `fgv.tracked@1` schema/converter agreement over 71 fixture values (TC § *Agreement fixtures*) | Matrix rows per slice (below) | — | T1 tests *shapes*, not *choices*, for about half the vocabulary (T1 § *Declared vs exercised*); schema/converter agreement for a host's own kinds is a fixture obligation, not a runtime check (I1c, TC § *The decision*) |
+| Storage fault matrix | Open-time validation of every record; fingerprinted read-back; write/read converter symmetry (T3 § *What shipped*) | Real-Node crash matrix, **37 tests on each of ext4 and tmpfs**, rows C1–C12, predictions written first, all held (T3 § *The crash-window matrix*). Activation/ack crashes (T7 W3, `delivery/crash.test.ts`); dispose/cleanup/archive crashes, 10 cases (T8 § *Recovery cases*); every journey write boundary, 10 steps and 13 boundaries (T8b § *Every crash point*); stop latch at each window (T9, `stopCrash`) | — | Nothing about OS crash or power loss: the claim is `'process-crash'` on F2's qualified filesystems (T3 § *What no test here establishes*). Source-cursor and dispatch windows are argued through W3/W9/W10, with no kill matrix (T6). P1 claims recovery behaviour after reopen, not crash survival (P1 § *Crash and recovery claims*) |
+| Authorization/adversarial scopes | Hidden and foreign ids answered identically on all eight broker entry points; projector failure fails the call; revocation mid-writer refuses with nothing written (T5 § *Authorization shape*, rounds 2–6). No principal/scope field on any wire schema, walked key by key; recording-proxy touched sets (I1a, I1b, I1c, I1d). Adversarial receipts all answer one `invalid-receipt` (T7 § *Acceptance evidence*) | T5's eight protections reverted, all red, in a check that preceded its seven Copilot rounds — each round then recorded its own reverts (T5 § *Revert check*, § *Review*); I1a 31 rows / 53 red, I1b 31 rows / 74 red, I1c 24 rows / 79 red (each in its § *Revert matrix*) | — | A host projector that keeps outcome artifact references is making a disclosure decision the converter cannot see (T5 § *What is structurally guaranteed*). `registerExternal` is unbound by design (T5 § *The one unbound operation*) |
+| Concurrency/idempotency | Stale writes refused (T5 acceptance table; I1b); same-key replay re-authorized (T5 rounds 2–3); uncertain dispatch held, never resent (T6 acceptance table; I1c § *Idempotency*); serialized prompt handoff in both orders (I2 rows I2-31…33) | T6's revert check (see the count caveat below); P1-4…P1-6 as single-layer mutants stayed `0 red` because each property is guarded twice — the rows now remove every layer (P1 § *Revert matrix*) | — | A model resend after a lost response is a new key and applies twice — by design (I1c § *Idempotency*) |
+| Reassignment | Identity, path, children, scopes, results and source binding preserved byte-for-byte; no implicit child reassignment (T5 acceptance table). Checkpoints independent across reassign and reopen (T7). Journey step 5 (P1) | — | — | A move's previous parent is not re-authorized on replay — a stated limit (T5 round 3) |
+| Receipts/retention | Only actually-included revisions appear in a receipt, at every budget (T2). Exact-ID falsifier; no pre-processing ack (T7 § *The exact-ID design*). Disposition, closure, abandonment, evidence-checked pruning (T8 § *The disposition model*). Receipt never in prompt text; acknowledgement only against the exact text sent (I2 § *The decision*) | T7 matrix (§ *Revert check*); T8 PR 1 matrix, 11 rows, all red (T8 § *Revert checks*); I2 matrix, **36 rows, 172 red** (I2 § *Revert matrix*) | Receipt preparation reads 200 task records and peaks 25.4 MiB above settled — a missed prediction (M1s § *Misses* (4)) | Worst-case receipt preparation at maximal envelopes not measured (M1s). The snapshot path trusts its context to be one render (I2 layer-1 P2-a). An expired orphaned receipt keeps pinning (`docs/TECH_DEBT.md` P3) |
+| Reconciliation | Source owns truth, push-vs-poll ordering, freshness refresh vs violation, active-only pass never complete (T6 § *Acceptance evidence*). Source-replay registration gap enforced (T8). Oversized results recorded `indeterminate`, never truncated (T8b) | SimulatedExecutor gaps, outages, lost responses, key expiry; cursor unmoved on every refusal (T6 W8) | — | The feed is trusted not to re-emit below the committed checkpoint (T6 round 3). Five T6 brief acceptance items have no evidence line in T6's `result.md`: terminal reconciliation after a missed publication, old pages/commands deduplicating, on-demand dedup evidence including archived replay, outage not failing execution, replay-envelope exhaustion/extension |
+| Cascade | Acceptance distinguished from completion at 11 named points; whole authoritative subtree captured; the 1,000-target bound refused, never truncated; admission freeze including raw-writer bypass (T9 § *The stop model*, § *The admission freeze*). Model stop tools end to end through the real broker (I1d) | T9: **166 rows — 158 red; 6 UNVERIFIED stale-on-base; M91 0 red by T3's disposition; T9-24 0 red (equivalent)**; 65 of 66 T9 rows red (T9 § *Revert matrix*). I1d: 27 rows (see the count caveat below) | Breadth capped at 1,000 targets with no capacity dimension; repetition bounded at 24 cycles (`record-bytes`, fixture profile) or 61 (`operations`, default profile); a whole-repository stop admitted at 325 plain tasks (M1s § *Cohort 1*) | Explicit abandonment of a blocked cancel not built; the stop reservation uses schema maxima (T9 § *Hand-offs*, both in `docs/TECH_DEBT.md`) |
+| Query performance | 0 / 1,000 / 10,000 history: warm `open` 20 visits 0 reads at every size, `listOwed` 10 visits, `queryDue` 6 visits; archived cohort 0 visits (T4 § *Counter evidence*). Journey step 6: 0 task-record reads at 0/60/180 terminal tasks against a control of 1 (P1) | T3 matrix re-checked 92/92 by T4 | — | Query work is observable only through an internal module (P1 finding 2) |
+| Residency structure and capacity | Exact fit / one over; `used + reserved` conserved (T3). Each of the eleven §8.6 dimensions saturated exactly; transfers checked against the records' own claims; lifetime limits survive reopen (T8b § *A3 — the saturation journeys*). The default profile refuses the 537th plain registration (T8b, `saturation.test.ts`) | T8b matrix run: **100 rows — 93 red, 6 stale on the base, 1 zero-red by an earlier disposition** (T8b § *Revert matrix*) | M1 early run at T4 and on T8's implementation: all frozen cohorts held (T4, T8b § *M1*). M1 stop and production-profile cohorts: **12 of 18 predictions held, 6 missed**, none re-thresholded (M1s) | See *What is not established* below |
+| Prompt/wire | Outbound request bodies captured from ai-assist's own builders for Anthropic, OpenAI Responses and Gemini (I1a § *The request-body capture test*; I1b; I1c; I1d; TC). Composition positively available, one trailing per-request slot, breakpoints ending at it; progress-only pair byte-identical first block (I2 § *Outbound evidence*) | I2 matrix (above) | — | No claim about provider cache hits (I2 § *What P1 can rely on*). On Gemini, schema closure is enforced by validation only (I1a round 1). Gemini acceptance of an empty nested object not verified live (TC) |
+| Credential-free journey | `samples/testbed` `agent-tasks` scenario: all nine steps through the package's exports, 105 pinned checks, deterministic second run, CLI smoke; six library contract tests in `journey/` (P1 § *What shipped*, § *The nine steps*) | `p1Matrix.js`: **ten rows, all red on the final source**; `journey/` alone catches 5, the scenario all 10 (P1 § *Revert matrix*) | — | No live model; "model turns" are captured streams (P1, TC § *End-to-end*) |
+
+**Matrix counts that do not reproduce from their own tables** (the claim each slice makes is stated, the arithmetic is not ours to change): I1d states "27 rows, 56 red" while its per-row verdicts sum to 59; T6 states 38 reverted protections while its labels name 36; T7's "22 protections … every one red" counts M21, which neuters a test double rather than a protection. **Six storage rows (M13, M20, M23, M34, M39, M49) remain UNVERIFIED** — their patterns no longer occur (T9, I1b; `docs/TECH_DEBT.md` P3).
+
+**M1's qualification gate.** M1s recommends: *"Keep the default profile as shipped. Qualify it for hosts by the budget below, not by a single RSS number"* — ~140 MiB for ordinary live-task work, ~300 MiB if task records approach the 8 MiB ceiling or consumers the 50,000-id cap, and at least 512 MiB of disk plus scratch for one largest-record replacement. M1s left the 1,000-task question to the user. **The user decided on 2026-10-01 to keep the default profile as shipped** (`docs/TECH_DEBT.md`, recorded via #709). Measured under that profile, `logical-bytes` refuses first: **519–532 live tasks admitted, the refusal landing at the 520th–533rd**, across the plain, owed and fanout mixes; also at the 364th with unresolved children and the 443rd live beside 9,000 archived (M1s § *Cohort 2*). The 1,000 `non-archived-tasks` limit is reached by no fixture. The default profile is therefore qualified as *a budget for a host*, not as a universal RSS number; § M1's *Qualification gate* asks no more than that.
+
+**P1's three surface findings** (P1 § *Every place the public surface was insufficient*, all P3 in `docs/TECH_DEBT.md`): (1) the broker silently requires a global `structuredClone`, which jsdom lacks; (2) query work is observable only through `packlets/storage/internals`; (3) ai-assist has no per-call transport, so capturing a request means substituting `globalThis.fetch`.
+
+**What this evidence does not establish:**
+
+- Durability beyond `'process-crash'` on Linux ext4/tmpfs — no OS-crash or power-loss claim (T3).
+- Peak memory near the ceilings: the cold-history bound **does not hold near the 8 MiB task-record ceiling** (open peaks 140 MiB, maxRSS 274 MiB); the consumer-record rewrite at the 50,000-id cap peaks 92.4 MiB above settled, and its maximal-evidence case is *extrapolated, not measured* (M1s § *Misses* (5), (6)).
+- M1's history-growth (0/1k/10k/40k on one subscription) and cache-saturation cohorts — **not built** (M1s § *Routed*; now in `docs/TECH_DEBT.md`).
+- Every memory figure is a sampled high-water from one machine and one Node version; latencies were measured under contention and are descriptive (M1s).
+- Provider cache hits, and any live-provider behaviour (I2, P1).
+- Whether a host's own command schemas agree with its converters at runtime (I1c, TC).
+- Several slices ran their final package gates or matrix on a head before their last review round and argued that the later change could not move them (T5, T9, I1a, I1b, I1c, I1d, TC — each states which head and why); CI was green on every head.
+
+**Handoff at the cluster close (2026-10-01):** F1/F2 are on `release`; every T, I, M and P slice is implemented on `integration/agent-tasks-v1` and finalized ([#712](https://github.com/ErikFortune/fgv/pull/712)). What remains is the orchestrator's promotion squash of the integration branch onto `release`. Nothing in the evidence above blocks it; the routed debt in `docs/TECH_DEBT.md` does not. A3's consumer limitation below still stands: acceptance is for disposable V1 ingestion hubs, and an autonomous collective still needs the separate compaction design.
+
+**Approval handoff** *(original, 2026-09-21 — superseded by the paragraph above; kept as the record of what was authorized and when)*: A1, A2 and A3 are approved; consumer acceptance of A3's finite horizon is limited to disposable V1 ingestion hubs. The future autonomous collective requires a separate compaction design before adoption. Approval and consumer execution-record byte measurements do not certify the broker's memory profile; M1 supplies that later evidence. Await explicit implementation authorization and start F1 as an isolated upstream FileTree slice, followed by F2's Node implementation and crash qualification before a durable task path is advertised. These adoption clarifications do not block F1/F2 or authorize consumer rollout. Branch/squash operations and shared orchestration artifacts remain with the user/orchestrator.
