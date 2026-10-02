@@ -1224,6 +1224,8 @@ multi-process ownership, general event sourcing, and dependency DAGs.
 
 <!-- BEGIN GENERATED: recent-additions -->
 
-*No stream has recorded a `sourceLine` against this package yet.*
+- **2026-10-01** — Agent task context can go into a cacheable prompt as one checked, trailing per-request slot, and a delivery's receipt is acknowledgeable only against the exact text that was sent. ([#707](https://github.com/ErikFortune/fgv/pull/707))
+- **2026-09-28** — A host can give a model bounded, per-call-authorized tools over its agent tasks: read-only by default, with create, update, reassign, typed commands and cascade-stop requests opt-in. ([#702](https://github.com/ErikFortune/fgv/pull/702))
+- **2026-09-22** — New @fgv/ts-agent-tasks records agent work without running it: typed task envelopes, a crash-safe FileTree store, and a principal-bound broker with exact-receipt delivery, external-source reconciliation, retention and persistent cascade stop. ([#684](https://github.com/ErikFortune/fgv/pull/684))
 
 <!-- END GENERATED: recent-additions -->

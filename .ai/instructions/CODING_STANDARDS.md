@@ -907,7 +907,7 @@ reads against intent and repo patterns, and an authorization defect is usually n
 intent. Every check is present; one of them runs at the wrong moment.
 
 Observed on #691 (`ts-agent-tasks` T5, the broker's bound-authority slice). Layer 1 returned **no
-P1s and one P2**, and the implementation already had authorization on every entry point. The
+P1s and one code P2** (a second P2 concerned the exit artifact), and the implementation already had authorization on every entry point. The
 Copilot loop then ran **seven rounds**, of which the first six each found a real disclosure or
 liveness defect:
 

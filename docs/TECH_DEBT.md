@@ -161,7 +161,7 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
   and document 536**, which `defaultTaskCapacityLimits`' remarks and the `CAPABILITIES.md` runbook now
   do. The open question is carried by the smaller entry below.
 
-  **Reference**: `.ai/tasks/active/agent-tasks-t8b/result.md` § *Profile*; the history of this
+  **Reference**: `.ai/tasks/completed/2026-10/agent-tasks-t8b/result.md` § *Profile*; the history of this
   entry is in `agent-tasks-t4` … `agent-tasks-t8` `result.md` files and
   [#687](https://github.com/ErikFortune/fgv/pull/687).
 
@@ -187,8 +187,9 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
   and disk budget much.
 
   **Decided 2026-10-01 (user): keep the default profile as shipped. Closed.** ~500 concurrent tasks
-  is sufficient for the foreseeable future, so the measured ceiling of 520–533 live tasks is accepted
-  and the ~1.5 GiB of logical budget per repository that admitting 1,000 would cost is not bought.
+  is sufficient for the foreseeable future, so the measured ceiling — 519–532 live tasks admitted,
+  refused at the 520th–533rd — is accepted, and the ~1.5 GiB of logical budget per repository that
+  admitting 1,000 would cost is not bought.
   `capacityProfile.ts` is untouched. The declared `non-archived-tasks: 1000` **stays as it is**, and
   stays documented as unreachable under the default's own `logical-bytes`: it is accurate once read
   with the concurrent-constraints note, and it is the direction that can be raised in place rather
@@ -293,8 +294,7 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
   of a latched task on every commit, and the broker names each refusal `stop-active`
   (`agent-tasks-t9` `result.md` § *The admission freeze*).
   **Trigger:** the start of T6, T7, T8 and T9 respectively. **Reference:** the `agent-tasks-t5`
-  stream's `result.md` § *What a later slice must decide* (at `.ai/tasks/active/agent-tasks-t5/`
-  until the `agent-tasks-v1` cluster finalizes).
+  stream's `result.md` § *What a later slice must decide* (at `.ai/tasks/completed/2026-10/agent-tasks-t5/`).
 
 - **[P2] `ts-agent-tasks` source hand-offs T6 left for T7/T8/T9 — each is the named slice's to
   decide, and none is safe to leave implicit.**
@@ -324,8 +324,7 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
   `contractVersion`) and names the kind's command for each mode; asked on every stop pass, its
   evidence revalidated after reopen.
   **Trigger:** the start of T7, T8 and T9 respectively. **Reference:** the `agent-tasks-t6`
-  stream's `result.md` § *Hand-offs* (at `.ai/tasks/active/agent-tasks-t6/` until the
-  `agent-tasks-v1` cluster finalizes).
+  stream's `result.md` § *Hand-offs* (at `.ai/tasks/completed/2026-10/agent-tasks-t6/`).
 
 - **[P2] `ts-agent-tasks` stop hand-offs T9 left open — each named with the slice or trigger that
   owns it.**
@@ -343,8 +342,7 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
   (3) ~~**M1's stop-state cohort** is not run by T9~~ *Resolved by `agent-tasks-m1-stop`* (2026-10-01):
   run, with the stop's resident and on-disk cost per target, latch and evidence record, and its
   bounds — breadth by the 1,000-target cap, repetition by the root's record (`record-bytes`) or
-  per-task `operations`. **Reference:** `agent-tasks-t9` `result.md` (at `.ai/tasks/active/agent-tasks-t9/`
-  until the `agent-tasks-v1` cluster finalizes) and `agent-tasks-m1-stop` `result.md`.
+  per-task `operations`. **Reference:** `agent-tasks-t9` `result.md` (at `.ai/tasks/completed/2026-10/agent-tasks-t9/`) and `agent-tasks-m1-stop` `result.md`.
 
 - **[P2] `ts-agent-tasks` receipt preparation's working set follows owed volume, not the receipt.**
   `BoundTaskDelivery.prepare` (`broker/delivery.ts`) gathers up to `maxPreparedUpdates` (1,000) owed
@@ -397,22 +395,24 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
   **Reference**: `agent-tasks-m1-stop` `result.md` § *Misses* (6).
 
 - **[P2] `ts-agent-tasks` delivery hand-offs T7 left for T8 — each is T8's to decide.**
-  *(T8: (1), (3) and (4) resolved — see each; (2) stays open with the profile qualification.)*
+  *(T8: (1), (3) and (4) resolved — see each. (2) resolved by `agent-tasks-t8b`'s profile change — noted at the cluster close, 2026-10-01.)*
   (1) ~~**`archive` is `retention-blocked` for every task a subscription covers, even fully
   acknowledged.**~~ *Resolved by T8.* The inherited rule refuses archive while any retained update names an audience,
   and T7 never prunes a stored audience; with one matching subscription no covered task can ever be
   archived. T8's pruning against exact acknowledgement history and disposition evidence is what
-  unblocks it (evidence: `delivery/retention.test.ts`). (2) **Profile inconsistency:** a
+  unblocks it (evidence: `delivery/retention.test.ts`). (2) ~~**Profile inconsistency:** a
   subscription record reserves E (512 B) record bytes per owed or future link, so
   `maxConsumerRecordBytes` (8 MiB) admits ≈16,384 while `maxAcknowledgementIdsPerSubscription`
-  advertises 50,000. (3) ~~**Subscription closure and disposition** (`closed`, `disposed`,
+  advertises 50,000.~~ *Resolved by `agent-tasks-t8b`*, which raised `maxConsumerRecordBytes` (and
+  `record-bytes`) to 32 MiB — room for 65,536 links at 512 B — while the per-subscription cap stayed
+  50,000; M1 reached the 50,001st id on the per-subscription cap (`agent-tasks-m1-stop` § *Cohort 2*). (3) ~~**Subscription closure and disposition** (`closed`, `disposed`,
   `coalesceProgress`) and the capacity each releases~~ *Resolved by T8* — closure releases the
   future-update reservation and, once nothing is owed, the preparation claim; exact history stays a
   lifetime charge. (4) ~~Baseline payloads of `current` subscriptions hold resident bytes until
   acknowledged~~ *Resolved by T8* — a baseline payload leaves the record, and the resident charge,
   in the write that acknowledges or disposes it.
   **Trigger:** the start of T8. **Reference:** the `agent-tasks-t7` stream's `result.md` §
-  *Hand-offs* (at `.ai/tasks/active/agent-tasks-t7/` until the `agent-tasks-v1` cluster finalizes).
+  *Hand-offs* (at `.ai/tasks/completed/2026-10/agent-tasks-t7/`).
 
 *(`ts-agent-tasks` — T8's second body of work: **retired 2026-09-26 by `agent-tasks-t8b`**, which
 delivered the A3 saturation journeys with exact transfers at every crash point, lifetime
@@ -781,6 +781,57 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
 
 ## P3 — Opportunistic cleanup
 
+- **[P3] `ts-agent-tasks` — deferrals the agent-tasks slices recorded only in their own `result.md`.**
+  Found by the cluster close (`agent-tasks-cluster-close`, 2026-10-01), which read all eighteen
+  slices' results against this file. Each item was left by a slice as "a later slice decides", "a
+  follow-up" or "recorded here, not built", and no later artifact picked it up. None blocks
+  promotion; listed so they are not lost when the slices' directories stop being read. Paths below
+  are under `.ai/tasks/completed/2026-10/`.
+  - **M1's history-growth and cache-saturation cohorts** (the plan's § 8 table: 0/1k/10k/40k ids on
+    one subscription; ten cycles past LRU/cursor/receipt bounds) are unbuilt. Only the plan's M1
+    heading recorded them. (`agent-tasks-m1-stop/result.md` § *Routed*.)
+  - **M1 peak sizing needs an allocation-profile or `--max-old-space-size` arm** before a sampled
+    peak is used to size a host: sampled heap cannot tell unreclaimed garbage from live records.
+    m1-stop added old-space sampling, not this arm. (`agent-tasks-t4/result.md` § *What a later
+    slice must decide*, item 6.)
+  - **A per-source index of reconciliation work** (T4 item 4, left "to T6"; T6 does not address it)
+    and **a distinct failure classification for the read-concurrency refusal**, which today is
+    indistinguishable from a concurrent writer (T4 item 5).
+  - **The snapshot prompt path trusts its context to be one render** — the receipt-to-text pairing is
+    trusted, not verified; verifying needs a text hash in the receipt, a T2/T7 surface change.
+    Documented only on `checkTaskPrompt`. (`agent-tasks-i2/result.md`, layer-1 P2-a.)
+  - **An inspect-only stop surface still needs a writer** — a host that wants a model to watch stops
+    but never request one must still pass a writer. "Recorded here, not built."
+    (`agent-tasks-i1d/result.md` § *Layer 1*, P3.)
+  - **T2's input-size bounds are sanity bounds, not measured** (10,000 entries per list, 200 items
+    per receipt), and **`allTaskResults`** — now used in two files — was to be recorded as a
+    `ts-utils` candidate at close. (`agent-tasks-t2/result.md` § *Things a later slice must decide*.)
+  - **`development-design.md` § 9's tie-break wording** ("task ID and update ID") was flagged by T2
+    for correction and is unchanged.
+  - **Per-owner vs repository-wide limit structure** — T1 called it "T3's call"; T3's result gives
+    it no disposition. (`agent-tasks-t1/result.md` items 4–5.)
+  - **FileTree upstream gaps found by T3:** no child-by-name lookup, and two session repositories
+    over one directory reached via two items are not detected ("Residual, documented").
+    (`agent-tasks-t3/result.md` § *Review*, round 6.)
+  - **A shared decoder for `_taskOf`** (T8 layer-1 P3.6, "a follow-up" in its `state.md`) and the
+    brief's **index repair** deliverable, which neither T8 artifact addresses.
+  - **`rushx coverage` fails in `ts-agent-tasks` with a babel-parser error** (pre-existing at T1;
+    `rushx test` carries the coverage gate). (`agent-tasks-t1/result.md` § *Gate results*.)
+  - **A stale comment in source:** `src/test/unit/journey/publicJourney.test.ts` points at
+    `.ai/tasks/active/agent-tasks-p1/result.md`, now at `.ai/tasks/completed/2026-10/agent-tasks-p1/`.
+    The cluster close changes no `src/` file, so it is left for the next stream to touch that file.
+
+  **Trigger**: each item's own surface — the next stream touching that packlet, measurement or
+  design section. The first two belong with any future M1 run.
+
+  **Scope sketch**: individual; most are a test, a measurement arm or a one-line doc fix. Split an
+  item into its own entry when someone picks it up.
+
+  **Not a P2**: none is a correctness defect in shipped behaviour; each is an unmeasured bound, an
+  unbuilt convenience or a doc drift.
+
+  **Reference**: `agent-tasks-cluster-close` `result.md` § *Recorded nowhere durable*.
+
 - ~~**[P3] `task_inspect` returns a task's details as unframed host JSON beside the framed context.**~~
   **Resolved by I2 (2026-10-01): details are data, framed like task prose.** `context` publishes
   `serializeTaskData` (the renderer's `quoteData` escaping applied to every string of a JSON value,
@@ -788,7 +839,7 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
   bounds the escaped text. The reason it is "yes": the hazards the renderer escapes — tag-block
   smuggling, bidi overrides, invisible characters, frame and Mustache delimiters — do not depend on
   which channel carries the text, and a model reads a tool result as readily as a system prompt.
-  `.ai/tasks/active/agent-tasks-i2/result.md`. Original entry follows.
+  `.ai/tasks/completed/2026-10/agent-tasks-i2/result.md`. Original entry follows.
   `libraries/ts-agent-tasks/src/packlets/tools/presentation.ts`. Task state reaches the model only
   inside `TaskContextRenderer`'s framed, escaped text; details, when the view's `ITaskProjector`
   exposes them, are returned as structured JSON beside it — size-bounded (`maxDetailsChars`) but not
@@ -806,10 +857,10 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
 
   **Not a P4**: it is a trust-framing asymmetry on a model-facing surface, not a doc gap.
 
-  **Reference**: `agent-tasks-i1a` layer-1 review P3-b; `.ai/tasks/active/agent-tasks-i1a/result.md`.
+  **Reference**: `agent-tasks-i1a` layer-1 review P3-b; `.ai/tasks/completed/2026-10/agent-tasks-i1a/result.md`.
 
 - **[P3] I2's revert-matrix rows live outside `perf/mutationMatrix.js`.**
-  `.ai/tasks/active/agent-tasks-i2/i2Matrix.js` holds rows `I2-1…I2-36` with the same mechanics as
+  `.ai/tasks/completed/2026-10/agent-tasks-i2/i2Matrix.js` holds rows `I2-1…I2-36` with the same mechanics as
   `libraries/ts-agent-tasks/perf/mutationMatrix.js`, because I2 ran beside the M1 stop-state cohort,
   which owned `perf/`. Two scripts means a refactor that moves a protected line can re-point one and
   leave the other's rows stale, and the artifact directory migrates at cluster close.
@@ -821,7 +872,7 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
 
   **Not a P4**: a stale row is a protection nobody is checking.
 
-  **Reference**: `.ai/tasks/active/agent-tasks-i2/result.md` § Revert matrix.
+  **Reference**: `.ai/tasks/completed/2026-10/agent-tasks-i2/result.md` § Revert matrix.
 
 - **[P3] `JsonConverters.jsonValue` admits `Infinity`, which has no JSON form.**
   `@fgv/ts-json-base`: `Converters.jsonValue.convert(Infinity)` succeeds (and `JSON.stringify` then
@@ -837,7 +888,7 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
 
   **Not a P4**: a value that changes silently on serialization is a correctness hazard, not a doc gap.
 
-  **Reference**: `.ai/tasks/active/agent-tasks-i2/result.md` § The framing decision.
+  **Reference**: `.ai/tasks/completed/2026-10/agent-tasks-i2/result.md` § The framing decision.
 
 - **[P3] `@fgv/ts-agent-tasks` needs a global `structuredClone`, and says so nowhere.**
   The broker clones every authorization request (`broker/access.ts`), and projections
@@ -854,7 +905,7 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
 
   **Not a P4**: the failure is silent at the call site and reads as an authorization decision.
 
-  **Reference**: `.ai/tasks/active/agent-tasks-p1/result.md` § finding 1.
+  **Reference**: `.ai/tasks/completed/2026-10/agent-tasks-p1/result.md` § finding 1.
 
 - **[P3] Query work is observable only through an internal module.**
   `ts-agent-tasks` promises that query, due and owed work stays tied to matching candidates as history
@@ -870,7 +921,7 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
 
   **Not a P2**: the guarantee itself is pinned by `storage/counters.test.ts`; this is observability.
 
-  **Reference**: `.ai/tasks/active/agent-tasks-p1/result.md` § finding 2.
+  **Reference**: `.ai/tasks/completed/2026-10/agent-tasks-p1/result.md` § finding 2.
 
 - **[P3] ai-assist has no per-call transport, so capturing a request means replacing `fetch`.**
   `AiAssist.callProviderCompletion` calls the global `fetch`. A host that wants to see the request its
@@ -885,10 +936,10 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
 
   **Not a P4**: three call sites already work around it.
 
-  **Reference**: `.ai/tasks/active/agent-tasks-p1/result.md` § finding 3.
+  **Reference**: `.ai/tasks/completed/2026-10/agent-tasks-p1/result.md` § finding 3.
 
 - **[P3] P1's revert-matrix rows live outside `perf/mutationMatrix.js`.**
-  `.ai/tasks/active/agent-tasks-p1/p1Matrix.js` holds rows `P1-1…P1-10`, which mutate the library and
+  `.ai/tasks/completed/2026-10/agent-tasks-p1/p1Matrix.js` holds rows `P1-1…P1-10`, which mutate the library and
   run both `journey/` and the testbed's `agentTasks` suite, because P1 ran beside the M1 stop-state
   cohort, which owned `perf/`. Same hazard as I2's rows: a refactor can re-point one script's patterns
   and leave the other's stale, and the directory migrates at cluster close.
@@ -900,7 +951,7 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
 
   **Not a P4**: a stale row is a protection nobody is checking.
 
-  **Reference**: `.ai/tasks/active/agent-tasks-p1/result.md` § Revert matrix.
+  **Reference**: `.ai/tasks/completed/2026-10/agent-tasks-p1/result.md` § Revert matrix.
 
 - **[P3] A `ts-extras` KeyStore Argon2id test is flaky: its fake KDF cannot tell random salts apart.**
   `libraries/ts-extras/src/test/unit/crypto/keystore/keyStoreArgon2id.test.ts` › *returns false when
@@ -917,7 +968,7 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
 
   **Not a P4**: an intermittent red on an unrelated package blocks CI for everyone downstream.
 
-  **Reference**: `.ai/tasks/active/agent-tasks-p1/result.md` § Gates.
+  **Reference**: `.ai/tasks/completed/2026-10/agent-tasks-p1/result.md` § Gates.
 
 - **[P3] `JsonSchema.integer` cannot state a range, so `task_query`'s `limit` bound is prose on the
   wire.** `libraries/ts-json-base/src/packlets/json-schema-builder/factories.ts` has no
@@ -952,8 +1003,9 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
   `M49` (pattern found 0 times) and `M39` (found 3 times) as `UNVERIFIED`: later refactors of
   `src/packlets/storage/` moved the lines they mutate. The script's own header says a moved line's row
   is re-pointed, not deleted — these were not. Their protections are unmeasured by the matrix until
-  they are. Present at the I1a landing (`387969ed`), found by I1b's `--check`; I1b touches no storage
-  source, so it did not re-point them.
+  they are. Present at the I1a landing (`387969ed`); first recorded as stale by `agent-tasks-t8b`
+  ("left as found"), routed here by I1b's `--check`; I1b touches no storage source, so it did not
+  re-point them. Still UNVERIFIED at the cluster close (2026-10-01).
 
   **Trigger**: the next stream that touches `src/packlets/storage/`, or any matrix run that selects
   storage rows.
@@ -983,7 +1035,7 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
 
   **Not a P4**: a collision would silently shadow a tool the host opted into.
 
-  **Reference**: `agent-tasks-i1b`; `.ai/tasks/active/agent-tasks-i1b/result.md`.
+  **Reference**: `agent-tasks-i1b`; `.ai/tasks/completed/2026-10/agent-tasks-i1b/result.md`.
 
 - **[P3] A model can name only the stops it requested: a bound view cannot list a task's stops.**
   `task_stop_inspect` takes an `intentId`, and the only place a model learns one is `task_stop`'s
@@ -1003,7 +1055,7 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
 
   **Not a P4**: a model-facing surface under-reports state the principal is entitled to read.
 
-  **Reference**: `.ai/tasks/active/agent-tasks-i1d/result.md`.
+  **Reference**: `.ai/tasks/completed/2026-10/agent-tasks-i1d/result.md`.
 
 - **[P3] A command receipt does not say whether an `accepted` intent has been dispatched.**
   `dispatchIntent` (`broker/externalCommands.ts`) returns the stored receipt unchanged when another
@@ -1036,7 +1088,9 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
   to stop does not double-apply anything — so a usability gap, not a safety one. Pinned:
   `trackedCommandTools.test.ts` › *a value only the converter refuses…*.
 
-  **Trigger**: I1d, which owns `packlets/tools/` — or the first consumer whose model hits it.
+  **Trigger**: ~~I1d, which owns `packlets/tools/`~~ — I1d (#706) neither took nor mentioned it, so
+  that trigger passed unacted (found at the cluster close, 2026-10-01). Now: the next stream that
+  touches `packlets/tools/commandTools.ts`, or the first consumer whose model hits it.
 
   **Also in that file, a stale comment.** `_send`'s comment ("the writer canonicalizes them — once —
   through the registered handle's `validate`") is true for external kinds only; for `fgv.tracked@1`
@@ -1050,7 +1104,7 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
 
   **Not a P4**: the model is told the opposite of the truth about whether to retry.
 
-  **Reference**: `agent-tasks-tracked-commands` (`.ai/tasks/active/agent-tasks-tracked-commands/result.md`).
+  **Reference**: `agent-tasks-tracked-commands` (`.ai/tasks/completed/2026-10/agent-tasks-tracked-commands/result.md`).
 
 - **[P3] Gemini has not been shown to accept a nested object schema with no properties.** `start`
   and `resume` (and any registered command with no parameters) put `parameters: { type: 'object',
