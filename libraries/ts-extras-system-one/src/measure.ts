@@ -26,6 +26,7 @@ import type {
   ISystemOneCriterionMeasure,
   ISystemOneInputMeasure,
   ISystemOneQuestionMeasure,
+  SystemOneFailureReason,
   SystemOneInputLimit
 } from './types';
 
@@ -86,7 +87,8 @@ function measureCriteria(question: Question): ISystemOneCriterionMeasure[] {
  * Measures, for each question, what an upstream CLM server embeds: the state plus the separator
  * plus the instructions, and each candidate text separately.
  * @remarks
- * Characters are a proxy for tokens, not a guarantee: the ratio varies with the content and with
+ * Lengths are UTF-16 code units, and the texts are not trimmed as CLM trims them, so both
+ * over-measure. Characters are a proxy for tokens, not a guarantee: the ratio varies with the content and with
  * each backend's tokenizer. A structured state is measured by its JSON serialization.
  * @param state - The state to be sent.
  * @param questions - The questions to be sent.
@@ -145,7 +147,7 @@ export function checkInputLimit(
   state: EntryType,
   questions: Questions,
   inputLimit: SystemOneInputLimit
-): DetailedResult<ISystemOneInputMeasure | undefined, 'invalid-request' | 'input-over-limit'> {
+): DetailedResult<ISystemOneInputMeasure | undefined, SystemOneFailureReason> {
   if (inputLimit === 'unchecked') {
     return succeedWithDetail(undefined);
   }

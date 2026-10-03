@@ -114,7 +114,7 @@ export interface ISystemOneRequest<Q extends Questions> {
     readonly inputLimit: SystemOneInputLimit;
     readonly questions: Q;
     readonly signal?: AbortSignal;
-    readonly state: SystemOneRequest<Q>['state'];
+    readonly state: EntryType;
 }
 
 // @public

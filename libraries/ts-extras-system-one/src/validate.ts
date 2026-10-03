@@ -33,7 +33,6 @@ import {
 import type {
   ChoiceQuestion,
   ChoiceResponse,
-  EntryType,
   ModelCard,
   NoulResponse,
   Question,
@@ -51,21 +50,35 @@ type ProjectedScore = Omit<ScoreResponse, 'confidence'>;
 type ProjectedAnswer = NoulResponse | ProjectedChoice | ProjectedScore;
 type ProjectedAnswers = Readonly<Record<string, ProjectedAnswer>>;
 
+/** A `score` answer as received: the legend's values are replaced from the request (see below). */
+interface IReceivedScore {
+  readonly type: 'score';
+  readonly score: number;
+  readonly legend: Readonly<Record<string, unknown>>;
+  readonly probabilities: Readonly<Record<string, number>>;
+}
+type ReceivedAnswer = NoulResponse | ProjectedChoice | IReceivedScore;
+
 /** A number that is finite and at least 0. */
 function isNonNegativeFinite(value: number): boolean {
   return Number.isFinite(value) && value >= 0;
 }
 
-/** A number that is finite and in `[0, 1]`. */
+/**
+ * A number in `[0, 1]`. The range alone rejects `Infinity`, `-Infinity` and `NaN`, and a JSON body
+ * cannot carry anything else non-finite.
+ */
 function isProbability(value: number): boolean {
-  return Number.isFinite(value) && value >= 0 && value <= 1;
+  return value >= 0 && value <= 1;
 }
 
 const nonNegativeCount: Validator<number> = Validators.number.withConstraint(isNonNegativeFinite);
 
-/** `billing_units` is kept only when the server sends a finite number. */
+const finiteNumber: Validator<number> = Validators.number.withConstraint(Number.isFinite);
+
+/** `billing_units` is kept only when the server sends a finite number; anything else is dropped. */
 const optionalBillingUnits: Converter<number | undefined> = Converters.generic((from: unknown) =>
-  succeed(typeof from === 'number' && Number.isFinite(from) ? from : undefined)
+  succeed(finiteNumber.validate(from).orDefault())
 ).optional();
 
 const usage: Converter<ISystemOneUsage> = Converters.object<ISystemOneUsage>({
@@ -78,14 +91,16 @@ const nonEmptyString: Converter<string> = Converters.string.withConstraint((s) =
   description: 'a non-empty string'
 });
 
-/** A legend entry: text, a JSON object or array, or `null`, as the SDK's `EntryType` declares. */
-const legendEntry: Converter<EntryType> = Converters.isA(
-  'a legend entry',
-  (from: unknown): from is EntryType => from === null || typeof from === 'string' || typeof from === 'object'
-);
-
 const probabilities: Converter<Record<string, number>> = Converters.recordOf(Validators.number);
 
+/** Legend values are only counted (their keys are checked); they are never returned. */
+const anyLegendValue: Converter<unknown> = Converters.generic((from: unknown) => succeed(from));
+
+/**
+ * Converts one answer by its own `type`, keeping only the fields the SDK declares. `confidence` and
+ * any undeclared field are dropped by construction: the converters build new objects, and nothing
+ * spreads the server's object.
+ */
 const noulAnswer: Converter<NoulResponse> = Converters.object<NoulResponse>({
   type: Converters.literal('noul'),
   noul: Validators.number
@@ -97,43 +112,26 @@ const choiceAnswer: Converter<ProjectedChoice> = Converters.object<ProjectedChoi
   probabilities
 });
 
-const scoreAnswer: Converter<ProjectedScore> = Converters.object<ProjectedScore>({
+const scoreAnswer: Converter<IReceivedScore> = Converters.object<IReceivedScore>({
   type: Converters.literal('score'),
   score: Validators.number,
-  legend: Converters.recordOf(legendEntry),
+  legend: Converters.recordOf(anyLegendValue),
   probabilities
 });
 
-const answerType: Converter<{ type: Question['type'] }> = Converters.object({
-  type: Converters.enumeratedValue<Question['type']>(['noul', 'choice', 'score'])
+const answer: Converter<ReceivedAnswer> = Converters.discriminatedObject<ReceivedAnswer>('type', {
+  noul: noulAnswer,
+  choice: choiceAnswer,
+  score: scoreAnswer
 });
 
-/**
- * Projects one answer by its own `type`, keeping only the fields the SDK declares. `confidence`
- * and any undeclared field are dropped by construction: the result is built by the converters,
- * never by spreading the server's object.
- */
-const answer: Converter<ProjectedAnswer> = Converters.generic(
-  (from: unknown): Result<ProjectedAnswer> =>
-    answerType.convert(from).onSuccess(({ type }): Result<ProjectedAnswer> => {
-      switch (type) {
-        case 'noul':
-          return noulAnswer.convert(from);
-        case 'choice':
-          return choiceAnswer.convert(from);
-        default:
-          return scoreAnswer.convert(from);
-      }
-    })
-);
-
-interface IProjectedBody {
+interface IReceivedBody {
   readonly model: string;
-  readonly answers: ProjectedAnswers;
+  readonly answers: Readonly<Record<string, ReceivedAnswer>>;
   readonly usage: ISystemOneUsage;
 }
 
-const body: Converter<IProjectedBody> = Converters.object<IProjectedBody>({
+const body: Converter<IReceivedBody> = Converters.object<IReceivedBody>({
   model: nonEmptyString,
   answers: Converters.recordOf(answer),
   usage
@@ -143,36 +141,6 @@ const body: Converter<IProjectedBody> = Converters.object<IProjectedBody>({
 function sameKeys(actual: ReadonlyArray<string>, expected: ReadonlyArray<string>): boolean {
   const expectedSet = new Set(expected);
   return actual.length === expected.length && actual.every((key) => expectedSet.has(key));
-}
-
-/**
- * Whether the answers are exactly the questions' ids, each with its question's `type`. This is
- * the check that makes the answers the questions' answers, so it is also what narrows them to the
- * type the SDK declares for `Q`.
- */
-function isAnswerSetFor<Q extends Questions>(
-  questions: Q,
-  answers: ProjectedAnswers
-): answers is ProjectedAnswers & SystemOneAnswerResult<Q>['answers'] {
-  const questionIds = Object.keys(questions);
-  const answerIds = Object.keys(answers);
-  const answerIdSet = new Set(answerIds);
-  if (questionIds.length !== answerIds.length || !questionIds.every((id) => answerIdSet.has(id))) {
-    return false;
-  }
-  return answerIds.every((id) => answers[id].type === questions[id].type);
-}
-
-/** Names the ids that are missing from, or extra to, the answers. */
-function describeAnswerSet(questions: Questions, answers: ProjectedAnswers): string {
-  const missing = Object.keys(questions).filter((id) => !Object.keys(answers).includes(id));
-  const extra = Object.keys(answers).filter((id) => !Object.keys(questions).includes(id));
-  const mistyped = Object.keys(answers).filter(
-    (id) => Object.keys(questions).includes(id) && answers[id].type !== questions[id].type
-  );
-  return `answers do not match the questions (missing [${missing.join(', ')}], extra [${extra.join(
-    ', '
-  )}], wrong type [${mistyped.join(', ')}])`;
 }
 
 /** Checks a distribution's keys, values and sum. */
@@ -187,7 +155,7 @@ function checkDistribution(
   }
   const bad = keys.filter((key) => !isProbability(distribution[key]));
   if (bad.length > 0) {
-    return fail(`${id}: probabilities for [${bad.join(', ')}] are not finite numbers in [0, 1]`);
+    return fail(`${id}: probabilities for [${bad.join(', ')}] are not numbers in [0, 1]`);
   }
   const sum = keys.reduce((total, key) => total + distribution[key], 0);
   if (Math.abs(sum - 1) > sumTolerance) {
@@ -196,14 +164,25 @@ function checkDistribution(
   return succeed(true);
 }
 
-function checkChoice(id: string, question: ChoiceQuestion, choice: ProjectedChoice): Result<true> {
+function checkNoul(id: string, noul: NoulResponse): Result<ProjectedAnswer> {
+  return isProbability(noul.noul)
+    ? succeed(noul)
+    : fail(`${id}: noul ${noul.noul} is not a number in [0, 1]`);
+}
+
+function checkChoice(id: string, question: ChoiceQuestion, choice: ProjectedChoice): Result<ProjectedAnswer> {
   const labels = Object.keys(question.criteria);
   return checkDistribution(id, choice.probabilities, labels).onSuccess(() =>
-    labels.includes(choice.choice) ? succeed(true) : fail(`${id}: choice '${choice.choice}' is not a label`)
+    labels.includes(choice.choice) ? succeed(choice) : fail(`${id}: choice '${choice.choice}' is not a label`)
   );
 }
 
-function checkScore(id: string, question: ScoreQuestion, score: ProjectedScore): Result<true> {
+/**
+ * Checks a `score` answer. Its `legend` is the request's rubric echoed back, keyed by level: the
+ * server's keys are checked, and the values are taken from the request, so the legend has exactly
+ * the type the SDK declares for the rubric whatever text the server rendered it as.
+ */
+function checkScore(id: string, question: ScoreQuestion, score: IReceivedScore): Result<ProjectedAnswer> {
   const levels = question.criteria.map((__level, index) => String(index));
   const top = levels.length - 1;
   return checkDistribution(id, score.probabilities, levels)
@@ -213,27 +192,69 @@ function checkScore(id: string, question: ScoreQuestion, score: ProjectedScore):
         : fail(`${id}: legend keys [${Object.keys(score.legend).join(', ')}] are not [${levels.join(', ')}]`)
     )
     .onSuccess(() =>
-      Number.isFinite(score.score) && score.score >= 0 && score.score <= top
-        ? succeed(true)
+      score.score >= 0 && score.score <= top
+        ? succeed({
+            type: 'score' as const,
+            score: score.score,
+            legend: Object.fromEntries(question.criteria.map((level, index) => [String(index), level])),
+            probabilities: score.probabilities
+          })
         : fail(`${id}: score ${score.score} is not in [0, ${top}]`)
     );
 }
 
+/** An answer with no question, kept only so that the id check below can name it. */
+function unmatched(received: ReceivedAnswer): ProjectedAnswer {
+  return received.type === 'score' ? { ...received, legend: {} } : received;
+}
+
+/** Checks one answer against the question it answers, including that their types match. */
+function checkAnswer(
+  id: string,
+  question: Question | undefined,
+  received: ReceivedAnswer
+): Result<ProjectedAnswer> {
+  if (question === undefined) {
+    // An extra id: the answer-set check rejects it.
+    return succeed(unmatched(received));
+  }
+  if (received.type === 'choice' && question.type === 'choice') {
+    return checkChoice(id, question, received);
+  }
+  if (received.type === 'score' && question.type === 'score') {
+    return checkScore(id, question, received);
+  }
+  if (received.type === 'noul' && question.type === 'noul') {
+    return checkNoul(id, received);
+  }
+  return fail(`${id}: a ${received.type} answer to a ${question.type} question`);
+}
+
 /**
- * Checks one answer against the question it answers. The answer's type has already been matched
- * to the question's by the answer-set check; a mismatch here fails.
- * @internal
+ * The answer-set check: the answer ids are exactly the question ids. Every answer has by now been
+ * checked against its own question (an extra id has none, and fails here), so passing this check
+ * is what makes the answers the questions' answers, and it narrows them to the type the SDK
+ * declares for `Q`. That type is a function of the caller's generic `Q`, which no runtime value can
+ * name, so this predicate is the one place the link is asserted.
  */
-export function checkAnswer(id: string, question: Question, projected: ProjectedAnswer): Result<true> {
-  if (projected.type === 'choice' && question.type === 'choice') {
-    return checkChoice(id, question, projected);
-  }
-  if (projected.type === 'score' && question.type === 'score') {
-    return checkScore(id, question, projected);
-  }
-  return projected.type === 'noul' && isProbability(projected.noul)
-    ? succeed(true)
-    : fail(`${id}: noul is not a finite number in [0, 1]`);
+function isAnswerSetFor<Q extends Questions>(
+  questions: Q,
+  answers: ProjectedAnswers
+): answers is ProjectedAnswers & SystemOneAnswerResult<Q>['answers'] {
+  const questionIds = Object.keys(questions);
+  const answerIds = new Set(Object.keys(answers));
+  return questionIds.length === answerIds.size && questionIds.every((id) => answerIds.has(id));
+}
+
+/** Names the ids missing from, or extra to, the answers. */
+function describeAnswerSet(questions: Questions, answers: ProjectedAnswers): string {
+  const questionIds = new Set(Object.keys(questions));
+  const answerIds = new Set(Object.keys(answers));
+  const missing = [...questionIds].filter((id) => !answerIds.has(id));
+  const extra = [...answerIds].filter((id) => !questionIds.has(id));
+  return `answer ids do not match the question ids (missing [${missing.join(', ')}], extra [${extra.join(
+    ', '
+  )}])`;
 }
 
 /**
@@ -245,6 +266,26 @@ export interface IValidatedBody<Q extends Questions> {
   readonly usage: ISystemOneUsage;
 }
 
+/** Assembles the validated body once every answer has been checked. */
+function assemble<Q extends Questions>(
+  questions: Q,
+  model: string,
+  reported: ISystemOneUsage,
+  answers: ProjectedAnswers
+): Result<IValidatedBody<Q>> {
+  if (!isAnswerSetFor(questions, answers)) {
+    return fail(describeAnswerSet(questions, answers));
+  }
+  return succeed({
+    result: {
+      model,
+      answers,
+      usage: { input_tokens: reported.input_tokens, output_tokens: reported.output_tokens }
+    },
+    usage: reported
+  });
+}
+
 /**
  * Validates a 2xx body against the request's own questions and projects it.
  * @internal
@@ -253,24 +294,18 @@ export function validateSystemOneBody<Q extends Questions>(
   questions: Q,
   data: unknown
 ): Result<IValidatedBody<Q>> {
-  return body.convert(data).onSuccess((projected): Result<IValidatedBody<Q>> => {
-    const { model, answers, usage: reported } = projected;
-    if (!isAnswerSetFor(questions, answers)) {
-      return fail(describeAnswerSet(questions, answers));
-    }
-    return mapResults(
-      Object.keys(answers).map((id) => checkAnswer(id, questions[id], answers[id]))
-    ).onSuccess(() =>
-      succeed({
-        result: {
-          model,
-          answers,
-          usage: { input_tokens: reported.input_tokens, output_tokens: reported.output_tokens }
-        },
-        usage: reported
-      })
+  const questionFor = new Map<string, Question>(Object.entries(questions));
+  return body
+    .convert(data)
+    .onSuccess(({ model, answers, usage: reported }) =>
+      mapResults(
+        Object.keys(answers).map((id) =>
+          checkAnswer(id, questionFor.get(id), answers[id]).onSuccess(
+            (checked): Result<[string, ProjectedAnswer]> => succeed([id, checked])
+          )
+        )
+      ).onSuccess((entries) => assemble(questions, model, reported, Object.fromEntries(entries)))
     );
-  });
 }
 
 /**

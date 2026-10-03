@@ -23,11 +23,11 @@
 import type { Logging } from '@fgv/ts-utils';
 import type {
   ChoiceResponse,
+  EntryType,
   Fetch,
   Questions,
   RetryPolicy,
   ScoreResponse,
-  SystemOneRequest,
   SystemOneResult
 } from '@typesafe-ai/sdk';
 
@@ -42,17 +42,25 @@ import type {
 export interface ICreateSystemOneClientParams {
   /** Absolute `http:` or `https:` URL of the System-1 server (for example `http://127.0.0.1:8700`). */
   readonly baseUrl: string;
-  /** Model id sent with every request (for example `clm-latest`, `clm-v0.1` or `jev-latest`). */
+  /**
+   * Model id sent with every request (for example `clm-latest`, `clm-v0.1` or `jev-latest`). It is
+   * trimmed, and the trimmed value is what is sent.
+   */
   readonly model: string;
   /** API key, sent as a bearer token. `''` is allowed, for a keyless local server. */
   readonly apiKey: string;
-  /** Timeout per attempt, in milliseconds. There is no total budget across retries. */
+  /**
+   * Timeout per attempt, in milliseconds; the SDK's default is 10,000. There is no total budget
+   * across retries: with the SDK's default policy (2 retries, `Retry-After` honoured up to 60 s), one
+   * call can take well over 30 seconds.
+   */
   readonly timeoutMs?: number;
   /** Overrides for the SDK's retry policy. */
   readonly retry?: Partial<RetryPolicy>;
   /**
-   * Logger for the SDK's request summaries. With no logger, the SDK logs nothing. The SDK never
-   * logs at `debug`, which would include request bodies.
+   * Logger for the SDK's request summaries. With no logger, the SDK logs nothing. This package
+   * never sets the SDK's level to `debug`, at which the SDK logs request bodies. The SDK's level is
+   * taken from `logger.logLevel` once, when the client is created.
    */
   readonly logger?: Logging.ILogger;
   /** A `fetch` implementation, in place of the global `fetch`. */
@@ -81,7 +89,7 @@ export type SystemOneInputLimit = { readonly maxChars: number } | 'unchecked';
  */
 export interface ISystemOneRequest<Q extends Questions> {
   /** The state the questions are asked about. */
-  readonly state: SystemOneRequest<Q>['state'];
+  readonly state: EntryType;
   /** The questions, keyed by the ids their answers are returned under. */
   readonly questions: Q;
   /** The input bound. Required: there is no default. */

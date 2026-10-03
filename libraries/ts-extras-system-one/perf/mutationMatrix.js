@@ -57,8 +57,8 @@ const MUTATIONS = [
     'R1 the bound runs after the SDK call',
     ['U1'],
     CLIENT,
-    '  const bound = checkInputLimit(state, questions, inputLimit);',
-    '  await sdkClients\n    .get(client)\n    ?.systemOne({ state, questions })\n    .withResponse()\n    .catch(() => undefined);\n  const bound = checkInputLimit(state, questions, inputLimit);'
+    '  return checkInputLimit(request.state, request.questions, request.inputLimit)',
+    '  await bindings\n    .get(client)\n    ?.sdk.systemOne({ state: request.state, questions: request.questions })\n    .withResponse()\n    .catch(() => undefined);\n  return checkInputLimit(request.state, request.questions, request.inputLimit)'
   ),
   m(
     'R2 >= instead of >',
@@ -120,8 +120,8 @@ const MUTATIONS = [
     "R9 the SDK's synchronous throw is not captured",
     ['U10'],
     CLIENT,
-    'const call = captureResult(() =>',
-    'const call = succeed('
+    '  return captureResult(() =>\n    binding.sdk',
+    '  return succeed(\n    binding.sdk'
   ),
   m(
     'R10 connection is tested before timeout',
@@ -156,22 +156,22 @@ const MUTATIONS = [
     'R15 only "every question answered" is checked',
     ['U16a'],
     VALIDATE,
-    'questionIds.length !== answerIds.length || ',
+    'questionIds.length === answerIds.size && ',
     ''
   ),
   m(
     'R16 no answer-id check at all',
     ['U16b'],
     VALIDATE,
-    '  if (questionIds.length !== answerIds.length || !questionIds.every((id) => answerIdSet.has(id))) {\n    return false;\n  }\n',
-    ''
+    'return questionIds.length === answerIds.size && questionIds.every((id) => answerIds.has(id));',
+    'return answerIds.size >= 0;'
   ),
   m(
     'R17 no answer-type check',
     ['U16c'],
     VALIDATE,
-    'return answerIds.every((id) => answers[id].type === questions[id].type);',
-    'return answerIds.length >= 0;'
+    "if (received.type === 'noul' && question.type === 'noul') {",
+    "if (received.type === 'noul') {"
   ),
   m(
     'R18 key sets compared by count',
@@ -192,23 +192,11 @@ const MUTATIONS = [
     'R21 no upper bound on a probability',
     ['U16g'],
     VALIDATE,
-    'return Number.isFinite(value) && value >= 0 && value <= 1;',
-    'return Number.isFinite(value) && value >= 0;'
-  ),
-  paired(
-    'R22 non-finite probabilities accepted (finiteness, the [0, 1] range and the sum each reject Infinity, so all three are reverted)',
-    ['U16h'],
-    [
-      {
-        file: VALIDATE,
-        from: 'return Number.isFinite(value) && value >= 0 && value <= 1;',
-        to: 'return value >= 0;'
-      },
-      { file: VALIDATE, from: 'if (Math.abs(sum - 1) > sumTolerance) {', to: 'if (Number.isNaN(sum)) {' }
-    ]
+    'return value >= 0 && value <= 1;',
+    'return value >= 0;'
   ),
   m(
-    'R22b non-finite usage counts accepted',
+    'R22 non-finite values accepted (usage counts; a probability’s finiteness is its [0, 1] range, which R21 covers)',
     ['U16h'],
     VALIDATE,
     'return Number.isFinite(value) && value >= 0;\n}',
@@ -232,8 +220,8 @@ const MUTATIONS = [
     "R25 the server's choice answer is passed through",
     ['U18'],
     VALIDATE,
-    'return choiceAnswer.convert(from);',
-    'return choiceAnswer.convert(from).onSuccess(() => succeed(from as ProjectedChoice));'
+    '  choice: choiceAnswer,',
+    '  choice: Converters.generic((from: unknown) =>\n    choiceAnswer.convert(from).onSuccess(() => succeed(from as ProjectedChoice))\n  ),'
   ),
   paired(
     'R26 model is in neither the request nor defaultModel',
@@ -241,7 +229,7 @@ const MUTATIONS = [
     [
       {
         file: CLIENT,
-        from: '.systemOne({ state, questions, model: client.model }',
+        from: '.systemOne({ state, questions, model: binding.model }',
         to: '.systemOne({ state, questions }'
       },
       { file: CLIENT, from: '        defaultModel: model,\n', to: '' }
@@ -284,8 +272,8 @@ const MUTATIONS = [
     'R32 elapsedMs does not cover retries',
     ['U20'],
     CLIENT,
-    'answerFrom(questions, received, Date.now() - started)',
-    'answerFrom(questions, received, Date.now() - Date.now())'
+    'answerFrom(request.questions, received, Date.now() - started)',
+    'answerFrom(request.questions, received, Date.now() - Date.now())'
   ),
   m(
     'R33 the models shape error is invalid-request',

@@ -59,10 +59,16 @@ describe('createSystemOneClient', () => {
     );
     expect(createSystemOneClient({ ...base, baseUrl: '/v1' })).toFailWith(/baseUrl/);
     expect(createSystemOneClient({ ...base, baseUrl: 'ftp://cfg.test' })).toFailWith(/baseUrl/);
+    expect(createSystemOneClient({ ...base, baseUrl: 'http://cfg.test/?x=1' })).toFailWith(/baseUrl/);
+    expect(createSystemOneClient({ ...base, baseUrl: 'http://cfg.test/#frag' })).toFailWith(/baseUrl/);
+    expect(createSystemOneClient({ ...base, baseUrl: 'http://user:pw@cfg.test' })).toFailWith(/baseUrl/);
+    expect(createSystemOneClient({ ...base, baseUrl: 'http://user@cfg.test' })).toFailWith(/baseUrl/);
     expect(createSystemOneClient({ baseUrl: 'http://cfg.test', model: '   ', apiKey: 'k' })).toFailWith(
       /model must be a non-empty string/
     );
 
+    // an empty key is used as given, never replaced by the environment's
+    process.env.TYPESAFE_API_KEY = 'env-key';
     const { fetch, calls } = scriptedFetch(jsonResponse(200, shortChoiceBody('q')));
     const keyless = clientFor(fetch, { apiKey: '', model: '  clm-latest  ' });
     expect(keyless.model).toBe('clm-latest');
@@ -70,6 +76,16 @@ describe('createSystemOneClient', () => {
       await askSystemOne(keyless, { state: 's', questions: { q: shortChoice() }, inputLimit: 'unchecked' })
     ).toSucceed();
     expect(new Headers(calls[0].init?.headers).get('authorization')).toBe('Bearer');
+  });
+
+  test('the client is frozen, and the model sent is the one it was created with', async () => {
+    const { fetch, calls } = scriptedFetch(jsonResponse(200, shortChoiceBody('q')));
+    const client = clientFor(fetch);
+    expect(Object.isFrozen(client)).toBe(true);
+    expect(
+      await askSystemOne(client, { state: 's', questions: { q: shortChoice() }, inputLimit: 'unchecked' })
+    ).toSucceed();
+    expect(sentBody(calls[0])).toEqual(expect.objectContaining({ model: 'clm-latest' }));
   });
 
   test('U24 an option the SDK refuses is a failure, not a throw', () => {
@@ -182,15 +198,25 @@ describe('listSystemOneModels', () => {
   test('U19 a bare array is invalid-response', async () => {
     const { fetch } = scriptedFetch(jsonResponse(200, []));
     expect(await listSystemOneModels(clientFor(fetch))).toFailWith(
-      /^invalid-response: Unexpected response shape/
+      /^invalid-response \(status 200\): Unexpected response shape/
+    );
+    const withId = scriptedFetch(jsonResponse(200, [], { 'x-typesafe-request-id': 'req-5' }));
+    expect(await listSystemOneModels(clientFor(withId.fetch))).toFailWith(
+      /^invalid-response \(status 200\) \(request req-5\): Unexpected response shape/
     );
   });
 
   test('U19 an element missing name is invalid-response', async () => {
     const { fetch } = scriptedFetch(
-      jsonResponse(200, { models: [{ description: card.description, release_date: card.release_date }] })
+      jsonResponse(
+        200,
+        { models: [{ description: card.description, release_date: card.release_date }] },
+        { 'x-typesafe-request-id': 'req-4' }
+      )
     );
-    expect(await listSystemOneModels(clientFor(fetch))).toFailWith(/^invalid-response.*name/);
+    expect(await listSystemOneModels(clientFor(fetch))).toFailWith(
+      /^invalid-response \(status 200\) \(request req-4\):.*name/
+    );
   });
 
   test('U19 an HTTP failure is classified as askSystemOne would', async () => {

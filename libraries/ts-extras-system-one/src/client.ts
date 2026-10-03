@@ -47,21 +47,36 @@ import type {
   ISystemOneMeta,
   ISystemOneRequest,
   ISystemOneTimingHeaders,
+  ISystemOneUsage,
   SystemOneFailureReason
 } from './types';
 import { modelCards, validateSystemOneBody } from './validate';
 
-/** The SDK client behind each {@link ISystemOneClient}, which the interface keeps opaque. */
-const sdkClients: WeakMap<ISystemOneClient, TypeSafeClient> = new WeakMap();
+/** What a client stands for: the SDK client and the model it sends. */
+interface IClientBinding {
+  readonly sdk: TypeSafeClient;
+  readonly model: string;
+}
 
-/** Fails unless `baseUrl` is an absolute `http:` or `https:` URL. */
+/**
+ * The binding behind each {@link ISystemOneClient}. The interface stays opaque, and what is sent
+ * never depends on the caller-held object.
+ */
+const bindings: WeakMap<ISystemOneClient, IClientBinding> = new WeakMap();
+
+/** Fails unless `baseUrl` is an absolute `http:` or `https:` URL with no query, fragment or credentials. */
 function checkBaseUrl(baseUrl: string): Result<string> {
+  const invalid = `baseUrl must be an absolute http(s) URL with no query, fragment or credentials, got '${baseUrl}'`;
   return captureResult(() => new URL(baseUrl))
-    .onFailure(() => fail(`baseUrl must be an absolute http(s) URL, got '${baseUrl}'`))
+    .onFailure(() => fail(invalid))
     .onSuccess((url) =>
-      url.protocol === 'http:' || url.protocol === 'https:'
+      (url.protocol === 'http:' || url.protocol === 'https:') &&
+      url.search === '' &&
+      url.hash === '' &&
+      url.username === '' &&
+      url.password === ''
         ? succeed(baseUrl)
-        : fail(`baseUrl must be an absolute http(s) URL, got '${baseUrl}'`)
+        : fail(invalid)
     );
 }
 
@@ -93,16 +108,18 @@ export function createSystemOneClient(params: ICreateSystemOneClientParams): Res
       return captureResult(() => new TypeSafeClient(config));
     })
     .onSuccess((sdk) => {
-      const client: ISystemOneClient = { model };
-      sdkClients.set(client, sdk);
+      const client: ISystemOneClient = Object.freeze({ model });
+      bindings.set(client, { sdk, model });
       return succeed(client);
     });
 }
 
-/** The SDK client for a client from {@link createSystemOneClient}. */
-function sdkFor(client: ISystemOneClient): Result<TypeSafeClient> {
-  const sdk = sdkClients.get(client);
-  return sdk !== undefined ? succeed(sdk) : fail('client was not created by createSystemOneClient');
+/** The binding for a client from {@link createSystemOneClient}. */
+function bindingFor(client: ISystemOneClient): Result<IClientBinding> {
+  const binding = bindings.get(client);
+  return binding !== undefined
+    ? succeed(binding)
+    : fail(failureMessage('invalid-request', 'client was not created by createSystemOneClient'));
 }
 
 /** The timing headers the response carried, unparsed, or `undefined` for neither. */
@@ -120,29 +137,60 @@ function timingHeadersOf(response: Response): ISystemOneTimingHeaders | undefine
 
 type AskResult<Q extends Questions> = DetailedResult<ISystemOneAnswer<Q>, SystemOneFailureReason>;
 
+/** Builds the meta for a validated response. */
+function metaFor(
+  model: string,
+  usage: ISystemOneUsage,
+  received: WithResponse<unknown>,
+  elapsedMs: number
+): ISystemOneMeta {
+  const timingHeaders = timingHeadersOf(received.response);
+  return {
+    model,
+    usage,
+    elapsedMs,
+    requestId: received.requestId,
+    ...(timingHeaders !== undefined ? { timingHeaders } : {})
+  };
+}
+
 /** Validates a 2xx response and builds the answer and its meta. */
 function answerFrom<Q extends Questions>(
   questions: Q,
   received: WithResponse<SystemOneResult<Q>>,
   elapsedMs: number
 ): AskResult<Q> {
-  const validated = validateSystemOneBody(questions, received.data);
-  if (validated.isFailure()) {
-    return failWithDetail(
-      failureMessage('invalid-response', validated.message, received.response.status, received.requestId),
-      'invalid-response'
+  return validateSystemOneBody(questions, received.data)
+    .withErrorFormat((message) =>
+      failureMessage('invalid-response', message, received.response.status, received.requestId)
+    )
+    .withFailureDetail<SystemOneFailureReason>('invalid-response')
+    .onSuccess(({ result, usage }) =>
+      succeedWithDetail({ result, meta: metaFor(result.model, usage, received, elapsedMs) })
     );
-  }
-  const { result, usage } = validated.value;
-  const timingHeaders = timingHeadersOf(received.response);
-  const meta: ISystemOneMeta = {
-    model: result.model,
-    usage,
-    elapsedMs,
-    requestId: received.requestId,
-    ...(timingHeaders !== undefined ? { timingHeaders } : {})
-  };
-  return succeedWithDetail({ result, meta });
+}
+
+/** A request on its way: the SDK's pending response, and when it was sent. */
+interface IPendingCall<Q extends Questions> {
+  readonly pending: Promise<WithResponse<SystemOneResult<Q>>>;
+  readonly started: number;
+}
+
+/** Sends the request. The SDK checks its questions synchronously and throws before any request. */
+function startCall<Q extends Questions>(
+  binding: IClientBinding,
+  request: ISystemOneRequest<Q>
+): DetailedResult<IPendingCall<Q>, SystemOneFailureReason> {
+  const { state, questions, signal } = request;
+  const started = Date.now();
+  return captureResult(() =>
+    binding.sdk
+      .systemOne({ state, questions, model: binding.model }, signal !== undefined ? { signal } : {})
+      .withResponse()
+  )
+    .withErrorFormat((message) => failureMessage('invalid-request', message))
+    .withFailureDetail<SystemOneFailureReason>('invalid-request')
+    .onSuccess((pending) => succeedWithDetail({ pending, started }));
 }
 
 /**
@@ -160,55 +208,54 @@ export async function askSystemOne<const Q extends Questions>(
   client: ISystemOneClient,
   request: ISystemOneRequest<Q>
 ): Promise<DetailedResult<ISystemOneAnswer<Q>, SystemOneFailureReason>> {
-  const { state, questions, inputLimit, signal } = request;
-  const bound = checkInputLimit(state, questions, inputLimit);
-  if (bound.isFailure()) {
-    return failWithDetail(bound.message, bound.detail);
-  }
-  const sdk = sdkFor(client);
-  if (sdk.isFailure()) {
-    return failWithDetail(failureMessage('invalid-request', sdk.message), 'invalid-request');
-  }
-  const started = Date.now();
-  // The SDK checks its questions synchronously and throws before returning a promise.
-  const call = captureResult(() =>
-    sdk.value
-      .systemOne({ state, questions, model: client.model }, signal !== undefined ? { signal } : {})
-      .withResponse()
-  );
-  if (call.isFailure()) {
-    return failWithDetail(failureMessage('invalid-request', call.message), 'invalid-request');
-  }
-  return call.value.then(
-    (received) => answerFrom(questions, received, Date.now() - started),
-    (err: unknown): AskResult<Q> => {
-      const { reason, message } = classifyError(err, 'connection');
-      return failWithDetail(message, reason);
-    }
-  );
+  return checkInputLimit(request.state, request.questions, request.inputLimit)
+    .onSuccess(() => bindingFor(client).withFailureDetail<SystemOneFailureReason>('invalid-request'))
+    .onSuccess((binding) => startCall(binding, request))
+    .thenOnSuccess(({ pending, started }) =>
+      pending.then(
+        (received) => answerFrom(request.questions, received, Date.now() - started),
+        (err: unknown): AskResult<Q> => {
+          const { reason, message } = classifyError(err, 'connection');
+          return failWithDetail(message, reason);
+        }
+      )
+    );
 }
 
 /**
  * Lists the models the server offers.
  * @param client - A client from {@link createSystemOneClient}.
  * @returns The model cards, or a failure whose message starts with the reason
- * {@link askSystemOne} would have classified.
+ * {@link askSystemOne} would have classified, with the status and request id when there are any.
  * @public
  */
 export async function listSystemOneModels(
   client: ISystemOneClient
 ): Promise<Result<ReadonlyArray<ModelCard>>> {
-  return sdkFor(client)
-    .withErrorFormat((message) => failureMessage('invalid-request', message))
-    .thenOnSuccess((sdk) =>
-      sdk.models.list().then(
-        (models): Result<ReadonlyArray<ModelCard>> =>
-          modelCards
-            .convert(models)
-            .withErrorFormat((message) => failureMessage('invalid-response', message)),
-        // The SDK raises its base error after the response when the shape cannot be unwrapped.
-        (err: unknown): Result<ReadonlyArray<ModelCard>> =>
-          fail(classifyError(err, 'invalid-response').message)
-      )
+  return bindingFor(client).thenOnSuccess(({ sdk }) => {
+    const listed = sdk.models.list();
+    return listed.withResponse().then(
+      (received): Result<ReadonlyArray<ModelCard>> =>
+        modelCards
+          .convert(received.data)
+          .withErrorFormat((message) =>
+            failureMessage('invalid-response', message, received.response.status, received.requestId)
+          ),
+      // The SDK raises its base error after a 2xx response whose shape it cannot unwrap; the
+      // response itself is still available for its status and request id.
+      (err: unknown): Promise<Result<ReadonlyArray<ModelCard>>> =>
+        listed.asResponse().then(
+          (response) =>
+            fail(
+              classifyError(
+                err,
+                'invalid-response',
+                response.status,
+                response.headers.get('x-typesafe-request-id') ?? undefined
+              ).message
+            ),
+          () => fail(classifyError(err, 'invalid-response').message)
+        )
     );
+  });
 }

@@ -92,9 +92,16 @@ function reasonForSdkError(err: unknown): SystemOneFailureReason | undefined {
  * @param err - What was thrown.
  * @param baseErrorReason - The reason for a base `TypeSafeError`, which the SDK raises for a
  * request it refuses to send or a response shape it cannot unwrap.
+ * @param status - The response status, when a response arrived and the error does not carry it.
+ * @param requestId - The response's request id, likewise.
  * @internal
  */
-export function classifyError(err: unknown, baseErrorReason: SystemOneFailureReason): IClassifiedFailure {
+export function classifyError(
+  err: unknown,
+  baseErrorReason: SystemOneFailureReason,
+  status?: number,
+  requestId?: string
+): IClassifiedFailure {
   const message = err instanceof Error ? err.message : String(err);
   if (err instanceof APIError) {
     const reason = reasonForStatus(err.status);
@@ -107,5 +114,5 @@ export function classifyError(err: unknown, baseErrorReason: SystemOneFailureRea
   // The SDK funnels every fetch failure into APIConnectionError, so anything else that is not one
   // of its own errors is not expected; it is reported as a connection failure with its message.
   const reason = err instanceof TypeSafeError ? baseErrorReason : 'connection';
-  return { reason, message: failureMessage(reason, message) };
+  return { reason, message: failureMessage(reason, message, status, requestId) };
 }

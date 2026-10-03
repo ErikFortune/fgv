@@ -5,7 +5,12 @@
 
 import '@fgv/ts-utils-jest';
 import { noul, type ScoreQuestion } from '@typesafe-ai/sdk';
-import { askSystemOne, type ISystemOneClient, type SystemOneFailureReason } from '../../index';
+import {
+  allSystemOneFailureReasons,
+  askSystemOne,
+  type ISystemOneClient,
+  type SystemOneFailureReason
+} from '../../index';
 import {
   clientFor,
   clmBody,
@@ -77,6 +82,20 @@ describe('askSystemOne', () => {
   });
 
   describe('failure classification', () => {
+    test('U11 the failure reasons are exactly the classification rows', () => {
+      expect([...allSystemOneFailureReasons].sort()).toEqual([
+        'aborted',
+        'connection',
+        'input-over-limit',
+        'invalid-request',
+        'invalid-response',
+        'rate-limited',
+        'server',
+        'timeout',
+        'unauthorized'
+      ]);
+    });
+
     test('U11 every classification row has its own reason', async () => {
       expect(await reasonFor(jsonResponse(401, { error: 'bad key' }))).toBe('unauthorized');
       expect(await reasonFor(jsonResponse(403, { error: 'denied' }))).toBe('unauthorized');
@@ -156,6 +175,18 @@ describe('askSystemOne', () => {
       expect(aborted.detail).toBe('aborted');
     });
 
+    test('U15 an abort during back-off is aborted, with no further request', async () => {
+      const { fetch, calls } = scriptedFetch(jsonResponse(503, { error: 'busy' }));
+      const client = clientFor(fetch, {
+        retry: { maxRetries: 2, backoffInitialMs: 5000, backoffMaxMs: 5000 }
+      });
+      const controller = new AbortController();
+      setTimeout(() => controller.abort(), 20);
+      const aborted = await askOnce(client, controller.signal);
+      expect(aborted.detail).toBe('aborted');
+      expect(calls).toHaveLength(1);
+    });
+
     test('U17 a 2xx body that is not JSON, or is empty, is invalid-response', async () => {
       expect(await reasonFor(textResponse(200, 'ok'))).toBe('invalid-response');
       expect(await reasonFor(textResponse(200, ''))).toBe('invalid-response');
@@ -187,9 +218,24 @@ describe('askSystemOne', () => {
     const legend3 = byIndex(['l0', 'l1', 'l2']);
     const goodChoice = { type: 'choice', choice: 'x', probabilities: { x: 0.5, y: 0.5 } };
 
-    test('U16a an extra answer id is invalid-response', async () => {
+    test('U16a an extra answer id, of any type, is invalid-response', async () => {
+      const scoreSent = {
+        type: 'score',
+        score: 1,
+        legend: byIndex(['l0', 'l1', 'l2']),
+        probabilities: byIndex([0, 1, 0])
+      };
+      expect(await validate({ a: choiceXY }, body({ a: goodChoice, s: scoreSent }))).toFailWith(
+        /extra \[s\]/
+      );
+      expect(await validate({ a: choiceXY }, body({ a: goodChoice, c: goodChoice }))).toFailWith(
+        /extra \[c\]/
+      );
+    });
+
+    test('U16a an extra noul answer id is invalid-response', async () => {
       const result = await validate({ a: choiceXY }, body({ a: goodChoice, b: { type: 'noul', noul: 0.5 } }));
-      expect(result).toFailWith(/^invalid-response.*extra \[b\]/);
+      expect(result).toFailWith(/^invalid-response.*missing \[\], extra \[b\]/);
       expect(result.detail).toBe('invalid-response');
     });
 
@@ -201,7 +247,25 @@ describe('askSystemOne', () => {
 
     test("U16c an answer whose type is not its question's is invalid-response", async () => {
       expect(await validate({ a: choiceXY }, body({ a: { type: 'noul', noul: 0.5 } }))).toFailWith(
-        /^invalid-response.*wrong type \[a\]/
+        /^invalid-response.*a: a noul answer to a choice question/
+      );
+      expect(await validate({ n: noul('q') }, body({ n: goodChoice }))).toFailWith(
+        /n: a choice answer to a noul question/
+      );
+      const scoreSent = {
+        type: 'score',
+        score: 1,
+        legend: byIndex(['l0', 'l1', 'l2']),
+        probabilities: byIndex([0, 1, 0])
+      };
+      expect(await validate({ a: choiceXY }, body({ a: scoreSent }))).toFailWith(
+        /a: a score answer to a choice question/
+      );
+      expect(await validate({ s: score3 }, body({ s: { type: 'noul', noul: 0.5 } }))).toFailWith(
+        /s: a noul answer to a score question/
+      );
+      expect(await validate({ a: choiceXY }, body({ a: { type: 'rank', choice: 'x' } }))).toFailWith(
+        /^invalid-response/
       );
     });
 
@@ -248,9 +312,11 @@ describe('askSystemOne', () => {
     test('U16g noul must be within [0, 1]', async () => {
       const q = { n: noul('q') };
       expect(await validate(q, body({ n: { type: 'noul', noul: 1.5 } }))).toFailWith(
-        /^invalid-response.*noul is not a finite number in \[0, 1\]/
+        /^invalid-response.*noul 1.5 is not a number in \[0, 1\]/
       );
-      expect(await validate(q, body({ n: { type: 'noul', noul: -0.5 } }))).toFailWith(/noul is not a finite/);
+      expect(await validate(q, body({ n: { type: 'noul', noul: -0.5 } }))).toFailWith(
+        /noul -0.5 is not a number/
+      );
       expect(await validate(q, body({ n: { type: 'noul', noul: 1 } }))).toSucceed();
     });
 
@@ -316,12 +382,12 @@ describe('askSystemOne', () => {
             s: {
               type: 'score',
               score: 1,
-              legend: byIndex(['l0', 7, 'l2']),
+              legend: 'l0, l1, l2',
               probabilities: byIndex([1, 0, 0])
             }
           })
         )
-      ).toFailWith(/^invalid-response/);
+      ).toFailWith(/^invalid-response.*legend/);
     });
 
     test('U16k model must be a non-empty string and usage finite counts >= 0', async () => {
@@ -342,6 +408,26 @@ describe('askSystemOne', () => {
       expect(await validate({ a: choiceXY }, body({ a: { type: 'rank', choice: 'x' } }))).toFailWith(
         /^invalid-response/
       );
+    });
+
+    test('U18 a score legend is the request’s rubric, whatever text the server echoed', async () => {
+      const rubric = ['  low  ', { level: 'mid' }, 'high'] as const;
+      const q = { s: { type: 'score', instructions: null, criteria: rubric } } as const;
+      const sent = {
+        type: 'score',
+        score: 1,
+        legend: byIndex(['low', 'level: mid', 'high']),
+        probabilities: byIndex([0, 1, 0])
+      };
+      const { fetch } = scriptedFetch(jsonResponse(200, body({ s: sent })));
+      const answered = await askSystemOne(clientFor(fetch), {
+        state: 's',
+        questions: q,
+        inputLimit: unchecked
+      });
+      expect(answered).toSucceedAndSatisfy(({ result }) => {
+        expect(result.answers.s.legend).toEqual(byIndex(['  low  ', { level: 'mid' }, 'high']));
+      });
     });
 
     test('U18 choice and score answers carry no confidence, and no undeclared field survives', async () => {
@@ -399,6 +485,12 @@ describe('askSystemOne', () => {
         expect('timingHeaders' in meta).toBe(false);
         expect(meta.model).toBe('jev-latest');
         expect(meta.usage).toEqual({ input_tokens: 17, output_tokens: 0 });
+      });
+      const onlyServerTiming = scriptedFetch(
+        jsonResponse(200, shortChoiceBody('q'), { 'server-timing': 'heads;dur=1' })
+      );
+      expect(await askOnce(clientFor(onlyServerTiming.fetch))).toSucceedAndSatisfy(({ meta }) => {
+        expect(meta.timingHeaders).toEqual({ 'server-timing': 'heads;dur=1' });
       });
       const onlyClm = scriptedFetch(jsonResponse(200, shortChoiceBody('q'), { 'x-clm-latency-ms': '9.0' }));
       expect(await askOnce(clientFor(onlyClm.fetch))).toSucceedAndSatisfy(({ meta }) => {
