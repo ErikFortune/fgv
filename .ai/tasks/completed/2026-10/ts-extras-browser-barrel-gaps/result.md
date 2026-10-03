@@ -55,8 +55,9 @@ not a defect.
   `release`), but 8 tests compare against `NodeCryptoProvider` and fail under the mapping. **Kept in
   narrowed form** as one suite using `jest.doMock`, because it is the only thing that runs the real call
   sites, and it covers the `Constants` question by execution. It relies on the sibling's built
-  `lib/index.browser.js` and a relative path to it, which is fragile; ts-extras builds before
-  ts-web-extras in Rush, and a break there is loud (module not found).
+  `lib/index.browser.js`, located beside `require.resolve('@fgv/ts-extras')` so it follows the real
+  package layout; ts-extras builds before ts-web-extras in Rush, and a missing build is loud (module not
+  found).
 - **(c) rejected.** Source scanning, one access shape, and (a) already covers the same ground without it.
 - **(d) rejected.** Heavier than the class warrants.
 

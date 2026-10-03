@@ -78,7 +78,7 @@ describe('ts-extras browser root exports', () => {
       }
       return Object.keys(node).flatMap((key) => {
         const memberPath = path === '' ? key : `${path}.${key}`;
-        if (!isNamespace(browser) || !(key in browser)) {
+        if (!isNamespace(browser) || !Object.prototype.hasOwnProperty.call(browser, key)) {
           return nodeOnlyMembers.has(memberPath) ? [] : [memberPath];
         }
         return findMissingMembers(node[key], browser[key], memberPath);
