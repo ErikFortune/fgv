@@ -127,6 +127,12 @@ describe('open objects', () => {
       );
     });
 
+    test('a bad declared field does not hide bad undeclared values: all three are reported', () => {
+      expect(open.convert({ query: 7, first: () => 1, second: undefined })).toFailWith(
+        /^(?=[\s\S]*query)(?=[\s\S]*first)(?=[\s\S]*second)/i
+      );
+    });
+
     test('a declared optional key is converted by its schema, not passed through', () => {
       expect(open.convert({ query: 'a', limit: '4' })).toSucceedWith({ query: 'a', limit: 4 });
       expect(open.convert({ query: 'a', limit: 'four' })).toFailWith(/limit/i);

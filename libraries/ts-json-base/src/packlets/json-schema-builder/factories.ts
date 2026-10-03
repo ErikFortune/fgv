@@ -28,6 +28,7 @@ import {
   Result,
   Validation,
   Validators,
+  allSucceed,
   fail,
   mapResults,
   succeed
@@ -481,7 +482,7 @@ class ObjectSchemaValidator<P extends ILlmProperties> extends SchemaValidatorBas
  *
  * A closed object (`additionalProperties: false`) is a strict `Converters.object`, which
  * rejects undeclared keys. An open object is the same declared-field conversion followed by
- * `_withUndeclaredKeys`, because `Converters.object` builds its result from declared
+ * `_convertOpenObject`, because `Converters.object` builds its result from declared
  * fields only and would otherwise drop every key the open wire schema admits.
  *
  * The wire and the converter agree whichever branch is taken: the closed branch rejects what
@@ -514,27 +515,47 @@ function _buildObjectConverter<P extends ILlmProperties>(
   }
   return Converters.generic<ObjectStatic<P>>((from: unknown) =>
     isJsonObject(from)
-      ? declared.convert(from).onSuccess((converted) => _withUndeclaredKeys(from, properties, converted))
+      ? _convertOpenObject(from, declared, properties)
       : fail(`open object: expected a JSON object, got ${_kindOf(from)}`)
   );
 }
 
 /**
- * Adds every key of `from` that `properties` does not declare to `converted`, each validated
- * as a `JsonValue`. This is where a schema-valued `additionalProperties` would apply its
- * schema in place of `jsonValue`.
+ * Converts an open object: the declared fields through `declared`, and every undeclared key
+ * through `_convertUndeclaredKeys`. The two sides are validated independently and their
+ * failures aggregated, so a bad declared field does not hide bad undeclared values; the result is
+ * built only when both succeed.
+ */
+function _convertOpenObject<T extends object>(
+  from: JsonObject,
+  declared: Converter<T>,
+  properties: ILlmProperties
+): Result<T> {
+  const converted = declared.convert(from);
+  const extras = _convertUndeclaredKeys(from, properties);
+  return allSucceed([converted, extras], from).onSuccess(() =>
+    converted.onSuccess((c) =>
+      extras.onSuccess((e) => {
+        const entries: [string, unknown][] = [...Object.entries(c), ...e];
+        // The result is `c` plus keys `T` leaves unconstrained, so it is still a `T`.
+        return succeed(Object.fromEntries(entries) as T);
+      })
+    )
+  );
+}
+
+/**
+ * Validates every key of `from` that `properties` does not declare as a `JsonValue`, reporting
+ * every bad one. This is where a schema-valued `additionalProperties` would apply its schema in
+ * place of `jsonValue`.
  *
  * @remarks
  * An own `"__proto__"` key is dropped, matching `Converters.jsonObject`, which copies every
  * nested value: carrying it as data would hand a caller a key that `Object.assign` or a spread
- * turns into a prototype. The result is assembled with `Object.fromEntries` rather than object
- * spread, which compiled down-level becomes `Object.assign`.
+ * turns into a prototype. The caller assembles the result with `Object.fromEntries` rather than
+ * object spread, which compiled down-level becomes `Object.assign`.
  */
-function _withUndeclaredKeys<T extends object>(
-  from: JsonObject,
-  properties: ILlmProperties,
-  converted: T
-): Result<T> {
+function _convertUndeclaredKeys(from: JsonObject, properties: ILlmProperties): Result<[string, JsonValue][]> {
   const undeclared = Object.entries(from).filter(
     ([key]) => key !== '__proto__' && !Object.prototype.hasOwnProperty.call(properties, key)
   );
@@ -545,11 +566,7 @@ function _withUndeclaredKeys<T extends object>(
         .withErrorFormat((msg) => `${key}: ${msg}`)
         .onSuccess((v) => succeed<[string, JsonValue]>([key, v]))
     )
-  ).onSuccess((extras) => {
-    const entries: [string, unknown][] = [...Object.entries(converted), ...extras];
-    // The result is `converted` plus keys `T` leaves unconstrained, so it is still a `T`.
-    return succeed(Object.fromEntries(entries) as T);
-  });
+  );
 }
 
 /** Names what a non-object input was, for the open-object refusal. */
