@@ -1,7 +1,7 @@
 {
   "changes": [
     {
-      "comment": "BREAKING: an open JsonSchema object (additionalProperties: true, including every fromJson object without additionalProperties: false) now carries undeclared keys through as validated JsonValue instead of silently dropping them, refuses a non-object input instead of converting it to {}, and states additionalProperties: true on the wire. Adds OpenObjectStatic and typed object() overloads for additionalProperties: true.",
+      "comment": "BREAKING: an open JsonSchema object (additionalProperties: true, including every fromJson object without additionalProperties: false) now carries undeclared keys through as validated JsonValue instead of silently dropping them, refuses a non-object input instead of converting it to {}, and states additionalProperties: true on the wire. Adds OpenObjectStatic and typed object() overloads for additionalProperties: true. Fixes a latent defect in Converters.jsonObject: a parsed \"__proto__\" key is now copied as an own property instead of replacing the result's prototype.",
       "type": "minor",
       "packageName": "@fgv/ts-json-base"
     }

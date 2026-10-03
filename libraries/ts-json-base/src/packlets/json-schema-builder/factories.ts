@@ -115,8 +115,9 @@ export interface IObjectSchemaOptions extends ISchemaOptions {
    * schema sets `additionalProperties: false`.
    *
    * When `true`, the object is **open**: declared properties convert through their schemas as
-   * usual, and every undeclared property is carried through to the result as a validated
-   * `JsonValue`, and the emitted schema sets `additionalProperties: true`. A value that is not
+   * usual, every undeclared property is carried through to the result as a validated
+   * `JsonValue` (after the declared ones), and the emitted schema sets
+   * `additionalProperties: true`. A value that is not
    * a JSON object, or an undeclared property that is not a JSON value, is refused. The static
    * type widens to `OpenObjectStatic`.
    *
@@ -476,8 +477,11 @@ class ObjectSchemaValidator<P extends ILlmProperties> extends SchemaValidatorBas
  *
  * A closed object (`additionalProperties: false`) is a strict `Converters.object`, which
  * rejects undeclared keys. An open object is the same declared-field conversion followed by
- * {@link _withUndeclaredKeys}, because `Converters.object` builds its result from declared
+ * `_withUndeclaredKeys`, because `Converters.object` builds its result from declared
  * fields only and would otherwise drop every key the open wire schema admits.
+ *
+ * The wire and the converter agree whichever branch is taken: the closed branch rejects what
+ * `additionalProperties: false` forbids, and the open branch keeps what an open schema admits.
  */
 function _buildObjectConverter<P extends ILlmProperties>(
   properties: P,
@@ -507,7 +511,7 @@ function _buildObjectConverter<P extends ILlmProperties>(
   return Converters.generic<ObjectStatic<P>>((from: unknown) =>
     isJsonObject(from)
       ? declared.convert(from).onSuccess((converted) => _withUndeclaredKeys(from, properties, converted))
-      : fail('open object: source is not a JSON object')
+      : fail(`open object: expected a JSON object, got ${Array.isArray(from) ? 'array' : typeof from}`)
   );
 }
 
@@ -518,10 +522,16 @@ function _buildObjectConverter<P extends ILlmProperties>(
  *
  * @remarks
  * The result is assembled with `Object.fromEntries`, which defines each key as an own
- * property — so a parsed `"__proto__"` key arrives as data rather than replacing the
- * result's prototype.
+ * property, and nested values come from `jsonValue`, which does the same — so a parsed
+ * `"__proto__"` key arrives as data at any depth rather than replacing a prototype. Object
+ * spread is deliberately not used: compiled down-level it becomes `Object.assign`, which
+ * assigns `__proto__` and so replaces the prototype.
  */
-function _withUndeclaredKeys<T>(from: JsonObject, properties: ILlmProperties, converted: T): Result<T> {
+function _withUndeclaredKeys<T extends object>(
+  from: JsonObject,
+  properties: ILlmProperties,
+  converted: T
+): Result<T> {
   const undeclared = Object.entries(from).filter(
     ([key]) => !Object.prototype.hasOwnProperty.call(properties, key)
   );
@@ -532,9 +542,11 @@ function _withUndeclaredKeys<T>(from: JsonObject, properties: ILlmProperties, co
         .withErrorFormat((msg) => `${key}: ${msg}`)
         .onSuccess((v) => succeed([key, v] as [string, JsonValue]))
     )
-  ).onSuccess((extras) =>
-    succeed(Object.fromEntries([...Object.entries(converted as object), ...extras]) as T)
-  );
+  ).onSuccess((extras) => {
+    const entries: [string, unknown][] = [...Object.entries(converted), ...extras];
+    // The result is `converted` plus keys `T` leaves unconstrained, so it is still a `T`.
+    return succeed(Object.fromEntries(entries) as T);
+  });
 }
 
 function _descriptionField(schema: ISchemaValidator<unknown>): { description?: string } {

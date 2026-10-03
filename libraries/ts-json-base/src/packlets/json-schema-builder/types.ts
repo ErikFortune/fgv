@@ -192,6 +192,11 @@ export type ObjectStatic<P extends ILlmProperties> = Simplify<
  * The derived static type for an **open** object — one built with
  * `additionalProperties: true`. The declared properties keep their derived types, and every
  * other key carries a `JsonValue`, which is what the validator passes through for it.
+ *
+ * @remarks
+ * Every declared property type must itself be a `JsonValue` for the intersection to be
+ * inhabitable. The built-in factories only produce such types; a caller-supplied
+ * `ISchemaValidator` whose static type is not JSON (a `Date`, say) cannot be used here.
  * @public
  */
 export type OpenObjectStatic<P extends ILlmProperties> = ObjectStatic<P> & JsonObject;

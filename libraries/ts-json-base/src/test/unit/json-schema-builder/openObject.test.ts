@@ -21,16 +21,16 @@
  */
 
 import '@fgv/ts-utils-jest';
-import { JsonObject, JsonSchema, JsonValue } from '../../..';
+import { JsonObject, JsonSchema, isJsonObject } from '../../..';
 
 /**
  * Whether a value satisfies the `additionalProperties` claim of the wire schema it came
  * from: every key the value carries is either declared, or the wire schema says undeclared
  * keys are allowed. Reads only the emitted JSON, never the node, so it checks the wire.
  */
-function wireAdmitsKeys(wire: JsonObject, value: JsonValue): boolean {
-  const declared = Object.keys((wire.properties ?? {}) as JsonObject);
-  const undeclared = Object.keys(value as JsonObject).filter((k) => !declared.includes(k));
+function wireAdmitsKeys(wire: JsonObject, value: unknown): boolean {
+  const declared = isJsonObject(wire.properties) ? Object.keys(wire.properties) : [];
+  const undeclared = isJsonObject(value) ? Object.keys(value).filter((k) => !declared.includes(k)) : [];
   return undeclared.length === 0 || wire.additionalProperties !== false;
 }
 
@@ -118,14 +118,36 @@ describe('open objects', () => {
     test('an undeclared key must carry a JSON value', () => {
       expect(open.convert({ query: 'a', bad: () => 1 })).toFailWith(/bad/i);
       expect(open.convert({ query: 'a', bad: undefined })).toFailWith(/bad/i);
+      expect(open.convert({ query: 'a', extra: { f: () => 1 } })).toFailWith(/extra/i);
     });
 
-    test('a non-object is refused rather than converted to {}', () => {
-      const bare = JsonSchema.object({}, { additionalProperties: true });
-      for (const input of [42, 'hi', [1], null, true]) {
-        expect(bare.convert(input)).toFailWith(/object/i);
-      }
+    test('every bad undeclared key is reported, not just the first', () => {
+      expect(open.convert({ query: 'a', first: () => 1, second: undefined })).toFailWith(
+        /first[\s\S]*second/i
+      );
     });
+
+    test('a declared optional key is converted by its schema, not passed through', () => {
+      expect(open.convert({ query: 'a', limit: '4' })).toSucceedWith({ query: 'a', limit: 4 });
+      expect(open.convert({ query: 'a', limit: 'four' })).toFailWith(/limit/i);
+    });
+
+    test('a closed object declared inside an open one stays closed', () => {
+      const outer = JsonSchema.object(
+        { inner: JsonSchema.object({ id: JsonSchema.string() }) },
+        { additionalProperties: true }
+      );
+      expect(outer.convert({ inner: { id: 'x' }, extra: 1 })).toSucceedWith({ inner: { id: 'x' }, extra: 1 });
+      expect(outer.convert({ inner: { id: 'x', stray: 1 } })).toFailWith(/stray/i);
+    });
+
+    test.each([42, 'hi', [1], null, true])(
+      'a non-object (%p) is refused rather than converted to {}',
+      (input) => {
+        const bare = JsonSchema.object({}, { additionalProperties: true });
+        expect(bare.convert(input)).toFailWith(/expected a JSON object/i);
+      }
+    );
 
     test('a __proto__ key arrives as data, not as a prototype', () => {
       const input = JSON.parse('{"query":"a","__proto__":{"polluted":true}}') as unknown;
@@ -133,6 +155,16 @@ describe('open objects', () => {
         expect(Object.getPrototypeOf(value)).toBe(Object.prototype);
         expect(Object.prototype.hasOwnProperty.call(value, '__proto__')).toBe(true);
         expect((value as unknown as { polluted?: boolean }).polluted).toBeUndefined();
+      });
+    });
+
+    test('a nested __proto__ key also arrives as data', () => {
+      const input = JSON.parse('{"query":"a","extra":{"__proto__":{"polluted":true}}}') as unknown;
+      expect(open.convert(input)).toSucceedAndSatisfy((value) => {
+        const extra = value.extra as JsonObject;
+        expect(Object.getPrototypeOf(extra)).toBe(Object.prototype);
+        expect(Object.prototype.hasOwnProperty.call(extra, '__proto__')).toBe(true);
+        expect((extra as unknown as { polluted?: boolean }).polluted).toBeUndefined();
       });
     });
 
@@ -145,40 +177,60 @@ describe('open objects', () => {
   });
 
   describe('toJson() and convert() agree', () => {
-    const shapes: ReadonlyArray<[string, JsonSchema.ISchemaValidator<unknown>]> = [
-      ['closed', JsonSchema.object({ q: JsonSchema.string() })],
-      ['open with properties', JsonSchema.object({ q: JsonSchema.string() }, { additionalProperties: true })],
-      ['open without properties', JsonSchema.object({}, { additionalProperties: true })],
+    // `open` is what the wire must say; the converter is then held to the same answer.
+    const shapes: ReadonlyArray<[string, JsonSchema.ISchemaValidator<unknown>, boolean]> = [
+      ['closed', JsonSchema.object({ q: JsonSchema.string() }), false],
+      [
+        'open with properties',
+        JsonSchema.object({ q: JsonSchema.string() }, { additionalProperties: true }),
+        true
+      ],
+      ['open without properties', JsonSchema.object({}, { additionalProperties: true }), true],
       [
         'nullable open',
-        JsonSchema.object({ q: JsonSchema.string() }, { additionalProperties: true, nullable: true })
+        JsonSchema.object({ q: JsonSchema.string() }, { additionalProperties: true, nullable: true }),
+        true
+      ],
+      [
+        'fromJson closed',
+        JsonSchema.fromJson({
+          type: 'object',
+          properties: { q: { type: 'string' } },
+          additionalProperties: false
+        }).orThrow(),
+        false
       ],
       [
         'fromJson absent',
-        JsonSchema.fromJson({ type: 'object', properties: { q: { type: 'string' } } }).orThrow()
+        JsonSchema.fromJson({ type: 'object', properties: { q: { type: 'string' } } }).orThrow(),
+        true
       ],
-      ['fromJson bare', JsonSchema.fromJson({ type: 'object' }).orThrow()]
+      ['fromJson bare', JsonSchema.fromJson({ type: 'object' }).orThrow(), true]
     ];
     const input = { q: 'a', extra: 1 };
+    const openShapes = shapes.filter(([, , open]) => open);
+    const closedShapes = shapes.filter(([, , open]) => !open);
 
-    test.each(shapes)('%s: the wire states additionalProperties explicitly', (__name, schema) => {
-      expect(typeof schema.toJson().additionalProperties).toBe('boolean');
+    test.each(shapes)('%s: the wire states additionalProperties: %p', (__name, schema, open) => {
+      expect(schema.toJson().additionalProperties).toBe(open);
     });
 
-    test.each(shapes)('%s: a value convert() returns is one the wire admits', (__name, schema) => {
-      const wire = schema.toJson();
-      const result = schema.convert(input);
-      if (wire.additionalProperties === false) {
-        // A closed wire must not be paired with a converter that accepts what it forbids.
-        expect(result).toFailWith(/extra/i);
-      } else {
-        // An open wire must not be paired with a converter that silently drops what it admits.
-        expect(result).toSucceedWith(input);
+    test.each(openShapes)(
+      '%s: an open wire is paired with a converter that keeps what it admits',
+      (__name, schema) => {
+        expect(schema.convert(input)).toSucceedAndSatisfy((value) => {
+          expect(value).toEqual(input);
+          expect(wireAdmitsKeys(schema.toJson(), value)).toBe(true);
+        });
       }
-      result.onSuccess((value) => {
-        expect(wireAdmitsKeys(wire, value as JsonValue)).toBe(true);
-        return result;
-      });
-    });
+    );
+
+    test.each(closedShapes)(
+      '%s: a closed wire is paired with a converter that refuses what it forbids',
+      (__name, schema) => {
+        expect(wireAdmitsKeys(schema.toJson(), input)).toBe(false);
+        expect(schema.convert(input)).toFailWith(/extra/i);
+      }
+    );
   });
 });
