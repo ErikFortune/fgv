@@ -1,7 +1,7 @@
 id: json-schema-open-object
 status: shipped
 packages: ['@fgv/ts-json-base']
-prs: [] # <PR>: filled by the orchestrator when it opens the PR — the worker does not know the number
+prs: [720]
 openPrs: []
 opened: 2026-10-03
 closed: 2026-10-03

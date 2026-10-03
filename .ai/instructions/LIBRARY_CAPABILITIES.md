@@ -198,7 +198,7 @@ markers.*
 
 <!-- BEGIN GENERATED: recent-additions -->
 
-- **2026-10-03** — An open JsonSchema object — additionalProperties: true, or an MCP schema that leaves it out — now passes undeclared keys through… · `ts-json-base`
+- **2026-10-03** — An open JsonSchema object — additionalProperties: true, or an MCP schema that leaves it out — now passes undeclared keys through… ([#720](https://github.com/ErikFortune/fgv/pull/720)) · `ts-json-base`
 - **2026-10-01** — Agent task context can go into a cacheable prompt as one checked, trailing per-request slot, and a delivery's receipt is… ([#707](https://github.com/ErikFortune/fgv/pull/707)) · `ts-agent-tasks`
 - **2026-09-28** — A host can give a model bounded, per-call-authorized tools over its agent tasks: read-only by default, with create, update… ([#702](https://github.com/ErikFortune/fgv/pull/702)) · `ts-agent-tasks`
 - **2026-09-26** — A converter handed an Object.create(null) value now returns a Result instead of throwing — isKeyOf, strictObject and six ts-json /… ([#700](https://github.com/ErikFortune/fgv/pull/700)) · `ts-utils` `ts-json` `ts-res-ui-components` `ts-utils-jest`

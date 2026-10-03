@@ -1,6 +1,6 @@
 # `json-schema-open-object`: open `JsonSchema` objects keep what their wire admits
 
-**Shipped 2026-10-03** via ErikFortune/fgv#&lt;PR&gt; (number filled when the PR opens). Origin:
+**Shipped 2026-10-03** via ErikFortune/fgv#720. Origin:
 ErikFortune/personaility#679.
 
 ---
