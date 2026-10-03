@@ -213,8 +213,8 @@ const MUTATIONS = [
     'R24 a non-object body is not converted',
     ['U17'],
     VALIDATE,
-    'return body.convert(data).onSuccess(',
-    'return succeed(data as IProjectedBody).onSuccess('
+    '  return body\n    .convert(data)\n',
+    '  return succeed(data as IReceivedBody)\n'
   ),
   m(
     "R25 the server's choice answer is passed through",
@@ -279,8 +279,8 @@ const MUTATIONS = [
     'R33 the models shape error is invalid-request',
     ['U19'],
     CLIENT,
-    "fail(classifyError(err, 'invalid-response').message)",
-    "fail(classifyError(err, 'invalid-request').message)"
+    "                err,\n                'invalid-response',\n                response.status,",
+    "                err,\n                'invalid-request',\n                response.status,"
   )
 ];
 
