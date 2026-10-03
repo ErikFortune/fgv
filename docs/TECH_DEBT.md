@@ -815,6 +815,10 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
   a strict downstream converter refuses it as an unexpected property instead. Decide whether "refuse"
   or "drop" is the intended contract, then fix both together.
 
+  The same class: `fromJson` builds its `properties` record by assignment, so a declared MCP
+  property literally named `__proto__` is not an own key there, and an open object treats it as
+  undeclared (it is still carried through, validated as `JsonValue`).
+
   **Not a P2**: no global prototype is touched and no known consumer reads inherited properties.
 
   **Reference**: `json-schema-open-object` (2026-10-03), `.ai/tasks/completed/2026-10/json-schema-open-object/result.md`.

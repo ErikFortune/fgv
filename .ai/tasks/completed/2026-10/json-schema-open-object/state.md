@@ -20,7 +20,12 @@ Worker-owned.
 - Review findings applied in `a74c87a8` (incl. a latent nested-`__proto__` defect in
   `Converters.jsonObject`). The reviewer's suggested object-spread replacement failed the
   top-level `__proto__` test (down-levelled spread is `Object.assign`); kept `Object.fromEntries`.
-- Second repo-wide `rush test` after `a74c87a8`.
+- Second repo-wide `rush test` after `a74c87a8`: **FAILURE** — `ts-agent-tasks`
+  `kindRegistry.test.ts` pins `jsonObject`'s existing `__proto__` handling; `testbed` blocked.
+- Antagonist pass on the finalize artifacts: flagged that an explicit `additionalProperties: true`
+  would break Anthropic JSON outputs (`ts-extras` `structuredOutput.ts:151`).
+- `9e9fe563`: reverted the explicit-`true` wire emission and the `jsonObject` change (deferred to
+  TECH_DEBT P3). Third repo-wide `rush test` on `9e9fe563`.
 
 ## Open questions
 

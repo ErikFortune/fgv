@@ -14,22 +14,22 @@ summary:
     closing the wire, refusing open nodes in fromJson, or a combination, and verify five stated beliefs.
   shipped: >
     Open objects convert declared properties as before and carry every undeclared key through as a
-    validated JsonValue; a non-object input is refused instead of becoming {}; toJson() always states
-    additionalProperties. Additive typing: OpenObjectStatic<P> and two object() overloads keyed on a
-    literal additionalProperties: true. A latent Converters.jsonObject defect (a parsed __proto__ key
-    replaced the copy's prototype) was fixed because pass-through made it reachable. No consumer outside
-    ts-json-base needed a test change.
+    validated JsonValue; a non-object input is refused instead of becoming {}. The wire schema is
+    unchanged (absent keyword = open, false = closed); the converter now honours it. Additive typing:
+    OpenObjectStatic<P> and two object() overloads keyed on a literal additionalProperties: true. No
+    consumer outside ts-json-base needed a test change.
   diverged: >
     Belief 4 was wrong: schema-valued additionalProperties is refused by fromJson before the
-    !== false mapping, so the open set is only absent-or-true. The brief missed a second symptom (an open
-    object converted 42, strings and arrays to {}), fixed here. The jsonObject __proto__ fix was not in
-    the brief and is disclosed in the change file. An object that declares properties and omits
-    additionalProperties now keeps stray keys rather than dropping them, which the requester had called
-    defensible but not required.
-  sourceLine: '**Shipped:** an open `JsonSchema` object now keeps what its wire schema admits — undeclared keys reach the caller as validated `JsonValue` instead of being silently dropped, and `toJson()` states `additionalProperties` either way.'
+    !== false mapping. The brief missed a second symptom (an open object converted 42, strings and
+    arrays to {}), fixed here. Emitting an explicit additionalProperties: true, as the requester
+    proposed, was built and reverted: Anthropic JSON outputs reject a present non-false keyword. A
+    Converters.jsonObject __proto__ fix was built and reverted after a repo-wide run showed
+    ts-agent-tasks pins the existing behaviour; deferred to TECH_DEBT. An object that declares
+    properties and omits additionalProperties now keeps stray keys rather than dropping them.
+  sourceLine: '**Shipped:** an open `JsonSchema` object now keeps what its wire schema admits — undeclared keys reach the caller as validated `JsonValue` instead of being silently dropped.'
   headline: >
     An open JsonSchema object — additionalProperties: true, or an MCP schema that leaves it out — now
-    passes undeclared keys through validated instead of silently dropping them, and its wire schema says so.
+    passes undeclared keys through validated instead of silently dropping them.
 keywords:
   [
     'additionalProperties',

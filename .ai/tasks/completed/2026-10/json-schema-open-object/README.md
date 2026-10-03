@@ -15,41 +15,32 @@ builds its result from declared fields only. So a model that filled an open obje
 
 ## What shipped
 
-- **Open objects pass undeclared keys through.** Each one is validated as `JsonValue`; declared
-  properties convert as before.
-- **A non-object input is refused** rather than becoming `{}`. Before this fix, an open object with
-  no declared properties accepted `42`.
-- **`toJson()` always states `additionalProperties`.**
-- **Additive typing:**
-  - `OpenObjectStatic<P> = ObjectStatic<P> & JsonObject`;
-  - two `object()` overloads keyed on a literal `additionalProperties: true`.
-- **A latent `Converters.jsonObject` fix.** A parsed `"__proto__"` key used to replace the copy's
-  prototype; the key is now defined as data.
-
-The closed default is unchanged.
+Open objects pass undeclared keys through, each validated as `JsonValue`; declared properties
+convert as before. A non-object input is refused rather than becoming `{}` (an open object with no
+declared properties used to accept `42`). **The wire schema is unchanged** — it was already right; the
+converter was the side that lied. Additive typing: `OpenObjectStatic<P> = ObjectStatic<P> & JsonObject`
+and two `object()` overloads keyed on a literal `additionalProperties: true`. The closed default is
+unchanged.
 
 ## What changed shape
 
-- **The brief was wrong about schema-valued `additionalProperties`.** It believed `fromJson` mapped
-  that case to `true`. In fact `fromJson` refuses it earlier.
-- **The brief missed a second symptom:** the non-object-to-`{}` conversion.
-- **The `__proto__` fix was not in the brief.** It became reachable through pass-through.
-- **The reviewer's object-spread suggestion was tried and reverted.** Compiled down-level, a spread
-  becomes `Object.assign`, which reintroduces the `__proto__` problem.
+- The brief believed `fromJson` mapped schema-valued `additionalProperties` to `true`; it refuses it
+  earlier.
+- It missed the non-object-to-`{}` symptom.
+- Emitting `additionalProperties: true` explicitly (the requester's proposal) was built and reverted:
+  `ts-extras` sends `toJson()` raw to Anthropic JSON outputs, which accept an absent keyword but
+  require a present one to be `false`.
+- A `Converters.jsonObject` `__proto__` fix was built and reverted: the second repo-wide run showed
+  `ts-agent-tasks` pins the existing behaviour. Deferred to `docs/TECH_DEBT.md` as a P3.
+- The reviewer's object-spread suggestion was tried and reverted: down-levelled spread is
+  `Object.assign`, which assigns a top-level `__proto__`.
 
 ## Decision
 
-Option (d) was chosen: pass-through, plus the keyword always on the wire, plus the typing answer.
-
-Rejected:
-
-- **Closing the wire (b).** It makes a `dict[str, Any]` argument uncallable.
-- **Refusing open nodes in `fromJson` (c).** This is the requester's own interim, and it is strictly
-  worse for the same safety.
-- **A "tolerate and strip" mode.** Nothing uses it, and the only truthful wire spelling for it is the
-  closed default.
-
-The full reasoning is in `result.md`.
+Pass-through, plus the typing answer, wire left as it was. Rejected: an always-explicit keyword
+(Anthropic 400), closing the wire (makes a `dict[str, Any]` argument uncallable), refusing open nodes in
+`fromJson` (the requester's own interim, strictly worse for the same safety), a "tolerate and strip"
+mode (unused, and its only truthful wire is the closed default). Full reasoning in `result.md`.
 
 ## Files
 
@@ -58,14 +49,17 @@ The full reasoning is in `result.md`.
   disposition.
 - Code:
   - `libraries/ts-json-base/src/packlets/json-schema-builder/{factories,types}.ts`
-  - `libraries/ts-json-base/src/packlets/converters/converters.ts`
-  - tests under `libraries/ts-json-base/src/test/unit/` (`json-schema-builder/openObject.test.ts` is
+    - tests under `libraries/ts-json-base/src/test/unit/` (`json-schema-builder/openObject.test.ts` is
     new).
 
 ## Left open
 
 - **Schema-valued `additionalProperties` ("record").** It is still refused. It is one of the separate
   asks queued on `integration/asks`, and `_withUndeclaredKeys` is the seam it would extend.
+- **`Converters.jsonObject` and a parsed `"__proto__"`**: `docs/TECH_DEBT.md` P3 (refuse vs drop;
+  `ts-agent-tasks` pins drop).
+- **Structured output does not refuse an open object on OpenAI strict formats** (pre-existing,
+  `ts-extras`, out of scope).
 - **The checked-in typedoc pages** under `libraries/ts-json-base/docs/` still carry the old option
   text. They were not regenerated, matching #655 and #659.
 - **PersonAIlity #679 can close citing this stream's merge commit.** The hub's interim refusal of open
