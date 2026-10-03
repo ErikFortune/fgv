@@ -1,0 +1,425 @@
+/*
+ * Copyright (c) 2026 Erik Fortune
+ * SPDX-License-Identifier: MIT
+ *
+ * Revert matrix for @fgv/ts-extras-system-one (implementation plan § 5.2), modelled on
+ * `libraries/ts-agent-tasks/perf/mutationMatrix.js`.
+ *
+ * Deliberately NOT a jest test. Each row neuters one protection, rebuilds, runs the suite, records
+ * which tests went red, and restores the file. It edits source in place, so it refuses to run
+ * against this package's own directory: give it a copy.
+ *
+ *   node perf/mutationMatrix.js --check [R1 R2 ...]
+ *   node perf/mutationMatrix.js --pkg <copy> [--out <file.json>] [R1 R2 ...]
+ *
+ *   --check   only confirm every pattern occurs exactly once in this package's source; no builds
+ *   --pkg     REQUIRED for a run: a copy of this package (with a `node_modules` symlink to this
+ *             package's), which the run mutates
+ *   --out     write the results as JSON
+ *   R…        run only the named rows
+ *
+ * The rules:
+ * - a row whose pattern is not found exactly once, whose mutant does not build, or whose run
+ *   reports no failure count, is UNVERIFIED, never "nothing went red";
+ * - a row that builds and leaves every test green is `0 red`, and is a finding;
+ * - each row names the tests that must go red, and is VERIFIED only if one of them is among the
+ *   red. "Something went red" is not enough: a row once went green for the wrong protection.
+ *
+ * When a refactor moves a protected line, re-point its row here; `--check` lists stale rows.
+ */
+
+/* eslint-disable no-console */
+
+const fs = require('fs');
+const path = require('path');
+const { spawnSync } = require('child_process');
+
+const CLIENT = 'src/client.ts';
+const CLASSIFY = 'src/classify.ts';
+const MEASURE = 'src/measure.ts';
+const VALIDATE = 'src/validate.ts';
+const LOGGING = 'src/logging.ts';
+
+function m(name, mustGoRed, file, from, to) {
+  return { name, mustGoRed, edits: [{ file, from, to }] };
+}
+
+/**
+ * A row for a guard that another layer deliberately backs up: reverting it alone is masked by
+ * construction, so the row reverts the guard and its backstops together.
+ */
+function paired(name, mustGoRed, edits) {
+  return { name, mustGoRed, edits };
+}
+
+const MUTATIONS = [
+  m(
+    'R1 the bound runs after the SDK call',
+    ['U1'],
+    CLIENT,
+    '  const bound = checkInputLimit(state, questions, inputLimit);',
+    '  await sdkClients\n    .get(client)\n    ?.systemOne({ state, questions })\n    .withResponse()\n    .catch(() => undefined);\n  const bound = checkInputLimit(state, questions, inputLimit);'
+  ),
+  m(
+    'R2 >= instead of >',
+    ['U2'],
+    MEASURE,
+    'question.stateAndInstructions > maxChars',
+    'question.stateAndInstructions >= maxChars'
+  ),
+  m(
+    'R3 the separator is not counted',
+    ['U3'],
+    MEASURE,
+    'stateLength + separatorLength + lengthOf(',
+    'stateLength + lengthOf('
+  ),
+  m(
+    'R4 the instructions are not counted',
+    ['U3'],
+    MEASURE,
+    'stateLength + separatorLength + lengthOf(questions[questionId].instructions)',
+    'stateLength + separatorLength'
+  ),
+  m(
+    'R5 the criteria are not bounded',
+    ['U4'],
+    MEASURE,
+    'for (const criterion of question.criteria) {',
+    'for (const criterion of question.criteria.slice(0, 0)) {'
+  ),
+  m(
+    "R5b noul's default candidate is not measured",
+    ['U4'],
+    MEASURE,
+    '? noulDefaults[key].length + instructions',
+    '? 0'
+  ),
+  m(
+    'R6 a structured state is measured as String(state)',
+    ['U5'],
+    MEASURE,
+    'JSON.stringify(value).length',
+    'String(value).length'
+  ),
+  m(
+    'R7 the refusal names the first question',
+    ['U6'],
+    MEASURE,
+    "        questionId: question.questionId,\n        part: 'state+instructions',",
+    "        questionId: measure.questions[0].questionId,\n        part: 'state+instructions',"
+  ),
+  m(
+    "R8 'unchecked' is treated as maxChars: 0",
+    ['U7'],
+    MEASURE,
+    "  if (inputLimit === 'unchecked') {\n    return succeedWithDetail(undefined);\n  }\n  const { maxChars } = inputLimit;",
+    "  const { maxChars } = inputLimit === 'unchecked' ? { maxChars: 0 } : inputLimit;"
+  ),
+  m(
+    "R9 the SDK's synchronous throw is not captured",
+    ['U10'],
+    CLIENT,
+    'const call = captureResult(() =>',
+    'const call = succeed('
+  ),
+  m(
+    'R10 connection is tested before timeout',
+    ['U14'],
+    CLASSIFY,
+    "  if (err instanceof APITimeoutError) {\n    return 'timeout';\n  }\n  if (err instanceof APIConnectionError) {\n    return 'connection';\n  }",
+    "  if (err instanceof APIConnectionError) {\n    return 'connection';\n  }\n  if (err instanceof APITimeoutError) {\n    return 'timeout';\n  }"
+  ),
+  m(
+    'R11 abort is not classified',
+    ['U15'],
+    CLASSIFY,
+    "  if (err instanceof APIUserAbortError) {\n    return 'aborted';\n  }\n",
+    ''
+  ),
+  m(
+    'R12 other 4xx fall through to server',
+    ['U12'],
+    CLASSIFY,
+    "  if (status >= 400 && status < 500) {\n    return 'invalid-request';",
+    "  if (status >= 400 && status < 500) {\n    return 'server';"
+  ),
+  m(
+    'R13 401/403 are invalid-request',
+    ['U11'],
+    CLASSIFY,
+    "  if (status === 401 || status === 403) {\n    return 'unauthorized';",
+    "  if (status === 401 || status === 403) {\n    return 'invalid-request';"
+  ),
+  m('R14 408 is not timeout', ['U11'], CLASSIFY, "  if (status === 408) {\n    return 'timeout';\n  }\n", ''),
+  m(
+    'R15 only "every question answered" is checked',
+    ['U16a'],
+    VALIDATE,
+    'questionIds.length !== answerIds.length || ',
+    ''
+  ),
+  m(
+    'R16 no answer-id check at all',
+    ['U16b'],
+    VALIDATE,
+    '  if (questionIds.length !== answerIds.length || !questionIds.every((id) => answerIdSet.has(id))) {\n    return false;\n  }\n',
+    ''
+  ),
+  m(
+    'R17 no answer-type check',
+    ['U16c'],
+    VALIDATE,
+    'return answerIds.every((id) => answers[id].type === questions[id].type);',
+    'return answerIds.length >= 0;'
+  ),
+  m(
+    'R18 key sets compared by count',
+    ['U16d'],
+    VALIDATE,
+    'return actual.length === expected.length && actual.every((key) => expectedSet.has(key));',
+    'return actual.length === expected.length && expectedSet.size >= 0;'
+  ),
+  m(
+    'R19 the choice need not be a label',
+    ['U16e'],
+    VALIDATE,
+    'labels.includes(choice.choice) ?',
+    'labels.length >= 0 ?'
+  ),
+  m('R20 the score may reach n', ['U16f'], VALIDATE, 'score.score <= top', 'score.score <= top + 1'),
+  m(
+    'R21 no upper bound on a probability',
+    ['U16g'],
+    VALIDATE,
+    'return Number.isFinite(value) && value >= 0 && value <= 1;',
+    'return Number.isFinite(value) && value >= 0;'
+  ),
+  paired(
+    'R22 non-finite probabilities accepted (finiteness, the [0, 1] range and the sum each reject Infinity, so all three are reverted)',
+    ['U16h'],
+    [
+      {
+        file: VALIDATE,
+        from: 'return Number.isFinite(value) && value >= 0 && value <= 1;',
+        to: 'return value >= 0;'
+      },
+      { file: VALIDATE, from: 'if (Math.abs(sum - 1) > sumTolerance) {', to: 'if (Number.isNaN(sum)) {' }
+    ]
+  ),
+  m(
+    'R22b non-finite usage counts accepted',
+    ['U16h'],
+    VALIDATE,
+    'return Number.isFinite(value) && value >= 0;\n}',
+    'return value >= 0;\n}'
+  ),
+  m(
+    'R23 no sum check',
+    ['U16i'],
+    VALIDATE,
+    'if (Math.abs(sum - 1) > sumTolerance) {',
+    'if (Number.isNaN(sum)) {'
+  ),
+  m(
+    'R24 a non-object body is not converted',
+    ['U17'],
+    VALIDATE,
+    'return body.convert(data).onSuccess(',
+    'return succeed(data as IProjectedBody).onSuccess('
+  ),
+  m(
+    "R25 the server's choice answer is passed through",
+    ['U18'],
+    VALIDATE,
+    'return choiceAnswer.convert(from);',
+    'return choiceAnswer.convert(from).onSuccess(() => succeed(from as ProjectedChoice));'
+  ),
+  paired(
+    'R26 model is in neither the request nor defaultModel',
+    ['U21'],
+    [
+      {
+        file: CLIENT,
+        from: '.systemOne({ state, questions, model: client.model }',
+        to: '.systemOne({ state, questions }'
+      },
+      { file: CLIENT, from: '        defaultModel: model,\n', to: '' }
+    ]
+  ),
+  m('R27 baseURL is not passed', ['U22'], CLIENT, '        baseURL,\n', ''),
+  m(
+    'R28 an ILogger at all maps to debug',
+    ['U23'],
+    LOGGING,
+    "      // all, detail, info\n      return 'info';",
+    "      return 'debug';"
+  ),
+  paired(
+    'R29 no logger: neither the no-op sink nor the off level (each masks the other)',
+    ['U23'],
+    [
+      {
+        file: LOGGING,
+        from: "return { logLevel: 'off', logger: noOpSink };",
+        to: 'return { logLevel: undefined, logger: undefined } as unknown as ISdkLogging;'
+      }
+    ]
+  ),
+  m(
+    'R30 requestId read from the body',
+    ['U20'],
+    CLIENT,
+    'requestId: received.requestId,',
+    'requestId: undefined,'
+  ),
+  m(
+    'R31 server-timing parsed to a number',
+    ['U20'],
+    CLIENT,
+    "{ 'server-timing': serverTiming }",
+    "{ 'server-timing': String(Number.parseFloat(serverTiming)) }"
+  ),
+  m(
+    'R32 elapsedMs does not cover retries',
+    ['U20'],
+    CLIENT,
+    'answerFrom(questions, received, Date.now() - started)',
+    'answerFrom(questions, received, Date.now() - Date.now())'
+  ),
+  m(
+    'R33 the models shape error is invalid-request',
+    ['U19'],
+    CLIENT,
+    "fail(classifyError(err, 'invalid-response').message)",
+    "fail(classifyError(err, 'invalid-request').message)"
+  )
+];
+
+const PACKAGE_DIR = path.resolve(__dirname, '..');
+
+function parseArgs(argv) {
+  const args = { check: false, pkg: undefined, out: undefined, only: [] };
+  for (let i = 0; i < argv.length; i++) {
+    const arg = argv[i];
+    if (arg === '--check') {
+      args.check = true;
+    } else if (arg === '--pkg') {
+      args.pkg = path.resolve(argv[++i]);
+    } else if (arg === '--out') {
+      args.out = path.resolve(argv[++i]);
+    } else {
+      args.only.push(arg);
+    }
+  }
+  if (args.check) {
+    args.pkg = args.pkg ?? PACKAGE_DIR;
+  } else if (args.pkg === undefined) {
+    console.error('mutationMatrix: --pkg <copy> is required; the run mutates the package it is given');
+    process.exit(2);
+  } else if (fs.realpathSync(args.pkg) === fs.realpathSync(PACKAGE_DIR)) {
+    console.error('mutationMatrix: refusing to mutate the package in place; pass a copy to --pkg');
+    process.exit(2);
+  }
+  return args;
+}
+
+function occurrences(text, pattern) {
+  return text.split(pattern).length - 1;
+}
+
+function runSuite(pkg) {
+  const out = spawnSync('node_modules/.bin/heft', ['test', '--clean', '--disable-code-coverage'], {
+    cwd: pkg,
+    encoding: 'utf8',
+    maxBuffer: 256 * 1024 * 1024
+  });
+  return `${out.stdout}${out.stderr}`;
+}
+
+function namesTest(redName, id) {
+  return new RegExp(`(^|[^A-Za-z0-9])${id}([^A-Za-z0-9]|$)`).test(redName);
+}
+
+function classify(text, mustGoRed) {
+  if (
+    text.includes('error TS') ||
+    (text.includes('build encountered an error') && !text.includes('[test:jest]'))
+  ) {
+    const errors = text
+      .split('\n')
+      .filter((line) => line.includes('error'))
+      .slice(0, 3);
+    return { verdict: 'UNVERIFIED: did not build', red: errors };
+  }
+  const red = Array.from(new Set(Array.from(text.matchAll(/● (.+)/g), (match) => match[1].trim()))).sort();
+  const failures = /Failures: (\d+)/.exec(text);
+  if (failures === null) {
+    return { verdict: 'UNVERIFIED: the run reported no failure count', red };
+  }
+  if (failures[1] === '0') {
+    return { verdict: '0 red', red };
+  }
+  const named = red.filter((name) => mustGoRed.some((id) => namesTest(name, id)));
+  return {
+    verdict:
+      named.length > 0
+        ? `VERIFIED (${failures[1]} red)`
+        : `UNVERIFIED: ${failures[1]} red, none of [${mustGoRed.join(', ')}]`,
+    red
+  };
+}
+
+function main() {
+  const args = parseArgs(process.argv.slice(2));
+  const rows = MUTATIONS.filter(
+    (row) => args.only.length === 0 || args.only.includes(row.name.split(' ')[0])
+  );
+  const results = [];
+  for (const row of rows) {
+    const files = row.edits.map((edit) => {
+      const file = path.join(args.pkg, edit.file);
+      return { ...edit, file, source: fs.readFileSync(file, 'utf8') };
+    });
+    const miss = files.find((edit) => occurrences(edit.source, edit.from) !== 1);
+    let result;
+    if (miss !== undefined) {
+      result = { verdict: `UNVERIFIED: pattern found ${occurrences(miss.source, miss.from)} times`, red: [] };
+    } else if (args.check) {
+      result = { verdict: 'pattern ok', red: [] };
+    } else {
+      // Edits to one file apply in turn, each against the text the previous one left.
+      const mutated = new Map();
+      for (const edit of files) {
+        const text = mutated.has(edit.file) ? mutated.get(edit.file) : edit.source;
+        mutated.set(
+          edit.file,
+          text.replace(edit.from, () => edit.to)
+        );
+      }
+      for (const [file, text] of mutated) {
+        fs.writeFileSync(file, text);
+      }
+      try {
+        result = classify(runSuite(args.pkg), row.mustGoRed);
+      } finally {
+        for (const edit of files) {
+          fs.writeFileSync(edit.file, edit.source);
+        }
+      }
+    }
+    results.push({ name: row.name, mustGoRed: row.mustGoRed, ...result });
+    console.log(`${row.name} [must go red: ${row.mustGoRed.join(', ')}]: ${result.verdict}`);
+    for (const test of result.red) {
+      console.log(`    ${test}`);
+    }
+  }
+  if (args.out !== undefined) {
+    fs.writeFileSync(args.out, `${JSON.stringify(results, undefined, 1)}\n`);
+  }
+  const bad = results.filter((r) => !r.verdict.startsWith('VERIFIED') && r.verdict !== 'pattern ok');
+  console.log(`\n${results.length} rows; ${bad.length} not VERIFIED`);
+  process.exitCode = bad.length > 0 ? 1 : 0;
+}
+
+main();
