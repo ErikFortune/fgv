@@ -122,7 +122,9 @@ export interface IObjectSchemaOptions extends ISchemaOptions {
    * type widens to `OpenObjectStatic`.
    *
    * Either way, what the validator accepts is what the wire schema states: the converter never
-   * drops a key the schema told the model it could send.
+   * drops a key the schema told the model it could send — with one exception, an own
+   * `"__proto__"` key, which is dropped at every depth rather than carried (see
+   * `Converters.jsonObject`).
    */
   additionalProperties?: boolean;
 }
@@ -459,8 +461,8 @@ class ObjectSchemaValidator<P extends ILlmProperties> extends SchemaValidatorBas
       properties,
       ...(required.length > 0 && { required }),
       // An absent keyword is JSON Schema's spelling of "open", which is what the open converter
-      // honours. `true` is not emitted: Anthropic's JSON outputs accept an absent keyword but
-      // require any present one to be `false`, so stating it would turn a working request into a 400.
+      // honours. `true` is not emitted: Anthropic JSON outputs require `additionalProperties: false`
+      // where the keyword is present, and an explicit `true` was not probed against them.
       ...(!this.additionalProperties && { additionalProperties: false }),
       ..._descriptionField(this)
     };
@@ -513,7 +515,7 @@ function _buildObjectConverter<P extends ILlmProperties>(
   return Converters.generic<ObjectStatic<P>>((from: unknown) =>
     isJsonObject(from)
       ? declared.convert(from).onSuccess((converted) => _withUndeclaredKeys(from, properties, converted))
-      : fail(`open object: expected a JSON object, got ${Array.isArray(from) ? 'array' : typeof from}`)
+      : fail(`open object: expected a JSON object, got ${_kindOf(from)}`)
   );
 }
 
@@ -523,11 +525,10 @@ function _buildObjectConverter<P extends ILlmProperties>(
  * schema in place of `jsonValue`.
  *
  * @remarks
- * The result is assembled with `Object.fromEntries`, which defines each key as an own
- * property, so a top-level `"__proto__"` key arrives as data rather than replacing the result's
- * prototype. Object spread is deliberately not used: compiled down-level it becomes
- * `Object.assign`, which assigns `__proto__`. Nested values are copied by `jsonValue`, so a
- * nested `"__proto__"` key gets `Converters.jsonObject`'s handling.
+ * An own `"__proto__"` key is dropped, matching `Converters.jsonObject`, which copies every
+ * nested value: carrying it as data would hand a caller a key that `Object.assign` or a spread
+ * turns into a prototype. The result is assembled with `Object.fromEntries` rather than object
+ * spread, which compiled down-level becomes `Object.assign`.
  */
 function _withUndeclaredKeys<T extends object>(
   from: JsonObject,
@@ -535,20 +536,28 @@ function _withUndeclaredKeys<T extends object>(
   converted: T
 ): Result<T> {
   const undeclared = Object.entries(from).filter(
-    ([key]) => !Object.prototype.hasOwnProperty.call(properties, key)
+    ([key]) => key !== '__proto__' && !Object.prototype.hasOwnProperty.call(properties, key)
   );
   return mapResults(
     undeclared.map(([key, value]) =>
       jsonValue
         .convert(value)
         .withErrorFormat((msg) => `${key}: ${msg}`)
-        .onSuccess((v) => succeed([key, v] as [string, JsonValue]))
+        .onSuccess((v) => succeed<[string, JsonValue]>([key, v]))
     )
   ).onSuccess((extras) => {
     const entries: [string, unknown][] = [...Object.entries(converted), ...extras];
     // The result is `converted` plus keys `T` leaves unconstrained, so it is still a `T`.
     return succeed(Object.fromEntries(entries) as T);
   });
+}
+
+/** Names what a non-object input was, for the open-object refusal. */
+function _kindOf(from: unknown): string {
+  if (from === null) {
+    return 'null';
+  }
+  return Array.isArray(from) ? 'array' : typeof from;
 }
 
 function _descriptionField(schema: ISchemaValidator<unknown>): { description?: string } {

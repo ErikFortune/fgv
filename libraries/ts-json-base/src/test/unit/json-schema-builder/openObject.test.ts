@@ -149,12 +149,32 @@ describe('open objects', () => {
       }
     );
 
-    test('a __proto__ key arrives as data, not as a prototype', () => {
-      const input = JSON.parse('{"query":"a","__proto__":{"polluted":true}}') as unknown;
+    test('the refusal names what it got, including null', () => {
+      const bare = JsonSchema.object({}, { additionalProperties: true });
+      expect(bare.convert(null)).toFailWith(/got null/i);
+      expect(bare.convert([1])).toFailWith(/got array/i);
+      expect(bare.convert(42)).toFailWith(/got number/i);
+    });
+
+    test('a top-level __proto__ key is dropped, never made the prototype', () => {
+      const input = JSON.parse('{"query":"a","__proto__":{"isAdmin":true},"extra":1}') as unknown;
       expect(open.convert(input)).toSucceedAndSatisfy((value) => {
         expect(Object.getPrototypeOf(value)).toBe(Object.prototype);
-        expect(Object.prototype.hasOwnProperty.call(value, '__proto__')).toBe(true);
-        expect((value as unknown as { polluted?: boolean }).polluted).toBeUndefined();
+        expect(Object.prototype.hasOwnProperty.call(value, '__proto__')).toBe(false);
+        expect('isAdmin' in value).toBe(false);
+        expect(value).toEqual({ query: 'a', extra: 1 });
+      });
+    });
+
+    test('a nested __proto__ key is dropped, never made the prototype', () => {
+      const bare = JsonSchema.fromJson({ type: 'object', properties: { q: { type: 'string' } } }).orThrow();
+      const input = JSON.parse('{"q":"a","extra":{"__proto__":{"isAdmin":true}}}') as unknown;
+      expect(bare.convert(input)).toSucceedAndSatisfy((value) => {
+        const extra = (value as JsonObject).extra as JsonObject;
+        expect(Object.getPrototypeOf(extra)).toBe(Object.prototype);
+        expect(Object.prototype.hasOwnProperty.call(extra, '__proto__')).toBe(false);
+        expect('isAdmin' in extra).toBe(false);
+        expect(value).toEqual({ q: 'a', extra: {} });
       });
     });
 
