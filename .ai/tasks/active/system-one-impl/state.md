@@ -26,3 +26,12 @@ Worker-owned working surface. The outcome is in [`result.md`](result.md).
 ## Open questions
 
 None blocking.
+
+## Later log
+
+- `code-reviewer` returned 2 P1 / 7 P2 / 12 P3; all applied (`7c540179`), coverage closed to 100%
+  with no `c8 ignore`.
+- Revert matrix: the first full run left R24 and R33 unverified, because pre-commit prettier had
+  moved their patterns after `--check`. Re-pointed in `3705870c`; then a clean full run gave 34/34
+  VERIFIED.
+- Gates green at `3a952c29` (see `result.md`).
