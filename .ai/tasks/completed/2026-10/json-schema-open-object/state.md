@@ -26,6 +26,11 @@ Worker-owned.
   would break Anthropic JSON outputs (`ts-extras` `structuredOutput.ts:151`).
 - `9e9fe563`: reverted the explicit-`true` wire emission and the `jsonObject` change (deferred to
   TECH_DEBT P3). Third repo-wide `rush test` on `9e9fe563`: SUCCESS, 36 operations.
+- Gate-time review: `5eea2cd2` drops an own `__proto__` in `jsonObject` and at an open object's top
+  level (the review placed `jsonObject` in `ts-utils`; it is in `ts-json-base`), restates the Anthropic
+  claim as unprobed, names the host-gate consequence in the change file, and applies two P3s.
+  Fourth repo-wide `rush test`: SUCCESS, 36 operations; ts-agent-tasks pin unedited and green.
+  TECH_DEBT P3 removed.
 
 ## Open questions
 

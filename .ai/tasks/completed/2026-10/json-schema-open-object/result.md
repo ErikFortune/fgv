@@ -6,6 +6,7 @@ Origin: ErikFortune/personaility#679. Commits on `json-schema-open-object`:
 - `47b44a81`: the fix and its tests;
 - `a74c87a8`: the review findings;
 - `9e9fe563`: undoes two of those (see *What changed shape*);
+- `5eea2cd2`: the gate-time review's changes, including the `__proto__` drop;
 - plus the finalize commits.
 
 ## What shipped
@@ -17,8 +18,8 @@ All changes are in `@fgv/ts-json-base`, `json-schema-builder` packlet:
   - Every undeclared key is carried through as a `JsonValue`, validated by `Converters.jsonValue`.
   - Bad undeclared values fail with the key named, and all of them are reported (`mapResults`).
   - The result lists declared keys first, then undeclared keys in input order.
-  - It is assembled with `Object.fromEntries`, so a top-level `"__proto__"` key arrives as data.
-- **A non-object is refused.** Before, an open object converted `42`, `'hi'`, `[1]` and `true` to `{}`. It now fails with `open object: expected a JSON object, got <kind>`. `null` is accepted only by a nullable node, as before.
+  - An own `"__proto__"` key is dropped at every depth (see *`__proto__`* below). The result is assembled with `Object.fromEntries`.
+- **A non-object is refused.** Before, an open object converted `42`, `'hi'`, `[1]` and `true` to `{}`. It now fails with `open object: expected a JSON object, got <kind>` (`null`, `array`, or the `typeof`). `null` is accepted only by a nullable node, as before.
 - **The wire schema is unchanged.**
   - A closed object emits `additionalProperties: false`.
   - An open object omits the keyword, which JSON Schema reads as open.
@@ -31,7 +32,8 @@ All changes are in `@fgv/ts-json-base`, `json-schema-builder` packlet:
 - **Docs and change file.**
   - `CAPABILITIES.md` describes the open-object behaviour.
   - The change file is `minor` with a `BREAKING:` prefix: `json-schema-builder` is absent from `origin/main`, so it never shipped non-alpha.
-  - `docs/TECH_DEBT.md` gains one P3 (below).
+  - **`Converters.jsonObject` drops an own `"__proto__"` key** instead of assigning it (below). Disclosed in the change file.
+  - The change file also states that MCP-adapted tools, and any consumer-registered open schema, now forward undeclared keys, so a host gate that authorizes on declared fields sees keys it did not see before.
 
 The closed default (`additionalProperties: false`) is unchanged: it is strict and rejects undeclared keys.
 
@@ -73,7 +75,7 @@ Rejected:
 - **(d) as first built: pass-through and an always-explicit `additionalProperties: true`.** It shipped in `47b44a81`, and `9e9fe563` reverted it after the antagonist pass found the cost.
   - `@fgv/ts-extras` sends the raw `toJson()` to Anthropic's JSON outputs (`anthropic-output-format`).
   - `structuredOutput.ts:151` records that `additionalProperties` "must be `false`" there, and that a bare `{ type: 'object' }` is accepted and constrained to `{}`. So an absent keyword is accepted, and an explicit `true` is not.
-  - Emitting `true` would therefore turn a previously-accepted request on the current Claude models into a 400. I did not probe the provider; the in-repo comment is the evidence.
+  - Anthropic JSON outputs require `additionalProperties: false`; an explicit `true` was not probed. Leaving the keyword absent keeps the request exactly as `release` sends it.
   - The requester asked for the keyword to be emitted, but that was a means: an absent keyword already says "open".
 - **(b) close the wire (`additionalProperties: false` always).**
   - It makes a `dict[str, Any]` / `z.record` argument uncallable: with no declared properties, the only value a model can send is `{}`.
@@ -102,7 +104,8 @@ The review loop added two things, and both were taken back out in `9e9fe563`:
   - `code-reviewer` found that `jsonObject` copies with `obj[name] = v`. A parsed nested `"__proto__"` therefore becomes the copy's prototype instead of a key. The open-object path reaches this through `jsonValue` for nested values.
   - Fixing it (`Object.defineProperty`) turned the second repo-wide run red. `ts-agent-tasks` `kindRegistry.test.ts` ("a __proto__ key in details reaches the registered converter neutralized") pins the key disappearing. With the fix, a strict downstream converter refuses it instead.
   - That is a contract question on an established converter with a known consumer, outside this stream's surface. The brief also limits consumer edits to test updates this behaviour forces.
-  - Reverted. Recorded as a P3 in `docs/TECH_DEBT.md`, with the consumer named.
+  - Reverted in `9e9fe563` and recorded as a TECH_DEBT P3.
+  - **Resolved in `5eea2cd2` by a third option from the gate-time review: drop the key.** `jsonObject` now skips an own `"__proto__"` key. The result's own keys are exactly what `release` produced (no `__proto__` key), and no prototype is ever set. The `ts-agent-tasks` pin passes unedited. The open object's top level drops it too, rather than carrying it as data: a data key named `__proto__` is re-read as a prototype by any caller that `Object.assign`s or spreads the arguments. The TECH_DEBT entry is removed.
   - The top level of an open object is unaffected: it is built with `Object.fromEntries`.
 - **The reviewer's suggested `{ ...converted, ...Object.fromEntries(extras) }` was tried and reverted.**
   - Compiled down-level, the spread becomes `Object.assign`, which assigns a top-level `__proto__`.
@@ -119,11 +122,14 @@ Each fix component was reverted on its own, and the `json-schema-builder` tests 
 | R3: drop the `isJsonObject` guard | `47b44a81` | 1 red: "a non-object is refused". It is now a `test.each` of 5 cases, all of which exercise it. |
 | R4: build the result by assignment instead of `Object.fromEntries` | `47b44a81` | 1 red: the top-level `__proto__` test |
 | R6: emit `additionalProperties: true` for an open object | `9e9fe563` | 6 red: all 5 open "the wire reads as open" agreement tests, plus `toJson.test.ts` "omits the keyword" |
+| R7: `jsonObject` stops dropping `__proto__` | `5eea2cd2` | 2 red: `converters.test.ts` "drops an own __proto__ key … at any depth", and the nested open-object test |
+| R8: open object stops dropping a top-level `__proto__` | `5eea2cd2` | 1 red: "a top-level __proto__ key is dropped" |
 
-R2 (the old omit-when-open `toJson()`, measured against `47b44a81`'s always-emit) and R5 (the `jsonObject` fix) concerned code that `9e9fe563` removed. R6 is the current wire's guard.
+R2 (the old omit-when-open `toJson()`, measured against `47b44a81`'s always-emit) and R5 (the define-as-data `jsonObject` fix) concerned code that `9e9fe563` removed. R4's top-level test now asserts a drop (R8). R6 is the current wire's guard.
 
 ## Gates
 
+- **`ts-json-base` on `5eea2cd2`:** `heft test --clean` 1217 passed, 0 failed, coverage 100/100/100/100, 0 warnings; `eslint src` 0; `etc/ts-json-base.api.md` unchanged by this commit.
 - **`ts-json-base` on `9e9fe563`:**
   - `heft build --clean`: 0 errors, 0 warnings.
   - `eslint src`: 0.
@@ -133,17 +139,18 @@ R2 (the old omit-when-open `toJson()`, measured against `47b44a81`'s always-emit
   - On `47b44a81`: **SUCCESS: 36 operations**, 0 error lines, nothing from cache. The only `warning` line is Rush's pre-existing "1 Git-tracked symlinks" notice.
   - On `a74c87a8`: **FAILURE.** `@fgv/ts-agent-tasks` had 1 test failing (the `__proto__` pin above), and `@fgv/testbed` was blocked. This led to `9e9fe563`.
   - On `9e9fe563`: **SUCCESS: 36 operations** (+1 no-op), 0 error lines, nothing from cache, log free of NUL padding. The only `warning` line is the same symlink notice.
+  - On `5eea2cd2`: **SUCCESS: 36 operations** (+1 no-op), 0 error lines, nothing from cache, no NUL padding, the same lone symlink notice. `ts-agent-tasks` (including the `__proto__` pin, unedited), `ts-extras-mcp` and `testbed` completed.
 - **`rush change --verify --target-branch origin/release`:** passes; it finds the `ts-json-base` change file, the only package touched.
 
 ## Consumers whose tests changed
 
-**None outside `ts-json-base`.** The `47b44a81` and `9e9fe563` runs were green with no consumer edits, covering:
+**None outside `ts-json-base`.** The `47b44a81`, `9e9fe563` and `5eea2cd2` runs were green with no consumer edits, covering:
 - `ts-extras-mcp`, whose adapted MCP tools now pass undeclared keys through;
 - `ts-extras` ai-assist;
 - `ts-agent-tasks`;
 - `ts-agent-memory`.
 
-The one consumer break found was caused by the `jsonObject` change. That change was reverted rather than editing the consumer.
+The one consumer break found was caused by the first `jsonObject` change. It was reverted rather than editing the consumer, and the drop that replaced it keeps that consumer green.
 
 Inside `ts-json-base`, two existing tests pinned the old boundary and were updated:
 - `validate.test.ts`: "additionalProperties: true ignores unknown fields" now "carries unknown fields through".
@@ -155,7 +162,7 @@ Inside `ts-json-base`, two existing tests pinned the old boundary and were updat
 
 No P1s.
 
-- **P2 — nested `__proto__` via `jsonObject`.** Fixed, then reverted and deferred to `TECH_DEBT.md` (see above).
+- **P2 — nested `__proto__` via `jsonObject`.** Fixed as define-as-data, reverted, then resolved as drop in `5eea2cd2` (see above).
 - **P2 — repo-wide test.** Run three times.
 - **P2 — `CAPABILITIES.md`.** Updated.
   - The checked-in typedoc pages under `libraries/ts-json-base/docs/` still carry the old option text. Not regenerated, deliberately: #655 and #659 did not regenerate them either, and doing so adds hundreds of unrelated diffs.
@@ -179,7 +186,7 @@ No P1s.
 An independent read-only reviewer was briefed to refute these artifacts. Its findings:
 
 - **The second gate's outcome was asserted before it finished.** True; the second gate then failed. The claims are corrected above.
-- **An explicit `true` breaks Anthropic JSON outputs.** Acted on: `9e9fe563`.
+- **An explicit `true` may break Anthropic JSON outputs** (they require `false`; `true` not probed). Acted on: `9e9fe563`.
 - **Structured output does not refuse an open object for OpenAI strict.**
   - True and pre-existing: `hasOptionalProperties` / `adaptOptionalToNullable` never look at `additionalProperties`, so an open schema reaches OpenAI strict as an opaque 400.
   - Unchanged by this stream, since the wire is unchanged. Listed under *Open*.
@@ -188,12 +195,18 @@ An independent read-only reviewer was briefed to refute these artifacts. Its fin
 - **The one perf-script hit in the consumer grep.** Noted above.
 - **`fromJson` builds `properties` by assignment.**
   - Pre-existing: a declared MCP property literally named `__proto__` is not an own key, so `_withUndeclaredKeys` treats it as undeclared.
-  - Same class as the `jsonObject` debt. Noted there, not fixed.
+  - Resolved by the same drop: an open object now drops such a key rather than carrying it.
+
+## Gate-time review (orchestrator), applied in `5eea2cd2`
+
+No P1s. Applied:
+- **Nested `__proto__`: drop, not define.** Item 1 succeeded. The repo-wide run was green and the TECH_DEBT P3 is removed. The request placed `Converters.jsonObject` and its test in `@fgv/ts-utils`. They are in `@fgv/ts-json-base` (`converters.ts`); `ts-utils` has no `jsonObject`. So the test is in `ts-json-base`'s `converters.test.ts`, `ts-utils` is untouched, and no second change file was needed. `etc/ts-json-base.api.md` is unchanged.
+- **Docs:** the `IObjectSchemaOptions` "never drops a key" is qualified for `__proto__`; the Anthropic claim is restated as "requires `false`; an explicit `true` was not probed" in `factories.ts` and `CAPABILITIES.md`; the change file names the host-gate consequence.
+- **P3s:** `succeed<[string, JsonValue]>([key, v])`; the refusal says `got null` for `null`.
 
 ## Open
 
 - Schema-valued `additionalProperties` ("record") is still refused. It is a separate ask on `integration/asks`.
-- `docs/TECH_DEBT.md` P3: `Converters.jsonObject` and a parsed `"__proto__"`. Decide whether the contract is refuse or drop; `ts-agent-tasks` pins drop.
 - Structured output (`ts-extras`) does not refuse an open object on OpenAI strict formats. This is pre-existing, and the brief puts `ts-extras` out of scope.
 - The typedoc pages were not regenerated.
 - PersonAIlity #679 can close citing the merge commit, and the hub's interim refusal of open nodes can lift.

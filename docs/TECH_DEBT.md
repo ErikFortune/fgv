@@ -797,32 +797,6 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
 
 ## P3 — Opportunistic cleanup
 
-- **[P3] `ts-json-base` — `Converters.jsonObject` assigns keys, so a parsed `"__proto__"` replaces the copy's prototype.**
-  `converters.ts` copies each property with `obj[name] = v`. For input from `JSON.parse`, an own
-  `"__proto__"` key therefore sets the *copy's* prototype to the (converted) value instead of
-  becoming a key: the key vanishes from the output, and the copy inherits the attacker's
-  properties. Nothing global is polluted. Reachable through every `jsonValue` / `jsonObject` caller,
-  including the nested values an open `JsonSchema` object now carries through (the top level of an
-  open object is built with `Object.fromEntries` and is unaffected).
-
-  **Trigger**: the next change to `Converters.jsonObject`, or any consumer that reads inherited
-  properties from a converted object.
-
-  **Scope sketch**: `Object.defineProperty` (or `Object.fromEntries`) in place of the assignment —
-  a one-line fix, tried in `json-schema-open-object`. It is a behaviour change on an established
-  surface with a known consumer: `ts-agent-tasks` `kindRegistry.test.ts` ("a __proto__ key in
-  details reaches the registered converter neutralized") pins the key disappearing, and with the fix
-  a strict downstream converter refuses it as an unexpected property instead. Decide whether "refuse"
-  or "drop" is the intended contract, then fix both together.
-
-  The same class: `fromJson` builds its `properties` record by assignment, so a declared MCP
-  property literally named `__proto__` is not an own key there, and an open object treats it as
-  undeclared (it is still carried through, validated as `JsonValue`).
-
-  **Not a P2**: no global prototype is touched and no known consumer reads inherited properties.
-
-  **Reference**: `json-schema-open-object` (2026-10-03), `.ai/tasks/completed/2026-10/json-schema-open-object/result.md`.
-
 - **[P3] `ts-agent-tasks` — deferrals the agent-tasks slices recorded only in their own `result.md`.**
   Found by the cluster close (`agent-tasks-cluster-close`, 2026-10-01), which read all eighteen
   slices' results against this file. Each item was left by a slice as "a later slice decides", "a

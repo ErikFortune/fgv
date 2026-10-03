@@ -28,17 +28,19 @@ unchanged.
   earlier.
 - It missed the non-object-to-`{}` symptom.
 - Emitting `additionalProperties: true` explicitly (the requester's proposal) was built and reverted:
-  `ts-extras` sends `toJson()` raw to Anthropic JSON outputs, which accept an absent keyword but
-  require a present one to be `false`.
-- A `Converters.jsonObject` `__proto__` fix was built and reverted: the second repo-wide run showed
-  `ts-agent-tasks` pins the existing behaviour. Deferred to `docs/TECH_DEBT.md` as a P3.
+  `ts-extras` sends `toJson()` raw to Anthropic JSON outputs, which require
+  `additionalProperties: false`; an explicit `true` was not probed.
+- A `Converters.jsonObject` `__proto__` fix (define as data) was built and reverted: the second
+  repo-wide run showed `ts-agent-tasks` pins the key disappearing. The gate-time review's third option
+  shipped instead: `jsonObject`, and an open object's top level, **drop** an own `__proto__` key, so
+  own keys are unchanged and no prototype is set.
 - The reviewer's object-spread suggestion was tried and reverted: down-levelled spread is
   `Object.assign`, which assigns a top-level `__proto__`.
 
 ## Decision
 
 Pass-through, plus the typing answer, wire left as it was. Rejected: an always-explicit keyword
-(Anthropic 400), closing the wire (makes a `dict[str, Any]` argument uncallable), refusing open nodes in
+(Anthropic JSON outputs require `false`; `true` unprobed), closing the wire (makes a `dict[str, Any]` argument uncallable), refusing open nodes in
 `fromJson` (the requester's own interim, strictly worse for the same safety), a "tolerate and strip"
 mode (unused, and its only truthful wire is the closed default). Full reasoning in `result.md`.
 
@@ -49,6 +51,7 @@ mode (unused, and its only truthful wire is the closed default). Full reasoning 
   disposition.
 - Code:
   - `libraries/ts-json-base/src/packlets/json-schema-builder/{factories,types}.ts`
+  - `libraries/ts-json-base/src/packlets/converters/converters.ts`
     - tests under `libraries/ts-json-base/src/test/unit/` (`json-schema-builder/openObject.test.ts` is
     new).
 
@@ -56,8 +59,6 @@ mode (unused, and its only truthful wire is the closed default). Full reasoning 
 
 - **Schema-valued `additionalProperties` ("record").** It is still refused. It is one of the separate
   asks queued on `integration/asks`, and `_withUndeclaredKeys` is the seam it would extend.
-- **`Converters.jsonObject` and a parsed `"__proto__"`**: `docs/TECH_DEBT.md` P3 (refuse vs drop;
-  `ts-agent-tasks` pins drop).
 - **Structured output does not refuse an open object on OpenAI strict formats** (pre-existing,
   `ts-extras`, out of scope).
 - **The checked-in typedoc pages** under `libraries/ts-json-base/docs/` still carry the old option
