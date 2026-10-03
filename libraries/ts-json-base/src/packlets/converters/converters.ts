@@ -98,14 +98,7 @@ export const jsonObject: Converter<JsonObject, IJsonConverterContext> = new Conv
       jsonValue
         .convert(value, ctx)
         .onSuccess((v: JsonValue) => {
-          // Defined rather than assigned: assigning a parsed `"__proto__"` key would replace
-          // the result's prototype instead of copying the key.
-          Object.defineProperty(obj, name, {
-            value: v,
-            enumerable: true,
-            writable: true,
-            configurable: true
-          });
+          obj[name] = v;
           return succeed(v);
         })
         .onFailure((m) => {

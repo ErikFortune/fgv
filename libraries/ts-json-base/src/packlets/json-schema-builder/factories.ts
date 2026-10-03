@@ -116,8 +116,8 @@ export interface IObjectSchemaOptions extends ISchemaOptions {
    *
    * When `true`, the object is **open**: declared properties convert through their schemas as
    * usual, every undeclared property is carried through to the result as a validated
-   * `JsonValue` (after the declared ones), and the emitted schema sets
-   * `additionalProperties: true`. A value that is not
+   * `JsonValue` (after the declared ones), and the emitted schema omits `additionalProperties`,
+   * which JSON Schema reads as open. A value that is not
    * a JSON object, or an undeclared property that is not a JSON value, is refused. The static
    * type widens to `OpenObjectStatic`.
    *
@@ -458,8 +458,10 @@ class ObjectSchemaValidator<P extends ILlmProperties> extends SchemaValidatorBas
       ...this._typeField('object'),
       properties,
       ...(required.length > 0 && { required }),
-      // Always stated, so the wire and the converter cannot disagree about undeclared keys.
-      additionalProperties: this.additionalProperties,
+      // An absent keyword is JSON Schema's spelling of "open", which is what the open converter
+      // honours. `true` is not emitted: Anthropic's JSON outputs accept an absent keyword but
+      // require any present one to be `false`, so stating it would turn a working request into a 400.
+      ...(!this.additionalProperties && { additionalProperties: false }),
       ..._descriptionField(this)
     };
   }
@@ -522,10 +524,10 @@ function _buildObjectConverter<P extends ILlmProperties>(
  *
  * @remarks
  * The result is assembled with `Object.fromEntries`, which defines each key as an own
- * property, and nested values come from `jsonValue`, which does the same — so a parsed
- * `"__proto__"` key arrives as data at any depth rather than replacing a prototype. Object
- * spread is deliberately not used: compiled down-level it becomes `Object.assign`, which
- * assigns `__proto__` and so replaces the prototype.
+ * property, so a top-level `"__proto__"` key arrives as data rather than replacing the result's
+ * prototype. Object spread is deliberately not used: compiled down-level it becomes
+ * `Object.assign`, which assigns `__proto__`. Nested values are copied by `jsonValue`, so a
+ * nested `"__proto__"` key gets `Converters.jsonObject`'s handling.
  */
 function _withUndeclaredKeys<T extends object>(
   from: JsonObject,

@@ -88,14 +88,13 @@ describe('schema.toJson()', () => {
       });
     });
 
-    test('object with additionalProperties: true states the keyword', () => {
+    test('object with additionalProperties: true omits the keyword', () => {
       const schema = JsonSchema.object({ query: JsonSchema.string() }, { additionalProperties: true });
-      // Emitted either way, so a reader of the wire never has to infer it from a default.
+      // additionalProperties is only emitted when false; when true the keyword is omitted.
       expect(schema.toJson()).toEqual({
         type: 'object',
         properties: { query: { type: 'string' } },
-        required: ['query'],
-        additionalProperties: true
+        required: ['query']
       });
     });
 

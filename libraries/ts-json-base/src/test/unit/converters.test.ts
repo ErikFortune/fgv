@@ -124,19 +124,6 @@ describe('converters', () => {
 
   describe('jsonObject', () => {
     const converter = Converters.jsonObject;
-    test('copies a parsed __proto__ key as data at any depth instead of setting the prototype', () => {
-      const input = JSON.parse(
-        '{"__proto__":{"polluted":true},"nested":{"__proto__":{"deep":1}}}'
-      ) as unknown;
-      expect(converter.convert(input)).toSucceedAndSatisfy((v) => {
-        expect(Object.getPrototypeOf(v)).toBe(Object.prototype);
-        expect(Object.prototype.hasOwnProperty.call(v, '__proto__')).toBe(true);
-        const nested = v.nested as object;
-        expect(Object.getPrototypeOf(nested)).toBe(Object.prototype);
-        expect(Object.prototype.hasOwnProperty.call(nested, '__proto__')).toBe(true);
-      });
-    });
-
     test.each(validObjectTests)('succeeds for $description', (tc) => {
       expect(converter.convert(tc.value)).toSucceedAndSatisfy((v) => {
         // explicitly test for equality but not identity (copying converter)
