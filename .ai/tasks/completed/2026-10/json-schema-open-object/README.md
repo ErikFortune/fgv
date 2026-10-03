@@ -58,7 +58,7 @@ mode (unused, and its only truthful wire is the closed default). Full reasoning 
 ## Left open
 
 - **Schema-valued `additionalProperties` ("record").** It is still refused. It is one of the separate
-  asks queued on `integration/asks`, and `_withUndeclaredKeys` is the seam it would extend.
+  asks queued on `integration/asks`, and `_convertUndeclaredKeys` is the seam it would extend.
 - **Structured output does not refuse an open object on OpenAI strict formats** (pre-existing,
   `ts-extras`, out of scope).
 - **The checked-in typedoc pages** under `libraries/ts-json-base/docs/` still carry the old option

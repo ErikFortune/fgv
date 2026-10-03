@@ -32,6 +32,10 @@ Worker-owned.
   Fourth repo-wide `rush test`: SUCCESS, 36 operations; ts-agent-tasks pin unedited and green.
   TECH_DEBT P3 removed.
 
+- Copilot round 1 on PR #720: undeclared keys were validated only after declared fields succeeded.
+  `2c7bf0d3` validates both sides independently (`allSucceed`) and reports all failures; R9 red against
+  the old shape. Fifth repo-wide `rush test` on `2c7bf0d3`.
+
 ## Open questions
 
 - None blocking. The PR number is unknown to the worker; `meta.yaml` `prs` and the ledger marker

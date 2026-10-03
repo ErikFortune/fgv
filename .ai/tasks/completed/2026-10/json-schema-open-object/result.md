@@ -7,6 +7,7 @@ Origin: ErikFortune/personaility#679. Commits on `json-schema-open-object`:
 - `a74c87a8`: the review findings;
 - `9e9fe563`: undoes two of those (see *What changed shape*);
 - `5eea2cd2`: the gate-time review's changes, including the `__proto__` drop;
+- `2c7bf0d3`: Copilot round 1's finding (declared and undeclared failures reported together);
 - plus the finalize commits.
 
 ## What shipped
@@ -16,7 +17,7 @@ All changes are in `@fgv/ts-json-base`, `json-schema-builder` packlet:
 - **Open objects pass undeclared keys through.** This covers `JsonSchema.object(props, { additionalProperties: true })` and every `fromJson` object without an explicit `additionalProperties: false`.
   - Declared properties convert through their schemas as before.
   - Every undeclared key is carried through as a `JsonValue`, validated by `Converters.jsonValue`.
-  - Bad undeclared values fail with the key named, and all of them are reported (`mapResults`).
+  - Bad undeclared values fail with the key named. Declared and undeclared keys are validated independently and every failure from both sides is reported in one error (`mapResults` over the undeclared keys, `allSucceed` over the two sides); the result is built only when both succeed.
   - The result lists declared keys first, then undeclared keys in input order.
   - An own `"__proto__"` key is dropped at every depth (see *`__proto__`* below). The result is assembled with `Object.fromEntries`.
 - **A non-object is refused.** Before, an open object converted `42`, `'hi'`, `[1]` and `true` to `{}`. It now fails with `open object: expected a JSON object, got <kind>` (`null`, `array`, or the `typeof`). `null` is accepted only by a nullable node, as before.
@@ -90,7 +91,7 @@ Rejected:
   - Consequence: an object that declares properties but omits the keyword now *keeps* stray keys. The requester called dropping them "defensible", not required, and the wire for that object says it is open.
 
 **Interaction with "record" (schema-valued `additionalProperties`, out of scope).**
-- `_withUndeclaredKeys` validates each undeclared value with `jsonValue`, and that call is the seam.
+- `_convertUndeclaredKeys` validates each undeclared value with `jsonValue`, and that call is the seam.
 - A schema-valued form would pass its schema there instead, and `fromJson` would stop refusing it.
 - Its `toJson()` would emit the schema, and the agreement tests would gain a third column.
 - Nothing here pre-empts that design.
@@ -124,6 +125,7 @@ Each fix component was reverted on its own, and the `json-schema-builder` tests 
 | R6: emit `additionalProperties: true` for an open object | `9e9fe563` | 6 red: all 5 open "the wire reads as open" agreement tests, plus `toJson.test.ts` "omits the keyword" |
 | R7: `jsonObject` stops dropping `__proto__` | `5eea2cd2` | 2 red: `converters.test.ts` "drops an own __proto__ key … at any depth", and the nested open-object test |
 | R8: open object stops dropping a top-level `__proto__` | `5eea2cd2` | 1 red: "a top-level __proto__ key is dropped" |
+| R9: validate undeclared keys only after declared fields succeed (the pre-Copilot behaviour) | `2c7bf0d3` | 1 red: "a bad declared field does not hide bad undeclared values". The failure was `Field query: "7": not a string`, naming neither undeclared key |
 
 R2 (the old omit-when-open `toJson()`, measured against `47b44a81`'s always-emit) and R5 (the define-as-data `jsonObject` fix) concerned code that `9e9fe563` removed. R4's top-level test now asserts a drop (R8). R6 is the current wire's guard.
 
@@ -166,7 +168,7 @@ No P1s.
 - **P2 — repo-wide test.** Run three times.
 - **P2 — `CAPABILITIES.md`.** Updated.
   - The checked-in typedoc pages under `libraries/ts-json-base/docs/` still carry the old option text. Not regenerated, deliberately: #655 and #659 did not regenerate them either, and doing so adds hundreds of unrelated diffs.
-- **P3 — typing of `_withUndeclaredKeys`.** Applied: `T extends object`, typed entries, no leaked `any`. The spread variant was rejected, as above.
+- **P3 — typing of `_withUndeclaredKeys`** (since split into `_convertOpenObject` / `_convertUndeclaredKeys`). Applied: `T extends object`, typed entries, no leaked `any`. The spread variant was rejected, as above.
 - **P3 — implementation-signature union.** Kept. It is sound and invisible to callers.
 - **P3 — `OpenObjectStatic` non-JSON edge.** Documented.
 - **P3 — error context.** Applied.
@@ -194,7 +196,7 @@ An independent read-only reviewer was briefed to refute these artifacts. Its fin
 - **The revert table's counts and names.** Corrected above.
 - **The one perf-script hit in the consumer grep.** Noted above.
 - **`fromJson` builds `properties` by assignment.**
-  - Pre-existing: a declared MCP property literally named `__proto__` is not an own key, so `_withUndeclaredKeys` treats it as undeclared.
+  - Pre-existing: a declared MCP property literally named `__proto__` is not an own key, so the open-object path treated it as undeclared.
   - Resolved by the same drop: an open object now drops such a key rather than carrying it.
 
 ## Gate-time review (orchestrator), applied in `5eea2cd2`
@@ -203,6 +205,10 @@ No P1s. Applied:
 - **Nested `__proto__`: drop, not define.** Item 1 succeeded. The repo-wide run was green and the TECH_DEBT P3 is removed. The request placed `Converters.jsonObject` and its test in `@fgv/ts-utils`. They are in `@fgv/ts-json-base` (`converters.ts`); `ts-utils` has no `jsonObject`. So the test is in `ts-json-base`'s `converters.test.ts`, `ts-utils` is untouched, and no second change file was needed. `etc/ts-json-base.api.md` is unchanged.
 - **Docs:** the `IObjectSchemaOptions` "never drops a key" is qualified for `__proto__`; the Anthropic claim is restated as "requires `false`; an explicit `true` was not probed" in `factories.ts` and `CAPABILITIES.md`; the change file names the host-gate consequence.
 - **P3s:** `succeed<[string, JsonValue]>([key, v])`; the refusal says `got null` for `null`.
+
+## Copilot round 1 (PR #720), applied in `2c7bf0d3`
+
+One finding, real: undeclared keys were validated only inside `declared.convert(from).onSuccess(...)`, so a failing declared field hid every bad undeclared value — contradicting the "all of them are reported" claim. `_convertOpenObject` now converts both sides independently, aggregates their failures with `allSucceed`, and builds the result only when both succeed. The new test (one bad declared field, two bad undeclared values) asserts all three appear; R9 shows it red against the old shape.
 
 ## Open
 
