@@ -17,6 +17,8 @@ They change only which live legs are required and when the cluster may close.
 
 ### U1 — E27a: does the Ollama leg stay in the topology?
 
+**Decided 2026-10-03 by the user: A.**
+
 **What is being decided.** You chose a topology in which some environments serve Qwen through Ollama
 (design § 7.1 item 6). E27a says that on Ollama `v0.35.0` with base `qwen3:8b`, the encoder request
 probably **fails outright**. Ollama starts `llama-server` with `--embedding` only when the GGUF
@@ -70,6 +72,8 @@ loses nothing if E27a holds, because OQ-12's fallback is already written down.
    reported, not checked here.
 
 ### U2 — Who runs the live legs, and does the cluster close wait for any?
+
+**Decided 2026-10-03 by the user: (a).**
 
 **What is being decided.** Design § 10 forbids claiming success from fixtures alone. This environment
 cannot run any live leg:

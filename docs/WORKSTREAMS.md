@@ -499,9 +499,9 @@ quantization are unverified.
 - **Contract refinements from reading the SDK at source:** a `fetch?` seam; explicit `logLevel` that is
   never `debug` (a fourth `TYPESAFE_*` variable exists); a total failure classification; timing
   headers that keep their names.
-- **Two decisions are the user's**, and neither changes the package surface: U1, whether Ollama stays
-  in the topology (E27a), and U2, who runs the live legs and whether the cluster close waits for one.
-  See `.ai/tasks/active/system-one-triage/result.md`.
+- **User decisions, 2026-10-03:** Ollama stays in the topology, gated on one probe round trip per
+  environment (E27a; option A). The cluster close waits on one recorded L1 remote round trip, and
+  nothing else (option (a)). Neither changes the package surface.
 - OQ-5, OQ-8 and OQ-10's Olares items stay open: they need egress or hardware.
 
 ---

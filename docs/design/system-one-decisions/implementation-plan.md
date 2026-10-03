@@ -23,12 +23,17 @@ this phase. **Base:** `integration/system-one-decisions` @ `72f5f0bb`, plus the 
   - D10: the harness ships as a `perf/` script (§ 8).
   - Design § 8's Phase B amendment: five contract refinements, specified in § 3.
 
-### 1.2 Pending with the user (neither changes § 3)
+### 1.2 Decided by the user, 2026-10-03 (neither changes § 3)
 
-- **U1 — E27a, the Ollama leg of the topology.** It changes only which live legs § 6 lists and what
-  the README says about Ollama.
-- **U2 — Who runs the live legs, and whether the cluster close waits for any.** It changes only the
-  close gate in § 10.
+- **Decision U1 — E27a, the Ollama leg: option A, keep Ollama, gated on one round trip.** Each
+  Ollama environment's first live step is a single `probe` (L4). A refusal is recorded as a refusal,
+  and that environment falls back to a remote vLLM-backed CLM (OQ-12). § 6 is unchanged.
+- **Decision U2 — the cluster-close gate: option (a), L1 only.** The squash to `release` waits for
+  one recorded L1 round trip. Phase C may finish with L1 "not run live"; the orchestrator then holds
+  the cluster close until someone with egress and a key runs `perf/systemOneLive.js probe` and
+  appends the record. L2–L5 gate the consumer's experiment, not the release.
+
+*(These are the triage's decision labels; they are unrelated to the unit-test ids U1–U26 in § 5.1.)*
 
 ## 2. Slicing: one slice, plus live evidence
 
@@ -44,7 +49,7 @@ this phase. **Base:** `integration/system-one-decisions` @ `72f5f0bb`, plus the 
 
 **Live evidence, L1–L5 (§ 6)**, is not a code slice. It is a set of recorded runs against real
 servers, which may happen after S1 merges into the integration branch and before the cluster close,
-by whoever has the egress and hardware (U2).
+by whoever has the egress and hardware (decision U2).
 
 ## 3. S1 surface
 
@@ -359,8 +364,8 @@ item 2). `perf/systemOneLive.js probe` (§ 8) produces the record.
 | L1 | Remote development server (Jev, or openjev/Codiv), over `https` with a key | wire compatibility against a real server: request accepted, § 3.6 passes on a real body, `requestId` and timing headers as sent, the status for an unknown model (OQ-6). Which remote was used is recorded (OQ-11) | § 10.2, OQ-6 |
 | L2 | `clm-serve` on loopback over vLLM bf16, on the Olares One | the deployed wiring, CLM's 422 and the keyless placeholder key; also OQ-10's Olares items (Blackwell build, memory budget), recorded as found, and OQ-8's issue #3 reproduction (one `score` question across two contrasting states) | § 10.2, OQ-8, OQ-10 |
 | L3 | With L2: E33's windows replayed through the encoder's `/tokenize` (E35) | the OQ-4 measurement against the real tokenizer. A `GET /tokenizer_info` with the flag would also close E16b | OQ-4, E16b |
-| L4 | Each Ollama setup actually deployed: **first** one `probe` round trip. A refusal is recorded as a refusal | E27a. **Its scope depends on U1** | § 10.2, OQ-12 |
-| L5 | `parity` between L2's endpoint and each L4 endpoint that passed its probe, with thresholds given before the run | OQ-12. **Its scope depends on U1** | OQ-12 |
+| L4 | Each Ollama setup actually deployed: **first** one `probe` round trip. A refusal is recorded as a refusal | E27a. Kept, gated on this probe (decision U1, option A) | § 10.2, OQ-12 |
+| L5 | `parity` between L2's endpoint and each L4 endpoint that passed its probe, with thresholds given before the run | OQ-12. Runs only for L4 endpoints that passed (decision U1, option A) | OQ-12 |
 
 **Not established by any unit test, and claimed nowhere until the matching leg runs:**
 
@@ -457,7 +462,7 @@ Start from `libraries/ts-extras-ollama/`.
 - `docs/WORKSTREAMS.md` § `system-one-decisions`: anticipate the merge (`CODING_STANDARDS.md` § *A PR
   anticipates its own merge*).
 - `/finalize-task` runs at the cluster close, as Phase A's and B's directories have not.
-- **The cluster close gate itself is U2.**
+- **The cluster close gate is one recorded L1 round trip** (decision U2, option (a)).
 
 ## 11. Traceability: design § 10 to this plan
 
