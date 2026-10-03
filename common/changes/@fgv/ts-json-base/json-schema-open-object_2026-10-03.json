@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "comment": "BREAKING: an open JsonSchema object (additionalProperties: true, including every fromJson object without additionalProperties: false) now carries undeclared keys through as validated JsonValue instead of silently dropping them, refuses a non-object input instead of converting it to {}, and states additionalProperties: true on the wire. Adds OpenObjectStatic and typed object() overloads for additionalProperties: true.",
+      "type": "minor",
+      "packageName": "@fgv/ts-json-base"
+    }
+  ],
+  "packageName": "@fgv/ts-json-base"
+}

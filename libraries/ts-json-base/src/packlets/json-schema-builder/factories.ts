@@ -29,10 +29,19 @@ import {
   Validation,
   Validators,
   fail,
+  mapResults,
   succeed
 } from '@fgv/ts-utils';
-import { JsonObject } from '../json';
-import { ILlmProperties, ISchemaValidator, ObjectStatic, SchemaNodeType, Static } from './types';
+import { jsonValue } from '../converters';
+import { JsonObject, JsonValue, isJsonObject } from '../json';
+import {
+  ILlmProperties,
+  ISchemaValidator,
+  ObjectStatic,
+  OpenObjectStatic,
+  SchemaNodeType,
+  Static
+} from './types';
 
 /**
  * Common options accepted by every schema factory.
@@ -99,8 +108,20 @@ export interface INumberSchemaOptions extends ISchemaOptions {
  */
 export interface IObjectSchemaOptions extends ISchemaOptions {
   /**
-   * When `false` (default), the validator rejects unrecognized properties and the emitted schema
-   * sets `additionalProperties: false`. Set `true` to allow extra fields.
+   * Whether the object is open to properties it does not declare.
+   *
+   * @remarks
+   * When `false` (default), the validator rejects any undeclared property and the emitted
+   * schema sets `additionalProperties: false`.
+   *
+   * When `true`, the object is **open**: declared properties convert through their schemas as
+   * usual, and every undeclared property is carried through to the result as a validated
+   * `JsonValue`, and the emitted schema sets `additionalProperties: true`. A value that is not
+   * a JSON object, or an undeclared property that is not a JSON value, is refused. The static
+   * type widens to `OpenObjectStatic`.
+   *
+   * Either way, what the validator accepts is what the wire schema states: the converter never
+   * drops a key the schema told the model it could send.
    */
   additionalProperties?: boolean;
 }
@@ -394,8 +415,8 @@ class ArraySchemaValidator<S extends ISchemaValidator<unknown>> extends SchemaVa
 class ObjectSchemaValidator<P extends ILlmProperties> extends SchemaValidatorBase<ObjectStatic<P>> {
   public readonly _properties: P;
   public readonly additionalProperties: boolean;
-  // Uses a Converter (not Validator) so that extra properties are stripped from the result
-  // (Validators are in-place and would return the full input object including unknown fields).
+  // Uses a Converter (not Validator) so that the result is a new object built from converted
+  // values (Validators are in-place and would return the input unchanged, skipping coercions).
   // Both validate() and convert() route through this converter so that nested schema coercions
   // propagate correctly regardless of which method is called.
   private readonly _converter: Converter<ObjectStatic<P>>;
@@ -436,7 +457,8 @@ class ObjectSchemaValidator<P extends ILlmProperties> extends SchemaValidatorBas
       ...this._typeField('object'),
       properties,
       ...(required.length > 0 && { required }),
-      ...(!this.additionalProperties && { additionalProperties: false }),
+      // Always stated, so the wire and the converter cannot disagree about undeclared keys.
+      additionalProperties: this.additionalProperties,
       ..._descriptionField(this)
     };
   }
@@ -448,11 +470,14 @@ class ObjectSchemaValidator<P extends ILlmProperties> extends SchemaValidatorBas
 
 /**
  * Builds a `Converter<ObjectStatic<P>>` for object nodes using `Converters.object`.
- * Uses a Converter (not Validator) so that extra properties are stripped from the result —
- * Validators are in-place and would pass unrecognized fields through unchanged.
- * Optional properties are tracked and listed in `optionalFields`.
  * Each property's ISchemaValidator is used as the field converter — its convert() method
  * is called by ObjectConverter for each field, propagating nested coercions and transforms.
+ * Optional properties are tracked and listed in `optionalFields`.
+ *
+ * A closed object (`additionalProperties: false`) is a strict `Converters.object`, which
+ * rejects undeclared keys. An open object is the same declared-field conversion followed by
+ * {@link _withUndeclaredKeys}, because `Converters.object` builds its result from declared
+ * fields only and would otherwise drop every key the open wire schema admits.
  */
 function _buildObjectConverter<P extends ILlmProperties>(
   properties: P,
@@ -472,10 +497,44 @@ function _buildObjectConverter<P extends ILlmProperties>(
     }
   }
 
-  return Converters.object(fields as Conversion.FieldConverters<ObjectStatic<P>>, {
+  const declared = Converters.object(fields as Conversion.FieldConverters<ObjectStatic<P>>, {
     optionalFields: optionalKeys as (keyof ObjectStatic<P>)[],
     strict: !additionalProperties
   });
+  if (!additionalProperties) {
+    return declared;
+  }
+  return Converters.generic<ObjectStatic<P>>((from: unknown) =>
+    isJsonObject(from)
+      ? declared.convert(from).onSuccess((converted) => _withUndeclaredKeys(from, properties, converted))
+      : fail('open object: source is not a JSON object')
+  );
+}
+
+/**
+ * Adds every key of `from` that `properties` does not declare to `converted`, each validated
+ * as a `JsonValue`. This is where a schema-valued `additionalProperties` would apply its
+ * schema in place of `jsonValue`.
+ *
+ * @remarks
+ * The result is assembled with `Object.fromEntries`, which defines each key as an own
+ * property — so a parsed `"__proto__"` key arrives as data rather than replacing the
+ * result's prototype.
+ */
+function _withUndeclaredKeys<T>(from: JsonObject, properties: ILlmProperties, converted: T): Result<T> {
+  const undeclared = Object.entries(from).filter(
+    ([key]) => !Object.prototype.hasOwnProperty.call(properties, key)
+  );
+  return mapResults(
+    undeclared.map(([key, value]) =>
+      jsonValue
+        .convert(value)
+        .withErrorFormat((msg) => `${key}: ${msg}`)
+        .onSuccess((v) => succeed([key, v] as [string, JsonValue]))
+    )
+  ).onSuccess((extras) =>
+    succeed(Object.fromEntries([...Object.entries(converted as object), ...extras]) as T)
+  );
 }
 
 function _descriptionField(schema: ISchemaValidator<unknown>): { description?: string } {
@@ -646,6 +705,35 @@ export function array<S extends ISchemaValidator<unknown>>(
 }
 
 /**
+ * Creates a schema node for an **open** JSON `object`: typed declared properties, plus any
+ * undeclared properties, which are carried through as `JsonValue`.
+ * @param properties - A record mapping property names to their schemas. Wrap a property with
+ * `optional` to make it optional.
+ * @param opts - Options including `additionalProperties: true` and `nullable: true`.
+ * @returns An `ISchemaValidator` whose `Static` type is `OpenObjectStatic<P> | null`.
+ * @public
+ */
+export function object<P extends ILlmProperties>(
+  properties: P,
+  opts: IObjectSchemaOptions & { additionalProperties: true; nullable: true }
+  // `null` is the JSON value being modelled, not a JS sentinel — the same carve-out
+  // `JsonPrimitive` takes in this package's `json` packlet.
+  // eslint-disable-next-line @rushstack/no-new-null
+): ISchemaValidator<OpenObjectStatic<P> | null>;
+/**
+ * Creates a schema node for an **open** JSON `object`: typed declared properties, plus any
+ * undeclared properties, which are carried through as `JsonValue`.
+ * @param properties - A record mapping property names to their schemas. Wrap a property with
+ * `optional` to make it optional.
+ * @param opts - Options including `additionalProperties: true`.
+ * @returns An `ISchemaValidator` whose `Static` type is `OpenObjectStatic<P>`.
+ * @public
+ */
+export function object<P extends ILlmProperties>(
+  properties: P,
+  opts: IObjectSchemaOptions & { additionalProperties: true }
+): ISchemaValidator<OpenObjectStatic<P>>;
+/**
  * Creates a schema node for a JSON `object` with a fixed set of typed properties.
  * @param properties - A record mapping property names to their schemas. Wrap a property with
  * `optional` to make it optional.
@@ -676,6 +764,7 @@ export function object<P extends ILlmProperties>(
 export function object<P extends ILlmProperties>(
   properties: P,
   opts?: IObjectSchemaOptions
-): ISchemaValidator<ObjectStatic<P>> {
+  // eslint-disable-next-line @rushstack/no-new-null
+): ISchemaValidator<ObjectStatic<P>> | ISchemaValidator<OpenObjectStatic<P> | null> {
   return new ObjectSchemaValidator(properties, opts);
 }

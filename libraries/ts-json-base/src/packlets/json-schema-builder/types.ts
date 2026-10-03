@@ -188,6 +188,14 @@ export type ObjectStatic<P extends ILlmProperties> = Simplify<
   { [K in RequiredKeys<P>]: Static<P[K]> } & { [K in OptionalKeys<P>]?: OptionalPropertyStatic<P[K]> }
 >;
 
+/**
+ * The derived static type for an **open** object — one built with
+ * `additionalProperties: true`. The declared properties keep their derived types, and every
+ * other key carries a `JsonValue`, which is what the validator passes through for it.
+ * @public
+ */
+export type OpenObjectStatic<P extends ILlmProperties> = ObjectStatic<P> & JsonObject;
+
 // ---------------------------------------------------------------------------
 // Legacy type aliases kept for backwards compatibility with the first-pass API.
 // These names were in the original public surface; the canonical interface is
