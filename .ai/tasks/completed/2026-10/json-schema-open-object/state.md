@@ -34,7 +34,7 @@ Worker-owned.
 
 - Copilot round 1 on PR #720: undeclared keys were validated only after declared fields succeeded.
   `2c7bf0d3` validates both sides independently (`allSucceed`) and reports all failures; R9 red against
-  the old shape. Fifth repo-wide `rush test` on `2c7bf0d3`.
+  the old shape. Fifth repo-wide `rush test` on `2c7bf0d3`: SUCCESS, 36 operations.
 
 ## Open questions
 

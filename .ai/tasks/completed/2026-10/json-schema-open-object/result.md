@@ -131,6 +131,7 @@ R2 (the old omit-when-open `toJson()`, measured against `47b44a81`'s always-emit
 
 ## Gates
 
+- **`ts-json-base` on `2c7bf0d3`:** `heft test --clean` 1218 passed, 0 failed, coverage 100/100/100/100, 0 warnings; `eslint` 0; `etc/ts-json-base.api.md` unchanged.
 - **`ts-json-base` on `5eea2cd2`:** `heft test --clean` 1217 passed, 0 failed, coverage 100/100/100/100, 0 warnings; `eslint src` 0; `etc/ts-json-base.api.md` unchanged by this commit.
 - **`ts-json-base` on `9e9fe563`:**
   - `heft build --clean`: 0 errors, 0 warnings.
@@ -142,6 +143,7 @@ R2 (the old omit-when-open `toJson()`, measured against `47b44a81`'s always-emit
   - On `a74c87a8`: **FAILURE.** `@fgv/ts-agent-tasks` had 1 test failing (the `__proto__` pin above), and `@fgv/testbed` was blocked. This led to `9e9fe563`.
   - On `9e9fe563`: **SUCCESS: 36 operations** (+1 no-op), 0 error lines, nothing from cache, log free of NUL padding. The only `warning` line is the same symlink notice.
   - On `5eea2cd2`: **SUCCESS: 36 operations** (+1 no-op), 0 error lines, nothing from cache, no NUL padding, the same lone symlink notice. `ts-agent-tasks` (including the `__proto__` pin, unedited), `ts-extras-mcp` and `testbed` completed.
+  - On `2c7bf0d3`: **SUCCESS: 36 operations** (+1 no-op), 0 error lines, nothing from cache, no NUL padding, the same lone symlink notice; `ts-json-base`, `ts-agent-tasks`, `ts-extras-mcp` and `testbed` completed.
 - **`rush change --verify --target-branch origin/release`:** passes; it finds the `ts-json-base` change file, the only package touched.
 
 ## Consumers whose tests changed
