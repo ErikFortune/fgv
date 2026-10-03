@@ -99,7 +99,7 @@ A new package, `@fgv/ts-extras-system-one` (`libraries/ts-extras-system-one`), s
       only the last attempt" has no textual form.
 
     Each row still protects what the plan says.
-14. **R20's fixture boundary.** U20's `elapsedMs` test uses a 45 ms first attempt and asserts
+14. **R32's fixture.** U20's `elapsedMs` test uses a 45 ms first attempt and asserts
     `>= 40`, against the plan's 40 / `>= 40`. `Date.now()` granularity could make an exact-40 test
     flaky.
 
