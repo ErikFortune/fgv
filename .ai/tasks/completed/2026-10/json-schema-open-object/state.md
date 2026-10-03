@@ -25,7 +25,7 @@ Worker-owned.
 - Antagonist pass on the finalize artifacts: flagged that an explicit `additionalProperties: true`
   would break Anthropic JSON outputs (`ts-extras` `structuredOutput.ts:151`).
 - `9e9fe563`: reverted the explicit-`true` wire emission and the `jsonObject` change (deferred to
-  TECH_DEBT P3). Third repo-wide `rush test` on `9e9fe563`.
+  TECH_DEBT P3). Third repo-wide `rush test` on `9e9fe563`: SUCCESS, 36 operations.
 
 ## Open questions
 

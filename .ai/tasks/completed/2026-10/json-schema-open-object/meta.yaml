@@ -49,4 +49,4 @@ keywords:
   ]
 relatedStreams:
   - { id: personality-intake, relationship: 'captured the PersonAIlity #679 ask this stream implements' }
-sourceHash: 8982b52066d12b85 # first 16 hex of sha256 over brief.md, state.md and result.md concatenated in that order
+sourceHash: ae758da8d88a7f47 # first 16 hex of sha256 over brief.md, state.md and result.md concatenated in that order

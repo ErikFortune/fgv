@@ -132,12 +132,12 @@ R2 (the old omit-when-open `toJson()`, measured against `47b44a81`'s always-emit
 - **Repo-wide `install-run-rush.js test`:**
   - On `47b44a81`: **SUCCESS: 36 operations**, 0 error lines, nothing from cache. The only `warning` line is Rush's pre-existing "1 Git-tracked symlinks" notice.
   - On `a74c87a8`: **FAILURE.** `@fgv/ts-agent-tasks` had 1 test failing (the `__proto__` pin above), and `@fgv/testbed` was blocked. This led to `9e9fe563`.
-  - On `9e9fe563`: GATE3.
-- **`rush change --verify --target-branch origin/release`:** CHANGEVERIFY.
+  - On `9e9fe563`: **SUCCESS: 36 operations** (+1 no-op), 0 error lines, nothing from cache, log free of NUL padding. The only `warning` line is the same symlink notice.
+- **`rush change --verify --target-branch origin/release`:** passes; it finds the `ts-json-base` change file, the only package touched.
 
 ## Consumers whose tests changed
 
-**None outside `ts-json-base`.** The `47b44a81` run was green with no consumer edits, covering:
+**None outside `ts-json-base`.** The `47b44a81` and `9e9fe563` runs were green with no consumer edits, covering:
 - `ts-extras-mcp`, whose adapted MCP tools now pass undeclared keys through;
 - `ts-extras` ai-assist;
 - `ts-agent-tasks`;
