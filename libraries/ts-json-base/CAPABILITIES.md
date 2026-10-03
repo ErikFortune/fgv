@@ -40,6 +40,7 @@
 
 <!-- BEGIN GENERATED: recent-additions -->
 
+- **2026-10-03** — An open JsonSchema object — additionalProperties: true, or an MCP schema that leaves it out — now passes undeclared keys through validated instead of silently dropping them, and its wire schema says so.
 - **2026-09-21** — A FileTree can now replace a file such that a reader never sees a torn write, and on a root whose filesystem was actually qualified it survives the writing process being killed — an unqualified root refuses rather than quietly promising less. ([#682](https://github.com/ErikFortune/fgv/pull/682))
 - **2026-08-23** — **Shipped:** an opt-in that hoists the optionals a schema already proves safe to hoist, rather than a boolean asserting they are. ([#659](https://github.com/ErikFortune/fgv/pull/659))
 - **2026-08-22** — **Shipped:** a capability-aware copy with a single guarantee — every file that lands is byte-identical to its source, or the copy says so. ([#653](https://github.com/ErikFortune/fgv/pull/653))
