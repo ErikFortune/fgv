@@ -12,6 +12,11 @@ OQ-10 (Qwen runs on vLLM on an Olares One, probably, and on Ollama elsewhere) wa
 names the ref it was read at, E16 and E27 are split by link, OQ-7 is resolved, and §8 decides the
 `confidence` field. The pass's account, including what it checked and left alone, is
 [`.ai/tasks/active/system-one-design-antagonist/result.md`](../../../.ai/tasks/active/system-one-design-antagonist/result.md).
+**Amended 2026-10-03** by Phase B triage (`system-one-triage`): §12 is worked through in place; §2
+gains E28–E35; §7.1 item 5 and §8 carry dated refinements; §11 D7 and D10 are annotated. Phase C is
+held to [`implementation-plan.md`](implementation-plan.md). The triage account, including the
+decisions left to the user, is
+[`.ai/tasks/active/system-one-triage/result.md`](../../../.ai/tasks/active/system-one-triage/result.md).
 **Date:** 2026-10-01. **Inspected checkout:** `16ec1622b`, which carries promoted `release` at
 `febf0b2b4`. `ts-agent-tasks` citations were re-read there; Phase A had read them from
 `origin/integration/agent-tasks-v1` at `2a95fbb2`, a branch that no longer exists.
@@ -115,6 +120,14 @@ cited only where the row is *about* `main` (E23). Abbreviations used below:
 | E27 | Ollama's embed handler requires **no embedding capability**, so a generative Qwen3-8B can be *asked* for embeddings. | **verified** | `server/routes.go:987` (`scheduleRunner(..., []model.Capability{}, ...)`) @ ollama `v0.35.0`. |
 | E27a | **At `v0.35.0`, asking will probably fail rather than mis-pool.** Ollama runs a GGUF model in a bundled upstream `llama-server`. It passes `--embedding` only when the GGUF carries `<arch>.pooling_type`, and it treats such a model as an embedding model. Without that flag, `llama-server`'s `/v1/embeddings` answers "This server does not support embeddings". llama.cpp's converter writes `pooling_type` only from a sentence-transformers `modules.json`, which `Qwen/Qwen3-8B` does not have. **Not checked:** the metadata of the actual `qwen3:8b` library blob, because `registry.ollama.ai` is unreachable from here. **Not covered:** older Ollama releases. Up to at least `v0.20.0` Ollama used its own runner (`runner/`), whose pooling remains **unverified**. | **derived**; the blob's metadata is **unverified** (unreachable from here) | `llm/llama_server.go:584-590, 863-865, 945` and `fs/gguf/metadata.go:80-91`, `server/images.go:197-200` @ ollama `v0.35.0`; `LLAMA_CPP_VERSION` = `b11081`. llama.cpp `tools/server/server-context.cpp:5390-5394` and `conversion/base.py:2223-2255`, `conversion/qwen.py:66-68, 159-161` @ `b11081`. HF tree `Qwen/Qwen3-8B` @ `b968826d` (no `modules.json`). `llm/llama_server.go` 404 @ `v0.12.0`, `v0.20.0`; 200 @ `v0.30.0`. |
 | E23 | CLM `main` matches PyPI 0.1.0 in `server.py`, `schema.py`, `embedder.py` and `client.py`. The only differences are a download counter and dict normalisation in `engine.py` (`question_to_dict`, +2 lines). **No truncation fix has landed on `main`.** The fix exists only as unmerged PR #6 (E16c). This row is *about* `main` by design: the question it answers is whether a fix has landed upstream ahead of a release. | **verified** | CLM `main` @ `bb42c6c` (2026-09-24; still `HEAD` on 2026-10-02) diffed against sdist 0.1.0. |
+| E28 | *Added 2026-10-03 (Phase B).* **SDK release cadence.** 0.5.7 was published 2026-09-12T04:13Z and 0.6.0 on 2026-09-15T18:17Z: three and a half days apart, not three weeks (OQ-9 said "three weeks apart"; the *package* is three weeks old). No release since; `latest` is still 0.6.0. The name `@fgv/ts-extras-system-one` is unclaimed on npm (`E404`). | **verified** | npm registry `time` and `dist-tags` for `@typesafe-ai/sdk`, and `npm view @fgv/ts-extras-system-one`, both 2026-10-03. Tarball `dist.shasum` `dbba30689e77c317e7619fbee006caa18f37a76a`. |
+| E29 | *Phase B.* **SDK logging and explicit values.** There is a fourth environment fallback, **`TYPESAFE_LOG_LEVEL`**, used when `logLevel` is omitted (§7.1 item 5 named three). At `debug` the SDK logs request and response bodies: "known credential headers are redacted; bodies are not". With no `logger` it writes to a prefixed `console`. Explicit options are taken with `??`, so an explicit **empty string is used as given**: an empty `apiKey` neither throws nor falls back to `TYPESAFE_API_KEY` (E13's "throws if no API key is given" means `undefined`). | **verified** | `dist/index.d.mts:209-213, 321`; `dist/index.mjs:62, 65-70, 259, 444-448, 511-516, 596-598` @ SDK 0.6.0. |
+| E30 | *Phase B.* **SDK failure mechanics.** `systemOne` checks its questions **synchronously**, before it returns a promise, and throws the *base* `TypeSafeError` for an empty set or a score question without a list of at least two levels. `APITimeoutError` **extends** `APIConnectionError`. Status classes exist for 400, 401, 403, **404**, 422, 429 and ≥ 500; any other non-2xx is a bare `APIError`. Retries by default: 408, 429 and **every status 500–599** (so openjev's `529` is retried), connection errors and timeouts; the timeout is per attempt, with no total budget. A 2xx body that is not JSON is returned **as a string**, and an empty one as `undefined`; neither throws. `models.list()` unwraps `{ models: [...] }` and throws the base `TypeSafeError` on any other shape. `withResponse()` resolves `{ data, response, requestId }`, with `requestId` from `x-typesafe-request-id`, else `undefined`. | **verified** | `dist/index.mjs:1-32, 73-92, 191-199, 347-354, 368-371, 438-441, 548-549, 628-660, 677-690`; `dist/index.d.mts:16-26, 352, 367` @ SDK 0.6.0. |
+| E31 | *Phase B.* **The SDK's fetch seam** is `type Fetch = (input: string, init?: RequestInit) => Promise<Response>`, so any function with the global `fetch` signature is assignable to it. The SDK buffers the whole body inside each attempt. Its dist imports no Node built-in. | **verified** | `dist/index.d.mts:192`; `dist/index.mjs:628-660` (no `node:` import anywhere in the file) @ SDK 0.6.0. |
+| E32 | *Phase B.* **CLM `/v1/models`** returns `{"models": [{name, description, release_date}]}`, the shape the SDK unwraps (E30). CLM joins state and instructions with `"\n\n"`, **two characters**, after stripping each. **The candidate texts are not always the descriptions** (a refinement of E17): a `choice` option with a null or empty description embeds its key; a `score` level embeds its text; a `noul` option embeds `"true: "` / `"false: "` plus its description, or, with no description, `"Yes. This is true: "` / `"No. This is false: "` **plus the question's instructions** (at most 26 characters plus the instructions). | **verified** | `server.py:10, 91-94`, `schema.py:62-65, 75-101` @ sdist 0.1.0. |
+| E33 | *Phase B.* **Qwen3-8B characters per token** (OQ-4), over 4,000-character windows. Minimum / median: English prose 3.65 / 5.43; Markdown (`CAPABILITIES.md` files) 2.91 / 4.16; TypeScript 3.51 / 4.39; JSON records (IANA subtag entries) 2.39 / 2.45; UUID-, timestamp- and number-dense JSON 1.34 / 1.35. Digits tokenize one per token, which is why the last class is lowest. The tokenizer adds no BOS or EOS (`"Hello world"` → `[9707, 1879]`). No CJK or other non-Latin corpus was measured. | **derived**. The vocabulary and merges are Qwen3-8B's own; the normalizer and pre-tokenizer are transformers' `Qwen2Tokenizer` defaults, which only `tokenizer.json` (unreachable, E16b) would confirm. The slow and fast tokenizers agreed on every one of 388 windows. | `vocab.json`, `merges.txt`, `tokenizer_config.json` of `Qwen/Qwen3-8B` @ `b968826d` (non-LFS, fetched through `huggingface.co`); transformers `4.55.0` (vLLM `v0.10.1`'s floor), tokenizers `0.21.4`. Corpora: `docs/design/**/*.md` prose paragraphs, `libraries/*/CAPABILITIES.md`, `libraries/ts-agent-tasks/src/packlets/**/*.ts`, `ts-bcp47`'s `language-subtag-registry.json`, and 2,000 seeded synthetic `{id, rev, at, parent, progress}` records, all @ `bb48c467`. `tokenizer.json` still redirects to `us.aws.cdn.hf.co/xet-bridge-us/…` (not fetched). |
+| E34 | *Phase B.* **E27a's converter link.** Neither converter that could have produced the `qwen3:8b` library blob writes a `pooling_type` for Qwen3. llama.cpp at `b5250` (2025-05-01, the week Qwen3 shipped) writes it only in `BertModel`, from `modules.json`. Ollama had no Qwen3 converter at `v0.6.8` or `v0.12.0`, and its `convert_qwen3.go` at `v0.20.0` writes none (only its BERT and nomic-bert converters do). At `v0.35.0` Ollama has no `convert/`, `runner/` or model-engine tree: every GGUF runs in `llama-server`, and `isEmbedding` is exactly `f.KV().Has("pooling_type")`. This narrows E27a's open link to the blob itself; it does not close it. | converters and the `v0.35.0` path **verified**; the blob's provenance and metadata remain **unverified** | llama.cpp `convert_hf_to_gguf.py:2686-2688, 3309-3341` @ `b5250`. ollama `convert/convert_qwen3.go:35-72`, `convert/convert_bert.go:95`, `convert/convert_nomicbert.go:101` @ `v0.20.0`; `git ls-tree` @ `v0.6.8`, `v0.12.0`, `v0.35.0`; `llm/llama_server.go:584-587, 863-865`, `server/images.go:197-200` @ `v0.35.0`. |
+| E35 | *Phase B.* **vLLM serves `POST /tokenize`**, so a deployed encoder can confirm E33's counts with the real tokenizer. At `v0.30.0`, `GET /tokenizer_info` also exists behind `--enable-tokenizer-info-endpoint`. | routes **verified**; whether they are mounted under `--runner pooling` is **unverified** | `vllm/entrypoints/openai/api_server.py:480` @ `v0.10.1`; `vllm/entrypoints/serve/tokenize/api_router.py:36, 87-93` @ `v0.30.0`. |
 
 Two brief premises turned out to be wrong. Both are recorded here because Phase B will reason from
 them.
@@ -407,6 +420,9 @@ for rather than discovered:
    `TYPESAFE_DEFAULT_MODEL` when values are omitted (E12). The boundary always passes explicit values,
    so a developer's shell variable cannot silently redirect a deployed client. The composition root
    chooses the environment, and the SDK never does.
+   *Amended 2026-10-03 (Phase B):* there is a fourth fallback, `TYPESAFE_LOG_LEVEL` (E29), and at
+   `debug` the SDK logs request bodies, which carry the state. The boundary therefore also passes
+   `logLevel` and `logger` explicitly, and never selects `debug` (plan § 3.4).
 6. **What runs Qwen in production.** *Answered by the user on 2026-10-01: probably vLLM on an Olares
    One, and Ollama in some other environments.* CLM's heads were trained on vLLM, Qwen3-8B, bf16,
    last-token-pooled embeddings (E2, E4). The two answers therefore carry very different confidence.
@@ -547,6 +563,25 @@ the bodies differ by backend (E9 against E21).
 - Retries beyond passing through the SDK's policy.
 - Fine-tuning.
 
+**Amended 2026-10-03 (Phase B).** Five refinements to the sketch above, each derived from a fact the
+sketch did not have. None changes decisions 1–6. The plan's § 3 is the authoritative surface.
+
+1. **`createSystemOneClient` takes `fetch?`**, typed as the SDK's `Fetch` (E31). §10 item 1 requires
+   unit tests "through its `fetch` seam", which the sketch's parameter list did not expose, and it is
+   the seam a guarded fetch (D7) would later plug into without a contract change. It does not
+   reintroduce a per-call URL: §6.3 stands.
+2. **`logLevel` and `logger` are always passed to the SDK, and `debug` is never selected** (E29).
+3. **The failure classification is total.** Any 4xx not named in the list is `invalid-request`
+   (including 404, which the SDK has its own class for), 408 is `timeout`, and any other non-2xx is
+   `server`. `APITimeoutError` is tested before `APIConnectionError`, which it extends (E30). The
+   SDK's synchronous `TypeSafeError` before the call is `invalid-request`; the same class raised
+   after a response by `models.list()` is `invalid-response` (E30).
+4. **`serverTiming` names its header.** The two backends format it differently, so a raw value the
+   consumer cannot attribute is not parseable. `meta` carries `timingHeaders`, holding whichever of
+   `server-timing` and `x-clm-latency-ms` were present, unparsed.
+5. **`@fgv/ts-json-base` is a dependency only if the source imports it.** The SDK types `state`
+   itself, so it is expected not to be.
+
 ## 9. Prospective consumers
 
 `CODING_STANDARDS.md` § *We Build General Capabilities* applies. These consumers shape priority, not
@@ -606,6 +641,11 @@ No success may be claimed from mocked SSE-style fixtures alone. This is the `TES
    waits for a consumer to ask. The backends' own `confidence` is not returned at all (§8).
 7. **D7 — A `fetch`-shaped safer-fetch adapter**, for a consumer that needs to reach a System-1 server
    whose URL it does not control.
+   *Phase B, 2026-10-03:* this is the same primitive as PersonAIlity ask personaility#672 (entry 12 of
+   `integration/asks`' `followups.md`): a guarded, `fetch`-shaped, non-buffering fetch. A
+   non-buffering one serves D7 too, because the SDK buffers for itself (E31); the reverse does not
+   hold. It is designed once, in safer-fetch, not here. This package needs only the `fetch?`
+   parameter (§8, Phase B amendment 1) to accept it later.
 8. **D8 — Sidecar process management** (spawn, health, download), as for Ollama.
 9. **D9 — Consumer integrations**, each as its own stream:
    - a prompt-assist System-1 screener factory;
@@ -615,6 +655,8 @@ No success may be claimed from mocked SSE-style fixtures alone. This is the `TES
     against two System-1 endpoints and reports agreement. It uses only the package's public client
     and needs no new surface. It is a candidate for Phase C if triage wants it to ship with the
     package rather than live in the consumer.
+    *Decided 2026-10-03 (Phase B): it ships in Phase C*, as `perf/systemOneLive.js` (OQ-12 below;
+    plan § 8).
 
 ## 12. Open questions for Phase B
 
@@ -625,6 +667,16 @@ Each question is followed by what would resolve it.
    consequence for the design is §8's per-call `meta`.
 2. **OQ-2 — Package name.** `@fgv/ts-extras-system-one` is provisional. *Resolved by:* triage. The
    constraints are §6.4's: not `-clm`, and not vendor-named if the backend is the consumer's choice.
+   **RESOLVED 2026-10-03 (Phase B): `@fgv/ts-extras-system-one`, at `libraries/ts-extras-system-one`.**
+   - It meets both of §6.4's constraints: it names the wire (`/v1/systemone`, the SDK's `systemOne`,
+     "System One API" on all three servers), not CLM and not TypeSafe.
+   - It follows the sibling rule, `ts-extras-<what is wrapped>`. `ts-extras-mcp` is the precedent for
+     naming a protocol rather than a library.
+   - `system-one` is the kebab form of the SDK's own `systemOne`. `systemone` would match the URL path
+     but no identifier a TS consumer types.
+   - The name is free on npm (E28).
+   - **Rejected:** `-decisions` (names a use, not the wire; the screener consumer, §9, is a decision
+     only loosely), `-typesafe` and `-clm` (§6.4).
 3. **OQ-3 — Can CLM run on the user's inner-loop machine? RESOLVED 2026-10-01 (user), by changing the
    question.** CLM runs in the deployed environment, which can host Qwen. Development machines
    connect to Jev or openjev running elsewhere. Nobody needs CLM on a laptop, so the llama.cpp laptop
@@ -634,6 +686,32 @@ Each question is followed by what would resolve it.
    counts against character counts on representative states (task context, prompt slot values,
    memory records), then picking a value with a stated margin. The ModernBERT and Gemma tokenizers
    need the same if those backends are documented.
+   **RESOLVED for upstream CLM 2026-10-03 (Phase B), from a derived measurement (E33).** The HF LFS
+   CDN is still blocked, but `vocab.json` and `merges.txt` are not LFS objects, and they are enough to
+   rebuild the tokenizer.
+   - **The rule:** `maxChars = floor(B × r × 0.9)`.
+     - `B` is the backend's token bound: `clm-serve --max-tokens`, default 2,048, which must not exceed
+       the encoder's `--max-model-len` (E15).
+     - `r` is the **minimum**, not the median, characters per token over 4,000-character windows of
+       representative states, measured with the backend's own tokenizer. The failure being prevented
+       is silent loss of the question, so the bound has to hold for the worst window, not the typical
+       one.
+     - `0.9` is the margin. It covers the reconstruction gap (E33 is derived) and drift between the
+       measured corpus and production. It does **not** cover a content class that was never
+       measured. Choosing `r` from the consumer's own states covers that.
+   - **The README's recommended values for upstream CLM at 2,048 tokens:**
+     - **2,400 characters** when the content class is unknown, or includes identifier- or
+       number-dense runs (UUIDs, timestamps, hashes, numeric tables). `r` = 1.34 gives 2,469.
+     - **4,400 characters** for states measured to be prose, Markdown, code or ordinary JSON records.
+       `r` = 2.39 gives 4,405.
+     - Anything above 4,400 only from the consumer's own measurement, by the rule.
+     - The `TaskContextRenderer` default of 8,000 characters exceeds both, as §6.1 predicted.
+   - **Not covered, and the README says so:** CJK and other non-Latin scripts (no corpus in this repo);
+     openjev's 512- and 1,024-token CPU models and its Gemma model (other tokenizers); Jev (OQ-5).
+   - **Phase C** puts E33's table and the rule in the README with the corpus described. It does not
+     re-measure from a sandbox. When the Olares leg runs, live check L3 replays E33's windows through
+     the deployed encoder's `/tokenize` (E35). A count that differs by more than the margin reopens
+     this question.
 5. **OQ-5 — Jev's semantics** (`confidence` formula, token bound, truncation, error bodies) (E14).
    *Resolved by:* reading `docs.typesafe.ai`, which is blocked here, or early-access observation.
    This does not block v1, because §5.2 already treats these as backend-defined.
@@ -641,6 +719,20 @@ Each question is followed by what would resolve it.
    `x-typesafe-request-id`; whether openjev's `529` counts as retryable (the SDK retries `500–599`);
    CLM's `422` on unknown model being classified as `invalid-request`. *Resolved by:* §10.2's live
    round trip plus targeted fixture tests.
+   **SPECIFIED FOR PHASE C 2026-10-03 (Phase B).** The SDK's side is now read at source (E29–E31), so
+   the fixture half is no longer a guess about the client. Every path below is a named unit test in
+   plan § 5 (U-numbers), and the server half is live checks L1 and L2:
+   - a missing `x-typesafe-request-id` gives `meta.requestId: undefined` (U20);
+   - openjev's `529` is retried and then reported as `server` (U13);
+   - CLM's `422` and openjev's `400 api_usage_error` for an unknown model are `invalid-request`
+     (U11, U12);
+   - a 404 from a wrong `baseUrl` path is `invalid-request` (U12);
+   - a 2xx non-JSON or empty body is `invalid-response`, not a success or a throw (U17);
+   - `models.list()`'s shape error is `invalid-response`, while the same error class before the call
+     is `invalid-request` (U10, U19).
+
+   What stays open until L1 and L2 run: whether each real server sends the headers and the status
+   codes the fixtures assume.
 7. **OQ-7 — Is `'unchecked'` safe to offer? RESOLVED 2026-10-02 (verification pass): keep it, and
    state exactly when it is correct.** This question's own condition, finding a backend that refuses,
    is met:
@@ -668,6 +760,23 @@ Each question is followed by what would resolve it.
 9. **OQ-9 — SDK pin and churn.** Releases so far are 0.5.7 and 0.6.0, three weeks apart.
    *Resolved by:* triage choosing `~0.6.0` or an exact pin, and whether a minor bump needs a review
    gate.
+   *Correction, 2026-10-03:* they are three and a half days apart (E28). The package is three weeks
+   old.
+   **RESOLVED 2026-10-03 (Phase B): `~0.6.0`, a direct dependency, and a review gate on every minor.**
+   - **Why `~` and not exact.** On a 0.x version, `~0.6.0` and `^0.6.0` admit the same set (0.6.x),
+     so the operator does not bound risk; the minor does. `ts-extras-transformers` uses `~4.2.0` for
+     the same reason. An exact pin would buy nothing inside the monorepo, where the lockfile already
+     pins the tested version, and outside it would give a consumer who also depends on the SDK a
+     second copy.
+   - **Patch bumps** take the ordinary path: `rush update`, then the unit suite. The boundary checks
+     everything it relies on at its own edge (response validation, explicit configuration, total
+     classification), so an untested patch on a consumer's install fails loudly rather than silently.
+   - **A minor bump (0.7.0) needs a review gate** before the range moves:
+     1. diff `dist/index.d.mts`;
+     2. re-confirm the behaviours the boundary depends on (E29–E31, listed in plan § 9);
+     3. the unit suite and the revert matrix green;
+     4. live check L1 re-run.
+   - npm's minimum release age already delays any new version by about a day (`CODING_STANDARDS.md`).
 10. **OQ-10 — What serves Qwen3-8B in the deployed environment? ANSWERED 2026-10-01 (user):
     probably vLLM on an Olares One, and Ollama elsewhere.** For Olares, two items remain open. Both
     are setup checks, not design work:
@@ -680,6 +789,8 @@ Each question is followed by what would resolve it.
     comparison. An openjev or `clm-serve` instance serving CLM gives the same weights as production
     (with the differences listed in §7.1, item 2). *Resolved by:* the consumer's experiment plan. The
     package supports any of them unchanged.
+    **Noted 2026-10-03 (Phase B); the consumer's to answer.** Nothing in the plan depends on the
+    answer. L1 records which remote it used, so a result is never read as covering another.
 12. **OQ-12 — Is Ollama-backed CLM faithful to vLLM-backed CLM?** It differs in pooling (E27),
     quantization (E19) and the truncation window (E25, E26) (§7.1, item 6). *Resolved by:* running the
     same fixed question set through `clm-serve` twice, once over vLLM bf16 on the Olares and once over
@@ -693,6 +804,19 @@ Each question is followed by what would resolve it.
     *Precondition, added 2026-10-02:* on Ollama `v0.35.0` with base `qwen3:8b`, the Ollama leg probably
     fails before any comparison is possible (E27a). The first step is a single round trip. A refusal
     there is recorded as a refusal, not as a parity result.
+    *Phase B, 2026-10-03:* E34 narrows E27a's open link to the library blob itself. **Whether Ollama
+    environments stay in the topology is the user's decision U1** (triage `result.md`). The harness
+    question is decided:
+    **D10 RESOLVED 2026-10-03 (Phase B): the harness ships in the package as `perf/systemOneLive.js`.**
+    - It is backend-agnostic and uses only the public client (D10), and measurement scripts belong
+      under `perf/` (`TESTING_GUIDELINES.md` § *Measurement Harnesses*). `perf/` is outside the
+      package's `files`, so nothing is published.
+    - It **refuses to run a parity comparison unless the thresholds are given as arguments**, and it
+      prints them before the first request. "Threshold written down before the run" is then enforced
+      by the script, not remembered.
+    - E27a's precondition is its first step: one probe round trip per endpoint. A failed probe exits
+      with its own code and the classified reason, never as a parity result.
+    - Specified in plan § 8.
 
 ## 13. Revert matrix
 
