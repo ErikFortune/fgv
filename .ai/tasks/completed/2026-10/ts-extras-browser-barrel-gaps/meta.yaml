@@ -1,0 +1,29 @@
+id: ts-extras-browser-barrel-gaps
+status: shipped
+packages: ['@fgv/ts-extras', '@fgv/ts-web-extras']
+prs: [717]
+openPrs: []
+opened: 2026-10-02
+closed: 2026-10-02
+summary:
+  intended: >
+    Fix the omission behind PersonAIlity's fgv-ask #648 (recovery-passphrase unlock fails in a browser
+    with `CryptoUtils.fromBase64Strict is not a function`): make ts-extras' browser crypto-utils entry
+    export what ts-web-extras calls at runtime, and add a guard that catches the class of defect.
+  shipped: >
+    One line in the browser crypto-utils barrel exporting fromBase64Strict; a recursive
+    namespace-member parity test in ts-extras with a commented, staleness-checked Node-only allowlist;
+    and a ts-web-extras suite that runs BrowserCryptoProvider and HttpTreeAccessors against the built
+    browser entry. Both guards were seen to fail when the barrel line was reverted.
+  diverged: >
+    The brief's second claim, that CryptoUtils.Constants is missing from the browser entry and breaks
+    every AES path, was refuted by running the built browser entry: Constants arrives through
+    `export * from './model'`. No Constants change was made. Mapping the whole ts-web-extras suite to
+    the browser entry was feasible but rejected as permanent configuration (eight tests compare against
+    NodeCryptoProvider); a narrowed single suite shipped instead.
+  sourceLine: "**Shipped:** `@fgv/ts-extras`' browser `crypto-utils` entry now exports `fromBase64Strict`, and a guard fails if the Node entry exports a namespace member the browser entry lacks. The `Constants` half of the ask was not a defect."
+  headline: '' # explicit opt-out: fromBase64Strict was already documented as the ts-extras answer; this makes the browser entry match
+keywords: ['browser barrel', 'index.browser', 'entry-point parity', 'namespace members', 'fromBase64Strict', 'Constants namespace', 'cross-runtime', 'fgv-ask', 'type-checks against Node d.ts']
+relatedStreams:
+  - {id: personality-intake, relationship: 'captured the PersonAIlity #648 ask this stream implements'}
+sourceHash: b84b8ec79684c73c # first 16 hex of sha256 over brief.md, state.md and result.md concatenated in that order

@@ -47,4 +47,60 @@ describe('ts-extras browser root exports', () => {
     const missingFromBrowser = nodeKeys.filter((k) => !browserKeys.includes(k));
     expect(missingFromBrowser).toEqual([]);
   });
+
+  describe('namespace member parity', () => {
+    // Members the Node entry exports that the browser entry omits ON PURPOSE, because the
+    // module behind each one imports a Node builtin (`node:crypto`, `fs`, `node:dns`).
+    // Anything else the Node entry exports from a namespace MUST exist on the browser
+    // entry: `@fgv/ts-web-extras` type-checks against the Node declarations, so a member
+    // missing here compiles cleanly and fails only at runtime in a browser.
+    const nodeOnlyMembers: ReadonlySet<string> = new Set([
+      'CryptoUtils.NodeCryptoProvider',
+      'CryptoUtils.nodeCryptoProvider',
+      'CryptoUtils.KeyStore.EncryptedFilePrivateKeyStorage',
+      'Csv.readCsvFileSync',
+      'RecordJar.readRecordJarFileSync',
+      'SaferFetch.blockPrivateNetworks',
+      'SaferFetch.nodeHostResolver'
+    ]);
+
+    function isNamespace(value: unknown): value is Record<string, unknown> {
+      return typeof value === 'object' && value !== null && !Array.isArray(value);
+    }
+
+    function resolvePath(root: unknown, path: string): unknown {
+      return path.split('.').reduce<unknown>((cur, key) => (isNamespace(cur) ? cur[key] : undefined), root);
+    }
+
+    function findMissingMembers(node: unknown, browser: unknown, path: string): string[] {
+      if (!isNamespace(node)) {
+        return [];
+      }
+      return Object.keys(node).flatMap((key) => {
+        const memberPath = path === '' ? key : `${path}.${key}`;
+        if (!isNamespace(browser) || !Object.prototype.hasOwnProperty.call(browser, key)) {
+          return nodeOnlyMembers.has(memberPath) ? [] : [memberPath];
+        }
+        return findMissingMembers(node[key], browser[key], memberPath);
+      });
+    }
+
+    test('browser entry exports every namespace member the Node entry exports, bar the allowlist', () => {
+      expect(findMissingMembers(TsExtrasNode, TsExtrasBrowser, '')).toEqual([]);
+    });
+
+    test('every allowlisted Node-only member exists on the Node entry and is absent from the browser entry', () => {
+      const stale = Array.from(nodeOnlyMembers).filter(
+        (path) =>
+          resolvePath(TsExtrasNode, path) === undefined || resolvePath(TsExtrasBrowser, path) !== undefined
+      );
+      expect(stale).toEqual([]);
+    });
+
+    test('reports a member the browser entry lacks', () => {
+      const node = { Ns: { present: 1, absent: 2, Deeper: { gone: 3 } } };
+      const browser = { Ns: { present: 1, Deeper: {} } };
+      expect(findMissingMembers(node, browser, '')).toEqual(['Ns.absent', 'Ns.Deeper.gone']);
+    });
+  });
 });
