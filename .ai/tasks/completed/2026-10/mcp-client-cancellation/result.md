@@ -354,6 +354,16 @@ exit code. Warnings were counted with `grep -ci warning`.
 | `ts-extras` fixlint, build, lint, test | 3109 tests, 100 % on all metrics; build, lint and test warnings 0 |
 | `change --verify` / feed `--check` | pass / 0 stale |
 
+**Copilot-review run, on `75696fba`:**
+
+| gate | result |
+|---|---|
+| `install-run-rush.js rebuild` (repo-wide) | `SUCCESS: 37 operations`; errors 0; warnings 1 (the symlink notice); not NUL-padded |
+| `install-run-rush.js test` (repo-wide) | `SUCCESS: 36 operations`; errors 0; warnings 1 (the symlink notice); not NUL-padded |
+| `ts-extras-mcp` fixlint, build, lint, test | 125 tests, 100 % on all metrics, warnings 0 |
+| `ts-extras` fixlint, build, lint, test | 3110 tests, 100 % on all metrics, warnings 0; `api.md` warnings identical to base |
+| `change --verify` / feed `--check` / `verify-capability-docs` | pass / 0 stale / 0 failed |
+
 ## What the brief got wrong
 
 - Belief 1 missed that the SDK reports an abort with the timeout code — the single fact the whole
