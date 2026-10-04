@@ -116,7 +116,7 @@ Every `await` between a check and the act it guards, and what re-checks after it
 | `request.ts` | (classification) | `await` of the SDK request | `aborted` vs other | No re-read of `signal.aborted`. `aborted` iff the SDK rejected with this call's reason object — the SDK's settlement order decides. Revert R1 shows a re-read misreports a timeout followed one microtask later by an abort. |
 | `request.ts` | listener removed in `finally` | settle → `finally` microtasks | — | An abort in that window makes the SDK send a redundant `notifications/cancelled` for a finished request; the spec lets servers ignore it. Commented. |
 | `operations.ts` `_classify` | `closeWatcher.closed` | none after the rejection | `not-connected` | The SDK sets `onclose` → watcher before rejecting in-flight requests, so the flag is already true for any close-caused failure. |
-| `session.ts` `_connectWithin` | — | the SDK's `connect`, including `transport.start()` and sending `notifications/initialized`, which its request options do not cover | race against the per-call abort and a deadline | The deadline is an `AbortController` aborted by the timer or the caller's signal, whichever fires first; an already-aborted signal fires it immediately (R22). Losing closes the client before the failure is returned, aborting the transport's fetch. When the SDK's own connect fails first, the SDK has already closed the transport. |
+| `session.ts` `_connectWithin` | — | the SDK's `connect`, including `transport.start()` and sending `notifications/initialized`, which its request options do not cover | race against the per-call abort and a deadline | The deadline is an `AbortController` aborted by the timer or the caller's signal, whichever fires first; an already-aborted signal fires it immediately (R22). **Every** losing path — the deadline, or the SDK's own failure — starts `client.close()` and returns the failure without awaiting it (R18, R23, R24): the SDK does not close a transport whose `start()` rejected, and awaiting a close could outlast the deadline. `finally` clears the timer and removes the race's listener (R25, R26). |
 | `session.ts` `connectMcpSession` | `timeoutMs` validated, then the handle claimed | none | connect | Validation runs first, so a bad option does not burn the handle; the claim is synchronous and permanent, so two concurrent connects on one handle cannot both start the transport. |
 | `session.ts` `connectMcpSession` | watcher attached to `client.onclose` | `await` handshake | `closed` check, `signal.aborted` check, `arm(onClose)` | All three run synchronously after the handshake's `await`, so no close can land between check and arm. A close during the handshake → `not-connected`, callback never armed. |
 | `session.ts` | `signal.aborted` after handshake success | `await client.close()` | return `aborted` | The abort landed after `initialize` answered but before the SDK returned (it awaits `notifications/initialized`), so the SDK cancelled nothing. We close what it opened; the watcher is unarmed, so `onClose` does not fire. Nothing acts after the close's `await`. |
@@ -148,14 +148,18 @@ the 404 tests run the same status through both phases.
 | R14 | schema rejection by both zod class names | classifier unit, `a malformed tools/call result is protocol, with no code` (real peer) |
 | R15 | builder passes `{ signal }` (ts-extras) | `the turn's signal reaches execute — the same object, not a copy` |
 | R16 | `listMcpTools` forwards its options | `follows nextCursor across pages`, `listMcpTools honours timeoutMs`, `an abort during pagination fails aborted and requests no further page` |
-| R17 | whole connect raced against abort and deadline (gate-time P2) | both real-HTTP stalled-`notifications/initialized` tests (they hang to the jest timeout) |
-| R18 | a lost connect closes the client (gate-time P2) | both real-HTTP stalled tests (the held POST is never abandoned) |
+| R17 | whole connect raced against abort and deadline (gate-time P2) | 4: both real-HTTP stalled-`notifications/initialized` tests, `an abort during a start() that genuinely stalls…`, `an abort raised synchronously inside a connect that never settles…` (all hang to the jest timeout) |
+| R18 | every losing connect closes the client (gate-time P2, made unconditional in review 2) | 6: `a transport whose start() rejects is closed…`, both real-HTTP stalled tests (the held POST is never abandoned), `a close() that never resolves does not stretch…`, the stalled-`start()` abort, the synchronous-abort race test |
 | R19 | timeout range validation (gate-time P3-2) | `an invalid timeoutMs fails invalid-options and does not consume the handle`, `an out-of-range timeout fails invalid-options before anything is sent` |
 | R20 | single-use transport handle (gate-time P3-3) | mocked double connect, `a failed connect still consumes the handle`, real in-memory double connect (`start` once) |
 | R21 | pre-set `sessionId` refused (gate-time P3-3) | `refuses a transport that already carries a session id…` |
 | R22 | the connect race sees an abort that landed before it listened | `an abort raised synchronously inside a connect that never settles is still seen by the race` |
+| R23 | close on *every* losing path, not only when the deadline won (review 2) | `a transport whose start() rejects is closed — the SDK itself never closes it` |
+| R24 | the losing path does not await the close (review 2) | `a close() that never resolves does not stretch the connect past timeoutMs`, `…does not delay an aborted connect either` |
+| R25 | `finally` clears the deadline timer (review 2) | `a settled connect leaves no deadline timer pending and no listener on the per-call signal` (fake timers: `getTimerCount() === 0`) |
+| R26 | `finally` removes the race's abort listener (review 2) | the same test (the listener added is the one removed) |
 
-Every row was rerun against the gate-time tree (`332c5f58` plus the R22 fix), not carried over.
+Every row R1–R22 was rerun against the gate-time tree (`332c5f58` plus the R22 fix), not carried over. After review 2, R17 and R18 were rerun and R23–R26 added against `7d9d1279`; R18's anchor changed with the code (it previously reverted the `lost.signal.aborted` gate, which R23 now covers).
 R22 was found by the matrix itself: R13 first reddened a test meant for the race. The test's
 connect resolved in the same tick as the abort, so `Promise.race` settled on the resolved connect.
 That showed the race attaches its abort listener only after `client.connect` has run its
@@ -242,6 +246,41 @@ No P1. Every finding applied, in `332c5f58`.
   `execute(args, context?): Promise<Result<unknown>>`. Two test sites in `ts-extras-mcp` read
   `execute` unbound (a lint hazard once it is a method) and now wrap it in an arrow. Every
   implementer compiles: the repo-wide rebuild is green (see `state.md` § Gates).
+
+## Gate-time review 2 (`6852c0d2..ce48cdb3`)
+
+No blocking findings. All applied in `7d9d1279`.
+
+- **The SDK does not always close.** My earlier claim that "when the SDK's own connect fails first,
+  the SDK has already closed the transport" was wrong. `Client.connect` awaits
+  `super.connect(transport)`, which awaits `transport.start()`, *before* the `try` that runs
+  `void this.close()`, so a transport whose `start()` rejects was never closed. `_connectWithin`
+  now closes on every losing path. The comment at `session.ts` (`_connectWithin` remarks), the
+  matching `sdk.ts` wording ("the SDK closes the transport on any handshake failure") and the
+  R17/R18 rows are corrected. **One refinement to the review's premise:** a second close is a
+  no-op only once the first has *completed* (`Protocol._onclose` clears the transport when the
+  transport's `onclose` fires). A custom `close()` that never completes is asked twice, once by
+  the SDK and once by us, and the never-resolving-close test asserts "at least once" for that
+  reason. Test: a custom transport whose `start()` rejects after allocating is closed. (R18, R23)
+- **`timeoutMs` now strictly bounds the connect.** The losing path starts `client.close()`,
+  catches its error, and rejects immediately. `model.ts` (`timeoutMs`, `signal`) and
+  `CAPABILITIES.md` say teardown can finish after the connect has returned. Tests: a custom
+  `close()` that never resolves; both the timeout and the abort still settle in under 2 s. (R24)
+- **Session id no longer echoed.** `createCustomTransport`'s failure keeps the explanation and
+  drops the value; the test asserts the value is absent.
+- **`execute` bivariance disclosed.** The method form makes `execute`'s parameters bivariant: a tool
+  can declare `execute(args: { a; b })` against `IAiClientToolConfig<{ a }>` without a compile
+  error. This is kept, as directed, and disclosed in the `ts-extras` change file. Runtime stays
+  safe because `executeClientToolTurn` validates the arguments against `parametersSchema` before
+  calling `execute`.
+- **Duplicate `timeoutMs` check on the connect path:** kept, with a comment. `runSdkRequest` owns
+  validation for every request; skipping it on connect would need a connect-only bypass for no
+  behavioural gain, and the check cannot fail there. The two `isFailure` guards in
+  `connectMcpSession` are unchanged, because their failure kinds differ.
+- **Newly pinned protections:** close-on-loss (R18/R23); `clearTimeout` and listener removal in
+  `finally`, via fake timers (`getTimerCount() === 0`) and add/remove listener identity (R25,
+  R26); and an abort during a `start()` that genuinely stalls, as distinct from the
+  synchronous-abort fake (R17 now reddens it).
 
 ## What this pre-empts for the other MCP asks
 

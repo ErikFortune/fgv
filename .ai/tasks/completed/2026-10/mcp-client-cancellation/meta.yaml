@@ -23,7 +23,7 @@ summary:
     maxTotalTimeoutMs; range-validated) on call/list, and timeoutMs/signal bounding the whole
     connect;
     IAiClientTool.execute(args, context?) with the turn's signal, forwarded by the MCP adapter.
-    Proven against a real in-memory server and a loopback HTTP server; a 22-row revert matrix.
+    Proven against a real in-memory server and a loopback HTTP server; a 26-row revert matrix.
   diverged: >
     The SDK reports a caller abort with the timeout code (-32001), which the brief did not know, so
     'aborted' is decided by the identity of a per-call abort reason rather than by code. The seam
@@ -56,4 +56,4 @@ keywords:
   - abort reported as timeout
 relatedStreams:
   - { id: personality-intake, relationship: 'triaged the four asks (followups entries 16, 9, 8, 10)' }
-sourceHash: sha256:7b323184bd1e4775 # over brief.md + result.md + state.md
+sourceHash: sha256:72348971dc051e5c # over brief.md + result.md + state.md

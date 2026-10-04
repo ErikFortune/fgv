@@ -51,6 +51,6 @@ with first decides — a test pins the case where an abort lands one microtask a
 
 ## Evidence
 
-`result.md`: belief verdicts, the vocabulary's SDK mapping, the check-then-act list, the 22-row
+`result.md`: belief verdicts, the vocabulary's SDK mapping, the check-then-act list, the 26-row
 revert matrix, the review dispositions, and § Gate counts (the gate-time run). `state.md` § Gates holds
 the first run.
