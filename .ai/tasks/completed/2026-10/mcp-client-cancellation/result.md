@@ -180,6 +180,52 @@ No P1. Findings and dispositions:
   timeout/abort tests assert `onClose` never fires. The ts-extras `if (result.isFailure()) return;`
   after `toSucceed()` style matches the surrounding file; kept.
 
+## Gate-time review (orchestrator's independent pass)
+
+No P1. Every finding applied, in `332c5f58`.
+
+- **P2 — `connectMcpSession` could hang.** Confirmed against SDK 1.29.0 `client/index.js`
+  ~285–321: `Client.connect` awaits `transport.start()` and then
+  `this.notification('notifications/initialized')` outside the request options it passes to
+  `initialize`. Over Streamable HTTP that notification is a fetch POST whose only signal is the
+  transport's own controller. **Fix:** `_connectWithin` (`session.ts`) races the whole SDK connect
+  against the per-call abort (rejecting with the per-call abort reason, so `aborted` still comes from
+  identity) and a `timeoutMs` deadline (SDK default 60 000 when omitted, rejecting with the SDK's own
+  timeout `McpError`). Losing closes the client, which aborts the transport's in-flight fetch. The
+  close watcher is unarmed at that point, so `onClose` is not called. The post-settle abort check
+  is kept for an abort that lands after the race resolved but before the session is handed out.
+  **Tests:** `httpFailures.test.ts` gains a real loopback server that answers `initialize` and
+  never answers the `notifications/initialized` POST. With `timeoutMs: 150` the connect fails
+  `timeout`; with an abort at 100 ms it fails `aborted`. Both settle in under 5 s, the server
+  observes its held POST closed (the fetch was aborted), and `onClose` never fires. Revert rows R17,
+  R18.
+- **P3-1 — `ae-unresolved-link`.** Neither `{@link AiAssist.IAiClientTool}` nor
+  `{@link IAiClientTool}` resolves inside the `AiAssist` namespace: both produce a new warning,
+  which I checked by building each. The reference is now a code span (`IAiClientTool.execute`).
+  `etc/ts-extras.api.md`'s warnings are identical to base (diffed `sort | uniq -c` of every
+  `Warning:` line: 383 = 383).
+- **P3-2 — timeout validation.** `timeoutMs` and `maxTotalTimeoutMs` must be positive, finite and
+  ≤ 2³¹−1, or the call fails before anything is sent. No existing kind fit — `protocol` is the
+  server's, `invalid-handle` is about handles — so a new kind, **`invalid-options`**, was added.
+  `Infinity`, `0`, negatives, `NaN` and `2³¹` are refused on call, list and connect; `2³¹−1` is
+  accepted. On connect the check runs before the handle is claimed, so a bad option does not burn
+  the transport. Revert row R19.
+- **P3-3 — single-use transports.** `McpTransport.claim()` marks a handle consumed at connect;
+  reuse fails `invalid-handle` before a client is built or the transport touched. A failed connect
+  still consumes it, because the SDK may have started and closed the transport. `createCustomTransport`
+  now returns `Result<IMcpTransport>` and refuses a transport whose `sessionId` is set (detectable:
+  `sessionId` was added to the structural `IMcpSdkTransport`). The TSDoc on `createCustomTransport`
+  and `IMcpSdkTransport` states both runtime obligations: no pre-set `sessionId` (the SDK would skip
+  `initialize`), and `close()` must call `onclose`. Tests cover a mocked double connect, a
+  failed-then-reused handle, a real in-memory double connect asserting `start` ran once, and the
+  `sessionId` refusal. Revert rows R20, R21.
+- **P3-4 — `-32000` during the handshake.** The `McpFailureReason` table now says any `-32000`
+  during the handshake is `not-connected`, whoever raised it. `CAPABILITIES.md` says the same.
+- **P3-5 — method signature.** `IAiClientTool.execute` is now
+  `execute(args, context?): Promise<Result<unknown>>`. Two test sites in `ts-extras-mcp` read
+  `execute` unbound (a lint hazard once it is a method) and now wrap it in an arrow. Every
+  implementer compiles: the repo-wide rebuild is green (see `state.md` § Gates).
+
 ## What this pre-empts for the other MCP asks
 
 - **#677 OAuth** — `unauthorized` (with `status`) and the `UnauthorizedError` mapping already exist;
