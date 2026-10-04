@@ -455,13 +455,15 @@ So **R2 is not the safe, independent one-liner §4 called it** — it converts a
 
 ### `system-one-decisions` 🔵
 
-**Status:** 🔵 **Phase A (design) complete 2026-10-01**; Phase B triage next. Design-triage-implement.
-Every phase lands on `integration/system-one-decisions` (off `release` `30713277c`). The orchestrator
-opens the cluster-close PR to `release` after Phase C.
-**Substrate:** `.ai/tasks/active/system-one-decisions-design/{brief.md, state.md, result.md}`
+**Status:** 🔵 **Phase B complete 2026-10-03; Phase C ready to commission.** Phase A (design) completed
+2026-10-01. Design-triage-implement. Every phase lands on `integration/system-one-decisions` (off
+`release` `30713277c`). The orchestrator opens the cluster-close PR to `release` after Phase C.
+**Substrate:** `.ai/tasks/active/system-one-decisions-design/`, `.ai/tasks/active/system-one-design-antagonist/`
+and `.ai/tasks/active/system-one-triage/` (each `{brief.md, state.md, result.md}`).
 **Design:** `docs/design/system-one-decisions/design.md`
-**Package surface (Phase A):** docs only. **Proposed for Phase C:** a new
-`@fgv/ts-extras-system-one` (name provisional, OQ-2).
+**Implementation plan (Phase C is held to it):** `docs/design/system-one-decisions/implementation-plan.md`
+**Package surface:** Phases A and B are docs only. **Phase C:** a new `@fgv/ts-extras-system-one`
+(name decided, OQ-2), one slice, plus live evidence L1–L5.
 
 **Mission.** Decide whether and how fgv supports System-1 decision models. These return typed answers
 with probabilities, such as hosted Jev and local CLM-8B.
@@ -487,6 +489,20 @@ with probabilities, such as hosted Jev and local CLM-8B.
 Phase C proceeds. Phase B works the remaining open questions, including the new OQ-12: whether
 Ollama-backed CLM matches vLLM-backed CLM. Ollama drops CLM's truncation, and its pooling and
 quantization are unverified.
+
+**Phase B findings (2026-10-03):**
+
+- **Decided:** the package name (OQ-2); the SDK pinned `~0.6.0` with a review gate on every minor
+  (OQ-9); a measured `maxChars` rule, with README values of 2,400 / 4,400 characters for upstream CLM
+  (OQ-4, from a reconstructed Qwen3 tokenizer); the parity harness ships as `perf/systemOneLive.js`
+  (D10). OQ-6 became named tests.
+- **Contract refinements from reading the SDK at source:** a `fetch?` seam; explicit `logLevel` that is
+  never `debug` (a fourth `TYPESAFE_*` variable exists); a total failure classification; timing
+  headers that keep their names.
+- **User decisions, 2026-10-03:** Ollama stays in the topology, gated on one probe round trip per
+  environment (E27a; option A). The cluster close waits on one recorded L1 remote round trip, and
+  nothing else (option (a)). Neither changes the package surface.
+- OQ-5, OQ-8 and OQ-10's Olares items stay open: they need egress or hardware.
 
 ---
 
