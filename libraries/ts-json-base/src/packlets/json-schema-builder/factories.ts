@@ -34,7 +34,7 @@ import {
   succeed
 } from '@fgv/ts-utils';
 import { jsonValue } from '../converters';
-import { JsonObject, JsonValue, isJsonObject } from '../json';
+import { JsonObject, isJsonObject } from '../json';
 import {
   ILlmProperties,
   ISchemaValidator,
@@ -419,21 +419,26 @@ class ArraySchemaValidator<S extends ISchemaValidator<unknown>> extends SchemaVa
 class ObjectSchemaValidator<P extends ILlmProperties> extends SchemaValidatorBase<ObjectStatic<P>> {
   public readonly _properties: P;
   public readonly additionalProperties: boolean;
+  /** The schema every undeclared property must match, for a record; absent otherwise. */
+  public readonly _values?: ISchemaValidator<unknown>;
   // Uses a Converter (not Validator) so that the result is a new object built from converted
   // values (Validators are in-place and would return the input unchanged, skipping coercions).
   // Both validate() and convert() route through this converter so that nested schema coercions
   // propagate correctly regardless of which method is called.
   private readonly _converter: Converter<ObjectStatic<P>>;
 
-  public constructor(properties: P, opts?: IObjectSchemaOptions) {
-    const additionalProperties = opts?.additionalProperties === true;
-    const converter = _buildObjectConverter(properties, additionalProperties);
+  public constructor(properties: P, opts?: IObjectSchemaOptions, values?: ISchemaValidator<unknown>) {
+    const additionalProperties = values !== undefined || opts?.additionalProperties === true;
+    const converter = _buildObjectConverter(properties, additionalProperties, values);
     // ValidatorFunc placeholder — validate() and convert() are both overridden below.
     /* c8 ignore next 1 - placeholder ValidatorFunc; validate() and convert() overrides always intercept */
     super('object', (__from: unknown): boolean | Failure<ObjectStatic<P>> => true, opts);
     this._properties = properties;
     this.additionalProperties = additionalProperties;
     this._converter = converter;
+    if (values !== undefined) {
+      this._values = values;
+    }
   }
 
   public override validate(from: unknown): Result<ObjectStatic<P>> {
@@ -465,6 +470,9 @@ class ObjectSchemaValidator<P extends ILlmProperties> extends SchemaValidatorBas
       // honours. `true` is not emitted: Anthropic JSON outputs require `additionalProperties: false`
       // where the keyword is present, and an explicit `true` was not probed against them.
       ...(!this.additionalProperties && { additionalProperties: false }),
+      // A record states the schema its undeclared properties must match, which is what its
+      // converter enforces for each of them.
+      ...(this._values !== undefined && { additionalProperties: this._values.toJson() }),
       ..._descriptionField(this)
     };
   }
@@ -490,7 +498,8 @@ class ObjectSchemaValidator<P extends ILlmProperties> extends SchemaValidatorBas
  */
 function _buildObjectConverter<P extends ILlmProperties>(
   properties: P,
-  additionalProperties: boolean
+  additionalProperties: boolean,
+  values: ISchemaValidator<unknown> | undefined
 ): Converter<ObjectStatic<P>> {
   const fields: Record<string, Converter<unknown> | Validation.Validator<unknown>> = {};
   const optionalKeys: string[] = [];
@@ -515,9 +524,14 @@ function _buildObjectConverter<P extends ILlmProperties>(
   }
   return Converters.generic<ObjectStatic<P>>((from: unknown) =>
     isJsonObject(from)
-      ? _convertOpenObject(from, declared, properties)
+      ? _convertOpenObject(from, declared, properties, values ?? jsonValue)
       : fail(`open object: expected a JSON object, got ${_kindOf(from)}`)
   );
+}
+
+/** What an open object converts each undeclared value through: `jsonValue`, or a record's schema. */
+interface IUndeclaredValueConverter {
+  convert(from: unknown): Result<unknown>;
 }
 
 /**
@@ -529,10 +543,11 @@ function _buildObjectConverter<P extends ILlmProperties>(
 function _convertOpenObject<T extends object>(
   from: JsonObject,
   declared: Converter<T>,
-  properties: ILlmProperties
+  properties: ILlmProperties,
+  values: IUndeclaredValueConverter
 ): Result<T> {
   const converted = declared.convert(from);
-  const extras = _convertUndeclaredKeys(from, properties);
+  const extras = _convertUndeclaredKeys(from, properties, values);
   return allSucceed([converted, extras], from).onSuccess(() =>
     converted.onSuccess((c) =>
       extras.onSuccess((e) => {
@@ -545,9 +560,8 @@ function _convertOpenObject<T extends object>(
 }
 
 /**
- * Validates every key of `from` that `properties` does not declare as a `JsonValue`, reporting
- * every bad one. This is where a schema-valued `additionalProperties` would apply its schema in
- * place of `jsonValue`.
+ * Converts every key of `from` that `properties` does not declare through `values` — `jsonValue`
+ * for an open object, the value schema for a record — reporting every bad one.
  *
  * @remarks
  * An own `"__proto__"` key is dropped, matching `Converters.jsonObject`, which copies every
@@ -555,16 +569,20 @@ function _convertOpenObject<T extends object>(
  * turns into a prototype. The caller assembles the result with `Object.fromEntries` rather than
  * object spread, which compiled down-level becomes `Object.assign`.
  */
-function _convertUndeclaredKeys(from: JsonObject, properties: ILlmProperties): Result<[string, JsonValue][]> {
+function _convertUndeclaredKeys(
+  from: JsonObject,
+  properties: ILlmProperties,
+  values: IUndeclaredValueConverter
+): Result<[string, unknown][]> {
   const undeclared = Object.entries(from).filter(
     ([key]) => key !== '__proto__' && !Object.prototype.hasOwnProperty.call(properties, key)
   );
   return mapResults(
     undeclared.map(([key, value]) =>
-      jsonValue
+      values
         .convert(value)
         .withErrorFormat((msg) => `${key}: ${msg}`)
-        .onSuccess((v) => succeed<[string, JsonValue]>([key, v]))
+        .onSuccess((v) => succeed<[string, unknown]>([key, v]))
     )
   );
 }
@@ -807,4 +825,51 @@ export function object<P extends ILlmProperties>(
   // eslint-disable-next-line @rushstack/no-new-null
 ): ISchemaValidator<ObjectStatic<P>> | ISchemaValidator<OpenObjectStatic<P> | null> {
   return new ObjectSchemaValidator(properties, opts);
+}
+
+/**
+ * Creates a schema node for a JSON object used as a map: any keys, each value matching `values`
+ * (pydantic `dict[str, T]`, zod `z.record(T)`).
+ *
+ * @remarks
+ * Emits `{ type: 'object', properties: {}, additionalProperties: <values> }`, and the validator
+ * converts every property through `values`, reporting each one that fails. A value that is not a
+ * JSON object is refused. As for an open object, an own `"__proto__"` key is dropped rather than
+ * carried.
+ *
+ * Providers whose strict structured-output mode requires `additionalProperties: false` (OpenAI
+ * strict, Anthropic JSON outputs) cannot accept a record there, exactly as they cannot accept an
+ * open object; it is suited to tool parameters.
+ * @param values - The schema every property value must match.
+ * @param opts - Optional description and nullability.
+ * @returns An `ISchemaValidator` whose `Static` type is `Record<string, Static<S>> | null`.
+ * @public
+ */
+export function record<S extends ISchemaValidator<unknown>>(
+  values: S,
+  opts: ISchemaOptions & { nullable: true }
+  // `null` is the JSON value being modelled, not a JS sentinel — the same carve-out
+  // `JsonPrimitive` takes in this package's `json` packlet.
+  // eslint-disable-next-line @rushstack/no-new-null
+): ISchemaValidator<Record<string, Static<S>> | null>;
+/**
+ * Creates a schema node for a JSON object used as a map: any keys, each value matching `values`
+ * (pydantic `dict[str, T]`, zod `z.record(T)`).
+ * @param values - The schema every property value must match.
+ * @param opts - Optional description and nullability.
+ * @returns An `ISchemaValidator` whose `Static` type is `Record<string, Static<S>>`.
+ * @public
+ */
+export function record<S extends ISchemaValidator<unknown>>(
+  values: S,
+  opts?: ISchemaOptions
+): ISchemaValidator<Record<string, Static<S>>>;
+export function record<S extends ISchemaValidator<unknown>>(
+  values: S,
+  opts?: ISchemaOptions
+): ISchemaValidator<Record<string, Static<S>>> {
+  // The node is an object with no declared properties; its static type is the map it converts to.
+  return new ObjectSchemaValidator({}, opts, values) as unknown as ISchemaValidator<
+    Record<string, Static<S>>
+  >;
 }

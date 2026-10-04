@@ -22,7 +22,7 @@
 
 import { Converter, Converters, Result, captureResult, fail, mapResults, succeed } from '@fgv/ts-utils';
 import { JsonObject, JsonValue } from '../json';
-import { array, boolean, enumOf, integer, number, object, optional, string } from './factories';
+import { array, boolean, enumOf, integer, number, object, optional, record, string } from './factories';
 import { ILlmProperties, ISchemaValidator } from './types';
 
 /**
@@ -174,6 +174,19 @@ const _plainObjectField: Converter<Record<string, unknown>> = Converters.generic
 // ---------------------------------------------------------------------------
 // Private helpers
 // ---------------------------------------------------------------------------
+
+/** Whether a node's `enum` list holds any number, for a sharper refusal than "not a string". */
+function _hasNumericEnumValue(from: unknown): boolean {
+  return Converters.field('enum', Converters.arrayOf(Converters.generic((v: unknown) => succeed(v))))
+    .convert(from)
+    .onSuccess((values) => succeed(values.some((v) => typeof v === 'number')))
+    .orDefault(false);
+}
+
+/** Whether a node carries no keyword beyond annotations — `{}`, the schema every value matches. */
+function _isAnySchema(raw: Record<string, unknown>): boolean {
+  return Object.keys(raw).every((key) => _NON_VALIDATING_KEYWORDS.has(key));
+}
 
 /**
  * Checks for forbidden keywords in a raw schema object (already validated as non-null object).
@@ -461,6 +474,11 @@ function _convertEnum(from: unknown, { path }: IParseContext): Result<ISchemaVal
   // `'null'` in the type union — so this arm reads both and requires them to agree,
   // rather than taking whichever it happens to look at first.
   const rawValuesResult = _enumRawValuesField.convert(from);
+  if (rawValuesResult.isFailure() && _hasNumericEnumValue(from)) {
+    // Numeric enums are deferred: `toJson()` would emit them, and Gemini's function-declaration
+    // schema admits `enum` only on strings, so such a tool would fail every Gemini request.
+    return fail(`${path}: numeric 'enum' values are not supported (only string enums are)`);
+  }
   if (rawValuesResult.isFailure()) {
     // Fall back to the strings-only extractor for its sharper message (non-array, wrong
     // member type, and so on); it fails on exactly the inputs this one does, minus `null`.
@@ -541,12 +559,20 @@ function _parseObjectBody(
   }
   const rawRequired = requiredResult.value;
 
-  // Extract `additionalProperties` — must be boolean if present (schema-valued not supported).
-  const addlPropsResult = Converters.optionalField('additionalProperties', Converters.boolean).convert(from);
+  // Extract `additionalProperties` — a boolean or a schema if present.
+  const addlPropsResult = Converters.optionalField(
+    'additionalProperties',
+    Converters.oneOf<boolean | Record<string, unknown>>([Converters.boolean, _plainObjectField])
+  ).convert(from);
   if (addlPropsResult.isFailure()) {
-    return fail(`${path}: schema-valued 'additionalProperties' is not supported`);
+    return fail(`${path}: 'additionalProperties' must be a boolean or a schema object`);
   }
   const additionalProperties = addlPropsResult.value;
+  // `{}` is the schema every value matches, so it means exactly what `true` does.
+  const valueSchema: Record<string, unknown> | undefined =
+    typeof additionalProperties === 'object' && Object.keys(additionalProperties).length > 0
+      ? additionalProperties
+      : undefined;
 
   // Extract optional description; _descriptionField always succeeds (optional string).
   const descResult = _descriptionField.convert(from);
@@ -565,6 +591,10 @@ function _parseObjectBody(
     if (!declared.has(key)) {
       return fail(`${path}: 'required' key '${key}' has no matching entry in 'properties'`);
     }
+  }
+
+  if (valueSchema !== undefined) {
+    return _parseRecordBody(valueSchema, propEntries.length > 0, ctx, description, nullable);
   }
 
   return mapResults(
@@ -588,6 +618,32 @@ function _parseObjectBody(
       }) as unknown as ISchemaValidator<JsonValue>
     );
   });
+}
+
+/**
+ * Converts an object whose `additionalProperties` is a schema into a record: every property's value
+ * must match that schema, and the wire states it.
+ *
+ * @remarks
+ * Only the map shape is admitted — no declared properties beside the value schema. Declared
+ * properties plus a schema for the rest (zod `.catchall()`) would need the builder to type both at
+ * once, and is refused with that reason rather than half-honoured.
+ */
+function _parseRecordBody(
+  valueSchema: Record<string, unknown>,
+  hasDeclaredProperties: boolean,
+  ctx: IParseContext,
+  description: string | undefined,
+  nullable: boolean
+): Result<ISchemaValidator<JsonValue>> {
+  if (hasDeclaredProperties) {
+    return fail(
+      `${ctx.path}: schema-valued 'additionalProperties' alongside declared 'properties' is not supported`
+    );
+  }
+  return _convertNode(valueSchema, _at(ctx, `${ctx.path}/additionalProperties`)).onSuccess((values) =>
+    succeed(record(values, _nodeOpts(description, nullable)) as unknown as ISchemaValidator<JsonValue>)
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -802,6 +858,12 @@ function _convertNode(from: unknown, nodeCtx: IParseContext): Result<ISchemaVali
   const split = _splitNullableType(raw.type);
   if (split.isFailure()) {
     return fail(`${path}: ${split.message}`);
+  }
+
+  // `{}` (pydantic `Any`) is deferred: its typeless wire is refused by providers that require a
+  // `type` on every schema (Gemini function declarations, OpenAI strict mode).
+  if (_isAnySchema(raw)) {
+    return fail(`${path}: a schema with no 'type' (matching any value) is not supported`);
   }
 
   // Missing/unknown type: give a better error than a generic "no matching converter".
