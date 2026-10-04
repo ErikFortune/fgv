@@ -118,7 +118,7 @@ Every `await` between a check and the act it guards, and what re-checks after it
 | `session.ts` `connectMcpSession` | watcher attached to `client.onclose` | `await` handshake | `closed` check, `signal.aborted` check, `arm(onClose)` | All three run synchronously after the handshake's `await`, so no close can land between check and arm. A close during the handshake → `not-connected`, callback never armed. |
 | `session.ts` | `signal.aborted` after handshake success | `await client.close()` | return `aborted` | The abort landed after `initialize` answered but before the SDK returned (it awaits `notifications/initialized`), so the SDK cancelled nothing. We close what it opened; the watcher is unarmed, so `onClose` does not fire. Nothing acts after the close's `await`. |
 | `McpCloseWatcher.notifyClosed` | `_closed` | none | call listener | Exactly once; a throw is contained (`captureResult`) and logged. An `async` listener's rejection is not observed — documented. |
-| `listMcpTools` | per page | `await` per page | next page | The caller's signal is re-linked per page by `runSdkRequest`; an abort between pages fails the next page as `aborted` (pre-check) without sending. |
+| `listMcpTools` | per page | `await` per page | next page | Each page runs through `runSdkRequest`, so the caller's signal is re-linked per page: an abort during a page cancels it, and an abort landing after a page settled is caught by the next page's pre-check without sending. Either way no further page is requested (tested for the in-flight case; the between-pages case is the same pre-check R3 pins). |
 
 ## Revert matrix
 
@@ -144,6 +144,7 @@ the 404 tests run the same status through both phases.
 | R13 | abort after `initialize` answered | `an abort landing after the handshake answered fails aborted, closes the client…` |
 | R14 | schema rejection by both zod class names | classifier unit, `a malformed tools/call result is protocol, with no code` (real peer) |
 | R15 | builder passes `{ signal }` (ts-extras) | `the turn's signal reaches execute — the same object, not a copy` |
+| R16 | `listMcpTools` forwards its options | `listMcpTools honours timeoutMs`, `an abort during pagination fails aborted and requests no further page` |
 
 R14 is not hypothetical: the first implementation matched only `'ZodError'`, and the real-peer test
 caught that the installed zod 4 core names its error `'$ZodError'`.
@@ -194,7 +195,7 @@ No P1. Findings and dispositions:
 
 ## Gate counts
 
-Recorded in `state.md` § Gates once the repo-wide runs complete.
+See `state.md` § Gates.
 
 ## What the brief got wrong
 

@@ -54,6 +54,13 @@ interface IFixture {
   readonly serverCancelled: Promise<unknown>;
   /** How many times the server's `tools/call` handler ran. */
   readonly callCount: () => number;
+  /** How many `tools/list` pages the server served. */
+  readonly listCount: () => number;
+  /**
+   * How `tools/list` behaves: one empty page; two pages, calling `onFirstPage` while serving the
+   * first; or never answering.
+   */
+  setListBehavior(behavior: 'single' | 'paged' | 'hang', onFirstPage?: () => void): void;
 }
 
 function deferred<T>(): { promise: Promise<T>; resolve: (value: T) => void } {
@@ -69,8 +76,21 @@ async function startFixture(): Promise<IFixture> {
   const entered = deferred<void>();
   const serverCancelled = deferred<unknown>();
   let calls = 0;
+  let lists = 0;
+  let listBehavior: 'single' | 'paged' | 'hang' = 'single';
+  let onFirstPage: (() => void) | undefined;
 
-  server.setRequestHandler(ListToolsRequestSchema, async () => ({ tools: [] }));
+  server.setRequestHandler(ListToolsRequestSchema, async (request) => {
+    lists++;
+    if (listBehavior === 'hang') {
+      await new Promise(() => undefined);
+    }
+    if (listBehavior === 'paged' && request.params?.cursor === undefined) {
+      onFirstPage?.();
+      return { tools: [], nextCursor: 'page-2' };
+    }
+    return { tools: [] };
+  });
   server.setRequestHandler(CallToolRequestSchema, async (request, extra) => {
     calls++;
     if (request.params.name === 'progress') {
@@ -109,7 +129,12 @@ async function startFixture(): Promise<IFixture> {
     clientSide,
     entered: entered.promise,
     serverCancelled: serverCancelled.promise,
-    callCount: () => calls
+    callCount: () => calls,
+    listCount: () => lists,
+    setListBehavior: (behavior, firstPage) => {
+      listBehavior = behavior;
+      onFirstPage = firstPage;
+    }
   };
 }
 
@@ -252,6 +277,24 @@ describe('per-request options against a real in-memory MCP server', () => {
 
   test('listMcpTools accepts the same options', async () => {
     expect(await listMcpTools(fixture.session, { timeoutMs: 5_000 })).toSucceedWith([]);
+  });
+
+  test('listMcpTools honours timeoutMs', async () => {
+    fixture.setListBehavior('hang');
+    expect(await listMcpTools(fixture.session, { timeoutMs: 50 })).toFailWithDetail(/Request timed out/, {
+      kind: 'timeout'
+    });
+  });
+
+  test('an abort during pagination fails aborted and requests no further page', async () => {
+    const controller = new AbortController();
+    // Aborts while the server is serving the first of two pages.
+    fixture.setListBehavior('paged', () => controller.abort());
+    expect(await listMcpTools(fixture.session, { signal: controller.signal })).toFailWithDetail(
+      'listMcpTools: aborted by the caller',
+      { kind: 'aborted' }
+    );
+    expect(fixture.listCount()).toBe(1);
   });
 });
 

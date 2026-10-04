@@ -42,3 +42,22 @@ Worker-owned.
 ## Open questions
 
 None blocking.
+
+## Gates
+
+Graded by grepping logs, not exit codes. "Warning" counts are case-insensitive (`grep -ci warning`).
+
+| gate | where | result |
+|---|---|---|
+| `install-run-rush.js rebuild` (repo-wide) | after `b8a120c4` | `SUCCESS: 37 operations`; errors 0 (`not met\|FAILURE\|Operations failed\|Error:\|error TS`); warnings 1 — Rush's pre-build *"Detected 1 Git-tracked symlinks"* repo-analysis notice, present on every run and not a project warning (no `SUCCESS WITH WARNINGS` banner); log not NUL-padded |
+| `install-run-rush.js test` (repo-wide) | after `b8a120c4` | `SUCCESS: 36 operations`; errors 0; warnings 1 — the same symlink notice; log not NUL-padded |
+| `rushx test` `ts-extras-mcp` | final tree | 106 tests, 8 suites, 100 % statements/branches/functions/lines; warnings 0 |
+| `rushx lint` `ts-extras-mcp` | final tree | errors 0, warnings 0 |
+| `rushx test` `ts-extras` | after `6478fe28` | 3109 tests, 100 % all metrics; warnings 0 |
+| `rushx lint` `ts-extras` | after `6478fe28` | errors 0, warnings 0 |
+| `rushx fixlint` | both packages, before each commit | run |
+| `change --verify --target-branch origin/integration/asks` | final tree | passes (both change files found) |
+
+After the repo-wide runs, only `ts-extras-mcp` **test files** and docs changed (antagonist-pass
+test additions); no source, signature or `ts-extras` file moved, so the package-local run above
+covers them.

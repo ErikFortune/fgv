@@ -21,7 +21,7 @@ summary:
     onClose on connectMcpSession; IMcpRequestOptions (timeoutMs, signal, onProgress,
     resetTimeoutOnProgress, maxTotalTimeoutMs) on call/list and timeoutMs/signal on connect;
     IAiClientTool.execute(args, context?) with the turn's signal, forwarded by the MCP adapter.
-    Proven against a real in-memory server and a loopback HTTP server; a 15-row revert matrix.
+    Proven against a real in-memory server and a loopback HTTP server; a 16-row revert matrix.
   diverged: >
     The SDK reports a caller abort with the timeout code (-32001), which the brief did not know, so
     'aborted' is decided by the identity of a per-call abort reason rather than by code. The seam
@@ -51,4 +51,4 @@ keywords:
   - abort reported as timeout
 relatedStreams:
   - { id: personality-intake, relationship: 'triaged the four asks (followups entries 16, 9, 8, 10)' }
-sourceHash: sha256:4d0fda073a07adee # over brief.md + result.md + state.md
+sourceHash: sha256:60d5164c16647521 # over brief.md + result.md + state.md

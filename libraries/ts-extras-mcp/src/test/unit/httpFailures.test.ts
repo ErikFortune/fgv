@@ -103,8 +103,8 @@ async function startHttpFixture(mode: Mode): Promise<{ server: Server; url: stri
   return { server, url: `http://127.0.0.1:${port}/mcp` };
 }
 
-async function connectTo(url: string): ReturnType<typeof connectMcpSession> {
-  return connectMcpSession({ transport: createHttpTransport({ url }).orThrow() });
+async function connectTo(url: string, onClose?: () => void): ReturnType<typeof connectMcpSession> {
+  return connectMcpSession({ transport: createHttpTransport({ url }).orThrow(), onClose });
 }
 
 describe('HTTP-status classification over the real Streamable-HTTP transport', () => {
@@ -144,13 +144,17 @@ describe('HTTP-status classification over the real Streamable-HTTP transport', (
   test('a 404 on an established session is session-expired', async () => {
     const fixture = await startHttpFixture('expire-session');
     server = fixture.server;
-    session = (await connectTo(fixture.url)).orThrow();
+    const onClose = jest.fn();
+    session = (await connectTo(fixture.url, onClose)).orThrow();
     expect(await callMcpTool(session, 'echo', {})).toFailWithDetail(
       /^callMcpTool 'echo': .*Session not found/,
       {
         kind: 'session-expired'
       }
     );
+    // A server that forgot the session is not a closed connection: nothing reported it before this
+    // call, and the call's failure does not either. Reconnecting is the consumer's decision.
+    expect(onClose).not.toHaveBeenCalled();
   });
 
   test('any other HTTP failure on an established session is transport, carrying the status', async () => {
