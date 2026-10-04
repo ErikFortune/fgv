@@ -35,3 +35,11 @@ None blocking.
   moved their patterns after `--check`. Re-pointed in `3705870c`; then a clean full run gave 34/34
   VERIFIED.
 - Gates green at `3a952c29` (see `result.md`).
+
+## Gate-time review round (2026-10-04)
+
+- Independent review: no P1s; P2-A (malformed input rejected instead of returning a Result) and
+  P2-B (state reachable through failure messages) fixed, P3-1..3 applied. P2-B did leak: the SDK's
+  `APIError.message` carries body text, up to 200 raw characters. A second path (2xx converter
+  messages and quoted received values) was found and closed in the same change.
+- Revert matrix 38/38 VERIFIED (R34-R37 new). Gates green; see `result.md`.
