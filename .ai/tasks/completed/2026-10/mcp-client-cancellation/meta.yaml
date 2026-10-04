@@ -21,7 +21,7 @@ summary:
     maxTotalTimeoutMs; range-validated) on call/list, and timeoutMs/signal bounding the whole
     connect;
     IAiClientTool.execute(args, context?) with the turn's signal, forwarded by the MCP adapter.
-    Proven against a real in-memory server and a loopback HTTP server; a 26-row revert matrix.
+    Proven against a real in-memory server and a loopback HTTP server; a 29-row revert matrix.
   diverged: >
     The SDK reports a caller abort with the timeout code (-32001), which the brief did not know, so
     'aborted' is decided by the identity of a per-call abort reason rather than by code. The seam
@@ -36,7 +36,8 @@ summary:
     client, against the brief's real-server-only instruction for steps 2-4. The gate-time review
     found the SDK's connect awaits transport.start() and the initialized notification outside its
     request options, so a stalled server hung the connect; the whole connect is now raced. It also
-    added invalid-options, single-use handles, and execute as a method signature.
+    added invalid-options and single-use handles. execute was made a method signature and then
+    reverted on the PR review, because method parameters are bivariant.
   sourceLine: "**Shipped:** an MCP tool call is now cancellable and classifiable — `callMcpTool` / `listMcpTools` take a timeout, an `AbortSignal` and a progress callback; every failure carries a total `McpFailureReason`; a session's close is observable through `onClose`; consumers can drive a session against an in-process server through `createCustomTransport`; and `IAiClientTool.execute` receives the turn's signal, which the MCP adapter forwards, so aborting a turn cancels the MCP request on the server."
   headline: >
     An MCP tool call can be bounded and cancelled — aborting an ai-assist turn now cancels the MCP
@@ -54,4 +55,4 @@ keywords:
   - abort reported as timeout
 relatedStreams:
   - { id: personality-intake, relationship: 'triaged the four asks (followups entries 16, 9, 8, 10)' }
-sourceHash: sha256:4c959fea66896dc9 # over brief.md + result.md + state.md
+sourceHash: sha256:469410458e9a8dac # over brief.md + result.md + state.md

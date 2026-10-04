@@ -158,6 +158,9 @@ the 404 tests run the same status through both phases.
 | R24 | the losing path does not await the close (review 2) | `a close() that never resolves does not stretch the connect past timeoutMs`, `…does not delay an aborted connect either` |
 | R25 | `finally` clears the deadline timer (review 2) | `a settled connect leaves no deadline timer pending and no listener on the per-call signal` (fake timers: `getTimerCount() === 0`) |
 | R26 | `finally` removes the race's abort listener (review 2) | the same test (the listener added is the one removed) |
+| R27 | `execute` is a function-typed property, not a method (Copilot, #722) | build fails: `TS2578 Unused '@ts-expect-error'` in `execute cannot demand more than TParams…` |
+| R28 | the post-handshake abort path does not await the close (Copilot, #722) | `the post-settle abort path does not wait for a close that never settles` |
+| R29 | an async `onClose` rejection is caught and logged (Copilot, #722) | `an async onClose that rejects is contained and logged…`, `…with no logger, is still contained` |
 
 Every row R1–R22 was rerun against the gate-time tree (`332c5f58` plus the R22 fix), not carried over. After review 2, R17 and R18 were rerun and R23–R26 added against `7d9d1279`; R18's anchor changed with the code (it previously reverted the `lost.signal.aborted` gate, which R23 now covers).
 R22 was found by the matrix itself: R13 first reddened a test meant for the race. The test's
@@ -242,10 +245,11 @@ No P1. Every finding applied, in `332c5f58`.
   `sessionId` refusal. Revert rows R20, R21.
 - **P3-4 — `-32000` during the handshake.** The `McpFailureReason` table now says any `-32000`
   during the handshake is `not-connected`, whoever raised it. `CAPABILITIES.md` says the same.
-- **P3-5 — method signature.** `IAiClientTool.execute` is now
+- **P3-5 — method signature.** `IAiClientTool.execute` was made
   `execute(args, context?): Promise<Result<unknown>>`. Two test sites in `ts-extras-mcp` read
-  `execute` unbound (a lint hazard once it is a method) and now wrap it in an arrow. Every
-  implementer compiles: the repo-wide rebuild is green (see `state.md` § Gates).
+  `execute` unbound (a lint hazard once it is a method) and were wrapped in an arrow. Every
+  implementer compiled. **Superseded:** reverted to a function-typed property on the PR review —
+  see [§ Copilot review on #722](#copilot-review-on-722).
 
 ## Gate-time review 2 (`6852c0d2..ce48cdb3`)
 
@@ -270,9 +274,10 @@ No blocking findings. All applied in `7d9d1279`.
   drops the value; the test asserts the value is absent.
 - **`execute` bivariance disclosed.** The method form makes `execute`'s parameters bivariant: a tool
   can declare `execute(args: { a; b })` against `IAiClientToolConfig<{ a }>` without a compile
-  error. This is kept, as directed, and disclosed in the `ts-extras` change file. Runtime stays
-  safe because `executeClientToolTurn` validates the arguments against `parametersSchema` before
-  calling `execute`.
+  error. It was kept, as directed, and disclosed in the change file with the claim that runtime
+  stays safe because arguments are validated first. **That claim was false**, and the PR review
+  caught it: validation guarantees only `TParams`, so a schema-valid `{ a }` reaches an `execute`
+  that requires `b`. **Superseded** — see [§ Copilot review on #722](#copilot-review-on-722).
 - **Duplicate `timeoutMs` check on the connect path:** kept, with a comment. `runSdkRequest` owns
   validation for every request; skipping it on connect would need a connect-only bypass for no
   behavioural gain, and the check cannot fail there. The two `isFailure` guards in
@@ -281,6 +286,35 @@ No blocking findings. All applied in `7d9d1279`.
   `finally`, via fake timers (`getTimerCount() === 0`) and add/remove listener identity (R25,
   R26); and an abort during a `start()` that genuinely stalls, as distinct from the
   synchronous-abort fake (R17 now reddens it).
+
+## Copilot review on #722
+
+Five comments, all applied in `40135942`.
+
+- **High — `execute`'s method form is type-unsound.** The method form makes `execute`'s parameters
+  bivariant. A tool can declare `execute(args: { query: string; limit: number })` against
+  `IAiClientTool<{ query: string }>` and compile. It then receives schema-valid `{ query }` with
+  `limit` undefined and crashes, because schema validation guarantees only `TParams`. I showed the
+  user both forms compiled under `tsc --strict`: the method form accepted that declaration, and the
+  property form rejected it with TS2322. **The user chose the property form.** `execute` is back to
+  `readonly execute: (args: TParams, context?: IAiClientToolExecuteContext) => Promise<Result<unknown>>`,
+  which deliberately departs from the method-signature convention, with the reason stated at the
+  declaration. A `@ts-expect-error` test in `clientToolTurn.test.ts` pins it: reverting to the method
+  form fails the build with TS2578 (R27). The two arrow wrappers in `ts-extras-mcp` tests stay; they
+  are harmless under either form.
+- **Low ×2 — the change file and this record repeated the false safety claim.** Both are corrected
+  above. The change file now says the property form keeps a wider argument shape a compile error.
+- **High — the post-handshake abort path awaited `client.close()`.** Unlike every other losing
+  path, it would hang `connectMcpSession` after an abort if the transport's `close()` never
+  settled. It now starts the close without awaiting it. Test: the post-settle abort with a
+  never-settling close still returns `aborted` (R28).
+- **Medium — a rejected `async` `onClose` was unhandled.** `McpCloseWatcher.notifyClosed` still
+  invokes the callback synchronously; a promise it returns is not awaited, but a `.catch` logs its
+  rejection (`onClose callback rejected: …`). `onClose` is now typed `() => void | Promise<void>`.
+  Tests: a rejecting async callback, with and without a logger, logs the rejection and raises no
+  `unhandledRejection` (R29). The naive revert, dropping the `.catch`, does not even build: the
+  repo's `@typescript-eslint/no-floating-promises` lint rule refuses it. R29 therefore reverts
+  instead to a handler that rethrows.
 
 ## What this pre-empts for the other MCP asks
 
