@@ -23,9 +23,9 @@ A Result-integration boundary over [`@modelcontextprotocol/sdk`](https://github.
 | `callMcpTool(session, name, args, options?)` | `Promise<DetailedResult<IMcpToolCallResult, McpFailureReason>>` (text-block projection; `isError: true` → failure with the tool's text verbatim, never swallowed) |
 | `adaptMcpTools(session, { logger? })` | `Promise<DetailedResult<{ tools: ReadonlyArray<AiAssist.IAiClientTool>; skipped: ReadonlyArray<IMcpSkippedTool> }, McpFailureReason>>` |
 
-**Per-request options (`IMcpRequestOptions`):** `timeoutMs` (SDK default 60 000), `signal`, `onProgress`, `resetTimeoutOnProgress`, `maxTotalTimeoutMs`, mapped onto the SDK's `RequestOptions`. An abort or timeout sends the server `notifications/cancelled`, so the request does not run on as an orphan. Adapted tools forward the turn's `signal` (`IAiClientTool.execute`'s context) to `callMcpTool`, so cancelling an `executeClientToolTurn` turn cancels the MCP request.
+**Per-request options (`IMcpRequestOptions`):** `timeoutMs` (SDK default 60 000), `signal`, `onProgress`, `resetTimeoutOnProgress`, `maxTotalTimeoutMs`, mapped onto the SDK's `RequestOptions`. `timeoutMs` applies per request — per page in `listMcpTools`. An abort or a `timeoutMs` expiry sends the server `notifications/cancelled`, so the request does not run on as an orphan; a `maxTotalTimeoutMs` expiry does not (the SDK fails it locally without a cancellation). Adapted tools forward the turn's `signal` (`IAiClientTool.execute`'s context) to `callMcpTool`, so cancelling an `executeClientToolTurn` turn cancels the MCP request.
 
-**Failure kinds (`McpFailureReason`, the `DetailedResult` detail):** the classification is total and keys on the SDK's error class, JSON-RPC code and HTTP status — never message text. Branch on `kind`; do not parse messages.
+**Failure kinds (`McpFailureReason`, the `DetailedResult` detail):** the classification is total and keys on the SDK's error class, JSON-RPC code, HTTP status, the session's observed close and the identity of the call's own abort reason — never message text. Branch on `kind`; do not parse messages.
 
 | kind | SDK signal |
 |---|---|

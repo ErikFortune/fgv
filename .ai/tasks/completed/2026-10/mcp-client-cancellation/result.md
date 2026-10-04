@@ -204,3 +204,13 @@ Recorded in `state.md` § Gates once the repo-wide runs complete.
 - The ai-assist surface needed two barrel files beyond the two named.
 - The orchestrator's lean (`createInMemoryTransportPair`) leaks more of the SDK than the
   alternative, for the reason above.
+
+## Deviation: four tests use a mocked client
+
+The brief asks that steps 2–4 be tested against a real in-process server. Four tests are not: R7's
+(a close landing inside the handshake), R13's (an abort landing after `initialize` answered but
+before `connect` returned) and R5's two mocked `isError` projections. The first two stage an
+interleaving inside the SDK's `connect` that a real server cannot produce deterministically; the
+mocked client is the only way to put the event in that window. Every other step 2–4 protection has
+a real-server test, and R5 also has the two real ones (`failures` and the `executeClientToolTurn`
+level).

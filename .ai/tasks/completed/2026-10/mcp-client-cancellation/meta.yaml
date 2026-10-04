@@ -1,7 +1,9 @@
 id: mcp-client-cancellation
 status: shipped
 packages: ['@fgv/ts-extras-mcp', '@fgv/ts-extras']
-prs: [] # the orchestrator fills in the PR number at open, anticipating its merge
+prs: [] # the orchestrator fills in the PR number at open, anticipating its merge — then re-run
+# `node common/scripts/generate-capability-feed.mjs` (the feed links prs[0]; CI's --check fails if stale)
+# and replace the two `#PR` placeholders in docs/workstreams/2026-10.md
 openPrs: []
 opened: 2026-10-04
 closed: 2026-10-04
@@ -28,7 +30,10 @@ summary:
     static bearer token already produces HTTP 401. The catch-all is 'transport', not the
     FetchFailureReason precedent's 'unknown'. The cited ts-extras-system-one precedent exists only as
     a design doc. Review moved 'not-connected' from code -32000 to the observed close, and added
-    schema-rejected responses to 'protocol'. Two ai-assist barrel files beyond the brief's list.
+    schema-rejected responses to 'protocol'. Two ai-assist barrel files beyond the brief's list. Four tests
+    stage conditions a real server cannot produce deterministically (a close landing inside the
+    handshake, an abort landing after initialize answered, two isError projections) on a mocked
+    client, against the brief's real-server-only instruction for steps 2-4.
   sourceLine: "**Shipped:** an MCP tool call is now cancellable and classifiable — `callMcpTool` / `listMcpTools` take a timeout, an `AbortSignal` and a progress callback; every failure carries a total `McpFailureReason`; a session's close is observable through `onClose`; consumers can drive a session against an in-process server through `createCustomTransport`; and `IAiClientTool.execute` receives the turn's signal, which the MCP adapter forwards, so aborting a turn cancels the MCP request on the server."
   headline: >
     An MCP tool call can be bounded and cancelled — aborting an ai-assist turn now cancels the MCP
