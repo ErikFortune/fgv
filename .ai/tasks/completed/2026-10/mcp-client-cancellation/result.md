@@ -339,6 +339,10 @@ One finding, verified by the orchestrator and applied.
   `this.onclose?.()`. The in-flight call fails `not-connected`, and `onClose` fires once. A
   type-level test assigns the SDK's `InMemoryTransport` to `IMcpSdkTransport`.
 - `etc/ts-extras-mcp.api.md` regenerated.
+- **Gates (on `24afca98`):** `ts-extras-mcp` fixlint, build, lint and test — 127 tests, 100 % on all
+  metrics, warnings 0. Repo-wide `install-run-rush.js test` — `SUCCESS: 36 operations` in 9 m 22 s,
+  errors 0, warnings 1 (the symlink notice), log not NUL-padded. `change --verify`, the feed
+  `--check` and `verify-capability-docs` all pass.
 
 ## What this pre-empts for the other MCP asks
 
