@@ -272,7 +272,28 @@ Recorded so they are not rediscovered as surprises:
 
 ## Gates
 
-Filled in after the repo-wide run (see below).
+- **Repo-wide `node common/scripts/install-run-rush.js test`, run on the code at `47320a83` from the
+  repo root:** `SUCCESS: 36 operations`, `exit 0`.
+  - 0 error lines (`not met|FAILURE|Operations failed|Error:|error TS`).
+  - 36 projects completed, none from cache.
+  - The log has no NUL padding (8050 bytes either way).
+  - The only case-insensitive `warning` line is Rush's existing "1 Git-tracked symlinks" notice,
+    the same as #720's baseline.
+  - `integration/asks` has not advanced since the branch point, so this is the combined tree.
+- **`ts-json-base`, after the comment-only softening in the finalize commit:**
+  - `heft build --clean`: 0 warnings, 0 errors.
+  - `eslint src`: 0.
+  - `heft test --clean`: **1297 passed, 0 failed, coverage 100/100/100/100, 0 warnings.**
+  - `etc/ts-json-base.api.md`: additive only (`+record`).
+  - The build-time lint caught one `no-unsafe-regexp` warning in a test during the review fixes, and
+    I fixed it before committing.
+- **`rush test --to @fgv/ts-extras-mcp`** (after `bfa5b645`): 6 operations, green.
+- **`rushx fixlint`:** `eslint --fix` was run after each entry. Prettier ran on every touched file,
+  and the pre-commit `rush prettier` passed on every commit.
+- **`change --verify --target-branch origin/integration/asks`:** passes. It finds three
+  `ts-json-base` change files (`minor`) and one `ts-extras-mcp` change file (`none`, docs only).
+- **`verify-capability-docs.mjs`:** 0 failed. `generate-capability-feed.mjs` was re-run and added
+  the headline without a PR link. Re-run it once the PR number is in `meta.yaml`.
 
 ## What the brief got wrong
 

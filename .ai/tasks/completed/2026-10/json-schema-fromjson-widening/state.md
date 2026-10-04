@@ -23,7 +23,17 @@ Worker-owned.
 - Revert matrix: the first attempt was interrupted mid-run and left R17's mutation in
   `fromJson.ts`. I noticed it, restored the file, and re-ran all 23 reverts on a clean tree.
   Every one goes red; the tree was clean afterwards.
-- Repo-wide `install-run-rush.js test`: see `result.md` § Gates.
+- Repo-wide `install-run-rush.js test` on `47320a83`: SUCCESS, 36 operations (detail in
+  `result.md` § Gates).
+- Finalize: migrated to `completed/2026-10/`, wrote `README.md` and `meta.yaml`, and drafted the
+  ledger entry. Antagonist pass (independent, read-only), whose findings I applied:
+  - recorded record's Gemini wire as an accepted risk;
+  - listed known exceptions and over-refusals;
+  - added a TECH_DEBT P3 entry for ignored validating keywords, and softened the two comments that
+    overclaimed;
+  - updated `ts-extras-mcp` `CAPABILITIES.md`;
+  - corrected wording.
+- `change --verify --target-branch origin/integration/asks` passes.
 
 ## Open questions
 

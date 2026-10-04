@@ -30,6 +30,12 @@ import { ILlmProperties, ISchemaValidator } from './types';
  * faithfully — silently dropping them would produce a converter looser than the schema describes.
  * Pure annotations (`title`, `default`, `examples`, draft-07 `format`) carry no validation semantics
  * and are intentionally ignored. `description` IS preserved on every node (see `_descriptionField`).
+ *
+ * The list is not yet complete against that rule: constraint keywords (`minimum`, `maxLength`,
+ * `const`, …), object-key keywords beside an open object (`patternProperties`, `propertyNames`, …) and
+ * array keywords (`prefixItems`, `contains`, …) are still accepted and ignored, so for them the
+ * converter is looser than the schema. Tracked in `docs/TECH_DEBT.md`; constraint keywords lift with
+ * their enforcement.
  */
 const FORBIDDEN_KEYWORDS: readonly string[] = [
   '$dynamicRef',
@@ -994,8 +1000,11 @@ export const jsonSchemaConverter: Converter<ISchemaValidator<JsonValue>, string>
  * references, recursive schemas (which have no finite inline form) and expansions beyond fixed
  * depth and size bounds are refused.
  *
- * Out-of-subset features fail loudly (see `FORBIDDEN_KEYWORDS`); `description` is preserved on every
- * node; other annotations (`title`, `default`, `format`, `examples`) are silently ignored.
+ * Out-of-subset structural features fail loudly (see `FORBIDDEN_KEYWORDS`); `description` is
+ * preserved on every node; other annotations (`title`, `default`, `format`, `examples`) are silently
+ * ignored. Constraint keywords (`minimum`, `maxLength`, `const`, …) and some object-key and array
+ * keywords are currently accepted without being enforced or emitted, so the validator can accept a
+ * value the source schema rejects.
  *
  * @param json - The raw JSON Schema object to parse.
  * @returns `Success` with the parsed schema, or `Failure` describing the first out-of-subset feature.
