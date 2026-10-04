@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "JsonSchema.fromJson accepts an anyOf/oneOf of exactly one supported schema plus {type: 'null'} (pydantic Optional[T]) and normalizes it to the nullable type-union form; every other union is still refused, now naming the keyword and its JSON Pointer path.",
+      "type": "minor",
+      "packageName": "@fgv/ts-json-base"
+    }
+  ],
+  "packageName": "@fgv/ts-json-base",
+  "email": "ErikFortune@outlook.com"
+}

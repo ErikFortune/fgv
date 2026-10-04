@@ -31,17 +31,24 @@ import { ILlmProperties, ISchemaValidator } from './types';
  * Pure annotations (`title`, `default`, `examples`, draft-07 `format`) carry no validation semantics
  * and are intentionally ignored. `description` IS preserved on every node (see `_descriptionField`).
  */
-const FORBIDDEN_KEYWORDS: readonly string[] = [
-  '$ref',
-  'oneOf',
-  'anyOf',
-  'allOf',
-  'not',
-  'if',
-  'then',
-  'else',
-  'pattern'
-];
+const FORBIDDEN_KEYWORDS: readonly string[] = ['$ref', 'allOf', 'not', 'if', 'then', 'else', 'pattern'];
+
+/**
+ * Keywords that carry no validation semantics. They may accompany a nullable `anyOf`/`oneOf`
+ * wrapper, or sit on its `{ type: 'null' }` branch, without changing what the node accepts.
+ * Anything else beside the wrapper is refused rather than guessed at.
+ */
+const _NON_VALIDATING_KEYWORDS: ReadonlySet<string> = new Set([
+  'description',
+  'title',
+  'default',
+  'examples',
+  '$comment',
+  'deprecated',
+  'readOnly',
+  'writeOnly',
+  '$schema'
+]);
 
 /** The type values we can dispatch to; used for early error detection. */
 const _SUPPORTED_TYPES: ReadonlySet<string> = new Set([
@@ -169,6 +176,108 @@ function _splitNullableType(rawType: unknown): Result<ISplitType> {
     return fail("union 'type' arrays are supported only as [<type>, 'null']");
   }
   return succeed({ type: withoutNull[0], nullable: true });
+}
+
+/** The two union keywords admitted in their nullable spelling. */
+type NullableUnionKeyword = 'anyOf' | 'oneOf';
+
+/** Whether a union member is exactly `{ type: 'null' }`, give or take annotations. */
+function _isNullBranch(member: unknown): boolean {
+  return _plainObjectField
+    .convert(member)
+    .onSuccess((obj) =>
+      succeed(
+        obj.type === 'null' &&
+          Object.keys(obj).every((key) => key === 'type' || _NON_VALIDATING_KEYWORDS.has(key))
+      )
+    )
+    .orDefault(false);
+}
+
+/**
+ * Re-emits `node` with `null` admitted and, optionally, a replacement description, then parses the
+ * result back.
+ *
+ * @remarks
+ * Goes through the wire form because that is the one representation every node shares: a
+ * nullable node is `type: [<t>, 'null']` (plus `null` in the `enum` of an enum node), which is the
+ * form `_splitNullableType` and the enum arm already read. A node that already admits `null`
+ * keeps its union as it is. Round-tripping through `toJson()` is safe because every node this
+ * converter builds re-parses to an equivalent validator — the property the round-trip tests pin.
+ */
+function _reshape(
+  node: ISchemaValidator<JsonValue>,
+  path: string,
+  nullable: boolean,
+  description: string | undefined
+): Result<ISchemaValidator<JsonValue>> {
+  const json: JsonObject = { ...node.toJson() };
+  if (nullable && typeof json.type === 'string') {
+    json.type = [json.type, 'null'];
+    if (Array.isArray(json.enum)) {
+      json.enum = [...json.enum, null];
+    }
+  }
+  if (description !== undefined) {
+    json.description = description;
+  }
+  // eslint-disable-next-line @typescript-eslint/no-use-before-define
+  return jsonSchemaConverter.convert(json, path);
+}
+
+/**
+ * Converts an `anyOf` or `oneOf` node. The only union admitted is exactly one supported schema
+ * plus `{ type: 'null' }`, in either order — pydantic's spelling of `Optional[T]` — which is
+ * normalized to the nullable form (`type: [<t>, 'null']`) the rest of the subset already models.
+ *
+ * @remarks
+ * For `anyOf` the meaning is "null, or a `T`", which is exactly a nullable `T`. For `oneOf` it is
+ * the same **only while `T` itself rejects `null`**: if `T` admits `null` too, a `null` value
+ * matches both branches and `oneOf` rejects it, which no nullable node can express — so that case
+ * is refused. Every other union (two non-null schemas, more than two members, `anyOf` and `oneOf`
+ * together, or a validation keyword beside the union) is refused as before.
+ */
+function _convertNullableUnion(
+  raw: Record<string, unknown>,
+  path: string
+): Result<ISchemaValidator<JsonValue>> {
+  if ('anyOf' in raw && 'oneOf' in raw) {
+    return fail(`${path}: unsupported JSON Schema keywords 'anyOf' and 'oneOf' on the same node`);
+  }
+  const keyword: NullableUnionKeyword = 'anyOf' in raw ? 'anyOf' : 'oneOf';
+  const unsupported = `${path}: unsupported JSON Schema keyword '${keyword}'`;
+  const sibling = Object.keys(raw).find((key) => key !== keyword && !_NON_VALIDATING_KEYWORDS.has(key));
+  if (sibling !== undefined) {
+    return fail(`${unsupported} alongside '${sibling}'`);
+  }
+  const members: unknown = raw[keyword];
+  const nullIndex: number = Array.isArray(members) ? members.findIndex(_isNullBranch) : -1;
+  const valueIndex: number = 1 - nullIndex;
+  if (
+    !Array.isArray(members) ||
+    members.length !== 2 ||
+    nullIndex < 0 ||
+    _isNullBranch(members[valueIndex])
+  ) {
+    return fail(`${unsupported} (supported only as exactly one schema plus {"type": "null"})`);
+  }
+  const memberPath = `${path}/${keyword}/${valueIndex}`;
+  return _descriptionField
+    .convert(raw)
+    .withErrorFormat((msg) => `${path}: ${msg}`)
+    .onSuccess((description) =>
+      // eslint-disable-next-line @typescript-eslint/no-use-before-define
+      jsonSchemaConverter
+        .convert(members[valueIndex], memberPath)
+        .onSuccess((inner) =>
+          keyword === 'oneOf' && inner.validate(null).isSuccess()
+            ? fail(
+                `${unsupported}: ${memberPath} also admits null, so exactly-one would reject null, ` +
+                  `which a nullable schema cannot express`
+              )
+            : _reshape(inner, path, true, description)
+        )
+    );
 }
 
 // ---------------------------------------------------------------------------
@@ -475,7 +584,7 @@ const _nullableTypeDispatchConverter: Converter<ISchemaValidator<JsonValue>, str
  * for the LLM-tool subset.
  *
  * @remarks
- * Performs pre-flight checks (non-object root, union type arrays, forbidden keywords,
+ * Performs pre-flight checks (non-object root, nullable `anyOf`/`oneOf`, union type arrays, forbidden keywords,
  * unknown types) before dispatching to the per-type arm converters.
  *
  * The conversion context (`TC = string`) carries the current JSON Pointer path so that
@@ -503,6 +612,12 @@ export const jsonSchemaConverter: Converter<ISchemaValidator<JsonValue>, string>
       return fail(`${path}: expected a JSON Schema object`);
     }
     const raw = from as Record<string, unknown>;
+
+    // A union is admitted only in its nullable spelling; its handler refuses everything else
+    // with the keyword and path named, like the forbidden-keyword check below.
+    if ('anyOf' in raw || 'oneOf' in raw) {
+      return _convertNullableUnion(raw, path);
+    }
 
     // Forbidden keywords: check before dispatching so inputs with no `type` (e.g. just
     // `{ $ref: '...' }`) get a specific error rather than a generic "no matching converter".
@@ -552,6 +667,10 @@ export const jsonSchemaConverter: Converter<ISchemaValidator<JsonValue>, string>
  * performs real runtime validation; the derived static type is the opaque `JsonValue`.
  *
  * Consumers who need a narrower derived type must author the schema via the factories.
+ *
+ * Nullability is read in both of its spellings: `type: [<t>, 'null']`, and an `anyOf` / `oneOf` of
+ * exactly one supported schema plus `{ type: 'null' }` (pydantic's `Optional[T]`). The second is
+ * normalized to the first, so `toJson()` always emits the type union. Every other union is refused.
  *
  * Out-of-subset features fail loudly (see `FORBIDDEN_KEYWORDS`); `description` is preserved on every
  * node; other annotations (`title`, `default`, `format`, `examples`) are silently ignored.
