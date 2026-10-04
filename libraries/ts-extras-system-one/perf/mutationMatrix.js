@@ -13,8 +13,10 @@
  *   node perf/mutationMatrix.js --pkg <copy> [--out <file.json>] [R1 R2 ...]
  *
  *   --check   only confirm every pattern occurs exactly once in this package's source; no builds
- *   --pkg     REQUIRED for a run: a copy of this package (with a `node_modules` symlink to this
- *             package's), which the run mutates
+ *   --pkg     REQUIRED for a run: a real copy of this package (with a `node_modules` symlink to
+ *             this package's), which the run mutates. It refuses this package's own directory, a
+ *             copy whose `src` is a symlink, and a copy whose mutated files are hard links to this
+ *             package's: each would mutate this package in place
  *   --out     write the results as JSON
  *   R…        run only the named rows
  *
@@ -113,8 +115,8 @@ const MUTATIONS = [
     "R8 'unchecked' is treated as maxChars: 0",
     ['U7'],
     MEASURE,
-    "  if (inputLimit === 'unchecked') {\n    return succeedWithDetail(undefined);\n  }\n  const { maxChars } = inputLimit;",
-    "  const { maxChars } = inputLimit === 'unchecked' ? { maxChars: 0 } : inputLimit;"
+    "limit === 'unchecked' ? succeedWithDetail(undefined) : bound(state, questions, limit.maxChars)",
+    "bound(state, questions, limit === 'unchecked' ? 0 : limit.maxChars)"
   ),
   m(
     "R9 the SDK's synchronous throw is not captured",
@@ -184,8 +186,8 @@ const MUTATIONS = [
     'R19 the choice need not be a label',
     ['U16e'],
     VALIDATE,
-    'labels.includes(choice.choice) ?',
-    'labels.length >= 0 ?'
+    'labels.includes(choice.choice)\n',
+    'labels.length >= 0\n'
   ),
   m('R20 the score may reach n', ['U16f'], VALIDATE, 'score.score <= top', 'score.score <= top + 1'),
   m(
@@ -281,8 +283,78 @@ const MUTATIONS = [
     CLIENT,
     "                err,\n                'invalid-response',\n                response.status,",
     "                err,\n                'invalid-request',\n                response.status,"
+  ),
+  paired(
+    'R34 a malformed request is not captured, so askSystemOne rejects instead of returning a Result',
+    ['U27'],
+    [
+      {
+        file: MEASURE,
+        from: '  return captureResult(() => {\n    const stateLength',
+        to: '  return succeed((() => {\n    const stateLength'
+      },
+      {
+        file: MEASURE,
+        from: '  }).withErrorFormat((message) => `the request could not be measured: ${message}`);',
+        to: '  })()).withErrorFormat((message) => `the request could not be measured: ${message}`);'
+      },
+      {
+        file: MEASURE,
+        from: '  captureResult,\n',
+        to: '  captureResult,\n  succeed,\n'
+      }
+    ]
+  ),
+  m(
+    "R35 an APIError's body-derived message reaches the failure message",
+    ['U23'],
+    CLASSIFY,
+    'failureMessage(reason, err.name, err.status, err.requestId)',
+    'failureMessage(reason, err.message, err.status, err.requestId)'
+  ),
+  m(
+    "R36 a 2xx body that is not a response is quoted by the converter's message",
+    ['U23'],
+    VALIDATE,
+    '.withErrorFormat(() => describeUnconvertible(questions, data))',
+    '.withErrorFormat((message) => `${message}; ${describeUnconvertible(questions, data)}`)'
+  ),
+  m(
+    'R37 a rejected choice is quoted',
+    ['U23'],
+    VALIDATE,
+    "fail(`${id}: the choice is not one of [${labels.join(', ')}]`)",
+    "fail(`${id}: the choice '${choice.choice}' is not one of [${labels.join(', ')}]`)"
   )
 ];
+
+/**
+ * Refuses a --pkg that would mutate this package's own source: the same directory, a `src` that is
+ * a symlink, or a source file hard-linked to this package's (same device and inode).
+ */
+function refuseInPlace(pkg) {
+  const refuse = (why) => {
+    console.error(`mutationMatrix: refusing --pkg ${pkg}: ${why}; pass a real copy`);
+    process.exit(2);
+  };
+  if (fs.realpathSync(pkg) === fs.realpathSync(PACKAGE_DIR)) {
+    refuse('it is this package');
+  }
+  const src = path.join(pkg, 'src');
+  if (
+    fs.lstatSync(src).isSymbolicLink() ||
+    fs.realpathSync(src) === fs.realpathSync(path.join(PACKAGE_DIR, 'src'))
+  ) {
+    refuse("its src is a link to this package's src");
+  }
+  for (const file of new Set(MUTATIONS.flatMap((row) => row.edits.map((edit) => edit.file)))) {
+    const theirs = fs.statSync(path.join(pkg, file));
+    const ours = fs.statSync(path.join(PACKAGE_DIR, file));
+    if (theirs.dev === ours.dev && theirs.ino === ours.ino) {
+      refuse(`${file} is a hard link to this package's`);
+    }
+  }
+}
 
 const PACKAGE_DIR = path.resolve(__dirname, '..');
 
@@ -305,9 +377,8 @@ function parseArgs(argv) {
   } else if (args.pkg === undefined) {
     console.error('mutationMatrix: --pkg <copy> is required; the run mutates the package it is given');
     process.exit(2);
-  } else if (fs.realpathSync(args.pkg) === fs.realpathSync(PACKAGE_DIR)) {
-    console.error('mutationMatrix: refusing to mutate the package in place; pass a copy to --pkg');
-    process.exit(2);
+  } else {
+    refuseInPlace(args.pkg);
   }
   return args;
 }
