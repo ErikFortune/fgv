@@ -78,7 +78,7 @@ describe('JsonSchema.fromJson', () => {
         required: ['query']
       };
       expect(JsonSchema.fromJson(raw)).toSucceedAndSatisfy((schema) => {
-        expect(schema.validate({ query: 'a', extra: 1 })).toSucceedWith({ query: 'a' });
+        expect(schema.validate({ query: 'a', extra: 1 })).toSucceedWith({ query: 'a', extra: 1 });
       });
     });
 

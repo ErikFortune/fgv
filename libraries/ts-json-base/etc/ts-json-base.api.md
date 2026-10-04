@@ -1162,6 +1162,7 @@ declare namespace JsonSchema {
         OptionalPropertyStatic,
         Simplify,
         ObjectStatic,
+        OpenObjectStatic,
         ILlmSchema,
         ILlmStringSchema,
         ILlmNumberSchema,
@@ -1254,6 +1255,17 @@ function object_2<T, TC = unknown>(properties: Validation.Classes.FieldValidator
 
 // @public
 function object_3<P extends ILlmProperties>(properties: P, opts: IObjectSchemaOptions & {
+    additionalProperties: true;
+    nullable: true;
+}): ISchemaValidator<OpenObjectStatic<P> | null>;
+
+// @public
+function object_3<P extends ILlmProperties>(properties: P, opts: IObjectSchemaOptions & {
+    additionalProperties: true;
+}): ISchemaValidator<OpenObjectStatic<P>>;
+
+// @public
+function object_3<P extends ILlmProperties>(properties: P, opts: IObjectSchemaOptions & {
     nullable: true;
 }): ISchemaValidator<ObjectStatic<P> | null>;
 
@@ -1272,6 +1284,9 @@ type ObjectStatic<P extends ILlmProperties> = Simplify<{
 
 // @public
 type ObjectValidator<T, TC = unknown> = Validation.Classes.ObjectValidator<JsonCompatibleType<T>, TC>;
+
+// @public
+type OpenObjectStatic<P extends ILlmProperties> = ObjectStatic<P> & JsonObject;
 
 // @public
 function optional<S extends ISchemaValidator<unknown>>(schema: S): ISchemaValidator<Static<S> | undefined>;
