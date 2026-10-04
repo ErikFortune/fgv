@@ -1,0 +1,75 @@
+id: json-schema-fromjson-widening
+status: shipped
+packages: ['@fgv/ts-json-base']
+prs: [] # PR onto integration/asks not yet opened; the orchestrator fills it in
+openPrs: []
+opened: 2026-10-04
+closed: 2026-10-04
+summary:
+  intended: >
+    Widen JsonSchema.fromJson (PersonAIlity fgv-asks #680, #681, #683) where a shape can be honoured
+    faithfully: anyOf/oneOf [T, null] as nullable, local $ref/$defs, then numeric enums, pattern,
+    record and {} — each to be supported, refused with a better message, or deferred — after checking
+    ts-extras' structured-output and tool-format paths before emitting any new wire shape, and
+    verifying five stated beliefs.
+  shipped: >
+    anyOf/oneOf of exactly one schema plus {type:'null'} normalizes to the nullable type union
+    (oneOf over a null-admitting branch refused). Local $ref (any #/… pointer) is inlined, so toJson()
+    is reference-free; recursive, remote and anchor refs, refs beside validation keywords and refs
+    under or through a nested $id are refused, bounded at 32 nested, 1000 expansions and 100000 nodes.
+    New additive JsonSchema.record(values); fromJson reads schema-valued additionalProperties (no
+    declared properties) as a record. Numeric enum, pattern and {} stay refused, the first and last
+    with sharper messages. $dynamicRef, $recursiveRef and a declared __proto__ property, previously
+    mishandled silently, are now refused. No test outside ts-json-base changed.
+  diverged: >
+    Of #683, only record shipped: numeric enum and {} are representable but their wire breaks Gemini
+    (string-only enum, required type), which needs a ts-extras decision the brief made a stop
+    condition, so both were deferred; pattern was deferred as a ReDoS surface. Belief 5's citation
+    (structuredOutput.ts:151) is a comment, not a check. Belief 1 missed that $dynamicRef/$recursiveRef
+    and constraint keywords were silently ignored. The code-reviewer pass added refusals the brief
+    did not anticipate (record beside patternProperties/propertyNames/unevaluatedProperties, pointers
+    through a nested $id, a __proto__ property) and a total node budget.
+  sourceLine: "**Shipped:** `JsonSchema.fromJson` now accepts pydantic's `Optional[T]` spelling (`anyOf`/`oneOf` `[T, {type:'null'}]`), local `$ref`/`$defs`, and schema-valued `additionalProperties` (as the new `JsonSchema.record`), each enforced by the converter and stated by `toJson()`. Numeric enums, `pattern` and `{}` stay refused, each for a recorded reason."
+  headline: >
+    JsonSchema.fromJson now reads pydantic Optional[T] (anyOf [T, null]), local $ref/$defs (inlined,
+    bounded) and z.record-style schema-valued additionalProperties via the new JsonSchema.record.
+keywords:
+  [
+    'anyOf',
+    'oneOf',
+    'nullable',
+    'Optional[T]',
+    'pydantic',
+    'FastMCP',
+    'zod',
+    '$ref',
+    '$defs',
+    'definitions',
+    'JSON Pointer',
+    'inlining',
+    'recursive schema',
+    'billion laughs',
+    'expansion budget',
+    'record',
+    'additionalProperties schema',
+    'z.record',
+    'dict[str, T]',
+    'numeric enum',
+    'pattern',
+    'ReDoS',
+    'Gemini enum',
+    'MCP tool schemas',
+    'adaptMcpTools',
+    'wire/converter agreement',
+    'fgv-ask'
+  ]
+relatedStreams:
+  - {
+      id: json-schema-open-object,
+      relationship: 'previous stream on this packlet; its undeclared-key seam carries the record values'
+    }
+  - {
+      id: personality-intake,
+      relationship: 'captured the PersonAIlity #680/#681/#683 asks this stream implements'
+    }
+sourceHash: TBD
