@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras-mcp",
+      "comment": "BREAKING: connectMcpSession, listMcpTools, callMcpTool and adaptMcpTools now return DetailedResult<T, McpFailureReason> — a total failure classification (tool-error, timeout, aborted, not-connected, session-expired, unauthorized, protocol, transport, invalid-handle); a tool's isError text is still the verbatim failure message. Adds per-request IMcpRequestOptions (timeoutMs, signal, onProgress, resetTimeoutOnProgress, maxTotalTimeoutMs) on callMcpTool and listMcpTools, timeoutMs/signal and an onClose observer on connectMcpSession, createCustomTransport for any pre-built SDK transport (e.g. InMemoryTransport), and forwards the turn's AbortSignal from adapted tools to callMcpTool",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-extras-mcp"
+}

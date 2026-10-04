@@ -44,11 +44,41 @@ See [`docs/FUTURE.md`](../../docs/FUTURE.md) for the tracked follow-ups.
 |---|---|
 | `createStdioTransport({ command, args?, env?, cwd? })` | `Result<IMcpTransport>` |
 | `createHttpTransport({ url, headers? })` | `Result<IMcpTransport>` |
-| `connectMcpSession({ transport, clientName?, clientVersion?, logger? })` | `Promise<Result<IMcpSession>>` |
+| `createCustomTransport(sdkTransport)` | `IMcpTransport` |
+| `connectMcpSession({ transport, clientName?, clientVersion?, logger?, onClose?, timeoutMs?, signal? })` | `Promise<DetailedResult<IMcpSession, McpFailureReason>>` |
 | `closeMcpSession(session)` | `Promise<Result<true>>` |
-| `listMcpTools(session)` | `Promise<Result<ReadonlyArray<IMcpToolDescriptor>>>` |
-| `callMcpTool(session, name, args)` | `Promise<Result<IMcpToolCallResult>>` |
-| `adaptMcpTools(session, { logger? })` | `Promise<Result<IAdaptMcpToolsResult>>` |
+| `listMcpTools(session, options?)` | `Promise<DetailedResult<ReadonlyArray<IMcpToolDescriptor>, McpFailureReason>>` |
+| `callMcpTool(session, name, args, options?)` | `Promise<DetailedResult<IMcpToolCallResult, McpFailureReason>>` |
+| `adaptMcpTools(session, { logger? })` | `Promise<DetailedResult<IAdaptMcpToolsResult, McpFailureReason>>` |
+
+`options` is an `IMcpRequestOptions`: `timeoutMs`, `signal`, `onProgress`, `resetTimeoutOnProgress`,
+`maxTotalTimeoutMs`. Every failure's `detail` is an `McpFailureReason` whose `kind` is one of
+`tool-error`, `timeout`, `aborted`, `not-connected`, `session-expired`, `unauthorized`, `protocol`,
+`transport` or `invalid-handle` — branch on it rather than on the message. See `CAPABILITIES.md`
+for how each SDK error maps to a kind.
+
+### Cancelling and bounding calls
+
+```ts
+const controller = new AbortController();
+const result = await callMcpTool(session, 'search', { q: 'x' }, { timeoutMs: 10_000, signal: controller.signal });
+if (result.isFailure() && result.detail?.kind === 'timeout') {
+  // ...
+}
+```
+
+An adapted tool forwards the turn's signal from `AiAssist.executeClientToolTurn({ signal })`, so
+aborting the turn cancels the in-flight MCP request (the server receives `notifications/cancelled`).
+
+### Testing against an in-process server
+
+```ts
+import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
+
+const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();
+await server.connect(serverSide); // your SDK `Server` / `McpServer`
+const session = (await connectMcpSession({ transport: createCustomTransport(clientSide) })).orThrow();
+```
 
 ## Usage
 
