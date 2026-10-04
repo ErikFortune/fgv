@@ -333,7 +333,9 @@ describe('createCustomTransport', () => {
   test('refuses a transport that already carries a session id — the SDK would skip the handshake', () => {
     const [clientSide] = InMemoryTransport.createLinkedPair();
     clientSide.sessionId = 'stale-session';
-    expect(createCustomTransport(clientSide)).toFailWith(/already has session id 'stale-session'/);
+    expect(createCustomTransport(clientSide)).toFailWith(/already has a session id/);
+    // The id acts like a routing token and failure messages reach logs: it is not echoed.
+    expect(createCustomTransport(clientSide)).not.toFailWith(/stale-session/);
   });
 
   test('a custom handle is single-use against a real server: the second connect never starts it again', async () => {
@@ -405,5 +407,109 @@ describe('connectMcpSession timeout and abort', () => {
       })
     ).toFailWithDetail('connectMcpSession: aborted before the request was sent', { kind: 'aborted' });
     expect(start).not.toHaveBeenCalled();
+  });
+});
+
+/**
+ * A custom transport whose `start()` and `close()` are scripted, and whose peer never answers.
+ * Its `close()` calls the SDK-assigned `onclose`, as `IMcpSdkTransport` requires.
+ */
+class ScriptedTransport {
+  public onclose?: () => void;
+  public onerror?: (error: Error) => void;
+  public onmessage?: (message: unknown) => void;
+  /** Set once `start()` has acquired its (pretend) resource. */
+  public allocated: boolean = false;
+  public readonly closeCalls: jest.Mock = jest.fn();
+  private readonly _start: 'reject' | 'stall' | 'ok';
+  private readonly _close: 'ok' | 'never';
+
+  public constructor(start: 'reject' | 'stall' | 'ok', close: 'ok' | 'never') {
+    this._start = start;
+    this._close = close;
+  }
+
+  public async start(): Promise<void> {
+    this.allocated = true;
+    if (this._start === 'reject') {
+      throw new Error('listen EADDRINUSE');
+    }
+    if (this._start === 'stall') {
+      await new Promise<void>(() => undefined);
+    }
+  }
+
+  public async send(): Promise<void> {
+    // The peer never answers.
+  }
+
+  public async close(): Promise<void> {
+    this.closeCalls();
+    if (this._close === 'never') {
+      return new Promise<void>(() => undefined);
+    }
+    this.onclose?.();
+  }
+}
+
+describe('connectMcpSession teardown on a lost or failed connect (custom transports)', () => {
+  test('a transport whose start() rejects is closed — the SDK itself never closes it', async () => {
+    const scripted = new ScriptedTransport('reject', 'ok');
+    const onClose = jest.fn();
+    expect(
+      await connectMcpSession({ transport: createCustomTransport(scripted).orThrow(), onClose })
+    ).toFailWithDetail(/^connectMcpSession: listen EADDRINUSE$/, { kind: 'transport' });
+    expect(scripted.allocated).toBe(true);
+    expect(scripted.closeCalls).toHaveBeenCalledTimes(1);
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  test('a close() that never resolves does not stretch the connect past timeoutMs', async () => {
+    const scripted = new ScriptedTransport('ok', 'never');
+    const started = Date.now();
+    expect(
+      await connectMcpSession({ transport: createCustomTransport(scripted).orThrow(), timeoutMs: 100 })
+    ).toFailWithDetail(/Request timed out/, { kind: 'timeout' });
+    expect(Date.now() - started).toBeLessThan(2_000);
+    // Started, not awaited. (It may be reached twice: when the SDK's own handshake failure also
+    // closes, a close() that never calls onclose leaves the SDK still holding the transport.)
+    expect(scripted.closeCalls).toHaveBeenCalled();
+  });
+
+  test('a close() that never resolves does not delay an aborted connect either', async () => {
+    const scripted = new ScriptedTransport('ok', 'never');
+    const controller = new AbortController();
+    setTimeout(() => controller.abort(), 50);
+    const started = Date.now();
+    expect(
+      await connectMcpSession({
+        transport: createCustomTransport(scripted).orThrow(),
+        timeoutMs: 30_000,
+        signal: controller.signal
+      })
+    ).toFailWithDetail('connectMcpSession: aborted by the caller', { kind: 'aborted' });
+    expect(Date.now() - started).toBeLessThan(2_000);
+    // Started, not awaited. (It may be reached twice: when the SDK's own handshake failure also
+    // closes, a close() that never calls onclose leaves the SDK still holding the transport.)
+    expect(scripted.closeCalls).toHaveBeenCalled();
+  });
+
+  test('an abort during a start() that genuinely stalls settles aborted and closes the transport', async () => {
+    const scripted = new ScriptedTransport('stall', 'ok');
+    const onClose = jest.fn();
+    const controller = new AbortController();
+    setTimeout(() => controller.abort(), 50);
+    const started = Date.now();
+    expect(
+      await connectMcpSession({
+        transport: createCustomTransport(scripted).orThrow(),
+        timeoutMs: 30_000,
+        signal: controller.signal,
+        onClose
+      })
+    ).toFailWithDetail('connectMcpSession: aborted by the caller', { kind: 'aborted' });
+    expect(Date.now() - started).toBeLessThan(2_000);
+    expect(scripted.closeCalls).toHaveBeenCalledTimes(1);
+    expect(onClose).not.toHaveBeenCalled();
   });
 });

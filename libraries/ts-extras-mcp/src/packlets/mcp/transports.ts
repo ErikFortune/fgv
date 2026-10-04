@@ -165,8 +165,10 @@ export function createHttpTransport(params: IMcpHttpTransportParams): Result<IMc
  */
 export function createCustomTransport(transport: IMcpSdkTransport): Result<IMcpTransport> {
   if (transport.sessionId !== undefined) {
+    // The id is deliberately not echoed: it acts much like a routing token, and failure messages
+    // reach logs.
     return fail(
-      `createCustomTransport: the transport already has session id '${transport.sessionId}'; ` +
+      'createCustomTransport: the transport already has a session id; ' +
         'the SDK would skip the initialize handshake — pass a fresh transport'
     );
   }

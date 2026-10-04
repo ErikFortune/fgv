@@ -166,10 +166,19 @@ export class McpSession implements IMcpSession {
  * only signal is the transport's own — and neither is covered, so a server that answers
  * `initialize` and then stalls would hang the connect forever. This races the whole connect
  * against the abort (rejecting with the per-call abort reason, so `runSdkRequest` classifies it
- * `'aborted'` by identity) and a timer (rejecting with the SDK's own timeout error). On losing, it
- * closes the client, which aborts the transport's in-flight fetch or ends its child process; the
- * close watcher is not yet armed, so the consumer's `onClose` is not called. When the SDK's own
- * connect fails first, the SDK has already closed the transport itself.
+ * `'aborted'` by identity) and a timer (rejecting with the SDK's own timeout error).
+ *
+ * **Every losing path closes the client** — the race lost to the deadline, and the SDK's own
+ * connect failing. The SDK does not close on all of its own failures: `Client.connect` awaits
+ * `transport.start()` before the `try` that runs `void this.close()`, so a transport whose
+ * `start()` rejects is never closed by the SDK. Where the SDK has already closed, a second close
+ * is a no-op once the first has completed (`Protocol._onclose` clears the transport); a transport
+ * whose `close()` never completes can be asked twice. The close watcher is not yet armed, so the
+ * consumer's `onClose` is not called.
+ *
+ * **The close is started, not awaited.** Closing can take seconds (a stdio child is given time to
+ * exit) or, for a custom transport, never finish; awaiting it would let teardown stretch the
+ * connect past its deadline. Teardown therefore completes after the failure has been returned.
  */
 async function _connectWithin(
   client: ISdkClient,
@@ -193,10 +202,8 @@ async function _connectWithin(
   connecting.catch(() => undefined);
   deadline.catch(() => undefined);
   return Promise.race([connecting, deadline])
-    .catch(async (err: unknown) => {
-      if (lost.signal.aborted) {
-        await client.close().catch(() => undefined);
-      }
+    .catch((err: unknown) => {
+      client.close().catch(() => undefined);
       return Promise.reject(err);
     })
     .finally(() => {
@@ -233,8 +240,10 @@ export async function connectMcpSession(
 ): Promise<DetailedResult<IMcpSession, McpFailureReason>> {
   const { transport, clientName, clientVersion, logger, onClose, timeoutMs, signal } = params;
 
-  // Validated before the handle is claimed, so a bad option does not consume the transport, and
-  // here as well as in runSdkRequest because the connect race below uses it as its own timer.
+  // Validated before the handle is claimed, so a bad option does not consume the transport. The
+  // connect race below also uses it as its own timer. runSdkRequest validates it again on this
+  // path, where that check can no longer fail; it is kept because runSdkRequest owns validation for
+  // every request, and skipping it here would need a connect-only bypass for no behavioural gain.
   const timeoutCheck = validateTimeoutMs('timeoutMs', timeoutMs);
   if (timeoutCheck.isFailure()) {
     return failWithDetail(`connectMcpSession: ${timeoutCheck.message}`, { kind: 'invalid-options' });

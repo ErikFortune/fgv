@@ -289,6 +289,34 @@ describe('connectMcpSession', () => {
     expect(onClose).not.toHaveBeenCalled();
   });
 
+  test('a settled connect leaves no deadline timer pending and no listener on the per-call signal', async () => {
+    jest.useFakeTimers({ doNotFake: ['nextTick', 'queueMicrotask'] });
+    try {
+      const controller = new AbortController();
+      let add: jest.SpyInstance | undefined;
+      let remove: jest.SpyInstance | undefined;
+      const fake = makeFakeClient();
+      // The per-call signal is the one the SDK receives; the connect race listens on it too.
+      fake.connect.mockImplementation(async (__transport: unknown, options?: sdk.ISdkRequestOptions) => {
+        if (options?.signal !== undefined) {
+          add = jest.spyOn(options.signal, 'addEventListener');
+          remove = jest.spyOn(options.signal, 'removeEventListener');
+        }
+      });
+      mockSdk.makeClient.mockReturnValueOnce(fake as unknown as sdk.ISdkClient);
+      const transport = createStdioTransport({ command: 'node' }).orThrow();
+
+      expect(
+        await connectMcpSession({ transport, signal: controller.signal, timeoutMs: 60_000 })
+      ).toSucceed();
+      expect(jest.getTimerCount()).toBe(0);
+      expect(add).toHaveBeenCalledTimes(1);
+      expect(remove).toHaveBeenCalledWith('abort', add?.mock.calls[0][1]);
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
   test('a transport handle is single-use: a second connect fails invalid-handle without touching it', async () => {
     const first = makeFakeClient();
     mockSdk.makeClient.mockReturnValueOnce(first as unknown as sdk.ISdkClient);

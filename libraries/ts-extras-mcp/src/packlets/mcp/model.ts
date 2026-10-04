@@ -165,8 +165,10 @@ export interface IConnectMcpSessionParams {
   readonly onClose?: () => void;
   /**
    * Timeout in milliseconds for the whole connect: starting the transport, the `initialize`
-   * request, and sending `notifications/initialized`. Defaults to the SDK's 60 000. Expiry closes
-   * the transport and fails the connect with the `'timeout'` {@link McpFailureReason}. Must be a
+   * request, and sending `notifications/initialized`. Defaults to the SDK's 60 000. Expiry fails the
+   * connect with the `'timeout'` {@link McpFailureReason} and starts closing the transport; the
+   * failure is returned without waiting for that close, so teardown (a stdio child's exit, a slow
+   * custom `close()`) can finish after the connect has returned. Must be a
    * positive, finite number no greater than 2³¹−1 (`setTimeout`'s limit); anything else fails with
    * `'invalid-options'`.
    */
@@ -174,8 +176,9 @@ export interface IConnectMcpSessionParams {
   /**
    * Aborts the connect. An abort at any point before the connect settles — while the transport
    * starts, while `initialize` is in flight, or while the SDK sends `notifications/initialized` —
-   * closes the transport and fails the connect with the `'aborted'` {@link McpFailureReason}, so
-   * an aborted connect never hands back a live session.
+   * fails the connect with the `'aborted'` {@link McpFailureReason} and starts closing the
+   * transport, so an aborted connect never hands back a live session. As with a timeout, the
+   * failure does not wait for the close to finish.
    */
   readonly signal?: AbortSignal;
 }

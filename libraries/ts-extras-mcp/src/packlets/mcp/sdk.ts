@@ -224,8 +224,9 @@ export function makeHttpTransport(url: URL, headers?: Record<string, string>): I
  * What the classifier needs to know about where a failure came from.
  *
  * @remarks
- * During the connect handshake there is no session yet, and the SDK closes the transport on *any*
- * handshake failure, so the close state carries no information there and is not asked for. On an
+ * During the connect handshake there is no session yet, and a failed handshake is always torn down
+ * (by the SDK, or by `connectMcpSession` where the SDK does not — a rejected `transport.start()`),
+ * so the close state carries no information there and is not asked for. On an
  * established session, `closed` is whether its close had been observed when the failure was
  * classified; the SDK calls `onclose` before it fails the requests in flight, so it is already
  * `true` for every failure the close itself caused.
