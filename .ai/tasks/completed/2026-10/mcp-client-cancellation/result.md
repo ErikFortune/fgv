@@ -258,7 +258,19 @@ No P1. Every finding applied, in `332c5f58`.
 
 ## Gate counts
 
-See `state.md` § Gates.
+Gate-time run, on `f3e1e300` (the first run is in `state.md` § Gates). Logs were graded by grep, not by
+exit code. Warnings were counted with `grep -ci warning`.
+
+| gate | result |
+|---|---|
+| `install-run-rush.js rebuild` (repo-wide) | `SUCCESS: 37 operations`; errors 0; warnings 1, which is Rush's pre-build *"Detected 1 Git-tracked symlinks"* repo-analysis notice and not a project warning (there is no `SUCCESS WITH WARNINGS` banner); the log is not NUL-padded |
+| `install-run-rush.js test` (repo-wide) | `SUCCESS: 36 operations`; errors 0; warnings 1, the same notice; the log is not NUL-padded |
+| `ts-extras-mcp` build + test | 117 tests, 100 % statements/branches/functions/lines; warnings 0 |
+| `ts-extras` build + test | 3109 tests, 100 % on all metrics; warnings 0; `etc/ts-extras.api.md` warnings identical to base |
+| `rushx lint`, both packages | errors 0, warnings 0 (`fixlint` run first) |
+| `change --verify --target-branch origin/integration/asks` | passes |
+| `generate-capability-feed.mjs --check` / `verify-capability-docs.mjs` | 0 stale / 0 failed |
+| base drift | `integration/asks` has not moved since the branch was cut |
 
 ## What the brief got wrong
 
