@@ -138,7 +138,7 @@ describe('adapted MCP tools inside executeClientToolTurn', () => {
     });
     const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();
     await server.connect(serverSide);
-    session = (await connectMcpSession({ transport: createCustomTransport(clientSide) })).orThrow();
+    session = (await connectMcpSession({ transport: createCustomTransport(clientSide).orThrow() })).orThrow();
   });
 
   afterEach(async () => {

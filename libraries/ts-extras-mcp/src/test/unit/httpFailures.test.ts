@@ -40,7 +40,7 @@ import {
 } from '../../packlets/mcp';
 
 /** How the fixture answers a POST that is not part of the handshake. */
-type Mode = 'refuse-all' | 'missing-endpoint' | 'expire-session' | 'server-error';
+type Mode = 'refuse-all' | 'missing-endpoint' | 'expire-session' | 'server-error' | 'stall-initialized';
 
 interface IJsonRpcMessage {
   readonly id?: number;
@@ -57,6 +57,9 @@ function readBody(req: IncomingMessage): Promise<IJsonRpcMessage> {
     req.on('end', () => resolve(JSON.parse(text) as IJsonRpcMessage));
   });
 }
+
+/** Resolves when the client gives up on a POST the fixture is deliberately holding open. */
+let heldPostClosed: Promise<void> = Promise.resolve();
 
 async function handle(mode: Mode, req: IncomingMessage, res: ServerResponse): Promise<void> {
   if (req.method !== 'POST') {
@@ -88,6 +91,12 @@ async function handle(mode: Mode, req: IncomingMessage, res: ServerResponse): Pr
     return;
   }
   if (message.id === undefined) {
+    if (mode === 'stall-initialized' && message.method === 'notifications/initialized') {
+      // Answered `initialize`, then never answers this POST: the window the SDK's request options
+      // do not cover. Record when the client abandons it.
+      heldPostClosed = new Promise<void>((resolve) => res.on('close', () => resolve()));
+      return;
+    }
     res.writeHead(202).end();
     return;
   }
@@ -103,8 +112,12 @@ async function startHttpFixture(mode: Mode): Promise<{ server: Server; url: stri
   return { server, url: `http://127.0.0.1:${port}/mcp` };
 }
 
-async function connectTo(url: string, onClose?: () => void): ReturnType<typeof connectMcpSession> {
-  return connectMcpSession({ transport: createHttpTransport({ url }).orThrow(), onClose });
+async function connectTo(
+  url: string,
+  onClose?: () => void,
+  bounds?: { timeoutMs?: number; signal?: AbortSignal }
+): ReturnType<typeof connectMcpSession> {
+  return connectMcpSession({ transport: createHttpTransport({ url }).orThrow(), onClose, ...bounds });
 }
 
 describe('HTTP-status classification over the real Streamable-HTTP transport', () => {
@@ -117,6 +130,8 @@ describe('HTTP-status classification over the real Streamable-HTTP transport', (
     if (toClose !== undefined) {
       await closeMcpSession(toClose);
     }
+    // A held-open POST would otherwise keep the server from closing.
+    server?.closeAllConnections();
     await new Promise<void>((resolve) => server?.close(() => resolve()));
   });
 
@@ -164,6 +179,38 @@ describe('HTTP-status classification over the real Streamable-HTTP transport', (
     expect(await callMcpTool(session, 'echo', {})).toFailWithDetail(/^callMcpTool 'echo':/, {
       kind: 'transport',
       status: 500
+    });
+  });
+
+  describe('a server that answers initialize and then stalls notifications/initialized', () => {
+    test('timeoutMs bounds the whole connect: it fails timeout promptly, the stalled POST is abandoned, and onClose never fires', async () => {
+      const fixture = await startHttpFixture('stall-initialized');
+      server = fixture.server;
+      const onClose = jest.fn();
+      const started = Date.now();
+      expect(await connectTo(fixture.url, onClose, { timeoutMs: 150 })).toFailWithDetail(
+        /^connectMcpSession: .*Request timed out/,
+        { kind: 'timeout' }
+      );
+      expect(Date.now() - started).toBeLessThan(5_000);
+      // Closing the client aborted the transport's in-flight fetch.
+      await heldPostClosed;
+      expect(onClose).not.toHaveBeenCalled();
+    });
+
+    test('an abort settles the connect promptly as aborted, and onClose never fires', async () => {
+      const fixture = await startHttpFixture('stall-initialized');
+      server = fixture.server;
+      const onClose = jest.fn();
+      const controller = new AbortController();
+      setTimeout(() => controller.abort(), 100);
+      const started = Date.now();
+      expect(
+        await connectTo(fixture.url, onClose, { timeoutMs: 30_000, signal: controller.signal })
+      ).toFailWithDetail('connectMcpSession: aborted by the caller', { kind: 'aborted' });
+      expect(Date.now() - started).toBeLessThan(5_000);
+      await heldPostClosed;
+      expect(onClose).not.toHaveBeenCalled();
     });
   });
 });

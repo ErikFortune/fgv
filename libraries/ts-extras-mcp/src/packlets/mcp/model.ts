@@ -79,6 +79,15 @@ export interface IMcpHttpTransportParams {
  * ownership of it (assigning its `onmessage` / `onclose` / `onerror` callbacks) when the session
  * connects.
  *
+ * Two runtime obligations the type cannot express:
+ *
+ * - **`close()` must call the `onclose` callback** the SDK assigned. That is how the SDK fails the
+ *   session's in-flight requests and how {@link IConnectMcpSessionParams.onClose} is told.
+ * - **It must be fresh: unstarted, and without a `sessionId`.** The SDK skips the `initialize`
+ *   handshake for a transport that already has a session id, treating it as a reconnect — so a
+ *   session connected over one would never have negotiated. {@link createCustomTransport} refuses
+ *   a transport whose `sessionId` is already set.
+ *
  * @public
  */
 export interface IMcpSdkTransport {
@@ -86,8 +95,10 @@ export interface IMcpSdkTransport {
   start(): Promise<void>;
   /** Sends one JSON-RPC message. */
   send(message: unknown, options?: unknown): Promise<void>;
-  /** Closes the transport. */
+  /** Closes the transport. Must call the `onclose` callback the SDK assigned. */
   close(): Promise<void>;
+  /** The transport's session id, when it has one. Must be unset when the transport is wrapped. */
+  readonly sessionId?: string;
 }
 
 /**
@@ -153,17 +164,18 @@ export interface IConnectMcpSessionParams {
    */
   readonly onClose?: () => void;
   /**
-   * Timeout in milliseconds for the initialize handshake. Defaults to the SDK's 60 000. Expiry
-   * fails the connect with the `'timeout'` {@link McpFailureReason}.
+   * Timeout in milliseconds for the whole connect: starting the transport, the `initialize`
+   * request, and sending `notifications/initialized`. Defaults to the SDK's 60 000. Expiry closes
+   * the transport and fails the connect with the `'timeout'` {@link McpFailureReason}. Must be a
+   * positive, finite number no greater than 2³¹−1 (`setTimeout`'s limit); anything else fails with
+   * `'invalid-options'`.
    */
   readonly timeoutMs?: number;
   /**
-   * Aborts the connect. An abort before the connect settles fails it with the `'aborted'`
-   * {@link McpFailureReason} and closes the transport — including an abort that lands after the
-   * server answered `initialize` but before the connect returned, so an aborted connect never
-   * hands back a live session. The SDK cannot interrupt the transport's own start-up (spawning a
-   * stdio child), so an abort during it takes effect when the handshake request is about to be
-   * sent.
+   * Aborts the connect. An abort at any point before the connect settles — while the transport
+   * starts, while `initialize` is in flight, or while the SDK sends `notifications/initialized` —
+   * closes the transport and fails the connect with the `'aborted'` {@link McpFailureReason}, so
+   * an aborted connect never hands back a live session.
    */
   readonly signal?: AbortSignal;
 }
@@ -227,7 +239,9 @@ export interface IMcpRequestOptions {
   /**
    * Request timeout in milliseconds. When it elapses the request fails with the `'timeout'`
    * {@link McpFailureReason}. Defaults to the SDK's `DEFAULT_REQUEST_TIMEOUT_MSEC`, 60 000.
-   * For {@link listMcpTools} it applies to each page.
+   * For {@link listMcpTools} it applies to each page. Must be a positive, finite number no greater
+   * than 2³¹−1 (`setTimeout`'s limit; the SDK would otherwise fire a larger or infinite value after
+   * 1 ms); anything else fails with `'invalid-options'` before a request is sent.
    */
   readonly timeoutMs?: number;
   /**
@@ -246,6 +260,7 @@ export interface IMcpRequestOptions {
   /**
    * An overall limit, in milliseconds, that progress cannot extend. The SDK checks it when a
    * progress notification arrives, so it only has effect together with `resetTimeoutOnProgress`.
+   * The same range as `timeoutMs` applies.
    */
   readonly maxTotalTimeoutMs?: number;
 }
@@ -268,12 +283,13 @@ export interface IMcpRequestOptions {
  * | `'tool-error'` | The tool ran and returned a result flagged `isError`. The failure message is the tool's own text, unprefixed (see {@link callMcpTool}). |
  * | `'timeout'` | The SDK's request timeout (or `maxTotalTimeoutMs`) elapsed: `McpError` code `-32001`. |
  * | `'aborted'` | The caller's `AbortSignal` fired before the request settled. |
- * | `'not-connected'` | The session's connection is closed: the call was made after it closed, or it closed while the call was in flight. Decided by the observed close, which the SDK reports before it fails the in-flight requests. |
+ * | `'not-connected'` | The session's connection is closed: the call was made after it closed, or it closed while the call was in flight. Decided by the observed close, which the SDK reports before it fails the in-flight requests. During the connect handshake, **any** `-32000` is `'not-connected'` — whether the SDK raised it or the server sent it — because a failed handshake leaves no session either way. |
  * | `'session-expired'` | A Streamable-HTTP server answered HTTP 404 for an established session: it no longer recognizes the session id (typically after a server restart). |
  * | `'unauthorized'` | The server refused the credentials: HTTP 401 or 403, or the SDK's `UnauthorizedError`. |
  * | `'protocol'` | The server answered with a JSON-RPC error (`code` is its code — including `-32000` on a session that is still open, which servers use as a generic error), or the SDK rejected a response that failed its result schema (no `code`). |
  * | `'transport'` | Anything else: a network or child-process I/O failure, a non-2xx HTTP status not listed above, or an error the SDK raised without a type — including the handshake's protocol-version refusal, which the SDK raises as a plain `Error`. This is the catch-all that makes the classification total. |
- * | `'invalid-handle'` | The session or transport handle did not come from this package. A caller bug; retrying cannot help. |
+ * | `'invalid-handle'` | The session or transport handle did not come from this package, or the transport handle was already used by an earlier connect. A caller bug; retrying cannot help. |
+ * | `'invalid-options'` | A `timeoutMs` / `maxTotalTimeoutMs` outside the accepted range. Reported before anything is sent. |
  *
  * Reconnecting is the consumer's policy. As a guide: `'not-connected'` and `'session-expired'`
  * mean the session is dead; `'transport'` means it is suspect; the others leave it usable.
@@ -299,7 +315,8 @@ export type McpFailureReason =
   | { readonly kind: 'protocol'; readonly code?: number }
   /** `status` is the HTTP status, when the failure came as one. */
   | { readonly kind: 'transport'; readonly status?: number }
-  | { readonly kind: 'invalid-handle' };
+  | { readonly kind: 'invalid-handle' }
+  | { readonly kind: 'invalid-options' };
 
 // ============================================================================
 // Tool discovery + invocation

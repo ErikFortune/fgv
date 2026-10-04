@@ -101,7 +101,7 @@ async function startFixture(onClose?: () => void, logger?: Logging.ILogger): Pro
   const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();
   await server.connect(serverSide);
   const session = (
-    await connectMcpSession({ transport: createCustomTransport(clientSide), onClose, logger })
+    await connectMcpSession({ transport: createCustomTransport(clientSide).orThrow(), onClose, logger })
   ).orThrow();
   return { server, session, release: () => release(), entered };
 }
@@ -242,7 +242,9 @@ describe('a response the SDK rejects', () => {
       peer.send({ jsonrpc: '2.0', id: message.id, result }).catch(() => undefined);
     };
     await peer.start();
-    const session = (await connectMcpSession({ transport: createCustomTransport(clientSide) })).orThrow();
+    const session = (
+      await connectMcpSession({ transport: createCustomTransport(clientSide).orThrow() })
+    ).orThrow();
 
     expect(await callMcpTool(session, 'anything', {})).toFailWithDetail(/^callMcpTool 'anything':/, {
       kind: 'protocol'

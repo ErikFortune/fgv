@@ -1188,7 +1188,7 @@ interface IAiCacheRequest {
 // @public
 interface IAiClientTool<TParams = unknown> {
     readonly config: IAiClientToolConfig<TParams>;
-    readonly execute: (args: TParams, context?: IAiClientToolExecuteContext) => Promise<Result<unknown>>;
+    execute(args: TParams, context?: IAiClientToolExecuteContext): Promise<Result<unknown>>;
 }
 
 // @public
@@ -1216,8 +1216,6 @@ interface IAiClientToolContinuation {
     readonly toolCallsSummary: ReadonlyArray<IAiClientToolCallSummary>;
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
 // @public
 interface IAiClientToolExecuteContext {
     readonly signal?: AbortSignal;

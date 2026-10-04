@@ -165,7 +165,7 @@ export interface IAiClientToolConfig<TParams = unknown> {
 }
 
 /**
- * Per-call context handed to {@link AiAssist.IAiClientTool.execute} alongside the arguments.
+ * Per-call context handed to `IAiClientTool.execute` alongside the arguments.
  * @public
  */
 export interface IAiClientToolExecuteContext {
@@ -199,7 +199,7 @@ export interface IAiClientTool<TParams = unknown> {
    * @param context - The turn's context, including its abort signal when it has one.
    * @returns A `Promise<Result<unknown>>` — the result is stringified and sent back to the model.
    */
-  readonly execute: (args: TParams, context?: IAiClientToolExecuteContext) => Promise<Result<unknown>>;
+  execute(args: TParams, context?: IAiClientToolExecuteContext): Promise<Result<unknown>>;
 }
 
 /**

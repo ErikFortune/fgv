@@ -16,14 +16,14 @@ A Result-integration boundary over [`@modelcontextprotocol/sdk`](https://github.
 |---|---|
 | `createStdioTransport({ command, args?, env?, cwd? })` | `Result<IMcpTransport>` |
 | `createHttpTransport({ url, headers? })` | `Result<IMcpTransport>` |
-| `createCustomTransport(sdkTransport)` | `IMcpTransport` — wraps any pre-built SDK client transport (e.g. `InMemoryTransport` for tests against an in-process server), typed structurally as `IMcpSdkTransport` |
+| `createCustomTransport(sdkTransport)` | `Result<IMcpTransport>` — wraps any pre-built SDK client transport (e.g. `InMemoryTransport` for tests against an in-process server), typed structurally as `IMcpSdkTransport`. It must be fresh (refused if it already has a `sessionId`, which would make the SDK skip `initialize`), and its `close()` must call `onclose`. Every transport handle is single-use. |
 | `connectMcpSession({ transport, clientName?, clientVersion?, logger?, onClose?, timeoutMs?, signal? })` | `Promise<DetailedResult<IMcpSession, McpFailureReason>>` |
 | `closeMcpSession(session)` | `Promise<Result<true>>` |
 | `listMcpTools(session, options?)` | `Promise<DetailedResult<ReadonlyArray<IMcpToolDescriptor>, McpFailureReason>>` (follows the SDK's `nextCursor` for the full catalog) |
 | `callMcpTool(session, name, args, options?)` | `Promise<DetailedResult<IMcpToolCallResult, McpFailureReason>>` (text-block projection; `isError: true` → failure with the tool's text verbatim, never swallowed) |
 | `adaptMcpTools(session, { logger? })` | `Promise<DetailedResult<{ tools: ReadonlyArray<AiAssist.IAiClientTool>; skipped: ReadonlyArray<IMcpSkippedTool> }, McpFailureReason>>` |
 
-**Per-request options (`IMcpRequestOptions`):** `timeoutMs` (SDK default 60 000), `signal`, `onProgress`, `resetTimeoutOnProgress`, `maxTotalTimeoutMs`, mapped onto the SDK's `RequestOptions`. `timeoutMs` applies per request — per page in `listMcpTools`. An abort or a `timeoutMs` expiry sends the server `notifications/cancelled`, so the request does not run on as an orphan; a `maxTotalTimeoutMs` expiry does not (the SDK fails it locally without a cancellation). Adapted tools forward the turn's `signal` (`IAiClientTool.execute`'s context) to `callMcpTool`, so cancelling an `executeClientToolTurn` turn cancels the MCP request.
+**Per-request options (`IMcpRequestOptions`):** `timeoutMs` (SDK default 60 000), `signal`, `onProgress`, `resetTimeoutOnProgress`, `maxTotalTimeoutMs`, mapped onto the SDK's `RequestOptions`. On `connectMcpSession`, `timeoutMs` and `signal` bound the **whole** connect — transport start, `initialize`, and sending `notifications/initialized`, which the SDK's own request options do not cover — and a lost connect closes the transport. `timeoutMs` applies per request — per page in `listMcpTools`. An abort or a `timeoutMs` expiry sends the server `notifications/cancelled`, so the request does not run on as an orphan; a `maxTotalTimeoutMs` expiry does not (the SDK fails it locally without a cancellation). Adapted tools forward the turn's `signal` (`IAiClientTool.execute`'s context) to `callMcpTool`, so cancelling an `executeClientToolTurn` turn cancels the MCP request.
 
 **Failure kinds (`McpFailureReason`, the `DetailedResult` detail):** the classification is total and keys on the SDK's error class, JSON-RPC code, HTTP status, the session's observed close and the identity of the call's own abort reason — never message text. Branch on `kind`; do not parse messages.
 
@@ -32,12 +32,13 @@ A Result-integration boundary over [`@modelcontextprotocol/sdk`](https://github.
 | `tool-error` | `CallToolResult.isError: true` — message is the tool's text, unprefixed |
 | `timeout` | `McpError` code `-32001` (`RequestTimeout`), including `maxTotalTimeoutMs` |
 | `aborted` | the caller's signal fired first — decided by the identity of the abort reason this package issued, because the SDK reports an abort with the *timeout* code |
-| `not-connected` | the session's close was observed: the SDK's `ConnectionClosed` (`-32000`) or untyped "Not connected", both raised only after `onclose` fires (a server's own `-32000` on an open session is `protocol`) |
+| `not-connected` | the session's close was observed: the SDK's `ConnectionClosed` (`-32000`) or untyped "Not connected", both raised only after `onclose` fires (a server's own `-32000` on an open session is `protocol`). During the handshake any `-32000` is `not-connected` |
 | `session-expired` | `StreamableHTTPError` 404 on an established session (during the handshake a 404 is `transport`) |
 | `unauthorized` | HTTP 401 / 403, or the SDK's `UnauthorizedError`; carries `status` when there was one |
 | `protocol` | any other `McpError` — a JSON-RPC error from the server, carrying `code` — or a response that failed the SDK's result schema (zod's error, no `code`) |
 | `transport` | the catch-all: any other HTTP status (carries `status`), network or child-process I/O failures, untyped SDK errors (including the handshake's protocol-version refusal) |
-| `invalid-handle` | a session/transport handle not produced by this package |
+| `invalid-handle` | a session/transport handle not produced by this package, or a transport handle already used by an earlier connect |
+| `invalid-options` | a `timeoutMs` / `maxTotalTimeoutMs` that is not a positive finite number ≤ 2³¹−1 (`setTimeout` would otherwise fire it after 1 ms); reported before anything is sent |
 
 **Close observation:** `connectMcpSession({ onClose })` fires once when the connection closes, for any reason (including `closeMcpSession`); never for a failed connect; a throwing callback is contained and logged. Reconnect policy stays with the consumer — the package has no pool or reconnector. A Streamable-HTTP server restart is not a close; the next call reports it as `session-expired` when the server answers 404.
 

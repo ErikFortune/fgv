@@ -47,9 +47,26 @@ export class McpTransport implements IMcpTransport {
   /** The wrapped SDK transport. */
   public readonly sdkTransport: ISdkTransport;
 
+  private _claimed: boolean = false;
+
   public constructor(transportKind: McpTransportKind, sdkTransport: ISdkTransport) {
     this.transportKind = transportKind;
     this.sdkTransport = sdkTransport;
+  }
+
+  /**
+   * Claims the transport for one connect. A handle is single-use: the session that connects over
+   * it owns the underlying transport, and starting a transport twice either throws in the SDK or —
+   * for a transport that keeps a session id — silently skips the handshake. A second claim fails
+   * without touching the transport. The handle stays claimed even when its connect fails, because
+   * the SDK may already have started (and then closed) the transport.
+   */
+  public claim(): Result<ISdkTransport> {
+    if (this._claimed) {
+      return fail('invalid MCP transport: this handle was already used by a connect; create a new transport');
+    }
+    this._claimed = true;
+    return succeed(this.sdkTransport);
   }
 
   /**
@@ -129,18 +146,29 @@ export function createHttpTransport(params: IMcpHttpTransportParams): Result<IMc
  * import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
  * const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();
  * await server.connect(serverSide); // an SDK `Server` / `McpServer`
- * const session = await connectMcpSession({ transport: createCustomTransport(clientSide) });
+ * const transport = createCustomTransport(clientSide).orThrow();
+ * const session = await connectMcpSession({ transport });
  * ```
  *
  * It equally admits transports this package does not construct itself (the SDK's legacy SSE or
  * WebSocket client transports, or a consumer's own implementation). The transport is handed to the
- * SDK client unchanged; it must be a fresh, unstarted transport, and the session that connects over
- * it takes ownership of it.
+ * SDK client unchanged, and the session that connects over it takes ownership of it. It must be
+ * fresh — unstarted and without a `sessionId` (the SDK treats a transport with one as a reconnect
+ * and skips the `initialize` handshake) — and its `close()` must call the `onclose` callback the
+ * SDK assigns, or neither in-flight requests nor `onClose` learn of the close. The handle is
+ * single-use: a second {@link connectMcpSession} with it fails `'invalid-handle'`.
  *
- * @param transport - An unstarted SDK client transport.
- * @returns An opaque handle with `transportKind: 'custom'`.
+ * @param transport - An unstarted SDK client transport with no session id.
+ * @returns `Success` with an opaque handle (`transportKind: 'custom'`), or `Failure` if the
+ * transport already carries a session id.
  * @public
  */
-export function createCustomTransport(transport: IMcpSdkTransport): IMcpTransport {
-  return new McpTransport('custom', transport);
+export function createCustomTransport(transport: IMcpSdkTransport): Result<IMcpTransport> {
+  if (transport.sessionId !== undefined) {
+    return fail(
+      `createCustomTransport: the transport already has session id '${transport.sessionId}'; ` +
+        'the SDK would skip the initialize handshake — pass a fresh transport'
+    );
+  }
+  return succeed<IMcpTransport>(new McpTransport('custom', transport));
 }

@@ -155,7 +155,7 @@ describe('@fgv/ts-extras-mcp end-to-end against a real in-memory MCP server', ()
     // connect through the PUBLIC connectMcpSession (real Client + real initialize handshake). On a
     // connect failure, tear the fixture server down before throwing so a failed handshake can't
     // leak open handles.
-    const transport = createCustomTransport(fixture.clientTransport);
+    const transport = createCustomTransport(fixture.clientTransport).orThrow();
     expect(transport.transportKind).toBe('custom');
     const connectResult = await connectMcpSession({ transport, clientName: 'e2e', clientVersion: '0.0.0' });
     if (connectResult.isFailure()) {
@@ -263,7 +263,7 @@ describe('@fgv/ts-extras-mcp end-to-end against a real in-memory MCP server', ()
       expect(await adaptMcpTools(session)).toSucceedAndSatisfy((result) => {
         const echo = result.tools.find((t) => t.config.name === 'echo');
         expect(echo).toBeDefined();
-        echoExecute = echo?.execute;
+        echoExecute = echo !== undefined ? (args: unknown) => echo.execute(args) : undefined;
       });
       expect(echoExecute).toBeDefined();
       expect(await echoExecute?.({ msg: 'roundtrip' })).toSucceedWith('echo: {"msg":"roundtrip"}');

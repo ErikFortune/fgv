@@ -26,7 +26,14 @@
  * @packageDocumentation
  */
 
-import { type DetailedResult, failWithDetail, succeedWithDetail } from '@fgv/ts-utils';
+import {
+  type DetailedResult,
+  type Result,
+  fail,
+  failWithDetail,
+  succeed,
+  succeedWithDetail
+} from '@fgv/ts-utils';
 
 import { type IMcpProgress, type IMcpRequestOptions, type McpFailureReason } from './model';
 import { type ISdkProgress, type ISdkRequestOptions, makeAbortReason } from './sdk';
@@ -37,6 +44,27 @@ import { type ISdkProgress, type ISdkRequestOptions, makeAbortReason } from './s
  */
 export function errorText(err: unknown): string {
   return err instanceof Error ? err.message : String(err);
+}
+
+/**
+ * The largest delay `setTimeout` honours (2³¹−1 ms). Node fires a larger — or an infinite — delay
+ * after 1 ms instead, so a caller asking for "no timeout" would get an immediate one.
+ * @internal
+ */
+export const MAX_TIMEOUT_MS: number = 2147483647;
+
+/**
+ * Validates one timeout-shaped option: absent, or a positive finite number of milliseconds no
+ * greater than {@link MAX_TIMEOUT_MS}.
+ * @internal
+ */
+export function validateTimeoutMs(name: string, value: number | undefined): Result<number | undefined> {
+  if (value === undefined || (Number.isFinite(value) && value > 0 && value <= MAX_TIMEOUT_MS)) {
+    return succeed(value);
+  }
+  return fail(
+    `${name} must be a positive number of milliseconds no greater than ${MAX_TIMEOUT_MS} (got ${value})`
+  );
 }
 
 function _toProgress(raw: ISdkProgress): IMcpProgress {
@@ -82,8 +110,15 @@ export async function runSdkRequest<T>(
   prefix: string,
   options: IMcpRequestOptions | undefined,
   classify: (err: unknown) => McpFailureReason,
-  request: (sdkOptions: ISdkRequestOptions | undefined) => Promise<T>
+  request: (sdkOptions: ISdkRequestOptions) => Promise<T>
 ): Promise<DetailedResult<T, McpFailureReason>> {
+  const invalid = validateTimeoutMs('timeoutMs', options?.timeoutMs).onSuccess(() =>
+    validateTimeoutMs('maxTotalTimeoutMs', options?.maxTotalTimeoutMs)
+  );
+  if (invalid.isFailure()) {
+    return failWithDetail(`${prefix}: ${invalid.message}`, { kind: 'invalid-options' });
+  }
+
   const callerSignal = options?.signal;
   // Check-then-link with no await between: either the signal is already aborted (and nothing is
   // sent), or the listener is in place before the request can be issued.
@@ -96,10 +131,7 @@ export async function runSdkRequest<T>(
   const onAbort = (): void => controller.abort(abortReason);
   callerSignal?.addEventListener('abort', onAbort, { once: true });
 
-  const sdkOptions =
-    options !== undefined
-      ? _toSdkOptions(options, callerSignal !== undefined ? controller.signal : undefined)
-      : undefined;
+  const sdkOptions = _toSdkOptions(options ?? {}, callerSignal !== undefined ? controller.signal : undefined);
   return (
     Promise.resolve()
       .then(() => request(sdkOptions))

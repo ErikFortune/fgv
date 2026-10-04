@@ -43,8 +43,16 @@ import {
   type IMcpSession,
   type McpFailureReason
 } from './model';
-import { runSdkRequest } from './request';
-import { type ISdkClient, classifySdkError, makeClient } from './sdk';
+import { runSdkRequest, validateTimeoutMs } from './request';
+import {
+  type ISdkClient,
+  type ISdkRequestOptions,
+  type ISdkTransport,
+  SDK_DEFAULT_TIMEOUT_MS,
+  classifySdkError,
+  makeClient,
+  makeTimeoutError
+} from './sdk';
 import { McpTransport } from './transports';
 
 /** Default client name advertised during the initialize handshake. */
@@ -150,6 +158,63 @@ export class McpSession implements IMcpSession {
 }
 
 /**
+ * Runs the SDK's `connect`, bounded by the caller's abort and an overall deadline.
+ *
+ * @remarks
+ * The SDK applies the request options to the `initialize` request only. Its `connect` also awaits
+ * `transport.start()` and sending `notifications/initialized` — over Streamable HTTP a POST whose
+ * only signal is the transport's own — and neither is covered, so a server that answers
+ * `initialize` and then stalls would hang the connect forever. This races the whole connect
+ * against the abort (rejecting with the per-call abort reason, so `runSdkRequest` classifies it
+ * `'aborted'` by identity) and a timer (rejecting with the SDK's own timeout error). On losing, it
+ * closes the client, which aborts the transport's in-flight fetch or ends its child process; the
+ * close watcher is not yet armed, so the consumer's `onClose` is not called. When the SDK's own
+ * connect fails first, the SDK has already closed the transport itself.
+ */
+async function _connectWithin(
+  client: ISdkClient,
+  transport: ISdkTransport,
+  sdkOptions: ISdkRequestOptions,
+  timeoutMs: number
+): Promise<void> {
+  const connecting = client.connect(transport, sdkOptions);
+  // The deadline is itself an abort: whichever of the timer and the caller's signal fires first
+  // aborts it, with that cause as its reason, and `lost.signal.aborted` records that it fired.
+  const lost = new AbortController();
+  const deadline = new Promise<never>((resolve, reject) => {
+    lost.signal.addEventListener('abort', () => reject(lost.signal.reason), { once: true });
+  });
+  const timer = setTimeout(() => lost.abort(makeTimeoutError(timeoutMs)), timeoutMs);
+  const stopListening =
+    sdkOptions.signal !== undefined
+      ? _onAbort(sdkOptions.signal, (reason) => lost.abort(reason))
+      : (): void => undefined;
+  // Whichever loses the race must not surface as an unhandled rejection.
+  connecting.catch(() => undefined);
+  deadline.catch(() => undefined);
+  return Promise.race([connecting, deadline])
+    .catch(async (err: unknown) => {
+      if (lost.signal.aborted) {
+        await client.close().catch(() => undefined);
+      }
+      return Promise.reject(err);
+    })
+    .finally(() => {
+      clearTimeout(timer);
+      stopListening();
+    });
+}
+
+/**
+ * Calls `onAbort` with the signal's reason when it aborts; returns a function that stops listening.
+ */
+function _onAbort(signal: AbortSignal, onAbort: (reason: unknown) => void): () => void {
+  const listener = (): void => onAbort(signal.reason);
+  signal.addEventListener('abort', listener, { once: true });
+  return () => signal.removeEventListener('abort', listener);
+}
+
+/**
  * Connects to an MCP server over the given transport and performs the initialize handshake.
  *
  * @param params - Transport plus optional client identity, logger and close observer.
@@ -162,9 +227,15 @@ export async function connectMcpSession(
 ): Promise<DetailedResult<IMcpSession, McpFailureReason>> {
   const { transport, clientName, clientVersion, logger, onClose, timeoutMs, signal } = params;
 
-  const transportResult = McpTransport.fromHandle(transport);
-  if (transportResult.isFailure()) {
-    return failWithDetail(`connectMcpSession: ${transportResult.message}`, { kind: 'invalid-handle' });
+  // Validated before the handle is claimed, so a bad option does not consume the transport, and
+  // here as well as in runSdkRequest because the connect race below uses it as its own timer.
+  const timeoutCheck = validateTimeoutMs('timeoutMs', timeoutMs);
+  if (timeoutCheck.isFailure()) {
+    return failWithDetail(`connectMcpSession: ${timeoutCheck.message}`, { kind: 'invalid-options' });
+  }
+  const claimed = McpTransport.fromHandle(transport).onSuccess((handle) => handle.claim());
+  if (claimed.isFailure()) {
+    return failWithDetail(`connectMcpSession: ${claimed.message}`, { kind: 'invalid-handle' });
   }
 
   const name = clientName ?? DEFAULT_CLIENT_NAME;
@@ -173,15 +244,13 @@ export async function connectMcpSession(
   const closeWatcher = new McpCloseWatcher(logger);
   client.onclose = () => closeWatcher.notifyClosed();
 
-  logger?.info(
-    `mcp: connecting (client ${name}@${version}, transport ${transportResult.value.transportKind})`
-  );
+  logger?.info(`mcp: connecting (client ${name}@${version}, transport ${transport.transportKind})`);
 
   const handshake = await runSdkRequest(
     'connectMcpSession',
     { timeoutMs, signal },
     (err) => classifySdkError(err, { phase: 'connect' }),
-    (sdkOptions) => client.connect(transportResult.value.sdkTransport, sdkOptions)
+    (sdkOptions) => _connectWithin(client, claimed.value, sdkOptions, timeoutMs ?? SDK_DEFAULT_TIMEOUT_MS)
   );
   if (handshake.isFailure()) {
     return failWithDetail(handshake.message, handshake.detail);

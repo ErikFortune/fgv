@@ -122,7 +122,9 @@ async function startFixture(): Promise<IFixture> {
 
   const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();
   await server.connect(serverSide);
-  const session = (await connectMcpSession({ transport: createCustomTransport(clientSide) })).orThrow();
+  const session = (
+    await connectMcpSession({ transport: createCustomTransport(clientSide).orThrow() })
+  ).orThrow();
   return {
     server,
     session,
@@ -279,6 +281,35 @@ describe('per-request options against a real in-memory MCP server', () => {
     expect(await listMcpTools(fixture.session, { timeoutMs: 5_000 })).toSucceedWith([]);
   });
 
+  test('an out-of-range timeout fails invalid-options before anything is sent', async () => {
+    for (const timeoutMs of [Infinity, 0, -5, Number.NaN, 2 ** 31]) {
+      expect(await callMcpTool(fixture.session, 'hang', {}, { timeoutMs })).toFailWithDetail(
+        /^callMcpTool 'hang': timeoutMs must be a positive number/,
+        { kind: 'invalid-options' }
+      );
+    }
+    expect(
+      await callMcpTool(
+        fixture.session,
+        'hang',
+        {},
+        { maxTotalTimeoutMs: Infinity, resetTimeoutOnProgress: true }
+      )
+    ).toFailWithDetail(/maxTotalTimeoutMs must be a positive number/, { kind: 'invalid-options' });
+    expect(await listMcpTools(fixture.session, { timeoutMs: Infinity })).toFailWithDetail(
+      /^listMcpTools: timeoutMs must be/,
+      { kind: 'invalid-options' }
+    );
+    expect(fixture.callCount()).toBe(0);
+    expect(fixture.listCount()).toBe(0);
+  });
+
+  test('the largest timeout setTimeout honours is accepted', async () => {
+    expect(await callMcpTool(fixture.session, 'progress', {}, { timeoutMs: 2 ** 31 - 1 })).toSucceedWith({
+      content: 'finished'
+    });
+  });
+
   test('listMcpTools honours timeoutMs', async () => {
     fixture.setListBehavior('hang');
     expect(await listMcpTools(fixture.session, { timeoutMs: 50 })).toFailWithDetail(/Request timed out/, {
@@ -298,6 +329,32 @@ describe('per-request options against a real in-memory MCP server', () => {
   });
 });
 
+describe('createCustomTransport', () => {
+  test('refuses a transport that already carries a session id — the SDK would skip the handshake', () => {
+    const [clientSide] = InMemoryTransport.createLinkedPair();
+    clientSide.sessionId = 'stale-session';
+    expect(createCustomTransport(clientSide)).toFailWith(/already has session id 'stale-session'/);
+  });
+
+  test('a custom handle is single-use against a real server: the second connect never starts it again', async () => {
+    const server = new Server({ name: 'single-use', version: '0.0.1' }, { capabilities: { tools: {} } });
+    server.setRequestHandler(ListToolsRequestSchema, async () => ({ tools: [] }));
+    const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();
+    await server.connect(serverSide);
+    const start = jest.spyOn(clientSide, 'start');
+    const transport = createCustomTransport(clientSide).orThrow();
+    const session = (await connectMcpSession({ transport })).orThrow();
+    expect(await connectMcpSession({ transport })).toFailWithDetail(/already used by a connect/, {
+      kind: 'invalid-handle'
+    });
+    expect(start).toHaveBeenCalledTimes(1);
+    // The first session is unaffected.
+    expect(await listMcpTools(session)).toSucceed();
+    await closeMcpSession(session);
+    await server.close();
+  });
+});
+
 describe('connectMcpSession timeout and abort', () => {
   /** A client transport whose peer never answers: the initialize request is never responded to. */
   function silentPeer(): { clientSide: InMemoryTransport; serverSide: InMemoryTransport } {
@@ -309,7 +366,11 @@ describe('connectMcpSession timeout and abort', () => {
     const { clientSide, serverSide } = silentPeer();
     const onClose = jest.fn();
     expect(
-      await connectMcpSession({ transport: createCustomTransport(clientSide), timeoutMs: 50, onClose })
+      await connectMcpSession({
+        transport: createCustomTransport(clientSide).orThrow(),
+        timeoutMs: 50,
+        onClose
+      })
     ).toFailWithDetail(/^connectMcpSession: .*Request timed out/, { kind: 'timeout' });
     await serverSide.close();
     expect(onClose).not.toHaveBeenCalled();
@@ -320,7 +381,7 @@ describe('connectMcpSession timeout and abort', () => {
     const controller = new AbortController();
     const onClose = jest.fn();
     const pending = connectMcpSession({
-      transport: createCustomTransport(clientSide),
+      transport: createCustomTransport(clientSide).orThrow(),
       signal: controller.signal,
       onClose
     });
@@ -338,7 +399,10 @@ describe('connectMcpSession timeout and abort', () => {
     const controller = new AbortController();
     controller.abort();
     expect(
-      await connectMcpSession({ transport: createCustomTransport(clientSide), signal: controller.signal })
+      await connectMcpSession({
+        transport: createCustomTransport(clientSide).orThrow(),
+        signal: controller.signal
+      })
     ).toFailWithDetail('connectMcpSession: aborted before the request was sent', { kind: 'aborted' });
     expect(start).not.toHaveBeenCalled();
   });

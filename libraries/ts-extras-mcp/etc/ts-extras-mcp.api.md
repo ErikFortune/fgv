@@ -24,7 +24,7 @@ export function closeMcpSession(session: IMcpSession): Promise<Result<true>>;
 export function connectMcpSession(params: IConnectMcpSessionParams): Promise<DetailedResult<IMcpSession, McpFailureReason>>;
 
 // @public
-export function createCustomTransport(transport: IMcpSdkTransport): IMcpTransport;
+export function createCustomTransport(transport: IMcpSdkTransport): Result<IMcpTransport>;
 
 // @public
 export function createHttpTransport(params: IMcpHttpTransportParams): Result<IMcpTransport>;
@@ -80,6 +80,7 @@ export interface IMcpRequestOptions {
 export interface IMcpSdkTransport {
     close(): Promise<void>;
     send(message: unknown, options?: unknown): Promise<void>;
+    readonly sessionId?: string;
     start(): Promise<void>;
 }
 
@@ -169,6 +170,8 @@ export type McpFailureReason = {
     readonly status?: number;
 } | {
     readonly kind: 'invalid-handle';
+} | {
+    readonly kind: 'invalid-options';
 };
 
 // @public

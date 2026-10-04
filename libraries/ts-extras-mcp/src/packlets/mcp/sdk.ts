@@ -42,6 +42,7 @@ import {
   StreamableHTTPClientTransport,
   StreamableHTTPError
 } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
+import { DEFAULT_REQUEST_TIMEOUT_MSEC } from '@modelcontextprotocol/sdk/shared/protocol.js';
 import { ErrorCode, McpError } from '@modelcontextprotocol/sdk/types.js';
 
 import { type McpFailureReason } from './model';
@@ -159,6 +160,21 @@ export interface ISdkClient {
  */
 export function makeAbortReason(): Error {
   return new McpError(ErrorCode.RequestTimeout, 'request aborted by the caller');
+}
+
+/**
+ * The SDK's default per-request timeout, in milliseconds.
+ * @internal
+ */
+export const SDK_DEFAULT_TIMEOUT_MS: number = DEFAULT_REQUEST_TIMEOUT_MSEC;
+
+/**
+ * Creates the error a timeout this package enforces itself rejects with — the same class and
+ * code the SDK uses for its own request timeouts, so it classifies identically.
+ * @internal
+ */
+export function makeTimeoutError(timeoutMs: number): Error {
+  return McpError.fromError(ErrorCode.RequestTimeout, 'Request timed out', { timeout: timeoutMs });
 }
 
 /**

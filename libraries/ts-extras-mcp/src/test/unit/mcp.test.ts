@@ -228,12 +228,12 @@ describe('connectMcpSession', () => {
     expect(onClose).not.toHaveBeenCalled();
   });
 
-  test('an abort landing after the handshake answered fails aborted, closes the client, and never reports the close', async () => {
+  test('an abort while connect is still running fails aborted, closes the client, and never reports the close', async () => {
     const onClose = jest.fn();
     const controller = new AbortController();
     const fake: IFakeClient & { onclose?: () => void } = makeFakeClient();
-    // The server has answered `initialize`; the abort arrives before connect() returns, so the
-    // SDK has no request left to cancel.
+    // The server has answered `initialize` and the SDK is still finishing connect() — the window
+    // its own request options do not cover. The connect race wins on the abort.
     fake.connect.mockImplementation(async () => controller.abort());
     fake.close.mockImplementation(async () => fake.onclose?.());
     mockSdk.makeClient.mockReturnValueOnce(fake as unknown as sdk.ISdkClient);
@@ -245,6 +245,70 @@ describe('connectMcpSession', () => {
     );
     expect(fake.close).toHaveBeenCalledTimes(1);
     expect(onClose).not.toHaveBeenCalled();
+  });
+
+  test('an abort landing after connect settled but before the session is handed out fails aborted', async () => {
+    const onClose = jest.fn();
+    const controller = new AbortController();
+    const fake: IFakeClient & { onclose?: () => void } = makeFakeClient();
+    fake.close.mockImplementation(async () => fake.onclose?.());
+    mockSdk.makeClient.mockReturnValueOnce(fake as unknown as sdk.ISdkClient);
+    // The request helper removes its listener from the caller's signal once the SDK has settled:
+    // aborting at that moment lands after the race is decided and before the session is armed.
+    const remove = controller.signal.removeEventListener.bind(controller.signal);
+    jest.spyOn(controller.signal, 'removeEventListener').mockImplementation((type, listener, options) => {
+      remove(type, listener, options);
+      controller.abort();
+    });
+    const transport = createStdioTransport({ command: 'node' }).orThrow();
+
+    expect(await connectMcpSession({ transport, onClose, signal: controller.signal })).toFailWithDetail(
+      'connectMcpSession: aborted by the caller',
+      { kind: 'aborted' }
+    );
+    expect(fake.close).toHaveBeenCalledTimes(1);
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  test('a transport handle is single-use: a second connect fails invalid-handle without touching it', async () => {
+    const first = makeFakeClient();
+    mockSdk.makeClient.mockReturnValueOnce(first as unknown as sdk.ISdkClient);
+    const transport = createStdioTransport({ command: 'node' }).orThrow();
+    expect(await connectMcpSession({ transport })).toSucceed();
+
+    expect(await connectMcpSession({ transport })).toFailWithDetail(/already used by a connect/, {
+      kind: 'invalid-handle'
+    });
+    // Refused before a client is even built, so nothing reaches the transport.
+    expect(mockSdk.makeClient).toHaveBeenCalledTimes(1);
+  });
+
+  test('a failed connect still consumes the handle', async () => {
+    const failing = makeFakeClient({
+      connect: jest.fn(async () => {
+        throw new Error('refused');
+      })
+    });
+    mockSdk.makeClient.mockReturnValueOnce(failing as unknown as sdk.ISdkClient);
+    const transport = createStdioTransport({ command: 'node' }).orThrow();
+    expect(await connectMcpSession({ transport })).toFail();
+    expect(await connectMcpSession({ transport })).toFailWithDetail(/already used/, {
+      kind: 'invalid-handle'
+    });
+  });
+
+  test('an invalid timeoutMs fails invalid-options and does not consume the handle', async () => {
+    const transport = createStdioTransport({ command: 'node' }).orThrow();
+    for (const timeoutMs of [Infinity, 0, -1, Number.NaN, 2 ** 31]) {
+      expect(await connectMcpSession({ transport, timeoutMs })).toFailWithDetail(
+        /timeoutMs must be a positive/,
+        {
+          kind: 'invalid-options'
+        }
+      );
+    }
+    mockSdk.makeClient.mockReturnValueOnce(makeFakeClient() as unknown as sdk.ISdkClient);
+    expect(await connectMcpSession({ transport, timeoutMs: 2 ** 31 - 1 })).toSucceed();
   });
 
   test('fails invalid-handle for a foreign transport handle', async () => {
@@ -335,8 +399,8 @@ describe('listMcpTools', () => {
     expect(await listMcpTools(session)).toSucceedAndSatisfy((tools: ReadonlyArray<IMcpToolDescriptor>) => {
       expect(tools.map((t) => t.name)).toEqual(['a', 'b']);
     });
-    expect(listTools).toHaveBeenNthCalledWith(1, undefined, undefined);
-    expect(listTools).toHaveBeenNthCalledWith(2, { cursor: 'p2' }, undefined);
+    expect(listTools).toHaveBeenNthCalledWith(1, undefined, {});
+    expect(listTools).toHaveBeenNthCalledWith(2, { cursor: 'p2' }, {});
   });
 
   test('coerces a missing/invalid inputSchema to null and a missing description to undefined', async () => {
@@ -382,7 +446,7 @@ describe('callMcpTool', () => {
     expect(await callMcpTool(session, 'a', args)).toSucceedWith({
       content: 'line one\nline two'
     });
-    expect(fake.callTool).toHaveBeenCalledWith({ name: 'a', arguments: args }, undefined, undefined);
+    expect(fake.callTool).toHaveBeenCalledWith({ name: 'a', arguments: args }, undefined, {});
   });
 
   test('summarizes non-text blocks', async () => {
@@ -530,18 +594,15 @@ describe('adaptMcpTools', () => {
       });
       const session = await connectWith(fake);
       const result = (await adaptMcpTools(session)).orThrow();
-      return result.tools[0].execute;
+      const tool = result.tools[0];
+      return (args: unknown) => tool.execute(args);
     }
 
     test('forwards validated args to callMcpTool and returns the projected content', async () => {
       const callTool = jest.fn(async () => ({ content: [{ type: 'text', text: 'tool output' }] }));
       const execute = await adaptGood(callTool);
       expect(await execute({ q: 'hello' })).toSucceedWith('tool output');
-      expect(callTool).toHaveBeenCalledWith(
-        { name: 'good', arguments: { q: 'hello' } },
-        undefined,
-        undefined
-      );
+      expect(callTool).toHaveBeenCalledWith({ name: 'good', arguments: { q: 'hello' } }, undefined, {});
     });
 
     test('fails when the model supplies non-object arguments', async () => {

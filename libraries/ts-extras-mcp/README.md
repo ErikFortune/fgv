@@ -44,7 +44,7 @@ See [`docs/FUTURE.md`](../../docs/FUTURE.md) for the tracked follow-ups.
 |---|---|
 | `createStdioTransport({ command, args?, env?, cwd? })` | `Result<IMcpTransport>` |
 | `createHttpTransport({ url, headers? })` | `Result<IMcpTransport>` |
-| `createCustomTransport(sdkTransport)` | `IMcpTransport` |
+| `createCustomTransport(sdkTransport)` | `Result<IMcpTransport>` |
 | `connectMcpSession({ transport, clientName?, clientVersion?, logger?, onClose?, timeoutMs?, signal? })` | `Promise<DetailedResult<IMcpSession, McpFailureReason>>` |
 | `closeMcpSession(session)` | `Promise<Result<true>>` |
 | `listMcpTools(session, options?)` | `Promise<DetailedResult<ReadonlyArray<IMcpToolDescriptor>, McpFailureReason>>` |
@@ -54,7 +54,7 @@ See [`docs/FUTURE.md`](../../docs/FUTURE.md) for the tracked follow-ups.
 `options` is an `IMcpRequestOptions`: `timeoutMs`, `signal`, `onProgress`, `resetTimeoutOnProgress`,
 `maxTotalTimeoutMs`. Every failure's `detail` is an `McpFailureReason` whose `kind` is one of
 `tool-error`, `timeout`, `aborted`, `not-connected`, `session-expired`, `unauthorized`, `protocol`,
-`transport` or `invalid-handle` — branch on it rather than on the message. See `CAPABILITIES.md`
+`transport`, `invalid-handle` or `invalid-options` — branch on it rather than on the message. See `CAPABILITIES.md`
 for how each SDK error maps to a kind.
 
 ### Cancelling and bounding calls
@@ -77,7 +77,8 @@ import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 
 const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();
 await server.connect(serverSide); // your SDK `Server` / `McpServer`
-const session = (await connectMcpSession({ transport: createCustomTransport(clientSide) })).orThrow();
+const transport = createCustomTransport(clientSide).orThrow(); // single-use
+const session = (await connectMcpSession({ transport })).orThrow();
 ```
 
 ## Usage
