@@ -21,7 +21,7 @@ distribution over a closed candidate set — no generated text. Node-only. The b
 | `createSystemOneClient({ baseUrl, model, apiKey, timeoutMs?, retry?, logger?, fetch? })` | `new TypeSafeClient(...)` | `Result<ISystemOneClient>` (opaque). Every `TYPESAFE_*` env fallback is overridden by an explicit value; `apiKey: ''` is a keyless local server. |
 | `askSystemOne(client, { state, questions, inputLimit, signal? })` | `systemOne(...).withResponse()` | `Promise<DetailedResult<ISystemOneAnswer<Q>, SystemOneFailureReason>>` — `{ result, meta }`, answers typed from the questions, **no `confidence`**. |
 | `listSystemOneModels(client)` | `models.list()` | `Promise<Result<ReadonlyArray<ModelCard>>>` |
-| `measureSystemOneInput(state, questions)` | — | the per-question and per-candidate character counts the bound uses |
+| `measureSystemOneInput(state, questions)` | — | `Result<ISystemOneInputMeasure>`: the per-question and per-candidate character counts the bound uses |
 | `noul` / `choice` / `score` | re-exports | the SDK's own builders — no parallel types |
 
 **What it adds over the SDK:**
@@ -37,7 +37,8 @@ distribution over a closed candidate set — no generated text. Node-only. The b
   in `[0, n-1]`. A mismatch is `invalid-response`.
 - **A total failure classification** by error class and HTTP status, never body text:
   `input-over-limit`, `invalid-request`, `unauthorized`, `rate-limited`, `server`, `connection`,
-  `timeout`, `aborted`, `invalid-response` (the list is `allSystemOneFailureReasons`).
+  `timeout`, `aborted`, `invalid-response` (the list is `allSystemOneFailureReasons`). Malformed input
+  is `invalid-request`, never a rejection, and no failure message quotes the server's body.
 - **Per-call `meta`**: answering `model`, `usage`, `elapsedMs` (including retries), `requestId`,
   unparsed `timingHeaders`.
 - **Logging through an fgv `ILogger`**, never at the SDK's `debug` level (which logs request bodies),

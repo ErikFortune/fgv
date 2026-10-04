@@ -55,7 +55,7 @@ if (answer.isSuccess()) {
 | `createSystemOneClient({ baseUrl, model, apiKey, timeoutMs?, retry?, logger?, fetch? })` | `Result<ISystemOneClient>` |
 | `askSystemOne(client, { state, questions, inputLimit, signal? })` | `Promise<DetailedResult<ISystemOneAnswer<Q>, SystemOneFailureReason>>` |
 | `listSystemOneModels(client)` | `Promise<Result<ReadonlyArray<ModelCard>>>` |
-| `measureSystemOneInput(state, questions)` | the lengths the input bound compares, so a caller can size a budget |
+| `measureSystemOneInput(state, questions)` | `Result<ISystemOneInputMeasure>`: the lengths the input bound compares, so a caller can size a budget; malformed input fails rather than throws |
 | `noul`, `choice`, `score` | the SDK's own question builders, re-exported |
 
 `askSystemOne` runs, in order: the input bound; the call; failure classification; validation of the
@@ -92,7 +92,12 @@ backends.
 | `aborted` | the caller's `AbortSignal` fired |
 | `invalid-response` | a 2xx whose body fails validation, including a non-JSON or empty body |
 
-The message carries the status and the request id when there are any. Retries are the SDK's own
+The message carries the status and the request id when there are any. **It never quotes the
+server's body**: the SDK builds an HTTP error's message from the response body, and a server may
+echo the request (state included), so a non-2xx failure names only the error class (for example
+`UnprocessableEntityError`), and a 2xx failure names the fields and question ids at fault, never a
+received value. A malformed request (missing or mis-shaped `criteria`, no `inputLimit`, a state that
+cannot be serialized) is `invalid-request`; `askSystemOne` never rejects. Retries are the SDK's own
 policy (by default 2 retries on 408, 429, 5xx, connection errors and timeouts), passed through
 unchanged; `timeoutMs` is per attempt.
 
