@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras",
+      "comment": "ai-assist: IAiClientTool.execute is now a method signature with an optional second parameter, IAiClientToolExecuteContext { signal? }, and executeClientToolTurn passes the turn's AbortSignal to it so a cancelled turn can stop the tool; existing one-parameter tools are unaffected. Note: the method form makes execute's parameters bivariant, so a tool can declare execute(args: { a; b }) against IAiClientToolConfig<{ a }> without a compile error; runtime stays safe because executeClientToolTurn validates args against the config's parametersSchema before calling execute",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-extras"
+}

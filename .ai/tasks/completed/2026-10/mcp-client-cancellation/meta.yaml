@@ -1,0 +1,57 @@
+id: mcp-client-cancellation
+status: shipped
+packages: ['@fgv/ts-extras-mcp', '@fgv/ts-extras']
+prs: [722]
+openPrs: []
+opened: 2026-10-04
+closed: 2026-10-04
+summary:
+  intended: >
+    Four PersonAIlity fgv-asks as one stream on integration/asks: a public transport-injection
+    seam (#678), a failure-kind vocabulary plus close observation (#673), per-call timeout and
+    AbortSignal on callMcpTool (#671), and the turn's AbortSignal passed to IAiClientTool.execute
+    (#684). Design the vocabulary once so the OAuth stream adds no kind; keep a tool's isError text
+    verbatim for the model; prove an aborted turn cancels the in-flight MCP request end to end.
+  shipped: >
+    createCustomTransport over a structural IMcpSdkTransport (refusing a pre-set sessionId; handles
+    single-use); McpFailureReason (tool-error, timeout, aborted, not-connected, session-expired,
+    unauthorized, protocol, transport, invalid-handle, invalid-options) as the DetailedResult
+    detail of connect/list/call/adapt, from a total classifier in sdk.ts; onClose on
+    connectMcpSession; IMcpRequestOptions (timeoutMs, signal, onProgress, resetTimeoutOnProgress,
+    maxTotalTimeoutMs; range-validated) on call/list, and timeoutMs/signal bounding the whole
+    connect;
+    IAiClientTool.execute(args, context?) with the turn's signal, forwarded by the MCP adapter.
+    Proven against a real in-memory server and a loopback HTTP server; a 26-row revert matrix.
+  diverged: >
+    The SDK reports a caller abort with the timeout code (-32001), which the brief did not know, so
+    'aborted' is decided by the identity of a per-call abort reason rather than by code. The seam
+    took the "pre-built SDK transport" shape, against the brief's lean, because the in-memory pair
+    would have had to name the SDK type. 'unauthorized' shipped now, not with OAuth: a refused
+    static bearer token already produces HTTP 401. The catch-all is 'transport', not the
+    FetchFailureReason precedent's 'unknown'. The cited ts-extras-system-one precedent exists only as
+    a design doc. Review moved 'not-connected' from code -32000 to the observed close, and added
+    schema-rejected responses to 'protocol'. Two ai-assist barrel files beyond the brief's list. Four tests
+    stage conditions a real server cannot produce deterministically (a close landing inside the
+    handshake, an abort landing after initialize answered, two isError projections) on a mocked
+    client, against the brief's real-server-only instruction for steps 2-4. The gate-time review
+    found the SDK's connect awaits transport.start() and the initialized notification outside its
+    request options, so a stalled server hung the connect; the whole connect is now raced. It also
+    added invalid-options, single-use handles, and execute as a method signature.
+  sourceLine: "**Shipped:** an MCP tool call is now cancellable and classifiable — `callMcpTool` / `listMcpTools` take a timeout, an `AbortSignal` and a progress callback; every failure carries a total `McpFailureReason`; a session's close is observable through `onClose`; consumers can drive a session against an in-process server through `createCustomTransport`; and `IAiClientTool.execute` receives the turn's signal, which the MCP adapter forwards, so aborting a turn cancels the MCP request on the server."
+  headline: >
+    An MCP tool call can be bounded and cancelled — aborting an ai-assist turn now cancels the MCP
+    request on the server — and every failure says what kind it was, so callers stop parsing messages.
+keywords:
+  - request cancellation
+  - AbortSignal
+  - request timeout
+  - notifications/cancelled
+  - failure classification
+  - DetailedResult detail union
+  - session close observation
+  - in-memory transport testing
+  - client tool execute context
+  - abort reported as timeout
+relatedStreams:
+  - { id: personality-intake, relationship: 'triaged the four asks (followups entries 16, 9, 8, 10)' }
+sourceHash: sha256:4c959fea66896dc9 # over brief.md + result.md + state.md
