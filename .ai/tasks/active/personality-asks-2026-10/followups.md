@@ -39,7 +39,7 @@ on that path (8 `ts-extras-mcp`, 4 of the 5 `JsonSchema` asks, and the ai-assist
   it through `export * from './model'`. The orchestrator's grep checked the barrel's own lines and
   missed the re-export path. This is the handoff's § 4 failure again: reasoning about what a barrel
   exports without following what implements it.
-- **Route:** shipped by stream `ts-extras-browser-barrel-gaps`
+- **Route:** **shipped** in #717 (`3515f456`), stream `ts-extras-browser-barrel-gaps`
   (`.ai/tasks/completed/2026-10/ts-extras-browser-barrel-gaps/`).
 
 ### 2. `JsonSchema.object` with `additionalProperties: true` silently drops undeclared keys — personaility#679
@@ -52,14 +52,14 @@ on that path (8 `ts-extras-mcp`, 4 of the 5 `JsonSchema` asks, and the ai-assist
   ("Set `true` to allow extra fields", `factories.ts:103`) is false in effect. **Every
   `JsonSchema.object(…, { additionalProperties: true })` caller is affected, not only `fromJson`.**
   `fromJson` maps an *absent* `additionalProperties` to `true` as well (`fromJson.ts:413`).
-- **Design position (ours, from the docstring):** "allow" means pass-through. Refusing open nodes is the
-  requester's acceptable fallback, but it would make the option a lie in the other direction. The
-  unresolved part is typing: `ObjectStatic<P>` has no index signature for the carried keys.
-- **Route:** small stream on `ts-json-base` (an established surface, so additive only). Fix it in the
-  JsonSchema factory and leave `Converters.object`'s semantics alone: that change would reach every
-  ts-utils consumer. **This widens what a function returns**, so `install-run-rush.js test` repo-wide is
-  the gate (precedent: #655 broke an `ts-extras-mcp` fixture that pinned the old boundary).
-  **Sequence it before entries 4–6, which touch the same packlet.**
+- **Correction (2026-10-03):** the stripping was *deliberate*, as the code comments and a pinned test
+  say. The "docstring is false" framing above overstated it. The real defect was that the wire
+  (`toJson()` omits the keyword, so the object reads as open) and the converter (strips the keys)
+  disagreed.
+- **Route:** **shipped** in #720 (`e5a40969`), stream `json-schema-open-object`. Undeclared keys now
+  pass through as validated `JsonValue`; the wire is unchanged; an own `__proto__` key is dropped at
+  every depth (including in `Converters.jsonObject`). A schema-valued `additionalProperties`
+  ("record", entry 6) is still refused, and `_convertUndeclaredKeys` is its seam.
 
 ### 3. `IProvenance.derivedFrom` docstring calls it a back-link — personaility#670
 - **Slug:** `2026-09-28-1501-agent-memory-derived-from-docstring`
@@ -212,8 +212,8 @@ to. Design it once, before any of them ships.
 
 | # | what | why here |
 |---|---|---|
-| 1 | entry 1 (#648) | **done**; the PR is pending |
-| 2 | entry 2 (#679) | silent data loss on a shipped surface; small |
+| 1 | entry 1 (#648) | **shipped**, #717 |
+| 2 | entry 2 (#679) | **shipped**, #720 |
 | 3 | C1: entries 16 → 9 → 8 + 10 | three requester P1s share one vocabulary; 16 makes them testable |
 | 4 | class B: entries 4 → 5 → 6 | #680 is a P1; same packlet as entry 2, so after it |
 | 5 | entry 12 (#672) | P1, but needs a new primitive; start its design in parallel with step 3 |
