@@ -41,6 +41,9 @@ with first decides — a test pins the case where an abort lands one microtask a
 - **`not-connected` is decided by the observed close**, not by `-32000`, which servers also use as
   a generic error (from the `code-reviewer` pass).
 - **`onClose` callback**, not a status read.
+- **Gate-time review:** the whole connect is raced against the abort and a deadline (the SDK's
+  connect awaits two steps its request options do not cover); timeouts are range-validated
+  (`invalid-options`); transport handles are single-use; `execute` became a method signature.
 
 ## Followups
 
@@ -48,5 +51,6 @@ with first decides — a test pins the case where an abort lands one microtask a
 
 ## Evidence
 
-`result.md`: belief verdicts, the vocabulary's SDK mapping, the check-then-act list, the 16-row
-revert matrix, the review dispositions. `state.md` § Gates: repo-wide gate counts.
+`result.md`: belief verdicts, the vocabulary's SDK mapping, the check-then-act list, the 22-row
+revert matrix, the review dispositions, and § Gate counts (the gate-time run). `state.md` § Gates holds
+the first run.

@@ -48,7 +48,8 @@ close and the identity of our own abort reason — never message text.
 | `unauthorized` | HTTP 401/403 (`StreamableHTTPError` / `SseError`, carries `status`), or `UnauthorizedError`. |
 | `protocol` | Any other `McpError` (carries `code`), including a server's own `-32000` on an open session; or a response that failed the SDK's result schema (`$ZodError` / `ZodError`, no `code`). |
 | `transport` | Catch-all: other HTTP statuses (carries `status` when ≥ 100), fetch / child-process I/O failures, any other untyped throw — including the handshake's plain-`Error` protocol-version refusal. |
-| `invalid-handle` | A session/transport handle not produced by this package. |
+| `invalid-handle` | A session/transport handle not produced by this package, or a transport handle already used by a connect (gate-time P3-3). |
+| `invalid-options` | A `timeoutMs` / `maxTotalTimeoutMs` outside (0, 2³¹−1], including `Infinity` and `NaN` (gate-time P3-2). |
 
 **`unauthorized` ships now**, not in the OAuth stream: it has a producer today. A static bearer
 token refused by the server yields `StreamableHTTPError(401)` (the transport raises
@@ -115,6 +116,8 @@ Every `await` between a check and the act it guards, and what re-checks after it
 | `request.ts` | (classification) | `await` of the SDK request | `aborted` vs other | No re-read of `signal.aborted`. `aborted` iff the SDK rejected with this call's reason object — the SDK's settlement order decides. Revert R1 shows a re-read misreports a timeout followed one microtask later by an abort. |
 | `request.ts` | listener removed in `finally` | settle → `finally` microtasks | — | An abort in that window makes the SDK send a redundant `notifications/cancelled` for a finished request; the spec lets servers ignore it. Commented. |
 | `operations.ts` `_classify` | `closeWatcher.closed` | none after the rejection | `not-connected` | The SDK sets `onclose` → watcher before rejecting in-flight requests, so the flag is already true for any close-caused failure. |
+| `session.ts` `_connectWithin` | — | the SDK's `connect`, including `transport.start()` and sending `notifications/initialized`, which its request options do not cover | race against the per-call abort and a deadline | The deadline is an `AbortController` aborted by the timer or the caller's signal, whichever fires first; an already-aborted signal fires it immediately (R22). Losing closes the client before the failure is returned, aborting the transport's fetch. When the SDK's own connect fails first, the SDK has already closed the transport. |
+| `session.ts` `connectMcpSession` | `timeoutMs` validated, then the handle claimed | none | connect | Validation runs first, so a bad option does not burn the handle; the claim is synchronous and permanent, so two concurrent connects on one handle cannot both start the transport. |
 | `session.ts` `connectMcpSession` | watcher attached to `client.onclose` | `await` handshake | `closed` check, `signal.aborted` check, `arm(onClose)` | All three run synchronously after the handshake's `await`, so no close can land between check and arm. A close during the handshake → `not-connected`, callback never armed. |
 | `session.ts` | `signal.aborted` after handshake success | `await client.close()` | return `aborted` | The abort landed after `initialize` answered but before the SDK returned (it awaits `notifications/initialized`), so the SDK cancelled nothing. We close what it opened; the watcher is unarmed, so `onClose` does not fire. Nothing acts after the close's `await`. |
 | `McpCloseWatcher.notifyClosed` | `_closed` | none | call listener | Exactly once; a throw is contained (`captureResult`) and logged. An `async` listener's rejection is not observed — documented. |
@@ -130,21 +133,35 @@ the 404 tests run the same status through both phases.
 | # | protection reverted | red tests |
 |---|---|---|
 | R1 | abort by identity → re-read `signal.aborted` | `an abort that lands after the timeout has settled the request is still timeout` |
-| R2 | per-call controller → caller signal straight to SDK | `aborting an in-flight call returns aborted promptly…`, `an abort during the handshake fails aborted`, `aborting the turn cancels the in-flight MCP request on the server`, listener-removal test |
+| R2 | per-call controller → caller signal straight to SDK | 6: in-flight abort (server sees cancellation), listener removal, abort during pagination, handshake abort, **turn abort cancels the MCP request**, HTTP stalled-connect abort |
 | R3 | pre-aborted check | `a signal already aborted fails aborted without sending anything`, `…without starting the handshake` |
-| R4 | `-32001` → `timeout` | 7: classifier unit, `timeoutMs fails timeout — not transport, not aborted…`, timeout+signal, timeout-then-abort race, progress-without-reset, `maxTotalTimeoutMs`, connect timeout |
+| R4 | `-32001` → `timeout` | 9: classifier unit, call timeout, timeout+signal, timeout-then-abort race, progress-without-reset, `maxTotalTimeoutMs`, list timeout, connect timeout, HTTP stalled-connect timeout |
 | R5 | `isError` text unprefixed | 2 mocked, `a tool's isError result is tool-error, with the tool's text verbatim…`, **`a tool's isError text reaches the model verbatim`** (executeClientToolTurn level) |
 | R6 | throwing `onClose` contained | both containment tests (the in-flight call no longer settles) |
 | R7 | close-during-handshake check | `fails not-connected, and never reports the close, when the connection closes during the handshake` |
 | R8 | untyped error on closed session → `not-connected` | classifier unit, `a call on a closed session is not-connected, not transport` |
 | R9 | `-32000` decided by observed close | classifier unit, `a server -32000 on an open session is protocol, and the session stays usable` |
 | R10 | 404 → `session-expired` only once a session exists | classifier unit, `a 404 during the handshake is transport` (real HTTP) |
-| R11 | caller listener removed on settle | `the listener on the caller signal is removed once the call settles` |
+| R11 | caller listener removed on settle | `the listener on the caller signal is removed once the call settles`, `an abort landing after connect settled but before the session is handed out…` |
 | R12 | adapter forwards the turn signal | `aborting the turn cancels the in-flight MCP request on the server` |
-| R13 | abort after `initialize` answered | `an abort landing after the handshake answered fails aborted, closes the client…` |
+| R13 | abort check after the connect race | `an abort landing as connect completes…`, `an abort landing after connect settled but before the session is handed out…` |
 | R14 | schema rejection by both zod class names | classifier unit, `a malformed tools/call result is protocol, with no code` (real peer) |
 | R15 | builder passes `{ signal }` (ts-extras) | `the turn's signal reaches execute — the same object, not a copy` |
-| R16 | `listMcpTools` forwards its options | `listMcpTools honours timeoutMs`, `an abort during pagination fails aborted and requests no further page` |
+| R16 | `listMcpTools` forwards its options | `follows nextCursor across pages`, `listMcpTools honours timeoutMs`, `an abort during pagination fails aborted and requests no further page` |
+| R17 | whole connect raced against abort and deadline (gate-time P2) | both real-HTTP stalled-`notifications/initialized` tests (they hang to the jest timeout) |
+| R18 | a lost connect closes the client (gate-time P2) | both real-HTTP stalled tests (the held POST is never abandoned) |
+| R19 | timeout range validation (gate-time P3-2) | `an invalid timeoutMs fails invalid-options and does not consume the handle`, `an out-of-range timeout fails invalid-options before anything is sent` |
+| R20 | single-use transport handle (gate-time P3-3) | mocked double connect, `a failed connect still consumes the handle`, real in-memory double connect (`start` once) |
+| R21 | pre-set `sessionId` refused (gate-time P3-3) | `refuses a transport that already carries a session id…` |
+| R22 | the connect race sees an abort that landed before it listened | `an abort raised synchronously inside a connect that never settles is still seen by the race` |
+
+Every row was rerun against the gate-time tree (`332c5f58` plus the R22 fix), not carried over.
+R22 was found by the matrix itself: R13 first reddened a test meant for the race. The test's
+connect resolved in the same tick as the abort, so `Promise.race` settled on the resolved connect.
+That showed the race attaches its abort listener only after `client.connect` has run its
+synchronous prefix, so an abort raised there was invisible to the race when the connect then never
+settled. `_onAbort` now fires immediately on an already-aborted signal, a new test pins it, and the
+misdescribed test was renamed to what it actually exercises.
 
 R14 is not hypothetical: the first implementation matched only `'ZodError'`, and the real-peer test
 caught that the installed zod 4 core names its error `'$ZodError'`.
