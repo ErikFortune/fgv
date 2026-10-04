@@ -228,12 +228,12 @@ describe('connectMcpSession', () => {
     expect(onClose).not.toHaveBeenCalled();
   });
 
-  test('an abort while connect is still running fails aborted, closes the client, and never reports the close', async () => {
+  test('an abort landing as connect completes fails aborted, closes the client, and never reports the close', async () => {
     const onClose = jest.fn();
     const controller = new AbortController();
     const fake: IFakeClient & { onclose?: () => void } = makeFakeClient();
-    // The server has answered `initialize` and the SDK is still finishing connect() — the window
-    // its own request options do not cover. The connect race wins on the abort.
+    // The abort lands while connect() is finishing and connect() still resolves: the race settles
+    // on the resolved connect, so it is the check after the race that must refuse the session.
     fake.connect.mockImplementation(async () => controller.abort());
     fake.close.mockImplementation(async () => fake.onclose?.());
     mockSdk.makeClient.mockReturnValueOnce(fake as unknown as sdk.ISdkClient);
@@ -245,6 +245,25 @@ describe('connectMcpSession', () => {
     );
     expect(fake.close).toHaveBeenCalledTimes(1);
     expect(onClose).not.toHaveBeenCalled();
+  });
+
+  test('an abort raised synchronously inside a connect that never settles is still seen by the race', async () => {
+    const controller = new AbortController();
+    const fake: IFakeClient & { onclose?: () => void } = makeFakeClient();
+    // connect() runs synchronously up to its first await (the SDK calls transport.start() there),
+    // so an abort can land before the race has attached its listener. This connect then hangs.
+    fake.connect.mockImplementation(() => {
+      controller.abort();
+      return new Promise<void>(() => undefined);
+    });
+    mockSdk.makeClient.mockReturnValueOnce(fake as unknown as sdk.ISdkClient);
+    const transport = createStdioTransport({ command: 'node' }).orThrow();
+
+    // Were the race blind to it, this would wait out the 2 s deadline and report `timeout`.
+    expect(
+      await connectMcpSession({ transport, signal: controller.signal, timeoutMs: 2_000 })
+    ).toFailWithDetail('connectMcpSession: aborted by the caller', { kind: 'aborted' });
+    expect(fake.close).toHaveBeenCalledTimes(1);
   });
 
   test('an abort landing after connect settled but before the session is handed out fails aborted', async () => {

@@ -206,11 +206,17 @@ async function _connectWithin(
 }
 
 /**
- * Calls `onAbort` with the signal's reason when it aborts; returns a function that stops listening.
+ * Calls `onAbort` with the signal's reason when it aborts — immediately, if it already has (the
+ * SDK's `connect` runs synchronously up to its first `await`, so an abort can land before this
+ * listener exists). Returns a function that stops listening.
  */
 function _onAbort(signal: AbortSignal, onAbort: (reason: unknown) => void): () => void {
   const listener = (): void => onAbort(signal.reason);
-  signal.addEventListener('abort', listener, { once: true });
+  if (signal.aborted) {
+    listener();
+  } else {
+    signal.addEventListener('abort', listener, { once: true });
+  }
   return () => signal.removeEventListener('abort', listener);
 }
 
