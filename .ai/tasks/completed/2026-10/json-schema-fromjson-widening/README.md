@@ -44,12 +44,15 @@ converter enforces. Anything else stays refused, with the keyword and its JSON P
 - **The `code-reviewer` pass found three real P1s, all fixed:**
   - a record could ignore `patternProperties`, `propertyNames` and `unevaluatedProperties`, making
     it looser than its source;
-  - a node budget was needed, because the expansion count alone allowed about 10M nodes from a
-    230 KB payload;
+  - a node budget was needed, because the expansion count alone bounds references, not what each
+    one inlines (the reviewer estimated about 10M nodes from about 230 KB);
   - `CAPABILITIES.md` was stale.
 
   The same pass found a pointer-through-`$id` mis-resolution and a pre-existing `__proto__` property
   loss. Both now refuse.
+- **Record is an accepted Gemini risk.** Its Gemini wire, `{type:'object', properties:{}}`, is the
+  same as an open object's, and Gemini has historically refused that shape (TECH_DEBT P3, unverified).
+  It was accepted because record adds no new wire shape, unlike the two deferrals.
 - **The brief's wire citation (belief 5) was wrong.** `structuredOutput.ts:151` is a comment, not a
   check.
 

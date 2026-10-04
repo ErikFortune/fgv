@@ -151,7 +151,7 @@ keys the value schema applies to, so a record that ignored them would be looser 
 |---|---|---|---|---|
 | `anyOf`/`oneOf` `[T, null]` | `type: [t, 'null']` (+ `null` in `enum`) | unchanged from today's nullable | already translated to `nullable: true` | unchanged from today's nullable |
 | local `$ref` | the inlined target; no `$ref` or `$defs` | only existing shapes | only existing shapes | only existing shapes |
-| record | `{type:'object', properties:{}, additionalProperties:<schema>}` | accepted as arbitrary JSON Schema (non-strict) | `{type:'object', properties:{}}`, the same wire as today's open object; the converter is stricter than this wire, which is safe | refused by providers, exactly like an open object (pre-existing, not refused locally) |
+| record | `{type:'object', properties:{}, additionalProperties:<schema>}` | accepted as arbitrary JSON Schema (non-strict) | `{type:'object', properties:{}}`, the same wire as an open object, which `fromJson` accepted before this stream; the model loses the value type, and the converter is stricter than the wire (safe for validation). **Accepted risk:** Gemini has historically refused an `OBJECT` with empty `properties` (`docs/TECH_DEBT.md` P3, "Gemini has not been shown to accept a nested object schema with no properties", unverified). If it still does, a record makes a skipped tool fail on Gemini, the same regression the numeric-enum and `{}` deferrals avoid. The difference that decided it: record introduces no new wire shape, whereas those two would. | refused by providers, exactly like an open object (pre-existing, not refused locally) |
 
 The Gemini facts above (string-only `enum`, `type` required) come from the documented Gemini
 `Schema` object. They were **not probed live**, and they are the reason for two deferrals.
@@ -207,7 +207,7 @@ refuses:
 - `openObject.test.ts` "schema-valued additionalProperties is still refused" became "… is a record,
   not an open object".
 
-New test files: `nullableUnion.test.ts`, `refDefs.test.ts`, `smallerShapes.test.ts`. The requester's
+New tests in `fromJson.test.ts`: the converter context path, a non-string object description, and the `__proto__` property refusal. New test files: `nullableUnion.test.ts`, `refDefs.test.ts`, `smallerShapes.test.ts`. The requester's
 spike shapes are included verbatim.
 
 ## `code-reviewer` (layer 1), on `bfa5b645`, before coverage closure
@@ -233,6 +233,42 @@ The run was read-only. Applied in `47320a83`:
 - **Advisory, not applied:** collapsing the three pre-existing stacked extractions in
   `_parseObjectBody` into one chain. That code predates this stream, and the touched part was
   chained.
+
+## Known exceptions and over-refusals
+
+Recorded so they are not rediscovered as surprises:
+
+- **A record drops an own `"__proto__"` key without validating it**, inherited from #720's
+  open-object rule. So `record(number)` accepts `{"__proto__": "x"}`, which the source schema
+  rejects, and the tool receives the arguments minus that key. Nothing invalid reaches the output.
+  It is still an exception to "a value the source rejects is rejected".
+- **Some refusals name the path but no keyword:**
+  - the node budget: "the schema exceeds the limit of 100000 nodes";
+  - the `__proto__` property refusal;
+  - `{}`: "a schema with no 'type'";
+  - a `null` branch carrying a validation keyword, which names `anyOf` at the wrapper's path rather
+    than the offending keyword in the branch.
+- **Over-refusals, all safe:**
+  - `_resolvePointer` refuses a pointer that passes through any map with a key named `$id`, including
+    a `$defs` entry or a property named `$id`, not only a schema `$id`;
+  - a root `$id` beside a nullable `anyOf` wrapper is refused, while a root `$id` beside `$ref` is
+    allowed.
+- **Not detected:**
+  - draft-04 `id` rebasing; refs under a draft-04 nested `id` resolve against the document root;
+  - non-reference nesting depth, which is bounded only by the node budget (pre-existing).
+- **Validating keywords that `fromJson` ignores,** which make the converter looser than its schema
+  (constraint keywords, object-key keywords beside an *open* object, and array keywords such as
+  `prefixItems`): pre-existing, now listed in `docs/TECH_DEBT.md` (P3). The comments on
+  `FORBIDDEN_KEYWORDS` and on `fromJson` that claimed otherwise are softened.
+- **Stale, in packages this stream does not own:**
+  - `ts-extras-mcp` `endToEnd.test.ts` has a header comment that still lists `$ref`/`oneOf`/`anyOf`
+    as rejected. Its `ref_tool` fixture is now refused only because `#/$defs/Foo` does not resolve,
+    so it no longer pins "`$ref` is refused".
+  - `samples/testbed` `mcpProbe.test.ts` mocks old reason strings.
+
+  Neither fails. I left both alone because the concurrent `mcp-client-cancellation` stream owns
+  `ts-extras-mcp` tests and the brief limits test edits here to assertions that the widening breaks.
+  `ts-extras-mcp`'s `CAPABILITIES.md` **was** updated (change file `none`).
 
 ## Gates
 

@@ -28,7 +28,9 @@ summary:
     (structuredOutput.ts:151) is a comment, not a check. Belief 1 missed that $dynamicRef/$recursiveRef
     and constraint keywords were silently ignored. The code-reviewer pass added refusals the brief
     did not anticipate (record beside patternProperties/propertyNames/unevaluatedProperties, pointers
-    through a nested $id, a __proto__ property) and a total node budget.
+    through a nested $id, a __proto__ property) and a total node budget. Record is admitted as an
+    accepted Gemini risk (its stripped wire {type:'object', properties:{}} matches an open object's,
+    which Gemini may refuse), and it inherits the open object's unvalidated __proto__ drop.
   sourceLine: "**Shipped:** `JsonSchema.fromJson` now accepts pydantic's `Optional[T]` spelling (`anyOf`/`oneOf` `[T, {type:'null'}]`), local `$ref`/`$defs`, and schema-valued `additionalProperties` (as the new `JsonSchema.record`), each enforced by the converter and stated by `toJson()`. Numeric enums, `pattern` and `{}` stay refused, each for a recorded reason."
   headline: >
     JsonSchema.fromJson now reads pydantic Optional[T] (anyOf [T, null]), local $ref/$defs (inlined,

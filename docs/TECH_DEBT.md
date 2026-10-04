@@ -1122,6 +1122,29 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
 
   **Reference**: `agent-tasks-tracked-commands` (`.ai/tasks/completed/2026-10/agent-tasks-tracked-commands/result.md`).
 
+- **[P3] `JsonSchema.fromJson` silently ignores validating keywords it does not model, so its converter can be looser than the source schema.**
+  The header of `FORBIDDEN_KEYWORDS` (`ts-json-base` `json-schema-builder/fromJson.ts`) is the stated
+  safety rule — a keyword that cannot be honoured is refused, never dropped — but it lists only the
+  structural keywords. Accepted and neither enforced nor emitted: constraint keywords (`const`,
+  `minimum`, `maximum`, `exclusiveMinimum`/`exclusiveMaximum`, `multipleOf`, `minLength`,
+  `maxLength`, `format`, `minItems`, `maxItems`, `uniqueItems`, `minProperties`, `maxProperties`);
+  object-key keywords beside an **open** object (`patternProperties`, `propertyNames`,
+  `unevaluatedProperties`, `dependentRequired`, `dependentSchemas`, `dependencies`); and array
+  keywords (`prefixItems`, `contains`, `additionalItems`, `unevaluatedItems`). Each makes an MCP
+  tool's arguments pass our validation and then fail at the server — not unsafe in the sense of
+  silent data loss, but a gap against the "converter enforces what the schema says" rule. The
+  `json-schema-fromjson-widening` stream refuses the object-key keywords beside a *record* (where it
+  introduced the shape) and leaves the rest.
+
+  **Trigger**: PersonAIlity#682 (constraint keywords through `toJson()`), whose faithful half is
+  enforcing them.
+
+  **Scope sketch**: per keyword, enforce (and emit, per provider) or refuse. Refusing outright would
+  skip most real MCP tools (`minimum`/`maxLength`/`format` are everywhere), so the constraint class
+  wants enforcement, not refusal; the object-key and array keywords are rarer and can be refused.
+
+  **Not a P4**: the subset's own header claims the opposite of what it does.
+
 - **[P3] Gemini has not been shown to accept a nested object schema with no properties.** `start`
   and `resume` (and any registered command with no parameters) put `parameters: { type: 'object',
   properties: {} }` inside the command tool's declaration once the Gemini adapter

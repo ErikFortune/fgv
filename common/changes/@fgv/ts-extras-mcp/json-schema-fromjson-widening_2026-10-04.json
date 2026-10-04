@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "CAPABILITIES.md: the JsonSchema.fromJson subset an MCP tool schema must fit now includes nullable anyOf/oneOf, local $ref and schema-valued additionalProperties.",
+      "type": "none",
+      "packageName": "@fgv/ts-extras-mcp"
+    }
+  ],
+  "packageName": "@fgv/ts-extras-mcp",
+  "email": "ErikFortune@outlook.com"
+}
