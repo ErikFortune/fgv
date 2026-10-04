@@ -1134,7 +1134,10 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
   tool's arguments pass our validation and then fail at the server — not unsafe in the sense of
   silent data loss, but a gap against the "converter enforces what the schema says" rule. The
   `json-schema-fromjson-widening` stream refuses the object-key keywords beside a *record* (where it
-  introduced the shape) and leaves the rest.
+  introduced the shape) and leaves the rest. Also looser than its schema: an open object or a record
+  drops an own `"__proto__"` key **without validating it** (so `record(number)` accepts
+  `{"__proto__": "x"}`, which the source schema rejects); nothing invalid reaches the output, but
+  the call is accepted rather than refused.
 
   **Trigger**: PersonAIlity#682 (constraint keywords through `toJson()`), whose faithful half is
   enforcing them.

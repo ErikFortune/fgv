@@ -50,9 +50,13 @@ converter enforces. Anything else stays refused, with the keyword and its JSON P
 
   The same pass found a pointer-through-`$id` mis-resolution and a pre-existing `__proto__` property
   loss. Both now refuse.
-- **Record is an accepted Gemini risk.** Its Gemini wire, `{type:'object', properties:{}}`, is the
-  same as an open object's, and Gemini has historically refused that shape (TECH_DEBT P3, unverified).
-  It was accepted because record adds no new wire shape, unlike the two deferrals.
+- **Record is accepted even though Gemini and Ollama strip its value schema.** The distinction from
+  the numeric-enum and `{}` deferrals is what happens to the request: those providers would reject
+  it outright. Here the request succeeds, the model is less guided, and a wrong value becomes a tool
+  error the model can correct, because `executeClientToolTurn` still validates the full schema.
+- **Gate review added a 128-level depth bound.** A 2000-deep `items` chain exhausted the stack, which
+  the node budget did not prevent. The root also gained a `captureResult` backstop, and pointer
+  decoding now follows RFC 6901 § 6 (decode, then split).
 - **The brief's wire citation (belief 5) was wrong.** `structuredOutput.ts:151` is a comment, not a
   check.
 

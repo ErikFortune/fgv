@@ -173,6 +173,23 @@ describe('JsonSchema.fromJson — local $ref / $defs', () => {
       );
     });
 
+    test('a percent-encoded slash is decoded before splitting (RFC 6901 § 6)', () => {
+      // `%2F` becomes a separator: the pointer is /$defs/a/b, so a nested `a.b` resolves...
+      expectHonoured({ $defs: { a: { b: { type: 'integer' } } }, $ref: '#/$defs/a%2Fb' }, [1], ['1']);
+      // ...and a literal key 'a/b' is not what `%2F` names (that key is spelled `a~1b`).
+      expect(
+        JsonSchema.fromJson({ $defs: { 'a/b': { type: 'integer' } }, $ref: '#/$defs/a%2Fb' })
+      ).toFailWith(/'#\/\$defs\/a%2Fb' does not resolve: no 'a'/);
+    });
+
+    test('~1 is unescaped before ~0, so ~01 names the literal key ~1', () => {
+      expectHonoured(
+        { $defs: { '~1': { type: 'boolean' }, '/': { type: 'string' } }, $ref: '#/$defs/~01' },
+        [true],
+        ['x']
+      );
+    });
+
     test('a root $ref, a chain of references and a definition used twice all inline', () => {
       expectHonoured({ $defs: { S: { type: 'string' } }, $ref: '#/$defs/S' }, ['x'], [1]);
       expectHonoured(chain(5), [{ v: 'x' }], [{ v: 1 }]);
@@ -260,6 +277,11 @@ describe('JsonSchema.fromJson — local $ref / $defs', () => {
         'a remote reference',
         obj({ x: { $ref: 'https://example.com/schema.json#/$defs/A' } }),
         /^#\/properties\/x: unsupported JSON Schema keyword '\$ref': remote reference/
+      ],
+      [
+        'a very long reference, echoed truncated',
+        obj({ x: { $ref: `https://example.com/${'a'.repeat(300)}` } }),
+        /remote reference 'https:\/\/example\.com\/a{100}…' \(only local/
       ],
       ['a relative remote reference', obj({ x: { $ref: 'other.json' } }), /remote reference 'other\.json'/],
       ['an anchor', obj({ x: { $ref: '#foo' } }), /'#foo': only JSON Pointer fragments/],

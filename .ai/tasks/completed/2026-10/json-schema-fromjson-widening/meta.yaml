@@ -16,11 +16,13 @@ summary:
     anyOf/oneOf of exactly one schema plus {type:'null'} normalizes to the nullable type union
     (oneOf over a null-admitting branch refused). Local $ref (any #/… pointer) is inlined, so toJson()
     is reference-free; recursive, remote and anchor refs, refs beside validation keywords and refs
-    under or through a nested $id are refused, bounded at 32 nested, 1000 expansions and 100000 nodes.
+    under or through a nested $id are refused, bounded at 32 nested, 1000 expansions, 100000 nodes
+    and 128 levels of depth.
     New additive JsonSchema.record(values); fromJson reads schema-valued additionalProperties (no
     declared properties) as a record. Numeric enum, pattern and {} stay refused, the first and last
     with sharper messages. $dynamicRef, $recursiveRef and a declared __proto__ property, previously
-    mishandled silently, are now refused. No test outside ts-json-base changed.
+    mishandled silently, are now refused. Outside ts-json-base only test fixtures changed
+    (ts-extras-mcp endToEnd, testbed mcpProbe).
   diverged: >
     Of #683, only record shipped: numeric enum and {} are representable but their wire breaks Gemini
     (string-only enum, required type), which needs a ts-extras decision the brief made a stop
@@ -28,9 +30,11 @@ summary:
     (structuredOutput.ts:151) is a comment, not a check. Belief 1 missed that $dynamicRef/$recursiveRef
     and constraint keywords were silently ignored. The code-reviewer pass added refusals the brief
     did not anticipate (record beside patternProperties/propertyNames/unevaluatedProperties, pointers
-    through a nested $id, a __proto__ property) and a total node budget. Record is admitted as an
-    accepted Gemini risk (its stripped wire {type:'object', properties:{}} matches an open object's,
-    which Gemini may refuse), and it inherits the open object's unvalidated __proto__ drop.
+    through a nested $id, a __proto__ property) and a total node budget; gate review added a
+    128-level depth bound (a 2000-deep chain exhausted the stack), a captureResult backstop and
+    RFC 6901 decode-then-split. Record is accepted although Gemini and Ollama strip its value
+    schema: unlike numeric enum and {}, the request succeeds and a wrong value becomes a
+    correctable tool error. It inherits the open object's unvalidated __proto__ drop.
   sourceLine: "**Shipped:** `JsonSchema.fromJson` now accepts pydantic's `Optional[T]` spelling (`anyOf`/`oneOf` `[T, {type:'null'}]`), local `$ref`/`$defs`, and schema-valued `additionalProperties` (as the new `JsonSchema.record`), each enforced by the converter and stated by `toJson()`. Numeric enums, `pattern` and `{}` stay refused, each for a recorded reason."
   headline: >
     JsonSchema.fromJson now reads pydantic Optional[T] (anyOf [T, null]), local $ref/$defs (inlined,
@@ -74,4 +78,4 @@ relatedStreams:
       id: personality-intake,
       relationship: 'captured the PersonAIlity #680/#681/#683 asks this stream implements'
     }
-sourceHash: 6b6806585c59a9c8 # first 16 hex of sha256 over brief.md, state.md and result.md concatenated in that order
+sourceHash: 042f237131b1f736 # first 16 hex of sha256 over brief.md, state.md and result.md concatenated in that order

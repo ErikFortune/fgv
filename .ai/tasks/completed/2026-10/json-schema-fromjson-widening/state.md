@@ -35,6 +35,19 @@ Worker-owned.
   - corrected wording.
 - `change --verify --target-branch origin/integration/asks` passes.
 
+- Gate-time review at `da4c7760` (orchestrator), applied:
+  - a 128-level depth bound, with a `captureResult` backstop at the root;
+  - the record disposition (Gemini/Ollama strip the value schema) restated;
+  - RFC 6901 decode-then-split, plus a `~01` test;
+  - `ts-extras-mcp` `CAPABILITIES.md` qualified;
+  - the `endToEnd` header comment and a `pydantic_tool` adaptable fixture;
+  - testbed `mcpProbe` reasons refreshed;
+  - the record `__proto__` gap added to TECH_DEBT;
+  - echoed references truncated;
+  - `_parseRecordBody` converts once.
+
+  Revert matrix re-run, 28 rows.
+
 ## Open questions
 
 None blocking. Deferred shapes are in `docs/FUTURE.md`; the numeric-enum and `{}` deferrals each

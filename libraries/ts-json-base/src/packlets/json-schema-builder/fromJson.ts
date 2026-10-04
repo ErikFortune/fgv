@@ -88,6 +88,18 @@ const MAX_REF_DEPTH: number = 32;
 const MAX_SCHEMA_NODES: number = 100000;
 
 /**
+ * The deepest a schema may nest, counting every level of `items`, `properties`,
+ * `additionalProperties`, union branches and `$ref` expansions from the root (depth 0). The
+ * conversion recurses once per level, so a server-supplied chain thousands deep would otherwise
+ * exhaust the stack, which `MAX_SCHEMA_NODES` does not prevent; this keeps it well below where
+ * that happens. Far deeper than any real tool schema.
+ */
+const MAX_SCHEMA_DEPTH: number = 128;
+
+/** The most characters of a server-supplied reference echoed back in an error message. */
+const MAX_ECHOED_REF_LENGTH: number = 120;
+
+/**
  * Keywords that change which keys a schema-valued `additionalProperties` governs, or constrain the
  * keys themselves. A record converter applies its value schema to every key and ignores these, so
  * a record carrying one would be looser than its source; it is refused instead.
@@ -114,6 +126,8 @@ interface IParseContext {
   readonly refs: readonly string[];
   /** Whether a subschema with its own `$id` lies between the root and this node. */
   readonly rebased: boolean;
+  /** How many levels below the document root this node sits, `$ref` expansions included. */
+  readonly depth: number;
   /** Reference expansions and schema nodes built so far by this conversion. */
   readonly budget: { expansions: number; nodes: number };
 }
@@ -122,14 +136,15 @@ interface IParseContext {
 function _rootContext(
   root: unknown,
   path: string,
-  budget: { expansions: number; nodes: number } = { expansions: 0, nodes: 0 }
+  budget: { expansions: number; nodes: number } = { expansions: 0, nodes: 0 },
+  depth: number = 0
 ): IParseContext {
-  return { path, root, refs: [], rebased: false, budget };
+  return { path, root, refs: [], rebased: false, depth, budget };
 }
 
-/** The same context, moved to a child node. */
+/** The same context, moved one level down to a child node. */
 function _at(ctx: IParseContext, path: string): IParseContext {
-  return { ...ctx, path };
+  return { ...ctx, path, depth: ctx.depth + 1 };
 }
 
 /** The type values we can dispatch to; used for early error detection. */
@@ -302,7 +317,7 @@ function _isNullBranch(member: unknown): boolean {
  */
 function _reshape(
   node: ISchemaValidator<JsonValue>,
-  { path, budget }: IParseContext,
+  { path, budget, depth }: IParseContext,
   nullable: boolean,
   description: string | undefined
 ): Result<ISchemaValidator<JsonValue>> {
@@ -317,8 +332,9 @@ function _reshape(
     json.description = description;
   }
   // The re-emitted form has no references left to resolve, so it is its own document; it still
-  // draws on the conversion's node budget, since re-parsing a subtree is work like any other.
-  return _convertNode(json, _rootContext(json, path, budget));
+  // draws on the conversion's node budget and starts at this node's depth, since re-parsing a
+  // subtree is work, and recursion, like any other.
+  return _convertNode(json, _rootContext(json, path, budget, depth));
 }
 
 /**
@@ -658,9 +674,15 @@ function _parseObjectBody(
 
 /**
  * Converts an object whose `additionalProperties` is a schema into a record: every property's value
- * must match that schema, and the wire states it.
+ * must match that schema, and `toJson()` states it as `additionalProperties: <schema>`.
  *
  * @remarks
+ * Not every provider receives that statement. The Gemini and Ollama formats in `@fgv/ts-extras`
+ * strip `additionalProperties`, so those providers see an unconstrained object and the model is
+ * not told the value type. The arguments are still validated against the full schema at call time
+ * (`executeClientToolTurn` validates before `execute`), so a wrong value comes back to the model as
+ * a tool error it can correct rather than reaching the tool.
+ *
  * Only the map shape is admitted — no declared properties beside the value schema. Declared
  * properties plus a schema for the rest (zod `.catchall()`) would need the builder to type both at
  * once, and is refused with that reason rather than half-honoured.
@@ -673,12 +695,10 @@ function _parseRecordBody(
   description: string | undefined,
   nullable: boolean
 ): Result<ISchemaValidator<JsonValue>> {
-  const keyKeyword = RECORD_KEY_KEYWORDS.find((keyword) =>
-    _plainObjectField
-      .convert(from)
-      .onSuccess((obj) => succeed(keyword in obj))
-      .orDefault(false)
-  );
+  const keyKeyword = _plainObjectField
+    .convert(from)
+    .onSuccess((obj) => succeed(RECORD_KEY_KEYWORDS.find((keyword) => keyword in obj)))
+    .orDefault(undefined);
   if (keyKeyword !== undefined) {
     return fail(
       `${ctx.path}: unsupported JSON Schema keyword '${keyKeyword}' beside a schema-valued 'additionalProperties'`
@@ -750,23 +770,33 @@ const _ARRAY_INDEX: RegExp = /^(?:0|[1-9][0-9]*)$/;
  * Splits a local reference (`#` or `#/…`) into its decoded JSON Pointer tokens.
  *
  * @remarks
- * The fragment is URI-encoded first and JSON-Pointer-escaped second (RFC 6901 § 6), so tokens
- * are percent-decoded, then `~1` → `/` and `~0` → `~`, in that order. A plain-name fragment
- * (`#foo`, which names an `$anchor`) is refused.
+ * A URI fragment holds a JSON Pointer in URI-encoded form (RFC 6901 § 6), so the whole fragment is
+ * percent-decoded first and only then split on `/` — `#/$defs/a%2Fb` is the pointer `/$defs/a/b`.
+ * Each token is then unescaped `~1` → `/` before `~0` → `~` (§ 4), so `~01` is the literal `~1`. A
+ * plain-name fragment (`#foo`, which names an `$anchor`) is refused.
  */
 function _pointerTokens(ref: string): Result<string[]> {
-  if (ref === '#') {
-    return succeed([]);
-  }
-  if (!ref.startsWith('#/')) {
-    return fail('only JSON Pointer fragments (#/…) are supported, not anchors');
-  }
-  return captureResult(() =>
-    ref
-      .slice(2)
-      .split('/')
-      .map((token) => decodeURIComponent(token).replace(/~1/g, '/').replace(/~0/g, '~'))
-  ).withErrorFormat((msg) => `malformed reference: ${msg}`);
+  return captureResult(() => decodeURIComponent(ref.slice(1)))
+    .withErrorFormat((msg) => `malformed reference: ${msg}`)
+    .onSuccess((pointer) => {
+      if (pointer === '') {
+        return succeed([]);
+      }
+      if (!pointer.startsWith('/')) {
+        return fail('only JSON Pointer fragments (#/…) are supported, not anchors');
+      }
+      return succeed(
+        pointer
+          .slice(1)
+          .split('/')
+          .map((token) => token.replace(/~1/g, '/').replace(/~0/g, '~'))
+      );
+    });
+}
+
+/** A server-supplied string, cut to a length safe to echo in an error message. */
+function _echo(value: string): string {
+  return value.length > MAX_ECHOED_REF_LENGTH ? `${value.slice(0, MAX_ECHOED_REF_LENGTH)}…` : value;
 }
 
 /** The value at one JSON Pointer token below `node`, or `undefined` when there is none. */
@@ -804,7 +834,7 @@ function _resolvePointer(root: unknown, tokens: readonly string[]): Result<unkno
     }
     node = _childAt(node, token);
     if (node === undefined) {
-      return fail(`does not resolve: no '${token}'`);
+      return fail(`does not resolve: no '${_echo(token)}'`);
     }
   }
   return succeed(node);
@@ -838,38 +868,44 @@ function _convertRef(raw: Record<string, unknown>, ctx: IParseContext): Result<I
   if (typeof ref !== 'string') {
     return fail(`${unsupported}: the reference must be a string`);
   }
+  const shown = _echo(ref);
   if (!ref.startsWith('#')) {
-    return fail(`${unsupported}: remote reference '${ref}' (only local '#/…' references are supported)`);
+    return fail(`${unsupported}: remote reference '${shown}' (only local '#/…' references are supported)`);
   }
   if (ctx.rebased) {
-    return fail(`${unsupported}: '${ref}' sits inside a subschema with its own '$id'`);
+    return fail(`${unsupported}: '${shown}' sits inside a subschema with its own '$id'`);
   }
   return _pointerTokens(ref)
-    .withErrorFormat((msg) => `${unsupported}: '${ref}': ${msg}`)
+    .withErrorFormat((msg) => `${unsupported}: '${shown}': ${msg}`)
     .onSuccess((tokens) => {
       // Identity is the decoded pointer, so two spellings of one target are one cycle.
       const target = `#${tokens.map((t) => `/${t.replace(/~/g, '~0').replace(/\//g, '~1')}`).join('')}`;
       if (ctx.refs.includes(target)) {
-        return fail(`${unsupported}: '${ref}' is recursive, which cannot be inlined`);
+        return fail(`${unsupported}: '${shown}' is recursive, which cannot be inlined`);
       }
       if (ctx.refs.length >= MAX_REF_DEPTH) {
-        return fail(`${unsupported}: '${ref}' exceeds the nesting limit of ${MAX_REF_DEPTH} references`);
+        return fail(`${unsupported}: '${shown}' exceeds the nesting limit of ${MAX_REF_DEPTH} references`);
       }
       if (ctx.budget.expansions >= MAX_REF_EXPANSIONS) {
         return fail(
-          `${unsupported}: '${ref}' exceeds the limit of ${MAX_REF_EXPANSIONS} reference expansions`
+          `${unsupported}: '${shown}' exceeds the limit of ${MAX_REF_EXPANSIONS} reference expansions`
         );
       }
       ctx.budget.expansions += 1;
       return _resolvePointer(ctx.root, tokens)
-        .withErrorFormat((msg) => `${unsupported}: '${ref}' ${msg}`)
+        .withErrorFormat((msg) => `${unsupported}: '${shown}' ${msg}`)
         .onSuccess((resolved) =>
           _descriptionField
             .convert(raw)
             .withErrorFormat((msg) => `${path}: ${msg}`)
             .onSuccess((description) =>
-              _convertNode(resolved, { ...ctx, path: target, refs: [...ctx.refs, target] })
-                .withErrorFormat((msg) => `${path}: via '$ref' '${ref}': ${msg}`)
+              _convertNode(resolved, {
+                ...ctx,
+                path: target,
+                refs: [...ctx.refs, target],
+                depth: ctx.depth + 1
+              })
+                .withErrorFormat((msg) => `${path}: via '$ref' '${shown}': ${msg}`)
                 .onSuccess((node) =>
                   description === undefined ? succeed(node) : _reshape(node, ctx, false, description)
                 )
@@ -892,6 +928,9 @@ function _convertNode(from: unknown, nodeCtx: IParseContext): Result<ISchemaVali
   }
   const raw = from as Record<string, unknown>;
 
+  if (nodeCtx.depth > MAX_SCHEMA_DEPTH) {
+    return fail(`${path}: the schema nests deeper than the limit of ${MAX_SCHEMA_DEPTH} levels`);
+  }
   if (nodeCtx.budget.nodes >= MAX_SCHEMA_NODES) {
     return fail(`${path}: the schema exceeds the limit of ${MAX_SCHEMA_NODES} nodes`);
   }
@@ -976,7 +1015,15 @@ export const jsonSchemaConverter: Converter<ISchemaValidator<JsonValue>, string>
     from: unknown,
     __self: Converter<ISchemaValidator<JsonValue>, string>,
     context?: string
-  ): Result<ISchemaValidator<JsonValue>> => _convertNode(from, _rootContext(from, context ?? '#'))
+  ): Result<ISchemaValidator<JsonValue>> => {
+    const path = context ?? '#';
+    // A backstop: the conversion returns its failures as Results and bounds its own recursion, so
+    // nothing in it is expected to throw — but it reads a caller-supplied value, which may carry
+    // accessors, and must not let one escape as an exception.
+    return captureResult(() => _convertNode(from, _rootContext(from, path)))
+      .withErrorFormat((msg) => `${path}: ${msg}`)
+      .onSuccess((converted) => converted);
+  }
 );
 
 /**

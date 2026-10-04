@@ -59,7 +59,13 @@ changed, including its tests.
   - 32 nested references;
   - 1000 total expansions;
   - 100000 schema nodes per conversion, which also counts the re-conversions that normalization
-    performs.
+    performs;
+  - 128 levels of nesting from the root, counting `items`, `properties`, `additionalProperties`,
+    union branches and `$ref` expansions alike (added at gate review: a 2000-deep `items` chain
+    otherwise exhausted the stack, which the node budget does not prevent);
+  - the root of `jsonSchemaConverter` is wrapped in `captureResult`, as a backstop that turns any
+    throw (for instance, from an accessor on a caller-supplied object) into a failure.
+- Reference strings echoed in errors are cut to 120 characters.
 - Previously silently ignored and now refused: `$dynamicRef` and `$recursiveRef`.
 
 ### #683: per sub-shape
@@ -151,7 +157,7 @@ keys the value schema applies to, so a record that ignored them would be looser 
 |---|---|---|---|---|
 | `anyOf`/`oneOf` `[T, null]` | `type: [t, 'null']` (+ `null` in `enum`) | unchanged from today's nullable | already translated to `nullable: true` | unchanged from today's nullable |
 | local `$ref` | the inlined target; no `$ref` or `$defs` | only existing shapes | only existing shapes | only existing shapes |
-| record | `{type:'object', properties:{}, additionalProperties:<schema>}` | accepted as arbitrary JSON Schema (non-strict) | `{type:'object', properties:{}}`, the same wire as an open object, which `fromJson` accepted before this stream; the model loses the value type, and the converter is stricter than the wire (safe for validation). **Accepted risk:** Gemini has historically refused an `OBJECT` with empty `properties` (`docs/TECH_DEBT.md` P3, "Gemini has not been shown to accept a nested object schema with no properties", unverified). If it still does, a record makes a skipped tool fail on Gemini, the same regression the numeric-enum and `{}` deferrals avoid. The difference that decided it: record introduces no new wire shape, whereas those two would. | refused by providers, exactly like an open object (pre-existing, not refused locally) |
+| record | `{type:'object', properties:{}, additionalProperties:<schema>}` | accepted as arbitrary JSON Schema (non-strict) | `{type:'object', properties:{}}`: Gemini (and Ollama) strip `additionalProperties`, so the provider sees an unconstrained object. **Accepted, not deferred, and the distinction from numeric enum / `{}` is what happens to the request.** There, the provider rejects the request, so the whole turn fails. Here, the request succeeds and the model is only less guided. `executeClientToolTurn` still validates the arguments against the full record schema at call time, so a wrong value comes back to the model as a tool error it can correct, and never reaches the tool. (Separately, and unverified: `docs/TECH_DEBT.md` P3 records that Gemini has historically refused an `OBJECT` with empty `properties`. That applies equally to the open objects `fromJson` accepted before this stream, and is not specific to records.) | refused by providers, exactly like an open object (pre-existing, not refused locally) |
 
 The Gemini facts above (string-only `enum`, `type` required) come from the documented Gemini
 `Schema` object. They were **not probed live**, and they are the reason for two deferrals.
@@ -159,7 +165,9 @@ The Gemini facts above (string-only `enum`, `type` required) come from the docum
 ## Revert matrix
 
 Each protection was reverted alone in the source, the `json-schema-builder` tests were run, and the
-file was restored. Measured on `47320a83`, on a clean tree. Several mutants (`if (false)`) also
+file was restored. Measured on a clean tree: R1–R23 on `47320a83`, then all 28 again on the
+gate-review changes. Every count was the same in both runs, except R10, which also reddens the new
+truncation test. Several mutants (`if (false)`) also
 trip TS7027 (unreachable code), a warning; the tests still ran on the emitted code.
 
 | # | protection reverted | red | named tests |
@@ -173,7 +181,7 @@ trip TS7027 (unreachable code), a warning; the tests still ran on the emitted co
 | R7 | nesting limit (32) | 1 | a chain deeper than the nesting limit |
 | R8 | expansion limit (1000) | 1 | an exponential expansion |
 | R9 | node budget (100000) | 1 | a wide definition inlined many times |
-| R10 | remote-ref refusal | 2 | a remote reference; a relative remote reference |
+| R10 | remote-ref refusal | 3 | a remote reference; a relative remote reference; a very long reference |
 | R11 | `$ref` under a nested `$id` | 1 | a reference under a nested $id |
 | R12 | pointer passing through a nested `$id` | 1 | a pointer passing through a subschema with its own $id |
 | R13 | own-key pointer resolution | 1 | a pointer naming an inherited property |
@@ -187,11 +195,26 @@ trip TS7027 (unreachable code), a warning; the tests still ran on the emitted co
 | R21 | numeric-enum message | 4 | zod number enum; pydantic Literal[1, 2]; mixed enum; fromJson "rejects non-string and empty enums" |
 | R22 | `{}` message | 3 | pydantic Any (spike); Any with title; fromJson "rejects a missing or unknown type" |
 | R23 | `$dynamicRef` forbidden | 1 | refuses $dynamicRef |
+| R24 | depth bound (128) | 3 | one level past the limit; the 20000-deep chain; nesting through `$ref` |
+| R25 | `captureResult` backstop at the root | 1 | an accessor that throws becomes a failure, not an exception |
+| R26 | percent-decode the fragment before splitting | 2 | `%2F` decoded before splitting (RFC 6901 § 6); a malformed escape (with the mutant, the decode throws outside the per-reference `captureResult`, and the backstop's message no longer matches) |
+| R27 | `~1` unescaped before `~0` | 1 | `~01` names the literal key `~1` |
+| R28 | echoed reference truncated | 1 | a very long reference, echoed truncated |
 
 ## Tests changed
 
-**In other packages: none.** `ts-extras-mcp`'s boundary fixtures still hold, because each one still
-refuses:
+**In other packages** (added at gate review, kept minimal because `mcp-client-cancellation` touches
+the same files):
+
+- `ts-extras-mcp` `endToEnd.test.ts`: the header comment now describes what is refused, and a new
+  adaptable fixture `pydantic_tool` (a local `$ref` plus an `anyOf [T, null]` field) is added to the
+  catalog and the adapted list.
+- `samples/testbed` `mcpProbe.test.ts`: the mocked skip reasons are refreshed to the strings
+  `fromJson` produces now, and the mocked `union_tool` schema is changed from `['string','null']`,
+  which has been adaptable since nullable support, to `['string','number']`.
+
+Before gate review, no test outside `ts-json-base` needed to change. `ts-extras-mcp`'s boundary
+fixtures still hold, because each one still refuses:
 
 - `ref_tool` uses `#/$defs/Foo` with no `$defs` (unresolvable);
 - `oneof_tool` and `anyof_tool` are string|number unions;
@@ -255,16 +278,15 @@ Recorded so they are not rediscovered as surprises:
     allowed.
 - **Not detected:**
   - draft-04 `id` rebasing; refs under a draft-04 nested `id` resolve against the document root;
-  - non-reference nesting depth, which is bounded only by the node budget (pre-existing).
+  - (fixed at gate review) nesting depth is now bounded at 128 levels, `$ref` expansions included.
 - **Validating keywords that `fromJson` ignores,** which make the converter looser than its schema
   (constraint keywords, object-key keywords beside an *open* object, and array keywords such as
   `prefixItems`): pre-existing, now listed in `docs/TECH_DEBT.md` (P3). The comments on
   `FORBIDDEN_KEYWORDS` and on `fromJson` that claimed otherwise are softened.
-- **Stale, in packages this stream does not own:**
-  - `ts-extras-mcp` `endToEnd.test.ts` has a header comment that still lists `$ref`/`oneOf`/`anyOf`
-    as rejected. Its `ref_tool` fixture is now refused only because `#/$defs/Foo` does not resolve,
-    so it no longer pins "`$ref` is refused".
-  - `samples/testbed` `mcpProbe.test.ts` mocks old reason strings.
+- **Formerly stale, refreshed at gate review:**
+  - `ts-extras-mcp` `endToEnd.test.ts`'s header comment. Its `ref_tool` fixture is refused only
+    because `#/$defs/Foo` does not resolve, and the comment now says so.
+  - `samples/testbed` `mcpProbe.test.ts`'s mocked reason strings.
 
   Neither fails. I left both alone because the concurrent `mcp-client-cancellation` stream owns
   `ts-extras-mcp` tests and the brief limits test edits here to assertions that the widening breaks.
