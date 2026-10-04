@@ -23,7 +23,9 @@
 // Mock the SDK-isolation seam so no live MCP server / subprocess is required. The factories
 // return controllable fakes; `makeClient` is configured per-test. The jest.mock call must
 // precede the regular imports (hoist-jest-mock).
+// The real error classifier is kept: only the constructors are faked.
 jest.mock('../../packlets/mcp/sdk', () => ({
+  ...jest.requireActual('../../packlets/mcp/sdk'),
   makeClient: jest.fn(),
   makeStdioTransport: jest.fn(() => ({ sentinel: 'stdio' })),
   makeHttpTransport: jest.fn(() => ({ sentinel: 'http' }))
@@ -35,6 +37,8 @@ import { type JsonObject, type JsonValue } from '@fgv/ts-json-base';
 
 // eslint-disable-next-line @rushstack/packlets/mechanics
 import * as sdk from '../../packlets/mcp/sdk';
+// eslint-disable-next-line @rushstack/packlets/mechanics
+import { McpCloseWatcher } from '../../packlets/mcp/session';
 import {
   type IAdaptMcpToolsResult,
   type IMcpSession,
@@ -204,7 +208,53 @@ describe('connectMcpSession', () => {
     mockSdk.makeClient.mockReturnValueOnce(fake as unknown as sdk.ISdkClient);
     const transport = createStdioTransport({ command: 'node' }).orThrow();
 
-    expect(await connectMcpSession({ transport })).toFailWith(/connectMcpSession:.*handshake refused/);
+    expect(await connectMcpSession({ transport })).toFailWithDetail(/connectMcpSession:.*handshake refused/, {
+      kind: 'transport'
+    });
+  });
+
+  test('fails not-connected, and never reports the close, when the connection closes during the handshake', async () => {
+    const onClose = jest.fn();
+    const fake: IFakeClient & { onclose?: () => void } = makeFakeClient();
+    // The SDK calls `onclose` when the transport closes; here it lands before connect() settles.
+    fake.connect.mockImplementation(async () => fake.onclose?.());
+    mockSdk.makeClient.mockReturnValueOnce(fake as unknown as sdk.ISdkClient);
+    const transport = createStdioTransport({ command: 'node' }).orThrow();
+
+    expect(await connectMcpSession({ transport, onClose })).toFailWithDetail(
+      /connectMcpSession: the connection closed during the handshake/,
+      { kind: 'not-connected' }
+    );
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  test('fails invalid-handle for a foreign transport handle', async () => {
+    expect(await connectMcpSession({ transport: FOREIGN_TRANSPORT })).toFailWithDetail(
+      /invalid MCP transport/,
+      { kind: 'invalid-handle' }
+    );
+  });
+});
+
+describe('McpCloseWatcher', () => {
+  test('records the close, and calls the armed listener exactly once', () => {
+    const watcher = new McpCloseWatcher();
+    const listener = jest.fn();
+    watcher.arm(listener);
+    expect(watcher.closed).toBe(false);
+    watcher.notifyClosed();
+    watcher.notifyClosed();
+    expect(watcher.closed).toBe(true);
+    expect(listener).toHaveBeenCalledTimes(1);
+  });
+
+  test('records a close that lands before it is armed, without calling a later listener', () => {
+    const watcher = new McpCloseWatcher();
+    watcher.notifyClosed();
+    const listener = jest.fn();
+    watcher.arm(listener);
+    expect(watcher.closed).toBe(true);
+    expect(listener).not.toHaveBeenCalled();
   });
 });
 
@@ -237,7 +287,9 @@ describe('closeMcpSession', () => {
 
 describe('listMcpTools', () => {
   test('fails loudly for a foreign session handle', async () => {
-    expect(await listMcpTools(FOREIGN_SESSION)).toFailWith(/invalid MCP session/);
+    expect(await listMcpTools(FOREIGN_SESSION)).toFailWithDetail(/invalid MCP session/, {
+      kind: 'invalid-handle'
+    });
   });
 
   test('returns a single-page catalog', async () => {
@@ -293,7 +345,9 @@ describe('callMcpTool', () => {
   const args: JsonObject = { q: 'hi' };
 
   test('fails loudly for a foreign session handle', async () => {
-    expect(await callMcpTool(FOREIGN_SESSION, 'a', args)).toFailWith(/invalid MCP session/);
+    expect(await callMcpTool(FOREIGN_SESSION, 'a', args)).toFailWithDetail(/invalid MCP session/, {
+      kind: 'invalid-handle'
+    });
   });
 
   test('concatenates text blocks', async () => {
@@ -341,10 +395,20 @@ describe('callMcpTool', () => {
     expect(await callMcpTool(session, 'a', args)).toFailWith(/^bad input$/);
   });
 
+  test('a rejection that is not an Error is reported by its string form, classified transport', async () => {
+    const fake = makeFakeClient({ callTool: jest.fn(() => Promise.reject('raw string rejection')) });
+    const session = await connectWith(fake);
+    expect(await callMcpTool(session, 'a', args)).toFailWithDetail("callMcpTool 'a': raw string rejection", {
+      kind: 'transport'
+    });
+  });
+
   test('maps isError:true with no content to a generic error', async () => {
     const fake = makeFakeClient({ callTool: jest.fn(async () => ({ isError: true })) });
     const session = await connectWith(fake);
-    expect(await callMcpTool(session, 'broken', args)).toFailWith(/tool 'broken' reported an error/);
+    expect(await callMcpTool(session, 'broken', args)).toFailWithDetail("tool 'broken' reported an error", {
+      kind: 'tool-error'
+    });
   });
 
   test('fails when callTool throws', async () => {

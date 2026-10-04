@@ -132,6 +132,25 @@ export interface IConnectMcpSessionParams {
   readonly clientVersion?: string;
   /** Optional logger for connection diagnostics. */
   readonly logger?: Logging.ILogger;
+  /**
+   * Called once when the session's connection closes, for any reason: the server process exited,
+   * the transport failed, or {@link closeMcpSession} was called. It is never called for a session
+   * whose connect failed, and never more than once.
+   *
+   * @remarks
+   * This is an observation, not a policy: the package never reconnects. A consumer that pools
+   * sessions uses it to retire a dead session before its next call rather than after. A call made
+   * on a closed session fails with the `'not-connected'` {@link McpFailureReason}.
+   *
+   * The callback runs inside the SDK's close handling. A throw from it is caught (and logged to
+   * `logger`, when one is supplied) so that it cannot stop the SDK from failing the session's
+   * in-flight requests.
+   *
+   * A Streamable-HTTP session has no connection to lose between requests, so a server that
+   * restarted is not observed here; the next call reports it, as `'session-expired'` when the
+   * server answers HTTP 404 for the stale session id.
+   */
+  readonly onClose?: () => void;
 }
 
 /**
@@ -158,6 +177,56 @@ export interface IMcpSession {
   /** Server identity reported by the handshake, when the server provided one. */
   readonly serverInfo: IMcpServerInfo | undefined;
 }
+
+// ============================================================================
+// Failure classification
+// ============================================================================
+
+/**
+ * Why an MCP operation failed — the detail of the `DetailedResult` returned by
+ * {@link connectMcpSession}, {@link listMcpTools}, {@link callMcpTool} and {@link adaptMcpTools}.
+ *
+ * @remarks
+ * Every failure carries exactly one reason: the classification is total, so a consumer can branch
+ * on `kind` without parsing the message. It is derived from the SDK's error classes, its JSON-RPC
+ * error code, and the HTTP status the transport reported — never from message text.
+ *
+ * | kind | produced when |
+ * |---|---|
+ * | `'tool-error'` | The tool ran and returned a result flagged `isError`. The failure message is the tool's own text, unprefixed (see {@link callMcpTool}). |
+ * | `'timeout'` | The SDK's request timeout (or `maxTotalTimeoutMs`) elapsed: `McpError` code `-32001`. |
+ * | `'aborted'` | The caller's `AbortSignal` fired before the request settled. |
+ * | `'not-connected'` | The session's connection is closed: the call was made after it closed, or it closed while the call was in flight (`McpError` code `-32000`). |
+ * | `'session-expired'` | A Streamable-HTTP server answered HTTP 404 for an established session: it no longer recognizes the session id (typically after a server restart). |
+ * | `'unauthorized'` | The server refused the credentials: HTTP 401 or 403, or the SDK's `UnauthorizedError`. |
+ * | `'protocol'` | The server answered with a JSON-RPC error, or the SDK rejected the server's response. `code` is the JSON-RPC error code. |
+ * | `'transport'` | Anything else: a network or child-process I/O failure, a non-2xx HTTP status not listed above, or an error the SDK raised without a type. This is the catch-all that makes the classification total. |
+ * | `'invalid-handle'` | The session or transport handle did not come from this package. A caller bug; retrying cannot help. |
+ *
+ * Reconnecting is the consumer's policy. As a guide: `'not-connected'` and `'session-expired'`
+ * mean the session is dead; `'transport'` means it is suspect; the others leave it usable.
+ *
+ * **Two limits of the SDK, stated so nobody builds on more than it gives.** The SDK reports a
+ * caller's abort as an `McpError` with the *timeout* code; this package tells the two apart by
+ * the identity of the abort it issued, not by the code. And a server that itself answers with the
+ * SDK's reserved codes `-32000` or `-32001` is indistinguishable from the SDK raising them, so it
+ * is classified the same way.
+ *
+ * @public
+ */
+export type McpFailureReason =
+  | { readonly kind: 'tool-error' }
+  | { readonly kind: 'timeout' }
+  | { readonly kind: 'aborted' }
+  | { readonly kind: 'not-connected' }
+  | { readonly kind: 'session-expired' }
+  /** `status` is the HTTP status, when the refusal came as one. */
+  | { readonly kind: 'unauthorized'; readonly status?: number }
+  /** `code` is the JSON-RPC error code. */
+  | { readonly kind: 'protocol'; readonly code: number }
+  /** `status` is the HTTP status, when the failure came as one. */
+  | { readonly kind: 'transport'; readonly status?: number }
+  | { readonly kind: 'invalid-handle' };
 
 // ============================================================================
 // Tool discovery + invocation

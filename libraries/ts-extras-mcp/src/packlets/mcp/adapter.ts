@@ -27,7 +27,7 @@
  * @packageDocumentation
  */
 
-import { type Result, succeed } from '@fgv/ts-utils';
+import { type DetailedResult, type Result, succeedWithDetail } from '@fgv/ts-utils';
 import { AiAssist } from '@fgv/ts-extras';
 import { Converters, JsonSchema, type JsonValue } from '@fgv/ts-json-base';
 
@@ -36,7 +36,8 @@ import {
   type IAdaptMcpToolsResult,
   type IMcpSession,
   type IMcpSkippedTool,
-  type IMcpToolDescriptor
+  type IMcpToolDescriptor,
+  type McpFailureReason
 } from './model';
 import { callMcpTool, listMcpTools } from './operations';
 
@@ -62,7 +63,9 @@ function _makeExecute(session: IMcpSession, name: string): (args: unknown) => Pr
     if (objResult.isFailure()) {
       return objResult;
     }
-    return (await callMcpTool(session, name, objResult.value)).onSuccess((called) => succeed(called.content));
+    return (await callMcpTool(session, name, objResult.value)).onSuccess((called) =>
+      succeedWithDetail<unknown, McpFailureReason>(called.content)
+    );
   };
 }
 
@@ -123,13 +126,14 @@ function _adaptOne(session: IMcpSession, descriptor: IMcpToolDescriptor): IAdapt
  *
  * @param session - A connected session from `connectMcpSession`.
  * @param options - Optional logger for the NOISY skip warnings.
- * @returns `Success` with `{ tools, skipped }`, or `Failure` only if tool discovery fails.
+ * @returns `Success` with `{ tools, skipped }`, or `Failure` only if tool discovery fails, with the
+ * discovery failure's {@link McpFailureReason} as its detail.
  * @public
  */
 export async function adaptMcpTools(
   session: IMcpSession,
   options?: IAdaptMcpToolsOptions
-): Promise<Result<IAdaptMcpToolsResult>> {
+): Promise<DetailedResult<IAdaptMcpToolsResult, McpFailureReason>> {
   return (await listMcpTools(session))
     .onSuccess((descriptors) => {
       const tools: AiAssist.IAiClientTool[] = [];
@@ -149,7 +153,7 @@ export async function adaptMcpTools(
         }
       }
 
-      return succeed<IAdaptMcpToolsResult>({ tools, skipped });
+      return succeedWithDetail<IAdaptMcpToolsResult, McpFailureReason>({ tools, skipped });
     })
     .withErrorFormat((msg) => `adaptMcpTools: ${msg}`);
 }

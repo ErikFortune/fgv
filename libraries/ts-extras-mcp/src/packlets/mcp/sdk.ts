@@ -34,9 +34,17 @@
  * @internal
  */
 
+import { UnauthorizedError } from '@modelcontextprotocol/sdk/client/auth.js';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+import { SseError } from '@modelcontextprotocol/sdk/client/sse.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
-import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
+import {
+  StreamableHTTPClientTransport,
+  StreamableHTTPError
+} from '@modelcontextprotocol/sdk/client/streamableHttp.js';
+import { ErrorCode, McpError } from '@modelcontextprotocol/sdk/types.js';
+
+import { type McpFailureReason } from './model';
 
 /**
  * Opaque transport handle. The concrete value is an SDK `Transport`; consumers of this module
@@ -103,6 +111,10 @@ export interface ISdkImplementation {
  * @internal
  */
 export interface ISdkClient {
+  /**
+   * Set by the session layer; the SDK calls it once when the connection closes, for any reason.
+   */
+  onclose?: () => void;
   connect(transport: ISdkTransport): Promise<void>;
   getServerVersion(): ISdkImplementation | undefined;
   listTools(params?: { cursor?: string }): Promise<ISdkListToolsResult>;
@@ -151,4 +163,58 @@ export function makeHttpTransport(url: URL, headers?: Record<string, string>): I
   return new StreamableHTTPClientTransport(url, {
     requestInit: headers ? { headers } : undefined
   }) as unknown as ISdkTransport;
+}
+
+/**
+ * Which operation a failure came from. An HTTP 404 means "session expired" only once a session
+ * exists; during the connect handshake it means the endpoint was not found.
+ * @internal
+ */
+export type SdkFailurePhase = 'connect' | 'session';
+
+/**
+ * Classifies an HTTP status reported by an SDK transport error.
+ */
+function _classifyHttpStatus(status: number | undefined, phase: SdkFailurePhase): McpFailureReason {
+  if (status === 401 || status === 403) {
+    return { kind: 'unauthorized', status };
+  }
+  if (status === 404 && phase === 'session') {
+    return { kind: 'session-expired' };
+  }
+  // The SDK uses -1 for "not an HTTP status" (e.g. an unexpected content type).
+  return status !== undefined && status >= 100 ? { kind: 'transport', status } : { kind: 'transport' };
+}
+
+/**
+ * Total classifier from anything the SDK can throw or reject with to a {@link McpFailureReason}.
+ * Classifies by error class, JSON-RPC code and HTTP status — never by message text.
+ *
+ * @remarks
+ * Two kinds are not produced here, because they depend on state this function cannot see:
+ * `'aborted'` is decided by the caller from the identity of the abort reason it issued (the SDK
+ * reports an abort with the *timeout* code), and `'not-connected'` for the SDK's untyped
+ * "Not connected" error is decided from the session's observed close.
+ *
+ * @param error - The thrown or rejected value.
+ * @param phase - Whether a session had been established when the failure occurred.
+ * @internal
+ */
+export function classifySdkError(error: unknown, phase: SdkFailurePhase): McpFailureReason {
+  if (error instanceof McpError) {
+    if (error.code === ErrorCode.RequestTimeout) {
+      return { kind: 'timeout' };
+    }
+    if (error.code === ErrorCode.ConnectionClosed) {
+      return { kind: 'not-connected' };
+    }
+    return { kind: 'protocol', code: error.code };
+  }
+  if (error instanceof UnauthorizedError) {
+    return { kind: 'unauthorized' };
+  }
+  if (error instanceof StreamableHTTPError || error instanceof SseError) {
+    return _classifyHttpStatus(error.code, phase);
+  }
+  return { kind: 'transport' };
 }
