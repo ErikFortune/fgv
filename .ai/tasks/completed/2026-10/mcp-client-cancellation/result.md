@@ -161,6 +161,8 @@ the 404 tests run the same status through both phases.
 | R27 | `execute` is a function-typed property, not a method (Copilot, #722) | build fails: `TS2578 Unused '@ts-expect-error'` in `execute cannot demand more than TParams…` |
 | R28 | the post-handshake abort path does not await the close (Copilot, #722) | `the post-settle abort path does not wait for a close that never settles` |
 | R29 | an async `onClose` rejection is caught and logged (Copilot, #722) | `an async onClose that rejects is contained and logged…`, `…with no logger, is still contained` |
+| R30 | `IMcpSdkTransport` declares the callback slots (Copilot round 2) | build fails: `TS2339 Property 'onclose' does not exist on type 'IMcpSdkTransport'` in the consumer transport (`customTransport.test.ts`) |
+| R31 | the slots use method syntax, not property syntax (Copilot round 2) | build fails: `TS2345 Argument of type 'InMemoryTransport' is not assignable to parameter of type 'IMcpSdkTransport'` at every `createCustomTransport(clientSide)` |
 
 Every row R1–R22 was rerun against the gate-time tree (`332c5f58` plus the R22 fix), not carried over. After review 2, R17 and R18 were rerun and R23–R26 added against `7d9d1279`; R18's anchor changed with the code (it previously reverted the `lost.signal.aborted` gate, which R23 now covers).
 R22 was found by the matrix itself: R13 first reddened a test meant for the race. The test's
@@ -315,6 +317,28 @@ Five comments, all applied in `40135942`.
   `unhandledRejection` (R29). The naive revert, dropping the `.catch`, does not even build: the
   repo's `@typescript-eslint/no-floating-promises` lint rule refuses it. R29 therefore reverts
   instead to a handler that rethrows.
+
+## Copilot round 2 on #722
+
+One finding, verified by the orchestrator and applied.
+
+- **`IMcpSdkTransport` did not declare the callback slots its contract relies on.** The SDK assigns
+  `onmessage` / `onclose` / `onerror`, and `close()` must call `onclose`. The interface declared
+  none of them, so a consumer's class could not write `this.onclose?.()` against the public type.
+  It now declares `onclose?(): void`, `onerror?(error: Error): void` and
+  `onmessage?(message: unknown, extra?: unknown): void`. Each has a one-line TSDoc saying the SDK
+  assigns it when the session connects, and `onclose`'s doc repeats that `close()` must call it.
+  **The slots use method syntax on purpose**, and a comment at the slots says why. Method
+  parameters are bivariant, which is what lets the SDK's own transports, whose `onmessage` takes
+  `JSONRPCMessage`, still assign to this SDK-agnostic shape. That is the same reason `send` takes
+  `unknown`, and the opposite of the `IAiClientTool.execute` case.
+- **Tests (`customTransport.test.ts`).** A consumer-written `ConsumerTransport` implements only
+  `IMcpSdkTransport`, with no SDK type in its declaration; its slots are typed
+  `IMcpSdkTransport['onclose']` and so on. An adapter wires it back-to-back with a real in-memory
+  `Server`. The test connects, calls a tool, then calls the consumer's `close()`, which invokes
+  `this.onclose?.()`. The in-flight call fails `not-connected`, and `onClose` fires once. A
+  type-level test assigns the SDK's `InMemoryTransport` to `IMcpSdkTransport`.
+- `etc/ts-extras-mcp.api.md` regenerated.
 
 ## What this pre-empts for the other MCP asks
 

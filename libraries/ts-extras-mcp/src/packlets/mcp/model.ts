@@ -99,6 +99,22 @@ export interface IMcpSdkTransport {
   close(): Promise<void>;
   /** The transport's session id, when it has one. Must be unset when the transport is wrapped. */
   readonly sessionId?: string;
+
+  // The three callback slots are declared in method syntax on purpose. Method parameters are
+  // bivariant, and here that is what we want: the SDK's own transports declare `onmessage` over
+  // its `JSONRPCMessage` type, and must still assign to this SDK-agnostic shape (the same reason
+  // `send` takes `unknown`). This is the opposite of `IAiClientTool.execute`, where bivariance
+  // would let an implementation demand more than its contract supplies.
+
+  /**
+   * Assigned by the SDK when the session connects. `close()` must call it, which is how the SDK
+   * fails the session's in-flight requests and how `onClose` is told.
+   */
+  onclose?(): void;
+  /** Assigned by the SDK when the session connects; call it to report a non-fatal transport error. */
+  onerror?(error: Error): void;
+  /** Assigned by the SDK when the session connects; call it with each JSON-RPC message received. */
+  onmessage?(message: unknown, extra?: unknown): void;
 }
 
 /**

@@ -16,7 +16,7 @@ A Result-integration boundary over [`@modelcontextprotocol/sdk`](https://github.
 |---|---|
 | `createStdioTransport({ command, args?, env?, cwd? })` | `Result<IMcpTransport>` |
 | `createHttpTransport({ url, headers? })` | `Result<IMcpTransport>` |
-| `createCustomTransport(sdkTransport)` | `Result<IMcpTransport>` — wraps any pre-built SDK client transport (e.g. `InMemoryTransport` for tests against an in-process server), typed structurally as `IMcpSdkTransport`. It must be fresh (refused if it already has a `sessionId`, which would make the SDK skip `initialize`), and its `close()` must call `onclose`. Every transport handle is single-use. |
+| `createCustomTransport(sdkTransport)` | `Result<IMcpTransport>` — wraps any pre-built SDK client transport (e.g. `InMemoryTransport` for tests against an in-process server), typed structurally as `IMcpSdkTransport`. It must be fresh (refused if it already has a `sessionId`, which would make the SDK skip `initialize`), and its `close()` must call `onclose`. The interface declares the `onclose` / `onerror` / `onmessage` slots the SDK assigns, so a consumer's own transport class can be written against it. Every transport handle is single-use. |
 | `connectMcpSession({ transport, clientName?, clientVersion?, logger?, onClose?, timeoutMs?, signal? })` | `Promise<DetailedResult<IMcpSession, McpFailureReason>>` |
 | `closeMcpSession(session)` | `Promise<Result<true>>` |
 | `listMcpTools(session, options?)` | `Promise<DetailedResult<ReadonlyArray<IMcpToolDescriptor>, McpFailureReason>>` (follows the SDK's `nextCursor` for the full catalog) |

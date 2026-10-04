@@ -79,6 +79,9 @@ export interface IMcpRequestOptions {
 // @public
 export interface IMcpSdkTransport {
     close(): Promise<void>;
+    onclose?(): void;
+    onerror?(error: Error): void;
+    onmessage?(message: unknown, extra?: unknown): void;
     send(message: unknown, options?: unknown): Promise<void>;
     readonly sessionId?: string;
     start(): Promise<void>;
