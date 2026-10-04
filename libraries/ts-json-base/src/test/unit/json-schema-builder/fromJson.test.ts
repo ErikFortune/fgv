@@ -123,6 +123,12 @@ describe('JsonSchema.fromJson', () => {
       expect(JsonSchema.fromJson(raw as JsonObject)).toFailWith(/unsupported JSON Schema keyword/i);
     });
 
+    test('jsonSchemaConverter reports errors under the path supplied as its context', () => {
+      expect(JsonSchema.jsonSchemaConverter.convert({ type: 'date' }, '#/x')).toFailWith(
+        /^#\/x: unsupported or missing 'type'/
+      );
+    });
+
     test('rejects a non-object root', () => {
       expect(JsonSchema.fromJson('nope' as unknown as JsonObject)).toFailWith(
         /expected a JSON Schema object/i

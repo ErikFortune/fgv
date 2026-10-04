@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "BREAKING: JsonSchema.fromJson resolves local $ref (#/$defs/…, #/definitions/…, any #/… pointer) by inlining, bounded at 32 nested and 1000 total expansions; toJson() emits the inlined, reference-free schema. Remote refs, anchors, recursive schemas, refs beside validation keywords and refs under a nested $id are refused with the keyword and path named. $dynamicRef and $recursiveRef, previously ignored, are now refused.",
+      "type": "minor",
+      "packageName": "@fgv/ts-json-base"
+    }
+  ],
+  "packageName": "@fgv/ts-json-base",
+  "email": "ErikFortune@outlook.com"
+}
