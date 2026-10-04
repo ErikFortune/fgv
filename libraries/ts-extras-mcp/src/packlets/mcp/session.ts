@@ -43,6 +43,7 @@ import {
   type IMcpSession,
   type McpFailureReason
 } from './model';
+import { runSdkRequest } from './request';
 import { type ISdkClient, classifySdkError, makeClient } from './sdk';
 import { McpTransport } from './transports';
 
@@ -159,7 +160,7 @@ export class McpSession implements IMcpSession {
 export async function connectMcpSession(
   params: IConnectMcpSessionParams
 ): Promise<DetailedResult<IMcpSession, McpFailureReason>> {
-  const { transport, clientName, clientVersion, logger, onClose } = params;
+  const { transport, clientName, clientVersion, logger, onClose, timeoutMs, signal } = params;
 
   const transportResult = McpTransport.fromHandle(transport);
   if (transportResult.isFailure()) {
@@ -176,39 +177,34 @@ export async function connectMcpSession(
     `mcp: connecting (client ${name}@${version}, transport ${transportResult.value.transportKind})`
   );
 
-  return Promise.resolve()
-    .then(() => client.connect(transportResult.value.sdkTransport))
-    .then(
-      (): DetailedResult<IMcpSession, McpFailureReason> => {
-        // Check-then-arm with no await between: a close that landed during the handshake is
-        // already recorded, and none can land between this check and `arm`.
-        if (closeWatcher.closed) {
-          return failWithDetail('connectMcpSession: the connection closed during the handshake', {
-            kind: 'not-connected'
-          });
-        }
-        closeWatcher.arm(onClose);
-        const raw = client.getServerVersion();
-        const serverInfo: IMcpServerInfo | undefined =
-          raw !== undefined ? { name: raw.name, version: raw.version } : undefined;
-        logger?.info(
-          serverInfo !== undefined
-            ? `mcp: connected to server ${serverInfo.name}@${serverInfo.version}`
-            : 'mcp: connected (server did not report identity)'
-        );
-        return succeedWithDetail(new McpSession(client, name, version, serverInfo, closeWatcher));
-      },
-      (err: unknown) =>
-        failWithDetail(`connectMcpSession: ${errorText(err)}`, classifySdkError(err, 'connect'))
+  const handshake = await runSdkRequest(
+    'connectMcpSession',
+    { timeoutMs, signal },
+    (err) => classifySdkError(err, 'connect'),
+    (sdkOptions) => client.connect(transportResult.value.sdkTransport, sdkOptions)
+  );
+  return handshake.onSuccess(() => {
+    // Check-then-arm with no await between: a close that landed during the handshake is already
+    // recorded, and none can land between this check and `arm`.
+    if (closeWatcher.closed) {
+      return failWithDetail<IMcpSession, McpFailureReason>(
+        'connectMcpSession: the connection closed during the handshake',
+        { kind: 'not-connected' }
+      );
+    }
+    closeWatcher.arm(onClose);
+    const raw = client.getServerVersion();
+    const serverInfo: IMcpServerInfo | undefined =
+      raw !== undefined ? { name: raw.name, version: raw.version } : undefined;
+    logger?.info(
+      serverInfo !== undefined
+        ? `mcp: connected to server ${serverInfo.name}@${serverInfo.version}`
+        : 'mcp: connected (server did not report identity)'
     );
-}
-
-/**
- * The message of a thrown or rejected value.
- * @internal
- */
-export function errorText(err: unknown): string {
-  return err instanceof Error ? err.message : String(err);
+    return succeedWithDetail<IMcpSession, McpFailureReason>(
+      new McpSession(client, name, version, serverInfo, closeWatcher)
+    );
+  });
 }
 
 /**

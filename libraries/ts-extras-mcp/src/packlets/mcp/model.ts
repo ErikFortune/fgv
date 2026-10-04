@@ -151,6 +151,18 @@ export interface IConnectMcpSessionParams {
    * server answers HTTP 404 for the stale session id.
    */
   readonly onClose?: () => void;
+  /**
+   * Timeout in milliseconds for the initialize handshake. Defaults to the SDK's 60 000. Expiry
+   * fails the connect with the `'timeout'` {@link McpFailureReason}.
+   */
+  readonly timeoutMs?: number;
+  /**
+   * Aborts the connect. An abort before the handshake settles fails it with the `'aborted'`
+   * {@link McpFailureReason}, and the SDK closes the transport. The SDK cannot interrupt the
+   * transport's own start-up (spawning a stdio child), so an abort during it takes effect when
+   * the handshake request is about to be sent.
+   */
+  readonly signal?: AbortSignal;
 }
 
 /**
@@ -176,6 +188,60 @@ export interface IMcpSession {
   readonly clientVersion: string;
   /** Server identity reported by the handshake, when the server provided one. */
   readonly serverInfo: IMcpServerInfo | undefined;
+}
+
+// ============================================================================
+// Per-request options
+// ============================================================================
+
+/**
+ * A progress notification from the server for an in-flight request.
+ * @public
+ */
+export interface IMcpProgress {
+  /** Progress so far. Increases with each notification. */
+  readonly progress: number;
+  /** The total, when the server knows it. */
+  readonly total?: number;
+  /** A human-readable progress message, when the server sent one. */
+  readonly message?: string;
+}
+
+/**
+ * Options for a single MCP request, mapped onto the SDK's `RequestOptions`. Accepted by
+ * {@link callMcpTool} and {@link listMcpTools}.
+ *
+ * @remarks
+ * When the request is aborted or times out, the SDK sends the server a
+ * `notifications/cancelled` for it, so the server can stop the work rather than run it to
+ * completion. Whether it does is the server's choice.
+ * @public
+ */
+export interface IMcpRequestOptions {
+  /**
+   * Request timeout in milliseconds. When it elapses the request fails with the `'timeout'`
+   * {@link McpFailureReason}. Defaults to the SDK's `DEFAULT_REQUEST_TIMEOUT_MSEC`, 60 000.
+   * For {@link listMcpTools} it applies to each page.
+   */
+  readonly timeoutMs?: number;
+  /**
+   * Aborts the request. A request aborted before it settles fails with the `'aborted'`
+   * {@link McpFailureReason}, never `'timeout'` or `'transport'`; a signal already aborted when
+   * the call is made fails the same way without sending anything.
+   */
+  readonly signal?: AbortSignal;
+  /**
+   * Receives the server's progress notifications for this request. Supplying it is what asks the
+   * server for progress (the SDK attaches a progress token only when a callback is given).
+   */
+  readonly onProgress?: (progress: IMcpProgress) => void;
+  /** When `true`, each progress notification restarts the `timeoutMs` clock. Default `false`. */
+  readonly resetTimeoutOnProgress?: boolean;
+  /**
+   * An overall limit, in milliseconds, that progress cannot extend. The SDK checks it when a
+   * progress notification arrives, so it only has effect together with `resetTimeoutOnProgress`.
+   */
+  readonly maxTotalTimeoutMs?: number;
 }
 
 // ============================================================================

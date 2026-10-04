@@ -107,6 +107,28 @@ export interface ISdkImplementation {
 }
 
 /**
+ * Projection of the SDK's `Progress` notification payload.
+ * @internal
+ */
+export interface ISdkProgress {
+  readonly progress: number;
+  readonly total?: number;
+  readonly message?: string;
+}
+
+/**
+ * Projection of the SDK's per-request `RequestOptions`.
+ * @internal
+ */
+export interface ISdkRequestOptions {
+  readonly timeout?: number;
+  readonly signal?: AbortSignal;
+  readonly onprogress?: (progress: ISdkProgress) => void;
+  readonly resetTimeoutOnProgress?: boolean;
+  readonly maxTotalTimeout?: number;
+}
+
+/**
  * Minimal projection of the SDK `Client` surface the package depends on.
  * @internal
  */
@@ -115,11 +137,28 @@ export interface ISdkClient {
    * Set by the session layer; the SDK calls it once when the connection closes, for any reason.
    */
   onclose?: () => void;
-  connect(transport: ISdkTransport): Promise<void>;
+  connect(transport: ISdkTransport, options?: ISdkRequestOptions): Promise<void>;
   getServerVersion(): ISdkImplementation | undefined;
-  listTools(params?: { cursor?: string }): Promise<ISdkListToolsResult>;
-  callTool(params: { name: string; arguments?: Record<string, unknown> }): Promise<ISdkCallToolResult>;
+  listTools(params?: { cursor?: string }, options?: ISdkRequestOptions): Promise<ISdkListToolsResult>;
+  /** The second parameter is the SDK's result schema; `undefined` selects its default. */
+  callTool(
+    params: { name: string; arguments?: Record<string, unknown> },
+    resultSchema?: undefined,
+    options?: ISdkRequestOptions
+  ): Promise<ISdkCallToolResult>;
   close(): Promise<void>;
+}
+
+/**
+ * Creates the reason a request is aborted with. Each call gets a distinct object, which the SDK
+ * rejects the request with *by identity*: it passes an `McpError` reason through unchanged, but
+ * wraps any other reason in a new `McpError` with the timeout code — which is why a plain
+ * `AbortSignal` reason would make an abort indistinguishable from a timeout. The code is the one
+ * the SDK itself uses for an abort; it is never what classifies the failure.
+ * @internal
+ */
+export function makeAbortReason(): Error {
+  return new McpError(ErrorCode.RequestTimeout, 'request aborted by the caller');
 }
 
 /**

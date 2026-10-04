@@ -38,11 +38,13 @@ import {
   type IMcpSession,
   type IMcpToolAnnotations,
   type IMcpToolCallResult,
+  type IMcpRequestOptions,
   type IMcpToolDescriptor,
   type McpFailureReason
 } from './model';
+import { runSdkRequest } from './request';
 import { type ISdkContentBlock, type ISdkToolDescriptor, classifySdkError } from './sdk';
-import { McpSession, errorText } from './session';
+import { McpSession } from './session';
 
 /**
  * Validates/normalizes a raw (untrusted) MCP `Tool.annotations` blob into an
@@ -111,24 +113,6 @@ function _projectContent(blocks: ReadonlyArray<ISdkContentBlock> | undefined): s
 }
 
 /**
- * Runs one SDK request on a session and converts its outcome into a `DetailedResult` whose failure
- * carries a {@link McpFailureReason}. `prefix` is prepended to the failure message.
- */
-async function _request<T>(
-  session: McpSession,
-  prefix: string,
-  request: () => Promise<T>
-): Promise<DetailedResult<T, McpFailureReason>> {
-  return Promise.resolve()
-    .then(request)
-    .then(
-      (value) => succeedWithDetail<T, McpFailureReason>(value),
-      (err: unknown) =>
-        failWithDetail<T, McpFailureReason>(`${prefix}: ${errorText(err)}`, _classify(session, err))
-    );
-}
-
-/**
  * Classifies a request failure. The SDK raises an untyped `Error` when a request is made on a
  * client whose transport has already closed; the session's observed close is what identifies it,
  * so a `'transport'` classification on a closed session is reported as `'not-connected'`.
@@ -143,12 +127,14 @@ function _classify(session: McpSession, err: unknown): McpFailureReason {
  * pagination until the full catalog is accumulated.
  *
  * @param session - A session from `connectMcpSession`.
+ * @param options - Optional timeout, abort signal and progress callback, applied to each page.
  * @returns `Success` with the full tool catalog, or `Failure` on a foreign handle or a
  * transport/protocol error. The failure's detail is a {@link McpFailureReason}.
  * @public
  */
 export async function listMcpTools(
-  session: IMcpSession
+  session: IMcpSession,
+  options?: IMcpRequestOptions
 ): Promise<DetailedResult<ReadonlyArray<IMcpToolDescriptor>, McpFailureReason>> {
   const sessionResult = McpSession.fromHandle(session);
   if (sessionResult.isFailure()) {
@@ -163,7 +149,12 @@ export async function listMcpTools(
   // Cursor-paginated loop: fetch each page, accumulate, advance until nextCursor is absent.
   do {
     const params = cursor !== undefined ? { cursor } : undefined;
-    const pageResult = await _request(mcpSession, 'listMcpTools', () => client.listTools(params));
+    const pageResult = await runSdkRequest(
+      'listMcpTools',
+      options,
+      (err) => _classify(mcpSession, err),
+      (sdkOptions) => client.listTools(params, sdkOptions)
+    );
     if (pageResult.isFailure()) {
       return failWithDetail(pageResult.message, pageResult.detail);
     }
@@ -190,6 +181,7 @@ export async function listMcpTools(
  * @param session - A session from `connectMcpSession`.
  * @param name - The tool name to invoke.
  * @param args - The tool arguments (a JSON object).
+ * @param options - Optional timeout, abort signal and progress callback for this call.
  * @returns `Success` with the projected content, or `Failure` on tool error / transport error /
  * foreign handle. The failure's detail is a {@link McpFailureReason}.
  * @public
@@ -197,7 +189,8 @@ export async function listMcpTools(
 export async function callMcpTool(
   session: IMcpSession,
   name: string,
-  args: JsonObject
+  args: JsonObject,
+  options?: IMcpRequestOptions
 ): Promise<DetailedResult<IMcpToolCallResult, McpFailureReason>> {
   const sessionResult = McpSession.fromHandle(session);
   if (sessionResult.isFailure()) {
@@ -207,8 +200,11 @@ export async function callMcpTool(
   // Only request failures are prefixed; the `isError` failure built in `onSuccess` is the server's
   // verbatim content, so the model-facing tool-error text is exactly what the tool said.
   return (
-    await _request(mcpSession, `callMcpTool '${name}'`, () =>
-      mcpSession.client.callTool({ name, arguments: args })
+    await runSdkRequest(
+      `callMcpTool '${name}'`,
+      options,
+      (err) => _classify(mcpSession, err),
+      (sdkOptions) => mcpSession.client.callTool({ name, arguments: args }, undefined, sdkOptions)
     )
   ).onSuccess((raw) => {
     const content = _projectContent(raw.content);

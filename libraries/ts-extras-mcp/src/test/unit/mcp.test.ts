@@ -316,8 +316,8 @@ describe('listMcpTools', () => {
     expect(await listMcpTools(session)).toSucceedAndSatisfy((tools: ReadonlyArray<IMcpToolDescriptor>) => {
       expect(tools.map((t) => t.name)).toEqual(['a', 'b']);
     });
-    expect(listTools).toHaveBeenNthCalledWith(1, undefined);
-    expect(listTools).toHaveBeenNthCalledWith(2, { cursor: 'p2' });
+    expect(listTools).toHaveBeenNthCalledWith(1, undefined, undefined);
+    expect(listTools).toHaveBeenNthCalledWith(2, { cursor: 'p2' }, undefined);
   });
 
   test('coerces a missing/invalid inputSchema to null and a missing description to undefined', async () => {
@@ -363,7 +363,7 @@ describe('callMcpTool', () => {
     expect(await callMcpTool(session, 'a', args)).toSucceedWith({
       content: 'line one\nline two'
     });
-    expect(fake.callTool).toHaveBeenCalledWith({ name: 'a', arguments: args });
+    expect(fake.callTool).toHaveBeenCalledWith({ name: 'a', arguments: args }, undefined, undefined);
   });
 
   test('summarizes non-text blocks', async () => {
@@ -518,7 +518,11 @@ describe('adaptMcpTools', () => {
       const callTool = jest.fn(async () => ({ content: [{ type: 'text', text: 'tool output' }] }));
       const execute = await adaptGood(callTool);
       expect(await execute({ q: 'hello' })).toSucceedWith('tool output');
-      expect(callTool).toHaveBeenCalledWith({ name: 'good', arguments: { q: 'hello' } });
+      expect(callTool).toHaveBeenCalledWith(
+        { name: 'good', arguments: { q: 'hello' } },
+        undefined,
+        undefined
+      );
     });
 
     test('fails when the model supplies non-object arguments', async () => {

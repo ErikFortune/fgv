@@ -15,7 +15,7 @@ import { Result } from '@fgv/ts-utils';
 export function adaptMcpTools(session: IMcpSession, options?: IAdaptMcpToolsOptions): Promise<DetailedResult<IAdaptMcpToolsResult, McpFailureReason>>;
 
 // @public
-export function callMcpTool(session: IMcpSession, name: string, args: JsonObject): Promise<DetailedResult<IMcpToolCallResult, McpFailureReason>>;
+export function callMcpTool(session: IMcpSession, name: string, args: JsonObject, options?: IMcpRequestOptions): Promise<DetailedResult<IMcpToolCallResult, McpFailureReason>>;
 
 // @public
 export function closeMcpSession(session: IMcpSession): Promise<Result<true>>;
@@ -49,6 +49,8 @@ export interface IConnectMcpSessionParams {
     readonly clientVersion?: string;
     readonly logger?: Logging.ILogger;
     readonly onClose?: () => void;
+    readonly signal?: AbortSignal;
+    readonly timeoutMs?: number;
     readonly transport: IMcpTransport;
 }
 
@@ -56,6 +58,22 @@ export interface IConnectMcpSessionParams {
 export interface IMcpHttpTransportParams {
     readonly headers?: Record<string, string>;
     readonly url: string;
+}
+
+// @public
+export interface IMcpProgress {
+    readonly message?: string;
+    readonly progress: number;
+    readonly total?: number;
+}
+
+// @public
+export interface IMcpRequestOptions {
+    readonly maxTotalTimeoutMs?: number;
+    readonly onProgress?: (progress: IMcpProgress) => void;
+    readonly resetTimeoutOnProgress?: boolean;
+    readonly signal?: AbortSignal;
+    readonly timeoutMs?: number;
 }
 
 // @public
@@ -121,7 +139,7 @@ export interface IMcpTransport {
 }
 
 // @public
-export function listMcpTools(session: IMcpSession): Promise<DetailedResult<ReadonlyArray<IMcpToolDescriptor>, McpFailureReason>>;
+export function listMcpTools(session: IMcpSession, options?: IMcpRequestOptions): Promise<DetailedResult<ReadonlyArray<IMcpToolDescriptor>, McpFailureReason>>;
 
 // @public
 export type McpFailureReason = {
