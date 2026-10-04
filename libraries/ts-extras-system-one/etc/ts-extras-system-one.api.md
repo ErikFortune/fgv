@@ -138,7 +138,7 @@ export { JsonValue }
 export function listSystemOneModels(client: ISystemOneClient): Promise<Result<ReadonlyArray<ModelCard>>>;
 
 // @public
-export function measureSystemOneInput(state: EntryType, questions: Questions): ISystemOneInputMeasure;
+export function measureSystemOneInput(state: EntryType, questions: Questions): Result<ISystemOneInputMeasure>;
 
 export { ModelCard }
 

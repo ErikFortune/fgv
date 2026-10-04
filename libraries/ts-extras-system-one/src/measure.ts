@@ -20,7 +20,16 @@
  * SOFTWARE.
  */
 
-import { failWithDetail, succeedWithDetail, type DetailedResult } from '@fgv/ts-utils';
+import {
+  Converter,
+  Converters,
+  Validators,
+  captureResult,
+  failWithDetail,
+  succeedWithDetail,
+  type DetailedResult,
+  type Result
+} from '@fgv/ts-utils';
 import type { EntryType, Question, Questions } from '@typesafe-ai/sdk';
 import type {
   ISystemOneCriterionMeasure,
@@ -55,6 +64,22 @@ function isEmptyDescription(value: EntryType | undefined): boolean {
   return value === undefined || value === null || value === '';
 }
 
+/**
+ * The measured length of a candidate whose description may be absent. CLM treats only `null` and
+ * `''` as absent, so a whitespace-only description is embedded as written; but CLM also trims what
+ * it embeds. That one is measured as the larger of its own length and the default's, which
+ * over-measures whichever CLM does.
+ */
+function candidateLength(description: EntryType | undefined, defaultLength: number): number {
+  if (isEmptyDescription(description)) {
+    return defaultLength;
+  }
+  const length = lengthOf(description);
+  return typeof description === 'string' && description.trim() === ''
+    ? Math.max(length, defaultLength)
+    : length;
+}
+
 /** The candidate texts CLM embeds for one question, measured. */
 function measureCriteria(question: Question): ISystemOneCriterionMeasure[] {
   switch (question.type) {
@@ -62,7 +87,7 @@ function measureCriteria(question: Question): ISystemOneCriterionMeasure[] {
       // A label with no description embeds the label itself.
       return Object.keys(question.criteria).map((key) => {
         const description = question.criteria[key];
-        return { key, length: isEmptyDescription(description) ? key.length : lengthOf(description) };
+        return { key, length: candidateLength(description, key.length) };
       });
     case 'score':
       return question.criteria.map((level, index) => ({ key: String(index), length: lengthOf(level) }));
@@ -71,13 +96,8 @@ function measureCriteria(question: Question): ISystemOneCriterionMeasure[] {
       // from the instructions, or (with neither) the key alone.
       const instructions = lengthOf(question.instructions);
       return (['true', 'false'] as const).map((key) => {
-        const description = question.criteria?.[key];
-        const body = !isEmptyDescription(description)
-          ? lengthOf(description)
-          : instructions > 0
-          ? noulDefaults[key].length + instructions
-          : key.length;
-        return { key, length: key.length + 2 + body };
+        const defaultLength = instructions > 0 ? noulDefaults[key].length + instructions : key.length;
+        return { key, length: key.length + 2 + candidateLength(question.criteria?.[key], defaultLength) };
       });
     }
   }
@@ -88,24 +108,34 @@ function measureCriteria(question: Question): ISystemOneCriterionMeasure[] {
  * plus the instructions, and each candidate text separately.
  * @remarks
  * Lengths are UTF-16 code units, and the texts are not trimmed as CLM trims them, so both
- * over-measure. Characters are a proxy for tokens, not a guarantee: the ratio varies with the content and with
- * each backend's tokenizer. A structured state is measured by its JSON serialization.
+ * over-measure. Characters are a proxy for tokens, not a guarantee: the ratio varies with the
+ * content and with each backend's tokenizer. A structured state is measured by its JSON
+ * serialization.
+ *
+ * Input outside the declared types — a question with missing or mis-shaped `criteria`, a state
+ * that cannot be serialized (circular, or holding a `bigint`) — fails rather than throws.
  * @param state - The state to be sent.
  * @param questions - The questions to be sent.
- * @returns The lengths the input bound compares against `maxChars`.
+ * @returns The lengths the input bound compares against `maxChars`, or a failure naming why the
+ * input could not be measured.
  * @public
  */
-export function measureSystemOneInput(state: EntryType, questions: Questions): ISystemOneInputMeasure {
-  const stateLength = lengthOf(state);
-  return {
-    questions: Object.keys(questions).map(
-      (questionId): ISystemOneQuestionMeasure => ({
-        questionId,
-        stateAndInstructions: stateLength + separatorLength + lengthOf(questions[questionId].instructions),
-        criteria: measureCriteria(questions[questionId])
-      })
-    )
-  };
+export function measureSystemOneInput(
+  state: EntryType,
+  questions: Questions
+): Result<ISystemOneInputMeasure> {
+  return captureResult(() => {
+    const stateLength = lengthOf(state);
+    return {
+      questions: Object.keys(questions).map(
+        (questionId): ISystemOneQuestionMeasure => ({
+          questionId,
+          stateAndInstructions: stateLength + separatorLength + lengthOf(questions[questionId].instructions),
+          criteria: measureCriteria(questions[questionId])
+        })
+      )
+    };
+  }).withErrorFormat((message) => `the request could not be measured: ${message}`);
 }
 
 /** One part of a question that is over the bound. */
@@ -138,9 +168,42 @@ function firstOverLimit(measure: ISystemOneInputMeasure, maxChars: number): IOve
   return undefined;
 }
 
+/** `'unchecked'`, or `{ maxChars }` with a number, which is then checked to be a positive integer. */
+const inputLimitShape: Converter<SystemOneInputLimit> = Converters.oneOf<SystemOneInputLimit>([
+  Converters.literal('unchecked'),
+  Converters.object<{ readonly maxChars: number }>({ maxChars: Validators.number })
+]);
+
+/** Measures the input and compares every part with `maxChars`. */
+function bound(
+  state: EntryType,
+  questions: Questions,
+  maxChars: number
+): DetailedResult<ISystemOneInputMeasure | undefined, SystemOneFailureReason> {
+  if (!Number.isInteger(maxChars) || maxChars <= 0) {
+    return failWithDetail(
+      `invalid-request: inputLimit.maxChars must be a positive integer, got ${maxChars}`,
+      'invalid-request'
+    );
+  }
+  return measureSystemOneInput(state, questions)
+    .withErrorFormat((message) => `invalid-request: ${message}`)
+    .withFailureDetail<SystemOneFailureReason>('invalid-request')
+    .onSuccess((measure) => {
+      const over = firstOverLimit(measure, maxChars);
+      return over === undefined
+        ? succeedWithDetail(measure)
+        : failWithDetail(
+            `input-over-limit: question '${over.questionId}': ${over.part} measures ${over.length} characters, over the limit of ${maxChars}`,
+            'input-over-limit'
+          );
+    });
+}
+
 /**
  * Applies the input bound. Succeeds with the measure, or `undefined` for `'unchecked'`; fails with
- * the reason `invalid-request` or `input-over-limit` as its detail.
+ * the reason `invalid-request` or `input-over-limit` as its detail. A malformed limit, or input that
+ * cannot be measured, is `invalid-request`, never a throw.
  * @internal
  */
 export function checkInputLimit(
@@ -148,23 +211,11 @@ export function checkInputLimit(
   questions: Questions,
   inputLimit: SystemOneInputLimit
 ): DetailedResult<ISystemOneInputMeasure | undefined, SystemOneFailureReason> {
-  if (inputLimit === 'unchecked') {
-    return succeedWithDetail(undefined);
-  }
-  const { maxChars } = inputLimit;
-  if (!Number.isInteger(maxChars) || maxChars <= 0) {
-    return failWithDetail(
-      `invalid-request: inputLimit.maxChars must be a positive integer, got ${maxChars}`,
-      'invalid-request'
+  return inputLimitShape
+    .convert(inputLimit)
+    .withErrorFormat(() => `invalid-request: inputLimit must be 'unchecked' or { maxChars: number }`)
+    .withFailureDetail<SystemOneFailureReason>('invalid-request')
+    .onSuccess((limit) =>
+      limit === 'unchecked' ? succeedWithDetail(undefined) : bound(state, questions, limit.maxChars)
     );
-  }
-  const measure = measureSystemOneInput(state, questions);
-  const over = firstOverLimit(measure, maxChars);
-  if (over !== undefined) {
-    return failWithDetail(
-      `input-over-limit: question '${over.questionId}': ${over.part} measures ${over.length} characters, over the limit of ${maxChars}`,
-      'input-over-limit'
-    );
-  }
-  return succeedWithDetail(measure);
 }

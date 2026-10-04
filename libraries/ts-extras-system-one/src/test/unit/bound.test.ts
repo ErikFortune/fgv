@@ -4,8 +4,15 @@
  */
 
 import '@fgv/ts-utils-jest';
-import { choice, noul, score } from '@typesafe-ai/sdk';
-import { askSystemOne, measureSystemOneInput } from '../../index';
+import {
+  choice,
+  noul,
+  score,
+  type ChoiceQuestion,
+  type EntryType,
+  type ScoreQuestion
+} from '@typesafe-ai/sdk';
+import { askSystemOne, measureSystemOneInput, type SystemOneInputLimit } from '../../index';
 import { clientFor, jsonResponse, scriptedFetch, shortChoice, shortChoiceBody } from './fixtures';
 
 describe('the input bound', () => {
@@ -154,7 +161,7 @@ describe('the input bound', () => {
       s: score({ rubric: 'r' }, ['low', null, { level: 'high' }])
     };
     const state = { ticket: 'abc' };
-    expect(measureSystemOneInput(state, questions)).toEqual({
+    expect(measureSystemOneInput(state, questions)).toSucceedWith({
       questions: [
         {
           questionId: 'n',
@@ -184,7 +191,7 @@ describe('the input bound', () => {
       ]
     });
     // a noul with neither criteria nor instructions embeds the bare key
-    expect(measureSystemOneInput(null, { q: noul() }).questions[0]).toEqual({
+    expect(measureSystemOneInput(null, { q: noul() }).orThrow().questions[0]).toEqual({
       questionId: 'q',
       stateAndInstructions: 2,
       criteria: [
@@ -194,7 +201,7 @@ describe('the input bound', () => {
     });
 
     const { fetch } = scriptedFetch(jsonResponse(200, shortChoiceBody('q')));
-    const [n] = measureSystemOneInput(state, questions).questions;
+    const [n] = measureSystemOneInput(state, questions).orThrow().questions;
     const overCandidate = await askSystemOne(clientFor(fetch), {
       state,
       questions,
@@ -210,6 +217,97 @@ describe('the input bound', () => {
     });
     expect(overState.message).toContain(
       `question 'n': state+instructions measures ${n.stateAndInstructions} `
+    );
+  });
+
+  test('U27 malformed input is invalid-request, resolved, with no request made', async () => {
+    const { fetch, calls } = scriptedFetch(jsonResponse(200, shortChoiceBody('q')));
+    const client = clientFor(fetch);
+    const circular: Record<string, unknown> = {};
+    circular.self = circular;
+    const cases: ReadonlyArray<[string, Parameters<typeof askSystemOne>[1]]> = [
+      [
+        'a score question with no criteria',
+        {
+          state: 's',
+          questions: {
+            s: { type: 'score', instructions: 'q', criteria: undefined } as unknown as ScoreQuestion
+          },
+          inputLimit: { maxChars: 100 }
+        }
+      ],
+      [
+        'a choice question with null criteria',
+        {
+          state: 's',
+          questions: {
+            c: { type: 'choice', instructions: 'q', criteria: null } as unknown as ChoiceQuestion
+          },
+          inputLimit: { maxChars: 100 }
+        }
+      ],
+      [
+        'no inputLimit',
+        {
+          state: 's',
+          questions: { q: shortChoice() },
+          inputLimit: undefined as unknown as SystemOneInputLimit
+        }
+      ],
+      [
+        'a maxChars that is not a number',
+        {
+          state: 's',
+          questions: { q: shortChoice() },
+          inputLimit: { maxChars: '10' } as unknown as SystemOneInputLimit
+        }
+      ],
+      [
+        'a circular state',
+        {
+          state: circular as unknown as EntryType,
+          questions: { q: shortChoice() },
+          inputLimit: { maxChars: 100 }
+        }
+      ],
+      [
+        'a bigint state',
+        {
+          state: { n: BigInt(1) } as unknown as EntryType,
+          questions: { q: shortChoice() },
+          inputLimit: { maxChars: 100 }
+        }
+      ]
+    ];
+    for (const [label, request] of cases) {
+      const result = await askSystemOne(client, request);
+      expect({ label, detail: result.detail }).toEqual({ label, detail: 'invalid-request' });
+      expect(result).toFailWith(/^invalid-request: /);
+    }
+    expect(calls).toHaveLength(0);
+    expect(
+      measureSystemOneInput('s', { c: { type: 'choice', criteria: null } as unknown as ChoiceQuestion })
+    ).toFailWith(/the request could not be measured/);
+  });
+
+  test('U4 a whitespace-only description is measured as the larger of itself and the default', () => {
+    expect(
+      measureSystemOneInput('', {
+        c: choice(null, { a: '   ', b: ' '.repeat(50) }),
+        n: noul('abc', { true: '  ', false: null })
+      })
+    ).toSucceedAndSatisfy(({ questions }) => {
+      expect(questions[0].criteria).toEqual([
+        { key: 'a', length: 3 },
+        { key: 'b', length: 50 }
+      ]);
+      // the default "Yes. This is true: " + "abc" (22) is longer than "  "
+      expect(questions[1].criteria[0]).toEqual({ key: 'true', length: 4 + 2 + 22 });
+    });
+    expect(measureSystemOneInput('', { c: choice(null, { longkey: ' ' }) })).toSucceedAndSatisfy(
+      ({ questions }) => {
+        expect(questions[0].criteria).toEqual([{ key: 'longkey', length: 7 }]);
+      }
     );
   });
 });

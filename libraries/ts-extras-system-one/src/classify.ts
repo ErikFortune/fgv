@@ -88,7 +88,7 @@ function reasonForSdkError(err: unknown): SystemOneFailureReason | undefined {
 
 /**
  * Classifies anything the SDK threw or rejected with, by its class and HTTP status. Never by body
- * text, which differs between backends.
+ * text, which differs between backends, and a non-2xx body never reaches the message.
  * @param err - What was thrown.
  * @param baseErrorReason - The reason for a base `TypeSafeError`, which the SDK raises for a
  * request it refuses to send or a response shape it cannot unwrap.
@@ -102,11 +102,13 @@ export function classifyError(
   status?: number,
   requestId?: string
 ): IClassifiedFailure {
-  const message = err instanceof Error ? err.message : String(err);
   if (err instanceof APIError) {
+    // The SDK builds an APIError's message from the response body, which a server may use to echo
+    // the request, state included; so the message names only the error class.
     const reason = reasonForStatus(err.status);
-    return { reason, message: failureMessage(reason, message, err.status, err.requestId) };
+    return { reason, message: failureMessage(reason, err.name, err.status, err.requestId) };
   }
+  const message = err instanceof Error ? err.message : String(err);
   const sdkReason = reasonForSdkError(err);
   if (sdkReason !== undefined) {
     return { reason: sdkReason, message: failureMessage(sdkReason, message) };

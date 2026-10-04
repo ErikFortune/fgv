@@ -64,15 +64,19 @@ interface IClientBinding {
  */
 const bindings: WeakMap<ISystemOneClient, IClientBinding> = new WeakMap();
 
-/** Fails unless `baseUrl` is an absolute `http:` or `https:` URL with no query, fragment or credentials. */
+/**
+ * Fails unless `baseUrl` is an absolute `http:` or `https:` URL with no query, fragment or
+ * credentials. `?` and `#` are refused in the raw string, since the SDK appends paths to the string
+ * as given, and a bare `?` or `#` parses to an empty `search` or `hash`.
+ */
 function checkBaseUrl(baseUrl: string): Result<string> {
   const invalid = `baseUrl must be an absolute http(s) URL with no query, fragment or credentials, got '${baseUrl}'`;
   return captureResult(() => new URL(baseUrl))
     .onFailure(() => fail(invalid))
     .onSuccess((url) =>
       (url.protocol === 'http:' || url.protocol === 'https:') &&
-      url.search === '' &&
-      url.hash === '' &&
+      !baseUrl.includes('?') &&
+      !baseUrl.includes('#') &&
       url.username === '' &&
       url.password === ''
         ? succeed(baseUrl)

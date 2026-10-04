@@ -22,6 +22,7 @@ import {
   sentBody,
   shortChoice,
   shortChoiceBody,
+  textResponse,
   threeQuestions
 } from './fixtures';
 
@@ -63,6 +64,9 @@ describe('createSystemOneClient', () => {
     expect(createSystemOneClient({ ...base, baseUrl: 'http://cfg.test/#frag' })).toFailWith(/baseUrl/);
     expect(createSystemOneClient({ ...base, baseUrl: 'http://user:pw@cfg.test' })).toFailWith(/baseUrl/);
     expect(createSystemOneClient({ ...base, baseUrl: 'http://user@cfg.test' })).toFailWith(/baseUrl/);
+    // a bare `?` or `#` parses to an empty search or hash, but the SDK receives the raw string
+    expect(createSystemOneClient({ ...base, baseUrl: 'http://cfg.test/?' })).toFailWith(/baseUrl/);
+    expect(createSystemOneClient({ ...base, baseUrl: 'http://cfg.test/#' })).toFailWith(/baseUrl/);
     expect(createSystemOneClient({ baseUrl: 'http://cfg.test', model: '   ', apiKey: 'k' })).toFailWith(
       /model must be a non-empty string/
     );
@@ -146,6 +150,98 @@ describe('createSystemOneClient', () => {
       .map((entry) => (typeof entry === 'string' ? entry : JSON.stringify(entry)))
       .join('\n');
     expect(rendered).not.toContain('MARKER-7f3a');
+  });
+
+  test('U23 a server that echoes the state puts it in no failure message and no log', async () => {
+    process.env.TYPESAFE_LOG_LEVEL = 'debug';
+    const marker = 'MARKER-9c41';
+    const logger = new Logging.InMemoryLogger('all');
+    const seen: unknown[] = [];
+    for (const method of ['detail', 'info', 'warn', 'error'] as const) {
+      const original = logger[method].bind(logger);
+      jest.spyOn(logger, method).mockImplementation((message?: unknown, ...parameters: unknown[]) => {
+        seen.push(message, ...parameters);
+        return original(message, ...parameters);
+      });
+    }
+    const echoes: ReadonlyArray<[string, ReadonlyArray<Response>]> = [
+      [
+        'a pydantic 422 with no msg',
+        [jsonResponse(422, { detail: [{ loc: ['body', 'state'], input: marker }] })]
+      ],
+      [
+        'a pydantic 422 whose msg quotes the input',
+        [jsonResponse(422, { detail: [{ loc: ['body', 'state'], msg: `bad: ${marker}`, input: marker }] })]
+      ],
+      ['a 400 error string', [jsonResponse(400, { error: `unknown model for ${marker}` })]],
+      ['a 400 text body', [textResponse(400, `state was ${marker}`)]],
+      [
+        'a retried 503 that echoes, twice',
+        [jsonResponse(503, { message: marker }), jsonResponse(503, { message: marker })]
+      ],
+      ['a 2xx that echoes the request', [jsonResponse(200, { request: { state: marker } })]],
+      ['a 2xx text echo', [textResponse(200, `you said ${marker}`)]],
+      [
+        'a 2xx answer whose choice is the state',
+        [
+          jsonResponse(200, {
+            ...shortChoiceBody('q'),
+            answers: { q: { type: 'choice', choice: marker, probabilities: { a: 0.5, b: 0.5 } } }
+          })
+        ]
+      ],
+      [
+        'a 2xx answer keyed by the state',
+        [
+          jsonResponse(200, {
+            ...shortChoiceBody('q'),
+            answers: { q: { type: 'choice', choice: 'a', probabilities: { a: 0.5, [marker]: 0.5 } } }
+          })
+        ]
+      ],
+      ['a 2xx extra answer id that is the state', [jsonResponse(200, shortChoiceBody('q', marker))]],
+      [
+        'a 2xx malformed answer under the state',
+        [
+          jsonResponse(200, {
+            ...shortChoiceBody('q'),
+            answers: {
+              q: { type: 'choice', choice: 'a', probabilities: { a: 1, b: 0 } },
+              [marker]: { type: marker }
+            }
+          })
+        ]
+      ]
+    ];
+    for (const [label, replies] of echoes) {
+      const { fetch } = scriptedFetch(...replies);
+      const client = clientFor(fetch, {
+        logger,
+        retry: { maxRetries: 1, backoffInitialMs: 1, backoffMaxMs: 1 }
+      });
+      const result = await askSystemOne(client, {
+        state: `ticket ${marker} says hello`,
+        questions: { q: shortChoice() },
+        inputLimit: 'unchecked'
+      });
+      expect({ label, failed: result.isFailure() }).toEqual({ label, failed: true });
+      expect({ label, message: result.message }).not.toEqual({
+        label,
+        message: expect.stringContaining(marker)
+      });
+    }
+    // the SDK logged its retry, so the retry path ran with logging live
+    expect(seen.some((entry) => String(entry).includes('retrying'))).toBe(true);
+    const rendered = seen
+      .map((entry) =>
+        entry instanceof Error
+          ? `${entry.name}: ${entry.message}`
+          : typeof entry === 'string'
+          ? entry
+          : JSON.stringify(entry)
+      )
+      .join('\n');
+    expect(rendered).not.toContain(marker);
   });
 
   test('U23 with no logger, console is never called', async () => {

@@ -116,7 +116,7 @@ describe('askSystemOne', () => {
         jsonResponse(403, { error: 'denied' }, { 'x-typesafe-request-id': 'req-9' })
       );
       expect(await askOnce(clientFor(fetch))).toFailWith(
-        /^unauthorized \(status 403\) \(request req-9\): 403 denied/
+        /^unauthorized \(status 403\) \(request req-9\): PermissionDeniedError$/
       );
     });
 
@@ -226,16 +226,16 @@ describe('askSystemOne', () => {
         probabilities: byIndex([0, 1, 0])
       };
       expect(await validate({ a: choiceXY }, body({ a: goodChoice, s: scoreSent }))).toFailWith(
-        /extra \[s\]/
+        /missing \[\], 1 extra/
       );
       expect(await validate({ a: choiceXY }, body({ a: goodChoice, c: goodChoice }))).toFailWith(
-        /extra \[c\]/
+        /missing \[\], 1 extra/
       );
     });
 
     test('U16a an extra noul answer id is invalid-response', async () => {
       const result = await validate({ a: choiceXY }, body({ a: goodChoice, b: { type: 'noul', noul: 0.5 } }));
-      expect(result).toFailWith(/^invalid-response.*missing \[\], extra \[b\]/);
+      expect(result).toFailWith(/^invalid-response.*missing \[\], 1 extra/);
       expect(result.detail).toBe('invalid-response');
     });
 
@@ -265,7 +265,7 @@ describe('askSystemOne', () => {
         /s: a noul answer to a score question/
       );
       expect(await validate({ a: choiceXY }, body({ a: { type: 'rank', choice: 'x' } }))).toFailWith(
-        /^invalid-response/
+        /^invalid-response.*invalid \[answers\].*answers that are not a noul, choice or score answer: \[a\]/
       );
     });
 
@@ -275,7 +275,7 @@ describe('askSystemOne', () => {
           { a: choiceXY },
           body({ a: { type: 'choice', choice: 'x', probabilities: { x: 0.5, z: 0.5 } } })
         )
-      ).toFailWith(/^invalid-response.*probability keys \[x, z\] are not \[x, y\]/);
+      ).toFailWith(/^invalid-response.*a: probability keys are not exactly \[x, y\] \(2 received\)/);
     });
 
     test('U16e the choice must be one of the labels', async () => {
@@ -284,7 +284,7 @@ describe('askSystemOne', () => {
           { a: choiceXY },
           body({ a: { type: 'choice', choice: 'z', probabilities: { x: 0.5, y: 0.5 } } })
         )
-      ).toFailWith(/^invalid-response.*choice 'z' is not a label/);
+      ).toFailWith(/^invalid-response.*a: the choice is not one of \[x, y\]/);
     });
 
     test('U16f the score must be within [0, n-1]', async () => {
@@ -357,7 +357,7 @@ describe('askSystemOne', () => {
           { s: score3 },
           body({ s: { type: 'score', score: 1, legend: legend3, probabilities: byIndex([0.5, 0.5]) } })
         )
-      ).toFailWith(/^invalid-response.*probability keys \[0, 1\] are not \[0, 1, 2\]/);
+      ).toFailWith(/^invalid-response.*s: probability keys are not exactly \[0, 1, 2\] \(2 received\)/);
       expect(
         await validate(
           { s: score3 },
@@ -374,7 +374,7 @@ describe('askSystemOne', () => {
             }
           })
         )
-      ).toFailWith(/^invalid-response.*legend keys \[0, 1, 3\] are not \[0, 1, 2\]/);
+      ).toFailWith(/^invalid-response.*s: legend keys are not exactly \[0, 1, 2\] \(3 received\)/);
       expect(
         await validate(
           { s: score3 },
@@ -387,26 +387,37 @@ describe('askSystemOne', () => {
             }
           })
         )
-      ).toFailWith(/^invalid-response.*legend/);
+      ).toFailWith(/^invalid-response.*answers that are not a noul, choice or score answer: \[s\]/);
     });
 
     test('U16k model must be a non-empty string and usage finite counts >= 0', async () => {
       const answers = { a: goodChoice };
       expect(
         await validate({ a: choiceXY }, { model: '', answers, usage: { input_tokens: 1, output_tokens: 0 } })
-      ).toFailWith(/^invalid-response.*model/);
+      ).toFailWith(/^invalid-response.*invalid \[model\]/);
       expect(
         await validate({ a: choiceXY }, { answers, usage: { input_tokens: 1, output_tokens: 0 } })
-      ).toFailWith(/^invalid-response.*model/);
+      ).toFailWith(/^invalid-response.*invalid \[model\]/);
       expect(
         await validate({ a: choiceXY }, body(answers, { input_tokens: -1, output_tokens: 0 }))
-      ).toFailWith(/^invalid-response.*input_tokens/);
+      ).toFailWith(/^invalid-response.*invalid \[usage\]/);
       expect(await validate({ a: choiceXY }, body(answers, { input_tokens: 1 }))).toFailWith(
-        /^invalid-response.*output_tokens/
+        /^invalid-response.*invalid \[usage\]/
       );
-      expect(await validate({ a: choiceXY }, { model: 'm', answers })).toFailWith(/^invalid-response.*usage/);
+      expect(await validate({ a: choiceXY }, { model: 'm', answers })).toFailWith(
+        /^invalid-response.*invalid \[usage\]/
+      );
       expect(await validate({ a: choiceXY }, body({ a: { type: 'rank', choice: 'x' } }))).toFailWith(
-        /^invalid-response/
+        /^invalid-response.*invalid \[answers\].*answers that are not a noul, choice or score answer: \[a\]/
+      );
+      expect(await validate({ a: choiceXY }, [goodChoice])).toFailWith(
+        /^invalid-response.*JSON but not an object/
+      );
+      expect(await validate({ a: choiceXY }, body({ a: goodChoice, zz: { type: 'rank' } }))).toFailWith(
+        /score answer: \[\] and 1 with no question$/
+      );
+      expect(await validate({ a: choiceXY }, { model: 'm', answers: 'none', usage: {} })).toFailWith(
+        /invalid \[answers, usage\]; answers that are not a noul, choice or score answer: \[\] and 0 with no question$/
       );
     });
 

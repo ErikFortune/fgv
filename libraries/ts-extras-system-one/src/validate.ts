@@ -131,9 +131,11 @@ interface IReceivedBody {
   readonly usage: ISystemOneUsage;
 }
 
+const answerRecord: Converter<Record<string, ReceivedAnswer>> = Converters.recordOf(answer);
+
 const body: Converter<IReceivedBody> = Converters.object<IReceivedBody>({
   model: nonEmptyString,
-  answers: Converters.recordOf(answer),
+  answers: answerRecord,
   usage
 });
 
@@ -151,7 +153,9 @@ function checkDistribution(
 ): Result<true> {
   const keys = Object.keys(distribution);
   if (!sameKeys(keys, expectedKeys)) {
-    return fail(`${id}: probability keys [${keys.join(', ')}] are not [${expectedKeys.join(', ')}]`);
+    return fail(
+      `${id}: probability keys are not exactly [${expectedKeys.join(', ')}] (${keys.length} received)`
+    );
   }
   const bad = keys.filter((key) => !isProbability(distribution[key]));
   if (bad.length > 0) {
@@ -173,7 +177,9 @@ function checkNoul(id: string, noul: NoulResponse): Result<ProjectedAnswer> {
 function checkChoice(id: string, question: ChoiceQuestion, choice: ProjectedChoice): Result<ProjectedAnswer> {
   const labels = Object.keys(question.criteria);
   return checkDistribution(id, choice.probabilities, labels).onSuccess(() =>
-    labels.includes(choice.choice) ? succeed(choice) : fail(`${id}: choice '${choice.choice}' is not a label`)
+    labels.includes(choice.choice)
+      ? succeed(choice)
+      : fail(`${id}: the choice is not one of [${labels.join(', ')}]`)
   );
 }
 
@@ -189,7 +195,11 @@ function checkScore(id: string, question: ScoreQuestion, score: IReceivedScore):
     .onSuccess(() =>
       sameKeys(Object.keys(score.legend), levels)
         ? succeed(true)
-        : fail(`${id}: legend keys [${Object.keys(score.legend).join(', ')}] are not [${levels.join(', ')}]`)
+        : fail(
+            `${id}: legend keys are not exactly [${levels.join(', ')}] (${
+              Object.keys(score.legend).length
+            } received)`
+          )
     )
     .onSuccess(() =>
       score.score >= 0 && score.score <= top
@@ -246,15 +256,65 @@ function isAnswerSetFor<Q extends Questions>(
   return questionIds.length === answerIds.size && questionIds.every((id) => answerIds.has(id));
 }
 
-/** Names the ids missing from, or extra to, the answers. */
+/**
+ * Names the question ids with no answer, and counts the answers with no question. Answer ids are
+ * chosen by the server, so they are counted rather than quoted.
+ */
 function describeAnswerSet(questions: Questions, answers: ProjectedAnswers): string {
-  const questionIds = new Set(Object.keys(questions));
   const answerIds = new Set(Object.keys(answers));
-  const missing = [...questionIds].filter((id) => !answerIds.has(id));
-  const extra = [...answerIds].filter((id) => !questionIds.has(id));
-  return `answer ids do not match the question ids (missing [${missing.join(', ')}], extra [${extra.join(
-    ', '
-  )}])`;
+  const missing = Object.keys(questions).filter((id) => !answerIds.has(id));
+  const extra = [...answerIds].filter((id) => !Object.keys(questions).includes(id)).length;
+  return `answer ids do not match the question ids (missing [${missing.join(', ')}], ${extra} extra)`;
+}
+
+const jsonRecord: Converter<Record<string, unknown>> = Converters.recordOf(anyLegendValue);
+
+/** The names of the fields of a JSON object that the given converters reject. */
+function rejectedFields(
+  record: Record<string, unknown>,
+  fields: Record<string, Converter<unknown>>
+): string[] {
+  return Object.keys(fields).filter((field) => fields[field].convert(record[field]).isFailure());
+}
+
+/** Describes the answers that are not noul, choice or score answers: question ids by name, others counted. */
+function describeBadAnswers(questions: Questions, answers: unknown): string {
+  const bad = jsonRecord
+    .convert(answers)
+    .onSuccess((record) =>
+      succeed(Object.keys(record).filter((id) => answer.convert(record[id]).isFailure()))
+    )
+    .orDefault([]);
+  const named = bad.filter((id) => Object.keys(questions).includes(id));
+  return `answers that are not a noul, choice or score answer: [${named.join(', ')}] and ${
+    bad.length - named.length
+  } with no question`;
+}
+
+/**
+ * Why a 2xx body is not a System-1 response, naming the fields and question ids at fault but never
+ * quoting a received value: a converter's message quotes what it rejected, and a server that echoes
+ * the request would put the state in it.
+ */
+function describeUnconvertible(questions: Questions, data: unknown): string {
+  if (data === undefined) {
+    return 'the body is empty';
+  }
+  if (typeof data === 'string') {
+    return `the body is text, not JSON (${data.length} characters)`;
+  }
+  return jsonRecord
+    .convert(data)
+    .onSuccess((record) =>
+      succeed(
+        `the body is not a System-1 response: invalid [${rejectedFields(record, {
+          model: nonEmptyString,
+          answers: answerRecord,
+          usage
+        }).join(', ')}]; ${describeBadAnswers(questions, record.answers)}`
+      )
+    )
+    .orDefault('the body is JSON but not an object');
 }
 
 /**
@@ -297,6 +357,7 @@ export function validateSystemOneBody<Q extends Questions>(
   const questionFor = new Map<string, Question>(Object.entries(questions));
   return body
     .convert(data)
+    .withErrorFormat(() => describeUnconvertible(questions, data))
     .onSuccess(({ model, answers, usage: reported }) =>
       mapResults(
         Object.keys(answers).map((id) =>
