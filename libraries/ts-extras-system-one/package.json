@@ -1,0 +1,92 @@
+{
+  "name": "@fgv/ts-extras-system-one",
+  "version": "5.1.0",
+  "description": "Result-integration boundary over @typesafe-ai/sdk for System-1 decision servers (CLM, openjev, Jev): mandatory input bound, response validation, classified failures",
+  "main": "lib/index.js",
+  "types": "dist/ts-extras-system-one.d.ts",
+  "exports": {
+    ".": {
+      "node": {
+        "import": "./lib/index.js",
+        "require": "./lib/index.js"
+      },
+      "default": {
+        "import": "./lib/index.js",
+        "require": "./lib/index.js"
+      },
+      "types": "./dist/ts-extras-system-one.d.ts"
+    }
+  },
+  "files": [
+    "lib",
+    "dist",
+    "CHANGELOG.json",
+    "README.md",
+    "CAPABILITIES.md",
+    "LICENSE",
+    "!lib/test",
+    "!dist/test",
+    "!**/*.test.*"
+  ],
+  "scripts": {
+    "build": "heft build --clean",
+    "clean": "heft clean",
+    "test": "heft test --clean",
+    "test-handles": "jest --runInBand --detectOpenHandles",
+    "clean-jest": "jest --clear-cache",
+    "update-snapshot": "jest --updateSnapshot",
+    "coverage": "jest --coverage",
+    "lint": "eslint src --ext .ts",
+    "fixlint": "eslint src --ext .ts --fix"
+  },
+  "keywords": [
+    "typescript",
+    "system-one",
+    "clm",
+    "result",
+    "classification"
+  ],
+  "author": "Erik Fortune",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ErikFortune/fgv/issues"
+  },
+  "homepage": "https://github.com/ErikFortune/fgv/tree/main/libraries/ts-extras-system-one#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ErikFortune/fgv.git"
+  },
+  "sideEffects": false,
+  "devDependencies": {
+    "@fgv/heft-dual-rig": "workspace:*",
+    "@fgv/ts-utils": "workspace:*",
+    "@fgv/ts-utils-jest": "workspace:*",
+    "@microsoft/api-extractor": "^7.55.2",
+    "@rushstack/eslint-config": "4.6.4",
+    "@rushstack/heft": "1.3.0",
+    "@rushstack/heft-jest-plugin": "2.0.17",
+    "@rushstack/heft-node-rig": "2.11.50",
+    "@types/heft-jest": "1.0.6",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^20.14.9",
+    "@typescript-eslint/eslint-plugin": "^8.52.0",
+    "@typescript-eslint/parser": "^8.52.0",
+    "eslint": "^9.39.2",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-n": "^17.23.1",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-promise": "^7.2.1",
+    "eslint-plugin-tsdoc": "~0.5.2",
+    "jest": "^30.5.2",
+    "rimraf": "^6.1.2",
+    "ts-jest": "^29.4.12",
+    "ts-node": "^10.9.2",
+    "typescript": "5.9.3"
+  },
+  "peerDependencies": {
+    "@fgv/ts-utils": "workspace:*"
+  },
+  "dependencies": {
+    "@typesafe-ai/sdk": "~0.6.0"
+  }
+}
