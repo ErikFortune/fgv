@@ -1,0 +1,55 @@
+id: json-schema-open-object
+status: shipped
+packages: ['@fgv/ts-json-base']
+prs: [720]
+openPrs: []
+opened: 2026-10-03
+closed: 2026-10-03
+summary:
+  intended: >
+    Make what JsonSchema.object emits on the wire agree with what it converts for open objects
+    (PersonAIlity fgv-ask #679): additionalProperties: true, and every fromJson object without
+    additionalProperties: false, advertised an open object while the converter silently dropped every
+    undeclared key, so an open MCP argument reached the tool as {}. Choose between pass-through,
+    closing the wire, refusing open nodes in fromJson, or a combination, and verify five stated beliefs.
+  shipped: >
+    Open objects convert declared properties as before and carry every undeclared key through as a
+    validated JsonValue; a non-object input is refused instead of becoming {}. The wire schema is
+    unchanged (absent keyword = open, false = closed); the converter now honours it. An own __proto__
+    key is dropped at every depth, in jsonObject too, so no prototype is ever set. Additive typing:
+    OpenObjectStatic<P> and two object() overloads keyed on a literal additionalProperties: true. No
+    consumer outside ts-json-base needed a test change.
+  diverged: >
+    Belief 4 was wrong: schema-valued additionalProperties is refused by fromJson before the
+    !== false mapping. The brief missed a second symptom (an open object converted 42, strings and
+    arrays to {}), fixed here. Emitting an explicit additionalProperties: true, as the requester
+    proposed, was built and reverted: Anthropic JSON outputs require additionalProperties: false, and
+    an explicit true was not probed. A Converters.jsonObject __proto__ fix that defined the key as data
+    was reverted after a repo-wide run showed ts-agent-tasks pins the key disappearing; the gate-time
+    review's alternative shipped instead (jsonObject and an open object's top level drop an own
+    __proto__ key). The change file states that hosts now see undeclared keys. An object that declares
+    properties and omits additionalProperties now keeps stray keys rather than dropping them.
+  sourceLine: '**Shipped:** an open `JsonSchema` object now keeps what its wire schema admits — undeclared keys reach the caller as validated `JsonValue` instead of being silently dropped.'
+  headline: >
+    An open JsonSchema object — additionalProperties: true, or an MCP schema that leaves it out — now
+    passes undeclared keys through validated instead of silently dropping them.
+keywords:
+  [
+    'additionalProperties',
+    'open object',
+    'pass-through',
+    'undeclared keys',
+    'silent data loss',
+    'dict[str, Any]',
+    'z.record',
+    'MCP tool arguments',
+    'fromJson',
+    'OpenObjectStatic',
+    'wire/converter agreement',
+    '__proto__',
+    'prototype pollution',
+    'fgv-ask'
+  ]
+relatedStreams:
+  - { id: personality-intake, relationship: 'captured the PersonAIlity #679 ask this stream implements' }
+sourceHash: fabd5feb590035e7 # first 16 hex of sha256 over brief.md, state.md and result.md concatenated in that order
