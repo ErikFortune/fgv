@@ -1,9 +1,7 @@
 id: mcp-client-cancellation
 status: shipped
 packages: ['@fgv/ts-extras-mcp', '@fgv/ts-extras']
-prs: [] # the orchestrator fills in the PR number at open, anticipating its merge — then re-run
-# `node common/scripts/generate-capability-feed.mjs` (the feed links prs[0]; CI's --check fails if stale)
-# and replace the two `#PR` placeholders in docs/workstreams/2026-10.md
+prs: [722]
 openPrs: []
 opened: 2026-10-04
 closed: 2026-10-04
