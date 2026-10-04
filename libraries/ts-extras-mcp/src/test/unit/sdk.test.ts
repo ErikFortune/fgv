@@ -77,14 +77,46 @@ describe('sdk isolation seam', () => {
   });
 
   describe('classifySdkError', () => {
+    const SESSION = { phase: 'session', closed: false } as const;
+    const CLOSED = { phase: 'session', closed: true } as const;
+    const CONNECT = { phase: 'connect' } as const;
+
     test('maps the SDK timeout code to timeout, never to transport or protocol', () => {
       const err = McpError.fromError(ErrorCode.RequestTimeout, 'Request timed out', { timeout: 5 });
-      expect(classifySdkError(err, 'session')).toEqual({ kind: 'timeout' });
+      expect(classifySdkError(err, SESSION)).toEqual({ kind: 'timeout' });
     });
 
-    test('maps the SDK connection-closed code to not-connected', () => {
+    test('maps -32000 to not-connected only when the close was observed, or during the handshake', () => {
       const err = McpError.fromError(ErrorCode.ConnectionClosed, 'Connection closed');
-      expect(classifySdkError(err, 'session')).toEqual({ kind: 'not-connected' });
+      expect(classifySdkError(err, CLOSED)).toEqual({ kind: 'not-connected' });
+      expect(classifySdkError(err, CONNECT)).toEqual({ kind: 'not-connected' });
+    });
+
+    test('maps -32000 on a session that is still open to protocol — a server generic error, not a dead session', () => {
+      const err = new McpError(ErrorCode.ConnectionClosed, 'server busy');
+      expect(classifySdkError(err, SESSION)).toEqual({ kind: 'protocol', code: ErrorCode.ConnectionClosed });
+    });
+
+    test('maps a response that failed the SDK result schema to protocol, with no code', () => {
+      // zod 4 core names it `$ZodError` (the real case is proven end to end in failures.test.ts);
+      // zod 3 and zod 4 classic name it `ZodError`.
+      for (const name of ['$ZodError', 'ZodError']) {
+        const schemaError = new Error('[{"path":["content"],"message":"Expected array"}]');
+        schemaError.name = name;
+        expect(classifySdkError(schemaError, SESSION)).toEqual({ kind: 'protocol' });
+      }
+    });
+
+    test('maps an untyped error on a closed session to not-connected, never during the handshake', () => {
+      expect(classifySdkError(new Error('Not connected'), CLOSED)).toEqual({ kind: 'not-connected' });
+      expect(classifySdkError(new Error('Not connected'), CONNECT)).toEqual({ kind: 'transport' });
+    });
+
+    test('keeps an HTTP status classification (and its status) on a closed session', () => {
+      expect(classifySdkError(new StreamableHTTPError(500, 'x'), CLOSED)).toEqual({
+        kind: 'transport',
+        status: 500
+      });
     });
 
     test('maps any other JSON-RPC error code to protocol, carrying the code', () => {
@@ -95,62 +127,62 @@ describe('sdk isolation seam', () => {
         ErrorCode.InvalidRequest,
         -1234
       ]) {
-        expect(classifySdkError(new McpError(code, 'x'), 'session')).toEqual({ kind: 'protocol', code });
+        expect(classifySdkError(new McpError(code, 'x'), SESSION)).toEqual({ kind: 'protocol', code });
       }
     });
 
     test('maps the SDK UnauthorizedError to unauthorized with no status', () => {
-      expect(classifySdkError(new UnauthorizedError(), 'session')).toEqual({ kind: 'unauthorized' });
+      expect(classifySdkError(new UnauthorizedError(), SESSION)).toEqual({ kind: 'unauthorized' });
     });
 
     test('maps HTTP 401 and 403 to unauthorized, carrying the status', () => {
-      expect(classifySdkError(new StreamableHTTPError(401, 'x'), 'session')).toEqual({
+      expect(classifySdkError(new StreamableHTTPError(401, 'x'), SESSION)).toEqual({
         kind: 'unauthorized',
         status: 401
       });
-      expect(classifySdkError(new StreamableHTTPError(403, 'x'), 'connect')).toEqual({
+      expect(classifySdkError(new StreamableHTTPError(403, 'x'), CONNECT)).toEqual({
         kind: 'unauthorized',
         status: 403
       });
     });
 
     test('maps HTTP 404 to session-expired only once a session exists', () => {
-      expect(classifySdkError(new StreamableHTTPError(404, 'x'), 'session')).toEqual({
+      expect(classifySdkError(new StreamableHTTPError(404, 'x'), SESSION)).toEqual({
         kind: 'session-expired'
       });
-      expect(classifySdkError(new StreamableHTTPError(404, 'x'), 'connect')).toEqual({
+      expect(classifySdkError(new StreamableHTTPError(404, 'x'), CONNECT)).toEqual({
         kind: 'transport',
         status: 404
       });
     });
 
     test('maps any other HTTP status to transport, carrying the status', () => {
-      expect(classifySdkError(new StreamableHTTPError(500, 'x'), 'session')).toEqual({
+      expect(classifySdkError(new StreamableHTTPError(500, 'x'), SESSION)).toEqual({
         kind: 'transport',
         status: 500
       });
     });
 
     test('omits a status that is not an HTTP status', () => {
-      expect(classifySdkError(new StreamableHTTPError(-1, 'x'), 'session')).toEqual({ kind: 'transport' });
-      expect(classifySdkError(new StreamableHTTPError(undefined, 'x'), 'session')).toEqual({
+      expect(classifySdkError(new StreamableHTTPError(-1, 'x'), SESSION)).toEqual({ kind: 'transport' });
+      expect(classifySdkError(new StreamableHTTPError(undefined, 'x'), SESSION)).toEqual({
         kind: 'transport'
       });
     });
 
     test('classifies the legacy SSE transport error by status the same way', () => {
       const event = { type: 'error' } as unknown as ConstructorParameters<typeof SseError>[2];
-      expect(classifySdkError(new SseError(401, 'x', event), 'session')).toEqual({
+      expect(classifySdkError(new SseError(401, 'x', event), SESSION)).toEqual({
         kind: 'unauthorized',
         status: 401
       });
     });
 
     test('is total: anything else, thrown or not an Error at all, is transport', () => {
-      expect(classifySdkError(new Error('Not connected'), 'session')).toEqual({ kind: 'transport' });
-      expect(classifySdkError(new TypeError('fetch failed'), 'session')).toEqual({ kind: 'transport' });
-      expect(classifySdkError('a string', 'session')).toEqual({ kind: 'transport' });
-      expect(classifySdkError(undefined, 'connect')).toEqual({ kind: 'transport' });
+      expect(classifySdkError(new Error('Not connected'), SESSION)).toEqual({ kind: 'transport' });
+      expect(classifySdkError(new TypeError('fetch failed'), SESSION)).toEqual({ kind: 'transport' });
+      expect(classifySdkError('a string', SESSION)).toEqual({ kind: 'transport' });
+      expect(classifySdkError(undefined, CONNECT)).toEqual({ kind: 'transport' });
     });
   });
 });

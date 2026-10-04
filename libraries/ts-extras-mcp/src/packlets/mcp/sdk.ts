@@ -205,20 +205,28 @@ export function makeHttpTransport(url: URL, headers?: Record<string, string>): I
 }
 
 /**
- * Which operation a failure came from. An HTTP 404 means "session expired" only once a session
- * exists; during the connect handshake it means the endpoint was not found.
+ * What the classifier needs to know about where a failure came from.
+ *
+ * @remarks
+ * During the connect handshake there is no session yet, and the SDK closes the transport on *any*
+ * handshake failure, so the close state carries no information there and is not asked for. On an
+ * established session, `closed` is whether its close had been observed when the failure was
+ * classified; the SDK calls `onclose` before it fails the requests in flight, so it is already
+ * `true` for every failure the close itself caused.
  * @internal
  */
-export type SdkFailurePhase = 'connect' | 'session';
+export type SdkFailureContext =
+  | { readonly phase: 'connect' }
+  | { readonly phase: 'session'; readonly closed: boolean };
 
 /**
  * Classifies an HTTP status reported by an SDK transport error.
  */
-function _classifyHttpStatus(status: number | undefined, phase: SdkFailurePhase): McpFailureReason {
+function _classifyHttpStatus(status: number | undefined, context: SdkFailureContext): McpFailureReason {
   if (status === 401 || status === 403) {
     return { kind: 'unauthorized', status };
   }
-  if (status === 404 && phase === 'session') {
+  if (status === 404 && context.phase === 'session') {
     return { kind: 'session-expired' };
   }
   // The SDK uses -1 for "not an HTTP status" (e.g. an unexpected content type).
@@ -226,34 +234,60 @@ function _classifyHttpStatus(status: number | undefined, phase: SdkFailurePhase)
 }
 
 /**
+ * Class names of the error the SDK rejects with when a response fails its result schema: zod's
+ * error, which is `'$ZodError'` from zod 4's core (what SDK 1.29 uses with zod 4) and `'ZodError'`
+ * from zod 3 or zod 4 classic. The SDK accepts either major (`^3.25 || ^4.0`).
+ */
+const SCHEMA_REJECTION_NAMES: ReadonlySet<string> = new Set(['$ZodError', 'ZodError']);
+
+/**
+ * Whether a value is the error the SDK raises when a response fails its result schema. The SDK
+ * rejects with the schema library's own error, not an `McpError`; it is recognized by its class
+ * name, which the schema library sets (never by message text). The schema library is the SDK's
+ * dependency, not this package's, so an `instanceof` against it is not available here.
+ */
+function _isSchemaRejection(error: unknown): boolean {
+  return error instanceof Error && SCHEMA_REJECTION_NAMES.has(error.name);
+}
+
+/**
  * Total classifier from anything the SDK can throw or reject with to a {@link McpFailureReason}.
- * Classifies by error class, JSON-RPC code and HTTP status — never by message text.
+ * Classifies by error class, JSON-RPC code, HTTP status and the session's observed close — never
+ * by message text.
  *
  * @remarks
- * Two kinds are not produced here, because they depend on state this function cannot see:
- * `'aborted'` is decided by the caller from the identity of the abort reason it issued (the SDK
- * reports an abort with the *timeout* code), and `'not-connected'` for the SDK's untyped
- * "Not connected" error is decided from the session's observed close.
+ * `'aborted'` is not produced here: the caller decides it from the identity of the abort reason it
+ * issued, because the SDK reports an abort with the *timeout* code.
+ *
+ * On an established session `'not-connected'` is decided by the observed close, not by code
+ * alone. JSON-RPC reserves `-32000`..`-32099` for implementation-defined server errors and many
+ * servers answer `-32000` as a generic error, so a `-32000` on a session that is still open is the
+ * server's `protocol` error, not a dead connection. The SDK's own `ConnectionClosed` (`-32000`) and
+ * its untyped "Not connected" are both raised only after `onclose` has fired. During the
+ * handshake, where a failure leaves no session either way, `-32000` is `'not-connected'`.
  *
  * @param error - The thrown or rejected value.
- * @param phase - Whether a session had been established when the failure occurred.
+ * @param context - Where the failure came from (see {@link SdkFailureContext}).
  * @internal
  */
-export function classifySdkError(error: unknown, phase: SdkFailurePhase): McpFailureReason {
+export function classifySdkError(error: unknown, context: SdkFailureContext): McpFailureReason {
   if (error instanceof McpError) {
     if (error.code === ErrorCode.RequestTimeout) {
       return { kind: 'timeout' };
     }
-    if (error.code === ErrorCode.ConnectionClosed) {
+    if (error.code === ErrorCode.ConnectionClosed && (context.phase === 'connect' || context.closed)) {
       return { kind: 'not-connected' };
     }
     return { kind: 'protocol', code: error.code };
+  }
+  if (_isSchemaRejection(error)) {
+    return { kind: 'protocol' };
   }
   if (error instanceof UnauthorizedError) {
     return { kind: 'unauthorized' };
   }
   if (error instanceof StreamableHTTPError || error instanceof SseError) {
-    return _classifyHttpStatus(error.code, phase);
+    return _classifyHttpStatus(error.code, context);
   }
-  return { kind: 'transport' };
+  return context.phase === 'session' && context.closed ? { kind: 'not-connected' } : { kind: 'transport' };
 }

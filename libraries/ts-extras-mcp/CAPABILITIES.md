@@ -32,11 +32,11 @@ A Result-integration boundary over [`@modelcontextprotocol/sdk`](https://github.
 | `tool-error` | `CallToolResult.isError: true` — message is the tool's text, unprefixed |
 | `timeout` | `McpError` code `-32001` (`RequestTimeout`), including `maxTotalTimeoutMs` |
 | `aborted` | the caller's signal fired first — decided by the identity of the abort reason this package issued, because the SDK reports an abort with the *timeout* code |
-| `not-connected` | `McpError` `-32000` (`ConnectionClosed`), or the SDK's untyped "Not connected" on a session whose close was observed |
+| `not-connected` | the session's close was observed: the SDK's `ConnectionClosed` (`-32000`) or untyped "Not connected", both raised only after `onclose` fires (a server's own `-32000` on an open session is `protocol`) |
 | `session-expired` | `StreamableHTTPError` 404 on an established session (during the handshake a 404 is `transport`) |
 | `unauthorized` | HTTP 401 / 403, or the SDK's `UnauthorizedError`; carries `status` when there was one |
-| `protocol` | any other `McpError` (a JSON-RPC error from the server, or the SDK rejecting a response); carries `code` |
-| `transport` | the catch-all: any other HTTP status (carries `status`), network or child-process I/O failures, untyped SDK errors |
+| `protocol` | any other `McpError` — a JSON-RPC error from the server, carrying `code` — or a response that failed the SDK's result schema (zod's error, no `code`) |
+| `transport` | the catch-all: any other HTTP status (carries `status`), network or child-process I/O failures, untyped SDK errors (including the handshake's protocol-version refusal) |
 | `invalid-handle` | a session/transport handle not produced by this package |
 
 **Close observation:** `connectMcpSession({ onClose })` fires once when the connection closes, for any reason (including `closeMcpSession`); never for a failed connect; a throwing callback is contained and logged. Reconnect policy stays with the consumer — the package has no pool or reconnector. A Streamable-HTTP server restart is not a close; the next call reports it as `session-expired` when the server answers 404.

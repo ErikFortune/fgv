@@ -228,6 +228,25 @@ describe('connectMcpSession', () => {
     expect(onClose).not.toHaveBeenCalled();
   });
 
+  test('an abort landing after the handshake answered fails aborted, closes the client, and never reports the close', async () => {
+    const onClose = jest.fn();
+    const controller = new AbortController();
+    const fake: IFakeClient & { onclose?: () => void } = makeFakeClient();
+    // The server has answered `initialize`; the abort arrives before connect() returns, so the
+    // SDK has no request left to cancel.
+    fake.connect.mockImplementation(async () => controller.abort());
+    fake.close.mockImplementation(async () => fake.onclose?.());
+    mockSdk.makeClient.mockReturnValueOnce(fake as unknown as sdk.ISdkClient);
+    const transport = createStdioTransport({ command: 'node' }).orThrow();
+
+    expect(await connectMcpSession({ transport, onClose, signal: controller.signal })).toFailWithDetail(
+      'connectMcpSession: aborted by the caller',
+      { kind: 'aborted' }
+    );
+    expect(fake.close).toHaveBeenCalledTimes(1);
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
   test('fails invalid-handle for a foreign transport handle', async () => {
     expect(await connectMcpSession({ transport: FOREIGN_TRANSPORT })).toFailWithDetail(
       /invalid MCP transport/,

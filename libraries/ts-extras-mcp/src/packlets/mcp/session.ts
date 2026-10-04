@@ -180,31 +180,37 @@ export async function connectMcpSession(
   const handshake = await runSdkRequest(
     'connectMcpSession',
     { timeoutMs, signal },
-    (err) => classifySdkError(err, 'connect'),
+    (err) => classifySdkError(err, { phase: 'connect' }),
     (sdkOptions) => client.connect(transportResult.value.sdkTransport, sdkOptions)
   );
-  return handshake.onSuccess(() => {
-    // Check-then-arm with no await between: a close that landed during the handshake is already
-    // recorded, and none can land between this check and `arm`.
-    if (closeWatcher.closed) {
-      return failWithDetail<IMcpSession, McpFailureReason>(
-        'connectMcpSession: the connection closed during the handshake',
-        { kind: 'not-connected' }
-      );
-    }
-    closeWatcher.arm(onClose);
-    const raw = client.getServerVersion();
-    const serverInfo: IMcpServerInfo | undefined =
-      raw !== undefined ? { name: raw.name, version: raw.version } : undefined;
-    logger?.info(
-      serverInfo !== undefined
-        ? `mcp: connected to server ${serverInfo.name}@${serverInfo.version}`
-        : 'mcp: connected (server did not report identity)'
-    );
-    return succeedWithDetail<IMcpSession, McpFailureReason>(
-      new McpSession(client, name, version, serverInfo, closeWatcher)
-    );
-  });
+  if (handshake.isFailure()) {
+    return failWithDetail(handshake.message, handshake.detail);
+  }
+  // Every check below runs synchronously before `arm`, so a close that landed during the handshake
+  // is already recorded and none can land between the checks and arming.
+  if (closeWatcher.closed) {
+    return failWithDetail('connectMcpSession: the connection closed during the handshake', {
+      kind: 'not-connected'
+    });
+  }
+  if (signal?.aborted === true) {
+    // The abort landed after the server answered `initialize` but before the SDK's connect returned
+    // (it still awaits sending `notifications/initialized`), so the SDK did not cancel anything.
+    // Close what it opened rather than hand an aborting caller a live session to leak. The watcher
+    // is unarmed, so this close is not reported to `onClose`.
+    await captureAsyncResult(() => client.close());
+    return failWithDetail('connectMcpSession: aborted by the caller', { kind: 'aborted' });
+  }
+  closeWatcher.arm(onClose);
+  const raw = client.getServerVersion();
+  const serverInfo: IMcpServerInfo | undefined =
+    raw !== undefined ? { name: raw.name, version: raw.version } : undefined;
+  logger?.info(
+    serverInfo !== undefined
+      ? `mcp: connected to server ${serverInfo.name}@${serverInfo.version}`
+      : 'mcp: connected (server did not report identity)'
+  );
+  return succeedWithDetail(new McpSession(client, name, version, serverInfo, closeWatcher));
 }
 
 /**

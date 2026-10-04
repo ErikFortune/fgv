@@ -113,13 +113,10 @@ function _projectContent(blocks: ReadonlyArray<ISdkContentBlock> | undefined): s
 }
 
 /**
- * Classifies a request failure. The SDK raises an untyped `Error` when a request is made on a
- * client whose transport has already closed; the session's observed close is what identifies it,
- * so a `'transport'` classification on a closed session is reported as `'not-connected'`.
+ * Classifies a request failure on an established session, against the session's observed close.
  */
 function _classify(session: McpSession, err: unknown): McpFailureReason {
-  const reason = classifySdkError(err, 'session');
-  return reason.kind === 'transport' && session.closeWatcher.closed ? { kind: 'not-connected' } : reason;
+  return classifySdkError(err, { phase: 'session', closed: session.closeWatcher.closed });
 }
 
 /**

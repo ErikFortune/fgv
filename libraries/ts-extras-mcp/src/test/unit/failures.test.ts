@@ -83,6 +83,10 @@ async function startFixture(onClose?: () => void, logger?: Logging.ILogger): Pro
         throw new McpError(ErrorCode.InvalidParams, 'bad arguments');
       case 'throws':
         throw new Error('handler blew up');
+      case 'server-busy':
+        // -32000 is the first of JSON-RPC's implementation-defined server-error codes, and the one
+        // the SDK also uses for its own ConnectionClosed.
+        throw new McpError(ErrorCode.ConnectionClosed, 'server busy');
       case 'hang':
         await new Promise<void>((resolve) => {
           release = resolve;
@@ -140,6 +144,14 @@ describe('McpFailureReason against a real in-memory MCP server', () => {
       kind: 'protocol',
       code: ErrorCode.InternalError
     });
+  });
+
+  test('a server -32000 on an open session is protocol, and the session stays usable', async () => {
+    expect(await callMcpTool(fixture.session, 'server-busy', {})).toFailWithDetail(/server busy/, {
+      kind: 'protocol',
+      code: ErrorCode.ConnectionClosed
+    });
+    expect(await callMcpTool(fixture.session, 'echo', { msg: 'still here' })).toSucceed();
   });
 
   test('a call on a closed session is not-connected, not transport', async () => {
@@ -207,5 +219,35 @@ describe('onClose — observing a session close', () => {
     await fixture.entered;
     await fixture.server.close();
     expect(await pending).toFailWithDetail(/Connection closed/, { kind: 'not-connected' });
+  });
+});
+
+describe('a response the SDK rejects', () => {
+  test('a malformed tools/call result is protocol, with no code', async () => {
+    // A hand-driven peer that completes the handshake, then answers tools/call with content that is
+    // not an array — something the SDK's own Server would refuse to send.
+    const [clientSide, peer] = InMemoryTransport.createLinkedPair();
+    peer.onmessage = (message): void => {
+      if (!('id' in message) || !('method' in message)) {
+        return;
+      }
+      const result =
+        message.method === 'initialize'
+          ? {
+              protocolVersion: (message.params as { protocolVersion: string }).protocolVersion,
+              capabilities: { tools: {} },
+              serverInfo: { name: 'malformed-peer', version: '0.0.1' }
+            }
+          : { content: 'not an array' };
+      peer.send({ jsonrpc: '2.0', id: message.id, result }).catch(() => undefined);
+    };
+    await peer.start();
+    const session = (await connectMcpSession({ transport: createCustomTransport(clientSide) })).orThrow();
+
+    expect(await callMcpTool(session, 'anything', {})).toFailWithDetail(/^callMcpTool 'anything':/, {
+      kind: 'protocol'
+    });
+
+    await closeMcpSession(session);
   });
 });

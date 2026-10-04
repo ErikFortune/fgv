@@ -100,14 +100,19 @@ export async function runSdkRequest<T>(
     options !== undefined
       ? _toSdkOptions(options, callerSignal !== undefined ? controller.signal : undefined)
       : undefined;
-  return Promise.resolve()
-    .then(() => request(sdkOptions))
-    .then(
-      (value) => succeedWithDetail<T, McpFailureReason>(value),
-      (err: unknown) =>
-        err === abortReason
-          ? failWithDetail<T, McpFailureReason>(`${prefix}: aborted by the caller`, { kind: 'aborted' })
-          : failWithDetail<T, McpFailureReason>(`${prefix}: ${errorText(err)}`, classify(err))
-    )
-    .finally(() => callerSignal?.removeEventListener('abort', onAbort));
+  return (
+    Promise.resolve()
+      .then(() => request(sdkOptions))
+      .then(
+        (value) => succeedWithDetail<T, McpFailureReason>(value),
+        (err: unknown) =>
+          err === abortReason
+            ? failWithDetail<T, McpFailureReason>(`${prefix}: aborted by the caller`, { kind: 'aborted' })
+            : failWithDetail<T, McpFailureReason>(`${prefix}: ${errorText(err)}`, classify(err))
+      )
+      // An abort that lands after the SDK settled but before this listener is removed still makes the
+      // SDK send `notifications/cancelled` for a request that already completed. The protocol lets a
+      // server ignore a cancellation for an unknown or finished request, so this is harmless.
+      .finally(() => callerSignal?.removeEventListener('abort', onAbort))
+  );
 }

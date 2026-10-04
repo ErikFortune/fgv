@@ -158,10 +158,10 @@ export type McpFailureReason = {
     readonly kind: 'unauthorized';
     readonly status?: number;
 }
-/** `code` is the JSON-RPC error code. */
+/** `code` is the JSON-RPC error code, when the failure carried one. */
 | {
     readonly kind: 'protocol';
-    readonly code: number;
+    readonly code?: number;
 }
 /** `status` is the HTTP status, when the failure came as one. */
 | {

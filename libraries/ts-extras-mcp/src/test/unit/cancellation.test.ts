@@ -200,9 +200,12 @@ describe('per-request options against a real in-memory MCP server', () => {
 
   test('the listener on the caller signal is removed once the call settles', async () => {
     const controller = new AbortController();
+    const add = jest.spyOn(controller.signal, 'addEventListener');
     const remove = jest.spyOn(controller.signal, 'removeEventListener');
     expect(await callMcpTool(fixture.session, 'progress', {}, { signal: controller.signal })).toSucceed();
-    expect(remove).toHaveBeenCalledWith('abort', expect.any(Function));
+    expect(add).toHaveBeenCalledTimes(1);
+    // The very listener that was added is the one removed.
+    expect(remove).toHaveBeenCalledWith('abort', add.mock.calls[0][1]);
     // Aborting afterwards affects nothing.
     controller.abort();
     expect(await callMcpTool(fixture.session, 'progress', {})).toSucceedWith({ content: 'finished' });
@@ -261,22 +264,29 @@ describe('connectMcpSession timeout and abort', () => {
 
   test('timeoutMs bounds the handshake and fails timeout', async () => {
     const { clientSide, serverSide } = silentPeer();
+    const onClose = jest.fn();
     expect(
-      await connectMcpSession({ transport: createCustomTransport(clientSide), timeoutMs: 50 })
+      await connectMcpSession({ transport: createCustomTransport(clientSide), timeoutMs: 50, onClose })
     ).toFailWithDetail(/^connectMcpSession: .*Request timed out/, { kind: 'timeout' });
     await serverSide.close();
+    expect(onClose).not.toHaveBeenCalled();
   });
 
   test('an abort during the handshake fails aborted', async () => {
     const { clientSide, serverSide } = silentPeer();
     const controller = new AbortController();
+    const onClose = jest.fn();
     const pending = connectMcpSession({
       transport: createCustomTransport(clientSide),
-      signal: controller.signal
+      signal: controller.signal,
+      onClose
     });
     setTimeout(() => controller.abort(), 20);
     expect(await pending).toFailWithDetail('connectMcpSession: aborted by the caller', { kind: 'aborted' });
     await serverSide.close();
+    // The SDK closed the transport on the failed handshake; a session that was never handed out
+    // never reports a close.
+    expect(onClose).not.toHaveBeenCalled();
   });
 
   test('a signal already aborted fails aborted without starting the handshake', async () => {

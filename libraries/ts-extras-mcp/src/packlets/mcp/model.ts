@@ -142,9 +142,10 @@ export interface IConnectMcpSessionParams {
    * sessions uses it to retire a dead session before its next call rather than after. A call made
    * on a closed session fails with the `'not-connected'` {@link McpFailureReason}.
    *
-   * The callback runs inside the SDK's close handling. A throw from it is caught (and logged to
-   * `logger`, when one is supplied) so that it cannot stop the SDK from failing the session's
-   * in-flight requests.
+   * The callback runs synchronously inside the SDK's close handling. A throw from it is caught (and
+   * logged to `logger`, when one is supplied) so that it cannot stop the SDK from failing the
+   * session's in-flight requests. It is typed `() => void`, so an `async` function is accepted, but
+   * a rejection of the promise it returns is not observed — handle errors inside it.
    *
    * A Streamable-HTTP session has no connection to lose between requests, so a server that
    * restarted is not observed here; the next call reports it, as `'session-expired'` when the
@@ -157,10 +158,12 @@ export interface IConnectMcpSessionParams {
    */
   readonly timeoutMs?: number;
   /**
-   * Aborts the connect. An abort before the handshake settles fails it with the `'aborted'`
-   * {@link McpFailureReason}, and the SDK closes the transport. The SDK cannot interrupt the
-   * transport's own start-up (spawning a stdio child), so an abort during it takes effect when
-   * the handshake request is about to be sent.
+   * Aborts the connect. An abort before the connect settles fails it with the `'aborted'`
+   * {@link McpFailureReason} and closes the transport — including an abort that lands after the
+   * server answered `initialize` but before the connect returned, so an aborted connect never
+   * hands back a live session. The SDK cannot interrupt the transport's own start-up (spawning a
+   * stdio child), so an abort during it takes effect when the handshake request is about to be
+   * sent.
    */
   readonly signal?: AbortSignal;
 }
@@ -212,9 +215,12 @@ export interface IMcpProgress {
  * {@link callMcpTool} and {@link listMcpTools}.
  *
  * @remarks
- * When the request is aborted or times out, the SDK sends the server a
+ * When the request is aborted or its `timeoutMs` elapses, the SDK sends the server a
  * `notifications/cancelled` for it, so the server can stop the work rather than run it to
- * completion. Whether it does is the server's choice.
+ * completion. Whether it does is the server's choice. **Exception:** when `maxTotalTimeoutMs`
+ * trips (it is checked as a progress notification arrives), the SDK fails the request without
+ * sending a cancellation, so the server is not told to stop; pair it with a `signal` you abort on
+ * a `'timeout'` failure if that matters.
  * @public
  */
 export interface IMcpRequestOptions {
@@ -262,11 +268,11 @@ export interface IMcpRequestOptions {
  * | `'tool-error'` | The tool ran and returned a result flagged `isError`. The failure message is the tool's own text, unprefixed (see {@link callMcpTool}). |
  * | `'timeout'` | The SDK's request timeout (or `maxTotalTimeoutMs`) elapsed: `McpError` code `-32001`. |
  * | `'aborted'` | The caller's `AbortSignal` fired before the request settled. |
- * | `'not-connected'` | The session's connection is closed: the call was made after it closed, or it closed while the call was in flight (`McpError` code `-32000`). |
+ * | `'not-connected'` | The session's connection is closed: the call was made after it closed, or it closed while the call was in flight. Decided by the observed close, which the SDK reports before it fails the in-flight requests. |
  * | `'session-expired'` | A Streamable-HTTP server answered HTTP 404 for an established session: it no longer recognizes the session id (typically after a server restart). |
  * | `'unauthorized'` | The server refused the credentials: HTTP 401 or 403, or the SDK's `UnauthorizedError`. |
- * | `'protocol'` | The server answered with a JSON-RPC error, or the SDK rejected the server's response. `code` is the JSON-RPC error code. |
- * | `'transport'` | Anything else: a network or child-process I/O failure, a non-2xx HTTP status not listed above, or an error the SDK raised without a type. This is the catch-all that makes the classification total. |
+ * | `'protocol'` | The server answered with a JSON-RPC error (`code` is its code — including `-32000` on a session that is still open, which servers use as a generic error), or the SDK rejected a response that failed its result schema (no `code`). |
+ * | `'transport'` | Anything else: a network or child-process I/O failure, a non-2xx HTTP status not listed above, or an error the SDK raised without a type — including the handshake's protocol-version refusal, which the SDK raises as a plain `Error`. This is the catch-all that makes the classification total. |
  * | `'invalid-handle'` | The session or transport handle did not come from this package. A caller bug; retrying cannot help. |
  *
  * Reconnecting is the consumer's policy. As a guide: `'not-connected'` and `'session-expired'`
@@ -275,8 +281,9 @@ export interface IMcpRequestOptions {
  * **Two limits of the SDK, stated so nobody builds on more than it gives.** The SDK reports a
  * caller's abort as an `McpError` with the *timeout* code; this package tells the two apart by
  * the identity of the abort it issued, not by the code. And a server that itself answers with the
- * SDK's reserved codes `-32000` or `-32001` is indistinguishable from the SDK raising them, so it
- * is classified the same way.
+ * SDK's reserved timeout code `-32001` is indistinguishable from the SDK's own timeout, so it is
+ * classified `'timeout'`. (The SDK's other reserved code, `-32000`, is disambiguated by the
+ * session's observed close.)
  *
  * @public
  */
@@ -288,8 +295,8 @@ export type McpFailureReason =
   | { readonly kind: 'session-expired' }
   /** `status` is the HTTP status, when the refusal came as one. */
   | { readonly kind: 'unauthorized'; readonly status?: number }
-  /** `code` is the JSON-RPC error code. */
-  | { readonly kind: 'protocol'; readonly code: number }
+  /** `code` is the JSON-RPC error code, when the failure carried one. */
+  | { readonly kind: 'protocol'; readonly code?: number }
   /** `status` is the HTTP status, when the failure came as one. */
   | { readonly kind: 'transport'; readonly status?: number }
   | { readonly kind: 'invalid-handle' };
