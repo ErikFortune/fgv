@@ -120,6 +120,35 @@ describe('JsonSchema — smaller MCP shapes (#683)', () => {
       });
     });
 
+    test('an annotation-only additionalProperties schema also means true', () => {
+      expect(
+        JsonSchema.fromJson({
+          ...obj({ q: { type: 'string' } }),
+          additionalProperties: { description: 'any' }
+        })
+      ).toSucceedAndSatisfy((schema) => {
+        expect(schema.validate({ q: 'a', extra: 1 })).toSucceedWith({ q: 'a', extra: 1 });
+      });
+    });
+
+    test.each<[string, RegExp]>([
+      ['patternProperties', /^#\/properties\/m: unsupported JSON Schema keyword 'patternProperties' beside/],
+      ['propertyNames', /^#\/properties\/m: unsupported JSON Schema keyword 'propertyNames' beside/],
+      [
+        'unevaluatedProperties',
+        /^#\/properties\/m: unsupported JSON Schema keyword 'unevaluatedProperties' beside/
+      ]
+    ])('refuses %s beside a value schema, which a record cannot honour', (keyword, message) => {
+      const raw: JsonObject = obj({
+        m: {
+          type: 'object',
+          additionalProperties: { type: 'string' },
+          [keyword]: { '^n_': { type: 'number' } }
+        }
+      });
+      expect(JsonSchema.fromJson(raw)).toFailWith(message);
+    });
+
     test('refuses declared properties beside a value schema, naming the path', () => {
       expect(
         JsonSchema.fromJson(

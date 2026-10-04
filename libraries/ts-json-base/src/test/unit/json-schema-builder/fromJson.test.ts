@@ -213,6 +213,19 @@ describe('JsonSchema.fromJson', () => {
       ).toFailWith(/'additionalProperties' must be a boolean or a schema object/i);
     });
 
+    test('rejects a non-string object description', () => {
+      expect(JsonSchema.fromJson({ type: 'object', description: 5 } as unknown as JsonObject)).toFailWith(
+        /^#: .*description/i
+      );
+    });
+
+    test('rejects a property named __proto__ rather than losing its schema', () => {
+      const raw = JSON.parse(
+        '{"type":"object","properties":{"__proto__":{"type":"string"}},"required":["__proto__"]}'
+      ) as JsonObject;
+      expect(JsonSchema.fromJson(raw)).toFailWith(/^#: a property named '__proto__' is not supported/);
+    });
+
     test('rejects a required key with no matching property schema', () => {
       expect(
         JsonSchema.fromJson({

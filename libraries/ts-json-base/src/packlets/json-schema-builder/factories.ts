@@ -834,8 +834,8 @@ export function object<P extends ILlmProperties>(
  * @remarks
  * Emits `{ type: 'object', properties: {}, additionalProperties: <values> }`, and the validator
  * converts every property through `values`, reporting each one that fails. A value that is not a
- * JSON object is refused. As for an open object, an own `"__proto__"` key is dropped rather than
- * carried.
+ * JSON object is refused. As for an open object, an own `"__proto__"` key is dropped — without
+ * being validated — rather than carried.
  *
  * Providers whose strict structured-output mode requires `additionalProperties: false` (OpenAI
  * strict, Anthropic JSON outputs) cannot accept a record there, exactly as they cannot accept an
@@ -868,7 +868,8 @@ export function record<S extends ISchemaValidator<unknown>>(
   values: S,
   opts?: ISchemaOptions
 ): ISchemaValidator<Record<string, Static<S>>> {
-  // The node is an object with no declared properties; its static type is the map it converts to.
+  // The node is an object with no declared properties, so its class-level static type is
+  // `ObjectStatic<{}>`; what it converts to is the map, which only this factory can state.
   return new ObjectSchemaValidator({}, opts, values) as unknown as ISchemaValidator<
     Record<string, Static<S>>
   >;

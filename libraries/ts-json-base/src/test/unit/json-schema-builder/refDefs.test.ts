@@ -205,6 +205,10 @@ describe('JsonSchema.fromJson — local $ref / $defs', () => {
       });
     });
 
+    test('a root $id may sit beside a root $ref', () => {
+      expectHonoured({ $id: 'urn:s', $defs: { S: { type: 'string' } }, $ref: '#/$defs/S' }, ['x'], [1]);
+    });
+
     test('a root $id does not prevent resolution', () => {
       expectHonoured(
         {
@@ -241,6 +245,16 @@ describe('JsonSchema.fromJson — local $ref / $defs', () => {
     defs.L12 = { type: 'string' };
     doubling.$ref = '#/$defs/L0';
 
+    const wideProps: JsonObject = {};
+    for (let i = 0; i < 200; i++) {
+      wideProps[`p${i}`] = { type: 'string' };
+    }
+    const manyRefs: JsonObject = {};
+    for (let i = 0; i < 600; i++) {
+      manyRefs[`r${i}`] = { $ref: '#/$defs/Wide' };
+    }
+    const wide: JsonObject = { $defs: { Wide: obj(wideProps) }, ...obj(manyRefs) };
+
     test.each<[string, JsonObject, RegExp]>([
       [
         'a remote reference',
@@ -264,6 +278,27 @@ describe('JsonSchema.fromJson — local $ref / $defs', () => {
         { $defs: { M: { anyOf: [{ type: 'string' }, { type: 'null' }] } }, $ref: '#/$defs/M/anyOf/01' },
         /does not resolve: no '01'/
       ],
+      [
+        'a pointer naming an inherited property',
+        { $defs: {}, ...obj({ x: { $ref: '#/$defs/constructor' } }) },
+        /'#\/\$defs\/constructor' does not resolve: no 'constructor'/
+      ],
+      [
+        'a pointer passing through a subschema with its own $id',
+        {
+          $defs: {
+            B: { type: 'string' },
+            A: {
+              $id: 'urn:a',
+              $defs: { B: { type: 'number' } },
+              ...obj({ x: obj({ y: { $ref: '#/$defs/B' } }) })
+            }
+          },
+          $ref: '#/$defs/A/properties/x'
+        },
+        /'#\/\$defs\/A\/properties\/x' passes through a subschema with its own '\$id'/
+      ],
+      ['a wide definition inlined many times', wide, /exceeds the limit of 100000 nodes/],
       ['a non-string reference', obj({ x: { $ref: 7 } }), /'\$ref': the reference must be a string/],
       [
         'a validation keyword beside $ref',

@@ -44,8 +44,9 @@ const FORBIDDEN_KEYWORDS: readonly string[] = [
 
 /**
  * Keywords that carry no validation semantics. They may accompany a nullable `anyOf`/`oneOf`
- * wrapper, or sit on its `{ type: 'null' }` branch, without changing what the node accepts.
- * Anything else beside the wrapper is refused rather than guessed at.
+ * wrapper (or sit on its `{ type: 'null' }` branch) or a `$ref`, without changing what the node
+ * accepts; a node made only of them is `{}`, the schema every value matches. Anything else beside
+ * a wrapper or a `$ref` is refused rather than guessed at.
  */
 const _NON_VALIDATING_KEYWORDS: ReadonlySet<string> = new Set([
   'description',
@@ -73,6 +74,25 @@ const MAX_REF_EXPANSIONS: number = 1000;
 const MAX_REF_DEPTH: number = 32;
 
 /**
+ * The most schema nodes one conversion may build, counting the re-conversions `_reshape` performs.
+ * `MAX_REF_EXPANSIONS` alone counts references, not what each inlines, so a wide definition
+ * referenced many times could still describe millions of nodes from a small payload. Far above
+ * any real tool schema, which has tens to hundreds of nodes.
+ */
+const MAX_SCHEMA_NODES: number = 100000;
+
+/**
+ * Keywords that change which keys a schema-valued `additionalProperties` governs, or constrain the
+ * keys themselves. A record converter applies its value schema to every key and ignores these, so
+ * a record carrying one would be looser than its source; it is refused instead.
+ */
+const RECORD_KEY_KEYWORDS: readonly string[] = [
+  'patternProperties',
+  'propertyNames',
+  'unevaluatedProperties'
+];
+
+/**
  * What a conversion threads through its recursion: where it is, and what `$ref` resolution needs.
  *
  * @remarks
@@ -88,13 +108,17 @@ interface IParseContext {
   readonly refs: readonly string[];
   /** Whether a subschema with its own `$id` lies between the root and this node. */
   readonly rebased: boolean;
-  /** Expansions performed so far by this conversion. */
-  readonly budget: { expansions: number };
+  /** Reference expansions and schema nodes built so far by this conversion. */
+  readonly budget: { expansions: number; nodes: number };
 }
 
 /** A fresh context for converting `root` as a whole document. */
-function _rootContext(root: unknown, path: string): IParseContext {
-  return { path, root, refs: [], rebased: false, budget: { expansions: 0 } };
+function _rootContext(
+  root: unknown,
+  path: string,
+  budget: { expansions: number; nodes: number } = { expansions: 0, nodes: 0 }
+): IParseContext {
+  return { path, root, refs: [], rebased: false, budget };
 }
 
 /** The same context, moved to a child node. */
@@ -272,7 +296,7 @@ function _isNullBranch(member: unknown): boolean {
  */
 function _reshape(
   node: ISchemaValidator<JsonValue>,
-  path: string,
+  { path, budget }: IParseContext,
   nullable: boolean,
   description: string | undefined
 ): Result<ISchemaValidator<JsonValue>> {
@@ -286,9 +310,9 @@ function _reshape(
   if (description !== undefined) {
     json.description = description;
   }
-  // The re-emitted form has no references left to resolve, so it is its own document.
-
-  return _convertNode(json, _rootContext(json, path));
+  // The re-emitted form has no references left to resolve, so it is its own document; it still
+  // draws on the conversion's node budget, since re-parsing a subtree is work like any other.
+  return _convertNode(json, _rootContext(json, path, budget));
 }
 
 /**
@@ -339,7 +363,7 @@ function _convertNullableUnion(
               `${unsupported}: ${memberPath} also admits null, so exactly-one would reject null, ` +
                 `which a nullable schema cannot express`
             )
-          : _reshape(inner, path, true, description)
+          : _reshape(inner, ctx, true, description)
       )
     );
 }
@@ -351,9 +375,9 @@ function _convertNullableUnion(
 // rather than casting `from` to `Record<string, unknown>` and reading properties
 // manually (the anti-pattern called out in CODING_STANDARDS §Type-Safe Validation).
 //
-// Arms are typed as `Converter<ISchemaValidator<JsonValue>, string>` where the
-// context string is the current JSON Pointer path. `discriminatedObject` and `oneOf`
-// thread the context through to each arm automatically.
+// Arms are typed as `Converter<ISchemaValidator<JsonValue>, IParseContext>`, whose
+// context carries the current JSON Pointer path and what `$ref` resolution needs.
+// `discriminatedObject` threads the context through to each arm automatically.
 // ---------------------------------------------------------------------------
 
 /** String arm: extracts `description?` and delegates to the `string` factory. */
@@ -414,7 +438,7 @@ function _convertBoolean(
 
 /**
  * Array arm — uses `Converters.field` to extract `items` as a raw unknown value (no cast),
- * then recurses for the `items` sub-schema via `jsonSchemaConverter`.
+ * then recurses for the `items` sub-schema via `_convertNode`.
  * Receives the current JSON Pointer path via `context`.
  */
 function _convertArray(
@@ -534,7 +558,7 @@ function _convertEnum(from: unknown, { path }: IParseContext): Result<ISchemaVal
 
 /**
  * Parses the body of an `object`-type schema using field converters, then recurses into
- * property sub-schemas via `jsonSchemaConverter`.
+ * property sub-schemas via `_convertNode`.
  * Called after pre-flight guarantees `from` is a non-null, non-array object.
  */
 function _parseObjectBody(
@@ -568,15 +592,14 @@ function _parseObjectBody(
     return fail(`${path}: 'additionalProperties' must be a boolean or a schema object`);
   }
   const additionalProperties = addlPropsResult.value;
-  // `{}` is the schema every value matches, so it means exactly what `true` does.
+  // `{}` (or annotations only) is the schema every value matches, so it means what `true` does.
   const valueSchema: Record<string, unknown> | undefined =
-    typeof additionalProperties === 'object' && Object.keys(additionalProperties).length > 0
+    typeof additionalProperties === 'object' && !_isAnySchema(additionalProperties)
       ? additionalProperties
       : undefined;
 
-  // Extract optional description; _descriptionField always succeeds (optional string).
+  // Extract optional description; a present non-string description is refused.
   const descResult = _descriptionField.convert(from);
-  /* c8 ignore next 3 - _descriptionField always succeeds */
   if (descResult.isFailure()) {
     return fail(`${path}: ${descResult.message}`);
   }
@@ -584,6 +607,13 @@ function _parseObjectBody(
 
   const requiredSet = new Set<string>(rawRequired ?? []);
   const propEntries: [string, unknown][] = rawProps !== undefined ? Object.entries(rawProps) : [];
+
+  // A property named `__proto__` cannot be held as an ordinary key by the object machinery
+  // downstream (assignment sets the prototype instead), so it would silently lose its schema and
+  // any requirement on it. Refused rather than dropped.
+  if (propEntries.some(([key]) => key === '__proto__')) {
+    return fail(`${path}: a property named '__proto__' is not supported`);
+  }
 
   // Reject `required` keys with no matching property schema.
   const declared = new Set(propEntries.map(([k]) => k));
@@ -594,7 +624,7 @@ function _parseObjectBody(
   }
 
   if (valueSchema !== undefined) {
-    return _parseRecordBody(valueSchema, propEntries.length > 0, ctx, description, nullable);
+    return _parseRecordBody(from, valueSchema, propEntries.length > 0, ctx, description, nullable);
   }
 
   return mapResults(
@@ -630,12 +660,24 @@ function _parseObjectBody(
  * once, and is refused with that reason rather than half-honoured.
  */
 function _parseRecordBody(
+  from: unknown,
   valueSchema: Record<string, unknown>,
   hasDeclaredProperties: boolean,
   ctx: IParseContext,
   description: string | undefined,
   nullable: boolean
 ): Result<ISchemaValidator<JsonValue>> {
+  const keyKeyword = RECORD_KEY_KEYWORDS.find((keyword) =>
+    _plainObjectField
+      .convert(from)
+      .onSuccess((obj) => succeed(keyword in obj))
+      .orDefault(false)
+  );
+  if (keyKeyword !== undefined) {
+    return fail(
+      `${ctx.path}: unsupported JSON Schema keyword '${keyKeyword}' beside a schema-valued 'additionalProperties'`
+    );
+  }
   if (hasDeclaredProperties) {
     return fail(
       `${ctx.path}: schema-valued 'additionalProperties' alongside declared 'properties' is not supported`
@@ -647,12 +689,12 @@ function _parseRecordBody(
 }
 
 // ---------------------------------------------------------------------------
-// Arm converter instances (built once, referenced by jsonSchemaConverter's dispatch).
-// Typed as `Converter<ISchemaValidator<JsonValue>, string>` so the JSON Pointer path
-// context flows from jsonSchemaConverter through oneOf/discriminatedObject to each arm.
+// Arm converter instances (built once, referenced by _convertNode's dispatch).
+// Typed as `Converter<ISchemaValidator<JsonValue>, IParseContext>` so the parse
+// context flows from _convertNode through discriminatedObject to each arm.
 // ---------------------------------------------------------------------------
 
-/** Arm body: the raw node, its JSON Pointer path, and whether its `type` union carried `null`. */
+/** Arm body: the raw node, its parse context, and whether its `type` union carried `null`. */
 type ArmBody = (from: unknown, ctx: IParseContext, nullable: boolean) => Result<ISchemaValidator<JsonValue>>;
 
 /**
@@ -732,10 +774,28 @@ function _childAt(node: unknown, token: string): unknown {
     .orDefault(undefined);
 }
 
-/** Resolves decoded JSON Pointer tokens against `root`. */
+/** Whether a node is a schema object declaring its own `$id`. */
+function _hasId(node: unknown): boolean {
+  return _plainObjectField
+    .convert(node)
+    .onSuccess((obj) => succeed('$id' in obj))
+    .orDefault(false);
+}
+
+/**
+ * Resolves decoded JSON Pointer tokens against `root`.
+ *
+ * @remarks
+ * A pointer that passes *through* a subschema declaring its own `$id` reaches a target whose own
+ * references are relative to that subschema, not to the document; it is refused. (A target that
+ * itself declares `$id` is caught by `_convertNode`, which marks its context rebased.)
+ */
 function _resolvePointer(root: unknown, tokens: readonly string[]): Result<unknown> {
   let node: unknown = root;
-  for (const token of tokens) {
+  for (const [index, token] of tokens.entries()) {
+    if (index > 0 && _hasId(node)) {
+      return fail(`passes through a subschema with its own '$id'`);
+    }
     node = _childAt(node, token);
     if (node === undefined) {
       return fail(`does not resolve: no '${token}'`);
@@ -761,7 +821,10 @@ function _resolvePointer(root: unknown, tokens: readonly string[]): Result<unkno
 function _convertRef(raw: Record<string, unknown>, ctx: IParseContext): Result<ISchemaValidator<JsonValue>> {
   const path = ctx.path;
   const unsupported = `${path}: unsupported JSON Schema keyword '$ref'`;
-  const sibling = Object.keys(raw).find((key) => key !== '$ref' && !_NON_VALIDATING_KEYWORDS.has(key));
+  // A root `$id` names the document the references already resolve against, so it is harmless.
+  const sibling = Object.keys(raw).find(
+    (key) => key !== '$ref' && !_NON_VALIDATING_KEYWORDS.has(key) && !(key === '$id' && raw === ctx.root)
+  );
   if (sibling !== undefined) {
     return fail(`${unsupported} alongside '${sibling}'`);
   }
@@ -802,7 +865,7 @@ function _convertRef(raw: Record<string, unknown>, ctx: IParseContext): Result<I
               _convertNode(resolved, { ...ctx, path: target, refs: [...ctx.refs, target] })
                 .withErrorFormat((msg) => `${path}: via '$ref' '${ref}': ${msg}`)
                 .onSuccess((node) =>
-                  description === undefined ? succeed(node) : _reshape(node, path, false, description)
+                  description === undefined ? succeed(node) : _reshape(node, ctx, false, description)
                 )
             )
         );
@@ -822,6 +885,11 @@ function _convertNode(from: unknown, nodeCtx: IParseContext): Result<ISchemaVali
     return fail(`${path}: expected a JSON Schema object`);
   }
   const raw = from as Record<string, unknown>;
+
+  if (nodeCtx.budget.nodes >= MAX_SCHEMA_NODES) {
+    return fail(`${path}: the schema exceeds the limit of ${MAX_SCHEMA_NODES} nodes`);
+  }
+  nodeCtx.budget.nodes += 1;
 
   // A nested `$id` rebases the references beneath it; those are refused rather than resolved
   // against the wrong document (see `_convertRef`).
@@ -887,8 +955,8 @@ function _convertNode(from: unknown, nodeCtx: IParseContext): Result<ISchemaVali
  * Performs pre-flight checks (non-object root, nullable `anyOf`/`oneOf`, local `$ref`, union type
  * arrays, forbidden keywords, unknown types) before dispatching to the per-type arm converters.
  *
- * The conversion context (`TC = string`) carries the JSON Pointer path of the value being
- * converted, so that error messages from nested nodes name the actual failing node (e.g.
+ * The public conversion context (`TC = string`) is the JSON Pointer path of the value being
+ * converted (internally the recursion carries a richer context for `$ref` resolution), so that error messages from nested nodes name the actual failing node (e.g.
  * `#/properties/config/properties/inner: 'required' key '...'`) rather than always
  * reporting `#:`. The context defaults to `'#'` when absent (top-level call).
  *
