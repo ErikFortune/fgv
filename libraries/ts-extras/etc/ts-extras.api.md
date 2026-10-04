@@ -1188,7 +1188,7 @@ interface IAiCacheRequest {
 // @public
 interface IAiClientTool<TParams = unknown> {
     readonly config: IAiClientToolConfig<TParams>;
-    execute(args: TParams, context?: IAiClientToolExecuteContext): Promise<Result<unknown>>;
+    readonly execute: (args: TParams, context?: IAiClientToolExecuteContext) => Promise<Result<unknown>>;
 }
 
 // @public

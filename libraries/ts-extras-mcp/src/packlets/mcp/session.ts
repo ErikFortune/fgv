@@ -43,7 +43,7 @@ import {
   type IMcpSession,
   type McpFailureReason
 } from './model';
-import { runSdkRequest, validateTimeoutMs } from './request';
+import { errorText, runSdkRequest, validateTimeoutMs } from './request';
 import {
   type ISdkClient,
   type ISdkRequestOptions,
@@ -80,7 +80,7 @@ const DEFAULT_CLIENT_VERSION: string = '5.1.0';
  */
 export class McpCloseWatcher {
   private _closed: boolean = false;
-  private _listener: (() => void) | undefined;
+  private _listener: (() => void | Promise<void>) | undefined;
   private readonly _logger: Logging.ILogger | undefined;
 
   public constructor(logger?: Logging.ILogger) {
@@ -93,7 +93,7 @@ export class McpCloseWatcher {
   }
 
   /** Arms the consumer's callback. Called once, synchronously after a successful handshake. */
-  public arm(listener: (() => void) | undefined): void {
+  public arm(listener: (() => void | Promise<void>) | undefined): void {
     this._listener = listener;
   }
 
@@ -109,10 +109,20 @@ export class McpCloseWatcher {
     this._closed = true;
     const listener = this._listener;
     if (listener !== undefined) {
-      captureResult(listener).onFailure((msg) => {
-        this._logger?.error(`mcp: onClose callback threw: ${msg}`);
-        return fail(msg);
-      });
+      captureResult(listener)
+        .onSuccess((returned) => {
+          // An async listener's rejection is contained the same way as a synchronous throw — logged,
+          // never left to become an unhandled rejection. It is not awaited: the SDK fails the
+          // session's in-flight requests right after this returns.
+          Promise.resolve(returned).catch((err: unknown) => {
+            this._logger?.error(`mcp: onClose callback rejected: ${errorText(err)}`);
+          });
+          return succeed(true);
+        })
+        .onFailure((msg) => {
+          this._logger?.error(`mcp: onClose callback threw: ${msg}`);
+          return fail(msg);
+        });
     }
   }
 }
@@ -281,8 +291,9 @@ export async function connectMcpSession(
     // The abort landed after the server answered `initialize` but before the SDK's connect returned
     // (it still awaits sending `notifications/initialized`), so the SDK did not cancel anything.
     // Close what it opened rather than hand an aborting caller a live session to leak. The watcher
-    // is unarmed, so this close is not reported to `onClose`.
-    await captureAsyncResult(() => client.close());
+    // is unarmed, so this close is not reported to `onClose`. As on every other losing path the
+    // close is started, not awaited, so a close that never settles cannot hold the abort.
+    client.close().catch(() => undefined);
     return failWithDetail('connectMcpSession: aborted by the caller', { kind: 'aborted' });
   }
   closeWatcher.arm(onClose);

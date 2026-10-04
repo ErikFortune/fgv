@@ -199,7 +199,11 @@ export interface IAiClientTool<TParams = unknown> {
    * @param context - The turn's context, including its abort signal when it has one.
    * @returns A `Promise<Result<unknown>>` — the result is stringified and sent back to the model.
    */
-  execute(args: TParams, context?: IAiClientToolExecuteContext): Promise<Result<unknown>>;
+  // Deliberately a function-typed property rather than a method signature, against the usual
+  // convention: method parameters are bivariant, which would let a tool declare `execute` over a
+  // wider shape than `TParams` (e.g. demand a field the schema never promises) and compile, then
+  // receive schema-valid arguments that lack it. The property form keeps that a compile error.
+  readonly execute: (args: TParams, context?: IAiClientToolExecuteContext) => Promise<Result<unknown>>;
 }
 
 /**

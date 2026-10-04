@@ -317,6 +317,26 @@ describe('connectMcpSession', () => {
     }
   });
 
+  test('the post-settle abort path does not wait for a close that never settles', async () => {
+    const controller = new AbortController();
+    const fake: IFakeClient & { onclose?: () => void } = makeFakeClient();
+    fake.close.mockImplementation(() => new Promise<void>(() => undefined));
+    mockSdk.makeClient.mockReturnValueOnce(fake as unknown as sdk.ISdkClient);
+    const remove = controller.signal.removeEventListener.bind(controller.signal);
+    jest.spyOn(controller.signal, 'removeEventListener').mockImplementation((type, listener, options) => {
+      remove(type, listener, options);
+      controller.abort();
+    });
+    const transport = createStdioTransport({ command: 'node' }).orThrow();
+
+    // Were the close awaited, this would never settle and the test would time out.
+    expect(await connectMcpSession({ transport, signal: controller.signal })).toFailWithDetail(
+      'connectMcpSession: aborted by the caller',
+      { kind: 'aborted' }
+    );
+    expect(fake.close).toHaveBeenCalledTimes(1);
+  });
+
   test('a transport handle is single-use: a second connect fails invalid-handle without touching it', async () => {
     const first = makeFakeClient();
     mockSdk.makeClient.mockReturnValueOnce(first as unknown as sdk.ISdkClient);

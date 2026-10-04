@@ -48,7 +48,7 @@ export interface IConnectMcpSessionParams {
     readonly clientName?: string;
     readonly clientVersion?: string;
     readonly logger?: Logging.ILogger;
-    readonly onClose?: () => void;
+    readonly onClose?: () => void | Promise<void>;
     readonly signal?: AbortSignal;
     readonly timeoutMs?: number;
     readonly transport: IMcpTransport;

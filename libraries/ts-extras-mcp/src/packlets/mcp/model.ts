@@ -155,14 +155,15 @@ export interface IConnectMcpSessionParams {
    *
    * The callback runs synchronously inside the SDK's close handling. A throw from it is caught (and
    * logged to `logger`, when one is supplied) so that it cannot stop the SDK from failing the
-   * session's in-flight requests. It is typed `() => void`, so an `async` function is accepted, but
-   * a rejection of the promise it returns is not observed — handle errors inside it.
+   * session's in-flight requests. It may be `async`: a promise it returns is not awaited (the SDK
+   * fails the in-flight requests straight after), but a rejection of that promise is caught and
+   * logged the same way, never left as an unhandled rejection.
    *
    * A Streamable-HTTP session has no connection to lose between requests, so a server that
    * restarted is not observed here; the next call reports it, as `'session-expired'` when the
    * server answers HTTP 404 for the stale session id.
    */
-  readonly onClose?: () => void;
+  readonly onClose?: () => void | Promise<void>;
   /**
    * Timeout in milliseconds for the whole connect: starting the transport, the `initialize`
    * request, and sending `notifications/initialized`. Defaults to the SDK's 60 000. Expiry fails the

@@ -575,6 +575,22 @@ describe('executeClientToolTurn', () => {
       expect(seen[0]?.signal).toBe(controller.signal);
     });
 
+    test('execute cannot demand more than TParams: the property form keeps parameters contravariant', () => {
+      const tool: IAiClientTool<RecallParams> = {
+        config: {
+          type: 'client_tool',
+          name: 'recall_memory',
+          description: 'Recall stored context',
+          parametersSchema: recallSchema
+        },
+        // A method signature would accept this (bivariant parameters) and the tool would then crash
+        // on schema-valid arguments that lack `limit`. This line must stay a compile error.
+        // @ts-expect-error — `limit` is not part of RecallParams
+        execute: async (args: { query: string; limit: number }) => succeed(args.limit.toFixed())
+      };
+      expect(tool.config.name).toBe('recall_memory');
+    });
+
     test('a turn without a signal hands execute a context with no signal', async () => {
       mockSseResponse(anthropicToolUseSse('toolu_01', 'recall_memory', '{"query":"q"}'));
       const seen: Array<IAiClientToolExecuteContext | undefined> = [];

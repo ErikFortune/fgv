@@ -64,7 +64,10 @@ interface IFixture {
  * Starts a real server and connects a session to it. `hang` blocks until `release()` (or until the
  * server's transport closes), so a test can act while a call is in flight.
  */
-async function startFixture(onClose?: () => void, logger?: Logging.ILogger): Promise<IFixture> {
+async function startFixture(
+  onClose?: () => void | Promise<void>,
+  logger?: Logging.ILogger
+): Promise<IFixture> {
   const server = new Server({ name: 'failures-fixture', version: '0.0.1' }, { capabilities: { tools: {} } });
   let release: () => void = () => undefined;
   let markEntered: () => void = () => undefined;
@@ -209,6 +212,42 @@ describe('onClose — observing a session close', () => {
     // pending request and this await would hang until the test timed out.
     expect(await pending).toFailWithDetail(/Connection closed/, { kind: 'not-connected' });
     expect(logger.logged.join('\n')).toMatch(/onClose callback threw: consumer bug/);
+  });
+
+  test('an async onClose that rejects is contained and logged — no unhandled rejection', async () => {
+    const logger = new Logging.InMemoryLogger('all');
+    const unhandled = jest.fn();
+    process.on('unhandledRejection', unhandled);
+    try {
+      const fixture = await startFixture(async () => {
+        throw new Error('async consumer bug');
+      }, logger);
+      const pending = callMcpTool(fixture.session, 'hang', {});
+      await fixture.entered;
+      await fixture.server.close();
+      expect(await pending).toFailWithDetail(/Connection closed/, { kind: 'not-connected' });
+      // Let the rejected promise's handler run.
+      await new Promise((resolve) => setImmediate(resolve));
+      expect(logger.logged.join('\n')).toMatch(/onClose callback rejected: async consumer bug/);
+      expect(unhandled).not.toHaveBeenCalled();
+    } finally {
+      process.off('unhandledRejection', unhandled);
+    }
+  });
+
+  test('an async onClose that rejects, with no logger, is still contained', async () => {
+    const unhandled = jest.fn();
+    process.on('unhandledRejection', unhandled);
+    try {
+      const fixture = await startFixture(async () => {
+        throw new Error('async consumer bug');
+      });
+      await fixture.server.close();
+      await new Promise((resolve) => setImmediate(resolve));
+      expect(unhandled).not.toHaveBeenCalled();
+    } finally {
+      process.off('unhandledRejection', unhandled);
+    }
   });
 
   test('a throwing onClose with no logger is still contained', async () => {
