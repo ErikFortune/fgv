@@ -76,6 +76,7 @@ declare namespace AiAssist {
         IAiClientToolConfig,
         IAiToolAnnotations,
         IAiClientTool,
+        IAiClientToolExecuteContext,
         IAiClientToolCallSummary,
         IAiClientToolContinuation,
         IAiClientToolTurnResult,
@@ -1187,7 +1188,7 @@ interface IAiCacheRequest {
 // @public
 interface IAiClientTool<TParams = unknown> {
     readonly config: IAiClientToolConfig<TParams>;
-    readonly execute: (args: TParams) => Promise<Result<unknown>>;
+    readonly execute: (args: TParams, context?: IAiClientToolExecuteContext) => Promise<Result<unknown>>;
 }
 
 // @public
@@ -1213,6 +1214,13 @@ interface IAiClientToolConfig<TParams = unknown> {
 interface IAiClientToolContinuation {
     readonly messages: ReadonlyArray<JsonObject>;
     readonly toolCallsSummary: ReadonlyArray<IAiClientToolCallSummary>;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IAiClientToolExecuteContext {
+    readonly signal?: AbortSignal;
 }
 
 // @public

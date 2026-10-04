@@ -34,7 +34,12 @@ import { JsonSchema } from '@fgv/ts-json-base';
 // eslint-disable-next-line @rushstack/packlets/mechanics
 import { executeClientToolTurn } from '../../../packlets/ai-assist/streamingAdapters/clientToolContinuationBuilder';
 // eslint-disable-next-line @rushstack/packlets/mechanics
-import type { IAiClientTool, IAiProviderDescriptor, IAiStreamEvent } from '../../../packlets/ai-assist/model';
+import type {
+  IAiClientTool,
+  IAiClientToolExecuteContext,
+  IAiProviderDescriptor,
+  IAiStreamEvent
+} from '../../../packlets/ai-assist/model';
 // eslint-disable-next-line @rushstack/packlets/mechanics
 import { AiPrompt } from '../../../packlets/ai-assist/model';
 
@@ -532,6 +537,59 @@ describe('executeClientToolTurn', () => {
         expect(r.continuation?.toolCallsSummary[0].toolName).toBe('recall_memory');
         expect(r.continuation?.toolCallsSummary[0].isError).toBe(false);
       });
+    });
+  });
+
+  describe('execute context', () => {
+    function makeContextCapturingTool(seen: Array<IAiClientToolExecuteContext | undefined>): IAiClientTool {
+      return {
+        config: {
+          type: 'client_tool',
+          name: 'recall_memory',
+          description: 'Recall stored context',
+          parametersSchema: recallSchema
+        },
+        execute: async (__args, context) => {
+          seen.push(context);
+          return succeed('ok');
+        }
+      };
+    }
+
+    test("the turn's signal reaches execute — the same object, not a copy", async () => {
+      mockSseResponse(anthropicToolUseSse('toolu_01', 'recall_memory', '{"query":"q"}'));
+      const seen: Array<IAiClientToolExecuteContext | undefined> = [];
+      const controller = new AbortController();
+      const result = executeClientToolTurn({
+        descriptor: makeAnthropicDescriptor(),
+        apiKey: 'test-key',
+        ...testPrompt.toRequest(),
+        clientTools: [makeContextCapturingTool(seen)],
+        model: 'claude-sonnet-4-6',
+        signal: controller.signal
+      });
+      expect(result).toSucceed();
+      if (result.isFailure()) return;
+      await collect(result.value.events);
+      expect(seen).toHaveLength(1);
+      expect(seen[0]?.signal).toBe(controller.signal);
+    });
+
+    test('a turn without a signal hands execute a context with no signal', async () => {
+      mockSseResponse(anthropicToolUseSse('toolu_01', 'recall_memory', '{"query":"q"}'));
+      const seen: Array<IAiClientToolExecuteContext | undefined> = [];
+      const result = executeClientToolTurn({
+        descriptor: makeAnthropicDescriptor(),
+        apiKey: 'test-key',
+        ...testPrompt.toRequest(),
+        clientTools: [makeContextCapturingTool(seen)],
+        model: 'claude-sonnet-4-6'
+      });
+      expect(result).toSucceed();
+      if (result.isFailure()) return;
+      await collect(result.value.events);
+      expect(seen).toHaveLength(1);
+      expect(seen[0]?.signal).toBeUndefined();
     });
   });
 
