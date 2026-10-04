@@ -27,7 +27,13 @@
 
 import { type Result, captureResult, fail, succeed } from '@fgv/ts-utils';
 
-import { type IMcpHttpTransportParams, type IMcpStdioTransportParams, type IMcpTransport } from './model';
+import {
+  type IMcpHttpTransportParams,
+  type IMcpSdkTransport,
+  type IMcpStdioTransportParams,
+  type IMcpTransport,
+  type McpTransportKind
+} from './model';
 import { type ISdkTransport, makeHttpTransport, makeStdioTransport } from './sdk';
 
 /**
@@ -37,11 +43,11 @@ import { type ISdkTransport, makeHttpTransport, makeStdioTransport } from './sdk
  * @internal
  */
 export class McpTransport implements IMcpTransport {
-  public readonly transportKind: 'stdio' | 'http';
+  public readonly transportKind: McpTransportKind;
   /** The wrapped SDK transport. */
   public readonly sdkTransport: ISdkTransport;
 
-  public constructor(transportKind: 'stdio' | 'http', sdkTransport: ISdkTransport) {
+  public constructor(transportKind: McpTransportKind, sdkTransport: ISdkTransport) {
     this.transportKind = transportKind;
     this.sdkTransport = sdkTransport;
   }
@@ -55,7 +61,9 @@ export class McpTransport implements IMcpTransport {
     if (handle instanceof McpTransport) {
       return succeed(handle);
     }
-    return fail('invalid MCP transport: expected a handle from createStdioTransport / createHttpTransport');
+    return fail(
+      'invalid MCP transport: expected a handle from createStdioTransport / createHttpTransport / createCustomTransport'
+    );
   }
 }
 
@@ -108,4 +116,31 @@ export function createHttpTransport(params: IMcpHttpTransportParams): Result<IMc
       );
     })
     .withErrorFormat((msg) => `createHttpTransport: ${msg}`);
+}
+
+/**
+ * Wraps a pre-built MCP SDK client transport in this package's opaque transport handle, so a
+ * session can run over any transport the SDK (or the consumer) provides.
+ *
+ * @remarks
+ * The motivating use is testing against an in-process server, with no subprocess and no port:
+ *
+ * ```ts
+ * import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
+ * const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();
+ * await server.connect(serverSide); // an SDK `Server` / `McpServer`
+ * const session = await connectMcpSession({ transport: createCustomTransport(clientSide) });
+ * ```
+ *
+ * It equally admits transports this package does not construct itself (the SDK's legacy SSE or
+ * WebSocket client transports, or a consumer's own implementation). The transport is handed to the
+ * SDK client unchanged; it must be a fresh, unstarted transport, and the session that connects over
+ * it takes ownership of it.
+ *
+ * @param transport - An unstarted SDK client transport.
+ * @returns An opaque handle with `transportKind: 'custom'`.
+ * @public
+ */
+export function createCustomTransport(transport: IMcpSdkTransport): IMcpTransport {
+  return new McpTransport('custom', transport);
 }

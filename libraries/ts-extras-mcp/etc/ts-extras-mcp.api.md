@@ -23,6 +23,9 @@ export function closeMcpSession(session: IMcpSession): Promise<Result<true>>;
 export function connectMcpSession(params: IConnectMcpSessionParams): Promise<Result<IMcpSession>>;
 
 // @public
+export function createCustomTransport(transport: IMcpSdkTransport): IMcpTransport;
+
+// @public
 export function createHttpTransport(params: IMcpHttpTransportParams): Result<IMcpTransport>;
 
 // @public
@@ -51,6 +54,13 @@ export interface IConnectMcpSessionParams {
 export interface IMcpHttpTransportParams {
     readonly headers?: Record<string, string>;
     readonly url: string;
+}
+
+// @public
+export interface IMcpSdkTransport {
+    close(): Promise<void>;
+    send(message: unknown, options?: unknown): Promise<void>;
+    start(): Promise<void>;
 }
 
 // @public
@@ -105,10 +115,13 @@ export interface IMcpToolDescriptor {
 
 // @public
 export interface IMcpTransport {
-    readonly transportKind: 'stdio' | 'http';
+    readonly transportKind: McpTransportKind;
 }
 
 // @public
 export function listMcpTools(session: IMcpSession): Promise<Result<ReadonlyArray<IMcpToolDescriptor>>>;
+
+// @public
+export type McpTransportKind = 'stdio' | 'http' | 'custom';
 
 ```

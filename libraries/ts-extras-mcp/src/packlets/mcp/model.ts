@@ -67,13 +67,49 @@ export interface IMcpHttpTransportParams {
 }
 
 /**
- * Opaque handle to an MCP transport produced by {@link createStdioTransport} or
- * {@link createHttpTransport}. Hand it to {@link connectMcpSession}; do not construct directly.
+ * The minimal structural shape of an MCP SDK client transport, accepted by
+ * {@link createCustomTransport}.
+ *
+ * @remarks
+ * Every `@modelcontextprotocol/sdk` client transport satisfies this shape — the SDK's
+ * `InMemoryTransport` (for tests against an in-process server), `SSEClientTransport`,
+ * `WebSocketClientTransport`, or a consumer's own `Transport` implementation. It is declared
+ * structurally so this package's public surface never names an SDK type; the SDK's own `Transport`
+ * interface is what the object must actually implement at runtime, because the SDK client takes
+ * ownership of it (assigning its `onmessage` / `onclose` / `onerror` callbacks) when the session
+ * connects.
+ *
+ * @public
+ */
+export interface IMcpSdkTransport {
+  /** Starts the transport. Called by the SDK client during {@link connectMcpSession}. */
+  start(): Promise<void>;
+  /** Sends one JSON-RPC message. */
+  send(message: unknown, options?: unknown): Promise<void>;
+  /** Closes the transport. */
+  close(): Promise<void>;
+}
+
+/**
+ * Which kind of transport an {@link IMcpTransport} handle wraps: one this package constructed
+ * (`'stdio'`, `'http'`), or a consumer-supplied SDK transport (`'custom'`).
+ * @public
+ */
+export type McpTransportKind = 'stdio' | 'http' | 'custom';
+
+/**
+ * Opaque handle to an MCP transport produced by {@link createStdioTransport},
+ * {@link createHttpTransport} or {@link createCustomTransport}. Hand it to
+ * {@link connectMcpSession}; do not construct directly.
+ *
+ * @remarks
+ * A handle is single-use: the session that connects over it owns the underlying transport, and
+ * closing that session closes the transport.
  * @public
  */
 export interface IMcpTransport {
   /** Which transport kind this handle wraps. */
-  readonly transportKind: 'stdio' | 'http';
+  readonly transportKind: McpTransportKind;
 }
 
 // ============================================================================
@@ -85,7 +121,10 @@ export interface IMcpTransport {
  * @public
  */
 export interface IConnectMcpSessionParams {
-  /** A transport produced by {@link createStdioTransport} / {@link createHttpTransport}. */
+  /**
+   * A transport produced by {@link createStdioTransport}, {@link createHttpTransport} or
+   * {@link createCustomTransport}.
+   */
   readonly transport: IMcpTransport;
   /** Client name advertised to the server during the initialize handshake. Default `'@fgv/ts-extras-mcp'`. */
   readonly clientName?: string;

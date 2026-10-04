@@ -27,6 +27,7 @@ describe('@fgv/ts-extras-mcp package barrel', () => {
   test('re-exports the public boundary primitives', () => {
     expect(typeof mcp.createStdioTransport).toBe('function');
     expect(typeof mcp.createHttpTransport).toBe('function');
+    expect(typeof mcp.createCustomTransport).toBe('function');
     expect(typeof mcp.connectMcpSession).toBe('function');
     expect(typeof mcp.closeMcpSession).toBe('function');
     expect(typeof mcp.listMcpTools).toBe('function');
