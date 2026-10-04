@@ -311,6 +311,15 @@ exit code. Warnings were counted with `grep -ci warning`.
 | `generate-capability-feed.mjs --check` / `verify-capability-docs.mjs` | 0 stale / 0 failed |
 | base drift | `integration/asks` has not moved since the branch was cut |
 
+**Review-2 run, on `fd60b481`:**
+
+| gate | result |
+|---|---|
+| `install-run-rush.js test` (repo-wide) | `SUCCESS: 36 operations` in 12 m 60 s; errors 0; warnings 1 (the same symlink notice); log not NUL-padded |
+| `ts-extras-mcp` fixlint, build, lint, test | 122 tests, 100 % on all metrics; build, lint and test warnings 0 |
+| `ts-extras` fixlint, build, lint, test | 3109 tests, 100 % on all metrics; build, lint and test warnings 0 |
+| `change --verify` / feed `--check` | pass / 0 stale |
+
 ## What the brief got wrong
 
 - Belief 1 missed that the SDK reports an abort with the timeout code — the single fact the whole
