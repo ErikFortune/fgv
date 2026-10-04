@@ -1,7 +1,7 @@
 id: json-schema-fromjson-widening
 status: shipped
 packages: ['@fgv/ts-json-base']
-prs: [] # PR onto integration/asks not yet opened; the orchestrator fills it in
+prs: [723]
 openPrs: []
 opened: 2026-10-04
 closed: 2026-10-04

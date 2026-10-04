@@ -40,7 +40,7 @@
 
 <!-- BEGIN GENERATED: recent-additions -->
 
-- **2026-10-04** — JsonSchema.fromJson now reads pydantic Optional[T] (anyOf [T, null]), local $ref/$defs (inlined, bounded) and z.record-style schema-valued additionalProperties via the new JsonSchema.record.
+- **2026-10-04** — JsonSchema.fromJson now reads pydantic Optional[T] (anyOf [T, null]), local $ref/$defs (inlined, bounded) and z.record-style schema-valued additionalProperties via the new JsonSchema.record. ([#723](https://github.com/ErikFortune/fgv/pull/723))
 - **2026-10-03** — An open JsonSchema object — additionalProperties: true, or an MCP schema that leaves it out — now passes undeclared keys through validated instead of silently dropping them. ([#720](https://github.com/ErikFortune/fgv/pull/720))
 - **2026-09-21** — A FileTree can now replace a file such that a reader never sees a torn write, and on a root whose filesystem was actually qualified it survives the writing process being killed — an unqualified root refuses rather than quietly promising less. ([#682](https://github.com/ErikFortune/fgv/pull/682))
 - **2026-08-23** — **Shipped:** an opt-in that hoists the optionals a schema already proves safe to hoist, rather than a boolean asserting they are. ([#659](https://github.com/ErikFortune/fgv/pull/659))
