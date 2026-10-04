@@ -294,6 +294,18 @@ Recorded so they are not rediscovered as surprises:
 
 ## Gates
 
+- **After gate review, repo-wide `node common/scripts/install-run-rush.js test` on `2ef7dd99`, from the
+  repo root:** `SUCCESS: 36 operations`, `exit 0`, 9m18s.
+  - 0 error lines.
+  - 36 projects completed, none from cache, including `ts-json-base`, `ts-extras-mcp` and `testbed`.
+  - The log has no NUL padding.
+  - The only `warning` line is the Git-tracked-symlink notice.
+- **Same round, per package:** `ts-json-base` (1305 passed, coverage 100%) and `ts-extras-mcp`
+  (52 passed) each had a clean build, lint and test with 0 warnings. `change --verify` passes. The
+  capability-docs check reports 0 failures.
+
+Before gate review:
+
 - **Repo-wide `node common/scripts/install-run-rush.js test`, run on the code at `47320a83` from the
   repo root:** `SUCCESS: 36 operations`, `exit 0`.
   - 0 error lines (`not met|FAILURE|Operations failed|Error:|error TS`).
