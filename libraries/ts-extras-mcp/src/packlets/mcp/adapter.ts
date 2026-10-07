@@ -27,7 +27,7 @@
  * @packageDocumentation
  */
 
-import { type Result, succeed } from '@fgv/ts-utils';
+import { type DetailedResult, type Result, succeedWithDetail } from '@fgv/ts-utils';
 import { AiAssist } from '@fgv/ts-extras';
 import { Converters, JsonSchema, type JsonValue } from '@fgv/ts-json-base';
 
@@ -36,7 +36,8 @@ import {
   type IAdaptMcpToolsResult,
   type IMcpSession,
   type IMcpSkippedTool,
-  type IMcpToolDescriptor
+  type IMcpToolDescriptor,
+  type McpFailureReason
 } from './model';
 import { callMcpTool, listMcpTools } from './operations';
 
@@ -52,17 +53,24 @@ type IAdaptOutcome =
  * Builds the `execute` callback for an adapted MCP tool. Args arrive already validated against
  * the tool's `parametersSchema` by `executeClientToolTurn`; here we narrow to a `JsonObject`
  * (MCP arguments are always an object) and forward to {@link callMcpTool}, returning the
- * projected text content. A tool error surfaces as a `Failure` (never swallowed).
+ * projected text content. A tool error surfaces as a `Failure` (never swallowed). The turn's
+ * abort signal, when it has one, is forwarded so that cancelling the turn cancels the MCP request.
  */
-function _makeExecute(session: IMcpSession, name: string): (args: unknown) => Promise<Result<unknown>> {
-  return async (args: unknown): Promise<Result<unknown>> => {
+function _makeExecute(
+  session: IMcpSession,
+  name: string
+): (args: unknown, context?: AiAssist.IAiClientToolExecuteContext) => Promise<Result<unknown>> {
+  return async (args: unknown, context?: AiAssist.IAiClientToolExecuteContext): Promise<Result<unknown>> => {
     const objResult = Converters.jsonObject
       .convert(args)
       .withErrorFormat((msg) => `tool '${name}': arguments must be a JSON object: ${msg}`);
     if (objResult.isFailure()) {
       return objResult;
     }
-    return (await callMcpTool(session, name, objResult.value)).onSuccess((called) => succeed(called.content));
+    const signal = context?.signal;
+    return (
+      await callMcpTool(session, name, objResult.value, signal !== undefined ? { signal } : undefined)
+    ).onSuccess((called) => succeedWithDetail<unknown, McpFailureReason>(called.content));
   };
 }
 
@@ -123,13 +131,14 @@ function _adaptOne(session: IMcpSession, descriptor: IMcpToolDescriptor): IAdapt
  *
  * @param session - A connected session from `connectMcpSession`.
  * @param options - Optional logger for the NOISY skip warnings.
- * @returns `Success` with `{ tools, skipped }`, or `Failure` only if tool discovery fails.
+ * @returns `Success` with `{ tools, skipped }`, or `Failure` only if tool discovery fails, with the
+ * discovery failure's {@link McpFailureReason} as its detail.
  * @public
  */
 export async function adaptMcpTools(
   session: IMcpSession,
   options?: IAdaptMcpToolsOptions
-): Promise<Result<IAdaptMcpToolsResult>> {
+): Promise<DetailedResult<IAdaptMcpToolsResult, McpFailureReason>> {
   return (await listMcpTools(session))
     .onSuccess((descriptors) => {
       const tools: AiAssist.IAiClientTool[] = [];
@@ -149,7 +158,7 @@ export async function adaptMcpTools(
         }
       }
 
-      return succeed<IAdaptMcpToolsResult>({ tools, skipped });
+      return succeedWithDetail<IAdaptMcpToolsResult, McpFailureReason>({ tools, skipped });
     })
     .withErrorFormat((msg) => `adaptMcpTools: ${msg}`);
 }

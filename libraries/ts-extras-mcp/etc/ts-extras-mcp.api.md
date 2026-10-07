@@ -5,22 +5,26 @@
 ```ts
 
 import { AiAssist } from '@fgv/ts-extras';
+import { DetailedResult } from '@fgv/ts-utils';
 import { JsonObject } from '@fgv/ts-json-base';
 import { JsonValue } from '@fgv/ts-json-base';
 import { Logging } from '@fgv/ts-utils';
 import { Result } from '@fgv/ts-utils';
 
 // @public
-export function adaptMcpTools(session: IMcpSession, options?: IAdaptMcpToolsOptions): Promise<Result<IAdaptMcpToolsResult>>;
+export function adaptMcpTools(session: IMcpSession, options?: IAdaptMcpToolsOptions): Promise<DetailedResult<IAdaptMcpToolsResult, McpFailureReason>>;
 
 // @public
-export function callMcpTool(session: IMcpSession, name: string, args: JsonObject): Promise<Result<IMcpToolCallResult>>;
+export function callMcpTool(session: IMcpSession, name: string, args: JsonObject, options?: IMcpRequestOptions): Promise<DetailedResult<IMcpToolCallResult, McpFailureReason>>;
 
 // @public
 export function closeMcpSession(session: IMcpSession): Promise<Result<true>>;
 
 // @public
-export function connectMcpSession(params: IConnectMcpSessionParams): Promise<Result<IMcpSession>>;
+export function connectMcpSession(params: IConnectMcpSessionParams): Promise<DetailedResult<IMcpSession, McpFailureReason>>;
+
+// @public
+export function createCustomTransport(transport: IMcpSdkTransport): Result<IMcpTransport>;
 
 // @public
 export function createHttpTransport(params: IMcpHttpTransportParams): Result<IMcpTransport>;
@@ -44,6 +48,9 @@ export interface IConnectMcpSessionParams {
     readonly clientName?: string;
     readonly clientVersion?: string;
     readonly logger?: Logging.ILogger;
+    readonly onClose?: () => void | Promise<void>;
+    readonly signal?: AbortSignal;
+    readonly timeoutMs?: number;
     readonly transport: IMcpTransport;
 }
 
@@ -51,6 +58,33 @@ export interface IConnectMcpSessionParams {
 export interface IMcpHttpTransportParams {
     readonly headers?: Record<string, string>;
     readonly url: string;
+}
+
+// @public
+export interface IMcpProgress {
+    readonly message?: string;
+    readonly progress: number;
+    readonly total?: number;
+}
+
+// @public
+export interface IMcpRequestOptions {
+    readonly maxTotalTimeoutMs?: number;
+    readonly onProgress?: (progress: IMcpProgress) => void;
+    readonly resetTimeoutOnProgress?: boolean;
+    readonly signal?: AbortSignal;
+    readonly timeoutMs?: number;
+}
+
+// @public
+export interface IMcpSdkTransport {
+    close(): Promise<void>;
+    onclose?(): void;
+    onerror?(error: Error): void;
+    onmessage?(message: unknown, extra?: unknown): void;
+    send(message: unknown, options?: unknown): Promise<void>;
+    readonly sessionId?: string;
+    start(): Promise<void>;
 }
 
 // @public
@@ -105,10 +139,45 @@ export interface IMcpToolDescriptor {
 
 // @public
 export interface IMcpTransport {
-    readonly transportKind: 'stdio' | 'http';
+    readonly transportKind: McpTransportKind;
 }
 
 // @public
-export function listMcpTools(session: IMcpSession): Promise<Result<ReadonlyArray<IMcpToolDescriptor>>>;
+export function listMcpTools(session: IMcpSession, options?: IMcpRequestOptions): Promise<DetailedResult<ReadonlyArray<IMcpToolDescriptor>, McpFailureReason>>;
+
+// @public
+export type McpFailureReason = {
+    readonly kind: 'tool-error';
+} | {
+    readonly kind: 'timeout';
+} | {
+    readonly kind: 'aborted';
+} | {
+    readonly kind: 'not-connected';
+} | {
+    readonly kind: 'session-expired';
+}
+/** `status` is the HTTP status, when the refusal came as one. */
+| {
+    readonly kind: 'unauthorized';
+    readonly status?: number;
+}
+/** `code` is the JSON-RPC error code, when the failure carried one. */
+| {
+    readonly kind: 'protocol';
+    readonly code?: number;
+}
+/** `status` is the HTTP status, when the failure came as one. */
+| {
+    readonly kind: 'transport';
+    readonly status?: number;
+} | {
+    readonly kind: 'invalid-handle';
+} | {
+    readonly kind: 'invalid-options';
+};
+
+// @public
+export type McpTransportKind = 'stdio' | 'http' | 'custom';
 
 ```
