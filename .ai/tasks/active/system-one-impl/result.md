@@ -13,7 +13,7 @@ A new package, `@fgv/ts-extras-system-one` (`libraries/ts-extras-system-one`), s
     re-exported;
   - the plan's types, plus the additions listed under Deviations.
 - Tests:
-  - 70 unit tests, all running the real SDK 0.6.0 through the `fetch` parameter;
+  - 76 unit tests, all running the real SDK 0.6.0 through the `fetch` parameter;
   - no module mocking;
   - every plan id U1–U26 appears in a test title, plus U27 (malformed input, added at the gate-time review);
   - 100% coverage on statements, branches, functions and lines, with no `c8 ignore`.
@@ -136,6 +136,22 @@ A new package, `@fgv/ts-extras-system-one` (`libraries/ts-extras-system-one`), s
 21. **A rejected `baseUrl` is never echoed** (Copilot round 1): it can carry credentials or a token in
     its query, so the message names the constraint only.
 
+22. **Every exported function converts a JavaScript caller's input before reading it** (Copilot
+    round 3). The shape gates are in `src/shapes.ts`, and their messages name fields or the caller's
+    own question ids, never a value. A malformed input is `invalid-request`, never a throw or a
+    rejection.
+    - `askSystemOne` checks the whole request, every question included, before the bound, so a
+      malformed question is `invalid-request` in `'unchecked'` mode too.
+    - The bound no longer re-checks the questions. That second check could never be shown
+      load-bearing (R42 went `0 red`).
+    - A question of an unknown `type` is now refused. Before, it was sent and left to the server.
+23. **Every failure message of a `Result`-returning entry point starts with its reason**
+    (`createSystemOneClient`, `listSystemOneModels`, `measureSystemOneInput`), as `askSystemOne`'s
+    detail does. `createSystemOneClient`'s messages gained the `invalid-request: ` prefix.
+24. **The `noul` / `choice` / `score` re-exports were left as the SDK's own functions**, as plan § 3.1
+    and U25 require (see round 3, item 1). They still throw the SDK's `TypeSafeError` for
+    wrong-shaped criteria from a JavaScript caller.
+
 ## The orchestrator's beliefs
 
 1. **Right.** `rush add -p @typesafe-ai/sdk@~0.6.0` resolved 0.6.0. The lockfile diff is only the new
@@ -175,17 +191,19 @@ close waits for a recorded L1.
 
 ## Revert matrix
 
-Run with `node perf/mutationMatrix.js --pkg <copy>` against a real copy of the package at `2dfefc42`
+Run with `node perf/mutationMatrix.js --pkg <copy>` against a real copy of the package at `1eb007b3`
 (no links: only `node_modules` was a symlink to the package's). It exited 0.
-- Rows R34–R37 were added at the gate-time review, R38–R40 (with R39b, R39c) at Copilot round 1, and
-  the harness rows H1–H4 at Copilot round 2.
-- R8, R19 and R23 were re-pointed after refactors.
+- Rows added by round: R34–R37 at the gate-time review; R38–R40 (with R39b, R39c) at Copilot round
+  1; harness rows H1–H4 at round 2; R41–R46 and H5–H8 at round 3.
+- R1, R8, R19, R23, R34 and R38 were re-pointed after refactors.
 - The R rows run the jest suite. The H rows mutate `perf/systemOneLive.js`, which jest does not
   cover: they rebuild the package from its restored source and run `perf/systemOneLive.selftest.js`,
   which drives the harness against local stub servers and reports in jest's `●` / `Failures:` shape.
 
 ```
-R1 the bound runs after the SDK call [must go red: U1]: VERIFIED (18 red)
+R1 the bound runs after the SDK call [must go red: U1]: VERIFIED (20 red)
+    a JavaScript caller’s malformed input is a classified Result, never a throw › U27b a malformed question is invalid-request in unchecked mode too, with nothing sent
+    a JavaScript caller’s malformed input is a classified Result, never a throw › U29 askSystemOne checks the request before reading any field, and every failure has a reason
     askSystemOne › U10 an empty question set, or a score question with one level, is invalid-request with no request made
     askSystemOne › failure classification › U13 a 529 is retried and then server; a 503 then 200 succeeds
     askSystemOne › failure classification › U15 an abort during back-off is aborted, with no further request
@@ -223,7 +241,8 @@ R5b noul's default candidate is not measured [must go red: U4]: VERIFIED (3 red)
     the input bound › U26 measureSystemOneInput returns the numbers the refusal reports
     the input bound › U4 a whitespace-only description is measured as the larger of itself and the default
     the input bound › U4 each candidate is bounded separately and named in the failure
-R6 a structured state is measured as String(state) [must go red: U5]: VERIFIED (3 red)
+R6 a structured state is measured as String(state) [must go red: U5]: VERIFIED (4 red)
+    a JavaScript caller’s malformed input is a classified Result, never a throw › U28 measureSystemOneInput fails invalid-request without quoting the input
     the input bound › U26 measureSystemOneInput returns the numbers the refusal reports
     the input bound › U27 malformed input is invalid-request, resolved, with no request made
     the input bound › U5 a structured state is measured by its JSON serialization
@@ -344,7 +363,8 @@ R32 elapsedMs does not cover retries [must go red: U20]: VERIFIED (1 red)
     askSystemOne › meta › U20 elapsedMs covers retries and back-off
 R33 the models shape error is invalid-request [must go red: U19]: VERIFIED (1 red)
     listSystemOneModels › U19 a bare array is invalid-response
-R34 a malformed request is not captured, so askSystemOne rejects instead of returning a Result [must go red: U27]: VERIFIED (1 red)
+R34 an unserializable state is not captured, so askSystemOne rejects instead of returning a Result [must go red: U27]: VERIFIED (2 red)
+    a JavaScript caller’s malformed input is a classified Result, never a throw › U28 measureSystemOneInput fails invalid-request without quoting the input
     the input bound › U27 malformed input is invalid-request, resolved, with no request made
 R35 an APIError's body-derived message reaches the failure message [must go red: U23]: VERIFIED (2 red)
     askSystemOne › failure classification › U11 the failure message carries the status and the request id
@@ -365,16 +385,40 @@ R39c a rejected sum quotes the received value [must go red: U16i]: VERIFIED (1 r
     askSystemOne › response validation › U16i each distribution must sum to 1 within 1e-3, at both boundaries, without quoting the sum
 R40 no rounding allowance on the sum tolerance [must go red: U16i]: VERIFIED (1 red)
     askSystemOne › response validation › U16i each distribution must sum to 1 within 1e-3, at both boundaries, without quoting the sum
+R41 createSystemOneClient reads its parameters unconverted [must go red: U28]: VERIFIED (1 red)
+    a JavaScript caller’s malformed input is a classified Result, never a throw › U28 createSystemOneClient converts its parameters before reading any field
+R42 the questions are not checked before the input limit, so 'unchecked' mode sends a malformed question [must go red: U27b]: VERIFIED (2 red)
+    a JavaScript caller’s malformed input is a classified Result, never a throw › U27b a malformed question is invalid-request in unchecked mode too, with nothing sent
+    a JavaScript caller’s malformed input is a classified Result, never a throw › U29 askSystemOne checks the request before reading any field, and every failure has a reason
+R43 a malformed model list is quoted [must go red: U19]: VERIFIED (2 red)
+    listSystemOneModels › U19 a malformed model entry is named by index, and nothing it carries is quoted
+    listSystemOneModels › U19 an element missing name is invalid-response
+R44 a base URL with whitespace is accepted [must go red: U24]: VERIFIED (1 red)
+    createSystemOneClient › U24 rejects a relative or non-http(s) baseUrl and a blank model; accepts an empty apiKey
+R45 askSystemOne reads its request unchecked [must go red: U29]: VERIFIED (2 red)
+    a JavaScript caller’s malformed input is a classified Result, never a throw › U27b a malformed question is invalid-request in unchecked mode too, with nothing sent
+    a JavaScript caller’s malformed input is a classified Result, never a throw › U29 askSystemOne checks the request before reading any field, and every failure has a reason
+R46 measureSystemOneInput measures questions of the wrong shape [must go red: U28]: VERIFIED (2 red)
+    a JavaScript caller’s malformed input is a classified Result, never a throw › U28 measureSystemOneInput fails invalid-request without quoting the input
+    the input bound › U27 malformed input is invalid-request, resolved, with no request made
 H1 an unknown option is accepted [must go red: S1]: VERIFIED (1 red)
     S1 an unknown or repeated option is refused before any output, naming the flag but not its value
 H2 a noul's criteria are not checked [must go red: S2]: VERIFIED (1 red)
-    S2 --check validates a noul's criteria
+    S2 --check validates a noul's criteria as the SDK and askSystemOne accept them
 H3 the unknown-model probe records no status [must go red: S3]: VERIFIED (1 red)
     S3 the probe records how an unknown model is refused, and nothing the server sent
 H4 a model-listing failure does not fail the probe [must go red: S4]: VERIFIED (1 red)
     S4 a model-listing failure fails the probe; when both fail, the ask is reported
+H5 a URL with whitespace is accepted [must go red: S5]: VERIFIED (1 red)
+    S5 a base URL with whitespace is refused, as the client refuses it
+H6 --check may be given twice [must go red: S6]: VERIFIED (1 red)
+    S6 --check given twice is refused
+H7 questions given as a list are accepted [must go red: S7]: VERIFIED (1 red)
+    S7 questions given as a list are refused
+H8 a noul criterion must be text [must go red: S2]: VERIFIED (1 red)
+    S2 --check validates a noul's criteria as the SDK and askSystemOne accept them
 
-47 rows; 0 not VERIFIED
+57 rows; 0 not VERIFIED
 ```
 
 ## `code-reviewer` findings and disposition
@@ -581,6 +625,114 @@ exit 2
 
 `parity` against two endpoints whose listing returns 500 exited **2** with `refused: "a probe failed:
 refused, not a parity result"`, both probes `listSystemOneModels/server`.
+
+## Copilot round 3 on fgv#721 (against `502b2067`) and disposition
+
+Three threads and five summary findings, all reproduced by the orchestrator. All eight are fixed,
+except the part of item 1 that would have reversed a plan decision, described under item 1.
+
+**Library**
+
+1. **Malformed public input threw** (thread r4210798244).
+   - Repros: `createSystemOneClient({ baseUrl, model: 5 })` and `createSystemOneClient(undefined)`.
+   - **Fixed** (deviation 22): each entry point converts its input first. The repros now return
+     `invalid-request: invalid [model] in the client parameters` and `invalid-request:
+     createSystemOneClient takes { baseUrl, model, apiKey, timeoutMs?, retry?, logger?, fetch? }`.
+
+   **Entry-point sweep:**
+
+   | export | malformed input from a JS caller | now |
+   |---|---|---|
+   | `createSystemOneClient` | `undefined`, `null`, a number, an array, a non-string `baseUrl` / `model` / `apiKey`, a non-number `timeoutMs`, a non-object `retry`, a logger without methods, a non-function `fetch` | `checkClientParams` first: `invalid-request`, naming the fields. U28; **R41** |
+   | `askSystemOne` | request `undefined` / `null` / a string, a non-`EntryType` or missing state, questions missing or a list, a non-`AbortSignal` signal, no `inputLimit`, any malformed question; a forged client (`undefined`, `null`, a number, `{}`) | `checkRequest` before any field is read; the client through the `WeakMap` lookup (no throw for any key). Resolved `invalid-request`, nothing sent. U29, U27b; **R45**, **R42** |
+   | `listSystemOneModels` | a forged client (`undefined`, `null`, a number, `{}`) | `invalid-request: client was not created by createSystemOneClient`. U28 |
+   | `measureSystemOneInput` | questions `undefined` or a list, any malformed question, an unserializable state | `checkQuestions`, then the measure in `captureResult` with a fixed message. U28, U27; **R46**, **R34** |
+   | `noul`, `choice`, `score` | wrong-shaped criteria | **Not changed.** These are the SDK's own builders, re-exported by identity. Plan § 3.1 decided "identity, not wrappers", and U25 asserts it. A `Result`-returning builder could not be used inline in a `questions` literal, which is what the builders are for. The SDK throws its `TypeSafeError` synchronously for a `choice` given a list or a `score` given a map. A JS caller that hands plain question objects to `askSystemOne` gets `invalid-request` instead. **This is the one part of the sweep not done as asked; it needs your decision.** |
+   | `allSystemOneFailureReasons` | — | a constant; takes no input |
+   | types | — | no runtime surface |
+
+2. **A malformed question was unclassified in `'unchecked'` mode** (thread r4210798344).
+   - Before: `detail: undefined`. The check in `validate.ts` threw on the response, and the
+     rejection lost the reason.
+   - **Fixed:** the request gate checks every question before the limit is read. U27b runs seven
+     malformed questions in both modes and asserts `invalid-request`, the fixed message and zero
+     requests. **R42** points at the request gate's question check.
+
+   **Every `fail` / `failWithDetail` / `captureResult` that reaches the public surface:**
+   - **`client.ts`:**
+     - `checkBaseUrl`: two fixed messages.
+     - `clientFrom`: blank model, fixed.
+     - The SDK constructor in `captureResult`: the SDK's own message about the caller's options,
+       prefixed `invalid-request`.
+     - `bindingFor`: fixed.
+     - `startCall`'s `captureResult`: the SDK's synchronous question check, which names question
+       ids and counts; `withFailureDetail('invalid-request')`.
+     - The pending call's rejection: `classifyError`, with a detail always set.
+     - `answerFrom`: `withFailureDetail('invalid-response')`.
+     - `listSystemOneModels`: `describeModelList`; the SDK's fixed unwrap text through
+       `classifyError`; `classifyError` on the HTTP error.
+   - **`measure.ts`:**
+     - The `inputLimit` shape: fixed.
+     - `maxChars`: quotes the caller's own number.
+     - The measure: fixed.
+     - The over-limit message: ids, the part and counts.
+   - **`shapes.ts`:** every gate's message is fixed, naming fields or question ids.
+   - **`validate.ts`:**
+     - The semantic checks: ids, request labels and levels, bounds and counts.
+     - `describeUnconvertible`, `describeAnswerSet`, `describeModelList`: fields, request ids,
+       indices and counts.
+   - **Reasons:** every `askSystemOne` step carries a detail. Every message from the three
+     `Result`-returning entry points starts with its reason (deviation 23).
+   - **What remains:** a throw inside the response validation itself. Its inputs are now gated
+     (the questions on the way in, the body by converters), so none is expected. It would surface
+     as a failure without a detail, and no test can reach it.
+
+3. **A model-list failure echoed server data.**
+   - Repro: `Field name not found in: {"secret":"SERVER-SECRET-VALUE"}`.
+   - **Fixed:** the message is now `the model list is not [{ name, description, release_date }]:
+     entries [i, …] are malformed`. U19 plants `SERVER-SECRET-VALUE` in two entries and asserts it
+     appears in no message. **R43** restores the quoting.
+
+   **Sweep of failures that can carry received data:**
+   - The model list: fixed here.
+   - Non-2xx bodies in `classify.ts`: already only the error class (`err.name`), since the
+     gate-time review.
+   - 2xx bodies (`validate.ts`): fixed descriptions since the gate-time review and round 1.
+   - The SDK's own texts that reach a message:
+     - the models-unwrap message (fixed text);
+     - `Request timed out after Nms`;
+     - the abort text (fixed);
+     - `Connection error: <fetch's own message>`: the platform's or the caller's `fetch`, not the
+       server.
+
+   None of these quote a body.
+4. **Whitespace in the base URL.**
+   - Repro: `' http://cfg.test '` was accepted and requests went to `" http://cfg.test /v1/models"`.
+   - **Fixed** by refusing any whitespace in the raw string, consistent with the bare `?` and `#`.
+   - U24 covers a leading, a trailing, a tab and a newline case. **R44** removes the check.
+
+**Harness (`perf/systemOneLive.js`)**
+
+5. **`absoluteUrl` matches the client:** whitespace is refused. Self-test **S5** (probe and parity
+   `--check`); row **H5**.
+6. **A `noul`'s criteria values are any `EntryType`** (thread r4210798437). The keys are only `true`
+   and/or `false`; each value is text, a JSON object or array, or `null`. `{}`, `{ false: null }` and
+   object or array values are accepted, matching the SDK and `askSystemOne`'s gate. Numbers and
+   booleans are refused. **S2** was updated (seven valid shapes, five invalid); row **H8**.
+7. **`--check --check` is refused** (exit 3, no output). Self-test **S6**; row **H6**.
+8. **Questions given as a list are refused** by the question-file check. Self-test **S7**; row **H7**.
+
+**Repros, run by hand against the built `lib/` after the fixes:**
+
+```
+createSystemOneClient({ baseUrl, model: 5 }) -> {"message":"invalid-request: invalid [model] in the client parameters"}
+createSystemOneClient(undefined) -> {"message":"invalid-request: createSystemOneClient takes { baseUrl, model, apiKey, timeoutMs?, retry?, logger?, fetch? }"}
+createSystemOneClient({ baseUrl: ' http://cfg.test ' }) -> {"message":"invalid-request: baseUrl must be an absolute http(s) URL with no whitespace, query, fragment or credentials"}
+askSystemOne unchecked, choice criteria null -> {"message":"invalid-request: [q] are not well-formed noul, choice or score questions","detail":"invalid-request"}
+askSystemOne(c, undefined) -> {"message":"invalid-request: the request must be an object { state, questions, inputLimit, signal? }","detail":"invalid-request"}
+listSystemOneModels(undefined) -> {"message":"invalid-request: client was not created by createSystemOneClient"}
+measureSystemOneInput(s, undefined) -> {"message":"invalid-request: questions must be an object of named questions"}
+```
 
 ## Gates
 

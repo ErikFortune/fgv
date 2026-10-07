@@ -60,3 +60,16 @@ None blocking.
   fails the probe, the ask's failure winning when both fail.
 - New `perf/systemOneLive.selftest.js` (S1–S4, stub servers); the matrix runs it for harness rows
   H1–H4. Revert matrix 47/47 VERIFIED.
+
+## Copilot round 3 on fgv#721 (against `502b2067`)
+
+- Three threads plus five summary findings, all reproduced first. Library: every exported entry
+  point converts its parameters before reading a field (new `src/shapes.ts`), so malformed JS input
+  is an `invalid-request` Result rather than a throw; a malformed question is `invalid-request` in
+  `'unchecked'` mode too, with nothing sent; a model-list failure describes the expected shape and
+  the malformed entry indices, never the received data; a base URL with whitespace is refused.
+  Harness: `absoluteUrl` refuses whitespace as the client does; noul criteria accept `true`/`false`
+  keys with any entry value; `--check` twice is refused; `questions` as a list is refused.
+- The `noul`/`choice`/`score` factories are left as identity constructors (plan § 3.1, U25); making
+  them Result-returning is an orchestrator decision — recorded in `result.md`.
+- Revert matrix 57/57 VERIFIED (R41–R46, H5–H8 new; R1, R34, R38, R42 re-pointed). Self-test 7/7.
