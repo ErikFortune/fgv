@@ -208,7 +208,7 @@ const MUTATIONS = [
     'R23 no sum check',
     ['U16i'],
     VALIDATE,
-    'if (Math.abs(sum - 1) > sumTolerance) {',
+    'if (Math.abs(sum - 1) > sumTolerance + sumRoundingAllowance) {',
     'if (Number.isNaN(sum)) {'
   ),
   m(
@@ -325,6 +325,41 @@ const MUTATIONS = [
     VALIDATE,
     "fail(`${id}: the choice is not one of [${labels.join(', ')}]`)",
     "fail(`${id}: the choice '${choice.choice}' is not one of [${labels.join(', ')}]`)"
+  ),
+  m(
+    'R38 a rejected baseUrl is echoed, credentials included',
+    ['U24'],
+    CLIENT,
+    "const invalid = 'baseUrl must be an absolute http(s) URL with no query, fragment or credentials';",
+    "const invalid = `baseUrl must be an absolute http(s) URL with no query, fragment or credentials, got '${baseUrl}'`;"
+  ),
+  m(
+    'R39 a rejected noul quotes the received value',
+    ['U16g'],
+    VALIDATE,
+    'fail(`${id}: noul is not a number in [0, 1]`)',
+    'fail(`${id}: noul ${noul.noul} is not a number in [0, 1]`)'
+  ),
+  m(
+    'R39b a rejected score quotes the received value',
+    ['U16f'],
+    VALIDATE,
+    'fail(`${id}: score is not in [0, ${top}]`)',
+    'fail(`${id}: score ${score.score} is not in [0, ${top}]`)'
+  ),
+  m(
+    'R39c a rejected sum quotes the received value',
+    ['U16i'],
+    VALIDATE,
+    'fail(`${id}: probabilities do not sum to 1 within ${sumTolerance}`)',
+    'fail(`${id}: probabilities sum to ${sum}, not 1 within ${sumTolerance}`)'
+  ),
+  m(
+    'R40 no rounding allowance on the sum tolerance',
+    ['U16i'],
+    VALIDATE,
+    'if (Math.abs(sum - 1) > sumTolerance + sumRoundingAllowance) {',
+    'if (Math.abs(sum - 1) > sumTolerance) {'
   )
 ];
 
@@ -456,14 +491,27 @@ function main() {
           text.replace(edit.from, () => edit.to)
         );
       }
-      for (const [file, text] of mutated) {
-        fs.writeFileSync(file, text);
-      }
+      // Every write is inside the protected region, so a failure part-way through a set of writes
+      // still restores every file, including those already written. Each original was read before
+      // any write, and each restore is attempted even if another fails.
+      const originals = new Map(files.map((edit) => [edit.file, edit.source]));
       try {
+        for (const [file, text] of mutated) {
+          fs.writeFileSync(file, text);
+        }
         result = classify(runSuite(args.pkg), row.mustGoRed);
       } finally {
-        for (const edit of files) {
-          fs.writeFileSync(edit.file, edit.source);
+        const unrestored = [];
+        for (const [file, source] of originals) {
+          try {
+            fs.writeFileSync(file, source);
+          } catch (err) {
+            unrestored.push(`${file}: ${err.message}`);
+          }
+        }
+        if (unrestored.length > 0) {
+          // Stop the run: every later row would be measured against a mutant.
+          throw new Error(`could not restore, the copy is still mutated:\n  ${unrestored.join('\n  ')}`);
         }
       }
     }

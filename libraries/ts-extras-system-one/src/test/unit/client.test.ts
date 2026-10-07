@@ -63,6 +63,18 @@ describe('createSystemOneClient', () => {
     expect(createSystemOneClient({ ...base, baseUrl: 'http://cfg.test/?x=1' })).toFailWith(/baseUrl/);
     expect(createSystemOneClient({ ...base, baseUrl: 'http://cfg.test/#frag' })).toFailWith(/baseUrl/);
     expect(createSystemOneClient({ ...base, baseUrl: 'http://user:pw@cfg.test' })).toFailWith(/baseUrl/);
+    // a rejected URL is never echoed: not its credentials, not a token in its query
+    for (const secretBearing of [
+      'https://user:hunter2-secret@cfg.test',
+      'https://cfg.test/?token=hunter2-secret',
+      'https://cfg.test/#hunter2-secret'
+    ]) {
+      const refused = createSystemOneClient({ ...base, baseUrl: secretBearing });
+      expect(refused).toFailWith(
+        /baseUrl must be an absolute http\(s\) URL with no query, fragment or credentials/
+      );
+      expect(refused.message).not.toContain('hunter2');
+    }
     expect(createSystemOneClient({ ...base, baseUrl: 'http://user@cfg.test' })).toFailWith(/baseUrl/);
     // a bare `?` or `#` parses to an empty search or hash, but the SDK receives the raw string
     expect(createSystemOneClient({ ...base, baseUrl: 'http://cfg.test/?' })).toFailWith(/baseUrl/);

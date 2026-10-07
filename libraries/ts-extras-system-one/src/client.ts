@@ -70,7 +70,8 @@ const bindings: WeakMap<ISystemOneClient, IClientBinding> = new WeakMap();
  * as given, and a bare `?` or `#` parses to an empty `search` or `hash`.
  */
 function checkBaseUrl(baseUrl: string): Result<string> {
-  const invalid = `baseUrl must be an absolute http(s) URL with no query, fragment or credentials, got '${baseUrl}'`;
+  // The value is never echoed: a rejected URL can carry credentials, a token in its query, or both.
+  const invalid = 'baseUrl must be an absolute http(s) URL with no query, fragment or credentials';
   return captureResult(() => new URL(baseUrl))
     .onFailure(() => fail(invalid))
     .onSuccess((url) =>

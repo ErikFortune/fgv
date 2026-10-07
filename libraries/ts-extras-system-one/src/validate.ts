@@ -45,6 +45,13 @@ import type { ISystemOneUsage, SystemOneAnswerResult } from './types';
 /** How far a distribution's sum may be from 1. */
 const sumTolerance: number = 1e-3;
 
+/**
+ * Binary rounding in the sum and in `sum - 1` puts a distribution exactly at the tolerance either
+ * side of it (`0.499 + 0.5` misses 1 by `0.0010000000000000009`), so the comparison allows a few
+ * units of rounding error, keeping "within 1e-3" true at both boundaries.
+ */
+const sumRoundingAllowance: number = Number.EPSILON * 8;
+
 type ProjectedChoice = Omit<ChoiceResponse, 'confidence'>;
 type ProjectedScore = Omit<ScoreResponse, 'confidence'>;
 type ProjectedAnswer = NoulResponse | ProjectedChoice | ProjectedScore;
@@ -162,16 +169,14 @@ function checkDistribution(
     return fail(`${id}: probabilities for [${bad.join(', ')}] are not numbers in [0, 1]`);
   }
   const sum = keys.reduce((total, key) => total + distribution[key], 0);
-  if (Math.abs(sum - 1) > sumTolerance) {
-    return fail(`${id}: probabilities sum to ${sum}, not 1 within ${sumTolerance}`);
+  if (Math.abs(sum - 1) > sumTolerance + sumRoundingAllowance) {
+    return fail(`${id}: probabilities do not sum to 1 within ${sumTolerance}`);
   }
   return succeed(true);
 }
 
 function checkNoul(id: string, noul: NoulResponse): Result<ProjectedAnswer> {
-  return isProbability(noul.noul)
-    ? succeed(noul)
-    : fail(`${id}: noul ${noul.noul} is not a number in [0, 1]`);
+  return isProbability(noul.noul) ? succeed(noul) : fail(`${id}: noul is not a number in [0, 1]`);
 }
 
 function checkChoice(id: string, question: ChoiceQuestion, choice: ProjectedChoice): Result<ProjectedAnswer> {
@@ -209,7 +214,7 @@ function checkScore(id: string, question: ScoreQuestion, score: IReceivedScore):
             legend: Object.fromEntries(question.criteria.map((level, index) => [String(index), level])),
             probabilities: score.probabilities
           })
-        : fail(`${id}: score ${score.score} is not in [0, ${top}]`)
+        : fail(`${id}: score is not in [0, ${top}]`)
     );
 }
 

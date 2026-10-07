@@ -287,20 +287,20 @@ describe('askSystemOne', () => {
       ).toFailWith(/^invalid-response.*a: the choice is not one of \[x, y\]/);
     });
 
-    test('U16f the score must be within [0, n-1]', async () => {
+    test('U16f the score must be within [0, n-1], and the failure does not quote it', async () => {
       const probabilities = byIndex([0, 0, 1]);
-      expect(
-        await validate(
-          { s: score3 },
-          body({ s: { type: 'score', score: 3, legend: legend3, probabilities } })
-        )
-      ).toFailWith(/^invalid-response.*score 3 is not in \[0, 2\]/);
-      expect(
-        await validate(
-          { s: score3 },
-          body({ s: { type: 'score', score: -0.1, legend: legend3, probabilities } })
-        )
-      ).toFailWith(/score -0.1 is not in \[0, 2\]/);
+      const over = await validate(
+        { s: score3 },
+        body({ s: { type: 'score', score: 2.75, legend: legend3, probabilities } })
+      );
+      expect(over).toFailWith(/^invalid-response.*s: score is not in \[0, 2\]/);
+      expect(over.message).not.toContain('2.75');
+      const under = await validate(
+        { s: score3 },
+        body({ s: { type: 'score', score: -0.125, legend: legend3, probabilities } })
+      );
+      expect(under).toFailWith(/s: score is not in \[0, 2\]/);
+      expect(under.message).not.toContain('0.125');
       expect(
         await validate(
           { s: score3 },
@@ -309,14 +309,14 @@ describe('askSystemOne', () => {
       ).toSucceed();
     });
 
-    test('U16g noul must be within [0, 1]', async () => {
+    test('U16g noul must be within [0, 1], and the failure does not quote it', async () => {
       const q = { n: noul('q') };
-      expect(await validate(q, body({ n: { type: 'noul', noul: 1.5 } }))).toFailWith(
-        /^invalid-response.*noul 1.5 is not a number in \[0, 1\]/
-      );
-      expect(await validate(q, body({ n: { type: 'noul', noul: -0.5 } }))).toFailWith(
-        /noul -0.5 is not a number/
-      );
+      const over = await validate(q, body({ n: { type: 'noul', noul: 1.375 } }));
+      expect(over).toFailWith(/^invalid-response.*n: noul is not a number in \[0, 1\]/);
+      expect(over.message).not.toContain('1.375');
+      const under = await validate(q, body({ n: { type: 'noul', noul: -0.625 } }));
+      expect(under).toFailWith(/n: noul is not a number/);
+      expect(under.message).not.toContain('0.625');
       expect(await validate(q, body({ n: { type: 'noul', noul: 1 } }))).toSucceed();
     });
 
@@ -336,19 +336,21 @@ describe('askSystemOne', () => {
       ).toBe('invalid-response');
     });
 
-    test('U16i each distribution must sum to 1 within 1e-3', async () => {
-      expect(
-        await validate(
-          { a: choiceXY },
-          body({ a: { type: 'choice', choice: 'x', probabilities: { x: 0.5, y: 0.497 } } })
-        )
-      ).toFailWith(/^invalid-response.*probabilities sum to 0.997/);
-      expect(
-        await validate(
-          { a: choiceXY },
-          body({ a: { type: 'choice', choice: 'x', probabilities: { x: 0.5, y: 0.4995 } } })
-        )
-      ).toSucceed();
+    test('U16i each distribution must sum to 1 within 1e-3, at both boundaries, without quoting the sum', async () => {
+      const sums = async (x: number, y: number): ReturnType<typeof validate> =>
+        validate({ a: choiceXY }, body({ a: { type: 'choice', choice: 'x', probabilities: { x, y } } }));
+      const short = await sums(0.5, 0.4567);
+      expect(short).toFailWith(/^invalid-response.*a: probabilities do not sum to 1 within 0.001/);
+      expect(short.message).not.toContain('0.9567');
+      expect(short.message).not.toContain('0.4567');
+      expect(await sums(0.5, 0.4995)).toSucceed();
+      // the documented boundaries, each 1e-3 from 1: 0.499 + 0.5 misses by 0.0010000000000000009 in
+      // binary, and 0.501 + 0.5 by 0.0009999999999998899
+      expect(await sums(0.499, 0.5)).toSucceed();
+      expect(await sums(0.501, 0.5)).toSucceed();
+      // just outside each boundary
+      expect(await sums(0.4989, 0.5)).toFailWith(/do not sum to 1 within 0.001/);
+      expect(await sums(0.5011, 0.5)).toFailWith(/do not sum to 1 within 0.001/);
     });
 
     test('U16j score probability keys and legend keys must be exactly 0..n-1', async () => {

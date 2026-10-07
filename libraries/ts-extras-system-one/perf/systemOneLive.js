@@ -78,17 +78,57 @@ function fraction(name, value) {
   return n;
 }
 
+/**
+ * A URL with its userinfo, query and fragment removed, for messages: a rejected value may carry
+ * credentials or a token, and is never echoed whole.
+ */
+function redactedUrl(value) {
+  try {
+    const url = new URL(value);
+    return `'${url.protocol}//${url.host}${url.pathname}' (userinfo, query and fragment removed)`;
+  } catch {
+    return 'a value that is not a URL';
+  }
+}
+
+/**
+ * Applies `createSystemOneClient`'s constraints — an absolute `http:` or `https:` URL with no
+ * query, fragment or credentials — and returns the URL a live run would use: the SDK strips
+ * trailing slashes, so they are stripped here too.
+ */
 function absoluteUrl(name, value) {
+  if (value === undefined) {
+    usage(`--${name} is required`);
+  }
   let url;
   try {
     url = new URL(value);
   } catch {
-    usage(`--${name} must be an absolute http(s) URL, got '${value}'`);
+    usage(`--${name} must be an absolute http(s) URL; got ${redactedUrl(value)}`);
   }
-  if (url.protocol !== 'http:' && url.protocol !== 'https:') {
-    usage(`--${name} must be an absolute http(s) URL, got '${value}'`);
+  const valid =
+    (url.protocol === 'http:' || url.protocol === 'https:') &&
+    !value.includes('?') &&
+    !value.includes('#') &&
+    url.username === '' &&
+    url.password === '';
+  if (!valid) {
+    usage(
+      `--${name} must be an absolute http(s) URL with no query, fragment or credentials; got ${redactedUrl(
+        value
+      )}`
+    );
   }
-  return value;
+  return value.replace(/\/+$/, '');
+}
+
+/** A model id as the client sends it: trimmed, and required. */
+function modelId(name, value) {
+  const model = (value ?? '').trim();
+  if (model === '') {
+    usage(`--${name} needs a model id`);
+  }
+  return model;
 }
 
 function endpoint(name, value, keyEnv) {
@@ -97,9 +137,13 @@ function endpoint(name, value, keyEnv) {
   }
   const comma = value.lastIndexOf(',');
   if (comma <= 0 || comma === value.length - 1) {
-    usage(`--${name} must be <url,model>, got '${value}'`);
+    usage(`--${name} must be <url,model>`);
   }
-  return { url: absoluteUrl(name, value.slice(0, comma)), model: value.slice(comma + 1), keyEnv };
+  return {
+    url: absoluteUrl(name, value.slice(0, comma)),
+    model: modelId(name, value.slice(comma + 1)),
+    keyEnv
+  };
 }
 
 function keyFrom(keyEnv) {
@@ -310,11 +354,11 @@ async function parity(pkg, a, b, items, maxChars, thresholds) {
 async function main() {
   const { mode, flags } = parseArgs(process.argv.slice(2));
   if (mode === 'probe') {
-    const target = { url: absoluteUrl('url', flags.url), keyEnv: flags['key-env'] };
-    if (flags.model === undefined || flags.model.trim() === '') {
-      usage('--model is required');
-    }
-    target.model = flags.model;
+    const target = {
+      url: absoluteUrl('url', flags.url),
+      model: modelId('model', flags.model),
+      keyEnv: flags['key-env']
+    };
     const maxChars =
       flags['max-chars'] === undefined ? undefined : positiveInteger('max-chars', flags['max-chars']);
     if (flags.check) {
