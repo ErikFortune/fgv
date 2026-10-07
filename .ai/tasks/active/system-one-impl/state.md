@@ -43,3 +43,9 @@ None blocking.
   `APIError.message` carries body text, up to 200 raw characters. A second path (2xx converter
   messages and quoted received values) was found and closed in the same change.
 - Revert matrix 38/38 VERIFIED (R34-R37 new). Gates green; see `result.md`.
+
+## Copilot round 1 on fgv#721 (2026-10-07, against `78ad9b83`)
+
+- Six threads, all fixed: baseUrl echo, systemOneLive `--check` URL constraints and redaction,
+  received values in 2xx messages, sum-tolerance rounding, matrix write/restore ordering, the
+  largest-file figure. Revert matrix 43/43 VERIFIED (R38-R40 new, R23 re-pointed).

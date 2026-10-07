@@ -6,7 +6,7 @@ A new package, `@fgv/ts-extras-system-one` (`libraries/ts-extras-system-one`), s
 [`implementation-plan.md`](../../../docs/design/system-one-decisions/implementation-plan.md).
 
 - Source is in `src/`: `types.ts`, `measure.ts`, `logging.ts`, `classify.ts`, `validate.ts` and
-  `client.ts`, re-exported from `index.ts`. The largest file has about 310 lines.
+  `client.ts`, re-exported from `index.ts`. The largest is `validate.ts`, at 387 lines.
 - Exports:
   - `createSystemOneClient`, `askSystemOne`, `listSystemOneModels` and `measureSystemOneInput`;
   - the SDK's own `noul`, `choice` and `score`, plus its question, answer and `ModelCard` types,
@@ -125,6 +125,17 @@ A new package, `@fgv/ts-extras-system-one` (`libraries/ts-extras-system-one`), s
 18. **`baseUrl` refuses a raw `?` or `#`** anywhere in the string (gate-time P3-1): `http://h/?`
     parses to an empty `search`, yet the SDK appends paths to the raw string.
 
+19. **The sum tolerance allows binary rounding** (Copilot round 1): the check is
+    `|sum − 1| > 1e-3 + 8·Number.EPSILON`. Without the allowance, `0.499 + 0.5` (which misses 1 by
+    `0.0010000000000000009` in binary) was rejected while the equal upper boundary `0.501 + 0.5` was
+    accepted. Plan § 3.6's "within 1e-3" now holds at both boundaries; `0.4989 + 0.5` and
+    `0.5011 + 0.5` still fail.
+20. **No 2xx failure quotes a received number either** (Copilot round 1): the sum, the `noul` value
+    and the `score` value are no longer in their messages, which name the question id and the
+    configured bound. Deviation 16 now holds without exception.
+21. **A rejected `baseUrl` is never echoed** (Copilot round 1): it can carry credentials or a token in
+    its query, so the message names the constraint only.
+
 ## The orchestrator's beliefs
 
 1. **Right.** `rush add -p @typesafe-ai/sdk@~0.6.0` resolved 0.6.0. The lockfile diff is only the new
@@ -164,10 +175,10 @@ close waits for a recorded L1.
 
 ## Revert matrix
 
-Run with `node perf/mutationMatrix.js --pkg <copy>` against a real copy of the package at `e8265a70`'s
-source (no links: its `src/client.ts` had its own inode; only `node_modules` was a symlink to the
-package's). It took 4 m 17 s and exited 0. Rows R34–R37 were added at the gate-time review; R8 and R19
-were re-pointed after the refactor.
+Run with `node perf/mutationMatrix.js --pkg <copy>` against a real copy of the package at `2e8555e2`
+(no links: only `node_modules` was a symlink to the package's). It took 4 m 53 s and exited 0.
+Rows R34–R37 were added at the gate-time review and R38–R40 (with R39b, R39c) at Copilot round 1;
+R8, R19 and R23 were re-pointed after refactors.
 
 ```
 R1 the bound runs after the SDK call [must go red: U1]: VERIFIED (18 red)
@@ -233,10 +244,10 @@ R8 'unchecked' is treated as maxChars: 0 [must go red: U7]: VERIFIED (35 red)
     askSystemOne › response validation › U16c an answer whose type is not its question's is invalid-response
     askSystemOne › response validation › U16d choice probability keys must equal the criteria keys
     askSystemOne › response validation › U16e the choice must be one of the labels
-    askSystemOne › response validation › U16f the score must be within [0, n-1]
-    askSystemOne › response validation › U16g noul must be within [0, 1]
+    askSystemOne › response validation › U16f the score must be within [0, n-1], and the failure does not quote it
+    askSystemOne › response validation › U16g noul must be within [0, 1], and the failure does not quote it
     askSystemOne › response validation › U16h a non-finite value is invalid-response
-    askSystemOne › response validation › U16i each distribution must sum to 1 within 1e-3
+    askSystemOne › response validation › U16i each distribution must sum to 1 within 1e-3, at both boundaries, without quoting the sum
     askSystemOne › response validation › U16j score probability keys and legend keys must be exactly 0..n-1
     askSystemOne › response validation › U16k model must be a non-empty string and usage finite counts >= 0
     askSystemOne › response validation › U18 a score legend is the request’s rubric, whatever text the server echoed
@@ -287,13 +298,13 @@ R19 the choice need not be a label [must go red: U16e]: VERIFIED (2 red)
     askSystemOne › response validation › U16e the choice must be one of the labels
     createSystemOneClient › U23 a server that echoes the state puts it in no failure message and no log
 R20 the score may reach n [must go red: U16f]: VERIFIED (1 red)
-    askSystemOne › response validation › U16f the score must be within [0, n-1]
+    askSystemOne › response validation › U16f the score must be within [0, n-1], and the failure does not quote it
 R21 no upper bound on a probability [must go red: U16g]: VERIFIED (1 red)
-    askSystemOne › response validation › U16g noul must be within [0, 1]
+    askSystemOne › response validation › U16g noul must be within [0, 1], and the failure does not quote it
 R22 non-finite values accepted (usage counts; a probability’s finiteness is its [0, 1] range, which R21 covers) [must go red: U16h]: VERIFIED (1 red)
     askSystemOne › response validation › U16h a non-finite value is invalid-response
 R23 no sum check [must go red: U16i]: VERIFIED (1 red)
-    askSystemOne › response validation › U16i each distribution must sum to 1 within 1e-3
+    askSystemOne › response validation › U16i each distribution must sum to 1 within 1e-3, at both boundaries, without quoting the sum
 R24 a non-object body is not converted [must go red: U17]: VERIFIED (8 red)
     askSystemOne › failure classification › U11 every classification row has its own reason
     askSystemOne › failure classification › U17 a 2xx body that is not JSON, or is empty, is invalid-response
@@ -340,8 +351,18 @@ R36 a 2xx body that is not a response is quoted by the converter's message [must
 R37 a rejected choice is quoted [must go red: U23]: VERIFIED (2 red)
     askSystemOne › response validation › U16e the choice must be one of the labels
     createSystemOneClient › U23 a server that echoes the state puts it in no failure message and no log
+R38 a rejected baseUrl is echoed, credentials included [must go red: U24]: VERIFIED (1 red)
+    createSystemOneClient › U24 rejects a relative or non-http(s) baseUrl and a blank model; accepts an empty apiKey
+R39 a rejected noul quotes the received value [must go red: U16g]: VERIFIED (1 red)
+    askSystemOne › response validation › U16g noul must be within [0, 1], and the failure does not quote it
+R39b a rejected score quotes the received value [must go red: U16f]: VERIFIED (1 red)
+    askSystemOne › response validation › U16f the score must be within [0, n-1], and the failure does not quote it
+R39c a rejected sum quotes the received value [must go red: U16i]: VERIFIED (1 red)
+    askSystemOne › response validation › U16i each distribution must sum to 1 within 1e-3, at both boundaries, without quoting the sum
+R40 no rounding allowance on the sum tolerance [must go red: U16i]: VERIFIED (1 red)
+    askSystemOne › response validation › U16i each distribution must sum to 1 within 1e-3, at both boundaries, without quoting the sum
 
-38 rows; 0 not VERIFIED
+43 rows; 0 not VERIFIED
 ```
 
 ## `code-reviewer` findings and disposition
@@ -434,6 +455,35 @@ No P1s.
   device and inode (a hard link). Each was exercised: `--pkg .`, a copy whose `src` is a symlink,
   and a `cp -al` hard-link copy each exit 2 with the reason; the usage notes say so.
 
+## Copilot round 1 on fgv#721 (against `78ad9b83`) and disposition
+
+All six threads were verified, and all six are fixed.
+
+1. **`checkBaseUrl` echoed the rejected URL**, credentials included. **Fixed** (deviation 21); U24
+   refuses `https://user:hunter2-secret@…`, a `?token=` and a `#` value, and asserts `hunter2`
+   appears in none of the messages. Revert row **R38** is VERIFIED by U24.
+2. **`perf/systemOneLive.js --check` accepted URLs the client rejects, and printed them.** **Fixed:**
+   `absoluteUrl` applies the client's constraints (absolute `http:`/`https:`, no raw `?` or `#`, no
+   userinfo); a rejected value is printed with userinfo, query and fragment removed (an unparseable
+   one is not printed at all); the URL is normalized as the SDK does (trailing slashes stripped) and
+   the model id trimmed, so `--check` reports exactly what a live run would send. `endpoint` no longer
+   echoes `<url,model>` either. Exercised by hand (the script is outside the jest suite): credential,
+   query, fragment, bare `?`, `ftp:` and unparseable values each exit 3 with a redacted message, and
+   `http://127.0.0.1:8700/` with model ` clm-latest ` reports `http://127.0.0.1:8700` and `clm-latest`.
+3. **2xx failures quoted the received sum, `noul` and `score`.** **Fixed** (deviation 20). A sweep of
+   every `${…}` in `validate.ts` found no other received value: the remaining interpolations are
+   question ids, request labels and levels, configured bounds, counts, and the answer `type`, which
+   the discriminated converter has already confined to `noul` / `choice` / `score`. U16f, U16g and
+   U16i assert the received value is absent; rows **R39**, **R39b** and **R39c** are VERIFIED by them.
+4. **The sum tolerance was asymmetric under binary rounding.** **Fixed** (deviation 19); U16i asserts
+   both boundaries pass and a value just outside each fails. Row **R40** (allowance removed) is
+   VERIFIED by U16i.
+5. **The matrix wrote its mutations before the `try`/`finally`.** **Fixed:** every write is inside the
+   protected region; the `finally` restores every file from its original (all read before any write),
+   attempts each restore even if another fails, and stops the run if any copy is left mutated.
+6. **`result.md` said the largest file has about 310 lines.** **Fixed:** `validate.ts`, 387 lines,
+   measured after items 3 and 4.
+
 ## Gates
 
 Re-run on 2026-10-04 after the gate-time fixes, at `0584f819` (source as of the matrix commit plus
@@ -456,7 +506,7 @@ README/CAPABILITIES wording), from the repo root unless noted.
 **Capability and bundler scripts:** `verify-capability-docs.mjs`, `generate-capability-feed.mjs
 --check` and `verify-bundler-resolution.mjs` (21 checked, 0 failed) all exit 0.
 
-**Revert matrix:** 38/38 VERIFIED (above).
+**Revert matrix:** 43/43 VERIFIED (above).
 
 **Not run:** a repo-wide `rush test`, for the reason given before: no other package's source or
 accepted behaviour changed.
