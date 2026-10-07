@@ -55,4 +55,4 @@ keywords:
   - abort reported as timeout
 relatedStreams:
   - { id: personality-intake, relationship: 'triaged the four asks (followups entries 16, 9, 8, 10)' }
-sourceHash: sha256:9595e136020e18a5 # over brief.md + result.md + state.md
+sourceHash: sha256:5263ec6b8d635e9d # over brief.md + result.md + state.md

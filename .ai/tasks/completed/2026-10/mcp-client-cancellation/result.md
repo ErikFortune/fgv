@@ -378,6 +378,11 @@ orchestrator verified each one against `7b55abad`.
 - **Stale entries here:** the step-1 row now gives `createCustomTransport`'s `Result` return. The
   check-then-act rows now record the non-awaited post-handshake close and the async `onClose`
   containment.
+- **Gates (on `6fade118`):**
+  - `ts-extras-mcp` fixlint, build, lint, test: 133 tests, 100 % on all metrics, warnings 0.
+  - Repo-wide `install-run-rush.js test`: `SUCCESS: 36 operations` in 9 m 45 s, errors 0,
+    warnings 1 (the symlink notice), log not NUL-padded.
+  - `change --verify` and the feed `--check` pass.
 
 ## What this pre-empts for the other MCP asks
 
