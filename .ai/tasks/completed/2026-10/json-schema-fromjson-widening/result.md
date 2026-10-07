@@ -433,6 +433,17 @@ Recorded so they are not rediscovered as surprises:
 
 ## Gates
 
+- **After Copilot round 3, repo-wide `node common/scripts/install-run-rush.js test` on `b0680bbf`, from
+  the repo root:** `SUCCESS: 36 operations`, `exit 0`, 10m27s.
+  - 0 error lines.
+  - 36 projects completed, none from cache.
+  - No NUL padding.
+  - The only `warning` line is the Git-tracked-symlink notice.
+  - `ts-json-base`: 1341 passed, coverage 100%. `ts-extras-mcp`: 134 passed, coverage 100%. Both had
+    0 warnings in build, lint and test.
+  - `change --verify` passes.
+  - `verify-capability-docs`: 0 failed.
+
 - **After Copilot round 2, repo-wide `node common/scripts/install-run-rush.js test` on `5e5418e1`
   (with `integration/asks`, including #722, merged in; `rush install` run first), from the repo
   root:** `SUCCESS: 36 operations`, `exit 0`, 10m40s.
