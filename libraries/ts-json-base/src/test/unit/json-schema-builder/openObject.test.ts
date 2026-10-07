@@ -83,10 +83,15 @@ describe('open objects', () => {
       });
     });
 
-    test('schema-valued additionalProperties is still refused', () => {
-      expect(JsonSchema.fromJson({ type: 'object', additionalProperties: { type: 'string' } })).toFailWith(
-        /schema-valued 'additionalProperties' is not supported/i
-      );
+    test('schema-valued additionalProperties is a record, not an open object', () => {
+      // Its undeclared values must match the schema, so a non-string is refused where an open
+      // object would carry it through.
+      expect(
+        JsonSchema.fromJson({ type: 'object', additionalProperties: { type: 'string' } })
+      ).toSucceedAndSatisfy((schema) => {
+        expect(schema.validate({ a: 'x' })).toSucceedWith({ a: 'x' });
+        expect(schema.validate({ a: 1 })).toFailWith(/a: /);
+      });
     });
   });
 

@@ -28,8 +28,10 @@
  * projection casts, and `adaptMcpTools`' `JsonSchema.fromJson` gate. It is the class of gap that
  * 100%-line-coverage of a mocked seam cannot catch (e.g. a projection-shape mismatch in `sdk.ts`).
  *
- * The fixture server advertises a MIX of tools: two adaptable, and one for each JSON Schema feature
- * `JsonSchema.fromJson` rejects ($ref, oneOf, anyOf, pattern, union `type[]`).
+ * The fixture server advertises a MIX of tools: adaptable ones (including a pydantic-shaped one with
+ * a local `$ref` and an `anyOf [T, null]` field), and one for each JSON Schema feature
+ * `JsonSchema.fromJson` rejects (an unresolvable `$ref`, a general oneOf/anyOf union, pattern, a
+ * general union `type[]`).
  */
 
 import '@fgv/ts-utils-jest';
@@ -78,6 +80,21 @@ const ADAPTABLE_TOOLS = [
     name: 'nullable_tool',
     description: 'Takes a value that may be null.',
     inputSchema: { type: 'object', properties: { x: { type: ['string', 'null'] } } }
+  },
+  {
+    // pydantic's shapes for a nested model and an `Optional[str] = None` field: a local `$ref`
+    // into `$defs` and an `anyOf [T, null]`. Both are inlined/normalized by `fromJson`.
+    name: 'pydantic_tool',
+    description: 'Takes a nested model and an optional string.',
+    inputSchema: {
+      $defs: { Loc: { type: 'object', properties: { lat: { type: 'number' } }, required: ['lat'] } },
+      type: 'object',
+      properties: {
+        loc: { $ref: '#/$defs/Loc' },
+        lang: { anyOf: [{ type: 'string' }, { type: 'null' }], default: null }
+      },
+      required: ['loc']
+    }
   }
 ];
 
@@ -190,6 +207,7 @@ describe('@fgv/ts-extras-mcp end-to-end against a real in-memory MCP server', ()
           'oneof_tool',
           'pattern_tool',
           'ping',
+          'pydantic_tool',
           'ref_tool',
           'union_tool'
         ].sort()
@@ -220,7 +238,12 @@ describe('@fgv/ts-extras-mcp end-to-end against a real in-memory MCP server', ()
 
       expect(await adaptMcpTools(session, { logger })).toSucceedAndSatisfy((result) => {
         // (a) Only the adaptable tools are offered to the model; none of the rejected ones leak.
-        expect(result.tools.map((t) => t.config.name).sort()).toEqual(['echo', 'nullable_tool', 'ping']);
+        expect(result.tools.map((t) => t.config.name).sort()).toEqual([
+          'echo',
+          'nullable_tool',
+          'ping',
+          'pydantic_tool'
+        ]);
         const offeredNames = new Set(result.tools.map((t) => t.config.name));
         for (const t of UNADAPTABLE_TOOLS) {
           expect(offeredNames.has(t.name)).toBe(false);

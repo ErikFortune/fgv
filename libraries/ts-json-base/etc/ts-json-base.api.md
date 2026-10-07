@@ -1179,6 +1179,7 @@ declare namespace JsonSchema {
         optional,
         array,
         object_3 as object,
+        record,
         ISchemaOptions,
         INumberSchemaOptions,
         IObjectSchemaOptions,
@@ -1309,6 +1310,14 @@ export function pickJsonValue(src: JsonObject, path: string): Result<JsonValue>;
 //
 // @public (undocumented)
 function readJsonFileSync(srcPath: string): Result<JsonValue>;
+
+// @public
+function record<S extends ISchemaValidator<unknown>>(values: S & (undefined extends Static<S> ? never : unknown), opts: ISchemaOptions & {
+    nullable: true;
+}): ISchemaValidator<Record<string, Static<S>> | null>;
+
+// @public
+function record<S extends ISchemaValidator<unknown>>(values: S & (undefined extends Static<S> ? never : unknown), opts?: ISchemaOptions): ISchemaValidator<Record<string, Static<S>>>;
 
 // @public
 type RecordConverter<T, TC = unknown, TK extends string = string> = Converter<Record<TK, JsonCompatibleType<T>>, TC>;

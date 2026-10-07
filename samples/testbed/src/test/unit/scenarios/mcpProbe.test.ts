@@ -187,17 +187,20 @@ describe('runMcpProbe', () => {
       skipped: [
         {
           name: 'ref_tool',
-          reason: "#/properties/x: unsupported JSON Schema keyword '$ref'",
+          reason:
+            "#/properties/x: unsupported JSON Schema keyword '$ref': '#/$defs/Foo' does not resolve: no '$defs'",
           schema: { type: 'object', properties: { x: { $ref: '#/$defs/Foo' } } }
         },
         {
           name: 'oneof_tool',
-          reason: "#/properties/x: unsupported JSON Schema keyword 'oneOf'",
+          reason:
+            '#/properties/x: unsupported JSON Schema keyword \'oneOf\' (supported only as exactly one schema plus {"type": "null"})',
           schema: { type: 'object', properties: { x: { oneOf: [] } } }
         },
         {
           name: 'anyof_tool',
-          reason: "#/properties/x: unsupported JSON Schema keyword 'anyOf'",
+          reason:
+            '#/properties/x: unsupported JSON Schema keyword \'anyOf\' (supported only as exactly one schema plus {"type": "null"})',
           schema: { type: 'object', properties: { x: { anyOf: [] } } }
         },
         {
@@ -207,8 +210,8 @@ describe('runMcpProbe', () => {
         },
         {
           name: 'union_tool',
-          reason: "#/properties/x: union 'type' arrays are not supported",
-          schema: { type: 'object', properties: { x: { type: ['string', 'null'] } } }
+          reason: "#/properties/x: union 'type' arrays are supported only as [<type>, 'null']",
+          schema: { type: 'object', properties: { x: { type: ['string', 'number'] } } }
         }
       ]
     };

@@ -112,6 +112,23 @@ function _adaptOne(session: IMcpSession, descriptor: IMcpToolDescriptor): IAdapt
 }
 
 /**
+ * `text` with every control character — C0, DEL, C1 and U+2028/U+2029 — spelled `\uXXXX`.
+ *
+ * @remarks
+ * The skip warning carries server-supplied text (the tool name, and the raw schema, whose
+ * `JSON.stringify` form still leaves DEL, C1 and U+2028/U+2029 raw), so a hostile server could
+ * otherwise break the log line or forge another. The structured `skipped` record is left as the
+ * server sent it; escaping is for the log line only.
+ */
+function _printable(text: string): string {
+  return Array.from(text, (ch) => {
+    const code = ch.charCodeAt(0);
+    const control = code < 0x20 || (code >= 0x7f && code <= 0x9f) || code === 0x2028 || code === 0x2029;
+    return control ? `\\u${code.toString(16).padStart(4, '0')}` : ch;
+  }).join('');
+}
+
+/**
  * Discovers an MCP server's tools and adapts each into an `AiAssist.IAiClientTool` that drops
  * directly into `AiAssist.executeClientToolTurn`.
  *
@@ -151,9 +168,11 @@ export async function adaptMcpTools(
         } else {
           skipped.push(outcome.skipped);
           options?.logger?.warn(
-            `mcp: skipping tool '${outcome.skipped.name}': inputSchema is outside the supported ` +
-              `JSON Schema subset: ${outcome.skipped.reason}. ` +
-              `Raw schema: ${JSON.stringify(outcome.skipped.schema)}`
+            _printable(
+              `mcp: skipping tool '${outcome.skipped.name}': inputSchema is outside the supported ` +
+                `JSON Schema subset: ${outcome.skipped.reason}. ` +
+                `Raw schema: ${JSON.stringify(outcome.skipped.schema)}`
+            )
           );
         }
       }
