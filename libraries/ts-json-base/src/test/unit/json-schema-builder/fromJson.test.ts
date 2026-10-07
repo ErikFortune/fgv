@@ -129,6 +129,21 @@ describe('JsonSchema.fromJson', () => {
       );
     });
 
+    test('escapes a property key as a JSON Pointer token in the reported path', () => {
+      expect(
+        JsonSchema.fromJson({
+          type: 'object',
+          properties: { 'a/b': { type: 'date' } }
+        } as unknown as JsonObject)
+      ).toFailWith(/^#\/properties\/a~1b: unsupported or missing 'type'/);
+      expect(
+        JsonSchema.fromJson({
+          type: 'object',
+          properties: { 'c~/d': { type: 'date' } }
+        } as unknown as JsonObject)
+      ).toFailWith(/^#\/properties\/c~0~1d: unsupported or missing 'type'/);
+    });
+
     test('rejects a non-object root', () => {
       expect(JsonSchema.fromJson('nope' as unknown as JsonObject)).toFailWith(
         /expected a JSON Schema object/i

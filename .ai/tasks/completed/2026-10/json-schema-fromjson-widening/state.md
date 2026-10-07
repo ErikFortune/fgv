@@ -48,6 +48,15 @@ Worker-owned.
 
   Revert matrix re-run, 28 rows.
 
+- Copilot round 1 on #723 (five threads, against `f2a96f57`), applied:
+  - malformed `~` escapes refused;
+  - `_convertNode` guards with `_plainObjectField`, and the enum arm takes the converted object;
+  - property keys escaped in child paths;
+  - README row count corrected;
+  - the `result.md` scope statement corrected.
+
+  Revert matrix re-run, 30 rows.
+
 ## Open questions
 
 None blocking. Deferred shapes are in `docs/FUTURE.md`; the numeric-enum and `{}` deferrals each

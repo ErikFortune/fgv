@@ -321,6 +321,16 @@ describe('JsonSchema.fromJson — local $ref / $defs', () => {
         /'#\/\$defs\/A\/properties\/x' passes through a subschema with its own '\$id'/
       ],
       ['a wide definition inlined many times', wide, /exceeds the limit of 100000 nodes/],
+      [
+        "an invalid '~' escape",
+        { $defs: { 'a~2b': { type: 'string' } }, $ref: '#/$defs/a~2b' },
+        /'#\/\$defs\/a~2b': malformed reference: invalid '~' escape/
+      ],
+      [
+        "a trailing '~'",
+        { $defs: { 'a~': { type: 'string' } }, $ref: '#/$defs/a~' },
+        /'#\/\$defs\/a~': malformed reference: invalid '~' escape/
+      ],
       ['a non-string reference', obj({ x: { $ref: 7 } }), /'\$ref': the reference must be a string/],
       [
         'a validation keyword beside $ref',

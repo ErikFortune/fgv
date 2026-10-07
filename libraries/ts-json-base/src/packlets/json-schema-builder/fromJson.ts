@@ -515,7 +515,10 @@ function _convertObject(
  *
  * Receives the current JSON Pointer path via `context`.
  */
-function _convertEnum(from: unknown, { path }: IParseContext): Result<ISchemaValidator<JsonValue>> {
+function _convertEnum(
+  from: Record<string, unknown>,
+  { path }: IParseContext
+): Result<ISchemaValidator<JsonValue>> {
   // An enum node carries its nullability in TWO places — `null` among the values and
   // `'null'` in the type union — so this arm reads both and requires them to agree,
   // rather than taking whichever it happens to look at first.
@@ -532,9 +535,9 @@ function _convertEnum(from: unknown, { path }: IParseContext): Result<ISchemaVal
   }
   const nullInValues: boolean = rawValuesResult.value.includes(null);
 
-  // L1: reject conflicting `type`. For enum nodes, `jsonSchemaConverter`'s type pre-flight
+  // L1: reject conflicting `type`. For enum nodes, `_convertNode`'s type pre-flight
   // is skipped (the `!('enum' in raw)` gate). Validate here instead.
-  const rawType: unknown = (from as Record<string, unknown>).type;
+  const rawType: unknown = from.type;
   const split = _splitNullableType(rawType);
   if (split.isFailure()) {
     return fail(`${path}: ${split.message}`);
@@ -558,7 +561,7 @@ function _convertEnum(from: unknown, { path }: IParseContext): Result<ISchemaVal
   // Now that `null` has been accounted for, the strings-only extractor governs the rest —
   // including the non-empty constraint, which a list of just `[null]` must still fail.
   const valuesResult = _enumValuesField.convert({
-    ...(from as Record<string, unknown>),
+    ...from,
     enum: rawValuesResult.value.filter((v): v is string => v !== null)
   });
   if (valuesResult.isFailure()) {
@@ -652,7 +655,7 @@ function _parseObjectBody(
   return mapResults(
     propEntries.map(([key, child]) =>
       // Thread the JSON Pointer path as context so nested errors are correctly attributed.
-      _convertNode(child, _at(ctx, `${path}/properties/${key}`)).onSuccess((node) =>
+      _convertNode(child, _at(ctx, `${path}/properties/${_escapeToken(key)}`)).onSuccess((node) =>
         succeed([key, requiredSet.has(key) ? node : optional(node)] as const)
       )
     )
@@ -763,6 +766,9 @@ const _nullableTypeDispatchConverter: Converter<ISchemaValidator<JsonValue>, IPa
 // its wire schema are reference-free.
 // ---------------------------------------------------------------------------
 
+/** Matches a `~` that does not begin a valid RFC 6901 escape (`~0` or `~1`). */
+const _INVALID_ESCAPE: RegExp = /~(?![01])/;
+
 /** Matches a JSON Pointer array index token: `0`, or digits without a leading zero. */
 const _ARRAY_INDEX: RegExp = /^(?:0|[1-9][0-9]*)$/;
 
@@ -785,13 +791,18 @@ function _pointerTokens(ref: string): Result<string[]> {
       if (!pointer.startsWith('/')) {
         return fail('only JSON Pointer fragments (#/…) are supported, not anchors');
       }
-      return succeed(
-        pointer
-          .slice(1)
-          .split('/')
-          .map((token) => token.replace(/~1/g, '/').replace(/~0/g, '~'))
-      );
+      const tokens = pointer.slice(1).split('/');
+      // RFC 6901 allows `~` only as `~0` or `~1`; anything else is not a pointer, and guessing a
+      // meaning for it could resolve a different node than the server intended.
+      return tokens.some((token) => _INVALID_ESCAPE.test(token))
+        ? fail("malformed reference: invalid '~' escape")
+        : succeed(tokens.map((token) => token.replace(/~1/g, '/').replace(/~0/g, '~')));
     });
+}
+
+/** Escapes a key as one JSON Pointer token (RFC 6901 § 3): `~` → `~0` first, then `/` → `~1`. */
+function _escapeToken(key: string): string {
+  return key.replace(/~/g, '~0').replace(/\//g, '~1');
 }
 
 /** A server-supplied string, cut to a length safe to echo in an error message. */
@@ -879,7 +890,7 @@ function _convertRef(raw: Record<string, unknown>, ctx: IParseContext): Result<I
     .withErrorFormat((msg) => `${unsupported}: '${shown}': ${msg}`)
     .onSuccess((tokens) => {
       // Identity is the decoded pointer, so two spellings of one target are one cycle.
-      const target = `#${tokens.map((t) => `/${t.replace(/~/g, '~0').replace(/\//g, '~1')}`).join('')}`;
+      const target = `#${tokens.map((t) => `/${_escapeToken(t)}`).join('')}`;
       if (ctx.refs.includes(target)) {
         return fail(`${unsupported}: '${shown}' is recursive, which cannot be inlined`);
       }
@@ -920,13 +931,19 @@ function _convertRef(raw: Record<string, unknown>, ctx: IParseContext): Result<I
  * arm converters, which recurse through here for their sub-schemas.
  */
 function _convertNode(from: unknown, nodeCtx: IParseContext): Result<ISchemaValidator<JsonValue>> {
-  const path = nodeCtx.path;
+  // Every node must be a non-array object; the rest of the checks read it as one.
+  return _plainObjectField
+    .convert(from)
+    .withErrorFormat(() => `${nodeCtx.path}: expected a JSON Schema object`)
+    .onSuccess((raw) => _convertSchemaObject(raw, nodeCtx));
+}
 
-  // Guard: every node must be a non-array object.
-  if (typeof from !== 'object' || Array.isArray(from) || from === null) {
-    return fail(`${path}: expected a JSON Schema object`);
-  }
-  const raw = from as Record<string, unknown>;
+/** The body of `_convertNode`, for a node already known to be a schema object. */
+function _convertSchemaObject(
+  raw: Record<string, unknown>,
+  nodeCtx: IParseContext
+): Result<ISchemaValidator<JsonValue>> {
+  const path = nodeCtx.path;
 
   if (nodeCtx.depth > MAX_SCHEMA_DEPTH) {
     return fail(`${path}: the schema nests deeper than the limit of ${MAX_SCHEMA_DEPTH} levels`);
@@ -938,7 +955,7 @@ function _convertNode(from: unknown, nodeCtx: IParseContext): Result<ISchemaVali
 
   // A nested `$id` rebases the references beneath it; those are refused rather than resolved
   // against the wrong document (see `_convertRef`).
-  const ctx: IParseContext = from !== nodeCtx.root && '$id' in raw ? { ...nodeCtx, rebased: true } : nodeCtx;
+  const ctx: IParseContext = raw !== nodeCtx.root && '$id' in raw ? { ...nodeCtx, rebased: true } : nodeCtx;
 
   // A union is admitted only in its nullable spelling; its handler refuses everything else
   // with the keyword and path named, like the forbidden-keyword check below.
@@ -963,7 +980,7 @@ function _convertNode(from: unknown, nodeCtx: IParseContext): Result<ISchemaVali
   // enum type validation entirely, including the union rule, because an enum's nullability is
   // declared in two places and only it can check that they agree.
   if ('enum' in raw) {
-    return _convertEnum(from, ctx);
+    return _convertEnum(raw, ctx);
   }
 
   // Union type arrays: `[<type>, 'null']` is the nullable spelling and is admitted;
@@ -989,7 +1006,7 @@ function _convertNode(from: unknown, nodeCtx: IParseContext): Result<ISchemaVali
     // the lookup and the nullability travels in the table choice instead.
     return _nullableTypeDispatchConverter.convert({ ...raw, type: split.value.type }, ctx);
   }
-  return _typeDispatchConverter.convert(from, ctx);
+  return _typeDispatchConverter.convert(raw, ctx);
 }
 
 /**

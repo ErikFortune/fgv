@@ -13,8 +13,13 @@ Origin: ErikFortune/personaility#680, #681, #683. Commits on `json-schema-fromjs
 - `47320a83`: the `code-reviewer` findings, plus `CAPABILITIES.md` and `docs/FUTURE.md`;
 - plus the finalize commits.
 
-All source changes are in `@fgv/ts-json-base`, packlet `json-schema-builder`. No other package
-changed, including its tests.
+Production source changes are confined to `@fgv/ts-json-base`, packlet `json-schema-builder`. In the
+gate-review round, two other packages received test-only updates:
+
+- `ts-extras-mcp` `endToEnd.test.ts`;
+- `samples/testbed` `mcpProbe.test.ts`.
+
+`ts-extras-mcp`'s `CAPABILITIES.md` was also updated (docs only, change file `none`).
 
 ## What shipped, per entry
 
@@ -165,8 +170,8 @@ The Gemini facts above (string-only `enum`, `type` required) come from the docum
 ## Revert matrix
 
 Each protection was reverted alone in the source, the `json-schema-builder` tests were run, and the
-file was restored. Measured on a clean tree: R1–R23 on `47320a83`, then all 28 again on the
-gate-review changes. Every count was the same in both runs, except R10, which also reddens the new
+file was restored. Measured on a clean tree: R1–R23 on `47320a83`, all 28 again on the
+gate-review changes, and all 30 again on the Copilot round 1 changes. Every count was the same in both runs, except R10, which also reddens the new
 truncation test. Several mutants (`if (false)`) also
 trip TS7027 (unreachable code), a warning; the tests still ran on the emitted code.
 
@@ -200,6 +205,8 @@ trip TS7027 (unreachable code), a warning; the tests still ran on the emitted co
 | R26 | percent-decode the fragment before splitting | 2 | `%2F` decoded before splitting (RFC 6901 § 6); a malformed escape (with the mutant, the decode throws outside the per-reference `captureResult`, and the backstop's message no longer matches) |
 | R27 | `~1` unescaped before `~0` | 1 | `~01` names the literal key `~1` |
 | R28 | echoed reference truncated | 1 | a very long reference, echoed truncated |
+| R29 | invalid `~` escape refused | 2 | an invalid '~' escape (`a~2b`); a trailing '~' (`a~`) |
+| R30 | property key escaped as a pointer token in error paths | 1 | escapes a property key as a JSON Pointer token in the reported path |
 
 ## Tests changed
 
@@ -257,6 +264,29 @@ The run was read-only. Applied in `47320a83`:
   `_parseObjectBody` into one chain. That code predates this stream, and the touched part was
   chained.
 
+## Copilot round 1 (PR #723), applied
+
+Five threads, verified against `f2a96f57`:
+
+1. **Malformed `~` escapes.** `_pointerTokens` now refuses any token with a `~` not followed by `0`
+   or `1`, or a `~` at the end, with `malformed reference: invalid '~' escape`. It does this after
+   percent-decoding and splitting and before unescaping. Tests cover `a~2b` and `a~`; `~01` still
+   decodes to `~1`. Revert row R29.
+2. **Type-safe node guard.** `_convertNode` now checks the node with `_plainObjectField.convert(from)`,
+   keeping the `expected a JSON Schema object` message, and chains into `_convertSchemaObject`. The
+   enum arm takes the converted `Record<string, unknown>` instead of casting `unknown` at its two
+   former sites. One `as Record<string, unknown>` remains, inside `_plainObjectField` itself, and it
+   is safe: that converter is where the narrowing is established, directly after its
+   `typeof === 'object' && !Array.isArray && !== null` guard. Every other reader receives its
+   output.
+3. **Property paths.** A property key is escaped as a JSON Pointer token in child paths: `~` → `~0`
+   first, then `/` → `~1`, using the helper that builds the `$ref` cycle key. So a failing property
+   named `a/b` is reported at `#/properties/a~1b`. Revert row R30.
+4. **README row count:** corrected to 30 rows.
+5. **Scope statement:** the opening of this file and the "formerly stale" paragraph now say that
+   production source changes are confined to `ts-json-base`, and that the two other packages
+   received test-only updates in the gate-review round.
+
 ## Known exceptions and over-refusals
 
 Recorded so they are not rediscovered as surprises:
@@ -288,9 +318,10 @@ Recorded so they are not rediscovered as surprises:
     because `#/$defs/Foo` does not resolve, and the comment now says so.
   - `samples/testbed` `mcpProbe.test.ts`'s mocked reason strings.
 
-  Neither fails. I left both alone because the concurrent `mcp-client-cancellation` stream owns
-  `ts-extras-mcp` tests and the brief limits test edits here to assertions that the widening breaks.
-  `ts-extras-mcp`'s `CAPABILITIES.md` **was** updated (change file `none`).
+  Both received test-only updates in the gate-review round (see *Tests changed*). The edits were
+  kept minimal because the concurrent `mcp-client-cancellation` stream touches the same
+  `ts-extras-mcp` test file. No production source outside `ts-json-base` changed.
+  `ts-extras-mcp`'s `CAPABILITIES.md` was updated as well (docs only, change file `none`).
 
 ## Gates
 
