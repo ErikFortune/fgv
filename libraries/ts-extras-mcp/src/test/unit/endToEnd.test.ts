@@ -49,13 +49,9 @@ import {
   callMcpTool,
   closeMcpSession,
   connectMcpSession,
+  createCustomTransport,
   listMcpTools
 } from '../../packlets/mcp';
-// Internal: the opaque-handle class. The package exposes only stdio/http transport factories, so a
-// real in-process e2e (which must inject the SDK's InMemoryTransport) wraps it here. Tests may
-// import internal modules directly (TESTING_GUIDELINES § Testing Internal Code).
-// eslint-disable-next-line @rushstack/packlets/mechanics
-import { McpTransport } from '../../packlets/mcp/transports';
 
 // ---------------------------------------------------------------------------
 // Fixture server — a real SDK Server advertising a mix of adaptable + un-adaptable tools.
@@ -172,10 +168,12 @@ describe('@fgv/ts-extras-mcp end-to-end against a real in-memory MCP server', ()
   beforeEach(async () => {
     const fixture = await startFixtureServer();
     server = fixture.server;
-    // Wrap the SDK in-memory client transport in the package's opaque handle, then connect through
-    // the PUBLIC connectMcpSession (real Client + real initialize handshake). On a connect failure,
-    // tear the fixture server down before throwing so a failed handshake can't leak open handles.
-    const transport = new McpTransport('http', fixture.clientTransport);
+    // Wrap the SDK in-memory client transport through the PUBLIC createCustomTransport seam, then
+    // connect through the PUBLIC connectMcpSession (real Client + real initialize handshake). On a
+    // connect failure, tear the fixture server down before throwing so a failed handshake can't
+    // leak open handles.
+    const transport = createCustomTransport(fixture.clientTransport).orThrow();
+    expect(transport.transportKind).toBe('custom');
     const connectResult = await connectMcpSession({ transport, clientName: 'e2e', clientVersion: '0.0.0' });
     if (connectResult.isFailure()) {
       await server.close();
@@ -288,7 +286,7 @@ describe('@fgv/ts-extras-mcp end-to-end against a real in-memory MCP server', ()
       expect(await adaptMcpTools(session)).toSucceedAndSatisfy((result) => {
         const echo = result.tools.find((t) => t.config.name === 'echo');
         expect(echo).toBeDefined();
-        echoExecute = echo?.execute;
+        echoExecute = echo !== undefined ? (args: unknown) => echo.execute(args) : undefined;
       });
       expect(echoExecute).toBeDefined();
       expect(await echoExecute?.({ msg: 'roundtrip' })).toSucceedWith('echo: {"msg":"roundtrip"}');

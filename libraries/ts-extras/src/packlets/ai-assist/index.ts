@@ -17,6 +17,7 @@ export {
   type IAiClientToolConfig,
   type IAiToolAnnotations,
   type IAiClientTool,
+  type IAiClientToolExecuteContext,
   type IAiClientToolCallSummary,
   type IAiClientToolContinuation,
   type IAiClientToolTurnResult,
