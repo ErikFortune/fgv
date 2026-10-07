@@ -180,17 +180,20 @@ const CASES = [
   ],
   [
     'S2',
-    "--check validates a noul's criteria",
+    "--check validates a noul's criteria as the SDK and askSystemOne accept them",
     async (fail, dir) => {
       const cases = [
         ['<absent>', 0],
         [null, 0],
+        [{}, 0],
         [{ true: 'yes' }, 0],
         [{ true: 'yes', false: 'no' }, 0],
+        [{ false: null }, 0],
+        [{ true: { says: 'yes' }, false: ['no'] }, 0],
         [['yes', 'no'], 3],
         [{ true: 'yes', maybe: 'perhaps' }, 3],
         [{ true: 5 }, 3],
-        [{}, 3],
+        [{ false: true }, 3],
         ['yes', 3]
       ];
       for (const [criteria, expected] of cases) {
@@ -251,6 +254,55 @@ const CASES = [
           );
         }
       });
+    }
+  ],
+  [
+    'S5',
+    'a base URL with whitespace is refused, as the client refuses it',
+    async (fail) => {
+      for (const url of [' http://127.0.0.1:8700', 'http://127.0.0.1:8700 ', 'http://127.0.0.1:8700\t']) {
+        const result = await run(['probe', '--url', url, '--model', 'm', '--check']);
+        if (result.code !== 3 || result.stdout !== '')
+          fail(`${JSON.stringify(url)}: exit ${result.code}, expected 3`);
+      }
+      const spaced = await run([
+        'parity',
+        ...parityCheck('unused')
+          .slice(1)
+          .map((arg) =>
+            arg === 'http://127.0.0.1:8700,clm-latest' ? ' http://127.0.0.1:8700,clm-latest' : arg
+          )
+      ]);
+      if (spaced.code !== 3) fail(`parity --a with leading whitespace: exit ${spaced.code}, expected 3`);
+    }
+  ],
+  [
+    'S6',
+    '--check given twice is refused',
+    async (fail) => {
+      const twice = await run([
+        'probe',
+        '--url',
+        'http://127.0.0.1:8700',
+        '--model',
+        'm',
+        '--check',
+        '--check'
+      ]);
+      if (twice.code !== 3 || twice.stdout !== '') fail(`exit ${twice.code}, expected 3 with no output`);
+    }
+  ],
+  [
+    'S7',
+    'questions given as a list are refused',
+    async (fail, dir) => {
+      const file = path.join(dir, 'list.json');
+      fs.writeFileSync(
+        file,
+        JSON.stringify({ items: [{ state: 's', questions: [{ type: 'noul', instructions: 'Is it?' }] }] })
+      );
+      const result = await run(parityCheck(file));
+      if (result.code !== 3) fail(`exit ${result.code}, expected 3`);
     }
   ]
 ];

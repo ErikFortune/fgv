@@ -71,11 +71,22 @@ describe('createSystemOneClient', () => {
     ]) {
       const refused = createSystemOneClient({ ...base, baseUrl: secretBearing });
       expect(refused).toFailWith(
-        /baseUrl must be an absolute http\(s\) URL with no query, fragment or credentials/
+        /^invalid-request: baseUrl must be an absolute http\(s\) URL with no whitespace, query, fragment or credentials$/
       );
       expect(refused.message).not.toContain('hunter2');
     }
     expect(createSystemOneClient({ ...base, baseUrl: 'http://user@cfg.test' })).toFailWith(/baseUrl/);
+    // whitespace: URL would trim it, but the SDK appends paths to the raw string
+    for (const spaced of [
+      ' http://cfg.test ',
+      'http://cfg.test ',
+      '\thttp://cfg.test',
+      'http://cfg.test\n'
+    ]) {
+      expect(createSystemOneClient({ ...base, baseUrl: spaced })).toFailWith(
+        /^invalid-request: baseUrl must be/
+      );
+    }
     // a bare `?` or `#` parses to an empty search or hash, but the SDK receives the raw string
     expect(createSystemOneClient({ ...base, baseUrl: 'http://cfg.test/?' })).toFailWith(/baseUrl/);
     expect(createSystemOneClient({ ...base, baseUrl: 'http://cfg.test/#' })).toFailWith(/baseUrl/);
@@ -312,6 +323,23 @@ describe('listSystemOneModels', () => {
     expect(await listSystemOneModels(clientFor(withId.fetch))).toFailWith(
       /^invalid-response \(status 200\) \(request req-5\): Unexpected response shape/
     );
+  });
+
+  test('U19 a malformed model entry is named by index, and nothing it carries is quoted', async () => {
+    const { fetch } = scriptedFetch(
+      jsonResponse(200, {
+        models: [
+          card,
+          { secret: 'SERVER-SECRET-VALUE' },
+          { ...card, name: 'SERVER-SECRET-VALUE', description: 7 }
+        ]
+      })
+    );
+    const listed = await listSystemOneModels(clientFor(fetch));
+    expect(listed).toFailWith(
+      /^invalid-response \(status 200\): the model list is not \[\{ name, description, release_date \}\]: entries \[1, 2\] are malformed$/
+    );
+    expect(listed.message).not.toContain('SERVER-SECRET-VALUE');
   });
 
   test('U19 an element missing name is invalid-response', async () => {

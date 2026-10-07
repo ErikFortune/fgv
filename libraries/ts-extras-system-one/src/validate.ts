@@ -40,6 +40,7 @@ import type {
   ScoreQuestion,
   ScoreResponse
 } from '@typesafe-ai/sdk';
+import { anyValue, jsonRecord, rejectedFields } from './shapes';
 import type { ISystemOneUsage, SystemOneAnswerResult } from './types';
 
 /** How far a distribution's sum may be from 1. */
@@ -100,9 +101,6 @@ const nonEmptyString: Converter<string> = Converters.string.withConstraint((s) =
 
 const probabilities: Converter<Record<string, number>> = Converters.recordOf(Validators.number);
 
-/** Legend values are only counted (their keys are checked); they are never returned. */
-const anyLegendValue: Converter<unknown> = Converters.generic((from: unknown) => succeed(from));
-
 /**
  * Converts one answer by its own `type`, keeping only the fields the SDK declares. `confidence` and
  * any undeclared field are dropped by construction: the converters build new objects, and nothing
@@ -122,7 +120,7 @@ const choiceAnswer: Converter<ProjectedChoice> = Converters.object<ProjectedChoi
 const scoreAnswer: Converter<IReceivedScore> = Converters.object<IReceivedScore>({
   type: Converters.literal('score'),
   score: Validators.number,
-  legend: Converters.recordOf(anyLegendValue),
+  legend: Converters.recordOf(anyValue),
   probabilities
 });
 
@@ -272,16 +270,6 @@ function describeAnswerSet(questions: Questions, answers: ProjectedAnswers): str
   return `answer ids do not match the question ids (missing [${missing.join(', ')}], ${extra} extra)`;
 }
 
-const jsonRecord: Converter<Record<string, unknown>> = Converters.recordOf(anyLegendValue);
-
-/** The names of the fields of a JSON object that the given converters reject. */
-function rejectedFields(
-  record: Record<string, unknown>,
-  fields: Record<string, Converter<unknown>>
-): string[] {
-  return Object.keys(fields).filter((field) => fields[field].convert(record[field]).isFailure());
-}
-
 /** Describes the answers that are not noul, choice or score answers: question ids by name, others counted. */
 function describeBadAnswers(questions: Questions, answers: unknown): string {
   const bad = jsonRecord
@@ -378,10 +366,25 @@ export function validateSystemOneBody<Q extends Questions>(
  * Validates `/v1/models` entries, keeping only the fields `ModelCard` declares.
  * @internal
  */
-export const modelCards: Converter<ModelCard[]> = Converters.arrayOf(
-  Converters.object<ModelCard>({
-    name: Converters.string,
-    description: Converters.string,
-    release_date: Converters.string
-  })
-);
+const modelCard: Converter<ModelCard> = Converters.object<ModelCard>({
+  name: Converters.string,
+  description: Converters.string,
+  release_date: Converters.string
+});
+
+export const modelCards: Converter<ModelCard[]> = Converters.arrayOf(modelCard);
+
+/**
+ * Why a model list is not `ModelCard`s, naming the entries at fault by index and never quoting a
+ * value: a converter's message quotes what it rejected.
+ * @internal
+ */
+export function describeModelList(entries: ReadonlyArray<unknown>): string {
+  // The SDK has already unwrapped `{ models: [...] }` and refused any other shape, so this is a list.
+  const bad = entries
+    .map((entry, index) => (modelCard.convert(entry).isFailure() ? index : -1))
+    .filter((index) => index >= 0);
+  return `the model list is not [{ name, description, release_date }]: entries [${bad.join(
+    ', '
+  )}] are malformed`;
+}

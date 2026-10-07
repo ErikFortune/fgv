@@ -287,7 +287,7 @@ describe('the input bound', () => {
     expect(calls).toHaveLength(0);
     expect(
       measureSystemOneInput('s', { c: { type: 'choice', criteria: null } as unknown as ChoiceQuestion })
-    ).toFailWith(/the request could not be measured/);
+    ).toFailWith(/^invalid-request: \[c\] are not well-formed noul, choice or score questions$/);
   });
 
   test('U4 a whitespace-only description is measured as the larger of itself and the default', () => {

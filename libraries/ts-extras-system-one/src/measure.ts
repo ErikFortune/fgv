@@ -38,6 +38,7 @@ import type {
   SystemOneFailureReason,
   SystemOneInputLimit
 } from './types';
+import { checkQuestions } from './shapes';
 
 /** CLM joins state and instructions with `"\n\n"`. */
 const separatorLength: number = 2;
@@ -113,7 +114,8 @@ function measureCriteria(question: Question): ISystemOneCriterionMeasure[] {
  * serialization.
  *
  * Input outside the declared types — a question with missing or mis-shaped `criteria`, a state
- * that cannot be serialized (circular, or holding a `bigint`) — fails rather than throws.
+ * that cannot be serialized (circular, or holding a `bigint`) — fails `invalid-request` rather
+ * than throws, and the message never quotes the input.
  * @param state - The state to be sent.
  * @param questions - The questions to be sent.
  * @returns The lengths the input bound compares against `maxChars`, or a failure naming why the
@@ -124,18 +126,25 @@ export function measureSystemOneInput(
   state: EntryType,
   questions: Questions
 ): Result<ISystemOneInputMeasure> {
-  return captureResult(() => {
-    const stateLength = lengthOf(state);
-    return {
-      questions: Object.keys(questions).map(
-        (questionId): ISystemOneQuestionMeasure => ({
-          questionId,
-          stateAndInstructions: stateLength + separatorLength + lengthOf(questions[questionId].instructions),
-          criteria: measureCriteria(questions[questionId])
-        })
-      )
-    };
-  }).withErrorFormat((message) => `the request could not be measured: ${message}`);
+  return checkQuestions(questions).onSuccess(() =>
+    captureResult(() => measureChecked(state, questions)).withErrorFormat(
+      () => 'invalid-request: the state or a question is not JSON-serializable, so it cannot be measured'
+    )
+  );
+}
+
+/** Measures input whose questions have the declared shape. */
+function measureChecked(state: EntryType, questions: Questions): ISystemOneInputMeasure {
+  const stateLength = lengthOf(state);
+  return {
+    questions: Object.keys(questions).map(
+      (questionId): ISystemOneQuestionMeasure => ({
+        questionId,
+        stateAndInstructions: stateLength + separatorLength + lengthOf(questions[questionId].instructions),
+        criteria: measureCriteria(questions[questionId])
+      })
+    )
+  };
 }
 
 /** One part of a question that is over the bound. */
@@ -187,7 +196,6 @@ function bound(
     );
   }
   return measureSystemOneInput(state, questions)
-    .withErrorFormat((message) => `invalid-request: ${message}`)
     .withFailureDetail<SystemOneFailureReason>('invalid-request')
     .onSuccess((measure) => {
       const over = firstOverLimit(measure, maxChars);
@@ -211,9 +219,14 @@ export function checkInputLimit(
   questions: Questions,
   inputLimit: SystemOneInputLimit
 ): DetailedResult<ISystemOneInputMeasure | undefined, SystemOneFailureReason> {
-  return inputLimitShape
-    .convert(inputLimit)
-    .withErrorFormat(() => `invalid-request: inputLimit must be 'unchecked' or { maxChars: number }`)
+  // The questions are checked before the limit is read, so a malformed question is
+  // `invalid-request` in 'unchecked' mode too, and nothing is sent.
+  return checkQuestions(questions)
+    .onSuccess(() =>
+      inputLimitShape
+        .convert(inputLimit)
+        .withErrorFormat(() => `invalid-request: inputLimit must be 'unchecked' or { maxChars: number }`)
+    )
     .withFailureDetail<SystemOneFailureReason>('invalid-request')
     .onSuccess((limit) =>
       limit === 'unchecked' ? succeedWithDetail(undefined) : bound(state, questions, limit.maxChars)

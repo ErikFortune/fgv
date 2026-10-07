@@ -50,7 +50,8 @@ import type {
   ISystemOneUsage,
   SystemOneFailureReason
 } from './types';
-import { modelCards, validateSystemOneBody } from './validate';
+import { checkClientParams, checkRequest } from './shapes';
+import { describeModelList, modelCards, validateSystemOneBody } from './validate';
 
 /** What a client stands for: the SDK client and the model it sends. */
 interface IClientBinding {
@@ -66,16 +67,19 @@ const bindings: WeakMap<ISystemOneClient, IClientBinding> = new WeakMap();
 
 /**
  * Fails unless `baseUrl` is an absolute `http:` or `https:` URL with no query, fragment or
- * credentials. `?` and `#` are refused in the raw string, since the SDK appends paths to the string
- * as given, and a bare `?` or `#` parses to an empty `search` or `hash`.
+ * credentials. Whitespace, `?` and `#` are refused in the raw string, since the SDK appends paths to
+ * the string as given: `URL` would trim surrounding whitespace, and a bare `?` or `#` parses to an
+ * empty `search` or `hash`, so none of them is visible in the parsed URL.
  */
 function checkBaseUrl(baseUrl: string): Result<string> {
   // The value is never echoed: a rejected URL can carry credentials, a token in its query, or both.
-  const invalid = 'baseUrl must be an absolute http(s) URL with no query, fragment or credentials';
+  const invalid =
+    'invalid-request: baseUrl must be an absolute http(s) URL with no whitespace, query, fragment or credentials';
   return captureResult(() => new URL(baseUrl))
     .onFailure(() => fail(invalid))
     .onSuccess((url) =>
       (url.protocol === 'http:' || url.protocol === 'https:') &&
+      !/\s/.test(baseUrl) &&
       !baseUrl.includes('?') &&
       !baseUrl.includes('#') &&
       url.username === '' &&
@@ -91,13 +95,19 @@ function checkBaseUrl(baseUrl: string): Result<string> {
  * The server URL, model, key and log level are always passed to the SDK, so no `TYPESAFE_*`
  * environment variable can take effect. There is no per-call URL.
  * @param params - The server, model, key and options.
- * @returns The client, or a failure naming the invalid parameter.
+ * @returns The client, or a failure naming the invalid parameter; every failure is
+ * `invalid-request`, including parameters of the wrong shape from a JavaScript caller.
  * @public
  */
 export function createSystemOneClient(params: ICreateSystemOneClientParams): Result<ISystemOneClient> {
+  return checkClientParams(params).onSuccess(() => clientFrom(params));
+}
+
+/** Creates the client from parameters whose shape has been checked. */
+function clientFrom(params: ICreateSystemOneClientParams): Result<ISystemOneClient> {
   const model = params.model.trim();
   if (model.length === 0) {
-    return fail('model must be a non-empty string');
+    return fail('invalid-request: model must be a non-empty string');
   }
   return checkBaseUrl(params.baseUrl)
     .onSuccess((baseURL) => {
@@ -110,7 +120,9 @@ export function createSystemOneClient(params: ICreateSystemOneClientParams): Res
         ...(params.retry !== undefined ? { retry: params.retry } : {}),
         ...(params.fetch !== undefined ? { fetch: params.fetch } : {})
       };
-      return captureResult(() => new TypeSafeClient(config));
+      return captureResult(() => new TypeSafeClient(config)).withErrorFormat(
+        (message) => `invalid-request: ${message}`
+      );
     })
     .onSuccess((sdk) => {
       const client: ISystemOneClient = Object.freeze({ model });
@@ -213,7 +225,10 @@ export async function askSystemOne<const Q extends Questions>(
   client: ISystemOneClient,
   request: ISystemOneRequest<Q>
 ): Promise<DetailedResult<ISystemOneAnswer<Q>, SystemOneFailureReason>> {
-  return checkInputLimit(request.state, request.questions, request.inputLimit)
+  // A JavaScript caller's request is checked before any field is read.
+  return checkRequest(request)
+    .withFailureDetail<SystemOneFailureReason>('invalid-request')
+    .onSuccess(() => checkInputLimit(request.state, request.questions, request.inputLimit))
     .onSuccess(() => bindingFor(client).withFailureDetail<SystemOneFailureReason>('invalid-request'))
     .onSuccess((binding) => startCall(binding, request))
     .thenOnSuccess(({ pending, started }) =>
@@ -243,8 +258,13 @@ export async function listSystemOneModels(
       (received): Result<ReadonlyArray<ModelCard>> =>
         modelCards
           .convert(received.data)
-          .withErrorFormat((message) =>
-            failureMessage('invalid-response', message, received.response.status, received.requestId)
+          .withErrorFormat(() =>
+            failureMessage(
+              'invalid-response',
+              describeModelList(received.data),
+              received.response.status,
+              received.requestId
+            )
           ),
       // The SDK raises its base error after a 2xx response whose shape it cannot unwrap; the
       // response itself is still available for its status and request id.

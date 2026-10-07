@@ -80,6 +80,9 @@ function parseArgs(argv) {
   for (let i = 0; i < rest.length; i++) {
     const arg = rest[i];
     if (arg === '--check') {
+      if (flags.check) {
+        usage('--check is given more than once');
+      }
       flags.check = true;
     } else if (arg.startsWith('--')) {
       const name = arg.slice(2);
@@ -132,7 +135,7 @@ function redactedUrl(value) {
 
 /**
  * Applies `createSystemOneClient`'s constraints — an absolute `http:` or `https:` URL with no
- * query, fragment or credentials — and returns the URL a live run would use: the SDK strips
+ * whitespace, query, fragment or credentials — and returns the URL a live run would use: the SDK strips
  * trailing slashes, so they are stripped here too.
  */
 function absoluteUrl(name, value) {
@@ -147,13 +150,14 @@ function absoluteUrl(name, value) {
   }
   const valid =
     (url.protocol === 'http:' || url.protocol === 'https:') &&
+    !/\s/.test(value) &&
     !value.includes('?') &&
     !value.includes('#') &&
     url.username === '' &&
     url.password === '';
   if (!valid) {
     usage(
-      `--${name} must be an absolute http(s) URL with no query, fragment or credentials; got ${redactedUrl(
+      `--${name} must be an absolute http(s) URL with no whitespace, query, fragment or credentials; got ${redactedUrl(
         value
       )}`
     );
@@ -198,9 +202,15 @@ function keyFrom(keyEnv) {
 
 const QUESTION_TYPES = ['noul', 'choice', 'score'];
 
+/** The SDK's `EntryType`: text, a JSON object or array, or `null`. */
+function isEntry(value) {
+  return value === null || typeof value === 'string' || typeof value === 'object';
+}
+
 /**
- * A `noul` question's optional criteria: absent (or `null`, which the SDK's type allows), or an
- * object whose keys are `true` and/or `false`, each with a string description.
+ * A `noul` question's optional criteria, as the SDK and `askSystemOne` accept them: absent, `null`,
+ * or an object whose only keys are `true` and/or `false`, each an `EntryType` (text, a JSON object
+ * or array, or `null`).
  */
 function isNoulCriteria(criteria) {
   if (criteria === undefined || criteria === null) {
@@ -209,11 +219,7 @@ function isNoulCriteria(criteria) {
   if (typeof criteria !== 'object' || Array.isArray(criteria)) {
     return false;
   }
-  const keys = Object.keys(criteria);
-  return (
-    keys.length > 0 &&
-    keys.every((key) => (key === 'true' || key === 'false') && typeof criteria[key] === 'string')
-  );
+  return Object.keys(criteria).every((key) => (key === 'true' || key === 'false') && isEntry(criteria[key]));
 }
 
 /** Validates the parity question file: `{ "items": [{ "state": …, "questions": { id: Question } }] }`. */
@@ -240,7 +246,10 @@ function readQuestionFile(file) {
     if (item === null || typeof item !== 'object' || !('state' in item)) {
       usage(`${where} needs a state`);
     }
-    const ids = item.questions && typeof item.questions === 'object' ? Object.keys(item.questions) : [];
+    if (item.questions === null || typeof item.questions !== 'object' || Array.isArray(item.questions)) {
+      usage(`${where} needs questions as an object of named questions, not a list`);
+    }
+    const ids = Object.keys(item.questions);
     if (ids.length === 0) {
       usage(`${where} needs at least one question`);
     }
@@ -261,7 +270,7 @@ function readQuestionFile(file) {
       if (q.type === 'noul' && !isNoulCriteria(q.criteria)) {
         usage(
           `${where} question '${id}': noul criteria, when given, must be an object whose keys are ` +
-            "'true' and/or 'false', each with a string description"
+            "'true' and/or 'false', each text, a JSON object or array, or null"
         );
       }
     }
