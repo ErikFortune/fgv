@@ -84,9 +84,12 @@ gate-review round, two other packages received test-only updates:
 
 Also refused, and recorded in `docs/FUTURE.md`: declared `properties` together with a
 schema-valued `additionalProperties` (zod `.catchall()`). The converter would be easy; the builder
-has no typing for it that avoids collapsing to `never`. Also refused:
-`patternProperties`, `propertyNames` and `unevaluatedProperties` beside a record. These change which
-keys the value schema applies to, so a record that ignored them would be looser than its source.
+has no typing for it that avoids collapsing to `never`. Also refused beside a record: every object keyword that constrains the record's key set, which the
+record converter would otherwise ignore. That covers `patternProperties`, `propertyNames`,
+`unevaluatedProperties`, `dependentRequired`, `dependentSchemas`, draft-07 `dependencies`,
+`minProperties` and `maxProperties`. A record that ignored any of them would be looser than its
+source. The open-object form of the same looseness (these keywords beside an *open* object) stays
+in the `docs/TECH_DEBT.md` P3 entry, under #682.
 
 ## Verdicts on the brief's beliefs
 
@@ -171,7 +174,7 @@ The Gemini facts above (string-only `enum`, `type` required) come from the docum
 
 Each protection was reverted alone in the source, the `json-schema-builder` tests were run, and the
 file was restored. Measured on a clean tree: R1–R23 on `47320a83`, all 28 again on the
-gate-review changes, and all 30 again on the Copilot round 1 changes. Every count was the same in both runs, except R10, which also reddens the new
+gate-review changes, all 30 again on the Copilot round 1 changes, and all 32 again on the Copilot round 2 changes. Every count was the same in both runs, except R10, which also reddens the new
 truncation test. Several mutants (`if (false)`) also
 trip TS7027 (unreachable code), a warning; the tests still ran on the emitted code.
 
@@ -192,10 +195,10 @@ trip TS7027 (unreachable code), a warning; the tests still ran on the emitted co
 | R13 | own-key pointer resolution | 1 | a pointer naming an inherited property |
 | R14 | validation keyword beside `$ref` refused | 1 | a validation keyword beside $ref |
 | R15 | `__proto__` property refused | 1 | rejects a property named __proto__ rather than losing its schema |
-| R16 | record key keywords refused | 3 | patternProperties / propertyNames / unevaluatedProperties beside a value schema |
+| R16 | record key-set keywords refused (the whole check) | 8 | one parameterized row per keyword (3 at first; 8 since Copilot round 2) |
 | R17 | record + declared properties refused | 1 | refuses declared properties beside a value schema |
-| R18 | record converts values through its schema | 6 | z.record verbatim; nullable record; record values; factory convert; per-key errors; openObject "is a record, not an open object" |
-| R19 | record wire states its value schema | 4 | z.record verbatim; nullable record; record values; factory emits |
+| R18 | record converts values through its schema | 7 | z.record verbatim; nullable record; record values; factory convert; per-key errors; openObject "is a record, not an open object"; a plain record still adapts (since round 2) |
+| R19 | record wire states its value schema | 5 | z.record verbatim; nullable record; record values; factory emits; a plain record still adapts (since round 2) |
 | R20 | `{}` `additionalProperties` reads as `true` | 2 | empty / annotation-only additionalProperties means true |
 | R21 | numeric-enum message | 4 | zod number enum; pydantic Literal[1, 2]; mixed enum; fromJson "rejects non-string and empty enums" |
 | R22 | `{}` message | 3 | pydantic Any (spike); Any with title; fromJson "rejects a missing or unknown type" |
@@ -204,9 +207,11 @@ trip TS7027 (unreachable code), a warning; the tests still ran on the emitted co
 | R25 | `captureResult` backstop at the root | 1 | an accessor that throws becomes a failure, not an exception |
 | R26 | percent-decode the fragment before splitting | 2 | `%2F` decoded before splitting (RFC 6901 § 6); a malformed escape (with the mutant, the decode throws outside the per-reference `captureResult`, and the backstop's message no longer matches) |
 | R27 | `~1` unescaped before `~0` | 1 | `~01` names the literal key `~1` |
-| R28 | echoed reference truncated | 1 | a very long reference, echoed truncated |
+| R28 | echoed reference truncated | 2 | a very long reference, echoed truncated; a long local reference to an invalid target (since round 2) |
 | R29 | invalid `~` escape refused | 2 | an invalid '~' escape (`a~2b`); a trailing '~' (`a~`) |
 | R30 | property key escaped as a pointer token in error paths | 1 | escapes a property key as a JSON Pointer token in the reported path |
+| R31 | the five key-set keywords added in round 2 (`dependentRequired`, `dependentSchemas`, `dependencies`, `minProperties`, `maxProperties`) | 5 | their five parameterized rows |
+| R32 | `$ref` error path truncated (`path: _echo(target)`) | 1 | a long local reference to an invalid target, echoed truncated in the nested path |
 
 ## Tests changed
 
@@ -286,6 +291,22 @@ Five threads, verified against `f2a96f57`:
 5. **Scope statement:** the opening of this file and the "formerly stale" paragraph now say that
    production source changes are confined to `ts-json-base`, and that the two other packages
    received test-only updates in the gate-review round.
+
+## Copilot round 2 (PR #723), applied
+
+Two threads, verified against `c4494de1` (the branch with `integration/asks`, including #722, merged in):
+
+1. **Record key-set keywords.** `RECORD_KEY_KEYWORDS` now also holds `dependentRequired`,
+   `dependentSchemas`, `dependencies` (draft-07), `minProperties` and `maxProperties`. Each is refused
+   with the existing "unsupported JSON Schema keyword '…' beside a schema-valued
+   'additionalProperties'" message. There is one parameterized test per keyword (8 in all), and a test
+   confirms a plain record still adapts. Revert row R31. The open-object form of this looseness stays
+   in the TECH_DEBT entry, under #682.
+2. **`$ref` diagnostic path.** The full target stays in `refs` for cycle identity. The resolved node's
+   error path is now `_echo(target)`, so a long local reference is cut to 120 characters there too,
+   not only where the reference itself is quoted. A test uses a 200-character local `$ref` to an
+   invalid target and checks that the message holds the truncated form and never the full name.
+   Revert row R32.
 
 ## Known exceptions and over-refusals
 

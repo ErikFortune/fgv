@@ -1133,8 +1133,8 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
   keywords (`prefixItems`, `contains`, `additionalItems`, `unevaluatedItems`). Each makes an MCP
   tool's arguments pass our validation and then fail at the server — not unsafe in the sense of
   silent data loss, but a gap against the "converter enforces what the schema says" rule. The
-  `json-schema-fromjson-widening` stream refuses the object-key keywords beside a *record* (where it
-  introduced the shape) and leaves the rest. Also looser than its schema: an open object or a record
+  `json-schema-fromjson-widening` stream refuses the object-key and key-count keywords beside a
+  *record* (where it introduced the shape) and leaves the rest. Also looser than its schema: an open object or a record
   drops an own `"__proto__"` key **without validating it** (so `record(number)` accepts
   `{"__proto__": "x"}`, which the source schema rejects); nothing invalid reaches the output, but
   the call is accepted rather than refused.

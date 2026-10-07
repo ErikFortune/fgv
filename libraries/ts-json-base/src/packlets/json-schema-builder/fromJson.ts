@@ -100,14 +100,21 @@ const MAX_SCHEMA_DEPTH: number = 128;
 const MAX_ECHOED_REF_LENGTH: number = 120;
 
 /**
- * Keywords that change which keys a schema-valued `additionalProperties` governs, or constrain the
- * keys themselves. A record converter applies its value schema to every key and ignores these, so
- * a record carrying one would be looser than its source; it is refused instead.
+ * Object keywords that constrain a record's key set, which a record converter would otherwise
+ * ignore: which keys the value schema governs (`patternProperties`, `unevaluatedProperties`), what a
+ * key may be (`propertyNames`), which keys require others (`dependentRequired`, `dependentSchemas`,
+ * draft-07 `dependencies`), and how many keys there may be (`minProperties`, `maxProperties`). A
+ * record carrying one would be looser than its source, so it is refused instead.
  */
 const RECORD_KEY_KEYWORDS: readonly string[] = [
   'patternProperties',
   'propertyNames',
-  'unevaluatedProperties'
+  'unevaluatedProperties',
+  'dependentRequired',
+  'dependentSchemas',
+  'dependencies',
+  'minProperties',
+  'maxProperties'
 ];
 
 /**
@@ -910,9 +917,11 @@ function _convertRef(raw: Record<string, unknown>, ctx: IParseContext): Result<I
             .convert(raw)
             .withErrorFormat((msg) => `${path}: ${msg}`)
             .onSuccess((description) =>
+              // The full target stays the cycle identity in `refs`; the error path is cut, since a
+              // server can make a reference arbitrarily long and every nested failure repeats it.
               _convertNode(resolved, {
                 ...ctx,
-                path: target,
+                path: _echo(target),
                 refs: [...ctx.refs, target],
                 depth: ctx.depth + 1
               })

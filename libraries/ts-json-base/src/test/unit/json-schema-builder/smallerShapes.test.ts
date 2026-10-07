@@ -131,22 +131,60 @@ describe('JsonSchema — smaller MCP shapes (#683)', () => {
       });
     });
 
-    test.each<[string, RegExp]>([
-      ['patternProperties', /^#\/properties\/m: unsupported JSON Schema keyword 'patternProperties' beside/],
-      ['propertyNames', /^#\/properties\/m: unsupported JSON Schema keyword 'propertyNames' beside/],
+    test.each<[string, JsonValue, RegExp]>([
+      [
+        'patternProperties',
+        { '^n_': { type: 'number' } },
+        /^#\/properties\/m: unsupported JSON Schema keyword 'patternProperties' beside a schema-valued 'additionalProperties'/
+      ],
+      [
+        'propertyNames',
+        { enum: ['a', 'b'] },
+        /^#\/properties\/m: unsupported JSON Schema keyword 'propertyNames' beside a schema-valued 'additionalProperties'/
+      ],
       [
         'unevaluatedProperties',
-        /^#\/properties\/m: unsupported JSON Schema keyword 'unevaluatedProperties' beside/
+        false,
+        /^#\/properties\/m: unsupported JSON Schema keyword 'unevaluatedProperties' beside a schema-valued 'additionalProperties'/
+      ],
+      [
+        'dependentRequired',
+        { a: ['b'] },
+        /^#\/properties\/m: unsupported JSON Schema keyword 'dependentRequired' beside a schema-valued 'additionalProperties'/
+      ],
+      [
+        'dependentSchemas',
+        { a: { required: ['b'] } },
+        /^#\/properties\/m: unsupported JSON Schema keyword 'dependentSchemas' beside a schema-valued 'additionalProperties'/
+      ],
+      [
+        'dependencies',
+        { a: ['b'] },
+        /^#\/properties\/m: unsupported JSON Schema keyword 'dependencies' beside a schema-valued 'additionalProperties'/
+      ],
+      [
+        'minProperties',
+        1,
+        /^#\/properties\/m: unsupported JSON Schema keyword 'minProperties' beside a schema-valued 'additionalProperties'/
+      ],
+      [
+        'maxProperties',
+        3,
+        /^#\/properties\/m: unsupported JSON Schema keyword 'maxProperties' beside a schema-valued 'additionalProperties'/
       ]
-    ])('refuses %s beside a value schema, which a record cannot honour', (keyword, message) => {
+    ])('refuses %s beside a value schema, which a record cannot honour', (keyword, value, message) => {
       const raw: JsonObject = obj({
-        m: {
-          type: 'object',
-          additionalProperties: { type: 'string' },
-          [keyword]: { '^n_': { type: 'number' } }
-        }
+        m: { type: 'object', additionalProperties: { type: 'string' }, [keyword]: value }
       });
       expect(JsonSchema.fromJson(raw)).toFailWith(message);
+    });
+
+    test('a plain record, with none of those keywords, still adapts', () => {
+      expectHonoured(
+        obj({ m: { type: 'object', additionalProperties: { type: 'string' } } }, ['m']),
+        [{ m: { a: 'x', b: 'y' } }, { m: {} }],
+        [{ m: { a: 1 } }]
+      );
     });
 
     test('refuses declared properties beside a value schema, naming the path', () => {

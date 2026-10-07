@@ -57,6 +57,13 @@ Worker-owned.
 
   Revert matrix re-run, 30 rows.
 
+- Copilot round 2 on #723 (two threads, against `c4494de1`), applied after pulling the merge of
+  `integration/asks` (with #722) and running `rush install`:
+  - the record key-set keywords completed;
+  - the `$ref` error path truncated.
+
+  Revert matrix re-run, 32 rows.
+
 ## Open questions
 
 None blocking. Deferred shapes are in `docs/FUTURE.md`; the numeric-enum and `{}` deferrals each

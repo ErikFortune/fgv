@@ -262,6 +262,7 @@ describe('JsonSchema.fromJson — local $ref / $defs', () => {
     defs.L12 = { type: 'string' };
     doubling.$ref = '#/$defs/L0';
 
+    const longName = 'L'.repeat(200);
     const wideProps: JsonObject = {};
     for (let i = 0; i < 200; i++) {
       wideProps[`p${i}`] = { type: 'string' };
@@ -282,6 +283,13 @@ describe('JsonSchema.fromJson — local $ref / $defs', () => {
         'a very long reference, echoed truncated',
         obj({ x: { $ref: `https://example.com/${'a'.repeat(300)}` } }),
         /remote reference 'https:\/\/example\.com\/a{100}…' \(only local/
+      ],
+      [
+        'a long local reference to an invalid target, echoed truncated in the nested path',
+        { $defs: { [longName]: { type: 'date' } }, $ref: `#/$defs/${longName}` },
+        // The truncated target appears (as the shown reference and as the nested error path), and the
+        // full 200-character name appears nowhere in the message.
+        /^(?![\s\S]*L{121})#: via '\$ref' '#\/\$defs\/L{112}…': #\/\$defs\/L{112}…: unsupported or missing 'type'$/
       ],
       ['a relative remote reference', obj({ x: { $ref: 'other.json' } }), /remote reference 'other\.json'/],
       ['an anchor', obj({ x: { $ref: '#foo' } }), /'#foo': only JSON Pointer fragments/],
