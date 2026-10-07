@@ -70,8 +70,8 @@ const MUTATIONS = [
     'R1 the bound runs after the SDK call',
     ['U1'],
     CLIENT,
-    '  return checkInputLimit(request.state, request.questions, request.inputLimit)',
-    '  await bindings\n    .get(client)\n    ?.sdk.systemOne({ state: request.state, questions: request.questions })\n    .withResponse()\n    .catch(() => undefined);\n  return checkInputLimit(request.state, request.questions, request.inputLimit)'
+    '  return checkRequest(request)\n',
+    '  await bindings\n    .get(client)\n    ?.sdk.systemOne({ state: request.state, questions: request.questions })\n    .withResponse()\n    .catch(() => undefined);\n  return checkRequest(request)\n'
   ),
   m(
     'R2 >= instead of >',
@@ -295,26 +295,12 @@ const MUTATIONS = [
     "                err,\n                'invalid-response',\n                response.status,",
     "                err,\n                'invalid-request',\n                response.status,"
   ),
-  paired(
-    'R34 a malformed request is not captured, so askSystemOne rejects instead of returning a Result',
+  m(
+    'R34 an unserializable state is not captured, so askSystemOne rejects instead of returning a Result',
     ['U27'],
-    [
-      {
-        file: MEASURE,
-        from: '  return captureResult(() => {\n    const stateLength',
-        to: '  return succeed((() => {\n    const stateLength'
-      },
-      {
-        file: MEASURE,
-        from: '  }).withErrorFormat((message) => `the request could not be measured: ${message}`);',
-        to: '  })()).withErrorFormat((message) => `the request could not be measured: ${message}`);'
-      },
-      {
-        file: MEASURE,
-        from: '  captureResult,\n',
-        to: '  captureResult,\n  succeed,\n'
-      }
-    ]
+    MEASURE,
+    'captureResult(() => measureChecked(state, questions))',
+    'captureResult(() => true).onSuccess(() => succeedWithDetail(measureChecked(state, questions)).asResult)'
   ),
   m(
     "R35 an APIError's body-derived message reaches the failure message",
@@ -341,8 +327,8 @@ const MUTATIONS = [
     'R38 a rejected baseUrl is echoed, credentials included',
     ['U24'],
     CLIENT,
-    "const invalid = 'baseUrl must be an absolute http(s) URL with no query, fragment or credentials';",
-    "const invalid = `baseUrl must be an absolute http(s) URL with no query, fragment or credentials, got '${baseUrl}'`;"
+    "'invalid-request: baseUrl must be an absolute http(s) URL with no whitespace, query, fragment or credentials';",
+    "`invalid-request: baseUrl must be an absolute http(s) URL with no whitespace, query, fragment or credentials, got '${baseUrl}'`;"
   ),
   m(
     'R39 a rejected noul quotes the received value',
@@ -372,6 +358,42 @@ const MUTATIONS = [
     'if (Math.abs(sum - 1) > sumTolerance + sumRoundingAllowance) {',
     'if (Math.abs(sum - 1) > sumTolerance) {'
   ),
+  m(
+    'R41 createSystemOneClient reads its parameters unconverted',
+    ['U28'],
+    CLIENT,
+    'return checkClientParams(params).onSuccess(() => clientFrom(params));',
+    'return clientFrom(params);'
+  ),
+  m(
+    "R42 the questions are not checked before the input limit, so 'unchecked' mode sends a malformed question",
+    ['U27b'],
+    MEASURE,
+    '  return checkQuestions(questions)\n    .onSuccess(() =>\n      inputLimitShape',
+    '  return captureResult(() => true)\n    .onSuccess(() =>\n      inputLimitShape'
+  ),
+  m(
+    'R43 a malformed model list is quoted',
+    ['U19'],
+    CLIENT,
+    'describeModelList(received.data),',
+    'JSON.stringify(received.data),'
+  ),
+  m('R44 a base URL with whitespace is accepted', ['U24'], CLIENT, '      !/\\s/.test(baseUrl) &&\n', ''),
+  m(
+    'R45 askSystemOne reads its request unchecked',
+    ['U29'],
+    CLIENT,
+    '  return checkRequest(request)\n',
+    '  return captureResult(() => true)\n'
+  ),
+  m(
+    'R46 measureSystemOneInput measures questions of the wrong shape',
+    ['U28'],
+    MEASURE,
+    'return checkQuestions(questions).onSuccess(() =>',
+    'return captureResult(() => true).onSuccess(() =>'
+  ),
   harness(
     'H1 an unknown option is accepted',
     ['S1'],
@@ -395,6 +417,20 @@ const MUTATIONS = [
     ['S4'],
     'if (!listModels.ok) {',
     "if (listModels.ok === 'never') {"
+  ),
+  harness('H5 a URL with whitespace is accepted', ['S5'], '    !/\\s/.test(value) &&\n', ''),
+  harness(
+    'H6 --check may be given twice',
+    ['S6'],
+    "      if (flags.check) {\n        usage('--check is given more than once');\n      }\n",
+    ''
+  ),
+  harness('H7 questions given as a list are accepted', ['S7'], ' || Array.isArray(item.questions)) {', ') {'),
+  harness(
+    'H8 a noul criterion must be text',
+    ['S2'],
+    "  return value === null || typeof value === 'string' || typeof value === 'object';",
+    "  return typeof value === 'string';"
   )
 ];
 
