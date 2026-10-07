@@ -611,6 +611,11 @@ from the repo root: exit 0, `SUCCESS: 37 operations`, 11 m 35 s; `grep -cE "not 
 failed|Error:|error TS"` **0**; the one `warning` line is the `.agents/skills` symlink notice; no NUL
 padding. In the package: fixlint, build, lint and test all exit 0 with 0 warnings; 70 tests, 100%.
 
+**Copilot round 2 (2026-10-07):** after the five fixes, the same repo-wide `rush test`: exit 0,
+`SUCCESS: 37 operations`, 11 m 42 s; error grep **0**; the one `warning` line is the same symlink
+notice; no NUL padding. In the package: fixlint, build, lint and test exit 0 with 0 warnings; 70
+tests, 100%. `perf/systemOneLive.selftest.js`: 4 of 4 pass. Revert matrix 47/47 VERIFIED.
+
 ## What the brief or the plan got wrong
 
 1. **The plan's R22 could not be made VERIFIED as written.** "Drop `Number.isFinite`" on a probability
