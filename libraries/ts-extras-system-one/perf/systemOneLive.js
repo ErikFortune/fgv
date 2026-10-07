@@ -13,15 +13,22 @@
  *        --max-chars <n> --min-top-agreement <x> --max-mean-abs-diff <y>
  *        [--key-env-a <VAR>] [--key-env-b <VAR>] [--check]
  *
- *   probe   one askSystemOne with a fixed noul + choice + score question set, plus
- *           listSystemOneModels; prints the § 6 record as JSON. Exit 0 on success, 2 on a
- *           classified failure (the record names the reason and status).
+ *   probe   one askSystemOne with a fixed noul + choice + score question set, then
+ *           listSystemOneModels, then one ask with a model id that cannot exist (L1 / OQ-6: the
+ *           record keeps its classified reason and status, nothing the server sent, and expects
+ *           invalid-request; it is an observation and never fails the probe). Prints the § 6
+ *           record as JSON. Exit 0 when the ask and the listing both succeed; 2 when either fails,
+ *           with `failedStep`, `reason` and `message`. When both fail, the ask's failure is the
+ *           one reported; the listing's stays in `listModels`.
  *   parity  refuses to start unless both thresholds are given, and prints them first. Probes both
  *           endpoints and exits 2 if either probe fails ("refused, not a parity result"). Asks
  *           every item of the question file of both, each bounded by --max-chars so truncation is
  *           not what is measured, and reports top-answer agreement and the mean and maximum
  *           per-option absolute difference. Exit 0 (pass) or 1 (fail).
  *   --check validates the arguments and the question file and makes no request (exit 0, or 3).
+ *           Each mode accepts only its own flags: an unknown or repeated flag is refused (exit 3)
+ *           before any output or request, and the message names the flag, never its value. In the
+ *           question file, a noul's criteria, when given, are `true` and/or `false` descriptions.
  *
  * Keys are read from the environment variable named by --key-env / --key-env-a / --key-env-b,
  * never from an argument, so they appear in neither the shell history nor the record. With no
@@ -32,6 +39,7 @@
 
 /* eslint-disable no-console */
 
+const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 
@@ -42,21 +50,52 @@ function usage(message) {
   process.exit(USAGE_ERROR);
 }
 
+/** The flags each mode accepts, besides `--check`. Anything else is refused before any work. */
+const MODE_FLAGS = {
+  probe: ['url', 'model', 'key-env', 'max-chars'],
+  parity: [
+    'a',
+    'b',
+    'questions',
+    'max-chars',
+    'min-top-agreement',
+    'max-mean-abs-diff',
+    'key-env-a',
+    'key-env-b'
+  ]
+};
+
+/**
+ * Parses the mode and its flags. An unknown mode, an unknown or repeated flag, or a stray argument
+ * is a usage error, raised before any output or request; the message names the flag, never a
+ * value, since a value may be a URL with credentials.
+ */
 function parseArgs(argv) {
   const [mode, ...rest] = argv;
+  if (!Object.keys(MODE_FLAGS).includes(mode)) {
+    usage(`the mode must be ${Object.keys(MODE_FLAGS).join(' or ')}`);
+  }
+  const allowed = MODE_FLAGS[mode];
   const flags = { check: false };
   for (let i = 0; i < rest.length; i++) {
     const arg = rest[i];
     if (arg === '--check') {
       flags.check = true;
     } else if (arg.startsWith('--')) {
+      const name = arg.slice(2);
+      if (!allowed.includes(name)) {
+        usage(`unknown option ${arg} for ${mode}; it accepts --${allowed.join(', --')} and --check`);
+      }
+      if (name in flags) {
+        usage(`${arg} is given more than once`);
+      }
       const value = rest[++i];
       if (value === undefined || value.startsWith('--')) {
         usage(`${arg} needs a value`);
       }
-      flags[arg.slice(2)] = value;
+      flags[name] = value;
     } else {
-      usage(`unexpected argument '${arg}'`);
+      usage(`unexpected argument at position ${i + 2}; every value follows its --option`);
     }
   }
   return { mode, flags };
@@ -159,6 +198,24 @@ function keyFrom(keyEnv) {
 
 const QUESTION_TYPES = ['noul', 'choice', 'score'];
 
+/**
+ * A `noul` question's optional criteria: absent (or `null`, which the SDK's type allows), or an
+ * object whose keys are `true` and/or `false`, each with a string description.
+ */
+function isNoulCriteria(criteria) {
+  if (criteria === undefined || criteria === null) {
+    return true;
+  }
+  if (typeof criteria !== 'object' || Array.isArray(criteria)) {
+    return false;
+  }
+  const keys = Object.keys(criteria);
+  return (
+    keys.length > 0 &&
+    keys.every((key) => (key === 'true' || key === 'false') && typeof criteria[key] === 'string')
+  );
+}
+
 /** Validates the parity question file: `{ "items": [{ "state": …, "questions": { id: Question } }] }`. */
 function readQuestionFile(file) {
   if (file === undefined) {
@@ -201,6 +258,12 @@ function readQuestionFile(file) {
       if (q.type === 'score' && (!Array.isArray(q.criteria) || q.criteria.length < 2)) {
         usage(`${where} question '${id}': score criteria must be a list of at least two levels`);
       }
+      if (q.type === 'noul' && !isNoulCriteria(q.criteria)) {
+        usage(
+          `${where} question '${id}': noul criteria, when given, must be an object whose keys are ` +
+            "'true' and/or 'false', each with a string description"
+        );
+      }
     }
   });
   return parsed.items;
@@ -211,8 +274,13 @@ function loadPackage() {
   if (!fs.existsSync(lib)) {
     usage(`no built lib at ${lib}; run 'rushx build' first`);
   }
-  return require(lib);
+  const pkg = require(lib);
+  REASONS = [...pkg.allSystemOneFailureReasons];
+  return pkg;
 }
+
+/** The package's failure reasons, filled in by `loadPackage`. */
+let REASONS = [];
 
 /** The fixed probe question set: one of each type. */
 function probeQuestions(pkg) {
@@ -253,18 +321,96 @@ async function probe(pkg, target, maxChars) {
     inputLimit: maxChars === undefined ? 'unchecked' : { maxChars }
   });
   const models = await pkg.listSystemOneModels(client.value);
-  const modelsRecord = models.isSuccess()
+  const listModels = models.isSuccess()
     ? { ok: true, models: models.value }
-    : { ok: false, message: models.message };
+    : { ok: false, reason: reasonOf(models.message), message: models.message };
+  const unknownModel = await probeUnknownModel(pkg, target);
+  // Both steps are evidence the record must hold. When both fail, the ask's failure is the one
+  // reported, since it is the round trip L1 exists to establish; the listing's stays in `listModels`.
   if (asked.isFailure()) {
-    return { ...record, ok: false, reason: asked.detail, message: asked.message, listModels: modelsRecord };
+    return {
+      ...record,
+      ok: false,
+      failedStep: 'askSystemOne',
+      reason: asked.detail,
+      message: asked.message,
+      listModels,
+      unknownModel
+    };
+  }
+  if (!listModels.ok) {
+    return {
+      ...record,
+      ok: false,
+      failedStep: 'listSystemOneModels',
+      reason: listModels.reason,
+      message: listModels.message,
+      meta: asked.value.meta,
+      listModels,
+      unknownModel
+    };
   }
   return {
     ...record,
     ok: true,
     meta: asked.value.meta,
     result: asked.value.result,
-    listModels: modelsRecord
+    listModels,
+    unknownModel
+  };
+}
+
+/**
+ * The classified reason at the head of one of the package's failure messages, which it composes as
+ * `<reason>[ (status N)][ (request R)]: …`. `undefined` when the message has no known reason.
+ */
+function reasonOf(message) {
+  const head = /^([a-z-]+)[ :]/.exec(message);
+  return head !== null && REASONS.includes(head[1]) ? head[1] : undefined;
+}
+
+/** The HTTP status in one of the package's failure messages, which it composes as `(status N)`. */
+function statusOf(message) {
+  const status = /^[a-z-]+ \(status (\d{3})\)/.exec(message);
+  return status === null ? undefined : Number(status[1]);
+}
+
+/** A model id no server can have: a fixed prefix and a random suffix. */
+function unknownModelId() {
+  return `fgv-probe-unknown-model-${crypto.randomBytes(6).toString('hex')}`;
+}
+
+/**
+ * Asks once with a model id that cannot exist and records how the server refuses it (L1, OQ-6):
+ * the classified reason and the status, and nothing the server sent back. The expected outcome is
+ * `invalid-request`. It is an observation, so it never fails the probe; a success is recorded as
+ * surprising.
+ * @remarks
+ * The package's `DetailedResult` carries the reason as its detail but does not expose the HTTP
+ * status as a field, so the status is read from the `(status N)` segment the package itself
+ * composes in the message. The rest of the message is not recorded.
+ */
+async function probeUnknownModel(pkg, target) {
+  const model = unknownModelId();
+  const client = pkg.createSystemOneClient({ baseUrl: target.url, model, apiKey: keyFrom(target.keyEnv) });
+  if (client.isFailure()) {
+    return { model, outcome: 'not-asked', reason: 'invalid-request' };
+  }
+  const asked = await pkg.askSystemOne(client.value, {
+    state: PROBE_STATE,
+    questions: { billing: pkg.noul('Is this message about billing?') },
+    inputLimit: 'unchecked'
+  });
+  if (asked.isSuccess()) {
+    return { model, outcome: 'accepted (surprising: a server answered for a model id that cannot exist)' };
+  }
+  const status = statusOf(asked.message);
+  return {
+    model,
+    outcome:
+      asked.detail === 'invalid-request' ? 'refused as expected' : 'refused, with an unexpected reason',
+    reason: asked.detail,
+    ...(status !== undefined ? { status } : {})
   };
 }
 
@@ -391,7 +537,7 @@ async function main() {
     console.log(JSON.stringify(report, undefined, 2));
     return exit;
   }
-  return usage(`the mode must be probe or parity, got '${mode}'`);
+  return usage('the mode must be probe or parity');
 }
 
 main().then(

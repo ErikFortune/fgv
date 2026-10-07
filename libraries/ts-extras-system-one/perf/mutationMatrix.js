@@ -54,6 +54,17 @@ function paired(name, mustGoRed, edits) {
   return { name, mustGoRed, edits };
 }
 
+const HARNESS = 'perf/systemOneLive.js';
+
+/**
+ * A row for the live harness, which the jest suite does not cover: the run builds the package
+ * from its unmutated source, then runs `perf/systemOneLive.selftest.js`, whose failures print in
+ * jest's `● <id> …` / `Failures: N` shape.
+ */
+function harness(name, mustGoRed, from, to) {
+  return { name, mustGoRed, edits: [{ file: HARNESS, from, to }], suite: 'selftest' };
+}
+
 const MUTATIONS = [
   m(
     'R1 the bound runs after the SDK call',
@@ -360,6 +371,30 @@ const MUTATIONS = [
     VALIDATE,
     'if (Math.abs(sum - 1) > sumTolerance + sumRoundingAllowance) {',
     'if (Math.abs(sum - 1) > sumTolerance) {'
+  ),
+  harness(
+    'H1 an unknown option is accepted',
+    ['S1'],
+    'if (!allowed.includes(name)) {',
+    'if (allowed.length < 0 && !allowed.includes(name)) {'
+  ),
+  harness(
+    "H2 a noul's criteria are not checked",
+    ['S2'],
+    "if (q.type === 'noul' && !isNoulCriteria(q.criteria)) {",
+    "if (q.type === 'noul' && !isNoulCriteria(undefined)) {"
+  ),
+  harness(
+    'H3 the unknown-model probe records no status',
+    ['S3'],
+    'const status = statusOf(asked.message);',
+    'const status = undefined;'
+  ),
+  harness(
+    'H4 a model-listing failure does not fail the probe',
+    ['S4'],
+    'if (!listModels.ok) {',
+    "if (listModels.ok === 'never') {"
   )
 ];
 
@@ -422,12 +457,20 @@ function occurrences(text, pattern) {
   return text.split(pattern).length - 1;
 }
 
-function runSuite(pkg) {
-  const out = spawnSync('node_modules/.bin/heft', ['test', '--clean', '--disable-code-coverage'], {
-    cwd: pkg,
-    encoding: 'utf8',
-    maxBuffer: 256 * 1024 * 1024
-  });
+function runSuite(pkg, suite) {
+  const options = { cwd: pkg, encoding: 'utf8', maxBuffer: 256 * 1024 * 1024 };
+  if (suite === 'selftest') {
+    // A jest row's `heft test --clean` leaves `lib/` built from its mutant, so rebuild from the
+    // restored source before running the harness against it.
+    const build = spawnSync('node_modules/.bin/heft', ['build', '--clean'], options);
+    const built = `${build.stdout}${build.stderr}`;
+    if (build.status !== 0) {
+      return `${built}\nbuild encountered an error`;
+    }
+    const out = spawnSync(process.execPath, ['perf/systemOneLive.selftest.js'], options);
+    return `${out.stdout}${out.stderr}`;
+  }
+  const out = spawnSync('node_modules/.bin/heft', ['test', '--clean', '--disable-code-coverage'], options);
   return `${out.stdout}${out.stderr}`;
 }
 
@@ -499,7 +542,7 @@ function main() {
         for (const [file, text] of mutated) {
           fs.writeFileSync(file, text);
         }
-        result = classify(runSuite(args.pkg), row.mustGoRed);
+        result = classify(runSuite(args.pkg, row.suite), row.mustGoRed);
       } finally {
         const unrestored = [];
         for (const [file, source] of originals) {
