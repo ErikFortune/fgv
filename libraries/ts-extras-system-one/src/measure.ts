@@ -219,14 +219,11 @@ export function checkInputLimit(
   questions: Questions,
   inputLimit: SystemOneInputLimit
 ): DetailedResult<ISystemOneInputMeasure | undefined, SystemOneFailureReason> {
-  // The questions are checked before the limit is read, so a malformed question is
-  // `invalid-request` in 'unchecked' mode too, and nothing is sent.
-  return checkQuestions(questions)
-    .onSuccess(() =>
-      inputLimitShape
-        .convert(inputLimit)
-        .withErrorFormat(() => `invalid-request: inputLimit must be 'unchecked' or { maxChars: number }`)
-    )
+  // `askSystemOne` has already checked every question's shape (`checkRequest`), in either mode, so
+  // a malformed question is `invalid-request` in 'unchecked' mode too and nothing is sent.
+  return inputLimitShape
+    .convert(inputLimit)
+    .withErrorFormat(() => `invalid-request: inputLimit must be 'unchecked' or { maxChars: number }`)
     .withFailureDetail<SystemOneFailureReason>('invalid-request')
     .onSuccess((limit) =>
       limit === 'unchecked' ? succeedWithDetail(undefined) : bound(state, questions, limit.maxChars)

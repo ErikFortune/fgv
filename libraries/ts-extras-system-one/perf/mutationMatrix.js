@@ -41,6 +41,7 @@ const CLASSIFY = 'src/classify.ts';
 const MEASURE = 'src/measure.ts';
 const VALIDATE = 'src/validate.ts';
 const LOGGING = 'src/logging.ts';
+const SHAPES = 'src/shapes.ts';
 
 function m(name, mustGoRed, file, from, to) {
   return { name, mustGoRed, edits: [{ file, from, to }] };
@@ -368,9 +369,9 @@ const MUTATIONS = [
   m(
     "R42 the questions are not checked before the input limit, so 'unchecked' mode sends a malformed question",
     ['U27b'],
-    MEASURE,
-    '  return checkQuestions(questions)\n    .onSuccess(() =>\n      inputLimitShape',
-    '  return captureResult(() => true)\n    .onSuccess(() =>\n      inputLimitShape'
+    SHAPES,
+    '        ? checkQuestions(record.questions)\n',
+    '        ? succeed(true as const)\n'
   ),
   m(
     'R43 a malformed model list is quoted',
