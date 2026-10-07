@@ -175,10 +175,14 @@ close waits for a recorded L1.
 
 ## Revert matrix
 
-Run with `node perf/mutationMatrix.js --pkg <copy>` against a real copy of the package at `2e8555e2`
-(no links: only `node_modules` was a symlink to the package's). It took 4 m 53 s and exited 0.
-Rows R34–R37 were added at the gate-time review and R38–R40 (with R39b, R39c) at Copilot round 1;
-R8, R19 and R23 were re-pointed after refactors.
+Run with `node perf/mutationMatrix.js --pkg <copy>` against a real copy of the package at `2dfefc42`
+(no links: only `node_modules` was a symlink to the package's). It exited 0.
+- Rows R34–R37 were added at the gate-time review, R38–R40 (with R39b, R39c) at Copilot round 1, and
+  the harness rows H1–H4 at Copilot round 2.
+- R8, R19 and R23 were re-pointed after refactors.
+- The R rows run the jest suite. The H rows mutate `perf/systemOneLive.js`, which jest does not
+  cover: they rebuild the package from its restored source and run `perf/systemOneLive.selftest.js`,
+  which drives the harness against local stub servers and reports in jest's `●` / `Failures:` shape.
 
 ```
 R1 the bound runs after the SDK call [must go red: U1]: VERIFIED (18 red)
@@ -361,8 +365,16 @@ R39c a rejected sum quotes the received value [must go red: U16i]: VERIFIED (1 r
     askSystemOne › response validation › U16i each distribution must sum to 1 within 1e-3, at both boundaries, without quoting the sum
 R40 no rounding allowance on the sum tolerance [must go red: U16i]: VERIFIED (1 red)
     askSystemOne › response validation › U16i each distribution must sum to 1 within 1e-3, at both boundaries, without quoting the sum
+H1 an unknown option is accepted [must go red: S1]: VERIFIED (1 red)
+    S1 an unknown or repeated option is refused before any output, naming the flag but not its value
+H2 a noul's criteria are not checked [must go red: S2]: VERIFIED (1 red)
+    S2 --check validates a noul's criteria
+H3 the unknown-model probe records no status [must go red: S3]: VERIFIED (1 red)
+    S3 the probe records how an unknown model is refused, and nothing the server sent
+H4 a model-listing failure does not fail the probe [must go red: S4]: VERIFIED (1 red)
+    S4 a model-listing failure fails the probe; when both fail, the ask is reported
 
-43 rows; 0 not VERIFIED
+47 rows; 0 not VERIFIED
 ```
 
 ## `code-reviewer` findings and disposition
@@ -484,6 +496,92 @@ All six threads were verified, and all six are fixed.
 6. **`result.md` said the largest file has about 310 lines.** **Fixed:** `validate.ts`, 387 lines,
    measured after items 3 and 4.
 
+## Copilot round 2 on fgv#721 (against `9b076e47`) and disposition
+
+One inline thread plus four findings from the review summary, all confirmed by the orchestrator and
+all fixed. Items 1–4 are in `perf/systemOneLive.js`.
+
+1. **Unknown options were silently ignored** (`--max-char 2400 --check` exited 0 and reported
+   `maxChars: "unchecked"`). **Fixed:** each mode has a fixed set of flags. An unknown flag, a
+   repeated flag and a stray argument each exit 3 before any output or request. The message names
+   the flag and never its value; an unknown mode is no longer echoed either. Self-test **S1**;
+   matrix row **H1**.
+2. **`--check` did not validate a `noul`'s criteria.** **Fixed:** they are optional (absent or
+   `null`, as the SDK's type allows); when present they must be a non-array object whose keys are
+   exactly `true` and/or `false`, with string values. An empty object is refused. Self-test **S2**
+   covers four valid and five invalid shapes; matrix row **H2**.
+3. **The probe did not record the unknown-model status that L1 and OQ-6 require.** **Fixed:**
+   - After the ask and the listing, `probe` asks once with `fgv-probe-unknown-model-<12 hex>` and
+     records `unknownModel: { model, outcome, reason, status }`.
+   - The outcome is `refused as expected` for `invalid-request`, `refused, with an unexpected reason`
+     otherwise, and `accepted (surprising …)` for a success.
+   - It never fails the probe.
+   - Only the reason and the status are recorded. The package's message, and anything the server
+     sent, are not.
+   - **The package's result does not expose the HTTP status as a field.** Its `DetailedResult`
+     carries the reason as its detail, and the status appears only in the `(status N)` segment the
+     package itself composes at the head of its message. The harness reads it from there with a
+     regex anchored to that format. I did not widen the public surface for the harness. If a
+     consumer needs the status structurally, the additive change would be a `status` (and
+     `requestId`) on the failure detail; that is a design decision, flagged here and not taken.
+   - The plan's L1 row and § 8 `probe` bullet now say where L1's unknown-model status comes from.
+   - Self-test **S3** checks the stub's 422 is recorded as `invalid-request` / 422 with none of the
+     stub's text, and that an accepting stub is recorded as surprising. Matrix row **H3** (status
+     not recorded).
+4. **A model-listing failure did not fail the probe.** **Fixed:** the record becomes `ok: false` with
+   `failedStep: 'listSystemOneModels'`, the listing's classified reason and the package's message,
+   so `probe` exits 2 and `parity` refuses the probe.
+   - **When both the ask and the listing fail, the ask's failure is reported**, as `failedStep:
+     'askSystemOne'`. The ask is the round trip L1 exists to establish, and a server that cannot
+     answer it has not shown wire compatibility, whatever its model list says. The listing's failure
+     stays in `listModels`, and the choice is written in the harness's usage notes.
+   - Self-test **S4**; matrix row **H4**.
+5. **A stale "Not run: a repo-wide rush test" paragraph remained under Gates.** **Removed**; the gate
+   evidence above it supersedes it.
+
+**Exercised by hand** (stub servers from a scratch `stub.js` on 127.0.0.1; `$SCRATCH` is the session
+scratchpad; the stub's bodies carry the text `SERVER-TEXT`, which appears in no record):
+
+```
+$ node perf/systemOneLive.js probe --url http://127.0.0.1:8700 --model clm-latest --max-char 2400 --check
+exit 3
+systemOneLive: unknown option --max-char for probe; it accepts --url, --model, --key-env, --max-chars and --check
+
+$ node perf/systemOneLive.js probe --url http://127.0.0.1:8700 --model clm-latest --max-chars 2400 --check
+exit 0
+
+$ node perf/systemOneLive.js parity --a http://127.0.0.1:8700,clm-latest --b http://127.0.0.1:8701,clm-latest --questions $SCRATCH/badnoul.json --max-chars 2400 --min-top-agreement 0.9 --max-mean-abs-diff 0.1 --check
+exit 3
+systemOneLive: --questions item 0 question 'n': noul criteria, when given, must be an object whose keys are 'true' and/or 'false', each with a string description
+
+$ node perf/systemOneLive.js parity --a http://127.0.0.1:8700,clm-latest --b http://127.0.0.1:8701,clm-latest --questions $SCRATCH/goodnoul.json --max-chars 2400 --min-top-agreement 0.9 --max-mean-abs-diff 0.1 --check
+exit 0
+
+# stub: answers clm-latest, refuses any other model with 422, lists models
+$ node perf/systemOneLive.js probe --url http://127.0.0.1:18781 --model clm-latest
+exit 0
+
+  record: {"ok":true,"listModels":true,"unknownModel":{"model":"fgv-probe-unknown-model-d2348e90a19a","outcome":"refused as expected","reason":"invalid-request","status":422}} server-text-in-record=0
+# stub: as above, but /v1/models answers 500
+$ node perf/systemOneLive.js probe --url http://127.0.0.1:18781 --model clm-latest
+exit 2
+
+  record: {"ok":false,"failedStep":"listSystemOneModels","reason":"server","listModels":false,"unknownModel":{"model":"fgv-probe-unknown-model-5a85c51e454c","outcome":"refused as expected","reason":"invalid-request","status":422}} server-text-in-record=0
+# stub: /v1/systemone answers 503 for every model, /v1/models answers 500
+$ node perf/systemOneLive.js probe --url http://127.0.0.1:18781 --model clm-latest
+exit 2
+
+  record: {"ok":false,"failedStep":"askSystemOne","reason":"server","listModels":false,"unknownModel":{"model":"fgv-probe-unknown-model-404e2cf62120","outcome":"refused, with an unexpected reason","reason":"server","status":503}} server-text-in-record=0
+# nothing listens on 127.0.0.1:9 (unreachable)
+$ node perf/systemOneLive.js probe --url http://127.0.0.1:9 --model clm-latest
+exit 2
+
+  record: {"ok":false,"failedStep":"askSystemOne","reason":"connection","listModels":{"ok":false,"reason":"connection"},"unknownModel":{"model":"fgv-probe-unknown-model-814c411e8ad6","outcome":"refused, with an unexpected reason","reason":"connection"}}
+```
+
+`parity` against two endpoints whose listing returns 500 exited **2** with `refused: "a probe failed:
+refused, not a parity result"`, both probes `listSystemOneModels/server`.
+
 ## Gates
 
 Re-run on 2026-10-04 after the gate-time fixes, at `0584f819` (source as of the matrix commit plus
@@ -506,15 +604,12 @@ README/CAPABILITIES wording), from the repo root unless noted.
 **Capability and bundler scripts:** `verify-capability-docs.mjs`, `generate-capability-feed.mjs
 --check` and `verify-bundler-resolution.mjs` (21 checked, 0 failed) all exit 0.
 
-**Revert matrix:** 43/43 VERIFIED (above).
+**Revert matrix:** 47/47 VERIFIED (above).
 
 **Copilot round 1 (2026-10-07):** after the six fixes, `node common/scripts/install-run-rush.js test`
 from the repo root: exit 0, `SUCCESS: 37 operations`, 11 m 35 s; `grep -cE "not met|FAILURE|Operations
 failed|Error:|error TS"` **0**; the one `warning` line is the `.agents/skills` symlink notice; no NUL
 padding. In the package: fixlint, build, lint and test all exit 0 with 0 warnings; 70 tests, 100%.
-
-**Not run:** a repo-wide `rush test`, for the reason given before: no other package's source or
-accepted behaviour changed.
 
 ## What the brief or the plan got wrong
 

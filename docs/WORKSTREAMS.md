@@ -509,7 +509,7 @@ quantization are unverified.
 
 **Phase C (2026-10-03):** `@fgv/ts-extras-system-one` built as plan § 3 specifies, with deviations
 recorded in `system-one-impl/result.md` (chiefly: a `score` legend is projected from the request's
-rubric). 70 unit tests through the real SDK's `fetch` seam, 100% coverage; revert matrix 43/43
+rubric). 70 unit tests through the real SDK's `fetch` seam, 100% coverage; revert matrix 47/47
 VERIFIED. The SDK installs through Rush's verifying `rush install`; it bundles for a browser without a
 node-builtins declaration. **Next:** someone with egress and a key runs `perf/systemOneLive.js probe`
 (L1) and appends the record; then the orchestrator runs `/finalize-task` and the cluster close.

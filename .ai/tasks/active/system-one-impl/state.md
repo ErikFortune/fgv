@@ -49,3 +49,14 @@ None blocking.
 - Six threads, all fixed: baseUrl echo, systemOneLive `--check` URL constraints and redaction,
   received values in 2xx messages, sum-tolerance rounding, matrix write/restore ordering, the
   largest-file figure. Revert matrix 43/43 VERIFIED (R38-R40 new, R23 re-pointed).
+
+## Copilot round 2 on fgv#721 (against `9b076e47`)
+
+- One thread plus four summary findings, all in `perf/systemOneLive.js` except the stale
+  "Not run" paragraph: unknown/repeated/stray arguments refused (exit 3, flag named, value never
+  echoed); noul criteria validated in `--check`; an unknown-model ask recorded as an observation
+  (reason and status only; the status is read from the package's own `(status N)` message segment,
+  since the result does not expose it as a field — flagged, surface not widened); a listing failure
+  fails the probe, the ask's failure winning when both fail.
+- New `perf/systemOneLive.selftest.js` (S1–S4, stub servers); the matrix runs it for harness rows
+  H1–H4. Revert matrix 47/47 VERIFIED.
