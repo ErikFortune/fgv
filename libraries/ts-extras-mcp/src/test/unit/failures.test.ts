@@ -292,3 +292,70 @@ describe('a response the SDK rejects', () => {
     await closeMcpSession(session);
   });
 });
+
+/** A rejection value whose conversion to text itself throws. */
+const UNPRINTABLE = {
+  toString(): string {
+    throw new Error('toString exploded');
+  }
+};
+
+describe('a rejection value that cannot be converted to text', () => {
+  test('a send that rejects with it still yields a classified DetailedResult from callMcpTool', async () => {
+    const server = new Server({ name: 'unprintable', version: '0.0.1' }, { capabilities: { tools: {} } });
+    server.setRequestHandler(ListToolsRequestSchema, async () => ({ tools: [] }));
+    const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();
+    await server.connect(serverSide);
+    const session = (
+      await connectMcpSession({ transport: createCustomTransport(clientSide).orThrow() })
+    ).orThrow();
+
+    jest.spyOn(clientSide, 'send').mockImplementation(() => Promise.reject(UNPRINTABLE));
+    expect(await callMcpTool(session, 'echo', {})).toFailWithDetail(
+      "callMcpTool 'echo': <unprintable error>",
+      {
+        kind: 'transport'
+      }
+    );
+
+    jest.restoreAllMocks();
+    await closeMcpSession(session);
+    await server.close();
+  });
+
+  test('a handshake send that rejects with it still yields a classified DetailedResult from connect', async () => {
+    const [clientSide] = InMemoryTransport.createLinkedPair();
+    jest.spyOn(clientSide, 'send').mockImplementation(() => Promise.reject(UNPRINTABLE));
+    expect(
+      await connectMcpSession({ transport: createCustomTransport(clientSide).orThrow(), timeoutMs: 5_000 })
+    ).toFailWithDetail('connectMcpSession: <unprintable error>', { kind: 'transport' });
+    jest.restoreAllMocks();
+  });
+
+  test('an async onClose rejecting with it is logged, with no unhandled rejection', async () => {
+    const logger = new Logging.InMemoryLogger('all');
+    const unhandled = jest.fn();
+    process.on('unhandledRejection', unhandled);
+    try {
+      const fixture = await startFixture(() => Promise.reject(UNPRINTABLE), logger);
+      await fixture.server.close();
+      await new Promise((resolve) => setImmediate(resolve));
+      expect(logger.logged.join('\n')).toMatch(/onClose callback rejected: <unprintable error>/);
+      expect(unhandled).not.toHaveBeenCalled();
+    } finally {
+      process.off('unhandledRejection', unhandled);
+    }
+  });
+
+  test('a synchronous onClose throwing it is contained and logged, and the in-flight call still settles', async () => {
+    const logger = new Logging.InMemoryLogger('all');
+    const fixture = await startFixture(() => {
+      throw UNPRINTABLE;
+    }, logger);
+    const pending = callMcpTool(fixture.session, 'hang', {});
+    await fixture.entered;
+    await fixture.server.close();
+    expect(await pending).toFailWithDetail(/Connection closed/, { kind: 'not-connected' });
+    expect(logger.logged.join('\n')).toMatch(/onClose callback threw: <unprintable error>/);
+  });
+});

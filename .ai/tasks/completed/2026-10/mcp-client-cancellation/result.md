@@ -14,7 +14,7 @@ Branch `mcp-client-cancellation`, from `integration/asks`. Packages: `@fgv/ts-ex
 
 | step | ask | commit | what |
 |---|---|---|---|
-| 1 | personaility#678 | `7873d86b` | `createCustomTransport(t: IMcpSdkTransport): IMcpTransport`, `McpTransportKind` (+`'custom'`). The e2e suite drives the in-memory server through it; the internal-class import is gone. `docs/FUTURE.md` entry retired. |
+| 1 | personaility#678 | `7873d86b` | `createCustomTransport(t: IMcpSdkTransport): Result<IMcpTransport>` (a `Result` since the gate-time review, which refuses a pre-set `sessionId`), `McpTransportKind` (+`'custom'`). The e2e suite drives the in-memory server through it; the internal-class import is gone. `docs/FUTURE.md` entry retired. |
 | 2 | personaility#673 | `94c04327` | `McpFailureReason`; `connectMcpSession` / `listMcpTools` / `callMcpTool` / `adaptMcpTools` return `DetailedResult<T, McpFailureReason>`; total classifier `classifySdkError` in `sdk.ts`; `onClose` on `connectMcpSession` (`McpCloseWatcher`). |
 | 3 | personaility#671 | `cee54a20` | `IMcpRequestOptions { timeoutMs, signal, onProgress, resetTimeoutOnProgress, maxTotalTimeoutMs }` on `callMcpTool` / `listMcpTools`; `timeoutMs` / `signal` on `connectMcpSession`. All applied by one helper, `request.ts` `runSdkRequest`. |
 | 4 | personaility#684 | `6478fe28` | `IAiClientTool.execute(args, context?: IAiClientToolExecuteContext)`; `executeClientToolTurn` passes `{ signal }`; the MCP adapter forwards it to `callMcpTool`. |
@@ -119,8 +119,8 @@ Every `await` between a check and the act it guards, and what re-checks after it
 | `session.ts` `_connectWithin` | — | the SDK's `connect`, including `transport.start()` and sending `notifications/initialized`, which its request options do not cover | race against the per-call abort and a deadline | The deadline is an `AbortController` aborted by the timer or the caller's signal, whichever fires first; an already-aborted signal fires it immediately (R22). **Every** losing path — the deadline, or the SDK's own failure — starts `client.close()` and returns the failure without awaiting it (R18, R23, R24): the SDK does not close a transport whose `start()` rejected, and awaiting a close could outlast the deadline. `finally` clears the timer and removes the race's listener (R25, R26). |
 | `session.ts` `connectMcpSession` | `timeoutMs` validated, then the handle claimed | none | connect | Validation runs first, so a bad option does not burn the handle; the claim is synchronous and permanent, so two concurrent connects on one handle cannot both start the transport. |
 | `session.ts` `connectMcpSession` | watcher attached to `client.onclose` | `await` handshake | `closed` check, `signal.aborted` check, `arm(onClose)` | All three run synchronously after the handshake's `await`, so no close can land between check and arm. A close during the handshake → `not-connected`, callback never armed. |
-| `session.ts` | `signal.aborted` after handshake success | `await client.close()` | return `aborted` | The abort landed after `initialize` answered but before the SDK returned (it awaits `notifications/initialized`), so the SDK cancelled nothing. We close what it opened; the watcher is unarmed, so `onClose` does not fire. Nothing acts after the close's `await`. |
-| `McpCloseWatcher.notifyClosed` | `_closed` | none | call listener | Exactly once; a throw is contained (`captureResult`) and logged. An `async` listener's rejection is not observed — documented. |
+| `session.ts` | `signal.aborted` after handshake success | none | start `client.close()`, return `aborted` | The abort landed after `initialize` answered but before the SDK's connect returned (it awaits `notifications/initialized`), so the SDK cancelled nothing. The close is **started, not awaited** — as on every other losing path — so a `close()` that never settles cannot hold the abort (R28). The watcher is unarmed, so `onClose` does not fire. |
+| `McpCloseWatcher.notifyClosed` | `_closed` | none | call listener | Exactly once. A synchronous throw is caught by a plain `try`/`catch` and logged; a returned promise is not awaited, but its rejection is caught and logged, never left unhandled (R29). Both convert the error with the non-throwing `errorText` (R33, R32). |
 | `listMcpTools` | per page | `await` per page | next page | Each page runs through `runSdkRequest`, so the caller's signal is re-linked per page: an abort during a page cancels it, and an abort landing after a page settled is caught by the next page's pre-check without sending. Either way no further page is requested (tested for the in-flight case; the between-pages case is the same pre-check R3 pins). |
 
 ## Revert matrix
@@ -137,7 +137,7 @@ the 404 tests run the same status through both phases.
 | R3 | pre-aborted check | `a signal already aborted fails aborted without sending anything`, `…without starting the handshake` |
 | R4 | `-32001` → `timeout` | 9: classifier unit, call timeout, timeout+signal, timeout-then-abort race, progress-without-reset, `maxTotalTimeoutMs`, list timeout, connect timeout, HTTP stalled-connect timeout |
 | R5 | `isError` text unprefixed | 2 mocked, `a tool's isError result is tool-error, with the tool's text verbatim…`, **`a tool's isError text reaches the model verbatim`** (executeClientToolTurn level) |
-| R6 | throwing `onClose` contained | both containment tests (the in-flight call no longer settles) |
+| R6 | throwing `onClose` contained | both containment tests (the in-flight call no longer settles). *Its original anchor (`captureResult(listener)`) was replaced by a `try`/`catch` in Copilot round 3; R33 now covers the same containment.* |
 | R7 | close-during-handshake check | `fails not-connected, and never reports the close, when the connection closes during the handshake` |
 | R8 | untyped error on closed session → `not-connected` | classifier unit, `a call on a closed session is not-connected, not transport` |
 | R9 | `-32000` decided by observed close | classifier unit, `a server -32000 on an open session is protocol, and the session stays usable` |
@@ -163,6 +163,9 @@ the 404 tests run the same status through both phases.
 | R29 | an async `onClose` rejection is caught and logged (Copilot, #722) | `an async onClose that rejects is contained and logged…`, `…with no logger, is still contained` |
 | R30 | `IMcpSdkTransport` declares the callback slots (Copilot round 2) | build fails: `TS2339 Property 'onclose' does not exist on type 'IMcpSdkTransport'` in the consumer transport (`customTransport.test.ts`) |
 | R31 | the slots use method syntax, not property syntax (Copilot round 2) | build fails: `TS2345 Argument of type 'InMemoryTransport' is not assignable to parameter of type 'IMcpSdkTransport'` at every `createCustomTransport(clientSide)` |
+| R32 | `errorText` never throws (Copilot round 3) | 7: the `errorText` unit, the unprintable call/handshake/close/async-`onClose`/sync-`onClose` tests |
+| R33 | the sync `onClose` catch converts via `errorText` (Copilot round 3 sibling) | both sync-throw containment tests (the escaping throw leaves the in-flight call unsettled) |
+| R34 | `closeMcpSession` converts via `errorText` (Copilot round 3 sibling) | `still returns a Result when close rejects with a value that cannot be converted to text` |
 
 Every row R1–R22 was rerun against the gate-time tree (`332c5f58` plus the R22 fix), not carried over. After review 2, R17 and R18 were rerun and R23–R26 added against `7d9d1279`; R18's anchor changed with the code (it previously reverted the `lost.signal.aborted` gate, which R23 now covers).
 R22 was found by the matrix itself: R13 first reddened a test meant for the race. The test's
@@ -343,6 +346,38 @@ One finding, verified by the orchestrator and applied.
   metrics, warnings 0. Repo-wide `install-run-rush.js test` — `SUCCESS: 36 operations` in 9 m 22 s,
   errors 0, warnings 1 (the symlink notice), log not NUL-padded. `change --verify`, the feed
   `--check` and `verify-capability-docs` all pass.
+
+## Copilot round 3 on #722
+
+No inline findings. The summaries listed items from earlier rounds that had been missed, and the
+orchestrator verified each one against `7b55abad`.
+
+- **`errorText` could throw.** `String(err)` throws for a value whose `toString` throws, and a
+  custom transport can reject with anything. `runSdkRequest`'s rejection handler would then reject
+  instead of returning a `DetailedResult`, and the async `onClose` logging path would fail the same
+  way. `errorText` now wraps the conversion and returns the fixed `'<unprintable error>'`
+  (`UNPRINTABLE_ERROR`) for anything it cannot convert, including an `Error` whose `message`
+  getter throws.
+  **Sibling sweep:** `@fgv/ts-utils`' `captureResult` / `captureAsyncResult` convert errors through
+  `_errorMessage`, which has the same `String(err)` flaw. Two paths in this package depended on it:
+  - The synchronous `onClose` containment, `captureResult(listener)`. A callback throwing such a
+    value made `captureResult` itself throw inside the SDK's close handling, so in-flight requests
+    never settled.
+  - `closeMcpSession`'s `captureAsyncResult`.
+
+  Both now convert through `errorText`. The `ts-utils` helper itself is outside this stream's
+  surface (an established package) and is routed as a separate task.
+  **Tests:** a send that rejects with the value, on a call and during the handshake, still yields a
+  classified `DetailedResult` (`transport`, message `'<unprintable error>'`). An async `onClose`
+  rejecting with it is logged, with no `unhandledRejection`. A sync `onClose` throwing it is
+  contained, and the in-flight call still settles `not-connected`. `closeMcpSession` with a close
+  rejecting with it still returns a `Result`. A unit test covers `errorText` directly. (R32–R34)
+- **`createCustomTransport` TSDoc example** now unwraps the connect result, matching the README.
+- **`httpFailures.test.ts` `afterEach`** guards the whole close wait, so a fixture that failed to
+  start cannot hang the hook into a Jest timeout.
+- **Stale entries here:** the step-1 row now gives `createCustomTransport`'s `Result` return. The
+  check-then-act rows now record the non-awaited post-handshake close and the async `onClose`
+  containment.
 
 ## What this pre-empts for the other MCP asks
 

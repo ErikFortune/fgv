@@ -147,7 +147,7 @@ export function createHttpTransport(params: IMcpHttpTransportParams): Result<IMc
  * const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();
  * await server.connect(serverSide); // an SDK `Server` / `McpServer`
  * const transport = createCustomTransport(clientSide).orThrow();
- * const session = await connectMcpSession({ transport });
+ * const session = (await connectMcpSession({ transport })).orThrow();
  * ```
  *
  * It equally admits transports this package does not construct itself (the SDK's legacy SSE or

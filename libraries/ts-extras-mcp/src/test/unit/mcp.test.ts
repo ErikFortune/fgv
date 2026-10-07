@@ -39,6 +39,8 @@ import { type JsonObject, type JsonValue } from '@fgv/ts-json-base';
 import * as sdk from '../../packlets/mcp/sdk';
 // eslint-disable-next-line @rushstack/packlets/mechanics
 import { McpCloseWatcher } from '../../packlets/mcp/session';
+// eslint-disable-next-line @rushstack/packlets/mechanics
+import { UNPRINTABLE_ERROR, errorText } from '../../packlets/mcp/request';
 import {
   type IAdaptMcpToolsResult,
   type IMcpSession,
@@ -386,6 +388,26 @@ describe('connectMcpSession', () => {
   });
 });
 
+describe('errorText', () => {
+  test('never throws, whatever it is handed', () => {
+    const unprintable = {
+      toString(): string {
+        throw new Error('no');
+      }
+    };
+    const badMessage = new Error('x');
+    Object.defineProperty(badMessage, 'message', {
+      get(): string {
+        throw new Error('no');
+      }
+    });
+    expect(errorText(unprintable)).toBe(UNPRINTABLE_ERROR);
+    expect(errorText(badMessage)).toBe(UNPRINTABLE_ERROR);
+    expect(errorText(new Error('plain'))).toBe('plain');
+    expect(errorText('text')).toBe('text');
+  });
+});
+
 describe('McpCloseWatcher', () => {
   test('records the close, and calls the armed listener exactly once', () => {
     const watcher = new McpCloseWatcher();
@@ -428,6 +450,17 @@ describe('closeMcpSession', () => {
     });
     const session = await connectWith(fake);
     expect(await closeMcpSession(session)).toFailWith(/closeMcpSession:.*already closed/);
+  });
+
+  test('still returns a Result when close rejects with a value that cannot be converted to text', async () => {
+    const unprintable = {
+      toString(): string {
+        throw new Error('no');
+      }
+    };
+    const fake = makeFakeClient({ close: jest.fn(() => Promise.reject(unprintable)) });
+    const session = await connectWith(fake);
+    expect(await closeMcpSession(session)).toFailWith('closeMcpSession: <unprintable error>');
   });
 });
 

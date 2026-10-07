@@ -130,9 +130,15 @@ describe('HTTP-status classification over the real Streamable-HTTP transport', (
     if (toClose !== undefined) {
       await closeMcpSession(toClose);
     }
-    // A held-open POST would otherwise keep the server from closing.
-    server?.closeAllConnections();
-    await new Promise<void>((resolve) => server?.close(() => resolve()));
+    // Guard the whole wait: a fixture that failed to start leaves no server, and waiting on a close
+    // callback that will never fire would hang the hook into a Jest timeout.
+    const toStop = server;
+    server = undefined;
+    if (toStop !== undefined) {
+      // A held-open POST would otherwise keep the server from closing.
+      toStop.closeAllConnections();
+      await new Promise<void>((resolve) => toStop.close(() => resolve()));
+    }
   });
 
   test('a refused credential at connect is unauthorized, carrying the status', async () => {

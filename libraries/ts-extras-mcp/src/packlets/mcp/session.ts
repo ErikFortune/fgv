@@ -29,8 +29,6 @@ import {
   type DetailedResult,
   type Logging,
   type Result,
-  captureAsyncResult,
-  captureResult,
   fail,
   failWithDetail,
   succeed,
@@ -108,22 +106,24 @@ export class McpCloseWatcher {
     }
     this._closed = true;
     const listener = this._listener;
-    if (listener !== undefined) {
-      captureResult(listener)
-        .onSuccess((returned) => {
-          // An async listener's rejection is contained the same way as a synchronous throw — logged,
-          // never left to become an unhandled rejection. It is not awaited: the SDK fails the
-          // session's in-flight requests right after this returns.
-          Promise.resolve(returned).catch((err: unknown) => {
-            this._logger?.error(`mcp: onClose callback rejected: ${errorText(err)}`);
-          });
-          return succeed(true);
-        })
-        .onFailure((msg) => {
-          this._logger?.error(`mcp: onClose callback threw: ${msg}`);
-          return fail(msg);
-        });
+    if (listener === undefined) {
+      return;
     }
+    // A plain try/catch rather than captureResult: captureResult converts the thrown value to a
+    // message with a conversion that can itself throw (a value whose toString throws), and a throw
+    // escaping here would stop the SDK from failing the session's in-flight requests.
+    let returned: unknown;
+    try {
+      returned = listener();
+    } catch (err: unknown) {
+      this._logger?.error(`mcp: onClose callback threw: ${errorText(err)}`);
+      return;
+    }
+    // An async listener's rejection is contained the same way — logged, never left to become an
+    // unhandled rejection. It is not awaited: the SDK fails the in-flight requests straight after.
+    Promise.resolve(returned).catch((err: unknown) => {
+      this._logger?.error(`mcp: onClose callback rejected: ${errorText(err)}`);
+    });
   }
 }
 
@@ -323,7 +323,12 @@ export async function closeMcpSession(session: IMcpSession): Promise<Result<true
   if (sessionResult.isFailure()) {
     return fail(`closeMcpSession: ${sessionResult.message}`);
   }
-  return captureAsyncResult(() => sessionResult.value.client.close())
-    .onSuccess(() => succeed(true as const))
-    .withErrorFormat((msg) => `closeMcpSession: ${msg}`);
+  // Converted with errorText rather than captureAsyncResult, whose message conversion can throw on a
+  // foreign rejection value (see errorText).
+  return Promise.resolve()
+    .then(() => sessionResult.value.client.close())
+    .then(
+      () => succeed(true as const),
+      (err: unknown) => fail<true>(`closeMcpSession: ${errorText(err)}`)
+    );
 }

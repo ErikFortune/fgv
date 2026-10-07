@@ -39,11 +39,28 @@ import { type IMcpProgress, type IMcpRequestOptions, type McpFailureReason } fro
 import { type ISdkProgress, type ISdkRequestOptions, makeAbortReason } from './sdk';
 
 /**
- * The message of a thrown or rejected value.
+ * What {@link errorText} reports for a value that cannot be converted to text.
+ * @internal
+ */
+export const UNPRINTABLE_ERROR: string = '<unprintable error>';
+
+/**
+ * The message of a thrown or rejected value. Never throws.
+ *
+ * @remarks
+ * A custom transport or a consumer callback can throw or reject with anything, including a value
+ * whose `toString` (or an `Error` whose `message`) itself throws. Converting such a value must not
+ * throw from inside a rejection handler, or the caller would get a rejected promise instead of a
+ * `DetailedResult`. `@fgv/ts-utils`' `captureResult` / `captureAsyncResult` do not have this
+ * guarantee, so the paths that convert a foreign value use this instead.
  * @internal
  */
 export function errorText(err: unknown): string {
-  return err instanceof Error ? err.message : String(err);
+  try {
+    return err instanceof Error ? String(err.message) : String(err);
+  } catch {
+    return UNPRINTABLE_ERROR;
+  }
 }
 
 /**
