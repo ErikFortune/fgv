@@ -508,6 +508,11 @@ README/CAPABILITIES wording), from the repo root unless noted.
 
 **Revert matrix:** 43/43 VERIFIED (above).
 
+**Copilot round 1 (2026-10-07):** after the six fixes, `node common/scripts/install-run-rush.js test`
+from the repo root: exit 0, `SUCCESS: 37 operations`, 11 m 35 s; `grep -cE "not met|FAILURE|Operations
+failed|Error:|error TS"` **0**; the one `warning` line is the `.agents/skills` symlink notice; no NUL
+padding. In the package: fixlint, build, lint and test all exit 0 with 0 warnings; 70 tests, 100%.
+
 **Not run:** a repo-wide `rush test`, for the reason given before: no other package's source or
 accepted behaviour changed.
 
