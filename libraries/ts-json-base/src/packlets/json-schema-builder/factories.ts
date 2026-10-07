@@ -579,7 +579,9 @@ function _convertUndeclaredKeys(
   );
   return mapResults(
     undeclared.map(([key, value]) =>
-      values
+      // An own key whose value is `undefined` is not JSON, so it is refused exactly as an open object
+      // refuses it, whatever the record's value schema would accept (`optional(...)` accepts it).
+      (value === undefined ? jsonValue : values)
         .convert(value)
         .withErrorFormat((msg) => `${key}: ${msg}`)
         .onSuccess((v) => succeed<[string, unknown]>([key, v]))
@@ -840,13 +842,16 @@ export function object<P extends ILlmProperties>(
  * Providers whose strict structured-output mode requires `additionalProperties: false` (OpenAI
  * strict, Anthropic JSON outputs) cannot accept a record there, exactly as they cannot accept an
  * open object; it is suited to tool parameters.
+ * A value schema whose static type admits `undefined` (such as `optional(...)`) is refused at
+ * compile time, and an own property whose value is `undefined` is refused at run time either way:
+ * `undefined` is not JSON, and the emitted `additionalProperties` schema does not admit it.
  * @param values - The schema every property value must match.
  * @param opts - Optional description and nullability.
  * @returns An `ISchemaValidator` whose `Static` type is `Record<string, Static<S>> | null`.
  * @public
  */
 export function record<S extends ISchemaValidator<unknown>>(
-  values: S,
+  values: S & (undefined extends Static<S> ? never : unknown),
   opts: ISchemaOptions & { nullable: true }
   // `null` is the JSON value being modelled, not a JS sentinel — the same carve-out
   // `JsonPrimitive` takes in this package's `json` packlet.
@@ -861,7 +866,7 @@ export function record<S extends ISchemaValidator<unknown>>(
  * @public
  */
 export function record<S extends ISchemaValidator<unknown>>(
-  values: S,
+  values: S & (undefined extends Static<S> ? never : unknown),
   opts?: ISchemaOptions
 ): ISchemaValidator<Record<string, Static<S>>>;
 export function record<S extends ISchemaValidator<unknown>>(

@@ -64,6 +64,14 @@ Worker-owned.
 
   Revert matrix re-run, 32 rows.
 
+- Copilot round 3 on #723 (two summary findings, reproduced at `b8643f0d`), applied:
+  - a record refuses `undefined` values at run time and at compile time;
+  - server-supplied text is escaped in every `fromJson` message (an 11-site sweep), and in
+    `adaptMcpTools`' warning.
+
+  Revert matrix re-run, 44 rows. Two stale mutation patterns were retargeted, and one weak test (a
+  pointer token that was never echoed) was fixed after R43 first showed 0 red.
+
 ## Open questions
 
 None blocking. Deferred shapes are in `docs/FUTURE.md`; the numeric-enum and `{}` deferrals each

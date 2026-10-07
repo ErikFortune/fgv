@@ -178,7 +178,8 @@ const _SUPPORTED_TYPES: ReadonlySet<string> = new Set([
 const _descriptionField: Converter<string | undefined> = Converters.optionalField(
   'description',
   Converters.string
-);
+  // The failure message quotes the offending value, which is server-supplied.
+).withFormattedError((__from, message) => _printable(`${message}`));
 
 /**
  * Extracts and validates the `enum` field: must be a non-empty array of strings.
@@ -368,7 +369,7 @@ function _convertNullableUnion(
   const unsupported = `${path}: unsupported JSON Schema keyword '${keyword}'`;
   const sibling = Object.keys(raw).find((key) => key !== keyword && !_NON_VALIDATING_KEYWORDS.has(key));
   if (sibling !== undefined) {
-    return fail(`${unsupported} alongside '${sibling}'`);
+    return fail(`${unsupported} alongside '${_echo(sibling)}'`);
   }
   const members: unknown = raw[keyword];
   const nullIndex: number = Array.isArray(members) ? members.findIndex(_isNullBranch) : -1;
@@ -538,7 +539,7 @@ function _convertEnum(
   if (rawValuesResult.isFailure()) {
     // Fall back to the strings-only extractor for its sharper message (non-array, wrong
     // member type, and so on); it fails on exactly the inputs this one does, minus `null`.
-    return fail(`${path}: ${_enumValuesField.convert(from).message}`);
+    return fail(`${path}: ${_printable(`${_enumValuesField.convert(from).message}`)}`);
   }
   const nullInValues: boolean = rawValuesResult.value.includes(null);
 
@@ -555,7 +556,9 @@ function _convertEnum(
   }
   if (split.value.type !== undefined && split.value.type !== 'string') {
     return fail(
-      `${path}: enum schema declares conflicting 'type' '${split.value.type}' (must be 'string' or absent)`
+      `${path}: enum schema declares conflicting 'type' '${_echo(
+        split.value.type
+      )}' (must be 'string' or absent)`
     );
   }
   if (split.value.nullable !== nullInValues) {
@@ -572,7 +575,7 @@ function _convertEnum(
     enum: rawValuesResult.value.filter((v): v is string => v !== null)
   });
   if (valuesResult.isFailure()) {
-    return fail(`${path}: ${valuesResult.message}`);
+    return fail(`${path}: ${_printable(valuesResult.message)}`);
   }
 
   return _descriptionField
@@ -651,7 +654,7 @@ function _parseObjectBody(
   const declared = new Set(propEntries.map(([k]) => k));
   for (const key of requiredSet) {
     if (!declared.has(key)) {
-      return fail(`${path}: 'required' key '${key}' has no matching entry in 'properties'`);
+      return fail(`${path}: 'required' key '${_echo(key)}' has no matching entry in 'properties'`);
     }
   }
 
@@ -662,7 +665,7 @@ function _parseObjectBody(
   return mapResults(
     propEntries.map(([key, child]) =>
       // Thread the JSON Pointer path as context so nested errors are correctly attributed.
-      _convertNode(child, _at(ctx, `${path}/properties/${_escapeToken(key)}`)).onSuccess((node) =>
+      _convertNode(child, _at(ctx, `${path}/properties/${_printable(_escapeToken(key))}`)).onSuccess((node) =>
         succeed([key, requiredSet.has(key) ? node : optional(node)] as const)
       )
     )
@@ -812,9 +815,36 @@ function _escapeToken(key: string): string {
   return key.replace(/~/g, '~0').replace(/\//g, '~1');
 }
 
-/** A server-supplied string, cut to a length safe to echo in an error message. */
+/**
+ * One character, with a control character spelled `\uXXXX`: C0, DEL, C1, and the line and
+ * paragraph separators U+2028/U+2029. A server-supplied string echoed raw could otherwise break a
+ * log line, forge a new one, or drive a terminal.
+ */
+function _escapeChar(ch: string): string {
+  const code = ch.charCodeAt(0);
+  const control = code < 0x20 || (code >= 0x7f && code <= 0x9f) || code === 0x2028 || code === 0x2029;
+  return control ? `\\u${code.toString(16).padStart(4, '0')}` : ch;
+}
+
+/** A server-supplied string with every control character escaped (see `_escapeChar`). */
+function _printable(value: string): string {
+  return Array.from(value, _escapeChar).join('');
+}
+
+/**
+ * A server-supplied string made safe to echo in an error message: control characters escaped, then
+ * cut to `MAX_ECHOED_REF_LENGTH`. The cut is made between escaped characters, so it never splits an
+ * escape sequence or a surrogate pair.
+ */
 function _echo(value: string): string {
-  return value.length > MAX_ECHOED_REF_LENGTH ? `${value.slice(0, MAX_ECHOED_REF_LENGTH)}…` : value;
+  let out = '';
+  for (const piece of Array.from(value, _escapeChar)) {
+    if (out.length + piece.length > MAX_ECHOED_REF_LENGTH) {
+      return `${out}…`;
+    }
+    out += piece;
+  }
+  return out;
 }
 
 /** The value at one JSON Pointer token below `node`, or `undefined` when there is none. */
@@ -880,7 +910,7 @@ function _convertRef(raw: Record<string, unknown>, ctx: IParseContext): Result<I
     (key) => key !== '$ref' && !_NON_VALIDATING_KEYWORDS.has(key) && !(key === '$id' && raw === ctx.root)
   );
   if (sibling !== undefined) {
-    return fail(`${unsupported} alongside '${sibling}'`);
+    return fail(`${unsupported} alongside '${_echo(sibling)}'`);
   }
   const ref: unknown = raw.$ref;
   if (typeof ref !== 'string') {
@@ -1047,7 +1077,7 @@ export const jsonSchemaConverter: Converter<ISchemaValidator<JsonValue>, string>
     // nothing in it is expected to throw — but it reads a caller-supplied value, which may carry
     // accessors, and must not let one escape as an exception.
     return captureResult(() => _convertNode(from, _rootContext(from, path)))
-      .withErrorFormat((msg) => `${path}: ${msg}`)
+      .withErrorFormat((msg) => `${path}: ${_printable(msg)}`)
       .onSuccess((converted) => converted);
   }
 );

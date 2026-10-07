@@ -1,8 +1,8 @@
 {
   "changes": [
     {
-      "comment": "CAPABILITIES.md: the JsonSchema.fromJson subset an MCP tool schema must fit now includes nullable anyOf/oneOf, local $ref and schema-valued additionalProperties.",
-      "type": "none",
+      "comment": "adaptMcpTools escapes control characters (C0, DEL, C1, U+2028/U+2029) as \\uXXXX in its skip warning, so a server-supplied tool name or schema cannot break or forge a log line; the structured skipped record is unchanged. CAPABILITIES.md: the JsonSchema.fromJson subset an MCP tool schema must fit now includes nullable anyOf/oneOf, local $ref and schema-valued additionalProperties.",
+      "type": "patch",
       "packageName": "@fgv/ts-extras-mcp"
     }
   ],

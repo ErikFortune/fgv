@@ -633,6 +633,30 @@ describe('adaptMcpTools', () => {
     });
   }
 
+  test('escapes control characters from a server-supplied tool name in the skip warning', async () => {
+    const logger = new Logging.InMemoryLogger('all');
+    // C0 (newline, ESC), DEL, C1 (NEL) and U+2028/U+2029 — built, since a formatter would turn
+    // escapes for the last two into raw characters — plus a printable non-ASCII 'é' that must survive.
+    const name = `bad\nname\u001b[2J${String.fromCharCode(0x7f, 0x85, 0x2028, 0x2029)}é`;
+    const fake = makeFakeClient({
+      listTools: jest.fn(async () => ({ tools: [{ name, inputSchema: forbiddenSchema }] }))
+    });
+    const session = await connectWith(fake);
+    expect(await adaptMcpTools(session, { logger })).toSucceedAndSatisfy((result: IAdaptMcpToolsResult) => {
+      // The structured record keeps the name exactly as the server sent it...
+      expect(result.skipped[0].name).toBe(name);
+    });
+    // ...while the log line carries no raw control character.
+    const warned = logger.logged.join('');
+    expect(warned).toContain("skipping tool 'bad\\u000aname\\u001b[2J\\u007f\\u0085\\u2028\\u2029é'");
+    expect(
+      Array.from(warned).some((ch) => {
+        const code = ch.charCodeAt(0);
+        return code < 0x20 || (code >= 0x7f && code <= 0x9f) || code === 0x2028 || code === 0x2029;
+      })
+    ).toBe(false);
+  });
+
   test('propagates a tool-discovery failure', async () => {
     const fake = makeFakeClient({
       listTools: jest.fn(async () => {

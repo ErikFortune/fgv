@@ -1312,12 +1312,12 @@ export function pickJsonValue(src: JsonObject, path: string): Result<JsonValue>;
 function readJsonFileSync(srcPath: string): Result<JsonValue>;
 
 // @public
-function record<S extends ISchemaValidator<unknown>>(values: S, opts: ISchemaOptions & {
+function record<S extends ISchemaValidator<unknown>>(values: S & (undefined extends Static<S> ? never : unknown), opts: ISchemaOptions & {
     nullable: true;
 }): ISchemaValidator<Record<string, Static<S>> | null>;
 
 // @public
-function record<S extends ISchemaValidator<unknown>>(values: S, opts?: ISchemaOptions): ISchemaValidator<Record<string, Static<S>>>;
+function record<S extends ISchemaValidator<unknown>>(values: S & (undefined extends Static<S> ? never : unknown), opts?: ISchemaOptions): ISchemaValidator<Record<string, Static<S>>>;
 
 // @public
 type RecordConverter<T, TC = unknown, TK extends string = string> = Converter<Record<TK, JsonCompatibleType<T>>, TC>;

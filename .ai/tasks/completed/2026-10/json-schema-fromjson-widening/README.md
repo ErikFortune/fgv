@@ -63,5 +63,5 @@ converter enforces. Anything else stays refused, with the keyword and its JSON P
 ## Where to read more
 
 - `result.md`: belief verdicts, design calls with rejected alternatives, the wire table, the
-  32-row revert matrix, the gates.
+  44-row revert matrix, the gates.
 - `brief.md`, `state.md`: the contract and the working log, archived as written.

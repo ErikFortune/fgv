@@ -13,8 +13,9 @@ Origin: ErikFortune/personaility#680, #681, #683. Commits on `json-schema-fromjs
 - `47320a83`: the `code-reviewer` findings, plus `CAPABILITIES.md` and `docs/FUTURE.md`;
 - plus the finalize commits.
 
-Production source changes are confined to `@fgv/ts-json-base`, packlet `json-schema-builder`. In the
-gate-review round, two other packages received test-only updates:
+Production source changes are confined to `@fgv/ts-json-base`, packlet `json-schema-builder`, except
+for one small fix in `ts-extras-mcp` `adapter.ts` in Copilot round 3: the skip warning now escapes
+control characters. In the gate-review round, two other packages received test-only updates:
 
 - `ts-extras-mcp` `endToEnd.test.ts`;
 - `samples/testbed` `mcpProbe.test.ts`.
@@ -174,14 +175,14 @@ The Gemini facts above (string-only `enum`, `type` required) come from the docum
 
 Each protection was reverted alone in the source, the `json-schema-builder` tests were run, and the
 file was restored. Measured on a clean tree: R1–R23 on `47320a83`, all 28 again on the
-gate-review changes, all 30 again on the Copilot round 1 changes, and all 32 again on the Copilot round 2 changes. Every count was the same in both runs, except R10, which also reddens the new
+gate-review changes, all 30 again on the Copilot round 1 changes, and all 32 again on the Copilot round 2 changes, and all 44 again on the Copilot round 3 changes (R1–R27 in one run, R28–R43 in a second after two stale mutation patterns were retargeted at the rewritten `_echo` and child-path lines, and R44 by hand in `ts-extras-mcp`). Every count was the same in both runs, except R10, which also reddens the new
 truncation test. Several mutants (`if (false)`) also
 trip TS7027 (unreachable code), a warning; the tests still ran on the emitted code.
 
 | # | protection reverted | red | named tests |
 |---|---|---|---|
 | R1 | `oneOf` over a null-admitting branch refused | 1 | refuses oneOf over a schema that already admits null |
-| R2 | validation keyword beside the union refused | 1 | refuses a validation keyword beside the union |
+| R2 | validation keyword beside the union refused | 2 | refuses a validation keyword beside the union; the round-3 echo test for that message |
 | R3 | `null` branch must be annotation-only | 1 | refuses a null branch carrying a validation keyword |
 | R4 | `_reshape` adds `null` to `type` | 14 | every normalization test, both verbatim pydantic tests, the pydantic nested-model test, two record tests |
 | R5 | `_reshape` adds `null` to `enum` | 1 | a nullable enum normalizes to the type-union form |
@@ -193,7 +194,7 @@ trip TS7027 (unreachable code), a warning; the tests still ran on the emitted co
 | R11 | `$ref` under a nested `$id` | 1 | a reference under a nested $id |
 | R12 | pointer passing through a nested `$id` | 1 | a pointer passing through a subschema with its own $id |
 | R13 | own-key pointer resolution | 1 | a pointer naming an inherited property |
-| R14 | validation keyword beside `$ref` refused | 1 | a validation keyword beside $ref |
+| R14 | validation keyword beside `$ref` refused | 2 | a validation keyword beside $ref; the round-3 echo test for that message |
 | R15 | `__proto__` property refused | 1 | rejects a property named __proto__ rather than losing its schema |
 | R16 | record key-set keywords refused (the whole check) | 8 | one parameterized row per keyword (3 at first; 8 since Copilot round 2) |
 | R17 | record + declared properties refused | 1 | refuses declared properties beside a value schema |
@@ -207,11 +208,23 @@ trip TS7027 (unreachable code), a warning; the tests still ran on the emitted co
 | R25 | `captureResult` backstop at the root | 1 | an accessor that throws becomes a failure, not an exception |
 | R26 | percent-decode the fragment before splitting | 2 | `%2F` decoded before splitting (RFC 6901 § 6); a malformed escape (with the mutant, the decode throws outside the per-reference `captureResult`, and the backstop's message no longer matches) |
 | R27 | `~1` unescaped before `~0` | 1 | `~01` names the literal key `~1` |
-| R28 | echoed reference truncated | 2 | a very long reference, echoed truncated; a long local reference to an invalid target (since round 2) |
+| R28 | echoed reference truncated (now the cut in `_echo`) | 4 | a very long reference; a long local reference to an invalid target (round 2); the two round-3 truncation tests |
 | R29 | invalid `~` escape refused | 2 | an invalid '~' escape (`a~2b`); a trailing '~' (`a~`) |
 | R30 | property key escaped as a pointer token in error paths | 1 | escapes a property key as a JSON Pointer token in the reported path |
 | R31 | the five key-set keywords added in round 2 (`dependentRequired`, `dependentSchemas`, `dependencies`, `minProperties`, `maxProperties`) | 5 | their five parameterized rows |
 | R32 | `$ref` error path truncated (`path: _echo(target)`) | 1 | a long local reference to an invalid target, echoed truncated in the nested path |
+| R33 | record refuses an own `undefined` value | 1 | refuses an own property whose value is undefined, whatever the value schema accepts |
+| R34 | control characters escaped (`_escapeChar`, the global switch) | 15 | every round-3 echo test that contains a control character |
+| R35 | `_echo` cuts between escapes, never inside one | 1 | truncation never splits an escape sequence |
+| R36 | property key escaped (`_printable`) in child paths | 8 | a control character in a property key, one row per character |
+| R37 | `anyOf`/`oneOf` sibling keyword echoed | 1 | a keyword beside a nullable union is echoed escaped |
+| R38 | `$ref` sibling keyword echoed | 1 | a keyword beside $ref is echoed escaped |
+| R39 | `required` key echoed | 1 | a required key with no property is echoed escaped |
+| R40 | conflicting enum `type` echoed | 1 | a conflicting enum type is echoed escaped |
+| R41 | enum value message escaped | 1 | a non-string enum value is echoed escaped |
+| R42 | `description` message escaped | 1 | a non-string description is echoed escaped |
+| R43 | unresolvable pointer token echoed | 1 | an unresolvable pointer token is echoed escaped |
+| R44 | `adaptMcpTools` skip warning escaped (`ts-extras-mcp`) | 1 | escapes control characters from a server-supplied tool name in the skip warning |
 
 ## Tests changed
 
@@ -308,6 +321,79 @@ Two threads, verified against `c4494de1` (the branch with `integration/asks`, in
    invalid target and checks that the message holds the truncated form and never the full name.
    Revert row R32.
 
+## Copilot round 3 (PR #723), applied
+
+These two findings came from the round summary ("Previously missed"), not from inline threads. The
+orchestrator reproduced both at `b8643f0d`.
+
+1. **`JsonSchema.record` accepted `undefined` values.** `record(optional(string())).validate({ a:
+   undefined })` succeeded, although the wire says `additionalProperties: { type: 'string' }` and
+   an open object refuses the same input.
+   - **Runtime fix:** `_convertUndeclaredKeys` converts an own property whose value is `undefined`
+     through `jsonValue` rather than the value schema. A record therefore refuses it exactly as an
+     open object does, with the same message (`a: "undefined": invalid JSON primitive.`), whatever
+     the value schema accepts. Revert row R33.
+   - **Type-level fix:** `record`'s parameter is now `S & (undefined extends Static<S> ? never :
+     unknown)`. A value schema whose `Static` admits `undefined` (such as `optional(...)`) becomes a
+     compile-time error.
+     - No cast and no new export were needed; `S` is still inferred from the intersection.
+     - The regression test's `@ts-expect-error` line is the compile-time proof, and the same line
+       exercises the runtime refusal.
+     - This narrows `record`'s signature in `etc/ts-json-base.api.md`, which is fine because
+       `record` is new in this PR.
+     - One consequence: a value typed `ISchemaValidator<unknown>` is also refused, because `unknown`
+       admits `undefined`. `fromJson` passes `ISchemaValidator<JsonValue>`, which does not.
+2. **Server-supplied text was echoed with raw control characters**, a log-injection path through
+   `adaptMcpTools`' warning.
+   - `@fgv/ts-utils` has no escaping helper (`singleLine` refuses rather than escapes), so
+     `fromJson.ts` gained two:
+     - `_escapeChar`/`_printable` spell C0, DEL, C1, U+2028 and U+2029 as `\uXXXX`.
+     - `_echo` now escapes first and then cuts to 120 characters, between escaped characters, so it
+       never splits an escape or a surrogate pair. Revert rows R34 and R35.
+   - Backslashes are **not** escaped. A key that literally contains the six characters `\u000a`
+     reads the same as an escaped newline. That is ambiguous, but it carries no injection risk, so I
+     left it.
+
+   **Sweep: every place in `fromJson.ts` where a message or error path carries server text, and how
+   each is now routed:**
+
+   | site | server text | routing | revert row |
+   |---|---|---|---|
+   | `$ref` value, every message that quotes it (`shown`) | the reference | `_echo` | R34 |
+   | resolved node's error path | the decoded `$ref` target | `_echo` | R32, R34 |
+   | "does not resolve: no '…'" | a pointer token | `_echo` | R43 |
+   | child path `#/properties/<key>` | property key | `_printable(_escapeToken(key))` | R36 |
+   | "'required' key '…' has no matching entry" | a `required` entry | `_echo` | R39 |
+   | "unsupported JSON Schema keyword 'anyOf'/'oneOf' alongside '…'" | a sibling key | `_echo` | R37 |
+   | "unsupported JSON Schema keyword '$ref' alongside '…'" | a sibling key | `_echo` | R38 |
+   | "enum schema declares conflicting 'type' '…'" | a `type` value | `_echo` | R40 |
+   | enum value messages forwarded from `Converters` ("Not a string: …") | a non-string enum member, whose `JSON.stringify` leaves DEL, C1, U+2028 and U+2029 raw | `_printable` | R41 |
+   | `description` messages forwarded from `Converters` | a non-string description | `_printable`, via `_descriptionField.withFormattedError` | R42 |
+   | the root `captureResult` backstop's message | a thrown error's text | `_printable` | covered by R25's test |
+
+   Not routed, because the text is not server-supplied:
+   - keyword names in the forbidden-keyword and record-key-set refusals, which come from fixed lists;
+   - the `anyOf`/`oneOf` member path, which uses a fixed keyword and an index;
+   - "unsupported or missing 'type'", which echoes nothing;
+   - the union-type message;
+   - the caller-supplied `jsonSchemaConverter` context path.
+
+   **`adaptMcpTools`** (`ts-extras-mcp`) echoed the server-supplied tool name raw in its skip
+   warning, along with the raw schema, whose `JSON.stringify` form leaves DEL, C1, U+2028 and U+2029
+   raw. The fix was small, so it is applied here.
+   - The whole warning now passes through a local `_printable`. The structured `skipped` record is
+     left as the server sent it. Revert row R44.
+   - The `ts-extras-mcp` change file is now `patch` (it was `none`), because this is a source
+     change.
+   - The helper duplicates `fromJson.ts`'s, because neither package exports one. A shared escaping
+     primitive in `@fgv/ts-utils` would be the cleaner long-term home. It is not added here, because
+     that would put a third package's public surface in this PR.
+
+   Regression tests (`echo.test.ts`) cover `\n`, `\r`, NUL, ESC, DEL, NEL (C1), U+2028 and U+2029,
+   each in a `$ref` and in a property key. Each asserts that the message contains no raw control
+   character and does contain the escaped form. Further tests cover each site above and the
+   truncation boundary.
+
 ## Known exceptions and over-refusals
 
 Recorded so they are not rediscovered as surprises:
@@ -341,7 +427,8 @@ Recorded so they are not rediscovered as surprises:
 
   Both received test-only updates in the gate-review round (see *Tests changed*). The edits were
   kept minimal because the concurrent `mcp-client-cancellation` stream touches the same
-  `ts-extras-mcp` test file. No production source outside `ts-json-base` changed.
+  `ts-extras-mcp` test file. Outside `ts-json-base`, the only production source change is the
+  round-3 escaping of `adaptMcpTools`' skip warning.
   `ts-extras-mcp`'s `CAPABILITIES.md` was updated as well (docs only, change file `none`).
 
 ## Gates

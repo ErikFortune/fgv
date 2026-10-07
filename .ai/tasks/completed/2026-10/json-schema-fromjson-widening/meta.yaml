@@ -21,8 +21,10 @@ summary:
     New additive JsonSchema.record(values); fromJson reads schema-valued additionalProperties (no
     declared properties) as a record. Numeric enum, pattern and {} stay refused, the first and last
     with sharper messages. $dynamicRef, $recursiveRef and a declared __proto__ property, previously
-    mishandled silently, are now refused. Outside ts-json-base only test fixtures changed
-    (ts-extras-mcp endToEnd, testbed mcpProbe).
+    mishandled silently, are now refused. A record refuses undefined values (runtime and compile
+    time), and server-supplied text is escaped in every fromJson message and in adaptMcpTools' skip
+    warning (the one production change outside ts-json-base); otherwise only test fixtures changed
+    outside it (ts-extras-mcp endToEnd, testbed mcpProbe).
   diverged: >
     Of #683, only record shipped: numeric enum and {} are representable but their wire breaks Gemini
     (string-only enum, required type), which needs a ts-extras decision the brief made a stop
@@ -78,4 +80,4 @@ relatedStreams:
       id: personality-intake,
       relationship: 'captured the PersonAIlity #680/#681/#683 asks this stream implements'
     }
-sourceHash: 9829bbd863d28c69 # first 16 hex of sha256 over brief.md, state.md and result.md concatenated in that order
+sourceHash: 921299eddab73fe8 # first 16 hex of sha256 over brief.md, state.md and result.md concatenated in that order

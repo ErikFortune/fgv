@@ -234,6 +234,18 @@ describe('JsonSchema — smaller MCP shapes (#683)', () => {
         }
       });
 
+      test('refuses an own property whose value is undefined, whatever the value schema accepts', () => {
+        // @ts-expect-error - a value schema whose static type admits undefined is refused at compile time
+        const optionalValues = JsonSchema.record(JsonSchema.optional(JsonSchema.string()));
+        // At run time, `undefined` is refused exactly as an open object refuses it.
+        expect(optionalValues.validate({ a: undefined })).toFailWith(/^a: .*invalid JSON primitive/);
+        expect(optionalValues.validate({ a: 'x' })).toSucceedWith({ a: 'x' });
+        expect(scores.validate({ a: 1, b: undefined })).toFailWith(/^b: .*invalid JSON primitive/);
+        expect(JsonSchema.object({}, { additionalProperties: true }).validate({ a: undefined })).toFailWith(
+          /^a: .*invalid JSON primitive/
+        );
+      });
+
       test('drops an own __proto__ key like an open object does', () => {
         const input = JSON.parse('{"__proto__": 1, "a": 2}') as JsonObject;
         expect(scores.validate(input)).toSucceedAndSatisfy((v) => {
