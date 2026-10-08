@@ -227,7 +227,7 @@ const MUTATIONS = [
     'R24 a non-object body is not converted',
     ['U17'],
     VALIDATE,
-    '  return body\n    .convert(data)\n',
+    '  return safeConvert(body, data)\n',
     '  return succeed(data as IReceivedBody)\n'
   ),
   m(
@@ -297,11 +297,11 @@ const MUTATIONS = [
     "                err,\n                'invalid-request',\n                response.status,"
   ),
   m(
-    'R34 an unserializable state is not captured, so askSystemOne rejects instead of returning a Result',
-    ['U27'],
-    MEASURE,
-    'captureResult(() => measureChecked(state, questions))',
-    'captureResult(() => true).onSuccess(() => succeedWithDetail(measureChecked(state, questions)).asResult)'
+    'R34 measureSystemOneInput does not check the state, so an unserializable one throws',
+    ['U28', 'U30', 'U31'],
+    SHAPES,
+    '  return safeConvert(entry, state)\n',
+    '  return succeed(state)\n'
   ),
   m(
     "R35 an APIError's body-derived message reaches the failure message",
@@ -392,8 +392,120 @@ const MUTATIONS = [
     'R46 measureSystemOneInput measures questions of the wrong shape',
     ['U28'],
     MEASURE,
-    'return checkQuestions(questions).onSuccess(() =>',
-    'return captureResult(() => true).onSuccess(() =>'
+    'return checkInput(state, questions).onSuccess(',
+    'return succeed(true).onSuccess('
+  ),
+  m(
+    'R47 a conversion that throws is not caught',
+    ['U30', 'U34'],
+    SHAPES,
+    'return captureResult(() => converter.convert(from)).onSuccess((result) => result);',
+    'return converter.convert(from);'
+  ),
+  m(
+    "R48 the request's top level is converted unguarded, so a bigint request throws",
+    ['U30'],
+    SHAPES,
+    'return safeConvert(callerRecord, request)',
+    'return callerRecord.convert(request)'
+  ),
+  m(
+    "R49 the client parameters' top level is converted unguarded",
+    ['U30'],
+    SHAPES,
+    'return safeConvert(callerRecord, params)',
+    'return callerRecord.convert(params)'
+  ),
+  m(
+    'R50 a field is converted unguarded, so a circular or bigint field throws',
+    ['U30'],
+    SHAPES,
+    'safeConvert(fields[field], record[field])',
+    'fields[field].convert(record[field])'
+  ),
+  m(
+    'R51 a question is converted unguarded, so a circular question throws',
+    ['U30'],
+    SHAPES,
+    'safeConvert(question, record[id])',
+    'question.convert(record[id])'
+  ),
+  m(
+    'R52 the input limit is converted unguarded, so a circular limit throws',
+    ['U30'],
+    MEASURE,
+    'safeConvert(inputLimitShape, inputLimit)',
+    'inputLimitShape.convert(inputLimit)'
+  ),
+  m(
+    'R53 the body is converted unguarded',
+    ['U34'],
+    VALIDATE,
+    'safeConvert(body, data)',
+    'body.convert(data)'
+  ),
+  m(
+    'R54 an unconvertible body is described unguarded',
+    ['U34'],
+    VALIDATE,
+    'safeConvert(jsonRecord, data)',
+    'jsonRecord.convert(data)'
+  ),
+  m(
+    'R55 the answer set is described unguarded',
+    ['U34'],
+    VALIDATE,
+    'safeConvert(jsonRecord, answers)',
+    'jsonRecord.convert(answers)'
+  ),
+  m(
+    'R56 each answer is described unguarded',
+    ['U34'],
+    VALIDATE,
+    'safeConvert(answer, record[id])',
+    'answer.convert(record[id])'
+  ),
+  m(
+    'R57 each model card is described unguarded',
+    ['U34'],
+    VALIDATE,
+    'safeConvert(modelCard, entry)',
+    'modelCard.convert(entry)'
+  ),
+  m(
+    'R58 an EntryType is not checked as JSON',
+    ['U31'],
+    SHAPES,
+    '  JsonConverters.jsonValue\n    .convert(from)\n',
+    '  succeed(from)\n'
+  ),
+  m(
+    'R59 a bare number or boolean is accepted as an EntryType',
+    ['U31'],
+    SHAPES,
+    "typeof value === 'number' || typeof value === 'boolean'",
+    'value === undefined'
+  ),
+  m(
+    'R60 a received or request record may carry an own __proto__ key',
+    ['U33'],
+    SHAPES,
+    'hasReservedKey(from) ? fail(\'"__proto__" is a reserved key\') : record.convert(from)',
+    'record.convert(from)'
+  ),
+  m(
+    'R61 a __proto__ question id is not named as reserved',
+    ['U33'],
+    SHAPES,
+    '  if (hasReservedKey(questions)) {\n',
+    "  if (questions === 'never') {\n"
+  ),
+  m(
+    'R62 a reserved answer id is not counted',
+    ['U33'],
+    VALIDATE,
+    'const reserved = hasReservedKey(answers) ? 1 : 0;',
+    'const reserved = 0;'
   ),
   harness(
     'H1 an unknown option is accepted',
@@ -432,6 +544,36 @@ const MUTATIONS = [
     ['S2'],
     "  return value === null || typeof value === 'string' || typeof value === 'object';",
     "  return typeof value === 'string';"
+  ),
+  harness(
+    'H9 the state is not checked',
+    ['S8'],
+    '    if (!isEntry(item.state)) {\n',
+    "    if (item.state === 'never') {\n"
+  ),
+  harness(
+    'H10 instructions are not checked',
+    ['S8'],
+    'if (q.instructions !== undefined && !isEntry(q.instructions)) {',
+    "if (q.instructions === 'never') {"
+  ),
+  harness(
+    'H11 choice descriptions and labels are not checked',
+    ['S8'],
+    "        (Object.prototype.hasOwnProperty.call(q.criteria, '__proto__') ||\n          !Object.values(q.criteria).every(isEntry))\n",
+    "        q.criteria === 'never'\n"
+  ),
+  harness(
+    'H12 score levels are not checked',
+    ['S8'],
+    "if (q.type === 'score' && !q.criteria.every(isEntry)) {",
+    "if (q.type === 'never') {"
+  ),
+  harness(
+    'H13 a __proto__ question id is accepted',
+    ['S8'],
+    "    if (Object.prototype.hasOwnProperty.call(item.questions, '__proto__')) {\n",
+    "    if (item.questions === 'never') {\n"
   )
 ];
 

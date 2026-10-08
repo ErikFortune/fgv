@@ -92,6 +92,14 @@ describe('response validation never throws, whatever it is handed', () => {
     expect(validateSystemOneBody({ q: noul('q') }, BigInt(1))).toFailWith(
       /^the body is JSON but not an object$/
     );
+    expect(
+      validateSystemOneBody(
+        { q: noul('q') },
+        { model: 'm', answers: BigInt(1), usage: { input_tokens: 1, output_tokens: 0 } }
+      )
+    ).toFailWith(
+      /invalid \[answers\]; answers that are not a noul, choice or score answer: \[\] and 0 with no question$/
+    );
   });
 
   test('U34 describeModelList names a circular entry instead of throwing', () => {
