@@ -1035,7 +1035,8 @@ Revert matrix 57/57 VERIFIED.
 0 with 0 warnings; 86 tests, 100%, no `c8 ignore`. Self-test 8 of 8. Revert matrix 78/78 VERIFIED.
 `verify-capability-docs.mjs`, `verify-bundler-resolution.mjs` (21 checked, 0 failed) and `rush
 change --verify --target-branch origin/integration/system-one-decisions` exit 0. The repo-wide `rush
-test` result follows.
+test` at `89f189ea`: exit 0, `SUCCESS: 37 operations`, 10 m 39 s; error grep **0**; the one `warning`
+line is the symlink notice; no NUL padding.
 
 ## What the brief or the plan got wrong
 
