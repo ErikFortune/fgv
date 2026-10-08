@@ -20,7 +20,17 @@
  * SOFTWARE.
  */
 
-import { Converter, Converters, Validator, Validators, fail, succeed, type Result } from '@fgv/ts-utils';
+import { Converters as JsonConverters } from '@fgv/ts-json-base';
+import {
+  Converter,
+  Converters,
+  Validator,
+  Validators,
+  captureResult,
+  fail,
+  succeed,
+  type Result
+} from '@fgv/ts-utils';
 import type { EntryType, NoulQuestion } from '@typesafe-ai/sdk';
 
 /*
@@ -30,24 +40,64 @@ import type { EntryType, NoulQuestion } from '@typesafe-ai/sdk';
  * credentials, or the state). Every message starts with the reason, `invalid-request`.
  */
 
+/**
+ * Converts without throwing. A converter formats its failure by quoting what it rejected with
+ * `JSON.stringify`, which throws on a cycle or a `bigint`, and a recursive JSON check overflows the
+ * stack on a cycle, so any conversion of a caller's or a server's value can throw. A throw becomes a
+ * failure; every caller replaces the message with fixed text, so the thrown text is never shown.
+ */
+export function safeConvert<T>(converter: Converter<T> | Validator<T>, from: unknown): Result<T> {
+  return captureResult(() => converter.convert(from)).onSuccess((result) => result);
+}
+
 /** Any value, passed through; used where only the keys of a record matter. */
 export const anyValue: Converter<unknown> = Converters.generic((from: unknown) => succeed(from));
 
-/** A JSON object (not an array) of any values. */
+/** A JSON object (not an array) of any values, for describing what was received. */
 export const jsonRecord: Converter<Record<string, unknown>> = Converters.recordOf(anyValue);
+
+/** Whether a value is an object with an own `__proto__` key, as `JSON.parse` can produce. */
+export function hasReservedKey(from: unknown): boolean {
+  return typeof from === 'object' && from !== null && Object.prototype.hasOwnProperty.call(from, '__proto__');
+}
+
+/**
+ * `Converters.recordOf`, refusing an object with an own `__proto__` key. `recordOf` writes each key
+ * into a plain object, where `__proto__` sets the prototype instead of creating a key, so the key
+ * would vanish and an exact-key check after the conversion could not see it.
+ */
+export function ownRecordOf<T>(inner: Converter<T> | Validator<T>): Converter<Record<string, T>> {
+  const record = Converters.recordOf(inner);
+  return Converters.generic((from: unknown) =>
+    hasReservedKey(from) ? fail('"__proto__" is a reserved key') : record.convert(from)
+  );
+}
+
+/** A caller's object of any values, refusing a reserved key whose value would be read as a prototype. */
+const callerRecord: Converter<Record<string, unknown>> = ownRecordOf(anyValue);
 
 /** The names of the fields of an object that the given converters or validators reject. */
 export function rejectedFields(
   record: Record<string, unknown>,
   fields: Record<string, Converter<unknown> | Validator<unknown>>
 ): string[] {
-  return Object.keys(fields).filter((field) => fields[field].convert(record[field]).isFailure());
+  return Object.keys(fields).filter((field) => safeConvert(fields[field], record[field]).isFailure());
 }
 
-/** The SDK's `EntryType`: text, a JSON object or array, or `null`. */
-const entry: Converter<EntryType> = Converters.isA(
-  'text, a JSON object or array, or null',
-  (from: unknown): from is EntryType => from === null || typeof from === 'string' || typeof from === 'object'
+/**
+ * The SDK's `EntryType`: text, a JSON object or array, or `null`, checked recursively as JSON, so a
+ * `Map`, a `Date`, a `bigint`, an `undefined` or a cycle anywhere inside is refused rather than
+ * serialized into something else. A bare number or boolean is JSON but not an `EntryType`.
+ */
+const entry: Converter<EntryType> = Converters.generic((from: unknown) =>
+  JsonConverters.jsonValue
+    .convert(from)
+    .onSuccess(
+      (value): Result<EntryType> =>
+        typeof value === 'number' || typeof value === 'boolean'
+          ? fail('not text, a JSON object or array, or null')
+          : succeed(value)
+    )
 );
 
 /** The SDK's own type for a noul's criteria: optional, `null`, or `true` / `false` descriptions. */
@@ -91,7 +141,7 @@ const question: Converter<INoulShape | IChoiceShape | IScoreShape> = Converters.
   choice: Converters.object<IChoiceShape>({
     type: Converters.literal('choice'),
     instructions: entry.optional(),
-    criteria: Converters.recordOf(entry)
+    criteria: ownRecordOf(entry)
   }),
   score: Converters.object<IScoreShape>({
     type: Converters.literal('score'),
@@ -105,15 +155,27 @@ const question: Converter<INoulShape | IChoiceShape | IScoreShape> = Converters.
  * question; the failure names the caller's question ids at fault.
  */
 export function checkQuestions(questions: unknown): Result<true> {
-  return jsonRecord
-    .convert(questions)
+  if (hasReservedKey(questions)) {
+    return fail('invalid-request: [__proto__] is a reserved key and cannot be a question id');
+  }
+  return safeConvert(callerRecord, questions)
     .withErrorFormat(() => 'invalid-request: questions must be an object of named questions')
     .onSuccess((record) => {
-      const bad = Object.keys(record).filter((id) => question.convert(record[id]).isFailure());
+      const bad = Object.keys(record).filter((id) => safeConvert(question, record[id]).isFailure());
       return bad.length === 0
         ? succeed(true as const)
         : fail(`invalid-request: [${bad.join(', ')}] are not well-formed noul, choice or score questions`);
     });
+}
+
+/**
+ * Fails unless `state` is an `EntryType` and `questions` are well-formed, for the measure, which
+ * has no request object to check.
+ */
+export function checkInput(state: unknown, questions: unknown): Result<true> {
+  return safeConvert(entry, state)
+    .withErrorFormat(() => 'invalid-request: the state is not text, a JSON object or array, or null')
+    .onSuccess(() => checkQuestions(questions));
 }
 
 const abortSignal: Validator<AbortSignal> = Validators.isA(
@@ -126,8 +188,7 @@ const abortSignal: Validator<AbortSignal> = Validators.isA(
  * questions and signal. The input limit's own shape is checked by the bound.
  */
 export function checkRequest(request: unknown): Result<true> {
-  return jsonRecord
-    .convert(request)
+  return safeConvert(callerRecord, request)
     .withErrorFormat(
       () => 'invalid-request: the request must be an object { state, questions, inputLimit, signal? }'
     )
@@ -163,8 +224,7 @@ const retryShape: Converter<unknown> = Converters.isA(
  * fields of the declared types, naming the fields at fault.
  */
 export function checkClientParams(params: unknown): Result<true> {
-  return jsonRecord
-    .convert(params)
+  return safeConvert(callerRecord, params)
     .withErrorFormat(
       () =>
         'invalid-request: createSystemOneClient takes { baseUrl, model, apiKey, timeoutMs?, retry?, logger?, fetch? }'

@@ -87,6 +87,7 @@
     "@fgv/ts-utils": "workspace:*"
   },
   "dependencies": {
-    "@typesafe-ai/sdk": "~0.6.0"
+    "@typesafe-ai/sdk": "~0.6.0",
+    "@fgv/ts-json-base": "workspace:*"
   }
 }

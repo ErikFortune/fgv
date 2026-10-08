@@ -40,7 +40,7 @@ import type {
   ScoreQuestion,
   ScoreResponse
 } from '@typesafe-ai/sdk';
-import { anyValue, jsonRecord, rejectedFields } from './shapes';
+import { anyValue, hasReservedKey, jsonRecord, ownRecordOf, rejectedFields, safeConvert } from './shapes';
 import type { ISystemOneUsage, SystemOneAnswerResult } from './types';
 
 /** How far a distribution's sum may be from 1. */
@@ -99,7 +99,7 @@ const nonEmptyString: Converter<string> = Converters.string.withConstraint((s) =
   description: 'a non-empty string'
 });
 
-const probabilities: Converter<Record<string, number>> = Converters.recordOf(Validators.number);
+const probabilities: Converter<Record<string, number>> = ownRecordOf(Validators.number);
 
 /**
  * Converts one answer by its own `type`, keeping only the fields the SDK declares. `confidence` and
@@ -120,7 +120,7 @@ const choiceAnswer: Converter<ProjectedChoice> = Converters.object<ProjectedChoi
 const scoreAnswer: Converter<IReceivedScore> = Converters.object<IReceivedScore>({
   type: Converters.literal('score'),
   score: Validators.number,
-  legend: Converters.recordOf(anyValue),
+  legend: ownRecordOf(anyValue),
   probabilities
 });
 
@@ -136,7 +136,7 @@ interface IReceivedBody {
   readonly usage: ISystemOneUsage;
 }
 
-const answerRecord: Converter<Record<string, ReceivedAnswer>> = Converters.recordOf(answer);
+const answerRecord: Converter<Record<string, ReceivedAnswer>> = ownRecordOf(answer);
 
 const body: Converter<IReceivedBody> = Converters.object<IReceivedBody>({
   model: nonEmptyString,
@@ -272,15 +272,16 @@ function describeAnswerSet(questions: Questions, answers: ProjectedAnswers): str
 
 /** Describes the answers that are not noul, choice or score answers: question ids by name, others counted. */
 function describeBadAnswers(questions: Questions, answers: unknown): string {
-  const bad = jsonRecord
-    .convert(answers)
+  const bad = safeConvert(jsonRecord, answers)
     .onSuccess((record) =>
-      succeed(Object.keys(record).filter((id) => answer.convert(record[id]).isFailure()))
+      succeed(Object.keys(record).filter((id) => safeConvert(answer, record[id]).isFailure()))
     )
     .orDefault([]);
   const named = bad.filter((id) => Object.keys(questions).includes(id));
+  // A reserved `__proto__` id is not an own key of the converted record, so it is counted here.
+  const reserved = hasReservedKey(answers) ? 1 : 0;
   return `answers that are not a noul, choice or score answer: [${named.join(', ')}] and ${
-    bad.length - named.length
+    bad.length - named.length + reserved
   } with no question`;
 }
 
@@ -296,8 +297,7 @@ function describeUnconvertible(questions: Questions, data: unknown): string {
   if (typeof data === 'string') {
     return `the body is text, not JSON (${data.length} characters)`;
   }
-  return jsonRecord
-    .convert(data)
+  return safeConvert(jsonRecord, data)
     .onSuccess((record) =>
       succeed(
         `the body is not a System-1 response: invalid [${rejectedFields(record, {
@@ -348,8 +348,7 @@ export function validateSystemOneBody<Q extends Questions>(
   data: unknown
 ): Result<IValidatedBody<Q>> {
   const questionFor = new Map<string, Question>(Object.entries(questions));
-  return body
-    .convert(data)
+  return safeConvert(body, data)
     .withErrorFormat(() => describeUnconvertible(questions, data))
     .onSuccess(({ model, answers, usage: reported }) =>
       mapResults(
@@ -382,7 +381,7 @@ export const modelCards: Converter<ModelCard[]> = Converters.arrayOf(modelCard);
 export function describeModelList(entries: ReadonlyArray<unknown>): string {
   // The SDK has already unwrapped `{ models: [...] }` and refused any other shape, so this is a list.
   const bad = entries
-    .map((entry, index) => (modelCard.convert(entry).isFailure() ? index : -1))
+    .map((entry, index) => (safeConvert(modelCard, entry).isFailure() ? index : -1))
     .filter((index) => index >= 0);
   return `the model list is not [{ name, description, release_date }]: entries [${bad.join(
     ', '

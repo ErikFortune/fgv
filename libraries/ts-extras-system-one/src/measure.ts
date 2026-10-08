@@ -24,8 +24,8 @@ import {
   Converter,
   Converters,
   Validators,
-  captureResult,
   failWithDetail,
+  succeed,
   succeedWithDetail,
   type DetailedResult,
   type Result
@@ -38,7 +38,7 @@ import type {
   SystemOneFailureReason,
   SystemOneInputLimit
 } from './types';
-import { checkQuestions } from './shapes';
+import { checkInput, safeConvert } from './shapes';
 
 /** CLM joins state and instructions with `"\n\n"`. */
 const separatorLength: number = 2;
@@ -114,8 +114,8 @@ function measureCriteria(question: Question): ISystemOneCriterionMeasure[] {
  * serialization.
  *
  * Input outside the declared types — a question with missing or mis-shaped `criteria`, a state
- * that cannot be serialized (circular, or holding a `bigint`) — fails `invalid-request` rather
- * than throws, and the message never quotes the input.
+ * or entry that is not JSON (a cycle, a `bigint`, a `Map`, a `Date`, an `undefined`) — fails
+ * `invalid-request` rather than throws, and the message never quotes the input.
  * @param state - The state to be sent.
  * @param questions - The questions to be sent.
  * @returns The lengths the input bound compares against `maxChars`, or a failure naming why the
@@ -126,11 +126,7 @@ export function measureSystemOneInput(
   state: EntryType,
   questions: Questions
 ): Result<ISystemOneInputMeasure> {
-  return checkQuestions(questions).onSuccess(() =>
-    captureResult(() => measureChecked(state, questions)).withErrorFormat(
-      () => 'invalid-request: the state or a question is not JSON-serializable, so it cannot be measured'
-    )
-  );
+  return checkInput(state, questions).onSuccess(() => succeed(measureChecked(state, questions)));
 }
 
 /** Measures input whose questions have the declared shape. */
@@ -221,8 +217,7 @@ export function checkInputLimit(
 ): DetailedResult<ISystemOneInputMeasure | undefined, SystemOneFailureReason> {
   // `askSystemOne` has already checked every question's shape (`checkRequest`), in either mode, so
   // a malformed question is `invalid-request` in 'unchecked' mode too and nothing is sent.
-  return inputLimitShape
-    .convert(inputLimit)
+  return safeConvert(inputLimitShape, inputLimit)
     .withErrorFormat(() => `invalid-request: inputLimit must be 'unchecked' or { maxChars: number }`)
     .withFailureDetail<SystemOneFailureReason>('invalid-request')
     .onSuccess((limit) =>

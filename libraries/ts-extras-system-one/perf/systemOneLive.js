@@ -202,7 +202,11 @@ function keyFrom(keyEnv) {
 
 const QUESTION_TYPES = ['noul', 'choice', 'score'];
 
-/** The SDK's `EntryType`: text, a JSON object or array, or `null`. */
+/**
+ * The SDK's `EntryType`, as `askSystemOne` checks it: text, a JSON object or array, or `null`, and
+ * not a bare number or boolean. The file is parsed JSON, so everything inside is already JSON; only
+ * the top level needs checking here.
+ */
 function isEntry(value) {
   return value === null || typeof value === 'string' || typeof value === 'object';
 }
@@ -246,8 +250,14 @@ function readQuestionFile(file) {
     if (item === null || typeof item !== 'object' || !('state' in item)) {
       usage(`${where} needs a state`);
     }
+    if (!isEntry(item.state)) {
+      usage(`${where}: the state must be text, a JSON object or array, or null`);
+    }
     if (item.questions === null || typeof item.questions !== 'object' || Array.isArray(item.questions)) {
       usage(`${where} needs questions as an object of named questions, not a list`);
+    }
+    if (Object.prototype.hasOwnProperty.call(item.questions, '__proto__')) {
+      usage(`${where}: '__proto__' is a reserved key and cannot be a question id`);
     }
     const ids = Object.keys(item.questions);
     if (ids.length === 0) {
@@ -258,14 +268,30 @@ function readQuestionFile(file) {
       if (q === null || typeof q !== 'object' || !QUESTION_TYPES.includes(q.type)) {
         usage(`${where} question '${id}' must have a type of ${QUESTION_TYPES.join(', ')}`);
       }
+      if (q.instructions !== undefined && !isEntry(q.instructions)) {
+        usage(`${where} question '${id}': instructions must be text, a JSON object or array, or null`);
+      }
       if (
         q.type === 'choice' &&
         (q.criteria === null || typeof q.criteria !== 'object' || Array.isArray(q.criteria))
       ) {
         usage(`${where} question '${id}': choice criteria must be an object of labels`);
       }
+      if (
+        q.type === 'choice' &&
+        (Object.prototype.hasOwnProperty.call(q.criteria, '__proto__') ||
+          !Object.values(q.criteria).every(isEntry))
+      ) {
+        usage(
+          `${where} question '${id}': each choice description must be text, a JSON object or array, ` +
+            "or null, and '__proto__' cannot be a label"
+        );
+      }
       if (q.type === 'score' && (!Array.isArray(q.criteria) || q.criteria.length < 2)) {
         usage(`${where} question '${id}': score criteria must be a list of at least two levels`);
+      }
+      if (q.type === 'score' && !q.criteria.every(isEntry)) {
+        usage(`${where} question '${id}': each score level must be text, a JSON object or array, or null`);
       }
       if (q.type === 'noul' && !isNoulCriteria(q.criteria)) {
         usage(

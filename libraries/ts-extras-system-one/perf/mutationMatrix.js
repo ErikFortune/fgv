@@ -546,6 +546,13 @@ function classify(text, mustGoRed) {
 
 function main() {
   const args = parseArgs(process.argv.slice(2));
+  // A misspelt id would otherwise select nothing and report a clean run of fewer rows.
+  const known = new Set(MUTATIONS.map((row) => row.name.split(' ')[0]));
+  const unknown = args.only.filter((id) => !known.has(id));
+  if (unknown.length > 0) {
+    console.error(`mutationMatrix: no row named [${unknown.join(', ')}]; nothing was run`);
+    process.exit(2);
+  }
   const rows = MUTATIONS.filter(
     (row) => args.only.length === 0 || args.only.includes(row.name.split(' ')[0])
   );

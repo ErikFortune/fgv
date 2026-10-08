@@ -5,9 +5,10 @@
 
 import '@fgv/ts-utils-jest';
 import { Logging } from '@fgv/ts-utils';
-import { APIConnectionError, APIUserAbortError, TypeSafeError } from '@typesafe-ai/sdk';
+import { APIConnectionError, APIUserAbortError, TypeSafeError, noul } from '@typesafe-ai/sdk';
 import { classifyError } from '../../classify';
 import { sdkLogging } from '../../logging';
+import { describeModelList, validateSystemOneBody } from '../../validate';
 
 describe('sdkLogging', () => {
   test.each([
@@ -71,5 +72,33 @@ describe('classifyError', () => {
   test('the SDK error classes classify by class', () => {
     expect(classifyError(new APIUserAbortError(), 'connection').reason).toBe('aborted');
     expect(classifyError(new APIConnectionError(), 'invalid-response').reason).toBe('connection');
+  });
+});
+
+describe('response validation never throws, whatever it is handed', () => {
+  // A parsed JSON body cannot hold a cycle or a bigint, so these reach the validators only through
+  // a caller of the internal functions; they pin that a converter's failure formatting cannot throw.
+  test('U34 validateSystemOneBody fails a circular or bigint body instead of throwing', () => {
+    const body: Record<string, unknown> = {
+      model: 'm',
+      usage: { input_tokens: BigInt(1), output_tokens: 0 }
+    };
+    body.answers = { q: body };
+    let result: ReturnType<typeof validateSystemOneBody> | undefined;
+    expect(() => {
+      result = validateSystemOneBody({ q: noul('q') }, body);
+    }).not.toThrow();
+    expect(result).toFailWith(/^the body is not a System-1 response: invalid \[answers, usage\]; .*\[q\]/);
+    expect(validateSystemOneBody({ q: noul('q') }, BigInt(1))).toFailWith(
+      /^the body is JSON but not an object$/
+    );
+  });
+
+  test('U34 describeModelList names a circular entry instead of throwing', () => {
+    const entry: Record<string, unknown> = { name: 'm' };
+    entry.self = entry;
+    expect(describeModelList([{ name: 'a', description: 'b', release_date: 'c' }, entry])).toBe(
+      'the model list is not [{ name, description, release_date }]: entries [1] are malformed'
+    );
   });
 });

@@ -1002,6 +1002,9 @@ importers:
 
   ../../libraries/ts-extras-system-one:
     dependencies:
+      '@fgv/ts-json-base':
+        specifier: workspace:*
+        version: link:../ts-json-base
       '@typesafe-ai/sdk':
         specifier: ~0.6.0
         version: 0.6.0

@@ -50,7 +50,7 @@ import type {
   ISystemOneUsage,
   SystemOneFailureReason
 } from './types';
-import { checkClientParams, checkRequest } from './shapes';
+import { checkClientParams, checkRequest, safeConvert } from './shapes';
 import { describeModelList, modelCards, validateSystemOneBody } from './validate';
 
 /** What a client stands for: the SDK client and the model it sends. */
@@ -256,16 +256,14 @@ export async function listSystemOneModels(
     const listed = sdk.models.list();
     return listed.withResponse().then(
       (received): Result<ReadonlyArray<ModelCard>> =>
-        modelCards
-          .convert(received.data)
-          .withErrorFormat(() =>
-            failureMessage(
-              'invalid-response',
-              describeModelList(received.data),
-              received.response.status,
-              received.requestId
-            )
-          ),
+        safeConvert(modelCards, received.data).withErrorFormat(() =>
+          failureMessage(
+            'invalid-response',
+            describeModelList(received.data),
+            received.response.status,
+            received.requestId
+          )
+        ),
       // The SDK raises its base error after a 2xx response whose shape it cannot unwrap; the
       // response itself is still available for its status and request id.
       (err: unknown): Promise<Result<ReadonlyArray<ModelCard>>> =>

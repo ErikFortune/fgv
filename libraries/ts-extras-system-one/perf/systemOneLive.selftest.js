@@ -304,6 +304,50 @@ const CASES = [
       const result = await run(parityCheck(file));
       if (result.code !== 3) fail(`exit ${result.code}, expected 3`);
     }
+  ],
+  [
+    'S8',
+    '--check validates the state, instructions, choice descriptions and score levels as askSystemOne does',
+    async (fail, dir) => {
+      const noulQ = (fields) => `{"type":"noul","instructions":"Is it?"${fields}}`;
+      const choiceQ = (criteria, fields = '') =>
+        `{"type":"choice","instructions":"Which?","criteria":${criteria}${fields}}`;
+      const scoreQ = (levels, fields = '') =>
+        `{"type":"score","instructions":"How much?","criteria":${levels}${fields}}`;
+      const cases = [
+        ['a text state', '"s"', `{"n":${noulQ('')}}`, 0],
+        ['an object state', '{"a":[1,true,null]}', `{"n":${noulQ('')}}`, 0],
+        ['a null state', 'null', `{"n":${noulQ('')}}`, 0],
+        ['a numeric state', '5', `{"n":${noulQ('')}}`, 3],
+        ['a boolean state', 'true', `{"n":${noulQ('')}}`, 3],
+        ['noul: object instructions', '"s"', `{"n":{"type":"noul","instructions":{"q":"Is it?"}}}`, 0],
+        ['noul: numeric instructions', '"s"', `{"n":{"type":"noul","instructions":7}}`, 3],
+        ['choice: list and null descriptions', '"s"', `{"c":${choiceQ('{"a":["x"],"b":null}')}}`, 0],
+        ['choice: a numeric description', '"s"', `{"c":${choiceQ('{"a":"x","b":5}')}}`, 3],
+        ['choice: a __proto__ label', '"s"', `{"c":${choiceQ('{"a":"x","__proto__":"y"}')}}`, 3],
+        [
+          'choice: boolean instructions',
+          '"s"',
+          `{"c":{"type":"choice","instructions":true,"criteria":{"a":"x","b":"y"}}}`,
+          3
+        ],
+        ['score: object levels', '"s"', `{"s":${scoreQ('[{"d":"low"},"high"]')}}`, 0],
+        ['score: a boolean level', '"s"', `{"s":${scoreQ('["low",false]')}}`, 3],
+        [
+          'score: numeric instructions',
+          '"s"',
+          `{"s":{"type":"score","instructions":7,"criteria":["low","high"]}}`,
+          3
+        ],
+        ['a __proto__ question id', '"s"', `{"__proto__":${noulQ('')}}`, 3]
+      ];
+      for (const [label, state, questions, expected] of cases) {
+        const file = path.join(dir, `s8-${Math.random().toString(36).slice(2)}.json`);
+        fs.writeFileSync(file, `{"items":[{"state":${state},"questions":${questions}}]}`);
+        const result = await run(parityCheck(file));
+        if (result.code !== expected) fail(`${label}: exit ${result.code}, expected ${expected}`);
+      }
+    }
   ]
 ];
 
