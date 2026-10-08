@@ -348,6 +348,29 @@ const CASES = [
         if (result.code !== expected) fail(`${label}: exit ${result.code}, expected ${expected}`);
       }
     }
+  ],
+  [
+    'S9',
+    '--check refuses a __proto__ key nested anywhere in the state, an instruction or a criterion',
+    async (fail, dir) => {
+      const nested = '{"d":{"__proto__":{"x":1},"e":2}}';
+      const noulQ = '{"type":"noul","instructions":"Is it?"}';
+      const cases = [
+        ['nested JSON without the key', '{"a":[{"b":{"proto":"__proto__"}}]}', `{"n":${noulQ}}`, 0],
+        ['the state, two levels down', '{"a":{"__proto__":1,"b":2}}', `{"n":${noulQ}}`, 3],
+        ['the state, inside an array', '[[{"a":{"__proto__":null}}]]', `{"n":${noulQ}}`, 3],
+        ['a noul instruction', '"s"', `{"n":{"type":"noul","instructions":${nested}}}`, 3],
+        ['a noul criterion', '"s"', `{"n":{"type":"noul","criteria":{"true":${nested}}}}`, 3],
+        ['a choice description', '"s"', `{"c":{"type":"choice","criteria":{"a":${nested},"b":null}}}`, 3],
+        ['a score level', '"s"', `{"s":{"type":"score","criteria":["low",[${nested}]]}}`, 3]
+      ];
+      for (const [label, state, questions, expected] of cases) {
+        const file = path.join(dir, `s9-${Math.random().toString(36).slice(2)}.json`);
+        fs.writeFileSync(file, `{"items":[{"state":${state},"questions":${questions}}]}`);
+        const result = await run(parityCheck(file));
+        if (result.code !== expected) fail(`${label}: exit ${result.code}, expected ${expected}`);
+      }
+    }
   ]
 ];
 

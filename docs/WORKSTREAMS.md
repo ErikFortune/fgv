@@ -460,7 +460,7 @@ So **R2 is not the safe, independent one-liner §4 called it** — it converts a
 live round trip** (decision U2; L1–L5 not run live). Phase B completed 2026-10-03. Phase A (design) completed
 2026-10-01. Design-triage-implement. Every phase lands on `integration/system-one-decisions` (off
 `release` `30713277c`). The orchestrator opens the cluster-close PR to `release` after Phase C.
-**Substrate:** `.ai/tasks/active/system-one-decisions-design/`, `.ai/tasks/active/system-one-design-antagonist/`
+**Substrate:** `.ai/tasks/active/system-one-decisions-design/`, `.ai/tasks/active/system-one-design-antagonist/`,
 `.ai/tasks/active/system-one-triage/` and `.ai/tasks/active/system-one-impl/` (each
 `{brief.md, state.md, result.md}`).
 **Design:** `docs/design/system-one-decisions/design.md`

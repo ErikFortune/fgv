@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { Converters as JsonConverters } from '@fgv/ts-json-base';
+import { Converters as JsonConverters, isJsonArray, isJsonObject } from '@fgv/ts-json-base';
 import {
   Converter,
   Converters,
@@ -116,13 +116,42 @@ export function rejectedFields(
 }
 
 /**
+ * A snapshot of a JSON-shaped value that refuses an own `__proto__` key at any depth. The JSON
+ * converter copies each key by assignment, where `__proto__` sets the copy's prototype instead of
+ * creating a key, so a nested reserved key would vanish from what is sent. The walk descends exactly
+ * where the JSON converter does (its own `isJsonArray` / `isJsonObject`), reads each value once, and
+ * builds the snapshot with `Object.fromEntries`, which creates keys rather than assigning them;
+ * anything else is passed through for the JSON converter to judge. A cycle overflows the stack and a
+ * Proxy trap can throw, so it runs only inside `safeConvert`.
+ */
+function withoutReservedKeys(from: unknown): Result<unknown> {
+  if (isJsonArray(from)) {
+    return mapResults(from.map(withoutReservedKeys));
+  }
+  if (!isJsonObject(from)) {
+    return succeed(from);
+  }
+  const entries = Object.entries(from);
+  return entries.some(([key]) => key === '__proto__')
+    ? fail('"__proto__" is a reserved key')
+    : mapResults(
+        entries.map(([key, value]) =>
+          withoutReservedKeys(value).onSuccess(
+            (snapshot): Result<[string, unknown]> => succeed([key, snapshot])
+          )
+        )
+      ).onSuccess((snapshot) => succeed(Object.fromEntries(snapshot)));
+}
+
+/**
  * The SDK's `EntryType`: text, a JSON object or array, or `null`, checked recursively as JSON, so a
- * `Map`, a `Date`, a `bigint`, an `undefined` or a cycle anywhere inside is refused rather than
- * serialized into something else. A bare number or boolean is JSON but not an `EntryType`.
+ * `Map`, a `Date`, a `bigint`, an `undefined`, a cycle or a reserved `__proto__` key anywhere inside
+ * is refused rather than serialized into something else. A bare number or boolean is JSON but not an
+ * `EntryType`.
  */
 const entry: Converter<EntryType> = Converters.generic((from: unknown) =>
-  JsonConverters.jsonValue
-    .convert(from)
+  withoutReservedKeys(from)
+    .onSuccess((snapshot) => JsonConverters.jsonValue.convert(snapshot))
     .onSuccess(
       (value): Result<EntryType> =>
         typeof value === 'number' || typeof value === 'boolean'

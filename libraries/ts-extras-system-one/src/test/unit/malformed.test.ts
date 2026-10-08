@@ -4,7 +4,7 @@
  */
 
 import '@fgv/ts-utils-jest';
-import { TypeSafeError, choice, noul, score } from '@typesafe-ai/sdk';
+import { TypeSafeError, choice, noul, score, type EntryType } from '@typesafe-ai/sdk';
 import {
   askSystemOne,
   createSystemOneClient,
@@ -19,6 +19,7 @@ import {
   clientFor,
   jsonResponse,
   scriptedFetch,
+  sentBody,
   shortChoice,
   shortChoiceBody,
   textResponse
@@ -385,5 +386,85 @@ describe('a reserved __proto__ key cannot slip past an exact-key check', () => {
         inputLimit: 'unchecked'
       })
     ).toFailWith(/answers that are not a noul, choice or score answer: \[\] and 1 with no question$/);
+  });
+});
+
+describe('a reserved __proto__ key is refused at any depth of a JSON entry', () => {
+  test('U38 a nested __proto__ in the state, an instruction or any criterion is invalid-request, with nothing sent', async () => {
+    const { fetch, calls } = scriptedFetch(jsonResponse(200, shortChoiceBody('q')));
+    const client = clientFor(fetch);
+    const states: ReadonlyArray<[string, string]> = [
+      ['two levels, object value', '{"a":{"__proto__":{"x":1},"b":2}}'],
+      ['two levels, primitive value', '{"a":{"__proto__":1,"b":2}}'],
+      ['inside an array', '{"a":[{"b":{"__proto__":null}}]}'],
+      ['four levels', '[[{"a":{"b":{"__proto__":{"c":"d"}}}}]]']
+    ];
+    for (const [label, text] of states) {
+      const state = untyped<EntryType>(JSON.parse(text));
+      const result = await askSystemOne(client, {
+        state,
+        questions: { q: shortChoice() },
+        inputLimit: 'unchecked'
+      });
+      expect({ label, detail: result.detail, message: result.message }).toEqual({
+        label,
+        detail: 'invalid-request',
+        message: 'invalid-request: invalid [state] in the request'
+      });
+      expect(measureSystemOneInput(state, { q: shortChoice() })).toFailWith(
+        /^invalid-request: the state is not/
+      );
+    }
+    const nested = '{"d":{"__proto__":{"x":1},"e":2}}';
+    const questions: ReadonlyArray<[string, string]> = [
+      ['an instruction', `{"type":"noul","instructions":${nested}}`],
+      ['a choice description', `{"type":"choice","criteria":{"a":${nested},"b":null}}`],
+      ['a score level', `{"type":"score","criteria":["low",[${nested}]]}`],
+      ['a noul criterion', `{"type":"noul","criteria":{"true":${nested}}}`]
+    ];
+    for (const [label, text] of questions) {
+      const result = await askSystemOne(client, {
+        state: 's',
+        questions: untyped<Questions>({ q: JSON.parse(text) }),
+        inputLimit: 'unchecked'
+      });
+      expect({ label, detail: result.detail }).toEqual({ label, detail: 'invalid-request' });
+      expect(result).toFailWith(
+        /^invalid-request: \[q\] are not well-formed noul, choice or score questions$/
+      );
+    }
+    expect(calls).toHaveLength(0);
+  });
+
+  test('U38 nested JSON without a reserved key is sent intact', async () => {
+    const { fetch, calls } = scriptedFetch(jsonResponse(200, shortChoiceBody('q')));
+    const state = { a: [{ b: { c: ['d', null, 1, true] } }], proto: '__proto__' };
+    expect(
+      await askSystemOne(clientFor(fetch), {
+        state,
+        questions: { q: choice({ e: { f: 'g' } }, { a: null, b: null }) },
+        inputLimit: 'unchecked'
+      })
+    ).toSucceed();
+    expect(sentBody(calls[0])).toEqual(
+      expect.objectContaining({
+        state,
+        questions: { q: expect.objectContaining({ instructions: { e: { f: 'g' } } }) }
+      })
+    );
+  });
+
+  test('U38 a nested __proto__ in a received distribution whose value is an object is invalid-response', async () => {
+    // The response side converts no value through the JSON converter; every record at every depth
+    // (answer set, probabilities, legend) is converted by `ownRecordOf`. U33 covers a primitive value.
+    const text =
+      '{"model":"m","answers":{"q":{"type":"choice","choice":"a","probabilities":{"a":0.5,"b":0.5,"__proto__":{"c":1}}}},"usage":{"input_tokens":1,"output_tokens":0}}';
+    const { fetch } = scriptedFetch(textResponse(200, text, { 'content-type': 'application/json' }));
+    const result = await askSystemOne(clientFor(fetch), {
+      state: 's',
+      questions: { q: shortChoice() },
+      inputLimit: 'unchecked'
+    });
+    expect(result.detail).toBe('invalid-response');
   });
 });

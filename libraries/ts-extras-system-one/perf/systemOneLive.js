@@ -203,11 +203,32 @@ function keyFrom(keyEnv) {
 const QUESTION_TYPES = ['noul', 'choice', 'score'];
 
 /**
- * The SDK's `EntryType`, as `askSystemOne` checks it: text, a JSON object or array, or `null`, and
- * not a bare number or boolean. The file is parsed JSON, so everything inside is already JSON; only
- * the top level needs checking here.
+ * The SDK's `EntryType`, as `askSystemOne` checks it: text, a JSON object or array, or `null`, not
+ * a bare number or boolean, and with no own `__proto__` key at any depth. The file is parsed JSON,
+ * so everything inside is already JSON.
  */
 function isEntry(value) {
+  return isTopLevelEntry(value) && !hasReservedKey(value);
+}
+
+/**
+ * Whether a parsed JSON value holds an own `__proto__` key at any depth, which `askSystemOne`
+ * refuses: the JSON copy it sends would turn the key into a prototype and drop it.
+ */
+function hasReservedKey(value) {
+  if (Array.isArray(value)) {
+    return value.some(hasReservedKey);
+  }
+  if (value === null || typeof value !== 'object') {
+    return false;
+  }
+  return (
+    Object.prototype.hasOwnProperty.call(value, '__proto__') || Object.values(value).some(hasReservedKey)
+  );
+}
+
+/** The top level of an `EntryType`. */
+function isTopLevelEntry(value) {
   return value === null || typeof value === 'string' || typeof value === 'object';
 }
 
