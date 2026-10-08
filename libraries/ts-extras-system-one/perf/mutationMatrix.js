@@ -477,14 +477,14 @@ const MUTATIONS = [
     ['U31'],
     SHAPES,
     '  JsonConverters.jsonValue\n    .convert(from)\n',
-    '  succeed(from)\n'
+    '  succeed(from as EntryType)\n'
   ),
   m(
     'R59 a bare number or boolean is accepted as an EntryType',
     ['U31'],
     SHAPES,
-    "typeof value === 'number' || typeof value === 'boolean'",
-    'value === undefined'
+    "fail('not text, a JSON object or array, or null')",
+    'succeed(value as unknown as EntryType)'
   ),
   m(
     'R60 a received or request record may carry an own __proto__ key',

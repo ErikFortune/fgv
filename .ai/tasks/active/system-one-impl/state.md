@@ -73,3 +73,21 @@ None blocking.
 - The `noul`/`choice`/`score` factories are left as identity constructors (plan § 3.1, U25); making
   them Result-returning is an orchestrator decision — recorded in `result.md`.
 - Revert matrix 57/57 VERIFIED (R41–R46, H5–H8 new; R1, R34, R38, R42 re-pointed). Self-test 7/7.
+
+## Copilot round 4 on fgv#721 (against `6514b3c2`)
+
+- Six inline threads; the three library findings were reproduced first (outputs in `result.md`).
+  - Every conversion of a caller's or a server's value goes through `safeConvert`, so a cycle or a
+    `bigint` can no longer throw out of a converter's failure formatting.
+  - An `EntryType` is checked as JSON with `@fgv/ts-json-base`'s `jsonValue`, which is now a direct
+    dependency, added with `rush add`; README, CAPABILITIES and the posture text were updated.
+  - An own `__proto__` key is refused on both sides; the upstream `recordOf` behaviour is recorded
+    for the orchestrator.
+  - The matrix refuses unknown row ids, and `--check` validates `EntryType` values.
+  - The stale PR-body counts are left to the orchestrator.
+- Factories: decided by the orchestrator. They stay plain constructors (deviation 24), and U32 shows
+  a malformed factory-built question refused at `askSystemOne`. Finding: the SDK's `score` does
+  throw on non-list criteria, which corrects the "cannot throw" premise but does not change the
+  decision.
+- Revert matrix: R47–R62 and H9–H13 are new; R24, R34 and R46 were re-pointed. Self-test 8/8; 86
+  tests at 100%.

@@ -47,8 +47,8 @@ distribution over a closed candidate set — no generated text. Node-only. The b
 **Probabilities are set-relative and model-specific**: a threshold tuned against one backend or
 candidate set does not transfer to another.
 
-**Dependency posture:** `@typesafe-ai/sdk` **direct**, `~0.6.0` (review every minor); `@fgv/ts-utils`
-peer.
+**Dependency posture:** `@typesafe-ai/sdk` **direct**, `~0.6.0` (review every minor);
+`@fgv/ts-json-base` direct (its JSON converter); `@fgv/ts-utils` peer.
 
 **Explicitly NOT in scope:** CLM's `/v1/rank` (use `choice`); `temperature` and openjev's extensions;
 a browser sibling; an `ISystemOneDecider` interface; sidecar process management; `confidence` in any

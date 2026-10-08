@@ -5,17 +5,19 @@
 A new package, `@fgv/ts-extras-system-one` (`libraries/ts-extras-system-one`), slice S1 of
 [`implementation-plan.md`](../../../docs/design/system-one-decisions/implementation-plan.md).
 
-- Source is in `src/`: `types.ts`, `measure.ts`, `logging.ts`, `classify.ts`, `validate.ts` and
-  `client.ts`, re-exported from `index.ts`. The largest is `validate.ts`, at 387 lines.
+- Source is in `src/`: `types.ts`, `measure.ts`, `logging.ts`, `classify.ts`, `shapes.ts`,
+  `validate.ts` and `client.ts`, re-exported from `index.ts`. The largest is `validate.ts`, at 389
+  lines.
 - Exports:
   - `createSystemOneClient`, `askSystemOne`, `listSystemOneModels` and `measureSystemOneInput`;
   - the SDK's own `noul`, `choice` and `score`, plus its question, answer and `ModelCard` types,
     re-exported;
   - the plan's types, plus the additions listed under Deviations.
 - Tests:
-  - 76 unit tests, all running the real SDK 0.6.0 through the `fetch` parameter;
+  - 86 unit tests, all running the real SDK 0.6.0 through the `fetch` parameter;
   - no module mocking;
-  - every plan id U1–U26 appears in a test title, plus U27 (malformed input, added at the gate-time review);
+  - every plan id U1–U26 appears in a test title, plus U27–U34 (malformed input, cycles, JSON entries,
+    reserved keys and the factories, added at the review rounds);
   - 100% coverage on statements, branches, functions and lines, with no `c8 ignore`.
 - `perf/mutationMatrix.js` (§ 5.2):
   - it refuses to run without `--pkg`, and refuses a `--pkg` that is the package itself;
@@ -148,9 +150,42 @@ A new package, `@fgv/ts-extras-system-one` (`libraries/ts-extras-system-one`), s
 23. **Every failure message of a `Result`-returning entry point starts with its reason**
     (`createSystemOneClient`, `listSystemOneModels`, `measureSystemOneInput`), as `askSystemOne`'s
     detail does. `createSystemOneClient`'s messages gained the `invalid-request: ` prefix.
-24. **The `noul` / `choice` / `score` re-exports were left as the SDK's own functions**, as plan § 3.1
-    and U25 require (see round 3, item 1). They still throw the SDK's `TypeSafeError` for
-    wrong-shaped criteria from a JavaScript caller.
+24. **`noul` / `choice` / `score` stay the SDK's own constructors** (plan § 3.1, U25). **Decided** by
+    the orchestrator on 2026-10-08, no longer open. The reasoning:
+    - They read no fields, so a typed caller cannot build a malformed question with them.
+    - A JavaScript caller's malformed question is refused as `invalid-request` by the request gate in
+      `askSystemOne` / `measureSystemOneInput`. That gate is the one place that also covers
+      questions built without the factories.
+    - U32 builds malformed questions with the factories, as a JavaScript caller would, and asserts
+      `invalid-request` at `askSystemOne` with nothing sent.
+
+    One correction to the premise "they cannot throw", found while writing U32: `noul` and `choice`
+    are plain object literals, but the SDK's `score` throws its `TypeSafeError` when its criteria
+    are not a list (`dist/index.mjs`, `score`). That check is the SDK's, and it runs in the caller's
+    code before any call into this package. U32 pins it. It does not change the decision, since a
+    wrapper is the only way to change it and that is what § 3.1 rules out.
+25. **An `EntryType` is JSON, all the way down** (Copilot round 4). The state, every instruction and
+    every criterion value are checked with `@fgv/ts-json-base`'s `Converters.jsonValue`, now a direct
+    dependency of this package, added with `rush add`. That converter refuses a `Map`, `Set`, `Date`,
+    `RegExp`, `bigint`, `undefined` or `NaN` anywhere inside. The top level is then restricted to
+    text, an object, an array or `null`. Before, the check was `typeof === 'object'`, which let a
+    `Map` state through to be serialized as `{}`.
+26. **No conversion of a caller's or a server's value can throw** (Copilot round 4). A ts-utils
+    converter formats its failure with `JSON.stringify(from)`, which throws on a cycle or a `bigint`,
+    and the recursive JSON check overflows the stack on a cycle. Every such conversion now goes
+    through `safeConvert` (`shapes.ts`), which turns a throw into a failure. Each caller already
+    replaces the message with fixed text. As a result, `measureSystemOneInput` no longer needs its
+    `captureResult` around the measure: the gate refuses anything the measure's `JSON.stringify`
+    could throw on.
+27. **An own `__proto__` key is refused, not dropped** (Copilot round 4). `Converters.recordOf` writes
+    each key into `{}`, where `__proto__` sets the prototype instead of creating a key, so the key
+    vanished before any exact-key check could see it. `ownRecordOf` (`shapes.ts`) refuses such a
+    record before converting it. On the response side this covers the probabilities, the legend
+    and the answer set (`invalid-response`). On the request side it covers question ids, choice
+    labels and the request and parameter objects (`invalid-request`). **Upstream, for the
+    orchestrator:** `Converters.recordOf` in `@fgv/ts-utils` drops an own `__proto__` key silently.
+    When the value is an object, it also sets that object as the result's prototype. `ts-utils` is
+    an established surface, so this PR works around it locally and leaves `ts-utils` unchanged.
 
 ## The orchestrator's beliefs
 
@@ -647,7 +682,7 @@ except the part of item 1 that would have reversed a plan decision, described un
    | `askSystemOne` | request `undefined` / `null` / a string, a non-`EntryType` or missing state, questions missing or a list, a non-`AbortSignal` signal, no `inputLimit`, any malformed question; a forged client (`undefined`, `null`, a number, `{}`) | `checkRequest` before any field is read; the client through the `WeakMap` lookup (no throw for any key). Resolved `invalid-request`, nothing sent. U29, U27b; **R45**, **R42** |
    | `listSystemOneModels` | a forged client (`undefined`, `null`, a number, `{}`) | `invalid-request: client was not created by createSystemOneClient`. U28 |
    | `measureSystemOneInput` | questions `undefined` or a list, any malformed question, an unserializable state | `checkQuestions`, then the measure in `captureResult` with a fixed message. U28, U27; **R46**, **R34** |
-   | `noul`, `choice`, `score` | wrong-shaped criteria | **Not changed.** These are the SDK's own builders, re-exported by identity. Plan § 3.1 decided "identity, not wrappers", and U25 asserts it. A `Result`-returning builder could not be used inline in a `questions` literal, which is what the builders are for. The SDK throws its `TypeSafeError` synchronously for a `choice` given a list or a `score` given a map. A JS caller that hands plain question objects to `askSystemOne` gets `invalid-request` instead. **This is the one part of the sweep not done as asked; it needs your decision.** |
+   | `noul`, `choice`, `score` | wrong-shaped criteria | **Not changed. Decided at round 4 (deviation 24).** These are the SDK's own builders, re-exported by identity. Plan § 3.1 decided "identity, not wrappers", and U25 asserts it. A `Result`-returning builder could not be used inline in a `questions` literal, which is what the builders are for. The SDK throws its `TypeSafeError` synchronously for a `choice` given a list or a `score` given a map. A JS caller that hands plain question objects to `askSystemOne` gets `invalid-request` instead. **This is the one part of the sweep not done as asked; it needs your decision.** |
    | `allSystemOneFailureReasons` | — | a constant; takes no input |
    | types | — | no runtime surface |
 
@@ -734,6 +769,142 @@ listSystemOneModels(undefined) -> {"message":"invalid-request: client was not cr
 measureSystemOneInput(s, undefined) -> {"message":"invalid-request: questions must be an object of named questions"}
 ```
 
+## Copilot round 4 on fgv#721 (against `6514b3c2`) and disposition
+
+Six inline threads. The orchestrator reproduced the three library findings at `6514b3c2`. All six
+are handled: five fixed, and the stale-counts thread left to the orchestrator as instructed.
+
+**Library**
+
+1. **A shape conversion could throw** (thread r4213291217).
+   - Repro: a question `{ instructions: 'q', self: <itself> }`. At `6514b3c2`, `measureSystemOneInput`
+     threw and `askSystemOne` rejected, both with `Converting circular structure to JSON`. The
+     discriminated converter's failure path calls `JSON.stringify(from)`.
+   - **Fixed** (deviation 26). Every conversion of a caller's or a server's value goes through
+     `safeConvert`. The repro now gives `invalid-request: [q] are not well-formed noul, choice or score
+     questions` from both entry points.
+   - Each gate converts per field and per question, so a cycle in one question still names that
+     question. A cycle the gate cannot attribute (a `bigint` request, or a `bigint` parameter
+     object) gets the gate's fixed top-level message.
+   - Found by the sweep and not in the thread: a circular `inputLimit` threw the same way, from
+     `oneOf`'s failure path (`No matching converter for ${JSON.stringify(from)}`). It is fixed by the
+     same change and covered by U30 and **R52**.
+   - Tests:
+     - **U30** covers circular or `bigint` client parameters, request, state, question, choice
+       criterion, noul criterion and input limit. None throws; each is `invalid-request` with nothing
+       sent, and the planted secret appears in no message.
+     - **U34** covers the response side through the internal functions: a circular and `bigint`
+       body, a `bigint` answer set, and a circular model-list entry. A parsed JSON body cannot hold
+       either, so these pin only that the formatting cannot throw.
+   - Rows: **R47** (`safeConvert` itself) and **R48–R57** (one per call site).
+
+   **Sweep: every converter call a caller's or a server's value can reach, after the fix.** These
+   are all the `.convert(` / `.validate(` calls in `src/`, from `grep -nE "\.convert\(|\.validate\("`.
+
+   | site | value from | guarded by | row |
+   |---|---|---|---|
+   | `shapes.ts` `safeConvert` | — | the guard itself (`captureResult`) | R47 |
+   | `shapes.ts` `checkClientParams`: the parameter object | caller | `safeConvert(callerRecord, params)` | R49 |
+   | `shapes.ts` `rejectedFields`: each declared field (client parameters, request `state` / `signal`, and the 2xx body's fields when describing it) | caller, server | `safeConvert(fields[field], …)` | R50 |
+   | `shapes.ts` `checkRequest`: the request object | caller | `safeConvert(callerRecord, request)` | R48 |
+   | `shapes.ts` `checkQuestions`: the questions object | caller | `safeConvert(callerRecord, questions)`; a reserved id is refused before it | R61 (the reserved check) |
+   | `shapes.ts` `checkQuestions`: each question | caller | `safeConvert(question, record[id])` | R51 |
+   | `shapes.ts` `checkInput`: the measure's state | caller | `safeConvert(entry, state)` | R34 |
+   | `shapes.ts` `ownRecordOf`: `record.convert` | caller, server | runs only inside a converter that a `safeConvert` call above or below runs | R47 |
+   | `shapes.ts` `entry`: `JsonConverters.jsonValue.convert` | caller | runs only inside `safeConvert` (state, instructions, criteria) | R47, R58 |
+   | `measure.ts` `checkInputLimit`: the input limit | caller | `safeConvert(inputLimitShape, inputLimit)` | R52 |
+   | `validate.ts` `validateSystemOneBody`: the 2xx body | server | `safeConvert(body, data)` | R53 |
+   | `validate.ts` `describeUnconvertible`: the body as a record | server | `safeConvert(jsonRecord, data)` | R54 |
+   | `validate.ts` `describeBadAnswers`: the answer set | server | `safeConvert(jsonRecord, answers)` | R55 |
+   | `validate.ts` `describeBadAnswers`: each answer | server | `safeConvert(answer, record[id])` | R56 |
+   | `validate.ts` `optionalBillingUnits`: `finiteNumber.validate` | server | runs only inside the body conversion | R53 |
+   | `validate.ts` `describeModelList`: each entry | server | `safeConvert(modelCard, entry)` | R57 |
+   | `client.ts` `listSystemOneModels`: the model list | server | `safeConvert(modelCards, received.data)` | none; see below |
+
+   - **No row for the last site.** `received.data` is the SDK's `JSON.parse` output, unwrapped by
+     the SDK from `{ models: [...] }`, and it cannot hold a cycle or a `bigint`. No input reachable
+     through `fetch` makes `modelCards` throw, so the guard cannot be shown load-bearing from the
+     suite. It is kept so the rule "every conversion is guarded" has no exception.
+   - The same holds for every server-side row in practice. R53–R57 are VERIFIED only through U34,
+     which calls the internal functions directly.
+   - **Other throw sources checked:**
+     - `classify.ts` and `logging.ts` call no converter.
+     - `bindingFor` is a `WeakMap.get`, which does not throw for a primitive key.
+     - `measure.ts`'s `JSON.stringify(value)` runs only on values the gate has checked as JSON. A
+       non-finite number is the one value that check passes and JSON cannot hold; `JSON.stringify`
+       writes it as `null` rather than throwing (see the note under item 2).
+
+2. **An `EntryType` was not checked as JSON** (thread r4213291188).
+   - Repro: `state: new Map()` in `'unchecked'` mode was accepted and sent as `{}`.
+   - **Fixed** (deviation 25). Now: `invalid-request: invalid [state] in the request`, nothing sent.
+   - **U31** covers:
+     - a state that is a `Map`, a `Date`, a `bigint`, `{ a: undefined }`, `{ a: [new Map()] }`, a
+       bare number or a bare boolean, at `askSystemOne` and at `measureSystemOneInput`;
+     - a `Map` instruction, a `Date` choice description, a `bigint` score level and a `Set` inside a
+       noul criterion;
+     - JSON states of each allowed kind, which are still accepted.
+   - Rows: **R58** (the JSON check) and **R59** (the bare number or boolean).
+   - Note: `ts-json-base`'s `jsonPrimitive` accepts `Infinity` (it refuses only `NaN`), and
+     `JSON.stringify` writes `Infinity` as `null`. A non-finite number nested in a state is therefore
+     sent as `null` rather than refused. This is left as is, since the converter belongs to
+     `ts-json-base`; it is recorded for the same upstream pass as `recordOf`.
+
+3. **A reserved `__proto__` key slipped past exact-key checks** (thread r4213291067).
+   - Repro: a choice answer with probabilities `{"x":0.5,"y":0.5,"__proto__":0}` was accepted.
+   - **Fixed** (deviation 27). Now: `invalid-response (status 200): the body is not a System-1
+     response: invalid [answers]; answers that are not a noul, choice or score answer: [q] and 0 with
+     no question`.
+   - **U33**:
+     - a `__proto__` probability, legend level or answer id is `invalid-response`, and the answer id
+       is counted as one "with no question";
+     - a `__proto__` question id is `invalid-request: [__proto__] is a reserved key and cannot be a
+       question id`;
+     - a `__proto__` choice label is `invalid-request` at `askSystemOne` and at the measure, with
+       nothing sent.
+   - Rows: **R60** (`ownRecordOf`), **R61** (the question-id message) and **R62** (the answer-id
+     count).
+   - `ts-utils` is not changed. The upstream issue is recorded in deviation 27 for the orchestrator.
+
+**Harness**
+
+4. **The revert matrix ran a misspelt row id as an empty run** (thread r4213291115). **Fixed:** an
+   id that names no row in `MUTATIONS` stops the run before anything is read or mutated, with exit 2
+   and the unknown ids named. Verified by hand:
+   - `--check R1 R999 X` exits 2 with `mutationMatrix: no row named [R999, X]; nothing was run`.
+   - `--check R1` exits 0.
+
+   The matrix cannot carry a row for itself.
+5. **`--check` did not check `EntryType` values** (thread r4213291150). **Fixed:** the question-file
+   check now refuses the following, by the rule of item 2:
+   - a state, an instruction, a choice description or a score level that is a bare number or
+     boolean;
+   - a `__proto__` question id or choice label, as `askSystemOne` does.
+
+   The file is parsed JSON, so everything nested is JSON already, and only the top level needs the
+   check. Self-test **S8** runs 15 cases across all three question kinds, 6 accepted and 9 refused;
+   it went red without the fix. Rows **H9–H13**.
+
+**Process**
+
+6. **The PR description's counts are stale** (thread r4213291255). As instructed, this is left to the
+   orchestrator, who updates the PR body at merge. This file, `state.md` and `docs/WORKSTREAMS.md`
+   carry the current counts: 86 tests and the revert matrix below.
+
+**Repros, run by hand against the built `lib/`:**
+
+```
+--- at 5efb395d (fixed)
+measure circular q: invalid-request: [q] are not well-formed noul, choice or score questions
+ask circular q: invalid-request invalid-request: [q] are not well-formed noul, choice or score questions
+Map state: invalid-request invalid-request: invalid [state] in the request calls 0
+__proto__ probs: invalid-response invalid-response (status 200): the body is not a System-1 response: invalid [answers]; answers that are not a noul, choice or score answer: [q] and 0 with no question calls 1
+--- at 6514b3c2
+measure THREW Converting circular structure to JSON
+ask REJECTED Converting circular structure to JSON
+Map state: undefined undefined calls 1
+__proto__ probs: ACCEPTED calls 2
+```
+
 ## Gates
 
 Re-run on 2026-10-04 after the gate-time fixes, at `0584f819` (source as of the matrix commit plus
@@ -767,6 +938,11 @@ padding. In the package: fixlint, build, lint and test all exit 0 with 0 warning
 `SUCCESS: 37 operations`, 11 m 42 s; error grep **0**; the one `warning` line is the same symlink
 notice; no NUL padding. In the package: fixlint, build, lint and test exit 0 with 0 warnings; 70
 tests, 100%. `perf/systemOneLive.selftest.js`: 4 of 4 pass. Revert matrix 47/47 VERIFIED.
+
+**Copilot round 3 (2026-10-07):** at `6514b3c2`, the repo-wide `rush test`: exit 0, `SUCCESS: 37
+operations`, 9 m 42 s; error grep **0**; the one `warning` line is the symlink notice. In the
+package: fixlint, build, lint and test exit 0 with 0 warnings; 76 tests, 100%. Self-test 7 of 7.
+Revert matrix 57/57 VERIFIED.
 
 ## What the brief or the plan got wrong
 

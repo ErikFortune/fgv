@@ -56,7 +56,7 @@ if (answer.isSuccess()) {
 | `askSystemOne(client, { state, questions, inputLimit, signal? })` | `Promise<DetailedResult<ISystemOneAnswer<Q>, SystemOneFailureReason>>` |
 | `listSystemOneModels(client)` | `Promise<Result<ReadonlyArray<ModelCard>>>` |
 | `measureSystemOneInput(state, questions)` | `Result<ISystemOneInputMeasure>`: the lengths the input bound compares, so a caller can size a budget; malformed input fails rather than throws |
-| `noul`, `choice`, `score` | the SDK's own question builders, re-exported |
+| `noul`, `choice`, `score` | the SDK's own question builders, re-exported: plain constructors that check nothing, except that `score` throws the SDK's `TypeSafeError` when its criteria are not a list. A malformed question, however built, is `invalid-request` at `askSystemOne` and `measureSystemOneInput` |
 
 `askSystemOne` runs, in order: the input bound; the call; failure classification; validation of the
 response against the request's own questions; and projection. Each step can fail, and nothing after a
@@ -227,7 +227,9 @@ The key is read from the environment variable named by `--key-env`, never from a
 `@typesafe-ai/sdk` is a **direct** dependency, pinned `~0.6.0`: a pure-JS protocol client with no
 native binding and no consumer-owned handle, so a consumer has no reason to hold a second opinion
 about its version (the `ts-extras-mcp` and webauthn precedent). The SDK is young and 0.x, so every
-minor bump is a wire change to review, not to absorb. `@fgv/ts-utils` is a peer dependency.
+minor bump is a wire change to review, not to absorb. `@fgv/ts-json-base` is a direct dependency
+for its JSON converter, which checks a state, an instruction or a criterion as JSON all the way
+down. `@fgv/ts-utils` is a peer dependency.
 
 ## Explicitly not in scope
 
