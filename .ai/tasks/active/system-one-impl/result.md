@@ -1204,7 +1204,9 @@ line is the symlink notice; no NUL padding.
 **Copilot round 5 (2026-10-08):** at `3fe623c1`, in the package: fixlint, build, lint and test exit
 0 with 0 warnings; 94 tests, 100%, no `c8 ignore`. Self-test 8 of 8. Revert matrix 91/91 VERIFIED.
 `verify-capability-docs.mjs` and `rush change --verify --target-branch
-origin/integration/system-one-decisions` exit 0. The repo-wide `rush test` result follows.
+origin/integration/system-one-decisions` exit 0. The repo-wide `rush test` at `38136ed5`: exit 0,
+`SUCCESS: 37 operations`, 8 m 42 s; error grep **0**; the one `warning` line is the symlink notice;
+no NUL padding.
 
 ## What the brief or the plan got wrong
 
