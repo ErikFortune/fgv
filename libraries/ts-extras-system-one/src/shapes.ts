@@ -134,21 +134,17 @@ const entry: Converter<EntryType> = Converters.generic((from: unknown) =>
 /** The SDK's own type for a noul's criteria: optional, `null`, or `true` / `false` descriptions. */
 type NoulCriteria = NoulQuestion['criteria'];
 
-/**
- * Converts a snapshot of a caller's object rather than the object itself. A converter that fails
- * formats the value it was given, and a getter it reads while doing so has been read once already,
- * so a choice between shapes (`null` or an object, `'unchecked'` or an object) snapshots first.
- */
-export function snapshotThen<T>(converter: Converter<T>): Converter<T> {
-  return Converters.generic((from: unknown) =>
-    callerRecord.convert(from).onSuccess((snapshot) => converter.convert(snapshot))
-  );
-}
-
-const noulOutcomes: Converter<NonNullable<NoulCriteria>> = snapshotThen(
-  Converters.strictObject<NonNullable<NoulCriteria>>({ true: entry.optional(), false: entry.optional() })
+const noulOutcomes: Converter<NonNullable<NoulCriteria>> = Converters.strictObject<NonNullable<NoulCriteria>>(
+  {
+    true: entry.optional(),
+    false: entry.optional()
+  }
 );
 
+/**
+ * `null`, or the outcomes object. Not a `oneOf`: a failed alternative formats the value it was given,
+ * reading the caller's getters once before the matching alternative reads them again.
+ */
 const noulCriteria: Converter<NoulCriteria> = Converters.generic(
   (from: unknown): Result<NoulCriteria> => (from === null ? succeed(null) : noulOutcomes.convert(from))
 );

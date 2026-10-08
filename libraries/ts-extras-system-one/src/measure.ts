@@ -38,7 +38,7 @@ import type {
   SystemOneFailureReason,
   SystemOneInputLimit
 } from './types';
-import { checkInput, safeConvert, snapshotThen } from './shapes';
+import { checkInput, safeConvert } from './shapes';
 
 /** CLM joins state and instructions with `"\n\n"`. */
 const separatorLength: number = 2;
@@ -176,10 +176,14 @@ function firstOverLimit(measure: ISystemOneInputMeasure, maxChars: number): IOve
 }
 
 /** `'unchecked'`, or `{ maxChars }` with a number, which is then checked to be a positive integer. */
-const maxCharsShape: Converter<{ readonly maxChars: number }> = snapshotThen(
-  Converters.object<{ readonly maxChars: number }>({ maxChars: Validators.number })
-);
+const maxCharsShape: Converter<{ readonly maxChars: number }> = Converters.object<{
+  readonly maxChars: number;
+}>({ maxChars: Validators.number });
 
+/**
+ * `'unchecked'`, or `{ maxChars }`. Not a `oneOf`: a failed alternative formats the value it was
+ * given, reading the caller's getters once before the matching alternative reads them again.
+ */
 const inputLimitShape: Converter<SystemOneInputLimit> = Converters.generic(
   (from: unknown): Result<SystemOneInputLimit> =>
     from === 'unchecked' ? succeed('unchecked') : maxCharsShape.convert(from)
