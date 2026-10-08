@@ -226,19 +226,28 @@ close waits for a recorded L1.
 
 ## Revert matrix
 
-Run with `node perf/mutationMatrix.js --pkg <copy>` against a real copy of the package at `1eb007b3`
+Run with `node perf/mutationMatrix.js --pkg <copy>` against a real copy of the package at `05e8f95a`
 (no links: only `node_modules` was a symlink to the package's). It exited 0.
 - Rows added by round: R34–R37 at the gate-time review; R38–R40 (with R39b, R39c) at Copilot round
-  1; harness rows H1–H4 at round 2; R41–R46 and H5–H8 at round 3.
-- R1, R8, R19, R23, R34 and R38 were re-pointed after refactors.
+  1; harness rows H1–H4 at round 2; R41–R46 and H5–H8 at round 3; R47–R62 and H9–H13 at round 4.
+- R1, R8, R19, R23, R24, R34, R38 and R46 were re-pointed after refactors.
+- A row whose mutant does not compile is reported UNVERIFIED (as "did not build", or, when the
+  compiler's output does not say `error TS`, "the run reported no failure count"), never as
+  VERIFIED. At round 4, R58 and R59 first came back that way; their mutants were rewritten to
+  compile, and the run below is clean.
 - The R rows run the jest suite. The H rows mutate `perf/systemOneLive.js`, which jest does not
   cover: they rebuild the package from its restored source and run `perf/systemOneLive.selftest.js`,
   which drives the harness against local stub servers and reports in jest's `●` / `Failures:` shape.
 
 ```
-R1 the bound runs after the SDK call [must go red: U1]: VERIFIED (20 red)
+R1 the bound runs after the SDK call [must go red: U1]: VERIFIED (25 red)
     a JavaScript caller’s malformed input is a classified Result, never a throw › U27b a malformed question is invalid-request in unchecked mode too, with nothing sent
     a JavaScript caller’s malformed input is a classified Result, never a throw › U29 askSystemOne checks the request before reading any field, and every failure has a reason
+    a JavaScript caller’s malformed input is a classified Result, never a throw › U32 the factories are plain constructors: a malformed factory-built question is refused at askSystemOne
+    a reserved __proto__ key cannot slip past an exact-key check › U33 a __proto__ question id or choice label is invalid-request, with nothing sent
+    a value no converter can describe — a cycle, a bigint — is a classified failure, never a throw › U30 askSystemOne refuses a cycle anywhere in the request, with nothing sent
+    an EntryType is JSON: text, a JSON object or array, or null, all the way down › U31 JSON entries of every allowed kind are still accepted
+    an EntryType is JSON: text, a JSON object or array, or null, all the way down › U31 a state, instruction or criterion that is not JSON is refused, with nothing sent
     askSystemOne › U10 an empty question set, or a score question with one level, is invalid-request with no request made
     askSystemOne › failure classification › U13 a 529 is retried and then server; a 503 then 200 succeeds
     askSystemOne › failure classification › U15 an abort during back-off is aborted, with no further request
@@ -276,14 +285,14 @@ R5b noul's default candidate is not measured [must go red: U4]: VERIFIED (3 red)
     the input bound › U26 measureSystemOneInput returns the numbers the refusal reports
     the input bound › U4 a whitespace-only description is measured as the larger of itself and the default
     the input bound › U4 each candidate is bounded separately and named in the failure
-R6 a structured state is measured as String(state) [must go red: U5]: VERIFIED (4 red)
-    a JavaScript caller’s malformed input is a classified Result, never a throw › U28 measureSystemOneInput fails invalid-request without quoting the input
+R6 a structured state is measured as String(state) [must go red: U5]: VERIFIED (2 red)
     the input bound › U26 measureSystemOneInput returns the numbers the refusal reports
-    the input bound › U27 malformed input is invalid-request, resolved, with no request made
     the input bound › U5 a structured state is measured by its JSON serialization
 R7 the refusal names the first question [must go red: U6]: VERIFIED (1 red)
     the input bound › U6 the failure names the question that is over
-R8 'unchecked' is treated as maxChars: 0 [must go red: U7]: VERIFIED (35 red)
+R8 'unchecked' is treated as maxChars: 0 [must go red: U7]: VERIFIED (37 red)
+    a reserved __proto__ key cannot slip past an exact-key check › U33 a __proto__ probability, legend level or answer id is invalid-response
+    an EntryType is JSON: text, a JSON object or array, or null, all the way down › U31 JSON entries of every allowed kind are still accepted
     askSystemOne › U10 an empty question set, or a score question with one level, is invalid-request with no request made
     askSystemOne › failure classification › U11 every classification row has its own reason
     askSystemOne › failure classification › U11 the failure message carries the status and the request id
@@ -363,7 +372,8 @@ R22 non-finite values accepted (usage counts; a probability’s finiteness is it
     askSystemOne › response validation › U16h a non-finite value is invalid-response
 R23 no sum check [must go red: U16i]: VERIFIED (1 red)
     askSystemOne › response validation › U16i each distribution must sum to 1 within 1e-3, at both boundaries, without quoting the sum
-R24 a non-object body is not converted [must go red: U17]: VERIFIED (8 red)
+R24 a non-object body is not converted [must go red: U17]: VERIFIED (10 red)
+    a reserved __proto__ key cannot slip past an exact-key check › U33 a __proto__ probability, legend level or answer id is invalid-response
     askSystemOne › failure classification › U11 every classification row has its own reason
     askSystemOne › failure classification › U17 a 2xx body that is not JSON, or is empty, is invalid-response
     askSystemOne › meta › U20 billing_units is kept only when it is a finite number
@@ -372,6 +382,7 @@ R24 a non-object body is not converted [must go red: U17]: VERIFIED (8 red)
     askSystemOne › response validation › U16j score probability keys and legend keys must be exactly 0..n-1
     askSystemOne › response validation › U16k model must be a non-empty string and usage finite counts >= 0
     askSystemOne › response validation › U18 choice and score answers carry no confidence, and no undeclared field survives
+    response validation never throws, whatever it is handed › U34 validateSystemOneBody fails a circular or bigint body instead of throwing
 R25 the server's choice answer is passed through [must go red: U18]: VERIFIED (1 red)
     askSystemOne › response validation › U18 choice and score answers carry no confidence, and no undeclared field survives
 R26 model is in neither the request nor defaultModel [must go red: U21]: VERIFIED (2 red)
@@ -398,15 +409,17 @@ R32 elapsedMs does not cover retries [must go red: U20]: VERIFIED (1 red)
     askSystemOne › meta › U20 elapsedMs covers retries and back-off
 R33 the models shape error is invalid-request [must go red: U19]: VERIFIED (1 red)
     listSystemOneModels › U19 a bare array is invalid-response
-R34 an unserializable state is not captured, so askSystemOne rejects instead of returning a Result [must go red: U27]: VERIFIED (2 red)
+R34 measureSystemOneInput does not check the state, so an unserializable one throws [must go red: U28, U30, U31]: VERIFIED (3 red)
     a JavaScript caller’s malformed input is a classified Result, never a throw › U28 measureSystemOneInput fails invalid-request without quoting the input
-    the input bound › U27 malformed input is invalid-request, resolved, with no request made
+    a value no converter can describe — a cycle, a bigint — is a classified failure, never a throw › U30 measureSystemOneInput refuses a circular state or question without throwing
+    an EntryType is JSON: text, a JSON object or array, or null, all the way down › U31 a state, instruction or criterion that is not JSON is refused, with nothing sent
 R35 an APIError's body-derived message reaches the failure message [must go red: U23]: VERIFIED (2 red)
     askSystemOne › failure classification › U11 the failure message carries the status and the request id
     createSystemOneClient › U23 a server that echoes the state puts it in no failure message and no log
-R36 a 2xx body that is not a response is quoted by the converter's message [must go red: U23]: VERIFIED (2 red)
+R36 a 2xx body that is not a response is quoted by the converter's message [must go red: U23]: VERIFIED (3 red)
     askSystemOne › response validation › U16k model must be a non-empty string and usage finite counts >= 0
     createSystemOneClient › U23 a server that echoes the state puts it in no failure message and no log
+    response validation never throws, whatever it is handed › U34 validateSystemOneBody fails a circular or bigint body instead of throwing
 R37 a rejected choice is quoted [must go red: U23]: VERIFIED (2 red)
     askSystemOne › response validation › U16e the choice must be one of the labels
     createSystemOneClient › U23 a server that echoes the state puts it in no failure message and no log
@@ -420,22 +433,85 @@ R39c a rejected sum quotes the received value [must go red: U16i]: VERIFIED (1 r
     askSystemOne › response validation › U16i each distribution must sum to 1 within 1e-3, at both boundaries, without quoting the sum
 R40 no rounding allowance on the sum tolerance [must go red: U16i]: VERIFIED (1 red)
     askSystemOne › response validation › U16i each distribution must sum to 1 within 1e-3, at both boundaries, without quoting the sum
-R41 createSystemOneClient reads its parameters unconverted [must go red: U28]: VERIFIED (1 red)
+R41 createSystemOneClient reads its parameters unconverted [must go red: U28]: VERIFIED (2 red)
     a JavaScript caller’s malformed input is a classified Result, never a throw › U28 createSystemOneClient converts its parameters before reading any field
-R42 the questions are not checked before the input limit, so 'unchecked' mode sends a malformed question [must go red: U27b]: VERIFIED (2 red)
+    a value no converter can describe — a cycle, a bigint — is a classified failure, never a throw › U30 createSystemOneClient refuses a cycle or a bigint in its parameters
+R42 the questions are not checked before the input limit, so 'unchecked' mode sends a malformed question [must go red: U27b]: VERIFIED (6 red)
     a JavaScript caller’s malformed input is a classified Result, never a throw › U27b a malformed question is invalid-request in unchecked mode too, with nothing sent
     a JavaScript caller’s malformed input is a classified Result, never a throw › U29 askSystemOne checks the request before reading any field, and every failure has a reason
+    a JavaScript caller’s malformed input is a classified Result, never a throw › U32 the factories are plain constructors: a malformed factory-built question is refused at askSystemOne
+    a reserved __proto__ key cannot slip past an exact-key check › U33 a __proto__ question id or choice label is invalid-request, with nothing sent
+    a value no converter can describe — a cycle, a bigint — is a classified failure, never a throw › U30 askSystemOne refuses a cycle anywhere in the request, with nothing sent
+    an EntryType is JSON: text, a JSON object or array, or null, all the way down › U31 a state, instruction or criterion that is not JSON is refused, with nothing sent
 R43 a malformed model list is quoted [must go red: U19]: VERIFIED (2 red)
     listSystemOneModels › U19 a malformed model entry is named by index, and nothing it carries is quoted
     listSystemOneModels › U19 an element missing name is invalid-response
 R44 a base URL with whitespace is accepted [must go red: U24]: VERIFIED (1 red)
     createSystemOneClient › U24 rejects a relative or non-http(s) baseUrl and a blank model; accepts an empty apiKey
-R45 askSystemOne reads its request unchecked [must go red: U29]: VERIFIED (2 red)
+R45 askSystemOne reads its request unchecked [must go red: U29]: VERIFIED (6 red)
     a JavaScript caller’s malformed input is a classified Result, never a throw › U27b a malformed question is invalid-request in unchecked mode too, with nothing sent
     a JavaScript caller’s malformed input is a classified Result, never a throw › U29 askSystemOne checks the request before reading any field, and every failure has a reason
-R46 measureSystemOneInput measures questions of the wrong shape [must go red: U28]: VERIFIED (2 red)
+    a JavaScript caller’s malformed input is a classified Result, never a throw › U32 the factories are plain constructors: a malformed factory-built question is refused at askSystemOne
+    a reserved __proto__ key cannot slip past an exact-key check › U33 a __proto__ question id or choice label is invalid-request, with nothing sent
+    a value no converter can describe — a cycle, a bigint — is a classified failure, never a throw › U30 askSystemOne refuses a cycle anywhere in the request, with nothing sent
+    an EntryType is JSON: text, a JSON object or array, or null, all the way down › U31 a state, instruction or criterion that is not JSON is refused, with nothing sent
+R46 measureSystemOneInput measures questions of the wrong shape [must go red: U28]: VERIFIED (5 red)
     a JavaScript caller’s malformed input is a classified Result, never a throw › U28 measureSystemOneInput fails invalid-request without quoting the input
+    a reserved __proto__ key cannot slip past an exact-key check › U33 a __proto__ question id or choice label is invalid-request, with nothing sent
+    a value no converter can describe — a cycle, a bigint — is a classified failure, never a throw › U30 measureSystemOneInput refuses a circular state or question without throwing
+    an EntryType is JSON: text, a JSON object or array, or null, all the way down › U31 a state, instruction or criterion that is not JSON is refused, with nothing sent
     the input bound › U27 malformed input is invalid-request, resolved, with no request made
+R47 a conversion that throws is not caught [must go red: U30, U34]: VERIFIED (7 red)
+    a JavaScript caller’s malformed input is a classified Result, never a throw › U28 measureSystemOneInput fails invalid-request without quoting the input
+    a value no converter can describe — a cycle, a bigint — is a classified failure, never a throw › U30 askSystemOne refuses a cycle anywhere in the request, with nothing sent
+    a value no converter can describe — a cycle, a bigint — is a classified failure, never a throw › U30 createSystemOneClient refuses a cycle or a bigint in its parameters
+    a value no converter can describe — a cycle, a bigint — is a classified failure, never a throw › U30 measureSystemOneInput refuses a circular state or question without throwing
+    response validation never throws, whatever it is handed › U34 describeModelList names a circular entry instead of throwing
+    response validation never throws, whatever it is handed › U34 validateSystemOneBody fails a circular or bigint body instead of throwing
+    the input bound › U27 malformed input is invalid-request, resolved, with no request made
+R48 the request's top level is converted unguarded, so a bigint request throws [must go red: U30]: VERIFIED (1 red)
+    a value no converter can describe — a cycle, a bigint — is a classified failure, never a throw › U30 askSystemOne refuses a cycle anywhere in the request, with nothing sent
+R49 the client parameters' top level is converted unguarded [must go red: U30]: VERIFIED (1 red)
+    a value no converter can describe — a cycle, a bigint — is a classified failure, never a throw › U30 createSystemOneClient refuses a cycle or a bigint in its parameters
+R50 a field is converted unguarded, so a circular or bigint field throws [must go red: U30]: VERIFIED (4 red)
+    a value no converter can describe — a cycle, a bigint — is a classified failure, never a throw › U30 askSystemOne refuses a cycle anywhere in the request, with nothing sent
+    a value no converter can describe — a cycle, a bigint — is a classified failure, never a throw › U30 createSystemOneClient refuses a cycle or a bigint in its parameters
+    response validation never throws, whatever it is handed › U34 validateSystemOneBody fails a circular or bigint body instead of throwing
+    the input bound › U27 malformed input is invalid-request, resolved, with no request made
+R51 a question is converted unguarded, so a circular question throws [must go red: U30]: VERIFIED (2 red)
+    a value no converter can describe — a cycle, a bigint — is a classified failure, never a throw › U30 askSystemOne refuses a cycle anywhere in the request, with nothing sent
+    a value no converter can describe — a cycle, a bigint — is a classified failure, never a throw › U30 measureSystemOneInput refuses a circular state or question without throwing
+R52 the input limit is converted unguarded, so a circular limit throws [must go red: U30]: VERIFIED (1 red)
+    a value no converter can describe — a cycle, a bigint — is a classified failure, never a throw › U30 askSystemOne refuses a cycle anywhere in the request, with nothing sent
+R53 the body is converted unguarded [must go red: U34]: VERIFIED (1 red)
+    response validation never throws, whatever it is handed › U34 validateSystemOneBody fails a circular or bigint body instead of throwing
+R54 an unconvertible body is described unguarded [must go red: U34]: VERIFIED (1 red)
+    response validation never throws, whatever it is handed › U34 validateSystemOneBody fails a circular or bigint body instead of throwing
+R55 the answer set is described unguarded [must go red: U34]: VERIFIED (1 red)
+    response validation never throws, whatever it is handed › U34 validateSystemOneBody fails a circular or bigint body instead of throwing
+R56 each answer is described unguarded [must go red: U34]: VERIFIED (1 red)
+    response validation never throws, whatever it is handed › U34 validateSystemOneBody fails a circular or bigint body instead of throwing
+R57 each model card is described unguarded [must go red: U34]: VERIFIED (1 red)
+    response validation never throws, whatever it is handed › U34 describeModelList names a circular entry instead of throwing
+R58 an EntryType is not checked as JSON [must go red: U31]: VERIFIED (7 red)
+    a JavaScript caller’s malformed input is a classified Result, never a throw › U28 measureSystemOneInput fails invalid-request without quoting the input
+    a JavaScript caller’s malformed input is a classified Result, never a throw › U29 askSystemOne checks the request before reading any field, and every failure has a reason
+    a JavaScript caller’s malformed input is a classified Result, never a throw › U32 the factories are plain constructors: a malformed factory-built question is refused at askSystemOne
+    a value no converter can describe — a cycle, a bigint — is a classified failure, never a throw › U30 askSystemOne refuses a cycle anywhere in the request, with nothing sent
+    a value no converter can describe — a cycle, a bigint — is a classified failure, never a throw › U30 measureSystemOneInput refuses a circular state or question without throwing
+    an EntryType is JSON: text, a JSON object or array, or null, all the way down › U31 a state, instruction or criterion that is not JSON is refused, with nothing sent
+    the input bound › U27 malformed input is invalid-request, resolved, with no request made
+R59 a bare number or boolean is accepted as an EntryType [must go red: U31]: VERIFIED (3 red)
+    a JavaScript caller’s malformed input is a classified Result, never a throw › U27b a malformed question is invalid-request in unchecked mode too, with nothing sent
+    a JavaScript caller’s malformed input is a classified Result, never a throw › U29 askSystemOne checks the request before reading any field, and every failure has a reason
+    an EntryType is JSON: text, a JSON object or array, or null, all the way down › U31 a state, instruction or criterion that is not JSON is refused, with nothing sent
+R60 a received or request record may carry an own __proto__ key [must go red: U33]: VERIFIED (2 red)
+    a reserved __proto__ key cannot slip past an exact-key check › U33 a __proto__ probability, legend level or answer id is invalid-response
+    a reserved __proto__ key cannot slip past an exact-key check › U33 a __proto__ question id or choice label is invalid-request, with nothing sent
+R61 a __proto__ question id is not named as reserved [must go red: U33]: VERIFIED (1 red)
+    a reserved __proto__ key cannot slip past an exact-key check › U33 a __proto__ question id or choice label is invalid-request, with nothing sent
+R62 a reserved answer id is not counted [must go red: U33]: VERIFIED (1 red)
+    a reserved __proto__ key cannot slip past an exact-key check › U33 a __proto__ probability, legend level or answer id is invalid-response
 H1 an unknown option is accepted [must go red: S1]: VERIFIED (1 red)
     S1 an unknown or repeated option is refused before any output, naming the flag but not its value
 H2 a noul's criteria are not checked [must go red: S2]: VERIFIED (1 red)
@@ -450,10 +526,21 @@ H6 --check may be given twice [must go red: S6]: VERIFIED (1 red)
     S6 --check given twice is refused
 H7 questions given as a list are accepted [must go red: S7]: VERIFIED (1 red)
     S7 questions given as a list are refused
-H8 a noul criterion must be text [must go red: S2]: VERIFIED (1 red)
+H8 a noul criterion must be text [must go red: S2]: VERIFIED (2 red)
     S2 --check validates a noul's criteria as the SDK and askSystemOne accept them
+    S8 --check validates the state, instructions, choice descriptions and score levels as askSystemOne does
+H9 the state is not checked [must go red: S8]: VERIFIED (1 red)
+    S8 --check validates the state, instructions, choice descriptions and score levels as askSystemOne does
+H10 instructions are not checked [must go red: S8]: VERIFIED (1 red)
+    S8 --check validates the state, instructions, choice descriptions and score levels as askSystemOne does
+H11 choice descriptions and labels are not checked [must go red: S8]: VERIFIED (1 red)
+    S8 --check validates the state, instructions, choice descriptions and score levels as askSystemOne does
+H12 score levels are not checked [must go red: S8]: VERIFIED (1 red)
+    S8 --check validates the state, instructions, choice descriptions and score levels as askSystemOne does
+H13 a __proto__ question id is accepted [must go red: S8]: VERIFIED (1 red)
+    S8 --check validates the state, instructions, choice descriptions and score levels as askSystemOne does
 
-57 rows; 0 not VERIFIED
+78 rows; 0 not VERIFIED
 ```
 
 ## `code-reviewer` findings and disposition
@@ -943,6 +1030,12 @@ tests, 100%. `perf/systemOneLive.selftest.js`: 4 of 4 pass. Revert matrix 47/47 
 operations`, 9 m 42 s; error grep **0**; the one `warning` line is the symlink notice. In the
 package: fixlint, build, lint and test exit 0 with 0 warnings; 76 tests, 100%. Self-test 7 of 7.
 Revert matrix 57/57 VERIFIED.
+
+**Copilot round 4 (2026-10-08):** at `05e8f95a`, in the package: fixlint, build, lint and test exit
+0 with 0 warnings; 86 tests, 100%, no `c8 ignore`. Self-test 8 of 8. Revert matrix 78/78 VERIFIED.
+`verify-capability-docs.mjs`, `verify-bundler-resolution.mjs` (21 checked, 0 failed) and `rush
+change --verify --target-branch origin/integration/system-one-decisions` exit 0. The repo-wide `rush
+test` result follows.
 
 ## What the brief or the plan got wrong
 
