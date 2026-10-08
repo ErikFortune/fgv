@@ -1,0 +1,62 @@
+id: system-one-triage
+status: shipped
+packages: [] # triage; design.md, implementation-plan.md, the ledger and task artifacts only
+prs: [719]
+openPrs: []
+opened: 2026-10-03
+closed: 2026-10-04
+ledgerEntry: system-one-decisions
+summary:
+  headline: '' # sibling phase; the cluster's capability line is on system-one-impl
+  intended: >
+    Phase B of system-one-decisions: work the design's §12 open questions in place (decide OQ-2 the
+    package name and OQ-9 the SDK pin; decide or specify OQ-4's per-backend maxChars; turn OQ-6 into
+    named tests and live checks; decide whether the OQ-12/D10 parity harness ships as a perf/ script;
+    note OQ-11; leave OQ-5, OQ-8 and OQ-10's Olares items open), write
+    docs/design/system-one-decisions/implementation-plan.md for Phase C with per-slice surface,
+    acceptance, revert matrix and tests covering every §10 item, and put a decisions-for-the-user list
+    at the top of result.md with E27a first. Check two orchestrator beliefs (E27a bears on a user
+    decision; D7 is the same primitive as personaility#672). Docs only.
+  shipped: >
+    §12 worked through in place: OQ-2 @fgv/ts-extras-system-one; OQ-9 ~0.6.0 direct with a review
+    gate on every minor; OQ-4 resolved for upstream CLM as maxChars = floor(B x r_min x 0.9) with
+    README values 2,400 and 4,400, from a Qwen3 tokenizer reconstructed from non-LFS vocab.json and
+    merges.txt (E33, derived); OQ-6 specified as named unit tests and live checks L1/L2; D10 ships as
+    perf/systemOneLive.js, refusing to compare without thresholds given up front. Evidence rows
+    E28-E35 added. The implementation plan (one slice, S1) with live checks L1-L5. Two user
+    decisions framed and then decided by the user on 2026-10-03: U1 option A (keep Ollama, gated on
+    one probe round trip) and U2 option (a) (the cluster close waits on L1 only). Both orchestrator
+    beliefs confirmed, with refinements. No src/ or package.json change; capability gates exit 0.
+  diverged: >
+    OQ-4 was decided rather than only specified: the brief expected the blocked HF LFS CDN to rule out
+    measuring, but the tokenizer's vocab.json and merges.txt are not LFS objects. Belief 2 was right
+    about the adapter (no D7 adapter for v1) but missed that design §8's contract sketch lacked the
+    fetch? seam §10 needs, so Phase C gained a fetch? parameter. Reading the SDK at source produced
+    five contract refinements, none moving a decision: the fetch seam; a fourth TYPESAFE_* fallback
+    (TYPESAFE_LOG_LEVEL=debug would log request bodies, so logLevel is pinned); E17's candidate texts
+    include a noul's instructions; OQ-9's "three weeks apart" was three and a half days; and an
+    explicit '' API key is sent as "Bearer ". The brief's four follow-up buckets are not
+    DESIGN_PROCESS.md's; the brief's were used. The work was pushed to system-one-phase-b, not the
+    harness-designated branch.
+  sourceLine: '- § 12 of [`design.md`](../../../../../docs/design/system-one-decisions/design.md), worked through in place;'
+keywords:
+  - design triage
+  - implementation plan
+  - user decisions U1 U2
+  - E27a Ollama probe
+  - cluster-close gate L1 only
+  - live checks L1-L5
+  - maxChars rule
+  - chars per token measurement
+  - Qwen3 tokenizer reconstruction
+  - SDK pin review gate
+  - fetch seam
+  - TYPESAFE_LOG_LEVEL
+  - safer-fetch adapter D7
+  - personaility#672
+  - parity harness thresholds up front
+relatedStreams:
+  - { id: system-one-decisions-design, relationship: 'Phase A; this phase worked its §12 in place' }
+  - { id: system-one-design-antagonist, relationship: 'read first; its E27a became user decision U1' }
+  - { id: system-one-impl, relationship: 'Phase C; held to the implementation plan written here' }
+sourceHash: 1051164659ed9509

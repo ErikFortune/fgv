@@ -453,69 +453,6 @@ So **R2 is not the safe, independent one-liner §4 called it** — it converts a
 
 ---
 
-### `system-one-decisions` 🔵
-
-**Status:** 🔵 **Phase C implemented 2026-10-03** (`@fgv/ts-extras-system-one`, branch
-`system-one-phase-c`, onto `integration/system-one-decisions`); **cluster close held for a recorded L1
-live round trip** (decision U2; L1–L5 not run live). Phase B completed 2026-10-03. Phase A (design) completed
-2026-10-01. Design-triage-implement. Every phase lands on `integration/system-one-decisions` (off
-`release` `30713277c`). The orchestrator opens the cluster-close PR to `release` after Phase C.
-**Substrate:** `.ai/tasks/active/system-one-decisions-design/`, `.ai/tasks/active/system-one-design-antagonist/`,
-`.ai/tasks/active/system-one-triage/` and `.ai/tasks/active/system-one-impl/` (each
-`{brief.md, state.md, result.md}`).
-**Design:** `docs/design/system-one-decisions/design.md`
-**Implementation plan (Phase C is held to it):** `docs/design/system-one-decisions/implementation-plan.md`
-**Package surface:** Phases A and B are docs only. **Phase C:** a new `@fgv/ts-extras-system-one`
-(name decided, OQ-2), one slice, plus live evidence L1–L5.
-
-**Mission.** Decide whether and how fgv supports System-1 decision models. These return typed answers
-with probabilities, such as hosted Jev and local CLM-8B.
-
-**Phase A findings:**
-
-- **The pressure test is overturned.** The wire has an official MIT TS SDK, `@typesafe-ai/sdk`, with
-  `baseURL`/`fetch` overrides. It is the `ts-extras-ollama` shape, not a new one.
-- **No fgv interface.** The backend is picked by URL.
-- **CLM-8B is not viable on a laptop inner loop.** It needs an NVIDIA GPU with vLLM, and the GGUF is
-  heads only.
-- **Upstream CLM silently truncates the question away**, so fgv refuses at a mandatory caller bound.
-
-**User decisions, 2026-10-01:**
-
-- OQ-1 is resolved: the consumer will experiment, and adoption depends on performance.
-- OQ-3 is resolved: production runs Qwen and CLM locally, and development connects to a remote Jev or
-  openjev.
-
-- OQ-10 is answered: Qwen runs on vLLM on an Olares One (probably), and on Ollama in some other
-  environments.
-
-Phase C proceeds. Phase B works the remaining open questions, including the new OQ-12: whether
-Ollama-backed CLM matches vLLM-backed CLM. Ollama drops CLM's truncation, and its pooling and
-quantization are unverified.
-
-**Phase B findings (2026-10-03):**
-
-- **Decided:** the package name (OQ-2); the SDK pinned `~0.6.0` with a review gate on every minor
-  (OQ-9); a measured `maxChars` rule, with README values of 2,400 / 4,400 characters for upstream CLM
-  (OQ-4, from a reconstructed Qwen3 tokenizer); the parity harness ships as `perf/systemOneLive.js`
-  (D10). OQ-6 became named tests.
-- **Contract refinements from reading the SDK at source:** a `fetch?` seam; explicit `logLevel` that is
-  never `debug` (a fourth `TYPESAFE_*` variable exists); a total failure classification; timing
-  headers that keep their names.
-- **User decisions, 2026-10-03:** Ollama stays in the topology, gated on one probe round trip per
-  environment (E27a; option A). The cluster close waits on one recorded L1 remote round trip, and
-  nothing else (option (a)). Neither changes the package surface.
-- OQ-5, OQ-8 and OQ-10's Olares items stay open: they need egress or hardware.
-
-**Phase C (2026-10-03):** `@fgv/ts-extras-system-one` built as plan § 3 specifies, with deviations
-recorded in `system-one-impl/result.md` (chiefly: a `score` legend is projected from the request's
-rubric). 97 unit tests through the real SDK's `fetch` seam, 100% coverage; revert matrix 97/97
-VERIFIED. The SDK installs through Rush's verifying `rush install`; it bundles for a browser without a
-node-builtins declaration. **Next:** someone with egress and a key runs `perf/systemOneLive.js probe`
-(L1) and appends the record; then the orchestrator runs `/finalize-task` and the cluster close.
-
----
-
 ## Shipped streams
 
 The full entries are archived by month under [`docs/workstreams/`](workstreams/). This index is
@@ -525,8 +462,8 @@ here so a stream can be found by id without opening them; each archive links bac
 the same "docs ship with the code" rule as everywhere else, so the working ledger never
 accumulates history again.
 
-**[2026-10](workstreams/2026-10.md)** — 20 shipped
-`agent-tasks-cluster-close` · `personality-intake` · `agent-tasks-p1` · `agent-tasks-m1-stop` · `agent-tasks-i2` · `agent-tasks-tracked-commands` · `agent-tasks-i1d` · `agent-tasks-i1c` · `agent-tasks-i1b` · `agent-tasks-i1a` · `agent-tasks-t9` · `agent-tasks-t8b` · `agent-tasks-t8` · `agent-tasks-t7` · `agent-tasks-t6` · `agent-tasks-t5` · `agent-tasks-t4` · `agent-tasks-t3` · `agent-tasks-t2` · `agent-tasks-t1`
+**[2026-10](workstreams/2026-10.md)** — 21 shipped
+`system-one-decisions` · `agent-tasks-cluster-close` · `personality-intake` · `agent-tasks-p1` · `agent-tasks-m1-stop` · `agent-tasks-i2` · `agent-tasks-tracked-commands` · `agent-tasks-i1d` · `agent-tasks-i1c` · `agent-tasks-i1b` · `agent-tasks-i1a` · `agent-tasks-t9` · `agent-tasks-t8b` · `agent-tasks-t8` · `agent-tasks-t7` · `agent-tasks-t6` · `agent-tasks-t5` · `agent-tasks-t4` · `agent-tasks-t3` · `agent-tasks-t2` · `agent-tasks-t1`
 
 **[2026-09](workstreams/2026-09.md)** — 9 shipped
 `null-prototype-property-guard` · `ai-assist-anthropic-structured-output` · `ai-assist-model-catalog-2026-09` · `prompt-assist-qualifier-stability` · `ai-assist-streaming-cache` · `filetree-atomic-write` · `ai-assist-prompt-caching` · `ai-assist-thinking-anchoring` · `prompt-composition-metadata`

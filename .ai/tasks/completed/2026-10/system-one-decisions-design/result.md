@@ -1,7 +1,7 @@
 # Result — `system-one-decisions-design` (Phase A)
 
 **Shipped:** a design for System-1 decisions, at
-[`docs/design/system-one-decisions/design.md`](../../../../docs/design/system-one-decisions/design.md).
+[`docs/design/system-one-decisions/design.md`](../../../../../docs/design/system-one-decisions/design.md).
 The recommendation is a thin Result boundary over the vendor's own TS SDK (`@typesafe-ai/sdk`), with
 the backend picked by URL. The pressure test is overturned, and CLM-8B is reported as **not viable on
 a laptop inner loop**. Design only; nothing was run.

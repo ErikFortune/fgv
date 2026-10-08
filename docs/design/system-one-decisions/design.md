@@ -11,20 +11,23 @@ OQ-10 (Qwen runs on vLLM on an Olares One, probably, and on Ollama elsewhere) wa
 **Amended 2026-10-02** by the `system-one-design-antagonist` verification pass: every §2 citation now
 names the ref it was read at, E16 and E27 are split by link, OQ-7 is resolved, and §8 decides the
 `confidence` field. The pass's account, including what it checked and left alone, is
-[`.ai/tasks/active/system-one-design-antagonist/result.md`](../../../.ai/tasks/active/system-one-design-antagonist/result.md).
+[`.ai/tasks/completed/2026-10/system-one-design-antagonist/result.md`](../../../.ai/tasks/completed/2026-10/system-one-design-antagonist/result.md).
 **Amended 2026-10-03** by Phase B triage (`system-one-triage`): §12 is worked through in place; §2
 gains E28–E35; §7.1 item 5 and §8 carry dated refinements; §11 D7 and D10 are annotated. Phase C is
 held to [`implementation-plan.md`](implementation-plan.md). The triage account, including the
 decisions left to the user, is
-[`.ai/tasks/active/system-one-triage/result.md`](../../../.ai/tasks/active/system-one-triage/result.md).
+[`.ai/tasks/completed/2026-10/system-one-triage/result.md`](../../../.ai/tasks/completed/2026-10/system-one-triage/result.md).
 **Implemented 2026-10-03** (Phase C, `system-one-impl`) as `@fgv/ts-extras-system-one`, per
 [`implementation-plan.md`](implementation-plan.md); deviations in
-[`.ai/tasks/active/system-one-impl/result.md`](../../../.ai/tasks/active/system-one-impl/result.md).
-**No live leg has run** (L1–L5 "not run live"); the cluster close waits on a recorded L1.
+[`.ai/tasks/completed/2026-10/system-one-impl/result.md`](../../../.ai/tasks/completed/2026-10/system-one-impl/result.md).
+**L1 recorded 2026-10-08** against hosted Jev (`jev-latest` answering as `jev-1.13.0`), passed; see
+E36 and the record in `system-one-impl/result.md` § "L1, recorded 2026-10-08". L2–L5 were not run
+live; decision U2 required only L1. **Shipped 2026-10-08:** Phase C via #721, and the cluster closed
+with the cluster-close PR into `integration/system-one-decisions`.
 **Date:** 2026-10-01. **Inspected checkout:** `16ec1622b`, which carries promoted `release` at
 `febf0b2b4`. `ts-agent-tasks` citations were re-read there; Phase A had read them from
 `origin/integration/agent-tasks-v1` at `2a95fbb2`, a branch that no longer exists.
-**Brief:** [`.ai/tasks/active/system-one-decisions-design/brief.md`](../../../.ai/tasks/active/system-one-decisions-design/brief.md).
+**Brief:** [`.ai/tasks/completed/2026-10/system-one-decisions-design/brief.md`](../../../.ai/tasks/completed/2026-10/system-one-decisions-design/brief.md).
 
 ## 1. Decisions and scope
 
@@ -132,6 +135,7 @@ cited only where the row is *about* `main` (E23). Abbreviations used below:
 | E33 | *Phase B.* **Qwen3-8B characters per token** (OQ-4), over 4,000-character windows. Minimum / median: English prose 3.65 / 5.43; Markdown (`CAPABILITIES.md` files) 2.91 / 4.16; TypeScript 3.51 / 4.39; JSON records (IANA subtag entries) 2.39 / 2.45; UUID-, timestamp- and number-dense JSON 1.34 / 1.35. Digits tokenize one per token, which is why the last class is lowest. The tokenizer adds no BOS or EOS (`"Hello world"` → `[9707, 1879]`). No CJK or other non-Latin corpus was measured. | **derived**. The vocabulary and merges are Qwen3-8B's own; the normalizer and pre-tokenizer are transformers' `Qwen2Tokenizer` defaults, which only `tokenizer.json` (unreachable, E16b) would confirm. The slow and fast tokenizers agreed on every one of 388 windows. | `vocab.json`, `merges.txt`, `tokenizer_config.json` of `Qwen/Qwen3-8B` @ `b968826d` (non-LFS, fetched through `huggingface.co`); transformers `4.55.0` (vLLM `v0.10.1`'s floor), tokenizers `0.21.4`. Corpora: `docs/design/**/*.md` prose paragraphs, `libraries/*/CAPABILITIES.md`, `libraries/ts-agent-tasks/src/packlets/**/*.ts`, `ts-bcp47`'s `language-subtag-registry.json`, and 2,000 seeded synthetic `{id, rev, at, parent, progress}` records, all @ `bb48c467`. `tokenizer.json` still redirects to `us.aws.cdn.hf.co/xet-bridge-us/…` (not fetched). |
 | E34 | *Phase B.* **E27a's converter link.** Neither converter that could have produced the `qwen3:8b` library blob writes a `pooling_type` for Qwen3. llama.cpp at `b5250` (2025-05-01, the week Qwen3 shipped) writes it only in `BertModel`, from `modules.json`. Ollama had no Qwen3 converter at `v0.6.8` or `v0.12.0`, and its `convert_qwen3.go` at `v0.20.0` writes none (only its BERT and nomic-bert converters do). At `v0.35.0` Ollama has no `convert/`, `runner/` or model-engine tree: every GGUF runs in `llama-server`, and `isEmbedding` is exactly `f.KV().Has("pooling_type")`. This narrows E27a's open link to the blob itself; it does not close it. | converters and the `v0.35.0` path **verified**; the blob's provenance and metadata remain **unverified** | llama.cpp `convert_hf_to_gguf.py:2686-2688, 3309-3341` @ `b5250`. ollama `convert/convert_qwen3.go:35-72`, `convert/convert_bert.go:95`, `convert/convert_nomicbert.go:101` @ `v0.20.0`; `git ls-tree` @ `v0.6.8`, `v0.12.0`, `v0.35.0`; `llm/llama_server.go:584-587, 863-865`, `server/images.go:197-200` @ `v0.35.0`. |
 | E35 | *Phase B.* **vLLM serves `POST /tokenize`**, so a deployed encoder can confirm E33's counts with the real tokenizer. At `v0.30.0`, `GET /tokenizer_info` also exists behind `--enable-tokenizer-info-endpoint`. | routes **verified**; whether they are mounted under `--runner pooling` is **unverified** | `vllm/entrypoints/openai/api_server.py:480` @ `v0.10.1`; `vllm/entrypoints/serve/tokenize/api_router.py:36, 87-93` @ `v0.30.0`. |
+| E36 | *Added 2026-10-08 (live check L1).* **Jev, live.** Hosted Jev at `https://api.typesafe.ai`, model `jev-latest` answering as `jev-1.13.0`, accepted a noul + choice + score request through `@fgv/ts-extras-system-one` and the body passed every plan § 3.6 check. **A `score` answer is fractional, confirmed live:** `score` was `1.73` over levels `0`–`2` with probabilities `{0: 0, 1: 0.27, 2: 0.73}`, which equals `Σ level·p` (0·0 + 1·0.27 + 2·0.73). This is the documented behaviour, now observed: the SDK types `ScoreResponse.score` as "Expected score, which may fall between integer rubric levels" (`dist/index.d.mts:109` @ SDK 0.6.0), and E6 reads the same expectation in CLM's source. So a `score` is **not an integer level**; the most probable level is the argmax of `probabilities`. Also observed: an unknown model gets **`400`**, classified `invalid-request` (OQ-6; openjev's report in E21, not CLM's `422` in E9); `x-typesafe-request-id` is sent; neither `Server-Timing` nor `X-CLM-Latency-Ms` is sent. | **verified** (one live round trip; the `score` semantics also at SDK source) | `perf/systemOneLive.js probe` record of 2026-10-08T14:22:08Z, darwin arm64, Node 24.18, in `.ai/tasks/completed/2026-10/system-one-impl/result.md` § "L1, recorded 2026-10-08". |
 
 Two brief premises turned out to be wrong. Both are recorded here because Phase B will reason from
 them.
@@ -719,6 +723,8 @@ Each question is followed by what would resolve it.
 5. **OQ-5 — Jev's semantics** (`confidence` formula, token bound, truncation, error bodies) (E14).
    *Resolved by:* reading `docs.typesafe.ai`, which is blocked here, or early-access observation.
    This does not block v1, because §5.2 already treats these as backend-defined.
+   *Not answered by L1 (2026-10-08, E36),* although L1 was an observation of Jev: the probe projects
+   `confidence` away and records no error body, and it measured no token bound or truncation.
 6. **OQ-6 — Does the SDK behave against non-Jev servers in every path?** For example: a missing
    `x-typesafe-request-id`; whether openjev's `529` counts as retryable (the SDK retries `500–599`);
    CLM's `422` on unknown model being classified as `invalid-request`. *Resolved by:* §10.2's live
@@ -737,6 +743,10 @@ Each question is followed by what would resolve it.
 
    What stays open until L1 and L2 run: whether each real server sends the headers and the status
    codes the fixtures assume.
+   **Jev answered by L1, 2026-10-08 (E36):** an unknown model is `400`, classified `invalid-request`,
+   as openjev reports and unlike CLM's `422`; `x-typesafe-request-id` is sent; neither timing header
+   is. CLM's server remains for L2; openjev and Codiv each need their own L1-style probe, and
+   openjev's `529` retry path is still unobserved live.
 7. **OQ-7 — Is `'unchecked'` safe to offer? RESOLVED 2026-10-02 (verification pass): keep it, and
    state exactly when it is correct.** This question's own condition, finding a backend that refuses,
    is met:
@@ -795,6 +805,8 @@ Each question is followed by what would resolve it.
     package supports any of them unchanged.
     **Noted 2026-10-03 (Phase B); the consumer's to answer.** Nothing in the plan depends on the
     answer. L1 records which remote it used, so a result is never read as covering another.
+    **L1 (2026-10-08) used hosted Jev** (`https://api.typesafe.ai`, `jev-latest` → `jev-1.13.0`),
+    E36. It says nothing about CLM's weights or about openjev, Codiv or `clm-serve`.
 12. **OQ-12 — Is Ollama-backed CLM faithful to vLLM-backed CLM?** It differs in pooling (E27),
     quantization (E19) and the truncation window (E25, E26) (§7.1, item 6). *Resolved by:* running the
     same fixed question set through `clm-serve` twice, once over vLLM bf16 on the Olares and once over

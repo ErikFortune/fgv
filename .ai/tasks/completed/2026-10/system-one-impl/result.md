@@ -3,7 +3,7 @@
 ## What shipped
 
 A new package, `@fgv/ts-extras-system-one` (`libraries/ts-extras-system-one`), slice S1 of
-[`implementation-plan.md`](../../../docs/design/system-one-decisions/implementation-plan.md).
+[`implementation-plan.md`](../../../../../docs/design/system-one-decisions/implementation-plan.md).
 
 - Source is in `src/`: `types.ts`, `measure.ts`, `logging.ts`, `classify.ts`, `shapes.ts`,
   `validate.ts` and `client.ts`, re-exported from `index.ts`. The largest are `shapes.ts` and
@@ -220,14 +220,16 @@ A new package, `@fgv/ts-extras-system-one` (`libraries/ts-extras-system-one`), s
 
 | leg | status |
 |---|---|
-| L1 remote development server | **not run live** (egress refused, no key) |
+| L1 remote development server | **passed live 2026-10-08** against hosted Jev; record and findings under "L1, recorded 2026-10-08" below |
 | L2 `clm-serve` + vLLM on the Olares One | **not run live** |
 | L3 E33 windows via `/tokenize` | **not run live** |
 | L4 Ollama probe per environment | **not run live** |
 | L5 parity | **not run live** |
 
-Only `perf/systemOneLive.js --check` was run, for both modes: exit 0. Under decision U2, the cluster
-close waits for a recorded L1.
+At Phase C's close, only `perf/systemOneLive.js --check` was run, for both modes: exit 0, and L1 was
+not run either (egress refused, no key). Under decision U2 the cluster close waited for a recorded L1.
+**L1 was run on 2026-10-08 and passed**; it is recorded after deviation 32, under "L1, recorded
+2026-10-08". L2–L5 remain **not run live**.
 
 28. **The caller's input is read once** (Copilot round 5). Every gate in `shapes.ts` returns the
     value it converted, and every entry point uses only that value afterwards. A getter or a Proxy
@@ -261,6 +263,88 @@ close waits for a recorded L1.
       The JSON converter then converts that snapshot, so the caller's input is still read once
       (deviation 28).
     - A cycle or a throwing Proxy inside a value fails within the existing `safeConvert` guard.
+
+### L1, recorded 2026-10-08
+
+**L1 passed** against hosted Jev: `https://api.typesafe.ai`, model `jev-latest`, answering as
+`jev-1.13.0`. Run on 2026-10-08 from darwin arm64 under Node 24.18, with
+`perf/systemOneLive.js probe` and no `--max-chars` (so `inputLimit: "unchecked"`). Run outside the agent
+sandbox and supplied to the cluster close; the record does not name the operator, and it does not
+name the package commit whose `lib/` was probed, so neither is recorded here. The probe record, verbatim:
+
+```
+{
+  "date": "2026-10-08T14:22:08.019Z",
+  "url": "https://api.typesafe.ai",
+  "model": "jev-latest",
+  "keyEnv": "TYPESAFE_API_KEY",
+  "node": "v24.18.0",
+  "host": { "platform": "darwin", "arch": "arm64" },
+  "inputLimit": "unchecked",
+  "ok": true,
+  "meta": {
+    "model": "jev-1.13.0",
+    "usage": { "input_tokens": 392, "output_tokens": 69 },
+    "elapsedMs": 152,
+    "requestId": "req_01a11be496da7fa09e62bfac2947b130"
+  },
+  "result": {
+    "model": "jev-1.13.0",
+    "answers": {
+      "billing": { "type": "noul", "noul": 0.99 },
+      "route": { "type": "choice", "choice": "billing", "probabilities": { "other": 0, "technical": 0, "billing": 1 } },
+      "urgency": {
+        "type": "score", "score": 1.73,
+        "legend": { "0": "Not urgent", "1": "Somewhat urgent", "2": "Very urgent" },
+        "probabilities": { "0": 0, "1": 0.27, "2": 0.73 }
+      }
+    },
+    "usage": { "input_tokens": 392, "output_tokens": 69 }
+  },
+  "listModels": {
+    "ok": true,
+    "models": [
+      { "name": "jev-latest", "description": "The latest iteration of TypeSafe's System One Model: Jev", "release_date": "2026-09-10T18:38:01.391457+00:00" },
+      { "name": "jev-preview", "description": "A preview version of `jev-latest`: should be better in most ways", "release_date": "2026-09-10T18:39:06.057655+00:00" }
+    ]
+  },
+  "unknownModel": { "model": "fgv-probe-unknown-model-c3fc13b22b38", "outcome": "refused as expected", "reason": "invalid-request", "status": 400 }
+}
+```
+
+**Findings.**
+
+1. **Wire compatibility holds against a real server.** The request was accepted; the body passed
+   every § 3.6 check (answer ids, types, probability keys, ranges and sums) and was projected without
+   `confidence`; `listSystemOneModels` unwrapped `/v1/models`. `meta.requestId` came from
+   `x-typesafe-request-id`, so Jev sends it.
+2. **OQ-6 for Jev: an unknown model gets `400`, classified `invalid-request`.** This is consistent
+   with openjev's README (E21: `400 api_usage_error` for an unknown model), and different from CLM's
+   `422` (E9). Both classify as `invalid-request` (U11, U12), so the difference needs no code change.
+3. **OQ-11: the remote used was hosted Jev** (`https://api.typesafe.ai`, `jev-latest` → `jev-1.13.0`).
+   Not openjev, Codiv or `clm-serve`. This result covers Jev only, and is not evidence about CLM's
+   weights or any other server.
+4. **No timing headers were present in `meta`, because Jev did not send them.** The package does not
+   drop them: `timingHeadersOf` (`src/client.ts`) reads `server-timing` and `x-clm-latency-ms` from the
+   response and puts whichever is present in `meta.timingHeaders`, and U20 pins both the
+   pass-through and the omission. The probe prints `meta` as returned. So Jev's response carried
+   **neither of those two headers**. Whether it carries timing under some other header name is not
+   observable through the package, which reads only those two by design (plan § 3.3).
+5. **Jev's `score` is fractional: `1.73`, not a level index.** It equals `Σ level·p` over the
+   returned distribution (0·0 + 1·0.27 + 2·0.73 = 1.73). This is live confirmation of documented
+   behaviour, not a discovery: the SDK types `ScoreResponse.score` as "Expected score, which may fall
+   between integer rubric levels" (`dist/index.d.mts:109` @ 0.6.0), and E6 reads the same expectation
+   in CLM's source. A consumer must not assume a `score` answer is an integer level; the most
+   probable level is the argmax of `probabilities`. Recorded as E36 in the design and in the README's
+   description of `score` answers. Nothing in the package changes: § 3.6 already checks `score` as a
+   number in `[0, n-1]`, not an integer.
+6. `elapsedMs` 152 is client wall time for the one ask, including any retries. It is one sample over
+   the open internet and is not a performance result.
+
+**L2–L5 stay "not run live".** Decision U2 (option (a)) made one recorded L1 the cluster-close gate
+and nothing else, so the cluster closes on this record. L2 (`clm-serve` + vLLM on the Olares One),
+L3 (E33's windows through `/tokenize`), L4 (an Ollama probe per environment) and L5 (parity) remain
+open evidence for the consumer's experiment; they need hardware this cluster did not have.
 
 ## Revert matrix
 

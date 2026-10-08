@@ -4,7 +4,7 @@
 it was read at. E16 and E27 are split so that each link carries its own marker. OQ-7 is resolved:
 `'unchecked'` stays, with a stated correctness condition. §8 now omits `confidence`, which answers the
 asymmetry the brief asked about. Docs only:
-[`docs/design/system-one-decisions/design.md`](../../../../docs/design/system-one-decisions/design.md).
+[`docs/design/system-one-decisions/design.md`](../../../../../docs/design/system-one-decisions/design.md).
 
 ## Facts that contradict a decision
 

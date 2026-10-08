@@ -1,0 +1,86 @@
+id: system-one-impl
+status: shipped
+packages: ['@fgv/ts-extras-system-one']
+prs: [721]
+openPrs: []
+opened: 2026-10-03
+closed: 2026-10-08
+ledgerEntry: system-one-decisions
+summary:
+  headline: >
+    A Result boundary over the TypeSafe System-1 SDK: ask Jev, openjev or a local CLM server typed
+    noul/choice/score questions, with over-long input refused, not truncated. Verified live on Jev.
+  intended: >
+    Phase C of system-one-decisions: build slice S1, the new package @fgv/ts-extras-system-one,
+    exactly as docs/design/system-one-decisions/implementation-plan.md specifies (§3 surface, §4
+    acceptance, §5 tests and revert matrix, §8 harness, §9 scaffold, §10 close-time updates), with
+    every deviation recorded. Verify four orchestrator beliefs: @typesafe-ai/sdk@0.6.0 installs
+    through Rush's verifying install; the plan's §9 SDK behaviours hold at 0.6.0; the SDK bundles
+    without Node built-ins; no live leg can run from the sandbox, so L1-L5 are recorded "not run
+    live". Fixture tests through the real SDK's fetch seam, never a module mock; a repo-wide rebuild
+    with zero warnings; code-reviewer before coverage closure. No safer-fetch adapter, only the
+    fetch? seam.
+  shipped: >
+    @fgv/ts-extras-system-one: createSystemOneClient, askSystemOne, listSystemOneModels and
+    measureSystemOneInput, re-exporting the SDK's noul/choice/score factories and types; answers
+    validated at the boundary and projected without confidence; a mandatory inputLimit that refuses
+    before any request; a total failure classification; failure messages that never quote the
+    server's body or a received value; every caller input converted and read once. 97 unit tests
+    through the real SDK 0.6.0, 100% coverage with no c8 ignore; revert matrix 97 rows, all VERIFIED;
+    perf/systemOneLive.js (probe, parity, --check) with a 9/9 self-test. README, CAPABILITIES, api.md,
+    a minor change file and the §10 doc updates. All four beliefs held. Gates green after each of six
+    Copilot rounds on #721. L1 passed live on 2026-10-08 against hosted Jev (recorded at the cluster
+    close); L2-L5 not run live.
+  diverged: >
+    Thirty-two recorded deviations from the plan. The surface moved in places the plan had fixed:
+    measureSystemOneInput returns a Result (the plan said "pure; cannot fail"), because malformed
+    JavaScript input threw; a score legend is projected from the request's rubric rather than taken
+    from the server; @fgv/ts-json-base became a direct dependency (for jsonValue) at Copilot round 4.
+    The plan's R22 could not go red as written (a finiteness check masked by the range check) and was
+    retargeted; R15-R17 presupposed contradictory iteration orders. A gate-time review and six
+    Copilot rounds grew the work well past the plan: SDK APIError messages were found to leak up to
+    200 raw body characters, so failures name the error class and drop the server's own explanation;
+    caller input is converted and read once; EntryType is JSON all the way down; an own __proto__ key
+    is refused at any depth. Those rounds also surfaced upstream flaws in ts-utils recordOf and
+    ts-json-base jsonObject/jsonValue (and jsonValue admitting Infinity), worked around locally. The
+    orchestrator decided the factories stay plain SDK constructors. Belief 4 held for the sandbox,
+    and L1 was later run from outside it (passed against hosted Jev only); L2-L5 were never run.
+  sourceLine: 'A new package, `@fgv/ts-extras-system-one` (`libraries/ts-extras-system-one`), slice S1 of'
+keywords:
+  - System-1 decision model
+  - Result integration boundary
+  - '@typesafe-ai/sdk'
+  - Jev
+  - CLM
+  - openjev
+  - inputLimit refuse not truncate
+  - measureSystemOneInput
+  - failure classification
+  - response validation
+  - confidence omitted
+  - score legend projection
+  - fractional score expectation
+  - no received value in failure messages
+  - APIError body leak
+  - read-once input
+  - __proto__ reserved key
+  - recordOf prototype hazard
+  - jsonValue Infinity
+  - revert matrix
+  - live probe L1
+  - parity harness
+  - fetch seam
+relatedStreams:
+  - {
+      id: system-one-decisions-design,
+      relationship: 'Phase A; designed the boundary this package implements'
+    }
+  - {
+      id: system-one-design-antagonist,
+      relationship: 'decided the confidence omission and kept unchecked mode'
+    }
+  - {
+      id: system-one-triage,
+      relationship: 'Phase B; wrote the implementation plan this slice was held to, and user decisions U1/U2'
+    }
+sourceHash: 2bd928dfe72adbc6

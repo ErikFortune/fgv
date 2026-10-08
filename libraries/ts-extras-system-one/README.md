@@ -14,10 +14,11 @@ over the backends: one HTTP client is the only implementation, and the servers d
 
 Node ≥ 20 only.
 
-> **Live status.** No live round trip has been run against any server by this package's tests or
-> its author. The unit tests run the real SDK through its `fetch` seam against recorded CLM- and
-> Jev-shaped bodies. Wire compatibility with a real server is established only by a recorded run
-> of `perf/systemOneLive.js probe` (see [Live checks](#live-checks)).
+> **Live status.** One live round trip is recorded: on 2026-10-08, `perf/systemOneLive.js probe`
+> against hosted Jev (`https://api.typesafe.ai`, `jev-latest` answering as `jev-1.13.0`) passed.
+> That covers Jev only. No CLM (`clm-serve`), openjev, Codiv or Ollama endpoint has been run live.
+> The unit tests run the real SDK through its `fetch` seam against recorded CLM- and Jev-shaped
+> bodies (see [Live checks](#live-checks)).
 
 ## Usage
 
@@ -68,6 +69,11 @@ failure runs.
   `[0, n-1]`, a `noul` in `[0, 1]`. A server can return a well-formed answer to a different set of
   questions; that is `invalid-response`. Not checked, deliberately: that `choice` is the argmax or
   `score` the expectation, since the boundary promises the wire, not a backend's semantics.
+- **A `score` answer is a number in `[0, n-1]`, not an integer level.** It is the expectation over
+  the levels, as the SDK documents ("Expected score, which may fall between integer rubric levels")
+  and CLM computes. The live Jev check confirmed it: levels `0`–`2` with probabilities `0`, `0.27`
+  and `0.73` gave `score: 1.73` (`Σ level·p`). Read the most probable level from
+  `probabilities` (its argmax), and treat `score` as a fractional position on the rubric.
 - **`confidence` is never returned.** CLM and openjev define it differently, even over the same
   weights, and Jev's definition is unknown. Both known definitions are functions of `probabilities`,
   so compute whichever you want from those and name it in your own code.
