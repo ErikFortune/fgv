@@ -14,11 +14,11 @@ A new package, `@fgv/ts-extras-system-one` (`libraries/ts-extras-system-one`), s
     re-exported;
   - the plan's types, plus the additions listed under Deviations.
 - Tests:
-  - 94 unit tests, all running the real SDK 0.6.0 through the `fetch` parameter;
+  - 97 unit tests, all running the real SDK 0.6.0 through the `fetch` parameter;
   - no module mocking;
-  - every plan id U1–U26 appears in a test title, plus U27–U37 (malformed input, cycles, JSON entries,
-    reserved keys, the factories, read-once input, throwing Proxies and the logger level, added at
-    the review rounds);
+  - every plan id U1–U26 appears in a test title, plus U27–U38 (malformed input, cycles, JSON entries,
+    reserved keys at any depth, the factories, read-once input, throwing Proxies and the logger
+    level, added at the review rounds);
   - 100% coverage on statements, branches, functions and lines, with no `c8 ignore`.
 - `perf/mutationMatrix.js` (§ 5.2):
   - it refuses to run without `--pkg`, and refuses a `--pkg` that is the package itself;
@@ -187,6 +187,10 @@ A new package, `@fgv/ts-extras-system-one` (`libraries/ts-extras-system-one`), s
     orchestrator:** `Converters.recordOf` in `@fgv/ts-utils` drops an own `__proto__` key silently.
     When the value is an object, it also sets that object as the result's prototype. `ts-utils` is
     an established surface, so this PR works around it locally and leaves `ts-utils` unchanged.
+    **`@fgv/ts-json-base`'s `jsonObject` has the same flaw, with the same fix** (round 6): it copies
+    each key with `obj[name] = v`, so a `__proto__` key at any depth becomes the copy's prototype
+    and is dropped from what is serialized. Both want to create keys rather than assign them
+    (`Object.defineProperty`, or `Object.fromEntries`), or to refuse the key.
 
 ## The orchestrator's beliefs
 
@@ -248,14 +252,24 @@ close waits for a recorded L1.
     `Logging.reporterLogLevel`. `'debug'`, `'verbose'`, `'INFO'` and `''` are `invalid [logger]`.
     Before, any string was accepted and treated as `info`.
 
+32. **A JSON entry is refused when it holds an own `__proto__` key at any depth** (Copilot round 6).
+    The state, every instruction and every criterion value are walked before the JSON conversion,
+    by `withoutReservedKeys` (`shapes.ts`).
+    - The walk descends exactly where `jsonValue` does, using its own `isJsonArray` / `isJsonObject`,
+      and reads each value once.
+    - It builds a snapshot with `Object.fromEntries`, which creates keys rather than assigning them.
+      The JSON converter then converts that snapshot, so the caller's input is still read once
+      (deviation 28).
+    - A cycle or a throwing Proxy inside a value fails within the existing `safeConvert` guard.
+
 ## Revert matrix
 
-Run with `node perf/mutationMatrix.js --pkg <copy>` against a real copy of the package at `3fe623c1`
+Run with `node perf/mutationMatrix.js --pkg <copy>` against a real copy of the package at `4edb198f`
 (no links: only `node_modules` was a symlink to the package's). It exited 0.
 - Rows added by round: R34–R37 at the gate-time review; R38–R40 (with R39b, R39c) at Copilot round
   1; harness rows H1–H4 at round 2; R41–R46 and H5–H8 at round 3; R47–R62 and H9–H13 at round 4;
-  R63–R75 at round 5.
-- R1, R8, R19, R23, R24, R32, R34, R38, R41, R42, R45, R46, R50, R51 and R60–R62 were re-pointed
+  R63–R75 at round 5; R76–R79, H14 and H15 at round 6.
+- R1, R8, R19, R23, R24, R32, R34, R38, R41, R42, R45, R46, R50, R51, R58 and R60–R62 were re-pointed
   after refactors.
 - A row whose mutant does not compile is reported UNVERIFIED (as "did not build", or, when the
   compiler's output does not say `error TS`, "the run reported no failure count"), never as
@@ -266,12 +280,13 @@ Run with `node perf/mutationMatrix.js --pkg <copy>` against a real copy of the p
   which drives the harness against local stub servers and reports in jest's `●` / `Failures:` shape.
 
 ```
-R1 the bound runs after the SDK call [must go red: U1]: VERIFIED (27 red)
+R1 the bound runs after the SDK call [must go red: U1]: VERIFIED (28 red)
     a JavaScript caller’s malformed input is a classified Result, never a throw › U27b a malformed question is invalid-request in unchecked mode too, with nothing sent
     a JavaScript caller’s malformed input is a classified Result, never a throw › U29 askSystemOne checks the request before reading any field, and every failure has a reason
     a JavaScript caller’s malformed input is a classified Result, never a throw › U32 the factories are plain constructors: a malformed factory-built question is refused at askSystemOne
     a Proxy whose traps throw is a classified failure, never a throw › U36 askSystemOne refuses a throwing request, questions, question or criteria, with nothing sent
     a reserved __proto__ key cannot slip past an exact-key check › U33 a __proto__ question id or choice label is invalid-request, with nothing sent
+    a reserved __proto__ key is refused at any depth of a JSON entry › U38 a nested __proto__ in the state, an instruction or any criterion is invalid-request, with nothing sent
     a value no converter can describe — a cycle, a bigint — is a classified failure, never a throw › U30 askSystemOne refuses a cycle anywhere in the request, with nothing sent
     an EntryType is JSON: text, a JSON object or array, or null, all the way down › U31 JSON entries of every allowed kind are still accepted
     an EntryType is JSON: text, a JSON object or array, or null, all the way down › U31 a state, instruction or criterion that is not JSON is refused, with nothing sent
@@ -318,8 +333,10 @@ R6 a structured state is measured as String(state) [must go red: U5]: VERIFIED (
     the input bound › U5 a structured state is measured by its JSON serialization
 R7 the refusal names the first question [must go red: U6]: VERIFIED (1 red)
     the input bound › U6 the failure names the question that is over
-R8 'unchecked' is treated as maxChars: 0 [must go red: U7]: VERIFIED (37 red)
+R8 'unchecked' is treated as maxChars: 0 [must go red: U7]: VERIFIED (39 red)
     a reserved __proto__ key cannot slip past an exact-key check › U33 a __proto__ probability, legend level or answer id is invalid-response
+    a reserved __proto__ key is refused at any depth of a JSON entry › U38 a nested __proto__ in a received distribution whose value is an object is invalid-response
+    a reserved __proto__ key is refused at any depth of a JSON entry › U38 nested JSON without a reserved key is sent intact
     an EntryType is JSON: text, a JSON object or array, or null, all the way down › U31 JSON entries of every allowed kind are still accepted
     askSystemOne › failure classification › U11 every classification row has its own reason
     askSystemOne › failure classification › U11 the failure message carries the status and the request id
@@ -441,8 +458,9 @@ R32 elapsedMs does not cover retries [must go red: U20]: VERIFIED (1 red)
     askSystemOne › meta › U20 elapsedMs covers retries and back-off
 R33 the models shape error is invalid-request [must go red: U19]: VERIFIED (1 red)
     listSystemOneModels › U19 a bare array is invalid-response
-R34 measureSystemOneInput does not check the state, so an unserializable one throws [must go red: U28, U30, U31]: VERIFIED (3 red)
+R34 measureSystemOneInput does not check the state, so an unserializable one throws [must go red: U28, U30, U31]: VERIFIED (4 red)
     a JavaScript caller’s malformed input is a classified Result, never a throw › U28 measureSystemOneInput fails invalid-request without quoting the input
+    a reserved __proto__ key is refused at any depth of a JSON entry › U38 a nested __proto__ in the state, an instruction or any criterion is invalid-request, with nothing sent
     a value no converter can describe — a cycle, a bigint — is a classified failure, never a throw › U30 measureSystemOneInput refuses a circular state or question without throwing
     an EntryType is JSON: text, a JSON object or array, or null, all the way down › U31 a state, instruction or criterion that is not JSON is refused, with nothing sent
 R35 an APIError's body-derived message reaches the failure message [must go red: U23]: VERIFIED (2 red)
@@ -472,12 +490,13 @@ R41 createSystemOneClient reads its parameters unconverted [must go red: U28]: V
     a logger’s level is one ts-utils publishes › U37 a level ts-utils does not publish is invalid-request
     a value no converter can describe — a cycle, a bigint — is a classified failure, never a throw › U30 createSystemOneClient refuses a cycle or a bigint in its parameters
     every entry point reads the caller’s input once, and uses only what it converted › U35 createSystemOneClient builds the client from one read of each parameter
-R42 the questions are not checked before the input limit, so 'unchecked' mode sends a malformed question [must go red: U27b]: VERIFIED (10 red)
+R42 the questions are not checked before the input limit, so 'unchecked' mode sends a malformed question [must go red: U27b]: VERIFIED (11 red)
     a JavaScript caller’s malformed input is a classified Result, never a throw › U27b a malformed question is invalid-request in unchecked mode too, with nothing sent
     a JavaScript caller’s malformed input is a classified Result, never a throw › U29 askSystemOne checks the request before reading any field, and every failure has a reason
     a JavaScript caller’s malformed input is a classified Result, never a throw › U32 the factories are plain constructors: a malformed factory-built question is refused at askSystemOne
     a Proxy whose traps throw is a classified failure, never a throw › U36 askSystemOne refuses a throwing request, questions, question or criteria, with nothing sent
     a reserved __proto__ key cannot slip past an exact-key check › U33 a __proto__ question id or choice label is invalid-request, with nothing sent
+    a reserved __proto__ key is refused at any depth of a JSON entry › U38 a nested __proto__ in the state, an instruction or any criterion is invalid-request, with nothing sent
     a value no converter can describe — a cycle, a bigint — is a classified failure, never a throw › U30 askSystemOne refuses a cycle anywhere in the request, with nothing sent
     an EntryType is JSON: text, a JSON object or array, or null, all the way down › U31 a state, instruction or criterion that is not JSON is refused, with nothing sent
     askSystemOne › U10 an empty question set, or a score question with one level, is invalid-request with no request made
@@ -488,21 +507,23 @@ R43 a malformed model list is quoted [must go red: U19]: VERIFIED (2 red)
     listSystemOneModels › U19 an element missing name is invalid-response
 R44 a base URL with whitespace is accepted [must go red: U24]: VERIFIED (1 red)
     createSystemOneClient › U24 rejects a relative or non-http(s) baseUrl and a blank model; accepts an empty apiKey
-R45 askSystemOne reads its request unchecked [must go red: U29]: VERIFIED (10 red)
+R45 askSystemOne reads its request unchecked [must go red: U29]: VERIFIED (11 red)
     a JavaScript caller’s malformed input is a classified Result, never a throw › U27b a malformed question is invalid-request in unchecked mode too, with nothing sent
     a JavaScript caller’s malformed input is a classified Result, never a throw › U29 askSystemOne checks the request before reading any field, and every failure has a reason
     a JavaScript caller’s malformed input is a classified Result, never a throw › U32 the factories are plain constructors: a malformed factory-built question is refused at askSystemOne
     a Proxy whose traps throw is a classified failure, never a throw › U36 askSystemOne refuses a throwing request, questions, question or criteria, with nothing sent
     a reserved __proto__ key cannot slip past an exact-key check › U33 a __proto__ question id or choice label is invalid-request, with nothing sent
+    a reserved __proto__ key is refused at any depth of a JSON entry › U38 a nested __proto__ in the state, an instruction or any criterion is invalid-request, with nothing sent
     a value no converter can describe — a cycle, a bigint — is a classified failure, never a throw › U30 askSystemOne refuses a cycle anywhere in the request, with nothing sent
     an EntryType is JSON: text, a JSON object or array, or null, all the way down › U31 a state, instruction or criterion that is not JSON is refused, with nothing sent
     askSystemOne › U10 an empty question set, or a score question with one level, is invalid-request with no request made
     every entry point reads the caller’s input once, and uses only what it converted › U35 askSystemOne bounds, sends and validates against one read of the request
     the input bound › U27 malformed input is invalid-request, resolved, with no request made
-R46 measureSystemOneInput measures questions of the wrong shape [must go red: U28]: VERIFIED (7 red)
+R46 measureSystemOneInput measures questions of the wrong shape [must go red: U28]: VERIFIED (8 red)
     a JavaScript caller’s malformed input is a classified Result, never a throw › U28 measureSystemOneInput fails invalid-request without quoting the input
     a Proxy whose traps throw is a classified failure, never a throw › U36 askSystemOne refuses a throwing request, questions, question or criteria, with nothing sent
     a reserved __proto__ key cannot slip past an exact-key check › U33 a __proto__ question id or choice label is invalid-request, with nothing sent
+    a reserved __proto__ key is refused at any depth of a JSON entry › U38 a nested __proto__ in the state, an instruction or any criterion is invalid-request, with nothing sent
     a value no converter can describe — a cycle, a bigint — is a classified failure, never a throw › U30 measureSystemOneInput refuses a circular state or question without throwing
     an EntryType is JSON: text, a JSON object or array, or null, all the way down › U31 a state, instruction or criterion that is not JSON is refused, with nothing sent
     every entry point reads the caller’s input once, and uses only what it converted › U35 measureSystemOneInput measures one read of the state and questions
@@ -546,12 +567,9 @@ R56 each answer is described unguarded [must go red: U34]: VERIFIED (2 red)
     response validation never throws, whatever it is handed › U34 validateSystemOneBody fails a circular or bigint body instead of throwing
 R57 each model card is described unguarded [must go red: U34]: VERIFIED (1 red)
     response validation never throws, whatever it is handed › U34 describeModelList names a circular entry instead of throwing
-R58 an EntryType is not checked as JSON [must go red: U31]: VERIFIED (7 red)
-    a JavaScript caller’s malformed input is a classified Result, never a throw › U28 measureSystemOneInput fails invalid-request without quoting the input
+R58 an EntryType is not checked as JSON [must go red: U31]: VERIFIED (4 red)
     a JavaScript caller’s malformed input is a classified Result, never a throw › U29 askSystemOne checks the request before reading any field, and every failure has a reason
     a JavaScript caller’s malformed input is a classified Result, never a throw › U32 the factories are plain constructors: a malformed factory-built question is refused at askSystemOne
-    a value no converter can describe — a cycle, a bigint — is a classified failure, never a throw › U30 askSystemOne refuses a cycle anywhere in the request, with nothing sent
-    a value no converter can describe — a cycle, a bigint — is a classified failure, never a throw › U30 measureSystemOneInput refuses a circular state or question without throwing
     an EntryType is JSON: text, a JSON object or array, or null, all the way down › U31 a state, instruction or criterion that is not JSON is refused, with nothing sent
     the input bound › U27 malformed input is invalid-request, resolved, with no request made
 R59 a bare number or boolean is accepted as an EntryType [must go red: U31]: VERIFIED (3 red)
@@ -596,10 +614,19 @@ R74 the reserved-key probe is not guarded, so a throwing Proxy trap throws [must
     response validation is total over a Proxy whose traps throw › U36 validateSystemOneBody fails a throwing answer set or distribution instead of throwing
 R75 any string is accepted as a logger level [must go red: U37]: VERIFIED (1 red)
     a logger’s level is one ts-utils publishes › U37 a level ts-utils does not publish is invalid-request
+R76 a nested __proto__ in a JSON entry is not refused [must go red: U38]: VERIFIED (1 red)
+    a reserved __proto__ key is refused at any depth of a JSON entry › U38 a nested __proto__ in the state, an instruction or any criterion is invalid-request, with nothing sent
+R77 the reserved-key walk does not descend into arrays [must go red: U38]: VERIFIED (1 red)
+    a reserved __proto__ key is refused at any depth of a JSON entry › U38 a nested __proto__ in the state, an instruction or any criterion is invalid-request, with nothing sent
+R78 the reserved-key walk does not descend into objects [must go red: U38]: VERIFIED (1 red)
+    a reserved __proto__ key is refused at any depth of a JSON entry › U38 a nested __proto__ in the state, an instruction or any criterion is invalid-request, with nothing sent
+R79 the JSON converter reads the caller's value again rather than the walk's snapshot [must go red: U35]: VERIFIED (1 red)
+    every entry point reads the caller’s input once, and uses only what it converted › U35 measureSystemOneInput measures one read of the state and questions
 H1 an unknown option is accepted [must go red: S1]: VERIFIED (1 red)
     S1 an unknown or repeated option is refused before any output, naming the flag but not its value
-H2 a noul's criteria are not checked [must go red: S2]: VERIFIED (1 red)
+H2 a noul's criteria are not checked [must go red: S2]: VERIFIED (2 red)
     S2 --check validates a noul's criteria as the SDK and askSystemOne accept them
+    S9 --check refuses a __proto__ key nested anywhere in the state, an instruction or a criterion
 H3 the unknown-model probe records no status [must go red: S3]: VERIFIED (1 red)
     S3 the probe records how an unknown model is refused, and nothing the server sent
 H4 a model-listing failure does not fail the probe [must go red: S4]: VERIFIED (1 red)
@@ -610,21 +637,30 @@ H6 --check may be given twice [must go red: S6]: VERIFIED (1 red)
     S6 --check given twice is refused
 H7 questions given as a list are accepted [must go red: S7]: VERIFIED (1 red)
     S7 questions given as a list are refused
-H8 a noul criterion must be text [must go red: S2]: VERIFIED (2 red)
+H8 a noul criterion must be text [must go red: S2]: VERIFIED (3 red)
     S2 --check validates a noul's criteria as the SDK and askSystemOne accept them
     S8 --check validates the state, instructions, choice descriptions and score levels as askSystemOne does
-H9 the state is not checked [must go red: S8]: VERIFIED (1 red)
+    S9 --check refuses a __proto__ key nested anywhere in the state, an instruction or a criterion
+H9 the state is not checked [must go red: S8]: VERIFIED (2 red)
     S8 --check validates the state, instructions, choice descriptions and score levels as askSystemOne does
-H10 instructions are not checked [must go red: S8]: VERIFIED (1 red)
+    S9 --check refuses a __proto__ key nested anywhere in the state, an instruction or a criterion
+H10 instructions are not checked [must go red: S8]: VERIFIED (2 red)
     S8 --check validates the state, instructions, choice descriptions and score levels as askSystemOne does
-H11 choice descriptions and labels are not checked [must go red: S8]: VERIFIED (1 red)
+    S9 --check refuses a __proto__ key nested anywhere in the state, an instruction or a criterion
+H11 choice descriptions and labels are not checked [must go red: S8]: VERIFIED (2 red)
     S8 --check validates the state, instructions, choice descriptions and score levels as askSystemOne does
-H12 score levels are not checked [must go red: S8]: VERIFIED (1 red)
+    S9 --check refuses a __proto__ key nested anywhere in the state, an instruction or a criterion
+H12 score levels are not checked [must go red: S8]: VERIFIED (2 red)
     S8 --check validates the state, instructions, choice descriptions and score levels as askSystemOne does
+    S9 --check refuses a __proto__ key nested anywhere in the state, an instruction or a criterion
 H13 a __proto__ question id is accepted [must go red: S8]: VERIFIED (1 red)
     S8 --check validates the state, instructions, choice descriptions and score levels as askSystemOne does
+H14 a nested __proto__ key is not checked [must go red: S9]: VERIFIED (1 red)
+    S9 --check refuses a __proto__ key nested anywhere in the state, an instruction or a criterion
+H15 the nested __proto__ check does not descend into arrays [must go red: S9]: VERIFIED (1 red)
+    S9 --check refuses a __proto__ key nested anywhere in the state, an instruction or a criterion
 
-91 rows; 0 not VERIFIED
+97 rows; 0 not VERIFIED
 ```
 
 ## `code-reviewer` findings and disposition
@@ -1155,6 +1191,58 @@ are fixed.
 - R50's `rejectedFields` now serves only the 2xx-body description, so it must turn U34 red, not U30.
   The gates' per-field guard is the new `named` helper, covered by **R63**.
 
+## Copilot round 6 on fgv#721 (against `12e41c3f`) and disposition
+
+Three threads; all fixed.
+
+**1. A nested reserved key vanished from what was sent** (thread r4214989996).
+- **Repro** (the orchestrator's, confirmed at `12e41c3f`): `askSystemOne` with the state
+  `{"a":{"__proto__":{"x":1},"b":2}}` sent `{"state":{"a":{"b":2}}}`. `@fgv/ts-json-base`'s
+  `jsonObject` copies keys with `obj[name] = v`. A nested `__proto__` therefore became the copy's
+  prototype, or was ignored when its value was a primitive, and so disappeared from serialization.
+- **Fixed** (deviation 32). The repro now gives `invalid-request: invalid [state] in the request`,
+  and nothing is sent.
+- **Request side:**
+  - Covered: the state, every instruction, and every criterion value (choice descriptions, score
+    levels and noul criteria).
+  - The walk runs inside `entry`, so it is under the existing `safeConvert` guard.
+  - **U38:**
+    - State keys two levels down (with an object value and with a primitive value), inside an array,
+      and four levels down are each `invalid-request`, at `askSystemOne` and at the measure.
+    - A key two levels into an instruction, a choice description, a score level (inside an array)
+      or a noul criterion fails as `[q] are not well-formed …`.
+    - In every case nothing is sent.
+    - Nested JSON without the key, including a *value* `'__proto__'`, is sent intact.
+- **Response side, swept:**
+  - No received value goes through `jsonValue`.
+  - Every record converted below the top level goes through `ownRecordOf`: the answer set, each
+    probability distribution and each legend, at every depth.
+  - The answer, usage and model-card objects are converted field by field. An undeclared key,
+    `__proto__` included, is dropped by construction, as `confidence` is.
+  - So no response-side change was needed. U38 adds a reserved key whose value is an object, three
+    levels down in a distribution: it is `invalid-response`. U33 already covered a primitive value.
+- **Against the `12e41c3f` source,** only U38's request-side test fails: the nested key is accepted
+  and the state is sent, with `detail` undefined. The response-side and "sent intact" tests pass
+  there, which confirms the sweep above.
+- **`--check` mirrors the rule:** an own `__proto__` key at any depth of the state, an instruction
+  or a criterion value exits 3. Self-test **S9** has seven cases: the accepted one, the state two
+  levels down, the state inside an array, an instruction, a noul criterion, a choice description
+  and a score level. It goes red without the harness change.
+- **Rows:**
+  - **R76** turns the key check off.
+  - **R77** stops the walk descending into arrays.
+  - **R78** stops it descending into objects.
+  - **R79** has the JSON converter read the caller's value again instead of the walk's snapshot,
+    and U35 goes red.
+  - **H14** and **H15** cover the harness.
+  - **R58** was re-pointed to the new line.
+- **Upstream:** `jsonObject` is added to the `recordOf` note in deviation 27; same flaw, same fix.
+
+**2. Missing separators** (threads r4214990079 and r4214990123).
+- `.ai/conventions/result-integration-boundary.md` line 19: a comma after
+  `` `ts-extras-mcp` (`@modelcontextprotocol/sdk`) ``.
+- `docs/WORKSTREAMS.md` line 463: a comma after `` `.ai/tasks/active/system-one-design-antagonist/` ``.
+
 ## Gates
 
 Re-run on 2026-10-04 after the gate-time fixes, at `0584f819` (source as of the matrix commit plus
@@ -1207,6 +1295,10 @@ line is the symlink notice; no NUL padding.
 origin/integration/system-one-decisions` exit 0. The repo-wide `rush test` at `38136ed5`: exit 0,
 `SUCCESS: 37 operations`, 8 m 42 s; error grep **0**; the one `warning` line is the symlink notice;
 no NUL padding.
+
+**Copilot round 6 (2026-10-08):** at `4edb198f`, in the package: fixlint, build, lint and test exit
+0 with 0 warnings; 97 tests, 100%, no `c8 ignore`. Self-test 9 of 9. Revert matrix 97/97 VERIFIED.
+The repo-wide `rush test` result follows.
 
 ## What the brief or the plan got wrong
 

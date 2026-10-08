@@ -2,7 +2,7 @@
 
 **Status:** **Implemented 2026-10-03 (Phase C, `system-one-impl`)** as `@fgv/ts-extras-system-one`; the
 deviations are in [`result.md`](../../../.ai/tasks/active/system-one-impl/result.md). The revert matrix
-ran 91/91 VERIFIED. **Live legs L1–L5: not run live**; the cluster close is held for a recorded L1
+ran 97/97 VERIFIED. **Live legs L1–L5: not run live**; the cluster close is held for a recorded L1
 (decision U2). Originally the Phase B (triage) output of the `system-one-decisions`
 design-triage-implement stream, 2026-10-03; Phase C was held to this document. Two decisions
 are the user's (§ 1.2); neither changes the package surface, so neither blocks commissioning Phase C.

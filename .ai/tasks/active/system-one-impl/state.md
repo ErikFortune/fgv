@@ -107,3 +107,15 @@ None blocking.
   the `oneOf`s were gone.
 - Revert matrix: R63–R75 are new; R32, R34, R41, R42, R46, R50, R51 and R60–R62 were re-pointed. 94
   tests at 100%; self-test 8/8.
+
+## Copilot round 6 on fgv#721 (against `12e41c3f`)
+
+- Three threads, all fixed.
+  - A JSON entry with an own `__proto__` key at any depth is refused (`withoutReservedKeys`, inside
+    `entry`, building the snapshot that `jsonValue` then converts), and `--check` mirrors it.
+  - The response side was swept and needed no change: it uses no `jsonValue`, and every nested
+    record goes through `ownRecordOf`.
+  - Two missing separators in the docs were added.
+- `jsonObject` is added to the upstream note next to `recordOf`.
+- New tests: U38 (both sides) and self-test S9. Revert rows R76–R79, H14 and H15 are new; R58 was
+  re-pointed. 97 tests at 100%; self-test 9/9.
