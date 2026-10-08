@@ -91,3 +91,19 @@ None blocking.
   decision.
 - Revert matrix: R47–R62 and H9–H13 are new; R24, R34 and R46 were re-pointed. Self-test 8/8; 86
   tests at 100%.
+
+## Copilot round 5 on fgv#721 (against `07ddadd7`)
+
+- Four inline threads, all fixed.
+  - Every gate returns its converted value, and the entry points use only that value, so the
+    caller's input is read once. Questions are snapshotted before conversion, and the two `oneOf`
+    shape choices are replaced, since a failed alternative read the caller's getters first.
+  - The reserved-key probe is a `Result`, so a throwing Proxy trap is classified.
+  - A logger's level is converted with `Logging.reporterLogLevel`.
+- The entry-point sweep, with the value each entry point uses afterwards, is in `result.md`.
+- New tests U35–U37, with U36's response side in `internals.test.ts`; U10 now expects the gate's
+  message for a one-level score (deviation 29).
+- A `snapshotThen` helper was written and then removed, because no revert of it could go red once
+  the `oneOf`s were gone.
+- Revert matrix: R63–R75 are new; R32, R34, R41, R42, R46, R50, R51 and R60–R62 were re-pointed. 94
+  tests at 100%; self-test 8/8.

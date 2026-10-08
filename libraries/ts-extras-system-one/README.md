@@ -180,6 +180,11 @@ WAN round trip, and `timingHeaders` is what lets you separate server time from n
   to the SDK, so none of `TYPESAFE_BASE_URL`, `TYPESAFE_DEFAULT_MODEL`, `TYPESAFE_API_KEY` or
   `TYPESAFE_LOG_LEVEL` can redirect or reconfigure a deployed client. There is no per-call URL.
   Model ids differ by backend (`clm-latest`, `clm-v0.1`, `jev-latest`), so `model` has no default.
+- **Input is read once.** Each entry point converts what it is given into a new value before using
+  it, and uses only that value afterwards, so a getter or a Proxy cannot make what is checked differ
+  from what is sent or measured. `retry` is copied field by field (a field the SDK does not declare
+  is dropped), and a logger's `logLevel` must be one of ts-utils' `ReporterLogLevel` values; its
+  methods are read once and called on the logger itself.
 - **A keyless local server.** The SDK accepts an empty key and sends `Authorization: Bearer `.
   Pass `apiKey: ''` to talk to a `clm-serve` started without `CLM_API_KEY`. A server that does have a
   key answers 401, which is `unauthorized`.

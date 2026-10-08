@@ -6,18 +6,19 @@ A new package, `@fgv/ts-extras-system-one` (`libraries/ts-extras-system-one`), s
 [`implementation-plan.md`](../../../docs/design/system-one-decisions/implementation-plan.md).
 
 - Source is in `src/`: `types.ts`, `measure.ts`, `logging.ts`, `classify.ts`, `shapes.ts`,
-  `validate.ts` and `client.ts`, re-exported from `index.ts`. The largest is `validate.ts`, at 389
-  lines.
+  `validate.ts` and `client.ts`, re-exported from `index.ts`. The largest are `shapes.ts` and
+  `validate.ts`, at 390 lines each.
 - Exports:
   - `createSystemOneClient`, `askSystemOne`, `listSystemOneModels` and `measureSystemOneInput`;
   - the SDK's own `noul`, `choice` and `score`, plus its question, answer and `ModelCard` types,
     re-exported;
   - the plan's types, plus the additions listed under Deviations.
 - Tests:
-  - 86 unit tests, all running the real SDK 0.6.0 through the `fetch` parameter;
+  - 94 unit tests, all running the real SDK 0.6.0 through the `fetch` parameter;
   - no module mocking;
-  - every plan id U1–U26 appears in a test title, plus U27–U34 (malformed input, cycles, JSON entries,
-    reserved keys and the factories, added at the review rounds);
+  - every plan id U1–U26 appears in a test title, plus U27–U37 (malformed input, cycles, JSON entries,
+    reserved keys, the factories, read-once input, throwing Proxies and the logger level, added at
+    the review rounds);
   - 100% coverage on statements, branches, functions and lines, with no `c8 ignore`.
 - `perf/mutationMatrix.js` (§ 5.2):
   - it refuses to run without `--pkg`, and refuses a `--pkg` that is the package itself;
@@ -223,6 +224,29 @@ A new package, `@fgv/ts-extras-system-one` (`libraries/ts-extras-system-one`), s
 
 Only `perf/systemOneLive.js --check` was run, for both modes: exit 0. Under decision U2, the cluster
 close waits for a recorded L1.
+
+28. **The caller's input is read once** (Copilot round 5). Every gate in `shapes.ts` returns the
+    value it converted, and every entry point uses only that value afterwards. A getter or a Proxy
+    therefore cannot answer the check one way and the send another. A caller's object is
+    snapshotted before its fields are converted, and every converted value is a new object, apart
+    from the pass-throughs listed in round 5, item 1.
+    - A choice between two shapes (`inputLimit`, a noul's `criteria`) is no longer a `oneOf`. The
+      failed alternative formats the value it was given, which reads the caller's getters before
+      the matching alternative reads them again.
+    - The SDK itself reads each retry field twice (`=== void 0`, then its range check), so `retry`
+      is copied too.
+29. **A `score` question with one level is refused by the gate**, not by the SDK. The converted
+    levels are typed as the SDK's own at-least-two tuple, so a converted question needs no cast to
+    be sent. U10 now expects `invalid-request: [s] are not well-formed noul, choice or score
+    questions` where it expected the SDK's `Score question "s" has 1 criteria`. It is still
+    `invalid-request` with nothing sent.
+30. **`retry` is converted, not passed through.** Only the fields `RetryPolicy` declares are copied:
+    numbers, booleans, and `httpStatuses` as a new `Set`. A field of the wrong type is now
+    `invalid [retry]` from the gate rather than the SDK's message. An undeclared field, which the SDK
+    ignored, is dropped. The SDK still checks the ranges.
+31. **A logger's `logLevel` must be a `Logging.ReporterLogLevel`**, converted with ts-utils' published
+    `Logging.reporterLogLevel`. `'debug'`, `'verbose'`, `'INFO'` and `''` are `invalid [logger]`.
+    Before, any string was accepted and treated as `info`.
 
 ## Revert matrix
 
@@ -991,6 +1015,79 @@ ask REJECTED Converting circular structure to JSON
 Map state: undefined undefined calls 1
 __proto__ probs: ACCEPTED calls 2
 ```
+
+## Copilot round 5 on fgv#721 (against `07ddadd7`) and disposition
+
+Four inline threads, which the orchestrator confirmed by reading the code at `07ddadd7`. All four
+are fixed.
+
+**1–2. The caller's input was read again after its check** (threads r4213669430 and r4213669461).
+- Before: the gates only reported validity, and `createSystemOneClient`, `askSystemOne` and
+  `measureSystemOneInput` then read the caller's objects again. A getter or a Proxy could pass the
+  check and then return something else, or throw, on the second read.
+- **Fixed** (deviation 28). Each gate returns a converted copy, and the entry points use only that
+  copy.
+- **U35:** for each entry point, every getter answers valid data on its first read and throws on
+  any later read. Each entry point succeeds without throwing, and what was sent or measured is the
+  first-read value:
+  - the URL, the bearer key and the model id that went out;
+  - the exact JSON body;
+  - the measure, equal to that of the plain first-read values.
+
+  Rows **R64–R73**, one per place the converted value is used.
+- Before the fix, U35 failed as follows:
+  - the client: the SDK's double read of `retry.maxRetries` threw inside its constructor, which
+    became `invalid-request`;
+  - the ask: `checkInputLimit` re-read `request.state` and the promise rejected;
+  - the measure: `measureChecked` re-read the getters and threw.
+
+  Reverting any one use site reproduces its failure.
+
+**Entry-point sweep: every exported entry point, and the value it uses after its check**
+
+| export | the caller's input | read | what is used afterwards |
+|---|---|---|---|
+| `createSystemOneClient(params)` | `params` | once, as a snapshot of its own enumerable fields | `ICheckedClientParams`. `baseUrl`, `model` and `apiKey` are strings; `timeoutMs` is a number. `retry` is a new object of `RetryPolicy`'s declared fields, with `httpStatuses` a new `Set`. `logger` is a new `{ logLevel, detail, info, warn, error }`: the level converted, and each method read once and bound to the caller's logger. `fetch` is the caller's function, **passed through**: it is called, never read, and calling it is its purpose. |
+| `askSystemOne(client, request)` | `client` | never: only a `WeakMap` key | the binding stored when the client was created |
+| | `request` | once, as a snapshot | `ICheckedRequest`. `state` is a JSON copy. `questions` is a new object of new questions: each is snapshotted, then converted, with instructions and criteria values as JSON copies, choice criteria a new record, score levels a new tuple, and noul criteria a new object or `null`. `inputLimit` is the snapshot's value, converted once by the bound into `'unchecked'` or a new `{ maxChars }`. `signal` is the caller's `AbortSignal`, **passed through**: it is the caller's cancellation channel, which the SDK must observe changing, and this package never reads it as data. The same converted questions are bounded, sent and used to validate the answers. |
+| `listSystemOneModels(client)` | `client` | never: only a `WeakMap` key | the binding |
+| `measureSystemOneInput(state, questions)` | `state`, `questions` | once each | the same conversions as the request's `state` and `questions`; the measure is of the copies |
+| `noul`, `choice`, `score` | their arguments | — | the SDK's own constructors, unchanged (deviation 24) |
+| `allSystemOneFailureReasons` | — | — | a constant |
+
+**Pass-throughs, and why each value is never read again:**
+- The snapshot (`callerRecord`, over `anyValue`) holds the caller's values. Each one a gate uses is
+  then converted, and the rest are never read.
+- `signal` and `fetch`: see the table.
+- The logger's methods are bound functions. They hold the caller's logger only as `this`, and are
+  called, never read.
+
+**3. The reserved-key probe sat outside the throw guard** (thread r4213669487).
+- Before: `checkQuestions` probed the questions object for an own `__proto__` before its
+  `safeConvert`, so a Proxy whose `getOwnPropertyDescriptor` trap threw made `askSystemOne` reject.
+  The answer-set description had the same unguarded probe.
+- **Fixed:** the probe is now `reservedKeyIn`, which returns a `Result` from inside `captureResult`.
+  `ownRecordOf` and both former call sites go through it.
+- **U36** builds Proxies whose `getOwnPropertyDescriptor`, `ownKeys` or `get` trap throws, for the
+  client parameters, the request, the questions object, a question and a choice's criteria.
+  - Request side: each is `invalid-request`, nothing is sent, and the trap's planted secret appears
+    in no message. The questions object is also checked at the measure.
+  - Response side: a throwing answer set or distribution fails `validateSystemOneBody` without
+    throwing. `askSystemOne` reports that as `invalid-response`. A parsed body cannot be a Proxy,
+    so this is pinned through the internal function.
+- Row **R74**.
+
+**4. A logger's level was any string** (thread r4213669510).
+- **Fixed** (deviation 31). The level is now converted with `Logging.reporterLogLevel`, the
+  converter ts-utils publishes, so Copilot's suggested name is the real one.
+- **U37:** `'debug'`, `'verbose'`, `'INFO'` and `''` are `invalid-request: invalid [logger] in the
+  client parameters`, and all six published levels are accepted.
+- Row **R75**.
+
+**Matrix rows re-pointed after the refactor:**
+- R32, R34, R41, R42, R46, R51 and R60–R62 had their patterns moved.
+- R50's `rejectedFields` now serves only the 2xx-body description, so it must turn U34 red, not U30.
+  The gates' per-field guard is the new `named` helper, covered by **R63**.
 
 ## Gates
 

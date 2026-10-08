@@ -286,8 +286,8 @@ const MUTATIONS = [
     'R32 elapsedMs does not cover retries',
     ['U20'],
     CLIENT,
-    'answerFrom(request.questions, received, Date.now() - started)',
-    'answerFrom(request.questions, received, Date.now() - Date.now())'
+    'answerFrom<Q>(questions, received, Date.now() - started)',
+    'answerFrom<Q>(questions, received, Date.now() - Date.now())'
   ),
   m(
     'R33 the models shape error is invalid-request',
@@ -301,7 +301,7 @@ const MUTATIONS = [
     ['U28', 'U30', 'U31'],
     SHAPES,
     '  return safeConvert(entry, state)\n',
-    '  return succeed(state)\n'
+    '  return succeed(state as EntryType)\n'
   ),
   m(
     "R35 an APIError's body-derived message reaches the failure message",
@@ -363,15 +363,15 @@ const MUTATIONS = [
     'R41 createSystemOneClient reads its parameters unconverted',
     ['U28'],
     CLIENT,
-    'return checkClientParams(params).onSuccess(() => clientFrom(params));',
+    'return checkClientParams(params).onSuccess((checked) => clientFrom(checked));',
     'return clientFrom(params);'
   ),
   m(
     "R42 the questions are not checked before the input limit, so 'unchecked' mode sends a malformed question",
     ['U27b'],
     SHAPES,
-    '        ? checkQuestions(record.questions)\n',
-    '        ? succeed(true as const)\n'
+    'checkQuestions(record.questions).onSuccess((questions) =>',
+    'succeed(record.questions as Questions).onSuccess((questions) =>'
   ),
   m(
     'R43 a malformed model list is quoted',
@@ -386,14 +386,14 @@ const MUTATIONS = [
     ['U29'],
     CLIENT,
     '  return checkRequest(request)\n',
-    '  return captureResult(() => true)\n'
+    '  return succeed<ICheckedRequest>(request)\n'
   ),
   m(
     'R46 measureSystemOneInput measures questions of the wrong shape',
     ['U28'],
     MEASURE,
     'return checkInput(state, questions).onSuccess(',
-    'return succeed(true).onSuccess('
+    'return succeed({ state, questions }).onSuccess('
   ),
   m(
     'R47 a conversion that throws is not caught',
@@ -417,8 +417,8 @@ const MUTATIONS = [
     'return callerRecord.convert(params)'
   ),
   m(
-    'R50 a field is converted unguarded, so a circular or bigint field throws',
-    ['U30'],
+    'R50 a body field is described unguarded, so a circular or bigint field throws',
+    ['U34'],
     SHAPES,
     'safeConvert(fields[field], record[field])',
     'fields[field].convert(record[field])'
@@ -427,8 +427,8 @@ const MUTATIONS = [
     'R51 a question is converted unguarded, so a circular question throws',
     ['U30'],
     SHAPES,
-    'safeConvert(question, record[id])',
-    'question.convert(record[id])'
+    '.onSuccess((snapshot) => safeConvert(question, snapshot))',
+    '.onSuccess((snapshot) => question.convert(snapshot))'
   ),
   m(
     'R52 the input limit is converted unguarded, so a circular limit throws',
@@ -490,22 +490,113 @@ const MUTATIONS = [
     'R60 a received or request record may carry an own __proto__ key',
     ['U33'],
     SHAPES,
-    'hasReservedKey(from) ? fail(\'"__proto__" is a reserved key\') : record.convert(from)',
-    'record.convert(from)'
+    'reserved ? fail(\'"__proto__" is a reserved key\')',
+    'reserved === undefined ? fail(\'"__proto__" is a reserved key\')'
   ),
   m(
     'R61 a __proto__ question id is not named as reserved',
     ['U33'],
     SHAPES,
-    '  if (hasReservedKey(questions)) {\n',
-    "  if (questions === 'never') {\n"
+    "          ? fail('invalid-request: [__proto__] is a reserved key and cannot be a question id')",
+    '          ? fail(questionsShape)'
   ),
   m(
     'R62 a reserved answer id is not counted',
     ['U33'],
     VALIDATE,
-    'const reserved = hasReservedKey(answers) ? 1 : 0;',
+    'const reserved = reservedKeyIn(answers).orDefault(false) ? 1 : 0;',
     'const reserved = 0;'
+  ),
+  m(
+    "R63 a request's fields are converted unguarded, so a circular field throws",
+    ['U30'],
+    SHAPES,
+    'return safeConvert(converter, from).withErrorFormat(() => name);',
+    'return converter.convert(from).withErrorFormat(() => name);'
+  ),
+  m(
+    "R64 createSystemOneClient builds the client from the caller's parameters after the gate",
+    ['U35'],
+    CLIENT,
+    '.onSuccess((checked) => clientFrom(checked));',
+    '.onSuccess(() => clientFrom(params));'
+  ),
+  m(
+    "R65 askSystemOne bounds the caller's request rather than the converted one",
+    ['U35'],
+    CLIENT,
+    'checkInputLimit(checked.state, checked.questions, checked.inputLimit)',
+    'checkInputLimit(request.state, request.questions, request.inputLimit)'
+  ),
+  m(
+    "R66 askSystemOne sends the caller's request rather than the converted one",
+    ['U35'],
+    CLIENT,
+    '.onSuccess((binding) => startCall(binding, checked))',
+    '.onSuccess((binding) => startCall(binding, request))'
+  ),
+  m(
+    "R67 the answers are validated against the caller's questions rather than those sent",
+    ['U35'],
+    CLIENT,
+    'answerFrom<Q>(questions, received, Date.now() - started)',
+    'answerFrom<Q>(request.questions, received, Date.now() - started)'
+  ),
+  m(
+    "R68 measureSystemOneInput measures the caller's input rather than the converted one",
+    ['U35'],
+    MEASURE,
+    'succeed(measureChecked(checked.state, checked.questions))',
+    'succeed(measureChecked(state, questions))'
+  ),
+  m(
+    "R69 a question is converted from the caller's object, so its type is read twice",
+    ['U35'],
+    SHAPES,
+    '.onSuccess((snapshot) => safeConvert(question, snapshot))',
+    '.onSuccess(() => safeConvert(question, from))'
+  ),
+  m(
+    "R70 the input limit is a oneOf, whose failed alternative reads the caller's object first",
+    ['U35'],
+    MEASURE,
+    "from === 'unchecked' ? succeed('unchecked') : maxCharsShape.convert(from)",
+    "Converters.oneOf<SystemOneInputLimit>([Converters.literal('unchecked'), maxCharsShape]).convert(from)"
+  ),
+  m(
+    "R71 a noul's criteria are a oneOf, whose failed alternative reads the caller's object first",
+    ['U35'],
+    SHAPES,
+    '(from === null ? succeed(null) : noulOutcomes.convert(from))',
+    'Converters.oneOf<NoulCriteria>([Converters.literal(null), noulOutcomes]).convert(from)'
+  ),
+  m(
+    "R72 the logger's methods are not bound to the caller's logger",
+    ['U23', 'U35'],
+    SHAPES,
+    'info: fields.info.bind(from),',
+    'info: fields.info,'
+  ),
+  m(
+    "R73 retry overrides are passed through, so the SDK reads the caller's object",
+    ['U35'],
+    SHAPES,
+    "retry: () => named('retry', retryShape.optional(), record.retry),",
+    'retry: () => succeed(record.retry as Partial<RetryPolicy> | undefined),'
+  ),
+  m(
+    'R74 the reserved-key probe is not guarded, so a throwing Proxy trap throws',
+    ['U36'],
+    SHAPES,
+    "  return captureResult(\n    () => typeof from === 'object'",
+    "  return succeed(\n    typeof from === 'object'"
+  ),
+  m(
+    'R75 any string is accepted as a logger level',
+    ['U37'],
+    SHAPES,
+    'logLevel: Logging.reporterLogLevel,',
+    'logLevel: Converters.string as unknown as Converter<Logging.ReporterLogLevel>,'
   ),
   harness(
     'H1 an unknown option is accepted',

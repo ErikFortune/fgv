@@ -60,7 +60,8 @@ export interface ICreateSystemOneClientParams {
   /**
    * Logger for the SDK's request summaries. With no logger, the SDK logs nothing. This package
    * never sets the SDK's level to `debug`, at which the SDK logs request bodies. The SDK's level is
-   * taken from `logger.logLevel` once, when the client is created.
+   * taken from `logger.logLevel` once, when the client is created, and must be one of ts-utils'
+   * `ReporterLogLevel` values.
    */
   readonly logger?: Logging.ILogger;
   /** A `fetch` implementation, in place of the global `fetch`. */
