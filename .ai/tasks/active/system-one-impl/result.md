@@ -1298,7 +1298,8 @@ no NUL padding.
 
 **Copilot round 6 (2026-10-08):** at `4edb198f`, in the package: fixlint, build, lint and test exit
 0 with 0 warnings; 97 tests, 100%, no `c8 ignore`. Self-test 9 of 9. Revert matrix 97/97 VERIFIED.
-The repo-wide `rush test` result follows.
+`rush change --verify` exits 0. The repo-wide `rush test` at `5cb02adb`: exit 0, `SUCCESS: 37
+operations`, 9 m 46 s; error grep **0**; the one `warning` line is the symlink notice; no NUL padding.
 
 ## What the brief or the plan got wrong
 
