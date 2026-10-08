@@ -1,7 +1,10 @@
 # System-1 decisions — implementation plan
 
-**Status:** Phase B (triage) output of the `system-one-decisions` design-triage-implement stream,
-2026-10-03. **Phase C is held to this document.** Nothing here is implemented or run. Two decisions
+**Status:** **Implemented 2026-10-03 (Phase C, `system-one-impl`)** as `@fgv/ts-extras-system-one`; the
+deviations are in [`result.md`](../../../.ai/tasks/active/system-one-impl/result.md). The revert matrix
+ran 97/97 VERIFIED. **Live legs L1–L5: not run live**; the cluster close is held for a recorded L1
+(decision U2). Originally the Phase B (triage) output of the `system-one-decisions`
+design-triage-implement stream, 2026-10-03; Phase C was held to this document. Two decisions
 are the user's (§ 1.2); neither changes the package surface, so neither blocks commissioning Phase C.
 **Design:** [`design.md`](design.md). Facts are cited by their E-number there; E28–E35 were added by
 this phase. **Base:** `integration/system-one-decisions` @ `72f5f0bb`, plus the Phase B brief
@@ -361,7 +364,7 @@ item 2). `perf/systemOneLive.js probe` (§ 8) produces the record.
 
 | id | leg | what it establishes | design |
 |---|---|---|---|
-| L1 | Remote development server (Jev, or openjev/Codiv), over `https` with a key | wire compatibility against a real server: request accepted, § 3.6 passes on a real body, `requestId` and timing headers as sent, the status for an unknown model (OQ-6). Which remote was used is recorded (OQ-11) | § 10.2, OQ-6 |
+| L1 | Remote development server (Jev, or openjev/Codiv), over `https` with a key | wire compatibility against a real server: request accepted, § 3.6 passes on a real body, `requestId` and timing headers as sent, the status for an unknown model (OQ-6), from `probe`'s deliberate unknown-model ask (§ 8). Which remote was used is recorded (OQ-11) | § 10.2, OQ-6 |
 | L2 | `clm-serve` on loopback over vLLM bf16, on the Olares One | the deployed wiring, CLM's 422 and the keyless placeholder key; also OQ-10's Olares items (Blackwell build, memory budget), recorded as found, and OQ-8's issue #3 reproduction (one `score` question across two contrasting states) | § 10.2, OQ-8, OQ-10 |
 | L3 | With L2: E33's windows replayed through the encoder's `/tokenize` (E35) | the OQ-4 measurement against the real tokenizer. A `GET /tokenizer_info` with the flag would also close E16b | OQ-4, E16b |
 | L4 | Each Ollama setup actually deployed: **first** one `probe` round trip. A refusal is recorded as a refusal | E27a. Kept, gated on this probe (decision U1, option A) | § 10.2, OQ-12 |
@@ -393,8 +396,14 @@ This is D10, decided. It is not a jest test and not published (`perf/` is outsid
 requires a built `lib/`, and uses only the package's public exports.
 
 - **`probe --url <u> --model <m> [--key-env <VAR>] [--max-chars <n>]`.** One `askSystemOne` with a
-  fixed three-question set (one each of `noul`, `choice` and `score`), plus `listSystemOneModels`. It
-  prints § 6's record as JSON. It exits 0 on success, and 2 on a classified failure, with the reason.
+  fixed three-question set (one each of `noul`, `choice` and `score`), then `listSystemOneModels`,
+  then one `askSystemOne` with a model id that cannot exist (`fgv-probe-unknown-model-` plus a random
+  suffix), recorded as `unknownModel` with its classified reason and HTTP status and nothing the
+  server sent: L1's "status for an unknown model" (OQ-6). The expected reason is `invalid-request`;
+  that ask is an observation and never fails the probe, and a success is recorded as surprising. It
+  prints § 6's record as JSON. It exits 0 when the ask and the listing both succeed, and 2 when
+  either fails, with `failedStep`, the reason and the package's message; when both fail, the ask's
+  failure is the one reported. *(Phase C, Copilot round 2.)*
 - **`parity --a <url,model> --b <url,model> --questions <file> --min-top-agreement <x>
   --max-mean-abs-diff <y>`.**
   - It **refuses to start unless both thresholds are given**, and prints them first.

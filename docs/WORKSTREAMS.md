@@ -455,11 +455,14 @@ So **R2 is not the safe, independent one-liner §4 called it** — it converts a
 
 ### `system-one-decisions` 🔵
 
-**Status:** 🔵 **Phase B complete 2026-10-03; Phase C ready to commission.** Phase A (design) completed
+**Status:** 🔵 **Phase C implemented 2026-10-03** (`@fgv/ts-extras-system-one`, branch
+`system-one-phase-c`, onto `integration/system-one-decisions`); **cluster close held for a recorded L1
+live round trip** (decision U2; L1–L5 not run live). Phase B completed 2026-10-03. Phase A (design) completed
 2026-10-01. Design-triage-implement. Every phase lands on `integration/system-one-decisions` (off
 `release` `30713277c`). The orchestrator opens the cluster-close PR to `release` after Phase C.
-**Substrate:** `.ai/tasks/active/system-one-decisions-design/`, `.ai/tasks/active/system-one-design-antagonist/`
-and `.ai/tasks/active/system-one-triage/` (each `{brief.md, state.md, result.md}`).
+**Substrate:** `.ai/tasks/active/system-one-decisions-design/`, `.ai/tasks/active/system-one-design-antagonist/`,
+`.ai/tasks/active/system-one-triage/` and `.ai/tasks/active/system-one-impl/` (each
+`{brief.md, state.md, result.md}`).
 **Design:** `docs/design/system-one-decisions/design.md`
 **Implementation plan (Phase C is held to it):** `docs/design/system-one-decisions/implementation-plan.md`
 **Package surface:** Phases A and B are docs only. **Phase C:** a new `@fgv/ts-extras-system-one`
@@ -503,6 +506,13 @@ quantization are unverified.
   environment (E27a; option A). The cluster close waits on one recorded L1 remote round trip, and
   nothing else (option (a)). Neither changes the package surface.
 - OQ-5, OQ-8 and OQ-10's Olares items stay open: they need egress or hardware.
+
+**Phase C (2026-10-03):** `@fgv/ts-extras-system-one` built as plan § 3 specifies, with deviations
+recorded in `system-one-impl/result.md` (chiefly: a `score` legend is projected from the request's
+rubric). 97 unit tests through the real SDK's `fetch` seam, 100% coverage; revert matrix 97/97
+VERIFIED. The SDK installs through Rush's verifying `rush install`; it bundles for a browser without a
+node-builtins declaration. **Next:** someone with egress and a key runs `perf/systemOneLive.js probe`
+(L1) and appends the record; then the orchestrator runs `/finalize-task` and the cluster close.
 
 ---
 

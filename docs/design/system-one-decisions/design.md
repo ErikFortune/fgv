@@ -17,6 +17,10 @@ gains E28–E35; §7.1 item 5 and §8 carry dated refinements; §11 D7 and D10 a
 held to [`implementation-plan.md`](implementation-plan.md). The triage account, including the
 decisions left to the user, is
 [`.ai/tasks/active/system-one-triage/result.md`](../../../.ai/tasks/active/system-one-triage/result.md).
+**Implemented 2026-10-03** (Phase C, `system-one-impl`) as `@fgv/ts-extras-system-one`, per
+[`implementation-plan.md`](implementation-plan.md); deviations in
+[`.ai/tasks/active/system-one-impl/result.md`](../../../.ai/tasks/active/system-one-impl/result.md).
+**No live leg has run** (L1–L5 "not run live"); the cluster close waits on a recorded L1.
 **Date:** 2026-10-01. **Inspected checkout:** `16ec1622b`, which carries promoted `release` at
 `febf0b2b4`. `ts-agent-tasks` citations were re-read there; Phase A had read them from
 `origin/integration/agent-tasks-v1` at `2a95fbb2`, a branch that no longer exists.
