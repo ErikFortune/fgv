@@ -40,7 +40,7 @@ import type {
   ScoreQuestion,
   ScoreResponse
 } from '@typesafe-ai/sdk';
-import { anyValue, hasReservedKey, jsonRecord, ownRecordOf, rejectedFields, safeConvert } from './shapes';
+import { anyValue, jsonRecord, ownRecordOf, rejectedFields, reservedKeyIn, safeConvert } from './shapes';
 import type { ISystemOneUsage, SystemOneAnswerResult } from './types';
 
 /** How far a distribution's sum may be from 1. */
@@ -248,10 +248,11 @@ function checkAnswer(
  * checked against its own question (an extra id has none, and fails here), so passing this check
  * is what makes the answers the questions' answers, and it narrows them to the type the SDK
  * declares for `Q`. That type is a function of the caller's generic `Q`, which no runtime value can
- * name, so this predicate is the one place the link is asserted.
+ * name, so this predicate is the one place the link is asserted. The questions are the converted
+ * copy of the caller's `Q` that was sent, so they have its ids, types and criteria.
  */
 function isAnswerSetFor<Q extends Questions>(
-  questions: Q,
+  questions: Questions,
   answers: ProjectedAnswers
 ): answers is ProjectedAnswers & SystemOneAnswerResult<Q>['answers'] {
   const questionIds = Object.keys(questions);
@@ -279,7 +280,7 @@ function describeBadAnswers(questions: Questions, answers: unknown): string {
     .orDefault([]);
   const named = bad.filter((id) => Object.keys(questions).includes(id));
   // A reserved `__proto__` id is not an own key of the converted record, so it is counted here.
-  const reserved = hasReservedKey(answers) ? 1 : 0;
+  const reserved = reservedKeyIn(answers).orDefault(false) ? 1 : 0;
   return `answers that are not a noul, choice or score answer: [${named.join(', ')}] and ${
     bad.length - named.length + reserved
   } with no question`;
@@ -321,12 +322,12 @@ export interface IValidatedBody<Q extends Questions> {
 
 /** Assembles the validated body once every answer has been checked. */
 function assemble<Q extends Questions>(
-  questions: Q,
+  questions: Questions,
   model: string,
   reported: ISystemOneUsage,
   answers: ProjectedAnswers
 ): Result<IValidatedBody<Q>> {
-  if (!isAnswerSetFor(questions, answers)) {
+  if (!isAnswerSetFor<Q>(questions, answers)) {
     return fail(describeAnswerSet(questions, answers));
   }
   return succeed({
@@ -344,7 +345,7 @@ function assemble<Q extends Questions>(
  * @internal
  */
 export function validateSystemOneBody<Q extends Questions>(
-  questions: Q,
+  questions: Questions,
   data: unknown
 ): Result<IValidatedBody<Q>> {
   const questionFor = new Map<string, Question>(Object.entries(questions));
@@ -357,7 +358,7 @@ export function validateSystemOneBody<Q extends Questions>(
             (checked): Result<[string, ProjectedAnswer]> => succeed([id, checked])
           )
         )
-      ).onSuccess((entries) => assemble(questions, model, reported, Object.fromEntries(entries)))
+      ).onSuccess((entries) => assemble<Q>(questions, model, reported, Object.fromEntries(entries)))
     );
 }
 

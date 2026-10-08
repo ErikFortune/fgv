@@ -59,11 +59,24 @@ export interface ISdkLogging {
 }
 
 /**
- * Adapts an fgv `ILogger` to the SDK's `Logger`. With no logger, logging is off and the sink
+ * What this package uses of an fgv `ILogger`: its level, and the four methods it forwards to. An
+ * `ILogger` is one.
+ * @internal
+ */
+export interface ISdkLogTarget {
+  readonly logLevel: Logging.ReporterLogLevel;
+  detail(message?: unknown, ...parameters: unknown[]): unknown;
+  info(message?: unknown, ...parameters: unknown[]): unknown;
+  warn(message?: unknown, ...parameters: unknown[]): unknown;
+  error(message?: unknown, ...parameters: unknown[]): unknown;
+}
+
+/**
+ * Adapts an fgv logger to the SDK's `Logger`. With no logger, logging is off and the sink
  * discards.
  * @internal
  */
-export function sdkLogging(logger: Logging.ILogger | undefined): ISdkLogging {
+export function sdkLogging(logger: ISdkLogTarget | undefined): ISdkLogging {
   if (logger === undefined) {
     return { logLevel: 'off', logger: noOpSink };
   }

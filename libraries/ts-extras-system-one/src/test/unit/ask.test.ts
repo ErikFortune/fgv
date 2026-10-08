@@ -76,7 +76,8 @@ describe('askSystemOne', () => {
       questions: { s: oneLevel },
       inputLimit: unchecked
     });
-    expect(single).toFailWith(/invalid-request: Score question "s" has 1 criteria/);
+    // The gate converts a score's levels into the SDK's at-least-two type, so it refuses one level.
+    expect(single).toFailWith(/^invalid-request: \[s\] are not well-formed noul, choice or score questions$/);
     expect(single.detail).toBe('invalid-request');
     expect(calls).toHaveLength(0);
   });

@@ -50,7 +50,13 @@ import type {
   ISystemOneUsage,
   SystemOneFailureReason
 } from './types';
-import { checkClientParams, checkRequest, safeConvert } from './shapes';
+import {
+  checkClientParams,
+  checkRequest,
+  safeConvert,
+  type ICheckedClientParams,
+  type ICheckedRequest
+} from './shapes';
 import { describeModelList, modelCards, validateSystemOneBody } from './validate';
 
 /** What a client stands for: the SDK client and the model it sends. */
@@ -100,11 +106,12 @@ function checkBaseUrl(baseUrl: string): Result<string> {
  * @public
  */
 export function createSystemOneClient(params: ICreateSystemOneClientParams): Result<ISystemOneClient> {
-  return checkClientParams(params).onSuccess(() => clientFrom(params));
+  // The caller's parameters are read once, by the gate; only the converted copy is used after it.
+  return checkClientParams(params).onSuccess((checked) => clientFrom(checked));
 }
 
-/** Creates the client from parameters whose shape has been checked. */
-function clientFrom(params: ICreateSystemOneClientParams): Result<ISystemOneClient> {
+/** Creates the client from converted parameters. */
+function clientFrom(params: ICheckedClientParams): Result<ISystemOneClient> {
   const model = params.model.trim();
   if (model.length === 0) {
     return fail('invalid-request: model must be a non-empty string');
@@ -173,11 +180,11 @@ function metaFor(
 
 /** Validates a 2xx response and builds the answer and its meta. */
 function answerFrom<Q extends Questions>(
-  questions: Q,
-  received: WithResponse<SystemOneResult<Q>>,
+  questions: Questions,
+  received: WithResponse<SystemOneResult<Questions>>,
   elapsedMs: number
 ): AskResult<Q> {
-  return validateSystemOneBody(questions, received.data)
+  return validateSystemOneBody<Q>(questions, received.data)
     .withErrorFormat((message) =>
       failureMessage('invalid-response', message, received.response.status, received.requestId)
     )
@@ -187,17 +194,21 @@ function answerFrom<Q extends Questions>(
     );
 }
 
-/** A request on its way: the SDK's pending response, and when it was sent. */
-interface IPendingCall<Q extends Questions> {
-  readonly pending: Promise<WithResponse<SystemOneResult<Q>>>;
+/** A request on its way: the questions sent, the SDK's pending response, and when it was sent. */
+interface IPendingCall {
+  readonly questions: Questions;
+  readonly pending: Promise<WithResponse<SystemOneResult<Questions>>>;
   readonly started: number;
 }
 
-/** Sends the request. The SDK checks its questions synchronously and throws before any request. */
-function startCall<Q extends Questions>(
+/**
+ * Sends the converted request. The SDK checks its questions synchronously and throws before any
+ * request.
+ */
+function startCall(
   binding: IClientBinding,
-  request: ISystemOneRequest<Q>
-): DetailedResult<IPendingCall<Q>, SystemOneFailureReason> {
+  request: ICheckedRequest
+): DetailedResult<IPendingCall, SystemOneFailureReason> {
   const { state, questions, signal } = request;
   const started = Date.now();
   return captureResult(() =>
@@ -207,7 +218,7 @@ function startCall<Q extends Questions>(
   )
     .withErrorFormat((message) => failureMessage('invalid-request', message))
     .withFailureDetail<SystemOneFailureReason>('invalid-request')
-    .onSuccess((pending) => succeedWithDetail({ pending, started }));
+    .onSuccess((pending) => succeedWithDetail({ questions, pending, started }));
 }
 
 /**
@@ -225,15 +236,23 @@ export async function askSystemOne<const Q extends Questions>(
   client: ISystemOneClient,
   request: ISystemOneRequest<Q>
 ): Promise<DetailedResult<ISystemOneAnswer<Q>, SystemOneFailureReason>> {
-  // A JavaScript caller's request is checked before any field is read.
+  // The caller's request is read once, by the gate; only the converted copy is used after it, so
+  // what is bounded, sent and validated against is the same value.
   return checkRequest(request)
     .withFailureDetail<SystemOneFailureReason>('invalid-request')
-    .onSuccess(() => checkInputLimit(request.state, request.questions, request.inputLimit))
-    .onSuccess(() => bindingFor(client).withFailureDetail<SystemOneFailureReason>('invalid-request'))
-    .onSuccess((binding) => startCall(binding, request))
-    .thenOnSuccess(({ pending, started }) =>
+    .onSuccess((checked) =>
+      checkInputLimit(checked.state, checked.questions, checked.inputLimit).onSuccess(() =>
+        succeedWithDetail<ICheckedRequest, SystemOneFailureReason>(checked)
+      )
+    )
+    .onSuccess((checked) =>
+      bindingFor(client)
+        .withFailureDetail<SystemOneFailureReason>('invalid-request')
+        .onSuccess((binding) => startCall(binding, checked))
+    )
+    .thenOnSuccess(({ questions, pending, started }) =>
       pending.then(
-        (received) => answerFrom(request.questions, received, Date.now() - started),
+        (received) => answerFrom<Q>(questions, received, Date.now() - started),
         (err: unknown): AskResult<Q> => {
           const { reason, message } = classifyError(err, 'connection');
           return failWithDetail(message, reason);

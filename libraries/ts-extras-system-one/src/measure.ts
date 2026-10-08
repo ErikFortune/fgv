@@ -38,7 +38,7 @@ import type {
   SystemOneFailureReason,
   SystemOneInputLimit
 } from './types';
-import { checkInput, safeConvert } from './shapes';
+import { checkInput, safeConvert, snapshotThen } from './shapes';
 
 /** CLM joins state and instructions with `"\n\n"`. */
 const separatorLength: number = 2;
@@ -126,10 +126,12 @@ export function measureSystemOneInput(
   state: EntryType,
   questions: Questions
 ): Result<ISystemOneInputMeasure> {
-  return checkInput(state, questions).onSuccess(() => succeed(measureChecked(state, questions)));
+  return checkInput(state, questions).onSuccess((checked) =>
+    succeed(measureChecked(checked.state, checked.questions))
+  );
 }
 
-/** Measures input whose questions have the declared shape. */
+/** Measures converted input: a state and questions that the gates have already converted. */
 function measureChecked(state: EntryType, questions: Questions): ISystemOneInputMeasure {
   const stateLength = lengthOf(state);
   return {
@@ -174,10 +176,14 @@ function firstOverLimit(measure: ISystemOneInputMeasure, maxChars: number): IOve
 }
 
 /** `'unchecked'`, or `{ maxChars }` with a number, which is then checked to be a positive integer. */
-const inputLimitShape: Converter<SystemOneInputLimit> = Converters.oneOf<SystemOneInputLimit>([
-  Converters.literal('unchecked'),
+const maxCharsShape: Converter<{ readonly maxChars: number }> = snapshotThen(
   Converters.object<{ readonly maxChars: number }>({ maxChars: Validators.number })
-]);
+);
+
+const inputLimitShape: Converter<SystemOneInputLimit> = Converters.generic(
+  (from: unknown): Result<SystemOneInputLimit> =>
+    from === 'unchecked' ? succeed('unchecked') : maxCharsShape.convert(from)
+);
 
 /** Measures the input and compares every part with `maxChars`. */
 function bound(
@@ -191,32 +197,30 @@ function bound(
       'invalid-request'
     );
   }
-  return measureSystemOneInput(state, questions)
-    .withFailureDetail<SystemOneFailureReason>('invalid-request')
-    .onSuccess((measure) => {
-      const over = firstOverLimit(measure, maxChars);
-      return over === undefined
-        ? succeedWithDetail(measure)
-        : failWithDetail(
-            `input-over-limit: question '${over.questionId}': ${over.part} measures ${over.length} characters, over the limit of ${maxChars}`,
-            'input-over-limit'
-          );
-    });
+  const measure = measureChecked(state, questions);
+  const over = firstOverLimit(measure, maxChars);
+  return over === undefined
+    ? succeedWithDetail(measure)
+    : failWithDetail(
+        `input-over-limit: question '${over.questionId}': ${over.part} measures ${over.length} characters, over the limit of ${maxChars}`,
+        'input-over-limit'
+      );
 }
 
 /**
- * Applies the input bound. Succeeds with the measure, or `undefined` for `'unchecked'`; fails with
- * the reason `invalid-request` or `input-over-limit` as its detail. A malformed limit, or input that
- * cannot be measured, is `invalid-request`, never a throw.
+ * Applies the input bound to a converted state and questions. Succeeds with the measure, or
+ * `undefined` for `'unchecked'`; fails with the reason `invalid-request` or `input-over-limit` as
+ * its detail. A malformed limit is `invalid-request`, never a throw.
+ * @param inputLimit - The limit the caller's request held, read once; converted here.
  * @internal
  */
 export function checkInputLimit(
   state: EntryType,
   questions: Questions,
-  inputLimit: SystemOneInputLimit
+  inputLimit: unknown
 ): DetailedResult<ISystemOneInputMeasure | undefined, SystemOneFailureReason> {
-  // `askSystemOne` has already checked every question's shape (`checkRequest`), in either mode, so
-  // a malformed question is `invalid-request` in 'unchecked' mode too and nothing is sent.
+  // `askSystemOne` has already converted the state and every question (`checkRequest`), in either
+  // mode, so a malformed question is `invalid-request` in 'unchecked' mode too and nothing is sent.
   return safeConvert(inputLimitShape, inputLimit)
     .withErrorFormat(() => `invalid-request: inputLimit must be 'unchecked' or { maxChars: number }`)
     .withFailureDetail<SystemOneFailureReason>('invalid-request')

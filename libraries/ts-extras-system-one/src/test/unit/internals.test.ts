@@ -110,3 +110,32 @@ describe('response validation never throws, whatever it is handed', () => {
     );
   });
 });
+
+describe('response validation is total over a Proxy whose traps throw', () => {
+  // A parsed body cannot be a Proxy; this pins only that the reserved-key probe is guarded.
+  test('U36 validateSystemOneBody fails a throwing answer set or distribution instead of throwing', () => {
+    for (const trap of ['getOwnPropertyDescriptor', 'ownKeys', 'get'] as const) {
+      const hostile = <T extends object>(target: T): T =>
+        new Proxy(target, {
+          [trap]: () => {
+            throw new Error('trap');
+          }
+        });
+      const usage = { input_tokens: 1, output_tokens: 0 };
+      for (const body of [
+        { model: 'm', answers: hostile({ q: { type: 'noul', noul: 0.5 } }), usage },
+        {
+          model: 'm',
+          answers: { q: { type: 'choice', choice: 'a', probabilities: hostile({ a: 0.5, b: 0.5 }) } },
+          usage
+        }
+      ]) {
+        let result: ReturnType<typeof validateSystemOneBody> | undefined;
+        expect(() => {
+          result = validateSystemOneBody({ q: noul('q') }, body);
+        }).not.toThrow();
+        expect(result).toFailWith(/^the body is not a System-1 response/);
+      }
+    }
+  });
+});
