@@ -476,8 +476,8 @@ const MUTATIONS = [
     'R58 an EntryType is not checked as JSON',
     ['U31'],
     SHAPES,
-    '  JsonConverters.jsonValue\n    .convert(from)\n',
-    '  succeed(from as EntryType)\n'
+    '.onSuccess((snapshot) => JsonConverters.jsonValue.convert(snapshot))',
+    '.onSuccess((snapshot) => succeed(snapshot as EntryType))'
   ),
   m(
     'R59 a bare number or boolean is accepted as an EntryType',
@@ -598,6 +598,34 @@ const MUTATIONS = [
     'logLevel: Logging.reporterLogLevel,',
     'logLevel: Converters.string as unknown as Converter<Logging.ReporterLogLevel>,'
   ),
+  m(
+    'R76 a nested __proto__ in a JSON entry is not refused',
+    ['U38'],
+    SHAPES,
+    "entries.some(([key]) => key === '__proto__')",
+    "entries.some(([key]) => key === 'never')"
+  ),
+  m(
+    'R77 the reserved-key walk does not descend into arrays',
+    ['U38'],
+    SHAPES,
+    '    return mapResults(from.map(withoutReservedKeys));\n',
+    '    return succeed(from);\n'
+  ),
+  m(
+    'R78 the reserved-key walk does not descend into objects',
+    ['U38'],
+    SHAPES,
+    'withoutReservedKeys(value).onSuccess(',
+    'succeed(value).onSuccess('
+  ),
+  m(
+    "R79 the JSON converter reads the caller's value again rather than the walk's snapshot",
+    ['U35'],
+    SHAPES,
+    '.onSuccess((snapshot) => JsonConverters.jsonValue.convert(snapshot))',
+    '.onSuccess(() => JsonConverters.jsonValue.convert(from))'
+  ),
   harness(
     'H1 an unknown option is accepted',
     ['S1'],
@@ -665,6 +693,18 @@ const MUTATIONS = [
     ['S8'],
     "    if (Object.prototype.hasOwnProperty.call(item.questions, '__proto__')) {\n",
     "    if (item.questions === 'never') {\n"
+  ),
+  harness(
+    'H14 a nested __proto__ key is not checked',
+    ['S9'],
+    '  return isTopLevelEntry(value) && !hasReservedKey(value);',
+    '  return isTopLevelEntry(value);'
+  ),
+  harness(
+    'H15 the nested __proto__ check does not descend into arrays',
+    ['S9'],
+    '    return value.some(hasReservedKey);\n',
+    '    return false;\n'
   )
 ];
 
