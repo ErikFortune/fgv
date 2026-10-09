@@ -109,9 +109,8 @@ export class McpCloseWatcher {
     if (listener === undefined) {
       return;
     }
-    // A plain try/catch rather than captureResult: captureResult converts the thrown value to a
-    // message with a conversion that can itself throw (a value whose toString throws), and a throw
-    // escaping here would stop the SDK from failing the session's in-flight requests.
+    // Contained here: a throw escaping would stop the SDK from failing the session's in-flight
+    // requests. The logged text uses errorText, for this package's fallback text.
     let returned: unknown;
     try {
       returned = listener();
@@ -323,8 +322,8 @@ export async function closeMcpSession(session: IMcpSession): Promise<Result<true
   if (sessionResult.isFailure()) {
     return fail(`closeMcpSession: ${sessionResult.message}`);
   }
-  // Converted with errorText rather than captureAsyncResult, whose message conversion can throw on a
-  // foreign rejection value (see errorText).
+  // Converted with errorText, for this package's fallback text on a rejection value that cannot be
+  // read (see errorText).
   return Promise.resolve()
     .then(() => sessionResult.value.client.close())
     .then(

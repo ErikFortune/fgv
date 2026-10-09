@@ -51,8 +51,8 @@ export const UNPRINTABLE_ERROR: string = '<unprintable error>';
  * A custom transport or a consumer callback can throw or reject with anything, including a value
  * whose `toString` (or an `Error` whose `message`) itself throws. Converting such a value must not
  * throw from inside a rejection handler, or the caller would get a rejected promise instead of a
- * `DetailedResult`. `@fgv/ts-utils`' `captureResult` / `captureAsyncResult` do not have this
- * guarantee, so the paths that convert a foreign value use this instead.
+ * `DetailedResult`. `@fgv/ts-utils`' capture helpers are total in the same way; this one exists
+ * so this package's messages carry its own fallback text, {@link UNPRINTABLE_ERROR}.
  * @internal
  */
 export function errorText(err: unknown): string {

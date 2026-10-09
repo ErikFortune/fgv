@@ -35,12 +35,24 @@ describe('captureResult with a thrown value that cannot be read', () => {
         throw new Error('message');
       }
     });
-    for (const thrown of [unprintable, unreadable]) {
+    const unprintableMessage = Object.defineProperty(new Error('hidden'), 'message', {
+      value: unprintable
+    });
+    for (const thrown of [unprintable, unreadable, unprintableMessage]) {
       expect(
         captureResult(() => {
           throw thrown;
         })
       ).toFailWith('an error whose message could not be read');
     }
+  });
+
+  test('converts an Error whose message is not a string to text', () => {
+    const numeric = Object.defineProperty(new Error('hidden'), 'message', { value: 42 });
+    expect(
+      captureResult(() => {
+        throw numeric;
+      })
+    ).toFailWith('42');
   });
 });

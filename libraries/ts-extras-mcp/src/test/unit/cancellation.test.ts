@@ -338,6 +338,18 @@ describe('createCustomTransport', () => {
     expect(createCustomTransport(clientSide)).not.toFailWith(/stale-session/);
   });
 
+  test('refuses a transport whose session id cannot be read, without throwing', () => {
+    const [clientSide] = InMemoryTransport.createLinkedPair();
+    Object.defineProperty(clientSide, 'sessionId', {
+      get(): never {
+        throw new Error('getter');
+      }
+    });
+    expect(createCustomTransport(clientSide)).toFailWith(
+      /^createCustomTransport: the transport's session id could not be read$/
+    );
+  });
+
   test('a custom handle is single-use against a real server: the second connect never starts it again', async () => {
     const server = new Server({ name: 'single-use', version: '0.0.1' }, { capabilities: { tools: {} } });
     server.setRequestHandler(ListToolsRequestSchema, async () => ({ tools: [] }));

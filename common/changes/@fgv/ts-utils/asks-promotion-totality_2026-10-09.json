@@ -1,7 +1,7 @@
 {
   "changes": [
     {
-      "comment": "captureResult, captureAsyncResult and the AsyncResult rejection paths never throw while reporting a failure: a thrown or rejected value whose message accessor or toString throws now yields the fixed text 'an error whose message could not be read'.",
+      "comment": "captureResult, captureAsyncResult and the AsyncResult rejection paths never throw while reporting a failure: a thrown or rejected value whose message accessor or toString throws now yields the fixed text 'an error whose message could not be read'. An Error whose message is not a string is converted to text.",
       "type": "patch",
       "packageName": "@fgv/ts-utils"
     }
