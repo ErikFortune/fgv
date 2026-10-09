@@ -237,6 +237,15 @@ function _onAbort(signal: AbortSignal, onAbort: (reason: unknown) => void): () =
 }
 
 /**
+ * Whether a signal has already aborted. A function rather than an inline `signal?.aborted` check, so
+ * the compiler does not carry the result past the handshake's `await`, where the signal can since
+ * have aborted.
+ */
+function _alreadyAborted(signal: AbortSignal | undefined): boolean {
+  return signal?.aborted === true;
+}
+
+/**
  * Connects to an MCP server over the given transport and performs the initialize handshake.
  *
  * @param params - Transport plus optional client identity, logger and close observer.
@@ -256,6 +265,12 @@ export async function connectMcpSession(
   const timeoutCheck = validateTimeoutMs('timeoutMs', timeoutMs);
   if (timeoutCheck.isFailure()) {
     return failWithDetail(`connectMcpSession: ${timeoutCheck.message}`, { kind: 'invalid-options' });
+  }
+  // Likewise an abort that has already happened: nothing would be started, so the transport stays
+  // unclaimed and the caller can retry with it. runSdkRequest still catches an abort that lands
+  // after the claim.
+  if (_alreadyAborted(signal)) {
+    return failWithDetail('connectMcpSession: aborted before the request was sent', { kind: 'aborted' });
   }
   const claimed = McpTransport.fromHandle(transport).onSuccess((handle) => handle.claim());
   if (claimed.isFailure()) {

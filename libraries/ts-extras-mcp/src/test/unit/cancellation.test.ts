@@ -412,13 +412,18 @@ describe('connectMcpSession timeout and abort', () => {
     const start = jest.spyOn(clientSide, 'start');
     const controller = new AbortController();
     controller.abort();
-    expect(
-      await connectMcpSession({
-        transport: createCustomTransport(clientSide).orThrow(),
-        signal: controller.signal
-      })
-    ).toFailWithDetail('connectMcpSession: aborted before the request was sent', { kind: 'aborted' });
+    const transport = createCustomTransport(clientSide).orThrow();
+    expect(await connectMcpSession({ transport, signal: controller.signal })).toFailWithDetail(
+      'connectMcpSession: aborted before the request was sent',
+      { kind: 'aborted' }
+    );
     expect(start).not.toHaveBeenCalled();
+    // Nothing was started, so the handle is not consumed: a second connect gets past the claim
+    // (failing here only on its own timeout, because the peer never answers).
+    expect(await connectMcpSession({ transport, timeoutMs: 50 })).toFailWithDetail(/^connectMcpSession: /, {
+      kind: 'timeout'
+    });
+    expect(start).toHaveBeenCalledTimes(1);
   });
 });
 
