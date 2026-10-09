@@ -81,6 +81,29 @@ describe('sdk isolation seam', () => {
     const CLOSED = { phase: 'session', closed: true } as const;
     const CONNECT = { phase: 'connect' } as const;
 
+    test('maps a value that throws when inspected to transport, or not-connected on a closed session', () => {
+      const unreadableName = Object.defineProperty(new Error('e'), 'name', {
+        get(): string {
+          throw new Error('name');
+        }
+      });
+      const hostile = new Proxy(
+        {},
+        {
+          getPrototypeOf(): never {
+            throw new Error('trap');
+          }
+        }
+      );
+      for (const error of [unreadableName, hostile]) {
+        expect(classifySdkError(error, { phase: 'connect' })).toEqual({ kind: 'transport' });
+        expect(classifySdkError(error, { phase: 'session', closed: false })).toEqual({ kind: 'transport' });
+        expect(classifySdkError(error, { phase: 'session', closed: true })).toEqual({
+          kind: 'not-connected'
+        });
+      }
+    });
+
     test('maps the SDK timeout code to timeout, never to transport or protocol', () => {
       const err = McpError.fromError(ErrorCode.RequestTimeout, 'Request timed out', { timeout: 5 });
       expect(classifySdkError(err, SESSION)).toEqual({ kind: 'timeout' });

@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "classifySdkError is total: a rejection value that throws when inspected (a throwing name accessor, a Proxy trap) is classified as transport, or not-connected on a closed session, instead of throwing.",
+      "type": "patch",
+      "packageName": "@fgv/ts-extras-mcp"
+    }
+  ],
+  "packageName": "@fgv/ts-extras-mcp",
+  "email": "ErikFortune@outlook.com"
+}

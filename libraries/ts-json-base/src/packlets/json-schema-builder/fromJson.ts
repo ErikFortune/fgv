@@ -21,7 +21,7 @@
  */
 
 import { Converter, Converters, Result, captureResult, fail, mapResults, succeed } from '@fgv/ts-utils';
-import { JsonObject, JsonValue } from '../json';
+import { JsonObject, JsonValue, isJsonObject } from '../json';
 import { array, boolean, enumOf, integer, number, object, optional, record, string } from './factories';
 import { ILlmProperties, ISchemaValidator } from './types';
 
@@ -216,12 +216,7 @@ const _enumRawValuesField: Converter<(string | null)[]> = Converters.field(
  * not an unsafe cast.
  */
 const _plainObjectField: Converter<Record<string, unknown>> = Converters.generic(
-  (v: unknown): Result<Record<string, unknown>> => {
-    if (typeof v === 'object' && !Array.isArray(v) && v !== null) {
-      return succeed(v as Record<string, unknown>);
-    }
-    return fail('expected an object');
-  }
+  (v: unknown): Result<Record<string, unknown>> => (isJsonObject(v) ? succeed(v) : fail('expected an object'))
 );
 
 // ---------------------------------------------------------------------------

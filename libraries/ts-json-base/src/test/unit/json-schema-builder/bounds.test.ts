@@ -90,4 +90,39 @@ describe('JsonSchema.fromJson — depth bound', () => {
     expect(() => JsonSchema.fromJson(hostile)).not.toThrow();
     expect(JsonSchema.fromJson(hostile)).toFailWith(/^#: boom/);
   });
+
+  test('an accessor that throws an unprintable value becomes a failure, not an exception', () => {
+    const unprintable = {
+      toString(): string {
+        throw new Error('toString');
+      }
+    };
+    const hostile = Object.defineProperty({}, 'type', {
+      enumerable: true,
+      get(): never {
+        throw unprintable;
+      }
+    }) as JsonObject;
+    expect(JsonSchema.fromJson(hostile)).toFailWith(/^#: an error whose message could not be read$/);
+  });
+
+  test('a non-JSON object where an object keyword expects a schema or map is refused', () => {
+    for (const value of [new Date(0), new Map(), new Set(), new Error('e'), /x/]) {
+      const name = value.constructor.name;
+      expect({
+        name,
+        result: JsonSchema.fromJson({
+          type: 'object',
+          additionalProperties: value
+        } as unknown as JsonObject).isFailure()
+      }).toEqual({ name, result: true });
+      expect({
+        name,
+        result: JsonSchema.fromJson({
+          type: 'object',
+          properties: value
+        } as unknown as JsonObject).isFailure()
+      }).toEqual({ name, result: true });
+    }
+  });
 });

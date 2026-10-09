@@ -45,6 +45,7 @@ import {
 import { DEFAULT_REQUEST_TIMEOUT_MSEC } from '@modelcontextprotocol/sdk/shared/protocol.js';
 import { ErrorCode, McpError } from '@modelcontextprotocol/sdk/types.js';
 
+import { captureResult } from '@fgv/ts-utils';
 import { type McpFailureReason } from './model';
 
 /**
@@ -288,6 +289,15 @@ function _isSchemaRejection(error: unknown): boolean {
  * @internal
  */
 export function classifySdkError(error: unknown, context: SdkFailureContext): McpFailureReason {
+  // A custom transport can reject with anything: an `instanceof` against a Proxy, or an accessor
+  // such as `name` or `code`, can throw, so a value that cannot be inspected is a transport failure.
+  return captureResult(() => _classifyInspectable(error, context)).orDefaultWith(() =>
+    context.phase === 'session' && context.closed ? { kind: 'not-connected' } : { kind: 'transport' }
+  );
+}
+
+/** {@link classifySdkError}, for a value that can be inspected without throwing. */
+function _classifyInspectable(error: unknown, context: SdkFailureContext): McpFailureReason {
   if (error instanceof McpError) {
     if (error.code === ErrorCode.RequestTimeout) {
       return { kind: 'timeout' };

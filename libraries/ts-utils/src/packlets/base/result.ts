@@ -1049,16 +1049,19 @@ export function propagateWithDetail<T, TD>(
 }
 
 /**
- * Extracts a message string from an unknown thrown/rejected value.
+ * Extracts a message string from an unknown thrown/rejected value. Total: a value whose
+ * inspection or conversion to text throws (a throwing `message` accessor or `toString`, or a
+ * Proxy trap) yields fixed text instead, so a capture never throws while reporting a failure.
  * @param err - The caught error value.
  * @returns The error message string.
  * @internal
  */
 export function _errorMessage(err: unknown): string {
-  if (err instanceof Error) {
-    return err.message;
+  try {
+    return err instanceof Error ? err.message : String(err);
+  } catch {
+    return 'an error whose message could not be read';
   }
-  return String(err);
 }
 
 /**
