@@ -82,6 +82,7 @@ Every entry here **widens an accepted set**, so `install-run-rush.js test` repo-
 `rebuild`. `ts-extras-mcp` has fixtures pinning which schemas are skipped.
 
 ### 4. `fromJson`: accept `anyOf`/`oneOf` `[T, null]` as nullable — personaility#680
+- **Status:** **shipped** in #723, promoted to `release` by #727 (`0e1028e3`); stream `json-schema-fromjson-widening`. Issue closed.
 - **Slug:** `2026-10-01-0043-json-schema-anyof-null-nullable`
 - **Req. priority:** P1 ("decides whether FastMCP servers in general are usable").
 - **Verified:** `anyOf` and `oneOf` are in `FORBIDDEN_KEYWORDS` (`fromJson.ts:34-44`); the nullable form
@@ -90,6 +91,7 @@ Every entry here **widens an accepted set**, so `install-run-rush.js test` repo-
   first slice.
 
 ### 5. `fromJson`: resolve local `$ref`/`$defs` — personaility#681
+- **Status:** **shipped** in #723, promoted to `release` by #727 (`0e1028e3`); stream `json-schema-fromjson-widening`. Issue closed.
 - **Slug:** `2026-10-01-0043-json-schema-local-ref-defs`
 - **Req. priority:** P2.
 - **Verified:** `$ref` is forbidden; `docs/FUTURE.md` already names this our "highest-value" `fromJson`
@@ -98,6 +100,7 @@ Every entry here **widens an accepted set**, so `install-run-rush.js test` repo-
   since inlining a recursive model is unbounded.
 
 ### 6. `fromJson`: numeric enums, `pattern`, record, `{}` (any) — personaility#683
+- **Status:** **partly shipped** in #723, promoted by #727 (`0e1028e3`): schema-valued `additionalProperties` as a record (`JsonSchema.record`). Numeric `enum`, `pattern` and `{}` are deferred to a later JsonSchema stream (Gemini wire limits; `pattern` is a ReDoS surface). Issue left open with a comment.
 - **Slug:** `2026-10-01-0043-json-schema-smaller-mcp-shapes`
 - **Req. priority:** P3; "fgv decides which of these to support".
 - **Verified:** none of the four is representable in the builder today (see the shared finding).
@@ -124,6 +127,7 @@ to. Design it once, before any of them ships.
 ### C1 — cancellation and failure classification
 
 ### 8. Per-call timeout and `AbortSignal` on `callMcpTool` — personaility#671
+- **Status:** **shipped** in #722, promoted to `release` by #727 (`0e1028e3`); stream `mcp-client-cancellation`. Issue closed.
 - **Slug:** `2026-10-01-0042-mcp-call-timeout-abort`
 - **Req. priority:** P1.
 - **Verified:** `callMcpTool(session, name, args)` (`operations.ts:159`) takes no options; every call
@@ -131,6 +135,7 @@ to. Design it once, before any of them ships.
 - **Route:** C1 slice. Map the call onto the SDK's `RequestOptions`.
 
 ### 9. Failure kinds, and observing a session close — personaility#673
+- **Status:** **shipped** in #722, promoted to `release` by #727 (`0e1028e3`); stream `mcp-client-cancellation`. Issue closed.
 - **Slug:** `2026-10-01-0043-mcp-failure-kind-close-observation`
 - **Req. priority:** P1.
 - **Route:** C1 slice, **designed first**: the kind set (`tool-error` / `timeout` / `aborted` /
@@ -138,6 +143,7 @@ to. Design it once, before any of them ships.
   rides on a `DetailedResult`. Reconnect policy stays theirs.
 
 ### 10. Pass the turn's `AbortSignal` to `IAiClientTool.execute` — personaility#684 (`ts-extras` ai-assist)
+- **Status:** **shipped** in #722, promoted to `release` by #727 (`0e1028e3`); stream `mcp-client-cancellation`. Issue closed.
 - **Slug:** `2026-10-01-0043-ai-assist-client-tool-execute-signal`
 - **Req. priority:** P2.
 - **Verified:** `execute: (args) => Promise<Result<unknown>>` (`toolTypes.ts:185`); the single call site
@@ -170,22 +176,26 @@ to. Design it once, before any of them ships.
 ### C3 — fidelity and lifecycle
 
 ### 13. Rich tool results: resource links, `structuredContent`, media — personaility#675
+- **Status:** **in flight**: stream `mcp-round-2a` (brief at `.ai/tasks/active/mcp-round-2a/brief.md` on branch `mcp-round-2a`).
 - **Slug:** `2026-10-01-0043-mcp-rich-tool-results`
 - **Req. priority:** P2. Minimum bar: a `resource_link` projects to a line carrying its URI.
 - **Verified:** already recorded in `docs/FUTURE.md` (multimodal passthrough).
 - **Route:** C3. Additive projection beside `content: string`.
 
 ### 14. Descriptor `title` / `outputSchema`, and `tools/list_changed` — personaility#676
+- **Status:** **in flight**: stream `mcp-round-2a` (brief at `.ai/tasks/active/mcp-round-2a/brief.md` on branch `mcp-round-2a`).
 - **Slug:** `2026-10-01-0043-mcp-descriptor-title-list-changed`
 - **Req. priority:** P2.
 - **Route:** C3. Two parts: descriptor fields (trivial), and a change callback on the session.
 
 ### 15. Terminate HTTP sessions on close — personaility#674
+- **Status:** **in flight**: stream `mcp-round-2a` (brief at `.ai/tasks/active/mcp-round-2a/brief.md` on branch `mcp-round-2a`).
 - **Slug:** `2026-10-01-0043-mcp-terminate-http-session`
 - **Req. priority:** P3. Best-effort, since a 405 is acceptable.
 - **Route:** C3, or a chore. Small.
 
 ### 16. Public transport-injection seam — personaility#678
+- **Status:** **shipped** in #722, promoted to `release` by #727 (`0e1028e3`); stream `mcp-client-cancellation`. Issue closed. Delivered as `createCustomTransport`.
 - **Slug:** `2026-10-01-0043-mcp-transport-injection-seam`
 - **Req. priority:** P2.
 - **Verified:** already in `docs/FUTURE.md` ("Transport-injection testability seam").
@@ -214,10 +224,10 @@ to. Design it once, before any of them ships.
 |---|---|---|
 | 1 | entry 1 (#648) | **shipped**, #717 |
 | 2 | entry 2 (#679) | **shipped**, #720 |
-| 3 | C1: entries 16 → 9 → 8 + 10 | three requester P1s share one vocabulary; 16 makes them testable |
-| 4 | class B: entries 4 → 5 → 6 | #680 is a P1; same packlet as entry 2, so after it |
+| 3 | C1: entries 16 → 9 → 8 + 10 | **shipped**, #722 → #727 |
+| 4 | class B: entries 4 → 5 → 6 | **shipped** (6 in part), #723 → #727 |
 | 5 | entry 12 (#672) | P1, but needs a new primitive; start its design in parallel with step 3 |
-| 6 | C3: entries 13, 14, 15; then 11 | P2/P3 fidelity; OAuth after the kinds exist |
+| 6 | C3: entries 13, 14, 15; then 11 | 13–15 **in flight** (`mcp-round-2a`); 11 with 12 in `mcp-round-2b` |
 | 7 | entry 7 (#682) | largest design in class B |
 | — | entries 3, 17 | cheap; fold into whichever chore batch opens first |
 
