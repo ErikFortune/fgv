@@ -34,7 +34,9 @@ distribution over a closed candidate set — no generated text. Node-only. The b
   4,400 (measured prose/Markdown/code/JSON); the rule and measurements are in the README.
 - **Response validation the SDK does not do**: answer ids = question ids with matching types,
   probability keys = labels / `0..n-1`, finite values in `[0, 1]` summing to 1 within `1e-3`, `score`
-  in `[0, n-1]`. A mismatch is `invalid-response`.
+  in `[0, n-1]`. A mismatch is `invalid-response`. A `score` is **fractional** — the expectation
+  over the levels, as the SDK documents (confirmed live on Jev: `1.73` for `p = 0, 0.27, 0.73`) — so take the level from
+  `probabilities`, never by assuming an integer.
 - **A total failure classification** by error class and HTTP status, never body text:
   `input-over-limit`, `invalid-request`, `unauthorized`, `rate-limited`, `server`, `connection`,
   `timeout`, `aborted`, `invalid-response` (the list is `allSystemOneFailureReasons`). Malformed input
@@ -54,7 +56,8 @@ candidate set does not transfer to another.
 a browser sibling; an `ISystemOneDecider` interface; sidecar process management; `confidence` in any
 form; exact token counting; threshold policy; retries beyond the SDK's; fine-tuning; a per-call URL.
 
-**Live status:** no live round trip recorded yet; `perf/systemOneLive.js probe` produces the record.
+**Live status:** one live round trip recorded — hosted Jev (`jev-1.13.0`), 2026-10-08, passed. No
+CLM, openjev or Ollama endpoint has been run live; `perf/systemOneLive.js probe` produces the record.
 
 **Upstream:** `@typesafe-ai/sdk` `~0.6.0` (direct dependency).
 
@@ -72,6 +75,6 @@ form; exact token counting; threshold policy; retries beyond the SDK's; fine-tun
 
 <!-- BEGIN GENERATED: recent-additions -->
 
-*No stream has recorded a `sourceLine` against this package yet.*
+- **2026-10-03** — A Result boundary over the TypeSafe System-1 SDK: ask Jev, openjev or a local CLM server typed noul/choice/score questions, with over-long input refused, not truncated. Verified live on Jev. ([#721](https://github.com/ErikFortune/fgv/pull/721))
 
 <!-- END GENERATED: recent-additions -->

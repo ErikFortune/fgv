@@ -2,9 +2,9 @@
 
 **Shipped:**
 
-- § 12 of [`design.md`](../../../docs/design/system-one-decisions/design.md), worked through in place;
+- § 12 of [`design.md`](../../../../../docs/design/system-one-decisions/design.md), worked through in place;
 - E28–E35 added to its evidence table, plus dated refinements to § 7.1 item 5, § 8 and § 11;
-- [`implementation-plan.md`](../../../docs/design/system-one-decisions/implementation-plan.md), which
+- [`implementation-plan.md`](../../../../../docs/design/system-one-decisions/implementation-plan.md), which
   Phase C is held to;
 - the ledger update.
 

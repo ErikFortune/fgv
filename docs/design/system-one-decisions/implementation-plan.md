@@ -1,16 +1,18 @@
 # System-1 decisions — implementation plan
 
 **Status:** **Implemented 2026-10-03 (Phase C, `system-one-impl`)** as `@fgv/ts-extras-system-one`; the
-deviations are in [`result.md`](../../../.ai/tasks/active/system-one-impl/result.md). The revert matrix
-ran 97/97 VERIFIED. **Live legs L1–L5: not run live**; the cluster close is held for a recorded L1
-(decision U2). Originally the Phase B (triage) output of the `system-one-decisions`
+deviations are in [`result.md`](../../../.ai/tasks/completed/2026-10/system-one-impl/result.md). The revert matrix
+ran 97/97 VERIFIED. **Shipped 2026-10-08:** Phase C via #721; **L1 recorded 2026-10-08** against
+hosted Jev and passed (design E36; the record is in `result.md` § "L1, recorded 2026-10-08"), which
+met decision U2, and the cluster closed with [#724](https://github.com/ErikFortune/fgv/pull/724). **L2–L5: not run live**; U2 required
+only L1. Originally the Phase B (triage) output of the `system-one-decisions`
 design-triage-implement stream, 2026-10-03; Phase C was held to this document. Two decisions
 are the user's (§ 1.2); neither changes the package surface, so neither blocks commissioning Phase C.
 **Design:** [`design.md`](design.md). Facts are cited by their E-number there; E28–E35 were added by
 this phase. **Base:** `integration/system-one-decisions` @ `72f5f0bb`, plus the Phase B brief
 `bb48c467`.
 **Triage account:**
-[`.ai/tasks/active/system-one-triage/result.md`](../../../.ai/tasks/active/system-one-triage/result.md).
+[`.ai/tasks/completed/2026-10/system-one-triage/result.md`](../../../.ai/tasks/completed/2026-10/system-one-triage/result.md).
 
 ## 1. What this plan rests on
 
