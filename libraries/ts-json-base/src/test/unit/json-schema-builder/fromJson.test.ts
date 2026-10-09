@@ -123,6 +123,27 @@ describe('JsonSchema.fromJson', () => {
       expect(JsonSchema.fromJson(raw as JsonObject)).toFailWith(/unsupported JSON Schema keyword/i);
     });
 
+    test('jsonSchemaConverter reports errors under the path supplied as its context', () => {
+      expect(JsonSchema.jsonSchemaConverter.convert({ type: 'date' }, '#/x')).toFailWith(
+        /^#\/x: unsupported or missing 'type'/
+      );
+    });
+
+    test('escapes a property key as a JSON Pointer token in the reported path', () => {
+      expect(
+        JsonSchema.fromJson({
+          type: 'object',
+          properties: { 'a/b': { type: 'date' } }
+        } as unknown as JsonObject)
+      ).toFailWith(/^#\/properties\/a~1b: unsupported or missing 'type'/);
+      expect(
+        JsonSchema.fromJson({
+          type: 'object',
+          properties: { 'c~/d': { type: 'date' } }
+        } as unknown as JsonObject)
+      ).toFailWith(/^#\/properties\/c~0~1d: unsupported or missing 'type'/);
+    });
+
     test('rejects a non-object root', () => {
       expect(JsonSchema.fromJson('nope' as unknown as JsonObject)).toFailWith(
         /expected a JSON Schema object/i
@@ -170,13 +191,16 @@ describe('JsonSchema.fromJson', () => {
     });
 
     test('rejects a missing or unknown type', () => {
-      expect(JsonSchema.fromJson({})).toFailWith(/unsupported or missing 'type'/i);
+      expect(JsonSchema.fromJson({})).toFailWith(
+        /^#: a schema with no 'type' \(matching any value\) is not supported/
+      );
       expect(JsonSchema.fromJson({ type: 'date' })).toFailWith(/unsupported or missing 'type'/i);
     });
 
     test('rejects non-string and empty enums', () => {
-      // [1, 2] — items fail Converters.string, error includes "Not a string"
-      expect(JsonSchema.fromJson({ enum: [1, 2] })).toFailWith(/not a string/i);
+      // [1, 2] — numeric enums are refused with their own message; other non-strings with "Not a string"
+      expect(JsonSchema.fromJson({ enum: [1, 2] })).toFailWith(/numeric 'enum' values are not supported/i);
+      expect(JsonSchema.fromJson({ enum: [true] })).toFailWith(/not a string/i);
       expect(JsonSchema.fromJson({ enum: [] })).toFailWith(/'enum' must be a non-empty array/i);
       // 'a' is not an array — Converters.arrayOf fails with "Not an array"
       expect(JsonSchema.fromJson({ enum: 'a' } as unknown as JsonObject)).toFailWith(/not an array/i);
@@ -200,11 +224,21 @@ describe('JsonSchema.fromJson', () => {
         /'required' must be an array of strings/i
       );
       expect(
-        JsonSchema.fromJson({
-          type: 'object',
-          additionalProperties: { type: 'string' }
-        } as unknown as JsonObject)
-      ).toFailWith(/schema-valued 'additionalProperties' is not supported/i);
+        JsonSchema.fromJson({ type: 'object', additionalProperties: 'yes' } as unknown as JsonObject)
+      ).toFailWith(/'additionalProperties' must be a boolean or a schema object/i);
+    });
+
+    test('rejects a non-string object description', () => {
+      expect(JsonSchema.fromJson({ type: 'object', description: 5 } as unknown as JsonObject)).toFailWith(
+        /^#: .*description/i
+      );
+    });
+
+    test('rejects a property named __proto__ rather than losing its schema', () => {
+      const raw = JSON.parse(
+        '{"type":"object","properties":{"__proto__":{"type":"string"}},"required":["__proto__"]}'
+      ) as JsonObject;
+      expect(JsonSchema.fromJson(raw)).toFailWith(/^#: a property named '__proto__' is not supported/);
     });
 
     test('rejects a required key with no matching property schema', () => {

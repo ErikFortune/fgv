@@ -950,7 +950,9 @@ export function executeClientToolTurn(
           }
         }
 
-        const executeResult = await captureAsyncResult(async () => tool.execute(validationResult.value));
+        const executeResult = await captureAsyncResult(async () =>
+          tool.execute(validationResult.value, { signal })
+        );
         const executionResult: Result<unknown> = executeResult.isSuccess()
           ? executeResult.value
           : executeResult;

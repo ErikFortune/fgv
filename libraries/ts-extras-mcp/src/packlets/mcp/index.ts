@@ -28,7 +28,7 @@
 // `export *` (rather than named type-only re-exports) emits a runtime re-export of the
 // types-only module so it participates in coverage as a loaded (zero-statement) module.
 export * from './model';
-export { createHttpTransport, createStdioTransport } from './transports';
+export { createCustomTransport, createHttpTransport, createStdioTransport } from './transports';
 export { closeMcpSession, connectMcpSession } from './session';
 export { callMcpTool, listMcpTools } from './operations';
 export { adaptMcpTools } from './adapter';

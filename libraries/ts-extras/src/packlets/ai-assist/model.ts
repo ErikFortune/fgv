@@ -221,6 +221,7 @@ export type {
   IAiClientToolConfig,
   AiToolConfig,
   IAiClientTool,
+  IAiClientToolExecuteContext,
   IAiStreamToolUseStart,
   IAiStreamToolUseDelta,
   IAiStreamToolUseComplete,

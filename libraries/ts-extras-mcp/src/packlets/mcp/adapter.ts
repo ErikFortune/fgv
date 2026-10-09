@@ -27,7 +27,7 @@
  * @packageDocumentation
  */
 
-import { type Result, succeed } from '@fgv/ts-utils';
+import { type DetailedResult, type Result, succeedWithDetail } from '@fgv/ts-utils';
 import { AiAssist } from '@fgv/ts-extras';
 import { Converters, JsonSchema, type JsonValue } from '@fgv/ts-json-base';
 
@@ -36,7 +36,8 @@ import {
   type IAdaptMcpToolsResult,
   type IMcpSession,
   type IMcpSkippedTool,
-  type IMcpToolDescriptor
+  type IMcpToolDescriptor,
+  type McpFailureReason
 } from './model';
 import { callMcpTool, listMcpTools } from './operations';
 
@@ -52,17 +53,24 @@ type IAdaptOutcome =
  * Builds the `execute` callback for an adapted MCP tool. Args arrive already validated against
  * the tool's `parametersSchema` by `executeClientToolTurn`; here we narrow to a `JsonObject`
  * (MCP arguments are always an object) and forward to {@link callMcpTool}, returning the
- * projected text content. A tool error surfaces as a `Failure` (never swallowed).
+ * projected text content. A tool error surfaces as a `Failure` (never swallowed). The turn's
+ * abort signal, when it has one, is forwarded so that cancelling the turn cancels the MCP request.
  */
-function _makeExecute(session: IMcpSession, name: string): (args: unknown) => Promise<Result<unknown>> {
-  return async (args: unknown): Promise<Result<unknown>> => {
+function _makeExecute(
+  session: IMcpSession,
+  name: string
+): (args: unknown, context?: AiAssist.IAiClientToolExecuteContext) => Promise<Result<unknown>> {
+  return async (args: unknown, context?: AiAssist.IAiClientToolExecuteContext): Promise<Result<unknown>> => {
     const objResult = Converters.jsonObject
       .convert(args)
       .withErrorFormat((msg) => `tool '${name}': arguments must be a JSON object: ${msg}`);
     if (objResult.isFailure()) {
       return objResult;
     }
-    return (await callMcpTool(session, name, objResult.value)).onSuccess((called) => succeed(called.content));
+    const signal = context?.signal;
+    return (
+      await callMcpTool(session, name, objResult.value, signal !== undefined ? { signal } : undefined)
+    ).onSuccess((called) => succeedWithDetail<unknown, McpFailureReason>(called.content));
   };
 }
 
@@ -104,6 +112,23 @@ function _adaptOne(session: IMcpSession, descriptor: IMcpToolDescriptor): IAdapt
 }
 
 /**
+ * `text` with every control character — C0, DEL, C1 and U+2028/U+2029 — spelled `\uXXXX`.
+ *
+ * @remarks
+ * The skip warning carries server-supplied text (the tool name, and the raw schema, whose
+ * `JSON.stringify` form still leaves DEL, C1 and U+2028/U+2029 raw), so a hostile server could
+ * otherwise break the log line or forge another. The structured `skipped` record is left as the
+ * server sent it; escaping is for the log line only.
+ */
+function _printable(text: string): string {
+  return Array.from(text, (ch) => {
+    const code = ch.charCodeAt(0);
+    const control = code < 0x20 || (code >= 0x7f && code <= 0x9f) || code === 0x2028 || code === 0x2029;
+    return control ? `\\u${code.toString(16).padStart(4, '0')}` : ch;
+  }).join('');
+}
+
+/**
  * Discovers an MCP server's tools and adapts each into an `AiAssist.IAiClientTool` that drops
  * directly into `AiAssist.executeClientToolTurn`.
  *
@@ -123,13 +148,14 @@ function _adaptOne(session: IMcpSession, descriptor: IMcpToolDescriptor): IAdapt
  *
  * @param session - A connected session from `connectMcpSession`.
  * @param options - Optional logger for the NOISY skip warnings.
- * @returns `Success` with `{ tools, skipped }`, or `Failure` only if tool discovery fails.
+ * @returns `Success` with `{ tools, skipped }`, or `Failure` only if tool discovery fails, with the
+ * discovery failure's {@link McpFailureReason} as its detail.
  * @public
  */
 export async function adaptMcpTools(
   session: IMcpSession,
   options?: IAdaptMcpToolsOptions
-): Promise<Result<IAdaptMcpToolsResult>> {
+): Promise<DetailedResult<IAdaptMcpToolsResult, McpFailureReason>> {
   return (await listMcpTools(session))
     .onSuccess((descriptors) => {
       const tools: AiAssist.IAiClientTool[] = [];
@@ -142,14 +168,16 @@ export async function adaptMcpTools(
         } else {
           skipped.push(outcome.skipped);
           options?.logger?.warn(
-            `mcp: skipping tool '${outcome.skipped.name}': inputSchema is outside the supported ` +
-              `JSON Schema subset: ${outcome.skipped.reason}. ` +
-              `Raw schema: ${JSON.stringify(outcome.skipped.schema)}`
+            _printable(
+              `mcp: skipping tool '${outcome.skipped.name}': inputSchema is outside the supported ` +
+                `JSON Schema subset: ${outcome.skipped.reason}. ` +
+                `Raw schema: ${JSON.stringify(outcome.skipped.schema)}`
+            )
           );
         }
       }
 
-      return succeed<IAdaptMcpToolsResult>({ tools, skipped });
+      return succeedWithDetail<IAdaptMcpToolsResult, McpFailureReason>({ tools, skipped });
     })
     .withErrorFormat((msg) => `adaptMcpTools: ${msg}`);
 }

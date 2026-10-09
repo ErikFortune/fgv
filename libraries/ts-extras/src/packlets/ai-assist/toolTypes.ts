@@ -165,12 +165,28 @@ export interface IAiClientToolConfig<TParams = unknown> {
 }
 
 /**
+ * Per-call context handed to `IAiClientTool.execute` alongside the arguments.
+ * @public
+ */
+export interface IAiClientToolExecuteContext {
+  /**
+   * The turn's abort signal — `IExecuteClientToolTurnParams.signal`, when the caller supplied one.
+   * A tool that does slow or side-effecting work (a network request, a subprocess) should pass it
+   * on, so that a cancelled or timed-out turn stops the tool and not only the provider stream.
+   */
+  readonly signal?: AbortSignal;
+}
+
+/**
  * A client-defined tool: configuration + execution callback pair.
  *
  * @remarks
  * The `execute` callback receives typed `TParams` (already validated by
  * `config.parametersSchema.validate()`) and returns a `Promise<Result<unknown>>`.
  * Thrown errors are caught via `captureAsyncResult` in the round-trip helper.
+ *
+ * The optional second parameter carries the turn's context (its abort signal). A tool that
+ * ignores it may declare only the first parameter.
  *
  * @public
  */
@@ -180,9 +196,14 @@ export interface IAiClientTool<TParams = unknown> {
   /**
    * Execute the tool with validated parameters.
    * @param args - Typed arguments, already validated against `config.parametersSchema`.
+   * @param context - The turn's context, including its abort signal when it has one.
    * @returns A `Promise<Result<unknown>>` — the result is stringified and sent back to the model.
    */
-  readonly execute: (args: TParams) => Promise<Result<unknown>>;
+  // Deliberately a function-typed property rather than a method signature, against the usual
+  // convention: method parameters are bivariant, which would let a tool declare `execute` over a
+  // wider shape than `TParams` (e.g. demand a field the schema never promises) and compile, then
+  // receive schema-valid arguments that lack it. The property form keeps that a compile error.
+  readonly execute: (args: TParams, context?: IAiClientToolExecuteContext) => Promise<Result<unknown>>;
 }
 
 /**

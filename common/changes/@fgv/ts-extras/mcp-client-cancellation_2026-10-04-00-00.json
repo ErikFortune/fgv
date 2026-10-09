@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras",
+      "comment": "ai-assist: IAiClientTool.execute gains an optional second parameter, IAiClientToolExecuteContext { signal? }, and executeClientToolTurn passes the turn's AbortSignal to it so a cancelled turn can stop the tool; existing one-parameter tools are unaffected. execute stays a function-typed property, so a tool still cannot declare it over a wider argument shape than its schema's TParams",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-extras"
+}
