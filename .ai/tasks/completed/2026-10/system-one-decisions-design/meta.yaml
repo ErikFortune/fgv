@@ -42,7 +42,9 @@ summary:
     stream (the consumer will experiment; production runs CLM locally, development reaches a remote
     Jev or openjev; vLLM on an Olares One, Ollama elsewhere), which added per-call meta and OQ-10 to
     OQ-12 (Ollama-versus-vLLM encoder parity) to the design.
-  sourceLine: '**Shipped:** a design for System-1 decisions, at'
+  sourceLine: >
+    **Shipped:** a design for System-1 decisions, at
+    [`docs/design/system-one-decisions/design.md`](../../../../../docs/design/system-one-decisions/design.md).
 keywords:
   - System-1 decision model
   - Jev

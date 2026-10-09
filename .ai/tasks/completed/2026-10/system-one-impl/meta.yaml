@@ -1,7 +1,7 @@
 id: system-one-impl
 status: shipped
 packages: ['@fgv/ts-extras-system-one']
-prs: [721]
+prs: [721, 724]
 openPrs: []
 opened: 2026-10-03
 closed: 2026-10-08
@@ -45,7 +45,9 @@ summary:
     ts-json-base jsonObject/jsonValue (and jsonValue admitting Infinity), worked around locally. The
     orchestrator decided the factories stay plain SDK constructors. Belief 4 held for the sandbox,
     and L1 was later run from outside it (passed against hosted Jev only); L2-L5 were never run.
-  sourceLine: 'A new package, `@fgv/ts-extras-system-one` (`libraries/ts-extras-system-one`), slice S1 of'
+  sourceLine: >
+    A new package, `@fgv/ts-extras-system-one` (`libraries/ts-extras-system-one`), slice S1 of
+    [`implementation-plan.md`](../../../../../docs/design/system-one-decisions/implementation-plan.md).
 keywords:
   - System-1 decision model
   - Result integration boundary

@@ -38,7 +38,8 @@ summary:
     expected low yield on overstatement; three wordings were tightened. Egress differed from the
     brief's table: the git protocol to github.com works, the HF LFS CDN does not. The PR diff showed
     253 src/ files from the release merge the orchestrator made before handover, not this stream's.
-  sourceLine: '**Shipped:** a verification pass over the Phase A System-1 design. Every §2 citation now names the ref'
+  sourceLine: >
+    **Shipped:** a verification pass over the Phase A System-1 design.
 keywords:
   - antagonist pass
   - citation pinning

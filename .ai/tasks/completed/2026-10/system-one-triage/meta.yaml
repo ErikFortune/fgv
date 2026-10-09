@@ -38,7 +38,13 @@ summary:
     explicit '' API key is sent as "Bearer ". The brief's four follow-up buckets are not
     DESIGN_PROCESS.md's; the brief's were used. The work was pushed to system-one-phase-b, not the
     harness-designated branch.
-  sourceLine: '- § 12 of [`design.md`](../../../../../docs/design/system-one-decisions/design.md), worked through in place;'
+  sourceLine: >
+    **Shipped:**
+    - § 12 of [`design.md`](../../../../../docs/design/system-one-decisions/design.md), worked through in place;
+    - E28–E35 added to its evidence table, plus dated refinements to § 7.1 item 5, § 8 and § 11;
+    - [`implementation-plan.md`](../../../../../docs/design/system-one-decisions/implementation-plan.md), which
+    Phase C is held to;
+    - the ledger update.
 keywords:
   - design triage
   - implementation plan

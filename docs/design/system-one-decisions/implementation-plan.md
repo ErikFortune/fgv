@@ -4,7 +4,7 @@
 deviations are in [`result.md`](../../../.ai/tasks/completed/2026-10/system-one-impl/result.md). The revert matrix
 ran 97/97 VERIFIED. **Shipped 2026-10-08:** Phase C via #721; **L1 recorded 2026-10-08** against
 hosted Jev and passed (design E36; the record is in `result.md` § "L1, recorded 2026-10-08"), which
-met decision U2, and the cluster closed with the cluster-close PR. **L2–L5: not run live**; U2 required
+met decision U2, and the cluster closed with [#724](https://github.com/ErikFortune/fgv/pull/724). **L2–L5: not run live**; U2 required
 only L1. Originally the Phase B (triage) output of the `system-one-decisions`
 design-triage-implement stream, 2026-10-03; Phase C was held to this document. Two decisions
 are the user's (§ 1.2); neither changes the package surface, so neither blocks commissioning Phase C.

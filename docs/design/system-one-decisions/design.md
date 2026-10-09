@@ -23,7 +23,7 @@ decisions left to the user, is
 **L1 recorded 2026-10-08** against hosted Jev (`jev-latest` answering as `jev-1.13.0`), passed; see
 E36 and the record in `system-one-impl/result.md` § "L1, recorded 2026-10-08". L2–L5 were not run
 live; decision U2 required only L1. **Shipped 2026-10-08:** Phase C via #721, and the cluster closed
-with the cluster-close PR into `integration/system-one-decisions`.
+with [#724](https://github.com/ErikFortune/fgv/pull/724) into `integration/system-one-decisions`.
 **Date:** 2026-10-01. **Inspected checkout:** `16ec1622b`, which carries promoted `release` at
 `febf0b2b4`. `ts-agent-tasks` citations were re-read there; Phase A had read them from
 `origin/integration/agent-tasks-v1` at `2a95fbb2`, a branch that no longer exists.
