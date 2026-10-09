@@ -44,6 +44,7 @@ getting-started material. This index routes; it does not duplicate.
 | [`ts-extras-transformers`](libraries/ts-extras-transformers/CAPABILITIES.md) · [`ts-web-extras-transformers`](libraries/ts-web-extras-transformers/CAPABILITIES.md) | Local HuggingFace models — classify, embed, summarize |
 | [`ts-extras-mcp`](libraries/ts-extras-mcp/CAPABILITIES.md) | MCP server tools → ai-assist client tools |
 | [`ts-extras-ollama`](libraries/ts-extras-ollama/CAPABILITIES.md) | Ollama *native* API — model management, grammar-constrained output |
+| [`ts-extras-system-one`](libraries/ts-extras-system-one/CAPABILITIES.md) | System-1 decision servers (CLM, openjev, Jev) — mandatory input bound, validated answers, no `confidence` |
 | [`ts-agent-tasks`](libraries/ts-agent-tasks/CAPABILITIES.md) | Agent task recording and mediation — envelope, lifecycle/observation/command/recovery unions, kind+command registry, finite capacity model, snapshot-only context renderer with pure inclusion receipts, FileTree task repository with one-record atomic commit, resident-index queries/paging/due/owed, principal-bound broker (authorized projected views, lists, hierarchy, reassignment), external sources (ordered reconciliation, reserved command dispatch, held uncertain outcomes), subscriptions with issued receipts and exact-ID acknowledgement, retention (authorized disposition, subscription closure, command abandonment, evidence-checked pruning and archive, a capacity runbook), cascade stop (persisted intent over the whole subtree, frozen admission, honest partial results), model tools with bounded output — read-only by default, create/update/reassign, typed commands and cascade-stop requests opt-in; checked prompt composition (one trailing per-request task slot, receipt acknowledgeable only against the exact body sent). **Records work; runs no agent loop** |
 | [`ts-agent-memory`](libraries/ts-agent-memory/CAPABILITIES.md) | Agent memory/knowledge vault — records, dedup (`dedupScopeFor`), edges, retrieval, `IVectorIndex` / `IFragmentVectorIndex`, `embedsKind` |
 | [`ts-agent-memory-sqlite-vec`](libraries/ts-agent-memory-sqlite-vec/CAPABILITIES.md) | Durable vector + fragment indexes (SQLite `vec0`) |
@@ -123,6 +124,7 @@ detail. `· pkg` names the owning package.*
 - **Need a text embedding (`text → vector`)?** → `callProviderEmbedding` · `ts-extras-transformers`
 - **Embedding text via a cloud or self-hosted provider?** → `callProviderEmbedding` · `ts-extras`
 - **Calling a self-hosted Ollama or OpenAI-compatible model?** → `executeClientToolTurn` · `ts-extras`
+- **Asking a System-1 model (CLM, Jev) a typed yes/no, choice or score question?** → `askSystemOne` `noul` `choice` `score`; never truncate the state yourself · `ts-extras-system-one`
 - **Recording agent work — lifecycle, observations, commands — without building a runner?** → `ITaskEnvelope` `TaskLifecycle` `TaskKindRegistry` `TaskConverters` · `ts-agent-tasks`
 - **Rendering task snapshots into bounded prompt context, with a receipt of exactly what was included?** → `TaskContextRenderer` `ITaskInclusionReceipt` · `ts-agent-tasks`
 - **Persisting agent task state + owed updates so a process crash loses neither?** → `FileTreeTaskRepository` `FileTree` · `ts-agent-tasks`
@@ -201,14 +203,14 @@ markers.*
 - **2026-10-04** — JsonSchema.fromJson now reads pydantic Optional[T] (anyOf [T, null]), local $ref/$defs (inlined, bounded) and z.record-style… ([#723](https://github.com/ErikFortune/fgv/pull/723)) · `ts-json-base`
 - **2026-10-04** — An MCP tool call can be bounded and cancelled — aborting an ai-assist turn now cancels the MCP request on the server — and every… ([#722](https://github.com/ErikFortune/fgv/pull/722)) · `ts-extras-mcp` `ts-extras`
 - **2026-10-03** — An open JsonSchema object — additionalProperties: true, or an MCP schema that leaves it out — now passes undeclared keys through… ([#720](https://github.com/ErikFortune/fgv/pull/720)) · `ts-json-base`
+- **2026-10-03** — A Result boundary over the TypeSafe System-1 SDK: ask Jev, openjev or a local CLM server typed noul/choice/score questions, with… ([#721](https://github.com/ErikFortune/fgv/pull/721)) · `ts-extras-system-one`
 - **2026-10-01** — Agent task context can go into a cacheable prompt as one checked, trailing per-request slot, and a delivery's receipt is… ([#707](https://github.com/ErikFortune/fgv/pull/707)) · `ts-agent-tasks`
 - **2026-09-28** — A host can give a model bounded, per-call-authorized tools over its agent tasks: read-only by default, with create, update… ([#702](https://github.com/ErikFortune/fgv/pull/702)) · `ts-agent-tasks`
 - **2026-09-26** — A converter handed an Object.create(null) value now returns a Result instead of throwing — isKeyOf, strictObject and six ts-json /… ([#700](https://github.com/ErikFortune/fgv/pull/700)) · `ts-utils` `ts-json` `ts-res-ui-components` `ts-utils-jest`
 - **2026-09-25** — Anthropic structured output works on Claude Opus 5.5 and Fable 5.1 via JSON outputs instead of a forced tool call, and the advanced… ([#694](https://github.com/ErikFortune/fgv/pull/694)) · `ts-extras`
 - **2026-09-24** — ai-assist's tier and image aliases now point at GPT-6, Gemini 3.8 Flash and Grok 4.7, each id cited from a fetched provider page… ([#692](https://github.com/ErikFortune/fgv/pull/692)) · `ts-extras`
 - **2026-09-23** — A tool-augmented or streamed chat turn can now carry prompt-cache breakpoints and a routing key, closing the one remaining hole… ([#688](https://github.com/ErikFortune/fgv/pull/688)) · `ts-extras`
-- **2026-09-23** — Shipped: a qualifier axis can declare how often it changes, so a body conditioned only on never-changing axes is no longer refuted… ([#689](https://github.com/ErikFortune/fgv/pull/689)) · `ts-prompt-assist`
 
-*Showing the 10 most recent of 53. Per-package history is in each `CAPABILITIES.md`.*
+*Showing the 10 most recent of 54. Per-package history is in each `CAPABILITIES.md`.*
 
 <!-- END GENERATED: recent-additions -->

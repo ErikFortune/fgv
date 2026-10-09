@@ -23,6 +23,29 @@ Description with the user's framing expanded with the design space.
 
 ---
 
+## `ts-extras-system-one` — exact token pre-measurement (design D5)
+
+`askSystemOne`'s mandatory input bound measures characters, with README values (2,400 / 4,400) derived
+from Qwen3-8B characters-per-token measurements (design E33). For a backend whose tokenizer is known,
+the bound could count tokens exactly instead, replacing the character proxy and its safety margin.
+
+**A concrete route now exists** (Phase B, 2026-10-03): Qwen3's `vocab.json` and `merges.txt` are
+reachable without LFS and are enough to build the tokenizer, which is how E33 was measured. Loading it
+at runtime (for example through transformers.js) is unverified. A deployed vLLM encoder also serves
+`POST /tokenize` (E35), which live check L3 would use to confirm E33's counts.
+
+**Why deferred**: the character bound is derived (E33) and deliberately conservative; the package
+has no consumer yet, and L3 (not run) would confirm the measurement against the real tokenizer.
+
+**Dependencies**: a consumer whose states run near the bound, or L3's `/tokenize` evidence showing the
+character rule is too loose or too tight.
+
+**Reference**: `docs/design/system-one-decisions/design.md` §11 D5, E33, E35;
+`.ai/tasks/completed/2026-10/system-one-triage/result.md` § Follow-ups (asked for this entry at
+finalization; added at the `system-one-decisions` cluster close, 2026-10-08).
+
+---
+
 ## A browser story for client-tool turns (CORS pre-flight + a proxied entry point)
 
 `callProviderCompletionStream` pre-flights `IAiProviderDescriptor.streamingCorsRestricted` and

@@ -1,0 +1,30 @@
+{
+  "items": [
+    {
+      "state": "I was charged twice for my subscription this month and need a refund.",
+      "questions": {
+        "billing": { "type": "noul", "instructions": "Is this message about billing?" },
+        "route": {
+          "type": "choice",
+          "instructions": "Which team should handle it?",
+          "criteria": {
+            "billing": "The billing team",
+            "technical": "Technical support",
+            "other": "Anyone else"
+          }
+        }
+      }
+    },
+    {
+      "state": "The app crashes every time I open the settings page on my phone.",
+      "questions": {
+        "billing": { "type": "noul", "instructions": "Is this message about billing?" },
+        "urgency": {
+          "type": "score",
+          "instructions": "How urgent is it?",
+          "criteria": ["Not urgent", "Somewhat urgent", "Very urgent"]
+        }
+      }
+    }
+  ]
+}
