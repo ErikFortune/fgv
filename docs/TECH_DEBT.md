@@ -754,6 +754,22 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
 - **[P2] Cross-runtime entry-point export parity is not systematically tested.**
   Libraries with both Node (`src/index.ts`) and browser (`src/index.browser.ts`) entry points can drift in export names without CI catching it. api-extractor runs only on the Node entry point, so a typo or rename in the browser entry slips through. Pattern has bitten the team three times: `@fgv/ts-extras` exported `Crypto` instead of `CryptoUtils` (personaility web app); `@fgv/ts-extras` missed `Yaml` entirely (ts-prompt-assist sample app, fixed in #377); plus the earlier `repo-template` issue. **`@fgv/ts-extras` now has the recommended micro-test** (`src/test/unit/index.browser.test.ts` asserts every top-level name in `index.ts` is also in `index.browser.ts`); other libraries with browser entries still need it.
 
+  **Namespace members are now covered for `@fgv/ts-extras` too.** The top-level check cannot see a
+  namespace whose name exists on both entries while its members differ — which is how
+  `CryptoUtils.fromBase64Strict` went missing from the browser entry and broke recovery unlock in a
+  browser (`ts-extras-browser-barrel-gaps`). The same test now walks every namespace the Node entry
+  exports, recursively, and fails on any member absent from the browser entry unless it is on a
+  commented Node-only allowlist of seven entries (`NodeCryptoProvider`, `nodeCryptoProvider`,
+  `KeyStore.EncryptedFilePrivateKeyStorage`, `readCsvFileSync`, `readRecordJarFileSync`,
+  `blockPrivateNetworks`, `nodeHostResolver`). The allowlist is itself checked for staleness. The walk
+  descends into every non-array object, including plain data and object instances such as
+  converters, and stops at functions, classes and arrays. Not covered: class members (statics),
+  array contents, and subpath exports whose Node condition the root entry never reaches (e.g.
+  `./hash` → `hash/index.node.js`). An exported object instance whose own keys legitimately differ
+  between runtimes would fail this test and need an allowlist entry. `ts-web-extras` additionally has one suite that runs the
+  crypto provider and HTTP tree against the browser entry; the rest of its suite still resolves
+  `@fgv/ts-extras` to the Node entry, because several tests compare against `NodeCryptoProvider`.
+
   Comprehensive per-export coverage on every library is too expensive given the API surface. The right scope is opportunistic per-library micro-tests.
 
   **Libraries with `*.browser.ts` entries that still need the micro-test:** `ts-bcp47`, `ts-res`, `ts-web-extras`, `ts-app-shell`, `ts-res-ui-components`, `ts-json`, `ts-json-base`, `ts-sudoku-lib`, `ts-sudoku-ui`.
