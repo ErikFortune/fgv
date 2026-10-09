@@ -620,6 +620,20 @@ const MUTATIONS = [
     'succeed(value).onSuccess('
   ),
   m(
+    'R80 a non-finite number in a JSON entry is not refused',
+    ['U39'],
+    SHAPES,
+    "  if (typeof from === 'number' && !Number.isFinite(from)) {",
+    "  if (typeof from === 'number' && Number.isFinite(from) && !Number.isFinite(from)) {"
+  ),
+  m(
+    'R81 an error that throws when inspected is classified unguarded',
+    ['U40'],
+    CLASSIFY,
+    '  return captureResult(() => classifyReadableError(err, baseErrorReason, status, requestId)).orDefaultWith(',
+    '  return captureResult(() => classifyReadableError(err, baseErrorReason, status, requestId)).orThrow() &&\n    captureResult(() => classifyReadableError(err, baseErrorReason, status, requestId)).orDefaultWith('
+  ),
+  m(
     "R79 the JSON converter reads the caller's value again rather than the walk's snapshot",
     ['U35'],
     SHAPES,
@@ -697,13 +711,19 @@ const MUTATIONS = [
   harness(
     'H14 a nested __proto__ key is not checked',
     ['S9'],
-    '  return isTopLevelEntry(value) && !hasReservedKey(value);',
+    '  return isTopLevelEntry(value) && !hasUnsendable(value);',
     '  return isTopLevelEntry(value);'
   ),
   harness(
     'H15 the nested __proto__ check does not descend into arrays',
     ['S9'],
-    '    return value.some(hasReservedKey);\n',
+    '    return value.some(hasUnsendable);\n',
+    '    return false;\n'
+  ),
+  harness(
+    'H16 a non-finite number is not checked',
+    ['S9'],
+    '    return !Number.isFinite(value);\n',
     '    return false;\n'
   )
 ];

@@ -204,27 +204,29 @@ const QUESTION_TYPES = ['noul', 'choice', 'score'];
 
 /**
  * The SDK's `EntryType`, as `askSystemOne` checks it: text, a JSON object or array, or `null`, not
- * a bare number or boolean, and with no own `__proto__` key at any depth. The file is parsed JSON,
- * so everything inside is already JSON.
+ * a bare number or boolean, and with no own `__proto__` key or non-finite number at any depth. The
+ * file is parsed JSON, but `JSON.parse` reads `1e999` as `Infinity`, so that is checked too.
  */
 function isEntry(value) {
-  return isTopLevelEntry(value) && !hasReservedKey(value);
+  return isTopLevelEntry(value) && !hasUnsendable(value);
 }
 
 /**
- * Whether a parsed JSON value holds an own `__proto__` key at any depth, which `askSystemOne`
- * refuses: the JSON copy it sends would turn the key into a prototype and drop it.
+ * Whether a parsed JSON value holds an own `__proto__` key or a non-finite number at any depth,
+ * which `askSystemOne` refuses: the JSON copy it sends would drop the key, and would send the number
+ * as `null`.
  */
-function hasReservedKey(value) {
+function hasUnsendable(value) {
+  if (typeof value === 'number') {
+    return !Number.isFinite(value);
+  }
   if (Array.isArray(value)) {
-    return value.some(hasReservedKey);
+    return value.some(hasUnsendable);
   }
   if (value === null || typeof value !== 'object') {
     return false;
   }
-  return (
-    Object.prototype.hasOwnProperty.call(value, '__proto__') || Object.values(value).some(hasReservedKey)
-  );
+  return Object.prototype.hasOwnProperty.call(value, '__proto__') || Object.values(value).some(hasUnsendable);
 }
 
 /** The top level of an `EntryType`. */

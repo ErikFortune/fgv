@@ -351,7 +351,7 @@ const CASES = [
   ],
   [
     'S9',
-    '--check refuses a __proto__ key nested anywhere in the state, an instruction or a criterion',
+    '--check refuses a __proto__ key or a non-finite number nested anywhere in the state, an instruction or a criterion',
     async (fail, dir) => {
       const nested = '{"d":{"__proto__":{"x":1},"e":2}}';
       const noulQ = '{"type":"noul","instructions":"Is it?"}';
@@ -362,7 +362,10 @@ const CASES = [
         ['a noul instruction', '"s"', `{"n":{"type":"noul","instructions":${nested}}}`, 3],
         ['a noul criterion', '"s"', `{"n":{"type":"noul","criteria":{"true":${nested}}}}`, 3],
         ['a choice description', '"s"', `{"c":{"type":"choice","criteria":{"a":${nested},"b":null}}}`, 3],
-        ['a score level', '"s"', `{"s":{"type":"score","criteria":["low",[${nested}]]}}`, 3]
+        ['a score level', '"s"', `{"s":{"type":"score","criteria":["low",[${nested}]]}}`, 3],
+        ['finite numbers', '{"a":[0,-1.5,1e308]}', `{"n":${noulQ}}`, 0],
+        ['1e999 in the state', '{"a":[1e999]}', `{"n":${noulQ}}`, 3],
+        ['-1e999 in a criterion', '"s"', '{"n":{"type":"noul","criteria":{"true":{"x":-1e999}}}}', 3]
       ];
       for (const [label, state, questions, expected] of cases) {
         const file = path.join(dir, `s9-${Math.random().toString(36).slice(2)}.json`);

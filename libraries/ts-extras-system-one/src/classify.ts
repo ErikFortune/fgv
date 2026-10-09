@@ -27,6 +27,7 @@ import {
   APIUserAbortError,
   TypeSafeError
 } from '@typesafe-ai/sdk';
+import { captureResult } from '@fgv/ts-utils';
 import type { SystemOneFailureReason } from './types';
 
 /**
@@ -97,6 +98,23 @@ function reasonForSdkError(err: unknown): SystemOneFailureReason | undefined {
  * @internal
  */
 export function classifyError(
+  err: unknown,
+  baseErrorReason: SystemOneFailureReason,
+  status?: number,
+  requestId?: string
+): IClassifiedFailure {
+  // What a caller's `fetch` rejects with is arbitrary: a Proxy can throw from `instanceof` or from
+  // its own conversion to text, so a value that cannot be inspected gets fixed text instead.
+  return captureResult(() => classifyReadableError(err, baseErrorReason, status, requestId)).orDefaultWith(
+    () => ({
+      reason: 'connection',
+      message: failureMessage('connection', 'an error that could not be read', status, requestId)
+    })
+  );
+}
+
+/** {@link classifyError}, for an error that can be inspected without throwing. */
+function classifyReadableError(
   err: unknown,
   baseErrorReason: SystemOneFailureReason,
   status?: number,

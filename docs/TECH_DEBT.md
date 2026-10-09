@@ -807,14 +807,13 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
     `Object.getPrototypeOf(result).evil === 1`. With a number value, `{"x":0.5,"__proto__":0}`
     succeeds as `{"x":0.5}`.
   - **`@fgv/ts-json-base` `jsonObject`**, and with it **`jsonValue`**, which delegates to it for
-    objects (`libraries/ts-json-base/src/packlets/converters/converters.ts`). On
-    `integration/system-one-decisions` the key is assigned (`obj[name] = v`) at any depth, with the
-    same effect as `recordOf`: it is dropped and, when its value is an object, **becomes the copy's
-    prototype**. `jsonValue.convert(JSON.parse('{"a":{"__proto__":{"x":1},"b":2}}'))` succeeds,
-    serializes as `{"a":{"b":2}}`, and `value.a.x === 1` (reproduced 2026-10-08). So prototype
-    injection through `jsonObject` is live on this branch until #720 is promoted. **On `release`,
-    #720 changed this to an explicit, documented drop.** The prototype hazard is gone there, but the
-    key is still discarded silently, and the result still reports success. The in-place `Validators.jsonObject` copies nothing and is not affected.
+    objects (`libraries/ts-json-base/src/packlets/converters/converters.ts`). Before #720 the key
+    was assigned (`obj[name] = v`) at any depth, with the same effect as `recordOf`:
+    `jsonValue.convert(JSON.parse('{"a":{"__proto__":{"x":1},"b":2}}'))` succeeded, serialized as
+    `{"a":{"b":2}}`, and `value.a.x === 1` (reproduced 2026-10-08 on
+    `integration/system-one-decisions`). **#720 changed this to an explicit, documented drop**, and
+    the promotion of that branch (#726) brought it in. The prototype hazard is gone, but the key is
+    still discarded silently, and the result still reports success. The in-place `Validators.jsonObject` copies nothing and is not affected.
 
   **Interim measure.** `@fgv/ts-extras-system-one` guards both locally, in
   `libraries/ts-extras-system-one/src/shapes.ts`:
@@ -840,8 +839,9 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
   - `jsonObject` must **refuse** the key, or offer an opt-in that does. #720's drop does **not**
     lift `withoutReservedKeys`, because the package would then send a state that differs from the
     caller's without saying so.
-  - After promotion brings #720 in, `withoutReservedKeys`' docstring ("copies each key by
-    assignment") needs a one-line update. The guard itself stays.
+  - The promotion to `release` (#726) brought #720 in: `jsonObject` now drops the key rather than
+    assigning it, and `withoutReservedKeys`' docstring says so. The guard stays, because a drop is
+    still a silent change to what is sent.
 
   **Trigger**: any `ts-utils` conversion or `ts-json-base` converter touch, or a third consumer
   needing either guard.
@@ -972,12 +972,12 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
   every instruction and every criterion value with `jsonValue`. So a non-finite number nested in a
   caller's state passes, and the SDK's `JSON.stringify` sends it as `null`: what is sent differs from
   what was checked. Re-verified 2026-10-08 against the built package: `jsonValue.convert(Infinity)`
-  succeeds, and `{r: Infinity}` converts and serializes as `{"r":null}`, while `NaN` is refused. **That
-  package has no interim guard for this.** Its range checks reject non-finite *received* numbers
-  (probabilities, `noul`, `score`, `usage`), but on the request side the case was deliberately left
-  to this upstream fix rather than guarded locally (`system-one-impl/result.md`, Copilot round 4,
-  the note under item 2). What resolves it there is the same upstream fix. A local guard would be the
-  stopgap if a consumer meets it first.
+  succeeds, and `{r: Infinity}` converts and serializes as `{"r":null}`, while `NaN` is refused. The
+  request side was first left to this upstream fix (`system-one-impl/result.md`, Copilot round 4,
+  the note under item 2); **the promotion to `release` (#726) added the local guard**:
+  `withoutReservedKeys` now refuses a non-finite number at any depth (test U39, matrix row R80), and
+  the live harness's `--check` does the same (S9, H16). Its range checks already rejected non-finite
+  *received* numbers. The upstream fix would let the local guard go.
 
   **Reference**: `.ai/tasks/completed/2026-10/agent-tasks-i2/result.md` § The framing decision;
   `.ai/tasks/completed/2026-10/system-one-impl/result.md` § Copilot round 4.

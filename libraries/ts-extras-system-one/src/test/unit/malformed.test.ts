@@ -468,3 +468,49 @@ describe('a reserved __proto__ key is refused at any depth of a JSON entry', () 
     expect(result.detail).toBe('invalid-response');
   });
 });
+
+describe('a non-finite number is refused at any depth of a JSON entry', () => {
+  test('U39 Infinity, -Infinity or NaN in the state or a criterion is invalid-request, with nothing sent', async () => {
+    const { fetch, calls } = scriptedFetch(jsonResponse(200, shortChoiceBody('q')));
+    const client = clientFor(fetch);
+    // `JSON.stringify` would send each of these as `null`, so the sent state would differ from the
+    // caller's; `JSON.parse('1e999')` produces the first.
+    const states: ReadonlyArray<[string, EntryType]> = [
+      ['an object value', untyped<EntryType>({ n: Infinity })],
+      ['inside an array', untyped<EntryType>({ a: [1, -Infinity] })],
+      ['NaN, two levels down', untyped<EntryType>({ a: { b: NaN } })]
+    ];
+    for (const [label, state] of states) {
+      const result = await askSystemOne(client, {
+        state,
+        questions: { q: shortChoice() },
+        inputLimit: 'unchecked'
+      });
+      expect({ label, detail: result.detail, message: result.message }).toEqual({
+        label,
+        detail: 'invalid-request',
+        message: 'invalid-request: invalid [state] in the request'
+      });
+    }
+    const criterion = await askSystemOne(client, {
+      state: 's',
+      questions: untyped<Questions>({ q: { type: 'noul', criteria: { true: { n: Infinity } } } }),
+      inputLimit: 'unchecked'
+    });
+    expect(criterion.detail).toBe('invalid-request');
+    expect(calls).toHaveLength(0);
+  });
+
+  test('U39 finite numbers inside a JSON entry are sent intact', async () => {
+    const { fetch, calls } = scriptedFetch(jsonResponse(200, shortChoiceBody('q')));
+    const state = { a: [0, -1.5, 1e308] };
+    expect(
+      await askSystemOne(clientFor(fetch), {
+        state,
+        questions: { q: shortChoice() },
+        inputLimit: 'unchecked'
+      })
+    ).toSucceed();
+    expect(sentBody(calls[0])).toEqual(expect.objectContaining({ state }));
+  });
+});

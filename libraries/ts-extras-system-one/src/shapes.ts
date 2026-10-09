@@ -116,9 +116,9 @@ export function rejectedFields(
 }
 
 /**
- * A snapshot of a JSON-shaped value that refuses an own `__proto__` key at any depth. The JSON
- * converter copies each key by assignment, where `__proto__` sets the copy's prototype instead of
- * creating a key, so a nested reserved key would vanish from what is sent. The walk descends exactly
+ * A snapshot of a JSON-shaped value that refuses an own `__proto__` key and a non-finite number at
+ * any depth. The JSON converter drops a `__proto__` key and accepts `Infinity`, which serializes as
+ * `null`, so either would make what is sent differ from what the caller passed. The walk descends exactly
  * where the JSON converter does (its own `isJsonArray` / `isJsonObject`), reads each value once, and
  * builds the snapshot with `Object.fromEntries`, which creates keys rather than assigning them;
  * anything else is passed through for the JSON converter to judge. A cycle overflows the stack and a
@@ -127,6 +127,9 @@ export function rejectedFields(
 function withoutReservedKeys(from: unknown): Result<unknown> {
   if (isJsonArray(from)) {
     return mapResults(from.map(withoutReservedKeys));
+  }
+  if (typeof from === 'number' && !Number.isFinite(from)) {
+    return fail('not a finite number');
   }
   if (!isJsonObject(from)) {
     return succeed(from);
@@ -145,7 +148,7 @@ function withoutReservedKeys(from: unknown): Result<unknown> {
 
 /**
  * The SDK's `EntryType`: text, a JSON object or array, or `null`, checked recursively as JSON, so a
- * `Map`, a `Date`, a `bigint`, an `undefined`, a cycle or a reserved `__proto__` key anywhere inside
+ * `Map`, a `Date`, a `bigint`, an `undefined`, a non-finite number, a cycle or a reserved `__proto__` key anywhere inside
  * is refused rather than serialized into something else. A bare number or boolean is JSON but not an
  * `EntryType`.
  */

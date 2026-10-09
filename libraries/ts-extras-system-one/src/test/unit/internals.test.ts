@@ -69,6 +69,24 @@ describe('classifyError', () => {
     });
   });
 
+  test('U40 a value that throws when inspected is connection, with fixed text', () => {
+    const hostile = new Proxy(
+      {},
+      {
+        getPrototypeOf: () => {
+          throw new Error('trap');
+        },
+        get: () => {
+          throw new Error('trap');
+        }
+      }
+    );
+    expect(classifyError(hostile, 'invalid-response', 200, 'req-4')).toEqual({
+      reason: 'connection',
+      message: 'connection (status 200) (request req-4): an error that could not be read'
+    });
+  });
+
   test('the SDK error classes classify by class', () => {
     expect(classifyError(new APIUserAbortError(), 'connection').reason).toBe('aborted');
     expect(classifyError(new APIConnectionError(), 'invalid-response').reason).toBe('connection');
