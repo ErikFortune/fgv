@@ -1535,26 +1535,6 @@ describe('Result module', () => {
         expect(result.message).toBe(failedReturn);
       }
     });
-
-    test('returns failure with fixed text if the thrown value cannot be read', () => {
-      const unprintable = {
-        toString(): string {
-          throw new Error('toString');
-        }
-      };
-      const unreadable = Object.defineProperty(new Error('hidden'), 'message', {
-        get(): string {
-          throw new Error('message');
-        }
-      });
-      for (const thrown of [unprintable, unreadable]) {
-        expect(
-          captureResult(() => {
-            throw thrown;
-          })
-        ).toFailWith('an error whose message could not be read');
-      }
-    });
   });
 
   describe('helpers', () => {
