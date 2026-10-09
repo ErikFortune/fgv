@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "New package: a Result-integration boundary over @typesafe-ai/sdk for System-1 decision servers (CLM, openjev, Jev), with a mandatory input bound, response validation, classified failures and per-call meta",
+      "type": "minor",
+      "packageName": "@fgv/ts-extras-system-one"
+    }
+  ],
+  "packageName": "@fgv/ts-extras-system-one",
+  "email": "noreply@anthropic.com"
+}

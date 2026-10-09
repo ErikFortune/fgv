@@ -795,6 +795,70 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
 
   **Reference**: PR #377 (ts-extras Yaml fix + micro-test pattern landed); original L13 lessons-pending entry; earlier ts-extras `Crypto` bug.
 
+- **[P2] `Converters.recordOf` (`@fgv/ts-utils`) and `Converters.jsonObject` (`@fgv/ts-json-base`) mishandle an own `__proto__` key.**
+  Both build their result by assignment (`result[key] = value`), where the key `__proto__` sets the
+  result's prototype instead of creating a property. `JSON.parse('{"__proto__": …}')` produces exactly
+  such an own key, so untrusted JSON reaches this path.
+  - **`@fgv/ts-utils` `Converters.recordOf`** (`libraries/ts-utils/src/packlets/conversion/basicConverters.ts`,
+    `recordOf`): the key is dropped silently, and **when its value is an object, that object becomes
+    the result's prototype**, so every property on it reads through the result. Reproduced on
+    2026-10-08 against the built package. `recordOf(identity)` over
+    `JSON.parse('{"x":0.5,"__proto__":{"evil":1}}')` succeeds, `Object.keys` is `['x']`, and
+    `Object.getPrototypeOf(result).evil === 1`. With a number value, `{"x":0.5,"__proto__":0}`
+    succeeds as `{"x":0.5}`.
+  - **`@fgv/ts-json-base` `jsonObject`**, and with it **`jsonValue`**, which delegates to it for
+    objects (`libraries/ts-json-base/src/packlets/converters/converters.ts`). Before #720 the key
+    was assigned (`obj[name] = v`) at any depth, with the same effect as `recordOf`:
+    `jsonValue.convert(JSON.parse('{"a":{"__proto__":{"x":1},"b":2}}'))` succeeded, serialized as
+    `{"a":{"b":2}}`, and `value.a.x === 1` (reproduced 2026-10-08 on
+    `integration/system-one-decisions`). **#720 changed this to an explicit, documented drop**, and
+    the promotion of that branch (#726) brought it in. The prototype hazard is gone, but the key is
+    still discarded silently, and the result still reports success. The in-place `Validators.jsonObject` copies nothing and is not affected.
+
+  **Interim measure.** `@fgv/ts-extras-system-one` guards both locally, in
+  `libraries/ts-extras-system-one/src/shapes.ts`:
+  - `ownRecordOf` refuses any record holding an own `__proto__` before `recordOf` sees it. This
+    covers answer sets, probability distributions and legends (`invalid-response`), and question
+    ids, choice labels and request/parameter objects (`invalid-request`).
+  - `withoutReservedKeys` walks every JSON entry (state, instructions, criterion values) before
+    `jsonValue`. It refuses the key at any depth and snapshots with `Object.fromEntries`.
+  - **One site is not guarded:** `jsonRecord` (`shapes.ts`, a plain `recordOf(anyValue)`), used in
+    `validate.ts` only to *describe* a body that has already failed (which top-level fields, which
+    answers are malformed). A received body such as `{"__proto__":{"model":…}}` can make
+    `rejectedFields` read through an injected prototype and misname the fields at fault. The call
+    still fails `invalid-response`, so the effect is limited to the diagnostic message.
+
+  Tests U33 and U38 pin both guards, and revert-matrix rows R60, R61 and R76 confirm them. The
+  package refuses rather than drops: a caller's or a server's data must never change silently
+  between the check and the send.
+
+  **What lifts the guards: the upstream fix.**
+  - `recordOf` must create keys rather than assign them (`Object.defineProperty`, or
+    `Object.fromEntries`), or refuse the key. Then `ownRecordOf` can become plain `recordOf`, and
+    `jsonRecord`'s diagnostic gap closes with no local change.
+  - `jsonObject` must **refuse** the key, or offer an opt-in that does. #720's drop does **not**
+    lift `withoutReservedKeys`, because the package would then send a state that differs from the
+    caller's without saying so.
+  - The promotion to `release` (#726) brought #720 in: `jsonObject` now drops the key rather than
+    assigning it, and `withoutReservedKeys`' docstring says so. The guard stays, because a drop is
+    still a silent change to what is sent.
+
+  **Trigger**: any `ts-utils` conversion or `ts-json-base` converter touch, or a third consumer
+  needing either guard.
+
+  **Scope sketch**: decide the policy once for both libraries. Refuse, drop, or keep as a real own
+  property. `JsonEditor` deliberately skips `__proto__` / `constructor` / `prototype`, and #720
+  drops, so "drop, documented" may be the policy for `jsonObject`. If it is, offer a strict refusal
+  for boundaries that must not lose data. `recordOf` setting a prototype from input is wrong under
+  every policy. This is a behaviour change on established surfaces, so run a repo-wide `rush test`.
+  It is a sibling of the `jsonThreeWayDiff` `__proto__` P3 below, and both should take one policy.
+
+  **Not a P3**: `recordOf`, and `jsonObject` / `jsonValue` until #720 is promoted, let input choose
+  an object's prototype, at converters that are commonly the trust boundary. That is a correctness and prototype-injection hazard, not a cosmetic loss.
+
+  **Reference**: `.ai/tasks/completed/2026-10/system-one-impl/result.md`: deviations 27 and 32, and
+  Copilot rounds 4 and 6 on #721 (threads r4213291067, r4214989996).
+
 ## P3 — Opportunistic cleanup
 
 - **[P3] `ts-agent-tasks` — deferrals the agent-tasks slices recorded only in their own `result.md`.**
@@ -904,7 +968,19 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
 
   **Not a P4**: a value that changes silently on serialization is a correctness hazard, not a doc gap.
 
-  **Reference**: `.ai/tasks/completed/2026-10/agent-tasks-i2/result.md` § The framing decision.
+  **Second consumer, 2026-10-08: `@fgv/ts-extras-system-one`.** Its request gate checks the state,
+  every instruction and every criterion value with `jsonValue`. So a non-finite number nested in a
+  caller's state passes, and the SDK's `JSON.stringify` sends it as `null`: what is sent differs from
+  what was checked. Re-verified 2026-10-08 against the built package: `jsonValue.convert(Infinity)`
+  succeeds, and `{r: Infinity}` converts and serializes as `{"r":null}`, while `NaN` is refused. The
+  request side was first left to this upstream fix (`system-one-impl/result.md`, Copilot round 4,
+  the note under item 2); **the promotion to `release` (#726) added the local guard**:
+  `withoutReservedKeys` now refuses a non-finite number at any depth (test U39, matrix row R80), and
+  the live harness's `--check` does the same (S9, H16). Its range checks already rejected non-finite
+  *received* numbers. The upstream fix would let the local guard go.
+
+  **Reference**: `.ai/tasks/completed/2026-10/agent-tasks-i2/result.md` § The framing decision;
+  `.ai/tasks/completed/2026-10/system-one-impl/result.md` § Copilot round 4.
 
 - **[P3] `@fgv/ts-agent-tasks` needs a global `structuredClone`, and says so nowhere.**
   The broker clones every authorization request (`broker/access.ts`), and projections

@@ -651,6 +651,13 @@
       "tags": ["libraries"]
     },
     {
+      "packageName": "@fgv/ts-extras-system-one",
+      "projectFolder": "libraries/ts-extras-system-one",
+      "shouldPublish": true,
+      "versionPolicyName": "base-utils",
+      "tags": ["libraries"]
+    },
+    {
       "packageName": "@fgv/testbed",
       "projectFolder": "samples/testbed",
       "shouldPublish": false,
