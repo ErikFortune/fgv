@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-import '@fgv/ts-utils-jest';
+import '../helpers/jest';
 import { Failure, Success } from '../../packlets/base';
 
 /**
