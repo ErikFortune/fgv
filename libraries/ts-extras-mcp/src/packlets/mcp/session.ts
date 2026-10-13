@@ -41,7 +41,7 @@ import {
   type IMcpSession,
   type McpFailureReason
 } from './model';
-import { errorText, runSdkRequest, validateTimeoutMs } from './request';
+import { errorText, printable, runSdkRequest, validateTimeoutMs } from './request';
 import {
   type ISdkClient,
   type ISdkRequestOptions,
@@ -49,7 +49,8 @@ import {
   SDK_DEFAULT_TIMEOUT_MS,
   classifySdkError,
   makeClient,
-  makeTimeoutError
+  makeTimeoutError,
+  terminateHttpSession
 } from './sdk';
 import { McpTransport } from './transports';
 
@@ -65,6 +66,18 @@ const DEFAULT_CLIENT_NAME: string = '@fgv/ts-extras-mcp';
  * runtime is avoided to keep the bundle free of a JSON import / `require` of the manifest.)
  */
 const DEFAULT_CLIENT_VERSION: string = '5.1.0';
+
+/**
+ * How long {@link closeMcpSession} waits for a Streamable-HTTP server to answer the `DELETE` that
+ * ends its session, in milliseconds, before closing the transport anyway.
+ *
+ * @remarks
+ * Termination is a courtesy to the server, so it must not hold the close: two seconds covers a
+ * loopback or same-region round trip with room to spare, and caps what an unresponsive server can
+ * add to a close. Closing the transport aborts a `DELETE` still pending at that point.
+ * @internal
+ */
+export const TERMINATE_TIMEOUT_MS: number = 2000;
 
 /**
  * Records whether a session's connection has closed, and forwards the close to the consumer's
@@ -139,19 +152,41 @@ export class McpSession implements IMcpSession {
   public readonly client: ISdkClient;
   /** The session's close state. */
   public readonly closeWatcher: McpCloseWatcher;
+  /** The Streamable-HTTP transport whose server session a close terminates; `undefined` for any other kind. */
+  private readonly _httpTransport: ISdkTransport | undefined;
+  private readonly _logger: Logging.ILogger | undefined;
+  private _terminating: Promise<void> | undefined;
 
   public constructor(
     client: ISdkClient,
     clientName: string,
     clientVersion: string,
     serverInfo: IMcpServerInfo | undefined,
-    closeWatcher: McpCloseWatcher
+    closeWatcher: McpCloseWatcher,
+    httpTransport?: ISdkTransport,
+    logger?: Logging.ILogger
   ) {
     this.client = client;
     this.clientName = clientName;
     this.clientVersion = clientVersion;
     this.serverInfo = serverInfo;
     this.closeWatcher = closeWatcher;
+    this._httpTransport = httpTransport;
+    this._logger = logger;
+  }
+
+  /**
+   * Ends the server's Streamable-HTTP session, best-effort and bounded by
+   * {@link TERMINATE_TIMEOUT_MS}. Never rejects. Sends at most one `DELETE` per session, however
+   * many closes are made, and none for a non-HTTP session.
+   */
+  public terminate(): Promise<void> {
+    const transport = this._httpTransport;
+    if (transport === undefined) {
+      return Promise.resolve();
+    }
+    this._terminating ??= _terminateWithin(transport, TERMINATE_TIMEOUT_MS, this._logger);
+    return this._terminating;
   }
 
   /**
@@ -188,6 +223,12 @@ export class McpSession implements IMcpSession {
  * **The close is started, not awaited.** Closing can take seconds (a stdio child is given time to
  * exit) or, for a custom transport, never finish; awaiting it would let teardown stretch the
  * connect past its deadline. Teardown therefore completes after the failure has been returned.
+ *
+ * **No Streamable-HTTP `DELETE` is sent here**, unlike {@link closeMcpSession}: the `DELETE` must
+ * precede the close (closing aborts it), so sending it would hold the close behind a server round
+ * trip. A connect that lost before `initialize` was answered has no session id to terminate; one
+ * that lost after it (an abort or deadline during `notifications/initialized`) leaves the server's
+ * session to expire on the server's own idle timeout.
  */
 async function _connectWithin(
   client: ISdkClient,
@@ -219,6 +260,43 @@ async function _connectWithin(
       clearTimeout(timer);
       stopListening();
     });
+}
+
+/**
+ * Sends the Streamable-HTTP `DELETE` for `transport`, waiting at most `timeoutMs` for it. Never
+ * rejects.
+ *
+ * @remarks
+ * A failure (a non-2xx answer other than 405, a network error, a dropped connection) and an
+ * expired bound are each logged once, at `detail`: termination is a courtesy whose failure the
+ * consumer cannot act on, and the close proceeds either way. The error text can carry the server's
+ * HTTP reason phrase, so it is escaped for the log line. A `DELETE` still pending at the bound is
+ * left to the close that follows, which aborts it; its eventual rejection is absorbed here.
+ */
+async function _terminateWithin(
+  transport: ISdkTransport,
+  timeoutMs: number,
+  logger: Logging.ILogger | undefined
+): Promise<void> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const bound = new Promise<'timed-out'>((resolve) => {
+    timer = setTimeout(() => resolve('timed-out'), timeoutMs);
+  });
+  const terminating = Promise.resolve()
+    .then(() => terminateHttpSession(transport))
+    .then(
+      () => 'terminated' as const,
+      (err: unknown) => ({ failed: err })
+    );
+  const outcome = await Promise.race([terminating, bound]);
+  clearTimeout(timer);
+  if (outcome === 'timed-out') {
+    logger?.detail(`mcp: session termination did not finish within ${timeoutMs} ms; closing anyway`);
+  } else if (outcome !== 'terminated') {
+    logger?.detail(
+      printable(`mcp: session termination failed; closing anyway: ${errorText(outcome.failed)}`)
+    );
+  }
 }
 
 /**
@@ -319,7 +397,10 @@ export async function connectMcpSession(
       ? `mcp: connected to server ${serverInfo.name}@${serverInfo.version}`
       : 'mcp: connected (server did not report identity)'
   );
-  return succeedWithDetail(new McpSession(client, name, version, serverInfo, closeWatcher));
+  const httpTransport = transport.transportKind === 'http' ? claimed.value : undefined;
+  return succeedWithDetail(
+    new McpSession(client, name, version, serverInfo, closeWatcher, httpTransport, logger)
+  );
 }
 
 /**
@@ -327,6 +408,18 @@ export async function connectMcpSession(
  *
  * @remarks
  * The session's `onClose` callback, when one was supplied, fires as part of this close.
+ *
+ * **Streamable HTTP.** Before closing the transport, the close ends the session on the server by
+ * sending the Streamable-HTTP `DELETE` (the SDK's `terminateSession()`), so the server can free it
+ * rather than wait for its own idle timeout. This is best-effort and bounded: a server that answers
+ * 405 (it does not support termination), fails, drops the connection or never answers does not
+ * fail the close, and delays it by at most two seconds. A termination failure is logged at `detail`
+ * to the session's `logger`. Only the first close of a session sends the `DELETE`. Stdio and custom
+ * transports are closed exactly as before.
+ *
+ * A call still in flight when the `DELETE` lands may be failed by the server before the transport
+ * closes, so it can report the server's answer (`'protocol'`, `'session-expired'`) rather than
+ * `'not-connected'`.
  *
  * @param session - A session from {@link connectMcpSession}.
  * @returns `Success(true)`, or `Failure` if the handle is foreign or the close call throws.
@@ -337,10 +430,12 @@ export async function closeMcpSession(session: IMcpSession): Promise<Result<true
   if (sessionResult.isFailure()) {
     return fail(`closeMcpSession: ${sessionResult.message}`);
   }
+  const mcpSession = sessionResult.value;
   // Converted with errorText, for this package's fallback text on a rejection value that cannot be
-  // read (see errorText).
+  // read (see errorText). `terminate` never rejects, so only the close can fail the result.
   return Promise.resolve()
-    .then(() => sessionResult.value.client.close())
+    .then(() => mcpSession.terminate())
+    .then(() => mcpSession.client.close())
     .then(
       () => succeed(true as const),
       (err: unknown) => fail<true>(`closeMcpSession: ${errorText(err)}`)

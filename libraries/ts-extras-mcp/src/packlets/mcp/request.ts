@@ -64,6 +64,22 @@ export function errorText(err: unknown): string {
 }
 
 /**
+ * `text` with every control character — C0, DEL, C1 and U+2028/U+2029 — spelled `\uXXXX`.
+ *
+ * @remarks
+ * For log lines that carry server-supplied text, so a hostile server cannot break the line or forge
+ * another. Structured values are left as the server sent them; escaping is for the log line only.
+ * @internal
+ */
+export function printable(text: string): string {
+  return Array.from(text, (ch) => {
+    const code = ch.charCodeAt(0);
+    const control = code < 0x20 || (code >= 0x7f && code <= 0x9f) || code === 0x2028 || code === 0x2029;
+    return control ? `\\u${code.toString(16).padStart(4, '0')}` : ch;
+  }).join('');
+}
+
+/**
  * The largest delay `setTimeout` honours (2³¹−1 ms). Node fires a larger — or an infinite — delay
  * after 1 ms instead, so a caller asking for "no timeout" would get an immediate one.
  * @internal

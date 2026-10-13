@@ -46,7 +46,7 @@ See [`docs/FUTURE.md`](../../docs/FUTURE.md) for the tracked follow-ups.
 | `createHttpTransport({ url, headers? })` | `Result<IMcpTransport>` |
 | `createCustomTransport(sdkTransport)` | `Result<IMcpTransport>` |
 | `connectMcpSession({ transport, clientName?, clientVersion?, logger?, onClose?, timeoutMs?, signal? })` | `Promise<DetailedResult<IMcpSession, McpFailureReason>>` |
-| `closeMcpSession(session)` | `Promise<Result<true>>` |
+| `closeMcpSession(session)` | `Promise<Result<true>>` — over Streamable HTTP, ends the server's session with a best-effort `DELETE` (bounded to 2 s) before closing |
 | `listMcpTools(session, options?)` | `Promise<DetailedResult<ReadonlyArray<IMcpToolDescriptor>, McpFailureReason>>` |
 | `callMcpTool(session, name, args, options?)` | `Promise<DetailedResult<IMcpToolCallResult, McpFailureReason>>` |
 | `adaptMcpTools(session, { logger? })` | `Promise<DetailedResult<IAdaptMcpToolsResult, McpFailureReason>>` |

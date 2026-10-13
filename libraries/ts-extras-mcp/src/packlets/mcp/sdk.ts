@@ -212,6 +212,24 @@ export function makeStdioTransport(params: ISdkStdioParams): ISdkTransport {
 }
 
 /**
+ * Ends a Streamable-HTTP session on the server: sends the `DELETE` that the SDK's
+ * `terminateSession()` issues. Resolves without sending anything for any other transport, or for an
+ * HTTP transport that was never assigned a session id (the SDK checks that itself).
+ *
+ * @remarks
+ * The SDK treats a 405 answer as success (the server does not support explicit termination) and
+ * rejects with a `StreamableHTTPError` for any other non-2xx status. The request runs on the
+ * transport's own abort signal, so it stays pending against a server that never answers until the
+ * transport is closed. The caller bounds it.
+ * @internal
+ */
+export function terminateHttpSession(transport: ISdkTransport): Promise<void> {
+  return transport instanceof StreamableHTTPClientTransport
+    ? transport.terminateSession()
+    : Promise.resolve();
+}
+
+/**
  * Constructs a Streamable-HTTP transport for the given URL, with optional static headers.
  * @internal
  */

@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "closeMcpSession on a Streamable-HTTP session now sends the session-terminating DELETE before closing the transport, best-effort and bounded to 2 s; a 405, failure or silence never fails or holds the close (personaility#674)",
+      "type": "minor",
+      "packageName": "@fgv/ts-extras-mcp"
+    }
+  ],
+  "packageName": "@fgv/ts-extras-mcp",
+  "email": "noreply@anthropic.com"
+}
