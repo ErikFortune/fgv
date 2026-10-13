@@ -62,9 +62,12 @@ for how each SDK error maps to a kind.
 ### Rich results
 
 `callMcpTool` returns every content block, converter-validated, as `blocks` — `text`,
-`resource_link` (`uri`, `name?`, `title?`, `mimeType?`, `description?`), `resource` (embedded text,
-or a blob's `byteLength`), `image` / `audio` (`mimeType`, `byteLength`) and `unknown` for anything
-else or malformed — plus `structuredContent` when it is JSON. `content` is the text projection a
+`resource_link` (`uri`, `name?`, `title?`, `mimeType?`, `description?`), `resource` (`uri?`,
+`mimeType?`, and embedded text or a blob's `byteLength`), `image` / `audio` (`mimeType?`,
+`byteLength`) and `unknown` for anything else or malformed — plus `structuredContent` when it is
+JSON. A `uri` or `mimeType` that is missing or not one printable line is dropped and the block kept
+(except a `resource_link`'s `uri`, which is the point of that block). Line-wrapped base64 is
+malformed. A block's `annotations` and `_meta` are not carried. `content` is the text projection a
 model sees: a `resource_link` becomes `[resource_link: <uri> (<name>)]` and an embedded text resource
 its text. Media data rides only when asked for:
 

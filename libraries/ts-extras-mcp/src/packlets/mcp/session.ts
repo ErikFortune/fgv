@@ -176,8 +176,8 @@ export function invokeContained(
  * before the session is handed out is held, and delivered once on a later macrotask after
  * {@link McpToolsChangedWatcher.arm} — by then `connectMcpSession` has returned, so the consumer
  * holds the session it would re-list with. Nothing is delivered once `closeMcpSession` has been
- * entered or the connection has closed: the check runs at delivery time, after every `await` or deferral, against the session's close
- * watcher.
+ * entered or the connection has closed: the check runs at delivery time, after every `await` or
+ * deferral, against the session's close watcher.
  * @internal
  */
 export class McpToolsChangedWatcher {
@@ -526,10 +526,12 @@ export async function closeMcpSession(session: IMcpSession): Promise<Result<true
     return fail(`closeMcpSession: ${sessionResult.message}`);
   }
   const mcpSession = sessionResult.value;
-  // Converted with errorText, for this package's fallback text on a rejection value that cannot be
-  // read (see errorText). `terminate` never rejects, so only the close can fail the result.
+
   // Entered before the first `await`, so no notification is delivered from here on.
   mcpSession.closeWatcher.beginClosing();
+
+  // Converted with errorText, for this package's fallback text on a rejection value that cannot be
+  // read (see errorText). `terminate` never rejects, so only the close can fail the result.
   return Promise.resolve()
     .then(() => mcpSession.terminate())
     .then(() => mcpSession.client.close())

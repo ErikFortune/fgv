@@ -321,7 +321,11 @@ describe('closeMcpSession terminates a Streamable-HTTP session', () => {
     await fixture!.streamOpened;
     // The channel works: a notification on the standalone stream before close is delivered.
     fixture!.stream!.write(LIST_CHANGED_EVENT);
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    // Polled rather than a fixed wait, so a slow runner cannot fail the control.
+    const deadline = Date.now() + 3000;
+    while (onToolsChanged.mock.calls.length === 0 && Date.now() < deadline) {
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    }
     expect(onToolsChanged).toHaveBeenCalledTimes(1);
 
     // The fixture sends another as the DELETE arrives, and holds the DELETE for the whole bound.

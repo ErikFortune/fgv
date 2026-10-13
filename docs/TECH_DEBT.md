@@ -897,8 +897,8 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
   is a missing optional property rather than a prototype hazard: the SDK's zod parse and #720's
   `jsonValue` both drop the key rather than assign it.
 
-  **Reference**: `.ai/tasks/completed/2026-10/mcp-round-2a/result.md` § "The #723 and #721 lessons",
-  and the orchestrator's review of that stream (P3-7).
+  **Reference**: `.ai/tasks/completed/2026-10/mcp-round-2a/result.md` § "The #723 and #721 lessons"
+  (the measurement against SDK 1.29.0) and § "Second review round" (where filing it was asked for).
 
 - **[P3] `ts-agent-tasks` — deferrals the agent-tasks slices recorded only in their own `result.md`.**
   Found by the cluster close (`agent-tasks-cluster-close`, 2026-10-01), which read all eighteen
