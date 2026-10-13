@@ -176,20 +176,20 @@ to. Design it once, before any of them ships.
 ### C3 — fidelity and lifecycle
 
 ### 13. Rich tool results: resource links, `structuredContent`, media — personaility#675
-- **Status:** **in flight**: stream `mcp-round-2a` (brief at `.ai/tasks/active/mcp-round-2a/brief.md` on branch `mcp-round-2a`).
+- **Status:** **shipped** in #728 (`826ad119`) into `integration/asks`; stream `mcp-round-2a` (`.ai/tasks/completed/2026-10/mcp-round-2a/`). Reaches `release` with the next asks promotion.
 - **Slug:** `2026-10-01-0043-mcp-rich-tool-results`
 - **Req. priority:** P2. Minimum bar: a `resource_link` projects to a line carrying its URI.
 - **Verified:** already recorded in `docs/FUTURE.md` (multimodal passthrough).
 - **Route:** C3. Additive projection beside `content: string`.
 
 ### 14. Descriptor `title` / `outputSchema`, and `tools/list_changed` — personaility#676
-- **Status:** **in flight**: stream `mcp-round-2a` (brief at `.ai/tasks/active/mcp-round-2a/brief.md` on branch `mcp-round-2a`).
+- **Status:** **shipped** in #728 (`826ad119`) into `integration/asks`; stream `mcp-round-2a` (`.ai/tasks/completed/2026-10/mcp-round-2a/`). Reaches `release` with the next asks promotion.
 - **Slug:** `2026-10-01-0043-mcp-descriptor-title-list-changed`
 - **Req. priority:** P2.
 - **Route:** C3. Two parts: descriptor fields (trivial), and a change callback on the session.
 
 ### 15. Terminate HTTP sessions on close — personaility#674
-- **Status:** **in flight**: stream `mcp-round-2a` (brief at `.ai/tasks/active/mcp-round-2a/brief.md` on branch `mcp-round-2a`).
+- **Status:** **shipped** in #728 (`826ad119`) into `integration/asks`; stream `mcp-round-2a` (`.ai/tasks/completed/2026-10/mcp-round-2a/`). Reaches `release` with the next asks promotion.
 - **Slug:** `2026-10-01-0043-mcp-terminate-http-session`
 - **Req. priority:** P3. Best-effort, since a 405 is acceptable.
 - **Route:** C3, or a chore. Small.
@@ -227,7 +227,7 @@ to. Design it once, before any of them ships.
 | 3 | C1: entries 16 → 9 → 8 + 10 | **shipped**, #722 → #727 |
 | 4 | class B: entries 4 → 5 → 6 | **shipped** (6 in part), #723 → #727 |
 | 5 | entry 12 (#672) | P1, but needs a new primitive; start its design in parallel with step 3 |
-| 6 | C3: entries 13, 14, 15; then 11 | 13–15 **in flight** (`mcp-round-2a`); 11 with 12 in `mcp-round-2b` |
+| 6 | C3: entries 13, 14, 15; then 11 | 13–15 **shipped**, #728; 11 with 12 in `mcp-round-2b` |
 | 7 | entry 7 (#682) | largest design in class B |
 | — | entries 3, 17 | cheap; fold into whichever chore batch opens first |
 
