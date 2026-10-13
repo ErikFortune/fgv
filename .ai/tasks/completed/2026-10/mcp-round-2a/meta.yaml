@@ -1,0 +1,65 @@
+id: mcp-round-2a
+status: shipped
+packages: ['@fgv/ts-extras-mcp']
+prs: [728] # written anticipating merge
+openPrs: []
+opened: 2026-10-13
+closed: 2026-10-13
+summary:
+  intended: >
+    Three PersonAIlity fgv-asks, each its own commit on integration/asks: terminate a Streamable-HTTP
+    session on close, best-effort and bounded (#674); carry a tool's title and outputSchema on
+    IMcpToolDescriptor and fire onToolsChanged on notifications/tools/list_changed (#676); and keep
+    resource links, embedded resources, media and structuredContent in tool results, as a
+    converter-validated block union beside an improved text projection, with media data opt-in and
+    links never followed (#675).
+  shipped: >
+    closeMcpSession sends the SDK's terminateSession() DELETE before closing an HTTP transport,
+    raced against a 2 s bound, logged at detail, at most once per session; losing connect paths send
+    none. IMcpToolDescriptor gains title (own, else annotations.title; single-line) and outputSchema
+    (raw JSON). onToolsChanged is registered before the handshake, contained like onClose (now a
+    shared invokeContained), never fires once closeMcpSession is entered or the connection has closed, and a notification held during the connect is
+    delivered once after the session is returned. IMcpToolCallResult gains blocks (McpContentBlock:
+    text, resource_link, embedded text or blob resource, image, audio, unknown) and
+    structuredContent; callMcpTool takes IMcpCallToolOptions with includeMediaData; a resource_link
+    projects to its URI and name, an embedded text resource to its text. structuredContent holding
+    an own __proto__ key is refused whole, and so is an outputSchema holding one that survives the
+    SDK's list parse. Real in-process and loopback-HTTP
+    servers throughout; a 25-row revert matrix. A second review round kept a block's text or data when
+    an unprinted uri or mimeType is invalid (those fields became optional), validated
+    annotations.title, and filed the tools/list __proto__ gap in TECH_DEBT.
+  diverged: >
+    The SDK's default CallToolResultSchema rejects a whole tools/call response over one unknown or
+    malformed block, so callMcpTool now reads results with the SDK's generic ResultSchema and
+    validates them itself; the brief assumed the projection alone decided what survived. The DELETE
+    rides the transport's own abort signal, so a silent server holds it until close; the bound is
+    the package's, and the close is what cancels it. The __proto__ refusal is partial for
+    outputSchema, because the SDK's tools/list parse already drops such a key at the top level and
+    among property names; the same exposure on inputSchema predates the stream and is filed as a
+    TECH_DEBT P3 rather than fixed. Single-line validation also refuses U+2028/U+2029, which
+    singleLine admits. The unknown block's blockType is optional (absent when the type is not a short
+    printable line) rather than required, and unreadable or non-array content maps to one unknown
+    block. A notification arriving before the session is returned is held and delivered once after
+    it, rather than delivered as it arrives.
+  sourceLine: '# Result — `mcp-round-2a` (MCP fidelity and lifecycle)'
+  headline: >
+    An MCP tool result keeps its resource links, embedded resources, images and structuredContent,
+    tool titles and tool-list changes reach the consumer, and closing an HTTP session ends it on the
+    server.
+keywords:
+  - resource_link
+  - embedded resource
+  - multimodal tool result
+  - structuredContent
+  - content block union
+  - session termination
+  - Streamable HTTP DELETE
+  - tools/list_changed notification
+  - tool title
+  - outputSchema
+  - __proto__ refusal
+  - generic result schema
+relatedStreams:
+  - { id: personality-intake, relationship: 'triaged the three asks (followups entries 13, 14, 15)' }
+  - { id: mcp-client-cancellation, relationship: 'built the surface (#722) these three extend' }
+sourceHash: sha256:950510afa51c867d # over brief.md + result.md + state.md

@@ -63,6 +63,7 @@ interface IFakeClient {
   listTools: jest.Mock;
   callTool: jest.Mock;
   close: jest.Mock;
+  setNotificationHandler: jest.Mock;
 }
 
 function makeFakeClient(overrides: Partial<IFakeClient> = {}): IFakeClient {
@@ -72,6 +73,7 @@ function makeFakeClient(overrides: Partial<IFakeClient> = {}): IFakeClient {
     listTools: jest.fn(async () => ({ tools: [] })),
     callTool: jest.fn(async () => ({ content: [] })),
     close: jest.fn(async () => undefined),
+    setNotificationHandler: jest.fn(),
     ...overrides
   };
 }
@@ -442,6 +444,15 @@ describe('closeMcpSession', () => {
     expect(fake.close).toHaveBeenCalledTimes(1);
   });
 
+  test('an http handle over a transport that is not the SDK HTTP transport is closed without a DELETE', async () => {
+    const fake = makeFakeClient();
+    mockSdk.makeClient.mockReturnValueOnce(fake as unknown as sdk.ISdkClient);
+    const transport = createHttpTransport({ url: 'http://127.0.0.1:1/mcp' }).orThrow();
+    const session = (await connectMcpSession({ transport })).orThrow();
+    expect(await closeMcpSession(session)).toSucceedWith(true);
+    expect(fake.close).toHaveBeenCalledTimes(1);
+  });
+
   test('fails when close throws', async () => {
     const fake = makeFakeClient({
       close: jest.fn(async () => {
@@ -544,9 +555,13 @@ describe('callMcpTool', () => {
     });
     const session = await connectWith(fake);
     expect(await callMcpTool(session, 'a', args)).toSucceedWith({
-      content: 'line one\nline two'
+      content: 'line one\nline two',
+      blocks: [
+        { type: 'text', text: 'line one' },
+        { type: 'text', text: 'line two' }
+      ]
     });
-    expect(fake.callTool).toHaveBeenCalledWith({ name: 'a', arguments: args }, undefined, {});
+    expect(fake.callTool).toHaveBeenCalledWith({ name: 'a', arguments: args }, sdk.SDK_RAW_RESULT_SCHEMA, {});
   });
 
   test('summarizes non-text blocks', async () => {
@@ -559,15 +574,20 @@ describe('callMcpTool', () => {
       }))
     });
     const session = await connectWith(fake);
+    // An image without its mimeType keeps its size; the type is simply absent.
     expect(await callMcpTool(session, 'a', args)).toSucceedWith({
-      content: 'caption\n[image block]'
+      content: 'caption\n[image block]',
+      blocks: [
+        { type: 'text', text: 'caption' },
+        { type: 'image', byteLength: 4 }
+      ]
     });
   });
 
   test('projects an empty/absent content list to an empty string', async () => {
     const fake = makeFakeClient({ callTool: jest.fn(async () => ({})) });
     const session = await connectWith(fake);
-    expect(await callMcpTool(session, 'a', args)).toSucceedWith({ content: '' });
+    expect(await callMcpTool(session, 'a', args)).toSucceedWith({ content: '', blocks: [] });
   });
 
   test('maps isError:true to a Failure carrying the projected content', async () => {
@@ -726,7 +746,11 @@ describe('adaptMcpTools', () => {
       const callTool = jest.fn(async () => ({ content: [{ type: 'text', text: 'tool output' }] }));
       const execute = await adaptGood(callTool);
       expect(await execute({ q: 'hello' })).toSucceedWith('tool output');
-      expect(callTool).toHaveBeenCalledWith({ name: 'good', arguments: { q: 'hello' } }, undefined, {});
+      expect(callTool).toHaveBeenCalledWith(
+        { name: 'good', arguments: { q: 'hello' } },
+        sdk.SDK_RAW_RESULT_SCHEMA,
+        {}
+      );
     });
 
     test('fails when the model supplies non-object arguments', async () => {

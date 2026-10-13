@@ -30,8 +30,10 @@ These were considered and deferred — use `@modelcontextprotocol/sdk` directly 
 - **Browser sibling** (`@fgv/ts-web-extras-mcp`) — Node-only at v0.1.
 - **MCP resources / prompts / sampling** — tool discovery + invocation only.
 - **OAuth / managed auth** — static headers only (`createHttpTransport({ headers })`).
-- **Multimodal tool-result passthrough** — non-text content blocks are projected to a one-line
-  `[<type> block]` summary.
+- **Following resource links** — `callMcpTool` reports a `resource_link`'s URI; fetching it is
+  yours, through your own egress guard.
+- **Rich blocks in the ai-assist round-trip** — `adaptMcpTools` hands the model the text projection;
+  `callMcpTool` returns the blocks themselves.
 - **Cross-server tool-name namespacing** — duplicate tool names already fail loudly in
   `AiAssist.executeClientToolTurn`.
 - **MCP server orchestration / lifecycle management beyond a single session.**
@@ -45,17 +47,38 @@ See [`docs/FUTURE.md`](../../docs/FUTURE.md) for the tracked follow-ups.
 | `createStdioTransport({ command, args?, env?, cwd? })` | `Result<IMcpTransport>` |
 | `createHttpTransport({ url, headers? })` | `Result<IMcpTransport>` |
 | `createCustomTransport(sdkTransport)` | `Result<IMcpTransport>` |
-| `connectMcpSession({ transport, clientName?, clientVersion?, logger?, onClose?, timeoutMs?, signal? })` | `Promise<DetailedResult<IMcpSession, McpFailureReason>>` |
-| `closeMcpSession(session)` | `Promise<Result<true>>` |
+| `connectMcpSession({ transport, clientName?, clientVersion?, logger?, onClose?, onToolsChanged?, timeoutMs?, signal? })` | `Promise<DetailedResult<IMcpSession, McpFailureReason>>` |
+| `closeMcpSession(session)` | `Promise<Result<true>>` — over Streamable HTTP, ends the server's session with a best-effort `DELETE` (bounded to 2 s) before closing |
 | `listMcpTools(session, options?)` | `Promise<DetailedResult<ReadonlyArray<IMcpToolDescriptor>, McpFailureReason>>` |
-| `callMcpTool(session, name, args, options?)` | `Promise<DetailedResult<IMcpToolCallResult, McpFailureReason>>` |
+| `callMcpTool(session, name, args, options?)` | `Promise<DetailedResult<IMcpToolCallResult, McpFailureReason>>` — `{ content, blocks, structuredContent? }` |
 | `adaptMcpTools(session, { logger? })` | `Promise<DetailedResult<IAdaptMcpToolsResult, McpFailureReason>>` |
 
-`options` is an `IMcpRequestOptions`: `timeoutMs`, `signal`, `onProgress`, `resetTimeoutOnProgress`,
-`maxTotalTimeoutMs`. Every failure's `detail` is an `McpFailureReason` whose `kind` is one of
+`listMcpTools`' `options` is an `IMcpRequestOptions`: `timeoutMs`, `signal`, `onProgress`,
+`resetTimeoutOnProgress`, `maxTotalTimeoutMs`. `callMcpTool`'s is an `IMcpCallToolOptions`: the same,
+plus `includeMediaData`. Every failure's `detail` is an `McpFailureReason` whose `kind` is one of
 `tool-error`, `timeout`, `aborted`, `not-connected`, `session-expired`, `unauthorized`, `protocol`,
 `transport`, `invalid-handle` or `invalid-options` — branch on it rather than on the message. See `CAPABILITIES.md`
 for how each SDK error maps to a kind.
+
+### Rich results
+
+`callMcpTool` returns every content block, converter-validated, as `blocks` — `text`,
+`resource_link` (`uri`, `name?`, `title?`, `mimeType?`, `description?`), `resource` (`uri?`,
+`mimeType?`, and embedded text or a blob's `byteLength`), `image` / `audio` (`mimeType?`,
+`byteLength`) and `unknown` for anything else or malformed — plus `structuredContent` when it is
+JSON. A `uri` or `mimeType` that is missing or not one printable line is dropped and the block kept
+(except a `resource_link`'s `uri`, which is the point of that block). Line-wrapped base64 is
+malformed. A block's `annotations` and `_meta` are not carried. `content` is the text projection a
+model sees: a `resource_link` becomes `[resource_link: <uri> (<name>)]` and an embedded text resource
+its text. Media data rides only when asked for:
+
+```ts
+const result = await callMcpTool(session, 'get-tiny-image', {}, { includeMediaData: true });
+// result.value.blocks[1] → { type: 'image', mimeType: 'image/png', byteLength: 8, data: 'iVBORw0KGgo=' }
+```
+
+The package never follows a `resource_link`: its URI is server-supplied, so fetch it only through
+your own egress guard.
 
 ### Cancelling and bounding calls
 

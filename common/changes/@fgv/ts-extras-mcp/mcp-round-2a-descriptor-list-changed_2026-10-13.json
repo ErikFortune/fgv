@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "IMcpToolDescriptor carries title (falling back to annotations.title; single-line only) and outputSchema (raw JSON; refused whole if it holds an own __proto__ key), and connectMcpSession takes onToolsChanged, fired on notifications/tools/list_changed and contained like onClose (personaility#676)",
+      "type": "minor",
+      "packageName": "@fgv/ts-extras-mcp"
+    }
+  ],
+  "packageName": "@fgv/ts-extras-mcp",
+  "email": "noreply@anthropic.com"
+}

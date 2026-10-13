@@ -181,6 +181,27 @@ export interface IConnectMcpSessionParams {
    */
   readonly onClose?: () => void | Promise<void>;
   /**
+   * Called when the server sends `notifications/tools/list_changed`: its tool catalog has changed
+   * since the consumer last listed it.
+   *
+   * @remarks
+   * An observation only: the package does not re-list. Call {@link listMcpTools} (or
+   * {@link adaptMcpTools}) when it fires. Once the session is returned it fires once per
+   * notification, and never once
+   * {@link closeMcpSession} has been called (an HTTP close can stay open for up to two seconds
+   * while the server's session is terminated), after the connection has closed, or for a session
+   * whose connect failed. Any notifications that
+   * arrive while the connect is still settling are delivered as one call (a single re-list covers
+   * them all), shortly after
+   * {@link connectMcpSession} has returned the session, so the callback can always use the handle.
+   *
+   * Whether a server sends the notification is its choice; one that advertises
+   * `capabilities.tools.listChanged` says it will. The callback is contained exactly as
+   * `onClose` is: a throw, or a rejection of the promise an `async` callback returns, is caught and
+   * logged to `logger`, never propagated and never left unhandled.
+   */
+  readonly onToolsChanged?: () => void | Promise<void>;
+  /**
    * Timeout in milliseconds for the whole connect: starting the transport, the `initialize`
    * request, and sending `notifications/initialized`. Defaults to the SDK's 60 000. Expiry fails the
    * connect with the `'timeout'` {@link McpFailureReason} and starts closing the transport; the
@@ -355,7 +376,10 @@ export type McpFailureReason =
  * @public
  */
 export interface IMcpToolAnnotations {
-  /** Optional human-readable display title for the tool. */
+  /**
+   * Optional human-readable display title for the tool. Kept only when it is one printable line
+   * (no control characters, U+2028 or U+2029); otherwise dropped, never altered.
+   */
   readonly title?: string;
   /** Hint: the tool does not modify its environment (read-only). */
   readonly readOnlyHint?: boolean;
@@ -374,6 +398,12 @@ export interface IMcpToolAnnotations {
 export interface IMcpToolDescriptor {
   /** Tool name (unique within a server). */
   readonly name: string;
+  /**
+   * Human-readable display title: the tool's own `title`, or else its `annotations.title`. Absent
+   * when neither is a non-empty single line of text without control characters or U+2028/U+2029;
+   * a title that is not is dropped, never altered.
+   */
+  readonly title?: string;
   /** Human-readable description, when the server provided one. */
   readonly description: string | undefined;
   /**
@@ -384,6 +414,19 @@ export interface IMcpToolDescriptor {
    */
   readonly inputSchema: JsonValue;
   /**
+   * The tool's declared output schema as raw JSON, when the server declared one: the shape of the
+   * `structuredContent` its results carry. Carried verbatim, like `inputSchema`, and not parsed.
+   *
+   * @remarks
+   * Absent when the server declared none, or when the value is not JSON. It is also absent — refused
+   * whole, never returned with a key missing — when it holds an own `__proto__` key, which
+   * `@fgv/ts-json-base`'s JSON converters would otherwise drop silently. Note that the SDK parses
+   * the tool list against its own schema first, and that parse already drops a `__proto__` key at
+   * the schema's top level or among its `properties` names; only one nested deeper reaches this
+   * package to be refused.
+   */
+  readonly outputSchema?: JsonValue;
+  /**
    * The tool's normalized behavior annotations, when the server provided any usable ones.
    * Absent when the server declared no annotations (or only malformed/unknown fields).
    * See {@link IMcpToolAnnotations}.
@@ -392,19 +435,196 @@ export interface IMcpToolDescriptor {
 }
 
 /**
+ * Options for {@link callMcpTool}: the per-request options, plus how media is carried.
+ * @public
+ */
+export interface IMcpCallToolOptions extends IMcpRequestOptions {
+  /**
+   * When `true`, image, audio and embedded blob blocks carry their `data` (base64, exactly as the
+   * server sent it). Default `false`: they carry only `mimeType` and `byteLength`, so a large image
+   * does not ride every result by accident.
+   */
+  readonly includeMediaData?: boolean;
+}
+
+/**
+ * A `text` content block.
+ * @public
+ */
+export interface IMcpTextBlock {
+  readonly type: 'text';
+  /** The block's text, as the server sent it. */
+  readonly text: string;
+}
+
+/**
+ * A `resource_link` content block: a resource the server points at without embedding it.
+ *
+ * @remarks
+ * **The package never follows the link.** The `uri` is server-supplied, and fetching it is the
+ * consumer's decision; any fetch must go through the consumer's own egress guard (for an
+ * `http(s)` URI, a guarded fetch such as `@fgv/ts-extras`' `saferFetchBytes`), never a plain `fetch`.
+ * `uri`, `name`, `title` and `mimeType` are each one printable line; an optional one that is not
+ * is dropped, and a `uri` that is not makes the whole block {@link IMcpUnknownBlock | unknown}.
+ * @public
+ */
+export interface IMcpResourceLinkBlock {
+  readonly type: 'resource_link';
+  /** The resource's URI. Not followed by this package. */
+  readonly uri: string;
+  /** The resource's programmatic name. */
+  readonly name?: string;
+  /** The resource's display title. */
+  readonly title?: string;
+  /** The resource's MIME type, when the server gave one. */
+  readonly mimeType?: string;
+  /** A human-readable description; free text, possibly several lines. */
+  readonly description?: string;
+}
+
+/**
+ * A `resource` content block embedding a text resource.
+ * @public
+ */
+export interface IMcpEmbeddedTextResourceBlock {
+  readonly type: 'resource';
+  /** The embedded resource's URI; absent when the server's was missing or not one printable line. */
+  readonly uri?: string;
+  /** Its MIME type, when the server gave one. */
+  readonly mimeType?: string;
+  /** Its text, as the server sent it. */
+  readonly text: string;
+}
+
+/**
+ * A `resource` content block embedding a binary resource.
+ * @public
+ */
+export interface IMcpEmbeddedBlobResourceBlock {
+  readonly type: 'resource';
+  /** The embedded resource's URI; absent when the server's was missing or not one printable line. */
+  readonly uri?: string;
+  /** Its MIME type, when the server gave one. */
+  readonly mimeType?: string;
+  /** The decoded size of the resource, in bytes. */
+  readonly byteLength: number;
+  /** The base64 data as sent, only when {@link IMcpCallToolOptions.includeMediaData} is `true`. */
+  readonly data?: string;
+}
+
+/**
+ * An `image` content block.
+ * @public
+ */
+export interface IMcpImageBlock {
+  readonly type: 'image';
+  /**
+   * The image's MIME type; absent when the server's was missing or not one printable line. The
+   * block keeps its size and data either way.
+   */
+  readonly mimeType?: string;
+  /** The decoded size of the image, in bytes. */
+  readonly byteLength: number;
+  /** The base64 data as sent, only when {@link IMcpCallToolOptions.includeMediaData} is `true`. */
+  readonly data?: string;
+}
+
+/**
+ * An `audio` content block.
+ * @public
+ */
+export interface IMcpAudioBlock {
+  readonly type: 'audio';
+  /**
+   * The audio's MIME type; absent when the server's was missing or not one printable line. The
+   * block keeps its size and data either way.
+   */
+  readonly mimeType?: string;
+  /** The decoded size of the audio, in bytes. */
+  readonly byteLength: number;
+  /** The base64 data as sent, only when {@link IMcpCallToolOptions.includeMediaData} is `true`. */
+  readonly data?: string;
+}
+
+/**
+ * A content block this package does not carry: a block type it does not know, or a known type
+ * whose required fields are missing or malformed. It never fails the call.
+ * @public
+ */
+export interface IMcpUnknownBlock {
+  readonly type: 'unknown';
+  /**
+   * The block's `type` as the server sent it, when that is one printable line of at most 64
+   * characters. A known type here (`'image'`, say) means the block was malformed.
+   */
+  readonly blockType?: string;
+}
+
+/**
+ * One content block of an MCP tool result, discriminated by `type`. Each is converter-validated;
+ * anything that does not validate is an {@link IMcpUnknownBlock}.
+ *
+ * | MCP block | variant |
+ * |---|---|
+ * | `text` | {@link IMcpTextBlock} |
+ * | `resource_link` | {@link IMcpResourceLinkBlock} |
+ * | `resource` with `text` | {@link IMcpEmbeddedTextResourceBlock} |
+ * | `resource` with `blob` | {@link IMcpEmbeddedBlobResourceBlock} |
+ * | `image` | {@link IMcpImageBlock} |
+ * | `audio` | {@link IMcpAudioBlock} |
+ * | anything else, or malformed | {@link IMcpUnknownBlock} |
+ *
+ * **Not carried:** a block's `annotations` (`audience`, `priority`, `lastModified`) and its `_meta`.
+ * **Base64** (image, audio and blob `data`) is accepted in the standard or URL-safe alphabet, with
+ * or without padding, and **without whitespace**: line-wrapped base64 (MIME style) is treated as
+ * malformed, so such a block is {@link IMcpUnknownBlock | unknown}.
+ *
+ * @public
+ */
+export type McpContentBlock =
+  | IMcpTextBlock
+  | IMcpResourceLinkBlock
+  | IMcpEmbeddedTextResourceBlock
+  | IMcpEmbeddedBlobResourceBlock
+  | IMcpImageBlock
+  | IMcpAudioBlock
+  | IMcpUnknownBlock;
+
+/**
  * Successful projection of an MCP `CallToolResult` produced by {@link callMcpTool}.
  *
  * @remarks
- * `content` is the text concatenation of the result's `text` blocks; non-text blocks
- * (image / audio / resource) are projected to a one-line `[<type> block]` summary
- * (multimodal passthrough is out of scope at v0.1). A result with `isError: true` is mapped
- * to `Result.fail(content)` rather than returned here, so it is never silently swallowed.
+ * `content` is the text projection handed to a model (it is what {@link adaptMcpTools}' tools
+ * return), one line or passage per block, joined by newlines:
+ *
+ * | block | projects to |
+ * |---|---|
+ * | `text` | its text |
+ * | `resource_link` | `[resource_link: <uri> (<name>)]`, or `[resource_link: <uri>]` without a name |
+ * | embedded text `resource` | its text |
+ * | embedded blob `resource`, `image`, `audio` | `[resource block]`, `[image block]`, `[audio block]` |
+ * | unknown | `[<blockType> block]`, or `[unknown block]` without a usable `blockType` |
+ *
+ * Every server string interpolated into a generated placeholder (a link's URI or name, a
+ * `blockType`) is validated first (one with a line break, U+2028/U+2029 or a control character is
+ * not echoed), so a block cannot forge a placeholder line. Text and embedded-text bodies are free
+ * text, projected verbatim, and may span lines. It is still
+ * untrusted server text — a single line can say anything — exactly as a `text` block always was. A result with `isError: true`
+ * is mapped to `Result.fail(content)` rather than returned here, so it is never silently swallowed.
  *
  * @public
  */
 export interface IMcpToolCallResult {
-  /** The projected text content of the tool result. */
+  /** The text projection of the tool result. */
   readonly content: string;
+  /** Every content block, in order, converter-validated. See {@link McpContentBlock}. */
+  readonly blocks: ReadonlyArray<McpContentBlock>;
+  /**
+   * The result's `structuredContent`, when present and JSON. Omitted when it is not JSON, or when it
+   * holds an own `__proto__` key at any depth: refused whole rather than returned with the key
+   * silently dropped. A refusal is logged at `info` to the session's logger.
+   */
+  readonly structuredContent?: JsonValue;
 }
 
 // ============================================================================

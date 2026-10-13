@@ -235,14 +235,17 @@ describe('per-request options against a real in-memory MCP server', () => {
     expect(remove).toHaveBeenCalledWith('abort', add.mock.calls[0][1]);
     // Aborting afterwards affects nothing.
     controller.abort();
-    expect(await callMcpTool(fixture.session, 'progress', {})).toSucceedWith({ content: 'finished' });
+    expect(await callMcpTool(fixture.session, 'progress', {})).toSucceedWith({
+      content: 'finished',
+      blocks: [{ type: 'text', text: 'finished' }]
+    });
   });
 
   test('onProgress receives the server progress notifications, mapped', async () => {
     const seen: IMcpProgress[] = [];
     expect(
       await callMcpTool(fixture.session, 'progress', {}, { onProgress: (p) => seen.push(p) })
-    ).toSucceedWith({ content: 'finished' });
+    ).toSucceedWith({ content: 'finished', blocks: [{ type: 'text', text: 'finished' }] });
     expect(seen).toEqual([
       { progress: 1 },
       ...[2, 3, 4, 5].map((step) => ({ progress: step, total: 5, message: `step ${step}` }))
@@ -263,7 +266,7 @@ describe('per-request options against a real in-memory MCP server', () => {
         {},
         { timeoutMs: 80, resetTimeoutOnProgress: true, onProgress: () => undefined }
       )
-    ).toSucceedWith({ content: 'finished' });
+    ).toSucceedWith({ content: 'finished', blocks: [{ type: 'text', text: 'finished' }] });
   });
 
   test('maxTotalTimeoutMs caps a call that progress would otherwise extend', async () => {
@@ -306,7 +309,8 @@ describe('per-request options against a real in-memory MCP server', () => {
 
   test('the largest timeout setTimeout honours is accepted', async () => {
     expect(await callMcpTool(fixture.session, 'progress', {}, { timeoutMs: 2 ** 31 - 1 })).toSucceedWith({
-      content: 'finished'
+      content: 'finished',
+      blocks: [{ type: 'text', text: 'finished' }]
     });
   });
 

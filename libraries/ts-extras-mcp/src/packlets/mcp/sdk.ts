@@ -43,7 +43,12 @@ import {
   StreamableHTTPError
 } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { DEFAULT_REQUEST_TIMEOUT_MSEC } from '@modelcontextprotocol/sdk/shared/protocol.js';
-import { ErrorCode, McpError } from '@modelcontextprotocol/sdk/types.js';
+import {
+  ErrorCode,
+  McpError,
+  ResultSchema,
+  ToolListChangedNotificationSchema
+} from '@modelcontextprotocol/sdk/types.js';
 
 import { captureResult } from '@fgv/ts-utils';
 import { type McpFailureReason } from './model';
@@ -56,23 +61,28 @@ import { type McpFailureReason } from './model';
 export type ISdkTransport = object;
 
 /**
- * A single content block in an MCP `CallToolResult`. Only `text` blocks carry inline content;
- * all other block types are projected to a structural summary by the operations layer.
- * @internal
- */
-export interface ISdkContentBlock {
-  readonly type: string;
-  readonly text?: string;
-}
-
-/**
- * Projection of the SDK's `CallToolResult`.
+ * Projection of a `tools/call` result as read with {@link SDK_RAW_RESULT_SCHEMA}: every field is
+ * untrusted and unvalidated, and the operations layer converts each one.
  * @internal
  */
 export interface ISdkCallToolResult {
-  readonly content?: ReadonlyArray<ISdkContentBlock>;
-  readonly isError?: boolean;
+  readonly content?: unknown;
+  readonly isError?: unknown;
+  readonly structuredContent?: unknown;
 }
+
+/**
+ * The SDK's generic result schema — a loose object that checks only `_meta` — passed to
+ * `callTool` in place of its default `CallToolResultSchema`.
+ *
+ * @remarks
+ * The default schema validates `content` as a closed union of five block types, so one block of a
+ * type it does not know, or one malformed block, rejects the whole response. It also rebuilds
+ * `structuredContent`, silently dropping an own `__proto__` key. The generic schema passes both
+ * through by reference, and the operations layer validates them itself.
+ * @internal
+ */
+export const SDK_RAW_RESULT_SCHEMA: unknown = ResultSchema;
 
 /**
  * Projection of a single tool descriptor in the SDK's `ListToolsResult`.
@@ -80,6 +90,8 @@ export interface ISdkCallToolResult {
  */
 export interface ISdkToolDescriptor {
   readonly name: string;
+  /** The tool's display title (untrusted; validated by the operations layer). */
+  readonly title?: unknown;
   readonly description?: string;
   readonly inputSchema?: unknown;
   /**
@@ -88,6 +100,8 @@ export interface ISdkToolDescriptor {
    * spec's untrusted-server warning.
    */
   readonly annotations?: unknown;
+  /** The tool's declared output schema (untrusted; validated by the operations layer). */
+  readonly outputSchema?: unknown;
 }
 
 /**
@@ -142,13 +156,35 @@ export interface ISdkClient {
   connect(transport: ISdkTransport, options?: ISdkRequestOptions): Promise<void>;
   getServerVersion(): ISdkImplementation | undefined;
   listTools(params?: { cursor?: string }, options?: ISdkRequestOptions): Promise<ISdkListToolsResult>;
-  /** The second parameter is the SDK's result schema; `undefined` selects its default. */
+  /** The second parameter is the SDK's result schema: {@link SDK_RAW_RESULT_SCHEMA}. */
   callTool(
     params: { name: string; arguments?: Record<string, unknown> },
-    resultSchema?: undefined,
+    resultSchema: unknown,
     options?: ISdkRequestOptions
   ): Promise<ISdkCallToolResult>;
   close(): Promise<void>;
+  /**
+   * Registers the handler for one notification method, identified by the SDK's schema for it.
+   * Replaces any earlier handler for the same method.
+   */
+  setNotificationHandler(schema: unknown, handler: (notification: unknown) => void | Promise<void>): void;
+}
+
+/**
+ * Calls `handler` for each `notifications/tools/list_changed` the server sends on `client`'s
+ * connection. Register it before `connect`, so a notification sent straight after `initialize` is
+ * not missed.
+ *
+ * @remarks
+ * Registered directly rather than through the SDK's `listChanged` client option, which re-lists
+ * the tools itself and is set up only when the server advertises `tools.listChanged`. A server that
+ * sends the notification without advertising the capability is still heard. The SDK parses the
+ * notification against its schema before calling the handler, and reports a handler's throw or
+ * rejection to its own `onerror`; the session layer contains the consumer's callback before that.
+ * @internal
+ */
+export function onToolListChanged(client: ISdkClient, handler: () => void): void {
+  client.setNotificationHandler(ToolListChangedNotificationSchema, () => handler());
 }
 
 /**
@@ -209,6 +245,24 @@ export function makeStdioTransport(params: ISdkStdioParams): ISdkTransport {
     env: params.env,
     cwd: params.cwd
   }) as unknown as ISdkTransport;
+}
+
+/**
+ * Ends a Streamable-HTTP session on the server: sends the `DELETE` that the SDK's
+ * `terminateSession()` issues. Resolves without sending anything for any other transport, or for an
+ * HTTP transport that was never assigned a session id (the SDK checks that itself).
+ *
+ * @remarks
+ * The SDK treats a 405 answer as success (the server does not support explicit termination) and
+ * rejects with a `StreamableHTTPError` for any other non-2xx status. The request runs on the
+ * transport's own abort signal, so it stays pending against a server that never answers until the
+ * transport is closed. The caller bounds it.
+ * @internal
+ */
+export function terminateHttpSession(transport: ISdkTransport): Promise<void> {
+  return transport instanceof StreamableHTTPClientTransport
+    ? transport.terminateSession()
+    : Promise.resolve();
 }
 
 /**

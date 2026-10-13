@@ -123,7 +123,10 @@ describe('a consumer-written IMcpSdkTransport', () => {
       await connectMcpSession({ transport: createCustomTransport(consumer).orThrow(), onClose })
     ).orThrow();
 
-    expect(await callMcpTool(session, 'ping', {})).toSucceedWith({ content: 'pong' });
+    expect(await callMcpTool(session, 'ping', {})).toSucceedWith({
+      content: 'pong',
+      blocks: [{ type: 'text', text: 'pong' }]
+    });
 
     const pending = callMcpTool(session, 'hang', {});
     await entered;
