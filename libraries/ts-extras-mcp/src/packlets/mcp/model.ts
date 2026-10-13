@@ -572,6 +572,11 @@ export interface IMcpUnknownBlock {
  * | `audio` | {@link IMcpAudioBlock} |
  * | anything else, or malformed | {@link IMcpUnknownBlock} |
  *
+ * **Not carried:** a block's `annotations` (`audience`, `priority`, `lastModified`) and its `_meta`.
+ * **Base64** (image, audio and blob `data`) is accepted in the standard or URL-safe alphabet, with
+ * or without padding, and **without whitespace**: line-wrapped base64 (MIME style) is treated as
+ * malformed, so such a block is {@link IMcpUnknownBlock | unknown}.
+ *
  * @public
  */
 export type McpContentBlock =

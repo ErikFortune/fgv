@@ -344,6 +344,25 @@ describe('blocks a real SDK server would refuse to send', () => {
     await closeMcpSession(session);
   });
 
+  test('line-wrapped base64 is malformed, and block annotations and _meta are not carried', async () => {
+    const session = await connectPeer({
+      wrapped: {
+        content: [
+          { type: 'image', mimeType: 'image/png', data: 'iVBORw0K\nGgo=' },
+          { type: 'text', text: 't', annotations: { audience: ['user'], priority: 1 }, _meta: { k: 'v' } }
+        ]
+      }
+    });
+    expect(await call(session, 'wrapped')).toSucceedWith({
+      content: '[image block]\nt',
+      blocks: [
+        { type: 'unknown', blockType: 'image' },
+        { type: 'text', text: 't' }
+      ]
+    });
+    await closeMcpSession(session);
+  });
+
   test('a field the projection never prints does not cost a block its body', async () => {
     const session = await connectPeer({
       unprinted: {
