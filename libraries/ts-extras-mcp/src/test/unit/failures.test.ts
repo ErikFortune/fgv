@@ -284,8 +284,8 @@ describe('a response the SDK rejects', () => {
               serverInfo: { name: 'malformed-peer', version: '0.0.1' }
             }
           : message.method === 'tools/list'
-            ? { tools: 'not an array' }
-            : { content: 'not an array' };
+          ? { tools: 'not an array' }
+          : { content: 'not an array' };
       peer.send({ jsonrpc: '2.0', id: message.id, result } as never).catch(() => undefined);
     };
     await peer.start();
