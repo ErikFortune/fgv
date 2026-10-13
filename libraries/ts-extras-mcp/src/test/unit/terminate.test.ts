@@ -231,11 +231,25 @@ describe('closeMcpSession terminates a Streamable-HTTP session', () => {
   });
 
   test('a successful DELETE carries the session id, and a second close sends no second DELETE', async () => {
-    const { session, closes } = await connectToFixture('ok');
+    const logger = new Logging.InMemoryLogger('detail');
+    const { session, closes } = await connectToFixture('ok', logger);
     expect(await closeMcpSession(session)).toSucceedWith(true);
     expect(await closeMcpSession(session)).toSucceedWith(true);
     expect(fixture!.deletes).toEqual(['session-1']);
     expect(closes).toHaveBeenCalledTimes(1);
+    // A second attempt would run on the closed transport's aborted signal: never sent, but logged
+    // as a failed termination the consumer did not cause.
+    expect(logger.logged.join('\n')).not.toMatch(/termination/);
+  });
+
+  test('after a failed DELETE, a second close makes no second attempt', async () => {
+    // A successful DELETE clears the SDK's session id, so only a failed one leaves an id to retry.
+    const logger = new Logging.InMemoryLogger('detail');
+    const { session } = await connectToFixture('server-error', logger);
+    expect(await closeMcpSession(session)).toSucceedWith(true);
+    expect(await closeMcpSession(session)).toSucceedWith(true);
+    expect(fixture!.deletes).toEqual(['session-1']);
+    expect(logger.logged.filter((line) => /termination/.test(line))).toHaveLength(1);
   });
 
   test('concurrent closes share one DELETE', async () => {
