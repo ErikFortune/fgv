@@ -43,7 +43,7 @@ import {
   StreamableHTTPError
 } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { DEFAULT_REQUEST_TIMEOUT_MSEC } from '@modelcontextprotocol/sdk/shared/protocol.js';
-import { ErrorCode, McpError } from '@modelcontextprotocol/sdk/types.js';
+import { ErrorCode, McpError, ToolListChangedNotificationSchema } from '@modelcontextprotocol/sdk/types.js';
 
 import { captureResult } from '@fgv/ts-utils';
 import { type McpFailureReason } from './model';
@@ -80,6 +80,8 @@ export interface ISdkCallToolResult {
  */
 export interface ISdkToolDescriptor {
   readonly name: string;
+  /** The tool's display title (untrusted; validated by the operations layer). */
+  readonly title?: unknown;
   readonly description?: string;
   readonly inputSchema?: unknown;
   /**
@@ -88,6 +90,8 @@ export interface ISdkToolDescriptor {
    * spec's untrusted-server warning.
    */
   readonly annotations?: unknown;
+  /** The tool's declared output schema (untrusted; validated by the operations layer). */
+  readonly outputSchema?: unknown;
 }
 
 /**
@@ -149,6 +153,28 @@ export interface ISdkClient {
     options?: ISdkRequestOptions
   ): Promise<ISdkCallToolResult>;
   close(): Promise<void>;
+  /**
+   * Registers the handler for one notification method, identified by the SDK's schema for it.
+   * Replaces any earlier handler for the same method.
+   */
+  setNotificationHandler(schema: unknown, handler: (notification: unknown) => void | Promise<void>): void;
+}
+
+/**
+ * Calls `handler` for each `notifications/tools/list_changed` the server sends on `client`'s
+ * connection. Register it before `connect`, so a notification sent straight after `initialize` is
+ * not missed.
+ *
+ * @remarks
+ * Registered directly rather than through the SDK's `listChanged` client option, which re-lists
+ * the tools itself and is set up only when the server advertises `tools.listChanged`. A server that
+ * sends the notification without advertising the capability is still heard. The SDK parses the
+ * notification against its schema before calling the handler, and reports a handler's throw or
+ * rejection to its own `onerror`; the session layer contains the consumer's callback before that.
+ * @internal
+ */
+export function onToolListChanged(client: ISdkClient, handler: () => void): void {
+  client.setNotificationHandler(ToolListChangedNotificationSchema, () => handler());
 }
 
 /**

@@ -63,6 +63,7 @@ interface IFakeClient {
   listTools: jest.Mock;
   callTool: jest.Mock;
   close: jest.Mock;
+  setNotificationHandler: jest.Mock;
 }
 
 function makeFakeClient(overrides: Partial<IFakeClient> = {}): IFakeClient {
@@ -72,6 +73,7 @@ function makeFakeClient(overrides: Partial<IFakeClient> = {}): IFakeClient {
     listTools: jest.fn(async () => ({ tools: [] })),
     callTool: jest.fn(async () => ({ content: [] })),
     close: jest.fn(async () => undefined),
+    setNotificationHandler: jest.fn(),
     ...overrides
   };
 }

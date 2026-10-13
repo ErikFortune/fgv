@@ -181,6 +181,23 @@ export interface IConnectMcpSessionParams {
    */
   readonly onClose?: () => void | Promise<void>;
   /**
+   * Called when the server sends `notifications/tools/list_changed`: its tool catalog has changed
+   * since the consumer last listed it.
+   *
+   * @remarks
+   * An observation only: the package does not re-list. Call {@link listMcpTools} (or
+   * {@link adaptMcpTools}) when it fires. It fires once per notification, and never after the
+   * session's connection has closed or for a session whose connect failed. A notification that
+   * arrives while the connect is still settling is delivered once, shortly after
+   * {@link connectMcpSession} has returned the session, so the callback can always use the handle.
+   *
+   * Whether a server sends the notification is its choice; one that advertises
+   * `capabilities.tools.listChanged` says it will. The callback is contained exactly as
+   * `onClose` is: a throw, or a rejection of the promise an `async` callback returns, is caught and
+   * logged to `logger`, never propagated and never left unhandled.
+   */
+  readonly onToolsChanged?: () => void | Promise<void>;
+  /**
    * Timeout in milliseconds for the whole connect: starting the transport, the `initialize`
    * request, and sending `notifications/initialized`. Defaults to the SDK's 60 000. Expiry fails the
    * connect with the `'timeout'` {@link McpFailureReason} and starts closing the transport; the
@@ -374,6 +391,12 @@ export interface IMcpToolAnnotations {
 export interface IMcpToolDescriptor {
   /** Tool name (unique within a server). */
   readonly name: string;
+  /**
+   * Human-readable display title: the tool's own `title`, or else its `annotations.title`. Absent
+   * when neither is a non-empty single line of text without control characters; a title that is
+   * not is dropped, never altered.
+   */
+  readonly title?: string;
   /** Human-readable description, when the server provided one. */
   readonly description: string | undefined;
   /**
@@ -383,6 +406,19 @@ export interface IMcpToolDescriptor {
    * supported subset).
    */
   readonly inputSchema: JsonValue;
+  /**
+   * The tool's declared output schema as raw JSON, when the server declared one: the shape of the
+   * `structuredContent` its results carry. Carried verbatim, like `inputSchema`, and not parsed.
+   *
+   * @remarks
+   * Absent when the server declared none, or when the value is not JSON. It is also absent — refused
+   * whole, never returned with a key missing — when it holds an own `__proto__` key, which
+   * `@fgv/ts-json-base`'s JSON converters would otherwise drop silently. Note that the SDK parses
+   * the tool list against its own schema first, and that parse already drops a `__proto__` key at
+   * the schema's top level or among its `properties` names; only one nested deeper reaches this
+   * package to be refused.
+   */
+  readonly outputSchema?: JsonValue;
   /**
    * The tool's normalized behavior annotations, when the server provided any usable ones.
    * Absent when the server declared no annotations (or only malformed/unknown fields).

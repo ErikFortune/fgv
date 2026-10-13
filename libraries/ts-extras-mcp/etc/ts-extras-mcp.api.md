@@ -49,6 +49,7 @@ export interface IConnectMcpSessionParams {
     readonly clientVersion?: string;
     readonly logger?: Logging.ILogger;
     readonly onClose?: () => void | Promise<void>;
+    readonly onToolsChanged?: () => void | Promise<void>;
     readonly signal?: AbortSignal;
     readonly timeoutMs?: number;
     readonly transport: IMcpTransport;
@@ -135,6 +136,8 @@ export interface IMcpToolDescriptor {
     readonly description: string | undefined;
     readonly inputSchema: JsonValue;
     readonly name: string;
+    readonly outputSchema?: JsonValue;
+    readonly title?: string;
 }
 
 // @public

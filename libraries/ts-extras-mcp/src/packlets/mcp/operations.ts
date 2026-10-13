@@ -27,12 +27,17 @@
  */
 
 import {
+  type Converter,
   type DetailedResult,
+  type Logging,
+  type Result,
   Converters as UtilsConverters,
+  captureResult,
+  fail,
   failWithDetail,
   succeedWithDetail
 } from '@fgv/ts-utils';
-import { Converters, type JsonObject } from '@fgv/ts-json-base';
+import { Converters, type JsonObject, type JsonValue, isJsonArray, isJsonObject } from '@fgv/ts-json-base';
 
 import {
   type IMcpSession,
@@ -80,19 +85,75 @@ function _normalizeAnnotations(raw: unknown): IMcpToolAnnotations | undefined {
   return Object.keys(normalized).length > 0 ? normalized : undefined;
 }
 
+/** A received string that must be one line of printable text. Its failure message is never surfaced. */
+const singleLine: Converter<string> = UtilsConverters.string.singleLine();
+
+/** `value` when it is a single line of printable text; otherwise `undefined`. */
+function _line(value: unknown): string | undefined {
+  return singleLine.convert(value).orDefault();
+}
+
+/** Whether a JSON-shaped value holds an own `__proto__` key at any depth. */
+function _holdsReservedKey(value: unknown): boolean {
+  if (isJsonArray(value)) {
+    return value.some(_holdsReservedKey);
+  }
+  if (isJsonObject(value)) {
+    return Object.entries(value).some(([key, child]) => key === '__proto__' || _holdsReservedKey(child));
+  }
+  return false;
+}
+
+/**
+ * Converts a received value to JSON verbatim, refusing it whole when it holds an own `__proto__` key.
+ *
+ * @remarks
+ * `@fgv/ts-json-base`'s `jsonValue` drops such a key silently and reports success (see
+ * `docs/TECH_DEBT.md`), so a value that holds one would come back with data missing and nothing to
+ * say so. Refusing keeps a returned value whole. Total: a value that cannot be walked (a cycle from a
+ * custom transport, an accessor that throws) fails rather than throws.
+ * @internal
+ */
+export function receivedJson(value: unknown): Result<JsonValue> {
+  // Every message is fixed text: the converter's own message can quote the value.
+  return captureResult(
+    (): Result<JsonValue> =>
+      _holdsReservedKey(value)
+        ? fail('holds a reserved "__proto__" key')
+        : Converters.jsonValue.convert(value).withErrorFormat(() => 'is not JSON')
+  )
+    .withErrorFormat(() => 'could not be read')
+    .onSuccess((converted) => converted);
+}
+
 /**
  * Projects a single SDK tool descriptor into a public {@link IMcpToolDescriptor}. The
  * `inputSchema` field is validated as a `JsonValue`; an absent/non-JSON schema becomes `null`
  * (which {@link adaptMcpTools} then reports as un-adaptable rather than offering it to the model).
  * The raw `annotations` blob is validated/normalized (never propagated raw) per the MCP
- * untrusted-server warning.
+ * untrusted-server warning. The `title` falls back to the annotations' title, each taken only when
+ * it is a single line; the `outputSchema` is carried as raw JSON, or omitted (and the refusal logged
+ * at `info`) when it is not JSON or holds a reserved key.
  */
-function _toDescriptor(tool: ISdkToolDescriptor): IMcpToolDescriptor {
+function _toDescriptor(tool: ISdkToolDescriptor, logger: Logging.ILogger | undefined): IMcpToolDescriptor {
   const annotations = _normalizeAnnotations(tool.annotations);
+  const title = _line(tool.title) ?? _line(annotations?.title);
+  const outputSchema =
+    tool.outputSchema === undefined
+      ? undefined
+      : receivedJson(tool.outputSchema)
+          .onFailure((message) => {
+            // The tool name is server text; it is not echoed.
+            logger?.info(`mcp: a tool's outputSchema was refused and omitted: ${message}`);
+            return fail(message);
+          })
+          .orDefault();
   return {
     name: tool.name,
+    ...(title !== undefined ? { title } : {}),
     description: tool.description,
     inputSchema: Converters.jsonValue.convert(tool.inputSchema).orDefault(null),
+    ...(outputSchema !== undefined ? { outputSchema } : {}),
     ...(annotations !== undefined ? { annotations } : {})
   };
 }
@@ -156,7 +217,7 @@ export async function listMcpTools(
       return failWithDetail(pageResult.message, pageResult.detail);
     }
     for (const tool of pageResult.value.tools) {
-      all.push(_toDescriptor(tool));
+      all.push(_toDescriptor(tool, mcpSession.logger));
     }
     cursor = pageResult.value.nextCursor;
   } while (cursor !== undefined);

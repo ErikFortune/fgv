@@ -50,6 +50,7 @@ import {
   classifySdkError,
   makeClient,
   makeTimeoutError,
+  onToolListChanged,
   terminateHttpSession
 } from './sdk';
 import { McpTransport } from './transports';
@@ -123,19 +124,82 @@ export class McpCloseWatcher {
       return;
     }
     // Contained here: a throw escaping would stop the SDK from failing the session's in-flight
-    // requests. The logged text uses errorText, for this package's fallback text.
-    let returned: unknown;
-    try {
-      returned = listener();
-    } catch (err: unknown) {
-      this._logger?.error(`mcp: onClose callback threw: ${errorText(err)}`);
+    // requests. It is not awaited: the SDK fails the in-flight requests straight after.
+    invokeContained('onClose', listener, this._logger);
+  }
+}
+
+/**
+ * Calls a consumer callback so that nothing it does can escape: a throw is caught, and a rejection
+ * of the promise an `async` callback returns is caught too, never left as an unhandled rejection.
+ * Both are logged at `error` (the consumer's own bug), with the text read by `errorText` for this
+ * package's fallback text. The returned promise is not awaited.
+ * @internal
+ */
+export function invokeContained(
+  name: string,
+  listener: () => void | Promise<void>,
+  logger: Logging.ILogger | undefined
+): void {
+  try {
+    // A returned thenable whose `then` throws becomes a rejection of `Promise.resolve`'s promise,
+    // so it is caught below with the other rejections.
+    Promise.resolve(listener()).catch((err: unknown) => {
+      logger?.error(`mcp: ${name} callback rejected: ${errorText(err)}`);
+    });
+  } catch (err: unknown) {
+    logger?.error(`mcp: ${name} callback threw: ${errorText(err)}`);
+  }
+}
+
+/**
+ * Forwards the server's `notifications/tools/list_changed` to the consumer's `onToolsChanged`.
+ *
+ * @remarks
+ * Its `notify` is registered on the SDK client before the handshake. A notification that lands
+ * before the session is handed out is held, and delivered once on a later macrotask after
+ * {@link McpToolsChangedWatcher.arm} — by then `connectMcpSession` has returned, so the consumer
+ * holds the session it would re-list with. Nothing is delivered once the connection has closed:
+ * the check runs at delivery time, after every `await` or deferral, against the session's close
+ * watcher.
+ * @internal
+ */
+export class McpToolsChangedWatcher {
+  private readonly _listener: () => void | Promise<void>;
+  private readonly _closeWatcher: McpCloseWatcher;
+  private readonly _logger: Logging.ILogger | undefined;
+  private _armed: boolean = false;
+  private _pending: boolean = false;
+
+  public constructor(
+    listener: () => void | Promise<void>,
+    closeWatcher: McpCloseWatcher,
+    logger?: Logging.ILogger
+  ) {
+    this._listener = listener;
+    this._closeWatcher = closeWatcher;
+    this._logger = logger;
+  }
+
+  /** Called by the SDK for each notification. Delivers it, or holds it until armed. */
+  public notify(): void {
+    if (this._closeWatcher.closed) {
       return;
     }
-    // An async listener's rejection is contained the same way — logged, never left to become an
-    // unhandled rejection. It is not awaited: the SDK fails the in-flight requests straight after.
-    Promise.resolve(returned).catch((err: unknown) => {
-      this._logger?.error(`mcp: onClose callback rejected: ${errorText(err)}`);
-    });
+    if (!this._armed) {
+      this._pending = true;
+      return;
+    }
+    invokeContained('onToolsChanged', this._listener, this._logger);
+  }
+
+  /** Starts delivery. Called once, synchronously after a successful handshake. */
+  public arm(): void {
+    this._armed = true;
+    if (this._pending) {
+      this._pending = false;
+      setTimeout(() => this.notify(), 0);
+    }
   }
 }
 
@@ -152,9 +216,10 @@ export class McpSession implements IMcpSession {
   public readonly client: ISdkClient;
   /** The session's close state. */
   public readonly closeWatcher: McpCloseWatcher;
+  /** The logger supplied to `connectMcpSession`, if any. */
+  public readonly logger: Logging.ILogger | undefined;
   /** The Streamable-HTTP transport whose server session a close terminates; `undefined` for any other kind. */
   private readonly _httpTransport: ISdkTransport | undefined;
-  private readonly _logger: Logging.ILogger | undefined;
   private _terminating: Promise<void> | undefined;
 
   public constructor(
@@ -172,7 +237,7 @@ export class McpSession implements IMcpSession {
     this.serverInfo = serverInfo;
     this.closeWatcher = closeWatcher;
     this._httpTransport = httpTransport;
-    this._logger = logger;
+    this.logger = logger;
   }
 
   /**
@@ -185,7 +250,7 @@ export class McpSession implements IMcpSession {
     if (transport === undefined) {
       return Promise.resolve();
     }
-    this._terminating ??= _terminateWithin(transport, TERMINATE_TIMEOUT_MS, this._logger);
+    this._terminating ??= _terminateWithin(transport, TERMINATE_TIMEOUT_MS, this.logger);
     return this._terminating;
   }
 
@@ -334,7 +399,7 @@ function _alreadyAborted(signal: AbortSignal | undefined): boolean {
 export async function connectMcpSession(
   params: IConnectMcpSessionParams
 ): Promise<DetailedResult<IMcpSession, McpFailureReason>> {
-  const { transport, clientName, clientVersion, logger, onClose, timeoutMs, signal } = params;
+  const { transport, clientName, clientVersion, logger, onClose, onToolsChanged, timeoutMs, signal } = params;
 
   // Validated before the handle is claimed, so a bad option does not consume the transport. The
   // connect race below also uses it as its own timer. runSdkRequest validates it again on this
@@ -360,6 +425,15 @@ export async function connectMcpSession(
   const client = makeClient(name, version);
   const closeWatcher = new McpCloseWatcher(logger);
   client.onclose = () => closeWatcher.notifyClosed();
+  // Registered before the handshake, so a notification sent straight after `initialize` is held
+  // rather than missed. Only when asked for, so a session without the callback is unchanged.
+  const toolsChangedWatcher =
+    onToolsChanged !== undefined
+      ? new McpToolsChangedWatcher(onToolsChanged, closeWatcher, logger)
+      : undefined;
+  if (toolsChangedWatcher !== undefined) {
+    onToolListChanged(client, () => toolsChangedWatcher.notify());
+  }
 
   logger?.info(`mcp: connecting (client ${name}@${version}, transport ${transport.transportKind})`);
 
@@ -389,6 +463,7 @@ export async function connectMcpSession(
     return failWithDetail('connectMcpSession: aborted by the caller', { kind: 'aborted' });
   }
   closeWatcher.arm(onClose);
+  toolsChangedWatcher?.arm();
   const raw = client.getServerVersion();
   const serverInfo: IMcpServerInfo | undefined =
     raw !== undefined ? { name: raw.name, version: raw.version } : undefined;
