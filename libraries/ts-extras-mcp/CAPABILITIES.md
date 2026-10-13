@@ -40,7 +40,7 @@ A Result-integration boundary over [`@modelcontextprotocol/sdk`](https://github.
 | `invalid-handle` | a session/transport handle not produced by this package, or a transport handle already used by an earlier connect |
 | `invalid-options` | a `timeoutMs` / `maxTotalTimeoutMs` that is not a positive finite number ≤ 2³¹−1 (`setTimeout` would otherwise fire it after 1 ms); reported before anything is sent |
 
-**Tool-list changes:** `connectMcpSession({ onToolsChanged })` fires on each `notifications/tools/list_changed`. It is an observation — the package never re-lists; call `listMcpTools`. Never after close, never for a failed connect; one that lands during the connect is delivered once, just after the session is returned. Contained like `onClose`.
+**Tool-list changes:** `connectMcpSession({ onToolsChanged })` fires on each `notifications/tools/list_changed`. It is an observation — the package never re-lists; call `listMcpTools`. Never once `closeMcpSession` is entered (an HTTP close can hold the connection open for 2 s) or after the connection closes, never for a failed connect; one that lands during the connect is delivered once, just after the session is returned. Contained like `onClose`.
 
 **Close observation:** `connectMcpSession({ onClose })` fires once when the connection closes, for any reason (including `closeMcpSession`); never for a failed connect; a throwing callback, or an `async` one that rejects, is contained and logged. Reconnect policy stays with the consumer — the package has no pool or reconnector. A Streamable-HTTP server restart is not a close; the next call reports it as `session-expired` when the server answers 404.
 

@@ -18,14 +18,16 @@ summary:
     raced against a 2 s bound, logged at detail, at most once per session; losing connect paths send
     none. IMcpToolDescriptor gains title (own, else annotations.title; single-line) and outputSchema
     (raw JSON). onToolsChanged is registered before the handshake, contained like onClose (now a
-    shared invokeContained), never fires after close, and a notification held during the connect is
+    shared invokeContained), never fires once closeMcpSession is entered or the connection has closed, and a notification held during the connect is
     delivered once after the session is returned. IMcpToolCallResult gains blocks (McpContentBlock:
     text, resource_link, embedded text or blob resource, image, audio, unknown) and
     structuredContent; callMcpTool takes IMcpCallToolOptions with includeMediaData; a resource_link
     projects to its URI and name, an embedded text resource to its text. structuredContent holding
     an own __proto__ key is refused whole, and so is an outputSchema holding one that survives the
     SDK's list parse. Real in-process and loopback-HTTP
-    servers throughout; a 20-row revert matrix.
+    servers throughout; a 25-row revert matrix. A second review round kept a block's text or data when
+    an unprinted uri or mimeType is invalid (those fields became optional), validated
+    annotations.title, and filed the tools/list __proto__ gap in TECH_DEBT.
   diverged: >
     The SDK's default CallToolResultSchema rejects a whole tools/call response over one unknown or
     malformed block, so callMcpTool now reads results with the SDK's generic ResultSchema and
@@ -33,8 +35,8 @@ summary:
     rides the transport's own abort signal, so a silent server holds it until close; the bound is
     the package's, and the close is what cancels it. The __proto__ refusal is partial for
     outputSchema, because the SDK's tools/list parse already drops such a key at the top level and
-    among property names; the same exposure on inputSchema predates the stream and is proposed as
-    TECH_DEBT rather than fixed. Single-line validation also refuses U+2028/U+2029, which
+    among property names; the same exposure on inputSchema predates the stream and is filed as a
+    TECH_DEBT P3 rather than fixed. Single-line validation also refuses U+2028/U+2029, which
     singleLine admits. The unknown block's blockType is optional (absent when the type is not a short
     printable line) rather than required, and unreadable or non-array content maps to one unknown
     block. A notification arriving before the session is returned is held and delivered once after
@@ -60,4 +62,4 @@ keywords:
 relatedStreams:
   - { id: personality-intake, relationship: 'triaged the three asks (followups entries 13, 14, 15)' }
   - { id: mcp-client-cancellation, relationship: 'built the surface (#722) these three extend' }
-sourceHash: sha256:79dfca438796a65d # over brief.md + result.md + state.md
+sourceHash: sha256:cd013384238f93ab # over brief.md + result.md + state.md

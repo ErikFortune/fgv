@@ -44,6 +44,10 @@ hands on:
   `__proto__` key is omitted whole, and the refusal is logged at `info`.
 - **A `tools/list_changed` that arrives during the connect is held.** It is delivered once, on a
   macrotask after the session has been returned.
+- **A field the projection never prints does not cost a block its body** (review round 2): an
+  embedded resource's `uri` and a media block's `mimeType` are optional, dropped when invalid.
+- **`onToolsChanged` stops once `closeMcpSession` is entered** (review round 2), not only once the
+  connection has closed, because an HTTP close can hold the connection open for 2 s.
 - **Strings are checked before they are echoed.** Received strings that reach the projection or a
   descriptor must be one printable line. This also refuses U+2028/U+2029, which `singleLine` admits.
 - **Losing connect paths send no `DELETE`.** That keeps them fire-and-forget.
@@ -53,7 +57,7 @@ hands on:
 - `blocks` do not reach an ai-assist client tool. That needs a multimodal tool-result shape in
   `@fgv/ts-extras`.
 - The SDK's `tools/list` parse drops some `__proto__` keys before this package sees them. The same
-  exposure exists on `inputSchema`. A TECH_DEBT entry is proposed in `result.md`.
+  exposure exists on `inputSchema`. Filed as a P3 in `docs/TECH_DEBT.md`.
 - `mcp-round-2b` should route the `DELETE` through its guarded egress and auth. See `result.md`.
 
 See `result.md` for the full record:
@@ -61,6 +65,6 @@ See `result.md` for the full record:
 - the verdict on each of the brief's beliefs;
 - the block mapping;
 - the check-then-act windows;
-- the 20-row revert matrix;
+- the 25-row revert matrix;
 - the dispositions of the code-reviewer's findings;
 - the gate counts.

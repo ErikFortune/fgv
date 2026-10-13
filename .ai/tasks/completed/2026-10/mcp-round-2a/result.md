@@ -9,6 +9,13 @@ Branch `mcp-round-2a`, cut from `integration/asks` @ `a6076e07`. Commits, in ord
 | `91131e23` | #675: rich tool results |
 | `9be0e578` | code-reviewer findings (see below) |
 | `09a51448` | the R4 revert-matrix row's test |
+| `c9f4c92c` | review round 2, P2-1: `onToolsChanged` stops once `closeMcpSession` is entered |
+| `b4211336` | review round 2, P2-2: an unprinted invalid field no longer costs a block its body |
+| `7ee4b957` | review round 2, P3-1: rejection containment proven through the logger |
+| `42709046` | review round 2, P3-2: `annotations.title` validated as one line |
+| `b0bd836c` | review round 2, P3-3/4 docs and the P3-7 TECH_DEBT entry |
+| `89efc6a3` | review round 2: a test pinning the `closed` check for a server-side close (R6) |
+| `22d32d01` | review round 2: the second code-reviewer pass's P3s |
 
 Package surface touched: `libraries/ts-extras-mcp` (source, tests, `etc/ts-extras-mcp.api.md`,
 `CAPABILITIES.md`, `README.md`), three change files under `common/changes/@fgv/ts-extras-mcp/`, and
@@ -106,15 +113,23 @@ both.
 |---|---|---|---|---|
 | `text` | `IMcpTextBlock { text }` | `text`: string | — | its text |
 | `resource_link` | `IMcpResourceLinkBlock` | `uri`: line | `name`, `title`, `mimeType`: line; `description`: string | `[resource_link: <uri> (<name>)]` |
-| `resource` with `resource.text` | `IMcpEmbeddedTextResourceBlock { uri, mimeType?, text }` | `resource`: object; `uri`: line | `mimeType`: line | its text |
-| `resource` with `resource.blob` | `IMcpEmbeddedBlobResourceBlock { uri, mimeType?, byteLength, data? }` | `uri`; `blob`: base64 | `mimeType` | `[resource block]` |
-| `image` / `audio` | `IMcpImageBlock` / `IMcpAudioBlock { mimeType, byteLength, data? }` | `mimeType`: line; `data`: base64 | — | `[image block]` / `[audio block]` |
+| `resource` with `resource.text` | `IMcpEmbeddedTextResourceBlock { uri?, mimeType?, text }` | `resource`: object; `text`: string | `uri`, `mimeType`: line | its text |
+| `resource` with `resource.blob` | `IMcpEmbeddedBlobResourceBlock { uri?, mimeType?, byteLength, data? }` | `resource`: object; `blob`: base64 | `uri`, `mimeType`: line | `[resource block]` |
+| `image` / `audio` | `IMcpImageBlock` / `IMcpAudioBlock { mimeType?, byteLength, data? }` | `data`: base64 | `mimeType`: line | `[image block]` / `[audio block]` |
 | any other type, or a missing or invalid required field | `IMcpUnknownBlock { blockType? }` | — | `blockType`: line, ≤ 64 characters | `[<blockType> block]` / `[unknown block]` |
 
 How the edge cases are handled:
 
+- **A field the projection never prints does not cost a block its body** (review round 2, P2-2).
+  An embedded resource's `uri` and an image or audio block's `mimeType` are never projected, so one
+  that is missing or not a printable line is dropped, and the block keeps its text, size and data.
+  I chose optional fields over the alternatives (a sentinel string, or a separate "degraded"
+  variant) because it is the rule every other optional field here already follows — drop, never
+  alter — and it adds no new type for consumers to branch on. `resource_link`'s `uri` stays
+  required: it is the point of the block, and a link without one says nothing.
+- **Not carried:** a block's `annotations` (`audience`, `priority`, `lastModified`) and its `_meta`.
 - **Base64.** The standard or URL-safe alphabet is accepted, with optional padding and no
-  whitespace.
+  whitespace. Line-wrapped (MIME-style) base64 is therefore malformed, and the block is `unknown`.
   - A length that is ≡ 1 mod 4 is malformed.
   - `byteLength` is ⌊unpadded × 3 / 4⌋.
   - `data` is carried only with `includeMediaData: true`, exactly as it was sent.
@@ -148,8 +163,9 @@ How the edge cases are handled:
     `jsonValue`.
   - Closing both needs `tools/list` read with the generic schema. That would bypass the SDK's
     `cacheToolMetadata`, which feeds its `outputSchema` validation and task-required checks.
-    **Proposed TECH_DEBT entry for the orchestrator; not yet filed** (`docs/TECH_DEBT.md` was outside
-    this stream's surface).
+    **Filed in review round 2** as a P3 in `docs/TECH_DEBT.md` ("`ts-extras-mcp` tool schemas can
+    lose an own `__proto__` key without the package seeing it"), with `mcp-round-2b` and the SDK v2
+    rename as its triggers.
 
 ## Belief verdicts (SDK `@modelcontextprotocol/sdk` 1.29.0, installed)
 
@@ -190,40 +206,49 @@ How the edge cases are handled:
 | close racing an in-flight call | none: a call may be made or in flight while `terminate()` runs | the `DELETE` (≤ 2 s), then `client.close()` | The SDK fails in-flight requests on close, after `onclose`, so they classify `not-connected`. **Accepted gap:** the server may fail an in-flight call when the `DELETE` lands, before the transport closes. That call then reports the server's answer (`protocol` / `session-expired`). Documented on `closeMcpSession`; not tested, because which answer comes back is the server's choice. |
 | the `DELETE` racing `client.close()` | `_terminating` memo (one attempt per session) | `Promise.race([terminating, bound])` | The close always comes after the race settles. A `DELETE` still pending is aborted by that close, and its rejection is absorbed by the `.then` that mapped it to `{ failed }`. It is never logged twice (test R4). |
 | concurrent closes | `_terminating ??=` with no `await` before the assignment | — | The second close awaits the same promise. `client.close()` runs twice and is idempotent (`Protocol.close` on an undefined transport). |
-| notification racing close | `closeWatcher.closed` in `McpToolsChangedWatcher.notify` | the SDK's `Promise.resolve().then(handler)` microtask between receipt and our handler | The check runs inside the handler, at delivery. A late transport delivery after close is a no-op (test). |
-| notification held before `arm` | `_pending` | `setTimeout(0)` | `notify()` runs again and re-checks `closed`. A close before the deferred delivery drops it (test). |
+| notification racing close | `closeWatcher.closing` or `.closed` in `McpToolsChangedWatcher.notify` | the SDK's `Promise.resolve().then(handler)` microtask between receipt and our handler | The check runs inside the handler, at delivery. A late transport delivery after close is a no-op (tests R6, for a server-side close; R21). |
+| notification arriving while an HTTP close holds the `DELETE` (review round 2, P2-1) | `closeWatcher.closing`, set synchronously when `closeMcpSession` is entered, before its first `await` | the `DELETE` race (≤ 2 s) and `client.close()`, during which the connection is still open and the server can notify on the standalone SSE stream | `notify()` checks `closing` at delivery, so nothing reaches the callback from entry on (test R21, against a fixture that holds the `DELETE` and notifies on its GET stream). `closing` is read **only** here: call classification still reads the observed close, so the in-flight-call disposition above (P3-4) is unchanged. |
+| notification held before `arm` | `_pending` | `setTimeout(0)` | `notify()` runs again and re-checks `closing` and `closed`. A close before the deferred delivery drops it (test). |
 | notification during a failed connect | `_armed` false | — | Never armed, so nothing is scheduled and nothing fires. |
 | a `DELETE` on an already-closed HTTP session | none, on purpose | — | `StreamableHTTPClientTransport` calls `onclose` only from its own `close()`, so an HTTP session's watcher closes only through `client.close()`, which runs after `terminate()`. See code-reviewer P2-2. |
 
 ## Revert matrix
 
 Each protection was reverted on its own, in the compiled `lib/`, and the named suites were re-run.
-The script is `revert.py` in the scratchpad; it is not committed. **20 of 20 go red.** R4 was green
-on the first pass. That exposed that a successful `DELETE` clears the SDK's session id, so the memo
-matters only after a failed `DELETE`. I added a test for that case, and R4 now goes red.
+The script is `revert.py` in the scratchpad; it is not committed. **25 of 25 go red** (re-run in full
+after review round 2). R4 was green on the first pass. That exposed that a successful `DELETE` clears
+the SDK's session id, so the memo matters only after a failed `DELETE`. I added a test for that case,
+and R4 now goes red. R6 went green once `closing` was added, because every close through
+`closeMcpSession` now trips `closing` first; the `closed` check is now the guard only for a
+server-side close, and a test for that case makes R6 red again.
 
 | row | protection reverted | tests that go red |
 |---|---|---|
-| R1 | `DELETE` before close | 7 (every `terminate.test` DELETE case, including the real SDK server's `onsessionclosed`) |
-| R2 | 2 s bound | never answers; no-logger silent `DELETE` |
+| R1 | `DELETE` before close | 9 (every `terminate.test` DELETE case, including the real SDK server's `onsessionclosed`) |
+| R2 | 2 s bound | never answers; held `DELETE` with a notification; no-logger silent `DELETE` |
 | R3 | HTTP kind only | custom `StreamableHTTPClientTransport` sends no `DELETE` |
 | R4 | one attempt per session | after a failed `DELETE`, a second close makes no second attempt |
 | R5 | failure logged at `detail` (mutated to `warn`) | logged at detail and never at warning or above |
-| R6 | no delivery after close | late transport delivery; held notification dropped on close |
+| R6 | no delivery after the connection closed | nothing fires after the server closes the connection, for a late delivery |
 | R7 | pre-arm notification held | sent straight after `initialize` is delivered once |
 | R8 | held notification deferred (mutated to synchronous) | delivered after the session is returned; dropped on close |
 | R9 | throw contained | a throwing callback is contained and logged |
 | R10 | title falls back to `annotations.title` | fallback; not-one-line dropped |
-| R11 | title single-line | not-one-line dropped |
+| R11 | title single-line | not-one-line dropped; annotations title dropped |
 | R12 | `__proto__` refused | `outputSchema` nested `__proto__`; `structuredContent` top and nested; no-logger refusal |
-| R13 | generic result schema (mutated back to the SDK default) | 12: all nine hand-driven-peer block tests and three of the four `structuredContent` wire tests. The fourth (not JSON / cannot be read) passes under either schema, because the strict schema's `record(unknown)` admits both values and the package then omits them. |
+| R13 | generic result schema (mutated back to the SDK default) | 13: the hand-driven-peer block tests and three of the four `structuredContent` wire tests. The fourth (not JSON / cannot be read) passes under either schema, because the strict schema's `record(unknown)` admits both values and the package then omits them. |
 | R14 | media data opt-in | no data by default; audio and blob opt-in |
-| R15 | decoded `byteLength` (mutated to `data.length`; fixture 12 characters vs 8 bytes) | 4 |
+| R15 | decoded `byteLength` (mutated to `data.length`; fixture 12 characters vs 8 bytes) | 5 |
 | R16 | `resource_link` projects URI and name | 5, including the adapted tool and the `isError` message |
-| R17 | U+2028/U+2029 refused | forging projection; descriptor title |
+| R17 | U+2028/U+2029 refused | forging projection; unprinted-field test; descriptor title |
 | R18 | `blockType` ≤ 64 | forging projection (65 vs 64 `x`) |
 | R19 | `blockType` kept when other fields are unreadable | a block that cannot be inspected |
 | R20 | content-array read captured | throwing index getter and revoked Proxy |
+| R21 | no `onToolsChanged` once `closeMcpSession` is entered (P2-1) | a `tools/list_changed` sent while the `DELETE` is held does not reach `onToolsChanged` |
+| R22 | embedded resource keeps its body without a valid `uri` (P2-2; mutated back to required) | a field the projection never prints does not cost a block its body |
+| R23 | media block keeps its data without a valid `mimeType` (P2-2; mutated back to required) | the same; `callMcpTool` summarizes non-text blocks |
+| R24 | callback rejection caught (P3-1; `.catch` replaced by a rethrow) | rejecting async callback is caught and logged; throwing thenable |
+| R25 | `annotations.title` one line (P3-2; mutated to any string) | annotations title dropped; not-one-line dropped |
 
 ## code-reviewer (layer 1)
 
@@ -239,6 +264,34 @@ The pass ran after the functional tests and before coverage closure. It found no
 | P3-4: a call racing the `DELETE` window | **Accepted and documented** (check-then-act table). No "closing" flag: it would make `not-connected` arrive before the transport has actually closed, which contradicts the kind's documented meaning. |
 | P3-5: real timers in the bound tests | **Kept.** The tests prove that a real `DELETE` is aborted by a real close, which fake timers would not exercise. Margins: 50 ms under, and 1000 ms over, the bound. |
 
+### Second pass (after the orchestrator's review)
+
+Run on `f173f207..89efc6a3`, read-only. **No P1, no P2.** It confirmed that no path delivers
+`onToolsChanged` after `closeMcpSession` is entered (the deferred pre-arm delivery goes back through
+`notify()`), and that `closing` has no reader in classification.
+
+| finding | disposition |
+|---|---|
+| P3: README "Rich results" not updated for optional `uri` / `mimeType`, base64 and annotations | **Fixed.** |
+| P3: an over-long TSDoc line in `McpToolsChangedWatcher` | **Fixed** (re-wrapped). |
+| P3: the "entered before the first `await`" comment sat inside the `errorText` comment | **Fixed** (moved above `beginClosing()`). |
+| P3: the held-DELETE test's positive control used a fixed 100 ms wait | **Fixed** (polls with a 3 s deadline). The negative half needs no wait: it holds for the whole 2 s bound. The fixture's SSE response is destroyed by `closeAllConnections()` in `afterEach`. |
+| P3: the TECH_DEBT claim that `jsonValue` drops an own `__proto__` at any depth was unverified | **Verified:** `jsonValue.convert(JSON.parse('{"a":{"__proto__":{"x":1},"b":2}}'))` succeeds as `{"a":{"b":2}}` with no own key and no read-through. |
+| P3: the TECH_DEBT reference cited an unresolvable review | **Fixed:** it points at this file. |
+
+## Second review round
+
+The orchestrator's review of the stream, and what each item became:
+
+| item | outcome |
+|---|---|
+| P2-1: `onToolsChanged` fired while an HTTP close held the `DELETE` | **Fixed.** `closing` lives on `McpCloseWatcher` (which `McpSession` owns and the tools-changed watcher already holds) rather than on `McpSession` itself, so the watcher needs no back-reference to the session. Test R21; table row above. |
+| P2-2: an invalid unprinted field cost a block its body | **Fixed** with optional fields; reasoning under the block union. Tests R22, R23. |
+| P3-1: `process.on('unhandledRejection')` as the witness | **Fixed** in `toolsChanged.test.ts`; the no-logger variant asserted nothing and is dropped. R24. The same pattern in `failures.test.ts` (from #722, `onClose`) predates this stream and was left. |
+| P3-2: `annotations.title` unvalidated | **Fixed.** R25. |
+| P3-3 / P3-4: base64 whitespace; annotations and `_meta` not carried | **Documented** in TSDoc, `CAPABILITIES.md`, the README and above, and pinned by a test. |
+| P3-7: file the TECH_DEBT entry | **Filed** (P3). |
+
 ## Gates
 
 Each gate was graded by `grep -ci error` and `grep -ci warning` on its log, not by exit code.
@@ -247,7 +300,7 @@ Each gate was graded by `grep -ci error` and `grep -ci warning` on its log, not 
 |---|---|---|
 | `rushx build` (ts-extras-mcp) | 0 | 0 |
 | `rushx lint` (ts-extras-mcp) | 0 | 0 |
-| `rushx test` (ts-extras-mcp): 100% statements, branches, functions and lines; 183 tests | 0 | 0 |
+| `rushx test` (ts-extras-mcp): 100% statements, branches, functions and lines; 187 tests (round 2) | 0 | 0 |
 | `rushx fixlint` | run; no changes | — |
 | `install-run-rush.js rebuild` (4 min 20 s) | 0 | 1: Rush's "Detected 1 Git-tracked symlinks" (`.agents/skills`, pre-existing); not a build warning |
 | `install-run-rush.js test` (10 min 13 s, exit 0, no `fail` lines) | 0 | 1: the same symlink notice |
