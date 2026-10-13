@@ -59,7 +59,7 @@ async function connectListing(
     { name: 'descriptor-fixture', version: '1.0.0' },
     { capabilities: { tools: {} } }
   );
-  server.setRequestHandler(ListToolsRequestSchema, async () => ({ tools: [...tools] } as never));
+  server.setRequestHandler(ListToolsRequestSchema, async () => ({ tools: [...tools] }) as never);
   const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();
   await server.connect(serverSide);
   return (

@@ -502,6 +502,24 @@ describe('blocks a real SDK server would refuse to send', () => {
     await closeMcpSession(session);
   });
 
+  test('base64 padding must complete the last quantum exactly', async () => {
+    const image = (data: string): Record<string, unknown> => ({ type: 'image', mimeType: 'image/png', data });
+    const session = await connectPeer({
+      padding: { content: ['AA==', 'AAA=', 'AA', 'AA=', 'AAA==', 'AAAA='].map(image) }
+    });
+    expect(await call(session, 'padding')).toSucceedAndSatisfy((result) => {
+      expect(result.blocks).toEqual([
+        { type: 'image', mimeType: 'image/png', byteLength: 1 },
+        { type: 'image', mimeType: 'image/png', byteLength: 2 },
+        { type: 'image', mimeType: 'image/png', byteLength: 1 },
+        { type: 'unknown', blockType: 'image' },
+        { type: 'unknown', blockType: 'image' },
+        { type: 'unknown', blockType: 'image' }
+      ]);
+    });
+    await closeMcpSession(session);
+  });
+
   test('URL-safe, unpadded base64 is sized too (the SDK server would refuse it)', async () => {
     const session = await connectPeer({
       urlsafe: { content: [{ type: 'image', mimeType: 'image/png', data: 'AQID-_8' }] }

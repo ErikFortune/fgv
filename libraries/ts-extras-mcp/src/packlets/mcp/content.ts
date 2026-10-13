@@ -73,10 +73,18 @@ const jsonObject: Converter<JsonObject> = UtilsConverters.isA('object', isJsonOb
 /** Base64 as MCP sends it: standard or URL-safe alphabet, optional padding, no whitespace. */
 const base64: Converter<string> = UtilsConverters.string.matching(/^[A-Za-z0-9+/_-]*={0,2}$/);
 
-/** The decoded size of a base64 string, or a failure when its length cannot be base64. */
+/**
+ * The decoded size of a base64 string, or a failure when its length cannot be base64. Padding is
+ * optional, but when present it must complete the last quantum exactly: `AA==` and `AAA=` are
+ * valid, `AA=`, `AAA==` and `AAAA=` are not.
+ */
 function _byteLength(data: string): Result<number> {
   const unpadded = data.replace(/=+$/, '').length;
-  return unpadded % 4 === 1 ? fail('not a base64 length') : succeed(Math.floor((unpadded * 3) / 4));
+  const padding = data.length - unpadded;
+  if (unpadded % 4 === 1 || (padding > 0 && (unpadded + padding) % 4 !== 0)) {
+    return fail('not a base64 length');
+  }
+  return succeed(Math.floor((unpadded * 3) / 4));
 }
 
 /** The named field of `raw` converted by `converter`; `undefined` when absent or invalid. */

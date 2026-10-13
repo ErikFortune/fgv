@@ -42,19 +42,20 @@ See [`docs/FUTURE.md`](../../docs/FUTURE.md) for the tracked follow-ups.
 
 ## The primitives
 
-| Function | Return |
-|---|---|
-| `createStdioTransport({ command, args?, env?, cwd? })` | `Result<IMcpTransport>` |
-| `createHttpTransport({ url, headers? })` | `Result<IMcpTransport>` |
-| `createCustomTransport(sdkTransport)` | `Result<IMcpTransport>` |
-| `connectMcpSession({ transport, clientName?, clientVersion?, logger?, onClose?, onToolsChanged?, timeoutMs?, signal? })` | `Promise<DetailedResult<IMcpSession, McpFailureReason>>` |
-| `closeMcpSession(session)` | `Promise<Result<true>>` — over Streamable HTTP, ends the server's session with a best-effort `DELETE` (bounded to 2 s) before closing |
-| `listMcpTools(session, options?)` | `Promise<DetailedResult<ReadonlyArray<IMcpToolDescriptor>, McpFailureReason>>` |
-| `callMcpTool(session, name, args, options?)` | `Promise<DetailedResult<IMcpToolCallResult, McpFailureReason>>` — `{ content, blocks, structuredContent? }` |
-| `adaptMcpTools(session, { logger? })` | `Promise<DetailedResult<IAdaptMcpToolsResult, McpFailureReason>>` |
+| Function                                                                                                                 | Return                                                                                                                                |
+| ------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `createStdioTransport({ command, args?, env?, cwd? })`                                                                   | `Result<IMcpTransport>`                                                                                                               |
+| `createHttpTransport({ url, headers? })`                                                                                 | `Result<IMcpTransport>`                                                                                                               |
+| `createCustomTransport(sdkTransport)`                                                                                    | `Result<IMcpTransport>`                                                                                                               |
+| `connectMcpSession({ transport, clientName?, clientVersion?, logger?, onClose?, onToolsChanged?, timeoutMs?, signal? })` | `Promise<DetailedResult<IMcpSession, McpFailureReason>>`                                                                              |
+| `closeMcpSession(session)`                                                                                               | `Promise<Result<true>>` — over Streamable HTTP, ends the server's session with a best-effort `DELETE` (bounded to 2 s) before closing |
+| `listMcpTools(session, options?)`                                                                                        | `Promise<DetailedResult<ReadonlyArray<IMcpToolDescriptor>, McpFailureReason>>`                                                        |
+| `callMcpTool(session, name, args, options?)`                                                                             | `Promise<DetailedResult<IMcpToolCallResult, McpFailureReason>>` — `{ content, blocks, structuredContent? }`                           |
+| `adaptMcpTools(session, { logger? })`                                                                                    | `Promise<DetailedResult<IAdaptMcpToolsResult, McpFailureReason>>`                                                                     |
 
-`options` is an `IMcpRequestOptions`: `timeoutMs`, `signal`, `onProgress`, `resetTimeoutOnProgress`,
-`maxTotalTimeoutMs`. Every failure's `detail` is an `McpFailureReason` whose `kind` is one of
+`listMcpTools`' `options` is an `IMcpRequestOptions`: `timeoutMs`, `signal`, `onProgress`,
+`resetTimeoutOnProgress`, `maxTotalTimeoutMs`. `callMcpTool`'s is an `IMcpCallToolOptions`: the same,
+plus `includeMediaData`. Every failure's `detail` is an `McpFailureReason` whose `kind` is one of
 `tool-error`, `timeout`, `aborted`, `not-connected`, `session-expired`, `unauthorized`, `protocol`,
 `transport`, `invalid-handle` or `invalid-options` — branch on it rather than on the message. See `CAPABILITIES.md`
 for how each SDK error maps to a kind.
@@ -83,7 +84,12 @@ your own egress guard.
 
 ```ts
 const controller = new AbortController();
-const result = await callMcpTool(session, 'search', { q: 'x' }, { timeoutMs: 10_000, signal: controller.signal });
+const result = await callMcpTool(
+  session,
+  'search',
+  { q: 'x' },
+  { timeoutMs: 10_000, signal: controller.signal }
+);
 if (result.isFailure() && result.detail?.kind === 'timeout') {
   // ...
 }
@@ -106,12 +112,7 @@ const session = (await connectMcpSession({ transport })).orThrow();
 ## Usage
 
 ```typescript
-import {
-  createStdioTransport,
-  connectMcpSession,
-  adaptMcpTools,
-  closeMcpSession
-} from '@fgv/ts-extras-mcp';
+import { createStdioTransport, connectMcpSession, adaptMcpTools, closeMcpSession } from '@fgv/ts-extras-mcp';
 import { AiAssist } from '@fgv/ts-extras';
 
 // 1. Connect to an MCP server (stdio spawns a subprocess; see the security note below).

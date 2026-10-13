@@ -11,7 +11,7 @@ Implementer's working surface. The brief is frozen; disagreements and open quest
 - [x] #675 rich results — commit 3
 - [x] code-reviewer pass, then coverage closure
 - [x] gates (package, repo-wide rebuild + test, change verify)
-- [ ] /finalize-task, push
+- [x] /finalize-task, push
 
 ## Findings that shape the build (not in the brief)
 

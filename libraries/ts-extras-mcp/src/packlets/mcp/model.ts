@@ -186,11 +186,13 @@ export interface IConnectMcpSessionParams {
    *
    * @remarks
    * An observation only: the package does not re-list. Call {@link listMcpTools} (or
-   * {@link adaptMcpTools}) when it fires. It fires once per notification, and never once
+   * {@link adaptMcpTools}) when it fires. Once the session is returned it fires once per
+   * notification, and never once
    * {@link closeMcpSession} has been called (an HTTP close can stay open for up to two seconds
    * while the server's session is terminated), after the connection has closed, or for a session
-   * whose connect failed. A notification that
-   * arrives while the connect is still settling is delivered once, shortly after
+   * whose connect failed. Any notifications that
+   * arrive while the connect is still settling are delivered as one call (a single re-list covers
+   * them all), shortly after
    * {@link connectMcpSession} has returned the session, so the callback can always use the handle.
    *
    * Whether a server sends the notification is its choice; one that advertises
