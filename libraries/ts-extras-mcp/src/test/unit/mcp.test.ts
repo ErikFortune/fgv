@@ -546,9 +546,13 @@ describe('callMcpTool', () => {
     });
     const session = await connectWith(fake);
     expect(await callMcpTool(session, 'a', args)).toSucceedWith({
-      content: 'line one\nline two'
+      content: 'line one\nline two',
+      blocks: [
+        { type: 'text', text: 'line one' },
+        { type: 'text', text: 'line two' }
+      ]
     });
-    expect(fake.callTool).toHaveBeenCalledWith({ name: 'a', arguments: args }, undefined, {});
+    expect(fake.callTool).toHaveBeenCalledWith({ name: 'a', arguments: args }, sdk.SDK_RAW_RESULT_SCHEMA, {});
   });
 
   test('summarizes non-text blocks', async () => {
@@ -561,15 +565,20 @@ describe('callMcpTool', () => {
       }))
     });
     const session = await connectWith(fake);
+    // An image without its mimeType is malformed: an unknown block that keeps the image placeholder.
     expect(await callMcpTool(session, 'a', args)).toSucceedWith({
-      content: 'caption\n[image block]'
+      content: 'caption\n[image block]',
+      blocks: [
+        { type: 'text', text: 'caption' },
+        { type: 'unknown', blockType: 'image' }
+      ]
     });
   });
 
   test('projects an empty/absent content list to an empty string', async () => {
     const fake = makeFakeClient({ callTool: jest.fn(async () => ({})) });
     const session = await connectWith(fake);
-    expect(await callMcpTool(session, 'a', args)).toSucceedWith({ content: '' });
+    expect(await callMcpTool(session, 'a', args)).toSucceedWith({ content: '', blocks: [] });
   });
 
   test('maps isError:true to a Failure carrying the projected content', async () => {
@@ -728,7 +737,11 @@ describe('adaptMcpTools', () => {
       const callTool = jest.fn(async () => ({ content: [{ type: 'text', text: 'tool output' }] }));
       const execute = await adaptGood(callTool);
       expect(await execute({ q: 'hello' })).toSucceedWith('tool output');
-      expect(callTool).toHaveBeenCalledWith({ name: 'good', arguments: { q: 'hello' } }, undefined, {});
+      expect(callTool).toHaveBeenCalledWith(
+        { name: 'good', arguments: { q: 'hello' } },
+        sdk.SDK_RAW_RESULT_SCHEMA,
+        {}
+      );
     });
 
     test('fails when the model supplies non-object arguments', async () => {

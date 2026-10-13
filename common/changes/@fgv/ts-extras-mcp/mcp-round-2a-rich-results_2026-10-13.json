@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "BREAKING: IMcpToolCallResult gains blocks (every content block converter-validated into McpContentBlock: text, resource_link, embedded resource, image, audio, unknown) and structuredContent; callMcpTool takes IMcpCallToolOptions with includeMediaData. The text projection changes value: a resource_link now projects to `[resource_link: <uri> (<name>)]` and an embedded text resource to its text; an unknown or malformed block no longer fails the call (personaility#675)",
+      "type": "minor",
+      "packageName": "@fgv/ts-extras-mcp"
+    }
+  ],
+  "packageName": "@fgv/ts-extras-mcp",
+  "email": "noreply@anthropic.com"
+}

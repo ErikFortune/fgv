@@ -15,7 +15,7 @@ import { Result } from '@fgv/ts-utils';
 export function adaptMcpTools(session: IMcpSession, options?: IAdaptMcpToolsOptions): Promise<DetailedResult<IAdaptMcpToolsResult, McpFailureReason>>;
 
 // @public
-export function callMcpTool(session: IMcpSession, name: string, args: JsonObject, options?: IMcpRequestOptions): Promise<DetailedResult<IMcpToolCallResult, McpFailureReason>>;
+export function callMcpTool(session: IMcpSession, name: string, args: JsonObject, options?: IMcpCallToolOptions): Promise<DetailedResult<IMcpToolCallResult, McpFailureReason>>;
 
 // @public
 export function closeMcpSession(session: IMcpSession): Promise<Result<true>>;
@@ -56,9 +56,51 @@ export interface IConnectMcpSessionParams {
 }
 
 // @public
+export interface IMcpAudioBlock {
+    readonly byteLength: number;
+    readonly data?: string;
+    readonly mimeType: string;
+    // (undocumented)
+    readonly type: 'audio';
+}
+
+// @public
+export interface IMcpCallToolOptions extends IMcpRequestOptions {
+    readonly includeMediaData?: boolean;
+}
+
+// @public
+export interface IMcpEmbeddedBlobResourceBlock {
+    readonly byteLength: number;
+    readonly data?: string;
+    readonly mimeType?: string;
+    // (undocumented)
+    readonly type: 'resource';
+    readonly uri: string;
+}
+
+// @public
+export interface IMcpEmbeddedTextResourceBlock {
+    readonly mimeType?: string;
+    readonly text: string;
+    // (undocumented)
+    readonly type: 'resource';
+    readonly uri: string;
+}
+
+// @public
 export interface IMcpHttpTransportParams {
     readonly headers?: Record<string, string>;
     readonly url: string;
+}
+
+// @public
+export interface IMcpImageBlock {
+    readonly byteLength: number;
+    readonly data?: string;
+    readonly mimeType: string;
+    // (undocumented)
+    readonly type: 'image';
 }
 
 // @public
@@ -75,6 +117,17 @@ export interface IMcpRequestOptions {
     readonly resetTimeoutOnProgress?: boolean;
     readonly signal?: AbortSignal;
     readonly timeoutMs?: number;
+}
+
+// @public
+export interface IMcpResourceLinkBlock {
+    readonly description?: string;
+    readonly mimeType?: string;
+    readonly name?: string;
+    readonly title?: string;
+    // (undocumented)
+    readonly type: 'resource_link';
+    readonly uri: string;
 }
 
 // @public
@@ -117,6 +170,13 @@ export interface IMcpStdioTransportParams {
 }
 
 // @public
+export interface IMcpTextBlock {
+    readonly text: string;
+    // (undocumented)
+    readonly type: 'text';
+}
+
+// @public
 export interface IMcpToolAnnotations {
     readonly destructiveHint?: boolean;
     readonly idempotentHint?: boolean;
@@ -127,7 +187,9 @@ export interface IMcpToolAnnotations {
 
 // @public
 export interface IMcpToolCallResult {
+    readonly blocks: ReadonlyArray<McpContentBlock>;
     readonly content: string;
+    readonly structuredContent?: JsonValue;
 }
 
 // @public
@@ -146,7 +208,17 @@ export interface IMcpTransport {
 }
 
 // @public
+export interface IMcpUnknownBlock {
+    readonly blockType?: string;
+    // (undocumented)
+    readonly type: 'unknown';
+}
+
+// @public
 export function listMcpTools(session: IMcpSession, options?: IMcpRequestOptions): Promise<DetailedResult<ReadonlyArray<IMcpToolDescriptor>, McpFailureReason>>;
+
+// @public
+export type McpContentBlock = IMcpTextBlock | IMcpResourceLinkBlock | IMcpEmbeddedTextResourceBlock | IMcpEmbeddedBlobResourceBlock | IMcpImageBlock | IMcpAudioBlock | IMcpUnknownBlock;
 
 // @public
 export type McpFailureReason = {

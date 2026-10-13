@@ -124,7 +124,8 @@ describe('McpFailureReason against a real in-memory MCP server', () => {
 
   test('a successful call carries no failure detail', async () => {
     expect(await callMcpTool(fixture.session, 'echo', { msg: 'hi' })).toSucceedWith({
-      content: 'echo: {"msg":"hi"}'
+      content: 'echo: {"msg":"hi"}',
+      blocks: [{ type: 'text', text: 'echo: {"msg":"hi"}' }]
     });
   });
 
@@ -262,9 +263,14 @@ describe('onClose — observing a session close', () => {
 });
 
 describe('a response the SDK rejects', () => {
-  test('a malformed tools/call result is protocol, with no code', async () => {
-    // A hand-driven peer that completes the handshake, then answers tools/call with content that is
-    // not an array — something the SDK's own Server would refuse to send.
+  test('a result the SDK schema rejects is protocol, with no code', async () => {
+    // A hand-driven peer that completes the handshake, then answers tools/list with tools that are
+    // not an array, and tools/call with content that is not an array — things the SDK's own Server
+    // would refuse to send. The SDK's list schema rejects the first. The second, since tools/call is
+    // read with the SDK's generic result schema, is the package's to convert, and becomes a single
+    // unknown block rather than a failed call. (A tools/call result the generic schema rejects never
+    // reaches the request: the JSON-RPC envelope check applies the same schema, so such a message is
+    // not recognized as a response at all.)
     const [clientSide, peer] = InMemoryTransport.createLinkedPair();
     peer.onmessage = (message): void => {
       if (!('id' in message) || !('method' in message)) {
@@ -277,16 +283,20 @@ describe('a response the SDK rejects', () => {
               capabilities: { tools: {} },
               serverInfo: { name: 'malformed-peer', version: '0.0.1' }
             }
+          : message.method === 'tools/list'
+          ? { tools: 'not an array' }
           : { content: 'not an array' };
-      peer.send({ jsonrpc: '2.0', id: message.id, result }).catch(() => undefined);
+      peer.send({ jsonrpc: '2.0', id: message.id, result } as never).catch(() => undefined);
     };
     await peer.start();
     const session = (
       await connectMcpSession({ transport: createCustomTransport(clientSide).orThrow() })
     ).orThrow();
 
-    expect(await callMcpTool(session, 'anything', {})).toFailWithDetail(/^callMcpTool 'anything':/, {
-      kind: 'protocol'
+    expect(await listMcpTools(session)).toFailWithDetail(/^listMcpTools:/, { kind: 'protocol' });
+    expect(await callMcpTool(session, 'nonarray', {})).toSucceedWith({
+      content: '[unknown block]',
+      blocks: [{ type: 'unknown' }]
     });
 
     await closeMcpSession(session);
