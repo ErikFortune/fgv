@@ -302,9 +302,15 @@ Each gate was graded by `grep -ci error` and `grep -ci warning` on its log, not 
 | `rushx lint` (ts-extras-mcp) | 0 | 0 |
 | `rushx test` (ts-extras-mcp): 100% statements, branches, functions and lines; 187 tests (round 2) | 0 | 0 |
 | `rushx fixlint` | run; no changes | — |
-| `install-run-rush.js rebuild` (4 min 20 s) | 0 | 1: Rush's "Detected 1 Git-tracked symlinks" (`.agents/skills`, pre-existing); not a build warning |
-| `install-run-rush.js test` (10 min 13 s, exit 0, no `fail` lines) | 0 | 1: the same symlink notice |
-| `change --verify --target-branch origin/integration/asks` | 0 | 0 |
+| `install-run-rush.js rebuild` (round 2: 4 min 29 s) | 0 | 1: Rush's "Detected 1 Git-tracked symlinks" (`.agents/skills`, pre-existing); not a build warning |
+| `install-run-rush.js test` (round 2: 10 min 58 s, exit 0) | 0 | 1: the same symlink notice |
+| `change --verify --target-branch origin/integration/asks` (round 2) | 0 | 0 |
+
+Round 2's first repo-wide `test` failed once, in `@fgv/ts-extras`
+`saferFetchRetry.test.ts` § "an exhausted deadline fails with the attempt's own failure". That is
+the probabilistic flake already filed as a P2 in `docs/TECH_DEBT.md` ("flakes CI … at roughly 1 run
+in 170"). This branch touches no file in `ts-extras`; the suite passed 3 of 3 runs in isolation, and
+the full re-run above is clean.
 
 `samples/testbed` (`mcpProbe`) uses `listMcpTools` and `adaptMcpTools` only, and pins no call
 projection. No other package imports `callMcpTool`.

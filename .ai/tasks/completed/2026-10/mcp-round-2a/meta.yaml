@@ -62,4 +62,4 @@ keywords:
 relatedStreams:
   - { id: personality-intake, relationship: 'triaged the three asks (followups entries 13, 14, 15)' }
   - { id: mcp-client-cancellation, relationship: 'built the surface (#722) these three extend' }
-sourceHash: sha256:cd013384238f93ab # over brief.md + result.md + state.md
+sourceHash: sha256:950510afa51c867d # over brief.md + result.md + state.md
