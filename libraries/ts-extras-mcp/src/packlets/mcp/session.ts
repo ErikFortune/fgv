@@ -92,6 +92,7 @@ export const TERMINATE_TIMEOUT_MS: number = 2000;
  */
 export class McpCloseWatcher {
   private _closed: boolean = false;
+  private _closing: boolean = false;
   private _listener: (() => void | Promise<void>) | undefined;
   private readonly _logger: Logging.ILogger | undefined;
 
@@ -102,6 +103,21 @@ export class McpCloseWatcher {
   /** Whether the connection has closed. Never reverts to `false`. */
   public get closed(): boolean {
     return this._closed;
+  }
+
+  /**
+   * Whether the consumer has entered `closeMcpSession`. Set before the Streamable-HTTP `DELETE`,
+   * which can hold the close for up to two seconds before the connection is actually closed. Read
+   * only to stop consumer notifications: it does **not** classify in-flight calls, which still
+   * fail by what the server or the observed close says. Never reverts to `false`.
+   */
+  public get closing(): boolean {
+    return this._closing;
+  }
+
+  /** Records that the consumer has started closing the session. */
+  public beginClosing(): void {
+    this._closing = true;
   }
 
   /** Arms the consumer's callback. Called once, synchronously after a successful handshake. */
@@ -159,8 +175,8 @@ export function invokeContained(
  * Its `notify` is registered on the SDK client before the handshake. A notification that lands
  * before the session is handed out is held, and delivered once on a later macrotask after
  * {@link McpToolsChangedWatcher.arm} — by then `connectMcpSession` has returned, so the consumer
- * holds the session it would re-list with. Nothing is delivered once the connection has closed:
- * the check runs at delivery time, after every `await` or deferral, against the session's close
+ * holds the session it would re-list with. Nothing is delivered once `closeMcpSession` has been
+ * entered or the connection has closed: the check runs at delivery time, after every `await` or deferral, against the session's close
  * watcher.
  * @internal
  */
@@ -181,9 +197,13 @@ export class McpToolsChangedWatcher {
     this._logger = logger;
   }
 
-  /** Called by the SDK for each notification. Delivers it, or holds it until armed. */
+  /**
+   * Called by the SDK for each notification. Delivers it, or holds it until armed. Nothing is
+   * delivered once the consumer has entered `closeMcpSession` (the HTTP `DELETE` can hold the
+   * close open while the server still sends), or once the connection has closed.
+   */
   public notify(): void {
-    if (this._closeWatcher.closed) {
+    if (this._closeWatcher.closing || this._closeWatcher.closed) {
       return;
     }
     if (!this._armed) {
@@ -508,6 +528,8 @@ export async function closeMcpSession(session: IMcpSession): Promise<Result<true
   const mcpSession = sessionResult.value;
   // Converted with errorText, for this package's fallback text on a rejection value that cannot be
   // read (see errorText). `terminate` never rejects, so only the close can fail the result.
+  // Entered before the first `await`, so no notification is delivered from here on.
+  mcpSession.closeWatcher.beginClosing();
   return Promise.resolve()
     .then(() => mcpSession.terminate())
     .then(() => mcpSession.client.close())

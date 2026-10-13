@@ -51,7 +51,13 @@ import {
 import { TERMINATE_TIMEOUT_MS } from '../../packlets/mcp/session';
 
 /** How the fixture answers the `DELETE`. */
-type DeleteMode = 'ok' | 'not-allowed' | 'never' | 'drop' | 'server-error';
+type DeleteMode = 'ok' | 'not-allowed' | 'never' | 'drop' | 'server-error' | 'never-notifying';
+
+/** A `notifications/tools/list_changed`, as one SSE event. */
+const LIST_CHANGED_EVENT: string = `data: ${JSON.stringify({
+  jsonrpc: '2.0',
+  method: 'notifications/tools/list_changed'
+})}\n\n`;
 
 interface IFixture {
   readonly server: Server;
@@ -60,6 +66,11 @@ interface IFixture {
   readonly deletes: Array<string | undefined>;
   /** Resolves when the client abandons a `DELETE` the fixture is holding open. */
   heldDeleteClosed: Promise<void>;
+  /** The standalone GET SSE stream, in `'never-notifying'` mode, once the client has opened it. */
+  stream?: ServerResponse;
+  /** Resolves when the client has opened the standalone stream. */
+  streamOpened: Promise<void>;
+  openedStream?: () => void;
 }
 
 function readBody(req: IncomingMessage): Promise<{ id?: number; method?: string; params?: unknown }> {
@@ -79,6 +90,14 @@ async function handle(
   res: ServerResponse
 ): Promise<void> {
   if (req.method === 'GET') {
+    if (mode === 'never-notifying') {
+      // A standalone SSE stream the server can notify on, held open.
+      res.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-cache' });
+      res.flushHeaders();
+      fixture.stream = res;
+      fixture.openedStream?.();
+      return;
+    }
     // No standalone SSE stream; the SDK client treats 405 as "not offered".
     res.writeHead(405).end();
     return;
@@ -101,6 +120,11 @@ async function handle(
         return;
       case 'never':
         fixture.heldDeleteClosed = new Promise<void>((resolve) => res.on('close', () => resolve()));
+        return;
+      case 'never-notifying':
+        // Holds the DELETE, and meanwhile tells the client its tool list changed.
+        fixture.heldDeleteClosed = new Promise<void>((resolve) => res.on('close', () => resolve()));
+        fixture.stream?.write(LIST_CHANGED_EVENT);
         return;
     }
   }
@@ -130,8 +154,12 @@ async function startFixture(mode: DeleteMode): Promise<IFixture> {
     }),
     url: '',
     deletes: [],
-    heldDeleteClosed: Promise.resolve()
+    heldDeleteClosed: Promise.resolve(),
+    streamOpened: Promise.resolve()
   };
+  fixture.streamOpened = new Promise<void>((resolve) => {
+    fixture.openedStream = resolve;
+  });
   await new Promise<void>((resolve) => fixture.server.listen(0, '127.0.0.1', resolve));
   const { port } = fixture.server.address() as AddressInfo;
   fixture.url = `http://127.0.0.1:${port}/mcp`;
@@ -170,7 +198,8 @@ describe('closeMcpSession terminates a Streamable-HTTP session', () => {
 
   async function connectToFixture(
     mode: DeleteMode,
-    logger?: Logging.ILogger
+    logger?: Logging.ILogger,
+    onToolsChanged?: () => void
   ): Promise<{ session: IMcpSession; closes: jest.Mock }> {
     const started = await startFixture(mode);
     fixture = started;
@@ -179,7 +208,8 @@ describe('closeMcpSession terminates a Streamable-HTTP session', () => {
       await connectMcpSession({
         transport: createHttpTransport({ url: started.url }).orThrow(),
         onClose: closes,
-        logger
+        logger,
+        onToolsChanged
       })
     ).orThrow();
     return { session, closes };
@@ -283,6 +313,23 @@ describe('closeMcpSession terminates a Streamable-HTTP session', () => {
     // The close that followed the bound aborted the DELETE the server was holding.
     await fixture!.heldDeleteClosed;
     expect(logger.logged.join('\n')).toMatch(/termination did not finish within 2000 ms/);
+  }, 10000);
+
+  test('a tools/list_changed sent while the DELETE is held does not reach onToolsChanged', async () => {
+    const onToolsChanged = jest.fn();
+    const { session, closes } = await connectToFixture('never-notifying', undefined, onToolsChanged);
+    await fixture!.streamOpened;
+    // The channel works: a notification on the standalone stream before close is delivered.
+    fixture!.stream!.write(LIST_CHANGED_EVENT);
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    expect(onToolsChanged).toHaveBeenCalledTimes(1);
+
+    // The fixture sends another as the DELETE arrives, and holds the DELETE for the whole bound.
+    const { result } = await timedClose(session);
+    expect(result).toSucceedWith(true);
+    expect(fixture!.deletes).toEqual(['session-1']);
+    expect(onToolsChanged).toHaveBeenCalledTimes(1);
+    expect(closes).toHaveBeenCalledTimes(1);
   }, 10000);
 
   test('a dropped connection does not fail or delay the close, and is logged once at detail', async () => {
