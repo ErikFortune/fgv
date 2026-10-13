@@ -121,20 +121,25 @@ function _resourceBlock(
   raw: unknown,
   includeData: boolean
 ): Result<IMcpEmbeddedTextResourceBlock | IMcpEmbeddedBlobResourceBlock> {
-  return _required(raw, 'resource', jsonObject).onSuccess((resource) =>
-    _required(resource, 'uri', line).onSuccess(
-      (uri): Result<IMcpEmbeddedTextResourceBlock | IMcpEmbeddedBlobResourceBlock> => {
-        const mimeType = _maybe(resource, 'mimeType', line);
-        const head = { type: 'resource' as const, uri, ...(mimeType !== undefined ? { mimeType } : {}) };
-        const embeddedText = _maybe(resource, 'text', text);
-        if (embeddedText !== undefined) {
-          return succeed<IMcpEmbeddedTextResourceBlock>({ ...head, text: embeddedText });
-        }
-        return _required(resource, 'blob', base64)
-          .onSuccess((blob) => _media(blob, includeData))
-          .onSuccess((media) => succeed<IMcpEmbeddedBlobResourceBlock>({ ...head, ...media }));
+  // The URI is never projected, so a missing or invalid one is dropped rather than costing the
+  // block its body: the text or blob is what the block carries.
+  return _required(raw, 'resource', jsonObject).onSuccess(
+    (resource): Result<IMcpEmbeddedTextResourceBlock | IMcpEmbeddedBlobResourceBlock> => {
+      const uri = _maybe(resource, 'uri', line);
+      const mimeType = _maybe(resource, 'mimeType', line);
+      const head = {
+        type: 'resource' as const,
+        ...(uri !== undefined ? { uri } : {}),
+        ...(mimeType !== undefined ? { mimeType } : {})
+      };
+      const embeddedText = _maybe(resource, 'text', text);
+      if (embeddedText !== undefined) {
+        return succeed<IMcpEmbeddedTextResourceBlock>({ ...head, text: embeddedText });
       }
-    )
+      return _required(resource, 'blob', base64)
+        .onSuccess((blob) => _media(blob, includeData))
+        .onSuccess((media) => succeed<IMcpEmbeddedBlobResourceBlock>({ ...head, ...media }));
+    }
   );
 }
 
@@ -142,12 +147,13 @@ function _mediaBlock<T extends 'image' | 'audio'>(
   raw: unknown,
   type: T,
   includeData: boolean
-): Result<{ type: T; mimeType: string; byteLength: number; data?: string }> {
-  return _required(raw, 'mimeType', line).onSuccess((mimeType) =>
-    _required(raw, 'data', base64)
-      .onSuccess((data) => _media(data, includeData))
-      .onSuccess((media) => succeed({ type, mimeType, ...media }))
-  );
+): Result<{ type: T; mimeType?: string; byteLength: number; data?: string }> {
+  // The MIME type is never projected, so a missing or invalid one is dropped rather than costing
+  // the block its data.
+  const mimeType = _maybe(raw, 'mimeType', line);
+  return _required(raw, 'data', base64)
+    .onSuccess((data) => _media(data, includeData))
+    .onSuccess((media) => succeed({ type, ...(mimeType !== undefined ? { mimeType } : {}), ...media }));
 }
 
 /** The block for a known type, or a failure when the block is malformed. */

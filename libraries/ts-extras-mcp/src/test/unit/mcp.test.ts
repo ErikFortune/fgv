@@ -574,12 +574,12 @@ describe('callMcpTool', () => {
       }))
     });
     const session = await connectWith(fake);
-    // An image without its mimeType is malformed: an unknown block that keeps the image placeholder.
+    // An image without its mimeType keeps its size; the type is simply absent.
     expect(await callMcpTool(session, 'a', args)).toSucceedWith({
       content: 'caption\n[image block]',
       blocks: [
         { type: 'text', text: 'caption' },
-        { type: 'unknown', blockType: 'image' }
+        { type: 'image', byteLength: 4 }
       ]
     });
   });

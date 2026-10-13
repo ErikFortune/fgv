@@ -59,7 +59,7 @@ export interface IConnectMcpSessionParams {
 export interface IMcpAudioBlock {
     readonly byteLength: number;
     readonly data?: string;
-    readonly mimeType: string;
+    readonly mimeType?: string;
     // (undocumented)
     readonly type: 'audio';
 }
@@ -76,7 +76,7 @@ export interface IMcpEmbeddedBlobResourceBlock {
     readonly mimeType?: string;
     // (undocumented)
     readonly type: 'resource';
-    readonly uri: string;
+    readonly uri?: string;
 }
 
 // @public
@@ -85,7 +85,7 @@ export interface IMcpEmbeddedTextResourceBlock {
     readonly text: string;
     // (undocumented)
     readonly type: 'resource';
-    readonly uri: string;
+    readonly uri?: string;
 }
 
 // @public
@@ -98,7 +98,7 @@ export interface IMcpHttpTransportParams {
 export interface IMcpImageBlock {
     readonly byteLength: number;
     readonly data?: string;
-    readonly mimeType: string;
+    readonly mimeType?: string;
     // (undocumented)
     readonly type: 'image';
 }

@@ -483,8 +483,8 @@ export interface IMcpResourceLinkBlock {
  */
 export interface IMcpEmbeddedTextResourceBlock {
   readonly type: 'resource';
-  /** The embedded resource's URI. */
-  readonly uri: string;
+  /** The embedded resource's URI; absent when the server's was missing or not one printable line. */
+  readonly uri?: string;
   /** Its MIME type, when the server gave one. */
   readonly mimeType?: string;
   /** Its text, as the server sent it. */
@@ -497,8 +497,8 @@ export interface IMcpEmbeddedTextResourceBlock {
  */
 export interface IMcpEmbeddedBlobResourceBlock {
   readonly type: 'resource';
-  /** The embedded resource's URI. */
-  readonly uri: string;
+  /** The embedded resource's URI; absent when the server's was missing or not one printable line. */
+  readonly uri?: string;
   /** Its MIME type, when the server gave one. */
   readonly mimeType?: string;
   /** The decoded size of the resource, in bytes. */
@@ -513,8 +513,11 @@ export interface IMcpEmbeddedBlobResourceBlock {
  */
 export interface IMcpImageBlock {
   readonly type: 'image';
-  /** The image's MIME type. */
-  readonly mimeType: string;
+  /**
+   * The image's MIME type; absent when the server's was missing or not one printable line. The
+   * block keeps its size and data either way.
+   */
+  readonly mimeType?: string;
   /** The decoded size of the image, in bytes. */
   readonly byteLength: number;
   /** The base64 data as sent, only when {@link IMcpCallToolOptions.includeMediaData} is `true`. */
@@ -527,8 +530,11 @@ export interface IMcpImageBlock {
  */
 export interface IMcpAudioBlock {
   readonly type: 'audio';
-  /** The audio's MIME type. */
-  readonly mimeType: string;
+  /**
+   * The audio's MIME type; absent when the server's was missing or not one printable line. The
+   * block keeps its size and data either way.
+   */
+  readonly mimeType?: string;
   /** The decoded size of the audio, in bytes. */
   readonly byteLength: number;
   /** The base64 data as sent, only when {@link IMcpCallToolOptions.includeMediaData} is `true`. */
