@@ -502,6 +502,35 @@ describe('blocks a real SDK server would refuse to send', () => {
     await closeMcpSession(session);
   });
 
+  test('a hole in a sparse content array is an unknown block, not a hole in blocks', async () => {
+    // eslint-disable-next-line no-sparse-arrays
+    const sparse: unknown[] = [{ type: 'text', text: 'a' }, , { type: 'text', text: 'b' }];
+    const session = await connectPeer({ sparse: { content: sparse } });
+    expect(await call(session, 'sparse')).toSucceedAndSatisfy((result) => {
+      expect(result.blocks).toHaveLength(3);
+      expect(result.blocks[1]).toEqual({ type: 'unknown' });
+    });
+    await closeMcpSession(session);
+  });
+
+  test('an isError that is not a boolean is a protocol failure, never a success', async () => {
+    const session = await connectPeer({
+      stringly: { content: [{ type: 'text', text: 'bad' }], isError: 'true' },
+      numeric: { content: [], isError: 1 },
+      absent: { content: [{ type: 'text', text: 'ok' }] },
+      flagged: { content: [{ type: 'text', text: 'boom' }], isError: true }
+    });
+    for (const name of ['stringly', 'numeric']) {
+      expect(await callMcpTool(session, name, {})).toFailWithDetail(
+        `callMcpTool '${name}': the result's isError is not a boolean`,
+        { kind: 'protocol' }
+      );
+    }
+    expect(await call(session, 'absent')).toSucceed();
+    expect(await callMcpTool(session, 'flagged', {})).toFailWithDetail('boom', { kind: 'tool-error' });
+    await closeMcpSession(session);
+  });
+
   test('base64 padding must complete the last quantum exactly', async () => {
     const image = (data: string): Record<string, unknown> => ({ type: 'image', mimeType: 'image/png', data });
     const session = await connectPeer({

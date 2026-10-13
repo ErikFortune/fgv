@@ -210,8 +210,10 @@ export function toContentBlocks(raw: unknown, includeData: boolean): ReadonlyArr
     if (raw === undefined) {
       return [];
     }
+    // `Array.from` visits every index, so a hole in a sparse array becomes an unknown block
+    // rather than a hole in `blocks` (which `map` would leave).
     return Array.isArray(raw)
-      ? raw.map((block) => toContentBlock(block, includeData))
+      ? Array.from(raw, (block: unknown) => toContentBlock(block, includeData))
       : [{ type: 'unknown' }];
   }).orDefault([{ type: 'unknown' }]);
 }

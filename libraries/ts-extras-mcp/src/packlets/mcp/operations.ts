@@ -30,6 +30,7 @@ import {
   type DetailedResult,
   type Logging,
   Converters as UtilsConverters,
+  Validators,
   fail,
   failWithDetail,
   succeedWithDetail
@@ -237,9 +238,19 @@ export async function callMcpTool(
       (sdkOptions) => mcpSession.client.callTool({ name, arguments: args }, SDK_RAW_RESULT_SCHEMA, sdkOptions)
     )
   ).onSuccess((raw) => {
+    // The SDK's generic result schema leaves `isError` unchecked, so a value that is not a boolean
+    // is refused here rather than read as success.
+    // A strict check: `Converters.boolean` would also accept the string "true".
+    const isError = Validators.boolean.optional().validate(raw.isError);
+    if (isError.isFailure()) {
+      return failWithDetail<IMcpToolCallResult, McpFailureReason>(
+        `callMcpTool '${name}': the result's isError is not a boolean`,
+        { kind: 'protocol' }
+      );
+    }
     const blocks = toContentBlocks(raw.content, includeData);
     const content = projectContent(blocks);
-    if (raw.isError === true) {
+    if (isError.value === true) {
       return failWithDetail<IMcpToolCallResult, McpFailureReason>(
         content.length > 0 ? content : `tool '${name}' reported an error`,
         { kind: 'tool-error' }
