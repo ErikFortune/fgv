@@ -444,6 +444,15 @@ describe('closeMcpSession', () => {
     expect(fake.close).toHaveBeenCalledTimes(1);
   });
 
+  test('an http handle over a transport that is not the SDK HTTP transport is closed without a DELETE', async () => {
+    const fake = makeFakeClient();
+    mockSdk.makeClient.mockReturnValueOnce(fake as unknown as sdk.ISdkClient);
+    const transport = createHttpTransport({ url: 'http://127.0.0.1:1/mcp' }).orThrow();
+    const session = (await connectMcpSession({ transport })).orThrow();
+    expect(await closeMcpSession(session)).toSucceedWith(true);
+    expect(fake.close).toHaveBeenCalledTimes(1);
+  });
+
   test('fails when close throws', async () => {
     const fake = makeFakeClient({
       close: jest.fn(async () => {

@@ -55,8 +55,9 @@ import {
  * One printable line: non-empty, with no control characters (`singleLine`) and no U+2028 / U+2029,
  * the Unicode line and paragraph separators, which `singleLine` admits (they are not `\p{Cc}`) but
  * which end a line for many readers.
+ * @internal
  */
-const line: Converter<string> = UtilsConverters.string
+export const line: Converter<string> = UtilsConverters.string
   .singleLine()
   .withConstraint((value) => !/[\u2028\u2029]/u.test(value));
 
@@ -189,10 +190,16 @@ export function toContentBlock(raw: unknown, includeData: boolean): McpContentBl
  * @internal
  */
 export function toContentBlocks(raw: unknown, includeData: boolean): ReadonlyArray<McpContentBlock> {
-  if (raw === undefined) {
-    return [];
-  }
-  return Array.isArray(raw) ? raw.map((block) => toContentBlock(block, includeData)) : [{ type: 'unknown' }];
+  // Captured as a whole: a custom transport's array can have a throwing index getter, or be a
+  // revoked Proxy that `Array.isArray` itself throws on.
+  return captureResult((): ReadonlyArray<McpContentBlock> => {
+    if (raw === undefined) {
+      return [];
+    }
+    return Array.isArray(raw)
+      ? raw.map((block) => toContentBlock(block, includeData))
+      : [{ type: 'unknown' }];
+  }).orDefault([{ type: 'unknown' }]);
 }
 
 /** The text projection of one block (see {@link IMcpToolCallResult}). */

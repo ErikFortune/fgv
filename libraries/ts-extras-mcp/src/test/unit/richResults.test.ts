@@ -470,6 +470,28 @@ describe('blocks a real SDK server would refuse to send', () => {
     await closeMcpSession(session);
   });
 
+  test('a content array that cannot be read is one unknown block, not a rejected call', async () => {
+    const trapped: unknown[] = [{ type: 'text', text: 'a' }];
+    Object.defineProperty(trapped, 0, {
+      get: () => {
+        throw new Error('index getter bug');
+      }
+    });
+    const revocable = Proxy.revocable<unknown[]>([], {});
+    revocable.revoke();
+    const session = await connectPeer({
+      trapped: { content: trapped },
+      revoked: { content: revocable.proxy }
+    });
+    for (const name of ['trapped', 'revoked']) {
+      expect(await call(session, name)).toSucceedWith({
+        content: '[unknown block]',
+        blocks: [{ type: 'unknown' }]
+      });
+    }
+    await closeMcpSession(session);
+  });
+
   test('content that is not an array is one unknown block; absent content is none', async () => {
     const session = await connectPeer({ scalar: { content: 7 }, none: {} });
     expect(await call(session, 'scalar')).toSucceedWith({
@@ -503,6 +525,14 @@ describe('structuredContent from the wire', () => {
       'mcp: a tool result\'s structuredContent was refused and omitted: holds a reserved "__proto__" key',
       'mcp: a tool result\'s structuredContent was refused and omitted: holds a reserved "__proto__" key'
     ]);
+    await closeMcpSession(session);
+  });
+
+  test('a refusal with no logger is still an omission, not a failure', async () => {
+    const session = await connectPeer({
+      top: JSON.parse('{"content":[],"structuredContent":{"__proto__":{"admin":true}}}')
+    });
+    expect(await call(session, 'top')).toSucceedWith({ content: '', blocks: [] });
     await closeMcpSession(session);
   });
 

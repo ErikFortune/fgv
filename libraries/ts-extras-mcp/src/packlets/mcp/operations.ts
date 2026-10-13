@@ -27,7 +27,6 @@
  */
 
 import {
-  type Converter,
   type DetailedResult,
   type Logging,
   Converters as UtilsConverters,
@@ -37,7 +36,7 @@ import {
 } from '@fgv/ts-utils';
 import { Converters, type JsonObject, type JsonValue } from '@fgv/ts-json-base';
 
-import { projectContent, receivedJson, toContentBlocks } from './content';
+import { line, projectContent, receivedJson, toContentBlocks } from './content';
 import {
   type IMcpCallToolOptions,
   type IMcpSession,
@@ -85,12 +84,9 @@ function _normalizeAnnotations(raw: unknown): IMcpToolAnnotations | undefined {
   return Object.keys(normalized).length > 0 ? normalized : undefined;
 }
 
-/** A received string that must be one line of printable text. Its failure message is never surfaced. */
-const singleLine: Converter<string> = UtilsConverters.string.singleLine();
-
-/** `value` when it is a single line of printable text; otherwise `undefined`. */
+/** `value` when it is a single line of printable text (see `line`); otherwise `undefined`. */
 function _line(value: unknown): string | undefined {
-  return singleLine.convert(value).orDefault();
+  return line.convert(value).orDefault();
 }
 
 /**

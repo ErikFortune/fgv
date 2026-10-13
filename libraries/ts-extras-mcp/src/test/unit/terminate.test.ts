@@ -238,6 +238,14 @@ describe('closeMcpSession terminates a Streamable-HTTP session', () => {
     expect(closes).toHaveBeenCalledTimes(1);
   });
 
+  test('concurrent closes share one DELETE', async () => {
+    const { session, closes } = await connectToFixture('ok');
+    const results = await Promise.all([closeMcpSession(session), closeMcpSession(session)]);
+    results.forEach((result) => expect(result).toSucceedWith(true));
+    expect(fixture!.deletes).toEqual(['session-1']);
+    expect(closes).toHaveBeenCalledTimes(1);
+  });
+
   test('a 405 answer is not a failure: the close is prompt, unlogged, and onClose fires once', async () => {
     const logger = new Logging.InMemoryLogger('detail');
     const { session, closes } = await connectToFixture('not-allowed', logger);
@@ -290,6 +298,17 @@ describe('closeMcpSession terminates a Streamable-HTTP session', () => {
     );
     louder.forEach((spy) => expect(spy).not.toHaveBeenCalled());
   });
+
+  test('with no logger, a failed or silent DELETE still leaves the close bounded and successful', async () => {
+    const failing = await connectToFixture('server-error');
+    expect(await closeMcpSession(failing.session)).toSucceedWith(true);
+    await stop(fixture?.server);
+    const silent = await connectToFixture('never');
+    const { result, ms } = await timedClose(silent.session);
+    expect(result).toSucceedWith(true);
+    expect(ms).toBeLessThan(TERMINATE_TIMEOUT_MS + PROMPT_MS);
+    expect(silent.closes).toHaveBeenCalledTimes(1);
+  }, 10000);
 
   test('a custom transport is closed exactly as before, with no DELETE, even when it speaks HTTP', async () => {
     const { session: first } = await connectToFixture('ok');

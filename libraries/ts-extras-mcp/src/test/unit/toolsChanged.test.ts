@@ -121,10 +121,17 @@ describe('descriptor title and outputSchema', () => {
       { name: 'multi', title: 'Line one\nLine two', inputSchema: INPUT, annotations: { title: 'Fallback' } },
       { name: 'bell', title: 'Ring\u0007', inputSchema: INPUT },
       { name: 'nel', title: 'Next\u0085Line', inputSchema: INPUT, annotations: { title: 'Bad\r' } },
-      { name: 'empty', title: '', inputSchema: INPUT }
+      { name: 'empty', title: '', inputSchema: INPUT },
+      { name: 'separator', title: 'a\u2028b', inputSchema: INPUT, annotations: { title: 'c\u2029d' } }
     ]);
     const listed = (await listMcpTools(session)).orThrow();
-    expect(listed.map((tool) => tool.title)).toEqual(['Fallback', undefined, undefined, undefined]);
+    expect(listed.map((tool) => tool.title)).toEqual([
+      'Fallback',
+      undefined,
+      undefined,
+      undefined,
+      undefined
+    ]);
     await closeMcpSession(session);
   });
 

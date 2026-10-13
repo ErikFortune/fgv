@@ -393,8 +393,8 @@ export interface IMcpToolDescriptor {
   readonly name: string;
   /**
    * Human-readable display title: the tool's own `title`, or else its `annotations.title`. Absent
-   * when neither is a non-empty single line of text without control characters; a title that is
-   * not is dropped, never altered.
+   * when neither is a non-empty single line of text without control characters or U+2028/U+2029;
+   * a title that is not is dropped, never altered.
    */
   readonly title?: string;
   /** Human-readable description, when the server provided one. */
@@ -587,8 +587,9 @@ export type McpContentBlock =
  * | embedded blob `resource`, `image`, `audio` | `[resource block]`, `[image block]`, `[audio block]` |
  * | unknown | `[<blockType> block]`, or `[unknown block]` without a usable `blockType` |
  *
- * Every server string in that projection is validated first (a URI or name with a line break or
- * control character is not echoed), so a block cannot forge a line. A result with `isError: true`
+ * Every server string in that projection is validated first (a URI or name with a line break,
+ * U+2028/U+2029 or a control character is not echoed), so a block cannot forge a line. It is still
+ * untrusted server text — a single line can say anything — exactly as a `text` block always was. A result with `isError: true`
  * is mapped to `Result.fail(content)` rather than returned here, so it is never silently swallowed.
  *
  * @public
