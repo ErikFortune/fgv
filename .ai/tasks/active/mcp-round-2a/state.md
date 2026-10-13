@@ -6,11 +6,11 @@ Implementer's working surface. The brief is frozen; disagreements and open quest
 
 - [x] Setup: branch at `c67d6d44`, `rush install` clean.
 - [x] Beliefs 1–7 checked against SDK 1.29.0 and source (verdicts in `result.md`).
-- [ ] #674 terminate on close — commit 1
-- [ ] #676 descriptor `title` / `outputSchema`, `onToolsChanged` — commit 2
-- [ ] #675 rich results — commit 3
-- [ ] code-reviewer pass, then coverage closure
-- [ ] gates (package, repo-wide rebuild + test, change verify)
+- [x] #674 terminate on close — commit 1
+- [x] #676 descriptor `title` / `outputSchema`, `onToolsChanged` — commit 2
+- [x] #675 rich results — commit 3
+- [x] code-reviewer pass, then coverage closure
+- [x] gates (package, repo-wide rebuild + test, change verify)
 - [ ] /finalize-task, push
 
 ## Findings that shape the build (not in the brief)
