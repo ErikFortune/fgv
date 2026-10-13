@@ -256,13 +256,28 @@ function _holdsReservedKey(value: unknown): boolean {
   return false;
 }
 
+/** Whether a value holds a non-finite number at any depth (`JSON.parse('1e400')` is `Infinity`). */
+function _holdsNonFinite(value: unknown): boolean {
+  if (typeof value === 'number') {
+    return !Number.isFinite(value);
+  }
+  if (isJsonArray(value)) {
+    return value.some(_holdsNonFinite);
+  }
+  if (isJsonObject(value)) {
+    return Object.values(value).some(_holdsNonFinite);
+  }
+  return false;
+}
+
 /**
- * Converts a received value to JSON verbatim, refusing it whole when it holds an own `__proto__` key.
+ * Converts a received value to JSON verbatim, refusing it whole when it holds an own `__proto__` key
+ * or a non-finite number.
  *
  * @remarks
- * `@fgv/ts-json-base`'s `jsonValue` drops such a key silently and reports success (see
- * `docs/TECH_DEBT.md`), so a value that holds one would come back with data missing and nothing to
- * say so. Refusing keeps a returned value whole. Total: a value that cannot be walked (a cycle from a
+ * `@fgv/ts-json-base`'s `jsonValue` drops such a key silently and accepts `Infinity` (see
+ * `docs/TECH_DEBT.md`), so a value that holds either would come back with data missing, or as a
+ * value that serializes differently (`Infinity` becomes `null`), and nothing to say so. Refusing keeps a returned value whole. Total: a value that cannot be walked (a cycle from a
  * custom transport, an accessor that throws) fails rather than throws. Every message is fixed
  * text, because the converter's own message can quote the value.
  * @internal
@@ -272,6 +287,8 @@ export function receivedJson(value: unknown): Result<JsonValue> {
     (): Result<JsonValue> =>
       _holdsReservedKey(value)
         ? fail('holds a reserved "__proto__" key')
+        : _holdsNonFinite(value)
+        ? fail('holds a non-finite number')
         : Converters.jsonValue.convert(value).withErrorFormat(() => 'is not JSON')
   )
     .withErrorFormat(() => 'could not be read')

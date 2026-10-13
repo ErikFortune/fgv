@@ -618,6 +618,28 @@ describe('structuredContent from the wire', () => {
     await closeMcpSession(session);
   });
 
+  test('a non-finite number at any depth refuses the whole value, and the refusal is logged', async () => {
+    const logger = new Logging.InMemoryLogger('detail');
+    const session = await connectPeer(
+      {
+        top: JSON.parse('{"content":[],"structuredContent":1e400}'),
+        nested: JSON.parse('{"content":[],"structuredContent":{"rows":[{"n":-1e400}],"ok":1}}'),
+        finite: JSON.parse('{"content":[],"structuredContent":{"n":1e300}}')
+      },
+      logger
+    );
+    for (const name of ['top', 'nested']) {
+      expect(await call(session, name)).toSucceedAndSatisfy((result: IMcpToolCallResult) => {
+        expect('structuredContent' in result).toBe(false);
+      });
+    }
+    expect(await call(session, 'finite')).toSucceedAndSatisfy((result: IMcpToolCallResult) => {
+      expect(result.structuredContent).toEqual({ n: 1e300 });
+    });
+    expect(logger.logged.filter((line) => /non-finite number/.test(line))).toHaveLength(2);
+    await closeMcpSession(session);
+  });
+
   test('a refusal with no logger is still an omission, not a failure', async () => {
     const session = await connectPeer({
       top: JSON.parse('{"content":[],"structuredContent":{"__proto__":{"admin":true}}}')

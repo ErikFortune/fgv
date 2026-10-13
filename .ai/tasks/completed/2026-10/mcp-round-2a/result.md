@@ -146,7 +146,9 @@ How the edge cases are handled:
 ### The #723 and #721 lessons
 
 - **No server string is echoed unvalidated.**
-  - The projection uses only strings that passed `line`.
+  - Every string the projection interpolates into a generated line (a `resource_link` URI or name, a
+    `blockType`) passed `line`. Text-block and embedded-text bodies are the exception: they are free
+    text, projected verbatim, exactly as a `text` block always was.
   - The converters' own failure messages quote the value (and `field` serializes the whole object),
     so they are never surfaced; only `.orDefault()` is used.
   - The refusal log lines are fixed text.

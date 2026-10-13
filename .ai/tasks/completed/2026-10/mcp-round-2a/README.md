@@ -48,8 +48,9 @@ hands on:
   embedded resource's `uri` and a media block's `mimeType` are optional, dropped when invalid.
 - **`onToolsChanged` stops once `closeMcpSession` is entered** (review round 2), not only once the
   connection has closed, because an HTTP close can hold the connection open for 2 s.
-- **Strings are checked before they are echoed.** Received strings that reach the projection or a
-  descriptor must be one printable line. This also refuses U+2028/U+2029, which `singleLine` admits.
+- **Strings are checked before they are echoed into generated text.** Received strings placed in a
+  generated placeholder (a `resource_link` URI or name, a `blockType`) or a descriptor field must be one
+  printable line. Text-block and embedded-text bodies are free text and are projected verbatim. This also refuses U+2028/U+2029, which `singleLine` admits.
 - **Losing connect paths send no `DELETE`.** That keeps them fire-and-forget.
 
 ## Open

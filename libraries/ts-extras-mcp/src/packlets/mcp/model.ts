@@ -605,8 +605,10 @@ export type McpContentBlock =
  * | embedded blob `resource`, `image`, `audio` | `[resource block]`, `[image block]`, `[audio block]` |
  * | unknown | `[<blockType> block]`, or `[unknown block]` without a usable `blockType` |
  *
- * Every server string in that projection is validated first (a URI or name with a line break,
- * U+2028/U+2029 or a control character is not echoed), so a block cannot forge a line. It is still
+ * Every server string interpolated into a generated placeholder (a link's URI or name, a
+ * `blockType`) is validated first (one with a line break, U+2028/U+2029 or a control character is
+ * not echoed), so a block cannot forge a placeholder line. Text and embedded-text bodies are free
+ * text, projected verbatim, and may span lines. It is still
  * untrusted server text — a single line can say anything — exactly as a `text` block always was. A result with `isError: true`
  * is mapped to `Result.fail(content)` rather than returned here, so it is never silently swallowed.
  *

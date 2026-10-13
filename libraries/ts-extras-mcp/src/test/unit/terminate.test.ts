@@ -30,7 +30,6 @@
  */
 
 import '@fgv/ts-utils-jest';
-import { randomUUID } from 'node:crypto';
 import { type IncomingMessage, type Server, type ServerResponse, createServer } from 'node:http';
 import { type AddressInfo } from 'node:net';
 import { Logging } from '@fgv/ts-utils';
@@ -226,7 +225,7 @@ describe('closeMcpSession terminates a Streamable-HTTP session', () => {
         return;
       }
       const transport = new StreamableHTTPServerTransport({
-        sessionIdGenerator: () => randomUUID(),
+        sessionIdGenerator: () => 'fixture-session-1',
         onsessioninitialized: (sessionId) => {
           transports.set(sessionId, transport);
         },
