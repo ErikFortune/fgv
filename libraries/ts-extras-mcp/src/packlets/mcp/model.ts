@@ -374,7 +374,10 @@ export type McpFailureReason =
  * @public
  */
 export interface IMcpToolAnnotations {
-  /** Optional human-readable display title for the tool. */
+  /**
+   * Optional human-readable display title for the tool. Kept only when it is one printable line
+   * (no control characters, U+2028 or U+2029); otherwise dropped, never altered.
+   */
   readonly title?: string;
   /** Hint: the tool does not modify its environment (read-only). */
   readonly readOnlyHint?: boolean;

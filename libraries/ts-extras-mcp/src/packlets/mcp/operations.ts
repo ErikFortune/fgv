@@ -68,7 +68,9 @@ function _normalizeAnnotations(raw: unknown): IMcpToolAnnotations | undefined {
     return undefined;
   }
   const obj = objResult.value;
-  const title = UtilsConverters.string.convert(obj.title).orDefault();
+  // The title is display text, validated like the descriptor's own title; one that is not a
+  // single printable line is dropped.
+  const title = _line(obj.title);
   const readOnlyHint = UtilsConverters.boolean.convert(obj.readOnlyHint).orDefault();
   const destructiveHint = UtilsConverters.boolean.convert(obj.destructiveHint).orDefault();
   const idempotentHint = UtilsConverters.boolean.convert(obj.idempotentHint).orDefault();
@@ -120,7 +122,7 @@ function _receivedJsonOrOmit(
  */
 function _toDescriptor(tool: ISdkToolDescriptor, logger: Logging.ILogger | undefined): IMcpToolDescriptor {
   const annotations = _normalizeAnnotations(tool.annotations);
-  const title = _line(tool.title) ?? _line(annotations?.title);
+  const title = _line(tool.title) ?? annotations?.title;
   const outputSchema = _receivedJsonOrOmit(tool.outputSchema, "a tool's outputSchema", logger);
   return {
     name: tool.name,

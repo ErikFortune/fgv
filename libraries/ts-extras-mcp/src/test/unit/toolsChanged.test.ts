@@ -116,6 +116,19 @@ describe('descriptor title and outputSchema', () => {
     await closeMcpSession(session);
   });
 
+  test('an annotations.title that is not one printable line is dropped from the annotations too', async () => {
+    const session = await connectListing([
+      { name: 'only', inputSchema: INPUT, annotations: { title: 'Two\nlines' } },
+      { name: 'mixed', inputSchema: INPUT, annotations: { title: 'Bell\u0007', readOnlyHint: true } }
+    ]);
+    const listed = (await listMcpTools(session)).orThrow();
+    expect(listed[0].title).toBeUndefined();
+    expect('annotations' in listed[0]).toBe(false);
+    expect(listed[1].title).toBeUndefined();
+    expect(listed[1].annotations).toEqual({ readOnlyHint: true });
+    await closeMcpSession(session);
+  });
+
   test('a title that is not one printable line is dropped, never altered', async () => {
     const session = await connectListing([
       { name: 'multi', title: 'Line one\nLine two', inputSchema: INPUT, annotations: { title: 'Fallback' } },
