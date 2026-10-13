@@ -270,6 +270,17 @@ describe('onToolsChanged', () => {
     await closeMcpSession(session);
   });
 
+  test('nothing fires after the server closes the connection, for a late delivery', async () => {
+    const onToolsChanged = jest.fn();
+    const { server, session, clientSide } = await connectMcpServer(onToolsChanged);
+    // The close comes from the server's side: closeMcpSession has not been entered.
+    await server.close();
+    clientSide.onmessage?.({ jsonrpc: '2.0', method: 'notifications/tools/list_changed' });
+    await settle();
+    expect(onToolsChanged).not.toHaveBeenCalled();
+    await closeMcpSession(session);
+  });
+
   test('nothing fires after close, even for a notification the transport delivers late', async () => {
     const onToolsChanged = jest.fn();
     const { session, clientSide } = await connectMcpServer(onToolsChanged);
