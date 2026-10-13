@@ -7,8 +7,8 @@ Branch `mcp-round-2a`, cut from `integration/asks` @ `a6076e07`. Commits, in ord
 | `87de3380` | #674: terminate Streamable-HTTP sessions on close |
 | `6b8949a0` | #676: descriptor `title` / `outputSchema`, `onToolsChanged` |
 | `91131e23` | #675: rich tool results |
-| `review fixes` | code-reviewer findings (see below) |
-| `test pin` | the R4 revert-matrix row's test |
+| `9be0e578` | code-reviewer findings (see below) |
+| `09a51448` | the R4 revert-matrix row's test |
 
 Package surface touched: `libraries/ts-extras-mcp` (source, tests, `etc/ts-extras-mcp.api.md`,
 `CAPABILITIES.md`, `README.md`), three change files under `common/changes/@fgv/ts-extras-mcp/`, and
@@ -148,8 +148,8 @@ How the edge cases are handled:
     `jsonValue`.
   - Closing both needs `tools/list` read with the generic schema. That would bypass the SDK's
     `cacheToolMetadata`, which feeds its `outputSchema` validation and task-required checks.
-    **Proposed TECH_DEBT entry for the orchestrator** (`docs/TECH_DEBT.md` was outside this stream's
-    surface).
+    **Proposed TECH_DEBT entry for the orchestrator; not yet filed** (`docs/TECH_DEBT.md` was outside
+    this stream's surface).
 
 ## Belief verdicts (SDK `@modelcontextprotocol/sdk` 1.29.0, installed)
 
@@ -216,7 +216,7 @@ matters only after a failed `DELETE`. I added a test for that case, and R4 now g
 | R10 | title falls back to `annotations.title` | fallback; not-one-line dropped |
 | R11 | title single-line | not-one-line dropped |
 | R12 | `__proto__` refused | `outputSchema` nested `__proto__`; `structuredContent` top and nested; no-logger refusal |
-| R13 | generic result schema (mutated back to the SDK default) | 12 (every hand-driven-peer block test, and the `structuredContent` wire tests) |
+| R13 | generic result schema (mutated back to the SDK default) | 12: all nine hand-driven-peer block tests and three of the four `structuredContent` wire tests. The fourth (not JSON / cannot be read) passes under either schema, because the strict schema's `record(unknown)` admits both values and the package then omits them. |
 | R14 | media data opt-in | no data by default; audio and blob opt-in |
 | R15 | decoded `byteLength` (mutated to `data.length`; fixture 12 characters vs 8 bytes) | 4 |
 | R16 | `resource_link` projects URI and name | 5, including the adapted tool and the `isError` message |
