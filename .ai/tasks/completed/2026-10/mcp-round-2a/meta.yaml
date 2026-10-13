@@ -1,7 +1,7 @@
 id: mcp-round-2a
 status: shipped
 packages: ['@fgv/ts-extras-mcp']
-prs: [] # the orchestrator fills in the PR number at open; written anticipating merge
+prs: [728] # written anticipating merge
 openPrs: []
 opened: 2026-10-13
 closed: 2026-10-13

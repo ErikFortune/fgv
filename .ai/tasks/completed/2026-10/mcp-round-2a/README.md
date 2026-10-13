@@ -1,6 +1,6 @@
 # mcp-round-2a — MCP fidelity and lifecycle
 
-**Shipped**: 2026-10-13 into `integration/asks` (PR number recorded in `meta.yaml` at open).
+**Shipped**: 2026-10-13 into `integration/asks` via #728.
 Package: `@fgv/ts-extras-mcp`.
 
 ## Summary
