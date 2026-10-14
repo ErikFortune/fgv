@@ -1388,43 +1388,52 @@ interface IGuardedRequest {
   readonly body: string | Uint8Array | undefined;
 }
 
-function _prepareGuardedFetch(options: IGuardedFetchOptions): Outcome<IPreparedGuardedFetch> {
+/**
+ * Re-types a plain `Result` from a collaborator as an `Outcome`: a failure becomes `'unknown'`, the
+ * taxonomy's slot for an invalid option, exactly as the buffered entry points report one.
+ */
+function _asOutcome<T>(result: Result<T>): Outcome<T> {
+  return result.isSuccess() ? _succeed(result.value) : _unknown<T>(result.message);
+}
+
+/** Refuses every option that needs the body read, would retry, or belongs on the call. */
+function _refuseUnsupportedOptions(options: IGuardedFetchOptions): Outcome<IGuardedFetchOptions> {
   // Read off the object's own entries rather than its type: a JavaScript caller, or a spread of a
   // buffered call's options, can carry any of these, and the type cannot see them.
   const refused = Object.entries(options)
     .filter(([name, value]) => value !== undefined && GUARDED_FETCH_REFUSED_OPTIONS.has(name))
     .map(([name]) => name);
-  if (refused.length > 0) {
-    return _unknown<IPreparedGuardedFetch>(
-      `createGuardedFetch does not support ${refused.join(', ')}: a guarded fetch never reads the ` +
-        'body, never retries, and takes per-request inputs from each call.'
+  return refused.length > 0
+    ? _unknown<IGuardedFetchOptions>(
+        `createGuardedFetch does not support ${refused.join(', ')}: a guarded fetch never reads the ` +
+          'body, never retries, and takes per-request inputs from each call.'
+      )
+    : _succeed(options);
+}
+
+function _validHeadersTimeout(headersTimeoutMs: number): Outcome<number> {
+  return Number.isFinite(headersTimeoutMs) && headersTimeoutMs > 0
+    ? _succeed(headersTimeoutMs)
+    : _unknown<number>(`headersTimeoutMs must be a positive finite number; got ${headersTimeoutMs}.`);
+}
+
+/** Validates a guarded fetch's options once, at creation, in the order the buffered entry points use. */
+function _prepareGuardedFetch(options: IGuardedFetchOptions): Outcome<IPreparedGuardedFetch> {
+  return _refuseUnsupportedOptions(options)
+    .onSuccess(() => _validHeadersTimeout(options.headersTimeoutMs ?? DEFAULT_HEADERS_TIMEOUT_MS))
+    .onSuccess((headersTimeoutMs) =>
+      _resolveRedirectOptions(options).onSuccess((redirect) =>
+        _asOutcome(resolveGuards(options)).onSuccess((guards) =>
+          _succeed<IPreparedGuardedFetch>({
+            guards,
+            redirect,
+            headersTimeoutMs,
+            transport: options.transport ?? platformFetchTransport,
+            logger: options.logger ?? new Logging.NoOpLogger()
+          })
+        )
+      )
     );
-  }
-
-  const headersTimeoutMs = options.headersTimeoutMs ?? DEFAULT_HEADERS_TIMEOUT_MS;
-  if (!Number.isFinite(headersTimeoutMs) || headersTimeoutMs <= 0) {
-    return _unknown<IPreparedGuardedFetch>(
-      `headersTimeoutMs must be a positive finite number; got ${headersTimeoutMs}.`
-    );
-  }
-
-  const redirect = _resolveRedirectOptions(options);
-  if (redirect.isFailure()) {
-    return _propagate<IResolvedRedirectOptions, IPreparedGuardedFetch>(redirect);
-  }
-
-  const guards = resolveGuards(options);
-  if (guards.isFailure()) {
-    return _unknown<IPreparedGuardedFetch>(guards.message);
-  }
-
-  return _succeed({
-    guards: guards.value,
-    redirect: redirect.value,
-    headersTimeoutMs,
-    transport: options.transport ?? platformFetchTransport,
-    logger: options.logger ?? new Logging.NoOpLogger()
-  });
 }
 
 /**
@@ -1515,23 +1524,23 @@ async function _executeGuarded(
   if (signal?.aborted === true) {
     return _fail<Response>({ kind: 'aborted' }, _stopMessage('caller-aborted'));
   }
+  return _guardedRequest(input, init)
+    .onSuccess((request) => _parseUrl(request.url).onSuccess((url) => _succeed({ request, url })))
+    .thenOnSuccess(async (target) => _walkGuarded(prepared, target.request, target.url, signal));
+}
 
-  const normalized = _guardedRequest(input, init);
-  if (normalized.isFailure()) {
-    return _propagate<IGuardedRequest, Response>(normalized);
-  }
-  const request = normalized.value;
-
-  const parsed = _parseUrl(request.url);
-  if (parsed.isFailure()) {
-    return _propagate<URL, Response>(parsed);
-  }
-
+/** Runs the shared hop walk for one guarded call, and hands back the final response unread. */
+async function _walkGuarded(
+  prepared: IPreparedGuardedFetch,
+  request: IGuardedRequest,
+  url: URL,
+  signal: AbortSignal | undefined
+): Promise<Outcome<Response>> {
   // No overall deadline: the body this returns may be a stream that lives for an hour.
   const watch = new DeadlineWatch(undefined, prepared.headersTimeoutMs, signal);
   // Captured for the same reason as in `_execute`: the logger is collaborator code.
   const ran = await captureAsyncResult(async () =>
-    _walk(parsed.value, {
+    _walk(url, {
       guards: prepared.guards,
       resolved: {
         ...prepared.redirect,
@@ -1554,16 +1563,21 @@ async function _executeGuarded(
   // Disposed on success too: the headers timer is already cleared, and the caller's signal now
   // reaches the body through the composed transport signal rather than through this watch.
   watch.dispose();
-  if (ran.isFailure()) {
-    return _unexpected<Response>(ran.message);
-  }
-  return ran.value.onSuccess((walked) => {
-    if (stoppedBy === undefined) {
-      return _succeed(walked.value);
-    }
-    _discardBody(walked.value);
-    return _stopped<Response>(watch, stoppedBy);
-  });
+  return ran.isFailure()
+    ? _unexpected<Response>(ran.message)
+    : ran.value.onSuccess((walked) =>
+        stoppedBy === undefined ? _succeed(walked.value) : _stoppedReleasing(walked.value, watch, stoppedBy)
+      );
+}
+
+/** Reports a stop that landed after the walk returned, releasing the response it will not hand back. */
+function _stoppedReleasing(
+  response: Response,
+  watch: DeadlineWatch,
+  cause: DeadlineStopCause
+): Outcome<Response> {
+  _discardBody(response);
+  return _stopped<Response>(watch, cause);
 }
 
 /**
