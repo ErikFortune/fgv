@@ -29,7 +29,8 @@ These were considered and deferred — use `@modelcontextprotocol/sdk` directly 
 
 - **Browser sibling** (`@fgv/ts-web-extras-mcp`) — Node-only at v0.1.
 - **MCP resources / prompts / sampling** — tool discovery + invocation only.
-- **OAuth / managed auth** — static headers only (`createHttpTransport({ headers })`).
+- **An OAuth `auth()` helper** — `authProvider` is passed through and the SDK drives the flow, but
+  exchanging an authorization code after the redirect is yours (the SDK's `auth()`).
 - **Following resource links** — `callMcpTool` reports a `resource_link`'s URI; fetching it is
   yours, through your own egress guard.
 - **Rich blocks in the ai-assist round-trip** — `adaptMcpTools` hands the model the text projection;
@@ -45,7 +46,7 @@ See [`docs/FUTURE.md`](../../docs/FUTURE.md) for the tracked follow-ups.
 | Function | Return |
 |---|---|
 | `createStdioTransport({ command, args?, env?, cwd? })` | `Result<IMcpTransport>` |
-| `createHttpTransport({ url, headers? })` | `Result<IMcpTransport>` |
+| `createHttpTransport({ url, headers?, fetch?, authProvider? })` | `Result<IMcpTransport>` |
 | `createCustomTransport(sdkTransport)` | `Result<IMcpTransport>` |
 | `connectMcpSession({ transport, clientName?, clientVersion?, logger?, onClose?, onToolsChanged?, timeoutMs?, signal? })` | `Promise<DetailedResult<IMcpSession, McpFailureReason>>` |
 | `closeMcpSession(session)` | `Promise<Result<true>>` — over Streamable HTTP, ends the server's session with a best-effort `DELETE` (bounded to 2 s) before closing |
@@ -56,8 +57,8 @@ See [`docs/FUTURE.md`](../../docs/FUTURE.md) for the tracked follow-ups.
 `listMcpTools`' `options` is an `IMcpRequestOptions`: `timeoutMs`, `signal`, `onProgress`,
 `resetTimeoutOnProgress`, `maxTotalTimeoutMs`. `callMcpTool`'s is an `IMcpCallToolOptions`: the same,
 plus `includeMediaData`. Every failure's `detail` is an `McpFailureReason` whose `kind` is one of
-`tool-error`, `timeout`, `aborted`, `not-connected`, `session-expired`, `unauthorized`, `protocol`,
-`transport`, `invalid-handle` or `invalid-options` — branch on it rather than on the message. See `CAPABILITIES.md`
+`tool-error`, `timeout`, `aborted`, `not-connected`, `session-expired`, `unauthorized`,
+`egress-blocked`, `protocol`, `transport`, `invalid-handle` or `invalid-options` — branch on it rather than on the message. See `CAPABILITIES.md`
 for how each SDK error maps to a kind.
 
 ### Rich results
@@ -92,6 +93,36 @@ if (result.isFailure() && result.detail?.kind === 'timeout') {
 
 An adapted tool forwards the turn's signal from `AiAssist.executeClientToolTurn({ signal })`, so
 aborting the turn cancels the in-flight MCP request (the server receives `notifications/cancelled`).
+
+### Guarded egress and OAuth (Streamable HTTP)
+
+Every HTTP request a session makes — each `POST`, the standalone `GET` event stream, the `DELETE`
+on close, and with OAuth every discovery and token request — goes through the transport's `fetch`.
+**Give it a guarded fetch**: without one, requests use `globalThis.fetch`, with no address guard and
+default redirect following.
+
+```typescript
+import { SaferFetch } from '@fgv/ts-extras';
+
+const fetch = SaferFetch.createGuardedFetch({ addressGuard: SaferFetch.blockPrivateNetworks() }).orThrow();
+const transport = createHttpTransport({ url, headers: { 'x-api-key': key }, fetch, authProvider }).orThrow();
+```
+
+- A refusal fails the operation with `egress-blocked`, carrying the refusal's kind only (never its
+  URL). A refused `DELETE` does not fail the close; a refused event stream is logged at `detail`.
+- Redirects are rejected by default. If you allow them, list your static credential headers and
+  `mcp-session-id` in the guarded fetch's `sensitiveHeaders`.
+- `authProvider` is the SDK's `OAuthClientProvider` (`McpOAuthClientProvider`). **Interactive
+  authorization — `saveCodeVerifier` and `redirectToAuthorization` — runs only inside
+  `connectMcpSession`.** Elsewhere (a later call, the SDK's own reconnect of the event stream, the
+  close) it is refused and the operation fails `unauthorized`; reconnect to authorize. Token refresh
+  is not interactive and runs wherever the SDK needs it.
+- `unauthorized` carries `resourceMetadataUrl` — the `resource_metadata` URL from the server's
+  `WWW-Authenticate` challenge — when it sent a valid one. Its message is fixed text: a 401 body is
+  never echoed.
+- Static `headers` are never sent to an authorization server on another origin.
+- DNS rebinding is **not** closed: the guard validates a resolved address and the platform
+  re-resolves. A strict `allowHosts` list narrows it.
 
 ### Testing against an in-process server
 
@@ -179,7 +210,8 @@ MCP_PROBE_URL=http://localhost:3001/mcp MCP_PROBE_HEADERS="authorization=Bearer 
 `createStdioTransport` spawns `command` (with `args`) as a **child process**. The command runs
 with the privileges of the host process. **Never source the command, arguments, or environment
 from untrusted input** — treat them with the same care as any shell-out. The HTTP transport
-(`createHttpTransport`) does not spawn a process; supply credentials via static `headers`.
+(`createHttpTransport`) does not spawn a process; supply credentials via static `headers` or an
+OAuth `authProvider`, and its egress protection via `fetch` (see above).
 
 ## Runtime requirements
 

@@ -531,7 +531,8 @@ export interface IMcpTextBlock {
  * @remarks
  * **The package never follows the link.** The `uri` is server-supplied, and fetching it is the
  * consumer's decision; any fetch must go through the consumer's own egress guard (for an
- * `http(s)` URI, a guarded fetch such as `@fgv/ts-extras`' `saferFetchBytes`), never a plain `fetch`.
+ * `http(s)` URI, `@fgv/ts-extras`' `SaferFetch.saferFetchBytes`, or `SaferFetch.createGuardedFetch`
+ * for a streamed body), never a plain `fetch`.
  * `uri`, `name`, `title` and `mimeType` are each one printable line; an optional one that is not
  * is dropped, and a `uri` that is not makes the whole block {@link IMcpUnknownBlock | unknown}.
  * @public

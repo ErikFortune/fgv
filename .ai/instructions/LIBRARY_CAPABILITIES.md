@@ -147,6 +147,7 @@ detail. `· pkg` names the owning package.*
 - **Listing records from a store?** → `addressGuard` `allowAnyAddress` `scanEveryRecord` `listEntries` · `ts-agent-memory`
 - **Building a retriever directly?** → `FileTree` `FileTreeMemoryStore` `listEntries` · `ts-agent-memory`
 - **Fetching a URL you do not fully control (server-side)?** → `saferFetchJson` `saferFetchBytes` `addressGuard` `blockPrivateNetworks` `allowContentTypes`; never echo `FetchFailureReason` to an untrusted caller · `ts-extras`
+- **Streaming a response through the SSRF guard, or handing a guarded `fetch` to a library (MCP, SSE)?** → `createGuardedFetch` `blockPrivateNetworks` `GuardedFetchError` · `ts-extras`
 - **Fetching a URL from a browser?** → `addressGuard` `allowAnyAddress` · `ts-web-extras`
 - **Parsing / comparing language tags?** → `Bcp47.tag` `Bcp47.similarity` · `ts-bcp47`
 - **Context-conditional resources?** → `ResourceManager` · `ts-res`
