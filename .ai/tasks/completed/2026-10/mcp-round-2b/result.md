@@ -269,19 +269,19 @@ drops in without a signature change.
 
 ## Gate counts
 
-Final run, on the code as pushed. Each log graded with `grep -ci error` / `grep -ci warning`, not by
-exit code.
+Final run, after the orchestrator-review fixes, on the code as pushed. Each log graded with
+`grep -ci error` / `grep -ci warning`, not by exit code.
 
 | gate | exit | `error` lines | `warning` lines | notes |
 |---|---|---|---|---|
 | `ts-extras` `rushx fixlint` / `build` / `lint` | 0 / 0 / 0 | 0 / 0 / 0 | 0 / 0 / 0 | |
-| `ts-extras` `rushx test` | 0 | 1 | 0 | the one match is the `guardedFetchError.ts` row of the coverage table; 97 suites, 3149 passed, 0 failed; 100 % statements/branches/functions/lines |
+| `ts-extras` `rushx test` | 0 | 1 | 0 | the one match is the `guardedFetchError.ts` row of the coverage table; 97 suites, 3149 passed, 0 failed; 100 % on all four |
 | `ts-extras-mcp` `rushx fixlint` / `build` / `lint` | 0 / 0 / 0 | 0 / 0 / 0 | 0 / 0 / 0 | |
-| `ts-extras-mcp` `rushx test` | 0 | 0 | 0 | 14 suites, 228 passed, 0 failed; 100 % on all four |
+| `ts-extras-mcp` `rushx test` | 0 | 0 | 0 | 14 suites, 236 passed, 0 failed; 100 % on all four |
 | `install-run-rush.js rebuild` | 0 | 0 | 1 | `SUCCESS: 38 operations`; the warning is Rush's existing "1 Git-tracked symlink" repo-state notice |
 | `install-run-rush.js test` | 0 | 0 | 1 | `SUCCESS: 37 operations`; same notice |
 | `change --verify --target-branch origin/integration/asks` | 0 | 0 | 0 | change files: `@fgv/ts-extras` ×1, `@fgv/ts-extras-mcp` ×2, all `minor` |
-| `verify-capability-docs.mjs` | 0 | — | — | router 22,632/24,000 chars, 0 failed |
+| `verify-capability-docs.mjs` | 0 | — | — | router 22,585/24,000 chars, 0 failed; the capability feed is current (0 updated) |
 
 Prettier: the repo's 2.8.8 (`rush-prettier` autoinstaller) and the pre-commit `rush prettier` hook;
 no global prettier was used.
