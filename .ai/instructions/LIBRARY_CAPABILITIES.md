@@ -201,6 +201,7 @@ markers.*
 
 <!-- BEGIN GENERATED: recent-additions -->
 
+- **2026-10-14** — MCP servers can be reached through the same SSRF guard as the rest of your egress, without buffering their streams, and… · `ts-extras` `ts-extras-mcp`
 - **2026-10-13** — An MCP tool result keeps its resource links, embedded resources, images and structuredContent, tool titles and tool-list changes… ([#728](https://github.com/ErikFortune/fgv/pull/728)) · `ts-extras-mcp`
 - **2026-10-04** — JsonSchema.fromJson now reads pydantic Optional[T] (anyOf [T, null]), local $ref/$defs (inlined, bounded) and z.record-style… ([#723](https://github.com/ErikFortune/fgv/pull/723)) · `ts-json-base`
 - **2026-10-04** — An MCP tool call can be bounded and cancelled — aborting an ai-assist turn now cancels the MCP request on the server — and every… ([#722](https://github.com/ErikFortune/fgv/pull/722)) · `ts-extras-mcp` `ts-extras`
@@ -210,8 +211,7 @@ markers.*
 - **2026-09-28** — A host can give a model bounded, per-call-authorized tools over its agent tasks: read-only by default, with create, update… ([#702](https://github.com/ErikFortune/fgv/pull/702)) · `ts-agent-tasks`
 - **2026-09-26** — A converter handed an Object.create(null) value now returns a Result instead of throwing — isKeyOf, strictObject and six ts-json /… ([#700](https://github.com/ErikFortune/fgv/pull/700)) · `ts-utils` `ts-json` `ts-res-ui-components` `ts-utils-jest`
 - **2026-09-25** — Anthropic structured output works on Claude Opus 5.5 and Fable 5.1 via JSON outputs instead of a forced tool call, and the advanced… ([#694](https://github.com/ErikFortune/fgv/pull/694)) · `ts-extras`
-- **2026-09-24** — ai-assist's tier and image aliases now point at GPT-6, Gemini 3.8 Flash and Grok 4.7, each id cited from a fetched provider page… ([#692](https://github.com/ErikFortune/fgv/pull/692)) · `ts-extras`
 
-*Showing the 10 most recent of 55. Per-package history is in each `CAPABILITIES.md`.*
+*Showing the 10 most recent of 56. Per-package history is in each `CAPABILITIES.md`.*
 
 <!-- END GENERATED: recent-additions -->

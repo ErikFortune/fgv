@@ -65,6 +65,7 @@ A Result-integration boundary over [`@modelcontextprotocol/sdk`](https://github.
 
 <!-- BEGIN GENERATED: recent-additions -->
 
+- **2026-10-14** — MCP servers can be reached through the same SSRF guard as the rest of your egress, without buffering their streams, and OAuth-protected MCP servers work — with interactive authorization confined to the connect.
 - **2026-10-13** — An MCP tool result keeps its resource links, embedded resources, images and structuredContent, tool titles and tool-list changes reach the consumer, and closing an HTTP session ends it on the server. ([#728](https://github.com/ErikFortune/fgv/pull/728))
 - **2026-10-04** — An MCP tool call can be bounded and cancelled — aborting an ai-assist turn now cancels the MCP request on the server — and every failure says what kind it was, so callers stop parsing messages. ([#722](https://github.com/ErikFortune/fgv/pull/722))
 - **2026-08-22** — **Shipped:** `nullable: true` on every factory — the spelling OpenAI strict mode accepts for an absent-able field, where `optional(...)` is unsendable. ([#655](https://github.com/ErikFortune/fgv/pull/655))
