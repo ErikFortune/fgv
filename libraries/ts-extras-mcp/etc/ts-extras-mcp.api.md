@@ -9,6 +9,7 @@ import { DetailedResult } from '@fgv/ts-utils';
 import { JsonObject } from '@fgv/ts-json-base';
 import { JsonValue } from '@fgv/ts-json-base';
 import { Logging } from '@fgv/ts-utils';
+import { OAuthClientProvider } from '@modelcontextprotocol/sdk/client/auth.js';
 import { Result } from '@fgv/ts-utils';
 import { SaferFetch } from '@fgv/ts-extras';
 
@@ -91,6 +92,7 @@ export interface IMcpEmbeddedTextResourceBlock {
 
 // @public
 export interface IMcpHttpTransportParams {
+    readonly authProvider?: McpOAuthClientProvider;
     readonly fetch?: McpFetch;
     readonly headers?: Record<string, string>;
     readonly url: string;
@@ -234,10 +236,15 @@ export type McpFailureReason = {
 } | {
     readonly kind: 'session-expired';
 }
-/** `status` is the HTTP status, when the refusal came as one. */
+/**
+* `status` is the HTTP status, when the refusal came as one. `resourceMetadataUrl` is the
+* `resource_metadata` URL from the endpoint's most recent `WWW-Authenticate` challenge, present
+* only when it was a valid `http:`/`https:` URL on one printable line.
+*/
 | {
     readonly kind: 'unauthorized';
     readonly status?: number;
+    readonly resourceMetadataUrl?: string;
 }
 /** `reason` is the kind of the guarded fetch's `FetchFailureReason`; its URL-bearing payload is never carried. */
 | {
@@ -261,6 +268,9 @@ export type McpFailureReason = {
 
 // @public
 export type McpFetch = (url: string | URL, init?: RequestInit) => Promise<Response>;
+
+// @public
+export type McpOAuthClientProvider = OAuthClientProvider;
 
 // @public
 export type McpTransportKind = 'stdio' | 'http' | 'custom';

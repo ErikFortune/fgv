@@ -26,42 +26,132 @@
  * @packageDocumentation
  */
 
-import { Logging } from '@fgv/ts-utils';
+import { Logging, captureResult } from '@fgv/ts-utils';
 
-import { type McpFetch } from './model';
+import { type McpFailureReason, type McpFetch } from './model';
 import { printable } from './request';
-import { classifySdkError } from './sdk';
+import {
+  type McpOAuthClientProvider,
+  classifySdkError,
+  makeUnauthorizedError,
+  readResourceMetadataUrl
+} from './sdk';
 
 /**
- * Per-transport egress state, and the `fetch` the SDK transport is constructed with.
+ * A `resource_metadata` URL as this package will report it: an `http:` or `https:` URL whose
+ * serialization is one line of printable ASCII, or `undefined`.
+ *
+ * @remarks
+ * The value is chosen by the server, and the consumer is invited to fetch it, so anything else is
+ * dropped rather than echoed. The WHATWG serializer already percent-encodes or strips everything
+ * outside printable ASCII; the line check is kept so the guarantee does not rest on that.
+ * @internal
+ */
+export function acceptResourceMetadataUrl(url: URL | undefined): string | undefined {
+  if (url === undefined || (url.protocol !== 'https:' && url.protocol !== 'http:')) {
+    return undefined;
+  }
+  return /^[\x21-\x7e]+$/.test(url.href) ? url.href : undefined;
+}
+
+/**
+ * Wraps the consumer's OAuth provider so that its two interactive steps run only while the
+ * consumer's connect is in progress.
+ *
+ * @remarks
+ * The SDK's `auth()` runs from paths the consumer did not start: the standalone `GET` event stream
+ * answers a 401 by authorizing, and that stream is opened detached after the handshake and
+ * reopened by the SDK's own reconnect timer. Without this, a token that expired an hour into a
+ * session could open a browser window, or overwrite the code verifier of a flow the consumer has in
+ * progress, from a timer. `saveCodeVerifier` is the first interactive step `auth()` takes and
+ * `redirectToAuthorization` the second; both are refused outside the window, with the SDK's own
+ * `UnauthorizedError`, so the operation fails `'unauthorized'` and nothing is persisted.
+ *
+ * Every other member is forwarded to the consumer's object unchanged, with methods bound to it, so
+ * an implementation using private fields works, and an optional member the consumer did not
+ * implement still reads as absent.
+ */
+function _gateInteractive(consumer: McpOAuthClientProvider, isOpen: () => boolean): McpOAuthClientProvider {
+  const refused = (): Promise<never> =>
+    Promise.reject(
+      makeUnauthorizedError(
+        'interactive authorization is started only by connectMcpSession; reconnect to authorize'
+      )
+    );
+  return new Proxy(consumer, {
+    get: (target: McpOAuthClientProvider, prop: string | symbol): unknown => {
+      if (prop === 'saveCodeVerifier') {
+        return (verifier: string) => (isOpen() ? target.saveCodeVerifier(verifier) : refused());
+      }
+      if (prop === 'redirectToAuthorization') {
+        return (url: URL) => (isOpen() ? target.redirectToAuthorization(url) : refused());
+      }
+      const value: unknown = Reflect.get(target, prop, target);
+      return typeof value === 'function' ? value.bind(target) : value;
+    }
+  });
+}
+
+/**
+ * Per-transport egress state, and the `fetch` (and OAuth provider) the SDK transport is
+ * constructed with.
  *
  * @remarks
  * **One wrapper, always.** The SDK transport is always given {@link McpHttpEgress.fetch}, which
  * delegates to the consumer's `fetch` or, when none was supplied, to `globalThis.fetch` at call
  * time. Every request the SDK makes for the session — each `POST`, the standalone `GET` event
- * stream, the termination `DELETE` — passes through it, so per-session protections live in one
- * place and apply identically whichever `fetch` is underneath.
+ * stream, the termination `DELETE`, and with OAuth every discovery, registration and token request
+ * — passes through it, so per-session protections live in one place and apply identically
+ * whichever `fetch` is underneath.
  *
- * The wrapper never alters a request or a response. It rethrows every rejection unchanged, so the
- * SDK — and the classifier after it — sees exactly what the underlying `fetch` produced.
+ * The wrapper never alters a response, and rethrows every rejection unchanged, so the SDK — and
+ * the classifier after it — sees exactly what the underlying `fetch` produced. It alters a request
+ * in one way only: the consumer's static headers are removed from a request to any origin other
+ * than the endpoint's (in practice, the authorization server). The SDK merges them into every
+ * auth request, and a static `x-api-key` has no business at a server the MCP server chose.
  * @internal
  */
 export class McpHttpEgress {
   /** The `fetch` to construct the SDK transport with. */
   public readonly fetch: McpFetch;
+  /** The gated OAuth provider to construct the SDK transport with, when the consumer supplied one. */
+  public readonly authProvider: McpOAuthClientProvider | undefined;
 
   private readonly _endpoint: URL;
   private readonly _underlying: McpFetch | undefined;
+  /** The consumer's static headers: lowercased name to value. */
+  private readonly _staticHeaders: ReadonlyMap<string, string>;
   private _logger: Logging.ILogger = new Logging.NoOpLogger();
+  private _interactive: boolean = false;
+  private _resourceMetadataUrl: string | undefined;
 
   /**
    * @param endpoint - The MCP endpoint the transport was created for.
    * @param underlying - The consumer's `fetch`, if one was supplied.
+   * @param staticHeaders - The consumer's static headers, if any.
+   * @param authProvider - The consumer's OAuth provider, if one was supplied.
    */
-  public constructor(endpoint: URL, underlying: McpFetch | undefined) {
+  public constructor(
+    endpoint: URL,
+    underlying: McpFetch | undefined,
+    staticHeaders?: Readonly<Record<string, string>>,
+    authProvider?: McpOAuthClientProvider
+  ) {
     this._endpoint = endpoint;
     this._underlying = underlying;
+    this._staticHeaders = new Map(
+      Object.entries(staticHeaders ?? {}).map(([name, value]) => [name.toLowerCase(), value])
+    );
+    this.authProvider =
+      authProvider !== undefined ? _gateInteractive(authProvider, () => this._interactive) : undefined;
     this.fetch = (url: string | URL, init?: RequestInit): Promise<Response> => this._send(url, init);
+  }
+
+  /**
+   * The `resource_metadata` URL of the endpoint's most recent valid `WWW-Authenticate` challenge.
+   */
+  public get resourceMetadataUrl(): string | undefined {
+    return this._resourceMetadataUrl;
   }
 
   /** Attaches the session's logger. Called by `connectMcpSession`, before anything is sent. */
@@ -69,12 +159,66 @@ export class McpHttpEgress {
     this._logger = logger ?? new Logging.NoOpLogger();
   }
 
+  /**
+   * Runs the consumer's connect with interactive authorization allowed, and closes the window
+   * however it ends. The transport is single-use, so this runs at most once per egress.
+   */
+  public async interactive<T>(work: () => Promise<T>): Promise<T> {
+    this._interactive = true;
+    try {
+      return await work();
+    } finally {
+      this._interactive = false;
+    }
+  }
+
+  /** Adds the captured `resource_metadata` URL to an `'unauthorized'` reason; returns any other as is. */
+  public describe(reason: McpFailureReason): McpFailureReason {
+    const resourceMetadataUrl = this._resourceMetadataUrl;
+    return reason.kind === 'unauthorized' && resourceMetadataUrl !== undefined
+      ? { ...reason, resourceMetadataUrl }
+      : reason;
+  }
+
   private async _send(url: string | URL, init: RequestInit | undefined): Promise<Response> {
     const underlying = this._underlying ?? globalThis.fetch;
-    return underlying(url, init).catch((err: unknown) => {
-      this._noteRefusal(url, init, err);
+    const target = new URL(String(url));
+    const response = await underlying(url, this._forOrigin(target, init)).catch((err: unknown) => {
+      this._noteRefusal(target, init, err);
       throw err;
     });
+    this._noteChallenge(target, response);
+    return response;
+  }
+
+  /** Removes the consumer's static headers from a request leaving the endpoint's origin. */
+  private _forOrigin(target: URL, init: RequestInit | undefined): RequestInit | undefined {
+    if (this._staticHeaders.size === 0 || target.origin === this._endpoint.origin) {
+      return init;
+    }
+    const headers = new Headers(init?.headers);
+    for (const [name, value] of this._staticHeaders) {
+      // Only the consumer's own value: a header the SDK set for this request under the same name
+      // (client authentication on the token endpoint) is the SDK's to send.
+      if (headers.get(name) === value) {
+        headers.delete(name);
+      }
+    }
+    return { ...init, headers };
+  }
+
+  /** Records the `resource_metadata` URL of a challenge from the endpoint. */
+  private _noteChallenge(target: URL, response: Response): void {
+    if (target.href !== this._endpoint.href || (response.status !== 401 && response.status !== 403)) {
+      return;
+    }
+    // A consumer `fetch` can return anything shaped like a response; a header read that throws
+    // leaves the previous value in place rather than failing the request.
+    const parsed = captureResult(() => readResourceMetadataUrl(response)).orDefault(undefined);
+    const accepted = acceptResourceMetadataUrl(parsed);
+    if (accepted !== undefined) {
+      this._resourceMetadataUrl = accepted;
+    }
   }
 
   /**
@@ -87,10 +231,10 @@ export class McpHttpEgress {
    * refusal's kind is logged, never its URL-bearing reason. A refusal of any other request fails
    * the operation that sent it, and is classified there.
    */
-  private _noteRefusal(url: string | URL, init: RequestInit | undefined, err: unknown): void {
-    // The SDK opens the stream with exactly `method: 'GET'` on the endpoint URL it was given; OAuth
-    // discovery `GET`s go to other URLs and fail the operation that triggered them.
-    if (init?.method !== 'GET' || String(url) !== this._endpoint.href) {
+  private _noteRefusal(target: URL, init: RequestInit | undefined, err: unknown): void {
+    // The SDK opens the stream with exactly `method: 'GET'` on the endpoint URL; OAuth discovery
+    // `GET`s go to other URLs and fail the operation that triggered them.
+    if (init?.method !== 'GET' || target.href !== this._endpoint.href) {
       return;
     }
     const reason = classifySdkError(err, { phase: 'session', closed: false });

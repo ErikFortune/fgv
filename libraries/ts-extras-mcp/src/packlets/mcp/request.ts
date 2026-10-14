@@ -100,6 +100,21 @@ export function validateTimeoutMs(name: string, value: number | undefined): Resu
   );
 }
 
+/**
+ * The text a failure message carries for `err`, once classified.
+ * @remarks
+ * An `'unauthorized'` failure gets fixed text. Its error text is the server's (a 401 body) or the
+ * authorization server's (an OAuth error description), and a server that refused a credential may
+ * well repeat it back — so it never reaches a message that consumers log.
+ * @internal
+ */
+export function failureText(err: unknown, reason: McpFailureReason): string {
+  if (reason.kind !== 'unauthorized') {
+    return errorText(err);
+  }
+  return reason.status !== undefined ? `unauthorized (HTTP ${reason.status})` : 'unauthorized';
+}
+
 function _toProgress(raw: ISdkProgress): IMcpProgress {
   return {
     progress: raw.progress,
@@ -170,10 +185,15 @@ export async function runSdkRequest<T>(
       .then(() => request(sdkOptions))
       .then(
         (value) => succeedWithDetail<T, McpFailureReason>(value),
-        (err: unknown) =>
-          err === abortReason
-            ? failWithDetail<T, McpFailureReason>(`${prefix}: aborted by the caller`, { kind: 'aborted' })
-            : failWithDetail<T, McpFailureReason>(`${prefix}: ${errorText(err)}`, classify(err))
+        (err: unknown) => {
+          if (err === abortReason) {
+            return failWithDetail<T, McpFailureReason>(`${prefix}: aborted by the caller`, {
+              kind: 'aborted'
+            });
+          }
+          const reason = classify(err);
+          return failWithDetail<T, McpFailureReason>(`${prefix}: ${failureText(err, reason)}`, reason);
+        }
       )
       // An abort that lands after the SDK settled but before this listener is removed still makes the
       // SDK send `notifications/cancelled` for a request that already completed. The protocol lets a

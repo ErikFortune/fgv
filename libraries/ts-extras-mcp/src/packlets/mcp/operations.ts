@@ -139,7 +139,7 @@ function _toDescriptor(tool: ISdkToolDescriptor, logger: Logging.ILogger | undef
  * Classifies a request failure on an established session, against the session's observed close.
  */
 function _classify(session: McpSession, err: unknown): McpFailureReason {
-  return classifySdkError(err, { phase: 'session', closed: session.closeWatcher.closed });
+  return session.describe(classifySdkError(err, { phase: 'session', closed: session.closeWatcher.closed }));
 }
 
 /**

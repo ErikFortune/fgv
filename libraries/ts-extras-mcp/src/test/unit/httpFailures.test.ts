@@ -141,16 +141,15 @@ describe('HTTP-status classification over the real Streamable-HTTP transport', (
     }
   });
 
-  test('a refused credential at connect is unauthorized, carrying the status', async () => {
+  test('a refused credential at connect is unauthorized, carrying the status, and its body is not echoed', async () => {
     const fixture = await startHttpFixture('refuse-all');
     server = fixture.server;
-    expect(await connectTo(fixture.url)).toFailWithDetail(
-      /^connectMcpSession: .*missing or invalid bearer token/,
-      {
-        kind: 'unauthorized',
-        status: 401
-      }
-    );
+    // The server's 401 body ("missing or invalid bearer token") stays out of the message: a body
+    // answering a refused credential may repeat it.
+    expect(await connectTo(fixture.url)).toFailWithDetail(/^connectMcpSession: unauthorized \(HTTP 401\)$/, {
+      kind: 'unauthorized',
+      status: 401
+    });
   });
 
   test('a 404 during the handshake is transport — there is no session to have expired', async () => {

@@ -33,8 +33,8 @@ import { type AddressInfo } from 'node:net';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 
-/** Answers a request itself (returning `true`), or lets the MCP server handle it (`false`). */
-export type RequestGate = (req: IncomingMessage, res: ServerResponse) => boolean;
+/** Answers a request itself (resolving `true`), or lets the MCP server handle it (`false`). */
+export type RequestGate = (req: IncomingMessage, res: ServerResponse) => Promise<boolean>;
 
 export interface IRealMcpServer {
   readonly server: Server;
@@ -54,9 +54,15 @@ export async function startRealMcpServer(gate?: RequestGate): Promise<IRealMcpSe
   let nextSession = 1;
   const server = createServer((req, res) => {
     methods.push(req.method ?? '?');
-    if (gate?.(req, res) === true) {
-      return;
-    }
+    (gate ?? (async () => false))(req, res)
+      .then((answered) => {
+        if (!answered) {
+          handleMcp(req, res);
+        }
+      })
+      .catch(() => res.writeHead(500).end());
+  });
+  function handleMcp(req: IncomingMessage, res: ServerResponse): void {
     const id = req.headers['mcp-session-id'];
     const existing = typeof id === 'string' ? transports.get(id) : undefined;
     if (existing !== undefined) {
@@ -80,7 +86,7 @@ export async function startRealMcpServer(gate?: RequestGate): Promise<IRealMcpSe
       .connect(transport)
       .then(() => transport.handleRequest(req, res))
       .catch(() => res.writeHead(500).end());
-  });
+  }
   await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
   const { port } = server.address() as AddressInfo;
   return {

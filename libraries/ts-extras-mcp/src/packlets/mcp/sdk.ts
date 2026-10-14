@@ -34,7 +34,11 @@
  * @internal
  */
 
-import { UnauthorizedError } from '@modelcontextprotocol/sdk/client/auth.js';
+import {
+  type OAuthClientProvider,
+  UnauthorizedError,
+  extractWWWAuthenticateParams
+} from '@modelcontextprotocol/sdk/client/auth.js';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { SseError } from '@modelcontextprotocol/sdk/client/sse.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
@@ -42,6 +46,7 @@ import {
   StreamableHTTPClientTransport,
   StreamableHTTPError
 } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
+import { OAuthError } from '@modelcontextprotocol/sdk/server/auth/errors.js';
 import { DEFAULT_REQUEST_TIMEOUT_MSEC } from '@modelcontextprotocol/sdk/shared/protocol.js';
 import {
   ErrorCode,
@@ -267,6 +272,20 @@ export function terminateHttpSession(transport: ISdkTransport): Promise<void> {
 }
 
 /**
+ * The MCP SDK's OAuth client provider — the object that holds a client's registration and tokens
+ * and starts the interactive authorization — under this package's name.
+ *
+ * @remarks
+ * This is the SDK's own `OAuthClientProvider` interface from
+ * `@modelcontextprotocol/sdk/client/auth.js`, unchanged: implement it (over your own keystore, for
+ * example) and pass it as {@link IMcpHttpTransportParams.authProvider}. The package wraps it before
+ * handing it to the SDK, so that the interactive steps — `saveCodeVerifier` and
+ * `redirectToAuthorization` — run only inside {@link connectMcpSession}.
+ * @public
+ */
+export type McpOAuthClientProvider = OAuthClientProvider;
+
+/**
  * Parameters for the Streamable-HTTP transport factory.
  * @internal
  */
@@ -275,6 +294,26 @@ export interface ISdkHttpParams {
   readonly headers?: Record<string, string>;
   /** The `fetch` the transport sends every request through: the package's egress wrapper. */
   readonly fetch: McpFetch;
+  /** The OAuth provider the SDK authorizes with: the package's gated wrapper of the consumer's. */
+  readonly authProvider?: McpOAuthClientProvider;
+}
+
+/**
+ * The `resource_metadata` URL of a response's `WWW-Authenticate` bearer challenge, as the SDK's own
+ * exported parser reads it, or `undefined` when there is none or it is not a URL.
+ * @internal
+ */
+export function readResourceMetadataUrl(response: Response): URL | undefined {
+  return extractWWWAuthenticateParams(response).resourceMetadataUrl;
+}
+
+/**
+ * Creates the SDK's `UnauthorizedError`, so a refusal this package raises inside the SDK's auth
+ * flow classifies exactly as the SDK's own.
+ * @internal
+ */
+export function makeUnauthorizedError(message: string): Error {
+  return new UnauthorizedError(message);
 }
 
 /**
@@ -284,7 +323,8 @@ export interface ISdkHttpParams {
 export function makeHttpTransport(url: URL, params: ISdkHttpParams): ISdkTransport {
   return new StreamableHTTPClientTransport(url, {
     requestInit: params.headers ? { headers: params.headers } : undefined,
-    fetch: params.fetch
+    fetch: params.fetch,
+    authProvider: params.authProvider
   }) as unknown as ISdkTransport;
 }
 
@@ -387,7 +427,9 @@ function _classifyInspectable(error: unknown, context: SdkFailureContext): McpFa
   if (_isSchemaRejection(error)) {
     return { kind: 'protocol' };
   }
-  if (error instanceof UnauthorizedError) {
+  // An OAuth error is the SDK's auth flow failing at the authorization server — a refused refresh,
+  // registration or token exchange: the credentials could not be obtained.
+  if (error instanceof UnauthorizedError || error instanceof OAuthError) {
     return { kind: 'unauthorized' };
   }
   // The SDK passes a rejected `fetch` through unchanged — from `send`, from `connect`, and from

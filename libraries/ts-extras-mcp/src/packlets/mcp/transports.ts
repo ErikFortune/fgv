@@ -156,9 +156,13 @@ export function createHttpTransport(params: IMcpHttpTransportParams): Result<IMc
       if (supplied !== undefined && typeof supplied !== 'function') {
         return fail(`fetch must be a function (got ${typeof supplied})`);
       }
-      const egress = new McpHttpEgress(url, supplied);
+      const egress = new McpHttpEgress(url, supplied, params.headers, params.authProvider);
       return captureResult(() =>
-        makeHttpTransport(url, { headers: params.headers, fetch: egress.fetch })
+        makeHttpTransport(url, {
+          headers: params.headers,
+          fetch: egress.fetch,
+          authProvider: egress.authProvider
+        })
       ).onSuccess((sdkTransport) => succeed<IMcpTransport>(new McpTransport('http', sdkTransport, egress)));
     })
     .withErrorFormat((msg) => `createHttpTransport: ${msg}`);

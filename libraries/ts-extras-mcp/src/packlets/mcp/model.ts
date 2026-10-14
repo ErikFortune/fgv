@@ -29,6 +29,10 @@ import { type Logging } from '@fgv/ts-utils';
 import { type AiAssist, type SaferFetch } from '@fgv/ts-extras';
 import { type JsonValue } from '@fgv/ts-json-base';
 
+import { type McpOAuthClientProvider } from './sdk';
+
+export type { McpOAuthClientProvider } from './sdk';
+
 // ============================================================================
 // Transport
 // ============================================================================
@@ -91,8 +95,34 @@ export interface IMcpHttpTransportParams {
    * If the guarded fetch allows redirects, list the static credential headers above and
    * `mcp-session-id` in its `sensitiveHeaders`: `fetch` strips only `authorization` on a
    * cross-origin redirect.
+   *
+   * With an {@link IMcpHttpTransportParams.authProvider}, OAuth discovery, client registration and
+   * token requests go through this `fetch` too — so the guard also covers the authorization server
+   * the MCP server names.
    */
   readonly fetch?: McpFetch;
+  /**
+   * An OAuth 2.1 client provider, for servers that require the MCP authorization flow. The SDK
+   * attaches its access token to every request, refreshes it on a 401, and runs discovery and
+   * client registration as needed.
+   *
+   * @remarks
+   * **Interactive authorization runs only inside {@link connectMcpSession}.** The provider's
+   * `saveCodeVerifier` and `redirectToAuthorization` are forwarded while the consumer's connect is
+   * in progress, and refused at any other time — on a later call, on the SDK's own reconnect of the
+   * standalone event stream, and on close. A refused interactive step fails the operation with the
+   * `'unauthorized'` {@link McpFailureReason}; reconnect to authorize. Non-interactive steps — a
+   * token refresh, client registration, `saveTokens` — run wherever the SDK needs them, including
+   * on the SDK's background reconnect of the event stream.
+   *
+   * After `redirectToAuthorization`, the connect fails `'unauthorized'`. Exchange the authorization
+   * code with the SDK's `auth()` (which saves the tokens through this provider), then connect again
+   * with a new transport.
+   *
+   * Static `headers` are never sent to the authorization server: they are dropped from any request
+   * whose origin differs from the MCP endpoint's.
+   */
+  readonly authProvider?: McpOAuthClientProvider;
 }
 
 /**
@@ -355,7 +385,7 @@ export interface IMcpRequestOptions {
  * | `'aborted'` | The caller's `AbortSignal` fired before the request settled. |
  * | `'not-connected'` | The session's connection is closed: the call was made after it closed, or it closed while the call was in flight. Decided by the observed close, which the SDK reports before it fails the in-flight requests. During the connect handshake, **any** `-32000` is `'not-connected'` — whether the SDK raised it or the server sent it — because a failed handshake leaves no session either way. |
  * | `'session-expired'` | A Streamable-HTTP server answered HTTP 404 for an established session: it no longer recognizes the session id (typically after a server restart). |
- * | `'unauthorized'` | The server refused the credentials: HTTP 401 or 403, or the SDK's `UnauthorizedError`. |
+ * | `'unauthorized'` | The server refused the credentials: HTTP 401 or 403, or the SDK's `UnauthorizedError` — including an interactive authorization refused outside the connect (see {@link IMcpHttpTransportParams.authProvider}). `resourceMetadataUrl` is the `resource_metadata` URL of the endpoint's most recent `WWW-Authenticate` challenge, when it sent a valid one. The message is fixed text: the server's response body is never echoed, since it may repeat a credential. |
  * | `'egress-blocked'` | The transport's guarded `fetch` refused the request (`SaferFetch.GuardedFetchError`): an address or request guard, a rejected redirect, a refused response head or an unsupported request. `reason` is the refusal's `FetchFailureReason` kind, never its URL-bearing detail. A configuration refusal: retrying cannot help. A guarded fetch's `'network'`, `'timeout'` and `'aborted'` failures are not refusals and classify as a plain `fetch` failure would. |
  * | `'protocol'` | The server answered with a JSON-RPC error (`code` is its code — including `-32000` on a session that is still open, which servers use as a generic error), or the SDK rejected a response that failed its result schema (no `code`). |
  * | `'transport'` | Anything else: a network or child-process I/O failure, a non-2xx HTTP status not listed above, or an error the SDK raised without a type — including the handshake's protocol-version refusal, which the SDK raises as a plain `Error`. This is the catch-all that makes the classification total. |
@@ -382,8 +412,12 @@ export type McpFailureReason =
   | { readonly kind: 'aborted' }
   | { readonly kind: 'not-connected' }
   | { readonly kind: 'session-expired' }
-  /** `status` is the HTTP status, when the refusal came as one. */
-  | { readonly kind: 'unauthorized'; readonly status?: number }
+  /**
+   * `status` is the HTTP status, when the refusal came as one. `resourceMetadataUrl` is the
+   * `resource_metadata` URL from the endpoint's most recent `WWW-Authenticate` challenge, present
+   * only when it was a valid `http:`/`https:` URL on one printable line.
+   */
+  | { readonly kind: 'unauthorized'; readonly status?: number; readonly resourceMetadataUrl?: string }
   /** `reason` is the kind of the guarded fetch's `FetchFailureReason`; its URL-bearing payload is never carried. */
   | { readonly kind: 'egress-blocked'; readonly reason: SaferFetch.FetchFailureReason['kind'] }
   /** `code` is the JSON-RPC error code, when the failure carried one. */
