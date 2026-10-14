@@ -539,6 +539,65 @@ describe('createGuardedFetch', () => {
       expect(body.wasCancelled()).toBe(true);
     });
 
+    test('the headers deadline also bounds a response-headers guard that never settles', async () => {
+      const body = cancellableStreamOf([utf8('x')]);
+      const fetch = guarded(
+        respondWith(() => new Response(body.stream)),
+        {
+          headersTimeoutMs: 20,
+          responseHeadersGuard: { name: 'hangs', check: () => new Promise<Result<true>>(() => undefined) }
+        }
+      );
+      const error = await rejectionOf(fetch(URL_UNDER_TEST));
+      expect(error.reason).toEqual(expect.objectContaining({ kind: 'timeout', phase: 'headers' }));
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(body.wasCancelled()).toBe(true);
+    });
+
+    test('an abort at any point after the last guard accepts either rejects or reaches the body', async () => {
+      // The window between the response-headers guard accepting and the response being handed back
+      // is microtasks only, so the abort is swept across microtask depths: wherever it lands, the
+      // caller either gets an `aborted` rejection (and the body is released) or the response was
+      // returned before the abort, which then reaches the body through the transport signal.
+      let rejected = 0;
+      for (let depth = 0; depth < 40; depth++) {
+        const controller = new AbortController();
+        const body = cancellableStreamOf([utf8('x')]);
+        const fetch = guarded(
+          respondWith(() => new Response(body.stream)),
+          {
+            responseHeadersGuard: {
+              name: 'aborts-later',
+              check: async () => {
+                let tick: Promise<void> = Promise.resolve();
+                for (let i = 0; i < depth; i++) {
+                  tick = tick.then(() => undefined);
+                }
+                tick.then(() => controller.abort()).catch(() => undefined);
+                return succeed(true as const);
+              }
+            }
+          }
+        );
+        const settled = await fetch(URL_UNDER_TEST, { signal: controller.signal }).then(
+          (response) => response,
+          (err: unknown) => err
+        );
+        if (settled instanceof GuardedFetchError) {
+          expect(settled.reason).toEqual({ kind: 'aborted' });
+          await new Promise((resolve) => setTimeout(resolve, 0));
+          expect(body.wasCancelled()).toBe(true);
+          rejected++;
+        } else {
+          // Returned before the abort: cancelling the body is then the transport's, through the
+          // composed signal (the real-server test shows the platform transport doing it).
+          await new Promise((resolve) => setTimeout(resolve, 0));
+          expect(controller.signal.aborted).toBe(true);
+        }
+      }
+      expect(rejected).toBeGreaterThan(0);
+    });
+
     test('the headers deadline stops a host that never answers', async () => {
       const error = await rejectionOf(guarded(neverResponds(), { headersTimeoutMs: 20 })(URL_UNDER_TEST));
       expect(error.reason).toEqual(

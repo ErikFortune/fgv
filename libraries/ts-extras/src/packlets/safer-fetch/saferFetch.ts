@@ -158,6 +158,12 @@ interface IWalkContext<T> {
    * buffered entry points, which read the body inside the walk's deadlines.
    */
   readonly outliving?: AbortSignal;
+  /**
+   * Set when the finisher retires the headers deadline itself, once it has checked the head. The
+   * streaming entry point has no overall deadline, so retiring it on arrival would leave its
+   * response-headers guard unbounded.
+   */
+  readonly finisherRetiresHeadersDeadline?: boolean;
 }
 
 /**
@@ -846,7 +852,9 @@ async function _connect<T>(
     .thenOnSuccess(async (response) => {
       // Inside the continuation rather than before it, which is where it already ran: the
       // headers deadline is retired only once a response has actually arrived.
-      watch.headersReceived();
+      if (context.finisherRetiresHeadersDeadline !== true) {
+        watch.headersReceived();
+      }
       return _receiveHead(response, cleared.url, resolved.redirectPolicy).thenOnSuccess(
         async (received): Promise<Outcome<AttemptOutcome<T>>> =>
           received.kind === 'redirect'
@@ -1489,7 +1497,12 @@ function _guardedRequest(input: unknown, init: RequestInit | undefined): Outcome
  */
 function _streamingFinisher(guards: IResolvedGuards, watch: DeadlineWatch): HopFinisher<Response> {
   return async (response, head, url, chain) =>
-    (await _checkResponseHead(response, head, url, chain, guards, watch)).onSuccess(() => _succeed(response));
+    (await _checkResponseHead(response, head, url, chain, guards, watch)).onSuccess(() => {
+      // Only now: the headers deadline also bounds the response-headers guard, which nothing else
+      // would on this path.
+      watch.headersReceived();
+      return _succeed(response);
+    });
 }
 
 async function _executeGuarded(
@@ -1530,15 +1543,27 @@ async function _executeGuarded(
       },
       watch,
       finish: _streamingFinisher(prepared.guards, watch),
+      finisherRetiresHeadersDeadline: true,
       ...(signal !== undefined ? { outliving: signal } : {})
     })
   );
+  // Read before the watch is disposed: an abort that landed after the last guard settled has
+  // already cancelled the body through the composed signal, so the call must report it rather than
+  // hand back a response whose first read fails.
+  const stoppedBy = watch.cause;
   // Disposed on success too: the headers timer is already cleared, and the caller's signal now
   // reaches the body through the composed transport signal rather than through this watch.
   watch.dispose();
-  return ran.isFailure()
-    ? _unexpected<Response>(ran.message)
-    : ran.value.onSuccess((walked) => _succeed(walked.value));
+  if (ran.isFailure()) {
+    return _unexpected<Response>(ran.message);
+  }
+  return ran.value.onSuccess((walked) => {
+    if (stoppedBy === undefined) {
+      return _succeed(walked.value);
+    }
+    _discardBody(walked.value);
+    return _stopped<Response>(watch, stoppedBy);
+  });
 }
 
 /**

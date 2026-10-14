@@ -496,9 +496,9 @@ export interface IGuardedFetchOptions {
 
   /**
    * Deadline from the start of each hop to its response headers, in milliseconds. Default
-   * {@link SaferFetch.DEFAULT_HEADERS_TIMEOUT_MS}. It covers guard evaluation, the connect and
-   * the wait for headers, and is cleared when headers arrive: a stream that then lives for an hour
-   * is not cut off.
+   * {@link SaferFetch.DEFAULT_HEADERS_TIMEOUT_MS}. It covers the request and address guards, the
+   * connect, the wait for headers and the response-headers guard, and is cleared once that guard
+   * accepts: a stream that then lives for an hour is not cut off.
    */
   readonly headersTimeoutMs?: number;
 
