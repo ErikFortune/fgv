@@ -113,13 +113,17 @@ const transport = createHttpTransport({ url, headers: { 'x-api-key': key }, fetc
 - Redirects are rejected by default. If you allow them, list your static credential headers and
   `mcp-session-id` in the guarded fetch's `sensitiveHeaders`.
 - `authProvider` is the SDK's `OAuthClientProvider` (`McpOAuthClientProvider`). **Interactive
-  authorization — `saveCodeVerifier` and `redirectToAuthorization` — runs only inside
+  authorization — `state`, `saveCodeVerifier` and `redirectToAuthorization` — runs only inside
   `connectMcpSession`.** Elsewhere (a later call, the SDK's own reconnect of the event stream, the
-  close) it is refused and the operation fails `unauthorized`; reconnect to authorize. Token refresh
-  is not interactive and runs wherever the SDK needs it.
+  close) it is refused and the operation fails `unauthorized`; reconnect to authorize. A
+  non-`http(s)` authorization URL is always refused. Discovery, client registration, token refresh,
+  `saveTokens` and `invalidateCredentials` are not interactive and run wherever the SDK needs them.
 - `unauthorized` carries `resourceMetadataUrl` — the `resource_metadata` URL from the server's
-  `WWW-Authenticate` challenge — when it sent a valid one. Its message is fixed text: a 401 body is
-  never echoed.
+  `WWW-Authenticate` challenge — when it sent a valid one. It is server-chosen: fetch it only through
+  the same guarded fetch.
+- Failure messages never carry server-authored text: an `unauthorized` failure, or one from an HTTP
+  or OAuth error, reads as its kind and status (`unauthorized (HTTP 401)`, `transport (HTTP 500)`),
+  since a server may repeat a credential it was sent.
 - Static `headers` are never sent to an authorization server on another origin.
 - DNS rebinding is **not** closed: the guard validates a resolved address and the platform
   re-resolves. A strict `allowHosts` list narrows it.

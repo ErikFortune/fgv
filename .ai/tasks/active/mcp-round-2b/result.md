@@ -41,9 +41,12 @@ Guarded MCP egress (personaility#672) and OAuth (personaility#677). Branch `mcp-
   aliased in `sdk.ts`, which stays the single SDK import site; the `.api.md` shows
   `import { OAuthClientProvider } from '@modelcontextprotocol/sdk/client/auth.js'` and
   `export type McpOAuthClientProvider = OAuthClientProvider`).
-- **Interactive gate.** The provider is wrapped in a `Proxy` whose `saveCodeVerifier` and
-  `redirectToAuthorization` are forwarded only while the consumer's `connectMcpSession` is running,
-  and otherwise reject with the SDK's own `UnauthorizedError` (→ `'unauthorized'`). Everything else
+- **Interactive gate.** The provider is wrapped in a `Proxy` whose `state`, `saveCodeVerifier`
+  and `redirectToAuthorization` are forwarded only while the consumer's `connectMcpSession` is running,
+  and otherwise reject with the SDK's own `UnauthorizedError` (→ `'unauthorized'`).
+  `redirectToAuthorization` is also refused for a non-`http(s)` URL, even inside the window.
+  Discovery, registration, refresh, `saveTokens` and `invalidateCredentials` are not gated, and can
+  run from the SDK's background reconnect. Everything else
   is forwarded bound to the consumer's object (private fields work; absent optional members stay
   absent).
 - `unauthorized` gains `resourceMetadataUrl?: string`. **Route taken:** the package's fetch wrapper
@@ -56,9 +59,12 @@ Guarded MCP egress (personaility#672) and OAuth (personaility#677). Branch `mcp-
     merges `requestInit.headers` into every OAuth request, including those to the authorization
     server the MCP server names — a static `x-api-key` would be sent there. Only a header whose value
     is the consumer's own is removed (the SDK's client-auth `Authorization` survives).
-  - **An `'unauthorized'` failure's message is fixed text** (`unauthorized (HTTP 401)`), not the
-    SDK error text: a 401 body or an OAuth `error_description` may repeat a credential (the test
-    servers do exactly that). This changed one existing assertion in `httpFailures.test.ts`.
+  - **Failure messages never carry server-authored text.** Every `'unauthorized'` failure, and any
+    failure from a `StreamableHTTPError`, `SseError` or `OAuthError`, reads as kind + status
+    (`unauthorized (HTTP 401)`, `transport (HTTP 500)`, `session-expired`): a response body, status
+    text or `error_description` may repeat a credential (the test servers do exactly that). This
+    changed four existing assertions that matched server text (three in `httpFailures.test.ts`, one
+    in `terminate.test.ts`).
   - **`OAuthError` classifies as `'unauthorized'`** (was the `'transport'` catch-all).
 - `docs/FUTURE.md`: the OAuth entry is marked partly shipped; new entries for the `auth()` helper
   (with its shape) and for pinned connect for MCP egress.
@@ -100,7 +106,7 @@ help", which is false for all three. Those classify exactly as the same failure 
 | path | does the SDK call `auth()`? | what now happens |
 |---|---|---|
 | `terminateSession()` | **No.** It calls `tokens()` (via `_commonHeaders`) only; a 401 is a `StreamableHTTPError` | logged at `detail` as `unauthorized`; close resolves; bounded by the 2 s termination bound regardless |
-| standalone SSE `GET` (after `initialized`, and on the SDK's reconnect timer) | **Yes**: a 401 → `_authThenStart()` → `auth()` → discovery, refresh, registration, then `saveCodeVerifier` + `redirectToAuthorization` | interactive steps **refused** (outside the connect window); refresh/registration/`saveTokens` still run (non-interactive) |
+| standalone SSE `GET` (after `initialized`, and on the SDK's reconnect timer) | **Yes**: a 401 → `_authThenStart()` → `auth()` → discovery, refresh, registration, then `state` + `saveCodeVerifier` + `redirectToAuthorization` | interactive steps **refused** (`state` first, so nothing of the consumer's in-progress flow is overwritten) (outside the connect window); refresh/registration/`saveTokens` still run (non-interactive) |
 | a `listChanged`-triggered request | the package never re-lists itself; the consumer's `onToolsChanged` callback may call `listMcpTools` → `send` → 401 → `auth()` | consumer-started, but after connect: interactive steps **refused** → `unauthorized`; refresh still runs |
 | any call after connect | `send` 401 → `auth()` | as above |
 | the 403 `insufficient_scope` upscope in `send` | `auth()` with `fetchFn: this._fetch` | same gate; same wrapper |
@@ -147,8 +153,8 @@ after it.
 | 2 | address guard clears hop *n* | none in our code between `_clearAddress` resolving and `transport.fetch` (loop detection is synchronous) | connect | DNS: **not re-checked** — the platform re-resolves at connect. This is the documented rebinding residual (see below) |
 | 3 | caller signal not aborted (entry) | request guard, address guard, connect, each hop | each guard call / connect | every `_raced` call first checks `watch.cause` and **does not start** the guard or transport if the call has stopped (new in commit 2); `watch.race` then answers a stop mid-flight. The watch's controller aborts the in-flight fetch |
 | 4 | hop *n* redirected | `_nextHop` (sync), then hop *n+1*'s request and address guards | hop *n+1* connect | full re-walk of both guards on hop *n+1*; loop detection on guard-cleared URLs; headers stripped from the previous hop's set, never restored |
-| 5 | response-headers guard accepts | none: `_succeed(response)` follows synchronously | response returned | a refusal releases the body; after return, the caller's signal reaches the body through `AbortSignal.any` (the watch has been disposed) |
-| 6 | interactive window open (`egress.interactive`) | the whole SDK connect | `saveCodeVerifier` / `redirectToAuthorization` | `isOpen()` is read **at the moment each interactive method is called**, not when the window opened; the window closes in a `finally` the instant the connect race settles, so a flow that outlives a lost/timed-out connect is refused |
+| 5 | response-headers guard accepts | microtasks only (the walk unwinding) | response returned | the headers deadline runs until this guard accepts (streaming has no other bound on it); `watch.cause` is re-read after the walk, so an abort that landed meanwhile rejects and releases the body; after return, the caller's signal reaches the body through `AbortSignal.any` (the watch has been disposed). A few microtasks remain between that re-read and the caller — see R7 |
+| 6 | interactive window open (`egress.interactive`) | the whole SDK connect | `state` / `saveCodeVerifier` / `redirectToAuthorization` | `isOpen()` is read **at the moment each interactive method is called**, not when the window opened; the window closes in a `finally` the instant the connect race settles, so a flow that outlives a lost/timed-out connect is refused |
 | 7 | endpoint 401 recorded (`resourceMetadataUrl`) | SDK auth flow, retries | attached to a later `unauthorized` | not re-checked: it is the **latest** valid challenge from that endpoint, overwritten by each newer one, never cleared. Disclosed in the TSDoc ("most recent") |
 | 8 | static-header strip decision (origin ≠ endpoint) | none | request sent | computed per request from that request's URL |
 | 9 | `closeMcpSession` begins | `terminate()` (≤ 2 s) | `client.close()` | termination never calls `auth()`; the gate is closed after connect anyway; the 2 s bound covers a slow `tokens()` |
@@ -163,7 +169,42 @@ After `connect` settles, a 401 on that stream — including on every reconnect �
 
 ## Revert matrix
 
-*(filled in below after the runs)*
+Each protection reverted on its own (source patched, `tsc`, the named test run, source restored).
+"red" = the named test failed. Script: the session scratchpad's `revert.py`; reproduce by hand from
+the "revert" column.
+
+| # | protection | revert | named test | result |
+|---|---|---|---|---|
+| R1 | a stopped watch starts no guard/transport work (`_raced`) | skip the pre-check | `an abort between hops stops the walk before the next hop is guarded or sent` | red |
+| R2 | address guard on every hop | guard hop 0 only | `runs the address guard on every hop, and refuses a hop to a private address` | red |
+| R3 | monotonic credential stripping | re-derive headers from the caller's set when back on the origin | `…stays gone on A → B → A` | red |
+| R4 | a returned stream is not cut off (headers timer retired *and* watch disposed — two independent layers) | remove both | `a stream that outlives the headers deadline is not cut off` | red |
+| R5 | headers deadline bounds the streaming head guard | retire it on arrival | `the headers deadline also bounds a response-headers guard that never settles` | red |
+| R6 | caller's signal reaches the body after return (`AbortSignal.any`) | transport gets `watch.signal` only | `an abort after return cancels the body mid-stream` | red |
+| R6b | no listener left on the caller's signal | don't dispose the watch on success | `leaves no abort listener on the caller's signal…` | red |
+| R7 | an abort landing after the last guard is reported | drop the post-walk `watch.cause` check | `an abort at any point after the last guard accepts…` | **green — not isolated** (see below) |
+| R8 | a `Request` input is refused | accept it | `refuses a Request object, sending nothing` | red |
+| R9 | body-needing options refused at creation | drop `timeoutMs` from the refused set | `refuses every option that needs the body read…` | red |
+| R10 | the package wrapper is installed even with a consumer `fetch` | hand the SDK the consumer's `fetch` | `a refused standalone GET is logged by kind, and calls still work` | red |
+| R11 | `GuardedFetchError` → `egress-blocked` | skip the branch | `a refusal on a call classifies as egress-blocked…` | red |
+| R12 | interactive gate (all three steps) | forward always | `the SDK's background reconnect of the event stream never starts interactive authorization` | red |
+| R13 | `state` gated | forward `state` always | `after connect, a token that cannot be refreshed fails a call unauthorized…` | red |
+| R14 | the window closes after connect | leave it open | same as R13 | red |
+| R15 | `resource_metadata` scheme validation | accept any URL | `a resource_metadata that is … is omitted` | red (2 of 3) |
+| R16 | static headers dropped off-origin | never drop | `an expired token is refreshed…; static headers never reach the authorization server` | red |
+| R17 | server-authored error text redacted | redact `unauthorized` only | `a non-401 error whose body echoes the credentials never surfaces them` | red |
+| R18 | non-http(s) authorization URL refused | forward any | `inside the window, an authorization URL that is not http(s) is still refused` | red |
+
+R8, R11, R12 and R13's reverts also produced `tsc` type errors (emit still happened, and the named
+test ran against the emitted code).
+
+**R7 is not isolated, and cannot be.** The interval between the response-headers guard accepting and
+the caller's continuation running is microtasks only, with no I/O. The sweep test schedules the
+abort at 40 microtask depths and asserts each outcome is coherent (an `aborted` rejection with the
+body released, or a response returned before the abort). With the check removed, earlier stop
+points still produce rejections at most depths, so the test stays green; with it in place, an abort
+can still land in the last few microtasks after the check, exactly as with platform `fetch`. The
+check narrows that window; it is kept, and covered, but no test isolates it.
 
 ## DNS-rebinding residual, now
 
@@ -177,11 +218,45 @@ drops in without a signature change.
 
 ## Gate counts
 
-*(filled in after the final gate run)*
+Final run, on the code as pushed. Each log graded with `grep -ci error` / `grep -ci warning`, not by
+exit code.
+
+| gate | exit | `error` lines | `warning` lines | notes |
+|---|---|---|---|---|
+| `ts-extras` `rushx fixlint` / `build` / `lint` | 0 / 0 / 0 | 0 / 0 / 0 | 0 / 0 / 0 | |
+| `ts-extras` `rushx test` | 0 | 1 | 0 | the one match is the `guardedFetchError.ts` row of the coverage table; 97 suites, 3149 passed, 0 failed; 100 % statements/branches/functions/lines |
+| `ts-extras-mcp` `rushx fixlint` / `build` / `lint` | 0 / 0 / 0 | 0 / 0 / 0 | 0 / 0 / 0 | |
+| `ts-extras-mcp` `rushx test` | 0 | 0 | 0 | 14 suites, 228 passed, 0 failed; 100 % on all four |
+| `install-run-rush.js rebuild` | 0 | 0 | 1 | `SUCCESS: 38 operations`; the warning is Rush's existing "1 Git-tracked symlink" repo-state notice |
+| `install-run-rush.js test` | 0 | 0 | 1 | `SUCCESS: 37 operations`; same notice |
+| `change --verify --target-branch origin/integration/asks` | 0 | 0 | 0 | change files: `@fgv/ts-extras` ×1, `@fgv/ts-extras-mcp` ×2, all `minor` |
+| `verify-capability-docs.mjs` | 0 | — | — | router 22,632/24,000 chars, 0 failed |
+
+Prettier: the repo's 2.8.8 (`rush-prettier` autoinstaller) and the pre-commit `rush prettier` hook;
+no global prettier was used.
 
 ## code-reviewer findings
 
-*(filled in after the review)*
+Run once on the full diff after the functional tests (commits 1–4 + docs). Honest sequencing note:
+the per-package coverage runs during steps 2 and 3 had already prompted two small tests
+(an abort as the final response arrives; a rejected consumer `fetch`) before the reviewer ran; no
+`c8 ignore` was added anywhere. No P1s. Every P2 and P3 was acted on:
+
+| # | pri | finding | disposition |
+|---|---|---|---|
+| 1 | P2 | streaming head guard had no deadline (headers timer cleared before it ran; no overall timer) | **fixed** — the streaming finisher retires the headers deadline only after the guard accepts; TSDoc corrected; test with a never-settling guard |
+| 2 | P2 | `state()` runs before `saveCodeVerifier`, so the gate's "nothing persisted" claim was false; other off-window writes undocumented | **fixed** — `state` gated too (when implemented); TSDoc and docs list what does run off-window (discovery, registration, refresh, `saveTokens`, `invalidateCredentials`); tests count `state()` calls |
+| 3 | P2 | non-401 HTTP errors put server body text (possibly an echoed token) in messages | **fixed** — any failure from `StreamableHTTPError`/`SseError`/`OAuthError`, and every `unauthorized`, reads as kind + status; test with a 500 echoing the bearer token and API key; three existing assertions on server text updated |
+| 4 | P3 | `redirectToAuthorization` forwarded a server-chosen URL of any scheme | **fixed** — non-`http(s)` refused even inside the window; test |
+| 5 | P3 | `resourceMetadataUrl` TSDoc didn't say it is server-chosen / may be stale | **fixed** in TSDoc, README, CAPABILITIES |
+| 6 | P3 | static-header drop compared untrimmed values | **fixed** — compares the trimmed configured value; test uses a padded value |
+| 7 | P3 | 403 `insufficient_scope` path untested | **fixed** — test: no interactive step, `unauthorized` with `resourceMetadataUrl` |
+| 8 | P3 | a consumer `fetch` that throws synchronously skipped the refusal log | **fixed** — called inside `then`; test |
+| 9 | P3 | `instanceof GuardedFetchError` fails across duplicate installs | **documented** (peer dependency; a second copy classifies as `transport`). Matching on `name` would let any error named so claim to be a refusal |
+| 10 | P3 | an abort after the head guard still resolved the response | **fixed (narrowed)** — post-walk `watch.cause` check rejects and releases the body; see R7 for why the window cannot be fully closed |
+
+The reviewer's reference to `operations.ts:109` logging an error message was checked: that line logs
+a refused JSON field, not an error text — no change.
 
 ## What the brief got wrong
 
