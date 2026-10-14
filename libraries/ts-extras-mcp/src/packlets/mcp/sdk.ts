@@ -366,6 +366,19 @@ function _classifyHttpStatus(status: number | undefined, context: SdkFailureCont
 const SCHEMA_REJECTION_NAMES: ReadonlySet<string> = new Set(['$ZodError', 'ZodError']);
 
 /**
+ * Whether an error's text was written by a server: an HTTP error the transport built from a
+ * response's status text or body, or an OAuth error built from an authorization server's
+ * `error_description`. Such text may repeat a credential the server was sent, so it is never put
+ * in a failure message. Never throws: a value that cannot be inspected is not one of these.
+ * @internal
+ */
+export function isServerAuthoredError(error: unknown): boolean {
+  return captureResult(
+    () => error instanceof StreamableHTTPError || error instanceof SseError || error instanceof OAuthError
+  ).orDefault(false);
+}
+
+/**
  * Guarded-fetch failures that are not refusals: the network failed, the server did not answer in
  * time, or the request was aborted (in practice, by the transport's own close). They classify as
  * the same failure through an unguarded `fetch` would, so `'egress-blocked'` means only "the

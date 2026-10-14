@@ -36,7 +36,7 @@ import {
 } from '@fgv/ts-utils';
 
 import { type IMcpProgress, type IMcpRequestOptions, type McpFailureReason } from './model';
-import { type ISdkProgress, type ISdkRequestOptions, makeAbortReason } from './sdk';
+import { type ISdkProgress, type ISdkRequestOptions, isServerAuthoredError, makeAbortReason } from './sdk';
 
 /**
  * What {@link errorText} reports for a value that cannot be converted to text.
@@ -103,16 +103,19 @@ export function validateTimeoutMs(name: string, value: number | undefined): Resu
 /**
  * The text a failure message carries for `err`, once classified.
  * @remarks
- * An `'unauthorized'` failure gets fixed text. Its error text is the server's (a 401 body) or the
- * authorization server's (an OAuth error description), and a server that refused a credential may
- * well repeat it back — so it never reaches a message that consumers log.
+ * **Server-authored text never reaches a message.** An HTTP error's text is the server's response
+ * body or status text, and an OAuth error's is the authorization server's `error_description`; a
+ * server may repeat a credential it was sent in either (a debug echo, a validation error quoting the
+ * request). Such a failure, and every `'unauthorized'` one, gets fixed text instead: the kind, and
+ * the HTTP status when there was one. The classification carries everything a caller branches on.
  * @internal
  */
 export function failureText(err: unknown, reason: McpFailureReason): string {
-  if (reason.kind !== 'unauthorized') {
+  if (reason.kind !== 'unauthorized' && !isServerAuthoredError(err)) {
     return errorText(err);
   }
-  return reason.status !== undefined ? `unauthorized (HTTP ${reason.status})` : 'unauthorized';
+  const status = 'status' in reason ? reason.status : undefined;
+  return status !== undefined ? `${reason.kind} (HTTP ${status})` : reason.kind;
 }
 
 function _toProgress(raw: ISdkProgress): IMcpProgress {

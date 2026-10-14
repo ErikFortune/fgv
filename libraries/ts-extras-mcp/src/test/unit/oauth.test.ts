@@ -82,6 +82,7 @@ class TestProvider implements McpOAuthClientProvider {
   public readonly verifiers: string[] = [];
   public readonly saved: OAuthTokens[] = [];
   public tokenReads: number = 0;
+  public stateCalls: number = 0;
   #tokens: OAuthTokens | undefined;
 
   public constructor(tokens: OAuthTokens | undefined) {
@@ -98,6 +99,11 @@ class TestProvider implements McpOAuthClientProvider {
 
   public clientInformation(): { client_id: string; client_secret: string } {
     return { client_id: CLIENT_ID, client_secret: CLIENT_SECRET };
+  }
+
+  public state(): string {
+    this.stateCalls++;
+    return `state-${this.stateCalls}`;
   }
 
   public tokens(): OAuthTokens | undefined {
@@ -217,6 +223,10 @@ interface IProtection {
   readonly streams: ServerResponse[];
   /** Overrides the `resource_metadata` value the challenge carries. */
   metadataOverride?: string;
+  /** Answers every authorized `POST` with a 403 `insufficient_scope` challenge. */
+  insufficientScope?: boolean;
+  /** Answers every authorized `tools/call` with a 500 whose body echoes the request's credentials. */
+  echoOn500?: boolean;
 }
 
 /** The three methods of Express's response that the SDK's `requireBearerAuth` uses. */
@@ -269,6 +279,21 @@ async function startProtectedServer(auth: IAuthServer, protection: IProtection):
     });
     if (passed && req.method === 'GET') {
       protection.streams.push(res);
+    }
+    if (passed && req.method === 'POST' && protection.insufficientScope === true) {
+      res
+        .writeHead(403, {
+          'www-authenticate': `Bearer error="insufficient_scope", scope="more", resource_metadata="${origin}${metadataPath}"`
+        })
+        .end();
+      return true;
+    }
+    if (passed && req.method === 'POST' && protection.echoOn500 === true) {
+      // A careless debug echo: the whole request's credentials, back in an error body.
+      res
+        .writeHead(500, 'Server Error')
+        .end(`failed: ${req.headers.authorization} ${String(req.headers['x-api-key'])}`);
+      return true;
     }
     return !passed;
   });
@@ -382,6 +407,7 @@ describe('OAuth through authProvider', () => {
     });
     expect(message).toBe('connectMcpSession: unauthorized');
     // Inside the consumer's connect, the interactive steps are forwarded.
+    expect(provider.stateCalls).toBe(1);
     expect(provider.verifiers).toHaveLength(1);
     expect(provider.redirects).toHaveLength(1);
     expect(provider.redirects[0].origin).toBe(auth.origin);
@@ -432,8 +458,36 @@ describe('OAuth through authProvider', () => {
       kind: 'unauthorized',
       resourceMetadataUrl: `${new URL(real.url).origin}/.well-known/oauth-protected-resource/mcp`
     });
+    expect(provider.stateCalls).toBe(0);
     expect(provider.verifiers).toEqual([]);
     expect(provider.redirects).toEqual([]);
+  });
+
+  test('the 403 insufficient_scope upscope path never starts interactive authorization', async () => {
+    const provider = new TestProvider({ access_token: ACCESS_TOKEN, token_type: 'Bearer' });
+    const { session } = await connect(provider);
+    protection.insufficientScope = true;
+    const called = await callMcpTool(session!, 'echo', {});
+    observed.push(called.message ?? '');
+    expect(called).toFailWithDetail(/^callMcpTool 'echo': unauthorized$/, {
+      kind: 'unauthorized',
+      resourceMetadataUrl: `${new URL(real.url).origin}/.well-known/oauth-protected-resource/mcp`
+    });
+    expect(provider.stateCalls).toBe(0);
+    expect(provider.verifiers).toEqual([]);
+    expect(provider.redirects).toEqual([]);
+  });
+
+  test('a non-401 error whose body echoes the credentials never surfaces them', async () => {
+    const provider = new TestProvider({ access_token: ACCESS_TOKEN, token_type: 'Bearer' });
+    const { session } = await connect(provider);
+    protection.echoOn500 = true;
+    const called = await callMcpTool(session!, 'echo', {});
+    observed.push(called.message ?? '');
+    expect(called).toFailWithDetail(/^callMcpTool 'echo': transport \(HTTP 500\)$/, {
+      kind: 'transport',
+      status: 500
+    });
   });
 
   test("the SDK's background reconnect of the event stream never starts interactive authorization", async () => {
@@ -452,6 +506,7 @@ describe('OAuth through authProvider', () => {
     // The SDK's auth flow did run — discovery reached the authorization server — and stopped at the
     // interactive step.
     expect(auth.requests.map((r) => r.path)).toContain('/.well-known/oauth-authorization-server');
+    expect(provider.stateCalls).toBe(0);
     expect(provider.verifiers).toEqual([]);
     expect(provider.redirects).toEqual([]);
   }, 10000);
@@ -524,6 +579,23 @@ describe('McpHttpEgress edges', () => {
     expect(egress.resourceMetadataUrl).toBeUndefined();
   });
 
+  test('a consumer fetch that throws instead of rejecting is still seen, and its refusal logged', async () => {
+    const refusal = new SaferFetch.GuardedFetchError({
+      kind: 'redirect-rejected',
+      url: ENDPOINT.href,
+      status: 302
+    });
+    const egress = new McpHttpEgress(ENDPOINT, () => {
+      throw refusal;
+    });
+    const logger = new Logging.InMemoryLogger('detail');
+    egress.attachLogger(logger);
+    await expect(egress.fetch(ENDPOINT, { method: 'GET' })).rejects.toBe(refusal);
+    expect(logger.logged).toEqual([
+      'mcp: the server event stream was refused by the egress guard (redirect-rejected)'
+    ]);
+  });
+
   test('a rejection is rethrown unchanged, whatever the request', async () => {
     const failure = new TypeError('fetch failed');
     const egress = new McpHttpEgress(ENDPOINT, async () => Promise.reject(failure));
@@ -552,7 +624,7 @@ describe('McpHttpEgress edges', () => {
         sent.push(args[1]);
         return new Response('ok');
       },
-      { 'X-Api-Key': 'k' }
+      { 'X-Api-Key': ' k ' }
     );
     await egress.fetch('https://as.example.com/token');
     await egress.fetch('https://as.example.com/token', { headers: { 'x-api-key': 'k', 'x-other': 'o' } });
@@ -587,5 +659,34 @@ describe('McpHttpEgress edges', () => {
     expect(gated.tokens()).toBeUndefined();
     expect(gated.redirectUrl).toBe(REDIRECT_URL);
     expect(gated.saveClientInformation).toBeUndefined();
+    // `state` is gated like the other two, and forwarded inside the window.
+    await expect(Promise.resolve(gated.state!())).rejects.toThrow(/started only by connectMcpSession/);
+    await expect(egress.interactive(async () => gated.state!())).resolves.toBe('state-1');
+  });
+
+  test('inside the window, an authorization URL that is not http(s) is still refused', async () => {
+    const provider = new TestProvider(undefined);
+    const egress = new McpHttpEgress(ENDPOINT, undefined, undefined, provider);
+    await expect(
+      egress.interactive(async () =>
+        egress.authProvider!.redirectToAuthorization(new URL('file:///etc/passwd'))
+      )
+    ).rejects.toThrow(/not http\(s\)/);
+    expect(provider.redirects).toEqual([]);
+  });
+
+  test('a provider without state() still reads as having none', () => {
+    const minimal: McpOAuthClientProvider = {
+      redirectUrl: REDIRECT_URL,
+      clientMetadata: { redirect_uris: [REDIRECT_URL] },
+      clientInformation: () => undefined,
+      tokens: () => undefined,
+      saveTokens: () => undefined,
+      redirectToAuthorization: () => undefined,
+      saveCodeVerifier: () => undefined,
+      codeVerifier: () => ''
+    };
+    const gated = new McpHttpEgress(ENDPOINT, undefined, undefined, minimal).authProvider!;
+    expect(gated.state).toBeUndefined();
   });
 });

@@ -55,36 +55,54 @@ export function acceptResourceMetadataUrl(url: URL | undefined): string | undefi
 }
 
 /**
- * Wraps the consumer's OAuth provider so that its two interactive steps run only while the
- * consumer's connect is in progress.
+ * Wraps the consumer's OAuth provider so that the steps that start an interactive authorization run
+ * only while the consumer's connect is in progress.
  *
  * @remarks
  * The SDK's `auth()` runs from paths the consumer did not start: the standalone `GET` event stream
  * answers a 401 by authorizing, and that stream is opened detached after the handshake and
  * reopened by the SDK's own reconnect timer. Without this, a token that expired an hour into a
- * session could open a browser window, or overwrite the code verifier of a flow the consumer has in
- * progress, from a timer. `saveCodeVerifier` is the first interactive step `auth()` takes and
- * `redirectToAuthorization` the second; both are refused outside the window, with the SDK's own
- * `UnauthorizedError`, so the operation fails `'unauthorized'` and nothing is persisted.
+ * session could open a browser window, or overwrite the `state` and code verifier of a flow the
+ * consumer has in progress, from a timer.
+ *
+ * Gated, in the order `auth()` calls them: `state` (where a provider typically mints and stores the
+ * CSRF value), `saveCodeVerifier`, `redirectToAuthorization`. Outside the window each rejects with
+ * the SDK's own `UnauthorizedError`, so the operation fails `'unauthorized'` before the first of
+ * them has run. Inside it, `redirectToAuthorization` is still refused for a URL that is not `http:`
+ * or `https:` — the authorization endpoint comes from server-supplied metadata, and a consumer is
+ * expected to open it in a browser.
+ *
+ * **Not gated, and so able to run from those background paths:** discovery and
+ * `saveDiscoveryState`, dynamic client registration and `saveClientInformation`, a token refresh and
+ * `saveTokens`, and `invalidateCredentials` when the authorization server answers `invalid_grant` or
+ * `invalid_client`. None is interactive; each is what keeps a session authorized.
  *
  * Every other member is forwarded to the consumer's object unchanged, with methods bound to it, so
  * an implementation using private fields works, and an optional member the consumer did not
  * implement still reads as absent.
  */
 function _gateInteractive(consumer: McpOAuthClientProvider, isOpen: () => boolean): McpOAuthClientProvider {
-  const refused = (): Promise<never> =>
-    Promise.reject(
-      makeUnauthorizedError(
-        'interactive authorization is started only by connectMcpSession; reconnect to authorize'
-      )
-    );
+  const refused = (why: string): Promise<never> => Promise.reject(makeUnauthorizedError(why));
+  const outsideWindow =
+    'interactive authorization is started only by connectMcpSession; reconnect to authorize';
+  const state = consumer.state;
   return new Proxy(consumer, {
     get: (target: McpOAuthClientProvider, prop: string | symbol): unknown => {
+      if (prop === 'state' && state !== undefined) {
+        return () => (isOpen() ? state.call(target) : refused(outsideWindow));
+      }
       if (prop === 'saveCodeVerifier') {
-        return (verifier: string) => (isOpen() ? target.saveCodeVerifier(verifier) : refused());
+        return (verifier: string) => (isOpen() ? target.saveCodeVerifier(verifier) : refused(outsideWindow));
       }
       if (prop === 'redirectToAuthorization') {
-        return (url: URL) => (isOpen() ? target.redirectToAuthorization(url) : refused());
+        return (url: URL) => {
+          if (!isOpen()) {
+            return refused(outsideWindow);
+          }
+          return url.protocol === 'https:' || url.protocol === 'http:'
+            ? target.redirectToAuthorization(url)
+            : refused('the authorization server named an authorization endpoint that is not http(s)');
+        };
       }
       const value: unknown = Reflect.get(target, prop, target);
       return typeof value === 'function' ? value.bind(target) : value;
@@ -183,10 +201,13 @@ export class McpHttpEgress {
   private async _send(url: string | URL, init: RequestInit | undefined): Promise<Response> {
     const underlying = this._underlying ?? globalThis.fetch;
     const target = new URL(String(url));
-    const response = await underlying(url, this._forOrigin(target, init)).catch((err: unknown) => {
-      this._noteRefusal(target, init, err);
-      throw err;
-    });
+    // Called inside `then`, so a consumer `fetch` that throws rather than rejecting is still seen.
+    const response = await Promise.resolve()
+      .then(() => underlying(url, this._forOrigin(target, init)))
+      .catch((err: unknown) => {
+        this._noteRefusal(target, init, err);
+        throw err;
+      });
     this._noteChallenge(target, response);
     return response;
   }
@@ -200,7 +221,8 @@ export class McpHttpEgress {
     for (const [name, value] of this._staticHeaders) {
       // Only the consumer's own value: a header the SDK set for this request under the same name
       // (client authentication on the token endpoint) is the SDK's to send.
-      if (headers.get(name) === value) {
+      // Compared trimmed, as `Headers` stores it.
+      if (headers.get(name) === value.trim()) {
         headers.delete(name);
       }
     }

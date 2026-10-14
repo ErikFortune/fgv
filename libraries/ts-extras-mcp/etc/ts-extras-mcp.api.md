@@ -239,7 +239,9 @@ export type McpFailureReason = {
 /**
 * `status` is the HTTP status, when the refusal came as one. `resourceMetadataUrl` is the
 * `resource_metadata` URL from the endpoint's most recent `WWW-Authenticate` challenge, present
-* only when it was a valid `http:`/`https:` URL on one printable line.
+* only when it was a valid `http:`/`https:` URL on one printable line. It is chosen by the server
+* and may come from an earlier challenge than the one that failed this operation: fetch it only
+* through the same guarded `fetch` as the transport.
 */
 | {
     readonly kind: 'unauthorized';

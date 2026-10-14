@@ -87,6 +87,10 @@ export interface IMcpHttpTransportParams {
    * long-lived event streams. A refusal fails the operation with the `'egress-blocked'`
    * {@link McpFailureReason}.
    *
+   * Refusals are recognized by class, so the guarded fetch must come from the same `@fgv/ts-extras`
+   * this package resolves (it is a peer dependency): one from a second installed copy classifies as
+   * `'transport'`.
+   *
    * **Any other `fetch` gets no protection from this package.** When omitted, the platform's
    * `globalThis.fetch` is used, which follows redirects and connects to any address — including a
    * private one — and the same is true of any function supplied here that does not guard. A custom
@@ -108,12 +112,17 @@ export interface IMcpHttpTransportParams {
    *
    * @remarks
    * **Interactive authorization runs only inside {@link connectMcpSession}.** The provider's
-   * `saveCodeVerifier` and `redirectToAuthorization` are forwarded while the consumer's connect is
-   * in progress, and refused at any other time — on a later call, on the SDK's own reconnect of the
-   * standalone event stream, and on close. A refused interactive step fails the operation with the
-   * `'unauthorized'` {@link McpFailureReason}; reconnect to authorize. Non-interactive steps — a
-   * token refresh, client registration, `saveTokens` — run wherever the SDK needs them, including
-   * on the SDK's background reconnect of the event stream.
+   * `state`, `saveCodeVerifier` and `redirectToAuthorization` are forwarded while the consumer's
+   * connect is in progress, and refused at any other time — on a later call, on the SDK's own
+   * reconnect of the standalone event stream, and on close. A refused step fails the operation with
+   * the `'unauthorized'` {@link McpFailureReason} before any of the three has run; reconnect to
+   * authorize. `redirectToAuthorization` is also refused for a URL that is not `http:`/`https:`:
+   * the authorization endpoint comes from server-supplied metadata, so treat the URL as untrusted.
+   *
+   * **Non-interactive steps run wherever the SDK needs them**, including on its background
+   * reconnect of the event stream: discovery and `saveDiscoveryState`, client registration and
+   * `saveClientInformation`, a token refresh and `saveTokens`, and `invalidateCredentials` when the
+   * authorization server answers `invalid_grant` or `invalid_client`.
    *
    * After `redirectToAuthorization`, the connect fails `'unauthorized'`. Exchange the authorization
    * code with the SDK's `auth()` (which saves the tokens through this provider), then connect again
@@ -385,12 +394,17 @@ export interface IMcpRequestOptions {
  * | `'aborted'` | The caller's `AbortSignal` fired before the request settled. |
  * | `'not-connected'` | The session's connection is closed: the call was made after it closed, or it closed while the call was in flight. Decided by the observed close, which the SDK reports before it fails the in-flight requests. During the connect handshake, **any** `-32000` is `'not-connected'` — whether the SDK raised it or the server sent it — because a failed handshake leaves no session either way. |
  * | `'session-expired'` | A Streamable-HTTP server answered HTTP 404 for an established session: it no longer recognizes the session id (typically after a server restart). |
- * | `'unauthorized'` | The server refused the credentials: HTTP 401 or 403, or the SDK's `UnauthorizedError` — including an interactive authorization refused outside the connect (see {@link IMcpHttpTransportParams.authProvider}). `resourceMetadataUrl` is the `resource_metadata` URL of the endpoint's most recent `WWW-Authenticate` challenge, when it sent a valid one. The message is fixed text: the server's response body is never echoed, since it may repeat a credential. |
+ * | `'unauthorized'` | The server refused the credentials: HTTP 401 or 403, or the SDK's `UnauthorizedError` — including an interactive authorization refused outside the connect (see {@link IMcpHttpTransportParams.authProvider}) — or an OAuth error from the authorization server. `resourceMetadataUrl` is the `resource_metadata` URL of the endpoint's most recent `WWW-Authenticate` challenge, when it sent a valid one. |
  * | `'egress-blocked'` | The transport's guarded `fetch` refused the request (`SaferFetch.GuardedFetchError`): an address or request guard, a rejected redirect, a refused response head or an unsupported request. `reason` is the refusal's `FetchFailureReason` kind, never its URL-bearing detail. A configuration refusal: retrying cannot help. A guarded fetch's `'network'`, `'timeout'` and `'aborted'` failures are not refusals and classify as a plain `fetch` failure would. |
  * | `'protocol'` | The server answered with a JSON-RPC error (`code` is its code — including `-32000` on a session that is still open, which servers use as a generic error), or the SDK rejected a response that failed its result schema (no `code`). |
  * | `'transport'` | Anything else: a network or child-process I/O failure, a non-2xx HTTP status not listed above, or an error the SDK raised without a type — including the handshake's protocol-version refusal, which the SDK raises as a plain `Error`. This is the catch-all that makes the classification total. |
  * | `'invalid-handle'` | The session or transport handle did not come from this package, or the transport handle was already used by an earlier connect. A caller bug; retrying cannot help. |
  * | `'invalid-options'` | A `timeoutMs` / `maxTotalTimeoutMs` outside the accepted range. Reported before anything is sent. |
+ *
+ * **Messages never carry server-authored text.** A failure from an HTTP error (a response's body
+ * or status text) or an OAuth error (an `error_description`), and every `'unauthorized'` failure,
+ * gets the kind and the HTTP status as its text — e.g. `unauthorized (HTTP 401)`,
+ * `transport (HTTP 500)` — because a server may repeat a credential it was sent.
  *
  * Reconnecting is the consumer's policy. As a guide: `'not-connected'` and `'session-expired'`
  * mean the session is dead; `'transport'` means it is suspect; `'egress-blocked'` means the
@@ -415,7 +429,9 @@ export type McpFailureReason =
   /**
    * `status` is the HTTP status, when the refusal came as one. `resourceMetadataUrl` is the
    * `resource_metadata` URL from the endpoint's most recent `WWW-Authenticate` challenge, present
-   * only when it was a valid `http:`/`https:` URL on one printable line.
+   * only when it was a valid `http:`/`https:` URL on one printable line. It is chosen by the server
+   * and may come from an earlier challenge than the one that failed this operation: fetch it only
+   * through the same guarded `fetch` as the transport.
    */
   | { readonly kind: 'unauthorized'; readonly status?: number; readonly resourceMetadataUrl?: string }
   /** `reason` is the kind of the guarded fetch's `FetchFailureReason`; its URL-bearing payload is never carried. */
