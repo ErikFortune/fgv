@@ -44,6 +44,7 @@ import {
   SUPPORTED_SCHEMES
 } from './defaults';
 import type { FetchFailureReason } from './failureReason';
+import { GuardedFetchError } from './guardedFetchError';
 import { resolveGuards } from './guards';
 import {
   computeRetryDelayMs,
@@ -55,6 +56,8 @@ import {
   type IResolvedRetryPolicy
 } from './retry';
 import type {
+  GuardedFetch,
+  IGuardedFetchOptions,
   IGuardVerdict,
   IRequestHop,
   IResolvedGuards,
@@ -149,6 +152,12 @@ interface IWalkContext<T> {
   readonly resolved: IResolvedWalkOptions;
   readonly watch: DeadlineWatch;
   readonly finish: HopFinisher<T>;
+  /**
+   * The caller's signal, when the response outlives the walk: composed into every hop's transport
+   * signal so that aborting it still cancels the body after the walk has returned. Absent for the
+   * buffered entry points, which read the body inside the walk's deadlines.
+   */
+  readonly outliving?: AbortSignal;
 }
 
 /**
@@ -312,6 +321,13 @@ async function _raced<T>(
   toFailure: (message: string) => Outcome<T>,
   onAbandon?: () => void
 ): Promise<Outcome<T>> {
+  // A call already stopped does not start the work at all. Racing it would report the same stop,
+  // but only after starting a guard (a DNS lookup) or a transport call nobody will wait for.
+  const stoppedBy = watch.cause;
+  if (stoppedBy !== undefined) {
+    onAbandon?.();
+    return _stopped<T>(watch, stoppedBy);
+  }
   const race = await watch.race(_capture(work));
   if (race.stopped) {
     onAbandon?.();
@@ -802,7 +818,12 @@ async function _connect<T>(
     // `'manual'` rather than `'follow'`: the platform must not follow anything on our behalf,
     // because a hop the guard never sees is a hop the guard never guarded.
     redirect: 'manual',
-    signal: watch.signal
+    // A composed signal rather than a listener on the caller's: the watch stops listening when the
+    // walk returns, and a listener left behind on a long-lived caller signal (one per request, on a
+    // signal that outlives a whole session) would be a leak. `AbortSignal.any` holds its sources
+    // weakly, so the composite goes away with the response.
+    signal:
+      context.outliving === undefined ? watch.signal : AbortSignal.any([watch.signal, context.outliving])
   };
   if (request.body !== undefined) {
     // A byte body is copied into a fresh buffer rather than handed over by reference: it keeps
@@ -1312,5 +1333,277 @@ export async function saferFetchJson<T>(
     _decodeText(raw).onSuccess((text) =>
       _parseJson(text, parser).onSuccess((parsed) => _succeed(_toResponse(parsed, raw)))
     )
+  );
+}
+
+/** Methods a guarded fetch accepts — every {@link SaferFetch.SaferFetchMethod}. */
+const GUARDED_FETCH_METHODS: ReadonlyArray<SaferFetchMethod> = [
+  'GET',
+  'HEAD',
+  'POST',
+  'PUT',
+  'PATCH',
+  'DELETE'
+];
+
+/**
+ * {@link SaferFetch.ISaferFetchOptions} members a guarded fetch refuses at creation: each needs the
+ * body read or would replay a request, so accepting one silently would advertise a protection the
+ * function does not give. The per-request members are refused too — they belong on the call's
+ * `RequestInit`, and accepting them here would leave a caller believing they applied.
+ */
+const GUARDED_FETCH_REFUSED_OPTIONS: ReadonlySet<string> = new Set([
+  'timeoutMs',
+  'maxResponseBytes',
+  'responseBodyGuard',
+  'retry',
+  'method',
+  'headers',
+  'body',
+  'signal'
+]);
+
+/** A guarded fetch's validated, per-function settings: resolved once, at creation. */
+interface IPreparedGuardedFetch {
+  readonly guards: IResolvedGuards;
+  readonly redirect: IResolvedRedirectOptions;
+  readonly headersTimeoutMs: number;
+  readonly transport: IFetchTransport;
+  readonly logger: Logging.ILogger;
+}
+
+/** One guarded call's request, normalized from the fetch-shaped arguments. */
+interface IGuardedRequest {
+  readonly url: string | URL;
+  readonly method: SaferFetchMethod;
+  readonly headers: Record<string, string>;
+  readonly body: string | Uint8Array | undefined;
+}
+
+function _prepareGuardedFetch(options: IGuardedFetchOptions): Outcome<IPreparedGuardedFetch> {
+  // Read off the object's own entries rather than its type: a JavaScript caller, or a spread of a
+  // buffered call's options, can carry any of these, and the type cannot see them.
+  const refused = Object.entries(options)
+    .filter(([name, value]) => value !== undefined && GUARDED_FETCH_REFUSED_OPTIONS.has(name))
+    .map(([name]) => name);
+  if (refused.length > 0) {
+    return _unknown<IPreparedGuardedFetch>(
+      `createGuardedFetch does not support ${refused.join(', ')}: a guarded fetch never reads the ` +
+        'body, never retries, and takes per-request inputs from each call.'
+    );
+  }
+
+  const headersTimeoutMs = options.headersTimeoutMs ?? DEFAULT_HEADERS_TIMEOUT_MS;
+  if (!Number.isFinite(headersTimeoutMs) || headersTimeoutMs <= 0) {
+    return _unknown<IPreparedGuardedFetch>(
+      `headersTimeoutMs must be a positive finite number; got ${headersTimeoutMs}.`
+    );
+  }
+
+  const redirect = _resolveRedirectOptions(options);
+  if (redirect.isFailure()) {
+    return _propagate<IResolvedRedirectOptions, IPreparedGuardedFetch>(redirect);
+  }
+
+  const guards = resolveGuards(options);
+  if (guards.isFailure()) {
+    return _unknown<IPreparedGuardedFetch>(guards.message);
+  }
+
+  return _succeed({
+    guards: guards.value,
+    redirect: redirect.value,
+    headersTimeoutMs,
+    transport: options.transport ?? platformFetchTransport,
+    logger: options.logger ?? new Logging.NoOpLogger()
+  });
+}
+
+/**
+ * Normalizes a request body to what the walk can carry: a string or a byte array.
+ *
+ * @remarks
+ * `URLSearchParams` is accepted because OAuth token requests send one (the MCP SDK's do); it is
+ * sent as its string form with the content type `fetch` would have given it, unless the caller set
+ * one. A `ReadableStream`, `FormData` or `Blob` is refused: the walk may have to replay the body on
+ * a `307`/`308` hop, and a stream cannot be replayed.
+ */
+function _guardedBody(
+  body: unknown,
+  headers: Record<string, string>
+): Outcome<string | Uint8Array | undefined> {
+  if (body === undefined || body === null || typeof body === 'string' || body instanceof Uint8Array) {
+    return _succeed(body ?? undefined);
+  }
+  if (body instanceof ArrayBuffer) {
+    return _succeed(new Uint8Array(body));
+  }
+  if (body instanceof URLSearchParams) {
+    headers['content-type'] ??= 'application/x-www-form-urlencoded;charset=UTF-8';
+    return _succeed(body.toString());
+  }
+  return _unknown<string | Uint8Array | undefined>(
+    'a guarded fetch body must be a string, Uint8Array, ArrayBuffer or URLSearchParams.'
+  );
+}
+
+/** Normalizes the fetch-shaped arguments, refusing every shape the walk cannot carry faithfully. */
+function _guardedRequest(input: unknown, init: RequestInit | undefined): Outcome<IGuardedRequest> {
+  if (typeof input !== 'string' && !(input instanceof URL)) {
+    return _unknown<IGuardedRequest>(
+      'a guarded fetch takes a string or URL; a Request object is not supported.'
+    );
+  }
+
+  // Upper-cased, as `fetch` normalizes the methods it knows; anything outside the safer-fetch set is
+  // refused rather than sent.
+  const requestedMethod = String(init?.method ?? 'GET').toUpperCase();
+  const method = GUARDED_FETCH_METHODS.find((m) => m === requestedMethod);
+  if (method === undefined) {
+    return _unknown<IGuardedRequest>(
+      `method "${requestedMethod}" is not supported; expected one of ${GUARDED_FETCH_METHODS.join(', ')}.`
+    );
+  }
+
+  // `Headers` accepts every `HeadersInit` shape — a `Headers`, an array of pairs, a record — and
+  // validates names and values the way `fetch` would. It lowercases names as it goes.
+  const parsedHeaders = captureResult(() => new Headers(init?.headers ?? undefined));
+  if (parsedHeaders.isFailure()) {
+    return _unknown<IGuardedRequest>(`invalid request headers: ${parsedHeaders.message}`);
+  }
+  const headers: Record<string, string> = {};
+  parsedHeaders.value.forEach((value, name) => {
+    headers[name] = value;
+  });
+
+  return _guardedBody(init?.body, headers).onSuccess((body) =>
+    body !== undefined && METHODS_WITHOUT_BODY.includes(method)
+      ? _unknown<IGuardedRequest>(`a ${method} request cannot carry a body.`)
+      : _succeed<IGuardedRequest>({ url: input, method, headers, body })
+  );
+}
+
+/**
+ * The streaming finisher: runs the response-headers guard and hands the response back with its
+ * body unread, whatever its status.
+ */
+function _streamingFinisher(guards: IResolvedGuards, watch: DeadlineWatch): HopFinisher<Response> {
+  return async (response, head, url, chain) =>
+    (await _checkResponseHead(response, head, url, chain, guards, watch)).onSuccess(() => _succeed(response));
+}
+
+async function _executeGuarded(
+  prepared: IPreparedGuardedFetch,
+  input: unknown,
+  init: RequestInit | undefined
+): Promise<Outcome<Response>> {
+  // First, before the request is even inspected: an aborted call starts nothing.
+  const signal = init?.signal ?? undefined;
+  if (signal?.aborted === true) {
+    return _fail<Response>({ kind: 'aborted' }, _stopMessage('caller-aborted'));
+  }
+
+  const normalized = _guardedRequest(input, init);
+  if (normalized.isFailure()) {
+    return _propagate<IGuardedRequest, Response>(normalized);
+  }
+  const request = normalized.value;
+
+  const parsed = _parseUrl(request.url);
+  if (parsed.isFailure()) {
+    return _propagate<URL, Response>(parsed);
+  }
+
+  // No overall deadline: the body this returns may be a stream that lives for an hour.
+  const watch = new DeadlineWatch(undefined, prepared.headersTimeoutMs, signal);
+  // Captured for the same reason as in `_execute`: the logger is collaborator code.
+  const ran = await captureAsyncResult(async () =>
+    _walk(parsed.value, {
+      guards: prepared.guards,
+      resolved: {
+        ...prepared.redirect,
+        method: request.method,
+        headers: request.headers,
+        body: request.body,
+        transport: prepared.transport,
+        logger: prepared.logger
+      },
+      watch,
+      finish: _streamingFinisher(prepared.guards, watch),
+      ...(signal !== undefined ? { outliving: signal } : {})
+    })
+  );
+  // Disposed on success too: the headers timer is already cleared, and the caller's signal now
+  // reaches the body through the composed transport signal rather than through this watch.
+  watch.dispose();
+  return ran.isFailure()
+    ? _unexpected<Response>(ran.message)
+    : ran.value.onSuccess((walked) => _succeed(walked.value));
+}
+
+/**
+ * The reason a guarded call failed.
+ *
+ * @remarks
+ * A failure from inside a chaining callback can arrive without a reason (see {@link _withReason});
+ * it gets the same `'unknown'` wrapping here, so a `GuardedFetchError` always carries one.
+ */
+function _reasonOf(failure: DetailedFailure<Response, FetchFailureReason>): FetchFailureReason {
+  return failure.detail ?? { kind: 'unknown', detail: `saferFetch: unexpected error: ${failure.message}` };
+}
+
+/**
+ * Creates a `fetch`-shaped function that sends every request through the safer-fetch hop walk and
+ * returns the response **without reading its body** — for streaming responses (Server-Sent Events,
+ * MCP Streamable HTTP) and for libraries that take a `fetch`.
+ *
+ * @remarks
+ * **What it does.** Every call runs the same walk as the buffered entry points: the scheme check,
+ * the request guard, the address guard on **every** hop before any connection, the redirect policy
+ * (`'reject'` by default), loop detection, monotonic credential stripping on a cross-origin hop,
+ * and a headers deadline per hop. The response-headers guard runs on the final response's head.
+ * The final hop's platform `Response` is then returned with its body stream intact: nothing is
+ * buffered, so the first event of a stream reaches the caller as soon as the server sends it.
+ *
+ * **Cancellation.** The call's `init.signal` stops guard evaluation, the connect and a redirect
+ * walk in progress, and — once the response has been returned — the body stream. A signal that is
+ * already aborted fails the call before any guard runs. Cancelling the body after return relies on
+ * the transport honoring `RequestInit.signal` for the body, as {@link SaferFetch.platformFetchTransport}
+ * does; it needs `AbortSignal.any` (Node 20.3 or later; current browsers).
+ *
+ * **What it does not protect against** — on top of everything {@link SaferFetch.saferFetchBytes}
+ * lists, DNS rebinding included: there is **no deadline over the body**, **no size cap**, **no
+ * body guard** and **no retry**. A server can hold a returned stream open, or send it without end,
+ * for as long as the caller keeps reading; bounding that is the caller's job, typically with
+ * `init.signal`. Each of those options is refused at creation rather than ignored.
+ *
+ * **Custom credential headers.** `fetch` strips only `authorization` on a cross-origin redirect.
+ * Redirects are rejected by default; a caller who allows them must list every custom credential
+ * header (`x-api-key`, a session token) in `sensitiveHeaders`, or it is carried to the next origin.
+ *
+ * **Request inputs.** The first argument is a string or `URL` (a `Request` object is refused). The
+ * method is one of {@link SaferFetch.SaferFetchMethod}. Headers may be a `Headers`, an array of
+ * pairs or a record. The body may be a string, `Uint8Array`, `ArrayBuffer` or `URLSearchParams`; a
+ * stream or `FormData` is refused. Other `RequestInit` members (`redirect`, `credentials`, `mode`,
+ * `cache`, …) are ignored.
+ *
+ * **Failures.** The function rejects with a {@link SaferFetch.GuardedFetchError}, whose message is
+ * fixed text and whose `reason` is the `FetchFailureReason` — which holds URLs. A non-2xx response
+ * is returned, not rejected.
+ *
+ * @param options - The guards and redirect settings, validated once, here. `addressGuard` is
+ * required: use `blockPrivateNetworks()` on Node.
+ * @returns `Success` with the function, or `Failure` if an option is invalid or refused.
+ * @public
+ */
+export function createGuardedFetch(options: IGuardedFetchOptions): Result<GuardedFetch> {
+  return _prepareGuardedFetch(options).asResult.onSuccess((prepared) =>
+    succeed<GuardedFetch>(async (url: string | URL, init?: RequestInit): Promise<Response> => {
+      const outcome = await _executeGuarded(prepared, url, init);
+      if (outcome.isFailure()) {
+        throw new GuardedFetchError(_reasonOf(outcome));
+      }
+      return outcome.value;
+    })
   );
 }

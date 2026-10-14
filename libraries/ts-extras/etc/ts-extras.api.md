@@ -560,6 +560,14 @@ function createEncryptedFile<TMetadata = JsonValue>(params: ICreateEncryptedFile
 // @public
 function createEncryptedFileConverter<TMetadata = JsonValue>(metadataConverter?: Converter<TMetadata>): Converter<IEncryptedFile<TMetadata>>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function createGuardedFetch(options: IGuardedFetchOptions): Result<GuardedFetch>;
+
 // @public
 function createZipFromFiles(files: ReadonlyArray<IZipFile>, options?: ICreateZipOptions): Result<Uint8Array>;
 
@@ -1043,6 +1051,20 @@ type GptImageSize = '1024x1024' | '1536x1024' | '1024x1536' | 'auto';
 
 // @public
 type GrokImagineModelNames = 'grok-imagine-image' | 'grok-imagine-image-quality' | 'grok-imagine-image-2.0';
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+type GuardedFetch = (url: string | URL, init?: RequestInit) => Promise<Response>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+class GuardedFetchError extends Error {
+    constructor(reason: FetchFailureReason);
+    readonly reason: FetchFailureReason;
+}
 
 declare namespace Hash {
     export {
@@ -1938,6 +1960,27 @@ interface IGrokImagineModelOptions extends INamedModelFamilyConfig {
     readonly models?: GrokImagineModelNames[];
     // (undocumented)
     readonly provider: 'xai';
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IGuardedFetchOptions {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly addressGuard: IAddressGuard;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly headersTimeoutMs?: number;
+    readonly logger?: Logging.ILogger;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly maxRedirects?: number;
+    readonly redirectPolicy?: SaferFetchRedirectPolicy;
+    readonly requestGuard?: IRequestGuard;
+    readonly responseHeadersGuard?: IResponseHeadersGuard;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly sensitiveHeaders?: ReadonlyArray<string>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly transport?: IFetchTransport;
 }
 
 // @public
@@ -3207,9 +3250,11 @@ declare namespace SaferFetch {
         FetchFailureReason,
         FetchTimeoutPhase,
         IRetryPolicy,
+        GuardedFetch,
         IAddressGuard,
         IFetchTransport,
         IFetchTransportHints,
+        IGuardedFetchOptions,
         IGuardVerdict,
         IRequestGuard,
         IRequestHop,
@@ -3225,10 +3270,12 @@ declare namespace SaferFetch {
         allowAnyAddress,
         allowContentTypes,
         platformFetchTransport,
+        createGuardedFetch,
         saferFetchBytes,
         saferFetchJson,
         saferFetchText,
         ISaferFetchJsonOptions,
+        GuardedFetchError,
         allowAnyAddressPolicy,
         blockPrivateNetworksPolicy,
         IAddressCheckVerdict,

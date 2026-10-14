@@ -426,3 +426,85 @@ export interface ISaferFetchResponse<T> {
   /** Decoded bytes read from the response body. */
   readonly bytesRead: number;
 }
+
+/**
+ * A `fetch`-shaped function whose every request goes through the safer-fetch hop walk, and whose
+ * response body is returned **unread**. Created by {@link SaferFetch.createGuardedFetch}.
+ *
+ * @remarks
+ * Structurally the same as the `FetchLike` that fetch-accepting libraries take (the MCP SDK's
+ * transports among them), so it can be handed to any of them.
+ *
+ * It **rejects** on every failure, as a fetch-shaped caller expects, with a
+ * {@link SaferFetch.GuardedFetchError} carrying the `FetchFailureReason`. A non-2xx answer is not a
+ * failure: it is returned, as `fetch` returns it, because fetch-shaped callers branch on it.
+ * @public
+ */
+export type GuardedFetch = (url: string | URL, init?: RequestInit) => Promise<Response>;
+
+/**
+ * Options for {@link SaferFetch.createGuardedFetch}. A subset of {@link SaferFetch.ISaferFetchOptions}:
+ * the per-request inputs (method, headers, body, signal) arrive on each call's `RequestInit`
+ * instead, and every option that needs the body read is absent.
+ *
+ * @remarks
+ * **Absent on purpose, and refused if supplied:** `timeoutMs` (a deadline over the body would cut
+ * off a stream that is meant to live for an hour), `maxResponseBytes` and `responseBodyGuard` (both
+ * need the body read, which this entry point never does), and `retry` (it would replay a
+ * non-idempotent `POST`, and a streaming caller has usually consumed part of the response before it
+ * could know to retry). A caller who needs those wants a buffered entry point.
+ * @public
+ */
+export interface IGuardedFetchOptions {
+  /**
+   * **Required, with no default** — for the same reason as {@link SaferFetch.ISaferFetchOptions.addressGuard}.
+   * Runs on every hop, before any connection.
+   */
+  readonly addressGuard: IAddressGuard;
+
+  /** Policy guard over each outbound request. Defaults to silent passthrough. */
+  readonly requestGuard?: IRequestGuard;
+
+  /**
+   * Policy guard over the head of every response the function returns, whatever its status. It
+   * runs before the response is handed back, so a refusal costs no body bytes. Defaults to silent
+   * passthrough.
+   */
+  readonly responseHeadersGuard?: IResponseHeadersGuard;
+
+  /**
+   * How redirects are handled. Defaults to `'reject'`, as everywhere in safer-fetch. The caller's
+   * `RequestInit.redirect` is ignored: the platform is never allowed to follow a hop the guard did
+   * not see.
+   */
+  readonly redirectPolicy?: SaferFetchRedirectPolicy;
+
+  /** Cap on redirect hops followed under `'validate-each-hop'`. Default {@link SaferFetch.DEFAULT_MAX_REDIRECTS}. */
+  readonly maxRedirects?: number;
+
+  /**
+   * Additional header names to drop on a cross-origin redirect hop, on top of
+   * {@link SaferFetch.ALWAYS_STRIPPED_HEADERS}.
+   *
+   * @remarks
+   * **A caller that allows redirects must list its custom credential headers here** — `x-api-key`,
+   * `x-auth-token`, a session or routing token such as MCP's `mcp-session-id`. `fetch` itself
+   * strips only `authorization` on a cross-origin redirect, and this primitive strips only the
+   * three it always strips: a header it was not told about is carried to the next origin.
+   */
+  readonly sensitiveHeaders?: ReadonlyArray<string>;
+
+  /**
+   * Deadline from the start of each hop to its response headers, in milliseconds. Default
+   * {@link SaferFetch.DEFAULT_HEADERS_TIMEOUT_MS}. It covers guard evaluation, the connect and
+   * the wait for headers, and is cleared when headers arrive: a stream that then lives for an hour
+   * is not cut off.
+   */
+  readonly headersTimeoutMs?: number;
+
+  /** Defaults to {@link SaferFetch.platformFetchTransport}. */
+  readonly transport?: IFetchTransport;
+
+  /** Diagnostics sink. Defaults to a no-op logger. Hop failures are logged at `detail`, with URLs. */
+  readonly logger?: Logging.ILogger;
+}

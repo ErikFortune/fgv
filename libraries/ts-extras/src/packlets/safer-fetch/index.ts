@@ -54,9 +54,11 @@ export type { FetchFailureReason, FetchTimeoutPhase } from './failureReason';
 export type { IRetryPolicy } from './retry';
 
 export type {
+  GuardedFetch,
   IAddressGuard,
   IFetchTransport,
   IFetchTransportHints,
+  IGuardedFetchOptions,
   IGuardVerdict,
   IRequestGuard,
   IRequestHop,
@@ -75,7 +77,15 @@ export { allowAnyAddress, allowContentTypes } from './guards';
 
 export { platformFetchTransport } from './transport';
 
-export { saferFetchBytes, saferFetchJson, saferFetchText, type ISaferFetchJsonOptions } from './saferFetch';
+export {
+  createGuardedFetch,
+  saferFetchBytes,
+  saferFetchJson,
+  saferFetchText,
+  type ISaferFetchJsonOptions
+} from './saferFetch';
+
+export { GuardedFetchError } from './guardedFetchError';
 
 // Two layers, one naming rule: an **unsuffixed** factory returns the asynchronous,
 // hop-chain-aware, name-resolving `IAddressGuard` that an entry point's `addressGuard` option
