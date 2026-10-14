@@ -878,9 +878,10 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
   `callMcpTool` is not affected: `mcp-round-2a` moved it to the SDK's generic `ResultSchema`, which
   passes `content` and `structuredContent` through by reference.
 
-  **Trigger**: `mcp-round-2b` (#672 guarded egress, #677 OAuth), the next stream to edit
-  `operations.ts` and `sdk.ts`; or the SDK v2 client-package rename, which rewrites `sdk.ts`. Both
-  are scheduled events, not recall.
+  **Trigger**: the SDK v2 client-package rename, which rewrites `sdk.ts`; or the next stream whose
+  scope includes reading `tools/list`. *`mcp-round-2b` (2026-10-14) edited `operations.ts` and
+  `sdk.ts` but passed on this deliberately: its brief was egress and OAuth, and the fix changes how
+  `tools/list` is read and validated — its own reviewable change.*
 
   **Scope sketch**:
   - Read `tools/list` with `client.request({ method: 'tools/list', params }, ResultSchema, options)`

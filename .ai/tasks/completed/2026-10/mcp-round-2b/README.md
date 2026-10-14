@@ -43,12 +43,19 @@ Two PersonAIlity asks:
 
 ## Read next
 
-`result.md`: belief verdicts, the SDK behaviour tables, the check-then-act table, the 18-row revert
-matrix, the review dispositions, the gate counts, and what the brief got wrong.
+`result.md`: belief verdicts, the SDK behaviour tables, the check-then-act table, the 19-row revert
+matrix (R7 not isolatable), the review dispositions, the gate counts, and what the brief got wrong.
 
 ## Open
 
-- A helper around the SDK's `auth()` flow (FUTURE.md, with a proposed shape).
+- A helper around the SDK's `auth()` flow (FUTURE.md, with a proposed shape). Until it exists the
+  consumer exchanges the authorization code with the SDK's `auth()` and **must pass its guarded fetch
+  as `fetchFn`**, or that exchange bypasses the guard and the static-header rule.
+- One residual on the interactive gate: the SDK's standalone `GET` is started inside `connect`, so a
+  401 on it before `connect` settles still reaches the interactive steps. After `connect`, never.
+- The secrets proof does not cover an authorization code: no code exchange runs through the package.
+- TECH_DEBT's `__proto__`-in-`tools/list` entry named this stream as its trigger; passed on and
+  retargeted to the SDK v2 rename.
 - Pinned connect, to close DNS rebinding for MCP egress (FUTURE.md). `createGuardedFetch` takes a
   `transport`, so it inherits the fix without a signature change.
 - PersonAIlity #672 and #677 can close against the merge commit.

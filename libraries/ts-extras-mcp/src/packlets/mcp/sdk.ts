@@ -279,7 +279,7 @@ export function terminateHttpSession(transport: ISdkTransport): Promise<void> {
  * This is the SDK's own `OAuthClientProvider` interface from
  * `@modelcontextprotocol/sdk/client/auth.js`, unchanged: implement it (over your own keystore, for
  * example) and pass it as {@link IMcpHttpTransportParams.authProvider}. The package wraps it before
- * handing it to the SDK, so that the interactive steps — `saveCodeVerifier` and
+ * handing it to the SDK, so that the interactive steps — `state`, `saveCodeVerifier` and
  * `redirectToAuthorization` — run only inside {@link connectMcpSession}.
  * @public
  */

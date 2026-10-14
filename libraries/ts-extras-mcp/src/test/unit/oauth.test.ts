@@ -306,7 +306,10 @@ describe('OAuth through authProvider', () => {
   let real: IRealMcpServer;
   let protection: IProtection;
   let sessions: IMcpSession[];
-  /** Every log line and failure message the tests produce: checked for secrets at the end of each. */
+  /**
+   * Every log line, failure message and serialized `McpFailureReason` the tests produce: checked for
+   * secrets at the end of each.
+   */
   let observed: string[];
   let logger: Logging.InMemoryLogger;
   let fetchLogger: Logging.InMemoryLogger;
@@ -359,7 +362,7 @@ describe('OAuth through authProvider', () => {
       sessions.push(result.value);
       return { session: result.value };
     }
-    observed.push(result.message);
+    observed.push(result.message, JSON.stringify(result.detail));
     return { failure: result.detail, message: result.message };
   }
 
@@ -453,7 +456,7 @@ describe('OAuth through authProvider', () => {
     const { session } = await connect(provider);
     protection.valid.clear();
     const called = await callMcpTool(session!, 'echo', {});
-    observed.push(called.message ?? '');
+    observed.push(called.message ?? '', JSON.stringify(called.detail));
     expect(called).toFailWithDetail(/^callMcpTool 'echo': unauthorized$/, {
       kind: 'unauthorized',
       resourceMetadataUrl: `${new URL(real.url).origin}/.well-known/oauth-protected-resource/mcp`
@@ -468,7 +471,7 @@ describe('OAuth through authProvider', () => {
     const { session } = await connect(provider);
     protection.insufficientScope = true;
     const called = await callMcpTool(session!, 'echo', {});
-    observed.push(called.message ?? '');
+    observed.push(called.message ?? '', JSON.stringify(called.detail));
     expect(called).toFailWithDetail(/^callMcpTool 'echo': unauthorized$/, {
       kind: 'unauthorized',
       resourceMetadataUrl: `${new URL(real.url).origin}/.well-known/oauth-protected-resource/mcp`
@@ -483,7 +486,7 @@ describe('OAuth through authProvider', () => {
     const { session } = await connect(provider);
     protection.echoOn500 = true;
     const called = await callMcpTool(session!, 'echo', {});
-    observed.push(called.message ?? '');
+    observed.push(called.message ?? '', JSON.stringify(called.detail));
     expect(called).toFailWithDetail(/^callMcpTool 'echo': transport \(HTTP 500\)$/, {
       kind: 'transport',
       status: 500

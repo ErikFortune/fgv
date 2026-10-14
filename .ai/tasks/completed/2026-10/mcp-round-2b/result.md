@@ -206,6 +206,16 @@ points still produce rejections at most depths, so the test stays green; with it
 can still land in the last few microtasks after the check, exactly as with platform `fetch`. The
 check narrows that window; it is kept, and covered, but no test isolates it.
 
+## Secrets proof — its scope
+
+`oauth.test.ts` greps every log line (session logger and the guarded fetch's logger at `detail`),
+every failure message and every serialized `McpFailureReason` from each test for seven values: the
+access token, a refreshed token, two refresh tokens, a stale token, the client secret and a static
+API key. The test servers echo tokens in a 401 body, an `invalid_grant` description and a 500 body.
+**An authorization code is not in the list**: no code exchange runs through the package — after
+`redirectToAuthorization` the consumer exchanges the code with the SDK's `auth()` (the helper is
+deferred to FUTURE.md), and should pass its guarded fetch as `fetchFn`.
+
 ## DNS-rebinding residual, now
 
 Unchanged in kind, narrower in where it applies. MCP egress through `createGuardedFetch` +
@@ -246,7 +256,7 @@ the per-package coverage runs during steps 2 and 3 had already prompted two smal
 |---|---|---|---|
 | 1 | P2 | streaming head guard had no deadline (headers timer cleared before it ran; no overall timer) | **fixed** — the streaming finisher retires the headers deadline only after the guard accepts; TSDoc corrected; test with a never-settling guard |
 | 2 | P2 | `state()` runs before `saveCodeVerifier`, so the gate's "nothing persisted" claim was false; other off-window writes undocumented | **fixed** — `state` gated too (when implemented); TSDoc and docs list what does run off-window (discovery, registration, refresh, `saveTokens`, `invalidateCredentials`); tests count `state()` calls |
-| 3 | P2 | non-401 HTTP errors put server body text (possibly an echoed token) in messages | **fixed** — any failure from `StreamableHTTPError`/`SseError`/`OAuthError`, and every `unauthorized`, reads as kind + status; test with a 500 echoing the bearer token and API key; three existing assertions on server text updated |
+| 3 | P2 | non-401 HTTP errors put server body text (possibly an echoed token) in messages | **fixed** — any failure from `StreamableHTTPError`/`SseError`/`OAuthError`, and every `unauthorized`, reads as kind + status; test with a 500 echoing the bearer token and API key; four existing assertions on server text updated (three in `httpFailures.test.ts`, one in `terminate.test.ts`; a fourth `httpFailures` assertion was only tightened) |
 | 4 | P3 | `redirectToAuthorization` forwarded a server-chosen URL of any scheme | **fixed** — non-`http(s)` refused even inside the window; test |
 | 5 | P3 | `resourceMetadataUrl` TSDoc didn't say it is server-chosen / may be stale | **fixed** in TSDoc, README, CAPABILITIES |
 | 6 | P3 | static-header drop compared untrimmed values | **fixed** — compares the trimmed configured value; test uses a padded value |

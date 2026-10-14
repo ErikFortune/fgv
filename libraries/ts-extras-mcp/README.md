@@ -30,7 +30,8 @@ These were considered and deferred — use `@modelcontextprotocol/sdk` directly 
 - **Browser sibling** (`@fgv/ts-web-extras-mcp`) — Node-only at v0.1.
 - **MCP resources / prompts / sampling** — tool discovery + invocation only.
 - **An OAuth `auth()` helper** — `authProvider` is passed through and the SDK drives the flow, but
-  exchanging an authorization code after the redirect is yours (the SDK's `auth()`).
+  exchanging an authorization code after the redirect is yours (the SDK's `auth()`). Pass your
+  guarded fetch to it as `fetchFn`, or that exchange bypasses your egress guard.
 - **Following resource links** — `callMcpTool` reports a `resource_link`'s URI; fetching it is
   yours, through your own egress guard.
 - **Rich blocks in the ai-assist round-trip** — `adaptMcpTools` hands the model the text projection;
