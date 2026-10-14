@@ -34,6 +34,7 @@ import {
   type IMcpTransport,
   type McpTransportKind
 } from './model';
+import { McpHttpEgress } from './egress';
 import { type ISdkTransport, makeHttpTransport, makeStdioTransport } from './sdk';
 
 /**
@@ -46,12 +47,19 @@ export class McpTransport implements IMcpTransport {
   public readonly transportKind: McpTransportKind;
   /** The wrapped SDK transport. */
   public readonly sdkTransport: ISdkTransport;
+  /** The egress wrapper every request goes through; Streamable HTTP only. */
+  public readonly httpEgress: McpHttpEgress | undefined;
 
   private _claimed: boolean = false;
 
-  public constructor(transportKind: McpTransportKind, sdkTransport: ISdkTransport) {
+  public constructor(
+    transportKind: McpTransportKind,
+    sdkTransport: ISdkTransport,
+    httpEgress?: McpHttpEgress
+  ) {
     this.transportKind = transportKind;
     this.sdkTransport = sdkTransport;
+    this.httpEgress = httpEgress;
   }
 
   /**
@@ -116,9 +124,23 @@ export function createStdioTransport(params: IMcpStdioTransportParams): Result<I
 /**
  * Creates a Streamable-HTTP MCP transport for the given endpoint URL.
  *
- * @param params - The endpoint URL and optional static headers.
- * @returns `Success` with an opaque transport handle, or `Failure` if the URL is invalid or the
- * SDK constructor throws.
+ * @remarks
+ * **Egress.** Pass a `fetch` from `SaferFetch.createGuardedFetch` with
+ * `SaferFetch.blockPrivateNetworks()` as its address guard (both from `@fgv/ts-extras`) to give
+ * every request the session makes — the `POST`s, the standalone `GET` event stream and the
+ * termination `DELETE` — the same SSRF protection as the rest of your egress:
+ *
+ * ```ts
+ * const fetch = SaferFetch.createGuardedFetch({ addressGuard: SaferFetch.blockPrivateNetworks() }).orThrow();
+ * const transport = createHttpTransport({ url, fetch }).orThrow();
+ * ```
+ * Without it, requests go out through
+ * `globalThis.fetch` with no address guard and default redirect following. See
+ * {@link IMcpHttpTransportParams.fetch}.
+ *
+ * @param params - The endpoint URL, optional static headers, and the optional `fetch`.
+ * @returns `Success` with an opaque transport handle, or `Failure` if the URL is invalid, `fetch`
+ * is not a function, or the SDK constructor throws.
  * @public
  */
 export function createHttpTransport(params: IMcpHttpTransportParams): Result<IMcpTransport> {
@@ -128,9 +150,16 @@ export function createHttpTransport(params: IMcpHttpTransportParams): Result<IMc
       if (url.protocol !== 'http:' && url.protocol !== 'https:') {
         return fail(`url must use http or https protocol (got '${url.protocol}')`);
       }
-      return captureResult(() => makeHttpTransport(url, params.headers)).onSuccess((sdkTransport) =>
-        succeed<IMcpTransport>(new McpTransport('http', sdkTransport))
-      );
+      // A JavaScript caller can pass anything; a non-function would only fail on the first request,
+      // as a transport error far from the mistake.
+      const supplied = params.fetch ?? undefined;
+      if (supplied !== undefined && typeof supplied !== 'function') {
+        return fail(`fetch must be a function (got ${typeof supplied})`);
+      }
+      const egress = new McpHttpEgress(url, supplied);
+      return captureResult(() =>
+        makeHttpTransport(url, { headers: params.headers, fetch: egress.fetch })
+      ).onSuccess((sdkTransport) => succeed<IMcpTransport>(new McpTransport('http', sdkTransport, egress)));
     })
     .withErrorFormat((msg) => `createHttpTransport: ${msg}`);
 }

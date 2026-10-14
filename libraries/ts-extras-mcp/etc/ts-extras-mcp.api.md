@@ -10,6 +10,7 @@ import { JsonObject } from '@fgv/ts-json-base';
 import { JsonValue } from '@fgv/ts-json-base';
 import { Logging } from '@fgv/ts-utils';
 import { Result } from '@fgv/ts-utils';
+import { SaferFetch } from '@fgv/ts-extras';
 
 // @public
 export function adaptMcpTools(session: IMcpSession, options?: IAdaptMcpToolsOptions): Promise<DetailedResult<IAdaptMcpToolsResult, McpFailureReason>>;
@@ -90,6 +91,7 @@ export interface IMcpEmbeddedTextResourceBlock {
 
 // @public
 export interface IMcpHttpTransportParams {
+    readonly fetch?: McpFetch;
     readonly headers?: Record<string, string>;
     readonly url: string;
 }
@@ -237,6 +239,11 @@ export type McpFailureReason = {
     readonly kind: 'unauthorized';
     readonly status?: number;
 }
+/** `reason` is the kind of the guarded fetch's `FetchFailureReason`; its URL-bearing payload is never carried. */
+| {
+    readonly kind: 'egress-blocked';
+    readonly reason: SaferFetch.FetchFailureReason['kind'];
+}
 /** `code` is the JSON-RPC error code, when the failure carried one. */
 | {
     readonly kind: 'protocol';
@@ -251,6 +258,9 @@ export type McpFailureReason = {
 } | {
     readonly kind: 'invalid-options';
 };
+
+// @public
+export type McpFetch = (url: string | URL, init?: RequestInit) => Promise<Response>;
 
 // @public
 export type McpTransportKind = 'stdio' | 'http' | 'custom';

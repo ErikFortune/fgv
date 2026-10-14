@@ -378,8 +378,11 @@ async function _terminateWithin(
   if (outcome === 'timed-out') {
     logger?.detail(`mcp: session termination did not finish within ${timeoutMs} ms; closing anyway`);
   } else if (outcome !== 'terminated') {
+    // The classified kind is logged alongside the text, so an egress refusal of the `DELETE` reads
+    // as one. Classified as an open session: the close has not happened yet.
+    const kind = classifySdkError(outcome.failed, { phase: 'session', closed: false }).kind;
     logger?.detail(
-      printable(`mcp: session termination failed; closing anyway: ${errorText(outcome.failed)}`)
+      printable(`mcp: session termination failed; closing anyway (${kind}): ${errorText(outcome.failed)}`)
     );
   }
 }
@@ -435,10 +438,13 @@ export async function connectMcpSession(
   if (_alreadyAborted(signal)) {
     return failWithDetail('connectMcpSession: aborted before the request was sent', { kind: 'aborted' });
   }
-  const claimed = McpTransport.fromHandle(transport).onSuccess((handle) => handle.claim());
+  const claimed = McpTransport.fromHandle(transport).onSuccess((handle) =>
+    handle.claim().onSuccess(() => succeed(handle))
+  );
   if (claimed.isFailure()) {
     return failWithDetail(`connectMcpSession: ${claimed.message}`, { kind: 'invalid-handle' });
   }
+  const claimedHandle: McpTransport = claimed.value;
 
   const name = clientName ?? DEFAULT_CLIENT_NAME;
   const version = clientVersion ?? DEFAULT_CLIENT_VERSION;
@@ -455,13 +461,15 @@ export async function connectMcpSession(
     onToolListChanged(client, () => toolsChangedWatcher.notify());
   }
 
+  claimedHandle.httpEgress?.attachLogger(logger);
   logger?.info(`mcp: connecting (client ${name}@${version}, transport ${transport.transportKind})`);
 
   const handshake = await runSdkRequest(
     'connectMcpSession',
     { timeoutMs, signal },
     (err) => classifySdkError(err, { phase: 'connect' }),
-    (sdkOptions) => _connectWithin(client, claimed.value, sdkOptions, timeoutMs ?? SDK_DEFAULT_TIMEOUT_MS)
+    (sdkOptions) =>
+      _connectWithin(client, claimedHandle.sdkTransport, sdkOptions, timeoutMs ?? SDK_DEFAULT_TIMEOUT_MS)
   );
   if (handshake.isFailure()) {
     return failWithDetail(handshake.message, handshake.detail);
@@ -492,7 +500,7 @@ export async function connectMcpSession(
       ? `mcp: connected to server ${serverInfo.name}@${serverInfo.version}`
       : 'mcp: connected (server did not report identity)'
   );
-  const httpTransport = transport.transportKind === 'http' ? claimed.value : undefined;
+  const httpTransport = transport.transportKind === 'http' ? claimedHandle.sdkTransport : undefined;
   return succeedWithDetail(
     new McpSession(client, name, version, serverInfo, closeWatcher, httpTransport, logger)
   );

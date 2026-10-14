@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras-mcp",
+      "comment": "createHttpTransport takes an optional fetch (McpFetch), and every HTTP request the session makes — each POST, the standalone GET event stream and the termination DELETE — goes through it. Pass SaferFetch.createGuardedFetch with blockPrivateNetworks() from @fgv/ts-extras to give MCP egress the same SSRF protection as other safer-fetch calls; without it, globalThis.fetch is used with no protection. A guarded fetch's refusal classifies as the new 'egress-blocked' McpFailureReason, carrying only the refusal's kind; a refused DELETE is logged at detail and the close still resolves within its bound, and a refused event stream is logged at detail.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-extras-mcp",
+  "email": "noreply@anthropic.com"
+}

@@ -26,7 +26,7 @@
  */
 
 import { type Logging } from '@fgv/ts-utils';
-import { type AiAssist } from '@fgv/ts-extras';
+import { type AiAssist, type SaferFetch } from '@fgv/ts-extras';
 import { type JsonValue } from '@fgv/ts-json-base';
 
 // ============================================================================
@@ -55,6 +55,14 @@ export interface IMcpStdioTransportParams {
 }
 
 /**
+ * The `fetch` a Streamable-HTTP transport sends every request through. Structurally the same as
+ * `SaferFetch.GuardedFetch` from `@fgv/ts-extras`, so a function from `SaferFetch.createGuardedFetch`
+ * fits it directly.
+ * @public
+ */
+export type McpFetch = (url: string | URL, init?: RequestInit) => Promise<Response>;
+
+/**
  * Parameters for {@link createHttpTransport}. The transport connects to a Streamable-HTTP MCP
  * endpoint.
  * @public
@@ -62,8 +70,29 @@ export interface IMcpStdioTransportParams {
 export interface IMcpHttpTransportParams {
   /** Absolute `http`/`https` URL of the MCP server endpoint. */
   readonly url: string;
-  /** Optional static headers (e.g. an `Authorization` bearer token). OAuth/managed auth is out of scope at v0.1. */
+  /** Optional static headers (e.g. an `Authorization` bearer token or an `x-api-key`). */
   readonly headers?: Record<string, string>;
+  /**
+   * The `fetch` every HTTP request of the session goes through: each `POST`, the standalone `GET`
+   * event stream, and the `DELETE` that {@link closeMcpSession} sends.
+   *
+   * @remarks
+   * **Use `SaferFetch.createGuardedFetch` with `SaferFetch.blockPrivateNetworks()`** (both from
+   * `@fgv/ts-extras`). That gives MCP egress the same SSRF protection as every other safer-fetch
+   * call — the address guard on every hop, redirects rejected by default — without buffering the
+   * long-lived event streams. A refusal fails the operation with the `'egress-blocked'`
+   * {@link McpFailureReason}.
+   *
+   * **Any other `fetch` gets no protection from this package.** When omitted, the platform's
+   * `globalThis.fetch` is used, which follows redirects and connects to any address — including a
+   * private one — and the same is true of any function supplied here that does not guard. A custom
+   * `fetch` is still the right seam for a metered or pinned egress path.
+   *
+   * If the guarded fetch allows redirects, list the static credential headers above and
+   * `mcp-session-id` in its `sensitiveHeaders`: `fetch` strips only `authorization` on a
+   * cross-origin redirect.
+   */
+  readonly fetch?: McpFetch;
 }
 
 /**
@@ -327,13 +356,16 @@ export interface IMcpRequestOptions {
  * | `'not-connected'` | The session's connection is closed: the call was made after it closed, or it closed while the call was in flight. Decided by the observed close, which the SDK reports before it fails the in-flight requests. During the connect handshake, **any** `-32000` is `'not-connected'` — whether the SDK raised it or the server sent it — because a failed handshake leaves no session either way. |
  * | `'session-expired'` | A Streamable-HTTP server answered HTTP 404 for an established session: it no longer recognizes the session id (typically after a server restart). |
  * | `'unauthorized'` | The server refused the credentials: HTTP 401 or 403, or the SDK's `UnauthorizedError`. |
+ * | `'egress-blocked'` | The transport's guarded `fetch` refused the request (`SaferFetch.GuardedFetchError`): an address or request guard, a rejected redirect, a refused response head or an unsupported request. `reason` is the refusal's `FetchFailureReason` kind, never its URL-bearing detail. A configuration refusal: retrying cannot help. A guarded fetch's `'network'`, `'timeout'` and `'aborted'` failures are not refusals and classify as a plain `fetch` failure would. |
  * | `'protocol'` | The server answered with a JSON-RPC error (`code` is its code — including `-32000` on a session that is still open, which servers use as a generic error), or the SDK rejected a response that failed its result schema (no `code`). |
  * | `'transport'` | Anything else: a network or child-process I/O failure, a non-2xx HTTP status not listed above, or an error the SDK raised without a type — including the handshake's protocol-version refusal, which the SDK raises as a plain `Error`. This is the catch-all that makes the classification total. |
  * | `'invalid-handle'` | The session or transport handle did not come from this package, or the transport handle was already used by an earlier connect. A caller bug; retrying cannot help. |
  * | `'invalid-options'` | A `timeoutMs` / `maxTotalTimeoutMs` outside the accepted range. Reported before anything is sent. |
  *
  * Reconnecting is the consumer's policy. As a guide: `'not-connected'` and `'session-expired'`
- * mean the session is dead; `'transport'` means it is suspect; the others leave it usable.
+ * mean the session is dead; `'transport'` means it is suspect; `'egress-blocked'` means the
+ * configuration refuses this server or request, so reconnecting cannot help; the others leave it
+ * usable.
  *
  * **Two limits of the SDK, stated so nobody builds on more than it gives.** The SDK reports a
  * caller's abort as an `McpError` with the *timeout* code; this package tells the two apart by
@@ -352,6 +384,8 @@ export type McpFailureReason =
   | { readonly kind: 'session-expired' }
   /** `status` is the HTTP status, when the refusal came as one. */
   | { readonly kind: 'unauthorized'; readonly status?: number }
+  /** `reason` is the kind of the guarded fetch's `FetchFailureReason`; its URL-bearing payload is never carried. */
+  | { readonly kind: 'egress-blocked'; readonly reason: SaferFetch.FetchFailureReason['kind'] }
   /** `code` is the JSON-RPC error code, when the failure carried one. */
   | { readonly kind: 'protocol'; readonly code?: number }
   /** `status` is the HTTP status, when the failure came as one. */

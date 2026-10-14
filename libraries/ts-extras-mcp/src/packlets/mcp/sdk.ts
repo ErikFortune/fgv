@@ -51,7 +51,8 @@ import {
 } from '@modelcontextprotocol/sdk/types.js';
 
 import { captureResult } from '@fgv/ts-utils';
-import { type McpFailureReason } from './model';
+import { SaferFetch } from '@fgv/ts-extras';
+import { type McpFailureReason, type McpFetch } from './model';
 
 /**
  * Opaque transport handle. The concrete value is an SDK `Transport`; consumers of this module
@@ -266,12 +267,24 @@ export function terminateHttpSession(transport: ISdkTransport): Promise<void> {
 }
 
 /**
- * Constructs a Streamable-HTTP transport for the given URL, with optional static headers.
+ * Parameters for the Streamable-HTTP transport factory.
  * @internal
  */
-export function makeHttpTransport(url: URL, headers?: Record<string, string>): ISdkTransport {
+export interface ISdkHttpParams {
+  /** Static headers sent on every request. */
+  readonly headers?: Record<string, string>;
+  /** The `fetch` the transport sends every request through: the package's egress wrapper. */
+  readonly fetch: McpFetch;
+}
+
+/**
+ * Constructs a Streamable-HTTP transport for the given URL.
+ * @internal
+ */
+export function makeHttpTransport(url: URL, params: ISdkHttpParams): ISdkTransport {
   return new StreamableHTTPClientTransport(url, {
-    requestInit: headers ? { headers } : undefined
+    requestInit: params.headers ? { headers: params.headers } : undefined,
+    fetch: params.fetch
   }) as unknown as ISdkTransport;
 }
 
@@ -311,6 +324,16 @@ function _classifyHttpStatus(status: number | undefined, context: SdkFailureCont
  * from zod 3 or zod 4 classic. The SDK accepts either major (`^3.25 || ^4.0`).
  */
 const SCHEMA_REJECTION_NAMES: ReadonlySet<string> = new Set(['$ZodError', 'ZodError']);
+
+/**
+ * Guarded-fetch failures that are not refusals: the network failed, the server did not answer in
+ * time, or the request was aborted (in practice, by the transport's own close). They classify as
+ * the same failure through an unguarded `fetch` would, so `'egress-blocked'` means only "the
+ * configuration refused this".
+ */
+const TRANSIENT_FETCH_FAILURES: ReadonlySet<SaferFetch.FetchFailureReason['kind']> = new Set<
+  SaferFetch.FetchFailureReason['kind']
+>(['network', 'timeout', 'aborted']);
 
 /**
  * Whether a value is the error the SDK raises when a response fails its result schema. The SDK
@@ -366,6 +389,11 @@ function _classifyInspectable(error: unknown, context: SdkFailureContext): McpFa
   }
   if (error instanceof UnauthorizedError) {
     return { kind: 'unauthorized' };
+  }
+  // The SDK passes a rejected `fetch` through unchanged — from `send`, from `connect`, and from
+  // `terminateSession` — so the guarded fetch's own error is what arrives here.
+  if (error instanceof SaferFetch.GuardedFetchError && !TRANSIENT_FETCH_FAILURES.has(error.reason.kind)) {
+    return { kind: 'egress-blocked', reason: error.reason.kind };
   }
   if (error instanceof StreamableHTTPError || error instanceof SseError) {
     return _classifyHttpStatus(error.code, context);

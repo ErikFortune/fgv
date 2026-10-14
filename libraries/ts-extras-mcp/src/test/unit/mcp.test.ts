@@ -136,7 +136,10 @@ describe('createHttpTransport', () => {
     expect(
       createHttpTransport({ url: 'https://example.com/mcp', headers: { authorization: 'Bearer t' } })
     ).toSucceed();
-    expect(mockSdk.makeHttpTransport).toHaveBeenCalledWith(expect.any(URL), { authorization: 'Bearer t' });
+    expect(mockSdk.makeHttpTransport).toHaveBeenCalledWith(expect.any(URL), {
+      headers: { authorization: 'Bearer t' },
+      fetch: expect.any(Function)
+    });
   });
 
   test('fails for an unparseable url', () => {

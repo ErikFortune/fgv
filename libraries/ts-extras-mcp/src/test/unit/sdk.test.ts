@@ -24,6 +24,7 @@
 // Constructing the SDK objects is side-effect-free — no process is spawned and no network call is
 // made until a transport is connected, so these factory calls are safe in a unit test.
 import { UnauthorizedError } from '@modelcontextprotocol/sdk/client/auth.js';
+import { SaferFetch } from '@fgv/ts-extras';
 import { SseError } from '@modelcontextprotocol/sdk/client/sse.js';
 import { StreamableHTTPError } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { ErrorCode, McpError } from '@modelcontextprotocol/sdk/types.js';
@@ -65,13 +66,14 @@ describe('sdk isolation seam', () => {
   describe('makeHttpTransport', () => {
     test('constructs a transport with headers', () => {
       const transport = makeHttpTransport(new URL('http://localhost:9000/mcp'), {
-        authorization: 'Bearer x'
+        headers: { authorization: 'Bearer x' },
+        fetch: globalThis.fetch
       });
       expect(transport).toBeDefined();
     });
 
     test('constructs a transport without headers', () => {
-      const transport = makeHttpTransport(new URL('https://example.com/mcp'));
+      const transport = makeHttpTransport(new URL('https://example.com/mcp'), { fetch: globalThis.fetch });
       expect(transport).toBeDefined();
     });
   });
@@ -152,6 +154,43 @@ describe('sdk isolation seam', () => {
       ]) {
         expect(classifySdkError(new McpError(code, 'x'), SESSION)).toEqual({ kind: 'protocol', code });
       }
+    });
+
+    test('maps a guarded-fetch refusal to egress-blocked, carrying only the reason kind', () => {
+      const refusal = new SaferFetch.GuardedFetchError({
+        kind: 'blocked-by-guard',
+        url: 'http://10.0.0.5/mcp',
+        hop: 0,
+        guard: 'blockPrivateNetworks',
+        detail: '10.0.0.5 is private'
+      });
+      expect(classifySdkError(refusal, SESSION)).toEqual({
+        kind: 'egress-blocked',
+        reason: 'blocked-by-guard'
+      });
+      expect(classifySdkError(refusal, CONNECT)).toEqual({
+        kind: 'egress-blocked',
+        reason: 'blocked-by-guard'
+      });
+      const redirect = new SaferFetch.GuardedFetchError({
+        kind: 'redirect-rejected',
+        url: 'https://example.com/mcp',
+        status: 302
+      });
+      expect(classifySdkError(redirect, CLOSED)).toEqual({
+        kind: 'egress-blocked',
+        reason: 'redirect-rejected'
+      });
+    });
+
+    test.each<{ label: string; reason: SaferFetch.FetchFailureReason }>([
+      { label: 'network', reason: { kind: 'network', detail: 'ECONNREFUSED' } },
+      { label: 'timeout', reason: { kind: 'timeout', phase: 'headers', elapsedMs: 10, limitMs: 10 } },
+      { label: 'aborted', reason: { kind: 'aborted' } }
+    ])('maps a guarded-fetch $label failure as a plain fetch failure, not a refusal', ({ reason }) => {
+      const error = new SaferFetch.GuardedFetchError(reason);
+      expect(classifySdkError(error, SESSION)).toEqual({ kind: 'transport' });
+      expect(classifySdkError(error, CLOSED)).toEqual({ kind: 'not-connected' });
     });
 
     test('maps the SDK UnauthorizedError to unauthorized with no status', () => {
