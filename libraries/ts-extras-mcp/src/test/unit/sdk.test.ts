@@ -185,12 +185,26 @@ describe('sdk isolation seam', () => {
 
     test.each<{ label: string; reason: SaferFetch.FetchFailureReason }>([
       { label: 'network', reason: { kind: 'network', detail: 'ECONNREFUSED' } },
-      { label: 'timeout', reason: { kind: 'timeout', phase: 'headers', elapsedMs: 10, limitMs: 10 } },
-      { label: 'aborted', reason: { kind: 'aborted' } }
+      { label: 'aborted', reason: { kind: 'aborted' } },
+      {
+        label: 'unknown (internal)',
+        reason: { kind: 'unknown', detail: 'saferFetch: unexpected error: boom' }
+      }
     ])('maps a guarded-fetch $label failure as a plain fetch failure, not a refusal', ({ reason }) => {
       const error = new SaferFetch.GuardedFetchError(reason);
       expect(classifySdkError(error, SESSION)).toEqual({ kind: 'transport' });
       expect(classifySdkError(error, CLOSED)).toEqual({ kind: 'not-connected' });
+    });
+
+    test("maps a guarded fetch's headers timeout to timeout", () => {
+      const error = new SaferFetch.GuardedFetchError({
+        kind: 'timeout',
+        phase: 'headers',
+        elapsedMs: 10,
+        limitMs: 10
+      });
+      expect(classifySdkError(error, SESSION)).toEqual({ kind: 'timeout' });
+      expect(classifySdkError(error, CONNECT)).toEqual({ kind: 'timeout' });
     });
 
     test('maps the SDK UnauthorizedError to unauthorized with no status', () => {

@@ -196,6 +196,41 @@ describe('Streamable-HTTP egress through an injected fetch', () => {
     expect(real.methods).not.toContain('GET');
   });
 
+  test("a slow tool on a JSON-response server outlives the guarded fetch's headers deadline: timeout, not transport", async () => {
+    // In JSON-response mode the server holds the POST's response headers until the tool is done, so
+    // the guarded fetch's headersTimeoutMs — not callMcpTool's timeoutMs — is what bounds the call.
+    const slow = await startRealMcpServer(undefined, { enableJsonResponse: true, slowToolMs: 400 });
+    try {
+      const tight = (
+        await connectMcpSession({
+          transport: createHttpTransport({
+            url: slow.url,
+            fetch: guardedFetch({ headersTimeoutMs: 150 })
+          }).orThrow()
+        })
+      ).orThrow();
+      sessions.push(tight);
+      expect(await callMcpTool(tight, 'slow', {}, { timeoutMs: 60000 })).toFailWithDetail(
+        /guarded fetch failed: timeout/,
+        { kind: 'timeout' }
+      );
+      // Sized to the longest request timeout, the same server and tool succeed.
+      const sized = (
+        await connectMcpSession({
+          transport: createHttpTransport({
+            url: slow.url,
+            fetch: guardedFetch({ headersTimeoutMs: 5000 })
+          }).orThrow()
+        })
+      ).orThrow();
+      sessions.push(sized);
+      expect(await callMcpTool(sized, 'slow', {}, { timeoutMs: 5000 })).toSucceed();
+    } finally {
+      await Promise.all(sessions.splice(0).map((s) => closeMcpSession(s)));
+      await slow.stop();
+    }
+  });
+
   test("a guarded fetch's network failure is a transport failure, not a refusal", async () => {
     const gone = await startRealMcpServer();
     await gone.stop();

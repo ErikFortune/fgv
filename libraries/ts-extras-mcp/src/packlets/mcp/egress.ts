@@ -26,16 +26,13 @@
  * @packageDocumentation
  */
 
-import { Logging, captureResult } from '@fgv/ts-utils';
+import { Logging, captureResult, succeed } from '@fgv/ts-utils';
+import { SaferFetch } from '@fgv/ts-extras';
 
 import { type McpFailureReason, type McpFetch } from './model';
 import { printable } from './request';
-import {
-  type McpOAuthClientProvider,
-  classifySdkError,
-  makeUnauthorizedError,
-  readResourceMetadataUrl
-} from './sdk';
+import { type McpOAuthClientProvider } from './sdkTypes';
+import { classifySdkError, makeUnauthorizedError, readResourceMetadataUrl } from './sdk';
 
 /**
  * A `resource_metadata` URL as this package will report it: an `http:` or `https:` URL whose
@@ -55,6 +52,28 @@ export function acceptResourceMetadataUrl(url: URL | undefined): string | undefi
 }
 
 /**
+ * Whether `hostname` is a loopback host: `localhost`, or an address literal (IPv6 in brackets) that
+ * classifies as loopback.
+ */
+function _isLoopbackHost(hostname: string): boolean {
+  const literal = hostname.startsWith('[') && hostname.endsWith(']') ? hostname.slice(1, -1) : hostname;
+  return (
+    hostname === 'localhost' ||
+    SaferFetch.classifyAddress(literal)
+      .onSuccess((classified) => succeed(classified.classification === 'loopback'))
+      .orDefault(false)
+  );
+}
+
+/**
+ * Whether an authorization endpoint may be handed to the consumer to open: `https:`, or `http:` on a
+ * loopback host only, as OAuth 2.1 allows. The URL comes from server-supplied metadata.
+ */
+function _acceptableAuthorizationUrl(url: URL): boolean {
+  return url.protocol === 'https:' || (url.protocol === 'http:' && _isLoopbackHost(url.hostname));
+}
+
+/**
  * Wraps the consumer's OAuth provider so that the steps that start an interactive authorization run
  * only while the consumer's connect is in progress.
  *
@@ -68,9 +87,9 @@ export function acceptResourceMetadataUrl(url: URL | undefined): string | undefi
  * Gated, in the order `auth()` calls them: `state` (where a provider typically mints and stores the
  * CSRF value), `saveCodeVerifier`, `redirectToAuthorization`. Outside the window each rejects with
  * the SDK's own `UnauthorizedError`, so the operation fails `'unauthorized'` before the first of
- * them has run. Inside it, `redirectToAuthorization` is still refused for a URL that is not `http:`
- * or `https:` — the authorization endpoint comes from server-supplied metadata, and a consumer is
- * expected to open it in a browser.
+ * them has run. Inside it, `redirectToAuthorization` is still refused for a URL that is neither
+ * `https:` nor `http:` on a loopback host — the authorization endpoint comes from server-supplied
+ * metadata, and a consumer is expected to open it in a browser.
  *
  * **Not gated, and so able to run from those background paths:** discovery and
  * `saveDiscoveryState`, dynamic client registration and `saveClientInformation`, a token refresh and
@@ -99,9 +118,11 @@ function _gateInteractive(consumer: McpOAuthClientProvider, isOpen: () => boolea
           if (!isOpen()) {
             return refused(outsideWindow);
           }
-          return url.protocol === 'https:' || url.protocol === 'http:'
+          return _acceptableAuthorizationUrl(url)
             ? target.redirectToAuthorization(url)
-            : refused('the authorization server named an authorization endpoint that is not http(s)');
+            : refused(
+                'the authorization server named an authorization endpoint that is neither https nor http on a loopback host'
+              );
         };
       }
       const value: unknown = Reflect.get(target, prop, target);

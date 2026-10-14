@@ -31,6 +31,10 @@
  * The only `as unknown as` casts in the package live here, at the boundary where the real SDK
  * objects are narrowed to the local projection.
  *
+ * One public SDK type is aliased elsewhere: `McpOAuthClientProvider`, in `sdkTypes.ts`, a type-only
+ * leaf. It lives apart so that `model.ts` can name it without importing this module, which itself
+ * imports `model.ts`; a rename touches both files.
+ *
  * @internal
  */
 
@@ -272,20 +276,6 @@ export function terminateHttpSession(transport: ISdkTransport): Promise<void> {
 }
 
 /**
- * The MCP SDK's OAuth client provider — the object that holds a client's registration and tokens
- * and starts the interactive authorization — under this package's name.
- *
- * @remarks
- * This is the SDK's own `OAuthClientProvider` interface from
- * `@modelcontextprotocol/sdk/client/auth.js`, unchanged: implement it (over your own keystore, for
- * example) and pass it as {@link IMcpHttpTransportParams.authProvider}. The package wraps it before
- * handing it to the SDK, so that the interactive steps — `state`, `saveCodeVerifier` and
- * `redirectToAuthorization` — run only inside {@link connectMcpSession}.
- * @public
- */
-export type McpOAuthClientProvider = OAuthClientProvider;
-
-/**
  * Parameters for the Streamable-HTTP transport factory.
  * @internal
  */
@@ -295,7 +285,7 @@ export interface ISdkHttpParams {
   /** The `fetch` the transport sends every request through: the package's egress wrapper. */
   readonly fetch: McpFetch;
   /** The OAuth provider the SDK authorizes with: the package's gated wrapper of the consumer's. */
-  readonly authProvider?: McpOAuthClientProvider;
+  readonly authProvider?: OAuthClientProvider;
 }
 
 /**
@@ -379,14 +369,15 @@ export function isServerAuthoredError(error: unknown): boolean {
 }
 
 /**
- * Guarded-fetch failures that are not refusals: the network failed, the server did not answer in
- * time, or the request was aborted (in practice, by the transport's own close). They classify as
- * the same failure through an unguarded `fetch` would, so `'egress-blocked'` means only "the
- * configuration refused this".
+ * Guarded-fetch failures that are not refusals: the network failed, the request was aborted (in
+ * practice, by the transport's own close), or the guarded fetch failed internally (`'unknown'`: a
+ * bug, or a logger that threw). They classify as the same failure through an unguarded `fetch`
+ * would, so `'egress-blocked'` means only "the configuration refused this". A guarded fetch's
+ * `'timeout'` is handled before this set is consulted: it classifies as `'timeout'`.
  */
-const TRANSIENT_FETCH_FAILURES: ReadonlySet<SaferFetch.FetchFailureReason['kind']> = new Set<
+const NON_REFUSAL_FETCH_FAILURES: ReadonlySet<SaferFetch.FetchFailureReason['kind']> = new Set<
   SaferFetch.FetchFailureReason['kind']
->(['network', 'timeout', 'aborted']);
+>(['network', 'aborted', 'unknown']);
 
 /**
  * Whether a value is the error the SDK raises when a response fails its result schema. The SDK
@@ -447,8 +438,16 @@ function _classifyInspectable(error: unknown, context: SdkFailureContext): McpFa
   }
   // The SDK passes a rejected `fetch` through unchanged — from `send`, from `connect`, and from
   // `terminateSession` — so the guarded fetch's own error is what arrives here.
-  if (error instanceof SaferFetch.GuardedFetchError && !TRANSIENT_FETCH_FAILURES.has(error.reason.kind)) {
-    return { kind: 'egress-blocked', reason: error.reason.kind };
+  if (error instanceof SaferFetch.GuardedFetchError) {
+    const kind = error.reason.kind;
+    // The guarded fetch's headers deadline: a server that held its response headers too long — a
+    // slow tool on a server that answers with JSON rather than a stream holds them until it is done.
+    if (kind === 'timeout') {
+      return { kind: 'timeout' };
+    }
+    if (!NON_REFUSAL_FETCH_FAILURES.has(kind)) {
+      return { kind: 'egress-blocked', reason: kind };
+    }
   }
   if (error instanceof StreamableHTTPError || error instanceof SseError) {
     return _classifyHttpStatus(error.code, context);

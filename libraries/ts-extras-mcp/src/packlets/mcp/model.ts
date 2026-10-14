@@ -29,9 +29,7 @@ import { type Logging } from '@fgv/ts-utils';
 import { type AiAssist, type SaferFetch } from '@fgv/ts-extras';
 import { type JsonValue } from '@fgv/ts-json-base';
 
-import { type McpOAuthClientProvider } from './sdk';
-
-export type { McpOAuthClientProvider } from './sdk';
+import { type McpOAuthClientProvider } from './sdkTypes';
 
 // ============================================================================
 // Transport
@@ -87,6 +85,13 @@ export interface IMcpHttpTransportParams {
    * long-lived event streams. A refusal fails the operation with the `'egress-blocked'`
    * {@link McpFailureReason}.
    *
+   * **Size `headersTimeoutMs` to your longest MCP request timeout.** The guarded fetch's headers
+   * deadline (default 10 s) runs from each request until its response headers arrive. A server
+   * that answers with JSON rather than an SSE stream holds a `tools/call`'s headers until the tool
+   * finishes, so a 15 s tool fails at 10 s — as `'timeout'` — whatever `timeoutMs` the call was
+   * given. Set `headersTimeoutMs` on `createGuardedFetch` to at least your longest `timeoutMs`.
+   * The package cannot see the guarded fetch's deadline, so it does not warn.
+   *
    * Refusals are recognized by class, so the guarded fetch must come from the same `@fgv/ts-extras`
    * this package resolves (it is a peer dependency): one from a second installed copy classifies as
    * `'transport'`.
@@ -115,9 +120,13 @@ export interface IMcpHttpTransportParams {
    * `state`, `saveCodeVerifier` and `redirectToAuthorization` are forwarded while the consumer's
    * connect is in progress, and refused at any other time — on a later call, on the SDK's own
    * reconnect of the standalone event stream, and on close. A refused step fails the operation with
-   * the `'unauthorized'` {@link McpFailureReason} before any of the three has run; reconnect to
-   * authorize. `redirectToAuthorization` is also refused for a URL that is not `http:`/`https:`:
-   * the authorization endpoint comes from server-supplied metadata, so treat the URL as untrusted.
+   * the `'unauthorized'` {@link McpFailureReason}; reconnect to authorize. For a flow that starts
+   * outside the window the refusal comes before any of the three has run. A flow that starts
+   * inside a connect which then times out or is aborted can already have passed `state` and
+   * `saveCodeVerifier` — and persisted what your provider persists there — and be refused only at
+   * `redirectToAuthorization`. `redirectToAuthorization` is also refused for a URL that is neither
+   * `https:` nor `http:` on a loopback host: the authorization endpoint comes from server-supplied
+   * metadata, so treat the URL as untrusted.
    *
    * **Non-interactive steps run wherever the SDK needs them**, including on its background
    * reconnect of the event stream: discovery and `saveDiscoveryState`, client registration and
@@ -125,7 +134,8 @@ export interface IMcpHttpTransportParams {
    * authorization server answers `invalid_grant` or `invalid_client`.
    *
    * After `redirectToAuthorization`, the connect fails `'unauthorized'`. Exchange the authorization
-   * code with the SDK's `auth()` (which saves the tokens through this provider), then connect again
+   * code with the SDK's `auth()` (which saves the tokens through this provider) — **pass your
+   * guarded fetch as its `fetchFn`, or the token request bypasses the guard** — then connect again
    * with a new transport.
    *
    * Static `headers` are never sent to the authorization server: they are dropped from any request
@@ -390,12 +400,12 @@ export interface IMcpRequestOptions {
  * | kind | produced when |
  * |---|---|
  * | `'tool-error'` | The tool ran and returned a result flagged `isError`. The failure message is the tool's own text, unprefixed (see {@link callMcpTool}). |
- * | `'timeout'` | The SDK's request timeout (or `maxTotalTimeoutMs`) elapsed: `McpError` code `-32001`. |
+ * | `'timeout'` | The SDK's request timeout (or `maxTotalTimeoutMs`) elapsed: `McpError` code `-32001`. Also a guarded `fetch`'s headers deadline (`headersTimeoutMs`) — see {@link IMcpHttpTransportParams.fetch}. |
  * | `'aborted'` | The caller's `AbortSignal` fired before the request settled. |
  * | `'not-connected'` | The session's connection is closed: the call was made after it closed, or it closed while the call was in flight. Decided by the observed close, which the SDK reports before it fails the in-flight requests. During the connect handshake, **any** `-32000` is `'not-connected'` — whether the SDK raised it or the server sent it — because a failed handshake leaves no session either way. |
  * | `'session-expired'` | A Streamable-HTTP server answered HTTP 404 for an established session: it no longer recognizes the session id (typically after a server restart). |
  * | `'unauthorized'` | The server refused the credentials: HTTP 401 or 403, or the SDK's `UnauthorizedError` — including an interactive authorization refused outside the connect (see {@link IMcpHttpTransportParams.authProvider}) — or an OAuth error from the authorization server. `resourceMetadataUrl` is the `resource_metadata` URL of the endpoint's most recent `WWW-Authenticate` challenge, when it sent a valid one. |
- * | `'egress-blocked'` | The transport's guarded `fetch` refused the request (`SaferFetch.GuardedFetchError`): an address or request guard, a rejected redirect, a refused response head or an unsupported request. `reason` is the refusal's `FetchFailureReason` kind, never its URL-bearing detail. A configuration refusal: retrying cannot help. A guarded fetch's `'network'`, `'timeout'` and `'aborted'` failures are not refusals and classify as a plain `fetch` failure would. |
+ * | `'egress-blocked'` | The transport's guarded `fetch` refused the request (`SaferFetch.GuardedFetchError`): an address or request guard, a rejected redirect, a refused response head or an unsupported request. `reason` is the refusal's `FetchFailureReason` kind, never its URL-bearing detail. A configuration refusal: retrying cannot help. A guarded fetch's `'timeout'` (its headers deadline) is `'timeout'`; its `'network'`, `'aborted'` and `'unknown'` (an internal failure) are not refusals and classify as a plain `fetch` failure would (`'transport'`, or `'not-connected'` once closed). |
  * | `'protocol'` | The server answered with a JSON-RPC error (`code` is its code — including `-32000` on a session that is still open, which servers use as a generic error), or the SDK rejected a response that failed its result schema (no `code`). |
  * | `'transport'` | Anything else: a network or child-process I/O failure, a non-2xx HTTP status not listed above, or an error the SDK raised without a type — including the handshake's protocol-version refusal, which the SDK raises as a plain `Error`. This is the catch-all that makes the classification total. |
  * | `'invalid-handle'` | The session or transport handle did not come from this package, or the transport handle was already used by an earlier connect. A caller bug; retrying cannot help. |

@@ -44,16 +44,16 @@ See [`docs/FUTURE.md`](../../docs/FUTURE.md) for the tracked follow-ups.
 
 ## The primitives
 
-| Function | Return |
-|---|---|
-| `createStdioTransport({ command, args?, env?, cwd? })` | `Result<IMcpTransport>` |
-| `createHttpTransport({ url, headers?, fetch?, authProvider? })` | `Result<IMcpTransport>` |
-| `createCustomTransport(sdkTransport)` | `Result<IMcpTransport>` |
-| `connectMcpSession({ transport, clientName?, clientVersion?, logger?, onClose?, onToolsChanged?, timeoutMs?, signal? })` | `Promise<DetailedResult<IMcpSession, McpFailureReason>>` |
-| `closeMcpSession(session)` | `Promise<Result<true>>` — over Streamable HTTP, ends the server's session with a best-effort `DELETE` (bounded to 2 s) before closing |
-| `listMcpTools(session, options?)` | `Promise<DetailedResult<ReadonlyArray<IMcpToolDescriptor>, McpFailureReason>>` |
-| `callMcpTool(session, name, args, options?)` | `Promise<DetailedResult<IMcpToolCallResult, McpFailureReason>>` — `{ content, blocks, structuredContent? }` |
-| `adaptMcpTools(session, { logger? })` | `Promise<DetailedResult<IAdaptMcpToolsResult, McpFailureReason>>` |
+| Function                                                                                                                 | Return                                                                                                                                |
+| ------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `createStdioTransport({ command, args?, env?, cwd? })`                                                                   | `Result<IMcpTransport>`                                                                                                               |
+| `createHttpTransport({ url, headers?, fetch?, authProvider? })`                                                          | `Result<IMcpTransport>`                                                                                                               |
+| `createCustomTransport(sdkTransport)`                                                                                    | `Result<IMcpTransport>`                                                                                                               |
+| `connectMcpSession({ transport, clientName?, clientVersion?, logger?, onClose?, onToolsChanged?, timeoutMs?, signal? })` | `Promise<DetailedResult<IMcpSession, McpFailureReason>>`                                                                              |
+| `closeMcpSession(session)`                                                                                               | `Promise<Result<true>>` — over Streamable HTTP, ends the server's session with a best-effort `DELETE` (bounded to 2 s) before closing |
+| `listMcpTools(session, options?)`                                                                                        | `Promise<DetailedResult<ReadonlyArray<IMcpToolDescriptor>, McpFailureReason>>`                                                        |
+| `callMcpTool(session, name, args, options?)`                                                                             | `Promise<DetailedResult<IMcpToolCallResult, McpFailureReason>>` — `{ content, blocks, structuredContent? }`                           |
+| `adaptMcpTools(session, { logger? })`                                                                                    | `Promise<DetailedResult<IAdaptMcpToolsResult, McpFailureReason>>`                                                                     |
 
 `listMcpTools`' `options` is an `IMcpRequestOptions`: `timeoutMs`, `signal`, `onProgress`,
 `resetTimeoutOnProgress`, `maxTotalTimeoutMs`. `callMcpTool`'s is an `IMcpCallToolOptions`: the same,
@@ -86,7 +86,12 @@ your own egress guard.
 
 ```ts
 const controller = new AbortController();
-const result = await callMcpTool(session, 'search', { q: 'x' }, { timeoutMs: 10_000, signal: controller.signal });
+const result = await callMcpTool(
+  session,
+  'search',
+  { q: 'x' },
+  { timeoutMs: 10_000, signal: controller.signal }
+);
 if (result.isFailure() && result.detail?.kind === 'timeout') {
   // ...
 }
@@ -105,9 +110,19 @@ default redirect following.
 ```typescript
 import { SaferFetch } from '@fgv/ts-extras';
 
-const fetch = SaferFetch.createGuardedFetch({ addressGuard: SaferFetch.blockPrivateNetworks() }).orThrow();
+const fetch = SaferFetch.createGuardedFetch({
+  addressGuard: SaferFetch.blockPrivateNetworks(),
+  // At least your longest MCP request timeoutMs — see below.
+  headersTimeoutMs: 120_000
+}).orThrow();
 const transport = createHttpTransport({ url, headers: { 'x-api-key': key }, fetch, authProvider }).orThrow();
 ```
+
+- **Size `headersTimeoutMs` to your longest MCP request timeout.** The guarded fetch's headers
+  deadline (default 10 s) runs from each request to its response headers. A server that answers
+  with JSON instead of an SSE stream holds a `tools/call`'s headers until the tool finishes, so a
+  slow tool fails at that deadline — as `timeout` — whatever `timeoutMs` the call was given. The
+  package cannot see the guarded fetch's deadline, so it does not warn.
 
 - A refusal fails the operation with `egress-blocked`, carrying the refusal's kind only (never its
   URL). A refused `DELETE` does not fail the close; a refused event stream is logged at `detail`.
@@ -116,9 +131,14 @@ const transport = createHttpTransport({ url, headers: { 'x-api-key': key }, fetc
 - `authProvider` is the SDK's `OAuthClientProvider` (`McpOAuthClientProvider`). **Interactive
   authorization — `state`, `saveCodeVerifier` and `redirectToAuthorization` — runs only inside
   `connectMcpSession`.** Elsewhere (a later call, the SDK's own reconnect of the event stream, the
-  close) it is refused and the operation fails `unauthorized`; reconnect to authorize. A
-  non-`http(s)` authorization URL is always refused. Discovery, client registration, token refresh,
-  `saveTokens` and `invalidateCredentials` are not interactive and run wherever the SDK needs them.
+  close) it is refused and the operation fails `unauthorized`; reconnect to authorize. A flow
+  started inside a connect that then times out or is aborted can already have run `state` and
+  `saveCodeVerifier`, and is refused at `redirectToAuthorization`. An authorization URL that is
+  neither `https:` nor `http:` on a loopback host is always refused. Discovery, client
+  registration, token refresh, `saveTokens` and `invalidateCredentials` are not interactive and run
+  wherever the SDK needs them.
+- After the redirect, exchange the code with the SDK's `auth()` and **pass your guarded fetch as its
+  `fetchFn`**, or the token request bypasses the guard; then connect again with a new transport.
 - `unauthorized` carries `resourceMetadataUrl` — the `resource_metadata` URL from the server's
   `WWW-Authenticate` challenge — when it sent a valid one. It is server-chosen: fetch it only through
   the same guarded fetch.
@@ -143,12 +163,7 @@ const session = (await connectMcpSession({ transport })).orThrow();
 ## Usage
 
 ```typescript
-import {
-  createStdioTransport,
-  connectMcpSession,
-  adaptMcpTools,
-  closeMcpSession
-} from '@fgv/ts-extras-mcp';
+import { createStdioTransport, connectMcpSession, adaptMcpTools, closeMcpSession } from '@fgv/ts-extras-mcp';
 import { AiAssist } from '@fgv/ts-extras';
 
 // 1. Connect to an MCP server (stdio spawns a subprocess; see the security note below).

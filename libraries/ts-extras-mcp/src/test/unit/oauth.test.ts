@@ -667,14 +667,28 @@ describe('McpHttpEgress edges', () => {
     await expect(egress.interactive(async () => gated.state!())).resolves.toBe('state-1');
   });
 
-  test('inside the window, an authorization URL that is not http(s) is still refused', async () => {
+  test.each<{ label: string; url: string }>([
+    { label: 'https', url: 'https://as.example.com/authorize' },
+    { label: 'http on 127.0.0.1', url: 'http://127.0.0.1:9000/authorize' },
+    { label: 'http on [::1]', url: 'http://[::1]:9000/authorize' },
+    { label: 'http on localhost', url: 'http://localhost:9000/authorize' }
+  ])('inside the window, an authorization URL over $label is forwarded', async ({ url }) => {
+    const provider = new TestProvider(undefined);
+    const egress = new McpHttpEgress(ENDPOINT, undefined, undefined, provider);
+    await egress.interactive(async () => egress.authProvider!.redirectToAuthorization(new URL(url)));
+    expect(provider.redirects.map((u) => u.href)).toEqual([new URL(url).href]);
+  });
+
+  test.each<{ label: string; url: string }>([
+    { label: 'plain http to a remote host', url: 'http://as.example.com/authorize' },
+    { label: 'http to a private address', url: 'http://10.0.0.5/authorize' },
+    { label: 'a file: URL', url: 'file:///etc/passwd' }
+  ])('inside the window, an authorization URL that is $label is still refused', async ({ url }) => {
     const provider = new TestProvider(undefined);
     const egress = new McpHttpEgress(ENDPOINT, undefined, undefined, provider);
     await expect(
-      egress.interactive(async () =>
-        egress.authProvider!.redirectToAuthorization(new URL('file:///etc/passwd'))
-      )
-    ).rejects.toThrow(/not http\(s\)/);
+      egress.interactive(async () => egress.authProvider!.redirectToAuthorization(new URL(url)))
+    ).rejects.toThrow(/neither https nor http on a loopback host/);
     expect(provider.redirects).toEqual([]);
   });
 

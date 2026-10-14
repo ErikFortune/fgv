@@ -47,7 +47,21 @@ export interface IRealMcpServer {
   stop(): Promise<void>;
 }
 
-export async function startRealMcpServer(gate?: RequestGate): Promise<IRealMcpServer> {
+/** How the server answers. */
+export interface IRealMcpServerOptions {
+  /**
+   * Answer each `POST` with one JSON body rather than an SSE stream (the SDK's `enableJsonResponse`).
+   * The response headers then wait for the whole request — a slow tool holds them.
+   */
+  readonly enableJsonResponse?: boolean;
+  /** Registers a `slow` tool that answers after this many milliseconds. */
+  readonly slowToolMs?: number;
+}
+
+export async function startRealMcpServer(
+  gate?: RequestGate,
+  options?: IRealMcpServerOptions
+): Promise<IRealMcpServer> {
   const methods: string[] = [];
   const closedSessions: string[] = [];
   const transports = new Map<string, StreamableHTTPServerTransport>();
@@ -71,6 +85,7 @@ export async function startRealMcpServer(gate?: RequestGate): Promise<IRealMcpSe
     }
     const transport = new StreamableHTTPServerTransport({
       sessionIdGenerator: () => `session-${nextSession++}`,
+      enableJsonResponse: options?.enableJsonResponse === true,
       onsessioninitialized: (sessionId) => {
         transports.set(sessionId, transport);
       },
@@ -82,6 +97,13 @@ export async function startRealMcpServer(gate?: RequestGate): Promise<IRealMcpSe
     mcp.registerTool('echo', { description: 'echoes' }, async () => ({
       content: [{ type: 'text', text: 'echoed' }]
     }));
+    const slowMs = options?.slowToolMs;
+    if (slowMs !== undefined) {
+      mcp.registerTool('slow', { description: 'answers late' }, async () => {
+        await new Promise((resolve) => setTimeout(resolve, slowMs));
+        return { content: [{ type: 'text', text: 'late' }] };
+      });
+    }
     mcp
       .connect(transport)
       .then(() => transport.handleRequest(req, res))
