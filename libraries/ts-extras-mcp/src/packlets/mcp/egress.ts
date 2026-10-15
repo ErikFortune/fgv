@@ -192,9 +192,9 @@ function _gateInteractive(consumer: McpOAuthClientProvider, isOpen: () => boolea
  *
  * The wrapper never alters a response, and rethrows every rejection unchanged, so the SDK — and
  * the classifier after it — sees exactly what the underlying `fetch` produced. It alters a request
- * in one way only: the consumer's static headers are removed from a request to any origin other
- * than the endpoint's (in practice, the authorization server). The SDK merges them into every
- * auth request, and a static `x-api-key` has no business at a server the MCP server chose.
+ * in one way only: it **applies** the consumer's static headers, and only to a request for the MCP
+ * endpoint's origin. The SDK is not given them, so a request to any other origin (in practice, the
+ * authorization server the MCP server named) never carries them.
  * @internal
  */
 export class McpHttpEgress {
@@ -274,7 +274,7 @@ export class McpHttpEgress {
     const target = new URL(String(url));
     // Called inside `then`, so a consumer `fetch` that throws rather than rejecting is still seen.
     const response = await Promise.resolve()
-      .then(() => underlying(url, this._forOrigin(target, init)))
+      .then(() => underlying(url, this._withStaticHeaders(target, init)))
       .catch((err: unknown) => {
         this._noteRefusal(target, init, err);
         throw err;
@@ -283,19 +283,25 @@ export class McpHttpEgress {
     return response;
   }
 
-  /** Removes the consumer's static headers from a request leaving the endpoint's origin. */
-  private _forOrigin(target: URL, init: RequestInit | undefined): RequestInit | undefined {
-    if (this._staticHeaders.size === 0 || target.origin === this._endpoint.origin) {
+  /**
+   * Applies the consumer's static headers to a request for the MCP endpoint's origin, and to no
+   * other.
+   *
+   * @remarks
+   * The SDK is never given the static headers: if it were, its auth fetch would merge them into
+   * every OAuth request with the caller's casing, beside the SDK's own lowercased ones — so a static
+   * `Authorization` and the `client_secret_basic` `authorization` would both reach the authorization
+   * server, joined. Applying them here, with `set`, means the authorization server never sees them,
+   * and on the endpoint's origin a static header overrides one the SDK set under the same name (the
+   * provider's `Authorization: Bearer`) exactly as the SDK's own merge did.
+   */
+  private _withStaticHeaders(target: URL, init: RequestInit | undefined): RequestInit | undefined {
+    if (this._staticHeaders.size === 0 || target.origin !== this._endpoint.origin) {
       return init;
     }
     const headers = new Headers(init?.headers);
     for (const [name, value] of this._staticHeaders) {
-      // Only the consumer's own value: a header the SDK set for this request under the same name
-      // (client authentication on the token endpoint) is the SDK's to send. Both sides are
-      // `Headers`-normalized, so a combined value compares whole.
-      if (headers.get(name) === value) {
-        headers.delete(name);
-      }
+      headers.set(name, value);
     }
     return { ...init, headers };
   }

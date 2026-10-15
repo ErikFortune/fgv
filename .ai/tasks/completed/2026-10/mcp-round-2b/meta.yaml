@@ -25,7 +25,7 @@ summary:
     run only inside connectMcpSession (and an authorization URL that is neither https nor loopback http is always refused);
     resourceMetadataUrl is read with the SDK's exported extractWWWAuthenticateParams in the wrapper.
     Real SDK servers throughout (the protected one behind the SDK's own requireBearerAuth via an
-    Express shim, plus a minimal local authorization server); a 29-row revert matrix, 28 red and one
+    Express shim, plus a minimal local authorization server); a 36-row revert matrix, 35 red and one
     (R7, a late-abort check in a microtask-only window) that no test can isolate. After the
     orchestrator review a guarded headers timeout classifies as 'timeout' (a JSON-response server
     holds a slow tool's headers) and consumers are told to size headersTimeoutMs to their longest
@@ -35,8 +35,9 @@ summary:
     A guarded fetch's network, aborted and internal (unknown) failures classify as before, and its
     timeout as 'timeout', rather than as egress-blocked (the brief said any GuardedFetchError). The SDK can start interactive
     authorization from its detached standalone GET and its reconnect timer; this was prevented by
-    gating the provider rather than the paths. Unasked hardening: static headers are dropped from
-    requests to another origin (the SDK merges them into requests to the authorization server),
+    gating the provider rather than the paths. Unasked hardening: static headers reach only the MCP
+    endpoint's origin (the SDK merged them into requests to the authorization server; after Copilot
+    round 3 the egress applies them and the SDK never holds them),
     failure messages never carry server-authored HTTP or OAuth error text, and OAuthError classifies
     as unauthorized. The headers deadline on the streaming path runs until the response-headers guard
     accepts. mcp-session-id was not added to safer-fetch's default stripped headers. The buffered
@@ -75,4 +76,4 @@ relatedStreams:
       id: mcp-client-cancellation,
       relationship: 'built the McpFailureReason vocabulary (#722) extended here'
     }
-sourceHash: sha256:b774376086532b39 # over brief.md + result.md + state.md
+sourceHash: sha256:06f7401b407377b5 # over brief.md + result.md + state.md

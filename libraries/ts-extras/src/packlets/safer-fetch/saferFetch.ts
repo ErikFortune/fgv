@@ -414,9 +414,23 @@ async function _cancelReader(reader: ReadableStreamDefaultReader<Uint8Array>): P
   await reader.cancel().catch(() => undefined);
 }
 
+/**
+ * A copy of the caller's bytes that nothing else holds.
+ *
+ * @remarks
+ * `new Uint8Array(bytes)` rather than `bytes.slice()`: a Node `Buffer` is a `Uint8Array` whose
+ * `slice()` returns a view over the same memory, which would copy nothing.
+ */
+function _ownBytes(bytes: Uint8Array): Uint8Array {
+  return new Uint8Array(bytes);
+}
+
 function _resolveCallOptions(options: ISaferFetchOptions): Outcome<IResolvedCallOptions> {
   const method = options.method ?? 'GET';
-  const body = options.body ?? undefined;
+  // Copied before the first `await`, for the same reason as a guarded fetch's body: the request
+  // guard approves this copy, and a caller mutating its array during the walk cannot change it.
+  const supplied = options.body ?? undefined;
+  const body = supplied instanceof Uint8Array ? _ownBytes(supplied) : supplied;
   if (body !== undefined && METHODS_WITHOUT_BODY.includes(method)) {
     return _unknown<IResolvedCallOptions>(`a ${method} request cannot carry a body.`);
   }
@@ -1449,11 +1463,16 @@ function _guardedBody(
   body: unknown,
   headers: Record<string, string>
 ): Outcome<string | Uint8Array | undefined> {
-  if (body === undefined || body === null || typeof body === 'string' || body instanceof Uint8Array) {
+  if (body === undefined || body === null || typeof body === 'string') {
     return _succeed(body ?? undefined);
   }
+  // Bytes are copied here, before the first `await`: the guards approve this copy, and a caller
+  // that mutates its buffer while they run cannot change what goes on the wire.
+  if (body instanceof Uint8Array) {
+    return _succeed(_ownBytes(body));
+  }
   if (body instanceof ArrayBuffer) {
-    return _succeed(new Uint8Array(body));
+    return _succeed(new Uint8Array(body.slice(0)));
   }
   if (body instanceof URLSearchParams) {
     headers['content-type'] ??= 'application/x-www-form-urlencoded;charset=UTF-8';

@@ -693,3 +693,87 @@ describe('createGuardedFetch', () => {
     });
   });
 });
+
+describe('request bodies are copied before the first await (Copilot round 3)', () => {
+  /** A gate the test opens, so a call can be held inside its address guard. */
+  function gate(): { readonly opened: Promise<void>; open: () => void } {
+    let open: () => void = () => undefined;
+    const opened = new Promise<void>((resolve) => {
+      open = resolve;
+    });
+    return { opened, open: () => open() };
+  }
+
+  const bodies: ReadonlyArray<{
+    label: string;
+    make: () => { body: Uint8Array | ArrayBuffer; bytes: Uint8Array };
+  }> = [
+    {
+      label: 'a Uint8Array',
+      make: () => {
+        const bytes = new Uint8Array([1, 2, 3]);
+        return { body: bytes, bytes };
+      }
+    },
+    {
+      label: 'an ArrayBuffer',
+      make: () => {
+        const buffer = new ArrayBuffer(3);
+        const bytes = new Uint8Array(buffer);
+        bytes.set([1, 2, 3]);
+        return { body: buffer, bytes };
+      }
+    },
+    {
+      label: 'a Node Buffer (whose slice() is a view)',
+      make: () => {
+        const bytes = Buffer.from([1, 2, 3]);
+        return { body: bytes, bytes };
+      }
+    }
+  ];
+
+  test.each(bodies)(
+    'createGuardedFetch: $label mutated while the address guard runs is sent as approved',
+    async ({ make }) => {
+      const held = gate();
+      const transport = respondWith(() => new Response('ok'));
+      const { body, bytes } = make();
+      const call = guarded(transport, { addressGuard: gatedGuard(held.opened) })(URL_UNDER_TEST, {
+        method: 'POST',
+        body: body as BodyInit
+      });
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      bytes[0] = 9;
+      held.open();
+      await call;
+      expect(Array.from(transport.calls[0].init.body as Uint8Array)).toEqual([1, 2, 3]);
+    }
+  );
+
+  test('saferFetchBytes: a body mutated while the guards run is the body the request guard saw, and is sent', async () => {
+    const held = gate();
+    const transport = respondWith(() => new Response('ok'));
+    const bytes = new Uint8Array([1, 2, 3]);
+    const seenByRequestGuard: number[][] = [];
+    const call = SaferFetch.saferFetchBytes(URL_UNDER_TEST, {
+      addressGuard: gatedGuard(held.opened),
+      requestGuard: {
+        name: 'records',
+        check: async (request) => {
+          seenByRequestGuard.push(Array.from(request.body as Uint8Array));
+          return succeed(request);
+        }
+      },
+      transport,
+      method: 'POST',
+      body: bytes
+    });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    bytes[0] = 9;
+    held.open();
+    await expect(call).resolves.toSucceed();
+    expect(seenByRequestGuard).toEqual([[1, 2, 3]]);
+    expect(Array.from(transport.calls[0].init.body as Uint8Array)).toEqual([1, 2, 3]);
+  });
+});

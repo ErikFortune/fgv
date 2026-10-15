@@ -60,6 +60,7 @@ const REFRESH_TOKEN: string = 'rtoken-5e7f20';
 const NEXT_REFRESH_TOKEN: string = 'rtoken-next-c3d4';
 const STALE_TOKEN: string = 'atoken-stale-0d9e';
 const API_KEY: string = 'apikey-static-77aa';
+const STATIC_TOKEN: string = 'atoken-static-header-5b1c';
 const SECRETS: ReadonlyArray<string> = [
   CLIENT_SECRET,
   ACCESS_TOKEN,
@@ -67,7 +68,8 @@ const SECRETS: ReadonlyArray<string> = [
   REFRESH_TOKEN,
   NEXT_REFRESH_TOKEN,
   STALE_TOKEN,
-  API_KEY
+  API_KEY,
+  STATIC_TOKEN
 ];
 
 const REDIRECT_URL: string = 'http://127.0.0.1:1/callback';
@@ -155,11 +157,23 @@ interface IAuthServer {
   readonly server: Server;
   readonly origin: string;
   readonly requests: IRecordedRequest[];
+  /** How the token endpoint expects the client to authenticate. Default `client_secret_post`. */
+  authMethod: 'client_secret_post' | 'client_secret_basic';
+  /** Called when the token endpoint issues a token. */
+  onToken?: () => void;
 }
 
 async function startAuthServer(): Promise<IAuthServer> {
+  // The settings a test may change; the handlers read them per request. Returned as the server
+  // record itself, so a test's change is what the next request sees.
+  const settings: Pick<IAuthServer, 'authMethod' | 'onToken'> = { authMethod: 'client_secret_post' };
   const requests: IRecordedRequest[] = [];
   let origin = '';
+  const basic = `Basic ${Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString('base64')}`;
+  const clientAuthenticated = (req: IncomingMessage, form: URLSearchParams): boolean =>
+    settings.authMethod === 'client_secret_basic'
+      ? req.headers.authorization === basic
+      : form.get('client_secret') === CLIENT_SECRET;
   const server = createServer((req, res) => {
     readBody(req)
       .then((body) => {
@@ -177,7 +191,7 @@ async function startAuthServer(): Promise<IAuthServer> {
               ['response_types_supported', ['code']],
               ['grant_types_supported', ['authorization_code', 'refresh_token']],
               ['code_challenge_methods_supported', ['S256']],
-              ['token_endpoint_auth_methods_supported', ['client_secret_post']]
+              ['token_endpoint_auth_methods_supported', [settings.authMethod]]
             ])
           );
           return;
@@ -187,8 +201,9 @@ async function startAuthServer(): Promise<IAuthServer> {
           if (
             form.get('grant_type') === 'refresh_token' &&
             form.get('refresh_token') === REFRESH_TOKEN &&
-            form.get('client_secret') === CLIENT_SECRET
+            clientAuthenticated(req, form)
           ) {
+            settings.onToken?.();
             sendJson(res, 200, {
               access_token: REFRESHED_TOKEN,
               token_type: 'Bearer',
@@ -210,7 +225,7 @@ async function startAuthServer(): Promise<IAuthServer> {
   });
   await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
   origin = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
-  return { server, origin, requests };
+  return Object.assign(settings, { server, origin, requests });
 }
 
 /** What the protected MCP server accepts and records. */
@@ -635,6 +650,69 @@ describe('OAuth through authProvider', () => {
     expect(provider.redirects).toEqual([]);
   });
 
+  test('a static Authorization with client_secret_basic: the authorization server sees only the Basic credential', async () => {
+    // The MCP server accepts only the static credential, so the first request is refused, the SDK
+    // refreshes at the authorization server (authenticating with Basic), and the retry gets through.
+    protection.valid.clear();
+    auth.authMethod = 'client_secret_basic';
+    auth.onToken = (): void => {
+      protection.valid.add(STATIC_TOKEN);
+    };
+    const provider = new TestProvider({
+      access_token: STALE_TOKEN,
+      token_type: 'Bearer',
+      refresh_token: REFRESH_TOKEN
+    });
+    const session = (
+      await connectMcpSession({
+        transport: createHttpTransport({
+          url: real.url,
+          headers: { Authorization: `Bearer ${STATIC_TOKEN}` },
+          fetch: guarded(),
+          authProvider: provider
+        }).orThrow(),
+        logger
+      })
+    ).orThrow();
+    sessions.push(session);
+    expect(await callMcpTool(session, 'echo', {})).toSucceed();
+    const tokenRequests = auth.requests.filter((r) => r.path === '/token');
+    expect(tokenRequests).toHaveLength(1);
+    expect(tokenRequests[0].headers.authorization).toBe(
+      `Basic ${Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString('base64')}`
+    );
+    for (const request of auth.requests) {
+      expect(String(request.headers.authorization ?? '')).not.toContain(STATIC_TOKEN);
+    }
+    // Every MCP request carried the static value — never the provider's tokens.
+    expect(protection.seen.length).toBeGreaterThan(0);
+    for (const request of protection.seen) {
+      expect(request.authorization).toBe(`Bearer ${STATIC_TOKEN}`);
+    }
+  });
+
+  test("a static Authorization overrides the provider's Bearer on MCP-origin requests", async () => {
+    protection.valid.add(STATIC_TOKEN);
+    const provider = new TestProvider({ access_token: ACCESS_TOKEN, token_type: 'Bearer' });
+    const session = (
+      await connectMcpSession({
+        transport: createHttpTransport({
+          url: real.url,
+          headers: { Authorization: `Bearer ${STATIC_TOKEN}` },
+          fetch: guarded(),
+          authProvider: provider
+        }).orThrow(),
+        logger
+      })
+    ).orThrow();
+    sessions.push(session);
+    expect(await callMcpTool(session, 'echo', {})).toSucceed();
+    expect(protection.seen.length).toBeGreaterThan(0);
+    for (const request of protection.seen) {
+      expect(request.authorization).toBe(`Bearer ${STATIC_TOKEN}`);
+    }
+  });
+
   test("headers are copied at createHttpTransport: a caller's later changes reach neither server", async () => {
     protection.valid.clear();
     protection.valid.add(REFRESHED_TOKEN);
@@ -776,7 +854,7 @@ describe('McpHttpEgress edges', () => {
     expect(egress.resourceMetadataUrl).toBe('https://as.example.com/meta');
   });
 
-  test('static headers are dropped from a request to another origin, even with no headers of its own', async () => {
+  test('static headers are applied, with set, to the endpoint origin only, and never to another', async () => {
     const sent: Array<RequestInit | undefined> = [];
     const egress = new McpHttpEgress(
       ENDPOINT,
@@ -784,19 +862,33 @@ describe('McpHttpEgress edges', () => {
         sent.push(args[1]);
         return new Response('ok');
       },
-      { 'X-Api-Key': ' k ' }
+      { 'X-Api-Key': ' k ', Authorization: 'Bearer static' }
     );
+    // Another origin: nothing is added, and the request's own headers pass through untouched.
     await egress.fetch('https://as.example.com/token');
-    await egress.fetch('https://as.example.com/token', { headers: { 'x-api-key': 'k', 'x-other': 'o' } });
-    // The same name with a value the SDK chose is the SDK's to send.
-    await egress.fetch('https://as.example.com/token', { headers: { 'x-api-key': 'different' } });
-    await egress.fetch(ENDPOINT, { headers: { 'x-api-key': 'k' } });
-    expect(new Headers(sent[0]?.headers).has('x-api-key')).toBe(false);
-    const second = new Headers(sent[1]?.headers);
-    expect(second.has('x-api-key')).toBe(false);
-    expect(second.get('x-other')).toBe('o');
-    expect(new Headers(sent[2]?.headers).get('x-api-key')).toBe('different');
-    expect(sent[3]).toEqual({ headers: { 'x-api-key': 'k' } });
+    await egress.fetch('https://as.example.com/token', { headers: { authorization: 'Basic abc' } });
+    // The endpoint's origin — the endpoint and any other path on it — gets them, overriding a header
+    // the SDK set under the same name, whatever its case.
+    await egress.fetch(ENDPOINT, { method: 'POST', headers: { Authorization: 'Bearer oauth' } });
+    await egress.fetch('https://mcp.example.com/.well-known/oauth-protected-resource/mcp');
+    expect(sent[0]).toBeUndefined();
+    expect(sent[1]).toEqual({ headers: { authorization: 'Basic abc' } });
+    const endpoint = new Headers(sent[2]?.headers);
+    expect(endpoint.get('x-api-key')).toBe('k');
+    expect(endpoint.get('authorization')).toBe('Bearer static');
+    expect(sent[2]?.method).toBe('POST');
+    expect(new Headers(sent[3]?.headers).get('x-api-key')).toBe('k');
+  });
+
+  test('with no static headers, a request passes through untouched', async () => {
+    const sent: Array<RequestInit | undefined> = [];
+    const egress = new McpHttpEgress(ENDPOINT, async (...args: Parameters<McpFetch>) => {
+      sent.push(args[1]);
+      return new Response('ok');
+    });
+    const init: RequestInit = { headers: { accept: 'application/json' } };
+    await egress.fetch(ENDPOINT, init);
+    expect(sent[0]).toBe(init);
   });
 
   test('the gated provider refuses the interactive steps outside the window and forwards them inside it', async () => {
@@ -990,7 +1082,7 @@ describe('the OAuth facade and transport construction (Copilot round 1)', () => 
     }
   });
 
-  test('case-variant duplicate static headers, combined as the SDK sends them, are not sent to another origin', async () => {
+  test('case-variant duplicate static headers are applied combined on the endpoint origin, and nowhere else', async () => {
     const sent: Array<RequestInit | undefined> = [];
     const egress = new McpHttpEgress(
       ENDPOINT,
@@ -1000,9 +1092,10 @@ describe('the OAuth facade and transport construction (Copilot round 1)', () => 
       },
       { 'X-Api-Key': 'a', 'x-api-key': 'b' }
     );
-    // What the SDK sends: the static headers spread into a record, then into `Headers` ("a, b").
-    await egress.fetch('https://as.example.com/token', { headers: { 'X-Api-Key': 'a', 'x-api-key': 'b' } });
+    await egress.fetch('https://as.example.com/token', { headers: { accept: 'application/json' } });
+    await egress.fetch(ENDPOINT);
     expect(new Headers(sent[0]?.headers).has('x-api-key')).toBe(false);
+    expect(new Headers(sent[1]?.headers).get('x-api-key')).toBe('a, b');
   });
 
   test('createHttpTransport refuses case-variant duplicate header names', () => {
@@ -1025,6 +1118,18 @@ describe('the OAuth facade and transport construction (Copilot round 1)', () => 
   test('an invalid header value fails createHttpTransport with fixed text', () => {
     const result = createHttpTransport({ url: ENDPOINT.href, headers: { 'x-api-key': 'bad\nvalue' } });
     expect(result).toFailWith(/^createHttpTransport: the transport could not be built/);
+  });
+
+  test('a fetch getter that throws fails createHttpTransport with fixed text', () => {
+    const params = {
+      url: ENDPOINT.href,
+      get fetch(): McpFetch {
+        throw new Error('fetch getter boom with s3cret');
+      }
+    };
+    const result = createHttpTransport(params);
+    expect(result).toFailWith(/^createHttpTransport: fetch could not be read$/);
+    expect(result.message).not.toMatch(/s3cret|boom/);
   });
 
   test('headers whose keys cannot be read fail createHttpTransport with fixed text', () => {

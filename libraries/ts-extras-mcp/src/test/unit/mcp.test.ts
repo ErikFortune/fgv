@@ -127,7 +127,7 @@ describe('createStdioTransport', () => {
 });
 
 describe('createHttpTransport', () => {
-  test('succeeds for http and https urls and forwards headers', () => {
+  test('succeeds for http and https urls, and keeps static headers from the SDK', () => {
     expect(createHttpTransport({ url: 'http://localhost:9000/mcp' })).toSucceedAndSatisfy(
       (t: IMcpTransport) => {
         expect(t.transportKind).toBe('http');
@@ -136,8 +136,8 @@ describe('createHttpTransport', () => {
     expect(
       createHttpTransport({ url: 'https://example.com/mcp', headers: { authorization: 'Bearer t' } })
     ).toSucceed();
+    // The egress applies static headers itself, to the endpoint's origin only; the SDK never sees them.
     expect(mockSdk.makeHttpTransport).toHaveBeenCalledWith(expect.any(URL), {
-      headers: { authorization: 'Bearer t' },
       fetch: expect.any(Function)
     });
   });

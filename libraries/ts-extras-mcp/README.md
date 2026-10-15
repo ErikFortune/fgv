@@ -145,7 +145,9 @@ const transport = createHttpTransport({ url, headers: { 'x-api-key': key }, fetc
 - Failure messages never carry server-authored text: an `unauthorized` failure, or one from an HTTP
   or OAuth error, reads as its kind and status (`unauthorized (HTTP 401)`, `transport (HTTP 500)`),
   since a server may repeat a credential it was sent.
-- Static `headers` are never sent to an authorization server on another origin.
+- Static `headers` are applied by the package, and only to requests for the MCP endpoint's origin —
+  never to an authorization server or any other origin. There a static header replaces one of the
+  same name, so a static `Authorization` overrides the OAuth bearer token.
 - DNS rebinding is **not** closed: the guard validates a resolved address and the platform
   re-resolves. A strict `allowHosts` list narrows it.
 

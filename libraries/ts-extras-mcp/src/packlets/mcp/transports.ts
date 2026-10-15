@@ -176,16 +176,22 @@ export function createHttpTransport(params: IMcpHttpTransportParams): Result<IMc
       if (url.protocol !== 'http:' && url.protocol !== 'https:') {
         return fail(`url must use http or https protocol (got '${url.protocol}')`);
       }
-      // A JavaScript caller can pass anything; a non-function would only fail on the first request,
-      // as a transport error far from the mistake.
-      const supplied = params.fetch ?? undefined;
+      // Read inside a capture with fixed text: `fetch` can be an accessor on the caller's object, and
+      // what it throws is the caller's. A JavaScript caller can also pass a non-function, which would
+      // only fail on the first request, as a transport error far from the mistake.
+      const fetched = captureResult(() => params.fetch ?? undefined).withErrorFormat(
+        () => 'fetch could not be read'
+      );
+      if (fetched.isFailure()) {
+        return fail(fetched.message);
+      }
+      const supplied = fetched.value;
       if (supplied !== undefined && typeof supplied !== 'function') {
         return fail(`fetch must be a function (got ${typeof supplied})`);
       }
-      // Copied once, here, and that copy is all anything downstream ever sees: the SDK reads its
-      // headers on every request, so handing it the caller's record would let a value changed or
-      // added later reach requests — including ones to the authorization server — that the egress
-      // snapshot knows nothing about. Read inside a capture: the record and its keys are the caller's.
+      // Copied once, here, and that copy is all anything downstream ever sees: a value the caller
+      // changes or adds later reaches no request. Read inside a capture: the record and its keys are
+      // the caller's.
       const copied = captureResult(() => _copyHeaders(params.headers)).withErrorFormat(
         () => 'headers could not be read'
       );
@@ -205,8 +211,8 @@ export function createHttpTransport(params: IMcpHttpTransportParams): Result<IMc
       // because what threw is the consumer's and may carry a credential.
       return captureResult((): IMcpTransport => {
         const egress = new McpHttpEgress(url, supplied, headers, params.authProvider);
+        // No headers for the SDK: the egress applies them, to the endpoint's origin only.
         const sdkTransport = makeHttpTransport(url, {
-          headers,
           fetch: egress.fetch,
           authProvider: egress.authProvider
         });

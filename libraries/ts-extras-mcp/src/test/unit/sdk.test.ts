@@ -64,15 +64,7 @@ describe('sdk isolation seam', () => {
   });
 
   describe('makeHttpTransport', () => {
-    test('constructs a transport with headers', () => {
-      const transport = makeHttpTransport(new URL('http://localhost:9000/mcp'), {
-        headers: { authorization: 'Bearer x' },
-        fetch: globalThis.fetch
-      });
-      expect(transport).toBeDefined();
-    });
-
-    test('constructs a transport without headers', () => {
+    test('constructs a transport', () => {
       const transport = makeHttpTransport(new URL('https://example.com/mcp'), { fetch: globalThis.fetch });
       expect(transport).toBeDefined();
     });

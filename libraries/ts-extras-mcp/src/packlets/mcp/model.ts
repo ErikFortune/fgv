@@ -79,6 +79,11 @@ export interface IMcpHttpTransportParams {
    *
    * The headers are **copied** when {@link createHttpTransport} is called: changing or adding to
    * this record afterwards has no effect on any request. Create a new transport to change them.
+   *
+   * They are applied by the package, **only to requests for the MCP endpoint's origin** — never to
+   * the authorization server or any other origin. There a static header replaces one of the same
+   * name (a static `Authorization` overrides the OAuth provider's bearer token, as the SDK's own
+   * merge did).
    */
   readonly headers?: Record<string, string>;
   /**
@@ -145,8 +150,8 @@ export interface IMcpHttpTransportParams {
    * guarded fetch as its `fetchFn`, or the token request bypasses the guard** — then connect again
    * with a new transport.
    *
-   * Static `headers` are never sent to the authorization server: they are dropped from any request
-   * whose origin differs from the MCP endpoint's.
+   * Static `headers` are never sent to the authorization server: the package applies them only to
+   * requests for the MCP endpoint's origin.
    */
   readonly authProvider?: McpOAuthClientProvider;
 }

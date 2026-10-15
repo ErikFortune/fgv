@@ -19,7 +19,8 @@ Two PersonAIlity asks:
 
 - **The SDK sends every request through the transport's `fetch`** — including every OAuth
   discovery, registration and token request, with the consumer's static headers merged in. So the
-  package always installs its own wrapper, which also drops static headers from other origins.
+  package always installs its own wrapper, which applies static headers itself, only to the endpoint's
+  origin.
 - **OAuth token requests carry a `URLSearchParams` body**, so the guarded fetch accepts one.
 - **The SDK treats a `TypeError` from `fetch` as CORS** during discovery, so `GuardedFetchError`
   extends `Error`, never `TypeError`.
@@ -43,7 +44,7 @@ Two PersonAIlity asks:
 
 ## Read next
 
-`result.md`: belief verdicts, the SDK behaviour tables, the check-then-act table, the 29-row revert
+`result.md`: belief verdicts, the SDK behaviour tables, the check-then-act table, the 36-row revert
 matrix (R7 not isolatable), the review dispositions, the gate counts, and what the brief got wrong.
 
 ## Open

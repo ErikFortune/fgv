@@ -280,8 +280,6 @@ export function terminateHttpSession(transport: ISdkTransport): Promise<void> {
  * @internal
  */
 export interface ISdkHttpParams {
-  /** Static headers sent on every request. */
-  readonly headers?: Record<string, string>;
   /** The `fetch` the transport sends every request through: the package's egress wrapper. */
   readonly fetch: McpFetch;
   /** The OAuth provider the SDK authorizes with: the package's gated wrapper of the consumer's. */
@@ -308,11 +306,15 @@ export function makeUnauthorizedError(message: string): Error {
 
 /**
  * Constructs a Streamable-HTTP transport for the given URL.
+ *
+ * @remarks
+ * The transport is given no `requestInit`: static headers are applied by the package's egress
+ * wrapper, to the endpoint's origin only. Handed to the SDK, they would also be merged into every
+ * OAuth request, including those to the authorization server.
  * @internal
  */
 export function makeHttpTransport(url: URL, params: ISdkHttpParams): ISdkTransport {
   return new StreamableHTTPClientTransport(url, {
-    requestInit: params.headers ? { headers: params.headers } : undefined,
     fetch: params.fetch,
     authProvider: params.authProvider
   }) as unknown as ISdkTransport;

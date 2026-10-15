@@ -57,10 +57,12 @@ Guarded MCP egress (personaility#672) and OAuth (personaility#677). Branch `mcp-
   keeps it only if `http:`/`https:` and one line of printable ASCII. `_resourceMetadataUrl` is not
   touched.
 - Hardening found while building it (disclosed, not asked for):
-  - **Static headers are dropped from requests to another origin.** The SDK's `createFetchWithInit`
-    merges `requestInit.headers` into every OAuth request, including those to the authorization
-    server the MCP server names — a static `x-api-key` would be sent there. Only a header whose value
-    is the consumer's own is removed (the SDK's client-auth `Authorization` survives).
+  - **Static headers reach only the MCP endpoint's origin.** The SDK's `createFetchWithInit` merges
+    `requestInit.headers` into every OAuth request, including those to the authorization server the
+    MCP server names — a static `x-api-key` would be sent there. *As shipped after Copilot round 3:*
+    the SDK is given no static headers; the egress wrapper applies them, with `set`, only to requests
+    for the endpoint's origin. (Until round 3 they were stripped off-origin by value; that was
+    defeated by a case-split merge — see the round 3 table.)
   - **Failure messages never carry server-authored text.** Every `'unauthorized'` failure, and any
     failure from a `StreamableHTTPError`, `SseError` or `OAuthError`, reads as kind + status
     (`unauthorized (HTTP 401)`, `transport (HTTP 500)`, `session-expired`): a response body, status
@@ -166,7 +168,7 @@ after it.
 | 6c | authorization URL accepted (`https:`, or `http:` with a loopback host) | none | `redirectToAuthorization` forwarded | the URL is the one passed to that call; no re-resolution — the consumer opens it |
 | 6d | which optional provider members exist (Copilot round 1: the `Proxy` became a forwarding facade) | none — read once, when the transport is built | the SDK's feature detection (`provider.state ? …`) | **not re-checked**: a member the consumer adds or removes after `createHttpTransport` is not seen. Data members (`redirectUrl`, `clientMetadata`, `clientMetadataUrl`) are read at use. `isOpen()` is still read when each interactive method is called (rows 6, 6b), and the late-window tests now pin it: a connect that times out or is aborted while the flow is parked before any interactive step lets nothing interactive through afterwards, and one parked in `saveCodeVerifier` has its redirect refused |
 | 7 | endpoint 401 recorded (`resourceMetadataUrl`) | SDK auth flow, retries | attached to a later `unauthorized` | not re-checked: it is the **latest** valid challenge from that endpoint, overwritten by each newer one, never cleared. Disclosed in the TSDoc ("most recent") |
-| 8 | static-header strip decision (origin ≠ endpoint) | none | request sent | computed per request from that request's URL |
+| 8 | static headers applied (request origin = endpoint origin) | none | request sent | computed per request from that request's URL; off-origin requests are never given them (since Copilot round 3 — the SDK no longer holds them at all) |
 | 9 | `closeMcpSession` begins | `terminate()` (≤ 2 s) | `client.close()` | termination never calls `auth()`; the gate is closed after connect anyway; the 2 s bound covers a slow `tokens()` |
 
 Not a window but worth stating: the gate is per transport (single-use), so two sessions cannot open
@@ -243,6 +245,18 @@ R18's test was replaced by the two `test.each` tables that pin R21 (forwarded: `
 | # | protection | revert | named test | result |
 |---|---|---|---|---|
 | R28 | the SDK and the egress share one private, frozen copy of `headers` | hand the SDK the caller's record | `headers are copied at createHttpTransport: a caller's later changes reach neither server` | red |
+
+### Rows added after Copilot round 3
+
+| # | protection | revert | named test | result |
+|---|---|---|---|---|
+| R29 | static headers only on the endpoint's origin | apply them on every origin | `a static Authorization with client_secret_basic: the authorization server sees only the Basic credential` | red |
+| R30 | a static header overrides a same-named one (`set`) | `append` | `a static Authorization overrides the provider's Bearer on MCP-origin requests` | red |
+| R31 | `params.fetch` read inside the capture | read it outside | `a fetch getter that throws fails createHttpTransport with fixed text` | red |
+| R32 | guarded `Uint8Array` body copied | pass it through | `createGuardedFetch: a Uint8Array mutated while the address guard runs is sent as approved` | red |
+| R33 | guarded `ArrayBuffer` body copied | `new Uint8Array(buffer)` (a view) | `…an ArrayBuffer mutated…` | red |
+| R34 | buffered body copied before the walk | keep the caller's array | `saferFetchBytes: a body mutated while the guards run…` | red |
+| R35 | the copy is not a `Buffer` view | `bytes.slice()` | `…a Node Buffer (whose slice() is a view)…` | red |
 
 ## `AbortSignal.any` and a long-lived source signal (orchestrator review)
 
@@ -365,6 +379,16 @@ read at use, by design) and `_url` (the package's own `URL`); the egress keeps i
 own `Map` of normalized headers, the consumer's `fetch` function reference, and the facade's closure
 over the consumer's provider (by design). The `params` object itself is not retained.
 
+## Copilot round 3 (PR #729)
+
+Each finding was reproduced with a failing test before it was fixed.
+
+| # | sev | finding | reproduced | disposition |
+|---|---|---|---|---|
+| 1 | high | a case-split merge leaked static headers to the authorization server: the SDK's `createFetchWithInit` spreads the caller-cased static record beside the SDK's lowercased token-request headers, so a static `Authorization: Bearer …` and the `client_secret_basic` `authorization: Basic …` became two keys that `Headers` joined, and the exact-value strip missed the joined value | yes — R29's revert reproduces the leak in the `client_secret_basic` test | **fixed** — the SDK is given no static headers (`makeHttpTransport` takes none); the egress applies them with `set`, only when the request's origin is the endpoint's, so on that origin a static header still overrides the SDK's same-named one (as `_commonHeaders`' merge did) and on any other origin they never appear. The value-comparison strip is gone. Lowercasing the copy was rejected, as the finding said: it would stop a static `Authorization` overriding the provider's `Bearer` and join the two instead. Tests: `client_secret_basic` with a static `Authorization` (the authorization server sees only Basic; the MCP server sees the static value), a static `Authorization` overriding the provider's `Bearer`, and the off-origin / case-variant unit tests rewritten for apply-on-origin. R29, R30 |
+| 2 | medium | `params.fetch` was read outside a capture | yes — a throwing getter escaped (R31) | **fixed** — read inside `captureResult` with fixed text; regression asserts the thrown text is not echoed |
+| 3 | medium | `_guardedBody` aliased the caller's bytes | yes — mutating the buffer while the address guard ran changed the bytes sent, for a `Uint8Array`, an `ArrayBuffer` (`new Uint8Array(buffer)` is a view) and a Node `Buffer` | **fixed** — copied before the first `await`: `new Uint8Array(bytes)` (not `.slice()`, which on a `Buffer` is a view — R35) and `new Uint8Array(buffer.slice(0))`. **The buffered entry points had the same aliasing** (`options.body` was copied only at connect, after the guards had awaited, so the request guard approved bytes that could then change) — fixed the same way in `_resolveCallOptions`. R32–R35. The existing safer-fetch suite is unchanged |
+
 The CI failure on `f3b88357` (`ERR_PNPM_CACHE_MISSING_AFTER_304` during install) was not this PR's.
 
 ## What the brief got wrong
@@ -376,7 +400,7 @@ The CI failure on `f3b88357` (`ERR_PNPM_CACHE_MISSING_AFTER_304` during install)
   is `'timeout'`, after the orchestrator review).
 - **Belief 2 is wider than stated:** the injected `fetch` also carries every OAuth discovery,
   registration and token request, with the consumer's static headers merged in by the SDK — which is
-  why static headers are now stripped from other origins.
+  why static headers now reach only the endpoint's origin.
 - **Belief 6:** the dependency on `@fgv/ts-extras` is a peer dependency.
 - **"`GuardedFetchError extends Error`"** was right, and needed to be exactly that: the SDK treats a
   `TypeError` from `fetch` as CORS during discovery.
