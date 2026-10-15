@@ -218,7 +218,7 @@ interface IProtection {
   /** Access tokens currently accepted. */
   readonly valid: Set<string>;
   /** The `authorization` and `x-api-key` header of every MCP request, in order. */
-  readonly seen: Array<{ method: string; authorization?: string; apiKey?: string }>;
+  readonly seen: Array<{ method: string; authorization?: string; apiKey?: string; otherCredential?: string }>;
   /** Standalone GET event streams that passed authorization, so a test can end them. */
   readonly streams: ServerResponse[];
   /** Overrides the `resource_metadata` value the challenge carries. */
@@ -258,7 +258,9 @@ async function startProtectedServer(auth: IAuthServer, protection: IProtection):
     protection.seen.push({
       method: req.method ?? '?',
       authorization: req.headers.authorization,
-      apiKey: typeof req.headers['x-api-key'] === 'string' ? req.headers['x-api-key'] : undefined
+      apiKey: typeof req.headers['x-api-key'] === 'string' ? req.headers['x-api-key'] : undefined,
+      otherCredential:
+        typeof req.headers['x-other-credential'] === 'string' ? req.headers['x-other-credential'] : undefined
     });
     const middleware = requireBearerAuth({
       verifier: {
@@ -631,6 +633,41 @@ describe('OAuth through authProvider', () => {
     expect(provider.stateCalls).toBe(1);
     expect(provider.verifiers).toHaveLength(1);
     expect(provider.redirects).toEqual([]);
+  });
+
+  test("headers are copied at createHttpTransport: a caller's later changes reach neither server", async () => {
+    protection.valid.clear();
+    protection.valid.add(REFRESHED_TOKEN);
+    const provider = new TestProvider({
+      access_token: STALE_TOKEN,
+      token_type: 'Bearer',
+      refresh_token: REFRESH_TOKEN
+    });
+    const callerHeaders: Record<string, string> = { 'x-api-key': API_KEY };
+    const transport = createHttpTransport({
+      url: real.url,
+      headers: callerHeaders,
+      fetch: guarded(),
+      authProvider: provider
+    }).orThrow();
+    // After construction and before authorization runs: rotate the key and add a credential.
+    callerHeaders['x-api-key'] = 'apikey-rotated-later';
+    callerHeaders['x-other-credential'] = 'other-credential-added-later';
+    const session = (await connectMcpSession({ transport, logger })).orThrow();
+    sessions.push(session);
+    expect(await callMcpTool(session, 'echo', {})).toSucceed();
+    // Authorization did run (a refresh at the authorization server), and saw neither value.
+    expect(auth.requests.map((r) => r.path)).toContain('/token');
+    for (const request of auth.requests) {
+      expect(request.headers['x-api-key']).toBeUndefined();
+      expect(request.headers['x-other-credential']).toBeUndefined();
+    }
+    // The MCP server received the headers exactly as they were at construction.
+    expect(protection.seen.length).toBeGreaterThan(0);
+    for (const request of protection.seen) {
+      expect(request.apiKey).toBe(API_KEY);
+      expect(request.otherCredential).toBeUndefined();
+    }
   });
 
   test('a frozen provider reaches the protected server through a real connect', async () => {

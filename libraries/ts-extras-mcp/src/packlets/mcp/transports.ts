@@ -122,6 +122,15 @@ export function createStdioTransport(params: IMcpStdioTransportParams): Result<I
 }
 
 /**
+ * A private, frozen copy of the caller's static headers, each key and value read exactly once.
+ */
+function _copyHeaders(
+  headers: Readonly<Record<string, string>> | undefined
+): Readonly<Record<string, string>> | undefined {
+  return headers === undefined ? undefined : Object.freeze(Object.fromEntries(Object.entries(headers)));
+}
+
+/**
  * The lowercased names that `headers` spells more than once, in different letter cases.
  */
 function _caseVariantDuplicates(
@@ -173,16 +182,21 @@ export function createHttpTransport(params: IMcpHttpTransportParams): Result<IMc
       if (supplied !== undefined && typeof supplied !== 'function') {
         return fail(`fetch must be a function (got ${typeof supplied})`);
       }
-      // Read inside a capture: `headers` is the consumer's object, and its keys can be an accessor.
-      const duplicates = captureResult(() => _caseVariantDuplicates(params.headers)).withErrorFormat(
+      // Copied once, here, and that copy is all anything downstream ever sees: the SDK reads its
+      // headers on every request, so handing it the caller's record would let a value changed or
+      // added later reach requests — including ones to the authorization server — that the egress
+      // snapshot knows nothing about. Read inside a capture: the record and its keys are the caller's.
+      const copied = captureResult(() => _copyHeaders(params.headers)).withErrorFormat(
         () => 'headers could not be read'
       );
-      if (duplicates.isFailure()) {
-        return fail(duplicates.message);
+      if (copied.isFailure()) {
+        return fail(copied.message);
       }
-      if (duplicates.value.length > 0) {
+      const headers = copied.value;
+      const duplicates = _caseVariantDuplicates(headers);
+      if (duplicates.length > 0) {
         return fail(
-          `headers names ${duplicates.value.join(', ')} more than once, in different letter cases; header ` +
+          `headers names ${duplicates.join(', ')} more than once, in different letter cases; header ` +
             'names are case-insensitive, so the values would be sent combined — give each header once'
         );
       }
@@ -190,9 +204,9 @@ export function createHttpTransport(params: IMcpHttpTransportParams): Result<IMc
       // invalid header, and the OAuth provider's members are read here. The message is fixed text,
       // because what threw is the consumer's and may carry a credential.
       return captureResult((): IMcpTransport => {
-        const egress = new McpHttpEgress(url, supplied, params.headers, params.authProvider);
+        const egress = new McpHttpEgress(url, supplied, headers, params.authProvider);
         const sdkTransport = makeHttpTransport(url, {
-          headers: params.headers,
+          headers,
           fetch: egress.fetch,
           authProvider: egress.authProvider
         });

@@ -76,6 +76,9 @@ export interface IMcpHttpTransportParams {
    * Optional static headers (e.g. an `Authorization` bearer token or an `x-api-key`). Each name may
    * appear once: header names are case-insensitive, so `X-Api-Key` and `x-api-key` together are
    * refused rather than sent as one combined value.
+   *
+   * The headers are **copied** when {@link createHttpTransport} is called: changing or adding to
+   * this record afterwards has no effect on any request. Create a new transport to change them.
    */
   readonly headers?: Record<string, string>;
   /**

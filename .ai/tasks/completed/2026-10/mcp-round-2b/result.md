@@ -238,6 +238,12 @@ R18's test was replaced by the two `test.each` tables that pin R21 (forwarded: `
 | R26 | the window closes when a connect that parked the auth flow fails | leave it open | `a connect that times out / is aborted while auth is parked…` | red (both) |
 | R27 | a late redirect after a pending `saveCodeVerifier` is refused | same | `a connect that times out while saveCodeVerifier is pending: the late redirect is refused` | red |
 
+### Row added after Copilot round 2
+
+| # | protection | revert | named test | result |
+|---|---|---|---|---|
+| R28 | the SDK and the egress share one private, frozen copy of `headers` | hand the SDK the caller's record | `headers are copied at createHttpTransport: a caller's later changes reach neither server` | red |
+
 ## `AbortSignal.any` and a long-lived source signal (orchestrator review)
 
 Supported Node is `>=22.22.0 <23 || >=24.15.0 <25` (`rush.json`). Measured on **22.22.0** (24.15 is
@@ -346,6 +352,18 @@ Each finding was reproduced with a failing test before it was fixed.
 | 2 | high | `{ 'X-Api-Key': 'a', 'x-api-key': 'b' }`: `Headers` sends `a, b`, but the snapshot kept only `b`, so the off-origin strip missed it | yes — the combined header reached the other origin | **fixed** — the snapshot is built through `Headers`, so it holds the same combined value the SDK sends (R23). **Decision: `createHttpTransport` also refuses case-variant duplicate names** (R24): header names are case-insensitive, so the two entries can only ever go out as one combined value — almost certainly not what was meant — and refusing names the mistake at the call site instead of on the wire |
 | 3 | medium | the late-authorization windows were untested | the tests passed on the existing gate (no reproduction of an open window) | **tested, no gate change** — connect timing out and, separately, aborted while the auth flow is parked in `clientInformation`, then released: no `state`, `saveCodeVerifier` or redirect reaches the consumer (R26); parked in `saveCodeVerifier` then released: the redirect is refused (R27) |
 | 4 | medium | the egress wrapper was built outside `captureResult` and read `authProvider` members at construction, so a throwing getter escaped `createHttpTransport` | yes — the call threw | **fixed** — the egress (header normalization, the facade) and the SDK transport are built inside one `captureResult` with fixed text; reading `headers`' keys is captured too. One existing assertion that matched the SDK constructor's thrown text now expects the fixed text. R25 |
+
+## Copilot round 2 (PR #729)
+
+| # | sev | finding | reproduced | disposition |
+|---|---|---|---|---|
+| 1 | high | the egress snapshotted `params.headers`, but the SDK was handed the caller's own record and reads it on every request, so a value changed or added after construction reached the authorization server unstripped | yes — the regression fails with the SDK given the caller's record (R28) | **fixed** — `createHttpTransport` copies `headers` once (each key and value read once, inside a capture) into a private frozen object, and that copy is the only one the SDK, the egress and the duplicate-name check see. `headers` TSDoc and the CAPABILITIES row say later changes have no effect |
+
+Other caller-owned objects checked: the SDK transport keeps `_requestInit` (the package's object,
+holding the copy), `_fetch` (the egress function), `_authProvider` (the facade — its data members are
+read at use, by design) and `_url` (the package's own `URL`); the egress keeps its own `URL`, its
+own `Map` of normalized headers, the consumer's `fetch` function reference, and the facade's closure
+over the consumer's provider (by design). The `params` object itself is not retained.
 
 The CI failure on `f3b88357` (`ERR_PNPM_CACHE_MISSING_AFTER_304` during install) was not this PR's.
 
