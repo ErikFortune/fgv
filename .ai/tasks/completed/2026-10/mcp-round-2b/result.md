@@ -164,6 +164,7 @@ after it.
 | 6 | interactive window open (`egress.interactive`) | the whole SDK connect | `state` / `saveCodeVerifier` / `redirectToAuthorization` | `isOpen()` is read **at the moment each interactive method is called**, not when the window opened; the window closes in a `finally` the instant the connect race settles, so a flow that outlives a lost/timed-out connect is refused |
 | 6b | an `auth()` flow started inside the window, then the connect times out or is aborted | discovery, refresh/registration, `state()`, `saveCodeVerifier()` — each an `await` | `redirectToAuthorization` | each step re-reads `isOpen()` when called, so whichever step runs after the window closes is refused. If `state` and `saveCodeVerifier` had already run inside it, **they have run** (and persisted whatever the provider persists there); only the redirect is refused. Documented in the `authProvider` TSDoc, README and CAPABILITIES |
 | 6c | authorization URL accepted (`https:`, or `http:` with a loopback host) | none | `redirectToAuthorization` forwarded | the URL is the one passed to that call; no re-resolution — the consumer opens it |
+| 6d | which optional provider members exist (Copilot round 1: the `Proxy` became a forwarding facade) | none — read once, when the transport is built | the SDK's feature detection (`provider.state ? …`) | **not re-checked**: a member the consumer adds or removes after `createHttpTransport` is not seen. Data members (`redirectUrl`, `clientMetadata`, `clientMetadataUrl`) are read at use. `isOpen()` is still read when each interactive method is called (rows 6, 6b), and the late-window tests now pin it: a connect that times out or is aborted while the flow is parked before any interactive step lets nothing interactive through afterwards, and one parked in `saveCodeVerifier` has its redirect refused |
 | 7 | endpoint 401 recorded (`resourceMetadataUrl`) | SDK auth flow, retries | attached to a later `unauthorized` | not re-checked: it is the **latest** valid challenge from that endpoint, overwritten by each newer one, never cleared. Disclosed in the TSDoc ("most recent") |
 | 8 | static-header strip decision (origin ≠ endpoint) | none | request sent | computed per request from that request's URL |
 | 9 | `closeMcpSession` begins | `terminate()` (≤ 2 s) | `client.close()` | termination never calls `auth()`; the gate is closed after connect anyway; the 2 s bound covers a slow `tokens()` |
@@ -226,6 +227,17 @@ check narrows that window; it is kept, and covered, but no test isolates it.
 R18's test was replaced by the two `test.each` tables that pin R21 (forwarded: `https`, `http` on
 `127.0.0.1`, `[::1]`, `localhost`; refused: remote `http`, private-address `http`, `file:`).
 
+### Rows added after Copilot round 1
+
+| # | protection | revert | named test | result |
+|---|---|---|---|---|
+| R22 | the gate is a forwarding facade, not a `Proxy` | return a `Proxy` over the consumer whose `get` reads the facade | `a frozen object-literal provider works through the gate` | red |
+| R23 | static headers normalized through `Headers` | lowercase the raw record instead | `case-variant duplicate static headers, combined as the SDK sends them, are not sent to another origin` | red |
+| R24 | case-variant duplicate header names refused | never refuse | `createHttpTransport refuses case-variant duplicate header names` | red |
+| R25 | the egress (headers, provider) is built inside the capture | build it before the capture | `a provider getter that throws fails createHttpTransport with fixed text` | red |
+| R26 | the window closes when a connect that parked the auth flow fails | leave it open | `a connect that times out / is aborted while auth is parked…` | red (both) |
+| R27 | a late redirect after a pending `saveCodeVerifier` is refused | same | `a connect that times out while saveCodeVerifier is pending: the late redirect is refused` | red |
+
 ## `AbortSignal.any` and a long-lived source signal (orchestrator review)
 
 Supported Node is `>=22.22.0 <23 || >=24.15.0 <25` (`rush.json`). Measured on **22.22.0** (24.15 is
@@ -277,7 +289,7 @@ Final run, after the orchestrator-review fixes, on the code as pushed. Each log 
 | `ts-extras` `rushx fixlint` / `build` / `lint` | 0 / 0 / 0 | 0 / 0 / 0 | 0 / 0 / 0 | |
 | `ts-extras` `rushx test` | 0 | 1 | 0 | the one match is the `guardedFetchError.ts` row of the coverage table; 97 suites, 3149 passed, 0 failed; 100 % on all four |
 | `ts-extras-mcp` `rushx fixlint` / `build` / `lint` | 0 / 0 / 0 | 0 / 0 / 0 | 0 / 0 / 0 | |
-| `ts-extras-mcp` `rushx test` | 0 | 0 | 0 | 14 suites, 236 passed, 0 failed; 100 % on all four |
+| `ts-extras-mcp` `rushx test` | 0 | 0 | 0 | 14 suites, 236 passed, 0 failed; 100 % on all four. After Copilot round 1: 248 passed, 0 failed; 100 %; build and lint 0 errors, 0 warnings. `ts-extras` untouched in that round, so the repo-wide test was not re-run |
 | `install-run-rush.js rebuild` | 0 | 0 | 1 | `SUCCESS: 38 operations`; the warning is Rush's existing "1 Git-tracked symlink" repo-state notice |
 | `install-run-rush.js test` | 0 | 0 | 1 | `SUCCESS: 37 operations`; same notice |
 | `change --verify --target-branch origin/integration/asks` | 0 | 0 | 0 | change files: `@fgv/ts-extras` ×1, `@fgv/ts-extras-mcp` ×2, all `minor` |
@@ -323,6 +335,19 @@ No blocking findings. Each item and what was done:
 | P3 | plain `http:` authorization URLs | **fixed** — refused unless the host is loopback (`localhost`, or a literal that `SaferFetch.classifyAddress` calls loopback) (R21) |
 | P3 | `McpOAuthClientProvider` re-exported from `model.ts`, model↔sdk type cycle | **fixed** — type-only leaf `sdkTypes.ts`, exported from the barrel with `export *` (so it is loaded and covered like `model.ts`); `.api.md` unchanged |
 | P3 | `AbortSignal.any` leak on supported Node | **measured** — see the section above; not affected, no workaround |
+
+## Copilot round 1 (PR #729)
+
+Each finding was reproduced with a failing test before it was fixed.
+
+| # | sev | finding | reproduced | disposition |
+|---|---|---|---|---|
+| 1 | high | the gate's `Proxy` returned wrapped/bound functions, violating the invariant for a frozen provider's non-writable, non-configurable properties: reading `tokens` threw `TypeError` | yes — `'get' on proxy: property 'tokens' is a read-only and non-configurable data property…` | **fixed** — an explicit forwarding facade: every member calls through with the consumer's object as the receiver; data members read at use; optional methods read once and absent when the consumer lacks them. Tests: a frozen provider through the gate and through a real connect; every member's receiver; absent optionals stay absent; the existing private-field class (`TestProvider`) runs every real-server test. R22 |
+| 2 | high | `{ 'X-Api-Key': 'a', 'x-api-key': 'b' }`: `Headers` sends `a, b`, but the snapshot kept only `b`, so the off-origin strip missed it | yes — the combined header reached the other origin | **fixed** — the snapshot is built through `Headers`, so it holds the same combined value the SDK sends (R23). **Decision: `createHttpTransport` also refuses case-variant duplicate names** (R24): header names are case-insensitive, so the two entries can only ever go out as one combined value — almost certainly not what was meant — and refusing names the mistake at the call site instead of on the wire |
+| 3 | medium | the late-authorization windows were untested | the tests passed on the existing gate (no reproduction of an open window) | **tested, no gate change** — connect timing out and, separately, aborted while the auth flow is parked in `clientInformation`, then released: no `state`, `saveCodeVerifier` or redirect reaches the consumer (R26); parked in `saveCodeVerifier` then released: the redirect is refused (R27) |
+| 4 | medium | the egress wrapper was built outside `captureResult` and read `authProvider` members at construction, so a throwing getter escaped `createHttpTransport` | yes — the call threw | **fixed** — the egress (header normalization, the facade) and the SDK transport are built inside one `captureResult` with fixed text; reading `headers`' keys is captured too. One existing assertion that matched the SDK constructor's thrown text now expects the fixed text. R25 |
+
+The CI failure on `f3b88357` (`ERR_PNPM_CACHE_MISSING_AFTER_304` during install) was not this PR's.
 
 ## What the brief got wrong
 

@@ -122,6 +122,21 @@ export function createStdioTransport(params: IMcpStdioTransportParams): Result<I
 }
 
 /**
+ * The lowercased names that `headers` spells more than once, in different letter cases.
+ */
+function _caseVariantDuplicates(
+  headers: Readonly<Record<string, string>> | undefined
+): ReadonlyArray<string> {
+  const seen = new Set<string>();
+  const duplicates = new Set<string>();
+  for (const name of Object.keys(headers ?? {})) {
+    const lowered = name.toLowerCase();
+    (seen.has(lowered) ? duplicates : seen).add(lowered);
+  }
+  return [...duplicates];
+}
+
+/**
  * Creates a Streamable-HTTP MCP transport for the given endpoint URL.
  *
  * @remarks
@@ -140,7 +155,9 @@ export function createStdioTransport(params: IMcpStdioTransportParams): Result<I
  *
  * @param params - The endpoint URL, optional static headers, and the optional `fetch`.
  * @returns `Success` with an opaque transport handle, or `Failure` if the URL is invalid, `fetch`
- * is not a function, or the SDK constructor throws.
+ * is not a function, `headers` names one header more than once in different letter cases, a header
+ * is not a valid HTTP header, or reading the `authProvider` throws (with fixed text: what threw is
+ * the consumer's).
  * @public
  */
 export function createHttpTransport(params: IMcpHttpTransportParams): Result<IMcpTransport> {
@@ -156,14 +173,35 @@ export function createHttpTransport(params: IMcpHttpTransportParams): Result<IMc
       if (supplied !== undefined && typeof supplied !== 'function') {
         return fail(`fetch must be a function (got ${typeof supplied})`);
       }
-      const egress = new McpHttpEgress(url, supplied, params.headers, params.authProvider);
-      return captureResult(() =>
-        makeHttpTransport(url, {
+      // Read inside a capture: `headers` is the consumer's object, and its keys can be an accessor.
+      const duplicates = captureResult(() => _caseVariantDuplicates(params.headers)).withErrorFormat(
+        () => 'headers could not be read'
+      );
+      if (duplicates.isFailure()) {
+        return fail(duplicates.message);
+      }
+      if (duplicates.value.length > 0) {
+        return fail(
+          `headers names ${duplicates.value.join(', ')} more than once, in different letter cases; header ` +
+            'names are case-insensitive, so the values would be sent combined — give each header once'
+        );
+      }
+      // One capture around everything built from the consumer's objects: `Headers` refuses an
+      // invalid header, and the OAuth provider's members are read here. The message is fixed text,
+      // because what threw is the consumer's and may carry a credential.
+      return captureResult((): IMcpTransport => {
+        const egress = new McpHttpEgress(url, supplied, params.headers, params.authProvider);
+        const sdkTransport = makeHttpTransport(url, {
           headers: params.headers,
           fetch: egress.fetch,
           authProvider: egress.authProvider
-        })
-      ).onSuccess((sdkTransport) => succeed<IMcpTransport>(new McpTransport('http', sdkTransport, egress)));
+        });
+        return new McpTransport('http', sdkTransport, egress);
+      }).withErrorFormat(
+        () =>
+          'the transport could not be built: an invalid header, an authProvider that threw, or ' +
+          'options the SDK refused'
+      );
     })
     .withErrorFormat((msg) => `createHttpTransport: ${msg}`);
 }

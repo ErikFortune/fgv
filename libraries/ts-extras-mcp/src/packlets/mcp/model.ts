@@ -72,7 +72,11 @@ export type McpFetch = (url: string | URL, init?: RequestInit) => Promise<Respon
 export interface IMcpHttpTransportParams {
   /** Absolute `http`/`https` URL of the MCP server endpoint. */
   readonly url: string;
-  /** Optional static headers (e.g. an `Authorization` bearer token or an `x-api-key`). */
+  /**
+   * Optional static headers (e.g. an `Authorization` bearer token or an `x-api-key`). Each name may
+   * appear once: header names are case-insensitive, so `X-Api-Key` and `x-api-key` together are
+   * refused rather than sent as one combined value.
+   */
   readonly headers?: Record<string, string>;
   /**
    * The `fetch` every HTTP request of the session goes through: each `POST`, the standalone `GET`

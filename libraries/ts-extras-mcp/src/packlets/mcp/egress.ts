@@ -96,39 +96,86 @@ function _acceptableAuthorizationUrl(url: URL): boolean {
  * `saveTokens`, and `invalidateCredentials` when the authorization server answers `invalid_grant` or
  * `invalid_client`. None is interactive; each is what keeps a session authorized.
  *
- * Every other member is forwarded to the consumer's object unchanged, with methods bound to it, so
- * an implementation using private fields works, and an optional member the consumer did not
- * implement still reads as absent.
+ * The wrapper is an explicit forwarding facade, not a `Proxy`: a `Proxy` that returns wrapped or
+ * bound functions violates the invariant for a non-writable, non-configurable property, so a frozen
+ * provider would throw on any read. Every member calls through with the consumer's object as the
+ * receiver, so an implementation using private fields works. Data members (`redirectUrl`,
+ * `clientMetadata`, `clientMetadataUrl`) are read at use. Optional methods are read once, at
+ * construction, and one the consumer did not implement is absent here too, because the SDK
+ * feature-detects them.
  */
 function _gateInteractive(consumer: McpOAuthClientProvider, isOpen: () => boolean): McpOAuthClientProvider {
   const refused = (why: string): Promise<never> => Promise.reject(makeUnauthorizedError(why));
   const outsideWindow =
     'interactive authorization is started only by connectMcpSession; reconnect to authorize';
-  const state = consumer.state;
-  return new Proxy(consumer, {
-    get: (target: McpOAuthClientProvider, prop: string | symbol): unknown => {
-      if (prop === 'state' && state !== undefined) {
-        return () => (isOpen() ? state.call(target) : refused(outsideWindow));
+  // Optional methods, read once: the SDK feature-detects them (`provider.state ? …`), so one the
+  // consumer did not implement must stay absent here too. Each is called with the consumer's object
+  // as its receiver.
+  const {
+    state,
+    saveClientInformation,
+    addClientAuthentication,
+    validateResourceURL,
+    invalidateCredentials,
+    prepareTokenRequest,
+    saveDiscoveryState,
+    discoveryState
+  } = consumer;
+  return {
+    // Data members are read through at use, as the SDK reads them.
+    get redirectUrl() {
+      return consumer.redirectUrl;
+    },
+    get clientMetadata() {
+      return consumer.clientMetadata;
+    },
+    get clientMetadataUrl() {
+      return consumer.clientMetadataUrl;
+    },
+    clientInformation: () => consumer.clientInformation(),
+    tokens: () => consumer.tokens(),
+    saveTokens: (tokens) => consumer.saveTokens(tokens),
+    codeVerifier: () => consumer.codeVerifier(),
+    saveCodeVerifier: (verifier) => (isOpen() ? consumer.saveCodeVerifier(verifier) : refused(outsideWindow)),
+    redirectToAuthorization: (url) => {
+      if (!isOpen()) {
+        return refused(outsideWindow);
       }
-      if (prop === 'saveCodeVerifier') {
-        return (verifier: string) => (isOpen() ? target.saveCodeVerifier(verifier) : refused(outsideWindow));
-      }
-      if (prop === 'redirectToAuthorization') {
-        return (url: URL) => {
-          if (!isOpen()) {
-            return refused(outsideWindow);
-          }
-          return _acceptableAuthorizationUrl(url)
-            ? target.redirectToAuthorization(url)
-            : refused(
-                'the authorization server named an authorization endpoint that is neither https nor http on a loopback host'
-              );
-        };
-      }
-      const value: unknown = Reflect.get(target, prop, target);
-      return typeof value === 'function' ? value.bind(target) : value;
-    }
-  });
+      return _acceptableAuthorizationUrl(url)
+        ? consumer.redirectToAuthorization(url)
+        : refused(
+            'the authorization server named an authorization endpoint that is neither https nor http on a loopback host'
+          );
+    },
+    ...(state !== undefined
+      ? { state: () => (isOpen() ? state.call(consumer) : refused(outsideWindow)) }
+      : {}),
+    ...(saveClientInformation !== undefined
+      ? { saveClientInformation: (info) => saveClientInformation.call(consumer, info) }
+      : {}),
+    ...(addClientAuthentication !== undefined
+      ? {
+          addClientAuthentication: (headers, params, url, metadata) =>
+            addClientAuthentication.call(consumer, headers, params, url, metadata)
+        }
+      : {}),
+    ...(validateResourceURL !== undefined
+      ? {
+          validateResourceURL: (serverUrl, resource) =>
+            validateResourceURL.call(consumer, serverUrl, resource)
+        }
+      : {}),
+    ...(invalidateCredentials !== undefined
+      ? { invalidateCredentials: (scope) => invalidateCredentials.call(consumer, scope) }
+      : {}),
+    ...(prepareTokenRequest !== undefined
+      ? { prepareTokenRequest: (scope) => prepareTokenRequest.call(consumer, scope) }
+      : {}),
+    ...(saveDiscoveryState !== undefined
+      ? { saveDiscoveryState: (discovered) => saveDiscoveryState.call(consumer, discovered) }
+      : {}),
+    ...(discoveryState !== undefined ? { discoveryState: () => discoveryState.call(consumer) } : {})
+  };
 }
 
 /**
@@ -178,9 +225,12 @@ export class McpHttpEgress {
   ) {
     this._endpoint = endpoint;
     this._underlying = underlying;
-    this._staticHeaders = new Map(
-      Object.entries(staticHeaders ?? {}).map(([name, value]) => [name.toLowerCase(), value])
-    );
+    // Normalized through `Headers`, as every request's headers are: names lowercased, values trimmed,
+    // and case-variant duplicates combined into one value — exactly what the SDK will send.
+    const normalized = new Headers(staticHeaders);
+    const entries: Array<[string, string]> = [];
+    normalized.forEach((value, name) => entries.push([name, value]));
+    this._staticHeaders = new Map(entries);
     this.authProvider =
       authProvider !== undefined ? _gateInteractive(authProvider, () => this._interactive) : undefined;
     this.fetch = (url: string | URL, init?: RequestInit): Promise<Response> => this._send(url, init);
@@ -241,9 +291,9 @@ export class McpHttpEgress {
     const headers = new Headers(init?.headers);
     for (const [name, value] of this._staticHeaders) {
       // Only the consumer's own value: a header the SDK set for this request under the same name
-      // (client authentication on the token endpoint) is the SDK's to send.
-      // Compared trimmed, as `Headers` stores it.
-      if (headers.get(name) === value.trim()) {
+      // (client authentication on the token endpoint) is the SDK's to send. Both sides are
+      // `Headers`-normalized, so a combined value compares whole.
+      if (headers.get(name) === value) {
         headers.delete(name);
       }
     }

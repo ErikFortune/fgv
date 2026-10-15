@@ -301,6 +301,62 @@ async function startProtectedServer(auth: IAuthServer, protection: IProtection):
   return real;
 }
 
+interface IDeferred {
+  readonly promise: Promise<void>;
+  readonly resolve: () => void;
+}
+
+function deferred(): IDeferred {
+  let release: () => void = () => undefined;
+  const promise = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  return { promise, resolve: () => release() };
+}
+
+/**
+ * A provider whose `clientInformation` (a step before any interactive one) or `saveCodeVerifier` (the
+ * step before the redirect) waits until the test releases it, so a connect can time out or be aborted
+ * while the SDK's auth flow is parked there.
+ */
+class PausingProvider extends TestProvider {
+  private readonly _step: 'clientInformation' | 'saveCodeVerifier';
+  private readonly _pause: IDeferred = deferred();
+  private readonly _reach: IDeferred = deferred();
+
+  public constructor(step: 'clientInformation' | 'saveCodeVerifier') {
+    super(undefined);
+    this._step = step;
+  }
+
+  /** Resolves once the auth flow has reached the paused step. */
+  public get reached(): Promise<void> {
+    return this._reach.promise;
+  }
+
+  /** Lets the paused step finish. */
+  public release(): void {
+    this._pause.resolve();
+  }
+
+  public override clientInformation(): { client_id: string; client_secret: string } {
+    const info = super.clientInformation();
+    if (this._step !== 'clientInformation') {
+      return info;
+    }
+    this._reach.resolve();
+    return this._pause.promise.then(() => info) as unknown as { client_id: string; client_secret: string };
+  }
+
+  public override saveCodeVerifier(verifier: string): void {
+    super.saveCodeVerifier(verifier);
+    if (this._step === 'saveCodeVerifier') {
+      this._reach.resolve();
+      return this._pause.promise as unknown as void;
+    }
+  }
+}
+
 describe('OAuth through authProvider', () => {
   let auth: IAuthServer;
   let real: IRealMcpServer;
@@ -529,6 +585,70 @@ describe('OAuth through authProvider', () => {
     expect(auth.requests).toEqual([]);
   });
 
+  test.each<{ label: string; how: 'timeout' | 'abort' }>([
+    { label: 'times out', how: 'timeout' },
+    { label: 'is aborted', how: 'abort' }
+  ])(
+    'a connect that $label while auth is parked before any interactive step: nothing interactive reaches the consumer afterwards',
+    async ({ how }) => {
+      protection.valid.clear();
+      const provider = new PausingProvider('clientInformation');
+      const controller = new AbortController();
+      const connecting = connectMcpSession({
+        transport: createHttpTransport({ url: real.url, fetch: guarded(), authProvider: provider }).orThrow(),
+        ...(how === 'timeout' ? { timeoutMs: 300 } : { signal: controller.signal })
+      });
+      await provider.reached;
+      if (how === 'abort') {
+        controller.abort();
+      }
+      const result = await connecting;
+      observed.push(result.message ?? '');
+      expect(result).toFailWithDetail(/.*/, { kind: how === 'timeout' ? 'timeout' : 'aborted' });
+      // The window is closed; now let the parked flow continue.
+      provider.release();
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      expect(provider.stateCalls).toBe(0);
+      expect(provider.verifiers).toEqual([]);
+      expect(provider.redirects).toEqual([]);
+    }
+  );
+
+  test('a connect that times out while saveCodeVerifier is pending: the late redirect is refused', async () => {
+    protection.valid.clear();
+    const provider = new PausingProvider('saveCodeVerifier');
+    const connecting = connectMcpSession({
+      transport: createHttpTransport({ url: real.url, fetch: guarded(), authProvider: provider }).orThrow(),
+      timeoutMs: 300
+    });
+    await provider.reached;
+    const result = await connecting;
+    observed.push(result.message ?? '');
+    expect(result).toFailWithDetail(/.*/, { kind: 'timeout' });
+    provider.release();
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    // state and saveCodeVerifier ran inside the window — documented — but the redirect is refused.
+    expect(provider.stateCalls).toBe(1);
+    expect(provider.verifiers).toHaveLength(1);
+    expect(provider.redirects).toEqual([]);
+  });
+
+  test('a frozen provider reaches the protected server through a real connect', async () => {
+    const frozen: McpOAuthClientProvider = Object.freeze({
+      redirectUrl: REDIRECT_URL,
+      clientMetadata: { redirect_uris: [REDIRECT_URL] },
+      clientInformation: () => ({ client_id: CLIENT_ID, client_secret: CLIENT_SECRET }),
+      tokens: (): OAuthTokens => ({ access_token: ACCESS_TOKEN, token_type: 'Bearer' }),
+      saveTokens: () => undefined,
+      redirectToAuthorization: () => undefined,
+      saveCodeVerifier: () => undefined,
+      codeVerifier: () => ''
+    });
+    const { session } = await connect(frozen);
+    expect(await callMcpTool(session!, 'echo', {})).toSucceed();
+    expect(protection.seen.every((r) => r.authorization === `Bearer ${ACCESS_TOKEN}`)).toBe(true);
+  });
+
   test('the guard covers the authorization server the MCP server names', async () => {
     protection.valid.clear();
     const authOrigin = auth.origin;
@@ -705,5 +825,179 @@ describe('McpHttpEgress edges', () => {
     };
     const gated = new McpHttpEgress(ENDPOINT, undefined, undefined, minimal).authProvider!;
     expect(gated.state).toBeUndefined();
+  });
+});
+
+describe('the OAuth facade and transport construction (Copilot round 1)', () => {
+  const ENDPOINT = new URL('https://mcp.example.com/mcp');
+
+  test('a frozen object-literal provider works through the gate', async () => {
+    const tokens: OAuthTokens = { access_token: 'frozen-token', token_type: 'Bearer' };
+    const frozen: McpOAuthClientProvider = Object.freeze({
+      redirectUrl: REDIRECT_URL,
+      clientMetadata: { redirect_uris: [REDIRECT_URL] },
+      clientInformation: () => undefined,
+      tokens: () => tokens,
+      saveTokens: () => undefined,
+      redirectToAuthorization: () => undefined,
+      saveCodeVerifier: () => undefined,
+      codeVerifier: () => ''
+    });
+    const gated = new McpHttpEgress(ENDPOINT, undefined, undefined, frozen).authProvider!;
+    expect(await gated.tokens()).toBe(tokens);
+    expect(gated.redirectUrl).toBe(REDIRECT_URL);
+    expect(gated.clientMetadata).toEqual({ redirect_uris: [REDIRECT_URL] });
+    expect(gated.clientMetadataUrl).toBeUndefined();
+  });
+
+  test('every member forwards to the consumer, with the consumer as the receiver', async () => {
+    const receivers: unknown[] = [];
+    function record(this: unknown, value: unknown): unknown {
+      receivers.push(this);
+      return value;
+    }
+    const full = {
+      redirectUrl: REDIRECT_URL,
+      clientMetadata: { redirect_uris: [REDIRECT_URL] },
+      clientMetadataUrl: 'https://client.example.com/meta',
+      clientInformation(): unknown {
+        return record.call(this, undefined);
+      },
+      tokens(): unknown {
+        return record.call(this, undefined);
+      },
+      saveTokens(): unknown {
+        return record.call(this, undefined);
+      },
+      codeVerifier(): unknown {
+        return record.call(this, 'v');
+      },
+      saveCodeVerifier(): unknown {
+        return record.call(this, undefined);
+      },
+      redirectToAuthorization(): unknown {
+        return record.call(this, undefined);
+      },
+      state(): unknown {
+        return record.call(this, 's');
+      },
+      saveClientInformation(): unknown {
+        return record.call(this, undefined);
+      },
+      addClientAuthentication(): unknown {
+        return record.call(this, undefined);
+      },
+      validateResourceURL(): unknown {
+        return record.call(this, undefined);
+      },
+      invalidateCredentials(): unknown {
+        return record.call(this, undefined);
+      },
+      prepareTokenRequest(): unknown {
+        return record.call(this, undefined);
+      },
+      saveDiscoveryState(): unknown {
+        return record.call(this, undefined);
+      },
+      discoveryState(): unknown {
+        return record.call(this, undefined);
+      }
+    } as unknown as McpOAuthClientProvider;
+    const egress = new McpHttpEgress(ENDPOINT, undefined, undefined, full);
+    const gated = egress.authProvider!;
+    expect(gated.clientMetadataUrl).toBe('https://client.example.com/meta');
+    const tokens: OAuthTokens = { access_token: 'x', token_type: 'Bearer' };
+    await gated.clientInformation();
+    await gated.tokens();
+    await gated.saveTokens(tokens);
+    expect(await gated.codeVerifier()).toBe('v');
+    await gated.saveClientInformation!({ client_id: 'c' });
+    await gated.addClientAuthentication!(new Headers(), new URLSearchParams(), ENDPOINT);
+    await gated.validateResourceURL!(ENDPOINT);
+    await gated.invalidateCredentials!('tokens');
+    await gated.prepareTokenRequest!();
+    await gated.saveDiscoveryState!({ authorizationServerUrl: 'https://as.example.com' });
+    await gated.discoveryState!();
+    await egress.interactive(async () => {
+      expect(await gated.state!()).toBe('s');
+      await gated.saveCodeVerifier('v');
+      await gated.redirectToAuthorization(new URL('https://as.example.com/a'));
+    });
+    expect(receivers).toHaveLength(14);
+    expect(receivers.every((r) => r === full)).toBe(true);
+  });
+
+  test('an optional member the consumer did not implement stays absent', () => {
+    const minimal: McpOAuthClientProvider = {
+      redirectUrl: REDIRECT_URL,
+      clientMetadata: { redirect_uris: [REDIRECT_URL] },
+      clientInformation: () => undefined,
+      tokens: () => undefined,
+      saveTokens: () => undefined,
+      redirectToAuthorization: () => undefined,
+      saveCodeVerifier: () => undefined,
+      codeVerifier: () => ''
+    };
+    const gated = new McpHttpEgress(ENDPOINT, undefined, undefined, minimal).authProvider!;
+    for (const member of [
+      'state',
+      'saveClientInformation',
+      'addClientAuthentication',
+      'validateResourceURL',
+      'invalidateCredentials',
+      'prepareTokenRequest',
+      'saveDiscoveryState',
+      'discoveryState'
+    ] as const) {
+      expect(gated[member]).toBeUndefined();
+    }
+  });
+
+  test('case-variant duplicate static headers, combined as the SDK sends them, are not sent to another origin', async () => {
+    const sent: Array<RequestInit | undefined> = [];
+    const egress = new McpHttpEgress(
+      ENDPOINT,
+      async (...args: Parameters<McpFetch>) => {
+        sent.push(args[1]);
+        return new Response('ok');
+      },
+      { 'X-Api-Key': 'a', 'x-api-key': 'b' }
+    );
+    // What the SDK sends: the static headers spread into a record, then into `Headers` ("a, b").
+    await egress.fetch('https://as.example.com/token', { headers: { 'X-Api-Key': 'a', 'x-api-key': 'b' } });
+    expect(new Headers(sent[0]?.headers).has('x-api-key')).toBe(false);
+  });
+
+  test('createHttpTransport refuses case-variant duplicate header names', () => {
+    expect(
+      createHttpTransport({ url: ENDPOINT.href, headers: { 'X-Api-Key': 'a', 'x-api-key': 'b' } })
+    ).toFailWith(/headers names x-api-key more than once, in different letter cases/);
+  });
+
+  test('a provider getter that throws fails createHttpTransport with fixed text', () => {
+    const hostile = new Proxy({} as McpOAuthClientProvider, {
+      get: () => {
+        throw new Error('getter boom with s3cret');
+      }
+    });
+    const result = createHttpTransport({ url: ENDPOINT.href, authProvider: hostile });
+    expect(result).toFailWith(/^createHttpTransport: the transport could not be built/);
+    expect(result.message).not.toMatch(/s3cret|boom/);
+  });
+
+  test('an invalid header value fails createHttpTransport with fixed text', () => {
+    const result = createHttpTransport({ url: ENDPOINT.href, headers: { 'x-api-key': 'bad\nvalue' } });
+    expect(result).toFailWith(/^createHttpTransport: the transport could not be built/);
+  });
+
+  test('headers whose keys cannot be read fail createHttpTransport with fixed text', () => {
+    const unreadable = new Proxy({} as Record<string, string>, {
+      ownKeys: () => {
+        throw new Error('keys boom');
+      }
+    });
+    expect(createHttpTransport({ url: ENDPOINT.href, headers: unreadable })).toFailWith(
+      /^createHttpTransport: headers could not be read$/
+    );
   });
 });

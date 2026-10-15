@@ -154,7 +154,10 @@ describe('createHttpTransport', () => {
     mockSdk.makeHttpTransport.mockImplementationOnce(() => {
       throw new Error('http boom');
     });
-    expect(createHttpTransport({ url: 'http://localhost' })).toFailWith(/createHttpTransport:.*http boom/);
+    // Fixed text: what threw while building from the consumer's options is not echoed.
+    const result = createHttpTransport({ url: 'http://localhost' });
+    expect(result).toFailWith(/^createHttpTransport: the transport could not be built/);
+    expect(result.message).not.toMatch(/http boom/);
   });
 });
 
