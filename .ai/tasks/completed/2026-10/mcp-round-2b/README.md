@@ -1,6 +1,6 @@
 # mcp-round-2b — guarded MCP egress and OAuth
 
-**Shipped**: 2026-10-14 into `integration/asks` (PR number filled in by the orchestrator).
+**Shipped**: 2026-10-14 into `integration/asks` via #729.
 Packages: `@fgv/ts-extras` (safer-fetch), `@fgv/ts-extras-mcp`.
 
 ## Summary

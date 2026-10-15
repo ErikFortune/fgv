@@ -1,7 +1,7 @@
 id: mcp-round-2b
 status: shipped
 packages: ['@fgv/ts-extras', '@fgv/ts-extras-mcp']
-prs: [] # written anticipating merge; the orchestrator fills in the PR number
+prs: [729] # written anticipating merge
 openPrs: []
 opened: 2026-10-14 # first work commit; the brief was frozen 2026-10-13
 closed: 2026-10-14

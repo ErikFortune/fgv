@@ -69,7 +69,7 @@
 
 <!-- BEGIN GENERATED: recent-additions -->
 
-- **2026-10-14** — MCP servers can be reached through the same SSRF guard as the rest of your egress, without buffering their streams, and OAuth-protected MCP servers work — with interactive authorization confined to the connect.
+- **2026-10-14** — MCP servers can be reached through the same SSRF guard as the rest of your egress, without buffering their streams, and OAuth-protected MCP servers work — with interactive authorization confined to the connect. ([#729](https://github.com/ErikFortune/fgv/pull/729))
 - **2026-10-04** — An MCP tool call can be bounded and cancelled — aborting an ai-assist turn now cancels the MCP request on the server — and every failure says what kind it was, so callers stop parsing messages. ([#722](https://github.com/ErikFortune/fgv/pull/722))
 - **2026-09-25** — Anthropic structured output works on Claude Opus 5.5 and Fable 5.1 via JSON outputs instead of a forced tool call, and the advanced tier now resolves to claude-opus-5-5. ([#694](https://github.com/ErikFortune/fgv/pull/694))
 - **2026-09-24** — ai-assist's tier and image aliases now point at GPT-6, Gemini 3.8 Flash and Grok 4.7, each id cited from a fetched provider page; Anthropic's are held until structured output stops forcing a tool call. ([#692](https://github.com/ErikFortune/fgv/pull/692))
