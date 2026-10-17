@@ -117,6 +117,11 @@ Every entry here **widens an accepted set**, so `install-run-rush.js test` repo-
   instead.
 - **Route:** the largest of class B, and design-shaped, because the per-provider fold is the hard part.
   It also closes TECH_DEBT P3 (`task_query`'s `limit` bound is prose). Run it **after** 4–6.
+- **Status:** **shipped** in #734 (`48feb860`) into `integration/asks`, stream `json-schema-constraints`.
+  - Validating keywords are enforced and emitted.
+  - Annotations are emitted.
+  - Each wire format has a capability table citing provider docs; unverified targets fold.
+  - Fold format: `Constraints: …` for validating keywords; annotations as their own sentences; `title` dropped.
 
 ---
 
@@ -280,7 +285,7 @@ to. Design it once, before any of them ships.
 | 4 | class B: entries 4 → 5 → 6 | **shipped** (6 in part), #723 → #727 |
 | 5 | entry 12 (#672) | **shipped**, #729 |
 | 6 | C3: entries 13, 14, 15; then 11 | 13–15 **shipped**, #728; 11 **shipped**, #729 |
-| 7 | entry 7 (#682) | largest design in class B |
+| 7 | entry 7 (#682) | **shipped**, #734 |
 | — | entries 3, 17 | **shipped**, #732 |
 
 **Parallel-safe pairs:** the C cluster (`ts-extras-mcp` plus the one ai-assist file) is disjoint from
