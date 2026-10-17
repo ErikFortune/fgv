@@ -172,6 +172,6 @@ build it on `nextFloat()` rather than adding a second generator.
 
 <!-- BEGIN GENERATED: recent-additions -->
 
-*No stream has recorded a `sourceLine` against this package yet.*
+- **2026-10-17** — **Shipped:** `@fgv/ts-random` can make a weighted random choice, either from a generator or as a pure function of a unit float in `[0, 1]`, so a hash-derived choice is stable; `IProvenance.derivedFrom` is now documented as provenance, not a live link. ([#TBD](https://github.com/ErikFortune/fgv/pull/TBD))
 
 <!-- END GENERATED: recent-additions -->
