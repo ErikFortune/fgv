@@ -99,4 +99,22 @@ merge `6b36067cf` (which includes #735). Detail in `result.md` § Review round 1
 
 ### Gate counts (round 1)
 
-GATE_COUNTS_PLACEHOLDER
+Run from the repo root on the tree with #735 restored (see the note below), logs in
+`../gate-logs-json-schema-shapes/`.
+
+| gate | result |
+| --- | --- |
+| `install-run-rush.js rebuild` | exit 0; error grep 0; `warning` 1 (Rush's Git-tracked symlinks notice only); 38 completed |
+| `install-run-rush.js test` | exit 0; error grep 0; `warning` 1 (the same notice); 37 completed (`SUCCESS: 37 operations`); log not NUL-padded (8282 = 8282 bytes) |
+| per-package `rushx test` (`ts-json-base`, `ts-extras`, `ts-extras-mcp`) | 100% on all four metrics, no warnings |
+| `rushx fixlint` then `rushx lint` (`ts-json-base`, `ts-extras`, `ts-extras-ollama`, `ts-extras-mcp`, testbed) | exit 0; 0 warnings, 0 errors; fixlint changed nothing |
+| `change --verify --target-branch origin/integration/asks` | exit 0 |
+| `verify-capability-docs.mjs` | 0 failed (router 22,778/24,000) |
+| `generate-capability-feed.mjs --check` | 0 stale |
+
+**Note: a process slip, fixed.** The local branch ref had been advanced to the `integration/asks`
+merge `6b36067cf` without the worktree being updated, so the round-1 commit `d69ac6716`
+(`git add -A`) staged the pre-merge content of #735's files and reverted them. `change --verify`
+caught it (`@fgv/ts-agent-memory` had no change file). The next commit re-applies exactly the diff
+from `6b36067cf` for those seven paths; afterwards the branch differs from `origin/integration/asks`
+only in this stream's files, and the gates above ran on that tree.

@@ -70,4 +70,4 @@ relatedStreams:
       relationship: 'earlier part of PersonAIlity #683 (record, $ref, Optional)'
     }
   - { id: personality-intake, relationship: 'captured the PersonAIlity #683 ask this stream finishes' }
-sourceHash: e1b9e0c25e107743 # first 16 hex of sha256 over brief.md, state.md and result.md concatenated in that order
+sourceHash: 86840e4161372f3d # first 16 hex of sha256 over brief.md, state.md and result.md concatenated in that order
