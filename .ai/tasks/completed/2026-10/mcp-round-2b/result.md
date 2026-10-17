@@ -326,6 +326,14 @@ Final run, after the orchestrator-review fixes, on the code as pushed. Each log 
 | `change --verify --target-branch origin/integration/asks` | 0 | 0 | 0 | change files: `@fgv/ts-extras` ×1, `@fgv/ts-extras-mcp` ×2, all `minor` |
 | `verify-capability-docs.mjs` | 0 | — | — | router 22,585/24,000 chars, 0 failed; the capability feed is current (0 updated) |
 
+After Copilot round 4 (graded the same way): both packages' `fixlint` / `build` / `lint` exit 0 with
+0 `error` and 0 `warning` lines. `ts-extras` `rushx test`: 97 suites, 3158 passed, 0 failed, 100 % on
+all four, and the one `error` match is still the `guardedFetchError.ts` coverage row.
+`ts-extras-mcp` `rushx test`: 14 suites, 254 passed, 0 failed, 100 % on all four. `rebuild`:
+`SUCCESS: 38 operations`, 0 errors, 1 warning (the symlink notice). `test`: `SUCCESS: 37 operations`,
+0 errors, 1 warning (the same notice). `change --verify`: 0 / 0. `verify-capability-docs`: 0 failed;
+feed: 0 updated.
+
 Prettier: the repo's 2.8.8 (`rush-prettier` autoinstaller) and the pre-commit `rush prettier` hook;
 no global prettier was used.
 

@@ -76,4 +76,4 @@ relatedStreams:
       id: mcp-client-cancellation,
       relationship: 'built the McpFailureReason vocabulary (#722) extended here'
     }
-sourceHash: sha256:7a189f2d1a170fb1 # over brief.md + result.md + state.md
+sourceHash: sha256:0b74cbde272d2831 # over brief.md + result.md + state.md
