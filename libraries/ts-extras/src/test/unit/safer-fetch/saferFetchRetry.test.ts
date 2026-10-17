@@ -516,12 +516,20 @@ describe('retry', () => {
       expect(transport.calls).toHaveLength(0);
     });
 
-    test.each<[string, (ms: number) => SaferFetch.IRetryPolicy]>([
-      ['retry.baseDelayMs', (ms: number) => ({ attempts: 1, baseDelayMs: ms, maxDelayMs: 2147483647 })],
-      ['retry.maxDelayMs', (ms: number) => ({ attempts: 1, maxDelayMs: ms })]
+    test.each<[string, (ms: number) => SaferFetch.IRetryPolicy, RegExp]>([
+      [
+        'retry.baseDelayMs',
+        (ms: number) => ({ attempts: 1, baseDelayMs: ms, maxDelayMs: 2147483647 }),
+        /^retry\.baseDelayMs must be no greater than 2147483647 ms/
+      ],
+      [
+        'retry.maxDelayMs',
+        (ms: number) => ({ attempts: 1, maxDelayMs: ms }),
+        /^retry\.maxDelayMs must be no greater than 2147483647 ms/
+      ]
     ])(
       'bounds %s by what a timer honours: 2147483647 is accepted, 2147483648 refused',
-      async (name: string, withDelay: (ms: number) => SaferFetch.IRetryPolicy) => {
+      async (__name: string, withDelay: (ms: number) => SaferFetch.IRetryPolicy, expected: RegExp) => {
         const transport = answering(() => ok('fine'));
         await expect(
           saferFetchText(URL_UNDER_TEST, options(transport, { retry: withDelay(2147483647) }))
@@ -529,13 +537,10 @@ describe('retry', () => {
         expect(transport.calls).toHaveLength(1);
         await expect(
           saferFetchText(URL_UNDER_TEST, options(transport, { retry: withDelay(2147483648) }))
-        ).resolves.toFailWithDetail(
-          new RegExp(`${name.replace('.', '\\.')} must be no greater than 2147483647 ms`),
-          {
-            kind: 'unknown',
-            detail: expect.stringMatching(/must be no greater than 2147483647 ms/) as unknown as string
-          }
-        );
+        ).resolves.toFailWithDetail(expected, {
+          kind: 'unknown',
+          detail: expect.stringMatching(/must be no greater than 2147483647 ms/) as unknown as string
+        });
         expect(transport.calls).toHaveLength(1);
       }
     );

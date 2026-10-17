@@ -867,6 +867,25 @@ describe('McpHttpEgress edges', () => {
     ]);
   });
 
+  test('a refusal of any request but the event stream is logged by kind, with no URL', async () => {
+    const refusal = new SaferFetch.GuardedFetchError({
+      kind: 'redirect-rejected',
+      url: ENDPOINT.href,
+      status: 302
+    });
+    const egress = new McpHttpEgress(ENDPOINT, async () => Promise.reject(refusal));
+    const logger = new Logging.InMemoryLogger('detail');
+    egress.attachLogger(logger);
+    await expect(egress.fetch(ENDPOINT)).rejects.toBe(refusal);
+    await expect(egress.fetch(ENDPOINT, { method: 'POST' })).rejects.toBe(refusal);
+    await expect(egress.fetch('https://as.example.com/token', { method: 'GET' })).rejects.toBe(refusal);
+    expect(logger.logged).toEqual([
+      'mcp: an HTTP request was refused by the egress guard (redirect-rejected)',
+      'mcp: an HTTP request was refused by the egress guard (redirect-rejected)',
+      'mcp: an HTTP request was refused by the egress guard (redirect-rejected)'
+    ]);
+  });
+
   test('a rejection is rethrown unchanged, whatever the request', async () => {
     const failure = new TypeError('fetch failed');
     const egress = new McpHttpEgress(ENDPOINT, async () => Promise.reject(failure));
