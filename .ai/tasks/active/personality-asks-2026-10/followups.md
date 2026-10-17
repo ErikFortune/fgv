@@ -157,6 +157,7 @@ to. Design it once, before any of them ships.
 - **Req. priority:** P2. It depends on entry 9's kinds.
 - **Route:** after C1. An authorization surface: budget for a long review loop
   (CODING_STANDARDS § "Authorization boundaries").
+- **Status:** **shipped** in #729 (`9013c2df`) into `integration/asks`; stream `mcp-round-2b` (`.ai/tasks/completed/2026-10/mcp-round-2b/`). Reaches `release` with the next asks promotion.
 
 ### C2 — egress
 
@@ -172,6 +173,7 @@ to. Design it once, before any of them ships.
   push the SSRF policy back onto every consumer. It is a security boundary, so expect a substantive
   review loop. Note also that `IAddressGuard` lives in `ts-extras` and `ts-extras-mcp` would take it as
   a dependency; check the dependency posture.
+- **Status:** **shipped** in #729 (`9013c2df`) into `integration/asks`; stream `mcp-round-2b` (`.ai/tasks/completed/2026-10/mcp-round-2b/`). Reaches `release` with the next asks promotion.
 
 ### C3 — fidelity and lifecycle
 
@@ -243,8 +245,8 @@ to. Design it once, before any of them ships.
 | 2 | entry 2 (#679) | **shipped**, #720 |
 | 3 | C1: entries 16 → 9 → 8 + 10 | **shipped**, #722 → #727 |
 | 4 | class B: entries 4 → 5 → 6 | **shipped** (6 in part), #723 → #727 |
-| 5 | entry 12 (#672) | P1, but needs a new primitive; start its design in parallel with step 3 |
-| 6 | C3: entries 13, 14, 15; then 11 | 13–15 **shipped**, #728; 11 with 12 in `mcp-round-2b` |
+| 5 | entry 12 (#672) | **shipped**, #729 |
+| 6 | C3: entries 13, 14, 15; then 11 | 13–15 **shipped**, #728; 11 **shipped**, #729 |
 | 7 | entry 7 (#682) | largest design in class B |
 | — | entries 3, 17 | cheap; fold into whichever chore batch opens first |
 
