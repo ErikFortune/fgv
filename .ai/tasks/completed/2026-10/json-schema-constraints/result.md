@@ -274,6 +274,17 @@ Run on `7c0738a93`.
 | `verify-capability-docs.mjs` | 0 failed |
 | `generate-capability-feed.mjs --check` | 0 stale |
 
+### Gate counts (round 3)
+
+Run on `b5c2ccc47`, which includes the `integration/asks` merge `3d1b360a4`.
+
+| gate | result |
+| --- | --- |
+| `rebuild` | exit 0; error grep = 0; warning = 1 (symlink notice); 38/38 |
+| `test` | exit 0; error grep = 0; warning = 1 (symlink notice); 37 completed plus `typedoc-compact-theme` (no work); log not NUL-padded |
+| per-package `heft test --clean` and `eslint` (`ts-json-base`, `ts-extras`, `ts-extras-ollama`, `ts-extras-mcp`) | 100% coverage, lint exit 0, no warnings |
+| `change --verify`, `verify-capability-docs`, `generate-capability-feed --check` | all pass |
+
 ## What the brief got wrong
 
 - **Decision 7 assumed one table per wire format.** The OpenAI-family wires are shared by six
