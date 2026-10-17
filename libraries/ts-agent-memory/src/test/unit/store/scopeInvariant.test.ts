@@ -36,7 +36,10 @@ import {
 const noteKind: Kind = 'note' as Kind;
 const eventKind: Kind = 'event' as Kind;
 
-/** Flat, scope-blind: files everything under `shared`, decodes from the stem alone. */
+/**
+ * Flat, scope-blind: files everything under `shared`, decodes from the stem alone,
+ * and accepts any `<prefix>-` stem, so `verifyRoundTrip` does not check idStem either.
+ */
 class ScopeBlindCodec implements IIdentityCodec {
   public encode(entityId: EntityId): Result<IIdentityCodecResult> {
     if (entityId === 'unencodable') {
@@ -45,7 +48,7 @@ class ScopeBlindCodec implements IIdentityCodec {
     return succeed({ scope: 'shared' as MemoryScopeKey, idStem: `p-${entityId}`, isVersioned: false });
   }
   public decode(__scope: MemoryScopeKey, encodedStem: string): Result<EntityId> {
-    return Convert.entityId.convert(encodedStem.slice('p-'.length));
+    return Convert.entityId.convert(encodedStem.slice(encodedStem.indexOf('-') + 1));
   }
   public verifyRoundTrip(scope: MemoryScopeKey, encodedStem: string): Result<true> {
     return this.decode(scope, encodedStem).onSuccess(() => succeed(true));
@@ -205,6 +208,14 @@ describe('FileTreeMemoryStore scope invariant (scope == codec(kind).encode(entit
       );
     });
 
+    test("'fail' mode rejects a flat record whose stem is not the codec's idStem", () => {
+      // Decodes to 'acme' and sits in the right scope, but encode('acme') is 'p-acme'.
+      const misnamed: ISeedFile = recordFile(noteKind, 'shared', 'q-acme', 'acme');
+      expect(open([misnamed])).toFailWith(
+        /shared\/q-acme\.md'.*read as 'q-acme', but its codec derives idStem 'p-acme' for entityId 'acme'/i
+      );
+    });
+
     test('an entity id the codec cannot encode is reported with the file context', () => {
       const unencodable: ISeedFile = recordFile(noteKind, 'shared', 'p-unencodable', 'unencodable');
       expect(open([unencodable])).toFailWith(
@@ -224,6 +235,15 @@ describe('FileTreeMemoryStore scope invariant (scope == codec(kind).encode(entit
       expect(store.resolveRecord('elsewhere' as MemoryScopeKey, 'p-acme' as MemoryId)).toFailWith(
         /but its codec derives scope 'shared'/i
       );
+    });
+
+    test('getById refuses a flat record whose stem is not the codec idStem', async () => {
+      const misnamed: ISeedFile = recordFile(noteKind, 'shared', 'q-acme', 'acme');
+      const store = open([misnamed], 'skip').orThrow();
+      expect(await store.getById('shared' as MemoryScopeKey, 'q-acme' as MemoryId)).toFailWith(
+        /but its codec derives idStem 'p-acme'/i
+      );
+      expect(await store.get(noteKind, 'acme' as EntityId)).toSucceedWith(undefined);
     });
 
     test('getById refuses a version file under another entity subtree', async () => {

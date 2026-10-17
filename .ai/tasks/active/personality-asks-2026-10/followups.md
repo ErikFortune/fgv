@@ -257,7 +257,7 @@ to. Design it once, before any of them ships.
 - **What:** a vault written with a non-identity `scopeEncoding` cannot be reopened, because the open walk indexes raw directory segments. Since #733 the reopen fails loudly; before, it silently misfiled records.
 - **Route:** recorded in `docs/TECH_DEBT.md` (P3). The trigger is the first consumer that needs a non-identity encoding.
 
-### D5. The store does not check the idStem half for flat kinds — from #733's review
+### D5. The store does not check the idStem half for flat kinds — from #733's review — **shipped** via #TBD
 
 - **What:** a codec that ignores scope and also skips the idStem check in `verifyRoundTrip` can load `shared/X.md` whose `entityId` encodes to `shared/Y`. `getById` finds that record, but `get(kind, entityId)` misses it.
 - **Possible fix:** a one-line store check inside the same chain, `!encoded.isVersioned && encoded.idStem !== file.baseName`, would make the whole address a store property.
