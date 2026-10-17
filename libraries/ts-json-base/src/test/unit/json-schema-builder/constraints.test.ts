@@ -22,6 +22,7 @@
 
 import '@fgv/ts-utils-jest';
 import { JsonObject, JsonValue } from '../../../packlets/json';
+import { succeed } from '@fgv/ts-utils';
 import { JsonSchema } from '../../..';
 
 /** A schema node built either way: from the factory, or from `fromJson` over its wire form. */
@@ -449,5 +450,71 @@ describe('JsonSchema constraints — emission and round trip', () => {
     examples.push('b');
     expect(schema.validate('ab')).toSucceed();
     expect(schema.toJson()).toEqual({ type: 'string', minLength: 1, examples: ['a'] });
+  });
+});
+
+describe('JsonSchema constraints — review round', () => {
+  test('multipleOf accepts decimal multiples within float rounding', () => {
+    expect(JsonSchema.number({ multipleOf: 0.1 }).validate(0.3)).toSucceedWith(0.3);
+    expect(JsonSchema.number({ multipleOf: 0.1 }).validate(0.7)).toSucceedWith(0.7);
+    expect(JsonSchema.number({ multipleOf: 0.05 }).validate(1.15)).toSucceedWith(1.15);
+  });
+
+  test('multipleOf refuses a near miss on a large quotient', () => {
+    expect(JsonSchema.number({ multipleOf: 1 }).validate(2000000000.5)).toFailWith(/multipleOf/);
+    expect(JsonSchema.number({ multipleOf: 0.01 }).validate(12345678.123)).toFailWith(/multipleOf/);
+    expect(JsonSchema.integer({ multipleOf: 10 }).validate(10000000005)).toFailWith(/multipleOf/);
+    expect(JsonSchema.integer({ multipleOf: 10 }).validate(10000000010)).toSucceed();
+  });
+
+  test('validateNumberOptions and validateStringOptions are the non-throwing checks', () => {
+    expect(JsonSchema.validateNumberOptions('integer', { minimum: 3, maximum: 1 })).toFailWith(
+      /minimum 3 is greater than maximum 1/
+    );
+    expect(
+      JsonSchema.validateNumberOptions('integer', { minimum: 1, maximum: 3 }).onSuccess((o) =>
+        succeed(JsonSchema.integer(o))
+      )
+    ).toSucceedAndSatisfy((schema) => {
+      expect(schema.validate(4)).toFailWith(/maximum/);
+    });
+    expect(JsonSchema.validateNumberOptions('number', undefined)).toSucceedWith(undefined);
+    expect(JsonSchema.validateStringOptions({ minLength: -1 })).toFailWith(/non-negative integer/);
+    expect(JsonSchema.validateStringOptions({ maxLength: 2 })).toSucceedWith({ maxLength: 2 });
+  });
+
+  test('mutating what toJson() returned cannot alter the node', () => {
+    const schema = JsonSchema.object(
+      { a: JsonSchema.string() },
+      { default: { a: 'x' }, examples: [{ a: 'y' }] }
+    );
+    const first = schema.toJson();
+    (first.default as JsonObject).a = 'changed';
+    (first.examples as JsonObject[])[0].a = 'changed';
+    (first.examples as JsonValue[]).push('extra');
+    expect(schema.toJson()).toEqual(expect.objectContaining({ default: { a: 'x' }, examples: [{ a: 'y' }] }));
+  });
+
+  test('mutating the authored default after construction cannot alter the node', () => {
+    const value: JsonObject = { k: 1 };
+    const schema = JsonSchema.boolean({ default: value });
+    value.k = 2;
+    expect(schema.toJson()).toEqual({ type: 'boolean', default: { k: 1 } });
+  });
+
+  test('fromJson refuses a length keyword beside a string enum, naming the path', () => {
+    expect(
+      JsonSchema.fromJson({ type: 'object', properties: { e: { enum: ['abc', 'd'], maxLength: 1 } } })
+    ).toFailWith(/^#\/properties\/e: unsupported JSON Schema keyword 'maxLength' beside 'enum'/);
+    expect(JsonSchema.fromJson({ type: 'string', enum: ['a'], minLength: 2 })).toFailWith(
+      /'minLength' beside 'enum'/
+    );
+  });
+
+  test('an integer range above 2^53 is judged as a number range rather than by rounding', () => {
+    const big = 2 ** 53;
+    const schema = JsonSchema.integer({ exclusiveMinimum: big, maximum: big + 2 });
+    expect(schema.validate(big + 2)).toSucceed();
+    expect(() => JsonSchema.integer({ exclusiveMinimum: big, maximum: big })).toThrow(/leave no integer/);
   });
 });

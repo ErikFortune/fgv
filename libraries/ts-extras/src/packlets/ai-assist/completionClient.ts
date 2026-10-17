@@ -449,7 +449,7 @@ async function callOpenAiResponsesCompletion(
     input,
     // `tools` is omitted entirely when none are requested — a Responses-only model routed
     // here for tier/model reasons (not tools) must not send an empty tools array.
-    ...(tools.length > 0 ? { tools: toResponsesApiTools(tools, config.providerId) } : {}),
+    ...(tools.length > 0 ? { tools: toResponsesApiTools(tools, config) } : {}),
     // Temperature is sent only when the caller explicitly provided one (see callOpenAiCompletion).
     ...(temperature !== undefined ? { temperature } : {}),
     ...(effort !== undefined && config.model !== 'grok-4' ? { reasoning: { effort } } : {}),
@@ -891,13 +891,17 @@ export async function callProviderCompletion(
   // on the model alone cannot know which of the two OpenAI wire shapes applies.
   const usesResponsesApi: boolean =
     descriptor.apiFormat === 'openai' && (hasTools || isResponsesOnlyModel(descriptor, model));
+  // The schema-keyword tables trust a provider's documentation only on that provider's own
+  // endpoint: a caller-supplied `endpoint` (a gateway, LiteLLM, vLLM) is an unverified server.
+  const wireProviderId: string | undefined = endpoint === undefined ? descriptor.id : undefined;
   const structuredResult = resolveStructuredOutput(
     descriptor,
     model,
     structuredOutput,
     tools,
     usesResponsesApi,
-    resolveStructuredOutputCapability
+    resolveStructuredOutputCapability,
+    { providerId: wireProviderId, model }
   );
   if (structuredResult.isFailure()) {
     return fail(structuredResult.message);
@@ -927,7 +931,7 @@ export async function callProviderCompletion(
     baseUrl: baseUrlResult.value,
     apiKey,
     model,
-    providerId: descriptor.id
+    providerId: wireProviderId
   };
   /* c8 ignore next 8 - optional logger diagnostic output */
   if (logger) {

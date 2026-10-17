@@ -11,6 +11,7 @@ import { DetailedResult } from '@fgv/ts-utils';
 import { ObjectConverter as ObjectConverter_2 } from '@fgv/ts-utils';
 import { Result } from '@fgv/ts-utils';
 import { StringConverter } from '@fgv/ts-utils';
+import { StringOneOf } from '@fgv/ts-utils';
 import { Validation } from '@fgv/ts-utils';
 import { Validator } from '@fgv/ts-utils';
 import { Validators as Validators_3 } from '@fgv/ts-utils';
@@ -419,7 +420,7 @@ type FileTreeItemType = 'directory' | 'file';
 const foldAllSchemaKeywords: SchemaKeywordCapabilities;
 
 // @public
-function foldedConstraintsSentence(folded: ReadonlyArray<readonly [SchemaConstraintKeyword, JsonValue]>): string;
+function foldedKeywordsText(folded: ReadonlyArray<readonly [SchemaConstraintKeyword, JsonValue]>): string;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -1199,6 +1200,8 @@ declare namespace JsonSchema {
         INumberSchemaOptions,
         IStringSchemaOptions,
         IObjectSchemaOptions,
+        validateNumberOptions,
+        validateStringOptions,
         string_2 as string,
         number_2 as number,
         integer,
@@ -1210,12 +1213,18 @@ declare namespace JsonSchema {
         record,
         fromJson,
         jsonSchemaConverter,
-        foldedConstraintsSentence,
+        foldedKeywordsText,
         adaptSchemaKeywords,
-        SchemaConstraintKeyword,
+        schemaNumberConstraintKeywords,
+        schemaLengthConstraintKeywords,
+        schemaAnnotationKeywords,
         schemaConstraintKeywords,
+        SchemaValidatingKeyword,
+        SchemaAnnotationKeyword,
+        SchemaConstraintKeyword,
         SchemaKeywordTranslator,
         SchemaKeywordRule,
+        SchemaAnnotationRule,
         SchemaKeywordCapabilities,
         foldAllSchemaKeywords
     }
@@ -1392,13 +1401,22 @@ type SaveDetail = SaveCapability | SaveFailureReason;
 type SaveFailureReason = 'not-supported' | 'read-only' | 'not-mutable' | 'path-excluded' | 'permission-denied';
 
 // @public
-type SchemaConstraintKeyword = 'minimum' | 'exclusiveMinimum' | 'maximum' | 'exclusiveMaximum' | 'multipleOf' | 'minLength' | 'maxLength' | 'format' | 'title' | 'default' | 'examples';
+type SchemaAnnotationKeyword = StringOneOf<typeof schemaAnnotationKeywords>;
 
 // @public
-const schemaConstraintKeywords: ReadonlyArray<SchemaConstraintKeyword>;
+const schemaAnnotationKeywords: readonly ["format", "title", "default", "examples"];
 
 // @public
-type SchemaKeywordCapabilities = Readonly<Record<SchemaConstraintKeyword, SchemaKeywordRule>>;
+type SchemaAnnotationRule = SchemaKeywordRule | 'drop';
+
+// @public
+type SchemaConstraintKeyword = StringOneOf<typeof schemaConstraintKeywords>;
+
+// @public
+const schemaConstraintKeywords: readonly ["minimum", "exclusiveMinimum", "maximum", "exclusiveMaximum", "multipleOf", "minLength", "maxLength", "format", "title", "default", "examples"];
+
+// @public
+type SchemaKeywordCapabilities = Readonly<Record<SchemaValidatingKeyword, SchemaKeywordRule> & Record<SchemaAnnotationKeyword, SchemaAnnotationRule>>;
 
 // @public
 type SchemaKeywordRule = 'pass' | 'fold' | {
@@ -1411,7 +1429,16 @@ type SchemaKeywordRule = 'pass' | 'fold' | {
 type SchemaKeywordTranslator = (node: JsonObject) => JsonObject | undefined;
 
 // @public
+const schemaLengthConstraintKeywords: readonly ["minLength", "maxLength"];
+
+// @public
 type SchemaNodeType = 'string' | 'number' | 'integer' | 'boolean' | 'enum' | 'optional' | 'array' | 'object';
+
+// @public
+const schemaNumberConstraintKeywords: readonly ["minimum", "exclusiveMinimum", "maximum", "exclusiveMaximum", "multipleOf"];
+
+// @public
+type SchemaValidatingKeyword = StringOneOf<typeof schemaNumberConstraintKeywords> | StringOneOf<typeof schemaLengthConstraintKeywords>;
 
 // @public
 type Simplify<T> = {
@@ -1450,6 +1477,12 @@ function stringifiedJson(): Converter<JsonValue>;
 
 // @public
 function stringifiedJson<T>(inner: Converter<T> | Validator<T>): Converter<T>;
+
+// @public
+function validateNumberOptions(type: 'number' | 'integer', opts: INumberSchemaOptions | undefined): Result<INumberSchemaOptions | undefined>;
+
+// @public
+function validateStringOptions(opts: IStringSchemaOptions | undefined): Result<IStringSchemaOptions | undefined>;
 
 // @public
 type Validator_2<T, TC = unknown> = Validator<JsonCompatibleType<T>, TC>;

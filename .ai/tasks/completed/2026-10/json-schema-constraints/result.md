@@ -15,7 +15,7 @@ close-out commit.
     passthrough bag.
 - **Validating keywords are enforced.** The failure names the keyword and the bound, for example
   `expected a value >= 1 (minimum), got 0`. That is the text a model reads on the tool path.
-  `multipleOf` uses a relative tolerance of 1e-9 on the quotient. A nullable node accepts `null`
+  `multipleOf` allows four units in the last place on the quotient (`4·ε·max(1, abs(q))`). A nullable node accepts `null`
   unconstrained.
 - **Annotations are emitted, never enforced.** `format` values are not checked. `default` and
   `examples` must be JSON values but are not checked against the node.
@@ -39,7 +39,7 @@ close-out commit.
   - `SchemaKeywordCapabilities` is a total `Record`, so a new keyword is a compile error in every
     table;
   - `foldAllSchemaKeywords` is the table that folds everything;
-  - `foldedConstraintsSentence` builds the fold sentence;
+  - `foldedKeywordsText` builds the fold text;
   - `schemaConstraintKeywords` gives the fold order.
 - **Per-format tables** are in `ts-extras` `ai-assist/schemaKeywords.ts`, applied on every path:
   - Responses tools, both completion and streaming;
@@ -83,7 +83,13 @@ close-out commit.
 ## Capability table
 
 All pages were fetched on 2026-10-17. `{v…}` means the keyword passes only for the listed values
-and folds otherwise.
+and folds otherwise. "drop" removes an annotation without restating it (review round, F4).
+
+The OpenAI/xAI column applies only when the request goes to the provider's **own endpoint** and the
+model is **not fine-tuned** (`ft:`). A descriptor sent to a caller-supplied `endpoint`, or an
+OpenAI fine-tuned model, takes the "any other provider" column: everything folds, and `title`
+drops. OpenAI states that fine-tuned models support none of the string, number or array
+constraints [O]. (Review round, F2 and F3.)
 
 | keyword | Responses tools + OpenAI strict output (`openai`, `xai-grok`) | same wires, any other provider | Anthropic tools (incl. forced-tool output) | Anthropic JSON outputs | Gemini (tools + responseSchema) | Ollama |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -94,7 +100,7 @@ and folds otherwise.
 | multipleOf | fold (xAI silent) | fold | pass | fold | fold | fold |
 | minLength / maxLength | fold (OpenAI does not list them) | fold | pass | fold | pass [G] | fold |
 | format | {date-time, time, date, email, ipv4, ipv6, uuid} [O][X] | fold | pass | {date-time, time, date, duration, email, hostname, uri, ipv4, ipv6, uuid} [A2] | pass ("Any value is allowed") [G] | fold |
-| title | fold | fold | pass | fold | pass [G] | fold |
+| title | drop | drop | pass | drop | pass [G] | drop |
 | default | fold | fold | pass | pass ("for all supported types") [A2] | pass ("documentation-only") [G] | fold |
 | examples | fold | fold | pass | fold | fold (`example` is root-only) | fold |
 
@@ -129,18 +135,37 @@ Citations:
 the fold removes it. Anthropic JSON outputs documents a 400 for these keywords *if sent*, which is
 why they fold. That is the stop-and-report condition's intended case, not a breach of it.
 
-## Fold sentence format
+## Fold text format
 
-`Constraints: <keyword> <JSON value>; <keyword> <JSON value>.`, for example
-`Constraints: minimum 1; maximum 10.` or `Constraints: format "email"; default null.`.
+The review round (F4) split the fold into two parts:
 
-- Keywords appear in `schemaConstraintKeywords` order: `minimum`, `exclusiveMinimum`, `maximum`,
-  `exclusiveMaximum`, `multipleOf`, `minLength`, `maxLength`, `format`, `title`, `default`,
-  `examples`.
-- Values are written with `JSON.stringify`.
-- The sentence is appended after an existing description with a single space, or becomes the
-  description. An existing `description` key keeps its position.
-- The sentence is pinned verbatim in `keywordAdaptation.test.ts`.
+- **Validating keywords:** one sentence, `Constraints: <keyword> <JSON value>; <keyword> <JSON
+  value>.`, for example `Constraints: minimum 1; maximum 10.`
+- **Annotations:** one sentence each, so that none reads as a constraint:
+  - `Format: email.`
+  - `Title: Count.` (a string value written as it is)
+  - `Default: null.`
+  - `Examples: ["a","b"].` (non-string values as JSON)
+
+A table normally drops `title` rather than folding it.
+
+Both parts follow `schemaConstraintKeywords` order: `minimum`, `exclusiveMinimum`, `maximum`,
+`exclusiveMaximum`, `multipleOf`, `minLength`, `maxLength`, `format`, `title`, `default`,
+`examples`. The order holds whatever order the keys arrived in. The parts are joined by one space,
+for example `Constraints: minimum 1; maximum 10. Default: 3.`
+
+The text is appended after an existing description with a single space, or becomes the
+description. An existing `description` key keeps its position. It is pinned verbatim in
+`keywordAdaptation.test.ts` (`foldedKeywordsText`).
+
+**Orchestrator decision (review round, F4).**
+
+- A `'drop'` rule was added for annotations only. The type allows it only on annotation keys,
+  because dropping an annotation cannot loosen the wire relative to the validator.
+- `title` drops on every table that does not pass it. It only restates the property name, and
+  folding it put `Title: …` on every pydantic property of every MCP tool.
+- Folded annotations get their own sentences, so `default null` can no longer read as "must be
+  null".
 
 Safety argument (in TSDoc on `adaptSchemaKeywords` and `schemaKeywords.ts`): folding loosens the
 wire, never the validator. `StructuredOutputEnforcement`'s `'schema'` TSDoc states that folded
@@ -199,6 +224,24 @@ Run on commit `a21d378f9`, from the repo root, with logs under `.gate-logs/` (no
 | per-package `heft test --clean` (`ts-json-base`, `ts-extras`, `ts-extras-ollama`, `ts-extras-mcp`) | 100% statements, branches, functions and lines; no warnings |
 | `eslint src` / `eslint --fix` (`rushx lint` / `fixlint`) in the same four | exit 0; `--fix` changed nothing |
 | `verify-capability-docs.mjs` | 0 failed; router at 22,639/24,000 characters |
+
+## Review round (gate-time review, applied)
+
+| finding | what changed |
+| --- | --- |
+| F1 (HIGH) `multipleOf` tolerance grew with the quotient | Tolerance is now `4·ε·max(1, abs(q))`. New tests reject `2000000000.5`/`1`, `12345678.123`/`0.01` and `10000000005`/`10`, and accept `0.3`/`0.1`, `0.7`/`0.1` and `1.15`/`0.05`. TSDoc and `CAPABILITIES.md` updated. |
+| F2 OpenAI fine-tuned models | `schemaKeywordsFor(format, { providerId, model })` folds everything for an `ft:` model. Tested on tools and on structured output. |
+| F3 endpoint override | `providerId` is `endpoint === undefined ? descriptor.id : undefined` in `completionClient`, `streamingClient` and `clientToolContinuationBuilder`. `resolveStructuredOutput` takes a required `wireTarget`. Tested end to end on a client-tool turn and on structured output. |
+| F4 annotation fold (orchestrator decision) | Added the `'drop'` rule (annotations only; `SchemaAnnotationRule`), `title: 'drop'` and the split fold text (`foldedKeywordsText`; `foldedConstraintsSentence` removed). See § Fold text format. |
+| F5 factory throw | Every public factory's TSDoc has an `@throws` note. New `JsonSchema.validateNumberOptions(type, opts)` / `validateStringOptions(opts)` run the same checks as a `Result`, with a TSDoc example. |
+| F6 closed-union drift | `schemaNumberConstraintKeywords`, `schemaLengthConstraintKeywords` and `schemaAnnotationKeywords` are `as const`. `schemaConstraintKeywords` is composed from them, and every keyword type is `StringOneOf<…>`. The node constructors, emitters and `fromJson`'s numeric field converters all copy through the arrays. `IAnnotations` is now `Pick<ISchemaOptions, …>` (`SchemaAnnotations`), and there is one shared JSON-value converter (`annotationJsonValue`). |
+| F7 `AiStructuredOutputFormat` | `structuredOutput.ts` uses `AiStructuredOutputFormat` throughout, replacing `IAiStructuredOutputCapability['format']`. |
+| F8 doc drift / aliasing | The `enforceNumberConstraints` TSDoc now says it reports every violated keyword. `default`/`examples` are held as `jsonValue`-converted copies, and `toJson()` emits fresh copies. Tests cover mutating `toJson()` output and the authored value. |
+| F9 `enum` drops lengths | `fromJson` refuses `minLength`/`maxLength` beside `enum` with a path-named failure, tested. |
+| F10 integer translation beyond 2^53 | The Gemini translator folds when the translated bound is not a safe integer. `_isEmptyRange` skips the integer refinement there. Both tested. |
+| F11 `TECH_DEBT.md` cites branch hashes | It now cites the stream and `#TBD`. |
+
+Re-gated after the round; see § Gate counts (round 2).
 
 ## What the brief got wrong
 

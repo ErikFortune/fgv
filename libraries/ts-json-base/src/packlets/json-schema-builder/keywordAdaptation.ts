@@ -20,45 +20,71 @@
  * SOFTWARE.
  */
 
+import { StringOneOf } from '@fgv/ts-utils';
 import { JsonObject, JsonValue, isJsonObject } from '../json';
 
 /**
- * A constraint or annotation keyword a schema node can carry beyond its structure — the keywords
- * whose provider support varies, and which `adaptSchemaKeywords` adapts.
+ * The numeric constraint keywords of a `number` / `integer` node, in the order they are checked,
+ * emitted and folded.
  * @public
  */
-export type SchemaConstraintKeyword =
-  | 'minimum'
-  | 'exclusiveMinimum'
-  | 'maximum'
-  | 'exclusiveMaximum'
-  | 'multipleOf'
-  | 'minLength'
-  | 'maxLength'
-  | 'format'
-  | 'title'
-  | 'default'
-  | 'examples';
-
-/**
- * Every `SchemaConstraintKeyword`, in the fixed order in which they are translated
- * and folded — so the fold sentence is the same for the same node, whatever order its keys arrived
- * in, and a cached prompt prefix stays stable.
- * @public
- */
-export const schemaConstraintKeywords: ReadonlyArray<SchemaConstraintKeyword> = [
+export const schemaNumberConstraintKeywords = [
   'minimum',
   'exclusiveMinimum',
   'maximum',
   'exclusiveMaximum',
-  'multipleOf',
-  'minLength',
-  'maxLength',
-  'format',
-  'title',
-  'default',
-  'examples'
-];
+  'multipleOf'
+] as const;
+
+/**
+ * The length constraint keywords of a `string` node, in the order they are checked, emitted and
+ * folded.
+ * @public
+ */
+export const schemaLengthConstraintKeywords = ['minLength', 'maxLength'] as const;
+
+/**
+ * The annotation keywords — emitted, never enforced — in the order they are folded.
+ * @public
+ */
+export const schemaAnnotationKeywords = ['format', 'title', 'default', 'examples'] as const;
+
+/**
+ * Every keyword whose provider support varies, and which `adaptSchemaKeywords` adapts: the
+ * validating keywords, then the annotations.
+ *
+ * @remarks
+ * The **single** list: `SchemaConstraintKeyword` is derived from it, the walker iterates it, and
+ * the factories, `fromJson` and `toJson()` copy fields through its two validating subsets — so a
+ * keyword cannot be known to one of them and missing from another (which, for the walker, would
+ * send it raw to every provider).
+ * @public
+ */
+export const schemaConstraintKeywords = [
+  ...schemaNumberConstraintKeywords,
+  ...schemaLengthConstraintKeywords,
+  ...schemaAnnotationKeywords
+] as const;
+
+/**
+ * A validating keyword: enforced by the validator.
+ * @public
+ */
+export type SchemaValidatingKeyword =
+  | StringOneOf<typeof schemaNumberConstraintKeywords>
+  | StringOneOf<typeof schemaLengthConstraintKeywords>;
+
+/**
+ * An annotation keyword: emitted, never enforced.
+ * @public
+ */
+export type SchemaAnnotationKeyword = StringOneOf<typeof schemaAnnotationKeywords>;
+
+/**
+ * A constraint or annotation keyword a schema node can carry beyond its structure.
+ * @public
+ */
+export type SchemaConstraintKeyword = StringOneOf<typeof schemaConstraintKeywords>;
 
 /**
  * Rewrites a node to express one keyword in a provider's dialect.
@@ -76,12 +102,13 @@ export type SchemaKeywordTranslator = (node: JsonObject) => JsonObject | undefin
  * What one wire format does with one keyword.
  *
  * - `'pass'` — the provider documents the keyword; it is sent as emitted.
- * - `'fold'` — removed, and stated in the node's description instead (see
- *   `adaptSchemaKeywords`).
+ * - `'fold'` — removed, and stated in the node's description instead (see `adaptSchemaKeywords`).
  * - `{ passValues }` — sent only when its value is one of these (a `format` vocabulary); folded
  *   otherwise.
  * - `{ translate }` — rewritten into an exact equivalent the provider documents; folded where the
  *   translator finds none.
+ *
+ * An annotation may also be `'drop'` — see `SchemaAnnotationRule`.
  * @public
  */
 export type SchemaKeywordRule =
@@ -91,20 +118,34 @@ export type SchemaKeywordRule =
   | { readonly translate: SchemaKeywordTranslator };
 
 /**
+ * What one wire format does with one annotation: any `SchemaKeywordRule`, or `'drop'` — removed
+ * and not restated.
+ *
+ * @remarks
+ * Only an annotation may be dropped: it constrains nothing, so removing it cannot make the wire
+ * looser than the validator. A validating keyword is always passed, translated or folded.
+ * @public
+ */
+export type SchemaAnnotationRule = SchemaKeywordRule | 'drop';
+
+/**
  * A wire format's keyword-capability table: a rule for **every** keyword.
  *
  * @remarks
- * A total `Record`, so a table that forgets a keyword — or a keyword added later — is a compile
- * error rather than a silent default. Build a table so that anything not verified against the
- * provider's documentation is `'fold'`: folding is always safe (see
- * `adaptSchemaKeywords`), so an unverified `'pass'` is the only way a table can be
- * wrong in a harmful direction.
+ * Total, so a table that forgets a keyword — or a keyword added later — is a compile error rather
+ * than a silent default. Build a table so that anything not verified against the provider's
+ * documentation is `'fold'` (or, for an annotation, `'drop'`): folding is always safe (see
+ * `adaptSchemaKeywords`), so an unverified `'pass'` is the only way a table can be wrong in a
+ * harmful direction.
  * @public
  */
-export type SchemaKeywordCapabilities = Readonly<Record<SchemaConstraintKeyword, SchemaKeywordRule>>;
+export type SchemaKeywordCapabilities = Readonly<
+  Record<SchemaValidatingKeyword, SchemaKeywordRule> & Record<SchemaAnnotationKeyword, SchemaAnnotationRule>
+>;
 
 /**
- * The table that folds every keyword — the safe choice for a wire whose support is undocumented.
+ * The conservative table, for a wire whose support is undocumented: every keyword folds, except
+ * `title`, which is dropped — a title restates the property name the model already sees.
  * @public
  */
 export const foldAllSchemaKeywords: SchemaKeywordCapabilities = {
@@ -116,51 +157,85 @@ export const foldAllSchemaKeywords: SchemaKeywordCapabilities = {
   minLength: 'fold',
   maxLength: 'fold',
   format: 'fold',
-  title: 'fold',
+  title: 'drop',
   default: 'fold',
   examples: 'fold'
 };
 
-/**
- * The sentence that states folded keywords in a description:
- * `Constraints: minimum 1; maximum 10.`
- *
- * @remarks
- * Each keyword is its name, a space, and its value as JSON (`format "email"`, `default null`,
- * `examples [1,2]`), joined by `"; "` in `schemaConstraintKeywords` order. Fixed
- * wording and order make the output byte-stable for prompt caching.
- * @param folded - The folded keywords and their values, in order.
- * @returns The sentence.
- * @public
- */
-export function foldedConstraintsSentence(
-  folded: ReadonlyArray<readonly [SchemaConstraintKeyword, JsonValue]>
-): string {
-  return `Constraints: ${folded
-    .map(([keyword, value]) => `${keyword} ${JSON.stringify(value)}`)
-    .join('; ')}.`;
+/** A folded keyword and its value. */
+type Folded = readonly [SchemaConstraintKeyword, JsonValue];
+
+/** The sentence label for each annotation, in `schemaAnnotationKeywords` order. */
+const ANNOTATION_LABELS: Readonly<Record<SchemaAnnotationKeyword, string>> = {
+  format: 'Format',
+  title: 'Title',
+  default: 'Default',
+  examples: 'Examples'
+};
+
+/** Whether a keyword is an annotation. */
+function _isAnnotation(keyword: SchemaConstraintKeyword): keyword is SchemaAnnotationKeyword {
+  return schemaAnnotationKeywords.some((k) => k === keyword);
 }
 
-/** Whether `rule` sends a keyword whose value is `value`. */
-function _passes(rule: SchemaKeywordRule, value: JsonValue): boolean {
-  if (rule === 'pass') {
-    return true;
+/**
+ * The text that states folded keywords in a description: the validating keywords as one
+ * `Constraints:` sentence, then one sentence per folded annotation.
+ *
+ * @remarks
+ * - Validating keywords: `Constraints: minimum 1; maximum 10.` — each keyword name, a space and
+ *   its value as JSON, joined by `"; "`.
+ * - Annotations, each its own sentence so none reads as a constraint: `Format: email.`,
+ *   `Title: Count.` (a string value written as it is), `Default: null.`, `Examples: ["a","b"].`
+ *   (other values as JSON).
+ *
+ * Both follow `schemaConstraintKeywords` order whatever order the keys arrived in, and the two
+ * parts are joined by one space. Fixed wording and order make the output byte-stable for prompt
+ * caching. Returns `''` for nothing folded.
+ * @param folded - The folded keywords and their values.
+ * @returns The text.
+ * @public
+ */
+export function foldedKeywordsText(
+  folded: ReadonlyArray<readonly [SchemaConstraintKeyword, JsonValue]>
+): string {
+  const rank = (keyword: SchemaConstraintKeyword): number => schemaConstraintKeywords.indexOf(keyword);
+  const ordered = [...folded].sort(([a], [b]) => rank(a) - rank(b));
+  const constraints = ordered.filter(([keyword]) => !_isAnnotation(keyword));
+  const parts: string[] = [];
+  if (constraints.length > 0) {
+    parts.push(
+      `Constraints: ${constraints
+        .map(([keyword, value]) => `${keyword} ${JSON.stringify(value)}`)
+        .join('; ')}.`
+    );
   }
-  if (rule === 'fold') {
-    return false;
+  for (const [keyword, value] of ordered) {
+    if (_isAnnotation(keyword)) {
+      const shown = typeof value === 'string' && keyword !== 'default' ? value : JSON.stringify(value);
+      parts.push(`${ANNOTATION_LABELS[keyword]}: ${shown}.`);
+    }
+  }
+  return parts.join(' ');
+}
+
+/** What `rule` does with a keyword whose value is `value`, once any translator has run. */
+function _disposition(rule: SchemaAnnotationRule, value: JsonValue): 'pass' | 'fold' | 'drop' {
+  if (rule === 'pass' || rule === 'fold' || rule === 'drop') {
+    return rule;
   }
   if ('passValues' in rule) {
-    return typeof value === 'string' && rule.passValues.includes(value);
+    return typeof value === 'string' && rule.passValues.includes(value) ? 'pass' : 'fold';
   }
   // A translator that ran and found an equivalent removed the keyword; one still present had none.
-  return false;
+  return 'fold';
 }
 
 /** Applies every translator in the table to a node, in keyword order. */
 function _translate(node: JsonObject, capabilities: SchemaKeywordCapabilities): JsonObject {
   let out = node;
   for (const keyword of schemaConstraintKeywords) {
-    const rule = capabilities[keyword];
+    const rule: SchemaAnnotationRule = capabilities[keyword];
     if (keyword in out && typeof rule === 'object' && 'translate' in rule) {
       out = rule.translate(out) ?? out;
     }
@@ -171,38 +246,53 @@ function _translate(node: JsonObject, capabilities: SchemaKeywordCapabilities): 
 /** Adapts one node's own keywords, its children already adapted. */
 function _adaptOwnKeywords(node: JsonObject, capabilities: SchemaKeywordCapabilities): JsonObject {
   const translated = _translate(node, capabilities);
-  const folded = schemaConstraintKeywords
-    .filter((keyword) => keyword in translated && !_passes(capabilities[keyword], translated[keyword]))
-    .map((keyword) => [keyword, translated[keyword]] as const);
-  if (folded.length === 0) {
+  const removed = new Set<string>();
+  const folded: Folded[] = [];
+  for (const keyword of schemaConstraintKeywords) {
+    if (keyword in translated) {
+      const disposition = _disposition(capabilities[keyword], translated[keyword]);
+      if (disposition !== 'pass') {
+        removed.add(keyword);
+      }
+      if (disposition === 'fold') {
+        folded.push([keyword, translated[keyword]]);
+      }
+    }
+  }
+  if (removed.size === 0) {
     return translated;
   }
   const out: JsonObject = {};
   for (const [key, value] of Object.entries(translated)) {
-    if (!folded.some(([keyword]) => keyword === key)) {
+    if (!removed.has(key)) {
       out[key] = value;
     }
   }
-  const sentence = foldedConstraintsSentence(folded);
+  if (folded.length === 0) {
+    return out;
+  }
+  const text = foldedKeywordsText(folded);
   const existing = out.description;
   // An existing description keeps its position; a new one goes last.
   return {
     ...out,
-    description: typeof existing === 'string' && existing.length > 0 ? `${existing} ${sentence}` : sentence
+    description: typeof existing === 'string' && existing.length > 0 ? `${existing} ${text}` : text
   };
 }
 
 /**
  * Adapts a wire schema's constraint and annotation keywords to one provider's documented support:
- * each keyword is passed, translated, or folded into the node's description, per `capabilities`.
+ * each keyword is passed, translated, folded into the node's description, or (an annotation)
+ * dropped, per `capabilities`.
  *
  * @remarks
  * **Folding loosens the wire, never the validator.** A folded keyword is removed from the node and
- * restated in one deterministic sentence appended to its `description` — see
- * `foldedConstraintsSentence`. The schema's validator still enforces it, so the
- * validator stays authoritative: a model that ignores a folded constraint gets a correctable
- * validation error on a tool call, and a validation failure on a structured-output reply. That is
- * why folding is always safe, and why a capability table should fold anything not verified.
+ * restated in deterministic text appended to its `description` — see `foldedKeywordsText`. The
+ * schema's validator still enforces it, so the validator stays authoritative: a model that ignores
+ * a folded constraint gets a correctable validation error on a tool call, and a validation failure
+ * on a structured-output reply. That is why folding is always safe, and why a capability table
+ * should fold anything not verified. Dropping is safe for the same reason, and is allowed only for
+ * annotations, which constrain nothing.
  *
  * Walks the schema grammar `toJson()` emits — a node's `properties` values, `items` and
  * schema-valued `additionalProperties` are nodes and are adapted; every other value, `default`,

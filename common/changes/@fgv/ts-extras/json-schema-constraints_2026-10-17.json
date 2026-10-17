@@ -1,7 +1,7 @@
 {
   "changes": [
     {
-      "comment": "ai-assist adapts a schema's constraint and annotation keywords on every tool and structured-output wire, with a keyword-capability table per format: passed where the provider documents the keyword, translated exactly where Gemini has an equivalent, and otherwise folded into the node's description as 'Constraints: ...'. OpenAI-format providers other than OpenAI and xAI fold every keyword. The validator still enforces each folded constraint.",
+      "comment": "ai-assist adapts a schema's constraint and annotation keywords on every tool and structured-output wire, with a keyword-capability table per format: passed where the provider documents the keyword, translated exactly where Gemini has an equivalent, and otherwise folded into the node's description as 'Constraints: ...'. OpenAI-format providers other than OpenAI and xAI, OpenAI fine-tuned models, and any descriptor sent to a caller-supplied endpoint fold every keyword; a title a wire does not take is dropped. The validator still enforces each folded constraint.",
       "type": "minor",
       "packageName": "@fgv/ts-extras"
     }

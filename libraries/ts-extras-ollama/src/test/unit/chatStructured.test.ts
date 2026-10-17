@@ -128,8 +128,8 @@ describe('chatStructured (layer 1 — structural client mock)', () => {
     ).toFailWith(/maxLength/);
 
     expect(((chat.mock.calls[0][0] as JsonObject).format as JsonObject).properties).toEqual({
-      name: { type: 'string', description: 'Short. Constraints: maxLength 2; format "hostname".' },
-      age: { type: 'integer', description: 'Constraints: minimum 0; maximum 150; default 30.' }
+      name: { type: 'string', description: 'Short. Constraints: maxLength 2. Format: hostname.' },
+      age: { type: 'integer', description: 'Constraints: minimum 0; maximum 150. Default: 30.' }
     });
   });
 

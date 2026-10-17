@@ -727,7 +727,8 @@ export function executeClientToolTurn(
     baseUrl: baseUrlResult.value,
     apiKey,
     model: resolvedModel,
-    providerId: descriptor.id
+    // Trusted only on the provider's own endpoint — see `IAiApiConfig.providerId`.
+    providerId: endpoint === undefined ? descriptor.id : undefined
   };
 
   // Accumulation buffers — populated by the adapter, read by the builder.

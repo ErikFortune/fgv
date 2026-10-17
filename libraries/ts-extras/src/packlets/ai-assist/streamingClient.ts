@@ -187,7 +187,8 @@ export async function callProviderCompletionStream(
     baseUrl: baseUrlResult.value,
     apiKey,
     model,
-    providerId: descriptor.id
+    // Trusted only on the provider's own endpoint — see `IAiApiConfig.providerId`.
+    providerId: endpoint === undefined ? descriptor.id : undefined
   };
 
   switch (descriptor.apiFormat) {

@@ -27,7 +27,7 @@ import { type JsonObject, type JsonValue } from '@fgv/ts-json-base';
 import { type Result, fail, succeed } from '@fgv/ts-utils';
 
 import { type IAiProviderDescriptor } from './model';
-import { adaptWireSchema } from './schemaKeywords';
+import { type ISchemaWireTarget, adaptWireSchema } from './schemaKeywords';
 import {
   type AiServerToolConfig,
   type AiServerToolType,
@@ -215,12 +215,15 @@ function webSearchToResponsesApi(config: IAiWebSearchToolConfig): JsonObject {
  * Formats a client tool config for the xAI/OpenAI Responses API.
  * @internal
  */
-function clientToolToResponsesApi(config: IAiClientToolConfig, providerId: string | undefined): JsonObject {
+function clientToolToResponsesApi(
+  config: IAiClientToolConfig,
+  target: ISchemaWireTarget | undefined
+): JsonObject {
   return {
     type: 'function',
     name: config.name,
     description: config.description,
-    parameters: adaptWireSchema(config.parametersSchema.toJson(), 'responses-tools', providerId)
+    parameters: adaptWireSchema(config.parametersSchema.toJson(), 'responses-tools', target)
   } as JsonObject;
 }
 
@@ -234,20 +237,21 @@ function clientToolToResponsesApi(config: IAiClientToolConfig, providerId: strin
  * constraint folded into the description. The tool's own validator is unchanged and still
  * enforces each one.
  * @param tools - The resolved tool configs (server-side and/or client-defined)
- * @param providerId - The receiving provider's descriptor id; absent folds every keyword.
+ * @param target - Who receives the request: the provider id (only when it goes to that
+ * provider's own endpoint) and the model. Absent folds every keyword.
  * @returns Provider-native tool objects for the `tools` request field
  * @public
  */
 export function toResponsesApiTools(
   tools: ReadonlyArray<AiToolConfig>,
-  providerId?: string
+  target?: ISchemaWireTarget
 ): ReadonlyArray<JsonObject> {
   return tools.map((t) => {
     switch (t.type) {
       case 'web_search':
         return webSearchToResponsesApi(t);
       case 'client_tool':
-        return clientToolToResponsesApi(t, providerId);
+        return clientToolToResponsesApi(t, target);
       /* c8 ignore next 4 - defensive coding: exhaustive switch guaranteed by TypeScript */
       default: {
         const _exhaustive: never = t;

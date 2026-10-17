@@ -24,17 +24,26 @@ import {
   Converter,
   Converters,
   Result,
+  Validator,
   Validators,
   captureResult,
   fail,
   mapResults,
   succeed
 } from '@fgv/ts-utils';
-import { jsonValue } from '../converters';
 import { JsonObject, JsonValue, isJsonObject } from '../json';
-import { checkNumberOptions, checkStringOptions } from './constraints';
+import {
+  NumberConstraints,
+  SchemaAnnotations,
+  StringConstraints,
+  annotationFields,
+  annotationJsonValue,
+  checkNumberOptions,
+  checkStringOptions
+} from './constraints';
 import { array, boolean, enumOf, integer, number, object, optional, record, string } from './factories';
-import { INumberSchemaOptions, IStringSchemaOptions } from './options';
+import { schemaLengthConstraintKeywords, schemaNumberConstraintKeywords } from './keywordAdaptation';
+import { INumberSchemaOptions } from './options';
 import { ILlmProperties, ISchemaValidator } from './types';
 
 /**
@@ -185,16 +194,20 @@ const _SUPPORTED_TYPES: ReadonlySet<string> = new Set([
 // `from as Record<string, unknown>` in the arm bodies.
 // ---------------------------------------------------------------------------
 
-/** The annotations every node carries: what `_annotationsField` extracts. */
-interface IAnnotations {
-  readonly description?: string;
-  readonly title?: string;
-  readonly default?: JsonValue;
-  readonly examples?: JsonValue[];
+/**
+ * One optional JSON-number field per keyword, keyed from the keyword list itself so the parser
+ * cannot know a different set of keywords than the factories and the emitter.
+ */
+function _numericFields<K extends string>(keywords: readonly K[]): Record<K, Validator<number | undefined>> {
+  const fields: Partial<Record<K, Validator<number | undefined>>> = {};
+  for (const keyword of keywords) {
+    fields[keyword] = Validators.number.optional();
+  }
+  return fields as Record<K, Validator<number | undefined>>;
 }
 
-/** Any JSON value, with the plain conversion context the field converters use. */
-const _anyJsonValue: Converter<JsonValue> = Converters.generic((from: unknown) => jsonValue.convert(from));
+/** The annotations every node carries: what `_annotationsField` extracts. */
+type IAnnotations = SchemaAnnotations;
 
 /**
  * Extracts the annotations every node carries — `description`, `title`, `default` and `examples`.
@@ -206,8 +219,8 @@ const _anyJsonValue: Converter<JsonValue> = Converters.generic((from: unknown) =
 const _annotationsField: Converter<IAnnotations> = Converters.object<IAnnotations>({
   description: Converters.string.optional('failOnError'),
   title: Converters.string.optional('failOnError'),
-  default: _anyJsonValue.optional('failOnError'),
-  examples: Converters.arrayOf(_anyJsonValue).optional('failOnError')
+  default: annotationJsonValue.optional('failOnError'),
+  examples: Converters.arrayOf(annotationJsonValue).optional('failOnError')
   // The failure message quotes the offending value, which is server-supplied.
 }).withFormattedError((__from, message) => _printable(`${message}`));
 
@@ -216,21 +229,16 @@ const _annotationsField: Converter<IAnnotations> = Converters.object<IAnnotation
  * numeric string is refused, not coerced; coherence (finite, ordered, a non-empty range) is
  * checked afterwards by `checkNumberOptions`, the same check the factories run.
  */
-const _numberConstraintsField: Converter<INumberSchemaOptions> = Converters.object<INumberSchemaOptions>({
-  minimum: Validators.number.optional(),
-  maximum: Validators.number.optional(),
-  exclusiveMinimum: Validators.number.optional(),
-  exclusiveMaximum: Validators.number.optional(),
-  multipleOf: Validators.number.optional()
-}).withFormattedError((__from, message) => _printable(`${message}`));
+const _numberConstraintsField: Converter<NumberConstraints> = Converters.object<NumberConstraints>(
+  _numericFields(schemaNumberConstraintKeywords)
+).withFormattedError((__from, message) => _printable(`${message}`));
 
 /**
  * Extracts a string node's `minLength`, `maxLength` and `format`. The lengths must be JSON
  * numbers and `format` a string; `checkStringOptions` then requires non-negative integers in order.
  */
-const _stringConstraintsField: Converter<IStringSchemaOptions> = Converters.object<IStringSchemaOptions>({
-  minLength: Validators.number.optional(),
-  maxLength: Validators.number.optional(),
+const _stringConstraintsField: Converter<StringConstraints> = Converters.object<StringConstraints>({
+  ..._numericFields(schemaLengthConstraintKeywords),
   format: Converters.string.optional('failOnError')
 }).withFormattedError((__from, message) => _printable(`${message}`));
 
@@ -390,7 +398,7 @@ function _reshape(
   }
   // Each annotation present on the wrapper (or beside the `$ref`) replaces the inner node's; an
   // absent one leaves the inner node's in place.
-  for (const [key, value] of Object.entries(annotations)) {
+  for (const [key, value] of Object.entries(annotationFields(annotations))) {
     json[key] = value;
   }
   // The re-emitted form has no references left to resolve, so it is its own document; it still
@@ -605,6 +613,13 @@ function _convertEnum(
     return fail(`${path}: ${_printable(`${_enumValuesField.convert(from).message}`)}`);
   }
   const nullInValues: boolean = rawValuesResult.value.includes(null);
+
+  // An enum node is a closed set of strings and carries no length constraint, so a length keyword
+  // beside `enum` would be dropped and the validator would accept a member the schema rejects.
+  const lengthKeyword = schemaLengthConstraintKeywords.find((keyword) => keyword in from);
+  if (lengthKeyword !== undefined) {
+    return fail(`${path}: unsupported JSON Schema keyword '${lengthKeyword}' beside 'enum'`);
+  }
 
   // L1: reject conflicting `type`. For enum nodes, `_convertNode`'s type pre-flight
   // is skipped (the `!('enum' in raw)` gate). Validate here instead.

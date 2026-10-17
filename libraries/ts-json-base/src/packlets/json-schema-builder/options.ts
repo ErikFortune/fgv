@@ -152,8 +152,10 @@ export interface INumberSchemaOptions extends ISchemaOptions {
    * The value must be a multiple of this, which must be greater than zero.
    *
    * @remarks
-   * Checked with a relative tolerance of `1e-9` on the quotient, so that `0.3` counts as a
-   * multiple of `0.1` despite binary floating point.
+   * Checked on the quotient `value / multipleOf`, which may differ from the nearest integer by
+   * at most four units in the last place of its magnitude (`4 * Number.EPSILON * max(1, |q|)`) —
+   * enough that `0.3` counts as a multiple of `0.1` despite binary floating point, and no more, so
+   * a large quotient such as `2000000000.5 / 1` is still refused.
    */
   multipleOf?: number;
 }

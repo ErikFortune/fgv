@@ -39,16 +39,39 @@ const passAll: JsonSchema.SchemaKeywordCapabilities = {
 };
 
 describe('JsonSchema.adaptSchemaKeywords', () => {
-  test('the fold sentence is pinned verbatim', () => {
+  test('the fold text is pinned verbatim: constraints in one sentence, each annotation in its own', () => {
     expect(
-      JsonSchema.foldedConstraintsSentence([
-        ['minimum', 1],
-        ['maximum', 10],
-        ['format', 'email'],
+      JsonSchema.foldedKeywordsText([
+        ['examples', ['a', 'b']],
         ['default', null],
-        ['examples', [1, 2]]
+        ['maximum', 10],
+        ['title', 'Count'],
+        ['format', 'email'],
+        ['minimum', 1]
       ])
-    ).toBe('Constraints: minimum 1; maximum 10; format "email"; default null; examples [1,2].');
+    ).toBe(
+      'Constraints: minimum 1; maximum 10. Format: email. Title: Count. Default: null. Examples: ["a","b"].'
+    );
+    expect(JsonSchema.foldedKeywordsText([['default', 'x']])).toBe('Default: "x".');
+    expect(JsonSchema.foldedKeywordsText([])).toBe('');
+  });
+
+  test('a dropped annotation is removed and not restated', () => {
+    expect(
+      JsonSchema.adaptSchemaKeywords({ type: 'string', title: 'Name' }, JsonSchema.foldAllSchemaKeywords)
+    ).toEqual({ type: 'string' });
+    const caps: JsonSchema.SchemaKeywordCapabilities = { ...passAll, default: 'drop', examples: 'drop' };
+    expect(
+      JsonSchema.adaptSchemaKeywords({ type: 'number', default: 1, examples: [2], minimum: 0 }, caps)
+    ).toEqual({ type: 'number', minimum: 0 });
+  });
+
+  test('a folded title reads as a title, not a constraint', () => {
+    const caps: JsonSchema.SchemaKeywordCapabilities = { ...passAll, title: 'fold' };
+    expect(JsonSchema.adaptSchemaKeywords({ type: 'string', title: 'Name' }, caps)).toEqual({
+      type: 'string',
+      description: 'Title: Name.'
+    });
   });
 
   test('a pass-everything table leaves the schema unchanged', () => {
@@ -61,7 +84,7 @@ describe('JsonSchema.adaptSchemaKeywords', () => {
     const raw: JsonObject = { type: 'integer', maximum: 10, default: 3, minimum: 1 };
     expect(JsonSchema.adaptSchemaKeywords(raw, JsonSchema.foldAllSchemaKeywords)).toEqual({
       type: 'integer',
-      description: 'Constraints: minimum 1; maximum 10; default 3.'
+      description: 'Constraints: minimum 1; maximum 10. Default: 3.'
     });
   });
 
@@ -69,7 +92,8 @@ describe('JsonSchema.adaptSchemaKeywords', () => {
     const raw: JsonObject = { type: 'string', description: 'A name.', minLength: 1, title: 'Name' };
     const adapted = JsonSchema.adaptSchemaKeywords(raw, JsonSchema.foldAllSchemaKeywords) as JsonObject;
     expect(Object.keys(adapted)).toEqual(['type', 'description']);
-    expect(adapted.description).toBe('A name. Constraints: minLength 1; title "Name".');
+    // The title is dropped, not folded: it restates the property name.
+    expect(adapted.description).toBe('A name. Constraints: minLength 1.');
   });
 
   test('an empty description is replaced by the sentence alone', () => {
@@ -92,7 +116,7 @@ describe('JsonSchema.adaptSchemaKeywords', () => {
     });
     expect(JsonSchema.adaptSchemaKeywords({ type: 'string', format: 'hostname' }, caps)).toEqual({
       type: 'string',
-      description: 'Constraints: format "hostname".'
+      description: 'Format: hostname.'
     });
   });
 

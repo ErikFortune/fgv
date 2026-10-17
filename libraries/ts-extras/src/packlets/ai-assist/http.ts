@@ -37,7 +37,8 @@ export interface IAiApiConfig {
   readonly model: string;
   /**
    * The provider descriptor id, where a wire format shared between providers needs it — the
-   * OpenAI-family schema-keyword table differs by provider. Absent folds every keyword.
+   * OpenAI-family schema-keyword table differs by provider. Set only when the request goes to the
+   * provider's own endpoint, never for a caller-supplied `endpoint`; absent folds every keyword.
    */
   readonly providerId?: string;
 }

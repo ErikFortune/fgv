@@ -27,31 +27,51 @@
  * Internal to the packlet — not re-exported from its barrel.
  */
 
-import { Converters, Result, fail, mapResults, succeed } from '@fgv/ts-utils';
+import { Converter, Converters, Result, StringOneOf, fail, mapResults, succeed } from '@fgv/ts-utils';
 import { jsonValue } from '../converters';
 import { JsonObject, JsonValue } from '../json';
+import { schemaLengthConstraintKeywords, schemaNumberConstraintKeywords } from './keywordAdaptation';
 import { INumberSchemaOptions, ISchemaOptions, IStringSchemaOptions } from './options';
 
-/** The numeric keywords, in the order they are checked and emitted. */
-const NUMBER_KEYWORDS: readonly NumberKeyword[] = [
-  'minimum',
-  'exclusiveMinimum',
-  'maximum',
-  'exclusiveMaximum',
-  'multipleOf'
-];
-
 /** A numeric constraint keyword. */
-type NumberKeyword = 'minimum' | 'maximum' | 'exclusiveMinimum' | 'exclusiveMaximum' | 'multipleOf';
+type NumberKeyword = StringOneOf<typeof schemaNumberConstraintKeywords>;
 
-/** The string-length keywords, in the order they are checked and emitted. */
-const LENGTH_KEYWORDS: readonly LengthKeyword[] = ['minLength', 'maxLength'];
+/** A number node's constraints. @internal */
+export type NumberConstraints = Pick<INumberSchemaOptions, NumberKeyword>;
 
-/** A string-length constraint keyword. */
-type LengthKeyword = 'minLength' | 'maxLength';
+/** A string node's constraints and format. @internal */
+export type StringConstraints = Pick<
+  IStringSchemaOptions,
+  StringOneOf<typeof schemaLengthConstraintKeywords> | 'format'
+>;
 
-/** The relative tolerance `multipleOf` allows on the quotient, for binary floating point. */
-const MULTIPLE_OF_TOLERANCE: number = 1e-9;
+/** The annotations every node carries. */
+export type SchemaAnnotations = Pick<ISchemaOptions, 'description' | 'title' | 'default' | 'examples'>;
+
+/**
+ * Any JSON value, with the plain conversion context field converters use. The value it produces
+ * is a fresh copy, so holding it cannot alias the caller's object.
+ * @internal
+ */
+export const annotationJsonValue: Converter<JsonValue> = Converters.generic((from: unknown) =>
+  jsonValue.convert(from)
+);
+
+/**
+ * A copy of an already-validated JSON value, so a caller mutating what `toJson()` returned cannot
+ * reach the node. `annotationJsonValue` cannot fail on a value it has already accepted.
+ */
+function _copyJson(value: JsonValue): JsonValue {
+  return annotationJsonValue.convert(value).orDefault(value);
+}
+
+/**
+ * The quotient tolerance `multipleOf` allows, as a multiple of the quotient's magnitude: four
+ * units in the last place, the size of the rounding error one division and one product can carry.
+ * Anything wider accepts genuinely wrong values once the quotient is large — a tolerance of `1e-9`
+ * relative accepted `2000000000.5` as a multiple of `1`.
+ */
+const MULTIPLE_OF_ULPS: number = 4 * Number.EPSILON;
 
 /** One end of a numeric range. */
 interface IBound {
@@ -89,12 +109,21 @@ function _bound(opts: INumberSchemaOptions, keyword: NumberKeyword, exclusive: b
   return value === undefined ? undefined : { value, exclusive, keyword };
 }
 
-/** Whether the range from `lo` to `hi` holds no value (no integer, when `integer`). */
+/**
+ * Whether the range from `lo` to `hi` holds no value (no integer, when `integer`).
+ *
+ * @remarks
+ * The integer rounding is exact only while the rounded ends are safe integers; beyond 2^53,
+ * `floor(b) + 1` can equal `b`. There the integer refinement is skipped and the number test
+ * decides, which can only refuse less.
+ */
 function _isEmptyRange(lo: IBound, hi: IBound, integer: boolean): boolean {
   if (integer) {
     const first = lo.exclusive ? Math.floor(lo.value) + 1 : Math.ceil(lo.value);
     const last = hi.exclusive ? Math.ceil(hi.value) - 1 : Math.floor(hi.value);
-    return first > last;
+    if (Number.isSafeInteger(first) && Number.isSafeInteger(last)) {
+      return first > last;
+    }
   }
   return lo.value > hi.value || (lo.value === hi.value && (lo.exclusive || hi.exclusive));
 }
@@ -104,33 +133,35 @@ function _isEmptyRange(lo: IBound, hi: IBound, integer: boolean): boolean {
  * above `maximum`, the bounds together admitting at least one value, and `multipleOf` positive.
  * @param type - The node kind; an `integer` range must hold an integer.
  * @param opts - The options to check.
- * @returns The options, or a `Failure` naming the keyword and the value.
+ * @returns The options (annotations copied), or a `Failure` naming the keyword and the value.
  * @internal
  */
 export function checkNumberOptions(
   type: 'number' | 'integer',
   opts: INumberSchemaOptions | undefined
 ): Result<INumberSchemaOptions | undefined> {
-  if (opts === undefined) {
-    return succeed(opts);
-  }
-  return checkAnnotations(opts).onSuccess(() => {
-    const nonFinite = NUMBER_KEYWORDS.find((k) => opts[k] !== undefined && !Number.isFinite(opts[k]));
+  return checkAnnotations(opts).onSuccess((checked) => {
+    if (checked === undefined) {
+      return succeed(checked);
+    }
+    const nonFinite = schemaNumberConstraintKeywords.find(
+      (k) => checked[k] !== undefined && !Number.isFinite(checked[k])
+    );
     if (nonFinite !== undefined) {
-      return fail(`${nonFinite} must be a finite number, got ${String(opts[nonFinite])}`);
+      return fail(`${nonFinite} must be a finite number, got ${String(checked[nonFinite])}`);
     }
-    if (opts.minimum !== undefined && opts.maximum !== undefined && opts.minimum > opts.maximum) {
-      return fail(`minimum ${opts.minimum} is greater than maximum ${opts.maximum}`);
+    if (checked.minimum !== undefined && checked.maximum !== undefined && checked.minimum > checked.maximum) {
+      return fail(`minimum ${checked.minimum} is greater than maximum ${checked.maximum}`);
     }
-    const lo = _tighter(_bound(opts, 'minimum', false), _bound(opts, 'exclusiveMinimum', true), true);
-    const hi = _tighter(_bound(opts, 'maximum', false), _bound(opts, 'exclusiveMaximum', true), false);
+    const lo = _tighter(_bound(checked, 'minimum', false), _bound(checked, 'exclusiveMinimum', true), true);
+    const hi = _tighter(_bound(checked, 'maximum', false), _bound(checked, 'exclusiveMaximum', true), false);
     if (lo !== undefined && hi !== undefined && _isEmptyRange(lo, hi, type === 'integer')) {
       return fail(`${_describe(lo)} and ${_describe(hi)} leave no ${type} in range`);
     }
-    if (opts.multipleOf !== undefined && opts.multipleOf <= 0) {
-      return fail(`multipleOf must be greater than 0, got ${opts.multipleOf}`);
+    if (checked.multipleOf !== undefined && checked.multipleOf <= 0) {
+      return fail(`multipleOf must be greater than 0, got ${checked.multipleOf}`);
     }
-    return succeed(opts);
+    return succeed(checked);
   });
 }
 
@@ -138,70 +169,84 @@ export function checkNumberOptions(
  * Checks a `string` node's options for coherence: each length a non-negative integer, and
  * `minLength` not above `maxLength`.
  * @param opts - The options to check.
- * @returns The options, or a `Failure` naming the keyword and the value.
+ * @returns The options (annotations copied), or a `Failure` naming the keyword and the value.
  * @internal
  */
 export function checkStringOptions(
   opts: IStringSchemaOptions | undefined
 ): Result<IStringSchemaOptions | undefined> {
-  if (opts === undefined) {
-    return succeed(opts);
-  }
-  return checkAnnotations(opts).onSuccess(() => {
-    const bad = LENGTH_KEYWORDS.find((k) => {
-      const length = opts[k];
+  return checkAnnotations(opts).onSuccess((checked) => {
+    if (checked === undefined) {
+      return succeed(checked);
+    }
+    const bad = schemaLengthConstraintKeywords.find((k) => {
+      const length = checked[k];
       return length !== undefined && !(Number.isInteger(length) && length >= 0);
     });
     if (bad !== undefined) {
-      return fail(`${bad} must be a non-negative integer, got ${String(opts[bad])}`);
+      return fail(`${bad} must be a non-negative integer, got ${String(checked[bad])}`);
     }
-    if (opts.minLength !== undefined && opts.maxLength !== undefined && opts.minLength > opts.maxLength) {
-      return fail(`minLength ${opts.minLength} is greater than maxLength ${opts.maxLength}`);
+    if (
+      checked.minLength !== undefined &&
+      checked.maxLength !== undefined &&
+      checked.minLength > checked.maxLength
+    ) {
+      return fail(`minLength ${checked.minLength} is greater than maxLength ${checked.maxLength}`);
     }
-    return succeed(opts);
+    return succeed(checked);
   });
 }
-
-/** A JSON value, refusing `undefined`, functions and other non-JSON values. */
-const _annotationValue: (from: unknown) => Result<JsonValue> = (from) => jsonValue.convert(from);
 
 /**
  * Checks the annotations every node accepts: `default` and each member of `examples` must be JSON
  * values, and `examples` an array. They are not checked against the node.
  * @param opts - The options to check.
- * @returns The options, or a `Failure` naming the keyword.
+ * @returns The options with `default` and `examples` replaced by fresh copies, so the node never
+ * aliases the caller's objects; or a `Failure` naming the keyword.
  * @internal
  */
 export function checkAnnotations<T extends ISchemaOptions>(opts: T | undefined): Result<T | undefined> {
   if (opts === undefined) {
     return succeed(opts);
   }
-  const checkDefault: Result<unknown> =
+  const defaultResult: Result<JsonValue | undefined> =
     opts.default === undefined
       ? succeed(undefined)
-      : _annotationValue(opts.default).withErrorFormat((msg) => `default: ${msg}`);
-  return checkDefault
-    .onSuccess(() =>
-      opts.examples === undefined
-        ? succeed([])
-        : Converters.arrayOf(Converters.generic(_annotationValue))
-            .convert(opts.examples)
-            .withErrorFormat((msg) => `examples: ${msg}`)
+      : annotationJsonValue.convert(opts.default).withErrorFormat((msg) => `default: ${msg}`);
+  return defaultResult.onSuccess((copiedDefault) =>
+    (opts.examples === undefined
+      ? succeed(undefined)
+      : Converters.arrayOf(annotationJsonValue)
+          .convert(opts.examples)
+          .withErrorFormat((msg) => `examples: ${msg}`)
+    ).onSuccess((copiedExamples) =>
+      succeed({
+        ...opts,
+        ...(copiedDefault !== undefined && { default: copiedDefault }),
+        ...(copiedExamples !== undefined && { examples: copiedExamples })
+      })
     )
-    .onSuccess(() => succeed(opts));
+  );
 }
 
 /**
  * Checks a number against every numeric constraint in `opts`.
  * @param value - The (already type-checked) number.
- * @param opts - The node's options.
- * @returns The number, or a `Failure` naming the first violated keyword and its bound.
+ * @param opts - The node's constraints.
+ * @returns The number, or a `Failure` naming **every** violated keyword and its bound, one per
+ * line.
  * @internal
  */
-export function enforceNumberConstraints(value: number, opts: INumberSchemaOptions): Result<number> {
+export function enforceNumberConstraints(value: number, opts: NumberConstraints): Result<number> {
   return mapResults(
-    NUMBER_KEYWORDS.map((keyword) => _enforceNumberKeyword(value, keyword, opts[keyword]))
+    schemaNumberConstraintKeywords.map((keyword) => _enforceNumberKeyword(value, keyword, opts[keyword]))
   ).onSuccess(() => succeed(value));
+}
+
+/** Whether `value` is a multiple of `step`, within float rounding of the quotient. */
+function _isMultipleOf(value: number, step: number): boolean {
+  const quotient = value / step;
+  return Math.abs(quotient - Math.round(quotient)) <= MULTIPLE_OF_ULPS * Math.max(1, Math.abs(quotient));
 }
 
 /** One numeric keyword's check; succeeds when the keyword is absent. */
@@ -226,24 +271,21 @@ function _enforceNumberKeyword(
       return value < bound
         ? succeed(value)
         : fail(`expected a value < ${bound} (exclusiveMaximum), got ${value}`);
-    case 'multipleOf': {
-      const quotient = value / bound;
-      return Math.abs(quotient - Math.round(quotient)) <=
-        MULTIPLE_OF_TOLERANCE * Math.max(1, Math.abs(quotient))
+    case 'multipleOf':
+      return _isMultipleOf(value, bound)
         ? succeed(value)
         : fail(`expected a multiple of ${bound} (multipleOf), got ${value}`);
-    }
   }
 }
 
 /**
  * Checks a string's length, in code points, against `minLength` and `maxLength`.
  * @param value - The (already type-checked) string.
- * @param opts - The node's options.
+ * @param opts - The node's constraints.
  * @returns The string, or a `Failure` naming the violated keyword and its bound.
  * @internal
  */
-export function enforceStringConstraints(value: string, opts: IStringSchemaOptions): Result<string> {
+export function enforceStringConstraints(value: string, opts: StringConstraints): Result<string> {
   if (opts.minLength === undefined && opts.maxLength === undefined) {
     return succeed(value);
   }
@@ -257,25 +299,21 @@ export function enforceStringConstraints(value: string, opts: IStringSchemaOptio
   return succeed(value);
 }
 
-/**
- * The wire fields for the annotations every node carries, in a fixed order: `description`,
- * `title`, `default`, `examples`.
- * @internal
- */
-export function annotationFields(opts: ISchemaOptions): JsonObject {
+/** The annotations in `opts`, copied, without the absent ones. @internal */
+export function pickAnnotations(opts: ISchemaOptions | undefined): SchemaAnnotations {
   return {
-    ...(opts.description !== undefined && { description: opts.description }),
-    ...(opts.title !== undefined && { title: opts.title }),
-    ...(opts.default !== undefined && { default: opts.default }),
-    ...(opts.examples !== undefined && { examples: [...opts.examples] })
+    ...(opts?.description !== undefined && { description: opts.description }),
+    ...(opts?.title !== undefined && { title: opts.title }),
+    ...(opts?.default !== undefined && { default: _copyJson(opts.default) }),
+    ...(opts?.examples !== undefined && { examples: opts.examples.map(_copyJson) })
   };
 }
 
-/** The wire fields for a number node's constraints, in a fixed order. @internal */
-export function numberConstraintFields(opts: INumberSchemaOptions): JsonObject {
-  const out: JsonObject = {};
-  for (const keyword of NUMBER_KEYWORDS) {
-    const value = opts[keyword];
+/** The numeric constraints in `opts`, copied through the keyword list. @internal */
+export function pickNumberConstraints(opts: INumberSchemaOptions | undefined): NumberConstraints {
+  const out: { -readonly [K in NumberKeyword]?: number } = {};
+  for (const keyword of schemaNumberConstraintKeywords) {
+    const value = opts?.[keyword];
     if (value !== undefined) {
       out[keyword] = value;
     }
@@ -283,11 +321,38 @@ export function numberConstraintFields(opts: INumberSchemaOptions): JsonObject {
   return out;
 }
 
+/** The length constraints and `format` in `opts`, copied through the keyword list. @internal */
+export function pickStringConstraints(opts: IStringSchemaOptions | undefined): StringConstraints {
+  const out: { -readonly [K in keyof StringConstraints]?: StringConstraints[K] } = {};
+  for (const keyword of schemaLengthConstraintKeywords) {
+    const value = opts?.[keyword];
+    if (value !== undefined) {
+      out[keyword] = value;
+    }
+  }
+  if (opts?.format !== undefined) {
+    out.format = opts.format;
+  }
+  return out;
+}
+
+/**
+ * The wire fields for a node's annotations, in a fixed order — `description`, `title`, `default`,
+ * `examples` — with `default` and `examples` as fresh copies, so a caller mutating what `toJson()`
+ * returned cannot reach the node.
+ * @internal
+ */
+export function annotationFields(annotations: SchemaAnnotations): JsonObject {
+  const { examples, ...rest } = pickAnnotations(annotations);
+  return { ...rest, ...(examples !== undefined && { examples: [...examples] }) };
+}
+
+/** The wire fields for a number node's constraints, in a fixed order. @internal */
+export function numberConstraintFields(opts: NumberConstraints): JsonObject {
+  return { ...pickNumberConstraints(opts) };
+}
+
 /** The wire fields for a string node's constraints and format, in a fixed order. @internal */
-export function stringConstraintFields(opts: IStringSchemaOptions): JsonObject {
-  return {
-    ...(opts.minLength !== undefined && { minLength: opts.minLength }),
-    ...(opts.maxLength !== undefined && { maxLength: opts.maxLength }),
-    ...(opts.format !== undefined && { format: opts.format })
-  };
+export function stringConstraintFields(opts: StringConstraints): JsonObject {
+  return { ...pickStringConstraints(opts) };
 }

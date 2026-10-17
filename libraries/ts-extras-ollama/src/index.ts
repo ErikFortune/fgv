@@ -523,7 +523,7 @@ export interface IChatStructuredParams<T> {
 
 /**
  * Ollama's keyword-capability table for the native `format` field: every constraint and annotation
- * keyword folds.
+ * keyword folds, except `title`, which is dropped (it restates the property name).
  *
  * @remarks
  * Ollama documents `format` only as "a JSON schema" — its API reference

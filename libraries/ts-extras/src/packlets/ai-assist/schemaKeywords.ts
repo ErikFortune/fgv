@@ -48,6 +48,23 @@ export type SchemaWireFormat =
   | 'gemini';
 
 /**
+ * Who receives a wire schema, as far as choosing its keyword table needs to know.
+ *
+ * @remarks
+ * Both fields are optional and their absence is safe: an OpenAI-family wire with no verified
+ * `providerId` folds every keyword. Set `providerId` only when the request goes to that
+ * provider's own endpoint — a descriptor pointed at a caller-supplied endpoint (a gateway, LiteLLM,
+ * vLLM) reaches a server whose keyword support nobody verified.
+ * @internal
+ */
+export interface ISchemaWireTarget {
+  /** The provider descriptor id, when the request goes to that provider's own endpoint. */
+  readonly providerId?: string;
+  /** The concrete model id. */
+  readonly model?: string;
+}
+
+/**
  * The providers whose documentation verifies the OpenAI-family tables.
  *
  * @remarks
@@ -76,7 +93,11 @@ const OPENAI_FAMILY_VERIFIED_PROVIDERS: ReadonlySet<string> = new Set(['openai',
  * - `format` passes only for the values both list: OpenAI's date-time, time, date, duration,
  *   email, hostname, ipv4, ipv6 and uuid, intersected with xAI's date, time, date-time, email,
  *   uuid, ipv4, ipv6 and uri.
- * - `title`, `default`, `examples` fold: neither page mentions them.
+ * - `default` and `examples` fold: neither page mentions them. `title` is dropped — it only
+ *   restates the property name, and folding it put `Title: …` on every pydantic property.
+ *
+ * OpenAI states that fine-tuned models support none of the string, number or array constraints, so
+ * a fine-tuned model (an `ft:` id) gets `foldAllSchemaKeywords` instead.
  *
  * OpenAI's Responses tools without `strict` are normalized to strict mode "when possible"
  * (https://developers.openai.com/api/docs/guides/function-calling), so the strict-mode subset is the
@@ -92,7 +113,7 @@ export const openAiFamilySchemaKeywords: JsonSchema.SchemaKeywordCapabilities = 
   minLength: 'fold',
   maxLength: 'fold',
   format: { passValues: ['date-time', 'time', 'date', 'email', 'ipv4', 'ipv6', 'uuid'] },
-  title: 'fold',
+  title: 'drop',
   default: 'fold',
   examples: 'fold'
 };
@@ -133,7 +154,8 @@ export const anthropicToolsSchemaKeywords: JsonSchema.SchemaKeywordCapabilities 
  * "Numerical constraints (such as minimum, maximum, multipleOf)" and "String constraints
  * (minLength, maxLength)" are **not** supported, and "If you use an unsupported feature, you'll receive a 400
  * error" — so they fold, which is what Anthropic's own SDK helpers do. `exclusiveMinimum` /
- * `exclusiveMaximum` fall under "such as"; `title` and `examples` are not mentioned. All fold.
+ * `exclusiveMaximum` fall under "such as"; `examples` is not mentioned and folds; `title` is not
+ * mentioned and is dropped, since it only restates the property name.
  * @internal
  */
 export const anthropicJsonOutputsSchemaKeywords: JsonSchema.SchemaKeywordCapabilities = {
@@ -147,7 +169,7 @@ export const anthropicJsonOutputsSchemaKeywords: JsonSchema.SchemaKeywordCapabil
   format: {
     passValues: ['date-time', 'time', 'date', 'duration', 'email', 'hostname', 'uri', 'ipv4', 'ipv6', 'uuid']
   },
-  title: 'fold',
+  title: 'drop',
   default: 'pass',
   examples: 'fold'
 };
@@ -177,6 +199,11 @@ function _integerExclusiveBound(
     }
     const inclusive = exclusive === 'exclusiveMinimum' ? 'minimum' : 'maximum';
     const translated = exclusive === 'exclusiveMinimum' ? Math.floor(bound) + 1 : Math.ceil(bound) - 1;
+    // Beyond 2^53 the arithmetic is not exact — `floor(b) + 1` can equal `b`, which would loosen
+    // the bound — so there is no exact equivalent, and the keyword folds.
+    if (!Number.isSafeInteger(translated)) {
+      return undefined;
+    }
     const existing: JsonValue | undefined = node[inclusive];
     const out: JsonObject = {};
     for (const [key, value] of Object.entries(node)) {
@@ -222,21 +249,23 @@ export const geminiSchemaKeywords: JsonSchema.SchemaKeywordCapabilities = {
 };
 
 /**
- * The keyword-capability table for a wire format as one provider receives it.
+ * The keyword-capability table for a wire format as one target receives it.
  * @param format - The wire format.
- * @param providerId - The provider descriptor id. The OpenAI-family formats are shared by
- * providers whose support differs, so only verified providers get their table; any other — or an
- * absent id — folds everything.
+ * @param target - Who receives it. The OpenAI-family formats are shared by providers whose support
+ * differs, so only a verified provider on its own endpoint gets their table, and not for a
+ * fine-tuned (`ft:`) model; any other target — or none — folds everything.
  * @internal
  */
 export function schemaKeywordsFor(
   format: SchemaWireFormat,
-  providerId?: string
+  target?: ISchemaWireTarget
 ): JsonSchema.SchemaKeywordCapabilities {
   switch (format) {
     case 'responses-tools':
     case 'openai-strict-output':
-      return providerId !== undefined && OPENAI_FAMILY_VERIFIED_PROVIDERS.has(providerId)
+      return target?.providerId !== undefined &&
+        OPENAI_FAMILY_VERIFIED_PROVIDERS.has(target.providerId) &&
+        target.model?.startsWith('ft:') !== true
         ? openAiFamilySchemaKeywords
         : JsonSchema.foldAllSchemaKeywords;
     case 'anthropic-tools':
@@ -253,6 +282,10 @@ export function schemaKeywordsFor(
  * receives it.
  * @internal
  */
-export function adaptWireSchema(schema: JsonValue, format: SchemaWireFormat, providerId?: string): JsonValue {
-  return JsonSchema.adaptSchemaKeywords(schema, schemaKeywordsFor(format, providerId));
+export function adaptWireSchema(
+  schema: JsonValue,
+  format: SchemaWireFormat,
+  target?: ISchemaWireTarget
+): JsonValue {
+  return JsonSchema.adaptSchemaKeywords(schema, schemaKeywordsFor(format, target));
 }

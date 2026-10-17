@@ -45,6 +45,9 @@ import {
 } from './types';
 import { INumberSchemaOptions, IObjectSchemaOptions, ISchemaOptions, IStringSchemaOptions } from './options';
 import {
+  NumberConstraints,
+  SchemaAnnotations,
+  StringConstraints,
   annotationFields,
   checkAnnotations,
   checkNumberOptions,
@@ -52,6 +55,9 @@ import {
   enforceNumberConstraints,
   enforceStringConstraints,
   numberConstraintFields,
+  pickAnnotations,
+  pickNumberConstraints,
+  pickStringConstraints,
   stringConstraintFields
 } from './constraints';
 
@@ -88,7 +94,7 @@ abstract class SchemaValidatorBase<T>
   /** Whether `null` is an accepted value — see {@link JsonSchema.ISchemaOptions.nullable}. */
   public readonly nullable: boolean;
   /** The annotations this node emits: `description`, `title`, `default`, `examples`. */
-  private readonly _annotations: ISchemaOptions;
+  private readonly _annotations: SchemaAnnotations;
 
   protected constructor(
     type: SchemaNodeType,
@@ -101,13 +107,9 @@ abstract class SchemaValidatorBase<T>
     if (opts?.description !== undefined) {
       this.description = opts.description;
     }
-    // Copied, so that a caller mutating its options object afterwards cannot change the node.
-    this._annotations = {
-      ...(opts?.description !== undefined && { description: opts.description }),
-      ...(opts?.title !== undefined && { title: opts.title }),
-      ...(opts?.default !== undefined && { default: opts.default }),
-      ...(opts?.examples !== undefined && { examples: [...opts.examples] })
-    };
+    // Copied — `default` and `examples` deeply — so a caller mutating its options object
+    // afterwards cannot change the node.
+    this._annotations = pickAnnotations(opts);
   }
 
   /** The wire fields for this node's annotations — see `annotationFields`. */
@@ -159,18 +161,14 @@ abstract class SchemaValidatorBase<T>
 class StringSchemaValidator extends SchemaValidatorBase<string> {
   private readonly _inner: Validation.Validator<string>;
   /** The node's length constraints and format. */
-  private readonly _constraints: IStringSchemaOptions;
+  private readonly _constraints: StringConstraints;
 
   public constructor(opts?: IStringSchemaOptions) {
     const inner = Validators.string;
     /* c8 ignore next 1 - placeholder ValidatorFunc; validate() and convert() overrides always intercept */
     super('string', (__from: unknown): boolean | Failure<string> => true, opts);
     this._inner = inner;
-    this._constraints = {
-      ...(opts?.minLength !== undefined && { minLength: opts.minLength }),
-      ...(opts?.maxLength !== undefined && { maxLength: opts.maxLength }),
-      ...(opts?.format !== undefined && { format: opts.format })
-    };
+    this._constraints = pickStringConstraints(opts);
   }
 
   public override validate(from: unknown): Result<string> {
@@ -206,7 +204,7 @@ class StringSchemaValidator extends SchemaValidatorBase<string> {
 class NumberSchemaValidator extends SchemaValidatorBase<number> {
   public readonly strict: boolean;
   /** The node's numeric constraints. */
-  private readonly _constraints: INumberSchemaOptions;
+  private readonly _constraints: NumberConstraints;
   // Held for non-strict mode where coercion is needed.
   private readonly _nonStrictConverter?: Converter<number>;
   // Held for strict mode where in-place validation is the canonical operation.
@@ -236,13 +234,7 @@ class NumberSchemaValidator extends SchemaValidatorBase<number> {
     }
 
     this.strict = strict;
-    this._constraints = {
-      ...(opts?.minimum !== undefined && { minimum: opts.minimum }),
-      ...(opts?.maximum !== undefined && { maximum: opts.maximum }),
-      ...(opts?.exclusiveMinimum !== undefined && { exclusiveMinimum: opts.exclusiveMinimum }),
-      ...(opts?.exclusiveMaximum !== undefined && { exclusiveMaximum: opts.exclusiveMaximum }),
-      ...(opts?.multipleOf !== undefined && { multipleOf: opts.multipleOf })
-    };
+    this._constraints = pickNumberConstraints(opts);
   }
 
   public override validate(from: unknown): Result<number> {
@@ -579,6 +571,56 @@ function _kindOf(from: unknown): string {
 }
 
 // ---------------------------------------------------------------------------
+// Public option checkers
+// ---------------------------------------------------------------------------
+
+/**
+ * Checks `number` / `integer` options for coherence without constructing a node — the
+ * non-throwing path for bounds derived at run time.
+ *
+ * @remarks
+ * Runs exactly the checks the `number` and `integer` factories run, which throw on failure: a
+ * non-finite bound, `minimum` above `maximum`, exclusive bounds leaving no value (for `integer`, no
+ * integer) in range, `multipleOf` not greater than zero, and a `default` or `examples` member that
+ * is not JSON. Options it accepts never make the factory throw.
+ *
+ * @example
+ * ```ts
+ * const schema = JsonSchema.validateNumberOptions('integer', { minimum: lo, maximum: hi }).onSuccess((o) =>
+ *   succeed(JsonSchema.integer(o))
+ * );
+ * ```
+ * @param type - The node kind the options are for.
+ * @param opts - The options to check.
+ * @returns The options, or a `Failure` naming the keyword and the value.
+ * @public
+ */
+export function validateNumberOptions(
+  type: 'number' | 'integer',
+  opts: INumberSchemaOptions | undefined
+): Result<INumberSchemaOptions | undefined> {
+  return checkNumberOptions(type, opts);
+}
+
+/**
+ * Checks `string` options for coherence without constructing a node — the non-throwing path for
+ * lengths derived at run time.
+ *
+ * @remarks
+ * Runs exactly the checks the `string` factory runs, which throws on failure: a length that is not
+ * a non-negative integer, `minLength` above `maxLength`, and a `default` or `examples` member that
+ * is not JSON. Options it accepts never make the factory throw.
+ * @param opts - The options to check.
+ * @returns The options, or a `Failure` naming the keyword and the value.
+ * @public
+ */
+export function validateStringOptions(
+  opts: IStringSchemaOptions | undefined
+): Result<IStringSchemaOptions | undefined> {
+  return checkStringOptions(opts);
+}
+
+// ---------------------------------------------------------------------------
 // Public factory functions
 // ---------------------------------------------------------------------------
 
@@ -586,6 +628,8 @@ function _kindOf(from: unknown): string {
  * Creates a schema node for a JSON `string`.
  * @param opts - Optional description.
  * @returns An `ISchemaValidator` whose `Static` type is `string`.
+ * @throws Error when the options are incoherent — see `validateStringOptions`, the non-throwing check. A
+ * schema is declared, so this is a setup-time error.
  * @public
  */
 // `null` is the JSON value being modelled, not a JS sentinel — the same carve-out
@@ -596,6 +640,8 @@ export function string(opts: IStringSchemaOptions & { nullable: true }): ISchema
  * Creates a schema node for a JSON `string`.
  * @param opts - Optional description and nullability.
  * @returns An `ISchemaValidator` whose `Static` type is `string`.
+ * @throws Error when the options are incoherent — see `validateStringOptions`, the non-throwing check. A
+ * schema is declared, so this is a setup-time error.
  * @public
  */
 export function string(opts?: IStringSchemaOptions): ISchemaValidator<string>;
@@ -607,6 +653,8 @@ export function string(opts?: IStringSchemaOptions): ISchemaValidator<string> {
  * Creates a schema node for a JSON `number`.
  * @param opts - Optional description and strict mode (see `INumberSchemaOptions`).
  * @returns An `ISchemaValidator` whose `Static` type is `number`.
+ * @throws Error when the options are incoherent — see `validateNumberOptions`, the non-throwing check. A
+ * schema is declared, so this is a setup-time error.
  * @public
  */
 export function number(
@@ -619,6 +667,8 @@ export function number(
  * Creates a schema node for a JSON `number`.
  * @param opts - Optional description, nullability and strict mode (see `INumberSchemaOptions`).
  * @returns An `ISchemaValidator` whose `Static` type is `number`.
+ * @throws Error when the options are incoherent — see `validateNumberOptions`, the non-throwing check. A
+ * schema is declared, so this is a setup-time error.
  * @public
  */
 export function number(opts?: INumberSchemaOptions): ISchemaValidator<number>;
@@ -630,6 +680,8 @@ export function number(opts?: INumberSchemaOptions): ISchemaValidator<number> {
  * Creates a schema node for a JSON `integer`.
  * @param opts - Optional description and strict mode (see `INumberSchemaOptions`).
  * @returns An `ISchemaValidator` (tagged `integer`) whose `Static` type is `number`.
+ * @throws Error when the options are incoherent — see `validateNumberOptions`, the non-throwing check. A
+ * schema is declared, so this is a setup-time error.
  * @public
  */
 export function integer(
@@ -642,6 +694,8 @@ export function integer(
  * Creates a schema node for a JSON `integer`.
  * @param opts - Optional description, nullability and strict mode (see `INumberSchemaOptions`).
  * @returns An `ISchemaValidator` (tagged `integer`) whose `Static` type is `number`.
+ * @throws Error when the options are incoherent — see `validateNumberOptions`, the non-throwing check. A
+ * schema is declared, so this is a setup-time error.
  * @public
  */
 export function integer(opts?: INumberSchemaOptions): ISchemaValidator<number>;
@@ -653,6 +707,8 @@ export function integer(opts?: INumberSchemaOptions): ISchemaValidator<number> {
  * Creates a schema node for a JSON `boolean`.
  * @param opts - Optional description.
  * @returns An `ISchemaValidator` whose `Static` type is `boolean`.
+ * @throws Error when `default` or a member of `examples` is not a JSON value — a setup-time error, since a
+ * schema is declared.
  * @public
  */
 // `null` is the JSON value being modelled, not a JS sentinel — the same carve-out
@@ -663,6 +719,8 @@ export function boolean(opts: ISchemaOptions & { nullable: true }): ISchemaValid
  * Creates a schema node for a JSON `boolean`.
  * @param opts - Optional description and nullability.
  * @returns An `ISchemaValidator` whose `Static` type is `boolean`.
+ * @throws Error when `default` or a member of `examples` is not a JSON value — a setup-time error, since a
+ * schema is declared.
  * @public
  */
 export function boolean(opts?: ISchemaOptions): ISchemaValidator<boolean>;
@@ -675,6 +733,8 @@ export function boolean(opts?: ISchemaOptions): ISchemaValidator<boolean> {
  * @param values - The allowed string values.
  * @param opts - Optional description.
  * @returns An `ISchemaValidator` whose `Static` type is the union of `values`.
+ * @throws Error when `default` or a member of `examples` is not a JSON value — a setup-time error, since a
+ * schema is declared.
  * @public
  */
 export function enumOf<T extends string>(
@@ -690,6 +750,8 @@ export function enumOf<T extends string>(
  * @param opts - Optional description and nullability. A nullable enum also carries `null` in
  * its emitted `enum` list, so the two halves of the node cannot disagree.
  * @returns An `ISchemaValidator` whose `Static` type is the union of `values`.
+ * @throws Error when `default` or a member of `examples` is not a JSON value — a setup-time error, since a
+ * schema is declared.
  * @public
  */
 export function enumOf<T extends string>(values: readonly T[], opts?: ISchemaOptions): ISchemaValidator<T>;
@@ -714,6 +776,8 @@ export function optional<S extends ISchemaValidator<unknown>>(
  * @param items - The schema applied to every element.
  * @param opts - Optional description.
  * @returns An `ISchemaValidator` whose `Static` type is `Array<Static<S>>`.
+ * @throws Error when `default` or a member of `examples` is not a JSON value — a setup-time error, since a
+ * schema is declared.
  * @public
  */
 export function array<S extends ISchemaValidator<unknown>>(
@@ -728,6 +792,8 @@ export function array<S extends ISchemaValidator<unknown>>(
  * @param items - The schema applied to every element.
  * @param opts - Optional description and nullability.
  * @returns An `ISchemaValidator` whose `Static` type is `Array<Static<S>>`.
+ * @throws Error when `default` or a member of `examples` is not a JSON value — a setup-time error, since a
+ * schema is declared.
  * @public
  */
 export function array<S extends ISchemaValidator<unknown>>(
@@ -748,6 +814,8 @@ export function array<S extends ISchemaValidator<unknown>>(
  * `optional` to make it optional.
  * @param opts - Options including `additionalProperties: true` and `nullable: true`.
  * @returns An `ISchemaValidator` whose `Static` type is `OpenObjectStatic<P> | null`.
+ * @throws Error when `default` or a member of `examples` is not a JSON value — a setup-time error, since a
+ * schema is declared.
  * @public
  */
 export function object<P extends ILlmProperties>(
@@ -764,6 +832,8 @@ export function object<P extends ILlmProperties>(
  * `optional` to make it optional.
  * @param opts - Options including `additionalProperties: true`.
  * @returns An `ISchemaValidator` whose `Static` type is `OpenObjectStatic<P>`.
+ * @throws Error when `default` or a member of `examples` is not a JSON value — a setup-time error, since a
+ * schema is declared.
  * @public
  */
 export function object<P extends ILlmProperties>(
@@ -776,6 +846,8 @@ export function object<P extends ILlmProperties>(
  * `optional` to make it optional.
  * @param opts - Optional description and `additionalProperties` flag.
  * @returns An `ISchemaValidator` whose `Static` type derives the required/optional split.
+ * @throws Error when `default` or a member of `examples` is not a JSON value — a setup-time error, since a
+ * schema is declared.
  * @public
  */
 export function object<P extends ILlmProperties>(
@@ -792,6 +864,8 @@ export function object<P extends ILlmProperties>(
  * property to be required.
  * @param opts - Optional description, nullability and `additionalProperties` flag.
  * @returns An `ISchemaValidator` whose `Static` type derives the required/optional split.
+ * @throws Error when `default` or a member of `examples` is not a JSON value — a setup-time error, since a
+ * schema is declared.
  * @public
  */
 export function object<P extends ILlmProperties>(
@@ -825,6 +899,8 @@ export function object<P extends ILlmProperties>(
  * @param values - The schema every property value must match.
  * @param opts - Optional description and nullability.
  * @returns An `ISchemaValidator` whose `Static` type is `Record<string, Static<S>> | null`.
+ * @throws Error when `default` or a member of `examples` is not a JSON value — a setup-time error, since a
+ * schema is declared.
  * @public
  */
 export function record<S extends ISchemaValidator<unknown>>(
@@ -840,6 +916,8 @@ export function record<S extends ISchemaValidator<unknown>>(
  * @param values - The schema every property value must match.
  * @param opts - Optional description and nullability.
  * @returns An `ISchemaValidator` whose `Static` type is `Record<string, Static<S>>`.
+ * @throws Error when `default` or a member of `examples` is not a JSON value — a setup-time error, since a
+ * schema is declared.
  * @public
  */
 export function record<S extends ISchemaValidator<unknown>>(

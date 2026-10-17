@@ -7,12 +7,13 @@ import type { JsonObject, JsonValue } from '@fgv/ts-json-base';
 import { Result, fail, succeed } from '@fgv/ts-utils';
 import type { AiServerToolConfig, IAiProviderDescriptor } from './model';
 import type {
+  AiStructuredOutputFormat,
   IAiStructuredOutputCapability,
   StructuredOutputEnforcement,
   StructuredOutputFallback,
   StructuredOutputRequest
 } from './structuredOutputTypes';
-import { type SchemaWireFormat, adaptWireSchema } from './schemaKeywords';
+import { type ISchemaWireTarget, type SchemaWireFormat, adaptWireSchema } from './schemaKeywords';
 import { toGeminiParameterSchema } from './toolFormats';
 
 /**
@@ -58,10 +59,7 @@ export const NO_STRUCTURED_OUTPUT: IResolvedStructuredOutput = { enforcement: 'n
  * to declare.
  * @internal
  */
-function schemaWire(
-  format: IAiStructuredOutputCapability['format'],
-  raw: JsonValue
-): IResolvedStructuredOutput {
+function schemaWire(format: AiStructuredOutputFormat, raw: JsonValue): IResolvedStructuredOutput {
   switch (format) {
     case 'openai-json-schema':
       return {
@@ -136,9 +134,7 @@ function schemaWire(
  * what a format can do could only ever disagree with this function.
  * @internal
  */
-function jsonObjectWire(
-  format: IAiStructuredOutputCapability['format']
-): IResolvedStructuredOutput | undefined {
+function jsonObjectWire(format: AiStructuredOutputFormat): IResolvedStructuredOutput | undefined {
   switch (format) {
     case 'openai-json-schema':
       return { enforcement: 'json-mode', wire: { response_format: { type: 'json_object' } } };
@@ -282,7 +278,7 @@ export function hoistNullableOptionals(raw: JsonValue): JsonValue {
  * it takes the Anthropic tools table, not the JSON-outputs one.
  * @internal
  */
-function schemaWireFormatOf(format: IAiStructuredOutputCapability['format']): SchemaWireFormat {
+function schemaWireFormatOf(format: AiStructuredOutputFormat): SchemaWireFormat {
   switch (format) {
     case 'openai-json-schema':
     case 'openai-responses-format':
@@ -297,7 +293,7 @@ function schemaWireFormatOf(format: IAiStructuredOutputCapability['format']): Sc
 }
 
 /** The two formats that carry OpenAI's all-properties-required strict rule. @internal */
-function isOpenAiStrictFormat(format: IAiStructuredOutputCapability['format']): boolean {
+function isOpenAiStrictFormat(format: AiStructuredOutputFormat): boolean {
   return format === 'openai-json-schema' || format === 'openai-responses-format';
 }
 
@@ -315,7 +311,7 @@ function isOpenAiStrictFormat(format: IAiStructuredOutputCapability['format']): 
  * @internal
  */
 function conflictsWithServerTools(
-  format: IAiStructuredOutputCapability['format'],
+  format: AiStructuredOutputFormat,
   resolved: IResolvedStructuredOutput
 ): boolean {
   return (
@@ -346,9 +342,9 @@ function conflictsWithServerTools(
  * @internal
  */
 function effectiveFormat(
-  declared: IAiStructuredOutputCapability['format'],
+  declared: AiStructuredOutputFormat,
   usesResponsesApi: boolean
-): IAiStructuredOutputCapability['format'] {
+): AiStructuredOutputFormat {
   if (usesResponsesApi && declared === 'openai-json-schema') {
     return 'openai-responses-format';
   }
@@ -371,6 +367,9 @@ function effectiveFormat(
  * OpenAI Responses API rather than Chat Completions. See {@link effectiveFormat} —
  * the route is not a function of the model alone, so the capability declaration
  * cannot carry it.
+ * @param resolveCapability - Resolves the model's structured-output capability.
+ * @param wireTarget - Who receives the schema, for its keyword-capability table: the provider id
+ * only when the request goes to that provider's own endpoint, and the model.
  * @returns The decision, or `Failure` when the caller asked to fail rather than
  * degrade — or when the request conflicts with server tools, which is never
  * degradable because the caller asked for two things the provider cannot both do.
@@ -385,7 +384,8 @@ export function resolveStructuredOutput(
   resolveCapability: (
     descriptor: IAiProviderDescriptor,
     model: string
-  ) => IAiStructuredOutputCapability | undefined
+  ) => IAiStructuredOutputCapability | undefined,
+  wireTarget: ISchemaWireTarget
 ): Result<IResolvedStructuredOutput> {
   if (request === undefined) {
     return succeed(NO_STRUCTURED_OUTPUT);
@@ -425,7 +425,7 @@ export function resolveStructuredOutput(
     const adapted: JsonValue = adaptWireSchema(
       request.schema.toJson(),
       schemaWireFormatOf(format),
-      descriptor.id
+      wireTarget
     );
     const raw: JsonValue = adapt ? hoistNullableOptionals(adapted) : adapted;
     if (strict && hasOptionalProperties(raw)) {
