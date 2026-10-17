@@ -46,6 +46,10 @@ export type DeadlineRace<T> =
  * The overall deadline covers the connect, the headers, and the body read, and it is what
  * stops a response that dribbles one byte every 25 seconds — such a response passes every
  * per-read check and never trips a connect timeout.
+ *
+ * The overall deadline is **optional**. The streaming entry point has none, because it hands back
+ * a body that may legitimately live for an hour: there only the headers deadline and the caller's
+ * signal apply.
  * @internal
  */
 export class DeadlineWatch {
@@ -67,10 +71,17 @@ export class DeadlineWatch {
   private _inBodyPhase: boolean;
   private readonly _waiters: Set<(cause: DeadlineStopCause) => void>;
 
-  public constructor(timeoutMs: number, headersTimeoutMs: number, callerSignal?: AbortSignal) {
+  /**
+   * @param timeoutMs - The overall deadline, or `undefined` for none (the streaming entry point).
+   * @param headersTimeoutMs - The per-attempt deadline to response headers.
+   * @param callerSignal - The caller's cancellation signal, if any.
+   */
+  public constructor(timeoutMs: number | undefined, headersTimeoutMs: number, callerSignal?: AbortSignal) {
     this._controller = new AbortController();
     this._startedAt = Date.now();
-    this._timeoutMs = timeoutMs;
+    // Infinite rather than absent, so `remainingMs` and the failure reason need no second branch.
+    // It is never handed to `setTimeout`, which would fire an infinite delay after 1 ms.
+    this._timeoutMs = timeoutMs ?? Number.POSITIVE_INFINITY;
     this._headersTimeoutMs = headersTimeoutMs;
     this._callerSignal = callerSignal;
     this._terminal = false;
@@ -78,7 +89,10 @@ export class DeadlineWatch {
     this._waiters = new Set();
 
     this._onCallerAbort = (): void => this._stop('caller-aborted');
-    this._overallTimer = setTimeout(() => this._stop(this._inBodyPhase ? 'body' : 'overall'), timeoutMs);
+    this._overallTimer =
+      timeoutMs !== undefined
+        ? setTimeout(() => this._stop(this._inBodyPhase ? 'body' : 'overall'), timeoutMs)
+        : undefined;
     this._headersTimer = setTimeout(() => this._stop('headers'), headersTimeoutMs);
 
     if (callerSignal !== undefined) {

@@ -57,13 +57,16 @@ export {
   SUPPORTED_SCHEMES
 } from './defaults';
 
-export type { FetchFailureReason, FetchTimeoutPhase } from './failureReason';
+export type { FetchFailureKind, FetchFailureReason, FetchTimeoutPhase } from './failureReason';
+export { SAFER_FETCH_METHODS } from './model';
 export type { IRetryPolicy } from './retry';
 
 export type {
+  GuardedFetch,
   IAddressGuard,
   IFetchTransport,
   IFetchTransportHints,
+  IGuardedFetchOptions,
   IGuardVerdict,
   IRequestGuard,
   IRequestHop,
@@ -82,7 +85,15 @@ export { allowAnyAddress, allowContentTypes } from './guards';
 
 export { platformFetchTransport } from './transport';
 
-export { saferFetchBytes, saferFetchJson, saferFetchText, type ISaferFetchJsonOptions } from './saferFetch';
+export {
+  createGuardedFetch,
+  saferFetchBytes,
+  saferFetchJson,
+  saferFetchText,
+  type ISaferFetchJsonOptions
+} from './saferFetch';
+
+export { GuardedFetchError } from './guardedFetchError';
 
 // Runtime-agnostic and exported from both barrels: the address *classification* layer is pure
 // arithmetic over parsed octets with no I/O, so it works in a browser exactly as it does on

@@ -9,7 +9,9 @@ import { DetailedResult } from '@fgv/ts-utils';
 import { JsonObject } from '@fgv/ts-json-base';
 import { JsonValue } from '@fgv/ts-json-base';
 import { Logging } from '@fgv/ts-utils';
+import { OAuthClientProvider } from '@modelcontextprotocol/sdk/client/auth.js';
 import { Result } from '@fgv/ts-utils';
+import { SaferFetch } from '@fgv/ts-extras';
 
 // @public
 export function adaptMcpTools(session: IMcpSession, options?: IAdaptMcpToolsOptions): Promise<DetailedResult<IAdaptMcpToolsResult, McpFailureReason>>;
@@ -90,6 +92,8 @@ export interface IMcpEmbeddedTextResourceBlock {
 
 // @public
 export interface IMcpHttpTransportParams {
+    readonly authProvider?: McpOAuthClientProvider;
+    readonly fetch?: McpFetch;
     readonly headers?: Record<string, string>;
     readonly url: string;
 }
@@ -232,10 +236,22 @@ export type McpFailureReason = {
 } | {
     readonly kind: 'session-expired';
 }
-/** `status` is the HTTP status, when the refusal came as one. */
+/**
+* `status` is the HTTP status, when the refusal came as one. `resourceMetadataUrl` is the
+* `resource_metadata` URL from the endpoint's most recent `WWW-Authenticate` challenge, present
+* only when it was a valid `http:`/`https:` URL on one printable line. It is chosen by the server
+* and may come from an earlier challenge than the one that failed this operation: fetch it only
+* through the same guarded `fetch` as the transport.
+*/
 | {
     readonly kind: 'unauthorized';
     readonly status?: number;
+    readonly resourceMetadataUrl?: string;
+}
+/** `reason` is the kind of the guarded fetch's `FetchFailureReason`; its URL-bearing payload is never carried. */
+| {
+    readonly kind: 'egress-blocked';
+    readonly reason: SaferFetch.FetchFailureKind;
 }
 /** `code` is the JSON-RPC error code, when the failure carried one. */
 | {
@@ -251,6 +267,12 @@ export type McpFailureReason = {
 } | {
     readonly kind: 'invalid-options';
 };
+
+// @public
+export type McpFetch = (url: string | URL, init?: RequestInit) => Promise<Response>;
+
+// @public
+export type McpOAuthClientProvider = OAuthClientProvider;
 
 // @public
 export type McpTransportKind = 'stdio' | 'http' | 'custom';

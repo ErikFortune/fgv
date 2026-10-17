@@ -31,10 +31,18 @@
  * The only `as unknown as` casts in the package live here, at the boundary where the real SDK
  * objects are narrowed to the local projection.
  *
+ * One public SDK type is aliased elsewhere: `McpOAuthClientProvider`, in `sdkTypes.ts`, a type-only
+ * leaf. It lives apart so that `model.ts` can name it without importing this module, which itself
+ * imports `model.ts`; a rename touches both files.
+ *
  * @internal
  */
 
-import { UnauthorizedError } from '@modelcontextprotocol/sdk/client/auth.js';
+import {
+  type OAuthClientProvider,
+  UnauthorizedError,
+  extractWWWAuthenticateParams
+} from '@modelcontextprotocol/sdk/client/auth.js';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { SseError } from '@modelcontextprotocol/sdk/client/sse.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
@@ -42,6 +50,7 @@ import {
   StreamableHTTPClientTransport,
   StreamableHTTPError
 } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
+import { OAuthError } from '@modelcontextprotocol/sdk/server/auth/errors.js';
 import { DEFAULT_REQUEST_TIMEOUT_MSEC } from '@modelcontextprotocol/sdk/shared/protocol.js';
 import {
   ErrorCode,
@@ -51,7 +60,8 @@ import {
 } from '@modelcontextprotocol/sdk/types.js';
 
 import { captureResult } from '@fgv/ts-utils';
-import { type McpFailureReason } from './model';
+import { SaferFetch } from '@fgv/ts-extras';
+import { type McpFailureReason, type McpFetch } from './model';
 
 /**
  * Opaque transport handle. The concrete value is an SDK `Transport`; consumers of this module
@@ -266,12 +276,47 @@ export function terminateHttpSession(transport: ISdkTransport): Promise<void> {
 }
 
 /**
- * Constructs a Streamable-HTTP transport for the given URL, with optional static headers.
+ * Parameters for the Streamable-HTTP transport factory.
  * @internal
  */
-export function makeHttpTransport(url: URL, headers?: Record<string, string>): ISdkTransport {
+export interface ISdkHttpParams {
+  /** The `fetch` the transport sends every request through: the package's egress wrapper. */
+  readonly fetch: McpFetch;
+  /** The OAuth provider the SDK authorizes with: the package's gated wrapper of the consumer's. */
+  readonly authProvider?: OAuthClientProvider;
+}
+
+/**
+ * The `resource_metadata` URL of a response's `WWW-Authenticate` bearer challenge, as the SDK's own
+ * exported parser reads it, or `undefined` when there is none or it is not a URL.
+ * @internal
+ */
+export function readResourceMetadataUrl(response: Response): URL | undefined {
+  return extractWWWAuthenticateParams(response).resourceMetadataUrl;
+}
+
+/**
+ * Creates the SDK's `UnauthorizedError`, so a refusal this package raises inside the SDK's auth
+ * flow classifies exactly as the SDK's own.
+ * @internal
+ */
+export function makeUnauthorizedError(message: string): Error {
+  return new UnauthorizedError(message);
+}
+
+/**
+ * Constructs a Streamable-HTTP transport for the given URL.
+ *
+ * @remarks
+ * The transport is given no `requestInit`: static headers are applied by the package's egress
+ * wrapper, to the endpoint's origin only. Handed to the SDK, they would also be merged into every
+ * OAuth request, including those to the authorization server.
+ * @internal
+ */
+export function makeHttpTransport(url: URL, params: ISdkHttpParams): ISdkTransport {
   return new StreamableHTTPClientTransport(url, {
-    requestInit: headers ? { headers } : undefined
+    fetch: params.fetch,
+    authProvider: params.authProvider
   }) as unknown as ISdkTransport;
 }
 
@@ -311,6 +356,31 @@ function _classifyHttpStatus(status: number | undefined, context: SdkFailureCont
  * from zod 3 or zod 4 classic. The SDK accepts either major (`^3.25 || ^4.0`).
  */
 const SCHEMA_REJECTION_NAMES: ReadonlySet<string> = new Set(['$ZodError', 'ZodError']);
+
+/**
+ * Whether an error's text was written by a server: an HTTP error the transport built from a
+ * response's status text or body, or an OAuth error built from an authorization server's
+ * `error_description`. Such text may repeat a credential the server was sent, so it is never put
+ * in a failure message. Never throws: a value that cannot be inspected is not one of these.
+ * @internal
+ */
+export function isServerAuthoredError(error: unknown): boolean {
+  return captureResult(
+    () => error instanceof StreamableHTTPError || error instanceof SseError || error instanceof OAuthError
+  ).orDefault(false);
+}
+
+/**
+ * Guarded-fetch failures that are not refusals: the network failed, the request was aborted (in
+ * practice, by the transport's own close), or the guarded fetch failed internally (`'unknown'`: a
+ * bug, or a logger that threw). They classify as the same failure through an unguarded `fetch`
+ * would, so `'egress-blocked'` means only "the configuration refused this". A guarded fetch's
+ * `'timeout'` is handled before this set is consulted: it classifies as `'timeout'`. Through a guarded
+ * fetch, a network failure during OAuth discovery is a `GuardedFetchError`, not a `TypeError`, so the
+ * SDK's CORS-retry fallback does not run.
+ */
+const NON_REFUSAL_FETCH_FAILURES: ReadonlySet<SaferFetch.FetchFailureKind> =
+  new Set<SaferFetch.FetchFailureKind>(['network', 'aborted', 'unknown']);
 
 /**
  * Whether a value is the error the SDK raises when a response fails its result schema. The SDK
@@ -364,8 +434,23 @@ function _classifyInspectable(error: unknown, context: SdkFailureContext): McpFa
   if (_isSchemaRejection(error)) {
     return { kind: 'protocol' };
   }
-  if (error instanceof UnauthorizedError) {
+  // An OAuth error is the SDK's auth flow failing at the authorization server — a refused refresh,
+  // registration or token exchange: the credentials could not be obtained.
+  if (error instanceof UnauthorizedError || error instanceof OAuthError) {
     return { kind: 'unauthorized' };
+  }
+  // The SDK passes a rejected `fetch` through unchanged — from `send`, from `connect`, and from
+  // `terminateSession` — so the guarded fetch's own error is what arrives here.
+  if (error instanceof SaferFetch.GuardedFetchError) {
+    const kind = error.reason.kind;
+    // The guarded fetch's headers deadline: a server that held its response headers too long — a
+    // slow tool on a server that answers with JSON rather than a stream holds them until it is done.
+    if (kind === 'timeout') {
+      return { kind: 'timeout' };
+    }
+    if (!NON_REFUSAL_FETCH_FAILURES.has(kind)) {
+      return { kind: 'egress-blocked', reason: kind };
+    }
   }
   if (error instanceof StreamableHTTPError || error instanceof SseError) {
     return _classifyHttpStatus(error.code, context);

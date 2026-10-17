@@ -560,6 +560,14 @@ function createEncryptedFile<TMetadata = JsonValue>(params: ICreateEncryptedFile
 // @public
 function createEncryptedFileConverter<TMetadata = JsonValue>(metadataConverter?: Converter<TMetadata>): Converter<IEncryptedFile<TMetadata>>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function createGuardedFetch(options: IGuardedFetchOptions): Result<GuardedFetch>;
+
 // @public
 function createZipFromFiles(files: ReadonlyArray<IZipFile>, options?: ICreateZipOptions): Result<Uint8Array>;
 
@@ -837,6 +845,9 @@ function fencedStringifiedJson(options?: IFencedStringifiedJsonExtractorOptions)
 function fencedStringifiedJson<T>(options: IFencedStringifiedJsonOptions<T>): Converter<T>;
 
 // @public
+type FetchFailureKind = FetchFailureReason['kind'];
+
+// @public
 type FetchFailureReason =
 /** The supplied URL could not be parsed, or its scheme is not `http:` or `https:`. */
     {
@@ -1043,6 +1054,20 @@ type GptImageSize = '1024x1024' | '1536x1024' | '1024x1536' | 'auto';
 
 // @public
 type GrokImagineModelNames = 'grok-imagine-image' | 'grok-imagine-image-quality' | 'grok-imagine-image-2.0';
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+type GuardedFetch = (url: string | URL, init?: RequestInit) => Promise<Response>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+class GuardedFetchError extends Error {
+    constructor(reason: FetchFailureReason);
+    readonly reason: FetchFailureReason;
+}
 
 declare namespace Hash {
     export {
@@ -1938,6 +1963,27 @@ interface IGrokImagineModelOptions extends INamedModelFamilyConfig {
     readonly models?: GrokImagineModelNames[];
     // (undocumented)
     readonly provider: 'xai';
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IGuardedFetchOptions {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly addressGuard: IAddressGuard;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly headersTimeoutMs?: number;
+    readonly logger?: Logging.ILogger;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly maxRedirects?: number;
+    readonly redirectPolicy?: SaferFetchRedirectPolicy;
+    readonly requestGuard?: IRequestGuard;
+    readonly responseHeadersGuard?: IResponseHeadersGuard;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly sensitiveHeaders?: ReadonlyArray<string>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly transport?: IFetchTransport;
 }
 
 // @public
@@ -3190,6 +3236,9 @@ const RETRY_AFTER_STATUSES: ReadonlyArray<number>;
 // @public
 const RETRYABLE_HTTP_STATUSES: ReadonlyArray<number>;
 
+// @public
+const SAFER_FETCH_METHODS: readonly ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE"];
+
 declare namespace SaferFetch {
     export {
         ALWAYS_STRIPPED_HEADERS,
@@ -3204,12 +3253,16 @@ declare namespace SaferFetch {
         RETRY_AFTER_STATUSES,
         RETRYABLE_HTTP_STATUSES,
         SUPPORTED_SCHEMES,
+        FetchFailureKind,
         FetchFailureReason,
         FetchTimeoutPhase,
+        SAFER_FETCH_METHODS,
         IRetryPolicy,
+        GuardedFetch,
         IAddressGuard,
         IFetchTransport,
         IFetchTransportHints,
+        IGuardedFetchOptions,
         IGuardVerdict,
         IRequestGuard,
         IRequestHop,
@@ -3225,10 +3278,12 @@ declare namespace SaferFetch {
         allowAnyAddress,
         allowContentTypes,
         platformFetchTransport,
+        createGuardedFetch,
         saferFetchBytes,
         saferFetchJson,
         saferFetchText,
         ISaferFetchJsonOptions,
+        GuardedFetchError,
         allowAnyAddressPolicy,
         blockPrivateNetworksPolicy,
         IAddressCheckVerdict,
@@ -3262,7 +3317,7 @@ function saferFetchJson(url: string | URL, options: ISaferFetchOptions): Promise
 function saferFetchJson<T>(url: string | URL, options: ISaferFetchJsonOptions<T>): Promise<DetailedResult<ISaferFetchResponse<T>, FetchFailureReason>>;
 
 // @public
-type SaferFetchMethod = 'GET' | 'HEAD' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+type SaferFetchMethod = (typeof SAFER_FETCH_METHODS)[number];
 
 // @public
 type SaferFetchRedirectPolicy = 'reject' | 'validate-each-hop';

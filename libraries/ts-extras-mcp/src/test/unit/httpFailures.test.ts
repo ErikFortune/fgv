@@ -141,22 +141,21 @@ describe('HTTP-status classification over the real Streamable-HTTP transport', (
     }
   });
 
-  test('a refused credential at connect is unauthorized, carrying the status', async () => {
+  test('a refused credential at connect is unauthorized, carrying the status, and its body is not echoed', async () => {
     const fixture = await startHttpFixture('refuse-all');
     server = fixture.server;
-    expect(await connectTo(fixture.url)).toFailWithDetail(
-      /^connectMcpSession: .*missing or invalid bearer token/,
-      {
-        kind: 'unauthorized',
-        status: 401
-      }
-    );
+    // The server's 401 body ("missing or invalid bearer token") stays out of the message: a body
+    // answering a refused credential may repeat it.
+    expect(await connectTo(fixture.url)).toFailWithDetail(/^connectMcpSession: unauthorized \(HTTP 401\)$/, {
+      kind: 'unauthorized',
+      status: 401
+    });
   });
 
   test('a 404 during the handshake is transport — there is no session to have expired', async () => {
     const fixture = await startHttpFixture('missing-endpoint');
     server = fixture.server;
-    expect(await connectTo(fixture.url)).toFailWithDetail(/^connectMcpSession: .*no such endpoint/, {
+    expect(await connectTo(fixture.url)).toFailWithDetail(/^connectMcpSession: transport \(HTTP 404\)$/, {
       kind: 'transport',
       status: 404
     });
@@ -167,12 +166,9 @@ describe('HTTP-status classification over the real Streamable-HTTP transport', (
     server = fixture.server;
     const onClose = jest.fn();
     session = (await connectTo(fixture.url, onClose)).orThrow();
-    expect(await callMcpTool(session, 'echo', {})).toFailWithDetail(
-      /^callMcpTool 'echo': .*Session not found/,
-      {
-        kind: 'session-expired'
-      }
-    );
+    expect(await callMcpTool(session, 'echo', {})).toFailWithDetail(/^callMcpTool 'echo': session-expired$/, {
+      kind: 'session-expired'
+    });
     // A server that forgot the session is not a closed connection: nothing reported it before this
     // call, and the call's failure does not either. Reconnecting is the consumer's decision.
     expect(onClose).not.toHaveBeenCalled();
@@ -182,10 +178,13 @@ describe('HTTP-status classification over the real Streamable-HTTP transport', (
     const fixture = await startHttpFixture('server-error');
     server = fixture.server;
     session = (await connectTo(fixture.url)).orThrow();
-    expect(await callMcpTool(session, 'echo', {})).toFailWithDetail(/^callMcpTool 'echo':/, {
-      kind: 'transport',
-      status: 500
-    });
+    expect(await callMcpTool(session, 'echo', {})).toFailWithDetail(
+      /^callMcpTool 'echo': transport \(HTTP 500\)$/,
+      {
+        kind: 'transport',
+        status: 500
+      }
+    );
   });
 
   describe('a server that answers initialize and then stalls notifications/initialized', () => {

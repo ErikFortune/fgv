@@ -36,7 +36,7 @@ import {
 } from '@fgv/ts-utils';
 
 import { type IMcpProgress, type IMcpRequestOptions, type McpFailureReason } from './model';
-import { type ISdkProgress, type ISdkRequestOptions, makeAbortReason } from './sdk';
+import { type ISdkProgress, type ISdkRequestOptions, isServerAuthoredError, makeAbortReason } from './sdk';
 
 /**
  * What {@link errorText} reports for a value that cannot be converted to text.
@@ -98,6 +98,24 @@ export function validateTimeoutMs(name: string, value: number | undefined): Resu
   return fail(
     `${name} must be a positive number of milliseconds no greater than ${MAX_TIMEOUT_MS} (got ${value})`
   );
+}
+
+/**
+ * The text a failure message carries for `err`, once classified.
+ * @remarks
+ * **Server-authored text never reaches a message.** An HTTP error's text is the server's response
+ * body or status text, and an OAuth error's is the authorization server's `error_description`; a
+ * server may repeat a credential it was sent in either (a debug echo, a validation error quoting the
+ * request). Such a failure, and every `'unauthorized'` one, gets fixed text instead: the kind, and
+ * the HTTP status when there was one. The classification carries everything a caller branches on.
+ * @internal
+ */
+export function failureText(err: unknown, reason: McpFailureReason): string {
+  if (reason.kind !== 'unauthorized' && !isServerAuthoredError(err)) {
+    return errorText(err);
+  }
+  const status = 'status' in reason ? reason.status : undefined;
+  return status !== undefined ? `${reason.kind} (HTTP ${status})` : reason.kind;
 }
 
 function _toProgress(raw: ISdkProgress): IMcpProgress {
@@ -170,10 +188,15 @@ export async function runSdkRequest<T>(
       .then(() => request(sdkOptions))
       .then(
         (value) => succeedWithDetail<T, McpFailureReason>(value),
-        (err: unknown) =>
-          err === abortReason
-            ? failWithDetail<T, McpFailureReason>(`${prefix}: aborted by the caller`, { kind: 'aborted' })
-            : failWithDetail<T, McpFailureReason>(`${prefix}: ${errorText(err)}`, classify(err))
+        (err: unknown) => {
+          if (err === abortReason) {
+            return failWithDetail<T, McpFailureReason>(`${prefix}: aborted by the caller`, {
+              kind: 'aborted'
+            });
+          }
+          const reason = classify(err);
+          return failWithDetail<T, McpFailureReason>(`${prefix}: ${failureText(err, reason)}`, reason);
+        }
       )
       // An abort that lands after the SDK settled but before this listener is removed still makes the
       // SDK send `notifications/cancelled` for a request that already completed. The protocol lets a

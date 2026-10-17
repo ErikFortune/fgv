@@ -358,7 +358,7 @@ describe('closeMcpSession terminates a Streamable-HTTP session', () => {
     expect(ms).toBeLessThan(PROMPT_MS);
     expect(closes).toHaveBeenCalledTimes(1);
     expect(detail).toHaveBeenCalledWith(
-      expect.stringMatching(/session termination failed.*Internal Server Error/)
+      'mcp: session termination failed; closing anyway (transport): transport (HTTP 500)'
     );
     louder.forEach((spy) => expect(spy).not.toHaveBeenCalled());
   });

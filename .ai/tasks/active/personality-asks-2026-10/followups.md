@@ -218,6 +218,23 @@ to. Design it once, before any of them ships.
 
 ---
 
+## Deferred from streams
+
+### D1. Result-chain the safer-fetch hop walk — from `mcp-round-2b` (#729)
+
+- **Source:** the gate-time deep review of #729.
+- **What:** in `libraries/ts-extras/src/packlets/safer-fetch/saferFetch.ts`, `_walk` steps through six
+  per-hop checks (request guard, scheme recheck, address guard, loop detection, the connect,
+  the next hop) with an `isFailure` / `_propagate` after each, and `_execute` does the same for
+  three. Convert both to Result chains or recursion.
+- **Why deferred:** it rewrites the security-critical hop loop, which every buffered and guarded
+  request runs through. That deserves its own stream and its own review, not a ride on a review
+  round. #729 chained only `_resolveCallOptions`, leaving `_walk` and `_execute` as they were.
+- **Route:** small stream in `ts-extras` safer-fetch. The existing revert rows for the walk (the
+  `mcp-round-2b` revert matrix) are the regression check: each must still go red after the rewrite.
+
+---
+
 ## Proposed order — for the user to prioritise
 
 | # | what | why here |

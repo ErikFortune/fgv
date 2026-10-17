@@ -927,6 +927,32 @@ describe('saferFetch entry points', () => {
         expect(transport.calls).toHaveLength(0);
       }
     );
+
+    test.each<[string, (ms: number) => Partial<SaferFetch.ISaferFetchOptions>, RegExp]>([
+      ['timeoutMs', (ms: number) => ({ timeoutMs: ms }), /^timeoutMs must be no greater than 2147483647 ms/],
+      [
+        'headersTimeoutMs',
+        (ms: number) => ({ headersTimeoutMs: ms }),
+        /^headersTimeoutMs must be no greater than 2147483647 ms/
+      ]
+    ])(
+      'bounds %s by what a timer honours: 2147483647 is accepted, 2147483648 refused',
+      async (
+        __name: string,
+        withDelay: (ms: number) => Partial<SaferFetch.ISaferFetchOptions>,
+        expected: RegExp
+      ) => {
+        const transport = respondWith(() => textResponse('ok'));
+        await expect(
+          saferFetchText(URL_UNDER_TEST, options(transport, withDelay(2147483647)))
+        ).resolves.toSucceed();
+        expect(transport.calls).toHaveLength(1);
+        await expect(
+          saferFetchText(URL_UNDER_TEST, options(transport, withDelay(2147483648)))
+        ).resolves.toFailWithDetail(expected, expect.objectContaining({ kind: 'unknown' }));
+        expect(transport.calls).toHaveLength(1);
+      }
+    );
   });
 
   describe('failure taxonomy invariant', () => {

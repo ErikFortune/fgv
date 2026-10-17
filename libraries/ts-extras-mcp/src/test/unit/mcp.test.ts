@@ -127,7 +127,7 @@ describe('createStdioTransport', () => {
 });
 
 describe('createHttpTransport', () => {
-  test('succeeds for http and https urls and forwards headers', () => {
+  test('succeeds for http and https urls, and keeps static headers from the SDK', () => {
     expect(createHttpTransport({ url: 'http://localhost:9000/mcp' })).toSucceedAndSatisfy(
       (t: IMcpTransport) => {
         expect(t.transportKind).toBe('http');
@@ -136,7 +136,10 @@ describe('createHttpTransport', () => {
     expect(
       createHttpTransport({ url: 'https://example.com/mcp', headers: { authorization: 'Bearer t' } })
     ).toSucceed();
-    expect(mockSdk.makeHttpTransport).toHaveBeenCalledWith(expect.any(URL), { authorization: 'Bearer t' });
+    // The egress applies static headers itself, to the endpoint's origin only; the SDK never sees them.
+    expect(mockSdk.makeHttpTransport).toHaveBeenCalledWith(expect.any(URL), {
+      fetch: expect.any(Function)
+    });
   });
 
   test('fails for an unparseable url', () => {
@@ -151,7 +154,10 @@ describe('createHttpTransport', () => {
     mockSdk.makeHttpTransport.mockImplementationOnce(() => {
       throw new Error('http boom');
     });
-    expect(createHttpTransport({ url: 'http://localhost' })).toFailWith(/createHttpTransport:.*http boom/);
+    // Fixed text: what threw while building from the consumer's options is not echoed.
+    const result = createHttpTransport({ url: 'http://localhost' });
+    expect(result).toFailWith(/^createHttpTransport: the transport could not be built/);
+    expect(result.message).not.toMatch(/http boom/);
   });
 });
 
