@@ -245,6 +245,18 @@ to. Design it once, before any of them ships.
   - In that case `scopedAddressOf` (and so the #731 merge key) would name the codec's scope, not the file's.
   - All four shipped codecs already check scope. Five in-repo test codecs would need updating, three of them because their `decode` ignores scope.
 - **Route:** small stream in `ts-agent-memory`. Tighten the TSDoc contract, and enforce it in `verifyLoadedIdentity`. Breaking only for custom codecs, which is allowed on this active surface.
+- **Status:** **shipped** in #733 (`0e4fbf59`). The check is enforced by the store in `verifyLoadedIdentity` for every codec. The `IIdentityCodec` interface is unchanged.
+
+### D4. `scopeEncoding` has no inverse — from `agent-memory-scope-invariant` (#733)
+
+- **What:** a vault written with a non-identity `scopeEncoding` cannot be reopened, because the open walk indexes raw directory segments. Since #733 the reopen fails loudly; before, it silently misfiled records.
+- **Route:** recorded in `docs/TECH_DEBT.md` (P3). The trigger is the first consumer that needs a non-identity encoding.
+
+### D5. The store does not check the idStem half for flat kinds — from #733's review
+
+- **What:** a codec that ignores scope and also skips the idStem check in `verifyRoundTrip` can load `shared/X.md` whose `entityId` encodes to `shared/Y`. `getById` finds that record, but `get(kind, entityId)` misses it.
+- **Possible fix:** a one-line store check inside the same chain, `!encoded.isVersioned && encoded.idStem !== file.baseName`, would make the whole address a store property.
+- **Route:** fold into the next `ts-agent-memory` stream. A misbehaving codec is a codec bug, and this half is already in the codec contract.
 
 ### D3. Default `memory_search` handle is the bare id — from `agent-memory-merge-scope` (#731)
 
