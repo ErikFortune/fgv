@@ -109,6 +109,12 @@ export function verifyOccupantKind<T>(
  * codecs that happen to check it. For a versioned kind `encode(entityId).scope`
  * is the entity's subtree, which is where every one of its version files lives,
  * so the same comparison holds for flat and versioned layouts.
+ *
+ * For a flat kind the store also checks the other half of the address: the
+ * filename stem must be `codec.encode(entityId).idStem`. The codec contract
+ * already asks `verifyRoundTrip` for this, but a codec that skips it would let
+ * `getById` find a record that `get(kind, entityId)` cannot. A versioned kind's
+ * stem names one version, not the entity, so the check does not apply there.
  * @internal
  */
 export function verifyLoadedIdentity(
@@ -136,12 +142,18 @@ export function verifyLoadedIdentity(
               )
         )
     )
-    .onSuccess((encoded) =>
-      encoded.scope === scope
-        ? succeed(record)
-        : fail<IMemoryRecord<unknown>>(
-            `read from scope '${scope}', but its codec derives scope '${encoded.scope}' for entityId '${entityId}'`
-          )
-    )
+    .onSuccess((encoded) => {
+      if (encoded.scope !== scope) {
+        return fail<IMemoryRecord<unknown>>(
+          `read from scope '${scope}', but its codec derives scope '${encoded.scope}' for entityId '${entityId}'`
+        );
+      }
+      if (!encoded.isVersioned && encoded.idStem !== file.baseName) {
+        return fail<IMemoryRecord<unknown>>(
+          `read as '${file.baseName}', but its codec derives idStem '${encoded.idStem}' for entityId '${entityId}'`
+        );
+      }
+      return succeed(record);
+    })
     .withErrorFormat((msg) => `memory file '${file.absolutePath}': ${msg}`);
 }
