@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "BREAKING: `ScoreUnionMergeStrategy.create` now takes `{ identityResolver }` (required; pass the store) and dedupes and scores records by their scope-qualified `(scope, id)` address instead of the bare `id`, so two MTM `turn-<n>` records in different conversations no longer collapse into one. A record whose identity cannot be resolved fails the merge. New `scopedAddressOf(record, resolver)` helper, also used by the ingest orchestrator.",
+      "type": "minor",
+      "packageName": "@fgv/ts-agent-memory"
+    }
+  ],
+  "packageName": "@fgv/ts-agent-memory",
+  "email": "noreply@anthropic.com"
+}

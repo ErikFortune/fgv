@@ -12,6 +12,7 @@ import {
   IEdgeTarget,
   IIdentityCodec,
   IIdentityCodecResult,
+  IIdentityResolver,
   IMemoryEnvelope,
   IMemoryRecord,
   IProvenance,
@@ -21,7 +22,8 @@ import {
   Tag,
   edgeTargetKey,
   isTemporalRecord,
-  isVersionCurrent
+  isVersionCurrent,
+  scopedAddressOf
 } from '../types';
 import { IBodyConverterRegistry } from '../converters';
 import { IMemoryStore, scanEveryRecord } from '../store';
@@ -198,6 +200,8 @@ export class MemoryIngestOrchestrator implements IMemoryIngestOrchestrator {
   private readonly _registry: IBodyConverterRegistry;
   private readonly _codecs: ReadonlyMap<Kind, IIdentityCodec>;
   private readonly _defaultCodec: IIdentityCodec | undefined;
+  /** {@link MemoryIngestOrchestrator._resolveAddress} as an `IIdentityResolver`, over this orchestrator's codecs. */
+  private readonly _identityResolver: IIdentityResolver;
   private readonly _classifier: IMemoryClassifier;
   private readonly _extractor: IFactExtractor;
   private readonly _relationExtractor: IRelationExtractor;
@@ -213,6 +217,10 @@ export class MemoryIngestOrchestrator implements IMemoryIngestOrchestrator {
     this._registry = params.registry;
     this._codecs = params.codecs ?? new Map<Kind, IIdentityCodec>();
     this._defaultCodec = params.defaultCodec;
+    this._identityResolver = {
+      resolveIdentity: (kind: Kind, entityId: EntityId): Result<IIdentityCodecResult> =>
+        this._resolveAddress(entityId, kind)
+    };
     this._classifier = params.classifier;
     this._extractor = params.extractor;
     this._relationExtractor = params.relationExtractor;
@@ -946,9 +954,9 @@ export class MemoryIngestOrchestrator implements IMemoryIngestOrchestrator {
   ): Result<ReadonlyArray<IScopedRecord>> {
     return mapResults(
       records.map((record) =>
-        this._resolveAddress(record.envelope.entityId, record.envelope.kind)
+        scopedAddressOf(record, this._identityResolver)
           .withErrorFormat((msg) => `cannot resolve scope for stored record '${record.envelope.id}': ${msg}`)
-          .onSuccess((addr) => succeed({ address: { scope: addr.scope, id: record.envelope.id }, record }))
+          .onSuccess((address) => succeed({ address, record }))
       )
     );
   }

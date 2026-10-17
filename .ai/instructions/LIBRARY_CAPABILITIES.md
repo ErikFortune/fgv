@@ -80,7 +80,6 @@ detail. `· pkg` names the owning package.*
 - **Diffing JSON?** → `detailedDiff` `threeWayDiff` · `ts-json`
 - **Branded ID type?** → `Brand<T>` · `ts-utils`
 - **Generating a UUID?** → `ICryptoProvider` `generateUuid` · `ts-utils`
-- **Need a weighted random choice, or the same choice from a hash?** → `pickWeighted` `pickWeightedAt` · `ts-random`
 - **Hashing / canonical hash of an object?** → `Crc32Normalizer` `Md5Normalizer` · `ts-utils`
 - **Symmetric encryption / decryption (AES-GCM)?** → `KeyStore` · `ts-extras`
 - **Need AES-256-GCM encrypt/decrypt with a key you already hold?** → `ICryptoProvider` `KeyStore` · `ts-extras`
@@ -202,6 +201,7 @@ markers.*
 
 <!-- BEGIN GENERATED: recent-additions -->
 
+- **2026-10-17** — HybridRetriever's score-union merge no longer collapses records that share an id across scopes — two conversations' turn-3 stay two… ([#731](https://github.com/ErikFortune/fgv/pull/731)) · `ts-agent-memory`
 - **2026-10-17** — Shipped: `@fgv/ts-random` can make a weighted random choice, either from a generator or as a pure function of a unit float in `[0… ([#TBD](https://github.com/ErikFortune/fgv/pull/TBD)) · `ts-random` `ts-agent-memory`
 - **2026-10-14** — MCP servers can be reached through the same SSRF guard as the rest of your egress, without buffering their streams, and… ([#729](https://github.com/ErikFortune/fgv/pull/729)) · `ts-extras` `ts-extras-mcp`
 - **2026-10-13** — An MCP tool result keeps its resource links, embedded resources, images and structuredContent, tool titles and tool-list changes… ([#728](https://github.com/ErikFortune/fgv/pull/728)) · `ts-extras-mcp`
@@ -211,8 +211,7 @@ markers.*
 - **2026-10-03** — A Result boundary over the TypeSafe System-1 SDK: ask Jev, openjev or a local CLM server typed noul/choice/score questions, with… ([#721](https://github.com/ErikFortune/fgv/pull/721)) · `ts-extras-system-one`
 - **2026-10-01** — Agent task context can go into a cacheable prompt as one checked, trailing per-request slot, and a delivery's receipt is… ([#707](https://github.com/ErikFortune/fgv/pull/707)) · `ts-agent-tasks`
 - **2026-09-28** — A host can give a model bounded, per-call-authorized tools over its agent tasks: read-only by default, with create, update… ([#702](https://github.com/ErikFortune/fgv/pull/702)) · `ts-agent-tasks`
-- **2026-09-26** — A converter handed an Object.create(null) value now returns a Result instead of throwing — isKeyOf, strictObject and six ts-json /… ([#700](https://github.com/ErikFortune/fgv/pull/700)) · `ts-utils` `ts-json` `ts-res-ui-components` `ts-utils-jest`
 
-*Showing the 10 most recent of 57. Per-package history is in each `CAPABILITIES.md`.*
+*Showing the 10 most recent of 58. Per-package history is in each `CAPABILITIES.md`.*
 
 <!-- END GENERATED: recent-additions -->
