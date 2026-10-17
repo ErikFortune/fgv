@@ -170,7 +170,7 @@ this from a recurring chore to a one-time fix.
 
 ## Completed batches
 
-### `chores-2026-10-asks` ✅ (shipped 2026-10-17 via #TBD)
+### `chores-2026-10-asks` ✅ (shipped 2026-10-17 via #732)
 
 Two PersonAIlity asks, into `integration/asks`. Artifacts at
 `.ai/tasks/completed/2026-10/chores-2026-10-asks/`.

@@ -1,7 +1,7 @@
 id: chores-2026-10-asks
 status: shipped
 packages: ['@fgv/ts-random', '@fgv/ts-agent-memory']
-prs: [TBD]
+prs: [732]
 openPrs: []
 opened: 2026-10-17
 closed: 2026-10-17

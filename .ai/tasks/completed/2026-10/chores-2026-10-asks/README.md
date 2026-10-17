@@ -1,6 +1,6 @@
 # `chores-2026-10-asks`: `derivedFrom` docstring and a weighted pick
 
-**Shipped 2026-10-17** via ErikFortune/fgv#TBD, into `integration/asks`.
+**Shipped 2026-10-17** via ErikFortune/fgv#732, into `integration/asks`.
 
 ---
 

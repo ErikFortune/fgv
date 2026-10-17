@@ -1,6 +1,6 @@
 # Result: `chores-2026-10-asks`
 
-Two PersonAIlity asks, one commit each, on branch `chores-2026-10-asks` (PR #TBD into `integration/asks`).
+Two PersonAIlity asks, one commit each, on branch `chores-2026-10-asks` (PR #732 into `integration/asks`).
 
 ## Item 1: `IProvenance.derivedFrom` docstring (personaility#670), commit `0cb13fa8c`
 
