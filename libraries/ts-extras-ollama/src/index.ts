@@ -534,7 +534,7 @@ export interface IChatStructuredParams<T> {
  * constraint fails validation rather than reaching the caller. See `JsonSchema.adaptSchemaKeywords`
  * in `@fgv/ts-json-base` for the fold rule.
  */
-const OLLAMA_FORMAT_SCHEMA_KEYWORDS: JsonSchema.SchemaKeywordCapabilities = JsonSchema.foldAllSchemaKeywords;
+const OLLAMA_FORMAT_SCHEMA_KEYWORDS: JsonSchema.SchemaKeywordCapabilities = JsonSchema.unverifiedWireSchemaKeywords;
 
 /**
  * Recursively removes the JSON-Schema keywords (`$schema`, `additionalProperties`) — *if present*

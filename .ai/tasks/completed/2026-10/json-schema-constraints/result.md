@@ -15,7 +15,7 @@ close-out commit.
     passthrough bag.
 - **Validating keywords are enforced.** The failure names the keyword and the bound, for example
   `expected a value >= 1 (minimum), got 0`. That is the text a model reads on the tool path.
-  `multipleOf` allows four units in the last place on the quotient (`4·ε·max(1, abs(q))`). A nullable node accepts `null`
+  `multipleOf` allows 4ε relative on the quotient (`4·ε·max(1, abs(q))`). A nullable node accepts `null`
   unconstrained.
 - **Annotations are emitted, never enforced.** `format` values are not checked. `default` and
   `examples` must be JSON values but are not checked against the node.
@@ -242,6 +242,23 @@ Run on commit `a21d378f9`, from the repo root, with logs under `.gate-logs/` (no
 | F11 `TECH_DEBT.md` cites branch hashes | It now cites the stream and `#TBD`. |
 
 Re-gated after the round; see § Gate counts (round 2).
+
+### Verification round (applied)
+
+| finding | what changed |
+| --- | --- |
+| N1 (P1, orchestrator decision) the endpoint rule covered only OpenAI wires | `schemaKeywordsFor` now gives every wire format `unverifiedWireSchemaKeywords` when `target.providerId` is absent. `toAnthropicTools` and `toGeminiTools` take the target, and every call site passes `config`, whose `providerId` is absent under an endpoint override. Tests: `openai`, `anthropic` and `google-gemini` descriptors each pass `minimum` on their own endpoint and fold it through an override; a missing target folds on every format. `CAPABILITIES.md` and the change file updated. |
+| N6 rename the conservative table | `foldAllSchemaKeywords` is now `unverifiedWireSchemaKeywords` at every site, test, doc and `api.md`. |
+| N2 `adaptWireSchema` TSDoc | It now says `target`. |
+| N3 `_parseObjectBody` ladder | The annotations guard chains with `.onSuccess` around the tail. |
+| F6 leftovers | `SchemaAnnotations` is derived from `schemaAnnotationKeywords` (`'description' \| Exclude<…, 'format'>`). `pickAnnotations` copies through the array. `_NON_VALIDATING_KEYWORDS` takes its annotation entries from the array. The `IAnnotations` alias is gone. |
+| N4 `_numericFields` cast | Kept, with a one-line comment saying why it is total; a cast-free build of a mapped record was not clean. |
+| N5 / F7 test siblings | The review-round `describe` is renamed after its behaviour. The endpoint test reuses `tool(ranged)`. `wireFor` takes `AiStructuredOutputFormat` and `ISchemaWireTarget`. |
+| F10 pass case | `exclusiveMinimum` 2^53−2 translates to `minimum` 2^53−1 on Gemini. |
+| F1 nit | Tolerance wording is "4ε relative" everywhere. |
+| F9 (optional) | The `fromJson` TSDoc says an enum node refuses lengths and drops `format`. |
+
+Re-gated; see § Gate counts (round 3).
 
 ### Gate counts (round 2)
 

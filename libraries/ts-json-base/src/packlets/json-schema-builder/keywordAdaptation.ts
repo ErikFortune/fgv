@@ -148,7 +148,7 @@ export type SchemaKeywordCapabilities = Readonly<
  * `title`, which is dropped — a title restates the property name the model already sees.
  * @public
  */
-export const foldAllSchemaKeywords: SchemaKeywordCapabilities = {
+export const unverifiedWireSchemaKeywords: SchemaKeywordCapabilities = {
   minimum: 'fold',
   exclusiveMinimum: 'fold',
   maximum: 'fold',

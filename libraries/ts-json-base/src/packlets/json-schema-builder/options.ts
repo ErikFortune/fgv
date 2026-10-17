@@ -153,7 +153,7 @@ export interface INumberSchemaOptions extends ISchemaOptions {
    *
    * @remarks
    * Checked on the quotient `value / multipleOf`, which may differ from the nearest integer by
-   * at most four units in the last place of its magnitude (`4 * Number.EPSILON * max(1, |q|)`) —
+   * at most 4ε relative to its magnitude (`4 * Number.EPSILON * max(1, |q|)`) —
    * enough that `0.3` counts as a multiple of `0.1` despite binary floating point, and no more, so
    * a large quotient such as `2000000000.5 / 1` is still refused.
    */

@@ -417,9 +417,6 @@ type FileTreeItem<TCT extends string = string> = IFileTreeFileItem<TCT> | IFileT
 type FileTreeItemType = 'directory' | 'file';
 
 // @public
-const foldAllSchemaKeywords: SchemaKeywordCapabilities;
-
-// @public
 function foldedKeywordsText(folded: ReadonlyArray<readonly [SchemaConstraintKeyword, JsonValue]>): string;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -1226,7 +1223,7 @@ declare namespace JsonSchema {
         SchemaKeywordRule,
         SchemaAnnotationRule,
         SchemaKeywordCapabilities,
-        foldAllSchemaKeywords
+        unverifiedWireSchemaKeywords
     }
 }
 export { JsonSchema }
@@ -1477,6 +1474,9 @@ function stringifiedJson(): Converter<JsonValue>;
 
 // @public
 function stringifiedJson<T>(inner: Converter<T> | Validator<T>): Converter<T>;
+
+// @public
+const unverifiedWireSchemaKeywords: SchemaKeywordCapabilities;
 
 // @public
 function validateNumberOptions(type: 'number' | 'integer', opts: INumberSchemaOptions | undefined): Result<INumberSchemaOptions | undefined>;

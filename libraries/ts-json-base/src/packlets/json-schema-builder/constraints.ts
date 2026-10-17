@@ -30,7 +30,11 @@
 import { Converter, Converters, Result, StringOneOf, fail, mapResults, succeed } from '@fgv/ts-utils';
 import { jsonValue } from '../converters';
 import { JsonObject, JsonValue } from '../json';
-import { schemaLengthConstraintKeywords, schemaNumberConstraintKeywords } from './keywordAdaptation';
+import {
+  schemaAnnotationKeywords,
+  schemaLengthConstraintKeywords,
+  schemaNumberConstraintKeywords
+} from './keywordAdaptation';
 import { INumberSchemaOptions, ISchemaOptions, IStringSchemaOptions } from './options';
 
 /** A numeric constraint keyword. */
@@ -45,8 +49,11 @@ export type StringConstraints = Pick<
   StringOneOf<typeof schemaLengthConstraintKeywords> | 'format'
 >;
 
-/** The annotations every node carries. */
-export type SchemaAnnotations = Pick<ISchemaOptions, 'description' | 'title' | 'default' | 'examples'>;
+/** The annotation keywords every node kind carries: all but `format`, which only strings carry. */
+type CommonAnnotationKeyword = Exclude<StringOneOf<typeof schemaAnnotationKeywords>, 'format'>;
+
+/** The annotations every node carries, derived from the keyword list. */
+export type SchemaAnnotations = Pick<ISchemaOptions, 'description' | CommonAnnotationKeyword>;
 
 /**
  * Any JSON value, with the plain conversion context field converters use. The value it produces
@@ -66,8 +73,8 @@ function _copyJson(value: JsonValue): JsonValue {
 }
 
 /**
- * The quotient tolerance `multipleOf` allows, as a multiple of the quotient's magnitude: four
- * units in the last place, the size of the rounding error one division and one product can carry.
+ * The quotient tolerance `multipleOf` allows, as a multiple of the quotient's magnitude: 4ε
+ * relative, the size of the rounding error one division and one product can carry.
  * Anything wider accepts genuinely wrong values once the quotient is large — a tolerance of `1e-9`
  * relative accepted `2000000000.5` as a multiple of `1`.
  */
@@ -299,14 +306,46 @@ export function enforceStringConstraints(value: string, opts: StringConstraints)
   return succeed(value);
 }
 
+/** The common annotations, in emission order. */
+const COMMON_ANNOTATION_KEYWORDS: ReadonlyArray<CommonAnnotationKeyword> = schemaAnnotationKeywords.filter(
+  (keyword): keyword is CommonAnnotationKeyword => keyword !== 'format'
+);
+
+/** Copies one annotation from `from` into `to` when present — JSON values deeply. */
+function _copyAnnotation(
+  from: ISchemaOptions | undefined,
+  keyword: CommonAnnotationKeyword,
+  to: { -readonly [K in keyof SchemaAnnotations]: SchemaAnnotations[K] }
+): void {
+  switch (keyword) {
+    case 'title':
+      if (from?.title !== undefined) {
+        to.title = from.title;
+      }
+      return;
+    case 'default':
+      if (from?.default !== undefined) {
+        to.default = _copyJson(from.default);
+      }
+      return;
+    case 'examples':
+      if (from?.examples !== undefined) {
+        to.examples = from.examples.map(_copyJson);
+      }
+      return;
+  }
+}
+
 /** The annotations in `opts`, copied, without the absent ones. @internal */
 export function pickAnnotations(opts: ISchemaOptions | undefined): SchemaAnnotations {
-  return {
-    ...(opts?.description !== undefined && { description: opts.description }),
-    ...(opts?.title !== undefined && { title: opts.title }),
-    ...(opts?.default !== undefined && { default: _copyJson(opts.default) }),
-    ...(opts?.examples !== undefined && { examples: opts.examples.map(_copyJson) })
-  };
+  const out: { -readonly [K in keyof SchemaAnnotations]: SchemaAnnotations[K] } = {};
+  if (opts?.description !== undefined) {
+    out.description = opts.description;
+  }
+  for (const keyword of COMMON_ANNOTATION_KEYWORDS) {
+    _copyAnnotation(opts, keyword, out);
+  }
+  return out;
 }
 
 /** The numeric constraints in `opts`, copied through the keyword list. @internal */

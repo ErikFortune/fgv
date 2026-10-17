@@ -35,13 +35,13 @@ import type {
   IAiStreamEvent
 } from '../../../packlets/ai-assist/model';
 // eslint-disable-next-line @rushstack/packlets/mechanics
-import type { IAiStructuredOutputCapability } from '../../../packlets/ai-assist/structuredOutputTypes';
+import type { AiStructuredOutputFormat } from '../../../packlets/ai-assist/structuredOutputTypes';
 // eslint-disable-next-line @rushstack/packlets/mechanics
 import { AiPrompt } from '../../../packlets/ai-assist/model';
 // eslint-disable-next-line @rushstack/packlets/mechanics
 import { callProviderCompletion } from '../../../packlets/ai-assist/completionClient';
 // eslint-disable-next-line @rushstack/packlets/mechanics
-import { schemaKeywordsFor } from '../../../packlets/ai-assist/schemaKeywords';
+import { type ISchemaWireTarget, schemaKeywordsFor } from '../../../packlets/ai-assist/schemaKeywords';
 // eslint-disable-next-line @rushstack/packlets/mechanics
 import { resolveStructuredOutput } from '../../../packlets/ai-assist/structuredOutput';
 // eslint-disable-next-line @rushstack/packlets/mechanics
@@ -133,12 +133,14 @@ describe('schema keyword capability tables, per wire format', () => {
   });
 
   test('Anthropic tools: every keyword passes, emitted exactly as toJson() states it', () => {
-    const [wire] = toAnthropicTools([tool().config]);
+    const [wire] = toAnthropicTools([tool().config], { providerId: 'anthropic' });
     expect(wire.input_schema).toEqual(everything.toJson());
   });
 
   test('Gemini tools: documented keywords pass, integer exclusive bounds translate, the rest folds', () => {
-    const [{ function_declarations: declarations }] = toGeminiTools([tool().config]) as JsonObject[];
+    const [{ function_declarations: declarations }] = toGeminiTools([tool().config], {
+      providerId: 'google-gemini'
+    }) as JsonObject[];
     const parameters = ((declarations as JsonObject[])[0] as JsonObject).parameters;
     expect(propertiesOf(parameters)).toEqual({
       n: {
@@ -165,7 +167,7 @@ describe('schema keyword capability tables, per wire format', () => {
   });
 
   test('Gemini translation keeps the tighter of an exclusive and an inclusive bound, and survives nullability', () => {
-    const caps = schemaKeywordsFor('gemini');
+    const caps = schemaKeywordsFor('gemini', { providerId: 'google-gemini' });
     const tighterInclusive = JsonSchema.integer({
       minimum: 5,
       exclusiveMinimum: 2,
@@ -197,11 +199,17 @@ describe('schema keyword capability tables, per wire format', () => {
   });
 
   test('Gemini folds an integer exclusive bound whose translation would not be exact (beyond 2^53)', () => {
-    const caps = schemaKeywordsFor('gemini');
+    const caps = schemaKeywordsFor('gemini', { providerId: 'google-gemini' });
     const big = JsonSchema.integer({ exclusiveMinimum: 2 ** 53 });
     expect(JsonSchema.adaptSchemaKeywords(big.toJson(), caps)).toEqual({
       type: 'integer',
       description: `Constraints: exclusiveMinimum ${2 ** 53}.`
+    });
+    // Just inside the safe range the translation is still exact.
+    const justInside = JsonSchema.integer({ exclusiveMinimum: 2 ** 53 - 2 });
+    expect(JsonSchema.adaptSchemaKeywords(justInside.toJson(), caps)).toEqual({
+      type: 'integer',
+      minimum: 2 ** 53 - 1
     });
     const below = JsonSchema.integer({ exclusiveMaximum: -(2 ** 53) });
     expect(JsonSchema.adaptSchemaKeywords(below.toJson(), caps)).toEqual({
@@ -251,10 +259,10 @@ describe('schema keyword capability tables, structured output', () => {
   }
 
   function wireFor(
-    format: IAiStructuredOutputCapability['format'],
+    format: AiStructuredOutputFormat,
     providerId: AiProviderId = 'openai',
     usesResponsesApi: boolean = false,
-    target: { providerId?: string; model?: string } = { providerId, model: 'm' }
+    target: ISchemaWireTarget = { providerId, model: 'm' }
   ): JsonObject {
     return resolveStructuredOutput(
       descriptor(providerId),
@@ -435,32 +443,60 @@ describe('a folded constraint on the tool path', () => {
   });
 });
 
-describe('an endpoint override is an unverified server', () => {
-  const openAi: IAiProviderDescriptor = {
-    id: 'openai',
-    label: 'OpenAI',
-    buttonLabel: 'OpenAI',
-    needsSecret: true,
-    apiFormat: 'openai',
-    baseUrl: 'https://api.openai.com/v1',
-    defaultModel: 'gpt-x',
-    supportedTools: [],
-    corsRestricted: false,
-    streamingCorsRestricted: false,
-    acceptsImageInput: false,
-    structuredOutput: [{ modelPrefix: '', format: 'openai-json-schema' }]
-  };
+describe('an endpoint override is an unverified server, on every wire format', () => {
+  function descriptorFor(
+    id: AiProviderId,
+    apiFormat: IAiProviderDescriptor['apiFormat'],
+    baseUrl: string
+  ): IAiProviderDescriptor {
+    return {
+      id,
+      label: id,
+      buttonLabel: id,
+      needsSecret: true,
+      apiFormat,
+      baseUrl,
+      defaultModel: 'm',
+      supportedTools: [],
+      corsRestricted: false,
+      streamingCorsRestricted: false,
+      acceptsImageInput: false,
+      ...(apiFormat === 'openai' && {
+        structuredOutput: [{ modelPrefix: '', format: 'openai-json-schema' as const }]
+      })
+    };
+  }
+
+  /** A stream that ends at once, in each wire's own spelling. */
+  const DONE: Readonly<Record<IAiProviderDescriptor['apiFormat'], string>> = {
+    openai: `event: response.completed\ndata: ${JSON.stringify({ response: { status: 'completed' } })}\n\n`,
+    anthropic: 'event: message_stop\ndata: {}\n\n',
+    gemini: `data: ${JSON.stringify({
+      candidates: [{ content: { parts: [{ text: '' }] }, finishReason: 'STOP' }]
+    })}\n\n`
+  } as Readonly<Record<IAiProviderDescriptor['apiFormat'], string>>;
+
+  /** Where each wire puts the one client tool's parameter schema. */
+  function sentParameters(apiFormat: IAiProviderDescriptor['apiFormat'], body: JsonObject): JsonValue {
+    const [first] = body.tools as JsonObject[];
+    if (apiFormat === 'anthropic') {
+      return first.input_schema;
+    }
+    if (apiFormat === 'gemini') {
+      return (first.function_declarations as JsonObject[])[0].parameters;
+    }
+    return first.parameters;
+  }
+
   const ranged = JsonSchema.object({ n: JsonSchema.integer({ minimum: 1 }) });
   let bodies: JsonObject[];
+  let done: string;
 
   beforeEach(() => {
     bodies = [];
     const encoder = new TextEncoder();
     jest.spyOn(global, 'fetch').mockImplementation(async (__url, init) => {
       bodies.push(JSON.parse(String(init?.body)) as JsonObject);
-      const done = `event: response.completed\ndata: ${JSON.stringify({
-        response: { status: 'completed' }
-      })}\n\n`;
       return {
         ok: true,
         status: 200,
@@ -481,42 +517,58 @@ describe('an endpoint override is an unverified server', () => {
     jest.restoreAllMocks();
   });
 
-  async function toolParameters(endpoint: string | undefined): Promise<JsonObject> {
-    const pick: IAiClientTool = {
-      config: { type: 'client_tool', name: 'pick', description: 'Pick', parametersSchema: ranged },
-      execute: async () => succeed('ok')
-    } as unknown as IAiClientTool;
+  async function toolParameters(
+    descriptor: IAiProviderDescriptor,
+    endpoint: string | undefined
+  ): Promise<JsonValue> {
+    done = DONE[descriptor.apiFormat];
     const turn = executeClientToolTurn({
-      descriptor: openAi,
+      descriptor,
       apiKey: 'k',
       ...(endpoint !== undefined && { endpoint }),
       ...new AiPrompt('hello', 'system').toRequest(),
-      clientTools: [pick],
-      model: 'gpt-x'
+      clientTools: [tool(ranged)],
+      model: 'm'
     }).orThrow();
     const events: IAiStreamEvent[] = [];
     for await (const event of turn.events) {
       events.push(event);
     }
     expect(events.length).toBeGreaterThan(0);
-    return ((bodies[0].tools as JsonObject[])[0] as JsonObject).parameters as JsonObject;
+    return sentParameters(descriptor.apiFormat, bodies[0]);
   }
 
-  test('a client tool sent to an OpenAI descriptor on its own endpoint passes minimum', async () => {
-    expect(propertiesOf(await toolParameters(undefined)).n).toEqual({ type: 'integer', minimum: 1 });
-  });
+  const descriptors: ReadonlyArray<IAiProviderDescriptor> = [
+    descriptorFor('openai', 'openai', 'https://api.openai.com/v1'),
+    descriptorFor('anthropic', 'anthropic', 'https://api.anthropic.com/v1'),
+    descriptorFor('google-gemini', 'gemini', 'https://generativelanguage.googleapis.com/v1beta')
+  ];
 
-  test('the same tool sent through an endpoint override folds it', async () => {
-    expect(propertiesOf(await toolParameters('https://gateway.example/v1')).n).toEqual({
-      type: 'integer',
-      description: 'Constraints: minimum 1.'
-    });
-  });
+  test.each(descriptors.map((d) => [d.id, d] as const))(
+    '%s on its own endpoint passes minimum',
+    async (__id, descriptor) => {
+      expect(propertiesOf(await toolParameters(descriptor, undefined)).n).toEqual({
+        type: 'integer',
+        minimum: 1
+      });
+    }
+  );
+
+  test.each(descriptors.map((d) => [d.id, d] as const))(
+    '%s through an endpoint override folds it',
+    async (__id, descriptor) => {
+      expect(propertiesOf(await toolParameters(descriptor, 'https://gateway.example/v1')).n).toEqual({
+        type: 'integer',
+        description: 'Constraints: minimum 1.'
+      });
+    }
+  );
 
   test('structured output through an endpoint override folds it too', async () => {
+    done = DONE.openai;
     expect(
       await callProviderCompletion({
-        descriptor: openAi,
+        descriptor: descriptors[0],
         apiKey: 'k',
         endpoint: 'https://gateway.example/v1',
         ...new AiPrompt('hello', 'system').toRequest(),
@@ -525,5 +577,16 @@ describe('an endpoint override is an unverified server', () => {
     ).toSucceed();
     const sent = ((bodies[0].response_format as JsonObject).json_schema as JsonObject).schema;
     expect(propertiesOf(sent).n).toEqual({ type: 'integer', description: 'Constraints: minimum 1.' });
+  });
+
+  test('with no target at all, every wire format gets the conservative table', () => {
+    for (const format of [
+      'anthropic-tools',
+      'anthropic-json-outputs',
+      'gemini',
+      'responses-tools'
+    ] as const) {
+      expect(schemaKeywordsFor(format)).toBe(JsonSchema.unverifiedWireSchemaKeywords);
+    }
   });
 });

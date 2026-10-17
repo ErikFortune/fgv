@@ -42,7 +42,11 @@ import {
   checkStringOptions
 } from './constraints';
 import { array, boolean, enumOf, integer, number, object, optional, record, string } from './factories';
-import { schemaLengthConstraintKeywords, schemaNumberConstraintKeywords } from './keywordAdaptation';
+import {
+  schemaAnnotationKeywords,
+  schemaLengthConstraintKeywords,
+  schemaNumberConstraintKeywords
+} from './keywordAdaptation';
 import { INumberSchemaOptions } from './options';
 import { ILlmProperties, ISchemaValidator } from './types';
 
@@ -81,9 +85,9 @@ const FORBIDDEN_KEYWORDS: readonly string[] = [
  */
 const _NON_VALIDATING_KEYWORDS: ReadonlySet<string> = new Set([
   'description',
-  'title',
-  'default',
-  'examples',
+  // `format` is an annotation too, but it applies only to strings, so it is not admitted beside a
+  // wrapper or a `$ref` whose target need not be one.
+  ...schemaAnnotationKeywords.filter((keyword) => keyword !== 'format'),
   '$comment',
   'deprecated',
   'readOnly',
@@ -203,11 +207,9 @@ function _numericFields<K extends string>(keywords: readonly K[]): Record<K, Val
   for (const keyword of keywords) {
     fields[keyword] = Validators.number.optional();
   }
+  // Total: the loop above assigned every member of `keywords`, which is all of `K`.
   return fields as Record<K, Validator<number | undefined>>;
 }
-
-/** The annotations every node carries: what `_annotationsField` extracts. */
-type IAnnotations = SchemaAnnotations;
 
 /**
  * Extracts the annotations every node carries — `description`, `title`, `default` and `examples`.
@@ -216,7 +218,7 @@ type IAnnotations = SchemaAnnotations;
  * it would emit a schema that says less than the source. `default` and `examples` are not
  * checked against the node — see `JsonSchema.ISchemaOptions.default`.
  */
-const _annotationsField: Converter<IAnnotations> = Converters.object<IAnnotations>({
+const _annotationsField: Converter<SchemaAnnotations> = Converters.object<SchemaAnnotations>({
   description: Converters.string.optional('failOnError'),
   title: Converters.string.optional('failOnError'),
   default: annotationJsonValue.optional('failOnError'),
@@ -311,17 +313,20 @@ function _checkForbidden(raw: Record<string, unknown>): Result<true> {
 }
 
 /** Converts a node's annotations and nullability into `ISchemaOptions` form. */
-function _nodeOpts(annotations: IAnnotations, nullable: boolean): IAnnotations & { nullable?: true } {
+function _nodeOpts(
+  annotations: SchemaAnnotations,
+  nullable: boolean
+): SchemaAnnotations & { nullable?: true } {
   return { ...annotations, ...(nullable && { nullable: true as const }) };
 }
 
 /** Whether any annotation is present, i.e. whether a wrapper or `$ref` sibling overrides any. */
-function _hasAnnotations(annotations: IAnnotations): boolean {
+function _hasAnnotations(annotations: SchemaAnnotations): boolean {
   return Object.keys(annotations).length > 0;
 }
 
 /** A node's annotations, with a failure naming the path. */
-function _annotationsAt(from: unknown, path: string): Result<IAnnotations> {
+function _annotationsAt(from: unknown, path: string): Result<SchemaAnnotations> {
   return _annotationsField.convert(from).withErrorFormat((msg) => `${path}: ${msg}`);
 }
 
@@ -387,7 +392,7 @@ function _reshape(
   node: ISchemaValidator<JsonValue>,
   { path, budget, depth }: IParseContext,
   nullable: boolean,
-  annotations: IAnnotations
+  annotations: SchemaAnnotations
 ): Result<ISchemaValidator<JsonValue>> {
   const json: JsonObject = { ...node.toJson() };
   if (nullable && typeof json.type === 'string') {
@@ -709,54 +714,50 @@ function _parseObjectBody(
       : undefined;
 
   // Extract the annotations; a present one of the wrong shape is refused.
-  const annotationsResult = _annotationsAt(from, path);
-  if (annotationsResult.isFailure()) {
-    return fail(annotationsResult.message);
-  }
-  const annotations = annotationsResult.value;
+  return _annotationsAt(from, path).onSuccess((annotations) => {
+    const requiredSet = new Set<string>(rawRequired ?? []);
+    const propEntries: [string, unknown][] = rawProps !== undefined ? Object.entries(rawProps) : [];
 
-  const requiredSet = new Set<string>(rawRequired ?? []);
-  const propEntries: [string, unknown][] = rawProps !== undefined ? Object.entries(rawProps) : [];
-
-  // A property named `__proto__` cannot be held as an ordinary key by the object machinery
-  // downstream (assignment sets the prototype instead), so it would silently lose its schema and
-  // any requirement on it. Refused rather than dropped.
-  if (propEntries.some(([key]) => key === '__proto__')) {
-    return fail(`${path}: a property named '__proto__' is not supported`);
-  }
-
-  // Reject `required` keys with no matching property schema.
-  const declared = new Set(propEntries.map(([k]) => k));
-  for (const key of requiredSet) {
-    if (!declared.has(key)) {
-      return fail(`${path}: 'required' key '${_echo(key)}' has no matching entry in 'properties'`);
+    // A property named `__proto__` cannot be held as an ordinary key by the object machinery
+    // downstream (assignment sets the prototype instead), so it would silently lose its schema and
+    // any requirement on it. Refused rather than dropped.
+    if (propEntries.some(([key]) => key === '__proto__')) {
+      return fail(`${path}: a property named '__proto__' is not supported`);
     }
-  }
 
-  if (valueSchema !== undefined) {
-    return _parseRecordBody(from, valueSchema, propEntries.length > 0, ctx, annotations, nullable);
-  }
+    // Reject `required` keys with no matching property schema.
+    const declared = new Set(propEntries.map(([k]) => k));
+    for (const key of requiredSet) {
+      if (!declared.has(key)) {
+        return fail(`${path}: 'required' key '${_echo(key)}' has no matching entry in 'properties'`);
+      }
+    }
 
-  return mapResults(
-    propEntries.map(([key, child]) =>
-      // Thread the JSON Pointer path as context so nested errors are correctly attributed.
-      _convertNode(child, _at(ctx, `${path}/properties/${_printable(_escapeToken(key))}`)).onSuccess((node) =>
-        succeed([key, requiredSet.has(key) ? node : optional(node)] as const)
+    if (valueSchema !== undefined) {
+      return _parseRecordBody(from, valueSchema, propEntries.length > 0, ctx, annotations, nullable);
+    }
+
+    return mapResults(
+      propEntries.map(([key, child]) =>
+        // Thread the JSON Pointer path as context so nested errors are correctly attributed.
+        _convertNode(child, _at(ctx, `${path}/properties/${_printable(_escapeToken(key))}`)).onSuccess(
+          (node) => succeed([key, requiredSet.has(key) ? node : optional(node)] as const)
+        )
       )
-    )
-  ).onSuccess((built) => {
-    const properties: ILlmProperties = {};
-    for (const [key, node] of built) {
-      properties[key] = node;
-    }
-    return succeed(
-      object(properties, {
-        // JSON Schema's default (absent additionalProperties) permits extra fields;
-        // only an explicit `false` produces a strict validator.
-        additionalProperties: additionalProperties !== false,
-        ..._nodeOpts(annotations, nullable)
-      }) as unknown as ISchemaValidator<JsonValue>
-    );
+    ).onSuccess((built) => {
+      const properties: ILlmProperties = {};
+      for (const [key, node] of built) {
+        properties[key] = node;
+      }
+      return succeed(
+        object(properties, {
+          // JSON Schema's default (absent additionalProperties) permits extra fields;
+          // only an explicit `false` produces a strict validator.
+          additionalProperties: additionalProperties !== false,
+          ..._nodeOpts(annotations, nullable)
+        }) as unknown as ISchemaValidator<JsonValue>
+      );
+    });
   });
 }
 
@@ -780,7 +781,7 @@ function _parseRecordBody(
   valueSchema: Record<string, unknown>,
   hasDeclaredProperties: boolean,
   ctx: IParseContext,
-  annotations: IAnnotations,
+  annotations: SchemaAnnotations,
   nullable: boolean
 ): Result<ISchemaValidator<JsonValue>> {
   const keyKeyword = _plainObjectField
@@ -1184,7 +1185,8 @@ export const jsonSchemaConverter: Converter<ISchemaValidator<JsonValue>, string>
  * path named, exactly as the factories refuse it. Beside a `$ref` or a nullable `anyOf`/`oneOf`, each
  * annotation replaces the inner node's of the same name. `const` and some object-key and array
  * keywords are still accepted without being enforced or emitted, so for them the validator can accept
- * a value the source schema rejects.
+ * a value the source schema rejects. An `enum` node carries no length constraint and refuses
+ * `minLength`/`maxLength`; it does not carry `format` either, which is dropped there.
  *
  * @param json - The raw JSON Schema object to parse.
  * @returns `Success` with the parsed schema, or `Failure` describing the first out-of-subset feature.

@@ -664,7 +664,7 @@ async function callAnthropicCompletion(
   mergeAnthropicStructuredWire(body, structured.wire);
 
   if (tools && tools.length > 0) {
-    body.tools = toAnthropicTools(tools);
+    body.tools = toAnthropicTools(tools, config);
     /* c8 ignore next 3 - optional logger diagnostic output */
     logger?.info(`Anthropic completion: model=${config.model}, tools=${tools.map((t) => t.type).join(',')}`);
   } else {
@@ -752,7 +752,7 @@ async function callGeminiCompletion(
   };
 
   if (tools && tools.length > 0) {
-    body.tools = toGeminiTools(tools);
+    body.tools = toGeminiTools(tools, config);
     /* c8 ignore next 1 - optional logger */
     logger?.info(`Gemini completion: model=${config.model}, tools=${tools.map((t) => t.type).join(',')}`);
   } else {

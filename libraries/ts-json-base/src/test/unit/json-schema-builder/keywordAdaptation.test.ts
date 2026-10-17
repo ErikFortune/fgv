@@ -58,7 +58,10 @@ describe('JsonSchema.adaptSchemaKeywords', () => {
 
   test('a dropped annotation is removed and not restated', () => {
     expect(
-      JsonSchema.adaptSchemaKeywords({ type: 'string', title: 'Name' }, JsonSchema.foldAllSchemaKeywords)
+      JsonSchema.adaptSchemaKeywords(
+        { type: 'string', title: 'Name' },
+        JsonSchema.unverifiedWireSchemaKeywords
+      )
     ).toEqual({ type: 'string' });
     const caps: JsonSchema.SchemaKeywordCapabilities = { ...passAll, default: 'drop', examples: 'drop' };
     expect(
@@ -82,7 +85,7 @@ describe('JsonSchema.adaptSchemaKeywords', () => {
   test('folding removes the keywords and appends one sentence, in fixed keyword order', () => {
     // Authored out of order: the sentence follows `schemaConstraintKeywords`, not the input.
     const raw: JsonObject = { type: 'integer', maximum: 10, default: 3, minimum: 1 };
-    expect(JsonSchema.adaptSchemaKeywords(raw, JsonSchema.foldAllSchemaKeywords)).toEqual({
+    expect(JsonSchema.adaptSchemaKeywords(raw, JsonSchema.unverifiedWireSchemaKeywords)).toEqual({
       type: 'integer',
       description: 'Constraints: minimum 1; maximum 10. Default: 3.'
     });
@@ -90,7 +93,10 @@ describe('JsonSchema.adaptSchemaKeywords', () => {
 
   test('an existing description keeps its text and position, the sentence after it', () => {
     const raw: JsonObject = { type: 'string', description: 'A name.', minLength: 1, title: 'Name' };
-    const adapted = JsonSchema.adaptSchemaKeywords(raw, JsonSchema.foldAllSchemaKeywords) as JsonObject;
+    const adapted = JsonSchema.adaptSchemaKeywords(
+      raw,
+      JsonSchema.unverifiedWireSchemaKeywords
+    ) as JsonObject;
     expect(Object.keys(adapted)).toEqual(['type', 'description']);
     // The title is dropped, not folded: it restates the property name.
     expect(adapted.description).toBe('A name. Constraints: minLength 1.');
@@ -100,14 +106,14 @@ describe('JsonSchema.adaptSchemaKeywords', () => {
     expect(
       JsonSchema.adaptSchemaKeywords(
         { type: 'string', description: '', maxLength: 2 },
-        JsonSchema.foldAllSchemaKeywords
+        JsonSchema.unverifiedWireSchemaKeywords
       )
     ).toEqual({ type: 'string', description: 'Constraints: maxLength 2.' });
   });
 
   test('passValues sends a listed value and folds any other', () => {
     const caps: JsonSchema.SchemaKeywordCapabilities = {
-      ...JsonSchema.foldAllSchemaKeywords,
+      ...JsonSchema.unverifiedWireSchemaKeywords,
       format: { passValues: ['date', 'uuid'] }
     };
     expect(JsonSchema.adaptSchemaKeywords({ type: 'string', format: 'uuid' }, caps)).toEqual({
@@ -149,7 +155,7 @@ describe('JsonSchema.adaptSchemaKeywords', () => {
       scores: JsonSchema.record(JsonSchema.number({ minimum: 0 })),
       n: JsonSchema.optional(JsonSchema.integer({ multipleOf: 2 }))
     }).toJson();
-    expect(JsonSchema.adaptSchemaKeywords(schema, JsonSchema.foldAllSchemaKeywords)).toEqual({
+    expect(JsonSchema.adaptSchemaKeywords(schema, JsonSchema.unverifiedWireSchemaKeywords)).toEqual({
       type: 'object',
       properties: {
         tags: { type: 'array', items: { type: 'string', description: 'Constraints: maxLength 5.' } },
@@ -174,7 +180,7 @@ describe('JsonSchema.adaptSchemaKeywords', () => {
     };
     expect(
       JsonSchema.adaptSchemaKeywords(raw, {
-        ...JsonSchema.foldAllSchemaKeywords,
+        ...JsonSchema.unverifiedWireSchemaKeywords,
         default: 'pass',
         examples: 'pass'
       })
@@ -182,22 +188,22 @@ describe('JsonSchema.adaptSchemaKeywords', () => {
   });
 
   test('a non-object value is returned as it is, and the input is never modified', () => {
-    expect(JsonSchema.adaptSchemaKeywords(true, JsonSchema.foldAllSchemaKeywords)).toBe(true);
+    expect(JsonSchema.adaptSchemaKeywords(true, JsonSchema.unverifiedWireSchemaKeywords)).toBe(true);
     const raw: JsonObject = { type: 'number', minimum: 1 };
-    JsonSchema.adaptSchemaKeywords(raw, JsonSchema.foldAllSchemaKeywords);
+    JsonSchema.adaptSchemaKeywords(raw, JsonSchema.unverifiedWireSchemaKeywords);
     expect(raw).toEqual({ type: 'number', minimum: 1 });
   });
 
   test('a folded schema still validates as the authored one does: the validator stays authoritative', () => {
     const schema = JsonSchema.integer({ minimum: 1, maximum: 10 });
-    const folded = JsonSchema.adaptSchemaKeywords(schema.toJson(), JsonSchema.foldAllSchemaKeywords);
+    const folded = JsonSchema.adaptSchemaKeywords(schema.toJson(), JsonSchema.unverifiedWireSchemaKeywords);
     expect(folded).toEqual({ type: 'integer', description: 'Constraints: minimum 1; maximum 10.' });
     expect(schema.validate(0)).toFailWith(/minimum/);
   });
 
   test('schemaConstraintKeywords lists every keyword of the table, in fold order', () => {
     expect([...JsonSchema.schemaConstraintKeywords].sort()).toEqual(
-      Object.keys(JsonSchema.foldAllSchemaKeywords).sort()
+      Object.keys(JsonSchema.unverifiedWireSchemaKeywords).sort()
     );
   });
 });

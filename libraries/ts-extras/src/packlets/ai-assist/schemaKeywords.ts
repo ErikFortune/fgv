@@ -51,8 +51,8 @@ export type SchemaWireFormat =
  * Who receives a wire schema, as far as choosing its keyword table needs to know.
  *
  * @remarks
- * Both fields are optional and their absence is safe: an OpenAI-family wire with no verified
- * `providerId` folds every keyword. Set `providerId` only when the request goes to that
+ * Both fields are optional and their absence is safe: a wire with no `providerId` — on any
+ * format — gets the conservative table, and an OpenAI-family wire also needs a verified one. Set `providerId` only when the request goes to that
  * provider's own endpoint — a descriptor pointed at a caller-supplied endpoint (a gateway, LiteLLM,
  * vLLM) reaches a server whose keyword support nobody verified.
  * @internal
@@ -72,7 +72,7 @@ export interface ISchemaWireTarget {
  * Groq, Mistral, OpenAI-compatible servers and Ollama's compatibility endpoint as well as OpenAI
  * and xAI. Only OpenAI's and xAI's keyword support was verified (Mistral's documentation host was
  * unreachable; the others document none), so any other provider on those wires gets
- * `foldAllSchemaKeywords`.
+ * `unverifiedWireSchemaKeywords`.
  * @internal
  */
 const OPENAI_FAMILY_VERIFIED_PROVIDERS: ReadonlySet<string> = new Set(['openai', 'xai-grok']);
@@ -97,7 +97,7 @@ const OPENAI_FAMILY_VERIFIED_PROVIDERS: ReadonlySet<string> = new Set(['openai',
  *   restates the property name, and folding it put `Title: …` on every pydantic property.
  *
  * OpenAI states that fine-tuned models support none of the string, number or array constraints, so
- * a fine-tuned model (an `ft:` id) gets `foldAllSchemaKeywords` instead.
+ * a fine-tuned model (an `ft:` id) gets `unverifiedWireSchemaKeywords` instead.
  *
  * OpenAI's Responses tools without `strict` are normalized to strict mode "when possible"
  * (https://developers.openai.com/api/docs/guides/function-calling), so the strict-mode subset is the
@@ -253,21 +253,26 @@ export const geminiSchemaKeywords: JsonSchema.SchemaKeywordCapabilities = {
  * @param format - The wire format.
  * @param target - Who receives it. The OpenAI-family formats are shared by providers whose support
  * differs, so only a verified provider on its own endpoint gets their table, and not for a
- * fine-tuned (`ft:`) model; any other target — or none — folds everything.
+ * fine-tuned (`ft:`) model. On every format, a target with no `providerId` — a caller-supplied
+ * endpoint, or no target at all — is an unverified server and gets
+ * `unverifiedWireSchemaKeywords`: the documentation a table cites describes the provider's own
+ * endpoint, not a gateway that happens to speak its wire.
  * @internal
  */
 export function schemaKeywordsFor(
   format: SchemaWireFormat,
   target?: ISchemaWireTarget
 ): JsonSchema.SchemaKeywordCapabilities {
+  if (target?.providerId === undefined) {
+    return JsonSchema.unverifiedWireSchemaKeywords;
+  }
   switch (format) {
     case 'responses-tools':
     case 'openai-strict-output':
-      return target?.providerId !== undefined &&
-        OPENAI_FAMILY_VERIFIED_PROVIDERS.has(target.providerId) &&
+      return OPENAI_FAMILY_VERIFIED_PROVIDERS.has(target.providerId) &&
         target.model?.startsWith('ft:') !== true
         ? openAiFamilySchemaKeywords
-        : JsonSchema.foldAllSchemaKeywords;
+        : JsonSchema.unverifiedWireSchemaKeywords;
     case 'anthropic-tools':
       return anthropicToolsSchemaKeywords;
     case 'anthropic-json-outputs':
@@ -278,8 +283,8 @@ export function schemaKeywordsFor(
 }
 
 /**
- * A client tool's or structured-output request's wire schema, adapted for `format` as `providerId`
- * receives it.
+ * A client tool's or structured-output request's wire schema, adapted for `format` as `target`
+ * receives it — see `schemaKeywordsFor`.
  * @internal
  */
 export function adaptWireSchema(

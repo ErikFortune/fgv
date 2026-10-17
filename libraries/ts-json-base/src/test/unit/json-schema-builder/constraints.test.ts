@@ -453,7 +453,7 @@ describe('JsonSchema constraints — emission and round trip', () => {
   });
 });
 
-describe('JsonSchema constraints — review round', () => {
+describe('JsonSchema constraints — float tolerance, non-throwing checks, copies, enum lengths, 2^53', () => {
   test('multipleOf accepts decimal multiples within float rounding', () => {
     expect(JsonSchema.number({ multipleOf: 0.1 }).validate(0.3)).toSucceedWith(0.3);
     expect(JsonSchema.number({ multipleOf: 0.1 }).validate(0.7)).toSucceedWith(0.7);

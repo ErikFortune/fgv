@@ -269,7 +269,7 @@ export async function callGeminiStream(
   };
   /* c8 ignore next 3 - tools branch not exercised in streaming tests */
   if (tools && tools.length > 0) {
-    body.tools = toGeminiTools(tools);
+    body.tools = toGeminiTools(tools, config);
   }
   const headers: Record<string, string> = geminiAuthHeader(config.apiKey);
   /* c8 ignore next 4 - optional logger diagnostic output */
