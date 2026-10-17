@@ -211,7 +211,15 @@ export interface IFileTreeMemoryStoreCreateParams {
    * this seam.
    */
   readonly index?: IMemoryIndex;
-  /** Scope encoding. Defaults to {@link defaultMemoryScopeEncoding}. */
+  /**
+   * Scope encoding. Defaults to {@link defaultMemoryScopeEncoding}.
+   *
+   * @remarks
+   * Keep it the identity encoding. The open-time walk indexes records under their
+   * raw directory segments and has no inverse for an encoding, so a vault written
+   * with a non-identity encoding fails its scope check on the next open. That
+   * holds until the encoding gains an inverse.
+   */
   readonly scopeEncoding?: (scope: MemoryScopeKey) => Result<string>;
   /**
    * Transaction-time clock. Defaults to `Date.now`. Injectable so tests can
@@ -1593,7 +1601,8 @@ export class FileTreeMemoryStore implements IMemoryStore {
    * `splitFrontmatter` hands back the body text unconverted, so the round trip
    * carries the authored characters through untouched and only the envelope
    * moves. The parsed record is additionally put through `_verifyLoaded`, the
-   * same id-vs-filename and scope-derived-entityId check the load paths apply —
+   * same identity checks the load paths apply (id vs filename, scope-derived
+   * entityId, and the scope invariant) —
    * without it, reconcile would be the one path that accepts and rewrites a file
    * the store would refuse to load.
    *
@@ -1689,8 +1698,8 @@ export class FileTreeMemoryStore implements IMemoryStore {
         return file.getRawContents().onSuccess((raw) =>
           // `parseMemoryFile` validates the body through the registered Converter,
           // so a corrupt record is refused rather than silently rewritten, and
-          // `_verifyLoaded` re-applies the same id-vs-filename and
-          // scope-derived-entityId checks the two load paths apply. Reconcile is a
+          // `_verifyLoaded` re-applies the same identity checks the two load paths
+          // apply (id vs filename, scope-derived entityId, and the scope invariant). Reconcile is a
           // read-then-write, and a file can change on disk after the index was
           // built, so skipping them would make this the one path that accepts —
           // and rewrites — a record the store would otherwise refuse to load.
@@ -1773,8 +1782,9 @@ export class FileTreeMemoryStore implements IMemoryStore {
 
   /**
    * Read and validate the record at `<scope>/<idStem>.md`, returning `undefined`
-   * when the scope directory or file is absent. Verifies the on-disk id ↔
-   * filename round-trip on every load.
+   * when the scope directory or file is absent. Applies `_verifyLoaded`'s identity
+   * checks on every load, including that the record was read from its codec's
+   * scope.
    */
   private _readRecord(
     scope: MemoryScopeKey,

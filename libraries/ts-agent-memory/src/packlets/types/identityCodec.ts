@@ -44,8 +44,10 @@ export interface IIdentityCodec {
   decode(scope: MemoryScopeKey, encodedStem: string): Result<EntityId>;
 
   /**
-   * Assert that `encode(decode(scope, stem)).idStem === stem`. Used by the
-   * store's `verifyFilenameId` check on load.
+   * Assert that `stem` is the stem this codec would produce for
+   * `decode(scope, stem)`: `encode(...).idStem` for a flat kind, the
+   * `encodeVersion(...)` stem for a versioned one. Used by the store's load-time
+   * identity check (`verifyLoadedIdentity`).
    *
    * @remarks
    * Only the idStem is part of this contract. The store separately enforces that

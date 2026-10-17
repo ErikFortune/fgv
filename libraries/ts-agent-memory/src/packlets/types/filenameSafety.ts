@@ -26,7 +26,7 @@ const PORTABLE_FILENAME_RE: RegExp = /^[A-Za-z0-9._-]+$/;
  * (`[A-Za-z0-9._-]`), rejecting a leading or trailing `.` and reserved Windows
  * device names. This is the cross-platform filename-stem contract for the
  * package: {@link MemoryId} values, the concrete {@link IIdentityCodec}
- * implementations, and the store's `verifyFilenameId` all gate on it.
+ * implementations, and the store's load-time identity check all gate on it.
  *
  * @remarks
  * A trailing `.` is rejected because Windows silently strips trailing dots from
