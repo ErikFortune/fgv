@@ -798,7 +798,9 @@ export interface IAdaptMcpToolsOptions {
    * (or any that passes untyped nodes) to have it adapted.
    *
    * Admission only: the adapted tool keeps the schema as `fromJson` parsed it, and the request path
-   * adapts it for the wire exactly once, when it is sent.
+   * adapts it for the wire exactly once, when it is sent. The table must therefore be the one for
+   * the wire the tools are actually sent on: a tool admitted under a more permissive table than the
+   * request's wire fails that request loudly, naming the tool.
    */
   readonly schemaKeywords?: JsonSchema.SchemaKeywordCapabilities;
 }

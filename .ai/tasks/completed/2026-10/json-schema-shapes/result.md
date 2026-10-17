@@ -188,3 +188,14 @@ Run from the repo root, logs in `../gate-logs-json-schema-shapes/` (outside the 
 ### Gate counts (round 1)
 
 See `state.md` § Review round 1 for the run.
+
+## Review round 2 (orchestrator)
+
+A ref-only review of the round-1 delta found no P1s. The revert/restore pair for #735 nets to zero. The orchestrator applied the P2s directly:
+
+- `_adaptOne` (`ts-extras-mcp` `adapter.ts`) is now one Result chain: JSON object → `fromJson` → admission. Before, it was three stacked `isFailure` guards. Its docstring now names the wire-admission skip cause.
+- `IAdaptMcpToolsOptions.schemaKeywords` now states that the table must match the wire the tools are sent on. A tool admitted under a more permissive table fails that request loudly, naming the tool. A new `shapes.test.ts` case pins this: the tool is admitted under the Anthropic table, then a Gemini turn emits a `Gemini streaming: … configure … no 'type'` error and nothing is sent.
+
+Not applied (P3):
+- The `clientToolSchemaKeywords` tests compare against `schemaKeywordsFor`, which is partly circular. The round-2 review confirmed the two derive from the same switch.
+- There are no MCP-level admission tests for `{}` under items, nullable `anyOf` or `$ref`. The walker covers all three, and ts-json-base tests items.
