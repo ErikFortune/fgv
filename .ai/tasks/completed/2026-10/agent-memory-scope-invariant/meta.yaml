@@ -1,0 +1,44 @@
+id: agent-memory-scope-invariant
+status: shipped
+packages: ['@fgv/ts-agent-memory']
+prs: [] # TBD: the orchestrator fills in the PR number
+openPrs: []
+opened: 2026-10-17
+closed: 2026-10-17
+summary:
+  intended: >
+    Follow-up D2 from agent-memory-merge-scope (#731). Make scope == codec(kind).encode(entityId).scope
+    a property of the store, enforced in verifyLoadedIdentity for every codec, rather than an
+    accident of the four shipped codecs. The interface stays unchanged. TSDoc and CAPABILITIES.md
+    state the guarantee unconditionally. Fixtures that relied on foreign-scope loads get fixed
+    honestly. The work needs regression tests for 'fail' and 'skip' modes, the open walk and
+    getById, and neutralize-and-confirm.
+  shipped: >
+    verifyLoadedIdentity now chains a fourth check, encode(entityId).scope === scope. A mismatch or
+    encode failure is reported with the file path, the scope read from and the derived scope, and
+    the check covers every load path including reconcile. TSDoc on the store class, verifyRoundTrip
+    and scopedAddressOf, plus CAPABILITIES.md, now state the guarantee. A new 8-test suite with
+    scope-blind flat and versioned codecs goes 5 red with the comparison neutralized. Change file
+    typed minor with a BREAKING: prefix.
+  diverged: >
+    No fixture needed changing: none of the five test codecs #731 named ever loads from a foreign
+    scope, so the whole existing suite passed with the check in place. #731 had understated
+    turnCodec, whose decode reads only the second scope segment. The out-of-scope scopeEncoding
+    probe found that a non-identity encoding produces a vault the store cannot reopen. The new check
+    turns the scope-blind case of that from silent mis-indexing into a loud open failure. Reported,
+    not fixed.
+  sourceLine: '**Shipped:** `FileTreeMemoryStore` now refuses to load any record that was not read from `codec(kind).encode(entityId).scope`, for every identity codec — so `scopedAddressOf` is the address a store-returned record was read from, unconditionally, and a custom codec no longer has to check scope itself.'
+  headline: >
+    FileTreeMemoryStore now refuses to load a record from any scope other than the one its kind's
+    codec derives, so a custom codec that ignores scope can no longer load a foreign-scope file.
+keywords:
+  - scope invariant
+  - foreign scope load
+  - identity codec contract
+  - verifyLoadedIdentity
+  - verifyRoundTrip
+  - scopedAddressOf
+  - skippedRecords quarantine
+  - scopeEncoding reopen
+relatedStreams: [agent-memory-merge-scope]
+sourceHash: sha256:e411a4affc143fe9 # over brief.md + result.md + state.md
