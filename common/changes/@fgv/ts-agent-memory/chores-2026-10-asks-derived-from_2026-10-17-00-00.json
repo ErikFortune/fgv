@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "Docs: `IProvenance.derivedFrom` is described as provenance rather than a live back-link — it keeps naming a withdrawn source, and for a versioned kind may name a superseded version.",
+      "type": "none",
+      "packageName": "@fgv/ts-agent-memory"
+    }
+  ],
+  "packageName": "@fgv/ts-agent-memory",
+  "email": "noreply@anthropic.com"
+}
