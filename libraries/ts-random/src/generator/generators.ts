@@ -88,7 +88,8 @@ export interface IWeightedCandidate<T> {
  * - If `total` is not finite (the eligible weights overflow when summed), every
  *   eligible weight is divided by the largest eligible weight and the total is
  *   recomputed. This happens only on overflow, so ordinary weights keep their
- *   exact float behavior.
+ *   exact float behavior. After rescaling, a weight below the float resolution of
+ *   the largest contributes no range and is reachable only by elimination.
  *
  * This walk is part of the contract: callers persist draws made through it, so it
  * must not change.

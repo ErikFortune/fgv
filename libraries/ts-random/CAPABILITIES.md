@@ -76,7 +76,7 @@ component takes an optional generator and stays testable without reading global 
 
 `pickWeightedAt(unit, candidates)` is a **pure function** exported beside the generator:
 `candidates` is a `ReadonlyArray<IWeightedCandidate<T>>` (`{ item, weight }`), and the same `unit`
-and candidates always choose the same item. `rng.pickWeighted(candidates)` is the same pick over
+and candidates always choose the same item. `PseudoRandomGenerator.pickWeighted(candidates)` is the same pick over
 `nextFloat()`, and consumes exactly one draw even when it returns `undefined`. **Use the pure form
 when the randomness comes from somewhere else** — a hash ratio, a stored draw — so a hash-derived
 choice and a generator-derived one share one set of rules.

@@ -30,9 +30,13 @@ export interface IProvenance {
   /** Optional confidence in `[0, 1]`. */
   readonly confidence?: number;
   /**
-   * Provenance, not a live reference: records which source record the write
-   * that produced this record came from. It is stamped per write and
-   * deliberately keeps naming that source after the source is withdrawn —
+   * Provenance, not a live reference: names the source record an ingest write
+   * derived this record from. The ingest orchestrator stamps it from
+   * `IIngestItem.sourceId`. A merge-into that supplies no `sourceId` keeps the
+   * target's earlier value, and one that does replaces it, so a merged record
+   * names its most recent ingest source rather than every source. On a direct
+   * put it is whatever the caller supplied. It deliberately keeps naming its
+   * source after that source is withdrawn —
    * clearing it would erase a true fact, and repointing it would assert a write
    * that never happened. It is the cross-kind provenance spine.
    *

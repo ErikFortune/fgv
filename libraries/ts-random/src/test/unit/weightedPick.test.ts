@@ -7,7 +7,7 @@ function weighted<T>(...pairs: ReadonlyArray<[T, number]>): ReadonlyArray<IWeigh
 }
 
 /**
- * The walk the first consumer used before this primitive existed: `point < cumulative`
+ * The established consumer walk: `point < cumulative`
  * in input order over positive weights, last candidate by elimination. Kept here so the
  * stability test compares against an independent statement of that walk.
  */
@@ -163,9 +163,27 @@ describe('pickWeightedAt', () => {
       const candidates = weighted<string>(['a', 0.1], ['b', 0.2], ['c', 0.3]);
       expect(pickWeightedAt(0.16666666666666666, candidates)).toBe('b');
     });
+
+    test('does not rescale ordinary weights (a second, independent witness)', () => {
+      // 0.5 * 6.6 = 3.3 lands just inside b's cumulative bound (1.1 + 2.2) unscaled;
+      // rescaled by 3.3 the point falls on the bound and the walk would choose 'c'.
+      const candidates = weighted<string>(['a', 1.1], ['b', 2.2], ['c', 3.3]);
+      expect(pickWeightedAt(0.5, candidates)).toBe('b');
+    });
   });
 
   describe('overflow', () => {
+    test('a weight that underflows to zero after rescaling is reachable only by elimination', () => {
+      // Rescaled by 1e308, the 1e-300 weight contributes no range: last in the list it
+      // wins only at unit 1; first in the list it is never chosen.
+      const last = weighted<string>(['a', 1e308], ['b', 1e308], ['tiny', 1e-300]);
+      expect(pickWeightedAt(0.5, last)).toBe('b');
+      expect(pickWeightedAt(1 - Number.EPSILON, last)).toBe('b');
+      expect(pickWeightedAt(1, last)).toBe('tiny');
+      const first = weighted<string>(['tiny', 1e-300], ['a', 1e308], ['b', 1e308]);
+      expect(pickWeightedAt(0, first)).toBe('a');
+    });
+
     test('rescales by the largest eligible weight when the total is not finite', () => {
       const candidates = weighted<string>(['a', 1e308], ['b', 1e308]);
       expect(pickWeightedAt(0, candidates)).toBe('a');
