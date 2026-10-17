@@ -726,7 +726,8 @@ export function executeClientToolTurn(
   const config: IStreamApiConfig = {
     baseUrl: baseUrlResult.value,
     apiKey,
-    model: resolvedModel
+    model: resolvedModel,
+    providerId: descriptor.id
   };
 
   // Accumulation buffers — populated by the adapter, read by the builder.

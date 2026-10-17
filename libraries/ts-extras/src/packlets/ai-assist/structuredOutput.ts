@@ -12,6 +12,7 @@ import type {
   StructuredOutputFallback,
   StructuredOutputRequest
 } from './structuredOutputTypes';
+import { type SchemaWireFormat, adaptWireSchema } from './schemaKeywords';
 import { toGeminiParameterSchema } from './toolFormats';
 
 /**
@@ -273,6 +274,28 @@ export function hoistNullableOptionals(raw: JsonValue): JsonValue {
   return out;
 }
 
+/**
+ * The keyword-capability table a structured-output format's schema is adapted with.
+ *
+ * @remarks
+ * The forced-tool mechanism sends the schema as an ordinary (non-strict) tool's `input_schema`, so
+ * it takes the Anthropic tools table, not the JSON-outputs one.
+ * @internal
+ */
+function schemaWireFormatOf(format: IAiStructuredOutputCapability['format']): SchemaWireFormat {
+  switch (format) {
+    case 'openai-json-schema':
+    case 'openai-responses-format':
+      return 'openai-strict-output';
+    case 'gemini-response-schema':
+      return 'gemini';
+    case 'anthropic-output-format':
+      return 'anthropic-json-outputs';
+    case 'anthropic-tool-forced':
+      return 'anthropic-tools';
+  }
+}
+
 /** The two formats that carry OpenAI's all-properties-required strict rule. @internal */
 function isOpenAiStrictFormat(format: IAiStructuredOutputCapability['format']): boolean {
   return format === 'openai-json-schema' || format === 'openai-responses-format';
@@ -395,7 +418,16 @@ export function resolveStructuredOutput(
     // a reply on a provider that never needed it changed.
     const strict: boolean = isOpenAiStrictFormat(format);
     const adapt: boolean = strict && request.adaptOptionalToNullable === true;
-    const raw: JsonValue = adapt ? hoistNullableOptionals(request.schema.toJson()) : request.schema.toJson();
+    // Constraint keywords are adapted FIRST: a folded `default` or `examples` is data that the
+    // optional-property walkers below must not read as schema. Folding loosens only the wire —
+    // the caller's schema still validates the reply — so the enforcement reported below stays
+    // `'schema'` while a folded constraint is not provider-enforced.
+    const adapted: JsonValue = adaptWireSchema(
+      request.schema.toJson(),
+      schemaWireFormatOf(format),
+      descriptor.id
+    );
+    const raw: JsonValue = adapt ? hoistNullableOptionals(adapted) : adapted;
     if (strict && hasOptionalProperties(raw)) {
       // See `hasOptionalProperties` — a hard provider constraint, treated as a
       // capability mismatch rather than relocated into an opaque 400.

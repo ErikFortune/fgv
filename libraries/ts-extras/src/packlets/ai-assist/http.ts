@@ -35,6 +35,11 @@ export interface IAiApiConfig {
   readonly baseUrl: string;
   readonly apiKey: string;
   readonly model: string;
+  /**
+   * The provider descriptor id, where a wire format shared between providers needs it — the
+   * OpenAI-family schema-keyword table differs by provider. Absent folds every keyword.
+   */
+  readonly providerId?: string;
 }
 
 /**

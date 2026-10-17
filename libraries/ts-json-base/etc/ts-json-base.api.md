@@ -15,6 +15,9 @@ import { Validation } from '@fgv/ts-utils';
 import { Validator } from '@fgv/ts-utils';
 import { Validators as Validators_3 } from '@fgv/ts-utils';
 
+// @public
+function adaptSchemaKeywords(schema: JsonValue, capabilities: SchemaKeywordCapabilities): JsonValue;
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -411,6 +414,12 @@ type FileTreeItem<TCT extends string = string> = IFileTreeFileItem<TCT> | IFileT
 
 // @public
 type FileTreeItemType = 'directory' | 'file';
+
+// @public
+const foldAllSchemaKeywords: SchemaKeywordCapabilities;
+
+// @public
+function foldedConstraintsSentence(folded: ReadonlyArray<readonly [SchemaConstraintKeyword, JsonValue]>): string;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -1200,7 +1209,15 @@ declare namespace JsonSchema {
         object_3 as object,
         record,
         fromJson,
-        jsonSchemaConverter
+        jsonSchemaConverter,
+        foldedConstraintsSentence,
+        adaptSchemaKeywords,
+        SchemaConstraintKeyword,
+        schemaConstraintKeywords,
+        SchemaKeywordTranslator,
+        SchemaKeywordRule,
+        SchemaKeywordCapabilities,
+        foldAllSchemaKeywords
     }
 }
 export { JsonSchema }
@@ -1373,6 +1390,25 @@ type SaveDetail = SaveCapability | SaveFailureReason;
 
 // @public
 type SaveFailureReason = 'not-supported' | 'read-only' | 'not-mutable' | 'path-excluded' | 'permission-denied';
+
+// @public
+type SchemaConstraintKeyword = 'minimum' | 'exclusiveMinimum' | 'maximum' | 'exclusiveMaximum' | 'multipleOf' | 'minLength' | 'maxLength' | 'format' | 'title' | 'default' | 'examples';
+
+// @public
+const schemaConstraintKeywords: ReadonlyArray<SchemaConstraintKeyword>;
+
+// @public
+type SchemaKeywordCapabilities = Readonly<Record<SchemaConstraintKeyword, SchemaKeywordRule>>;
+
+// @public
+type SchemaKeywordRule = 'pass' | 'fold' | {
+    readonly passValues: ReadonlyArray<string>;
+} | {
+    readonly translate: SchemaKeywordTranslator;
+};
+
+// @public
+type SchemaKeywordTranslator = (node: JsonObject) => JsonObject | undefined;
 
 // @public
 type SchemaNodeType = 'string' | 'number' | 'integer' | 'boolean' | 'enum' | 'optional' | 'array' | 'object';

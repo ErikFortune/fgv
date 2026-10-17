@@ -449,7 +449,7 @@ async function callOpenAiResponsesCompletion(
     input,
     // `tools` is omitted entirely when none are requested — a Responses-only model routed
     // here for tier/model reasons (not tools) must not send an empty tools array.
-    ...(tools.length > 0 ? { tools: toResponsesApiTools(tools) } : {}),
+    ...(tools.length > 0 ? { tools: toResponsesApiTools(tools, config.providerId) } : {}),
     // Temperature is sent only when the caller explicitly provided one (see callOpenAiCompletion).
     ...(temperature !== undefined ? { temperature } : {}),
     ...(effort !== undefined && config.model !== 'grok-4' ? { reasoning: { effort } } : {}),
@@ -926,7 +926,8 @@ export async function callProviderCompletion(
   const config: IAiApiConfig = {
     baseUrl: baseUrlResult.value,
     apiKey,
-    model
+    model,
+    providerId: descriptor.id
   };
   /* c8 ignore next 8 - optional logger diagnostic output */
   if (logger) {

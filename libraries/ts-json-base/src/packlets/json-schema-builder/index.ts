@@ -35,3 +35,4 @@ export * from './types';
 export * from './options';
 export * from './factories';
 export * from './fromJson';
+export * from './keywordAdaptation';

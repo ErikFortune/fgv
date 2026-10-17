@@ -186,7 +186,8 @@ export async function callProviderCompletionStream(
   const config: IStreamApiConfig = {
     baseUrl: baseUrlResult.value,
     apiKey,
-    model
+    model,
+    providerId: descriptor.id
   };
 
   switch (descriptor.apiFormat) {

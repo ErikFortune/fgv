@@ -1,0 +1,258 @@
+/*
+ * Copyright (c) 2026 Erik Fortune
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+/**
+ * Keyword-capability tables: for each provider wire format that carries a JSON Schema, what it
+ * does with each constraint and annotation keyword `JsonSchema` emits — pass, translate, or fold
+ * into the description (`JsonSchema.adaptSchemaKeywords` in `@fgv/ts-json-base`).
+ *
+ * **Folding loosens the wire, never the validator.** The schema's validator still enforces every
+ * folded constraint, so a model that ignores one gets a correctable validation error on a tool
+ * call, and a validation failure on a structured-output reply. Folding is therefore always safe,
+ * and every entry below that is not `'fold'` cites the provider documentation it was verified
+ * against (fetched 2026-10-17). **An entry nobody could verify is `'fold'`** — an unverified
+ * `'pass'` is the one way this table can be wrong in a harmful direction (a provider 400, or a
+ * keyword silently honoured differently).
+ */
+
+import { type JsonObject, type JsonValue, JsonSchema } from '@fgv/ts-json-base';
+
+/**
+ * The wire formats that carry a `JsonSchema`, each with its own keyword-capability table.
+ * @internal
+ */
+export type SchemaWireFormat =
+  | 'responses-tools'
+  | 'openai-strict-output'
+  | 'anthropic-tools'
+  | 'anthropic-json-outputs'
+  | 'gemini';
+
+/**
+ * The providers whose documentation verifies the OpenAI-family tables.
+ *
+ * @remarks
+ * The Responses and Chat Completions wires are shared by every `apiFormat: 'openai'` provider —
+ * Groq, Mistral, OpenAI-compatible servers and Ollama's compatibility endpoint as well as OpenAI
+ * and xAI. Only OpenAI's and xAI's keyword support was verified (Mistral's documentation host was
+ * unreachable; the others document none), so any other provider on those wires gets
+ * `foldAllSchemaKeywords`.
+ * @internal
+ */
+const OPENAI_FAMILY_VERIFIED_PROVIDERS: ReadonlySet<string> = new Set(['openai', 'xai-grok']);
+
+/**
+ * The OpenAI-family table — the **intersection** of what OpenAI and xAI document, since one wire
+ * serves both.
+ *
+ * @remarks
+ * - Numeric range keywords pass. OpenAI lists `minimum`, `maximum`, `exclusiveMinimum` and
+ *   `exclusiveMaximum` as supported number properties
+ *   (https://developers.openai.com/api/docs/guides/structured-outputs § "Supported schemas");
+ *   xAI lists the same four as enforced
+ *   (https://docs.x.ai/docs/guides/structured-outputs). xAI states tool schemas "follow the same
+ *   JSON Schema support rules".
+ * - `multipleOf` folds: OpenAI supports it, xAI's page does not mention it.
+ * - `minLength` / `maxLength` fold: xAI supports them, OpenAI does not list them as supported.
+ * - `format` passes only for the values both list: OpenAI's date-time, time, date, duration,
+ *   email, hostname, ipv4, ipv6 and uuid, intersected with xAI's date, time, date-time, email,
+ *   uuid, ipv4, ipv6 and uri.
+ * - `title`, `default`, `examples` fold: neither page mentions them.
+ *
+ * OpenAI's Responses tools without `strict` are normalized to strict mode "when possible"
+ * (https://developers.openai.com/api/docs/guides/function-calling), so the strict-mode subset is the
+ * one that applies to tools as well.
+ * @internal
+ */
+export const openAiFamilySchemaKeywords: JsonSchema.SchemaKeywordCapabilities = {
+  minimum: 'pass',
+  exclusiveMinimum: 'pass',
+  maximum: 'pass',
+  exclusiveMaximum: 'pass',
+  multipleOf: 'fold',
+  minLength: 'fold',
+  maxLength: 'fold',
+  format: { passValues: ['date-time', 'time', 'date', 'email', 'ipv4', 'ipv6', 'uuid'] },
+  title: 'fold',
+  default: 'fold',
+  examples: 'fold'
+};
+
+/**
+ * Anthropic client tools (`input_schema`, no `strict`) — every keyword passes.
+ *
+ * @remarks
+ * `input_schema` is "A JSON Schema object"
+ * (https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools), and Anthropic's
+ * JSON Schema limitations apply to "JSON outputs and strict tool use" only
+ * (https://platform.claude.com/docs/en/build-with-claude/structured-outputs § "JSON Schema
+ * limitations"). This adapter never sets `strict` on a tool, so the forced-tool structured-output
+ * mechanism uses this table too.
+ * @internal
+ */
+export const anthropicToolsSchemaKeywords: JsonSchema.SchemaKeywordCapabilities = {
+  minimum: 'pass',
+  exclusiveMinimum: 'pass',
+  maximum: 'pass',
+  exclusiveMaximum: 'pass',
+  multipleOf: 'pass',
+  minLength: 'pass',
+  maxLength: 'pass',
+  format: 'pass',
+  title: 'pass',
+  default: 'pass',
+  examples: 'pass'
+};
+
+/**
+ * Anthropic JSON outputs (`output_config.format`).
+ *
+ * @remarks
+ * From https://platform.claude.com/docs/en/build-with-claude/structured-outputs § "JSON Schema
+ * limitations": `default` is supported "for all supported types", and the string formats
+ * date-time, time, date, duration, email, hostname, uri, ipv4, ipv6 and uuid are supported.
+ * "Numerical constraints (such as minimum, maximum, multipleOf)" and "String constraints
+ * (minLength, maxLength)" are **not** supported, and "If you use an unsupported feature, you'll receive a 400
+ * error" — so they fold, which is what Anthropic's own SDK helpers do. `exclusiveMinimum` /
+ * `exclusiveMaximum` fall under "such as"; `title` and `examples` are not mentioned. All fold.
+ * @internal
+ */
+export const anthropicJsonOutputsSchemaKeywords: JsonSchema.SchemaKeywordCapabilities = {
+  minimum: 'fold',
+  exclusiveMinimum: 'fold',
+  maximum: 'fold',
+  exclusiveMaximum: 'fold',
+  multipleOf: 'fold',
+  minLength: 'fold',
+  maxLength: 'fold',
+  format: {
+    passValues: ['date-time', 'time', 'date', 'duration', 'email', 'hostname', 'uri', 'ipv4', 'ipv6', 'uuid']
+  },
+  title: 'fold',
+  default: 'pass',
+  examples: 'fold'
+};
+
+/** Whether a wire node's `type` is `integer`, alone or in a nullable union. */
+function _isIntegerNode(node: JsonObject): boolean {
+  const type: JsonValue | undefined = node.type;
+  return type === 'integer' || (Array.isArray(type) && type.includes('integer'));
+}
+
+/**
+ * Translates an exclusive bound on an **integer** node into the inclusive bound Gemini documents.
+ *
+ * @remarks
+ * Exact, not approximate: for an integer `x`, `x > b` holds exactly when `x >= floor(b) + 1`, and
+ * `x < b` exactly when `x <= ceil(b) - 1`. Where the node already carries the inclusive bound the
+ * tighter of the two is kept, which is the conjunction both stated. A number node has no exact
+ * inclusive equivalent, so the translator declines and the keyword folds.
+ */
+function _integerExclusiveBound(
+  exclusive: 'exclusiveMinimum' | 'exclusiveMaximum'
+): JsonSchema.SchemaKeywordTranslator {
+  return (node: JsonObject): JsonObject | undefined => {
+    const bound: JsonValue | undefined = node[exclusive];
+    if (!_isIntegerNode(node) || typeof bound !== 'number') {
+      return undefined;
+    }
+    const inclusive = exclusive === 'exclusiveMinimum' ? 'minimum' : 'maximum';
+    const translated = exclusive === 'exclusiveMinimum' ? Math.floor(bound) + 1 : Math.ceil(bound) - 1;
+    const existing: JsonValue | undefined = node[inclusive];
+    const out: JsonObject = {};
+    for (const [key, value] of Object.entries(node)) {
+      if (key !== exclusive) {
+        out[key] = value;
+      }
+    }
+    out[inclusive] =
+      typeof existing !== 'number'
+        ? translated
+        : exclusive === 'exclusiveMinimum'
+        ? Math.max(existing, translated)
+        : Math.min(existing, translated);
+    return out;
+  };
+}
+
+/**
+ * Gemini function-declaration parameters and `responseSchema` — the OpenAPI 3.0 subset.
+ *
+ * @remarks
+ * From the Schema object at https://ai.google.dev/api/generate-content § "Schema": `minimum` /
+ * `maximum` (for `INTEGER` and `NUMBER`), `minLength` / `maxLength`, `format` ("Any value is
+ * allowed"), `title` and `default` are fields, so they pass. The object has **no**
+ * `exclusiveMinimum`, `exclusiveMaximum`, `multipleOf` or `examples`: the exclusive bounds are
+ * translated on an integer node (see `_integerExclusiveBound`) and folded elsewhere; `multipleOf`
+ * folds; `examples` folds, because Gemini's singular `example` is "populated only when the object
+ * is the root" and is therefore no exact equivalent.
+ * @internal
+ */
+export const geminiSchemaKeywords: JsonSchema.SchemaKeywordCapabilities = {
+  minimum: 'pass',
+  exclusiveMinimum: { translate: _integerExclusiveBound('exclusiveMinimum') },
+  maximum: 'pass',
+  exclusiveMaximum: { translate: _integerExclusiveBound('exclusiveMaximum') },
+  multipleOf: 'fold',
+  minLength: 'pass',
+  maxLength: 'pass',
+  format: 'pass',
+  title: 'pass',
+  default: 'pass',
+  examples: 'fold'
+};
+
+/**
+ * The keyword-capability table for a wire format as one provider receives it.
+ * @param format - The wire format.
+ * @param providerId - The provider descriptor id. The OpenAI-family formats are shared by
+ * providers whose support differs, so only verified providers get their table; any other — or an
+ * absent id — folds everything.
+ * @internal
+ */
+export function schemaKeywordsFor(
+  format: SchemaWireFormat,
+  providerId?: string
+): JsonSchema.SchemaKeywordCapabilities {
+  switch (format) {
+    case 'responses-tools':
+    case 'openai-strict-output':
+      return providerId !== undefined && OPENAI_FAMILY_VERIFIED_PROVIDERS.has(providerId)
+        ? openAiFamilySchemaKeywords
+        : JsonSchema.foldAllSchemaKeywords;
+    case 'anthropic-tools':
+      return anthropicToolsSchemaKeywords;
+    case 'anthropic-json-outputs':
+      return anthropicJsonOutputsSchemaKeywords;
+    case 'gemini':
+      return geminiSchemaKeywords;
+  }
+}
+
+/**
+ * A client tool's or structured-output request's wire schema, adapted for `format` as `providerId`
+ * receives it.
+ * @internal
+ */
+export function adaptWireSchema(schema: JsonValue, format: SchemaWireFormat, providerId?: string): JsonValue {
+  return JsonSchema.adaptSchemaKeywords(schema, schemaKeywordsFor(format, providerId));
+}
