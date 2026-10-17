@@ -1,6 +1,6 @@
 # `json-schema-shapes`: numeric enums, enforced `const` and `{}`, adapted or refused per wire
 
-**Shipped 2026-10-17** onto `integration/asks` (PR #TBD).
+**Shipped 2026-10-17** onto `integration/asks` (PR #736).
 Origin: ErikFortune/personaility#683, the part #682 left. Builds on `json-schema-constraints` (#734).
 
 ---

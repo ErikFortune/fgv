@@ -101,7 +101,7 @@ Every entry here **widens an accepted set**, so `install-run-rush.js test` repo-
   since inlining a recursive model is unbounded.
 
 ### 6. `fromJson`: numeric enums, `pattern`, record, `{}` (any) — personaility#683
-- **Status:** **partly shipped** in #723, promoted by #727 (`0e1028e3`): schema-valued `additionalProperties` as a record (`JsonSchema.record`). Numeric `enum`, `pattern` and `{}` are deferred to a later JsonSchema stream (Gemini wire limits; `pattern` is a ReDoS surface). Issue left open with a comment.
+- **Status:** **partly shipped** in #723, promoted by #727 (`0e1028e3`): schema-valued `additionalProperties` as a record (`JsonSchema.record`). Numeric/boolean `enum`, enforced scalar `const` and `{}` **shipped** via #736 (`json-schema-shapes`), with per-wire adaptation. MCP tools are admitted against the target wire, so the default still skips a `{}` tool. `pattern` stays deferred: it is a ReDoS surface, and that is the user's decision. Issue left open until PersonAIlity adopts.
 - **Slug:** `2026-10-01-0043-json-schema-smaller-mcp-shapes`
 - **Req. priority:** P3; "fgv decides which of these to support".
 - **Verified:** none of the four is representable in the builder today (see the shared finding).
