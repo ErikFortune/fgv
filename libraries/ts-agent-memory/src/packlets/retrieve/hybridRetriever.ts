@@ -89,9 +89,7 @@ export class ScoreUnionMergeStrategy implements IMergeStrategy {
   public static create(params: IScoreUnionMergeStrategyCreateParams): Result<ScoreUnionMergeStrategy> {
     // Typed as required; still refused at runtime so an untyped caller that omits it
     // fails here rather than on the first merge.
-    if (
-      (params as Partial<IScoreUnionMergeStrategyCreateParams> | undefined)?.identityResolver === undefined
-    ) {
+    if (params?.identityResolver === undefined || params.identityResolver === null) {
       return fail('ScoreUnionMergeStrategy: an identityResolver is required');
     }
     return succeed(new ScoreUnionMergeStrategy(params.identityResolver));

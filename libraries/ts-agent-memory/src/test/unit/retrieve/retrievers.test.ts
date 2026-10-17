@@ -108,7 +108,7 @@ function ids(records: ReadonlyArray<IMemoryRecord<unknown>>): ReadonlyArray<stri
 
 const knowledge: Kind = 'knowledge' as Kind;
 
-/** Addresses every flat fixture above: kind `knowledge`, `entityId === id`, scope `knowledge`. */
+/** Addresses every fixture that reaches a merge: kind `knowledge`, `entityId === id`, scope `knowledge`. */
 const knowledgeIdentity: IIdentityResolver = storeIdentityResolver();
 
 describe('retrieve helpers', () => {

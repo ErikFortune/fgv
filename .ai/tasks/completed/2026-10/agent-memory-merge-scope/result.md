@@ -109,7 +109,7 @@ I ran `grep -rn "ScoreUnionMergeStrategy|IMergeStrategy|HybridRetriever"` over `
 - **Updated:** `samples/testbed/.../memoryToolsGate/index.ts`, which now passes
   `{ identityResolver: store }`. The store was already in scope as the record resolver.
   - `retrievers.test.ts` uses `storeIdentityResolver()` with the knowledge codec. Every fixture there
-    is `kind: knowledge`, `entityId === id` and scope `knowledge`.
+    that reaches a merge is `kind: knowledge`, `entityId === id` and scope `knowledge`.
   - `temporalRetrievers.test.ts` uses a store with the `facts` temporal codec and the knowledge codec.
   - `memoryTools.test.ts` uses its existing `makeStore()`, which has the knowledge and MTM codecs.
 - **Negative results:**
@@ -186,3 +186,16 @@ Logs are under `<worktree>/.gate-logs/`. Each count is `grep -cE 'not met|FAILUR
   helper takes the resolver as a parameter.
 - **"Fix the TSDoc on `IMergeStrategy` if it states the id-only rule":** it does not, so there was
   nothing to fix.
+
+## Orchestrator gate-time review
+
+An independent deep review found no P1 or P2 findings. The orchestrator applied the following P3 fixes:
+
+- The end-to-end hybrid test's name no longer claims a score it cannot observe.
+- Two fixture comments are narrowed to the fixtures that reach a merge.
+- The `Partial<…>` cast in `create` is removed. A `null` resolver is now refused too.
+- A sentence spliced into the Retrieval paragraph of `CAPABILITIES.md` is split.
+- The MTM fixture in `memoryTools.test.ts` gains a valid `entityId`.
+- The `scopedAddressOf` TSDoc now says it does not capture a throwing resolver.
+
+The finding about duplicated test setup is accepted as is. The new suite needs `writePolicies` and a clock, which the shared helper does not take, and widening the helper for a single use is not worth it.

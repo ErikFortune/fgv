@@ -782,7 +782,7 @@ describe('createMemoryTools', () => {
     test('filters by a validated kind', async () => {
       const retriever = makeRetriever([
         { id: 'doc-1', kind: 'knowledge' },
-        { id: 'turn-0', kind: 'mtm', scope: 'conversations/conv-1' }
+        { id: 'turn-0', entityId: 'conv-1:0', kind: 'mtm', scope: 'conversations/conv-1' }
       ]);
       const tool = toolByName(
         createMemoryTools({

@@ -310,7 +310,7 @@ describe('ScoreUnionMergeStrategy — scope-qualified identity', () => {
 });
 
 describe('HybridRetriever over a store — the merge sees scoped identity end to end', () => {
-  test('turn-3 in two conversations, surfaced by two retrievers, is two records scoring 2 each', async () => {
+  test('turn-3 in two conversations, surfaced by two retrievers, is two records, not one', async () => {
     const store = makeStore();
     await putTurn(store, 'conv-a', 3, ['hot']);
     await putTurn(store, 'conv-b', 3, ['hot']);
@@ -325,7 +325,7 @@ describe('HybridRetriever over a store — the merge sees scoped identity end to
       ScoreUnionMergeStrategy.create({ identityResolver: store }).orThrow()
     ).orThrow();
     expect(await hybrid.retrieve({ kind: mtmKind, tag: 'hot' as Tag })).toSucceedAndSatisfy((records) => {
-      // Recency (tag-filtered) and Tag both return both turn-3s; each scores 2.
+      // Recency (tag-filtered) and Tag both return both turn-3s; keyed on the bare id they would collapse to one.
       expect(addresses(records, store)).toEqual([
         'conversations/conv-b/turn-3',
         'conversations/conv-a/turn-3'

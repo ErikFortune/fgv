@@ -65,6 +65,9 @@ export interface IIdentityResolver {
  * A record built by hand, or resolved with a codec map that differs from the
  * store's, gets the address its kind's codec says it should have.
  *
+ * It does not capture a resolver that throws: a caller handed a consumer-injected
+ * resolver wraps the call in `captureResult`, as `ScoreUnionMergeStrategy` does.
+ *
  * @param record - The record to address.
  * @param resolver - Resolves `(kind, entityId)` to the record's storage scope.
  * @returns `Success` with the address, or the resolver's `Failure` (no codec for
