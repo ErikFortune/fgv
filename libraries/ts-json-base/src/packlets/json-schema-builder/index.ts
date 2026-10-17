@@ -32,5 +32,6 @@
  * - `fromJson(json)` returns `ISchemaValidator<JsonValue>` (honest supertype — a runtime-parsed schema may validate strings, numbers, booleans, arrays, or objects, not just objects).
  */
 export * from './types';
+export * from './options';
 export * from './factories';
 export * from './fromJson';

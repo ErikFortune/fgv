@@ -867,6 +867,11 @@ function integer(opts?: INumberSchemaOptions): ISchemaValidator<number>;
 
 // @public
 interface INumberSchemaOptions extends ISchemaOptions {
+    exclusiveMaximum?: number;
+    exclusiveMinimum?: number;
+    maximum?: number;
+    minimum?: number;
+    multipleOf?: number;
     strict?: boolean;
 }
 
@@ -915,9 +920,12 @@ function isBinaryFileItem<TCT extends string = string>(item: AnyFileTreeFileItem
 
 // @public
 interface ISchemaOptions {
+    default?: JsonValue;
     description?: string;
+    examples?: ReadonlyArray<JsonValue>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     nullable?: boolean;
+    title?: string;
 }
 
 // @public
@@ -1018,6 +1026,13 @@ interface IStrictTextFileTreeAccessors<TCT extends string = string> extends IFil
 // @public
 interface IStrictTextFileTreeFileItem<TCT extends string = string> extends IFileTreeFileItem<TCT> {
     getTextStrict(): Result<string>;
+}
+
+// @public
+interface IStringSchemaOptions extends ISchemaOptions {
+    format?: string;
+    maxLength?: number;
+    minLength?: number;
 }
 
 // @public
@@ -1171,6 +1186,10 @@ declare namespace JsonSchema {
         ILlmOptional,
         ILlmArraySchema,
         ILlmObjectSchema,
+        ISchemaOptions,
+        INumberSchemaOptions,
+        IStringSchemaOptions,
+        IObjectSchemaOptions,
         string_2 as string,
         number_2 as number,
         integer,
@@ -1180,9 +1199,6 @@ declare namespace JsonSchema {
         array,
         object_3 as object,
         record,
-        ISchemaOptions,
-        INumberSchemaOptions,
-        IObjectSchemaOptions,
         fromJson,
         jsonSchemaConverter
     }
@@ -1379,12 +1395,12 @@ function strictObject<T, TC = unknown>(properties: Conversion.FieldConverters<Js
 const string: StringConverter<string, IJsonConverterContext>;
 
 // @public
-function string_2(opts: ISchemaOptions & {
+function string_2(opts: IStringSchemaOptions & {
     nullable: true;
 }): ISchemaValidator<string | null>;
 
 // @public
-function string_2(opts?: ISchemaOptions): ISchemaValidator<string>;
+function string_2(opts?: IStringSchemaOptions): ISchemaValidator<string>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
