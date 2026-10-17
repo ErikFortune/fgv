@@ -235,6 +235,25 @@ to. Design it once, before any of them ships.
 - **Route:** small stream in `ts-extras` safer-fetch. The existing revert rows for the walk (the
   `mcp-round-2b` revert matrix) are the regression check: each must still go red after the rewrite.
 
+### D2. `IIdentityCodec.verifyRoundTrip` does not require scope equality — from `agent-memory-merge-scope` (#731)
+
+- **Source:** the stream's own sweep for fgv#725. See `.ai/tasks/completed/2026-10/agent-memory-merge-scope/result.md` § "Out-of-scope report 1".
+- **What:** the contract only requires `encode(decode(scope, stem)).idStem === stem`.
+  - A custom codec whose `decode` ignores scope would let the store load a record at a scope other than `encode(entityId).scope`.
+  - In that case `scopedAddressOf` (and so the #731 merge key) would name the codec's scope, not the file's.
+  - All four shipped codecs already check scope. Five in-repo test codecs would need updating, three of them because their `decode` ignores scope.
+- **Route:** small stream in `ts-agent-memory`. Tighten the TSDoc contract, and enforce it in `verifyLoadedIdentity`. Breaking only for custom codecs, which is allowed on this active surface.
+
+### D3. Default `memory_search` handle is the bare id — from `agent-memory-merge-scope` (#731)
+
+- **Source:** the same `result.md`, § "Out-of-scope report 2".
+- **What:** without `handleFor`, `defaultProjectItem` (`tools/memoryTools.ts:~347`) uses `envelope.id` as the agent-visible handle.
+  - Search results carry no scope, so two same-id records in different scopes are indistinguishable to the model.
+  - No tool resolves a handle back to a record, so this is cosmetic today.
+  - One misuse path exists: a `memory_write` link target with `scope` omitted defaults to the writer's scope. A handle copied from another conversation would then point the edge at the wrong record.
+- **Route:** decide whether the default handle should be scope-qualified, for example via `edgeTargetKey`, or whether search items should carry scope. This is an agent-facing format decision, so ask the user before building it.
+
+
 ---
 
 ## Proposed order — for the user to prioritise
