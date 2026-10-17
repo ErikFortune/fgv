@@ -89,10 +89,17 @@ describe('JsonSchema.fromJson', () => {
       });
     });
 
-    test('ignores harmless annotations (format, title, default) without failing', () => {
+    test('carries annotations (format, title, default) through to toJson() without enforcing them', () => {
       const raw: JsonObject = { type: 'string', format: 'date-time', title: 'When', default: 'now' };
       expect(JsonSchema.fromJson(raw)).toSucceedAndSatisfy((schema) => {
-        expect(schema.toJson()).toEqual({ type: 'string' });
+        expect(schema.toJson()).toEqual({
+          type: 'string',
+          format: 'date-time',
+          title: 'When',
+          default: 'now'
+        });
+        // `format` is an annotation: a value that is not a date-time is still accepted.
+        expect(schema.validate('not a date')).toSucceedWith('not a date');
       });
     });
 

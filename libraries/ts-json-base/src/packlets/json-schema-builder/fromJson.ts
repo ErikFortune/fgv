@@ -20,22 +20,38 @@
  * SOFTWARE.
  */
 
-import { Converter, Converters, Result, captureResult, fail, mapResults, succeed } from '@fgv/ts-utils';
+import {
+  Converter,
+  Converters,
+  Result,
+  Validators,
+  captureResult,
+  fail,
+  mapResults,
+  succeed
+} from '@fgv/ts-utils';
+import { jsonValue } from '../converters';
 import { JsonObject, JsonValue, isJsonObject } from '../json';
+import { checkNumberOptions, checkStringOptions } from './constraints';
 import { array, boolean, enumOf, integer, number, object, optional, record, string } from './factories';
+import { INumberSchemaOptions, IStringSchemaOptions } from './options';
 import { ILlmProperties, ISchemaValidator } from './types';
 
 /**
  * Compositional / assertive keywords outside the LLM-tool subset. Their presence cannot be honored
  * faithfully — silently dropping them would produce a converter looser than the schema describes.
- * Pure annotations (`title`, `default`, `examples`, draft-07 `format`) carry no validation semantics
- * and are intentionally ignored. `description` IS preserved on every node (see `_descriptionField`).
  *
- * The list is not yet complete against that rule: constraint keywords (`minimum`, `maxLength`,
- * `const`, …), object-key keywords beside an open object (`patternProperties`, `propertyNames`, …) and
- * array keywords (`prefixItems`, `contains`, …) are still accepted and ignored, so for them the
- * converter is looser than the schema. Tracked in `docs/TECH_DEBT.md`; constraint keywords lift with
- * their enforcement.
+ * Constraint keywords are carried rather than refused: `minimum`, `maximum`, `exclusiveMinimum`,
+ * `exclusiveMaximum` and `multipleOf` on a number or integer node, and `minLength` and `maxLength` on
+ * a string node, are enforced by the derived validator and emitted by `toJson()`. The annotations
+ * `description`, `title`, `default` and `examples` (every node) and `format` (string nodes) are
+ * emitted and never enforced. A keyword on a node kind it does not apply to (`minimum` on a string)
+ * constrains nothing under JSON Schema and is not emitted.
+ *
+ * The list is still not complete against the rule above: `const`, object-key keywords beside an open
+ * object (`patternProperties`, `propertyNames`, …) and array keywords (`minItems`, `prefixItems`,
+ * `contains`, …) are accepted and ignored, so for them the converter is looser than the schema.
+ * Tracked in `docs/TECH_DEBT.md`.
  */
 const FORBIDDEN_KEYWORDS: readonly string[] = [
   '$dynamicRef',
@@ -169,17 +185,54 @@ const _SUPPORTED_TYPES: ReadonlySet<string> = new Set([
 // `from as Record<string, unknown>` in the arm bodies.
 // ---------------------------------------------------------------------------
 
+/** The annotations every node carries: what `_annotationsField` extracts. */
+interface IAnnotations {
+  readonly description?: string;
+  readonly title?: string;
+  readonly default?: JsonValue;
+  readonly examples?: JsonValue[];
+}
+
+/** Any JSON value, with the plain conversion context the field converters use. */
+const _anyJsonValue: Converter<JsonValue> = Converters.generic((from: unknown) => jsonValue.convert(from));
+
 /**
- * Extracts an optional `description` string. Absent values succeed as `undefined`.
- * When present, `description` must be a string — a non-string value (e.g. a number or object)
- * produces a descriptive failure. Pure annotations with no validation semantics are accepted;
- * non-string values that cannot be used as a description are rejected with a clear error.
+ * Extracts the annotations every node carries — `description`, `title`, `default` and `examples`.
+ * Each is optional; a present one of the wrong shape (a non-string `description` or `title`, a
+ * non-array `examples`, a value that is not JSON) is refused rather than dropped, since dropping
+ * it would emit a schema that says less than the source. `default` and `examples` are not
+ * checked against the node — see `JsonSchema.ISchemaOptions.default`.
  */
-const _descriptionField: Converter<string | undefined> = Converters.optionalField(
-  'description',
-  Converters.string
+const _annotationsField: Converter<IAnnotations> = Converters.object<IAnnotations>({
+  description: Converters.string.optional('failOnError'),
+  title: Converters.string.optional('failOnError'),
+  default: _anyJsonValue.optional('failOnError'),
+  examples: Converters.arrayOf(_anyJsonValue).optional('failOnError')
   // The failure message quotes the offending value, which is server-supplied.
-).withFormattedError((__from, message) => _printable(`${message}`));
+}).withFormattedError((__from, message) => _printable(`${message}`));
+
+/**
+ * Extracts a number node's constraint keywords. Each must be a JSON number when present — a
+ * numeric string is refused, not coerced; coherence (finite, ordered, a non-empty range) is
+ * checked afterwards by `checkNumberOptions`, the same check the factories run.
+ */
+const _numberConstraintsField: Converter<INumberSchemaOptions> = Converters.object<INumberSchemaOptions>({
+  minimum: Validators.number.optional(),
+  maximum: Validators.number.optional(),
+  exclusiveMinimum: Validators.number.optional(),
+  exclusiveMaximum: Validators.number.optional(),
+  multipleOf: Validators.number.optional()
+}).withFormattedError((__from, message) => _printable(`${message}`));
+
+/**
+ * Extracts a string node's `minLength`, `maxLength` and `format`. The lengths must be JSON
+ * numbers and `format` a string; `checkStringOptions` then requires non-negative integers in order.
+ */
+const _stringConstraintsField: Converter<IStringSchemaOptions> = Converters.object<IStringSchemaOptions>({
+  minLength: Validators.number.optional(),
+  maxLength: Validators.number.optional(),
+  format: Converters.string.optional('failOnError')
+}).withFormattedError((__from, message) => _printable(`${message}`));
 
 /**
  * Extracts and validates the `enum` field: must be a non-empty array of strings.
@@ -249,15 +302,19 @@ function _checkForbidden(raw: Record<string, unknown>): Result<true> {
   return succeed(true as const);
 }
 
-/** Converts a description and nullability into `ISchemaOptions` form. */
-function _nodeOpts(
-  description: string | undefined,
-  nullable: boolean
-): { description?: string; nullable?: true } {
-  return {
-    ...(description !== undefined && { description }),
-    ...(nullable && { nullable: true as const })
-  };
+/** Converts a node's annotations and nullability into `ISchemaOptions` form. */
+function _nodeOpts(annotations: IAnnotations, nullable: boolean): IAnnotations & { nullable?: true } {
+  return { ...annotations, ...(nullable && { nullable: true as const }) };
+}
+
+/** Whether any annotation is present, i.e. whether a wrapper or `$ref` sibling overrides any. */
+function _hasAnnotations(annotations: IAnnotations): boolean {
+  return Object.keys(annotations).length > 0;
+}
+
+/** A node's annotations, with a failure naming the path. */
+function _annotationsAt(from: unknown, path: string): Result<IAnnotations> {
+  return _annotationsField.convert(from).withErrorFormat((msg) => `${path}: ${msg}`);
 }
 
 /** A `type` field split into its scalar type and whether `null` was part of a union. */
@@ -308,7 +365,7 @@ function _isNullBranch(member: unknown): boolean {
 }
 
 /**
- * Re-emits `node` with `null` admitted and, optionally, a replacement description, then parses the
+ * Re-emits `node` with `null` admitted and, optionally, replacement annotations, then parses the
  * result back.
  *
  * @remarks
@@ -322,7 +379,7 @@ function _reshape(
   node: ISchemaValidator<JsonValue>,
   { path, budget, depth }: IParseContext,
   nullable: boolean,
-  description: string | undefined
+  annotations: IAnnotations
 ): Result<ISchemaValidator<JsonValue>> {
   const json: JsonObject = { ...node.toJson() };
   if (nullable && typeof json.type === 'string') {
@@ -331,8 +388,10 @@ function _reshape(
       json.enum = [...json.enum, null];
     }
   }
-  if (description !== undefined) {
-    json.description = description;
+  // Each annotation present on the wrapper (or beside the `$ref`) replaces the inner node's; an
+  // absent one leaves the inner node's in place.
+  for (const [key, value] of Object.entries(annotations)) {
+    json[key] = value;
   }
   // The re-emitted form has no references left to resolve, so it is its own document; it still
   // draws on the conversion's node budget and starts at this node's depth, since re-parsing a
@@ -378,19 +437,16 @@ function _convertNullableUnion(
     return fail(`${unsupported} (supported only as exactly one schema plus {"type": "null"})`);
   }
   const memberPath = `${path}/${keyword}/${valueIndex}`;
-  return _descriptionField
-    .convert(raw)
-    .withErrorFormat((msg) => `${path}: ${msg}`)
-    .onSuccess((description) =>
-      _convertNode(members[valueIndex], _at(ctx, memberPath)).onSuccess((inner) =>
-        keyword === 'oneOf' && inner.validate(null).isSuccess()
-          ? fail(
-              `${unsupported}: ${memberPath} also admits null, so exactly-one would reject null, ` +
-                `which a nullable schema cannot express`
-            )
-          : _reshape(inner, ctx, true, description)
-      )
-    );
+  return _annotationsAt(raw, path).onSuccess((annotations) =>
+    _convertNode(members[valueIndex], _at(ctx, memberPath)).onSuccess((inner) =>
+      keyword === 'oneOf' && inner.validate(null).isSuccess()
+        ? fail(
+            `${unsupported}: ${memberPath} also admits null, so exactly-one would reject null, ` +
+              `which a nullable schema cannot express`
+          )
+        : _reshape(inner, ctx, true, annotations)
+    )
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -405,60 +461,75 @@ function _convertNullableUnion(
 // `discriminatedObject` threads the context through to each arm automatically.
 // ---------------------------------------------------------------------------
 
-/** String arm: extracts `description?` and delegates to the `string` factory. */
+/**
+ * String arm: extracts the annotations, `minLength`, `maxLength` and `format`, checks them as the
+ * `string` factory does, and delegates to it.
+ */
 function _convertString(
   from: unknown,
   { path }: IParseContext,
   nullable: boolean
 ): Result<ISchemaValidator<JsonValue>> {
-  return _descriptionField
-    .convert(from)
-    .withErrorFormat((msg) => `${path}: ${msg}`)
-    .onSuccess((description) =>
-      succeed(string(_nodeOpts(description, nullable)) as unknown as ISchemaValidator<JsonValue>)
-    );
+  return _annotationsAt(from, path).onSuccess((annotations) =>
+    _stringConstraintsField
+      .convert(from)
+      .onSuccess((constraints) => checkStringOptions({ ...constraints, ..._nodeOpts(annotations, nullable) }))
+      .withErrorFormat((msg) => `${path}: ${msg}`)
+      .onSuccess((opts) => succeed(string(opts) as unknown as ISchemaValidator<JsonValue>))
+  );
 }
 
-/** Number arm: extracts `description?` and delegates to the `number` factory. */
+/**
+ * The options for a `number` or `integer` node: its annotations and range keywords, checked as the
+ * factory checks them, with failures naming the path.
+ */
+function _numberOpts(
+  from: unknown,
+  path: string,
+  type: 'number' | 'integer',
+  nullable: boolean
+): Result<INumberSchemaOptions | undefined> {
+  return _annotationsAt(from, path).onSuccess((annotations) =>
+    _numberConstraintsField
+      .convert(from)
+      .onSuccess((constraints) =>
+        checkNumberOptions(type, { ...constraints, ..._nodeOpts(annotations, nullable) })
+      )
+      .withErrorFormat((msg) => `${path}: ${msg}`)
+  );
+}
+
+/** Number arm: extracts and checks the node's options and delegates to the `number` factory. */
 function _convertNumber(
   from: unknown,
   { path }: IParseContext,
   nullable: boolean
 ): Result<ISchemaValidator<JsonValue>> {
-  return _descriptionField
-    .convert(from)
-    .withErrorFormat((msg) => `${path}: ${msg}`)
-    .onSuccess((description) =>
-      succeed(number(_nodeOpts(description, nullable)) as unknown as ISchemaValidator<JsonValue>)
-    );
+  return _numberOpts(from, path, 'number', nullable).onSuccess((opts) =>
+    succeed(number(opts) as unknown as ISchemaValidator<JsonValue>)
+  );
 }
 
-/** Integer arm: extracts `description?` and delegates to the `integer` factory. */
+/** Integer arm: extracts and checks the node's options and delegates to the `integer` factory. */
 function _convertInteger(
   from: unknown,
   { path }: IParseContext,
   nullable: boolean
 ): Result<ISchemaValidator<JsonValue>> {
-  return _descriptionField
-    .convert(from)
-    .withErrorFormat((msg) => `${path}: ${msg}`)
-    .onSuccess((description) =>
-      succeed(integer(_nodeOpts(description, nullable)) as unknown as ISchemaValidator<JsonValue>)
-    );
+  return _numberOpts(from, path, 'integer', nullable).onSuccess((opts) =>
+    succeed(integer(opts) as unknown as ISchemaValidator<JsonValue>)
+  );
 }
 
-/** Boolean arm: extracts `description?` and delegates to the `boolean` factory. */
+/** Boolean arm: extracts the annotations and delegates to the `boolean` factory. */
 function _convertBoolean(
   from: unknown,
   { path }: IParseContext,
   nullable: boolean
 ): Result<ISchemaValidator<JsonValue>> {
-  return _descriptionField
-    .convert(from)
-    .withErrorFormat((msg) => `${path}: ${msg}`)
-    .onSuccess((description) =>
-      succeed(boolean(_nodeOpts(description, nullable)) as unknown as ISchemaValidator<JsonValue>)
-    );
+  return _annotationsAt(from, path).onSuccess((annotations) =>
+    succeed(boolean(_nodeOpts(annotations, nullable)) as unknown as ISchemaValidator<JsonValue>)
+  );
 }
 
 /**
@@ -486,14 +557,11 @@ function _convertArray(
     return fail(`${path}: tuple-form 'items' arrays are not supported`);
   }
 
-  return _descriptionField
-    .convert(from)
-    .withErrorFormat((msg) => `${path}: ${msg}`)
-    .onSuccess((description) =>
-      _convertNode(items, _at(ctx, `${path}/items`)).onSuccess((inner) =>
-        succeed(array(inner, _nodeOpts(description, nullable)) as unknown as ISchemaValidator<JsonValue>)
-      )
-    );
+  return _annotationsAt(from, path).onSuccess((annotations) =>
+    _convertNode(items, _at(ctx, `${path}/items`)).onSuccess((inner) =>
+      succeed(array(inner, _nodeOpts(annotations, nullable)) as unknown as ISchemaValidator<JsonValue>)
+    )
+  );
 }
 
 /**
@@ -573,17 +641,14 @@ function _convertEnum(
     return fail(`${path}: ${_printable(valuesResult.message)}`);
   }
 
-  return _descriptionField
-    .convert(from)
-    .withErrorFormat((msg) => `${path}: ${msg}`)
-    .onSuccess((description) =>
-      succeed(
-        enumOf(
-          valuesResult.value,
-          _nodeOpts(description, nullInValues)
-        ) as unknown as ISchemaValidator<JsonValue>
-      )
-    );
+  return _annotationsAt(from, path).onSuccess((annotations) =>
+    succeed(
+      enumOf(
+        valuesResult.value,
+        _nodeOpts(annotations, nullInValues)
+      ) as unknown as ISchemaValidator<JsonValue>
+    )
+  );
 }
 
 /**
@@ -628,12 +693,12 @@ function _parseObjectBody(
       ? additionalProperties
       : undefined;
 
-  // Extract optional description; a present non-string description is refused.
-  const descResult = _descriptionField.convert(from);
-  if (descResult.isFailure()) {
-    return fail(`${path}: ${descResult.message}`);
+  // Extract the annotations; a present one of the wrong shape is refused.
+  const annotationsResult = _annotationsAt(from, path);
+  if (annotationsResult.isFailure()) {
+    return fail(annotationsResult.message);
   }
-  const description = descResult.value;
+  const annotations = annotationsResult.value;
 
   const requiredSet = new Set<string>(rawRequired ?? []);
   const propEntries: [string, unknown][] = rawProps !== undefined ? Object.entries(rawProps) : [];
@@ -654,7 +719,7 @@ function _parseObjectBody(
   }
 
   if (valueSchema !== undefined) {
-    return _parseRecordBody(from, valueSchema, propEntries.length > 0, ctx, description, nullable);
+    return _parseRecordBody(from, valueSchema, propEntries.length > 0, ctx, annotations, nullable);
   }
 
   return mapResults(
@@ -674,7 +739,7 @@ function _parseObjectBody(
         // JSON Schema's default (absent additionalProperties) permits extra fields;
         // only an explicit `false` produces a strict validator.
         additionalProperties: additionalProperties !== false,
-        ..._nodeOpts(description, nullable)
+        ..._nodeOpts(annotations, nullable)
       }) as unknown as ISchemaValidator<JsonValue>
     );
   });
@@ -700,7 +765,7 @@ function _parseRecordBody(
   valueSchema: Record<string, unknown>,
   hasDeclaredProperties: boolean,
   ctx: IParseContext,
-  description: string | undefined,
+  annotations: IAnnotations,
   nullable: boolean
 ): Result<ISchemaValidator<JsonValue>> {
   const keyKeyword = _plainObjectField
@@ -718,7 +783,7 @@ function _parseRecordBody(
     );
   }
   return _convertNode(valueSchema, _at(ctx, `${ctx.path}/additionalProperties`)).onSuccess((values) =>
-    succeed(record(values, _nodeOpts(description, nullable)) as unknown as ISchemaValidator<JsonValue>)
+    succeed(record(values, _nodeOpts(annotations, nullable)) as unknown as ISchemaValidator<JsonValue>)
   );
 }
 
@@ -893,9 +958,11 @@ function _resolvePointer(root: unknown, tokens: readonly string[]): Result<unkno
  * schema, which has no finite inline form and is refused, and `MAX_REF_DEPTH` and
  * `MAX_REF_EXPANSIONS` bound nesting and total size.
  *
- * Siblings of `$ref` may be annotations only. A sibling `description` replaces the target's,
- * which is what pydantic means by it; any validation keyword beside `$ref` is refused, because
- * draft-07 ignores such siblings while later drafts apply them, and the two readings disagree.
+ * Siblings of `$ref` may be annotations only. A sibling `description`, `title`, `default` or
+ * `examples` replaces the target's of the same name, which is what pydantic means by it; any
+ * validation keyword beside `$ref` is refused, because draft-07 ignores such siblings while later
+ * drafts apply them, and the two readings disagree. `format` is refused there too: it applies only
+ * to strings, and the target need not be one.
  */
 function _convertRef(raw: Record<string, unknown>, ctx: IParseContext): Result<ISchemaValidator<JsonValue>> {
   const path = ctx.path;
@@ -938,23 +1005,20 @@ function _convertRef(raw: Record<string, unknown>, ctx: IParseContext): Result<I
       return _resolvePointer(ctx.root, tokens)
         .withErrorFormat((msg) => `${unsupported}: '${shown}' ${msg}`)
         .onSuccess((resolved) =>
-          _descriptionField
-            .convert(raw)
-            .withErrorFormat((msg) => `${path}: ${msg}`)
-            .onSuccess((description) =>
-              // The full target stays the cycle identity in `refs`; the error path is cut, since a
-              // server can make a reference arbitrarily long and every nested failure repeats it.
-              _convertNode(resolved, {
-                ...ctx,
-                path: _echo(target),
-                refs: [...ctx.refs, target],
-                depth: ctx.depth + 1
-              })
-                .withErrorFormat((msg) => `${path}: via '$ref' '${shown}': ${msg}`)
-                .onSuccess((node) =>
-                  description === undefined ? succeed(node) : _reshape(node, ctx, false, description)
-                )
-            )
+          _annotationsAt(raw, path).onSuccess((annotations) =>
+            // The full target stays the cycle identity in `refs`; the error path is cut, since a
+            // server can make a reference arbitrarily long and every nested failure repeats it.
+            _convertNode(resolved, {
+              ...ctx,
+              path: _echo(target),
+              refs: [...ctx.refs, target],
+              depth: ctx.depth + 1
+            })
+              .withErrorFormat((msg) => `${path}: via '$ref' '${shown}': ${msg}`)
+              .onSuccess((node) =>
+                _hasAnnotations(annotations) ? _reshape(node, ctx, false, annotations) : succeed(node)
+              )
+          )
         );
     });
 }
@@ -1098,11 +1162,14 @@ export const jsonSchemaConverter: Converter<ISchemaValidator<JsonValue>, string>
  * references, recursive schemas (which have no finite inline form) and expansions beyond fixed
  * depth and size bounds are refused.
  *
- * Out-of-subset structural features fail loudly (see `FORBIDDEN_KEYWORDS`); `description` is
- * preserved on every node; other annotations (`title`, `default`, `format`, `examples`) are silently
- * ignored. Constraint keywords (`minimum`, `maxLength`, `const`, …) and some object-key and array
- * keywords are currently accepted without being enforced or emitted, so the validator can accept a
- * value the source schema rejects.
+ * Out-of-subset structural features fail loudly (see `FORBIDDEN_KEYWORDS`). The numeric range
+ * keywords, `multipleOf` and the string lengths are enforced and emitted; the annotations
+ * `description`, `title`, `default`, `examples` and `format` are emitted and not enforced. An
+ * incoherent constraint set (`minimum` above `maximum`, a negative `minLength`, …) is refused with the
+ * path named, exactly as the factories refuse it. Beside a `$ref` or a nullable `anyOf`/`oneOf`, each
+ * annotation replaces the inner node's of the same name. `const` and some object-key and array
+ * keywords are still accepted without being enforced or emitted, so for them the validator can accept
+ * a value the source schema rejects.
  *
  * @param json - The raw JSON Schema object to parse.
  * @returns `Success` with the parsed schema, or `Failure` describing the first out-of-subset feature.

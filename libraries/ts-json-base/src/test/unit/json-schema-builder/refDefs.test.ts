@@ -203,17 +203,24 @@ describe('JsonSchema.fromJson — local $ref / $defs', () => {
       );
     });
 
-    test('a $ref sibling description replaces the target description; other annotations are ignored', () => {
+    test('each $ref sibling annotation replaces the target annotation of the same name', () => {
       expect(
         JsonSchema.fromJson({
-          $defs: { S: { type: 'string', description: 'inner' } },
+          $defs: { S: { type: 'string', description: 'inner', title: 'Inner', examples: ['x'] } },
           $ref: '#/$defs/S',
           description: 'outer',
           title: 'T',
           default: 'd'
         })
       ).toSucceedAndSatisfy((schema) => {
-        expect(schema.toJson()).toEqual({ type: 'string', description: 'outer' });
+        // `examples` is not beside the `$ref`, so the target's survives.
+        expect(schema.toJson()).toEqual({
+          type: 'string',
+          description: 'outer',
+          title: 'T',
+          default: 'd',
+          examples: ['x']
+        });
       });
       expect(
         JsonSchema.fromJson({ $defs: { S: { type: 'string', description: 'inner' } }, $ref: '#/$defs/S' })
