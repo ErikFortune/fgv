@@ -1252,7 +1252,7 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
   **Reference**: `agent-tasks-tracked-commands` (`.ai/tasks/completed/2026-10/agent-tasks-tracked-commands/result.md`).
 
 - **[P3] `JsonSchema.fromJson` silently ignores validating keywords it does not model, so its converter can be looser than the source schema.**
-  **Constraint class resolved by the `json-schema-constraints` stream** (PersonAIlity#682, PR #TBD): `minimum`, `maximum`,
+  **Constraint class resolved by the `json-schema-constraints` stream** (PersonAIlity#682, PR #734): `minimum`, `maximum`,
   `exclusiveMinimum`/`exclusiveMaximum`, `multipleOf`, `minLength` and `maxLength` are now enforced
   by the derived validator and emitted by `toJson()`, `format`/`title`/`default`/`examples` are
   emitted as annotations, and every provider wire passes, translates or folds each one

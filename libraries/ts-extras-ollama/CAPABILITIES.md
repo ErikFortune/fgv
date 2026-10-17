@@ -47,7 +47,7 @@
 
 <!-- BEGIN GENERATED: recent-additions -->
 
-- **2026-10-17** — JsonSchema constraint keywords (minimum, maxLength, multipleOf, …) are now enforced by the validator and emitted by toJson(), and every ai-assist and Ollama wire passes, translates or folds each one into the description per the provider's documented support.
+- **2026-10-17** — JsonSchema constraint keywords (minimum, maxLength, multipleOf, …) are now enforced by the validator and emitted by toJson(), and every ai-assist and Ollama wire passes, translates or folds each one into the description per the provider's documented support. ([#734](https://github.com/ErikFortune/fgv/pull/734))
 - **2026-06-06** — Shipped first-class Ollama support across two activities. ([#468](https://github.com/ErikFortune/fgv/pull/468))
 
 <!-- END GENERATED: recent-additions -->

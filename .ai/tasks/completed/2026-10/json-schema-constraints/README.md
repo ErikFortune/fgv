@@ -1,6 +1,6 @@
 # `json-schema-constraints`: constraint keywords are enforced, emitted and adapted per provider
 
-**Shipped 2026-10-17** onto `integration/asks` (PR #TBD; the orchestrator fills in the number).
+**Shipped 2026-10-17** onto `integration/asks` (PR #734).
 Origin: ErikFortune/personaility#682. Builds on `json-schema-fromjson-widening` (#723).
 
 ---

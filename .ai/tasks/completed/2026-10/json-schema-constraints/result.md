@@ -239,7 +239,7 @@ Run on commit `a21d378f9`, from the repo root, with logs under `.gate-logs/` (no
 | F8 doc drift / aliasing | The `enforceNumberConstraints` TSDoc now says it reports every violated keyword. `default`/`examples` are held as `jsonValue`-converted copies, and `toJson()` emits fresh copies. Tests cover mutating `toJson()` output and the authored value. |
 | F9 `enum` drops lengths | `fromJson` refuses `minLength`/`maxLength` beside `enum` with a path-named failure, tested. |
 | F10 integer translation beyond 2^53 | The Gemini translator folds when the translated bound is not a safe integer. `_isEmptyRange` skips the integer refinement there. Both tested. |
-| F11 `TECH_DEBT.md` cites branch hashes | It now cites the stream and `#TBD`. |
+| F11 `TECH_DEBT.md` cites branch hashes | It now cites the stream and `#734`. |
 
 Re-gated after the round; see § Gate counts (round 2).
 

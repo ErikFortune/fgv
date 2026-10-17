@@ -41,7 +41,7 @@
 
 <!-- BEGIN GENERATED: recent-additions -->
 
-- **2026-10-17** — JsonSchema constraint keywords (minimum, maxLength, multipleOf, …) are now enforced by the validator and emitted by toJson(), and every ai-assist and Ollama wire passes, translates or folds each one into the description per the provider's documented support.
+- **2026-10-17** — JsonSchema constraint keywords (minimum, maxLength, multipleOf, …) are now enforced by the validator and emitted by toJson(), and every ai-assist and Ollama wire passes, translates or folds each one into the description per the provider's documented support. ([#734](https://github.com/ErikFortune/fgv/pull/734))
 - **2026-10-04** — JsonSchema.fromJson now reads pydantic Optional[T] (anyOf [T, null]), local $ref/$defs (inlined, bounded) and z.record-style schema-valued additionalProperties via the new JsonSchema.record. ([#723](https://github.com/ErikFortune/fgv/pull/723))
 - **2026-10-03** — An open JsonSchema object — additionalProperties: true, or an MCP schema that leaves it out — now passes undeclared keys through validated instead of silently dropping them. ([#720](https://github.com/ErikFortune/fgv/pull/720))
 - **2026-09-21** — A FileTree can now replace a file such that a reader never sees a torn write, and on a root whose filesystem was actually qualified it survives the writing process being killed — an unqualified root refuses rather than quietly promising less. ([#682](https://github.com/ErikFortune/fgv/pull/682))
