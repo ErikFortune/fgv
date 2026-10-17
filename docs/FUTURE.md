@@ -23,6 +23,24 @@ Description with the user's framing expanded with the design space.
 
 ---
 
+## `ts-random` — weighted pick without replacement (`pickWeightedSequence`)
+
+`pickWeighted` / `pickWeightedAt` choose one item. A weighted draw of several **distinct** items
+(each chosen item removed before the next draw) is the natural sibling: PersonAIlity's quirk draw
+would want it if its catalog outgrows the free slots. Design questions: whether the pure form takes
+one unit per draw or derives successive units, and whether the single-pick walk (input order,
+`point < cumulative`, last by elimination) is reused unchanged on the shrinking set so a sequence's
+first draw equals `pickWeightedAt`'s.
+
+**Why deferred**: asked for only as optional; no consumer needs it yet.
+
+**Dependencies**: a consumer whose catalog needs several distinct weighted draws.
+
+**Reference**: personaility#669; chore batch `chores-2026-10-asks` (item 2), which shipped the
+single pick.
+
+---
+
 ## `ts-extras-system-one` — exact token pre-measurement (design D5)
 
 `askSystemOne`'s mandatory input bound measures characters, with README values (2,400 / 4,400) derived

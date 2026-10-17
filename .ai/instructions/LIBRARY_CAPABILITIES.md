@@ -80,6 +80,7 @@ detail. `· pkg` names the owning package.*
 - **Diffing JSON?** → `detailedDiff` `threeWayDiff` · `ts-json`
 - **Branded ID type?** → `Brand<T>` · `ts-utils`
 - **Generating a UUID?** → `ICryptoProvider` `generateUuid` · `ts-utils`
+- **Need a weighted random choice, or the same choice from a hash?** → `pickWeighted` `pickWeightedAt` · `ts-random`
 - **Hashing / canonical hash of an object?** → `Crc32Normalizer` `Md5Normalizer` · `ts-utils`
 - **Symmetric encryption / decryption (AES-GCM)?** → `KeyStore` · `ts-extras`
 - **Need AES-256-GCM encrypt/decrypt with a key you already hold?** → `ICryptoProvider` `KeyStore` · `ts-extras`
