@@ -580,7 +580,7 @@ export async function callAnthropicStream(
     Object.assign(body, resolvedThinking.otherParams);
   }
   if (tools && tools.length > 0) {
-    body.tools = toAnthropicTools(tools);
+    body.tools = toAnthropicTools(tools, config);
   }
   const headers: Record<string, string> = anthropicAuthHeaders(config.apiKey);
   /* c8 ignore next 4 - optional logger diagnostic output */

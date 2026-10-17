@@ -57,7 +57,7 @@ describe('JsonSchema.fromJson — nullable anyOf / oneOf', () => {
       const raw: JsonObject = { anyOf: [{ type: 'string' }, { type: 'null' }], default: null };
       expectHonoured(raw, ['en', null], [3, true, {}, ['en']]);
       expect(JsonSchema.fromJson(raw)).toSucceedAndSatisfy((schema) => {
-        expect(schema.toJson()).toEqual({ type: ['string', 'null'] });
+        expect(schema.toJson()).toEqual({ type: ['string', 'null'], default: null });
       });
     });
 
@@ -69,7 +69,7 @@ describe('JsonSchema.fromJson — nullable anyOf / oneOf', () => {
       expect(JsonSchema.fromJson(raw)).toSucceedAndSatisfy((schema) => {
         expect(schema.toJson()).toEqual({
           type: 'object',
-          properties: { lang: { type: ['string', 'null'] } }
+          properties: { lang: { type: ['string', 'null'], default: null, title: 'Lang' } }
         });
       });
     });

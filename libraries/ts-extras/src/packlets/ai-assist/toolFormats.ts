@@ -27,6 +27,7 @@ import { type JsonObject, type JsonValue } from '@fgv/ts-json-base';
 import { type Result, fail, succeed } from '@fgv/ts-utils';
 
 import { type IAiProviderDescriptor } from './model';
+import { type ISchemaWireTarget, adaptWireSchema } from './schemaKeywords';
 import {
   type AiServerToolConfig,
   type AiServerToolType,
@@ -214,28 +215,43 @@ function webSearchToResponsesApi(config: IAiWebSearchToolConfig): JsonObject {
  * Formats a client tool config for the xAI/OpenAI Responses API.
  * @internal
  */
-function clientToolToResponsesApi(config: IAiClientToolConfig): JsonObject {
+function clientToolToResponsesApi(
+  config: IAiClientToolConfig,
+  target: ISchemaWireTarget | undefined
+): JsonObject {
   return {
     type: 'function',
     name: config.name,
     description: config.description,
-    parameters: config.parametersSchema.toJson()
+    parameters: adaptWireSchema(config.parametersSchema.toJson(), 'responses-tools', target)
   } as JsonObject;
 }
 
 /**
  * Formats tool configs for the xAI/OpenAI Responses API.
+ *
+ * @remarks
+ * Each client tool's parameter schema has its constraint keywords adapted to what the provider
+ * documents (see `schemaKeywords.ts`): the Responses wire is shared by every OpenAI-format
+ * provider, so the table depends on which one is receiving it, and an unverified provider has every
+ * constraint folded into the description. The tool's own validator is unchanged and still
+ * enforces each one.
  * @param tools - The resolved tool configs (server-side and/or client-defined)
+ * @param target - Who receives the request: the provider id (only when it goes to that
+ * provider's own endpoint) and the model. Absent folds every keyword.
  * @returns Provider-native tool objects for the `tools` request field
  * @public
  */
-export function toResponsesApiTools(tools: ReadonlyArray<AiToolConfig>): ReadonlyArray<JsonObject> {
+export function toResponsesApiTools(
+  tools: ReadonlyArray<AiToolConfig>,
+  target?: ISchemaWireTarget
+): ReadonlyArray<JsonObject> {
   return tools.map((t) => {
     switch (t.type) {
       case 'web_search':
         return webSearchToResponsesApi(t);
       case 'client_tool':
-        return clientToolToResponsesApi(t);
+        return clientToolToResponsesApi(t, target);
       /* c8 ignore next 4 - defensive coding: exhaustive switch guaranteed by TypeScript */
       default: {
         const _exhaustive: never = t;
@@ -277,27 +293,35 @@ function webSearchToAnthropic(config: IAiWebSearchToolConfig): JsonObject {
  * Note: Anthropic client tools have no `type` field (unlike server tools).
  * @internal
  */
-function clientToolToAnthropic(config: IAiClientToolConfig): JsonObject {
+function clientToolToAnthropic(
+  config: IAiClientToolConfig,
+  target: ISchemaWireTarget | undefined
+): JsonObject {
   return {
     name: config.name,
     description: config.description,
-    input_schema: config.parametersSchema.toJson()
+    input_schema: adaptWireSchema(config.parametersSchema.toJson(), 'anthropic-tools', target)
   } as JsonObject;
 }
 
 /**
  * Formats tool configs for the Anthropic Messages API.
  * @param tools - The resolved tool configs (server-side and/or client-defined)
+ * @param target - Who receives the request: the provider id (only when it goes to that
+ * provider's own endpoint) and the model. Absent — an endpoint override — folds every keyword.
  * @returns Provider-native tool objects for the `tools` request field
  * @public
  */
-export function toAnthropicTools(tools: ReadonlyArray<AiToolConfig>): ReadonlyArray<JsonObject> {
+export function toAnthropicTools(
+  tools: ReadonlyArray<AiToolConfig>,
+  target?: ISchemaWireTarget
+): ReadonlyArray<JsonObject> {
   return tools.map((t) => {
     switch (t.type) {
       case 'web_search':
         return webSearchToAnthropic(t);
       case 'client_tool':
-        return clientToolToAnthropic(t);
+        return clientToolToAnthropic(t, target);
       /* c8 ignore next 4 - defensive coding: exhaustive switch guaranteed by TypeScript */
       default: {
         const _exhaustive: never = t;
@@ -369,6 +393,12 @@ export function toGeminiParameterSchema(schema: JsonValue): JsonValue {
       if (key === 'additionalProperties' || key === '$schema') {
         continue;
       }
+      if (key === 'default' || key === 'examples' || key === 'const') {
+        // Data, not a schema: a `default` object holding a key named `additionalProperties`, or a
+        // nullable-looking `type` array, is a value and must reach the provider as written.
+        out[key] = value;
+        continue;
+      }
       if (nullableType !== undefined && key === 'type') {
         out.type = nullableType;
         out.nullable = true;
@@ -404,15 +434,21 @@ export function toGeminiParameterSchema(schema: JsonValue): JsonValue {
  * @remarks
  * Gemini uses `google_search` for search grounding (no per-tool config).
  * Client-defined tools are accumulated into a single `function_declarations` entry.
- * Each client tool's parameters schema is sanitized to Gemini's OpenAPI-subset
- * dialect via {@link toGeminiParameterSchema} (the raw draft-07 `.toJson()` output
- * carries `additionalProperties`, which Gemini rejects).
+ * Each client tool's parameters schema has its constraint keywords adapted to what Gemini
+ * documents (passed, translated or folded into the description — see `schemaKeywords.ts`),
+ * then is sanitized to Gemini's OpenAPI-subset dialect via {@link toGeminiParameterSchema}
+ * (the raw draft-07 `.toJson()` output carries `additionalProperties`, which Gemini rejects).
  *
  * @param tools - The resolved tool configs (server-side and/or client-defined)
+ * @param target - Who receives the request: the provider id (only when it goes to that
+ * provider's own endpoint) and the model. Absent — an endpoint override — folds every keyword.
  * @returns Provider-native tool objects for the `tools` request field
  * @public
  */
-export function toGeminiTools(tools: ReadonlyArray<AiToolConfig>): ReadonlyArray<JsonObject> {
+export function toGeminiTools(
+  tools: ReadonlyArray<AiToolConfig>,
+  target?: ISchemaWireTarget
+): ReadonlyArray<JsonObject> {
   const result: JsonObject[] = [];
   const functionDeclarations: JsonObject[] = [];
 
@@ -425,7 +461,7 @@ export function toGeminiTools(tools: ReadonlyArray<AiToolConfig>): ReadonlyArray
         functionDeclarations.push({
           name: t.name,
           description: t.description,
-          parameters: toGeminiParameterSchema(t.parametersSchema.toJson())
+          parameters: toGeminiParameterSchema(adaptWireSchema(t.parametersSchema.toJson(), 'gemini', target))
         } as JsonObject);
         break;
       /* c8 ignore next 4 - defensive coding: exhaustive switch guaranteed by TypeScript */

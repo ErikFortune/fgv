@@ -111,6 +111,28 @@ describe('chatStructured (layer 1 — structural client mock)', () => {
     expect(request).not.toHaveProperty('keep_alive');
   });
 
+  test('folds every constraint keyword into the description, and still enforces it on the reply', async () => {
+    const constrained = JsonSchema.object({
+      name: JsonSchema.string({ maxLength: 2, format: 'hostname', description: 'Short.' }),
+      age: JsonSchema.integer({ minimum: 0, maximum: 150, default: 30 })
+    });
+    const chat = jest.fn().mockResolvedValue(makeChatIterator(validPersonChunks()));
+
+    // `ada` is three characters: the folded `maxLength 2` is not on the wire, but the validator holds it.
+    expect(
+      await chatStructured(mockChatClient(chat), {
+        model: 'llama3.1:8b',
+        messages: userTurn,
+        schema: constrained
+      })
+    ).toFailWith(/maxLength/);
+
+    expect(((chat.mock.calls[0][0] as JsonObject).format as JsonObject).properties).toEqual({
+      name: { type: 'string', description: 'Short. Constraints: maxLength 2. Format: hostname.' },
+      age: { type: 'integer', description: 'Constraints: minimum 0; maximum 150. Default: 30.' }
+    });
+  });
+
   test('forwards options, keep_alive, and base64 images verbatim', async () => {
     const chat = jest.fn().mockResolvedValue(makeChatIterator(validPersonChunks()));
     const client = mockChatClient(chat);
