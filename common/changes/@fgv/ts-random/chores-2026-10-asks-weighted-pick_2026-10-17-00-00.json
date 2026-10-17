@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "Additive weighted pick: pure `pickWeightedAt(unit, candidates)` with `IWeightedCandidate<T>`, and `PseudoRandomGenerator.pickWeighted(candidates)` over `nextFloat()`. Only finite positive weights are eligible, `unit` is accepted on `[0, 1]`, and the walk (input order, `point < cumulative`, last by elimination) is fixed so persisted draws stay stable.",
+      "type": "minor",
+      "packageName": "@fgv/ts-random"
+    }
+  ],
+  "packageName": "@fgv/ts-random",
+  "email": "noreply@anthropic.com"
+}

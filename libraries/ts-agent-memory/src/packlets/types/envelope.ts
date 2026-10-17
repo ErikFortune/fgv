@@ -30,11 +30,25 @@ export interface IProvenance {
   /** Optional confidence in `[0, 1]`. */
   readonly confidence?: number;
   /**
-   * Scope-qualified back-link to the source record. Enables the cross-kind
-   * provenance spine. A scope-qualified {@link IEdgeTarget} (not a bare
-   * {@link MemoryId}) because per-scope codecs (e.g. the MTM codec's `turn-<n>`
-   * stems) legally reuse a stem across scopes, so a bare id would be ambiguous —
-   * the same reason {@link IEdge.target} is scope-qualified.
+   * Provenance, not a live reference: names the source record an ingest write
+   * derived this record from. The ingest orchestrator stamps it from
+   * `IIngestItem.sourceId`. A merge-into that supplies no `sourceId` keeps the
+   * target's earlier value, and one that does replaces it, so a merged record
+   * names its most recent ingest source rather than every source. On a direct
+   * put it is whatever the caller supplied. It deliberately keeps naming its
+   * source after that source is withdrawn —
+   * clearing it would erase a true fact, and repointing it would assert a write
+   * that never happened. It is the cross-kind provenance spine.
+   *
+   * A reader that resolves it must therefore handle a source that no longer
+   * exists, and, for a versioned kind, an address that names a version a later
+   * write has since superseded. No retrieval axis indexes this field; selecting
+   * records by it takes an `IMemoryQuery.filter` predicate over whole records.
+   *
+   * A scope-qualified {@link IEdgeTarget} (not a bare {@link MemoryId}) because
+   * per-scope codecs (e.g. the MTM codec's `turn-<n>` stems) legally reuse a
+   * stem across scopes, so a bare id would be ambiguous — the same reason
+   * {@link IEdge.target} is scope-qualified.
    */
   readonly derivedFrom?: IEdgeTarget;
   /** Opaque extension payload — consumer-owned, never interpreted by the store. */
