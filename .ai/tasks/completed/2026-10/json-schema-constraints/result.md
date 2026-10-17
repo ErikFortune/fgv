@@ -243,6 +243,20 @@ Run on commit `a21d378f9`, from the repo root, with logs under `.gate-logs/` (no
 
 Re-gated after the round; see § Gate counts (round 2).
 
+### Gate counts (round 2)
+
+Run on `7c0738a93`.
+
+| gate | result |
+| --- | --- |
+| `install-run-rush.js rebuild` | exit 0; error grep = 0; `warning` = 1 (the symlink notice only); 38/38 completed |
+| `install-run-rush.js test` | exit 0; error grep = 0; `warning` = 1 (the symlink notice only); 37 completed plus `typedoc-compact-theme`, which has no work; log not NUL-padded (8283 = 8283 bytes) |
+| per-package `heft test --clean` (`ts-json-base`, `ts-extras`, `ts-extras-ollama`, `ts-extras-mcp`) | 100% on all four metrics; no warnings |
+| `eslint src` (after `--fix`) in the same four | exit 0 |
+| `change --verify --target-branch origin/integration/asks` | exit 0 |
+| `verify-capability-docs.mjs` | 0 failed |
+| `generate-capability-feed.mjs --check` | 0 stale |
+
 ## What the brief got wrong
 
 - **Decision 7 assumed one table per wire format.** The OpenAI-family wires are shared by six

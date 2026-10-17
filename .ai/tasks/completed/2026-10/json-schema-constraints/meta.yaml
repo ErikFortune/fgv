@@ -21,7 +21,10 @@ summary:
     shared JsonSchema.adaptSchemaKeywords transform folds into one deterministic sentence
     ("Constraints: minimum 1; maximum 10."). ai-assist applies per-format tables on every tool and
     structured-output path; Ollama folds everything; an MCP tool declaring minimum now refuses an
-    out-of-range call before the server sees it.
+    out-of-range call before the server sees it. After the gate-time review, annotations may be
+    dropped (title is) and folded annotations get their own sentences; OpenAI fine-tuned models and
+    caller-supplied endpoints fold everything; validateNumberOptions/validateStringOptions give a
+    non-throwing check; multipleOf tolerates only float rounding.
   diverged: >
     The fold transform lives in ts-json-base, not ai-assist, so ts-extras-ollama (which depends only
     on ts-json-base) can share it. The OpenAI-family tables are per provider as well as per format:
@@ -69,4 +72,4 @@ relatedStreams:
       relationship: 'previous stream on this packlet; its $ref and nullable-union wrappers now carry annotations'
     }
   - { id: personality-intake, relationship: 'captured the PersonAIlity #682 ask this stream implements' }
-sourceHash: fdc7e7e439c0395a # first 16 hex of sha256 over brief.md, state.md and result.md concatenated in that order
+sourceHash: d02a39a377c4bac8 # first 16 hex of sha256 over brief.md, state.md and result.md concatenated in that order
