@@ -157,7 +157,7 @@ function makeRetriever(specs: ReadonlyArray<IEntrySpec>): HybridRetriever {
       StructuredFilterRetriever.create({ index: index, resolver: store }).orThrow(),
       TagRetriever.create({ index: index, resolver: store }).orThrow()
     ],
-    ScoreUnionMergeStrategy.create().orThrow()
+    ScoreUnionMergeStrategy.create({ identityResolver: makeStore() }).orThrow()
   ).orThrow();
 }
 

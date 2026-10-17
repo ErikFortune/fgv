@@ -5,25 +5,38 @@
 
 import '@fgv/ts-utils-jest';
 import { Result, succeed } from '@fgv/ts-utils';
+import { storeIdentityResolver } from '../../helpers/storeIdentityResolver';
 import {
   AsOfRetriever,
   CurrentValidRetriever,
   HistoryRetriever,
   HybridRetriever,
+  IIdentityCodec,
+  IIdentityResolver,
   IIndexedMemoryEntry,
   IIndexedMemoryRecord,
   IRetrieverCreateParams,
   MemoryId,
   IMemoryRecord,
   Kind,
+  KnowledgeIdentityCodec,
   MemoryIndex,
   MemoryScopeKey,
   RecencyRetriever,
   ScoreUnionMergeStrategy,
+  TemporalIdentityCodec,
   envelopeConverter
 } from '../../../index';
 
 const factKind: Kind = 'fact' as Kind;
+
+/** Addresses the fixtures below: versioned `fact` under `facts/entities/<entityId>`, flat `knowledge`. */
+const factIdentity: IIdentityResolver = storeIdentityResolver(
+  new Map<Kind, IIdentityCodec>([
+    [factKind, TemporalIdentityCodec.create('facts').orThrow()],
+    ['knowledge' as Kind, new KnowledgeIdentityCodec()]
+  ])
+);
 
 interface IVersionSpec {
   readonly entityId: string;
@@ -299,7 +312,7 @@ describe('temporal retrievers', () => {
       const asOf = AsOfRetriever.create(backed(index)).orThrow();
       const hybrid = HybridRetriever.create(
         [recency, asOf],
-        ScoreUnionMergeStrategy.create().orThrow()
+        ScoreUnionMergeStrategy.create({ identityResolver: factIdentity }).orThrow()
       ).orThrow();
       // The union supports temporal query, so the guard passes; Recency gets asOf
       // stripped (returns everything), AsOf returns the valid-at versions.
