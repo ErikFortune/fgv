@@ -67,6 +67,7 @@ on that path (8 `ts-extras-mcp`, 4 of the 5 `JsonSchema` asks, and the ai-assist
 - **Verified (by intake, not re-checked):** `ts-agent-memory/src/packlets/types/envelope.ts:33-39`
   still reads "Scope-qualified back-link to the source record".
 - **Route:** chore. Doc only, plus a change file (the change-file gate keys off files touched).
+- **Status:** **shipped** in #732 (`9d13829f`) into `integration/asks`, chore batch `chores-2026-10-asks`. The docstring does not say "queryable", because no retrieval axis indexes the field. Reaches `release` with the next asks promotion.
 
 ---
 
@@ -217,6 +218,7 @@ to. Design it once, before any of them ships.
 - **Route:** small stream. The edge rules are the substance: zero weights, all-zero, the last candidate
   winning by elimination, and a pure `pickWeightedAt(unit, …)`. Their two call sites have already
   drifted on exactly those rules, so the tests must pin each one.
+- **Status:** **shipped** in #732 (`9d13829f`) into `integration/asks`: `pickWeightedAt` and `PseudoRandomGenerator.pickWeighted`. Their walk reproduces the requester's avatar walk exactly for positive weights. Divergence to tell the requester: when every weight is zero, the primitive returns `undefined`, where their avatar sampler returns the first option.
 
 ---
 
@@ -267,7 +269,7 @@ to. Design it once, before any of them ships.
 | 5 | entry 12 (#672) | **shipped**, #729 |
 | 6 | C3: entries 13, 14, 15; then 11 | 13–15 **shipped**, #728; 11 **shipped**, #729 |
 | 7 | entry 7 (#682) | largest design in class B |
-| — | entries 3, 17 | cheap; fold into whichever chore batch opens first |
+| — | entries 3, 17 | **shipped**, #732 |
 
 **Parallel-safe pairs:** the C cluster (`ts-extras-mcp` plus the one ai-assist file) is disjoint from
 class B (`ts-json-base`). Entry 2 and class B are **not** disjoint; run them in sequence.
