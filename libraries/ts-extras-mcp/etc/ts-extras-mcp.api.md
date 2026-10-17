@@ -251,7 +251,7 @@ export type McpFailureReason = {
 /** `reason` is the kind of the guarded fetch's `FetchFailureReason`; its URL-bearing payload is never carried. */
 | {
     readonly kind: 'egress-blocked';
-    readonly reason: SaferFetch.FetchFailureReason['kind'];
+    readonly reason: SaferFetch.FetchFailureKind;
 }
 /** `code` is the JSON-RPC error code, when the failure carried one. */
 | {
