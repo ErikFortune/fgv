@@ -67,6 +67,7 @@ on that path (8 `ts-extras-mcp`, 4 of the 5 `JsonSchema` asks, and the ai-assist
 - **Verified (by intake, not re-checked):** `ts-agent-memory/src/packlets/types/envelope.ts:33-39`
   still reads "Scope-qualified back-link to the source record".
 - **Route:** chore. Doc only, plus a change file (the change-file gate keys off files touched).
+- **Status:** **shipped** in #732 (`9d13829f`) into `integration/asks`, chore batch `chores-2026-10-asks`. The docstring does not say "queryable", because no retrieval axis indexes the field. Reaches `release` with the next asks promotion.
 
 ---
 
@@ -217,6 +218,7 @@ to. Design it once, before any of them ships.
 - **Route:** small stream. The edge rules are the substance: zero weights, all-zero, the last candidate
   winning by elimination, and a pure `pickWeightedAt(unit, …)`. Their two call sites have already
   drifted on exactly those rules, so the tests must pin each one.
+- **Status:** **shipped** in #732 (`9d13829f`) into `integration/asks`: `pickWeightedAt` and `PseudoRandomGenerator.pickWeighted`. Their walk reproduces the requester's avatar walk exactly for positive weights. Divergence to tell the requester: when every weight is zero, the primitive returns `undefined`, where their avatar sampler returns the first option.
 
 ---
 
@@ -235,6 +237,37 @@ to. Design it once, before any of them ships.
 - **Route:** small stream in `ts-extras` safer-fetch. The existing revert rows for the walk (the
   `mcp-round-2b` revert matrix) are the regression check: each must still go red after the rewrite.
 
+### D2. `IIdentityCodec.verifyRoundTrip` does not require scope equality — from `agent-memory-merge-scope` (#731)
+
+- **Source:** the stream's own sweep for fgv#725. See `.ai/tasks/completed/2026-10/agent-memory-merge-scope/result.md` § "Out-of-scope report 1".
+- **What:** the contract only requires `encode(decode(scope, stem)).idStem === stem`.
+  - A custom codec whose `decode` ignores scope would let the store load a record at a scope other than `encode(entityId).scope`.
+  - In that case `scopedAddressOf` (and so the #731 merge key) would name the codec's scope, not the file's.
+  - All four shipped codecs already check scope. Five in-repo test codecs would need updating, three of them because their `decode` ignores scope.
+- **Route:** small stream in `ts-agent-memory`. Tighten the TSDoc contract, and enforce it in `verifyLoadedIdentity`. Breaking only for custom codecs, which is allowed on this active surface.
+- **Status:** **shipped** in #733 (`0e4fbf59`). The check is enforced by the store in `verifyLoadedIdentity` for every codec. The `IIdentityCodec` interface is unchanged.
+
+### D4. `scopeEncoding` has no inverse — from `agent-memory-scope-invariant` (#733)
+
+- **What:** a vault written with a non-identity `scopeEncoding` cannot be reopened, because the open walk indexes raw directory segments. Since #733 the reopen fails loudly; before, it silently misfiled records.
+- **Route:** recorded in `docs/TECH_DEBT.md` (P3). The trigger is the first consumer that needs a non-identity encoding.
+
+### D5. The store does not check the idStem half for flat kinds — from #733's review
+
+- **What:** a codec that ignores scope and also skips the idStem check in `verifyRoundTrip` can load `shared/X.md` whose `entityId` encodes to `shared/Y`. `getById` finds that record, but `get(kind, entityId)` misses it.
+- **Possible fix:** a one-line store check inside the same chain, `!encoded.isVersioned && encoded.idStem !== file.baseName`, would make the whole address a store property.
+- **Route:** fold into the next `ts-agent-memory` stream. A misbehaving codec is a codec bug, and this half is already in the codec contract.
+
+### D3. Default `memory_search` handle is the bare id — from `agent-memory-merge-scope` (#731)
+
+- **Source:** the same `result.md`, § "Out-of-scope report 2".
+- **What:** without `handleFor`, `defaultProjectItem` (`tools/memoryTools.ts:~347`) uses `envelope.id` as the agent-visible handle.
+  - Search results carry no scope, so two same-id records in different scopes are indistinguishable to the model.
+  - No tool resolves a handle back to a record, so this is cosmetic today.
+  - One misuse path exists: a `memory_write` link target with `scope` omitted defaults to the writer's scope. A handle copied from another conversation would then point the edge at the wrong record.
+- **Route:** decide whether the default handle should be scope-qualified, for example via `edgeTargetKey`, or whether search items should carry scope. This is an agent-facing format decision, so ask the user before building it.
+
+
 ---
 
 ## Proposed order — for the user to prioritise
@@ -248,7 +281,7 @@ to. Design it once, before any of them ships.
 | 5 | entry 12 (#672) | **shipped**, #729 |
 | 6 | C3: entries 13, 14, 15; then 11 | 13–15 **shipped**, #728; 11 **shipped**, #729 |
 | 7 | entry 7 (#682) | largest design in class B |
-| — | entries 3, 17 | cheap; fold into whichever chore batch opens first |
+| — | entries 3, 17 | **shipped**, #732 |
 
 **Parallel-safe pairs:** the C cluster (`ts-extras-mcp` plus the one ai-assist file) is disjoint from
 class B (`ts-json-base`). Entry 2 and class B are **not** disjoint; run them in sequence.

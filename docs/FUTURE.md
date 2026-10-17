@@ -23,6 +23,24 @@ Description with the user's framing expanded with the design space.
 
 ---
 
+## `ts-random` — weighted pick without replacement (`pickWeightedSequence`)
+
+`pickWeighted` / `pickWeightedAt` choose one item. A weighted draw of several **distinct** items
+(each chosen item removed before the next draw) is the natural sibling: PersonAIlity's quirk draw
+would want it if its catalog outgrows the free slots. Design questions: whether the pure form takes
+one unit per draw or derives successive units, and whether the single-pick walk (input order,
+`point < cumulative`, last by elimination) is reused unchanged on the shrinking set so a sequence's
+first draw equals `pickWeightedAt`'s.
+
+**Why deferred**: asked for only as optional; no consumer needs it yet.
+
+**Dependencies**: a consumer whose catalog needs several distinct weighted draws.
+
+**Reference**: personaility#669; chore batch `chores-2026-10-asks` (item 2), which shipped the
+single pick.
+
+---
+
 ## `ts-extras-system-one` — exact token pre-measurement (design D5)
 
 `askSystemOne`'s mandatory input bound measures characters, with README values (2,400 / 4,400) derived
@@ -983,8 +1001,8 @@ yes/no + storage-direction ratification** when v2 durability is scheduled.
 > traversal, cycle guard, ingest edge-validation, edge serialization, the `memory_write` /
 > `memory_context` tool schemas) behind a single collision-proof `edgeTargetKey` helper; #543
 > completed the migration across the vector/similarity + entity-resolution path (breaking the
-> pre-1.0 `IEntityResolver` host contract, no shim). Residual latent item: `IProvenance.derivedFrom`
-> stays a bare `MemoryId` (never dereferenced today) — tracked in `TECH_DEBT.md`.
+> pre-1.0 `IEntityResolver` host contract, no shim). The residual latent item, `IProvenance.derivedFrom`
+> as a bare `MemoryId`, has since been scope-qualified to an `IEdgeTarget` (retired from `TECH_DEBT.md`).
 
 **Reference:** consumer orchestrator's forwarded 2026-07 agent-memory batch (the id-stem
 uniqueness vs. bare-MemoryId-links friction report); PRs #542, #543; the four firm asks from

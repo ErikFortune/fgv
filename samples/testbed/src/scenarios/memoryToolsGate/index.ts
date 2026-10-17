@@ -147,7 +147,9 @@ function buildMemory(): Result<{
           resolver: store
         }).orThrow()
       ],
-      ScoreUnionMergeStrategy.create().orThrow()
+      // The store is also the identity resolver: the merge keys records on the
+      // `(scope, id)` address the store's own codecs derive.
+      ScoreUnionMergeStrategy.create({ identityResolver: store }).orThrow()
     ).orThrow();
     const tools = createMemoryTools({
       store,

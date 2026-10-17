@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { Result, fail, mapResults, succeed } from '@fgv/ts-utils';
-import { IMemoryRecord, MemoryId } from '../types';
+import { Result, captureResult, fail, mapResults, succeed } from '@fgv/ts-utils';
+import { IEdgeTarget, IIdentityResolver, IMemoryRecord, edgeTargetKey, scopedAddressOf } from '../types';
 import {
   IMemoryQuery,
   IMemoryRetriever,
@@ -32,52 +32,125 @@ export interface IMergeStrategy {
 }
 
 /**
+ * Parameters for {@link ScoreUnionMergeStrategy.create}.
+ * @public
+ */
+export interface IScoreUnionMergeStrategyCreateParams {
+  /**
+   * Resolves each merged record's `(kind, entityId)` to the scope it lives under,
+   * which together with its `id` is the identity the merge deduplicates and scores
+   * on. Normally the store the composed retrievers read from (`IMemoryStore` is an
+   * `IIdentityResolver`), so the merge uses the same codecs the records were
+   * loaded and verified with.
+   */
+  readonly identityResolver: IIdentityResolver;
+}
+
+/** A merged record paired with its scope-qualified identity key. */
+interface IKeyedRecord {
+  readonly key: string;
+  readonly record: IMemoryRecord<unknown>;
+}
+
+/**
  * The reference {@link IMergeStrategy}: a score-union. Every record is scored by
- * the number of composed result sets it appears in (deduplicated by
- * {@link IMemoryEnvelope.id | id}); the merged result is ordered by descending
- * score, then by recency. Records surfaced by more retrievers rank higher.
+ * the number of composed result sets it appears in; the merged result is ordered
+ * by descending score, then by recency. Records surfaced by more retrievers rank
+ * higher.
  *
  * @remarks
- * Dedup is by `id` alone, which is unambiguous for the flat (one-file-per-entity)
- * kinds B2 ships. Phase-C versioned kinds that reuse a stem across scopes will
- * extend the dedup key — additive, no API change.
+ * **Identity is the record's scope-qualified address, not its bare `id`.** A
+ * `MemoryId` is unique only within a scope — the MTM codec mints `turn-<n>` under
+ * every conversation — so two records are "the same" when their
+ * {@link scopedAddressOf | `(scope, id)` addresses} match, the scope coming from
+ * the injected {@link IScoreUnionMergeStrategyCreateParams.identityResolver |
+ * identity resolver}. A record appearing several times in one result set counts
+ * once for that set; distinct versions of a versioned entity have distinct ids and
+ * stay distinct.
+ *
+ * A record whose identity cannot be resolved (no codec for its kind, or a codec
+ * that rejects its entity id) fails the whole merge, naming the kind and entity id.
+ * There is deliberately no fallback to the bare id: that would silently conflate
+ * records again.
  * @public
  */
 export class ScoreUnionMergeStrategy implements IMergeStrategy {
-  private constructor() {}
+  private readonly _identityResolver: IIdentityResolver;
 
-  /** Family-convention factory. */
-  public static create(): Result<ScoreUnionMergeStrategy> {
-    return succeed(new ScoreUnionMergeStrategy());
+  private constructor(identityResolver: IIdentityResolver) {
+    this._identityResolver = identityResolver;
+  }
+
+  /**
+   * Family-convention factory.
+   * @param params - {@link IScoreUnionMergeStrategyCreateParams}; the identity
+   * resolver is required.
+   */
+  public static create(params: IScoreUnionMergeStrategyCreateParams): Result<ScoreUnionMergeStrategy> {
+    // Typed as required; still refused at runtime so an untyped caller that omits it
+    // fails here rather than on the first merge.
+    if (params?.identityResolver === undefined || params.identityResolver === null) {
+      return fail('ScoreUnionMergeStrategy: an identityResolver is required');
+    }
+    return succeed(new ScoreUnionMergeStrategy(params.identityResolver));
   }
 
   /** {@inheritDoc IMergeStrategy.merge} */
   public merge(
     resultSets: ReadonlyArray<ReadonlyArray<IMemoryRecord<unknown>>>
   ): Result<ReadonlyArray<IMemoryRecord<unknown>>> {
-    const scored: Map<MemoryId, { readonly record: IMemoryRecord<unknown>; score: number }> = new Map();
-    for (const set of resultSets) {
-      // Count each id at most once per result set, so the score is "how many
-      // retrievers surfaced this record" rather than "how many copies total".
-      const seenInSet: Set<MemoryId> = new Set<MemoryId>();
-      for (const record of set) {
-        const id: MemoryId = record.envelope.id;
-        if (seenInSet.has(id)) {
-          continue;
-        }
-        seenInSet.add(id);
-        const existing = scored.get(id);
-        if (existing === undefined) {
-          scored.set(id, { record, score: 1 });
-        } else {
-          existing.score += 1;
+    return mapResults(
+      resultSets.map((set) => mapResults(set.map((record) => this._keyed(record))))
+    ).onSuccess((keyedSets) => {
+      const scored: Map<string, { readonly record: IMemoryRecord<unknown>; score: number }> = new Map();
+      for (const set of keyedSets) {
+        // Count each record at most once per result set, so the score is "how many
+        // retrievers surfaced this record" rather than "how many copies total".
+        const seenInSet: Set<string> = new Set<string>();
+        for (const { key, record } of set) {
+          if (seenInSet.has(key)) {
+            continue;
+          }
+          seenInSet.add(key);
+          const existing = scored.get(key);
+          if (existing === undefined) {
+            scored.set(key, { record, score: 1 });
+          } else {
+            existing.score += 1;
+          }
         }
       }
-    }
-    const merged: IMemoryRecord<unknown>[] = Array.from(scored.values())
-      .sort((a, b) => (b.score !== a.score ? b.score - a.score : recencyCompare(a.record, b.record)))
-      .map((entry) => entry.record);
-    return succeed(merged);
+      const merged: IMemoryRecord<unknown>[] = Array.from(scored.values())
+        .sort((a, b) => (b.score !== a.score ? b.score - a.score : recencyCompare(a.record, b.record)))
+        .map((entry) => entry.record);
+      return succeed(merged);
+    });
+  }
+
+  /**
+   * The merge identity of one record: the canonical key of its scope-qualified
+   * address.
+   *
+   * @remarks
+   * The scope is derived from `(kind, entityId)` by the codec because no retriever
+   * result carries one, and for a record the store loaded the two agree — the store
+   * verifies every load against the codec round-trip. If a retriever result ever
+   * carries an authoritative scope the codec cannot derive (a custom codec whose
+   * round-trip ignores scope, or a child retriever returning records it built
+   * itself), the merge should key on that scope instead of resolving one.
+   *
+   * The resolver is a consumer-injectable seam, so a throw becomes a `Failure`
+   * here rather than escaping `merge`'s `Result` contract.
+   */
+  private _keyed(record: IMemoryRecord<unknown>): Result<IKeyedRecord> {
+    const { id, kind, entityId } = record.envelope;
+    return captureResult(() => scopedAddressOf(record, this._identityResolver))
+      .onSuccess((address: Result<IEdgeTarget>) => address)
+      .withErrorFormat(
+        (msg) =>
+          `ScoreUnionMergeStrategy: cannot resolve the scope of record '${id}' (kind '${kind}', entityId '${entityId}'): ${msg}`
+      )
+      .onSuccess((address) => succeed({ key: edgeTargetKey(address), record }));
   }
 }
 

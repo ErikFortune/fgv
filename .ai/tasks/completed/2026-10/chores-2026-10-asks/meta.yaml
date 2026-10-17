@@ -1,0 +1,28 @@
+id: chores-2026-10-asks
+status: shipped
+packages: ['@fgv/ts-random', '@fgv/ts-agent-memory']
+prs: [732]
+openPrs: []
+opened: 2026-10-17
+closed: 2026-10-17
+summary:
+  intended: >
+    Close two small PersonAIlity asks as a chore batch: rewrite the IProvenance.derivedFrom docstring in
+    ts-agent-memory to describe provenance rather than a followable back-link (personaility#670), and add a
+    weighted pick to ts-random as a pure function of a unit float plus a generator method, with edge rules
+    and a walk that keeps a consumer's stored hash-derived draws stable (personaility#669).
+  shipped: >
+    The derivedFrom docstring now says the field is provenance that keeps naming a withdrawn source and may
+    name a superseded version, with the ingest sourceId doc and a stale FUTURE.md line corrected to match.
+    ts-random gained IWeightedCandidate, pickWeightedAt and PseudoRandomGenerator.pickWeighted, with one
+    named test per edge rule, fixed stability pins, an overflow rescale, and a mutation-checked test that
+    ordinary weights are never rescaled.
+  diverged: >
+    The requester's "queryable" wording was not adopted: no retrieval axis indexes derivedFrom, so the
+    docstring says selecting by it takes a whole-record filter predicate. The stale claim the brief expected
+    in CAPABILITIES.md or the README was not there; the one contradiction found was in docs/FUTURE.md.
+  sourceLine: "**Shipped:** `@fgv/ts-random` can make a weighted random choice, either from a generator or as a pure function of a unit float in `[0, 1]`, so a hash-derived choice is stable; `IProvenance.derivedFrom` is now documented as provenance, not a live link."
+keywords: ['weighted pick', 'weighted random choice', 'pickWeighted', 'pickWeightedAt', 'IWeightedCandidate', 'cumulative weight walk', 'hash ratio', 'stable draws', 'derivedFrom', 'provenance', 'withdrawn source', 'fgv-ask']
+relatedStreams:
+  - {id: personality-intake, relationship: 'captured the PersonAIlity #669 and #670 asks this batch implements'}
+sourceHash: 2bdc0788dfb3252a # first 16 hex of sha256 over brief.md, state.md and result.md concatenated in that order
