@@ -222,3 +222,12 @@ export interface IObjectSchemaOptions extends ISchemaOptions {
    */
   additionalProperties?: boolean;
 }
+
+/**
+ * Options for the `anyValue` factory: the annotations only.
+ *
+ * @remarks
+ * There is no `nullable`, because a node that accepts any JSON value already accepts `null`.
+ * @public
+ */
+export type IAnySchemaOptions = Omit<ISchemaOptions, 'nullable'>;

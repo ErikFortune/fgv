@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { StringOneOf } from '@fgv/ts-utils';
+import { Result, StringOneOf, fail, mapResults, succeed } from '@fgv/ts-utils';
 import { JsonObject, JsonValue, isJsonObject } from '../json';
 
 /**
@@ -129,6 +129,27 @@ export type SchemaKeywordRule =
 export type SchemaAnnotationRule = SchemaKeywordRule | 'drop';
 
 /**
+ * What a wire format does with the two schema shapes whose support varies independently of any
+ * keyword: an `enum` whose members are not strings, and a schema with no `type`.
+ *
+ * @remarks
+ * - `nonStringEnum` — `'pass'` sends a numeric or boolean `enum` as emitted; `'fold'` removes it and
+ *   states it in the description (`Constraints: enum [1,2].`), keeping the `type`. A string enum is
+ *   always passed.
+ * - `untyped` — `'pass'` sends a schema with no `type` (`JsonSchema.anyValue`, `{}`) as emitted;
+ *   `'refuse'` fails the adaptation, naming the path. There is no fold for it: the only way to give
+ *   the node a `type` is to pick one, which would narrow what the model may send below what the
+ *   validator accepts, and a refusal is the one outcome that cannot mislead.
+ * @public
+ */
+export interface ISchemaShapeCapabilities {
+  /** What the wire does with an `enum` holding a number or a boolean. */
+  readonly nonStringEnum: 'pass' | 'fold';
+  /** What the wire does with a schema that states no `type`. */
+  readonly untyped: 'pass' | 'refuse';
+}
+
+/**
  * A wire format's keyword-capability table: a rule for **every** keyword.
  *
  * @remarks
@@ -141,11 +162,13 @@ export type SchemaAnnotationRule = SchemaKeywordRule | 'drop';
  */
 export type SchemaKeywordCapabilities = Readonly<
   Record<SchemaValidatingKeyword, SchemaKeywordRule> & Record<SchemaAnnotationKeyword, SchemaAnnotationRule>
->;
+> &
+  ISchemaShapeCapabilities;
 
 /**
  * The conservative table, for a wire whose support is undocumented: every keyword folds, except
- * `title`, which is dropped — a title restates the property name the model already sees.
+ * `title`, which is dropped — a title restates the property name the model already sees. A
+ * non-string `enum` folds, and a schema with no `type` is refused.
  * @public
  */
 export const unverifiedWireSchemaKeywords: SchemaKeywordCapabilities = {
@@ -159,11 +182,20 @@ export const unverifiedWireSchemaKeywords: SchemaKeywordCapabilities = {
   format: 'fold',
   title: 'drop',
   default: 'fold',
-  examples: 'fold'
+  examples: 'fold',
+  nonStringEnum: 'fold',
+  untyped: 'refuse'
 };
 
+/**
+ * A keyword the fold can state in a description: a constraint or annotation keyword, or a
+ * non-string `enum`.
+ * @public
+ */
+export type SchemaFoldedKeyword = 'enum' | SchemaConstraintKeyword;
+
 /** A folded keyword and its value. */
-type Folded = readonly [SchemaConstraintKeyword, JsonValue];
+type Folded = readonly [SchemaFoldedKeyword, JsonValue];
 
 /** The sentence label for each annotation, in `schemaAnnotationKeywords` order. */
 const ANNOTATION_LABELS: Readonly<Record<SchemaAnnotationKeyword, string>> = {
@@ -174,7 +206,7 @@ const ANNOTATION_LABELS: Readonly<Record<SchemaAnnotationKeyword, string>> = {
 };
 
 /** Whether a keyword is an annotation. */
-function _isAnnotation(keyword: SchemaConstraintKeyword): keyword is SchemaAnnotationKeyword {
+function _isAnnotation(keyword: SchemaFoldedKeyword): keyword is SchemaAnnotationKeyword {
   return schemaAnnotationKeywords.some((k) => k === keyword);
 }
 
@@ -184,22 +216,22 @@ function _isAnnotation(keyword: SchemaConstraintKeyword): keyword is SchemaAnnot
  *
  * @remarks
  * - Validating keywords: `Constraints: minimum 1; maximum 10.` — each keyword name, a space and
- *   its value as JSON, joined by `"; "`.
+ *   its value as JSON, joined by `"; "`. A folded non-string `enum` is one of them, and comes
+ *   first: `Constraints: enum [1,2].`
  * - Annotations, each its own sentence so none reads as a constraint: `Format: email.`,
  *   `Title: Count.` (a string value written as it is), `Default: null.`, `Examples: ["a","b"].`
  *   (other values as JSON).
  *
- * Both follow `schemaConstraintKeywords` order whatever order the keys arrived in, and the two
+ * Both follow `enum` then `schemaConstraintKeywords` order whatever order the keys arrived in, and the two
  * parts are joined by one space. Fixed wording and order make the output byte-stable for prompt
  * caching. Returns `''` for nothing folded.
  * @param folded - The folded keywords and their values.
  * @returns The text.
  * @public
  */
-export function foldedKeywordsText(
-  folded: ReadonlyArray<readonly [SchemaConstraintKeyword, JsonValue]>
-): string {
-  const rank = (keyword: SchemaConstraintKeyword): number => schemaConstraintKeywords.indexOf(keyword);
+export function foldedKeywordsText(folded: ReadonlyArray<readonly [SchemaFoldedKeyword, JsonValue]>): string {
+  const rank = (keyword: SchemaFoldedKeyword): number =>
+    keyword === 'enum' ? -1 : schemaConstraintKeywords.indexOf(keyword);
   const ordered = [...folded].sort(([a], [b]) => rank(a) - rank(b));
   const constraints = ordered.filter(([keyword]) => !_isAnnotation(keyword));
   const parts: string[] = [];
@@ -243,11 +275,21 @@ function _translate(node: JsonObject, capabilities: SchemaKeywordCapabilities): 
   return out;
 }
 
+/** Whether a node's `enum` lists a member that is neither a string nor `null`. */
+function _hasNonStringEnum(node: JsonObject): boolean {
+  const members: JsonValue | undefined = node.enum;
+  return Array.isArray(members) && members.some((m) => m !== null && typeof m !== 'string');
+}
+
 /** Adapts one node's own keywords, its children already adapted. */
 function _adaptOwnKeywords(node: JsonObject, capabilities: SchemaKeywordCapabilities): JsonObject {
   const translated = _translate(node, capabilities);
   const removed = new Set<string>();
   const folded: Folded[] = [];
+  if (capabilities.nonStringEnum === 'fold' && _hasNonStringEnum(translated)) {
+    removed.add('enum');
+    folded.push(['enum', translated.enum]);
+  }
   for (const keyword of schemaConstraintKeywords) {
     if (keyword in translated) {
       const disposition = _disposition(capabilities[keyword], translated[keyword]);
@@ -280,10 +322,22 @@ function _adaptOwnKeywords(node: JsonObject, capabilities: SchemaKeywordCapabili
   };
 }
 
+/** Keywords that let a node state no `type` of its own without being a schema that matches anything. */
+const _TYPED_ELSEWHERE: readonly string[] = ['type', 'enum', 'const', '$ref', 'anyOf', 'oneOf', 'allOf'];
+
+/** Whether a node states no `type` — and nothing standing in for one — so it matches any value. */
+function _isUntyped(node: JsonObject): boolean {
+  return !_TYPED_ELSEWHERE.some((keyword) => keyword in node);
+}
+
+/** Where a node sits, for the `untyped` rule. */
+type NodePosition = 'schema' | 'additionalProperties';
+
 /**
- * Adapts a wire schema's constraint and annotation keywords to one provider's documented support:
- * each keyword is passed, translated, folded into the node's description, or (an annotation)
- * dropped, per `capabilities`.
+ * Adapts a wire schema's constraint and annotation keywords, and its non-string enums and untyped
+ * nodes, to one provider's documented support, per `capabilities`: each keyword is passed,
+ * translated, folded into the node's description, or (an annotation) dropped; a non-string `enum`
+ * is passed or folded; and a node with no `type` is passed or refused.
  *
  * @remarks
  * **Folding loosens the wire, never the validator.** A folded keyword is removed from the node and
@@ -294,33 +348,97 @@ function _adaptOwnKeywords(node: JsonObject, capabilities: SchemaKeywordCapabili
  * should fold anything not verified. Dropping is safe for the same reason, and is allowed only for
  * annotations, which constrain nothing.
  *
+ * **A node with no `type` is never given one.** Where the table refuses it, adaptation fails with
+ * the node's JSON Pointer path: inventing a `type` would narrow what the model may send below what
+ * the validator accepts, which is the one direction an adaptation must never move. A schema-valued
+ * `additionalProperties` with no `type` is exempt — it says "any value" for the undeclared keys,
+ * which a wire that drops or ignores `additionalProperties` already means.
+ *
  * Walks the schema grammar `toJson()` emits — a node's `properties` values, `items` and
  * schema-valued `additionalProperties` are nodes and are adapted; every other value, `default`,
  * `examples` and `enum` among them, is data and is copied untouched. A property *named* like a
- * keyword is a name, not a keyword. A value that is not an object is returned as it is. Infallible,
- * so it returns a plain value rather than a `Result`.
+ * keyword is a name, not a keyword. A value that is not an object is returned as it is.
  * @param schema - A wire schema, typically `schema.toJson()`.
  * @param capabilities - The target wire format's keyword-capability table.
- * @returns The adapted schema; the input is not modified.
+ * @returns The adapted schema — the input is not modified — or a `Failure` naming the path of a
+ * node the wire cannot carry.
  * @public
  */
-export function adaptSchemaKeywords(schema: JsonValue, capabilities: SchemaKeywordCapabilities): JsonValue {
+export function adaptSchemaKeywords(
+  schema: JsonValue,
+  capabilities: SchemaKeywordCapabilities
+): Result<JsonValue> {
+  return _adaptNode(schema, capabilities, '#', 'schema');
+}
+
+/** Adapts one node and everything beneath it; `path` is its JSON Pointer. */
+function _adaptNode(
+  schema: JsonValue,
+  capabilities: SchemaKeywordCapabilities,
+  path: string,
+  position: NodePosition
+): Result<JsonValue> {
   if (!isJsonObject(schema)) {
-    return schema;
+    return succeed(schema);
   }
-  const out: JsonObject = {};
-  for (const [key, value] of Object.entries(schema)) {
-    if (key === 'properties' && isJsonObject(value)) {
-      const properties: JsonObject = {};
-      for (const [name, child] of Object.entries(value)) {
-        properties[name] = adaptSchemaKeywords(child, capabilities);
-      }
-      out[key] = properties;
-    } else if (key === 'items' || key === 'additionalProperties') {
-      out[key] = adaptSchemaKeywords(value, capabilities);
-    } else {
+  if (capabilities.untyped === 'refuse' && position === 'schema' && _isUntyped(schema)) {
+    return fail(`${path}: a schema with no 'type' (matching any value) cannot be sent on this wire`);
+  }
+  return mapResults(
+    Object.entries(schema).map(([key, value]) =>
+      _adaptMember(key, value, capabilities, path).onSuccess((adapted) =>
+        succeed<[string, JsonValue]>([key, adapted])
+      )
+    )
+  ).onSuccess((entries) => {
+    const out: JsonObject = {};
+    for (const [key, value] of entries) {
       out[key] = value;
     }
+    return succeed(_adaptOwnKeywords(out, capabilities));
+  });
+}
+
+/** Adapts one member of a node: its sub-schemas are adapted, anything else is data, copied as is. */
+function _adaptMember(
+  key: string,
+  value: JsonValue,
+  capabilities: SchemaKeywordCapabilities,
+  path: string
+): Result<JsonValue> {
+  if (key === 'properties' && isJsonObject(value)) {
+    return mapResults(
+      Object.entries(value).map(([name, child]) =>
+        _adaptNode(child, capabilities, `${path}/properties/${_escapeToken(name)}`, 'schema').onSuccess(
+          (adapted) => succeed<[string, JsonValue]>([name, adapted])
+        )
+      )
+    ).onSuccess((entries) => {
+      const properties: JsonObject = {};
+      for (const [name, adapted] of entries) {
+        properties[name] = adapted;
+      }
+      return succeed<JsonValue>(properties);
+    });
   }
-  return _adaptOwnKeywords(out, capabilities);
+  if (key === 'items') {
+    return _adaptNode(value, capabilities, `${path}/items`, 'schema');
+  }
+  if (key === 'additionalProperties') {
+    return _adaptNode(value, capabilities, `${path}/additionalProperties`, 'additionalProperties');
+  }
+  return succeed(value);
+}
+
+/**
+ * Escapes a key as one JSON Pointer token (RFC 6901 § 3) — `~` → `~0` first, then `/` → `~1` — with
+ * every control character spelled `\uXXXX`, since a property name may be server-supplied and ends
+ * up in an error message.
+ */
+function _escapeToken(key: string): string {
+  return Array.from(key.replace(/~/g, '~0').replace(/\//g, '~1'), (ch) => {
+    const code = ch.charCodeAt(0);
+    const control = code < 0x20 || (code >= 0x7f && code <= 0x9f) || code === 0x2028 || code === 0x2029;
+    return control ? `\\u${code.toString(16).padStart(4, '0')}` : ch;
+  }).join('');
 }
