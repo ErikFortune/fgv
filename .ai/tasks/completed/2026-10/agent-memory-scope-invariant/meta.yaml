@@ -1,7 +1,7 @@
 id: agent-memory-scope-invariant
 status: shipped
 packages: ['@fgv/ts-agent-memory']
-prs: [] # TBD: the orchestrator fills in the PR number
+prs: [733]
 openPrs: []
 opened: 2026-10-17
 closed: 2026-10-17

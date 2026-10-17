@@ -203,7 +203,7 @@ markers.*
 <!-- BEGIN GENERATED: recent-additions -->
 
 - **2026-10-17** — HybridRetriever's score-union merge no longer collapses records that share an id across scopes — two conversations' turn-3 stay two… ([#731](https://github.com/ErikFortune/fgv/pull/731)) · `ts-agent-memory`
-- **2026-10-17** — FileTreeMemoryStore now refuses to load a record from any scope other than the one its kind's codec derives, so a custom codec that… · `ts-agent-memory`
+- **2026-10-17** — FileTreeMemoryStore now refuses to load a record from any scope other than the one its kind's codec derives, so a custom codec that… ([#733](https://github.com/ErikFortune/fgv/pull/733)) · `ts-agent-memory`
 - **2026-10-17** — Shipped: `@fgv/ts-random` can make a weighted random choice, either from a generator or as a pure function of a unit float in `[0… ([#732](https://github.com/ErikFortune/fgv/pull/732)) · `ts-random` `ts-agent-memory`
 - **2026-10-14** — MCP servers can be reached through the same SSRF guard as the rest of your egress, without buffering their streams, and… ([#729](https://github.com/ErikFortune/fgv/pull/729)) · `ts-extras` `ts-extras-mcp`
 - **2026-10-13** — An MCP tool result keeps its resource links, embedded resources, images and structuredContent, tool titles and tool-list changes… ([#728](https://github.com/ErikFortune/fgv/pull/728)) · `ts-extras-mcp`
