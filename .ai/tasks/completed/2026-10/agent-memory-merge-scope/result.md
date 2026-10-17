@@ -173,9 +173,9 @@ Logs are under `<worktree>/.gate-logs/`. Each count is `grep -cE 'not met|FAILUR
 | `rushx build` (ts-agent-memory) | exit 0 | 0 | 0 |
 | `rushx lint` (ts-agent-memory) | exit 0 | 0 | 0 |
 | `rushx test` (ts-agent-memory) | exit 0, 100 / 100 / 100 / 100 | 0 | 0 |
-| `install-run-rush.js rebuild` | GATE_REBUILD | | |
-| `install-run-rush.js test` | GATE_TEST | | |
-| `change --verify --target-branch origin/integration/asks` | GATE_CHANGE | | |
+| `install-run-rush.js rebuild` | exit 0, `SUCCESS: 38 operations` | 0 | 1 (Rush's Git-tracked symlink notice only) |
+| `install-run-rush.js test` | exit 0, `SUCCESS: 37 operations`; log NUL-free | 0 | 1 (Rush's Git-tracked symlink notice only) |
+| `change --verify --target-branch origin/integration/asks` | exit 0, finds the one change file | 0 | 0 |
 
 ## What the brief got wrong
 

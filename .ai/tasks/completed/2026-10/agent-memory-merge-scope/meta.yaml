@@ -1,0 +1,48 @@
+id: agent-memory-merge-scope
+status: shipped
+packages: ['@fgv/ts-agent-memory']
+prs: [] # written anticipating merge; the orchestrator fills in the PR number at open
+openPrs: []
+opened: 2026-10-17
+closed: 2026-10-17
+summary:
+  intended: >
+    fgv#725: ScoreUnionMergeStrategy deduplicated and scored by bare envelope.id, which the MTM
+    codec mints per conversation, so distinct turns collapsed silently. Key the merge on the
+    record's scope-qualified address, edgeTargetKey({ scope: resolveIdentity(kind, entityId).scope,
+    id }), with a required identityResolver on create, a loud failure for an unresolvable record and
+    no bare-id fallback. Share one helper with the ingest orchestrator's equivalent construction,
+    fix the TSDoc, state the lift condition at the key site, and prove the regression tests go red
+    against the bare-id key.
+  shipped: >
+    ScoreUnionMergeStrategy.create({ identityResolver }) (required, refused at runtime when absent),
+    keying both the per-set seen-set and the score map on edgeTargetKey(scopedAddressOf(record,
+    resolver)); the resolver call is captureResult-wrapped and an unresolvable record fails the
+    merge naming kind and entityId. New public scopedAddressOf(record, resolver):
+    Result<IEdgeTarget>, which ingest's _scopeRecords now uses over its own codec map. Updated
+    samples/testbed (the store is the resolver) and three suites; a 13-test regression suite on
+    store-loaded MTM, temporal and knowledge records, 5 of which go red against the bare-id key.
+  diverged: >
+    Nothing material. The helper takes the resolver as a parameter and leaves failures unformatted,
+    because ingest resolves with the codec map it was given rather than the store's, and keeping its
+    exact messages kept the extraction behaviour-neutral. IMergeStrategy's TSDoc never stated the
+    id-only rule, so it was left alone. The two out-of-scope questions were reported: tightening
+    verifyRoundTrip costs no shipped code and five test codecs, and the bare-id tool handle is never
+    resolved back, though search results carry no scope and a link target's omitted scope defaults
+    to the writer's.
+  sourceLine: "**Shipped:** `ScoreUnionMergeStrategy` now deduplicates and scores records by their scope-qualified `(scope, id)` address instead of the bare `id`, so two MTM `turn-3` records in different conversations stay two records; its `create({ identityResolver })` requires the resolver (pass the store), and a record whose identity cannot be resolved fails the merge."
+  headline: >
+    HybridRetriever's score-union merge no longer collapses records that share an id across scopes —
+    two conversations' turn-3 stay two records — because ScoreUnionMergeStrategy now keys on the
+    scope-qualified address and requires an identity resolver.
+keywords:
+  - merge identity
+  - scope-qualified key
+  - score union
+  - hybrid retrieval dedup
+  - MTM turn id collision
+  - identity resolver
+  - edgeTargetKey
+  - scopedAddressOf
+relatedStreams: [] # fgv#725 came from an independent library review, not from a stream
+sourceHash: sha256:c1c3b8c36be974a9 # over brief.md + result.md + state.md
