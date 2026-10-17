@@ -983,8 +983,8 @@ yes/no + storage-direction ratification** when v2 durability is scheduled.
 > traversal, cycle guard, ingest edge-validation, edge serialization, the `memory_write` /
 > `memory_context` tool schemas) behind a single collision-proof `edgeTargetKey` helper; #543
 > completed the migration across the vector/similarity + entity-resolution path (breaking the
-> pre-1.0 `IEntityResolver` host contract, no shim). Residual latent item: `IProvenance.derivedFrom`
-> stays a bare `MemoryId` (never dereferenced today) — tracked in `TECH_DEBT.md`.
+> pre-1.0 `IEntityResolver` host contract, no shim). The residual latent item, `IProvenance.derivedFrom`
+> as a bare `MemoryId`, has since been scope-qualified to an `IEdgeTarget` (retired from `TECH_DEBT.md`).
 
 **Reference:** consumer orchestrator's forwarded 2026-07 agent-memory batch (the id-stem
 uniqueness vs. bare-MemoryId-links friction report); PRs #542, #543; the four firm asks from
