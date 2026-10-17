@@ -1,7 +1,7 @@
 id: agent-memory-merge-scope
 status: shipped
 packages: ['@fgv/ts-agent-memory']
-prs: [] # written anticipating merge; the orchestrator fills in the PR number at open
+prs: [731]
 openPrs: []
 opened: 2026-10-17
 closed: 2026-10-17
