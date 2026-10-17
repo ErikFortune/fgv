@@ -23,10 +23,17 @@ import type { Logging, Result } from '@fgv/ts-utils';
 import type { IRetryPolicy } from './retry';
 
 /**
+ * Every HTTP method a safer-fetch call may use, as a runtime list. `SaferFetchMethod` is derived
+ * from it, so the two cannot diverge.
+ * @public
+ */
+export const SAFER_FETCH_METHODS = ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE'] as const;
+
+/**
  * HTTP methods a safer-fetch call may use.
  * @public
  */
-export type SaferFetchMethod = 'GET' | 'HEAD' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+export type SaferFetchMethod = (typeof SAFER_FETCH_METHODS)[number];
 
 /**
  * How redirects are handled.

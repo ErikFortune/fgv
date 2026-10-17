@@ -39,7 +39,8 @@
  * **Explicitly NOT in scope (deferred — see README / docs/FUTURE.md):**
  * - Browser sibling `@fgv/ts-web-extras-mcp`
  * - MCP resources / prompts / sampling features
- * - A helper around the SDK's OAuth `auth()` flow (`authProvider` itself is passed through)
+ * - A helper around the SDK's OAuth `auth()` flow (`authProvider` itself is wrapped, its
+ *   interactive steps gated to the connect; the wrapper is a different object from the provider)
  * - Multimodal tool-result passthrough (text-block projection only)
  * - Cross-server tool-name namespacing (duplicate names already fail loudly in
  *   `executeClientToolTurn`)

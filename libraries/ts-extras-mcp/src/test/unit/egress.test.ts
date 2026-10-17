@@ -28,6 +28,8 @@
  */
 
 import '@fgv/ts-utils-jest';
+import { type IncomingHttpHeaders, type Server, type ServerResponse, createServer } from 'node:http';
+import { type AddressInfo } from 'node:net';
 import { fail, Logging, succeed } from '@fgv/ts-utils';
 import { SaferFetch } from '@fgv/ts-extras';
 
@@ -264,5 +266,60 @@ describe('Streamable-HTTP egress through an injected fetch', () => {
     expect(
       createHttpTransport({ url: 'https://example.com/mcp', fetch: 'nope' as unknown as McpFetch })
     ).toFailWith(/createHttpTransport: fetch must be a function \(got string\)/);
+  });
+});
+
+describe('static headers and redirects through globalThis.fetch', () => {
+  /** A loopback server answering every request with `respond`, recording each request's headers. */
+  async function listen(
+    respond: (res: ServerResponse) => void
+  ): Promise<{ server: Server; origin: string; seen: IncomingHttpHeaders[] }> {
+    const seen: IncomingHttpHeaders[] = [];
+    const server = createServer((req, res) => {
+      seen.push(req.headers);
+      req.resume();
+      respond(res);
+    });
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', () => resolve()));
+    return { server, origin: `http://127.0.0.1:${(server.address() as AddressInfo).port}`, seen };
+  }
+
+  const servers: Server[] = [];
+  afterEach(async () => {
+    await Promise.all(
+      servers.splice(0).map(
+        (server) =>
+          new Promise<void>((resolve) => {
+            server.closeAllConnections();
+            server.close(() => resolve());
+          })
+      )
+    );
+  });
+
+  test('a 307 from the MCP origin to another origin is refused, and the static header never reaches it', async () => {
+    const other = await listen((res) => res.writeHead(500).end());
+    const mcp = await listen((res) => res.writeHead(307, { location: `${other.origin}/elsewhere` }).end());
+    servers.push(other.server, mcp.server);
+
+    // Control: without static headers the platform follows the redirect, so the other origin is
+    // reachable and would see whatever the request carried.
+    await connectMcpSession({
+      transport: createHttpTransport({ url: `${mcp.origin}/mcp` }).orThrow(),
+      timeoutMs: 2000
+    });
+    expect(other.seen.length).toBeGreaterThan(0);
+    other.seen.length = 0;
+
+    const connected = await connectMcpSession({
+      transport: createHttpTransport({
+        url: `${mcp.origin}/mcp`,
+        headers: { 'x-api-key': 'k-static-3e9a' }
+      }).orThrow(),
+      timeoutMs: 2000
+    });
+    expect(connected).toFail();
+    expect(mcp.seen.map((headers) => headers['x-api-key'])).toContain('k-static-3e9a');
+    expect(other.seen).toEqual([]);
   });
 });

@@ -80,10 +80,17 @@ export interface IMcpHttpTransportParams {
    * The headers are **copied** when {@link createHttpTransport} is called: changing or adding to
    * this record afterwards has no effect on any request. Create a new transport to change them.
    *
-   * They are applied by the package, **only to requests for the MCP endpoint's origin** — never to
-   * the authorization server or any other origin. There a static header replaces one of the same
-   * name (a static `Authorization` overrides the OAuth provider's bearer token, as the SDK's own
-   * merge did).
+   * They are applied by the package, **only to requests whose URL is on the MCP endpoint's
+   * origin** — never to the authorization server or any other origin. There a static header replaces
+   * one of the same name (a static `Authorization` overrides the OAuth provider's bearer token, as the
+   * SDK's own merge did).
+   *
+   * **Redirects.** The package sees only a request's first URL, so what happens on a redirect is the
+   * `fetch`'s. Without a consumer `fetch` (`globalThis.fetch`), a request carrying static headers
+   * refuses redirects (`redirect: 'error'`), because the platform would carry them to any origin. With
+   * a guarded fetch, its default `redirectPolicy: 'reject'` holds; under `'validate-each-hop'` a
+   * static header crosses a redirect to another origin unless it is listed in `sensitiveHeaders`. A
+   * consumer `fetch` of any other kind owns its redirect handling.
    */
   readonly headers?: Record<string, string>;
   /**
@@ -152,8 +159,12 @@ export interface IMcpHttpTransportParams {
    * guarded fetch as its `fetchFn`, or the token request bypasses the guard** — then connect again
    * with a new transport.
    *
-   * Static `headers` are never sent to the authorization server: the package applies them only to
-   * requests for the MCP endpoint's origin.
+   * Static `headers` are never applied to a request for the authorization server: the package
+   * applies them only to requests whose URL is on the MCP endpoint's origin (for redirects, see
+   * {@link IMcpHttpTransportParams.headers}).
+   *
+   * The SDK is given a wrapper, not this object: a forwarding facade that gates the interactive
+   * steps. It is a different object from your provider, so an identity comparison against it fails.
    */
   readonly authProvider?: McpOAuthClientProvider;
 }
@@ -425,10 +436,13 @@ export interface IMcpRequestOptions {
  * | `'invalid-handle'` | The session or transport handle did not come from this package, or the transport handle was already used by an earlier connect. A caller bug; retrying cannot help. |
  * | `'invalid-options'` | A `timeoutMs` / `maxTotalTimeoutMs` outside the accepted range. Reported before anything is sent. |
  *
- * **Messages never carry server-authored text.** A failure from an HTTP error (a response's body
- * or status text) or an OAuth error (an `error_description`), and every `'unauthorized'` failure,
- * gets the kind and the HTTP status as its text — e.g. `unauthorized (HTTP 401)`,
- * `transport (HTTP 500)` — because a server may repeat a credential it was sent.
+ * **HTTP-error and OAuth-error text never reaches a failure message.** A failure from an HTTP
+ * error (a response's body or status text) or an OAuth error (an `error_description`), and every
+ * `'unauthorized'` failure, gets the kind and the HTTP status as its text — e.g.
+ * `unauthorized (HTTP 401)`, `transport (HTTP 500)` — because a server may repeat a credential it
+ * was sent. Other messages can carry server text: `'tool-error'` and `'protocol'` messages carry the
+ * server's own text by design, and the SDK's other auth errors (for example a failed metadata
+ * discovery) can name a server-chosen URL.
  *
  * Reconnecting is the consumer's policy. As a guide: `'not-connected'` and `'session-expired'`
  * mean the session is dead; `'transport'` means it is suspect; `'egress-blocked'` means the
@@ -459,7 +473,7 @@ export type McpFailureReason =
    */
   | { readonly kind: 'unauthorized'; readonly status?: number; readonly resourceMetadataUrl?: string }
   /** `reason` is the kind of the guarded fetch's `FetchFailureReason`; its URL-bearing payload is never carried. */
-  | { readonly kind: 'egress-blocked'; readonly reason: SaferFetch.FetchFailureReason['kind'] }
+  | { readonly kind: 'egress-blocked'; readonly reason: SaferFetch.FetchFailureKind }
   /** `code` is the JSON-RPC error code, when the failure carried one. */
   | { readonly kind: 'protocol'; readonly code?: number }
   /** `status` is the HTTP status, when the failure came as one. */

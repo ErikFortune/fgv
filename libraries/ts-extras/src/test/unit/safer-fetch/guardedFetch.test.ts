@@ -702,7 +702,7 @@ describe('createGuardedFetch', () => {
   });
 });
 
-describe('request bodies are copied before the first await (Copilot round 3)', () => {
+describe('request bodies are copied before the first await', () => {
   /** A gate the test opens, so a call can be held inside its address guard. */
   function gate(): { readonly opened: Promise<void>; open: () => void } {
     let open: () => void = () => undefined;

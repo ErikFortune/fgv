@@ -34,6 +34,7 @@ import { type AddressInfo } from 'node:net';
 import { Logging, fail, succeed } from '@fgv/ts-utils';
 import { SaferFetch } from '@fgv/ts-extras';
 
+import { InvalidTokenError } from '@modelcontextprotocol/sdk/server/auth/errors.js';
 import { requireBearerAuth } from '@modelcontextprotocol/sdk/server/auth/middleware/bearerAuth.js';
 import { type OAuthClientMetadata, type OAuthTokens } from '@modelcontextprotocol/sdk/shared/auth.js';
 
@@ -48,7 +49,11 @@ import {
   createHttpTransport
 } from '../../packlets/mcp';
 // eslint-disable-next-line @rushstack/packlets/mechanics
-import { McpHttpEgress, acceptResourceMetadataUrl } from '../../packlets/mcp/egress';
+import {
+  FORWARDED_PROVIDER_MEMBERS,
+  McpHttpEgress,
+  acceptResourceMetadataUrl
+} from '../../packlets/mcp/egress';
 import { type IRealMcpServer, startRealMcpServer, waitFor } from './realHttpServer';
 
 // Every secret the flows handle. None may appear in a log line or a failure message.
@@ -73,6 +78,12 @@ const SECRETS: ReadonlyArray<string> = [
 ];
 
 const REDIRECT_URL: string = 'http://127.0.0.1:1/callback';
+
+/**
+ * The secrets minted during a test rather than fixed in advance: each `state` value and each
+ * SDK-generated code verifier a `TestProvider` is handed. Checked with `SECRETS`, then cleared.
+ */
+const GENERATED_SECRETS: string[] = [];
 
 /**
  * An in-memory OAuth client provider, the shape a consumer implements over its keystore. Its state
@@ -105,7 +116,9 @@ class TestProvider implements McpOAuthClientProvider {
 
   public state(): string {
     this.stateCalls++;
-    return `state-${this.stateCalls}`;
+    const state = `state-${this.stateCalls}-csrf-e2f1`;
+    GENERATED_SECRETS.push(state);
+    return state;
   }
 
   public tokens(): OAuthTokens | undefined {
@@ -123,6 +136,7 @@ class TestProvider implements McpOAuthClientProvider {
   }
 
   public saveCodeVerifier(verifier: string): void {
+    GENERATED_SECRETS.push(verifier);
     this.verifiers.push(verifier);
   }
 
@@ -281,7 +295,6 @@ async function startProtectedServer(auth: IAuthServer, protection: IProtection):
       verifier: {
         verifyAccessToken: async (token: string) => {
           if (!protection.valid.has(token)) {
-            const { InvalidTokenError } = await import('@modelcontextprotocol/sdk/server/auth/errors.js');
             // The SDK's own error text, which a careless server might extend with the token.
             throw new InvalidTokenError(`token ${token} is not valid`);
           }
@@ -404,9 +417,10 @@ describe('OAuth through authProvider', () => {
     await new Promise<void>((resolve) => auth.server.close(() => resolve()));
     // The secrets check, over every line and message this test produced.
     const text = [...observed, ...logger.logged, ...fetchLogger.logged].join('\n');
-    for (const secret of SECRETS) {
+    for (const secret of [...SECRETS, ...GENERATED_SECRETS]) {
       expect(text).not.toContain(secret);
     }
+    GENERATED_SECRETS.length = 0;
   });
 
   /** The recommended guarded fetch, allowing the loopback test servers. */
@@ -832,8 +846,19 @@ describe('McpHttpEgress edges', () => {
     expect(acceptResourceMetadataUrl(new URL('ftp://as.example.com/meta'))).toBeUndefined();
     expect(acceptResourceMetadataUrl(undefined)).toBeUndefined();
     // The WHATWG serializer never produces this; the check does not rely on that.
-    const forged = { protocol: 'https:', href: 'https://as.example.com/a\nb' } as unknown as URL;
+    const forged = {
+      protocol: 'https:',
+      username: '',
+      password: '',
+      href: 'https://as.example.com/a\nb'
+    } as unknown as URL;
     expect(acceptResourceMetadataUrl(forged)).toBeUndefined();
+  });
+
+  test('acceptResourceMetadataUrl drops a URL that carries a username or password', () => {
+    expect(acceptResourceMetadataUrl(new URL('https://user@as.example.com/meta'))).toBeUndefined();
+    expect(acceptResourceMetadataUrl(new URL('https://user:pw@as.example.com/meta'))).toBeUndefined();
+    expect(acceptResourceMetadataUrl(new URL('https://:pw@as.example.com/meta'))).toBeUndefined();
   });
 
   test('a challenge whose headers cannot be read leaves no URL and does not fail the request', async () => {
@@ -965,7 +990,7 @@ describe('McpHttpEgress edges', () => {
     expect(gated.saveClientInformation).toBeUndefined();
     // `state` is gated like the other two, and forwarded inside the window.
     await expect(Promise.resolve(gated.state!())).rejects.toThrow(/started only by connectMcpSession/);
-    await expect(egress.interactive(async () => gated.state!())).resolves.toBe('state-1');
+    await expect(egress.interactive(async () => gated.state!())).resolves.toBe('state-1-csrf-e2f1');
   });
 
   test.each<{ label: string; url: string }>([
@@ -1009,7 +1034,7 @@ describe('McpHttpEgress edges', () => {
   });
 });
 
-describe('the OAuth facade and transport construction (Copilot round 1)', () => {
+describe('the OAuth provider facade, and createHttpTransport input handling', () => {
   const ENDPOINT = new URL('https://mcp.example.com/mcp');
 
   test('a frozen object-literal provider works through the gate', async () => {
@@ -1106,6 +1131,8 @@ describe('the OAuth facade and transport construction (Copilot round 1)', () => 
     });
     expect(receivers).toHaveLength(14);
     expect(receivers.every((r) => r === full)).toBe(true);
+    // The facade forwards exactly the members the compile-time list names.
+    expect(Object.keys(gated).sort()).toEqual(Object.keys(FORWARDED_PROVIDER_MEMBERS).sort());
   });
 
   test('an optional member the consumer did not implement stays absent', () => {

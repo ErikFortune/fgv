@@ -138,3 +138,9 @@ export type FetchFailureReason =
    * contract. Reports what it knows rather than guessing at a more specific kind.
    */
   | { readonly kind: 'unknown'; readonly detail: string };
+
+/**
+ * The `kind` discriminant of a `FetchFailureReason`.
+ * @public
+ */
+export type FetchFailureKind = FetchFailureReason['kind'];

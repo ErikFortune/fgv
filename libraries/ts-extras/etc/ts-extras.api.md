@@ -845,6 +845,9 @@ function fencedStringifiedJson(options?: IFencedStringifiedJsonExtractorOptions)
 function fencedStringifiedJson<T>(options: IFencedStringifiedJsonOptions<T>): Converter<T>;
 
 // @public
+type FetchFailureKind = FetchFailureReason['kind'];
+
+// @public
 type FetchFailureReason =
 /** The supplied URL could not be parsed, or its scheme is not `http:` or `https:`. */
     {
@@ -3233,6 +3236,9 @@ const RETRY_AFTER_STATUSES: ReadonlyArray<number>;
 // @public
 const RETRYABLE_HTTP_STATUSES: ReadonlyArray<number>;
 
+// @public
+const SAFER_FETCH_METHODS: readonly ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE"];
+
 declare namespace SaferFetch {
     export {
         ALWAYS_STRIPPED_HEADERS,
@@ -3247,8 +3253,10 @@ declare namespace SaferFetch {
         RETRY_AFTER_STATUSES,
         RETRYABLE_HTTP_STATUSES,
         SUPPORTED_SCHEMES,
+        FetchFailureKind,
         FetchFailureReason,
         FetchTimeoutPhase,
+        SAFER_FETCH_METHODS,
         IRetryPolicy,
         GuardedFetch,
         IAddressGuard,
@@ -3309,7 +3317,7 @@ function saferFetchJson(url: string | URL, options: ISaferFetchOptions): Promise
 function saferFetchJson<T>(url: string | URL, options: ISaferFetchJsonOptions<T>): Promise<DetailedResult<ISaferFetchResponse<T>, FetchFailureReason>>;
 
 // @public
-type SaferFetchMethod = 'GET' | 'HEAD' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+type SaferFetchMethod = (typeof SAFER_FETCH_METHODS)[number];
 
 // @public
 type SaferFetchRedirectPolicy = 'reject' | 'validate-each-hop';

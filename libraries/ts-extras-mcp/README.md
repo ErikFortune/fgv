@@ -29,7 +29,8 @@ These were considered and deferred — use `@modelcontextprotocol/sdk` directly 
 
 - **Browser sibling** (`@fgv/ts-web-extras-mcp`) — Node-only at v0.1.
 - **MCP resources / prompts / sampling** — tool discovery + invocation only.
-- **An OAuth `auth()` helper** — `authProvider` is passed through and the SDK drives the flow, but
+- **An OAuth `auth()` helper** — `authProvider` is wrapped (its interactive steps gated to the
+  connect; the wrapper is a different object from your provider) and the SDK drives the flow, but
   exchanging an authorization code after the redirect is yours (the SDK's `auth()`). Pass your
   guarded fetch to it as `fetchFn`, or that exchange bypasses your egress guard.
 - **Following resource links** — `callMcpTool` reports a `resource_link`'s URI; fetching it is
@@ -143,12 +144,17 @@ const transport = createHttpTransport({ url, headers: { 'x-api-key': key }, fetc
 - `unauthorized` carries `resourceMetadataUrl` — the `resource_metadata` URL from the server's
   `WWW-Authenticate` challenge — when it sent a valid one. It is server-chosen: fetch it only through
   the same guarded fetch.
-- Failure messages never carry server-authored text: an `unauthorized` failure, or one from an HTTP
-  or OAuth error, reads as its kind and status (`unauthorized (HTTP 401)`, `transport (HTTP 500)`),
-  since a server may repeat a credential it was sent.
-- Static `headers` are applied by the package, and only to requests for the MCP endpoint's origin —
-  never to an authorization server or any other origin. There a static header replaces one of the
-  same name, so a static `Authorization` overrides the OAuth bearer token.
+- HTTP-error and OAuth-error text never reaches a failure message: an `unauthorized` failure, or one
+  from an HTTP or OAuth error, reads as its kind and status (`unauthorized (HTTP 401)`,
+  `transport (HTTP 500)`), since a server may repeat a credential it was sent. `tool-error` and
+  `protocol` messages carry server text by design, and the SDK's other auth errors can name a
+  server-chosen URL.
+- Static `headers` are applied by the package, and only to requests whose URL is on the MCP
+  endpoint's origin — never to an authorization server or any other origin. There a static header
+  replaces one of the same name, so a static `Authorization` overrides the OAuth bearer token.
+  Without your own `fetch`, redirects on those requests are refused. With a guarded fetch, its
+  default `'reject'` holds; `validate-each-hop` carries a static header across a redirect unless
+  that header is listed in `sensitiveHeaders`.
 - DNS rebinding is **not** closed: the guard validates a resolved address and the platform
   re-resolves. A strict `allowHosts` list narrows it.
 

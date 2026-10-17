@@ -35,8 +35,8 @@ import { type McpOAuthClientProvider } from './sdkTypes';
 import { classifySdkError, makeUnauthorizedError, readResourceMetadataUrl } from './sdk';
 
 /**
- * A `resource_metadata` URL as this package will report it: an `http:` or `https:` URL whose
- * serialization is one line of printable ASCII, or `undefined`.
+ * A `resource_metadata` URL as this package will report it: an `http:` or `https:` URL with no
+ * username or password whose serialization is one line of printable ASCII, or `undefined`.
  *
  * @remarks
  * The value is chosen by the server, and the consumer is invited to fetch it, so anything else is
@@ -45,7 +45,13 @@ import { classifySdkError, makeUnauthorizedError, readResourceMetadataUrl } from
  * @internal
  */
 export function acceptResourceMetadataUrl(url: URL | undefined): string | undefined {
-  if (url === undefined || (url.protocol !== 'https:' && url.protocol !== 'http:')) {
+  // A URL with userinfo is never reported: the consumer would be invited to send those credentials.
+  if (
+    url === undefined ||
+    (url.protocol !== 'https:' && url.protocol !== 'http:') ||
+    url.username !== '' ||
+    url.password !== ''
+  ) {
     return undefined;
   }
   return /^[\x21-\x7e]+$/.test(url.href) ? url.href : undefined;
@@ -72,6 +78,32 @@ function _isLoopbackHost(hostname: string): boolean {
 function _acceptableAuthorizationUrl(url: URL): boolean {
   return url.protocol === 'https:' || (url.protocol === 'http:' && _isLoopbackHost(url.hostname));
 }
+
+/**
+ * Every member of the SDK's `OAuthClientProvider`, as the facade in {@link _gateInteractive} forwards
+ * it. A `Record` over `keyof`, so a member a future SDK version adds fails the build here until the
+ * facade forwards it; a unit test checks the facade against this list.
+ * @internal
+ */
+export const FORWARDED_PROVIDER_MEMBERS: Readonly<Record<keyof McpOAuthClientProvider, true>> = {
+  redirectUrl: true,
+  clientMetadata: true,
+  clientMetadataUrl: true,
+  state: true,
+  clientInformation: true,
+  saveClientInformation: true,
+  tokens: true,
+  saveTokens: true,
+  redirectToAuthorization: true,
+  saveCodeVerifier: true,
+  codeVerifier: true,
+  addClientAuthentication: true,
+  validateResourceURL: true,
+  invalidateCredentials: true,
+  prepareTokenRequest: true,
+  saveDiscoveryState: true,
+  discoveryState: true
+};
 
 /**
  * Wraps the consumer's OAuth provider so that the steps that start an interactive authorization run
@@ -303,7 +335,9 @@ export class McpHttpEgress {
     for (const [name, value] of this._staticHeaders) {
       headers.set(name, value);
     }
-    return { ...init, headers };
+    // `globalThis.fetch` follows a redirect with every custom header, to any origin, so a request
+    // carrying static headers refuses redirects. A consumer `fetch` owns its own redirect policy.
+    return this._underlying === undefined ? { ...init, headers, redirect: 'error' } : { ...init, headers };
   }
 
   /** Records the `resource_metadata` URL of a challenge from the endpoint. */

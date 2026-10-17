@@ -70,6 +70,7 @@ import type {
   SaferFetchMethod,
   SaferFetchRedirectPolicy
 } from './model';
+import { SAFER_FETCH_METHODS } from './model';
 import { resolveLocation, rewriteForRedirect, sensitiveHeaderSet } from './redirect';
 import { platformFetchTransport } from './transport';
 
@@ -262,9 +263,18 @@ function _unknown<T>(message: string): Outcome<T> {
   return _fail<T>({ kind: 'unknown', detail: message }, message);
 }
 
-/** The wrapping that every escaped-exception path reports, defined once so the two agree exactly. */
+/**
+ * The reason every escaped-exception path reports, defined once so {@link _unexpected} and
+ * {@link _reasonOf} agree exactly.
+ */
+function _unexpectedReason(message: string): FetchFailureReason & { readonly kind: 'unknown' } {
+  return { kind: 'unknown', detail: `saferFetch: unexpected error: ${message}` };
+}
+
+/** The failure every escaped-exception path reports. */
 function _unexpected<T>(message: string): Outcome<T> {
-  return _unknown<T>(`saferFetch: unexpected error: ${message}`);
+  const reason = _unexpectedReason(message);
+  return _fail<T>(reason, reason.detail);
 }
 
 /**
@@ -462,28 +472,22 @@ function _resolveCallOptions(options: ISaferFetchOptions): Outcome<IResolvedCall
     }
   }
 
-  const redirect = _resolveRedirectOptions(options);
-  if (redirect.isFailure()) {
-    return _propagate<IResolvedRedirectOptions, IResolvedCallOptions>(redirect);
-  }
-
-  const retry = resolveRetryPolicy(options.retry);
-  if (retry.isFailure()) {
-    return _unknown<IResolvedCallOptions>(retry.message);
-  }
-
-  return _succeed({
-    method,
-    headers: _lowercaseHeaders(options.headers ?? {}),
-    body,
-    timeoutMs,
-    headersTimeoutMs,
-    maxResponseBytes,
-    ...redirect.value,
-    retry: retry.value,
-    transport: options.transport ?? platformFetchTransport,
-    logger: options.logger ?? new Logging.NoOpLogger()
-  });
+  return _resolveRedirectOptions(options).onSuccess((redirect) =>
+    _asOutcome(resolveRetryPolicy(options.retry)).onSuccess((retry) =>
+      _succeed<IResolvedCallOptions>({
+        method,
+        headers: _lowercaseHeaders(options.headers ?? {}),
+        body,
+        timeoutMs,
+        headersTimeoutMs,
+        maxResponseBytes,
+        ...redirect,
+        retry,
+        transport: options.transport ?? platformFetchTransport,
+        logger: options.logger ?? new Logging.NoOpLogger()
+      })
+    )
+  );
 }
 
 /**
@@ -750,9 +754,8 @@ function _bufferedFinisher(
     }
 
     const hop = chain.length - 1;
-    // Chained rather than stepped: `thenOnSuccess` now preserves `FetchFailureReason` across an
-    // async step, so each stage's failure propagates with its detail intact and the two
-    // `_propagate` re-types this sequence used to need are gone.
+    // Chained rather than stepped: `thenOnSuccess` preserves `FetchFailureReason` across an async
+    // step, so each stage's failure propagates with its detail intact.
     return (await _checkResponseHead(response, head, url, chain, guards, watch))
       .thenOnSuccess(async () => _readCappedBody(response, head, resolved.maxResponseBytes, watch))
       .thenOnSuccess(async (bytes) =>
@@ -1372,14 +1375,7 @@ export async function saferFetchJson<T>(
 }
 
 /** Methods a guarded fetch accepts — every {@link SaferFetch.SaferFetchMethod}. */
-const GUARDED_FETCH_METHODS: ReadonlyArray<SaferFetchMethod> = [
-  'GET',
-  'HEAD',
-  'POST',
-  'PUT',
-  'PATCH',
-  'DELETE'
-];
+const GUARDED_FETCH_METHODS: ReadonlyArray<SaferFetchMethod> = SAFER_FETCH_METHODS;
 
 /**
  * {@link SaferFetch.ISaferFetchOptions} members a guarded fetch refuses at creation: each needs the
@@ -1623,7 +1619,7 @@ function _stoppedReleasing(
  * it gets the same `'unknown'` wrapping here, so a `GuardedFetchError` always carries one.
  */
 function _reasonOf(failure: DetailedFailure<Response, FetchFailureReason>): FetchFailureReason {
-  return failure.detail ?? { kind: 'unknown', detail: `saferFetch: unexpected error: ${failure.message}` };
+  return failure.detail ?? _unexpectedReason(failure.message);
 }
 
 /**

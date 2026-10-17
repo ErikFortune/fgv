@@ -168,7 +168,7 @@ after it.
 | 6c | authorization URL accepted (`https:`, or `http:` with a loopback host) | none | `redirectToAuthorization` forwarded | the URL is the one passed to that call; no re-resolution — the consumer opens it |
 | 6d | which optional provider members exist (Copilot round 1: the `Proxy` became a forwarding facade) | none — read once, when the transport is built | the SDK's feature detection (`provider.state ? …`) | **not re-checked**: a member the consumer adds or removes after `createHttpTransport` is not seen. Data members (`redirectUrl`, `clientMetadata`, `clientMetadataUrl`) are read at use. `isOpen()` is still read when each interactive method is called (rows 6, 6b), and the late-window tests now pin it: a connect that times out or is aborted while the flow is parked before any interactive step lets nothing interactive through afterwards, and one parked in `saveCodeVerifier` has its redirect refused |
 | 7 | endpoint 401 recorded (`resourceMetadataUrl`) | SDK auth flow, retries | attached to a later `unauthorized` | not re-checked: it is the **latest** valid challenge from that endpoint, overwritten by each newer one, never cleared. Disclosed in the TSDoc ("most recent") |
-| 8 | static headers applied (request origin = endpoint origin) | none | request sent | computed per request from that request's URL; off-origin requests are never given them (since Copilot round 3 — the SDK no longer holds them at all) |
+| 8 | static headers applied (request origin = endpoint origin) | none | request sent | computed per request from that request's URL; off-origin requests are never given them (since Copilot round 3 — the SDK no longer holds them at all). The check sees only the first URL: a redirect is the `fetch`'s. Since the gate-time review, a request carrying them through `globalThis.fetch` sets `redirect: 'error'`; a guarded fetch keeps its own policy (`'reject'` by default; under `'validate-each-hop'` only `sensitiveHeaders` are stripped) |
 | 9 | `closeMcpSession` begins | `terminate()` (≤ 2 s) | `client.close()` | termination never calls `auth()`; the gate is closed after connect anyway; the 2 s bound covers a slow `tokens()` |
 
 Not a window but worth stating: the gate is per transport (single-use), so two sessions cannot open
@@ -268,6 +268,14 @@ R18's test was replaced by the two `test.each` tables that pin R21 (forwarded: `
 | R39 | `retry.baseDelayMs` bounded | exempt it from the bound | `bounds retry.baseDelayMs by what a timer honours…` | red |
 | R40 | `retry.maxDelayMs` bounded | exempt it from the bound | `bounds retry.maxDelayMs by what a timer honours…` | red |
 | R41 | guarded `headersTimeoutMs` bounded, at creation | no upper bound | `bounds the headers timeout by what a timer honours: 2147483647 is accepted, 2147483648 refused` | red |
+
+### Rows added after the gate-time deep review
+
+| # | protection | revert | named test | result |
+|---|---|---|---|---|
+| R42 | `redirect: 'error'` on a request carrying static headers through `globalThis.fetch` | return the init without it | `a 307 from the MCP origin to another origin is refused, and the static header never reaches it` | red |
+| R43 | a `resource_metadata` URL with userinfo is dropped | skip the username / password check | `acceptResourceMetadataUrl drops a URL that carries a username or password` | red |
+| R44 | the facade's member list covers `keyof McpOAuthClientProvider` | remove `discoveryState` from the list | build (`TS2741`), and `every member forwards to the consumer…` | red (compile error first) |
 
 ## `AbortSignal.any` and a long-lived source signal (orchestrator review)
 
@@ -420,6 +428,28 @@ with a failing test before it was fixed.
 | 1 | medium | `_noteRefusal` logged only a refusal of the endpoint's event-stream `GET`; the OAuth discovery, refresh and registration the SDK runs after a 401 on its background reconnect have no operation to fail, so a guard refusing one of them was reported nowhere | yes — the new test sees no log line before the fix (R36) | **fixed** — every `egress-blocked` refusal is logged at `detail`, whatever its URL or method, by kind only and never with a URL. The endpoint `GET` keeps its event-stream line; anything else is `mcp: an HTTP request was refused by the egress guard (<kind>)`. A refusal that also fails an operation is now logged as well as classified. TSDoc on `_noteRefusal` and `IHttpTransportParams.fetch`, and the README, updated. Test: the event-stream `GET` gets a 401 on reconnect, the guard blocks the authorization-server request, and the session logger records the refusal with no URL in any line. R36 |
 | 2 | medium | `headersTimeoutMs` above 2³¹−1 was accepted; Node fires such a timer after 1 ms, so the call timed out at once | yes — R41 | **fixed** — refused at creation above 2147483647 (`MAX_TIMER_DELAY_MS`, internal, the same bound as `ts-extras-mcp`'s `MAX_TIMEOUT_MS`). The sweep found three more options that reach `setTimeout`: the buffered `timeoutMs` and `headersTimeoutMs`, and `retry.baseDelayMs` / `retry.maxDelayMs` (a backoff, and an honoured `Retry-After`, is clamped to `maxDelayMs`, so bounding it bounds both). All now refused above the bound. The guarded path takes no other timer option (`timeoutMs` and `retry` are refused there). Tests: 2147483647 accepted and 2147483648 refused for each of the five. R37–R41 |
 | 3 | — | redact `McpError` text | — | **declined**, per the orchestrator; not changed |
+
+## Gate-time deep review (PR #729)
+
+No code defects. Fifteen items, all applied:
+
+| # | item | disposition |
+|---|---|---|
+| 1 | static headers can follow a redirect: the egress sees only a request's first URL, native `fetch` follows with custom headers to any origin, and a guarded fetch under `validate-each-hop` does unless the header is in `sensitiveHeaders` | **fixed** — a request carrying static headers through `globalThis.fetch` sets `redirect: 'error'`. The exact guarantee is now stated in `headers`/`authProvider` TSDoc, the README, CAPABILITIES and the oauth change file. Test: a 307 from the MCP origin to another origin (with a no-headers control showing the other origin is reachable) fails and the other origin sees nothing. R42 |
+| 2 | "messages never carry server-authored text" was too broad | **narrowed** to HTTP-error and OAuth-error text, with `tool-error` / `protocol` carrying server text by design and the SDK's other auth errors able to name a server-chosen URL (model.ts, CAPABILITIES, README, change file) |
+| 3 | stacked `isFailure` checks in `createHttpTransport` | **chained** with `.onSuccess`; same messages; every read of the caller's objects still inside its capture; the build step moved to `_buildHttpTransport` |
+| 4 | stacked checks in `_resolveCallOptions` | **chained** (redirect, then retry), as `_prepareGuardedFetch` does. `_walk` / `_execute` untouched (D1 in `personality-asks-2026-10/followups.md`) |
+| 5 | `_reasonOf` re-spelled the unexpected-error wrapping | both now build it from `_unexpectedReason` |
+| 6 | `GUARDED_FETCH_METHODS` hand-copied the method union | `SAFER_FETCH_METHODS` (`as const`, exported) and `SaferFetchMethod` derived from it; the union is unchanged |
+| 7 | temporal markers | both `describe`s renamed after their behaviour; the "now … used to need" comment rewritten |
+| 8 | inline `await import` in a test | moved to a top-level import |
+| 9 | userinfo in `resource_metadata` | `acceptResourceMetadataUrl` drops it; test. R43. The existing forged-URL fixture gained empty `username` / `password` so it still reaches the line check |
+| 10 | the secrets sweep missed the code verifier and `state` | `TestProvider` records both into `GENERATED_SECRETS`, which `afterEach` scans with `SECRETS` and then clears; `state` values made distinctive (`state-<n>-csrf-e2f1`) |
+| 11 | "`authProvider` is passed through" | now "wrapped, with the interactive steps gated; a different object from your provider" (index.ts, README, FUTURE.md, model.ts, CAPABILITIES, change file) |
+| 12 | indexed access on `FetchFailureReason['kind']` | `SaferFetch.FetchFailureKind` exported and used in `model.ts` and `sdk.ts`; `.api.md` regenerated by the build |
+| 13 | facade coverage | `FORWARDED_PROVIDER_MEMBERS: Record<keyof McpOAuthClientProvider, true>` (compile-time), and the forwarding test asserts the facade's keys equal it. R44 |
+| 14 | change-file wording | the buffered paths take `string \| Uint8Array`, so only a `Uint8Array` is copied there; the stray ",." removed |
+| 15 | `NON_REFUSAL_FETCH_FAILURES` | one line added on the SDK's CORS-retry fallback not running through a guarded fetch |
 
 ## What the brief got wrong
 

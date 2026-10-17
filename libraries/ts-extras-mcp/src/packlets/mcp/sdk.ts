@@ -375,11 +375,12 @@ export function isServerAuthoredError(error: unknown): boolean {
  * practice, by the transport's own close), or the guarded fetch failed internally (`'unknown'`: a
  * bug, or a logger that threw). They classify as the same failure through an unguarded `fetch`
  * would, so `'egress-blocked'` means only "the configuration refused this". A guarded fetch's
- * `'timeout'` is handled before this set is consulted: it classifies as `'timeout'`.
+ * `'timeout'` is handled before this set is consulted: it classifies as `'timeout'`. Through a guarded
+ * fetch, a network failure during OAuth discovery is a `GuardedFetchError`, not a `TypeError`, so the
+ * SDK's CORS-retry fallback does not run.
  */
-const NON_REFUSAL_FETCH_FAILURES: ReadonlySet<SaferFetch.FetchFailureReason['kind']> = new Set<
-  SaferFetch.FetchFailureReason['kind']
->(['network', 'aborted', 'unknown']);
+const NON_REFUSAL_FETCH_FAILURES: ReadonlySet<SaferFetch.FetchFailureKind> =
+  new Set<SaferFetch.FetchFailureKind>(['network', 'aborted', 'unknown']);
 
 /**
  * Whether a value is the error the SDK raises when a response fails its result schema. The SDK

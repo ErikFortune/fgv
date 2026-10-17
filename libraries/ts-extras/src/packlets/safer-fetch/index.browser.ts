@@ -57,7 +57,8 @@ export {
   SUPPORTED_SCHEMES
 } from './defaults';
 
-export type { FetchFailureReason, FetchTimeoutPhase } from './failureReason';
+export type { FetchFailureKind, FetchFailureReason, FetchTimeoutPhase } from './failureReason';
+export { SAFER_FETCH_METHODS } from './model';
 export type { IRetryPolicy } from './retry';
 
 export type {

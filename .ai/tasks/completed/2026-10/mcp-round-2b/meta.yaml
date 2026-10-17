@@ -25,7 +25,7 @@ summary:
     run only inside connectMcpSession (and an authorization URL that is neither https nor loopback http is always refused);
     resourceMetadataUrl is read with the SDK's exported extractWWWAuthenticateParams in the wrapper.
     Real SDK servers throughout (the protected one behind the SDK's own requireBearerAuth via an
-    Express shim, plus a minimal local authorization server); a 42-row revert matrix, 41 red and one
+    Express shim, plus a minimal local authorization server); a 45-row revert matrix, 44 red and one
     (R7, a late-abort check in a microtask-only window) that no test can isolate. After the
     orchestrator review a guarded headers timeout classifies as 'timeout' (a JSON-response server
     holds a slow tool's headers) and consumers are told to size headersTimeoutMs to their longest
@@ -76,4 +76,4 @@ relatedStreams:
       id: mcp-client-cancellation,
       relationship: 'built the McpFailureReason vocabulary (#722) extended here'
     }
-sourceHash: sha256:0b74cbde272d2831 # over brief.md + result.md + state.md
+sourceHash: sha256:1c9b59b2969fa517 # over brief.md + result.md + state.md
