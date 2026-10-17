@@ -40,7 +40,7 @@ import {
   type ProgressResponse,
   type ShowResponse
 } from 'ollama';
-import { captureAsyncResult, captureResult, succeed, type Result } from '@fgv/ts-utils';
+import { captureAsyncResult, captureResult, fail, succeed, type Result } from '@fgv/ts-utils';
 import { type JsonObject, type JsonValue, JsonSchema } from '@fgv/ts-json-base';
 
 /**
@@ -523,7 +523,8 @@ export interface IChatStructuredParams<T> {
 
 /**
  * Ollama's keyword-capability table for the native `format` field: every constraint and annotation
- * keyword folds, except `title`, which is dropped (it restates the property name).
+ * keyword folds, except `title`, which is dropped (it restates the property name). A numeric or
+ * boolean `enum` folds too, and a schema with no `type` is refused.
  *
  * @remarks
  * Ollama documents `format` only as "a JSON schema" — its API reference
@@ -534,7 +535,8 @@ export interface IChatStructuredParams<T> {
  * constraint fails validation rather than reaching the caller. See `JsonSchema.adaptSchemaKeywords`
  * in `@fgv/ts-json-base` for the fold rule.
  */
-const OLLAMA_FORMAT_SCHEMA_KEYWORDS: JsonSchema.SchemaKeywordCapabilities = JsonSchema.unverifiedWireSchemaKeywords;
+const OLLAMA_FORMAT_SCHEMA_KEYWORDS: JsonSchema.SchemaKeywordCapabilities =
+  JsonSchema.unverifiedWireSchemaKeywords;
 
 /**
  * Recursively removes the JSON-Schema keywords (`$schema`, `additionalProperties`) — *if present*
@@ -612,10 +614,17 @@ export async function chatStructured<T>(
   client: IOllamaClient,
   params: IChatStructuredParams<T>
 ): Promise<Result<IOllamaChatStructuredResult<T>>> {
-  const accumulated = await captureAsyncResult(async () => {
-    const wireFormat = sanitizeFormatSchema(
-      JsonSchema.adaptSchemaKeywords(params.schema.toJson(), OLLAMA_FORMAT_SCHEMA_KEYWORDS)
+  // A schema with no `type` (`JsonSchema.anyValue`) is refused here rather than sent: Ollama's
+  // support for one is undocumented, and giving it a `type` would narrow the reply below what the
+  // schema accepts.
+  const adapted = JsonSchema.adaptSchemaKeywords(params.schema.toJson(), OLLAMA_FORMAT_SCHEMA_KEYWORDS);
+  if (adapted.isFailure()) {
+    return fail(
+      `chatStructured(${params.model}): the schema cannot be sent as Ollama's format: ${adapted.message}`
     );
+  }
+  const accumulated = await captureAsyncResult(async () => {
+    const wireFormat = sanitizeFormatSchema(adapted.value);
     const request: ChatRequest & { stream: true } = {
       model: params.model,
       messages: params.messages.map(toWireMessage),

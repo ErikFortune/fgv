@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "Each ai-assist wire's schema table now states the numeric-enum and untyped-schema shapes: a numeric or boolean enum passes on OpenAI, xAI and both Anthropic wires and folds into the description on Gemini and unverified servers; a schema with no type (JsonSchema.anyValue, {}) passes on Anthropic tools and is refused elsewhere, failing the client-tool request before it is sent with the tool and path named, and making a structured-output request a capability mismatch under onUnsupported. The internal tool formatters (toResponsesApiTools, toAnthropicTools, toGeminiTools) return a Result.",
+      "type": "minor",
+      "packageName": "@fgv/ts-extras"
+    }
+  ],
+  "packageName": "@fgv/ts-extras",
+  "email": "ErikFortune@outlook.com"
+}

@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "chatStructured folds a numeric or boolean enum into the description and refuses a schema with no type (JsonSchema.anyValue) before sending anything.",
+      "type": "minor",
+      "packageName": "@fgv/ts-extras-ollama"
+    }
+  ],
+  "packageName": "@fgv/ts-extras-ollama",
+  "email": "ErikFortune@outlook.com"
+}

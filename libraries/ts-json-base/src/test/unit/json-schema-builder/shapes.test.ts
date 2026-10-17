@@ -49,7 +49,7 @@ describe('JsonSchema — numeric and boolean enums', () => {
       expect(schema.validate(undefined)).toFailWith(/Invalid enumerated value undefined/);
       expect(schema.validate({})).toFailWith(/Invalid enumerated value an object/);
       expect(schema.validate([2])).toFailWith(/Invalid enumerated value an array/);
-    expect(schema.validate(Symbol('s'))).toFailWith(/Invalid enumerated value a symbol/);
+      expect(schema.validate(Symbol('s'))).toFailWith(/Invalid enumerated value a symbol/);
     });
 
     test('integerEnumOf emits type integer', () => {
@@ -171,7 +171,10 @@ describe('JsonSchema — numeric and boolean enums', () => {
 describe('JsonSchema — scalar const', () => {
   test('maps const to the one-value enum of its type, emitted as enum', () => {
     expectRoundTrip({ const: 'a' }, { type: 'string', enum: ['a'] });
-    expectRoundTrip({ type: 'string', const: 'a', description: 'd' }, { type: 'string', enum: ['a'], description: 'd' });
+    expectRoundTrip(
+      { type: 'string', const: 'a', description: 'd' },
+      { type: 'string', enum: ['a'], description: 'd' }
+    );
     expectRoundTrip({ const: 1.5 }, { type: 'number', enum: [1.5] });
     expectRoundTrip({ type: 'number', const: 2 }, { type: 'number', enum: [2] });
     expectRoundTrip({ type: 'integer', const: 2 }, { type: 'integer', enum: [2] });
@@ -201,7 +204,9 @@ describe('JsonSchema — scalar const', () => {
     expect(JsonSchema.fromJson({ type: 'number', const: 'a' })).toFailWith(
       /conflicting 'type' 'number' for string values/
     );
-    expect(JsonSchema.fromJson({ type: 'integer', const: 1.5 })).toFailWith(/enum value 1.5 is not an integer/);
+    expect(JsonSchema.fromJson({ type: 'integer', const: 1.5 })).toFailWith(
+      /enum value 1.5 is not an integer/
+    );
     expect(JsonSchema.fromJson({ type: 'object', const: 1 })).toFailWith(/conflicting 'type' 'object'/);
     expect(JsonSchema.fromJson({ type: ['string', 'null'], const: 'a' })).toFailWith(
       /'const' beside a union 'type' is not supported/
@@ -229,7 +234,12 @@ describe('JsonSchema — scalar const', () => {
 
 describe('JsonSchema — anyValue / {}', () => {
   test('the factory emits {} plus annotations, and accepts any JSON value as a copy', () => {
-    const schema = JsonSchema.anyValue({ description: 'anything', title: 'Any', default: null, examples: [1] });
+    const schema = JsonSchema.anyValue({
+      description: 'anything',
+      title: 'Any',
+      default: null,
+      examples: [1]
+    });
     expect(schema._type).toBe('any');
     expect(JsonSchema.isSchemaValidator(schema)).toBe(true);
     expect(schema.toJson()).toEqual({ description: 'anything', title: 'Any', default: null, examples: [1] });
@@ -277,11 +287,13 @@ describe('JsonSchema — anyValue / {}', () => {
     expectRoundTrip({}, {});
     expectRoundTrip({ description: 'd', title: 't' }, { description: 'd', title: 't' });
     expectRoundTrip({ type: 'array', items: {} }, { type: 'array', items: {} });
-    expect(JsonSchema.fromJson({ type: 'object', additionalProperties: {} })).toSucceedAndSatisfy((schema) => {
-      expect(schema._type).toBe('object');
-      expect(schema.toJson()).toEqual({ type: 'object', properties: {} });
-      expect(schema.validate({ a: 1 })).toSucceedWith({ a: 1 });
-    });
+    expect(JsonSchema.fromJson({ type: 'object', additionalProperties: {} })).toSucceedAndSatisfy(
+      (schema) => {
+        expect(schema._type).toBe('object');
+        expect(schema.toJson()).toEqual({ type: 'object', properties: {} });
+        expect(schema.validate({ a: 1 })).toSucceedWith({ a: 1 });
+      }
+    );
   });
 
   test('a $ref to {} and a nullable anyOf of {} are any; a oneOf of {} and null is refused', () => {
@@ -361,11 +373,20 @@ describe('JsonSchema.adaptSchemaKeywords — non-string enums and untyped nodes'
     expect(
       JsonSchema.adaptSchemaKeywords(JsonSchema.array(JsonSchema.anyValue()).toJson(), caps('fold', 'refuse'))
     ).toFailWith(/^#\/items: a schema with no 'type'/);
-    expect(JsonSchema.adaptSchemaKeywords({}, caps('fold', 'refuse'))).toFailWith(/^#: a schema with no 'type'/);
+    expect(JsonSchema.adaptSchemaKeywords({}, caps('fold', 'refuse'))).toFailWith(
+      /^#: a schema with no 'type'/
+    );
   });
 
   test('a node typed by something other than type is not untyped', () => {
-    const nodes: JsonObject[] = [{ enum: ["a"] }, { const: 1 }, { $ref: "#/x" }, { anyOf: [] }, { oneOf: [] }, { allOf: [] }];
+    const nodes: JsonObject[] = [
+      { enum: ['a'] },
+      { const: 1 },
+      { $ref: '#/x' },
+      { anyOf: [] },
+      { oneOf: [] },
+      { allOf: [] }
+    ];
     for (const node of nodes) {
       expect(JsonSchema.adaptSchemaKeywords(node, caps('pass', 'refuse'))).toSucceed();
     }

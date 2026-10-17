@@ -648,7 +648,9 @@ function _buildEnum(
         .withErrorFormat((msg) => `${path}: ${msg}`)
         .onSuccess((checked) =>
           succeed(
-            (type === 'integer' ? integerEnumOf(checked, opts) : numberEnumOf(checked, opts)) as unknown as ISchemaValidator<JsonValue>
+            (type === 'integer'
+              ? integerEnumOf(checked, opts)
+              : numberEnumOf(checked, opts)) as unknown as ISchemaValidator<JsonValue>
           )
         );
     default:

@@ -267,7 +267,9 @@ export function checkEnumValues<T extends number | boolean>(
           Number.isFinite(value) &&
           (type === 'number' || Number.isInteger(value));
     if (!fits) {
-      return fail(`enum value ${describeEnumMember(value)} is not ${type === 'integer' ? 'an' : 'a'} ${type}`);
+      return fail(
+        `enum value ${describeEnumMember(value)} is not ${type === 'integer' ? 'an' : 'a'} ${type}`
+      );
     }
   }
   return succeed(values);

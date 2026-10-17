@@ -881,8 +881,14 @@ export function numberEnumOf<T extends number>(
  * declared.
  * @public
  */
-export function numberEnumOf<T extends number>(values: readonly T[], opts?: ISchemaOptions): ISchemaValidator<T>;
-export function numberEnumOf<T extends number>(values: readonly T[], opts?: ISchemaOptions): ISchemaValidator<T> {
+export function numberEnumOf<T extends number>(
+  values: readonly T[],
+  opts?: ISchemaOptions
+): ISchemaValidator<T>;
+export function numberEnumOf<T extends number>(
+  values: readonly T[],
+  opts?: ISchemaOptions
+): ISchemaValidator<T> {
   return _nonStringEnum('numberEnumOf', 'number', values, opts);
 }
 
@@ -918,8 +924,14 @@ export function integerEnumOf<T extends number>(
  * declared.
  * @public
  */
-export function integerEnumOf<T extends number>(values: readonly T[], opts?: ISchemaOptions): ISchemaValidator<T>;
-export function integerEnumOf<T extends number>(values: readonly T[], opts?: ISchemaOptions): ISchemaValidator<T> {
+export function integerEnumOf<T extends number>(
+  values: readonly T[],
+  opts?: ISchemaOptions
+): ISchemaValidator<T>;
+export function integerEnumOf<T extends number>(
+  values: readonly T[],
+  opts?: ISchemaOptions
+): ISchemaValidator<T> {
   return _nonStringEnum('integerEnumOf', 'integer', values, opts);
 }
 
@@ -955,8 +967,14 @@ export function booleanEnumOf<T extends boolean>(
  * declared.
  * @public
  */
-export function booleanEnumOf<T extends boolean>(values: readonly T[], opts?: ISchemaOptions): ISchemaValidator<T>;
-export function booleanEnumOf<T extends boolean>(values: readonly T[], opts?: ISchemaOptions): ISchemaValidator<T> {
+export function booleanEnumOf<T extends boolean>(
+  values: readonly T[],
+  opts?: ISchemaOptions
+): ISchemaValidator<T>;
+export function booleanEnumOf<T extends boolean>(
+  values: readonly T[],
+  opts?: ISchemaOptions
+): ISchemaValidator<T> {
   return _nonStringEnum('booleanEnumOf', 'boolean', values, opts);
 }
 

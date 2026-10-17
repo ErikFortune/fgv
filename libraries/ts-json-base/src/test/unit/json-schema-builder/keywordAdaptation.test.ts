@@ -95,7 +95,10 @@ describe('JsonSchema.adaptSchemaKeywords', () => {
 
   test('an existing description keeps its text and position, the sentence after it', () => {
     const raw: JsonObject = { type: 'string', description: 'A name.', minLength: 1, title: 'Name' };
-    const adapted = JsonSchema.adaptSchemaKeywords(raw, JsonSchema.unverifiedWireSchemaKeywords).orThrow() as JsonObject;
+    const adapted = JsonSchema.adaptSchemaKeywords(
+      raw,
+      JsonSchema.unverifiedWireSchemaKeywords
+    ).orThrow() as JsonObject;
     expect(Object.keys(adapted)).toEqual(['type', 'description']);
     // The title is dropped, not folded: it restates the property name.
     expect(adapted.description).toBe('A name. Constraints: minLength 1.');

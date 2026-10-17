@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "Tests only: MCP tools using a numeric enum, a scalar const or {} are now adapted; an out-of-set call is refused before it reaches the server, and a Gemini request carrying {} is refused naming the tool and path.",
+      "type": "none",
+      "packageName": "@fgv/ts-extras-mcp"
+    }
+  ],
+  "packageName": "@fgv/ts-extras-mcp",
+  "email": "ErikFortune@outlook.com"
+}

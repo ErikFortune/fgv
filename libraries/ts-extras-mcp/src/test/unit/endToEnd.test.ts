@@ -29,7 +29,8 @@
  * 100%-line-coverage of a mocked seam cannot catch (e.g. a projection-shape mismatch in `sdk.ts`).
  *
  * The fixture server advertises a MIX of tools: adaptable ones (including a pydantic-shaped one with
- * a local `$ref` and an `anyOf [T, null]` field), and one for each JSON Schema feature
+ * a local `$ref` and an `anyOf [T, null]` field, and one with a numeric enum, a `const` and `{}`), and
+ * one for each JSON Schema feature
  * `JsonSchema.fromJson` rejects (an unresolvable `$ref`, a general oneOf/anyOf union, pattern, a
  * general union `type[]`).
  */
@@ -94,6 +95,22 @@ const ADAPTABLE_TOOLS = [
         lang: { anyOf: [{ type: 'string' }, { type: 'null' }], default: null }
       },
       required: ['loc']
+    }
+  },
+  {
+    // pydantic's `Literal[1, 2]`, a `Literal['fast']` emitted as `const`, and `Any` as `{}`. A server
+    // offering any of them had the tool skipped until `fromJson` learned numeric enums, scalar `const`
+    // and the any node; `pattern_tool` is still the example of a refused keyword.
+    name: 'literal_any_tool',
+    description: 'Takes a numeric literal, a const and an arbitrary value.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        level: { type: 'integer', enum: [1, 2] },
+        mode: { const: 'fast' },
+        payload: {}
+      },
+      required: ['level']
     }
   }
 ];
@@ -203,6 +220,7 @@ describe('@fgv/ts-extras-mcp end-to-end against a real in-memory MCP server', ()
         [
           'anyof_tool',
           'echo',
+          'literal_any_tool',
           'nullable_tool',
           'oneof_tool',
           'pattern_tool',
@@ -241,6 +259,7 @@ describe('@fgv/ts-extras-mcp end-to-end against a real in-memory MCP server', ()
         // (a) Only the adaptable tools are offered to the model; none of the rejected ones leak.
         expect(result.tools.map((t) => t.config.name).sort()).toEqual([
           'echo',
+          'literal_any_tool',
           'nullable_tool',
           'ping',
           'pydantic_tool'

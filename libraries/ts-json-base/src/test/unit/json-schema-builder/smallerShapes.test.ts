@@ -258,11 +258,11 @@ describe('JsonSchema — smaller MCP shapes (#683)', () => {
 
   describe('numeric enum, scalar const and {} (supported)', () => {
     test('zod: number enum (spike)', () => {
-      expectHonoured(obj({ lvl: { type: 'number', enum: [1, 2, 3] } }, ['lvl']), [{ lvl: 1 }, { lvl: 3 }], [
-        { lvl: 4 },
-        { lvl: '1' },
-        { lvl: 1.5 }
-      ]);
+      expectHonoured(
+        obj({ lvl: { type: 'number', enum: [1, 2, 3] } }, ['lvl']),
+        [{ lvl: 1 }, { lvl: 3 }],
+        [{ lvl: 4 }, { lvl: '1' }, { lvl: 1.5 }]
+      );
     });
 
     test('pydantic Literal[1, 2]', () => {
@@ -317,7 +317,11 @@ describe('JsonSchema — smaller MCP shapes (#683)', () => {
         obj({ id: { type: 'string', pattern: '^[a-z]+$' } }),
         /^#\/properties\/id: unsupported JSON Schema keyword 'pattern'/
       ],
-      ['a mixed enum', obj({ m: { enum: ['a', 1] } }), /^#\/properties\/m: 'enum' values must all be of one type/]
+      [
+        'a mixed enum',
+        obj({ m: { enum: ['a', 1] } }),
+        /^#\/properties\/m: 'enum' values must all be of one type/
+      ]
     ])('refuses %s', (__label, raw, message) => {
       expect(JsonSchema.fromJson(raw)).toFailWith(message);
     });
