@@ -31,10 +31,18 @@
  * The only `as unknown as` casts in the package live here, at the boundary where the real SDK
  * objects are narrowed to the local projection.
  *
+ * One public SDK type is aliased elsewhere: `McpOAuthClientProvider`, in `sdkTypes.ts`, a type-only
+ * leaf. It lives apart so that `model.ts` can name it without importing this module, which itself
+ * imports `model.ts`; a rename touches both files.
+ *
  * @internal
  */
 
-import { UnauthorizedError } from '@modelcontextprotocol/sdk/client/auth.js';
+import {
+  type OAuthClientProvider,
+  UnauthorizedError,
+  extractWWWAuthenticateParams
+} from '@modelcontextprotocol/sdk/client/auth.js';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { SseError } from '@modelcontextprotocol/sdk/client/sse.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
@@ -42,11 +50,18 @@ import {
   StreamableHTTPClientTransport,
   StreamableHTTPError
 } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
+import { OAuthError } from '@modelcontextprotocol/sdk/server/auth/errors.js';
 import { DEFAULT_REQUEST_TIMEOUT_MSEC } from '@modelcontextprotocol/sdk/shared/protocol.js';
-import { ErrorCode, McpError } from '@modelcontextprotocol/sdk/types.js';
+import {
+  ErrorCode,
+  McpError,
+  ResultSchema,
+  ToolListChangedNotificationSchema
+} from '@modelcontextprotocol/sdk/types.js';
 
 import { captureResult } from '@fgv/ts-utils';
-import { type McpFailureReason } from './model';
+import { SaferFetch } from '@fgv/ts-extras';
+import { type McpFailureReason, type McpFetch } from './model';
 
 /**
  * Opaque transport handle. The concrete value is an SDK `Transport`; consumers of this module
@@ -56,23 +71,28 @@ import { type McpFailureReason } from './model';
 export type ISdkTransport = object;
 
 /**
- * A single content block in an MCP `CallToolResult`. Only `text` blocks carry inline content;
- * all other block types are projected to a structural summary by the operations layer.
- * @internal
- */
-export interface ISdkContentBlock {
-  readonly type: string;
-  readonly text?: string;
-}
-
-/**
- * Projection of the SDK's `CallToolResult`.
+ * Projection of a `tools/call` result as read with {@link SDK_RAW_RESULT_SCHEMA}: every field is
+ * untrusted and unvalidated, and the operations layer converts each one.
  * @internal
  */
 export interface ISdkCallToolResult {
-  readonly content?: ReadonlyArray<ISdkContentBlock>;
-  readonly isError?: boolean;
+  readonly content?: unknown;
+  readonly isError?: unknown;
+  readonly structuredContent?: unknown;
 }
+
+/**
+ * The SDK's generic result schema — a loose object that checks only `_meta` — passed to
+ * `callTool` in place of its default `CallToolResultSchema`.
+ *
+ * @remarks
+ * The default schema validates `content` as a closed union of five block types, so one block of a
+ * type it does not know, or one malformed block, rejects the whole response. It also rebuilds
+ * `structuredContent`, silently dropping an own `__proto__` key. The generic schema passes both
+ * through by reference, and the operations layer validates them itself.
+ * @internal
+ */
+export const SDK_RAW_RESULT_SCHEMA: unknown = ResultSchema;
 
 /**
  * Projection of a single tool descriptor in the SDK's `ListToolsResult`.
@@ -80,6 +100,8 @@ export interface ISdkCallToolResult {
  */
 export interface ISdkToolDescriptor {
   readonly name: string;
+  /** The tool's display title (untrusted; validated by the operations layer). */
+  readonly title?: unknown;
   readonly description?: string;
   readonly inputSchema?: unknown;
   /**
@@ -88,6 +110,8 @@ export interface ISdkToolDescriptor {
    * spec's untrusted-server warning.
    */
   readonly annotations?: unknown;
+  /** The tool's declared output schema (untrusted; validated by the operations layer). */
+  readonly outputSchema?: unknown;
 }
 
 /**
@@ -142,13 +166,35 @@ export interface ISdkClient {
   connect(transport: ISdkTransport, options?: ISdkRequestOptions): Promise<void>;
   getServerVersion(): ISdkImplementation | undefined;
   listTools(params?: { cursor?: string }, options?: ISdkRequestOptions): Promise<ISdkListToolsResult>;
-  /** The second parameter is the SDK's result schema; `undefined` selects its default. */
+  /** The second parameter is the SDK's result schema: {@link SDK_RAW_RESULT_SCHEMA}. */
   callTool(
     params: { name: string; arguments?: Record<string, unknown> },
-    resultSchema?: undefined,
+    resultSchema: unknown,
     options?: ISdkRequestOptions
   ): Promise<ISdkCallToolResult>;
   close(): Promise<void>;
+  /**
+   * Registers the handler for one notification method, identified by the SDK's schema for it.
+   * Replaces any earlier handler for the same method.
+   */
+  setNotificationHandler(schema: unknown, handler: (notification: unknown) => void | Promise<void>): void;
+}
+
+/**
+ * Calls `handler` for each `notifications/tools/list_changed` the server sends on `client`'s
+ * connection. Register it before `connect`, so a notification sent straight after `initialize` is
+ * not missed.
+ *
+ * @remarks
+ * Registered directly rather than through the SDK's `listChanged` client option, which re-lists
+ * the tools itself and is set up only when the server advertises `tools.listChanged`. A server that
+ * sends the notification without advertising the capability is still heard. The SDK parses the
+ * notification against its schema before calling the handler, and reports a handler's throw or
+ * rejection to its own `onerror`; the session layer contains the consumer's callback before that.
+ * @internal
+ */
+export function onToolListChanged(client: ISdkClient, handler: () => void): void {
+  client.setNotificationHandler(ToolListChangedNotificationSchema, () => handler());
 }
 
 /**
@@ -212,12 +258,65 @@ export function makeStdioTransport(params: ISdkStdioParams): ISdkTransport {
 }
 
 /**
- * Constructs a Streamable-HTTP transport for the given URL, with optional static headers.
+ * Ends a Streamable-HTTP session on the server: sends the `DELETE` that the SDK's
+ * `terminateSession()` issues. Resolves without sending anything for any other transport, or for an
+ * HTTP transport that was never assigned a session id (the SDK checks that itself).
+ *
+ * @remarks
+ * The SDK treats a 405 answer as success (the server does not support explicit termination) and
+ * rejects with a `StreamableHTTPError` for any other non-2xx status. The request runs on the
+ * transport's own abort signal, so it stays pending against a server that never answers until the
+ * transport is closed. The caller bounds it.
  * @internal
  */
-export function makeHttpTransport(url: URL, headers?: Record<string, string>): ISdkTransport {
+export function terminateHttpSession(transport: ISdkTransport): Promise<void> {
+  return transport instanceof StreamableHTTPClientTransport
+    ? transport.terminateSession()
+    : Promise.resolve();
+}
+
+/**
+ * Parameters for the Streamable-HTTP transport factory.
+ * @internal
+ */
+export interface ISdkHttpParams {
+  /** The `fetch` the transport sends every request through: the package's egress wrapper. */
+  readonly fetch: McpFetch;
+  /** The OAuth provider the SDK authorizes with: the package's gated wrapper of the consumer's. */
+  readonly authProvider?: OAuthClientProvider;
+}
+
+/**
+ * The `resource_metadata` URL of a response's `WWW-Authenticate` bearer challenge, as the SDK's own
+ * exported parser reads it, or `undefined` when there is none or it is not a URL.
+ * @internal
+ */
+export function readResourceMetadataUrl(response: Response): URL | undefined {
+  return extractWWWAuthenticateParams(response).resourceMetadataUrl;
+}
+
+/**
+ * Creates the SDK's `UnauthorizedError`, so a refusal this package raises inside the SDK's auth
+ * flow classifies exactly as the SDK's own.
+ * @internal
+ */
+export function makeUnauthorizedError(message: string): Error {
+  return new UnauthorizedError(message);
+}
+
+/**
+ * Constructs a Streamable-HTTP transport for the given URL.
+ *
+ * @remarks
+ * The transport is given no `requestInit`: static headers are applied by the package's egress
+ * wrapper, to the endpoint's origin only. Handed to the SDK, they would also be merged into every
+ * OAuth request, including those to the authorization server.
+ * @internal
+ */
+export function makeHttpTransport(url: URL, params: ISdkHttpParams): ISdkTransport {
   return new StreamableHTTPClientTransport(url, {
-    requestInit: headers ? { headers } : undefined
+    fetch: params.fetch,
+    authProvider: params.authProvider
   }) as unknown as ISdkTransport;
 }
 
@@ -257,6 +356,31 @@ function _classifyHttpStatus(status: number | undefined, context: SdkFailureCont
  * from zod 3 or zod 4 classic. The SDK accepts either major (`^3.25 || ^4.0`).
  */
 const SCHEMA_REJECTION_NAMES: ReadonlySet<string> = new Set(['$ZodError', 'ZodError']);
+
+/**
+ * Whether an error's text was written by a server: an HTTP error the transport built from a
+ * response's status text or body, or an OAuth error built from an authorization server's
+ * `error_description`. Such text may repeat a credential the server was sent, so it is never put
+ * in a failure message. Never throws: a value that cannot be inspected is not one of these.
+ * @internal
+ */
+export function isServerAuthoredError(error: unknown): boolean {
+  return captureResult(
+    () => error instanceof StreamableHTTPError || error instanceof SseError || error instanceof OAuthError
+  ).orDefault(false);
+}
+
+/**
+ * Guarded-fetch failures that are not refusals: the network failed, the request was aborted (in
+ * practice, by the transport's own close), or the guarded fetch failed internally (`'unknown'`: a
+ * bug, or a logger that threw). They classify as the same failure through an unguarded `fetch`
+ * would, so `'egress-blocked'` means only "the configuration refused this". A guarded fetch's
+ * `'timeout'` is handled before this set is consulted: it classifies as `'timeout'`. Through a guarded
+ * fetch, a network failure during OAuth discovery is a `GuardedFetchError`, not a `TypeError`, so the
+ * SDK's CORS-retry fallback does not run.
+ */
+const NON_REFUSAL_FETCH_FAILURES: ReadonlySet<SaferFetch.FetchFailureKind> =
+  new Set<SaferFetch.FetchFailureKind>(['network', 'aborted', 'unknown']);
 
 /**
  * Whether a value is the error the SDK raises when a response fails its result schema. The SDK
@@ -310,8 +434,23 @@ function _classifyInspectable(error: unknown, context: SdkFailureContext): McpFa
   if (_isSchemaRejection(error)) {
     return { kind: 'protocol' };
   }
-  if (error instanceof UnauthorizedError) {
+  // An OAuth error is the SDK's auth flow failing at the authorization server — a refused refresh,
+  // registration or token exchange: the credentials could not be obtained.
+  if (error instanceof UnauthorizedError || error instanceof OAuthError) {
     return { kind: 'unauthorized' };
+  }
+  // The SDK passes a rejected `fetch` through unchanged — from `send`, from `connect`, and from
+  // `terminateSession` — so the guarded fetch's own error is what arrives here.
+  if (error instanceof SaferFetch.GuardedFetchError) {
+    const kind = error.reason.kind;
+    // The guarded fetch's headers deadline: a server that held its response headers too long — a
+    // slow tool on a server that answers with JSON rather than a stream holds them until it is done.
+    if (kind === 'timeout') {
+      return { kind: 'timeout' };
+    }
+    if (!NON_REFUSAL_FETCH_FAILURES.has(kind)) {
+      return { kind: 'egress-blocked', reason: kind };
+    }
   }
   if (error instanceof StreamableHTTPError || error instanceof SseError) {
     return _classifyHttpStatus(error.code, context);

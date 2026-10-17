@@ -28,13 +28,18 @@
 
 import {
   type DetailedResult,
+  type Logging,
   Converters as UtilsConverters,
+  Validators,
+  fail,
   failWithDetail,
   succeedWithDetail
 } from '@fgv/ts-utils';
-import { Converters, type JsonObject } from '@fgv/ts-json-base';
+import { Converters, type JsonObject, type JsonValue } from '@fgv/ts-json-base';
 
+import { line, projectContent, receivedJson, toContentBlocks } from './content';
 import {
+  type IMcpCallToolOptions,
   type IMcpSession,
   type IMcpToolAnnotations,
   type IMcpToolCallResult,
@@ -43,7 +48,7 @@ import {
   type McpFailureReason
 } from './model';
 import { runSdkRequest } from './request';
-import { type ISdkContentBlock, type ISdkToolDescriptor, classifySdkError } from './sdk';
+import { type ISdkToolDescriptor, SDK_RAW_RESULT_SCHEMA, classifySdkError } from './sdk';
 import { McpSession } from './session';
 
 /**
@@ -64,7 +69,9 @@ function _normalizeAnnotations(raw: unknown): IMcpToolAnnotations | undefined {
     return undefined;
   }
   const obj = objResult.value;
-  const title = UtilsConverters.string.convert(obj.title).orDefault();
+  // The title is display text, validated like the descriptor's own title; one that is not a
+  // single printable line is dropped.
+  const title = _line(obj.title);
   const readOnlyHint = UtilsConverters.boolean.convert(obj.readOnlyHint).orDefault();
   const destructiveHint = UtilsConverters.boolean.convert(obj.destructiveHint).orDefault();
   const idempotentHint = UtilsConverters.boolean.convert(obj.idempotentHint).orDefault();
@@ -80,43 +87,59 @@ function _normalizeAnnotations(raw: unknown): IMcpToolAnnotations | undefined {
   return Object.keys(normalized).length > 0 ? normalized : undefined;
 }
 
+/** `value` when it is a single line of printable text (see `line`); otherwise `undefined`. */
+function _line(value: unknown): string | undefined {
+  return line.convert(value).orDefault();
+}
+
+/**
+ * `value` as JSON ({@link receivedJson}), or `undefined` when it is absent or refused. A refusal is
+ * logged at `info`, in fixed text: nothing server-supplied (a tool name, the value) is echoed.
+ */
+function _receivedJsonOrOmit(
+  value: unknown,
+  what: string,
+  logger: Logging.ILogger | undefined
+): JsonValue | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+  return receivedJson(value)
+    .onFailure((message) => {
+      logger?.info(`mcp: ${what} was refused and omitted: ${message}`);
+      return fail(message);
+    })
+    .orDefault();
+}
+
 /**
  * Projects a single SDK tool descriptor into a public {@link IMcpToolDescriptor}. The
  * `inputSchema` field is validated as a `JsonValue`; an absent/non-JSON schema becomes `null`
  * (which {@link adaptMcpTools} then reports as un-adaptable rather than offering it to the model).
  * The raw `annotations` blob is validated/normalized (never propagated raw) per the MCP
- * untrusted-server warning.
+ * untrusted-server warning. The `title` falls back to the annotations' title, each taken only when
+ * it is a single line; the `outputSchema` is carried as raw JSON, or omitted (and the refusal logged
+ * at `info`) when it is not JSON or holds a reserved key.
  */
-function _toDescriptor(tool: ISdkToolDescriptor): IMcpToolDescriptor {
+function _toDescriptor(tool: ISdkToolDescriptor, logger: Logging.ILogger | undefined): IMcpToolDescriptor {
   const annotations = _normalizeAnnotations(tool.annotations);
+  const title = _line(tool.title) ?? annotations?.title;
+  const outputSchema = _receivedJsonOrOmit(tool.outputSchema, "a tool's outputSchema", logger);
   return {
     name: tool.name,
+    ...(title !== undefined ? { title } : {}),
     description: tool.description,
     inputSchema: Converters.jsonValue.convert(tool.inputSchema).orDefault(null),
+    ...(outputSchema !== undefined ? { outputSchema } : {}),
     ...(annotations !== undefined ? { annotations } : {})
   };
-}
-
-/**
- * Projects the SDK `CallToolResult` content blocks to a single string: `text` blocks are
- * concatenated; every other block type becomes a one-line `[<type> block]` summary.
- */
-function _projectContent(blocks: ReadonlyArray<ISdkContentBlock> | undefined): string {
-  if (blocks === undefined || blocks.length === 0) {
-    return '';
-  }
-  return blocks
-    .map((block) =>
-      block.type === 'text' && block.text !== undefined ? block.text : `[${block.type} block]`
-    )
-    .join('\n');
 }
 
 /**
  * Classifies a request failure on an established session, against the session's observed close.
  */
 function _classify(session: McpSession, err: unknown): McpFailureReason {
-  return classifySdkError(err, { phase: 'session', closed: session.closeWatcher.closed });
+  return session.describe(classifySdkError(err, { phase: 'session', closed: session.closeWatcher.closed }));
 }
 
 /**
@@ -156,7 +179,7 @@ export async function listMcpTools(
       return failWithDetail(pageResult.message, pageResult.detail);
     }
     for (const tool of pageResult.value.tools) {
-      all.push(_toDescriptor(tool));
+      all.push(_toDescriptor(tool, mcpSession.logger));
     }
     cursor = pageResult.value.nextCursor;
   } while (cursor !== undefined);
@@ -168,18 +191,28 @@ export async function listMcpTools(
  * Calls a named tool on a connected MCP server.
  *
  * @remarks
- * The SDK `CallToolResult` is projected to {@link IMcpToolCallResult} (text-block concatenation;
- * non-text blocks summarized). A result flagged `isError: true` is mapped to a failure whose
- * message is the projected content **verbatim** and whose detail is `'tool-error'` — it is never
- * swallowed, so `executeClientToolTurn` routes the server's own words back to the model as a
- * provider-native error tool-result. Every other failure is prefixed `callMcpTool '<name>':` and
- * classified per {@link McpFailureReason}.
+ * The SDK `CallToolResult` is projected to {@link IMcpToolCallResult}: every content block,
+ * converter-validated, as `blocks`; their text projection as `content`; and `structuredContent`
+ * when it is JSON. An unknown or malformed block becomes an `unknown` block and never fails the
+ * call. Media data (image, audio, blob) is carried only when `options.includeMediaData` is `true`.
+ * A `resource_link` is reported, never followed.
+ *
+ * The result is read with the SDK's generic result schema rather than its `CallToolResult` schema,
+ * which rejects the whole response over one block of a type it does not know; this package
+ * validates the result itself. The SDK still checks `structuredContent` against the tool's
+ * `outputSchema` when an earlier `listMcpTools` gave it one.
+ *
+ * A result flagged `isError: true` is mapped to a failure whose message is the text projection
+ * **verbatim** and whose detail is `'tool-error'` — it is never swallowed, so
+ * `executeClientToolTurn` routes the server's own words back to the model as a provider-native
+ * error tool-result. Every other failure is prefixed `callMcpTool '<name>':` and classified per
+ * {@link McpFailureReason}.
  *
  * @param session - A session from `connectMcpSession`.
  * @param name - The tool name to invoke.
  * @param args - The tool arguments (a JSON object).
- * @param options - Optional timeout, abort signal and progress callback for this call.
- * @returns `Success` with the projected content, or `Failure` on tool error / transport error /
+ * @param options - Optional timeout, abort signal, progress callback and media opt-in for this call.
+ * @returns `Success` with the projected result, or `Failure` on tool error / transport error /
  * foreign handle. The failure's detail is a {@link McpFailureReason}.
  * @public
  */
@@ -187,13 +220,14 @@ export async function callMcpTool(
   session: IMcpSession,
   name: string,
   args: JsonObject,
-  options?: IMcpRequestOptions
+  options?: IMcpCallToolOptions
 ): Promise<DetailedResult<IMcpToolCallResult, McpFailureReason>> {
   const sessionResult = McpSession.fromHandle(session);
   if (sessionResult.isFailure()) {
     return failWithDetail(`callMcpTool: ${sessionResult.message}`, { kind: 'invalid-handle' });
   }
   const mcpSession = sessionResult.value;
+  const includeData = options?.includeMediaData === true;
   // Only request failures are prefixed; the `isError` failure built in `onSuccess` is the server's
   // verbatim content, so the model-facing tool-error text is exactly what the tool said.
   return (
@@ -201,16 +235,36 @@ export async function callMcpTool(
       `callMcpTool '${name}'`,
       options,
       (err) => _classify(mcpSession, err),
-      (sdkOptions) => mcpSession.client.callTool({ name, arguments: args }, undefined, sdkOptions)
+      (sdkOptions) => mcpSession.client.callTool({ name, arguments: args }, SDK_RAW_RESULT_SCHEMA, sdkOptions)
     )
   ).onSuccess((raw) => {
-    const content = _projectContent(raw.content);
-    if (raw.isError === true) {
+    // The SDK's generic result schema leaves `isError` unchecked, so a value that is not a boolean
+    // is refused here rather than read as success.
+    // A strict check: `Converters.boolean` would also accept the string "true".
+    const isError = Validators.boolean.optional().validate(raw.isError);
+    if (isError.isFailure()) {
+      return failWithDetail<IMcpToolCallResult, McpFailureReason>(
+        `callMcpTool '${name}': the result's isError is not a boolean`,
+        { kind: 'protocol' }
+      );
+    }
+    const blocks = toContentBlocks(raw.content, includeData);
+    const content = projectContent(blocks);
+    if (isError.value === true) {
       return failWithDetail<IMcpToolCallResult, McpFailureReason>(
         content.length > 0 ? content : `tool '${name}' reported an error`,
         { kind: 'tool-error' }
       );
     }
-    return succeedWithDetail<IMcpToolCallResult, McpFailureReason>({ content });
+    const structuredContent = _receivedJsonOrOmit(
+      raw.structuredContent,
+      "a tool result's structuredContent",
+      mcpSession.logger
+    );
+    return succeedWithDetail<IMcpToolCallResult, McpFailureReason>({
+      content,
+      blocks,
+      ...(structuredContent !== undefined ? { structuredContent } : {})
+    });
   });
 }

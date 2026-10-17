@@ -861,6 +861,46 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
 
 ## P3 — Opportunistic cleanup
 
+- **[P3] `ts-extras-mcp` tool schemas can lose an own `__proto__` key without the package seeing it.**
+  `listMcpTools` (`libraries/ts-extras-mcp/src/packlets/mcp/operations.ts`) reads `tools/list` through
+  the SDK's `client.listTools`, which parses the page with its own `ListToolsResultSchema` first.
+  Measured against `@modelcontextprotocol/sdk` 1.29.0 in `mcp-round-2a`, that parse **drops** an own
+  `__proto__` key in two places: at an `outputSchema`'s top level, and as a name among its
+  `properties`. A key nested deeper (inside a property's own schema) survives and reaches the
+  package. So:
+  - `outputSchema`'s refusal (`receivedJson`, refusing the whole value on an own `__proto__`) sees
+    only the deeper keys. The shallow ones are gone before it runs, and the descriptor is returned
+    with a property silently missing.
+  - `inputSchema` has the same SDK-side loss, and it still goes through plain `Converters.jsonValue`.
+    Since #720 that drops an own `__proto__` at any depth, also silently, so `adaptMcpTools` can
+    build a tool whose validated arguments omit a property the server declared.
+
+  `callMcpTool` is not affected: `mcp-round-2a` moved it to the SDK's generic `ResultSchema`, which
+  passes `content` and `structuredContent` through by reference.
+
+  **Trigger**: the SDK v2 client-package rename, which rewrites `sdk.ts`; or the next stream whose
+  scope includes reading `tools/list`. *`mcp-round-2b` (2026-10-14) edited `operations.ts` and
+  `sdk.ts` but passed on this deliberately: its brief was egress and OAuth, and the fix changes how
+  `tools/list` is read and validated — its own reviewable change.*
+
+  **Scope sketch**:
+  - Read `tools/list` with `client.request({ method: 'tools/list', params }, ResultSchema, options)`
+    and validate each tool in the package, as `callMcpTool` now does for results.
+  - The cost is that the SDK's `cacheToolMetadata` no longer runs. That cache feeds `callTool`'s
+    `outputSchema` validation of `structuredContent` and its task-required checks. So either call it
+    with the package-validated tools, or replace both checks deliberately.
+  - Then route `inputSchema` through `receivedJson`. A refused schema becomes `null`, which
+    `adaptMcpTools` already reports as un-adaptable, so a schema with the key is skipped with a
+    reason rather than adapted with a property missing.
+  - It should follow the policy the `recordOf` / `jsonObject` P2 above settles for `__proto__`.
+
+  **Not a P2**: a schema property literally named `__proto__` is rare in a real tool, and the effect
+  is a missing optional property rather than a prototype hazard: the SDK's zod parse and #720's
+  `jsonValue` both drop the key rather than assign it.
+
+  **Reference**: `.ai/tasks/completed/2026-10/mcp-round-2a/result.md` § "The #723 and #721 lessons"
+  (the measurement against SDK 1.29.0) and § "Second review round" (where filing it was asked for).
+
 - **[P3] `ts-agent-tasks` — deferrals the agent-tasks slices recorded only in their own `result.md`.**
   Found by the cluster close (`agent-tasks-cluster-close`, 2026-10-01), which read all eighteen
   slices' results against this file. Each item was left by a slice as "a later slice decides", "a

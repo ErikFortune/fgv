@@ -217,7 +217,8 @@ describe('@fgv/ts-extras-mcp end-to-end against a real in-memory MCP server', ()
 
   test('callMcpTool round-trips a real tool result, and maps isError to Failure', async () => {
     expect(await callMcpTool(session, 'echo', { msg: 'hi' })).toSucceedWith({
-      content: 'echo: {"msg":"hi"}'
+      content: 'echo: {"msg":"hi"}',
+      blocks: [{ type: 'text', text: 'echo: {"msg":"hi"}' }]
     });
     expect(await callMcpTool(session, 'nope', {})).toFailWith(/unknown tool: nope/);
   });
