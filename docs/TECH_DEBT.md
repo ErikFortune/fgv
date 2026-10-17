@@ -1256,11 +1256,13 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
   `exclusiveMinimum`/`exclusiveMaximum`, `multipleOf`, `minLength` and `maxLength` are now enforced
   by the derived validator and emitted by `toJson()`, `format`/`title`/`default`/`examples` are
   emitted as annotations, and every provider wire passes, translates or folds each one
-  (`.ai/tasks/completed/2026-10/json-schema-constraints/result.md`). **Still open, as written
-  below:** `const`, the array constraints (`minItems`, `maxItems`, `uniqueItems`), the key-count
-  keywords beside an open object (`minProperties`, `maxProperties`), the object-key and array
-  keywords, and the unvalidated `"__proto__"` drop. `const` is the next stream's
-  (PersonAIlity#683), on top of the same capability tables.
+  (`.ai/tasks/completed/2026-10/json-schema-constraints/result.md`). **`const` resolved by the
+  `json-schema-shapes` stream** (PersonAIlity#683): a scalar `const` is now the enforced one-value
+  enum of its type, and an object, array or `null` `const` is refused
+  (`.ai/tasks/completed/2026-10/json-schema-shapes/result.md`). **Still open, as written below:**
+  the array constraints (`minItems`, `maxItems`, `uniqueItems`), the key-count keywords beside an
+  open object (`minProperties`, `maxProperties`), the object-key and array keywords, and the
+  unvalidated `"__proto__"` drop.
 
   The header of `FORBIDDEN_KEYWORDS` (`ts-json-base` `json-schema-builder/fromJson.ts`) is the stated
   safety rule — a keyword that cannot be honoured is refused, never dropped — but it lists only the

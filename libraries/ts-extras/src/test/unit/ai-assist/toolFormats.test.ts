@@ -217,11 +217,11 @@ describe('resolveEffectiveTools', () => {
 
 describe('toResponsesApiTools', () => {
   test('formats basic web search tool', () => {
-    expect(toResponsesApiTools([webSearchTool])).toEqual([{ type: 'web_search' }]);
+    expect(toResponsesApiTools([webSearchTool]).orThrow()).toEqual([{ type: 'web_search' }]);
   });
 
   test('includes allowed_domains filter', () => {
-    expect(toResponsesApiTools([webSearchWithDomains])).toEqual([
+    expect(toResponsesApiTools([webSearchWithDomains]).orThrow()).toEqual([
       {
         type: 'web_search',
         filters: {
@@ -232,7 +232,7 @@ describe('toResponsesApiTools', () => {
   });
 
   test('includes excluded_domains filter', () => {
-    expect(toResponsesApiTools([webSearchWithBlocked])).toEqual([
+    expect(toResponsesApiTools([webSearchWithBlocked]).orThrow()).toEqual([
       {
         type: 'web_search',
         filters: {
@@ -243,7 +243,7 @@ describe('toResponsesApiTools', () => {
   });
 
   test('includes enable_image_understanding when set', () => {
-    expect(toResponsesApiTools([webSearchWithImageUnderstanding])).toEqual([
+    expect(toResponsesApiTools([webSearchWithImageUnderstanding]).orThrow()).toEqual([
       {
         type: 'web_search',
         // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -253,11 +253,11 @@ describe('toResponsesApiTools', () => {
   });
 
   test('returns empty array for empty input', () => {
-    expect(toResponsesApiTools([])).toEqual([]);
+    expect(toResponsesApiTools([]).orThrow()).toEqual([]);
   });
 
   test('formats client tool as function type with parameters schema', () => {
-    expect(toResponsesApiTools([memoryTool])).toEqual([
+    expect(toResponsesApiTools([memoryTool]).orThrow()).toEqual([
       {
         type: 'function',
         name: 'recall_memory',
@@ -268,7 +268,7 @@ describe('toResponsesApiTools', () => {
   });
 
   test('formats multiple client tools', () => {
-    const result = toResponsesApiTools([memoryTool, weatherTool]);
+    const result = toResponsesApiTools([memoryTool, weatherTool]).orThrow();
     expect(result).toHaveLength(2);
     expect(result[0]).toEqual({
       type: 'function',
@@ -286,7 +286,7 @@ describe('toResponsesApiTools', () => {
 
   test('handles mixed server and client tools', () => {
     const tools: AiToolConfig[] = [webSearchTool, memoryTool];
-    const result = toResponsesApiTools(tools);
+    const result = toResponsesApiTools(tools).orThrow();
     expect(result).toHaveLength(2);
     expect(result[0]).toEqual({ type: 'web_search' });
     expect(result[1]).toEqual({
@@ -304,11 +304,13 @@ describe('toResponsesApiTools', () => {
 
 describe('toAnthropicTools', () => {
   test('formats basic web search tool', () => {
-    expect(toAnthropicTools([webSearchTool])).toEqual([{ type: 'web_search_20250305', name: 'web_search' }]);
+    expect(toAnthropicTools([webSearchTool]).orThrow()).toEqual([
+      { type: 'web_search_20250305', name: 'web_search' }
+    ]);
   });
 
   test('includes max_uses', () => {
-    expect(toAnthropicTools([webSearchWithDomains])).toEqual([
+    expect(toAnthropicTools([webSearchWithDomains]).orThrow()).toEqual([
       {
         type: 'web_search_20250305',
         name: 'web_search',
@@ -319,7 +321,7 @@ describe('toAnthropicTools', () => {
   });
 
   test('includes blocked_domains', () => {
-    expect(toAnthropicTools([webSearchWithBlocked])).toEqual([
+    expect(toAnthropicTools([webSearchWithBlocked]).orThrow()).toEqual([
       {
         type: 'web_search_20250305',
         name: 'web_search',
@@ -329,11 +331,11 @@ describe('toAnthropicTools', () => {
   });
 
   test('returns empty array for empty input', () => {
-    expect(toAnthropicTools([])).toEqual([]);
+    expect(toAnthropicTools([]).orThrow()).toEqual([]);
   });
 
   test('formats client tool with input_schema (no type field)', () => {
-    expect(toAnthropicTools([memoryTool])).toEqual([
+    expect(toAnthropicTools([memoryTool]).orThrow()).toEqual([
       {
         name: 'recall_memory',
         description: 'Recall stored user context',
@@ -343,7 +345,7 @@ describe('toAnthropicTools', () => {
   });
 
   test('formats multiple client tools', () => {
-    const result = toAnthropicTools([memoryTool, weatherTool]);
+    const result = toAnthropicTools([memoryTool, weatherTool]).orThrow();
     expect(result).toHaveLength(2);
     expect(result[0]).toEqual({
       name: 'recall_memory',
@@ -358,13 +360,13 @@ describe('toAnthropicTools', () => {
   });
 
   test('client tool wire format has no type field (unlike server tools)', () => {
-    const result = toAnthropicTools([memoryTool]);
+    const result = toAnthropicTools([memoryTool]).orThrow();
     expect(result[0]).not.toHaveProperty('type');
   });
 
   test('handles mixed server and client tools', () => {
     const tools: AiToolConfig[] = [webSearchTool, memoryTool];
-    const result = toAnthropicTools(tools);
+    const result = toAnthropicTools(tools).orThrow();
     expect(result).toHaveLength(2);
     expect(result[0]).toHaveProperty('type', 'web_search_20250305');
     expect(result[1]).not.toHaveProperty('type');
@@ -378,20 +380,20 @@ describe('toAnthropicTools', () => {
 
 describe('toGeminiTools', () => {
   test('formats web search as google_search', () => {
-    expect(toGeminiTools([webSearchTool])).toEqual([{ google_search: {} }]);
+    expect(toGeminiTools([webSearchTool]).orThrow()).toEqual([{ google_search: {} }]);
   });
 
   test('ignores web search domain filters (not supported by Gemini)', () => {
     // Gemini doesn't support domain filtering — just google_search: {}
-    expect(toGeminiTools([webSearchWithDomains])).toEqual([{ google_search: {} }]);
+    expect(toGeminiTools([webSearchWithDomains]).orThrow()).toEqual([{ google_search: {} }]);
   });
 
   test('returns empty array for empty input', () => {
-    expect(toGeminiTools([])).toEqual([]);
+    expect(toGeminiTools([]).orThrow()).toEqual([]);
   });
 
   test('formats client tool inside function_declarations', () => {
-    expect(toGeminiTools([memoryTool])).toEqual([
+    expect(toGeminiTools([memoryTool]).orThrow()).toEqual([
       {
         function_declarations: [
           {
@@ -405,7 +407,7 @@ describe('toGeminiTools', () => {
   });
 
   test('accumulates multiple client tools in a single function_declarations entry', () => {
-    expect(toGeminiTools([memoryTool, weatherTool])).toEqual([
+    expect(toGeminiTools([memoryTool, weatherTool]).orThrow()).toEqual([
       {
         function_declarations: [
           {
@@ -425,7 +427,7 @@ describe('toGeminiTools', () => {
 
   test('handles mixed server and client tools', () => {
     const tools: AiToolConfig[] = [webSearchTool, memoryTool];
-    const result = toGeminiTools(tools);
+    const result = toGeminiTools(tools).orThrow();
     expect(result).toHaveLength(2);
     expect(result[0]).toEqual({ google_search: {} });
     expect(result[1]).toEqual({
@@ -443,7 +445,7 @@ describe('toGeminiTools', () => {
     // The raw draft-07 schema carries `additionalProperties: false`, which Gemini rejects.
     expect(memoryWireSchema).toHaveProperty('additionalProperties', false);
 
-    const result = toGeminiTools([memoryTool]);
+    const result = toGeminiTools([memoryTool]).orThrow();
     const declarations = (result[0] as { function_declarations: Array<{ parameters: object }> })
       .function_declarations;
     const params = declarations[0].parameters as Record<string, unknown>;
@@ -460,7 +462,7 @@ describe('toGeminiTools', () => {
     expect(rawParams).toHaveProperty('additionalProperties', false);
     expect(rawParams.properties.filter).toHaveProperty('additionalProperties', false);
 
-    const result = toGeminiTools([nestedTool]);
+    const result = toGeminiTools([nestedTool]).orThrow();
     const declarations = (result[0] as { function_declarations: Array<{ parameters: object }> })
       .function_declarations;
     const params = declarations[0].parameters as {
@@ -579,7 +581,7 @@ describe('client-tool annotations are host-advisory-only (never serialized to th
   };
 
   test('OpenAI/xAI Responses wire tool omits annotations entirely', () => {
-    expect(toResponsesApiTools([annotatedTool])).toEqual([
+    expect(toResponsesApiTools([annotatedTool]).orThrow()).toEqual([
       {
         type: 'function',
         name: 'recall_memory',
@@ -590,7 +592,7 @@ describe('client-tool annotations are host-advisory-only (never serialized to th
   });
 
   test('Anthropic wire tool omits annotations entirely', () => {
-    expect(toAnthropicTools([annotatedTool])).toEqual([
+    expect(toAnthropicTools([annotatedTool]).orThrow()).toEqual([
       {
         name: 'recall_memory',
         description: 'Recall stored user context',
@@ -600,7 +602,7 @@ describe('client-tool annotations are host-advisory-only (never serialized to th
   });
 
   test('Gemini wire tool omits annotations entirely', () => {
-    expect(toGeminiTools([annotatedTool])).toEqual([
+    expect(toGeminiTools([annotatedTool]).orThrow()).toEqual([
       {
         function_declarations: [
           {
@@ -615,9 +617,9 @@ describe('client-tool annotations are host-advisory-only (never serialized to th
 
   test('no provider wire schema mentions any annotation key', () => {
     const serialized = JSON.stringify([
-      toResponsesApiTools([annotatedTool]),
-      toAnthropicTools([annotatedTool]),
-      toGeminiTools([annotatedTool])
+      toResponsesApiTools([annotatedTool]).orThrow(),
+      toAnthropicTools([annotatedTool]).orThrow(),
+      toGeminiTools([annotatedTool]).orThrow()
     ]);
     for (const key of [
       'annotations',

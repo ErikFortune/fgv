@@ -84,7 +84,7 @@ function propertiesOf(schema: JsonValue): JsonObject {
 describe('schema keyword capability tables, per wire format', () => {
   test('OpenAI/xAI Responses tools: ranges pass, a shared format passes, the rest folds', () => {
     for (const providerId of ['openai', 'xai-grok']) {
-      const [wire] = toResponsesApiTools([tool().config], { providerId, model: 'gpt-x' });
+      const [wire] = toResponsesApiTools([tool().config], { providerId, model: 'gpt-x' }).orThrow();
       expect(propertiesOf(wire.parameters)).toEqual({
         // `title` is dropped, not folded; `default` folds as its own sentence.
         n: {
@@ -107,25 +107,28 @@ describe('schema keyword capability tables, per wire format', () => {
 
   test('OpenAI-format providers whose support is unverified get every keyword folded', () => {
     for (const providerId of ['mistral', 'groq', 'openai-compat', 'ollama', undefined]) {
-      const [wire] = toResponsesApiTools([tool().config], { providerId });
+      const [wire] = toResponsesApiTools([tool().config], { providerId }).orThrow();
       expect(propertiesOf(wire.parameters).i).toEqual({
         type: 'integer',
         description: 'Constraints: exclusiveMinimum 0; exclusiveMaximum 100.'
       });
     }
-    expect(propertiesOf(toResponsesApiTools([tool().config])[0].parameters).x).toEqual({
+    expect(propertiesOf(toResponsesApiTools([tool().config]).orThrow()[0].parameters).x).toEqual({
       type: 'number',
       description: 'Constraints: exclusiveMinimum 0.'
     });
   });
 
   test('a verified provider with no model named still gets its table', () => {
-    const [wire] = toResponsesApiTools([tool().config], { providerId: 'openai' });
+    const [wire] = toResponsesApiTools([tool().config], { providerId: 'openai' }).orThrow();
     expect(propertiesOf(wire.parameters).x).toEqual({ type: 'number', exclusiveMinimum: 0 });
   });
 
   test('an OpenAI fine-tuned model gets every keyword folded, since OpenAI documents none for it', () => {
-    const [wire] = toResponsesApiTools([tool().config], { providerId: 'openai', model: 'ft:gpt-4o:org::id' });
+    const [wire] = toResponsesApiTools([tool().config], {
+      providerId: 'openai',
+      model: 'ft:gpt-4o:org::id'
+    }).orThrow();
     expect(propertiesOf(wire.parameters).i).toEqual({
       type: 'integer',
       description: 'Constraints: exclusiveMinimum 0; exclusiveMaximum 100.'
@@ -133,14 +136,14 @@ describe('schema keyword capability tables, per wire format', () => {
   });
 
   test('Anthropic tools: every keyword passes, emitted exactly as toJson() states it', () => {
-    const [wire] = toAnthropicTools([tool().config], { providerId: 'anthropic' });
+    const [wire] = toAnthropicTools([tool().config], { providerId: 'anthropic' }).orThrow();
     expect(wire.input_schema).toEqual(everything.toJson());
   });
 
   test('Gemini tools: documented keywords pass, integer exclusive bounds translate, the rest folds', () => {
     const [{ function_declarations: declarations }] = toGeminiTools([tool().config], {
       providerId: 'google-gemini'
-    }) as JsonObject[];
+    }).orThrow() as JsonObject[];
     const parameters = ((declarations as JsonObject[])[0] as JsonObject).parameters;
     expect(propertiesOf(parameters)).toEqual({
       n: {
@@ -174,7 +177,9 @@ describe('schema keyword capability tables, per wire format', () => {
       maximum: 7,
       exclusiveMaximum: 9
     });
-    expect(toGeminiParameterSchema(JsonSchema.adaptSchemaKeywords(tighterInclusive.toJson(), caps))).toEqual({
+    expect(
+      toGeminiParameterSchema(JsonSchema.adaptSchemaKeywords(tighterInclusive.toJson(), caps).orThrow())
+    ).toEqual({
       type: 'integer',
       minimum: 5,
       maximum: 7
@@ -185,13 +190,17 @@ describe('schema keyword capability tables, per wire format', () => {
       maximum: 9,
       exclusiveMaximum: 4
     });
-    expect(toGeminiParameterSchema(JsonSchema.adaptSchemaKeywords(tighterExclusive.toJson(), caps))).toEqual({
+    expect(
+      toGeminiParameterSchema(JsonSchema.adaptSchemaKeywords(tighterExclusive.toJson(), caps).orThrow())
+    ).toEqual({
       type: 'integer',
       minimum: 3,
       maximum: 3
     });
     const nullable = JsonSchema.integer({ nullable: true, exclusiveMaximum: 10 });
-    expect(toGeminiParameterSchema(JsonSchema.adaptSchemaKeywords(nullable.toJson(), caps))).toEqual({
+    expect(
+      toGeminiParameterSchema(JsonSchema.adaptSchemaKeywords(nullable.toJson(), caps).orThrow())
+    ).toEqual({
       type: 'integer',
       nullable: true,
       maximum: 9
@@ -201,18 +210,18 @@ describe('schema keyword capability tables, per wire format', () => {
   test('Gemini folds an integer exclusive bound whose translation would not be exact (beyond 2^53)', () => {
     const caps = schemaKeywordsFor('gemini', { providerId: 'google-gemini' });
     const big = JsonSchema.integer({ exclusiveMinimum: 2 ** 53 });
-    expect(JsonSchema.adaptSchemaKeywords(big.toJson(), caps)).toEqual({
+    expect(JsonSchema.adaptSchemaKeywords(big.toJson(), caps).orThrow()).toEqual({
       type: 'integer',
       description: `Constraints: exclusiveMinimum ${2 ** 53}.`
     });
     // Just inside the safe range the translation is still exact.
     const justInside = JsonSchema.integer({ exclusiveMinimum: 2 ** 53 - 2 });
-    expect(JsonSchema.adaptSchemaKeywords(justInside.toJson(), caps)).toEqual({
+    expect(JsonSchema.adaptSchemaKeywords(justInside.toJson(), caps).orThrow()).toEqual({
       type: 'integer',
       minimum: 2 ** 53 - 1
     });
     const below = JsonSchema.integer({ exclusiveMaximum: -(2 ** 53) });
-    expect(JsonSchema.adaptSchemaKeywords(below.toJson(), caps)).toEqual({
+    expect(JsonSchema.adaptSchemaKeywords(below.toJson(), caps).orThrow()).toEqual({
       type: 'integer',
       description: `Constraints: exclusiveMaximum ${-(2 ** 53)}.`
     });

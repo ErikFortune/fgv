@@ -422,13 +422,19 @@ export function resolveStructuredOutput(
     // optional-property walkers below must not read as schema. Folding loosens only the wire —
     // the caller's schema still validates the reply — so the enforcement reported below stays
     // `'schema'` while a folded constraint is not provider-enforced.
-    const adapted: JsonValue = adaptWireSchema(
+    const raw: Result<JsonValue> = adaptWireSchema(
       request.schema.toJson(),
       schemaWireFormatOf(format),
       wireTarget
-    );
-    const raw: JsonValue = adapt ? hoistNullableOptionals(adapted) : adapted;
-    if (strict && hasOptionalProperties(raw)) {
+    ).onSuccess((json) => succeed(adapt ? hoistNullableOptionals(json) : json));
+    if (raw.isFailure()) {
+      // A node the format cannot carry — a schema with no `type` where the wire requires one. It
+      // is never given a type (that would narrow the reply below what the validator accepts), so
+      // the request is a capability mismatch, governed by `onUnsupported` like the one below.
+      unsupported =
+        `the supplied schema cannot be sent as ${format} structured output: ${raw.message}; ` +
+        `pass onUnsupported: 'degrade' to send the request unconstrained`;
+    } else if (strict && hasOptionalProperties(raw.value)) {
       // See `hasOptionalProperties` — a hard provider constraint, treated as a
       // capability mismatch rather than relocated into an opaque 400.
       unsupported =
@@ -442,7 +448,7 @@ export function resolveStructuredOutput(
             `for each of them, or pass `) +
         `onUnsupported: 'degrade' to send the request unconstrained`;
     } else {
-      resolved = schemaWire(format, raw);
+      resolved = schemaWire(format, raw.value);
     }
   } else {
     resolved = jsonObjectWire(format);

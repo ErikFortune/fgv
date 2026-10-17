@@ -34,7 +34,7 @@ import {
   succeed
 } from '@fgv/ts-utils';
 import { jsonValue } from '../converters';
-import { JsonObject, isJsonObject } from '../json';
+import { JsonObject, JsonValue, isJsonObject } from '../json';
 import {
   ILlmProperties,
   ISchemaValidator,
@@ -43,14 +43,23 @@ import {
   SchemaNodeType,
   Static
 } from './types';
-import { INumberSchemaOptions, IObjectSchemaOptions, ISchemaOptions, IStringSchemaOptions } from './options';
 import {
+  IAnySchemaOptions,
+  INumberSchemaOptions,
+  IObjectSchemaOptions,
+  ISchemaOptions,
+  IStringSchemaOptions
+} from './options';
+import {
+  NonStringEnumType,
   NumberConstraints,
   SchemaAnnotations,
   StringConstraints,
   annotationFields,
   checkAnnotations,
+  checkEnumValues,
   checkNumberOptions,
+  describeEnumMember,
   checkStringOptions,
   enforceNumberConstraints,
   enforceStringConstraints,
@@ -293,15 +302,30 @@ class BooleanSchemaValidator extends SchemaValidatorBase<boolean> {
   }
 }
 
-class EnumSchemaValidator<T extends string> extends SchemaValidatorBase<T> {
+/**
+ * A closed set of values sharing one JSON type: strings (`enumOf`), numbers or integers
+ * (`numberEnumOf` / `integerEnumOf`), or booleans (`booleanEnumOf`).
+ *
+ * @remarks
+ * The node kind is `'enum'` whatever the value type; `valueType` is what `toJson()` states as the
+ * wire `type`, so a reader consulting either `type` or `enum` reaches the same answer.
+ */
+class EnumSchemaValidator<T extends string | number | boolean> extends SchemaValidatorBase<T> {
   public readonly enum: ReadonlyArray<T>;
+  /** The JSON type every member shares, emitted as the wire `type`. */
+  public readonly valueType: 'string' | NonStringEnumType;
   private readonly _inner: Validation.Validator<T>;
 
-  public constructor(values: ReadonlyArray<T>, opts?: ISchemaOptions) {
-    const inner = Validators.enumeratedValue(values);
+  public constructor(
+    valueType: 'string' | NonStringEnumType,
+    values: ReadonlyArray<T>,
+    inner: Validation.Validator<T>,
+    opts?: ISchemaOptions
+  ) {
     /* c8 ignore next 1 - placeholder ValidatorFunc; validate() and convert() overrides always intercept */
     super('enum', (__from: unknown): boolean | Failure<T> => true, opts);
     this.enum = values;
+    this.valueType = valueType;
     this._inner = inner;
   }
 
@@ -318,10 +342,55 @@ class EnumSchemaValidator<T extends string> extends SchemaValidatorBase<T> {
     // `enum` alone would otherwise reject the very value `type` says is allowed, and
     // the two halves of one node disagreeing is what this package exists to prevent.
     return {
-      ...this._typeField('string'),
+      ...this._typeField(this.valueType),
       enum: this.nullable ? [...this.enum, null] : [...this.enum],
       ...this._annotationFields()
     };
+  }
+}
+
+/**
+ * Accepts exactly the listed numbers or booleans, compared with `===` — no coercion, so `'1'` is
+ * not `1`.
+ */
+function _literalValues<T extends number | boolean>(values: ReadonlyArray<T>): Validation.Validator<T> {
+  return new Validation.Base.GenericValidator<T>({
+    validator: (from: unknown): boolean | Failure<T> =>
+      values.some((value) => value === from) ||
+      fail(
+        `Invalid enumerated value ${describeEnumMember(from)} - expected: (${values
+          .map((value) => String(value))
+          .join(', ')})`
+      )
+  });
+}
+
+/**
+ * A node that accepts any JSON value — JSON Schema's `{}`, pydantic's `Any`.
+ *
+ * @remarks
+ * Validates through `jsonValue`, so the result is a fresh copy of the input and a value that is not
+ * JSON (`undefined`, a function, a class instance) is refused. Its wire form states no `type`,
+ * which is the point and also the hazard: a provider that requires a `type` on every schema cannot
+ * be sent it, and the provider adapters in `@fgv/ts-extras` refuse the request rather than invent
+ * one.
+ */
+class AnySchemaValidator extends SchemaValidatorBase<JsonValue> {
+  public constructor(opts?: IAnySchemaOptions) {
+    /* c8 ignore next 1 - placeholder ValidatorFunc; validate() and convert() overrides always intercept */
+    super('any', (__from: unknown): boolean | Failure<JsonValue> => true, opts);
+  }
+
+  public override validate(from: unknown): Result<JsonValue> {
+    return jsonValue.convert(from);
+  }
+
+  public override convert(from: unknown): Result<JsonValue> {
+    return jsonValue.convert(from);
+  }
+
+  public toJson(): JsonObject {
+    return this._annotationFields();
   }
 }
 
@@ -756,7 +825,178 @@ export function enumOf<T extends string>(
  */
 export function enumOf<T extends string>(values: readonly T[], opts?: ISchemaOptions): ISchemaValidator<T>;
 export function enumOf<T extends string>(values: readonly T[], opts?: ISchemaOptions): ISchemaValidator<T> {
-  return new EnumSchemaValidator(values, _coherent('enumOf', checkAnnotations(opts)));
+  return new EnumSchemaValidator(
+    'string',
+    values,
+    Validators.enumeratedValue(values),
+    _coherent('enumOf', checkAnnotations(opts))
+  );
+}
+
+/** Builds a numeric or boolean enum node once its members and options are known coherent. */
+function _nonStringEnum<T extends number | boolean>(
+  factory: string,
+  type: NonStringEnumType,
+  values: ReadonlyArray<T>,
+  opts: ISchemaOptions | undefined
+): ISchemaValidator<T> {
+  const checked = _coherent(
+    factory,
+    checkEnumValues(type, values).onSuccess(() => checkAnnotations(opts))
+  );
+  // Copied, so a caller mutating its array afterwards cannot change the node.
+  const members: ReadonlyArray<T> = [...values];
+  return new EnumSchemaValidator(type, members, _literalValues(members), checked);
+}
+
+/**
+ * Creates a schema node for a closed set of numbers (pydantic `Literal[1.5, 2]`).
+ * @param values - The allowed values.
+ * @param opts - Optional annotations and nullability.
+ * @returns An `ISchemaValidator` whose `Static` type is the union of `values`, or `null`.
+ * @throws Error when `values` is empty or holds a member that is not a finite number, or when
+ * `default` or a member of `examples` is not a JSON value — a setup-time error, since a schema is
+ * declared.
+ * @public
+ */
+export function numberEnumOf<T extends number>(
+  values: readonly T[],
+  opts: ISchemaOptions & { nullable: true }
+  // `null` is the JSON value being modelled, not a JS sentinel — the same carve-out
+  // `JsonPrimitive` takes in this package's `json` packlet.
+  // eslint-disable-next-line @rushstack/no-new-null
+): ISchemaValidator<T | null>;
+/**
+ * Creates a schema node for a closed set of numbers (pydantic `Literal[1.5, 2]`).
+ *
+ * @remarks
+ * Emits `{ type: 'number', enum: [...] }`. The validator accepts exactly the listed values,
+ * compared with `===`, and coerces nothing — `'1'` is not `1`. A nullable node also carries `null`
+ * in its emitted `enum`, as `enumOf` does.
+ * @param values - The allowed values.
+ * @param opts - Optional annotations and nullability.
+ * @returns An `ISchemaValidator` whose `Static` type is the union of `values`.
+ * @throws Error when `values` is empty or holds a member that is not a finite number, or when
+ * `default` or a member of `examples` is not a JSON value — a setup-time error, since a schema is
+ * declared.
+ * @public
+ */
+export function numberEnumOf<T extends number>(
+  values: readonly T[],
+  opts?: ISchemaOptions
+): ISchemaValidator<T>;
+export function numberEnumOf<T extends number>(
+  values: readonly T[],
+  opts?: ISchemaOptions
+): ISchemaValidator<T> {
+  return _nonStringEnum('numberEnumOf', 'number', values, opts);
+}
+
+/**
+ * Creates a schema node for a closed set of integers (pydantic `Literal[1, 2]`).
+ * @param values - The allowed values.
+ * @param opts - Optional annotations and nullability.
+ * @returns An `ISchemaValidator` whose `Static` type is the union of `values`, or `null`.
+ * @throws Error when `values` is empty or holds a member that is not an integer, or when
+ * `default` or a member of `examples` is not a JSON value — a setup-time error, since a schema is
+ * declared.
+ * @public
+ */
+export function integerEnumOf<T extends number>(
+  values: readonly T[],
+  opts: ISchemaOptions & { nullable: true }
+  // `null` is the JSON value being modelled, not a JS sentinel — the same carve-out
+  // `JsonPrimitive` takes in this package's `json` packlet.
+  // eslint-disable-next-line @rushstack/no-new-null
+): ISchemaValidator<T | null>;
+/**
+ * Creates a schema node for a closed set of integers (pydantic `Literal[1, 2]`).
+ *
+ * @remarks
+ * Emits `{ type: 'integer', enum: [...] }`. The validator accepts exactly the listed values,
+ * compared with `===`, and coerces nothing — `'1'` is not `1`. A nullable node also carries `null`
+ * in its emitted `enum`, as `enumOf` does.
+ * @param values - The allowed values.
+ * @param opts - Optional annotations and nullability.
+ * @returns An `ISchemaValidator` whose `Static` type is the union of `values`.
+ * @throws Error when `values` is empty or holds a member that is not an integer, or when
+ * `default` or a member of `examples` is not a JSON value — a setup-time error, since a schema is
+ * declared.
+ * @public
+ */
+export function integerEnumOf<T extends number>(
+  values: readonly T[],
+  opts?: ISchemaOptions
+): ISchemaValidator<T>;
+export function integerEnumOf<T extends number>(
+  values: readonly T[],
+  opts?: ISchemaOptions
+): ISchemaValidator<T> {
+  return _nonStringEnum('integerEnumOf', 'integer', values, opts);
+}
+
+/**
+ * Creates a schema node for a closed set of booleans (a boolean `const`).
+ * @param values - The allowed values.
+ * @param opts - Optional annotations and nullability.
+ * @returns An `ISchemaValidator` whose `Static` type is the union of `values`, or `null`.
+ * @throws Error when `values` is empty or holds a member that is not a boolean, or when
+ * `default` or a member of `examples` is not a JSON value — a setup-time error, since a schema is
+ * declared.
+ * @public
+ */
+export function booleanEnumOf<T extends boolean>(
+  values: readonly T[],
+  opts: ISchemaOptions & { nullable: true }
+  // `null` is the JSON value being modelled, not a JS sentinel — the same carve-out
+  // `JsonPrimitive` takes in this package's `json` packlet.
+  // eslint-disable-next-line @rushstack/no-new-null
+): ISchemaValidator<T | null>;
+/**
+ * Creates a schema node for a closed set of booleans (a boolean `const`).
+ *
+ * @remarks
+ * Emits `{ type: 'boolean', enum: [...] }`. The validator accepts exactly the listed values,
+ * compared with `===`, and coerces nothing — `'1'` is not `1`. A nullable node also carries `null`
+ * in its emitted `enum`, as `enumOf` does.
+ * @param values - The allowed values.
+ * @param opts - Optional annotations and nullability.
+ * @returns An `ISchemaValidator` whose `Static` type is the union of `values`.
+ * @throws Error when `values` is empty or holds a member that is not a boolean, or when
+ * `default` or a member of `examples` is not a JSON value — a setup-time error, since a schema is
+ * declared.
+ * @public
+ */
+export function booleanEnumOf<T extends boolean>(
+  values: readonly T[],
+  opts?: ISchemaOptions
+): ISchemaValidator<T>;
+export function booleanEnumOf<T extends boolean>(
+  values: readonly T[],
+  opts?: ISchemaOptions
+): ISchemaValidator<T> {
+  return _nonStringEnum('booleanEnumOf', 'boolean', values, opts);
+}
+
+/**
+ * Creates a schema node that accepts any JSON value — JSON Schema's `{}`, pydantic's `Any`.
+ *
+ * @remarks
+ * Emits `{}` plus any annotations. The validator accepts any `JsonValue`, `null` included, and
+ * returns a copy; a value that is not JSON (`undefined`, a function, a class instance) is refused.
+ *
+ * Its wire form has no `type`, and some providers require one on every schema (Gemini; OpenAI
+ * strict mode). The provider adapters in `@fgv/ts-extras` refuse a request that would send it to
+ * such a provider, naming the tool and the path, rather than substitute a type — which would narrow
+ * what the model may send below what the validator accepts.
+ * @param opts - Optional annotations.
+ * @returns An `ISchemaValidator` whose `Static` type is `JsonValue`.
+ * @throws Error when `default` or a member of `examples` is not a JSON value — a setup-time error,
+ * since a schema is declared.
+ * @public
+ */
+export function anyValue(opts?: IAnySchemaOptions): ISchemaValidator<JsonValue> {
+  return new AnySchemaValidator(_coherent('anyValue', checkAnnotations(opts)));
 }
 
 /**

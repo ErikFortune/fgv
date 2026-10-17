@@ -237,6 +237,63 @@ export function checkAnnotations<T extends ISchemaOptions>(opts: T | undefined):
 }
 
 /**
+ * The JSON type the members of a non-string enum share: `number` or `integer` for a numeric enum,
+ * `boolean` for a boolean one.
+ * @internal
+ */
+export type NonStringEnumType = 'number' | 'integer' | 'boolean';
+
+/**
+ * Checks the members of a numeric or boolean enum: there must be at least one, each must be of
+ * `type` — a finite number, an integer for `integer`, or a boolean — and none may be `null`
+ * (nullability is the `nullable` option, as for every other node).
+ * @param type - The JSON type the members share.
+ * @param values - The members.
+ * @returns The members, or a `Failure` naming the first one that does not fit.
+ * @internal
+ */
+export function checkEnumValues<T extends number | boolean>(
+  type: NonStringEnumType,
+  values: ReadonlyArray<T>
+): Result<ReadonlyArray<T>> {
+  if (values.length === 0) {
+    return fail(`enum must list at least one value`);
+  }
+  for (const value of values) {
+    const fits =
+      type === 'boolean'
+        ? typeof value === 'boolean'
+        : typeof value === 'number' &&
+          Number.isFinite(value) &&
+          (type === 'number' || Number.isInteger(value));
+    if (!fits) {
+      return fail(
+        `enum value ${describeEnumMember(value)} is not ${type === 'integer' ? 'an' : 'a'} ${type}`
+      );
+    }
+  }
+  return succeed(values);
+}
+
+/**
+ * An enum member, or any value checked against one, as it reads in an error message — without
+ * serializing anything non-primitive.
+ * @internal
+ */
+export function describeEnumMember(value: unknown): string {
+  if (typeof value === 'string') {
+    return JSON.stringify(value);
+  }
+  if (typeof value === 'number' || typeof value === 'boolean' || value === null || value === undefined) {
+    return String(value);
+  }
+  if (Array.isArray(value)) {
+    return 'an array';
+  }
+  return typeof value === 'object' ? 'an object' : `a ${typeof value}`;
+}
+
+/**
  * Checks a number against every numeric constraint in `opts`.
  * @param value - The (already type-checked) number.
  * @param opts - The node's constraints.

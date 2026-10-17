@@ -84,7 +84,7 @@ import {
   resolveEffectiveBaseUrl
 } from './endpoint';
 import { type IAiApiConfig, fetchJson } from './http';
-import { toAnthropicTools, toGeminiTools, toResponsesApiTools } from './toolFormats';
+import { serverToolsToAnthropic, serverToolsToGemini, serverToolsToResponsesApi } from './toolFormats';
 import {
   ANTHROPIC_STRUCTURED_OUTPUT_TOOL_NAME,
   type IResolvedStructuredOutput,
@@ -449,7 +449,7 @@ async function callOpenAiResponsesCompletion(
     input,
     // `tools` is omitted entirely when none are requested — a Responses-only model routed
     // here for tier/model reasons (not tools) must not send an empty tools array.
-    ...(tools.length > 0 ? { tools: toResponsesApiTools(tools, config) } : {}),
+    ...(tools.length > 0 ? { tools: serverToolsToResponsesApi(tools) } : {}),
     // Temperature is sent only when the caller explicitly provided one (see callOpenAiCompletion).
     ...(temperature !== undefined ? { temperature } : {}),
     ...(effort !== undefined && config.model !== 'grok-4' ? { reasoning: { effort } } : {}),
@@ -664,7 +664,7 @@ async function callAnthropicCompletion(
   mergeAnthropicStructuredWire(body, structured.wire);
 
   if (tools && tools.length > 0) {
-    body.tools = toAnthropicTools(tools, config);
+    body.tools = serverToolsToAnthropic(tools);
     /* c8 ignore next 3 - optional logger diagnostic output */
     logger?.info(`Anthropic completion: model=${config.model}, tools=${tools.map((t) => t.type).join(',')}`);
   } else {
@@ -752,7 +752,7 @@ async function callGeminiCompletion(
   };
 
   if (tools && tools.length > 0) {
-    body.tools = toGeminiTools(tools, config);
+    body.tools = serverToolsToGemini(tools);
     /* c8 ignore next 1 - optional logger */
     logger?.info(`Gemini completion: model=${config.model}, tools=${tools.map((t) => t.type).join(',')}`);
   } else {

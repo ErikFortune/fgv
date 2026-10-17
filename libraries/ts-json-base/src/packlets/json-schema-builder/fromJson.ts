@@ -38,10 +38,25 @@ import {
   StringConstraints,
   annotationFields,
   annotationJsonValue,
+  checkEnumValues,
   checkNumberOptions,
   checkStringOptions
 } from './constraints';
-import { array, boolean, enumOf, integer, number, object, optional, record, string } from './factories';
+import {
+  anyValue,
+  array,
+  boolean,
+  booleanEnumOf,
+  enumOf,
+  integer,
+  integerEnumOf,
+  number,
+  numberEnumOf,
+  object,
+  optional,
+  record,
+  string
+} from './factories';
 import {
   schemaAnnotationKeywords,
   schemaLengthConstraintKeywords,
@@ -61,8 +76,12 @@ import { ILlmProperties, ISchemaValidator } from './types';
  * emitted and never enforced. A keyword on a node kind it does not apply to (`minimum` on a string)
  * constrains nothing under JSON Schema and is not emitted.
  *
- * The list is still not complete against the rule above: `const`, object-key keywords beside an open
- * object (`patternProperties`, `propertyNames`, …) and array keywords (`minItems`, `prefixItems`,
+ * A scalar `const` is carried as a single-value enum of its type, and enforced. `pattern` is refused
+ * because enforcing it would run a server-supplied regular expression on a backtracking engine
+ * against model-supplied strings (see `docs/FUTURE.md`).
+ *
+ * The list is still not complete against the rule above: object-key keywords beside an open object
+ * (`patternProperties`, `propertyNames`, …) and array keywords (`minItems`, `prefixItems`,
  * `contains`, …) are accepted and ignored, so for them the converter is looser than the schema.
  * Tracked in `docs/TECH_DEBT.md`.
  */
@@ -244,34 +263,33 @@ const _stringConstraintsField: Converter<StringConstraints> = Converters.object<
   format: Converters.string.optional('failOnError')
 }).withFormattedError((__from, message) => _printable(`${message}`));
 
-/**
- * Extracts and validates the `enum` field: must be a non-empty array of strings.
- * Non-array input or non-string element → descriptive failure; empty array → failure.
- */
-const _enumValuesField: Converter<string[]> = Converters.field(
-  'enum',
-  Converters.arrayOf(Converters.string).withConstraint(
-    (values) => values.length > 0 || fail("'enum' must be a non-empty array")
-  )
-);
+/** A scalar an `enum` or `const` may list: a string, number or boolean — or `null`. */
+// `null` is the JSON value being modelled, not a JS sentinel — the same carve-out
+// `JsonPrimitive` takes in this package's `json` packlet.
+// eslint-disable-next-line @rushstack/no-new-null
+type EnumMember = string | number | boolean | null;
 
 /**
- * Extracts an `enum` list that may carry `null` among its string members.
+ * Extracts an `enum` list: an array of strings, numbers, booleans or `null`.
  *
  * @remarks
  * A nullable enum emitted by this package carries `null` in **both** `type` and `enum`,
  * because a reader consulting only one of them would otherwise disagree with a reader
  * consulting the other. This converter is what lets the `null` member through so the
- * enum arm can strip it and set nullability; `_enumValuesField` still governs the
- * remaining values.
+ * enum arm can strip it and set nullability. Whether the remaining members share one type, and
+ * whether that type agrees with `type`, is the arm's to judge.
  */
-// `null` is the JSON value being modelled, not a JS sentinel — the same carve-out
-// `JsonPrimitive` takes in this package's `json` packlet.
-// eslint-disable-next-line @rushstack/no-new-null
-const _enumRawValuesField: Converter<(string | null)[]> = Converters.field(
+const _enumRawValuesField: Converter<EnumMember[]> = Converters.field(
   'enum',
-  Converters.arrayOf(Converters.oneOf<string | null>([Converters.string, Converters.literal(null)]))
-);
+  Converters.arrayOf(
+    Converters.oneOf<EnumMember>([
+      Converters.string,
+      Validators.isA('number', (v): v is number => typeof v === 'number'),
+      Validators.boolean,
+      Converters.literal(null)
+    ])
+  )
+).withFormattedError(() => "'enum' must be an array of strings, numbers, booleans or null");
 
 /**
  * Checks that the input is a non-null, non-array object and returns it as
@@ -285,14 +303,6 @@ const _plainObjectField: Converter<Record<string, unknown>> = Converters.generic
 // ---------------------------------------------------------------------------
 // Private helpers
 // ---------------------------------------------------------------------------
-
-/** Whether a node's `enum` list holds any number, for a sharper refusal than "not a string". */
-function _hasNumericEnumValue(from: unknown): boolean {
-  return Converters.field('enum', Converters.arrayOf(Converters.generic((v: unknown) => succeed(v))))
-    .convert(from)
-    .onSuccess((values) => succeed(values.some((v) => typeof v === 'number')))
-    .orDefault(false);
-}
 
 /** Whether a node carries no keyword beyond annotations — `{}`, the schema every value matches. */
 function _isAnySchema(raw: Record<string, unknown>): boolean {
@@ -589,45 +599,117 @@ function _convertObject(
   return _parseObjectBody(from, ctx, nullable);
 }
 
+/** The JSON type every member of an enum shares, before `type` refines a number to an integer. */
+type EnumMemberType = 'string' | 'number' | 'boolean';
+
+/** The JSON type of one enum member. */
+function _memberType(value: string | number | boolean): EnumMemberType {
+  if (typeof value === 'string') {
+    return 'string';
+  }
+  return typeof value === 'number' ? 'number' : 'boolean';
+}
+
+/** The type every member of a non-empty list shares, or `undefined` when they mix types. */
+function _sharedMemberType(
+  values: readonly [string | number | boolean, ...(string | number | boolean)[]]
+): EnumMemberType | undefined {
+  const first = _memberType(values[0]);
+  return values.every((value) => _memberType(value) === first) ? first : undefined;
+}
+
+/** Whether a declared `type` admits members of `memberType`. */
+function _typeAdmits(type: string, memberType: EnumMemberType): boolean {
+  return type === memberType || (type === 'integer' && memberType === 'number');
+}
+
 /**
- * Enum arm — extracts `type?`, `enum`, and `description?` declaratively via field converters.
+ * Builds the enum node for checked members: a string, number, integer or boolean enum. The members
+ * are re-checked against the node type (`checkEnumValues` — finite numbers, integers for
+ * `integer`), so a failure here is a `Failure` naming the path, never a factory throw.
+ */
+function _buildEnum(
+  type: string,
+  members: ReadonlyArray<string | number | boolean>,
+  annotations: SchemaAnnotations,
+  nullable: boolean,
+  path: string
+): Result<ISchemaValidator<JsonValue>> {
+  const opts = _nodeOpts(annotations, nullable);
+  const strings = members.filter((v): v is string => typeof v === 'string');
+  const numbers = members.filter((v): v is number => typeof v === 'number');
+  const booleans = members.filter((v): v is boolean => typeof v === 'boolean');
+  switch (type) {
+    case 'string':
+      return succeed(enumOf(strings, opts) as unknown as ISchemaValidator<JsonValue>);
+    case 'number':
+    case 'integer':
+      return checkEnumValues(type, numbers)
+        .withErrorFormat((msg) => `${path}: ${msg}`)
+        .onSuccess((checked) =>
+          succeed(
+            (type === 'integer'
+              ? integerEnumOf(checked, opts)
+              : numberEnumOf(checked, opts)) as unknown as ISchemaValidator<JsonValue>
+          )
+        );
+    default:
+      return succeed(booleanEnumOf(booleans, opts) as unknown as ISchemaValidator<JsonValue>);
+  }
+}
+
+/**
+ * Enum arm — a closed set of strings, numbers or booleans, all of one type.
  *
- * L1 rejection: rejects a `type` field that conflicts with enum semantics. An enum schema's only
- * valid type declarations are absent or `'string'`; any other value — including a union array like
- * `['string', 'null']` that would have been caught by the union-type pre-flight for non-enum nodes —
- * produces a descriptive failure.
+ * @remarks
+ * The members must share one JSON type (`[1, 'a']` is refused), and a declared `type` must admit
+ * it: `string` for strings, `number` or `integer` for numbers (every member an integer for
+ * `integer`), `boolean` for booleans. With no `type`, the members' type is used, and a numeric enum
+ * is a `number` enum. A union `type` is admitted only as `[<type>, 'null']`, and only when `null`
+ * is also among the members, since the node carries its nullability in both.
  *
- * Receives the current JSON Pointer path via `context`.
+ * An enum node carries no constraint: a length keyword beside it is refused, and so is a numeric
+ * constraint beside a numeric enum, because dropping either would accept a member the schema
+ * rejects. `format` beside a string enum is dropped.
+ *
+ * `keyword` names what the source said — `enum`, or a `const` the caller rewrote into a
+ * single-member list — so a refusal names the keyword the server actually sent.
  */
 function _convertEnum(
   from: Record<string, unknown>,
-  { path }: IParseContext
+  { path }: IParseContext,
+  keyword: 'enum' | 'const' = 'enum'
 ): Result<ISchemaValidator<JsonValue>> {
+  const rawValuesResult = _enumRawValuesField.convert(from);
+  if (rawValuesResult.isFailure()) {
+    return fail(`${path}: ${rawValuesResult.message}`);
+  }
   // An enum node carries its nullability in TWO places — `null` among the values and
   // `'null'` in the type union — so this arm reads both and requires them to agree,
   // rather than taking whichever it happens to look at first.
-  const rawValuesResult = _enumRawValuesField.convert(from);
-  if (rawValuesResult.isFailure() && _hasNumericEnumValue(from)) {
-    // Numeric enums are deferred: `toJson()` would emit them, and Gemini's function-declaration
-    // schema admits `enum` only on strings, so such a tool would fail every Gemini request.
-    return fail(`${path}: numeric 'enum' values are not supported (only string enums are)`);
-  }
-  if (rawValuesResult.isFailure()) {
-    // Fall back to the strings-only extractor for its sharper message (non-array, wrong
-    // member type, and so on); it fails on exactly the inputs this one does, minus `null`.
-    return fail(`${path}: ${_printable(`${_enumValuesField.convert(from).message}`)}`);
-  }
   const nullInValues: boolean = rawValuesResult.value.includes(null);
-
-  // An enum node is a closed set of strings and carries no length constraint, so a length keyword
-  // beside `enum` would be dropped and the validator would accept a member the schema rejects.
-  const lengthKeyword = schemaLengthConstraintKeywords.find((keyword) => keyword in from);
-  if (lengthKeyword !== undefined) {
-    return fail(`${path}: unsupported JSON Schema keyword '${lengthKeyword}' beside 'enum'`);
+  const members = rawValuesResult.value.filter((v): v is string | number | boolean => v !== null);
+  const [first, ...others] = members;
+  if (first === undefined) {
+    return fail(`${path}: 'enum' must be a non-empty array`);
+  }
+  const memberType = _sharedMemberType([first, ...others]);
+  if (memberType === undefined) {
+    return fail(`${path}: '${keyword}' values must all be of one type (strings, numbers or booleans)`);
   }
 
-  // L1: reject conflicting `type`. For enum nodes, `_convertNode`'s type pre-flight
-  // is skipped (the `!('enum' in raw)` gate). Validate here instead.
+  const lengthKeyword = schemaLengthConstraintKeywords.find((k) => k in from);
+  if (lengthKeyword !== undefined) {
+    return fail(`${path}: unsupported JSON Schema keyword '${lengthKeyword}' beside '${keyword}'`);
+  }
+  const numberKeyword =
+    memberType === 'number' ? schemaNumberConstraintKeywords.find((k) => k in from) : undefined;
+  if (numberKeyword !== undefined) {
+    return fail(`${path}: unsupported JSON Schema keyword '${numberKeyword}' beside '${keyword}'`);
+  }
+
+  // For enum nodes, `_convertNode`'s type pre-flight is skipped (the `!('enum' in raw)` gate), so
+  // the type is validated here.
   const rawType: unknown = from.type;
   const split = _splitNullableType(rawType);
   if (split.isFailure()) {
@@ -637,11 +719,10 @@ function _convertEnum(
     // e.g. type: 123 — the field exists but is not a string or a supported union.
     return fail(`${path}: enum schema 'type' field must be a string or absent`);
   }
-  if (split.value.type !== undefined && split.value.type !== 'string') {
+  const declared: string = split.value.type ?? memberType;
+  if (!_typeAdmits(declared, memberType)) {
     return fail(
-      `${path}: enum schema declares conflicting 'type' '${_echo(
-        split.value.type
-      )}' (must be 'string' or absent)`
+      `${path}: enum schema declares conflicting 'type' '${_echo(declared)}' for ${memberType} values`
     );
   }
   if (split.value.nullable !== nullInValues) {
@@ -651,24 +732,41 @@ function _convertEnum(
     );
   }
 
-  // Now that `null` has been accounted for, the strings-only extractor governs the rest —
-  // including the non-empty constraint, which a list of just `[null]` must still fail.
-  const valuesResult = _enumValuesField.convert({
-    ...from,
-    enum: rawValuesResult.value.filter((v): v is string => v !== null)
-  });
-  if (valuesResult.isFailure()) {
-    return fail(`${path}: ${_printable(valuesResult.message)}`);
-  }
-
   return _annotationsAt(from, path).onSuccess((annotations) =>
-    succeed(
-      enumOf(
-        valuesResult.value,
-        _nodeOpts(annotations, nullInValues)
-      ) as unknown as ISchemaValidator<JsonValue>
-    )
+    _buildEnum(declared, members, annotations, nullInValues, path)
   );
+}
+
+/**
+ * Const arm — a scalar `const` is the single-value enum of its type, and is enforced.
+ *
+ * @remarks
+ * Rewritten into `enum: [value]` and converted by the enum arm, so every rule there applies: a
+ * `type` must admit the value (`const: 'a'` beside `type: 'number'`, or `const: 1.5` beside
+ * `type: 'integer'`, is refused), and a constraint keyword beside it is refused. `toJson()` emits
+ * the enum spelling, which more provider wires accept than `const`.
+ *
+ * Refused: an object, array or `null` value (no node models one); `const` beside `enum`; and a
+ * nullable `type` union, since the value excludes `null` and the node would carry a nullability
+ * nothing could reach.
+ */
+function _convertConst(
+  from: Record<string, unknown>,
+  ctx: IParseContext
+): Result<ISchemaValidator<JsonValue>> {
+  const path = ctx.path;
+  // A rest destructure copies own keys as data, so an own `__proto__` key cannot become a prototype.
+  const { const: value, ...rest } = from;
+  if ('enum' in from) {
+    return fail(`${path}: unsupported JSON Schema keyword 'const' beside 'enum'`);
+  }
+  if (typeof value !== 'string' && typeof value !== 'number' && typeof value !== 'boolean') {
+    return fail(`${path}: 'const' is supported only with a string, number or boolean value`);
+  }
+  if (Array.isArray(from.type)) {
+    return fail(`${path}: 'const' beside a union 'type' is not supported`);
+  }
+  return _convertEnum({ ...rest, enum: [value] }, ctx, 'const');
 }
 
 /**
@@ -1093,6 +1191,11 @@ function _convertSchemaObject(
   // type-dispatched arm and produce a confusing "no matching converter" message. That arm owns
   // enum type validation entirely, including the union rule, because an enum's nullability is
   // declared in two places and only it can check that they agree.
+  // `const` first: beside an `enum` it is refused rather than letting the enum arm drop it.
+  if ('const' in raw) {
+    return _convertConst(raw, ctx);
+  }
+
   if ('enum' in raw) {
     return _convertEnum(raw, ctx);
   }
@@ -1104,10 +1207,13 @@ function _convertSchemaObject(
     return fail(`${path}: ${split.message}`);
   }
 
-  // `{}` (pydantic `Any`) is deferred: its typeless wire is refused by providers that require a
-  // `type` on every schema (Gemini function declarations, OpenAI strict mode).
+  // `{}` (pydantic `Any`), or annotations alone: the schema every value matches. Its typeless wire
+  // is refused by providers that require a `type` on every schema, which the provider adapters in
+  // `@fgv/ts-extras` decide per wire.
   if (_isAnySchema(raw)) {
-    return fail(`${path}: a schema with no 'type' (matching any value) is not supported`);
+    return _annotationsAt(raw, path).onSuccess((annotations) =>
+      succeed(anyValue(annotations) as unknown as ISchemaValidator<JsonValue>)
+    );
   }
 
   // Missing/unknown type: give a better error than a generic "no matching converter".
@@ -1183,10 +1289,17 @@ export const jsonSchemaConverter: Converter<ISchemaValidator<JsonValue>, string>
  * `description`, `title`, `default`, `examples` and `format` are emitted and not enforced. An
  * incoherent constraint set (`minimum` above `maximum`, a negative `minLength`, …) is refused with the
  * path named, exactly as the factories refuse it. Beside a `$ref` or a nullable `anyOf`/`oneOf`, each
- * annotation replaces the inner node's of the same name. `const` and some object-key and array
- * keywords are still accepted without being enforced or emitted, so for them the validator can accept
- * a value the source schema rejects. An `enum` node carries no length constraint and refuses
- * `minLength`/`maxLength`; it does not carry `format` either, which is dropped there.
+ * annotation replaces the inner node's of the same name. Some object-key and array keywords are
+ * still accepted without being enforced or emitted, so for them the validator can accept a value the
+ * source schema rejects.
+ *
+ * An `enum` may list strings, numbers or booleans, all of one type, and a `type` must admit them
+ * (`integer` requires every member to be an integer). A scalar `const` becomes the single-value enum
+ * of its type and is enforced; `toJson()` emits it as `enum: [value]`. An enum node carries no
+ * constraint and refuses `minLength`/`maxLength`, and a numeric one refuses the numeric constraint
+ * keywords; it does not carry `format` either, which is dropped there. A schema with no `type` and
+ * nothing but annotations — `{}`, pydantic's `Any` — becomes an `anyValue` node, which accepts any
+ * JSON value.
  *
  * @param json - The raw JSON Schema object to parse.
  * @returns `Success` with the parsed schema, or `Failure` describing the first out-of-subset feature.

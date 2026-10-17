@@ -32,9 +32,18 @@
  * against (fetched 2026-10-17). **An entry nobody could verify is `'fold'`** — an unverified
  * `'pass'` is the one way this table can be wrong in a harmful direction (a provider 400, or a
  * keyword silently honoured differently).
+ *
+ * Each table also states two shapes (fetched 2026-10-17): what the wire does with an `enum` of
+ * numbers or booleans (`nonStringEnum`: pass, or fold into the description keeping the `type`), and
+ * with a schema that has no `type` (`untyped`, from `JsonSchema.anyValue` / `{}`: pass, or refuse
+ * the request). An untyped node is never given a `type`, because any type would narrow what the
+ * model may send below what the validator accepts; where a wire requires one, or its documentation
+ * does not say, the request fails naming the tool and the path.
  */
 
+import { type Result } from '@fgv/ts-utils';
 import { type JsonObject, type JsonValue, JsonSchema } from '@fgv/ts-json-base';
+import type { IAiProviderDescriptor } from './model';
 
 /**
  * The wire formats that carry a `JsonSchema`, each with its own keyword-capability table.
@@ -95,6 +104,13 @@ const OPENAI_FAMILY_VERIFIED_PROVIDERS: ReadonlySet<string> = new Set(['openai',
  *   uuid, ipv4, ipv6 and uri.
  * - `default` and `examples` fold: neither page mentions them. `title` is dropped — it only
  *   restates the property name, and folding it put `Title: …` on every pydantic property.
+ * - A numeric or boolean `enum` passes. OpenAI lists `Enum` among the supported types without
+ *   restricting its members to strings, and states its size limits over "enum values", qualifying
+ *   only one of them as "a single enum property with string values"; xAI lists `enum` as supported.
+ *   Neither page restricts an enum to strings, as Gemini's does.
+ * - A schema with no `type` is refused. Neither page lists one among the supported schemas, OpenAI
+ *   requires the root to be "an object", and xAI does not address it. Unverified, so the safe choice:
+ *   the request fails rather than sending a shape a strict-mode server may 400 on.
  *
  * OpenAI states that fine-tuned models support none of the string, number or array constraints, so
  * a fine-tuned model (an `ft:` id) gets `unverifiedWireSchemaKeywords` instead.
@@ -115,7 +131,12 @@ export const openAiFamilySchemaKeywords: JsonSchema.SchemaKeywordCapabilities = 
   format: { passValues: ['date-time', 'time', 'date', 'email', 'ipv4', 'ipv6', 'uuid'] },
   title: 'drop',
   default: 'fold',
-  examples: 'fold'
+  examples: 'fold',
+  nonStringEnum: 'pass',
+  // Undocumented, so the conservative choice: the cited page covers strict structured outputs, not
+  // non-strict Responses function tools, and neither says whether a schema with no `type` is
+  // accepted. Refusing never sends a shape a strict-mode normalization could 400 on.
+  untyped: 'refuse'
 };
 
 /**
@@ -127,7 +148,8 @@ export const openAiFamilySchemaKeywords: JsonSchema.SchemaKeywordCapabilities = 
  * JSON Schema limitations apply to "JSON outputs and strict tool use" only
  * (https://platform.claude.com/docs/en/build-with-claude/structured-outputs § "JSON Schema
  * limitations"). This adapter never sets `strict` on a tool, so the forced-tool structured-output
- * mechanism uses this table too.
+ * mechanism uses this table too. A numeric `enum` and a schema with no `type` are both ordinary JSON
+ * Schema, so they pass.
  * @internal
  */
 export const anthropicToolsSchemaKeywords: JsonSchema.SchemaKeywordCapabilities = {
@@ -141,7 +163,9 @@ export const anthropicToolsSchemaKeywords: JsonSchema.SchemaKeywordCapabilities 
   format: 'pass',
   title: 'pass',
   default: 'pass',
-  examples: 'pass'
+  examples: 'pass',
+  nonStringEnum: 'pass',
+  untyped: 'pass'
 };
 
 /**
@@ -156,6 +180,10 @@ export const anthropicToolsSchemaKeywords: JsonSchema.SchemaKeywordCapabilities 
  * error" — so they fold, which is what Anthropic's own SDK helpers do. `exclusiveMinimum` /
  * `exclusiveMaximum` fall under "such as"; `examples` is not mentioned and folds; `title` is not
  * mentioned and is dropped, since it only restates the property name.
+ *
+ * The same section supports "`enum` (strings, numbers, bools, or nulls only - no complex types)", so
+ * a numeric or boolean enum passes. It lists the basic types and does not say whether a schema
+ * with no `type` is accepted, so one is refused rather than risking the documented 400.
  * @internal
  */
 export const anthropicJsonOutputsSchemaKeywords: JsonSchema.SchemaKeywordCapabilities = {
@@ -171,7 +199,9 @@ export const anthropicJsonOutputsSchemaKeywords: JsonSchema.SchemaKeywordCapabil
   },
   title: 'drop',
   default: 'pass',
-  examples: 'fold'
+  examples: 'fold',
+  nonStringEnum: 'pass',
+  untyped: 'refuse'
 };
 
 /** Whether a wire node's `type` is `integer`, alone or in a nullable union. */
@@ -232,6 +262,12 @@ function _integerExclusiveBound(
  * translated on an integer node (see `_integerExclusiveBound`) and folded elsewhere; `multipleOf`
  * folds; `examples` folds, because Gemini's singular `example` is "populated only when the object
  * is the root" and is therefore no exact equivalent.
+ *
+ * The same object's `enum` holds "Possible values of the element of Type.STRING with enum format",
+ * so a numeric or boolean enum folds into the description, keeping its `type`. Its `type` is
+ * "Required", so a schema with no `type` is refused: Gemini cannot express "any value" in this
+ * dialect (`parametersJsonSchema`, the full-JSON-Schema alternative to `parameters`, is a separate
+ * field this adapter does not send).
  * @internal
  */
 export const geminiSchemaKeywords: JsonSchema.SchemaKeywordCapabilities = {
@@ -245,7 +281,51 @@ export const geminiSchemaKeywords: JsonSchema.SchemaKeywordCapabilities = {
   format: 'pass',
   title: 'pass',
   default: 'pass',
-  examples: 'fold'
+  examples: 'fold',
+  nonStringEnum: 'fold',
+  untyped: 'refuse'
+};
+
+/**
+ * The keyword-capability table a client tool's parameter schema is adapted with when it is sent to
+ * `descriptor` — the table to hand to `@fgv/ts-extras-mcp`'s `adaptMcpTools` (its
+ * `schemaKeywords` option) so it admits exactly the MCP tools that wire can carry.
+ *
+ * @remarks
+ * The same table the request path uses: the wire follows `descriptor.apiFormat` (OpenAI-format
+ * Responses tools, Anthropic tools, or Gemini function declarations), and the provider's own table
+ * applies only when the request goes to its own endpoint — pass `endpoint` when the descriptor is
+ * pointed at a caller-supplied one, and every keyword is then treated as unverified, as the
+ * request path does.
+ * @param descriptor - The provider the tools will be sent to.
+ * @param options - The concrete `model` (an OpenAI fine-tuned `ft:` model gets the conservative
+ * table) and any caller-supplied `endpoint`.
+ * @returns The keyword-capability table.
+ * @public
+ */
+export function clientToolSchemaKeywords(
+  descriptor: IAiProviderDescriptor,
+  options?: { readonly model?: string; readonly endpoint?: string }
+): JsonSchema.SchemaKeywordCapabilities {
+  const format: SchemaWireFormat =
+    descriptor.apiFormat === 'anthropic'
+      ? 'anthropic-tools'
+      : descriptor.apiFormat === 'gemini'
+      ? 'gemini'
+      : 'responses-tools';
+  return schemaKeywordsFor(format, {
+    ...(options?.endpoint === undefined && { providerId: descriptor.id }),
+    ...(options?.model !== undefined && { model: options.model })
+  });
+}
+
+/** The provider-facing name of each wire format, for a refusal message. */
+const WIRE_FORMAT_NAMES: Readonly<Record<SchemaWireFormat, string>> = {
+  'responses-tools': 'OpenAI-format tools',
+  'openai-strict-output': 'OpenAI strict structured output',
+  'anthropic-tools': 'Anthropic tools',
+  'anthropic-json-outputs': 'Anthropic JSON outputs',
+  gemini: 'Gemini'
 };
 
 /**
@@ -285,12 +365,17 @@ export function schemaKeywordsFor(
 /**
  * A client tool's or structured-output request's wire schema, adapted for `format` as `target`
  * receives it — see `schemaKeywordsFor`.
+ * @returns The adapted schema, or a `Failure` naming the path of a node the wire cannot carry (a
+ * schema with no `type` where the table refuses one) and the wire it was refused for.
  * @internal
  */
 export function adaptWireSchema(
   schema: JsonValue,
   format: SchemaWireFormat,
   target?: ISchemaWireTarget
-): JsonValue {
-  return JsonSchema.adaptSchemaKeywords(schema, schemaKeywordsFor(format, target));
+): Result<JsonValue> {
+  return JsonSchema.adaptSchemaKeywords(schema, schemaKeywordsFor(format, target)).withErrorFormat(
+    (msg) =>
+      `${msg} (${WIRE_FORMAT_NAMES[format]}${target?.providerId === undefined ? ', unverified server' : ''})`
+  );
 }

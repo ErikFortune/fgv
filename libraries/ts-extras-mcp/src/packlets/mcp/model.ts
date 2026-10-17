@@ -27,7 +27,7 @@
 
 import { type Logging } from '@fgv/ts-utils';
 import { type AiAssist, type SaferFetch } from '@fgv/ts-extras';
-import { type JsonValue } from '@fgv/ts-json-base';
+import { type JsonSchema, type JsonValue } from '@fgv/ts-json-base';
 
 import { type McpOAuthClientProvider } from './sdkTypes';
 
@@ -781,6 +781,28 @@ export interface IAdaptMcpToolsOptions {
    * skips are still surfaced structurally on {@link IAdaptMcpToolsResult.skipped}.
    */
   readonly logger?: Logging.ILogger;
+
+  /**
+   * The keyword-capability table of the wire the adapted tools will be sent on, used to admit only
+   * tools that wire can carry.
+   *
+   * @remarks
+   * A tool whose schema that table refuses — today, one with a schema that states no `type`
+   * (pydantic `Any`, `{}`) on a wire that requires one or does not document it — is skipped like
+   * any other unadaptable tool, so one such tool cannot fail every request it would ride on. Get the
+   * table for a provider with `AiAssist.clientToolSchemaKeywords(descriptor, { model, endpoint })`
+   * from `@fgv/ts-extras`.
+   *
+   * Defaults to `JsonSchema.unverifiedWireSchemaKeywords`, the conservative table, which refuses an
+   * untyped schema — so without this option such a tool is skipped. Pass the Anthropic-tools table
+   * (or any that passes untyped nodes) to have it adapted.
+   *
+   * Admission only: the adapted tool keeps the schema as `fromJson` parsed it, and the request path
+   * adapts it for the wire exactly once, when it is sent. The table must therefore be the one for
+   * the wire the tools are actually sent on: a tool admitted under a more permissive table than the
+   * request's wire fails that request loudly, naming the tool.
+   */
+  readonly schemaKeywords?: JsonSchema.SchemaKeywordCapabilities;
 }
 
 /**

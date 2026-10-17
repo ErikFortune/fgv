@@ -35,7 +35,8 @@ export type SchemaNodeType =
   | 'enum'
   | 'optional'
   | 'array'
-  | 'object';
+  | 'object'
+  | 'any';
 
 /**
  * A typed JSON Schema node for the LLM-tool subset. Every value returned by the
@@ -97,7 +98,8 @@ const SCHEMA_NODE_TYPES: Readonly<Record<SchemaNodeType, true>> = {
   enum: true,
   optional: true,
   array: true,
-  object: true
+  object: true,
+  any: true
 };
 
 /**
