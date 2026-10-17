@@ -219,7 +219,9 @@ describe('AiAssist.clientToolSchemaKeywords — the table a host passes to adapt
 
   test('an endpoint override, an unverified provider and a fine-tuned model get the conservative table', () => {
     expect(
-      AiAssist.clientToolSchemaKeywords(provider('anthropic', 'anthropic'), { endpoint: 'https://gw.invalid' })
+      AiAssist.clientToolSchemaKeywords(provider('anthropic', 'anthropic'), {
+        endpoint: 'https://gw.invalid'
+      })
     ).toBe(JsonSchema.unverifiedWireSchemaKeywords);
     expect(AiAssist.clientToolSchemaKeywords(provider('groq', 'openai'))).toBe(
       JsonSchema.unverifiedWireSchemaKeywords

@@ -116,7 +116,11 @@ const MODELS: Readonly<Record<string, string>> = {
 };
 
 /** The SSE chunks in which the model calls `tool` with `argsJson`, in `descriptor`'s dialect. */
-function toolCallChunks(descriptor: AiAssist.IAiProviderDescriptor, tool: string, argsJson: string): string[] {
+function toolCallChunks(
+  descriptor: AiAssist.IAiProviderDescriptor,
+  tool: string,
+  argsJson: string
+): string[] {
   if (descriptor.apiFormat === 'gemini') {
     // A plain text reply: the Gemini case only checks what was sent.
     return [
@@ -319,7 +323,11 @@ describe('numeric enum, const and {} on an adapted MCP tool', () => {
 
     test.each([
       ['a level outside the numeric enum', '{"level":3,"mode":"fast"}', /Invalid enumerated value 3/],
-      ['a numeric string for the integer enum', '{"level":"1","mode":"fast"}', /Invalid enumerated value "1"/],
+      [
+        'a numeric string for the integer enum',
+        '{"level":"1","mode":"fast"}',
+        /Invalid enumerated value "1"/
+      ],
       ['a mode other than the const', '{"level":1,"mode":"slow"}', /Invalid enumerated value "slow"/]
     ])('%s is refused before it reaches the server', async (__label, argsJson, message) => {
       const { events } = await runTurn(ANTHROPIC, 'configure', argsJson);
@@ -353,7 +361,9 @@ describe('numeric enum, const and {} on an adapted MCP tool', () => {
       expect(calls).toEqual([]);
       const result = toolResult(events);
       expect(result).toEqual(expect.objectContaining({ toolName: 'level', isError: true }));
-      expect(result?.type === 'client-tool-result' ? result.result : '').toMatch(/Invalid enumerated value 3/);
+      expect(result?.type === 'client-tool-result' ? result.result : '').toMatch(
+        /Invalid enumerated value 3/
+      );
     });
 
     test('an in-set call is forwarded', async () => {

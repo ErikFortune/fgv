@@ -102,7 +102,10 @@ describe('JsonSchema — numeric and boolean enums', () => {
       expect(JsonSchema.enumOf(['a', 'a']).toJson()).toEqual({ type: 'string', enum: ['a', 'a'] });
       expect(JsonSchema.numberEnumOf([1.5, 1.5]).toJson()).toEqual({ type: 'number', enum: [1.5, 1.5] });
       expect(JsonSchema.integerEnumOf([1, 1]).toJson()).toEqual({ type: 'integer', enum: [1, 1] });
-      expect(JsonSchema.booleanEnumOf([true, true]).toJson()).toEqual({ type: 'boolean', enum: [true, true] });
+      expect(JsonSchema.booleanEnumOf([true, true]).toJson()).toEqual({
+        type: 'boolean',
+        enum: [true, true]
+      });
       expect(JsonSchema.integerEnumOf([1, 1]).validate(1)).toSucceedWith(1);
       expect(JsonSchema.fromJson({ type: 'integer', enum: [2, 2] })).toSucceedAndSatisfy((schema) => {
         expect(schema.toJson()).toEqual({ type: 'integer', enum: [2, 2] });
