@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "BREAKING: JsonSchema nodes carry constraint and annotation keywords. number/integer take minimum, maximum, exclusiveMinimum, exclusiveMaximum and multipleOf; string takes minLength, maxLength and format; every factory takes title, default and examples. Validating keywords are enforced and every keyword is emitted by toJson(); a factory throws on an incoherent option set. fromJson now enforces and emits the same keywords from a raw schema, so a value it used to accept (1 against minimum 5) is now rejected, and an incoherent or mistyped constraint is refused. New JsonSchema.adaptSchemaKeywords passes, translates or folds each keyword for one provider wire.",
+      "type": "minor",
+      "packageName": "@fgv/ts-json-base"
+    }
+  ],
+  "packageName": "@fgv/ts-json-base",
+  "email": "ErikFortune@outlook.com"
+}
