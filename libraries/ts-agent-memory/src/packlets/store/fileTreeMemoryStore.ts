@@ -345,6 +345,13 @@ interface IInternalParams {
  * invalidate-don't-delete), dispatched per kind by the codec's `isVersioned`
  * flag. A kind is flat with zero behavioral impact unless it opts into a
  * {@link ITemporalIdentityCodec}.
+ *
+ * **Scope invariant.** Every record the store returns was read from
+ * `codec(kind).encode(entityId).scope`. Each load — the open-time walk and every
+ * read path — checks it, for every codec, so a codec need not check scope in its
+ * own round-trip. A file under any other scope fails the read (or the open), or
+ * is quarantined into {@link FileTreeMemoryStore.skippedRecords | skippedRecords}
+ * when the store is opened with `onRecordError: 'skip'`.
  * @public
  */
 export class FileTreeMemoryStore implements IMemoryStore {
@@ -1796,8 +1803,9 @@ export class FileTreeMemoryStore implements IMemoryStore {
   }
 
   /**
-   * Enforce `envelope.id === filename stem`, the codec round-trip, AND that the
-   * envelope's own `entityId` agrees with the id decoded from the subtree scope.
+   * Enforce `envelope.id === filename stem`, the codec round-trip, that the
+   * envelope's own `entityId` agrees with the id decoded from the subtree scope,
+   * AND the scope invariant (`scope === codec.encode(entityId).scope`).
    * The round-trip only validates (scope, stem) consistency; the codec derives
    * `entityId` from the scope path and never reads the envelope's `entityId`
    * field, so a tampered/corrupt file whose frontmatter declares a foreign

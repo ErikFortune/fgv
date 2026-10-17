@@ -46,6 +46,12 @@ export interface IIdentityCodec {
   /**
    * Assert that `encode(decode(scope, stem)).idStem === stem`. Used by the
    * store's `verifyFilenameId` check on load.
+   *
+   * @remarks
+   * Only the idStem is part of this contract. The store separately enforces that
+   * a loaded record's scope equals `encode(entityId).scope`, so a codec need not
+   * check scope here — though checking it is harmless, and gives an earlier,
+   * codec-specific message.
    */
   verifyRoundTrip(scope: MemoryScopeKey, stem: string): Result<true>;
 }

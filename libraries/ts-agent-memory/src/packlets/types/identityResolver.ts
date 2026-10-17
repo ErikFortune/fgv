@@ -59,11 +59,11 @@ export interface IIdentityResolver {
  * {@link edgeTargetKey}. For a versioned kind the `id` is the version stem, so
  * distinct versions of one entity have distinct addresses.
  *
- * The result is the address the record was **read from** only for a record whose
- * identity the store verified on load — which every record `FileTreeMemoryStore`
- * returns is, under a codec whose round-trip checks scope (all shipped codecs do).
- * A record built by hand, or resolved with a codec map that differs from the
- * store's, gets the address its kind's codec says it should have.
+ * For every record `FileTreeMemoryStore` returns, the result is the address the
+ * record was **read from**: the store refuses to load a record from any scope other
+ * than `codec(kind).encode(entityId).scope`, whatever the codec. A record built by
+ * hand, or resolved with a codec map that differs from the store's, gets the
+ * address its kind's codec says it should have.
  *
  * It does not capture a resolver that throws: a caller handed a consumer-injected
  * resolver wraps the call in `captureResult`, as `ScoreUnionMergeStrategy` does.
