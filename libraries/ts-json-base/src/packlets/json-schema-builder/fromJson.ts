@@ -755,7 +755,8 @@ function _convertConst(
   ctx: IParseContext
 ): Result<ISchemaValidator<JsonValue>> {
   const path = ctx.path;
-  const value: unknown = from.const;
+  // A rest destructure copies own keys as data, so an own `__proto__` key cannot become a prototype.
+  const { const: value, ...rest } = from;
   if ('enum' in from) {
     return fail(`${path}: unsupported JSON Schema keyword 'const' beside 'enum'`);
   }
@@ -764,12 +765,6 @@ function _convertConst(
   }
   if (Array.isArray(from.type)) {
     return fail(`${path}: 'const' beside a union 'type' is not supported`);
-  }
-  const rest: Record<string, unknown> = {};
-  for (const [key, entry] of Object.entries(from)) {
-    if (key !== 'const') {
-      rest[key] = entry;
-    }
   }
   return _convertEnum({ ...rest, enum: [value] }, ctx, 'const');
 }

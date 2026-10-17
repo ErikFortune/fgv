@@ -1,8 +1,8 @@
 {
   "changes": [
     {
-      "comment": "Tests only: MCP tools using a numeric enum, a scalar const or {} are now adapted; an out-of-set call is refused before it reaches the server, and a Gemini request carrying {} is refused naming the tool and path.",
-      "type": "none",
+      "comment": "adaptMcpTools takes an optional schemaKeywords table (get one with AiAssist.clientToolSchemaKeywords) and skips a tool whose schema the target wire cannot carry, defaulting to the conservative JsonSchema.unverifiedWireSchemaKeywords: a tool with an untyped {} parameter (pydantic Any) stays skipped unless the table passes it (Anthropic tools), so it cannot fail every request. Tools using a numeric enum or a scalar const are now adapted, and an out-of-set call is refused before it reaches the server. The skip warning now reads 'inputSchema cannot be adapted: <reason>'.",
+      "type": "minor",
       "packageName": "@fgv/ts-extras-mcp"
     }
   ],

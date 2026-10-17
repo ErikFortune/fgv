@@ -57,8 +57,10 @@ close-out commit.
   declaring `{type: 'integer', enum: [1, 2]}`, `{const: 'fast', type: 'string'}` and `{title:
   'Payload'}` is adapted; Anthropic is shown all three; an out-of-set level, a numeric string, and a
   wrong `const` are each refused as a correctable tool error before the server sees them; an
-  in-set call is forwarded unchanged; and a Gemini request carrying the tool is refused naming the
-  tool and the path, with no `fetch`.
+  in-set call is forwarded unchanged. Admission against the wire table (added in review round 1):
+  by default, and with the OpenAI or Gemini table, the `{}` tool is skipped and the turn is sent
+  without it; with the Anthropic-tools table it is adapted. The same end to end runs on the OpenAI
+  Responses wire.
 
 ## Per-wire table additions
 
@@ -66,8 +68,8 @@ All pages fetched 2026-10-17 with the `WebFetch` tool.
 
 | wire | non-string `enum` | schema with no `type` |
 | --- | --- | --- |
-| Responses tools + OpenAI strict output (`openai`, `xai-grok`, own endpoint, not `ft:`) | **pass** [O][X] | **refuse** — not documented [O][X] |
-| Anthropic tools (incl. forced-tool output) | **pass** [A1] | **pass** as `{}` [A1] |
+| Responses tools + OpenAI strict output (`openai`, `xai-grok`, own endpoint, not `ft:`) | **pass** — OpenAI inferred [O]; xAI inferred [X] | **refuse** — conservative: strict output undocumented [O][X]; non-strict Responses function tools inferred (no page covers them) |
+| Anthropic tools (incl. forced-tool output) | **pass** [A1] | **pass** as `{}` — inferred [A1] |
 | Anthropic JSON outputs | **pass** [A2] | **refuse** — not documented [A2] |
 | Gemini (tools + `responseSchema`) | **fold**, `type` kept [G] | **refuse** — `type` is required [G] |
 | Unverified (`unverifiedWireSchemaKeywords`: other OpenAI-format providers, `ft:` models, any endpoint override; Ollama) | fold | refuse |
@@ -90,11 +92,14 @@ Citations:
   entry here that is an inference rather than a quotation.
 - **[X]** https://docs.x.ai/docs/guides/structured-outputs: `enum` and `const` are listed as
   supported; "Tool schemas follow the same JSON Schema support rules described on this page".
-  Numeric enum values and typeless schemas are not addressed.
+  Numeric enum values and typeless schemas are not addressed, so the xAI numeric-enum pass is an
+  **inference** from `enum` being listed without a value-type restriction, not a verified entry.
 - **[A1]** https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools:
   `input_schema` is "A JSON Schema object". `{}` and a numeric `enum` are ordinary JSON Schema; the
   JSON-Schema limitations in [A2] apply only to "JSON outputs and strict tool use", and this adapter
-  never sets `strict` on a tool. Same basis as #682's pass-everything table.
+  never sets `strict` on a tool. Same basis as #682's pass-everything table. The `{}` pass is an
+  **inference** from "A JSON Schema object": no page says a property schema without a `type` is
+  accepted.
 - **[A2]** https://platform.claude.com/docs/en/build-with-claude/structured-outputs § "JSON Schema
   limitations": supported "`enum` (strings, numbers, bools, or nulls only - no complex types)" and
   `const`; "If you use an unsupported feature, you'll receive a 400 error with details". A schema
@@ -162,7 +167,24 @@ Run from the repo root, logs in `../gate-logs-json-schema-shapes/` (outside the 
 - **Gemini has `parametersJsonSchema`**, which might carry `{}`; the brief's "unless their
   JSON-Schema parameter form accepts it" pointed at it. Adopting it would move the whole Gemini tool
   path off the OpenAPI subset and is left in `docs/FUTURE.md`.
-- **Consequence worth stating:** a tool that used to be skipped on every provider is now adapted,
-  and on Gemini (and any refusing wire) every request carrying it fails loudly instead. That is the
-  brief's decision; it is visible to a host only as a request failure, not on the approval screen.
+- **Decision 4's loud failure regressed MCP hosts** as first implemented: a server tool with `{}`
+  was adapted and then failed every request on a refusing wire, where before only that tool was
+  skipped. Fixed in review round 1 by admitting MCP tools against the target wire's table
+  (default conservative); host-authored client tools keep the loud failure.
 - **`samples/testbed` `mcpProbe` comments** were listed as a known pin; none mentions these shapes.
+
+## Review round 1 (gate-time deep review, applied)
+
+| finding | what changed |
+| --- | --- |
+| P1 one MCP tool with `{}` failed every request on Gemini, OpenAI/xAI and unverified wires (a regression: on `integration/asks` only that tool was skipped) | `adaptMcpTools` takes `schemaKeywords?: JsonSchema.SchemaKeywordCapabilities`, **defaulting to `JsonSchema.unverifiedWireSchemaKeywords`**, and runs `adaptSchemaKeywords` as an admission check only: a refused tool goes to `skipped` (reason `not sendable on the target wire: <path>: …`) with the warning, and an admitted tool keeps its parsed schema, so request-time adaptation still runs once. New public `AiAssist.clientToolSchemaKeywords(descriptor, { model, endpoint })` returns the table a descriptor's client-tool wire uses. Host-authored client tools keep the loud request-time failure. |
+| P1 tests | `ts-extras-mcp` `shapes.test.ts`: default skip (only that tool, with the warning); Anthropic-tools table adapts it with the schema as parsed; OpenAI and Gemini tables skip it; a Gemini turn is sent with the skipped tool left out. `endToEnd.test.ts`: `literal_any_tool` split into `literal_tool` (adaptable) and `any_tool` (skipped by default). `ts-extras` `schemaShapes.test.ts`: the mixed Gemini case is now explicitly the direct-client-tool loud failure; `clientToolSchemaKeywords` tested per format, endpoint override, unverified provider and `ft:` model. |
+| P1 docs | `ts-extras-mcp` change file is `minor` and describes the option; `ts-extras-mcp/CAPABILITIES.md`, `ts-extras/CAPABILITIES.md`, `docs/FUTURE.md` (the direct-vs-MCP trade-off) and the testbed `mcp-probe` footer updated. The skip warning now reads `inputSchema cannot be adapted: <reason>`. |
+| P2 citations | The OpenAI Responses function-tools `untyped: refuse`, the xAI numeric-enum pass and the Anthropic-tools `{}` pass are labelled inferences above; `schemaKeywords.ts` says the OpenAI-tools refuse is undocumented and conservative. |
+| P2 duplicate members / `-0` | String `enumOf` accepts duplicates and emits them as given, so the numeric, integer and boolean factories and `fromJson` do the same; pinned by a test. `-0` and `0` are one member under `===`, and `-0` serializes as `0`; pinned. |
+| P2 MCP on the OpenAI wire | End to end on the Responses wire: the model is shown the numeric enum and the const, an out-of-set call never reaches the server, an in-set call is forwarded. |
+| P3 | The nested ternary in `resolveStructuredOutput` is a `Result` chain; `_convertConst` uses a rest destructure (which also copies an own `__proto__` key as data). |
+
+### Gate counts (round 1)
+
+See `state.md` § Review round 1 for the run.

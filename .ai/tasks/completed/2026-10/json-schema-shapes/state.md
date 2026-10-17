@@ -69,13 +69,34 @@ Worker-owned. The brief is frozen; questions and deviations are recorded here.
 - **Gemini via `parametersJsonSchema`.** Gemini's `FunctionDeclaration` has a JSON-Schema field that
   could carry `{}`. Moving the Gemini tool path to it is a provider-path change beyond this stream;
   recorded in `docs/FUTURE.md`.
-- **A Gemini request now fails where it used to skip one tool.** A server with one `{}` parameter
-  used to lose that tool at adaptation (visible on the approval screen); now the tool is adapted and
-  every Gemini request carrying it fails loudly. That is decision 4 as written. A host that wants the
-  old behaviour on Gemini would need a per-provider filter at tool-selection time, which nothing
-  offers today.
+- **~~A Gemini request now fails where it used to skip one tool.~~** Resolved in review round 1:
+  `adaptMcpTools` admits each tool against the target wire's table (`schemaKeywords`, default
+  `JsonSchema.unverifiedWireSchemaKeywords`), so a `{}` tool is skipped unless the table carries it.
 - **Layer-1 review.** The kickoff forbids sub-agents, so no independent `code-reviewer` ran; the
   gate-time review is the only independent one. Inline self-review applied: the unreachable branch
   in the member-type helper was removed by construction (a non-empty tuple), JSON Pointer tokens in
   refusal paths escape control characters, a dynamic `RegExp` in a test was replaced, and the
   completion paths got infallible server-tool formatters instead of an untestable failure branch.
+
+## Review round 1
+
+The coordinator's decisions on the gate-time deep review, applied on top of the `integration/asks`
+merge `6b36067cf` (which includes #735). Detail in `result.md` § Review round 1.
+
+- **P1:** `adaptMcpTools({ schemaKeywords })`, default conservative, admission-only; public
+  `AiAssist.clientToolSchemaKeywords(descriptor, { model, endpoint })` to get the table. The
+  `endToEnd` fixture `literal_any_tool` became `literal_tool` (adaptable) plus `any_tool` (skipped
+  by default). The skip warning now reads `inputSchema cannot be adapted: <reason>`, since a skip is
+  no longer only a subset miss; no test pinned the old wording.
+- **P2:** inferences labelled in `result.md`; OpenAI-tools `untyped: refuse` commented as
+  undocumented and conservative; duplicate members accepted as string `enumOf` accepts them, and
+  `-0`, pinned; MCP end to end on the OpenAI wire; `docs/FUTURE.md` states the direct-vs-MCP
+  trade-off.
+- **P3:** `resolveStructuredOutput` adaptation is a `Result` chain; `_convertConst` uses a rest
+  destructure.
+- `samples/testbed` `mcp-probe` footer now says a skip may be a wire refusal (the package is private,
+  so no change file).
+
+### Gate counts (round 1)
+
+GATE_COUNTS_PLACEHOLDER

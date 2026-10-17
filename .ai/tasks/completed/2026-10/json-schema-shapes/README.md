@@ -25,8 +25,10 @@ schema forbade.
   passes on Anthropic tools and is refused everywhere else: the tool request fails before anything
   is sent, naming the tool and the path, and structured output treats it under `onUnsupported`.
   Every pass entry is cited from documentation fetched 2026-10-17.
-- **MCP end to end:** such a tool is adapted, an out-of-set call is refused before the server sees
-  it, and a Gemini request carrying `{}` is refused loudly.
+- **MCP end to end:** such a tool is adapted, and an out-of-set call is refused before the server
+  sees it. `adaptMcpTools` admits each tool against the target wire's table
+  (`schemaKeywords`, from `AiAssist.clientToolSchemaKeywords`), defaulting to the conservative one,
+  so a server tool with `{}` is skipped — as before — unless the wire carries it (Anthropic tools).
 
 ## What changed shape
 

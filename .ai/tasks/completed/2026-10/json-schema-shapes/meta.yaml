@@ -20,14 +20,18 @@ summary:
     both Anthropic wires and folds on Gemini; {} passes on Anthropic tools and is refused elsewhere,
     failing the tool request before it is sent with the tool and path named, or treated as a
     structured-output capability mismatch under onUnsupported. Ollama folds and refuses the same
-    way; an MCP tool with all three shapes is adapted and refuses out-of-set calls before the server.
+    way. adaptMcpTools admits each MCP tool against the target wire's table (schemaKeywords, via
+    AiAssist.clientToolSchemaKeywords; default conservative), so a server tool with {} is skipped
+    unless the wire carries it, and an admitted tool refuses out-of-set calls before the server.
   diverged: >
     adaptSchemaKeywords and the internal tool formatters return a Result so a refusal can carry a
     path; the completion paths use new infallible server-tool formatters. A boolean enum is accepted
     by fromJson as well, because the boolean node const needs would otherwise be emitter output
     fromJson refuses. The shape rules are table fields rather than keywords, since a string enum
     always passes. A numeric constraint beside a numeric enum, const beside a union type, and const
-    beside enum are refused. Gemini's parametersJsonSchema route for {} is left in FUTURE.md.
+    beside enum are refused. Gemini's parametersJsonSchema route for {} is left in FUTURE.md. The
+    first build failed every request carrying an MCP {} tool on a refusing wire; review round 1
+    replaced that with per-wire admission at adapt time, default conservative.
   sourceLine: "Accept each one where the schema *is* the validator, and make each provider's wire either carry it, adapt it, or refuse it **loudly**."
   headline: >
     JsonSchema now models numeric enums, an enforced scalar const and {} (pydantic Literal and Any),

@@ -30,6 +30,7 @@ import '@fgv/ts-utils-jest';
 
 import { JsonSchema, type JsonObject } from '@fgv/ts-json-base';
 import { succeed } from '@fgv/ts-utils';
+import { AiAssist } from '../../..';
 // eslint-disable-next-line @rushstack/packlets/mechanics
 import type { AiProviderId, IAiClientTool, IAiProviderDescriptor } from '../../../packlets/ai-assist/model';
 // eslint-disable-next-line @rushstack/packlets/mechanics
@@ -141,12 +142,18 @@ describe('the shape rules, per tool wire format', () => {
       const [declaration] = wire[1].function_declarations as JsonObject[];
       expect((declaration.parameters as JsonObject).properties).toEqual(foldedEnums);
     });
-    expect(
-      toGeminiTools([tool(enums).config, tool(untyped).config], { providerId: 'google-gemini' })
-    ).toFailWith(/\(Gemini\)$/);
+  });
+
+  test('a host-authored client tool Gemini cannot carry fails the whole request, loudly, by design', () => {
+    // Direct client tools are the host's own code, so a schema the wire cannot carry is an authoring
+    // error and fails the request naming the tool. MCP tools are different: `adaptMcpTools` admits
+    // them against the wire table, so one server tool with `{}` is skipped rather than failing here.
     expect(
       toGeminiTools([tool(enums, 'ok').config, tool(untyped).config], { providerId: 'google-gemini' })
     ).toFailWith(UNTYPED_REFUSAL);
+    expect(
+      toGeminiTools([tool(enums, 'ok').config, tool(untyped).config], { providerId: 'google-gemini' })
+    ).toFailWith(/\(Gemini\)$/);
   });
 
   test('a nullable numeric enum on Gemini folds, and the sanitizer still translates the union', () => {
@@ -176,6 +183,50 @@ describe('the shape rules, per tool wire format', () => {
       });
       expect([table.nonStringEnum, table.untyped]).toEqual([nonStringEnum, untypedRule]);
     }
+  });
+});
+
+describe('AiAssist.clientToolSchemaKeywords — the table a host passes to adaptMcpTools', () => {
+  function provider(id: AiProviderId, apiFormat: 'openai' | 'anthropic' | 'gemini'): IAiProviderDescriptor {
+    return {
+      id,
+      label: id,
+      buttonLabel: id,
+      needsSecret: true,
+      apiFormat,
+      baseUrl: 'https://example.invalid/v1',
+      defaultModel: 'm',
+      supportedTools: [],
+      corsRestricted: false,
+      streamingCorsRestricted: false,
+      acceptsImageInput: false
+    };
+  }
+
+  test('follows the descriptor to the tool wire its requests use', () => {
+    expect(AiAssist.clientToolSchemaKeywords(provider('anthropic', 'anthropic'))).toBe(
+      schemaKeywordsFor('anthropic-tools', { providerId: 'anthropic' })
+    );
+    expect(AiAssist.clientToolSchemaKeywords(provider('google-gemini', 'gemini'))).toBe(
+      schemaKeywordsFor('gemini', { providerId: 'google-gemini' })
+    );
+    expect(AiAssist.clientToolSchemaKeywords(provider('openai', 'openai'), { model: 'gpt-4o' })).toBe(
+      schemaKeywordsFor('responses-tools', { providerId: 'openai', model: 'gpt-4o' })
+    );
+    expect(AiAssist.clientToolSchemaKeywords(provider('anthropic', 'anthropic')).untyped).toBe('pass');
+    expect(AiAssist.clientToolSchemaKeywords(provider('openai', 'openai')).untyped).toBe('refuse');
+  });
+
+  test('an endpoint override, an unverified provider and a fine-tuned model get the conservative table', () => {
+    expect(
+      AiAssist.clientToolSchemaKeywords(provider('anthropic', 'anthropic'), { endpoint: 'https://gw.invalid' })
+    ).toBe(JsonSchema.unverifiedWireSchemaKeywords);
+    expect(AiAssist.clientToolSchemaKeywords(provider('groq', 'openai'))).toBe(
+      JsonSchema.unverifiedWireSchemaKeywords
+    );
+    expect(AiAssist.clientToolSchemaKeywords(provider('openai', 'openai'), { model: 'ft:gpt-4o:x' })).toBe(
+      JsonSchema.unverifiedWireSchemaKeywords
+    );
   });
 });
 

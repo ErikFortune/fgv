@@ -98,6 +98,30 @@ describe('JsonSchema — numeric and boolean enums', () => {
       expect(schema.toJson()).toEqual({ type: 'integer', enum: [1, 2] });
     });
 
+    test('duplicate members are accepted and emitted as given, as the string enumOf does', () => {
+      expect(JsonSchema.enumOf(['a', 'a']).toJson()).toEqual({ type: 'string', enum: ['a', 'a'] });
+      expect(JsonSchema.numberEnumOf([1.5, 1.5]).toJson()).toEqual({ type: 'number', enum: [1.5, 1.5] });
+      expect(JsonSchema.integerEnumOf([1, 1]).toJson()).toEqual({ type: 'integer', enum: [1, 1] });
+      expect(JsonSchema.booleanEnumOf([true, true]).toJson()).toEqual({ type: 'boolean', enum: [true, true] });
+      expect(JsonSchema.integerEnumOf([1, 1]).validate(1)).toSucceedWith(1);
+      expect(JsonSchema.fromJson({ type: 'integer', enum: [2, 2] })).toSucceedAndSatisfy((schema) => {
+        expect(schema.toJson()).toEqual({ type: 'integer', enum: [2, 2] });
+        expect(schema.validate(2)).toSucceedWith(2);
+      });
+      expect(JsonSchema.fromJson({ enum: ['a', 'a'] })).toSucceed();
+    });
+
+    test('-0 and 0 are one member, as === makes them', () => {
+      const zero = JsonSchema.integerEnumOf([0]);
+      expect(zero.validate(-0)).toSucceed();
+      expect(JsonSchema.numberEnumOf([-0]).validate(0)).toSucceedWith(0);
+      // JSON has no negative zero: the emitted list serializes it as 0.
+      expect(JSON.stringify(JsonSchema.integerEnumOf([-0]).toJson())).toBe('{"type":"integer","enum":[0]}');
+      expect(JsonSchema.fromJson({ type: 'integer', enum: [-0] })).toSucceedAndSatisfy((schema) => {
+        expect(schema.validate(0)).toSucceed();
+      });
+    });
+
     test('refuses an incoherent value list at construction', () => {
       expect(() => JsonSchema.numberEnumOf([])).toThrow(/numberEnumOf: enum must list at least one value/);
       expect(() => JsonSchema.numberEnumOf([1, Number.NaN])).toThrow(/enum value NaN is not a number/);

@@ -1602,7 +1602,7 @@ export class FileTreeMemoryStore implements IMemoryStore {
    * carries the authored characters through untouched and only the envelope
    * moves. The parsed record is additionally put through `_verifyLoaded`, the
    * same identity checks the load paths apply (id vs filename, scope-derived
-   * entityId, the scope invariant, and a flat kind's idStem) —
+   * entityId, and the scope invariant) —
    * without it, reconcile would be the one path that accepts and rewrites a file
    * the store would refuse to load.
    *
@@ -1699,8 +1699,7 @@ export class FileTreeMemoryStore implements IMemoryStore {
           // `parseMemoryFile` validates the body through the registered Converter,
           // so a corrupt record is refused rather than silently rewritten, and
           // `_verifyLoaded` re-applies the same identity checks the two load paths
-          // apply (id vs filename, scope-derived entityId, the scope invariant, and a flat kind's
-          // idStem). Reconcile is a
+          // apply (id vs filename, scope-derived entityId, and the scope invariant). Reconcile is a
           // read-then-write, and a file can change on disk after the index was
           // built, so skipping them would make this the one path that accepts —
           // and rewrites — a record the store would otherwise refuse to load.
@@ -1816,8 +1815,7 @@ export class FileTreeMemoryStore implements IMemoryStore {
   /**
    * Enforce `envelope.id === filename stem`, the codec round-trip, that the
    * envelope's own `entityId` agrees with the id decoded from the subtree scope,
-   * the scope invariant (`scope === codec.encode(entityId).scope`), AND for a flat
-   * kind that the stem is `codec.encode(entityId).idStem`.
+   * AND the scope invariant (`scope === codec.encode(entityId).scope`).
    * The round-trip only validates (scope, stem) consistency; the codec derives
    * `entityId` from the scope path and never reads the envelope's `entityId`
    * field, so a tampered/corrupt file whose frontmatter declares a foreign

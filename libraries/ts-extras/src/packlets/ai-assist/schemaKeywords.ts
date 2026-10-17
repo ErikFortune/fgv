@@ -43,6 +43,7 @@
 
 import { type Result } from '@fgv/ts-utils';
 import { type JsonObject, type JsonValue, JsonSchema } from '@fgv/ts-json-base';
+import type { IAiProviderDescriptor } from './model';
 
 /**
  * The wire formats that carry a `JsonSchema`, each with its own keyword-capability table.
@@ -132,6 +133,9 @@ export const openAiFamilySchemaKeywords: JsonSchema.SchemaKeywordCapabilities = 
   default: 'fold',
   examples: 'fold',
   nonStringEnum: 'pass',
+  // Undocumented, so the conservative choice: the cited page covers strict structured outputs, not
+  // non-strict Responses function tools, and neither says whether a schema with no `type` is
+  // accepted. Refusing never sends a shape a strict-mode normalization could 400 on.
   untyped: 'refuse'
 };
 
@@ -281,6 +285,39 @@ export const geminiSchemaKeywords: JsonSchema.SchemaKeywordCapabilities = {
   nonStringEnum: 'fold',
   untyped: 'refuse'
 };
+
+/**
+ * The keyword-capability table a client tool's parameter schema is adapted with when it is sent to
+ * `descriptor` — the table to hand to `@fgv/ts-extras-mcp`'s `adaptMcpTools` (its
+ * `schemaKeywords` option) so it admits exactly the MCP tools that wire can carry.
+ *
+ * @remarks
+ * The same table the request path uses: the wire follows `descriptor.apiFormat` (OpenAI-format
+ * Responses tools, Anthropic tools, or Gemini function declarations), and the provider's own table
+ * applies only when the request goes to its own endpoint — pass `endpoint` when the descriptor is
+ * pointed at a caller-supplied one, and every keyword is then treated as unverified, as the
+ * request path does.
+ * @param descriptor - The provider the tools will be sent to.
+ * @param options - The concrete `model` (an OpenAI fine-tuned `ft:` model gets the conservative
+ * table) and any caller-supplied `endpoint`.
+ * @returns The keyword-capability table.
+ * @public
+ */
+export function clientToolSchemaKeywords(
+  descriptor: IAiProviderDescriptor,
+  options?: { readonly model?: string; readonly endpoint?: string }
+): JsonSchema.SchemaKeywordCapabilities {
+  const format: SchemaWireFormat =
+    descriptor.apiFormat === 'anthropic'
+      ? 'anthropic-tools'
+      : descriptor.apiFormat === 'gemini'
+      ? 'gemini'
+      : 'responses-tools';
+  return schemaKeywordsFor(format, {
+    ...(options?.endpoint === undefined && { providerId: descriptor.id }),
+    ...(options?.model !== undefined && { model: options.model })
+  });
+}
 
 /** The provider-facing name of each wire format, for a refusal message. */
 const WIRE_FORMAT_NAMES: Readonly<Record<SchemaWireFormat, string>> = {

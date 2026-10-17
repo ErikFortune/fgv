@@ -29,7 +29,7 @@
  * 100%-line-coverage of a mocked seam cannot catch (e.g. a projection-shape mismatch in `sdk.ts`).
  *
  * The fixture server advertises a MIX of tools: adaptable ones (including a pydantic-shaped one with
- * a local `$ref` and an `anyOf [T, null]` field, and one with a numeric enum, a `const` and `{}`), and
+ * a local `$ref` and an `anyOf [T, null]` field, and one with a numeric enum and a `const`), and
  * one for each JSON Schema feature
  * `JsonSchema.fromJson` rejects (an unresolvable `$ref`, a general oneOf/anyOf union, pattern, a
  * general union `type[]`).
@@ -98,17 +98,16 @@ const ADAPTABLE_TOOLS = [
     }
   },
   {
-    // pydantic's `Literal[1, 2]`, a `Literal['fast']` emitted as `const`, and `Any` as `{}`. A server
-    // offering any of them had the tool skipped until `fromJson` learned numeric enums, scalar `const`
-    // and the any node; `pattern_tool` is still the example of a refused keyword.
-    name: 'literal_any_tool',
-    description: 'Takes a numeric literal, a const and an arbitrary value.',
+    // pydantic's `Literal[1, 2]` and a `Literal['fast']` emitted as `const`. A server offering
+    // either had the tool skipped until `fromJson` learned numeric enums and scalar `const`;
+    // `pattern_tool` is still the example of a refused keyword.
+    name: 'literal_tool',
+    description: 'Takes a numeric literal and a const.',
     inputSchema: {
       type: 'object',
       properties: {
         level: { type: 'integer', enum: [1, 2] },
-        mode: { const: 'fast' },
-        payload: {}
+        mode: { const: 'fast' }
       },
       required: ['level']
     }
@@ -144,6 +143,13 @@ const UNADAPTABLE_TOOLS = [
     // accept schemas the rest of the subset cannot represent.
     name: 'union_tool',
     inputSchema: { type: 'object', properties: { x: { type: ['string', 'number'] } } }
+  },
+  {
+    // pydantic `Any` (`{}`) parses, but the default (conservative) wire table refuses a schema with
+    // no `type`, so with no `schemaKeywords` option the tool is skipped rather than failing every
+    // request it would ride on. `shapes.test.ts` covers adapting it with a table that passes it.
+    name: 'any_tool',
+    inputSchema: { type: 'object', properties: { payload: {} } }
   }
 ];
 
@@ -220,14 +226,15 @@ describe('@fgv/ts-extras-mcp end-to-end against a real in-memory MCP server', ()
         [
           'anyof_tool',
           'echo',
-          'literal_any_tool',
+          'literal_tool',
           'nullable_tool',
           'oneof_tool',
           'pattern_tool',
           'ping',
           'pydantic_tool',
           'ref_tool',
-          'union_tool'
+          'union_tool',
+          'any_tool'
         ].sort()
       );
     });
@@ -252,14 +259,15 @@ describe('@fgv/ts-extras-mcp end-to-end against a real in-memory MCP server', ()
         oneof_tool: /oneOf/,
         anyof_tool: /anyOf/,
         pattern_tool: /pattern/,
-        union_tool: /union 'type'/
+        union_tool: /union 'type'/,
+        any_tool: /not sendable on the target wire: #\/properties\/payload: a schema with no 'type'/
       };
 
       expect(await adaptMcpTools(session, { logger })).toSucceedAndSatisfy((result) => {
         // (a) Only the adaptable tools are offered to the model; none of the rejected ones leak.
         expect(result.tools.map((t) => t.config.name).sort()).toEqual([
           'echo',
-          'literal_any_tool',
+          'literal_tool',
           'nullable_tool',
           'ping',
           'pydantic_tool'

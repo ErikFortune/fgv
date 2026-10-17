@@ -186,6 +186,7 @@ export {
 export type { IAiPromptCacheRoutingSupport } from './streamUsageCapability';
 
 export { ANTHROPIC_STRUCTURED_OUTPUT_TOOL_NAME } from './structuredOutput';
+export { clientToolSchemaKeywords } from './schemaKeywords';
 
 export type {
   AiStructuredOutputFormat,
