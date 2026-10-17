@@ -587,6 +587,39 @@ describe('OAuth through authProvider', () => {
     expect(provider.redirects).toEqual([]);
   }, 10000);
 
+  test("a guard refusal in the SDK's background authorization is logged by kind, with no URL", async () => {
+    // A 401 on the reconnected event stream starts OAuth discovery with no operation of the
+    // consumer's waiting on it, so a refusal there has no caller to fail: only the log reports it.
+    let refusing = false;
+    const fetch = guarded({
+      requestGuard: {
+        name: 'refuseAuthServer',
+        check: async (request: SaferFetch.ISaferFetchRequest) =>
+          refusing && request.url.origin === auth.origin
+            ? fail<SaferFetch.ISaferFetchRequest>('authorization server refused')
+            : succeed(request)
+      }
+    });
+    const provider = new TestProvider({ access_token: ACCESS_TOKEN, token_type: 'Bearer' });
+    await connect(provider, fetch);
+    await waitFor(() => protection.streams.length === 1);
+    refusing = true;
+    protection.valid.clear();
+    const getsBefore = protection.seen.filter((r) => r.method === 'GET').length;
+    protection.streams[0].end();
+    await waitFor(() => protection.seen.filter((r) => r.method === 'GET').length > getsBefore, 5000);
+    await waitFor(
+      () => logger.logged.some((line) => /an HTTP request was refused by the egress guard/.test(line)),
+      5000
+    );
+    expect(logger.logged).toContainEqual(
+      'mcp: an HTTP request was refused by the egress guard (blocked-by-guard)'
+    );
+    expect(logger.logged.join('\n')).not.toContain(auth.origin);
+    expect(auth.requests).toEqual([]);
+    expect(provider.redirects).toEqual([]);
+  }, 10000);
+
   test('closing never authorizes: a 401 on the DELETE is logged by kind and the close resolves promptly', async () => {
     const provider = new TestProvider({ access_token: ACCESS_TOKEN, token_type: 'Bearer' });
     const { session } = await connect(provider);

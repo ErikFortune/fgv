@@ -321,26 +321,30 @@ export class McpHttpEgress {
   }
 
   /**
-   * Logs a guarded-fetch refusal of the standalone `GET` event stream, at `detail`.
+   * Logs every guarded-fetch refusal, at `detail`, by the refusal's kind alone.
    *
    * @remarks
-   * The SDK starts that stream itself, detached, and reports its failure only to its own `onerror`:
-   * no operation of the consumer's fails. Without this line a guard that refuses the stream would
-   * silently stop server-initiated messages (such as `notifications/tools/list_changed`). Only the
-   * refusal's kind is logged, never its URL-bearing reason. A refusal of any other request fails
-   * the operation that sent it, and is classified there.
+   * Some requests have no caller to fail. The SDK opens the standalone `GET` event stream itself,
+   * detached, and on a 401 from it — at connect or from its own reconnect timer — runs OAuth
+   * discovery, refresh and registration with no operation of the consumer's waiting. A refusal on
+   * any of those is reported only to the SDK's own `onerror`, so without this line a guard that
+   * refuses one would silently stop server-initiated messages or background authorization.
+   *
+   * Which request was refused is not knowable here as "detached" or "awaited", so every
+   * `egress-blocked` refusal is logged, whatever its URL or method; a refusal that also fails an
+   * operation is classified there as well. The event stream keeps its own line. Only the refusal's
+   * kind is logged — never the URL or the URL-bearing reason.
    */
   private _noteRefusal(target: URL, init: RequestInit | undefined, err: unknown): void {
-    // The SDK opens the stream with exactly `method: 'GET'` on the endpoint URL; OAuth discovery
-    // `GET`s go to other URLs and fail the operation that triggered them.
-    if (init?.method !== 'GET' || target.href !== this._endpoint.href) {
+    const reason = classifySdkError(err, { phase: 'session', closed: false });
+    if (reason.kind !== 'egress-blocked') {
       return;
     }
-    const reason = classifySdkError(err, { phase: 'session', closed: false });
-    if (reason.kind === 'egress-blocked') {
-      this._logger.detail(
-        printable(`mcp: the server event stream was refused by the egress guard (${reason.reason})`)
-      );
-    }
+    // The SDK opens the stream with exactly `method: 'GET'` on the endpoint URL.
+    const what =
+      init?.method === 'GET' && target.href === this._endpoint.href
+        ? 'the server event stream was'
+        : 'an HTTP request was';
+    this._logger.detail(printable(`mcp: ${what} refused by the egress guard (${reason.reason})`));
   }
 }

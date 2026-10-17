@@ -258,6 +258,17 @@ R18's test was replaced by the two `test.each` tables that pin R21 (forwarded: `
 | R34 | buffered body copied before the walk | keep the caller's array | `saferFetchBytes: a body mutated while the guards run…` | red |
 | R35 | the copy is not a `Buffer` view | `bytes.slice()` | `…a Node Buffer (whose slice() is a view)…` | red |
 
+### Rows added after Copilot round 4
+
+| # | protection | revert | named test | result |
+|---|---|---|---|---|
+| R36 | every `egress-blocked` refusal is logged, whatever its URL or method | log only the endpoint's event-stream `GET` | `a guard refusal in the SDK's background authorization is logged by kind, with no URL` | red |
+| R37 | buffered `timeoutMs` bounded by 2147483647 | no upper bound | `bounds timeoutMs by what a timer honours: 2147483647 is accepted, 2147483648 refused` | red |
+| R38 | buffered `headersTimeoutMs` bounded | no upper bound | `bounds headersTimeoutMs by what a timer honours…` | red |
+| R39 | `retry.baseDelayMs` bounded | exempt it from the bound | `bounds retry.baseDelayMs by what a timer honours…` | red |
+| R40 | `retry.maxDelayMs` bounded | exempt it from the bound | `bounds retry.maxDelayMs by what a timer honours…` | red |
+| R41 | guarded `headersTimeoutMs` bounded, at creation | no upper bound | `bounds the headers timeout by what a timer honours: 2147483647 is accepted, 2147483648 refused` | red |
+
 ## `AbortSignal.any` and a long-lived source signal (orchestrator review)
 
 Supported Node is `>=22.22.0 <23 || >=24.15.0 <25` (`rush.json`). Measured on **22.22.0** (24.15 is
@@ -390,6 +401,17 @@ Each finding was reproduced with a failing test before it was fixed.
 | 3 | medium | `_guardedBody` aliased the caller's bytes | yes — mutating the buffer while the address guard ran changed the bytes sent, for a `Uint8Array`, an `ArrayBuffer` (`new Uint8Array(buffer)` is a view) and a Node `Buffer` | **fixed** — copied before the first `await`: `new Uint8Array(bytes)` (not `.slice()`, which on a `Buffer` is a view — R35) and `new Uint8Array(buffer.slice(0))`. **The buffered entry points had the same aliasing** (`options.body` was copied only at connect, after the guards had awaited, so the request guard approved bytes that could then change) — fixed the same way in `_resolveCallOptions`. R32–R35. The existing safer-fetch suite is unchanged |
 
 The CI failure on `f3b88357` (`ERR_PNPM_CACHE_MISSING_AFTER_304` during install) was not this PR's.
+
+## Copilot round 4 (PR #729)
+
+Both fixed findings were listed under "previously missed" in the round's summary. Each was reproduced
+with a failing test before it was fixed.
+
+| # | sev | finding | reproduced | disposition |
+|---|---|---|---|---|
+| 1 | medium | `_noteRefusal` logged only a refusal of the endpoint's event-stream `GET`; the OAuth discovery, refresh and registration the SDK runs after a 401 on its background reconnect have no operation to fail, so a guard refusing one of them was reported nowhere | yes — the new test sees no log line before the fix (R36) | **fixed** — every `egress-blocked` refusal is logged at `detail`, whatever its URL or method, by kind only and never with a URL. The endpoint `GET` keeps its event-stream line; anything else is `mcp: an HTTP request was refused by the egress guard (<kind>)`. A refusal that also fails an operation is now logged as well as classified. TSDoc on `_noteRefusal` and `IHttpTransportParams.fetch`, and the README, updated. Test: the event-stream `GET` gets a 401 on reconnect, the guard blocks the authorization-server request, and the session logger records the refusal with no URL in any line. R36 |
+| 2 | medium | `headersTimeoutMs` above 2³¹−1 was accepted; Node fires such a timer after 1 ms, so the call timed out at once | yes — R41 | **fixed** — refused at creation above 2147483647 (`MAX_TIMER_DELAY_MS`, internal, the same bound as `ts-extras-mcp`'s `MAX_TIMEOUT_MS`). The sweep found three more options that reach `setTimeout`: the buffered `timeoutMs` and `headersTimeoutMs`, and `retry.baseDelayMs` / `retry.maxDelayMs` (a backoff, and an honoured `Retry-After`, is clamped to `maxDelayMs`, so bounding it bounds both). All now refused above the bound. The guarded path takes no other timer option (`timeoutMs` and `retry` are refused there). Tests: 2147483647 accepted and 2147483648 refused for each of the five. R37–R41 |
+| 3 | — | redact `McpError` text | — | **declined**, per the orchestrator; not changed |
 
 ## What the brief got wrong
 

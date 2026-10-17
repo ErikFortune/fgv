@@ -128,6 +128,14 @@ describe('createGuardedFetch', () => {
       ).toFailWith(/sensitiveHeaders\[0\] must be a string/);
     });
 
+    test('bounds the headers timeout by what a timer honours: 2147483647 is accepted, 2147483648 refused', () => {
+      const base = { addressGuard: allowAnyAddress() };
+      expect(createGuardedFetch({ ...base, headersTimeoutMs: 2147483647 })).toSucceed();
+      expect(createGuardedFetch({ ...base, headersTimeoutMs: 2147483648 })).toFailWith(
+        /headersTimeoutMs must be no greater than 2147483647 ms/
+      );
+    });
+
     test('refuses every option that needs the body read, would retry, or belongs on the call', () => {
       const withRefused = {
         addressGuard: allowAnyAddress(),

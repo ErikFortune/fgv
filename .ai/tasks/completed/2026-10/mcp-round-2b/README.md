@@ -44,7 +44,7 @@ Two PersonAIlity asks:
 
 ## Read next
 
-`result.md`: belief verdicts, the SDK behaviour tables, the check-then-act table, the 36-row revert
+`result.md`: belief verdicts, the SDK behaviour tables, the check-then-act table, the 42-row revert
 matrix (R7 not isolatable), the review dispositions, the gate counts, and what the brief got wrong.
 
 ## Open

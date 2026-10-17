@@ -24,6 +24,7 @@ import {
   DEFAULT_RETRY_BASE_DELAY_MS,
   DEFAULT_RETRY_MAX_DELAY_MS,
   IDEMPOTENT_METHODS,
+  MAX_TIMER_DELAY_MS,
   RETRY_AFTER_STATUSES,
   RETRYABLE_HTTP_STATUSES
 } from './defaults';
@@ -150,6 +151,12 @@ export function resolveRetryPolicy(retry?: IRetryPolicy): Result<IResolvedRetryP
   for (const [name, value] of delays) {
     if (!Number.isFinite(value) || value < 0) {
       return fail(`${name} must be a non-negative finite number; got ${value}.`);
+    }
+    // A backoff reaches `setTimeout`, which fires a larger delay after 1 ms.
+    if (value > MAX_TIMER_DELAY_MS) {
+      return fail(
+        `${name} must be no greater than ${MAX_TIMER_DELAY_MS} ms (a timer fires a larger delay after 1 ms); got ${value}.`
+      );
     }
   }
 

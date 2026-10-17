@@ -95,7 +95,9 @@ export interface IMcpHttpTransportParams {
    * `@fgv/ts-extras`). That gives MCP egress the same SSRF protection as every other safer-fetch
    * call — the address guard on every hop, redirects rejected by default — without buffering the
    * long-lived event streams. A refusal fails the operation with the `'egress-blocked'`
-   * {@link McpFailureReason}.
+   * {@link McpFailureReason}. Every refusal is also logged at `detail` to the session's logger, by
+   * its kind only — including one no operation waits on, such as the standalone event stream or the
+   * OAuth discovery the SDK runs after a 401 on its background reconnect.
    *
    * **Size `headersTimeoutMs` to your longest MCP request timeout.** The guarded fetch's headers
    * deadline (default 10 s) runs from each request until its response headers arrive. A server

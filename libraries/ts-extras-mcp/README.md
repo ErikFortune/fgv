@@ -125,7 +125,8 @@ const transport = createHttpTransport({ url, headers: { 'x-api-key': key }, fetc
   package cannot see the guarded fetch's deadline, so it does not warn.
 
 - A refusal fails the operation with `egress-blocked`, carrying the refusal's kind only (never its
-  URL). A refused `DELETE` does not fail the close; a refused event stream is logged at `detail`.
+  URL). A refused `DELETE` does not fail the close. Every refusal is also logged at `detail`, by kind
+  only — including one no operation waits on, such as the event stream or the SDK's background OAuth.
 - Redirects are rejected by default. If you allow them, list your static credential headers and
   `mcp-session-id` in the guarded fetch's `sensitiveHeaders`.
 - `authProvider` is the SDK's `OAuthClientProvider` (`McpOAuthClientProvider`). **Interactive

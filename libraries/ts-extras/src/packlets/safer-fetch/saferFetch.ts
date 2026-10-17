@@ -40,6 +40,7 @@ import {
   DEFAULT_MAX_REDIRECTS,
   DEFAULT_MAX_RESPONSE_BYTES,
   DEFAULT_TIMEOUT_MS,
+  MAX_TIMER_DELAY_MS,
   REDIRECT_STATUSES,
   SUPPORTED_SCHEMES
 } from './defaults';
@@ -425,6 +426,14 @@ function _ownBytes(bytes: Uint8Array): Uint8Array {
   return new Uint8Array(bytes);
 }
 
+/** The refusal for a timeout or delay option a timer cannot honour. */
+function _overTimerMessage(name: string, value: number): string {
+  return (
+    `${name} must be no greater than ${MAX_TIMER_DELAY_MS} ms ` +
+    `(a timer fires a larger delay after 1 ms); got ${value}.`
+  );
+}
+
 function _resolveCallOptions(options: ISaferFetchOptions): Outcome<IResolvedCallOptions> {
   const method = options.method ?? 'GET';
   // Copied before the first `await`, for the same reason as a guarded fetch's body: the request
@@ -438,14 +447,18 @@ function _resolveCallOptions(options: ISaferFetchOptions): Outcome<IResolvedCall
   const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   const headersTimeoutMs = options.headersTimeoutMs ?? DEFAULT_HEADERS_TIMEOUT_MS;
   const maxResponseBytes = options.maxResponseBytes ?? DEFAULT_MAX_RESPONSE_BYTES;
-  const limits: ReadonlyArray<readonly [string, number]> = [
-    ['timeoutMs', timeoutMs],
-    ['headersTimeoutMs', headersTimeoutMs],
-    ['maxResponseBytes', maxResponseBytes]
+  // The two deadlines reach `setTimeout`, so they are also bounded by what a timer honours.
+  const limits: ReadonlyArray<readonly [string, number, number]> = [
+    ['timeoutMs', timeoutMs, MAX_TIMER_DELAY_MS],
+    ['headersTimeoutMs', headersTimeoutMs, MAX_TIMER_DELAY_MS],
+    ['maxResponseBytes', maxResponseBytes, Number.POSITIVE_INFINITY]
   ];
-  for (const [name, value] of limits) {
+  for (const [name, value, max] of limits) {
     if (!Number.isFinite(value) || value <= 0) {
       return _unknown<IResolvedCallOptions>(`${name} must be a positive finite number; got ${value}.`);
+    }
+    if (value > max) {
+      return _unknown<IResolvedCallOptions>(_overTimerMessage(name, value));
     }
   }
 
@@ -1426,9 +1439,12 @@ function _refuseUnsupportedOptions(options: IGuardedFetchOptions): Outcome<IGuar
 }
 
 function _validHeadersTimeout(headersTimeoutMs: number): Outcome<number> {
-  return Number.isFinite(headersTimeoutMs) && headersTimeoutMs > 0
+  if (!Number.isFinite(headersTimeoutMs) || headersTimeoutMs <= 0) {
+    return _unknown<number>(`headersTimeoutMs must be a positive finite number; got ${headersTimeoutMs}.`);
+  }
+  return headersTimeoutMs <= MAX_TIMER_DELAY_MS
     ? _succeed(headersTimeoutMs)
-    : _unknown<number>(`headersTimeoutMs must be a positive finite number; got ${headersTimeoutMs}.`);
+    : _unknown<number>(_overTimerMessage('headersTimeoutMs', headersTimeoutMs));
 }
 
 /** Validates a guarded fetch's options once, at creation, in the order the buffered entry points use. */
