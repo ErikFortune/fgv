@@ -1,6 +1,6 @@
 # memory-search-scope: memory tool result items carry their scope
 
-**Shipped**: 2026-10-18 into `integration/asks`. The PR number (#TBD) goes in `meta.yaml` when the
+**Shipped**: 2026-10-18 into `integration/asks`. The PR number (#739) goes in `meta.yaml` when the
 PR is opened. Package: `@fgv/ts-agent-memory`.
 
 ## Summary

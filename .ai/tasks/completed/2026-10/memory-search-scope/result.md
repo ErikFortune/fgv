@@ -2,7 +2,7 @@
 
 **Shipped:** every result item from `memory_search`, `memory_context` and `memory_read` now carries its address, `id` + `scope`, and the `memory_write` result carries `scope` beside its `id`. Two records that share an id in different scopes are therefore distinguishable to the model, and the tool descriptions tell it to copy `id` and `scope` from a result into a link target or context seed.
 
-Package: `@fgv/ts-agent-memory`. PR: #TBD into `integration/asks`.
+Package: `@fgv/ts-agent-memory`. PR: #739 into `integration/asks`.
 
 > **Read with § "Review round 2".** The sections before "Review round 2" record the first build, which
 > had no `id` on items and told the model to copy the `handle` as the id. The user's D7 decision

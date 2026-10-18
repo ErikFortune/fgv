@@ -60,7 +60,7 @@ App-agnostic **storage + retrieval substrate** for agent memory and knowledge �
 
 <!-- BEGIN GENERATED: recent-additions -->
 
-- **2026-10-18** — Agent memory tool results now carry each record's id and scope, so two conversations' turn-3 are distinguishable and a link copied from a result points at the right record.
+- **2026-10-18** — Agent memory tool results now carry each record's id and scope, so two conversations' turn-3 are distinguishable and a link copied from a result points at the right record. ([#739](https://github.com/ErikFortune/fgv/pull/739))
 - **2026-10-17** — HybridRetriever's score-union merge no longer collapses records that share an id across scopes — two conversations' turn-3 stay two records — because ScoreUnionMergeStrategy now keys on the scope-qualified address and requires an identity resolver. ([#731](https://github.com/ErikFortune/fgv/pull/731))
 - **2026-10-17** — FileTreeMemoryStore now refuses to load a record from any scope other than the one its kind's codec derives, so a custom codec that ignores scope can no longer load a foreign-scope file. ([#733](https://github.com/ErikFortune/fgv/pull/733))
 - **2026-10-17** — **Shipped:** `@fgv/ts-random` can make a weighted random choice, either from a generator or as a pure function of a unit float in `[0, 1]`, so a hash-derived choice is stable; `IProvenance.derivedFrom` is now documented as provenance, not a live link. ([#732](https://github.com/ErikFortune/fgv/pull/732))
