@@ -28,6 +28,8 @@ A JSON Schema is also our validator. Enforcing `pattern` means compiling a regex
 
 ## Acceptance
 
+- [ ] **Testbed wire probe** (`testbed-wire-probe`, merged before this stream): add a `pattern` fixture, both trusted (host factory) and untrusted (`fromJson` + injected validator), to the probe's fixture set, and extend the comparison to the new `pattern` table entries. Unit-test the classification as the probe already does. The user runs it live before merge, so say in `result.md` that the live run is theirs.
+
 - [ ] Trusted and untrusted paths, refusals, wire pass/fold per table, and MCP default-skip and injected-adapt, each tested, with emitted JSON pinned.
 - [ ] Fixtures that pin "pattern stays refused" are updated deliberately, keeping the default-refusal pins. List them in `result.md`.
 - [ ] Docs:
