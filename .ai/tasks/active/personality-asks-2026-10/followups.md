@@ -278,6 +278,12 @@ to. Design it once, before any of them ships.
   - One misuse path exists: a `memory_write` link target with `scope` omitted defaults to the writer's scope. A handle copied from another conversation would then point the edge at the wrong record.
 - **Route:** decide whether the default handle should be scope-qualified, for example via `edgeTargetKey`, or whether search items should carry scope. This is an agent-facing format decision, so ask the user before building it.
 
+### D7. A `handleFor` mnemonic cannot be linked from — from `memory-search-scope` (#TBD)
+
+- **What:** since D3, items carry `scope`, and the descriptions tell the model to copy the `handle` (as `id`) plus `scope` into a link target or `memory_context` seed. That works only when the handle is the id. With a host `handleFor` mnemonic, the handle is not a `MemoryId`, and no tool resolves a handle back, so a model cannot author a correct link or seed from a result at all. This predates D3.
+- **Possible fix:** an always-present, tool-layer-owned `id` on each item (as `scope` is), or a lookup that resolves a handle.
+- **Route:** an agent-facing format decision, like D3, so it goes to the user. In-repo, `samples/testbed`'s `memoryToolsGate` wires `handleFor` beside `memory_write`, but its mocked write authors no links.
+
 
 ---
 

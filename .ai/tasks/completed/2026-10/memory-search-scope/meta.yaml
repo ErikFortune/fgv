@@ -1,0 +1,49 @@
+id: memory-search-scope
+status: shipped
+packages: ['@fgv/ts-agent-memory']
+prs: []
+openPrs: []
+opened: 2026-10-18
+closed: 2026-10-18
+summary:
+  intended: >
+    Followup D3 / user decision 2: memory tool result items carried a bare-id handle and no scope, so
+    same-id records in different scopes were indistinguishable and a link copied from another scope
+    defaulted to the writer's scope. Give every result item from every record-returning memory tool a
+    `scope`, keep the id handle and handleFor unchanged, and tell the model in the memory_write link
+    target and memory_search descriptions (and the memory_context seed) to copy both id and scope.
+    Keep the omitted-scope default, and decide whether the projectItem hook or the tool layer owns
+    scope (safe default: the tool layer).
+  shipped: >
+    IMemoryToolResultItem extends a new IMemoryToolItemProjection with scope: MemoryScopeKey, set on
+    every memory_search / memory_context / memory_read item after any host projection, so the hook
+    (now returning IMemoryToolItemProjection) can neither drop nor forge it. The scope comes from
+    scopedAddressOf(record, store), and an unresolvable one fails the call. IMemoryWriteResult also
+    carries scope. The tool and schema descriptions carry the copy-both instruction. Tests cover
+    same-id distinguishability, a copied cross-scope link, the omitted-scope default, the projector
+    guarantee and each failure site.
+  diverged: >
+    Result items have no `id` field, so the descriptions say to copy the `handle` as `id`. With a
+    handleFor mnemonic the handle is not an id, and no correct link can be authored from it; this is
+    reported rather than fixed. The memory_write result also gained `scope`, which the brief did not
+    name, because the same wrong-default path applies to a copied written id.
+  sourceLine: '**Shipped:** every result item from `memory_search`, `memory_context` and `memory_read` now carries `scope`, the scope its record lives in, and so does the `memory_write` result.'
+  headline: >
+    Agent memory tools now tell the model which scope each result lives in, so two conversations'
+    turn-3 are distinguishable and a link copied from a search result points at the right record.
+keywords:
+  - agent-visible handle
+  - scope-qualified result
+  - link target
+  - cross-scope edge
+  - projectItem hook
+  - MTM turn id collision
+  - scopedAddressOf
+  - tool description
+relatedStreams:
+  - {
+      id: agent-memory-merge-scope,
+      relationship: 'reported the bare-id handle hazard (D3) this stream fixes'
+    }
+  - { id: personality-asks-2026-10, relationship: 'followup D3 and decision 2 live in its followups.md' }
+sourceHash: sha256:ec318a3f0707e1f9 # over brief.md + result.md + state.md
