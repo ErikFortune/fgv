@@ -202,6 +202,7 @@ markers.*
 
 <!-- BEGIN GENERATED: recent-additions -->
 
+- **2026-10-18** — JsonSchema factories never throw: constraint keywords, default and examples arrive through numberOptions / integerOptions /… ([#740](https://github.com/ErikFortune/fgv/pull/740)) · `ts-json-base` `ts-extras` `ts-extras-ollama`
 - **2026-10-18** — Agent memory tool results now carry each record's id and scope, so two conversations' turn-3 are distinguishable and a link copied… ([#739](https://github.com/ErikFortune/fgv/pull/739)) · `ts-agent-memory`
 - **2026-10-18** — AiAssist.structuredOutputSchemaKeywords reads the keyword table a structured-output schema is adapted with, and the testbed… ([#738](https://github.com/ErikFortune/fgv/pull/738)) · `ts-extras` `testbed`
 - **2026-10-17** — HybridRetriever's score-union merge no longer collapses records that share an id across scopes — two conversations' turn-3 stay two… ([#731](https://github.com/ErikFortune/fgv/pull/731)) · `ts-agent-memory`
@@ -211,8 +212,7 @@ markers.*
 - **2026-10-17** — JsonSchema now models numeric enums, an enforced scalar const and {} (pydantic Literal and Any), and each provider wire passes… ([#736](https://github.com/ErikFortune/fgv/pull/736)) · `ts-json-base` `ts-extras` `ts-extras-ollama` `ts-extras-mcp`
 - **2026-10-14** — MCP servers can be reached through the same SSRF guard as the rest of your egress, without buffering their streams, and… ([#729](https://github.com/ErikFortune/fgv/pull/729)) · `ts-extras` `ts-extras-mcp`
 - **2026-10-13** — An MCP tool result keeps its resource links, embedded resources, images and structuredContent, tool titles and tool-list changes… ([#728](https://github.com/ErikFortune/fgv/pull/728)) · `ts-extras-mcp`
-- **2026-10-04** — JsonSchema.fromJson now reads pydantic Optional[T] (anyOf [T, null]), local $ref/$defs (inlined, bounded) and z.record-style… ([#723](https://github.com/ErikFortune/fgv/pull/723)) · `ts-json-base`
 
-*Showing the 10 most recent of 63. Per-package history is in each `CAPABILITIES.md`.*
+*Showing the 10 most recent of 64. Per-package history is in each `CAPABILITIES.md`.*
 
 <!-- END GENERATED: recent-additions -->
