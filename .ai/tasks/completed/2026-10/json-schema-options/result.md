@@ -120,3 +120,35 @@ Logs under `../gate-logs-json-schema-options/` (per-worktree). Every log graded 
 4. Minor: the brief names "the enum factories" as option families. Only the non-string ones could
    fail, and on their value lists rather than their options, so they took the brief's
    return-a-`Result` branch.
+
+## Review round 1
+
+The deep review required changes. Every finding is resolved.
+
+| finding | resolution |
+|---|---|
+| **P1a** A spread kept the brand on an unchecked copy (`number({ ...v, maximum: -1 })`) | Validated options are now **nominal classes** whose options sit in an ES `#private` field. A spread's type lacks the private member, and it carries the class's `kind` discriminant, which plain options declare `never`. Pinned with `@ts-expect-error`. At run time a spread copies only `kind` (pinned with `toEqual`). |
+| **P1b** A literal with `__brand` forged validation | No literal is assignable to a class with a `#private` member. Two forge shapes are pinned: a fake `kind`, and an instance-shaped literal. Factories read options only through `instanceof`, so a cast forgery is read as plain, and nothing throws (pinned). |
+| P1 constraints: keep literal inference, integer→number, number→integer refusal | The classes are generic and covariant in `T`. The overloads take `Validated…Options<{ nullable: true }>`, and the existing `number \| null` test still type-checks. `ValidatedIntegerOptions extends ValidatedNumberOptions` and adds its own `#integer`. Both directions are pinned. |
+| **P2** index-signature bypass | No cheap type-level close. Documented on `PlainSchemaOptions` (and in `CAPABILITIES.md`) as a known limitation, and pinned by a test: a `Record<string, unknown>` with `minimum: 5, maximum: 1` is accepted, its constraints are applied as given, and nothing throws. |
+| **P2** missing pins | Added for a wide `INumberSchemaOptions`, `Partial<IStringSchemaOptions>`, `as const`, a spread of a raw object, spread and forge, and string options passed to `number`. |
+| **P2** stale `fromJson` comment | Now names `numberOptions` / `integerOptions` (and `stringOptions` on its sibling). |
+| P3 formatting | `fixlint` and prettier 2.8 run in `ts-json-base`, `ts-extras` and `ts-extras-ollama`. The remaining >110-column lines are pre-existing strings and imports that prettier does not break. |
+| P3 `default` remark | Reworded into two sentences without stacked dashes. |
+| P3 `.shouldNotFail` | 53 options steps in tests now use `.shouldNotFail('<kind> options')`. |
+
+Why `#private` rather than a `unique symbol` or TypeScript `private`: see `state.md` § "Review round
+1". In short, it is the only one of the three that closes the hole both in the type system and at
+run time.
+
+### Gates, round 1
+
+All logs were checked for NUL padding, and none was found.
+
+| gate | result |
+|---|---|
+| `ts-json-base` build / test | exit 0; coverage 100% (4/4); the only build notice is the API-signature update |
+| `fixlint` + `lint` in `ts-json-base`, `ts-extras`, `ts-extras-ollama` | exit 0, 0 warnings each |
+| repo-wide `rebuild` | exit 0; error grep 0; `warning` (-i) 1, the symlink notice; 38 completed |
+| repo-wide `test` | 36 of 37 ops passed. `@fgv/ts-res-cli` timed out at 5000 ms in `cli-configuration.test.ts` "building same input twice", a timing test that does not touch `JsonSchema` (1m18s, against 35s normally, while a sibling worker shared the machine). The re-run with `test --from @fgv/ts-res-cli` gave `SUCCESS: 9 operations`, error grep 0, `warning` 1 (symlink). Nothing was blocked behind the failure. |
+| `change --verify`, `verify-capability-docs`, `generate-capability-feed --check` | pass, 0 failed, 0 stale |
