@@ -158,6 +158,17 @@ function fakeProvider(options: {
   };
 }
 
+/**
+ * The library's own verdict on an adapted request: the schema adapted with the table the wire uses,
+ * failing as `executeClientToolTurn`'s pre-flight does. Asked of the library, never restated, so a
+ * test built on it pins the probe against what ships.
+ */
+function libraryPreflight(request: IAdaptedRequest): Result<string> | undefined {
+  const table = AiAssist.clientToolSchemaKeywords(request.descriptor, { model: request.model });
+  const adapted = JsonSchema.adaptSchemaKeywords(request.schema.toJson(), table);
+  return adapted.isFailure() ? fail(`executeClientToolTurn: tool 'probe': ${adapted.message}`) : undefined;
+}
+
 describe('wireProbe', () => {
   describe('fixtures', () => {
     test('every fixture reads into a validator that emits its JSON, with unique ids and the control first', () => {
@@ -422,12 +433,7 @@ describe('wireProbe', () => {
     test('probes only the wires with a key, and an all-accepting provider is never unsafe', async () => {
       // The library refuses a typeless root on Anthropic tools before sending it, as the live path does.
       const provider = fakeProvider({
-        adapted: (request) =>
-          JSON.stringify(request.schema.toJson()) === '{}'
-            ? fail(
-                "executeClientToolTurn: tool 'probe': #: a schema with no 'type' cannot be sent on this wire"
-              )
-            : undefined
+        adapted: libraryPreflight
       });
       const context = testContext({ ANTHROPIC_API_KEY: 'k' });
       const result = await runWireProbe(context, provider.deps, [
@@ -464,12 +470,7 @@ describe('wireProbe', () => {
                 })
               }
             : undefined,
-        adapted: (request) =>
-          JSON.stringify(request.schema.toJson()) === '{}'
-            ? fail(
-                "executeClientToolTurn: tool 'probe': #: a schema with no 'type' cannot be sent on this wire"
-              )
-            : undefined
+        adapted: libraryPreflight
       });
       const result = await runWireProbe(testContext({ ANTHROPIC_API_KEY: 'k' }), provider.deps, [
         wire('anthropic-tools')

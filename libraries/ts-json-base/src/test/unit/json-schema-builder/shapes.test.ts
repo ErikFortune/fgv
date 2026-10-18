@@ -351,7 +351,7 @@ describe('JsonSchema — anyValue / {}', () => {
 describe('JsonSchema.adaptSchemaKeywords — non-string enums and untyped nodes', () => {
   const caps = (
     nonStringEnum: 'pass' | 'fold',
-    untyped: JsonSchema.ISchemaShapeCapabilities['untyped']
+    untyped: JsonSchema.SchemaUntypedRule
   ): JsonSchema.SchemaKeywordCapabilities => ({
     ...JsonSchema.unverifiedWireSchemaKeywords,
     nonStringEnum,
@@ -427,6 +427,31 @@ describe('JsonSchema.adaptSchemaKeywords — non-string enums and untyped nodes'
     expect(
       JsonSchema.adaptSchemaKeywords(JsonSchema.anyValue().toJson(), caps('pass', 'pass-nested'))
     ).toFailWith(/^#: a schema with no 'type' \(matching any value\) cannot be sent on this wire$/);
+    // A root typed only by enum, const, $ref or a combinator still has no `type` keyword.
+    const roots: JsonObject[] = [
+      { enum: ['a', 'b'] },
+      { const: 1 },
+      { $ref: '#/$defs/x' },
+      { anyOf: [{ type: 'string' }] }
+    ];
+    for (const root of roots) {
+      expect(JsonSchema.adaptSchemaKeywords(root, caps('pass', 'pass-nested'))).toFailWith(
+        /^#: a root schema with no 'type' keyword cannot be sent on this wire$/
+      );
+      // Beneath the root the same node is typed elsewhere and passes.
+      expect(
+        JsonSchema.adaptSchemaKeywords(
+          { type: 'object', properties: { p: root } },
+          caps('pass', 'pass-nested')
+        )
+      ).toSucceed();
+    }
+    // A nullable root emits `type: [<type>, 'null']`, which is a `type` keyword, so it passes.
+    const nullableRoot = JsonSchema.object({ a: JsonSchema.string() }, { nullable: true }).toJson();
+    expect(nullableRoot).toMatchObject({ type: ['object', 'null'] });
+    expect(JsonSchema.adaptSchemaKeywords(nullableRoot, caps('pass', 'pass-nested'))).toSucceedWith(
+      nullableRoot
+    );
     // A typed root with untyped items is nested, not the root.
     const items = JsonSchema.array(JsonSchema.anyValue()).toJson();
     expect(JsonSchema.adaptSchemaKeywords(items, caps('pass', 'pass-nested'))).toSucceedWith(items);

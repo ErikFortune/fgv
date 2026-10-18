@@ -135,12 +135,19 @@ export function schemaWireProviderId(
 }
 
 /**
+ * The wire formats a client tool's parameter schema can be sent on.
+ * @internal
+ */
+export type ClientToolWireFormat = Extract<
+  SchemaWireFormat,
+  'responses-tools' | 'anthropic-tools' | 'gemini'
+>;
+
+/**
  * The wire format a descriptor's client tools are sent on, by its `apiFormat`.
  * @internal
  */
-export function clientToolWireFormat(
-  apiFormat: AiApiFormat
-): 'responses-tools' | 'anthropic-tools' | 'gemini' {
+export function clientToolWireFormat(apiFormat: AiApiFormat): ClientToolWireFormat {
   return apiFormat === 'anthropic'
     ? 'anthropic-tools'
     : apiFormat === 'gemini'

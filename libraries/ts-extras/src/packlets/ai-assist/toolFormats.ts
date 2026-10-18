@@ -27,7 +27,7 @@ import { type JsonObject, type JsonValue } from '@fgv/ts-json-base';
 import { type Result, fail, mapResults, succeed } from '@fgv/ts-utils';
 
 import { type IAiProviderDescriptor } from './model';
-import { type ISchemaWireTarget, adaptWireSchema } from './schemaKeywords';
+import { type ClientToolWireFormat, type ISchemaWireTarget, adaptWireSchema } from './schemaKeywords';
 import {
   type AiServerToolConfig,
   type AiServerToolType,
@@ -47,7 +47,7 @@ import {
  */
 export function adaptClientToolParameters(
   config: IAiClientToolConfig,
-  format: 'responses-tools' | 'anthropic-tools' | 'gemini',
+  format: ClientToolWireFormat,
   target: ISchemaWireTarget | undefined
 ): Result<JsonValue> {
   return adaptWireSchema(config.parametersSchema.toJson(), format, target).withErrorFormat(

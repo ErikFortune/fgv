@@ -57,6 +57,10 @@ import {
 } from '../../../packlets/ai-assist/toolFormats';
 // eslint-disable-next-line @rushstack/packlets/mechanics
 import { executeClientToolTurn } from '../../../packlets/ai-assist/streamingAdapters/clientToolContinuationBuilder';
+// eslint-disable-next-line @rushstack/packlets/mechanics
+import * as AnthropicStream from '../../../packlets/ai-assist/streamingAdapters/anthropic';
+// eslint-disable-next-line @rushstack/packlets/mechanics
+import { callProviderCompletionStream } from '../../../packlets/ai-assist/streamingClient';
 
 /** A parameter schema carrying every keyword, so each table's whole row is visible at once. */
 const everything = JsonSchema.object({
@@ -661,6 +665,47 @@ describe('an endpoint override is an unverified server, on every wire format', (
       type: 'integer',
       minimum: 1
     });
+  });
+
+  test('callProviderCompletionStream selects the table through the same assertion rule', async () => {
+    // The streaming entry point sends server tools only, so its table is observable as the target it
+    // hands the adapter — which is exactly what the adapter's tool formatter adapts with.
+    const adapter = jest.spyOn(AnthropicStream, 'callAnthropicStream');
+    const anthropic = descriptors[1];
+    const cases: ReadonlyArray<[string | undefined, IAiVerifiedEndpoint | undefined, string | undefined]> = [
+      [undefined, undefined, 'anthropic'],
+      ['https://gateway.example/v1', undefined, undefined],
+      ['https://gateway.example/v1', { providerId: 'anthropic', verified: true }, 'anthropic'],
+      ['https://gateway.example/v1', { providerId: 'openai', verified: true }, undefined],
+      [
+        'https://gateway.example/v1',
+        { providerId: 'anthropic', verified: false as unknown as true },
+        undefined
+      ]
+    ];
+    for (const [endpoint, verifiedEndpoint, providerId] of cases) {
+      adapter.mockClear();
+      done = DONE.anthropic;
+      const stream = await callProviderCompletionStream({
+        descriptor: anthropic,
+        apiKey: 'k',
+        ...(endpoint !== undefined && { endpoint }),
+        ...(verifiedEndpoint !== undefined && { verifiedEndpoint }),
+        ...new AiPrompt('hello', 'system').toRequest()
+      });
+      const events: IAiStreamEvent[] = [];
+      for await (const event of stream.orThrow()) {
+        events.push(event);
+      }
+      expect(events.map((e) => e.type)).toContain('done');
+      const target = adapter.mock.calls[0][0];
+      expect(target.providerId).toBe(providerId);
+      expect(schemaKeywordsFor('anthropic-tools', target)).toBe(
+        providerId === undefined
+          ? JsonSchema.unverifiedWireSchemaKeywords
+          : schemaKeywordsFor('anthropic-tools', { providerId: 'anthropic' })
+      );
+    }
   });
 
   test('structured output through a verified endpoint override passes it', async () => {

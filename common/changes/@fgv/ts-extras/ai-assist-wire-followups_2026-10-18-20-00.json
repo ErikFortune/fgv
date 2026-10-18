@@ -16,7 +16,7 @@
       "packageName": "@fgv/ts-extras"
     },
     {
-      "comment": "Anthropic tools refuse a typeless root schema (observed live: 400 input_schema.type Field required); `{}` beneath the root still passes. Applies to client tools and to forced-tool structured output.",
+      "comment": "Anthropic tools require a `type` keyword on the root schema (observed live: 400 input_schema.type Field required), so a typeless root, or one typed only by enum, const or $ref, is refused; `{}` beneath the root still passes. Applies to client tools and to forced-tool structured output.",
       "type": "minor",
       "packageName": "@fgv/ts-extras"
     }

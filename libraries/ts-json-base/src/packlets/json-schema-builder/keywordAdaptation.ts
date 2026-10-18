@@ -143,6 +143,13 @@ export type SchemaKeywordRule =
 export type SchemaAnnotationRule = SchemaKeywordRule | 'drop';
 
 /**
+ * What a wire format does with a schema that states no `type` — see
+ * `ISchemaShapeCapabilities.untyped`.
+ * @public
+ */
+export type SchemaUntypedRule = 'pass' | 'pass-nested' | 'refuse';
+
+/**
  * What a wire format does with the two schema shapes whose support varies independently of any
  * keyword: an `enum` whose members are not strings, and a schema with no `type`.
  *
@@ -152,8 +159,9 @@ export type SchemaAnnotationRule = SchemaKeywordRule | 'drop';
  *   always passed.
  * - `untyped` — `'pass'` sends a schema with no `type` (`JsonSchema.anyValue`, `{}`) as emitted;
  *   `'refuse'` fails the adaptation, naming the path; `'pass-nested'` passes one beneath the root
- *   (in `properties` or `items`) and refuses one **at** the root (`#`), for a wire that requires the
- *   root schema itself to state a `type`. There is no fold for it: the only way to give the node a
+ *   (in `properties` or `items`) and, for a wire that requires the root schema itself to state a
+ *   `type`, refuses a root (`#`) with no `type` keyword — including one typed only by `enum`,
+ *   `const`, `$ref` or a combinator, which such a wire rejects just the same. There is no fold for it: the only way to give the node a
  *   `type` is to pick one, which would narrow what the model may send below what the validator
  *   accepts, and a refusal is the one outcome that cannot mislead.
  * @public
@@ -162,7 +170,7 @@ export interface ISchemaShapeCapabilities {
   /** What the wire does with an `enum` holding a number or a boolean. */
   readonly nonStringEnum: 'pass' | 'fold';
   /** What the wire does with a schema that states no `type`. */
-  readonly untyped: 'pass' | 'pass-nested' | 'refuse';
+  readonly untyped: SchemaUntypedRule;
 }
 
 /**
@@ -350,9 +358,19 @@ function _isUntyped(node: JsonObject): boolean {
   return !_TYPED_ELSEWHERE.some((keyword) => keyword in node);
 }
 
-/** Whether the `untyped` rule refuses an untyped node at `path` — `'#'` is the root. */
-function _refusesUntyped(rule: ISchemaShapeCapabilities['untyped'], path: string): boolean {
-  return rule === 'refuse' || (rule === 'pass-nested' && path === '#');
+/**
+ * The refusal, if any, the `untyped` rule makes of a schema-position node at `path` (`'#'` is the
+ * root). Under `'pass-nested'` the root must carry an actual `type` keyword; beneath it, and under
+ * `'refuse'` everywhere, only a node matching any value is refused.
+ */
+function _untypedRefusal(rule: SchemaUntypedRule, node: JsonObject, path: string): string | undefined {
+  if (_isUntyped(node) && (rule === 'refuse' || (rule === 'pass-nested' && path === '#'))) {
+    return `${path}: a schema with no 'type' (matching any value) cannot be sent on this wire`;
+  }
+  if (rule === 'pass-nested' && path === '#' && !('type' in node)) {
+    return `${path}: a root schema with no 'type' keyword cannot be sent on this wire`;
+  }
+  return undefined;
 }
 
 /** Where a node sits, for the `untyped` rule. */
@@ -406,8 +424,9 @@ function _adaptNode(
   if (!isJsonObject(schema)) {
     return succeed(schema);
   }
-  if (_refusesUntyped(capabilities.untyped, path) && position === 'schema' && _isUntyped(schema)) {
-    return fail(`${path}: a schema with no 'type' (matching any value) cannot be sent on this wire`);
+  const refusal = position === 'schema' ? _untypedRefusal(capabilities.untyped, schema, path) : undefined;
+  if (refusal !== undefined) {
+    return fail(refusal);
   }
   return mapResults(
     Object.entries(schema).map(([key, value]) =>
