@@ -60,4 +60,4 @@ relatedStreams:
       relationship: 'introduced the non-string enum factories, which now return a Result'
     }
   - { id: json-schema-pattern, relationship: 'next stream; builds pattern on the validated string options' }
-sourceHash: 60fd7d5a52ab4b79 # first 16 hex of sha256 over brief.md, state.md and result.md concatenated in that order
+sourceHash: 37c67d9e0f1582cd # first 16 hex of sha256 over brief.md, state.md and result.md concatenated in that order

@@ -152,3 +152,29 @@ All logs were checked for NUL padding, and none was found.
 | repo-wide `rebuild` | exit 0; error grep 0; `warning` (-i) 1, the symlink notice; 38 completed |
 | repo-wide `test` | 36 of 37 ops passed. `@fgv/ts-res-cli` timed out at 5000 ms in `cli-configuration.test.ts` "building same input twice", a timing test that does not touch `JsonSchema` (1m18s, against 35s normally, while a sibling worker shared the machine). The re-run with `test --from @fgv/ts-res-cli` gave `SUCCESS: 9 operations`, error grep 0, `warning` 1 (symlink). Nothing was blocked behind the failure. |
 | `change --verify`, `verify-capability-docs`, `generate-capability-feed --check` | pass, 0 failed, 0 stale |
+
+## Review round 2
+
+| finding | resolution |
+|---|---|
+| **P1** non-instance options were applied unchecked, so the validator and the wire disagreed | A factory now keeps only the **plain keys** of anything that is not its own validated instance: `description`, `title`, `nullable`, `strict`, `format`, `additionalProperties`, each kept only if it has its declared type. Documented on `PlainSchemaOptions` and in `CAPABILITIES.md`. One test per traced case (`NaN` minimum, `'5'` minimum, `multipleOf: 0`, function `default`) shows that the node is `{ type: 'number' }`, that it validates the value, and that `toJson()` → `fromJson` gives the same node. The index-signature and cast pins were re-pinned: constraints are now ignored, and only typed plain keys survive. |
+| **P2** subclass forgery | Constructors take a module-private `unique symbol` token. An outside `super({ minimum: NaN })` is a compile error (pinned). At run time, an instance built without the token holds `{}`, so it applies nothing and nothing throws (pinned). |
+| **P2** two installed copies | Instances carry a non-enumerable `Symbol.for('@fgv/ts-json-base.validated-options')` marker. A marked value, or any validated instance not built for this factory, has its `options` (read through the prototype getter) **re-validated** with the same converters and checks as `fromJson`. On success the re-validated options are used; on failure, plain keys only. Tested with hand-built marked objects (own property and prototype getter; number, string and schema options; pass and fail) and with a marked value that has no options. The marker is documented as a convenience, not a security boundary. |
+| P3 `integer()` given `ValidatedNumberOptions` at run time | Re-validated as an integer range, and used if it holds an integer (both directions pinned). |
+| P3 comment at `factories.ts:~656` | Replaced; the cast now cites the `isOwn` guard that justifies it. |
+| P3 deep freeze | `checkAnnotations` deep-freezes its copies of `default` and `examples` (pinned). |
+
+Refactor: the `fromJson` field converters moved to `constraints.ts`, so re-validation and `fromJson`
+share them. `fromJson` wraps them with its printable-message formatting, so its messages are
+unchanged.
+
+### Gates, round 2
+
+All logs were checked for NUL padding, and none was found.
+
+| gate | result |
+|---|---|
+| `ts-json-base` build / fixlint / lint / test | exit 0; 0 warnings on the second build; coverage 100% (4/4) |
+| repo-wide `rebuild` | exit 0; error grep 0; `warning` (-i) 1, the symlink notice; 38 completed |
+| repo-wide `test` | exit 0; `SUCCESS: 37 operations`; error grep 0; `warning` (-i) 1, the symlink notice; no timing flake this run |
+| `change --verify`, `verify-capability-docs`, `generate-capability-feed --check` | pass, 0 failed, 0 stale |
