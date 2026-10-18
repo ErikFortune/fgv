@@ -186,3 +186,56 @@ problems and fixed both:
 - A test drained the stream into an unused variable. It now asserts the stub's error event.
 
 The gate-time independent review is the orchestrator's.
+
+## Review round 1
+
+The coordinator ran an independent deep review: no P1s, and the contract claims match the code. All
+findings are applied in `afcec032d`.
+
+- **P2-1. The streaming entry point is now pinned.** A new test in `schemaKeywords.test.ts`
+  ("callProviderCompletionStream selects the table through the same assertion rule") drives
+  `callProviderCompletionStream`. It spies on the Anthropic adapter and checks the target's
+  `providerId`, and the table it selects, in five cases:
+  - no endpoint;
+  - an endpoint override with no assertion;
+  - a valid assertion;
+  - an assertion naming another provider;
+  - `verified: false`.
+
+  This entry point sends server tools only, so the adapter target is the only observable form of
+  the table there. I verified the test as asked: with the destructure removed, this test alone
+  failed; after restoring it, everything passed.
+- **P2-2. One name for the client-tool wire union.** `ClientToolWireFormat` (`@internal`) is
+  `Extract<SchemaWireFormat, 'responses-tools' | 'anthropic-tools' | 'gemini'>`. `clientToolWireFormat`
+  and `adaptClientToolParameters` both use it.
+- **P3-3. The `pass-nested` root needs a real `type`.** The root must now carry an actual `type`
+  keyword.
+  - A typeless root keeps its existing message.
+  - A root typed only by `enum`, `const`, `$ref` or `anyOf` is refused with
+    `#: a root schema with no 'type' keyword cannot be sent on this wire`.
+  - Nested positions are unchanged.
+  - Tests cover each of those root shapes, and the same node nested passes.
+  - A nullable root emits `type: ['object', 'null']` and passes. **That is untested live**: the
+    probe has no nullable-root fixture, so whether Anthropic accepts a `type` array at the
+    `input_schema` root is unverified.
+- **P3-4. The rule union has a name.** `JsonSchema.SchemaUntypedRule` (`@public`) is used by
+  `ISchemaShapeCapabilities.untyped`, by the helper and by the test `caps` helper.
+- **P3-5. The testbed fake asks the library.** It now calls `libraryPreflight`, which adapts the
+  schema with `AiAssist.clientToolSchemaKeywords(descriptor, { model })` and returns the library's
+  own failure message. Nothing in the fake restates the refusal string.
+
+**Docs.** The `ts-json-base` and `ts-extras` `CAPABILITIES.md` and change files now describe the
+root rule.
+
+**Gates on `afcec032d`:**
+
+| gate | result |
+|---|---|
+| package `rushx test` and `lint` (`ts-json-base`, `ts-extras`, `testbed`) | exit 0, 0 warnings |
+| prettier | applied |
+| `install-run-rush.js rebuild` | exit 0, `SUCCESS: 38`, error grep 0, only the symlink warning, no NUL padding (8129 = 8129) |
+| `install-run-rush.js test` | exit 0, `SUCCESS: 37` (9m47s), error grep 0, only the symlink warning, no NUL padding (8283 = 8283) |
+| `change --verify` | exit 0 |
+| `generate-capability-feed --check` | exit 0 |
+| `verify-capability-docs` | 0 failed |
+| `api.md` `ae-` lines vs `origin/json-schema-pattern` | 0 |

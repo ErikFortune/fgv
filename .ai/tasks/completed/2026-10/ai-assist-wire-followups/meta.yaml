@@ -61,4 +61,4 @@ relatedStreams:
       relationship: 'introduced the per-wire tables and the fold text for default'
     }
   - { id: json-schema-pattern, relationship: 'the stacked base; also edits the wire tables' }
-sourceHash: c29147b2c2cf8140 # first 16 hex of sha256 over brief.md, state.md and result.md concatenated in that order
+sourceHash: 57e94af3bbd9893d # first 16 hex of sha256 over brief.md, state.md and result.md concatenated in that order
