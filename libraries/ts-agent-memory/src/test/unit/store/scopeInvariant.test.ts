@@ -216,6 +216,29 @@ describe('FileTreeMemoryStore scope invariant (scope == codec(kind).encode(entit
       );
     });
 
+    test("'fail' mode rejects a version file whose stem is not the codec's version stem", () => {
+      // Decodes to (launch, 1) and sits in the right subtree, but encodeVersion('launch', 1) is 'launch-v1'.
+      const misnamed: ISeedFile = recordFile(eventKind, 'events/entities/launch', 'launch-v01', 'launch');
+      expect(open([misnamed])).toFailWith(
+        /launch-v01\.md'.*read as 'launch-v01', but its codec derives version stem 'launch-v1' for entityId 'launch'/i
+      );
+    });
+
+    test('a codec that reports a versioned layout without version methods is refused', () => {
+      const flatPretendingVersioned: IIdentityCodec = {
+        encode: (entityId: EntityId) =>
+          succeed({ scope: 'shared' as MemoryScopeKey, idStem: `p-${entityId}`, isVersioned: true }),
+        decode: (__scope: MemoryScopeKey, stem: string) => Convert.entityId.convert(stem.slice(2)),
+        verifyRoundTrip: () => succeed(true)
+      };
+      const store = FileTreeMemoryStore.create({
+        root: mutableRoot([wellPlacedNote]),
+        registry: registry(),
+        codecs: new Map<Kind, IIdentityCodec>([[noteKind, flatPretendingVersioned]])
+      });
+      expect(store).toFailWith(/reports a versioned layout for entityId 'acme' but has no version methods/i);
+    });
+
     test('an entity id the codec cannot encode is reported with the file context', () => {
       const unencodable: ISeedFile = recordFile(noteKind, 'shared', 'p-unencodable', 'unencodable');
       expect(open([unencodable])).toFailWith(
