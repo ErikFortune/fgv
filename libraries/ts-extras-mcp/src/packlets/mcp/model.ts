@@ -803,6 +803,23 @@ export interface IAdaptMcpToolsOptions {
    * request's wire fails that request loudly, naming the tool.
    */
   readonly schemaKeywords?: JsonSchema.SchemaKeywordCapabilities;
+
+  /**
+   * Compiles the `pattern` keyword of a server's tool schemas; passed to `JsonSchema.fromJson`.
+   *
+   * @remarks
+   * Without it, a tool whose schema uses `pattern` is skipped, because this package never compiles a
+   * server-supplied regular expression: a backtracking `RegExp` built from one is a ReDoS vector on
+   * every tool call, and a synchronous match cannot be timed out. With it, such a tool is adapted,
+   * the predicate the validator returns enforces the pattern on the tool's arguments, and the wire
+   * receives the server's source — or, where the target wire does not document `pattern`, a
+   * description stating it (see `schemaKeywords`). A validator `Failure` skips the tool, with the
+   * reason.
+   *
+   * Supply a validator built on an engine that is safe on hostile input — RE2, say. A plain
+   * `new RegExp(source)` defeats the point of the option.
+   */
+  readonly patternValidator?: JsonSchema.SchemaPatternValidator;
 }
 
 /**

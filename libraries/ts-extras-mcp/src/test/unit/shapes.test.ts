@@ -31,7 +31,7 @@
  */
 
 import '@fgv/ts-utils-jest';
-import { Logging } from '@fgv/ts-utils';
+import { Logging, fail, succeed } from '@fgv/ts-utils';
 import { AiAssist } from '@fgv/ts-extras';
 import { JsonSchema, type JsonObject } from '@fgv/ts-json-base';
 
@@ -391,6 +391,155 @@ describe('numeric enum, const and {} on an adapted MCP tool', () => {
     test('an in-set call is forwarded', async () => {
       await runTurn(OPENAI, 'level', '{"level":1,"mode":"fast"}');
       expect(calls).toEqual([{ level: 1, mode: 'fast' }]);
+    });
+  });
+});
+
+/** A server tool whose argument must match `pattern` — pydantic's `constr(pattern=...)`. */
+const CODE_SCHEMA: JsonObject = {
+  type: 'object',
+  properties: { code: { type: 'string', pattern: '^[A-Z]+$' } },
+  required: ['code']
+};
+
+/** The patterns the test-only validator knows, each a literal: no test builds a `RegExp` from data. */
+const KNOWN_PATTERNS: ReadonlyMap<string, RegExp> = new Map([['^[A-Z]+$', /^[A-Z]+$/u]]);
+
+describe('pattern on an adapted MCP tool', () => {
+  let server: Server;
+  let session: IMcpSession;
+  let calls: unknown[];
+  let compiled: string[];
+
+  /** A test-only validator; a host should use an engine that is safe on hostile input, such as RE2. */
+  const patternValidator: JsonSchema.SchemaPatternValidator = (source) => {
+    compiled.push(source);
+    const re = KNOWN_PATTERNS.get(source);
+    return re === undefined ? fail(`no test pattern for ${source}`) : succeed((v: string) => re.test(v));
+  };
+
+  beforeEach(async () => {
+    calls = [];
+    compiled = [];
+    server = new Server({ name: 'pattern-fixture', version: '0.0.1' }, { capabilities: { tools: {} } });
+    server.setRequestHandler(ListToolsRequestSchema, async () => ({
+      tools: [
+        { name: 'code', description: 'Submit a code', inputSchema: CODE_SCHEMA },
+        { name: 'level', description: 'Set the level', inputSchema: LEVEL_SCHEMA }
+      ]
+    }));
+    server.setRequestHandler(CallToolRequestSchema, async (request) => {
+      calls.push(request.params.arguments);
+      return { content: [{ type: 'text', text: 'accepted' }] };
+    });
+    const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();
+    await server.connect(serverSide);
+    session = (await connectMcpSession({ transport: createCustomTransport(clientSide).orThrow() })).orThrow();
+  });
+
+  afterEach(async () => {
+    jest.restoreAllMocks();
+    await closeMcpSession(session);
+    await server.close();
+  });
+
+  async function runTurn(
+    descriptor: AiAssist.IAiProviderDescriptor,
+    argsJson: string
+  ): Promise<{ events: AiAssist.IAiStreamEvent[]; sent: JsonObject | undefined }> {
+    const adapted = (
+      await adaptMcpTools(session, {
+        schemaKeywords: AiAssist.clientToolSchemaKeywords(descriptor, { model: MODELS[descriptor.id] }),
+        patternValidator
+      })
+    ).orThrow();
+    const sent = mockModelCalls(toolCallChunks(descriptor, 'code', argsJson));
+    const turn = AiAssist.executeClientToolTurn({
+      descriptor,
+      apiKey: 'test-key',
+      ...new AiAssist.AiPrompt('submit it', 'system').toRequest(),
+      clientTools: adapted.tools,
+      model: MODELS[descriptor.id]
+    }).orThrow();
+    const events: AiAssist.IAiStreamEvent[] = [];
+    for await (const event of turn.events) {
+      events.push(event);
+    }
+    return { events, sent: sent() };
+  }
+
+  function resultText(events: AiAssist.IAiStreamEvent[]): string {
+    const result = events.find((e) => e.type === 'client-tool-result');
+    return result?.type === 'client-tool-result' && result.isError ? String(result.result) : '';
+  }
+
+  test('without a pattern validator the tool is skipped, and nothing compiles its pattern', async () => {
+    const logger = new Logging.InMemoryLogger('all');
+    expect(await adaptMcpTools(session, { logger, schemaKeywords: AiAssist.clientToolSchemaKeywords(ANTHROPIC) }))
+      .toSucceedAndSatisfy((result) => {
+        expect(result.tools.map((t) => t.config.name)).toEqual(['level']);
+        expect(result.skipped).toEqual([
+          {
+            name: 'code',
+            reason: "#/properties/code: unsupported JSON Schema keyword 'pattern'",
+            schema: CODE_SCHEMA
+          }
+        ]);
+      });
+    expect(logger.logged.join('\n')).toMatch(/skipping tool 'code'.*'pattern'/);
+    expect(compiled).toEqual([]);
+  });
+
+  test('with one, the tool is adapted, and the validator is handed the server source exactly', async () => {
+    expect(await adaptMcpTools(session, { patternValidator })).toSucceedAndSatisfy((result) => {
+      expect(result.skipped).toEqual([]);
+      const code = result.tools.find((t) => t.config.name === 'code');
+      expect(code?.config.parametersSchema.toJson()).toEqual({
+        type: 'object',
+        properties: { code: { type: 'string', pattern: '^[A-Z]+$' } },
+        required: ['code']
+      });
+    });
+    expect(compiled).toEqual(['^[A-Z]+$']);
+  });
+
+  test('a validator that refuses the pattern skips the tool, with its reason', async () => {
+    const refuse: JsonSchema.SchemaPatternValidator = () => fail('not on the allow-list');
+    expect(await adaptMcpTools(session, { patternValidator: refuse })).toSucceedAndSatisfy((result) => {
+      expect(result.tools.map((t) => t.config.name)).toEqual(['level']);
+      expect(result.skipped.map((s) => [s.name, s.reason])).toEqual([
+        ['code', '#/properties/code: pattern "^[A-Z]+$" was refused: not on the allow-list']
+      ]);
+    });
+  });
+
+  describe('on Anthropic, which documents pattern', () => {
+    test('the model is shown the pattern, and a call that breaks it never reaches the server', async () => {
+      const { events, sent } = await runTurn(ANTHROPIC, '{"code":"abc"}');
+      const wireTool = (sent?.tools as JsonObject[]).find((t) => t.name === 'code');
+      expect(wireTool?.input_schema).toEqual(CODE_SCHEMA);
+      expect(calls).toEqual([]);
+      expect(resultText(events)).toMatch(/expected a string matching "\^\[A-Z\]\+\$" \(pattern\)/);
+    });
+
+    test('a matching call is forwarded unchanged', async () => {
+      const { events } = await runTurn(ANTHROPIC, '{"code":"ABC"}');
+      expect(calls).toEqual([{ code: 'ABC' }]);
+      expect(resultText(events)).toBe('');
+    });
+  });
+
+  describe('on OpenAI, whose shared wire folds pattern', () => {
+    test('the model is told the pattern in the description, and the validator still enforces it', async () => {
+      const { events, sent } = await runTurn(OPENAI, '{"code":"abc"}');
+      const wireTool = (sent?.tools as JsonObject[]).find((t) => t.name === 'code');
+      expect(wireTool?.parameters).toEqual({
+        type: 'object',
+        properties: { code: { type: 'string', description: 'Constraints: pattern "^[A-Z]+$".' } },
+        required: ['code']
+      });
+      expect(calls).toEqual([]);
+      expect(resultText(events)).toMatch(/\(pattern\)/);
     });
   });
 });

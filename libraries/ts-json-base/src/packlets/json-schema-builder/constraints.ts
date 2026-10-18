@@ -54,11 +54,43 @@ type NumberKeyword = StringOneOf<typeof schemaNumberConstraintKeywords>;
 /** A number node's constraints. @internal */
 export type NumberConstraints = Pick<INumberSchemaOptions, NumberKeyword>;
 
-/** A string node's constraints and format. @internal */
-export type StringConstraints = Pick<
+/** A string node's length constraints and format, as `stringConstraintsConverter` reads them. @internal */
+export type StringLengthConstraints = Pick<
   IStringSchemaOptions,
   StringOneOf<typeof schemaLengthConstraintKeywords> | 'format'
 >;
+
+/**
+ * A pattern a string node enforces and emits: the source the wire receives, and the one predicate
+ * that enforces it. Held immutably, so the validator and `toJson()` cannot come to disagree.
+ * @internal
+ */
+export interface IHeldPattern {
+  /** The ECMAScript source emitted as `pattern`. */
+  readonly source: string;
+  /** Whether a string matches, or a `Failure` when the match could not be made. */
+  readonly matches: (value: string) => Result<boolean>;
+}
+
+/** A string node's constraints and format: the lengths, the held pattern and `format`. @internal */
+export type StringConstraints = StringLengthConstraints & { readonly pattern?: IHeldPattern };
+
+/**
+ * The options a `string` node is built from: `IStringSchemaOptions` with its `pattern` replaced by
+ * the held pattern a check produced.
+ * @internal
+ */
+export type StringNodeOptions = Omit<IStringSchemaOptions, 'pattern'> & { readonly pattern?: IHeldPattern };
+
+/**
+ * What `checkStringOptions` produces: the checked options as given (a `RegExp` pattern included),
+ * and the node options built from them.
+ * @internal
+ */
+export interface ICheckedStringOptions<T extends IStringSchemaOptions> {
+  readonly options: T;
+  readonly node: StringNodeOptions;
+}
 
 /** The annotation keywords every node kind carries: all but `format`, which only strings carry. */
 type CommonAnnotationKeyword = Exclude<StringOneOf<typeof schemaAnnotationKeywords>, 'format'>;
@@ -181,15 +213,102 @@ export function checkNumberOptions<T extends INumberSchemaOptions>(
   });
 }
 
+/** A host's `RegExp`: the only form a trusted pattern arrives in. */
+const _regExpValidator: Validator<RegExp> = Validators.isA(
+  'RegExp',
+  (from: unknown): from is RegExp => from instanceof RegExp
+);
+
 /**
- * Checks a `string` node's options for coherence: each length a non-negative integer, and
- * `minLength` not above `maxLength`.
+ * The built-in `RegExp.prototype.exec`, captured once: it runs a `RegExp`'s own compiled matcher,
+ * whatever a subclass declares as `exec` or `test`.
+ */
+const _builtinExec: typeof RegExp.prototype.exec = RegExp.prototype.exec;
+
+/**
+ * Each flag and the built-in accessor reporting it. The accessors read the `RegExp`'s internal
+ * flags, which a subclass cannot override; the `flags` accessor itself reads these through the
+ * object, which it can.
+ */
+const _FLAG_ACCESSORS: ReadonlyArray<readonly [string, string]> = [
+  ['d', 'hasIndices'],
+  ['g', 'global'],
+  ['i', 'ignoreCase'],
+  ['m', 'multiline'],
+  ['s', 'dotAll'],
+  ['u', 'unicode'],
+  ['v', 'unicodeSets'],
+  ['y', 'sticky']
+];
+
+/** A `RegExp`'s compiled source and flags, read through the built-in accessors. Throws on a non-`RegExp`. */
+function _compiledForm(re: RegExp): { readonly source: string; readonly flags: string } {
+  const source: unknown = Reflect.get(RegExp.prototype, 'source', re);
+  const flags = _FLAG_ACCESSORS.filter(([, accessor]) => Reflect.get(RegExp.prototype, accessor, re) === true)
+    .map(([flag]) => flag)
+    .join('');
+  return { source: String(source), flags };
+}
+
+/**
+ * Checks a host's trusted pattern and holds it.
+ *
+ * @remarks
+ * The pattern must be a `RegExp` with exactly the `u` flag. JSON Schema patterns are built with
+ * `u`, and the wire has no way to state any other flag, so this is the one form in which the
+ * `RegExp` the host wrote means exactly what the wire states — which is why nothing is recompiled.
+ *
+ * Its source and flags are read through the built-in accessors, and it is matched with the
+ * built-in `exec`, so a subclass overriding `source`, `test` or `exec` cannot make the wire and the
+ * validator disagree. A `RegExp` re-initialised afterwards (`compile()`) no longer has the form that
+ * was checked; every match then fails closed rather than enforcing something the wire does not
+ * state.
+ *
+ * This package never constructs a `RegExp`: the host built this one, and `fromJson` never reaches
+ * here.
+ */
+function _holdTrustedPattern(pattern: unknown): Result<IHeldPattern | undefined> {
+  if (pattern === undefined) {
+    return succeed(undefined);
+  }
+  return _regExpValidator
+    .validate(pattern)
+    .withErrorFormat(() => `pattern must be a RegExp, got ${describeEnumMember(pattern)}`)
+    .onSuccess((re) =>
+      captureResult(() => _compiledForm(re))
+        .withErrorFormat((msg) => `pattern is not a readable RegExp: ${msg}`)
+        .onSuccess(({ source, flags }) =>
+          flags === 'u'
+            ? succeed<IHeldPattern>(Object.freeze({ source, matches: _trustedMatcher(re, source) }))
+            : fail(
+                `pattern /${source}/${flags}: a JSON Schema pattern is built with exactly the 'u' flag ` +
+                  `(write /${source}/u); the wire cannot state '${flags}'`
+              )
+        )
+    );
+}
+
+/** Matches with a checked `RegExp`, failing closed once it no longer has the checked form. */
+function _trustedMatcher(re: RegExp, source: string): (value: string) => Result<boolean> {
+  return (value: string): Result<boolean> =>
+    captureResult(() => _compiledForm(re)).onSuccess((now) =>
+      now.source === source && now.flags === 'u'
+        ? captureResult(() => _builtinExec.call(re, value) !== null)
+        : fail('the RegExp was re-initialised after stringOptions checked it')
+    );
+}
+
+/**
+ * Checks a `string` node's options for coherence: each length a non-negative integer, `minLength`
+ * not above `maxLength`, and a `pattern` a `RegExp` whose only flag is `u`.
  * @param opts - The options to check.
- * @returns A copy of the options (annotations copied deeply), or a `Failure` naming the keyword and
- * the value.
+ * @returns A copy of the options (annotations copied deeply) and the node options built from it, or
+ * a `Failure` naming the keyword and the value.
  * @internal
  */
-export function checkStringOptions<T extends IStringSchemaOptions>(opts: T): Result<T> {
+export function checkStringOptions<T extends IStringSchemaOptions>(
+  opts: T
+): Result<ICheckedStringOptions<T>> {
   return checkAnnotations(opts).onSuccess((checked) => {
     const bad = schemaLengthConstraintKeywords.find((k) => {
       const length = checked[k];
@@ -205,8 +324,25 @@ export function checkStringOptions<T extends IStringSchemaOptions>(opts: T): Res
     ) {
       return fail(`minLength ${checked.minLength} is greater than maxLength ${checked.maxLength}`);
     }
-    return succeed(checked);
+    return _holdTrustedPattern(checked.pattern).onSuccess((pattern) =>
+      succeed({ options: checked, node: withHeldPattern(checked, pattern) })
+    );
   });
+}
+
+/**
+ * String options with their `pattern` replaced by a held one — or removed, when there is none.
+ * @internal
+ */
+export function withHeldPattern(
+  opts: Omit<IStringSchemaOptions, 'pattern'> & { readonly pattern?: unknown },
+  pattern: IHeldPattern | undefined
+): StringNodeOptions {
+  // A spread copies own keys as data, so an own `__proto__` key cannot become a prototype.
+  const rest: { -readonly [K in keyof typeof opts]?: (typeof opts)[K] } = { ...opts };
+  delete rest.pattern;
+  const unpatterned: Omit<IStringSchemaOptions, 'pattern'> = rest;
+  return { ...unpatterned, ...(pattern !== undefined && { pattern }) };
 }
 
 /** Freezes a copied JSON value and everything inside it. */
@@ -400,6 +536,34 @@ export function enforceStringConstraints(value: string, opts: StringConstraints)
   return succeed(value);
 }
 
+/**
+ * Checks a string against a node's held pattern.
+ *
+ * @remarks
+ * A match that cannot be made — a caller's predicate that throws, or a host `RegExp` changed since
+ * it was checked — fails the value rather than escaping the validator, and only a result of exactly
+ * `true` is a match.
+ * @param value - The (already type-checked) string.
+ * @param pattern - The node's held pattern, if any.
+ * @returns The string, or a `Failure` naming the pattern.
+ * @internal
+ */
+export function enforceStringPattern(value: string, pattern: IHeldPattern | undefined): Result<string> {
+  if (pattern === undefined) {
+    return succeed(value);
+  }
+  return pattern
+    .matches(value)
+    .withErrorFormat(
+      (msg) => `could not check the string against pattern ${JSON.stringify(pattern.source)}: ${msg}`
+    )
+    .onSuccess((matched) =>
+      matched === true
+        ? succeed(value)
+        : fail(`expected a string matching ${JSON.stringify(pattern.source)} (pattern)`)
+    );
+}
+
 /** The common annotations, in emission order. */
 const COMMON_ANNOTATION_KEYWORDS: ReadonlyArray<CommonAnnotationKeyword> = schemaAnnotationKeywords.filter(
   (keyword): keyword is CommonAnnotationKeyword => keyword !== 'format'
@@ -454,14 +618,20 @@ export function pickNumberConstraints(opts: INumberSchemaOptions | undefined): N
   return out;
 }
 
-/** The length constraints and `format` in `opts`, copied through the keyword list. @internal */
-export function pickStringConstraints(opts: IStringSchemaOptions | undefined): StringConstraints {
+/**
+ * The length constraints, held pattern and `format` in `opts`, copied through the keyword list.
+ * @internal
+ */
+export function pickStringConstraints(opts: StringNodeOptions | undefined): StringConstraints {
   const out: { -readonly [K in keyof StringConstraints]?: StringConstraints[K] } = {};
   for (const keyword of schemaLengthConstraintKeywords) {
     const value = opts?.[keyword];
     if (value !== undefined) {
       out[keyword] = value;
     }
+  }
+  if (opts?.pattern !== undefined) {
+    out.pattern = opts.pattern;
   }
   if (opts?.format !== undefined) {
     out.format = opts.format;
@@ -485,9 +655,18 @@ export function numberConstraintFields(opts: NumberConstraints): JsonObject {
   return { ...pickNumberConstraints(opts) };
 }
 
-/** The wire fields for a string node's constraints and format, in a fixed order. @internal */
+/**
+ * The wire fields for a string node's constraints and format, in a fixed order — the lengths, then
+ * `pattern` as its source, then `format`.
+ * @internal
+ */
 export function stringConstraintFields(opts: StringConstraints): JsonObject {
-  return { ...pickStringConstraints(opts) };
+  const { pattern, format, ...lengths } = pickStringConstraints(opts);
+  return {
+    ...lengths,
+    ...(pattern !== undefined && { pattern: pattern.source }),
+    ...(format !== undefined && { format })
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -535,7 +714,8 @@ export const numberConstraintsConverter: Converter<NumberConstraints> = Converte
  * and `format` a string; `checkStringOptions` then requires non-negative integers in order.
  * @internal
  */
-export const stringConstraintsConverter: Converter<StringConstraints> = Converters.object<StringConstraints>({
+export const stringConstraintsConverter: Converter<StringLengthConstraints> =
+  Converters.object<StringLengthConstraints>({
   ..._numericFields(schemaLengthConstraintKeywords),
   format: Converters.string.optional('failOnError')
 });
@@ -594,19 +774,29 @@ export function revalidateNumberOptions(
     );
 }
 
+/** Reads a `pattern` key as a `RegExp`, refusing a present one of another type. */
+const _patternKeyConverter: Converter<{ readonly pattern?: RegExp }> = Converters.object<{
+  readonly pattern?: RegExp;
+}>({
+  pattern: _regExpValidator.optional()
+});
+
 /**
- * Re-checks a value claiming to be validated `string` options: its lengths read as numbers, then
- * exactly the check `stringOptions` runs.
+ * Re-checks a value claiming to be validated `string` options: its lengths read as numbers and its
+ * pattern as a `RegExp`, then exactly the check `stringOptions` runs.
  * @internal
  */
-export function revalidateStringOptions(from: unknown): Result<IStringSchemaOptions> {
-  return _typedKeysConverter
-    .convert(from)
-    .onSuccess((typed) =>
-      stringConstraintsConverter
+export function revalidateStringOptions(from: unknown): Result<StringNodeOptions> {
+  return _typedKeysConverter.convert(from).onSuccess((typed) =>
+    stringConstraintsConverter.convert(from).onSuccess((constraints) =>
+      _patternKeyConverter
         .convert(from)
-        .onSuccess((constraints) => checkStringOptions({ ...typed, ...constraints }))
-    );
+        .onSuccess(({ pattern }) =>
+          checkStringOptions({ ...typed, ...constraints, ...(pattern !== undefined && { pattern }) })
+        )
+        .onSuccess(({ node }) => succeed(node))
+    )
+  );
 }
 
 /**

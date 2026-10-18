@@ -22,7 +22,11 @@
 
 import { StringOneOf } from '@fgv/ts-utils';
 import { JsonValue } from '../json';
-import { schemaLengthConstraintKeywords, schemaNumberConstraintKeywords } from './keywordAdaptation';
+import {
+  schemaLengthConstraintKeywords,
+  schemaNumberConstraintKeywords,
+  schemaPatternConstraintKeywords
+} from './keywordAdaptation';
 
 /**
  * Common options accepted by every schema factory.
@@ -174,9 +178,10 @@ export interface INumberSchemaOptions extends ISchemaOptions {
  * Options for the `string` factory.
  *
  * @remarks
- * `minLength` and `maxLength` are **validating**; `format` is an **annotation**. The lengths reach
- * the factory only through `stringOptions`, which refuses a length
- * that is not a non-negative integer, and `minLength` greater than `maxLength`.
+ * `minLength`, `maxLength` and `pattern` are **validating**; `format` is an **annotation**. They
+ * reach the factory only through `stringOptions`, which refuses a
+ * length that is not a non-negative integer, `minLength` greater than `maxLength`, and a `pattern`
+ * that is not a `RegExp` whose only flag is `u`.
  * @public
  */
 export interface IStringSchemaOptions extends ISchemaOptions {
@@ -193,6 +198,35 @@ export interface IStringSchemaOptions extends ISchemaOptions {
    * The string must have at most this many characters, counted in code points.
    */
   maxLength?: number;
+
+  /**
+   * A regular expression the string must match — the host's own, and therefore trusted.
+   *
+   * @remarks
+   * **Validating**: the derived validator enforces it and `toJson()` emits `pattern: <source>`. It
+   * is a `RegExp` rather than a source string so that the host compiles it — and owns its cost — and
+   * this package never turns a string into a regular expression.
+   *
+   * **Write it with exactly the `u` flag: `/^[a-z]+$/u`.** A JSON Schema `pattern` is an ECMA-262
+   * regular expression built with `u`, and **unanchored** (write `^…$` to match the whole string).
+   * The wire carries only the source, so `stringOptions` refuses a `RegExp` with any other flag set
+   * (`g`, `i`, `m`, `s`, `y`, `d`, `v`) or without `u`: only then does the `RegExp` mean exactly what
+   * the wire states, and it is enforced as written, never recompiled.
+   *
+   * Its source and flags are read through the built-in accessors and it is matched with the
+   * built-in `exec`, so a subclass overriding them changes neither the wire nor the check. Do not
+   * re-initialise it afterwards with `compile()`: a node then fails every value closed rather than
+   * enforcing a pattern the wire does not state.
+   *
+   * **The wire receives ECMAScript source.** Provider engines implement dialects of it — some
+   * reject lookarounds or backreferences, and some anchor implicitly — so the provider adapters in
+   * `@fgv/ts-extras` send `pattern` only where the provider documents it, and fold it into the
+   * description elsewhere. Folding loosens only the wire; the validator still enforces the pattern.
+   *
+   * A schema read with `fromJson` never carries a `RegExp`: a server-supplied pattern is compiled,
+   * if at all, by the caller's `patternValidator` (see `IFromJsonOptions`).
+   */
+  pattern?: RegExp;
 
   /**
    * A semantic format such as `'date-time'` or `'email'`, emitted as the JSON Schema `format`
@@ -290,13 +324,15 @@ export type PlainNumberSchemaOptions = PlainSchemaOptions &
 /**
  * The `string` options accepted as a plain object literal: the
  * `plain annotations` and `format`, which is an annotation
- * and cannot be incoherent. The length keywords are declared `never` and arrive through
- * `stringOptions`.
+ * and cannot be incoherent. The length keywords and `pattern` are declared `never` and arrive
+ * through `stringOptions`.
  * @public
  */
 export type PlainStringSchemaOptions = PlainSchemaOptions &
   Pick<IStringSchemaOptions, 'format'> & {
-    readonly [K in StringOneOf<typeof schemaLengthConstraintKeywords>]?: never;
+    readonly [K in
+      | StringOneOf<typeof schemaLengthConstraintKeywords>
+      | StringOneOf<typeof schemaPatternConstraintKeywords>]?: never;
   };
 
 /**

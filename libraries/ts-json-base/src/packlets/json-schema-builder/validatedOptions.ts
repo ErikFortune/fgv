@@ -31,12 +31,14 @@
  * options to the base constructor: without the token, an instance holds no options at all.
  */
 
-import { Result, succeed } from '@fgv/ts-utils';
+import { Result, captureResult, succeed } from '@fgv/ts-utils';
 import {
+  StringNodeOptions,
   VALIDATED_OPTIONS_MARKER,
   checkAnnotations,
   checkNumberOptions,
-  checkStringOptions
+  checkStringOptions,
+  withHeldPattern
 } from './constraints';
 import { INumberSchemaOptions, IObjectSchemaOptions, IStringSchemaOptions } from './options';
 
@@ -203,15 +205,24 @@ export class ValidatedIntegerOptions<
  * Options that `stringOptions` has found coherent, which the
  * `string` factory accepts. The options are held privately as a frozen copy, read through
  * `options`.
+ *
+ * @remarks
+ * A `pattern` is held separately as well, as the source and flags read when the options were
+ * checked: what the node emits comes from that reading, and what it enforces is the same `RegExp`,
+ * matched with the built-in `exec` and only while it still has that form.
  * @public
  */
 export class ValidatedStringOptions<T extends IStringSchemaOptions = IStringSchemaOptions> {
   /** Discriminates validated options from plain ones, which declare `kind` as `never`. */
   public readonly kind: 'validated-string-options' = 'validated-string-options';
   readonly #options: Readonly<T>;
+  /** What a node is built from: the options with the held pattern in place of the `RegExp`. */
+  readonly #node: StringNodeOptions;
 
-  private constructor(token: symbol, checked: T) {
+  private constructor(token: symbol, checked: T, node: StringNodeOptions) {
     this.#options = _hold(this, this.kind, token, checked);
+    // The constructor is private, so `node` always comes from this class's own check.
+    this.#node = Object.freeze(node);
   }
 
   /** The validated options: a frozen copy of those `stringOptions` was given. */
@@ -225,8 +236,16 @@ export class ValidatedStringOptions<T extends IStringSchemaOptions = IStringSche
    * `undefined` for anything else.
    * @internal
    */
-  public static _read(value: unknown): Readonly<IStringSchemaOptions> | undefined {
-    return _isObject(value) && #options in value ? (value as ValidatedStringOptions).#options : undefined;
+  public static _read(
+    value: unknown
+  ):
+    | Readonly<
+        Omit<IStringSchemaOptions, 'pattern'> & {
+          readonly pattern?: { readonly source: string; readonly matches: (value: string) => Result<boolean> };
+        }
+      >
+    | undefined {
+    return _isObject(value) && #node in value ? (value as ValidatedStringOptions).#node : undefined;
   }
 
   /**
@@ -234,8 +253,26 @@ export class ValidatedStringOptions<T extends IStringSchemaOptions = IStringSche
    * @internal
    */
   public static _create<T extends IStringSchemaOptions>(opts: T): Result<ValidatedStringOptions<T>> {
-    return checkStringOptions(opts).onSuccess((checked) =>
-      succeed(new ValidatedStringOptions<T>(CONSTRUCTION_TOKEN, checked))
+    return checkStringOptions(opts).onSuccess(({ options, node }) =>
+      succeed(new ValidatedStringOptions<T>(CONSTRUCTION_TOKEN, options, node))
+    );
+  }
+
+  /**
+   * Checks string options without a `pattern` and attaches a pattern a caller compiled — the
+   * source a schema stated and the predicate its `patternValidator` returned for it. Called by
+   * `fromJson`, which never compiles a pattern itself.
+   * @internal
+   */
+  public static _createWithMatcher<T extends IStringSchemaOptions & { readonly pattern?: never }>(
+    opts: T,
+    pattern: { readonly source: string; readonly matches: (value: string) => boolean }
+  ): Result<ValidatedStringOptions<T>> {
+    const { source, matches } = pattern;
+    // The predicate is the caller's code: one that throws fails the value, not the validator.
+    const held = Object.freeze({ source, matches: (value: string) => captureResult(() => matches(value)) });
+    return checkStringOptions(opts).onSuccess(({ options, node }) =>
+      succeed(new ValidatedStringOptions<T>(CONSTRUCTION_TOKEN, options, withHeldPattern(node, held)))
     );
   }
 }
@@ -318,11 +355,16 @@ export function integerOptions<T extends INumberSchemaOptions>(
  * reach the `string` factory.
  *
  * @remarks
- * Refuses a length that is not a non-negative integer, `minLength` above `maxLength`, and a
- * `default` or `examples` member that is not JSON.
+ * Refuses a length that is not a non-negative integer, `minLength` above `maxLength`, a `pattern`
+ * that is not a `RegExp` whose only flag is `u` (the flag JSON Schema patterns are built with), and
+ * a `default` or `examples` member that is not JSON.
+ *
+ * A `pattern` is the host's own `RegExp` and is trusted: the node enforces it and emits its
+ * `source`. See `IStringSchemaOptions.pattern` for the semantics and the wire.
  * @example
  * ```ts
  * const name = JsonSchema.string(JsonSchema.stringOptions({ minLength: 1 }).shouldNotFail('name length'));
+ * const slug = JsonSchema.string(JsonSchema.stringOptions({ pattern: /^[a-z0-9-]+$/u }).shouldNotFail('slug'));
  * ```
  * @param opts - The options to check.
  * @returns The validated options, or a `Failure` naming the keyword and the value.

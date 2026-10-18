@@ -78,7 +78,8 @@ const everything = JsonSchema.object({
       examples: ['a@b.c']
     }).shouldNotFail('string options')
   ),
-  d: JsonSchema.string({ format: 'duration' })
+  d: JsonSchema.string({ format: 'duration' }),
+  p: JsonSchema.string(JsonSchema.stringOptions({ pattern: /^[a-z]+$/u }).shouldNotFail('pattern options'))
 });
 
 function tool(schema: JsonSchema.ISchemaValidator<unknown> = everything): IAiClientTool {
@@ -112,7 +113,9 @@ describe('schema keyword capability tables, per wire format', () => {
           format: 'email',
           description: 'Who. Constraints: minLength 1; maxLength 8. Examples: ["a@b.c"].'
         },
-        d: { type: 'string', description: 'Format: duration.' }
+        d: { type: 'string', description: 'Format: duration.' },
+        // xAI anchors a pattern implicitly, so on the shared wire it folds.
+        p: { type: 'string', description: 'Constraints: pattern "^[a-z]+$".' }
       });
     }
   });
@@ -177,7 +180,8 @@ describe('schema keyword capability tables, per wire format', () => {
         format: 'email',
         description: 'Who. Examples: ["a@b.c"].'
       },
-      d: { type: 'string', format: 'duration' }
+      d: { type: 'string', format: 'duration' },
+      p: { type: 'string', pattern: '^[a-z]+$' }
     });
   });
 
@@ -276,7 +280,8 @@ describe('schema keyword capability tables, structured output', () => {
     ),
     s: JsonSchema.string(
       JsonSchema.stringOptions({ maxLength: 4, format: 'hostname' }).shouldNotFail('string options')
-    )
+    ),
+    p: JsonSchema.string(JsonSchema.stringOptions({ pattern: /^\d+$/u }).shouldNotFail('pattern options'))
   });
 
   function descriptor(id: AiProviderId): IAiProviderDescriptor {
@@ -316,9 +321,10 @@ describe('schema keyword capability tables, structured output', () => {
     type: 'object',
     properties: {
       n: { type: 'integer', minimum: 1, maximum: 5, description: 'Default: 3.' },
-      s: { type: 'string', description: 'Constraints: maxLength 4. Format: hostname.' }
+      s: { type: 'string', description: 'Constraints: maxLength 4. Format: hostname.' },
+      p: { type: 'string', description: 'Constraints: pattern "^\\\\d+$".' }
     },
-    required: ['n', 's'],
+    required: ['n', 's', 'p'],
     additionalProperties: false
   };
 
@@ -341,7 +347,8 @@ describe('schema keyword capability tables, structured output', () => {
     const wire = wireFor('anthropic-output-format', 'anthropic');
     expect(propertiesOf(((wire.output_config as JsonObject).format as JsonObject).schema)).toEqual({
       n: { type: 'integer', default: 3, description: 'Constraints: minimum 1; maximum 5.' },
-      s: { type: 'string', format: 'hostname', description: 'Constraints: maxLength 4.' }
+      s: { type: 'string', format: 'hostname', description: 'Constraints: maxLength 4.' },
+      p: { type: 'string', pattern: '^\\d+$' }
     });
   });
 
@@ -375,14 +382,16 @@ describe('schema keyword capability tables, structured output', () => {
       type: 'object',
       properties: {
         n: { type: 'integer', minimum: 1, maximum: 5, default: 3 },
-        s: { type: 'string', maxLength: 4, format: 'hostname' }
+        s: { type: 'string', maxLength: 4, format: 'hostname' },
+        p: { type: 'string', pattern: '^\\d+$' }
       },
-      required: ['n', 's']
+      required: ['n', 's', 'p']
     });
   });
 
   test('a folded constraint still rejects an out-of-range reply through the caller validator', () => {
-    expect(schema.validate({ n: 9, s: 'ok' })).toFailWith(/maximum/);
+    expect(schema.validate({ n: 9, s: 'ok', p: '1' })).toFailWith(/maximum/);
+    expect(schema.validate({ n: 3, s: 'ok', p: 'x' })).toFailWith(/pattern/);
   });
 });
 

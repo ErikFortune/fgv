@@ -24,6 +24,7 @@ import {
   Converter,
   Converters,
   Result,
+  Validator,
   Validators,
   captureResult,
   fail,
@@ -34,7 +35,7 @@ import { JsonObject, JsonValue, isJsonObject } from '../json';
 import {
   NumberConstraints,
   SchemaAnnotations,
-  StringConstraints,
+  StringLengthConstraints,
   annotationFields,
   annotationsConverter,
   numberConstraintsConverter,
@@ -58,11 +59,13 @@ import {
 import {
   schemaAnnotationKeywords,
   schemaLengthConstraintKeywords,
-  schemaNumberConstraintKeywords
+  schemaNumberConstraintKeywords,
+  schemaPatternConstraintKeywords
 } from './keywordAdaptation';
 import { INumberSchemaOptions } from './options';
 import {
   ValidatedSchemaOptions,
+  ValidatedStringOptions,
   integerOptions,
   numberOptions,
   schemaOptions,
@@ -81,9 +84,16 @@ import { ILlmProperties, ISchemaValidator } from './types';
  * emitted and never enforced. A keyword on a node kind it does not apply to (`minimum` on a string)
  * constrains nothing under JSON Schema and is not emitted.
  *
- * A scalar `const` is carried as a single-value enum of its type, and enforced. `pattern` is refused
- * because enforcing it would run a server-supplied regular expression on a backtracking engine
- * against model-supplied strings (see `docs/FUTURE.md`).
+ * A scalar `const` is carried as a single-value enum of its type, and enforced.
+ *
+ * `pattern` is not in this list, but it is refused **by default** by the same check (see
+ * `_checkForbidden`), because enforcing it means compiling a server-supplied
+ * regular expression and running it in this process against model-supplied strings — on a
+ * backtracking engine, where a pattern such as `(a+)+$` takes exponential time, and in a synchronous
+ * `RegExp.test` that cannot be timed out. This package never compiles one: a caller that supplies a
+ * `patternValidator` (see `IFromJsonOptions`) admits `pattern` on string nodes, and its validator
+ * decides what compiles and how it runs. Without one, the refusal happens before anything reads the
+ * pattern's value.
  *
  * The list is still not complete against the rule above: object-key keywords beside an open object
  * (`patternProperties`, `propertyNames`, …) and array keywords (`minItems`, `prefixItems`,
@@ -97,8 +107,7 @@ const FORBIDDEN_KEYWORDS: readonly string[] = [
   'not',
   'if',
   'then',
-  'else',
-  'pattern'
+  'else'
 ];
 
 /**
@@ -171,6 +180,40 @@ const RECORD_KEY_KEYWORDS: readonly string[] = [
 ];
 
 /**
+ * A compiled pattern: whether a string matches it.
+ * @public
+ */
+export type SchemaPatternPredicate = (value: string) => boolean;
+
+/**
+ * Compiles a server-supplied `pattern` for `fromJson`, or refuses it.
+ *
+ * @remarks
+ * Called once per string node carrying `pattern`, with the source exactly as the schema states it.
+ * A `Failure` refuses the whole schema, with the node's path and the validator's message. On
+ * success, the returned predicate is what the node's validator calls on every string — so it must be
+ * safe to run on any model-supplied string; a backtracking `RegExp` built from the source is
+ * **not**. A predicate that throws, or returns anything but `true`, fails the value.
+ *
+ * The node emits the source unchanged, and provider wires read it as an ECMA-262 pattern, so a
+ * validator built on another engine (RE2, say) should refuse what it would read differently.
+ * @public
+ */
+export type SchemaPatternValidator = (source: string) => Result<SchemaPatternPredicate>;
+
+/**
+ * Options for `fromJson`.
+ * @public
+ */
+export interface IFromJsonOptions {
+  /**
+   * Admits `pattern` on string nodes, compiled by this validator. Without it, `pattern` is refused
+   * wherever it appears, and nothing compiles it.
+   */
+  readonly patternValidator?: SchemaPatternValidator;
+}
+
+/**
  * What a conversion threads through its recursion: where it is, and what `$ref` resolution needs.
  *
  * @remarks
@@ -190,6 +233,22 @@ interface IParseContext {
   readonly depth: number;
   /** Reference expansions and schema nodes built so far by this conversion. */
   readonly budget: { expansions: number; nodes: number };
+  /** Whether `pattern` is admitted, and if so the caller's validator that compiles it. */
+  readonly patternGate: PatternGate;
+}
+
+/**
+ * Answers whether a conversion admits `pattern`: the caller's validator, or the refusal. Called for
+ * every node carrying `pattern`, before anything reads the keyword's value.
+ */
+type PatternGate = () => Result<SchemaPatternValidator>;
+
+/** The gate of a conversion with no `patternValidator`: `pattern` is refused. */
+const _refusePattern: PatternGate = () => fail(`unsupported JSON Schema keyword 'pattern'`);
+
+/** The gate for a conversion: the refusal, or one admitting `pattern` through `patternValidator`. */
+function _patternGate(patternValidator: SchemaPatternValidator | undefined): PatternGate {
+  return patternValidator === undefined ? _refusePattern : () => succeed(patternValidator);
 }
 
 /** A fresh context for converting `root` as a whole document. */
@@ -197,9 +256,10 @@ function _rootContext(
   root: unknown,
   path: string,
   budget: { expansions: number; nodes: number } = { expansions: 0, nodes: 0 },
-  depth: number = 0
+  depth: number = 0,
+  patternGate: PatternGate = _refusePattern
 ): IParseContext {
-  return { path, root, refs: [], rebased: false, depth, budget };
+  return { path, root, refs: [], rebased: false, depth, budget, patternGate };
 }
 
 /** The same context, moved one level down to a child node. */
@@ -243,8 +303,21 @@ const _numberConstraintsField: Converter<NumberConstraints> = numberConstraintsC
  * A string node's `minLength`, `maxLength` and `format`, as `stringConstraintsConverter` reads
  * them; `stringOptions` then requires non-negative integers in order.
  */
-const _stringConstraintsField: Converter<StringConstraints> = stringConstraintsConverter.withFormattedError(
+const _stringConstraintsField: Converter<StringLengthConstraints> = stringConstraintsConverter.withFormattedError(
   (__from, message) => _printable(`${message}`)
+);
+
+/** A string node's `pattern` source, refused when present and not a string. */
+const _patternField: Converter<{ readonly pattern?: string }> = Converters.object<{
+  readonly pattern?: string;
+}>({
+  pattern: Converters.string.optional('failOnError')
+}).withFormattedError(() => "'pattern' must be a string");
+
+/** What a pattern validator returns: a predicate, refused when it is not a function. */
+const _patternPredicate: Validator<SchemaPatternPredicate> = Validators.isA(
+  'function',
+  (from: unknown): from is SchemaPatternPredicate => typeof from === 'function'
 );
 
 /** A scalar an `enum` or `const` may list: a string, number or boolean — or `null`. */
@@ -295,15 +368,16 @@ function _isAnySchema(raw: Record<string, unknown>): boolean {
 
 /**
  * Checks for forbidden keywords in a raw schema object (already validated as non-null object).
- * Returns `succeed(true)` if clean; returns a `Failure` if a forbidden keyword is found.
+ * Returns `succeed(true)` if clean; returns a `Failure` if a forbidden keyword is found. `pattern`
+ * is forbidden unless the conversion's gate admits it, which is decided without reading its value.
  */
-function _checkForbidden(raw: Record<string, unknown>): Result<true> {
+function _checkForbidden(raw: Record<string, unknown>, ctx: IParseContext): Result<true> {
   for (const keyword of FORBIDDEN_KEYWORDS) {
     if (keyword in raw) {
       return fail(`unsupported JSON Schema keyword '${keyword}'`);
     }
   }
-  return succeed(true as const);
+  return 'pattern' in raw ? ctx.patternGate().onSuccess(() => succeed(true as const)) : succeed(true as const);
 }
 
 /** Converts a node's annotations and nullability into `ISchemaOptions` form. */
@@ -399,7 +473,7 @@ function _isNullBranch(member: unknown): boolean {
  */
 function _reshape(
   node: ISchemaValidator<JsonValue>,
-  { path, budget, depth }: IParseContext,
+  { path, budget, depth, patternGate }: IParseContext,
   nullable: boolean,
   annotations: SchemaAnnotations
 ): Result<ISchemaValidator<JsonValue>> {
@@ -417,8 +491,9 @@ function _reshape(
   }
   // The re-emitted form has no references left to resolve, so it is its own document; it still
   // draws on the conversion's node budget and starts at this node's depth, since re-parsing a
-  // subtree is work, and recursion, like any other.
-  return _convertNode(json, _rootContext(json, path, budget, depth));
+  // subtree is work, and recursion, like any other. It keeps the caller's pattern validator, which
+  // compiles the re-emitted source again.
+  return _convertNode(json, _rootContext(json, path, budget, depth, patternGate));
 }
 
 /**
@@ -484,20 +559,48 @@ function _convertNullableUnion(
 // ---------------------------------------------------------------------------
 
 /**
- * String arm: extracts the annotations, `minLength`, `maxLength` and `format`, checks them as the
- * `string` factory does, and delegates to it.
+ * String arm: extracts the annotations, `minLength`, `maxLength`, `pattern` and `format`, checks
+ * them as the `string` factory does, and delegates to it.
+ *
+ * @remarks
+ * A `pattern` reaches this arm only when the conversion's gate admits it (the forbidden-keyword
+ * check refuses it otherwise), and it is compiled only by the caller's validator.
  */
 function _convertString(
   from: unknown,
-  { path }: IParseContext,
+  { path, patternGate }: IParseContext,
   nullable: boolean
 ): Result<ISchemaValidator<JsonValue>> {
   return _annotationsAt(from, path).onSuccess((annotations) =>
     _stringConstraintsField
       .convert(from)
-      .onSuccess((constraints) => stringOptions({ ...constraints, ..._nodeOpts(annotations, nullable) }))
+      .onSuccess((constraints) =>
+        _patternField.convert(from).onSuccess(({ pattern }) => {
+          const opts = { ...constraints, ..._nodeOpts(annotations, nullable) };
+          return pattern === undefined
+            ? stringOptions(opts)
+            : _compilePattern(pattern, patternGate).onSuccess((matches) =>
+                ValidatedStringOptions._createWithMatcher(opts, { source: pattern, matches })
+              );
+        })
+      )
       .withErrorFormat((msg) => `${path}: ${msg}`)
       .onSuccess((opts) => succeed(string(opts) as unknown as ISchemaValidator<JsonValue>))
+  );
+}
+
+/**
+ * Compiles a server-supplied pattern with the caller's validator — the one way a `pattern` from
+ * `fromJson` is ever compiled.
+ */
+function _compilePattern(source: string, patternGate: PatternGate): Result<SchemaPatternPredicate> {
+  return patternGate().onSuccess((patternValidator) =>
+    // The validator is the caller's code; one that throws, or returns something else, refuses the
+    // schema rather than escaping the conversion.
+    captureResult(() => patternValidator(source))
+      .onSuccess((compiled) => compiled)
+      .onSuccess((predicate) => _patternPredicate.validate(predicate))
+      .withErrorFormat((msg) => `pattern ${JSON.stringify(_echo(source))} was refused: ${msg}`)
   );
 }
 
@@ -696,7 +799,9 @@ function _convertEnum(
     return fail(`${path}: '${keyword}' values must all be of one type (strings, numbers or booleans)`);
   }
 
-  const lengthKeyword = schemaLengthConstraintKeywords.find((k) => k in from);
+  const lengthKeyword = [...schemaLengthConstraintKeywords, ...schemaPatternConstraintKeywords].find(
+    (k) => k in from
+  );
   if (lengthKeyword !== undefined) {
     return fail(`${path}: unsupported JSON Schema keyword '${lengthKeyword}' beside '${keyword}'`);
   }
@@ -1179,7 +1284,7 @@ function _convertSchemaObject(
 
   // Forbidden keywords: check before dispatching so inputs with no `type` (e.g. just
   // `{ allOf: [...] }`) get a specific error rather than a generic "no matching converter".
-  const forbidden = _checkForbidden(raw);
+  const forbidden = _checkForbidden(raw, ctx);
   if (forbidden.isFailure()) {
     return fail(`${path}: ${forbidden.message}`);
   }
@@ -1252,16 +1357,23 @@ export const jsonSchemaConverter: Converter<ISchemaValidator<JsonValue>, string>
     from: unknown,
     __self: Converter<ISchemaValidator<JsonValue>, string>,
     context?: string
-  ): Result<ISchemaValidator<JsonValue>> => {
-    const path = context ?? '#';
-    // A backstop: the conversion returns its failures as Results and bounds its own recursion, so
-    // nothing in it is expected to throw — but it reads a caller-supplied value, which may carry
-    // accessors, and must not let one escape as an exception.
-    return captureResult(() => _convertNode(from, _rootContext(from, path)))
-      .withErrorFormat((msg) => `${path}: ${_printable(msg)}`)
-      .onSuccess((converted) => converted);
-  }
+  ): Result<ISchemaValidator<JsonValue>> => _convertDocument(from, context ?? '#', undefined)
 );
+
+/** Converts a whole document, with or without a pattern validator. */
+function _convertDocument(
+  from: unknown,
+  path: string,
+  patternValidator: SchemaPatternValidator | undefined
+): Result<ISchemaValidator<JsonValue>> {
+  // A backstop: the conversion returns its failures as Results and bounds its own recursion, so
+  // nothing in it is expected to throw — but it reads a caller-supplied value, which may carry
+  // accessors, and must not let one escape as an exception.
+  const ctx = _rootContext(from, path, undefined, 0, _patternGate(patternValidator));
+  return captureResult(() => _convertNode(from, ctx))
+    .withErrorFormat((msg) => `${path}: ${_printable(msg)}`)
+    .onSuccess((converted) => converted);
+}
 
 /**
  * Parses a raw JSON Schema object (e.g. one discovered at an MCP tool boundary) into a typed schema
@@ -1301,10 +1413,18 @@ export const jsonSchemaConverter: Converter<ISchemaValidator<JsonValue>, string>
  * nothing but annotations — `{}`, pydantic's `Any` — becomes an `anyValue` node, which accepts any
  * JSON value.
  *
+ * `pattern` is refused unless `options.patternValidator` is supplied, and this function never
+ * compiles one itself: with a validator, a string node's `pattern` is compiled by it, enforced by
+ * the predicate it returns, and emitted as the original source. A validator failure refuses the
+ * schema with the node's path. `pattern` beside an `enum` or `const` is refused, and on a node that
+ * is not a string it constrains nothing and is not emitted (nor compiled).
+ * `jsonSchemaConverter` takes no options, so it always refuses `pattern`.
+ *
  * @param json - The raw JSON Schema object to parse.
+ * @param options - How to treat keywords that are refused by default; see `IFromJsonOptions`.
  * @returns `Success` with the parsed schema, or `Failure` describing the first out-of-subset feature.
  * @public
  */
-export function fromJson(json: JsonObject): Result<ISchemaValidator<JsonValue>> {
-  return jsonSchemaConverter.convert(json);
+export function fromJson(json: JsonObject, options?: IFromJsonOptions): Result<ISchemaValidator<JsonValue>> {
+  return _convertDocument(json, '#', options?.patternValidator);
 }
