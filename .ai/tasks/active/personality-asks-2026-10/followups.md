@@ -280,7 +280,8 @@ to. Design it once, before any of them ships.
 
 ### D7. A `handleFor` mnemonic cannot be linked from — from `memory-search-scope` (#TBD)
 
-- **What:** since D3, items carry `scope`, and the descriptions tell the model to copy the `handle` (as `id`) plus `scope` into a link target or `memory_context` seed. That works only when the handle is the id. With a host `handleFor` mnemonic, the handle is not a `MemoryId`, and no tool resolves a handle back, so a model cannot author a correct link or seed from a result at all. This predates D3.
+- **What:** since D3, items carry `scope`, and the descriptions tell the model to copy the `handle` (as `id`) plus `scope` into a link target or `memory_context` seed. That works only when the handle is the id. With a host `handleFor` mnemonic, the handle is not a `MemoryId`, and no tool resolves a handle back, so a model cannot author a correct link or seed from a result at all.
+- **The D3 descriptions make this worse, not only pre-existing.** Before D3, nothing told the model to put a handle in `id`. Now the descriptions actively instruct it to, so under `handleFor` a compliant model writes a dangling edge. A mnemonic outside the portable filename set (such as the testbed's `@doc-1`) is rejected by the `MemoryId` converter, so the write fails. A portable-set mnemonic (such as `dark-mode-pref`) is accepted and persisted as an edge to a record that does not exist. The deep review of `memory-search-scope` raised this as a P2. It is held for a user decision, and the descriptions are unchanged pending that decision.
 - **Possible fix:** an always-present, tool-layer-owned `id` on each item (as `scope` is), or a lookup that resolves a handle.
 - **Route:** an agent-facing format decision, like D3, so it goes to the user. In-repo, `samples/testbed`'s `memoryToolsGate` wires `handleFor` beside `memory_write`, but its mocked write authors no links.
 

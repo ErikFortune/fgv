@@ -38,6 +38,8 @@ import {
   ScoreUnionMergeStrategy,
   StructuredFilterRetriever,
   TagRetriever,
+  TemporalIdentityCodec,
+  TemporalVersionedPolicy,
   createMemoryTools,
   envelopeConverter
 } from '../../../index';
@@ -1185,10 +1187,18 @@ describe('result items carry their scope', () => {
     readonly results: ReadonlyArray<IMemoryToolResultItem>;
   }
 
-  /** An `IMemoryStore` double whose identity resolution always fails, for the scope-failure paths. */
-  function unresolvableStore(record?: IMemoryRecord<unknown>): IMemoryStore {
+  /**
+   * An `IMemoryStore` double whose identity resolution always fails, for the
+   * scope-failure paths: by returning a `Failure`, or by throwing.
+   */
+  function unresolvableStore(record?: IMemoryRecord<unknown>, mode: 'fail' | 'throw' = 'fail'): IMemoryStore {
     return {
-      resolveIdentity: () => fail('no codec for this kind'),
+      resolveIdentity: () => {
+        if (mode === 'throw') {
+          throw new Error('resolver blew up');
+        }
+        return fail('no codec for this kind');
+      },
       get: async () => succeed(record),
       getById: async () => fail('unused'),
       list: async () => succeed([]),
@@ -1433,6 +1443,98 @@ describe('result items carry their scope', () => {
       expect(await tool.execute({ kind: 'knowledge', entityId: 'doc-1', body: 'x' })).toFailWith(
         /memory_write: cannot resolve the stored record's scope: no codec/
       );
+    });
+
+    test('a store whose resolver throws yields a failure, not an escaped throw (read and write)', async () => {
+      const read = toolByName(
+        createMemoryTools({
+          store: unresolvableStore(makeEntry({ id: 'doc-1' }).record, 'throw'),
+          retriever: makeRetriever([]),
+          registry: registryWith([{ kind: knowledgeKind }]),
+          tools: ['memory_read']
+        }),
+        'memory_read'
+      );
+      expect(await read.execute({ kind: 'knowledge', entityId: 'doc-1' })).toFailWith(
+        /memory_read: cannot resolve the scope of record 'doc-1'.*resolver blew up/
+      );
+      const write = toolByName(
+        createMemoryTools({
+          store: unresolvableStore(undefined, 'throw'),
+          retriever: makeRetriever([]),
+          registry: registryWith([{ kind: knowledgeKind }]),
+          codecs,
+          tools: ['memory_write']
+        }),
+        'memory_write'
+      );
+      expect(await write.execute({ kind: 'knowledge', entityId: 'doc-1', body: 'x' })).toFailWith(
+        /memory_write: cannot resolve the stored record's scope: resolver blew up/
+      );
+    });
+  });
+
+  test("a versioned (temporal) kind's item carries the entity's scope, beside the version-stem handle", async () => {
+    const factKind: Kind = 'fact' as Kind;
+    const store = FileTreeMemoryStore.create({
+      root: mutableRoot(),
+      registry: registryWith([{ kind: factKind }]),
+      codecs: new Map<Kind, IIdentityCodec>([[factKind, TemporalIdentityCodec.create('facts').orThrow()]]),
+      writePolicies: new Map<Kind, IWritePolicy>([[factKind, TemporalVersionedPolicy.create().orThrow()]])
+    }).orThrow();
+    const record: IMemoryRecord<unknown> = {
+      envelope: envelopeConverter
+        .convert({
+          id: 'fact-1',
+          entityId: 'fact-1',
+          kind: 'fact',
+          tags: [],
+          links: [],
+          created: 0,
+          updated: 0,
+          seq: 0,
+          contentHash: '',
+          provenance: { source: 'agent' },
+          temporal: { valid_at: 1 }
+        })
+        .orThrow(),
+      body: 'a fact'
+    };
+    (await store.put(record)).orThrow();
+    const tool = toolByName(
+      createMemoryTools({
+        store,
+        retriever: makeRetriever([]),
+        registry: registryWith([{ kind: factKind }]),
+        tools: ['memory_read']
+      }),
+      'memory_read'
+    );
+    expect(await tool.execute({ kind: 'fact', entityId: 'fact-1' })).toSucceedAndSatisfy((value) => {
+      const item = (value as { found: boolean; item: IMemoryToolResultItem }).item;
+      // The handle is the version stem; the scope is the entity's directory, shared by every version.
+      expect(item.handle).toMatch(/^fact-1-v\d+$/);
+      expect(item.scope).toBe('facts/entities/fact-1');
+    });
+  });
+
+  // Pins today's behaviour: `scope` is present alongside a host handle, and the
+  // handle is the mnemonic, not the id. If items gain a tool-owned `id`, add it
+  // to `expected` here.
+  test('scope is present alongside a handleFor mnemonic', async () => {
+    const tool = toolByName(
+      createMemoryTools({
+        store: makeStore(),
+        retriever: makeRetriever([{ id: 'doc-1', tags: ['topic'] }]),
+        registry: registryWith([{ kind: knowledgeKind }]),
+        handleFor: (r) => `@${r.envelope.id}`
+      }),
+      'memory_search'
+    );
+    expect(await tool.execute({ tag: 'topic' })).toSucceedAndSatisfy((value) => {
+      const item = (value as IItemsOut).results[0];
+      const expected = { handle: '@doc-1', scope: 'knowledge' };
+      expect({ handle: item.handle, scope: item.scope }).toEqual(expected);
     });
   });
 });

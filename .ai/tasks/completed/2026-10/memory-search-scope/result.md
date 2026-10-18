@@ -102,3 +102,28 @@ not by exit code.
 
 The default is kept. The only residual risk is the existing one: the fix is description-level, so a
 model that ignores the description still mislinks. No new unsafe case was found.
+
+## Review round 1
+
+The deep review found no P1s. Applied:
+
+1. **Uncaught store throw.** Both call sites (projection and `memory_write`) now go through a new
+   `scopeOf(ctx, record)`, which wraps `scopedAddressOf` in `captureResult`. A throwing
+   consumer-injected `resolveIdentity` therefore yields a `Failure`. New test: a throwing resolver
+   fails `memory_read` and `memory_write` with the thrown message.
+2. **`memory_write` reports failure after a committed put.** Not restructured. A comment at the call
+   site says the failure follows a committed put and is unreachable with `FileTreeMemoryStore`
+   (`put` encodes through the same codecs). The `IMemoryWriteResult.scope` TSDoc states that a custom
+   store whose resolver disagrees with its own `put` would see a failure reported for a persisted
+   write.
+3. **Tests added.**
+   - (a) A versioned (`TemporalIdentityCodec`) kind's `memory_read` item carries
+     `scope: 'facts/entities/fact-1'` beside a `fact-1-v<n>` handle.
+   - (b) `scope` is present alongside a `handleFor` mnemonic. The test pins `{ handle, scope }`
+     through one `expected` object, so adding an `id` later is a one-line change.
+4. **P2 held.** The descriptions are unchanged. D7 in `followups.md` is reworded: the D3 descriptions
+   now *instruct* the model to put a handle in `id`, so the `handleFor` hazard is worse, not just
+   pre-existing. A non-portable mnemonic (`@doc-1`) is rejected by the `MemoryId` converter. A
+   portable one is persisted as a dangling edge, because link targets are not checked for existence.
+
+Gates for this round are recorded below.

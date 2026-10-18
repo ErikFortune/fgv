@@ -72,6 +72,12 @@ export interface IMemoryWriteResult {
   /**
    * The scope the stored record lives in. Together with {@link IMemoryWriteResult.id | id}
    * it is the record's address — the `{ id, scope }` a later write links to it with.
+   *
+   * @remarks
+   * It is resolved through the store after the put commits. With `FileTreeMemoryStore`
+   * that cannot fail, because `put` encodes through the same codecs. A custom
+   * `IMemoryStore` whose `resolveIdentity` disagrees with its own `put` would see
+   * `memory_write` report a failure for a write that was in fact persisted.
    */
   readonly scope: MemoryScopeKey;
   /** The domain {@link EntityId} the write targeted. */
@@ -445,6 +451,18 @@ function projectFields(
 }
 
 /**
+ * Resolve a loaded record's scope through the store. The store is
+ * consumer-injected, so a throwing `resolveIdentity` is captured into a
+ * `Failure` (as `scopedAddressOf` asks of its callers) rather than escaping the
+ * tool's Result chain.
+ */
+function scopeOf(ctx: IToolContext, record: IMemoryRecord<unknown>): Result<MemoryScopeKey> {
+  return captureResult(() => scopedAddressOf(record, ctx.store)).onSuccess((address) =>
+    address.onSuccess(({ scope }) => succeed(scope))
+  );
+}
+
+/**
  * Project a record into an agent-visible result item: the host or default
  * projection, plus the record's `scope`. The scope is the record's address as
  * the store's codecs derive it, and it is spread LAST so a host projection can
@@ -457,12 +475,12 @@ function projectItem(
   record: IMemoryRecord<unknown>,
   detail: MemoryDetailTier
 ): Result<IMemoryToolResultItem> {
-  return scopedAddressOf(record, ctx.store)
+  return scopeOf(ctx, record)
     .withErrorFormat(
       (msg) =>
         `cannot resolve the scope of record '${record.envelope.id}' (kind '${record.envelope.kind}'): ${msg}`
     )
-    .onSuccess(({ scope }) => succeed({ ...projectFields(ctx, record, detail), scope }));
+    .onSuccess((scope) => succeed({ ...projectFields(ctx, record, detail), scope }));
 }
 
 /** Project every record into a result item; fails if any record's scope cannot be resolved. */
@@ -602,9 +620,15 @@ function buildWriteTool(ctx: IToolContext): AiAssist.IAiClientTool {
             (await ctx.store.put(record)).onSuccess((persisted) =>
               // The persisted record can be a different entity (content-scope
               // dedup), so its address is resolved from the record, not the request.
-              scopedAddressOf(persisted, ctx.store)
+              //
+              // This runs AFTER the put has committed, so a failure here reports a
+              // write that did persist. With `FileTreeMemoryStore` it is unreachable:
+              // `put` encodes through the same codecs `resolveIdentity` uses, so a
+              // record it just stored always resolves. Only a custom store whose
+              // resolver disagrees with its own `put` can reach it.
+              scopeOf(ctx, persisted)
                 .withErrorFormat((msg) => `memory_write: cannot resolve the stored record's scope: ${msg}`)
-                .onSuccess(({ scope }) =>
+                .onSuccess((scope) =>
                   succeed<IMemoryWriteResult>({
                     outcome: writeOutcome(before, persisted, entityId),
                     id: persisted.envelope.id,
