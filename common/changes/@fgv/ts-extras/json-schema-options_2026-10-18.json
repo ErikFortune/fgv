@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "Tests updated for JsonSchema validated options.",
+      "type": "none",
+      "packageName": "@fgv/ts-extras"
+    }
+  ],
+  "packageName": "@fgv/ts-extras",
+  "email": "ErikFortune@outlook.com"
+}
