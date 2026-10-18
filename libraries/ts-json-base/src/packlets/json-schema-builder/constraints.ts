@@ -217,34 +217,54 @@ function _deepFreeze(value: JsonValue): JsonValue {
   return value;
 }
 
+/** The keys every option set may carry beside its constraints, each of its declared type. */
+interface ITypedKeys {
+  readonly description?: string;
+  readonly title?: string;
+  readonly nullable?: boolean;
+  readonly strict?: boolean;
+  readonly format?: string;
+  readonly additionalProperties?: boolean;
+  readonly default?: JsonValue;
+  readonly examples?: ReadonlyArray<JsonValue>;
+}
+
 /**
- * Checks the annotations every node accepts: `default` and each member of `examples` must be JSON
- * values, and `examples` an array. They are not checked against the node.
+ * Reads {@link ITypedKeys}, refusing a present key of the wrong type. Declared with `var`-free
+ * hoisting in mind: it is referenced only from functions, after module evaluation.
+ */
+const _typedKeysConverter: Converter<ITypedKeys> = Converters.object<ITypedKeys>({
+  description: Converters.string.optional('failOnError'),
+  title: Converters.string.optional('failOnError'),
+  nullable: Converters.boolean.optional('failOnError'),
+  strict: Converters.boolean.optional('failOnError'),
+  format: Converters.string.optional('failOnError'),
+  additionalProperties: Converters.boolean.optional('failOnError'),
+  default: Converters.generic((from: unknown) => jsonValue.convert(from)).optional('failOnError'),
+  examples: Converters.arrayOf(Converters.generic((from: unknown) => jsonValue.convert(from))).optional(
+    'failOnError'
+  )
+});
+
+/**
+ * Checks the keys every node accepts, as every validated-options path does: `description`, `title`
+ * and `format` strings; `nullable`, `strict` and `additionalProperties` booleans; `default` and each
+ * member of `examples` JSON values, and `examples` an array. The annotations are not checked against
+ * the node.
  * @param opts - The options to check.
  * @returns The options with `default` and `examples` replaced by fresh, deeply frozen copies, so
  * the node never aliases the caller's objects; or a `Failure` naming the keyword.
  * @internal
  */
 export function checkAnnotations<T extends ISchemaOptions>(opts: T): Result<T> {
-  const defaultResult: Result<JsonValue | undefined> =
-    opts.default === undefined
-      ? succeed(undefined)
-      : annotationJsonValue.convert(opts.default).withErrorFormat((msg) => `default: ${msg}`);
-  return defaultResult.onSuccess((copiedDefault) =>
-    (opts.examples === undefined
-      ? succeed(undefined)
-      : Converters.arrayOf(annotationJsonValue)
-          .convert(opts.examples)
-          .withErrorFormat((msg) => `examples: ${msg}`)
-    ).onSuccess((copiedExamples) =>
-      succeed({
-        ...opts,
-        ...(copiedDefault !== undefined && { default: _deepFreeze(copiedDefault) }),
-        ...(copiedExamples !== undefined && {
-          examples: Object.freeze(copiedExamples.map((example) => _deepFreeze(example)))
-        })
+  return _typedKeysConverter.convert(opts).onSuccess((typed) =>
+    succeed({
+      ...opts,
+      ...(typed.default !== undefined && { default: _deepFreeze(typed.default) }),
+      ...(typed.examples !== undefined && {
+        examples: Object.freeze(typed.examples.map((example) => _deepFreeze(example)))
       })
-    )
+    })
   );
 }
 
@@ -549,48 +569,59 @@ export function plainKeysOf(from: unknown): IPlainKeys {
 }
 
 /**
- * Re-checks a value claiming to be validated `number` / `integer` options, from its keys up.
+ * Re-checks a value claiming to be validated `number` / `integer` options: its range keywords read
+ * as numbers, then exactly the check `numberOptions` / `integerOptions` runs.
  * @internal
  */
 export function revalidateNumberOptions(
   type: 'number' | 'integer',
   from: unknown
 ): Result<INumberSchemaOptions> {
-  return annotationsConverter
+  return _typedKeysConverter
     .convert(from)
-    .onSuccess((annotations) =>
+    .onSuccess((typed) =>
       numberConstraintsConverter
         .convert(from)
-        .onSuccess((constraints) =>
-          checkNumberOptions(type, { ...plainKeysOf(from), ...constraints, ...annotations })
-        )
+        .onSuccess((constraints) => checkNumberOptions(type, { ...typed, ...constraints }))
     );
 }
 
 /**
- * Re-checks a value claiming to be validated `string` options, from its keys up.
+ * Re-checks a value claiming to be validated `string` options: its lengths read as numbers, then
+ * exactly the check `stringOptions` runs.
  * @internal
  */
 export function revalidateStringOptions(from: unknown): Result<IStringSchemaOptions> {
-  return annotationsConverter
+  return _typedKeysConverter
     .convert(from)
-    .onSuccess((annotations) =>
+    .onSuccess((typed) =>
       stringConstraintsConverter
         .convert(from)
-        .onSuccess((constraints) =>
-          checkStringOptions({ ...plainKeysOf(from), ...constraints, ...annotations })
-        )
+        .onSuccess((constraints) => checkStringOptions({ ...typed, ...constraints }))
     );
 }
 
 /**
- * Re-checks a value claiming to be validated schema options, from its keys up.
+ * Re-checks a value claiming to be validated schema options: exactly the check `schemaOptions`
+ * runs.
  * @internal
  */
 export function revalidateSchemaOptions(from: unknown): Result<IObjectSchemaOptions> {
-  return annotationsConverter
+  return _typedKeysConverter
     .convert(from)
-    .onSuccess((annotations) =>
-      checkAnnotations<IObjectSchemaOptions>({ ...plainKeysOf(from), ...annotations })
-    );
+    .onSuccess((typed) => checkAnnotations<IObjectSchemaOptions>(typed));
 }
+
+/**
+ * The cross-copy marker every validated-options instance carries as a non-enumerable own property,
+ * holding its `kind`. Registered with `Symbol.for`, so every installed copy of the package derives
+ * the same symbol and nothing needs to export it.
+ *
+ * @remarks
+ * `instanceof` and private brands fail across two installed copies of this package, so a factory
+ * also recognises an instance by this symbol and then **re-validates** its options rather than
+ * trusting them. The marker is a runtime convenience for that case, **not a security boundary**:
+ * anyone can set it, which is why nothing marked is used unchecked.
+ * @internal
+ */
+export const VALIDATED_OPTIONS_MARKER: unique symbol = Symbol.for('@fgv/ts-json-base.validated-options');

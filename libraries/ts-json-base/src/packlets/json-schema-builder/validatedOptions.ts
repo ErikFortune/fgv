@@ -32,48 +32,40 @@
  */
 
 import { Result, succeed } from '@fgv/ts-utils';
-import { checkAnnotations, checkNumberOptions, checkStringOptions } from './constraints';
+import {
+  VALIDATED_OPTIONS_MARKER,
+  checkAnnotations,
+  checkNumberOptions,
+  checkStringOptions
+} from './constraints';
 import { INumberSchemaOptions, IObjectSchemaOptions, IStringSchemaOptions } from './options';
 
-/** Proves a construction came from this module. Never exported. */
+/**
+ * Proves a construction came from this module. Never exported; the constructors type it as a plain
+ * `symbol`, so no unexported type reaches the declarations.
+ */
 const CONSTRUCTION_TOKEN: unique symbol = Symbol('validated-options-construction');
 
-/** The type of {@link CONSTRUCTION_TOKEN}, which nothing outside this module can produce. */
-type ConstructionToken = typeof CONSTRUCTION_TOKEN;
-
-/**
- * The cross-copy marker every validated-options instance carries as a non-enumerable own property,
- * holding its `kind`.
- *
- * @remarks
- * `instanceof` fails across two installed copies of this package, so a factory also recognises an
- * instance by this registered symbol and then **re-validates** its options rather than trusting
- * them. The marker is a runtime convenience for that case, **not a security boundary**: anyone can
- * set it, which is why nothing marked is used unchecked.
- * @internal
- */
-export const VALIDATED_OPTIONS_MARKER: unique symbol = Symbol.for('@fgv/ts-json-base.validated-options');
+/** Whether `value` is an object, the precondition of an ES private brand check. */
+function _isObject(value: unknown): value is object {
+  return typeof value === 'object' && value !== null;
+}
 
 /** Freezes checked options — or, without the token, holds none — and marks the instance. */
-function _hold<T extends object>(
-  instance: object,
-  kind: string,
-  token: ConstructionToken,
-  checked: T
-): Readonly<T> {
+function _hold<T extends object>(instance: object, kind: string, token: symbol, checked: T): Readonly<T> {
   Object.defineProperty(instance, VALIDATED_OPTIONS_MARKER, { value: kind, enumerable: false });
   // A construction without the token is a subclass declared outside this module: it gets no options.
   return Object.freeze(token === CONSTRUCTION_TOKEN ? checked : ({} as T));
 }
 
 /**
- * Options whose annotations {@link JsonSchema.schemaOptions | schemaOptions} has checked: `default`
+ * Options whose annotations `schemaOptions` has checked: `default`
  * and every member of `examples` are JSON values.
  *
  * @remarks
  * Accepted by every factory that takes plain options (`boolean`, `enumOf`, `array`, `object`,
  * `record`, `anyValue`). Constructed only by `schemaOptions`. The options are held privately as a
- * frozen copy, read through {@link JsonSchema.ValidatedSchemaOptions.options | options}; spreading an
+ * frozen copy, read through `options`; spreading an
  * instance copies only its `kind`, which no factory accepts.
  * @public
  */
@@ -82,7 +74,7 @@ export class ValidatedSchemaOptions<T extends IObjectSchemaOptions = IObjectSche
   public readonly kind: 'validated-schema-options' = 'validated-schema-options';
   readonly #options: Readonly<T>;
 
-  private constructor(token: ConstructionToken, checked: T) {
+  private constructor(token: symbol, checked: T) {
     this.#options = _hold(this, this.kind, token, checked);
   }
 
@@ -92,7 +84,17 @@ export class ValidatedSchemaOptions<T extends IObjectSchemaOptions = IObjectSche
   }
 
   /**
-   * Checks the annotations. Called by {@link JsonSchema.schemaOptions | schemaOptions}.
+   * The options of a genuine instance — checked by an ES private brand, which neither a substituted
+   * prototype nor a `Proxy` passes, and read from the private field rather than the getter — or
+   * `undefined` for anything else.
+   * @internal
+   */
+  public static _read(value: unknown): Readonly<IObjectSchemaOptions> | undefined {
+    return _isObject(value) && #options in value ? (value as ValidatedSchemaOptions).#options : undefined;
+  }
+
+  /**
+   * Checks the annotations. Called by `schemaOptions`.
    * @internal
    */
   public static _create<T extends IObjectSchemaOptions>(opts: T): Result<ValidatedSchemaOptions<T>> {
@@ -103,15 +105,15 @@ export class ValidatedSchemaOptions<T extends IObjectSchemaOptions = IObjectSche
 }
 
 /**
- * Options that {@link JsonSchema.numberOptions | numberOptions} or
- * {@link JsonSchema.integerOptions | integerOptions} has found coherent, which the `number`
+ * Options that `numberOptions` or
+ * `integerOptions` has found coherent, which the `number`
  * factory accepts.
  *
  * @remarks
- * {@link JsonSchema.ValidatedIntegerOptions} extends this class, so integer-validated options are
+ * `ValidatedIntegerOptions` extends this class, so integer-validated options are
  * also number-validated: a range holding an integer holds a number. The converse does not hold, so
  * these are not accepted by the `integer` factory. The options are held privately as a frozen copy,
- * read through {@link JsonSchema.ValidatedNumberOptions.options | options}.
+ * read through `options`.
  * @public
  */
 export class ValidatedNumberOptions<T extends INumberSchemaOptions = INumberSchemaOptions> {
@@ -123,7 +125,7 @@ export class ValidatedNumberOptions<T extends INumberSchemaOptions = INumberSche
    * Reachable only with this module's construction token; see `numberOptions`.
    * @internal
    */
-  protected constructor(token: ConstructionToken, checked: T) {
+  protected constructor(token: symbol, checked: T) {
     this.#options = _hold(this, this.kind, token, checked);
   }
 
@@ -133,7 +135,17 @@ export class ValidatedNumberOptions<T extends INumberSchemaOptions = INumberSche
   }
 
   /**
-   * Checks number options. Called by {@link JsonSchema.numberOptions | numberOptions}.
+   * The options of a genuine instance (integer-validated ones included) — checked by an ES private
+   * brand, which neither a substituted prototype nor a `Proxy` passes, and read from the private
+   * field rather than the getter — or `undefined` for anything else.
+   * @internal
+   */
+  public static _read(value: unknown): Readonly<INumberSchemaOptions> | undefined {
+    return _isObject(value) && #options in value ? (value as ValidatedNumberOptions).#options : undefined;
+  }
+
+  /**
+   * Checks number options. Called by `numberOptions`.
    * @internal
    */
   public static _create<T extends INumberSchemaOptions>(opts: T): Result<ValidatedNumberOptions<T>> {
@@ -144,7 +156,7 @@ export class ValidatedNumberOptions<T extends INumberSchemaOptions = INumberSche
 }
 
 /**
- * Options that {@link JsonSchema.integerOptions | integerOptions} has found coherent for an
+ * Options that `integerOptions` has found coherent for an
  * integer node — in particular, its range holds at least one integer. Accepted by both the
  * `integer` and the `number` factory.
  * @public
@@ -158,7 +170,7 @@ export class ValidatedIntegerOptions<
    */
   readonly #integer: true = true;
 
-  private constructor(token: ConstructionToken, checked: T) {
+  private constructor(token: symbol, checked: T) {
     super(token, checked);
   }
 
@@ -168,7 +180,16 @@ export class ValidatedIntegerOptions<
   }
 
   /**
-   * Checks integer options. Called by {@link JsonSchema.integerOptions | integerOptions}.
+   * The options of a genuine integer-validated instance — its own private brand, then the base
+   * class's private field — or `undefined` for anything else.
+   * @internal
+   */
+  public static _readInteger(value: unknown): Readonly<INumberSchemaOptions> | undefined {
+    return _isObject(value) && #integer in value ? ValidatedNumberOptions._read(value) : undefined;
+  }
+
+  /**
+   * Checks integer options. Called by `integerOptions`.
    * @internal
    */
   public static _createInteger<T extends INumberSchemaOptions>(opts: T): Result<ValidatedIntegerOptions<T>> {
@@ -179,9 +200,9 @@ export class ValidatedIntegerOptions<
 }
 
 /**
- * Options that {@link JsonSchema.stringOptions | stringOptions} has found coherent, which the
+ * Options that `stringOptions` has found coherent, which the
  * `string` factory accepts. The options are held privately as a frozen copy, read through
- * {@link JsonSchema.ValidatedStringOptions.options | options}.
+ * `options`.
  * @public
  */
 export class ValidatedStringOptions<T extends IStringSchemaOptions = IStringSchemaOptions> {
@@ -189,7 +210,7 @@ export class ValidatedStringOptions<T extends IStringSchemaOptions = IStringSche
   public readonly kind: 'validated-string-options' = 'validated-string-options';
   readonly #options: Readonly<T>;
 
-  private constructor(token: ConstructionToken, checked: T) {
+  private constructor(token: symbol, checked: T) {
     this.#options = _hold(this, this.kind, token, checked);
   }
 
@@ -199,7 +220,17 @@ export class ValidatedStringOptions<T extends IStringSchemaOptions = IStringSche
   }
 
   /**
-   * Checks string options. Called by {@link JsonSchema.stringOptions | stringOptions}.
+   * The options of a genuine instance — checked by an ES private brand, which neither a substituted
+   * prototype nor a `Proxy` passes, and read from the private field rather than the getter — or
+   * `undefined` for anything else.
+   * @internal
+   */
+  public static _read(value: unknown): Readonly<IStringSchemaOptions> | undefined {
+    return _isObject(value) && #options in value ? (value as ValidatedStringOptions).#options : undefined;
+  }
+
+  /**
+   * Checks string options. Called by `stringOptions`.
    * @internal
    */
   public static _create<T extends IStringSchemaOptions>(opts: T): Result<ValidatedStringOptions<T>> {
@@ -211,7 +242,7 @@ export class ValidatedStringOptions<T extends IStringSchemaOptions = IStringSche
 
 /**
  * Checks the annotations every node carries and returns them as
- * {@link JsonSchema.ValidatedSchemaOptions | validated options} — the way to give a node a
+ * `validated options` — the way to give a node a
  * `default` or `examples`.
  *
  * @remarks
@@ -236,13 +267,13 @@ export function schemaOptions<T extends IObjectSchemaOptions>(
 
 /**
  * Checks `number` options for coherence and returns them as
- * {@link JsonSchema.ValidatedNumberOptions | validated options} — the only way range keywords reach
+ * `validated options` — the only way range keywords reach
  * the `number` factory.
  *
  * @remarks
  * Refuses a non-finite bound, `minimum` above `maximum`, exclusive bounds leaving no value in
  * range, `multipleOf` not greater than zero, and a `default` or `examples` member that is not JSON.
- * An `integer` node needs {@link JsonSchema.integerOptions | integerOptions}, whose check is
+ * An `integer` node needs `integerOptions`, whose check is
  * stricter; the result of this one is a compile error there.
  * @example
  * ```ts
@@ -260,11 +291,11 @@ export function numberOptions<T extends INumberSchemaOptions>(
 
 /**
  * Checks `integer` options for coherence and returns them as
- * {@link JsonSchema.ValidatedIntegerOptions | validated options} — the only way range keywords
+ * `validated options` — the only way range keywords
  * reach the `integer` factory.
  *
  * @remarks
- * Runs the {@link JsonSchema.numberOptions | numberOptions} checks, except that the range must hold
+ * Runs the `numberOptions` checks, except that the range must hold
  * an integer rather than merely a number: `exclusiveMinimum: 0, exclusiveMaximum: 1` is refused.
  * The result is also accepted by the `number` factory.
  * @example
@@ -283,7 +314,7 @@ export function integerOptions<T extends INumberSchemaOptions>(
 
 /**
  * Checks `string` options for coherence and returns them as
- * {@link JsonSchema.ValidatedStringOptions | validated options} — the only way length keywords
+ * `validated options` — the only way length keywords
  * reach the `string` factory.
  *
  * @remarks

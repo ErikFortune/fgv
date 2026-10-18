@@ -157,3 +157,26 @@ Because the property is non-enumerable, a spread does not copy it.
 
 **Deep freeze:** `checkAnnotations` now deep-freezes its copies of `default` and `examples`, so
 `.options` is frozen all the way down.
+
+## Review round 3
+
+- **Own-instance recognition is a private brand check, not `instanceof`.** Each class has an
+  `@internal` static `_read(value)` (`_readInteger` on the integer subclass), which does
+  `#options in value` (`#integer in value`, then the base `_read`) and returns `value.#options`
+  directly, never through the public getter. A substituted prototype has no private field. A
+  `Proxy` does not forward private fields to its target. Both fail the brand check.
+  `instanceof` survives only to *select re-validation* (`_claimsValidated`), where a claim is never
+  trusted.
+- **No unexported type in the declarations.** The constructors take `token: symbol`; the token is a
+  module-private value. `VALIDATED_OPTIONS_MARKER` moved to `constraints.ts`, which is not
+  barrel-exported (`Symbol.for` makes exporting it unnecessary).
+- **One check for all validated paths.** `checkAnnotations` (so `checkNumberOptions` and
+  `checkStringOptions` too) reads every non-constraint key through one typed converter, failing a
+  present key of the wrong type. The `revalidate*` functions now run that converter and then the
+  same `check*`, so `*Options()` and cross-copy re-validation apply identical checks. Plain options
+  keep their lenient read (wrong-typed plain keys ignored), because that path never claims
+  validation.
+- **TSDoc links.** The `{@link JsonSchema.…}` references this stream added were all
+  `ae-unresolved-link` (API Extractor cannot resolve into the namespace). They are now code spans,
+  so `api.md` carries exactly the base's `ae-*` set (2 `ae-forgotten-export` and
+  35 `ae-unresolved-inheritdoc-reference`, all pre-existing).

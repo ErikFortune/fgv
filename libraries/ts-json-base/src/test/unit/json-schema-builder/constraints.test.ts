@@ -800,6 +800,64 @@ describe('JsonSchema constraints — float tolerance, validated options, copies,
     });
   });
 
+  describe('own-instance forgeries are re-validated, never trusted', () => {
+    /** The validator and the wire agree, and the forged incoherent range is not applied. */
+    function expectUnforged(schema: JsonSchema.ISchemaValidator<unknown>): void {
+      expect(schema.toJson()).toEqual({ type: 'number' });
+      expect(schema.validate(3)).toSucceedWith(3);
+      expect(JsonSchema.fromJson(schema.toJson())).toSucceedAndSatisfy((parsed) => {
+        expect(parsed.toJson()).toEqual(schema.toJson());
+      });
+    }
+
+    test('a substituted prototype with an own options property', () => {
+      const forged: unknown = Object.setPrototypeOf(
+        { options: { minimum: 5, maximum: 1 } },
+        JsonSchema.ValidatedNumberOptions.prototype
+      );
+      expect(forged).toBeInstanceOf(JsonSchema.ValidatedNumberOptions);
+      expectUnforged(JsonSchema.number(forged as JsonSchema.ValidatedNumberOptions));
+    });
+
+    test('a Proxy over a real instance that answers options itself', () => {
+      const real = JsonSchema.numberOptions({ minimum: 0 }).shouldNotFail('proxy target');
+      const forged = new Proxy(real, {
+        get: (target, key, receiver): unknown =>
+          key === 'options' ? { minimum: 5, maximum: 1 } : Reflect.get(target, key, receiver)
+      });
+      expect(forged).toBeInstanceOf(JsonSchema.ValidatedNumberOptions);
+      expectUnforged(JsonSchema.number(forged));
+      // The same holds on the integer path, whose brand is checked the same way.
+      const integerForged = new Proxy(JsonSchema.integerOptions({ minimum: 0 }).shouldNotFail('int target'), {
+        get: (target, key, receiver): unknown =>
+          key === 'options' ? { minimum: 5, maximum: 1 } : Reflect.get(target, key, receiver)
+      });
+      expect(JsonSchema.integer(integerForged).toJson()).toEqual({ type: 'integer' });
+    });
+
+    test('a Proxy answering coherent options is re-validated and then used', () => {
+      const real = JsonSchema.numberOptions({}).shouldNotFail('proxy target');
+      const proxied = new Proxy(real, {
+        get: (target, key, receiver): unknown =>
+          key === 'options' ? { minimum: 2 } : Reflect.get(target, key, receiver)
+      });
+      const schema = JsonSchema.number(proxied);
+      expect(schema.toJson()).toEqual({ type: 'number', minimum: 2 });
+      expect(schema.validate(1)).toFailWith(/minimum/);
+    });
+  });
+
+  test('every validated-options path types the plain keys identically', () => {
+    expect(JsonSchema.schemaOptions({ nullable: 'yes' as never })).toFailWith(/^nullable: /);
+    expect(JsonSchema.schemaOptions({ description: 5 as never })).toFailWith(/^description: /);
+    expect(JsonSchema.schemaOptions({ additionalProperties: 1 as never })).toFailWith(
+      /^additionalProperties: /
+    );
+    expect(JsonSchema.numberOptions({ strict: 'no' as never })).toFailWith(/^strict: /);
+    expect(JsonSchema.stringOptions({ format: 7 as never })).toFailWith(/^format: /);
+    expect(JsonSchema.integerOptions({ title: [] as never })).toFailWith(/^title: /);
+  });
+
   test('validated default and examples are deeply frozen', () => {
     const v = JsonSchema.schemaOptions({ default: { a: [1] }, examples: [{ b: 2 }] }).shouldNotFail('frozen');
     expect(Object.isFrozen(v.options.default)).toBe(true);

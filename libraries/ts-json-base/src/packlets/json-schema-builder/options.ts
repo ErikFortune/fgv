@@ -33,10 +33,10 @@ import { schemaLengthConstraintKeywords, schemaNumberConstraintKeywords } from '
  * wire states but the validator does not know about would break the rule that what the validator
  * accepts is what the wire schema states. An incoherent set — an annotation that is not JSON, or a
  * constraint that leaves no value accepted — is refused before any node exists: the factories
- * accept unchecked only the options that cannot be wrong ({@link JsonSchema.PlainSchemaOptions}),
+ * accept unchecked only the options that cannot be wrong (`PlainSchemaOptions`),
  * and everything else arrives as validated options, made by
- * {@link JsonSchema.schemaOptions | schemaOptions}, {@link JsonSchema.numberOptions | numberOptions},
- * {@link JsonSchema.integerOptions | integerOptions} or {@link JsonSchema.stringOptions | stringOptions},
+ * `schemaOptions`, `numberOptions`,
+ * `integerOptions` or `stringOptions`,
  * each of which returns a `Result`. A factory therefore never fails; `fromJson` reports the same
  * conditions as a `Failure` naming the path.
  * @public
@@ -123,7 +123,7 @@ export interface ISchemaOptions {
  * @remarks
  * The range keywords are **validating**: the derived validator enforces them, with a failure that
  * names the keyword and the bound, and `toJson()` emits them. They reach a factory only through
- * {@link JsonSchema.numberOptions | numberOptions} or {@link JsonSchema.integerOptions | integerOptions},
+ * `numberOptions` or `integerOptions`,
  * which refuse a non-finite bound, `minimum` greater than `maximum`, an exclusive bound that leaves
  * no value (for `integer`, no integer) in range, and a `multipleOf` that is not greater than zero.
  * @public
@@ -175,7 +175,7 @@ export interface INumberSchemaOptions extends ISchemaOptions {
  *
  * @remarks
  * `minLength` and `maxLength` are **validating**; `format` is an **annotation**. The lengths reach
- * the factory only through {@link JsonSchema.stringOptions | stringOptions}, which refuses a length
+ * the factory only through `stringOptions`, which refuses a length
  * that is not a non-negative integer, and `minLength` greater than `maxLength`.
  * @public
  */
@@ -254,7 +254,7 @@ export type IAnySchemaOptions = Omit<ISchemaOptions, 'nullable'>;
  * @remarks
  * A factory never fails, so it accepts unchecked only what needs no check. `default` and
  * `examples` must be JSON values, which the type cannot fully guarantee (`NaN` is a `number`), so
- * they are declared `never` here and arrive through {@link JsonSchema.schemaOptions | schemaOptions}
+ * they are declared `never` here and arrive through `schemaOptions`
  * instead, as validated options. `kind` is declared `never` so that a spread of a validated-options
  * instance, which copies its `kind` discriminant and nothing else, is not mistaken for plain options.
  *
@@ -277,9 +277,9 @@ export type PlainSchemaOptions = Pick<ISchemaOptions, 'description' | 'title' | 
 
 /**
  * The `number` / `integer` options accepted as a plain object literal: the
- * {@link JsonSchema.PlainSchemaOptions | plain annotations} and `strict`. Every range keyword is
+ * `plain annotations` and `strict`. Every range keyword is
  * declared `never`, so a raw `{ minimum: 0 }` is a compile error — range keywords arrive through
- * {@link JsonSchema.numberOptions | numberOptions} or {@link JsonSchema.integerOptions | integerOptions}.
+ * `numberOptions` or `integerOptions`.
  * @public
  */
 export type PlainNumberSchemaOptions = PlainSchemaOptions &
@@ -289,9 +289,9 @@ export type PlainNumberSchemaOptions = PlainSchemaOptions &
 
 /**
  * The `string` options accepted as a plain object literal: the
- * {@link JsonSchema.PlainSchemaOptions | plain annotations} and `format`, which is an annotation
+ * `plain annotations` and `format`, which is an annotation
  * and cannot be incoherent. The length keywords are declared `never` and arrive through
- * {@link JsonSchema.stringOptions | stringOptions}.
+ * `stringOptions`.
  * @public
  */
 export type PlainStringSchemaOptions = PlainSchemaOptions &
@@ -301,7 +301,7 @@ export type PlainStringSchemaOptions = PlainSchemaOptions &
 
 /**
  * The `object` options accepted as a plain object literal: the
- * {@link JsonSchema.PlainSchemaOptions | plain annotations} and `additionalProperties`.
+ * `plain annotations` and `additionalProperties`.
  * @public
  */
 export type PlainObjectSchemaOptions = PlainSchemaOptions &

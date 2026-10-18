@@ -59,8 +59,7 @@ import {
   ValidatedIntegerOptions,
   ValidatedNumberOptions,
   ValidatedSchemaOptions,
-  ValidatedStringOptions,
-  VALIDATED_OPTIONS_MARKER
+  ValidatedStringOptions
 } from './validatedOptions';
 import {
   NonStringEnumType,
@@ -76,6 +75,7 @@ import {
   numberConstraintFields,
   pickAnnotations,
   pickNumberConstraints,
+  VALIDATED_OPTIONS_MARKER,
   pickStringConstraints,
   plainKeysOf,
   revalidateNumberOptions,
@@ -647,20 +647,21 @@ function _kindOf(from: unknown): string {
  * How one factory reads the options it is handed.
  *
  * @remarks
- * `isOwn` recognises the instances this copy of the package built for exactly this factory, whose
- * options are used as they are. Anything else that claims to be validated — an instance built for
+ * `own` recognises, by an ES private brand check, the instances this copy of the package built for
+ * exactly this factory, and reads their options from the private field; those are used as they are. Anything else that claims to be validated — an instance built for
  * another factory, or one from another installed copy of this package, recognised by its
  * cross-copy marker — is `revalidate`d from its keys up, and used only if that succeeds. Everything
  * else, and anything whose re-validation fails, contributes its plain keys alone.
  */
 interface IOptionsReader<O> {
-  readonly isOwn: (opts: unknown) => boolean;
+  readonly own: (opts: unknown) => O | undefined;
   readonly revalidate: (options: unknown) => Result<O>;
 }
 
 /**
- * Whether `opts` claims to be validated options: an instance from this copy of the package, or an
- * object carrying the cross-copy marker.
+ * Whether `opts` claims to be validated options: anything whose prototype chain reaches a validated
+ * class (a genuine instance for another factory, but also a substituted prototype or a `Proxy`), or
+ * an object carrying the cross-copy marker. A claim only selects re-validation; it is never trusted.
  */
 function _claimsValidated(opts: object): boolean {
   return (
@@ -679,9 +680,9 @@ function _optionsOf<O extends object>(opts: object | undefined, reader: IOptions
   if (opts === undefined) {
     return undefined;
   }
-  if (reader.isOwn(opts)) {
-    // `isOwn` admits only this factory's own validated class, whose options are its option type.
-    return (opts as { readonly options: O }).options;
+  const own = reader.own(opts);
+  if (own !== undefined) {
+    return own;
   }
   if (_claimsValidated(opts)) {
     // `options` is a prototype getter on a real instance, from either copy, so it is read through
@@ -694,22 +695,22 @@ function _optionsOf<O extends object>(opts: object | undefined, reader: IOptions
 }
 
 const _numberReader: IOptionsReader<INumberSchemaOptions> = {
-  isOwn: (opts) => opts instanceof ValidatedNumberOptions,
+  own: (opts) => ValidatedNumberOptions._read(opts),
   revalidate: (options) => revalidateNumberOptions('number', options)
 };
 
 const _integerReader: IOptionsReader<INumberSchemaOptions> = {
-  isOwn: (opts) => opts instanceof ValidatedIntegerOptions,
+  own: (opts) => ValidatedIntegerOptions._readInteger(opts),
   revalidate: (options) => revalidateNumberOptions('integer', options)
 };
 
 const _stringReader: IOptionsReader<IStringSchemaOptions> = {
-  isOwn: (opts) => opts instanceof ValidatedStringOptions,
+  own: (opts) => ValidatedStringOptions._read(opts),
   revalidate: revalidateStringOptions
 };
 
 const _schemaReader: IOptionsReader<IObjectSchemaOptions> = {
-  isOwn: (opts) => opts instanceof ValidatedSchemaOptions,
+  own: (opts) => ValidatedSchemaOptions._read(opts),
   revalidate: revalidateSchemaOptions
 };
 
@@ -719,7 +720,7 @@ const _schemaReader: IOptionsReader<IObjectSchemaOptions> = {
 
 /**
  * Creates a schema node for a JSON `string`.
- * @param opts - Plain options, or {@link JsonSchema.stringOptions | stringOptions} for lengths,
+ * @param opts - Plain options, or `stringOptions` for lengths,
  * `default` or `examples`.
  * @returns An `ISchemaValidator` whose `Static` type is `string | null`.
  * @public
@@ -735,8 +736,8 @@ export function string(
  *
  * @remarks
  * Never fails: a raw length keyword is a compile error, and the options that carry one were
- * checked by {@link JsonSchema.stringOptions | stringOptions}.
- * @param opts - Plain options, or {@link JsonSchema.stringOptions | stringOptions} for lengths,
+ * checked by `stringOptions`.
+ * @param opts - Plain options, or `stringOptions` for lengths,
  * `default` or `examples`.
  * @returns An `ISchemaValidator` whose `Static` type is `string`.
  * @public
@@ -748,7 +749,7 @@ export function string(opts?: PlainStringSchemaOptions | ValidatedStringOptions)
 
 /**
  * Creates a schema node for a JSON `number`.
- * @param opts - Plain options, or {@link JsonSchema.numberOptions | numberOptions} for range keywords,
+ * @param opts - Plain options, or `numberOptions` for range keywords,
  * `default` or `examples`.
  * @returns An `ISchemaValidator` whose `Static` type is `number | null`.
  * @public
@@ -764,10 +765,10 @@ export function number(
  *
  * @remarks
  * Never fails: a raw range keyword is a compile error, and the options that carry one were checked
- * by {@link JsonSchema.numberOptions | numberOptions} (or `integerOptions`, whose check is
+ * by `numberOptions` (or `integerOptions`, whose check is
  * stricter).
  * @param opts - Plain options (description, nullability, strict mode — see `INumberSchemaOptions`),
- * or {@link JsonSchema.numberOptions | numberOptions} for range keywords, `default` or `examples`.
+ * or `numberOptions` for range keywords, `default` or `examples`.
  * @returns An `ISchemaValidator` whose `Static` type is `number`.
  * @public
  */
@@ -778,7 +779,7 @@ export function number(opts?: PlainNumberSchemaOptions | ValidatedNumberOptions)
 
 /**
  * Creates a schema node for a JSON `integer`.
- * @param opts - Plain options, or {@link JsonSchema.integerOptions | integerOptions} for range
+ * @param opts - Plain options, or `integerOptions` for range
  * keywords, `default` or `examples`.
  * @returns An `ISchemaValidator` (tagged `integer`) whose `Static` type is `number | null`.
  * @public
@@ -794,10 +795,10 @@ export function integer(
  *
  * @remarks
  * Never fails: a raw range keyword is a compile error, and the options that carry one were checked
- * by {@link JsonSchema.integerOptions | integerOptions}. Options from `numberOptions` are refused at
+ * by `integerOptions`. Options from `numberOptions` are refused at
  * compile time, since a range holding a number need not hold an integer.
  * @param opts - Plain options (description, nullability, strict mode — see `INumberSchemaOptions`),
- * or {@link JsonSchema.integerOptions | integerOptions} for range keywords, `default` or `examples`.
+ * or `integerOptions` for range keywords, `default` or `examples`.
  * @returns An `ISchemaValidator` (tagged `integer`) whose `Static` type is `number`.
  * @public
  */
@@ -808,7 +809,7 @@ export function integer(opts?: PlainNumberSchemaOptions | ValidatedIntegerOption
 
 /**
  * Creates a schema node for a JSON `boolean`.
- * @param opts - Plain options, or {@link JsonSchema.schemaOptions | schemaOptions} for `default` or
+ * @param opts - Plain options, or `schemaOptions` for `default` or
  * `examples`.
  * @returns An `ISchemaValidator` whose `Static` type is `boolean | null`.
  * @public
@@ -821,7 +822,7 @@ export function boolean(
 ): ISchemaValidator<boolean | null>;
 /**
  * Creates a schema node for a JSON `boolean`.
- * @param opts - Plain options, or {@link JsonSchema.schemaOptions | schemaOptions} for `default` or
+ * @param opts - Plain options, or `schemaOptions` for `default` or
  * `examples`.
  * @returns An `ISchemaValidator` whose `Static` type is `boolean`.
  * @public
@@ -834,7 +835,7 @@ export function boolean(opts?: PlainSchemaOptions | ValidatedSchemaOptions): ISc
 /**
  * Creates a schema node for a closed set of string literals.
  * @param values - The allowed string values.
- * @param opts - Plain options, or {@link JsonSchema.schemaOptions | schemaOptions} for `default` or
+ * @param opts - Plain options, or `schemaOptions` for `default` or
  * `examples`.
  * @returns An `ISchemaValidator` whose `Static` type is the union of `values`, or `null`.
  * @public
@@ -850,7 +851,7 @@ export function enumOf<T extends string>(
  * Creates a schema node for a closed set of string literals.
  * @param values - The allowed string values.
  * @param opts - Plain options (description, nullability), or
- * {@link JsonSchema.schemaOptions | schemaOptions} for `default` or `examples`. A nullable enum also
+ * `schemaOptions` for `default` or `examples`. A nullable enum also
  * carries `null` in its emitted `enum` list, so the two halves of the node cannot disagree.
  * @returns An `ISchemaValidator` whose `Static` type is the union of `values`.
  * @public
@@ -1034,7 +1035,7 @@ export function booleanEnumOf<T extends boolean>(
  * strict mode). The provider adapters in `@fgv/ts-extras` refuse a request that would send it to
  * such a provider, naming the tool and the path, rather than substitute a type — which would narrow
  * what the model may send below what the validator accepts.
- * @param opts - Plain annotations, or {@link JsonSchema.schemaOptions | schemaOptions} for
+ * @param opts - Plain annotations, or `schemaOptions` for
  * `default` or `examples`.
  * @returns An `ISchemaValidator` whose `Static` type is `JsonValue`.
  * @public
@@ -1060,7 +1061,7 @@ export function optional<S extends ISchemaValidator<unknown>>(
 /**
  * Creates a schema node for a JSON `array` whose elements all match `items`.
  * @param items - The schema applied to every element.
- * @param opts - Plain options, or {@link JsonSchema.schemaOptions | schemaOptions} for `default` or
+ * @param opts - Plain options, or `schemaOptions` for `default` or
  * `examples`.
  * @returns An `ISchemaValidator` whose `Static` type is `Array<Static<S>> | null`.
  * @public
@@ -1076,7 +1077,7 @@ export function array<S extends ISchemaValidator<unknown>>(
  * Creates a schema node for a JSON `array` whose elements all match `items`.
  * @param items - The schema applied to every element.
  * @param opts - Plain options (description, nullability), or
- * {@link JsonSchema.schemaOptions | schemaOptions} for `default` or `examples`.
+ * `schemaOptions` for `default` or `examples`.
  * @returns An `ISchemaValidator` whose `Static` type is `Array<Static<S>>`.
  * @public
  */
@@ -1145,7 +1146,7 @@ export function object<P extends ILlmProperties>(
  * `optional` to make it optional, or author it `nullable` when the provider requires every
  * property to be required.
  * @param opts - Plain options (description, nullability, `additionalProperties`), or
- * {@link JsonSchema.schemaOptions | schemaOptions} for `default` or `examples`.
+ * `schemaOptions` for `default` or `examples`.
  * @returns An `ISchemaValidator` whose `Static` type derives the required/optional split.
  * @public
  */
@@ -1178,7 +1179,7 @@ export function object<P extends ILlmProperties>(
  * compile time, and an own property whose value is `undefined` is refused at run time either way:
  * `undefined` is not JSON, and the emitted `additionalProperties` schema does not admit it.
  * @param values - The schema every property value must match.
- * @param opts - Plain options, or {@link JsonSchema.schemaOptions | schemaOptions} for `default` or
+ * @param opts - Plain options, or `schemaOptions` for `default` or
  * `examples`.
  * @returns An `ISchemaValidator` whose `Static` type is `Record<string, Static<S>> | null`.
  * @public
@@ -1195,7 +1196,7 @@ export function record<S extends ISchemaValidator<unknown>>(
  * (pydantic `dict[str, T]`, zod `z.record(T)`).
  * @param values - The schema every property value must match.
  * @param opts - Plain options (description, nullability), or
- * {@link JsonSchema.schemaOptions | schemaOptions} for `default` or `examples`.
+ * `schemaOptions` for `default` or `examples`.
  * @returns An `ISchemaValidator` whose `Static` type is `Record<string, Static<S>>`.
  * @public
  */
