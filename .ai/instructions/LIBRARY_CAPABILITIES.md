@@ -203,6 +203,7 @@ markers.*
 <!-- BEGIN GENERATED: recent-additions -->
 
 - **2026-10-18** — Agent memory tool results now carry each record's id and scope, so two conversations' turn-3 are distinguishable and a link copied… ([#739](https://github.com/ErikFortune/fgv/pull/739)) · `ts-agent-memory`
+- **2026-10-18** — AiAssist.structuredOutputSchemaKeywords reads the keyword table a structured-output schema is adapted with, and the testbed… ([#738](https://github.com/ErikFortune/fgv/pull/738)) · `ts-extras` `testbed`
 - **2026-10-17** — HybridRetriever's score-union merge no longer collapses records that share an id across scopes — two conversations' turn-3 stay two… ([#731](https://github.com/ErikFortune/fgv/pull/731)) · `ts-agent-memory`
 - **2026-10-17** — FileTreeMemoryStore now refuses to load a record from any scope other than the one its kind's codec derives, so a custom codec that… ([#733](https://github.com/ErikFortune/fgv/pull/733)) · `ts-agent-memory`
 - **2026-10-17** — Shipped: `@fgv/ts-random` can make a weighted random choice, either from a generator or as a pure function of a unit float in `[0… ([#732](https://github.com/ErikFortune/fgv/pull/732)) · `ts-random` `ts-agent-memory`
@@ -211,8 +212,7 @@ markers.*
 - **2026-10-14** — MCP servers can be reached through the same SSRF guard as the rest of your egress, without buffering their streams, and… ([#729](https://github.com/ErikFortune/fgv/pull/729)) · `ts-extras` `ts-extras-mcp`
 - **2026-10-13** — An MCP tool result keeps its resource links, embedded resources, images and structuredContent, tool titles and tool-list changes… ([#728](https://github.com/ErikFortune/fgv/pull/728)) · `ts-extras-mcp`
 - **2026-10-04** — JsonSchema.fromJson now reads pydantic Optional[T] (anyOf [T, null]), local $ref/$defs (inlined, bounded) and z.record-style… ([#723](https://github.com/ErikFortune/fgv/pull/723)) · `ts-json-base`
-- **2026-10-04** — An MCP tool call can be bounded and cancelled — aborting an ai-assist turn now cancels the MCP request on the server — and every… ([#722](https://github.com/ErikFortune/fgv/pull/722)) · `ts-extras-mcp` `ts-extras`
 
-*Showing the 10 most recent of 62. Per-package history is in each `CAPABILITIES.md`.*
+*Showing the 10 most recent of 63. Per-package history is in each `CAPABILITIES.md`.*
 
 <!-- END GENERATED: recent-additions -->
