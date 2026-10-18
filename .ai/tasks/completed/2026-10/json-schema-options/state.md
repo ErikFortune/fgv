@@ -120,3 +120,40 @@ to the plain types: TypeScript does not check an index signature against optiona
 There is no cheap type-level close that keeps the overloads non-generic, so this is documented on
 `PlainSchemaOptions` as a known limitation and pinned by a test. The pin shows the value's
 constraints applied as given, with no throw.
+
+## Review round 2 (deep review: P1 unchecked non-instance options)
+
+**How a factory reads its options now** (`_optionsOf` + one `IOptionsReader` per factory):
+
+1. **This copy's own instance of the factory's own class** → its options, as they are.
+2. **Anything else claiming to be validated** → its `options`, re-validated from the keys up with
+   the matching converters and checks (`revalidate*Options` in `constraints.ts`, which reuse
+   `fromJson`'s own field converters). This covers an instance built for another factory, and an
+   instance from another installed copy of the package. "Claiming" means it is an instance of a
+   validated class, or it carries the cross-copy marker.
+   - `options` is read through the prototype chain (`Reflect.get`), because on a real instance it is
+     a prototype getter.
+   - If re-validation succeeds, the result is used. If it fails, only the plain keys are used.
+3. **Plain options**, including an index-signature value → **plain keys only**: `description`,
+   `title`, `nullable`, `strict`, `format`, `additionalProperties`, each kept only if it has its
+   declared type. Everything else is ignored.
+
+No path applies an unchecked value, so the validator and `toJson()` agree whatever is passed.
+
+**Runtime choice for `integer()` given `ValidatedNumberOptions`:** these options are re-validated
+as an integer range (step 2). A range that holds an integer is used, and one that does not falls
+back to plain keys. I chose this over always falling back to plain keys, because a number range
+that does hold an integer loses nothing.
+
+**Subclass forgery:** constructors take a module-private `unique symbol` token, so
+`super({ minimum: NaN })` from outside does not compile (pinned). At run time, a construction
+without the token holds empty options. It therefore applies nothing, and the constructor does not
+throw.
+
+**The cross-copy marker** (`Symbol.for('@fgv/ts-json-base.validated-options')`, a non-enumerable
+own property holding `kind`) is a **runtime convenience, not a security boundary**. Anyone can set
+it, which is why a marked value is never trusted: it only selects re-validation over plain keys.
+Because the property is non-enumerable, a spread does not copy it.
+
+**Deep freeze:** `checkAnnotations` now deep-freezes its copies of `default` and `examples`, so
+`.options` is frozen all the way down.

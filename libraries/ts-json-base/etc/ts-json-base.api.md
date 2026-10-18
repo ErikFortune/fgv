@@ -1279,6 +1279,7 @@ declare namespace JsonSchema {
         numberOptions,
         integerOptions,
         stringOptions,
+        VALIDATED_OPTIONS_MARKER,
         ValidatedSchemaOptions,
         ValidatedNumberOptions,
         ValidatedIntegerOptions,
@@ -1658,6 +1659,9 @@ function stringOptions<T extends IStringSchemaOptions>(opts: T & Record<Exclude<
 // @public
 const unverifiedWireSchemaKeywords: SchemaKeywordCapabilities;
 
+// @internal
+const VALIDATED_OPTIONS_MARKER: unique symbol;
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
@@ -1676,7 +1680,10 @@ class ValidatedIntegerOptions<T extends INumberSchemaOptions = INumberSchemaOpti
 //
 // @public
 class ValidatedNumberOptions<T extends INumberSchemaOptions = INumberSchemaOptions> {
-    protected constructor(checked: T);
+    // Warning: (ae-forgotten-export) The symbol "ConstructionToken" needs to be exported by the entry point index.d.ts
+    //
+    // @internal
+    protected constructor(token: ConstructionToken, checked: T);
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // @internal

@@ -115,7 +115,7 @@ describe('JsonSchema constraints — enforcement', () => {
 
     test('a nullable node accepts null unconstrained and constrains its numbers', () => {
       const schema = build({ minimum: 1, nullable: true });
-      expect(schema.validate(null)).toSucceedWith(null);
+      expect(schema.validate(null)).toSucceed();
       expect(schema.validate(0)).toFailWith(/minimum/);
     });
   });
@@ -674,19 +674,138 @@ describe('JsonSchema constraints — float tolerance, validated options, copies,
     expect(() => JsonSchema.number({ ...raw })).not.toThrow();
   });
 
-  test('known limitation: an index-signature type reaches a factory unchecked', () => {
-    // Pinned, not endorsed: TypeScript does not check an index signature against the plain
-    // options' `never` keys, so a deliberately widened value is accepted and its constraints
-    // applied as given. No factory throws on it.
-    const widened: Record<string, unknown> = { minimum: 5, maximum: 1 };
-    expect(() => JsonSchema.number(widened)).not.toThrow();
-    expect(JsonSchema.number(widened).validate(3)).toFail();
+  test('an index-signature value is read for its plain keys only, so nothing unchecked is applied', () => {
+    // TypeScript does not check an index signature against the plain options' `never` keys, so a
+    // deliberately widened value compiles. The factory keeps only the plain keys of their declared
+    // type and ignores everything else.
+    const widened: Record<string, unknown> = { minimum: 5, maximum: 1, description: 'd', title: 7 };
+    const schema = JsonSchema.number(widened);
+    expect(schema.toJson()).toEqual({ type: 'number', description: 'd' });
+    expect(schema.validate(3)).toSucceedWith(3);
   });
 
-  test('a cast to a validated type is still read as plain, and the factory does not throw', () => {
-    const cast = { minimum: 5 } as unknown as JsonSchema.ValidatedNumberOptions;
-    expect(() => JsonSchema.number(cast)).not.toThrow();
-    expect(JsonSchema.number(cast).toJson()).toEqual({ type: 'number', minimum: 5 });
+  test('a cast to a validated type is read as plain keys only, and the factory does not throw', () => {
+    const cast = { minimum: 5, nullable: true } as unknown as JsonSchema.ValidatedNumberOptions;
+    const schema = JsonSchema.number(cast);
+    expect(schema.toJson()).toEqual({ type: ['number', 'null'] });
+    expect(schema.validate(1)).toSucceedWith(1);
+    expect(schema.validate(null)).toSucceed();
+  });
+
+  // Each case is a value that, applied unchecked, would make the validator and the wire disagree.
+  const uncheckedCases: ReadonlyArray<[string, Record<string, unknown>, number]> = [
+    ['a NaN minimum', { minimum: NaN }, 1],
+    ['a string minimum', { minimum: '5' }, 1],
+    ['a zero multipleOf', { multipleOf: 0 }, 0.5],
+    ['a function default', { default: (): number => 1 }, 1]
+  ];
+
+  test.each(uncheckedCases)('%s outside validated options never reaches the node', (__name, raw, value) => {
+    const schema = JsonSchema.number(raw);
+    expect(schema.toJson()).toEqual({ type: 'number' });
+    expect(schema.validate(value)).toSucceedWith(value);
+    // The wire states exactly what the validator enforces: re-parsing it gives the same node.
+    expect(JsonSchema.fromJson(schema.toJson())).toSucceedAndSatisfy((parsed) => {
+      expect(parsed.toJson()).toEqual(schema.toJson());
+      expect(parsed.validate(value)).toSucceedWith(value);
+    });
+  });
+
+  test('a subclass declared outside the module cannot hand the base its own options', () => {
+    class Forged extends JsonSchema.ValidatedNumberOptions {
+      public constructor() {
+        // @ts-expect-error - the construction token is module-private
+        super({ minimum: NaN });
+      }
+    }
+    const forged = new Forged();
+    expect(forged.options).toEqual({});
+    expect(JsonSchema.number(forged).toJson()).toEqual({ type: 'number' });
+  });
+
+  describe('options from another installed copy of the package', () => {
+    const marker = Symbol.for('@fgv/ts-json-base.validated-options');
+
+    /** A hand-built stand-in for an instance a second copy of the package constructed. */
+    function foreign(options: Record<string, unknown>): JsonSchema.ValidatedNumberOptions {
+      const instance = { kind: 'validated-number-options', options };
+      Object.defineProperty(instance, marker, { value: 'validated-number-options' });
+      return instance as unknown as JsonSchema.ValidatedNumberOptions;
+    }
+
+    test('are re-validated, and used when they pass', () => {
+      const schema = JsonSchema.number(foreign({ minimum: 1, nullable: true, default: 2 }));
+      expect(schema.toJson()).toEqual({ type: ['number', 'null'], minimum: 1, default: 2 });
+      expect(schema.validate(null)).toSucceed();
+      expect(schema.validate(0)).toFailWith(/minimum/);
+    });
+
+    test('are read through a prototype getter, as a real instance exposes them', () => {
+      const proto = {
+        get options(): Record<string, unknown> {
+          return { maxLength: 2 };
+        }
+      };
+      const instance = Object.create(proto) as Record<string, unknown>;
+      Object.defineProperty(instance, marker, { value: 'validated-string-options' });
+      const schema = JsonSchema.string(instance);
+      expect(schema.toJson()).toEqual({ type: 'string', maxLength: 2 });
+      expect(schema.validate('abc')).toFailWith(/maxLength/);
+    });
+
+    test('schema options are re-validated too', () => {
+      const good = foreign({ default: true, title: 't' });
+      expect(JsonSchema.boolean(good as unknown as JsonSchema.ValidatedSchemaOptions).toJson()).toEqual({
+        type: 'boolean',
+        title: 't',
+        default: true
+      });
+      const bad = foreign({ default: NaN, title: 't' });
+      expect(JsonSchema.boolean(bad as unknown as JsonSchema.ValidatedSchemaOptions).toJson()).toEqual({
+        type: 'boolean',
+        title: 't'
+      });
+      const badString = foreign({ minLength: -1, description: 'd' });
+      expect(JsonSchema.string(badString as unknown as JsonSchema.ValidatedStringOptions).toJson()).toEqual({
+        type: 'string',
+        description: 'd'
+      });
+    });
+
+    test('fall back to plain keys when re-validation fails', () => {
+      const schema = JsonSchema.number(foreign({ minimum: 5, maximum: 1, description: 'd' }));
+      expect(schema.toJson()).toEqual({ type: 'number', description: 'd' });
+    });
+
+    test('are re-validated for the factory they reach: number options to integer', () => {
+      const own = JsonSchema.numberOptions({ exclusiveMinimum: 0, exclusiveMaximum: 1, title: 't' });
+      // A number range need not hold an integer; at run time it is re-checked as an integer range.
+      const loose = own.shouldNotFail('number range') as unknown as JsonSchema.ValidatedIntegerOptions;
+      expect(JsonSchema.integer(loose).toJson()).toEqual({ type: 'integer', title: 't' });
+      const fits = JsonSchema.numberOptions({ minimum: 1 }).shouldNotFail('fits');
+      const cast = fits as unknown as JsonSchema.ValidatedIntegerOptions;
+      expect(JsonSchema.integer(cast).toJson()).toEqual({ type: 'integer', minimum: 1 });
+    });
+
+    test('a marked value without readable options contributes nothing unchecked', () => {
+      const bare = {} as Record<string, unknown>;
+      Object.defineProperty(bare, marker, { value: 'validated-schema-options' });
+      expect(JsonSchema.boolean(bare).toJson()).toEqual({ type: 'boolean' });
+      expect(JsonSchema.string(bare).toJson()).toEqual({ type: 'string' });
+      expect(JsonSchema.object({}, bare).toJson()).toEqual({
+        type: 'object',
+        properties: {},
+        additionalProperties: false
+      });
+    });
+  });
+
+  test('validated default and examples are deeply frozen', () => {
+    const v = JsonSchema.schemaOptions({ default: { a: [1] }, examples: [{ b: 2 }] }).shouldNotFail('frozen');
+    expect(Object.isFrozen(v.options.default)).toBe(true);
+    expect(Object.isFrozen((v.options.default as { a: number[] }).a)).toBe(true);
+    expect(Object.isFrozen(v.options.examples)).toBe(true);
+    expect(Object.isFrozen(v.options.examples?.[0])).toBe(true);
   });
 
   test('mutating what toJson() returned cannot alter the node', () => {

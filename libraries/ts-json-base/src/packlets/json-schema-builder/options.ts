@@ -258,12 +258,15 @@ export type IAnySchemaOptions = Omit<ISchemaOptions, 'nullable'>;
  * instead, as validated options. `kind` is declared `never` so that a spread of a validated-options
  * instance, which copies its `kind` discriminant and nothing else, is not mistaken for plain options.
  *
- * **Known limitation:** a value whose type has an index signature (`Record<string, unknown>`, or an
- * interface declaring `[key: string]: unknown`) is assignable to every plain-options type, because
- * TypeScript does not check an index signature against the `never` keys. Such a value reaches the
- * factory unchecked, and a constraint it carries is applied as given. This takes a deliberately
- * widened type; an object literal, a declared options interface, `Partial<…>` and `as const` are all
- * refused.
+ * **What a factory reads from plain options:** only the plain keys — `description`, `title`,
+ * `nullable`, `strict`, `format`, `additionalProperties` — each of its declared type. Every other
+ * key, and a plain key of the wrong type, is ignored, so the validator and `toJson()` always agree.
+ * That matters for one case the types do not catch: a value whose type has an index signature
+ * (`Record<string, unknown>`, or an interface declaring `[key: string]: unknown`) is assignable to
+ * every plain-options type, because TypeScript does not check an index signature against the
+ * `never` keys. Such a value compiles, and its constraint keys are ignored rather than applied. An
+ * object literal, a declared options interface, `Partial<…>` and `as const` are all refused at
+ * compile time.
  * @public
  */
 export type PlainSchemaOptions = Pick<ISchemaOptions, 'description' | 'title' | 'nullable'> & {

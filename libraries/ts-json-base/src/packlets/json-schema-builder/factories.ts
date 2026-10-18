@@ -59,7 +59,8 @@ import {
   ValidatedIntegerOptions,
   ValidatedNumberOptions,
   ValidatedSchemaOptions,
-  ValidatedStringOptions
+  ValidatedStringOptions,
+  VALIDATED_OPTIONS_MARKER
 } from './validatedOptions';
 import {
   NonStringEnumType,
@@ -76,6 +77,10 @@ import {
   pickAnnotations,
   pickNumberConstraints,
   pickStringConstraints,
+  plainKeysOf,
+  revalidateNumberOptions,
+  revalidateSchemaOptions,
+  revalidateStringOptions,
   stringConstraintFields
 } from './constraints';
 
@@ -638,26 +643,75 @@ function _kindOf(from: unknown): string {
 // Reading plain or validated options
 // ---------------------------------------------------------------------------
 
-/** Any validated-options instance a factory accepts. */
-type AnyValidatedOptions = ValidatedSchemaOptions | ValidatedNumberOptions | ValidatedStringOptions;
+/**
+ * How one factory reads the options it is handed.
+ *
+ * @remarks
+ * `isOwn` recognises the instances this copy of the package built for exactly this factory, whose
+ * options are used as they are. Anything else that claims to be validated — an instance built for
+ * another factory, or one from another installed copy of this package, recognised by its
+ * cross-copy marker — is `revalidate`d from its keys up, and used only if that succeeds. Everything
+ * else, and anything whose re-validation fails, contributes its plain keys alone.
+ */
+interface IOptionsReader<O> {
+  readonly isOwn: (opts: unknown) => boolean;
+  readonly revalidate: (options: unknown) => Result<O>;
+}
 
 /**
- * The options a factory was given: read from inside a validated-options instance, or the plain
- * options themselves. Only an instance built by its class's own check is read as validated; any
- * other object is plain, whatever properties it carries.
+ * Whether `opts` claims to be validated options: an instance from this copy of the package, or an
+ * object carrying the cross-copy marker.
  */
-function _optionsOf<O extends object>(opts: O | AnyValidatedOptions | undefined): O | undefined {
-  if (
+function _claimsValidated(opts: object): boolean {
+  return (
     opts instanceof ValidatedSchemaOptions ||
     opts instanceof ValidatedNumberOptions ||
-    opts instanceof ValidatedStringOptions
-  ) {
-    // The overloads pair each factory with its own validated class, so the options read here are
-    // the factory's own option type.
-    return opts.options as unknown as O;
-  }
-  return opts;
+    opts instanceof ValidatedStringOptions ||
+    VALIDATED_OPTIONS_MARKER in opts
+  );
 }
+
+/**
+ * The options a factory was given, read so that nothing unchecked reaches a node — which is what
+ * keeps the validator and `toJson()` in agreement whatever the caller passed.
+ */
+function _optionsOf<O extends object>(opts: object | undefined, reader: IOptionsReader<O>): O | undefined {
+  if (opts === undefined) {
+    return undefined;
+  }
+  if (reader.isOwn(opts)) {
+    // `isOwn` admits only this factory's own validated class, whose options are its option type.
+    return (opts as { readonly options: O }).options;
+  }
+  if (_claimsValidated(opts)) {
+    // `options` is a prototype getter on a real instance, from either copy, so it is read through
+    // the prototype chain rather than as an own field.
+    const options: unknown = Reflect.get(opts, 'options');
+    return reader.revalidate(options).orDefaultWith(() => plainKeysOf(options) as O);
+  }
+  // Plain options: only the keys that cannot be wrong, each of its declared type.
+  return plainKeysOf(opts) as O;
+}
+
+const _numberReader: IOptionsReader<INumberSchemaOptions> = {
+  isOwn: (opts) => opts instanceof ValidatedNumberOptions,
+  revalidate: (options) => revalidateNumberOptions('number', options)
+};
+
+const _integerReader: IOptionsReader<INumberSchemaOptions> = {
+  isOwn: (opts) => opts instanceof ValidatedIntegerOptions,
+  revalidate: (options) => revalidateNumberOptions('integer', options)
+};
+
+const _stringReader: IOptionsReader<IStringSchemaOptions> = {
+  isOwn: (opts) => opts instanceof ValidatedStringOptions,
+  revalidate: revalidateStringOptions
+};
+
+const _schemaReader: IOptionsReader<IObjectSchemaOptions> = {
+  isOwn: (opts) => opts instanceof ValidatedSchemaOptions,
+  revalidate: revalidateSchemaOptions
+};
 
 // ---------------------------------------------------------------------------
 // Public factory functions
@@ -689,7 +743,7 @@ export function string(
  */
 export function string(opts?: PlainStringSchemaOptions | ValidatedStringOptions): ISchemaValidator<string>;
 export function string(opts?: PlainStringSchemaOptions | ValidatedStringOptions): ISchemaValidator<string> {
-  return new StringSchemaValidator(_optionsOf<IStringSchemaOptions>(opts));
+  return new StringSchemaValidator(_optionsOf(opts, _stringReader));
 }
 
 /**
@@ -719,7 +773,7 @@ export function number(
  */
 export function number(opts?: PlainNumberSchemaOptions | ValidatedNumberOptions): ISchemaValidator<number>;
 export function number(opts?: PlainNumberSchemaOptions | ValidatedNumberOptions): ISchemaValidator<number> {
-  return new NumberSchemaValidator('number', _optionsOf<INumberSchemaOptions>(opts));
+  return new NumberSchemaValidator('number', _optionsOf(opts, _numberReader));
 }
 
 /**
@@ -749,7 +803,7 @@ export function integer(
  */
 export function integer(opts?: PlainNumberSchemaOptions | ValidatedIntegerOptions): ISchemaValidator<number>;
 export function integer(opts?: PlainNumberSchemaOptions | ValidatedIntegerOptions): ISchemaValidator<number> {
-  return new NumberSchemaValidator('integer', _optionsOf<INumberSchemaOptions>(opts));
+  return new NumberSchemaValidator('integer', _optionsOf(opts, _integerReader));
 }
 
 /**
@@ -774,7 +828,7 @@ export function boolean(
  */
 export function boolean(opts?: PlainSchemaOptions | ValidatedSchemaOptions): ISchemaValidator<boolean>;
 export function boolean(opts?: PlainSchemaOptions | ValidatedSchemaOptions): ISchemaValidator<boolean> {
-  return new BooleanSchemaValidator(_optionsOf<ISchemaOptions>(opts));
+  return new BooleanSchemaValidator(_optionsOf(opts, _schemaReader));
 }
 
 /**
@@ -813,7 +867,7 @@ export function enumOf<T extends string>(
     'string',
     values,
     Validators.enumeratedValue(values),
-    _optionsOf<ISchemaOptions>(opts)
+    _optionsOf(opts, _schemaReader)
   );
 }
 
@@ -988,7 +1042,7 @@ export function booleanEnumOf<T extends boolean>(
 export function anyValue(
   opts?: PlainAnySchemaOptions | ValidatedSchemaOptions<IAnySchemaOptions>
 ): ISchemaValidator<JsonValue> {
-  return new AnySchemaValidator(_optionsOf<IAnySchemaOptions>(opts));
+  return new AnySchemaValidator(_optionsOf(opts, _schemaReader));
 }
 
 /**
@@ -1034,7 +1088,7 @@ export function array<S extends ISchemaValidator<unknown>>(
   items: S,
   opts?: PlainSchemaOptions | ValidatedSchemaOptions
 ): ISchemaValidator<Static<S>[]> {
-  return new ArraySchemaValidator(items, _optionsOf<ISchemaOptions>(opts));
+  return new ArraySchemaValidator(items, _optionsOf(opts, _schemaReader));
 }
 
 /**
@@ -1104,7 +1158,7 @@ export function object<P extends ILlmProperties>(
   opts?: PlainObjectSchemaOptions | ValidatedSchemaOptions<IObjectSchemaOptions>
   // eslint-disable-next-line @rushstack/no-new-null
 ): ISchemaValidator<ObjectStatic<P>> | ISchemaValidator<OpenObjectStatic<P> | null> {
-  return new ObjectSchemaValidator(properties, _optionsOf<IObjectSchemaOptions>(opts));
+  return new ObjectSchemaValidator(properties, _optionsOf(opts, _schemaReader));
 }
 
 /**
@@ -1157,7 +1211,7 @@ export function record<S extends ISchemaValidator<unknown>>(
   // `ObjectStatic<{}>`; what it converts to is the map, which only this factory can state.
   return new ObjectSchemaValidator(
     {},
-    _optionsOf<ISchemaOptions>(opts),
+    _optionsOf(opts, _schemaReader),
     values
   ) as unknown as ISchemaValidator<Record<string, Static<S>>>;
 }

@@ -26,11 +26,45 @@
  * Each class is **nominal**. Its options live in an ES `#private` field, which neither an object
  * literal nor a spread can reproduce, so the type system accepts an instance only when it was
  * built by the class's own check, and a factory reads the options only from such an instance.
+ *
+ * Construction takes a module-private token, so a subclass declared elsewhere cannot hand its own
+ * options to the base constructor: without the token, an instance holds no options at all.
  */
 
 import { Result, succeed } from '@fgv/ts-utils';
 import { checkAnnotations, checkNumberOptions, checkStringOptions } from './constraints';
 import { INumberSchemaOptions, IObjectSchemaOptions, IStringSchemaOptions } from './options';
+
+/** Proves a construction came from this module. Never exported. */
+const CONSTRUCTION_TOKEN: unique symbol = Symbol('validated-options-construction');
+
+/** The type of {@link CONSTRUCTION_TOKEN}, which nothing outside this module can produce. */
+type ConstructionToken = typeof CONSTRUCTION_TOKEN;
+
+/**
+ * The cross-copy marker every validated-options instance carries as a non-enumerable own property,
+ * holding its `kind`.
+ *
+ * @remarks
+ * `instanceof` fails across two installed copies of this package, so a factory also recognises an
+ * instance by this registered symbol and then **re-validates** its options rather than trusting
+ * them. The marker is a runtime convenience for that case, **not a security boundary**: anyone can
+ * set it, which is why nothing marked is used unchecked.
+ * @internal
+ */
+export const VALIDATED_OPTIONS_MARKER: unique symbol = Symbol.for('@fgv/ts-json-base.validated-options');
+
+/** Freezes checked options — or, without the token, holds none — and marks the instance. */
+function _hold<T extends object>(
+  instance: object,
+  kind: string,
+  token: ConstructionToken,
+  checked: T
+): Readonly<T> {
+  Object.defineProperty(instance, VALIDATED_OPTIONS_MARKER, { value: kind, enumerable: false });
+  // A construction without the token is a subclass declared outside this module: it gets no options.
+  return Object.freeze(token === CONSTRUCTION_TOKEN ? checked : ({} as T));
+}
 
 /**
  * Options whose annotations {@link JsonSchema.schemaOptions | schemaOptions} has checked: `default`
@@ -48,8 +82,8 @@ export class ValidatedSchemaOptions<T extends IObjectSchemaOptions = IObjectSche
   public readonly kind: 'validated-schema-options' = 'validated-schema-options';
   readonly #options: Readonly<T>;
 
-  private constructor(checked: T) {
-    this.#options = Object.freeze(checked);
+  private constructor(token: ConstructionToken, checked: T) {
+    this.#options = _hold(this, this.kind, token, checked);
   }
 
   /** The validated options: a frozen copy of those `schemaOptions` was given. */
@@ -62,7 +96,9 @@ export class ValidatedSchemaOptions<T extends IObjectSchemaOptions = IObjectSche
    * @internal
    */
   public static _create<T extends IObjectSchemaOptions>(opts: T): Result<ValidatedSchemaOptions<T>> {
-    return checkAnnotations(opts).onSuccess((checked) => succeed(new ValidatedSchemaOptions<T>(checked)));
+    return checkAnnotations(opts).onSuccess((checked) =>
+      succeed(new ValidatedSchemaOptions<T>(CONSTRUCTION_TOKEN, checked))
+    );
   }
 }
 
@@ -83,8 +119,12 @@ export class ValidatedNumberOptions<T extends INumberSchemaOptions = INumberSche
   public readonly kind: 'validated-number-options' = 'validated-number-options';
   readonly #options: Readonly<T>;
 
-  protected constructor(checked: T) {
-    this.#options = Object.freeze(checked);
+  /**
+   * Reachable only with this module's construction token; see `numberOptions`.
+   * @internal
+   */
+  protected constructor(token: ConstructionToken, checked: T) {
+    this.#options = _hold(this, this.kind, token, checked);
   }
 
   /** The validated options: a frozen copy of those the check was given. */
@@ -98,7 +138,7 @@ export class ValidatedNumberOptions<T extends INumberSchemaOptions = INumberSche
    */
   public static _create<T extends INumberSchemaOptions>(opts: T): Result<ValidatedNumberOptions<T>> {
     return checkNumberOptions('number', opts).onSuccess((checked) =>
-      succeed(new ValidatedNumberOptions<T>(checked))
+      succeed(new ValidatedNumberOptions<T>(CONSTRUCTION_TOKEN, checked))
     );
   }
 }
@@ -118,8 +158,8 @@ export class ValidatedIntegerOptions<
    */
   readonly #integer: true = true;
 
-  private constructor(checked: T) {
-    super(checked);
+  private constructor(token: ConstructionToken, checked: T) {
+    super(token, checked);
   }
 
   /** Always `true`: the range holds at least one integer. */
@@ -133,7 +173,7 @@ export class ValidatedIntegerOptions<
    */
   public static _createInteger<T extends INumberSchemaOptions>(opts: T): Result<ValidatedIntegerOptions<T>> {
     return checkNumberOptions('integer', opts).onSuccess((checked) =>
-      succeed(new ValidatedIntegerOptions<T>(checked))
+      succeed(new ValidatedIntegerOptions<T>(CONSTRUCTION_TOKEN, checked))
     );
   }
 }
@@ -149,8 +189,8 @@ export class ValidatedStringOptions<T extends IStringSchemaOptions = IStringSche
   public readonly kind: 'validated-string-options' = 'validated-string-options';
   readonly #options: Readonly<T>;
 
-  private constructor(checked: T) {
-    this.#options = Object.freeze(checked);
+  private constructor(token: ConstructionToken, checked: T) {
+    this.#options = _hold(this, this.kind, token, checked);
   }
 
   /** The validated options: a frozen copy of those `stringOptions` was given. */
@@ -163,7 +203,9 @@ export class ValidatedStringOptions<T extends IStringSchemaOptions = IStringSche
    * @internal
    */
   public static _create<T extends IStringSchemaOptions>(opts: T): Result<ValidatedStringOptions<T>> {
-    return checkStringOptions(opts).onSuccess((checked) => succeed(new ValidatedStringOptions<T>(checked)));
+    return checkStringOptions(opts).onSuccess((checked) =>
+      succeed(new ValidatedStringOptions<T>(CONSTRUCTION_TOKEN, checked))
+    );
   }
 }
 

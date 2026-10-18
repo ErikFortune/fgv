@@ -24,7 +24,6 @@ import {
   Converter,
   Converters,
   Result,
-  Validator,
   Validators,
   captureResult,
   fail,
@@ -37,7 +36,9 @@ import {
   SchemaAnnotations,
   StringConstraints,
   annotationFields,
-  annotationJsonValue
+  annotationsConverter,
+  numberConstraintsConverter,
+  stringConstraintsConverter
 } from './constraints';
 import {
   anyValue,
@@ -222,51 +223,29 @@ const _SUPPORTED_TYPES: ReadonlySet<string> = new Set([
 // ---------------------------------------------------------------------------
 
 /**
- * One optional JSON-number field per keyword, keyed from the keyword list itself so the parser
- * cannot know a different set of keywords than the factories and the emitter.
+ * The annotations every node carries, as `annotationsConverter` reads them, with a failure message
+ * made printable — it quotes the offending value, which is server-supplied.
  */
-function _numericFields<K extends string>(keywords: readonly K[]): Record<K, Validator<number | undefined>> {
-  const fields: Partial<Record<K, Validator<number | undefined>>> = {};
-  for (const keyword of keywords) {
-    fields[keyword] = Validators.number.optional();
-  }
-  // Total: the loop above assigned every member of `keywords`, which is all of `K`.
-  return fields as Record<K, Validator<number | undefined>>;
-}
+const _annotationsField: Converter<SchemaAnnotations> = annotationsConverter.withFormattedError(
+  (__from, message) => _printable(`${message}`)
+);
 
 /**
- * Extracts the annotations every node carries — `description`, `title`, `default` and `examples`.
- * Each is optional; a present one of the wrong shape (a non-string `description` or `title`, a
- * non-array `examples`, a value that is not JSON) is refused rather than dropped, since dropping
- * it would emit a schema that says less than the source. `default` and `examples` are not
- * checked against the node — see `JsonSchema.ISchemaOptions.default`.
- */
-const _annotationsField: Converter<SchemaAnnotations> = Converters.object<SchemaAnnotations>({
-  description: Converters.string.optional('failOnError'),
-  title: Converters.string.optional('failOnError'),
-  default: annotationJsonValue.optional('failOnError'),
-  examples: Converters.arrayOf(annotationJsonValue).optional('failOnError')
-  // The failure message quotes the offending value, which is server-supplied.
-}).withFormattedError((__from, message) => _printable(`${message}`));
-
-/**
- * Extracts a number node's constraint keywords. Each must be a JSON number when present — a
- * numeric string is refused, not coerced; coherence (finite, ordered, a non-empty range) is
+ * A number node's constraint keywords, as `numberConstraintsConverter` reads them. Coherence is
  * checked afterwards by `numberOptions` or `integerOptions`, the validated-options step every
  * declared range goes through too.
  */
-const _numberConstraintsField: Converter<NumberConstraints> = Converters.object<NumberConstraints>(
-  _numericFields(schemaNumberConstraintKeywords)
-).withFormattedError((__from, message) => _printable(`${message}`));
+const _numberConstraintsField: Converter<NumberConstraints> = numberConstraintsConverter.withFormattedError(
+  (__from, message) => _printable(`${message}`)
+);
 
 /**
- * Extracts a string node's `minLength`, `maxLength` and `format`. The lengths must be JSON
- * numbers and `format` a string; `stringOptions` then requires non-negative integers in order.
+ * A string node's `minLength`, `maxLength` and `format`, as `stringConstraintsConverter` reads
+ * them; `stringOptions` then requires non-negative integers in order.
  */
-const _stringConstraintsField: Converter<StringConstraints> = Converters.object<StringConstraints>({
-  ..._numericFields(schemaLengthConstraintKeywords),
-  format: Converters.string.optional('failOnError')
-}).withFormattedError((__from, message) => _printable(`${message}`));
+const _stringConstraintsField: Converter<StringConstraints> = stringConstraintsConverter.withFormattedError(
+  (__from, message) => _printable(`${message}`)
+);
 
 /** A scalar an `enum` or `const` may list: a string, number or boolean — or `null`. */
 // `null` is the JSON value being modelled, not a JS sentinel — the same carve-out
