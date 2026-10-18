@@ -271,9 +271,11 @@ function _integerExclusiveBound(
  * @remarks
  * From the Schema object at https://ai.google.dev/api/generate-content § "Schema": `minimum` /
  * `maximum` (for `INTEGER` and `NUMBER`), `minLength` / `maxLength`, `format` ("Any value is
- * allowed"), `title` and `default` are fields, so they pass. So is `pattern` ("Pattern of the
- * Type.STRING to restrict a string to a regular expression", fetched 2026-10-18); the page names no
- * dialect, so the ECMAScript source is sent as it is. The object has **no**
+ * allowed"), `title` and `default` are fields, so they pass. `pattern` is a field too ("Pattern of
+ * the Type.STRING to restrict a string to a regular expression", fetched 2026-10-18), but the page
+ * names neither a regex dialect nor whether the pattern is anchored — the semantics that made the
+ * OpenAI-family table fold it on xAI's account — so it **folds**: the validator still enforces it,
+ * and an enforcement probe could justify passing it later. The object has **no**
  * `exclusiveMinimum`, `exclusiveMaximum`, `multipleOf` or `examples`: the exclusive bounds are
  * translated on an integer node (see `_integerExclusiveBound`) and folded elsewhere; `multipleOf`
  * folds; `examples` folds, because Gemini's singular `example` is "populated only when the object
@@ -294,7 +296,7 @@ export const geminiSchemaKeywords: JsonSchema.SchemaKeywordCapabilities = {
   multipleOf: 'fold',
   minLength: 'pass',
   maxLength: 'pass',
-  pattern: 'pass',
+  pattern: 'fold',
   format: 'pass',
   title: 'pass',
   default: 'pass',

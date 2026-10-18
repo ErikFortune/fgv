@@ -46,7 +46,13 @@ import {
   schemaLengthConstraintKeywords,
   schemaNumberConstraintKeywords
 } from './keywordAdaptation';
-import { INumberSchemaOptions, IObjectSchemaOptions, ISchemaOptions, IStringSchemaOptions } from './options';
+import {
+  IHeldPattern,
+  INumberSchemaOptions,
+  IObjectSchemaOptions,
+  ISchemaOptions,
+  IStringSchemaOptions
+} from './options';
 
 /** A numeric constraint keyword. */
 type NumberKeyword = StringOneOf<typeof schemaNumberConstraintKeywords>;
@@ -59,18 +65,6 @@ export type StringLengthConstraints = Pick<
   IStringSchemaOptions,
   StringOneOf<typeof schemaLengthConstraintKeywords> | 'format'
 >;
-
-/**
- * A pattern a string node enforces and emits: the source the wire receives, and the one predicate
- * that enforces it. Held immutably, so the validator and `toJson()` cannot come to disagree.
- * @internal
- */
-export interface IHeldPattern {
-  /** The ECMAScript source emitted as `pattern`. */
-  readonly source: string;
-  /** Whether a string matches, or a `Failure` when the match could not be made. */
-  readonly matches: (value: string) => Result<boolean>;
-}
 
 /** A string node's constraints and format: the lengths, the held pattern and `format`. @internal */
 export type StringConstraints = StringLengthConstraints & { readonly pattern?: IHeldPattern };
@@ -289,14 +283,37 @@ function _holdTrustedPattern(pattern: unknown): Result<IHeldPattern | undefined>
     );
 }
 
-/** Matches with a checked `RegExp`, failing closed once it no longer has the checked form. */
+/** Whether a `RegExp` still has the form that was checked. */
+function _hasForm(re: RegExp, source: string): Result<true> {
+  return captureResult(() => _compiledForm(re)).onSuccess((now) =>
+    now.source === source && now.flags === 'u'
+      ? succeed(true as const)
+      : fail('the RegExp was re-initialised after stringOptions checked it')
+  );
+}
+
+/**
+ * Matches with a checked `RegExp`, failing closed once it no longer has the checked form.
+ *
+ * @remarks
+ * The built-in `exec` reads `lastIndex` before it runs the matcher, and converting a non-number
+ * `lastIndex` calls its `valueOf` — which could re-initialise the `RegExp` (`compile()`) between the
+ * form check and the match. So `lastIndex` is first set to the primitive `0` (a data property, which
+ * nothing can intercept), the match refuses to run unless it reads back as `0`, and the form is
+ * checked again after the match.
+ */
 function _trustedMatcher(re: RegExp, source: string): (value: string) => Result<boolean> {
   return (value: string): Result<boolean> =>
-    captureResult(() => _compiledForm(re)).onSuccess((now) =>
-      now.source === source && now.flags === 'u'
-        ? captureResult(() => _builtinExec.call(re, value) !== null)
-        : fail('the RegExp was re-initialised after stringOptions checked it')
-    );
+    _hasForm(re, source)
+      .onSuccess(() =>
+        captureResult(() => Reflect.set(re, 'lastIndex', 0) && Reflect.get(re, 'lastIndex') === 0)
+      )
+      .onSuccess((reset) =>
+        reset
+          ? captureResult(() => _builtinExec.call(re, value) !== null)
+          : fail<boolean>("the RegExp's lastIndex could not be reset to 0")
+      )
+      .onSuccess((matched) => _hasForm(re, source).onSuccess(() => succeed(matched)));
 }
 
 /**

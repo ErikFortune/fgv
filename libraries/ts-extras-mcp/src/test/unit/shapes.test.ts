@@ -514,6 +514,47 @@ describe('pattern on an adapted MCP tool', () => {
     });
   });
 
+  test('a validator that throws at admission skips the tool, and nothing escapes', async () => {
+    const throws: JsonSchema.SchemaPatternValidator = () => {
+      throw new Error('engine unavailable');
+    };
+    expect(await adaptMcpTools(session, { patternValidator: throws })).toSucceedAndSatisfy((result) => {
+      expect(result.tools.map((t) => t.config.name)).toEqual(['level']);
+      expect(result.skipped.map((s) => [s.name, s.reason])).toEqual([
+        ['code', '#/properties/code: pattern "^[A-Z]+$" was refused: engine unavailable']
+      ]);
+    });
+  });
+
+  test('a predicate that throws at execute is a correctable tool error, and the server is not called', async () => {
+    const adapted = (
+      await adaptMcpTools(session, {
+        schemaKeywords: AiAssist.clientToolSchemaKeywords(ANTHROPIC, { model: MODELS[ANTHROPIC.id] }),
+        patternValidator: () =>
+          succeed((): boolean => {
+            throw new Error('match timed out');
+          })
+      })
+    ).orThrow();
+    mockModelCalls(toolCallChunks(ANTHROPIC, 'code', '{"code":"ABC"}'));
+    const turn = AiAssist.executeClientToolTurn({
+      descriptor: ANTHROPIC,
+      apiKey: 'test-key',
+      ...new AiAssist.AiPrompt('submit it', 'system').toRequest(),
+      clientTools: adapted.tools,
+      model: MODELS[ANTHROPIC.id]
+    }).orThrow();
+    const events: AiAssist.IAiStreamEvent[] = [];
+    for await (const event of turn.events) {
+      events.push(event);
+    }
+    expect(calls).toEqual([]);
+    expect(events.find((e) => e.type === 'error')).toBeUndefined();
+    expect(resultText(events)).toMatch(
+      /could not check the string against pattern "\^\[A-Z\]\+\$": match timed out/
+    );
+  });
+
   describe('on Anthropic, which documents pattern', () => {
     test('the model is shown the pattern, and a call that breaks it never reaches the server', async () => {
       const { events, sent } = await runTurn(ANTHROPIC, '{"code":"abc"}');

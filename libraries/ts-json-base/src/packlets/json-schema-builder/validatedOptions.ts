@@ -31,16 +31,17 @@
  * options to the base constructor: without the token, an instance holds no options at all.
  */
 
-import { Result, captureResult, succeed } from '@fgv/ts-utils';
+import { Result, Validators, captureResult, succeed } from '@fgv/ts-utils';
 import {
   StringNodeOptions,
   VALIDATED_OPTIONS_MARKER,
   checkAnnotations,
   checkNumberOptions,
   checkStringOptions,
+  describeEnumMember,
   withHeldPattern
 } from './constraints';
-import { INumberSchemaOptions, IObjectSchemaOptions, IStringSchemaOptions } from './options';
+import { IHeldPattern, INumberSchemaOptions, IObjectSchemaOptions, IStringSchemaOptions } from './options';
 
 /**
  * Proves a construction came from this module. Never exported; the constructors type it as a plain
@@ -236,16 +237,9 @@ export class ValidatedStringOptions<T extends IStringSchemaOptions = IStringSche
    * `undefined` for anything else.
    * @internal
    */
-  public static _read(value: unknown):
-    | Readonly<
-        Omit<IStringSchemaOptions, 'pattern'> & {
-          readonly pattern?: {
-            readonly source: string;
-            readonly matches: (value: string) => Result<boolean>;
-          };
-        }
-      >
-    | undefined {
+  public static _read(
+    value: unknown
+  ): Readonly<Omit<IStringSchemaOptions, 'pattern'> & { readonly pattern?: IHeldPattern }> | undefined {
     return _isObject(value) && #node in value ? (value as ValidatedStringOptions).#node : undefined;
   }
 
@@ -267,11 +261,24 @@ export class ValidatedStringOptions<T extends IStringSchemaOptions = IStringSche
    */
   public static _createWithMatcher<T extends IStringSchemaOptions & { readonly pattern?: never }>(
     opts: T,
-    pattern: { readonly source: string; readonly matches: (value: string) => boolean }
+    source: string,
+    matches: (value: string) => boolean
   ): Result<ValidatedStringOptions<T>> {
-    const { source, matches } = pattern;
-    // The predicate is the caller's code: one that throws fails the value, not the validator.
-    const held = Object.freeze({ source, matches: (value: string) => captureResult(() => matches(value)) });
+    // The predicate is the caller's code: one that throws, or answers anything but a boolean,
+    // fails the value rather than the validator.
+    const held: IHeldPattern = Object.freeze({
+      source,
+      matches: (value: string): Result<boolean> =>
+        captureResult(() => matches(value)).onSuccess((matched: unknown) =>
+          Validators.boolean
+            .validate(matched)
+            .withErrorFormat(
+              () =>
+                `the pattern predicate for ${JSON.stringify(source)} returned ` +
+                `${describeEnumMember(matched)}, not a boolean`
+            )
+        )
+    });
     return checkStringOptions(opts).onSuccess(({ options, node }) =>
       succeed(new ValidatedStringOptions<T>(CONSTRUCTION_TOKEN, options, withHeldPattern(node, held)))
     );

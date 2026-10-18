@@ -59,7 +59,7 @@ All pages fetched 2026-10-18 with WebFetch (no sub-agent was used).
 | same wires, any other provider, `ft:` models, endpoint override | fold | unverified; [O] also lists `pattern` among the keywords fine-tuned models do not support |
 | Anthropic tools (and forced-tool output) | **pass** | the pass-everything table: `input_schema` is JSON Schema [A1]; the limits apply to "JSON outputs and strict tool use" [A2] |
 | Anthropic JSON outputs | **pass** | [A2] § "Pattern support (regex)": "Full matching (`^...$`) and partial matching", quantifiers, classes and groups supported; backreferences, lookaround, `\b` and large `{n,m}` not, and "Complex patterns may result in 400 errors" |
-| Gemini tools and `responseSchema` | **pass** | [G] Schema: "`pattern` … Optional. Pattern of the Type.STRING to restrict a string to a regular expression." No dialect is named |
+| Gemini tools and `responseSchema` | **fold** (review round 1; was pass) | [G] Schema documents the field — "`pattern` … Optional. Pattern of the Type.STRING to restrict a string to a regular expression." — but not its semantics: no dialect, and nothing on anchoring. That is the same unknown that folds the OpenAI-family table, so it folds |
 | Ollama (`ts-extras-ollama`) | fold | uses `unverifiedWireSchemaKeywords` |
 
 - [O] https://developers.openai.com/api/docs/guides/structured-outputs § "Supported properties"
@@ -102,10 +102,10 @@ comparison reads the library tables, so the new `pattern` rows are compared with
 New unit tests:
 
 - both fixtures emit the same wire and enforce the pattern;
-- `ourVerdict` gives pass on Anthropic tools, Anthropic JSON outputs and Gemini, and adapt on
-  OpenAI and xAI;
+- `ourVerdict` gives pass on Anthropic tools and Anthropic JSON outputs, and adapt on OpenAI, xAI
+  and Gemini;
 - xAI accepting the fold is `conservative`;
-- Gemini rejecting the pass is `unsafe` on both rows.
+- Anthropic JSON outputs rejecting the pass is `unsafe` on both rows.
 
 ## The security pin
 
@@ -135,7 +135,7 @@ once, with the source.
 - `ts-extras` `schemaKeywords.test.ts`: the `everything` tool schema and the structured-output
   schema gain a `pattern` property. Each per-wire expectation now pins it:
   - fold on OpenAI/xAI tools and strict output;
-  - pass on Gemini tools and `responseSchema`;
+  - fold on Gemini tools and `responseSchema`;
   - pass on Anthropic JSON outputs;
   - pass on Anthropic tools and forced tool, through `toJson()` equality.
 
@@ -195,9 +195,10 @@ Every log is graded by grep and checked for NUL padding (`wc -c` equals `tr -d '
 3. **OpenAI passes `pattern`, but the OpenAI-family table folds it.** The brief's rule is "pass where
    the docs say supported". OpenAI and xAI both list it, but xAI documents implicit anchoring, which
    changes what the keyword means. One table serves both providers.
-4. **Gemini names no regex dialect.** It passes under the brief's rule. The probe pattern is
-   anchored, so it cannot tell whether Gemini anchors implicitly as xAI does. Worth an unanchored
-   fixture in a later run.
+4. **Gemini names no regex dialect.** I passed it under the brief's rule; review round 1 folded it,
+   per this package's own rule (pass only where the keyword is documented with JSON Schema
+   semantics). An enforcement probe — an unanchored pattern — could justify passing it later
+   (`docs/FUTURE.md`).
 5. **The proxy path.** `callProxiedCompletion` sends `toJson()`, and a proxy that reconstitutes the
    schema with `fromJson` now refuses a host `pattern` unless the proxy injects a validator. From the
    proxy's side that schema is client input, so refusal is the right default. It is recorded here,
@@ -216,3 +217,20 @@ diff changed four things:
   re-parse contradicts.
 
 An independent gate-time review is the orchestrator's.
+
+## Review round 1
+
+The orchestrator's deep review found no P1s and confirmed the no-untrusted-`RegExp` claim. Base
+re-merged with `integration/asks` (#741, `ts-agent-memory` only) in `1a00c3546`.
+
+| finding | resolution |
+|---|---|
+| **P2** Gemini passed `pattern` although it documents neither dialect nor anchoring, contradicting `schemaPatternConstraintKeywords`' own rule | `geminiSchemaKeywords.pattern` is now `'fold'`, with its TSDoc giving the reason. Tests updated: Gemini tools and `responseSchema` fold it, and the probe's `ourVerdict` is `adapt` on Gemini. The probe's unsafe-pass test now uses Anthropic JSON outputs. Docs updated: the citation table above, `ts-extras` `CAPABILITIES.md`, the change file, the ledger, `README.md` and `meta.yaml`. `docs/FUTURE.md` notes that an enforcement probe could justify passing it later. |
+| **P3.1** compile-swap: the built-in `exec` reads `lastIndex` before matching, so a `lastIndex` whose `valueOf` calls `compile()` swapped the pattern after the form check. Reproduced: `^a$` matched `"b"` | Before each match, `lastIndex` is set to the primitive `0` with `Reflect.set`, and the match runs only if it reads back as `0`. The form is checked again after the match. A frozen `RegExp` with a non-zero `lastIndex` fails closed. Two tests cover this: one reproduces the attack (the `valueOf` is never called, and `"b"` is refused), and one covers the frozen case. |
+| **P3.2** a validator returning something that is not a `Result` threw a `TypeError` | The returned value is checked to be a `Success`/`Failure` before use, through a `Validators.isA` (ts-utils has no `isResult`). A non-`Result` is refused with `#/…: pattern "<src>" was refused: the pattern validator returned <kind>, not a Result`. A non-function predicate gets its own message. A predicate that returns a non-boolean at validation time now fails the value with `the pattern predicate for "<src>" returned <value>, not a boolean`. Each case is tested, including `undefined`, `null` and an array. One caveat: a `Result` from a different installed copy of `@fgv/ts-utils` is refused too, and the message says so. |
+| **P3.3** MCP tests | Two tests added. A validator that throws at admission skips the tool with its reason. A predicate that throws at `execute` produces a correctable tool error: the server is not called and no `error` event is emitted. |
+| **P3.4** the held-pattern shape was retyped inline | `IHeldPattern` (`@internal`) moved to `options.ts`, so it is exported from the barrel, and the `_read` / `_createWithMatcher` signatures now name it. `_createWithMatcher` takes `(opts, source, matches)`. The `api.md` `ae-*` counts are unchanged from the base (2 / 35 / 212). |
+
+### Gates, round 1
+
+GATES_R1

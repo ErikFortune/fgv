@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { StringOneOf } from '@fgv/ts-utils';
+import { Result, StringOneOf } from '@fgv/ts-utils';
 import { JsonValue } from '../json';
 import {
   schemaLengthConstraintKeywords,
@@ -239,6 +239,18 @@ export interface IStringSchemaOptions extends ISchemaOptions {
    * the description rather than sending it.
    */
   format?: string;
+}
+
+/**
+ * A pattern a string node enforces and emits: the source the wire receives, and the one predicate
+ * that enforces it. Held immutably, so the validator and `toJson()` cannot come to disagree.
+ * @internal
+ */
+export interface IHeldPattern {
+  /** The ECMAScript source emitted as `pattern`. */
+  readonly source: string;
+  /** Whether a string matches, or a `Failure` when the match could not be made. */
+  readonly matches: (value: string) => Result<boolean>;
 }
 
 /**

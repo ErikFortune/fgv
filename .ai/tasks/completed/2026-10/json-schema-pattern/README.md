@@ -23,8 +23,9 @@ synchronous `RegExp.test` cannot time out. The stream splits `pattern` by who wr
   pattern and its predicate enforces it.
 - **The library never constructs a `RegExp`.** This is pinned by a test that spies on `RegExp`
   and records zero calls.
-- **Wire tables:** `pattern` passes on Anthropic tools, Anthropic JSON outputs and Gemini. It folds
-  on the OpenAI/xAI wire, where xAI anchors patterns implicitly, and on unverified wires.
+- **Wire tables:** `pattern` passes on Anthropic tools and Anthropic JSON outputs. It folds on the
+  OpenAI/xAI wire, where xAI anchors patterns implicitly; on Gemini, which documents the field but
+  not its dialect or anchoring (review round 1); and on unverified wires.
 - **MCP:** `adaptMcpTools(session, { patternValidator })`. Without the option, a `pattern` tool is
   still skipped.
 - **Probe:** two new fixtures, `pattern-host` and `pattern-fromJson`.

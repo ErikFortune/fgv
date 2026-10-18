@@ -211,14 +211,14 @@ describe('wireProbe', () => {
       expect(ourVerdict(rawOf('untyped-root'), gemini)).toBe('refuse');
     });
 
-    test('pattern: passes where documented with JSON Schema semantics, folds on the OpenAI family', () => {
+    test('pattern: passes where documented with JSON Schema semantics, folds on OpenAI/xAI and Gemini', () => {
       const anthropicTools = AiAssist.clientToolSchemaKeywords(descriptor('anthropic'));
       const gemini = AiAssist.clientToolSchemaKeywords(descriptor('google-gemini'));
       const openai = AiAssist.clientToolSchemaKeywords(descriptor('openai'));
       const xai = AiAssist.clientToolSchemaKeywords(descriptor('xai-grok'));
       for (const id of ['pattern-host', 'pattern-fromJson']) {
         expect(ourVerdict(rawOf(id), anthropicTools)).toBe('pass');
-        expect(ourVerdict(rawOf(id), gemini)).toBe('pass');
+        expect(ourVerdict(rawOf(id), gemini)).toBe('adapt');
         expect(ourVerdict(rawOf(id), openai)).toBe('adapt');
         expect(ourVerdict(rawOf(id), xai)).toBe('adapt');
       }
@@ -480,7 +480,7 @@ describe('wireProbe', () => {
       });
     });
 
-    test('pattern: a fold xAI accepts is conservative; a pass Gemini rejects is unsafe, on both fixtures', async () => {
+    test('pattern: a fold xAI accepts is conservative; a pass Anthropic JSON outputs rejects is unsafe, on both fixtures', async () => {
       const xai = await runWireProbe(testContext({ XAI_API_KEY: 'x' }), fakeProvider({}).deps, [
         wire('xai-tools')
       ]);
@@ -488,20 +488,20 @@ describe('wireProbe', () => {
         expect(report).toMatch(/pattern-host\s+adapt\s+accepted\s+conservative\s+accepted/);
         expect(report).toMatch(/pattern-fromJson\s+adapt\s+accepted\s+conservative\s+accepted/);
       });
-      const gemini = await runWireProbe(
-        testContext({ GEMINI_API_KEY: 'g' }),
+      const jsonOutputs = await runWireProbe(
+        testContext({ ANTHROPIC_API_KEY: 'k' }),
         fakeProvider({
           rawStatus: (request) =>
             JSON.stringify(request.body).includes('"pattern"')
               ? { status: 400, body: JSON.stringify({ error: { message: 'pattern is not supported' } }) }
               : undefined
         }).deps,
-        [wire('gemini-response-schema')]
+        [wire('anthropic-json-outputs')]
       );
-      expect(gemini).toFailWith(
-        /UNSAFE \(raw\): gemini-response-schema\/pattern-host, gemini-response-schema\/pattern-fromJson/
+      expect(jsonOutputs).toFailWith(
+        /UNSAFE \(raw\): anthropic-json-outputs\/pattern-host, anthropic-json-outputs\/pattern-fromJson/
       );
-      expect(gemini).toFailWith(/pattern-host \(raw\): 400 pattern is not supported/);
+      expect(jsonOutputs).toFailWith(/pattern-host \(raw\): 400 pattern is not supported/);
     });
 
     test('end-to-end mismatches and inconclusive results are reported, not failed', async () => {

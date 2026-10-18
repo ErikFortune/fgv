@@ -1,7 +1,7 @@
 {
   "changes": [
     {
-      "comment": "ai-assist keyword tables gain a pattern row: passed on Anthropic tools, Anthropic JSON outputs and Gemini; folded on the shared OpenAI/xAI wire (xAI anchors patterns implicitly) and on unverified wires.",
+      "comment": "ai-assist keyword tables gain a pattern row: passed on Anthropic tools and Anthropic JSON outputs; folded on the shared OpenAI/xAI wire (xAI anchors patterns implicitly), on Gemini (no documented dialect or anchoring) and on unverified wires.",
       "type": "minor",
       "packageName": "@fgv/ts-extras"
     }

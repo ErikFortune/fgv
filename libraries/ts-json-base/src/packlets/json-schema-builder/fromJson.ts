@@ -23,7 +23,9 @@
 import {
   Converter,
   Converters,
+  Failure,
   Result,
+  Success,
   Validator,
   Validators,
   captureResult,
@@ -321,6 +323,24 @@ const _patternPredicate: Validator<SchemaPatternPredicate> = Validators.isA(
   (from: unknown): from is SchemaPatternPredicate => typeof from === 'function'
 );
 
+/**
+ * What a pattern validator must return: a `Result` of this package's `@fgv/ts-utils`. Anything else
+ * — a raw predicate, a promise, a `Result` from another installed copy of `@fgv/ts-utils` — refuses
+ * the schema with a message naming what came back.
+ */
+const _resultValidator: Validator<Result<unknown>> = Validators.isA(
+  'Result',
+  (from: unknown): from is Result<unknown> => from instanceof Success || from instanceof Failure
+);
+
+/** What a value is, for a message about a caller's function returning the wrong thing. */
+function _kindOf(value: unknown): string {
+  if (value === null || value === undefined) {
+    return String(value);
+  }
+  return Array.isArray(value) ? 'an array' : `a ${typeof value}`;
+}
+
 /** A scalar an `enum` or `const` may list: a string, number or boolean — or `null`. */
 // `null` is the JSON value being modelled, not a JS sentinel — the same carve-out
 // `JsonPrimitive` takes in this package's `json` packlet.
@@ -583,7 +603,7 @@ function _convertString(
           return pattern === undefined
             ? stringOptions(opts)
             : _compilePattern(pattern, patternGate).onSuccess((matches) =>
-                ValidatedStringOptions._createWithMatcher(opts, { source: pattern, matches })
+                ValidatedStringOptions._createWithMatcher(opts, pattern, matches)
               );
         })
       )
@@ -600,9 +620,18 @@ function _compilePattern(source: string, patternGate: PatternGate): Result<Schem
   return patternGate().onSuccess((patternValidator) =>
     // The validator is the caller's code; one that throws, or returns something else, refuses the
     // schema rather than escaping the conversion.
-    captureResult(() => patternValidator(source))
+    captureResult((): unknown => patternValidator(source))
+      .onSuccess((returned) =>
+        _resultValidator
+          .validate(returned)
+          .withErrorFormat(() => `the pattern validator returned ${_kindOf(returned)}, not a Result`)
+      )
       .onSuccess((compiled) => compiled)
-      .onSuccess((predicate) => _patternPredicate.validate(predicate))
+      .onSuccess((predicate) =>
+        _patternPredicate
+          .validate(predicate)
+          .withErrorFormat(() => `the pattern validator succeeded with ${_kindOf(predicate)}, not a function`)
+      )
       .withErrorFormat((msg) => `pattern ${JSON.stringify(_echo(source))} was refused: ${msg}`)
   );
 }

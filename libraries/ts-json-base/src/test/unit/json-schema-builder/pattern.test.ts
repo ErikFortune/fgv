@@ -414,3 +414,62 @@ describe('JsonSchema pattern — wire adaptation', () => {
     ).toBe('Constraints: maxLength 3; pattern "^a$".');
   });
 });
+
+describe('JsonSchema pattern — review round 1', () => {
+  test('a lastIndex whose valueOf re-initialises the RegExp mid-match cannot swap the pattern', () => {
+    const re = /^a$/u;
+    const schema = JsonSchema.string(JsonSchema.stringOptions({ pattern: re }).shouldNotFail('swap'));
+    let swapped = false;
+    // `exec` converts `lastIndex` before running the matcher; this one swaps the pattern when it is.
+    re.lastIndex = {
+      valueOf: (): number => {
+        swapped = true;
+        re.compile('^b$', 'u');
+        return 0;
+      }
+    } as unknown as number;
+    expect(schema.validate('b')).toFailWith(/pattern/);
+    expect(schema.validate('a')).toSucceed();
+    expect(swapped).toBe(false);
+  });
+
+  test('a RegExp whose lastIndex cannot be reset fails closed', () => {
+    const re = /^a$/u;
+    const schema = JsonSchema.string(JsonSchema.stringOptions({ pattern: re }).shouldNotFail('frozen'));
+    re.lastIndex = 3;
+    Object.freeze(re);
+    expect(schema.validate('a')).toFailWith(/lastIndex could not be reset to 0/);
+  });
+
+  test('a validator that returns something other than a Result refuses the schema, naming the path', () => {
+    const raw = ((source: string) => (v: string) =>
+      v === source) as unknown as JsonSchema.SchemaPatternValidator;
+    expect(JsonSchema.fromJson(idSchema('^a'), { patternValidator: raw })).toFailWith(
+      /^#\/properties\/id: pattern "\^a" was refused: the pattern validator returned a function, not a Result$/
+    );
+    const nothing = (() => undefined) as unknown as JsonSchema.SchemaPatternValidator;
+    expect(JsonSchema.fromJson(idSchema('^a'), { patternValidator: nothing })).toFailWith(
+      /was refused: the pattern validator returned undefined, not a Result$/
+    );
+    const nulled = (() => null) as unknown as JsonSchema.SchemaPatternValidator;
+    expect(JsonSchema.fromJson(idSchema('^a'), { patternValidator: nulled })).toFailWith(
+      /was refused: the pattern validator returned null, not a Result$/
+    );
+    const listed = (() => []) as unknown as JsonSchema.SchemaPatternValidator;
+    expect(JsonSchema.fromJson(idSchema('^a'), { patternValidator: listed })).toFailWith(
+      /was refused: the pattern validator returned an array, not a Result$/
+    );
+    const notAFunction = (() => succeed('yes')) as unknown as JsonSchema.SchemaPatternValidator;
+    expect(JsonSchema.fromJson(idSchema('^a'), { patternValidator: notAFunction })).toFailWith(
+      /was refused: the pattern validator succeeded with a string, not a function$/
+    );
+  });
+
+  test('a predicate that answers something other than a boolean fails the value with a clear message', () => {
+    const truthy = (() => succeed(() => 'yes')) as unknown as JsonSchema.SchemaPatternValidator;
+    const schema = JsonSchema.fromJson(idSchema('^a'), { patternValidator: truthy }).orThrow();
+    expect(schema.validate({ id: 'a' })).toFailWith(
+      /the pattern predicate for "\^a" returned "yes", not a boolean/
+    );
+  });
+});

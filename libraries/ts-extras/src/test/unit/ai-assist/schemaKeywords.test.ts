@@ -181,7 +181,8 @@ describe('schema keyword capability tables, per wire format', () => {
         description: 'Who. Examples: ["a@b.c"].'
       },
       d: { type: 'string', format: 'duration' },
-      p: { type: 'string', pattern: '^[a-z]+$' }
+      // Gemini names no regex dialect or anchoring, so `pattern` folds.
+      p: { type: 'string', description: 'Constraints: pattern "^[a-z]+$".' }
     });
   });
 
@@ -383,7 +384,7 @@ describe('schema keyword capability tables, structured output', () => {
       properties: {
         n: { type: 'integer', minimum: 1, maximum: 5, default: 3 },
         s: { type: 'string', maxLength: 4, format: 'hostname' },
-        p: { type: 'string', pattern: '^\\d+$' }
+        p: { type: 'string', description: 'Constraints: pattern "^\\\\d+$".' }
       },
       required: ['n', 's', 'p']
     });

@@ -677,6 +677,12 @@ interface IFromJsonOptions {
     readonly patternValidator?: SchemaPatternValidator;
 }
 
+// @internal
+interface IHeldPattern {
+    readonly matches: (value: string) => Result<boolean>;
+    readonly source: string;
+}
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
@@ -1241,6 +1247,7 @@ declare namespace JsonSchema {
         ISchemaOptions,
         INumberSchemaOptions,
         IStringSchemaOptions,
+        IHeldPattern,
         IObjectSchemaOptions,
         IAnySchemaOptions,
         PlainSchemaOptions,
@@ -1648,18 +1655,12 @@ class ValidatedStringOptions<T extends IStringSchemaOptions = IStringSchemaOptio
     // @internal
     static _createWithMatcher<T extends IStringSchemaOptions & {
         readonly pattern?: never;
-    }>(opts: T, pattern: {
-        readonly source: string;
-        readonly matches: (value: string) => boolean;
-    }): Result<ValidatedStringOptions<T>>;
+    }>(opts: T, source: string, matches: (value: string) => boolean): Result<ValidatedStringOptions<T>>;
     readonly kind: 'validated-string-options';
     get options(): Readonly<T>;
     // @internal
     static _read(value: unknown): Readonly<Omit<IStringSchemaOptions, 'pattern'> & {
-        readonly pattern?: {
-            readonly source: string;
-            readonly matches: (value: string) => Result<boolean>;
-        };
+        readonly pattern?: IHeldPattern;
     }> | undefined;
 }
 
