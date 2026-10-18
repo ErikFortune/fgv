@@ -1,0 +1,58 @@
+id: testbed-wire-probe
+status: shipped
+packages: ['@fgv/ts-extras', '@fgv/testbed']
+prs: [] # filled in by the orchestrator on merge (#TBD)
+openPrs: []
+opened: 2026-10-18
+closed: 2026-10-18
+summary:
+  intended: >
+    A samples/testbed scenario, run on demand with live keys and never in CI, that sends a fixed set
+    of fixture schemas (every constraint keyword, every annotation, numeric/boolean enums, {} at the
+    root, in properties and in items) unadapted to each provider wire, records accept/reject with
+    the provider's text, classifies each row against our table as agrees / conservative / unsafe,
+    exits non-zero only on unsafe, and confirms each adapted request is accepted end to end —
+    turning the #736 wire inferences into observations.
+  shipped: >
+    The wire-probe scenario over eight wires (Anthropic tools and JSON outputs; OpenAI and xAI
+    Responses tools and strict output; Gemini tools and responseSchema) with 22 fixtures, a
+    control-fixture gate per wire, the table read from the library rather than restated, and unit
+    tests over synthetic provider responses at 100% coverage. Two additive ts-extras exports:
+    AiAssist.structuredOutputSchemaKeywords and a public AiAssist.toGeminiParameterSchema.
+  diverged: >
+    Not testbed-only: the Anthropic JSON-outputs table and Gemini's dialect translation were
+    internal, and a testbed copy of the table could drift silently, so ts-extras gained two additive
+    exports and a change file. An adapted request the provider rejects end to end is also counted
+    unsafe. No live run was made — the session had no provider keys — so the #736 inferences remain
+    inferences.
+  sourceLine: '**Shipped:** a `wire-probe` testbed scenario that sends fixture schemas unadapted to each configured provider wire, classifies every row against the `ai-assist` keyword table as agrees / conservative / unsafe, and confirms each adapted request end to end — plus two additive `ts-extras` exports it needed.'
+  headline: >
+    AiAssist.structuredOutputSchemaKeywords reads the keyword table a structured-output schema is
+    adapted with, and the testbed wire-probe checks every table against what each provider accepts.
+keywords:
+  [
+    'wire probe',
+    'live provider test',
+    'keyword capability table',
+    'schemaKeywords',
+    'structuredOutputSchemaKeywords',
+    'clientToolSchemaKeywords',
+    'toGeminiParameterSchema',
+    'conservative fold',
+    'unsafe pass',
+    'numeric enum',
+    'untyped schema',
+    'Anthropic JSON outputs',
+    'OpenAI strict',
+    'Gemini responseSchema',
+    'xAI Responses',
+    'inference vs observation'
+  ]
+relatedStreams:
+  - { id: json-schema-shapes, relationship: 'shipped the nonStringEnum / untyped inferences this probes' }
+  - { id: json-schema-constraints, relationship: 'shipped the per-keyword tables this probes' }
+  - {
+      id: json-schema-pattern,
+      relationship: 'adds pattern; the probe gains a fixture and is re-run after it lands'
+    }
+sourceHash: 089b41bc603bb29b # first 16 hex of sha256 over brief.md and result.md concatenated in that order
