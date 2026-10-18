@@ -198,3 +198,23 @@ All logs were checked for NUL padding, and none was found.
 | repo-wide `rebuild` | exit 0; error grep 0; `warning` (-i) 1, the symlink notice; **0 `ae-` lines**; 38 completed |
 | repo-wide `test` | exit 0; `SUCCESS: 37 operations`; error grep 0; `warning` 1 (symlink); 0 `ae-` lines; no flake |
 | `change --verify`, `verify-capability-docs`, `generate-capability-feed --check` | pass, 0 failed, 0 stale |
+
+## Review round 4
+
+Base: `bf905bbff` (the coordinator's merge of `integration/asks`, #738 and #739), fast-forwarded.
+
+| finding | resolution |
+|---|---|
+| **P2** a factory could throw: a substituted prototype with no own `options`, or a `Proxy` with no `get` trap, reaches the real getter, which throws on the missing private field | The read is wrapped in `captureResult`, and a failure means "not validated", so only plain keys are kept. `plainKeysOf` is also wrapped, so a hostile accessor cannot escape a factory. Tested for both forgeries, on the number and the integer paths. |
+| **P2** `checkAnnotations` read its input twice | Each key is now read exactly once, into a snapshot (`captureResult` over a spread). Converting the snapshot is the check, and the result is built only from the snapshot and the converted values. A two-faced accessor is pinned (one read; the node carries the checked value), and so is a throwing accessor (a `Failure`, not an exception). |
+
+### Gates, round 4
+
+All logs were checked for NUL padding, and none was found.
+
+| gate | result |
+|---|---|
+| `ts-json-base` build / fixlint / lint / test | exit 0; 0 warnings and 0 `ae-` lines in the build log; coverage 100% (4/4); `api.md` `ae-*` set unchanged from the base (2 / 35 / 212) |
+| repo-wide `rebuild` | exit 0; error grep 0; `warning` (-i) 1, the symlink notice; 0 `ae-` lines; 38 completed |
+| repo-wide `test` | First run: `@fgv/ts-extras` failed one timing assertion, `md5Normalizer.browser.test.ts` "should handle large objects efficiently" (367 ms against a 300 ms bound, under load from the sibling worker; it does not touch `JsonSchema`). 17 operations had passed and 19 were blocked behind it. Re-run with `test --from @fgv/ts-extras`, which covers the failed package and every blocked one: `SUCCESS: 27 operations`, error grep 0, `warning` 1 (symlink), 0 `ae-` lines. |
+| `change --verify`, `verify-capability-docs`, `generate-capability-feed --check` | pass, 0 failed, 0 stale |
