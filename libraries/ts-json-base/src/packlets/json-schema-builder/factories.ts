@@ -29,6 +29,7 @@ import {
   Validation,
   Validators,
   allSucceed,
+  captureResult,
   fail,
   mapResults,
   succeed
@@ -686,9 +687,12 @@ function _optionsOf<O extends object>(opts: object | undefined, reader: IOptions
   }
   if (_claimsValidated(opts)) {
     // `options` is a prototype getter on a real instance, from either copy, so it is read through
-    // the prototype chain rather than as an own field.
-    const options: unknown = Reflect.get(opts, 'options');
-    return reader.revalidate(options).orDefaultWith(() => plainKeysOf(options) as O);
+    // the prototype chain rather than as an own field. On a forgery that reaches the real getter
+    // (a substituted prototype, a Proxy without a trap) the getter throws on the missing private
+    // field; that reads as "not validated", so only the plain keys are kept.
+    return captureResult((): unknown => Reflect.get(opts, 'options'))
+      .onSuccess((options) => reader.revalidate(options).onFailure(() => succeed(plainKeysOf(options) as O)))
+      .orDefaultWith(() => plainKeysOf(opts) as O);
   }
   // Plain options: only the keys that cannot be wrong, each of its declared type.
   return plainKeysOf(opts) as O;

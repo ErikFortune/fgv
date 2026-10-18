@@ -835,6 +835,26 @@ describe('JsonSchema constraints — float tolerance, validated options, copies,
       expect(JsonSchema.integer(integerForged).toJson()).toEqual({ type: 'integer' });
     });
 
+    test('a substituted prototype without its own options does not make a factory throw', () => {
+      const forged: unknown = Object.setPrototypeOf(
+        { description: 'd' },
+        JsonSchema.ValidatedNumberOptions.prototype
+      );
+      const build = (): JsonSchema.ISchemaValidator<unknown> =>
+        JsonSchema.number(forged as JsonSchema.ValidatedNumberOptions);
+      expect(build).not.toThrow();
+      expect(build().toJson()).toEqual({ type: 'number', description: 'd' });
+    });
+
+    test('a Proxy without a get trap does not make a factory throw', () => {
+      const real = JsonSchema.numberOptions({ minimum: 2 }).shouldNotFail('proxy target');
+      const proxied = new Proxy(real, {});
+      expect(() => JsonSchema.number(proxied)).not.toThrow();
+      expectUnforged(JsonSchema.number(proxied));
+      const integerProxied = new Proxy(JsonSchema.integerOptions({ minimum: 2 }).shouldNotFail('int'), {});
+      expect(JsonSchema.integer(integerProxied).toJson()).toEqual({ type: 'integer' });
+    });
+
     test('a Proxy answering coherent options is re-validated and then used', () => {
       const real = JsonSchema.numberOptions({}).shouldNotFail('proxy target');
       const proxied = new Proxy(real, {
@@ -856,6 +876,31 @@ describe('JsonSchema constraints — float tolerance, validated options, copies,
     expect(JsonSchema.numberOptions({ strict: 'no' as never })).toFailWith(/^strict: /);
     expect(JsonSchema.stringOptions({ format: 7 as never })).toFailWith(/^format: /);
     expect(JsonSchema.integerOptions({ title: [] as never })).toFailWith(/^title: /);
+  });
+
+  test('each option key is read exactly once, so a two-faced accessor cannot slip past the check', () => {
+    let reads = 0;
+    const twoFaced = {
+      get default(): JsonValue {
+        reads += 1;
+        // First read answers a JSON value; any later read would answer something that is not.
+        return reads === 1 ? 'ok' : ((() => 1) as unknown as JsonValue);
+      }
+    };
+    expect(JsonSchema.schemaOptions(twoFaced)).toSucceedAndSatisfy((validated) => {
+      expect(validated.options.default).toBe('ok');
+      expect(JsonSchema.boolean(validated).toJson()).toEqual({ type: 'boolean', default: 'ok' });
+    });
+    expect(reads).toBe(1);
+  });
+
+  test('a throwing accessor is a Failure from the options factory, not an exception', () => {
+    const hostile = {
+      get title(): string {
+        throw new Error('boom');
+      }
+    };
+    expect(JsonSchema.schemaOptions(hostile)).toFailWith(/boom/);
   });
 
   test('validated default and examples are deeply frozen', () => {

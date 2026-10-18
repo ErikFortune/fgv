@@ -34,6 +34,7 @@ import {
   StringOneOf,
   Validator,
   Validators,
+  captureResult,
   fail,
   mapResults,
   succeed
@@ -257,14 +258,18 @@ const _typedKeysConverter: Converter<ITypedKeys> = Converters.object<ITypedKeys>
  * @internal
  */
 export function checkAnnotations<T extends ISchemaOptions>(opts: T): Result<T> {
-  return _typedKeysConverter.convert(opts).onSuccess((typed) =>
-    succeed({
-      ...opts,
-      ...(typed.default !== undefined && { default: _deepFreeze(typed.default) }),
-      ...(typed.examples !== undefined && {
-        examples: Object.freeze(typed.examples.map((example) => _deepFreeze(example)))
+  // Each key is read exactly once, into the snapshot; everything after works from the snapshot and
+  // the converted values, so an accessor cannot answer the check one value and the node another.
+  return captureResult((): T => ({ ...opts })).onSuccess((snapshot) =>
+    _typedKeysConverter.convert(snapshot).onSuccess((typed) =>
+      succeed({
+        ...snapshot,
+        ...(typed.default !== undefined && { default: _deepFreeze(typed.default) }),
+        ...(typed.examples !== undefined && {
+          examples: Object.freeze(typed.examples.map((example) => _deepFreeze(example)))
+        })
       })
-    })
+    )
   );
 }
 
@@ -565,7 +570,10 @@ const _plainKeysConverter: Converter<IPlainKeys> = Converters.object<IPlainKeys>
  * @internal
  */
 export function plainKeysOf(from: unknown): IPlainKeys {
-  return _plainKeysConverter.convert(from).orDefault({});
+  // A hostile accessor may throw; that reads as no plain keys rather than escaping a factory.
+  return captureResult(() => _plainKeysConverter.convert(from))
+    .onSuccess((converted) => converted)
+    .orDefault({});
 }
 
 /**
