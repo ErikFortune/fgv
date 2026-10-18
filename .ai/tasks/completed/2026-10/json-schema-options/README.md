@@ -1,6 +1,6 @@
 # `json-schema-options`: validate the options, never throw from a factory
 
-**Shipped 2026-10-18** onto `integration/asks` (PR #TBD).
+**Shipped 2026-10-18** onto `integration/asks` (PR #740).
 Origin: user decision 6c, 2026-10-18 (`personality-asks-2026-10/followups.md`). Builds on
 `json-schema-constraints` (#734) and `json-schema-shapes` (#736).
 

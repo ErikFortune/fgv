@@ -1,6 +1,6 @@
 # Result: `json-schema-options`
 
-Branch `json-schema-options`, based on `integration/asks` at `b90de8b2b`. PR: #TBD.
+Branch `json-schema-options`, based on `integration/asks` at `b90de8b2b`. PR: #740.
 
 ## What shipped
 
