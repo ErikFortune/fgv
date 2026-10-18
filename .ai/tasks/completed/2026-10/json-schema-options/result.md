@@ -178,3 +178,23 @@ All logs were checked for NUL padding, and none was found.
 | repo-wide `rebuild` | exit 0; error grep 0; `warning` (-i) 1, the symlink notice; 38 completed |
 | repo-wide `test` | exit 0; `SUCCESS: 37 operations`; error grep 0; `warning` (-i) 1, the symlink notice; no timing flake this run |
 | `change --verify`, `verify-capability-docs`, `generate-capability-feed --check` | pass, 0 failed, 0 stale |
+
+## Review round 3
+
+| finding | resolution |
+|---|---|
+| **P1** own-instance forgery: a `setPrototypeOf` object with its own `options`, or a `Proxy` answering `.options` | Own instances are now recognised by an ES private brand check (`#options in x`; `#integer in x` on the integer path), and their options are read from the private field through `@internal` static `_read` / `_readInteger`, never through the getter. Both forgeries fail the brand check. They still pass `instanceof`, so they are re-validated: an incoherent forged range falls back to plain keys, and a coherent one is checked and then applied. One test per forgery (and one on the integer path) shows that the forged range is not applied and that `toJson()` → `fromJson` gives the same node. |
+| **P1** `ae-forgotten-export` for `ConstructionToken` | The constructors take `token: symbol`. `VALIDATED_OPTIONS_MARKER` moved to the internal `constraints.ts` and out of the barrel. The 53 `ae-unresolved-link` warnings this stream added (from `{@link JsonSchema.…}`) are now code spans. |
+| **P2** the validated paths applied different checks | Every `check*` function now reads all non-constraint keys through one typed converter, and a key of the wrong type is refused. The `revalidate*` functions run that same converter and then the same `check*`. Tested for `nullable`, `description`, `additionalProperties`, `strict`, `format` and `title`. |
+
+### Gates, round 3
+
+All logs were checked for NUL padding, and none was found.
+
+| gate | result |
+|---|---|
+| `ts-json-base` build / fixlint / lint / test | exit 0; the second build has 0 warnings and **0 `ae-` lines**; coverage 100% (4/4) |
+| `etc/ts-json-base.api.md` | **No `ae-` warnings beyond the base's**: it carries exactly the `ae-*` set of `origin/integration/asks` (2 `ae-forgotten-export`, for `JsonCompatible_2` and `IsUnknown`; 35 `ae-unresolved-inheritdoc-reference`; 212 `ae-unresolved-link`), all pre-existing and none from this stream |
+| repo-wide `rebuild` | exit 0; error grep 0; `warning` (-i) 1, the symlink notice; **0 `ae-` lines**; 38 completed |
+| repo-wide `test` | exit 0; `SUCCESS: 37 operations`; error grep 0; `warning` 1 (symlink); 0 `ae-` lines; no flake |
+| `change --verify`, `verify-capability-docs`, `generate-capability-feed --check` | pass, 0 failed, 0 stale |
