@@ -518,7 +518,11 @@ export async function callOpenAiResponsesStream(
   // `tools` is omitted entirely when none are requested — a Responses-only model routed
   // here for tier/model reasons (not tools) must not send an empty tools array.
   if (tools.length > 0) {
-    body.tools = toResponsesApiTools(tools);
+    const toolsResult = toResponsesApiTools(tools, config);
+    if (toolsResult.isFailure()) {
+      return fail(`OpenAI Responses streaming: ${toolsResult.message}`);
+    }
+    body.tools = toolsResult.value;
   }
   if (effort !== undefined && supportsReasoning) {
     body.reasoning = { effort };

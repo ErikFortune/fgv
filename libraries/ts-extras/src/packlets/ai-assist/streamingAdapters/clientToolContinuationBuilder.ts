@@ -726,7 +726,9 @@ export function executeClientToolTurn(
   const config: IStreamApiConfig = {
     baseUrl: baseUrlResult.value,
     apiKey,
-    model: resolvedModel
+    model: resolvedModel,
+    // Trusted only on the provider's own endpoint — see `IAiApiConfig.providerId`.
+    providerId: endpoint === undefined ? descriptor.id : undefined
   };
 
   // Accumulation buffers — populated by the adapter, read by the builder.

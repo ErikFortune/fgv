@@ -7,6 +7,7 @@
 import { AiAssist } from '@fgv/ts-extras';
 import { DetailedResult } from '@fgv/ts-utils';
 import { JsonObject } from '@fgv/ts-json-base';
+import { JsonSchema } from '@fgv/ts-json-base';
 import { JsonValue } from '@fgv/ts-json-base';
 import { Logging } from '@fgv/ts-utils';
 import { OAuthClientProvider } from '@modelcontextprotocol/sdk/client/auth.js';
@@ -37,6 +38,7 @@ export function createStdioTransport(params: IMcpStdioTransportParams): Result<I
 // @public
 export interface IAdaptMcpToolsOptions {
     readonly logger?: Logging.ILogger;
+    readonly schemaKeywords?: JsonSchema.SchemaKeywordCapabilities;
 }
 
 // @public

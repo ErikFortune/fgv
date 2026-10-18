@@ -107,6 +107,12 @@ export interface IAiStructuredOutputCapability {
  * - `'json-mode'` — syntactically valid JSON is guaranteed; the shape is not.
  * - `'schema'` — generation was constrained to the supplied schema, and the reply
  *   is the model's own text. Includes Anthropic's `output_config.format`.
+ *   **Folded constraints are not provider-enforced:** a constraint keyword the
+ *   provider does not document (Anthropic JSON outputs refuse `minimum` and
+ *   `maxLength`, for example) is removed from the wire schema and stated in the
+ *   node's description instead, so the provider constrains the reply's shape but
+ *   not that value. Your schema's validator still enforces it, and a reply that
+ *   breaks it fails validation.
  * - `'tool-forced'` — Anthropic-style forced tool use; the shape comes from the
  *   forced tool's input schema, and `content` is the re-serialized tool input.
  * @public

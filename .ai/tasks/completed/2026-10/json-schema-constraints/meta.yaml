@@ -1,0 +1,75 @@
+id: json-schema-constraints
+status: shipped
+packages: ['@fgv/ts-json-base', '@fgv/ts-extras', '@fgv/ts-extras-ollama', '@fgv/ts-extras-mcp']
+prs: [734]
+openPrs: []
+opened: 2026-10-17
+closed: 2026-10-17
+summary:
+  intended: >
+    Make the constraint keywords JsonSchema.fromJson accepted and silently dropped (minimum, maximum,
+    exclusive bounds, multipleOf, minLength, maxLength) part of the node — enforced by the validator,
+    emitted by toJson(), and adapted per provider wire (passed where documented, translated where
+    Gemini has an exact equivalent, folded into the description otherwise) — with format, title,
+    default and examples carried as annotations, every pass/translate entry cited from fetched
+    provider documentation (PersonAIlity#682).
+  shipped: >
+    number/integer/string factories take the keywords as typed options; validating ones are enforced
+    with a message naming keyword and bound, annotations are emitted only, and an incoherent set
+    throws at construction (fromJson returns the same checks as a Failure naming the path). Every
+    keyword round-trips; $ref and nullable-union wrapper annotations replace the inner node's. A
+    shared JsonSchema.adaptSchemaKeywords transform folds into one deterministic sentence
+    ("Constraints: minimum 1; maximum 10."). ai-assist applies per-format tables on every tool and
+    structured-output path; Ollama folds everything; an MCP tool declaring minimum now refuses an
+    out-of-range call before the server sees it. After the gate-time review, annotations may be
+    dropped (title is) and folded annotations get their own sentences; OpenAI fine-tuned models and
+    caller-supplied endpoints fold everything; validateNumberOptions/validateStringOptions give a
+    non-throwing check; multipleOf tolerates only float rounding.
+  diverged: >
+    The fold transform lives in ts-json-base, not ai-assist, so ts-extras-ollama (which depends only
+    on ts-json-base) can share it. The OpenAI-family tables are per provider as well as per format:
+    the Responses and Chat Completions wires are shared by every apiFormat 'openai' provider, and
+    only OpenAI and xAI could be verified (Mistral's docs host is blocked), so every other provider on
+    those wires folds everything. Factories throw rather than return a Result, since they return
+    ISchemaValidator. The TECH_DEBT P3 is resolved for the constraint class only; const, array and
+    key-count keywords remain. Four pinned tests changed, not two. The Gemini sanitizer was found
+    rewriting data-valued keywords and now copies default/examples/const verbatim.
+  sourceLine: "Make each of these keywords part of the node, so that all three of the following hold: it is **enforced** by the validator; it is **emitted** by `toJson()`; each provider's wire **adapts** it."
+  headline: >
+    JsonSchema constraint keywords (minimum, maxLength, multipleOf, …) are now enforced by the
+    validator and emitted by toJson(), and every ai-assist and Ollama wire passes, translates or
+    folds each one into the description per the provider's documented support.
+keywords:
+  [
+    'minimum',
+    'maximum',
+    'exclusiveMinimum',
+    'exclusiveMaximum',
+    'multipleOf',
+    'minLength',
+    'maxLength',
+    'format',
+    'title',
+    'default',
+    'examples',
+    'constraint keywords',
+    'annotations',
+    'fold into description',
+    'adaptSchemaKeywords',
+    'keyword capability table',
+    'OpenAI strict',
+    'xAI',
+    'Anthropic JSON outputs',
+    'Gemini OpenAPI subset',
+    'Ollama format',
+    'MCP tool schemas',
+    'wire/converter agreement',
+    'fgv-ask'
+  ]
+relatedStreams:
+  - {
+      id: json-schema-fromjson-widening,
+      relationship: 'previous stream on this packlet; its $ref and nullable-union wrappers now carry annotations'
+    }
+  - { id: personality-intake, relationship: 'captured the PersonAIlity #682 ask this stream implements' }
+sourceHash: 1462d1be97955922 # first 16 hex of sha256 over brief.md, state.md and result.md concatenated in that order

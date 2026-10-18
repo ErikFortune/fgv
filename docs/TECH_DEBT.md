@@ -861,6 +861,19 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
 
 ## P3 — Opportunistic cleanup
 
+- **[P3] `ts-agent-memory` cannot reopen a vault written with a non-identity `scopeEncoding`.**
+  Writes go through `scopeEncoding(scope)`. The open-time walk (`_collectEntries` in
+  `fileTreeMemoryStore.ts`) indexes records under the **raw** directory segments, and has no inverse
+  to recover the scope.
+  - **Before `agent-memory-scope-invariant`:** a scope-blind codec reopened such a vault silently,
+    filing records under the encoded path, so later reads missed them.
+  - **Now:** every codec fails the open on the scope check. That is loud rather than wrong, but it is
+    still unusable.
+  - **Fix:** give `scopeEncoding` an inverse (or make it a validation-only hook), and have the walk
+    decode directory segments back to scopes.
+  - **Trigger:** the first consumer that needs a non-identity encoding. The default is the identity
+    on valid scopes, and the param's TSDoc now says to keep it so.
+
 - **[P3] `ts-extras-mcp` tool schemas can lose an own `__proto__` key without the package seeing it.**
   `listMcpTools` (`libraries/ts-extras-mcp/src/packlets/mcp/operations.ts`) reads `tools/list` through
   the SDK's `client.listTools`, which parses the page with its own `ListToolsResultSchema` first.
@@ -1239,6 +1252,18 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
   **Reference**: `agent-tasks-tracked-commands` (`.ai/tasks/completed/2026-10/agent-tasks-tracked-commands/result.md`).
 
 - **[P3] `JsonSchema.fromJson` silently ignores validating keywords it does not model, so its converter can be looser than the source schema.**
+  **Constraint class resolved by the `json-schema-constraints` stream** (PersonAIlity#682, PR #734): `minimum`, `maximum`,
+  `exclusiveMinimum`/`exclusiveMaximum`, `multipleOf`, `minLength` and `maxLength` are now enforced
+  by the derived validator and emitted by `toJson()`, `format`/`title`/`default`/`examples` are
+  emitted as annotations, and every provider wire passes, translates or folds each one
+  (`.ai/tasks/completed/2026-10/json-schema-constraints/result.md`). **`const` resolved by the
+  `json-schema-shapes` stream** (PersonAIlity#683): a scalar `const` is now the enforced one-value
+  enum of its type, and an object, array or `null` `const` is refused
+  (`.ai/tasks/completed/2026-10/json-schema-shapes/result.md`). **Still open, as written below:**
+  the array constraints (`minItems`, `maxItems`, `uniqueItems`), the key-count keywords beside an
+  open object (`minProperties`, `maxProperties`), the object-key and array keywords, and the
+  unvalidated `"__proto__"` drop.
+
   The header of `FORBIDDEN_KEYWORDS` (`ts-json-base` `json-schema-builder/fromJson.ts`) is the stated
   safety rule — a keyword that cannot be honoured is refused, never dropped — but it lists only the
   structural keywords. Accepted and neither enforced nor emitted: constraint keywords (`const`,

@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "chatStructured folds every constraint and annotation keyword of the schema into the node's description before sending it as format, since Ollama documents no keyword support; the reply validator still enforces each one.",
+      "type": "minor",
+      "packageName": "@fgv/ts-extras-ollama"
+    }
+  ],
+  "packageName": "@fgv/ts-extras-ollama",
+  "email": "ErikFortune@outlook.com"
+}

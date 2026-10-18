@@ -44,6 +44,7 @@ for; it wraps a `SeededRandomSource` (reachable as `.rng`) and adds the draw ope
 | `nextBoolean(trueProbability = 0.5)` | weighted boolean |
 | `nextString(length, chars?)` | `chars` **defaults to alphanumeric**; pass one of `GeneratorData.Chars` for anything else |
 | `pickNext(items?)` | one element, or `undefined` for an empty or absent array |
+| `pickWeighted(candidates)` | one `item` with probability proportional to its `weight`, or `undefined` — see *Weighted pick* below |
 | `pickSequential(params)` / `pickRandom(params)` / `pickSequence(params)` | see below — the shape is not what the names suggest |
 
 **`candidates` is an array of *pools*, not of items** — `ReadonlyArray<ReadonlyArray<T>>` — and this
@@ -70,6 +71,31 @@ is what makes a seeded test stable as unrelated code starts drawing.
 **Global slot:** `setGlobalRng` / `getGlobalRng` / `ensureRng(rng?)`. `ensureRng` returns a `Result`
 and is the accessor to use — it resolves an explicit generator or falls back to the global one, so a
 component takes an optional generator and stays testable without reading global state itself.
+
+### Weighted pick — `pickWeighted` and `pickWeightedAt`
+
+`pickWeightedAt(unit, candidates)` is a **pure function** exported beside the generator:
+`candidates` is a `ReadonlyArray<IWeightedCandidate<T>>` (`{ item, weight }`), and the same `unit`
+and candidates always choose the same item. `PseudoRandomGenerator.pickWeighted(candidates)` is the same pick over
+`nextFloat()`, and consumes exactly one draw even when it returns `undefined`. **Use the pure form
+when the randomness comes from somewhere else** — a hash ratio, a stored draw — so a hash-derived
+choice and a generator-derived one share one set of rules.
+
+The rules, all part of the contract:
+
+- **Eligible means finite and greater than `0`.** Zero, negative, `NaN` and `±Infinity` weights are
+  never chosen, and take no share of the range.
+- **No eligible candidate (including an empty list) → `undefined`**, not a `Result` failure.
+- **`unit` is accepted on the closed interval `[0, 1]`**, because a hash ratio such as
+  `parseInt(hex, 16) / 0xffffffff` reaches exactly `1`. Outside that interval, or `NaN` → `undefined`.
+- **The walk is fixed:** `point = unit * total`; eligible candidates are walked in input order and the
+  first with `point < cumulative` wins; **the last eligible candidate wins by elimination**, so
+  `unit = 1` and floating-point shortfall land on it. Callers persist draws made this way, so the walk
+  must not be "improved".
+- **Overflow only:** if the eligible weights sum to a non-finite total, each is divided by the largest
+  eligible weight first. Ordinary weights are never rescaled, since that would move boundary draws.
+
+Not provided: weighted pick **without replacement** (a weighted sequence of distinct items).
 
 ### `SeededRandomSource` — the state layer
 
@@ -133,8 +159,9 @@ exists cannot fail to draw.
 
 ## Not in scope
 
-Cryptographic randomness (above), distributions beyond uniform and weighted-boolean (no gaussian,
-poisson, or arbitrary PDF sampling), and reservoir or streaming sampling. If you need a distribution,
+Cryptographic randomness (above), distributions beyond uniform, weighted-boolean and weighted
+choice (no gaussian, poisson, or arbitrary PDF sampling), weighted pick without replacement, and
+reservoir or streaming sampling. If you need a distribution,
 build it on `nextFloat()` rather than adding a second generator.
 
 ---
@@ -145,6 +172,6 @@ build it on `nextFloat()` rather than adding a second generator.
 
 <!-- BEGIN GENERATED: recent-additions -->
 
-*No stream has recorded a `sourceLine` against this package yet.*
+- **2026-10-17** — **Shipped:** `@fgv/ts-random` can make a weighted random choice, either from a generator or as a pure function of a unit float in `[0, 1]`, so a hash-derived choice is stable; `IProvenance.derivedFrom` is now documented as provenance, not a live link. ([#732](https://github.com/ErikFortune/fgv/pull/732))
 
 <!-- END GENERATED: recent-additions -->

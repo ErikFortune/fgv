@@ -5,10 +5,12 @@
 
 import '@fgv/ts-utils-jest';
 import { InMemoryRecordResolver } from '../../helpers/inMemoryRecordResolver';
+import { storeIdentityResolver } from '../../helpers/storeIdentityResolver';
 import { DetailedResult, Result, fail, succeed, succeedWithDetail } from '@fgv/ts-utils';
 import {
   HybridRetriever,
   IEdgeTarget,
+  IIdentityResolver,
   IMemoryQuery,
   IMemoryRecord,
   IMemoryRetriever,
@@ -105,6 +107,9 @@ function ids(records: ReadonlyArray<IMemoryRecord<unknown>>): ReadonlyArray<stri
 }
 
 const knowledge: Kind = 'knowledge' as Kind;
+
+/** Addresses every fixture that reaches a merge: kind `knowledge`, `entityId === id`, scope `knowledge`. */
+const knowledgeIdentity: IIdentityResolver = storeIdentityResolver();
 
 describe('retrieve helpers', () => {
   describe('guardRetrieverCapabilities', () => {
@@ -405,7 +410,7 @@ describe('orderBy: rank axis', () => {
     ]);
     const hybrid = HybridRetriever.create(
       [RecencyRetriever.create(backed(index)).orThrow(), TagRetriever.create(backed(index)).orThrow()],
-      ScoreUnionMergeStrategy.create().orThrow()
+      ScoreUnionMergeStrategy.create({ identityResolver: knowledgeIdentity }).orThrow()
     ).orThrow();
     expect(await hybrid.retrieve({ tag: 'x' as Tag, orderBy: 'rank' })).toSucceedAndSatisfy(
       (records: ReadonlyArray<IMemoryRecord<unknown>>) => {
@@ -738,7 +743,7 @@ describe('provenanceSource composition', () => {
         RecencyRetriever.create(backed(index)).orThrow(),
         StructuredFilterRetriever.create(backed(index)).orThrow()
       ],
-      ScoreUnionMergeStrategy.create().orThrow()
+      ScoreUnionMergeStrategy.create({ identityResolver: knowledgeIdentity }).orThrow()
     ).orThrow();
     expect(await hybrid.retrieve({ provenanceSource: 'bad-run' })).toSucceedAndSatisfy(
       (records: ReadonlyArray<IMemoryRecord<unknown>>) => {
@@ -1036,7 +1041,7 @@ describe('SemanticRetriever', () => {
 
 describe('ScoreUnionMergeStrategy', () => {
   test('unions, dedupes by id, and scores by retriever count', () => {
-    const strategy = ScoreUnionMergeStrategy.create().orThrow();
+    const strategy = ScoreUnionMergeStrategy.create({ identityResolver: knowledgeIdentity }).orThrow();
     const [a, b, c] = [
       makeEntry({ id: 'a', updated: 10 }).record,
       makeEntry({ id: 'b', updated: 30 }).record,
@@ -1055,7 +1060,7 @@ describe('ScoreUnionMergeStrategy', () => {
   });
 
   test('counts an id at most once per result set', () => {
-    const strategy = ScoreUnionMergeStrategy.create().orThrow();
+    const strategy = ScoreUnionMergeStrategy.create({ identityResolver: knowledgeIdentity }).orThrow();
     const a = makeEntry({ id: 'a', updated: 10 }).record;
     const b = makeEntry({ id: 'b', updated: 5 }).record;
     // 'a' twice in one set still scores 1; 'b' in two sets scores 2 → b ranks first.
@@ -1079,7 +1084,7 @@ describe('HybridRetriever', () => {
   }
 
   test('requires at least one retriever', () => {
-    const strategy = ScoreUnionMergeStrategy.create().orThrow();
+    const strategy = ScoreUnionMergeStrategy.create({ identityResolver: knowledgeIdentity }).orThrow();
     expect(HybridRetriever.create([], strategy)).toFailWith(/at least one retriever is required/i);
   });
 
@@ -1095,7 +1100,7 @@ describe('HybridRetriever', () => {
     }).orThrow();
     const hybrid = HybridRetriever.create(
       [recency, semantic],
-      ScoreUnionMergeStrategy.create().orThrow()
+      ScoreUnionMergeStrategy.create({ identityResolver: knowledgeIdentity }).orThrow()
     ).orThrow();
     expect(hybrid.capabilities).toEqual({
       supportsSemanticRecall: true,
@@ -1110,7 +1115,7 @@ describe('HybridRetriever', () => {
     const tag = TagRetriever.create(backed(index)).orThrow();
     const hybrid = HybridRetriever.create(
       [recency, tag],
-      ScoreUnionMergeStrategy.create().orThrow()
+      ScoreUnionMergeStrategy.create({ identityResolver: knowledgeIdentity }).orThrow()
     ).orThrow();
     // recency returns a,b,c (with tag x filter: a,c); tag x returns a,c. Both
     // surface a & c (score 2), b absent. Use tag:x so recency also filters to x.
@@ -1133,7 +1138,7 @@ describe('HybridRetriever', () => {
     }).orThrow();
     const hybrid = HybridRetriever.create(
       [recency, semantic],
-      ScoreUnionMergeStrategy.create().orThrow()
+      ScoreUnionMergeStrategy.create({ identityResolver: knowledgeIdentity }).orThrow()
     ).orThrow();
     // recency (no semantic support) gets the semantic field stripped → returns all
     // three; semantic returns just b. b therefore scores 2 and ranks first.
@@ -1158,7 +1163,7 @@ describe('HybridRetriever', () => {
     });
     const hybrid = HybridRetriever.create(
       [linkChild, plainChild],
-      ScoreUnionMergeStrategy.create().orThrow()
+      ScoreUnionMergeStrategy.create({ identityResolver: knowledgeIdentity }).orThrow()
     ).orThrow();
     expect(hybrid.capabilities.supportsLinkTraversal).toBe(true);
     // Union supports link traversal, so the hybrid does NOT loud-fail.
@@ -1173,7 +1178,10 @@ describe('HybridRetriever', () => {
   test('degrades loudly when its union does not support a requested capability', async () => {
     const { index } = build();
     const recency = RecencyRetriever.create(backed(index)).orThrow();
-    const hybrid = HybridRetriever.create([recency], ScoreUnionMergeStrategy.create().orThrow()).orThrow();
+    const hybrid = HybridRetriever.create(
+      [recency],
+      ScoreUnionMergeStrategy.create({ identityResolver: knowledgeIdentity }).orThrow()
+    ).orThrow();
     expect(await hybrid.retrieve({ semantic: 'q' })).toFailWith(/semantic recall requires/i);
   });
 
@@ -1186,7 +1194,10 @@ describe('HybridRetriever', () => {
         embedQuery: () => Promise.resolve(succeed(Float32Array.from([1])))
       }
     }).orThrow();
-    const hybrid = HybridRetriever.create([semantic], ScoreUnionMergeStrategy.create().orThrow()).orThrow();
+    const hybrid = HybridRetriever.create(
+      [semantic],
+      ScoreUnionMergeStrategy.create({ identityResolver: knowledgeIdentity }).orThrow()
+    ).orThrow();
     expect(await hybrid.retrieve({ semantic: 'q' })).toFailWith(/vector query failed/i);
   });
 
@@ -1215,7 +1226,7 @@ describe('HybridRetriever', () => {
     }).orThrow();
     const hybrid = HybridRetriever.create(
       [recency, semantic],
-      ScoreUnionMergeStrategy.create().orThrow()
+      ScoreUnionMergeStrategy.create({ identityResolver: knowledgeIdentity }).orThrow()
     ).orThrow();
     expect(await hybrid.retrieve({ semantic: 'q', limit: 2 })).toSucceedAndSatisfy(
       (records: ReadonlyArray<IMemoryRecord<unknown>>) => {
@@ -1227,7 +1238,10 @@ describe('HybridRetriever', () => {
   test('applies the hybrid-level limit after merge', async () => {
     const { index } = build();
     const recency = RecencyRetriever.create(backed(index)).orThrow();
-    const hybrid = HybridRetriever.create([recency], ScoreUnionMergeStrategy.create().orThrow()).orThrow();
+    const hybrid = HybridRetriever.create(
+      [recency],
+      ScoreUnionMergeStrategy.create({ identityResolver: knowledgeIdentity }).orThrow()
+    ).orThrow();
     expect(await hybrid.retrieve({ limit: 1 })).toSucceedAndSatisfy(
       (records: ReadonlyArray<IMemoryRecord<unknown>>) => {
         expect(records).toHaveLength(1);
@@ -1239,7 +1253,10 @@ describe('HybridRetriever', () => {
   test('applies the { offset, limit } window after merge', async () => {
     const { index } = build();
     const recency = RecencyRetriever.create(backed(index)).orThrow();
-    const hybrid = HybridRetriever.create([recency], ScoreUnionMergeStrategy.create().orThrow()).orThrow();
+    const hybrid = HybridRetriever.create(
+      [recency],
+      ScoreUnionMergeStrategy.create({ identityResolver: knowledgeIdentity }).orThrow()
+    ).orThrow();
     // Merged recency order is [b(30), c(20), a(10)]; offset 1 + limit 1 → [c].
     expect(await hybrid.retrieve({ offset: 1, limit: 1 })).toSucceedAndSatisfy(
       (records: ReadonlyArray<IMemoryRecord<unknown>>) => {
@@ -1254,7 +1271,10 @@ describe('HybridRetriever', () => {
       supportsTemporalQuery: false,
       supportsLinkTraversal: false
     });
-    const hybrid = HybridRetriever.create([child], ScoreUnionMergeStrategy.create().orThrow()).orThrow();
+    const hybrid = HybridRetriever.create(
+      [child],
+      ScoreUnionMergeStrategy.create({ identityResolver: knowledgeIdentity }).orThrow()
+    ).orThrow();
     expect(await hybrid.retrieve({ offset: 2, limit: 3 })).toSucceed();
     expect(child.lastQuery?.offset).toBeUndefined();
     expect(child.lastQuery?.limit).toBeUndefined();
@@ -1266,7 +1286,10 @@ describe('HybridRetriever', () => {
       supportsTemporalQuery: false,
       supportsLinkTraversal: false
     });
-    const hybrid = HybridRetriever.create([child], ScoreUnionMergeStrategy.create().orThrow()).orThrow();
+    const hybrid = HybridRetriever.create(
+      [child],
+      ScoreUnionMergeStrategy.create({ identityResolver: knowledgeIdentity }).orThrow()
+    ).orThrow();
     expect(await hybrid.retrieve({ kinds: ['knowledge'] as unknown as ReadonlyArray<Kind> })).toSucceed();
     expect(child.lastQuery?.kinds).toEqual(['knowledge']);
   });

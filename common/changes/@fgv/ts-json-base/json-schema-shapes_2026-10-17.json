@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "BREAKING: JsonSchema.fromJson now enforces a scalar const: it becomes the one-value enum of its type (string, number, integer or boolean) and toJson() emits it as enum: [v], so a value it used to accept and drop ('b' against const 'a') is now rejected; an object, array or null const, const beside enum, and const beside a conflicting or union type are refused. BREAKING (adaptation callers): JsonSchema.adaptSchemaKeywords now returns a Result, and SchemaKeywordCapabilities requires the two new shape rules nonStringEnum ('pass' | 'fold') and untyped ('pass' | 'refuse'); unverifiedWireSchemaKeywords folds a non-string enum and refuses an untyped node, naming its path. New: numberEnumOf, integerEnumOf and booleanEnumOf (closed sets compared with ===, no coercion; fromJson accepts a numeric or boolean enum whose type admits its members, refusing an integer enum with a non-integer member and a numeric constraint beside a numeric enum); anyValue() and the 'any' node kind (accepts any JsonValue, emits {} plus annotations; fromJson maps {} and annotations-only schemas to it, while additionalProperties: {} stays an open object); foldedKeywordsText states a folded enum first.",
+      "type": "minor",
+      "packageName": "@fgv/ts-json-base"
+    }
+  ],
+  "packageName": "@fgv/ts-json-base",
+  "email": "ErikFortune@outlook.com"
+}

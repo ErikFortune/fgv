@@ -152,6 +152,8 @@ export interface IStreamApiConfig {
   readonly baseUrl: string;
   readonly apiKey: string;
   readonly model: string;
+  /** The provider descriptor id — see `IAiApiConfig.providerId`. */
+  readonly providerId?: string;
 }
 
 /**

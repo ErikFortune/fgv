@@ -23,6 +23,24 @@ Description with the user's framing expanded with the design space.
 
 ---
 
+## `ts-random` — weighted pick without replacement (`pickWeightedSequence`)
+
+`pickWeighted` / `pickWeightedAt` choose one item. A weighted draw of several **distinct** items
+(each chosen item removed before the next draw) is the natural sibling: PersonAIlity's quirk draw
+would want it if its catalog outgrows the free slots. Design questions: whether the pure form takes
+one unit per draw or derives successive units, and whether the single-pick walk (input order,
+`point < cumulative`, last by elimination) is reused unchanged on the shrinking set so a sequence's
+first draw equals `pickWeightedAt`'s.
+
+**Why deferred**: asked for only as optional; no consumer needs it yet.
+
+**Dependencies**: a consumer whose catalog needs several distinct weighted draws.
+
+**Reference**: personaility#669; chore batch `chores-2026-10-asks` (item 2), which shipped the
+single pick.
+
+---
+
 ## `ts-extras-system-one` — exact token pre-measurement (design D5)
 
 `askSystemOne`'s mandatory input bound measures characters, with README values (2,400 / 4,400) derived
@@ -425,17 +443,16 @@ Deferred from the `ts-extras-mcp` slice-1 stream (2026-06-06). Each is additive 
 
 **Headline follow-on lever — additively widen `JsonSchema.fromJson`'s supported subset** (in `@fgv/ts-json-base`). The single biggest real-world risk is schema-subset mismatch: real MCP servers advertise shapes `fromJson` rejects, so those tools land in `adaptMcpTools`' `skipped` set.
 
-*Shipped so far:* the nullable union `type: [T, 'null']`; open objects that pass undeclared keys through (#720); and, in the `json-schema-fromjson-widening` stream, `anyOf`/`oneOf` `[T, {type:'null'}]` (pydantic `Optional[T]`) normalized to nullable, local `$ref`/`$defs` inlined with cycle and size bounds, and schema-valued `additionalProperties` as `JsonSchema.record`. See `.ai/tasks/completed/2026-10/json-schema-fromjson-widening/result.md`.
+*Shipped so far:* the nullable union `type: [T, 'null']`; open objects that pass undeclared keys through (#720); in the `json-schema-fromjson-widening` stream, `anyOf`/`oneOf` `[T, {type:'null'}]` (pydantic `Optional[T]`) normalized to nullable, local `$ref`/`$defs` inlined with cycle and size bounds, and schema-valued `additionalProperties` as `JsonSchema.record`; and, in the `json-schema-shapes` stream (PersonAIlity#683), **numeric and boolean `enum`** (pydantic `Literal[1, 2]`; `JsonSchema.numberEnumOf` / `integerEnumOf` / `booleanEnumOf`), **scalar `const`** (now enforced, emitted as a one-value `enum`), and **`{}`** (pydantic `Any`; `JsonSchema.anyValue`). Their wire support is stated per provider in the #682 capability tables: Gemini folds a non-string `enum` into the description (its `enum` is string-only), and every wire that requires a `type` on every schema, or does not document a typeless one, refuses `{}` rather than inventing a type. The trade-off is drawn by where the tool comes from: a **host-authored client tool** with `{}` fails the request loudly on such a wire, naming the tool and the path (an authoring error the host can fix); an **MCP tool** is admitted by `adaptMcpTools` against the target wire's table, **defaulting to the conservative one**, so a server tool with `{}` is skipped — as it was before this stream — unless the host passes a table that carries it (Anthropic tools). See `.ai/tasks/completed/2026-10/json-schema-shapes/result.md`.
 
 *Still refused, each deferred with its reason* (requested in PersonAIlity#683, which left the choice to fgv):
 
 - **`pattern`.** Faithful means the converter enforces the regex, and here the regex comes from the MCP server — untrusted input run by a backtracking engine against model-supplied strings. Nested or overlapping quantifiers (`(a+)+$`) are catastrophic, and adjacent overlapping ones (`\d+\d+\d+…`) are polynomial enough to stall the event loop on a few kilobytes of argument. A syntactic "safe subset" check does not close the polynomial class. Unblocks with a linear-time matcher (an RE2-class engine, which `ts-json-base` does not depend on today) or a vetted safe-subset analyser. Separately, provider dialects differ (Anthropic JSON outputs refuse backreferences and lookaround), so the wire side wants the same per-provider design as constraint keywords (#682).
-- **Numeric `enum`** (pydantic `Literal[1, 2]`, zod `type: number, enum: [...]`). The builder extension is small (an `enumOf` overload over numbers emitting `type: 'number'|'integer'`), but the wire breaks a provider: Gemini's function-declaration schema admits `enum` only on `type: STRING`, so one such tool would fail every Gemini request that carries it, where today it is merely skipped. Unblocks with a decision in `@fgv/ts-extras`' `toGeminiParameterSchema` (fold a non-string `enum` into the description, or refuse the tool for Gemini) — a provider-path source change, out of this stream's scope.
-- **`{}` with no `type`** (pydantic `Any`). Representable as an "any `JsonValue`" node, but its typeless wire is refused by providers that require `type` on every schema (Gemini function declarations; OpenAI strict mode). Same per-provider decision as above.
+- **`{}` on Gemini through `parametersJsonSchema`.** Gemini's `FunctionDeclaration` has a full-JSON-Schema alternative to the OpenAPI-subset `parameters` field, which could carry a typeless schema. Moving the Gemini tool path onto it is a separate provider-path change (it would also change how every other keyword is sent), so today a Gemini request carrying `{}` is refused.
 - **Declared `properties` plus a schema-valued `additionalProperties`** (zod `.catchall()`, pydantic typed extras). The converter is a one-line generalization of the record path; what is missing is a builder typing that does not collapse to `never` when the declared and undeclared value types differ.
 - **General unions** (`anyOf` of two non-null schemas) — out of scope by the requester's own statement, and unrepresentable on strict provider schemas.
 
-Not part of this lever: `fromJson` accepts constraint keywords (`minimum`, `maxLength`, `const`, `format`, …) but neither enforces nor emits them — a looser converter than the source schema describes. Carrying them through `toJson()` is PersonAIlity#682, a separate per-provider stream; enforcing them is the faithful half of that same work.
+Not part of this lever: the constraint keywords (`minimum`, `maxLength`, `format`, …), which PersonAIlity#682 (`json-schema-constraints`, #734) made enforced, emitted and adapted per provider.
 
 **Reference**: `.ai/tasks/completed/2026-06/ts-extras-mcp/brief.md` + `design.md`.
 
@@ -983,8 +1000,8 @@ yes/no + storage-direction ratification** when v2 durability is scheduled.
 > traversal, cycle guard, ingest edge-validation, edge serialization, the `memory_write` /
 > `memory_context` tool schemas) behind a single collision-proof `edgeTargetKey` helper; #543
 > completed the migration across the vector/similarity + entity-resolution path (breaking the
-> pre-1.0 `IEntityResolver` host contract, no shim). Residual latent item: `IProvenance.derivedFrom`
-> stays a bare `MemoryId` (never dereferenced today) — tracked in `TECH_DEBT.md`.
+> pre-1.0 `IEntityResolver` host contract, no shim). The residual latent item, `IProvenance.derivedFrom`
+> as a bare `MemoryId`, has since been scope-qualified to an `IEdgeTarget` (retired from `TECH_DEBT.md`).
 
 **Reference:** consumer orchestrator's forwarded 2026-07 agent-memory batch (the id-stem
 uniqueness vs. bare-MemoryId-links friction report); PRs #542, #543; the four firm asks from

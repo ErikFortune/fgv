@@ -30,7 +30,7 @@
  * @packageDocumentation
  */
 
-import { type Logging, Result, succeed, type Validator, Validators } from '@fgv/ts-utils';
+import { fail, type Logging, Result, succeed, type Validator, Validators } from '@fgv/ts-utils';
 import { type JsonObject } from '@fgv/ts-json-base';
 
 import { buildGeminiContents } from '../chatRequestBuilders';
@@ -267,9 +267,12 @@ export async function callGeminiStream(
     contents,
     generationConfig
   };
-  /* c8 ignore next 3 - tools branch not exercised in streaming tests */
   if (tools && tools.length > 0) {
-    body.tools = toGeminiTools(tools);
+    const toolsResult = toGeminiTools(tools, config);
+    if (toolsResult.isFailure()) {
+      return fail(`Gemini streaming: ${toolsResult.message}`);
+    }
+    body.tools = toolsResult.value;
   }
   const headers: Record<string, string> = geminiAuthHeader(config.apiKey);
   /* c8 ignore next 4 - optional logger diagnostic output */

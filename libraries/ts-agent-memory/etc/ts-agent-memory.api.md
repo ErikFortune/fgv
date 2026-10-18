@@ -742,6 +742,11 @@ export interface IScopedMemoryRecord {
 }
 
 // @public
+export interface IScoreUnionMergeStrategyCreateParams {
+    readonly identityResolver: IIdentityResolver;
+}
+
+// @public
 export interface ISemanticBackend {
     readonly embedQuery: QueryEmbedder;
     readonly vectorIndex: IVectorIndex;
@@ -1059,8 +1064,11 @@ export function scanEveryRecord(options?: {
 }): IWholeVaultScan;
 
 // @public
+export function scopedAddressOf(record: IMemoryRecord<unknown>, resolver: IIdentityResolver): Result<IEdgeTarget>;
+
+// @public
 export class ScoreUnionMergeStrategy implements IMergeStrategy {
-    static create(): Result<ScoreUnionMergeStrategy>;
+    static create(params: IScoreUnionMergeStrategyCreateParams): Result<ScoreUnionMergeStrategy>;
     merge(resultSets: ReadonlyArray<ReadonlyArray<IMemoryRecord<unknown>>>): Result<ReadonlyArray<IMemoryRecord<unknown>>>;
 }
 

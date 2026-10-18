@@ -170,4 +170,15 @@ this from a recurring chore to a one-time fix.
 
 ## Completed batches
 
-*(No completed batches yet.)*
+### `chores-2026-10-asks` ✅ (shipped 2026-10-17 via #732)
+
+Two PersonAIlity asks, into `integration/asks`. Artifacts at
+`.ai/tasks/completed/2026-10/chores-2026-10-asks/`.
+
+1. **`IProvenance.derivedFrom` docstring** (`@fgv/ts-agent-memory`, personaility#670) — described as
+   provenance that keeps naming a withdrawn source and may name a superseded version, not a live
+   back-link. Not described as queryable: no retrieval axis indexes it.
+2. **Weighted pick** (`@fgv/ts-random`, personaility#669) — `pickWeightedAt(unit, candidates)` and
+   `PseudoRandomGenerator.pickWeighted(candidates)`; finite positive weights only, `unit` on `[0, 1]`,
+   input-order `point < cumulative` walk with last-by-elimination, rescale only on overflow.
+   `pickWeightedSequence` parked in `docs/FUTURE.md`.

@@ -256,33 +256,71 @@ describe('JsonSchema — smaller MCP shapes (#683)', () => {
     });
   });
 
-  describe('deferred shapes stay refused, with the keyword and path named', () => {
+  describe('numeric enum, scalar const and {} (supported)', () => {
+    test('zod: number enum (spike)', () => {
+      expectHonoured(
+        obj({ lvl: { type: 'number', enum: [1, 2, 3] } }, ['lvl']),
+        [{ lvl: 1 }, { lvl: 3 }],
+        [{ lvl: 4 }, { lvl: '1' }, { lvl: 1.5 }]
+      );
+    });
+
+    test('pydantic Literal[1, 2]', () => {
+      const raw = obj({ n: { enum: [1, 2], title: 'N', type: 'integer' } }, ['n']);
+      expectHonoured(raw, [{ n: 1 }, { n: 2 }], [{ n: 3 }, { n: '2' }, { n: true }]);
+      expect(JsonSchema.fromJson(raw)).toSucceedAndSatisfy((schema) => {
+        expect(schema.toJson()).toEqual({
+          type: 'object',
+          properties: { n: { type: 'integer', enum: [1, 2], title: 'N' } },
+          required: ['n']
+        });
+      });
+    });
+
+    test('pydantic Literal["a"] / zod z.literal("a") -> const, emitted as a one-value enum', () => {
+      const raw = obj({ kind: { const: 'a', type: 'string' } }, ['kind']);
+      expectHonoured(raw, [{ kind: 'a' }], [{ kind: 'b' }, {}]);
+      expect(JsonSchema.fromJson(raw)).toSucceedAndSatisfy((schema) => {
+        expect((schema.toJson().properties as JsonObject).kind).toEqual({ type: 'string', enum: ['a'] });
+      });
+    });
+
+    test('a numeric and a boolean const', () => {
+      expectHonoured(obj({ v: { const: 2 } }, ['v']), [{ v: 2 }], [{ v: 3 }, { v: '2' }]);
+      expectHonoured(obj({ on: { const: true } }, ['on']), [{ on: true }], [{ on: false }, { on: 'true' }]);
+    });
+
+    test('pydantic: Any -> {} (no type) (spike)', () => {
+      expectHonoured(
+        obj({ anything: {} }, ['anything']),
+        [{ anything: 1 }, { anything: 'x' }, { anything: null }, { anything: { a: [1] } }],
+        [{}]
+      );
+    });
+
+    test('pydantic Any with a title, and Optional[Any] = None', () => {
+      expect(JsonSchema.fromJson(obj({ anything: { title: 'Anything' } }))).toSucceedAndSatisfy((schema) => {
+        expect((schema.toJson().properties as JsonObject).anything).toEqual({ title: 'Anything' });
+      });
+      expectHonoured(
+        obj({ maybe: { anyOf: [{}, { type: 'null' }], default: null } }),
+        [{ maybe: null }, { maybe: 3 }, {}],
+        []
+      );
+    });
+  });
+
+  describe('pattern stays refused, with the keyword and path named', () => {
     test.each<[string, JsonObject, RegExp]>([
-      [
-        'zod: number enum (spike)',
-        obj({ lvl: { type: 'number', enum: [1, 2, 3] } }),
-        /^#\/properties\/lvl: numeric 'enum' values are not supported/
-      ],
-      [
-        'pydantic Literal[1, 2]',
-        obj({ n: { enum: [1, 2], title: 'N', type: 'integer' } }),
-        /^#\/properties\/n: numeric 'enum' values are not supported/
-      ],
-      ['a mixed enum', obj({ m: { enum: ['a', 1] } }), /^#\/properties\/m: numeric 'enum' values/],
       [
         'zod: z.string().regex -> pattern (spike)',
         obj({ id: { type: 'string', pattern: '^[a-z]+$' } }),
         /^#\/properties\/id: unsupported JSON Schema keyword 'pattern'/
       ],
       [
-        'pydantic: Any -> {} (no type) (spike)',
-        obj({ anything: {} }),
-        /^#\/properties\/anything: a schema with no 'type' \(matching any value\) is not supported/
-      ],
-      [
-        'pydantic Any with a title',
-        obj({ anything: { title: 'Anything' } }),
-        /^#\/properties\/anything: a schema with no 'type'/
+        'a mixed enum',
+        obj({ m: { enum: ['a', 1] } }),
+        /^#\/properties\/m: 'enum' values must all be of one type/
       ]
     ])('refuses %s', (__label, raw, message) => {
       expect(JsonSchema.fromJson(raw)).toFailWith(message);

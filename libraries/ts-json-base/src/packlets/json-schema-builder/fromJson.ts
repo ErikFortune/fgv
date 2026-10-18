@@ -20,22 +20,70 @@
  * SOFTWARE.
  */
 
-import { Converter, Converters, Result, captureResult, fail, mapResults, succeed } from '@fgv/ts-utils';
+import {
+  Converter,
+  Converters,
+  Result,
+  Validator,
+  Validators,
+  captureResult,
+  fail,
+  mapResults,
+  succeed
+} from '@fgv/ts-utils';
 import { JsonObject, JsonValue, isJsonObject } from '../json';
-import { array, boolean, enumOf, integer, number, object, optional, record, string } from './factories';
+import {
+  NumberConstraints,
+  SchemaAnnotations,
+  StringConstraints,
+  annotationFields,
+  annotationJsonValue,
+  checkEnumValues,
+  checkNumberOptions,
+  checkStringOptions
+} from './constraints';
+import {
+  anyValue,
+  array,
+  boolean,
+  booleanEnumOf,
+  enumOf,
+  integer,
+  integerEnumOf,
+  number,
+  numberEnumOf,
+  object,
+  optional,
+  record,
+  string
+} from './factories';
+import {
+  schemaAnnotationKeywords,
+  schemaLengthConstraintKeywords,
+  schemaNumberConstraintKeywords
+} from './keywordAdaptation';
+import { INumberSchemaOptions } from './options';
 import { ILlmProperties, ISchemaValidator } from './types';
 
 /**
  * Compositional / assertive keywords outside the LLM-tool subset. Their presence cannot be honored
  * faithfully — silently dropping them would produce a converter looser than the schema describes.
- * Pure annotations (`title`, `default`, `examples`, draft-07 `format`) carry no validation semantics
- * and are intentionally ignored. `description` IS preserved on every node (see `_descriptionField`).
  *
- * The list is not yet complete against that rule: constraint keywords (`minimum`, `maxLength`,
- * `const`, …), object-key keywords beside an open object (`patternProperties`, `propertyNames`, …) and
- * array keywords (`prefixItems`, `contains`, …) are still accepted and ignored, so for them the
- * converter is looser than the schema. Tracked in `docs/TECH_DEBT.md`; constraint keywords lift with
- * their enforcement.
+ * Constraint keywords are carried rather than refused: `minimum`, `maximum`, `exclusiveMinimum`,
+ * `exclusiveMaximum` and `multipleOf` on a number or integer node, and `minLength` and `maxLength` on
+ * a string node, are enforced by the derived validator and emitted by `toJson()`. The annotations
+ * `description`, `title`, `default` and `examples` (every node) and `format` (string nodes) are
+ * emitted and never enforced. A keyword on a node kind it does not apply to (`minimum` on a string)
+ * constrains nothing under JSON Schema and is not emitted.
+ *
+ * A scalar `const` is carried as a single-value enum of its type, and enforced. `pattern` is refused
+ * because enforcing it would run a server-supplied regular expression on a backtracking engine
+ * against model-supplied strings (see `docs/FUTURE.md`).
+ *
+ * The list is still not complete against the rule above: object-key keywords beside an open object
+ * (`patternProperties`, `propertyNames`, …) and array keywords (`minItems`, `prefixItems`,
+ * `contains`, …) are accepted and ignored, so for them the converter is looser than the schema.
+ * Tracked in `docs/TECH_DEBT.md`.
  */
 const FORBIDDEN_KEYWORDS: readonly string[] = [
   '$dynamicRef',
@@ -56,9 +104,9 @@ const FORBIDDEN_KEYWORDS: readonly string[] = [
  */
 const _NON_VALIDATING_KEYWORDS: ReadonlySet<string> = new Set([
   'description',
-  'title',
-  'default',
-  'examples',
+  // `format` is an annotation too, but it applies only to strings, so it is not admitted beside a
+  // wrapper or a `$ref` whose target need not be one.
+  ...schemaAnnotationKeywords.filter((keyword) => keyword !== 'format'),
   '$comment',
   'deprecated',
   'readOnly',
@@ -170,45 +218,78 @@ const _SUPPORTED_TYPES: ReadonlySet<string> = new Set([
 // ---------------------------------------------------------------------------
 
 /**
- * Extracts an optional `description` string. Absent values succeed as `undefined`.
- * When present, `description` must be a string — a non-string value (e.g. a number or object)
- * produces a descriptive failure. Pure annotations with no validation semantics are accepted;
- * non-string values that cannot be used as a description are rejected with a clear error.
+ * One optional JSON-number field per keyword, keyed from the keyword list itself so the parser
+ * cannot know a different set of keywords than the factories and the emitter.
  */
-const _descriptionField: Converter<string | undefined> = Converters.optionalField(
-  'description',
-  Converters.string
+function _numericFields<K extends string>(keywords: readonly K[]): Record<K, Validator<number | undefined>> {
+  const fields: Partial<Record<K, Validator<number | undefined>>> = {};
+  for (const keyword of keywords) {
+    fields[keyword] = Validators.number.optional();
+  }
+  // Total: the loop above assigned every member of `keywords`, which is all of `K`.
+  return fields as Record<K, Validator<number | undefined>>;
+}
+
+/**
+ * Extracts the annotations every node carries — `description`, `title`, `default` and `examples`.
+ * Each is optional; a present one of the wrong shape (a non-string `description` or `title`, a
+ * non-array `examples`, a value that is not JSON) is refused rather than dropped, since dropping
+ * it would emit a schema that says less than the source. `default` and `examples` are not
+ * checked against the node — see `JsonSchema.ISchemaOptions.default`.
+ */
+const _annotationsField: Converter<SchemaAnnotations> = Converters.object<SchemaAnnotations>({
+  description: Converters.string.optional('failOnError'),
+  title: Converters.string.optional('failOnError'),
+  default: annotationJsonValue.optional('failOnError'),
+  examples: Converters.arrayOf(annotationJsonValue).optional('failOnError')
   // The failure message quotes the offending value, which is server-supplied.
+}).withFormattedError((__from, message) => _printable(`${message}`));
+
+/**
+ * Extracts a number node's constraint keywords. Each must be a JSON number when present — a
+ * numeric string is refused, not coerced; coherence (finite, ordered, a non-empty range) is
+ * checked afterwards by `checkNumberOptions`, the same check the factories run.
+ */
+const _numberConstraintsField: Converter<NumberConstraints> = Converters.object<NumberConstraints>(
+  _numericFields(schemaNumberConstraintKeywords)
 ).withFormattedError((__from, message) => _printable(`${message}`));
 
 /**
- * Extracts and validates the `enum` field: must be a non-empty array of strings.
- * Non-array input or non-string element → descriptive failure; empty array → failure.
+ * Extracts a string node's `minLength`, `maxLength` and `format`. The lengths must be JSON
+ * numbers and `format` a string; `checkStringOptions` then requires non-negative integers in order.
  */
-const _enumValuesField: Converter<string[]> = Converters.field(
-  'enum',
-  Converters.arrayOf(Converters.string).withConstraint(
-    (values) => values.length > 0 || fail("'enum' must be a non-empty array")
-  )
-);
+const _stringConstraintsField: Converter<StringConstraints> = Converters.object<StringConstraints>({
+  ..._numericFields(schemaLengthConstraintKeywords),
+  format: Converters.string.optional('failOnError')
+}).withFormattedError((__from, message) => _printable(`${message}`));
+
+/** A scalar an `enum` or `const` may list: a string, number or boolean — or `null`. */
+// `null` is the JSON value being modelled, not a JS sentinel — the same carve-out
+// `JsonPrimitive` takes in this package's `json` packlet.
+// eslint-disable-next-line @rushstack/no-new-null
+type EnumMember = string | number | boolean | null;
 
 /**
- * Extracts an `enum` list that may carry `null` among its string members.
+ * Extracts an `enum` list: an array of strings, numbers, booleans or `null`.
  *
  * @remarks
  * A nullable enum emitted by this package carries `null` in **both** `type` and `enum`,
  * because a reader consulting only one of them would otherwise disagree with a reader
  * consulting the other. This converter is what lets the `null` member through so the
- * enum arm can strip it and set nullability; `_enumValuesField` still governs the
- * remaining values.
+ * enum arm can strip it and set nullability. Whether the remaining members share one type, and
+ * whether that type agrees with `type`, is the arm's to judge.
  */
-// `null` is the JSON value being modelled, not a JS sentinel — the same carve-out
-// `JsonPrimitive` takes in this package's `json` packlet.
-// eslint-disable-next-line @rushstack/no-new-null
-const _enumRawValuesField: Converter<(string | null)[]> = Converters.field(
+const _enumRawValuesField: Converter<EnumMember[]> = Converters.field(
   'enum',
-  Converters.arrayOf(Converters.oneOf<string | null>([Converters.string, Converters.literal(null)]))
-);
+  Converters.arrayOf(
+    Converters.oneOf<EnumMember>([
+      Converters.string,
+      Validators.isA('number', (v): v is number => typeof v === 'number'),
+      Validators.boolean,
+      Converters.literal(null)
+    ])
+  )
+).withFormattedError(() => "'enum' must be an array of strings, numbers, booleans or null");
 
 /**
  * Checks that the input is a non-null, non-array object and returns it as
@@ -222,14 +303,6 @@ const _plainObjectField: Converter<Record<string, unknown>> = Converters.generic
 // ---------------------------------------------------------------------------
 // Private helpers
 // ---------------------------------------------------------------------------
-
-/** Whether a node's `enum` list holds any number, for a sharper refusal than "not a string". */
-function _hasNumericEnumValue(from: unknown): boolean {
-  return Converters.field('enum', Converters.arrayOf(Converters.generic((v: unknown) => succeed(v))))
-    .convert(from)
-    .onSuccess((values) => succeed(values.some((v) => typeof v === 'number')))
-    .orDefault(false);
-}
 
 /** Whether a node carries no keyword beyond annotations — `{}`, the schema every value matches. */
 function _isAnySchema(raw: Record<string, unknown>): boolean {
@@ -249,15 +322,22 @@ function _checkForbidden(raw: Record<string, unknown>): Result<true> {
   return succeed(true as const);
 }
 
-/** Converts a description and nullability into `ISchemaOptions` form. */
+/** Converts a node's annotations and nullability into `ISchemaOptions` form. */
 function _nodeOpts(
-  description: string | undefined,
+  annotations: SchemaAnnotations,
   nullable: boolean
-): { description?: string; nullable?: true } {
-  return {
-    ...(description !== undefined && { description }),
-    ...(nullable && { nullable: true as const })
-  };
+): SchemaAnnotations & { nullable?: true } {
+  return { ...annotations, ...(nullable && { nullable: true as const }) };
+}
+
+/** Whether any annotation is present, i.e. whether a wrapper or `$ref` sibling overrides any. */
+function _hasAnnotations(annotations: SchemaAnnotations): boolean {
+  return Object.keys(annotations).length > 0;
+}
+
+/** A node's annotations, with a failure naming the path. */
+function _annotationsAt(from: unknown, path: string): Result<SchemaAnnotations> {
+  return _annotationsField.convert(from).withErrorFormat((msg) => `${path}: ${msg}`);
 }
 
 /** A `type` field split into its scalar type and whether `null` was part of a union. */
@@ -308,7 +388,7 @@ function _isNullBranch(member: unknown): boolean {
 }
 
 /**
- * Re-emits `node` with `null` admitted and, optionally, a replacement description, then parses the
+ * Re-emits `node` with `null` admitted and, optionally, replacement annotations, then parses the
  * result back.
  *
  * @remarks
@@ -322,7 +402,7 @@ function _reshape(
   node: ISchemaValidator<JsonValue>,
   { path, budget, depth }: IParseContext,
   nullable: boolean,
-  description: string | undefined
+  annotations: SchemaAnnotations
 ): Result<ISchemaValidator<JsonValue>> {
   const json: JsonObject = { ...node.toJson() };
   if (nullable && typeof json.type === 'string') {
@@ -331,8 +411,10 @@ function _reshape(
       json.enum = [...json.enum, null];
     }
   }
-  if (description !== undefined) {
-    json.description = description;
+  // Each annotation present on the wrapper (or beside the `$ref`) replaces the inner node's; an
+  // absent one leaves the inner node's in place.
+  for (const [key, value] of Object.entries(annotationFields(annotations))) {
+    json[key] = value;
   }
   // The re-emitted form has no references left to resolve, so it is its own document; it still
   // draws on the conversion's node budget and starts at this node's depth, since re-parsing a
@@ -378,19 +460,16 @@ function _convertNullableUnion(
     return fail(`${unsupported} (supported only as exactly one schema plus {"type": "null"})`);
   }
   const memberPath = `${path}/${keyword}/${valueIndex}`;
-  return _descriptionField
-    .convert(raw)
-    .withErrorFormat((msg) => `${path}: ${msg}`)
-    .onSuccess((description) =>
-      _convertNode(members[valueIndex], _at(ctx, memberPath)).onSuccess((inner) =>
-        keyword === 'oneOf' && inner.validate(null).isSuccess()
-          ? fail(
-              `${unsupported}: ${memberPath} also admits null, so exactly-one would reject null, ` +
-                `which a nullable schema cannot express`
-            )
-          : _reshape(inner, ctx, true, description)
-      )
-    );
+  return _annotationsAt(raw, path).onSuccess((annotations) =>
+    _convertNode(members[valueIndex], _at(ctx, memberPath)).onSuccess((inner) =>
+      keyword === 'oneOf' && inner.validate(null).isSuccess()
+        ? fail(
+            `${unsupported}: ${memberPath} also admits null, so exactly-one would reject null, ` +
+              `which a nullable schema cannot express`
+          )
+        : _reshape(inner, ctx, true, annotations)
+    )
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -405,60 +484,75 @@ function _convertNullableUnion(
 // `discriminatedObject` threads the context through to each arm automatically.
 // ---------------------------------------------------------------------------
 
-/** String arm: extracts `description?` and delegates to the `string` factory. */
+/**
+ * String arm: extracts the annotations, `minLength`, `maxLength` and `format`, checks them as the
+ * `string` factory does, and delegates to it.
+ */
 function _convertString(
   from: unknown,
   { path }: IParseContext,
   nullable: boolean
 ): Result<ISchemaValidator<JsonValue>> {
-  return _descriptionField
-    .convert(from)
-    .withErrorFormat((msg) => `${path}: ${msg}`)
-    .onSuccess((description) =>
-      succeed(string(_nodeOpts(description, nullable)) as unknown as ISchemaValidator<JsonValue>)
-    );
+  return _annotationsAt(from, path).onSuccess((annotations) =>
+    _stringConstraintsField
+      .convert(from)
+      .onSuccess((constraints) => checkStringOptions({ ...constraints, ..._nodeOpts(annotations, nullable) }))
+      .withErrorFormat((msg) => `${path}: ${msg}`)
+      .onSuccess((opts) => succeed(string(opts) as unknown as ISchemaValidator<JsonValue>))
+  );
 }
 
-/** Number arm: extracts `description?` and delegates to the `number` factory. */
+/**
+ * The options for a `number` or `integer` node: its annotations and range keywords, checked as the
+ * factory checks them, with failures naming the path.
+ */
+function _numberOpts(
+  from: unknown,
+  path: string,
+  type: 'number' | 'integer',
+  nullable: boolean
+): Result<INumberSchemaOptions | undefined> {
+  return _annotationsAt(from, path).onSuccess((annotations) =>
+    _numberConstraintsField
+      .convert(from)
+      .onSuccess((constraints) =>
+        checkNumberOptions(type, { ...constraints, ..._nodeOpts(annotations, nullable) })
+      )
+      .withErrorFormat((msg) => `${path}: ${msg}`)
+  );
+}
+
+/** Number arm: extracts and checks the node's options and delegates to the `number` factory. */
 function _convertNumber(
   from: unknown,
   { path }: IParseContext,
   nullable: boolean
 ): Result<ISchemaValidator<JsonValue>> {
-  return _descriptionField
-    .convert(from)
-    .withErrorFormat((msg) => `${path}: ${msg}`)
-    .onSuccess((description) =>
-      succeed(number(_nodeOpts(description, nullable)) as unknown as ISchemaValidator<JsonValue>)
-    );
+  return _numberOpts(from, path, 'number', nullable).onSuccess((opts) =>
+    succeed(number(opts) as unknown as ISchemaValidator<JsonValue>)
+  );
 }
 
-/** Integer arm: extracts `description?` and delegates to the `integer` factory. */
+/** Integer arm: extracts and checks the node's options and delegates to the `integer` factory. */
 function _convertInteger(
   from: unknown,
   { path }: IParseContext,
   nullable: boolean
 ): Result<ISchemaValidator<JsonValue>> {
-  return _descriptionField
-    .convert(from)
-    .withErrorFormat((msg) => `${path}: ${msg}`)
-    .onSuccess((description) =>
-      succeed(integer(_nodeOpts(description, nullable)) as unknown as ISchemaValidator<JsonValue>)
-    );
+  return _numberOpts(from, path, 'integer', nullable).onSuccess((opts) =>
+    succeed(integer(opts) as unknown as ISchemaValidator<JsonValue>)
+  );
 }
 
-/** Boolean arm: extracts `description?` and delegates to the `boolean` factory. */
+/** Boolean arm: extracts the annotations and delegates to the `boolean` factory. */
 function _convertBoolean(
   from: unknown,
   { path }: IParseContext,
   nullable: boolean
 ): Result<ISchemaValidator<JsonValue>> {
-  return _descriptionField
-    .convert(from)
-    .withErrorFormat((msg) => `${path}: ${msg}`)
-    .onSuccess((description) =>
-      succeed(boolean(_nodeOpts(description, nullable)) as unknown as ISchemaValidator<JsonValue>)
-    );
+  return _annotationsAt(from, path).onSuccess((annotations) =>
+    succeed(boolean(_nodeOpts(annotations, nullable)) as unknown as ISchemaValidator<JsonValue>)
+  );
 }
 
 /**
@@ -486,14 +580,11 @@ function _convertArray(
     return fail(`${path}: tuple-form 'items' arrays are not supported`);
   }
 
-  return _descriptionField
-    .convert(from)
-    .withErrorFormat((msg) => `${path}: ${msg}`)
-    .onSuccess((description) =>
-      _convertNode(items, _at(ctx, `${path}/items`)).onSuccess((inner) =>
-        succeed(array(inner, _nodeOpts(description, nullable)) as unknown as ISchemaValidator<JsonValue>)
-      )
-    );
+  return _annotationsAt(from, path).onSuccess((annotations) =>
+    _convertNode(items, _at(ctx, `${path}/items`)).onSuccess((inner) =>
+      succeed(array(inner, _nodeOpts(annotations, nullable)) as unknown as ISchemaValidator<JsonValue>)
+    )
+  );
 }
 
 /**
@@ -508,38 +599,117 @@ function _convertObject(
   return _parseObjectBody(from, ctx, nullable);
 }
 
+/** The JSON type every member of an enum shares, before `type` refines a number to an integer. */
+type EnumMemberType = 'string' | 'number' | 'boolean';
+
+/** The JSON type of one enum member. */
+function _memberType(value: string | number | boolean): EnumMemberType {
+  if (typeof value === 'string') {
+    return 'string';
+  }
+  return typeof value === 'number' ? 'number' : 'boolean';
+}
+
+/** The type every member of a non-empty list shares, or `undefined` when they mix types. */
+function _sharedMemberType(
+  values: readonly [string | number | boolean, ...(string | number | boolean)[]]
+): EnumMemberType | undefined {
+  const first = _memberType(values[0]);
+  return values.every((value) => _memberType(value) === first) ? first : undefined;
+}
+
+/** Whether a declared `type` admits members of `memberType`. */
+function _typeAdmits(type: string, memberType: EnumMemberType): boolean {
+  return type === memberType || (type === 'integer' && memberType === 'number');
+}
+
 /**
- * Enum arm — extracts `type?`, `enum`, and `description?` declaratively via field converters.
+ * Builds the enum node for checked members: a string, number, integer or boolean enum. The members
+ * are re-checked against the node type (`checkEnumValues` — finite numbers, integers for
+ * `integer`), so a failure here is a `Failure` naming the path, never a factory throw.
+ */
+function _buildEnum(
+  type: string,
+  members: ReadonlyArray<string | number | boolean>,
+  annotations: SchemaAnnotations,
+  nullable: boolean,
+  path: string
+): Result<ISchemaValidator<JsonValue>> {
+  const opts = _nodeOpts(annotations, nullable);
+  const strings = members.filter((v): v is string => typeof v === 'string');
+  const numbers = members.filter((v): v is number => typeof v === 'number');
+  const booleans = members.filter((v): v is boolean => typeof v === 'boolean');
+  switch (type) {
+    case 'string':
+      return succeed(enumOf(strings, opts) as unknown as ISchemaValidator<JsonValue>);
+    case 'number':
+    case 'integer':
+      return checkEnumValues(type, numbers)
+        .withErrorFormat((msg) => `${path}: ${msg}`)
+        .onSuccess((checked) =>
+          succeed(
+            (type === 'integer'
+              ? integerEnumOf(checked, opts)
+              : numberEnumOf(checked, opts)) as unknown as ISchemaValidator<JsonValue>
+          )
+        );
+    default:
+      return succeed(booleanEnumOf(booleans, opts) as unknown as ISchemaValidator<JsonValue>);
+  }
+}
+
+/**
+ * Enum arm — a closed set of strings, numbers or booleans, all of one type.
  *
- * L1 rejection: rejects a `type` field that conflicts with enum semantics. An enum schema's only
- * valid type declarations are absent or `'string'`; any other value — including a union array like
- * `['string', 'null']` that would have been caught by the union-type pre-flight for non-enum nodes —
- * produces a descriptive failure.
+ * @remarks
+ * The members must share one JSON type (`[1, 'a']` is refused), and a declared `type` must admit
+ * it: `string` for strings, `number` or `integer` for numbers (every member an integer for
+ * `integer`), `boolean` for booleans. With no `type`, the members' type is used, and a numeric enum
+ * is a `number` enum. A union `type` is admitted only as `[<type>, 'null']`, and only when `null`
+ * is also among the members, since the node carries its nullability in both.
  *
- * Receives the current JSON Pointer path via `context`.
+ * An enum node carries no constraint: a length keyword beside it is refused, and so is a numeric
+ * constraint beside a numeric enum, because dropping either would accept a member the schema
+ * rejects. `format` beside a string enum is dropped.
+ *
+ * `keyword` names what the source said — `enum`, or a `const` the caller rewrote into a
+ * single-member list — so a refusal names the keyword the server actually sent.
  */
 function _convertEnum(
   from: Record<string, unknown>,
-  { path }: IParseContext
+  { path }: IParseContext,
+  keyword: 'enum' | 'const' = 'enum'
 ): Result<ISchemaValidator<JsonValue>> {
+  const rawValuesResult = _enumRawValuesField.convert(from);
+  if (rawValuesResult.isFailure()) {
+    return fail(`${path}: ${rawValuesResult.message}`);
+  }
   // An enum node carries its nullability in TWO places — `null` among the values and
   // `'null'` in the type union — so this arm reads both and requires them to agree,
   // rather than taking whichever it happens to look at first.
-  const rawValuesResult = _enumRawValuesField.convert(from);
-  if (rawValuesResult.isFailure() && _hasNumericEnumValue(from)) {
-    // Numeric enums are deferred: `toJson()` would emit them, and Gemini's function-declaration
-    // schema admits `enum` only on strings, so such a tool would fail every Gemini request.
-    return fail(`${path}: numeric 'enum' values are not supported (only string enums are)`);
-  }
-  if (rawValuesResult.isFailure()) {
-    // Fall back to the strings-only extractor for its sharper message (non-array, wrong
-    // member type, and so on); it fails on exactly the inputs this one does, minus `null`.
-    return fail(`${path}: ${_printable(`${_enumValuesField.convert(from).message}`)}`);
-  }
   const nullInValues: boolean = rawValuesResult.value.includes(null);
+  const members = rawValuesResult.value.filter((v): v is string | number | boolean => v !== null);
+  const [first, ...others] = members;
+  if (first === undefined) {
+    return fail(`${path}: 'enum' must be a non-empty array`);
+  }
+  const memberType = _sharedMemberType([first, ...others]);
+  if (memberType === undefined) {
+    return fail(`${path}: '${keyword}' values must all be of one type (strings, numbers or booleans)`);
+  }
 
-  // L1: reject conflicting `type`. For enum nodes, `_convertNode`'s type pre-flight
-  // is skipped (the `!('enum' in raw)` gate). Validate here instead.
+  const lengthKeyword = schemaLengthConstraintKeywords.find((k) => k in from);
+  if (lengthKeyword !== undefined) {
+    return fail(`${path}: unsupported JSON Schema keyword '${lengthKeyword}' beside '${keyword}'`);
+  }
+  const numberKeyword =
+    memberType === 'number' ? schemaNumberConstraintKeywords.find((k) => k in from) : undefined;
+  if (numberKeyword !== undefined) {
+    return fail(`${path}: unsupported JSON Schema keyword '${numberKeyword}' beside '${keyword}'`);
+  }
+
+  // For enum nodes, `_convertNode`'s type pre-flight is skipped (the `!('enum' in raw)` gate), so
+  // the type is validated here.
   const rawType: unknown = from.type;
   const split = _splitNullableType(rawType);
   if (split.isFailure()) {
@@ -549,11 +719,10 @@ function _convertEnum(
     // e.g. type: 123 — the field exists but is not a string or a supported union.
     return fail(`${path}: enum schema 'type' field must be a string or absent`);
   }
-  if (split.value.type !== undefined && split.value.type !== 'string') {
+  const declared: string = split.value.type ?? memberType;
+  if (!_typeAdmits(declared, memberType)) {
     return fail(
-      `${path}: enum schema declares conflicting 'type' '${_echo(
-        split.value.type
-      )}' (must be 'string' or absent)`
+      `${path}: enum schema declares conflicting 'type' '${_echo(declared)}' for ${memberType} values`
     );
   }
   if (split.value.nullable !== nullInValues) {
@@ -563,27 +732,41 @@ function _convertEnum(
     );
   }
 
-  // Now that `null` has been accounted for, the strings-only extractor governs the rest —
-  // including the non-empty constraint, which a list of just `[null]` must still fail.
-  const valuesResult = _enumValuesField.convert({
-    ...from,
-    enum: rawValuesResult.value.filter((v): v is string => v !== null)
-  });
-  if (valuesResult.isFailure()) {
-    return fail(`${path}: ${_printable(valuesResult.message)}`);
-  }
+  return _annotationsAt(from, path).onSuccess((annotations) =>
+    _buildEnum(declared, members, annotations, nullInValues, path)
+  );
+}
 
-  return _descriptionField
-    .convert(from)
-    .withErrorFormat((msg) => `${path}: ${msg}`)
-    .onSuccess((description) =>
-      succeed(
-        enumOf(
-          valuesResult.value,
-          _nodeOpts(description, nullInValues)
-        ) as unknown as ISchemaValidator<JsonValue>
-      )
-    );
+/**
+ * Const arm — a scalar `const` is the single-value enum of its type, and is enforced.
+ *
+ * @remarks
+ * Rewritten into `enum: [value]` and converted by the enum arm, so every rule there applies: a
+ * `type` must admit the value (`const: 'a'` beside `type: 'number'`, or `const: 1.5` beside
+ * `type: 'integer'`, is refused), and a constraint keyword beside it is refused. `toJson()` emits
+ * the enum spelling, which more provider wires accept than `const`.
+ *
+ * Refused: an object, array or `null` value (no node models one); `const` beside `enum`; and a
+ * nullable `type` union, since the value excludes `null` and the node would carry a nullability
+ * nothing could reach.
+ */
+function _convertConst(
+  from: Record<string, unknown>,
+  ctx: IParseContext
+): Result<ISchemaValidator<JsonValue>> {
+  const path = ctx.path;
+  // A rest destructure copies own keys as data, so an own `__proto__` key cannot become a prototype.
+  const { const: value, ...rest } = from;
+  if ('enum' in from) {
+    return fail(`${path}: unsupported JSON Schema keyword 'const' beside 'enum'`);
+  }
+  if (typeof value !== 'string' && typeof value !== 'number' && typeof value !== 'boolean') {
+    return fail(`${path}: 'const' is supported only with a string, number or boolean value`);
+  }
+  if (Array.isArray(from.type)) {
+    return fail(`${path}: 'const' beside a union 'type' is not supported`);
+  }
+  return _convertEnum({ ...rest, enum: [value] }, ctx, 'const');
 }
 
 /**
@@ -628,55 +811,51 @@ function _parseObjectBody(
       ? additionalProperties
       : undefined;
 
-  // Extract optional description; a present non-string description is refused.
-  const descResult = _descriptionField.convert(from);
-  if (descResult.isFailure()) {
-    return fail(`${path}: ${descResult.message}`);
-  }
-  const description = descResult.value;
+  // Extract the annotations; a present one of the wrong shape is refused.
+  return _annotationsAt(from, path).onSuccess((annotations) => {
+    const requiredSet = new Set<string>(rawRequired ?? []);
+    const propEntries: [string, unknown][] = rawProps !== undefined ? Object.entries(rawProps) : [];
 
-  const requiredSet = new Set<string>(rawRequired ?? []);
-  const propEntries: [string, unknown][] = rawProps !== undefined ? Object.entries(rawProps) : [];
-
-  // A property named `__proto__` cannot be held as an ordinary key by the object machinery
-  // downstream (assignment sets the prototype instead), so it would silently lose its schema and
-  // any requirement on it. Refused rather than dropped.
-  if (propEntries.some(([key]) => key === '__proto__')) {
-    return fail(`${path}: a property named '__proto__' is not supported`);
-  }
-
-  // Reject `required` keys with no matching property schema.
-  const declared = new Set(propEntries.map(([k]) => k));
-  for (const key of requiredSet) {
-    if (!declared.has(key)) {
-      return fail(`${path}: 'required' key '${_echo(key)}' has no matching entry in 'properties'`);
+    // A property named `__proto__` cannot be held as an ordinary key by the object machinery
+    // downstream (assignment sets the prototype instead), so it would silently lose its schema and
+    // any requirement on it. Refused rather than dropped.
+    if (propEntries.some(([key]) => key === '__proto__')) {
+      return fail(`${path}: a property named '__proto__' is not supported`);
     }
-  }
 
-  if (valueSchema !== undefined) {
-    return _parseRecordBody(from, valueSchema, propEntries.length > 0, ctx, description, nullable);
-  }
+    // Reject `required` keys with no matching property schema.
+    const declared = new Set(propEntries.map(([k]) => k));
+    for (const key of requiredSet) {
+      if (!declared.has(key)) {
+        return fail(`${path}: 'required' key '${_echo(key)}' has no matching entry in 'properties'`);
+      }
+    }
 
-  return mapResults(
-    propEntries.map(([key, child]) =>
-      // Thread the JSON Pointer path as context so nested errors are correctly attributed.
-      _convertNode(child, _at(ctx, `${path}/properties/${_printable(_escapeToken(key))}`)).onSuccess((node) =>
-        succeed([key, requiredSet.has(key) ? node : optional(node)] as const)
+    if (valueSchema !== undefined) {
+      return _parseRecordBody(from, valueSchema, propEntries.length > 0, ctx, annotations, nullable);
+    }
+
+    return mapResults(
+      propEntries.map(([key, child]) =>
+        // Thread the JSON Pointer path as context so nested errors are correctly attributed.
+        _convertNode(child, _at(ctx, `${path}/properties/${_printable(_escapeToken(key))}`)).onSuccess(
+          (node) => succeed([key, requiredSet.has(key) ? node : optional(node)] as const)
+        )
       )
-    )
-  ).onSuccess((built) => {
-    const properties: ILlmProperties = {};
-    for (const [key, node] of built) {
-      properties[key] = node;
-    }
-    return succeed(
-      object(properties, {
-        // JSON Schema's default (absent additionalProperties) permits extra fields;
-        // only an explicit `false` produces a strict validator.
-        additionalProperties: additionalProperties !== false,
-        ..._nodeOpts(description, nullable)
-      }) as unknown as ISchemaValidator<JsonValue>
-    );
+    ).onSuccess((built) => {
+      const properties: ILlmProperties = {};
+      for (const [key, node] of built) {
+        properties[key] = node;
+      }
+      return succeed(
+        object(properties, {
+          // JSON Schema's default (absent additionalProperties) permits extra fields;
+          // only an explicit `false` produces a strict validator.
+          additionalProperties: additionalProperties !== false,
+          ..._nodeOpts(annotations, nullable)
+        }) as unknown as ISchemaValidator<JsonValue>
+      );
+    });
   });
 }
 
@@ -700,7 +879,7 @@ function _parseRecordBody(
   valueSchema: Record<string, unknown>,
   hasDeclaredProperties: boolean,
   ctx: IParseContext,
-  description: string | undefined,
+  annotations: SchemaAnnotations,
   nullable: boolean
 ): Result<ISchemaValidator<JsonValue>> {
   const keyKeyword = _plainObjectField
@@ -718,7 +897,7 @@ function _parseRecordBody(
     );
   }
   return _convertNode(valueSchema, _at(ctx, `${ctx.path}/additionalProperties`)).onSuccess((values) =>
-    succeed(record(values, _nodeOpts(description, nullable)) as unknown as ISchemaValidator<JsonValue>)
+    succeed(record(values, _nodeOpts(annotations, nullable)) as unknown as ISchemaValidator<JsonValue>)
   );
 }
 
@@ -893,9 +1072,11 @@ function _resolvePointer(root: unknown, tokens: readonly string[]): Result<unkno
  * schema, which has no finite inline form and is refused, and `MAX_REF_DEPTH` and
  * `MAX_REF_EXPANSIONS` bound nesting and total size.
  *
- * Siblings of `$ref` may be annotations only. A sibling `description` replaces the target's,
- * which is what pydantic means by it; any validation keyword beside `$ref` is refused, because
- * draft-07 ignores such siblings while later drafts apply them, and the two readings disagree.
+ * Siblings of `$ref` may be annotations only. A sibling `description`, `title`, `default` or
+ * `examples` replaces the target's of the same name, which is what pydantic means by it; any
+ * validation keyword beside `$ref` is refused, because draft-07 ignores such siblings while later
+ * drafts apply them, and the two readings disagree. `format` is refused there too: it applies only
+ * to strings, and the target need not be one.
  */
 function _convertRef(raw: Record<string, unknown>, ctx: IParseContext): Result<ISchemaValidator<JsonValue>> {
   const path = ctx.path;
@@ -938,23 +1119,20 @@ function _convertRef(raw: Record<string, unknown>, ctx: IParseContext): Result<I
       return _resolvePointer(ctx.root, tokens)
         .withErrorFormat((msg) => `${unsupported}: '${shown}' ${msg}`)
         .onSuccess((resolved) =>
-          _descriptionField
-            .convert(raw)
-            .withErrorFormat((msg) => `${path}: ${msg}`)
-            .onSuccess((description) =>
-              // The full target stays the cycle identity in `refs`; the error path is cut, since a
-              // server can make a reference arbitrarily long and every nested failure repeats it.
-              _convertNode(resolved, {
-                ...ctx,
-                path: _echo(target),
-                refs: [...ctx.refs, target],
-                depth: ctx.depth + 1
-              })
-                .withErrorFormat((msg) => `${path}: via '$ref' '${shown}': ${msg}`)
-                .onSuccess((node) =>
-                  description === undefined ? succeed(node) : _reshape(node, ctx, false, description)
-                )
-            )
+          _annotationsAt(raw, path).onSuccess((annotations) =>
+            // The full target stays the cycle identity in `refs`; the error path is cut, since a
+            // server can make a reference arbitrarily long and every nested failure repeats it.
+            _convertNode(resolved, {
+              ...ctx,
+              path: _echo(target),
+              refs: [...ctx.refs, target],
+              depth: ctx.depth + 1
+            })
+              .withErrorFormat((msg) => `${path}: via '$ref' '${shown}': ${msg}`)
+              .onSuccess((node) =>
+                _hasAnnotations(annotations) ? _reshape(node, ctx, false, annotations) : succeed(node)
+              )
+          )
         );
     });
 }
@@ -1013,6 +1191,11 @@ function _convertSchemaObject(
   // type-dispatched arm and produce a confusing "no matching converter" message. That arm owns
   // enum type validation entirely, including the union rule, because an enum's nullability is
   // declared in two places and only it can check that they agree.
+  // `const` first: beside an `enum` it is refused rather than letting the enum arm drop it.
+  if ('const' in raw) {
+    return _convertConst(raw, ctx);
+  }
+
   if ('enum' in raw) {
     return _convertEnum(raw, ctx);
   }
@@ -1024,10 +1207,13 @@ function _convertSchemaObject(
     return fail(`${path}: ${split.message}`);
   }
 
-  // `{}` (pydantic `Any`) is deferred: its typeless wire is refused by providers that require a
-  // `type` on every schema (Gemini function declarations, OpenAI strict mode).
+  // `{}` (pydantic `Any`), or annotations alone: the schema every value matches. Its typeless wire
+  // is refused by providers that require a `type` on every schema, which the provider adapters in
+  // `@fgv/ts-extras` decide per wire.
   if (_isAnySchema(raw)) {
-    return fail(`${path}: a schema with no 'type' (matching any value) is not supported`);
+    return _annotationsAt(raw, path).onSuccess((annotations) =>
+      succeed(anyValue(annotations) as unknown as ISchemaValidator<JsonValue>)
+    );
   }
 
   // Missing/unknown type: give a better error than a generic "no matching converter".
@@ -1098,11 +1284,22 @@ export const jsonSchemaConverter: Converter<ISchemaValidator<JsonValue>, string>
  * references, recursive schemas (which have no finite inline form) and expansions beyond fixed
  * depth and size bounds are refused.
  *
- * Out-of-subset structural features fail loudly (see `FORBIDDEN_KEYWORDS`); `description` is
- * preserved on every node; other annotations (`title`, `default`, `format`, `examples`) are silently
- * ignored. Constraint keywords (`minimum`, `maxLength`, `const`, …) and some object-key and array
- * keywords are currently accepted without being enforced or emitted, so the validator can accept a
- * value the source schema rejects.
+ * Out-of-subset structural features fail loudly (see `FORBIDDEN_KEYWORDS`). The numeric range
+ * keywords, `multipleOf` and the string lengths are enforced and emitted; the annotations
+ * `description`, `title`, `default`, `examples` and `format` are emitted and not enforced. An
+ * incoherent constraint set (`minimum` above `maximum`, a negative `minLength`, …) is refused with the
+ * path named, exactly as the factories refuse it. Beside a `$ref` or a nullable `anyOf`/`oneOf`, each
+ * annotation replaces the inner node's of the same name. Some object-key and array keywords are
+ * still accepted without being enforced or emitted, so for them the validator can accept a value the
+ * source schema rejects.
+ *
+ * An `enum` may list strings, numbers or booleans, all of one type, and a `type` must admit them
+ * (`integer` requires every member to be an integer). A scalar `const` becomes the single-value enum
+ * of its type and is enforced; `toJson()` emits it as `enum: [value]`. An enum node carries no
+ * constraint and refuses `minLength`/`maxLength`, and a numeric one refuses the numeric constraint
+ * keywords; it does not carry `format` either, which is dropped there. A schema with no `type` and
+ * nothing but annotations — `{}`, pydantic's `Any` — becomes an `anyValue` node, which accepts any
+ * JSON value.
  *
  * @param json - The raw JSON Schema object to parse.
  * @returns `Success` with the parsed schema, or `Failure` describing the first out-of-subset feature.

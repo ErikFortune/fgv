@@ -89,10 +89,17 @@ describe('JsonSchema.fromJson', () => {
       });
     });
 
-    test('ignores harmless annotations (format, title, default) without failing', () => {
+    test('carries annotations (format, title, default) through to toJson() without enforcing them', () => {
       const raw: JsonObject = { type: 'string', format: 'date-time', title: 'When', default: 'now' };
       expect(JsonSchema.fromJson(raw)).toSucceedAndSatisfy((schema) => {
-        expect(schema.toJson()).toEqual({ type: 'string' });
+        expect(schema.toJson()).toEqual({
+          type: 'string',
+          format: 'date-time',
+          title: 'When',
+          default: 'now'
+        });
+        // `format` is an annotation: a value that is not a date-time is still accepted.
+        expect(schema.validate('not a date')).toSucceedWith('not a date');
       });
     });
 
@@ -190,20 +197,24 @@ describe('JsonSchema.fromJson', () => {
       );
     });
 
-    test('rejects a missing or unknown type', () => {
-      expect(JsonSchema.fromJson({})).toFailWith(
-        /^#: a schema with no 'type' \(matching any value\) is not supported/
-      );
+    test('maps {} to the any node, and rejects an unknown or a constraint-only missing type', () => {
+      expect(JsonSchema.fromJson({})).toSucceedAndSatisfy((schema) => {
+        expect(schema._type).toBe('any');
+        expect(schema.toJson()).toEqual({});
+      });
       expect(JsonSchema.fromJson({ type: 'date' })).toFailWith(/unsupported or missing 'type'/i);
+      expect(JsonSchema.fromJson({ minimum: 1 })).toFailWith(/unsupported or missing 'type'/i);
     });
 
-    test('rejects non-string and empty enums', () => {
-      // [1, 2] — numeric enums are refused with their own message; other non-strings with "Not a string"
-      expect(JsonSchema.fromJson({ enum: [1, 2] })).toFailWith(/numeric 'enum' values are not supported/i);
-      expect(JsonSchema.fromJson({ enum: [true] })).toFailWith(/not a string/i);
+    test('rejects mixed, object-valued and empty enums', () => {
+      expect(JsonSchema.fromJson({ enum: [1, 'a'] })).toFailWith(/'enum' values must all be of one type/i);
+      expect(JsonSchema.fromJson({ enum: [{ a: 1 }] } as unknown as JsonObject)).toFailWith(
+        /'enum' must be an array of strings, numbers, booleans or null/i
+      );
       expect(JsonSchema.fromJson({ enum: [] })).toFailWith(/'enum' must be a non-empty array/i);
-      // 'a' is not an array — Converters.arrayOf fails with "Not an array"
-      expect(JsonSchema.fromJson({ enum: 'a' } as unknown as JsonObject)).toFailWith(/not an array/i);
+      expect(JsonSchema.fromJson({ enum: 'a' } as unknown as JsonObject)).toFailWith(
+        /'enum' must be an array of strings, numbers, booleans or null/i
+      );
     });
 
     test('rejects an array without items and tuple-form items', () => {

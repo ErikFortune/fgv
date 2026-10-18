@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "Tests only: an adapted MCP tool whose schema declares minimum now refuses an out-of-range model call before it reaches the server.",
+      "type": "none",
+      "packageName": "@fgv/ts-extras-mcp"
+    }
+  ],
+  "packageName": "@fgv/ts-extras-mcp",
+  "email": "ErikFortune@outlook.com"
+}

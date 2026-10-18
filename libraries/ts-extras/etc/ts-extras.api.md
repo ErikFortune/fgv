@@ -217,6 +217,7 @@ declare namespace AiAssist {
         supportsStreamUsageOption,
         IAiPromptCacheRoutingSupport,
         ANTHROPIC_STRUCTURED_OUTPUT_TOOL_NAME,
+        clientToolSchemaKeywords,
         AiStructuredOutputFormat,
         IAiStructuredOutputCapability,
         IJsonObjectStructuredOutputRequest,
@@ -493,6 +494,12 @@ function classifyAddress(address: string): Result<IClassifiedAddress>;
 //
 // @public
 function classifyJsonParseFailure(text: string): JsonParseFailureReason;
+
+// @public
+function clientToolSchemaKeywords(descriptor: IAiProviderDescriptor, options?: {
+    readonly model?: string;
+    readonly endpoint?: string;
+}): JsonSchema.SchemaKeywordCapabilities;
 
 declare namespace Constants {
     export {

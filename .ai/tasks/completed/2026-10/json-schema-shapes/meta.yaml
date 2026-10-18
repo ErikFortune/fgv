@@ -1,0 +1,73 @@
+id: json-schema-shapes
+status: shipped
+packages: ['@fgv/ts-json-base', '@fgv/ts-extras', '@fgv/ts-extras-ollama', '@fgv/ts-extras-mcp']
+prs: [736]
+openPrs: []
+opened: 2026-10-17
+closed: 2026-10-17
+summary:
+  intended: >
+    Accept the three MCP shapes fromJson refused or mishandled — a numeric enum (pydantic
+    Literal[1, 2]), a scalar const, and {} (pydantic Any) — where the schema is the validator, and
+    make each provider wire carry, adapt or loudly refuse each one through the #682 capability
+    tables, with every pass entry cited from fetched provider documentation (PersonAIlity#683).
+  shipped: >
+    numberEnumOf / integerEnumOf / booleanEnumOf (=== comparison, no coercion) and fromJson support
+    for numeric and boolean enums whose type admits them; scalar const enforced as a one-value enum
+    and emitted as enum: [v] (BREAKING: it used to be dropped); an anyValue node ('any' kind) that
+    accepts any JsonValue, emits {} and is what fromJson maps {} to. The capability tables gained
+    nonStringEnum (pass / fold) and untyped (pass / refuse): a numeric enum passes on OpenAI, xAI and
+    both Anthropic wires and folds on Gemini; {} passes on Anthropic tools and is refused elsewhere,
+    failing the tool request before it is sent with the tool and path named, or treated as a
+    structured-output capability mismatch under onUnsupported. Ollama folds and refuses the same
+    way. adaptMcpTools admits each MCP tool against the target wire's table (schemaKeywords, via
+    AiAssist.clientToolSchemaKeywords; default conservative), so a server tool with {} is skipped
+    unless the wire carries it, and an admitted tool refuses out-of-set calls before the server.
+  diverged: >
+    adaptSchemaKeywords and the internal tool formatters return a Result so a refusal can carry a
+    path; the completion paths use new infallible server-tool formatters. A boolean enum is accepted
+    by fromJson as well, because the boolean node const needs would otherwise be emitter output
+    fromJson refuses. The shape rules are table fields rather than keywords, since a string enum
+    always passes. A numeric constraint beside a numeric enum, const beside a union type, and const
+    beside enum are refused. Gemini's parametersJsonSchema route for {} is left in FUTURE.md. The
+    first build failed every request carrying an MCP {} tool on a refusing wire; review round 1
+    replaced that with per-wire admission at adapt time, default conservative.
+  sourceLine: "Accept each one where the schema *is* the validator, and make each provider's wire either carry it, adapt it, or refuse it **loudly**."
+  headline: >
+    JsonSchema now models numeric enums, an enforced scalar const and {} (pydantic Literal and Any),
+    and each provider wire passes, folds or loudly refuses them per its documented support.
+keywords:
+  [
+    'numeric enum',
+    'integer enum',
+    'boolean enum',
+    'const',
+    'Literal',
+    'Any',
+    'empty schema',
+    'anyValue',
+    'numberEnumOf',
+    'integerEnumOf',
+    'booleanEnumOf',
+    'nonStringEnum',
+    'untyped schema',
+    'adaptSchemaKeywords',
+    'keyword capability table',
+    'Gemini OpenAPI subset',
+    'OpenAI strict',
+    'Anthropic JSON outputs',
+    'MCP tool schemas',
+    'onUnsupported',
+    'fgv-ask'
+  ]
+relatedStreams:
+  - {
+      id: json-schema-constraints,
+      relationship: 'introduced the per-wire capability tables this stream extends'
+    }
+  - {
+      id: json-schema-fromjson-widening,
+      relationship: 'earlier part of PersonAIlity #683 (record, $ref, Optional)'
+    }
+  - { id: personality-intake, relationship: 'captured the PersonAIlity #683 ask this stream finishes' }
+sourceHash: 86840e4161372f3d # first 16 hex of sha256 over brief.md, state.md and result.md concatenated in that order
