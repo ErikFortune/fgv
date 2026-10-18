@@ -382,6 +382,25 @@ export function toAnthropicTools(
 // ============================================================================
 
 /**
+ * The non-`null` member of a draft-07 nullable `type` union, or `undefined` when `type` is
+ * not one.
+ *
+ * @remarks
+ * Deliberately narrow: only the two-member `[<type>, 'null']` shape `JsonSchema` emits is
+ * recognised. A general union has no OpenAPI equivalent, so translating one would be
+ * inventing a meaning — it is passed through unchanged and Gemini refuses it, which is the
+ * honest outcome.
+ * @internal
+ */
+function _nullableUnionMember(type: JsonValue | undefined): string | undefined {
+  if (!Array.isArray(type) || type.length !== 2 || !type.includes('null')) {
+    return undefined;
+  }
+  const other: JsonValue | undefined = type.find((member) => member !== 'null');
+  return typeof other === 'string' ? other : undefined;
+}
+
+/**
  * Sanitizes a draft-07 JSON Schema (as emitted by `JsonSchema.object(...).toJson()`)
  * into the OpenAPI 3.0 Schema Object subset that Gemini's `function_declarations[].parameters`
  * accepts.
@@ -402,27 +421,14 @@ export function toAnthropicTools(
  * each property's subschema value is still recursively sanitized — a tool parameter
  * legitimately named `additionalProperties` survives.
  *
- * @internal
+ * Only the **dialect** is translated: constraint and annotation keywords pass through as written.
+ * `toGeminiTools` and the Gemini structured-output wire adapt those first, to what Gemini
+ * documents; call this directly only to build a Gemini schema yourself — for example a wire probe
+ * that must send a keyword unadapted to observe whether Gemini accepts it.
+ * @param schema - A draft-07 JSON Schema.
+ * @returns The schema in Gemini's OpenAPI 3.0 subset.
+ * @public
  */
-/**
- * The non-`null` member of a draft-07 nullable `type` union, or `undefined` when `type` is
- * not one.
- *
- * @remarks
- * Deliberately narrow: only the two-member `[<type>, 'null']` shape `JsonSchema` emits is
- * recognised. A general union has no OpenAPI equivalent, so translating one would be
- * inventing a meaning — it is passed through unchanged and Gemini refuses it, which is the
- * honest outcome.
- * @internal
- */
-function _nullableUnionMember(type: JsonValue | undefined): string | undefined {
-  if (!Array.isArray(type) || type.length !== 2 || !type.includes('null')) {
-    return undefined;
-  }
-  const other: JsonValue | undefined = type.find((member) => member !== 'null');
-  return typeof other === 'string' ? other : undefined;
-}
-
 export function toGeminiParameterSchema(schema: JsonValue): JsonValue {
   if (Array.isArray(schema)) {
     return schema.map(toGeminiParameterSchema);
