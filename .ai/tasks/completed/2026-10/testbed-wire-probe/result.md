@@ -165,8 +165,6 @@ One fix was made during review. Initially a control rejected with a 400 would ha
 - **The OpenAI-family table is an intersection.** xAI accepts `format: uri` and OpenAI strict
   rejects it. If enforcement is confirmed, per-provider tables would let xAI pass more. That is a
   design question for the orchestrator.
-- **After `json-schema-pattern` lands**, add a `pattern` fixture and re-run, per followups decision
-  5.
 
 ## Live run (2026-10-18)
 
@@ -489,3 +487,16 @@ Logs are in `../gate-logs-testbed-wire-probe/` (worktree-relative), graded by gr
 | repo-wide `install-run-rush.js rebuild` | exit 0 in 4m40s; 0 `not met`/`FAILURE`/`Operations failed`/`error TS`; 1 warning, the git-symlink notice |
 | `change --verify --target-branch origin/integration/asks` | pass |
 | `verify-capability-docs`, `generate-capability-feed --check` | pass |
+
+## Review round 1 (orchestrator)
+
+A ref-only deep review found one P1. The orchestrator applied it along with the cheap P2 and P3 fixes:
+- **P1.** A fixture the table refuses, which `ai-assist` sent anyway and the provider then rejected, was classified `mismatch`. That is a request we send that fails, so it is now `unsafe` and fails the run (`classifyEndToEnd`; test updated).
+- **P2.** The live seams are now a top-of-file import. The dynamic import had no reason to exist: `live.ts` reaches only `@fgv/ts-extras` and the global `fetch`.
+- **P2.** The `live.ts` coverage-exclusion comment no longer claims the functions only reach the network. It says their event drain and error text are checked only by a live run.
+- **P3.**
+  - `IWireProbeDeps` members are method signatures.
+  - A raw request is bounded at 60 s via `AbortSignal.timeout`.
+  - The duplicate "after `json-schema-pattern`" follow-up is removed.
+- **Owner of the unsafe row.** It is fixed in the `ai-assist-wire-followups` stream; see the brief on that branch, § Decisions 4. The `pattern` fixture is in the `json-schema-pattern` brief's acceptance.
+- **Not applied (P3).** Four single imperative `isFailure` guards, each acceptable per the review, and a missing `state.md`.

@@ -48,6 +48,7 @@ import type { ICliScenarioImpl, IScenario, IScenarioContext } from '../../shell'
 import { requiredSecretsForProviders } from '../aiProviderSecrets';
 import { WIRE_PROBE_WIRES } from './wires';
 import { type IWireProbeDeps, runWireProbe, selectWires } from './probe';
+import { LIVE_WIRE_PROBE_DEPS } from './live';
 
 export * from './fixtures';
 export * from './probe';
@@ -72,8 +73,6 @@ export async function runWireProbeScenario(
 
 const cliImpl: ICliScenarioImpl = {
   async run(context: IScenarioContext): Promise<Result<string>> {
-    // The live seams load only here, so a test that imports this module never reaches them.
-    const { LIVE_WIRE_PROBE_DEPS } = await import('./live');
     return runWireProbeScenario(context, LIVE_WIRE_PROBE_DEPS, process.env);
   }
 };

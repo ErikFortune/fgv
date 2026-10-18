@@ -167,9 +167,9 @@ export interface IAdaptedRequest {
  */
 export interface IWireProbeDeps {
   /** POSTs a raw request. A failure is a transport failure; any HTTP status is a success. */
-  readonly postJson: (request: IRawRequest) => Promise<Result<IHttpResponse>>;
+  postJson(request: IRawRequest): Promise<Result<IHttpResponse>>;
   /** Sends the fixture through `ai-assist`; the `Result` is the library's own. */
-  readonly sendAdapted: (request: IAdaptedRequest) => Promise<Result<string>>;
+  sendAdapted(request: IAdaptedRequest): Promise<Result<string>>;
 }
 
 // ---------------------------------------------------------------------------
@@ -316,6 +316,11 @@ export function classifyEndToEnd(ours: OurVerdict, adapted: AdaptedObservation):
     return 'inconclusive';
   }
   if (ours === 'refuse') {
+    // A refused fixture that was sent anyway and then rejected is a request we actually send that
+    // fails: that is unsafe, whatever the table said.
+    if (adapted.kind === 'rejected') {
+      return 'unsafe';
+    }
     return adapted.kind === 'refused-locally' ? 'ok' : 'mismatch';
   }
   if (adapted.kind === 'refused-locally') {

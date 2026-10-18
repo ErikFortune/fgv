@@ -25,9 +25,11 @@
  *
  * @remarks
  * Excluded from coverage by `config/jest.config.json`'s `coveragePathIgnorePatterns`, as
- * `xaiCacheProbe/index.js` is: both functions only reach the network. Everything that reads their
- * results — classification, the control gate, the report — is in `./probe` and `./report` and is
- * covered over recorded responses.
+ * `xaiCacheProbe/index.js` is, because both functions need a live provider. They are not pure
+ * pass-throughs: `sendClientToolTurn` drains the turn's events and its error text is what
+ * `observeAdapted` matches on, so a change here is checked only by a live run. Everything that reads
+ * their results (classification, the control gate, the report) is in `./probe` and `./report` and
+ * is covered over recorded responses.
  *
  * @packageDocumentation
  */
@@ -39,6 +41,9 @@ import { AiAssist } from '@fgv/ts-extras';
 import type { IAdaptedRequest, IHttpResponse, IWireProbeDeps } from './probe';
 import type { IRawRequest } from './wires';
 import { PROBE_PROMPT, PROBE_TOOL_NAME } from './wires';
+
+/** The bound on one raw request, so a hung provider ends the run as inconclusive rather than stalling it. */
+const RAW_TIMEOUT_MS: number = 60_000;
 
 /**
  * Posts a raw request with the platform `fetch`.
@@ -54,7 +59,8 @@ async function postJsonLive(request: IRawRequest): Promise<Result<IHttpResponse>
     const response = await fetch(request.url, {
       method: 'POST',
       headers: { ...request.headers, 'content-type': 'application/json' },
-      body: JSON.stringify(request.body)
+      body: JSON.stringify(request.body),
+      signal: AbortSignal.timeout(RAW_TIMEOUT_MS)
     });
     return { status: response.status, body: await response.text() };
   });

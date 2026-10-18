@@ -276,7 +276,7 @@ describe('wireProbe', () => {
       expect(classifyEndToEnd('adapt', refused)).toBe('mismatch');
       expect(classifyEndToEnd('refuse', refused)).toBe('ok');
       expect(classifyEndToEnd('refuse', accepted)).toBe('mismatch');
-      expect(classifyEndToEnd('refuse', rejected)).toBe('mismatch');
+      expect(classifyEndToEnd('refuse', rejected)).toBe('unsafe');
       expect(classifyEndToEnd('pass', unknown)).toBe('inconclusive');
     });
   });
