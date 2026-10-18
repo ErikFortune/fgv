@@ -244,7 +244,8 @@ const _FLAG_ACCESSORS: ReadonlyArray<readonly [string, string]> = [
 /** A `RegExp`'s compiled source and flags, read through the built-in accessors. Throws on a non-`RegExp`. */
 function _compiledForm(re: RegExp): { readonly source: string; readonly flags: string } {
   const source: unknown = Reflect.get(RegExp.prototype, 'source', re);
-  const flags = _FLAG_ACCESSORS.filter(([, accessor]) => Reflect.get(RegExp.prototype, accessor, re) === true)
+  const flags = _FLAG_ACCESSORS
+    .filter(([, accessor]) => Reflect.get(RegExp.prototype, accessor, re) === true)
     .map(([flag]) => flag)
     .join('');
   return { source: String(source), flags };
@@ -716,9 +717,9 @@ export const numberConstraintsConverter: Converter<NumberConstraints> = Converte
  */
 export const stringConstraintsConverter: Converter<StringLengthConstraints> =
   Converters.object<StringLengthConstraints>({
-  ..._numericFields(schemaLengthConstraintKeywords),
-  format: Converters.string.optional('failOnError')
-});
+    ..._numericFields(schemaLengthConstraintKeywords),
+    format: Converters.string.optional('failOnError')
+  });
 
 /**
  * The option keys that cannot be incoherent, each read as its declared type. A key of the wrong

@@ -189,7 +189,9 @@ export type SchemaPatternPredicate = (value: string) => boolean;
  * Compiles a server-supplied `pattern` for `fromJson`, or refuses it.
  *
  * @remarks
- * Called once per string node carrying `pattern`, with the source exactly as the schema states it.
+ * Called for each string node carrying `pattern`, with the source exactly as the schema states it —
+ * again for the same node when a nullable `anyOf`/`oneOf` or a `$ref` with annotations re-reads it,
+ * so it should be cheap to call twice (or cache by source).
  * A `Failure` refuses the whole schema, with the node's path and the validator's message. On
  * success, the returned predicate is what the node's validator calls on every string — so it must be
  * safe to run on any model-supplied string; a backtracking `RegExp` built from the source is
@@ -303,9 +305,8 @@ const _numberConstraintsField: Converter<NumberConstraints> = numberConstraintsC
  * A string node's `minLength`, `maxLength` and `format`, as `stringConstraintsConverter` reads
  * them; `stringOptions` then requires non-negative integers in order.
  */
-const _stringConstraintsField: Converter<StringLengthConstraints> = stringConstraintsConverter.withFormattedError(
-  (__from, message) => _printable(`${message}`)
-);
+const _stringConstraintsField: Converter<StringLengthConstraints> =
+  stringConstraintsConverter.withFormattedError((__from, message) => _printable(`${message}`));
 
 /** A string node's `pattern` source, refused when present and not a string. */
 const _patternField: Converter<{ readonly pattern?: string }> = Converters.object<{
@@ -377,7 +378,9 @@ function _checkForbidden(raw: Record<string, unknown>, ctx: IParseContext): Resu
       return fail(`unsupported JSON Schema keyword '${keyword}'`);
     }
   }
-  return 'pattern' in raw ? ctx.patternGate().onSuccess(() => succeed(true as const)) : succeed(true as const);
+  return 'pattern' in raw
+    ? ctx.patternGate().onSuccess(() => succeed(true as const))
+    : succeed(true as const);
 }
 
 /** Converts a node's annotations and nullability into `ISchemaOptions` form. */

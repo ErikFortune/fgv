@@ -236,12 +236,13 @@ export class ValidatedStringOptions<T extends IStringSchemaOptions = IStringSche
    * `undefined` for anything else.
    * @internal
    */
-  public static _read(
-    value: unknown
-  ):
+  public static _read(value: unknown):
     | Readonly<
         Omit<IStringSchemaOptions, 'pattern'> & {
-          readonly pattern?: { readonly source: string; readonly matches: (value: string) => Result<boolean> };
+          readonly pattern?: {
+            readonly source: string;
+            readonly matches: (value: string) => Result<boolean>;
+          };
         }
       >
     | undefined {

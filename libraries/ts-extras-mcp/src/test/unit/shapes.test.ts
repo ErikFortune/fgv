@@ -475,17 +475,18 @@ describe('pattern on an adapted MCP tool', () => {
 
   test('without a pattern validator the tool is skipped, and nothing compiles its pattern', async () => {
     const logger = new Logging.InMemoryLogger('all');
-    expect(await adaptMcpTools(session, { logger, schemaKeywords: AiAssist.clientToolSchemaKeywords(ANTHROPIC) }))
-      .toSucceedAndSatisfy((result) => {
-        expect(result.tools.map((t) => t.config.name)).toEqual(['level']);
-        expect(result.skipped).toEqual([
-          {
-            name: 'code',
-            reason: "#/properties/code: unsupported JSON Schema keyword 'pattern'",
-            schema: CODE_SCHEMA
-          }
-        ]);
-      });
+    expect(
+      await adaptMcpTools(session, { logger, schemaKeywords: AiAssist.clientToolSchemaKeywords(ANTHROPIC) })
+    ).toSucceedAndSatisfy((result) => {
+      expect(result.tools.map((t) => t.config.name)).toEqual(['level']);
+      expect(result.skipped).toEqual([
+        {
+          name: 'code',
+          reason: "#/properties/code: unsupported JSON Schema keyword 'pattern'",
+          schema: CODE_SCHEMA
+        }
+      ]);
+    });
     expect(logger.logged.join('\n')).toMatch(/skipping tool 'code'.*'pattern'/);
     expect(compiled).toEqual([]);
   });

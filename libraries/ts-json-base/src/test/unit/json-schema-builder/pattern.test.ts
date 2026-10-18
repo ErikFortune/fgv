@@ -182,11 +182,9 @@ describe('JsonSchema pattern — trusted (host-written) path', () => {
     expect(JsonSchema.fromJson(json)).toFailWith(
       /^#\/properties\/id: unsupported JSON Schema keyword 'pattern'/
     );
-    expect(JsonSchema.fromJson(json, { patternValidator: regExpValidator })).toSucceedAndSatisfy(
-      (parsed) => {
-        expect(parsed.toJson()).toEqual(json);
-      }
-    );
+    expect(JsonSchema.fromJson(json, { patternValidator: regExpValidator })).toSucceedAndSatisfy((parsed) => {
+      expect(parsed.toJson()).toEqual(json);
+    });
   });
 
   describe('options from another installed copy of the package', () => {
@@ -337,12 +335,12 @@ describe('JsonSchema pattern — untrusted (fromJson) path', () => {
       calls.push(source);
       return regExpValidator(source);
     };
-    expect(JsonSchema.fromJson({ type: 'number', pattern: '^1' }, { patternValidator: validator })).toSucceedAndSatisfy(
-      (schema) => {
-        expect(schema.toJson()).toEqual({ type: 'number' });
-        expect(schema.validate(2)).toSucceed();
-      }
-    );
+    expect(
+      JsonSchema.fromJson({ type: 'number', pattern: '^1' }, { patternValidator: validator })
+    ).toSucceedAndSatisfy((schema) => {
+      expect(schema.toJson()).toEqual({ type: 'number' });
+      expect(schema.validate(2)).toSucceed();
+    });
     expect(calls).toEqual([]);
   });
 
@@ -386,7 +384,9 @@ describe('JsonSchema pattern — wire adaptation', () => {
   );
 
   test('the conservative table folds it, after the lengths, with its source as JSON', () => {
-    expect(JsonSchema.adaptSchemaKeywords(schema.toJson(), JsonSchema.unverifiedWireSchemaKeywords)).toSucceedWith({
+    expect(
+      JsonSchema.adaptSchemaKeywords(schema.toJson(), JsonSchema.unverifiedWireSchemaKeywords)
+    ).toSucceedWith({
       type: 'string',
       description: 'Constraints: minLength 1; pattern "^\\\\d+$". Format: x.'
     });

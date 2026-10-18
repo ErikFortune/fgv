@@ -165,7 +165,9 @@ describe('wireProbe', () => {
       expect(new Set(WIRE_PROBE_FIXTURES.map((f) => f.id)).size).toBe(WIRE_PROBE_FIXTURES.length);
       for (const f of WIRE_PROBE_FIXTURES) {
         expect(readFixture(f)).toSucceedAndSatisfy((validator) => {
-          expect(validator.toJson()).toEqual(JsonSchema.fromJson(f.schema, { patternValidator: probePatternValidator }).orThrow().toJson());
+          expect(validator.toJson()).toEqual(
+            JsonSchema.fromJson(f.schema, { patternValidator: probePatternValidator }).orThrow().toJson()
+          );
         });
       }
     });
@@ -225,7 +227,9 @@ describe('wireProbe', () => {
         descriptor('anthropic'),
         AiAssist.resolveProviderModel(descriptor('anthropic'), wire('anthropic-json-outputs').model).orThrow()
       );
-      expect(jsonOutputs === undefined ? undefined : ourVerdict(rawOf('pattern-host'), jsonOutputs)).toBe('pass');
+      expect(jsonOutputs === undefined ? undefined : ourVerdict(rawOf('pattern-host'), jsonOutputs)).toBe(
+        'pass'
+      );
     });
   });
 

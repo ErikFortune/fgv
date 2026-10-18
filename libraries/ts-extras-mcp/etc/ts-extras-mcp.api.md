@@ -38,6 +38,7 @@ export function createStdioTransport(params: IMcpStdioTransportParams): Result<I
 // @public
 export interface IAdaptMcpToolsOptions {
     readonly logger?: Logging.ILogger;
+    readonly patternValidator?: JsonSchema.SchemaPatternValidator;
     readonly schemaKeywords?: JsonSchema.SchemaKeywordCapabilities;
 }
 
