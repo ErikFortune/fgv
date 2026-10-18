@@ -5,17 +5,18 @@ PR is opened. Package: `@fgv/ts-agent-memory`.
 
 ## Summary
 
-Followup D3, user decision 2 of 2026-10-18. `createMemoryTools` result items carried a `handle`,
+Followups D3 and D7, user decisions of 2026-10-18. `createMemoryTools` result items carried a `handle`,
 which by default is the bare `envelope.id`, and no scope. Two same-id records in different scopes
 (turn-3 in two conversations) were indistinguishable to the model. Worse, a `memory_write` link
 target with an omitted `scope` defaults to the writer's scope, so an id copied from another scope
 silently pointed the edge at the wrong record.
 
-Every item from `memory_search`, `memory_context` and `memory_read` now carries `scope`, and so does
-the `memory_write` result. The descriptions tell the model to copy both the `handle` (as `id`) and
-the `scope`. The tool layer owns `scope`: the `projectItem` hook returns the new
-`IMemoryToolItemProjection` and cannot drop or forge it. A record whose scope cannot be resolved
-fails the call.
+Every item from `memory_search`, `memory_context` and `memory_read` now carries its address,
+`id` + `scope`. The `memory_write` result carries `scope` beside its `id`. `handle` is the display
+key only. The descriptions tell the model to copy `id` and `scope` from a result, which is correct
+under a `handleFor` mnemonic too. The tool layer owns `id` and `scope`: the `projectItem` hook
+returns the new `IMemoryToolItemProjection` and cannot drop or forge them. A record whose scope
+cannot be resolved fails the call, and so does a store whose resolver throws.
 
 ## Files changed
 
@@ -24,19 +25,21 @@ fails the call.
   their scope", plus retyped test projectors.
 - `libraries/ts-agent-memory/etc/ts-agent-memory.api.md`, `CAPABILITIES.md`, and a change file
   (`minor`, `BREAKING (implementers only):`).
-- `.ai/tasks/active/personality-asks-2026-10/followups.md`: D3 marked shipped.
+- `.ai/tasks/active/personality-asks-2026-10/followups.md`: D3 and D7 marked shipped.
 
 ## Decisions made during execution
 
-- `scope` is applied by the tool layer, after any host projection.
-- It is resolved with `scopedAddressOf(record, store)`, and an unresolvable one fails loudly.
+- `id` and `scope` are applied by the tool layer, after any host projection.
+- The scope is resolved with a `captureResult`-wrapped `scopedAddressOf(record, store)`, and an
+  unresolvable one fails loudly.
+- The first build told the model to copy the `handle` as `id`. The deep review flagged that as a P2
+  under `handleFor`, and the user's D7 decision replaced it with a tool-owned `id`.
 - The write result gained `scope`; delete did not.
 - The omitted-scope default is kept, as briefed.
 
 ## Followups
 
-None opened. `result.md` reports one for the orchestrator: with a `handleFor` mnemonic, a model
-cannot author a correct link or seed from a result, because the handle is not an id.
+None open. D7 (links under a `handleFor` mnemonic), raised by this stream, shipped in it.
 
 ## Evidence
 

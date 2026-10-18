@@ -1,11 +1,12 @@
 # Result: `memory-search-scope`
 
-**Shipped:** every result item from `memory_search`, `memory_context` and `memory_read` now carries
-`scope`, the scope its record lives in, and so does the `memory_write` result. Two records that share
-an id in different scopes are therefore distinguishable to the model, and the tool descriptions tell
-it to copy both a result's `handle` (as `id`) and its `scope` into a link target or context seed.
+**Shipped:** every result item from `memory_search`, `memory_context` and `memory_read` now carries its address, `id` + `scope`, and the `memory_write` result carries `scope` beside its `id`. Two records that share an id in different scopes are therefore distinguishable to the model, and the tool descriptions tell it to copy `id` and `scope` from a result into a link target or context seed.
 
 Package: `@fgv/ts-agent-memory`. PR: #TBD into `integration/asks`.
+
+> **Read with § "Review round 2".** The sections before "Review round 2" record the first build, which
+> had no `id` on items and told the model to copy the `handle` as the id. The user's D7 decision
+> replaced that. Where the two disagree, "Review round 2" is what shipped.
 
 ## What changed
 
@@ -137,3 +138,34 @@ Gates for this round. Logs are `r1-*.log` in `../gate-logs-memory-search-scope/`
   recur.
 - **Other checks:** `change --verify --target-branch origin/integration/asks`,
   `verify-capability-docs` and the feed `--check` all exit 0.
+
+## Review round 2: D7 decided, items carry `id`
+
+The user decided D7 by adding the `id` field. This supersedes the "copy the `handle` as `id`" wording
+above and resolves the round-1 P2.
+
+- **`IMemoryToolResultItem.id: MemoryId`** is the record's `envelope.id`. It is set by the tool layer
+  in `projectItem`, spread after the host projection beside `scope`, so a `projectItem` hook can
+  neither drop nor forge it. The forging projector test now also returns `id: 'forged-id'`, and the
+  real id wins in both the forging and the omitting case. `IMemoryWriteResult` already carried `id`
+  and is unchanged.
+- **`handle` is the display key.** Its TSDoc, the `handleFor` TSDoc and the item TSDoc say it is for
+  display and for reference in prose, and that links and context seeds use `id` + `scope`.
+- **Descriptions** now say "copy `id` and `scope` from a result" everywhere. That covers the
+  link-target `id` (adding "not its `handle`"), the context-seed `id`, and the `memory_write`,
+  `memory_read`, `memory_search` and `memory_context` tool descriptions. The `scope` field
+  descriptions already said to copy from the same result as `id`.
+- **Tests.**
+  - With `handleFor` set to a portable-set mnemonic, a `memory_write` link built from a copied
+    `{ id, scope }` re-resolves (`resolveRecord`) to conv-b's turn. This is the case where using the
+    handle would have dangled silently, because the `MemoryId` converter accepts it.
+  - A `memory_context` seed copied from a mnemonic-handled note's result traverses to that note's
+    linked turn.
+  - The "alongside `handleFor`" pin now asserts `{ handle: '@doc-1', id: 'doc-1', scope: 'knowledge' }`.
+  - The earlier cross-scope link test now copies `id` instead of `handle`.
+- **Docs.** `CAPABILITIES.md`, `etc/ts-agent-memory.api.md` (adds `id`) and the change file comment
+  are updated. D3 and D7 are marked shipped together in `followups.md`.
+
+### Gates (round 2; logs `r2-*.log`)
+
+See the bullets that follow this section, appended after the gates ran.

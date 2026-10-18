@@ -269,7 +269,7 @@ to. Design it once, before any of them ships.
 - **Possible fix:** have the store decode the version address and compare against `encodeVersion(entityId, seq)` for `ITemporalIdentityCodec` kinds.
 - **Route:** fold into the next `ts-agent-memory` stream. It is a codec bug for a codec that breaks its contract, and the shipped `TemporalIdentityCodec` already checks it.
 
-### D3. Default `memory_search` handle is the bare id — from `agent-memory-merge-scope` (#731) — **shipped** via #TBD (`memory-search-scope`: every result item carries `scope`)
+### D3. Default `memory_search` handle is the bare id — from `agent-memory-merge-scope` (#731) — **shipped** via #TBD (`memory-search-scope`: every result item carries `id` + `scope`; shipped together with D7)
 
 - **Source:** the same `result.md`, § "Out-of-scope report 2".
 - **What:** without `handleFor`, `defaultProjectItem` (`tools/memoryTools.ts:~347`) uses `envelope.id` as the agent-visible handle.
@@ -278,12 +278,13 @@ to. Design it once, before any of them ships.
   - One misuse path exists: a `memory_write` link target with `scope` omitted defaults to the writer's scope. A handle copied from another conversation would then point the edge at the wrong record.
 - **Route:** decide whether the default handle should be scope-qualified, for example via `edgeTargetKey`, or whether search items should carry scope. This is an agent-facing format decision, so ask the user before building it.
 
-### D7. A `handleFor` mnemonic cannot be linked from — from `memory-search-scope` (#TBD)
+### D7. A `handleFor` mnemonic cannot be linked from — from `memory-search-scope` (#TBD) — **shipped** via #TBD, together with D3
 
 - **What:** since D3, items carry `scope`, and the descriptions tell the model to copy the `handle` (as `id`) plus `scope` into a link target or `memory_context` seed. That works only when the handle is the id. With a host `handleFor` mnemonic, the handle is not a `MemoryId`, and no tool resolves a handle back, so a model cannot author a correct link or seed from a result at all.
 - **The D3 descriptions make this worse, not only pre-existing.** Before D3, nothing told the model to put a handle in `id`. Now the descriptions actively instruct it to, so under `handleFor` a compliant model writes a dangling edge. A mnemonic outside the portable filename set (such as the testbed's `@doc-1`) is rejected by the `MemoryId` converter, so the write fails. A portable-set mnemonic (such as `dark-mode-pref`) is accepted and persisted as an edge to a record that does not exist. The deep review of `memory-search-scope` raised this as a P2. It is held for a user decision, and the descriptions are unchanged pending that decision.
 - **Possible fix:** an always-present, tool-layer-owned `id` on each item (as `scope` is), or a lookup that resolves a handle.
 - **Route:** an agent-facing format decision, like D3, so it goes to the user. In-repo, `samples/testbed`'s `memoryToolsGate` wires `handleFor` beside `memory_write`, but its mocked write authors no links.
+- **Decision (user, 2026-10-18):** add the `id` field. **Shipped** on `memory-search-scope`. Every result item carries `id: MemoryId` (its `envelope.id`), owned by the tool layer exactly as `scope` is, so a `projectItem` hook can neither drop nor forge it. `handle` is now documented as the display key only. Every description says to copy `id` and `scope` from a result. End-to-end tests with a portable-set mnemonic prove that a copied `{ id, scope }` link and a copied `memory_context` seed both resolve to the right record.
 
 
 ---

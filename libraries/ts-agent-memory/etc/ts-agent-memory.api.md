@@ -648,6 +648,7 @@ export interface IMemoryToolItemProjection {
 
 // @public
 export interface IMemoryToolResultItem extends IMemoryToolItemProjection {
+    readonly id: MemoryId;
     readonly scope: MemoryScopeKey;
 }
 
