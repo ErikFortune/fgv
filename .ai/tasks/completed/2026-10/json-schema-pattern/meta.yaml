@@ -1,7 +1,7 @@
 id: json-schema-pattern
 status: shipped
 packages: ['@fgv/ts-json-base', '@fgv/ts-extras', '@fgv/ts-extras-mcp']
-prs: [] # TBD: the orchestrator fills in the PR number
+prs: [742]
 openPrs: []
 opened: 2026-10-18
 closed: 2026-10-18

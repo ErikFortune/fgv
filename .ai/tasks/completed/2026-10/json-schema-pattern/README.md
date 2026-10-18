@@ -1,6 +1,6 @@
 # `json-schema-pattern`: trusted `pattern` on host schemas, injected validator for untrusted ones
 
-**Shipped 2026-10-18** onto `integration/asks` (PR #TBD).
+**Shipped 2026-10-18** onto `integration/asks` (PR #742).
 Origin: user decision 1, 2026-10-18 (`personality-asks-2026-10/followups.md`), the last shape from
 personaility#683. Builds on `json-schema-options` (#740), `json-schema-constraints` (#734),
 `json-schema-shapes` (#736) and `testbed-wire-probe` (#738).

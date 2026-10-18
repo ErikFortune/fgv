@@ -6,7 +6,7 @@ only through an injected `patternValidator`, so the library never constructs a `
 
 Branch `json-schema-pattern`, from `d33b149e7` merged with `integration/asks` at `b7986878b`
 (#740, #739, #738). Commits: `eaf47d8ff` (merge), `60ee1660e` (code and tests), `8a1c49e42` (docs,
-change files, prettier), and the close-out commit. PR: #TBD.
+change files, prettier), and the close-out commit. PR: #742.
 
 **The live wire probe is the user's to run before merge.** This session had no provider keys; the
 probe's new rows are unit-tested over synthetic responses only.
