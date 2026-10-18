@@ -281,6 +281,29 @@ to. Design it once, before any of them ships.
 
 ---
 
+## Decisions, 2026-10-18 (user, after the #731–#736 batch)
+
+Judged against `release` at `0f621ab1d` (#737). Each decision is briefed on its own branch, which is named in brackets.
+
+1. **`pattern`** [`json-schema-pattern`]: split by trust.
+   - Host-written schemas get a `pattern` option on the string factory. The host's regex is trusted, enforced, and emitted where the wire documents `pattern`.
+   - `fromJson` refuses `pattern` by default and accepts an injected `patternValidator: (source) => Result<(value) => boolean>`.
+   - An RE2-backed default ships separately, as its own package and a later stream, so only callers who want it take the native dependency.
+2. **D3** [`memory-search-scope`]: the agent sees each search item's scope.
+   - Amended at brief time: `memory_write` link targets are already structured as `{ id, scope? }`, so a single qualified handle *string* would land in `id` and break.
+   - The fix is that every result item carries `scope`, and the tool's description tells the model to copy both fields into a link target.
+   - The default handle stays the id; `handleFor` is unchanged.
+3. **Loud request failure** for a host-written client tool the wire cannot carry: confirmed. Add a pre-flight so it fails when the turn is created, not mid-stream [`ai-assist-wire-followups`].
+4. **Mismatched MCP wire table fails loudly**: confirmed.
+5. **Live testbed wire probe** to turn the #736 inferences into observations: approved [`testbed-wire-probe`].
+6. **Wire decisions:**
+   - Keep folding `format`. Stop folding `default`: drop it, because a folded default reads as if it were applied. `examples` stays folded. [`ai-assist-wire-followups`]
+   - An endpoint override stays conservative unless the host asserts `{ providerId, verified: true }` [`ai-assist-wire-followups`].
+   - Constraint options are validated rather than the schema: `JsonSchema.numberOptions` / `stringOptions` return `Result` of branded options, and constraint-bearing factories accept only those. Factories never throw; declarations use `.shouldNotFail(label)` [`json-schema-options`].
+7. **All-zero weights** stay `undefined`. Uniform weighting is the caller's `?? pick(...)`. PersonAIlity's first-option sampler is theirs to change; noted on personaility#669.
+
+**Order:** `json-schema-options` → `json-schema-pattern` → `ai-assist-wire-followups`. All three touch `json-schema-builder` / `schemaKeywords`. `memory-search-scope` and `testbed-wire-probe` are independent and can run in parallel. The probe should be re-run once `json-schema-pattern` lands.
+
 ## Proposed order — for the user to prioritise
 
 | # | what | why here |
