@@ -269,7 +269,7 @@ to. Design it once, before any of them ships.
 - **Possible fix:** have the store decode the version address and compare against `encodeVersion(entityId, seq)` for `ITemporalIdentityCodec` kinds.
 - **Route:** fold into the next `ts-agent-memory` stream. It is a codec bug for a codec that breaks its contract, and the shipped `TemporalIdentityCodec` already checks it.
 
-### D3. Default `memory_search` handle is the bare id — from `agent-memory-merge-scope` (#731)
+### D3. Default `memory_search` handle is the bare id — from `agent-memory-merge-scope` (#731) — **shipped** via #TBD (`memory-search-scope`: every result item carries `scope`)
 
 - **Source:** the same `result.md`, § "Out-of-scope report 2".
 - **What:** without `handleFor`, `defaultProjectItem` (`tools/memoryTools.ts:~347`) uses `envelope.id` as the agent-visible handle.

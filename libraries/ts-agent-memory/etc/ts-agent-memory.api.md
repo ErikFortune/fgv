@@ -219,7 +219,7 @@ export interface ICreateMemoryToolsParams {
     readonly defaultCodec?: IIdentityCodec;
     readonly handleFor?: (record: IMemoryRecord<unknown>) => string;
     readonly kinds?: ReadonlyArray<Kind>;
-    readonly projectItem?: (record: IMemoryRecord<unknown>, detail: MemoryDetailTier) => IMemoryToolResultItem;
+    readonly projectItem?: (record: IMemoryRecord<unknown>, detail: MemoryDetailTier) => IMemoryToolItemProjection;
     readonly registry: IBodyConverterRegistry;
     readonly retriever: IMemoryRetriever;
     readonly store: IMemoryStore;
@@ -638,7 +638,7 @@ export interface IMemoryStoreListFilter {
 }
 
 // @public
-export interface IMemoryToolResultItem {
+export interface IMemoryToolItemProjection {
     readonly body: unknown;
     readonly entityId: EntityId;
     readonly handle: string;
@@ -647,11 +647,17 @@ export interface IMemoryToolResultItem {
 }
 
 // @public
+export interface IMemoryToolResultItem extends IMemoryToolItemProjection {
+    readonly scope: MemoryScopeKey;
+}
+
+// @public
 export interface IMemoryWriteResult {
     readonly entityId: EntityId;
     readonly id: MemoryId;
     readonly kind: Kind;
     readonly outcome: MemoryWriteOutcome;
+    readonly scope: MemoryScopeKey;
 }
 
 // @public

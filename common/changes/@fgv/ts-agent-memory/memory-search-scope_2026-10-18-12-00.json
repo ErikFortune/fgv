@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-agent-memory",
+      "comment": "BREAKING (implementers only): memory tool result items (IMemoryToolResultItem) and IMemoryWriteResult now carry the record's scope, and the tool descriptions tell the model to copy both id and scope into a link target or context seed; the projectItem hook now returns IMemoryToolItemProjection (the item without scope), so a projector annotated as returning IMemoryToolResultItem must switch to the new type",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-agent-memory"
+}
