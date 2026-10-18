@@ -22,6 +22,7 @@ import {
   IMemoryRecord,
   IMemoryRecordResolver,
   IMemoryStore,
+  IMemoryToolItemProjection,
   IMemoryToolResultItem,
   IMemoryWriteResult,
   IWritePolicy,
@@ -37,6 +38,8 @@ import {
   ScoreUnionMergeStrategy,
   StructuredFilterRetriever,
   TagRetriever,
+  TemporalIdentityCodec,
+  TemporalVersionedPolicy,
   createMemoryTools,
   envelopeConverter
 } from '../../../index';
@@ -383,6 +386,7 @@ describe('createMemoryTools', () => {
         expect(result.outcome).toBe('written');
         expect(result.id).toBe('doc-1');
         expect(result.entityId).toBe('doc-1');
+        expect(result.scope).toBe('knowledge');
       });
       expect(
         await toolByName(tools, 'memory_read').execute({ kind: 'knowledge', entityId: 'doc-1' })
@@ -498,6 +502,7 @@ describe('createMemoryTools', () => {
         const result = value as IMemoryWriteResult;
         expect(result.id).toBe('turn-7');
         expect(result.entityId).toBe('conv-1:7');
+        expect(result.scope).toBe('conversations/conv-1');
       });
       // Read back via the same composite entityId.
       expect(
@@ -952,7 +957,7 @@ describe('result projection (projectItem host projector + detail tier)', () => {
   const boundingProjector = (
     record: IMemoryRecord<unknown>,
     detail: 'gist' | 'full'
-  ): IMemoryToolResultItem => ({
+  ): IMemoryToolItemProjection => ({
     handle: `h:${record.envelope.id}`,
     kind: record.envelope.kind,
     entityId: record.envelope.entityId,
@@ -1128,7 +1133,7 @@ describe('result projection (projectItem host projector + detail tier)', () => {
     }
 
     async function readToolWith(
-      projector?: (record: IMemoryRecord<unknown>, detail: 'gist' | 'full') => IMemoryToolResultItem
+      projector?: (record: IMemoryRecord<unknown>, detail: 'gist' | 'full') => IMemoryToolItemProjection
     ): Promise<AiAssist.IAiClientTool> {
       const tools = createMemoryTools({
         store: makeStore(),
@@ -1172,6 +1177,466 @@ describe('result projection (projectItem host projector + detail tier)', () => {
           expect((value as IReadOut).item.body).toBe('FULLBODY');
         });
       }
+    });
+  });
+});
+
+describe('result items carry their scope', () => {
+  interface IItemsOut {
+    readonly count: number;
+    readonly results: ReadonlyArray<IMemoryToolResultItem>;
+  }
+
+  /**
+   * An `IMemoryStore` double whose identity resolution always fails, for the
+   * scope-failure paths: by returning a `Failure`, or by throwing.
+   */
+  function unresolvableStore(record?: IMemoryRecord<unknown>, mode: 'fail' | 'throw' = 'fail'): IMemoryStore {
+    return {
+      resolveIdentity: () => {
+        if (mode === 'throw') {
+          throw new Error('resolver blew up');
+        }
+        return fail('no codec for this kind');
+      },
+      get: async () => succeed(record),
+      getById: async () => fail('unused'),
+      list: async () => succeed([]),
+      listEntries: async () => succeed([]),
+      listScoped: async () => succeed([]),
+      resolveRecord: () => succeed(undefined),
+      coverage: async () => succeed({ records: new Map<Kind, number>() }),
+      asRecordSource: () => ({ list: async () => succeed({ records: [] }) }),
+      dedupScopeFor: () => 'content',
+      embedsKind: () => true,
+      reconcile: async (kind: Kind) =>
+        succeed({ artifact: 'rank' as const, kind, examined: 0, repaired: 0, failed: [] }),
+      put: async (r) => succeed(r),
+      delete: async () => fail('unused')
+    };
+  }
+
+  /**
+   * A real store holding two MTM turns that share the stem `turn-3` in two
+   * conversations, with tools whose retriever indexes that store.
+   */
+  async function twoConversations(): Promise<{
+    store: FileTreeMemoryStore;
+    tools: ReadonlyArray<AiAssist.IAiClientTool>;
+  }> {
+    const store = makeStore();
+    const registry = registryWith([{ kind: knowledgeKind }, { kind: mtmKind }]);
+    const writer = toolByName(
+      createMemoryTools({ store, retriever: makeRetriever([]), registry, codecs, tools: ['memory_write'] }),
+      'memory_write'
+    );
+    (await writer.execute({ kind: 'mtm', entityId: 'conv-a:3', body: 'turn in a', tags: ['t'] })).orThrow();
+    (await writer.execute({ kind: 'mtm', entityId: 'conv-b:3', body: 'turn in b', tags: ['t'] })).orThrow();
+    const index = MemoryIndex.create().orThrow();
+    index.rebuild((await store.listEntries()).orThrow()).orThrow();
+    const retriever = RecencyRetriever.create({ index, resolver: store }).orThrow();
+    const tools = createMemoryTools({
+      store,
+      retriever,
+      registry,
+      codecs,
+      tools: ['memory_write', 'memory_read', 'memory_search']
+    });
+    return { store, tools };
+  }
+
+  test('two same-id records in different scopes come back distinguishable', async () => {
+    const { tools } = await twoConversations();
+    expect(await toolByName(tools, 'memory_search').execute({ kind: 'mtm' })).toSucceedAndSatisfy((value) => {
+      const out = value as IItemsOut;
+      expect(out.count).toBe(2);
+      // The handles collide; the scopes do not, and each is the record's own.
+      expect(out.results.map((r) => r.handle)).toEqual(['turn-3', 'turn-3']);
+      expect(out.results.map((r) => [r.entityId, r.scope]).sort()).toEqual([
+        ['conv-a:3', 'conversations/conv-a'],
+        ['conv-b:3', 'conversations/conv-b']
+      ]);
+    });
+  });
+
+  test("a write that links with a copied { id, scope } targets the other scope's record", async () => {
+    const { store, tools } = await twoConversations();
+    const found = (await toolByName(tools, 'memory_search').execute({ kind: 'mtm' })).orThrow() as IItemsOut;
+    const inB = found.results.find((r) => r.entityId === 'conv-b:3');
+    expect(inB).toBeDefined();
+    expect(
+      await toolByName(tools, 'memory_write').execute({
+        kind: 'knowledge',
+        entityId: 'note-1',
+        body: 'about the b turn',
+        links: [{ type: 'mtm-ref', target: { id: inB?.id, scope: inB?.scope } }]
+      })
+    ).toSucceed();
+    expect(await store.get(knowledgeKind, 'note-1' as EntityId)).toSucceedAndSatisfy((rec) => {
+      expect(rec?.envelope.links).toEqual([
+        { type: 'mtm-ref', target: { scope: 'conversations/conv-b', id: 'turn-3' } }
+      ]);
+      // The edge resolves to conv-b's turn, not conv-a's.
+      const target = rec!.envelope.links[0].target;
+      expect(store.resolveRecord(target.scope, target.id)).toSucceedAndSatisfy((linked) => {
+        expect(linked?.envelope.entityId).toBe('conv-b:3');
+      });
+    });
+  });
+
+  test("an omitted link scope still defaults to the writer's own scope", async () => {
+    const { store, tools } = await twoConversations();
+    expect(
+      await toolByName(tools, 'memory_write').execute({
+        kind: 'mtm',
+        entityId: 'conv-a:4',
+        body: 'follow-up in a',
+        links: [{ type: 'rel', target: { id: 'turn-3' } }]
+      })
+    ).toSucceedAndSatisfy((value) => {
+      expect((value as IMemoryWriteResult).scope).toBe('conversations/conv-a');
+    });
+    expect(await store.get(mtmKind, 'conv-a:4' as EntityId)).toSucceedAndSatisfy((rec) => {
+      expect(rec?.envelope.links).toEqual([
+        { type: 'rel', target: { scope: 'conversations/conv-a', id: 'turn-3' } }
+      ]);
+    });
+  });
+
+  test('memory_read and memory_context items carry the scope too', async () => {
+    const { tools } = await twoConversations();
+    expect(
+      await toolByName(tools, 'memory_read').execute({ kind: 'mtm', entityId: 'conv-b:3' })
+    ).toSucceedAndSatisfy((value) => {
+      expect((value as { item: IMemoryToolResultItem }).item.scope).toBe('conversations/conv-b');
+    });
+    const context = toolByName(
+      createMemoryTools({
+        store: makeStore(),
+        retriever: makeLinkRetriever([{ id: 'a', links: ['b'] }, { id: 'b' }]),
+        registry: registryWith([{ kind: knowledgeKind }])
+      }),
+      'memory_context'
+    );
+    expect(await context.execute({ from: { id: 'a', scope: 'knowledge' } })).toSucceedAndSatisfy((value) => {
+      expect((value as IItemsOut).results.map((r) => [r.handle, r.scope])).toEqual([['b', 'knowledge']]);
+    });
+  });
+
+  test('a host projector can neither drop nor override the id or scope', async () => {
+    const forging = (record: IMemoryRecord<unknown>): IMemoryToolItemProjection => {
+      const projected = {
+        handle: `h:${record.envelope.id}`,
+        kind: record.envelope.kind,
+        entityId: record.envelope.entityId,
+        tags: record.envelope.tags,
+        body: '<<gist>>',
+        id: 'forged-id',
+        scope: 'forged'
+      };
+      return projected;
+    };
+    const omitting = (record: IMemoryRecord<unknown>): IMemoryToolItemProjection => ({
+      handle: `h:${record.envelope.id}`,
+      kind: record.envelope.kind,
+      entityId: record.envelope.entityId,
+      tags: record.envelope.tags,
+      body: '<<gist>>'
+    });
+    for (const projector of [forging, omitting]) {
+      const tool = toolByName(
+        createMemoryTools({
+          store: makeStore(),
+          retriever: makeRetriever([{ id: 'doc-1', tags: ['topic'] }]),
+          registry: registryWith([{ kind: knowledgeKind }]),
+          projectItem: projector
+        }),
+        'memory_search'
+      );
+      expect(await tool.execute({ tag: 'topic' })).toSucceedAndSatisfy((value) => {
+        const item = (value as IItemsOut).results[0];
+        expect(item.handle).toBe('h:doc-1');
+        expect(item.body).toBe('<<gist>>');
+        expect(item.id).toBe('doc-1');
+        expect(item.scope).toBe('knowledge');
+      });
+    }
+  });
+
+  test('the descriptions tell the model to copy both id and scope', () => {
+    const tools = allTools();
+    expect(toolByName(tools, 'memory_search').config.description).toMatch(
+      /copy `id` and `scope` from the result/
+    );
+    const write = toolByName(tools, 'memory_write').config.parametersSchema.toJson() as JsonObject;
+    const links = (write.properties as JsonObject).links as JsonObject;
+    const target = ((links.items as JsonObject).properties as JsonObject).target as JsonObject;
+    const targetScope = (target.properties as JsonObject).scope as JsonObject;
+    expect(targetScope.description).toMatch(/copy `scope` from the same result/);
+    const context = toolByName(tools, 'memory_context').config.parametersSchema.toJson() as JsonObject;
+    const from = (context.properties as JsonObject).from as JsonObject;
+    const seedScope = (from.properties as JsonObject).scope as JsonObject;
+    expect(seedScope.description).toMatch(/copy `scope` from the same result item/);
+  });
+
+  describe('a record whose scope cannot be resolved fails loudly', () => {
+    test('memory_search', async () => {
+      // A single retriever, so no merge strategy resolves (and fails on) the scope first.
+      const unscoped: ReadonlyArray<IEntrySpec> = [{ id: 'x-1', kind: 'other', tags: ['topic'] }];
+      const tool = toolByName(
+        createMemoryTools({
+          store: makeStore(),
+          retriever: RecencyRetriever.create({
+            index: makeIndex(unscoped),
+            resolver: resolverFor(unscoped)
+          }).orThrow(),
+          registry: registryWith([{ kind: knowledgeKind }])
+        }),
+        'memory_search'
+      );
+      expect(await tool.execute({ tag: 'topic' })).toFailWith(
+        /memory_search: cannot resolve the scope of record 'x-1' \(kind 'other'\)/
+      );
+    });
+
+    test('memory_context', async () => {
+      const tool = toolByName(
+        createMemoryTools({
+          store: makeStore(),
+          retriever: makeLinkRetriever([
+            { id: 'a', links: ['x-1'] },
+            { id: 'x-1', kind: 'other' }
+          ]),
+          registry: registryWith([{ kind: knowledgeKind }])
+        }),
+        'memory_context'
+      );
+      expect(await tool.execute({ from: { id: 'a', scope: 'knowledge' } })).toFailWith(
+        /memory_context: cannot resolve the scope of record 'x-1'/
+      );
+    });
+
+    test('memory_read', async () => {
+      const tool = toolByName(
+        createMemoryTools({
+          store: unresolvableStore(makeEntry({ id: 'doc-1' }).record),
+          retriever: makeRetriever([]),
+          registry: registryWith([{ kind: knowledgeKind }]),
+          tools: ['memory_read']
+        }),
+        'memory_read'
+      );
+      expect(await tool.execute({ kind: 'knowledge', entityId: 'doc-1' })).toFailWith(
+        /memory_read: cannot resolve the scope of record 'doc-1'.*no codec/
+      );
+    });
+
+    test('memory_write', async () => {
+      const tool = toolByName(
+        createMemoryTools({
+          store: unresolvableStore(),
+          retriever: makeRetriever([]),
+          registry: registryWith([{ kind: knowledgeKind }]),
+          codecs,
+          tools: ['memory_write']
+        }),
+        'memory_write'
+      );
+      expect(await tool.execute({ kind: 'knowledge', entityId: 'doc-1', body: 'x' })).toFailWith(
+        /memory_write: cannot resolve the stored record's scope: no codec/
+      );
+    });
+
+    test('a store whose resolver throws yields a failure, not an escaped throw (read and write)', async () => {
+      const read = toolByName(
+        createMemoryTools({
+          store: unresolvableStore(makeEntry({ id: 'doc-1' }).record, 'throw'),
+          retriever: makeRetriever([]),
+          registry: registryWith([{ kind: knowledgeKind }]),
+          tools: ['memory_read']
+        }),
+        'memory_read'
+      );
+      expect(await read.execute({ kind: 'knowledge', entityId: 'doc-1' })).toFailWith(
+        /memory_read: cannot resolve the scope of record 'doc-1'.*resolver blew up/
+      );
+      const write = toolByName(
+        createMemoryTools({
+          store: unresolvableStore(undefined, 'throw'),
+          retriever: makeRetriever([]),
+          registry: registryWith([{ kind: knowledgeKind }]),
+          codecs,
+          tools: ['memory_write']
+        }),
+        'memory_write'
+      );
+      expect(await write.execute({ kind: 'knowledge', entityId: 'doc-1', body: 'x' })).toFailWith(
+        /memory_write: cannot resolve the stored record's scope: resolver blew up/
+      );
+    });
+  });
+
+  test("a versioned (temporal) kind's item carries the entity's scope, beside the version-stem handle", async () => {
+    const factKind: Kind = 'fact' as Kind;
+    const store = FileTreeMemoryStore.create({
+      root: mutableRoot(),
+      registry: registryWith([{ kind: factKind }]),
+      codecs: new Map<Kind, IIdentityCodec>([[factKind, TemporalIdentityCodec.create('facts').orThrow()]]),
+      writePolicies: new Map<Kind, IWritePolicy>([[factKind, TemporalVersionedPolicy.create().orThrow()]])
+    }).orThrow();
+    const record: IMemoryRecord<unknown> = {
+      envelope: envelopeConverter
+        .convert({
+          id: 'fact-1',
+          entityId: 'fact-1',
+          kind: 'fact',
+          tags: [],
+          links: [],
+          created: 0,
+          updated: 0,
+          seq: 0,
+          contentHash: '',
+          provenance: { source: 'agent' },
+          temporal: { valid_at: 1 }
+        })
+        .orThrow(),
+      body: 'a fact'
+    };
+    (await store.put(record)).orThrow();
+    const tool = toolByName(
+      createMemoryTools({
+        store,
+        retriever: makeRetriever([]),
+        registry: registryWith([{ kind: factKind }]),
+        tools: ['memory_read']
+      }),
+      'memory_read'
+    );
+    expect(await tool.execute({ kind: 'fact', entityId: 'fact-1' })).toSucceedAndSatisfy((value) => {
+      const item = (value as { found: boolean; item: IMemoryToolResultItem }).item;
+      // The handle is the version stem; the scope is the entity's directory, shared by every version.
+      expect(item.handle).toMatch(/^fact-1-v\d+$/);
+      expect(item.scope).toBe('facts/entities/fact-1');
+    });
+  });
+
+  // The handle is the display mnemonic; the address is the tool-owned `id` + `scope`.
+  test('id and scope are present alongside a handleFor mnemonic', async () => {
+    const tool = toolByName(
+      createMemoryTools({
+        store: makeStore(),
+        retriever: makeRetriever([{ id: 'doc-1', tags: ['topic'] }]),
+        registry: registryWith([{ kind: knowledgeKind }]),
+        handleFor: (r) => `@${r.envelope.id}`
+      }),
+      'memory_search'
+    );
+    expect(await tool.execute({ tag: 'topic' })).toSucceedAndSatisfy((value) => {
+      const item = (value as IItemsOut).results[0];
+      const expected = { handle: '@doc-1', id: 'doc-1', scope: 'knowledge' };
+      expect({ handle: item.handle, id: item.id, scope: item.scope }).toEqual(expected);
+    });
+  });
+
+  describe('with a handleFor mnemonic, a copied { id, scope } still addresses the right record', () => {
+    // A portable-set mnemonic: the MemoryId converter would ACCEPT it as an id, so a
+    // link built from the handle would dangle silently. Links must use `id`.
+    const mnemonic = (r: IMemoryRecord<unknown>): string =>
+      `mnemonic-${r.envelope.entityId.replace(':', '-')}`;
+
+    async function seeded(): Promise<{
+      store: FileTreeMemoryStore;
+      tools: (retriever: 'search' | 'context') => ReadonlyArray<AiAssist.IAiClientTool>;
+    }> {
+      const store = makeStore();
+      const registry = registryWith([{ kind: knowledgeKind }, { kind: mtmKind }]);
+      const writer = toolByName(
+        createMemoryTools({ store, retriever: makeRetriever([]), registry, codecs, tools: ['memory_write'] }),
+        'memory_write'
+      );
+      (await writer.execute({ kind: 'mtm', entityId: 'conv-a:3', body: 'turn in a' })).orThrow();
+      (await writer.execute({ kind: 'mtm', entityId: 'conv-b:3', body: 'turn in b' })).orThrow();
+      const tools = (retriever: 'search' | 'context'): ReadonlyArray<AiAssist.IAiClientTool> => {
+        // Each tool re-indexes the store before it runs, so records written since are visible.
+        const index = MemoryIndex.create().orThrow();
+        return createMemoryTools({
+          store,
+          retriever:
+            retriever === 'search'
+              ? RecencyRetriever.create({ index, resolver: store }).orThrow()
+              : LinkTraversalRetriever.create({ index, resolver: store }).orThrow(),
+          registry,
+          codecs,
+          handleFor: mnemonic,
+          tools: ['memory_write', 'memory_search', 'memory_context']
+        }).map((tool) => ({
+          config: tool.config,
+          execute: async (args: unknown): Promise<Result<unknown>> => {
+            index.rebuild((await store.listEntries()).orThrow()).orThrow();
+            return tool.execute(args);
+          }
+        }));
+      };
+      return { store, tools };
+    }
+
+    async function itemFor(
+      tools: ReadonlyArray<AiAssist.IAiClientTool>,
+      kind: string,
+      entityId: string
+    ): Promise<IMemoryToolResultItem | undefined> {
+      const found = (await toolByName(tools, 'memory_search').execute({ kind })).orThrow() as IItemsOut;
+      return found.results.find((r) => r.entityId === entityId);
+    }
+
+    test('a memory_write link built from the copied { id, scope } resolves to that record', async () => {
+      const { store, tools } = await seeded();
+      const search = tools('search');
+      const inB = await itemFor(search, 'mtm', 'conv-b:3');
+      expect(inB?.handle).toBe('mnemonic-conv-b-3');
+      expect(
+        await toolByName(search, 'memory_write').execute({
+          kind: 'knowledge',
+          entityId: 'note-1',
+          body: 'about the b turn',
+          links: [{ type: 'mtm-ref', target: { id: inB?.id, scope: inB?.scope } }]
+        })
+      ).toSucceed();
+      expect(await store.get(knowledgeKind, 'note-1' as EntityId)).toSucceedAndSatisfy((rec) => {
+        const target = rec!.envelope.links[0].target;
+        expect(target).toEqual({ scope: 'conversations/conv-b', id: 'turn-3' });
+        expect(store.resolveRecord(target.scope, target.id)).toSucceedAndSatisfy((linked) => {
+          expect(linked?.envelope.entityId).toBe('conv-b:3');
+        });
+      });
+    });
+
+    test('a memory_context seed built from the copied { id, scope } traverses from that record', async () => {
+      const { tools } = await seeded();
+      const search = tools('search');
+      const inB = await itemFor(search, 'mtm', 'conv-b:3');
+      // A note that links to conv-b's turn, then seed traversal from the note's own result.
+      (
+        await toolByName(search, 'memory_write').execute({
+          kind: 'knowledge',
+          entityId: 'note-1',
+          body: 'about the b turn',
+          links: [{ type: 'mtm-ref', target: { id: inB?.id, scope: inB?.scope } }]
+        })
+      ).orThrow();
+      const note = await itemFor(search, 'knowledge', 'note-1');
+      expect(note?.handle).toBe('mnemonic-note-1');
+      expect(
+        await toolByName(tools('context'), 'memory_context').execute({
+          from: { id: note?.id, scope: note?.scope }
+        })
+      ).toSucceedAndSatisfy((value) => {
+        const out = value as { seed: IEdgeTarget; results: ReadonlyArray<IMemoryToolResultItem> };
+        expect(out.seed).toEqual({ scope: 'knowledge', id: 'note-1' });
+        expect(out.results.map((r) => [r.entityId, r.id, r.scope])).toEqual([
+          ['conv-b:3', 'turn-3', 'conversations/conv-b']
+        ]);
+      });
     });
   });
 });

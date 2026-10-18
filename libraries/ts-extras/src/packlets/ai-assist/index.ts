@@ -172,7 +172,12 @@ export {
   modelSpec
 } from './converters';
 
-export { resolveEffectiveTools, resolveToolConflicts, defaultToolConflictPolicy } from './toolFormats';
+export {
+  resolveEffectiveTools,
+  resolveToolConflicts,
+  defaultToolConflictPolicy,
+  toGeminiParameterSchema
+} from './toolFormats';
 export type { IAiResolvedToolConflicts } from './toolFormats';
 
 export type { AiCacheReportingLevel, IAiCompletionUsage } from './usageTypes';
@@ -185,7 +190,7 @@ export {
 } from './streamUsageCapability';
 export type { IAiPromptCacheRoutingSupport } from './streamUsageCapability';
 
-export { ANTHROPIC_STRUCTURED_OUTPUT_TOOL_NAME } from './structuredOutput';
+export { ANTHROPIC_STRUCTURED_OUTPUT_TOOL_NAME, structuredOutputSchemaKeywords } from './structuredOutput';
 export { clientToolSchemaKeywords } from './schemaKeywords';
 
 export type {

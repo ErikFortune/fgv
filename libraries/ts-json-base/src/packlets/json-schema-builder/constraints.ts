@@ -27,7 +27,18 @@
  * Internal to the packlet — not re-exported from its barrel.
  */
 
-import { Converter, Converters, Result, StringOneOf, fail, mapResults, succeed } from '@fgv/ts-utils';
+import {
+  Converter,
+  Converters,
+  Result,
+  StringOneOf,
+  Validator,
+  Validators,
+  captureResult,
+  fail,
+  mapResults,
+  succeed
+} from '@fgv/ts-utils';
 import { jsonValue } from '../converters';
 import { JsonObject, JsonValue } from '../json';
 import {
@@ -35,7 +46,7 @@ import {
   schemaLengthConstraintKeywords,
   schemaNumberConstraintKeywords
 } from './keywordAdaptation';
-import { INumberSchemaOptions, ISchemaOptions, IStringSchemaOptions } from './options';
+import { INumberSchemaOptions, IObjectSchemaOptions, ISchemaOptions, IStringSchemaOptions } from './options';
 
 /** A numeric constraint keyword. */
 type NumberKeyword = StringOneOf<typeof schemaNumberConstraintKeywords>;
@@ -140,17 +151,15 @@ function _isEmptyRange(lo: IBound, hi: IBound, integer: boolean): boolean {
  * above `maximum`, the bounds together admitting at least one value, and `multipleOf` positive.
  * @param type - The node kind; an `integer` range must hold an integer.
  * @param opts - The options to check.
- * @returns The options (annotations copied), or a `Failure` naming the keyword and the value.
+ * @returns A copy of the options (annotations copied deeply), or a `Failure` naming the keyword and
+ * the value.
  * @internal
  */
-export function checkNumberOptions(
+export function checkNumberOptions<T extends INumberSchemaOptions>(
   type: 'number' | 'integer',
-  opts: INumberSchemaOptions | undefined
-): Result<INumberSchemaOptions | undefined> {
+  opts: T
+): Result<T> {
   return checkAnnotations(opts).onSuccess((checked) => {
-    if (checked === undefined) {
-      return succeed(checked);
-    }
     const nonFinite = schemaNumberConstraintKeywords.find(
       (k) => checked[k] !== undefined && !Number.isFinite(checked[k])
     );
@@ -176,16 +185,12 @@ export function checkNumberOptions(
  * Checks a `string` node's options for coherence: each length a non-negative integer, and
  * `minLength` not above `maxLength`.
  * @param opts - The options to check.
- * @returns The options (annotations copied), or a `Failure` naming the keyword and the value.
+ * @returns A copy of the options (annotations copied deeply), or a `Failure` naming the keyword and
+ * the value.
  * @internal
  */
-export function checkStringOptions(
-  opts: IStringSchemaOptions | undefined
-): Result<IStringSchemaOptions | undefined> {
+export function checkStringOptions<T extends IStringSchemaOptions>(opts: T): Result<T> {
   return checkAnnotations(opts).onSuccess((checked) => {
-    if (checked === undefined) {
-      return succeed(checked);
-    }
     const bad = schemaLengthConstraintKeywords.find((k) => {
       const length = checked[k];
       return length !== undefined && !(Number.isInteger(length) && length >= 0);
@@ -204,33 +209,65 @@ export function checkStringOptions(
   });
 }
 
+/** Freezes a copied JSON value and everything inside it. */
+function _deepFreeze(value: JsonValue): JsonValue {
+  if (typeof value === 'object' && value !== null) {
+    Object.values(value).forEach((child) => _deepFreeze(child));
+    Object.freeze(value);
+  }
+  return value;
+}
+
+/** The keys every option set may carry beside its constraints, each of its declared type. */
+interface ITypedKeys {
+  readonly description?: string;
+  readonly title?: string;
+  readonly nullable?: boolean;
+  readonly strict?: boolean;
+  readonly format?: string;
+  readonly additionalProperties?: boolean;
+  readonly default?: JsonValue;
+  readonly examples?: ReadonlyArray<JsonValue>;
+}
+
 /**
- * Checks the annotations every node accepts: `default` and each member of `examples` must be JSON
- * values, and `examples` an array. They are not checked against the node.
+ * Reads {@link ITypedKeys}, refusing a present key of the wrong type. Declared with `var`-free
+ * hoisting in mind: it is referenced only from functions, after module evaluation.
+ */
+const _typedKeysConverter: Converter<ITypedKeys> = Converters.object<ITypedKeys>({
+  description: Converters.string.optional('failOnError'),
+  title: Converters.string.optional('failOnError'),
+  nullable: Converters.boolean.optional('failOnError'),
+  strict: Converters.boolean.optional('failOnError'),
+  format: Converters.string.optional('failOnError'),
+  additionalProperties: Converters.boolean.optional('failOnError'),
+  default: Converters.generic((from: unknown) => jsonValue.convert(from)).optional('failOnError'),
+  examples: Converters.arrayOf(Converters.generic((from: unknown) => jsonValue.convert(from))).optional(
+    'failOnError'
+  )
+});
+
+/**
+ * Checks the keys every node accepts, as every validated-options path does: `description`, `title`
+ * and `format` strings; `nullable`, `strict` and `additionalProperties` booleans; `default` and each
+ * member of `examples` JSON values, and `examples` an array. The annotations are not checked against
+ * the node.
  * @param opts - The options to check.
- * @returns The options with `default` and `examples` replaced by fresh copies, so the node never
- * aliases the caller's objects; or a `Failure` naming the keyword.
+ * @returns The options with `default` and `examples` replaced by fresh, deeply frozen copies, so
+ * the node never aliases the caller's objects; or a `Failure` naming the keyword.
  * @internal
  */
-export function checkAnnotations<T extends ISchemaOptions>(opts: T | undefined): Result<T | undefined> {
-  if (opts === undefined) {
-    return succeed(opts);
-  }
-  const defaultResult: Result<JsonValue | undefined> =
-    opts.default === undefined
-      ? succeed(undefined)
-      : annotationJsonValue.convert(opts.default).withErrorFormat((msg) => `default: ${msg}`);
-  return defaultResult.onSuccess((copiedDefault) =>
-    (opts.examples === undefined
-      ? succeed(undefined)
-      : Converters.arrayOf(annotationJsonValue)
-          .convert(opts.examples)
-          .withErrorFormat((msg) => `examples: ${msg}`)
-    ).onSuccess((copiedExamples) =>
+export function checkAnnotations<T extends ISchemaOptions>(opts: T): Result<T> {
+  // Each key is read exactly once, into the snapshot; everything after works from the snapshot and
+  // the converted values, so an accessor cannot answer the check one value and the node another.
+  return captureResult((): T => ({ ...opts })).onSuccess((snapshot) =>
+    _typedKeysConverter.convert(snapshot).onSuccess((typed) =>
       succeed({
-        ...opts,
-        ...(copiedDefault !== undefined && { default: copiedDefault }),
-        ...(copiedExamples !== undefined && { examples: copiedExamples })
+        ...snapshot,
+        ...(typed.default !== undefined && { default: _deepFreeze(typed.default) }),
+        ...(typed.examples !== undefined && {
+          examples: Object.freeze(typed.examples.map((example) => _deepFreeze(example)))
+        })
       })
     )
   );
@@ -452,3 +489,147 @@ export function numberConstraintFields(opts: NumberConstraints): JsonObject {
 export function stringConstraintFields(opts: StringConstraints): JsonObject {
   return { ...pickStringConstraints(opts) };
 }
+
+// ---------------------------------------------------------------------------
+// Reading options from an unknown value
+// ---------------------------------------------------------------------------
+
+/**
+ * One optional JSON-number field per keyword, keyed from the keyword list itself so the parser
+ * cannot know a different set of keywords than the factories and the emitter.
+ */
+function _numericFields<K extends string>(keywords: readonly K[]): Record<K, Validator<number | undefined>> {
+  const fields: Partial<Record<K, Validator<number | undefined>>> = {};
+  for (const keyword of keywords) {
+    fields[keyword] = Validators.number.optional();
+  }
+  // Total: the loop above assigned every member of `keywords`, which is all of `K`.
+  return fields as Record<K, Validator<number | undefined>>;
+}
+
+/**
+ * Extracts the annotations every node carries — `description`, `title`, `default` and `examples`.
+ * Each is optional; a present one of the wrong shape (a non-string `description` or `title`, a
+ * non-array `examples`, a value that is not JSON) is refused rather than dropped, since dropping
+ * it would state less than the source. `default` and `examples` are not checked against the node.
+ * @internal
+ */
+export const annotationsConverter: Converter<SchemaAnnotations> = Converters.object<SchemaAnnotations>({
+  description: Converters.string.optional('failOnError'),
+  title: Converters.string.optional('failOnError'),
+  default: annotationJsonValue.optional('failOnError'),
+  examples: Converters.arrayOf(annotationJsonValue).optional('failOnError')
+});
+
+/**
+ * Extracts a number node's constraint keywords. Each must be a JSON number when present — a numeric
+ * string is refused, not coerced; coherence is checked afterwards by `checkNumberOptions`.
+ * @internal
+ */
+export const numberConstraintsConverter: Converter<NumberConstraints> = Converters.object<NumberConstraints>(
+  _numericFields(schemaNumberConstraintKeywords)
+);
+
+/**
+ * Extracts a string node's `minLength`, `maxLength` and `format`. The lengths must be JSON numbers
+ * and `format` a string; `checkStringOptions` then requires non-negative integers in order.
+ * @internal
+ */
+export const stringConstraintsConverter: Converter<StringConstraints> = Converters.object<StringConstraints>({
+  ..._numericFields(schemaLengthConstraintKeywords),
+  format: Converters.string.optional('failOnError')
+});
+
+/**
+ * The option keys that cannot be incoherent, each read as its declared type. A key of the wrong
+ * type is ignored rather than refused: this is the reading of last resort, used when options did
+ * not come through a validated-options factory.
+ * @internal
+ */
+export interface IPlainKeys {
+  readonly description?: string;
+  readonly title?: string;
+  readonly nullable?: boolean;
+  readonly strict?: boolean;
+  readonly format?: string;
+  readonly additionalProperties?: boolean;
+}
+
+const _plainKeysConverter: Converter<IPlainKeys> = Converters.object<IPlainKeys>({
+  description: Converters.string.optional('ignoreErrors'),
+  title: Converters.string.optional('ignoreErrors'),
+  nullable: Converters.boolean.optional('ignoreErrors'),
+  strict: Converters.boolean.optional('ignoreErrors'),
+  format: Converters.string.optional('ignoreErrors'),
+  additionalProperties: Converters.boolean.optional('ignoreErrors')
+});
+
+/**
+ * Only the plain keys of `from`, each of its declared type — every other key, constraint or
+ * annotation, is ignored, so nothing unchecked can reach a node.
+ * @internal
+ */
+export function plainKeysOf(from: unknown): IPlainKeys {
+  // A hostile accessor may throw; that reads as no plain keys rather than escaping a factory.
+  return captureResult(() => _plainKeysConverter.convert(from))
+    .onSuccess((converted) => converted)
+    .orDefault({});
+}
+
+/**
+ * Re-checks a value claiming to be validated `number` / `integer` options: its range keywords read
+ * as numbers, then exactly the check `numberOptions` / `integerOptions` runs.
+ * @internal
+ */
+export function revalidateNumberOptions(
+  type: 'number' | 'integer',
+  from: unknown
+): Result<INumberSchemaOptions> {
+  return _typedKeysConverter
+    .convert(from)
+    .onSuccess((typed) =>
+      numberConstraintsConverter
+        .convert(from)
+        .onSuccess((constraints) => checkNumberOptions(type, { ...typed, ...constraints }))
+    );
+}
+
+/**
+ * Re-checks a value claiming to be validated `string` options: its lengths read as numbers, then
+ * exactly the check `stringOptions` runs.
+ * @internal
+ */
+export function revalidateStringOptions(from: unknown): Result<IStringSchemaOptions> {
+  return _typedKeysConverter
+    .convert(from)
+    .onSuccess((typed) =>
+      stringConstraintsConverter
+        .convert(from)
+        .onSuccess((constraints) => checkStringOptions({ ...typed, ...constraints }))
+    );
+}
+
+/**
+ * Re-checks a value claiming to be validated schema options: exactly the check `schemaOptions`
+ * runs.
+ * @internal
+ */
+export function revalidateSchemaOptions(from: unknown): Result<IObjectSchemaOptions> {
+  return _typedKeysConverter
+    .convert(from)
+    .onSuccess((typed) => checkAnnotations<IObjectSchemaOptions>(typed));
+}
+
+/**
+ * The cross-copy marker every validated-options instance carries as a non-enumerable own property,
+ * holding its `kind`. Registered with `Symbol.for`, so every installed copy of the package derives
+ * the same symbol and nothing needs to export it.
+ *
+ * @remarks
+ * `instanceof` and private brands fail across two installed copies of this package, so a factory
+ * also recognises an instance by this symbol and then **re-validates** its options rather than
+ * trusting them. The marker is a runtime convenience for that case, **not a security boundary**:
+ * anyone can set it, which is why nothing marked is used unchecked.
+ * @internal
+ */
+export const VALIDATED_OPTIONS_MARKER: unique symbol = Symbol.for('@fgv/ts-json-base.validated-options');

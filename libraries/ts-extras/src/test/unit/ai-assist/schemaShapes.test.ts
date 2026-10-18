@@ -58,8 +58,8 @@ import { TEST_PROMPT } from './streamingAdaptersFixtures';
 
 /** A numeric enum, a boolean const-style enum and a string enum — no untyped node. */
 const enums = JsonSchema.object({
-  level: JsonSchema.integerEnumOf([1, 2], { description: 'Level.' }),
-  on: JsonSchema.booleanEnumOf([true]),
+  level: JsonSchema.integerEnumOf([1, 2], { description: 'Level.' }).orThrow(),
+  on: JsonSchema.booleanEnumOf([true]).orThrow(),
   kind: JsonSchema.enumOf(['a', 'b'])
 });
 
@@ -157,7 +157,9 @@ describe('the shape rules, per tool wire format', () => {
   });
 
   test('a nullable numeric enum on Gemini folds, and the sanitizer still translates the union', () => {
-    const nullable = JsonSchema.object({ n: JsonSchema.numberEnumOf([0.5, 1], { nullable: true }) });
+    const nullable = JsonSchema.object({
+      n: JsonSchema.numberEnumOf([0.5, 1], { nullable: true }).orThrow()
+    });
     expect(toGeminiTools([tool(nullable).config], { providerId: 'google-gemini' })).toSucceedAndSatisfy(
       ([wire]) => {
         const [declaration] = wire.function_declarations as JsonObject[];
@@ -232,6 +234,66 @@ describe('AiAssist.clientToolSchemaKeywords — the table a host passes to adapt
   });
 });
 
+describe('AiAssist.structuredOutputSchemaKeywords — the table a structured-output schema is adapted with', () => {
+  function registered(id: AiProviderId): IAiProviderDescriptor {
+    return AiAssist.getProviderDescriptor(id).orThrow();
+  }
+
+  test('follows the model to the structured-output wire it uses', () => {
+    // Anthropic splits by model: JSON outputs for the lines that reject forced tool use, the
+    // forced tool (and so the tools table) for the rest.
+    expect(
+      AiAssist.structuredOutputSchemaKeywords(registered('anthropic'), { model: 'claude-opus-5-5' })
+    ).toBe(schemaKeywordsFor('anthropic-json-outputs', { providerId: 'anthropic' }));
+    expect(
+      AiAssist.structuredOutputSchemaKeywords(registered('anthropic'), { model: '@anthropic:sonnet' })
+    ).toBe(schemaKeywordsFor('anthropic-tools', { providerId: 'anthropic' }));
+    expect(
+      AiAssist.structuredOutputSchemaKeywords(registered('google-gemini'), { model: '@google-gemini:flash' })
+    ).toBe(schemaKeywordsFor('gemini', { providerId: 'google-gemini' }));
+    expect(AiAssist.structuredOutputSchemaKeywords(registered('openai'), { model: 'gpt-4o' })).toBe(
+      schemaKeywordsFor('openai-strict-output', { providerId: 'openai', model: 'gpt-4o' })
+    );
+    expect(AiAssist.structuredOutputSchemaKeywords(registered('xai-grok'), { model: 'grok-4.3' })).toBe(
+      schemaKeywordsFor('openai-strict-output', { providerId: 'xai-grok', model: 'grok-4.3' })
+    );
+  });
+
+  test('an endpoint override and a fine-tuned model get the conservative table', () => {
+    expect(
+      AiAssist.structuredOutputSchemaKeywords(registered('anthropic'), {
+        model: 'claude-opus-5-5',
+        endpoint: 'https://gw.invalid'
+      })
+    ).toBe(JsonSchema.unverifiedWireSchemaKeywords);
+    expect(AiAssist.structuredOutputSchemaKeywords(registered('openai'), { model: 'ft:gpt-4o:x' })).toBe(
+      JsonSchema.unverifiedWireSchemaKeywords
+    );
+  });
+
+  test('a provider with no structured-output capability has no table', () => {
+    const descriptor: IAiProviderDescriptor = { ...registered('openai'), structuredOutput: undefined };
+    expect(AiAssist.structuredOutputSchemaKeywords(descriptor, { model: 'gpt-4o' })).toBeUndefined();
+  });
+});
+
+describe('AiAssist.toGeminiParameterSchema — the dialect translation alone', () => {
+  test('translates the dialect and passes constraint keywords through unadapted', () => {
+    expect(
+      AiAssist.toGeminiParameterSchema({
+        type: 'object',
+        properties: { n: { type: 'number', exclusiveMinimum: 0, multipleOf: 2 } },
+        required: ['n'],
+        additionalProperties: false
+      })
+    ).toEqual({
+      type: 'object',
+      properties: { n: { type: 'number', exclusiveMinimum: 0, multipleOf: 2 } },
+      required: ['n']
+    });
+  });
+});
+
 describe('the shape rules on structured output', () => {
   function descriptor(id: AiProviderId): IAiProviderDescriptor {
     return {
@@ -266,7 +328,7 @@ describe('the shape rules on structured output', () => {
     );
   }
 
-  const answer = JsonSchema.object({ grade: JsonSchema.integerEnumOf([1, 2, 3]) });
+  const answer = JsonSchema.object({ grade: JsonSchema.integerEnumOf([1, 2, 3]).orThrow() });
   const anyAnswer = JsonSchema.object({ value: JsonSchema.anyValue() });
 
   test('a numeric enum passes on OpenAI strict and Anthropic JSON outputs, and folds on Gemini', () => {

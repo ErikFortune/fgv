@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras",
+      "comment": "ai-assist: export structuredOutputSchemaKeywords(descriptor, { model, endpoint }), the structured-output sibling of clientToolSchemaKeywords. It returns the keyword-capability table a structured-output schema is adapted with for that model (Anthropic JSON outputs for the lines that reject forced tool use, the Anthropic tools table for the rest; the OpenAI-family and Gemini tables otherwise), the conservative table under an endpoint override or for an ft: model, and undefined when the model declares no structured-output capability. Also export toGeminiParameterSchema, the draft-07 to Gemini OpenAPI-subset dialect translation on its own, which passes constraint and annotation keywords through unadapted. Both are additive; used by the testbed wire probe.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-extras",
+  "email": "noreply@anthropic.com"
+}
