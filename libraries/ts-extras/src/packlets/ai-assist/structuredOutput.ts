@@ -3,9 +3,10 @@
  * SPDX-License-Identifier: MIT
  */
 
-import type { JsonObject, JsonValue } from '@fgv/ts-json-base';
+import type { JsonObject, JsonSchema, JsonValue } from '@fgv/ts-json-base';
 import { Result, fail, succeed } from '@fgv/ts-utils';
 import type { AiServerToolConfig, IAiProviderDescriptor } from './model';
+import { resolveStructuredOutputCapability } from './registry';
 import type {
   AiStructuredOutputFormat,
   IAiStructuredOutputCapability,
@@ -13,7 +14,12 @@ import type {
   StructuredOutputFallback,
   StructuredOutputRequest
 } from './structuredOutputTypes';
-import { type ISchemaWireTarget, type SchemaWireFormat, adaptWireSchema } from './schemaKeywords';
+import {
+  type ISchemaWireTarget,
+  type SchemaWireFormat,
+  adaptWireSchema,
+  schemaKeywordsFor
+} from './schemaKeywords';
 import { toGeminiParameterSchema } from './toolFormats';
 
 /**
@@ -290,6 +296,37 @@ function schemaWireFormatOf(format: AiStructuredOutputFormat): SchemaWireFormat 
     case 'anthropic-tool-forced':
       return 'anthropic-tools';
   }
+}
+
+/**
+ * The keyword-capability table a structured-output schema is adapted with when it is sent to
+ * `descriptor` for `model` — the structured-output sibling of `clientToolSchemaKeywords`.
+ *
+ * @remarks
+ * The same table the request path uses. The wire follows the model's declared structured-output
+ * format, so it can differ by model within one provider: an Anthropic model that takes JSON
+ * outputs (`output_config.format`) gets that wire's table, and one that takes the forced-tool
+ * mechanism gets the Anthropic tools table. The provider's own table applies only when the request
+ * goes to its own endpoint — pass `endpoint` when the descriptor is pointed at a caller-supplied
+ * one, and every keyword is then treated as unverified, as the request path does.
+ * @param descriptor - The provider the schema will be sent to.
+ * @param options - The `model` (a concrete id or an `@provider:role` alias; an OpenAI fine-tuned
+ * `ft:` model gets the conservative table) and any caller-supplied `endpoint`.
+ * @returns The keyword-capability table, or `undefined` when the model declares no structured-output
+ * capability and the request would send no schema at all.
+ * @public
+ */
+export function structuredOutputSchemaKeywords(
+  descriptor: IAiProviderDescriptor,
+  options: { readonly model: string; readonly endpoint?: string }
+): JsonSchema.SchemaKeywordCapabilities | undefined {
+  const capability = resolveStructuredOutputCapability(descriptor, options.model);
+  return capability === undefined
+    ? undefined
+    : schemaKeywordsFor(schemaWireFormatOf(capability.format), {
+        ...(options.endpoint === undefined && { providerId: descriptor.id }),
+        model: options.model
+      });
 }
 
 /** The two formats that carry OpenAI's all-properties-required strict rule. @internal */

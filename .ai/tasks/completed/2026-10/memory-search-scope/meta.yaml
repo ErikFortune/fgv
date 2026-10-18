@@ -1,0 +1,52 @@
+id: memory-search-scope
+status: shipped
+packages: ['@fgv/ts-agent-memory']
+prs: [739]
+openPrs: []
+opened: 2026-10-18
+closed: 2026-10-18
+summary:
+  intended: >
+    Followup D3 / user decision 2: memory tool result items carried a bare-id handle and no scope, so
+    same-id records in different scopes were indistinguishable and a link copied from another scope
+    defaulted to the writer's scope. Give every result item from every record-returning memory tool a
+    `scope`, keep the id handle and handleFor unchanged, and tell the model in the memory_write link
+    target and memory_search descriptions (and the memory_context seed) to copy both id and scope.
+    Keep the omitted-scope default, and decide whether the projectItem hook or the tool layer owns
+    scope (safe default: the tool layer).
+  shipped: >
+    IMemoryToolResultItem extends a new IMemoryToolItemProjection with id: MemoryId and
+    scope: MemoryScopeKey, set on every memory_search / memory_context / memory_read item after any
+    host projection, so the hook (now returning IMemoryToolItemProjection) can neither drop nor forge
+    them. handle is documented as the display key only. The scope comes from a captureResult-wrapped
+    scopedAddressOf(record, store), and an unresolvable one fails the call. IMemoryWriteResult also
+    carries scope. Every description says to copy id and scope from a result. Tests cover same-id
+    distinguishability, copied cross-scope links and context seeds (including under a handleFor
+    mnemonic), the omitted-scope default, the projector guarantee, a versioned kind and each failure
+    site.
+  diverged: >
+    Items had no `id` field, so the first build told the model to copy the `handle` as `id`. That
+    breaks under a handleFor mnemonic, and the deep review flagged it as a P2. The user then decided
+    D7: items gained a tool-owned `id`, and the descriptions were rewritten. The memory_write result
+    also gained `scope`, which the brief did not name, because a copied written id hits the same
+    wrong-default path.
+  sourceLine: '**Shipped:** every result item from `memory_search`, `memory_context` and `memory_read` now carries its address, `id` + `scope`, and the `memory_write` result carries `scope` beside its `id`.'
+  headline: >
+    Agent memory tool results now carry each record's id and scope, so two conversations' turn-3 are
+    distinguishable and a link copied from a result points at the right record.
+keywords:
+  - agent-visible handle
+  - scope-qualified result
+  - link target
+  - cross-scope edge
+  - projectItem hook
+  - MTM turn id collision
+  - scopedAddressOf
+  - tool description
+relatedStreams:
+  - {
+      id: agent-memory-merge-scope,
+      relationship: 'reported the bare-id handle hazard (D3) this stream fixes'
+    }
+  - { id: personality-asks-2026-10, relationship: 'followup D3 and decision 2 live in its followups.md' }
+sourceHash: sha256:8938892c1f48d2b5 # over brief.md + result.md + state.md
