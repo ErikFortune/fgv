@@ -42,14 +42,33 @@ This stream builds the instrument that turns the table into observations.
   request is valid apart from the keyword under test.
 - **An adapted request the provider rejects also counts as unsafe**, since it is the request we
   actually send.
+- **After the live run**, multi-line provider error text is joined onto one line. The report's
+  "conservative" label no longer suggests a table entry can be loosened on acceptance alone.
+
+## Live run (2026-10-18)
+
+The user ran it with all four keys. The report is verbatim in `result.md`. Out of 176 rows:
+124 agree, 51 are conservative, 1 is unsafe, 0 are inconclusive. Every adapted request was
+accepted except the unsafe one.
+
+- **Unsafe: `anthropic-tools/untyped-root`.** Anthropic accepts `{}` inside `input_schema` but
+  requires `type` at its root. The table's `untyped: 'pass'` covers the root as well. The fix is left
+  to `ai-assist-wire-followups`, which owns `schemaKeywords.ts`.
+- **The #736 inferences.**
+  - OpenAI and xAI accept a numeric or boolean enum: confirmed.
+  - Anthropic tools accept `{}`: confirmed nested, refuted at the root.
+  - The OpenAI function-tools refusal of `{}` is conservative: Responses tools accepted it.
+- **The #734 documentation entries hold.** Anthropic JSON outputs 400s on numeric constraints and
+  `{}`, OpenAI strict rejects `format: uri` and `{}`, and Gemini rejects the exclusives,
+  `multipleOf`, `examples` and non-string enums. The conservative rows show only that the request
+  was accepted, not that the keyword is enforced, so they do not by themselves justify loosening a
+  table.
 
 ## Not done
 
-- **No live run.** The session had no provider keys, so the #736 inferences are still inferences.
-  Run it with all four keys (README: "Provider wire probe").
-- **`pattern`** gets a fixture after `json-schema-pattern` lands, and the probe is re-run then.
+- **`pattern`**: add a fixture after `json-schema-pattern` lands, then re-run.
 
 ## Artifacts
 
-`brief.md` (frozen) and `result.md` (method, model table, gates, self-review). There is no
+`brief.md` (frozen) and `result.md` (method, model table, the live report, gates, self-review). There is no
 `state.md`: no question was raised in flight.

@@ -6,10 +6,10 @@ Branch `testbed-wire-probe`, from `integration/asks` at `59f06b939` (brief commi
 had nothing newer to merge). Commits: `ce69cfed` (ts-extras), `1b9ce0e2` (testbed), and the
 close-out commit. PR: `#TBD`.
 
-**No live run was made.** This session had no provider keys (`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`,
-`GEMINI_API_KEY`/`GOOGLE_API_KEY` and `XAI_API_KEY` were all unset). Every result below is from unit
-tests over synthetic responses. The #736 inferences are therefore **still inferences**; the first
-live run is what turns them into observations.
+**One live run was made, on 2026-10-18 by the user, with all four keys** (§ Live run below). It found
+**one unsafe row**: `anthropic-tools/untyped-root`. It confirmed two of the three #736 inferences and
+showed the third to be conservative. The session that built the probe had no keys; the unit tests run
+over synthetic responses.
 
 ## What shipped
 
@@ -143,12 +143,336 @@ One fix was made during review. Initially a control rejected with a 400 would ha
 
 ## Follow-ups
 
-- **Run it live** with all four keys and paste the report here or into the next stream. Watch three
-  rows in particular: `openai-tools` / `xai-tools` `untyped-*` (an inferred refuse), the `enum-*`
-  rows on OpenAI and xAI (an inferred pass), and `anthropic-tools` `untyped-*` (an inferred pass,
-  including `{}` as the whole `input_schema`).
+- **Fix the unsafe row (P2, for `ai-assist-wire-followups`, which owns `schemaKeywords.ts`).**
+  Anthropic tools refuses a typeless **root** `input_schema`
+  (`400 tools.0.custom.input_schema.type: Field required`). It accepts `{}` in properties and in
+  items. Today `anthropicToolsSchemaKeywords.untyped: 'pass'` covers the root too.
+  - Reachable through a host-authored client tool whose `parametersSchema` is `JsonSchema.anyValue()`.
+  - Reachable through Anthropic forced-tool structured output, which uses the same table, on any
+    model but opus-5-5 / fable-5-1 / mythos-5-1 with a root `anyValue()` schema.
+  - Not reachable through MCP, whose `inputSchema` must be an object.
+
+  The fix is to refuse an untyped root on that wire: a root-only rule in `adaptSchemaKeywords`, or
+  a `untyped: 'pass-nested'` value. This stream does not make the fix, to avoid a collision on
+  that file.
+- **Conservative rows are not a licence to loosen.** "Accepted" means the request did not 400. It
+  does not mean the keyword is honoured. A fold keeps the constraint in front of the model as text;
+  a pass to a provider that ignores the keyword loses it. Loosening an entry needs documentation, or
+  a probe of enforcement (send a schema the model cannot satisfy without the keyword), not just an
+  observed 2xx.
 - **After `json-schema-pattern` lands**, add a `pattern` fixture and re-run, per followups decision
   5.
+- **The OpenAI-family table is an intersection.** xAI accepts `format: uri` and OpenAI strict
+  rejects it. If enforcement is confirmed, per-provider tables would let xAI pass more. That is a
+  design question for the orchestrator.
+- **After `json-schema-pattern` lands**, add a `pattern` fixture and re-run, per followups decision
+  5.
+
+## Live run (2026-10-18)
+
+The user ran it with all four keys: `node bin/testbed.js --scenario wire-probe`, 352 requests
+(176 raw and 176 end to end). It exited 1 on the one unsafe row, as designed. The full report is
+reproduced verbatim below. The per-request `POST` log lines are omitted; they list the URLs only.
+
+### What it settles
+
+**The three #736 inferences:**
+
+| inference | observed | verdict |
+|---|---|---|
+| OpenAI and xAI pass a numeric/boolean `enum` | accepted on all four OpenAI-family wires (tools and strict output) | **confirmed** |
+| Anthropic tools pass `{}` | accepted in properties and in items; **rejected at the root** (`input_schema.type: Field required`) | **confirmed nested, refuted at root**, which is the unsafe row |
+| OpenAI function tools refuse `{}` | OpenAI Responses tools accepted `{}` in properties, in items and at the root | **conservative**. Acceptance is not enforcement (see Follow-ups) |
+
+**The #734 documentation-derived entries:**
+- **Anthropic JSON outputs.** The docs' numeric-constraint 400s are reproduced exactly: `minimum`,
+  both exclusives, `maximum` and `multipleOf`, each `For 'number' type, property '…' is not
+  supported`. So is the `{}` refusal: `Empty schema ({}) … is not supported`. It accepted things
+  the docs did not mention or listed as unsupported: `minLength`, `maxLength`, `title`, `examples`,
+  and `items: {}`, although it rejects `{}` as a property.
+- **OpenAI strict.** It rejected `format: uri` (`'uri' is not a valid format`), which agrees with
+  the intersection table. It rejected `{}` (`schema must have a 'type' key`), which agrees. It
+  accepted `multipleOf`, `minLength`, `maxLength`, `duration`, `title`, `default` and `examples`,
+  all of which we fold.
+- **xAI.** It accepted every fixture on both wires, including `format: uri` and a root `{}` on
+  strict output.
+- **Gemini, both wires.** It agrees on every keyword. The exclusives, `multipleOf` and `examples`
+  give `Unknown name … Cannot find field`. A non-string `enum` is rejected as `TYPE_STRING`, so the
+  fold is right. It **accepted `{}`** everywhere, including `parameters: {}`, although the Schema
+  object documents `type` as required.
+
+**End to end:** every adapted request was accepted, and every refused fixture was refused before
+sending, except the unsafe row. There is one inconclusive row: `anthropic-json-outputs/minLength`
+end to end returned `Anthropic response contained no text content blocks`. The request was
+accepted, and the reply under the 256-token cap had no text. That is a probe limit, not a schema
+finding.
+
+### Report
+
+```
+=== wire probe: what each provider accepts vs ai-assist's keyword tables ===
+wires probed: 8 · skipped: 0
+ours: pass = sent as written · adapt = folded, translated or dropped · refuse = not sent
+outcome: conservative = we adapt or refuse, the provider accepted the raw schema;
+         unsafe = we pass, the provider rejected it
+
+--- Anthropic tools · anthropic · claude-sonnet-5 ---
+  fixture                     ours    provider  outcome       end to end
+  control                     pass    accepted  agrees        accepted
+  minimum                     pass    accepted  agrees        accepted
+  exclusiveMinimum-number     pass    accepted  agrees        accepted
+  exclusiveMinimum-integer    pass    accepted  agrees        accepted
+  maximum                     pass    accepted  agrees        accepted
+  exclusiveMaximum-number     pass    accepted  agrees        accepted
+  exclusiveMaximum-integer    pass    accepted  agrees        accepted
+  multipleOf                  pass    accepted  agrees        accepted
+  minLength                   pass    accepted  agrees        accepted
+  maxLength                   pass    accepted  agrees        accepted
+  format-date-time            pass    accepted  agrees        accepted
+  format-uri                  pass    accepted  agrees        accepted
+  format-duration             pass    accepted  agrees        accepted
+  title                       pass    accepted  agrees        accepted
+  default                     pass    accepted  agrees        accepted
+  examples                    pass    accepted  agrees        accepted
+  enum-integer                pass    accepted  agrees        accepted
+  enum-number                 pass    accepted  agrees        accepted
+  enum-boolean                pass    accepted  agrees        accepted
+  untyped-property            pass    accepted  agrees        accepted
+  untyped-items               pass    accepted  agrees        accepted
+  untyped-root                pass    rejected  unsafe        rejected (UNSAFE)
+  provider text:
+    untyped-root (raw): 400 tools.0.custom.input_schema.type: Field required
+    untyped-root (end to end): 400 tools.0.custom.input_schema.type: Field required
+
+--- Anthropic JSON outputs · anthropic · claude-opus-5-5 ---
+  fixture                     ours    provider  outcome       end to end
+  control                     pass    accepted  agrees        accepted
+  minimum                     adapt   rejected  agrees        accepted
+  exclusiveMinimum-number     adapt   rejected  agrees        accepted
+  exclusiveMinimum-integer    adapt   rejected  agrees        accepted
+  maximum                     adapt   rejected  agrees        accepted
+  exclusiveMaximum-number     adapt   rejected  agrees        accepted
+  exclusiveMaximum-integer    adapt   rejected  agrees        accepted
+  multipleOf                  adapt   rejected  agrees        accepted
+  minLength                   adapt   accepted  conservative  ? (INCONCLUSIVE)
+  maxLength                   adapt   accepted  conservative  accepted
+  format-date-time            pass    accepted  agrees        accepted
+  format-uri                  pass    accepted  agrees        accepted
+  format-duration             pass    accepted  agrees        accepted
+  title                       adapt   accepted  conservative  accepted
+  default                     pass    accepted  agrees        accepted
+  examples                    adapt   accepted  conservative  accepted
+  enum-integer                pass    accepted  agrees        accepted
+  enum-number                 pass    accepted  agrees        accepted
+  enum-boolean                pass    accepted  agrees        accepted
+  untyped-property            refuse  rejected  agrees        refused here
+  untyped-items               refuse  accepted  conservative  refused here
+  untyped-root                refuse  rejected  agrees        refused here
+  provider text:
+    minimum (raw): 400 output_config.format.schema: For 'number' type, property 'minimum' is not supported
+    exclusiveMinimum-number (raw): 400 output_config.format.schema: For 'number' type, property 'exclusiveMinimum' is not supported
+    exclusiveMinimum-integer (raw): 400 output_config.format.schema: For 'integer' type, property 'exclusiveMinimum' is not supported
+    maximum (raw): 400 output_config.format.schema: For 'number' type, property 'maximum' is not supported
+    exclusiveMaximum-number (raw): 400 output_config.format.schema: For 'number' type, property 'exclusiveMaximum' is not supported
+    exclusiveMaximum-integer (raw): 400 output_config.format.schema: For 'integer' type, property 'exclusiveMaximum' is not supported
+    multipleOf (raw): 400 output_config.format.schema: For 'number' type, property 'multipleOf' is not supported
+    minLength (end to end): Anthropic response contained no text content blocks
+    untyped-property (raw): 400 output_config.format.schema: Empty schema ({}) that accepts any JSON value is not supported. Please specify a concrete type.
+    untyped-root (raw): 400 output_config.format.schema: Empty schema ({}) that accepts any JSON value is not supported. Please specify a concrete type.
+
+--- OpenAI Responses tools · openai · gpt-5.4-nano ---
+  fixture                     ours    provider  outcome       end to end
+  control                     pass    accepted  agrees        accepted
+  minimum                     pass    accepted  agrees        accepted
+  exclusiveMinimum-number     pass    accepted  agrees        accepted
+  exclusiveMinimum-integer    pass    accepted  agrees        accepted
+  maximum                     pass    accepted  agrees        accepted
+  exclusiveMaximum-number     pass    accepted  agrees        accepted
+  exclusiveMaximum-integer    pass    accepted  agrees        accepted
+  multipleOf                  adapt   accepted  conservative  accepted
+  minLength                   adapt   accepted  conservative  accepted
+  maxLength                   adapt   accepted  conservative  accepted
+  format-date-time            pass    accepted  agrees        accepted
+  format-uri                  adapt   accepted  conservative  accepted
+  format-duration             adapt   accepted  conservative  accepted
+  title                       adapt   accepted  conservative  accepted
+  default                     adapt   accepted  conservative  accepted
+  examples                    adapt   accepted  conservative  accepted
+  enum-integer                pass    accepted  agrees        accepted
+  enum-number                 pass    accepted  agrees        accepted
+  enum-boolean                pass    accepted  agrees        accepted
+  untyped-property            refuse  accepted  conservative  refused here
+  untyped-items               refuse  accepted  conservative  refused here
+  untyped-root                refuse  accepted  conservative  refused here
+
+--- OpenAI strict structured output · openai · gpt-5.4-nano ---
+  fixture                     ours    provider  outcome       end to end
+  control                     pass    accepted  agrees        accepted
+  minimum                     pass    accepted  agrees        accepted
+  exclusiveMinimum-number     pass    accepted  agrees        accepted
+  exclusiveMinimum-integer    pass    accepted  agrees        accepted
+  maximum                     pass    accepted  agrees        accepted
+  exclusiveMaximum-number     pass    accepted  agrees        accepted
+  exclusiveMaximum-integer    pass    accepted  agrees        accepted
+  multipleOf                  adapt   accepted  conservative  accepted
+  minLength                   adapt   accepted  conservative  accepted
+  maxLength                   adapt   accepted  conservative  accepted
+  format-date-time            pass    accepted  agrees        accepted
+  format-uri                  adapt   rejected  agrees        accepted
+  format-duration             adapt   accepted  conservative  accepted
+  title                       adapt   accepted  conservative  accepted
+  default                     adapt   accepted  conservative  accepted
+  examples                    adapt   accepted  conservative  accepted
+  enum-integer                pass    accepted  agrees        accepted
+  enum-number                 pass    accepted  agrees        accepted
+  enum-boolean                pass    accepted  agrees        accepted
+  untyped-property            refuse  rejected  agrees        refused here
+  untyped-items               refuse  rejected  agrees        refused here
+  untyped-root                refuse  rejected  agrees        refused here
+  provider text:
+    format-uri (raw): 400 Invalid schema for response_format 'response': In context=('properties', 'v'), 'uri' is not a valid format.
+    untyped-property (raw): 400 Invalid schema for response_format 'response': In context=('properties', 'v'), schema must have a 'type' key.
+    untyped-items (raw): 400 Invalid schema for response_format 'response': In context=('properties', 'v', 'items'), schema must have a 'type' key.
+    untyped-root (raw): 400 Invalid schema for response_format 'response': In context=(), 'additionalProperties' is required to be supplied and to be false.
+
+--- Gemini function declarations · google-gemini · gemini-3.5-flash-lite ---
+  fixture                     ours    provider  outcome       end to end
+  control                     pass    accepted  agrees        accepted
+  minimum                     pass    accepted  agrees        accepted
+  exclusiveMinimum-number     adapt   rejected  agrees        accepted
+  exclusiveMinimum-integer    adapt   rejected  agrees        accepted
+  maximum                     pass    accepted  agrees        accepted
+  exclusiveMaximum-number     adapt   rejected  agrees        accepted
+  exclusiveMaximum-integer    adapt   rejected  agrees        accepted
+  multipleOf                  adapt   rejected  agrees        accepted
+  minLength                   pass    accepted  agrees        accepted
+  maxLength                   pass    accepted  agrees        accepted
+  format-date-time            pass    accepted  agrees        accepted
+  format-uri                  pass    accepted  agrees        accepted
+  format-duration             pass    accepted  agrees        accepted
+  title                       pass    accepted  agrees        accepted
+  default                     pass    accepted  agrees        accepted
+  examples                    adapt   rejected  agrees        accepted
+  enum-integer                adapt   rejected  agrees        accepted
+  enum-number                 adapt   rejected  agrees        accepted
+  enum-boolean                adapt   rejected  agrees        accepted
+  untyped-property            refuse  accepted  conservative  refused here
+  untyped-items               refuse  accepted  conservative  refused here
+  untyped-root                refuse  accepted  conservative  refused here
+  provider text:
+    exclusiveMinimum-number (raw): 400 Invalid JSON payload received. Unknown name "exclusiveMinimum" at 'tools[0].function_declarations[0].parameters.properties[0].value': Cannot find field.
+    exclusiveMinimum-integer (raw): 400 Invalid JSON payload received. Unknown name "exclusiveMinimum" at 'tools[0].function_declarations[0].parameters.properties[0].value': Cannot find field.
+    exclusiveMaximum-number (raw): 400 Invalid JSON payload received. Unknown name "exclusiveMaximum" at 'tools[0].function_declarations[0].parameters.properties[0].value': Cannot find field.
+    exclusiveMaximum-integer (raw): 400 Invalid JSON payload received. Unknown name "exclusiveMaximum" at 'tools[0].function_declarations[0].parameters.properties[0].value': Cannot find field.
+    multipleOf (raw): 400 Invalid JSON payload received. Unknown name "multipleOf" at 'tools[0].function_declarations[0].parameters.properties[0].value': Cannot find field.
+    examples (raw): 400 Invalid JSON payload received. Unknown name "examples" at 'tools[0].function_declarations[0].parameters.properties[0].value': Cannot find field.
+    enum-integer (raw): 400 Invalid value at 'tools[0].function_declarations[0].parameters.properties[0].value.enum[0]' (TYPE_STRING), 1
+Invalid value at 'tools[0].function_declarations[0].parameters.properties[0].value.enum[1]' (TYPE_STRING), 2
+Invalid value at 'tools[0].function_declarations[0].parameters.properties[0].value…
+    enum-number (raw): 400 Invalid value at 'tools[0].function_declarations[0].parameters.properties[0].value.enum[0]' (TYPE_STRING), 0.5
+Invalid value at 'tools[0].function_declarations[0].parameters.properties[0].value.enum[1]' (TYPE_STRING), 1.5
+    enum-boolean (raw): 400 Invalid value at 'tools[0].function_declarations[0].parameters.properties[0].value.enum[0]' (TYPE_STRING), true
+
+--- Gemini responseSchema · google-gemini · gemini-3.5-flash-lite ---
+  fixture                     ours    provider  outcome       end to end
+  control                     pass    accepted  agrees        accepted
+  minimum                     pass    accepted  agrees        accepted
+  exclusiveMinimum-number     adapt   rejected  agrees        accepted
+  exclusiveMinimum-integer    adapt   rejected  agrees        accepted
+  maximum                     pass    accepted  agrees        accepted
+  exclusiveMaximum-number     adapt   rejected  agrees        accepted
+  exclusiveMaximum-integer    adapt   rejected  agrees        accepted
+  multipleOf                  adapt   rejected  agrees        accepted
+  minLength                   pass    accepted  agrees        accepted
+  maxLength                   pass    accepted  agrees        accepted
+  format-date-time            pass    accepted  agrees        accepted
+  format-uri                  pass    accepted  agrees        accepted
+  format-duration             pass    accepted  agrees        accepted
+  title                       pass    accepted  agrees        accepted
+  default                     pass    accepted  agrees        accepted
+  examples                    adapt   rejected  agrees        accepted
+  enum-integer                adapt   rejected  agrees        accepted
+  enum-number                 adapt   rejected  agrees        accepted
+  enum-boolean                adapt   rejected  agrees        accepted
+  untyped-property            refuse  accepted  conservative  refused here
+  untyped-items               refuse  accepted  conservative  refused here
+  untyped-root                refuse  accepted  conservative  refused here
+  provider text:
+    exclusiveMinimum-number (raw): 400 Invalid JSON payload received. Unknown name "exclusiveMinimum" at 'generation_config.response_schema.properties[0].value': Cannot find field.
+    exclusiveMinimum-integer (raw): 400 Invalid JSON payload received. Unknown name "exclusiveMinimum" at 'generation_config.response_schema.properties[0].value': Cannot find field.
+    exclusiveMaximum-number (raw): 400 Invalid JSON payload received. Unknown name "exclusiveMaximum" at 'generation_config.response_schema.properties[0].value': Cannot find field.
+    exclusiveMaximum-integer (raw): 400 Invalid JSON payload received. Unknown name "exclusiveMaximum" at 'generation_config.response_schema.properties[0].value': Cannot find field.
+    multipleOf (raw): 400 Invalid JSON payload received. Unknown name "multipleOf" at 'generation_config.response_schema.properties[0].value': Cannot find field.
+    examples (raw): 400 Invalid JSON payload received. Unknown name "examples" at 'generation_config.response_schema.properties[0].value': Cannot find field.
+    enum-integer (raw): 400 Invalid value at 'generation_config.response_schema.properties[0].value.enum[0]' (TYPE_STRING), 1
+Invalid value at 'generation_config.response_schema.properties[0].value.enum[1]' (TYPE_STRING), 2
+Invalid value at 'generation_config.response_schema.properties[0].value.enum[2]' (TYPE_STRING), 3
+    enum-number (raw): 400 Invalid value at 'generation_config.response_schema.properties[0].value.enum[0]' (TYPE_STRING), 0.5
+Invalid value at 'generation_config.response_schema.properties[0].value.enum[1]' (TYPE_STRING), 1.5
+    enum-boolean (raw): 400 Invalid value at 'generation_config.response_schema.properties[0].value.enum[0]' (TYPE_STRING), true
+
+--- xAI Responses tools · xai-grok · grok-4.3 ---
+  fixture                     ours    provider  outcome       end to end
+  control                     pass    accepted  agrees        accepted
+  minimum                     pass    accepted  agrees        accepted
+  exclusiveMinimum-number     pass    accepted  agrees        accepted
+  exclusiveMinimum-integer    pass    accepted  agrees        accepted
+  maximum                     pass    accepted  agrees        accepted
+  exclusiveMaximum-number     pass    accepted  agrees        accepted
+  exclusiveMaximum-integer    pass    accepted  agrees        accepted
+  multipleOf                  adapt   accepted  conservative  accepted
+  minLength                   adapt   accepted  conservative  accepted
+  maxLength                   adapt   accepted  conservative  accepted
+  format-date-time            pass    accepted  agrees        accepted
+  format-uri                  adapt   accepted  conservative  accepted
+  format-duration             adapt   accepted  conservative  accepted
+  title                       adapt   accepted  conservative  accepted
+  default                     adapt   accepted  conservative  accepted
+  examples                    adapt   accepted  conservative  accepted
+  enum-integer                pass    accepted  agrees        accepted
+  enum-number                 pass    accepted  agrees        accepted
+  enum-boolean                pass    accepted  agrees        accepted
+  untyped-property            refuse  accepted  conservative  refused here
+  untyped-items               refuse  accepted  conservative  refused here
+  untyped-root                refuse  accepted  conservative  refused here
+
+--- xAI strict structured output · xai-grok · grok-4.3 ---
+  fixture                     ours    provider  outcome       end to end
+  control                     pass    accepted  agrees        accepted
+  minimum                     pass    accepted  agrees        accepted
+  exclusiveMinimum-number     pass    accepted  agrees        accepted
+  exclusiveMinimum-integer    pass    accepted  agrees        accepted
+  maximum                     pass    accepted  agrees        accepted
+  exclusiveMaximum-number     pass    accepted  agrees        accepted
+  exclusiveMaximum-integer    pass    accepted  agrees        accepted
+  multipleOf                  adapt   accepted  conservative  accepted
+  minLength                   adapt   accepted  conservative  accepted
+  maxLength                   adapt   accepted  conservative  accepted
+  format-date-time            pass    accepted  agrees        accepted
+  format-uri                  adapt   accepted  conservative  accepted
+  format-duration             adapt   accepted  conservative  accepted
+  title                       adapt   accepted  conservative  accepted
+  default                     adapt   accepted  conservative  accepted
+  examples                    adapt   accepted  conservative  accepted
+  enum-integer                pass    accepted  agrees        accepted
+  enum-number                 pass    accepted  agrees        accepted
+  enum-boolean                pass    accepted  agrees        accepted
+  untyped-property            refuse  accepted  conservative  refused here
+  untyped-items               refuse  accepted  conservative  refused here
+  untyped-root                refuse  accepted  conservative  refused here
+
+=== summary ===
+agrees 124 · conservative 51 · unsafe 1 · inconclusive 0
+UNSAFE (raw): anthropic-tools/untyped-root
+UNSAFE (end to end): anthropic-tools/untyped-root
+end-to-end mismatches: none
+conservative (a table entry that could be loosened): anthropic-json-outputs/minLength, anthropic-json-outputs/maxLength, anthropic-json-outputs/title, anthropic-json-outputs/examples, anthropic-json-outputs/untyped-items, openai-tools/multipleOf, openai-tools/minLength, openai-tools/maxLength, openai-tools/format-uri, openai-tools/format-duration, openai-tools/title, openai-tools/default, openai-tools/examples, openai-tools/untyped-property, openai-tools/untyped-items, openai-tools/untyped-root, openai-strict-output/multipleOf, openai-strict-output/minLength, openai-strict-output/maxLength, openai-strict-output/format-duration, openai-strict-output/title, openai-strict-output/default, openai-strict-output/examples, gemini-tools/untyped-property, gemini-tools/untyped-items, gemini-tools/untyped-root, gemini-response-schema/untyped-property, gemini-response-schema/untyped-items, gemini-response-schema/untyped-root, xai-tools/multipleOf, xai-tools/minLength, xai-tools/maxLength, xai-tools/format-uri, xai-tools/format-duration, xai-tools/title, xai-tools/default, xai-tools/examples, xai-tools/untyped-property, xai-tools/untyped-items, xai-tools/untyped-root, xai-strict-output/multipleOf, xai-strict-output/minLength, xai-strict-output/maxLength, xai-strict-output/format-uri, xai-strict-output/format-duration, xai-strict-output/title, xai-strict-output/default, xai-strict-output/examples, xai-strict-output/untyped-property, xai-strict-output/untyped-items, xai-strict-output/untyped-root
+
+1 unsafe row(s): anthropic-tools/untyped-root
+```
+
+The multi-line Gemini entries above are as printed by that run. The probe now joins line breaks
+with ` | ` so each entry stays on one indented line.
 
 ## Gates
 

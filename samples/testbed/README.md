@@ -88,11 +88,11 @@ constraint keyword, every annotation, numeric and boolean enums, `{}` at the roo
 and in items) **unadapted**, records accept/reject with the provider's error text, and compares
 that with the table:
 
-| outcome | means |
-|---|---|
-| `agrees` | the table matches the provider |
-| `conservative` | we fold or refuse, the provider accepted the raw schema — the entry could be loosened |
-| `unsafe` | we pass, the provider rejected it |
+| outcome        | means                                                                                                                                 |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `agrees`       | the table matches the provider                                                                                                        |
+| `conservative` | we fold or refuse, the provider accepted the raw schema. Accepted is not enforced, so this alone does not justify loosening the entry |
+| `unsafe`       | we pass, the provider rejected it                                                                                                     |
 
 It then sends each fixture **through** `ai-assist` and confirms the adapted request is accepted
 (or, where the table refuses, that it is refused before anything is sent). An adapted request the

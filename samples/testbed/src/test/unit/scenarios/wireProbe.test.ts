@@ -201,6 +201,12 @@ describe('wireProbe', () => {
       expect(providerErrorText('<html>bad gateway</html>')).toBe('<html>bad gateway</html>');
       expect(providerErrorText('{"detail":"no"}')).toBe('{"detail":"no"}');
       expect(providerErrorText('x'.repeat(400))).toBe(`${'x'.repeat(300)}…`);
+      // Gemini puts one error per line.
+      expect(
+        providerErrorText(
+          JSON.stringify({ error: { message: 'enum[0] (TYPE_STRING), 1\nenum[1] (TYPE_STRING), 2' } })
+        )
+      ).toBe('enum[0] (TYPE_STRING), 1 | enum[1] (TYPE_STRING), 2');
     });
 
     test('observeRaw: 2xx accepts, 400/422 reject, anything else is inconclusive', () => {
@@ -426,7 +432,9 @@ describe('wireProbe', () => {
       expect(result).toSucceedAndSatisfy((report) => {
         expect(report).toMatch(/enum-integer\s+adapt\s+accepted\s+conservative\s+accepted/);
         expect(report).toMatch(/untyped-property\s+refuse\s+rejected\s+agrees\s+refused here/);
-        expect(report).toContain('conservative (a table entry that could be loosened): gemini-tools/');
+        expect(report).toContain(
+          'conservative (accepted raw; loosening needs evidence it is enforced): gemini-tools/'
+        );
         expect(report).toContain('untyped-root (raw): 400 type is required');
       });
     });
@@ -510,7 +518,7 @@ describe('wireProbe', () => {
       const results: IWireProbeWireResult[] = [];
       expect(unsafeRows(results)).toEqual([]);
       expect(formatWireProbeReport(results)).toContain(
-        'conservative (a table entry that could be loosened): none'
+        'conservative (accepted raw; loosening needs evidence it is enforced): none'
       );
     });
   });

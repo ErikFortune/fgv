@@ -52,7 +52,9 @@
  *
  * Non-zero only when a row is `unsafe` — a pass the provider rejects, or an adapted request it
  * rejects end to end. Those are the rows where `ai-assist` sends something that fails. A
- * `conservative` row is a table entry that could be loosened, which is a finding, not a failure.
+ * `conservative` row is a finding, not a failure. It shows the request was accepted, not that the
+ * keyword is honoured, so it is not by itself a reason to loosen the table: a fold keeps the
+ * constraint in front of the model as text, and a pass to a provider that ignores it loses that.
  *
  * @packageDocumentation
  */
@@ -202,8 +204,13 @@ export function ourVerdict(raw: JsonValue, table: JsonSchema.SchemaKeywordCapabi
 /** The longest provider error text the report carries. */
 const MAX_DETAIL: number = 300;
 
+/**
+ * One report line: line breaks become ` | ` (Gemini lists one error per line, which broke the
+ * report's indentation on the first live run), then the text is capped at `MAX_DETAIL`.
+ */
 function truncate(text: string): string {
-  return text.length > MAX_DETAIL ? `${text.slice(0, MAX_DETAIL)}…` : text;
+  const line = text.replace(/\s*\n\s*/g, ' | ');
+  return line.length > MAX_DETAIL ? `${line.slice(0, MAX_DETAIL)}…` : line;
 }
 
 /**

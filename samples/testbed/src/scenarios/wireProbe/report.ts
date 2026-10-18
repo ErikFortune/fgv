@@ -149,7 +149,7 @@ export function formatWireProbeReport(results: ReadonlyArray<IWireProbeWireResul
   lines.push(`UNSAFE (end to end): ${named(probed, (row) => row.endToEnd === 'unsafe')}`);
   lines.push(`end-to-end mismatches: ${named(probed, (row) => row.endToEnd === 'mismatch')}`);
   lines.push(
-    `conservative (a table entry that could be loosened): ${named(
+    `conservative (accepted raw; loosening needs evidence it is enforced): ${named(
       probed,
       (row) => row.outcome === 'conservative'
     )}`
