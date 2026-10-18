@@ -45,7 +45,9 @@ import {
   observeAdapted,
   observeRaw,
   ourVerdict,
+  probePatternValidator,
   providerErrorText,
+  readFixture,
   runWireProbe,
   runWireProbeScenario,
   selectWires,
@@ -110,7 +112,7 @@ function fixture(id: string): IWireProbeFixture {
 }
 
 function rawOf(id: string): JsonObject {
-  return JsonSchema.fromJson(fixture(id).schema).orThrow().toJson() as JsonObject;
+  return readFixture(fixture(id)).orThrow().toJson() as JsonObject;
 }
 
 /**
@@ -158,12 +160,30 @@ function fakeProvider(options: {
 
 describe('wireProbe', () => {
   describe('fixtures', () => {
-    test('every fixture reads through JsonSchema.fromJson, with unique ids and the control first', () => {
+    test('every fixture reads into a validator that emits its JSON, with unique ids and the control first', () => {
       expect(WIRE_PROBE_FIXTURES[0].id).toBe(CONTROL_FIXTURE_ID);
       expect(new Set(WIRE_PROBE_FIXTURES.map((f) => f.id)).size).toBe(WIRE_PROBE_FIXTURES.length);
       for (const f of WIRE_PROBE_FIXTURES) {
-        expect(JsonSchema.fromJson(f.schema)).toSucceed();
+        expect(readFixture(f)).toSucceedAndSatisfy((validator) => {
+          expect(validator.toJson()).toEqual(
+            JsonSchema.fromJson(f.schema, { patternValidator: probePatternValidator }).orThrow().toJson()
+          );
+        });
       }
+    });
+
+    test('the pattern fixtures: one from the host factory, one from fromJson, the same wire, both enforced', () => {
+      const host = readFixture(fixture('pattern-host')).orThrow();
+      const fromJson = readFixture(fixture('pattern-fromJson')).orThrow();
+      expect(host.toJson()).toEqual(fixture('pattern-host').schema);
+      expect(fromJson.toJson()).toEqual(host.toJson());
+      for (const validator of [host, fromJson]) {
+        expect(validator.validate({ v: 'abc' })).toSucceed();
+        expect(validator.validate({ v: 'ABC' })).toFailWith(/pattern/);
+      }
+      // Without the validator, fromJson refuses the fixture, as it does any server's pattern.
+      expect(JsonSchema.fromJson(fixture('pattern-fromJson').schema)).toFailWith(/'pattern'/);
+      expect(probePatternValidator('(a+)+$')).toFailWith(/compiles only its own pattern/);
     });
 
     test('cover every keyword and shape the tables name', () => {
@@ -189,6 +209,27 @@ describe('wireProbe', () => {
       expect(ourVerdict(rawOf('title'), openai)).toBe('adapt');
       expect(ourVerdict(rawOf('untyped-items'), openai)).toBe('refuse');
       expect(ourVerdict(rawOf('untyped-root'), gemini)).toBe('refuse');
+    });
+
+    test('pattern: passes where documented with JSON Schema semantics, folds on OpenAI/xAI and Gemini', () => {
+      const anthropicTools = AiAssist.clientToolSchemaKeywords(descriptor('anthropic'));
+      const gemini = AiAssist.clientToolSchemaKeywords(descriptor('google-gemini'));
+      const openai = AiAssist.clientToolSchemaKeywords(descriptor('openai'));
+      const xai = AiAssist.clientToolSchemaKeywords(descriptor('xai-grok'));
+      for (const id of ['pattern-host', 'pattern-fromJson']) {
+        expect(ourVerdict(rawOf(id), anthropicTools)).toBe('pass');
+        expect(ourVerdict(rawOf(id), gemini)).toBe('adapt');
+        expect(ourVerdict(rawOf(id), openai)).toBe('adapt');
+        expect(ourVerdict(rawOf(id), xai)).toBe('adapt');
+      }
+      const jsonOutputs = wireSchemaKeywords(
+        wire('anthropic-json-outputs'),
+        descriptor('anthropic'),
+        AiAssist.resolveProviderModel(descriptor('anthropic'), wire('anthropic-json-outputs').model).orThrow()
+      );
+      expect(jsonOutputs === undefined ? undefined : ourVerdict(rawOf('pattern-host'), jsonOutputs)).toBe(
+        'pass'
+      );
     });
   });
 
@@ -387,7 +428,7 @@ describe('wireProbe', () => {
         expect(report).toContain('SKIPPED: no google-gemini key');
         expect(report).toContain('UNSAFE (raw): none');
         expect(report).toContain('UNSAFE (end to end): none');
-        expect(report).toMatch(/agrees 22 · conservative 0 · unsafe 0 · inconclusive 0/);
+        expect(report).toMatch(/agrees 24 · conservative 0 · unsafe 0 · inconclusive 0/);
       });
       expect(provider.rawUrls).toHaveLength(WIRE_PROBE_FIXTURES.length);
       expect(provider.adapted).toHaveLength(WIRE_PROBE_FIXTURES.length);
@@ -437,6 +478,30 @@ describe('wireProbe', () => {
         );
         expect(report).toContain('untyped-root (raw): 400 type is required');
       });
+    });
+
+    test('pattern: a fold xAI accepts is conservative; a pass Anthropic JSON outputs rejects is unsafe, on both fixtures', async () => {
+      const xai = await runWireProbe(testContext({ XAI_API_KEY: 'x' }), fakeProvider({}).deps, [
+        wire('xai-tools')
+      ]);
+      expect(xai).toSucceedAndSatisfy((report) => {
+        expect(report).toMatch(/pattern-host\s+adapt\s+accepted\s+conservative\s+accepted/);
+        expect(report).toMatch(/pattern-fromJson\s+adapt\s+accepted\s+conservative\s+accepted/);
+      });
+      const jsonOutputs = await runWireProbe(
+        testContext({ ANTHROPIC_API_KEY: 'k' }),
+        fakeProvider({
+          rawStatus: (request) =>
+            JSON.stringify(request.body).includes('"pattern"')
+              ? { status: 400, body: JSON.stringify({ error: { message: 'pattern is not supported' } }) }
+              : undefined
+        }).deps,
+        [wire('anthropic-json-outputs')]
+      );
+      expect(jsonOutputs).toFailWith(
+        /UNSAFE \(raw\): anthropic-json-outputs\/pattern-host, anthropic-json-outputs\/pattern-fromJson/
+      );
+      expect(jsonOutputs).toFailWith(/pattern-host \(raw\): 400 pattern is not supported/);
     });
 
     test('end-to-end mismatches and inconclusive results are reported, not failed', async () => {

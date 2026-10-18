@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "adaptMcpTools takes an optional patternValidator, passed to JsonSchema.fromJson: a tool using pattern is adapted and its pattern enforced on every call. Without one, such a tool stays skipped.",
+      "type": "minor",
+      "packageName": "@fgv/ts-extras-mcp"
+    }
+  ],
+  "packageName": "@fgv/ts-extras-mcp",
+  "email": "ErikFortune@outlook.com"
+}

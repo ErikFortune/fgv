@@ -31,10 +31,16 @@
  * property `v` and `additionalProperties: false`, the shape OpenAI strict output requires, so a
  * rejection names the keyword under test rather than the envelope.
  *
+ * `pattern` has two fixtures, one per way a pattern reaches a schema: built by the host's
+ * `stringOptions` from a trusted `RegExp`, and read by `fromJson` with an injected
+ * `patternValidator`, as an MCP server's would be. Both send the same JSON, so a difference between
+ * their rows would be a difference in what the library builds, not in what the provider does.
+ *
  * @packageDocumentation
  */
 
-import type { JsonObject } from '@fgv/ts-json-base';
+import { fail, succeed, type Result } from '@fgv/ts-utils';
+import { JsonSchema, type JsonObject } from '@fgv/ts-json-base';
 
 /**
  * One fixture schema.
@@ -45,8 +51,36 @@ export interface IWireProbeFixture {
   readonly id: string;
   /** The table row it exercises. */
   readonly row: string;
-  /** The schema as a host authors it; read through `JsonSchema.fromJson`. */
+  /** The schema as a host authors it; read through `JsonSchema.fromJson` unless `build` is given. */
   readonly schema: JsonObject;
+  /**
+   * Builds the validator another way — through the host factories, or `fromJson` with options — for
+   * the fixtures whose path through the library is itself under test. Its `toJson()` is `schema`.
+   */
+  readonly build?: () => Result<JsonSchema.ISchemaValidator<unknown>>;
+}
+
+/** The pattern both `pattern` fixtures carry: anchored, and within every documented dialect. */
+const PROBE_PATTERN_SOURCE: string = '^[a-z]+$';
+
+/**
+ * The probe's `patternValidator`. It compiles only the probe's own fixture pattern, from a literal,
+ * so nothing here turns a string into a regular expression; a host reading untrusted schemas should
+ * use an engine that is safe on hostile input.
+ * @public
+ */
+export const probePatternValidator: JsonSchema.SchemaPatternValidator = (source) =>
+  source === PROBE_PATTERN_SOURCE
+    ? succeed((value: string) => /^[a-z]+$/u.test(value))
+    : fail(`the wire probe compiles only its own pattern, not ${JSON.stringify(source)}`);
+
+/**
+ * Reads a fixture into the validator the probe sends: `build` when it has one, otherwise
+ * `JsonSchema.fromJson` over its JSON.
+ * @public
+ */
+export function readFixture(fixture: IWireProbeFixture): Result<JsonSchema.ISchemaValidator<unknown>> {
+  return fixture.build?.() ?? JsonSchema.fromJson(fixture.schema);
 }
 
 /**
@@ -94,6 +128,26 @@ export const WIRE_PROBE_FIXTURES: ReadonlyArray<IWireProbeFixture> = [
   { id: 'multipleOf', row: 'multipleOf', schema: oneProperty({ type: 'number', multipleOf: 0.5 }) },
   { id: 'minLength', row: 'minLength', schema: oneProperty({ type: 'string', minLength: 2 }) },
   { id: 'maxLength', row: 'maxLength', schema: oneProperty({ type: 'string', maxLength: 8 }) },
+  {
+    // A host's own `RegExp`, through `stringOptions`.
+    id: 'pattern-host',
+    row: 'pattern (host stringOptions)',
+    schema: oneProperty({ type: 'string', pattern: PROBE_PATTERN_SOURCE }),
+    build: () =>
+      JsonSchema.stringOptions({ pattern: /^[a-z]+$/u }).onSuccess((opts) =>
+        succeed(JsonSchema.object({ v: JsonSchema.string(opts) }))
+      )
+  },
+  {
+    // A server's pattern, through `fromJson` with an injected validator.
+    id: 'pattern-fromJson',
+    row: 'pattern (fromJson + patternValidator)',
+    schema: oneProperty({ type: 'string', pattern: PROBE_PATTERN_SOURCE }),
+    build: () =>
+      JsonSchema.fromJson(oneProperty({ type: 'string', pattern: PROBE_PATTERN_SOURCE }), {
+        patternValidator: probePatternValidator
+      })
+  },
   {
     // In every table's pass list.
     id: 'format-date-time',
