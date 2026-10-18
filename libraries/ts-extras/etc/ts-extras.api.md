@@ -208,6 +208,7 @@ declare namespace AiAssist {
         resolveEffectiveTools,
         resolveToolConflicts,
         defaultToolConflictPolicy,
+        toGeminiParameterSchema,
         IAiResolvedToolConflicts,
         AiCacheReportingLevel,
         IAiCompletionUsage,
@@ -217,6 +218,7 @@ declare namespace AiAssist {
         supportsStreamUsageOption,
         IAiPromptCacheRoutingSupport,
         ANTHROPIC_STRUCTURED_OUTPUT_TOOL_NAME,
+        structuredOutputSchemaKeywords,
         clientToolSchemaKeywords,
         AiStructuredOutputFormat,
         IAiStructuredOutputCapability,
@@ -3365,6 +3367,12 @@ type StructuredOutputFallback = 'degrade' | 'fail';
 type StructuredOutputRequest = ISchemaStructuredOutputRequest | IJsonObjectStructuredOutputRequest;
 
 // @public
+function structuredOutputSchemaKeywords(descriptor: IAiProviderDescriptor, options: {
+    readonly model: string;
+    readonly endpoint?: string;
+}): JsonSchema.SchemaKeywordCapabilities | undefined;
+
+// @public
 const SUPPORTED_SCHEMES: ReadonlyArray<string>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -3411,6 +3419,9 @@ function toBase64(bytes: Uint8Array): string;
 //
 // @public
 function toDataUrl(image: IAiImageData): string;
+
+// @public
+function toGeminiParameterSchema(schema: JsonValue): JsonValue;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver

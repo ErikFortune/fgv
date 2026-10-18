@@ -10,6 +10,7 @@ import {
   IIdentityCodec,
   IIdentityCodecResult,
   IMemoryRecord,
+  isTemporalIdentityCodec,
   Kind,
   MemoryScopeKey
 } from '../types';
@@ -114,7 +115,8 @@ export function verifyOccupantKind<T>(
  * filename stem must be `codec.encode(entityId).idStem`. The codec contract
  * already asks `verifyRoundTrip` for this, but a codec that skips it would let
  * `getById` find a record that `get(kind, entityId)` cannot. A versioned kind's
- * stem names one version, not the entity, so the check does not apply there.
+ * stem names one version rather than the entity, so there the stem must instead be
+ * `encodeVersion(entityId, seq)` for the `seq` the codec decodes from it.
  * @internal
  */
 export function verifyLoadedIdentity(
@@ -141,19 +143,46 @@ export function verifyLoadedIdentity(
                 `envelope entityId '${entityId}' does not match scope-derived entityId '${decodedEntityId}'`
               )
         )
+        .onSuccess((encoded) => {
+          if (encoded.scope !== scope) {
+            return fail<IMemoryRecord<unknown>>(
+              `read from scope '${scope}', but its codec derives scope '${encoded.scope}' for entityId '${entityId}'`
+            );
+          }
+          if (!encoded.isVersioned) {
+            return encoded.idStem === file.baseName
+              ? succeed(record)
+              : fail<IMemoryRecord<unknown>>(
+                  `read as '${file.baseName}', but its codec derives idStem '${encoded.idStem}' for entityId '${entityId}'`
+                );
+          }
+          return verifyVersionStem(c, scope, file.baseName, entityId).onSuccess(() => succeed(record));
+        })
     )
-    .onSuccess((encoded) => {
-      if (encoded.scope !== scope) {
-        return fail<IMemoryRecord<unknown>>(
-          `read from scope '${scope}', but its codec derives scope '${encoded.scope}' for entityId '${entityId}'`
-        );
-      }
-      if (!encoded.isVersioned && encoded.idStem !== file.baseName) {
-        return fail<IMemoryRecord<unknown>>(
-          `read as '${file.baseName}', but its codec derives idStem '${encoded.idStem}' for entityId '${entityId}'`
-        );
-      }
-      return succeed(record);
-    })
     .withErrorFormat((msg) => `memory file '${file.absolutePath}': ${msg}`);
+}
+
+/**
+ * The versioned half of the address check: `stem` must be exactly the version stem
+ * the codec forms for `(entityId, seq)`, where `seq` is what it decodes from `stem`.
+ */
+function verifyVersionStem(
+  codec: IIdentityCodec,
+  scope: MemoryScopeKey,
+  stem: string,
+  entityId: EntityId
+): Result<string> {
+  if (!isTemporalIdentityCodec(codec)) {
+    return fail(`codec reports a versioned layout for entityId '${entityId}' but has no version methods`);
+  }
+  return codec
+    .decodeVersion(scope, stem)
+    .onSuccess((address) => codec.encodeVersion(entityId, address.seq))
+    .onSuccess((expected) =>
+      expected === stem
+        ? succeed(stem)
+        : fail<string>(
+            `read as '${stem}', but its codec derives version stem '${expected}' for entityId '${entityId}'`
+          )
+    );
 }

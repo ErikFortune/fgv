@@ -3,10 +3,21 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { Result, captureResult, fail, succeed } from '@fgv/ts-utils';
+import { Result, captureResult, fail, mapResults, succeed } from '@fgv/ts-utils';
 import { JsonSchema } from '@fgv/ts-json-base';
 import { AiAssist } from '@fgv/ts-extras';
-import { Convert, EntityId, IEdgeTarget, IIdentityCodec, IMemoryRecord, Kind, MemoryId, Tag } from '../types';
+import {
+  Convert,
+  EntityId,
+  IEdgeTarget,
+  IIdentityCodec,
+  IMemoryRecord,
+  Kind,
+  MemoryId,
+  MemoryScopeKey,
+  Tag,
+  scopedAddressOf
+} from '../types';
 import { IBodyConverterRegistry, envelopeConverter } from '../converters';
 import { IMemoryStore } from '../store';
 import { IMemoryQuery, IMemoryRetriever } from '../retrieve';
@@ -58,6 +69,17 @@ export interface IMemoryWriteResult {
   readonly outcome: MemoryWriteOutcome;
   /** The stored record's {@link MemoryId}. */
   readonly id: MemoryId;
+  /**
+   * The scope the stored record lives in. Together with {@link IMemoryWriteResult.id | id}
+   * it is the record's address — the `{ id, scope }` a later write links to it with.
+   *
+   * @remarks
+   * It is resolved through the store after the put commits. With `FileTreeMemoryStore`
+   * that cannot fail, because `put` encodes through the same codecs. A custom
+   * `IMemoryStore` whose `resolveIdentity` disagrees with its own `put` would see
+   * `memory_write` report a failure for a write that was in fact persisted.
+   */
+  readonly scope: MemoryScopeKey;
   /** The domain {@link EntityId} the write targeted. */
   readonly entityId: EntityId;
   /** The record's {@link Kind}. */
@@ -65,14 +87,21 @@ export interface IMemoryWriteResult {
 }
 
 /**
- * A single agent-visible search / context result item. The agent-facing key is
- * {@link IMemoryToolResultItem.handle | handle}: the host mnemonic when a
- * {@link ICreateMemoryToolsParams.handleFor | handleFor} hook is supplied, else
- * the raw {@link MemoryId}.
+ * The part of an agent-visible result item that a host
+ * {@link ICreateMemoryToolsParams.projectItem | projectItem} hook produces. The
+ * tool layer adds {@link IMemoryToolResultItem.id | id} and
+ * {@link IMemoryToolResultItem.scope | scope} on top, so a hook neither supplies
+ * nor can remove them.
  * @public
  */
-export interface IMemoryToolResultItem {
-  /** The agent-visible key (host handle when supplied, raw {@link MemoryId} otherwise). */
+export interface IMemoryToolItemProjection {
+  /**
+   * The display key: the host mnemonic when a
+   * {@link ICreateMemoryToolsParams.handleFor | handleFor} hook is supplied, the
+   * raw {@link MemoryId} otherwise. It is for display and for referring to the
+   * record in prose. It is NOT an address: links and context seeds use
+   * {@link IMemoryToolResultItem.id | id} + {@link IMemoryToolResultItem.scope | scope}.
+   */
   readonly handle: string;
   /** The record's {@link Kind}. */
   readonly kind: Kind;
@@ -82,6 +111,32 @@ export interface IMemoryToolResultItem {
   readonly tags: ReadonlyArray<string>;
   /** The record body (a markdown string in B1). */
   readonly body: unknown;
+}
+
+/**
+ * A single agent-visible `memory_search` / `memory_context` / `memory_read`
+ * result item. Its address is {@link IMemoryToolResultItem.id | id} +
+ * {@link IMemoryToolResultItem.scope | scope}; its display key is
+ * {@link IMemoryToolItemProjection.handle | handle}.
+ *
+ * @remarks
+ * A bare id is unique only within a scope (the MTM codec mints `turn-<n>` under
+ * every conversation), so every item carries the scope its record lives in as
+ * well as its id. The tool descriptions tell the model to copy both into a
+ * `memory_write` link target or a `memory_context` seed. The tool layer always
+ * sets `id` and `scope`, after any host projection, so a
+ * {@link ICreateMemoryToolsParams.projectItem | projectItem} hook cannot drop or
+ * override them.
+ * @public
+ */
+export interface IMemoryToolResultItem extends IMemoryToolItemProjection {
+  /** The record's {@link MemoryId} (`envelope.id`), unique within {@link IMemoryToolResultItem.scope | scope}. */
+  readonly id: MemoryId;
+  /**
+   * The scope the record lives in — the address the store read it from, derived
+   * from its `(kind, entityId)` by the store's codecs (see `scopedAddressOf`).
+   */
+  readonly scope: MemoryScopeKey;
 }
 
 /**
@@ -130,14 +185,15 @@ export interface ICreateMemoryToolsParams {
   readonly defaultCodec?: IIdentityCodec;
   /**
    * Optional host hook mapping a record to its agent-visible handle (an evocative
-   * mnemonic tag). When supplied, `memory_search` / `memory_context` results use
-   * the returned handle as the agent-visible key; when absent the raw
-   * {@link MemoryId} is used.
+   * mnemonic tag). When supplied, `memory_search` / `memory_context` /
+   * `memory_read` items use the returned handle as their display key; when absent
+   * the raw {@link MemoryId} is used. Items carry their `id` and `scope` either
+   * way, and those, not the handle, are what links and context seeds take.
    */
   readonly handleFor?: (record: IMemoryRecord<unknown>) => string;
   /**
    * Optional host projector mapping a record (and the requested detail tier) to
-   * its agent-visible {@link IMemoryToolResultItem}. When supplied, every
+   * its agent-visible {@link IMemoryToolItemProjection}. When supplied, every
    * `memory_search` / `memory_context` / `memory_read` result item is produced by
    * this callback — the host owns how much of the body a `'gist'` vs `'full'`
    * result carries, so it can bound the default (`'gist'`) path.
@@ -149,8 +205,16 @@ export interface ICreateMemoryToolsParams {
    * The callback is guarded exactly like `handleFor`: a throw degrades to the
    * default full-body projection for that item rather than failing the whole
    * search.
+   *
+   * The hook does not own {@link IMemoryToolResultItem.id | id} or
+   * {@link IMemoryToolResultItem.scope | scope}: the tool layer sets both on
+   * every item after the hook runs, so a value the hook returns is overwritten
+   * and one it omits is still present.
    */
-  readonly projectItem?: (record: IMemoryRecord<unknown>, detail: MemoryDetailTier) => IMemoryToolResultItem;
+  readonly projectItem?: (
+    record: IMemoryRecord<unknown>,
+    detail: MemoryDetailTier
+  ) => IMemoryToolItemProjection;
 }
 
 /**
@@ -171,7 +235,10 @@ interface IToolContext {
   readonly codecs?: ReadonlyMap<Kind, IIdentityCodec>;
   readonly defaultCodec?: IIdentityCodec;
   readonly handleFor?: (record: IMemoryRecord<unknown>) => string;
-  readonly projectItem?: (record: IMemoryRecord<unknown>, detail: MemoryDetailTier) => IMemoryToolResultItem;
+  readonly projectItem?: (
+    record: IMemoryRecord<unknown>,
+    detail: MemoryDetailTier
+  ) => IMemoryToolItemProjection;
 }
 
 // ---------------------------------------------------------------------------
@@ -185,14 +252,23 @@ interface IToolContext {
  * The scope-qualified target of a link edge authored by the agent on a write.
  * `scope` is optional: when omitted it defaults to the writing record's OWN
  * resolved scope (the common same-conversation case); supply it explicitly to
- * point an edge at a record in a different scope.
+ * point an edge at a record in a different scope. The descriptions tell the
+ * model to copy `id` and `scope` from one result, since every result item
+ * carries both and a bare id is ambiguous across scopes.
  */
 // eslint-disable-next-line @rushstack/typedef-var
 const linkTargetSchema = JsonSchema.object({
-  id: JsonSchema.string({ description: 'The MemoryId of the record this edge points at.' }),
+  id: JsonSchema.string({
+    description:
+      'The MemoryId of the record this edge points at: copy `id` from a memory_search, ' +
+      'memory_context, memory_read or memory_write result (not its `handle`).'
+  }),
   scope: JsonSchema.optional(
     JsonSchema.string({
-      description: "The target record's scope. Defaults to the writing record's own scope when omitted."
+      description:
+        "The target record's scope: copy `scope` from the same result you took `id` from. " +
+        "Records in different scopes can share an id. When omitted, defaults to the writing record's own " +
+        'scope, which is right only for a target in that same scope.'
     })
   )
 });
@@ -264,9 +340,15 @@ const searchSchema = JsonSchema.object({
  */
 // eslint-disable-next-line @rushstack/typedef-var
 const contextSeedSchema = JsonSchema.object({
-  id: JsonSchema.string({ description: 'The MemoryId of the seed record to traverse links from.' }),
+  id: JsonSchema.string({
+    description:
+      'The MemoryId of the seed record to traverse links from: copy `id` from a memory_search, ' +
+      'memory_context or memory_read result (not its `handle`).'
+  }),
   scope: JsonSchema.string({
-    description: 'The scope of the seed record (required — a bare seed id is ambiguous across scopes).'
+    description:
+      'The scope of the seed record: copy `scope` from the same result item you took `id` from ' +
+      '(required — a bare seed id is ambiguous across scopes).'
   })
 });
 
@@ -339,7 +421,7 @@ function resolveDetail(detail?: string): MemoryDetailTier {
 }
 
 /** The built-in default projection: full body plus the guarded host handle. Ignores the detail tier. */
-function defaultProjectItem(ctx: IToolContext, record: IMemoryRecord<unknown>): IMemoryToolResultItem {
+function defaultProjectItem(ctx: IToolContext, record: IMemoryRecord<unknown>): IMemoryToolItemProjection {
   // `handleFor` is a host callback; guard it so a throw degrades to the raw id rather than
   // escaping the Result chain (and crashing the whole search/context call).
   const handle =
@@ -356,24 +438,68 @@ function defaultProjectItem(ctx: IToolContext, record: IMemoryRecord<unknown>): 
 }
 
 /**
- * Project a record into an agent-visible result item at the requested detail
- * tier. When a host {@link ICreateMemoryToolsParams.projectItem | projectItem}
- * is supplied it owns the projection; otherwise the built-in
- * {@link defaultProjectItem} (full body) is used. The host callback is guarded
- * like `handleFor` — a throw degrades to the default full-body projection for
- * that item rather than failing the whole search/context call.
+ * Project a record's agent-visible fields at the requested detail tier. When a
+ * host {@link ICreateMemoryToolsParams.projectItem | projectItem} is supplied it
+ * owns the projection; otherwise the built-in {@link defaultProjectItem} (full
+ * body) is used. The host callback is guarded like `handleFor` — a throw
+ * degrades to the default full-body projection for that item rather than
+ * failing the whole search/context call.
  */
-function projectItem(
+function projectFields(
   ctx: IToolContext,
   record: IMemoryRecord<unknown>,
   detail: MemoryDetailTier
-): IMemoryToolResultItem {
+): IMemoryToolItemProjection {
   if (ctx.projectItem === undefined) {
     return defaultProjectItem(ctx, record);
   }
   // Guard the host projector like `handleFor`: a throw degrades to the built-in
   // full-body projection (itself throw-safe) rather than escaping the chain.
-  return captureResult(() => ctx.projectItem!(record, detail)).orDefault(defaultProjectItem(ctx, record));
+  return captureResult(() => ctx.projectItem!(record, detail)).orDefaultWith(() =>
+    defaultProjectItem(ctx, record)
+  );
+}
+
+/**
+ * Resolve a loaded record's scope through the store. The store is
+ * consumer-injected, so a throwing `resolveIdentity` is captured into a
+ * `Failure` (as `scopedAddressOf` asks of its callers) rather than escaping the
+ * tool's Result chain.
+ */
+function scopeOf(ctx: IToolContext, record: IMemoryRecord<unknown>): Result<MemoryScopeKey> {
+  return captureResult(() => scopedAddressOf(record, ctx.store)).onSuccess((address) =>
+    address.onSuccess(({ scope }) => succeed(scope))
+  );
+}
+
+/**
+ * Project a record into an agent-visible result item: the host or default
+ * projection, plus the record's address: `id` (its `envelope.id`) and `scope`
+ * (as the store's codecs derive it). Both are spread LAST so a host projection
+ * can neither drop nor override them. A record whose scope cannot be resolved fails
+ * the call rather than reaching the model unqualified, since an unqualified id
+ * is exactly the ambiguity the field exists to remove.
+ */
+function projectItem(
+  ctx: IToolContext,
+  record: IMemoryRecord<unknown>,
+  detail: MemoryDetailTier
+): Result<IMemoryToolResultItem> {
+  return scopeOf(ctx, record)
+    .withErrorFormat(
+      (msg) =>
+        `cannot resolve the scope of record '${record.envelope.id}' (kind '${record.envelope.kind}'): ${msg}`
+    )
+    .onSuccess((scope) => succeed({ ...projectFields(ctx, record, detail), id: record.envelope.id, scope }));
+}
+
+/** Project every record into a result item; fails if any record's scope cannot be resolved. */
+function projectItems(
+  ctx: IToolContext,
+  records: ReadonlyArray<IMemoryRecord<unknown>>,
+  detail: MemoryDetailTier
+): Result<ReadonlyArray<IMemoryToolResultItem>> {
+  return mapResults(records.map((record) => projectItem(ctx, record, detail)));
 }
 
 /** Resolve the identity codec used by `memory_write` to derive the storage id. */
@@ -482,7 +608,9 @@ function buildWriteTool(ctx: IToolContext): AiAssist.IAiClientTool {
       name: 'memory_write',
       description:
         'Store a new memory record or update an existing one by (kind, entityId). ' +
-        'Identical content is a no-op that returns the existing record.',
+        "Identical content is a no-op that returns the existing record. Returns the stored record's " +
+        '`id` and `scope`. To link to a record another memory tool returned, copy `id` and `scope` ' +
+        'from that result into the link target; records in different scopes can share an id.',
       parametersSchema: writeSchema,
       annotations: WRITE_ANNOTATIONS
     },
@@ -499,12 +627,25 @@ function buildWriteTool(ctx: IToolContext): AiAssist.IAiClientTool {
           // instead of being masked as a normal write.
           (await ctx.store.get(kind, entityId)).thenOnSuccess(async (before) =>
             (await ctx.store.put(record)).onSuccess((persisted) =>
-              succeed<IMemoryWriteResult>({
-                outcome: writeOutcome(before, persisted, entityId),
-                id: persisted.envelope.id,
-                entityId,
-                kind
-              })
+              // The persisted record can be a different entity (content-scope
+              // dedup), so its address is resolved from the record, not the request.
+              //
+              // This runs AFTER the put has committed, so a failure here reports a
+              // write that did persist. With `FileTreeMemoryStore` it is unreachable:
+              // `put` encodes through the same codecs `resolveIdentity` uses, so a
+              // record it just stored always resolves. Only a custom store whose
+              // resolver disagrees with its own `put` can reach it.
+              scopeOf(ctx, persisted)
+                .withErrorFormat((msg) => `memory_write: cannot resolve the stored record's scope: ${msg}`)
+                .onSuccess((scope) =>
+                  succeed<IMemoryWriteResult>({
+                    outcome: writeOutcome(before, persisted, entityId),
+                    id: persisted.envelope.id,
+                    scope,
+                    entityId,
+                    kind
+                  })
+                )
             )
           )
         )
@@ -516,7 +657,9 @@ function buildReadTool(ctx: IToolContext): AiAssist.IAiClientTool {
     config: {
       type: 'client_tool',
       name: 'memory_read',
-      description: 'Read a specific memory record by (kind, entityId).',
+      description:
+        'Read a specific memory record by (kind, entityId). The returned item carries its `id` ' +
+        'and `scope`; copy both to link to it.',
       parametersSchema: readSchema,
       annotations: READ_ONLY_ANNOTATIONS
     },
@@ -538,7 +681,9 @@ function buildReadTool(ctx: IToolContext): AiAssist.IAiClientTool {
           (await ctx.store.get(kind, entityId)).onSuccess((record) =>
             record === undefined
               ? succeed({ found: false })
-              : succeed({ found: true, item: projectItem(ctx, record, detail) })
+              : projectItem(ctx, record, detail)
+                  .withErrorFormat((msg) => `memory_read: ${msg}`)
+                  .onSuccess((item) => succeed({ found: true, item }))
           )
         )
   };
@@ -551,6 +696,9 @@ function buildSearchTool(ctx: IToolContext): AiAssist.IAiClientTool {
       name: 'memory_search',
       description:
         'Search memories by tag, kind, or semantic text. Returns ranked results. ' +
+        'Each result carries its `id` and the `scope` its record lives in, plus a display `handle`; ' +
+        'records in different scopes can share an id, so to link to a result (memory_write) or start ' +
+        'from it (memory_context), copy `id` and `scope` from the result. ' +
         'At least one of kind, tag, semantic or limit must be supplied.',
       parametersSchema: searchSchema,
       annotations: READ_ONLY_ANNOTATIONS
@@ -598,7 +746,9 @@ function buildSearchTool(ctx: IToolContext): AiAssist.IAiClientTool {
             ...(typed.offset !== undefined ? { offset: typed.offset } : {})
           };
           return (await ctx.retriever.retrieve(query)).onSuccess((records) =>
-            succeed({ count: records.length, results: records.map((r) => projectItem(ctx, r, detail)) })
+            projectItems(ctx, records, detail)
+              .withErrorFormat((msg) => `memory_search: ${msg}`)
+              .onSuccess((results) => succeed({ count: results.length, results }))
           );
         })
   };
@@ -610,7 +760,8 @@ function buildContextTool(ctx: IToolContext): AiAssist.IAiClientTool {
       type: 'client_tool',
       name: 'memory_context',
       description:
-        'Build a context graph from a seed memory: returns the records linked from the seed, up to `hops` hops.',
+        'Build a context graph from a seed memory: returns the records linked from the seed, up to `hops` hops. ' +
+        'Seed it by copying `id` and `scope` from a result; results carry both, like memory_search.',
       parametersSchema: contextSchema,
       annotations: READ_ONLY_ANNOTATIONS
     },
@@ -635,11 +786,9 @@ function buildContextTool(ctx: IToolContext): AiAssist.IAiClientTool {
             ...(typed.limit !== undefined ? { limit: typed.limit } : {})
           };
           return (await ctx.retriever.retrieve(query)).onSuccess((records) =>
-            succeed({
-              seed: from,
-              count: records.length,
-              results: records.map((r) => projectItem(ctx, r, detail))
-            })
+            projectItems(ctx, records, detail)
+              .withErrorFormat((msg) => `memory_context: ${msg}`)
+              .onSuccess((results) => succeed({ seed: from, count: results.length, results }))
           );
         })
   };

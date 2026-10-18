@@ -39,6 +39,7 @@ import {
 import { openaiClientToolsScenario } from './openaiClientTools';
 import { saferFetchGuardScenario } from './saferFetchGuard';
 import { streamingChatScenario } from './streamingChat';
+import { wireProbeScenario } from './wireProbe';
 import { xaiClientToolsScenario } from './xaiClientTools';
 
 /**
@@ -71,5 +72,6 @@ export const scenarios: readonly IScenario[] = [
   geminiStructuredOutputScenario,
   xaiStructuredOutputScenario,
   xaiCacheProbeScenario,
+  wireProbeScenario,
   agentTasksScenario
 ];
