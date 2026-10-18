@@ -41,7 +41,11 @@ import { AiPrompt } from '../../../packlets/ai-assist/model';
 // eslint-disable-next-line @rushstack/packlets/mechanics
 import { callProviderCompletion } from '../../../packlets/ai-assist/completionClient';
 // eslint-disable-next-line @rushstack/packlets/mechanics
-import { type ISchemaWireTarget, schemaKeywordsFor } from '../../../packlets/ai-assist/schemaKeywords';
+import {
+  type IAiVerifiedEndpoint,
+  type ISchemaWireTarget,
+  schemaKeywordsFor
+} from '../../../packlets/ai-assist/schemaKeywords';
 // eslint-disable-next-line @rushstack/packlets/mechanics
 import { resolveStructuredOutput } from '../../../packlets/ai-assist/structuredOutput';
 // eslint-disable-next-line @rushstack/packlets/mechanics
@@ -99,12 +103,12 @@ describe('schema keyword capability tables, per wire format', () => {
     for (const providerId of ['openai', 'xai-grok']) {
       const [wire] = toResponsesApiTools([tool().config], { providerId, model: 'gpt-x' }).orThrow();
       expect(propertiesOf(wire.parameters)).toEqual({
-        // `title` is dropped, not folded; `default` folds as its own sentence.
+        // `title` and `default` are dropped, not folded: a folded default reads as applied.
         n: {
           type: 'number',
           minimum: 1,
           maximum: 10,
-          description: 'Constraints: multipleOf 0.5. Default: 2.'
+          description: 'Constraints: multipleOf 0.5.'
         },
         i: { type: 'integer', exclusiveMinimum: 0, exclusiveMaximum: 100 },
         x: { type: 'number', exclusiveMinimum: 0 },
@@ -321,7 +325,7 @@ describe('schema keyword capability tables, structured output', () => {
   const openAiShape: JsonObject = {
     type: 'object',
     properties: {
-      n: { type: 'integer', minimum: 1, maximum: 5, description: 'Default: 3.' },
+      n: { type: 'integer', minimum: 1, maximum: 5 },
       s: { type: 'string', description: 'Constraints: maxLength 4. Format: hostname.' },
       p: { type: 'string', description: 'Constraints: pattern "^\\\\d+$".' }
     },
@@ -340,7 +344,7 @@ describe('schema keyword capability tables, structured output', () => {
     const wire = wireFor('openai-json-schema', 'mistral');
     expect(propertiesOf(((wire.response_format as JsonObject).json_schema as JsonObject).schema).n).toEqual({
       type: 'integer',
-      description: 'Constraints: minimum 1; maximum 5. Default: 3.'
+      description: 'Constraints: minimum 1; maximum 5.'
     });
   });
 
@@ -357,7 +361,7 @@ describe('schema keyword capability tables, structured output', () => {
     const wire = wireFor('openai-json-schema', 'openai', false, { model: 'm' });
     expect(propertiesOf(((wire.response_format as JsonObject).json_schema as JsonObject).schema).n).toEqual({
       type: 'integer',
-      description: 'Constraints: minimum 1; maximum 5. Default: 3.'
+      description: 'Constraints: minimum 1; maximum 5.'
     });
   });
 
@@ -368,7 +372,7 @@ describe('schema keyword capability tables, structured output', () => {
     });
     expect(propertiesOf(((wire.response_format as JsonObject).json_schema as JsonObject).schema).n).toEqual({
       type: 'integer',
-      description: 'Constraints: minimum 1; maximum 5. Default: 3.'
+      description: 'Constraints: minimum 1; maximum 5.'
     });
   });
 
@@ -570,16 +574,19 @@ describe('an endpoint override is an unverified server, on every wire format', (
 
   async function toolParameters(
     descriptor: IAiProviderDescriptor,
-    endpoint: string | undefined
+    endpoint: string | undefined,
+    verifiedEndpoint?: IAiVerifiedEndpoint,
+    model: string = 'm'
   ): Promise<JsonValue> {
     done = DONE[descriptor.apiFormat];
     const turn = executeClientToolTurn({
       descriptor,
       apiKey: 'k',
       ...(endpoint !== undefined && { endpoint }),
+      ...(verifiedEndpoint !== undefined && { verifiedEndpoint }),
       ...new AiPrompt('hello', 'system').toRequest(),
       clientTools: [tool(ranged)],
-      model: 'm'
+      model
     }).orThrow();
     const events: IAiStreamEvent[] = [];
     for await (const event of turn.events) {
@@ -614,6 +621,63 @@ describe('an endpoint override is an unverified server, on every wire format', (
       });
     }
   );
+
+  test.each(descriptors.map((d) => [d.id, d] as const))(
+    '%s through a verified endpoint override passes minimum, as on its own endpoint',
+    async (__id, descriptor) => {
+      const verified: IAiVerifiedEndpoint = { providerId: descriptor.id, verified: true };
+      expect(
+        propertiesOf(await toolParameters(descriptor, 'https://gateway.example/v1', verified)).n
+      ).toEqual({ type: 'integer', minimum: 1 });
+    }
+  );
+
+  test('a verified override keeps the fine-tuned-model rule: an ft: model still folds', async () => {
+    const verified: IAiVerifiedEndpoint = { providerId: 'openai', verified: true };
+    expect(
+      propertiesOf(
+        await toolParameters(descriptors[0], 'https://gateway.example/v1', verified, 'ft:gpt-4o:x')
+      ).n
+    ).toEqual({ type: 'integer', description: 'Constraints: minimum 1.' });
+  });
+
+  test('an assertion that is not verified: true, or names another provider, leaves the override conservative', async () => {
+    const assertions: ReadonlyArray<IAiVerifiedEndpoint> = [
+      { providerId: 'openai', verified: false as unknown as true },
+      { providerId: 'openai', verified: 'true' as unknown as true },
+      { providerId: 'xai-grok', verified: true }
+    ];
+    for (const assertion of assertions) {
+      bodies = [];
+      expect(
+        propertiesOf(await toolParameters(descriptors[0], 'https://gateway.example/v1', assertion)).n
+      ).toEqual({ type: 'integer', description: 'Constraints: minimum 1.' });
+    }
+  });
+
+  test('an assertion with no endpoint changes nothing: the provider is already on its own endpoint', async () => {
+    const other: IAiVerifiedEndpoint = { providerId: 'xai-grok', verified: true };
+    expect(propertiesOf(await toolParameters(descriptors[0], undefined, other)).n).toEqual({
+      type: 'integer',
+      minimum: 1
+    });
+  });
+
+  test('structured output through a verified endpoint override passes it', async () => {
+    done = DONE.openai;
+    expect(
+      await callProviderCompletion({
+        descriptor: descriptors[0],
+        apiKey: 'k',
+        endpoint: 'https://gateway.example/v1',
+        verifiedEndpoint: { providerId: 'openai', verified: true },
+        ...new AiPrompt('hello', 'system').toRequest(),
+        structuredOutput: { mode: 'schema', schema: ranged }
+      })
+    ).toSucceed();
+    const sent = ((bodies[0].response_format as JsonObject).json_schema as JsonObject).schema;
+    expect(propertiesOf(sent).n).toEqual({ type: 'integer', minimum: 1 });
+  });
 
   test('structured output through an endpoint override folds it too', async () => {
     done = DONE.openai;

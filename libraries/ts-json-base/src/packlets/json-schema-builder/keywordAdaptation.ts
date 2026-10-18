@@ -151,16 +151,18 @@ export type SchemaAnnotationRule = SchemaKeywordRule | 'drop';
  *   states it in the description (`Constraints: enum [1,2].`), keeping the `type`. A string enum is
  *   always passed.
  * - `untyped` — `'pass'` sends a schema with no `type` (`JsonSchema.anyValue`, `{}`) as emitted;
- *   `'refuse'` fails the adaptation, naming the path. There is no fold for it: the only way to give
- *   the node a `type` is to pick one, which would narrow what the model may send below what the
- *   validator accepts, and a refusal is the one outcome that cannot mislead.
+ *   `'refuse'` fails the adaptation, naming the path; `'pass-nested'` passes one beneath the root
+ *   (in `properties` or `items`) and refuses one **at** the root (`#`), for a wire that requires the
+ *   root schema itself to state a `type`. There is no fold for it: the only way to give the node a
+ *   `type` is to pick one, which would narrow what the model may send below what the validator
+ *   accepts, and a refusal is the one outcome that cannot mislead.
  * @public
  */
 export interface ISchemaShapeCapabilities {
   /** What the wire does with an `enum` holding a number or a boolean. */
   readonly nonStringEnum: 'pass' | 'fold';
   /** What the wire does with a schema that states no `type`. */
-  readonly untyped: 'pass' | 'refuse';
+  readonly untyped: 'pass' | 'pass-nested' | 'refuse';
 }
 
 /**
@@ -181,8 +183,11 @@ export type SchemaKeywordCapabilities = Readonly<
 
 /**
  * The conservative table, for a wire whose support is undocumented: every keyword folds, except
- * `title`, which is dropped — a title restates the property name the model already sees. A
- * non-string `enum` folds, and a schema with no `type` is refused.
+ * `title` and `default`, which are dropped. A title restates the property name the model already
+ * sees. A default folded into the description (`Default: 3.`) reads as though it were applied when
+ * the field is omitted, and nothing applies it (the validator never substitutes a default), so
+ * stating it would mislead the model about what an omitted field means. A non-string `enum` folds,
+ * and a schema with no `type` is refused.
  * @public
  */
 export const unverifiedWireSchemaKeywords: SchemaKeywordCapabilities = {
@@ -196,7 +201,7 @@ export const unverifiedWireSchemaKeywords: SchemaKeywordCapabilities = {
   pattern: 'fold',
   format: 'fold',
   title: 'drop',
-  default: 'fold',
+  default: 'drop',
   examples: 'fold',
   nonStringEnum: 'fold',
   untyped: 'refuse'
@@ -345,6 +350,11 @@ function _isUntyped(node: JsonObject): boolean {
   return !_TYPED_ELSEWHERE.some((keyword) => keyword in node);
 }
 
+/** Whether the `untyped` rule refuses an untyped node at `path` — `'#'` is the root. */
+function _refusesUntyped(rule: ISchemaShapeCapabilities['untyped'], path: string): boolean {
+  return rule === 'refuse' || (rule === 'pass-nested' && path === '#');
+}
+
 /** Where a node sits, for the `untyped` rule. */
 type NodePosition = 'schema' | 'additionalProperties';
 
@@ -396,7 +406,7 @@ function _adaptNode(
   if (!isJsonObject(schema)) {
     return succeed(schema);
   }
-  if (capabilities.untyped === 'refuse' && position === 'schema' && _isUntyped(schema)) {
+  if (_refusesUntyped(capabilities.untyped, path) && position === 'schema' && _isUntyped(schema)) {
     return fail(`${path}: a schema with no 'type' (matching any value) cannot be sent on this wire`);
   }
   return mapResults(

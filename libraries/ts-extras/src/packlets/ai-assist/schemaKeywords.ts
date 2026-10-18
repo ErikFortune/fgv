@@ -43,7 +43,7 @@
 
 import { type Result } from '@fgv/ts-utils';
 import { type JsonObject, type JsonValue, JsonSchema } from '@fgv/ts-json-base';
-import type { IAiProviderDescriptor } from './model';
+import type { AiApiFormat, AiProviderId, IAiProviderDescriptor } from './model';
 
 /**
  * The wire formats that carry a `JsonSchema`, each with its own keyword-capability table.
@@ -61,9 +61,11 @@ export type SchemaWireFormat =
  *
  * @remarks
  * Both fields are optional and their absence is safe: a wire with no `providerId` — on any
- * format — gets the conservative table, and an OpenAI-family wire also needs a verified one. Set `providerId` only when the request goes to that
- * provider's own endpoint — a descriptor pointed at a caller-supplied endpoint (a gateway, LiteLLM,
- * vLLM) reaches a server whose keyword support nobody verified.
+ * format — gets the conservative table, and an OpenAI-family wire also needs a verified one. Derive
+ * `providerId` with `schemaWireProviderId`, never by hand: it is set only when the request goes to
+ * that provider's own endpoint, or to an endpoint the host has asserted is that provider
+ * (`IAiVerifiedEndpoint`) — a descriptor pointed at any other caller-supplied endpoint (a gateway,
+ * LiteLLM, vLLM) reaches a server whose keyword support nobody verified.
  * @internal
  */
 export interface ISchemaWireTarget {
@@ -71,6 +73,79 @@ export interface ISchemaWireTarget {
   readonly providerId?: string;
   /** The concrete model id. */
   readonly model?: string;
+}
+
+/**
+ * A host's assertion that a caller-supplied `endpoint` is the descriptor's own provider, so a
+ * request sent there has its schemas adapted with that provider's keyword table rather than the
+ * conservative one.
+ *
+ * @remarks
+ * Every keyword table cites a provider's documentation, and that documentation describes the
+ * provider's own endpoint. An `endpoint` override therefore gets
+ * `JsonSchema.unverifiedWireSchemaKeywords` by default — a gateway, LiteLLM or vLLM speaks the wire
+ * format without promising its keyword support. Pass this only for an endpoint you know reaches
+ * the provider itself (a regional host, an egress proxy, a pass-through gateway that forwards the
+ * body unchanged).
+ *
+ * It is honoured only when **all** of these hold, and otherwise ignored, which leaves the
+ * conservative table (always safe):
+ * - an `endpoint` is set — with none, the request already goes to the provider's own endpoint;
+ * - `verified` is the literal `true`;
+ * - `providerId` is the descriptor's own `id`. The assertion names the provider so a stale or
+ *   copied setting cannot silently vouch for a different one.
+ *
+ * Honoured, the endpoint is treated exactly as the provider's own, including the rule that an
+ * OpenAI fine-tuned (`ft:`) model gets the conservative table.
+ * @public
+ */
+export interface IAiVerifiedEndpoint {
+  /** The provider the endpoint is asserted to be — must equal the descriptor's `id`. */
+  readonly providerId: AiProviderId;
+  /** The assertion itself; only the literal `true` is honoured. */
+  readonly verified: true;
+}
+
+/**
+ * The provider id a request's schemas are adapted for — the one place that decides whether an
+ * endpoint is trusted as the provider's own.
+ *
+ * @remarks
+ * Every path that picks a keyword table goes through this: the completion, streaming and
+ * client-tool request paths, `clientToolSchemaKeywords` and `structuredOutputSchemaKeywords`. See
+ * `IAiVerifiedEndpoint` for when an assertion is honoured.
+ * @param descriptor - The provider the request is sent to.
+ * @param endpoint - The caller-supplied endpoint, if any.
+ * @param verifiedEndpoint - The host's assertion about that endpoint, if any.
+ * @returns The descriptor's id when the request reaches the provider (its own endpoint, or an
+ * honoured assertion), otherwise `undefined` — the conservative table.
+ * @internal
+ */
+export function schemaWireProviderId(
+  descriptor: IAiProviderDescriptor,
+  endpoint: string | undefined,
+  verifiedEndpoint: IAiVerifiedEndpoint | undefined
+): string | undefined {
+  if (endpoint === undefined) {
+    return descriptor.id;
+  }
+  return verifiedEndpoint?.verified === true && verifiedEndpoint.providerId === descriptor.id
+    ? descriptor.id
+    : undefined;
+}
+
+/**
+ * The wire format a descriptor's client tools are sent on, by its `apiFormat`.
+ * @internal
+ */
+export function clientToolWireFormat(
+  apiFormat: AiApiFormat
+): 'responses-tools' | 'anthropic-tools' | 'gemini' {
+  return apiFormat === 'anthropic'
+    ? 'anthropic-tools'
+    : apiFormat === 'gemini'
+    ? 'gemini'
+    : 'responses-tools';
 }
 
 /**
@@ -107,8 +182,10 @@ const OPENAI_FAMILY_VERIFIED_PROVIDERS: ReadonlySet<string> = new Set(['openai',
  * - `format` passes only for the values both list: OpenAI's date-time, time, date, duration,
  *   email, hostname, ipv4, ipv6 and uuid, intersected with xAI's date, time, date-time, email,
  *   uuid, ipv4, ipv6 and uri.
- * - `default` and `examples` fold: neither page mentions them. `title` is dropped — it only
- *   restates the property name, and folding it put `Title: …` on every pydantic property.
+ * - `examples` folds: neither page mentions it. `default` is not mentioned either and is
+ *   **dropped**, not folded: a `Default: …` sentence reads as though the default were applied,
+ *   and nothing applies it. `title` is dropped — it only restates the property name, and folding
+ *   it put `Title: …` on every pydantic property.
  * - A numeric or boolean `enum` passes. OpenAI lists `Enum` among the supported types without
  *   restricting its members to strings, and states its size limits over "enum values", qualifying
  *   only one of them as "a single enum property with string values"; xAI lists `enum` as supported.
@@ -136,7 +213,7 @@ export const openAiFamilySchemaKeywords: JsonSchema.SchemaKeywordCapabilities = 
   pattern: 'fold',
   format: { passValues: ['date-time', 'time', 'date', 'email', 'ipv4', 'ipv6', 'uuid'] },
   title: 'drop',
-  default: 'fold',
+  default: 'drop',
   examples: 'fold',
   nonStringEnum: 'pass',
   // Undocumented, so the conservative choice: the cited page covers strict structured outputs, not
@@ -154,8 +231,14 @@ export const openAiFamilySchemaKeywords: JsonSchema.SchemaKeywordCapabilities = 
  * JSON Schema limitations apply to "JSON outputs and strict tool use" only
  * (https://platform.claude.com/docs/en/build-with-claude/structured-outputs § "JSON Schema
  * limitations"). This adapter never sets `strict` on a tool, so the forced-tool structured-output
- * mechanism uses this table too. A numeric `enum` and a schema with no `type` are both ordinary JSON
- * Schema, so they pass.
+ * mechanism uses this table too. A numeric `enum` is ordinary JSON Schema, so it passes.
+ *
+ * A schema with no `type` passes beneath the root and is **refused at the root** (`'pass-nested'`).
+ * Observed, not documented: a live probe (2026-10-18, claude-sonnet-5) had `{}` accepted as a
+ * property and as `items`, and a typeless root `input_schema` rejected with
+ * `400 tools.0.custom.input_schema.type: Field required`. The root is not given
+ * `{ "type": "object" }` instead: a typeless root's validator accepts any JSON value, objects or
+ * not, so that `type` would state a narrower schema than the validator enforces.
  * @internal
  */
 export const anthropicToolsSchemaKeywords: JsonSchema.SchemaKeywordCapabilities = {
@@ -172,7 +255,7 @@ export const anthropicToolsSchemaKeywords: JsonSchema.SchemaKeywordCapabilities 
   default: 'pass',
   examples: 'pass',
   nonStringEnum: 'pass',
-  untyped: 'pass'
+  untyped: 'pass-nested'
 };
 
 /**
@@ -311,29 +394,30 @@ export const geminiSchemaKeywords: JsonSchema.SchemaKeywordCapabilities = {
  * `schemaKeywords` option) so it admits exactly the MCP tools that wire can carry.
  *
  * @remarks
- * The same table the request path uses: the wire follows `descriptor.apiFormat` (OpenAI-format
- * Responses tools, Anthropic tools, or Gemini function declarations), and the provider's own table
- * applies only when the request goes to its own endpoint — pass `endpoint` when the descriptor is
- * pointed at a caller-supplied one, and every keyword is then treated as unverified, as the
- * request path does.
+ * The same table the request path uses, chosen by the same helpers: the wire follows
+ * `descriptor.apiFormat` (OpenAI-format Responses tools, Anthropic tools, or Gemini function
+ * declarations), and the provider's own table applies only when the request goes to its own
+ * endpoint — pass `endpoint` when the descriptor is pointed at a caller-supplied one, and every
+ * keyword is then treated as unverified, as the request path does, unless `verifiedEndpoint`
+ * asserts the endpoint is the provider itself (see `IAiVerifiedEndpoint`). Pass
+ * exactly the `model`, `endpoint` and `verifiedEndpoint` the turn will be sent with.
  * @param descriptor - The provider the tools will be sent to.
  * @param options - The concrete `model` (an OpenAI fine-tuned `ft:` model gets the conservative
- * table) and any caller-supplied `endpoint`.
+ * table), any caller-supplied `endpoint`, and any `verifiedEndpoint` assertion about it.
  * @returns The keyword-capability table.
  * @public
  */
 export function clientToolSchemaKeywords(
   descriptor: IAiProviderDescriptor,
-  options?: { readonly model?: string; readonly endpoint?: string }
+  options?: {
+    readonly model?: string;
+    readonly endpoint?: string;
+    readonly verifiedEndpoint?: IAiVerifiedEndpoint;
+  }
 ): JsonSchema.SchemaKeywordCapabilities {
-  const format: SchemaWireFormat =
-    descriptor.apiFormat === 'anthropic'
-      ? 'anthropic-tools'
-      : descriptor.apiFormat === 'gemini'
-      ? 'gemini'
-      : 'responses-tools';
-  return schemaKeywordsFor(format, {
-    ...(options?.endpoint === undefined && { providerId: descriptor.id }),
+  const providerId = schemaWireProviderId(descriptor, options?.endpoint, options?.verifiedEndpoint);
+  return schemaKeywordsFor(clientToolWireFormat(descriptor.apiFormat), {
+    ...(providerId !== undefined && { providerId }),
     ...(options?.model !== undefined && { model: options.model })
   });
 }

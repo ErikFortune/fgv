@@ -268,6 +268,8 @@ export async function callGeminiStream(
     generationConfig
   };
   if (tools && tools.length > 0) {
+    // Defence in depth: `executeClientToolTurn` pre-flights every client tool with this same table
+    // and target, so through it this cannot fail; it guards any other caller of this adapter.
     const toolsResult = toGeminiTools(tools, config);
     if (toolsResult.isFailure()) {
       return fail(`Gemini streaming: ${toolsResult.message}`);

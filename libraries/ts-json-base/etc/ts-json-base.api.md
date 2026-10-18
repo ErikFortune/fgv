@@ -982,7 +982,7 @@ interface ISchemaOptions {
 // @public
 interface ISchemaShapeCapabilities {
     readonly nonStringEnum: 'pass' | 'fold';
-    readonly untyped: 'pass' | 'refuse';
+    readonly untyped: 'pass' | 'pass-nested' | 'refuse';
 }
 
 // @public
