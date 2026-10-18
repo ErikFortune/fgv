@@ -42,6 +42,7 @@
 <!-- BEGIN GENERATED: recent-additions -->
 
 - **2026-10-18** — JsonSchema factories never throw: constraint keywords, default and examples arrive through numberOptions / integerOptions / stringOptions / schemaOptions, each a Result of a nominal options instance, and a raw constraint literal is a compile error. ([#740](https://github.com/ErikFortune/fgv/pull/740))
+- **2026-10-18** — JsonSchema pattern: a host's /…/u RegExp via stringOptions is enforced and sent where the wire documents pattern, and fromJson admits a server's pattern only through an injected patternValidator — the library never compiles one.
 - **2026-10-17** — JsonSchema constraint keywords (minimum, maxLength, multipleOf, …) are now enforced by the validator and emitted by toJson(), and every ai-assist and Ollama wire passes, translates or folds each one into the description per the provider's documented support. ([#734](https://github.com/ErikFortune/fgv/pull/734))
 - **2026-10-17** — JsonSchema now models numeric enums, an enforced scalar const and {} (pydantic Literal and Any), and each provider wire passes, folds or loudly refuses them per its documented support. ([#736](https://github.com/ErikFortune/fgv/pull/736))
 - **2026-10-04** — JsonSchema.fromJson now reads pydantic Optional[T] (anyOf [T, null]), local $ref/$defs (inlined, bounded) and z.record-style schema-valued additionalProperties via the new JsonSchema.record. ([#723](https://github.com/ErikFortune/fgv/pull/723))
