@@ -168,4 +168,17 @@ above and resolves the round-1 P2.
 
 ### Gates (round 2; logs `r2-*.log`)
 
-See the bullets that follow this section, appended after the gates ran.
+- **Package:** build exit 0, with the API report updated to add `id`. Lint reports 0 warnings or
+  errors. Test coverage is 100% on all metrics, and the pre-prettier run passed every test. Fixlint
+  was run. Prettier 2.8.8 then reformatted the test file, formatting only.
+- **Repo-wide `rush rebuild`:** `SUCCESS: 38 operations`, with 0 error greps, 1 `warning` (the
+  symlink notice) and no NUL padding.
+- **Repo-wide `rush test`, first run (`r2-test.log`):** FAILURE in `@fgv/ts-extras`. A timing
+  assertion in `md5Normalizer.browser.test.ts` (“should handle large objects efficiently”) measured
+  328 ms against a < 300 ms bound. The diff does not touch `ts-extras`, which is upstream of
+  `ts-agent-memory`, and the run shared the machine with a concurrent worker. Rush stopped
+  downstream after 17 operations.
+- **Repo-wide `rush test`, re-run (`r2-test-rerun.log`):** `SUCCESS: 37 operations` plus 1 `NO OP`.
+  0 error / `not met` greps, 1 `warning` (the symlink notice), no NUL padding.
+- **Other gates:** `change --verify --target-branch origin/integration/asks`,
+  `verify-capability-docs` and the feed `--check` each exit 0.
