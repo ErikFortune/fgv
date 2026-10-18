@@ -65,6 +65,7 @@ A Result-integration boundary over [`@modelcontextprotocol/sdk`](https://github.
 
 <!-- BEGIN GENERATED: recent-additions -->
 
+- **2026-10-18** — ai-assist: verifiedEndpoint lets an endpoint override use the provider's keyword table, default is dropped instead of folded, client-tool turns are pre-flighted at creation, and Anthropic tools refuse a typeless root.
 - **2026-10-18** — JsonSchema pattern: a host's /…/u RegExp via stringOptions is enforced and sent where the wire documents pattern, and fromJson admits a server's pattern only through an injected patternValidator — the library never compiles one. ([#742](https://github.com/ErikFortune/fgv/pull/742))
 - **2026-10-17** — JsonSchema constraint keywords (minimum, maxLength, multipleOf, …) are now enforced by the validator and emitted by toJson(), and every ai-assist and Ollama wire passes, translates or folds each one into the description per the provider's documented support. ([#734](https://github.com/ErikFortune/fgv/pull/734))
 - **2026-10-17** — JsonSchema now models numeric enums, an enforced scalar const and {} (pydantic Literal and Any), and each provider wire passes, folds or loudly refuses them per its documented support. ([#736](https://github.com/ErikFortune/fgv/pull/736))

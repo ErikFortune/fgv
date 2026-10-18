@@ -1,0 +1,64 @@
+id: ai-assist-wire-followups
+status: shipped
+packages: ['@fgv/ts-json-base', '@fgv/ts-extras', '@fgv/ts-extras-mcp', '@fgv/ts-extras-ollama']
+prs: []
+openPrs: []
+opened: 2026-10-18
+closed: 2026-10-18
+summary:
+  intended: >
+    User decisions 3 and 6 (2026-10-18) and the wire probe's unsafe row: an explicit host
+    assertion { providerId, verified: true } that lets an endpoint override use the provider's
+    keyword table (ft: rule kept), selected through one helper shared with clientToolSchemaKeywords;
+    drop default instead of folding it, keeping format and examples folded; pre-flight every client
+    tool's schema at turn creation so a wire mismatch is a Failure with nothing sent; and make
+    Anthropic tools refuse a typeless root input_schema, or emit type object only if exactly what
+    the validator accepts.
+  shipped: >
+    IAiVerifiedEndpoint ({ providerId, verified: true }) as verifiedEndpoint beside endpoint on
+    callProviderCompletion, callProviderCompletionStream, executeClientToolTurn,
+    clientToolSchemaKeywords and structuredOutputSchemaKeywords, all deciding through
+    schemaWireProviderId. default drops on the OpenAI/xAI and unverified tables.
+    executeClientToolTurn adapts every offered client tool before the stream starts and returns a
+    Failure naming tool, path and wire. ISchemaShapeCapabilities.untyped gains 'pass-nested', which
+    Anthropic tools now use, so a typeless root is refused there and in forced-tool structured
+    output.
+  diverged: >
+    The assertion is honoured only when providerId equals the descriptor id, because the table
+    follows the descriptor's apiFormat. A mismatch is ignored, not failed, so the table lookup and
+    the request path agree. The untyped root is refused rather than given type object, since its
+    validator accepts non-objects. The stream-time check stays as defence in depth. The settings
+    record and ts-app-shell are not threaded.
+  sourceLine: "**Shipped:** an endpoint override can be asserted as the provider's own (`verifiedEndpoint: { providerId, verified: true }`), `default` is dropped rather than folded, a client tool the wire cannot carry fails `executeClientToolTurn` at creation with nothing sent, and Anthropic tools refuse a typeless root schema."
+  headline: >
+    ai-assist: verifiedEndpoint lets an endpoint override use the provider's keyword table, default
+    is dropped instead of folded, client-tool turns are pre-flighted at creation, and Anthropic
+    tools refuse a typeless root.
+keywords:
+  [
+    'verifiedEndpoint',
+    'IAiVerifiedEndpoint',
+    'endpoint override',
+    'keyword table',
+    'schemaWireProviderId',
+    'default annotation',
+    'fold vs drop',
+    'pre-flight',
+    'executeClientToolTurn',
+    'pass-nested',
+    'untyped root',
+    'input_schema.type',
+    'wire probe'
+  ]
+relatedStreams:
+  - { id: testbed-wire-probe, relationship: 'its live run found the untyped-root unsafe row fixed here' }
+  - {
+      id: json-schema-shapes,
+      relationship: 'introduced the untyped rule, the loud refusal and clientToolSchemaKeywords'
+    }
+  - {
+      id: json-schema-constraints,
+      relationship: 'introduced the per-wire tables and the fold text for default'
+    }
+  - { id: json-schema-pattern, relationship: 'the stacked base; also edits the wire tables' }
+sourceHash: c29147b2c2cf8140 # first 16 hex of sha256 over brief.md, state.md and result.md concatenated in that order
