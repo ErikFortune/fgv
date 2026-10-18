@@ -1,7 +1,7 @@
 {
   "changes": [
     {
-      "comment": "BREAKING: JsonSchema factories never throw. Constraint keywords, default and examples reach a factory only as validated options from numberOptions / integerOptions / stringOptions / schemaOptions (each a Result of branded, frozen options); a raw constraint literal is a compile error. numberEnumOf / integerEnumOf / booleanEnumOf return a Result. validateNumberOptions / validateStringOptions are removed.",
+      "comment": "BREAKING: JsonSchema factories never throw. Constraint keywords, default and examples reach a factory only as validated options from numberOptions / integerOptions / stringOptions / schemaOptions (each a Result of a nominal class instance holding frozen options); a raw constraint literal is a compile error. numberEnumOf / integerEnumOf / booleanEnumOf return a Result. validateNumberOptions / validateStringOptions are removed.",
       "type": "minor",
       "packageName": "@fgv/ts-json-base"
     }

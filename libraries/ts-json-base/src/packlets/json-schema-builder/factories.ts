@@ -53,12 +53,14 @@ import {
   PlainNumberSchemaOptions,
   PlainObjectSchemaOptions,
   PlainSchemaOptions,
-  PlainStringSchemaOptions,
+  PlainStringSchemaOptions
+} from './options';
+import {
   ValidatedIntegerOptions,
   ValidatedNumberOptions,
   ValidatedSchemaOptions,
   ValidatedStringOptions
-} from './options';
+} from './validatedOptions';
 import {
   NonStringEnumType,
   NumberConstraints,
@@ -67,9 +69,7 @@ import {
   annotationFields,
   checkAnnotations,
   checkEnumValues,
-  checkNumberOptions,
   describeEnumMember,
-  checkStringOptions,
   enforceNumberConstraints,
   enforceStringConstraints,
   numberConstraintFields,
@@ -635,121 +635,28 @@ function _kindOf(from: unknown): string {
 }
 
 // ---------------------------------------------------------------------------
-// Validated options
+// Reading plain or validated options
 // ---------------------------------------------------------------------------
 
-/**
- * Freezes checked options and gives them the brand their check earns.
- *
- * @remarks
- * The brand is a claim about the value, so the value must not change after the check: the copy the
- * check made is frozen (shallowly — `default` and `examples` are copied again by the node). The
- * cast is the one place a validated-options brand is issued, and it is reached only on success.
- */
-function _issue<V>(checked: object): V {
-  return Object.freeze(checked) as unknown as V;
-}
+/** Any validated-options instance a factory accepts. */
+type AnyValidatedOptions = ValidatedSchemaOptions | ValidatedNumberOptions | ValidatedStringOptions;
 
 /**
- * Checks the annotations every node carries and returns them as
- * {@link JsonSchema.ValidatedSchemaOptions | validated options} — the way to give a node a
- * `default` or `examples`.
- *
- * @remarks
- * `default` and each member of `examples` must be JSON values; neither is checked against the node.
- * The result is accepted by every factory that takes plain options (`boolean`, `enumOf`, `array`,
- * `object`, `record`, `anyValue`), and `additionalProperties` is carried for `object`. A key that
- * is not an option is a compile error, and `nullable: true` keeps its literal type, so the
- * factory's nullable overload still applies.
- * @example
- * ```ts
- * const flag = JsonSchema.boolean(JsonSchema.schemaOptions({ default: false }).shouldNotFail('flag default'));
- * ```
- * @param opts - The options to check.
- * @returns A frozen copy of the options, branded, or a `Failure` naming the keyword.
- * @public
+ * The options a factory was given: read from inside a validated-options instance, or the plain
+ * options themselves. Only an instance built by its class's own check is read as validated; any
+ * other object is plain, whatever properties it carries.
  */
-export function schemaOptions<T extends IObjectSchemaOptions>(
-  opts: T & Record<Exclude<keyof T, keyof IObjectSchemaOptions>, never>
-): Result<ValidatedSchemaOptions<T>> {
-  return checkAnnotations<T>(opts).onSuccess((checked) =>
-    succeed(_issue<ValidatedSchemaOptions<T>>(checked))
-  );
-}
-
-/**
- * Checks `number` options for coherence and returns them as
- * {@link JsonSchema.ValidatedNumberOptions | validated options} — the only way range keywords reach
- * the `number` factory.
- *
- * @remarks
- * Refuses a non-finite bound, `minimum` above `maximum`, exclusive bounds leaving no value in
- * range, `multipleOf` not greater than zero, and a `default` or `examples` member that is not JSON.
- * An `integer` node needs {@link JsonSchema.integerOptions | integerOptions}, whose check is
- * stricter; the result of this one is a compile error there.
- * @example
- * ```ts
- * const ratio = JsonSchema.number(JsonSchema.numberOptions({ minimum: 0, maximum: 1 }).shouldNotFail('ratio bounds'));
- * ```
- * @param opts - The options to check.
- * @returns A frozen copy of the options, branded, or a `Failure` naming the keyword and the value.
- * @public
- */
-export function numberOptions<T extends INumberSchemaOptions>(
-  opts: T & Record<Exclude<keyof T, keyof INumberSchemaOptions>, never>
-): Result<ValidatedNumberOptions<T>> {
-  return checkNumberOptions<T>('number', opts).onSuccess((checked) =>
-    succeed(_issue<ValidatedNumberOptions<T>>(checked))
-  );
-}
-
-/**
- * Checks `integer` options for coherence and returns them as
- * {@link JsonSchema.ValidatedIntegerOptions | validated options} — the only way range keywords
- * reach the `integer` factory.
- *
- * @remarks
- * Runs the {@link JsonSchema.numberOptions | numberOptions} checks, except that the range must hold
- * an integer rather than merely a number: `exclusiveMinimum: 0, exclusiveMaximum: 1` is refused.
- * The result is also accepted by the `number` factory.
- * @example
- * ```ts
- * const age = JsonSchema.integer(JsonSchema.integerOptions({ minimum: 0 }).shouldNotFail('age bounds'));
- * ```
- * @param opts - The options to check.
- * @returns A frozen copy of the options, branded, or a `Failure` naming the keyword and the value.
- * @public
- */
-export function integerOptions<T extends INumberSchemaOptions>(
-  opts: T & Record<Exclude<keyof T, keyof INumberSchemaOptions>, never>
-): Result<ValidatedIntegerOptions<T>> {
-  return checkNumberOptions<T>('integer', opts).onSuccess((checked) =>
-    succeed(_issue<ValidatedIntegerOptions<T>>(checked))
-  );
-}
-
-/**
- * Checks `string` options for coherence and returns them as
- * {@link JsonSchema.ValidatedStringOptions | validated options} — the only way length keywords
- * reach the `string` factory.
- *
- * @remarks
- * Refuses a length that is not a non-negative integer, `minLength` above `maxLength`, and a
- * `default` or `examples` member that is not JSON.
- * @example
- * ```ts
- * const name = JsonSchema.string(JsonSchema.stringOptions({ minLength: 1 }).shouldNotFail('name length'));
- * ```
- * @param opts - The options to check.
- * @returns A frozen copy of the options, branded, or a `Failure` naming the keyword and the value.
- * @public
- */
-export function stringOptions<T extends IStringSchemaOptions>(
-  opts: T & Record<Exclude<keyof T, keyof IStringSchemaOptions>, never>
-): Result<ValidatedStringOptions<T>> {
-  return checkStringOptions<T>(opts).onSuccess((checked) =>
-    succeed(_issue<ValidatedStringOptions<T>>(checked))
-  );
+function _optionsOf<O extends object>(opts: O | AnyValidatedOptions | undefined): O | undefined {
+  if (
+    opts instanceof ValidatedSchemaOptions ||
+    opts instanceof ValidatedNumberOptions ||
+    opts instanceof ValidatedStringOptions
+  ) {
+    // The overloads pair each factory with its own validated class, so the options read here are
+    // the factory's own option type.
+    return opts.options as unknown as O;
+  }
+  return opts;
 }
 
 // ---------------------------------------------------------------------------
@@ -764,7 +671,7 @@ export function stringOptions<T extends IStringSchemaOptions>(
  * @public
  */
 export function string(
-  opts: (PlainStringSchemaOptions | ValidatedStringOptions) & { nullable: true }
+  opts: (PlainStringSchemaOptions & { nullable: true }) | ValidatedStringOptions<{ nullable: true }>
   // `null` is the JSON value being modelled, not a JS sentinel — the same carve-out
   // `JsonPrimitive` takes in this package's `json` packlet.
   // eslint-disable-next-line @rushstack/no-new-null
@@ -782,7 +689,7 @@ export function string(
  */
 export function string(opts?: PlainStringSchemaOptions | ValidatedStringOptions): ISchemaValidator<string>;
 export function string(opts?: PlainStringSchemaOptions | ValidatedStringOptions): ISchemaValidator<string> {
-  return new StringSchemaValidator(opts);
+  return new StringSchemaValidator(_optionsOf<IStringSchemaOptions>(opts));
 }
 
 /**
@@ -793,7 +700,7 @@ export function string(opts?: PlainStringSchemaOptions | ValidatedStringOptions)
  * @public
  */
 export function number(
-  opts: (PlainNumberSchemaOptions | ValidatedNumberOptions) & { nullable: true }
+  opts: (PlainNumberSchemaOptions & { nullable: true }) | ValidatedNumberOptions<{ nullable: true }>
   // `null` is the JSON value being modelled, not a JS sentinel — the same carve-out
   // `JsonPrimitive` takes in this package's `json` packlet.
   // eslint-disable-next-line @rushstack/no-new-null
@@ -812,7 +719,7 @@ export function number(
  */
 export function number(opts?: PlainNumberSchemaOptions | ValidatedNumberOptions): ISchemaValidator<number>;
 export function number(opts?: PlainNumberSchemaOptions | ValidatedNumberOptions): ISchemaValidator<number> {
-  return new NumberSchemaValidator('number', opts);
+  return new NumberSchemaValidator('number', _optionsOf<INumberSchemaOptions>(opts));
 }
 
 /**
@@ -823,7 +730,7 @@ export function number(opts?: PlainNumberSchemaOptions | ValidatedNumberOptions)
  * @public
  */
 export function integer(
-  opts: (PlainNumberSchemaOptions | ValidatedIntegerOptions) & { nullable: true }
+  opts: (PlainNumberSchemaOptions & { nullable: true }) | ValidatedIntegerOptions<{ nullable: true }>
   // `null` is the JSON value being modelled, not a JS sentinel — the same carve-out
   // `JsonPrimitive` takes in this package's `json` packlet.
   // eslint-disable-next-line @rushstack/no-new-null
@@ -842,7 +749,7 @@ export function integer(
  */
 export function integer(opts?: PlainNumberSchemaOptions | ValidatedIntegerOptions): ISchemaValidator<number>;
 export function integer(opts?: PlainNumberSchemaOptions | ValidatedIntegerOptions): ISchemaValidator<number> {
-  return new NumberSchemaValidator('integer', opts);
+  return new NumberSchemaValidator('integer', _optionsOf<INumberSchemaOptions>(opts));
 }
 
 /**
@@ -853,7 +760,7 @@ export function integer(opts?: PlainNumberSchemaOptions | ValidatedIntegerOption
  * @public
  */
 export function boolean(
-  opts: (PlainSchemaOptions | ValidatedSchemaOptions) & { nullable: true }
+  opts: (PlainSchemaOptions & { nullable: true }) | ValidatedSchemaOptions<{ nullable: true }>
   // `null` is the JSON value being modelled, not a JS sentinel — the same carve-out
   // `JsonPrimitive` takes in this package's `json` packlet.
   // eslint-disable-next-line @rushstack/no-new-null
@@ -867,7 +774,7 @@ export function boolean(
  */
 export function boolean(opts?: PlainSchemaOptions | ValidatedSchemaOptions): ISchemaValidator<boolean>;
 export function boolean(opts?: PlainSchemaOptions | ValidatedSchemaOptions): ISchemaValidator<boolean> {
-  return new BooleanSchemaValidator(opts);
+  return new BooleanSchemaValidator(_optionsOf<ISchemaOptions>(opts));
 }
 
 /**
@@ -880,7 +787,7 @@ export function boolean(opts?: PlainSchemaOptions | ValidatedSchemaOptions): ISc
  */
 export function enumOf<T extends string>(
   values: readonly T[],
-  opts: (PlainSchemaOptions | ValidatedSchemaOptions) & { nullable: true }
+  opts: (PlainSchemaOptions & { nullable: true }) | ValidatedSchemaOptions<{ nullable: true }>
   // `null` is the JSON value being modelled, not a JS sentinel — the same carve-out
   // `JsonPrimitive` takes in this package's `json` packlet.
   // eslint-disable-next-line @rushstack/no-new-null
@@ -902,7 +809,12 @@ export function enumOf<T extends string>(
   values: readonly T[],
   opts?: PlainSchemaOptions | ValidatedSchemaOptions
 ): ISchemaValidator<T> {
-  return new EnumSchemaValidator('string', values, Validators.enumeratedValue(values), opts);
+  return new EnumSchemaValidator(
+    'string',
+    values,
+    Validators.enumeratedValue(values),
+    _optionsOf<ISchemaOptions>(opts)
+  );
 }
 
 /**
@@ -1076,7 +988,7 @@ export function booleanEnumOf<T extends boolean>(
 export function anyValue(
   opts?: PlainAnySchemaOptions | ValidatedSchemaOptions<IAnySchemaOptions>
 ): ISchemaValidator<JsonValue> {
-  return new AnySchemaValidator(opts);
+  return new AnySchemaValidator(_optionsOf<IAnySchemaOptions>(opts));
 }
 
 /**
@@ -1101,7 +1013,7 @@ export function optional<S extends ISchemaValidator<unknown>>(
  */
 export function array<S extends ISchemaValidator<unknown>>(
   items: S,
-  opts: (PlainSchemaOptions | ValidatedSchemaOptions) & { nullable: true }
+  opts: (PlainSchemaOptions & { nullable: true }) | ValidatedSchemaOptions<{ nullable: true }>
   // `null` is the JSON value being modelled, not a JS sentinel — the same carve-out
   // `JsonPrimitive` takes in this package's `json` packlet.
   // eslint-disable-next-line @rushstack/no-new-null
@@ -1122,7 +1034,7 @@ export function array<S extends ISchemaValidator<unknown>>(
   items: S,
   opts?: PlainSchemaOptions | ValidatedSchemaOptions
 ): ISchemaValidator<Static<S>[]> {
-  return new ArraySchemaValidator(items, opts);
+  return new ArraySchemaValidator(items, _optionsOf<ISchemaOptions>(opts));
 }
 
 /**
@@ -1136,10 +1048,9 @@ export function array<S extends ISchemaValidator<unknown>>(
  */
 export function object<P extends ILlmProperties>(
   properties: P,
-  opts: (PlainObjectSchemaOptions | ValidatedSchemaOptions<IObjectSchemaOptions>) & {
-    additionalProperties: true;
-    nullable: true;
-  }
+  opts:
+    | (PlainObjectSchemaOptions & { additionalProperties: true; nullable: true })
+    | ValidatedSchemaOptions<{ additionalProperties: true; nullable: true }>
   // `null` is the JSON value being modelled, not a JS sentinel — the same carve-out
   // `JsonPrimitive` takes in this package's `json` packlet.
   // eslint-disable-next-line @rushstack/no-new-null
@@ -1155,9 +1066,9 @@ export function object<P extends ILlmProperties>(
  */
 export function object<P extends ILlmProperties>(
   properties: P,
-  opts: (PlainObjectSchemaOptions | ValidatedSchemaOptions<IObjectSchemaOptions>) & {
-    additionalProperties: true;
-  }
+  opts:
+    | (PlainObjectSchemaOptions & { additionalProperties: true })
+    | ValidatedSchemaOptions<{ additionalProperties: true }>
 ): ISchemaValidator<OpenObjectStatic<P>>;
 /**
  * Creates a schema node for a JSON `object` with a fixed set of typed properties.
@@ -1169,7 +1080,7 @@ export function object<P extends ILlmProperties>(
  */
 export function object<P extends ILlmProperties>(
   properties: P,
-  opts: (PlainObjectSchemaOptions | ValidatedSchemaOptions<IObjectSchemaOptions>) & { nullable: true }
+  opts: (PlainObjectSchemaOptions & { nullable: true }) | ValidatedSchemaOptions<{ nullable: true }>
   // `null` is the JSON value being modelled, not a JS sentinel — the same carve-out
   // `JsonPrimitive` takes in this package's `json` packlet.
   // eslint-disable-next-line @rushstack/no-new-null
@@ -1193,7 +1104,7 @@ export function object<P extends ILlmProperties>(
   opts?: PlainObjectSchemaOptions | ValidatedSchemaOptions<IObjectSchemaOptions>
   // eslint-disable-next-line @rushstack/no-new-null
 ): ISchemaValidator<ObjectStatic<P>> | ISchemaValidator<OpenObjectStatic<P> | null> {
-  return new ObjectSchemaValidator(properties, opts);
+  return new ObjectSchemaValidator(properties, _optionsOf<IObjectSchemaOptions>(opts));
 }
 
 /**
@@ -1220,7 +1131,7 @@ export function object<P extends ILlmProperties>(
  */
 export function record<S extends ISchemaValidator<unknown>>(
   values: S & (undefined extends Static<S> ? never : unknown),
-  opts: (PlainSchemaOptions | ValidatedSchemaOptions) & { nullable: true }
+  opts: (PlainSchemaOptions & { nullable: true }) | ValidatedSchemaOptions<{ nullable: true }>
   // `null` is the JSON value being modelled, not a JS sentinel — the same carve-out
   // `JsonPrimitive` takes in this package's `json` packlet.
   // eslint-disable-next-line @rushstack/no-new-null
@@ -1244,7 +1155,9 @@ export function record<S extends ISchemaValidator<unknown>>(
 ): ISchemaValidator<Record<string, Static<S>>> {
   // The node is an object with no declared properties, so its class-level static type is
   // `ObjectStatic<{}>`; what it converts to is the map, which only this factory can state.
-  return new ObjectSchemaValidator({}, opts, values) as unknown as ISchemaValidator<
-    Record<string, Static<S>>
-  >;
+  return new ObjectSchemaValidator(
+    {},
+    _optionsOf<ISchemaOptions>(opts),
+    values
+  ) as unknown as ISchemaValidator<Record<string, Static<S>>>;
 }

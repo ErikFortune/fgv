@@ -15,7 +15,7 @@ summary:
     sweep the consumers (user decision 6c, 2026-10-18).
   shipped: >
     numberOptions, integerOptions, stringOptions and schemaOptions each return a Result of a
-    type-branded, frozen copy; the factories accept those or plain options holding only what cannot
+    nominal instance holding a frozen copy; the factories accept those or plain options holding only what cannot
     be wrong (description, title, nullable, strict, format, additionalProperties), so a constraint
     key, default or examples on a raw literal, a misspelt options key, and numberOptions output
     passed to integer are compile errors. nullable: true keeps its literal type through validation.
@@ -32,7 +32,7 @@ summary:
   sourceLine: '**Constraint-bearing factories accept only validated options.**'
   headline: >
     JsonSchema factories never throw: constraint keywords, default and examples arrive through
-    numberOptions / integerOptions / stringOptions / schemaOptions, each a Result of branded options,
+    numberOptions / integerOptions / stringOptions / schemaOptions, each a Result of a nominal options instance,
     and a raw constraint literal is a compile error.
 keywords:
   [
@@ -41,7 +41,7 @@ keywords:
     'integerOptions',
     'stringOptions',
     'schemaOptions',
-    'branded options',
+    'nominal options',
     'PlainSchemaOptions',
     'never throw',
     'shouldNotFail',

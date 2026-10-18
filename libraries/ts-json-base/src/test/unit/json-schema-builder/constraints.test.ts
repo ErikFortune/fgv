@@ -36,7 +36,10 @@ function viaFromJson(type: string): Build {
 const numberBuilders: ReadonlyArray<[string, Build]> = [
   [
     'factory',
-    (opts) => JsonSchema.number(JsonSchema.numberOptions(opts as JsonSchema.INumberSchemaOptions).orThrow())
+    (opts) =>
+      JsonSchema.number(
+        JsonSchema.numberOptions(opts as JsonSchema.INumberSchemaOptions).shouldNotFail('number options')
+      )
   ],
   ['fromJson', viaFromJson('number')]
 ];
@@ -44,7 +47,10 @@ const numberBuilders: ReadonlyArray<[string, Build]> = [
 const integerBuilders: ReadonlyArray<[string, Build]> = [
   [
     'factory',
-    (opts) => JsonSchema.integer(JsonSchema.integerOptions(opts as JsonSchema.INumberSchemaOptions).orThrow())
+    (opts) =>
+      JsonSchema.integer(
+        JsonSchema.integerOptions(opts as JsonSchema.INumberSchemaOptions).shouldNotFail('integer options')
+      )
   ],
   ['fromJson', viaFromJson('integer')]
 ];
@@ -52,7 +58,10 @@ const integerBuilders: ReadonlyArray<[string, Build]> = [
 const stringBuilders: ReadonlyArray<[string, Build]> = [
   [
     'factory',
-    (opts) => JsonSchema.string(JsonSchema.stringOptions(opts as JsonSchema.IStringSchemaOptions).orThrow())
+    (opts) =>
+      JsonSchema.string(
+        JsonSchema.stringOptions(opts as JsonSchema.IStringSchemaOptions).shouldNotFail('string options')
+      )
   ],
   ['fromJson', viaFromJson('string')]
 ];
@@ -128,7 +137,9 @@ describe('JsonSchema constraints — enforcement', () => {
   });
 
   test('a non-strict number coerces first and then applies its constraints', () => {
-    const schema = JsonSchema.number(JsonSchema.numberOptions({ strict: false, minimum: 10 }).orThrow());
+    const schema = JsonSchema.number(
+      JsonSchema.numberOptions({ strict: false, minimum: 10 }).shouldNotFail('number options')
+    );
     expect(schema.validate('12')).toSucceedWith(12);
     expect(schema.validate('9')).toFailWith(/minimum/);
   });
@@ -165,7 +176,9 @@ describe('JsonSchema constraints — enforcement', () => {
 
   test('annotations are never enforced', () => {
     const schema = JsonSchema.integer(
-      JsonSchema.integerOptions({ default: 'not an integer', examples: [true], title: 'T' }).orThrow()
+      JsonSchema.integerOptions({ default: 'not an integer', examples: [true], title: 'T' }).shouldNotFail(
+        'integer options'
+      )
     );
     expect(schema.validate(4)).toSucceedWith(4);
     expect(schema.validate(undefined)).toFail();
@@ -247,7 +260,9 @@ describe('JsonSchema constraints — incoherent options', () => {
     expect(JsonSchema.numberOptions({ minimum: 1.2, maximum: 1.8 })).toSucceed();
     expect(
       JsonSchema.integer(
-        JsonSchema.integerOptions({ exclusiveMinimum: 0.5, exclusiveMaximum: 2 }).orThrow()
+        JsonSchema.integerOptions({ exclusiveMinimum: 0.5, exclusiveMaximum: 2 }).shouldNotFail(
+          'integer options'
+        )
       ).validate(1)
     ).toSucceedWith(1);
   });
@@ -322,56 +337,62 @@ describe('JsonSchema constraints — emission and round trip', () => {
   const nodes: ReadonlyArray<[string, JsonSchema.ISchemaValidator<unknown>, JsonObject]> = [
     [
       'minimum',
-      JsonSchema.number(JsonSchema.numberOptions({ minimum: 1 }).orThrow()),
+      JsonSchema.number(JsonSchema.numberOptions({ minimum: 1 }).shouldNotFail('number options')),
       { type: 'number', minimum: 1 }
     ],
     [
       'maximum',
-      JsonSchema.number(JsonSchema.numberOptions({ maximum: 9 }).orThrow()),
+      JsonSchema.number(JsonSchema.numberOptions({ maximum: 9 }).shouldNotFail('number options')),
       { type: 'number', maximum: 9 }
     ],
     [
       'exclusiveMinimum',
-      JsonSchema.integer(JsonSchema.integerOptions({ exclusiveMinimum: 0 }).orThrow()),
+      JsonSchema.integer(JsonSchema.integerOptions({ exclusiveMinimum: 0 }).shouldNotFail('integer options')),
       { type: 'integer', exclusiveMinimum: 0 }
     ],
     [
       'exclusiveMaximum',
-      JsonSchema.number(JsonSchema.numberOptions({ exclusiveMaximum: 1 }).orThrow()),
+      JsonSchema.number(JsonSchema.numberOptions({ exclusiveMaximum: 1 }).shouldNotFail('number options')),
       { type: 'number', exclusiveMaximum: 1 }
     ],
     [
       'multipleOf',
-      JsonSchema.integer(JsonSchema.integerOptions({ multipleOf: 3 }).orThrow()),
+      JsonSchema.integer(JsonSchema.integerOptions({ multipleOf: 3 }).shouldNotFail('integer options')),
       { type: 'integer', multipleOf: 3 }
     ],
     [
       'minLength',
-      JsonSchema.string(JsonSchema.stringOptions({ minLength: 1 }).orThrow()),
+      JsonSchema.string(JsonSchema.stringOptions({ minLength: 1 }).shouldNotFail('string options')),
       { type: 'string', minLength: 1 }
     ],
     [
       'maxLength',
-      JsonSchema.string(JsonSchema.stringOptions({ maxLength: 8 }).orThrow()),
+      JsonSchema.string(JsonSchema.stringOptions({ maxLength: 8 }).shouldNotFail('string options')),
       { type: 'string', maxLength: 8 }
     ],
     ['format', JsonSchema.string({ format: 'uuid' }), { type: 'string', format: 'uuid' }],
     ['title', JsonSchema.boolean({ title: 'Flag' }), { type: 'boolean', title: 'Flag' }],
     [
       'default',
-      JsonSchema.enumOf(['a', 'b'], JsonSchema.schemaOptions({ default: 'a' }).orThrow()),
+      JsonSchema.enumOf(
+        ['a', 'b'],
+        JsonSchema.schemaOptions({ default: 'a' }).shouldNotFail('schema options')
+      ),
       { type: 'string', enum: ['a', 'b'], default: 'a' }
     ],
     [
       'examples',
-      JsonSchema.array(JsonSchema.string(), JsonSchema.schemaOptions({ examples: [['x'], []] }).orThrow()),
+      JsonSchema.array(
+        JsonSchema.string(),
+        JsonSchema.schemaOptions({ examples: [['x'], []] }).shouldNotFail('schema options')
+      ),
       { type: 'array', items: { type: 'string' }, examples: [['x'], []] }
     ],
     [
       'object annotations',
       JsonSchema.object(
         { a: JsonSchema.string() },
-        JsonSchema.schemaOptions({ title: 'O', default: { a: 'z' } }).orThrow()
+        JsonSchema.schemaOptions({ title: 'O', default: { a: 'z' } }).shouldNotFail('schema options')
       ),
       {
         type: 'object',
@@ -385,8 +406,8 @@ describe('JsonSchema constraints — emission and round trip', () => {
     [
       'record annotations',
       JsonSchema.record(
-        JsonSchema.integer(JsonSchema.integerOptions({ minimum: 0 }).orThrow()),
-        JsonSchema.schemaOptions({ examples: [{ k: 1 }] }).orThrow()
+        JsonSchema.integer(JsonSchema.integerOptions({ minimum: 0 }).shouldNotFail('integer options')),
+        JsonSchema.schemaOptions({ examples: [{ k: 1 }] }).shouldNotFail('schema options')
       ),
       {
         type: 'object',
@@ -398,7 +419,9 @@ describe('JsonSchema constraints — emission and round trip', () => {
     [
       'nullable with constraints',
       JsonSchema.number(
-        JsonSchema.numberOptions({ nullable: true, minimum: 0, maximum: 1, default: null }).orThrow()
+        JsonSchema.numberOptions({ nullable: true, minimum: 0, maximum: 1, default: null }).shouldNotFail(
+          'number options'
+        )
       ),
       { type: ['number', 'null'], minimum: 0, maximum: 1, default: null }
     ]
@@ -426,7 +449,7 @@ describe('JsonSchema constraints — emission and round trip', () => {
         maximum: 9,
         exclusiveMinimum: 0,
         minimum: 1
-      }).orThrow()
+      }).shouldNotFail('number options')
     );
     const expected = [
       'type',
@@ -450,7 +473,9 @@ describe('JsonSchema constraints — emission and round trip', () => {
     expect(
       Object.keys(
         JsonSchema.string(
-          JsonSchema.stringOptions({ title: 't', format: 'date', maxLength: 9, minLength: 1 }).orThrow()
+          JsonSchema.stringOptions({ title: 't', format: 'date', maxLength: 9, minLength: 1 }).shouldNotFail(
+            'string options'
+          )
         ).toJson()
       )
     ).toEqual(['type', 'minLength', 'maxLength', 'format', 'title']);
@@ -508,7 +533,7 @@ describe('JsonSchema constraints — emission and round trip', () => {
   test('a node does not change when the caller mutates its options afterwards', () => {
     const examples: JsonValue[] = ['a'];
     const opts: JsonSchema.IStringSchemaOptions = { minLength: 1, examples };
-    const schema = JsonSchema.string(JsonSchema.stringOptions(opts).orThrow());
+    const schema = JsonSchema.string(JsonSchema.stringOptions(opts).shouldNotFail('string options'));
     opts.minLength = 5;
     examples.push('b');
     expect(schema.validate('ab')).toSucceed();
@@ -519,59 +544,83 @@ describe('JsonSchema constraints — emission and round trip', () => {
 describe('JsonSchema constraints — float tolerance, validated options, copies, enum lengths, 2^53', () => {
   test('multipleOf accepts decimal multiples within float rounding', () => {
     expect(
-      JsonSchema.number(JsonSchema.numberOptions({ multipleOf: 0.1 }).orThrow()).validate(0.3)
+      JsonSchema.number(
+        JsonSchema.numberOptions({ multipleOf: 0.1 }).shouldNotFail('number options')
+      ).validate(0.3)
     ).toSucceedWith(0.3);
     expect(
-      JsonSchema.number(JsonSchema.numberOptions({ multipleOf: 0.1 }).orThrow()).validate(0.7)
+      JsonSchema.number(
+        JsonSchema.numberOptions({ multipleOf: 0.1 }).shouldNotFail('number options')
+      ).validate(0.7)
     ).toSucceedWith(0.7);
     expect(
-      JsonSchema.number(JsonSchema.numberOptions({ multipleOf: 0.05 }).orThrow()).validate(1.15)
+      JsonSchema.number(
+        JsonSchema.numberOptions({ multipleOf: 0.05 }).shouldNotFail('number options')
+      ).validate(1.15)
     ).toSucceedWith(1.15);
   });
 
   test('multipleOf refuses a near miss on a large quotient', () => {
     expect(
-      JsonSchema.number(JsonSchema.numberOptions({ multipleOf: 1 }).orThrow()).validate(2000000000.5)
+      JsonSchema.number(JsonSchema.numberOptions({ multipleOf: 1 }).shouldNotFail('number options')).validate(
+        2000000000.5
+      )
     ).toFailWith(/multipleOf/);
     expect(
-      JsonSchema.number(JsonSchema.numberOptions({ multipleOf: 0.01 }).orThrow()).validate(12345678.123)
+      JsonSchema.number(
+        JsonSchema.numberOptions({ multipleOf: 0.01 }).shouldNotFail('number options')
+      ).validate(12345678.123)
     ).toFailWith(/multipleOf/);
     expect(
-      JsonSchema.integer(JsonSchema.integerOptions({ multipleOf: 10 }).orThrow()).validate(10000000005)
+      JsonSchema.integer(
+        JsonSchema.integerOptions({ multipleOf: 10 }).shouldNotFail('integer options')
+      ).validate(10000000005)
     ).toFailWith(/multipleOf/);
     expect(
-      JsonSchema.integer(JsonSchema.integerOptions({ multipleOf: 10 }).orThrow()).validate(10000000010)
+      JsonSchema.integer(
+        JsonSchema.integerOptions({ multipleOf: 10 }).shouldNotFail('integer options')
+      ).validate(10000000010)
     ).toSucceed();
   });
 
-  test('validated options are frozen copies, so neither side can invalidate the check', () => {
+  test('validated options hold a frozen copy, so neither side can invalidate the check', () => {
     const opts: JsonSchema.INumberSchemaOptions = { minimum: 1, maximum: 3 };
     expect(JsonSchema.numberOptions(opts)).toSucceedAndSatisfy((validated) => {
-      expect(validated).not.toBe(opts);
-      expect(validated).toEqual(opts);
-      expect(Object.isFrozen(validated)).toBe(true);
+      expect(validated).toBeInstanceOf(JsonSchema.ValidatedNumberOptions);
+      expect(validated.options).not.toBe(opts);
+      expect(validated.options).toEqual(opts);
+      expect(Object.isFrozen(validated.options)).toBe(true);
     });
     expect(JsonSchema.integerOptions(opts)).toSucceedAndSatisfy((v) => {
-      expect(Object.isFrozen(v)).toBe(true);
+      expect(v).toBeInstanceOf(JsonSchema.ValidatedNumberOptions);
+      expect(v.holdsInteger).toBe(true);
+      expect(Object.isFrozen(v.options)).toBe(true);
     });
     expect(JsonSchema.stringOptions({ maxLength: 2 })).toSucceedAndSatisfy((v) => {
-      expect(v).toEqual({ maxLength: 2 });
-      expect(Object.isFrozen(v)).toBe(true);
+      expect(v.options).toEqual({ maxLength: 2 });
+      expect(Object.isFrozen(v.options)).toBe(true);
     });
     expect(JsonSchema.schemaOptions({ title: 't' })).toSucceedAndSatisfy((v) => {
-      expect(v).toEqual({ title: 't' });
-      expect(Object.isFrozen(v)).toBe(true);
+      expect(v.options).toEqual({ title: 't' });
+      expect(Object.isFrozen(v.options)).toBe(true);
     });
   });
 
+  test('a spread of validated options copies only the discriminant, never the options', () => {
+    const validated = JsonSchema.numberOptions({ minimum: 0 }).shouldNotFail('spread source');
+    expect({ ...validated }).toEqual({ kind: 'validated-number-options' });
+  });
+
   test('integer-validated options are accepted by the number factory', () => {
-    const range = JsonSchema.integerOptions({ minimum: 1, maximum: 3 }).orThrow();
+    const range = JsonSchema.integerOptions({ minimum: 1, maximum: 3 }).shouldNotFail('integer options');
     expect(JsonSchema.number(range).validate(2.5)).toSucceedWith(2.5);
     expect(JsonSchema.integer(range).validate(2.5)).toFail();
   });
 
   test('nullable survives validation, so the nullable overload applies', () => {
-    const schema = JsonSchema.integer(JsonSchema.integerOptions({ minimum: 0, nullable: true }).orThrow());
+    const schema = JsonSchema.integer(
+      JsonSchema.integerOptions({ minimum: 0, nullable: true }).shouldNotFail('integer options')
+    );
     const value: number | null = schema.validate(null).orThrow();
     expect(value).toBeNull();
     expect(schema.toJson()).toEqual({ type: ['integer', 'null'], minimum: 0 });
@@ -588,22 +637,64 @@ describe('JsonSchema constraints — float tolerance, validated options, copies,
     expect(() => JsonSchema.boolean({ default: true })).not.toThrow();
     // @ts-expect-error - examples must arrive through validated options
     expect(() => JsonSchema.object({}, { examples: [{}] })).not.toThrow();
-    const numberRange = JsonSchema.numberOptions({ minimum: 0 }).orThrow();
+    const numberRange = JsonSchema.numberOptions({ minimum: 0 }).shouldNotFail('number options');
     // @ts-expect-error - a number range need not hold an integer
     expect(() => JsonSchema.integer(numberRange)).not.toThrow();
     // @ts-expect-error - a key that is not an option is refused by the options factory
     expect(JsonSchema.numberOptions({ minimun: 0, description: 'd' })).toSucceed();
   });
 
-  test('a factory given options that bypass the types still does not throw', () => {
-    const bypassed = { minimum: 5, maximum: 1 } as unknown as JsonSchema.ValidatedNumberOptions;
-    expect(() => JsonSchema.number(bypassed)).not.toThrow();
+  test('validated options are nominal: a spread or a forged literal is not accepted', () => {
+    const validated = JsonSchema.numberOptions({ minimum: 0 }).shouldNotFail('nominal source');
+    // @ts-expect-error - a spread re-opens nothing: it is not an instance, and its kind is not plain
+    expect(() => JsonSchema.number({ ...validated, maximum: -1 })).not.toThrow();
+    // @ts-expect-error - a spread alone is not validated options either
+    expect(() => JsonSchema.number({ ...validated })).not.toThrow();
+    const literal = { minimum: 5, maximum: 1, kind: 'validated-number-options' } as const;
+    // @ts-expect-error - the brand cannot be forged with a literal
+    expect(() => JsonSchema.number(literal)).not.toThrow();
+    const forged = { kind: 'validated-number-options', options: { minimum: 5, maximum: 1 } } as const;
+    // @ts-expect-error - nor with a literal shaped like an instance
+    expect(() => JsonSchema.number(forged)).not.toThrow();
+    // @ts-expect-error - string options are not number options
+    expect(() => JsonSchema.number(JsonSchema.stringOptions({}).shouldNotFail('string'))).not.toThrow();
+  });
+
+  test('a widened options type carrying constraint keys is a compile error on a factory', () => {
+    const wide: JsonSchema.INumberSchemaOptions = { minimum: 0 };
+    // @ts-expect-error - the declared options interface carries range keywords
+    expect(() => JsonSchema.number(wide)).not.toThrow();
+    const partial: Partial<JsonSchema.IStringSchemaOptions> = { maxLength: 2 };
+    // @ts-expect-error - so does a Partial of it
+    expect(() => JsonSchema.string(partial)).not.toThrow();
+    // @ts-expect-error - and an as-const literal
+    expect(() => JsonSchema.integer({ minimum: 0 } as const)).not.toThrow();
+    const raw = { minimum: 0, description: 'd' };
+    // @ts-expect-error - and a spread of a raw object
+    expect(() => JsonSchema.number({ ...raw })).not.toThrow();
+  });
+
+  test('known limitation: an index-signature type reaches a factory unchecked', () => {
+    // Pinned, not endorsed: TypeScript does not check an index signature against the plain
+    // options' `never` keys, so a deliberately widened value is accepted and its constraints
+    // applied as given. No factory throws on it.
+    const widened: Record<string, unknown> = { minimum: 5, maximum: 1 };
+    expect(() => JsonSchema.number(widened)).not.toThrow();
+    expect(JsonSchema.number(widened).validate(3)).toFail();
+  });
+
+  test('a cast to a validated type is still read as plain, and the factory does not throw', () => {
+    const cast = { minimum: 5 } as unknown as JsonSchema.ValidatedNumberOptions;
+    expect(() => JsonSchema.number(cast)).not.toThrow();
+    expect(JsonSchema.number(cast).toJson()).toEqual({ type: 'number', minimum: 5 });
   });
 
   test('mutating what toJson() returned cannot alter the node', () => {
     const schema = JsonSchema.object(
       { a: JsonSchema.string() },
-      JsonSchema.schemaOptions({ default: { a: 'x' }, examples: [{ a: 'y' }] }).orThrow()
+      JsonSchema.schemaOptions({ default: { a: 'x' }, examples: [{ a: 'y' }] }).shouldNotFail(
+        'schema options'
+      )
     );
     const first = schema.toJson();
     (first.default as JsonObject).a = 'changed';
@@ -614,7 +705,9 @@ describe('JsonSchema constraints — float tolerance, validated options, copies,
 
   test('mutating the authored default after construction cannot alter the node', () => {
     const value: JsonObject = { k: 1 };
-    const schema = JsonSchema.boolean(JsonSchema.schemaOptions({ default: value }).orThrow());
+    const schema = JsonSchema.boolean(
+      JsonSchema.schemaOptions({ default: value }).shouldNotFail('schema options')
+    );
     value.k = 2;
     expect(schema.toJson()).toEqual({ type: 'boolean', default: { k: 1 } });
   });
@@ -631,7 +724,7 @@ describe('JsonSchema constraints — float tolerance, validated options, copies,
   test('an integer range above 2^53 is judged as a number range rather than by rounding', () => {
     const big = 2 ** 53;
     const schema = JsonSchema.integer(
-      JsonSchema.integerOptions({ exclusiveMinimum: big, maximum: big + 2 }).orThrow()
+      JsonSchema.integerOptions({ exclusiveMinimum: big, maximum: big + 2 }).shouldNotFail('integer options')
     );
     expect(schema.validate(big + 2)).toSucceed();
     expect(JsonSchema.integerOptions({ exclusiveMinimum: big, maximum: big })).toFailWith(/leave no integer/);

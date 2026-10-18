@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { Brand, StringOneOf } from '@fgv/ts-utils';
+import { StringOneOf } from '@fgv/ts-utils';
 import { JsonValue } from '../json';
 import { schemaLengthConstraintKeywords, schemaNumberConstraintKeywords } from './keywordAdaptation';
 
@@ -98,10 +98,12 @@ export interface ISchemaOptions {
    * `default` annotation.
    *
    * @remarks
-   * An **annotation**: emitted, never enforced, and never applied — the validator does not
-   * substitute it for a missing value. It must be a JSON value — so it reaches a factory only
-   * through validated options, which refuse one that is not — but it is deliberately **not** checked against the node: JSON Schema does not require a
-   * `default` to validate, and checking it would refuse schemas servers already send.
+   * An **annotation**: emitted, never enforced, and never applied. The validator does not
+   * substitute it for a missing value.
+   *
+   * It must be a JSON value, so it reaches a factory only through validated options, which refuse
+   * one that is not. It is deliberately **not** checked against the node: JSON Schema does not
+   * require a `default` to validate, and checking it would refuse schemas servers already send.
    */
   default?: JsonValue;
 
@@ -253,12 +255,21 @@ export type IAnySchemaOptions = Omit<ISchemaOptions, 'nullable'>;
  * A factory never fails, so it accepts unchecked only what needs no check. `default` and
  * `examples` must be JSON values, which the type cannot fully guarantee (`NaN` is a `number`), so
  * they are declared `never` here and arrive through {@link JsonSchema.schemaOptions | schemaOptions}
- * instead, as validated options.
+ * instead, as validated options. `kind` is declared `never` so that a spread of a validated-options
+ * instance, which copies its `kind` discriminant and nothing else, is not mistaken for plain options.
+ *
+ * **Known limitation:** a value whose type has an index signature (`Record<string, unknown>`, or an
+ * interface declaring `[key: string]: unknown`) is assignable to every plain-options type, because
+ * TypeScript does not check an index signature against the `never` keys. Such a value reaches the
+ * factory unchecked, and a constraint it carries is applied as given. This takes a deliberately
+ * widened type; an object literal, a declared options interface, `Partial<…>` and `as const` are all
+ * refused.
  * @public
  */
 export type PlainSchemaOptions = Pick<ISchemaOptions, 'description' | 'title' | 'nullable'> & {
   readonly default?: never;
   readonly examples?: never;
+  readonly kind?: never;
 };
 
 /**
@@ -298,55 +309,3 @@ export type PlainObjectSchemaOptions = PlainSchemaOptions &
  * @public
  */
 export type PlainAnySchemaOptions = Omit<PlainSchemaOptions, 'nullable'>;
-
-/**
- * Options whose annotations {@link JsonSchema.schemaOptions | schemaOptions} has checked: `default`
- * and every member of `examples` are JSON values.
- *
- * @remarks
- * The brand exists only in the type; the value is a frozen copy of the options it was made from,
- * so neither the caller's later mutations nor its own can invalidate the check. Every factory that
- * accepts plain options accepts these too.
- * @public
- */
-export type ValidatedSchemaOptions<T extends IObjectSchemaOptions = IObjectSchemaOptions> = Brand<
-  T,
-  'ValidatedSchemaOptions'
->;
-
-/**
- * Options that {@link JsonSchema.numberOptions | numberOptions} or
- * {@link JsonSchema.integerOptions | integerOptions} has found coherent, which the `number`
- * factory accepts.
- *
- * @remarks
- * The brand is a union so that {@link JsonSchema.ValidatedIntegerOptions | integer-validated}
- * options are also number-validated: a range holding an integer holds a number. The converse does
- * not hold, so these are not accepted by the `integer` factory.
- * @public
- */
-export type ValidatedNumberOptions<T extends INumberSchemaOptions = INumberSchemaOptions> = Brand<
-  T,
-  'ValidatedNumberOptions' | 'ValidatedIntegerOptions'
->;
-
-/**
- * Options that {@link JsonSchema.integerOptions | integerOptions} has found coherent for an
- * integer node — in particular, its range holds at least one integer. Accepted by both the
- * `integer` and the `number` factory.
- * @public
- */
-export type ValidatedIntegerOptions<T extends INumberSchemaOptions = INumberSchemaOptions> = Brand<
-  T,
-  'ValidatedIntegerOptions'
->;
-
-/**
- * Options that {@link JsonSchema.stringOptions | stringOptions} has found coherent, which the
- * `string` factory accepts.
- * @public
- */
-export type ValidatedStringOptions<T extends IStringSchemaOptions = IStringSchemaOptions> = Brand<
-  T,
-  'ValidatedStringOptions'
->;

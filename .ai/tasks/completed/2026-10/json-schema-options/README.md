@@ -15,7 +15,7 @@ but schemas nest, so a `Result` from every factory would force an unwrap at ever
 ## What shipped
 
 - **Validated options.** `numberOptions`, `integerOptions`, `stringOptions` and `schemaOptions`
-  each return a `Result` of a type-branded, frozen copy.
+  each return a `Result` of a nominal instance holding a frozen copy.
 - **Factories accept only validated or plain options.** Plain options hold only what cannot be
   wrong. A constraint key, `default` or `examples` on a raw literal is a compile error.
 - **`nullable: true` survives validation**, so the nullable overloads are unchanged.

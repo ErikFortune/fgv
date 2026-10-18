@@ -81,7 +81,7 @@ describe('JsonSchema.adaptSchemaKeywords', () => {
 
   test('a pass-everything table leaves the schema unchanged', () => {
     const schema = JsonSchema.number(
-      JsonSchema.numberOptions({ minimum: 1, title: 'N', description: 'n' }).orThrow()
+      JsonSchema.numberOptions({ minimum: 1, title: 'N', description: 'n' }).shouldNotFail('number options')
     ).toJson();
     expect(JsonSchema.adaptSchemaKeywords(schema, passAll)).toSucceedWith(schema);
   });
@@ -155,9 +155,15 @@ describe('JsonSchema.adaptSchemaKeywords', () => {
 
   test('adapts nested properties, items and schema-valued additionalProperties', () => {
     const schema = JsonSchema.object({
-      tags: JsonSchema.array(JsonSchema.string(JsonSchema.stringOptions({ maxLength: 5 }).orThrow())),
-      scores: JsonSchema.record(JsonSchema.number(JsonSchema.numberOptions({ minimum: 0 }).orThrow())),
-      n: JsonSchema.optional(JsonSchema.integer(JsonSchema.integerOptions({ multipleOf: 2 }).orThrow()))
+      tags: JsonSchema.array(
+        JsonSchema.string(JsonSchema.stringOptions({ maxLength: 5 }).shouldNotFail('string options'))
+      ),
+      scores: JsonSchema.record(
+        JsonSchema.number(JsonSchema.numberOptions({ minimum: 0 }).shouldNotFail('number options'))
+      ),
+      n: JsonSchema.optional(
+        JsonSchema.integer(JsonSchema.integerOptions({ multipleOf: 2 }).shouldNotFail('integer options'))
+      )
     }).toJson();
     expect(JsonSchema.adaptSchemaKeywords(schema, JsonSchema.unverifiedWireSchemaKeywords)).toSucceedWith({
       type: 'object',
@@ -199,7 +205,9 @@ describe('JsonSchema.adaptSchemaKeywords', () => {
   });
 
   test('a folded schema still validates as the authored one does: the validator stays authoritative', () => {
-    const schema = JsonSchema.integer(JsonSchema.integerOptions({ minimum: 1, maximum: 10 }).orThrow());
+    const schema = JsonSchema.integer(
+      JsonSchema.integerOptions({ minimum: 1, maximum: 10 }).shouldNotFail('integer options')
+    );
     const folded = JsonSchema.adaptSchemaKeywords(schema.toJson(), JsonSchema.unverifiedWireSchemaKeywords);
     expect(folded).toSucceedWith({ type: 'integer', description: 'Constraints: minimum 1; maximum 10.' });
     expect(schema.validate(0)).toFailWith(/minimum/);

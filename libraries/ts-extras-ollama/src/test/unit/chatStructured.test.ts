@@ -113,8 +113,14 @@ describe('chatStructured (layer 1 — structural client mock)', () => {
 
   test('folds every constraint keyword into the description, and still enforces it on the reply', async () => {
     const constrained = JsonSchema.object({
-      name: JsonSchema.string(JsonSchema.stringOptions({ maxLength: 2, format: 'hostname', description: 'Short.' }).orThrow()),
-      age: JsonSchema.integer(JsonSchema.integerOptions({ minimum: 0, maximum: 150, default: 30 }).orThrow())
+      name: JsonSchema.string(
+        JsonSchema.stringOptions({ maxLength: 2, format: 'hostname', description: 'Short.' }).shouldNotFail(
+          'string options'
+        )
+      ),
+      age: JsonSchema.integer(
+        JsonSchema.integerOptions({ minimum: 0, maximum: 150, default: 30 }).shouldNotFail('integer options')
+      )
     });
     const chat = jest.fn().mockResolvedValue(makeChatIterator(validPersonChunks()));
 

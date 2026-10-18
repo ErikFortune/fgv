@@ -47,23 +47,26 @@ import {
   enumOf,
   integer,
   integerEnumOf,
-  integerOptions,
   number,
   numberEnumOf,
-  numberOptions,
   object,
   optional,
   record,
-  schemaOptions,
-  string,
-  stringOptions
+  string
 } from './factories';
 import {
   schemaAnnotationKeywords,
   schemaLengthConstraintKeywords,
   schemaNumberConstraintKeywords
 } from './keywordAdaptation';
-import { INumberSchemaOptions, ValidatedSchemaOptions } from './options';
+import { INumberSchemaOptions } from './options';
+import {
+  ValidatedSchemaOptions,
+  integerOptions,
+  numberOptions,
+  schemaOptions,
+  stringOptions
+} from './validatedOptions';
 import { ILlmProperties, ISchemaValidator } from './types';
 
 /**
@@ -249,7 +252,8 @@ const _annotationsField: Converter<SchemaAnnotations> = Converters.object<Schema
 /**
  * Extracts a number node's constraint keywords. Each must be a JSON number when present — a
  * numeric string is refused, not coerced; coherence (finite, ordered, a non-empty range) is
- * checked afterwards by `checkNumberOptions`, the same check the factories run.
+ * checked afterwards by `numberOptions` or `integerOptions`, the validated-options step every
+ * declared range goes through too.
  */
 const _numberConstraintsField: Converter<NumberConstraints> = Converters.object<NumberConstraints>(
   _numericFields(schemaNumberConstraintKeywords)
@@ -257,7 +261,7 @@ const _numberConstraintsField: Converter<NumberConstraints> = Converters.object<
 
 /**
  * Extracts a string node's `minLength`, `maxLength` and `format`. The lengths must be JSON
- * numbers and `format` a string; `checkStringOptions` then requires non-negative integers in order.
+ * numbers and `format` a string; `stringOptions` then requires non-negative integers in order.
  */
 const _stringConstraintsField: Converter<StringConstraints> = Converters.object<StringConstraints>({
   ..._numericFields(schemaLengthConstraintKeywords),

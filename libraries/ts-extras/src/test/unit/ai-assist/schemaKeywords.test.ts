@@ -56,16 +56,28 @@ import { executeClientToolTurn } from '../../../packlets/ai-assist/streamingAdap
 
 /** A parameter schema carrying every keyword, so each table's whole row is visible at once. */
 const everything = JsonSchema.object({
-  n: JsonSchema.number(JsonSchema.numberOptions({ minimum: 1, maximum: 10, multipleOf: 0.5, title: 'N', default: 2 }).orThrow()),
-  i: JsonSchema.integer(JsonSchema.integerOptions({ exclusiveMinimum: 0, exclusiveMaximum: 100 }).orThrow()),
-  x: JsonSchema.number(JsonSchema.numberOptions({ exclusiveMinimum: 0 }).orThrow()),
-  s: JsonSchema.string(JsonSchema.stringOptions({
-    minLength: 1,
-    maxLength: 8,
-    format: 'email',
-    description: 'Who.',
-    examples: ['a@b.c']
-  }).orThrow()),
+  n: JsonSchema.number(
+    JsonSchema.numberOptions({
+      minimum: 1,
+      maximum: 10,
+      multipleOf: 0.5,
+      title: 'N',
+      default: 2
+    }).shouldNotFail('number options')
+  ),
+  i: JsonSchema.integer(
+    JsonSchema.integerOptions({ exclusiveMinimum: 0, exclusiveMaximum: 100 }).shouldNotFail('integer options')
+  ),
+  x: JsonSchema.number(JsonSchema.numberOptions({ exclusiveMinimum: 0 }).shouldNotFail('number options')),
+  s: JsonSchema.string(
+    JsonSchema.stringOptions({
+      minLength: 1,
+      maxLength: 8,
+      format: 'email',
+      description: 'Who.',
+      examples: ['a@b.c']
+    }).shouldNotFail('string options')
+  ),
   d: JsonSchema.string({ format: 'duration' })
 });
 
@@ -171,12 +183,14 @@ describe('schema keyword capability tables, per wire format', () => {
 
   test('Gemini translation keeps the tighter of an exclusive and an inclusive bound, and survives nullability', () => {
     const caps = schemaKeywordsFor('gemini', { providerId: 'google-gemini' });
-    const tighterInclusive = JsonSchema.integer(JsonSchema.integerOptions({
-      minimum: 5,
-      exclusiveMinimum: 2,
-      maximum: 7,
-      exclusiveMaximum: 9
-    }).orThrow());
+    const tighterInclusive = JsonSchema.integer(
+      JsonSchema.integerOptions({
+        minimum: 5,
+        exclusiveMinimum: 2,
+        maximum: 7,
+        exclusiveMaximum: 9
+      }).shouldNotFail('integer options')
+    );
     expect(
       toGeminiParameterSchema(JsonSchema.adaptSchemaKeywords(tighterInclusive.toJson(), caps).orThrow())
     ).toEqual({
@@ -184,12 +198,14 @@ describe('schema keyword capability tables, per wire format', () => {
       minimum: 5,
       maximum: 7
     });
-    const tighterExclusive = JsonSchema.integer(JsonSchema.integerOptions({
-      minimum: 1,
-      exclusiveMinimum: 2.5,
-      maximum: 9,
-      exclusiveMaximum: 4
-    }).orThrow());
+    const tighterExclusive = JsonSchema.integer(
+      JsonSchema.integerOptions({
+        minimum: 1,
+        exclusiveMinimum: 2.5,
+        maximum: 9,
+        exclusiveMaximum: 4
+      }).shouldNotFail('integer options')
+    );
     expect(
       toGeminiParameterSchema(JsonSchema.adaptSchemaKeywords(tighterExclusive.toJson(), caps).orThrow())
     ).toEqual({
@@ -197,7 +213,9 @@ describe('schema keyword capability tables, per wire format', () => {
       minimum: 3,
       maximum: 3
     });
-    const nullable = JsonSchema.integer(JsonSchema.integerOptions({ nullable: true, exclusiveMaximum: 10 }).orThrow());
+    const nullable = JsonSchema.integer(
+      JsonSchema.integerOptions({ nullable: true, exclusiveMaximum: 10 }).shouldNotFail('integer options')
+    );
     expect(
       toGeminiParameterSchema(JsonSchema.adaptSchemaKeywords(nullable.toJson(), caps).orThrow())
     ).toEqual({
@@ -209,18 +227,24 @@ describe('schema keyword capability tables, per wire format', () => {
 
   test('Gemini folds an integer exclusive bound whose translation would not be exact (beyond 2^53)', () => {
     const caps = schemaKeywordsFor('gemini', { providerId: 'google-gemini' });
-    const big = JsonSchema.integer(JsonSchema.integerOptions({ exclusiveMinimum: 2 ** 53 }).orThrow());
+    const big = JsonSchema.integer(
+      JsonSchema.integerOptions({ exclusiveMinimum: 2 ** 53 }).shouldNotFail('integer options')
+    );
     expect(JsonSchema.adaptSchemaKeywords(big.toJson(), caps).orThrow()).toEqual({
       type: 'integer',
       description: `Constraints: exclusiveMinimum ${2 ** 53}.`
     });
     // Just inside the safe range the translation is still exact.
-    const justInside = JsonSchema.integer(JsonSchema.integerOptions({ exclusiveMinimum: 2 ** 53 - 2 }).orThrow());
+    const justInside = JsonSchema.integer(
+      JsonSchema.integerOptions({ exclusiveMinimum: 2 ** 53 - 2 }).shouldNotFail('integer options')
+    );
     expect(JsonSchema.adaptSchemaKeywords(justInside.toJson(), caps).orThrow()).toEqual({
       type: 'integer',
       minimum: 2 ** 53 - 1
     });
-    const below = JsonSchema.integer(JsonSchema.integerOptions({ exclusiveMaximum: -(2 ** 53) }).orThrow());
+    const below = JsonSchema.integer(
+      JsonSchema.integerOptions({ exclusiveMaximum: -(2 ** 53) }).shouldNotFail('integer options')
+    );
     expect(JsonSchema.adaptSchemaKeywords(below.toJson(), caps).orThrow()).toEqual({
       type: 'integer',
       description: `Constraints: exclusiveMaximum ${-(2 ** 53)}.`
@@ -247,8 +271,12 @@ describe('schema keyword capability tables, per wire format', () => {
 
 describe('schema keyword capability tables, structured output', () => {
   const schema = JsonSchema.object({
-    n: JsonSchema.integer(JsonSchema.integerOptions({ minimum: 1, maximum: 5, default: 3 }).orThrow()),
-    s: JsonSchema.string(JsonSchema.stringOptions({ maxLength: 4, format: 'hostname' }).orThrow())
+    n: JsonSchema.integer(
+      JsonSchema.integerOptions({ minimum: 1, maximum: 5, default: 3 }).shouldNotFail('integer options')
+    ),
+    s: JsonSchema.string(
+      JsonSchema.stringOptions({ maxLength: 4, format: 'hostname' }).shouldNotFail('string options')
+    )
   });
 
   function descriptor(id: AiProviderId): IAiProviderDescriptor {
@@ -411,7 +439,9 @@ describe('a folded constraint on the tool path', () => {
         type: 'client_tool',
         name: 'pick',
         description: 'Pick a multiple of five',
-        parametersSchema: JsonSchema.object({ n: JsonSchema.integer(JsonSchema.integerOptions({ multipleOf: 5 }).orThrow()) })
+        parametersSchema: JsonSchema.object({
+          n: JsonSchema.integer(JsonSchema.integerOptions({ multipleOf: 5 }).shouldNotFail('integer options'))
+        })
       },
       execute
     } as unknown as IAiClientTool;
@@ -497,7 +527,9 @@ describe('an endpoint override is an unverified server, on every wire format', (
     return first.parameters;
   }
 
-  const ranged = JsonSchema.object({ n: JsonSchema.integer(JsonSchema.integerOptions({ minimum: 1 }).orThrow()) });
+  const ranged = JsonSchema.object({
+    n: JsonSchema.integer(JsonSchema.integerOptions({ minimum: 1 }).shouldNotFail('integer options'))
+  });
   let bodies: JsonObject[];
   let done: string;
 

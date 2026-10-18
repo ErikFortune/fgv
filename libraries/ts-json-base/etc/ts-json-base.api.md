@@ -4,7 +4,6 @@
 
 ```ts
 
-import { Brand } from '@fgv/ts-utils';
 import { Conversion } from '@fgv/ts-utils';
 import { Converter } from '@fgv/ts-utils';
 import { Converters as Converters_3 } from '@fgv/ts-utils';
@@ -40,9 +39,11 @@ function anyValue(opts?: PlainAnySchemaOptions | ValidatedSchemaOptions<IAnySche
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-function array<S extends ISchemaValidator<unknown>>(items: S, opts: (PlainSchemaOptions | ValidatedSchemaOptions) & {
+function array<S extends ISchemaValidator<unknown>>(items: S, opts: (PlainSchemaOptions & {
     nullable: true;
-}): ISchemaValidator<Static<S>[] | null>;
+}) | ValidatedSchemaOptions<{
+    nullable: true;
+}>): ISchemaValidator<Static<S>[] | null>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -79,9 +80,11 @@ const boolean: Converter<boolean, IJsonConverterContext>;
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-function boolean_2(opts: (PlainSchemaOptions | ValidatedSchemaOptions) & {
+function boolean_2(opts: (PlainSchemaOptions & {
     nullable: true;
-}): ISchemaValidator<boolean | null>;
+}) | ValidatedSchemaOptions<{
+    nullable: true;
+}>): ISchemaValidator<boolean | null>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -270,9 +273,11 @@ function enumeratedValue_2<T>(values: ReadonlyArray<T>, message?: string): Valid
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-function enumOf<T extends string>(values: readonly T[], opts: (PlainSchemaOptions | ValidatedSchemaOptions) & {
+function enumOf<T extends string>(values: readonly T[], opts: (PlainSchemaOptions & {
     nullable: true;
-}): ISchemaValidator<T | null>;
+}) | ValidatedSchemaOptions<{
+    nullable: true;
+}>): ISchemaValidator<T | null>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -896,9 +901,11 @@ class InMemoryTreeAccessors<TCT extends string = string> implements IMutableFile
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-function integer(opts: (PlainNumberSchemaOptions | ValidatedIntegerOptions) & {
+function integer(opts: (PlainNumberSchemaOptions & {
     nullable: true;
-}): ISchemaValidator<number | null>;
+}) | ValidatedIntegerOptions<{
+    nullable: true;
+}>): ISchemaValidator<number | null>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -1268,14 +1275,14 @@ declare namespace JsonSchema {
         PlainStringSchemaOptions,
         PlainObjectSchemaOptions,
         PlainAnySchemaOptions,
-        ValidatedSchemaOptions,
-        ValidatedNumberOptions,
-        ValidatedIntegerOptions,
-        ValidatedStringOptions,
         schemaOptions,
         numberOptions,
         integerOptions,
         stringOptions,
+        ValidatedSchemaOptions,
+        ValidatedNumberOptions,
+        ValidatedIntegerOptions,
+        ValidatedStringOptions,
         string_2 as string,
         number_2 as number,
         integer,
@@ -1354,9 +1361,11 @@ const number: Converter<number, IJsonConverterContext>;
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-function number_2(opts: (PlainNumberSchemaOptions | ValidatedNumberOptions) & {
+function number_2(opts: (PlainNumberSchemaOptions & {
     nullable: true;
-}): ISchemaValidator<number | null>;
+}) | ValidatedNumberOptions<{
+    nullable: true;
+}>): ISchemaValidator<number | null>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -1396,20 +1405,27 @@ function object<T, TC = unknown>(properties: Conversion.FieldConverters<JsonComp
 function object_2<T, TC = unknown>(properties: Validation.Classes.FieldValidators<JsonCompatibleType<T>, TC>, params?: Omit<Validation.Classes.ObjectValidatorConstructorParams<JsonCompatibleType<T>, TC>, 'fields'>): JsonCompatible_2.ObjectValidator<T, TC>;
 
 // @public
-function object_3<P extends ILlmProperties>(properties: P, opts: (PlainObjectSchemaOptions | ValidatedSchemaOptions<IObjectSchemaOptions>) & {
+function object_3<P extends ILlmProperties>(properties: P, opts: (PlainObjectSchemaOptions & {
     additionalProperties: true;
     nullable: true;
-}): ISchemaValidator<OpenObjectStatic<P> | null>;
-
-// @public
-function object_3<P extends ILlmProperties>(properties: P, opts: (PlainObjectSchemaOptions | ValidatedSchemaOptions<IObjectSchemaOptions>) & {
+}) | ValidatedSchemaOptions<{
     additionalProperties: true;
-}): ISchemaValidator<OpenObjectStatic<P>>;
+    nullable: true;
+}>): ISchemaValidator<OpenObjectStatic<P> | null>;
 
 // @public
-function object_3<P extends ILlmProperties>(properties: P, opts: (PlainObjectSchemaOptions | ValidatedSchemaOptions<IObjectSchemaOptions>) & {
+function object_3<P extends ILlmProperties>(properties: P, opts: (PlainObjectSchemaOptions & {
+    additionalProperties: true;
+}) | ValidatedSchemaOptions<{
+    additionalProperties: true;
+}>): ISchemaValidator<OpenObjectStatic<P>>;
+
+// @public
+function object_3<P extends ILlmProperties>(properties: P, opts: (PlainObjectSchemaOptions & {
     nullable: true;
-}): ISchemaValidator<ObjectStatic<P> | null>;
+}) | ValidatedSchemaOptions<{
+    nullable: true;
+}>): ISchemaValidator<ObjectStatic<P> | null>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -1472,6 +1488,7 @@ type PlainObjectSchemaOptions = PlainSchemaOptions & Pick<IObjectSchemaOptions, 
 type PlainSchemaOptions = Pick<ISchemaOptions, 'description' | 'title' | 'nullable'> & {
     readonly default?: never;
     readonly examples?: never;
+    readonly kind?: never;
 };
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -1490,9 +1507,11 @@ function readJsonFileSync(srcPath: string): Result<JsonValue>;
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-function record<S extends ISchemaValidator<unknown>>(values: S & (undefined extends Static<S> ? never : unknown), opts: (PlainSchemaOptions | ValidatedSchemaOptions) & {
+function record<S extends ISchemaValidator<unknown>>(values: S & (undefined extends Static<S> ? never : unknown), opts: (PlainSchemaOptions & {
     nullable: true;
-}): ISchemaValidator<Record<string, Static<S>> | null>;
+}) | ValidatedSchemaOptions<{
+    nullable: true;
+}>): ISchemaValidator<Record<string, Static<S>> | null>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -1606,9 +1625,11 @@ const string: StringConverter<string, IJsonConverterContext>;
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-function string_2(opts: (PlainStringSchemaOptions | ValidatedStringOptions) & {
+function string_2(opts: (PlainStringSchemaOptions & {
     nullable: true;
-}): ISchemaValidator<string | null>;
+}) | ValidatedStringOptions<{
+    nullable: true;
+}>): ISchemaValidator<string | null>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -1640,24 +1661,55 @@ const unverifiedWireSchemaKeywords: SchemaKeywordCapabilities;
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-type ValidatedIntegerOptions<T extends INumberSchemaOptions = INumberSchemaOptions> = Brand<T, 'ValidatedIntegerOptions'>;
+class ValidatedIntegerOptions<T extends INumberSchemaOptions = INumberSchemaOptions> extends ValidatedNumberOptions<T> {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // @internal
+    static _createInteger<T extends INumberSchemaOptions>(opts: T): Result<ValidatedIntegerOptions<T>>;
+    get holdsInteger(): true;
+}
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-type ValidatedNumberOptions<T extends INumberSchemaOptions = INumberSchemaOptions> = Brand<T, 'ValidatedNumberOptions' | 'ValidatedIntegerOptions'>;
+class ValidatedNumberOptions<T extends INumberSchemaOptions = INumberSchemaOptions> {
+    protected constructor(checked: T);
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // @internal
+    static _create<T extends INumberSchemaOptions>(opts: T): Result<ValidatedNumberOptions<T>>;
+    readonly kind: 'validated-number-options';
+    get options(): Readonly<T>;
+}
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-type ValidatedSchemaOptions<T extends IObjectSchemaOptions = IObjectSchemaOptions> = Brand<T, 'ValidatedSchemaOptions'>;
+class ValidatedSchemaOptions<T extends IObjectSchemaOptions = IObjectSchemaOptions> {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // @internal
+    static _create<T extends IObjectSchemaOptions>(opts: T): Result<ValidatedSchemaOptions<T>>;
+    readonly kind: 'validated-schema-options';
+    get options(): Readonly<T>;
+}
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-type ValidatedStringOptions<T extends IStringSchemaOptions = IStringSchemaOptions> = Brand<T, 'ValidatedStringOptions'>;
+class ValidatedStringOptions<T extends IStringSchemaOptions = IStringSchemaOptions> {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // @internal
+    static _create<T extends IStringSchemaOptions>(opts: T): Result<ValidatedStringOptions<T>>;
+    readonly kind: 'validated-string-options';
+    get options(): Readonly<T>;
+}
 
 // @public
 type Validator_2<T, TC = unknown> = Validator<JsonCompatibleType<T>, TC>;

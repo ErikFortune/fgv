@@ -270,7 +270,7 @@ describe('JsonSchema — anyValue / {}', () => {
         title: 'Any',
         default: null,
         examples: [1]
-      }).orThrow()
+      }).shouldNotFail('schema options')
     );
     expect(schema._type).toBe('any');
     expect(JsonSchema.isSchemaValidator(schema)).toBe(true);
@@ -298,7 +298,9 @@ describe('JsonSchema — anyValue / {}', () => {
   });
 
   test('accepts validated annotations', () => {
-    const schema = JsonSchema.anyValue(JsonSchema.schemaOptions({ default: { a: 1 }, title: 'T' }).orThrow());
+    const schema = JsonSchema.anyValue(
+      JsonSchema.schemaOptions({ default: { a: 1 }, title: 'T' }).shouldNotFail('schema options')
+    );
     expect(schema.toJson()).toEqual({ title: 'T', default: { a: 1 } });
   });
 
@@ -439,7 +441,9 @@ describe('JsonSchema.adaptSchemaKeywords — non-string enums and untyped nodes'
     expect(
       JsonSchema.adaptSchemaKeywords(
         JsonSchema.object({
-          x: JsonSchema.anyValue(JsonSchema.schemaOptions({ title: 'X', default: 1 }).orThrow())
+          x: JsonSchema.anyValue(
+            JsonSchema.schemaOptions({ title: 'X', default: 1 }).shouldNotFail('schema options')
+          )
         }).toJson(),
         caps('fold', 'pass')
       )

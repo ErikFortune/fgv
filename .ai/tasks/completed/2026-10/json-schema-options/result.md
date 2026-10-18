@@ -6,7 +6,7 @@ Branch `json-schema-options`, based on `integration/asks` at `b90de8b2b`. PR: #T
 
 **The options are validated, not the schema. No `JsonSchema` factory throws.**
 
-- **Validated-options factories**, each returning `Result` of a type-branded, frozen copy:
+- **Validated-options factories**, each returning `Result` of a nominal instance holding a frozen copy:
   - `JsonSchema.numberOptions(opts)` → `ValidatedNumberOptions<T>`, for `number`.
   - `JsonSchema.integerOptions(opts)` → `ValidatedIntegerOptions<T>`, for `integer` (and `number`):
     the range must hold an integer.
