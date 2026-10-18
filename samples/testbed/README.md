@@ -78,6 +78,45 @@ Only scenarios with a web surface appear in the sidebar.
   embedder, so `rushx test` covers the real logic (including the actual file-backed
   `sqlite-vec` round-trip) fully offline.
 
+## Provider wire probe (`wire-probe`)
+
+Checks the keyword-capability tables `ai-assist` adapts JSON Schemas with (`schemaKeywords.ts` in
+`@fgv/ts-extras`) against what each provider actually accepts. For each configured wire —
+Anthropic tools and JSON outputs, OpenAI and xAI Responses tools and strict structured output,
+Gemini function declarations and `responseSchema` — it sends ~20 fixture schemas (every
+constraint keyword, every annotation, numeric and boolean enums, `{}` at the root, in properties
+and in items) **unadapted**, records accept/reject with the provider's error text, and compares
+that with the table:
+
+| outcome | means |
+|---|---|
+| `agrees` | the table matches the provider |
+| `conservative` | we fold or refuse, the provider accepted the raw schema — the entry could be loosened |
+| `unsafe` | we pass, the provider rejected it |
+
+It then sends each fixture **through** `ai-assist` and confirms the adapted request is accepted
+(or, where the table refuses, that it is refused before anything is sent). An adapted request the
+provider rejects is also `unsafe`. The CLI exits non-zero **only** on an unsafe row; the report is
+on stdout when there is none, and on stderr with the failure when there is.
+
+Live keys, on demand, **never in CI**. Keys resolve the usual way (KeyStore, then
+`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GEMINI_API_KEY` / `GOOGLE_API_KEY`, `XAI_API_KEY`); a wire
+whose provider has no key is skipped and the report says so. Keys are never logged.
+
+```bash
+rushx build
+ANTHROPIC_API_KEY=… GEMINI_API_KEY=… node bin/testbed.js --scenario wire-probe
+
+# a subset of wires (ids: anthropic-tools, anthropic-json-outputs, openai-tools,
+# openai-strict-output, gemini-tools, gemini-response-schema, xai-tools, xai-strict-output)
+WIRE_PROBE_WIRES=anthropic-tools,xai-tools node bin/testbed.js --scenario wire-probe
+```
+
+Each request is one turn on the cheapest model of each line (a 16-token cap raw, 256 end to end);
+the models and why are in `src/scenarios/wireProbe/wires.ts`. A wire whose control fixture (no
+keyword under test) is not accepted is reported as inconclusive — usually a bad key or a retired
+model. Re-run it whenever a table entry or a provider's schema support changes.
+
 ## Adding a scenario
 
 See [`src/conventions.md`](./src/conventions.md). Short version: drop a file under
