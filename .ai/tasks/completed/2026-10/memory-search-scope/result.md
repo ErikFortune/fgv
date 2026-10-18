@@ -126,4 +126,14 @@ The deep review found no P1s. Applied:
    pre-existing. A non-portable mnemonic (`@doc-1`) is rejected by the `MemoryId` converter. A
    portable one is persisted as a dangling edge, because link targets are not checked for existence.
 
-Gates for this round are recorded below.
+Gates for this round. Logs are `r1-*.log` in `../gate-logs-memory-search-scope/`:
+
+- **Package:** build exit 0; lint 0 warnings/errors; test 100% on all metrics; fixlint run; prettier
+  2.8.8 clean.
+- **Repo-wide `rush rebuild`:** `SUCCESS: 38 operations`. 0 error greps, 1 `warning` (the symlink
+  notice), no NUL padding.
+- **Repo-wide `rush test`:** `SUCCESS: 37 operations` plus 1 `NO OP`. 0 error / `not met` greps, 1
+  `warning` (the symlink notice), no NUL padding. The `ts-res-cli` timeout from the first run did not
+  recur.
+- **Other checks:** `change --verify --target-branch origin/integration/asks`,
+  `verify-capability-docs` and the feed `--check` all exit 0.

@@ -46,4 +46,4 @@ relatedStreams:
       relationship: 'reported the bare-id handle hazard (D3) this stream fixes'
     }
   - { id: personality-asks-2026-10, relationship: 'followup D3 and decision 2 live in its followups.md' }
-sourceHash: sha256:ec318a3f0707e1f9 # over brief.md + result.md + state.md
+sourceHash: sha256:6d0d5f95227ce243 # over brief.md + result.md + state.md
