@@ -263,7 +263,7 @@ to. Design it once, before any of them ships.
 - **Possible fix:** a one-line store check inside the same chain, `!encoded.isVersioned && encoded.idStem !== file.baseName`, would make the whole address a store property.
 - **Route:** fold into the next `ts-agent-memory` stream. A misbehaving codec is a codec bug, and this half is already in the codec contract.
 
-### D6. The store does not check a versioned kind's version stem — from D5's review — **shipped** via #TBD
+### D6. The store does not check a versioned kind's version stem — from D5's review — **shipped** via #741
 
 - **What:** D5 made a flat kind's idStem a store property. A versioned kind's file stem is `encodeVersion(entityId, seq)`, and only the codec's `verifyRoundTrip` checks it, so a temporal codec that skips that check has the same `getById` / `get` asymmetry D5 closed for flat kinds.
 - **Possible fix:** have the store decode the version address and compare against `encodeVersion(entityId, seq)` for `ITemporalIdentityCodec` kinds.
