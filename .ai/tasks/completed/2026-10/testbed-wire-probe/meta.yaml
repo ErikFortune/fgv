@@ -1,7 +1,7 @@
 id: testbed-wire-probe
 status: shipped
 packages: ['@fgv/ts-extras', '@fgv/testbed']
-prs: [] # filled in by the orchestrator on merge (#TBD)
+prs: [738]
 openPrs: []
 opened: 2026-10-18
 closed: 2026-10-18

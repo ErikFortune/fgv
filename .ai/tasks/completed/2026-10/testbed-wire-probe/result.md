@@ -4,7 +4,7 @@
 
 Branch `testbed-wire-probe`, from `integration/asks` at `59f06b939` (brief commit; `integration/asks`
 had nothing newer to merge). Commits: `ce69cfed` (ts-extras), `1b9ce0e2` (testbed), and the
-close-out commit. PR: `#TBD`.
+close-out commit. PR: `#738`.
 
 **One live run was made, on 2026-10-18 by the user, with all four keys** (§ Live run below). It found
 **one unsafe row**: `anthropic-tools/untyped-root`. It confirmed two of the three #736 inferences and

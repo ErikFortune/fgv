@@ -1,6 +1,6 @@
 # `testbed-wire-probe`: what each provider wire accepts, compared with our keyword tables
 
-**Shipped 2026-10-18** onto `integration/asks` (PR #TBD). Origin: user decision 5, 2026-10-18
+**Shipped 2026-10-18** onto `integration/asks` (PR #738). Origin: user decision 5, 2026-10-18
 (`personality-asks-2026-10/followups.md` § "Decisions, 2026-10-18"). Follows `json-schema-constraints`
 (#734) and `json-schema-shapes` (#736), whose tables it checks.
 

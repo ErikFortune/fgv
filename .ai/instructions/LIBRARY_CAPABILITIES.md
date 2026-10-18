@@ -202,7 +202,7 @@ markers.*
 
 <!-- BEGIN GENERATED: recent-additions -->
 
-- **2026-10-18** — AiAssist.structuredOutputSchemaKeywords reads the keyword table a structured-output schema is adapted with, and the testbed… · `ts-extras` `testbed`
+- **2026-10-18** — AiAssist.structuredOutputSchemaKeywords reads the keyword table a structured-output schema is adapted with, and the testbed… ([#738](https://github.com/ErikFortune/fgv/pull/738)) · `ts-extras` `testbed`
 - **2026-10-17** — HybridRetriever's score-union merge no longer collapses records that share an id across scopes — two conversations' turn-3 stay two… ([#731](https://github.com/ErikFortune/fgv/pull/731)) · `ts-agent-memory`
 - **2026-10-17** — FileTreeMemoryStore now refuses to load a record from any scope other than the one its kind's codec derives, so a custom codec that… ([#733](https://github.com/ErikFortune/fgv/pull/733)) · `ts-agent-memory`
 - **2026-10-17** — Shipped: `@fgv/ts-random` can make a weighted random choice, either from a generator or as a pure function of a unit float in `[0… ([#732](https://github.com/ErikFortune/fgv/pull/732)) · `ts-random` `ts-agent-memory`
