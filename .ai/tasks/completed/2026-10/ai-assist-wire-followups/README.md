@@ -1,6 +1,6 @@
 # `ai-assist-wire-followups`: verified endpoints, dropped defaults, turn-creation pre-flight, the Anthropic-tools root
 
-**Shipped 2026-10-18** onto `integration/asks` (PR #TBD), stacked on `json-schema-pattern` (#742).
+**Shipped 2026-10-18** onto `integration/asks` (PR #743), stacked on `json-schema-pattern` (#742).
 Origin: user decisions 3 and 6, 2026-10-18 (`personality-asks-2026-10/followups.md`), and the
 `testbed-wire-probe` live run's one unsafe row. Builds on `json-schema-constraints` (#734),
 `json-schema-shapes` (#736), `testbed-wire-probe` (#738), `json-schema-options` (#740) and

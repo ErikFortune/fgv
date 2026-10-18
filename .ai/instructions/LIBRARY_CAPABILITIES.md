@@ -202,7 +202,7 @@ markers.*
 
 <!-- BEGIN GENERATED: recent-additions -->
 
-- **2026-10-18** — ai-assist: verifiedEndpoint lets an endpoint override use the provider's keyword table, default is dropped instead of folded… · `ts-json-base` `ts-extras` `ts-extras-mcp` `ts-extras-ollama`
+- **2026-10-18** — ai-assist: verifiedEndpoint lets an endpoint override use the provider's keyword table, default is dropped instead of folded… ([#743](https://github.com/ErikFortune/fgv/pull/743)) · `ts-json-base` `ts-extras` `ts-extras-mcp` `ts-extras-ollama`
 - **2026-10-18** — JsonSchema factories never throw: constraint keywords, default and examples arrive through numberOptions / integerOptions /… ([#740](https://github.com/ErikFortune/fgv/pull/740)) · `ts-json-base` `ts-extras` `ts-extras-ollama`
 - **2026-10-18** — JsonSchema pattern: a host's /…/u RegExp via stringOptions is enforced and sent where the wire documents pattern, and fromJson… ([#742](https://github.com/ErikFortune/fgv/pull/742)) · `ts-json-base` `ts-extras` `ts-extras-mcp`
 - **2026-10-18** — Agent memory tool results now carry each record's id and scope, so two conversations' turn-3 are distinguishable and a link copied… ([#739](https://github.com/ErikFortune/fgv/pull/739)) · `ts-agent-memory`

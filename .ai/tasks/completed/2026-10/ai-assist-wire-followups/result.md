@@ -9,7 +9,7 @@ Anthropic tools refuse a typeless root schema.
 - **Stacked on** `origin/integration/asks` and `origin/json-schema-pattern` (PR #742, unmerged),
   merged at `c4d4bb1ac`. Both merges were clean.
 - **Commits:** `a0b853352` (code, tests, docs, change files) and the close-out commit.
-- **PR:** #TBD.
+- **PR:** #743.
 
 **Before merge, the user re-runs the wire probe live.** This session had no provider keys, so the
 probe change is unit-tested over synthetic responses only. Expected live:
