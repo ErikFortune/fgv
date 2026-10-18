@@ -60,4 +60,4 @@ relatedStreams:
     }
   - { id: json-schema-shapes, relationship: 'introduced MCP wire admission; pattern_tool stays its refusal example' }
   - { id: testbed-wire-probe, relationship: 'the probe that gains the two pattern fixtures' }
-sourceHash: 5073b66593f81bef # first 16 hex of sha256 over brief.md, state.md and result.md concatenated in that order
+sourceHash: 6bc58202fb7c2ab8 # first 16 hex of sha256 over brief.md, state.md and result.md concatenated in that order

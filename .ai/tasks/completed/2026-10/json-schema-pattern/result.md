@@ -233,4 +233,13 @@ re-merged with `integration/asks` (#741, `ts-agent-memory` only) in `1a00c3546`.
 
 ### Gates, round 1
 
-GATES_R1
+I checked every log for NUL padding and found none.
+
+| gate | result |
+|---|---|
+| `ts-json-base`, `ts-extras`, `ts-extras-mcp`, `testbed`: build, fixlint, lint, test | exit 0 each; 0 lint warnings; coverage 100%; no `not met` |
+| `etc/*.api.md` `ae-*` | `ts-json-base` 2 / 35 / 212, the same as the base; `ts-extras-mcp` 0, the same as the base |
+| repo-wide `rebuild` | exit 0; `SUCCESS: 38 operations`; error grep 0; `warning` (-i) 1, the symlink notice; 0 `ae-` lines |
+| repo-wide `test` | **First run:** 17 operations passed. `@fgv/ts-extras` failed one wall-clock test in `safer-fetch/saferFetchRetry.test.ts`, "an exhausted deadline fails with the attempt's own failure": it expected 1 call and got 2. This stream does not touch that code, and `ts-extras`'s own `rushx test` passed earlier in this round. The 20 operations that depend on `ts-extras` were blocked. **Re-run** with `test --from @fgv/ts-extras`, which covers the failed package and every blocked one: exit 0, `SUCCESS: 27 operations`, error grep 0, `warning` 1 (the symlink notice). This test is not on the known-flake list. |
+| `change --verify --target-branch origin/integration/asks` | passes |
+| `verify-capability-docs` / `generate-capability-feed --check` | 0 failed / 0 stale |
