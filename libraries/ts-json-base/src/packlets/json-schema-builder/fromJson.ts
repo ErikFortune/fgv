@@ -37,10 +37,7 @@ import {
   SchemaAnnotations,
   StringConstraints,
   annotationFields,
-  annotationJsonValue,
-  checkEnumValues,
-  checkNumberOptions,
-  checkStringOptions
+  annotationJsonValue
 } from './constraints';
 import {
   anyValue,
@@ -50,19 +47,23 @@ import {
   enumOf,
   integer,
   integerEnumOf,
+  integerOptions,
   number,
   numberEnumOf,
+  numberOptions,
   object,
   optional,
   record,
-  string
+  schemaOptions,
+  string,
+  stringOptions
 } from './factories';
 import {
   schemaAnnotationKeywords,
   schemaLengthConstraintKeywords,
   schemaNumberConstraintKeywords
 } from './keywordAdaptation';
-import { INumberSchemaOptions } from './options';
+import { INumberSchemaOptions, ValidatedSchemaOptions } from './options';
 import { ILlmProperties, ISchemaValidator } from './types';
 
 /**
@@ -330,6 +331,21 @@ function _nodeOpts(
   return { ...annotations, ...(nullable && { nullable: true as const }) };
 }
 
+/**
+ * A node's annotations and nullability as validated options, for the factories that take them.
+ *
+ * @remarks
+ * The annotations were already converted by `_annotationsField`, which runs the same JSON check, so
+ * the factory-side check cannot fail here; its `Failure` is passed through unformatted rather than
+ * given a path it will never need.
+ */
+function _validatedNodeOpts(
+  annotations: SchemaAnnotations,
+  nullable: boolean
+): Result<ValidatedSchemaOptions<SchemaAnnotations & { nullable?: true }>> {
+  return schemaOptions(_nodeOpts(annotations, nullable));
+}
+
 /** Whether any annotation is present, i.e. whether a wrapper or `$ref` sibling overrides any. */
 function _hasAnnotations(annotations: SchemaAnnotations): boolean {
   return Object.keys(annotations).length > 0;
@@ -496,29 +512,22 @@ function _convertString(
   return _annotationsAt(from, path).onSuccess((annotations) =>
     _stringConstraintsField
       .convert(from)
-      .onSuccess((constraints) => checkStringOptions({ ...constraints, ..._nodeOpts(annotations, nullable) }))
+      .onSuccess((constraints) => stringOptions({ ...constraints, ..._nodeOpts(annotations, nullable) }))
       .withErrorFormat((msg) => `${path}: ${msg}`)
       .onSuccess((opts) => succeed(string(opts) as unknown as ISchemaValidator<JsonValue>))
   );
 }
 
 /**
- * The options for a `number` or `integer` node: its annotations and range keywords, checked as the
- * factory checks them, with failures naming the path.
+ * The unchecked options for a `number` or `integer` node: its annotations and range keywords, with
+ * failures naming the path. The arm checks them through `numberOptions` or `integerOptions`.
  */
-function _numberOpts(
-  from: unknown,
-  path: string,
-  type: 'number' | 'integer',
-  nullable: boolean
-): Result<INumberSchemaOptions | undefined> {
+function _numberOpts(from: unknown, path: string, nullable: boolean): Result<INumberSchemaOptions> {
   return _annotationsAt(from, path).onSuccess((annotations) =>
     _numberConstraintsField
       .convert(from)
-      .onSuccess((constraints) =>
-        checkNumberOptions(type, { ...constraints, ..._nodeOpts(annotations, nullable) })
-      )
       .withErrorFormat((msg) => `${path}: ${msg}`)
+      .onSuccess((constraints) => succeed({ ...constraints, ..._nodeOpts(annotations, nullable) }))
   );
 }
 
@@ -528,8 +537,10 @@ function _convertNumber(
   { path }: IParseContext,
   nullable: boolean
 ): Result<ISchemaValidator<JsonValue>> {
-  return _numberOpts(from, path, 'number', nullable).onSuccess((opts) =>
-    succeed(number(opts) as unknown as ISchemaValidator<JsonValue>)
+  return _numberOpts(from, path, nullable).onSuccess((opts) =>
+    numberOptions(opts)
+      .withErrorFormat((msg) => `${path}: ${msg}`)
+      .onSuccess((checked) => succeed(number(checked) as unknown as ISchemaValidator<JsonValue>))
   );
 }
 
@@ -539,8 +550,10 @@ function _convertInteger(
   { path }: IParseContext,
   nullable: boolean
 ): Result<ISchemaValidator<JsonValue>> {
-  return _numberOpts(from, path, 'integer', nullable).onSuccess((opts) =>
-    succeed(integer(opts) as unknown as ISchemaValidator<JsonValue>)
+  return _numberOpts(from, path, nullable).onSuccess((opts) =>
+    integerOptions(opts)
+      .withErrorFormat((msg) => `${path}: ${msg}`)
+      .onSuccess((checked) => succeed(integer(checked) as unknown as ISchemaValidator<JsonValue>))
   );
 }
 
@@ -551,7 +564,9 @@ function _convertBoolean(
   nullable: boolean
 ): Result<ISchemaValidator<JsonValue>> {
   return _annotationsAt(from, path).onSuccess((annotations) =>
-    succeed(boolean(_nodeOpts(annotations, nullable)) as unknown as ISchemaValidator<JsonValue>)
+    _validatedNodeOpts(annotations, nullable).onSuccess((opts) =>
+      succeed(boolean(opts) as unknown as ISchemaValidator<JsonValue>)
+    )
   );
 }
 
@@ -582,7 +597,9 @@ function _convertArray(
 
   return _annotationsAt(from, path).onSuccess((annotations) =>
     _convertNode(items, _at(ctx, `${path}/items`)).onSuccess((inner) =>
-      succeed(array(inner, _nodeOpts(annotations, nullable)) as unknown as ISchemaValidator<JsonValue>)
+      _validatedNodeOpts(annotations, nullable).onSuccess((opts) =>
+        succeed(array(inner, opts) as unknown as ISchemaValidator<JsonValue>)
+      )
     )
   );
 }
@@ -624,9 +641,9 @@ function _typeAdmits(type: string, memberType: EnumMemberType): boolean {
 }
 
 /**
- * Builds the enum node for checked members: a string, number, integer or boolean enum. The members
- * are re-checked against the node type (`checkEnumValues` — finite numbers, integers for
- * `integer`), so a failure here is a `Failure` naming the path, never a factory throw.
+ * Builds the enum node for checked members: a string, number, integer or boolean enum. The numeric
+ * and boolean factories re-check the members against the node type (finite numbers, integers for
+ * `integer`) and return a `Failure`, which is given the path.
  */
 function _buildEnum(
   type: string,
@@ -641,20 +658,18 @@ function _buildEnum(
   const booleans = members.filter((v): v is boolean => typeof v === 'boolean');
   switch (type) {
     case 'string':
-      return succeed(enumOf(strings, opts) as unknown as ISchemaValidator<JsonValue>);
+      return _validatedNodeOpts(annotations, nullable).onSuccess((validated) =>
+        succeed(enumOf(strings, validated) as unknown as ISchemaValidator<JsonValue>)
+      );
     case 'number':
     case 'integer':
-      return checkEnumValues(type, numbers)
+      return (type === 'integer' ? integerEnumOf(numbers, opts) : numberEnumOf(numbers, opts))
         .withErrorFormat((msg) => `${path}: ${msg}`)
-        .onSuccess((checked) =>
-          succeed(
-            (type === 'integer'
-              ? integerEnumOf(checked, opts)
-              : numberEnumOf(checked, opts)) as unknown as ISchemaValidator<JsonValue>
-          )
-        );
+        .onSuccess((node) => succeed(node as unknown as ISchemaValidator<JsonValue>));
     default:
-      return succeed(booleanEnumOf(booleans, opts) as unknown as ISchemaValidator<JsonValue>);
+      return booleanEnumOf(booleans, opts).onSuccess((node) =>
+        succeed(node as unknown as ISchemaValidator<JsonValue>)
+      );
   }
 }
 
@@ -847,14 +862,12 @@ function _parseObjectBody(
       for (const [key, node] of built) {
         properties[key] = node;
       }
-      return succeed(
-        object(properties, {
-          // JSON Schema's default (absent additionalProperties) permits extra fields;
-          // only an explicit `false` produces a strict validator.
-          additionalProperties: additionalProperties !== false,
-          ..._nodeOpts(annotations, nullable)
-        }) as unknown as ISchemaValidator<JsonValue>
-      );
+      return schemaOptions({
+        // JSON Schema's default (absent additionalProperties) permits extra fields;
+        // only an explicit `false` produces a strict validator.
+        additionalProperties: additionalProperties !== false,
+        ..._nodeOpts(annotations, nullable)
+      }).onSuccess((opts) => succeed(object(properties, opts) as unknown as ISchemaValidator<JsonValue>));
     });
   });
 }
@@ -897,7 +910,9 @@ function _parseRecordBody(
     );
   }
   return _convertNode(valueSchema, _at(ctx, `${ctx.path}/additionalProperties`)).onSuccess((values) =>
-    succeed(record(values, _nodeOpts(annotations, nullable)) as unknown as ISchemaValidator<JsonValue>)
+    _validatedNodeOpts(annotations, nullable).onSuccess((opts) =>
+      succeed(record(values, opts) as unknown as ISchemaValidator<JsonValue>)
+    )
   );
 }
 
@@ -1212,7 +1227,9 @@ function _convertSchemaObject(
   // `@fgv/ts-extras` decide per wire.
   if (_isAnySchema(raw)) {
     return _annotationsAt(raw, path).onSuccess((annotations) =>
-      succeed(anyValue(annotations) as unknown as ISchemaValidator<JsonValue>)
+      schemaOptions(annotations).onSuccess((opts) =>
+        succeed(anyValue(opts) as unknown as ISchemaValidator<JsonValue>)
+      )
     );
   }
 

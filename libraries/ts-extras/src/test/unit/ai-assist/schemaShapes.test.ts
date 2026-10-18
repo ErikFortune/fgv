@@ -58,8 +58,8 @@ import { TEST_PROMPT } from './streamingAdaptersFixtures';
 
 /** A numeric enum, a boolean const-style enum and a string enum — no untyped node. */
 const enums = JsonSchema.object({
-  level: JsonSchema.integerEnumOf([1, 2], { description: 'Level.' }),
-  on: JsonSchema.booleanEnumOf([true]),
+  level: JsonSchema.integerEnumOf([1, 2], { description: 'Level.' }).orThrow(),
+  on: JsonSchema.booleanEnumOf([true]).orThrow(),
   kind: JsonSchema.enumOf(['a', 'b'])
 });
 
@@ -157,7 +157,9 @@ describe('the shape rules, per tool wire format', () => {
   });
 
   test('a nullable numeric enum on Gemini folds, and the sanitizer still translates the union', () => {
-    const nullable = JsonSchema.object({ n: JsonSchema.numberEnumOf([0.5, 1], { nullable: true }) });
+    const nullable = JsonSchema.object({
+      n: JsonSchema.numberEnumOf([0.5, 1], { nullable: true }).orThrow()
+    });
     expect(toGeminiTools([tool(nullable).config], { providerId: 'google-gemini' })).toSucceedAndSatisfy(
       ([wire]) => {
         const [declaration] = wire.function_declarations as JsonObject[];
@@ -266,7 +268,7 @@ describe('the shape rules on structured output', () => {
     );
   }
 
-  const answer = JsonSchema.object({ grade: JsonSchema.integerEnumOf([1, 2, 3]) });
+  const answer = JsonSchema.object({ grade: JsonSchema.integerEnumOf([1, 2, 3]).orThrow() });
   const anyAnswer = JsonSchema.object({ value: JsonSchema.anyValue() });
 
   test('a numeric enum passes on OpenAI strict and Anthropic JSON outputs, and folds on Gemini', () => {

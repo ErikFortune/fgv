@@ -113,8 +113,8 @@ describe('chatStructured (layer 1 — structural client mock)', () => {
 
   test('folds every constraint keyword into the description, and still enforces it on the reply', async () => {
     const constrained = JsonSchema.object({
-      name: JsonSchema.string({ maxLength: 2, format: 'hostname', description: 'Short.' }),
-      age: JsonSchema.integer({ minimum: 0, maximum: 150, default: 30 })
+      name: JsonSchema.string(JsonSchema.stringOptions({ maxLength: 2, format: 'hostname', description: 'Short.' }).orThrow()),
+      age: JsonSchema.integer(JsonSchema.integerOptions({ minimum: 0, maximum: 150, default: 30 }).orThrow())
     });
     const chat = jest.fn().mockResolvedValue(makeChatIterator(validPersonChunks()));
 
@@ -134,7 +134,10 @@ describe('chatStructured (layer 1 — structural client mock)', () => {
   });
 
   test('folds a numeric enum into the description, and still enforces it on the reply', async () => {
-    const levelled = JsonSchema.object({ name: JsonSchema.string(), age: JsonSchema.integerEnumOf([1, 2]) });
+    const levelled = JsonSchema.object({
+      name: JsonSchema.string(),
+      age: JsonSchema.integerEnumOf([1, 2]).orThrow()
+    });
     const chat = jest.fn().mockResolvedValue(makeChatIterator(validPersonChunks()));
 
     // 42 is not 1 or 2: the folded enum is not on the wire, but the validator holds it.

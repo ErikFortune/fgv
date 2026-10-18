@@ -20,7 +20,9 @@
  * SOFTWARE.
  */
 
+import { Brand, StringOneOf } from '@fgv/ts-utils';
 import { JsonValue } from '../json';
+import { schemaLengthConstraintKeywords, schemaNumberConstraintKeywords } from './keywordAdaptation';
 
 /**
  * Common options accepted by every schema factory.
@@ -29,9 +31,14 @@ import { JsonValue } from '../json';
  * Every keyword here is either **validating** (enforced by the derived validator *and* emitted by
  * `toJson()`) or an **annotation** (emitted, never enforced). There is no third kind: a keyword the
  * wire states but the validator does not know about would break the rule that what the validator
- * accepts is what the wire schema states. The factory refuses an incoherent set — an annotation
- * that is not JSON, or a constraint that leaves no value accepted — by throwing at construction,
- * since a schema is declared, not computed; `fromJson` reports the same conditions as a `Failure`.
+ * accepts is what the wire schema states. An incoherent set — an annotation that is not JSON, or a
+ * constraint that leaves no value accepted — is refused before any node exists: the factories
+ * accept unchecked only the options that cannot be wrong ({@link JsonSchema.PlainSchemaOptions}),
+ * and everything else arrives as validated options, made by
+ * {@link JsonSchema.schemaOptions | schemaOptions}, {@link JsonSchema.numberOptions | numberOptions},
+ * {@link JsonSchema.integerOptions | integerOptions} or {@link JsonSchema.stringOptions | stringOptions},
+ * each of which returns a `Result`. A factory therefore never fails; `fromJson` reports the same
+ * conditions as a `Failure` naming the path.
  * @public
  */
 export interface ISchemaOptions {
@@ -92,8 +99,8 @@ export interface ISchemaOptions {
    *
    * @remarks
    * An **annotation**: emitted, never enforced, and never applied — the validator does not
-   * substitute it for a missing value. It must be a JSON value (the factory refuses one that is
-   * not), but it is deliberately **not** checked against the node: JSON Schema does not require a
+   * substitute it for a missing value. It must be a JSON value — so it reaches a factory only
+   * through validated options, which refuse one that is not — but it is deliberately **not** checked against the node: JSON Schema does not require a
    * `default` to validate, and checking it would refuse schemas servers already send.
    */
   default?: JsonValue;
@@ -113,9 +120,10 @@ export interface ISchemaOptions {
  *
  * @remarks
  * The range keywords are **validating**: the derived validator enforces them, with a failure that
- * names the keyword and the bound, and `toJson()` emits them. The factory refuses a non-finite
- * bound, `minimum` greater than `maximum`, an exclusive bound that leaves no value (for `integer`,
- * no integer) in range, and a `multipleOf` that is not greater than zero.
+ * names the keyword and the bound, and `toJson()` emits them. They reach a factory only through
+ * {@link JsonSchema.numberOptions | numberOptions} or {@link JsonSchema.integerOptions | integerOptions},
+ * which refuse a non-finite bound, `minimum` greater than `maximum`, an exclusive bound that leaves
+ * no value (for `integer`, no integer) in range, and a `multipleOf` that is not greater than zero.
  * @public
  */
 export interface INumberSchemaOptions extends ISchemaOptions {
@@ -164,8 +172,9 @@ export interface INumberSchemaOptions extends ISchemaOptions {
  * Options for the `string` factory.
  *
  * @remarks
- * `minLength` and `maxLength` are **validating**; `format` is an **annotation**. The factory
- * refuses a length that is not a non-negative integer, and `minLength` greater than `maxLength`.
+ * `minLength` and `maxLength` are **validating**; `format` is an **annotation**. The lengths reach
+ * the factory only through {@link JsonSchema.stringOptions | stringOptions}, which refuses a length
+ * that is not a non-negative integer, and `minLength` greater than `maxLength`.
  * @public
  */
 export interface IStringSchemaOptions extends ISchemaOptions {
@@ -231,3 +240,113 @@ export interface IObjectSchemaOptions extends ISchemaOptions {
  * @public
  */
 export type IAnySchemaOptions = Omit<ISchemaOptions, 'nullable'>;
+
+// ---------------------------------------------------------------------------
+// Plain and validated options
+// ---------------------------------------------------------------------------
+
+/**
+ * The options a factory accepts as a plain object literal: the ones that cannot be wrong —
+ * `description`, `title` and `nullable`.
+ *
+ * @remarks
+ * A factory never fails, so it accepts unchecked only what needs no check. `default` and
+ * `examples` must be JSON values, which the type cannot fully guarantee (`NaN` is a `number`), so
+ * they are declared `never` here and arrive through {@link JsonSchema.schemaOptions | schemaOptions}
+ * instead, as validated options.
+ * @public
+ */
+export type PlainSchemaOptions = Pick<ISchemaOptions, 'description' | 'title' | 'nullable'> & {
+  readonly default?: never;
+  readonly examples?: never;
+};
+
+/**
+ * The `number` / `integer` options accepted as a plain object literal: the
+ * {@link JsonSchema.PlainSchemaOptions | plain annotations} and `strict`. Every range keyword is
+ * declared `never`, so a raw `{ minimum: 0 }` is a compile error — range keywords arrive through
+ * {@link JsonSchema.numberOptions | numberOptions} or {@link JsonSchema.integerOptions | integerOptions}.
+ * @public
+ */
+export type PlainNumberSchemaOptions = PlainSchemaOptions &
+  Pick<INumberSchemaOptions, 'strict'> & {
+    readonly [K in StringOneOf<typeof schemaNumberConstraintKeywords>]?: never;
+  };
+
+/**
+ * The `string` options accepted as a plain object literal: the
+ * {@link JsonSchema.PlainSchemaOptions | plain annotations} and `format`, which is an annotation
+ * and cannot be incoherent. The length keywords are declared `never` and arrive through
+ * {@link JsonSchema.stringOptions | stringOptions}.
+ * @public
+ */
+export type PlainStringSchemaOptions = PlainSchemaOptions &
+  Pick<IStringSchemaOptions, 'format'> & {
+    readonly [K in StringOneOf<typeof schemaLengthConstraintKeywords>]?: never;
+  };
+
+/**
+ * The `object` options accepted as a plain object literal: the
+ * {@link JsonSchema.PlainSchemaOptions | plain annotations} and `additionalProperties`.
+ * @public
+ */
+export type PlainObjectSchemaOptions = PlainSchemaOptions &
+  Pick<IObjectSchemaOptions, 'additionalProperties'>;
+
+/**
+ * The `anyValue` options accepted as a plain object literal: `description` and `title`.
+ * @public
+ */
+export type PlainAnySchemaOptions = Omit<PlainSchemaOptions, 'nullable'>;
+
+/**
+ * Options whose annotations {@link JsonSchema.schemaOptions | schemaOptions} has checked: `default`
+ * and every member of `examples` are JSON values.
+ *
+ * @remarks
+ * The brand exists only in the type; the value is a frozen copy of the options it was made from,
+ * so neither the caller's later mutations nor its own can invalidate the check. Every factory that
+ * accepts plain options accepts these too.
+ * @public
+ */
+export type ValidatedSchemaOptions<T extends IObjectSchemaOptions = IObjectSchemaOptions> = Brand<
+  T,
+  'ValidatedSchemaOptions'
+>;
+
+/**
+ * Options that {@link JsonSchema.numberOptions | numberOptions} or
+ * {@link JsonSchema.integerOptions | integerOptions} has found coherent, which the `number`
+ * factory accepts.
+ *
+ * @remarks
+ * The brand is a union so that {@link JsonSchema.ValidatedIntegerOptions | integer-validated}
+ * options are also number-validated: a range holding an integer holds a number. The converse does
+ * not hold, so these are not accepted by the `integer` factory.
+ * @public
+ */
+export type ValidatedNumberOptions<T extends INumberSchemaOptions = INumberSchemaOptions> = Brand<
+  T,
+  'ValidatedNumberOptions' | 'ValidatedIntegerOptions'
+>;
+
+/**
+ * Options that {@link JsonSchema.integerOptions | integerOptions} has found coherent for an
+ * integer node — in particular, its range holds at least one integer. Accepted by both the
+ * `integer` and the `number` factory.
+ * @public
+ */
+export type ValidatedIntegerOptions<T extends INumberSchemaOptions = INumberSchemaOptions> = Brand<
+  T,
+  'ValidatedIntegerOptions'
+>;
+
+/**
+ * Options that {@link JsonSchema.stringOptions | stringOptions} has found coherent, which the
+ * `string` factory accepts.
+ * @public
+ */
+export type ValidatedStringOptions<T extends IStringSchemaOptions = IStringSchemaOptions> = Brand<
+  T,
+  'ValidatedStringOptions'
+>;

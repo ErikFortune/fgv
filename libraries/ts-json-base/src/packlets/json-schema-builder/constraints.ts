@@ -140,17 +140,15 @@ function _isEmptyRange(lo: IBound, hi: IBound, integer: boolean): boolean {
  * above `maximum`, the bounds together admitting at least one value, and `multipleOf` positive.
  * @param type - The node kind; an `integer` range must hold an integer.
  * @param opts - The options to check.
- * @returns The options (annotations copied), or a `Failure` naming the keyword and the value.
+ * @returns A copy of the options (annotations copied deeply), or a `Failure` naming the keyword and
+ * the value.
  * @internal
  */
-export function checkNumberOptions(
+export function checkNumberOptions<T extends INumberSchemaOptions>(
   type: 'number' | 'integer',
-  opts: INumberSchemaOptions | undefined
-): Result<INumberSchemaOptions | undefined> {
+  opts: T
+): Result<T> {
   return checkAnnotations(opts).onSuccess((checked) => {
-    if (checked === undefined) {
-      return succeed(checked);
-    }
     const nonFinite = schemaNumberConstraintKeywords.find(
       (k) => checked[k] !== undefined && !Number.isFinite(checked[k])
     );
@@ -176,16 +174,12 @@ export function checkNumberOptions(
  * Checks a `string` node's options for coherence: each length a non-negative integer, and
  * `minLength` not above `maxLength`.
  * @param opts - The options to check.
- * @returns The options (annotations copied), or a `Failure` naming the keyword and the value.
+ * @returns A copy of the options (annotations copied deeply), or a `Failure` naming the keyword and
+ * the value.
  * @internal
  */
-export function checkStringOptions(
-  opts: IStringSchemaOptions | undefined
-): Result<IStringSchemaOptions | undefined> {
+export function checkStringOptions<T extends IStringSchemaOptions>(opts: T): Result<T> {
   return checkAnnotations(opts).onSuccess((checked) => {
-    if (checked === undefined) {
-      return succeed(checked);
-    }
     const bad = schemaLengthConstraintKeywords.find((k) => {
       const length = checked[k];
       return length !== undefined && !(Number.isInteger(length) && length >= 0);
@@ -212,10 +206,7 @@ export function checkStringOptions(
  * aliases the caller's objects; or a `Failure` naming the keyword.
  * @internal
  */
-export function checkAnnotations<T extends ISchemaOptions>(opts: T | undefined): Result<T | undefined> {
-  if (opts === undefined) {
-    return succeed(opts);
-  }
+export function checkAnnotations<T extends ISchemaOptions>(opts: T): Result<T> {
   const defaultResult: Result<JsonValue | undefined> =
     opts.default === undefined
       ? succeed(undefined)
