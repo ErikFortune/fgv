@@ -1,0 +1,55 @@
+id: agent-memory-scope-decoding
+status: shipped
+packages: ['@fgv/ts-agent-memory']
+prs: []
+openPrs: []
+opened: 2026-10-19
+closed: 2026-10-19
+summary:
+  intended: >
+    Followups D4, user decision (a). FileTreeMemoryStore.create accepts scopeDecoding beside
+    scopeEncoding, and refuses an encoding without a decoding. The open walk and every address-first
+    read (getById, resolveRecord, reconcile) map each on-disk path back through the decoding before
+    indexing or checking the scope invariant. Every walked directory must satisfy
+    encode(decode(dir)) === dir and decode to a valid scope, failing or quarantining under the
+    existing error modes. The decoding signature mirrors the encoding's and returns Result. The
+    identity case is unchanged.
+  shipped: >
+    scopeDecoding?: (encoded: string) => Result<MemoryScopeKey>; create refuses scopeEncoding without
+    it, and a decoding alone pairs with defaultMemoryScopeEncoding. The open walk decodes each
+    record-holding directory once (decodeScopeDir), requires Convert.scopeKey and re-encoding to the
+    directory, and verifies the scope invariant against the decoded scope; skip mode quarantines with
+    ISkippedRecord.scope absent. Every directory resolution, read or write, goes through encodeScope,
+    which requires the encoded directory to decode back. TECH_DEBT P3 retired; D4 marked shipped.
+  diverged: >
+    The round-trip check runs on record-holding directories only, not on every walked directory,
+    because an intermediate directory of an encoded layout is not a scope. It also guards writes,
+    which the brief did not name, so a non-bijective pair cannot write a vault the next open refuses.
+    ISkippedRecord.scope became optional and its path the on-disk path, which the brief did not
+    anticipate. A decoding without an encoding is accepted; the brief was silent on that case.
+  sourceLine: '**Shipped:** `FileTreeMemoryStore.create` takes `scopeDecoding`, the inverse of `scopeEncoding`, so a vault written under a non-identity scope encoding reopens with every record reachable by the scope it was written to.'
+  headline: >
+    A memory vault written under a non-identity scope encoding now reopens: FileTreeMemoryStore takes
+    a scopeDecoding inverse and checks the pair round-trips on every directory it reads or writes.
+keywords:
+  [
+    'scopeEncoding',
+    'scopeDecoding',
+    'inverse',
+    'bijection',
+    'round-trip',
+    'directory layout',
+    'percent-encoding',
+    'open-time walk',
+    'scope invariant',
+    'ISkippedRecord',
+    'onRecordError skip',
+    'reopen vault'
+  ]
+relatedStreams:
+  - {
+      id: agent-memory-scope-invariant,
+      relationship: 'made the scope invariant a store property; recorded D4 as its follow-up'
+    }
+  - { id: personality-asks-2026-10, relationship: 'the followups ledger carrying D4' }
+sourceHash: c5672820a46e5a62 # first 16 hex of sha256 over brief.md, state.md and result.md concatenated in that order
