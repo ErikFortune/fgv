@@ -861,6 +861,30 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
 
 ## P3 — Opportunistic cleanup
 
+- **[P3] A `ts-extras-mcp` cancellation test races two real timers 10 ms apart, and fails under load.**
+  The test is `libraries/ts-extras-mcp/src/test/unit/cancellation.test.ts` §
+  *"maxTotalTimeoutMs caps a call that progress would otherwise extend"*. It calls a progress-emitting
+  tool on a real in-memory MCP server with
+  `{ timeoutMs: 80, resetTimeoutOnProgress: true, maxTotalTimeoutMs: 70 }`. It asserts that the
+  70 ms total cap fires (`/Maximum total timeout exceeded/`) before the 80 ms per-request timeout,
+  using real timers.
+  - **Observed:** on a loaded machine the 80 ms timer won instead. The test got
+    `MCP error -32001: Request timed out` with the right `{ kind: 'timeout' }` detail but the wrong
+    message, and that failed a repo-wide `rush test` for an unrelated stream.
+  - **The implementation is not at fault:** which SDK timer fires first is a property of the
+    scheduler, not of the package.
+
+  **Trigger**: the next stream touching `cancellation.test.ts`, or the next CI run it flakes.
+
+  **Scope sketch**: drive the timers with a fake clock, as #745 did for the safer-fetch timing tests.
+  The two deadlines then fire in a fixed order, and the assertion pins the cap rather than the
+  scheduler. Sweep the file's sibling real-timer tests for the same shape while there.
+
+  **Not a P2**: it is one test with a ~10 ms margin; it has been seen once, and a re-run passes.
+
+  **Reference**: `safer-fetch-walk-chain` (2026-10-19), second repo-wide `rush test`; recorded in
+  that stream's `result.md` § Gates.
+
 - **[P3] `ts-agent-memory` cannot reopen a vault written with a non-identity `scopeEncoding`.**
   Writes go through `scopeEncoding(scope)`. The open-time walk (`_collectEntries` in
   `fileTreeMemoryStore.ts`) indexes records under the **raw** directory segments, and has no inverse

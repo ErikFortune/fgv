@@ -27,7 +27,7 @@ between the connect settling and the next hop's derivation. Nothing is checked o
 state there.
 
 The `mcp-round-2b` revert matrix was re-run row by row. R7 stays green: that stream had already
-recorded it as not isolable. Every other row is red. Five new rows (S1–S5) target the walk's own
+recorded it as not isolable. Every other row is red. Seven new rows (S1–S7) target the walk's own
 ordering. Table in `result.md`.
 
 ## What a reader should know

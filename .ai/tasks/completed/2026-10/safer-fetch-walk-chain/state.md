@@ -9,8 +9,9 @@ Worker-owned. Brief: `brief.md` (frozen).
 - [x] Rewrite `_walk` / `_execute` (`97f01c699`)
 - [x] Check-then-act enumeration, **after**
 - [x] Revert matrix re-run (table in `result.md`)
-- [ ] Gates
-- [ ] Close-out
+- [x] Gates (see `result.md` § Gates)
+- [x] Close-out
+- [x] Review round 1 applied (P2-1, P2-2, P3s)
 
 ## Check-then-act enumeration — BEFORE (`saferFetch.ts` at `499063733`)
 
@@ -80,7 +81,7 @@ pending) waits.
 | # | before (L) | after (L) | same? |
 |---|---|---|---|
 | W0 | 976–981 | 971–977, once per walk | yes |
-| W1 | 989 → 991, sync | 1008 → 1011, sync | yes |
+| W1 | 989 → 991, sync | 1008 → 1011, sync. `attemptStarted()` is a no-op when a stop cause is already set (`deadline.ts` `attemptStarted`), so a stop that landed before the hop is never re-armed away; the W2 pre-check then reports it | yes |
 | W2 | `_raced` pre-check before the request guard | unchanged (`_raced` untouched) | yes |
 | W3 | one `await` (the guard); `request` re-read only for the `_blocked` message | 1011–1015, identical; `checked` is the guard's output from here on | yes |
 | W4 | 1002 → 1009 sync | 1018 `.onSuccess` (sync) → 1019 `.thenOnSuccess` on a settled `DetailedSuccess` → `_clearAndConnect` called synchronously → `_clearAddress` → `_raced` pre-check | yes, still sync |
@@ -90,6 +91,7 @@ pending) waits.
 | W8 | `_connect` preamble → pre-check → transport | `_connect` untouched; reached as above. No guard between W6 and W8 | yes |
 | W9 | inside `_connect` | untouched | yes |
 | W10 | `await _connect` → 1037 `_nextHop`, sync | 1052 `.thenOnSuccess` on the pending `AsyncDetailedResult` → `_settleHop` → 1081 `_nextHop`. **Adds a few microtasks** between the connect settling and `_nextHop`. Nothing is checked or read from mutable state in them: `attempt`, `checked`, `completed` are locals. No timer can fire inside a microtask run, and a caller abort landing there is caught by the next hop's W2 pre-check — the same check that caught it before | equivalent |
+| W12 | — (the final hop's value returned straight out of the loop) | the walk's result travels up through one `AsyncDetailedResult` per recursion level before `_walkGuarded` reads `watch.cause` (`stoppedBy`). That is O(hops) more microtasks between the last guard and the read. An abort landing in them is **reported** by that read, not dropped. The read only gets later, so it can only see more stops, never fewer | equivalent |
 | W11 | 1043 push → 1048 → 989, sync | 1082 `.thenOnSuccess` on a settled `_nextHop` result → `_walkHop` called synchronously with `[...completed, thisHop]` → 1008 → 1011. Sync | yes |
 
 Values read more than once: unchanged — `request` (1013 ×2, 1015 message), `checked` (1018, 1037,
@@ -112,8 +114,10 @@ same text — same three sites as before.
 ### Escapes (thrown errors) — the one place the mapping is not line-for-line
 
 Before, a throw inside the walk (outside a `_capture`) rejected `_walk` and reached the caller's
-`captureAsyncResult`. After, a throw inside any stage after the request guard is caught by a
-`thenOnSuccess` and becomes a `DetailedFailure` with `detail: undefined` and message
+`captureAsyncResult`. After, a throw inside any stage after hop 0's request guard is caught by a
+`thenOnSuccess`. That includes the request-guard stage of every later hop, because hop ≥1's
+`_walkHop` runs inside `_settleHop`'s `thenOnSuccess`. The failure becomes a `DetailedFailure` with
+`detail: undefined` and message
 `_errorMessage(err)` — the same function `captureAsyncResult` uses. Traced per entry point:
 
 - **buffered** (`saferFetch*`): `_runAttempt` sees `detail: undefined`; `isRetryableFailure(undefined)`
@@ -125,9 +129,10 @@ Before, a throw inside the walk (outside a `_capture`) rejected `_walk` and reac
 Existing tests pin both (`a logger that throws does not escape the Result contract`,
 `contains a throwing logger as unknown rather than letting it escape`). A throw that still escapes
 as a rejection — before the first stage hand-off, e.g. a request guard whose `name` getter throws
-while its refusal is reported — goes through the old `ran.isFailure()` branch in both versions;
+while its hop-0 refusal is reported — goes through the old `ran.isFailure()` branch in both versions;
 two new tests pin it (and keep those branches covered, which the rewrite had otherwise made
-unreachable from the existing suite).
+unreachable from the existing suite). The same getter on hop ≥1 takes the `thenOnSuccess` path
+instead and resolves to the same reason. A test pins that too, added in review round 1.
 
 **Disclosed divergence (one, garbage input only).** `watch.dispose()` now runs inside a
 `thenOnSuccess` callback. If it throws, the buffered call now resolves to an `'unknown'` failure

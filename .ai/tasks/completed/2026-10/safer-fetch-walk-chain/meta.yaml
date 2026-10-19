@@ -19,10 +19,10 @@ summary:
     _withReason wraps the whole chain. _propagate was removed. The before/after enumeration holds line
     for line, because DetailedSuccess.thenOnSuccess runs its callback synchronously; the only new
     interval is a few microtasks between the connect settling and _nextHop. All 28 mcp-round-2b
-    revert rows were re-run: 27 red, and R7 green as previously recorded. Five new ordering rows
-    (S1–S5) target the walk itself.
+    revert rows were re-run: 27 red, and R7 green as previously recorded. Seven new ordering rows
+    (S1–S7) target the walk itself.
   diverged: >
-    Beyond the brief: five revert rows aimed at the walk's own ordering. S1 (the scheme re-check
+    Beyond the brief: seven revert rows aimed at the walk's own ordering (S6 and S7 added in review round 1, each closing a gap no existing test pinned — the walk-level credential carry-forward, and re-arming the headers deadline before the request guard). S1 (the scheme re-check
     before the address guard) was green on the existing suite, before and after the rewrite, so a
     test was strengthened to pin it. Two tests were added to keep the top-level escaped-throw branches
     in _runCall and _walkGuarded covered, since the rewrite had made them unreachable from the
@@ -45,4 +45,4 @@ relatedStreams:
       id: mcp-round-2b,
       relationship: 'source of the revert matrix re-run here, and the stream whose #729 deep review raised D1'
     }
-sourceHash: sha256:d5199db9361ba03e # over brief.md + result.md + state.md
+sourceHash: sha256:4796e0db53139566 # over brief.md + result.md + state.md

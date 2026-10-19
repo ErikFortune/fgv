@@ -85,11 +85,13 @@ code where the patched line moved. The S rows are new and target the ordering th
 | R25 | egress built inside capture | build before | a provider getter that throws fails createHttpTransport… | red |
 | R26 | window closes on a failed parked connect | close on success only | a connect that $label while auth is parked… | red (both) |
 | R27 | late redirect after pending `saveCodeVerifier` refused | same | …while saveCodeVerifier is pending: the late redirect is refused | red |
-| S1 | scheme re-check of the request guard's replacement, before the address guard | drop it | a replacement request whose scheme is unsupported is refused | red (after strengthening, see below) |
+| S1 | scheme re-check of the request guard's replacement, before the address guard | drop it | a replacement request whose scheme is unsupported is refused · a request guard replacing a later hop with a bad scheme is refused | red, both (after strengthening, see below) |
 | S2 | loop detection compares guard-cleared URLs | compare `checked.url` | catches a repeat that only a normalizing guard makes visible | red |
 | S3 | headers deadline re-armed per hop | hop 0 only | the headers deadline is per attempt, so a later hop that never answers still times out | red |
 | S4 | the cleared (normalized) URL is what is sent | send `checked.url` | a normalized verdict URL is what actually gets requested | red |
 | S5 | the replacement request is what the address guard clears | clear the pre-guard URL | a replacement request is still address-checked before it is sent | red |
+| S6 | the next hop's headers come from the request actually sent (walk-level carry-forward) | pass `_nextHop` the caller's original headers | A → B → B/2 does NOT re-attach credentials on the same-origin second hop (buffered) · a stripped credential stays gone on a same-origin hop after a cross-origin one (guarded) | red, both |
+| S7 | the headers deadline is re-armed **before** the request guard | re-arm after the request guard | the headers deadline is re-armed before a later hop’s request guard runs | red |
 
 R22's first run missed its patch anchor because a comment sits between `return {` and the first
 getter. The anchor was corrected and the row re-run: red.
@@ -100,6 +102,16 @@ first check still refused the request, but only after handing a `file:` URL to t
 The existing test now also asserts that the address guard is never asked. That makes S1 red, and
 the strengthened test passes on the base commit.
 
+**Rows added in review round 1.**
+- **S6 — credential carry-forward was untested at the walk.** The reviewer found it: with the
+  revert, all 3223 ts-extras tests stayed green. R3 (A → B → A) cannot catch it, because B → A is
+  cross-origin under either header source. The new tests run A → B → B/2, so the second hop is
+  same-origin.
+- **S7 — the re-arm sat on the wrong side of the request guard.** S3 had pinned only that the
+  deadline is re-armed per hop, not that it happens before the request guard.
+- S1 now covers hop ≥1 too.
+- Every new test passes on the base commit.
+
 ## Tests
 
 - Two new tests cover a request guard whose `name` getter throws while its refusal is being
@@ -107,7 +119,14 @@ the strengthened test passes on the base commit.
   exercises the top-level `ran.isFailure()` branches in `_runCall` and `_walkGuarded`. The rewrite
   had left those branches unreachable from the existing suite. Both tests pass on the base commit:
   they pin behaviour and add none.
-- One test was strengthened (S1 above). `saferFetchRetry.test.ts` is untouched.
+- Review round 1 added four tests:
+  - A → B → B/2, buffered and guarded (S6).
+  - A hanging later-hop request guard bounded by the re-armed headers deadline (S7).
+  - A hop ≥1 request guard whose `name` getter throws. This is a different path from hop 0's: it
+    is raised inside `_settleHop`'s `thenOnSuccess` and resolves to the same `'unknown'` reason.
+- Two tests were strengthened to assert that the address guard is never asked: S1, on hop 0 and on
+  hop ≥1.
+- `saferFetchRetry.test.ts` is untouched.
 
 ## Gates
 
@@ -149,5 +168,5 @@ had 0 `not met|FAILURE|Operations failed|error TS` hits, and its only warning wa
   recorded it as not isolated (a microtask-only window), and it stays green.
 - It implies the matrix covers the walk's ordering. Only R1–R3 touch the walk at all, and R1's
   protection lives in `_raced`, outside it. So the matrix alone would not catch a stage moved inside
-  the walk. That gap is why rows S1–S5 were added, and S1 showed one ordering (the scheme re-check
+  the walk. That gap is why rows S1–S7 were added, and S1 showed one ordering (the scheme re-check
   before the address guard) that no test pinned.
