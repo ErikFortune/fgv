@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "New package: an RE2-backed (re2js) JsonSchema.SchemaPatternValidator for untrusted pattern — re2PatternValidator and createRe2PatternValidator read an ECMA-262 u-mode pattern, rewrite it into RE2 syntax with the same meaning or refuse it, and bound source length and program size",
+      "type": "minor",
+      "packageName": "@fgv/ts-extras-re2"
+    }
+  ],
+  "packageName": "@fgv/ts-extras-re2",
+  "email": "noreply@anthropic.com"
+}

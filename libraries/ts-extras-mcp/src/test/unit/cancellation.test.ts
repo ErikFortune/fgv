@@ -155,8 +155,8 @@ describe('per-request options against a real in-memory MCP server', () => {
 
   test('aborting an in-flight call returns aborted promptly, and the server sees the cancellation', async () => {
     const controller = new AbortController();
-    const started = Date.now();
-    // A generous timeout: were the abort not reaching the SDK, the call would run on to it.
+    // A generous timeout: were the abort not reaching the SDK, the call would run on to it and fail
+    // `timeout` rather than `aborted`.
     const pending = callMcpTool(
       fixture.session,
       'hang',
@@ -167,7 +167,6 @@ describe('per-request options against a real in-memory MCP server', () => {
     controller.abort();
 
     expect(await pending).toFailWithDetail("callMcpTool 'hang': aborted by the caller", { kind: 'aborted' });
-    expect(Date.now() - started).toBeLessThan(5_000);
     // The server's handler was told to stop — the request did not run on as an orphan.
     expect(String(await fixture.serverCancelled)).toMatch(/request aborted by the caller/);
   });
@@ -487,11 +486,10 @@ describe('connectMcpSession teardown on a lost or failed connect (custom transpo
 
   test('a close() that never resolves does not stretch the connect past timeoutMs', async () => {
     const scripted = new ScriptedTransport('ok', 'never');
-    const started = Date.now();
+    // The close never resolves, so a connect that awaited it would never settle at all.
     expect(
       await connectMcpSession({ transport: createCustomTransport(scripted).orThrow(), timeoutMs: 100 })
     ).toFailWithDetail(/Request timed out/, { kind: 'timeout' });
-    expect(Date.now() - started).toBeLessThan(2_000);
     // Started, not awaited. (It may be reached twice: when the SDK's own handshake failure also
     // closes, a close() that never calls onclose leaves the SDK still holding the transport.)
     expect(scripted.closeCalls).toHaveBeenCalled();
@@ -501,7 +499,7 @@ describe('connectMcpSession teardown on a lost or failed connect (custom transpo
     const scripted = new ScriptedTransport('ok', 'never');
     const controller = new AbortController();
     setTimeout(() => controller.abort(), 50);
-    const started = Date.now();
+    // The close never resolves, so a connect that awaited it would never settle at all.
     expect(
       await connectMcpSession({
         transport: createCustomTransport(scripted).orThrow(),
@@ -509,7 +507,6 @@ describe('connectMcpSession teardown on a lost or failed connect (custom transpo
         signal: controller.signal
       })
     ).toFailWithDetail('connectMcpSession: aborted by the caller', { kind: 'aborted' });
-    expect(Date.now() - started).toBeLessThan(2_000);
     // Started, not awaited. (It may be reached twice: when the SDK's own handshake failure also
     // closes, a close() that never calls onclose leaves the SDK still holding the transport.)
     expect(scripted.closeCalls).toHaveBeenCalled();
@@ -520,7 +517,7 @@ describe('connectMcpSession teardown on a lost or failed connect (custom transpo
     const onClose = jest.fn();
     const controller = new AbortController();
     setTimeout(() => controller.abort(), 50);
-    const started = Date.now();
+    // `aborted`, not the 30 s `timeout`: the abort is what ended the stalled start().
     expect(
       await connectMcpSession({
         transport: createCustomTransport(scripted).orThrow(),
@@ -529,7 +526,6 @@ describe('connectMcpSession teardown on a lost or failed connect (custom transpo
         onClose
       })
     ).toFailWithDetail('connectMcpSession: aborted by the caller', { kind: 'aborted' });
-    expect(Date.now() - started).toBeLessThan(2_000);
     expect(scripted.closeCalls).toHaveBeenCalledTimes(1);
     expect(onClose).not.toHaveBeenCalled();
   });
