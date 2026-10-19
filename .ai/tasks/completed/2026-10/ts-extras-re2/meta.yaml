@@ -18,7 +18,8 @@ summary:
     meaning — ., \s and \S rewritten to ECMA's sets — or refused, naming the construct; limits
     default to 1024 source units and a program size of 10000. Tested against V8 over the code
     point space, on 100,000-character catastrophic inputs, and end to end through fromJson and a
-    real in-memory MCP server.
+    real in-memory MCP server. Script= values are limited to a frozen allow-list of the 171
+    scripts both re2js and V8 accept (review round 1), tested against both engines.
   diverged: >
     A full ECMA-to-RE2 translator rather than handing the source to re2js: RE2 reads ., \s, POSIX
     classes and its own extensions differently, which the ts-json-base seam's TSDoc says a validator
@@ -47,4 +48,4 @@ keywords:
   ]
 relatedStreams:
   - { id: json-schema-pattern, relationship: 'introduced the SchemaPatternValidator seam this implements' }
-sourceHash: a29bd2417c59dc21 # first 16 hex of sha256 over brief.md, state.md and result.md concatenated in that order
+sourceHash: 884f4a1e3f16ec52 # first 16 hex of sha256 over brief.md, state.md and result.md concatenated in that order

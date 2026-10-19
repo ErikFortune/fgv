@@ -47,8 +47,10 @@ adaptMcpTools(session, { patternValidator: re2PatternValidator });
 
 **Dialect notes** (detail in the README): `\d`, `\w`, `\b` are ASCII in both dialects, so they agree;
 `\p{…}` accepts General_Category values (short or long, lone or `gc=`) and `Script=`/`sc=` with a
-long script name — RE2 has no four-letter aliases (`sc=Grek` is refused); property tables are
-re2js's (Unicode 17), so code points assigned after the host engine's Unicode version can differ.
+long script name on a frozen allow-list of scripts both re2js and V8 accept (no aliases such as
+`sc=Grek`, no Unicode 17 scripts older ECMA engines reject); property tables are re2js's (Unicode
+17), so `\p{…}` membership can differ from an ECMA engine's on some code points — newly assigned
+ones, and reclassified ones such as U+0295.
 Named groups `(?<name>…)` are accepted with ASCII names only.
 
 **Dependency posture:** `re2js` **direct**, pinned exactly (pure JS, no reason for a consumer to hold

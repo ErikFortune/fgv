@@ -235,7 +235,7 @@ describe('re2PatternValidator', () => {
       ['\\p{gc=Greek}', /'Greek' is not a General_Category value/],
       ['\\p{Script_Extensions=Greek}', /only General_Category and Script are supported/],
       ['\\p{scx=Grek}', /only General_Category and Script are supported/],
-      ['\\p{Script=Grek}', /RE2 cannot compile it/],
+      ['\\p{Script=Grek}', /'Grek' is not a script name/],
       ['\\p{a=b=c}', /malformed property/],
       ['\\p{}', /malformed property/],
       ['\\p{_a}', /malformed property/],
