@@ -861,6 +861,35 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
 
 ## P3 — Opportunistic cleanup
 
+- **[P3] Wall-clock assertions remain in tests outside the `deterministic-timing-tests` scope.**
+  That stream made `ts-extras` and `ts-extras-mcp` deterministic, except for one file. It reported
+  the rest without fixing them:
+  - `libraries/ts-extras-mcp/src/test/unit/terminate.test.ts`: `PROMPT_MS` (1 s) bounds at six
+    sites, and `TERMINATE_TIMEOUT_MS ± …` around a real 2 s hold, all over real loopback HTTP.
+  - `libraries/ts-res/src/test/unit/resources/deltaGenerator.{enumeration,core}.test.ts`:
+    `duration < 2000` and `duration < 5000`.
+  - `libraries/ts-sudoku-lib/src/test/unit/puzzles/killerCombinations.test.ts`: `< 100` / `< 200`
+    ms. These are the tightest, and the likeliest to flake next.
+  - `libraries/ts-sudoku-lib/src/test/unit/hints/integration.test.ts`, `puzzles/anyPuzzle.test.ts`
+    and `puzzles/sudokuXPuzzle.test.ts`.
+  - `tools/ts-res-cli/test/integration/cli-configuration.test.ts` "test consistent output by
+    building same input twice" spawns the CLI twice inside Jest's default 5 s timeout. It **did**
+    fail once under load during this stream's repo-wide `test` gate, and passed when re-run alone.
+
+  **Trigger**: any of these failing under a loaded gate. The sudoku packages are slated to leave
+  the repo, so their entries may lapse instead.
+
+  **Scope sketch**:
+  - For `terminate.test.ts`, use `useFakeTimeouts()` in `oauth.test.ts`: fake `setTimeout` only,
+    and keep the clock, promise jobs, `nextTick` and `setImmediate` real. Then advance the bound
+    explicitly.
+  - For the performance assertions, assert the property the bound guarded, as
+    `md5Normalizer.browser.test.ts` now does. Measure speed in a `perf/` script, not in the suite.
+
+  **Not a P2**: none of them has been observed failing yet.
+
+  **Reference**: `.ai/tasks/completed/2026-10/deterministic-timing-tests/result.md` § Sweep.
+
 - **[P3] A `ts-extras-mcp` cancellation test races two real timers 10 ms apart, and fails under load.**
   The test is `libraries/ts-extras-mcp/src/test/unit/cancellation.test.ts` §
   *"maxTotalTimeoutMs caps a call that progress would otherwise extend"*. It calls a progress-emitting
@@ -885,18 +914,6 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
   **Reference**: `safer-fetch-walk-chain` (2026-10-19), second repo-wide `rush test`; recorded in
   that stream's `result.md` § Gates.
 
-- **[P3] `ts-agent-memory` cannot reopen a vault written with a non-identity `scopeEncoding`.**
-  Writes go through `scopeEncoding(scope)`. The open-time walk (`_collectEntries` in
-  `fileTreeMemoryStore.ts`) indexes records under the **raw** directory segments, and has no inverse
-  to recover the scope.
-  - **Before `agent-memory-scope-invariant`:** a scope-blind codec reopened such a vault silently,
-    filing records under the encoded path, so later reads missed them.
-  - **Now:** every codec fails the open on the scope check. That is loud rather than wrong, but it is
-    still unusable.
-  - **Fix:** give `scopeEncoding` an inverse (or make it a validation-only hook), and have the walk
-    decode directory segments back to scopes.
-  - **Trigger:** the first consumer that needs a non-identity encoding. The default is the identity
-    on valid scopes, and the param's TSDoc now says to keep it so.
 
 - **[P3] `ts-extras-mcp` tool schemas can lose an own `__proto__` key without the package seeing it.**
   `listMcpTools` (`libraries/ts-extras-mcp/src/packlets/mcp/operations.ts`) reads `tools/list` through

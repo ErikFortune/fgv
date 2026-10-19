@@ -424,6 +424,13 @@
       "tags": ["libraries"]
     },
     {
+      "packageName": "@fgv/ts-extras-re2",
+      "projectFolder": "libraries/ts-extras-re2",
+      "shouldPublish": true,
+      "versionPolicyName": "base-utils",
+      "tags": ["libraries"]
+    },
+    {
       "packageName": "@fgv/ts-agent-memory",
       "projectFolder": "libraries/ts-agent-memory",
       "shouldPublish": true,
