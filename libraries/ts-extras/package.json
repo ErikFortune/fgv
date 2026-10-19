@@ -1,6 +1,6 @@
 {
   "name": "@fgv/ts-extras",
-  "version": "5.1.0-58",
+  "version": "5.1.0-59",
   "description": "Assorted Typescript Utilities",
   "main": "lib/index.js",
   "types": "dist/ts-extras.d.ts",
