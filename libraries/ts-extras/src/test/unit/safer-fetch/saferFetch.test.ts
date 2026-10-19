@@ -1001,6 +1001,25 @@ describe('saferFetch entry points', () => {
         expect.objectContaining({ kind: 'unknown' })
       );
     });
+
+    test('a request guard whose name throws while its refusal is reported is contained as `unknown`', async () => {
+      // A collaborator's getter read outside any capture: the walk itself rejects, and the call's
+      // top-level capture is what turns that into a result. Nothing is sent.
+      const requestGuard: SaferFetch.IRequestGuard = {
+        get name(): string {
+          throw new Error('name boom');
+        },
+        check: async (): Promise<Result<SaferFetch.ISaferFetchRequest>> => fail('refused')
+      };
+      const transport = respondWith(() => textResponse('ok'));
+      await expect(
+        saferFetchText(URL_UNDER_TEST, options(transport, { requestGuard }))
+      ).resolves.toFailWithDetail(/saferFetch: unexpected error: name boom/, {
+        kind: 'unknown',
+        detail: 'saferFetch: unexpected error: name boom'
+      });
+      expect(transport.calls).toHaveLength(0);
+    });
   });
 
   describe('diagnostics', () => {

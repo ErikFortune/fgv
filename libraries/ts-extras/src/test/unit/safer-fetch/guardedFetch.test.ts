@@ -374,6 +374,21 @@ describe('createGuardedFetch', () => {
         detail: expect.stringMatching(/saferFetch: unexpected error: logger boom/)
       });
     });
+
+    test('contains a request guard whose name throws while its refusal is reported', async () => {
+      // A collaborator's getter read outside any capture: the walk itself rejects, and the call's
+      // top-level capture is what turns that into a reason. Nothing is sent.
+      const requestGuard: SaferFetch.IRequestGuard = {
+        get name(): string {
+          throw new Error('name boom');
+        },
+        check: async (): Promise<Result<SaferFetch.ISaferFetchRequest>> => fail('refused')
+      };
+      const transport = respondWith(() => new Response('hi'));
+      const error = await rejectionOf(guarded(transport, { requestGuard })(URL_UNDER_TEST));
+      expect(error.reason).toEqual({ kind: 'unknown', detail: 'saferFetch: unexpected error: name boom' });
+      expect(transport.calls).toHaveLength(0);
+    });
   });
 
   describe('redirects and the address guard', () => {
