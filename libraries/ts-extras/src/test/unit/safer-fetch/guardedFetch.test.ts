@@ -468,6 +468,32 @@ describe('createGuardedFetch', () => {
       expect(sent[2]).toEqual({ accept: '*/*' });
     });
 
+    test('a stripped credential stays gone on a same-origin hop after a cross-origin one (A → B → B/2)', async () => {
+      const transport: IMockTransport = mockTransport(() => {
+        switch (transport.calls.length) {
+          case 1:
+            return succeed(redirectTo('https://b.example.org/hop'));
+          case 2:
+            return succeed(redirectTo('https://b.example.org/hop2'));
+          default:
+            return succeed(new Response('ok'));
+        }
+      });
+      await guarded(transport, { redirectPolicy: 'validate-each-hop' })(URL_UNDER_TEST, {
+        headers: { authorization: 'Bearer t', accept: '*/*' }
+      });
+      expect(transport.calls.map((c) => c.url.toString())).toEqual([
+        URL_UNDER_TEST,
+        'https://b.example.org/hop',
+        'https://b.example.org/hop2'
+      ]);
+      const sent = transport.calls.map((c) => c.init.headers);
+      expect(sent[0]).toEqual({ authorization: 'Bearer t', accept: '*/*' });
+      expect(sent[1]).toEqual({ accept: '*/*' });
+      // Same origin as the hop before, but the credential was never on that hop's request.
+      expect(sent[2]).toEqual({ accept: '*/*' });
+    });
+
     test('an unlisted custom header is carried across origins — why the list exists', async () => {
       const transport: IMockTransport = mockTransport(() =>
         succeed(transport.calls.length === 1 ? redirectTo('https://b.example.org/') : new Response('ok'))

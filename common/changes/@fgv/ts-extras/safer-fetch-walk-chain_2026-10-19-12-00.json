@@ -2,7 +2,7 @@
   "changes": [
     {
       "packageName": "@fgv/ts-extras",
-      "comment": "safer-fetch: internal refactor, no behaviour change — the hop walk and the buffered entry point's setup are Result chains (the walk recurses over hops) instead of stacked isFailure checks.",
+      "comment": "safer-fetch: internal refactor, no behaviour change for valid input — the hop walk and the buffered entry point's setup are Result chains (the walk recurses over hops) instead of stacked isFailure checks. One edge for invalid input: when the caller's signal is not an AbortSignal and disposing the deadline watch throws, a buffered call now resolves an 'unknown' failure instead of rejecting.",
       "type": "none"
     }
   ],

@@ -277,17 +277,19 @@ function _unexpected<T>(message: string): Outcome<T> {
  * `FetchFailureReason`.
  *
  * @remarks
- * Only one thing can produce a detail-less failure: a bug inside this module that throws or
- * rejects somewhere a `thenOnSuccess` callback catches it. `AsyncDetailedResult` converts such a
- * throw to a `DetailedFailure` with `detail: undefined` — correctly, since a thrown error supplies
- * no reason and inventing one would be worse — but that is a *chaining* primitive's contract, not
- * this module's.
+ * A detail-less failure comes from a throw or rejection that a `thenOnSuccess` callback caught:
+ * a bug inside this module, or collaborator code this module does not wrap — the caller's logger
+ * (a hop failure is logged inside the walk's chain), a guard's `name` getter read while reporting
+ * that guard's refusal on a redirect hop, or `DeadlineWatch.dispose` meeting a caller `signal`
+ * that is not an `AbortSignal`. `AsyncDetailedResult` converts such a throw to a
+ * `DetailedFailure` with `detail: undefined` — correctly, since a thrown error supplies no reason
+ * and inventing one would be worse — but that is a *chaining* primitive's contract, not this
+ * module's.
  *
- * Before the chaining pass those throws propagated as real rejections all the way to
- * {@link _runCall}'s `captureAsyncResult` and were reported as `'unknown'`. Catching them earlier
- * must not change what the caller sees, so the same wrapping is reapplied here. Without this a
- * caller switching on `detail.kind` — the documented way to consume this API — would fault on
- * `undefined`.
+ * Every such failure is reported exactly as a throw that reached {@link _runCall}'s
+ * `captureAsyncResult` is: `'unknown'`, with the `saferFetch: unexpected error:` prefix. Without
+ * this a caller switching on `detail.kind` — the documented way to consume this API — would fault
+ * on `undefined`.
  */
 function _withReason<T>(outcome: Outcome<T>): Outcome<T> {
   return outcome.isFailure() && outcome.detail === undefined ? _unexpected<T>(outcome.message) : outcome;
@@ -991,7 +993,9 @@ async function _walk<T>(url: URL, context: IWalkContext<T>): Promise<Outcome<IWa
  *
  * Recursive rather than a loop, as {@link _runAttempt} is: each hop is handed the hops before it
  * as a fresh array that nothing mutates, so a hop's view of the chain cannot change underneath it.
- * Depth is bounded by `maxRedirects`, and each level is `await`ed.
+ * Depth is bounded by `maxRedirects`, and each level is `await`ed. Each pending level holds its
+ * own copy of the chain, so memory retained by a walk is O(hops²) entries — bounded by
+ * `maxRedirects`.
  *
  * @param request - The request this hop sends, before the request guard has seen it.
  * @param completed - Hops already requested and redirected away from, oldest first.
@@ -1235,11 +1239,13 @@ async function _runCall(
 ): Promise<Outcome<IRawOutcome>> {
   // `captureAsyncResult` rather than `try`/`finally`, for the same reason `_capture` wraps every
   // guard and transport call: an entry point documented to always return a `Result` has to keep
-  // that promise even when a collaborator breaks its own. Nothing inside is *supposed* to throw
-  // — guards, transports and the body read are each captured already — but the caller's
-  // `logger` is collaborator code this primitive does not wrap, and a thrown diagnostic must not
-  // become the caller's problem. The watch is disposed on both paths because the capture has
-  // already converted the throw into a value.
+  // that promise even when a collaborator breaks its own. Guards, transports and the body read
+  // are each captured already, and a throw inside the walk's chain is converted by `thenOnSuccess`
+  // (see {@link _withReason}). What still reaches this capture is collaborator code outside both:
+  // the caller's `logger` on `_runAttempt`'s retry line, and a throw raised before the walk's
+  // first hand-off — a request guard's `name` getter while its hop-0 refusal is reported. The
+  // watch is disposed on both paths because the capture has already converted the throw into a
+  // value.
   const ran = await captureAsyncResult(async () => _runAttempt(url, guards, resolved, watch, 0));
   watch.dispose();
   // `'unknown'` is the taxonomy's honest slot for "something violated its contract", rather than a

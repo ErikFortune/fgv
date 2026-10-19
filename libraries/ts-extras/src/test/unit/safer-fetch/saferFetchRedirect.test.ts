@@ -411,6 +411,29 @@ describe('saferFetch redirect walk', () => {
       expect(headersOf(transport.calls[2]).get('cookie')).toBeNull();
     });
 
+    test('A → B → B/2 does NOT re-attach credentials on the same-origin second hop', async () => {
+      // Each hop's headers come from the request actually sent on the hop before, never from the
+      // caller's original set. A → B → A cannot tell the two apart (B → A is cross-origin either
+      // way); a same-origin hop after a cross-origin one can.
+      const transport = scripted(
+        [START, () => redirect(302, 'https://other.example/hop')],
+        ['https://other.example/hop', () => redirect(302, 'https://other.example/hop2')],
+        ['https://other.example/hop2', () => ok('done')]
+      );
+      await expect(saferFetchText(START, options(transport, { headers: AUTH }))).resolves.toSucceed();
+
+      expect(requestedUrls(transport)).toEqual([
+        START,
+        'https://other.example/hop',
+        'https://other.example/hop2'
+      ]);
+      expect(headersOf(transport.calls[0]).get('authorization')).toBe('Bearer secret');
+      expect(headersOf(transport.calls[1]).get('authorization')).toBeNull();
+      expect(headersOf(transport.calls[2]).get('authorization')).toBeNull();
+      expect(headersOf(transport.calls[2]).get('cookie')).toBeNull();
+      expect(headersOf(transport.calls[2]).get('accept')).toBe('text/plain');
+    });
+
     test('drops caller-declared sensitive headers too, case-insensitively', async () => {
       const transport = scripted(
         [START, () => redirect(302, 'https://other.example/second')],
@@ -742,9 +765,68 @@ describe('saferFetch redirect walk', () => {
         [START, () => redirect(302, 'https://end.example/second')],
         ['https://end.example/second', () => ok('never')]
       );
+      // Refused before the address guard is asked about the replacement: it sees hop 0 only.
+      const observed = observingGuard();
       await expect(
-        saferFetchText(START, options(transport, { requestGuard: retargeting }))
+        saferFetchText(START, options(transport, { requestGuard: retargeting, addressGuard: observed.guard }))
       ).resolves.toFailWith(/scheme "ftp:" is not supported/);
+      expect(observed.chains.map((chain) => chain[chain.length - 1].url.toString())).toEqual([START]);
+      expect(requestedUrls(transport)).toEqual([START]);
+    });
+
+    test('the headers deadline is re-armed before a later hop’s request guard runs', async () => {
+      // The first hop answers immediately, which retires its headers deadline. A request guard that
+      // never settles on the next hop is bounded by that hop's re-armed headers deadline, not only by
+      // the overall one.
+      const hanging: SaferFetch.IRequestGuard = {
+        name: 'hanging',
+        check: async (
+          request: SaferFetch.ISaferFetchRequest
+        ): Promise<Result<SaferFetch.ISaferFetchRequest>> =>
+          request.url.hostname === 'end.example'
+            ? new Promise<Result<SaferFetch.ISaferFetchRequest>>(() => undefined)
+            : succeed(request)
+      };
+      const transport = scripted(
+        [START, () => redirect(302, 'https://end.example/second')],
+        ['https://end.example/second', () => ok('never')]
+      );
+      await expect(
+        saferFetchText(
+          START,
+          options(transport, { requestGuard: hanging, headersTimeoutMs: 20, timeoutMs: 5_000 })
+        )
+      ).resolves.toFailWithDetail(
+        /timed out/,
+        expect.objectContaining({ kind: 'timeout', phase: 'headers', limitMs: 20 })
+      );
+      expect(requestedUrls(transport)).toEqual([START]);
+    });
+
+    test('a later hop’s request guard whose name throws while its refusal is reported is contained as unknown', async () => {
+      // On hop 0 this throw escapes the walk as a rejection; on a later hop it is raised inside a
+      // chaining callback instead. Both reach the caller as the same reason.
+      let refusing = false;
+      const requestGuard: SaferFetch.IRequestGuard = {
+        get name(): string {
+          throw new Error('name boom');
+        },
+        check: async (
+          request: SaferFetch.ISaferFetchRequest
+        ): Promise<Result<SaferFetch.ISaferFetchRequest>> => {
+          const refuse = refusing;
+          refusing = true;
+          return refuse ? fail('refused') : succeed(request);
+        }
+      };
+      const transport = scripted(
+        [START, () => redirect(302, 'https://end.example/second')],
+        ['https://end.example/second', () => ok('never')]
+      );
+      await expect(saferFetchText(START, options(transport, { requestGuard }))).resolves.toFailWithDetail(
+        /saferFetch: unexpected error: name boom/,
+        { kind: 'unknown', detail: 'saferFetch: unexpected error: name boom' }
+      );
       expect(requestedUrls(transport)).toEqual([START]);
     });
   });
