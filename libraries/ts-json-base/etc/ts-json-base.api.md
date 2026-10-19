@@ -982,7 +982,7 @@ interface ISchemaOptions {
 // @public
 interface ISchemaShapeCapabilities {
     readonly nonStringEnum: 'pass' | 'fold';
-    readonly untyped: 'pass' | 'refuse';
+    readonly untyped: SchemaUntypedRule;
 }
 
 // @public
@@ -1294,6 +1294,7 @@ declare namespace JsonSchema {
         SchemaKeywordTranslator,
         SchemaKeywordRule,
         SchemaAnnotationRule,
+        SchemaUntypedRule,
         ISchemaShapeCapabilities,
         SchemaKeywordCapabilities,
         unverifiedWireSchemaKeywords,
@@ -1567,6 +1568,9 @@ type SchemaPatternPredicate = (value: string) => boolean;
 
 // @public
 type SchemaPatternValidator = (source: string) => Result<SchemaPatternPredicate>;
+
+// @public
+type SchemaUntypedRule = 'pass' | 'pass-nested' | 'refuse';
 
 // @public
 type SchemaValidatingKeyword = StringOneOf<typeof schemaNumberConstraintKeywords> | StringOneOf<typeof schemaLengthConstraintKeywords> | StringOneOf<typeof schemaPatternConstraintKeywords>;

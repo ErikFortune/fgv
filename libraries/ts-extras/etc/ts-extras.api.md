@@ -220,6 +220,7 @@ declare namespace AiAssist {
         ANTHROPIC_STRUCTURED_OUTPUT_TOOL_NAME,
         structuredOutputSchemaKeywords,
         clientToolSchemaKeywords,
+        IAiVerifiedEndpoint,
         AiStructuredOutputFormat,
         IAiStructuredOutputCapability,
         IJsonObjectStructuredOutputRequest,
@@ -501,6 +502,7 @@ function classifyJsonParseFailure(text: string): JsonParseFailureReason;
 function clientToolSchemaKeywords(descriptor: IAiProviderDescriptor, options?: {
     readonly model?: string;
     readonly endpoint?: string;
+    readonly verifiedEndpoint?: IAiVerifiedEndpoint;
 }): JsonSchema.SchemaKeywordCapabilities;
 
 declare namespace Constants {
@@ -1550,6 +1552,12 @@ interface IAiToolEnablement {
 }
 
 // @public
+interface IAiVerifiedEndpoint {
+    readonly providerId: AiProviderId;
+    readonly verified: true;
+}
+
+// @public
 interface IAiWebSearchToolConfig {
     readonly allowedDomains?: ReadonlyArray<string>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -1829,6 +1837,7 @@ interface IExecuteClientToolTurnParams extends IChatRequest {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly toolConflictPolicy?: AiToolConflictPolicy;
     readonly tools?: ReadonlyArray<AiServerToolConfig>;
+    readonly verifiedEndpoint?: IAiVerifiedEndpoint;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -2286,6 +2295,7 @@ interface IProviderCompletionParams extends IChatRequest {
     readonly thinking?: IThinkingConfig;
     readonly tier?: 'advanced' | 'frontier';
     readonly tools?: ReadonlyArray<AiServerToolConfig>;
+    readonly verifiedEndpoint?: IAiVerifiedEndpoint;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -2305,6 +2315,7 @@ interface IProviderCompletionStreamParams extends IChatRequest {
     readonly thinking?: IThinkingConfig;
     readonly tier?: 'advanced' | 'frontier';
     readonly tools?: ReadonlyArray<AiServerToolConfig>;
+    readonly verifiedEndpoint?: IAiVerifiedEndpoint;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -3370,6 +3381,7 @@ type StructuredOutputRequest = ISchemaStructuredOutputRequest | IJsonObjectStruc
 function structuredOutputSchemaKeywords(descriptor: IAiProviderDescriptor, options: {
     readonly model: string;
     readonly endpoint?: string;
+    readonly verifiedEndpoint?: IAiVerifiedEndpoint;
 }): JsonSchema.SchemaKeywordCapabilities | undefined;
 
 // @public

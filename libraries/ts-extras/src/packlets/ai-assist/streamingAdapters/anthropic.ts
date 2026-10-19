@@ -580,6 +580,8 @@ export async function callAnthropicStream(
     Object.assign(body, resolvedThinking.otherParams);
   }
   if (tools && tools.length > 0) {
+    // Defence in depth: `executeClientToolTurn` pre-flights every client tool with this same table
+    // and target, so through it this cannot fail; it guards any other caller of this adapter.
     const toolsResult = toAnthropicTools(tools, config);
     if (toolsResult.isFailure()) {
       return fail(`Anthropic streaming: ${toolsResult.message}`);

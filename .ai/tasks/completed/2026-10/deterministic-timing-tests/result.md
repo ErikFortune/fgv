@@ -54,7 +54,7 @@ Grep over `libraries/*/src/test`: `Date.now()`/`performance.now()` diffs against
 
 - `ts-res/…/deltaGenerator.enumeration.test.ts:1155`: `duration < 2000`
 - `ts-res/…/deltaGenerator.core.test.ts:599-602`: `duration < 5000`
-- `ts-sudoku-lib/…/killerCombinations.test.ts:363,577,592`: `< 100`, `< 100`, `< 200` ms. These are the tightest in the repo and the likeliest to flake next. The sudoku packages are slated to leave the repo.
+- `ts-sudoku-lib/…/killerCombinations.test.ts:366,580,595`: `< 100`, `< 100`, `< 200` ms. These are the tightest in the repo and the likeliest to flake next. The sudoku packages are slated to leave the repo.
 - `ts-sudoku-lib/…/hints/integration.test.ts:445`: `< 5000`
 - `ts-sudoku-lib/…/anyPuzzle.test.ts:323`: `< 1000`
 - `ts-sudoku-lib/…/sudokuXPuzzle.test.ts:583`: `< 100`
