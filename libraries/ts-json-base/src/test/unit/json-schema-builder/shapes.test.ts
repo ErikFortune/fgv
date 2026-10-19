@@ -351,7 +351,7 @@ describe('JsonSchema — anyValue / {}', () => {
 describe('JsonSchema.adaptSchemaKeywords — non-string enums and untyped nodes', () => {
   const caps = (
     nonStringEnum: 'pass' | 'fold',
-    untyped: 'pass' | 'refuse'
+    untyped: JsonSchema.SchemaUntypedRule
   ): JsonSchema.SchemaKeywordCapabilities => ({
     ...JsonSchema.unverifiedWireSchemaKeywords,
     nonStringEnum,
@@ -418,6 +418,45 @@ describe('JsonSchema.adaptSchemaKeywords — non-string enums and untyped nodes'
     );
   });
 
+  test('pass-nested passes an untyped node beneath the root and refuses one at the root', () => {
+    const nested = JsonSchema.object({
+      p: JsonSchema.anyValue(),
+      list: JsonSchema.array(JsonSchema.anyValue())
+    }).toJson();
+    expect(JsonSchema.adaptSchemaKeywords(nested, caps('pass', 'pass-nested'))).toSucceedWith(nested);
+    expect(
+      JsonSchema.adaptSchemaKeywords(JsonSchema.anyValue().toJson(), caps('pass', 'pass-nested'))
+    ).toFailWith(/^#: a schema with no 'type' \(matching any value\) cannot be sent on this wire$/);
+    // A root typed only by enum, const, $ref or a combinator still has no `type` keyword.
+    const roots: JsonObject[] = [
+      { enum: ['a', 'b'] },
+      { const: 1 },
+      { $ref: '#/$defs/x' },
+      { anyOf: [{ type: 'string' }] }
+    ];
+    for (const root of roots) {
+      expect(JsonSchema.adaptSchemaKeywords(root, caps('pass', 'pass-nested'))).toFailWith(
+        /^#: a root schema with no 'type' keyword cannot be sent on this wire$/
+      );
+      // Beneath the root the same node is typed elsewhere and passes.
+      expect(
+        JsonSchema.adaptSchemaKeywords(
+          { type: 'object', properties: { p: root } },
+          caps('pass', 'pass-nested')
+        )
+      ).toSucceed();
+    }
+    // A nullable root emits `type: [<type>, 'null']`, which is a `type` keyword, so it passes.
+    const nullableRoot = JsonSchema.object({ a: JsonSchema.string() }, { nullable: true }).toJson();
+    expect(nullableRoot).toMatchObject({ type: ['object', 'null'] });
+    expect(JsonSchema.adaptSchemaKeywords(nullableRoot, caps('pass', 'pass-nested'))).toSucceedWith(
+      nullableRoot
+    );
+    // A typed root with untyped items is nested, not the root.
+    const items = JsonSchema.array(JsonSchema.anyValue()).toJson();
+    expect(JsonSchema.adaptSchemaKeywords(items, caps('pass', 'pass-nested'))).toSucceedWith(items);
+  });
+
   test('a node typed by something other than type is not untyped', () => {
     const nodes: JsonObject[] = [
       { enum: ['a'] },
@@ -442,14 +481,16 @@ describe('JsonSchema.adaptSchemaKeywords — non-string enums and untyped nodes'
       JsonSchema.adaptSchemaKeywords(
         JsonSchema.object({
           x: JsonSchema.anyValue(
-            JsonSchema.schemaOptions({ title: 'X', default: 1 }).shouldNotFail('schema options')
+            JsonSchema.schemaOptions({ title: 'X', default: 1, examples: [1] }).shouldNotFail(
+              'schema options'
+            )
           )
         }).toJson(),
         caps('fold', 'pass')
       )
     ).toSucceedWith({
       type: 'object',
-      properties: { x: { description: 'Default: 1.' } },
+      properties: { x: { description: 'Examples: [1].' } },
       required: ['x'],
       additionalProperties: false
     });

@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "Docs only: a schemaKeywords table that does not match the request's wire now fails executeClientToolTurn at creation (a Failure naming the tool) rather than as a stream error event, and clientToolSchemaKeywords takes verifiedEndpoint.",
+      "type": "none",
+      "packageName": "@fgv/ts-extras-mcp"
+    }
+  ],
+  "packageName": "@fgv/ts-extras-mcp",
+  "email": "ErikFortune@outlook.com"
+}
