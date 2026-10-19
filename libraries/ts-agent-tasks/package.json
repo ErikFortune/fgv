@@ -1,6 +1,6 @@
 {
   "name": "@fgv/ts-agent-tasks",
-  "version": "5.1.0",
+  "version": "5.1.0-58",
   "description": "Agent task recording, observation and command mediation",
   "main": "lib/index.js",
   "types": "dist/ts-agent-tasks.d.ts",
