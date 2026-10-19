@@ -89,10 +89,26 @@ describe('JsonSchema.adaptSchemaKeywords', () => {
 
   test('folding removes the keywords and appends one sentence, in fixed keyword order', () => {
     // Authored out of order: the sentence follows `schemaConstraintKeywords`, not the input.
-    const raw: JsonObject = { type: 'integer', maximum: 10, default: 3, minimum: 1 };
+    const raw: JsonObject = { type: 'integer', maximum: 10, examples: [3], minimum: 1 };
     expect(JsonSchema.adaptSchemaKeywords(raw, JsonSchema.unverifiedWireSchemaKeywords)).toSucceedWith({
       type: 'integer',
-      description: 'Constraints: minimum 1; maximum 10. Default: 3.'
+      description: 'Constraints: minimum 1; maximum 10. Examples: [3].'
+    });
+  });
+
+  test('the conservative table drops default rather than folding it, and still folds format and examples', () => {
+    // A folded `Default: 3.` reads as though the default were applied; nothing applies it.
+    expect(JsonSchema.unverifiedWireSchemaKeywords.default).toBe('drop');
+    const raw: JsonObject = {
+      type: 'string',
+      description: 'When.',
+      format: 'date-time',
+      default: '2026-01-01T00:00:00Z',
+      examples: ['2026-10-18T12:00:00Z']
+    };
+    expect(JsonSchema.adaptSchemaKeywords(raw, JsonSchema.unverifiedWireSchemaKeywords)).toSucceedWith({
+      type: 'string',
+      description: 'When. Format: date-time. Examples: ["2026-10-18T12:00:00Z"].'
     });
   });
 

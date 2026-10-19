@@ -790,8 +790,9 @@ export interface IAdaptMcpToolsOptions {
    * A tool whose schema that table refuses — today, one with a schema that states no `type`
    * (pydantic `Any`, `{}`) on a wire that requires one or does not document it — is skipped like
    * any other unadaptable tool, so one such tool cannot fail every request it would ride on. Get the
-   * table for a provider with `AiAssist.clientToolSchemaKeywords(descriptor, { model, endpoint })`
-   * from `@fgv/ts-extras`.
+   * table for a provider with
+   * `AiAssist.clientToolSchemaKeywords(descriptor, { model, endpoint, verifiedEndpoint })` from
+   * `@fgv/ts-extras`, passing exactly what the turn will be sent with.
    *
    * Defaults to `JsonSchema.unverifiedWireSchemaKeywords`, the conservative table, which refuses an
    * untyped schema — so without this option such a tool is skipped. Pass the Anthropic-tools table
@@ -800,7 +801,8 @@ export interface IAdaptMcpToolsOptions {
    * Admission only: the adapted tool keeps the schema as `fromJson` parsed it, and the request path
    * adapts it for the wire exactly once, when it is sent. The table must therefore be the one for
    * the wire the tools are actually sent on: a tool admitted under a more permissive table than the
-   * request's wire fails that request loudly, naming the tool.
+   * request's wire makes `AiAssist.executeClientToolTurn` return a `Failure` naming the tool, the
+   * path and the wire, before anything is sent.
    */
   readonly schemaKeywords?: JsonSchema.SchemaKeywordCapabilities;
 

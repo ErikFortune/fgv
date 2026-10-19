@@ -84,6 +84,7 @@ import {
   resolveEffectiveBaseUrl
 } from './endpoint';
 import { type IAiApiConfig, fetchJson } from './http';
+import { type IAiVerifiedEndpoint, schemaWireProviderId } from './schemaKeywords';
 import { serverToolsToAnthropic, serverToolsToGemini, serverToolsToResponsesApi } from './toolFormats';
 import {
   ANTHROPIC_STRUCTURED_OUTPUT_TOOL_NAME,
@@ -146,8 +147,19 @@ export interface IProviderCompletionParams extends IChatRequest {
    * optional port + path prefix). The per-route suffix (e.g. `/chat/completions`)
    * is appended unchanged. Must be a well-formed `http`/`https` URL. Auth shape
    * is unchanged: `needsSecret` providers still require an API key.
+   *
+   * Schemas sent to an overridden endpoint — client-tool parameters and structured-output
+   * schemas — are adapted with the conservative keyword table
+   * (`JsonSchema.unverifiedWireSchemaKeywords`), since the provider's documentation describes its
+   * own endpoint, unless `verifiedEndpoint` asserts this one is the provider itself.
    */
   readonly endpoint?: string;
+  /**
+   * The host's assertion that `endpoint` reaches the descriptor's own provider, so this request's
+   * schemas are adapted with that provider's keyword table instead of the conservative one.
+   * Ignored without `endpoint`, and honoured only as `IAiVerifiedEndpoint` describes.
+   */
+  readonly verifiedEndpoint?: IAiVerifiedEndpoint;
   /**
    * Optional thinking/reasoning config. Anthropic, OpenAI, and xAI reject `temperature` when
    * the effective merged effort is non-`'none'`; Gemini always accepts both.
@@ -827,6 +839,7 @@ export async function callProviderCompletion(
     tools,
     signal,
     endpoint,
+    verifiedEndpoint,
     thinking,
     maxTokens,
     structuredOutput,
@@ -892,8 +905,9 @@ export async function callProviderCompletion(
   const usesResponsesApi: boolean =
     descriptor.apiFormat === 'openai' && (hasTools || isResponsesOnlyModel(descriptor, model));
   // The schema-keyword tables trust a provider's documentation only on that provider's own
-  // endpoint: a caller-supplied `endpoint` (a gateway, LiteLLM, vLLM) is an unverified server.
-  const wireProviderId: string | undefined = endpoint === undefined ? descriptor.id : undefined;
+  // endpoint: a caller-supplied `endpoint` (a gateway, LiteLLM, vLLM) is an unverified server
+  // unless the host asserts otherwise.
+  const wireProviderId: string | undefined = schemaWireProviderId(descriptor, endpoint, verifiedEndpoint);
   const structuredResult = resolveStructuredOutput(
     descriptor,
     model,
