@@ -387,6 +387,38 @@ class PausingProvider extends TestProvider {
   }
 }
 
+/**
+ * Fakes `setTimeout` / `setInterval` only, so a connect deadline fires when the test says rather
+ * than when the machine gets round to it. The clock, promise jobs, `nextTick` and `setImmediate`
+ * stay real: the loopback servers and the SDK's auth flow run on them.
+ */
+function useFakeTimeouts(): void {
+  jest.useFakeTimers({
+    doNotFake: [
+      'Date',
+      'hrtime',
+      'performance',
+      'nextTick',
+      'queueMicrotask',
+      'setImmediate',
+      'clearImmediate',
+      'requestAnimationFrame',
+      'cancelAnimationFrame',
+      'requestIdleCallback',
+      'cancelIdleCallback'
+    ]
+  });
+}
+
+/**
+ * Lets a released auth step run to its end. From either paused step the rest of the SDK's flow is
+ * promise jobs with no I/O (`tokens` then `state`; or `redirectToAuthorization`), and the job queue
+ * drains completely before an immediate runs — so one turn is all of it, however loaded the machine.
+ */
+async function drained(): Promise<void> {
+  return new Promise<void>((resolve) => setImmediate(resolve));
+}
+
 describe('OAuth through authProvider', () => {
   let auth: IAuthServer;
   let real: IRealMcpServer;
@@ -638,12 +670,12 @@ describe('OAuth through authProvider', () => {
     const provider = new TestProvider({ access_token: ACCESS_TOKEN, token_type: 'Bearer' });
     const { session } = await connect(provider);
     protection.valid.clear();
-    const started = Date.now();
     expect(await closeMcpSession(session!)).toSucceedWith(true);
-    expect(Date.now() - started).toBeLessThan(1000);
+    // Promptly: the close ended on the DELETE's 401, not on the termination bound running out.
     expect(logger.logged).toContainEqual(
       'mcp: session termination failed; closing anyway (unauthorized): unauthorized (HTTP 401)'
     );
+    expect(logger.logged.join('\n')).not.toMatch(/did not finish within/);
     expect(provider.verifiers).toEqual([]);
     expect(provider.redirects).toEqual([]);
     expect(auth.requests).toEqual([]);
@@ -658,43 +690,59 @@ describe('OAuth through authProvider', () => {
       protection.valid.clear();
       const provider = new PausingProvider('clientInformation');
       const controller = new AbortController();
-      const connecting = connectMcpSession({
-        transport: createHttpTransport({ url: real.url, fetch: guarded(), authProvider: provider }).orThrow(),
-        ...(how === 'timeout' ? { timeoutMs: 300 } : { signal: controller.signal })
-      });
-      await provider.reached;
-      if (how === 'abort') {
-        controller.abort();
+      // The deadline must not fire before the flow is parked — on a busy machine discovery alone can
+      // outlast it — so it is held on a fake timer and fired once the flow is known to be waiting.
+      useFakeTimeouts();
+      try {
+        const connecting = connectMcpSession({
+          transport: createHttpTransport({ url: real.url, fetch: guarded(), authProvider: provider }).orThrow(),
+          ...(how === 'timeout' ? { timeoutMs: 300 } : { signal: controller.signal })
+        });
+        await provider.reached;
+        if (how === 'abort') {
+          controller.abort();
+        } else {
+          jest.advanceTimersByTime(300);
+        }
+        const result = await connecting;
+        observed.push(result.message ?? '');
+        expect(result).toFailWithDetail(/.*/, { kind: how === 'timeout' ? 'timeout' : 'aborted' });
+        // The window is closed; now let the parked flow continue.
+        provider.release();
+        await drained();
+        expect(provider.stateCalls).toBe(0);
+        expect(provider.verifiers).toEqual([]);
+        expect(provider.redirects).toEqual([]);
+      } finally {
+        jest.useRealTimers();
       }
-      const result = await connecting;
-      observed.push(result.message ?? '');
-      expect(result).toFailWithDetail(/.*/, { kind: how === 'timeout' ? 'timeout' : 'aborted' });
-      // The window is closed; now let the parked flow continue.
-      provider.release();
-      await new Promise((resolve) => setTimeout(resolve, 300));
-      expect(provider.stateCalls).toBe(0);
-      expect(provider.verifiers).toEqual([]);
-      expect(provider.redirects).toEqual([]);
     }
   );
 
   test('a connect that times out while saveCodeVerifier is pending: the late redirect is refused', async () => {
     protection.valid.clear();
     const provider = new PausingProvider('saveCodeVerifier');
-    const connecting = connectMcpSession({
-      transport: createHttpTransport({ url: real.url, fetch: guarded(), authProvider: provider }).orThrow(),
-      timeoutMs: 300
-    });
-    await provider.reached;
-    const result = await connecting;
-    observed.push(result.message ?? '');
-    expect(result).toFailWithDetail(/.*/, { kind: 'timeout' });
-    provider.release();
-    await new Promise((resolve) => setTimeout(resolve, 300));
-    // state and saveCodeVerifier ran inside the window — documented — but the redirect is refused.
-    expect(provider.stateCalls).toBe(1);
-    expect(provider.verifiers).toHaveLength(1);
-    expect(provider.redirects).toEqual([]);
+    // As above: the deadline fires once the flow is parked at saveCodeVerifier, not before.
+    useFakeTimeouts();
+    try {
+      const connecting = connectMcpSession({
+        transport: createHttpTransport({ url: real.url, fetch: guarded(), authProvider: provider }).orThrow(),
+        timeoutMs: 300
+      });
+      await provider.reached;
+      jest.advanceTimersByTime(300);
+      const result = await connecting;
+      observed.push(result.message ?? '');
+      expect(result).toFailWithDetail(/.*/, { kind: 'timeout' });
+      provider.release();
+      await drained();
+      // state and saveCodeVerifier ran inside the window — documented — but the redirect is refused.
+      expect(provider.stateCalls).toBe(1);
+      expect(provider.verifiers).toHaveLength(1);
+      expect(provider.redirects).toEqual([]);
+    } finally {
+      jest.useRealTimers();
+    }
   });
 
   test('a static Authorization with client_secret_basic: the authorization server sees only the Basic credential', async () => {

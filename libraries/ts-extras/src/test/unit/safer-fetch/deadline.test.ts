@@ -152,15 +152,17 @@ describe('DeadlineWatch', () => {
   });
 
   describe('remainingMs', () => {
-    test('reports the unspent share of the overall deadline', async () => {
+    test('reports the unspent share of the overall deadline', () => {
+      // On a fake clock, so the budget is exact rather than "about right on an idle machine".
+      jest.useFakeTimers();
       const watch = new DeadlineWatch(1_000, 1_000);
       try {
-        expect(watch.remainingMs).toBeGreaterThan(900);
-        expect(watch.remainingMs).toBeLessThanOrEqual(1_000);
-        await after(60);
-        expect(watch.remainingMs).toBeLessThan(950);
+        expect(watch.remainingMs).toBe(1_000);
+        jest.advanceTimersByTime(60);
+        expect(watch.remainingMs).toBe(940);
       } finally {
         watch.dispose();
+        jest.useRealTimers();
       }
     });
 
