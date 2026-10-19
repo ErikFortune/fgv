@@ -248,7 +248,9 @@ export interface IFileTreeMemoryStoreCreateParams {
    * open, or under `onRecordError: 'skip'` quarantines each of its records into
    * {@link FileTreeMemoryStore.skippedRecords | skippedRecords}. Every read and
    * write requires the encoded directory to decode back to the scope it was asked
-   * for. The scope invariant is then checked against the decoded scope.
+   * for, and the encoding to be canonical: non-empty, with no empty, `.` or `..`
+   * segments. The scope invariant is then checked against the decoded scope. A
+   * throw from either function is reported as a failure, like a failed result.
    */
   readonly scopeDecoding?: (encoded: string) => Result<MemoryScopeKey>;
   /**

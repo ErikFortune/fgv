@@ -4,7 +4,7 @@
  */
 
 import { FileTree } from '@fgv/ts-json-base';
-import { Result, fail, succeed } from '@fgv/ts-utils';
+import { Result, captureResult, fail, succeed } from '@fgv/ts-utils';
 import { Convert, MemoryScopeKey } from '../types';
 
 /** The record filename extension; the store's files are markdown + YAML frontmatter. */
@@ -35,6 +35,31 @@ export interface IScopeCoding {
 }
 
 /**
+ * Call a host-supplied coder, turning a throw into a failure so a misbehaving
+ * coder fails the operation (or is quarantined at open) rather than escaping it.
+ */
+function callCoder<T>(name: string, call: () => Result<T>): Result<T> {
+  return captureResult(call)
+    .withErrorFormat((msg) => `${name} threw: ${msg}`)
+    .onSuccess((result) => result);
+}
+
+/**
+ * Require an encoded path to be canonical: non-empty, with no empty, `.` or `..`
+ * segments. Directory resolution drops empty segments, so a non-canonical path
+ * would be written somewhere the open-time walk recovers under a different path,
+ * or, for `''`, at the root, where the walk ignores record files entirely.
+ */
+function requireCanonical(encoded: string): Result<string> {
+  if (encoded.split('/').some((s) => s === '' || s === '.' || s === '..')) {
+    return fail(
+      `encoded path '${encoded}' is not canonical: it needs non-empty segments, none of them '.' or '..'`
+    );
+  }
+  return succeed(encoded);
+}
+
+/**
  * Recover the scope a walked directory holds records for. With a decoding, the
  * decoded scope must pass the scope converter and re-encode to exactly `dirPath`;
  * a pair that is not a bijection on this directory fails here rather than filing
@@ -45,17 +70,15 @@ export function decodeScopeDir(scopes: IScopeCoding, dirPath: string): Result<Me
     // The identity case: the walk has always indexed the raw path, unvalidated.
     return succeed(dirPath as MemoryScopeKey);
   }
-  return scopes
-    .decode(dirPath)
+  const decode: ScopeDecoder = scopes.decode;
+  return callCoder('scopeDecoding', () => decode(dirPath))
     .onSuccess((decoded) => Convert.scopeKey.convert(decoded))
     .onSuccess((scope) =>
-      scopes
-        .encode(scope)
-        .onSuccess((reencoded) =>
-          reencoded === dirPath
-            ? succeed(scope)
-            : fail<MemoryScopeKey>(`decodes to scope '${scope}', which encodes to '${reencoded}'`)
-        )
+      callCoder('scopeEncoding', () => scopes.encode(scope)).onSuccess((reencoded) =>
+        reencoded === dirPath
+          ? succeed(scope)
+          : fail<MemoryScopeKey>(`decodes to scope '${scope}', which encodes to '${reencoded}'`)
+      )
     )
     .withErrorFormat((msg) => `scope directory '${dirPath}': ${msg}`);
 }
@@ -69,15 +92,16 @@ export function encodeScope(scopes: IScopeCoding, scope: MemoryScopeKey): Result
   if (scopes.decode === undefined) {
     return scopes.encode(scope);
   }
-  return scopes
-    .encode(scope)
+  return callCoder('scopeEncoding', () => scopes.encode(scope))
+    .onSuccess(requireCanonical)
     .onSuccess((encoded) =>
       decodeScopeDir(scopes, encoded).onSuccess((decoded) =>
         decoded === scope
           ? succeed(encoded)
-          : fail<string>(`scope '${scope}': encodes to '${encoded}', which decodes to scope '${decoded}'`)
+          : fail<string>(`encodes to '${encoded}', which decodes to scope '${decoded}'`)
       )
-    );
+    )
+    .withErrorFormat((msg) => `scope '${scope}': ${msg}`);
 }
 
 /**

@@ -21,6 +21,8 @@ import {
   MemoryScopeKey,
   MtmIdentityCodec,
   RankProjector,
+  TemporalIdentityCodec,
+  TemporalVersionedPolicy,
   envelopeConverter,
   joinFrontmatter,
   scanEveryRecord
@@ -434,6 +436,147 @@ describe('FileTreeMemoryStore scopeDecoding', () => {
       expect(store.skippedRecords).toEqual([
         expect.objectContaining({ path: 's-elsewhere/intro.md', scope: 'elsewhere' })
       ]);
+    });
+  });
+
+  describe('a throwing host coder fails instead of escaping', () => {
+    const boom = (): never => {
+      throw new Error('boom');
+    };
+
+    test("a decoding that throws at open fails in 'fail' mode and quarantines in 'skip' mode", () => {
+      const files = [knowledgeFile('s-knowledge/intro.md', 'intro')];
+      const params: ScopeParams = { scopeEncoding: prefixEncoding, scopeDecoding: boom };
+      expect(open(mutableRoot(files), params)).toFailWith(
+        /scope directory 's-knowledge': scopeDecoding threw: boom/i
+      );
+      expect(open(mutableRoot(files), { ...params, onRecordError: 'skip' })).toSucceedAndSatisfy((store) => {
+        expect(store.skippedRecords).toEqual([
+          expect.objectContaining({ path: 's-knowledge/intro.md', scope: undefined })
+        ]);
+      });
+    });
+
+    test('a decoding that throws fails a read and a write', async () => {
+      const root = mutableRoot();
+      const store = open(root, { scopeEncoding: prefixEncoding, scopeDecoding: boom }).orThrow();
+      expect(await store.getById('knowledge' as MemoryScopeKey, 'intro' as MemoryId)).toFailWith(
+        /scope 'knowledge':.*scopeDecoding threw: boom/i
+      );
+      expect(await store.put(makeRecord(knowledgeKind, 'intro', 'intro', 'hello'))).toFailWith(
+        /scopeDecoding threw: boom/i
+      );
+      expect(childNames(root)).toEqual([]);
+    });
+
+    test('an encoding that throws fails a write', async () => {
+      const root = mutableRoot();
+      const store = open(root, { scopeEncoding: boom, scopeDecoding: prefixDecoding }).orThrow();
+      expect(await store.put(makeRecord(knowledgeKind, 'intro', 'intro', 'hello'))).toFailWith(
+        /scope 'knowledge': scopeEncoding threw: boom/i
+      );
+      expect(childNames(root)).toEqual([]);
+    });
+  });
+
+  describe('an encoding must produce a canonical path', () => {
+    const cases: ReadonlyArray<[string, string]> = [
+      ['empty', ''],
+      ['a leading slash', '/s-knowledge'],
+      ['a double slash', 's-a//s-knowledge'],
+      ['a dot-dot segment', '../s-knowledge'],
+      ['a dot segment', 's-a/./s-knowledge']
+    ];
+
+    test.each(cases)('%s is refused on write and nothing is written', async (__name, encoded) => {
+      const root = mutableRoot();
+      const store = open(root, {
+        scopeEncoding: () => succeed(encoded),
+        scopeDecoding: prefixDecoding
+      }).orThrow();
+      expect(await store.put(makeRecord(knowledgeKind, 'intro', 'intro', 'hello'))).toFailWith(
+        /scope 'knowledge': encoded path '.*' is not canonical/i
+      );
+      expect(childNames(root)).toEqual([]);
+    });
+  });
+
+  describe('more layouts under a non-identity encoding', () => {
+    const params: ScopeParams = { scopeEncoding: prefixEncoding, scopeDecoding: prefixDecoding };
+
+    test('a versioned kind reopens and resolves its current version', async () => {
+      const factKind: Kind = 'fact' as Kind;
+      const reg = registry();
+      reg.register(factKind, Converters.string);
+      const create = (root: FileTree.IMutableFileTreeDirectoryItem): Result<FileTreeMemoryStore> =>
+        FileTreeMemoryStore.create({
+          root,
+          registry: reg,
+          codecs: new Map<Kind, IIdentityCodec>([
+            [factKind, TemporalIdentityCodec.create('facts').orThrow()]
+          ]),
+          writePolicies: new Map([[factKind, TemporalVersionedPolicy.create().orThrow()]]),
+          clock: () => 1000,
+          ...params
+        });
+      const root = mutableRoot();
+      const writer = create(root).orThrow();
+      (await writer.put(makeRecord(factKind, 'fact-1', 'fact-1', 'first'))).orThrow();
+      (await writer.put(makeRecord(factKind, 'fact-1', 'fact-1', 'second'))).orThrow();
+      expect(childNames(root)).toEqual(['s-facts']);
+
+      const store = create(root).orThrow();
+      expect(store.skippedRecords).toEqual([]);
+      expect(await store.get(factKind, 'fact-1' as EntityId)).toSucceedAndSatisfy(
+        (got: IMemoryRecord<unknown> | undefined) => {
+          expect(got?.body).toBe('second');
+        }
+      );
+      expect(await store.list({ scope: 'facts/entities/fact-1' as MemoryScopeKey })).toSucceedAndSatisfy(
+        (listed: ReadonlyArray<IMemoryRecord<unknown>>) => {
+          expect(listed).toHaveLength(2);
+        }
+      );
+    });
+
+    test('a parent scope and its nested child scope reopen separately', async () => {
+      // EntityId `<scope>~<stem>`: lets one kind file records under both `a` and `a/b`.
+      const pathKind: Kind = 'path' as Kind;
+      const pathCodec: IIdentityCodec = {
+        encode: (entityId) => {
+          const [scope, stem] = entityId.split('~');
+          return succeed({ scope: scope as MemoryScopeKey, idStem: stem, isVersioned: false });
+        },
+        decode: (scope, stem) => Convert.entityId.convert(`${scope}~${stem}`),
+        verifyRoundTrip: () => succeed(true)
+      };
+      const reg = registry();
+      reg.register(pathKind, Converters.string);
+      const create = (root: FileTree.IMutableFileTreeDirectoryItem): Result<FileTreeMemoryStore> =>
+        FileTreeMemoryStore.create({
+          root,
+          registry: reg,
+          codecs: new Map([[pathKind, pathCodec]]),
+          ...params
+        });
+      const root = mutableRoot();
+      const writer = create(root).orThrow();
+      (await writer.put(makeRecord(pathKind, 'p', 'a~p', 'parent'))).orThrow();
+      (await writer.put(makeRecord(pathKind, 'c', 'a/b~c', 'child'))).orThrow();
+
+      const store = create(root).orThrow();
+      expect(store.skippedRecords).toEqual([]);
+      expect(await store.list({ scope: 'a' as MemoryScopeKey })).toSucceedAndSatisfy(
+        (listed: ReadonlyArray<IMemoryRecord<unknown>>) => {
+          expect(listed.map((r) => r.body)).toEqual(['parent']);
+        }
+      );
+      expect(await store.list({ scope: 'a/b' as MemoryScopeKey })).toSucceedAndSatisfy(
+        (listed: ReadonlyArray<IMemoryRecord<unknown>>) => {
+          expect(listed.map((r) => r.body)).toEqual(['child']);
+        }
+      );
+      expect(await store.get(pathKind, 'a/b~c' as EntityId)).toSucceed();
     });
   });
 });
