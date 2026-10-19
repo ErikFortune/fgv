@@ -872,6 +872,9 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
     ms. These are the tightest, and the likeliest to flake next.
   - `libraries/ts-sudoku-lib/src/test/unit/hints/integration.test.ts`, `puzzles/anyPuzzle.test.ts`
     and `puzzles/sudokuXPuzzle.test.ts`.
+  - `tools/ts-res-cli/test/integration/cli-configuration.test.ts` "test consistent output by
+    building same input twice" spawns the CLI twice inside Jest's default 5 s timeout. It **did**
+    fail once under load during this stream's repo-wide `test` gate, and passed when re-run alone.
 
   **Trigger**: any of these failing under a loaded gate. The sudoku packages are slated to leave
   the repo, so their entries may lapse instead.
