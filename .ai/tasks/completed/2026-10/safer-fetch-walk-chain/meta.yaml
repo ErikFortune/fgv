@@ -1,7 +1,7 @@
 id: safer-fetch-walk-chain
 status: shipped
 packages: ['@fgv/ts-extras']
-prs: [] # TBD: the orchestrator opens the PR and fills in the number, anticipating merge
+prs: [748]
 openPrs: []
 opened: 2026-10-19
 closed: 2026-10-19

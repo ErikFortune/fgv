@@ -241,7 +241,7 @@ to. Design it once, before any of them ships.
   round. #729 chained only `_resolveCallOptions`, leaving `_walk` and `_execute` as they were.
 - **Route:** small stream in `ts-extras` safer-fetch. The existing revert rows for the walk (the
   `mcp-round-2b` revert matrix) are the regression check: each must still go red after the rewrite.
-- **Status:** **shipped** in #TBD, stream `safer-fetch-walk-chain` (recursion over hops). Every row is red again except R7, which `mcp-round-2b` had already recorded as not isolable. See `.ai/tasks/completed/2026-10/safer-fetch-walk-chain/result.md`.
+- **Status:** **shipped** in #748, stream `safer-fetch-walk-chain` (recursion over hops). Every row is red again except R7, which `mcp-round-2b` had already recorded as not isolable. See `.ai/tasks/completed/2026-10/safer-fetch-walk-chain/result.md`.
 
 ### D2. `IIdentityCodec.verifyRoundTrip` does not require scope equality — from `agent-memory-merge-scope` (#731)
 

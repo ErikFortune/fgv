@@ -5,7 +5,7 @@ stacked `isFailure`, and `_execute` is a synchronous validation chain followed b
 `thenOnSuccess` — same checks, in the same order, with the same messages and failure reasons.
 
 Commits: `97f01c699` (the rewrite, two tests, change file), `71a980903` (one test strengthened,
-`state.md` mapping), plus the close-out commit. PR: #TBD (`prs: []`).
+`state.md` mapping), plus the close-out commit. PR: #748.
 
 ## Shape
 

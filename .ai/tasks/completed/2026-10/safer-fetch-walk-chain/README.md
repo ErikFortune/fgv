@@ -1,6 +1,6 @@
 # safer-fetch-walk-chain — Result-chain the safer-fetch hop walk
 
-**Shipped**: 2026-10-19 into `integration/asks` via #TBD.
+**Shipped**: 2026-10-19 into `integration/asks` via #748.
 Package: `@fgv/ts-extras` (safer-fetch). This is an internal refactor with no API change; the
 change file is typed `none`.
 
