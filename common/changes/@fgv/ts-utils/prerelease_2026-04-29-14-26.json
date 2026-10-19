@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "bump version",
+      "type": "none",
+      "packageName": "@fgv/ts-utils"
+    }
+  ],
+  "packageName": "@fgv/ts-utils",
+  "email": "ErikFortune@outlook.com"
+}

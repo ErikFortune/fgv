@@ -1,6 +1,6 @@
 {
   "name": "@fgv/ts-extras-system-one",
-  "version": "5.1.0",
+  "version": "5.1.0-59",
   "description": "Result-integration boundary over @typesafe-ai/sdk for System-1 decision servers (CLM, openjev, Jev): mandatory input bound, response validation, classified failures",
   "main": "lib/index.js",
   "types": "dist/ts-extras-system-one.d.ts",

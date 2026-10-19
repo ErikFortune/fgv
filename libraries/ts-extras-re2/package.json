@@ -1,6 +1,6 @@
 {
   "name": "@fgv/ts-extras-re2",
-  "version": "5.1.0",
+  "version": "5.1.0-59",
   "description": "An RE2-backed (re2js) JSON Schema pattern validator for untrusted patterns: linear-time matching, ECMA-262 semantics or refusal",
   "main": "lib/index.js",
   "types": "dist/ts-extras-re2.d.ts",

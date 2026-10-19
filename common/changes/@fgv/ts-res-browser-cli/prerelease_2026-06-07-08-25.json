@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "change logs",
+      "type": "none",
+      "packageName": "@fgv/ts-res-browser-cli"
+    }
+  ],
+  "packageName": "@fgv/ts-res-browser-cli",
+  "email": "ErikFortune@outlook.com"
+}
