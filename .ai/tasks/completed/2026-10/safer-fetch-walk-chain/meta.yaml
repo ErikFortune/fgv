@@ -41,5 +41,8 @@ keywords:
   - revert matrix
   - behaviour-preserving refactor
 relatedStreams:
-  - { id: mcp-round-2b, relationship: 'source of the revert matrix re-run here, and the stream whose #729 deep review raised D1' }
-sourceHash: PLACEHOLDER
+  - {
+      id: mcp-round-2b,
+      relationship: 'source of the revert matrix re-run here, and the stream whose #729 deep review raised D1'
+    }
+sourceHash: sha256:2f64106aef58177d # over brief.md + result.md + state.md

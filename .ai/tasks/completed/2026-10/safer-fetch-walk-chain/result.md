@@ -51,7 +51,7 @@ Full before/after tables are in `state.md`. Summary:
 ## Revert matrix
 
 Each row is a source patch, one named test run (`heft test --test-path-pattern … -t …`), and a
-restore. Every row ran exactly its named test, and no row produced a `tsc` error. The script is in
+restore. Every row ran only its named test (or that test's `test.each` cases), and no row produced a `tsc` error. The script is in
 the session scratchpad (`revert.py`). The R rows are `mcp-round-2b`'s, re-expressed against the new
 code where the patched line moved. The S rows are new and target the ordering the rewrite encodes.
 
@@ -111,7 +111,30 @@ the strengthened test passes on the base commit.
 
 ## Gates
 
-Recorded in `state.md § Gates`.
+Run from the repo root, with logs in a per-worktree scratchpad directory. Graded by grep: every log
+had 0 `not met|FAILURE|Operations failed|error TS` hits, and its only warning was the symlink notice.
+
+- **NUL padding:** none in any log; byte counts matched with and without NULs.
+- **ts-extras:** `rushx build` and `rushx lint` pass, and coverage is 100%. `saferFetch.ts` is at
+  100/100/100/100.
+- **`rush rebuild`:** 38 of 38 completed, exit 0. `etc/ts-extras.api.md` is unchanged, so there are
+  no new `ae-*` warnings.
+- **`rush test`:** three runs were needed.
+  - Run 1: the known load-sensitive `md5Normalizer.browser` failed (708 ms against a 300 ms bound),
+    which blocked every downstream project.
+  - Run 2: ts-extras passed. ts-extras-mcp failed `cancellation.test`, "maxTotalTimeoutMs caps a call
+    that progress would otherwise extend", with 70 ms against 80 ms. That test runs against an
+    in-memory MCP server and does not touch safer-fetch, but it is **not** on the known
+    load-sensitive list. 35 projects succeeded and `testbed` was blocked.
+  - Run 3 (`--from @fgv/ts-extras-mcp`, which rebuilt its 18-project closure): 18 of 18 passed,
+    exit 0.
+  - Every project passed in at least one run.
+- **`rush change --verify --target-branch origin/release`:** passes. The change file is typed
+  `none`, with the comment "internal refactor, no behaviour change".
+- **Docs scripts:** `verify-capability-docs.mjs` reports 0 failed, and
+  `generate-capability-feed.mjs --check` reports 0 stale. This stream opts out of the feed with
+  `headline: ''`.
+- **Prettier:** 2.8.8, clean.
 
 ## What the brief got wrong
 
