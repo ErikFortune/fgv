@@ -135,7 +135,8 @@ describe('chatStructured (layer 1 — structural client mock)', () => {
 
     expect(((chat.mock.calls[0][0] as JsonObject).format as JsonObject).properties).toEqual({
       name: { type: 'string', description: 'Short. Constraints: maxLength 2. Format: hostname.' },
-      age: { type: 'integer', description: 'Constraints: minimum 0; maximum 150. Default: 30.' }
+      // `default` is dropped, not folded: `Default: 30.` would read as though it were applied.
+      age: { type: 'integer', description: 'Constraints: minimum 0; maximum 150.' }
     });
   });
 

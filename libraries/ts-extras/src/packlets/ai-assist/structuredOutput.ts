@@ -15,10 +15,12 @@ import type {
   StructuredOutputRequest
 } from './structuredOutputTypes';
 import {
+  type IAiVerifiedEndpoint,
   type ISchemaWireTarget,
   type SchemaWireFormat,
   adaptWireSchema,
-  schemaKeywordsFor
+  schemaKeywordsFor,
+  schemaWireProviderId
 } from './schemaKeywords';
 import { toGeminiParameterSchema } from './toolFormats';
 
@@ -308,23 +310,31 @@ function schemaWireFormatOf(format: AiStructuredOutputFormat): SchemaWireFormat 
  * outputs (`output_config.format`) gets that wire's table, and one that takes the forced-tool
  * mechanism gets the Anthropic tools table. The provider's own table applies only when the request
  * goes to its own endpoint — pass `endpoint` when the descriptor is pointed at a caller-supplied
- * one, and every keyword is then treated as unverified, as the request path does.
+ * one, and every keyword is then treated as unverified, as the request path does, unless
+ * `verifiedEndpoint` asserts the endpoint is the provider itself (see
+ * `IAiVerifiedEndpoint`).
  * @param descriptor - The provider the schema will be sent to.
  * @param options - The `model` (a concrete id or an `@provider:role` alias; an OpenAI fine-tuned
- * `ft:` model gets the conservative table) and any caller-supplied `endpoint`.
+ * `ft:` model gets the conservative table), any caller-supplied `endpoint`, and any
+ * `verifiedEndpoint` assertion about it.
  * @returns The keyword-capability table, or `undefined` when the model declares no structured-output
  * capability and the request would send no schema at all.
  * @public
  */
 export function structuredOutputSchemaKeywords(
   descriptor: IAiProviderDescriptor,
-  options: { readonly model: string; readonly endpoint?: string }
+  options: {
+    readonly model: string;
+    readonly endpoint?: string;
+    readonly verifiedEndpoint?: IAiVerifiedEndpoint;
+  }
 ): JsonSchema.SchemaKeywordCapabilities | undefined {
   const capability = resolveStructuredOutputCapability(descriptor, options.model);
+  const providerId = schemaWireProviderId(descriptor, options.endpoint, options.verifiedEndpoint);
   return capability === undefined
     ? undefined
     : schemaKeywordsFor(schemaWireFormatOf(capability.format), {
-        ...(options.endpoint === undefined && { providerId: descriptor.id }),
+        ...(providerId !== undefined && { providerId }),
         model: options.model
       });
 }

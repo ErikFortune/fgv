@@ -1,0 +1,26 @@
+{
+  "changes": [
+    {
+      "comment": "BREAKING: executeClientToolTurn pre-flights every client tool's parameter schema for the target wire when the turn is created; a schema the wire cannot carry now returns a Failure naming the tool, the path and the wire, with nothing sent, instead of surfacing as a stream `error` event once the turn runs.",
+      "type": "minor",
+      "packageName": "@fgv/ts-extras"
+    },
+    {
+      "comment": "New `verifiedEndpoint: { providerId, verified: true }` (AiAssist.IAiVerifiedEndpoint) on callProviderCompletion, callProviderCompletionStream, executeClientToolTurn, clientToolSchemaKeywords and structuredOutputSchemaKeywords: an endpoint override asserted to be the descriptor's own provider gets that provider's keyword table (the ft: rule included) instead of the conservative one. Ignored unless `verified` is the literal true and `providerId` equals the descriptor id.",
+      "type": "minor",
+      "packageName": "@fgv/ts-extras"
+    },
+    {
+      "comment": "`default` is now dropped, not folded, on the OpenAI/xAI table and on every unverified wire: a folded `Default: ...` read as though the default were applied. `format` and `examples` still fold.",
+      "type": "minor",
+      "packageName": "@fgv/ts-extras"
+    },
+    {
+      "comment": "Anthropic tools require a `type` keyword on the root schema (observed live: 400 input_schema.type Field required), so a typeless root, or one typed only by enum, const or $ref, is refused; `{}` beneath the root still passes. Applies to client tools and to forced-tool structured output.",
+      "type": "minor",
+      "packageName": "@fgv/ts-extras"
+    }
+  ],
+  "packageName": "@fgv/ts-extras",
+  "email": "ErikFortune@outlook.com"
+}

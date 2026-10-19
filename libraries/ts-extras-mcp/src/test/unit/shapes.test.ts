@@ -297,7 +297,7 @@ describe('numeric enum, const and {} on an adapted MCP tool', () => {
   });
 
   describe('a table that does not match the wire the tools are sent on', () => {
-    test('a tool admitted for Anthropic fails a Gemini request loudly, naming the tool', async () => {
+    test('a tool admitted for Anthropic fails a Gemini turn at creation, naming the tool', async () => {
       const adapted = (await adaptMcpTools(session, { schemaKeywords: tableFor(ANTHROPIC) })).orThrow();
       const sent = mockModelCalls(toolCallChunks(GEMINI, 'level', '{}'));
       const turn = AiAssist.executeClientToolTurn({
@@ -306,14 +306,11 @@ describe('numeric enum, const and {} on an adapted MCP tool', () => {
         ...new AiAssist.AiPrompt('configure it', 'system').toRequest(),
         clientTools: adapted.tools,
         model: MODELS[GEMINI.id]
-      }).orThrow();
-      const errors: string[] = [];
-      for await (const event of turn.events) {
-        if (event.type === 'error') {
-          errors.push(JSON.stringify(event));
-        }
-      }
-      expect(errors).toEqual([expect.stringMatching(/Gemini streaming: .*configure.*no 'type'/)]);
+      });
+      // The turn is refused before anything is sent, not reported as a stream `error` event.
+      expect(turn).toFailWith(
+        /^executeClientToolTurn: tool 'configure': #\/properties\/payload: a schema with no 'type'.*\(Gemini\)$/
+      );
       expect(sent()).toBeUndefined();
     });
   });
