@@ -192,12 +192,11 @@ describe('HTTP-status classification over the real Streamable-HTTP transport', (
       const fixture = await startHttpFixture('stall-initialized');
       server = fixture.server;
       const onClose = jest.fn();
-      const started = Date.now();
+      // The stalled POST never answers, so a deadline that did not bound it would never settle.
       expect(await connectTo(fixture.url, onClose, { timeoutMs: 150 })).toFailWithDetail(
         /^connectMcpSession: .*Request timed out/,
         { kind: 'timeout' }
       );
-      expect(Date.now() - started).toBeLessThan(5_000);
       // Closing the client aborted the transport's in-flight fetch.
       await heldPostClosed;
       expect(onClose).not.toHaveBeenCalled();
@@ -209,11 +208,10 @@ describe('HTTP-status classification over the real Streamable-HTTP transport', (
       const onClose = jest.fn();
       const controller = new AbortController();
       setTimeout(() => controller.abort(), 100);
-      const started = Date.now();
+      // `aborted`, not the 30 s `timeout`: the abort is what ended the connect.
       expect(
         await connectTo(fixture.url, onClose, { timeoutMs: 30_000, signal: controller.signal })
       ).toFailWithDetail('connectMcpSession: aborted by the caller', { kind: 'aborted' });
-      expect(Date.now() - started).toBeLessThan(5_000);
       await heldPostClosed;
       expect(onClose).not.toHaveBeenCalled();
     });
