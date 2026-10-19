@@ -305,6 +305,7 @@ export interface IFileTreeMemoryStoreCreateParams {
     readonly rankProjectors?: ReadonlyMap<Kind, RankProjector>;
     readonly registry: IBodyConverterRegistry;
     readonly root: FileTree.IMutableFileTreeDirectoryItem;
+    readonly scopeDecoding?: (encoded: string) => Result<MemoryScopeKey>;
     readonly scopeEncoding?: (scope: MemoryScopeKey) => Result<string>;
     readonly vectorIndex?: IVectorIndex;
     readonly writePolicies?: ReadonlyMap<Kind, IWritePolicy>;
@@ -768,7 +769,7 @@ export interface ISemanticRetrieverCreateParams extends IRetrieverCreateParams {
 export interface ISkippedRecord {
     readonly error: string;
     readonly path: string;
-    readonly scope: MemoryScopeKey;
+    readonly scope?: MemoryScopeKey;
 }
 
 // @public

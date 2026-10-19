@@ -241,6 +241,7 @@ to. Design it once, before any of them ships.
   round. #729 chained only `_resolveCallOptions`, leaving `_walk` and `_execute` as they were.
 - **Route:** small stream in `ts-extras` safer-fetch. The existing revert rows for the walk (the
   `mcp-round-2b` revert matrix) are the regression check: each must still go red after the rewrite.
+- **Status:** **shipped** in #748, stream `safer-fetch-walk-chain` (recursion over hops). Every row is red again except R7, which `mcp-round-2b` had already recorded as not isolable. See `.ai/tasks/completed/2026-10/safer-fetch-walk-chain/result.md`.
 
 ### D2. `IIdentityCodec.verifyRoundTrip` does not require scope equality — from `agent-memory-merge-scope` (#731)
 
@@ -252,10 +253,11 @@ to. Design it once, before any of them ships.
 - **Route:** small stream in `ts-agent-memory`. Tighten the TSDoc contract, and enforce it in `verifyLoadedIdentity`. Breaking only for custom codecs, which is allowed on this active surface.
 - **Status:** **shipped** in #733 (`0e4fbf59`). The check is enforced by the store in `verifyLoadedIdentity` for every codec. The `IIdentityCodec` interface is unchanged.
 
-### D4. `scopeEncoding` has no inverse — from `agent-memory-scope-invariant` (#733)
+### D4. `scopeEncoding` has no inverse — from `agent-memory-scope-invariant` (#733) — **shipped** via #747 (`agent-memory-scope-decoding`)
 
 - **What:** a vault written with a non-identity `scopeEncoding` cannot be reopened, because the open walk indexes raw directory segments. Since #733 the reopen fails loudly; before, it silently misfiled records.
 - **Route:** recorded in `docs/TECH_DEBT.md` (P3). The trigger is the first consumer that needs a non-identity encoding.
+- **Resolution:** user decision (a), 2026-10-19. `FileTreeMemoryStore.create` takes `scopeDecoding` beside `scopeEncoding` and refuses an encoding without it. The walk decodes each directory that holds records and requires it to round-trip; reads and writes require the encoded directory to decode back. The `TECH_DEBT.md` entry is retired.
 
 ### D5. The store does not check the idStem half for flat kinds — from #733's review — **shipped** via #735
 

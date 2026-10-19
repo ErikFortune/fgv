@@ -254,11 +254,6 @@ function _fail<T>(detail: FetchFailureReason, message: string): Outcome<T> {
   return failWithDetail<T, FetchFailureReason>(message, detail);
 }
 
-/** Re-types a failure for the next stage without re-deriving its message or detail. */
-function _propagate<TFrom, TTo>(from: DetailedFailure<TFrom, FetchFailureReason>): Outcome<TTo> {
-  return failWithDetail<TTo, FetchFailureReason>(from.message, from.detail);
-}
-
 function _unknown<T>(message: string): Outcome<T> {
   return _fail<T>({ kind: 'unknown', detail: message }, message);
 }
@@ -282,17 +277,19 @@ function _unexpected<T>(message: string): Outcome<T> {
  * `FetchFailureReason`.
  *
  * @remarks
- * Only one thing can produce a detail-less failure: a bug inside this module that throws or
- * rejects somewhere a `thenOnSuccess` callback catches it. `AsyncDetailedResult` converts such a
- * throw to a `DetailedFailure` with `detail: undefined` — correctly, since a thrown error supplies
- * no reason and inventing one would be worse — but that is a *chaining* primitive's contract, not
- * this module's.
+ * A detail-less failure comes from a throw or rejection that a `thenOnSuccess` callback caught:
+ * a bug inside this module, or collaborator code this module does not wrap — the caller's logger
+ * (a hop failure is logged inside the walk's chain), a guard's `name` getter read while reporting
+ * that guard's refusal on a redirect hop, or `DeadlineWatch.dispose` meeting a caller `signal`
+ * that is not an `AbortSignal`. `AsyncDetailedResult` converts such a throw to a
+ * `DetailedFailure` with `detail: undefined` — correctly, since a thrown error supplies no reason
+ * and inventing one would be worse — but that is a *chaining* primitive's contract, not this
+ * module's.
  *
- * Before the chaining pass those throws propagated as real rejections all the way to
- * {@link _execute}'s `captureAsyncResult` and were reported as `'unknown'`. Catching them earlier
- * must not change what the caller sees, so the same wrapping is reapplied here. Without this a
- * caller switching on `detail.kind` — the documented way to consume this API — would fault on
- * `undefined`.
+ * Every such failure is reported exactly as a throw that reached {@link _runCall}'s
+ * `captureAsyncResult` is: `'unknown'`, with the `saferFetch: unexpected error:` prefix. Without
+ * this a caller switching on `detail.kind` — the documented way to consume this API — would fault
+ * on `undefined`.
  */
 function _withReason<T>(outcome: Outcome<T>): Outcome<T> {
   return outcome.isFailure() && outcome.detail === undefined ? _unexpected<T>(outcome.message) : outcome;
@@ -972,81 +969,142 @@ function _nextHop(
  * amplifier, and a resumed chain would revalidate hops the new attempt no longer follows.
  */
 async function _walk<T>(url: URL, context: IWalkContext<T>): Promise<Outcome<IWalked<T>>> {
-  const { guards, resolved, watch } = context;
-  let request: ISaferFetchRequest = {
-    url,
-    method: resolved.method,
-    headers: resolved.headers,
-    ...(resolved.body !== undefined ? { body: resolved.body } : {})
-  };
-  /** Hops already requested and redirected away from, oldest first. */
-  const completed: ICompletedHop[] = [];
+  const { resolved } = context;
+  return _walkHop<T>(
+    {
+      url,
+      method: resolved.method,
+      headers: resolved.headers,
+      ...(resolved.body !== undefined ? { body: resolved.body } : {})
+    },
+    [],
+    context
+  );
+}
 
-  for (;;) {
-    // Re-arms the per-attempt headers deadline. Without this, the first hop's
-    // `headersReceived()` would retire it for the whole call and a later host that never
-    // answers would be bounded only by the overall deadline.
-    watch.attemptStarted();
+/**
+ * Walks one hop and, when it redirects, the hop it leads to.
+ *
+ * @remarks
+ * The checks run in a fixed order, each before the request it guards: the request guard, the
+ * scheme re-check, the address guard, loop detection, the connect, and — on a redirect — the next
+ * hop's derivation. Each stage is reached only through the previous stage's success, so a refusal
+ * anywhere ends the walk before anything after it starts.
+ *
+ * Recursive rather than a loop, as {@link _runAttempt} is: each hop is handed the hops before it
+ * as a fresh array that nothing mutates, so a hop's view of the chain cannot change underneath it.
+ * Depth is bounded by `maxRedirects`, and each level is `await`ed. Each pending level holds its
+ * own copy of the chain, so memory retained by a walk is O(hops²) entries — bounded by
+ * `maxRedirects`.
+ *
+ * @param request - The request this hop sends, before the request guard has seen it.
+ * @param completed - Hops already requested and redirected away from, oldest first.
+ */
+async function _walkHop<T>(
+  request: ISaferFetchRequest,
+  completed: ReadonlyArray<ICompletedHop>,
+  context: IWalkContext<T>
+): Promise<Outcome<IWalked<T>>> {
+  const { guards, watch } = context;
+  // Re-arms the per-attempt headers deadline. Without this, the first hop's
+  // `headersReceived()` would retire it for the whole call and a later host that never
+  // answers would be bounded only by the overall deadline.
+  watch.attemptStarted();
 
-    const guarded = await _raced(
+  return (
+    await _raced(
       watch,
       () => guards.request.check(request, [...completed, { url: request.url }]),
       (message) =>
         _blocked<ISaferFetchRequest>('request', request.url, completed.length, guards.request.name, message)
-    );
-    if (guarded.isFailure()) {
-      return _propagate<ISaferFetchRequest, IWalked<T>>(guarded);
-    }
+    )
+  )
+    .onSuccess((checked) => _checkScheme(checked.url).onSuccess(() => _succeed(checked)))
+    .thenOnSuccess(async (checked) => _clearAndConnect(checked, completed, context));
+}
 
-    const checked = guarded.value;
-    const rechecked = _checkScheme(checked.url);
-    if (rechecked.isFailure()) {
-      return _propagate<URL, IWalked<T>>(rechecked);
-    }
+/**
+ * The rest of one hop once its request guard has accepted: the address guard, loop detection and
+ * the connect.
+ *
+ * @param checked - The request the request guard returned; it is what this hop sends.
+ * @param completed - Hops already requested and redirected away from, oldest first.
+ */
+async function _clearAndConnect<T>(
+  checked: ISaferFetchRequest,
+  completed: ReadonlyArray<ICompletedHop>,
+  context: IWalkContext<T>
+): Promise<Outcome<IWalked<T>>> {
+  const { guards, resolved, watch } = context;
+  // The address guard runs immediately before the connect and after the request guard, so it
+  // is always the last word before anything reaches the wire.
+  return (await _clearAddress([...completed, { url: checked.url }], guards, watch))
+    .onSuccess((cleared) =>
+      _logFailure(resolved.logger, cleared.url, _detectLoop(cleared.url, completed)).onSuccess(() =>
+        _succeed(cleared)
+      )
+    )
+    .thenOnSuccess(async (cleared) =>
+      _logFailure(
+        resolved.logger,
+        cleared.url,
+        // Downstream guards see the chain as it was actually requested, so the URL a response
+        // guard reads is the URL the address guard cleared — not the pre-normalization spelling.
+        await _connect(checked, cleared, [...completed, { url: cleared.url }], context)
+      )
+    )
+    .thenOnSuccess(async (attempt) => _settleHop(checked, attempt, completed, context));
+}
 
-    // The address guard runs immediately before the connect and after the request guard, so it
-    // is always the last word before anything reaches the wire.
-    const cleared = await _clearAddress([...completed, { url: checked.url }], guards, watch);
-    if (cleared.isFailure()) {
-      return _propagate<IClearedHop, IWalked<T>>(cleared);
-    }
-
-    const unrepeated = _detectLoop(cleared.value.url, completed);
-    if (unrepeated.isFailure()) {
-      resolved.logger.detail(`saferFetch: ${cleared.value.url.toString()} failed: ${unrepeated.message}`);
-      return _propagate<URL, IWalked<T>>(unrepeated);
-    }
-
-    // Downstream guards see the chain as it was actually requested, so the URL a response guard
-    // reads is the URL the address guard cleared — not the pre-normalization spelling.
-    const requested: ReadonlyArray<IRequestHop> = [...completed, { url: cleared.value.url }];
-    const attempted = await _connect(checked, cleared.value, requested, context);
-    if (attempted.isFailure()) {
-      resolved.logger.detail(`saferFetch: ${cleared.value.url.toString()} failed: ${attempted.message}`);
-      return _propagate<IAttempt<T>, IWalked<T>>(attempted);
-    }
-    const attempt = attempted.value;
-
-    if (attempt.outcome.kind === 'final') {
-      return _succeed({
-        value: attempt.outcome.value,
-        urlChain: [...completed.map((hop) => hop.url.toString()), attempt.url.toString()]
-      });
-    }
-
-    const next = _nextHop(attempt.url, completed, attempt.outcome, checked, resolved);
-    if (next.isFailure()) {
-      resolved.logger.detail(`saferFetch: ${attempt.url.toString()} failed: ${next.message}`);
-      return _propagate<ISaferFetchRequest, IWalked<T>>(next);
-    }
-
-    completed.push({
-      url: attempt.url,
-      status: attempt.outcome.status,
-      ...(attempt.connectedAddress !== undefined ? { connectedAddress: attempt.connectedAddress } : {})
+/**
+ * Ends the walk on a final response, or derives the next hop from a redirect and walks it.
+ *
+ * @param checked - The request this hop actually sent. The next hop's headers are derived from it,
+ * never from the caller's original set, which is what keeps credential stripping monotonic.
+ * @param attempt - This hop's completed attempt.
+ * @param completed - Hops before this one, oldest first.
+ */
+async function _settleHop<T>(
+  checked: ISaferFetchRequest,
+  attempt: IAttempt<T>,
+  completed: ReadonlyArray<ICompletedHop>,
+  context: IWalkContext<T>
+): Promise<Outcome<IWalked<T>>> {
+  const { outcome } = attempt;
+  if (outcome.kind === 'final') {
+    return _succeed({
+      value: outcome.value,
+      urlChain: [...completed.map((hop) => hop.url.toString()), attempt.url.toString()]
     });
-    request = next.value;
   }
+
+  const { resolved } = context;
+  return _logFailure(
+    resolved.logger,
+    attempt.url,
+    _nextHop(attempt.url, completed, outcome, checked, resolved)
+  ).thenOnSuccess(async (next) =>
+    _walkHop(
+      next,
+      [
+        ...completed,
+        {
+          url: attempt.url,
+          status: outcome.status,
+          ...(attempt.connectedAddress !== undefined ? { connectedAddress: attempt.connectedAddress } : {})
+        }
+      ],
+      context
+    )
+  );
+}
+
+/** Logs a hop's failure, naming the URL it was for, and passes the outcome on unchanged. */
+function _logFailure<T>(logger: Logging.ILogger, url: URL, outcome: Outcome<T>): Outcome<T> {
+  if (outcome.isFailure()) {
+    logger.detail(`saferFetch: ${url.toString()} failed: ${outcome.message}`);
+  }
+  return outcome;
 }
 
 /**
@@ -1149,41 +1207,50 @@ async function _runAttempt(
 }
 
 async function _execute(url: string | URL, options: ISaferFetchOptions): Promise<Outcome<IRawOutcome>> {
-  const resolvedOptions = _resolveCallOptions(options);
-  if (resolvedOptions.isFailure()) {
-    return _propagate<IResolvedCallOptions, IRawOutcome>(resolvedOptions);
-  }
-  const resolved = resolvedOptions.value;
+  // Every step up to and including the watch runs synchronously, in the caller's tick: `options`
+  // is the caller's object, and nothing reads it after the first `await`.
+  const call = _resolveCallOptions(options).onSuccess((resolved) =>
+    _asOutcome(resolveGuards(options)).onSuccess((guards) =>
+      _parseUrl(url).onSuccess((parsed) =>
+        _succeed({
+          parsed,
+          guards,
+          resolved,
+          watch: new DeadlineWatch(resolved.timeoutMs, resolved.headersTimeoutMs, options.signal)
+        })
+      )
+    )
+  );
+  // This is the single boundary where an `Outcome` becomes the caller's result, so it is the one
+  // place the every-failure-has-a-reason invariant has to hold — see {@link _withReason}.
+  return _withReason(
+    await call.thenOnSuccess(async ({ parsed, guards, resolved, watch }) =>
+      _runCall(parsed, guards, resolved, watch)
+    )
+  );
+}
 
-  const resolvedGuards = resolveGuards(options);
-  if (resolvedGuards.isFailure()) {
-    return _unknown<IRawOutcome>(resolvedGuards.message);
-  }
-  const guards = resolvedGuards.value;
-
-  const parsed = _parseUrl(url);
-  if (parsed.isFailure()) {
-    return _propagate<URL, IRawOutcome>(parsed);
-  }
-
-  const watch = new DeadlineWatch(resolved.timeoutMs, resolved.headersTimeoutMs, options.signal);
+/** Runs a validated buffered call's attempts against its watch, disposing the watch on every path. */
+async function _runCall(
+  url: URL,
+  guards: IResolvedGuards,
+  resolved: IResolvedCallOptions,
+  watch: DeadlineWatch
+): Promise<Outcome<IRawOutcome>> {
   // `captureAsyncResult` rather than `try`/`finally`, for the same reason `_capture` wraps every
   // guard and transport call: an entry point documented to always return a `Result` has to keep
-  // that promise even when a collaborator breaks its own. Nothing inside is *supposed* to throw
-  // — guards, transports and the body read are each captured already — but the caller's
-  // `logger` is collaborator code this primitive does not wrap, and a thrown diagnostic must not
-  // become the caller's problem. The watch is disposed on both paths because the capture has
-  // already converted the throw into a value.
-  const ran = await captureAsyncResult(async () => _runAttempt(parsed.value, guards, resolved, watch, 0));
+  // that promise even when a collaborator breaks its own. Guards, transports and the body read
+  // are each captured already, and a throw inside the walk's chain is converted by `thenOnSuccess`
+  // (see {@link _withReason}). What still reaches this capture is collaborator code outside both:
+  // the caller's `logger` on `_runAttempt`'s retry line, and a throw raised before the walk's
+  // first hand-off — a request guard's `name` getter while its hop-0 refusal is reported. The
+  // watch is disposed on both paths because the capture has already converted the throw into a
+  // value.
+  const ran = await captureAsyncResult(async () => _runAttempt(url, guards, resolved, watch, 0));
   watch.dispose();
-  return ran.isFailure()
-    ? // `'unknown'` is the taxonomy's honest slot for "something violated its contract", rather
-      // than a guess at a more specific kind.
-      _unexpected<IRawOutcome>(ran.message)
-    : // Same wrapping for a throw a `thenOnSuccess` callback caught before it could reach the
-      // capture above — see {@link _withReason}. This is the single boundary where an `Outcome`
-      // becomes the caller's result, so it is the one place the invariant has to hold.
-      _withReason(ran.value);
+  // `'unknown'` is the taxonomy's honest slot for "something violated its contract", rather than a
+  // guess at a more specific kind.
+  return ran.isFailure() ? _unexpected<IRawOutcome>(ran.message) : ran.value;
 }
 
 function _toResponse<T>(value: T, raw: IRawOutcome): ISaferFetchResponse<T> {
@@ -1569,7 +1636,7 @@ async function _walkGuarded(
 ): Promise<Outcome<Response>> {
   // No overall deadline: the body this returns may be a stream that lives for an hour.
   const watch = new DeadlineWatch(undefined, prepared.headersTimeoutMs, signal);
-  // Captured for the same reason as in `_execute`: the logger is collaborator code.
+  // Captured for the same reason as in `_runCall`: the logger is collaborator code.
   const ran = await captureAsyncResult(async () =>
     _walk(url, {
       guards: prepared.guards,

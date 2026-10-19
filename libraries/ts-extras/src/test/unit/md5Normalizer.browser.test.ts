@@ -143,26 +143,31 @@ describe('Md5Normalizer (Browser - CRC32 based)', () => {
       });
     });
 
-    test('should handle large objects efficiently', () => {
+    test('should hash all of a large object, deterministically', () => {
+      // A unit test cannot assert how fast this is without asserting how busy the machine is.
+      // What a large input can be held to is that it hashes at all, that the hash is a function of
+      // the whole value rather than of a prefix, and that equal values hash equally.
       const normalizer = new BrowserHash.Md5Normalizer();
-      const largeObj = {
-        items: Array.from({ length: 1000 }, (unusedValue, i) => ({
+      const makeLargeObj = (lastData: string, length: number = 1000): unknown => ({
+        items: Array.from({ length }, (unusedValue, i) => ({
           id: i,
           name: `item-${i}`,
-          data: `data-${i}`.repeat(10)
+          data: i === length - 1 ? lastData : `data-${i}`.repeat(10)
         }))
-      };
-
-      const startTime = Date.now();
-      const result = normalizer.computeHash(largeObj);
-      const endTime = Date.now();
-
-      expect(result).toSucceedAndSatisfy((hash) => {
-        expect(hash).toMatch(/^[0-9a-f]{8}$/);
       });
 
-      // Should complete in reasonable time (less than 300ms for this size)
-      expect(endTime - startTime).toBeLessThan(300);
+      expect(normalizer.computeHash(makeLargeObj('last'))).toSucceedAndSatisfy((hash) => {
+        expect(hash).toMatch(/^[0-9a-f]{8}$/);
+        // A structurally equal copy built separately hashes the same.
+        expect(normalizer.computeHash(makeLargeObj('last'))).toSucceedWith(hash);
+        // The final element is part of the hash, so the whole input was consumed.
+        expect(normalizer.computeHash(makeLargeObj('changed'))).toSucceedAndSatisfy((other) => {
+          expect(other).not.toBe(hash);
+        });
+        expect(normalizer.computeHash(makeLargeObj('last', 999))).toSucceedAndSatisfy((other) => {
+          expect(other).not.toBe(hash);
+        });
+      });
     });
   });
 
