@@ -52,4 +52,4 @@ relatedStreams:
       relationship: 'made the scope invariant a store property; recorded D4 as its follow-up'
     }
   - { id: personality-asks-2026-10, relationship: 'the followups ledger carrying D4' }
-sourceHash: c5672820a46e5a62 # first 16 hex of sha256 over brief.md, state.md and result.md concatenated in that order
+sourceHash: aa9d616fab93bc2f # first 16 hex of sha256 over brief.md, state.md and result.md concatenated in that order

@@ -121,3 +121,37 @@ Each gate was run from the repo root with per-worktree logs, and graded by grep.
 - **`ISkippedRecord.scope` had to become optional**, which the brief did not anticipate. A
   directory that does not decode has no validated scope to report.
 - **Decoding alone is accepted.** The brief is silent on this case.
+
+## Review round 1
+
+The deep review found no P1s. Everything below is applied in `32852d0ef`, after merging
+`origin/integration/asks` (#743) in `1c7d73fdb`.
+
+- **P2: a throwing host coder escaped.** `decodeScopeDir` and `encodeScope` now call both coders
+  through `captureResult`. A throw is a failure (`scopeDecoding threw: …`). At open it fails the
+  open, or is quarantined under `'skip'`. On a read or a write it fails that operation. Tests cover
+  a throw at open in both modes, at read, and at write, for both the decoding and the encoding.
+- **P2: write check vs path normalization.** `encodeScope` now refuses an encoded path that is not
+  canonical: empty, or with an empty, `.` or `..` segment. Without this, directory resolution drops
+  empty segments, so `/s-a` or `a//b` would be written under a path the walk recovers differently,
+  and `''` would land at the root, where the walk ignores record files. Tests cover `''`, a leading
+  slash, a double slash, `..` and `.`. Each is refused on write, and nothing is written. The identity
+  case is untouched: the default encoding already refuses empty segments.
+- **P2: ledger counts.** Recomputed from the entries after the merge. The archive has 37 `###`
+  entries and the index has 37 ids, and both counters now read 37. The feed was regenerated.
+- **P3: versioned kind and nested scopes.** A `TemporalIdentityCodec` kind under the prefix encoding
+  reopens: `get` returns the current version, and `list` returns both versions. A parent scope `a`
+  and its child `a/b` (`s-a/` holds records and `s-a/s-b/`) reopen as separate scopes.
+
+TSDoc, `CAPABILITIES.md` and the change file now state the canonical-path rule and that a throw is
+a failure. `scopeDecoding.test.ts` has 29 tests, and the package is at 100%.
+
+**Gates (round 1).**
+- **Package.** Build, lint and fixlint are clean, and test is at 100%.
+- **`rush rebuild`.** 38 completed. 0 errors. The only warning is the symlink notice. No NUL
+  padding.
+- **`rush test`.** 36 projects completed, including `ts-agent-memory`, and one defines no work.
+  `ts-res-cli` failed once on its load-sensitive "build same input twice" test, and passed when
+  re-run alone.
+- **Verifiers.** `change --verify`: exit 0. `verify-capability-docs`: 0 failed. Feed `--check`: 0
+  stale.
