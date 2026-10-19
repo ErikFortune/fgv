@@ -695,7 +695,11 @@ describe('OAuth through authProvider', () => {
       useFakeTimeouts();
       try {
         const connecting = connectMcpSession({
-          transport: createHttpTransport({ url: real.url, fetch: guarded(), authProvider: provider }).orThrow(),
+          transport: createHttpTransport({
+            url: real.url,
+            fetch: guarded(),
+            authProvider: provider
+          }).orThrow(),
           ...(how === 'timeout' ? { timeoutMs: 300 } : { signal: controller.signal })
         });
         await provider.reached;

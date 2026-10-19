@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras",
+      "comment": "Test-only: timing-sensitive tests now run on a fake clock or assert a discriminating outcome instead of elapsed wall-clock time. No source or API change.",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-extras"
+}
