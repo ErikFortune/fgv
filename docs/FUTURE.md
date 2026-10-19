@@ -23,6 +23,47 @@ Description with the user's framing expanded with the design space.
 
 ---
 
+## `ts-random` — weighted pick without replacement (`pickWeightedSequence`)
+
+`pickWeighted` / `pickWeightedAt` choose one item. A weighted draw of several **distinct** items
+(each chosen item removed before the next draw) is the natural sibling: PersonAIlity's quirk draw
+would want it if its catalog outgrows the free slots. Design questions: whether the pure form takes
+one unit per draw or derives successive units, and whether the single-pick walk (input order,
+`point < cumulative`, last by elimination) is reused unchanged on the shrinking set so a sequence's
+first draw equals `pickWeightedAt`'s.
+
+**Why deferred**: asked for only as optional; no consumer needs it yet.
+
+**Dependencies**: a consumer whose catalog needs several distinct weighted draws.
+
+**Reference**: personaility#669; chore batch `chores-2026-10-asks` (item 2), which shipped the
+single pick.
+
+---
+
+## `ts-extras-system-one` — exact token pre-measurement (design D5)
+
+`askSystemOne`'s mandatory input bound measures characters, with README values (2,400 / 4,400) derived
+from Qwen3-8B characters-per-token measurements (design E33). For a backend whose tokenizer is known,
+the bound could count tokens exactly instead, replacing the character proxy and its safety margin.
+
+**A concrete route now exists** (Phase B, 2026-10-03): Qwen3's `vocab.json` and `merges.txt` are
+reachable without LFS and are enough to build the tokenizer, which is how E33 was measured. Loading it
+at runtime (for example through transformers.js) is unverified. A deployed vLLM encoder also serves
+`POST /tokenize` (E35), which live check L3 would use to confirm E33's counts.
+
+**Why deferred**: the character bound is derived (E33) and deliberately conservative; the package
+has no consumer yet, and L3 (not run) would confirm the measurement against the real tokenizer.
+
+**Dependencies**: a consumer whose states run near the bound, or L3's `/tokenize` evidence showing the
+character rule is too loose or too tight.
+
+**Reference**: `docs/design/system-one-decisions/design.md` §11 D5, E33, E35;
+`.ai/tasks/completed/2026-10/system-one-triage/result.md` § Follow-ups (asked for this entry at
+finalization; added at the `system-one-decisions` cluster close, 2026-10-08).
+
+---
+
 ## A browser story for client-tool turns (CORS pre-flight + a proxied entry point)
 
 `callProviderCompletionStream` pre-flights `IAiProviderDescriptor.streamingCorsRestricted` and
@@ -394,12 +435,24 @@ Deferred from the `ts-extras-mcp` slice-1 stream (2026-06-06). Each is additive 
 
 - **Browser sibling `@fgv/ts-web-extras-mcp`.** Slice 1 is Node-only (stdio transport spawns a subprocess; HTTP transport is fine in-browser modulo CORS). A browser package would expose `createHttpTransport` + the session/adapter surface backed by the SDK's browser-compatible transports.
 - **MCP resources / prompts / sampling.** Slice 1 covers tool discovery + invocation only. MCP servers also expose resources, prompt templates, and sampling callbacks.
-- **OAuth / managed auth.** Slice 1 supports static headers only (`createHttpTransport({ headers })`). The SDK has an auth provider abstraction for OAuth flows.
-- **Multimodal tool-result passthrough.** `callMcpTool` projects non-text content blocks to a `[<type> block]` summary; image/audio/resource passthrough into the ai-assist round-trip is out of scope.
+- **OAuth / managed auth — partly shipped (mcp-round-2b).** `createHttpTransport({ authProvider })` wraps the SDK's `OAuthClientProvider` in a forwarding facade (a different object from the consumer's provider) whose interactive steps are gated to `connectMcpSession`, and `unauthorized` carries `resourceMetadataUrl`. What remains is the helper below.
+- **A Result-wrapped helper around the SDK's `auth()` flow** (personaility#677, "welcome, not required"). After `redirectToAuthorization`, a consumer has to call the SDK's `auth(provider, { serverUrl, authorizationCode, resourceMetadataUrl, fetchFn })` itself to exchange the code, and must remember to pass its guarded fetch as `fetchFn`. Shape: `completeMcpAuthorization({ url, authProvider, authorizationCode, fetch?, resourceMetadataUrl?, signal? }): Promise<DetailedResult<'authorized', McpFailureReason>>` — `sdk.ts` calls `auth()` with the package's egress wrapper (so the guard, the static-header rule and the `resource_metadata` capture apply), classifies with the same classifier, and never echoes the code or tokens. Optionally a `beginMcpAuthorization` that runs discovery and returns the authorization URL without a connect. Additive; no consumer blocked on it today.
+- **Pinned connect for MCP egress.** The guarded fetch closes SSRF per hop but not DNS rebinding (the platform re-resolves after the guard). The safer-fetch pinning seam (`IGuardVerdict.pinnedAddress` + a pinning `IFetchTransport`) is where it lands, as its own stream; `createGuardedFetch` takes a `transport`, so it inherits the fix without a signature change.
+- **Rich tool-result blocks into the ai-assist round-trip.** `callMcpTool` returns every content block (`blocks`, mcp-round-2a), but `adaptMcpTools`' tools still hand the model the text projection: an `IAiClientTool` result is a string today, so images, audio and embedded blobs cannot reach the model. Needs a multimodal tool-result shape in `@fgv/ts-extras` ai-assist first.
 - **Cross-server tool-name namespacing.** Connecting multiple servers can collide tool names; duplicates already fail loudly in `executeClientToolTurn`, but a namespacing/prefixing scheme would let multiple servers coexist.
-- **Transport-injection testability seam.** The package exposes only the `createStdioTransport` / `createHttpTransport` factories, so an external consumer cannot inject an in-memory transport to drive the session/adapter in-process against a fake MCP server in their own tests (they'd stand up a real stdio/http server). The package's own e2e test reaches the internal `McpTransport` directly; a public seam (e.g. an exported `createTransportFromSdk` or accepting a pre-built SDK transport) would let consumers do the same. Surfaced by the #471 verification; not a production defect.
 
-**Headline follow-on lever — additively widen `JsonSchema.fromJson`'s supported subset** (in `@fgv/ts-json-base`). The single biggest real-world risk is schema-subset mismatch: real MCP servers advertise `$ref`/`$defs`, `oneOf`, `pattern`, union `type` arrays, etc. that `fromJson` rejects, so those tools land in `adaptMcpTools`' `skipped` set. `$ref`/`$defs` resolution and `pattern` passthrough are the highest-value additions. This is a separate small `ts-json-base` stream, commissioned based on what the `mcp-probe` scenario surfaces against real servers — NOT done in the `ts-extras-mcp` stream.
+**Headline follow-on lever — additively widen `JsonSchema.fromJson`'s supported subset** (in `@fgv/ts-json-base`). The single biggest real-world risk is schema-subset mismatch: real MCP servers advertise shapes `fromJson` rejects, so those tools land in `adaptMcpTools`' `skipped` set.
+
+*Shipped so far:* the nullable union `type: [T, 'null']`; open objects that pass undeclared keys through (#720); in the `json-schema-fromjson-widening` stream, `anyOf`/`oneOf` `[T, {type:'null'}]` (pydantic `Optional[T]`) normalized to nullable, local `$ref`/`$defs` inlined with cycle and size bounds, and schema-valued `additionalProperties` as `JsonSchema.record`; and, in the `json-schema-shapes` stream (PersonAIlity#683), **numeric and boolean `enum`** (pydantic `Literal[1, 2]`; `JsonSchema.numberEnumOf` / `integerEnumOf` / `booleanEnumOf`), **scalar `const`** (now enforced, emitted as a one-value `enum`), and **`{}`** (pydantic `Any`; `JsonSchema.anyValue`). Their wire support is stated per provider in the #682 capability tables: Gemini folds a non-string `enum` into the description (its `enum` is string-only), and every wire that requires a `type` on every schema, or does not document a typeless one, refuses `{}` rather than inventing a type. The trade-off is drawn by where the tool comes from: a **host-authored client tool** with `{}` fails the request loudly on such a wire, naming the tool and the path (an authoring error the host can fix); an **MCP tool** is admitted by `adaptMcpTools` against the target wire's table, **defaulting to the conservative one**, so a server tool with `{}` is skipped — as it was before this stream — unless the host passes a table that carries it (Anthropic tools). See `.ai/tasks/completed/2026-10/json-schema-shapes/result.md`. And, in the `json-schema-pattern` stream, `pattern` split by trust: a host's `RegExp` through `stringOptions({ pattern })` is enforced and sent where the wire documents `pattern`, while `fromJson` admits a server's `pattern` only with an injected `patternValidator`, so the library itself never compiles one (see `.ai/tasks/completed/2026-10/json-schema-pattern/result.md`).
+
+*Still refused, each deferred with its reason* (requested in PersonAIlity#683, which left the choice to fgv):
+
+- **A default `patternValidator` — ✅ shipped (`ts-extras-re2`, #746).** `@fgv/ts-extras-re2` exports `re2PatternValidator` (and `createRe2PatternValidator` for tighter limits), a `JsonSchema.SchemaPatternValidator` on re2js, a pure-JS port of RE2 with no native build. It reads the source as an ECMA-262 `u`-mode pattern and rewrites it into RE2 syntax with the same meaning, or refuses it (lookaround, backreferences, binary Unicode properties, non-ASCII group names, Annex B syntax). It bounds source length and compiled program size. Why the default is refusal and not a `RegExp`: the regex comes from the MCP server, and a backtracking engine run against model-supplied strings is catastrophic on `(a+)+$` and polynomial on `\d+\d+\d+…`. A linear-time engine closes both classes, which is why the default lives in its own package rather than in `ts-json-base`. See `.ai/tasks/completed/2026-10/ts-extras-re2/result.md`. The wire side already has its per-provider design: the `pattern` row in the ai-assist keyword tables passes it on Anthropic tools and Anthropic JSON outputs and folds it elsewhere. **Gemini folds only because its Schema documents the `pattern` field but not its dialect or anchoring**; an enforcement probe (an unanchored pattern, and a reply that would match it only partially) could justify passing it there later, as one could for xAI if it ever matched JSON Schema's unanchored reading.
+- **`{}` on Gemini through `parametersJsonSchema`.** Gemini's `FunctionDeclaration` has a full-JSON-Schema alternative to the OpenAPI-subset `parameters` field, which could carry a typeless schema. Moving the Gemini tool path onto it is a separate provider-path change (it would also change how every other keyword is sent), so today a Gemini request carrying `{}` is refused.
+- **Declared `properties` plus a schema-valued `additionalProperties`** (zod `.catchall()`, pydantic typed extras). The converter is a one-line generalization of the record path; what is missing is a builder typing that does not collapse to `never` when the declared and undeclared value types differ.
+- **General unions** (`anyOf` of two non-null schemas) — out of scope by the requester's own statement, and unrepresentable on strict provider schemas.
+
+Not part of this lever: the constraint keywords (`minimum`, `maxLength`, `format`, …), which PersonAIlity#682 (`json-schema-constraints`, #734) made enforced, emitted and adapted per provider.
 
 **Reference**: `.ai/tasks/completed/2026-06/ts-extras-mcp/brief.md` + `design.md`.
 
@@ -440,7 +493,7 @@ remain manual on a provider rotation and are tracked as a live entry in `docs/TE
 rather than here.
 
 Note the example below is now doubly stale: it cites `gpt-4o` as OpenAI's default, which it has
-not been for two model generations (the line is currently `gpt-5.6-*`, selected by tier).
+not been for three model generations (the line is currently `gpt-6-*`, selected by tier).
 
 *Original entry:*
 
@@ -947,8 +1000,8 @@ yes/no + storage-direction ratification** when v2 durability is scheduled.
 > traversal, cycle guard, ingest edge-validation, edge serialization, the `memory_write` /
 > `memory_context` tool schemas) behind a single collision-proof `edgeTargetKey` helper; #543
 > completed the migration across the vector/similarity + entity-resolution path (breaking the
-> pre-1.0 `IEntityResolver` host contract, no shim). Residual latent item: `IProvenance.derivedFrom`
-> stays a bare `MemoryId` (never dereferenced today) — tracked in `TECH_DEBT.md`.
+> pre-1.0 `IEntityResolver` host contract, no shim). The residual latent item, `IProvenance.derivedFrom`
+> as a bare `MemoryId`, has since been scope-qualified to an `IEdgeTarget` (retired from `TECH_DEBT.md`).
 
 **Reference:** consumer orchestrator's forwarded 2026-07 agent-memory batch (the id-stem
 uniqueness vs. bare-MemoryId-links friction report); PRs #542, #543; the four firm asks from

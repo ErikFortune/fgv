@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-agent-memory",
+      "comment": "BREAKING: FileTreeMemoryStore now refuses a flat-kind record whose filename stem is not codec.encode(entityId).idStem, so a codec whose verifyRoundTrip skips the idStem check can no longer load a record that getById finds but get(kind, entityId) cannot",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-agent-memory"
+}

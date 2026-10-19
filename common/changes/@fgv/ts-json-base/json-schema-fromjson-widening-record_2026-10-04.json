@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "New JsonSchema.record(values) factory (a map whose every value matches a schema; emits additionalProperties: <schema>; an own property whose value is undefined is refused, and a value schema whose static type admits undefined is a compile-time error), and JsonSchema.fromJson accepts a schema-valued additionalProperties as a record when no properties are declared and no keyword constraining its key set accompanies it (patternProperties, propertyNames, unevaluatedProperties, dependentRequired, dependentSchemas, dependencies, minProperties, maxProperties); an annotation-only additionalProperties ({}) now means the same as true. Numeric enums and schemas with no type ({}) are still refused, now with their own messages; pattern stays refused.",
+      "type": "minor",
+      "packageName": "@fgv/ts-json-base"
+    }
+  ],
+  "packageName": "@fgv/ts-json-base",
+  "email": "ErikFortune@outlook.com"
+}

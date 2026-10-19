@@ -1,0 +1,83 @@
+id: agent-tasks-t1
+status: shipped
+packages: ['@fgv/ts-agent-tasks']
+prs: [684]
+openPrs: []
+opened: 2026-09-22
+closed: 2026-09-22
+summary:
+  headline: >
+    New @fgv/ts-agent-tasks records agent work without running it: typed task envelopes, a
+    crash-safe FileTree store, and a principal-bound broker with exact-receipt delivery,
+    external-source reconciliation, retention and persistent cascade stop.
+  intended: >
+    Create @fgv/ts-agent-tasks and land slice T1 of the agent-tasks plan: package scaffold, value
+    types and converters, bounded common envelope, lifecycle/observation/command/recovery unions,
+    versioned detail and command registration, typed handles, Result-valued factories and injected
+    clock/ID/logger contracts, plus built-in tracked/list detail schemas. Under A3 also the
+    versioned capacity profile, typed dimension failures/status, bounded source-replay
+    declarations and the internal discriminated capacityClaims schema (claims are
+    repository-generated, not caller-issued). No storage, no broker, no side effects at import.
+    Landed on integration/agent-tasks-v1 so later slices could revise its vocabulary.
+  shipped: >
+    The new package with two packlets, types and converters, registered under the base-utils
+    lockstep policy. types: branded identities, scope/responsibility/reference, reasons, progress,
+    outcome, TaskLifecycle and status-set helpers, ObservationHealth, source binding/revision/
+    projection, RecoveryDeclaration/RecoveryResult, SourceHistoryDeclaration and
+    ISourceReplayEnvelope, ITaskEnvelope/ITaskSnapshot, TaskFailureCode/ITaskFailure/
+    ICapacityFailure/TaskResult, command request/state/receipt/descriptor, UpdateCategory, field
+    bounds, and the A3 capacity model including maximumClosureCharges and
+    maximumSettlementCharges. converters: TaskConverters.create({ bounds }), TaskKindRegistry and
+    createTaskCommandHandle, the two built-in kind descriptors, TaskEnvironment and the bounded
+    primitives. 409 tests at 100% on all four metrics, no coverage directives. result.md's
+    declared-vs-exercised table says "15 closed sets, 101 members, every one shape-exercised
+    and roughly half of them choice-unexercised" — though the table beneath that line has 18 rows
+    whose member counts sum to 100 (counted at the cluster close; T1 never reconciled the two).
+  diverged: >
+    The review loop moved T1 from schematizing §8.6 to enforcing parts of it: the two
+    closeout/settlement charge functions became Result-valued (an API change, failing on inexact
+    safe-integer arithmetic), and the profile converter now rejects a profile whose limits cannot
+    hold the protected closeout/settlement bundles — the capacity-deadlock case Copilot's round-3
+    summary surfaced. Uniqueness constraints were added to capacity-status rows, claim ids and
+    claim audiences, none of which the brief named. SourceRead was declared then cut on layer-1
+    review; ITaskSource/ISourceCapabilities, ITaskUpdate/ITaskSummary, a PageCursor converter and
+    tracked-command parameter schemas were deliberately not declared, so "command registration"
+    shipped as eleven names with zero schemas. The design's two source-history spellings were
+    unified on §8.6's observed-state/source-replay pending T6. T1 modelled claim conversion as a
+    disposition change only; T3 later revised that (charges shrink as spent) and added a sixth
+    claim purpose. The CI capability-feed gate, which the brief's checklist did not name, failed
+    the first two pushes.
+  sourceLine: '`@fgv/ts-agent-tasks` at `libraries/ts-agent-tasks`, registered in `rush.json` under the `base-utils` lockstep policy, with two packlets and nothing else.'
+keywords:
+  - task vocabulary
+  - closed unions
+  - declared vs exercised
+  - integration branch vocabulary revision licence
+  - capacity profile
+  - capacityClaims
+  - protected closeout bundle
+  - maximumClosureCharges
+  - maximumSettlementCharges
+  - converter-closure erasure
+  - typed kind handles
+  - encode/decode symmetry hole
+  - uniqueness constraint on bounded arrays
+  - source-history spelling
+  - generate-capability-feed gate
+  - Copilot previously-missed summary findings
+relatedStreams:
+  - id: agent-tasks-cluster-close
+    relationship: cluster parent; finalized at its close
+  - id: agent-tasks-t2
+    relationship: next slice; first to exercise T1's unions as choices (no member revised)
+  - id: agent-tasks-t3
+    relationship: revised CapacityClaimPurpose (5 -> 6) and claim-disposition semantics
+  - id: agent-tasks-t5
+    relationship: gave T1's eleven tracked command names their parameter shapes
+  - id: agent-tasks-t6
+    relationship: confirmed the observed-state / source-replay spelling T1 chose
+  - id: null-prototype-property-guard
+    relationship: fixed the ts-utils isKeyOf null-prototype throw T1 escalated (#700)
+  - id: filetree-atomic-write
+    relationship: F1/F2 precedent for landing a predictive vocabulary on an integration branch
+sourceHash: 52db8f1d0e7e427f

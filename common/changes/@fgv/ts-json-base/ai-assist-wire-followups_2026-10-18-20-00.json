@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "BREAKING (implementers only): ISchemaShapeCapabilities.untyped is now the named SchemaUntypedRule and gains 'pass-nested' (passes a typeless node beneath the root; refuses a root # with no `type` keyword, including one typed only by enum, const or $ref), so code switching on the rule must handle it. unverifiedWireSchemaKeywords now drops `default` instead of folding `Default: ...` into the description, since a folded default reads as though it were applied; `format` and `examples` still fold.",
+      "type": "minor",
+      "packageName": "@fgv/ts-json-base"
+    }
+  ],
+  "packageName": "@fgv/ts-json-base",
+  "email": "ErikFortune@outlook.com"
+}

@@ -162,8 +162,10 @@ export function formatMcpProbeReport(
     }
     lines.push('');
     lines.push(
-      'Each skipped tool names a JSON Schema feature `JsonSchema.fromJson` does not yet support. ' +
-        'The raw schema is printed so the subset can be additively widened in @fgv/ts-json-base.'
+      'Each skipped tool names a JSON Schema feature `JsonSchema.fromJson` does not yet support, ' +
+        'or one the target wire cannot carry (adaptation uses the conservative wire table by default, ' +
+        'which skips a tool with an untyped `{}` parameter). The raw schema is printed so the subset ' +
+        'can be additively widened in @fgv/ts-json-base.'
     );
   }
 

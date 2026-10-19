@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-agent-memory",
+      "comment": "BREAKING: FileTreeMemoryStore now enforces scope == codec(kind).encode(entityId).scope on every load, for every identity codec. A custom codec whose decode ignores scope previously let a file under a foreign scope load; that file now fails the read or the open, or is quarantined into skippedRecords under onRecordError: 'skip'. IIdentityCodec is unchanged",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-agent-memory"
+}

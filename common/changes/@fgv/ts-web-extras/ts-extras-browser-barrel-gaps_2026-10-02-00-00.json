@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-web-extras",
+      "comment": "Test-only: run BrowserCryptoProvider and HttpTreeAccessors against the ts-extras browser entry rather than the Node entry",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-web-extras"
+}

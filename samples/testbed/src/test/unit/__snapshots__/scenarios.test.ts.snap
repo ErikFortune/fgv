@@ -27,5 +27,7 @@ Array [
   "google-gemini-structured-output",
   "xai-grok-structured-output",
   "xai-cache-probe",
+  "wire-probe",
+  "agent-tasks",
 ]
 `;

@@ -1621,4 +1621,250 @@ describe('structured output', () => {
       });
     });
   });
+
+  // ==========================================================================
+  // Anthropic JSON outputs (`anthropic-output-format`) — the non-forcing format
+  // declared for the lines that return a 400 on a forced tool_choice.
+  //
+  // Every test here asserts the REQUEST BODY: a dropped or wrong constraint still
+  // returns 200 from a mock, so a success alone proves nothing about the wire.
+  // ==========================================================================
+
+  describe('anthropic output format', () => {
+    const anthropic = AiAssist.getProviderDescriptor('anthropic').orThrow();
+
+    /** An Anthropic reply as an always-thinking model sends it: a thinking block, then text. */
+    function anthropicThinkingThenText(text: string): unknown {
+      return {
+        content: [
+          { type: 'thinking', thinking: '', signature: 'sig' },
+          { type: 'text', text }
+        ],
+        stop_reason: 'end_turn'
+      };
+    }
+
+    function expectOutputFormatWire(body: Record<string, unknown>, schema: unknown): void {
+      expect(body.output_config).toMatchObject({ format: { type: 'json_schema', schema } });
+      // The whole point of the format: nothing forced, and no synthetic tool.
+      expect('tool_choice' in body).toBe(false);
+      expect('tools' in body).toBe(false);
+    }
+
+    test.each([
+      {
+        label: '@anthropic:opus via the advanced tier',
+        route: { tier: 'advanced' as const },
+        model: 'claude-opus-5-5'
+      },
+      {
+        label: '@anthropic:opus via the frontier cascade',
+        route: { tier: 'frontier' as const },
+        model: 'claude-opus-5-5'
+      },
+      {
+        label: '@anthropic:fable via modelOverride',
+        route: { modelOverride: '@anthropic:fable' },
+        model: 'claude-fable-5-1'
+      }
+    ])(
+      '$label sends output_config.format, no tool_choice, and reports "schema"',
+      async ({ route, model }) => {
+        mockFetchResponse(anthropicThinkingThenText('{"foo":"bar"}'));
+
+        const result = await AiAssist.callProviderCompletion({
+          descriptor: anthropic,
+          apiKey: 'test-key',
+          ...testPrompt.toRequest(),
+          ...route,
+          structuredOutput: { mode: 'schema', schema: fooSchema, onUnsupported: 'fail' }
+        });
+
+        expect(result).toSucceedAndSatisfy((r) => {
+          expect(r.structuredOutput).toBe('schema');
+          // The reply is the model's text block; the thinking block is skipped.
+          expect(r.content).toBe('{"foo":"bar"}');
+        });
+        const body = lastRequestBody();
+        expect(body.model).toBe(model);
+        expectOutputFormatWire(body, fooSchema.toJson());
+      }
+    );
+
+    test('the lines that accept forcing are unchanged: claude-opus-5 still forces the synthetic tool', async () => {
+      mockFetchResponse(anthropicToolForcedResponse({ foo: 'bar' }));
+
+      const result = await AiAssist.callProviderCompletion({
+        descriptor: anthropic,
+        apiKey: 'test-key',
+        ...testPrompt.toRequest(),
+        modelOverride: 'claude-opus-5',
+        structuredOutput: { mode: 'schema', schema: fooSchema }
+      });
+
+      expect(result).toSucceedAndSatisfy((r) => {
+        expect(r.structuredOutput).toBe('tool-forced');
+      });
+      const body = lastRequestBody();
+      expect(body.tool_choice).toEqual({
+        type: 'tool',
+        name: AiAssist.ANTHROPIC_STRUCTURED_OUTPUT_TOOL_NAME
+      });
+      expect('output_config' in body).toBe(false);
+    });
+
+    test('claude-mythos-5-1 (raw id) gets the adaptive thinking shape and the output format together', async () => {
+      // Declared by its own id on both tables: its page says a manual budget and a forced
+      // tool_choice both 400, so either table falling back to the catch-all is a provider error.
+      mockFetchResponse(anthropicThinkingThenText('{"foo":"bar"}'));
+
+      const result = await AiAssist.callProviderCompletion({
+        descriptor: anthropic,
+        apiKey: 'test-key',
+        ...testPrompt.toRequest(),
+        modelOverride: 'claude-mythos-5-1',
+        thinking: { effort: 'low' },
+        structuredOutput: { mode: 'schema', schema: fooSchema, onUnsupported: 'fail' }
+      });
+
+      expect(result).toSucceedAndSatisfy((r) => {
+        expect(r.structuredOutput).toBe('schema');
+      });
+      const body = lastRequestBody();
+      expect(body.model).toBe('claude-mythos-5-1');
+      expect(body.thinking).toEqual({ type: 'adaptive' });
+      expect(body.output_config).toEqual({
+        effort: 'low',
+        format: { type: 'json_schema', schema: fooSchema.toJson() }
+      });
+      expect('tool_choice' in body).toBe(false);
+    });
+
+    test('thinking effort and the format share output_config — neither overwrites the other', async () => {
+      // claude-opus-5-5 always thinks, so a structured-output call with an effort is the
+      // ordinary case, not an edge. A plain Object.assign of the wire drops `effort`.
+      mockFetchResponse(anthropicThinkingThenText('{"foo":"bar"}'));
+
+      const result = await AiAssist.callProviderCompletion({
+        descriptor: anthropic,
+        apiKey: 'test-key',
+        ...testPrompt.toRequest(),
+        tier: 'advanced',
+        thinking: { effort: 'high' },
+        structuredOutput: { mode: 'schema', schema: fooSchema }
+      });
+
+      expect(result).toSucceed();
+      const body = lastRequestBody();
+      expect(body.thinking).toEqual({ type: 'adaptive' });
+      expect(body.output_config).toEqual({
+        effort: 'high',
+        format: { type: 'json_schema', schema: fooSchema.toJson() }
+      });
+    });
+
+    test('a schema with optional properties is sent as-is: the all-required rule is OpenAI-only', async () => {
+      mockFetchResponse(anthropicResponse('{"a":"x"}'));
+
+      const result = await AiAssist.callProviderCompletion({
+        descriptor: anthropic,
+        apiKey: 'test-key',
+        ...testPrompt.toRequest(),
+        modelOverride: 'claude-opus-5-5',
+        structuredOutput: { mode: 'schema', schema: optionalPropSchema, onUnsupported: 'fail' }
+      });
+
+      expect(result).toSucceedAndSatisfy((r) => {
+        expect(r.structuredOutput).toBe('schema');
+      });
+      expectOutputFormatWire(lastRequestBody(), optionalPropSchema.toJson());
+    });
+
+    test('a reply that is not the constrained JSON is returned as text, not failed by the client', async () => {
+      // e.g. stop_reason 'refusal', which Anthropic documents as possibly not matching the
+      // schema. The report says what was ASKED ('schema'); conformance is the caller's
+      // converter's question — the same contract as every other 'schema' format.
+      mockFetchResponse(anthropicResponse('I cannot help with that.', 'refusal'));
+
+      const result = await AiAssist.callProviderCompletion({
+        descriptor: anthropic,
+        apiKey: 'test-key',
+        ...testPrompt.toRequest(),
+        modelOverride: 'claude-opus-5-5',
+        structuredOutput: { mode: 'schema', schema: fooSchema }
+      });
+
+      expect(result).toSucceedAndSatisfy((r) => {
+        expect(r.structuredOutput).toBe('schema');
+        expect(r.content).toBe('I cannot help with that.');
+      });
+    });
+
+    test('json-object has no expression on this format: degrades to "none" and sends nothing', async () => {
+      mockFetchResponse(anthropicResponse('plain text'));
+
+      const result = await AiAssist.callProviderCompletion({
+        descriptor: anthropic,
+        apiKey: 'test-key',
+        ...testPrompt.toRequest(),
+        modelOverride: 'claude-opus-5-5',
+        structuredOutput: { mode: 'json-object' }
+      });
+
+      expect(result).toSucceedAndSatisfy((r) => {
+        expect(r.structuredOutput).toBe('none');
+      });
+      const body = lastRequestBody();
+      expect('output_config' in body).toBe(false);
+      expect('tool_choice' in body).toBe(false);
+    });
+
+    test('json-object + onUnsupported: "fail" fails before the wire', async () => {
+      const result = await AiAssist.callProviderCompletion({
+        descriptor: anthropic,
+        apiKey: 'test-key',
+        ...testPrompt.toRequest(),
+        modelOverride: 'claude-fable-5-1',
+        structuredOutput: { mode: 'json-object', onUnsupported: 'fail' }
+      });
+
+      expect(result).toFailWith(/claude-fable-5-1.*cannot enforce 'json-object'/i);
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
+
+    test('schema + web_search is refused on the citations incompatibility, not a tools-channel clash', async () => {
+      const result = await AiAssist.callProviderCompletion({
+        descriptor: anthropic,
+        apiKey: 'test-key',
+        ...testPrompt.toRequest(),
+        tier: 'advanced',
+        tools: [{ type: 'web_search' }],
+        structuredOutput: { mode: 'schema', schema: fooSchema, onUnsupported: 'degrade' }
+      });
+
+      expect(result).toFailWith(/output_config\.format[\s\S]*citations[\s\S]*web_search/i);
+      expect(result).not.toFailWith(/forcing a tool/i);
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
+
+    test('json-object + web_search degrades to "none" and sends the search: an empty wire conflicts with nothing', async () => {
+      mockFetchResponse(anthropicWithToolsResponse('a plain-text answer'));
+
+      const result = await AiAssist.callProviderCompletion({
+        descriptor: anthropic,
+        apiKey: 'test-key',
+        ...testPrompt.toRequest(),
+        tier: 'advanced',
+        tools: [{ type: 'web_search' }],
+        structuredOutput: { mode: 'json-object' }
+      });
+
+      expect(result).toSucceedAndSatisfy((r) => {
+        expect(r.structuredOutput).toBe('none');
+      });
+      const body = lastRequestBody();
+      expect((body.tools as ReadonlyArray<Record<string, unknown>>)[0].name).toBe('web_search');
+      expect('output_config' in body).toBe(false);
+    });
+  });
 });

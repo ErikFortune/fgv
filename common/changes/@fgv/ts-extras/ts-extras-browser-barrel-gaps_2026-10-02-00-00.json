@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras",
+      "comment": "Export fromBase64Strict from the browser crypto-utils entry, where the Node entry already had it; add a namespace-member parity test so a member the Node entry exports from a namespace cannot go missing on the browser entry unnoticed",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@fgv/ts-extras"
+}

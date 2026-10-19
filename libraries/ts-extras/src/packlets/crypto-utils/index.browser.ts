@@ -63,6 +63,7 @@ export {
   createEncryptedFile,
   decryptFile,
   fromBase64,
+  fromBase64Strict,
   ICreateEncryptedFileParams,
   toBase64,
   tryDecryptFile

@@ -39,7 +39,13 @@ import { VectorMaintenance } from './vectorMaintenance';
 import { IDerivedStateCoverage } from './coverage';
 import { computeCoverage } from './storeCoverage';
 import { codecFor, resolveIdentity, verifyLoadedIdentity, verifyOccupantKind } from './storeIdentity';
-import { deleteRecordFile, resolveScopeDir, writeRecordFile } from './storeFileAccess';
+import {
+  IScopeCoding,
+  decodeScopeDir,
+  deleteRecordFile,
+  resolveScopeDir,
+  writeRecordFile
+} from './storeFileAccess';
 import { DerivedArtifact, ReconcileReport } from './reconcile';
 import { reconcileVectors } from './storeReconcile';
 import { IIndexedMemoryEntry, IMemoryIndex, MemoryIndex } from '../index';
@@ -91,10 +97,14 @@ export type MemoryRecordErrorMode = 'skip' | 'fail';
  * @public
  */
 export interface ISkippedRecord {
-  /** The record file's path within the vault (`<scope>/<filename>.md`). */
+  /** The record file's on-disk path within the vault (`<scope directory>/<filename>.md`). */
   readonly path: string;
-  /** The scope the record lives under (its parent directory path). */
-  readonly scope: MemoryScopeKey;
+  /**
+   * The scope the record lives under: its parent directory path, decoded through
+   * {@link IFileTreeMemoryStoreCreateParams.scopeDecoding | scopeDecoding} when one
+   * is supplied. Absent when that directory does not decode to a scope.
+   */
+  readonly scope?: MemoryScopeKey;
   /** The parse/validation failure message (includes the record path). */
   readonly error: string;
 }
@@ -211,8 +221,38 @@ export interface IFileTreeMemoryStoreCreateParams {
    * this seam.
    */
   readonly index?: IMemoryIndex;
-  /** Scope encoding. Defaults to {@link defaultMemoryScopeEncoding}. */
+  /**
+   * Maps a scope to the relative directory path its records are stored under.
+   * Defaults to {@link defaultMemoryScopeEncoding}, the identity on valid scopes.
+   *
+   * @remarks
+   * A non-identity encoding must be supplied together with
+   * {@link IFileTreeMemoryStoreCreateParams.scopeDecoding | scopeDecoding}, its
+   * inverse; `create` fails when it is supplied alone, because the open-time walk
+   * could not recover the scopes of the directories it writes.
+   */
   readonly scopeEncoding?: (scope: MemoryScopeKey) => Result<string>;
+  /**
+   * The inverse of {@link IFileTreeMemoryStoreCreateParams.scopeEncoding | scopeEncoding}:
+   * maps a relative directory path back to the scope stored under it. Required
+   * whenever `scopeEncoding` is supplied; when supplied alone it pairs with
+   * {@link defaultMemoryScopeEncoding}. Omit both for the identity layout.
+   *
+   * @remarks
+   * The pair must be a bijection on the scopes the vault uses:
+   * `scopeDecoding(scopeEncoding(scope))` must succeed with `scope`, and
+   * `scopeEncoding(scopeDecoding(dir))` must succeed with `dir`. The store checks
+   * both halves where it meets them. The open-time walk decodes each directory
+   * that holds record files, requires the result to pass `Convert.scopeKey`, and
+   * requires it to re-encode to that directory. A directory that fails fails the
+   * open, or under `onRecordError: 'skip'` quarantines each of its records into
+   * {@link FileTreeMemoryStore.skippedRecords | skippedRecords}. Every read and
+   * write requires the encoded directory to decode back to the scope it was asked
+   * for, and the encoding to be canonical: non-empty, with no empty, `.` or `..`
+   * segments. The scope invariant is then checked against the decoded scope. A
+   * throw from either function is reported as a failure, like a failed result.
+   */
+  readonly scopeDecoding?: (encoded: string) => Result<MemoryScopeKey>;
   /**
    * Transaction-time clock. Defaults to `Date.now`. Injectable so tests can
    * make `created` / `updated` deterministic. Also stamps observation
@@ -322,7 +362,7 @@ interface IInternalParams {
   readonly embedKinds: ReadonlySet<Kind> | undefined;
   readonly defaultCodec?: IIdentityCodec;
   readonly defaultPolicy: IWritePolicy;
-  readonly scopeEncoding: (scope: MemoryScopeKey) => Result<string>;
+  readonly scopes: IScopeCoding;
   readonly clock: () => number;
   readonly index: IMemoryIndex;
   readonly observers: ReadonlyArray<IMemoryObserver>;
@@ -345,6 +385,13 @@ interface IInternalParams {
  * invalidate-don't-delete), dispatched per kind by the codec's `isVersioned`
  * flag. A kind is flat with zero behavioral impact unless it opts into a
  * {@link ITemporalIdentityCodec}.
+ *
+ * **Scope invariant.** Every record the store returns was read from
+ * `codec(kind).encode(entityId).scope`. Each load — the open-time walk and every
+ * read path — checks it, for every codec, so a codec need not check scope in its
+ * own round-trip. A file under any other scope fails the read (or the open), or
+ * is quarantined into {@link FileTreeMemoryStore.skippedRecords | skippedRecords}
+ * when the store is opened with `onRecordError: 'skip'`.
  * @public
  */
 export class FileTreeMemoryStore implements IMemoryStore {
@@ -357,7 +404,7 @@ export class FileTreeMemoryStore implements IMemoryStore {
   private readonly _embedKinds: ReadonlySet<Kind> | undefined;
   private readonly _defaultCodec: IIdentityCodec | undefined;
   private readonly _defaultPolicy: IWritePolicy;
-  private readonly _scopeEncoding: (scope: MemoryScopeKey) => Result<string>;
+  private readonly _scopes: IScopeCoding;
   private readonly _clock: () => number;
   private readonly _index: IMemoryIndex;
   private readonly _hasher: Hash.Crc32Normalizer;
@@ -410,7 +457,7 @@ export class FileTreeMemoryStore implements IMemoryStore {
     this._embedKinds = params.embedKinds ?? undefined;
     this._defaultCodec = params.defaultCodec;
     this._defaultPolicy = params.defaultPolicy;
-    this._scopeEncoding = params.scopeEncoding;
+    this._scopes = params.scopes;
     this._clock = params.clock;
     this._index = params.index;
     this._hasher = new Hash.Crc32Normalizer();
@@ -450,6 +497,11 @@ export class FileTreeMemoryStore implements IMemoryStore {
    * resumes past the highest persisted `seq`).
    */
   public static create(params: IFileTreeMemoryStoreCreateParams): Result<FileTreeMemoryStore> {
+    if (params.scopeEncoding !== undefined && params.scopeDecoding === undefined) {
+      return fail(
+        'memory store: scopeEncoding requires scopeDecoding, so the open-time walk can recover each directory scope'
+      );
+    }
     return KnowledgeLwwPolicy.create().onSuccess((defaultPolicy) =>
       FileTreeMemoryStore._resolveIndex(params.index).onSuccess((index) => {
         const store: FileTreeMemoryStore = new FileTreeMemoryStore({
@@ -461,7 +513,10 @@ export class FileTreeMemoryStore implements IMemoryStore {
           embedKinds: params.embedKinds,
           defaultCodec: params.defaultCodec,
           defaultPolicy,
-          scopeEncoding: params.scopeEncoding ?? defaultMemoryScopeEncoding,
+          scopes: {
+            encode: params.scopeEncoding ?? defaultMemoryScopeEncoding,
+            decode: params.scopeDecoding
+          },
           clock: params.clock ?? Date.now,
           index,
           observers: params.observers ?? [],
@@ -1119,7 +1174,7 @@ export class FileTreeMemoryStore implements IMemoryStore {
     idStem: string
   ): Result<IMemoryRecord<unknown>> {
     return serializeMemoryFile(record.envelope, record.body)
-      .onSuccess((raw) => writeRecordFile(this._root, this._scopeEncoding, scope, idStem, raw))
+      .onSuccess((raw) => writeRecordFile(this._root, this._scopes, scope, idStem, raw))
       .onSuccess(() => this._index.patch('put', { scope, record }))
       .onSuccess(() => succeed(record));
   }
@@ -1160,7 +1215,7 @@ export class FileTreeMemoryStore implements IMemoryStore {
       // Delete the record file + index entry (authoritative), then prune the
       // vector best-effort: a committed delete must not fail because the
       // derived index could not be pruned.
-      return deleteRecordFile(this._root, this._scopeEncoding, scope, idStem)
+      return deleteRecordFile(this._root, this._scopes, scope, idStem)
         .onSuccess(() => this._index.patch('delete', { scope, record: existing }))
         .thenOnSuccess(async () => {
           await this._vectors.removeAll({ scope, id: existing.envelope.id });
@@ -1474,7 +1529,7 @@ export class FileTreeMemoryStore implements IMemoryStore {
       if (existing === undefined) {
         return fail(`memory put: cannot evict '${id}' in scope '${scope}': not found`);
       }
-      return deleteRecordFile(this._root, this._scopeEncoding, scope, id)
+      return deleteRecordFile(this._root, this._scopes, scope, id)
         .onSuccess(() => this._index.patch('delete', { scope, record: existing }))
         .onSuccess(() => succeed(id));
     });
@@ -1586,7 +1641,8 @@ export class FileTreeMemoryStore implements IMemoryStore {
    * `splitFrontmatter` hands back the body text unconverted, so the round trip
    * carries the authored characters through untouched and only the envelope
    * moves. The parsed record is additionally put through `_verifyLoaded`, the
-   * same id-vs-filename and scope-derived-entityId check the load paths apply —
+   * same identity checks the load paths apply (id vs filename, scope-derived
+   * entityId, the scope invariant, and a flat kind's idStem) —
    * without it, reconcile would be the one path that accepts and rewrites a file
    * the store would refuse to load.
    *
@@ -1665,7 +1721,7 @@ export class FileTreeMemoryStore implements IMemoryStore {
     id: MemoryId,
     mutate: (record: IMemoryRecord<string>) => IMemoryRecord<string> | undefined
   ): Result<boolean> {
-    return resolveScopeDir(this._root, this._scopeEncoding, scope).onSuccess((scopeDir) => {
+    return resolveScopeDir(this._root, this._scopes, scope).onSuccess((scopeDir) => {
       /* c8 ignore next 3 - defensive: the scope dir exists for any indexed record */
       if (scopeDir === undefined) {
         return fail(`'${id}': scope '${scope}' not found`);
@@ -1682,8 +1738,9 @@ export class FileTreeMemoryStore implements IMemoryStore {
         return file.getRawContents().onSuccess((raw) =>
           // `parseMemoryFile` validates the body through the registered Converter,
           // so a corrupt record is refused rather than silently rewritten, and
-          // `_verifyLoaded` re-applies the same id-vs-filename and
-          // scope-derived-entityId checks the two load paths apply. Reconcile is a
+          // `_verifyLoaded` re-applies the same identity checks the two load paths
+          // apply (id vs filename, scope-derived entityId, the scope invariant, and a flat kind's
+          // idStem). Reconcile is a
           // read-then-write, and a file can change on disk after the index was
           // built, so skipping them would make this the one path that accepts —
           // and rewrites — a record the store would otherwise refuse to load.
@@ -1766,15 +1823,16 @@ export class FileTreeMemoryStore implements IMemoryStore {
 
   /**
    * Read and validate the record at `<scope>/<idStem>.md`, returning `undefined`
-   * when the scope directory or file is absent. Verifies the on-disk id ↔
-   * filename round-trip on every load.
+   * when the scope directory or file is absent. Applies `_verifyLoaded`'s identity
+   * checks on every load, including that the record was read from its codec's
+   * scope.
    */
   private _readRecord(
     scope: MemoryScopeKey,
     idStem: string,
     expectedKind?: Kind
   ): Result<IMemoryRecord<unknown> | undefined> {
-    return resolveScopeDir(this._root, this._scopeEncoding, scope).onSuccess((scopeDir) => {
+    return resolveScopeDir(this._root, this._scopes, scope).onSuccess((scopeDir) => {
       if (scopeDir === undefined) {
         return succeed(undefined);
       }
@@ -1796,8 +1854,10 @@ export class FileTreeMemoryStore implements IMemoryStore {
   }
 
   /**
-   * Enforce `envelope.id === filename stem`, the codec round-trip, AND that the
-   * envelope's own `entityId` agrees with the id decoded from the subtree scope.
+   * Enforce `envelope.id === filename stem`, the codec round-trip, that the
+   * envelope's own `entityId` agrees with the id decoded from the subtree scope,
+   * the scope invariant (`scope === codec.encode(entityId).scope`), AND for a flat
+   * kind that the stem is `codec.encode(entityId).idStem`.
    * The round-trip only validates (scope, stem) consistency; the codec derives
    * `entityId` from the scope path and never reads the envelope's `entityId`
    * field, so a tampered/corrupt file whose frontmatter declares a foreign
@@ -1833,13 +1893,19 @@ export class FileTreeMemoryStore implements IMemoryStore {
     );
   }
 
-  /** Recursively collect every `.md` record under `dir` (scope = path segments). */
+  /**
+   * Recursively collect every `.md` record under `dir`. A directory's scope is its
+   * path, decoded once — and only when it holds a record file, since an
+   * intermediate directory of an encoded layout need not decode to a scope.
+   */
   private _collectEntries(
     dir: FileTree.IFileTreeDirectoryItem,
     scopeSegments: ReadonlyArray<string>,
     onRecordError: MemoryRecordErrorMode
   ): Result<ReadonlyArray<IIndexedMemoryEntry>> {
     return dir.getChildren().onSuccess((children) => {
+      const dirPath: string = scopeSegments.join('/');
+      let scope: Result<MemoryScopeKey> | undefined;
       const results: Result<ReadonlyArray<IIndexedMemoryEntry>>[] = children.map((child) => {
         if (child.type === 'directory') {
           return this._collectEntries(child, [...scopeSegments, child.name], onRecordError);
@@ -1849,8 +1915,8 @@ export class FileTreeMemoryStore implements IMemoryStore {
           // (records always live under at least one scope segment).
           return succeed<ReadonlyArray<IIndexedMemoryEntry>>([]);
         }
-        const scope: MemoryScopeKey = scopeSegments.join('/') as MemoryScopeKey;
-        return this._loadRecordFile(scope, child, onRecordError);
+        scope = scope ?? decodeScopeDir(this._scopes, dirPath);
+        return this._loadRecordFile(dirPath, scope, child, onRecordError);
       });
       // `'skip'` mode: keep every record that parsed, drop the ones that failed
       // in a single pass (each failure is captured on `this._skippedRecords` and
@@ -1875,33 +1941,35 @@ export class FileTreeMemoryStore implements IMemoryStore {
    * failure passes through untouched so the historical error is byte-identical.
    */
   private _loadRecordFile(
-    scope: MemoryScopeKey,
+    dirPath: string,
+    scope: Result<MemoryScopeKey>,
     child: FileTree.IFileTreeFileItem,
     onRecordError: MemoryRecordErrorMode
   ): Result<ReadonlyArray<IIndexedMemoryEntry>> {
-    return (
-      child
-        .getRawContents()
-        .onSuccess((raw) => parseMemoryFile(raw, this._registry))
-        .onSuccess((parsedRecord) => this._verifyLoaded(scope, child, parsedRecord))
-        // Parse → validate → PROJECT → discard, per file. The body is read and
-        // fully validated (which is what gives `onRecordError` its meaning), then
-        // dropped here rather than carried into the index. Peak body residency
-        // across the whole open is therefore ONE record, not N — which is the
-        // resident-memory moment this whole surface exists to fix, and it is why
-        // the projection had to reach `rebuild` and not just the read methods.
-        .onSuccess((verified) =>
-          succeed<ReadonlyArray<IIndexedMemoryEntry>>([{ scope, envelope: verified.envelope }])
-        )
-        .onFailure((message) => {
-          if (onRecordError === 'skip') {
-            const path: string = `${scope}/${child.name}`;
-            const error: string = `memory record '${path}': ${message}`;
-            this._skippedRecords.push({ path, scope, error });
-            this._warnSwallowed(error);
-          }
-          return fail(message);
-        })
-    );
+    // Parse → validate → PROJECT → discard, per file. The body is read and fully
+    // validated (which is what gives `onRecordError` its meaning), then dropped
+    // here rather than carried into the index. Peak body residency across the
+    // whole open is therefore ONE record, not N — which is the resident-memory
+    // moment this whole surface exists to fix, and it is why the projection had
+    // to reach `rebuild` and not just the read methods.
+    return scope
+      .onSuccess((decoded) =>
+        child
+          .getRawContents()
+          .onSuccess((raw) => parseMemoryFile(raw, this._registry))
+          .onSuccess((parsedRecord) => this._verifyLoaded(decoded, child, parsedRecord))
+          .onSuccess((verified) =>
+            succeed<ReadonlyArray<IIndexedMemoryEntry>>([{ scope: decoded, envelope: verified.envelope }])
+          )
+      )
+      .onFailure((message) => {
+        if (onRecordError === 'skip') {
+          const path: string = `${dirPath}/${child.name}`;
+          const error: string = `memory record '${path}': ${message}`;
+          this._skippedRecords.push({ path, scope: scope.orDefault(), error });
+          this._warnSwallowed(error);
+        }
+        return fail(message);
+      });
   }
 }

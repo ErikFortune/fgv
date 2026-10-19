@@ -30,6 +30,7 @@ import { fail, type Logging, Result, succeed, type Validator, Validators } from 
 import { isJsonObject, type JsonObject } from '@fgv/ts-json-base';
 
 import { type IAiCacheRequest } from '../cacheRequest';
+import { type IAiVerifiedEndpoint } from '../schemaKeywords';
 import {
   type AiServerToolConfig,
   type IAiProviderDescriptor,
@@ -118,8 +119,19 @@ export interface IProviderCompletionStreamParams extends IChatRequest {
    * substituted for `descriptor.baseUrl` when composing the streaming
    * request, with the per-format suffix appended unchanged. Validated at the
    * dispatcher; auth shape is unaffected.
+   *
+   * Schemas sent to an overridden endpoint — client-tool parameters and structured-output
+   * schemas — are adapted with the conservative keyword table
+   * (`JsonSchema.unverifiedWireSchemaKeywords`), since the provider's documentation describes its
+   * own endpoint, unless `verifiedEndpoint` asserts this one is the provider itself.
    */
   readonly endpoint?: string;
+  /**
+   * The host's assertion that `endpoint` reaches the descriptor's own provider, so this request's
+   * schemas are adapted with that provider's keyword table instead of the conservative one.
+   * Ignored without `endpoint`, and honoured only as `IAiVerifiedEndpoint` describes.
+   */
+  readonly verifiedEndpoint?: IAiVerifiedEndpoint;
   /**
    * Optional thinking/reasoning mode configuration.
    */
@@ -152,6 +164,8 @@ export interface IStreamApiConfig {
   readonly baseUrl: string;
   readonly apiKey: string;
   readonly model: string;
+  /** The provider descriptor id — see `IAiApiConfig.providerId`. */
+  readonly providerId?: string;
 }
 
 /**

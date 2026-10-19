@@ -39,11 +39,14 @@ getting-started material. This index routes; it does not duplicate.
 | [`ts-random`](libraries/ts-random/CAPABILITIES.md) | Seeded, reproducible PRNG (`SeededRandomSource`, `PseudoRandomGenerator`) + word/char corpora. **mulberry32 — never for tokens, salts or keys** |
 | [`ts-extras`](libraries/ts-extras/CAPABILITIES.md) | Crypto, `safer-fetch`, `ai-assist` (LLM clients, structured output incl. `adaptOptionalToNullable`), CSV, zip, mustache |
 | [`ts-web-extras`](libraries/ts-web-extras/CAPABILITIES.md) | Browser siblings — crypto, File System Access `FileTree`, browser `safer-fetch` |
+| [`ts-extras-re2`](libraries/ts-extras-re2/CAPABILITIES.md) | RE2 (re2js) `patternValidator` for untrusted JSON Schema `pattern` — linear time, ECMA meaning or refusal |
 | [`ts-extras-argon2`](libraries/ts-extras-argon2/CAPABILITIES.md) · [`ts-web-extras-argon2`](libraries/ts-web-extras-argon2/CAPABILITIES.md) | Argon2id providers (Node native / browser WASM) |
 | [`ts-extras-webauthn`](libraries/ts-extras-webauthn/CAPABILITIES.md) · [`ts-web-extras-webauthn`](libraries/ts-web-extras-webauthn/CAPABILITIES.md) | WebAuthn Result boundary over `@simplewebauthn/*` |
 | [`ts-extras-transformers`](libraries/ts-extras-transformers/CAPABILITIES.md) · [`ts-web-extras-transformers`](libraries/ts-web-extras-transformers/CAPABILITIES.md) | Local HuggingFace models — classify, embed, summarize |
 | [`ts-extras-mcp`](libraries/ts-extras-mcp/CAPABILITIES.md) | MCP server tools → ai-assist client tools |
 | [`ts-extras-ollama`](libraries/ts-extras-ollama/CAPABILITIES.md) | Ollama *native* API — model management, grammar-constrained output |
+| [`ts-extras-system-one`](libraries/ts-extras-system-one/CAPABILITIES.md) | System-1 decision servers (CLM, openjev, Jev) — mandatory input bound, validated answers, no `confidence` |
+| [`ts-agent-tasks`](libraries/ts-agent-tasks/CAPABILITIES.md) | Agent task recording and mediation — envelope, lifecycle/observation/command/recovery unions, kind+command registry, finite capacity model, snapshot-only context renderer with pure inclusion receipts, FileTree task repository with one-record atomic commit, resident-index queries/paging/due/owed, principal-bound broker (authorized projected views, lists, hierarchy, reassignment), external sources (ordered reconciliation, reserved command dispatch, held uncertain outcomes), subscriptions with issued receipts and exact-ID acknowledgement, retention (authorized disposition, subscription closure, command abandonment, evidence-checked pruning and archive, a capacity runbook), cascade stop (persisted intent over the whole subtree, frozen admission, honest partial results), model tools with bounded output — read-only by default, create/update/reassign, typed commands and cascade-stop requests opt-in; checked prompt composition (one trailing per-request task slot, receipt acknowledgeable only against the exact body sent). **Records work; runs no agent loop** |
 | [`ts-agent-memory`](libraries/ts-agent-memory/CAPABILITIES.md) | Agent memory/knowledge vault — records, dedup (`dedupScopeFor`), edges, retrieval, `IVectorIndex` / `IFragmentVectorIndex`, `embedsKind` |
 | [`ts-agent-memory-sqlite-vec`](libraries/ts-agent-memory-sqlite-vec/CAPABILITIES.md) | Durable vector + fragment indexes (SQLite `vec0`) |
 | [`ts-prompt-assist`](libraries/ts-prompt-assist/CAPABILITIES.md) | Conditional prompt authoring, resolution, composition, observation |
@@ -78,6 +81,7 @@ detail. `· pkg` names the owning package.*
 - **Diffing JSON?** → `detailedDiff` `threeWayDiff` · `ts-json`
 - **Branded ID type?** → `Brand<T>` · `ts-utils`
 - **Generating a UUID?** → `ICryptoProvider` `generateUuid` · `ts-utils`
+- **Need a weighted random choice, or the same choice from a hash?** → `pickWeighted` `pickWeightedAt` · `ts-random`
 - **Hashing / canonical hash of an object?** → `Crc32Normalizer` `Md5Normalizer` · `ts-utils`
 - **Symmetric encryption / decryption (AES-GCM)?** → `KeyStore` · `ts-extras`
 - **Need AES-256-GCM encrypt/decrypt with a key you already hold?** → `ICryptoProvider` `KeyStore` · `ts-extras`
@@ -100,6 +104,7 @@ detail. `· pkg` names the owning package.*
 - **Parsing a JSON-shaped string (with optional inner validation)?** → `Converters.stringifiedJson` · `ts-json-base`
 - **Need typed JSON Schema for LLM tool authoring?** → `JsonSchema` `fromJson` · `ts-json-base`
 - **Need an absent-able field in a schema you send to OpenAI?** → `JsonSchema` `nullable` · `ts-json-base`
+- **Accepting untrusted JSON Schema `pattern`?** → `re2PatternValidator` · `ts-extras-re2`
 - **Asking an LLM for JSON and getting a validated `T`?** → `generateJsonCompletion` `JsonSchema` · `ts-extras`
 - **Need the provider to constrain its output, not just be asked to?** → `structuredOutput` · `ts-extras`
 - **Running a tool-use conversation with harness-side client tools?** → `executeClientToolTurn` `JsonSchema` · `ts-extras`
@@ -122,6 +127,20 @@ detail. `· pkg` names the owning package.*
 - **Need a text embedding (`text → vector`)?** → `callProviderEmbedding` · `ts-extras-transformers`
 - **Embedding text via a cloud or self-hosted provider?** → `callProviderEmbedding` · `ts-extras`
 - **Calling a self-hosted Ollama or OpenAI-compatible model?** → `executeClientToolTurn` · `ts-extras`
+- **Asking a System-1 model (CLM, Jev) a typed yes/no, choice or score question?** → `askSystemOne` `noul` `choice` `score`; never truncate the state yourself · `ts-extras-system-one`
+- **Recording agent work — lifecycle, observations, commands — without building a runner?** → `ITaskEnvelope` `TaskLifecycle` `TaskKindRegistry` `TaskConverters` · `ts-agent-tasks`
+- **Rendering task snapshots into bounded prompt context, with a receipt of exactly what was included?** → `TaskContextRenderer` `ITaskInclusionReceipt` · `ts-agent-tasks`
+- **Persisting agent task state + owed updates so a process crash loses neither?** → `FileTreeTaskRepository` `FileTree` · `ts-agent-tasks`
+- **Selecting agent tasks by scope/lifecycle, due time or owed update without reading records?** → `FileTreeTaskRepository` `runTaskRepositoryConformance` · `ts-agent-tasks`
+- **Giving a principal (model tool, actor) authorized, projected access to agent tasks?** → `TaskBroker` `ITaskAuthorization` `defaultTaskProjector` · `ts-agent-tasks`
+- **Tracking work an external executor runs — its state reconciled, commands dispatched, never set optimistically?** → `ExternalTaskSource` `ITaskSource` `TaskBroker` · `ts-agent-tasks`
+- **Telling a consumer what changed in its tasks, and acknowledging only what it was actually shown?** → `TaskBroker` `IBoundTaskDelivery` `ITaskCheckpointStore` · `ts-agent-tasks`
+- **Pausing or cancelling an agent task and its whole subtree, with an honest partial result?** → `requestStop` `reconcileStop` `releaseStop` `ISourceCapabilities` · `ts-agent-tasks`
+- **Ending an agent-task obligation nobody will acknowledge, or freeing a full task repository?** → `TaskBroker` `dispose` `closeSubscription` `cleanup` · `ts-agent-tasks`
+- **Giving a model read-only, bounded tools over the agent tasks a principal may see?** → `createTaskTools` `IBoundTaskView` · `ts-agent-tasks`
+- **Letting a model create, update or reassign agent tasks, authorized per call?** → `createTaskTools` `ITaskMutationToolOptions` · `ts-agent-tasks`
+- **Letting a model pause or cancel a tree of agent tasks — but never release or carry out the stop?** → `createTaskTools` `ITaskStopToolOptions` · `ts-agent-tasks`
+- **Putting agent task context in a cacheable prompt, acknowledging only what was actually sent?** → `checkTaskPrompt` `prepareTaskPrompt` `taskPromptRecord` · `ts-agent-tasks`
 - **Storing agent memory / a knowledge vault?** → `FileTree` `FileTreeMemoryStore` · `ts-agent-memory`
 - **Semantic recall over that vault** → `InMemoryCosineIndex` `SqliteVecVectorIndex` `SqliteVecFragmentIndex` `FragmentSemanticRetriever` · `ts-agent-memory`
 - **Vector/fragment embeddings must survive a process restart?** → `SqliteVecVectorIndex` `SqliteVecFragmentIndex` · `ts-agent-memory-sqlite-vec`
@@ -131,6 +150,7 @@ detail. `· pkg` names the owning package.*
 - **Listing records from a store?** → `addressGuard` `allowAnyAddress` `scanEveryRecord` `listEntries` · `ts-agent-memory`
 - **Building a retriever directly?** → `FileTree` `FileTreeMemoryStore` `listEntries` · `ts-agent-memory`
 - **Fetching a URL you do not fully control (server-side)?** → `saferFetchJson` `saferFetchBytes` `addressGuard` `blockPrivateNetworks` `allowContentTypes`; never echo `FetchFailureReason` to an untrusted caller · `ts-extras`
+- **Streaming a response through the SSRF guard, or handing a guarded `fetch` to a library (MCP, SSE)?** → `createGuardedFetch` `blockPrivateNetworks` `GuardedFetchError` · `ts-extras`
 - **Fetching a URL from a browser?** → `addressGuard` `allowAnyAddress` · `ts-web-extras`
 - **Parsing / comparing language tags?** → `Bcp47.tag` `Bcp47.similarity` · `ts-bcp47`
 - **Context-conditional resources?** → `ResourceManager` · `ts-res`
@@ -184,17 +204,17 @@ markers.*
 
 <!-- BEGIN GENERATED: recent-additions -->
 
-- **2026-09-23** — A tool-augmented or streamed chat turn can now carry prompt-cache breakpoints and a routing key, closing the one remaining hole… ([#688](https://github.com/ErikFortune/fgv/pull/688)) · `ts-extras`
-- **2026-09-23** — Shipped: a qualifier axis can declare how often it changes, so a body conditioned only on never-changing axes is no longer refuted… ([#689](https://github.com/ErikFortune/fgv/pull/689)) · `ts-prompt-assist`
-- **2026-09-21** — A FileTree can now replace a file such that a reader never sees a torn write, and on a root whose filesystem was actually qualified… ([#682](https://github.com/ErikFortune/fgv/pull/682)) · `ts-json-base`
-- **2026-09-07** — ai-assist now places explicit prompt-cache breakpoints on Anthropic and OpenAI requests built from a ts-prompt-assist resolve… ([#671](https://github.com/ErikFortune/fgv/pull/671)) · `ts-extras` `ts-prompt-assist`
-- **2026-09-07** — Thinking config loses a required provider field that gated nothing, and gains 'none' — the cross-provider spelling for off that… ([#667](https://github.com/ErikFortune/fgv/pull/667)) · `ts-extras`
-- **2026-09-02** — Shipped: a rendered template, and a resolved prompt, can now say what they are made of — order, absolute size and binding… ([#663](https://github.com/ErikFortune/fgv/pull/663)) · `ts-extras` `ts-prompt-assist`
-- **2026-08-28** — A string can now declare that it must be one printable line — and the name says shape, not safety, because no converter can promise… · `ts-utils`
-- **2026-08-23** — Shipped: an opt-in that hoists the optionals a schema already proves safe to hoist, rather than a boolean asserting they are. ([#659](https://github.com/ErikFortune/fgv/pull/659)) · `ts-extras` `ts-json-base`
-- **2026-08-22** — Shipped: a capability-aware copy with a single guarantee — every file that lands is byte-identical to its source, or the copy says… ([#653](https://github.com/ErikFortune/fgv/pull/653)) · `ts-json-base`
-- **2026-08-22** — Shipped: `nullable: true` on every factory — the spelling OpenAI strict mode accepts for an absent-able field, where… ([#655](https://github.com/ErikFortune/fgv/pull/655)) · `ts-json-base` `ts-extras` `ts-extras-mcp`
+- **2026-10-19** — A memory vault written under a non-identity scope encoding now reopens: FileTreeMemoryStore takes a scopeDecoding inverse and… ([#747](https://github.com/ErikFortune/fgv/pull/747)) · `ts-agent-memory`
+- **2026-10-19** — New @fgv/ts-extras-re2: re2PatternValidator lets fromJson and adaptMcpTools accept an untrusted JSON Schema pattern — linear-time… ([#746](https://github.com/ErikFortune/fgv/pull/746)) · `ts-extras-re2` `ts-json-base` `ts-extras-mcp`
+- **2026-10-18** — ai-assist: verifiedEndpoint lets an endpoint override use the provider's keyword table, default is dropped instead of folded… ([#743](https://github.com/ErikFortune/fgv/pull/743)) · `ts-json-base` `ts-extras` `ts-extras-mcp` `ts-extras-ollama`
+- **2026-10-18** — JsonSchema factories never throw: constraint keywords, default and examples arrive through numberOptions / integerOptions /… ([#740](https://github.com/ErikFortune/fgv/pull/740)) · `ts-json-base` `ts-extras` `ts-extras-ollama`
+- **2026-10-18** — JsonSchema pattern: a host's /…/u RegExp via stringOptions is enforced and sent where the wire documents pattern, and fromJson… ([#742](https://github.com/ErikFortune/fgv/pull/742)) · `ts-json-base` `ts-extras` `ts-extras-mcp`
+- **2026-10-18** — Agent memory tool results now carry each record's id and scope, so two conversations' turn-3 are distinguishable and a link copied… ([#739](https://github.com/ErikFortune/fgv/pull/739)) · `ts-agent-memory`
+- **2026-10-18** — AiAssist.structuredOutputSchemaKeywords reads the keyword table a structured-output schema is adapted with, and the testbed… ([#738](https://github.com/ErikFortune/fgv/pull/738)) · `ts-extras` `testbed`
+- **2026-10-17** — HybridRetriever's score-union merge no longer collapses records that share an id across scopes — two conversations' turn-3 stay two… ([#731](https://github.com/ErikFortune/fgv/pull/731)) · `ts-agent-memory`
+- **2026-10-17** — FileTreeMemoryStore now refuses to load a record from any scope other than the one its kind's codec derives, so a custom codec that… ([#733](https://github.com/ErikFortune/fgv/pull/733)) · `ts-agent-memory`
+- **2026-10-17** — Shipped: `@fgv/ts-random` can make a weighted random choice, either from a generator or as a pure function of a unit float in `[0… ([#732](https://github.com/ErikFortune/fgv/pull/732)) · `ts-random` `ts-agent-memory`
 
-*Showing the 10 most recent of 44. Per-package history is in each `CAPABILITIES.md`.*
+*Showing the 10 most recent of 68. Per-package history is in each `CAPABILITIES.md`.*
 
 <!-- END GENERATED: recent-additions -->

@@ -1,0 +1,33 @@
+id: personality-intake
+status: shipped
+packages: [] # capture-only; no package touched
+prs: [711] # written in the PR itself, anticipating its merge (CODING_STANDARDS § "A PR anticipates its own merge")
+openPrs: []
+opened: 2026-10-01
+closed: 2026-10-01
+summary:
+  intended: >
+    Capture PersonAIlity's requests to fgv as durable, triageable artifacts: one inbox file per
+    request, each with a citable source, quoted constraints, and the agent's own voice confined to
+    marked Observations. Capture only: no triage, ranking, scoping or implementation, and no
+    /finalize-task.
+  shipped: >
+    17 inbox findings, one per open fgv-ask issue in ErikFortune/personaility (ErikFortune/personaility#648, #669, #670,
+    #671-#678 ts-extras-mcp, #679-#683 ts-json-base JsonSchema, #684 ai-assist; all issue numbers
+    are PersonAIlity issues, not fgv PRs), plus an index and
+    a state record of the enumeration, exclusions and ambiguities. A follow-up sweep against fgv
+    repo state found none of the 17 implemented on any branch or open PR.
+  diverged: >
+    The repo-state sweep was added at the user's request after capture, on the premise that older
+    asks might be done but unpublished. The premise did not hold. The brief said not to run
+    /finalize-task, and the user then asked for it, so the inbox now lives under completed/2026-10/ undrained,
+    contrary to inbox-and-drain's drain-before-close rule; the ledger entry points the next
+    orchestrator at it.
+    The brief and the original state.md were not on the base; they came from cee0cf6a0 on
+    claude/orchestrator-handoff-2026-10. The branch was the session's
+    claude/personality-intake-qvid00, not the claude/personality-intake the brief named.
+  sourceLine: '' # deliberately blank: the verbatim opener is in result.md, but a capture-only stream ships no capability, and a sourceLine here would put it in the generated capability feed
+keywords: ['fgv-ask', 'consumer requests', 'cross-repo intake', 'findings inbox', 'MCP', 'ts-extras-mcp', 'JsonSchema fromJson', 'repo-state sweep', 'capture-only']
+relatedStreams:
+  - {id: agent-memory-mcp-server, relationship: 'active fgv stream on the MCP server direction; several captured asks concern the MCP client direction'}
+sourceHash: 2d8cfd9ff6b5b892

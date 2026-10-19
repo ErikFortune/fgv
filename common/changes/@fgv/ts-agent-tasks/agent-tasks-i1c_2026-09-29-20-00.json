@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-agent-tasks",
+      "comment": "BREAKING (implementers only): generated typed command tools (I1c). ITaskCommandHandle gains parameters, the registered parameter schema (createTaskCommandHandle supplies it), so a hand-built handle must too. createTaskTools takes an optional commands: ITaskCommandToolOptions = { writer, registry, environment, enable: ITaskCommandToolSpec[] } and offers one tool per named registered command, its wire schema carrying the registered parameter schema; absent, none. A tool sends its command through the writer's execute with a minted operation id, only to a task of its own kind and detail version, and tells the model accepted or applied (TaskCommandToolResult), a refusal as a fixed code line, or that the outcome is unknown and the command must not be sent again. A generated name may not be a fixed tool's, and a clash refuses the tool set at build time.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-agent-tasks"
+}

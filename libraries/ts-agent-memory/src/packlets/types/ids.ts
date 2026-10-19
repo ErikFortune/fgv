@@ -8,7 +8,7 @@ import { assertPortableFilenameStem } from './filenameSafety';
 
 /**
  * Stable file-stem identifier for a memory record. Equals the codec-produced
- * `idStem` and the on-disk filename stem (`verifyFilenameId` enforces the
+ * `idStem` and the on-disk filename stem (the store's load-time identity check enforces the
  * round-trip).
  * @public
  */
@@ -102,7 +102,7 @@ export const Convert: {
   /**
    * Validates an `unknown` value as a {@link MemoryId}. Unlike the other
    * brands, `MemoryId` IS the on-disk filename stem (`id === idStem`, enforced
-   * by the store's `verifyFilenameId`), so it additionally enforces the
+   * by the store's load-time identity check), so it additionally enforces the
    * portable-filename-stem contract — rejecting path-unsafe ids (`a/b`,
    * `conv-1:7`) at convert time rather than letting them surface as a file-path
    * failure later. (`EntityId` stays relaxed: a domain key may legitimately be

@@ -17,6 +17,7 @@ export {
   type IAiClientToolConfig,
   type IAiToolAnnotations,
   type IAiClientTool,
+  type IAiClientToolExecuteContext,
   type IAiClientToolCallSummary,
   type IAiClientToolContinuation,
   type IAiClientToolTurnResult,
@@ -84,6 +85,7 @@ export {
   resolveProviderModel,
   isResponsesOnlyModel,
   isAdaptiveThinkingModel,
+  isThinkingRequiredModel,
   usesMaxCompletionTokensField,
   toDataUrl,
   type IThinkingConfig,
@@ -170,7 +172,12 @@ export {
   modelSpec
 } from './converters';
 
-export { resolveEffectiveTools, resolveToolConflicts, defaultToolConflictPolicy } from './toolFormats';
+export {
+  resolveEffectiveTools,
+  resolveToolConflicts,
+  defaultToolConflictPolicy,
+  toGeminiParameterSchema
+} from './toolFormats';
 export type { IAiResolvedToolConflicts } from './toolFormats';
 
 export type { AiCacheReportingLevel, IAiCompletionUsage } from './usageTypes';
@@ -183,7 +190,8 @@ export {
 } from './streamUsageCapability';
 export type { IAiPromptCacheRoutingSupport } from './streamUsageCapability';
 
-export { ANTHROPIC_STRUCTURED_OUTPUT_TOOL_NAME } from './structuredOutput';
+export { ANTHROPIC_STRUCTURED_OUTPUT_TOOL_NAME, structuredOutputSchemaKeywords } from './structuredOutput';
+export { clientToolSchemaKeywords, type IAiVerifiedEndpoint } from './schemaKeywords';
 
 export type {
   AiStructuredOutputFormat,

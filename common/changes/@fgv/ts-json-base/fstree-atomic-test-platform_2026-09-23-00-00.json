@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-json-base",
+      "comment": "Test-only: an atomic-write test asserting a filter refusal is classified as qualified-only, since that check sits after the atomicReplace capability gate and is unreachable on an unqualified platform. No runtime change.",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-json-base",
+  "email": "noreply@anthropic.com"
+}

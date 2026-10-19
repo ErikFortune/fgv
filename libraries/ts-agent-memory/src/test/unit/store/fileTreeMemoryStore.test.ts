@@ -206,6 +206,7 @@ describe('FileTreeMemoryStore', () => {
         registry: knowledgeRegistry(),
         codecs: knowledgeCodecs,
         scopeEncoding: (scope) => succeed(scope as string),
+        scopeDecoding: (encoded) => Convert.scopeKey.convert(encoded),
         clock
       }).orThrow();
       await store.put(makeRecord({ id: 'x', body: 'y' }));

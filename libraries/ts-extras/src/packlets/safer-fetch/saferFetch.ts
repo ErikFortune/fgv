@@ -40,10 +40,12 @@ import {
   DEFAULT_MAX_REDIRECTS,
   DEFAULT_MAX_RESPONSE_BYTES,
   DEFAULT_TIMEOUT_MS,
+  MAX_TIMER_DELAY_MS,
   REDIRECT_STATUSES,
   SUPPORTED_SCHEMES
 } from './defaults';
 import type { FetchFailureReason } from './failureReason';
+import { GuardedFetchError } from './guardedFetchError';
 import { resolveGuards } from './guards';
 import {
   computeRetryDelayMs,
@@ -55,6 +57,8 @@ import {
   type IResolvedRetryPolicy
 } from './retry';
 import type {
+  GuardedFetch,
+  IGuardedFetchOptions,
   IGuardVerdict,
   IRequestHop,
   IResolvedGuards,
@@ -62,9 +66,11 @@ import type {
   ISaferFetchRequest,
   ISaferFetchResponse,
   ISaferFetchResponseHead,
+  IFetchTransport,
   SaferFetchMethod,
   SaferFetchRedirectPolicy
 } from './model';
+import { SAFER_FETCH_METHODS } from './model';
 import { resolveLocation, rewriteForRedirect, sensitiveHeaderSet } from './redirect';
 import { platformFetchTransport } from './transport';
 
@@ -72,30 +78,94 @@ import { platformFetchTransport } from './transport';
 type Outcome<T> = DetailedResult<T, FetchFailureReason>;
 
 /**
- * The raw outcome of a call, before the body bytes are interpreted as bytes, text, or JSON.
- * @internal
+ * What a completed hop walk produced: the finisher's value for the final hop, and every URL that
+ * was actually requested on the way to it.
  */
-interface IRawOutcome {
-  readonly bytes: Uint8Array;
-  readonly head: ISaferFetchResponseHead;
+interface IWalked<T> {
+  readonly value: T;
   readonly urlChain: ReadonlyArray<string>;
 }
 
-/** Resolved, validated per-call settings. Every field concrete from here down. */
-interface IResolvedCallOptions {
-  readonly method: SaferFetchMethod;
-  readonly headers: Record<string, string>;
-  readonly body: string | Uint8Array | undefined;
-  readonly timeoutMs: number;
-  readonly headersTimeoutMs: number;
-  readonly maxResponseBytes: number;
+/** The buffered entry points' final-hop value: the body as bytes, and the head it came with. */
+interface IBufferedBody {
+  readonly bytes: Uint8Array;
+  readonly head: ISaferFetchResponseHead;
+}
+
+/**
+ * The raw outcome of a buffered call, before the body bytes are interpreted as bytes, text, or
+ * JSON.
+ * @internal
+ */
+type IRawOutcome = IWalked<IBufferedBody>;
+
+/** The redirect settings every walk needs, resolved and validated. */
+interface IResolvedRedirectOptions {
   readonly redirectPolicy: SaferFetchRedirectPolicy;
   readonly maxRedirects: number;
   /** Lowercased; the always-stripped three unioned with the caller's additions. */
   readonly sensitiveHeaders: ReadonlySet<string>;
+}
+
+/**
+ * Everything the hop walk itself reads, resolved and validated. Shared by every entry point, so
+ * the walk cannot tell which one called it.
+ */
+interface IResolvedWalkOptions extends IResolvedRedirectOptions {
+  readonly method: SaferFetchMethod;
+  readonly headers: Record<string, string>;
+  readonly body: string | Uint8Array | undefined;
+  readonly transport: IFetchTransport;
+  readonly logger: Logging.ILogger;
+}
+
+/** Resolved, validated per-call settings of a buffered call. Every field concrete from here down. */
+interface IResolvedCallOptions extends IResolvedWalkOptions {
+  readonly timeoutMs: number;
+  readonly headersTimeoutMs: number;
+  readonly maxResponseBytes: number;
   /** Never absent once resolved: an omitted `retry` option resolves to zero attempts. */
   readonly retry: IResolvedRetryPolicy;
-  readonly logger: Logging.ILogger;
+}
+
+/**
+ * Turns the final hop's response — one that is neither a redirect nor opaque — into the value its
+ * entry point returns. The buffered entry points read and cap the body here; the hop walk itself
+ * never touches a final response's body.
+ *
+ * @param response - The final hop's platform response, body unread.
+ * @param head - Its status and headers.
+ * @param url - The URL that was requested on this hop, as the address guard cleared it.
+ * @param chain - Every hop requested so far, this one last.
+ */
+type HopFinisher<T> = (
+  response: Response,
+  head: ISaferFetchResponseHead,
+  url: URL,
+  chain: ReadonlyArray<IRequestHop>
+) => Promise<Outcome<T>>;
+
+/**
+ * One walk's collaborators: the guards, the resolved walk settings, the deadlines it races
+ * against, and the finisher that decides what the final hop yields.
+ */
+interface IWalkContext<T> {
+  readonly guards: IResolvedGuards;
+  readonly resolved: IResolvedWalkOptions;
+  readonly watch: DeadlineWatch;
+  readonly finish: HopFinisher<T>;
+  /**
+   * The caller's signal, when the response outlives the walk: composed into every hop's transport
+   * signal so that aborting it still cancels the body after the walk has returned. Absent for the
+   * buffered entry points, which read the body inside the walk's deadlines.
+   */
+  readonly outliving?: AbortSignal;
+  /**
+   * Set when the finisher retires the headers deadline itself, once it has checked the head. The
+   * streaming entry point has no overall deadline, so retiring it on arrival would leave its
+   * response-headers guard unbounded.
+   */
+  readonly finisherRetiresHeadersDeadline?: boolean;
 }
 
 /**
@@ -137,6 +207,13 @@ interface ICompletedHop extends IRequestHop {
   readonly status: number;
 }
 
+/** A redirect a hop answered with, still to be validated and followed. */
+interface IRedirect {
+  readonly kind: 'redirect';
+  readonly status: number;
+  readonly location: string;
+}
+
 /**
  * What one attempt produced: either the response this call was after, or a redirect to follow.
  *
@@ -146,12 +223,15 @@ interface ICompletedHop extends IRequestHop {
  * decide whether to recurse, would put the hop loop inside the response-handling path where the
  * hop cap and the credential rule are much harder to see.
  */
-type AttemptOutcome =
-  | { readonly kind: 'final'; readonly bytes: Uint8Array; readonly head: ISaferFetchResponseHead }
-  | { readonly kind: 'redirect'; readonly status: number; readonly location: string };
+type AttemptOutcome<T> = { readonly kind: 'final'; readonly value: T } | IRedirect;
+
+/**
+ * What a hop's response head says: a redirect to follow, or a final response for the finisher.
+ */
+type HeadOutcome = { readonly kind: 'final'; readonly head: ISaferFetchResponseHead } | IRedirect;
 
 /** One completed attempt, with the URL that was actually requested. */
-interface IAttempt {
+interface IAttempt<T> {
   /**
    * The URL the transport was given — the address guard's cleared, possibly normalized URL,
    * not necessarily the spelling the caller or a `Location` header used. This is what a relative
@@ -159,7 +239,7 @@ interface IAttempt {
    */
   readonly url: URL;
   readonly connectedAddress: string | undefined;
-  readonly outcome: AttemptOutcome;
+  readonly outcome: AttemptOutcome<T>;
 }
 
 const METHODS_WITHOUT_BODY: ReadonlyArray<SaferFetchMethod> = ['GET', 'HEAD'];
@@ -174,18 +254,22 @@ function _fail<T>(detail: FetchFailureReason, message: string): Outcome<T> {
   return failWithDetail<T, FetchFailureReason>(message, detail);
 }
 
-/** Re-types a failure for the next stage without re-deriving its message or detail. */
-function _propagate<TFrom, TTo>(from: DetailedFailure<TFrom, FetchFailureReason>): Outcome<TTo> {
-  return failWithDetail<TTo, FetchFailureReason>(from.message, from.detail);
-}
-
 function _unknown<T>(message: string): Outcome<T> {
   return _fail<T>({ kind: 'unknown', detail: message }, message);
 }
 
-/** The wrapping that every escaped-exception path reports, defined once so the two agree exactly. */
+/**
+ * The reason every escaped-exception path reports, defined once so {@link _unexpected} and
+ * {@link _reasonOf} agree exactly.
+ */
+function _unexpectedReason(message: string): FetchFailureReason & { readonly kind: 'unknown' } {
+  return { kind: 'unknown', detail: `saferFetch: unexpected error: ${message}` };
+}
+
+/** The failure every escaped-exception path reports. */
 function _unexpected<T>(message: string): Outcome<T> {
-  return _unknown<T>(`saferFetch: unexpected error: ${message}`);
+  const reason = _unexpectedReason(message);
+  return _fail<T>(reason, reason.detail);
 }
 
 /**
@@ -193,17 +277,19 @@ function _unexpected<T>(message: string): Outcome<T> {
  * `FetchFailureReason`.
  *
  * @remarks
- * Only one thing can produce a detail-less failure: a bug inside this module that throws or
- * rejects somewhere a `thenOnSuccess` callback catches it. `AsyncDetailedResult` converts such a
- * throw to a `DetailedFailure` with `detail: undefined` — correctly, since a thrown error supplies
- * no reason and inventing one would be worse — but that is a *chaining* primitive's contract, not
- * this module's.
+ * A detail-less failure comes from a throw or rejection that a `thenOnSuccess` callback caught:
+ * a bug inside this module, or collaborator code this module does not wrap — the caller's logger
+ * (a hop failure is logged inside the walk's chain), a guard's `name` getter read while reporting
+ * that guard's refusal on a redirect hop, or `DeadlineWatch.dispose` meeting a caller `signal`
+ * that is not an `AbortSignal`. `AsyncDetailedResult` converts such a throw to a
+ * `DetailedFailure` with `detail: undefined` — correctly, since a thrown error supplies no reason
+ * and inventing one would be worse — but that is a *chaining* primitive's contract, not this
+ * module's.
  *
- * Before the chaining pass those throws propagated as real rejections all the way to
- * {@link _execute}'s `captureAsyncResult` and were reported as `'unknown'`. Catching them earlier
- * must not change what the caller sees, so the same wrapping is reapplied here. Without this a
- * caller switching on `detail.kind` — the documented way to consume this API — would fault on
- * `undefined`.
+ * Every such failure is reported exactly as a throw that reached {@link _runCall}'s
+ * `captureAsyncResult` is: `'unknown'`, with the `saferFetch: unexpected error:` prefix. Without
+ * this a caller switching on `detail.kind` — the documented way to consume this API — would fault
+ * on `undefined`.
  */
 function _withReason<T>(outcome: Outcome<T>): Outcome<T> {
   return outcome.isFailure() && outcome.detail === undefined ? _unexpected<T>(outcome.message) : outcome;
@@ -249,6 +335,13 @@ async function _raced<T>(
   toFailure: (message: string) => Outcome<T>,
   onAbandon?: () => void
 ): Promise<Outcome<T>> {
+  // A call already stopped does not start the work at all. Racing it would report the same stop,
+  // but only after starting a guard (a DNS lookup) or a transport call nobody will wait for.
+  const stoppedBy = watch.cause;
+  if (stoppedBy !== undefined) {
+    onAbandon?.();
+    return _stopped<T>(watch, stoppedBy);
+  }
   const race = await watch.race(_capture(work));
   if (race.stopped) {
     onAbandon?.();
@@ -329,9 +422,31 @@ async function _cancelReader(reader: ReadableStreamDefaultReader<Uint8Array>): P
   await reader.cancel().catch(() => undefined);
 }
 
+/**
+ * A copy of the caller's bytes that nothing else holds.
+ *
+ * @remarks
+ * `new Uint8Array(bytes)` rather than `bytes.slice()`: a Node `Buffer` is a `Uint8Array` whose
+ * `slice()` returns a view over the same memory, which would copy nothing.
+ */
+function _ownBytes(bytes: Uint8Array): Uint8Array {
+  return new Uint8Array(bytes);
+}
+
+/** The refusal for a timeout or delay option a timer cannot honour. */
+function _overTimerMessage(name: string, value: number): string {
+  return (
+    `${name} must be no greater than ${MAX_TIMER_DELAY_MS} ms ` +
+    `(a timer fires a larger delay after 1 ms); got ${value}.`
+  );
+}
+
 function _resolveCallOptions(options: ISaferFetchOptions): Outcome<IResolvedCallOptions> {
   const method = options.method ?? 'GET';
-  const body = options.body ?? undefined;
+  // Copied before the first `await`, for the same reason as a guarded fetch's body: the request
+  // guard approves this copy, and a caller mutating its array during the walk cannot change it.
+  const supplied = options.body ?? undefined;
+  const body = supplied instanceof Uint8Array ? _ownBytes(supplied) : supplied;
   if (body !== undefined && METHODS_WITHOUT_BODY.includes(method)) {
     return _unknown<IResolvedCallOptions>(`a ${method} request cannot carry a body.`);
   }
@@ -339,31 +454,60 @@ function _resolveCallOptions(options: ISaferFetchOptions): Outcome<IResolvedCall
   const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   const headersTimeoutMs = options.headersTimeoutMs ?? DEFAULT_HEADERS_TIMEOUT_MS;
   const maxResponseBytes = options.maxResponseBytes ?? DEFAULT_MAX_RESPONSE_BYTES;
-  const limits: ReadonlyArray<readonly [string, number]> = [
-    ['timeoutMs', timeoutMs],
-    ['headersTimeoutMs', headersTimeoutMs],
-    ['maxResponseBytes', maxResponseBytes]
+  // The two deadlines reach `setTimeout`, so they are also bounded by what a timer honours.
+  const limits: ReadonlyArray<readonly [string, number, number]> = [
+    ['timeoutMs', timeoutMs, MAX_TIMER_DELAY_MS],
+    ['headersTimeoutMs', headersTimeoutMs, MAX_TIMER_DELAY_MS],
+    ['maxResponseBytes', maxResponseBytes, Number.POSITIVE_INFINITY]
   ];
-  for (const [name, value] of limits) {
+  for (const [name, value, max] of limits) {
     if (!Number.isFinite(value) || value <= 0) {
       return _unknown<IResolvedCallOptions>(`${name} must be a positive finite number; got ${value}.`);
     }
+    if (value > max) {
+      return _unknown<IResolvedCallOptions>(_overTimerMessage(name, value));
+    }
   }
 
+  return _resolveRedirectOptions(options).onSuccess((redirect) =>
+    _asOutcome(resolveRetryPolicy(options.retry)).onSuccess((retry) =>
+      _succeed<IResolvedCallOptions>({
+        method,
+        headers: _lowercaseHeaders(options.headers ?? {}),
+        body,
+        timeoutMs,
+        headersTimeoutMs,
+        maxResponseBytes,
+        ...redirect,
+        retry,
+        transport: options.transport ?? platformFetchTransport,
+        logger: options.logger ?? new Logging.NoOpLogger()
+      })
+    )
+  );
+}
+
+/**
+ * Resolves and validates the redirect settings, in the order the buffered entry points have
+ * always reported them: policy, hop cap, then the sensitive-header list.
+ */
+function _resolveRedirectOptions(
+  options: Pick<ISaferFetchOptions, 'redirectPolicy' | 'maxRedirects' | 'sensitiveHeaders'>
+): Outcome<IResolvedRedirectOptions> {
   // `String(...)` and a lookup rather than a literal comparison, so that a JavaScript caller
   // supplying a policy this release does not implement is rejected instead of silently getting a
   // different one. The lookup also narrows to the union with no cast.
   const requestedPolicy = String(options.redirectPolicy ?? 'reject');
   const redirectPolicy = REDIRECT_POLICIES.find((p) => p === requestedPolicy);
   if (redirectPolicy === undefined) {
-    return _unknown<IResolvedCallOptions>(
+    return _unknown<IResolvedRedirectOptions>(
       `redirectPolicy "${requestedPolicy}" is not supported; expected ${REDIRECT_POLICIES.join(' or ')}.`
     );
   }
 
   const maxRedirects = options.maxRedirects ?? DEFAULT_MAX_REDIRECTS;
   if (!Number.isInteger(maxRedirects) || maxRedirects < 0) {
-    return _unknown<IResolvedCallOptions>(
+    return _unknown<IResolvedRedirectOptions>(
       `maxRedirects must be a non-negative integer; got ${maxRedirects}.`
     );
   }
@@ -378,7 +522,7 @@ function _resolveCallOptions(options: ISaferFetchOptions): Outcome<IResolvedCall
   const extraSensitive = options.sensitiveHeaders;
   if (extraSensitive !== undefined) {
     if (!Array.isArray(extraSensitive)) {
-      return _unknown<IResolvedCallOptions>(
+      return _unknown<IResolvedRedirectOptions>(
         `sensitiveHeaders must be an array of header names; got ${typeof extraSensitive}.`
       );
     }
@@ -386,29 +530,16 @@ function _resolveCallOptions(options: ISaferFetchOptions): Outcome<IResolvedCall
     // cannot distinguish that from "no offender".
     const badIndex = extraSensitive.findIndex((n) => typeof n !== 'string');
     if (badIndex >= 0) {
-      return _unknown<IResolvedCallOptions>(
+      return _unknown<IResolvedRedirectOptions>(
         `sensitiveHeaders[${badIndex}] must be a string header name; got ${typeof extraSensitive[badIndex]}.`
       );
     }
   }
 
-  const retry = resolveRetryPolicy(options.retry);
-  if (retry.isFailure()) {
-    return _unknown<IResolvedCallOptions>(retry.message);
-  }
-
   return _succeed({
-    method,
-    headers: _lowercaseHeaders(options.headers ?? {}),
-    body,
-    timeoutMs,
-    headersTimeoutMs,
-    maxResponseBytes,
     redirectPolicy,
     maxRedirects,
-    sensitiveHeaders: sensitiveHeaderSet(options.sensitiveHeaders),
-    retry: retry.value,
-    logger: options.logger ?? new Logging.NoOpLogger()
+    sensitiveHeaders: sensitiveHeaderSet(options.sensitiveHeaders)
   });
 }
 
@@ -497,18 +628,24 @@ async function _readCappedBody(
   }
   return _succeed(bytes);
 }
-async function _receive(
+
+/**
+ * Reads a hop's response head: fails an opaque redirect, decides a redirect status, and otherwise
+ * hands back the head of a final response with its body untouched.
+ *
+ * @remarks
+ * This is the part of response handling that belongs to the **walk**, and so is shared by every
+ * entry point: whether a hop is a redirect, and whether the redirect policy allows following it,
+ * must not depend on what the caller will do with the final body.
+ */
+function _receiveHead(
   response: Response,
   url: URL,
-  chain: ReadonlyArray<IRequestHop>,
-  guards: IResolvedGuards,
-  resolved: IResolvedCallOptions,
-  watch: DeadlineWatch,
-  notes: IAttemptNotes
-): Promise<Outcome<AttemptOutcome>> {
+  redirectPolicy: SaferFetchRedirectPolicy
+): Outcome<HeadOutcome> {
   if (response.type === 'opaqueredirect') {
     _discardBody(response);
-    return _fail<AttemptOutcome>(
+    return _fail<HeadOutcome>(
       { kind: 'redirect-opaque' },
       'the platform returned an opaque redirect, whose target cannot be inspected or guarded.'
     );
@@ -518,20 +655,20 @@ async function _receive(
     // The body of a redirect is never the body this call wanted, and leaving it unconsumed holds
     // the connection open for the whole rest of the chain.
     _discardBody(response);
-    if (resolved.redirectPolicy === 'reject') {
-      return _fail<AttemptOutcome>(
+    if (redirectPolicy === 'reject') {
+      return _fail<HeadOutcome>(
         { kind: 'redirect-rejected', url: url.toString(), status: response.status },
         `${url.toString()} redirected with status ${response.status}; redirects are rejected.`
       );
     }
     const location = response.headers.get('location') ?? undefined;
     if (location === undefined || location.trim().length === 0) {
-      return _fail<AttemptOutcome>(
+      return _fail<HeadOutcome>(
         { kind: 'redirect-rejected', url: url.toString(), status: response.status },
         `${url.toString()} redirected with status ${response.status} but sent no usable Location header.`
       );
     }
-    return _succeed<AttemptOutcome>({ kind: 'redirect', status: response.status, location });
+    return _succeed<HeadOutcome>({ kind: 'redirect', status: response.status, location });
   }
 
   const headers = _readHeaders(response);
@@ -539,61 +676,95 @@ async function _receive(
   // header was never sent; these are read as optional everywhere downstream.
   const contentType: string | undefined = headers['content-type'];
   const contentLength: string | undefined = headers['content-length'];
-  const head: ISaferFetchResponseHead = {
-    status: response.status,
-    statusText: response.statusText,
-    headers,
-    contentType,
-    contentLength: parseContentLength(contentLength)
-  };
+  return _succeed<HeadOutcome>({
+    kind: 'final',
+    head: {
+      status: response.status,
+      statusText: response.statusText,
+      headers,
+      contentType,
+      contentLength: parseContentLength(contentLength)
+    }
+  });
+}
 
-  if (!response.ok) {
-    _discardBody(response);
-    // Recorded before the failure is built rather than carried on it: `Retry-After` is
-    // scheduling advice for this process, not a fact about the response worth widening the
-    // taxonomy — and the taxonomy is a surface callers may echo, which advice from an
-    // attacker-controlled server should not join.
-    notes.retryAfter = headers['retry-after'];
-    return _fail<AttemptOutcome>(
-      // `bodyPreview` is deliberately never populated: error bodies routinely echo request
-      // content, including credentials.
-      { kind: 'http-status', status: response.status, statusText: response.statusText },
-      `${url.toString()} returned ${response.status} ${response.statusText}.`
-    );
-  }
-
+/**
+ * Runs the response-headers guard on a final response's head, releasing the body if it refuses.
+ *
+ * @remarks
+ * Shared by every entry point, so a content-type allowlist refuses identically whether or not the
+ * caller goes on to read the body.
+ */
+async function _checkResponseHead(
+  response: Response,
+  head: ISaferFetchResponseHead,
+  url: URL,
+  chain: ReadonlyArray<IRequestHop>,
+  guards: IResolvedGuards,
+  watch: DeadlineWatch
+): Promise<Outcome<true>> {
   const hop = chain.length - 1;
-  // Chained rather than stepped: `thenOnSuccess` now preserves `FetchFailureReason` across an
-  // async step, so each stage's failure propagates with its detail intact and the two
-  // `_propagate` re-types this sequence used to need are gone.
-  return (
-    await _raced(
-      watch,
-      () => guards.responseHeaders.check(head, chain),
-      (message) => {
-        // A content-type allowlist names itself by exposing `acceptedContentTypes`, and its
-        // rejections carry a more useful payload than an opaque policy refusal would.
-        const accepted = guards.responseHeaders.acceptedContentTypes ?? undefined;
-        return accepted !== undefined
-          ? _fail<true>(
-              { kind: 'unsupported-content-type', contentType: head.contentType, accepted },
-              `${url.toString()}: ${message}`
-            )
-          : _blocked<true>('response-headers', url, hop, guards.responseHeaders.name, message);
-      },
-      () => _discardBody(response)
-    )
-  )
-    .thenOnSuccess(async () => _readCappedBody(response, head, resolved.maxResponseBytes, watch))
-    .thenOnSuccess(async (bytes) =>
-      (
-        await _raced(
-          watch,
-          () => guards.responseBody.check(bytes, head),
-          (message) => _blocked<true>('response-body', url, hop, guards.responseBody.name, message)
-        )
-      ).onSuccess(() => _succeed<AttemptOutcome>({ kind: 'final', bytes, head }))
-    );
+  return _raced(
+    watch,
+    () => guards.responseHeaders.check(head, chain),
+    (message) => {
+      // A content-type allowlist names itself by exposing `acceptedContentTypes`, and its
+      // rejections carry a more useful payload than an opaque policy refusal would.
+      const accepted = guards.responseHeaders.acceptedContentTypes ?? undefined;
+      return accepted !== undefined
+        ? _fail<true>(
+            { kind: 'unsupported-content-type', contentType: head.contentType, accepted },
+            `${url.toString()}: ${message}`
+          )
+        : _blocked<true>('response-headers', url, hop, guards.responseHeaders.name, message);
+    },
+    () => _discardBody(response)
+  );
+}
+
+/**
+ * The buffered entry points' finisher: refuses a non-2xx status, runs the response-headers guard,
+ * reads the body under the size cap, and runs the body guard over it.
+ *
+ * @param notes - This attempt's out-channel, which a non-2xx answer's `Retry-After` is recorded on.
+ */
+function _bufferedFinisher(
+  guards: IResolvedGuards,
+  resolved: IResolvedCallOptions,
+  watch: DeadlineWatch,
+  notes: IAttemptNotes
+): HopFinisher<IBufferedBody> {
+  return async (response, head, url, chain) => {
+    if (!response.ok) {
+      _discardBody(response);
+      // Recorded before the failure is built rather than carried on it: `Retry-After` is
+      // scheduling advice for this process, not a fact about the response worth widening the
+      // taxonomy — and the taxonomy is a surface callers may echo, which advice from an
+      // attacker-controlled server should not join.
+      notes.retryAfter = head.headers['retry-after'];
+      return _fail<IBufferedBody>(
+        // `bodyPreview` is deliberately never populated: error bodies routinely echo request
+        // content, including credentials.
+        { kind: 'http-status', status: response.status, statusText: response.statusText },
+        `${url.toString()} returned ${response.status} ${response.statusText}.`
+      );
+    }
+
+    const hop = chain.length - 1;
+    // Chained rather than stepped: `thenOnSuccess` preserves `FetchFailureReason` across an async
+    // step, so each stage's failure propagates with its detail intact.
+    return (await _checkResponseHead(response, head, url, chain, guards, watch))
+      .thenOnSuccess(async () => _readCappedBody(response, head, resolved.maxResponseBytes, watch))
+      .thenOnSuccess(async (bytes) =>
+        (
+          await _raced(
+            watch,
+            () => guards.responseBody.check(bytes, head),
+            (message) => _blocked<true>('response-body', url, hop, guards.responseBody.name, message)
+          )
+        ).onSuccess(() => _succeed<IBufferedBody>({ bytes, head }))
+      );
+  };
 }
 
 /**
@@ -665,17 +836,14 @@ function _detectLoop(cleared: URL, completed: ReadonlyArray<ICompletedHop>): Out
   );
 }
 
-async function _connect(
+async function _connect<T>(
   request: ISaferFetchRequest,
   cleared: IClearedHop,
   chain: ReadonlyArray<IRequestHop>,
-  guards: IResolvedGuards,
-  options: ISaferFetchOptions,
-  resolved: IResolvedCallOptions,
-  watch: DeadlineWatch,
-  notes: IAttemptNotes
-): Promise<Outcome<IAttempt>> {
-  const transport = options.transport ?? platformFetchTransport;
+  context: IWalkContext<T>
+): Promise<Outcome<IAttempt<T>>> {
+  const { resolved, watch } = context;
+  const transport = resolved.transport;
 
   const init: RequestInit = {
     method: request.method,
@@ -683,7 +851,12 @@ async function _connect(
     // `'manual'` rather than `'follow'`: the platform must not follow anything on our behalf,
     // because a hop the guard never sees is a hop the guard never guarded.
     redirect: 'manual',
-    signal: watch.signal
+    // A composed signal rather than a listener on the caller's: the watch stops listening when the
+    // walk returns, and a listener left behind on a long-lived caller signal (one per request, on a
+    // signal that outlives a whole session) would be a leak. `AbortSignal.any` holds its sources
+    // weakly, so the composite goes away with the response.
+    signal:
+      context.outliving === undefined ? watch.signal : AbortSignal.any([watch.signal, context.outliving])
   };
   if (request.body !== undefined) {
     // A byte body is copied into a fresh buffer rather than handed over by reference: it keeps
@@ -706,8 +879,17 @@ async function _connect(
     .thenOnSuccess(async (response) => {
       // Inside the continuation rather than before it, which is where it already ran: the
       // headers deadline is retired only once a response has actually arrived.
-      watch.headersReceived();
-      return _receive(response, cleared.url, chain, guards, resolved, watch, notes);
+      if (context.finisherRetiresHeadersDeadline !== true) {
+        watch.headersReceived();
+      }
+      return _receiveHead(response, cleared.url, resolved.redirectPolicy).thenOnSuccess(
+        async (received): Promise<Outcome<AttemptOutcome<T>>> =>
+          received.kind === 'redirect'
+            ? _succeed<AttemptOutcome<T>>(received)
+            : (await context.finish(response, received.head, cleared.url, chain)).onSuccess((value) =>
+                _succeed<AttemptOutcome<T>>({ kind: 'final', value })
+              )
+      );
     })
     .onSuccess((outcome) =>
       // The pin is recorded only once the transport has accepted it. A transport that cannot
@@ -733,7 +915,7 @@ function _nextHop(
   completed: ReadonlyArray<ICompletedHop>,
   redirect: { readonly status: number; readonly location: string },
   request: ISaferFetchRequest,
-  resolved: IResolvedCallOptions
+  resolved: IResolvedRedirectOptions
 ): Outcome<ISaferFetchRequest> {
   const followed = completed.length;
   if (followed >= resolved.maxRedirects) {
@@ -786,98 +968,143 @@ function _nextHop(
  * {@link SaferFetch.IRetryPolicy}: a cached verdict would turn retry into a DNS-rebinding
  * amplifier, and a resumed chain would revalidate hops the new attempt no longer follows.
  */
-async function _walk(
-  url: URL,
-  guards: IResolvedGuards,
-  options: ISaferFetchOptions,
-  resolved: IResolvedCallOptions,
-  watch: DeadlineWatch,
-  notes: IAttemptNotes
-): Promise<Outcome<IRawOutcome>> {
-  let request: ISaferFetchRequest = {
-    url,
-    method: resolved.method,
-    headers: resolved.headers,
-    ...(resolved.body !== undefined ? { body: resolved.body } : {})
-  };
-  /** Hops already requested and redirected away from, oldest first. */
-  const completed: ICompletedHop[] = [];
+async function _walk<T>(url: URL, context: IWalkContext<T>): Promise<Outcome<IWalked<T>>> {
+  const { resolved } = context;
+  return _walkHop<T>(
+    {
+      url,
+      method: resolved.method,
+      headers: resolved.headers,
+      ...(resolved.body !== undefined ? { body: resolved.body } : {})
+    },
+    [],
+    context
+  );
+}
 
-  for (;;) {
-    // Re-arms the per-attempt headers deadline. Without this, the first hop's
-    // `headersReceived()` would retire it for the whole call and a later host that never
-    // answers would be bounded only by the overall deadline.
-    watch.attemptStarted();
+/**
+ * Walks one hop and, when it redirects, the hop it leads to.
+ *
+ * @remarks
+ * The checks run in a fixed order, each before the request it guards: the request guard, the
+ * scheme re-check, the address guard, loop detection, the connect, and — on a redirect — the next
+ * hop's derivation. Each stage is reached only through the previous stage's success, so a refusal
+ * anywhere ends the walk before anything after it starts.
+ *
+ * Recursive rather than a loop, as {@link _runAttempt} is: each hop is handed the hops before it
+ * as a fresh array that nothing mutates, so a hop's view of the chain cannot change underneath it.
+ * Depth is bounded by `maxRedirects`, and each level is `await`ed. Each pending level holds its
+ * own copy of the chain, so memory retained by a walk is O(hops²) entries — bounded by
+ * `maxRedirects`.
+ *
+ * @param request - The request this hop sends, before the request guard has seen it.
+ * @param completed - Hops already requested and redirected away from, oldest first.
+ */
+async function _walkHop<T>(
+  request: ISaferFetchRequest,
+  completed: ReadonlyArray<ICompletedHop>,
+  context: IWalkContext<T>
+): Promise<Outcome<IWalked<T>>> {
+  const { guards, watch } = context;
+  // Re-arms the per-attempt headers deadline. Without this, the first hop's
+  // `headersReceived()` would retire it for the whole call and a later host that never
+  // answers would be bounded only by the overall deadline.
+  watch.attemptStarted();
 
-    const guarded = await _raced(
+  return (
+    await _raced(
       watch,
       () => guards.request.check(request, [...completed, { url: request.url }]),
       (message) =>
         _blocked<ISaferFetchRequest>('request', request.url, completed.length, guards.request.name, message)
-    );
-    if (guarded.isFailure()) {
-      return _propagate<ISaferFetchRequest, IRawOutcome>(guarded);
-    }
+    )
+  )
+    .onSuccess((checked) => _checkScheme(checked.url).onSuccess(() => _succeed(checked)))
+    .thenOnSuccess(async (checked) => _clearAndConnect(checked, completed, context));
+}
 
-    const checked = guarded.value;
-    const rechecked = _checkScheme(checked.url);
-    if (rechecked.isFailure()) {
-      return _propagate<URL, IRawOutcome>(rechecked);
-    }
+/**
+ * The rest of one hop once its request guard has accepted: the address guard, loop detection and
+ * the connect.
+ *
+ * @param checked - The request the request guard returned; it is what this hop sends.
+ * @param completed - Hops already requested and redirected away from, oldest first.
+ */
+async function _clearAndConnect<T>(
+  checked: ISaferFetchRequest,
+  completed: ReadonlyArray<ICompletedHop>,
+  context: IWalkContext<T>
+): Promise<Outcome<IWalked<T>>> {
+  const { guards, resolved, watch } = context;
+  // The address guard runs immediately before the connect and after the request guard, so it
+  // is always the last word before anything reaches the wire.
+  return (await _clearAddress([...completed, { url: checked.url }], guards, watch))
+    .onSuccess((cleared) =>
+      _logFailure(resolved.logger, cleared.url, _detectLoop(cleared.url, completed)).onSuccess(() =>
+        _succeed(cleared)
+      )
+    )
+    .thenOnSuccess(async (cleared) =>
+      _logFailure(
+        resolved.logger,
+        cleared.url,
+        // Downstream guards see the chain as it was actually requested, so the URL a response
+        // guard reads is the URL the address guard cleared — not the pre-normalization spelling.
+        await _connect(checked, cleared, [...completed, { url: cleared.url }], context)
+      )
+    )
+    .thenOnSuccess(async (attempt) => _settleHop(checked, attempt, completed, context));
+}
 
-    // The address guard runs immediately before the connect and after the request guard, so it
-    // is always the last word before anything reaches the wire.
-    const cleared = await _clearAddress([...completed, { url: checked.url }], guards, watch);
-    if (cleared.isFailure()) {
-      return _propagate<IClearedHop, IRawOutcome>(cleared);
-    }
-
-    const unrepeated = _detectLoop(cleared.value.url, completed);
-    if (unrepeated.isFailure()) {
-      resolved.logger.detail(`saferFetch: ${cleared.value.url.toString()} failed: ${unrepeated.message}`);
-      return _propagate<URL, IRawOutcome>(unrepeated);
-    }
-
-    // Downstream guards see the chain as it was actually requested, so the URL a response guard
-    // reads is the URL the address guard cleared — not the pre-normalization spelling.
-    const requested: ReadonlyArray<IRequestHop> = [...completed, { url: cleared.value.url }];
-    const attempted = await _connect(
-      checked,
-      cleared.value,
-      requested,
-      guards,
-      options,
-      resolved,
-      watch,
-      notes
-    );
-    if (attempted.isFailure()) {
-      resolved.logger.detail(`saferFetch: ${cleared.value.url.toString()} failed: ${attempted.message}`);
-      return _propagate<IAttempt, IRawOutcome>(attempted);
-    }
-    const attempt = attempted.value;
-
-    if (attempt.outcome.kind === 'final') {
-      return _succeed({
-        bytes: attempt.outcome.bytes,
-        head: attempt.outcome.head,
-        urlChain: [...completed.map((hop) => hop.url.toString()), attempt.url.toString()]
-      });
-    }
-
-    const next = _nextHop(attempt.url, completed, attempt.outcome, checked, resolved);
-    if (next.isFailure()) {
-      resolved.logger.detail(`saferFetch: ${attempt.url.toString()} failed: ${next.message}`);
-      return _propagate<ISaferFetchRequest, IRawOutcome>(next);
-    }
-
-    completed.push({
-      url: attempt.url,
-      status: attempt.outcome.status,
-      ...(attempt.connectedAddress !== undefined ? { connectedAddress: attempt.connectedAddress } : {})
+/**
+ * Ends the walk on a final response, or derives the next hop from a redirect and walks it.
+ *
+ * @param checked - The request this hop actually sent. The next hop's headers are derived from it,
+ * never from the caller's original set, which is what keeps credential stripping monotonic.
+ * @param attempt - This hop's completed attempt.
+ * @param completed - Hops before this one, oldest first.
+ */
+async function _settleHop<T>(
+  checked: ISaferFetchRequest,
+  attempt: IAttempt<T>,
+  completed: ReadonlyArray<ICompletedHop>,
+  context: IWalkContext<T>
+): Promise<Outcome<IWalked<T>>> {
+  const { outcome } = attempt;
+  if (outcome.kind === 'final') {
+    return _succeed({
+      value: outcome.value,
+      urlChain: [...completed.map((hop) => hop.url.toString()), attempt.url.toString()]
     });
-    request = next.value;
   }
+
+  const { resolved } = context;
+  return _logFailure(
+    resolved.logger,
+    attempt.url,
+    _nextHop(attempt.url, completed, outcome, checked, resolved)
+  ).thenOnSuccess(async (next) =>
+    _walkHop(
+      next,
+      [
+        ...completed,
+        {
+          url: attempt.url,
+          status: outcome.status,
+          ...(attempt.connectedAddress !== undefined ? { connectedAddress: attempt.connectedAddress } : {})
+        }
+      ],
+      context
+    )
+  );
+}
+
+/** Logs a hop's failure, naming the URL it was for, and passes the outcome on unchanged. */
+function _logFailure<T>(logger: Logging.ILogger, url: URL, outcome: Outcome<T>): Outcome<T> {
+  if (outcome.isFailure()) {
+    logger.detail(`saferFetch: ${url.toString()} failed: ${outcome.message}`);
+  }
+  return outcome;
 }
 
 /**
@@ -938,7 +1165,6 @@ function _retryDelayMs(
 async function _runAttempt(
   url: URL,
   guards: IResolvedGuards,
-  options: ISaferFetchOptions,
   resolved: IResolvedCallOptions,
   watch: DeadlineWatch,
   attempt: number
@@ -947,7 +1173,12 @@ async function _runAttempt(
   // attempt's `Retry-After` into a later decision would schedule against a response that is no
   // longer the reason we are retrying.
   const notes: IAttemptNotes = {};
-  const walked = await _walk(url, guards, options, resolved, watch, notes);
+  const walked = await _walk(url, {
+    guards,
+    resolved,
+    watch,
+    finish: _bufferedFinisher(guards, resolved, watch, notes)
+  });
   // `!isFailure()` rather than `isSuccess()`: only the former narrows to the failure branch
   // below, where `detail` is known to be present.
   if (!walked.isFailure()) {
@@ -972,56 +1203,63 @@ async function _runAttempt(
   const slept = await watch.delay(delay);
   return slept.stopped
     ? _stopped<IRawOutcome>(watch, slept.cause)
-    : _runAttempt(url, guards, options, resolved, watch, attempt + 1);
+    : _runAttempt(url, guards, resolved, watch, attempt + 1);
 }
 
 async function _execute(url: string | URL, options: ISaferFetchOptions): Promise<Outcome<IRawOutcome>> {
-  const resolvedOptions = _resolveCallOptions(options);
-  if (resolvedOptions.isFailure()) {
-    return _propagate<IResolvedCallOptions, IRawOutcome>(resolvedOptions);
-  }
-  const resolved = resolvedOptions.value;
+  // Every step up to and including the watch runs synchronously, in the caller's tick: `options`
+  // is the caller's object, and nothing reads it after the first `await`.
+  const call = _resolveCallOptions(options).onSuccess((resolved) =>
+    _asOutcome(resolveGuards(options)).onSuccess((guards) =>
+      _parseUrl(url).onSuccess((parsed) =>
+        _succeed({
+          parsed,
+          guards,
+          resolved,
+          watch: new DeadlineWatch(resolved.timeoutMs, resolved.headersTimeoutMs, options.signal)
+        })
+      )
+    )
+  );
+  // This is the single boundary where an `Outcome` becomes the caller's result, so it is the one
+  // place the every-failure-has-a-reason invariant has to hold — see {@link _withReason}.
+  return _withReason(
+    await call.thenOnSuccess(async ({ parsed, guards, resolved, watch }) =>
+      _runCall(parsed, guards, resolved, watch)
+    )
+  );
+}
 
-  const resolvedGuards = resolveGuards(options);
-  if (resolvedGuards.isFailure()) {
-    return _unknown<IRawOutcome>(resolvedGuards.message);
-  }
-  const guards = resolvedGuards.value;
-
-  const parsed = _parseUrl(url);
-  if (parsed.isFailure()) {
-    return _propagate<URL, IRawOutcome>(parsed);
-  }
-
-  const watch = new DeadlineWatch(resolved.timeoutMs, resolved.headersTimeoutMs, options.signal);
+/** Runs a validated buffered call's attempts against its watch, disposing the watch on every path. */
+async function _runCall(
+  url: URL,
+  guards: IResolvedGuards,
+  resolved: IResolvedCallOptions,
+  watch: DeadlineWatch
+): Promise<Outcome<IRawOutcome>> {
   // `captureAsyncResult` rather than `try`/`finally`, for the same reason `_capture` wraps every
   // guard and transport call: an entry point documented to always return a `Result` has to keep
-  // that promise even when a collaborator breaks its own. Nothing inside is *supposed* to throw
-  // — guards, transports and the body read are each captured already — but the caller's
-  // `logger` is collaborator code this primitive does not wrap, and a thrown diagnostic must not
-  // become the caller's problem. The watch is disposed on both paths because the capture has
-  // already converted the throw into a value.
-  const ran = await captureAsyncResult(async () =>
-    _runAttempt(parsed.value, guards, options, resolved, watch, 0)
-  );
+  // that promise even when a collaborator breaks its own. Guards, transports and the body read
+  // are each captured already, and a throw inside the walk's chain is converted by `thenOnSuccess`
+  // (see {@link _withReason}). What still reaches this capture is collaborator code outside both:
+  // the caller's `logger` on `_runAttempt`'s retry line, and a throw raised before the walk's
+  // first hand-off — a request guard's `name` getter while its hop-0 refusal is reported. The
+  // watch is disposed on both paths because the capture has already converted the throw into a
+  // value.
+  const ran = await captureAsyncResult(async () => _runAttempt(url, guards, resolved, watch, 0));
   watch.dispose();
-  return ran.isFailure()
-    ? // `'unknown'` is the taxonomy's honest slot for "something violated its contract", rather
-      // than a guess at a more specific kind.
-      _unexpected<IRawOutcome>(ran.message)
-    : // Same wrapping for a throw a `thenOnSuccess` callback caught before it could reach the
-      // capture above — see {@link _withReason}. This is the single boundary where an `Outcome`
-      // becomes the caller's result, so it is the one place the invariant has to hold.
-      _withReason(ran.value);
+  // `'unknown'` is the taxonomy's honest slot for "something violated its contract", rather than a
+  // guess at a more specific kind.
+  return ran.isFailure() ? _unexpected<IRawOutcome>(ran.message) : ran.value;
 }
 
 function _toResponse<T>(value: T, raw: IRawOutcome): ISaferFetchResponse<T> {
   return {
     value,
-    status: raw.head.status,
-    headers: raw.head.headers,
+    status: raw.value.head.status,
+    headers: raw.value.head.headers,
     urlChain: raw.urlChain,
-    bytesRead: raw.bytes.byteLength
+    bytesRead: raw.value.bytes.byteLength
   };
 }
 
@@ -1045,10 +1283,10 @@ function _parseJson<T>(text: string, parser: Converter<T | JsonValue>): Outcome<
 }
 
 function _decodeText(raw: IRawOutcome): Outcome<string> {
-  const charset = parseCharset(raw.head.contentType) ?? 'utf-8';
+  const charset = parseCharset(raw.value.head.contentType) ?? 'utf-8';
   // `fatal: true` so an unknown charset, or a byte sequence invalid in the declared one,
   // surfaces as a decode failure rather than as silent mojibake some caller treats as data.
-  const decoded = captureResult(() => new TextDecoder(charset, { fatal: true }).decode(raw.bytes));
+  const decoded = captureResult(() => new TextDecoder(charset, { fatal: true }).decode(raw.value.bytes));
   if (decoded.isFailure()) {
     return _fail<string>(
       { kind: 'decode', detail: decoded.message },
@@ -1094,7 +1332,7 @@ export async function saferFetchBytes(
   url: string | URL,
   options: ISaferFetchOptions
 ): Promise<DetailedResult<ISaferFetchResponse<Uint8Array>, FetchFailureReason>> {
-  return (await _execute(url, options)).onSuccess((raw) => _succeed(_toResponse(raw.bytes, raw)));
+  return (await _execute(url, options)).onSuccess((raw) => _succeed(_toResponse(raw.value.bytes, raw)));
 }
 
 /**
@@ -1200,5 +1438,309 @@ export async function saferFetchJson<T>(
     _decodeText(raw).onSuccess((text) =>
       _parseJson(text, parser).onSuccess((parsed) => _succeed(_toResponse(parsed, raw)))
     )
+  );
+}
+
+/** Methods a guarded fetch accepts — every {@link SaferFetch.SaferFetchMethod}. */
+const GUARDED_FETCH_METHODS: ReadonlyArray<SaferFetchMethod> = SAFER_FETCH_METHODS;
+
+/**
+ * {@link SaferFetch.ISaferFetchOptions} members a guarded fetch refuses at creation: each needs the
+ * body read or would replay a request, so accepting one silently would advertise a protection the
+ * function does not give. The per-request members are refused too — they belong on the call's
+ * `RequestInit`, and accepting them here would leave a caller believing they applied.
+ */
+const GUARDED_FETCH_REFUSED_OPTIONS: ReadonlySet<string> = new Set([
+  'timeoutMs',
+  'maxResponseBytes',
+  'responseBodyGuard',
+  'retry',
+  'method',
+  'headers',
+  'body',
+  'signal'
+]);
+
+/** A guarded fetch's validated, per-function settings: resolved once, at creation. */
+interface IPreparedGuardedFetch {
+  readonly guards: IResolvedGuards;
+  readonly redirect: IResolvedRedirectOptions;
+  readonly headersTimeoutMs: number;
+  readonly transport: IFetchTransport;
+  readonly logger: Logging.ILogger;
+}
+
+/** One guarded call's request, normalized from the fetch-shaped arguments. */
+interface IGuardedRequest {
+  readonly url: string | URL;
+  readonly method: SaferFetchMethod;
+  readonly headers: Record<string, string>;
+  readonly body: string | Uint8Array | undefined;
+}
+
+/**
+ * Re-types a plain `Result` from a collaborator as an `Outcome`: a failure becomes `'unknown'`, the
+ * taxonomy's slot for an invalid option, exactly as the buffered entry points report one.
+ */
+function _asOutcome<T>(result: Result<T>): Outcome<T> {
+  return result.isSuccess() ? _succeed(result.value) : _unknown<T>(result.message);
+}
+
+/** Refuses every option that needs the body read, would retry, or belongs on the call. */
+function _refuseUnsupportedOptions(options: IGuardedFetchOptions): Outcome<IGuardedFetchOptions> {
+  // Read off the object's own entries rather than its type: a JavaScript caller, or a spread of a
+  // buffered call's options, can carry any of these, and the type cannot see them.
+  const refused = Object.entries(options)
+    .filter(([name, value]) => value !== undefined && GUARDED_FETCH_REFUSED_OPTIONS.has(name))
+    .map(([name]) => name);
+  return refused.length > 0
+    ? _unknown<IGuardedFetchOptions>(
+        `createGuardedFetch does not support ${refused.join(', ')}: a guarded fetch never reads the ` +
+          'body, never retries, and takes per-request inputs from each call.'
+      )
+    : _succeed(options);
+}
+
+function _validHeadersTimeout(headersTimeoutMs: number): Outcome<number> {
+  if (!Number.isFinite(headersTimeoutMs) || headersTimeoutMs <= 0) {
+    return _unknown<number>(`headersTimeoutMs must be a positive finite number; got ${headersTimeoutMs}.`);
+  }
+  return headersTimeoutMs <= MAX_TIMER_DELAY_MS
+    ? _succeed(headersTimeoutMs)
+    : _unknown<number>(_overTimerMessage('headersTimeoutMs', headersTimeoutMs));
+}
+
+/** Validates a guarded fetch's options once, at creation, in the order the buffered entry points use. */
+function _prepareGuardedFetch(options: IGuardedFetchOptions): Outcome<IPreparedGuardedFetch> {
+  return _refuseUnsupportedOptions(options)
+    .onSuccess(() => _validHeadersTimeout(options.headersTimeoutMs ?? DEFAULT_HEADERS_TIMEOUT_MS))
+    .onSuccess((headersTimeoutMs) =>
+      _resolveRedirectOptions(options).onSuccess((redirect) =>
+        _asOutcome(resolveGuards(options)).onSuccess((guards) =>
+          _succeed<IPreparedGuardedFetch>({
+            guards,
+            redirect,
+            headersTimeoutMs,
+            transport: options.transport ?? platformFetchTransport,
+            logger: options.logger ?? new Logging.NoOpLogger()
+          })
+        )
+      )
+    );
+}
+
+/**
+ * Normalizes a request body to what the walk can carry: a string or a byte array.
+ *
+ * @remarks
+ * `URLSearchParams` is accepted because OAuth token requests send one (the MCP SDK's do); it is
+ * sent as its string form with the content type `fetch` would have given it, unless the caller set
+ * one. A `ReadableStream`, `FormData` or `Blob` is refused: the walk may have to replay the body on
+ * a `307`/`308` hop, and a stream cannot be replayed.
+ */
+function _guardedBody(
+  body: unknown,
+  headers: Record<string, string>
+): Outcome<string | Uint8Array | undefined> {
+  if (body === undefined || body === null || typeof body === 'string') {
+    return _succeed(body ?? undefined);
+  }
+  // Bytes are copied here, before the first `await`: the guards approve this copy, and a caller
+  // that mutates its buffer while they run cannot change what goes on the wire.
+  if (body instanceof Uint8Array) {
+    return _succeed(_ownBytes(body));
+  }
+  if (body instanceof ArrayBuffer) {
+    return _succeed(new Uint8Array(body.slice(0)));
+  }
+  if (body instanceof URLSearchParams) {
+    headers['content-type'] ??= 'application/x-www-form-urlencoded;charset=UTF-8';
+    return _succeed(body.toString());
+  }
+  return _unknown<string | Uint8Array | undefined>(
+    'a guarded fetch body must be a string, Uint8Array, ArrayBuffer or URLSearchParams.'
+  );
+}
+
+/** Normalizes the fetch-shaped arguments, refusing every shape the walk cannot carry faithfully. */
+function _guardedRequest(input: unknown, init: RequestInit | undefined): Outcome<IGuardedRequest> {
+  if (typeof input !== 'string' && !(input instanceof URL)) {
+    return _unknown<IGuardedRequest>(
+      'a guarded fetch takes a string or URL; a Request object is not supported.'
+    );
+  }
+
+  // Upper-cased, as `fetch` normalizes the methods it knows; anything outside the safer-fetch set is
+  // refused rather than sent.
+  const requestedMethod = String(init?.method ?? 'GET').toUpperCase();
+  const method = GUARDED_FETCH_METHODS.find((m) => m === requestedMethod);
+  if (method === undefined) {
+    return _unknown<IGuardedRequest>(
+      `method "${requestedMethod}" is not supported; expected one of ${GUARDED_FETCH_METHODS.join(', ')}.`
+    );
+  }
+
+  // `Headers` accepts every `HeadersInit` shape — a `Headers`, an array of pairs, a record — and
+  // validates names and values the way `fetch` would. It lowercases names as it goes.
+  const parsedHeaders = captureResult(() => new Headers(init?.headers ?? undefined));
+  if (parsedHeaders.isFailure()) {
+    return _unknown<IGuardedRequest>(`invalid request headers: ${parsedHeaders.message}`);
+  }
+  const headers: Record<string, string> = {};
+  parsedHeaders.value.forEach((value, name) => {
+    headers[name] = value;
+  });
+
+  return _guardedBody(init?.body, headers).onSuccess((body) =>
+    body !== undefined && METHODS_WITHOUT_BODY.includes(method)
+      ? _unknown<IGuardedRequest>(`a ${method} request cannot carry a body.`)
+      : _succeed<IGuardedRequest>({ url: input, method, headers, body })
+  );
+}
+
+/**
+ * The streaming finisher: runs the response-headers guard and hands the response back with its
+ * body unread, whatever its status.
+ */
+function _streamingFinisher(guards: IResolvedGuards, watch: DeadlineWatch): HopFinisher<Response> {
+  return async (response, head, url, chain) =>
+    (await _checkResponseHead(response, head, url, chain, guards, watch)).onSuccess(() => {
+      // Only now: the headers deadline also bounds the response-headers guard, which nothing else
+      // would on this path.
+      watch.headersReceived();
+      return _succeed(response);
+    });
+}
+
+async function _executeGuarded(
+  prepared: IPreparedGuardedFetch,
+  input: unknown,
+  init: RequestInit | undefined
+): Promise<Outcome<Response>> {
+  // First, before the request is even inspected: an aborted call starts nothing.
+  const signal = init?.signal ?? undefined;
+  if (signal?.aborted === true) {
+    return _fail<Response>({ kind: 'aborted' }, _stopMessage('caller-aborted'));
+  }
+  return _guardedRequest(input, init)
+    .onSuccess((request) => _parseUrl(request.url).onSuccess((url) => _succeed({ request, url })))
+    .thenOnSuccess(async (target) => _walkGuarded(prepared, target.request, target.url, signal));
+}
+
+/** Runs the shared hop walk for one guarded call, and hands back the final response unread. */
+async function _walkGuarded(
+  prepared: IPreparedGuardedFetch,
+  request: IGuardedRequest,
+  url: URL,
+  signal: AbortSignal | undefined
+): Promise<Outcome<Response>> {
+  // No overall deadline: the body this returns may be a stream that lives for an hour.
+  const watch = new DeadlineWatch(undefined, prepared.headersTimeoutMs, signal);
+  // Captured for the same reason as in `_runCall`: the logger is collaborator code.
+  const ran = await captureAsyncResult(async () =>
+    _walk(url, {
+      guards: prepared.guards,
+      resolved: {
+        ...prepared.redirect,
+        method: request.method,
+        headers: request.headers,
+        body: request.body,
+        transport: prepared.transport,
+        logger: prepared.logger
+      },
+      watch,
+      finish: _streamingFinisher(prepared.guards, watch),
+      finisherRetiresHeadersDeadline: true,
+      ...(signal !== undefined ? { outliving: signal } : {})
+    })
+  );
+  // Read before the watch is disposed: an abort that landed after the last guard settled has
+  // already cancelled the body through the composed signal, so the call must report it rather than
+  // hand back a response whose first read fails.
+  const stoppedBy = watch.cause;
+  // Disposed on success too: the headers timer is already cleared, and the caller's signal now
+  // reaches the body through the composed transport signal rather than through this watch.
+  watch.dispose();
+  return ran.isFailure()
+    ? _unexpected<Response>(ran.message)
+    : ran.value.onSuccess((walked) =>
+        stoppedBy === undefined ? _succeed(walked.value) : _stoppedReleasing(walked.value, watch, stoppedBy)
+      );
+}
+
+/** Reports a stop that landed after the walk returned, releasing the response it will not hand back. */
+function _stoppedReleasing(
+  response: Response,
+  watch: DeadlineWatch,
+  cause: DeadlineStopCause
+): Outcome<Response> {
+  _discardBody(response);
+  return _stopped<Response>(watch, cause);
+}
+
+/**
+ * The reason a guarded call failed.
+ *
+ * @remarks
+ * A failure from inside a chaining callback can arrive without a reason (see {@link _withReason});
+ * it gets the same `'unknown'` wrapping here, so a `GuardedFetchError` always carries one.
+ */
+function _reasonOf(failure: DetailedFailure<Response, FetchFailureReason>): FetchFailureReason {
+  return failure.detail ?? _unexpectedReason(failure.message);
+}
+
+/**
+ * Creates a `fetch`-shaped function that sends every request through the safer-fetch hop walk and
+ * returns the response **without reading its body** — for streaming responses (Server-Sent Events,
+ * MCP Streamable HTTP) and for libraries that take a `fetch`.
+ *
+ * @remarks
+ * **What it does.** Every call runs the same walk as the buffered entry points: the scheme check,
+ * the request guard, the address guard on **every** hop before any connection, the redirect policy
+ * (`'reject'` by default), loop detection, monotonic credential stripping on a cross-origin hop,
+ * and a headers deadline per hop. The response-headers guard runs on the final response's head.
+ * The final hop's platform `Response` is then returned with its body stream intact: nothing is
+ * buffered, so the first event of a stream reaches the caller as soon as the server sends it.
+ *
+ * **Cancellation.** The call's `init.signal` stops guard evaluation, the connect and a redirect
+ * walk in progress, and — once the response has been returned — the body stream. A signal that is
+ * already aborted fails the call before any guard runs. Cancelling the body after return relies on
+ * the transport honoring `RequestInit.signal` for the body, as {@link SaferFetch.platformFetchTransport}
+ * does; it needs `AbortSignal.any` (Node 20.3 or later; current browsers).
+ *
+ * **What it does not protect against** — on top of everything {@link SaferFetch.saferFetchBytes}
+ * lists, DNS rebinding included: there is **no deadline over the body**, **no size cap**, **no
+ * body guard** and **no retry**. A server can hold a returned stream open, or send it without end,
+ * for as long as the caller keeps reading; bounding that is the caller's job, typically with
+ * `init.signal`. Each of those options is refused at creation rather than ignored.
+ *
+ * **Custom credential headers.** `fetch` strips only `authorization` on a cross-origin redirect.
+ * Redirects are rejected by default; a caller who allows them must list every custom credential
+ * header (`x-api-key`, a session token) in `sensitiveHeaders`, or it is carried to the next origin.
+ *
+ * **Request inputs.** The first argument is a string or `URL` (a `Request` object is refused). The
+ * method is one of {@link SaferFetch.SaferFetchMethod}. Headers may be a `Headers`, an array of
+ * pairs or a record. The body may be a string, `Uint8Array`, `ArrayBuffer` or `URLSearchParams`; a
+ * stream or `FormData` is refused. Other `RequestInit` members (`redirect`, `credentials`, `mode`,
+ * `cache`, …) are ignored.
+ *
+ * **Failures.** The function rejects with a {@link SaferFetch.GuardedFetchError}, whose message is
+ * fixed text and whose `reason` is the `FetchFailureReason` — which holds URLs. A non-2xx response
+ * is returned, not rejected.
+ *
+ * @param options - The guards and redirect settings, validated once, here. `addressGuard` is
+ * required: use `blockPrivateNetworks()` on Node.
+ * @returns `Success` with the function, or `Failure` if an option is invalid or refused.
+ * @public
+ */
+export function createGuardedFetch(options: IGuardedFetchOptions): Result<GuardedFetch> {
+  return _prepareGuardedFetch(options).asResult.onSuccess((prepared) =>
+    succeed<GuardedFetch>(async (url: string | URL, init?: RequestInit): Promise<Response> => {
+      const outcome = await _executeGuarded(prepared, url, init);
+      if (outcome.isFailure()) {
+        throw new GuardedFetchError(_reasonOf(outcome));
+      }
+      return outcome.value;
+    })
   );
 }

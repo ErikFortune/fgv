@@ -22,7 +22,7 @@ import '@fgv/ts-utils-jest';
 
 import { AiAssist } from '../../..';
 // eslint-disable-next-line @rushstack/packlets/mechanics
-import type { IAiProviderDescriptor } from '../../../packlets/ai-assist/model';
+import type { AiModelCapability, IAiProviderDescriptor } from '../../../packlets/ai-assist/model';
 
 // ============================================================================
 // Test helpers (parallel to apiClient.test.ts; kept inline to avoid coupling)
@@ -690,6 +690,76 @@ describe('callProviderListModels', () => {
       expect(result).toSucceedAndSatisfy((models) => {
         expect(models[0].capabilities.has('chat')).toBe(true);
       });
+    });
+  });
+
+  describe('2026-09 catalog rotation — every new line is classified by the default config', () => {
+    const FULL_THINKING: ReadonlyArray<AiModelCapability> = ['chat', 'tools', 'vision', 'thinking'];
+
+    async function listWith(
+      descriptor: IAiProviderDescriptor,
+      body: unknown
+    ): Promise<Map<string, ReadonlySet<AiModelCapability>>> {
+      mockFetchResponse(body);
+      const result = await AiAssist.callProviderListModels({ descriptor, apiKey: 'test-key' });
+      return new Map(result.orThrow().map((m) => [m.id, m.capabilities]));
+    }
+
+    test('openai: gpt-6 ids get the full thinking-capable set; gpt-image-2.5 ids are image-only', async () => {
+      // No rule other than /^gpt-6/ matches a gpt-6 id, so without it these would list with no
+      // capabilities at all.
+      const byId = await listWith(
+        makeImageDescriptor(),
+        openAiListBody([
+          'gpt-6-astra',
+          'gpt-6-sol',
+          'gpt-6-luna',
+          'gpt-image-2.5-sunburst',
+          'gpt-image-2.5-flare'
+        ])
+      );
+      for (const id of ['gpt-6-astra', 'gpt-6-sol', 'gpt-6-luna']) {
+        expect([...byId.get(id)!].sort()).toEqual([...FULL_THINKING].sort());
+      }
+      for (const id of ['gpt-image-2.5-sunburst', 'gpt-image-2.5-flare']) {
+        expect([...byId.get(id)!]).toEqual(['image-generation']);
+      }
+    });
+
+    test('xai-grok: grok-4.7 and grok-4.6 keep thinking; grok-imagine-image-2.0 is image-only', async () => {
+      // Without their own rules both would hit only /^grok-4/ (chat/tools/vision, no thinking).
+      const byId = await listWith(
+        makeDescriptor(),
+        openAiListBody(['grok-4.7', 'grok-4.6', 'grok-imagine-image-2.0'])
+      );
+      for (const id of ['grok-4.7', 'grok-4.6']) {
+        expect([...byId.get(id)!].sort()).toEqual([...FULL_THINKING].sort());
+      }
+      expect([...byId.get('grok-imagine-image-2.0')!]).toEqual(['image-generation']);
+    });
+
+    test('google-gemini: gemini-3.8-flash and gemini-3.5-flash-lite are thinking-capable', async () => {
+      const byId = await listWith(
+        makeDescriptor({
+          apiFormat: 'gemini',
+          baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
+          id: 'google-gemini'
+        }),
+        geminiListBody([{ name: 'models/gemini-3.8-flash' }, { name: 'models/gemini-3.5-flash-lite' }])
+      );
+      for (const id of ['gemini-3.8-flash', 'gemini-3.5-flash-lite']) {
+        expect([...byId.get(id)!].sort()).toEqual([...FULL_THINKING].sort());
+      }
+    });
+
+    test('anthropic: claude-opus-5-5 and claude-fable-5-1 are thinking-capable', async () => {
+      const byId = await listWith(
+        makeDescriptor({ id: 'anthropic', apiFormat: 'anthropic', baseUrl: 'https://api.anthropic.com/v1' }),
+        anthropicListBody([{ id: 'claude-opus-5-5' }, { id: 'claude-fable-5-1' }])
+      );
+      for (const id of ['claude-opus-5-5', 'claude-fable-5-1']) {
+        expect([...byId.get(id)!].sort()).toEqual([...FULL_THINKING].sort());
+      }
     });
   });
 });

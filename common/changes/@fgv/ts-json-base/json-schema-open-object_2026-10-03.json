@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "comment": "BREAKING: an open JsonSchema object (additionalProperties: true, including every fromJson object without additionalProperties: false) now carries undeclared keys through as validated JsonValue instead of silently dropping them, and refuses a non-object input instead of converting it to {}. The wire schema is unchanged. MCP-adapted tools, and any consumer-registered open schema, now forward undeclared keys, so a host gate that authorizes on declared fields will see keys it did not see before. Converters.jsonObject now drops an own \"__proto__\" key instead of assigning it (which replaced the copy's prototype); own keys in the result are unchanged. Adds OpenObjectStatic and typed object() overloads for additionalProperties: true.",
+      "type": "minor",
+      "packageName": "@fgv/ts-json-base"
+    }
+  ],
+  "packageName": "@fgv/ts-json-base"
+}

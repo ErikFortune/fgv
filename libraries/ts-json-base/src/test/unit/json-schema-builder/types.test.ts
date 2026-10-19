@@ -64,6 +64,41 @@ describe('JsonSchema phantom types', () => {
     expect(schema._type).toBe('object');
   });
 
+  test('Static<S> of an open object keeps declared types and admits JSON values elsewhere', () => {
+    const properties = { query: JsonSchema.string(), limit: JsonSchema.optional(JsonSchema.number()) };
+    const schema = JsonSchema.object(properties, { additionalProperties: true });
+    type S = JsonSchema.Static<typeof schema>;
+    assertExact<S, JsonSchema.OpenObjectStatic<typeof properties>>(true);
+    assertExact<S, { query: string; limit?: number } & JsonObject>(true);
+    assertExact<S['query'], string>(true);
+    const value: S = { query: 'a', extra: { nested: [1, null] } };
+    const extra: JsonValue = value.extra;
+    expect(extra).toEqual({ nested: [1, null] });
+    // still assignable wherever the closed shape is expected
+    const closed: { query: string; limit?: number } = value;
+    expect(closed.query).toBe('a');
+    expect(schema._type).toBe('object');
+  });
+
+  test('Static<S> of a nullable open object includes null', () => {
+    const schema = JsonSchema.object(
+      { q: JsonSchema.string() },
+      { additionalProperties: true, nullable: true }
+    );
+    type S = JsonSchema.Static<typeof schema>;
+    const none: S = null;
+    const some: S = { q: 'a', other: true };
+    expect([none, some]).toHaveLength(2);
+    expect(schema.validate(null)).toSucceedWith(null);
+  });
+
+  test('Static<S> of an object with a non-literal additionalProperties stays closed-typed', () => {
+    const open: boolean = Math.random() < 2;
+    const schema = JsonSchema.object({ q: JsonSchema.string() }, { additionalProperties: open });
+    assertExact<JsonSchema.Static<typeof schema>, { q: string }>(true);
+    expect(schema._type).toBe('object');
+  });
+
   test('Static<S> derives deeply nested shapes', () => {
     const schema = JsonSchema.object({
       action: JsonSchema.enumOf(['run', 'stop'] as const),

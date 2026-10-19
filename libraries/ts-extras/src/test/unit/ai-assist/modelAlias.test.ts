@@ -321,7 +321,7 @@ describe('google-gemini Tier 2 alias migration', () => {
   const gemini = AiAssist.getProviderDescriptor('google-gemini').orThrow();
 
   test('defaultModel resolves through the aliases to the concrete 3.x ids', () => {
-    expect(AiAssist.resolveProviderModel(gemini, undefined, 'base')).toSucceedWith('gemini-3.5-flash');
+    expect(AiAssist.resolveProviderModel(gemini, undefined, 'base')).toSucceedWith('gemini-3.8-flash');
     expect(AiAssist.resolveProviderModel(gemini, undefined, 'image')).toSucceedWith('gemini-3.1-flash-image');
     expect(AiAssist.resolveProviderModel(gemini, undefined, 'embedding')).toSucceedWith(
       'gemini-embedding-001'
@@ -340,10 +340,10 @@ describe('google-gemini Tier 2 alias migration', () => {
   });
 
   test('each declared alias maps to its concrete target', () => {
-    expect(AiAssist.resolveModelAlias(gemini, '@google-gemini:flash')).toSucceedWith('gemini-3.5-flash');
+    expect(AiAssist.resolveModelAlias(gemini, '@google-gemini:flash')).toSucceedWith('gemini-3.8-flash');
     expect(AiAssist.resolveModelAlias(gemini, '@google-gemini:pro')).toSucceedWith('gemini-3.1-pro-preview');
     expect(AiAssist.resolveModelAlias(gemini, '@google-gemini:flash-lite')).toSucceedWith(
-      'gemini-3.1-flash-lite'
+      'gemini-3.5-flash-lite'
     );
     expect(AiAssist.resolveModelAlias(gemini, '@google-gemini:flash-image')).toSucceedWith(
       'gemini-3.1-flash-image'

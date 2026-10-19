@@ -28,6 +28,7 @@ import {
   Result,
   _errorMessage,
   captureAsyncResult,
+  captureResult,
   fail,
   succeed
 } from '../../packlets/base';
@@ -52,6 +53,81 @@ describe('AsyncResult module', () => {
 
     test('converts null to string', () => {
       expect(_errorMessage(null)).toBe('null');
+    });
+
+    test('coerces a non-string Error message to string', () => {
+      const err = new Error('ignored');
+      Object.defineProperty(err, 'message', { value: 42 });
+      expect(_errorMessage(err)).toBe('42');
+    });
+  });
+
+  describe('unprintable thrown values', () => {
+    const unprintableMessage = 'an error whose message could not be read';
+
+    function throwingToString(): unknown {
+      return {
+        toString(): string {
+          throw new Error('toString exploded');
+        }
+      };
+    }
+
+    function throwingMessageGetter(): Error {
+      const err = new Error('ignored');
+      Object.defineProperty(err, 'message', {
+        get(): string {
+          throw new Error('message exploded');
+        }
+      });
+      return err;
+    }
+
+    function unprintableMessageObject(): Error {
+      const err = new Error('ignored');
+      Object.defineProperty(err, 'message', { value: throwingToString() });
+      return err;
+    }
+
+    const cases: ReadonlyArray<[string, () => unknown]> = [
+      ['an object whose toString throws', throwingToString],
+      ['an object with no prototype', () => Object.create(null)],
+      ['an Error whose message getter throws', throwingMessageGetter],
+      ['an Error whose message is unprintable', unprintableMessageObject]
+    ];
+
+    test.each(cases)('_errorMessage does not throw for %s', (__desc, make) => {
+      expect(_errorMessage(make())).toBe(unprintableMessage);
+    });
+
+    test.each(cases)('captureResult yields a Failure for %s', (__desc, make) => {
+      const value = make();
+      expect(
+        captureResult(() => {
+          throw value;
+        })
+      ).toFailWith(unprintableMessage);
+    });
+
+    test.each(cases)('captureAsyncResult yields a Failure for %s', async (__desc, make) => {
+      const value = make();
+      expect(await captureAsyncResult(() => Promise.reject(value))).toFailWith(unprintableMessage);
+    });
+
+    test.each(cases)(
+      'captureAsyncResult yields a Failure when the callback throws %s',
+      async (__desc, make) => {
+        const value = make();
+        expect(
+          await captureAsyncResult(() => {
+            throw value;
+          })
+        ).toFailWith(unprintableMessage);
+      }
+    );
+
+    test.each(cases)('AsyncResult normalizes a rejection with %s to a Failure', async (__desc, make) => {
+      expect(await new AsyncResult<string>(Promise.reject(make()))).toFailWith(unprintableMessage);
     });
   });
 

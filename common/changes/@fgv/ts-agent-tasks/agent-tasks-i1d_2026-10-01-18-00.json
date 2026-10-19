@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-agent-tasks",
+      "comment": "Opt-in stop tools (I1d). createTaskTools takes an optional stops: ITaskStopToolOptions = { writer, environment, enable: StopMode[] } and offers task_stop (the writer's requestStop, for exactly the modes enabled, with a minted operation id that becomes the stop's intentId) and task_stop_inspect (the view's inspectStop); absent or empty, neither. Both return ITaskStopToolResult: the stop, counts of its visible targets by state, and one page of them (id, state, confirmed revision, violation) continued with nextAfter — never a target's command key or a capacity refusal. Releasing a stop and running the stop pump are not offered to a model. task_stop and task_stop_inspect are reserved tool names.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-agent-tasks"
+}

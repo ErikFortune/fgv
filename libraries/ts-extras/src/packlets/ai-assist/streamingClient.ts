@@ -32,10 +32,12 @@ import { fail, Result } from '@fgv/ts-utils';
 import { type IAiCacheRequest } from './cacheRequest';
 import { splitChatRequest } from './chatRequestBuilders';
 import { resolveEffectiveBaseUrl } from './endpoint';
+import { schemaWireProviderId } from './schemaKeywords';
 import {
   type IAiStreamEvent,
   type ModelSpecKey,
   isAdaptiveThinkingModel,
+  isThinkingRequiredModel,
   isResponsesOnlyModel,
   resolveProviderModel,
   usesMaxCompletionTokensField
@@ -53,7 +55,7 @@ import { callOpenAiChatStream } from './streamingAdapters/openaiChat';
 import { callOpenAiResponsesStream } from './streamingAdapters/openaiResponses';
 import {
   checkTemperatureConflict,
-  mergeThinkingConfig,
+  resolveThinkingConfig,
   providerDiscriminatorForId,
   type IResolvedThinkingConfig
 } from './thinkingOptionsResolver';
@@ -123,6 +125,7 @@ export async function callProviderCompletionStream(
     tools,
     signal,
     endpoint,
+    verifiedEndpoint,
     thinking,
     maxTokens,
     cache
@@ -160,13 +163,22 @@ export async function callProviderCompletionStream(
   let resolvedThinking: IResolvedThinkingConfig | undefined;
   if (thinking !== undefined) {
     if (discriminator !== undefined) {
-      const mergeResult = mergeThinkingConfig(thinking, model, discriminator);
-      /* c8 ignore next 3 - mergeThinkingConfig always succeeds; defensive guard */
+      const mergeResult = resolveThinkingConfig(
+        thinking,
+        model,
+        discriminator,
+        isThinkingRequiredModel(descriptor, model)
+      );
       if (mergeResult.isFailure()) {
         return fail(mergeResult.message);
       }
-      resolvedThinking = mergeResult.value;
-      const conflictResult = checkTemperatureConflict(resolvedThinking, discriminator, temperature);
+      resolvedThinking = mergeResult.value.resolved;
+      const conflictResult = checkTemperatureConflict(
+        resolvedThinking,
+        discriminator,
+        temperature,
+        mergeResult.value.noneDegraded
+      );
       if (conflictResult.isFailure()) {
         return fail(conflictResult.message);
       }
@@ -176,7 +188,9 @@ export async function callProviderCompletionStream(
   const config: IStreamApiConfig = {
     baseUrl: baseUrlResult.value,
     apiKey,
-    model
+    model,
+    // Trusted only on the provider's own endpoint — see `IAiApiConfig.providerId`.
+    providerId: schemaWireProviderId(descriptor, endpoint, verifiedEndpoint)
   };
 
   switch (descriptor.apiFormat) {

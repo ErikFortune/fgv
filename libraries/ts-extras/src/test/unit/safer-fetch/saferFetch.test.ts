@@ -414,13 +414,23 @@ describe('saferFetch entry points', () => {
         name: 'retargeting',
         check: async (request) => succeed({ ...request, url: new URL('file:///etc/passwd') })
       };
+      // Refused before the address guard is asked: no guard ever sees a scheme the core refuses.
+      const addressed: string[] = [];
+      const addressGuard: SaferFetch.IAddressGuard = {
+        name: 'recording',
+        check: async (chain) => {
+          addressed.push(chain[chain.length - 1].url.toString());
+          return succeed({ url: chain[chain.length - 1].url });
+        }
+      };
       const transport = respondWith(() => textResponse('ok'));
       await expect(
-        saferFetchText(URL_UNDER_TEST, options(transport, { requestGuard }))
+        saferFetchText(URL_UNDER_TEST, options(transport, { addressGuard, requestGuard }))
       ).resolves.toFailWithDetail(
         /scheme "file:" is not supported/i,
         expect.objectContaining({ kind: 'invalid-url' })
       );
+      expect(addressed).toEqual([]);
       expect(transport.calls).toHaveLength(0);
     });
   });
@@ -927,6 +937,32 @@ describe('saferFetch entry points', () => {
         expect(transport.calls).toHaveLength(0);
       }
     );
+
+    test.each<[string, (ms: number) => Partial<SaferFetch.ISaferFetchOptions>, RegExp]>([
+      ['timeoutMs', (ms: number) => ({ timeoutMs: ms }), /^timeoutMs must be no greater than 2147483647 ms/],
+      [
+        'headersTimeoutMs',
+        (ms: number) => ({ headersTimeoutMs: ms }),
+        /^headersTimeoutMs must be no greater than 2147483647 ms/
+      ]
+    ])(
+      'bounds %s by what a timer honours: 2147483647 is accepted, 2147483648 refused',
+      async (
+        __name: string,
+        withDelay: (ms: number) => Partial<SaferFetch.ISaferFetchOptions>,
+        expected: RegExp
+      ) => {
+        const transport = respondWith(() => textResponse('ok'));
+        await expect(
+          saferFetchText(URL_UNDER_TEST, options(transport, withDelay(2147483647)))
+        ).resolves.toSucceed();
+        expect(transport.calls).toHaveLength(1);
+        await expect(
+          saferFetchText(URL_UNDER_TEST, options(transport, withDelay(2147483648)))
+        ).resolves.toFailWithDetail(expected, expect.objectContaining({ kind: 'unknown' }));
+        expect(transport.calls).toHaveLength(1);
+      }
+    );
   });
 
   describe('failure taxonomy invariant', () => {
@@ -974,6 +1010,25 @@ describe('saferFetch entry points', () => {
         /saferFetch: unexpected error: internal boom/,
         expect.objectContaining({ kind: 'unknown' })
       );
+    });
+
+    test('a request guard whose name throws while its refusal is reported is contained as `unknown`', async () => {
+      // A collaborator's getter read outside any capture: the walk itself rejects, and the call's
+      // top-level capture is what turns that into a result. Nothing is sent.
+      const requestGuard: SaferFetch.IRequestGuard = {
+        get name(): string {
+          throw new Error('name boom');
+        },
+        check: async (): Promise<Result<SaferFetch.ISaferFetchRequest>> => fail('refused')
+      };
+      const transport = respondWith(() => textResponse('ok'));
+      await expect(
+        saferFetchText(URL_UNDER_TEST, options(transport, { requestGuard }))
+      ).resolves.toFailWithDetail(/saferFetch: unexpected error: name boom/, {
+        kind: 'unknown',
+        detail: 'saferFetch: unexpected error: name boom'
+      });
+      expect(transport.calls).toHaveLength(0);
     });
   });
 

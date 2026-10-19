@@ -103,10 +103,10 @@ function addDeletionsAsNull(deleted: JsonValue, delta: Record<string, JsonValue>
   if (isJsonObject(deleted)) {
     const deletedObj = deleted as Record<string, JsonValue>;
     for (const key in deletedObj) {
-      if (deletedObj.hasOwnProperty(key)) {
+      if (Object.prototype.hasOwnProperty.call(deletedObj, key)) {
         // If this key already exists in delta (from onlyInB), it means the property
         // was modified, not deleted, so don't override with null
-        if (!(key in delta)) {
+        if (!Object.prototype.hasOwnProperty.call(delta, key)) {
           delta[key] = null;
         }
       }

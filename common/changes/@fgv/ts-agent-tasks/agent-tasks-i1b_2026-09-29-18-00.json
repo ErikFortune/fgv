@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-agent-tasks",
+      "comment": "Opt-in mutation tools (I1b): createTaskTools accepts mutations: { writer, environment, enable } (ITaskMutationToolOptions, TaskMutationToolGroup 'tracked' | 'reassign', allTaskMutationToolGroups) and then also builds task_create, task_update (tracked) and task_reassign (reassign) over the same binding, which must be the view itself. Without it the tools are still exactly task_query and task_inspect. Opting in authorizes nothing: every call is authorized by the writer's policy when it runs. The tool mints every operation id and a new task's id; closed schemas refuse a model-supplied one, and any scope, binding, lifecycle, stop policy or attention field. A writer's receipt is strictly converted and must be for the task, operation and revision asked about; the model is told only { taskId, revision, disposition } (ITaskMutationToolResult). task_inspect now returns the revision it read (ITaskInspectResolvedToolResult.revision), which a change passes back as expectedRevision. Model-facing descriptions for not-found-or-denied, conflict and commit-indeterminate are reworded; a writer that throws, rejects or answers malformed reports an unknown outcome.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-agent-tasks"
+}

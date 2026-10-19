@@ -27,18 +27,20 @@
  * @packageDocumentation
  */
 
-import { type Result, succeed } from '@fgv/ts-utils';
+import { type DetailedResult, type Result, succeed, succeedWithDetail } from '@fgv/ts-utils';
 import { AiAssist } from '@fgv/ts-extras';
-import { Converters, JsonSchema, type JsonValue } from '@fgv/ts-json-base';
+import { Converters, JsonSchema } from '@fgv/ts-json-base';
 
 import {
   type IAdaptMcpToolsOptions,
   type IAdaptMcpToolsResult,
   type IMcpSession,
   type IMcpSkippedTool,
-  type IMcpToolDescriptor
+  type IMcpToolDescriptor,
+  type McpFailureReason
 } from './model';
 import { callMcpTool, listMcpTools } from './operations';
+import { printable } from './request';
 
 /**
  * Per-tool adaptation outcome: either an adapted client tool, or a structurally-surfaced skip.
@@ -52,47 +54,61 @@ type IAdaptOutcome =
  * Builds the `execute` callback for an adapted MCP tool. Args arrive already validated against
  * the tool's `parametersSchema` by `executeClientToolTurn`; here we narrow to a `JsonObject`
  * (MCP arguments are always an object) and forward to {@link callMcpTool}, returning the
- * projected text content. A tool error surfaces as a `Failure` (never swallowed).
+ * projected text content. A tool error surfaces as a `Failure` (never swallowed). The turn's
+ * abort signal, when it has one, is forwarded so that cancelling the turn cancels the MCP request.
  */
-function _makeExecute(session: IMcpSession, name: string): (args: unknown) => Promise<Result<unknown>> {
-  return async (args: unknown): Promise<Result<unknown>> => {
+function _makeExecute(
+  session: IMcpSession,
+  name: string
+): (args: unknown, context?: AiAssist.IAiClientToolExecuteContext) => Promise<Result<unknown>> {
+  return async (args: unknown, context?: AiAssist.IAiClientToolExecuteContext): Promise<Result<unknown>> => {
     const objResult = Converters.jsonObject
       .convert(args)
       .withErrorFormat((msg) => `tool '${name}': arguments must be a JSON object: ${msg}`);
     if (objResult.isFailure()) {
       return objResult;
     }
-    return (await callMcpTool(session, name, objResult.value)).onSuccess((called) => succeed(called.content));
+    const signal = context?.signal;
+    return (
+      await callMcpTool(session, name, objResult.value, signal !== undefined ? { signal } : undefined)
+    ).onSuccess((called) => succeedWithDetail<unknown, McpFailureReason>(called.content));
   };
 }
 
 /**
  * Adapts a single discovered tool. Returns a `skipped` outcome (never a failure) when the
- * tool's `inputSchema` is not a JSON object or is outside the `JsonSchema.fromJson` subset.
+ * tool's `inputSchema` is not a JSON object, is outside the `JsonSchema.fromJson` subset, or
+ * cannot be carried by the target wire (`schemaKeywords`).
  */
-function _adaptOne(session: IMcpSession, descriptor: IMcpToolDescriptor): IAdaptOutcome {
+function _adaptOne(
+  session: IMcpSession,
+  descriptor: IMcpToolDescriptor,
+  schemaKeywords: JsonSchema.SchemaKeywordCapabilities,
+  fromJsonOptions: JsonSchema.IFromJsonOptions
+): IAdaptOutcome {
   const { name, description, inputSchema, annotations } = descriptor;
 
-  const skip = (reason: string, schema: JsonValue): IAdaptOutcome => ({
-    kind: 'skipped',
-    skipped: { name, reason, schema }
-  });
-
-  const asObject = Converters.jsonObject.convert(inputSchema);
-  if (asObject.isFailure()) {
-    return skip(`inputSchema is not a JSON object (${asObject.message})`, inputSchema);
-  }
-
-  const schemaResult = JsonSchema.fromJson(asObject.value);
-  if (schemaResult.isFailure()) {
-    return skip(schemaResult.message, inputSchema);
+  const parsed = Converters.jsonObject
+    .convert(inputSchema)
+    .withErrorFormat((msg) => `inputSchema is not a JSON object (${msg})`)
+    .onSuccess((asObject) => JsonSchema.fromJson(asObject, fromJsonOptions))
+    .onSuccess((schema) =>
+      // Admission only: the target wire must be able to carry the schema, or one such tool would
+      // fail every request it rides on. The adapted result is discarded — the request path adapts
+      // the schema itself, once, when it is sent.
+      JsonSchema.adaptSchemaKeywords(schema.toJson(), schemaKeywords)
+        .withErrorFormat((msg) => `not sendable on the target wire: ${msg}`)
+        .onSuccess(() => succeed(schema))
+    );
+  if (parsed.isFailure()) {
+    return { kind: 'skipped', skipped: { name, reason: parsed.message, schema: inputSchema } };
   }
 
   const config: AiAssist.IAiClientToolConfig = {
     type: 'client_tool',
     name,
     description: description ?? name,
-    parametersSchema: schemaResult.value,
+    parametersSchema: parsed.value,
     // IMcpToolAnnotations maps 1:1 onto AiAssist.IAiToolAnnotations. Only set the field when the
     // server provided usable annotations, so a tool without them stays exactly as before.
     ...(annotations !== undefined ? { annotations } : {})
@@ -118,38 +134,56 @@ function _adaptOne(session: IMcpSession, descriptor: IMcpToolDescriptor): IAdapt
  *    supplied — so pointing this at a new server immediately reveals every subset feature to
  *    extend, with the schema in hand.
  *
+ * A tool is also skipped, the same way, when the wire it will be sent on cannot carry its schema
+ * (see {@link IAdaptMcpToolsOptions.schemaKeywords}; the default table is conservative and skips
+ * a tool with an untyped `{}` parameter).
+ *
+ * A tool whose schema uses `pattern` is skipped unless {@link IAdaptMcpToolsOptions.patternValidator}
+ * is supplied: a server's pattern is never compiled by this package.
+ *
  * The whole catalog never fails on a single bad schema; the only failure mode is an upstream
  * `listMcpTools` error.
  *
  * @param session - A connected session from `connectMcpSession`.
- * @param options - Optional logger for the NOISY skip warnings.
- * @returns `Success` with `{ tools, skipped }`, or `Failure` only if tool discovery fails.
+ * @param options - Optional logger for the NOISY skip warnings, and the target wire's keyword table.
+ * @returns `Success` with `{ tools, skipped }`, or `Failure` only if tool discovery fails, with the
+ * discovery failure's {@link McpFailureReason} as its detail.
  * @public
  */
 export async function adaptMcpTools(
   session: IMcpSession,
   options?: IAdaptMcpToolsOptions
-): Promise<Result<IAdaptMcpToolsResult>> {
+): Promise<DetailedResult<IAdaptMcpToolsResult, McpFailureReason>> {
   return (await listMcpTools(session))
     .onSuccess((descriptors) => {
       const tools: AiAssist.IAiClientTool[] = [];
       const skipped: IMcpSkippedTool[] = [];
 
       for (const descriptor of descriptors) {
-        const outcome = _adaptOne(session, descriptor);
+        const outcome = _adaptOne(
+          session,
+          descriptor,
+          options?.schemaKeywords ?? JsonSchema.unverifiedWireSchemaKeywords,
+          options?.patternValidator !== undefined ? { patternValidator: options.patternValidator } : {}
+        );
         if (outcome.kind === 'tool') {
           tools.push(outcome.tool);
         } else {
           skipped.push(outcome.skipped);
+          // The skip warning carries server-supplied text (the tool name, and the raw schema, whose
+          // `JSON.stringify` form still leaves DEL, C1 and U+2028/U+2029 raw); the structured
+          // `skipped` record is left as the server sent it.
           options?.logger?.warn(
-            `mcp: skipping tool '${outcome.skipped.name}': inputSchema is outside the supported ` +
-              `JSON Schema subset: ${outcome.skipped.reason}. ` +
-              `Raw schema: ${JSON.stringify(outcome.skipped.schema)}`
+            printable(
+              `mcp: skipping tool '${outcome.skipped.name}': inputSchema cannot be adapted: ` +
+                `${outcome.skipped.reason}. ` +
+                `Raw schema: ${JSON.stringify(outcome.skipped.schema)}`
+            )
           );
         }
       }
 
-      return succeed<IAdaptMcpToolsResult>({ tools, skipped });
+      return succeedWithDetail<IAdaptMcpToolsResult, McpFailureReason>({ tools, skipped });
     })
     .withErrorFormat((msg) => `adaptMcpTools: ${msg}`);
 }

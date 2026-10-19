@@ -99,6 +99,14 @@ export const SUPPORTED_SCHEMES: ReadonlyArray<string> = ['http:', 'https:'];
 export const DEFAULT_RETRY_BASE_DELAY_MS: number = 250;
 
 /**
+ * The largest delay `setTimeout` honours (2³¹−1 ms). Node fires a larger delay after 1 ms instead,
+ * so every timeout and delay option that reaches a timer is refused above it rather than turned
+ * into an immediate timeout. The same bound as `@fgv/ts-extras-mcp`'s `MAX_TIMEOUT_MS`.
+ * @internal
+ */
+export const MAX_TIMER_DELAY_MS: number = 2147483647;
+
+/**
  * Default ceiling on a single {@link SaferFetch.IRetryPolicy | retry} delay, in milliseconds.
  *
  * @remarks

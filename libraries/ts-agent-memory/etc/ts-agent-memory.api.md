@@ -219,7 +219,7 @@ export interface ICreateMemoryToolsParams {
     readonly defaultCodec?: IIdentityCodec;
     readonly handleFor?: (record: IMemoryRecord<unknown>) => string;
     readonly kinds?: ReadonlyArray<Kind>;
-    readonly projectItem?: (record: IMemoryRecord<unknown>, detail: MemoryDetailTier) => IMemoryToolResultItem;
+    readonly projectItem?: (record: IMemoryRecord<unknown>, detail: MemoryDetailTier) => IMemoryToolItemProjection;
     readonly registry: IBodyConverterRegistry;
     readonly retriever: IMemoryRetriever;
     readonly store: IMemoryStore;
@@ -305,6 +305,7 @@ export interface IFileTreeMemoryStoreCreateParams {
     readonly rankProjectors?: ReadonlyMap<Kind, RankProjector>;
     readonly registry: IBodyConverterRegistry;
     readonly root: FileTree.IMutableFileTreeDirectoryItem;
+    readonly scopeDecoding?: (encoded: string) => Result<MemoryScopeKey>;
     readonly scopeEncoding?: (scope: MemoryScopeKey) => Result<string>;
     readonly vectorIndex?: IVectorIndex;
     readonly writePolicies?: ReadonlyMap<Kind, IWritePolicy>;
@@ -638,7 +639,7 @@ export interface IMemoryStoreListFilter {
 }
 
 // @public
-export interface IMemoryToolResultItem {
+export interface IMemoryToolItemProjection {
     readonly body: unknown;
     readonly entityId: EntityId;
     readonly handle: string;
@@ -647,11 +648,18 @@ export interface IMemoryToolResultItem {
 }
 
 // @public
+export interface IMemoryToolResultItem extends IMemoryToolItemProjection {
+    readonly id: MemoryId;
+    readonly scope: MemoryScopeKey;
+}
+
+// @public
 export interface IMemoryWriteResult {
     readonly entityId: EntityId;
     readonly id: MemoryId;
     readonly kind: Kind;
     readonly outcome: MemoryWriteOutcome;
+    readonly scope: MemoryScopeKey;
 }
 
 // @public
@@ -742,6 +750,11 @@ export interface IScopedMemoryRecord {
 }
 
 // @public
+export interface IScoreUnionMergeStrategyCreateParams {
+    readonly identityResolver: IIdentityResolver;
+}
+
+// @public
 export interface ISemanticBackend {
     readonly embedQuery: QueryEmbedder;
     readonly vectorIndex: IVectorIndex;
@@ -756,7 +769,7 @@ export interface ISemanticRetrieverCreateParams extends IRetrieverCreateParams {
 export interface ISkippedRecord {
     readonly error: string;
     readonly path: string;
-    readonly scope: MemoryScopeKey;
+    readonly scope?: MemoryScopeKey;
 }
 
 // @public
@@ -1059,8 +1072,11 @@ export function scanEveryRecord(options?: {
 }): IWholeVaultScan;
 
 // @public
+export function scopedAddressOf(record: IMemoryRecord<unknown>, resolver: IIdentityResolver): Result<IEdgeTarget>;
+
+// @public
 export class ScoreUnionMergeStrategy implements IMergeStrategy {
-    static create(): Result<ScoreUnionMergeStrategy>;
+    static create(params: IScoreUnionMergeStrategyCreateParams): Result<ScoreUnionMergeStrategy>;
     merge(resultSets: ReadonlyArray<ReadonlyArray<IMemoryRecord<unknown>>>): Result<ReadonlyArray<IMemoryRecord<unknown>>>;
 }
 

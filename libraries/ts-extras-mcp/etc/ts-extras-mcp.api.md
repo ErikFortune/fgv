@@ -5,22 +5,29 @@
 ```ts
 
 import { AiAssist } from '@fgv/ts-extras';
+import { DetailedResult } from '@fgv/ts-utils';
 import { JsonObject } from '@fgv/ts-json-base';
+import { JsonSchema } from '@fgv/ts-json-base';
 import { JsonValue } from '@fgv/ts-json-base';
 import { Logging } from '@fgv/ts-utils';
+import { OAuthClientProvider } from '@modelcontextprotocol/sdk/client/auth.js';
 import { Result } from '@fgv/ts-utils';
+import { SaferFetch } from '@fgv/ts-extras';
 
 // @public
-export function adaptMcpTools(session: IMcpSession, options?: IAdaptMcpToolsOptions): Promise<Result<IAdaptMcpToolsResult>>;
+export function adaptMcpTools(session: IMcpSession, options?: IAdaptMcpToolsOptions): Promise<DetailedResult<IAdaptMcpToolsResult, McpFailureReason>>;
 
 // @public
-export function callMcpTool(session: IMcpSession, name: string, args: JsonObject): Promise<Result<IMcpToolCallResult>>;
+export function callMcpTool(session: IMcpSession, name: string, args: JsonObject, options?: IMcpCallToolOptions): Promise<DetailedResult<IMcpToolCallResult, McpFailureReason>>;
 
 // @public
 export function closeMcpSession(session: IMcpSession): Promise<Result<true>>;
 
 // @public
-export function connectMcpSession(params: IConnectMcpSessionParams): Promise<Result<IMcpSession>>;
+export function connectMcpSession(params: IConnectMcpSessionParams): Promise<DetailedResult<IMcpSession, McpFailureReason>>;
+
+// @public
+export function createCustomTransport(transport: IMcpSdkTransport): Result<IMcpTransport>;
 
 // @public
 export function createHttpTransport(params: IMcpHttpTransportParams): Result<IMcpTransport>;
@@ -31,6 +38,8 @@ export function createStdioTransport(params: IMcpStdioTransportParams): Result<I
 // @public
 export interface IAdaptMcpToolsOptions {
     readonly logger?: Logging.ILogger;
+    readonly patternValidator?: JsonSchema.SchemaPatternValidator;
+    readonly schemaKeywords?: JsonSchema.SchemaKeywordCapabilities;
 }
 
 // @public
@@ -44,13 +53,99 @@ export interface IConnectMcpSessionParams {
     readonly clientName?: string;
     readonly clientVersion?: string;
     readonly logger?: Logging.ILogger;
+    readonly onClose?: () => void | Promise<void>;
+    readonly onToolsChanged?: () => void | Promise<void>;
+    readonly signal?: AbortSignal;
+    readonly timeoutMs?: number;
     readonly transport: IMcpTransport;
 }
 
 // @public
+export interface IMcpAudioBlock {
+    readonly byteLength: number;
+    readonly data?: string;
+    readonly mimeType?: string;
+    // (undocumented)
+    readonly type: 'audio';
+}
+
+// @public
+export interface IMcpCallToolOptions extends IMcpRequestOptions {
+    readonly includeMediaData?: boolean;
+}
+
+// @public
+export interface IMcpEmbeddedBlobResourceBlock {
+    readonly byteLength: number;
+    readonly data?: string;
+    readonly mimeType?: string;
+    // (undocumented)
+    readonly type: 'resource';
+    readonly uri?: string;
+}
+
+// @public
+export interface IMcpEmbeddedTextResourceBlock {
+    readonly mimeType?: string;
+    readonly text: string;
+    // (undocumented)
+    readonly type: 'resource';
+    readonly uri?: string;
+}
+
+// @public
 export interface IMcpHttpTransportParams {
+    readonly authProvider?: McpOAuthClientProvider;
+    readonly fetch?: McpFetch;
     readonly headers?: Record<string, string>;
     readonly url: string;
+}
+
+// @public
+export interface IMcpImageBlock {
+    readonly byteLength: number;
+    readonly data?: string;
+    readonly mimeType?: string;
+    // (undocumented)
+    readonly type: 'image';
+}
+
+// @public
+export interface IMcpProgress {
+    readonly message?: string;
+    readonly progress: number;
+    readonly total?: number;
+}
+
+// @public
+export interface IMcpRequestOptions {
+    readonly maxTotalTimeoutMs?: number;
+    readonly onProgress?: (progress: IMcpProgress) => void;
+    readonly resetTimeoutOnProgress?: boolean;
+    readonly signal?: AbortSignal;
+    readonly timeoutMs?: number;
+}
+
+// @public
+export interface IMcpResourceLinkBlock {
+    readonly description?: string;
+    readonly mimeType?: string;
+    readonly name?: string;
+    readonly title?: string;
+    // (undocumented)
+    readonly type: 'resource_link';
+    readonly uri: string;
+}
+
+// @public
+export interface IMcpSdkTransport {
+    close(): Promise<void>;
+    onclose?(): void;
+    onerror?(error: Error): void;
+    onmessage?(message: unknown, extra?: unknown): void;
+    send(message: unknown, options?: unknown): Promise<void>;
+    readonly sessionId?: string;
+    start(): Promise<void>;
 }
 
 // @public
@@ -82,6 +177,13 @@ export interface IMcpStdioTransportParams {
 }
 
 // @public
+export interface IMcpTextBlock {
+    readonly text: string;
+    // (undocumented)
+    readonly type: 'text';
+}
+
+// @public
 export interface IMcpToolAnnotations {
     readonly destructiveHint?: boolean;
     readonly idempotentHint?: boolean;
@@ -92,7 +194,9 @@ export interface IMcpToolAnnotations {
 
 // @public
 export interface IMcpToolCallResult {
+    readonly blocks: ReadonlyArray<McpContentBlock>;
     readonly content: string;
+    readonly structuredContent?: JsonValue;
 }
 
 // @public
@@ -101,14 +205,79 @@ export interface IMcpToolDescriptor {
     readonly description: string | undefined;
     readonly inputSchema: JsonValue;
     readonly name: string;
+    readonly outputSchema?: JsonValue;
+    readonly title?: string;
 }
 
 // @public
 export interface IMcpTransport {
-    readonly transportKind: 'stdio' | 'http';
+    readonly transportKind: McpTransportKind;
 }
 
 // @public
-export function listMcpTools(session: IMcpSession): Promise<Result<ReadonlyArray<IMcpToolDescriptor>>>;
+export interface IMcpUnknownBlock {
+    readonly blockType?: string;
+    // (undocumented)
+    readonly type: 'unknown';
+}
+
+// @public
+export function listMcpTools(session: IMcpSession, options?: IMcpRequestOptions): Promise<DetailedResult<ReadonlyArray<IMcpToolDescriptor>, McpFailureReason>>;
+
+// @public
+export type McpContentBlock = IMcpTextBlock | IMcpResourceLinkBlock | IMcpEmbeddedTextResourceBlock | IMcpEmbeddedBlobResourceBlock | IMcpImageBlock | IMcpAudioBlock | IMcpUnknownBlock;
+
+// @public
+export type McpFailureReason = {
+    readonly kind: 'tool-error';
+} | {
+    readonly kind: 'timeout';
+} | {
+    readonly kind: 'aborted';
+} | {
+    readonly kind: 'not-connected';
+} | {
+    readonly kind: 'session-expired';
+}
+/**
+* `status` is the HTTP status, when the refusal came as one. `resourceMetadataUrl` is the
+* `resource_metadata` URL from the endpoint's most recent `WWW-Authenticate` challenge, present
+* only when it was a valid `http:`/`https:` URL on one printable line. It is chosen by the server
+* and may come from an earlier challenge than the one that failed this operation: fetch it only
+* through the same guarded `fetch` as the transport.
+*/
+| {
+    readonly kind: 'unauthorized';
+    readonly status?: number;
+    readonly resourceMetadataUrl?: string;
+}
+/** `reason` is the kind of the guarded fetch's `FetchFailureReason`; its URL-bearing payload is never carried. */
+| {
+    readonly kind: 'egress-blocked';
+    readonly reason: SaferFetch.FetchFailureKind;
+}
+/** `code` is the JSON-RPC error code, when the failure carried one. */
+| {
+    readonly kind: 'protocol';
+    readonly code?: number;
+}
+/** `status` is the HTTP status, when the failure came as one. */
+| {
+    readonly kind: 'transport';
+    readonly status?: number;
+} | {
+    readonly kind: 'invalid-handle';
+} | {
+    readonly kind: 'invalid-options';
+};
+
+// @public
+export type McpFetch = (url: string | URL, init?: RequestInit) => Promise<Response>;
+
+// @public
+export type McpOAuthClientProvider = OAuthClientProvider;
+
+// @public
+export type McpTransportKind = 'stdio' | 'http' | 'custom';
 
 ```

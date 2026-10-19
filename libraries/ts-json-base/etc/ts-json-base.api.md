@@ -11,9 +11,13 @@ import { DetailedResult } from '@fgv/ts-utils';
 import { ObjectConverter as ObjectConverter_2 } from '@fgv/ts-utils';
 import { Result } from '@fgv/ts-utils';
 import { StringConverter } from '@fgv/ts-utils';
+import { StringOneOf } from '@fgv/ts-utils';
 import { Validation } from '@fgv/ts-utils';
 import { Validator } from '@fgv/ts-utils';
 import { Validators as Validators_3 } from '@fgv/ts-utils';
+
+// @public
+function adaptSchemaKeywords(schema: JsonValue, capabilities: SchemaKeywordCapabilities): Result<JsonValue>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -28,12 +32,17 @@ type AnyFileTreeDirectoryItem<TCT extends string = string> = IFileTreeDirectoryI
 type AnyFileTreeFileItem<TCT extends string = string> = IFileTreeFileItem<TCT> | IMutableFileTreeFileItem<TCT>;
 
 // @public
-function array<S extends ISchemaValidator<unknown>>(items: S, opts: ISchemaOptions & {
-    nullable: true;
-}): ISchemaValidator<Static<S>[] | null>;
+function anyValue(opts?: PlainAnySchemaOptions | ValidatedSchemaOptions<IAnySchemaOptions>): ISchemaValidator<JsonValue>;
 
 // @public
-function array<S extends ISchemaValidator<unknown>>(items: S, opts?: ISchemaOptions): ISchemaValidator<Static<S>[]>;
+function array<S extends ISchemaValidator<unknown>>(items: S, opts: (PlainSchemaOptions & {
+    nullable: true;
+}) | ValidatedSchemaOptions<{
+    nullable: true;
+}>): ISchemaValidator<Static<S>[] | null>;
+
+// @public
+function array<S extends ISchemaValidator<unknown>>(items: S, opts?: PlainSchemaOptions | ValidatedSchemaOptions): ISchemaValidator<Static<S>[]>;
 
 // @public
 type ArrayConverter<T, TC = unknown> = Converter<JsonCompatibleType<T>[], TC>;
@@ -63,15 +72,25 @@ type AtomicWriteGuarantee = 'session' | 'process-crash' | 'os-crash' | 'power-lo
 const boolean: Converter<boolean, IJsonConverterContext>;
 
 // @public
-function boolean_2(opts: ISchemaOptions & {
+function boolean_2(opts: (PlainSchemaOptions & {
     nullable: true;
-}): ISchemaValidator<boolean | null>;
+}) | ValidatedSchemaOptions<{
+    nullable: true;
+}>): ISchemaValidator<boolean | null>;
 
 // @public
-function boolean_2(opts?: ISchemaOptions): ISchemaValidator<boolean>;
+function boolean_2(opts?: PlainSchemaOptions | ValidatedSchemaOptions): ISchemaValidator<boolean>;
 
 // @public
 const boolean_3: Validator<boolean, IJsonValidatorContext>;
+
+// @public
+function booleanEnumOf<T extends boolean>(values: readonly T[], opts: ISchemaOptions & {
+    nullable: true;
+}): Result<ISchemaValidator<T | null>>;
+
+// @public
+function booleanEnumOf<T extends boolean>(values: readonly T[], opts?: ISchemaOptions): Result<ISchemaValidator<T>>;
 
 // @public
 export function classifyJsonValue(from: unknown): Result<JsonValueType>;
@@ -242,12 +261,14 @@ function enumeratedValue<T>(values: ReadonlyArray<T>, message?: string): Convert
 function enumeratedValue_2<T>(values: ReadonlyArray<T>, message?: string): Validator<T, IJsonValidatorContext | ReadonlyArray<T>>;
 
 // @public
-function enumOf<T extends string>(values: readonly T[], opts: ISchemaOptions & {
+function enumOf<T extends string>(values: readonly T[], opts: (PlainSchemaOptions & {
     nullable: true;
-}): ISchemaValidator<T | null>;
+}) | ValidatedSchemaOptions<{
+    nullable: true;
+}>): ISchemaValidator<T | null>;
 
 // @public
-function enumOf<T extends string>(values: readonly T[], opts?: ISchemaOptions): ISchemaValidator<T>;
+function enumOf<T extends string>(values: readonly T[], opts?: PlainSchemaOptions | ValidatedSchemaOptions): ISchemaValidator<T>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -412,6 +433,9 @@ type FileTreeItem<TCT extends string = string> = IFileTreeFileItem<TCT> | IFileT
 // @public
 type FileTreeItemType = 'directory' | 'file';
 
+// @public
+function foldedKeywordsText(folded: ReadonlyArray<readonly [SchemaFoldedKeyword, JsonValue]>): string;
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -426,7 +450,7 @@ function forFilesystem<TCT extends string = string>(prefix?: string): Result<Fil
 function forFilesystem<TCT extends string = string>(params?: IFileTreeInitParams<TCT>): Result<FileTree_2<TCT>>;
 
 // @public
-function fromJson(json: JsonObject): Result<ISchemaValidator<JsonValue>>;
+function fromJson(json: JsonObject, options?: IFromJsonOptions): Result<ISchemaValidator<JsonValue>>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -478,6 +502,9 @@ class FsFileTreeAccessors<TCT extends string = string> implements IMutableBinary
     // (undocumented)
     writeFileAtomically(filePath: string, contents: string, options: IAtomicWriteOptions): DetailedResult<IAtomicWriteReceipt, IAtomicWriteFailure>;
 }
+
+// @public
+type IAnySchemaOptions = Omit<ISchemaOptions, 'nullable'>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -643,6 +670,17 @@ interface IFileTreeInitParams<TCT extends string = string> {
 interface IFilterSpec {
     exclude?: (string | RegExp)[];
     include?: (string | RegExp)[];
+}
+
+// @public
+interface IFromJsonOptions {
+    readonly patternValidator?: SchemaPatternValidator;
+}
+
+// @internal
+interface IHeldPattern {
+    readonly matches: (value: string) => Result<boolean>;
+    readonly source: string;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -858,15 +896,33 @@ class InMemoryTreeAccessors<TCT extends string = string> implements IMutableFile
 }
 
 // @public
-function integer(opts: INumberSchemaOptions & {
+function integer(opts: (PlainNumberSchemaOptions & {
     nullable: true;
-}): ISchemaValidator<number | null>;
+}) | ValidatedIntegerOptions<{
+    nullable: true;
+}>): ISchemaValidator<number | null>;
 
 // @public
-function integer(opts?: INumberSchemaOptions): ISchemaValidator<number>;
+function integer(opts?: PlainNumberSchemaOptions | ValidatedIntegerOptions): ISchemaValidator<number>;
+
+// @public
+function integerEnumOf<T extends number>(values: readonly T[], opts: ISchemaOptions & {
+    nullable: true;
+}): Result<ISchemaValidator<T | null>>;
+
+// @public
+function integerEnumOf<T extends number>(values: readonly T[], opts?: ISchemaOptions): Result<ISchemaValidator<T>>;
+
+// @public
+function integerOptions<T extends INumberSchemaOptions>(opts: T & Record<Exclude<keyof T, keyof INumberSchemaOptions>, never>): Result<ValidatedIntegerOptions<T>>;
 
 // @public
 interface INumberSchemaOptions extends ISchemaOptions {
+    exclusiveMaximum?: number;
+    exclusiveMinimum?: number;
+    maximum?: number;
+    minimum?: number;
+    multipleOf?: number;
     strict?: boolean;
 }
 
@@ -915,9 +971,18 @@ function isBinaryFileItem<TCT extends string = string>(item: AnyFileTreeFileItem
 
 // @public
 interface ISchemaOptions {
+    default?: JsonValue;
     description?: string;
+    examples?: ReadonlyArray<JsonValue>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     nullable?: boolean;
+    title?: string;
+}
+
+// @public
+interface ISchemaShapeCapabilities {
+    readonly nonStringEnum: 'pass' | 'fold';
+    readonly untyped: SchemaUntypedRule;
 }
 
 // @public
@@ -1018,6 +1083,14 @@ interface IStrictTextFileTreeAccessors<TCT extends string = string> extends IFil
 // @public
 interface IStrictTextFileTreeFileItem<TCT extends string = string> extends IFileTreeFileItem<TCT> {
     getTextStrict(): Result<string>;
+}
+
+// @public
+interface IStringSchemaOptions extends ISchemaOptions {
+    format?: string;
+    maxLength?: number;
+    minLength?: number;
+    pattern?: RegExp;
 }
 
 // @public
@@ -1162,6 +1235,7 @@ declare namespace JsonSchema {
         OptionalPropertyStatic,
         Simplify,
         ObjectStatic,
+        OpenObjectStatic,
         ILlmSchema,
         ILlmStringSchema,
         ILlmNumberSchema,
@@ -1170,19 +1244,61 @@ declare namespace JsonSchema {
         ILlmOptional,
         ILlmArraySchema,
         ILlmObjectSchema,
+        ISchemaOptions,
+        INumberSchemaOptions,
+        IStringSchemaOptions,
+        IHeldPattern,
+        IObjectSchemaOptions,
+        IAnySchemaOptions,
+        PlainSchemaOptions,
+        PlainNumberSchemaOptions,
+        PlainStringSchemaOptions,
+        PlainObjectSchemaOptions,
+        PlainAnySchemaOptions,
+        schemaOptions,
+        numberOptions,
+        integerOptions,
+        stringOptions,
+        ValidatedSchemaOptions,
+        ValidatedNumberOptions,
+        ValidatedIntegerOptions,
+        ValidatedStringOptions,
         string_2 as string,
         number_2 as number,
         integer,
         boolean_2 as boolean,
         enumOf,
+        numberEnumOf,
+        integerEnumOf,
+        booleanEnumOf,
+        anyValue,
         optional,
         array,
         object_3 as object,
-        ISchemaOptions,
-        INumberSchemaOptions,
-        IObjectSchemaOptions,
+        record,
         fromJson,
-        jsonSchemaConverter
+        SchemaPatternPredicate,
+        SchemaPatternValidator,
+        IFromJsonOptions,
+        jsonSchemaConverter,
+        foldedKeywordsText,
+        adaptSchemaKeywords,
+        schemaNumberConstraintKeywords,
+        schemaLengthConstraintKeywords,
+        schemaPatternConstraintKeywords,
+        schemaAnnotationKeywords,
+        schemaConstraintKeywords,
+        SchemaValidatingKeyword,
+        SchemaAnnotationKeyword,
+        SchemaConstraintKeyword,
+        SchemaKeywordTranslator,
+        SchemaKeywordRule,
+        SchemaAnnotationRule,
+        SchemaUntypedRule,
+        ISchemaShapeCapabilities,
+        SchemaKeywordCapabilities,
+        unverifiedWireSchemaKeywords,
+        SchemaFoldedKeyword
     }
 }
 export { JsonSchema }
@@ -1228,17 +1344,30 @@ type MutableFileTreeItem<TCT extends string = string> = IMutableFileTreeFileItem
 const number: Converter<number, IJsonConverterContext>;
 
 // @public
-function number_2(opts: INumberSchemaOptions & {
+function number_2(opts: (PlainNumberSchemaOptions & {
     nullable: true;
-}): ISchemaValidator<number | null>;
+}) | ValidatedNumberOptions<{
+    nullable: true;
+}>): ISchemaValidator<number | null>;
 
 // @public
-function number_2(opts?: INumberSchemaOptions): ISchemaValidator<number>;
+function number_2(opts?: PlainNumberSchemaOptions | ValidatedNumberOptions): ISchemaValidator<number>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 const number_3: Validation.Classes.NumberValidator<number, IJsonValidatorContext>;
+
+// @public
+function numberEnumOf<T extends number>(values: readonly T[], opts: ISchemaOptions & {
+    nullable: true;
+}): Result<ISchemaValidator<T | null>>;
+
+// @public
+function numberEnumOf<T extends number>(values: readonly T[], opts?: ISchemaOptions): Result<ISchemaValidator<T>>;
+
+// @public
+function numberOptions<T extends INumberSchemaOptions>(opts: T & Record<Exclude<keyof T, keyof INumberSchemaOptions>, never>): Result<ValidatedNumberOptions<T>>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -1253,12 +1382,30 @@ function object<T, TC = unknown>(properties: Conversion.FieldConverters<JsonComp
 function object_2<T, TC = unknown>(properties: Validation.Classes.FieldValidators<JsonCompatibleType<T>, TC>, params?: Omit<Validation.Classes.ObjectValidatorConstructorParams<JsonCompatibleType<T>, TC>, 'fields'>): JsonCompatible_2.ObjectValidator<T, TC>;
 
 // @public
-function object_3<P extends ILlmProperties>(properties: P, opts: IObjectSchemaOptions & {
+function object_3<P extends ILlmProperties>(properties: P, opts: (PlainObjectSchemaOptions & {
+    additionalProperties: true;
     nullable: true;
-}): ISchemaValidator<ObjectStatic<P> | null>;
+}) | ValidatedSchemaOptions<{
+    additionalProperties: true;
+    nullable: true;
+}>): ISchemaValidator<OpenObjectStatic<P> | null>;
 
 // @public
-function object_3<P extends ILlmProperties>(properties: P, opts?: IObjectSchemaOptions): ISchemaValidator<ObjectStatic<P>>;
+function object_3<P extends ILlmProperties>(properties: P, opts: (PlainObjectSchemaOptions & {
+    additionalProperties: true;
+}) | ValidatedSchemaOptions<{
+    additionalProperties: true;
+}>): ISchemaValidator<OpenObjectStatic<P>>;
+
+// @public
+function object_3<P extends ILlmProperties>(properties: P, opts: (PlainObjectSchemaOptions & {
+    nullable: true;
+}) | ValidatedSchemaOptions<{
+    nullable: true;
+}>): ISchemaValidator<ObjectStatic<P> | null>;
+
+// @public
+function object_3<P extends ILlmProperties>(properties: P, opts?: PlainObjectSchemaOptions | ValidatedSchemaOptions<IObjectSchemaOptions>): ISchemaValidator<ObjectStatic<P>>;
 
 // @public
 type ObjectConverter<T, TC = unknown> = ObjectConverter_2<JsonCompatibleType<T>, TC>;
@@ -1272,6 +1419,9 @@ type ObjectStatic<P extends ILlmProperties> = Simplify<{
 
 // @public
 type ObjectValidator<T, TC = unknown> = Validation.Classes.ObjectValidator<JsonCompatibleType<T>, TC>;
+
+// @public
+type OpenObjectStatic<P extends ILlmProperties> = ObjectStatic<P> & JsonObject;
 
 // @public
 function optional<S extends ISchemaValidator<unknown>>(schema: S): ISchemaValidator<Static<S> | undefined>;
@@ -1290,10 +1440,43 @@ export function pickJsonObject(src: JsonObject, path: string): Result<JsonObject
 // @public
 export function pickJsonValue(src: JsonObject, path: string): Result<JsonValue>;
 
+// @public
+type PlainAnySchemaOptions = Omit<PlainSchemaOptions, 'nullable'>;
+
+// @public
+type PlainNumberSchemaOptions = PlainSchemaOptions & Pick<INumberSchemaOptions, 'strict'> & {
+    readonly [K in StringOneOf<typeof schemaNumberConstraintKeywords>]?: never;
+};
+
+// @public
+type PlainObjectSchemaOptions = PlainSchemaOptions & Pick<IObjectSchemaOptions, 'additionalProperties'>;
+
+// @public
+type PlainSchemaOptions = Pick<ISchemaOptions, 'description' | 'title' | 'nullable'> & {
+    readonly default?: never;
+    readonly examples?: never;
+    readonly kind?: never;
+};
+
+// @public
+type PlainStringSchemaOptions = PlainSchemaOptions & Pick<IStringSchemaOptions, 'format'> & {
+    readonly [K in StringOneOf<typeof schemaLengthConstraintKeywords> | StringOneOf<typeof schemaPatternConstraintKeywords>]?: never;
+};
+
 // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public (undocumented)
 function readJsonFileSync(srcPath: string): Result<JsonValue>;
+
+// @public
+function record<S extends ISchemaValidator<unknown>>(values: S & (undefined extends Static<S> ? never : unknown), opts: (PlainSchemaOptions & {
+    nullable: true;
+}) | ValidatedSchemaOptions<{
+    nullable: true;
+}>): ISchemaValidator<Record<string, Static<S>> | null>;
+
+// @public
+function record<S extends ISchemaValidator<unknown>>(values: S & (undefined extends Static<S> ? never : unknown), opts?: PlainSchemaOptions | ValidatedSchemaOptions): ISchemaValidator<Record<string, Static<S>>>;
 
 // @public
 type RecordConverter<T, TC = unknown, TK extends string = string> = Converter<Record<TK, JsonCompatibleType<T>>, TC>;
@@ -1335,7 +1518,62 @@ type SaveDetail = SaveCapability | SaveFailureReason;
 type SaveFailureReason = 'not-supported' | 'read-only' | 'not-mutable' | 'path-excluded' | 'permission-denied';
 
 // @public
-type SchemaNodeType = 'string' | 'number' | 'integer' | 'boolean' | 'enum' | 'optional' | 'array' | 'object';
+type SchemaAnnotationKeyword = StringOneOf<typeof schemaAnnotationKeywords>;
+
+// @public
+const schemaAnnotationKeywords: readonly ["format", "title", "default", "examples"];
+
+// @public
+type SchemaAnnotationRule = SchemaKeywordRule | 'drop';
+
+// @public
+type SchemaConstraintKeyword = StringOneOf<typeof schemaConstraintKeywords>;
+
+// @public
+const schemaConstraintKeywords: readonly ["minimum", "exclusiveMinimum", "maximum", "exclusiveMaximum", "multipleOf", "minLength", "maxLength", "pattern", "format", "title", "default", "examples"];
+
+// @public
+type SchemaFoldedKeyword = 'enum' | SchemaConstraintKeyword;
+
+// @public
+type SchemaKeywordCapabilities = Readonly<Record<SchemaValidatingKeyword, SchemaKeywordRule> & Record<SchemaAnnotationKeyword, SchemaAnnotationRule>> & ISchemaShapeCapabilities;
+
+// @public
+type SchemaKeywordRule = 'pass' | 'fold' | {
+    readonly passValues: ReadonlyArray<string>;
+} | {
+    readonly translate: SchemaKeywordTranslator;
+};
+
+// @public
+type SchemaKeywordTranslator = (node: JsonObject) => JsonObject | undefined;
+
+// @public
+const schemaLengthConstraintKeywords: readonly ["minLength", "maxLength"];
+
+// @public
+type SchemaNodeType = 'string' | 'number' | 'integer' | 'boolean' | 'enum' | 'optional' | 'array' | 'object' | 'any';
+
+// @public
+const schemaNumberConstraintKeywords: readonly ["minimum", "exclusiveMinimum", "maximum", "exclusiveMaximum", "multipleOf"];
+
+// @public
+function schemaOptions<T extends IObjectSchemaOptions>(opts: T & Record<Exclude<keyof T, keyof IObjectSchemaOptions>, never>): Result<ValidatedSchemaOptions<T>>;
+
+// @public
+const schemaPatternConstraintKeywords: readonly ["pattern"];
+
+// @public
+type SchemaPatternPredicate = (value: string) => boolean;
+
+// @public
+type SchemaPatternValidator = (source: string) => Result<SchemaPatternPredicate>;
+
+// @public
+type SchemaUntypedRule = 'pass' | 'pass-nested' | 'refuse';
+
+// @public
+type SchemaValidatingKeyword = StringOneOf<typeof schemaNumberConstraintKeywords> | StringOneOf<typeof schemaLengthConstraintKeywords> | StringOneOf<typeof schemaPatternConstraintKeywords>;
 
 // @public
 type Simplify<T> = {
@@ -1355,12 +1593,14 @@ function strictObject<T, TC = unknown>(properties: Conversion.FieldConverters<Js
 const string: StringConverter<string, IJsonConverterContext>;
 
 // @public
-function string_2(opts: ISchemaOptions & {
+function string_2(opts: (PlainStringSchemaOptions & {
     nullable: true;
-}): ISchemaValidator<string | null>;
+}) | ValidatedStringOptions<{
+    nullable: true;
+}>): ISchemaValidator<string | null>;
 
 // @public
-function string_2(opts?: ISchemaOptions): ISchemaValidator<string>;
+function string_2(opts?: PlainStringSchemaOptions | ValidatedStringOptions): ISchemaValidator<string>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -1374,6 +1614,59 @@ function stringifiedJson(): Converter<JsonValue>;
 
 // @public
 function stringifiedJson<T>(inner: Converter<T> | Validator<T>): Converter<T>;
+
+// @public
+function stringOptions<T extends IStringSchemaOptions>(opts: T & Record<Exclude<keyof T, keyof IStringSchemaOptions>, never>): Result<ValidatedStringOptions<T>>;
+
+// @public
+const unverifiedWireSchemaKeywords: SchemaKeywordCapabilities;
+
+// @public
+class ValidatedIntegerOptions<T extends INumberSchemaOptions = INumberSchemaOptions> extends ValidatedNumberOptions<T> {
+    // @internal
+    static _createInteger<T extends INumberSchemaOptions>(opts: T): Result<ValidatedIntegerOptions<T>>;
+    get holdsInteger(): true;
+    // @internal
+    static _readInteger(value: unknown): Readonly<INumberSchemaOptions> | undefined;
+}
+
+// @public
+class ValidatedNumberOptions<T extends INumberSchemaOptions = INumberSchemaOptions> {
+    // @internal
+    protected constructor(token: symbol, checked: T);
+    // @internal
+    static _create<T extends INumberSchemaOptions>(opts: T): Result<ValidatedNumberOptions<T>>;
+    readonly kind: 'validated-number-options';
+    get options(): Readonly<T>;
+    // @internal
+    static _read(value: unknown): Readonly<INumberSchemaOptions> | undefined;
+}
+
+// @public
+class ValidatedSchemaOptions<T extends IObjectSchemaOptions = IObjectSchemaOptions> {
+    // @internal
+    static _create<T extends IObjectSchemaOptions>(opts: T): Result<ValidatedSchemaOptions<T>>;
+    readonly kind: 'validated-schema-options';
+    get options(): Readonly<T>;
+    // @internal
+    static _read(value: unknown): Readonly<IObjectSchemaOptions> | undefined;
+}
+
+// @public
+class ValidatedStringOptions<T extends IStringSchemaOptions = IStringSchemaOptions> {
+    // @internal
+    static _create<T extends IStringSchemaOptions>(opts: T): Result<ValidatedStringOptions<T>>;
+    // @internal
+    static _createWithMatcher<T extends IStringSchemaOptions & {
+        readonly pattern?: never;
+    }>(opts: T, source: string, matches: (value: string) => boolean): Result<ValidatedStringOptions<T>>;
+    readonly kind: 'validated-string-options';
+    get options(): Readonly<T>;
+    // @internal
+    static _read(value: unknown): Readonly<Omit<IStringSchemaOptions, 'pattern'> & {
+        readonly pattern?: IHeldPattern;
+    }> | undefined;
+}
 
 // @public
 type Validator_2<T, TC = unknown> = Validator<JsonCompatibleType<T>, TC>;

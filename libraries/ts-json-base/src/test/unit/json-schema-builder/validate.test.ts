@@ -117,9 +117,9 @@ describe('JsonSchema schema validation (schema IS a Validator)', () => {
       expect(schema.validate({ query: 'a', sneaky: 1 })).toFailWith(/sneaky/i);
     });
 
-    test('additionalProperties: true ignores unknown fields', () => {
+    test('additionalProperties: true carries unknown fields through', () => {
       const schema = JsonSchema.object({ query: JsonSchema.string() }, { additionalProperties: true });
-      expect(schema.validate({ query: 'a', extra: 99 })).toSucceedWith({ query: 'a' });
+      expect(schema.validate({ query: 'a', extra: 99 })).toSucceedWith({ query: 'a', extra: 99 });
     });
 
     test('carries description into the object validator', () => {

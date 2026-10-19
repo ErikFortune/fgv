@@ -77,6 +77,7 @@ would be a promise the library cannot keep.
 
 <!-- BEGIN GENERATED: recent-additions -->
 
+- **2026-09-26** — A converter handed an Object.create(null) value now returns a Result instead of throwing — isKeyOf, strictObject and six ts-json / ts-res-ui-components property probes stopped calling hasOwnProperty on the object itself. ([#700](https://github.com/ErikFortune/fgv/pull/700))
 - **2026-08-28** — A string can now declare that it must be one printable line — and the name says shape, not safety, because no converter can promise the latter.
 - **2026-06-05** — **Status:** COMPLETE ([#461](https://github.com/ErikFortune/fgv/pull/461))
 - **2026-06-04** — **Shipped:** 2026-06-04. Phase A #455 + Phase B (commit `34ef9443`) + Phase C #456 on the `ts-prompt-assist-observability` integration branch; cluster-close squash → `release` opened by the orchestrator. ([#455](https://github.com/ErikFortune/fgv/pull/455))

@@ -45,7 +45,7 @@ export type StringOneOf<T> = Extract<OneOf<T>, string>;
  * @public
  */
 export function isKeyOf<T extends object>(key: string | number | symbol, item: T): key is keyof T {
-  return item.hasOwnProperty(key);
+  return Object.prototype.hasOwnProperty.call(item, key);
 }
 
 /**

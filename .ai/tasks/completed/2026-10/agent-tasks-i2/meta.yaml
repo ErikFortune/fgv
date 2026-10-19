@@ -1,0 +1,94 @@
+id: agent-tasks-i2
+status: shipped
+packages: ['@fgv/ts-agent-tasks']
+prs: [707]
+openPrs: []
+opened: 2026-10-01
+closed: 2026-10-01
+summary:
+  headline: >
+    Agent task context can go into a cacheable prompt as one checked, trailing per-request slot,
+    and a delivery's receipt is acknowledgeable only against the exact text that was sent.
+  intended: >
+    Slice I2 of the agent-tasks plan: a new `prompt` packlet in ts-agent-tasks with fragment and
+    descriptor factories, literal substitutions, a final checked resolve/cache-request helper and a
+    host receipt-handoff example, putting task context in one trailing per-request slot after the
+    stable prefix. It had two decisions to take. The first was how a receipt is bound to the prompt
+    actually sent: three unverified candidates were offered (hash the emitted text, bind to
+    composition identity, or refuse the shape). The second was whether `task_inspect` details are
+    data to be framed, which retires the I2-triggered TECH_DEBT entry either way. It was to consume
+    ts-prompt-assist and ai-assist unchanged and prove the outbound wire with a real PromptLibrary
+    and request builder.
+  shipped: >
+    The `prompt` packlet (fragments.ts, checkedPrompt.ts, handoff.ts): `taskPromptRecord` and its
+    parts, `checkTaskPrompt` returning an `ICheckedTaskPrompt` with `receiptFor(sentSystem)`, and
+    `prepareTaskPrompt` returning an `ITaskPromptHandoff` with `acknowledge(sentSystem)` and
+    `abandon()` and no receipt on it. The check refuses an unavailable composition even when
+    `cacheFindings` is empty. It refuses a missing, repeated, moved, overridden or altered task slot,
+    an empty stable prefix, refusing cache findings, and a breakpoint plan that does not end at the
+    slot. A threshold verdict of `met` is never inferred from silence. A failed check or a
+    mismatched send abandons the delivery's manifest, so the issued receipt dies by any path.
+    `serializeTaskData` is published from `context`, and `task_inspect.details` is now that escaped
+    one-line text (BREAKING, change file `minor`). It added a `@fgv/ts-prompt-assist` dependency.
+    ts-prompt-assist and ts-extras are unchanged. Outbound bodies were captured from ai-assist's own
+    builders for Anthropic, OpenAI and a tool-use turn. Across a progress-only change both plans are
+    `{ systemBreakpoints: [391] }`. Revert matrix: 36 rows, all red, 172 red tests, on `5cb380e0`.
+  diverged: >
+    None of the brief's three receipt-binding candidates shipped as written. Candidate 1's text
+    binding was buildable, but its carrier was out of the slice's surface: a hash in the receipt
+    would mean changing the receipt converter, the manifest and storage, and storage/ is outside
+    the slice. Candidate 2 was unbuildable
+    because `IPromptComposition` has no identity. What shipped is candidate 1's binding, as full
+    string equality, held in candidate 3's handoff rather than in the receipt. The framing decision
+    went further than "frame it": details became a string, which breaks hosts reading them as
+    objects, and unframeable details now fail the call rather than being omitted. Two
+    concurrency/validation fixes changed the handoff's shape after review. Copilot round 1's high
+    led to serializing every call on a handoff, and a round 1 medium to making refusal terminal
+    before the abandonment is awaited. Round 2 made `met` require the request's own minimum. Two things were routed to TECH_DEBT:
+    `JsonConverters.jsonValue` admits `Infinity` (found during the slice), and the revert rows live
+    in the stream directory rather than `perf/mutationMatrix.js`, because the brief left `perf/`
+    to the parallel M1 stream. Finally, the brief's advice to trigger Copilot with
+    a comment failed: both comments never registered, and the API request worked.
+  sourceLine: '**Shipped:** Agent task context can go into a cacheable prompt as its one trailing per-request slot — composition checked, the body sent required to be the body analyzed — and a delivery''s receipt can be acknowledged only against the exact text that was sent.'
+keywords:
+  - prompt packlet
+  - checkTaskPrompt
+  - prepareTaskPrompt
+  - taskPromptRecord
+  - receipt binding
+  - exact sent text
+  - trailing per-request slot
+  - stable prefix
+  - cache breakpoints
+  - composition availability
+  - cacheFindings empty vs unavailable
+  - threshold unknown
+  - serializeTaskData
+  - task_inspect details framing
+  - prompt trust framing
+  - outbound wire capture
+  - UTF-16 breakpoint
+  - handoff serialization
+  - jsonValue Infinity
+relatedStreams:
+  - id: agent-tasks-t2
+    relationship: >
+      Supplies `TaskContextRenderer` and `ITaskInclusionReceipt`. The receipt's canonical shape is
+      the reason a text hash could not be carried in it.
+  - id: agent-tasks-t7
+    relationship: >
+      Supplies the bound delivery whose manifest `prepareTaskPrompt` abandons on a failed check or
+      mismatched send. T7's exact-manifest acknowledgement is what makes the abandoned receipt dead.
+  - id: agent-tasks-i1a
+    relationship: >
+      Routed the `task_inspect` unframed-details TECH_DEBT entry here with I2 as its trigger. I2
+      resolved it by framing details. Its outbound-capture pattern was followed.
+  - id: agent-tasks-m1-stop
+    relationship: >
+      Ran in parallel and owned `perf/`, which is why I2's revert rows live in the stream directory.
+      M1 merged I2 in and re-checked a representative subset of its cohorts on the merged build.
+  - id: agent-tasks-p1
+    relationship: >
+      Downstream consumer. P1's journey step 9 drives `prepareTaskPrompt` and
+      `acknowledge(sentSystem)` per result.md § "What P1 can rely on".
+sourceHash: 9ab4bbd4ab9afaff

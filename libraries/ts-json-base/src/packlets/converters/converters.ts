@@ -76,7 +76,10 @@ export const jsonPrimitive: Converter<JsonPrimitive, IJsonConverterContext> = ne
  * are `undefined` - this default behavior can be overridden by supplying an appropriate
  * `IJsonConverterContext` at runtime.
  *
- * Guaranteed to return a new object.
+ * Guaranteed to return a new object whose prototype is `Object.prototype`. An own `"__proto__"`
+ * key (as `JSON.parse` produces) is dropped rather than copied: assigning it would replace the
+ * copy's prototype, and defining it as data would hand downstream code a key that `Object.assign`
+ * or a spread re-interprets the same way.
  * @public
  */
 export const jsonObject: Converter<JsonObject, IJsonConverterContext> = new Conversion.BaseConverter(
@@ -93,6 +96,10 @@ export const jsonObject: Converter<JsonObject, IJsonConverterContext> = new Conv
     for (const [name, value] of Object.entries(from)) {
       if (value === undefined && ctx?.ignoreUndefinedProperties === true) {
         // optionally ignore undefined values
+        continue;
+      }
+      if (name === '__proto__') {
+        // Never copied: see the doc comment.
         continue;
       }
       jsonValue

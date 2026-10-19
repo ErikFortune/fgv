@@ -151,7 +151,12 @@ const passthroughResponseBodyGuard: IResponseBodyGuard = {
  * silent passthrough.
  * @internal
  */
-export function resolveGuards(options: ISaferFetchOptions): Result<IResolvedGuards> {
+export function resolveGuards(
+  options: Pick<
+    ISaferFetchOptions,
+    'addressGuard' | 'requestGuard' | 'responseHeadersGuard' | 'responseBodyGuard'
+  >
+): Result<IResolvedGuards> {
   const address = options.addressGuard ?? undefined;
   if (address === undefined) {
     return fail(

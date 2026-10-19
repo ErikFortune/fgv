@@ -580,7 +580,13 @@ export async function callAnthropicStream(
     Object.assign(body, resolvedThinking.otherParams);
   }
   if (tools && tools.length > 0) {
-    body.tools = toAnthropicTools(tools);
+    // Defence in depth: `executeClientToolTurn` pre-flights every client tool with this same table
+    // and target, so through it this cannot fail; it guards any other caller of this adapter.
+    const toolsResult = toAnthropicTools(tools, config);
+    if (toolsResult.isFailure()) {
+      return fail(`Anthropic streaming: ${toolsResult.message}`);
+    }
+    body.tools = toolsResult.value;
   }
   const headers: Record<string, string> = anthropicAuthHeaders(config.apiKey);
   /* c8 ignore next 4 - optional logger diagnostic output */

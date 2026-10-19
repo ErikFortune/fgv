@@ -23,9 +23,9 @@
  * an attempt is a full re-walk rather than a resume.
  *
  * Delays are configured in single-digit milliseconds throughout, so these tests measure
- * behaviour rather than waiting on a backoff. The one place a duration is asserted is the
- * `Retry-After` clamp, where the unclamped value would be an hour and the test's own timeout is
- * the assertion.
+ * behaviour rather than waiting on a backoff. Where a test is *about* time — a clamp, a deadline,
+ * a backoff a caller interrupts — it runs on Jest's fake clock instead, so what it asserts is the
+ * schedule the call kept rather than how busy the machine happened to be.
  */
 
 import '@fgv/ts-utils-jest';
@@ -69,6 +69,62 @@ function answering(...responses: ReadonlyArray<() => Response>): IMockTransport 
   });
 }
 
+/**
+ * Fakes the clock and the timers only. Promise jobs, `nextTick` and `setImmediate` stay real,
+ * because the call path runs on them and {@link settledWithoutTime} uses `setImmediate` to let
+ * that work drain.
+ */
+function useFakeClock(): void {
+  jest.useFakeTimers({ doNotFake: ['nextTick', 'queueMicrotask', 'setImmediate', 'clearImmediate'] });
+}
+
+/**
+ * Pins `Math.random`, which the backoff's full jitter draws from, so the delay a test schedules
+ * is the delay it names.
+ */
+function pinRandom(value: number): void {
+  jest.spyOn(Math, 'random').mockReturnValue(value);
+}
+
+/** Yields one turn of the real event loop. Not a timer, so a fake clock does not hold it. */
+async function turn(): Promise<void> {
+  return new Promise<void>((resolve) => setImmediate(resolve));
+}
+
+/** How many event-loop turns the helpers below wait before concluding a timer is involved. */
+const MAX_TURNS: number = 100;
+
+/**
+ * Resolves with `promise`'s value once it settles without the fake clock moving, or rejects if it
+ * is still pending after the in-process work has had every chance to drain — which, with the clock
+ * stopped, means it is waiting on a timer. Counts turns of the event loop, not milliseconds.
+ */
+async function settledWithoutTime<T>(promise: Promise<T>): Promise<T> {
+  const state: { settled: boolean } = { settled: false };
+  const tracked = promise.finally(() => {
+    state.settled = true;
+  });
+  for (let i: number = 0; i < MAX_TURNS && !state.settled; i++) {
+    await turn();
+  }
+  if (!state.settled) {
+    throw new Error('still pending with the clock stopped: the call is waiting on a timer');
+  }
+  return tracked;
+}
+
+/** Waits, in event-loop turns, until `logger` has logged a line matching `pattern`. */
+async function untilLogged(logger: Logging.InMemoryLogger, pattern: RegExp): Promise<string> {
+  for (let i: number = 0; i < MAX_TURNS; i++) {
+    const line = logger.logged.find((l) => pattern.test(l));
+    if (line !== undefined) {
+      return line;
+    }
+    await turn();
+  }
+  throw new Error(`nothing matching ${pattern} was logged`);
+}
+
 /** A transport whose every call fails at the transport layer. */
 function alwaysNetworkFailure(): IMockTransport {
   return mockTransport(() => fail('connection reset'));
@@ -98,6 +154,11 @@ function recordingAddressGuard(): IRecordingGuard {
 }
 
 describe('retry', () => {
+  afterEach(() => {
+    jest.useRealTimers();
+    jest.restoreAllMocks();
+  });
+
   describe('is off unless asked for', () => {
     test('a failing call is not retried when no policy is supplied', async () => {
       const transport = alwaysNetworkFailure();
@@ -388,37 +449,42 @@ describe('retry', () => {
 
   describe('Retry-After on the request path', () => {
     test('is clamped to maxDelayMs', async () => {
-      // Unclamped, this call would sleep for an hour and the test would time out. The assertion
-      // is that it completes at all — and quickly.
+      // Unclamped, this call would sleep for an hour. The schedule is read from the call itself:
+      // the backoff it announces, and that the second attempt runs once exactly that much fake
+      // time has passed.
+      useFakeClock();
+      const logger = new Logging.InMemoryLogger('all');
       const transport = answering(
         () => status(503, { 'retry-after': '3600' }),
         () => ok('recovered')
       );
-      const startedAt: number = Date.now();
-      await expect(
-        saferFetchText(
-          URL_UNDER_TEST,
-          options(transport, { retry: { attempts: 1, baseDelayMs: 1, maxDelayMs: 5 } })
-        )
-      ).resolves.toSucceed();
-      expect(Date.now() - startedAt).toBeLessThan(1_000);
+      const pending = saferFetchText(
+        URL_UNDER_TEST,
+        options(transport, { logger, retry: { attempts: 1, baseDelayMs: 1, maxDelayMs: 5 } })
+      );
+      expect(await untilLogged(logger, /retrying in/)).toMatch(/retrying in 5ms/);
+      expect(transport.calls).toHaveLength(1);
+      await jest.advanceTimersByTimeAsync(5);
+      await expect(settledWithoutTime(pending)).resolves.toSucceed();
       expect(transport.calls).toHaveLength(2);
     });
 
     test('a Retry-After longer than the remaining budget fails now rather than sleeping past it', async () => {
+      // On a stopped clock, "fails now" is literal: the call settles without any time passing.
+      useFakeClock();
       const transport = answering(() => status(503, { 'retry-after': '3600' }));
-      const startedAt: number = Date.now();
       await expect(
-        saferFetchText(
-          URL_UNDER_TEST,
-          options(transport, {
-            timeoutMs: 5_000,
-            // A ceiling above the remaining budget, so the clamp cannot rescue this one.
-            retry: { attempts: 1, baseDelayMs: 1, maxDelayMs: 60_000 }
-          })
+        settledWithoutTime(
+          saferFetchText(
+            URL_UNDER_TEST,
+            options(transport, {
+              timeoutMs: 5_000,
+              // A ceiling above the remaining budget, so the clamp cannot rescue this one.
+              retry: { attempts: 1, baseDelayMs: 1, maxDelayMs: 60_000 }
+            })
+          )
         )
       ).resolves.toFailWith(/returned 503/i);
-      expect(Date.now() - startedAt).toBeLessThan(1_000);
       expect(transport.calls).toHaveLength(1);
     });
 
@@ -441,34 +507,47 @@ describe('retry', () => {
 
   describe('the overall deadline is the ceiling', () => {
     test('retries do not extend the deadline', async () => {
+      useFakeClock();
+      // Every backoff is 10ms, so each headers timeout leaves budget for another attempt until
+      // the overall deadline ends the call.
+      pinRandom(0.01);
       const transport = mockTransport(
         async (call: IRecordedCall) =>
           new Promise<Result<Response>>((resolve) => {
             call.init.signal?.addEventListener('abort', () => resolve(fail('aborted')));
           })
       );
-      const startedAt: number = Date.now();
-      await expect(
-        saferFetchText(
-          URL_UNDER_TEST,
-          options(transport, {
-            timeoutMs: 60,
-            headersTimeoutMs: 20,
-            // Twenty attempts at a one-second floor would be twenty seconds if the deadline did
-            // not govern; it governs, so this finishes inside the 60ms budget plus slack.
-            retry: { attempts: 20, baseDelayMs: 1_000, maxDelayMs: 1_000 }
-          })
-        )
-      ).resolves.toFailWith(/timed out/i);
-      expect(Date.now() - startedAt).toBeLessThan(1_000);
+      const pending = saferFetchText(
+        URL_UNDER_TEST,
+        options(transport, {
+          timeoutMs: 60,
+          headersTimeoutMs: 20,
+          // Twenty attempts would run far past the 60ms budget if the deadline did not govern.
+          retry: { attempts: 20, baseDelayMs: 1_000, maxDelayMs: 1_000 }
+        })
+      );
+      await jest.advanceTimersByTimeAsync(60);
+      await expect(settledWithoutTime(pending)).resolves.toFailWithDetail(/timed out/i, {
+        kind: 'timeout',
+        phase: 'overall',
+        // Exactly the budget: the call ended at the deadline, not at the end of a later backoff.
+        elapsedMs: 60,
+        limitMs: 60
+      });
     });
 
     test('an exhausted deadline fails with the attempt’s own failure', async () => {
+      // On a stopped clock the 30ms budget is exactly 30ms when the retry is decided, and the
+      // pinned jitter makes the computed backoff (`0.0062 * 5000`) 31ms: one more than fits.
+      useFakeClock();
+      pinRandom(0.0062);
       const transport = answering(() => status(503));
       await expect(
-        saferFetchText(
-          URL_UNDER_TEST,
-          options(transport, { timeoutMs: 30, retry: { attempts: 5, baseDelayMs: 10_000 } })
+        settledWithoutTime(
+          saferFetchText(
+            URL_UNDER_TEST,
+            options(transport, { timeoutMs: 30, retry: { attempts: 5, baseDelayMs: 10_000 } })
+          )
         )
       ).resolves.toFailWithDetail(/returned 503/i, {
         kind: 'http-status',
@@ -479,27 +558,29 @@ describe('retry', () => {
     });
 
     test('a caller abort during a backoff is answered during the backoff', async () => {
+      // On a stopped clock the backoff cannot elapse, so an answer at all means the abort — not
+      // the end of the sleep — is what ended the call.
+      useFakeClock();
       const controller = new AbortController();
-      // `Retry-After` rather than the ordinary backoff, because full jitter makes the computed
-      // delay uniform on `[0, cap)` — a jittered backoff could elapse before the abort lands,
-      // and the test would then be measuring a different path on a coin flip. A honored
-      // `Retry-After` is used unjittered, so this sleep is exactly one second every run.
+      const logger = new Logging.InMemoryLogger('all');
+      // `Retry-After` rather than the ordinary backoff, so the announced sleep is exactly one
+      // second rather than a jittered draw.
       const transport = answering(() => status(503, { 'retry-after': '1' }));
       const pending = saferFetchText(
         URL_UNDER_TEST,
         options(transport, {
+          logger,
           signal: controller.signal,
           timeoutMs: 10_000,
           retry: { attempts: 1, baseDelayMs: 400, maxDelayMs: 1_000 }
         })
       );
-      // Inside the 400ms backoff, after the first attempt has certainly failed.
-      await new Promise<void>((resolve) => setTimeout(resolve, 50));
+      // Inside the backoff: the first attempt has failed and the sleep has been scheduled.
+      expect(await untilLogged(logger, /retrying in/)).toMatch(/retrying in 1000ms/);
       controller.abort();
-      const startedAt: number = Date.now();
-      await expect(pending).resolves.toFailWithDetail(/aborted by caller/i, { kind: 'aborted' });
-      // Answered promptly rather than after the remaining ~950ms of backoff elapsed.
-      expect(Date.now() - startedAt).toBeLessThan(500);
+      await expect(settledWithoutTime(pending)).resolves.toFailWithDetail(/aborted by caller/i, {
+        kind: 'aborted'
+      });
       expect(transport.calls).toHaveLength(1);
     });
   });
@@ -515,6 +596,35 @@ describe('retry', () => {
       });
       expect(transport.calls).toHaveLength(0);
     });
+
+    test.each<[string, (ms: number) => SaferFetch.IRetryPolicy, RegExp]>([
+      [
+        'retry.baseDelayMs',
+        (ms: number) => ({ attempts: 1, baseDelayMs: ms, maxDelayMs: 2147483647 }),
+        /^retry\.baseDelayMs must be no greater than 2147483647 ms/
+      ],
+      [
+        'retry.maxDelayMs',
+        (ms: number) => ({ attempts: 1, maxDelayMs: ms }),
+        /^retry\.maxDelayMs must be no greater than 2147483647 ms/
+      ]
+    ])(
+      'bounds %s by what a timer honours: 2147483647 is accepted, 2147483648 refused',
+      async (__name: string, withDelay: (ms: number) => SaferFetch.IRetryPolicy, expected: RegExp) => {
+        const transport = answering(() => ok('fine'));
+        await expect(
+          saferFetchText(URL_UNDER_TEST, options(transport, { retry: withDelay(2147483647) }))
+        ).resolves.toSucceed();
+        expect(transport.calls).toHaveLength(1);
+        await expect(
+          saferFetchText(URL_UNDER_TEST, options(transport, { retry: withDelay(2147483648) }))
+        ).resolves.toFailWithDetail(expected, {
+          kind: 'unknown',
+          detail: expect.stringMatching(/must be no greater than 2147483647 ms/) as unknown as string
+        });
+        expect(transport.calls).toHaveLength(1);
+      }
+    );
   });
 
   describe('diagnostics', () => {

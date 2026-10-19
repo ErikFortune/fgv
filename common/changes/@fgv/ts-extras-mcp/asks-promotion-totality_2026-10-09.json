@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "classifySdkError is total: a rejection value that throws when inspected (a throwing name accessor, a Proxy trap) is classified as transport, or not-connected on a closed session, instead of throwing. createCustomTransport fails, rather than throwing, when the transport's sessionId cannot be read. connectMcpSession refuses an already-aborted signal before claiming the transport, so the untouched handle can be reused.",
+      "type": "patch",
+      "packageName": "@fgv/ts-extras-mcp"
+    }
+  ],
+  "packageName": "@fgv/ts-extras-mcp",
+  "email": "ErikFortune@outlook.com"
+}

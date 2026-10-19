@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-agent-tasks",
+      "comment": "BREAKING: new prompt packlet — taskPromptRecord and its fragment factories build a ts-prompt-assist prompt whose task context is one trailing per-request slot; checkTaskPrompt resolves it with a composition and refuses unless the body sent is the body analyzed; prepareTaskPrompt hands back a delivery whose receipt can be acknowledged only against the exact text sent, and is abandoned when a check fails. serializeTaskData is published from context, and task_inspect now returns details as escaped JSON text (a string) rather than structured JSON. Adds a dependency on @fgv/ts-prompt-assist.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-agent-tasks"
+}

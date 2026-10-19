@@ -10,6 +10,7 @@ import {
   IIdentityCodec,
   IIdentityCodecResult,
   IMemoryRecord,
+  isTemporalIdentityCodec,
   Kind,
   MemoryScopeKey
 } from '../types';
@@ -98,6 +99,24 @@ export function verifyOccupantKind<T>(
  * re-addressing, for one). A tampered or corrupt file declaring a foreign
  * `entityId` would otherwise load undetected, so the two are reconciled here
  * through the codec's own round-trip.
+ *
+ * The last check is the store's **scope invariant**: the record must have been
+ * read from `codec.encode(entityId).scope`. The codec contract asks
+ * `verifyRoundTrip` only for idStem equality, so a codec whose `decode` ignores
+ * the scope would otherwise let a file placed under a foreign scope load — and
+ * every consumer that re-derives an address from `(kind, entityId)` would then
+ * resolve a different scope than the one the record was read from. Enforcing it
+ * here makes it a property of the store for every codec, rather than of the
+ * codecs that happen to check it. For a versioned kind `encode(entityId).scope`
+ * is the entity's subtree, which is where every one of its version files lives,
+ * so the same comparison holds for flat and versioned layouts.
+ *
+ * For a flat kind the store also checks the other half of the address: the
+ * filename stem must be `codec.encode(entityId).idStem`. The codec contract
+ * already asks `verifyRoundTrip` for this, but a codec that skips it would let
+ * `getById` find a record that `get(kind, entityId)` cannot. A versioned kind's
+ * stem names one version rather than the entity, so there the stem must instead be
+ * `encodeVersion(entityId, seq)` for the `seq` the codec decodes from it.
  * @internal
  */
 export function verifyLoadedIdentity(
@@ -111,15 +130,59 @@ export function verifyLoadedIdentity(
       `memory file '${file.absolutePath}': envelope id '${record.envelope.id}' does not match filename stem '${file.baseName}'`
     );
   }
+  const entityId: EntityId = record.envelope.entityId;
   return codec
-    .onSuccess((c) => c.verifyRoundTrip(scope, file.baseName).onSuccess(() => c.decode(scope, file.baseName)))
-    .withErrorFormat((msg) => `memory file '${file.absolutePath}': ${msg}`)
-    .onSuccess((decodedEntityId) => {
-      if (decodedEntityId !== record.envelope.entityId) {
-        return fail(
-          `memory file '${file.absolutePath}': envelope entityId '${record.envelope.entityId}' does not match scope-derived entityId '${decodedEntityId}'`
-        );
-      }
-      return succeed(record);
-    });
+    .onSuccess((c) =>
+      c
+        .verifyRoundTrip(scope, file.baseName)
+        .onSuccess(() => c.decode(scope, file.baseName))
+        .onSuccess((decodedEntityId) =>
+          decodedEntityId === entityId
+            ? c.encode(entityId)
+            : fail<IIdentityCodecResult>(
+                `envelope entityId '${entityId}' does not match scope-derived entityId '${decodedEntityId}'`
+              )
+        )
+        .onSuccess((encoded) => {
+          if (encoded.scope !== scope) {
+            return fail<IMemoryRecord<unknown>>(
+              `read from scope '${scope}', but its codec derives scope '${encoded.scope}' for entityId '${entityId}'`
+            );
+          }
+          if (!encoded.isVersioned) {
+            return encoded.idStem === file.baseName
+              ? succeed(record)
+              : fail<IMemoryRecord<unknown>>(
+                  `read as '${file.baseName}', but its codec derives idStem '${encoded.idStem}' for entityId '${entityId}'`
+                );
+          }
+          return verifyVersionStem(c, scope, file.baseName, entityId).onSuccess(() => succeed(record));
+        })
+    )
+    .withErrorFormat((msg) => `memory file '${file.absolutePath}': ${msg}`);
+}
+
+/**
+ * The versioned half of the address check: `stem` must be exactly the version stem
+ * the codec forms for `(entityId, seq)`, where `seq` is what it decodes from `stem`.
+ */
+function verifyVersionStem(
+  codec: IIdentityCodec,
+  scope: MemoryScopeKey,
+  stem: string,
+  entityId: EntityId
+): Result<string> {
+  if (!isTemporalIdentityCodec(codec)) {
+    return fail(`codec reports a versioned layout for entityId '${entityId}' but has no version methods`);
+  }
+  return codec
+    .decodeVersion(scope, stem)
+    .onSuccess((address) => codec.encodeVersion(entityId, address.seq))
+    .onSuccess((expected) =>
+      expected === stem
+        ? succeed(stem)
+        : fail<string>(
+            `read as '${stem}', but its codec derives version stem '${expected}' for entityId '${entityId}'`
+          )
+    );
 }

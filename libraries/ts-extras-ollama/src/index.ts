@@ -40,8 +40,8 @@ import {
   type ProgressResponse,
   type ShowResponse
 } from 'ollama';
-import { captureAsyncResult, captureResult, succeed, type Result } from '@fgv/ts-utils';
-import { type JsonObject, type JsonValue, type JsonSchema } from '@fgv/ts-json-base';
+import { captureAsyncResult, captureResult, fail, succeed, type Result } from '@fgv/ts-utils';
+import { type JsonObject, type JsonValue, JsonSchema } from '@fgv/ts-json-base';
 
 /**
  * Construction parameters for an Ollama client. All optional; defaults match the `ollama` JS
@@ -522,6 +522,24 @@ export interface IChatStructuredParams<T> {
 }
 
 /**
+ * Ollama's keyword-capability table for the native `format` field: every constraint and annotation
+ * keyword folds, except `title` (it restates the property name) and `default` (folded, it would
+ * read as though it were applied), which are dropped. A numeric or
+ * boolean `enum` folds too, and a schema with no `type` is refused.
+ *
+ * @remarks
+ * Ollama documents `format` only as "a JSON schema" — its API reference
+ * (https://github.com/ollama/ollama/blob/main/docs/api.md, fetched 2026-10-17) lists no supported
+ * keywords, and its structured-outputs page was unreachable. An unverified keyword is folded into
+ * the node's description rather than sent, since folding cannot be wrong in a harmful direction:
+ * `chatStructured` still validates the reply with the schema, so a reply that breaks a folded
+ * constraint fails validation rather than reaching the caller. See `JsonSchema.adaptSchemaKeywords`
+ * in `@fgv/ts-json-base` for the fold rule.
+ */
+const OLLAMA_FORMAT_SCHEMA_KEYWORDS: JsonSchema.SchemaKeywordCapabilities =
+  JsonSchema.unverifiedWireSchemaKeywords;
+
+/**
  * Recursively removes the JSON-Schema keywords (`$schema`, `additionalProperties`) — *if present*
  * — that Ollama's `format` does not need. `JsonSchema.object(...).toJson()` emits
  * `additionalProperties: false` on object nodes; `$schema` is not added by default but may appear
@@ -597,8 +615,17 @@ export async function chatStructured<T>(
   client: IOllamaClient,
   params: IChatStructuredParams<T>
 ): Promise<Result<IOllamaChatStructuredResult<T>>> {
+  // A schema with no `type` (`JsonSchema.anyValue`) is refused here rather than sent: Ollama's
+  // support for one is undocumented, and giving it a `type` would narrow the reply below what the
+  // schema accepts.
+  const adapted = JsonSchema.adaptSchemaKeywords(params.schema.toJson(), OLLAMA_FORMAT_SCHEMA_KEYWORDS);
+  if (adapted.isFailure()) {
+    return fail(
+      `chatStructured(${params.model}): the schema cannot be sent as Ollama's format: ${adapted.message}`
+    );
+  }
   const accumulated = await captureAsyncResult(async () => {
-    const wireFormat = sanitizeFormatSchema(params.schema.toJson());
+    const wireFormat = sanitizeFormatSchema(adapted.value);
     const request: ChatRequest & { stream: true } = {
       model: params.model,
       messages: params.messages.map(toWireMessage),

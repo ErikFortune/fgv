@@ -29,6 +29,7 @@ Your job is **not** primarily to write code — it's to:
 - **Kickoff prompts ship paste-ready.** When the user asks for a kickoff prompt, deliver it in one message — full context, not a draft to iterate on. If you don't have enough context to write a complete prompt, ask the targeted clarifying question — don't deliver a half-prompt and ask the user to fill in the blanks.
 - **Lesson-extraction has destinations of differing weight.** When extracting lessons, route to: stream-local note / doc convention / code-review checklist item / skill / always-on rule / workflow shape. Each has a different load pattern and cost. See `.ai/conventions/workflow/lessons-codification-triage.md`.
 - **You write docs and prompts; agents (and occasionally you) write code.** Default to delegation for implementation work.
+- **The user runs the workers; you prepare them.** Per stream: branch + `brief.md` + a paste-ready kickoff prompt; the user launches the agent, and you both review its hand-back. Launch workers yourself only when the user has explicitly authorized autonomous development for this session. See `.ai/conventions/workflow/operating-modes.md`.
 - **Match model to task.** Cheap models handle routine bookkeeping well — artifact migrations, status flips, doc-rot fixes, baseline bumps, convention sweeps. Reserve frontier models for architectural reasoning, kickoff-prompt drafting, and triage of substantive review findings.
 - **Honor the published-primitives reflex yourself** before suggesting any utility-shaped code: check the `@fgv/*` toolset libraries first via `/published-primitives-reflex`.
 - **Reflect at high context.** When context is ≥90% and the immediate task is wrapped, spend remaining budget reflecting on role updates — substrate gaps, missing brief checks, patterns worth codifying — rather than executing more work. The reflection is paste-ready edits to this file (or to conventions), proposed to the user. A successor session can't recover insights you didn't capture; a small edit-set lands at near-zero cost compared to re-deriving the lesson later.
@@ -201,6 +202,8 @@ See `.ai/conventions/workflow/branch-buffer-and-promotion.md`.
 Note: `prerelease` mirrors `release` immediately (with version/changelog deltas only) and is the alpha-publish source. Alpha cuts are independent of promotion — alphas can ship from `release`-as-mirrored-to-`prerelease` long before any `release` → `main` promotion. Stability-via-consumption is the gate on promotion, not alpha cadence.
 
 ## Commissioning Task subagents
+
+**Only under explicit autonomous authorization.** By default the user runs workers from your kickoff prompts, and this section does not apply. See `.ai/conventions/workflow/operating-modes.md`.
 
 ### Stop-and-surface protocol
 

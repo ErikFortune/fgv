@@ -1,0 +1,70 @@
+id: agent-tasks-t2
+status: shipped
+packages: ['@fgv/ts-agent-tasks']
+prs: [685]
+openPrs: []
+opened: 2026-09-22
+closed: 2026-09-22
+summary:
+  headline: '' # one line per capability, not per stream: this slice's capability is carried by agent-tasks-t1's headline
+  intended: >
+    Land slice T2 — the pure, snapshot-only entry point of @fgv/ts-agent-tasks: deterministic
+    selection and rendering, current/update/attention fragments, budgets and omissions, a pure
+    inclusion receipt and a safe bounded projection seam, with no storage, broker, filesystem,
+    clock, random or checkpoint call (established by spying, not by comparing checkpoints). Holds
+    licence to revise T1's vocabulary as the first slice to exercise it, and was briefed as half of
+    the intended first T1+T2 squash to release.
+  shipped: >
+    TaskContextRenderer.create({ converters?, projection? }) with render(input, budget?) returning
+    TaskResult<ITaskContext>: bounded framed text, a structured view, an omission report and a
+    canonical inclusion receipt built from what actually rendered. New types ITaskSummary,
+    IUnresolvedTaskReference, ITaskUpdate and the context value types (defaultTaskContextBudget
+    20 / 3 / 8,000; limits of 200 items and 10,000 input entries per list); TaskConverters.context
+    with a canonical receipt converter; frame-safe per-string escaping covering bidi, zero-width,
+    variation selectors and the Unicode tag block; a default projection that strips the source
+    binding, and an unresolved-reference projection seam (TaskContextUnresolvedProjection) added
+    after CodeRabbit. No T1 union member revised. 500 tests in the package (91 new), 100% on all
+    four metrics, no coverage directives.
+  diverged: >
+    Despite the revision licence, no T1 member changed; T2 exercised only the presentation half of
+    four unions. It did change a T1 primitive outside the brief's "additions only" converter
+    remit: boundedArrayOf now checks the length cap before converting elements (and passes the
+    converter context through, after a regression in that fix). Against the design sketch it shipped
+    a class rather than renderTaskContext(input, budget), TaskResult rather than Result, one render
+    item per (task, revision), a tie-break on task ID then revision instead of §9's "task ID and
+    update ID" (flagged for the design authority; §9 is still unchanged), and a new rule of at most
+    one update per (task, revision, category) enforced as conflict — which caps a receipt entry at
+    seven update IDs and hands T7 a baseline-obligation collision to resolve. Review turned
+    `exhaustive` false whenever anything is abbreviated, and closed two disclosure paths around the
+    projection (diagnostics returning raw references; unresolved references never projected). The
+    T1+T2 squash the brief anticipated did not happen; the T3 brief records it was deliberately
+    widened to T1+T2+T3.
+  sourceLine: 'The **snapshot-only entry point**: a host hands `TaskContextRenderer` already-authorized task values and gets bounded framed text, a structured view, an omission report and a pure inclusion receipt — with no storage, no broker, and nothing the renderer could write to.'
+keywords:
+  - task context rendering
+  - prompt context budget
+  - inclusion receipt
+  - receipt honesty
+  - omissions report
+  - framing reserve
+  - projection seam
+  - unresolved reference projection
+  - prompt injection escaping
+  - Unicode tag block
+  - bidi and zero-width characters
+  - purity spies
+  - deterministic selection
+  - boundedArrayOf length-first
+  - one update per category
+relatedStreams:
+  - id: agent-tasks-cluster-close
+    relationship: cluster parent; finalized at its close
+  - id: agent-tasks-t1
+    relationship: vocabulary T2 exercised as choices for the first time (no member revised)
+  - id: agent-tasks-t7
+    relationship: owns acknowledgement; inherits T2's one-update-per-category rule and abbreviated-entry semantics
+  - id: agent-tasks-i2
+    relationship: places T2's single framed text block in the trailing per-request prompt slot
+  - id: agent-tasks-t3
+    relationship: next slice; the first squash to release was widened to include it
+sourceHash: a16da044f09bfec8

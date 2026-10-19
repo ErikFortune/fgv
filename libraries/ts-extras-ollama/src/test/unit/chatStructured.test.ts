@@ -111,6 +111,70 @@ describe('chatStructured (layer 1 — structural client mock)', () => {
     expect(request).not.toHaveProperty('keep_alive');
   });
 
+  test('folds every constraint keyword into the description, and still enforces it on the reply', async () => {
+    const constrained = JsonSchema.object({
+      name: JsonSchema.string(
+        JsonSchema.stringOptions({ maxLength: 2, format: 'hostname', description: 'Short.' }).shouldNotFail(
+          'string options'
+        )
+      ),
+      age: JsonSchema.integer(
+        JsonSchema.integerOptions({ minimum: 0, maximum: 150, default: 30 }).shouldNotFail('integer options')
+      )
+    });
+    const chat = jest.fn().mockResolvedValue(makeChatIterator(validPersonChunks()));
+
+    // `ada` is three characters: the folded `maxLength 2` is not on the wire, but the validator holds it.
+    expect(
+      await chatStructured(mockChatClient(chat), {
+        model: 'llama3.1:8b',
+        messages: userTurn,
+        schema: constrained
+      })
+    ).toFailWith(/maxLength/);
+
+    expect(((chat.mock.calls[0][0] as JsonObject).format as JsonObject).properties).toEqual({
+      name: { type: 'string', description: 'Short. Constraints: maxLength 2. Format: hostname.' },
+      // `default` is dropped, not folded: `Default: 30.` would read as though it were applied.
+      age: { type: 'integer', description: 'Constraints: minimum 0; maximum 150.' }
+    });
+  });
+
+  test('folds a numeric enum into the description, and still enforces it on the reply', async () => {
+    const levelled = JsonSchema.object({
+      name: JsonSchema.string(),
+      age: JsonSchema.integerEnumOf([1, 2]).orThrow()
+    });
+    const chat = jest.fn().mockResolvedValue(makeChatIterator(validPersonChunks()));
+
+    // 42 is not 1 or 2: the folded enum is not on the wire, but the validator holds it.
+    expect(
+      await chatStructured(mockChatClient(chat), {
+        model: 'llama3.1:8b',
+        messages: userTurn,
+        schema: levelled
+      })
+    ).toFailWith(/Invalid enumerated value 42/);
+    expect(((chat.mock.calls[0][0] as JsonObject).format as JsonObject).properties).toEqual({
+      name: { type: 'string' },
+      age: { type: 'integer', description: 'Constraints: enum [1,2].' }
+    });
+  });
+
+  test('refuses a schema with no type before sending anything, naming the path', async () => {
+    const chat = jest.fn();
+    expect(
+      await chatStructured(mockChatClient(chat), {
+        model: 'llama3.1:8b',
+        messages: userTurn,
+        schema: JsonSchema.object({ value: JsonSchema.anyValue() })
+      })
+    ).toFailWith(
+      /^chatStructured\(llama3\.1:8b\): the schema cannot be sent as Ollama's format: #\/properties\/value: a schema with no 'type'/
+    );
+    expect(chat).not.toHaveBeenCalled();
+  });
+
   test('forwards options, keep_alive, and base64 images verbatim', async () => {
     const chat = jest.fn().mockResolvedValue(makeChatIterator(validPersonChunks()));
     const client = mockChatClient(chat);

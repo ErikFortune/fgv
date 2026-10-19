@@ -124,6 +124,21 @@ describe('converters', () => {
 
   describe('jsonObject', () => {
     const converter = Converters.jsonObject;
+
+    test('drops an own __proto__ key instead of setting the prototype, at any depth', () => {
+      const input = JSON.parse(
+        '{"__proto__":{"isAdmin":true},"ok":{"__proto__":{"isAdmin":true}}}'
+      ) as unknown;
+      expect(converter.convert(input)).toSucceedAndSatisfy((result) => {
+        expect(Object.getPrototypeOf(result)).toBe(Object.prototype);
+        expect('isAdmin' in result).toBe(false);
+        expect(Object.prototype.hasOwnProperty.call(result, '__proto__')).toBe(false);
+        const nested = result.ok as object;
+        expect(Object.getPrototypeOf(nested)).toBe(Object.prototype);
+        expect('isAdmin' in nested).toBe(false);
+        expect(result).toEqual({ ok: {} });
+      });
+    });
     test.each(validObjectTests)('succeeds for $description', (tc) => {
       expect(converter.convert(tc.value)).toSucceedAndSatisfy((v) => {
         // explicitly test for equality but not identity (copying converter)

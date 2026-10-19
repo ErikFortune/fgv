@@ -28,86 +28,63 @@ import {
   Result,
   Validation,
   Validators,
+  allSucceed,
+  captureResult,
   fail,
+  mapResults,
   succeed
 } from '@fgv/ts-utils';
-import { JsonObject } from '../json';
-import { ILlmProperties, ISchemaValidator, ObjectStatic, SchemaNodeType, Static } from './types';
-
-/**
- * Common options accepted by every schema factory.
- * @public
- */
-export interface ISchemaOptions {
-  /**
-   * Optional human-readable description emitted into the wire JSON Schema.
-   */
-  description?: string;
-
-  /**
-   * When `true`, the value may also be `null`: the derived static type widens to
-   * `T | null`, the validator accepts `null`, and the wire schema declares a union
-   * `type` (`['string', 'null']`).
-   *
-   * @remarks
-   * **This is how you express an absent-able field to a provider that requires every
-   * property to be required.** OpenAI's strict structured output rejects a schema with
-   * any property missing from `required`, so `optional(...)` is unsendable there —
-   * see `hasOptionalProperties` in `@fgv/ts-extras`, which refuses rather than
-   * relocating the failure into a provider 400. A required-and-nullable property is
-   * the sanctioned spelling, and because the schema *is* the validator, the wire
-   * shape and the check cannot disagree about it.
-   *
-   * **If the field is genuinely absent-able *and* `null`-able, say both:**
-   * `optional(string({ nullable: true }))` accepts absent, `null`, or a value.
-   * That composition is what `@fgv/ts-extras`' `adaptOptionalToNullable` looks for —
-   * on a format requiring every property to be required, it drops the optionality
-   * for the wire, which is safe precisely because the authored schema already
-   * accepts the `null` the model will then have to send. Reach for it in preference
-   * to a bare `nullable` when absence is genuinely meaningful to you elsewhere;
-   * the schema then states what your validator does rather than what one provider
-   * demands.
-   *
-   * **The option's name is not the wire spelling.** It emits the draft-07 union
-   * `type: ['string', 'null']`, **not** the OpenAPI-3.0 keyword `nullable: true` —
-   * which OpenAI ignores. Gemini wants the other one, and the Gemini adapter in
-   * `@fgv/ts-extras` translates; nothing here emits `nullable` as a keyword.
-   *
-   * Distinct from {@link JsonSchema.optional | optional}, which is about a key being
-   * **absent**. The two compose as `optional(string({ nullable: true }))` — absent,
-   * or present and null, or present and a string.
-   */
-  nullable?: boolean;
-}
-
-/**
- * Options for the `number` and `integer` factories.
- * @public
- */
-export interface INumberSchemaOptions extends ISchemaOptions {
-  /**
-   * When `true` (default), the derived validator rejects numeric strings such as `'42'` and
-   * accepts only genuine JSON numbers. Set `false` to opt into permissive coercion (numeric
-   * strings are accepted and converted to their numeric value).
-   */
-  strict?: boolean;
-}
-
-/**
- * Options for the `object` factory.
- * @public
- */
-export interface IObjectSchemaOptions extends ISchemaOptions {
-  /**
-   * When `false` (default), the validator rejects unrecognized properties and the emitted schema
-   * sets `additionalProperties: false`. Set `true` to allow extra fields.
-   */
-  additionalProperties?: boolean;
-}
-
-// ---------------------------------------------------------------------------
-// Internal helper
-// ---------------------------------------------------------------------------
+import { jsonValue } from '../converters';
+import { JsonObject, JsonValue, isJsonObject } from '../json';
+import {
+  ILlmProperties,
+  ISchemaValidator,
+  ObjectStatic,
+  OpenObjectStatic,
+  SchemaNodeType,
+  Static
+} from './types';
+import {
+  IAnySchemaOptions,
+  INumberSchemaOptions,
+  IObjectSchemaOptions,
+  ISchemaOptions,
+  PlainAnySchemaOptions,
+  PlainNumberSchemaOptions,
+  PlainObjectSchemaOptions,
+  PlainSchemaOptions,
+  PlainStringSchemaOptions
+} from './options';
+import {
+  ValidatedIntegerOptions,
+  ValidatedNumberOptions,
+  ValidatedSchemaOptions,
+  ValidatedStringOptions
+} from './validatedOptions';
+import {
+  NonStringEnumType,
+  NumberConstraints,
+  SchemaAnnotations,
+  StringConstraints,
+  StringNodeOptions,
+  annotationFields,
+  checkAnnotations,
+  checkEnumValues,
+  describeEnumMember,
+  enforceNumberConstraints,
+  enforceStringConstraints,
+  enforceStringPattern,
+  numberConstraintFields,
+  pickAnnotations,
+  pickNumberConstraints,
+  VALIDATED_OPTIONS_MARKER,
+  pickStringConstraints,
+  plainKeysOf,
+  revalidateNumberOptions,
+  revalidateSchemaOptions,
+  revalidateStringOptions,
+  stringConstraintFields
+} from './constraints';
 
 // ---------------------------------------------------------------------------
 // Abstract base
@@ -127,6 +104,8 @@ abstract class SchemaValidatorBase<T>
   public readonly description?: string;
   /** Whether `null` is an accepted value — see {@link JsonSchema.ISchemaOptions.nullable}. */
   public readonly nullable: boolean;
+  /** The annotations this node emits: `description`, `title`, `default`, `examples`. */
+  private readonly _annotations: SchemaAnnotations;
 
   protected constructor(
     type: SchemaNodeType,
@@ -139,6 +118,14 @@ abstract class SchemaValidatorBase<T>
     if (opts?.description !== undefined) {
       this.description = opts.description;
     }
+    // Copied — `default` and `examples` deeply — so a caller mutating its options object
+    // afterwards cannot change the node.
+    this._annotations = pickAnnotations(opts);
+  }
+
+  /** The wire fields for this node's annotations — see `annotationFields`. */
+  protected _annotationFields(): JsonObject {
+    return annotationFields(this._annotations);
   }
 
   public abstract toJson(): JsonObject;
@@ -184,24 +171,38 @@ abstract class SchemaValidatorBase<T>
 
 class StringSchemaValidator extends SchemaValidatorBase<string> {
   private readonly _inner: Validation.Validator<string>;
+  /** The node's length constraints, held pattern and format. */
+  private readonly _constraints: StringConstraints;
 
-  public constructor(opts?: ISchemaOptions) {
+  public constructor(opts?: StringNodeOptions) {
     const inner = Validators.string;
     /* c8 ignore next 1 - placeholder ValidatorFunc; validate() and convert() overrides always intercept */
     super('string', (__from: unknown): boolean | Failure<string> => true, opts);
     this._inner = inner;
+    this._constraints = pickStringConstraints(opts);
   }
 
   public override validate(from: unknown): Result<string> {
-    return this._orNull(from, () => this._inner.validate(from));
+    return this._orNull(from, () => this._check(from));
   }
 
   public override convert(from: unknown): Result<string> {
-    return this._orNull(from, () => this._inner.validate(from));
+    return this._orNull(from, () => this._check(from));
+  }
+
+  private _check(from: unknown): Result<string> {
+    return this._inner
+      .validate(from)
+      .onSuccess((s) => enforceStringConstraints(s, this._constraints))
+      .onSuccess((s) => enforceStringPattern(s, this._constraints.pattern));
   }
 
   public toJson(): JsonObject {
-    return { ...this._typeField('string'), ..._descriptionField(this) };
+    return {
+      ...this._typeField('string'),
+      ...stringConstraintFields(this._constraints),
+      ...this._annotationFields()
+    };
   }
 }
 
@@ -216,6 +217,8 @@ class StringSchemaValidator extends SchemaValidatorBase<string> {
  */
 class NumberSchemaValidator extends SchemaValidatorBase<number> {
   public readonly strict: boolean;
+  /** The node's numeric constraints. */
+  private readonly _constraints: NumberConstraints;
   // Held for non-strict mode where coercion is needed.
   private readonly _nonStrictConverter?: Converter<number>;
   // Held for strict mode where in-place validation is the canonical operation.
@@ -245,6 +248,7 @@ class NumberSchemaValidator extends SchemaValidatorBase<number> {
     }
 
     this.strict = strict;
+    this._constraints = pickNumberConstraints(opts);
   }
 
   public override validate(from: unknown): Result<number> {
@@ -259,6 +263,10 @@ class NumberSchemaValidator extends SchemaValidatorBase<number> {
   }
 
   private _check(from: unknown): Result<number> {
+    return this._checkType(from).onSuccess((n) => enforceNumberConstraints(n, this._constraints));
+  }
+
+  private _checkType(from: unknown): Result<number> {
     if (this._nonStrictConverter !== undefined) {
       // Non-strict path: delegate to the coercing Converter so that '42' -> 42.
       return this._nonStrictConverter.convert(from);
@@ -268,7 +276,11 @@ class NumberSchemaValidator extends SchemaValidatorBase<number> {
   }
 
   public toJson(): JsonObject {
-    return { ...this._typeField(this._type), ..._descriptionField(this) };
+    return {
+      ...this._typeField(this._type),
+      ...numberConstraintFields(this._constraints),
+      ...this._annotationFields()
+    };
   }
 }
 
@@ -291,19 +303,34 @@ class BooleanSchemaValidator extends SchemaValidatorBase<boolean> {
   }
 
   public toJson(): JsonObject {
-    return { ...this._typeField('boolean'), ..._descriptionField(this) };
+    return { ...this._typeField('boolean'), ...this._annotationFields() };
   }
 }
 
-class EnumSchemaValidator<T extends string> extends SchemaValidatorBase<T> {
+/**
+ * A closed set of values sharing one JSON type: strings (`enumOf`), numbers or integers
+ * (`numberEnumOf` / `integerEnumOf`), or booleans (`booleanEnumOf`).
+ *
+ * @remarks
+ * The node kind is `'enum'` whatever the value type; `valueType` is what `toJson()` states as the
+ * wire `type`, so a reader consulting either `type` or `enum` reaches the same answer.
+ */
+class EnumSchemaValidator<T extends string | number | boolean> extends SchemaValidatorBase<T> {
   public readonly enum: ReadonlyArray<T>;
+  /** The JSON type every member shares, emitted as the wire `type`. */
+  public readonly valueType: 'string' | NonStringEnumType;
   private readonly _inner: Validation.Validator<T>;
 
-  public constructor(values: ReadonlyArray<T>, opts?: ISchemaOptions) {
-    const inner = Validators.enumeratedValue(values);
+  public constructor(
+    valueType: 'string' | NonStringEnumType,
+    values: ReadonlyArray<T>,
+    inner: Validation.Validator<T>,
+    opts?: ISchemaOptions
+  ) {
     /* c8 ignore next 1 - placeholder ValidatorFunc; validate() and convert() overrides always intercept */
     super('enum', (__from: unknown): boolean | Failure<T> => true, opts);
     this.enum = values;
+    this.valueType = valueType;
     this._inner = inner;
   }
 
@@ -320,10 +347,55 @@ class EnumSchemaValidator<T extends string> extends SchemaValidatorBase<T> {
     // `enum` alone would otherwise reject the very value `type` says is allowed, and
     // the two halves of one node disagreeing is what this package exists to prevent.
     return {
-      ...this._typeField('string'),
+      ...this._typeField(this.valueType),
       enum: this.nullable ? [...this.enum, null] : [...this.enum],
-      ..._descriptionField(this)
+      ...this._annotationFields()
     };
+  }
+}
+
+/**
+ * Accepts exactly the listed numbers or booleans, compared with `===` — no coercion, so `'1'` is
+ * not `1`.
+ */
+function _literalValues<T extends number | boolean>(values: ReadonlyArray<T>): Validation.Validator<T> {
+  return new Validation.Base.GenericValidator<T>({
+    validator: (from: unknown): boolean | Failure<T> =>
+      values.some((value) => value === from) ||
+      fail(
+        `Invalid enumerated value ${describeEnumMember(from)} - expected: (${values
+          .map((value) => String(value))
+          .join(', ')})`
+      )
+  });
+}
+
+/**
+ * A node that accepts any JSON value — JSON Schema's `{}`, pydantic's `Any`.
+ *
+ * @remarks
+ * Validates through `jsonValue`, so the result is a fresh copy of the input and a value that is not
+ * JSON (`undefined`, a function, a class instance) is refused. Its wire form states no `type`,
+ * which is the point and also the hazard: a provider that requires a `type` on every schema cannot
+ * be sent it, and the provider adapters in `@fgv/ts-extras` refuse the request rather than invent
+ * one.
+ */
+class AnySchemaValidator extends SchemaValidatorBase<JsonValue> {
+  public constructor(opts?: IAnySchemaOptions) {
+    /* c8 ignore next 1 - placeholder ValidatorFunc; validate() and convert() overrides always intercept */
+    super('any', (__from: unknown): boolean | Failure<JsonValue> => true, opts);
+  }
+
+  public override validate(from: unknown): Result<JsonValue> {
+    return jsonValue.convert(from);
+  }
+
+  public override convert(from: unknown): Result<JsonValue> {
+    return jsonValue.convert(from);
+  }
+
+  public toJson(): JsonObject {
+    return this._annotationFields();
   }
 }
 
@@ -387,28 +459,33 @@ class ArraySchemaValidator<S extends ISchemaValidator<unknown>> extends SchemaVa
   }
 
   public toJson(): JsonObject {
-    return { ...this._typeField('array'), items: this._items.toJson(), ..._descriptionField(this) };
+    return { ...this._typeField('array'), items: this._items.toJson(), ...this._annotationFields() };
   }
 }
 
 class ObjectSchemaValidator<P extends ILlmProperties> extends SchemaValidatorBase<ObjectStatic<P>> {
   public readonly _properties: P;
   public readonly additionalProperties: boolean;
-  // Uses a Converter (not Validator) so that extra properties are stripped from the result
-  // (Validators are in-place and would return the full input object including unknown fields).
+  /** The schema every undeclared property must match, for a record; absent otherwise. */
+  public readonly _values?: ISchemaValidator<unknown>;
+  // Uses a Converter (not Validator) so that the result is a new object built from converted
+  // values (Validators are in-place and would return the input unchanged, skipping coercions).
   // Both validate() and convert() route through this converter so that nested schema coercions
   // propagate correctly regardless of which method is called.
   private readonly _converter: Converter<ObjectStatic<P>>;
 
-  public constructor(properties: P, opts?: IObjectSchemaOptions) {
-    const additionalProperties = opts?.additionalProperties === true;
-    const converter = _buildObjectConverter(properties, additionalProperties);
+  public constructor(properties: P, opts?: IObjectSchemaOptions, values?: ISchemaValidator<unknown>) {
+    const additionalProperties = values !== undefined || opts?.additionalProperties === true;
+    const converter = _buildObjectConverter(properties, additionalProperties, values);
     // ValidatorFunc placeholder — validate() and convert() are both overridden below.
     /* c8 ignore next 1 - placeholder ValidatorFunc; validate() and convert() overrides always intercept */
     super('object', (__from: unknown): boolean | Failure<ObjectStatic<P>> => true, opts);
     this._properties = properties;
     this.additionalProperties = additionalProperties;
     this._converter = converter;
+    if (values !== undefined) {
+      this._values = values;
+    }
   }
 
   public override validate(from: unknown): Result<ObjectStatic<P>> {
@@ -436,8 +513,14 @@ class ObjectSchemaValidator<P extends ILlmProperties> extends SchemaValidatorBas
       ...this._typeField('object'),
       properties,
       ...(required.length > 0 && { required }),
+      // An absent keyword is JSON Schema's spelling of "open", which is what the open converter
+      // honours. `true` is not emitted: Anthropic JSON outputs require `additionalProperties: false`
+      // where the keyword is present, and an explicit `true` was not probed against them.
       ...(!this.additionalProperties && { additionalProperties: false }),
-      ..._descriptionField(this)
+      // A record states the schema its undeclared properties must match, which is what its
+      // converter enforces for each of them.
+      ...(this._values !== undefined && { additionalProperties: this._values.toJson() }),
+      ...this._annotationFields()
     };
   }
 }
@@ -448,15 +531,22 @@ class ObjectSchemaValidator<P extends ILlmProperties> extends SchemaValidatorBas
 
 /**
  * Builds a `Converter<ObjectStatic<P>>` for object nodes using `Converters.object`.
- * Uses a Converter (not Validator) so that extra properties are stripped from the result —
- * Validators are in-place and would pass unrecognized fields through unchanged.
- * Optional properties are tracked and listed in `optionalFields`.
  * Each property's ISchemaValidator is used as the field converter — its convert() method
  * is called by ObjectConverter for each field, propagating nested coercions and transforms.
+ * Optional properties are tracked and listed in `optionalFields`.
+ *
+ * A closed object (`additionalProperties: false`) is a strict `Converters.object`, which
+ * rejects undeclared keys. An open object is the same declared-field conversion followed by
+ * `_convertOpenObject`, because `Converters.object` builds its result from declared
+ * fields only and would otherwise drop every key the open wire schema admits.
+ *
+ * The wire and the converter agree whichever branch is taken: the closed branch rejects what
+ * `additionalProperties: false` forbids, and the open branch keeps what an open schema admits.
  */
 function _buildObjectConverter<P extends ILlmProperties>(
   properties: P,
-  additionalProperties: boolean
+  additionalProperties: boolean,
+  values: ISchemaValidator<unknown> | undefined
 ): Converter<ObjectStatic<P>> {
   const fields: Record<string, Converter<unknown> | Validation.Validator<unknown>> = {};
   const optionalKeys: string[] = [];
@@ -472,15 +562,165 @@ function _buildObjectConverter<P extends ILlmProperties>(
     }
   }
 
-  return Converters.object(fields as Conversion.FieldConverters<ObjectStatic<P>>, {
+  const declared = Converters.object(fields as Conversion.FieldConverters<ObjectStatic<P>>, {
     optionalFields: optionalKeys as (keyof ObjectStatic<P>)[],
     strict: !additionalProperties
   });
+  if (!additionalProperties) {
+    return declared;
+  }
+  return Converters.generic<ObjectStatic<P>>((from: unknown) =>
+    isJsonObject(from)
+      ? _convertOpenObject(from, declared, properties, values ?? jsonValue)
+      : fail(`open object: expected a JSON object, got ${_kindOf(from)}`)
+  );
 }
 
-function _descriptionField(schema: ISchemaValidator<unknown>): { description?: string } {
-  return schema.description !== undefined ? { description: schema.description } : {};
+/** What an open object converts each undeclared value through: `jsonValue`, or a record's schema. */
+interface IUndeclaredValueConverter {
+  convert(from: unknown): Result<unknown>;
 }
+
+/**
+ * Converts an open object: the declared fields through `declared`, and every undeclared key
+ * through `_convertUndeclaredKeys`. The two sides are validated independently and their
+ * failures aggregated, so a bad declared field does not hide bad undeclared values; the result is
+ * built only when both succeed.
+ */
+function _convertOpenObject<T extends object>(
+  from: JsonObject,
+  declared: Converter<T>,
+  properties: ILlmProperties,
+  values: IUndeclaredValueConverter
+): Result<T> {
+  const converted = declared.convert(from);
+  const extras = _convertUndeclaredKeys(from, properties, values);
+  return allSucceed([converted, extras], from).onSuccess(() =>
+    converted.onSuccess((c) =>
+      extras.onSuccess((e) => {
+        const entries: [string, unknown][] = [...Object.entries(c), ...e];
+        // The result is `c` plus keys `T` leaves unconstrained, so it is still a `T`.
+        return succeed(Object.fromEntries(entries) as T);
+      })
+    )
+  );
+}
+
+/**
+ * Converts every key of `from` that `properties` does not declare through `values` — `jsonValue`
+ * for an open object, the value schema for a record — reporting every bad one.
+ *
+ * @remarks
+ * An own `"__proto__"` key is dropped, matching `Converters.jsonObject`, which copies every
+ * nested value: carrying it as data would hand a caller a key that `Object.assign` or a spread
+ * turns into a prototype. The caller assembles the result with `Object.fromEntries` rather than
+ * object spread, which compiled down-level becomes `Object.assign`.
+ */
+function _convertUndeclaredKeys(
+  from: JsonObject,
+  properties: ILlmProperties,
+  values: IUndeclaredValueConverter
+): Result<[string, unknown][]> {
+  const undeclared = Object.entries(from).filter(
+    ([key]) => key !== '__proto__' && !Object.prototype.hasOwnProperty.call(properties, key)
+  );
+  return mapResults(
+    undeclared.map(([key, value]) =>
+      // An own key whose value is `undefined` is not JSON, so it is refused exactly as an open object
+      // refuses it, whatever the record's value schema would accept (`optional(...)` accepts it).
+      (value === undefined ? jsonValue : values)
+        .convert(value)
+        .withErrorFormat((msg) => `${key}: ${msg}`)
+        .onSuccess((v) => succeed<[string, unknown]>([key, v]))
+    )
+  );
+}
+
+/** Names what a non-object input was, for the open-object refusal. */
+function _kindOf(from: unknown): string {
+  if (from === null) {
+    return 'null';
+  }
+  return Array.isArray(from) ? 'array' : typeof from;
+}
+
+// ---------------------------------------------------------------------------
+// Reading plain or validated options
+// ---------------------------------------------------------------------------
+
+/**
+ * How one factory reads the options it is handed.
+ *
+ * @remarks
+ * `own` recognises, by an ES private brand check, the instances this copy of the package built for
+ * exactly this factory, and reads their options from the private field; those are used as they are. Anything else that claims to be validated — an instance built for
+ * another factory, or one from another installed copy of this package, recognised by its
+ * cross-copy marker — is `revalidate`d from its keys up, and used only if that succeeds. Everything
+ * else, and anything whose re-validation fails, contributes its plain keys alone.
+ */
+interface IOptionsReader<O> {
+  readonly own: (opts: unknown) => O | undefined;
+  readonly revalidate: (options: unknown) => Result<O>;
+}
+
+/**
+ * Whether `opts` claims to be validated options: anything whose prototype chain reaches a validated
+ * class (a genuine instance for another factory, but also a substituted prototype or a `Proxy`), or
+ * an object carrying the cross-copy marker. A claim only selects re-validation; it is never trusted.
+ */
+function _claimsValidated(opts: object): boolean {
+  return (
+    opts instanceof ValidatedSchemaOptions ||
+    opts instanceof ValidatedNumberOptions ||
+    opts instanceof ValidatedStringOptions ||
+    VALIDATED_OPTIONS_MARKER in opts
+  );
+}
+
+/**
+ * The options a factory was given, read so that nothing unchecked reaches a node — which is what
+ * keeps the validator and `toJson()` in agreement whatever the caller passed.
+ */
+function _optionsOf<O extends object>(opts: object | undefined, reader: IOptionsReader<O>): O | undefined {
+  if (opts === undefined) {
+    return undefined;
+  }
+  const own = reader.own(opts);
+  if (own !== undefined) {
+    return own;
+  }
+  if (_claimsValidated(opts)) {
+    // `options` is a prototype getter on a real instance, from either copy, so it is read through
+    // the prototype chain rather than as an own field. On a forgery that reaches the real getter
+    // (a substituted prototype, a Proxy without a trap) the getter throws on the missing private
+    // field; that reads as "not validated", so only the plain keys are kept.
+    return captureResult((): unknown => Reflect.get(opts, 'options'))
+      .onSuccess((options) => reader.revalidate(options).onFailure(() => succeed(plainKeysOf(options) as O)))
+      .orDefaultWith(() => plainKeysOf(opts) as O);
+  }
+  // Plain options: only the keys that cannot be wrong, each of its declared type.
+  return plainKeysOf(opts) as O;
+}
+
+const _numberReader: IOptionsReader<INumberSchemaOptions> = {
+  own: (opts) => ValidatedNumberOptions._read(opts),
+  revalidate: (options) => revalidateNumberOptions('number', options)
+};
+
+const _integerReader: IOptionsReader<INumberSchemaOptions> = {
+  own: (opts) => ValidatedIntegerOptions._readInteger(opts),
+  revalidate: (options) => revalidateNumberOptions('integer', options)
+};
+
+const _stringReader: IOptionsReader<StringNodeOptions> = {
+  own: (opts) => ValidatedStringOptions._read(opts),
+  revalidate: revalidateStringOptions
+};
+
+const _schemaReader: IOptionsReader<IObjectSchemaOptions> = {
+  own: (opts) => ValidatedSchemaOptions._read(opts),
+  revalidate: revalidateSchemaOptions
+};
 
 // ---------------------------------------------------------------------------
 // Public factory functions
@@ -488,102 +728,129 @@ function _descriptionField(schema: ISchemaValidator<unknown>): { description?: s
 
 /**
  * Creates a schema node for a JSON `string`.
- * @param opts - Optional description.
- * @returns An `ISchemaValidator` whose `Static` type is `string`.
+ * @param opts - Plain options, or `stringOptions` for lengths, `pattern`,
+ * `default` or `examples`.
+ * @returns An `ISchemaValidator` whose `Static` type is `string | null`.
  * @public
  */
-// `null` is the JSON value being modelled, not a JS sentinel — the same carve-out
-// `JsonPrimitive` takes in this package's `json` packlet.
-// eslint-disable-next-line @rushstack/no-new-null
-export function string(opts: ISchemaOptions & { nullable: true }): ISchemaValidator<string | null>;
+export function string(
+  opts: (PlainStringSchemaOptions & { nullable: true }) | ValidatedStringOptions<{ nullable: true }>
+  // `null` is the JSON value being modelled, not a JS sentinel — the same carve-out
+  // `JsonPrimitive` takes in this package's `json` packlet.
+  // eslint-disable-next-line @rushstack/no-new-null
+): ISchemaValidator<string | null>;
 /**
  * Creates a schema node for a JSON `string`.
- * @param opts - Optional description and nullability.
+ *
+ * @remarks
+ * Never fails: a raw length keyword or `pattern` is a compile error, and the options that carry one were
+ * checked by `stringOptions`.
+ * @param opts - Plain options, or `stringOptions` for lengths, `pattern`,
+ * `default` or `examples`.
  * @returns An `ISchemaValidator` whose `Static` type is `string`.
  * @public
  */
-export function string(opts?: ISchemaOptions): ISchemaValidator<string>;
-export function string(opts?: ISchemaOptions): ISchemaValidator<string> {
-  return new StringSchemaValidator(opts);
+export function string(opts?: PlainStringSchemaOptions | ValidatedStringOptions): ISchemaValidator<string>;
+export function string(opts?: PlainStringSchemaOptions | ValidatedStringOptions): ISchemaValidator<string> {
+  return new StringSchemaValidator(_optionsOf(opts, _stringReader));
 }
 
 /**
  * Creates a schema node for a JSON `number`.
- * @param opts - Optional description and strict mode (see `INumberSchemaOptions`).
- * @returns An `ISchemaValidator` whose `Static` type is `number`.
+ * @param opts - Plain options, or `numberOptions` for range keywords,
+ * `default` or `examples`.
+ * @returns An `ISchemaValidator` whose `Static` type is `number | null`.
  * @public
  */
 export function number(
-  opts: INumberSchemaOptions & { nullable: true }
+  opts: (PlainNumberSchemaOptions & { nullable: true }) | ValidatedNumberOptions<{ nullable: true }>
   // `null` is the JSON value being modelled, not a JS sentinel — the same carve-out
   // `JsonPrimitive` takes in this package's `json` packlet.
   // eslint-disable-next-line @rushstack/no-new-null
 ): ISchemaValidator<number | null>;
 /**
  * Creates a schema node for a JSON `number`.
- * @param opts - Optional description, nullability and strict mode (see `INumberSchemaOptions`).
+ *
+ * @remarks
+ * Never fails: a raw range keyword is a compile error, and the options that carry one were checked
+ * by `numberOptions` (or `integerOptions`, whose check is
+ * stricter).
+ * @param opts - Plain options (description, nullability, strict mode — see `INumberSchemaOptions`),
+ * or `numberOptions` for range keywords, `default` or `examples`.
  * @returns An `ISchemaValidator` whose `Static` type is `number`.
  * @public
  */
-export function number(opts?: INumberSchemaOptions): ISchemaValidator<number>;
-export function number(opts?: INumberSchemaOptions): ISchemaValidator<number> {
-  return new NumberSchemaValidator('number', opts);
+export function number(opts?: PlainNumberSchemaOptions | ValidatedNumberOptions): ISchemaValidator<number>;
+export function number(opts?: PlainNumberSchemaOptions | ValidatedNumberOptions): ISchemaValidator<number> {
+  return new NumberSchemaValidator('number', _optionsOf(opts, _numberReader));
 }
 
 /**
  * Creates a schema node for a JSON `integer`.
- * @param opts - Optional description and strict mode (see `INumberSchemaOptions`).
- * @returns An `ISchemaValidator` (tagged `integer`) whose `Static` type is `number`.
+ * @param opts - Plain options, or `integerOptions` for range
+ * keywords, `default` or `examples`.
+ * @returns An `ISchemaValidator` (tagged `integer`) whose `Static` type is `number | null`.
  * @public
  */
 export function integer(
-  opts: INumberSchemaOptions & { nullable: true }
+  opts: (PlainNumberSchemaOptions & { nullable: true }) | ValidatedIntegerOptions<{ nullable: true }>
   // `null` is the JSON value being modelled, not a JS sentinel — the same carve-out
   // `JsonPrimitive` takes in this package's `json` packlet.
   // eslint-disable-next-line @rushstack/no-new-null
 ): ISchemaValidator<number | null>;
 /**
  * Creates a schema node for a JSON `integer`.
- * @param opts - Optional description, nullability and strict mode (see `INumberSchemaOptions`).
+ *
+ * @remarks
+ * Never fails: a raw range keyword is a compile error, and the options that carry one were checked
+ * by `integerOptions`. Options from `numberOptions` are refused at
+ * compile time, since a range holding a number need not hold an integer.
+ * @param opts - Plain options (description, nullability, strict mode — see `INumberSchemaOptions`),
+ * or `integerOptions` for range keywords, `default` or `examples`.
  * @returns An `ISchemaValidator` (tagged `integer`) whose `Static` type is `number`.
  * @public
  */
-export function integer(opts?: INumberSchemaOptions): ISchemaValidator<number>;
-export function integer(opts?: INumberSchemaOptions): ISchemaValidator<number> {
-  return new NumberSchemaValidator('integer', opts);
+export function integer(opts?: PlainNumberSchemaOptions | ValidatedIntegerOptions): ISchemaValidator<number>;
+export function integer(opts?: PlainNumberSchemaOptions | ValidatedIntegerOptions): ISchemaValidator<number> {
+  return new NumberSchemaValidator('integer', _optionsOf(opts, _integerReader));
 }
 
 /**
  * Creates a schema node for a JSON `boolean`.
- * @param opts - Optional description.
- * @returns An `ISchemaValidator` whose `Static` type is `boolean`.
+ * @param opts - Plain options, or `schemaOptions` for `default` or
+ * `examples`.
+ * @returns An `ISchemaValidator` whose `Static` type is `boolean | null`.
  * @public
  */
-// `null` is the JSON value being modelled, not a JS sentinel — the same carve-out
-// `JsonPrimitive` takes in this package's `json` packlet.
-// eslint-disable-next-line @rushstack/no-new-null
-export function boolean(opts: ISchemaOptions & { nullable: true }): ISchemaValidator<boolean | null>;
+export function boolean(
+  opts: (PlainSchemaOptions & { nullable: true }) | ValidatedSchemaOptions<{ nullable: true }>
+  // `null` is the JSON value being modelled, not a JS sentinel — the same carve-out
+  // `JsonPrimitive` takes in this package's `json` packlet.
+  // eslint-disable-next-line @rushstack/no-new-null
+): ISchemaValidator<boolean | null>;
 /**
  * Creates a schema node for a JSON `boolean`.
- * @param opts - Optional description and nullability.
+ * @param opts - Plain options, or `schemaOptions` for `default` or
+ * `examples`.
  * @returns An `ISchemaValidator` whose `Static` type is `boolean`.
  * @public
  */
-export function boolean(opts?: ISchemaOptions): ISchemaValidator<boolean>;
-export function boolean(opts?: ISchemaOptions): ISchemaValidator<boolean> {
-  return new BooleanSchemaValidator(opts);
+export function boolean(opts?: PlainSchemaOptions | ValidatedSchemaOptions): ISchemaValidator<boolean>;
+export function boolean(opts?: PlainSchemaOptions | ValidatedSchemaOptions): ISchemaValidator<boolean> {
+  return new BooleanSchemaValidator(_optionsOf(opts, _schemaReader));
 }
 
 /**
  * Creates a schema node for a closed set of string literals.
  * @param values - The allowed string values.
- * @param opts - Optional description.
- * @returns An `ISchemaValidator` whose `Static` type is the union of `values`.
+ * @param opts - Plain options, or `schemaOptions` for `default` or
+ * `examples`.
+ * @returns An `ISchemaValidator` whose `Static` type is the union of `values`, or `null`.
  * @public
  */
 export function enumOf<T extends string>(
   values: readonly T[],
-  opts: ISchemaOptions & { nullable: true }
+  opts: (PlainSchemaOptions & { nullable: true }) | ValidatedSchemaOptions<{ nullable: true }>
   // `null` is the JSON value being modelled, not a JS sentinel — the same carve-out
   // `JsonPrimitive` takes in this package's `json` packlet.
   // eslint-disable-next-line @rushstack/no-new-null
@@ -591,14 +858,200 @@ export function enumOf<T extends string>(
 /**
  * Creates a schema node for a closed set of string literals.
  * @param values - The allowed string values.
- * @param opts - Optional description and nullability. A nullable enum also carries `null` in
- * its emitted `enum` list, so the two halves of the node cannot disagree.
+ * @param opts - Plain options (description, nullability), or
+ * `schemaOptions` for `default` or `examples`. A nullable enum also
+ * carries `null` in its emitted `enum` list, so the two halves of the node cannot disagree.
  * @returns An `ISchemaValidator` whose `Static` type is the union of `values`.
  * @public
  */
-export function enumOf<T extends string>(values: readonly T[], opts?: ISchemaOptions): ISchemaValidator<T>;
-export function enumOf<T extends string>(values: readonly T[], opts?: ISchemaOptions): ISchemaValidator<T> {
-  return new EnumSchemaValidator(values, opts);
+export function enumOf<T extends string>(
+  values: readonly T[],
+  opts?: PlainSchemaOptions | ValidatedSchemaOptions
+): ISchemaValidator<T>;
+export function enumOf<T extends string>(
+  values: readonly T[],
+  opts?: PlainSchemaOptions | ValidatedSchemaOptions
+): ISchemaValidator<T> {
+  return new EnumSchemaValidator(
+    'string',
+    values,
+    Validators.enumeratedValue(values),
+    _optionsOf(opts, _schemaReader)
+  );
+}
+
+/**
+ * Builds a numeric or boolean enum node once its members and annotations are known coherent.
+ * These factories take a value list the type cannot fully check — an integer, a finite number, a
+ * non-empty list — and have no option object to validate first, so they return the `Result`
+ * themselves.
+ */
+function _nonStringEnum<T extends number | boolean>(
+  type: NonStringEnumType,
+  values: ReadonlyArray<T>,
+  opts: ISchemaOptions | undefined
+): Result<ISchemaValidator<T>> {
+  return checkEnumValues(type, values).onSuccess(() =>
+    checkAnnotations(opts ?? {}).onSuccess((checked) => {
+      // Copied, so a caller mutating its array afterwards cannot change the node.
+      const members: ReadonlyArray<T> = [...values];
+      return succeed(new EnumSchemaValidator(type, members, _literalValues(members), checked));
+    })
+  );
+}
+
+/**
+ * Creates a schema node for a closed set of numbers (pydantic `Literal[1.5, 2]`).
+ * @param values - The allowed values.
+ * @param opts - Optional annotations and nullability.
+ * @returns The node, whose `Static` type is the union of `values` or `null`; or a `Failure` when
+ * `values` is empty or holds a member that is not a finite number, or when `default` or a member of
+ * `examples` is not a JSON value.
+ * @public
+ */
+export function numberEnumOf<T extends number>(
+  values: readonly T[],
+  opts: ISchemaOptions & { nullable: true }
+  // `null` is the JSON value being modelled, not a JS sentinel — the same carve-out
+  // `JsonPrimitive` takes in this package's `json` packlet.
+  // eslint-disable-next-line @rushstack/no-new-null
+): Result<ISchemaValidator<T | null>>;
+/**
+ * Creates a schema node for a closed set of numbers (pydantic `Literal[1.5, 2]`).
+ *
+ * @remarks
+ * Emits `{ type: 'number', enum: [...] }`. The validator accepts exactly the listed values,
+ * compared with `===`, and coerces nothing — `'1'` is not `1`. A nullable node also carries `null`
+ * in its emitted `enum`, as `enumOf` does.
+ *
+ * Unlike the other factories this one returns a `Result`, because what can be wrong is the value
+ * list rather than an option object; declare with `.shouldNotFail(label)`.
+ * @param values - The allowed values.
+ * @param opts - Optional annotations and nullability.
+ * @returns The node, whose `Static` type is the union of `values`; or a `Failure` when `values` is
+ * empty or holds a member that is not a finite number, or when `default` or a member of `examples`
+ * is not a JSON value.
+ * @public
+ */
+export function numberEnumOf<T extends number>(
+  values: readonly T[],
+  opts?: ISchemaOptions
+): Result<ISchemaValidator<T>>;
+export function numberEnumOf<T extends number>(
+  values: readonly T[],
+  opts?: ISchemaOptions
+): Result<ISchemaValidator<T>> {
+  return _nonStringEnum('number', values, opts);
+}
+
+/**
+ * Creates a schema node for a closed set of integers (pydantic `Literal[1, 2]`).
+ * @param values - The allowed values.
+ * @param opts - Optional annotations and nullability.
+ * @returns The node, whose `Static` type is the union of `values` or `null`; or a `Failure` when
+ * `values` is empty or holds a member that is not an integer, or when `default` or a member of
+ * `examples` is not a JSON value.
+ * @public
+ */
+export function integerEnumOf<T extends number>(
+  values: readonly T[],
+  opts: ISchemaOptions & { nullable: true }
+  // `null` is the JSON value being modelled, not a JS sentinel — the same carve-out
+  // `JsonPrimitive` takes in this package's `json` packlet.
+  // eslint-disable-next-line @rushstack/no-new-null
+): Result<ISchemaValidator<T | null>>;
+/**
+ * Creates a schema node for a closed set of integers (pydantic `Literal[1, 2]`).
+ *
+ * @remarks
+ * Emits `{ type: 'integer', enum: [...] }`. The validator accepts exactly the listed values,
+ * compared with `===`, and coerces nothing — `'1'` is not `1`. A nullable node also carries `null`
+ * in its emitted `enum`, as `enumOf` does.
+ *
+ * Unlike the other factories this one returns a `Result`, because what can be wrong is the value
+ * list rather than an option object; declare with `.shouldNotFail(label)`.
+ * @param values - The allowed values.
+ * @param opts - Optional annotations and nullability.
+ * @returns The node, whose `Static` type is the union of `values`; or a `Failure` when `values` is
+ * empty or holds a member that is not an integer, or when `default` or a member of `examples` is
+ * not a JSON value.
+ * @public
+ */
+export function integerEnumOf<T extends number>(
+  values: readonly T[],
+  opts?: ISchemaOptions
+): Result<ISchemaValidator<T>>;
+export function integerEnumOf<T extends number>(
+  values: readonly T[],
+  opts?: ISchemaOptions
+): Result<ISchemaValidator<T>> {
+  return _nonStringEnum('integer', values, opts);
+}
+
+/**
+ * Creates a schema node for a closed set of booleans (a boolean `const`).
+ * @param values - The allowed values.
+ * @param opts - Optional annotations and nullability.
+ * @returns The node, whose `Static` type is the union of `values` or `null`; or a `Failure` when
+ * `values` is empty or holds a member that is not a boolean, or when `default` or a member of
+ * `examples` is not a JSON value.
+ * @public
+ */
+export function booleanEnumOf<T extends boolean>(
+  values: readonly T[],
+  opts: ISchemaOptions & { nullable: true }
+  // `null` is the JSON value being modelled, not a JS sentinel — the same carve-out
+  // `JsonPrimitive` takes in this package's `json` packlet.
+  // eslint-disable-next-line @rushstack/no-new-null
+): Result<ISchemaValidator<T | null>>;
+/**
+ * Creates a schema node for a closed set of booleans (a boolean `const`).
+ *
+ * @remarks
+ * Emits `{ type: 'boolean', enum: [...] }`. The validator accepts exactly the listed values,
+ * compared with `===`, and coerces nothing — `'1'` is not `1`. A nullable node also carries `null`
+ * in its emitted `enum`, as `enumOf` does.
+ *
+ * Unlike the other factories this one returns a `Result`, because what can be wrong is the value
+ * list rather than an option object; declare with `.shouldNotFail(label)`.
+ * @param values - The allowed values.
+ * @param opts - Optional annotations and nullability.
+ * @returns The node, whose `Static` type is the union of `values`; or a `Failure` when `values` is
+ * empty or holds a member that is not a boolean, or when `default` or a member of `examples` is not
+ * a JSON value.
+ * @public
+ */
+export function booleanEnumOf<T extends boolean>(
+  values: readonly T[],
+  opts?: ISchemaOptions
+): Result<ISchemaValidator<T>>;
+export function booleanEnumOf<T extends boolean>(
+  values: readonly T[],
+  opts?: ISchemaOptions
+): Result<ISchemaValidator<T>> {
+  return _nonStringEnum('boolean', values, opts);
+}
+
+/**
+ * Creates a schema node that accepts any JSON value — JSON Schema's `{}`, pydantic's `Any`.
+ *
+ * @remarks
+ * Emits `{}` plus any annotations. The validator accepts any `JsonValue`, `null` included, and
+ * returns a copy; a value that is not JSON (`undefined`, a function, a class instance) is refused.
+ *
+ * Its wire form has no `type`, and some providers require one on every schema (Gemini; OpenAI
+ * strict mode). The provider adapters in `@fgv/ts-extras` refuse a request that would send it to
+ * such a provider, naming the tool and the path, rather than substitute a type — which would narrow
+ * what the model may send below what the validator accepts.
+ * @param opts - Plain annotations, or `schemaOptions` for
+ * `default` or `examples`.
+ * @returns An `ISchemaValidator` whose `Static` type is `JsonValue`.
+ * @public
+ */
+export function anyValue(
+  opts?: PlainAnySchemaOptions | ValidatedSchemaOptions<IAnySchemaOptions>
+): ISchemaValidator<JsonValue> {
+  return new AnySchemaValidator(_optionsOf(opts, _schemaReader));
 }
 
 /**
@@ -616,13 +1069,14 @@ export function optional<S extends ISchemaValidator<unknown>>(
 /**
  * Creates a schema node for a JSON `array` whose elements all match `items`.
  * @param items - The schema applied to every element.
- * @param opts - Optional description.
- * @returns An `ISchemaValidator` whose `Static` type is `Array<Static<S>>`.
+ * @param opts - Plain options, or `schemaOptions` for `default` or
+ * `examples`.
+ * @returns An `ISchemaValidator` whose `Static` type is `Array<Static<S>> | null`.
  * @public
  */
 export function array<S extends ISchemaValidator<unknown>>(
   items: S,
-  opts: ISchemaOptions & { nullable: true }
+  opts: (PlainSchemaOptions & { nullable: true }) | ValidatedSchemaOptions<{ nullable: true }>
   // `null` is the JSON value being modelled, not a JS sentinel — the same carve-out
   // `JsonPrimitive` takes in this package's `json` packlet.
   // eslint-disable-next-line @rushstack/no-new-null
@@ -630,21 +1084,55 @@ export function array<S extends ISchemaValidator<unknown>>(
 /**
  * Creates a schema node for a JSON `array` whose elements all match `items`.
  * @param items - The schema applied to every element.
- * @param opts - Optional description and nullability.
+ * @param opts - Plain options (description, nullability), or
+ * `schemaOptions` for `default` or `examples`.
  * @returns An `ISchemaValidator` whose `Static` type is `Array<Static<S>>`.
  * @public
  */
 export function array<S extends ISchemaValidator<unknown>>(
   items: S,
-  opts?: ISchemaOptions
+  opts?: PlainSchemaOptions | ValidatedSchemaOptions
 ): ISchemaValidator<Static<S>[]>;
 export function array<S extends ISchemaValidator<unknown>>(
   items: S,
-  opts?: ISchemaOptions
+  opts?: PlainSchemaOptions | ValidatedSchemaOptions
 ): ISchemaValidator<Static<S>[]> {
-  return new ArraySchemaValidator(items, opts);
+  return new ArraySchemaValidator(items, _optionsOf(opts, _schemaReader));
 }
 
+/**
+ * Creates a schema node for an **open** JSON `object`: typed declared properties, plus any
+ * undeclared properties, which are carried through as `JsonValue`.
+ * @param properties - A record mapping property names to their schemas. Wrap a property with
+ * `optional` to make it optional.
+ * @param opts - Options including `additionalProperties: true` and `nullable: true`.
+ * @returns An `ISchemaValidator` whose `Static` type is `OpenObjectStatic<P> | null`.
+ * @public
+ */
+export function object<P extends ILlmProperties>(
+  properties: P,
+  opts:
+    | (PlainObjectSchemaOptions & { additionalProperties: true; nullable: true })
+    | ValidatedSchemaOptions<{ additionalProperties: true; nullable: true }>
+  // `null` is the JSON value being modelled, not a JS sentinel — the same carve-out
+  // `JsonPrimitive` takes in this package's `json` packlet.
+  // eslint-disable-next-line @rushstack/no-new-null
+): ISchemaValidator<OpenObjectStatic<P> | null>;
+/**
+ * Creates a schema node for an **open** JSON `object`: typed declared properties, plus any
+ * undeclared properties, which are carried through as `JsonValue`.
+ * @param properties - A record mapping property names to their schemas. Wrap a property with
+ * `optional` to make it optional.
+ * @param opts - Options including `additionalProperties: true`.
+ * @returns An `ISchemaValidator` whose `Static` type is `OpenObjectStatic<P>`.
+ * @public
+ */
+export function object<P extends ILlmProperties>(
+  properties: P,
+  opts:
+    | (PlainObjectSchemaOptions & { additionalProperties: true })
+    | ValidatedSchemaOptions<{ additionalProperties: true }>
+): ISchemaValidator<OpenObjectStatic<P>>;
 /**
  * Creates a schema node for a JSON `object` with a fixed set of typed properties.
  * @param properties - A record mapping property names to their schemas. Wrap a property with
@@ -655,7 +1143,7 @@ export function array<S extends ISchemaValidator<unknown>>(
  */
 export function object<P extends ILlmProperties>(
   properties: P,
-  opts: IObjectSchemaOptions & { nullable: true }
+  opts: (PlainObjectSchemaOptions & { nullable: true }) | ValidatedSchemaOptions<{ nullable: true }>
   // `null` is the JSON value being modelled, not a JS sentinel — the same carve-out
   // `JsonPrimitive` takes in this package's `json` packlet.
   // eslint-disable-next-line @rushstack/no-new-null
@@ -665,17 +1153,74 @@ export function object<P extends ILlmProperties>(
  * @param properties - A record mapping property names to their schemas. Wrap a property with
  * `optional` to make it optional, or author it `nullable` when the provider requires every
  * property to be required.
- * @param opts - Optional description, nullability and `additionalProperties` flag.
+ * @param opts - Plain options (description, nullability, `additionalProperties`), or
+ * `schemaOptions` for `default` or `examples`.
  * @returns An `ISchemaValidator` whose `Static` type derives the required/optional split.
  * @public
  */
 export function object<P extends ILlmProperties>(
   properties: P,
-  opts?: IObjectSchemaOptions
+  opts?: PlainObjectSchemaOptions | ValidatedSchemaOptions<IObjectSchemaOptions>
 ): ISchemaValidator<ObjectStatic<P>>;
 export function object<P extends ILlmProperties>(
   properties: P,
-  opts?: IObjectSchemaOptions
-): ISchemaValidator<ObjectStatic<P>> {
-  return new ObjectSchemaValidator(properties, opts);
+  opts?: PlainObjectSchemaOptions | ValidatedSchemaOptions<IObjectSchemaOptions>
+  // eslint-disable-next-line @rushstack/no-new-null
+): ISchemaValidator<ObjectStatic<P>> | ISchemaValidator<OpenObjectStatic<P> | null> {
+  return new ObjectSchemaValidator(properties, _optionsOf(opts, _schemaReader));
+}
+
+/**
+ * Creates a schema node for a JSON object used as a map: any keys, each value matching `values`
+ * (pydantic `dict[str, T]`, zod `z.record(T)`).
+ *
+ * @remarks
+ * Emits `{ type: 'object', properties: {}, additionalProperties: <values> }`, and the validator
+ * converts every property through `values`, reporting each one that fails. A value that is not a
+ * JSON object is refused. As for an open object, an own `"__proto__"` key is dropped — without
+ * being validated — rather than carried.
+ *
+ * Providers whose strict structured-output mode requires `additionalProperties: false` (OpenAI
+ * strict, Anthropic JSON outputs) cannot accept a record there, exactly as they cannot accept an
+ * open object; it is suited to tool parameters.
+ * A value schema whose static type admits `undefined` (such as `optional(...)`) is refused at
+ * compile time, and an own property whose value is `undefined` is refused at run time either way:
+ * `undefined` is not JSON, and the emitted `additionalProperties` schema does not admit it.
+ * @param values - The schema every property value must match.
+ * @param opts - Plain options, or `schemaOptions` for `default` or
+ * `examples`.
+ * @returns An `ISchemaValidator` whose `Static` type is `Record<string, Static<S>> | null`.
+ * @public
+ */
+export function record<S extends ISchemaValidator<unknown>>(
+  values: S & (undefined extends Static<S> ? never : unknown),
+  opts: (PlainSchemaOptions & { nullable: true }) | ValidatedSchemaOptions<{ nullable: true }>
+  // `null` is the JSON value being modelled, not a JS sentinel — the same carve-out
+  // `JsonPrimitive` takes in this package's `json` packlet.
+  // eslint-disable-next-line @rushstack/no-new-null
+): ISchemaValidator<Record<string, Static<S>> | null>;
+/**
+ * Creates a schema node for a JSON object used as a map: any keys, each value matching `values`
+ * (pydantic `dict[str, T]`, zod `z.record(T)`).
+ * @param values - The schema every property value must match.
+ * @param opts - Plain options (description, nullability), or
+ * `schemaOptions` for `default` or `examples`.
+ * @returns An `ISchemaValidator` whose `Static` type is `Record<string, Static<S>>`.
+ * @public
+ */
+export function record<S extends ISchemaValidator<unknown>>(
+  values: S & (undefined extends Static<S> ? never : unknown),
+  opts?: PlainSchemaOptions | ValidatedSchemaOptions
+): ISchemaValidator<Record<string, Static<S>>>;
+export function record<S extends ISchemaValidator<unknown>>(
+  values: S,
+  opts?: PlainSchemaOptions | ValidatedSchemaOptions
+): ISchemaValidator<Record<string, Static<S>>> {
+  // The node is an object with no declared properties, so its class-level static type is
+  // `ObjectStatic<{}>`; what it converts to is the map, which only this factory can state.
+  return new ObjectSchemaValidator(
+    {},
+    _optionsOf(opts, _schemaReader),
+    values
+  ) as unknown as ISchemaValidator<Record<string, Static<S>>>;
 }

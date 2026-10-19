@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras",
+      "comment": "ai-assist: Anthropic structured output gains a non-forcing format, and @anthropic:opus / @anthropic:fable rotate to claude-opus-5-5 / claude-fable-5-1. AiStructuredOutputFormat gains 'anthropic-output-format' (Anthropic JSON outputs: output_config.format with type json_schema), declared by modelPrefix for claude-opus-5-5, claude-fable-5-1 and claude-mythos-5-1, which return a 400 on a forced tool_choice; every other Claude line keeps 'anthropic-tool-forced' under the catch-all. Before this, the catch-all claimed all three ids supported the forced mechanism, so a modelOverride to either with structuredOutput failed at the provider. The new format reports enforcement 'schema' (StructuredOutputEnforcement is unchanged), cannot express json-object (routed through onUnsupported), merges into output_config beside the adaptive-thinking effort rather than replacing it, and is still refused with web_search, on Anthropic's documented incompatibility between output_config.format and citations. The advanced tier (and the frontier cascade) now resolves to claude-opus-5-5. claude-mythos-5-1 is also added to adaptiveThinkingModelPrefixes (it is adaptive-only, and the legacy budget shape returns a 400 on it), to AnthropicThinkingModelNames, and to the listModels thinking idPattern rules.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-extras",
+  "email": "noreply@anthropic.com"
+}

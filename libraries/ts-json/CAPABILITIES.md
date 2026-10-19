@@ -35,6 +35,6 @@
 
 <!-- BEGIN GENERATED: recent-additions -->
 
-*No stream has recorded a `sourceLine` against this package yet.*
+- **2026-09-26** — A converter handed an Object.create(null) value now returns a Result instead of throwing — isKeyOf, strictObject and six ts-json / ts-res-ui-components property probes stopped calling hasOwnProperty on the object itself. ([#700](https://github.com/ErikFortune/fgv/pull/700))
 
 <!-- END GENERATED: recent-additions -->

@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "chatStructured drops `default` from the wire schema instead of folding `Default: ...` into the description (it uses unverifiedWireSchemaKeywords).",
+      "type": "minor",
+      "packageName": "@fgv/ts-extras-ollama"
+    }
+  ],
+  "packageName": "@fgv/ts-extras-ollama",
+  "email": "ErikFortune@outlook.com"
+}

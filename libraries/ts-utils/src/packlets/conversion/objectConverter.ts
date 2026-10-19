@@ -244,7 +244,10 @@ export class ObjectConverter<T, TC = unknown> extends BaseConverter<T, TC> {
     if (options.strict === true) {
       if (typeof from === 'object' && !Array.isArray(from)) {
         for (const key in from) {
-          if (from.hasOwnProperty(key) && (!isKeyOf(key, fields) || fields[key] === undefined)) {
+          if (
+            Object.prototype.hasOwnProperty.call(from, key) &&
+            (!isKeyOf(key, fields) || fields[key] === undefined)
+          ) {
             errors.push(`${key}: unexpected property in source object`);
           }
         }

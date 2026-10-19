@@ -246,45 +246,165 @@ function isModelSpecific(block: IThinkingProviderConfig): boolean {
  * temperature is accepted; see {@link IOpenAiThinkingConfig.effort} for the full
  * hybrid-mode semantics.
  *
+ * A generic `effort: 'none'` on a model that cannot run with thinking off (`thinkingRequired`)
+ * is sent as `'low'`, or refused when `config.onUnsupported` is `'fail'`. Provider blocks are
+ * not checked — a caller writing one has taken control of the wire value.
+ *
  * @param config - The caller's IThinkingConfig
  * @param resolvedModel - The concrete model string after registry resolution
  * @param discriminator - Coarse provider family
- * @returns Merged effective config for wire encoding
+ * @param thinkingRequired - Whether `resolvedModel` rejects the off value (see
+ *   `isThinkingRequiredModel`)
+ * @returns Merged effective config for wire encoding, or a failure when `'none'` is refused
  * @internal
  */
 export function mergeThinkingConfig(
   config: IThinkingConfig,
   resolvedModel: string,
-  discriminator: ThinkingProviderDiscriminator
+  discriminator: ThinkingProviderDiscriminator,
+  thinkingRequired: boolean = false
 ): Result<IResolvedThinkingConfig> {
+  return resolveThinkingConfig(config, resolvedModel, discriminator, thinkingRequired).onSuccess((r) =>
+    succeed(r.resolved)
+  );
+}
+
+/**
+ * The outcome of {@link resolveThinkingConfig}: the wire config, plus whether a generic `'none'`
+ * was actually sent as `'low'`.
+ * @internal
+ */
+export interface IThinkingResolution {
+  readonly resolved: IResolvedThinkingConfig;
+  /**
+   * True only when a generic `'none'` was degraded to `'low'` **and** no provider block then
+   * rewrote that provider's effort field, so the wire carries the degraded value.
+   */
+  readonly noneDegraded: boolean;
+}
+
+/**
+ * The wire keys through which each provider carries its thinking effort, where an `'other'` block's
+ * `otherParams` land (merged last, so they win): the request body for OpenAI, xAI and Anthropic, and
+ * `generationConfig` for Gemini.
+ */
+const EFFORT_WIRE_KEYS: Readonly<Record<ThinkingProviderDiscriminator, ReadonlyArray<string>>> = {
+  openai: ['reasoning_effort', 'reasoning'],
+  xai: ['reasoning_effort', 'reasoning'],
+  google: ['thinkingConfig'],
+  anthropic: ['thinking', 'output_config']
+};
+
+/** Whether one applicable block sets `discriminator`'s effort, typed or through `otherParams`. */
+function blockSetsEffort(
+  block: IThinkingProviderConfig,
+  discriminator: ThinkingProviderDiscriminator
+): boolean {
+  switch (block.provider) {
+    case 'other':
+      return EFFORT_WIRE_KEYS[discriminator].some((key) => key in block.config);
+    case 'google':
+      return block.config.thinkingBudget !== undefined;
+    default:
+      return block.config.effort !== undefined;
+  }
+}
+
+/**
+ * True when an applicable provider block sets `discriminator`'s effort — a typed block's `effort`
+ * (`thinkingBudget` on Gemini), or an `'other'` block's wire key. Blocks outrank the generic
+ * `effort`, so the caller then owns the value that reaches the wire, and the `'none'` gate stands
+ * aside: no degrade and no `'fail'` refusal.
+ */
+function providerBlockSetsEffort(
+  config: IThinkingConfig,
+  resolvedModel: string,
+  discriminator: ThinkingProviderDiscriminator
+): boolean {
+  return (config.providers ?? []).some(
+    (block) => blockApplies(block, resolvedModel, discriminator) && blockSetsEffort(block, discriminator)
+  );
+}
+
+/** The resolved field that carries the effort for `discriminator`. */
+function effortFieldFor(
+  resolved: IResolvedThinkingConfig,
+  discriminator: ThinkingProviderDiscriminator
+): unknown {
+  switch (discriminator) {
+    case 'anthropic':
+      return resolved.anthropicEffort;
+    case 'openai':
+      return resolved.openAiEffort;
+    case 'google':
+      return resolved.geminiThinkingBudget;
+    case 'xai':
+      return resolved.xaiEffort;
+  }
+}
+
+/**
+ * {@link mergeThinkingConfig}, also reporting whether the `'none'` degrade reached the wire.
+ * The call paths use this so a later failure message can say what was actually sent.
+ * @internal
+ */
+export function resolveThinkingConfig(
+  config: IThinkingConfig,
+  resolvedModel: string,
+  discriminator: ThinkingProviderDiscriminator,
+  thinkingRequired: boolean
+): Result<IThinkingResolution> {
   let resolved: IResolvedThinkingConfig = {};
 
+  let effort = config.effort;
+  let degraded = false;
+  if (
+    effort === 'none' &&
+    thinkingRequired &&
+    !providerBlockSetsEffort(config, resolvedModel, discriminator)
+  ) {
+    if (config.onUnsupported === 'fail') {
+      return fail(
+        `thinking effort 'none' is not supported by ${resolvedModel}: the model cannot run with ` +
+          `thinking off (omit onUnsupported, or set it to 'degrade', to send 'low' instead)`
+      );
+    }
+    effort = 'low';
+    degraded = true;
+  }
+
   // Tier 1: generic effort → common-subset mapping
-  if (config.effort !== undefined) {
+  if (effort !== undefined) {
     switch (discriminator) {
       case 'anthropic':
         // Anthropic has no 'none' value: "off" means no `thinking` wire param at all,
         // so 'none' leaves `anthropicEffort` unset rather than mapping to a value. That
         // also satisfies checkTemperatureConflict's anthropic gate (which fails only when
         // anthropicEffort is set), so temperature survives without any special-casing there.
-        if (config.effort !== 'none') {
-          resolved = { ...resolved, anthropicEffort: genericEffortToAnthropic(config.effort) };
+        if (effort !== 'none') {
+          resolved = { ...resolved, anthropicEffort: genericEffortToAnthropic(effort) };
         }
         break;
       case 'openai':
-        resolved = { ...resolved, openAiEffort: genericEffortToOpenAi(config.effort) };
+        resolved = { ...resolved, openAiEffort: genericEffortToOpenAi(effort) };
         break;
       case 'google':
-        resolved = { ...resolved, geminiThinkingBudget: genericEffortToGemini(config.effort) };
+        resolved = { ...resolved, geminiThinkingBudget: genericEffortToGemini(effort) };
         break;
       case 'xai':
-        resolved = { ...resolved, xaiEffort: genericEffortToXai(config.effort) };
+        resolved = { ...resolved, xaiEffort: genericEffortToXai(effort) };
         break;
     }
   }
 
+  const degradedValue = effortFieldFor(resolved, discriminator);
+  const outcome = (): IThinkingResolution => ({
+    resolved,
+    noneDegraded: degraded && effortFieldFor(resolved, discriminator) === degradedValue
+  });
+
   if (!config.providers) {
-    return succeed(resolved);
+    return succeed(outcome());
   }
 
   // Partition into tiers 2 and 3+4
@@ -302,7 +422,7 @@ export function mergeThinkingConfig(
     resolved = applyBlock(resolved, block, discriminator);
   }
 
-  return succeed(resolved);
+  return succeed(outcome());
 }
 
 /**
@@ -361,6 +481,24 @@ function applyBlock(
 // ============================================================================
 
 /**
+ * The temperature-conflict failure message. When the caller asked for `'none'` and the model
+ * cannot run with thinking off, the effort that conflicts is the `'low'` that `'none'` was
+ * degraded to (see `mergeThinkingConfig`), so the usual advice to "disable thinking" would tell
+ * the caller to do what they already did. That case gets its own message.
+ */
+function temperatureConflict(provider: string, noneDegraded: boolean): Result<undefined> {
+  if (noneDegraded) {
+    return fail(
+      `thinking effort 'none' was sent as 'low' because the model cannot run with thinking off, and ` +
+        `thinking mode is not compatible with temperature on provider ${provider}: remove temperature`
+    );
+  }
+  return fail(
+    `thinking mode is not compatible with temperature on provider ${provider}: remove temperature or disable thinking`
+  );
+}
+
+/**
  * Returns a Result.fail if temperature conflicts with thinking mode for the
  * given provider, otherwise succeed(undefined).
  *
@@ -368,12 +506,16 @@ function applyBlock(
  * effective effort is non-null and non-'none'), and xAI (conservative default
  * pending live verification). Gemini accepts temperature alongside thinking.
  *
+ * `noneDegraded` (from `resolveThinkingConfig`) says a generic `'none'` reached the wire as `'low'`.
+ * It affects only the failure message, never the decision.
+ *
  * @internal
  */
 export function checkTemperatureConflict(
   resolved: IResolvedThinkingConfig,
   discriminator: ThinkingProviderDiscriminator,
-  temperature: number | undefined
+  temperature: number | undefined,
+  noneDegraded: boolean = false
 ): Result<undefined> {
   if (temperature === undefined) {
     return succeed(undefined);
@@ -382,25 +524,19 @@ export function checkTemperatureConflict(
   switch (discriminator) {
     case 'anthropic':
       if (resolved.anthropicEffort !== undefined) {
-        return fail(
-          'thinking mode is not compatible with temperature on provider anthropic: remove temperature or disable thinking'
-        );
+        return temperatureConflict('anthropic', noneDegraded);
       }
       break;
     case 'openai':
       // 'none' disables reasoning; temperature is accepted in that case
       if (resolved.openAiEffort !== undefined && resolved.openAiEffort !== 'none') {
-        return fail(
-          'thinking mode is not compatible with temperature on provider openai: remove temperature or disable thinking'
-        );
+        return temperatureConflict('openai', noneDegraded);
       }
       break;
     case 'xai':
       // Conservative default: fail if xAI effort is active (per D8 — live verification pending)
       if (resolved.xaiEffort !== undefined && resolved.xaiEffort !== 'none') {
-        return fail(
-          'thinking mode is not compatible with temperature on provider xai: remove temperature or disable thinking'
-        );
+        return temperatureConflict('xai', noneDegraded);
       }
       break;
     case 'google':

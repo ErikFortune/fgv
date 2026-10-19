@@ -76,6 +76,7 @@ declare namespace AiAssist {
         IAiClientToolConfig,
         IAiToolAnnotations,
         IAiClientTool,
+        IAiClientToolExecuteContext,
         IAiClientToolCallSummary,
         IAiClientToolContinuation,
         IAiClientToolTurnResult,
@@ -143,6 +144,7 @@ declare namespace AiAssist {
         resolveProviderModel,
         isResponsesOnlyModel,
         isAdaptiveThinkingModel,
+        isThinkingRequiredModel,
         usesMaxCompletionTokensField,
         toDataUrl,
         IThinkingConfig,
@@ -206,6 +208,7 @@ declare namespace AiAssist {
         resolveEffectiveTools,
         resolveToolConflicts,
         defaultToolConflictPolicy,
+        toGeminiParameterSchema,
         IAiResolvedToolConflicts,
         AiCacheReportingLevel,
         IAiCompletionUsage,
@@ -215,6 +218,9 @@ declare namespace AiAssist {
         supportsStreamUsageOption,
         IAiPromptCacheRoutingSupport,
         ANTHROPIC_STRUCTURED_OUTPUT_TOOL_NAME,
+        structuredOutputSchemaKeywords,
+        clientToolSchemaKeywords,
+        IAiVerifiedEndpoint,
         AiStructuredOutputFormat,
         IAiStructuredOutputCapability,
         IJsonObjectStructuredOutputRequest,
@@ -323,7 +329,7 @@ const aiServerToolType: Converter<AiServerToolType>;
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-type AiStructuredOutputFormat = 'openai-json-schema' | 'openai-responses-format' | 'gemini-response-schema' | 'anthropic-tool-forced';
+type AiStructuredOutputFormat = 'openai-json-schema' | 'openai-responses-format' | 'gemini-response-schema' | 'anthropic-output-format' | 'anthropic-tool-forced';
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -395,7 +401,7 @@ const ANTHROPIC_STRUCTURED_OUTPUT_TOOL_NAME: string;
 function anthropicEffortToBudgetTokens(effort: NonNullable<IAnthropicThinkingConfig['effort']>): number;
 
 // @public
-type AnthropicThinkingModelNames = 'claude-sonnet-4-5' | 'claude-sonnet-4-6' | 'claude-sonnet-5' | 'claude-opus-4-6' | 'claude-opus-4-7' | 'claude-opus-4-8' | 'claude-opus-5' | 'claude-fable-5';
+type AnthropicThinkingModelNames = 'claude-sonnet-4-5' | 'claude-sonnet-4-6' | 'claude-sonnet-5' | 'claude-opus-4-6' | 'claude-opus-4-7' | 'claude-opus-4-8' | 'claude-opus-5' | 'claude-opus-5-5' | 'claude-fable-5' | 'claude-fable-5-1' | 'claude-mythos-5-1';
 
 // @public
 const ARGON2ID_OWASP_MIN: IArgon2idParams;
@@ -492,6 +498,13 @@ function classifyAddress(address: string): Result<IClassifiedAddress>;
 // @public
 function classifyJsonParseFailure(text: string): JsonParseFailureReason;
 
+// @public
+function clientToolSchemaKeywords(descriptor: IAiProviderDescriptor, options?: {
+    readonly model?: string;
+    readonly endpoint?: string;
+    readonly verifiedEndpoint?: IAiVerifiedEndpoint;
+}): JsonSchema.SchemaKeywordCapabilities;
+
 declare namespace Constants {
     export {
         ENCRYPTED_FILE_FORMAT,
@@ -557,6 +570,14 @@ function createEncryptedFile<TMetadata = JsonValue>(params: ICreateEncryptedFile
 //
 // @public
 function createEncryptedFileConverter<TMetadata = JsonValue>(metadataConverter?: Converter<TMetadata>): Converter<IEncryptedFile<TMetadata>>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function createGuardedFetch(options: IGuardedFetchOptions): Result<GuardedFetch>;
 
 // @public
 function createZipFromFiles(files: ReadonlyArray<IZipFile>, options?: ICreateZipOptions): Result<Uint8Array>;
@@ -835,6 +856,9 @@ function fencedStringifiedJson(options?: IFencedStringifiedJsonExtractorOptions)
 function fencedStringifiedJson<T>(options: IFencedStringifiedJsonOptions<T>): Converter<T>;
 
 // @public
+type FetchFailureKind = FetchFailureReason['kind'];
+
+// @public
 type FetchFailureReason =
 /** The supplied URL could not be parsed, or its scheme is not `http:` or `https:`. */
     {
@@ -1016,7 +1040,7 @@ const GCM_IV_SIZE: number;
 type GeminiFlashImageModelNames = 'gemini-3.1-flash-image';
 
 // @public
-type GeminiThinkingModelNames = 'gemini-3.1-pro-preview' | 'gemini-3.5-flash' | 'gemini-3.1-flash-lite';
+type GeminiThinkingModelNames = 'gemini-3.1-pro-preview' | 'gemini-3.8-flash' | 'gemini-3.5-flash' | 'gemini-3.5-flash-lite' | 'gemini-3.1-flash-lite';
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -1031,7 +1055,7 @@ function getProviderDescriptor(id: string): Result<IAiProviderDescriptor>;
 function getProviderDescriptors(): ReadonlyArray<IAiProviderDescriptor>;
 
 // @public
-type GptImageModelNames = 'gpt-image-1' | 'gpt-image-1.5' | 'gpt-image-2';
+type GptImageModelNames = 'gpt-image-1' | 'gpt-image-1.5' | 'gpt-image-2' | 'gpt-image-2.5-sunburst' | 'gpt-image-2.5-flare';
 
 // @public
 type GptImageQuality = 'low' | 'medium' | 'high' | 'auto';
@@ -1040,7 +1064,21 @@ type GptImageQuality = 'low' | 'medium' | 'high' | 'auto';
 type GptImageSize = '1024x1024' | '1536x1024' | '1024x1536' | 'auto';
 
 // @public
-type GrokImagineModelNames = 'grok-imagine-image' | 'grok-imagine-image-quality';
+type GrokImagineModelNames = 'grok-imagine-image' | 'grok-imagine-image-quality' | 'grok-imagine-image-2.0';
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+type GuardedFetch = (url: string | URL, init?: RequestInit) => Promise<Response>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+class GuardedFetchError extends Error {
+    constructor(reason: FetchFailureReason);
+    readonly reason: FetchFailureReason;
+}
 
 declare namespace Hash {
     export {
@@ -1186,7 +1224,7 @@ interface IAiCacheRequest {
 // @public
 interface IAiClientTool<TParams = unknown> {
     readonly config: IAiClientToolConfig<TParams>;
-    readonly execute: (args: TParams) => Promise<Result<unknown>>;
+    readonly execute: (args: TParams, context?: IAiClientToolExecuteContext) => Promise<Result<unknown>>;
 }
 
 // @public
@@ -1212,6 +1250,11 @@ interface IAiClientToolConfig<TParams = unknown> {
 interface IAiClientToolContinuation {
     readonly messages: ReadonlyArray<JsonObject>;
     readonly toolCallsSummary: ReadonlyArray<IAiClientToolCallSummary>;
+}
+
+// @public
+interface IAiClientToolExecuteContext {
+    readonly signal?: AbortSignal;
 }
 
 // @public
@@ -1398,6 +1441,10 @@ interface IAiProviderDescriptor {
     readonly streamingCorsRestricted: boolean;
     readonly structuredOutput?: ReadonlyArray<IAiStructuredOutputCapability>;
     readonly supportedTools: ReadonlyArray<AiServerToolType>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IThinkingConfig"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IThinkingConfig"
+    readonly thinkingRequiredModelPrefixes?: ReadonlyArray<string>;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -1502,6 +1549,12 @@ interface IAiToolEnablement {
     readonly config?: AiServerToolConfig;
     readonly enabled: boolean;
     readonly type: AiServerToolType;
+}
+
+// @public
+interface IAiVerifiedEndpoint {
+    readonly providerId: AiProviderId;
+    readonly verified: true;
 }
 
 // @public
@@ -1784,6 +1837,7 @@ interface IExecuteClientToolTurnParams extends IChatRequest {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly toolConflictPolicy?: AiToolConflictPolicy;
     readonly tools?: ReadonlyArray<AiServerToolConfig>;
+    readonly verifiedEndpoint?: IAiVerifiedEndpoint;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -1927,6 +1981,27 @@ interface IGrokImagineModelOptions extends INamedModelFamilyConfig {
     readonly models?: GrokImagineModelNames[];
     // (undocumented)
     readonly provider: 'xai';
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IGuardedFetchOptions {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly addressGuard: IAddressGuard;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly headersTimeoutMs?: number;
+    readonly logger?: Logging.ILogger;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly maxRedirects?: number;
+    readonly redirectPolicy?: SaferFetchRedirectPolicy;
+    readonly requestGuard?: IRequestGuard;
+    readonly responseHeadersGuard?: IResponseHeadersGuard;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly sensitiveHeaders?: ReadonlyArray<string>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly transport?: IFetchTransport;
 }
 
 // @public
@@ -2220,6 +2295,7 @@ interface IProviderCompletionParams extends IChatRequest {
     readonly thinking?: IThinkingConfig;
     readonly tier?: 'advanced' | 'frontier';
     readonly tools?: ReadonlyArray<AiServerToolConfig>;
+    readonly verifiedEndpoint?: IAiVerifiedEndpoint;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -2239,6 +2315,7 @@ interface IProviderCompletionStreamParams extends IChatRequest {
     readonly thinking?: IThinkingConfig;
     readonly tier?: 'advanced' | 'frontier';
     readonly tools?: ReadonlyArray<AiServerToolConfig>;
+    readonly verifiedEndpoint?: IAiVerifiedEndpoint;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -2503,6 +2580,11 @@ const isoDateTime: Converter<DateTime, unknown>;
 // @public
 function isResponsesOnlyModel(descriptor: IAiProviderDescriptor, modelId: string): boolean;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
+//
+// @public
+function isThinkingRequiredModel(descriptor: IAiProviderDescriptor, modelId: string): boolean;
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -2513,7 +2595,12 @@ function isValidMultibaseSpkiPublicKey(value: unknown): value is MultibaseSpkiPu
 
 // @public
 interface IThinkingConfig {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IThinkingConfig"
     readonly effort?: 'none' | 'low' | 'medium' | 'high';
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
+    readonly onUnsupported?: 'degrade' | 'fail';
     readonly providers?: ReadonlyArray<IThinkingProviderConfig>;
 }
 
@@ -3010,7 +3097,7 @@ const nodeCryptoProvider: NodeCryptoProvider;
 const nodeHostResolver: HostResolver;
 
 // @public
-type OpenAiThinkingModelNames = 'o3' | 'o4-mini' | 'o3-deep-research' | 'o4-mini-deep-research' | 'gpt-5' | 'gpt-5.1' | 'gpt-5.2' | 'gpt-5.4-mini' | 'gpt-5.5' | 'gpt-5.5-pro' | 'gpt-5.6-sol' | 'gpt-5.6-terra' | 'gpt-5.6-luna' | 'gpt-5-pro';
+type OpenAiThinkingModelNames = 'o3' | 'o4-mini' | 'gpt-5' | 'gpt-5.1' | 'gpt-5.2' | 'gpt-5.4-mini' | 'gpt-5.5' | 'gpt-5.5-pro' | 'gpt-5.6-sol' | 'gpt-5.6-terra' | 'gpt-5.6-luna' | 'gpt-5-pro' | 'gpt-6-astra' | 'gpt-6-sol' | 'gpt-6-luna';
 
 // @beta
 function parseCsvString(body: string, options?: CsvOptions): Result<unknown>;
@@ -3169,6 +3256,9 @@ const RETRY_AFTER_STATUSES: ReadonlyArray<number>;
 // @public
 const RETRYABLE_HTTP_STATUSES: ReadonlyArray<number>;
 
+// @public
+const SAFER_FETCH_METHODS: readonly ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE"];
+
 declare namespace SaferFetch {
     export {
         ALWAYS_STRIPPED_HEADERS,
@@ -3183,12 +3273,16 @@ declare namespace SaferFetch {
         RETRY_AFTER_STATUSES,
         RETRYABLE_HTTP_STATUSES,
         SUPPORTED_SCHEMES,
+        FetchFailureKind,
         FetchFailureReason,
         FetchTimeoutPhase,
+        SAFER_FETCH_METHODS,
         IRetryPolicy,
+        GuardedFetch,
         IAddressGuard,
         IFetchTransport,
         IFetchTransportHints,
+        IGuardedFetchOptions,
         IGuardVerdict,
         IRequestGuard,
         IRequestHop,
@@ -3204,10 +3298,12 @@ declare namespace SaferFetch {
         allowAnyAddress,
         allowContentTypes,
         platformFetchTransport,
+        createGuardedFetch,
         saferFetchBytes,
         saferFetchJson,
         saferFetchText,
         ISaferFetchJsonOptions,
+        GuardedFetchError,
         allowAnyAddressPolicy,
         blockPrivateNetworksPolicy,
         IAddressCheckVerdict,
@@ -3241,7 +3337,7 @@ function saferFetchJson(url: string | URL, options: ISaferFetchOptions): Promise
 function saferFetchJson<T>(url: string | URL, options: ISaferFetchJsonOptions<T>): Promise<DetailedResult<ISaferFetchResponse<T>, FetchFailureReason>>;
 
 // @public
-type SaferFetchMethod = 'GET' | 'HEAD' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+type SaferFetchMethod = (typeof SAFER_FETCH_METHODS)[number];
 
 // @public
 type SaferFetchRedirectPolicy = 'reject' | 'validate-each-hop';
@@ -3280,6 +3376,13 @@ type StructuredOutputFallback = 'degrade' | 'fail';
 
 // @public
 type StructuredOutputRequest = ISchemaStructuredOutputRequest | IJsonObjectStructuredOutputRequest;
+
+// @public
+function structuredOutputSchemaKeywords(descriptor: IAiProviderDescriptor, options: {
+    readonly model: string;
+    readonly endpoint?: string;
+    readonly verifiedEndpoint?: IAiVerifiedEndpoint;
+}): JsonSchema.SchemaKeywordCapabilities | undefined;
 
 // @public
 const SUPPORTED_SCHEMES: ReadonlyArray<string>;
@@ -3329,6 +3432,9 @@ function toBase64(bytes: Uint8Array): string;
 // @public
 function toDataUrl(image: IAiImageData): string;
 
+// @public
+function toGeminiParameterSchema(schema: JsonValue): JsonValue;
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -3357,7 +3463,7 @@ function validateCacheBreakpoints(systemLength: number, cache: IAiCacheRequest, 
 function validateResolvedOptions(modelId: string, capability: IAiImageModelCapability, resolved: IResolvedImageOptions): Result<IResolvedImageOptions>;
 
 // @public
-type XAiThinkingModelNames = 'grok-3-mini' | 'grok-4.3' | 'grok-4' | 'grok-4.5';
+type XAiThinkingModelNames = 'grok-3-mini' | 'grok-4.3' | 'grok-4' | 'grok-4.5' | 'grok-4.6' | 'grok-4.7';
 
 declare namespace Yaml {
     export {

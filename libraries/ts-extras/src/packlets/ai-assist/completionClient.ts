@@ -50,6 +50,7 @@ import {
   type ModelSpec,
   type ModelSpecKey,
   isAdaptiveThinkingModel,
+  isThinkingRequiredModel,
   isResponsesOnlyModel,
   resolveProviderModel,
   usesMaxCompletionTokensField
@@ -60,7 +61,7 @@ import type { IAiCompletionUsage } from './usageTypes';
 import {
   anthropicEffortToBudgetTokens,
   checkTemperatureConflict,
-  mergeThinkingConfig,
+  resolveThinkingConfig,
   providerDiscriminatorForId,
   type IResolvedThinkingConfig
 } from './thinkingOptionsResolver';
@@ -83,7 +84,8 @@ import {
   resolveEffectiveBaseUrl
 } from './endpoint';
 import { type IAiApiConfig, fetchJson } from './http';
-import { toAnthropicTools, toGeminiTools, toResponsesApiTools } from './toolFormats';
+import { type IAiVerifiedEndpoint, schemaWireProviderId } from './schemaKeywords';
+import { serverToolsToAnthropic, serverToolsToGemini, serverToolsToResponsesApi } from './toolFormats';
 import {
   ANTHROPIC_STRUCTURED_OUTPUT_TOOL_NAME,
   type IResolvedStructuredOutput,
@@ -145,8 +147,19 @@ export interface IProviderCompletionParams extends IChatRequest {
    * optional port + path prefix). The per-route suffix (e.g. `/chat/completions`)
    * is appended unchanged. Must be a well-formed `http`/`https` URL. Auth shape
    * is unchanged: `needsSecret` providers still require an API key.
+   *
+   * Schemas sent to an overridden endpoint — client-tool parameters and structured-output
+   * schemas — are adapted with the conservative keyword table
+   * (`JsonSchema.unverifiedWireSchemaKeywords`), since the provider's documentation describes its
+   * own endpoint, unless `verifiedEndpoint` asserts this one is the provider itself.
    */
   readonly endpoint?: string;
+  /**
+   * The host's assertion that `endpoint` reaches the descriptor's own provider, so this request's
+   * schemas are adapted with that provider's keyword table instead of the conservative one.
+   * Ignored without `endpoint`, and honoured only as `IAiVerifiedEndpoint` describes.
+   */
+  readonly verifiedEndpoint?: IAiVerifiedEndpoint;
   /**
    * Optional thinking/reasoning config. Anthropic, OpenAI, and xAI reject `temperature` when
    * the effective merged effort is non-`'none'`; Gemini always accepts both.
@@ -448,7 +461,7 @@ async function callOpenAiResponsesCompletion(
     input,
     // `tools` is omitted entirely when none are requested — a Responses-only model routed
     // here for tier/model reasons (not tools) must not send an empty tools array.
-    ...(tools.length > 0 ? { tools: toResponsesApiTools(tools) } : {}),
+    ...(tools.length > 0 ? { tools: serverToolsToResponsesApi(tools) } : {}),
     // Temperature is sent only when the caller explicitly provided one (see callOpenAiCompletion).
     ...(temperature !== undefined ? { temperature } : {}),
     ...(effort !== undefined && config.model !== 'grok-4' ? { reasoning: { effort } } : {}),
@@ -569,6 +582,29 @@ function extractAnthropicStructuredOutput(content: unknown[]): Result<string> {
   );
 }
 
+/**
+ * Merges a resolved structured-output wire into an Anthropic request body.
+ *
+ * @remarks
+ * A plain `Object.assign` except for `output_config`, which is **merged one level
+ * deep**. Two writers share that object: the adaptive-thinking path puts `effort` in
+ * it, and `'anthropic-output-format'` puts `format` in it. Anthropic's Messages API
+ * reference documents both as optional siblings of one `OutputConfig`
+ * (https://platform.claude.com/docs/en/api/messages/create, fetched 2026-09-25), so
+ * they belong in the same object — and a structured-output call on an always-thinking
+ * model such as `claude-opus-5-5` is exactly the call that carries both. Assigning
+ * would drop the caller's effort with nothing failing.
+ * @internal
+ */
+function mergeAnthropicStructuredWire(body: Record<string, unknown>, wire: JsonObject): void {
+  const { output_config: wireOutputConfig, ...rest } = wire;
+  Object.assign(body, rest);
+  if (isJsonObject(wireOutputConfig)) {
+    const existing = body.output_config;
+    body.output_config = isJsonObject(existing) ? { ...existing, ...wireOutputConfig } : wireOutputConfig;
+  }
+}
+
 /** Calls the Anthropic Messages API with optional tool support. @internal */
 async function callAnthropicCompletion(
   config: IAiApiConfig,
@@ -618,11 +654,13 @@ async function callAnthropicCompletion(
     Object.assign(body, resolvedThinking.otherParams);
   }
 
-  // The structured-output wire carries `tools` + `tool_choice` of its own, so the
-  // server-tool assignment below would clobber it. `resolveStructuredOutput`
-  // refuses that combination up front, which is what makes the two mutually
-  // exclusive — but that is an invariant held in a DIFFERENT FILE, and a future
-  // second Anthropic capability entry (or a relaxed conflict guard) would
+  // The forced-tool wire (`'tool-forced'`) carries `tools` + `tool_choice` of its
+  // own, so the server-tool assignment below would clobber it. (The
+  // `'anthropic-output-format'` wire lives in `output_config` and carries no tools,
+  // which is why this checks the enforcement, not merely that a wire exists.)
+  // `resolveStructuredOutput` refuses forced-tool + server tools up front, which is
+  // what makes the two mutually exclusive — but that is an invariant held in a
+  // DIFFERENT FILE, and a relaxed conflict guard (or a new tools-based format) would
   // reintroduce silent clobbering with nothing failing at this line. So assert it
   // here rather than trusting a comment across a file boundary.
   // Unreachable through the public API — resolveStructuredOutput refuses this
@@ -635,10 +673,10 @@ async function callAnthropicCompletion(
         `this combination must be refused before reaching the adapter`
     );
   }
-  Object.assign(body, structured.wire);
+  mergeAnthropicStructuredWire(body, structured.wire);
 
   if (tools && tools.length > 0) {
-    body.tools = toAnthropicTools(tools);
+    body.tools = serverToolsToAnthropic(tools);
     /* c8 ignore next 3 - optional logger diagnostic output */
     logger?.info(`Anthropic completion: model=${config.model}, tools=${tools.map((t) => t.type).join(',')}`);
   } else {
@@ -726,7 +764,7 @@ async function callGeminiCompletion(
   };
 
   if (tools && tools.length > 0) {
-    body.tools = toGeminiTools(tools);
+    body.tools = serverToolsToGemini(tools);
     /* c8 ignore next 1 - optional logger */
     logger?.info(`Gemini completion: model=${config.model}, tools=${tools.map((t) => t.type).join(',')}`);
   } else {
@@ -801,6 +839,7 @@ export async function callProviderCompletion(
     tools,
     signal,
     endpoint,
+    verifiedEndpoint,
     thinking,
     maxTokens,
     structuredOutput,
@@ -836,13 +875,22 @@ export async function callProviderCompletion(
   let resolvedThinking: IResolvedThinkingConfig | undefined;
   if (thinking !== undefined) {
     if (discriminator !== undefined) {
-      const mergeResult = mergeThinkingConfig(thinking, model, discriminator);
-      /* c8 ignore next 3 - mergeThinkingConfig always succeeds; defensive guard */
+      const mergeResult = resolveThinkingConfig(
+        thinking,
+        model,
+        discriminator,
+        isThinkingRequiredModel(descriptor, model)
+      );
       if (mergeResult.isFailure()) {
         return fail(mergeResult.message);
       }
-      resolvedThinking = mergeResult.value;
-      const conflictResult = checkTemperatureConflict(resolvedThinking, discriminator, temperature);
+      resolvedThinking = mergeResult.value.resolved;
+      const conflictResult = checkTemperatureConflict(
+        resolvedThinking,
+        discriminator,
+        temperature,
+        mergeResult.value.noneDegraded
+      );
       if (conflictResult.isFailure()) {
         return fail(conflictResult.message);
       }
@@ -856,13 +904,18 @@ export async function callProviderCompletion(
   // on the model alone cannot know which of the two OpenAI wire shapes applies.
   const usesResponsesApi: boolean =
     descriptor.apiFormat === 'openai' && (hasTools || isResponsesOnlyModel(descriptor, model));
+  // The schema-keyword tables trust a provider's documentation only on that provider's own
+  // endpoint: a caller-supplied `endpoint` (a gateway, LiteLLM, vLLM) is an unverified server
+  // unless the host asserts otherwise.
+  const wireProviderId: string | undefined = schemaWireProviderId(descriptor, endpoint, verifiedEndpoint);
   const structuredResult = resolveStructuredOutput(
     descriptor,
     model,
     structuredOutput,
     tools,
     usesResponsesApi,
-    resolveStructuredOutputCapability
+    resolveStructuredOutputCapability,
+    { providerId: wireProviderId, model }
   );
   if (structuredResult.isFailure()) {
     return fail(structuredResult.message);
@@ -891,7 +944,8 @@ export async function callProviderCompletion(
   const config: IAiApiConfig = {
     baseUrl: baseUrlResult.value,
     apiKey,
-    model
+    model,
+    providerId: wireProviderId
   };
   /* c8 ignore next 8 - optional logger diagnostic output */
   if (logger) {

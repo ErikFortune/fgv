@@ -23,9 +23,9 @@ fgv-stable token (`flash`, `pro`, `flash-image`, `embedding`, …) that outlives
 
 ```typescript
 // Registered today (each provider descriptor's `aliases` map):
-'@google-gemini:flash'  ->  'gemini-3.5-flash'   // fgv alias → concrete id
-'@openai:flagship'      ->  'gpt-5.6-terra'
-'@anthropic:opus'       ->  'claude-opus-5'
+'@google-gemini:flash'  ->  'gemini-3.8-flash'   // fgv alias → concrete id
+'@openai:flagship'      ->  'gpt-6-sol'
+'@anthropic:opus'       ->  'claude-opus-5-5'
 
 // When an RHS is itself a provider-native undated alias rather than a dated snapshot, resolution
 // follows one further `@fgv-alias → provider-native-alias` hop (cycle-guarded).
@@ -119,8 +119,8 @@ A tier request walks an **ordered fallback list** and takes the first key presen
 | `base` | `base` | always present |
 
 This is why a provider only needs to declare the tiers it actually differentiates. OpenAI wires all
-three tiers (`frontier` → `gpt-5.6-sol`, which works on chat completions); Anthropic and Gemini omit
-`frontier`, so a `frontier` request cascades to their `advanced` model (opus / pro). (The previous
+three tiers (`frontier` → `gpt-6-astra`, which works on chat completions); Anthropic and Gemini omit
+`frontier`, so a `frontier` request cascades to their `advanced` model (opus / pro). (An earlier
 frontier target `gpt-5.5-pro` is Responses-API-only; it remains reachable via `modelOverride` and is
 routed to the Responses API via `responsesOnlyModelPrefixes`.)
 `image`/`embedding` are unaffected — they keep their flat `modality → base` behavior.
@@ -147,13 +147,13 @@ there is no 2-D selection and no competition between the axes.
 
 | slot | OpenAI | Anthropic | Gemini |
 |---|---|---|---|
-| `base` | `@openai:mini` → `gpt-5.6-luna` | `@anthropic:sonnet` → `claude-sonnet-5` | `@google-gemini:flash` → `gemini-3.5-flash` |
-| `advanced` | `@openai:flagship` → `gpt-5.6-terra` | `@anthropic:opus` → `claude-opus-5` | `@google-gemini:pro` → `gemini-3.1-pro-preview` |
-| `frontier` | `@openai:pro` → `gpt-5.6-sol` | *(unset → advanced/opus)* | *(unset → advanced/pro)* |
+| `base` | `@openai:mini` → `gpt-6-luna` | `@anthropic:sonnet` → `claude-sonnet-5` | `@google-gemini:flash` → `gemini-3.8-flash` |
+| `advanced` | `@openai:flagship` → `gpt-6-sol` | `@anthropic:opus` → `claude-opus-5-5` | `@google-gemini:pro` → `gemini-3.1-pro-preview` |
+| `frontier` | `@openai:pro` → `gpt-6-astra` | *(unset → advanced/opus)* | *(unset → advanced/pro)* |
 
 ### Maintenance loop — one map edit + a testbed run
 
-When a provider bumps a line (e.g. `gemini-3.5-flash` → `gemini-4-flash`) or re-slots a tier:
+When a provider bumps a line (e.g. `gemini-3.8-flash` → `gemini-4-flash`) or re-slots a tier:
 
 1. **Edit one value.** For a line rotation, edit the map value in that descriptor's `aliases`
    (`registry.ts`). For a tier re-slot (e.g. promoting a model to `advanced`), edit the one `defaultModel`
@@ -175,19 +175,27 @@ It fixes **selection/default churn** only. Two axes remain manual on a provider 
 2. **The typed `*ModelNames` unions** (`GeminiThinkingModelNames`, etc.) used by the layered-options
    `models?` filters — enumerate concrete ids for compile-time ergonomics and must track real ids.
 
+And the per-model capability declarations on each descriptor (`structuredOutput`, `imageGeneration`,
+`embedding`, `responsesOnlyModelPrefixes`, `adaptiveThinkingModelPrefixes`) must be re-checked against
+the new ids: a successor can change what a declared mechanism does. The 2026-09 rotation held
+`@anthropic:opus` at `claude-opus-5` for exactly this reason — `claude-opus-5-5` rejects the forced
+`tool_choice` that `anthropic-tool-forced` structured output is built on. The rotation shipped only
+once a non-forcing format (`anthropic-output-format`) was declared for it by a longer `modelPrefix`
+than the `''` catch-all. A catch-all is a claim about **every** future id.
+
 ### Gemini defaults (first migrated provider)
 
 `google-gemini`'s `defaultModel` references aliases that resolve to the Gemini 3.x line:
 
 | Alias | Resolves to | Role / tier slot |
 |---|---|---|
-| `@google-gemini:flash` | `gemini-3.5-flash` | `base` |
+| `@google-gemini:flash` | `gemini-3.8-flash` | `base` |
 | `@google-gemini:pro` | `gemini-3.1-pro-preview` | `advanced` (also the `frontier` cascade target) |
 | `@google-gemini:flash-image` | `gemini-3.1-flash-image` | `image` |
 | `@google-gemini:embedding` | `gemini-embedding-001` | `embedding` |
-| `@google-gemini:flash-lite` | `gemini-3.1-flash-lite` | non-tier role (`modelOverride` only) |
+| `@google-gemini:flash-lite` | `gemini-3.5-flash-lite` | non-tier role (`modelOverride` only) |
 
-The per-role version split (flash base at 3.5, the rest at 3.1) is from Google's deprecation table —
+The per-role version split (flash at 3.8, flash-lite at 3.5, pro and flash-image at 3.1) follows Google's models page —
 consumers reference the role alias and never see these numbers. OpenAI and Anthropic have since adopted
 the scheme with the same tier vocabulary (see the cross-provider tier table above). Note the `pro` role
 serves both the `advanced` slot and (via the cascade) `frontier`, which is exactly why alias roles are
@@ -263,14 +271,17 @@ wrong quietly. Leave it at `'degrade'` on paths *designed* to degrade — an ext
 that may return nothing, a segmenter that floors to a mechanical chunker — where a
 hard failure would make this library less safe than the code it replaces.
 
-A **conflict** is not a degradation and does not obey `onUnsupported`. Anthropic and Gemini
-each refuse structured output alongside server-side tools, for **different reasons** — worth
-separating, because a reader who assumes one mechanism will reason wrongly about the other.
-Anthropic's mechanism *is* `tools` + `tool_choice`, so it is a wire-level clash. Gemini's
-`responseMimeType` / `responseSchema` live in `generationConfig`, nowhere near `tools`; the
-exclusion is one the API enforces. Either way it fails rather than degrading.
+A **conflict** is not a degradation and does not obey `onUnsupported`. Three formats refuse
+structured output alongside server-side tools, for **three different reasons** — worth
+separating, because a reader who assumes one mechanism will reason wrongly about the others.
+`anthropic-tool-forced`'s mechanism *is* `tools` + `tool_choice`, so it is a wire-level clash.
+Gemini's `responseMimeType` / `responseSchema` live in `generationConfig`, nowhere near `tools`;
+the exclusion is one the API enforces. `anthropic-output-format` has neither problem — Anthropic
+documents JSON outputs combined with tools in one request — but it documents `output_config.format`
+as incompatible with **citations**, and web search (the one server tool this library sends to
+Anthropic) always returns citations. Every time, it fails rather than degrading.
 
-### Four wire formats, declared per model family
+### Five wire formats, declared per model family
 
 `IAiProviderDescriptor.structuredOutput` is longest-prefix matched **after** alias
 resolution, exactly like `imageGeneration` and `embedding`.
@@ -280,13 +291,20 @@ resolution, exactly like `imageGeneration` and `embedding`.
 | `openai-json-schema` | `body.response_format` |
 | `openai-responses-format` | `body.text.format` |
 | `gemini-response-schema` | `generationConfig.responseMimeType` + `responseSchema` |
+| `anthropic-output-format` | `body.output_config.format` (merged beside any `output_config.effort`) |
 | `anthropic-tool-forced` | a forced synthetic tool + `tool_choice` |
 
 Gemini's schema is an OpenAPI-3.0 subset that **rejects** draft-07 keywords rather
 than ignoring them, so the schema goes through the same sanitizer the Gemini tool
 path uses.
 
-Anthropic has no response-format field at all. Its mechanism is forced tool use —
+Anthropic has two mechanisms, split by model line. `claude-opus-5-5`,
+`claude-fable-5-1` and `claude-mythos-5-1` return a 400 on a forced `tool_choice`, so they declare
+`anthropic-output-format`: Anthropic's JSON outputs, constrained decoding with the
+reply as text, reported as `'schema'`. (`tool_choice: auto` + a `strict` tool was the
+other documented option and was declined: `auto` lets the model answer in text
+instead, so a `T` would no longer be guaranteed to arrive.) Every other Claude line
+stays on forced tool use under the `''` catch-all —
 which is why `'tool-forced'` is a distinct enforcement value and not a spelling of
 `'schema'`: **the reply arrives in a `tool_use` block, not as text.** The library
 re-serializes that block's `input` into `content`, so `content` stays a JSON string

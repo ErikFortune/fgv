@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/testbed",
+      "comment": "Adds the agent-tasks scenario: a credential-free journey through @fgv/ts-agent-tasks' public API (tracked and external work, subscriptions and exact receipts, typed command tools, reassignment, due queries, cascade stops, recovery and a checked final prompt), with a testable core and a thin CLI bootstrap.",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/testbed"
+}

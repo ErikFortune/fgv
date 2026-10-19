@@ -678,6 +678,79 @@ describe('callProviderImageGeneration', () => {
     });
   });
 
+  describe('xai quality param (real registry descriptor)', () => {
+    // grok-imagine-image-2.0 is the only xAI image model that accepts `quality`; the default
+    // image tier resolves to it, so both xAI builders must carry the value, and every other
+    // grok-imagine id must keep omitting it.
+    const xai = AiAssist.getProviderDescriptor('xai-grok').orThrow();
+    const TEST_IMG: AiAssist.IAiImageAttachment = { mimeType: 'image/png', base64: 'AAAA' };
+
+    test('sends quality on the generations body for the default image model', async () => {
+      mockFetchResponse(openAiImageBody(['XYZ']));
+
+      const result = await AiAssist.callProviderImageGeneration({
+        descriptor: xai,
+        apiKey: 'test-key',
+        params: { prompt: 'a cat', options: { quality: 'medium' } }
+      });
+
+      expect(result).toSucceed();
+      const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
+      expect(fetchCall[0]).toBe('https://api.x.ai/v1/images/generations');
+      const body = JSON.parse(fetchCall[1].body);
+      expect(body.model).toBe('grok-imagine-image-2.0');
+      expect(body.quality).toBe('medium');
+    });
+
+    test('sends quality on the edits body when reference images are supplied', async () => {
+      mockFetchResponse(openAiImageBody(['XYZ']));
+
+      const result = await AiAssist.callProviderImageGeneration({
+        descriptor: xai,
+        apiKey: 'test-key',
+        params: { prompt: 'add sunglasses', referenceImages: [TEST_IMG], options: { quality: 'low' } }
+      });
+
+      expect(result).toSucceed();
+      const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
+      expect(fetchCall[0]).toBe('https://api.x.ai/v1/images/edits');
+      expect(JSON.parse(fetchCall[1].body).quality).toBe('low');
+    });
+
+    test('rejects a quality value grok-imagine-image-2.0 does not accept', async () => {
+      const result = await AiAssist.callProviderImageGeneration({
+        descriptor: xai,
+        apiKey: 'test-key',
+        params: { prompt: 'a cat', options: { quality: 'high' } }
+      });
+
+      expect(result).toFailWith(/quality "high" is not accepted/i);
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
+
+    test('omits quality for a grok-imagine model without the param, on both endpoints', async () => {
+      mockFetchResponse(openAiImageBody(['XYZ']));
+      await AiAssist.callProviderImageGeneration({
+        descriptor: xai,
+        apiKey: 'test-key',
+        modelOverride: 'grok-imagine-image-quality',
+        params: { prompt: 'a cat', options: { quality: 'medium' } }
+      });
+      await AiAssist.callProviderImageGeneration({
+        descriptor: xai,
+        apiKey: 'test-key',
+        modelOverride: 'grok-imagine-image-quality',
+        params: { prompt: 'add sunglasses', referenceImages: [TEST_IMG], options: { quality: 'medium' } }
+      });
+
+      const calls = (global.fetch as jest.Mock).mock.calls;
+      expect(calls[0][0]).toBe('https://api.x.ai/v1/images/generations');
+      expect(JSON.parse(calls[0][1].body).quality).toBeUndefined();
+      expect(calls[1][0]).toBe('https://api.x.ai/v1/images/edits');
+      expect(JSON.parse(calls[1][1].body).quality).toBeUndefined();
+    });
+  });
+
   describe('gemini-image-out format with generationConfig', () => {
     const geminiImageOutDescriptor = makeImageDescriptor({
       id: 'google-gemini',

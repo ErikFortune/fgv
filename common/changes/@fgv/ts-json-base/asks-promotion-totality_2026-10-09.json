@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "JsonSchema.fromJson refuses a Date, Map, Set, Error or RegExp given as 'properties' or 'additionalProperties', instead of reading it as an empty schema (which turned additionalProperties into true).",
+      "type": "patch",
+      "packageName": "@fgv/ts-json-base"
+    }
+  ],
+  "packageName": "@fgv/ts-json-base",
+  "email": "ErikFortune@outlook.com"
+}

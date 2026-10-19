@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-agent-tasks",
+      "comment": "Pure snapshot-only task context: TaskContextRenderer renders validated task summaries, updates and unresolved references into bounded, framed, escaped text with deterministic priority selection, depth/item/character budgets and an honest omission report, and returns a canonical pure inclusion receipt naming only the revisions and fully delivered update IDs it rendered. Adds ITaskSummary, ITaskUpdate, IUnresolvedTaskReference, the context value types, a host projection seam that re-validates its output, and summary/update/input/budget/receipt converters.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-agent-tasks"
+}

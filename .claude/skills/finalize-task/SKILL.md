@@ -134,6 +134,15 @@ headline — and a stream with neither is simply absent from the feed. That is t
 outcome: a fabricated summary is worse than a gap, which is why the streams carrying
 `artifactLoss` are left alone rather than backfilled.
 
+**The feed carries one line per externally interesting capability; how the work was broken into
+streams is not interesting to a consumer** (the user's rule, 2026-10-01: "nobody cares how we broke
+up the work"). When a cluster ships one capability across several streams, put the `headline` on the
+stream whose first PR a reader should land on (the feed links `prs[0]`) and give every sibling an
+explicit opt-out — `headline: ''` with a comment naming the stream that carries the line. An
+*absent* `headline` falls back to `sourceLine`, so a sibling left blank lands in the feed anyway;
+the explicit empty value is what keeps it out while its `sourceLine` stays verbatim. A stream that
+ships no capability at all (a measurement, a proving ground, a capture) opts out the same way.
+
 **`keywords` earn their place by adding recall.** Include concepts a literal grep for
 the stream id would miss — the problem class, the primitives touched, the failure mode
 addressed. Skip words already in the id.

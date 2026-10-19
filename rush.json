@@ -424,6 +424,13 @@
       "tags": ["libraries"]
     },
     {
+      "packageName": "@fgv/ts-extras-re2",
+      "projectFolder": "libraries/ts-extras-re2",
+      "shouldPublish": true,
+      "versionPolicyName": "base-utils",
+      "tags": ["libraries"]
+    },
+    {
       "packageName": "@fgv/ts-agent-memory",
       "projectFolder": "libraries/ts-agent-memory",
       "shouldPublish": true,
@@ -433,6 +440,13 @@
     {
       "packageName": "@fgv/ts-agent-memory-sqlite-vec",
       "projectFolder": "libraries/ts-agent-memory-sqlite-vec",
+      "shouldPublish": true,
+      "versionPolicyName": "base-utils",
+      "tags": ["libraries"]
+    },
+    {
+      "packageName": "@fgv/ts-agent-tasks",
+      "projectFolder": "libraries/ts-agent-tasks",
       "shouldPublish": true,
       "versionPolicyName": "base-utils",
       "tags": ["libraries"]
@@ -640,6 +654,13 @@
     {
       "packageName": "@fgv/ts-extras-ollama",
       "projectFolder": "libraries/ts-extras-ollama",
+      "shouldPublish": true,
+      "versionPolicyName": "base-utils",
+      "tags": ["libraries"]
+    },
+    {
+      "packageName": "@fgv/ts-extras-system-one",
+      "projectFolder": "libraries/ts-extras-system-one",
       "shouldPublish": true,
       "versionPolicyName": "base-utils",
       "tags": ["libraries"]

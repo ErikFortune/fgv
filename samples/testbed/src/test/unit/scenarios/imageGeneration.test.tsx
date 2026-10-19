@@ -97,7 +97,7 @@ describe('imageGenerationScenario metadata', () => {
 
     const xai = AiAssist.getProviderDescriptor('xai-grok').orThrow();
     expect(AiAssist.resolveImageCapability(xai, defaultModelFor('xai-grok'))).toMatchObject({
-      modelPrefix: 'grok-imagine-',
+      modelPrefix: 'grok-imagine-image-2.0',
       format: 'xai-images-edits',
       acceptsImageReferenceInput: true
     });

@@ -36,7 +36,7 @@
  * @packageDocumentation
  */
 
-import { captureAsyncResult, fail, type Logging, Result, succeed } from '@fgv/ts-utils';
+import { captureAsyncResult, fail, type Logging, mapResults, Result, succeed } from '@fgv/ts-utils';
 import { type JsonArray, type JsonObject } from '@fgv/ts-json-base';
 
 import { type IAiCacheRequest } from '../cacheRequest';
@@ -53,7 +53,8 @@ import {
   isAdaptiveThinkingModel,
   resolveProviderModel
 } from '../model';
-import { resolveToolConflicts } from '../toolFormats';
+import { adaptClientToolParameters, resolveToolConflicts } from '../toolFormats';
+import { type IAiVerifiedEndpoint, clientToolWireFormat, schemaWireProviderId } from '../schemaKeywords';
 import type { IAiCompletionUsage } from '../usageTypes';
 import { type IResolvedThinkingConfig } from '../thinkingOptionsResolver';
 import { splitChatRequest } from '../chatRequestBuilders';
@@ -492,8 +493,19 @@ export interface IExecuteClientToolTurnParams extends IChatRequest {
    * unchanged. Validated at the dispatcher; auth shape is unaffected. Use this
    * to point a client-tool turn at a local / LAN OpenAI-compatible server
    * (Ollama, LM Studio, llama.cpp).
+   *
+   * Schemas sent to an overridden endpoint — client-tool parameters and structured-output
+   * schemas — are adapted with the conservative keyword table
+   * (`JsonSchema.unverifiedWireSchemaKeywords`), since the provider's documentation describes its
+   * own endpoint, unless `verifiedEndpoint` asserts this one is the provider itself.
    */
   readonly endpoint?: string;
+  /**
+   * The host's assertion that `endpoint` reaches the descriptor's own provider, so this request's
+   * schemas are adapted with that provider's keyword table instead of the conservative one.
+   * Ignored without `endpoint`, and honoured only as `IAiVerifiedEndpoint` describes.
+   */
+  readonly verifiedEndpoint?: IAiVerifiedEndpoint;
   /** Optional logger for diagnostics. */
   readonly logger?: Logging.ILogger;
   /** Optional resolved thinking config (pre-resolved by the caller). */
@@ -624,8 +636,16 @@ export interface IExecuteClientToolTurnResult {
  * a host can tell the person that e.g. web search was unavailable this turn.
  * Pass `'fail'` to refuse the request up front instead.
  *
+ * **Schema pre-flight:** every client tool offered this turn has its parameter schema adapted for
+ * the target wire (`descriptor.apiFormat`, the model, and the endpoint as `endpoint` /
+ * `verifiedEndpoint` describe it) before anything is sent. A schema that wire cannot carry — a
+ * node with no `type` where the wire's table refuses one — makes this return a `Failure` naming the
+ * tool, the JSON Pointer path and the wire, with no request made; it is never reported as a stream
+ * `error` event.
+ *
  * @param params - Turn parameters
- * @returns `{ events, nextTurn }` — stream iterable + completion promise
+ * @returns `{ events, nextTurn }` — stream iterable + completion promise, or a `Failure` when the
+ * request is refused up front
  * @public
  */
 export function executeClientToolTurn(
@@ -645,6 +665,7 @@ export function executeClientToolTurn(
     resolvedThinking,
     model,
     endpoint,
+    verifiedEndpoint,
     onBeforeToolExecute,
     maxTokens,
     toolConflictPolicy,
@@ -726,8 +747,23 @@ export function executeClientToolTurn(
   const config: IStreamApiConfig = {
     baseUrl: baseUrlResult.value,
     apiKey,
-    model: resolvedModel
+    model: resolvedModel,
+    // Trusted only on the provider's own endpoint — see `IAiApiConfig.providerId`.
+    providerId: schemaWireProviderId(descriptor, endpoint, verifiedEndpoint)
   };
+
+  // Pre-flight: adapt every client tool's parameter schema for the wire it is about to be sent on,
+  // with the same table the adapter will use, so a schema that wire cannot carry fails here —
+  // naming the tool, the path and the wire — before anything is sent, rather than as an `error`
+  // event once the turn is driven.
+  const preflight = mapResults(
+    resolvedClientTools.map((tool) =>
+      adaptClientToolParameters(tool.config, clientToolWireFormat(descriptor.apiFormat), config)
+    )
+  );
+  if (preflight.isFailure()) {
+    return fail(`executeClientToolTurn: ${preflight.message}`);
+  }
 
   // Accumulation buffers — populated by the adapter, read by the builder.
   const anthropicBuffer = new Map<number, IAccumulatedBlock>();
@@ -950,7 +986,9 @@ export function executeClientToolTurn(
           }
         }
 
-        const executeResult = await captureAsyncResult(async () => tool.execute(validationResult.value));
+        const executeResult = await captureAsyncResult(async () =>
+          tool.execute(validationResult.value, { signal })
+        );
         const executionResult: Result<unknown> = executeResult.isSuccess()
           ? executeResult.value
           : executeResult;

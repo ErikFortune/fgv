@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-agent-tasks",
+      "comment": "Docs only: the generated recent-additions feed in CAPABILITIES.md gains the agent-tasks cluster's capability lines. No source or API change.",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-agent-tasks"
+}
