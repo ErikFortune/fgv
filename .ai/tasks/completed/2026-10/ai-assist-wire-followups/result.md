@@ -239,3 +239,20 @@ root rule.
 | `generate-capability-feed --check` | exit 0 |
 | `verify-capability-docs` | 0 failed |
 | `api.md` `ae-` lines vs `origin/json-schema-pattern` | 0 |
+
+## Live wire-probe run (user, 2026-10-19, all four keys)
+
+Run on `ai-assist-wire-followups` at 932ed7d3, which carries #742. Eight wires, 24 fixtures each.
+
+**Summary:** agrees 129 · conservative 63 · **unsafe 0** · inconclusive 0. End-to-end mismatches: none.
+
+- `anthropic-tools/untyped-root`: we refuse and Anthropic rejects (`input_schema.type: Field required`), so **agrees**. This was the one unsafe row in the 2026-10-18 run, and decision 4 fixes it.
+- `pattern-host` and `pattern-fromJson`:
+  - **agrees** on both Anthropic wires (pass, accepted);
+  - **conservative** on Gemini, OpenAI and xAI (fold, accepted).
+
+  That matches the #742 tables.
+- `default`: **conservative** on OpenAI/xAI (dropped, accepted), and agrees wherever we pass it.
+- `untyped-items` on Anthropic JSON outputs: conservative (we refuse, the provider accepts). Left as it is, because "accepted" is not "enforced".
+
+The full report is in the PR #743 conversation.
