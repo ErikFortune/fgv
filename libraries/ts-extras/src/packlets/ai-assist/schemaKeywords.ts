@@ -99,6 +99,11 @@ const OPENAI_FAMILY_VERIFIED_PROVIDERS: ReadonlySet<string> = new Set(['openai',
  *   JSON Schema support rules".
  * - `multipleOf` folds: OpenAI supports it, xAI's page does not mention it.
  * - `minLength` / `maxLength` fold: xAI supports them, OpenAI does not list them as supported.
+ * - `pattern` folds. OpenAI lists it ("A regular expression that the string must match"), but xAI
+ *   (https://docs.x.ai/docs/guides/structured-outputs, fetched 2026-10-18) documents that "`^` and
+ *   `$` are *implicit* — the pattern always matches the *entire string*", where JSON Schema patterns
+ *   are unanchored. Sent there, an unanchored pattern would state a narrower constraint than the
+ *   validator enforces, and one wire serves both providers.
  * - `format` passes only for the values both list: OpenAI's date-time, time, date, duration,
  *   email, hostname, ipv4, ipv6 and uuid, intersected with xAI's date, time, date-time, email,
  *   uuid, ipv4, ipv6 and uri.
@@ -128,6 +133,7 @@ export const openAiFamilySchemaKeywords: JsonSchema.SchemaKeywordCapabilities = 
   multipleOf: 'fold',
   minLength: 'fold',
   maxLength: 'fold',
+  pattern: 'fold',
   format: { passValues: ['date-time', 'time', 'date', 'email', 'ipv4', 'ipv6', 'uuid'] },
   title: 'drop',
   default: 'fold',
@@ -160,6 +166,7 @@ export const anthropicToolsSchemaKeywords: JsonSchema.SchemaKeywordCapabilities 
   multipleOf: 'pass',
   minLength: 'pass',
   maxLength: 'pass',
+  pattern: 'pass',
   format: 'pass',
   title: 'pass',
   default: 'pass',
@@ -181,6 +188,12 @@ export const anthropicToolsSchemaKeywords: JsonSchema.SchemaKeywordCapabilities 
  * `exclusiveMaximum` fall under "such as"; `examples` is not mentioned and folds; `title` is not
  * mentioned and is dropped, since it only restates the property name.
  *
+ * `pattern` passes: the same page's "Pattern support (regex)" lists "Full matching (`^...$`) and
+ * partial matching", quantifiers, character classes and groups as supported (fetched 2026-10-18),
+ * so an unanchored pattern means what JSON Schema says. It also lists backreferences, lookarounds,
+ * word boundaries and large `{n,m}` ranges as **not** supported, and "Complex patterns may result in
+ * 400 errors": a host pattern using one fails the request loudly rather than being sent loosened.
+ *
  * The same section supports "`enum` (strings, numbers, bools, or nulls only - no complex types)", so
  * a numeric or boolean enum passes. It lists the basic types and does not say whether a schema
  * with no `type` is accepted, so one is refused rather than risking the documented 400.
@@ -194,6 +207,7 @@ export const anthropicJsonOutputsSchemaKeywords: JsonSchema.SchemaKeywordCapabil
   multipleOf: 'fold',
   minLength: 'fold',
   maxLength: 'fold',
+  pattern: 'pass',
   format: {
     passValues: ['date-time', 'time', 'date', 'duration', 'email', 'hostname', 'uri', 'ipv4', 'ipv6', 'uuid']
   },
@@ -257,7 +271,11 @@ function _integerExclusiveBound(
  * @remarks
  * From the Schema object at https://ai.google.dev/api/generate-content § "Schema": `minimum` /
  * `maximum` (for `INTEGER` and `NUMBER`), `minLength` / `maxLength`, `format` ("Any value is
- * allowed"), `title` and `default` are fields, so they pass. The object has **no**
+ * allowed"), `title` and `default` are fields, so they pass. `pattern` is a field too ("Pattern of
+ * the Type.STRING to restrict a string to a regular expression", fetched 2026-10-18), but the page
+ * names neither a regex dialect nor whether the pattern is anchored — the semantics that made the
+ * OpenAI-family table fold it on xAI's account — so it **folds**: the validator still enforces it,
+ * and an enforcement probe could justify passing it later. The object has **no**
  * `exclusiveMinimum`, `exclusiveMaximum`, `multipleOf` or `examples`: the exclusive bounds are
  * translated on an integer node (see `_integerExclusiveBound`) and folded elsewhere; `multipleOf`
  * folds; `examples` folds, because Gemini's singular `example` is "populated only when the object
@@ -278,6 +296,7 @@ export const geminiSchemaKeywords: JsonSchema.SchemaKeywordCapabilities = {
   multipleOf: 'fold',
   minLength: 'pass',
   maxLength: 'pass',
+  pattern: 'fold',
   format: 'pass',
   title: 'pass',
   default: 'pass',

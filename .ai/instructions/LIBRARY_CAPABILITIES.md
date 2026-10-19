@@ -203,6 +203,7 @@ markers.*
 <!-- BEGIN GENERATED: recent-additions -->
 
 - **2026-10-18** — JsonSchema factories never throw: constraint keywords, default and examples arrive through numberOptions / integerOptions /… ([#740](https://github.com/ErikFortune/fgv/pull/740)) · `ts-json-base` `ts-extras` `ts-extras-ollama`
+- **2026-10-18** — JsonSchema pattern: a host's /…/u RegExp via stringOptions is enforced and sent where the wire documents pattern, and fromJson… ([#742](https://github.com/ErikFortune/fgv/pull/742)) · `ts-json-base` `ts-extras` `ts-extras-mcp`
 - **2026-10-18** — Agent memory tool results now carry each record's id and scope, so two conversations' turn-3 are distinguishable and a link copied… ([#739](https://github.com/ErikFortune/fgv/pull/739)) · `ts-agent-memory`
 - **2026-10-18** — AiAssist.structuredOutputSchemaKeywords reads the keyword table a structured-output schema is adapted with, and the testbed… ([#738](https://github.com/ErikFortune/fgv/pull/738)) · `ts-extras` `testbed`
 - **2026-10-17** — HybridRetriever's score-union merge no longer collapses records that share an id across scopes — two conversations' turn-3 stay two… ([#731](https://github.com/ErikFortune/fgv/pull/731)) · `ts-agent-memory`
@@ -211,8 +212,7 @@ markers.*
 - **2026-10-17** — JsonSchema constraint keywords (minimum, maxLength, multipleOf, …) are now enforced by the validator and emitted by toJson(), and… ([#734](https://github.com/ErikFortune/fgv/pull/734)) · `ts-json-base` `ts-extras` `ts-extras-ollama` `ts-extras-mcp`
 - **2026-10-17** — JsonSchema now models numeric enums, an enforced scalar const and {} (pydantic Literal and Any), and each provider wire passes… ([#736](https://github.com/ErikFortune/fgv/pull/736)) · `ts-json-base` `ts-extras` `ts-extras-ollama` `ts-extras-mcp`
 - **2026-10-14** — MCP servers can be reached through the same SSRF guard as the rest of your egress, without buffering their streams, and… ([#729](https://github.com/ErikFortune/fgv/pull/729)) · `ts-extras` `ts-extras-mcp`
-- **2026-10-13** — An MCP tool result keeps its resource links, embedded resources, images and structuredContent, tool titles and tool-list changes… ([#728](https://github.com/ErikFortune/fgv/pull/728)) · `ts-extras-mcp`
 
-*Showing the 10 most recent of 64. Per-package history is in each `CAPABILITIES.md`.*
+*Showing the 10 most recent of 65. Per-package history is in each `CAPABILITIES.md`.*
 
 <!-- END GENERATED: recent-additions -->

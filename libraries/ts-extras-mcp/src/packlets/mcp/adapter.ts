@@ -83,14 +83,15 @@ function _makeExecute(
 function _adaptOne(
   session: IMcpSession,
   descriptor: IMcpToolDescriptor,
-  schemaKeywords: JsonSchema.SchemaKeywordCapabilities
+  schemaKeywords: JsonSchema.SchemaKeywordCapabilities,
+  fromJsonOptions: JsonSchema.IFromJsonOptions
 ): IAdaptOutcome {
   const { name, description, inputSchema, annotations } = descriptor;
 
   const parsed = Converters.jsonObject
     .convert(inputSchema)
     .withErrorFormat((msg) => `inputSchema is not a JSON object (${msg})`)
-    .onSuccess((asObject) => JsonSchema.fromJson(asObject))
+    .onSuccess((asObject) => JsonSchema.fromJson(asObject, fromJsonOptions))
     .onSuccess((schema) =>
       // Admission only: the target wire must be able to carry the schema, or one such tool would
       // fail every request it rides on. The adapted result is discarded — the request path adapts
@@ -137,6 +138,9 @@ function _adaptOne(
  * (see {@link IAdaptMcpToolsOptions.schemaKeywords}; the default table is conservative and skips
  * a tool with an untyped `{}` parameter).
  *
+ * A tool whose schema uses `pattern` is skipped unless {@link IAdaptMcpToolsOptions.patternValidator}
+ * is supplied: a server's pattern is never compiled by this package.
+ *
  * The whole catalog never fails on a single bad schema; the only failure mode is an upstream
  * `listMcpTools` error.
  *
@@ -159,7 +163,8 @@ export async function adaptMcpTools(
         const outcome = _adaptOne(
           session,
           descriptor,
-          options?.schemaKeywords ?? JsonSchema.unverifiedWireSchemaKeywords
+          options?.schemaKeywords ?? JsonSchema.unverifiedWireSchemaKeywords,
+          options?.patternValidator !== undefined ? { patternValidator: options.patternValidator } : {}
         );
         if (outcome.kind === 'tool') {
           tools.push(outcome.tool);

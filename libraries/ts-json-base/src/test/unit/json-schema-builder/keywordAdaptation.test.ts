@@ -32,6 +32,7 @@ const passAll: JsonSchema.SchemaKeywordCapabilities = {
   multipleOf: 'pass',
   minLength: 'pass',
   maxLength: 'pass',
+  pattern: 'pass',
   format: 'pass',
   title: 'pass',
   default: 'pass',

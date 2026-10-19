@@ -44,6 +44,18 @@ export const schemaNumberConstraintKeywords = [
 export const schemaLengthConstraintKeywords = ['minLength', 'maxLength'] as const;
 
 /**
+ * The regular-expression constraint keyword of a `string` node, in the order it is checked, emitted
+ * and folded.
+ *
+ * @remarks
+ * The wire receives the pattern's ECMAScript source, which JSON Schema reads as an unanchored
+ * ECMA-262 regular expression with Unicode semantics. Provider engines implement dialects of it, so
+ * a table passes `pattern` only where the provider documents the keyword with those semantics.
+ * @public
+ */
+export const schemaPatternConstraintKeywords = ['pattern'] as const;
+
+/**
  * The annotation keywords — emitted, never enforced — in the order they are folded.
  * @public
  */
@@ -63,6 +75,7 @@ export const schemaAnnotationKeywords = ['format', 'title', 'default', 'examples
 export const schemaConstraintKeywords = [
   ...schemaNumberConstraintKeywords,
   ...schemaLengthConstraintKeywords,
+  ...schemaPatternConstraintKeywords,
   ...schemaAnnotationKeywords
 ] as const;
 
@@ -72,7 +85,8 @@ export const schemaConstraintKeywords = [
  */
 export type SchemaValidatingKeyword =
   | StringOneOf<typeof schemaNumberConstraintKeywords>
-  | StringOneOf<typeof schemaLengthConstraintKeywords>;
+  | StringOneOf<typeof schemaLengthConstraintKeywords>
+  | StringOneOf<typeof schemaPatternConstraintKeywords>;
 
 /**
  * An annotation keyword: emitted, never enforced.
@@ -179,6 +193,7 @@ export const unverifiedWireSchemaKeywords: SchemaKeywordCapabilities = {
   multipleOf: 'fold',
   minLength: 'fold',
   maxLength: 'fold',
+  pattern: 'fold',
   format: 'fold',
   title: 'drop',
   default: 'fold',

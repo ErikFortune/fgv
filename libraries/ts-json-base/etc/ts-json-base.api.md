@@ -450,7 +450,7 @@ function forFilesystem<TCT extends string = string>(prefix?: string): Result<Fil
 function forFilesystem<TCT extends string = string>(params?: IFileTreeInitParams<TCT>): Result<FileTree_2<TCT>>;
 
 // @public
-function fromJson(json: JsonObject): Result<ISchemaValidator<JsonValue>>;
+function fromJson(json: JsonObject, options?: IFromJsonOptions): Result<ISchemaValidator<JsonValue>>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -670,6 +670,17 @@ interface IFileTreeInitParams<TCT extends string = string> {
 interface IFilterSpec {
     exclude?: (string | RegExp)[];
     include?: (string | RegExp)[];
+}
+
+// @public
+interface IFromJsonOptions {
+    readonly patternValidator?: SchemaPatternValidator;
+}
+
+// @internal
+interface IHeldPattern {
+    readonly matches: (value: string) => Result<boolean>;
+    readonly source: string;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -1079,6 +1090,7 @@ interface IStringSchemaOptions extends ISchemaOptions {
     format?: string;
     maxLength?: number;
     minLength?: number;
+    pattern?: RegExp;
 }
 
 // @public
@@ -1235,6 +1247,7 @@ declare namespace JsonSchema {
         ISchemaOptions,
         INumberSchemaOptions,
         IStringSchemaOptions,
+        IHeldPattern,
         IObjectSchemaOptions,
         IAnySchemaOptions,
         PlainSchemaOptions,
@@ -1264,11 +1277,15 @@ declare namespace JsonSchema {
         object_3 as object,
         record,
         fromJson,
+        SchemaPatternPredicate,
+        SchemaPatternValidator,
+        IFromJsonOptions,
         jsonSchemaConverter,
         foldedKeywordsText,
         adaptSchemaKeywords,
         schemaNumberConstraintKeywords,
         schemaLengthConstraintKeywords,
+        schemaPatternConstraintKeywords,
         schemaAnnotationKeywords,
         schemaConstraintKeywords,
         SchemaValidatingKeyword,
@@ -1442,7 +1459,7 @@ type PlainSchemaOptions = Pick<ISchemaOptions, 'description' | 'title' | 'nullab
 
 // @public
 type PlainStringSchemaOptions = PlainSchemaOptions & Pick<IStringSchemaOptions, 'format'> & {
-    readonly [K in StringOneOf<typeof schemaLengthConstraintKeywords>]?: never;
+    readonly [K in StringOneOf<typeof schemaLengthConstraintKeywords> | StringOneOf<typeof schemaPatternConstraintKeywords>]?: never;
 };
 
 // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -1512,7 +1529,7 @@ type SchemaAnnotationRule = SchemaKeywordRule | 'drop';
 type SchemaConstraintKeyword = StringOneOf<typeof schemaConstraintKeywords>;
 
 // @public
-const schemaConstraintKeywords: readonly ["minimum", "exclusiveMinimum", "maximum", "exclusiveMaximum", "multipleOf", "minLength", "maxLength", "format", "title", "default", "examples"];
+const schemaConstraintKeywords: readonly ["minimum", "exclusiveMinimum", "maximum", "exclusiveMaximum", "multipleOf", "minLength", "maxLength", "pattern", "format", "title", "default", "examples"];
 
 // @public
 type SchemaFoldedKeyword = 'enum' | SchemaConstraintKeyword;
@@ -1543,7 +1560,16 @@ const schemaNumberConstraintKeywords: readonly ["minimum", "exclusiveMinimum", "
 function schemaOptions<T extends IObjectSchemaOptions>(opts: T & Record<Exclude<keyof T, keyof IObjectSchemaOptions>, never>): Result<ValidatedSchemaOptions<T>>;
 
 // @public
-type SchemaValidatingKeyword = StringOneOf<typeof schemaNumberConstraintKeywords> | StringOneOf<typeof schemaLengthConstraintKeywords>;
+const schemaPatternConstraintKeywords: readonly ["pattern"];
+
+// @public
+type SchemaPatternPredicate = (value: string) => boolean;
+
+// @public
+type SchemaPatternValidator = (source: string) => Result<SchemaPatternPredicate>;
+
+// @public
+type SchemaValidatingKeyword = StringOneOf<typeof schemaNumberConstraintKeywords> | StringOneOf<typeof schemaLengthConstraintKeywords> | StringOneOf<typeof schemaPatternConstraintKeywords>;
 
 // @public
 type Simplify<T> = {
@@ -1626,10 +1652,16 @@ class ValidatedSchemaOptions<T extends IObjectSchemaOptions = IObjectSchemaOptio
 class ValidatedStringOptions<T extends IStringSchemaOptions = IStringSchemaOptions> {
     // @internal
     static _create<T extends IStringSchemaOptions>(opts: T): Result<ValidatedStringOptions<T>>;
+    // @internal
+    static _createWithMatcher<T extends IStringSchemaOptions & {
+        readonly pattern?: never;
+    }>(opts: T, source: string, matches: (value: string) => boolean): Result<ValidatedStringOptions<T>>;
     readonly kind: 'validated-string-options';
     get options(): Readonly<T>;
     // @internal
-    static _read(value: unknown): Readonly<IStringSchemaOptions> | undefined;
+    static _read(value: unknown): Readonly<Omit<IStringSchemaOptions, 'pattern'> & {
+        readonly pattern?: IHeldPattern;
+    }> | undefined;
 }
 
 // @public

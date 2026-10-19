@@ -66,7 +66,7 @@ import { JsonSchema, type JsonValue } from '@fgv/ts-json-base';
 
 import type { IScenarioContext } from '../../shell';
 import { resolveProviderApiKey } from '../aiProviderSecrets';
-import { CONTROL_FIXTURE_ID, type IWireProbeFixture, WIRE_PROBE_FIXTURES } from './fixtures';
+import { CONTROL_FIXTURE_ID, type IWireProbeFixture, WIRE_PROBE_FIXTURES, readFixture } from './fixtures';
 import { formatWireProbeReport } from './report';
 import { type IRawRequest, type IWireProbeWire, buildRawRequest, wireSchemaKeywords } from './wires';
 
@@ -362,7 +362,7 @@ export function selectWires(
 // Run
 // ---------------------------------------------------------------------------
 
-/** A fixture read through `JsonSchema.fromJson`, with the raw JSON the probe sends. */
+/** A fixture read into its validator (see `readFixture`), with the raw JSON the probe sends. */
 interface IPreparedFixture {
   readonly fixture: IWireProbeFixture;
   readonly validator: JsonSchema.ISchemaValidator<unknown>;
@@ -370,7 +370,7 @@ interface IPreparedFixture {
 }
 
 function prepareFixture(fixture: IWireProbeFixture): Result<IPreparedFixture> {
-  return JsonSchema.fromJson(fixture.schema)
+  return readFixture(fixture)
     .withErrorFormat((msg) => `fixture '${fixture.id}': ${msg}`)
     .onSuccess((validator) => succeed({ fixture, validator, raw: validator.toJson() }));
 }

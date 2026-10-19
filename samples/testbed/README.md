@@ -83,10 +83,11 @@ Only scenarios with a web surface appear in the sidebar.
 Checks the keyword-capability tables `ai-assist` adapts JSON Schemas with (`schemaKeywords.ts` in
 `@fgv/ts-extras`) against what each provider actually accepts. For each configured wire —
 Anthropic tools and JSON outputs, OpenAI and xAI Responses tools and strict structured output,
-Gemini function declarations and `responseSchema` — it sends ~20 fixture schemas (every
+Gemini function declarations and `responseSchema` — it sends ~24 fixture schemas (every
 constraint keyword, every annotation, numeric and boolean enums, `{}` at the root, in properties
-and in items) **unadapted**, records accept/reject with the provider's error text, and compares
-that with the table:
+and in items, and `pattern` twice: from a host `RegExp` through `stringOptions`, and through
+`fromJson` with an injected `patternValidator`) **unadapted**, records accept/reject with the
+provider's error text, and compares that with the table:
 
 | outcome        | means                                                                                                                                 |
 | -------------- | ------------------------------------------------------------------------------------------------------------------------------------- |

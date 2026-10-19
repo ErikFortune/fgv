@@ -49,7 +49,6 @@ import {
   INumberSchemaOptions,
   IObjectSchemaOptions,
   ISchemaOptions,
-  IStringSchemaOptions,
   PlainAnySchemaOptions,
   PlainNumberSchemaOptions,
   PlainObjectSchemaOptions,
@@ -67,12 +66,14 @@ import {
   NumberConstraints,
   SchemaAnnotations,
   StringConstraints,
+  StringNodeOptions,
   annotationFields,
   checkAnnotations,
   checkEnumValues,
   describeEnumMember,
   enforceNumberConstraints,
   enforceStringConstraints,
+  enforceStringPattern,
   numberConstraintFields,
   pickAnnotations,
   pickNumberConstraints,
@@ -170,10 +171,10 @@ abstract class SchemaValidatorBase<T>
 
 class StringSchemaValidator extends SchemaValidatorBase<string> {
   private readonly _inner: Validation.Validator<string>;
-  /** The node's length constraints and format. */
+  /** The node's length constraints, held pattern and format. */
   private readonly _constraints: StringConstraints;
 
-  public constructor(opts?: IStringSchemaOptions) {
+  public constructor(opts?: StringNodeOptions) {
     const inner = Validators.string;
     /* c8 ignore next 1 - placeholder ValidatorFunc; validate() and convert() overrides always intercept */
     super('string', (__from: unknown): boolean | Failure<string> => true, opts);
@@ -190,7 +191,10 @@ class StringSchemaValidator extends SchemaValidatorBase<string> {
   }
 
   private _check(from: unknown): Result<string> {
-    return this._inner.validate(from).onSuccess((s) => enforceStringConstraints(s, this._constraints));
+    return this._inner
+      .validate(from)
+      .onSuccess((s) => enforceStringConstraints(s, this._constraints))
+      .onSuccess((s) => enforceStringPattern(s, this._constraints.pattern));
   }
 
   public toJson(): JsonObject {
@@ -708,7 +712,7 @@ const _integerReader: IOptionsReader<INumberSchemaOptions> = {
   revalidate: (options) => revalidateNumberOptions('integer', options)
 };
 
-const _stringReader: IOptionsReader<IStringSchemaOptions> = {
+const _stringReader: IOptionsReader<StringNodeOptions> = {
   own: (opts) => ValidatedStringOptions._read(opts),
   revalidate: revalidateStringOptions
 };
@@ -724,7 +728,7 @@ const _schemaReader: IOptionsReader<IObjectSchemaOptions> = {
 
 /**
  * Creates a schema node for a JSON `string`.
- * @param opts - Plain options, or `stringOptions` for lengths,
+ * @param opts - Plain options, or `stringOptions` for lengths, `pattern`,
  * `default` or `examples`.
  * @returns An `ISchemaValidator` whose `Static` type is `string | null`.
  * @public
@@ -739,9 +743,9 @@ export function string(
  * Creates a schema node for a JSON `string`.
  *
  * @remarks
- * Never fails: a raw length keyword is a compile error, and the options that carry one were
+ * Never fails: a raw length keyword or `pattern` is a compile error, and the options that carry one were
  * checked by `stringOptions`.
- * @param opts - Plain options, or `stringOptions` for lengths,
+ * @param opts - Plain options, or `stringOptions` for lengths, `pattern`,
  * `default` or `examples`.
  * @returns An `ISchemaValidator` whose `Static` type is `string`.
  * @public
