@@ -2,7 +2,7 @@
   "changes": [
     {
       "packageName": "@fgv/ts-agent-memory",
-      "comment": "FileTreeMemoryStore now refuses a versioned-kind record whose filename stem is not encodeVersion(entityId, seq) for the seq the codec decodes from it, and a codec that reports a versioned layout without version methods, completing the store-level address invariant for both layouts",
+      "comment": "BREAKING: FileTreeMemoryStore now refuses a versioned-kind record whose filename stem is not encodeVersion(entityId, seq) for the seq the codec decodes from it, and a codec that reports a versioned layout without version methods, completing the store-level address invariant for both layouts",
       "type": "minor"
     }
   ],
