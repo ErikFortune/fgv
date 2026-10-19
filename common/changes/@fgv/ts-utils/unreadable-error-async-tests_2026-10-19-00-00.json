@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-utils",
+      "comment": "Tests only: pin that captureAsyncResult and the AsyncResult rejection path yield a Failure for a thrown or rejected value whose message cannot be read, and point resultOrDefaultWith.test.ts at the package's local matchers (ts-utils cannot depend on @fgv/ts-utils-jest without a cycle).",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-utils"
+}
