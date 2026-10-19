@@ -2,7 +2,7 @@
 
 **Shipped:** the three load-sensitive tests in `ts-extras` and `ts-extras-mcp` are deterministic. Each now asserts the property it guarded, on a fake clock or on an outcome that tells the cases apart, never on elapsed wall-clock time. No production code changed.
 
-Branch `deterministic-timing-tests` → `integration/asks`. PR: #TBD (not opened by the worker).
+Branch `deterministic-timing-tests` → `integration/asks`. PR: #745.
 
 ## The three tests
 

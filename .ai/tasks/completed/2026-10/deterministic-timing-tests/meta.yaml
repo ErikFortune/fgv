@@ -1,7 +1,7 @@
 id: deterministic-timing-tests
 status: shipped
 packages: ['@fgv/ts-extras', '@fgv/ts-extras-mcp']
-prs: [] # #TBD — the orchestrator opens the PR and fills this in
+prs: [745]
 openPrs: []
 opened: 2026-10-19
 closed: 2026-10-19

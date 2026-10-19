@@ -1,6 +1,6 @@
 # deterministic-timing-tests: three load-sensitive tests made deterministic
 
-**Shipped:** 2026-10-19 into `integration/asks`. PR #TBD. The orchestrator fills in the number.
+**Shipped:** 2026-10-19 into `integration/asks`. PR #745.
 Packages: `@fgv/ts-extras` and `@fgv/ts-extras-mcp`. The change is test-only, with no source or API change.
 
 ## Summary
