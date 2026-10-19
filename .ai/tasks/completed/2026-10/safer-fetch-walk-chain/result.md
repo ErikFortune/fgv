@@ -155,6 +155,12 @@ had 0 `not met|FAILURE|Operations failed|error TS` hits, and its only warning wa
     with the attempt's own failure" (2 transport calls where 1 was expected). That blocked
     ts-extras' dependents, and the other 17 projects passed.
   - Re-run with `--from @fgv/ts-extras`: 27 of 27 passed, exit 0, clean greps.
+- **After review round 1:** gated in the foreground, as the orchestrator asked. It merges the
+  base and gates the combined tree at PR time.
+  - ts-extras `rushx build` and `rushx lint` pass.
+  - `rushx test`: 3227 passed, 0 failed, 100% on all four metrics, with clean greps and no NUL
+    padding.
+  - `rush change --verify --target-branch origin/integration/asks` passes.
 - **`rush change --verify --target-branch origin/release`:** passes. The change file is typed
   `none`, with the comment "internal refactor, no behaviour change".
 - **Docs scripts:** `verify-capability-docs.mjs` reports 0 failed, and

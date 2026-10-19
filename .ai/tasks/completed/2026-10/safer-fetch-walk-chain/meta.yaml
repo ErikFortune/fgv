@@ -45,4 +45,4 @@ relatedStreams:
       id: mcp-round-2b,
       relationship: 'source of the revert matrix re-run here, and the stream whose #729 deep review raised D1'
     }
-sourceHash: sha256:4796e0db53139566 # over brief.md + result.md + state.md
+sourceHash: sha256:1836dffd4535cc8f # over brief.md + result.md + state.md
