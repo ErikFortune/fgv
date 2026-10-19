@@ -47,4 +47,4 @@ keywords:
   ]
 relatedStreams:
   - { id: json-schema-pattern, relationship: 'introduced the SchemaPatternValidator seam this implements' }
-sourceHash: 0ddd69ac9514ad1c # first 16 hex of sha256 over brief.md, state.md and result.md concatenated in that order
+sourceHash: a29bd2417c59dc21 # first 16 hex of sha256 over brief.md, state.md and result.md concatenated in that order

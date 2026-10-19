@@ -3,35 +3,37 @@
 **Shipped:** `@fgv/ts-extras-re2`, the default `patternValidator` for an untrusted JSON Schema `pattern` — `re2PatternValidator` reads the source as an ECMA-262 `u`-mode pattern, rewrites it into RE2 syntax with the same meaning or refuses it, and compiles it with re2js under source-length and program-size limits.
 
 Branch `ts-extras-re2` from `f85ed68b3` (which already contained `integration/asks`). Commits:
-`513bd0d7c` (package, code and tests), `9087faf19` (docs, change files, capability routing), and the
-close-out commit. PR: #TBD.
+`513bd0d7c` (package, code and tests), `9087faf19` (docs, change files, capability routing),
+`b906a0ae1` (close-out), `9048d2d83` (lint fix found by the repo-wide rebuild), and a final
+result-update commit. PR: #TBD.
 
 ## Dependency checks (brief decision 2)
 
-| check | finding |
-|---|---|
-| version and age | `re2js@2.8.8`, published 2026-10-17T23:00:12Z, ~26 h old at the check (2026-10-19 01:20Z). pnpm 11.12.0's default `minimum-release-age` is `24 * 60` minutes (read from its bundled `pnpm.mjs`), and the repo sets no override. `rush add` and the repo-wide `rush install` both passed with the new lockfile entry. |
-| licence | MIT |
-| runtime dependencies | none; `engines.node >=20`; ESM, CJS and UMD builds |
-| maintenance | 49 versions since 2023-07, 35 of them in 2026, the latest two on 2026-10-17; one maintainer. GitHub was not reachable from this session, so issue and commit activity were not checked. |
-| added with | `rush add -p re2js@2.8.8`, written exactly (`"re2js": "2.8.8"`). The lockfile delta is the new project only. |
+| check                | finding                                                                                                                                                                                                                                                                                                              |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| version and age      | `re2js@2.8.8`, published 2026-10-17T23:00:12Z, ~26 h old at the check (2026-10-19 01:20Z). pnpm 11.12.0's default `minimum-release-age` is `24 * 60` minutes (read from its bundled `pnpm.mjs`), and the repo sets no override. `rush add` and the repo-wide `rush install` both passed with the new lockfile entry. |
+| licence              | MIT                                                                                                                                                                                                                                                                                                                  |
+| runtime dependencies | none; `engines.node >=20`; ESM, CJS and UMD builds                                                                                                                                                                                                                                                                   |
+| maintenance          | 49 versions since 2023-07, 35 of them in 2026, the latest two on 2026-10-17; one maintainer. GitHub was not reachable from this session, so issue and commit activity were not checked.                                                                                                                              |
+| added with           | `rush add -p re2js@2.8.8`, written exactly (`"re2js": "2.8.8"`). The lockfile delta is the new project only.                                                                                                                                                                                                         |
 
 ## What shipped
 
 `@fgv/ts-extras-re2` was registered in `rush.json` on the `base-utils` lockstep policy, and laid
 out from the `ts-extras-argon2` template.
 
-| export | |
-|---|---|
-| `re2PatternValidator: JsonSchema.SchemaPatternValidator` | the defaults |
+| export                                                             |                                                                                              |
+| ------------------------------------------------------------------ | -------------------------------------------------------------------------------------------- |
+| `re2PatternValidator: JsonSchema.SchemaPatternValidator`           | the defaults                                                                                 |
 | `createRe2PatternValidator({ maxSourceLength?, maxProgramSize? })` | `Result<JsonSchema.SchemaPatternValidator>`; fails on a limit that is not a positive integer |
-| `DEFAULT_RE2_PATTERN_LIMITS` | `{ maxSourceLength: 1024, maxProgramSize: 10000 }` |
-| `IRe2PatternValidatorOptions` | options type |
+| `DEFAULT_RE2_PATTERN_LIMITS`                                       | `{ maxSourceLength: 1024, maxProgramSize: 10000 }`                                           |
+| `IRe2PatternValidatorOptions`                                      | options type                                                                                 |
 
 - **Linear time.** Matching is re2js `test()`, RE2's linear-time engine.
 - **Unanchored search.** `abc` matches `xxabcxx`; only `^…$` anchors.
 - **ECMA meaning or refusal.** `ecmaPattern.ts` parses the source as ECMA-262 `u`-mode in a single
   pass and emits RE2 syntax. It rewrites:
+
   - `.` to ECMA's set, which excludes `\r`, U+2028 and U+2029 (RE2's `.` matches them);
   - `\s` and `\S` to ECMA's Unicode whitespace sets (RE2's are ASCII);
   - `\d`, `\w` and their negations to explicit ASCII ranges;
@@ -39,6 +41,7 @@ out from the `ts-extras-argon2` template.
   - `\uXXXX` surrogate pairs, `\u{…}`, `\cX`, `[\b]`, `[]` and `[^]`.
 
   It refuses, naming the construct and its index:
+
   - lookaround and backreferences;
   - binary properties, `Script_Extensions`, and `Script=` values that RE2 would resolve as a category
     or a binary property;
@@ -46,6 +49,7 @@ out from the `ts-extras-argon2` template.
   - repeat counts over 1000;
   - every Annex B or RE2-only construct (`(?i)`, `(?P<`, `\Q`, `\z`, POSIX classes, `\pL`, octal,
     lone `{` `}` `]`, `\-` outside a class).
+
 - **Limits.**
   - The source length is checked before parsing.
   - The program size is checked after compiling.
@@ -96,6 +100,7 @@ out from the `ts-extras-argon2` template.
   - `(a+)+$` on a long value;
   - a nullable node.
 - `adaptMcpTools` against a real in-memory MCP server:
+
   - the `code` and `redos` tools are adapted and enforced;
   - the `lookahead` tool is skipped with its reason;
   - without the validator, all three tools are skipped.
@@ -105,7 +110,21 @@ out from the `ts-extras-argon2` template.
 
 ## Gates
 
-GATES-PLACEHOLDER
+All runs were from the repo root, with logs in a per-worktree scratch directory. Each log was graded
+by grep: `not met|FAILURE|Operations failed|error TS` returned 0, case-insensitive `warning`
+returned 0 apart from Rush's tracked-symlink notice, and no log had NUL padding.
+
+| gate                                                           | result                                                                                                                                                                                                                                                                                                |
+| -------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| package `build` / `lint` / `test`                              | exit 0, with 0 warnings; 156 tests; 100% statements, branches, functions and lines                                                                                                                                                                                                                    |
+| repo-wide `install`                                            | exit 0 with the new lockfile entry (release-age policy active)                                                                                                                                                                                                                                        |
+| repo-wide `rebuild`                                            | first run **SUCCESS WITH WARNINGS**: the package's own `no-bitwise` lint warning in `_hexValue`. Fixed in `9048d2d83`, and the re-run was **SUCCESS: 39 operations**, 0 warnings                                                                                                                      |
+| repo-wide `test`                                               | 38 of 39 green. The failure was ts-extras `md5Normalizer.browser` › "should handle large objects efficiently", a known load-sensitive test, and it blocked 21 dependents. `rush test --from @fgv/ts-extras` re-ran ts-extras and every dependent: **SUCCESS: 28 operations**, 0 errors and 0 warnings |
+| `rush change --verify --target-branch origin/integration/asks` | exit 0. Change files: `ts-extras-re2` `minor`, `ts-json-base` and `ts-extras-mcp` `none` (CAPABILITIES-only edits)                                                                                                                                                                                    |
+| `verify-capability-docs`                                       | 0 failed; router at 23,118 of 24,000 characters                                                                                                                                                                                                                                                       |
+| `generate-capability-feed --check`                             | 0 stale                                                                                                                                                                                                                                                                                               |
+| prettier 2.8.8 (`rush prettier`, plus `--check` on the docs)   | clean                                                                                                                                                                                                                                                                                                 |
+| `etc/ts-extras-re2.api.md`                                     | new file, with 0 `ae-*` entries                                                                                                                                                                                                                                                                       |
 
 ## Docs
 
