@@ -32,6 +32,7 @@ import { fail, Result } from '@fgv/ts-utils';
 import { type IAiCacheRequest } from './cacheRequest';
 import { splitChatRequest } from './chatRequestBuilders';
 import { resolveEffectiveBaseUrl } from './endpoint';
+import { schemaWireProviderId } from './schemaKeywords';
 import {
   type IAiStreamEvent,
   type ModelSpecKey,
@@ -124,6 +125,7 @@ export async function callProviderCompletionStream(
     tools,
     signal,
     endpoint,
+    verifiedEndpoint,
     thinking,
     maxTokens,
     cache
@@ -188,7 +190,7 @@ export async function callProviderCompletionStream(
     apiKey,
     model,
     // Trusted only on the provider's own endpoint — see `IAiApiConfig.providerId`.
-    providerId: endpoint === undefined ? descriptor.id : undefined
+    providerId: schemaWireProviderId(descriptor, endpoint, verifiedEndpoint)
   };
 
   switch (descriptor.apiFormat) {

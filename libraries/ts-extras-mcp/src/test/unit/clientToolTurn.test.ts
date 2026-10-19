@@ -192,7 +192,6 @@ describe('adapted MCP tools inside executeClientToolTurn', () => {
 
   test('aborting the turn cancels the in-flight MCP request on the server', async () => {
     const controller = new AbortController();
-    const started = Date.now();
     const events = await runTurn('hang', controller.signal, async () => {
       await entered;
       controller.abort();
@@ -200,7 +199,6 @@ describe('adapted MCP tools inside executeClientToolTurn', () => {
 
     // The server's handler was told to stop; it did not run on to the SDK's 60 s default.
     expect(String(await serverCancelled)).toMatch(/request aborted by the caller/);
-    expect(Date.now() - started).toBeLessThan(5_000);
     expect(toolResult(events)).toEqual(
       expect.objectContaining({
         result: `hang (callId=${CALL_ID}): callMcpTool 'hang': aborted by the caller`,

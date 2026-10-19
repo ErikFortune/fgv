@@ -523,7 +523,8 @@ export interface IChatStructuredParams<T> {
 
 /**
  * Ollama's keyword-capability table for the native `format` field: every constraint and annotation
- * keyword folds, except `title`, which is dropped (it restates the property name). A numeric or
+ * keyword folds, except `title` (it restates the property name) and `default` (folded, it would
+ * read as though it were applied), which are dropped. A numeric or
  * boolean `enum` folds too, and a schema with no `type` is refused.
  *
  * @remarks

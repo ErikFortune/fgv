@@ -158,6 +158,17 @@ function fakeProvider(options: {
   };
 }
 
+/**
+ * The library's own verdict on an adapted request: the schema adapted with the table the wire uses,
+ * failing as `executeClientToolTurn`'s pre-flight does. Asked of the library, never restated, so a
+ * test built on it pins the probe against what ships.
+ */
+function libraryPreflight(request: IAdaptedRequest): Result<string> | undefined {
+  const table = AiAssist.clientToolSchemaKeywords(request.descriptor, { model: request.model });
+  const adapted = JsonSchema.adaptSchemaKeywords(request.schema.toJson(), table);
+  return adapted.isFailure() ? fail(`executeClientToolTurn: tool 'probe': ${adapted.message}`) : undefined;
+}
+
 describe('wireProbe', () => {
   describe('fixtures', () => {
     test('every fixture reads into a validator that emits its JSON, with unique ids and the control first', () => {
@@ -204,6 +215,9 @@ describe('wireProbe', () => {
       const openai = AiAssist.clientToolSchemaKeywords(descriptor('openai'));
       expect(ourVerdict(rawOf('multipleOf'), anthropicTools)).toBe('pass');
       expect(ourVerdict(rawOf('untyped-property'), anthropicTools)).toBe('pass');
+      expect(ourVerdict(rawOf('untyped-items'), anthropicTools)).toBe('pass');
+      // Anthropic tools reject a typeless root `input_schema`, so the table refuses one there.
+      expect(ourVerdict(rawOf('untyped-root'), anthropicTools)).toBe('refuse');
       expect(ourVerdict(rawOf('enum-integer'), gemini)).toBe('adapt');
       expect(ourVerdict(rawOf('exclusiveMinimum-integer'), gemini)).toBe('adapt');
       expect(ourVerdict(rawOf('title'), openai)).toBe('adapt');
@@ -417,7 +431,10 @@ describe('wireProbe', () => {
 
   describe('runWireProbe', () => {
     test('probes only the wires with a key, and an all-accepting provider is never unsafe', async () => {
-      const provider = fakeProvider({});
+      // The library refuses a typeless root on Anthropic tools before sending it, as the live path does.
+      const provider = fakeProvider({
+        adapted: libraryPreflight
+      });
       const context = testContext({ ANTHROPIC_API_KEY: 'k' });
       const result = await runWireProbe(context, provider.deps, [
         wire('anthropic-tools'),
@@ -428,12 +445,42 @@ describe('wireProbe', () => {
         expect(report).toContain('SKIPPED: no google-gemini key');
         expect(report).toContain('UNSAFE (raw): none');
         expect(report).toContain('UNSAFE (end to end): none');
-        expect(report).toMatch(/agrees 24 · conservative 0 · unsafe 0 · inconclusive 0/);
+        expect(report).toMatch(/agrees 23 · conservative 1 · unsafe 0 · inconclusive 0/);
+        expect(report).toMatch(/untyped-root\s+refuse\s+accepted\s+conservative\s+refused here/);
       });
       expect(provider.rawUrls).toHaveLength(WIRE_PROBE_FIXTURES.length);
       expect(provider.adapted).toHaveLength(WIRE_PROBE_FIXTURES.length);
       // The key never reaches the log.
       expect(lastLogger.logged.join('\n')).not.toMatch(/\bk\b.*x-api-key|Bearer/);
+    });
+
+    test('the live Anthropic-tools observation: a typeless root is rejected raw, and now refused here', async () => {
+      // 2026-10-18 live run: `400 tools.0.custom.input_schema.type: Field required` for a root `{}`.
+      const provider = fakeProvider({
+        rawStatus: (request) =>
+          JSON.stringify((request.body.tools as JsonObject[] | undefined)?.[0]?.input_schema) === '{}'
+            ? {
+                status: 400,
+                body: JSON.stringify({
+                  type: 'error',
+                  error: {
+                    type: 'invalid_request_error',
+                    message: 'tools.0.custom.input_schema.type: Field required'
+                  }
+                })
+              }
+            : undefined,
+        adapted: libraryPreflight
+      });
+      const result = await runWireProbe(testContext({ ANTHROPIC_API_KEY: 'k' }), provider.deps, [
+        wire('anthropic-tools')
+      ]);
+      expect(result).toSucceedAndSatisfy((report) => {
+        expect(report).toMatch(/untyped-root\s+refuse\s+rejected\s+agrees\s+refused here/);
+        expect(report).toMatch(/untyped-property\s+pass\s+accepted\s+agrees\s+accepted/);
+        expect(report).toMatch(/agrees 24 · conservative 0 · unsafe 0 · inconclusive 0/);
+        expect(report).toContain('UNSAFE (raw): none');
+      });
     });
 
     test('a pass the provider rejects is unsafe, and fails the run with the report', async () => {

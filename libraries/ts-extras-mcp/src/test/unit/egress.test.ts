@@ -42,8 +42,6 @@ import {
   createHttpTransport,
   listMcpTools
 } from '../../packlets/mcp';
-// eslint-disable-next-line @rushstack/packlets/mechanics
-import { TERMINATE_TIMEOUT_MS } from '../../packlets/mcp/session';
 import { type IRealMcpServer, startRealMcpServer, waitFor } from './realHttpServer';
 
 /** A loopback MCP server is private, so the recommended guard is told to allow exactly that. */
@@ -171,9 +169,9 @@ describe('Streamable-HTTP egress through an injected fetch', () => {
       guardedFetch({ requestGuard: switchableRequestGuard((method) => method === 'DELETE') }),
       logger
     );
-    const started = Date.now();
     expect(await closeMcpSession(connected)).toSucceedWith(true);
-    expect(Date.now() - started).toBeLessThan(TERMINATE_TIMEOUT_MS);
+    // Promptly: the close ended on the refusal, not on the termination bound running out.
+    expect(logger.logged.join('\n')).not.toMatch(/did not finish within/);
     expect(logger.logged).toContainEqual(
       expect.stringMatching(
         /session termination failed; closing anyway \(egress-blocked\): guarded fetch failed/
