@@ -155,8 +155,10 @@ function _hexValue(cp: number | undefined): number | undefined {
   if (_isDigit(cp)) {
     return cp - 0x30;
   }
-  const lower = cp | 0x20;
-  return lower >= 0x61 && lower <= 0x66 ? lower - 0x61 + 10 : undefined;
+  if (cp >= 0x41 && cp <= 0x46) {
+    return cp - 0x41 + 10;
+  }
+  return cp >= 0x61 && cp <= 0x66 ? cp - 0x61 + 10 : undefined;
 }
 
 function _isLeadSurrogate(cp: number): boolean {
