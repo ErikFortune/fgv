@@ -39,6 +39,7 @@ getting-started material. This index routes; it does not duplicate.
 | [`ts-random`](libraries/ts-random/CAPABILITIES.md) | Seeded, reproducible PRNG (`SeededRandomSource`, `PseudoRandomGenerator`) + word/char corpora. **mulberry32 — never for tokens, salts or keys** |
 | [`ts-extras`](libraries/ts-extras/CAPABILITIES.md) | Crypto, `safer-fetch`, `ai-assist` (LLM clients, structured output incl. `adaptOptionalToNullable`), CSV, zip, mustache |
 | [`ts-web-extras`](libraries/ts-web-extras/CAPABILITIES.md) | Browser siblings — crypto, File System Access `FileTree`, browser `safer-fetch` |
+| [`ts-extras-re2`](libraries/ts-extras-re2/CAPABILITIES.md) | RE2 (re2js) `patternValidator` for untrusted JSON Schema `pattern` — linear time, ECMA meaning or refusal |
 | [`ts-extras-argon2`](libraries/ts-extras-argon2/CAPABILITIES.md) · [`ts-web-extras-argon2`](libraries/ts-web-extras-argon2/CAPABILITIES.md) | Argon2id providers (Node native / browser WASM) |
 | [`ts-extras-webauthn`](libraries/ts-extras-webauthn/CAPABILITIES.md) · [`ts-web-extras-webauthn`](libraries/ts-web-extras-webauthn/CAPABILITIES.md) | WebAuthn Result boundary over `@simplewebauthn/*` |
 | [`ts-extras-transformers`](libraries/ts-extras-transformers/CAPABILITIES.md) · [`ts-web-extras-transformers`](libraries/ts-web-extras-transformers/CAPABILITIES.md) | Local HuggingFace models — classify, embed, summarize |
@@ -103,6 +104,7 @@ detail. `· pkg` names the owning package.*
 - **Parsing a JSON-shaped string (with optional inner validation)?** → `Converters.stringifiedJson` · `ts-json-base`
 - **Need typed JSON Schema for LLM tool authoring?** → `JsonSchema` `fromJson` · `ts-json-base`
 - **Need an absent-able field in a schema you send to OpenAI?** → `JsonSchema` `nullable` · `ts-json-base`
+- **Accepting untrusted JSON Schema `pattern`?** → `re2PatternValidator` · `ts-extras-re2`
 - **Asking an LLM for JSON and getting a validated `T`?** → `generateJsonCompletion` `JsonSchema` · `ts-extras`
 - **Need the provider to constrain its output, not just be asked to?** → `structuredOutput` · `ts-extras`
 - **Running a tool-use conversation with harness-side client tools?** → `executeClientToolTurn` `JsonSchema` · `ts-extras`
