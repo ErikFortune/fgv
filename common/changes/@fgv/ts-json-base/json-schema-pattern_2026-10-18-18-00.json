@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "BREAKING (implementers only): JsonSchema pattern, split by trust. stringOptions({ pattern }) takes a host RegExp with exactly the 'u' flag, enforced with the built-in matcher and emitted as its source; fromJson refuses a server's pattern by default and admits it only with fromJson(json, { patternValidator }), whose predicate enforces it, so the library never compiles a server-supplied regex. New schemaPatternConstraintKeywords, SchemaPatternValidator, SchemaPatternPredicate and IFromJsonOptions; 'pattern' joins SchemaValidatingKeyword, so a hand-written SchemaKeywordCapabilities table needs a pattern rule.",
+      "type": "minor",
+      "packageName": "@fgv/ts-json-base"
+    }
+  ],
+  "packageName": "@fgv/ts-json-base",
+  "email": "ErikFortune@outlook.com"
+}

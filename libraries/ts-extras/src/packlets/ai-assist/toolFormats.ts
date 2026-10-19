@@ -27,7 +27,7 @@ import { type JsonObject, type JsonValue } from '@fgv/ts-json-base';
 import { type Result, fail, mapResults, succeed } from '@fgv/ts-utils';
 
 import { type IAiProviderDescriptor } from './model';
-import { type ISchemaWireTarget, adaptWireSchema } from './schemaKeywords';
+import { type ClientToolWireFormat, type ISchemaWireTarget, adaptWireSchema } from './schemaKeywords';
 import {
   type AiServerToolConfig,
   type AiServerToolType,
@@ -41,12 +41,13 @@ import {
 } from './toolTypes';
 
 /**
- * A client tool's parameter schema adapted for one wire, with a refusal naming the tool.
+ * A client tool's parameter schema adapted for one wire, with a refusal naming the tool. The one
+ * adaptation both the turn's pre-flight and the request formatters run.
  * @internal
  */
-function adaptToolParameters(
+export function adaptClientToolParameters(
   config: IAiClientToolConfig,
-  format: 'responses-tools' | 'anthropic-tools' | 'gemini',
+  format: ClientToolWireFormat,
   target: ISchemaWireTarget | undefined
 ): Result<JsonValue> {
   return adaptWireSchema(config.parametersSchema.toJson(), format, target).withErrorFormat(
@@ -233,7 +234,7 @@ function clientToolToResponsesApi(
   config: IAiClientToolConfig,
   target: ISchemaWireTarget | undefined
 ): Result<JsonObject> {
-  return adaptToolParameters(config, 'responses-tools', target).onSuccess((parameters) =>
+  return adaptClientToolParameters(config, 'responses-tools', target).onSuccess((parameters) =>
     succeed({
       type: 'function',
       name: config.name,
@@ -328,7 +329,7 @@ function clientToolToAnthropic(
   config: IAiClientToolConfig,
   target: ISchemaWireTarget | undefined
 ): Result<JsonObject> {
-  return adaptToolParameters(config, 'anthropic-tools', target).onSuccess((inputSchema) =>
+  return adaptClientToolParameters(config, 'anthropic-tools', target).onSuccess((inputSchema) =>
     succeed({
       name: config.name,
       description: config.description,
@@ -382,6 +383,25 @@ export function toAnthropicTools(
 // ============================================================================
 
 /**
+ * The non-`null` member of a draft-07 nullable `type` union, or `undefined` when `type` is
+ * not one.
+ *
+ * @remarks
+ * Deliberately narrow: only the two-member `[<type>, 'null']` shape `JsonSchema` emits is
+ * recognised. A general union has no OpenAPI equivalent, so translating one would be
+ * inventing a meaning — it is passed through unchanged and Gemini refuses it, which is the
+ * honest outcome.
+ * @internal
+ */
+function _nullableUnionMember(type: JsonValue | undefined): string | undefined {
+  if (!Array.isArray(type) || type.length !== 2 || !type.includes('null')) {
+    return undefined;
+  }
+  const other: JsonValue | undefined = type.find((member) => member !== 'null');
+  return typeof other === 'string' ? other : undefined;
+}
+
+/**
  * Sanitizes a draft-07 JSON Schema (as emitted by `JsonSchema.object(...).toJson()`)
  * into the OpenAPI 3.0 Schema Object subset that Gemini's `function_declarations[].parameters`
  * accepts.
@@ -402,27 +422,14 @@ export function toAnthropicTools(
  * each property's subschema value is still recursively sanitized — a tool parameter
  * legitimately named `additionalProperties` survives.
  *
- * @internal
+ * Only the **dialect** is translated: constraint and annotation keywords pass through as written.
+ * `toGeminiTools` and the Gemini structured-output wire adapt those first, to what Gemini
+ * documents; call this directly only to build a Gemini schema yourself — for example a wire probe
+ * that must send a keyword unadapted to observe whether Gemini accepts it.
+ * @param schema - A draft-07 JSON Schema.
+ * @returns The schema in Gemini's OpenAPI 3.0 subset.
+ * @public
  */
-/**
- * The non-`null` member of a draft-07 nullable `type` union, or `undefined` when `type` is
- * not one.
- *
- * @remarks
- * Deliberately narrow: only the two-member `[<type>, 'null']` shape `JsonSchema` emits is
- * recognised. A general union has no OpenAPI equivalent, so translating one would be
- * inventing a meaning — it is passed through unchanged and Gemini refuses it, which is the
- * honest outcome.
- * @internal
- */
-function _nullableUnionMember(type: JsonValue | undefined): string | undefined {
-  if (!Array.isArray(type) || type.length !== 2 || !type.includes('null')) {
-    return undefined;
-  }
-  const other: JsonValue | undefined = type.find((member) => member !== 'null');
-  return typeof other === 'string' ? other : undefined;
-}
-
 export function toGeminiParameterSchema(schema: JsonValue): JsonValue {
   if (Array.isArray(schema)) {
     return schema.map(toGeminiParameterSchema);
@@ -518,7 +525,7 @@ export function toGeminiTools(
         break;
       case 'client_tool':
         declarations.push(
-          adaptToolParameters(t, 'gemini', target).onSuccess((parameters) =>
+          adaptClientToolParameters(t, 'gemini', target).onSuccess((parameters) =>
             succeed({
               name: t.name,
               description: t.description,

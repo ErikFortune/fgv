@@ -58,8 +58,8 @@ import { TEST_PROMPT } from './streamingAdaptersFixtures';
 
 /** A numeric enum, a boolean const-style enum and a string enum — no untyped node. */
 const enums = JsonSchema.object({
-  level: JsonSchema.integerEnumOf([1, 2], { description: 'Level.' }),
-  on: JsonSchema.booleanEnumOf([true]),
+  level: JsonSchema.integerEnumOf([1, 2], { description: 'Level.' }).orThrow(),
+  on: JsonSchema.booleanEnumOf([true]).orThrow(),
   kind: JsonSchema.enumOf(['a', 'b'])
 });
 
@@ -134,6 +134,20 @@ describe('the shape rules, per tool wire format', () => {
     expect(toAnthropicTools([tool(untyped).config])).toFailWith(UNTYPED_REFUSAL);
   });
 
+  test('Anthropic tools refuse an untyped root: input_schema must state a type', () => {
+    // Observed live: `400 tools.0.custom.input_schema.type: Field required` for a typeless root,
+    // while `{}` in properties and in items is accepted.
+    expect(toAnthropicTools([tool(JsonSchema.anyValue()).config], { providerId: 'anthropic' })).toFailWith(
+      /^tool 'lookup': #: a schema with no 'type' \(matching any value\) cannot be sent on this wire \(Anthropic tools\)$/
+    );
+    const nested = JsonSchema.object({ list: JsonSchema.array(JsonSchema.anyValue()) });
+    expect(toAnthropicTools([tool(nested).config], { providerId: 'anthropic' })).toSucceedAndSatisfy(
+      ([wire]) => {
+        expect((wire.input_schema as JsonObject).properties).toEqual({ list: { type: 'array', items: {} } });
+      }
+    );
+  });
+
   test('Gemini folds a numeric enum keeping its type, and refuses an untyped node', () => {
     expect(
       toGeminiTools([{ type: 'web_search' }, tool(enums).config], { providerId: 'google-gemini' })
@@ -157,7 +171,9 @@ describe('the shape rules, per tool wire format', () => {
   });
 
   test('a nullable numeric enum on Gemini folds, and the sanitizer still translates the union', () => {
-    const nullable = JsonSchema.object({ n: JsonSchema.numberEnumOf([0.5, 1], { nullable: true }) });
+    const nullable = JsonSchema.object({
+      n: JsonSchema.numberEnumOf([0.5, 1], { nullable: true }).orThrow()
+    });
     expect(toGeminiTools([tool(nullable).config], { providerId: 'google-gemini' })).toSucceedAndSatisfy(
       ([wire]) => {
         const [declaration] = wire.function_declarations as JsonObject[];
@@ -172,7 +188,7 @@ describe('the shape rules, per tool wire format', () => {
     const expected: Record<string, [string, string]> = {
       'responses-tools': ['pass', 'refuse'],
       'openai-strict-output': ['pass', 'refuse'],
-      'anthropic-tools': ['pass', 'pass'],
+      'anthropic-tools': ['pass', 'pass-nested'],
       'anthropic-json-outputs': ['pass', 'refuse'],
       gemini: ['fold', 'refuse']
     };
@@ -213,7 +229,7 @@ describe('AiAssist.clientToolSchemaKeywords — the table a host passes to adapt
     expect(AiAssist.clientToolSchemaKeywords(provider('openai', 'openai'), { model: 'gpt-4o' })).toBe(
       schemaKeywordsFor('responses-tools', { providerId: 'openai', model: 'gpt-4o' })
     );
-    expect(AiAssist.clientToolSchemaKeywords(provider('anthropic', 'anthropic')).untyped).toBe('pass');
+    expect(AiAssist.clientToolSchemaKeywords(provider('anthropic', 'anthropic')).untyped).toBe('pass-nested');
     expect(AiAssist.clientToolSchemaKeywords(provider('openai', 'openai')).untyped).toBe('refuse');
   });
 
@@ -229,6 +245,130 @@ describe('AiAssist.clientToolSchemaKeywords — the table a host passes to adapt
     expect(AiAssist.clientToolSchemaKeywords(provider('openai', 'openai'), { model: 'ft:gpt-4o:x' })).toBe(
       JsonSchema.unverifiedWireSchemaKeywords
     );
+  });
+
+  test('a verified endpoint override gets the provider table, keeping the ft: rule', () => {
+    const endpoint = 'https://gw.invalid';
+    expect(
+      AiAssist.clientToolSchemaKeywords(provider('anthropic', 'anthropic'), {
+        endpoint,
+        verifiedEndpoint: { providerId: 'anthropic', verified: true }
+      })
+    ).toBe(schemaKeywordsFor('anthropic-tools', { providerId: 'anthropic' }));
+    expect(
+      AiAssist.clientToolSchemaKeywords(provider('openai', 'openai'), {
+        model: 'gpt-4o',
+        endpoint,
+        verifiedEndpoint: { providerId: 'openai', verified: true }
+      })
+    ).toBe(schemaKeywordsFor('responses-tools', { providerId: 'openai', model: 'gpt-4o' }));
+    expect(
+      AiAssist.clientToolSchemaKeywords(provider('openai', 'openai'), {
+        model: 'ft:gpt-4o:x',
+        endpoint,
+        verifiedEndpoint: { providerId: 'openai', verified: true }
+      })
+    ).toBe(JsonSchema.unverifiedWireSchemaKeywords);
+  });
+
+  test('an assertion naming another provider, or not verified: true, leaves the override conservative', () => {
+    const assertions: ReadonlyArray<AiAssist.IAiVerifiedEndpoint> = [
+      { providerId: 'google-gemini', verified: true },
+      { providerId: 'anthropic', verified: false as unknown as true }
+    ];
+    for (const verifiedEndpoint of assertions) {
+      expect(
+        AiAssist.clientToolSchemaKeywords(provider('anthropic', 'anthropic'), {
+          endpoint: 'https://gw.invalid',
+          verifiedEndpoint
+        })
+      ).toBe(JsonSchema.unverifiedWireSchemaKeywords);
+    }
+  });
+});
+
+describe('AiAssist.structuredOutputSchemaKeywords — the table a structured-output schema is adapted with', () => {
+  function registered(id: AiProviderId): IAiProviderDescriptor {
+    return AiAssist.getProviderDescriptor(id).orThrow();
+  }
+
+  test('follows the model to the structured-output wire it uses', () => {
+    // Anthropic splits by model: JSON outputs for the lines that reject forced tool use, the
+    // forced tool (and so the tools table) for the rest.
+    expect(
+      AiAssist.structuredOutputSchemaKeywords(registered('anthropic'), { model: 'claude-opus-5-5' })
+    ).toBe(schemaKeywordsFor('anthropic-json-outputs', { providerId: 'anthropic' }));
+    expect(
+      AiAssist.structuredOutputSchemaKeywords(registered('anthropic'), { model: '@anthropic:sonnet' })
+    ).toBe(schemaKeywordsFor('anthropic-tools', { providerId: 'anthropic' }));
+    expect(
+      AiAssist.structuredOutputSchemaKeywords(registered('google-gemini'), { model: '@google-gemini:flash' })
+    ).toBe(schemaKeywordsFor('gemini', { providerId: 'google-gemini' }));
+    expect(AiAssist.structuredOutputSchemaKeywords(registered('openai'), { model: 'gpt-4o' })).toBe(
+      schemaKeywordsFor('openai-strict-output', { providerId: 'openai', model: 'gpt-4o' })
+    );
+    expect(AiAssist.structuredOutputSchemaKeywords(registered('xai-grok'), { model: 'grok-4.3' })).toBe(
+      schemaKeywordsFor('openai-strict-output', { providerId: 'xai-grok', model: 'grok-4.3' })
+    );
+  });
+
+  test('an endpoint override and a fine-tuned model get the conservative table', () => {
+    expect(
+      AiAssist.structuredOutputSchemaKeywords(registered('anthropic'), {
+        model: 'claude-opus-5-5',
+        endpoint: 'https://gw.invalid'
+      })
+    ).toBe(JsonSchema.unverifiedWireSchemaKeywords);
+    expect(AiAssist.structuredOutputSchemaKeywords(registered('openai'), { model: 'ft:gpt-4o:x' })).toBe(
+      JsonSchema.unverifiedWireSchemaKeywords
+    );
+  });
+
+  test('a verified endpoint override gets the provider table, keeping the ft: rule', () => {
+    const endpoint = 'https://gw.invalid';
+    expect(
+      AiAssist.structuredOutputSchemaKeywords(registered('anthropic'), {
+        model: 'claude-opus-5-5',
+        endpoint,
+        verifiedEndpoint: { providerId: 'anthropic', verified: true }
+      })
+    ).toBe(schemaKeywordsFor('anthropic-json-outputs', { providerId: 'anthropic' }));
+    expect(
+      AiAssist.structuredOutputSchemaKeywords(registered('openai'), {
+        model: 'ft:gpt-4o:x',
+        endpoint,
+        verifiedEndpoint: { providerId: 'openai', verified: true }
+      })
+    ).toBe(JsonSchema.unverifiedWireSchemaKeywords);
+    expect(
+      AiAssist.structuredOutputSchemaKeywords(registered('openai'), {
+        model: 'gpt-4o',
+        endpoint,
+        verifiedEndpoint: { providerId: 'xai-grok', verified: true }
+      })
+    ).toBe(JsonSchema.unverifiedWireSchemaKeywords);
+  });
+
+  test('a provider with no structured-output capability has no table', () => {
+    const descriptor: IAiProviderDescriptor = { ...registered('openai'), structuredOutput: undefined };
+    expect(AiAssist.structuredOutputSchemaKeywords(descriptor, { model: 'gpt-4o' })).toBeUndefined();
+  });
+});
+
+describe('AiAssist.toGeminiParameterSchema — the dialect translation alone', () => {
+  test('translates the dialect and passes constraint keywords through unadapted', () => {
+    expect(
+      AiAssist.toGeminiParameterSchema({
+        type: 'object',
+        properties: { n: { type: 'number', exclusiveMinimum: 0, multipleOf: 2 } },
+        required: ['n'],
+        additionalProperties: false
+      })
+    ).toEqual({
+      type: 'object',
+      properties: { n: { type: 'number', exclusiveMinimum: 0, multipleOf: 2 } },
+      required: ['n']
+    });
   });
 });
 
@@ -266,7 +406,7 @@ describe('the shape rules on structured output', () => {
     );
   }
 
-  const answer = JsonSchema.object({ grade: JsonSchema.integerEnumOf([1, 2, 3]) });
+  const answer = JsonSchema.object({ grade: JsonSchema.integerEnumOf([1, 2, 3]).orThrow() });
   const anyAnswer = JsonSchema.object({ value: JsonSchema.anyValue() });
 
   test('a numeric enum passes on OpenAI strict and Anthropic JSON outputs, and folds on Gemini', () => {
@@ -341,6 +481,17 @@ describe('the shape rules on structured output', () => {
       expect((forced.input_schema as JsonObject).properties).toEqual({ value: {} });
     });
   });
+
+  test('the forced-tool mechanism refuses an untyped root, under onUnsupported', () => {
+    expect(resolve('anthropic-tool-forced', JsonSchema.anyValue(), 'anthropic')).toFailWith(
+      /^the supplied schema cannot be sent as anthropic-tool-forced structured output: #: a schema with no 'type'/
+    );
+    expect(
+      resolve('anthropic-tool-forced', JsonSchema.anyValue(), 'anthropic', 'degrade')
+    ).toSucceedAndSatisfy((r) => {
+      expect(r.enforcement).toBe('none');
+    });
+  });
 });
 
 describe('the streaming adapters refuse a request carrying an untyped node, before sending it', () => {
@@ -397,5 +548,86 @@ describe('the streaming adapters refuse a request carrying an untyped node, befo
     );
     expect(result).toFailWith(/^OpenAI Responses streaming: tool 'lookup': #\/properties\/payload/);
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+});
+
+describe('executeClientToolTurn pre-flights every client tool at turn creation', () => {
+  let fetchMock: jest.SpyInstance;
+
+  beforeEach(() => {
+    fetchMock = jest.spyOn(global, 'fetch').mockImplementation(jest.fn());
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  function registered(id: AiProviderId): IAiProviderDescriptor {
+    return AiAssist.getProviderDescriptor(id).orThrow();
+  }
+
+  test.each([
+    ['openai', /\(OpenAI-format tools\)$/],
+    ['google-gemini', /\(Gemini\)$/],
+    ['anthropic', /\(Anthropic tools, unverified server\)$/]
+  ] as const)('%s: a tool the wire cannot carry fails the Result, naming tool, path and wire', (id, wire) => {
+    const result = AiAssist.executeClientToolTurn({
+      descriptor: registered(id),
+      apiKey: 'k',
+      system: 'system',
+      messages: [{ role: 'user', content: 'hello' }],
+      clientTools: [tool(enums, 'ok'), tool(untyped)],
+      // Anthropic tools carry a nested untyped node, so reach it through an unverified override.
+      ...(id === 'anthropic' && { endpoint: 'https://gateway.invalid/v1' })
+    });
+    expect(result).toFailWith(
+      /^executeClientToolTurn: tool 'lookup': #\/properties\/payload: a schema with no 'type' \(matching any value\) cannot be sent on this wire/
+    );
+    expect(result).toFailWith(wire);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  test('anthropic: an untyped root fails at creation, naming #', () => {
+    const result = AiAssist.executeClientToolTurn({
+      descriptor: registered('anthropic'),
+      apiKey: 'k',
+      system: 'system',
+      messages: [{ role: 'user', content: 'hello' }],
+      clientTools: [tool(JsonSchema.anyValue())]
+    });
+    expect(result).toFailWith(
+      /^executeClientToolTurn: tool 'lookup': #: a schema with no 'type'.*\(Anthropic tools\)$/
+    );
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  test('anthropic: a verified endpoint override is the provider, so a nested untyped node passes pre-flight', async () => {
+    fetchMock.mockResolvedValue({
+      ok: false,
+      status: 418,
+      text: async () => 'stop here'
+    } as unknown as Response);
+    const result = AiAssist.executeClientToolTurn({
+      descriptor: registered('anthropic'),
+      apiKey: 'k',
+      system: 'system',
+      messages: [{ role: 'user', content: 'hello' }],
+      clientTools: [tool(untyped)],
+      endpoint: 'https://gateway.invalid/v1',
+      verifiedEndpoint: { providerId: 'anthropic', verified: true }
+    });
+    const turn = result.orThrow();
+    const events: AiAssist.IAiStreamEvent[] = [];
+    for await (const event of turn.events) {
+      events.push(event);
+    }
+    // The stubbed provider answers 418, so the turn ends in an error — after the request was sent.
+    expect(events.map((e) => e.type)).toEqual(['error']);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const body = JSON.parse(String((fetchMock.mock.calls[0][1] as RequestInit).body)) as JsonObject;
+    expect(((body.tools as JsonObject[])[0].input_schema as JsonObject).properties).toEqual({
+      q: { type: 'string' },
+      payload: { description: 'Anything.' }
+    });
   });
 });

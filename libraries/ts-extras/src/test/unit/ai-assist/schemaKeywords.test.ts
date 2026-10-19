@@ -41,7 +41,11 @@ import { AiPrompt } from '../../../packlets/ai-assist/model';
 // eslint-disable-next-line @rushstack/packlets/mechanics
 import { callProviderCompletion } from '../../../packlets/ai-assist/completionClient';
 // eslint-disable-next-line @rushstack/packlets/mechanics
-import { type ISchemaWireTarget, schemaKeywordsFor } from '../../../packlets/ai-assist/schemaKeywords';
+import {
+  type IAiVerifiedEndpoint,
+  type ISchemaWireTarget,
+  schemaKeywordsFor
+} from '../../../packlets/ai-assist/schemaKeywords';
 // eslint-disable-next-line @rushstack/packlets/mechanics
 import { resolveStructuredOutput } from '../../../packlets/ai-assist/structuredOutput';
 // eslint-disable-next-line @rushstack/packlets/mechanics
@@ -53,20 +57,37 @@ import {
 } from '../../../packlets/ai-assist/toolFormats';
 // eslint-disable-next-line @rushstack/packlets/mechanics
 import { executeClientToolTurn } from '../../../packlets/ai-assist/streamingAdapters/clientToolContinuationBuilder';
+// eslint-disable-next-line @rushstack/packlets/mechanics
+import * as AnthropicStream from '../../../packlets/ai-assist/streamingAdapters/anthropic';
+// eslint-disable-next-line @rushstack/packlets/mechanics
+import { callProviderCompletionStream } from '../../../packlets/ai-assist/streamingClient';
 
 /** A parameter schema carrying every keyword, so each table's whole row is visible at once. */
 const everything = JsonSchema.object({
-  n: JsonSchema.number({ minimum: 1, maximum: 10, multipleOf: 0.5, title: 'N', default: 2 }),
-  i: JsonSchema.integer({ exclusiveMinimum: 0, exclusiveMaximum: 100 }),
-  x: JsonSchema.number({ exclusiveMinimum: 0 }),
-  s: JsonSchema.string({
-    minLength: 1,
-    maxLength: 8,
-    format: 'email',
-    description: 'Who.',
-    examples: ['a@b.c']
-  }),
-  d: JsonSchema.string({ format: 'duration' })
+  n: JsonSchema.number(
+    JsonSchema.numberOptions({
+      minimum: 1,
+      maximum: 10,
+      multipleOf: 0.5,
+      title: 'N',
+      default: 2
+    }).shouldNotFail('number options')
+  ),
+  i: JsonSchema.integer(
+    JsonSchema.integerOptions({ exclusiveMinimum: 0, exclusiveMaximum: 100 }).shouldNotFail('integer options')
+  ),
+  x: JsonSchema.number(JsonSchema.numberOptions({ exclusiveMinimum: 0 }).shouldNotFail('number options')),
+  s: JsonSchema.string(
+    JsonSchema.stringOptions({
+      minLength: 1,
+      maxLength: 8,
+      format: 'email',
+      description: 'Who.',
+      examples: ['a@b.c']
+    }).shouldNotFail('string options')
+  ),
+  d: JsonSchema.string({ format: 'duration' }),
+  p: JsonSchema.string(JsonSchema.stringOptions({ pattern: /^[a-z]+$/u }).shouldNotFail('pattern options'))
 });
 
 function tool(schema: JsonSchema.ISchemaValidator<unknown> = everything): IAiClientTool {
@@ -86,12 +107,12 @@ describe('schema keyword capability tables, per wire format', () => {
     for (const providerId of ['openai', 'xai-grok']) {
       const [wire] = toResponsesApiTools([tool().config], { providerId, model: 'gpt-x' }).orThrow();
       expect(propertiesOf(wire.parameters)).toEqual({
-        // `title` is dropped, not folded; `default` folds as its own sentence.
+        // `title` and `default` are dropped, not folded: a folded default reads as applied.
         n: {
           type: 'number',
           minimum: 1,
           maximum: 10,
-          description: 'Constraints: multipleOf 0.5. Default: 2.'
+          description: 'Constraints: multipleOf 0.5.'
         },
         i: { type: 'integer', exclusiveMinimum: 0, exclusiveMaximum: 100 },
         x: { type: 'number', exclusiveMinimum: 0 },
@@ -100,7 +121,9 @@ describe('schema keyword capability tables, per wire format', () => {
           format: 'email',
           description: 'Who. Constraints: minLength 1; maxLength 8. Examples: ["a@b.c"].'
         },
-        d: { type: 'string', description: 'Format: duration.' }
+        d: { type: 'string', description: 'Format: duration.' },
+        // xAI anchors a pattern implicitly, so on the shared wire it folds.
+        p: { type: 'string', description: 'Constraints: pattern "^[a-z]+$".' }
       });
     }
   });
@@ -165,18 +188,22 @@ describe('schema keyword capability tables, per wire format', () => {
         format: 'email',
         description: 'Who. Examples: ["a@b.c"].'
       },
-      d: { type: 'string', format: 'duration' }
+      d: { type: 'string', format: 'duration' },
+      // Gemini names no regex dialect or anchoring, so `pattern` folds.
+      p: { type: 'string', description: 'Constraints: pattern "^[a-z]+$".' }
     });
   });
 
   test('Gemini translation keeps the tighter of an exclusive and an inclusive bound, and survives nullability', () => {
     const caps = schemaKeywordsFor('gemini', { providerId: 'google-gemini' });
-    const tighterInclusive = JsonSchema.integer({
-      minimum: 5,
-      exclusiveMinimum: 2,
-      maximum: 7,
-      exclusiveMaximum: 9
-    });
+    const tighterInclusive = JsonSchema.integer(
+      JsonSchema.integerOptions({
+        minimum: 5,
+        exclusiveMinimum: 2,
+        maximum: 7,
+        exclusiveMaximum: 9
+      }).shouldNotFail('integer options')
+    );
     expect(
       toGeminiParameterSchema(JsonSchema.adaptSchemaKeywords(tighterInclusive.toJson(), caps).orThrow())
     ).toEqual({
@@ -184,12 +211,14 @@ describe('schema keyword capability tables, per wire format', () => {
       minimum: 5,
       maximum: 7
     });
-    const tighterExclusive = JsonSchema.integer({
-      minimum: 1,
-      exclusiveMinimum: 2.5,
-      maximum: 9,
-      exclusiveMaximum: 4
-    });
+    const tighterExclusive = JsonSchema.integer(
+      JsonSchema.integerOptions({
+        minimum: 1,
+        exclusiveMinimum: 2.5,
+        maximum: 9,
+        exclusiveMaximum: 4
+      }).shouldNotFail('integer options')
+    );
     expect(
       toGeminiParameterSchema(JsonSchema.adaptSchemaKeywords(tighterExclusive.toJson(), caps).orThrow())
     ).toEqual({
@@ -197,7 +226,9 @@ describe('schema keyword capability tables, per wire format', () => {
       minimum: 3,
       maximum: 3
     });
-    const nullable = JsonSchema.integer({ nullable: true, exclusiveMaximum: 10 });
+    const nullable = JsonSchema.integer(
+      JsonSchema.integerOptions({ nullable: true, exclusiveMaximum: 10 }).shouldNotFail('integer options')
+    );
     expect(
       toGeminiParameterSchema(JsonSchema.adaptSchemaKeywords(nullable.toJson(), caps).orThrow())
     ).toEqual({
@@ -209,18 +240,24 @@ describe('schema keyword capability tables, per wire format', () => {
 
   test('Gemini folds an integer exclusive bound whose translation would not be exact (beyond 2^53)', () => {
     const caps = schemaKeywordsFor('gemini', { providerId: 'google-gemini' });
-    const big = JsonSchema.integer({ exclusiveMinimum: 2 ** 53 });
+    const big = JsonSchema.integer(
+      JsonSchema.integerOptions({ exclusiveMinimum: 2 ** 53 }).shouldNotFail('integer options')
+    );
     expect(JsonSchema.adaptSchemaKeywords(big.toJson(), caps).orThrow()).toEqual({
       type: 'integer',
       description: `Constraints: exclusiveMinimum ${2 ** 53}.`
     });
     // Just inside the safe range the translation is still exact.
-    const justInside = JsonSchema.integer({ exclusiveMinimum: 2 ** 53 - 2 });
+    const justInside = JsonSchema.integer(
+      JsonSchema.integerOptions({ exclusiveMinimum: 2 ** 53 - 2 }).shouldNotFail('integer options')
+    );
     expect(JsonSchema.adaptSchemaKeywords(justInside.toJson(), caps).orThrow()).toEqual({
       type: 'integer',
       minimum: 2 ** 53 - 1
     });
-    const below = JsonSchema.integer({ exclusiveMaximum: -(2 ** 53) });
+    const below = JsonSchema.integer(
+      JsonSchema.integerOptions({ exclusiveMaximum: -(2 ** 53) }).shouldNotFail('integer options')
+    );
     expect(JsonSchema.adaptSchemaKeywords(below.toJson(), caps).orThrow()).toEqual({
       type: 'integer',
       description: `Constraints: exclusiveMaximum ${-(2 ** 53)}.`
@@ -247,8 +284,13 @@ describe('schema keyword capability tables, per wire format', () => {
 
 describe('schema keyword capability tables, structured output', () => {
   const schema = JsonSchema.object({
-    n: JsonSchema.integer({ minimum: 1, maximum: 5, default: 3 }),
-    s: JsonSchema.string({ maxLength: 4, format: 'hostname' })
+    n: JsonSchema.integer(
+      JsonSchema.integerOptions({ minimum: 1, maximum: 5, default: 3 }).shouldNotFail('integer options')
+    ),
+    s: JsonSchema.string(
+      JsonSchema.stringOptions({ maxLength: 4, format: 'hostname' }).shouldNotFail('string options')
+    ),
+    p: JsonSchema.string(JsonSchema.stringOptions({ pattern: /^\d+$/u }).shouldNotFail('pattern options'))
   });
 
   function descriptor(id: AiProviderId): IAiProviderDescriptor {
@@ -287,10 +329,11 @@ describe('schema keyword capability tables, structured output', () => {
   const openAiShape: JsonObject = {
     type: 'object',
     properties: {
-      n: { type: 'integer', minimum: 1, maximum: 5, description: 'Default: 3.' },
-      s: { type: 'string', description: 'Constraints: maxLength 4. Format: hostname.' }
+      n: { type: 'integer', minimum: 1, maximum: 5 },
+      s: { type: 'string', description: 'Constraints: maxLength 4. Format: hostname.' },
+      p: { type: 'string', description: 'Constraints: pattern "^\\\\d+$".' }
     },
-    required: ['n', 's'],
+    required: ['n', 's', 'p'],
     additionalProperties: false
   };
 
@@ -305,7 +348,7 @@ describe('schema keyword capability tables, structured output', () => {
     const wire = wireFor('openai-json-schema', 'mistral');
     expect(propertiesOf(((wire.response_format as JsonObject).json_schema as JsonObject).schema).n).toEqual({
       type: 'integer',
-      description: 'Constraints: minimum 1; maximum 5. Default: 3.'
+      description: 'Constraints: minimum 1; maximum 5.'
     });
   });
 
@@ -313,7 +356,8 @@ describe('schema keyword capability tables, structured output', () => {
     const wire = wireFor('anthropic-output-format', 'anthropic');
     expect(propertiesOf(((wire.output_config as JsonObject).format as JsonObject).schema)).toEqual({
       n: { type: 'integer', default: 3, description: 'Constraints: minimum 1; maximum 5.' },
-      s: { type: 'string', format: 'hostname', description: 'Constraints: maxLength 4.' }
+      s: { type: 'string', format: 'hostname', description: 'Constraints: maxLength 4.' },
+      p: { type: 'string', pattern: '^\\d+$' }
     });
   });
 
@@ -321,7 +365,7 @@ describe('schema keyword capability tables, structured output', () => {
     const wire = wireFor('openai-json-schema', 'openai', false, { model: 'm' });
     expect(propertiesOf(((wire.response_format as JsonObject).json_schema as JsonObject).schema).n).toEqual({
       type: 'integer',
-      description: 'Constraints: minimum 1; maximum 5. Default: 3.'
+      description: 'Constraints: minimum 1; maximum 5.'
     });
   });
 
@@ -332,7 +376,7 @@ describe('schema keyword capability tables, structured output', () => {
     });
     expect(propertiesOf(((wire.response_format as JsonObject).json_schema as JsonObject).schema).n).toEqual({
       type: 'integer',
-      description: 'Constraints: minimum 1; maximum 5. Default: 3.'
+      description: 'Constraints: minimum 1; maximum 5.'
     });
   });
 
@@ -347,14 +391,16 @@ describe('schema keyword capability tables, structured output', () => {
       type: 'object',
       properties: {
         n: { type: 'integer', minimum: 1, maximum: 5, default: 3 },
-        s: { type: 'string', maxLength: 4, format: 'hostname' }
+        s: { type: 'string', maxLength: 4, format: 'hostname' },
+        p: { type: 'string', description: 'Constraints: pattern "^\\\\d+$".' }
       },
-      required: ['n', 's']
+      required: ['n', 's', 'p']
     });
   });
 
   test('a folded constraint still rejects an out-of-range reply through the caller validator', () => {
-    expect(schema.validate({ n: 9, s: 'ok' })).toFailWith(/maximum/);
+    expect(schema.validate({ n: 9, s: 'ok', p: '1' })).toFailWith(/maximum/);
+    expect(schema.validate({ n: 3, s: 'ok', p: 'x' })).toFailWith(/pattern/);
   });
 });
 
@@ -411,7 +457,9 @@ describe('a folded constraint on the tool path', () => {
         type: 'client_tool',
         name: 'pick',
         description: 'Pick a multiple of five',
-        parametersSchema: JsonSchema.object({ n: JsonSchema.integer({ multipleOf: 5 }) })
+        parametersSchema: JsonSchema.object({
+          n: JsonSchema.integer(JsonSchema.integerOptions({ multipleOf: 5 }).shouldNotFail('integer options'))
+        })
       },
       execute
     } as unknown as IAiClientTool;
@@ -497,7 +545,9 @@ describe('an endpoint override is an unverified server, on every wire format', (
     return first.parameters;
   }
 
-  const ranged = JsonSchema.object({ n: JsonSchema.integer({ minimum: 1 }) });
+  const ranged = JsonSchema.object({
+    n: JsonSchema.integer(JsonSchema.integerOptions({ minimum: 1 }).shouldNotFail('integer options'))
+  });
   let bodies: JsonObject[];
   let done: string;
 
@@ -528,16 +578,19 @@ describe('an endpoint override is an unverified server, on every wire format', (
 
   async function toolParameters(
     descriptor: IAiProviderDescriptor,
-    endpoint: string | undefined
+    endpoint: string | undefined,
+    verifiedEndpoint?: IAiVerifiedEndpoint,
+    model: string = 'm'
   ): Promise<JsonValue> {
     done = DONE[descriptor.apiFormat];
     const turn = executeClientToolTurn({
       descriptor,
       apiKey: 'k',
       ...(endpoint !== undefined && { endpoint }),
+      ...(verifiedEndpoint !== undefined && { verifiedEndpoint }),
       ...new AiPrompt('hello', 'system').toRequest(),
       clientTools: [tool(ranged)],
-      model: 'm'
+      model
     }).orThrow();
     const events: IAiStreamEvent[] = [];
     for await (const event of turn.events) {
@@ -572,6 +625,104 @@ describe('an endpoint override is an unverified server, on every wire format', (
       });
     }
   );
+
+  test.each(descriptors.map((d) => [d.id, d] as const))(
+    '%s through a verified endpoint override passes minimum, as on its own endpoint',
+    async (__id, descriptor) => {
+      const verified: IAiVerifiedEndpoint = { providerId: descriptor.id, verified: true };
+      expect(
+        propertiesOf(await toolParameters(descriptor, 'https://gateway.example/v1', verified)).n
+      ).toEqual({ type: 'integer', minimum: 1 });
+    }
+  );
+
+  test('a verified override keeps the fine-tuned-model rule: an ft: model still folds', async () => {
+    const verified: IAiVerifiedEndpoint = { providerId: 'openai', verified: true };
+    expect(
+      propertiesOf(
+        await toolParameters(descriptors[0], 'https://gateway.example/v1', verified, 'ft:gpt-4o:x')
+      ).n
+    ).toEqual({ type: 'integer', description: 'Constraints: minimum 1.' });
+  });
+
+  test('an assertion that is not verified: true, or names another provider, leaves the override conservative', async () => {
+    const assertions: ReadonlyArray<IAiVerifiedEndpoint> = [
+      { providerId: 'openai', verified: false as unknown as true },
+      { providerId: 'openai', verified: 'true' as unknown as true },
+      { providerId: 'xai-grok', verified: true }
+    ];
+    for (const assertion of assertions) {
+      bodies = [];
+      expect(
+        propertiesOf(await toolParameters(descriptors[0], 'https://gateway.example/v1', assertion)).n
+      ).toEqual({ type: 'integer', description: 'Constraints: minimum 1.' });
+    }
+  });
+
+  test('an assertion with no endpoint changes nothing: the provider is already on its own endpoint', async () => {
+    const other: IAiVerifiedEndpoint = { providerId: 'xai-grok', verified: true };
+    expect(propertiesOf(await toolParameters(descriptors[0], undefined, other)).n).toEqual({
+      type: 'integer',
+      minimum: 1
+    });
+  });
+
+  test('callProviderCompletionStream selects the table through the same assertion rule', async () => {
+    // The streaming entry point sends server tools only, so its table is observable as the target it
+    // hands the adapter — which is exactly what the adapter's tool formatter adapts with.
+    const adapter = jest.spyOn(AnthropicStream, 'callAnthropicStream');
+    const anthropic = descriptors[1];
+    const cases: ReadonlyArray<[string | undefined, IAiVerifiedEndpoint | undefined, string | undefined]> = [
+      [undefined, undefined, 'anthropic'],
+      ['https://gateway.example/v1', undefined, undefined],
+      ['https://gateway.example/v1', { providerId: 'anthropic', verified: true }, 'anthropic'],
+      ['https://gateway.example/v1', { providerId: 'openai', verified: true }, undefined],
+      [
+        'https://gateway.example/v1',
+        { providerId: 'anthropic', verified: false as unknown as true },
+        undefined
+      ]
+    ];
+    for (const [endpoint, verifiedEndpoint, providerId] of cases) {
+      adapter.mockClear();
+      done = DONE.anthropic;
+      const stream = await callProviderCompletionStream({
+        descriptor: anthropic,
+        apiKey: 'k',
+        ...(endpoint !== undefined && { endpoint }),
+        ...(verifiedEndpoint !== undefined && { verifiedEndpoint }),
+        ...new AiPrompt('hello', 'system').toRequest()
+      });
+      const events: IAiStreamEvent[] = [];
+      for await (const event of stream.orThrow()) {
+        events.push(event);
+      }
+      expect(events.map((e) => e.type)).toContain('done');
+      const target = adapter.mock.calls[0][0];
+      expect(target.providerId).toBe(providerId);
+      expect(schemaKeywordsFor('anthropic-tools', target)).toBe(
+        providerId === undefined
+          ? JsonSchema.unverifiedWireSchemaKeywords
+          : schemaKeywordsFor('anthropic-tools', { providerId: 'anthropic' })
+      );
+    }
+  });
+
+  test('structured output through a verified endpoint override passes it', async () => {
+    done = DONE.openai;
+    expect(
+      await callProviderCompletion({
+        descriptor: descriptors[0],
+        apiKey: 'k',
+        endpoint: 'https://gateway.example/v1',
+        verifiedEndpoint: { providerId: 'openai', verified: true },
+        ...new AiPrompt('hello', 'system').toRequest(),
+        structuredOutput: { mode: 'schema', schema: ranged }
+      })
+    ).toSucceed();
+    const sent = ((bodies[0].response_format as JsonObject).json_schema as JsonObject).schema;
+    expect(propertiesOf(sent).n).toEqual({ type: 'integer', minimum: 1 });
+  });
 
   test('structured output through an endpoint override folds it too', async () => {
     done = DONE.openai;

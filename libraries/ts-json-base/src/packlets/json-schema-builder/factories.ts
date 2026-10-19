@@ -29,6 +29,7 @@ import {
   Validation,
   Validators,
   allSucceed,
+  captureResult,
   fail,
   mapResults,
   succeed
@@ -48,41 +49,42 @@ import {
   INumberSchemaOptions,
   IObjectSchemaOptions,
   ISchemaOptions,
-  IStringSchemaOptions
+  PlainAnySchemaOptions,
+  PlainNumberSchemaOptions,
+  PlainObjectSchemaOptions,
+  PlainSchemaOptions,
+  PlainStringSchemaOptions
 } from './options';
+import {
+  ValidatedIntegerOptions,
+  ValidatedNumberOptions,
+  ValidatedSchemaOptions,
+  ValidatedStringOptions
+} from './validatedOptions';
 import {
   NonStringEnumType,
   NumberConstraints,
   SchemaAnnotations,
   StringConstraints,
+  StringNodeOptions,
   annotationFields,
   checkAnnotations,
   checkEnumValues,
-  checkNumberOptions,
   describeEnumMember,
-  checkStringOptions,
   enforceNumberConstraints,
   enforceStringConstraints,
+  enforceStringPattern,
   numberConstraintFields,
   pickAnnotations,
   pickNumberConstraints,
+  VALIDATED_OPTIONS_MARKER,
   pickStringConstraints,
+  plainKeysOf,
+  revalidateNumberOptions,
+  revalidateSchemaOptions,
+  revalidateStringOptions,
   stringConstraintFields
 } from './constraints';
-
-/**
- * Returns the options a factory was given once they are known to be coherent, or throws.
- *
- * @remarks
- * Schemas are declared, not computed — a factory call is setup, typically a module-level
- * constant — so an incoherent option set (`minimum` above `maximum`, a negative `minLength`) is
- * an authoring error reported at the declaration, as `orThrow()` is for any other setup step.
- * A schema that arrives at run time goes through `fromJson`, which runs the same checks and
- * returns them as a `Failure` naming the path.
- */
-function _coherent<T>(factory: string, checked: Result<T>): T {
-  return checked.withErrorFormat((msg) => `JsonSchema.${factory}: ${msg}`).orThrow();
-}
 
 // ---------------------------------------------------------------------------
 // Abstract base
@@ -169,10 +171,10 @@ abstract class SchemaValidatorBase<T>
 
 class StringSchemaValidator extends SchemaValidatorBase<string> {
   private readonly _inner: Validation.Validator<string>;
-  /** The node's length constraints and format. */
+  /** The node's length constraints, held pattern and format. */
   private readonly _constraints: StringConstraints;
 
-  public constructor(opts?: IStringSchemaOptions) {
+  public constructor(opts?: StringNodeOptions) {
     const inner = Validators.string;
     /* c8 ignore next 1 - placeholder ValidatorFunc; validate() and convert() overrides always intercept */
     super('string', (__from: unknown): boolean | Failure<string> => true, opts);
@@ -189,7 +191,10 @@ class StringSchemaValidator extends SchemaValidatorBase<string> {
   }
 
   private _check(from: unknown): Result<string> {
-    return this._inner.validate(from).onSuccess((s) => enforceStringConstraints(s, this._constraints));
+    return this._inner
+      .validate(from)
+      .onSuccess((s) => enforceStringConstraints(s, this._constraints))
+      .onSuccess((s) => enforceStringPattern(s, this._constraints.pattern));
   }
 
   public toJson(): JsonObject {
@@ -640,54 +645,82 @@ function _kindOf(from: unknown): string {
 }
 
 // ---------------------------------------------------------------------------
-// Public option checkers
+// Reading plain or validated options
 // ---------------------------------------------------------------------------
 
 /**
- * Checks `number` / `integer` options for coherence without constructing a node — the
- * non-throwing path for bounds derived at run time.
+ * How one factory reads the options it is handed.
  *
  * @remarks
- * Runs exactly the checks the `number` and `integer` factories run, which throw on failure: a
- * non-finite bound, `minimum` above `maximum`, exclusive bounds leaving no value (for `integer`, no
- * integer) in range, `multipleOf` not greater than zero, and a `default` or `examples` member that
- * is not JSON. Options it accepts never make the factory throw.
- *
- * @example
- * ```ts
- * const schema = JsonSchema.validateNumberOptions('integer', { minimum: lo, maximum: hi }).onSuccess((o) =>
- *   succeed(JsonSchema.integer(o))
- * );
- * ```
- * @param type - The node kind the options are for.
- * @param opts - The options to check.
- * @returns The options, or a `Failure` naming the keyword and the value.
- * @public
+ * `own` recognises, by an ES private brand check, the instances this copy of the package built for
+ * exactly this factory, and reads their options from the private field; those are used as they are. Anything else that claims to be validated — an instance built for
+ * another factory, or one from another installed copy of this package, recognised by its
+ * cross-copy marker — is `revalidate`d from its keys up, and used only if that succeeds. Everything
+ * else, and anything whose re-validation fails, contributes its plain keys alone.
  */
-export function validateNumberOptions(
-  type: 'number' | 'integer',
-  opts: INumberSchemaOptions | undefined
-): Result<INumberSchemaOptions | undefined> {
-  return checkNumberOptions(type, opts);
+interface IOptionsReader<O> {
+  readonly own: (opts: unknown) => O | undefined;
+  readonly revalidate: (options: unknown) => Result<O>;
 }
 
 /**
- * Checks `string` options for coherence without constructing a node — the non-throwing path for
- * lengths derived at run time.
- *
- * @remarks
- * Runs exactly the checks the `string` factory runs, which throws on failure: a length that is not
- * a non-negative integer, `minLength` above `maxLength`, and a `default` or `examples` member that
- * is not JSON. Options it accepts never make the factory throw.
- * @param opts - The options to check.
- * @returns The options, or a `Failure` naming the keyword and the value.
- * @public
+ * Whether `opts` claims to be validated options: anything whose prototype chain reaches a validated
+ * class (a genuine instance for another factory, but also a substituted prototype or a `Proxy`), or
+ * an object carrying the cross-copy marker. A claim only selects re-validation; it is never trusted.
  */
-export function validateStringOptions(
-  opts: IStringSchemaOptions | undefined
-): Result<IStringSchemaOptions | undefined> {
-  return checkStringOptions(opts);
+function _claimsValidated(opts: object): boolean {
+  return (
+    opts instanceof ValidatedSchemaOptions ||
+    opts instanceof ValidatedNumberOptions ||
+    opts instanceof ValidatedStringOptions ||
+    VALIDATED_OPTIONS_MARKER in opts
+  );
 }
+
+/**
+ * The options a factory was given, read so that nothing unchecked reaches a node — which is what
+ * keeps the validator and `toJson()` in agreement whatever the caller passed.
+ */
+function _optionsOf<O extends object>(opts: object | undefined, reader: IOptionsReader<O>): O | undefined {
+  if (opts === undefined) {
+    return undefined;
+  }
+  const own = reader.own(opts);
+  if (own !== undefined) {
+    return own;
+  }
+  if (_claimsValidated(opts)) {
+    // `options` is a prototype getter on a real instance, from either copy, so it is read through
+    // the prototype chain rather than as an own field. On a forgery that reaches the real getter
+    // (a substituted prototype, a Proxy without a trap) the getter throws on the missing private
+    // field; that reads as "not validated", so only the plain keys are kept.
+    return captureResult((): unknown => Reflect.get(opts, 'options'))
+      .onSuccess((options) => reader.revalidate(options).onFailure(() => succeed(plainKeysOf(options) as O)))
+      .orDefaultWith(() => plainKeysOf(opts) as O);
+  }
+  // Plain options: only the keys that cannot be wrong, each of its declared type.
+  return plainKeysOf(opts) as O;
+}
+
+const _numberReader: IOptionsReader<INumberSchemaOptions> = {
+  own: (opts) => ValidatedNumberOptions._read(opts),
+  revalidate: (options) => revalidateNumberOptions('number', options)
+};
+
+const _integerReader: IOptionsReader<INumberSchemaOptions> = {
+  own: (opts) => ValidatedIntegerOptions._readInteger(opts),
+  revalidate: (options) => revalidateNumberOptions('integer', options)
+};
+
+const _stringReader: IOptionsReader<StringNodeOptions> = {
+  own: (opts) => ValidatedStringOptions._read(opts),
+  revalidate: revalidateStringOptions
+};
+
+const _schemaReader: IOptionsReader<IObjectSchemaOptions> = {
+  own: (opts) => ValidatedSchemaOptions._read(opts),
+  revalidate: revalidateSchemaOptions
+};
 
 // ---------------------------------------------------------------------------
 // Public factory functions
@@ -695,120 +728,129 @@ export function validateStringOptions(
 
 /**
  * Creates a schema node for a JSON `string`.
- * @param opts - Optional description.
- * @returns An `ISchemaValidator` whose `Static` type is `string`.
- * @throws Error when the options are incoherent — see `validateStringOptions`, the non-throwing check. A
- * schema is declared, so this is a setup-time error.
+ * @param opts - Plain options, or `stringOptions` for lengths, `pattern`,
+ * `default` or `examples`.
+ * @returns An `ISchemaValidator` whose `Static` type is `string | null`.
  * @public
  */
-// `null` is the JSON value being modelled, not a JS sentinel — the same carve-out
-// `JsonPrimitive` takes in this package's `json` packlet.
-// eslint-disable-next-line @rushstack/no-new-null
-export function string(opts: IStringSchemaOptions & { nullable: true }): ISchemaValidator<string | null>;
+export function string(
+  opts: (PlainStringSchemaOptions & { nullable: true }) | ValidatedStringOptions<{ nullable: true }>
+  // `null` is the JSON value being modelled, not a JS sentinel — the same carve-out
+  // `JsonPrimitive` takes in this package's `json` packlet.
+  // eslint-disable-next-line @rushstack/no-new-null
+): ISchemaValidator<string | null>;
 /**
  * Creates a schema node for a JSON `string`.
- * @param opts - Optional description and nullability.
+ *
+ * @remarks
+ * Never fails: a raw length keyword or `pattern` is a compile error, and the options that carry one were
+ * checked by `stringOptions`.
+ * @param opts - Plain options, or `stringOptions` for lengths, `pattern`,
+ * `default` or `examples`.
  * @returns An `ISchemaValidator` whose `Static` type is `string`.
- * @throws Error when the options are incoherent — see `validateStringOptions`, the non-throwing check. A
- * schema is declared, so this is a setup-time error.
  * @public
  */
-export function string(opts?: IStringSchemaOptions): ISchemaValidator<string>;
-export function string(opts?: IStringSchemaOptions): ISchemaValidator<string> {
-  return new StringSchemaValidator(_coherent('string', checkStringOptions(opts)));
+export function string(opts?: PlainStringSchemaOptions | ValidatedStringOptions): ISchemaValidator<string>;
+export function string(opts?: PlainStringSchemaOptions | ValidatedStringOptions): ISchemaValidator<string> {
+  return new StringSchemaValidator(_optionsOf(opts, _stringReader));
 }
 
 /**
  * Creates a schema node for a JSON `number`.
- * @param opts - Optional description and strict mode (see `INumberSchemaOptions`).
- * @returns An `ISchemaValidator` whose `Static` type is `number`.
- * @throws Error when the options are incoherent — see `validateNumberOptions`, the non-throwing check. A
- * schema is declared, so this is a setup-time error.
+ * @param opts - Plain options, or `numberOptions` for range keywords,
+ * `default` or `examples`.
+ * @returns An `ISchemaValidator` whose `Static` type is `number | null`.
  * @public
  */
 export function number(
-  opts: INumberSchemaOptions & { nullable: true }
+  opts: (PlainNumberSchemaOptions & { nullable: true }) | ValidatedNumberOptions<{ nullable: true }>
   // `null` is the JSON value being modelled, not a JS sentinel — the same carve-out
   // `JsonPrimitive` takes in this package's `json` packlet.
   // eslint-disable-next-line @rushstack/no-new-null
 ): ISchemaValidator<number | null>;
 /**
  * Creates a schema node for a JSON `number`.
- * @param opts - Optional description, nullability and strict mode (see `INumberSchemaOptions`).
+ *
+ * @remarks
+ * Never fails: a raw range keyword is a compile error, and the options that carry one were checked
+ * by `numberOptions` (or `integerOptions`, whose check is
+ * stricter).
+ * @param opts - Plain options (description, nullability, strict mode — see `INumberSchemaOptions`),
+ * or `numberOptions` for range keywords, `default` or `examples`.
  * @returns An `ISchemaValidator` whose `Static` type is `number`.
- * @throws Error when the options are incoherent — see `validateNumberOptions`, the non-throwing check. A
- * schema is declared, so this is a setup-time error.
  * @public
  */
-export function number(opts?: INumberSchemaOptions): ISchemaValidator<number>;
-export function number(opts?: INumberSchemaOptions): ISchemaValidator<number> {
-  return new NumberSchemaValidator('number', _coherent('number', checkNumberOptions('number', opts)));
+export function number(opts?: PlainNumberSchemaOptions | ValidatedNumberOptions): ISchemaValidator<number>;
+export function number(opts?: PlainNumberSchemaOptions | ValidatedNumberOptions): ISchemaValidator<number> {
+  return new NumberSchemaValidator('number', _optionsOf(opts, _numberReader));
 }
 
 /**
  * Creates a schema node for a JSON `integer`.
- * @param opts - Optional description and strict mode (see `INumberSchemaOptions`).
- * @returns An `ISchemaValidator` (tagged `integer`) whose `Static` type is `number`.
- * @throws Error when the options are incoherent — see `validateNumberOptions`, the non-throwing check. A
- * schema is declared, so this is a setup-time error.
+ * @param opts - Plain options, or `integerOptions` for range
+ * keywords, `default` or `examples`.
+ * @returns An `ISchemaValidator` (tagged `integer`) whose `Static` type is `number | null`.
  * @public
  */
 export function integer(
-  opts: INumberSchemaOptions & { nullable: true }
+  opts: (PlainNumberSchemaOptions & { nullable: true }) | ValidatedIntegerOptions<{ nullable: true }>
   // `null` is the JSON value being modelled, not a JS sentinel — the same carve-out
   // `JsonPrimitive` takes in this package's `json` packlet.
   // eslint-disable-next-line @rushstack/no-new-null
 ): ISchemaValidator<number | null>;
 /**
  * Creates a schema node for a JSON `integer`.
- * @param opts - Optional description, nullability and strict mode (see `INumberSchemaOptions`).
+ *
+ * @remarks
+ * Never fails: a raw range keyword is a compile error, and the options that carry one were checked
+ * by `integerOptions`. Options from `numberOptions` are refused at
+ * compile time, since a range holding a number need not hold an integer.
+ * @param opts - Plain options (description, nullability, strict mode — see `INumberSchemaOptions`),
+ * or `integerOptions` for range keywords, `default` or `examples`.
  * @returns An `ISchemaValidator` (tagged `integer`) whose `Static` type is `number`.
- * @throws Error when the options are incoherent — see `validateNumberOptions`, the non-throwing check. A
- * schema is declared, so this is a setup-time error.
  * @public
  */
-export function integer(opts?: INumberSchemaOptions): ISchemaValidator<number>;
-export function integer(opts?: INumberSchemaOptions): ISchemaValidator<number> {
-  return new NumberSchemaValidator('integer', _coherent('integer', checkNumberOptions('integer', opts)));
+export function integer(opts?: PlainNumberSchemaOptions | ValidatedIntegerOptions): ISchemaValidator<number>;
+export function integer(opts?: PlainNumberSchemaOptions | ValidatedIntegerOptions): ISchemaValidator<number> {
+  return new NumberSchemaValidator('integer', _optionsOf(opts, _integerReader));
 }
 
 /**
  * Creates a schema node for a JSON `boolean`.
- * @param opts - Optional description.
- * @returns An `ISchemaValidator` whose `Static` type is `boolean`.
- * @throws Error when `default` or a member of `examples` is not a JSON value — a setup-time error, since a
- * schema is declared.
+ * @param opts - Plain options, or `schemaOptions` for `default` or
+ * `examples`.
+ * @returns An `ISchemaValidator` whose `Static` type is `boolean | null`.
  * @public
  */
-// `null` is the JSON value being modelled, not a JS sentinel — the same carve-out
-// `JsonPrimitive` takes in this package's `json` packlet.
-// eslint-disable-next-line @rushstack/no-new-null
-export function boolean(opts: ISchemaOptions & { nullable: true }): ISchemaValidator<boolean | null>;
+export function boolean(
+  opts: (PlainSchemaOptions & { nullable: true }) | ValidatedSchemaOptions<{ nullable: true }>
+  // `null` is the JSON value being modelled, not a JS sentinel — the same carve-out
+  // `JsonPrimitive` takes in this package's `json` packlet.
+  // eslint-disable-next-line @rushstack/no-new-null
+): ISchemaValidator<boolean | null>;
 /**
  * Creates a schema node for a JSON `boolean`.
- * @param opts - Optional description and nullability.
+ * @param opts - Plain options, or `schemaOptions` for `default` or
+ * `examples`.
  * @returns An `ISchemaValidator` whose `Static` type is `boolean`.
- * @throws Error when `default` or a member of `examples` is not a JSON value — a setup-time error, since a
- * schema is declared.
  * @public
  */
-export function boolean(opts?: ISchemaOptions): ISchemaValidator<boolean>;
-export function boolean(opts?: ISchemaOptions): ISchemaValidator<boolean> {
-  return new BooleanSchemaValidator(_coherent('boolean', checkAnnotations(opts)));
+export function boolean(opts?: PlainSchemaOptions | ValidatedSchemaOptions): ISchemaValidator<boolean>;
+export function boolean(opts?: PlainSchemaOptions | ValidatedSchemaOptions): ISchemaValidator<boolean> {
+  return new BooleanSchemaValidator(_optionsOf(opts, _schemaReader));
 }
 
 /**
  * Creates a schema node for a closed set of string literals.
  * @param values - The allowed string values.
- * @param opts - Optional description.
- * @returns An `ISchemaValidator` whose `Static` type is the union of `values`.
- * @throws Error when `default` or a member of `examples` is not a JSON value — a setup-time error, since a
- * schema is declared.
+ * @param opts - Plain options, or `schemaOptions` for `default` or
+ * `examples`.
+ * @returns An `ISchemaValidator` whose `Static` type is the union of `values`, or `null`.
  * @public
  */
 export function enumOf<T extends string>(
   values: readonly T[],
-  opts: ISchemaOptions & { nullable: true }
+  opts: (PlainSchemaOptions & { nullable: true }) | ValidatedSchemaOptions<{ nullable: true }>
   // `null` is the JSON value being modelled, not a JS sentinel — the same carve-out
   // `JsonPrimitive` takes in this package's `json` packlet.
   // eslint-disable-next-line @rushstack/no-new-null
@@ -816,47 +858,55 @@ export function enumOf<T extends string>(
 /**
  * Creates a schema node for a closed set of string literals.
  * @param values - The allowed string values.
- * @param opts - Optional description and nullability. A nullable enum also carries `null` in
- * its emitted `enum` list, so the two halves of the node cannot disagree.
+ * @param opts - Plain options (description, nullability), or
+ * `schemaOptions` for `default` or `examples`. A nullable enum also
+ * carries `null` in its emitted `enum` list, so the two halves of the node cannot disagree.
  * @returns An `ISchemaValidator` whose `Static` type is the union of `values`.
- * @throws Error when `default` or a member of `examples` is not a JSON value — a setup-time error, since a
- * schema is declared.
  * @public
  */
-export function enumOf<T extends string>(values: readonly T[], opts?: ISchemaOptions): ISchemaValidator<T>;
-export function enumOf<T extends string>(values: readonly T[], opts?: ISchemaOptions): ISchemaValidator<T> {
+export function enumOf<T extends string>(
+  values: readonly T[],
+  opts?: PlainSchemaOptions | ValidatedSchemaOptions
+): ISchemaValidator<T>;
+export function enumOf<T extends string>(
+  values: readonly T[],
+  opts?: PlainSchemaOptions | ValidatedSchemaOptions
+): ISchemaValidator<T> {
   return new EnumSchemaValidator(
     'string',
     values,
     Validators.enumeratedValue(values),
-    _coherent('enumOf', checkAnnotations(opts))
+    _optionsOf(opts, _schemaReader)
   );
 }
 
-/** Builds a numeric or boolean enum node once its members and options are known coherent. */
+/**
+ * Builds a numeric or boolean enum node once its members and annotations are known coherent.
+ * These factories take a value list the type cannot fully check — an integer, a finite number, a
+ * non-empty list — and have no option object to validate first, so they return the `Result`
+ * themselves.
+ */
 function _nonStringEnum<T extends number | boolean>(
-  factory: string,
   type: NonStringEnumType,
   values: ReadonlyArray<T>,
   opts: ISchemaOptions | undefined
-): ISchemaValidator<T> {
-  const checked = _coherent(
-    factory,
-    checkEnumValues(type, values).onSuccess(() => checkAnnotations(opts))
+): Result<ISchemaValidator<T>> {
+  return checkEnumValues(type, values).onSuccess(() =>
+    checkAnnotations(opts ?? {}).onSuccess((checked) => {
+      // Copied, so a caller mutating its array afterwards cannot change the node.
+      const members: ReadonlyArray<T> = [...values];
+      return succeed(new EnumSchemaValidator(type, members, _literalValues(members), checked));
+    })
   );
-  // Copied, so a caller mutating its array afterwards cannot change the node.
-  const members: ReadonlyArray<T> = [...values];
-  return new EnumSchemaValidator(type, members, _literalValues(members), checked);
 }
 
 /**
  * Creates a schema node for a closed set of numbers (pydantic `Literal[1.5, 2]`).
  * @param values - The allowed values.
  * @param opts - Optional annotations and nullability.
- * @returns An `ISchemaValidator` whose `Static` type is the union of `values`, or `null`.
- * @throws Error when `values` is empty or holds a member that is not a finite number, or when
- * `default` or a member of `examples` is not a JSON value — a setup-time error, since a schema is
- * declared.
+ * @returns The node, whose `Static` type is the union of `values` or `null`; or a `Failure` when
+ * `values` is empty or holds a member that is not a finite number, or when `default` or a member of
+ * `examples` is not a JSON value.
  * @public
  */
 export function numberEnumOf<T extends number>(
@@ -865,7 +915,7 @@ export function numberEnumOf<T extends number>(
   // `null` is the JSON value being modelled, not a JS sentinel — the same carve-out
   // `JsonPrimitive` takes in this package's `json` packlet.
   // eslint-disable-next-line @rushstack/no-new-null
-): ISchemaValidator<T | null>;
+): Result<ISchemaValidator<T | null>>;
 /**
  * Creates a schema node for a closed set of numbers (pydantic `Literal[1.5, 2]`).
  *
@@ -873,33 +923,34 @@ export function numberEnumOf<T extends number>(
  * Emits `{ type: 'number', enum: [...] }`. The validator accepts exactly the listed values,
  * compared with `===`, and coerces nothing — `'1'` is not `1`. A nullable node also carries `null`
  * in its emitted `enum`, as `enumOf` does.
+ *
+ * Unlike the other factories this one returns a `Result`, because what can be wrong is the value
+ * list rather than an option object; declare with `.shouldNotFail(label)`.
  * @param values - The allowed values.
  * @param opts - Optional annotations and nullability.
- * @returns An `ISchemaValidator` whose `Static` type is the union of `values`.
- * @throws Error when `values` is empty or holds a member that is not a finite number, or when
- * `default` or a member of `examples` is not a JSON value — a setup-time error, since a schema is
- * declared.
+ * @returns The node, whose `Static` type is the union of `values`; or a `Failure` when `values` is
+ * empty or holds a member that is not a finite number, or when `default` or a member of `examples`
+ * is not a JSON value.
  * @public
  */
 export function numberEnumOf<T extends number>(
   values: readonly T[],
   opts?: ISchemaOptions
-): ISchemaValidator<T>;
+): Result<ISchemaValidator<T>>;
 export function numberEnumOf<T extends number>(
   values: readonly T[],
   opts?: ISchemaOptions
-): ISchemaValidator<T> {
-  return _nonStringEnum('numberEnumOf', 'number', values, opts);
+): Result<ISchemaValidator<T>> {
+  return _nonStringEnum('number', values, opts);
 }
 
 /**
  * Creates a schema node for a closed set of integers (pydantic `Literal[1, 2]`).
  * @param values - The allowed values.
  * @param opts - Optional annotations and nullability.
- * @returns An `ISchemaValidator` whose `Static` type is the union of `values`, or `null`.
- * @throws Error when `values` is empty or holds a member that is not an integer, or when
- * `default` or a member of `examples` is not a JSON value — a setup-time error, since a schema is
- * declared.
+ * @returns The node, whose `Static` type is the union of `values` or `null`; or a `Failure` when
+ * `values` is empty or holds a member that is not an integer, or when `default` or a member of
+ * `examples` is not a JSON value.
  * @public
  */
 export function integerEnumOf<T extends number>(
@@ -908,7 +959,7 @@ export function integerEnumOf<T extends number>(
   // `null` is the JSON value being modelled, not a JS sentinel — the same carve-out
   // `JsonPrimitive` takes in this package's `json` packlet.
   // eslint-disable-next-line @rushstack/no-new-null
-): ISchemaValidator<T | null>;
+): Result<ISchemaValidator<T | null>>;
 /**
  * Creates a schema node for a closed set of integers (pydantic `Literal[1, 2]`).
  *
@@ -916,33 +967,34 @@ export function integerEnumOf<T extends number>(
  * Emits `{ type: 'integer', enum: [...] }`. The validator accepts exactly the listed values,
  * compared with `===`, and coerces nothing — `'1'` is not `1`. A nullable node also carries `null`
  * in its emitted `enum`, as `enumOf` does.
+ *
+ * Unlike the other factories this one returns a `Result`, because what can be wrong is the value
+ * list rather than an option object; declare with `.shouldNotFail(label)`.
  * @param values - The allowed values.
  * @param opts - Optional annotations and nullability.
- * @returns An `ISchemaValidator` whose `Static` type is the union of `values`.
- * @throws Error when `values` is empty or holds a member that is not an integer, or when
- * `default` or a member of `examples` is not a JSON value — a setup-time error, since a schema is
- * declared.
+ * @returns The node, whose `Static` type is the union of `values`; or a `Failure` when `values` is
+ * empty or holds a member that is not an integer, or when `default` or a member of `examples` is
+ * not a JSON value.
  * @public
  */
 export function integerEnumOf<T extends number>(
   values: readonly T[],
   opts?: ISchemaOptions
-): ISchemaValidator<T>;
+): Result<ISchemaValidator<T>>;
 export function integerEnumOf<T extends number>(
   values: readonly T[],
   opts?: ISchemaOptions
-): ISchemaValidator<T> {
-  return _nonStringEnum('integerEnumOf', 'integer', values, opts);
+): Result<ISchemaValidator<T>> {
+  return _nonStringEnum('integer', values, opts);
 }
 
 /**
  * Creates a schema node for a closed set of booleans (a boolean `const`).
  * @param values - The allowed values.
  * @param opts - Optional annotations and nullability.
- * @returns An `ISchemaValidator` whose `Static` type is the union of `values`, or `null`.
- * @throws Error when `values` is empty or holds a member that is not a boolean, or when
- * `default` or a member of `examples` is not a JSON value — a setup-time error, since a schema is
- * declared.
+ * @returns The node, whose `Static` type is the union of `values` or `null`; or a `Failure` when
+ * `values` is empty or holds a member that is not a boolean, or when `default` or a member of
+ * `examples` is not a JSON value.
  * @public
  */
 export function booleanEnumOf<T extends boolean>(
@@ -951,7 +1003,7 @@ export function booleanEnumOf<T extends boolean>(
   // `null` is the JSON value being modelled, not a JS sentinel — the same carve-out
   // `JsonPrimitive` takes in this package's `json` packlet.
   // eslint-disable-next-line @rushstack/no-new-null
-): ISchemaValidator<T | null>;
+): Result<ISchemaValidator<T | null>>;
 /**
  * Creates a schema node for a closed set of booleans (a boolean `const`).
  *
@@ -959,23 +1011,25 @@ export function booleanEnumOf<T extends boolean>(
  * Emits `{ type: 'boolean', enum: [...] }`. The validator accepts exactly the listed values,
  * compared with `===`, and coerces nothing — `'1'` is not `1`. A nullable node also carries `null`
  * in its emitted `enum`, as `enumOf` does.
+ *
+ * Unlike the other factories this one returns a `Result`, because what can be wrong is the value
+ * list rather than an option object; declare with `.shouldNotFail(label)`.
  * @param values - The allowed values.
  * @param opts - Optional annotations and nullability.
- * @returns An `ISchemaValidator` whose `Static` type is the union of `values`.
- * @throws Error when `values` is empty or holds a member that is not a boolean, or when
- * `default` or a member of `examples` is not a JSON value — a setup-time error, since a schema is
- * declared.
+ * @returns The node, whose `Static` type is the union of `values`; or a `Failure` when `values` is
+ * empty or holds a member that is not a boolean, or when `default` or a member of `examples` is not
+ * a JSON value.
  * @public
  */
 export function booleanEnumOf<T extends boolean>(
   values: readonly T[],
   opts?: ISchemaOptions
-): ISchemaValidator<T>;
+): Result<ISchemaValidator<T>>;
 export function booleanEnumOf<T extends boolean>(
   values: readonly T[],
   opts?: ISchemaOptions
-): ISchemaValidator<T> {
-  return _nonStringEnum('booleanEnumOf', 'boolean', values, opts);
+): Result<ISchemaValidator<T>> {
+  return _nonStringEnum('boolean', values, opts);
 }
 
 /**
@@ -989,14 +1043,15 @@ export function booleanEnumOf<T extends boolean>(
  * strict mode). The provider adapters in `@fgv/ts-extras` refuse a request that would send it to
  * such a provider, naming the tool and the path, rather than substitute a type — which would narrow
  * what the model may send below what the validator accepts.
- * @param opts - Optional annotations.
+ * @param opts - Plain annotations, or `schemaOptions` for
+ * `default` or `examples`.
  * @returns An `ISchemaValidator` whose `Static` type is `JsonValue`.
- * @throws Error when `default` or a member of `examples` is not a JSON value — a setup-time error,
- * since a schema is declared.
  * @public
  */
-export function anyValue(opts?: IAnySchemaOptions): ISchemaValidator<JsonValue> {
-  return new AnySchemaValidator(_coherent('anyValue', checkAnnotations(opts)));
+export function anyValue(
+  opts?: PlainAnySchemaOptions | ValidatedSchemaOptions<IAnySchemaOptions>
+): ISchemaValidator<JsonValue> {
+  return new AnySchemaValidator(_optionsOf(opts, _schemaReader));
 }
 
 /**
@@ -1014,15 +1069,14 @@ export function optional<S extends ISchemaValidator<unknown>>(
 /**
  * Creates a schema node for a JSON `array` whose elements all match `items`.
  * @param items - The schema applied to every element.
- * @param opts - Optional description.
- * @returns An `ISchemaValidator` whose `Static` type is `Array<Static<S>>`.
- * @throws Error when `default` or a member of `examples` is not a JSON value — a setup-time error, since a
- * schema is declared.
+ * @param opts - Plain options, or `schemaOptions` for `default` or
+ * `examples`.
+ * @returns An `ISchemaValidator` whose `Static` type is `Array<Static<S>> | null`.
  * @public
  */
 export function array<S extends ISchemaValidator<unknown>>(
   items: S,
-  opts: ISchemaOptions & { nullable: true }
+  opts: (PlainSchemaOptions & { nullable: true }) | ValidatedSchemaOptions<{ nullable: true }>
   // `null` is the JSON value being modelled, not a JS sentinel — the same carve-out
   // `JsonPrimitive` takes in this package's `json` packlet.
   // eslint-disable-next-line @rushstack/no-new-null
@@ -1030,21 +1084,20 @@ export function array<S extends ISchemaValidator<unknown>>(
 /**
  * Creates a schema node for a JSON `array` whose elements all match `items`.
  * @param items - The schema applied to every element.
- * @param opts - Optional description and nullability.
+ * @param opts - Plain options (description, nullability), or
+ * `schemaOptions` for `default` or `examples`.
  * @returns An `ISchemaValidator` whose `Static` type is `Array<Static<S>>`.
- * @throws Error when `default` or a member of `examples` is not a JSON value — a setup-time error, since a
- * schema is declared.
  * @public
  */
 export function array<S extends ISchemaValidator<unknown>>(
   items: S,
-  opts?: ISchemaOptions
+  opts?: PlainSchemaOptions | ValidatedSchemaOptions
 ): ISchemaValidator<Static<S>[]>;
 export function array<S extends ISchemaValidator<unknown>>(
   items: S,
-  opts?: ISchemaOptions
+  opts?: PlainSchemaOptions | ValidatedSchemaOptions
 ): ISchemaValidator<Static<S>[]> {
-  return new ArraySchemaValidator(items, _coherent('array', checkAnnotations(opts)));
+  return new ArraySchemaValidator(items, _optionsOf(opts, _schemaReader));
 }
 
 /**
@@ -1054,13 +1107,13 @@ export function array<S extends ISchemaValidator<unknown>>(
  * `optional` to make it optional.
  * @param opts - Options including `additionalProperties: true` and `nullable: true`.
  * @returns An `ISchemaValidator` whose `Static` type is `OpenObjectStatic<P> | null`.
- * @throws Error when `default` or a member of `examples` is not a JSON value — a setup-time error, since a
- * schema is declared.
  * @public
  */
 export function object<P extends ILlmProperties>(
   properties: P,
-  opts: IObjectSchemaOptions & { additionalProperties: true; nullable: true }
+  opts:
+    | (PlainObjectSchemaOptions & { additionalProperties: true; nullable: true })
+    | ValidatedSchemaOptions<{ additionalProperties: true; nullable: true }>
   // `null` is the JSON value being modelled, not a JS sentinel — the same carve-out
   // `JsonPrimitive` takes in this package's `json` packlet.
   // eslint-disable-next-line @rushstack/no-new-null
@@ -1072,13 +1125,13 @@ export function object<P extends ILlmProperties>(
  * `optional` to make it optional.
  * @param opts - Options including `additionalProperties: true`.
  * @returns An `ISchemaValidator` whose `Static` type is `OpenObjectStatic<P>`.
- * @throws Error when `default` or a member of `examples` is not a JSON value — a setup-time error, since a
- * schema is declared.
  * @public
  */
 export function object<P extends ILlmProperties>(
   properties: P,
-  opts: IObjectSchemaOptions & { additionalProperties: true }
+  opts:
+    | (PlainObjectSchemaOptions & { additionalProperties: true })
+    | ValidatedSchemaOptions<{ additionalProperties: true }>
 ): ISchemaValidator<OpenObjectStatic<P>>;
 /**
  * Creates a schema node for a JSON `object` with a fixed set of typed properties.
@@ -1086,13 +1139,11 @@ export function object<P extends ILlmProperties>(
  * `optional` to make it optional.
  * @param opts - Optional description and `additionalProperties` flag.
  * @returns An `ISchemaValidator` whose `Static` type derives the required/optional split.
- * @throws Error when `default` or a member of `examples` is not a JSON value — a setup-time error, since a
- * schema is declared.
  * @public
  */
 export function object<P extends ILlmProperties>(
   properties: P,
-  opts: IObjectSchemaOptions & { nullable: true }
+  opts: (PlainObjectSchemaOptions & { nullable: true }) | ValidatedSchemaOptions<{ nullable: true }>
   // `null` is the JSON value being modelled, not a JS sentinel — the same carve-out
   // `JsonPrimitive` takes in this package's `json` packlet.
   // eslint-disable-next-line @rushstack/no-new-null
@@ -1102,22 +1153,21 @@ export function object<P extends ILlmProperties>(
  * @param properties - A record mapping property names to their schemas. Wrap a property with
  * `optional` to make it optional, or author it `nullable` when the provider requires every
  * property to be required.
- * @param opts - Optional description, nullability and `additionalProperties` flag.
+ * @param opts - Plain options (description, nullability, `additionalProperties`), or
+ * `schemaOptions` for `default` or `examples`.
  * @returns An `ISchemaValidator` whose `Static` type derives the required/optional split.
- * @throws Error when `default` or a member of `examples` is not a JSON value — a setup-time error, since a
- * schema is declared.
  * @public
  */
 export function object<P extends ILlmProperties>(
   properties: P,
-  opts?: IObjectSchemaOptions
+  opts?: PlainObjectSchemaOptions | ValidatedSchemaOptions<IObjectSchemaOptions>
 ): ISchemaValidator<ObjectStatic<P>>;
 export function object<P extends ILlmProperties>(
   properties: P,
-  opts?: IObjectSchemaOptions
+  opts?: PlainObjectSchemaOptions | ValidatedSchemaOptions<IObjectSchemaOptions>
   // eslint-disable-next-line @rushstack/no-new-null
 ): ISchemaValidator<ObjectStatic<P>> | ISchemaValidator<OpenObjectStatic<P> | null> {
-  return new ObjectSchemaValidator(properties, _coherent('object', checkAnnotations(opts)));
+  return new ObjectSchemaValidator(properties, _optionsOf(opts, _schemaReader));
 }
 
 /**
@@ -1137,15 +1187,14 @@ export function object<P extends ILlmProperties>(
  * compile time, and an own property whose value is `undefined` is refused at run time either way:
  * `undefined` is not JSON, and the emitted `additionalProperties` schema does not admit it.
  * @param values - The schema every property value must match.
- * @param opts - Optional description and nullability.
+ * @param opts - Plain options, or `schemaOptions` for `default` or
+ * `examples`.
  * @returns An `ISchemaValidator` whose `Static` type is `Record<string, Static<S>> | null`.
- * @throws Error when `default` or a member of `examples` is not a JSON value — a setup-time error, since a
- * schema is declared.
  * @public
  */
 export function record<S extends ISchemaValidator<unknown>>(
   values: S & (undefined extends Static<S> ? never : unknown),
-  opts: ISchemaOptions & { nullable: true }
+  opts: (PlainSchemaOptions & { nullable: true }) | ValidatedSchemaOptions<{ nullable: true }>
   // `null` is the JSON value being modelled, not a JS sentinel — the same carve-out
   // `JsonPrimitive` takes in this package's `json` packlet.
   // eslint-disable-next-line @rushstack/no-new-null
@@ -1154,25 +1203,24 @@ export function record<S extends ISchemaValidator<unknown>>(
  * Creates a schema node for a JSON object used as a map: any keys, each value matching `values`
  * (pydantic `dict[str, T]`, zod `z.record(T)`).
  * @param values - The schema every property value must match.
- * @param opts - Optional description and nullability.
+ * @param opts - Plain options (description, nullability), or
+ * `schemaOptions` for `default` or `examples`.
  * @returns An `ISchemaValidator` whose `Static` type is `Record<string, Static<S>>`.
- * @throws Error when `default` or a member of `examples` is not a JSON value — a setup-time error, since a
- * schema is declared.
  * @public
  */
 export function record<S extends ISchemaValidator<unknown>>(
   values: S & (undefined extends Static<S> ? never : unknown),
-  opts?: ISchemaOptions
+  opts?: PlainSchemaOptions | ValidatedSchemaOptions
 ): ISchemaValidator<Record<string, Static<S>>>;
 export function record<S extends ISchemaValidator<unknown>>(
   values: S,
-  opts?: ISchemaOptions
+  opts?: PlainSchemaOptions | ValidatedSchemaOptions
 ): ISchemaValidator<Record<string, Static<S>>> {
   // The node is an object with no declared properties, so its class-level static type is
   // `ObjectStatic<{}>`; what it converts to is the map, which only this factory can state.
   return new ObjectSchemaValidator(
     {},
-    _coherent('record', checkAnnotations(opts)),
+    _optionsOf(opts, _schemaReader),
     values
   ) as unknown as ISchemaValidator<Record<string, Static<S>>>;
 }

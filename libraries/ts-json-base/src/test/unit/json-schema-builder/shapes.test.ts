@@ -37,7 +37,7 @@ function expectRoundTrip(raw: JsonObject, emitted: JsonObject): void {
 describe('JsonSchema — numeric and boolean enums', () => {
   describe('factories', () => {
     test('numberEnumOf emits type number plus enum, and accepts exactly the listed values', () => {
-      const schema = JsonSchema.numberEnumOf([1.5, 2], { description: 'step' });
+      const schema = JsonSchema.numberEnumOf([1.5, 2], { description: 'step' }).orThrow();
       expect(schema._type).toBe('enum');
       expect(schema.toJson()).toEqual({ type: 'number', enum: [1.5, 2], description: 'step' });
       expect(schema.validate(1.5)).toSucceedWith(1.5);
@@ -53,14 +53,14 @@ describe('JsonSchema — numeric and boolean enums', () => {
     });
 
     test('integerEnumOf emits type integer', () => {
-      const schema = JsonSchema.integerEnumOf([1, 2, 3]);
+      const schema = JsonSchema.integerEnumOf([1, 2, 3]).orThrow();
       expect(schema.toJson()).toEqual({ type: 'integer', enum: [1, 2, 3] });
       expect(schema.validate(2)).toSucceedWith(2);
       expect(schema.validate(4)).toFail();
     });
 
     test('booleanEnumOf emits type boolean', () => {
-      const schema = JsonSchema.booleanEnumOf([true]);
+      const schema = JsonSchema.booleanEnumOf([true]).orThrow();
       expect(schema.toJson()).toEqual({ type: 'boolean', enum: [true] });
       expect(schema.validate(true)).toSucceedWith(true);
       expect(schema.validate(false)).toFailWith(/expected: \(true\)/);
@@ -68,7 +68,7 @@ describe('JsonSchema — numeric and boolean enums', () => {
     });
 
     test('a nullable numeric enum carries null in both type and enum, and accepts it', () => {
-      const schema = JsonSchema.integerEnumOf([1, 2], { nullable: true });
+      const schema = JsonSchema.integerEnumOf([1, 2], { nullable: true }).orThrow();
       expect(schema.toJson()).toEqual({ type: ['integer', 'null'], enum: [1, 2, null] });
       expect(schema.validate(null)).toSucceedWith(null);
       expect(schema.validate(1)).toSucceedWith(1);
@@ -76,9 +76,9 @@ describe('JsonSchema — numeric and boolean enums', () => {
     });
 
     test('derives the literal union as its static type', () => {
-      const levels = JsonSchema.integerEnumOf([1, 2]);
-      const flag = JsonSchema.booleanEnumOf([true]);
-      const nullable = JsonSchema.numberEnumOf([0.5], { nullable: true });
+      const levels = JsonSchema.integerEnumOf([1, 2]).orThrow();
+      const flag = JsonSchema.booleanEnumOf([true]).orThrow();
+      const nullable = JsonSchema.numberEnumOf([0.5], { nullable: true }).orThrow();
       const level: JsonSchema.Static<typeof levels> = 2;
       const on: JsonSchema.Static<typeof flag> = true;
       const maybe: JsonSchema.Static<typeof nullable> = null;
@@ -92,7 +92,7 @@ describe('JsonSchema — numeric and boolean enums', () => {
 
     test('the node copies its values, so mutating the authored array cannot change it', () => {
       const values = [1, 2];
-      const schema = JsonSchema.integerEnumOf(values);
+      const schema = JsonSchema.integerEnumOf(values).orThrow();
       values.push(3);
       expect(schema.validate(3)).toFail();
       expect(schema.toJson()).toEqual({ type: 'integer', enum: [1, 2] });
@@ -100,13 +100,16 @@ describe('JsonSchema — numeric and boolean enums', () => {
 
     test('duplicate members are accepted and emitted as given, as the string enumOf does', () => {
       expect(JsonSchema.enumOf(['a', 'a']).toJson()).toEqual({ type: 'string', enum: ['a', 'a'] });
-      expect(JsonSchema.numberEnumOf([1.5, 1.5]).toJson()).toEqual({ type: 'number', enum: [1.5, 1.5] });
-      expect(JsonSchema.integerEnumOf([1, 1]).toJson()).toEqual({ type: 'integer', enum: [1, 1] });
-      expect(JsonSchema.booleanEnumOf([true, true]).toJson()).toEqual({
+      expect(JsonSchema.numberEnumOf([1.5, 1.5]).orThrow().toJson()).toEqual({
+        type: 'number',
+        enum: [1.5, 1.5]
+      });
+      expect(JsonSchema.integerEnumOf([1, 1]).orThrow().toJson()).toEqual({ type: 'integer', enum: [1, 1] });
+      expect(JsonSchema.booleanEnumOf([true, true]).orThrow().toJson()).toEqual({
         type: 'boolean',
         enum: [true, true]
       });
-      expect(JsonSchema.integerEnumOf([1, 1]).validate(1)).toSucceedWith(1);
+      expect(JsonSchema.integerEnumOf([1, 1]).orThrow().validate(1)).toSucceedWith(1);
       expect(JsonSchema.fromJson({ type: 'integer', enum: [2, 2] })).toSucceedAndSatisfy((schema) => {
         expect(schema.toJson()).toEqual({ type: 'integer', enum: [2, 2] });
         expect(schema.validate(2)).toSucceedWith(2);
@@ -115,31 +118,31 @@ describe('JsonSchema — numeric and boolean enums', () => {
     });
 
     test('-0 and 0 are one member, as === makes them', () => {
-      const zero = JsonSchema.integerEnumOf([0]);
+      const zero = JsonSchema.integerEnumOf([0]).orThrow();
       expect(zero.validate(-0)).toSucceed();
-      expect(JsonSchema.numberEnumOf([-0]).validate(0)).toSucceedWith(0);
+      expect(JsonSchema.numberEnumOf([-0]).orThrow().validate(0)).toSucceedWith(0);
       // JSON has no negative zero: the emitted list serializes it as 0.
-      expect(JSON.stringify(JsonSchema.integerEnumOf([-0]).toJson())).toBe('{"type":"integer","enum":[0]}');
+      expect(JSON.stringify(JsonSchema.integerEnumOf([-0]).orThrow().toJson())).toBe(
+        '{"type":"integer","enum":[0]}'
+      );
       expect(JsonSchema.fromJson({ type: 'integer', enum: [-0] })).toSucceedAndSatisfy((schema) => {
         expect(schema.validate(0)).toSucceed();
       });
     });
 
-    test('refuses an incoherent value list at construction', () => {
-      expect(() => JsonSchema.numberEnumOf([])).toThrow(/numberEnumOf: enum must list at least one value/);
-      expect(() => JsonSchema.numberEnumOf([1, Number.NaN])).toThrow(/enum value NaN is not a number/);
-      expect(() => JsonSchema.numberEnumOf([Infinity])).toThrow(/enum value Infinity is not a number/);
-      expect(() => JsonSchema.integerEnumOf([1, 1.5])).toThrow(
-        /integerEnumOf: enum value 1.5 is not an integer/
+    test('returns a Failure for an incoherent value list', () => {
+      expect(JsonSchema.numberEnumOf([])).toFailWith(/enum must list at least one value/);
+      expect(JsonSchema.numberEnumOf([1, Number.NaN])).toFailWith(/enum value NaN is not a number/);
+      expect(JsonSchema.numberEnumOf([Infinity])).toFailWith(/enum value Infinity is not a number/);
+      expect(JsonSchema.integerEnumOf([1, 1.5])).toFailWith(/enum value 1.5 is not an integer/);
+      expect(JsonSchema.booleanEnumOf(['yes' as unknown as boolean])).toFailWith(
+        /enum value "yes" is not a boolean/
       );
-      expect(() => JsonSchema.booleanEnumOf(['yes' as unknown as boolean])).toThrow(
-        /booleanEnumOf: enum value "yes" is not a boolean/
-      );
-      expect(() => JsonSchema.numberEnumOf([{} as unknown as number])).toThrow(/enum value an object/);
-      expect(() => JsonSchema.numberEnumOf([[] as unknown as number])).toThrow(/enum value an array/);
-      expect(() => JsonSchema.numberEnumOf([null as unknown as number])).toThrow(/enum value null/);
-      expect(() => JsonSchema.integerEnumOf([1], { default: (() => 1) as unknown as JsonValue })).toThrow(
-        /integerEnumOf: default/
+      expect(JsonSchema.numberEnumOf([{} as unknown as number])).toFailWith(/enum value an object/);
+      expect(JsonSchema.numberEnumOf([[] as unknown as number])).toFailWith(/enum value an array/);
+      expect(JsonSchema.numberEnumOf([null as unknown as number])).toFailWith(/enum value null/);
+      expect(JsonSchema.integerEnumOf([1], { default: (() => 1) as unknown as JsonValue })).toFailWith(
+        /default/
       );
     });
   });
@@ -261,12 +264,14 @@ describe('JsonSchema — scalar const', () => {
 
 describe('JsonSchema — anyValue / {}', () => {
   test('the factory emits {} plus annotations, and accepts any JSON value as a copy', () => {
-    const schema = JsonSchema.anyValue({
-      description: 'anything',
-      title: 'Any',
-      default: null,
-      examples: [1]
-    });
+    const schema = JsonSchema.anyValue(
+      JsonSchema.schemaOptions({
+        description: 'anything',
+        title: 'Any',
+        default: null,
+        examples: [1]
+      }).shouldNotFail('schema options')
+    );
     expect(schema._type).toBe('any');
     expect(JsonSchema.isSchemaValidator(schema)).toBe(true);
     expect(schema.toJson()).toEqual({ description: 'anything', title: 'Any', default: null, examples: [1] });
@@ -288,10 +293,15 @@ describe('JsonSchema — anyValue / {}', () => {
     expect(schema.validate({ a: undefined })).toFail();
   });
 
-  test('refuses an annotation that is not JSON at construction', () => {
-    expect(() => JsonSchema.anyValue({ default: (() => 1) as unknown as JsonValue })).toThrow(
-      /anyValue: default/
+  test('an annotation that is not JSON is refused before construction, by schemaOptions', () => {
+    expect(JsonSchema.schemaOptions({ default: (() => 1) as unknown as JsonValue })).toFailWith(/^default: /);
+  });
+
+  test('accepts validated annotations', () => {
+    const schema = JsonSchema.anyValue(
+      JsonSchema.schemaOptions({ default: { a: 1 }, title: 'T' }).shouldNotFail('schema options')
     );
+    expect(schema.toJson()).toEqual({ title: 'T', default: { a: 1 } });
   });
 
   test('derives JsonValue as its static type, and composes as an optional or required property', () => {
@@ -341,7 +351,7 @@ describe('JsonSchema — anyValue / {}', () => {
 describe('JsonSchema.adaptSchemaKeywords — non-string enums and untyped nodes', () => {
   const caps = (
     nonStringEnum: 'pass' | 'fold',
-    untyped: 'pass' | 'refuse'
+    untyped: JsonSchema.SchemaUntypedRule
   ): JsonSchema.SchemaKeywordCapabilities => ({
     ...JsonSchema.unverifiedWireSchemaKeywords,
     nonStringEnum,
@@ -359,18 +369,21 @@ describe('JsonSchema.adaptSchemaKeywords — non-string enums and untyped nodes'
   });
 
   test('fold removes a numeric or boolean enum and keeps the type; the validator still enforces it', () => {
-    const schema = JsonSchema.integerEnumOf([1, 2], { description: 'Level.' });
+    const schema = JsonSchema.integerEnumOf([1, 2], { description: 'Level.' }).orThrow();
     expect(JsonSchema.adaptSchemaKeywords(schema.toJson(), caps('fold', 'refuse'))).toSucceedWith({
       type: 'integer',
       description: 'Level. Constraints: enum [1,2].'
     });
     expect(schema.validate(3)).toFail();
     expect(
-      JsonSchema.adaptSchemaKeywords(JsonSchema.booleanEnumOf([true]).toJson(), caps('fold', 'refuse'))
+      JsonSchema.adaptSchemaKeywords(
+        JsonSchema.booleanEnumOf([true]).orThrow().toJson(),
+        caps('fold', 'refuse')
+      )
     ).toSucceedWith({ type: 'boolean', description: 'Constraints: enum [true].' });
     expect(
       JsonSchema.adaptSchemaKeywords(
-        JsonSchema.numberEnumOf([0.5], { nullable: true }).toJson(),
+        JsonSchema.numberEnumOf([0.5], { nullable: true }).orThrow().toJson(),
         caps('fold', 'refuse')
       )
     ).toSucceedWith({ type: ['number', 'null'], description: 'Constraints: enum [0.5,null].' });
@@ -385,7 +398,7 @@ describe('JsonSchema.adaptSchemaKeywords — non-string enums and untyped nodes'
   });
 
   test('pass sends a numeric enum as emitted', () => {
-    const json = JsonSchema.numberEnumOf([1, 2]).toJson();
+    const json = JsonSchema.numberEnumOf([1, 2]).orThrow().toJson();
     expect(JsonSchema.adaptSchemaKeywords(json, caps('pass', 'refuse'))).toSucceedWith(json);
   });
 
@@ -403,6 +416,45 @@ describe('JsonSchema.adaptSchemaKeywords — non-string enums and untyped nodes'
     expect(JsonSchema.adaptSchemaKeywords({}, caps('fold', 'refuse'))).toFailWith(
       /^#: a schema with no 'type'/
     );
+  });
+
+  test('pass-nested passes an untyped node beneath the root and refuses one at the root', () => {
+    const nested = JsonSchema.object({
+      p: JsonSchema.anyValue(),
+      list: JsonSchema.array(JsonSchema.anyValue())
+    }).toJson();
+    expect(JsonSchema.adaptSchemaKeywords(nested, caps('pass', 'pass-nested'))).toSucceedWith(nested);
+    expect(
+      JsonSchema.adaptSchemaKeywords(JsonSchema.anyValue().toJson(), caps('pass', 'pass-nested'))
+    ).toFailWith(/^#: a schema with no 'type' \(matching any value\) cannot be sent on this wire$/);
+    // A root typed only by enum, const, $ref or a combinator still has no `type` keyword.
+    const roots: JsonObject[] = [
+      { enum: ['a', 'b'] },
+      { const: 1 },
+      { $ref: '#/$defs/x' },
+      { anyOf: [{ type: 'string' }] }
+    ];
+    for (const root of roots) {
+      expect(JsonSchema.adaptSchemaKeywords(root, caps('pass', 'pass-nested'))).toFailWith(
+        /^#: a root schema with no 'type' keyword cannot be sent on this wire$/
+      );
+      // Beneath the root the same node is typed elsewhere and passes.
+      expect(
+        JsonSchema.adaptSchemaKeywords(
+          { type: 'object', properties: { p: root } },
+          caps('pass', 'pass-nested')
+        )
+      ).toSucceed();
+    }
+    // A nullable root emits `type: [<type>, 'null']`, which is a `type` keyword, so it passes.
+    const nullableRoot = JsonSchema.object({ a: JsonSchema.string() }, { nullable: true }).toJson();
+    expect(nullableRoot).toMatchObject({ type: ['object', 'null'] });
+    expect(JsonSchema.adaptSchemaKeywords(nullableRoot, caps('pass', 'pass-nested'))).toSucceedWith(
+      nullableRoot
+    );
+    // A typed root with untyped items is nested, not the root.
+    const items = JsonSchema.array(JsonSchema.anyValue()).toJson();
+    expect(JsonSchema.adaptSchemaKeywords(items, caps('pass', 'pass-nested'))).toSucceedWith(items);
   });
 
   test('a node typed by something other than type is not untyped', () => {
@@ -427,12 +479,18 @@ describe('JsonSchema.adaptSchemaKeywords — non-string enums and untyped nodes'
   test('pass sends an untyped node as emitted, its annotations still adapted', () => {
     expect(
       JsonSchema.adaptSchemaKeywords(
-        JsonSchema.object({ x: JsonSchema.anyValue({ title: 'X', default: 1 }) }).toJson(),
+        JsonSchema.object({
+          x: JsonSchema.anyValue(
+            JsonSchema.schemaOptions({ title: 'X', default: 1, examples: [1] }).shouldNotFail(
+              'schema options'
+            )
+          )
+        }).toJson(),
         caps('fold', 'pass')
       )
     ).toSucceedWith({
       type: 'object',
-      properties: { x: { description: 'Default: 1.' } },
+      properties: { x: { description: 'Examples: [1].' } },
       required: ['x'],
       additionalProperties: false
     });

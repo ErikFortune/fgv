@@ -32,6 +32,7 @@ const passAll: JsonSchema.SchemaKeywordCapabilities = {
   multipleOf: 'pass',
   minLength: 'pass',
   maxLength: 'pass',
+  pattern: 'pass',
   format: 'pass',
   title: 'pass',
   default: 'pass',
@@ -80,16 +81,34 @@ describe('JsonSchema.adaptSchemaKeywords', () => {
   });
 
   test('a pass-everything table leaves the schema unchanged', () => {
-    const schema = JsonSchema.number({ minimum: 1, title: 'N', description: 'n' }).toJson();
+    const schema = JsonSchema.number(
+      JsonSchema.numberOptions({ minimum: 1, title: 'N', description: 'n' }).shouldNotFail('number options')
+    ).toJson();
     expect(JsonSchema.adaptSchemaKeywords(schema, passAll)).toSucceedWith(schema);
   });
 
   test('folding removes the keywords and appends one sentence, in fixed keyword order', () => {
     // Authored out of order: the sentence follows `schemaConstraintKeywords`, not the input.
-    const raw: JsonObject = { type: 'integer', maximum: 10, default: 3, minimum: 1 };
+    const raw: JsonObject = { type: 'integer', maximum: 10, examples: [3], minimum: 1 };
     expect(JsonSchema.adaptSchemaKeywords(raw, JsonSchema.unverifiedWireSchemaKeywords)).toSucceedWith({
       type: 'integer',
-      description: 'Constraints: minimum 1; maximum 10. Default: 3.'
+      description: 'Constraints: minimum 1; maximum 10. Examples: [3].'
+    });
+  });
+
+  test('the conservative table drops default rather than folding it, and still folds format and examples', () => {
+    // A folded `Default: 3.` reads as though the default were applied; nothing applies it.
+    expect(JsonSchema.unverifiedWireSchemaKeywords.default).toBe('drop');
+    const raw: JsonObject = {
+      type: 'string',
+      description: 'When.',
+      format: 'date-time',
+      default: '2026-01-01T00:00:00Z',
+      examples: ['2026-10-18T12:00:00Z']
+    };
+    expect(JsonSchema.adaptSchemaKeywords(raw, JsonSchema.unverifiedWireSchemaKeywords)).toSucceedWith({
+      type: 'string',
+      description: 'When. Format: date-time. Examples: ["2026-10-18T12:00:00Z"].'
     });
   });
 
@@ -153,9 +172,15 @@ describe('JsonSchema.adaptSchemaKeywords', () => {
 
   test('adapts nested properties, items and schema-valued additionalProperties', () => {
     const schema = JsonSchema.object({
-      tags: JsonSchema.array(JsonSchema.string({ maxLength: 5 })),
-      scores: JsonSchema.record(JsonSchema.number({ minimum: 0 })),
-      n: JsonSchema.optional(JsonSchema.integer({ multipleOf: 2 }))
+      tags: JsonSchema.array(
+        JsonSchema.string(JsonSchema.stringOptions({ maxLength: 5 }).shouldNotFail('string options'))
+      ),
+      scores: JsonSchema.record(
+        JsonSchema.number(JsonSchema.numberOptions({ minimum: 0 }).shouldNotFail('number options'))
+      ),
+      n: JsonSchema.optional(
+        JsonSchema.integer(JsonSchema.integerOptions({ multipleOf: 2 }).shouldNotFail('integer options'))
+      )
     }).toJson();
     expect(JsonSchema.adaptSchemaKeywords(schema, JsonSchema.unverifiedWireSchemaKeywords)).toSucceedWith({
       type: 'object',
@@ -197,7 +222,9 @@ describe('JsonSchema.adaptSchemaKeywords', () => {
   });
 
   test('a folded schema still validates as the authored one does: the validator stays authoritative', () => {
-    const schema = JsonSchema.integer({ minimum: 1, maximum: 10 });
+    const schema = JsonSchema.integer(
+      JsonSchema.integerOptions({ minimum: 1, maximum: 10 }).shouldNotFail('integer options')
+    );
     const folded = JsonSchema.adaptSchemaKeywords(schema.toJson(), JsonSchema.unverifiedWireSchemaKeywords);
     expect(folded).toSucceedWith({ type: 'integer', description: 'Constraints: minimum 1; maximum 10.' });
     expect(schema.validate(0)).toFailWith(/minimum/);
