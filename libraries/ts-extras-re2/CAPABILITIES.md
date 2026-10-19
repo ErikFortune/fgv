@@ -74,4 +74,7 @@ carry `pattern` (that is the ai-assist keyword tables).
 *Newest first. **Generated** — see the repo index; do not hand-edit inside the markers.*
 
 <!-- BEGIN GENERATED: recent-additions -->
+
+- **2026-10-19** — New @fgv/ts-extras-re2: re2PatternValidator lets fromJson and adaptMcpTools accept an untrusted JSON Schema pattern — linear-time RE2 matching, ECMA-262 meaning or a named refusal.
+
 <!-- END GENERATED: recent-additions -->
