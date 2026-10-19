@@ -5,7 +5,7 @@
 Branch `ts-extras-re2` from `f85ed68b3` (which already contained `integration/asks`). Commits:
 `513bd0d7c` (package, code and tests), `9087faf19` (docs, change files, capability routing),
 `b906a0ae1` (close-out), `9048d2d83` (lint fix found by the repo-wide rebuild), and a final
-result-update commit. PR: #TBD.
+result-update commit. PR: #746.
 
 ## Dependency checks (brief decision 2)
 

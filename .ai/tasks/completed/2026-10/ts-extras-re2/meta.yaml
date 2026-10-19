@@ -1,7 +1,7 @@
 id: ts-extras-re2
 status: shipped
 packages: ['@fgv/ts-extras-re2', '@fgv/ts-json-base', '@fgv/ts-extras-mcp']
-prs: []
+prs: [746]
 openPrs: []
 opened: 2026-10-19
 closed: 2026-10-19

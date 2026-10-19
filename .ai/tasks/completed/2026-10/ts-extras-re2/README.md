@@ -1,6 +1,6 @@
 # `ts-extras-re2`: an RE2-backed `patternValidator` for untrusted JSON Schema `pattern`
 
-**Shipped 2026-10-19** onto `integration/asks` (PR #TBD).
+**Shipped 2026-10-19** onto `integration/asks` (PR #746).
 Origin: user decisions 1 and 3, 2026-10-18 and 2026-10-19. It follows `json-schema-pattern` (#742),
 which made `fromJson` and `adaptMcpTools` refuse `pattern` unless a validator is injected.
 
