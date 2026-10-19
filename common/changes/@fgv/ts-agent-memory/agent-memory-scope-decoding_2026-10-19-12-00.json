@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-agent-memory",
+      "comment": "BREAKING: FileTreeMemoryStore.create takes scopeDecoding, the inverse of scopeEncoding, and refuses scopeEncoding without it. A vault written under a non-identity encoding now reopens: the open walk decodes each directory holding records and requires it to round-trip, and every read and write requires its encoded directory to decode back to the requested scope. ISkippedRecord.scope is now optional (absent when a directory does not decode), and ISkippedRecord.path is the on-disk path",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-agent-memory"
+}
