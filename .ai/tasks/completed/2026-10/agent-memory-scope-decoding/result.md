@@ -2,7 +2,7 @@
 
 **Shipped:** `FileTreeMemoryStore.create` takes `scopeDecoding`, the inverse of `scopeEncoding`, so a vault written under a non-identity scope encoding reopens with every record reachable by the scope it was written to.
 
-Base `integration/asks` at `84fc3cef4`. Implementation commit `2e06e8bc5`. PR #TBD.
+Base `integration/asks` at `84fc3cef4`. Implementation commit `2e06e8bc5`. PR #747.
 
 ## API
 

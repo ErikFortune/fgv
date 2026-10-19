@@ -1,7 +1,7 @@
 id: agent-memory-scope-decoding
 status: shipped
 packages: ['@fgv/ts-agent-memory']
-prs: []
+prs: [747]
 openPrs: []
 opened: 2026-10-19
 closed: 2026-10-19

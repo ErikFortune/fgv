@@ -1,6 +1,6 @@
 # `agent-memory-scope-decoding`: give `scopeEncoding` an inverse
 
-**Shipped 2026-10-19** onto `integration/asks` (PR #TBD).
+**Shipped 2026-10-19** onto `integration/asks` (PR #747).
 Origin: followups D4 (`personality-asks-2026-10/followups.md`) and the retired `TECH_DEBT.md` P3
 entry on non-identity `scopeEncoding`. User decision (a), 2026-10-19. It builds on
 `agent-memory-scope-invariant` (#733) and the D5/D6 address checks (#735, #741).

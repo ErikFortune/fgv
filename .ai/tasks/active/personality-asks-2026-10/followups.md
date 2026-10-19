@@ -252,7 +252,7 @@ to. Design it once, before any of them ships.
 - **Route:** small stream in `ts-agent-memory`. Tighten the TSDoc contract, and enforce it in `verifyLoadedIdentity`. Breaking only for custom codecs, which is allowed on this active surface.
 - **Status:** **shipped** in #733 (`0e4fbf59`). The check is enforced by the store in `verifyLoadedIdentity` for every codec. The `IIdentityCodec` interface is unchanged.
 
-### D4. `scopeEncoding` has no inverse — from `agent-memory-scope-invariant` (#733) — **shipped** via #TBD (`agent-memory-scope-decoding`)
+### D4. `scopeEncoding` has no inverse — from `agent-memory-scope-invariant` (#733) — **shipped** via #747 (`agent-memory-scope-decoding`)
 
 - **What:** a vault written with a non-identity `scopeEncoding` cannot be reopened, because the open walk indexes raw directory segments. Since #733 the reopen fails loudly; before, it silently misfiled records.
 - **Route:** recorded in `docs/TECH_DEBT.md` (P3). The trigger is the first consumer that needs a non-identity encoding.

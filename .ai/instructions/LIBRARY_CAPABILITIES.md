@@ -204,7 +204,7 @@ markers.*
 
 <!-- BEGIN GENERATED: recent-additions -->
 
-- **2026-10-19** — A memory vault written under a non-identity scope encoding now reopens: FileTreeMemoryStore takes a scopeDecoding inverse and… · `ts-agent-memory`
+- **2026-10-19** — A memory vault written under a non-identity scope encoding now reopens: FileTreeMemoryStore takes a scopeDecoding inverse and… ([#747](https://github.com/ErikFortune/fgv/pull/747)) · `ts-agent-memory`
 - **2026-10-19** — New @fgv/ts-extras-re2: re2PatternValidator lets fromJson and adaptMcpTools accept an untrusted JSON Schema pattern — linear-time… ([#746](https://github.com/ErikFortune/fgv/pull/746)) · `ts-extras-re2` `ts-json-base` `ts-extras-mcp`
 - **2026-10-18** — ai-assist: verifiedEndpoint lets an endpoint override use the provider's keyword table, default is dropped instead of folded… ([#743](https://github.com/ErikFortune/fgv/pull/743)) · `ts-json-base` `ts-extras` `ts-extras-mcp` `ts-extras-ollama`
 - **2026-10-18** — JsonSchema factories never throw: constraint keywords, default and examples arrive through numberOptions / integerOptions /… ([#740](https://github.com/ErikFortune/fgv/pull/740)) · `ts-json-base` `ts-extras` `ts-extras-ollama`
