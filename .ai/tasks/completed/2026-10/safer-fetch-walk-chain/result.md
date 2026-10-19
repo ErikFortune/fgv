@@ -129,6 +129,13 @@ had 0 `not met|FAILURE|Operations failed|error TS` hits, and its only warning wa
   - Run 3 (`--from @fgv/ts-extras-mcp`, which rebuilt its 18-project closure): 18 of 18 passed,
     exit 0.
   - Every project passed in at least one run.
+- **Combined tree:** gated after merging `origin/integration/asks`, which had advanced by #743 and
+  the #744 re-establish. `rush install` passed, and `rush rebuild` completed 38 of 38 with exit 0
+  and clean greps.
+  - `rush test` failed only the known load-sensitive `saferFetchRetry` "an exhausted deadline fails
+    with the attempt's own failure" (2 transport calls where 1 was expected). That blocked
+    ts-extras' dependents, and the other 17 projects passed.
+  - Re-run with `--from @fgv/ts-extras`: 27 of 27 passed, exit 0, clean greps.
 - **`rush change --verify --target-branch origin/release`:** passes. The change file is typed
   `none`, with the comment "internal refactor, no behaviour change".
 - **Docs scripts:** `verify-capability-docs.mjs` reports 0 failed, and
