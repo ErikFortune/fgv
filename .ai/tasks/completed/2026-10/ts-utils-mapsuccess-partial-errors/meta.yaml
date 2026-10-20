@@ -1,7 +1,7 @@
 id: ts-utils-mapsuccess-partial-errors
 status: shipped
 packages: ['@fgv/ts-utils']
-prs: [] # #TBD — the PR number is filled in when the PR is opened
+prs: [752]
 openPrs: []
 opened: 2026-10-20
 closed: 2026-10-20

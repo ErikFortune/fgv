@@ -1,6 +1,6 @@
 # ts-utils-mapsuccess-partial-errors — a partial fold reports its failures
 
-**Shipped**: 2026-10-20 into `integration/asks` via #TBD.
+**Shipped**: 2026-10-20 into `integration/asks` via #752.
 Package: `@fgv/ts-utils` (`base`). Origin: personaility#691 (fgv-ask). Change file typed `minor`.
 
 ## Summary

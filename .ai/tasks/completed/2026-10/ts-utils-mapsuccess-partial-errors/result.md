@@ -4,7 +4,7 @@
 `aggregatedErrors`, in input order, whether or not any result succeeded — so a partial fold reports
 what it dropped, as the parameter always promised. The returned `Result` is unchanged.
 
-Origin: personaility#691 (fgv-ask). Base / target: `integration/asks`. PR: #TBD.
+Origin: personaility#691 (fgv-ask). Base / target: `integration/asks`. PR: #752.
 
 ## What changed
 
