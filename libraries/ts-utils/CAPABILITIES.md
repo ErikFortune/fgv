@@ -77,6 +77,7 @@ would be a promise the library cannot keep.
 
 <!-- BEGIN GENERATED: recent-additions -->
 
+- **2026-10-20** — mapSuccess and mapSuccessAsync now hand every failure to a supplied aggregator, even when some results succeeded, so a lenient fold can report what it dropped. ([#752](https://github.com/ErikFortune/fgv/pull/752))
 - **2026-09-26** — A converter handed an Object.create(null) value now returns a Result instead of throwing — isKeyOf, strictObject and six ts-json / ts-res-ui-components property probes stopped calling hasOwnProperty on the object itself. ([#700](https://github.com/ErikFortune/fgv/pull/700))
 - **2026-08-28** — A string can now declare that it must be one printable line — and the name says shape, not safety, because no converter can promise the latter.
 - **2026-06-05** — **Status:** COMPLETE ([#461](https://github.com/ErikFortune/fgv/pull/461))

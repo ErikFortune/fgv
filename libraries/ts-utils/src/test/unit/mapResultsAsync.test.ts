@@ -390,15 +390,79 @@ describe('async Result family', () => {
       );
     });
 
-    test('appends errors to a supplied aggregator only when everything fails', async () => {
-      const aggregator: MessageAggregator = new MessageAggregator();
-      expect(
-        await mapSuccessAsync([failsLater<number>('e1'), later(2)], { aggregatedErrors: aggregator })
-      ).toSucceedWith([2]);
-      expect(aggregator.hasMessages).toBe(false);
+    describe('aggregatedErrors', () => {
+      test('receives every failure in input order from a partial fold (deferred form, concurrent)', async () => {
+        const aggregator: MessageAggregator = new MessageAggregator(['earlier']);
+        // e1 completes last and e3 first, so completion order differs from input order
+        expect(
+          await mapSuccessAsync(
+            [failsLater<number>('e1', 25), later(2, 10), failsLater<number>('e3', 1), later(4, 5)],
+            { concurrency: 4, aggregatedErrors: aggregator }
+          )
+        ).toSucceedWith([2, 4]);
+        expect(aggregator.messages).toEqual(['earlier', 'e1', 'e3']);
+      });
 
-      expect(await mapSuccessAsync([failsLater<number>('e1')], { aggregatedErrors: aggregator })).toFail();
-      expect(aggregator.messages).toEqual(['e1']);
+      test('receives every failure in input order from a partial fold (items form, concurrent)', async () => {
+        const aggregator: MessageAggregator = new MessageAggregator();
+        const delays: number[] = [25, 1, 15, 5, 1];
+        expect(
+          await mapSuccessAsync(
+            [1, 2, 3, 4, 5],
+            async (item: number, index: number) => {
+              await delay(delays[index]);
+              return item % 2 === 0 ? fail<number>(`even ${item}`) : succeed(item);
+            },
+            { concurrency: 3, aggregatedErrors: aggregator }
+          )
+        ).toSucceedWith([1, 3, 5]);
+        expect(aggregator.messages).toEqual(['even 2', 'even 4']);
+      });
+
+      test('is unchanged for an all-failed fold (both forms)', async () => {
+        const deferredAggregator: MessageAggregator = new MessageAggregator();
+        expect(
+          await mapSuccessAsync([failsLater<number>('e1', 10), failsLater<number>('e2', 1)], {
+            concurrency: 2,
+            aggregatedErrors: deferredAggregator
+          })
+        ).toFailWith(/e1[\s\S]*e2/);
+        expect(deferredAggregator.messages).toEqual(['e1', 'e2']);
+
+        const itemsAggregator: MessageAggregator = new MessageAggregator();
+        expect(
+          await mapSuccessAsync([1, 2], async (item: number) => fail<number>(`bad ${item}`), {
+            concurrency: 2,
+            aggregatedErrors: itemsAggregator
+          })
+        ).toFailWith(/bad 1[\s\S]*bad 2/);
+        expect(itemsAggregator.messages).toEqual(['bad 1', 'bad 2']);
+      });
+
+      test('adds nothing for an all-succeeded fold (both forms)', async () => {
+        const aggregator: MessageAggregator = new MessageAggregator();
+        expect(
+          await mapSuccessAsync([later(1, 5), later(2, 1)], { concurrency: 2, aggregatedErrors: aggregator })
+        ).toSucceedWith([1, 2]);
+        expect(
+          await mapSuccessAsync([1, 2], async (item: number) => succeed(item * 10), {
+            concurrency: 2,
+            aggregatedErrors: aggregator
+          })
+        ).toSucceedWith([10, 20]);
+        expect(aggregator.messages).toEqual([]);
+      });
+
+      test('adds nothing for empty input (both forms)', async () => {
+        const aggregator: MessageAggregator = new MessageAggregator();
+        expect(await mapSuccessAsync<number>([], { aggregatedErrors: aggregator })).toSucceedWith([]);
+        expect(
+          await mapSuccessAsync<number, number>([], async (item: number) => succeed(item), {
+            aggregatedErrors: aggregator
+          })
+        ).toSucceedWith([]);
+        expect(aggregator.messages).toEqual([]);
+      });
     });
 
     test('succeeds with an empty array for empty input', async () => {
