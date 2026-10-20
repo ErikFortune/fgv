@@ -7,12 +7,12 @@ Worker-owned working surface. Brief is the contract.
 - [x] Setup: branch at e15b1d440, `rush install` clean.
 - [x] Sibling sweep of `mapResults.ts` / `mapResultsAsync.ts` (see `result.md`).
 - [x] Aggregator-caller sweep (`libraries/ tools/ samples/`).
-- [ ] Tests written, shown red against unfixed code.
-- [ ] Fix applied, tests green.
-- [ ] Docs (TSDoc, base README, CAPABILITIES).
-- [ ] Change file.
-- [ ] Gates.
-- [ ] Close-out.
+- [x] Tests written, shown red against unfixed code.
+- [x] Fix applied, tests green.
+- [x] Docs (TSDoc, base README, CAPABILITIES).
+- [x] Change file.
+- [x] Gates.
+- [x] Close-out.
 
 ## Notes
 
@@ -21,4 +21,4 @@ Worker-owned working surface. Brief is the contract.
 
 ## Open questions
 
-None.
+None. Gates green on 7662592b3; see result.md.
