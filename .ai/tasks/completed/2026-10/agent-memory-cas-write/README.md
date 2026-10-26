@@ -1,6 +1,6 @@
 # `agent-memory-cas-write` — a conditional (compare-and-set) record write for `FileTreeMemoryStore`
 
-**Status:** shipped via #TBD into `integration/asks` (2026-10-26). Origin: personaility#701.
+**Status:** shipped via #759 into `integration/asks` (2026-10-26). Origin: personaility#701.
 
 ## What it delivered
 

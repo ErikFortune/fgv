@@ -1,7 +1,7 @@
 id: agent-memory-cas-write
 status: shipped
 packages: ['@fgv/ts-agent-memory']
-prs: [] # TBD — the PR is not opened yet
+prs: [759]
 openPrs: []
 opened: 2026-10-26
 closed: 2026-10-26

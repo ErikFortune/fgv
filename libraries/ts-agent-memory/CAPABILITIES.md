@@ -67,7 +67,7 @@ App-agnostic **storage + retrieval substrate** for agent memory and knowledge �
 <!-- BEGIN GENERATED: recent-additions -->
 
 - **2026-10-26** — A crash mid-write no longer leaves a torn memory record that fails the next open: FileTreeMemoryStore writes atomically wherever its root can, says so on store.durability, and allows one store per root per process. ([#756](https://github.com/ErikFortune/fgv/pull/756))
-- **2026-10-26** — A memory read-modify-write can no longer silently lose a concurrent update: FileTreeMemoryStore put and delete take an expected seq and fail with a conflict, and a seq is never re-issued, even across a restart.
+- **2026-10-26** — A memory read-modify-write can no longer silently lose a concurrent update: FileTreeMemoryStore put and delete take an expected seq and fail with a conflict, and a seq is never re-issued, even across a restart. ([#759](https://github.com/ErikFortune/fgv/pull/759))
 - **2026-10-19** — A memory vault written under a non-identity scope encoding now reopens: FileTreeMemoryStore takes a scopeDecoding inverse and checks the pair round-trips on every directory it reads or writes. ([#747](https://github.com/ErikFortune/fgv/pull/747))
 - **2026-10-18** — Agent memory tool results now carry each record's id and scope, so two conversations' turn-3 are distinguishable and a link copied from a result points at the right record. ([#739](https://github.com/ErikFortune/fgv/pull/739))
 - **2026-10-17** — HybridRetriever's score-union merge no longer collapses records that share an id across scopes — two conversations' turn-3 stay two records — because ScoreUnionMergeStrategy now keys on the scope-qualified address and requires an identity resolver. ([#731](https://github.com/ErikFortune/fgv/pull/731))
