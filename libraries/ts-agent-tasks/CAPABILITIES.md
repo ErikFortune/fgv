@@ -752,9 +752,9 @@ if (next !== undefined) {
   obligation — never takes the slot. Owed revisions come by the renderer's priority, and only those
   the principal may **see and acknowledge now** (below); a withheld one is never presented, so it
   never blocks the pump. An oversize revision is skipped while a smaller owed one fits; when none
-  fits (abbreviated, or omitted) the receipt is released and the call **fails loudly**, naming the
-  revision and the owed ids on the first page of `pending`, on every call until the host raises the
-  budget or disposes of those ids. At most 1,000 owed updates are read per preparation, so a
+  fits (abbreviated, or omitted) the receipt is released and the call **fails loudly**, naming that
+  revision and **only its** update ids — never other tasks', so a host acting on the message ends
+  nothing else — on every call until the host raises the budget or disposes of them. At most 1,000 owed updates are read per preparation, so a
   subscription whose first 1,000 are all withheld presents nothing until some are ended.
 - **It never acknowledges on its own** and is **at-least-once**: a prepared revision neither
   acknowledged nor disposed of is presented again. **Exactly-once is not this helper's property** —
@@ -792,11 +792,21 @@ the same way. The decisions are re-checked inside the commit's writer section (r
 the policy epoch), so a task that moves between the decision and the issue is captured again.
 
 **`IBoundTaskDelivery.disposeWithheld({ reason, limit? })`** → `{ subscriptionId, disposed, pinned,
-more }`. Ends up to `limit` owed updates the subscription holds that are withheld now. It is
-**authorized by ownership** — the subscription disposes of its own obligations, so no per-task
-`acknowledge` is asked for what the principal may no longer acknowledge — and each withheld decision
-is re-checked in the writer before anything is written. An id an unexpired, unacknowledged receipt
-names is left in `pinned`, not disposed; `more` says the listing went past `limit`.
+more }`, **counts only** — an update id embeds its task id, so a list would name tasks the principal
+may not read; the exact ids stay in the subscription's history for the trusted host. Ends up to
+`limit` owed updates the subscription holds that are withheld now. Not authorized per task, but by
+the subscription as a whole, and only when all three hold: the binding's principal **registered**
+the subscription; the binding's selectors **cover its whole selection**; and the policy grants
+**`dispose-obligation`** asked for the selection's scopes, naming no task. Otherwise
+`not-found-or-denied`. (Without the first two, "withheld" would be judged under whatever binding was
+brought, and the narrower it was the more it could end.) Each withheld decision is re-checked in the
+writer before anything is written. An id an unexpired, unacknowledged receipt names is counted in
+`pinned`, not disposed; `more` says the listing went past `limit`.
+
+**`bindDelivery` does not require the registering principal**: a host may subscribe on an agent's
+behalf and bind the agent's delivery. Disclosure and acknowledgement are decided under the binding's
+own authority, but a binding **drains** the subscription — what it acknowledges is no longer owed to
+that `consumerId` — so which principal drains which consumer is the host's to keep straight.
 
 **`DeferredObligations.create({ broker, principal, authorization, scope, idPrefix, roles, codes?,
 namespaces?, schedule?, operationBudget?, guard? })`** — a durable retry obligation is a

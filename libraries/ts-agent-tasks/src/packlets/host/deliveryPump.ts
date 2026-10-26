@@ -440,8 +440,10 @@ export class TaskDeliveryPump {
    * `next` never presents a withheld update, so it never blocks the pump; but it stays owed, and holds
    * its task's archive, until something ends it. The pump does **not** end them on its own: access can
    * come back (a policy that changes again, a task moved back), and a disposal cannot be undone. The
-   * host decides when — on its own sweep, say — and this call is the bounded path, reporting exactly
-   * what it ended, what a receipt still pins, and whether more remain.
+   * host decides when — on its own sweep, say — and this call is the bounded path, reporting how many
+   * it ended, how many a receipt still pins, and whether more remain: counts, never ids, which would
+   * name tasks the principal may not read. It is refused unless the pump's binding is the one that
+   * registered the subscription, covers its whole selection, and is granted `dispose-obligation`.
    */
   public disposeWithheld(reason: string, limit?: number): Promise<Result<ITaskWithheldDisposal>> {
     return guarded(this._guard, async () =>

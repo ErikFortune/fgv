@@ -22,10 +22,11 @@ summary:
     IBoundTaskDelivery.prepare's owed-only mode, which the pump uses so a task owed nothing never
     blocks another; disclosure decided now, on the current record and on acknowledge, so a task that
     left the binding's view is withheld rather than presented, and IBoundTaskDelivery.disposeWithheld
-    (ownership-authorized, pin-aware, bounded) for ending what is withheld; ids, codes, namespaces, schedule and budget as options; a pure retry() advising
+    (pin-aware, bounded, counts only, for the registering principal over its whole selection with a
+    dispose-obligation grant) for ending what is withheld; ids, codes, namespaces, schedule and budget as options; a pure retry() advising
     wait, hold or expire; deterministic operation ids so a lost response replays; decisions read from
     the pump's own record; obligations adopted and swept only when they read as the helper's own; a
-    check-then-act table, revert matrices for the build and for review rounds 1 and 2, each row red,
+    check-then-act table, revert matrices for the build and for review rounds 1 to 3, each row red,
     and every contract test in the ask mapped to a test.
   diverged: >
     IBoundTaskView was widened with queryDue, since the due index was reachable only through the
@@ -33,7 +34,10 @@ summary:
     found the pump stuck behind current tasks owed nothing; prepare gained an owed-only mode and the
     stale-render loop the brief described was removed as unnecessary. Review round 2 found it stuck
     on a revision whose task had left its view; disclosure changed in both prepare modes, including
-    the default, and IBoundTaskDelivery gained disposeWithheld. A committed
+    the default, and IBoundTaskDelivery gained disposeWithheld. Review round 3 tightened it to the
+    owning binding plus a grant and to counts; a foreign-principal binding can still drain a
+    subscription on release too, left as documented host responsibility because the host-subscribes,
+    agent-drains pattern depends on it, and escalated. A committed
     acknowledgement succeeds with its follow-up failures as issues rather than failing. The schedule
     advises rather than holds, keeping no resident state. merged re-reads its survivor, and the
     sweeps report per task and carry on; neither is in the PersonAIlity source. No stale-receipt
