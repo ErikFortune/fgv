@@ -4,7 +4,7 @@
  */
 
 import { Result, fail, succeed } from '@fgv/ts-utils';
-import { ITaskAccessRequest, ITaskAuthorization, ITaskScope, TaskAction, taskScopeKey } from '../types';
+import { ITaskAccessRequest, ITaskAuthorization, ITaskScope, TaskAction, _taskScopeKey } from '../types';
 
 /**
  * How {@link trustedKindAuthority} matches the scopes a request **asks for** — a creation's, a
@@ -92,7 +92,7 @@ export function trustedKindAuthority(params: ITrustedKindAuthorityParams): Resul
   const kinds: ReadonlySet<string> | undefined =
     params.kinds !== undefined ? new Set(params.kinds) : undefined;
   const scopes: ReadonlySet<string> | undefined =
-    params.scopes !== undefined ? new Set(params.scopes.map(taskScopeKey)) : undefined;
+    params.scopes !== undefined ? new Set(params.scopes.map(_taskScopeKey)) : undefined;
   const scopeMatch: TrustedScopeMatch = params.scopeMatch ?? 'every';
   const epoch: string = params.epoch;
 
@@ -105,7 +105,7 @@ export function trustedKindAuthority(params: ITrustedKindAuthorityParams): Resul
       if (kinds !== undefined && !kinds.has(subject.kind)) {
         return false;
       }
-      if (scopes !== undefined && !subject.scopes.some((scope) => scopes.has(taskScopeKey(scope)))) {
+      if (scopes !== undefined && !subject.scopes.some((scope) => scopes.has(_taskScopeKey(scope)))) {
         return false;
       }
     }
@@ -115,7 +115,7 @@ export function trustedKindAuthority(params: ITrustedKindAuthorityParams): Resul
     }
     const requested: ReadonlyArray<ITaskScope> = request.scopes;
     // Scopes asked for with no boundary to hold them to are refused.
-    const inside = (scope: ITaskScope): boolean => scopes !== undefined && scopes.has(taskScopeKey(scope));
+    const inside = (scope: ITaskScope): boolean => scopes !== undefined && scopes.has(_taskScopeKey(scope));
     return (
       requested.length > 0 && (scopeMatch === 'every' ? requested.every(inside) : requested.some(inside))
     );

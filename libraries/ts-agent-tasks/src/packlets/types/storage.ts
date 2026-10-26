@@ -235,7 +235,7 @@ export type ITaskRecordDraft = IResolvedTaskRecordDraft | IUnresolvedTaskRecordD
  * when unresolved. Shared between the package's packlets; not part of the published surface.
  * @internal
  */
-export function taskRecordScopes(record: ITaskRecordDraft | ITaskCommitRecord): ReadonlyArray<ITaskScope> {
+export function _taskRecordScopes(record: ITaskRecordDraft | ITaskCommitRecord): ReadonlyArray<ITaskScope> {
   return record.recordType === 'resolved' ? record.task.envelope.scopes : record.reference.scopes;
 }
 

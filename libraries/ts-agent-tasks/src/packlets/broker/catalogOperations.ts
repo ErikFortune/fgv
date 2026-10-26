@@ -27,8 +27,8 @@ import {
   isTerminalTaskStatus,
   taskListKind,
   trackedTaskKind,
-  taskRecordScopes,
-  taskScopeKey
+  _taskRecordScopes,
+  _taskScopeKey
 } from '../types';
 import { ITaskRepositoryWriter } from '../storage';
 import { AccessContext, subjectOf } from './access';
@@ -194,11 +194,11 @@ function _nextScopes(
   add: ReadonlyArray<ITaskScope>,
   remove: ReadonlyArray<ITaskScope>
 ): ReadonlyArray<ITaskScope> {
-  const removed: Set<string> = new Set(remove.map(taskScopeKey));
+  const removed: Set<string> = new Set(remove.map(_taskScopeKey));
   const out: ITaskScope[] = [];
   const seen: Set<string> = new Set<string>();
   for (const scope of [...current, ...add]) {
-    const key: string = taskScopeKey(scope);
+    const key: string = _taskScopeKey(scope);
     if (!removed.has(key) && !seen.has(key)) {
       seen.add(key);
       out.push(scope);
@@ -241,13 +241,13 @@ export async function changeScopes(
     receiptConverter: core.converters.broker.mutationResult,
     // The policy is told the scope set the task will carry, decided from the record it authorizes
     // against; the writer re-checks that record's revision, so the set it commits is this one.
-    access: (record) => ({ scopes: _nextScopes(taskRecordScopes(record), add, remove) }),
+    access: (record) => ({ scopes: _nextScopes(_taskRecordScopes(record), add, remove) }),
     evaluate: async (current): Promise<TaskResult<CatalogChange>> => {
       const envelope: ITaskEnvelope = current.task.envelope;
       const scopes: ReadonlyArray<ITaskScope> = _nextScopes(envelope.scopes, add, remove);
       const same: boolean =
         scopes.length === envelope.scopes.length &&
-        scopes.every((scope, i) => taskScopeKey(scope) === taskScopeKey(envelope.scopes[i]));
+        scopes.every((scope, i) => _taskScopeKey(scope) === _taskScopeKey(envelope.scopes[i]));
       return ok(
         same
           ? { disposition: 'unchanged' }

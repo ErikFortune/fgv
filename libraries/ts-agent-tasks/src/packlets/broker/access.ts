@@ -15,7 +15,7 @@ import {
   TaskAccessRole,
   TaskAction,
   TaskResult,
-  taskScopeKey
+  _taskScopeKey
 } from '../types';
 import { ok, taskFailure } from './failures';
 
@@ -75,14 +75,14 @@ export class AccessContext {
     this.scopes = params.scopes;
     this.creationScopes = params.creationScopes;
     this.projector = params.projector;
-    this._taskScopeKeys = new Set(params.scopes.map(taskScopeKey));
+    this._taskScopeKeys = new Set(params.scopes.map(_taskScopeKey));
     this._authorization = params.authorization;
     this._logger = params.logger;
   }
 
   /** Whether a scope lies within this view's maximum selectors. */
   public selects(scope: ITaskScope): boolean {
-    return this._taskScopeKeys.has(taskScopeKey(scope));
+    return this._taskScopeKeys.has(_taskScopeKey(scope));
   }
 
   /**

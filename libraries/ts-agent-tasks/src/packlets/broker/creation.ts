@@ -29,7 +29,7 @@ import {
   taskListDetailVersion,
   taskListKind,
   trackedTaskDetailVersion,
-  taskRecordScopes,
+  _taskRecordScopes,
   trackedTaskKind
 } from '../types';
 import { ITaskRepositoryWriter } from '../storage';
@@ -120,18 +120,25 @@ export async function createNative(
   // a concurrent identical creation or resume won — commits nothing and runs again, once, which
   // takes the existing-record path and its checks against the record as committed. The repository
   // is host-supplied, so a second miss is answered rather than retried without bound.
-  const first = await _createOnce(core, ctx, input, list, committedScopes, options?.resume === true);
-  if (first.isSuccess() && first.value === undefined) {
-    return options?.retried === true
-      ? _keptChanging('create')
-      : createNative(core, ctx, input, list, committedScopes, { ...options, retried: true });
-  }
-  return first.onSuccess((created) => ok(created!));
+  // A retried attempt answers a second miss itself, so it never asks for another run.
+  const first = await _createOnce(core, ctx, input, list, committedScopes, options ?? {});
+  return first.isSuccess() && first.value === undefined
+    ? createNative(core, ctx, input, list, committedScopes, { ...options, retried: true })
+    : first.onSuccess((created) => ok(created!));
 }
 
-/** The answer when an operation kept losing the race it retries. */
-function _keptChanging<T>(what: string): TaskResult<T> {
-  return taskFailure<T>(`${what}: the task kept changing while it was authorized; retry`, 'conflict', 'safe');
+/** The answer when an operation kept losing the race it retries, correlated to its request. */
+function _keptChanging<T>(
+  what: string,
+  taskId: TaskId,
+  operationId: ITaskMutationResult['operationId']
+): TaskResult<T> {
+  return taskFailure<T>(
+    `${what} ${taskId}: the task kept changing while it was authorized; retry`,
+    'conflict',
+    'safe',
+    { operationId }
+  );
 }
 
 /** One authorize-then-commit attempt; `undefined` when the task went live under it and it should run again. */
@@ -141,8 +148,9 @@ async function _createOnce(
   input: unknown,
   list: boolean,
   committedScopes: ReadonlyArray<ITaskScope> | undefined,
-  resume: boolean
+  options: { readonly resume?: boolean; readonly retried?: boolean }
 ): Promise<TaskResult<ITaskMutationResult | undefined>> {
+  const resume: boolean = options.resume === true;
   const converted = list
     ? convertRequest<ICreateTrackedTask | ICreateTaskList>(
         core,
@@ -199,7 +207,7 @@ async function _createOnce(
       );
     }
     // A replay is authorized for the scopes the task was committed with, whichever view asks.
-    if (!(await ctx.mayCreate({ ...access, scopes: committedScopes ?? taskRecordScopes(record) }))) {
+    if (!(await ctx.mayCreate({ ...access, scopes: _taskRecordScopes(record) }))) {
       return denied(taskId, 'create', operationId);
     }
     // The parent the request names is authorized again in its role, as the creation was.
@@ -246,7 +254,7 @@ async function _createOnce(
       return propagate(now);
     }
     if (now.value !== undefined) {
-      return ok(undefined);
+      return options.retried === true ? _keptChanging('create', taskId, operationId) : ok(undefined);
     }
     const parentNow = await recheckParent(core, writer, parent, taskId, operationId);
     if (parentNow.isFailure()) {
@@ -473,7 +481,7 @@ function _committed(taskId: TaskId, record: ITaskCommitRecord | undefined): Task
         operation: creation.operation,
         principalKey: creation.principalKey,
         request: creation.request,
-        scopes: taskRecordScopes(record)
+        scopes: _taskRecordScopes(record)
       })
     : _noPending(taskId);
 }
@@ -520,14 +528,14 @@ export async function registerExternal(
       { operationId }
     );
   }
-  const registered = await _registerExternalOnce(core, key.value, request, converted.value.json);
+  const registered = await _registerExternalOnce(core, key.value, request, converted.value.json, retried);
   if (registered.isFailure()) {
     return propagate(registered);
   }
-  // Went live under it: run again, once, which finds the live registration and replays it or
-  // conflicts; a host-supplied repository that misses it twice is answered, not retried.
+  // Went live (or vanished) under it: run again, once, with every check; a retried attempt answers
+  // a second miss itself, so a host-supplied repository that keeps missing is answered, not retried.
   if (registered.value === undefined) {
-    return retried ? _keptChanging('registerExternal') : registerExternal(core, principal, input, true);
+    return registerExternal(core, principal, input, true);
   }
   const read = await core.repository.read(taskId);
   if (read.isFailure()) {
@@ -548,7 +556,8 @@ async function _registerExternalOnce(
   core: BrokerCore,
   principal: string,
   request: IRegisterExternalTask,
-  json: JsonValue
+  json: JsonValue,
+  retried: boolean
 ): Promise<TaskResult<ITaskMutationResult | undefined>> {
   const { taskId, operationId } = request;
   const existing = await core.repository.readCommit(taskId);
@@ -583,14 +592,16 @@ async function _registerExternalOnce(
     parent = { id: request.parentId, role: 'parent', record: read.value };
   }
   return core.gated(async (writer): Promise<TaskResult<ITaskMutationResult | undefined>> => {
-    if (!replaying) {
-      const now = await writer.readCommit(taskId);
-      if (now.isFailure()) {
-        return propagate(now);
-      }
-      if (now.value !== undefined) {
-        return ok(undefined);
-      }
+    // What was read outside the writer must still hold inside it: a registration about to be written
+    // must still be absent, and one about to be replayed must still be live. Otherwise nothing is
+    // committed and the bounded retry runs every check again, from what is there now.
+    const now = await writer.readCommit(taskId);
+    if (now.isFailure()) {
+      return propagate(now);
+    }
+    const absent: boolean = now.value === undefined;
+    if (replaying ? absent : !absent) {
+      return retried ? _keptChanging('registerExternal', taskId, operationId) : ok(undefined);
     }
     const parentNow = await recheckParent(core, writer, parent, taskId, operationId);
     if (parentNow.isFailure()) {

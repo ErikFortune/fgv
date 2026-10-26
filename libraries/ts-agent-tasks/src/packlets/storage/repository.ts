@@ -58,8 +58,8 @@ import {
   TaskResult,
   UpdateCategory,
   isTerminalTaskStatus,
-  taskRecordScopes,
-  taskScopeKey
+  _taskRecordScopes,
+  _taskScopeKey
 } from '../types';
 import {
   ISourceReplayAdmission,
@@ -450,7 +450,7 @@ export class FileTreeTaskRepository implements ITaskRepository {
     }
     return this._gate
       .run(`pendingRegistration ${taskId}`, () => ok(this._readLanded(name, entry)))
-      .onSuccess((landed) => ok(landed.isSuccess() ? taskRecordScopes(landed.value.record) : undefined));
+      .onSuccess((landed) => ok(landed.isSuccess() ? _taskRecordScopes(landed.value.record) : undefined));
   }
 
   /** {@inheritDoc ITaskRepository.capacityStatus} */
@@ -1268,7 +1268,7 @@ export class FileTreeTaskRepository implements ITaskRepository {
     }
     // The draft carries the scopes this registration was authorized for. Adopting a record that
     // landed under other scopes would commit what was never authorized.
-    if (!sameScopes(taskRecordScopes(landed.value.record), taskRecordScopes(draft))) {
+    if (!sameScopes(_taskRecordScopes(landed.value.record), _taskRecordScopes(draft))) {
       return taskFailure(
         `register ${taskId}: its record landed with scopes other than the ones this registration ` +
           `was authorized for; resume it with the scopes it landed with`,
@@ -1953,7 +1953,7 @@ export class FileTreeTaskRepository implements ITaskRepository {
 
 /** Whether two scope lists name the same set. */
 function sameScopes(a: ReadonlyArray<ITaskScope>, b: ReadonlyArray<ITaskScope>): boolean {
-  const left: ReadonlySet<string> = new Set(a.map(taskScopeKey));
-  const right: ReadonlySet<string> = new Set(b.map(taskScopeKey));
+  const left: ReadonlySet<string> = new Set(a.map(_taskScopeKey));
+  const right: ReadonlySet<string> = new Set(b.map(_taskScopeKey));
   return left.size === right.size && [...left].every((k) => right.has(k));
 }

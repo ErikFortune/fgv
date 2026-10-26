@@ -20,7 +20,7 @@ export interface ITaskScope {
  * Shared between the package's packlets; not part of the published surface.
  * @internal
  */
-export function taskScopeKey(scope: ITaskScope): string {
+export function _taskScopeKey(scope: ITaskScope): string {
   return JSON.stringify([scope.namespace, scope.key]);
 }
 

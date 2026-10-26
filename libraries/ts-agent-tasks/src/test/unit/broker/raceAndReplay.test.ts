@@ -12,6 +12,7 @@ import {
   ITaskMutationResult,
   ITaskRepository,
   TaskBroker,
+  TaskId,
   TaskResult
 } from '../../../index';
 import { failWithDetail, succeedWithDetail } from '@fgv/ts-utils';
@@ -24,11 +25,15 @@ import {
   bindWriter,
   brokerHarness,
   op,
+  observation,
   rev,
-  tid
+  succeedTask,
+  tid,
+  track,
+  vendorBinding
 } from '../../helpers/brokerFixtures';
 import { jobKind, registerJob, sourceHarness } from '../../helpers/sourceFixtures';
-import { memoryRoot } from '../../helpers/storageFixtures';
+import { memoryRoot, vendorKind } from '../../helpers/storageFixtures';
 
 const code = (c: string): unknown => expect.objectContaining({ code: c });
 
@@ -318,9 +323,10 @@ describe('retries are bounded when the repository keeps missing the live task', 
     ).toSucceed();
     const broker = TaskBroker.create({ repository: lagging(h.repository), environment: h.env }).orThrow();
     const writer = broker.bind({ principal: 'alice', scopes: [alpha], authorization: h.policy }).orThrow();
-    const again = await writer.createTracked({ taskId: tid('x'), operationId: op('create-x-2'), title: 'x' });
-    expect(again).toFailWithDetail(/kept changing/, code('conflict'));
-    expect(again.detail?.retry).toBe('safe');
+    const operationId = op('create-x-2');
+    const again = await writer.createTracked({ taskId: tid('x'), operationId, title: 'x' });
+    expect(again).toFailWithDetail(/^create x: the task kept changing/, code('conflict'));
+    expect(again.detail).toEqual({ code: 'conflict', retry: 'safe', operationId });
   });
 
   test('an external registration answers conflict after one retry, instead of looping', async () => {
@@ -342,7 +348,8 @@ describe('retries are bounded when the repository keeps missing the live task', 
       binding: h.executor.binding('j1'),
       recovery: 'reattach'
     });
-    expect(again).toFailWithDetail(/kept changing/, code('conflict'));
+    expect(again).toFailWithDetail(/^registerExternal j1: the task kept changing/, code('conflict'));
+    expect(again.detail?.operationId).toBeDefined();
   });
 });
 
@@ -371,5 +378,45 @@ describe('an external replay is idempotent whatever became of its source', () =>
       await detached.registerExternal('host', { ...request, taskId: tid('j2'), operationId: op('r-j2') })
     ).toFailWithDetail(/not an attached source-replay source/, code('unsupported'));
     expect(await detached.registerExternal('host', request)).toSucceed();
+  });
+});
+
+describe('a replay judged outside the writer must still hold inside it', () => {
+  test('a registration that reads as live outside but is absent in the writer is not written unchecked', async () => {
+    const source = await brokerHarness();
+    await track(source.writer, 'parent');
+    const request = {
+      taskId: tid('v'),
+      operationId: op('register-v'),
+      kind: vendorKind,
+      detailVersion: 1,
+      title: 'vendor v',
+      scopes: [alpha],
+      binding: vendorBinding('v'),
+      recovery: 'reattach',
+      parentId: tid('parent'),
+      initialObservation: observation({ status: 'running' })
+    };
+    expect(await source.broker.registerExternal('host', request)).toSucceed();
+    // A second repository where the parent is terminal and `v` does not exist ...
+    const target = await brokerHarness();
+    await track(target.writer, 'parent');
+    await succeedTask(target, target.writer, 'parent');
+    // ... read through a repository whose outside-the-writer read sees `v` live.
+    const inconsistent = new Proxy(target.repository, {
+      get(t: ITaskRepository, key: string | symbol): unknown {
+        if (key === 'readCommit') {
+          return async (id: TaskId) => (id === 'v' ? source.repository.readCommit(id) : t.readCommit(id));
+        }
+        const value = Reflect.get(t, key);
+        return typeof value === 'function' ? value.bind(t) : value;
+      }
+    });
+    const broker = TaskBroker.create({ repository: inconsistent, environment: target.env }).orThrow();
+    expect(await broker.registerExternal('host', request)).toFailWithDetail(
+      /^registerExternal v: the task kept changing/,
+      code('conflict')
+    );
+    expect(await target.repository.readCommit(tid('v'))).toSucceedWith(undefined);
   });
 });
