@@ -669,13 +669,16 @@ under way have drained. It sees only the broker's queue — direct
 turn, around the repository writer, for **every** broker write — bound writers, model tools, source
 passes, deliveries, retention and `cleanup`. `guard` answers any `PromiseLike<Result<T>>`, so
 `AsyncControl.WriteGate` from `@fgv/ts-extras` fits as is — raise it to refuse every broker write
-unrun, pause it to hold them. The section must be started before the guard's answer settles (a gate
-may wait on a pause first). The broker tracks whether the guard ran the section:
+unrun, pause it to hold them. The section must be started before the guard answers (a gate may wait
+on a pause first): one started after the broker observed the answer is refused unrun, and one started
+in the few microtasks between the answer settling and the broker observing it is awaited and
+classified as run. The broker tracks whether the guard ran the section:
 - refused without running it — that failure when its detail converts as an `ITaskFailure`; otherwise
   (a gate typed over plain `Result`) `storage-unavailable`, retry `after-host-action`;
-- answered success, or threw, without running it — `invalid`;
-- ran it, then failed or threw — `storage-unavailable`, retry **`reconcile-first`**: the section may
-  have committed. A section the guard started without awaiting is awaited before the turn ends;
+- answered success or a non-`Result`, or threw, without running it — `invalid`;
+- ran it, then failed, threw or answered a non-`Result`, or the section itself rejected —
+  `storage-unavailable`, retry **`reconcile-first`**: the section may have committed. A section the
+  guard started without awaiting is awaited before the turn ends;
 - ran it twice — the second call is refused unrun.
 
 **The guard must not call the broker.** A broker write started from inside `guard` queues behind

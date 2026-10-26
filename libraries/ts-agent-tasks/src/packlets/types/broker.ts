@@ -357,15 +357,19 @@ export interface IBoundTaskWriter extends IBoundTaskView {
  * - **Not called.** A failure the gate returns is the operation's result when its detail is a valid
  *   task failure; any other failure (a gate typed over plain `Result`) is reported as
  *   `storage-unavailable`, retry `after-host-action`, since nothing was written. A gate that
- *   answers success without calling the section, or throws, is `invalid`.
+ *   answers success or something that is not a `Result` without calling the section, or throws,
+ *   is `invalid`.
  * - **Called.** The section's own result is the operation's result when the gate returns it, or
- *   any success. When the gate then fails or throws, the operation is `storage-unavailable`, retry
+ *   any success. When the gate then fails, throws or answers something that is not a `Result` —
+ *   or the section itself rejects — the operation is `storage-unavailable`, retry
  *   `reconcile-first`: the section may have committed. A section the gate started without awaiting
  *   is awaited before the broker's turn ends.
  * - **Called twice.** The second call is refused without running (`invalid`).
- * - **Called after the gate's answer settled.** Refused without running (`invalid`): the section
- *   must be started before the gate's answer settles, or it would run outside the broker's turn. A
- *   gate may wait — on a pause, say — before starting it, as long as it starts it before settling.
+ * - **Called after the broker observed the gate's answer.** Refused without running (`invalid`): it
+ *   would run outside the broker's turn. The broker observes the answer a few microtasks after it
+ *   settles; a section started inside that window is awaited and classified as called, so
+ *   `reconcile-first` unless the gate answered its result. A gate may wait — on a pause, say —
+ *   before starting it, as long as it starts it before answering.
  *
  * **The gate must not call the broker.** A broker operation started from inside `guard` queues
  * behind the very section the gate is holding and never runs, and every later broker write queues

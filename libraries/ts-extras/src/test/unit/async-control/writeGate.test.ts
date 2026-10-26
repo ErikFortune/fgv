@@ -161,6 +161,17 @@ describe('AsyncControl.WriteGate', () => {
       expect(g.inFlight).toBe(0);
     });
 
+    test("refuses a write that resolves to something that is not a Result, as 'threw', and releases the slot", async () => {
+      const g = gate();
+      expect(await g.guard(async () => 42 as unknown as Result<number>)).toFailWith(
+        /the write did not resolve to a Result/
+      );
+      expect(
+        await g.guardDetailed(async () => undefined as unknown as DetailedResult<number, 'mine'>)
+      ).toFailWithDetail(/did not resolve to a Result/, 'threw');
+      expect(g.inFlight).toBe(0);
+    });
+
     test('lets a write nested inside a guarded write run: nesting only deadlocks against a pause', async () => {
       const g = gate();
       const result = await g.guard(async () => {
@@ -338,6 +349,28 @@ describe('AsyncControl.WriteGate', () => {
       expect(w.calls()).toBe(1);
       w.settle(succeed(9));
       expect(await pending).toSucceedWith(9);
+    });
+
+    test('keeps order across a resume: a write asked while held writes are being woken queues behind them', async () => {
+      const g = gate();
+      const held = (await g.pause(10)).orThrow();
+      const order: string[] = [];
+      const write = (name: string) => async (): Promise<Result<string>> => {
+        order.push(name);
+        return succeed(name);
+      };
+      const a = g.guard(write('a'));
+      const b = g.guard(write('b'));
+      await flush();
+      held.resume();
+      // Synchronously after the resume, before the woken writes have decided again.
+      const c = g.guard(write('c'));
+      expect(g.waiting).toBe(1);
+      expect(await a).toSucceedWith('a');
+      expect(await b).toSucceedWith('b');
+      expect(await c).toSucceedWith('c');
+      expect(order).toEqual(['a', 'b', 'c']);
+      expect(g.waiting).toBe(0);
     });
 
     test('a woken write decides again: a pause taken before its turn holds it once more', async () => {

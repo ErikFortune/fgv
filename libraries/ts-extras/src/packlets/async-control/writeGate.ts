@@ -43,8 +43,9 @@ import {
  * Why a guarded write's outcome came from the gate rather than from the write:
  * - `'raised'` — the gate was raised, when the write asked or while it waited on a pause. The write
  *   was **not** run.
- * - `'threw'` — the write **was** run, and threw or rejected instead of answering a `Result`. Its
- *   side effects may have happened.
+ * - `'threw'` — the write **was** run, and did not answer a `Result`: it threw, rejected, or
+ *   resolved to something else. Its side effects may have happened. One kind covers all three
+ *   because a caller's response is the same — the write ran and its outcome is unknown.
  * @public
  */
 export type WriteGateRefusal = 'raised' | 'threw';
@@ -101,9 +102,13 @@ export interface IWriteGateOptions {
  * it. A write woken from a pause decides again, so a pause taken between the wake and the write's
  * turn holds it once more.
  *
+ * **Order across a resume is kept.** Writes held by a pause start in the order they asked, and a
+ * write that asks while they are being woken — before each has decided again — queues behind
+ * them rather than overtaking them.
+ *
  * **What a guarded write answers.** The write's own result, passed through as the same object.
- * A write that throws synchronously or rejects is answered as a failure (`'threw'`), never as a
- * rejection. The `inFlight` slot is released on every path — success, failure, throw, rejection —
+ * A write that throws synchronously, rejects, or resolves to something that is not a `Result` is
+ * answered as a failure (`'threw'`), never as a rejection or a raw value. The `inFlight` slot is released on every path — success, failure, throw, rejection —
  * before the guard's own result settles.
  *
  * **Call-site rule: a guarded write must not call `guard` on the same gate.** While the gate is
@@ -122,6 +127,8 @@ export class WriteGate {
   private _reason: string | undefined = undefined;
   private _pauses: number = 0;
   private _inFlight: number = 0;
+  /** Writes woken and not yet decided again; a new write queues behind them. */
+  private _waking: number = 0;
   /** Writes waiting on a pause; woken when the last pause ends, or when the gate is raised. */
   private _waiters: Array<() => void> = [];
   /** Pauses waiting for the writes under way to finish; told when `inFlight` reaches 0. */
@@ -252,20 +259,35 @@ export class WriteGate {
    * Admits, holds or refuses `write`. Every branch is decided synchronously, and a write that is
    * admitted is counted before it is called.
    */
-  private _run<R>(
+  private _run<R extends Result<unknown>>(
     write: () => Promise<R>,
-    refuse: (message: string, refusal: WriteGateRefusal) => R
+    refuse: (message: string, refusal: WriteGateRefusal) => R,
+    woken: boolean = false
   ): Promise<R> {
     if (this._reason !== undefined) {
       return Promise.resolve(refuse(`${this._raisedMessage()}; the write was not run`, 'raised'));
     }
-    if (this._pauses > 0) {
-      return new Promise<void>((resolve) => this._waiters.push(resolve)).then(() => this._run(write, refuse));
+    if (this._pauses > 0 || (!woken && this._waking > 0)) {
+      return new Promise<void>((resolve) => this._waiters.push(resolve)).then(() => {
+        this._waking -= 1;
+        const decided = this._run(write, refuse, true);
+        // The last woken write has decided: anything that queued behind the wake goes next.
+        if (this._waking === 0 && this._pauses === 0 && this._waiters.length > 0) {
+          this._wake();
+        }
+        return decided;
+      });
     }
     this._inFlight += 1;
     // The executor runs synchronously, so `write` starts now; a synchronous throw becomes a
     // rejection, which is answered rather than escaped.
     return new Promise<R>((resolve) => resolve(write()))
+      .then((result) =>
+        // A write typed loosely by its caller can resolve to anything; only a Result passes.
+        captureResult(() => result.isSuccess()).isSuccess()
+          ? result
+          : refuse(`write gate: the write did not resolve to a Result`, 'threw')
+      )
       .catch((err: unknown) => refuse(`write gate: the write threw: ${_message(err)}`, 'threw'))
       .finally(() => this._release());
   }
@@ -278,7 +300,9 @@ export class WriteGate {
   }
 
   private _wake(): void {
-    this._waiters.splice(0).forEach((wake) => wake());
+    const woken = this._waiters.splice(0);
+    this._waking += woken.length;
+    woken.forEach((wake) => wake());
   }
 
   /** A handle that ends this one pause, once. */

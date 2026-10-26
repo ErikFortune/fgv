@@ -548,7 +548,10 @@ describe('TaskBroker.create writeGuard', () => {
       await writer.createTracked({ taskId: tid('a'), operationId: op('create-a'), title: 'a' })
     ).toFailWithDetail(/the write guard refused: gate closed/, code('storage-unavailable'));
     expect(kept).toHaveLength(1);
-    expect(await kept[0]()).toFailWithDetail(/started the section after it had returned/, code('invalid'));
+    expect(await kept[0]()).toFailWithDetail(
+      /started the section after the broker had observed its answer/,
+      code('invalid')
+    );
     expect(await repository.read(tid('a'))).toSucceedWith(undefined);
   });
 

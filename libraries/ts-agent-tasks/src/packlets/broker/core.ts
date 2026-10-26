@@ -7,7 +7,6 @@ import { Converters as JsonConverters, JsonObject, JsonValue } from '@fgv/ts-jso
 import { AsyncControl } from '@fgv/ts-extras';
 import {
   Converter,
-  DetailedFailure,
   Hash,
   Result,
   captureAsyncResult,
@@ -112,35 +111,48 @@ export function receiptJson(receipt: ITaskMutationResult | IReassignmentResult):
  * Runs `write` through a host's write guard, keeping a classified result whatever the guard does.
  *
  * @remarks
- * The section is wrapped so the broker knows whether the guard ran it and what it returned:
- * - not run, and the guard refused with a valid task failure as its detail — that failure;
- * - not run, and the guard refused without one (a gate typed over plain `Result`) —
+ * The section is wrapped so the broker knows whether the guard started it and how it settled:
+ * - not started, and the guard refused with a valid task failure as its detail — that failure;
+ * - not started, and the guard refused without one (a gate typed over plain `Result`) —
  *   `storage-unavailable`, retry `after-host-action`: nothing was written;
- * - not run, and the guard answered success — `invalid`: there is no section result to report;
- * - not run, and the guard threw — `invalid`: nothing was written;
- * - run, and the guard then returned the section's own result, or any success — the section's result;
- * - run, and the guard then failed or threw — `storage-unavailable`, retry `reconcile-first`: the
- *   section may have committed, so its outcome is re-read before anything is retried;
+ * - not started, and the guard answered success or something that is not a `Result` — `invalid`:
+ *   there is no section result to report;
+ * - not started, and the guard threw — `invalid`: nothing was written;
+ * - started and fulfilled, and the guard then returned the section's own result, or any success —
+ *   the section's result;
+ * - started, and then the guard failed, threw or answered something that is not a `Result`, or the
+ *   section itself rejected — `storage-unavailable`, retry `reconcile-first`: the section may have
+ *   committed, so its outcome is re-read before anything is retried;
  * - a second call to the section — refused without running it, `invalid`.
  *
  * A section the guard started and did not await is awaited before the turn ends, so the writer is
  * never still held when the next section runs, and its outcome is classified as above. A section
- * the guard tries to start **after** its answer settled is refused without running (`invalid`): it
- * would run outside the queue's turn.
+ * the guard tries to start **after the broker has observed its answer** is refused without running
+ * (`invalid`): it would run outside the queue's turn. Observing lags the answer's settlement by a
+ * few microtasks; a section started inside that window is awaited and classified as started.
  */
 async function _guarded<T>(
   guard: ITaskWriteGuard,
   write: () => Promise<TaskResult<T>>,
   failure: Converter<ITaskFailure>
 ): Promise<TaskResult<T>> {
-  const seen: { ran?: TaskResult<T>; running?: Promise<unknown>; calls: number; closed: boolean } = {
+  const seen: {
+    started: boolean;
+    ran?: TaskResult<T>;
+    running: Promise<unknown>;
+    calls: number;
+    closed: boolean;
+  } = {
+    started: false,
+    // Replaced by the section's own promise once the guard starts it.
+    running: Promise.resolve(),
     calls: 0,
     closed: false
   };
   const once = async (): Promise<TaskResult<T>> => {
     if (seen.closed) {
       return taskFailure<T>(
-        `broker: the write guard started the section after it had returned; it was not run`,
+        `broker: the write guard started the section after the broker had observed its answer; it was not run`,
         'invalid',
         'after-host-action'
       );
@@ -153,6 +165,8 @@ async function _guarded<T>(
         'after-host-action'
       );
     }
+    // Marked before the section is called: a section that rejects may still have committed.
+    seen.started = true;
     const running: Promise<TaskResult<T>> = write().then((result) => {
       seen.ran = result;
       return result;
@@ -165,20 +179,34 @@ async function _guarded<T>(
   // From here on the turn is ending: a section started now would run outside it.
   seen.closed = true;
   // A section the guard started but did not wait for still holds the writer: wait for it here.
-  if (seen.running !== undefined) {
-    await captureAsyncResult(() => seen.running!);
-  }
-  const written: TaskResult<T> | undefined = seen.ran;
-  if (written !== undefined) {
-    if (outcome.isSuccess() && (outcome.value === written || outcome.value.isSuccess())) {
+  const settled: Result<unknown> = await captureAsyncResult(() => seen.running);
+  // Whether the guard's answer is a success; a failure here means it threw or is not a Result.
+  const answered: Result<boolean> = outcome.onSuccess((value) => captureResult(() => value.isSuccess()));
+  if (seen.started) {
+    const written: TaskResult<T> | undefined = seen.ran;
+    if (
+      written !== undefined &&
+      answered.isSuccess() &&
+      (answered.value || outcome.orDefault() === written)
+    ) {
       return written;
     }
-    const why: string = outcome.isFailure()
+    const guardDid: string = outcome.isFailure()
       ? `threw: ${outcome.message}`
+      : answered.isFailure()
+      ? `answered something that is not a Result`
+      : answered.value
+      ? `answered success`
       : `failed: ${outcome.value.message}`;
+    const own: string =
+      written === undefined
+        ? `rejected: ${String(settled.message)}`
+        : written.isSuccess()
+        ? 'success'
+        : written.message;
     return taskFailure<T>(
-      `broker: the write guard ${why} after the section ran (its own outcome: ` +
-        `${written.isSuccess() ? 'success' : written.message}); re-read what it may have committed`,
+      `broker: the write guard ${guardDid} after the section ran (its own outcome: ${own}); ` +
+        `re-read what it may have committed`,
       'storage-unavailable',
       'reconcile-first'
     );
@@ -186,6 +214,13 @@ async function _guarded<T>(
   if (outcome.isFailure()) {
     return taskFailure<T>(
       `broker: the write guard threw: ${outcome.message}`,
+      'invalid',
+      'after-host-action'
+    );
+  }
+  if (answered.isFailure()) {
+    return taskFailure<T>(
+      `broker: the write guard answered something that is not a Result without running the section`,
       'invalid',
       'after-host-action'
     );
@@ -198,10 +233,12 @@ async function _guarded<T>(
       'after-host-action'
     );
   }
-  // A refusal keeps its classification only when it carries a valid task failure; a gate typed over
-  // plain Result refuses without one. Either way nothing was written.
+  // The section was never started, so nothing was written. A refusal keeps its classification only
+  // when it carries a valid task failure; a gate typed over plain Result refuses without one. The
+  // check is structural and the converter validates the detail, so a failure built by another copy
+  // of ts-utils is read the same way an `instanceof` check would miss.
   const classified: Result<ITaskFailure> =
-    result instanceof DetailedFailure ? failure.convert(result.detail) : fail('no task detail');
+    'detail' in result ? failure.convert(result.detail) : fail('no task detail');
   return classified.isSuccess()
     ? failWithDetail<T, ITaskFailure>(result.message, classified.value)
     : taskFailure<T>(
