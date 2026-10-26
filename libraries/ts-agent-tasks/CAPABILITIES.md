@@ -796,10 +796,13 @@ more }`, **counts only** — an update id embeds its task id, so a list would na
 may not read; the exact ids stay in the subscription's history for the trusted host. Ends up to
 `limit` owed updates the subscription holds that are withheld now. Not authorized per task, but by
 the subscription as a whole, and only when all three hold: the binding's principal **registered**
-the subscription; the binding's selectors **cover its whole selection**; and the policy grants
-**`dispose-obligation`** asked for the selection's scopes, naming no task. Otherwise
-`not-found-or-denied`. (Without the first two, "withheld" would be judged under whatever binding was
-brought, and the narrower it was the more it could end.) Each withheld decision is re-checked in the
+the subscription; the binding's selectors **cover its whole selection**; and the binding's policy
+grants **both `acknowledge` and `dispose-obligation`**, each asked for the selection's scopes naming
+no task — only a binding that could have acknowledged these obligations may end them unseen.
+Otherwise `not-found-or-denied`. **The binding's policy decides what counts as withheld**: the checks
+refuse a binding narrower on principal, selectors or those grants, but not one merely narrower about
+a particular task than the consumer's real policy — so call it only through a binding built with
+**the consumer's own policy**. Each withheld decision is re-checked in the
 writer before anything is written. An id an unexpired, unacknowledged receipt names is counted in
 `pinned`, not disposed; `more` says the listing went past `limit`.
 

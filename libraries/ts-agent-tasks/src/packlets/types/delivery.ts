@@ -566,11 +566,17 @@ export interface IBoundTaskDelivery {
    * @remarks
    * Not authorized per task — an obligation the principal can never be shown could otherwise never
    * end, and would hold its task's archive for good — but by the subscription as a whole, and only
-   * when all three hold: the binding's principal is the one that registered the subscription; every
-   * scope of the subscription's selection lies within the binding's selectors (the rule `subscribe`
-   * applied); and the policy grants `dispose-obligation` asked for those scopes, with no task named.
-   * Each refusal is the same `not-found-or-denied`. Without the first two, "withheld" would be judged
-   * under whatever binding a caller brought, and the narrower that binding the more it could end.
+   * when all of these hold: the binding's principal is the one that registered the subscription;
+   * every scope of the subscription's selection lies within the binding's selectors (the rule
+   * `subscribe` applied); and the binding's policy grants both `acknowledge` and `dispose-obligation`,
+   * each asked for those scopes with no task named — only a binding that could have acknowledged
+   * these obligations may end them unseen. Each refusal is the same `not-found-or-denied`.
+   *
+   * **The binding's policy decides what counts as withheld.** These checks refuse a binding that is
+   * narrower on principal, on selectors, or in the grants it is asked for; they cannot tell a policy
+   * that withholds a task for good from one that is merely narrower about that task than the
+   * consumer's real policy. So call this only through a binding built with **the consumer's own
+   * policy**: anything that policy withholds is what the consumer itself can no longer be shown.
    *
    * A binding for another principal (a host-registered subscription an agent drains) cannot use this;
    * the registering principal can, and its own view decides what is withheld from it.

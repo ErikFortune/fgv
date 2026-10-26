@@ -244,9 +244,10 @@ export class TaskDeliveryPump {
    * One render of one owed revision the principal may see and acknowledge now; withheld ones are
    * never presented. An oversize revision is skipped while a smaller owed one fits. When none fits —
    * the candidate renders abbreviated or not at all — the receipt is released and the call **fails
-   * loudly**, naming the revision and the owed ids on the first page of `pending`, rather than
-   * presenting it as if delivered. It fails again on every call until the host raises
-   * `budget.maxChars` or ends those ids (`TaskBroker.dispose`). At most 1,000 owed updates are read
+   * loudly** rather than presenting it as if delivered. An abbreviated candidate is named with only
+   * its own update ids, never another task's; one omitted outright names nothing, and the message
+   * advises raising `maxChars`. It fails again on every call until the host raises `budget.maxChars`
+   * or ends the candidate's ids (`TaskBroker.dispose`). At most 1,000 owed updates are read
    * per preparation, so a subscription whose first 1,000 are all withheld presents nothing until
    * {@link TaskDeliveryPump.disposeWithheld} ends some.
    */

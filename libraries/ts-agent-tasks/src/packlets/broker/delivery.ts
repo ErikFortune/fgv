@@ -387,16 +387,18 @@ export class BoundTaskDelivery implements IBoundTaskDelivery {
     if (subscription.isFailure()) {
       return propagate(subscription);
     }
-    // "Withheld" is judged under this binding, so only the binding that owns the whole subscription
-    // may act on it: the registering principal, with selectors covering the selection — otherwise a
-    // narrower binding would withhold, and so end, more. Then the policy grants it as a grant of its
-    // own, asked for the selection as a whole — never per task, since these are tasks it may not see.
+    // "Withheld" is judged under this binding, so only a binding that could have discharged these
+    // obligations may end them unseen: the registering principal, with selectors covering the
+    // selection, whose policy grants both `acknowledge` and `dispose-obligation` for the selection —
+    // otherwise a narrower binding, on either axis, would withhold and so end more. Both are asked for
+    // the selection as a whole, never per task, since these are tasks it may not see.
     // Bound to a retained subscription; records are never removed.
     const found: ITaskSubscription = subscription.value!;
     const scopes: ReadonlyArray<ITaskScope> = found.selection.scopes;
     if (
       found.principalKey !== this._access.principal ||
       !scopes.every((scope) => this._access.selects(scope)) ||
+      !(await this._access.allows({ action: 'acknowledge', role: 'subject', scopes })) ||
       !(await this._access.allows({ action: 'dispose-obligation', role: 'subject', scopes }))
     ) {
       return taskFailure(

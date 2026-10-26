@@ -479,6 +479,18 @@ describe('only the binding that owns the whole subscription may end what it with
     });
   });
 
+  test('the same principal and selectors under a policy that does not grant acknowledge is refused', async () => {
+    const before = await aliceOwes();
+    // Denies only acknowledging: everything is withheld from it, and dispose-obligation is granted.
+    const noAck: TestPolicy = new TestPolicy();
+    noAck.deny.push((r) => r.action === 'acknowledge');
+    const narrow = h.broker.bindDelivery({ ...binding(h), authorization: noAck }).orThrow();
+    expect((await narrow.pending({ limit: 200 })).orThrow().withheld).toBe(2);
+    await refused(narrow);
+    expect(await aliceOwes()).toEqual(before);
+    expect((await consumerRecord(h.repository, 's1')).disposed).toEqual([]);
+  });
+
   test('a narrower policy that does not grant dispose-obligation cannot end what it withholds', async () => {
     const before = await aliceOwes();
     // Reads only: everything is withheld from it, and it is not allowed to end any of it.
@@ -494,10 +506,12 @@ describe('only the binding that owns the whole subscription may end what it with
     const policy = h.policy;
     h.policy.denyOn('acknowledge', 'a1');
     (await deliveryOf(h, 's1').disposeWithheld({ reason: 'x' })).orThrow();
-    const asked = policy.calls.filter((c) => c.action === 'dispose-obligation');
-    expect(asked).toEqual([expect.objectContaining({ role: 'subject', scopes: [alpha] })]);
-    expect(asked[0].task).toBeUndefined();
-    expect(asked[0].reference).toBeUndefined();
+    for (const action of ['acknowledge', 'dispose-obligation'] as const) {
+      const asked = policy.calls.filter((c) => c.action === action && c.scopes !== undefined);
+      expect(asked).toEqual([expect.objectContaining({ role: 'subject', scopes: [alpha] })]);
+      expect(asked[0].task).toBeUndefined();
+      expect(asked[0].reference).toBeUndefined();
+    }
   });
 
   test("a hidden task's id never appears in anything disposeWithheld answers", async () => {
