@@ -125,12 +125,25 @@ named test failure.
 
 ## Gates
 
-Gate results are recorded in the PR body and in the session report. On the committed tree before
-the docs commit:
+These ran on the tree combined with `origin/integration/asks` @ `da35380ee`, which by then included
+#759 and the #760 promotion. They ran in the foreground from the repo root, with per-worktree logs in
+`.gate-logs/`. Each was graded by exit code and by
+`grep -acE 'not met|Operations failed|error TS|Jest tests? failed'`, which must be 0, and by
+`grep -aiE warning`, which must show only the tracked-symlink notice.
 
-- `rushx build`, `lint` and `test` pass at 100% in ts-extras and in ts-agent-tasks.
+| Gate | Exit | Error grep | Warning grep |
+|---|---|---|---|
+| `rush install` | 0 | — | — |
+| `rush change --verify --target-branch origin/integration/asks` | 0 | — | — (both change files found) |
+| `rush rebuild` | 0 | 0 | symlink notice only; `SUCCESS: 39 operations`, 39 `completed successfully` |
+| `rush test` | 0 | 0 | symlink notice only; `SUCCESS: 38 operations`, 38 `completed successfully`; no NUL padding |
+| ts-extras `rushx build` / `lint` / `test` | 0 / 0 / 0 | 0 / 0 / 0 | 0 / 0 / 0; coverage 100/100/100/100 |
+| ts-agent-tasks `rushx build` / `lint` / `test` | 0 / 0 / 0 | 0 / 0 / 0 | 0 / 0 / 0; coverage 100/100/100/100 |
+| prettier 2.8.8 `--check` on every touched file | 0 | — | — (three TS files reformatted before the docs commit; no `--write` on markdown) |
+| `generate-capability-feed.mjs` then `--check` | 0 / 0 | — | 0 stale |
+| `verify-capability-docs.mjs` | 0 | — | router 23,730/24,000 chars, 0 failed |
 
-Repo-wide `rush install`, `change --verify`, `rebuild` and `test` were run after the final commit.
+None of the known load-sensitive tests failed, so no package re-run was needed.
 
 ## Brief deltas
 
