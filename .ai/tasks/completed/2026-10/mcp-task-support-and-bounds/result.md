@@ -223,3 +223,13 @@ C2).
 | **P3.2** `adaptMcpTools` used `mapResults(...).orDefault([])`, which would empty the whole catalog silently if a failure ever got through. | `_adaptOne` returns a plain `IAdaptOutcome` again, and `adaptMcpTools` loops over the descriptors directly. This reverts the round-1 P3.4 chaining of `_adaptOne`, because the two preferences conflict here. Each step's failure is a different skip kind; a single chain can carry the kind only as a failure detail, which is typed optional, and it ends in a `Result` that cannot fail. The two checks are therefore kept apart, with a comment saying why. The `listMcpTools` chain from round 1 is unchanged. | the existing skip-kind tests | — |
 
 One more change: `_isStandaloneStream` checks `init?.method === 'GET'` inline, so TypeScript narrows `init` and no branch is left unreachable.
+
+### Round-2 gates
+
+Run on `b9ed8dcba`. `origin/integration/asks` had not moved since the round-1 merge.
+
+- `change --verify`: exit 0. Feed `--check` and `verify-capability-docs`: both pass.
+- `rush rebuild`: exit 0, `SUCCESS: 39 operations`, 0 errors. The only warning is the symlink notice.
+- `rush test`: exit 0, `SUCCESS: 38 operations`, 0 errors. The only warning is the symlink notice. No load-sensitive test failed.
+- `ts-extras-mcp` `rushx build` / `lint` / `test`: every exit 0, 0 errors, 0 warnings, 100% coverage.
+- `ts-extras` and `samples/testbed` were not touched this round. The repo-wide gates above cover them.
