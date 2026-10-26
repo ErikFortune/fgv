@@ -150,7 +150,8 @@ export interface ISdkProgress {
  */
 export interface ISdkRequestOptions {
   readonly timeout?: number;
-  readonly signal?: AbortSignal;
+  /** Always present: the per-call signal `runSdkRequest` aborts, never the caller's own. */
+  readonly signal: AbortSignal;
   readonly onprogress?: (progress: ISdkProgress) => void;
   readonly resetTimeoutOnProgress?: boolean;
   readonly maxTotalTimeout?: number;

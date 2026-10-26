@@ -36,6 +36,7 @@ import {
 } from '@fgv/ts-utils';
 
 import { type IMcpProgress, type IMcpRequestOptions, type McpFailureReason } from './model';
+import { type IMcpRequestContext, mcpRequestContext } from './requestContext';
 import { type ISdkProgress, type ISdkRequestOptions, isServerAuthoredError, makeAbortReason } from './sdk';
 
 /**
@@ -126,11 +127,12 @@ function _toProgress(raw: ISdkProgress): IMcpProgress {
   };
 }
 
-function _toSdkOptions(options: IMcpRequestOptions, signal: AbortSignal | undefined): ISdkRequestOptions {
+function _toSdkOptions(options: IMcpRequestOptions, signal: AbortSignal): ISdkRequestOptions {
   const { timeoutMs, onProgress, resetTimeoutOnProgress, maxTotalTimeoutMs } = options;
   return {
     ...(timeoutMs !== undefined ? { timeout: timeoutMs } : {}),
-    ...(signal !== undefined ? { signal } : {}),
+    // Always the per-call signal, so a failure the egress reports can stop the request.
+    signal,
     // Only pass a progress callback when one was given: its presence is what makes the SDK ask
     // the server for progress.
     ...(onProgress !== undefined ? { onprogress: (raw: ISdkProgress) => onProgress(_toProgress(raw)) } : {}),
@@ -150,6 +152,13 @@ function _toSdkOptions(options: IMcpRequestOptions, signal: AbortSignal | undefi
  * by re-reading `signal.aborted` after the `await`, which a later abort could have flipped. The
  * caller's listener is removed when the request settles, so a long-lived signal (a whole turn's)
  * does not accumulate one per call; the SDK's own listener lands on the per-call signal instead.
+ *
+ * **Failure from the egress.** The SDK call runs inside {@link mcpRequestContext}, whose
+ * {@link IMcpRequestContext.fail} aborts the per-call controller with a second, distinct reason
+ * object and records the classification to report. The egress `fetch` uses it when a response body
+ * it is carrying ends past the guarded fetch's `maxResponseBytes` — a failure the SDK would
+ * otherwise report only to `onerror`, leaving the request pending. Once the request has settled,
+ * `fail` does nothing.
  *
  * @param prefix - Prepended to every failure message.
  * @param options - The caller's options, if any.
@@ -178,14 +187,29 @@ export async function runSdkRequest<T>(
   }
 
   const abortReason = makeAbortReason();
+  const egressReason = makeAbortReason();
   const controller = new AbortController();
   const onAbort = (): void => controller.abort(abortReason);
   callerSignal?.addEventListener('abort', onAbort, { once: true });
 
-  const sdkOptions = _toSdkOptions(options ?? {}, callerSignal !== undefined ? controller.signal : undefined);
+  let settled = false;
+  let egressFailure: { readonly reason: McpFailureReason; readonly message: string } = {
+    reason: { kind: 'transport' },
+    message: ''
+  };
+  const context: IMcpRequestContext = {
+    fail: (reason, message) => {
+      if (!settled && !controller.signal.aborted) {
+        egressFailure = { reason, message };
+        controller.abort(egressReason);
+      }
+    }
+  };
+
+  const sdkOptions = _toSdkOptions(options ?? {}, controller.signal);
   return (
     Promise.resolve()
-      .then(() => request(sdkOptions))
+      .then(() => mcpRequestContext.run(context, () => request(sdkOptions)))
       .then(
         (value) => succeedWithDetail<T, McpFailureReason>(value),
         (err: unknown) => {
@@ -194,6 +218,12 @@ export async function runSdkRequest<T>(
               kind: 'aborted'
             });
           }
+          if (err === egressReason) {
+            return failWithDetail<T, McpFailureReason>(
+              `${prefix}: ${egressFailure.message}`,
+              egressFailure.reason
+            );
+          }
           const reason = classify(err);
           return failWithDetail<T, McpFailureReason>(`${prefix}: ${failureText(err, reason)}`, reason);
         }
@@ -201,6 +231,9 @@ export async function runSdkRequest<T>(
       // An abort that lands after the SDK settled but before this listener is removed still makes the
       // SDK send `notifications/cancelled` for a request that already completed. The protocol lets a
       // server ignore a cancellation for an unknown or finished request, so this is harmless.
-      .finally(() => callerSignal?.removeEventListener('abort', onAbort))
+      .finally(() => {
+        settled = true;
+        callerSignal?.removeEventListener('abort', onAbort);
+      })
   );
 }

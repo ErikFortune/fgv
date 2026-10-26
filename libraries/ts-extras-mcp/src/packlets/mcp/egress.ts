@@ -31,6 +31,7 @@ import { SaferFetch } from '@fgv/ts-extras';
 
 import { type McpFailureReason, type McpFetch } from './model';
 import { printable } from './request';
+import { type IMcpRequestContext, mcpRequestContext } from './requestContext';
 import { type McpOAuthClientProvider } from './sdkTypes';
 import { classifySdkError, makeUnauthorizedError, readResourceMetadataUrl } from './sdk';
 
@@ -77,6 +78,48 @@ function _isLoopbackHost(hostname: string): boolean {
  */
 function _acceptableAuthorizationUrl(url: URL): boolean {
   return url.protocol === 'https:' || (url.protocol === 'http:' && _isLoopbackHost(url.hostname));
+}
+
+/**
+ * The limit and the (fixed-text) message of a body read failure that is a guarded fetch's
+ * `maxResponseBytes` refusal, or `undefined` for any other failure.
+ */
+function _tooLarge(err: unknown): { readonly limit: number; readonly message: string } | undefined {
+  if (!(err instanceof SaferFetch.GuardedFetchError)) {
+    return undefined;
+  }
+  const reason = err.reason;
+  return reason.kind === 'too-large' ? { limit: reason.limit, message: err.message } : undefined;
+}
+
+/**
+ * Passes `body` through chunk by chunk as the reader asks for it, calling `onError` with whatever a
+ * read of the upstream fails with before the stream errors with it. Nothing is read ahead.
+ */
+function _observedBody(
+  body: ReadableStream<Uint8Array>,
+  onError: (err: unknown) => void
+): ReadableStream<Uint8Array> {
+  const reader = body.getReader();
+  return new ReadableStream<Uint8Array>(
+    {
+      pull: async (controller): Promise<void> => {
+        const read = await reader.read().catch((err: unknown) => {
+          onError(err);
+          throw err;
+        });
+        if (read.done) {
+          controller.close();
+          return;
+        }
+        controller.enqueue(read.value);
+      },
+      cancel: async (reason: unknown): Promise<void> => {
+        await reader.cancel(reason).catch(() => undefined);
+      }
+    },
+    { highWaterMark: 0 }
+  );
 }
 
 /**
@@ -222,11 +265,16 @@ function _gateInteractive(consumer: McpOAuthClientProvider, isOpen: () => boolea
  * — passes through it, so per-session protections live in one place and apply identically
  * whichever `fetch` is underneath.
  *
- * The wrapper never alters a response, and rethrows every rejection unchanged, so the SDK — and
- * the classifier after it — sees exactly what the underlying `fetch` produced. It alters a request
- * in one way only: it **applies** the consumer's static headers, and only to a request for the MCP
- * endpoint's origin. The SDK is not given them, so a request to any other origin (in practice, the
- * authorization server the MCP server named) never carries them.
+ * The wrapper rethrows every rejection unchanged, so the SDK — and the classifier after it — sees
+ * exactly what the underlying `fetch` produced. It alters a request in one way only: it **applies**
+ * the consumer's static headers, and only to a request for the MCP endpoint's origin. The SDK is not
+ * given them, so a request to any other origin (in practice, the authorization server the MCP server
+ * named) never carries them.
+ *
+ * It alters a response in one way only: an SSE answer (`text/event-stream`) is returned with its body
+ * passed through an observer, a new `Response` with the same status, status text and headers. Every
+ * chunk and every read failure reaches the SDK unchanged. The observer exists for one failure the SDK
+ * mishandles — see {@link McpHttpEgress._noteOversizedBody}.
  * @internal
  */
 export class McpHttpEgress {
@@ -304,6 +352,9 @@ export class McpHttpEgress {
   private async _send(url: string | URL, init: RequestInit | undefined): Promise<Response> {
     const underlying = this._underlying ?? globalThis.fetch;
     const target = new URL(String(url));
+    // Read before the first `await`: the request this fetch carries, when one of this package's
+    // operations sent it.
+    const request = mcpRequestContext.getStore();
     // Called inside `then`, so a consumer `fetch` that throws rather than rejecting is still seen.
     const response = await Promise.resolve()
       .then(() => underlying(url, this._withStaticHeaders(target, init)))
@@ -312,7 +363,72 @@ export class McpHttpEgress {
         throw err;
       });
     this._noteChallenge(target, response);
-    return response;
+    return this._observeEventStream(response, this._isEventStreamGet(target, init), request);
+  }
+
+  /** Whether a request is the SDK's standalone `GET` event stream: exactly `GET` on the endpoint URL. */
+  private _isEventStreamGet(target: URL, init: RequestInit | undefined): boolean {
+    return init?.method === 'GET' && target.href === this._endpoint.href;
+  }
+
+  /**
+   * Returns an SSE answer with its body observed by {@link McpHttpEgress._noteOversizedBody}; any
+   * other response, and any response whose head cannot be read, unchanged.
+   */
+  private _observeEventStream(
+    response: Response,
+    isEventStreamGet: boolean,
+    request: IMcpRequestContext | undefined
+  ): Response {
+    // A consumer `fetch` can return anything shaped like a response; one whose head cannot be read
+    // is handed back as it came, for the SDK to deal with.
+    const body = captureResult(() =>
+      response.body !== null && String(response.headers.get('content-type')).startsWith('text/event-stream')
+        ? response.body
+        : undefined
+    ).orDefault(undefined);
+    if (body === undefined) {
+      return response;
+    }
+    return new Response(
+      _observedBody(body, (err) => this._noteOversizedBody(err, isEventStreamGet, request)),
+      { status: response.status, statusText: response.statusText, headers: response.headers }
+    );
+  }
+
+  /**
+   * Reports an SSE body that the guarded fetch's `maxResponseBytes` cut off.
+   *
+   * @remarks
+   * The SDK reads a `POST`'s SSE answer detached from the request it answers, and an error reading it
+   * goes only to the transport's `onerror`, wrapped in a new message: the request itself is never
+   * rejected, and would wait out its whole timeout. So for a `POST`, the request the body belongs to
+   * — the one whose context the fetch ran in — is failed here, as `egress-blocked` with reason
+   * `'too-large'`, exactly as a refused JSON answer is classified. The session stays usable.
+   *
+   * The standalone `GET` event stream has no request to fail. The SDK reconnects it at once, and the
+   * new response is counted from zero, so the cap bounds each connection rather than the session.
+   * Both cases are logged at `detail`, by the limit only, so the cut-off is never silent.
+   */
+  private _noteOversizedBody(
+    err: unknown,
+    isEventStreamGet: boolean,
+    request: IMcpRequestContext | undefined
+  ): void {
+    const tooLarge = _tooLarge(err);
+    if (tooLarge === undefined) {
+      return;
+    }
+    const { limit } = tooLarge;
+    if (isEventStreamGet) {
+      this._logger.detail(
+        `mcp: the server event stream exceeded the egress guard's maxResponseBytes (${limit} bytes); ` +
+          'the SDK reconnects it'
+      );
+      return;
+    }
+    this._logger.detail(`mcp: a response exceeded the egress guard's maxResponseBytes (${limit} bytes)`);
+    request?.fail({ kind: 'egress-blocked', reason: 'too-large' }, tooLarge.message);
   }
 
   /**
@@ -375,10 +491,7 @@ export class McpHttpEgress {
       return;
     }
     // The SDK opens the stream with exactly `method: 'GET'` on the endpoint URL.
-    const what =
-      init?.method === 'GET' && target.href === this._endpoint.href
-        ? 'the server event stream was'
-        : 'an HTTP request was';
+    const what = this._isEventStreamGet(target, init) ? 'the server event stream was' : 'an HTTP request was';
     this._logger.detail(printable(`mcp: ${what} refused by the egress guard (${reason.reason})`));
   }
 }

@@ -25,7 +25,7 @@
  * @packageDocumentation
  */
 
-import { type Logging } from '@fgv/ts-utils';
+import { type Logging, type StringOneOf } from '@fgv/ts-utils';
 import { type AiAssist, type SaferFetch } from '@fgv/ts-extras';
 import { type JsonSchema, type JsonValue } from '@fgv/ts-json-base';
 
@@ -553,19 +553,29 @@ export interface IMcpToolAnnotations {
 }
 
 /**
+ * Every MCP `Tool.execution.taskSupport` value, as a runtime list — the vocabulary of the SDK's own
+ * `ToolExecutionSchema`. {@link McpTaskSupport} is derived from it, so the two cannot diverge.
+ * @public
+ */
+export const MCP_TASK_SUPPORT_VALUES = ['forbidden', 'optional', 'required'] as const;
+
+/**
  * Whether a tool may, must or must not be invoked as an MCP task (task-augmented execution) — the
  * MCP `Tool.execution.taskSupport` vocabulary. Per the MCP spec an absent value means `'forbidden'`.
  * @public
  */
-export type McpTaskSupport = 'forbidden' | 'optional' | 'required';
+export type McpTaskSupport = StringOneOf<typeof MCP_TASK_SUPPORT_VALUES>;
 
 /**
  * Normalized MCP `Tool.execution` — the tool's execution metadata.
  *
  * @remarks
  * Validated like {@link IMcpToolAnnotations}: each known field is converted on its own, and an
- * unknown or malformed value is dropped (and logged at `info`), never failing discovery and never
- * propagated raw.
+ * unknown or malformed value that reaches this package is dropped (and logged at `info`), never
+ * failing discovery and never propagated raw. **Through the SDK, though, an unknown or malformed
+ * value fails the whole `tools/list` page as `'protocol'`** before it reaches this package: the SDK
+ * parses each page against its own schema, whose `execution` is closed. Only a value that gets past
+ * that parse is dropped and logged.
  * @public
  */
 export interface IMcpToolExecution {

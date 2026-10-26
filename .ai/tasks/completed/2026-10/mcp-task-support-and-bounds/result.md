@@ -56,7 +56,7 @@ Resolves personaility#689 and personaility#690. Base `integration/asks`; PR #TBD
 |---|---|---|
 | `maxResponseBytes` | `createGuardedFetch` → `_validMaxResponseBytes` | not positive and finite: creation fails (`unknown` outcome → `Failure`) |
 | `maxResponseBytes` | `_capBody`, on the final response's head, after the response-headers guard | declared `Content-Length` > cap: the call rejects with `GuardedFetchError` `'too-large'` (`bytesRead: 0`, `declared`), and the body is cancelled unread |
-| `maxResponseBytes` | `_countingBody` `pull`, once per chunk the consumer asks for | count > cap: chunks already delivered stay delivered (≤ cap bytes in total); the crossing chunk is withheld; the upstream is cancelled (releasing the connection); then the stream errors with `'too-large'` (`bytesRead` includes the crossing chunk). Through MCP, the SDK's read fails and the request is `egress-blocked` / `'too-large'`, for an SSE or a JSON answer alike (pinned in `egress.test.ts`) |
+| `maxResponseBytes` | `_countingBody` `pull`, once per chunk the consumer asks for | count > cap: chunks already delivered stay delivered (≤ cap bytes in total); the crossing chunk is withheld; the upstream is cancelled (releasing the connection); then the stream errors with `'too-large'` (`bytesRead` includes the crossing chunk). Through MCP: a JSON answer's read rejects the request with the error itself → `egress-blocked` / `'too-large'`. An SSE answer's read error the SDK sends only to `onerror`, so the package egress observes the SSE body and fails the request it belongs to (review round 1) → `egress-blocked` / `'too-large'`, promptly, session usable. On the standalone `GET` stream it ends that connection; logged at `detail`; the SDK reconnects with a fresh count (pinned in `egress.test.ts`) |
 | `maxPages`, `maxTotalMs` | `listMcpTools` → `_validateListingBounds`, before the deadline exists or any page is sent | `'invalid-options'`, nothing sent |
 | `maxPages` | `_listPages`, after each page's tools are accumulated | page `maxPages` still carries a `nextCursor`: fail `'limit-exceeded'` / `maxPages`; no further page is requested; accumulated tools discarded. Exactly `maxPages` pages succeed |
 | `maxTotalMs` | `_ListingDeadline` timer, on the signal every page is sent with | fires during a page: the page is aborted (the SDK sends `notifications/cancelled`; pinned), and its `'aborted'` failure is reported as `'limit-exceeded'` / `maxTotalMs` |
@@ -127,10 +127,11 @@ The pre-existing fixtures that pinned the old skip shape (`shapes.test.ts` ×2, 
   only the last page's tools. A tool on an earlier page with an `outputSchema` is then called without
   the SDK's structured-content check, and a task-required tool on an earlier page is not refused by the
   SDK's guard (`adaptMcpTools` now skips it either way). Pre-existing; not in this stream's scope.
-- **`maxResponseBytes` is per HTTP response.** Over MCP that includes the standalone `GET` event
-  stream, which lives for the session, so its total over the session counts against the cap.
-  Documented in both READMEs/CAPABILITIES; a per-message bound would need SSE parsing and is not
-  offered.
+- **`maxResponseBytes` is per HTTP response.** ~~Over MCP that includes the standalone `GET` event
+  stream, which lives for the session, so its total over the session counts against the cap.~~
+  Corrected in review round 1: the SDK reconnects the `GET` stream after each overflow, and each new
+  response is counted from zero, so the cap bounds each connection. A per-message bound would need
+  SSE parsing and is not offered.
 - **`tools/list_changed` rate bound** (#690's third bullet) is not addressed: the issue says any one of
   its options closes it, and the brief did not ask for it.
 
@@ -177,3 +178,25 @@ warnings with `grep -aiE warning`.
   - `libraries/ts-extras/CAPABILITIES.md`
 - `ts-extras.api.md` merged automatically.
 - The gates above ran on this branch alone, not on the combined tree.
+
+## Review round 1
+
+Findings from the orchestrator's independent review of `365a0f150`, with the reviewer's probes
+(`httpProbe2.js`, `getProbe.js`). The branch first took `origin/integration/asks` (#755, #756);
+the conflicts were all ledger, index and feed lines.
+
+| finding | fix | test | red before the fix |
+|---|---|---|---|
+| **P1** An SSE `POST` answer with no `Content-Length` that passes the cap mid-stream left the request pending until its timeout. The SDK's `_handleSseStream` sends the read error only to `onerror`, wrapped in a new `Error`. The earlier "SSE" test only reached the declared-`Content-Length` path. | `runSdkRequest` runs each SDK call inside an `AsyncLocalStorage` request context (`requestContext.ts`). It always hands the SDK a per-call signal and exposes `fail(reason, message)`, which aborts that signal with a distinct reason object. The egress observes each `text/event-stream` body. When a read fails with a `'too-large'` `GuardedFetchError`, it calls the context's `fail` for a `POST`, so the request fails at once as `egress-blocked` / `'too-large'`, the SDK sends `notifications/cancelled`, and the session stays usable. A `fail` after the request has settled does nothing. | `egress.test.ts`: "…tripped mid-body by an SSE answer with no Content-Length, fails the request promptly…" (through a re-chunking, `Content-Length`-dropping proxy; asserts the request fails in under 5 s with a 10 s timeout, and that the session still works). The JSON row of the same test passed before the fix, as the reviewer found. The old test is renamed "…tripped by %s response's declared Content-Length…". Egress unit tests (`oauth.test.ts`, "McpHttpEgress edges") cover pass-through, cancel forwarding, a cut-off outside any operation, and non-cap read failures. | yes: the SSE row timed out at 5 s (jest) before the fix |
+| **P2** The standalone `GET` stream does not accumulate: the SDK reconnects after each overflow with a fresh count. | Docs now say the cap is per connection and the SDK reconnects (`CAPABILITIES.md`, `README.md`, ledger, this file). The egress logs each `GET` overflow at `detail`. The P1 mechanism deliberately does **not** close the session on a `GET` overflow: no request is waiting on the stream, and a legitimate long-lived stream would otherwise eventually end a healthy session. | "an over-cap standalone event stream is logged at detail and reconnected, and the session keeps working" | yes: the `detail` line was absent before the fix |
+| **P2** The `IMcpToolExecution` TSDoc and `_normalizeExecution` claimed "never failing discovery" unqualified. | Both now say that through the SDK an unknown or malformed value fails the page as `'protocol'`, and only a value that reaches the package is dropped and logged. The SDK behaviour is kept, per the orchestrator's decision. | doc only | — |
+| **P3.1** Clones of a capped response lost `url` and `redirected`. | `_keepOrigin` defines `url`, `redirected` and a `clone` that does the same, recursively. | "maxResponseBytes: a clone of a capped response, and its clone, keep the url and redirected" | yes: red with `clone` left un-overridden (mutation run) |
+| **P3.2** `CAPABILITIES.md` claimed "the SDK refuses every plain call". | Reworded: the SDK refuses one only for tools on the most recent page it parsed, because its cache resets per page; otherwise the server does. | doc only | — |
+| **P3.3** `McpTaskSupport` was declared twice. | `MCP_TASK_SUPPORT_VALUES` (`as const`, public) plus `McpTaskSupport = StringOneOf<typeof …>`. `enumeratedValue` reads the same array. | existing execution tests | — |
+| **P3.4** Stacked `isFailure` checks in `_adaptOne` and `listMcpTools`. | `_adaptOne` now returns `Result<IAdaptOutcome>` as one chain: the wire refusal becomes a `'wire'` skip via `onFailure`, then a parse failure becomes a `'schema'` skip. `adaptMcpTools` collects outcomes with `mapResults`. `listMcpTools` chains handle → bounds → pages with `withFailureDetail` / `thenOnSuccess`. | the existing skip-kind and `invalid-handle` / `invalid-options` tests, unchanged and green | — |
+| **P3.5** Two new `ae-unresolved-link` warnings in `ts-extras.api.md`. | Left as they are. Both are `{@link SaferFetch.…}` namespace-member links, which API Extractor's resolver cannot follow ("This type of declaration is not supported yet by the resolver"). That is the same form, and the same warning, as every neighbouring safer-fetch link in that file. | — | — |
+
+Side effect to note: every SDK call now receives a `signal`, the per-call one, even when the caller
+gave none. Three unit tests that pinned the exact SDK options (`{}`) now expect
+`{ signal: expect.any(AbortSignal) }`. `ISdkRequestOptions.signal` is required, and the connect race
+always links it.

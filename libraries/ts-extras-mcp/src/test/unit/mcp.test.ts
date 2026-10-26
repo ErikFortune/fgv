@@ -516,8 +516,9 @@ describe('listMcpTools', () => {
     expect(await listMcpTools(session)).toSucceedAndSatisfy((tools: ReadonlyArray<IMcpToolDescriptor>) => {
       expect(tools.map((t) => t.name)).toEqual(['a', 'b']);
     });
-    expect(listTools).toHaveBeenNthCalledWith(1, undefined, {});
-    expect(listTools).toHaveBeenNthCalledWith(2, { cursor: 'p2' }, {});
+    // The SDK always gets a per-call signal, never the caller's own.
+    expect(listTools).toHaveBeenNthCalledWith(1, undefined, { signal: expect.any(AbortSignal) });
+    expect(listTools).toHaveBeenNthCalledWith(2, { cursor: 'p2' }, { signal: expect.any(AbortSignal) });
   });
 
   test('coerces a missing/invalid inputSchema to null and a missing description to undefined', async () => {
@@ -638,7 +639,9 @@ describe('callMcpTool', () => {
         { type: 'text', text: 'line two' }
       ]
     });
-    expect(fake.callTool).toHaveBeenCalledWith({ name: 'a', arguments: args }, sdk.SDK_RAW_RESULT_SCHEMA, {});
+    expect(fake.callTool).toHaveBeenCalledWith({ name: 'a', arguments: args }, sdk.SDK_RAW_RESULT_SCHEMA, {
+      signal: expect.any(AbortSignal)
+    });
   });
 
   test('summarizes non-text blocks', async () => {
@@ -828,7 +831,7 @@ describe('adaptMcpTools', () => {
       expect(callTool).toHaveBeenCalledWith(
         { name: 'good', arguments: { q: 'hello' } },
         sdk.SDK_RAW_RESULT_SCHEMA,
-        {}
+        { signal: expect.any(AbortSignal) }
       );
     });
 

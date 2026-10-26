@@ -1671,7 +1671,7 @@ function _countingBody(
  * @remarks
  * The wrapper is a new `Response`, because a platform `Response`'s body cannot be replaced; it
  * carries the original status, status text and headers, and `url` and `redirected` are copied onto
- * it as own properties, since the constructor cannot set them. A response without a body is
+ * it — and onto every clone of it — as own properties, since the constructor cannot set them. A response without a body is
  * returned unchanged: there is nothing to count.
  */
 function _capBody(response: Response, head: ISaferFetchResponseHead, limit: number): Outcome<Response> {
@@ -1692,9 +1692,21 @@ function _capBody(response: Response, head: ISaferFetchResponseHead, limit: numb
     statusText: response.statusText,
     headers: response.headers
   });
-  Object.defineProperty(capped, 'url', { value: response.url });
-  Object.defineProperty(capped, 'redirected', { value: response.redirected });
-  return _succeed(capped);
+  return _succeed(_keepOrigin(capped, response.url, response.redirected));
+}
+
+/**
+ * Gives a constructed `Response` the `url` and `redirected` of the response it stands in for, as own
+ * properties (the constructor cannot set them), and a `clone` that does the same for every clone.
+ */
+function _keepOrigin(target: Response, url: string, redirected: boolean): Response {
+  const clone = target.clone.bind(target);
+  Object.defineProperties(target, {
+    url: { value: url },
+    redirected: { value: redirected },
+    clone: { value: (): Response => _keepOrigin(clone(), url, redirected) }
+  });
+  return target;
 }
 
 /**

@@ -54,4 +54,4 @@ keywords:
 relatedStreams:
   - { id: mcp-round-2b, relationship: 'built the guarded-fetch MCP egress this bounds' }
   - { id: mcp-client-cancellation, relationship: 'introduced McpFailureReason and the per-request options this extends' }
-sourceHash: 74c92a09e0e5341c # first 16 hex of sha256 over brief.md, state.md and result.md concatenated in that order
+sourceHash: 5fef3742350cb433 # first 16 hex of sha256 over brief.md, state.md and result.md concatenated in that order

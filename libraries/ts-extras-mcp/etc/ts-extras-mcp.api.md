@@ -13,6 +13,7 @@ import { Logging } from '@fgv/ts-utils';
 import { OAuthClientProvider } from '@modelcontextprotocol/sdk/client/auth.js';
 import { Result } from '@fgv/ts-utils';
 import { SaferFetch } from '@fgv/ts-extras';
+import { StringOneOf } from '@fgv/ts-utils';
 
 // @public
 export function adaptMcpTools(session: IMcpSession, options?: IAdaptMcpToolsOptions): Promise<DetailedResult<IAdaptMcpToolsResult, McpFailureReason>>;
@@ -239,6 +240,9 @@ export interface IMcpUnknownBlock {
 export function listMcpTools(session: IMcpSession, options?: IListMcpToolsOptions): Promise<DetailedResult<ReadonlyArray<IMcpToolDescriptor>, McpFailureReason>>;
 
 // @public
+export const MCP_TASK_SUPPORT_VALUES: readonly ["forbidden", "optional", "required"];
+
+// @public
 export type McpContentBlock = IMcpTextBlock | IMcpResourceLinkBlock | IMcpEmbeddedTextResourceBlock | IMcpEmbeddedBlobResourceBlock | IMcpImageBlock | IMcpAudioBlock | IMcpUnknownBlock;
 
 // @public
@@ -303,7 +307,7 @@ export type McpOAuthClientProvider = OAuthClientProvider;
 export type McpSkipKind = 'schema' | 'wire' | 'task-support';
 
 // @public
-export type McpTaskSupport = 'forbidden' | 'optional' | 'required';
+export type McpTaskSupport = StringOneOf<typeof MCP_TASK_SUPPORT_VALUES>;
 
 // @public
 export type McpTransportKind = 'stdio' | 'http' | 'custom';

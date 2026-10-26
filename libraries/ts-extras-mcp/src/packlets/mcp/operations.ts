@@ -49,6 +49,7 @@ import {
   type IMcpToolCallResult,
   type IMcpToolDescriptor,
   type IMcpToolExecution,
+  MCP_TASK_SUPPORT_VALUES,
   type McpFailureReason,
   type McpTaskSupport
 } from './model';
@@ -92,11 +93,8 @@ function _normalizeAnnotations(raw: unknown): IMcpToolAnnotations | undefined {
   return Object.keys(normalized).length > 0 ? normalized : undefined;
 }
 
-/** The MCP `Tool.execution.taskSupport` vocabulary, as the SDK's own schema declares it. */
-const MCP_TASK_SUPPORT: ReadonlyArray<McpTaskSupport> = ['forbidden', 'optional', 'required'];
-
 const _taskSupport: Converter<McpTaskSupport, ReadonlyArray<McpTaskSupport>> =
-  UtilsConverters.enumeratedValue<McpTaskSupport>(MCP_TASK_SUPPORT);
+  UtilsConverters.enumeratedValue<McpTaskSupport>(MCP_TASK_SUPPORT_VALUES);
 
 /**
  * Validates/normalizes a raw (untrusted) MCP `Tool.execution` blob into an {@link IMcpToolExecution}.
@@ -105,7 +103,9 @@ const _taskSupport: Converter<McpTaskSupport, ReadonlyArray<McpTaskSupport>> =
  * Like {@link _normalizeAnnotations}: a blob that is absent, or not a JSON object, and a
  * `taskSupport` outside the known vocabulary are dropped — never failing discovery, never propagated
  * raw — and `undefined` is returned when nothing usable remains. A present value that is dropped is
- * logged at `info`, in fixed text: nothing server-supplied is echoed.
+ * logged at `info`, in fixed text: nothing server-supplied is echoed. Through the SDK this only sees
+ * values that passed the SDK's own `tools/list` parse: an unknown or malformed value fails the page
+ * as `'protocol'` there, before it gets here.
  */
 function _normalizeExecution(raw: unknown, logger: Logging.ILogger | undefined): IMcpToolExecution | undefined {
   if (raw === undefined) {
@@ -120,7 +120,7 @@ function _normalizeExecution(raw: unknown, logger: Logging.ILogger | undefined):
         : _taskSupport
             .convert(obj.taskSupport)
             .withErrorFormat(
-              () => `a tool's execution.taskSupport is not one of ${MCP_TASK_SUPPORT.join(', ')}`
+              () => `a tool's execution.taskSupport is not one of ${MCP_TASK_SUPPORT_VALUES.join(', ')}`
             )
     )
     .onFailure((message) => {
@@ -303,22 +303,25 @@ export async function listMcpTools(
   session: IMcpSession,
   options?: IListMcpToolsOptions
 ): Promise<DetailedResult<ReadonlyArray<IMcpToolDescriptor>, McpFailureReason>> {
-  const sessionResult = McpSession.fromHandle(session);
-  if (sessionResult.isFailure()) {
-    return failWithDetail(`listMcpTools: ${sessionResult.message}`, { kind: 'invalid-handle' });
-  }
-  const bounds = _validateListingBounds(options);
-  if (bounds.isFailure()) {
-    return failWithDetail(`listMcpTools: ${bounds.message}`, { kind: 'invalid-options' });
-  }
-  const validated = bounds.value;
-  const deadline =
-    validated.maxTotalMs !== undefined ? new _ListingDeadline(validated.maxTotalMs, validated.signal) : undefined;
-  try {
-    return await _listPages(sessionResult.value, validated, deadline);
-  } finally {
-    deadline?.dispose();
-  }
+  return McpSession.fromHandle(session)
+    .withFailureDetail<McpFailureReason>({ kind: 'invalid-handle' })
+    .onSuccess((mcpSession) =>
+      _validateListingBounds(options)
+        .withFailureDetail<McpFailureReason>({ kind: 'invalid-options' })
+        .onSuccess((validated) => succeedWithDetail({ mcpSession, validated }))
+    )
+    .withErrorFormat((msg) => `listMcpTools: ${msg}`)
+    .thenOnSuccess(async ({ mcpSession, validated }) => {
+      const deadline =
+        validated.maxTotalMs !== undefined
+          ? new _ListingDeadline(validated.maxTotalMs, validated.signal)
+          : undefined;
+      try {
+        return await _listPages(mcpSession, validated, deadline);
+      } finally {
+        deadline?.dispose();
+      }
+    });
 }
 
 /**

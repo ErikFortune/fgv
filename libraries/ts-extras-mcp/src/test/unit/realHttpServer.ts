@@ -27,7 +27,7 @@
  * the SDK sees it — the hook the OAuth tests use to demand a bearer token.
  */
 
-import { type IncomingMessage, type Server, type ServerResponse, createServer } from 'node:http';
+import { type IncomingMessage, type Server, type ServerResponse, createServer, request as httpRequest } from 'node:http';
 import { type AddressInfo } from 'node:net';
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
@@ -56,6 +56,8 @@ export interface IRealMcpServerOptions {
   readonly enableJsonResponse?: boolean;
   /** Registers a `slow` tool that answers after this many milliseconds. */
   readonly slowToolMs?: number;
+  /** Registers this many extra tools, `bulk_<n>`, each with a 200-character description: a large `tools/list`. */
+  readonly bulkTools?: number;
 }
 
 export async function startRealMcpServer(
@@ -97,6 +99,11 @@ export async function startRealMcpServer(
     mcp.registerTool('echo', { description: 'echoes' }, async () => ({
       content: [{ type: 'text', text: 'echoed' }]
     }));
+    for (let i = 0; i < (options?.bulkTools ?? 0); i++) {
+      mcp.registerTool(`bulk_${i}`, { description: 'd'.repeat(200) }, async () => ({
+        content: [{ type: 'text', text: 'bulk' }]
+      }));
+    }
     const slowMs = options?.slowToolMs;
     if (slowMs !== undefined) {
       mcp.registerTool('slow', { description: 'answers late' }, async () => {
@@ -129,4 +136,78 @@ export async function waitFor(condition: () => boolean, timeoutMs: number = 3000
   while (!condition() && Date.now() < deadline) {
     await new Promise((resolve) => setTimeout(resolve, 10));
   }
+}
+
+/** A running HTTP proxy in front of a {@link startRealMcpServer} endpoint. */
+export interface IRechunkingProxy {
+  /** The proxied MCP endpoint, `http://127.0.0.1:<port>/mcp`. */
+  readonly url: string;
+  /** How many `GET` requests the proxy has received. */
+  readonly gets: () => number;
+  stop(): Promise<void>;
+}
+
+/** How the proxy answers. */
+export interface IRechunkingProxyOptions {
+  /**
+   * Answer every `GET` itself, with an event stream that sends `count` SSE comments of `size` bytes,
+   * one every `everyMs`, rather than forwarding it.
+   */
+  readonly getStream?: { readonly size: number; readonly count: number; readonly everyMs: number };
+}
+
+/**
+ * A proxy that forwards every request to `target` but drops the response's `Content-Length` and
+ * re-sends its body in 256-byte writes, so a body over a size cap can only be caught by counting it
+ * as it streams — never on its declared length.
+ */
+export async function startRechunkingProxy(
+  target: string,
+  options?: IRechunkingProxyOptions
+): Promise<IRechunkingProxy> {
+  const upstream = new URL(target);
+  let gets = 0;
+  const server = createServer((req, res) => {
+    const getStream = options?.getStream;
+    if (req.method === 'GET' && getStream !== undefined) {
+      gets++;
+      res.writeHead(200, { 'content-type': 'text/event-stream' });
+      let sent = 0;
+      const timer = setInterval(() => {
+        res.write(`: ${'k'.repeat(getStream.size)}\n\n`);
+        if (++sent >= getStream.count) {
+          clearInterval(timer);
+        }
+      }, getStream.everyMs);
+      res.on('close', () => clearInterval(timer));
+      return;
+    }
+    const forward = httpRequest(
+      { host: upstream.hostname, port: upstream.port, path: upstream.pathname, method: req.method, headers: req.headers },
+      (answer) => {
+        const headers = { ...answer.headers };
+        delete headers['content-length'];
+        res.writeHead(answer.statusCode ?? 502, headers);
+        answer.on('data', (chunk: Buffer) => {
+          for (let i = 0; i < chunk.length; i += 256) {
+            res.write(chunk.subarray(i, i + 256));
+          }
+        });
+        answer.on('end', () => res.end());
+      }
+    );
+    forward.on('error', () => res.destroy());
+    req.pipe(forward);
+    res.on('close', () => forward.destroy());
+  });
+  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+  const { port } = server.address() as AddressInfo;
+  return {
+    url: `http://127.0.0.1:${port}/mcp`,
+    gets: () => gets,
+    stop: async () => {
+      server.closeAllConnections();
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
+  };
 }

@@ -42,7 +42,7 @@ import {
   createHttpTransport,
   listMcpTools
 } from '../../packlets/mcp';
-import { type IRealMcpServer, startRealMcpServer, waitFor } from './realHttpServer';
+import { type IRealMcpServer, startRealMcpServer, startRechunkingProxy, waitFor } from './realHttpServer';
 
 /** A loopback MCP server is private, so the recommended guard is told to allow exactly that. */
 const LOOPBACK_ALLOWED: SaferFetch.IAddressGuard = SaferFetch.blockPrivateNetworks({
@@ -146,7 +146,7 @@ describe('Streamable-HTTP egress through an injected fetch', () => {
     ['an SSE', false],
     ['a JSON', true]
   ])(
-    "a guarded fetch's maxResponseBytes, tripped by %s response, classifies as egress-blocked too-large",
+    "a guarded fetch's maxResponseBytes, tripped by %s response's declared Content-Length, classifies as egress-blocked too-large",
     async (__label, enableJsonResponse) => {
       const server = await startRealMcpServer(undefined, { enableJsonResponse });
       try {
@@ -164,6 +164,66 @@ describe('Streamable-HTTP egress through an injected fetch', () => {
       }
     }
   );
+
+  test.each([
+    ['an SSE', false],
+    ['a JSON', true]
+  ])(
+    "a guarded fetch's maxResponseBytes, tripped mid-body by %s answer with no Content-Length, fails the request promptly as egress-blocked too-large",
+    async (__label, enableJsonResponse) => {
+      // ~250 tools of ~250 bytes each: a tools/list answer far over the cap, sent in 256-byte writes
+      // with no Content-Length, so only the count during the read can catch it.
+      const server = await startRealMcpServer(undefined, { enableJsonResponse, bulkTools: 250 });
+      const proxy = await startRechunkingProxy(server.url);
+      const logger = new Logging.InMemoryLogger('all');
+      try {
+        const session = (
+          await connectMcpSession({
+            transport: createHttpTransport({ url: proxy.url, fetch: guardedFetch({ maxResponseBytes: 4096 }) }).orThrow(),
+            timeoutMs: 5000,
+            logger
+          })
+        ).orThrow();
+        sessions.push(session);
+        const started = Date.now();
+        expect(await listMcpTools(session, { timeoutMs: 10000 })).toFailWithDetail(
+          /listMcpTools: .*exceeded maxResponseBytes \(4096 bytes\)/,
+          { kind: 'egress-blocked', reason: 'too-large' }
+        );
+        // Promptly: not the 10 s request timeout.
+        expect(Date.now() - started).toBeLessThan(5000);
+        // The session is still usable, as after any other egress refusal.
+        expect(await callMcpTool(session, 'echo', {})).toSucceed();
+      } finally {
+        await proxy.stop();
+        await server.stop();
+      }
+    }
+  );
+
+  test("an over-cap standalone event stream is logged at detail and reconnected, and the session keeps working", async () => {
+    const proxy = await startRechunkingProxy(real.url, { getStream: { size: 500, count: 100, everyMs: 5 } });
+    const logger = new Logging.InMemoryLogger('all');
+    try {
+      const session = (
+        await connectMcpSession({
+          transport: createHttpTransport({ url: proxy.url, fetch: guardedFetch({ maxResponseBytes: 4096 }) }).orThrow(),
+          timeoutMs: 5000,
+          logger
+        })
+      ).orThrow();
+      sessions.push(session);
+      await waitFor(() => proxy.gets() >= 2);
+      // Each overflow ends that one connection; the SDK opens a fresh one, with a fresh count.
+      expect(proxy.gets()).toBeGreaterThanOrEqual(2);
+      expect(logger.logged.join('\n')).toMatch(
+        /mcp: the server event stream exceeded the egress guard's maxResponseBytes \(4096 bytes\)/
+      );
+      expect(await callMcpTool(session, 'echo', {})).toSucceed();
+    } finally {
+      await proxy.stop();
+    }
+  });
 
   test("a guarded fetch's maxResponseBytes above every response leaves the session working", async () => {
     const session = await connectWith(guardedFetch({ maxResponseBytes: 64 * 1024 }));

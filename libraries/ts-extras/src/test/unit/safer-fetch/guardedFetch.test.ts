@@ -899,6 +899,19 @@ describe('createGuardedFetch', () => {
       expect((await response.arrayBuffer()).byteLength).toBe(3 * 1024);
     });
 
+    test('maxResponseBytes: a clone of a capped response, and its clone, keep the url and redirected', async () => {
+      const fetch = createGuardedFetch({ addressGuard: allowAnyAddress(), maxResponseBytes: 3 * 1024 }).orThrow();
+      const response = await fetch(`${baseUrl}/exact`);
+      const clone = response.clone();
+      const cloneOfClone = clone.clone();
+      for (const r of [clone, cloneOfClone]) {
+        expect(r.url).toBe(`${baseUrl}/exact`);
+        expect(r.redirected).toBe(false);
+      }
+      const sizes = await Promise.all([response, clone, cloneOfClone].map(async (r) => (await r.arrayBuffer()).byteLength));
+      expect(sizes).toEqual([3 * 1024, 3 * 1024, 3 * 1024]);
+    });
+
     test('maxResponseBytes refuses a declared Content-Length over the cap and releases the connection', async () => {
       const fetch = createGuardedFetch({ addressGuard: allowAnyAddress(), maxResponseBytes: 4096 }).orThrow();
       const error = await rejectionOf(fetch(`${baseUrl}/declared`));
