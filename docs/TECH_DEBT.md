@@ -861,6 +861,44 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
 
 ## P3 — Opportunistic cleanup
 
+- **[P3] `executeClientToolTurn`'s `onBeforeToolExecute` gate never receives the turn's signal.**
+  The gate is called as `onBeforeToolExecute(tool, args)` in `dispatchCall`
+  (`libraries/ts-extras/src/packlets/ai-assist/streamingAdapters/clientToolContinuationBuilder.ts`),
+  with no way to observe an abort. A gate that waits on something slow — a human confirmation, a
+  remote policy check — keeps waiting after the turn stops, and the orphaned event generator stays
+  pinned on it. `runClientToolLoop` still releases its caller, because the round is raced, but the
+  generator and whatever the gate holds are not freed until the gate returns. This predates the
+  runner; the runner only made orphaned rounds a normal outcome.
+
+  **Trigger**: a host whose gate can wait indefinitely, or a leak report from one.
+
+  **Scope sketch**: pass `{ signal }` to the gate as a third, optional context argument, the way
+  `IAiClientTool.execute` receives it. Additive for gate implementations.
+
+  **Not a P2**: the caller is never held; only background resources are.
+
+  **Reference**: the independent review of `ai-assist-client-tool-loop`
+  (`.ai/tasks/completed/2026-10/ai-assist-client-tool-loop/result.md`).
+
+- **[P3] safer-fetch's internal `DeadlineWatch` duplicates `AsyncControl.raceStopConditions`.**
+  `libraries/ts-extras/src/packlets/safer-fetch/deadline.ts` composes a caller signal with
+  deadlines through its own `AbortController` and listeners, and races a promise against them. The
+  `async-control` packlet now publishes that mechanism as `raceStopConditions`
+  (`libraries/ts-extras/src/packlets/async-control/stopConditions.ts`), with an injectable timer,
+  deadline-range validation and release on every path. Two implementations of the same ordering
+  logic can drift: a fix to one (a late stop, a listener leak) does not reach the other.
+
+  **Trigger**: the next change to `deadline.ts`, or a defect found in either implementation.
+
+  **Scope sketch**: `DeadlineWatch` tracks two deadlines (overall and headers) and remembers which
+  one stopped the call, so it cannot be replaced one-for-one. Either extend `IStopConditions` with
+  a named-deadline form, or rebuild `DeadlineWatch` on two nested `raceStopConditions` calls. The
+  safer-fetch tests in `src/test/unit/safer-fetch/deadline.test.ts` are the behaviour to keep.
+
+  **Not a P2**: both implementations are tested, and nothing is known to be wrong in either.
+
+  **Reference**: `.ai/tasks/completed/2026-10/ai-assist-client-tool-loop/` (brief § 1).
+
 - **[P3] Wall-clock assertions remain in tests outside the `deterministic-timing-tests` scope.**
   That stream made `ts-extras` and `ts-extras-mcp` deterministic, except for one file. It reported
   the rest without fixing them:

@@ -37,7 +37,7 @@ getting-started material. This index routes; it does not duplicate.
 | [`ts-res`](libraries/ts-res/CAPABILITIES.md) | Multidimensional conditional resources — i18n, theming, A/B, environment overrides |
 | [`ts-res-ui-components`](libraries/ts-res-ui-components/CAPABILITIES.md) | React UI for browsing/editing ts-res resources |
 | [`ts-random`](libraries/ts-random/CAPABILITIES.md) | Seeded, reproducible PRNG (`SeededRandomSource`, `PseudoRandomGenerator`) + word/char corpora. **mulberry32 — never for tokens, salts or keys** |
-| [`ts-extras`](libraries/ts-extras/CAPABILITIES.md) | Crypto, `safer-fetch`, `ai-assist` (LLM clients, structured output incl. `adaptOptionalToNullable`), CSV, zip, mustache |
+| [`ts-extras`](libraries/ts-extras/CAPABILITIES.md) | Crypto, `safer-fetch`, `ai-assist` (LLM clients, structured output incl. `adaptOptionalToNullable`), `async-control`, CSV, zip, mustache |
 | [`ts-web-extras`](libraries/ts-web-extras/CAPABILITIES.md) | Browser siblings — crypto, File System Access `FileTree`, browser `safer-fetch` |
 | [`ts-extras-re2`](libraries/ts-extras-re2/CAPABILITIES.md) | RE2 (re2js) `patternValidator` for untrusted JSON Schema `pattern` — linear time, ECMA meaning or refusal |
 | [`ts-extras-argon2`](libraries/ts-extras-argon2/CAPABILITIES.md) · [`ts-web-extras-argon2`](libraries/ts-web-extras-argon2/CAPABILITIES.md) | Argon2id providers (Node native / browser WASM) |
@@ -108,6 +108,7 @@ detail. `· pkg` names the owning package.*
 - **Asking an LLM for JSON and getting a validated `T`?** → `generateJsonCompletion` `JsonSchema` · `ts-extras`
 - **Need the provider to constrain its output, not just be asked to?** → `structuredOutput` · `ts-extras`
 - **Running a tool-use conversation with harness-side client tools?** → `executeClientToolTurn` `JsonSchema` · `ts-extras`
+- **Multi-round client-tool loop with a round cap, deadline and abort — or any async work bounded that way?** → `runClientToolLoop` `raceStopConditions` · `ts-extras`
 - **Making an MCP server's tools callable from an ai-assist tool-use conversation?** → `executeClientToolTurn` `JsonSchema` `fromJson` `adaptMcpTools` · `ts-extras-mcp`
 - **Diagnosing an OpenAI/xAI Responses stream that completes empty?** → `executeClientToolTurn` · `ts-extras`
 - **Reading prompt-cache token counts off a completion (reads/writes, normalized)?** → `IAiCompletionUsage` `AiCacheReportingLevel` · `ts-extras`
@@ -204,6 +205,7 @@ markers.*
 
 <!-- BEGIN GENERATED: recent-additions -->
 
+- **2026-10-26** — ai-assist can run a whole client-tool conversation: runClientToolLoop caps rounds and honours a deadline and caller abort even when… ([#755](https://github.com/ErikFortune/fgv/pull/755)) · `ts-extras`
 - **2026-10-26** — ICryptoProvider now generates and imports non-extractable HMAC-SHA256 keys itself, and composite ids can split at the first or last… ([#754](https://github.com/ErikFortune/fgv/pull/754)) · `ts-extras` `ts-web-extras` `ts-utils`
 - **2026-10-26** — The sqlite-vec indexes now store which embedding model wrote their vectors in the same file, and refuse to mix models or serve a… ([#753](https://github.com/ErikFortune/fgv/pull/753)) · `ts-agent-memory-sqlite-vec`
 - **2026-10-20** — mapSuccess and mapSuccessAsync now hand every failure to a supplied aggregator, even when some results succeeded, so a lenient fold… ([#752](https://github.com/ErikFortune/fgv/pull/752)) · `ts-utils`
@@ -213,8 +215,7 @@ markers.*
 - **2026-10-18** — JsonSchema factories never throw: constraint keywords, default and examples arrive through numberOptions / integerOptions /… ([#740](https://github.com/ErikFortune/fgv/pull/740)) · `ts-json-base` `ts-extras` `ts-extras-ollama`
 - **2026-10-18** — JsonSchema pattern: a host's /…/u RegExp via stringOptions is enforced and sent where the wire documents pattern, and fromJson… ([#742](https://github.com/ErikFortune/fgv/pull/742)) · `ts-json-base` `ts-extras` `ts-extras-mcp`
 - **2026-10-18** — Agent memory tool results now carry each record's id and scope, so two conversations' turn-3 are distinguishable and a link copied… ([#739](https://github.com/ErikFortune/fgv/pull/739)) · `ts-agent-memory`
-- **2026-10-18** — AiAssist.structuredOutputSchemaKeywords reads the keyword table a structured-output schema is adapted with, and the testbed… ([#738](https://github.com/ErikFortune/fgv/pull/738)) · `ts-extras` `testbed`
 
-*Showing the 10 most recent of 71. Per-package history is in each `CAPABILITIES.md`.*
+*Showing the 10 most recent of 72. Per-package history is in each `CAPABILITIES.md`.*
 
 <!-- END GENERATED: recent-additions -->
