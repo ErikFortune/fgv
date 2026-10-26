@@ -114,4 +114,18 @@ Two existing ingest tests also went red during development before the `_expected
 
 ## Gates
 
-Recorded in `state.md § Gates` once run.
+Run in the foreground from the worktree root on the committed tree (implementation `b0b69da24`,
+docs `d8adfeced`). Graded by `grep -acE 'not met|Operations failed|error TS'` (must be 0) and
+`grep -aiE warning` (only the tracked-symlink notice allowed).
+
+| gate | result | bad | warnings |
+|---|---|---|---|
+| `rush install` | exit 0 | 0 | 0 |
+| `rush change --verify --target-branch origin/integration/asks` | exit 0, change file found | 0 | 0 |
+| `ts-agent-memory` `rushx build` / `lint` / `test` (100% coverage) | exit 0 / 0 / 0 | 0 / 0 / 0 | 0 / 0 / 0 |
+| `rush rebuild` (repo-wide) | exit 0, 13m15s | 0 | symlink notice only |
+| `rush test` (repo-wide) | 35 succeeded; `ts-extras-mcp` failed on the known load-sensitive "a slow tool on a JSON-response server outlives the guarded fetch's headers deadline"; `testbed` and `ts-extras-re2` blocked behind it | 1 (`Operations failed`) | symlink notice only |
+| `rush test --from @fgv/ts-extras-mcp` (rerun) | exit 0, 19 succeeded incl. `ts-extras-mcp`, `ts-extras-re2`, `testbed`, `ts-agent-memory`, `ts-agent-memory-sqlite-vec` | 0 | symlink notice only |
+| `rushx fixlint`, prettier 2.8.8 on every changed `.ts` | clean | — | — |
+| `max-lines` | `fileTreeMemoryStore.ts` 1972 / 2000 | — | — |
+| `generate-capability-feed.mjs`, `--check`, `verify-capability-docs.mjs` | exit 0 / 0 stale / 0 failed | — | — |
