@@ -25,9 +25,11 @@ import {
   ITaskScope,
   ITaskSource,
   ITaskSubscription,
+  ITaskWriteGuard,
   TaskId,
   TaskRegistrationResult,
   TaskResult,
+  TaskScheduleTimer,
   taskContextLimits
 } from '../types';
 import { ITaskRepository } from '../storage';
@@ -43,7 +45,7 @@ import {
   subscribe
 } from './delivery';
 import { abandonCommand, cleanup, closeSubscription, disposeObligations } from './disposition';
-import { extendReplayEnvelope, registerExternal } from './creation';
+import { extendReplayEnvelope, registerExternal, resumeExternal } from './creation';
 import { observeBinding, observeTask, reconcileSource, recoverTask } from './reconciliation';
 import { ok, propagate as propagateTask, taskFailure } from './failures';
 import { defaultTaskProjector } from './projection';
@@ -69,6 +71,20 @@ export interface ITaskBrokerCreateParams {
    * is created: changing these later changes only subscriptions created after. (T7.)
    */
   readonly delivery?: ITaskDeliveryDefaults;
+  /**
+   * A host write gate every broker write passes through — bound-writer operations, model tools,
+   * source passes, deliveries, retention and `cleanup` alike. It wraps each serialized writer
+   * section, inside the broker's writer queue, so a section the gate holds holds every section queued
+   * behind it.
+   *
+   * @remarks
+   * **A long hold fills the queue.** At most 64 sections wait for the writer; once that many are
+   * queued behind a held one, every further broker write fails at once with `conflict`, retry
+   * `safe`, until the hold ends. {@link TaskBroker.whenIdle} counts a held section as busy.
+   */
+  readonly writeGuard?: ITaskWriteGuard;
+  /** The timer {@link TaskBroker.whenIdle} bounds its wait with. Defaults to `setTimeout`. */
+  readonly schedule?: TaskScheduleTimer;
 }
 
 /**
@@ -118,7 +134,9 @@ export class TaskBroker {
                     converters: c,
                     delivery,
                     renderer,
-                    sources
+                    sources,
+                    ...(params.writeGuard !== undefined ? { writeGuard: params.writeGuard } : {}),
+                    ...(params.schedule !== undefined ? { schedule: params.schedule } : {})
                   })
                 )
             )
@@ -258,6 +276,39 @@ export class TaskBroker {
    */
   public registerExternal(principal: string, request: unknown): Promise<TaskResult<TaskRegistrationResult>> {
     return registerExternal(this._core, principal, request);
+  }
+
+  /**
+   * Resumes an external registration left pending — accepted into the inventory, its record never
+   * written — from the canonical request the repository stored with it, under the principal it was
+   * accepted for. A trusted host operation, as {@link TaskBroker.registerExternal} is.
+   *
+   * @remarks
+   * Every check registration makes is made again now: the request is converted, its parent re-read
+   * and re-checked inside the writer, and the source's committed history compared. A native pending
+   * registration resumes through a bound writer (`IBoundTaskWriter.resumePendingRegistration`), which
+   * authorizes it, and is `invalid` here. An id with no pending registration — including one already
+   * live — is `not-found-or-denied`.
+   */
+  public resumePendingRegistration(taskId: TaskId): Promise<TaskResult<TaskRegistrationResult>> {
+    return resumeExternal(this._core, taskId);
+  }
+
+  /**
+   * Resolves once no broker write is waiting for the writer or holding it, or fails — `conflict`,
+   * retry `safe` — when that has not happened within `timeoutMs`.
+   *
+   * @remarks
+   * **It describes a moment, not a hold.** It observes the broker's writer queue and never takes a
+   * turn in it, so it never takes the writer and never delays a write; a write enqueued the instant
+   * after it resolves runs as usual. A host that needs the quiet to last holds its writes first — with
+   * the `writeGuard` it gave {@link TaskBroker.create} — and a section that guard is holding counts as
+   * busy. It sees only the broker's own queue: a caller using the repository's `withWriter` directly is
+   * invisible to it. The wait is bounded by the `schedule` given to {@link TaskBroker.create}. A
+   * `timeoutMs` that is not a non-negative safe integer is `invalid`.
+   */
+  public whenIdle(timeoutMs: number): Promise<TaskResult<true>> {
+    return this._core.whenIdle(timeoutMs);
   }
 
   /**

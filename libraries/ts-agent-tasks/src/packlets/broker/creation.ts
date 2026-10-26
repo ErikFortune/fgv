@@ -30,7 +30,7 @@ import {
   trackedTaskDetailVersion,
   trackedTaskKind
 } from '../types';
-import { ITaskRepositoryWriter } from '../storage';
+import { ITaskPendingRegistration, ITaskRepositoryWriter } from '../storage';
 import { AccessContext, subjectOf } from './access';
 import { IRelatedTask, confirmUnchanged, isSameCatalog, readExisting } from './catalogMutation';
 import { checkParentOpen, convertRequest, readParent, refuseUnderLatch } from './catalogOperations';
@@ -302,6 +302,82 @@ async function _register(
   });
   // A registration that replays answers with the receipt it committed the first time.
   return registered.isSuccess() ? _committedReceipt(core, registered.value) : propagate(registered);
+}
+
+/**
+ * Resumes a pending native registration through a bound writer, from the request the repository
+ * stored with it. `create` is authorized again here, now: {@link createNative} asks the policy and
+ * re-checks the epoch inside the writer.
+ * @internal
+ */
+export async function resumeNative(
+  core: BrokerCore,
+  ctx: AccessContext,
+  taskId: unknown
+): Promise<TaskResult<ITaskMutationResult>> {
+  const pending = _pendingOf(core, taskId, 'resumePendingRegistration');
+  if (pending.isFailure()) {
+    return propagate(pending);
+  }
+  const registration: ITaskPendingRegistration = pending.value;
+  // Another principal's pending registration is answered as an id with none: it is not this view's.
+  if (registration.principalKey !== ctx.principal) {
+    return _noPending(registration.taskId);
+  }
+  if (registration.operation === 'register-external') {
+    return taskFailure(
+      `resumePendingRegistration: ${registration.taskId} is an external registration; resume it through ` +
+        `TaskBroker.resumePendingRegistration`,
+      'invalid',
+      'after-host-action',
+      { operationId: registration.operationId }
+    );
+  }
+  return createNative(core, ctx, registration.request, registration.operation === 'create-list');
+}
+
+/**
+ * Resumes a pending external registration — a trusted host operation, under the principal it was
+ * accepted for, from the request the repository stored with it.
+ * @internal
+ */
+export async function resumeExternal(core: BrokerCore, taskId: unknown): Promise<TaskResult<TaskRegistrationResult>> {
+  const pending = _pendingOf(core, taskId, 'resumePendingRegistration');
+  if (pending.isFailure()) {
+    return propagate(pending);
+  }
+  const registration: ITaskPendingRegistration = pending.value;
+  if (registration.operation !== 'register-external') {
+    return taskFailure(
+      `resumePendingRegistration: ${registration.taskId} is a native registration; resume it through a ` +
+        `bound writer, which authorizes it`,
+      'invalid',
+      'after-host-action',
+      { operationId: registration.operationId }
+    );
+  }
+  return registerExternal(core, registration.principalKey, registration.request);
+}
+
+/** The pending registration `taskId` names, or the failure that it names none. */
+function _pendingOf(core: BrokerCore, taskId: unknown, what: string): TaskResult<ITaskPendingRegistration> {
+  const id = core.converters.ids.taskId.convert(taskId);
+  if (id.isFailure()) {
+    return taskFailure(`${what}: ${id.message}`, 'invalid', 'after-host-action');
+  }
+  const pending = core.repository.pendingRegistration(id.value);
+  if (pending.isFailure()) {
+    return propagate(pending);
+  }
+  return pending.value === undefined ? _noPending(id.value) : ok(pending.value);
+}
+
+function _noPending<T>(taskId: TaskId): TaskResult<T> {
+  return taskFailure<T>(
+    `resumePendingRegistration: no pending registration ${taskId}`,
+    'not-found-or-denied',
+    'after-host-action'
+  );
 }
 
 /**

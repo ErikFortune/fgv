@@ -7,6 +7,7 @@ import { FileTree } from '@fgv/ts-json-base';
 import { DetailedResult, Result, fail, succeed } from '@fgv/ts-utils';
 import { TaskInventoryRecordKind } from '../types';
 import { manifestName, parseRecordName } from './layout';
+import { probeTaskRepositoryRoot } from './rootProbe';
 
 /**
  * File reads by record kind, counted at the one place the storage packlet reads a file. The
@@ -53,25 +54,22 @@ export class RecordStore {
    * Binds a store to a root, refusing a root that cannot honor `guarantee`.
    *
    * @remarks
-   * The capability inquiry is authoritative, not the guard: the guard only says the methods
-   * exist. A durable request against a root that does not list `'process-crash'` fails here,
-   * before anything is read or written.
+   * The capability inquiry is {@link probeTaskRepositoryRoot}'s — the one definition a host
+   * deciding a mode in advance also uses. A durable request against a root that does not qualify
+   * for `'process-crash'` fails here, before anything is read or written.
    */
   public static create(
     root: FileTree.FileTreeItem,
     guarantee: FileTree.AtomicWriteGuarantee
   ): Result<RecordStore> {
-    if (root.type !== 'directory') {
-      return fail(`${root.absolutePath}: a repository root must be a directory`);
-    }
-    if (!FileTree.isAtomicDirectoryItem(root)) {
-      return fail(`${root.absolutePath}: the root does not offer atomic writes`);
-    }
-    return root.getAtomicWriteCapabilities().onSuccess((capabilities) => {
-      if (!capabilities.atomicReplace || !capabilities.guarantees.includes(guarantee)) {
+    return probeTaskRepositoryRoot(root).onSuccess((probe) => {
+      if (!FileTree.isAtomicDirectoryItem(root)) {
+        return fail<RecordStore>(probe.reason!);
+      }
+      if (!probe.guarantees.includes(guarantee)) {
         return fail<RecordStore>(
           `${root.absolutePath}: the root cannot honor a '${guarantee}' atomic write ` +
-            `(it offers [${capabilities.guarantees.join(', ')}]); a durable repository is refused ` +
+            `(it offers [${probe.guarantees.join(', ')}]); a durable repository is refused ` +
             `rather than degraded to a weaker one`
         );
       }

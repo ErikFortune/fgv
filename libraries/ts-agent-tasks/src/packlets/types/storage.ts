@@ -324,7 +324,20 @@ export interface ITaskRepositoryManifest {
   readonly tasks: ReadonlyArray<ITaskInventoryEntry>;
   readonly consumers: ReadonlyArray<ITaskConsumerInventoryEntry>;
   readonly sources: ReadonlyArray<ITaskInventoryEntry>;
+  /**
+   * The durability the repository was initialized in. A repository initialized `process-crash`
+   * opens as `session` only on an explicit opt-in (`allowSessionOverDurable`). Absent from a
+   * manifest written before the field existed; such a repository opens in either mode, as it
+   * always did.
+   */
+  readonly initializedMode?: TaskRepositoryDurability;
 }
+
+/**
+ * The durability a repository commits at, by name: `'session'` or `'process-crash'`.
+ * @public
+ */
+export type TaskRepositoryDurability = 'session' | 'process-crash';
 
 /**
  * A broker source-checkpoint record (`source-<sourceId>.json`): the committed reconciliation

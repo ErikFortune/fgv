@@ -8,6 +8,7 @@ import {
   DeliveryId,
   IAcknowledgementResult,
   IBoundTaskDelivery,
+  ITaskIssuedReceiptSummary,
   IInclusionEntry,
   IPreparedTaskContext,
   ISubscribeRequest,
@@ -508,6 +509,25 @@ export class BoundTaskDelivery implements IBoundTaskDelivery {
       });
       return abandoned.onSuccess(() => ok(id.value));
     });
+  }
+
+  /** {@inheritDoc IBoundTaskDelivery.issued} */
+  public async issued(): Promise<TaskResult<ReadonlyArray<ITaskIssuedReceiptSummary>>> {
+    return this._core.gated(async (writer) =>
+      (await writer.readSubscription(this.subscriptionId)).onSuccess((record) =>
+        // Bound to a retained subscription, active or closed; records are never removed.
+        ok<ReadonlyArray<ITaskIssuedReceiptSummary>>(
+          record!.issued
+            .filter((manifest) => !manifest.acknowledged)
+            .map((manifest) => ({
+              deliveryId: manifest.deliveryId,
+              issuedAt: manifest.issuedAt,
+              expiresAt: manifest.expiresAt
+            }))
+            .sort((a, b) => (a.issuedAt < b.issuedAt ? -1 : a.issuedAt > b.issuedAt ? 1 : 0))
+        )
+      )
+    );
   }
 
   /** One capture-render-issue attempt; `undefined` when something moved and it should retry. */

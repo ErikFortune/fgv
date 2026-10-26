@@ -22,6 +22,7 @@ import {
   ITaskKindRegistry,
   ITaskRecoveryReport,
   ITaskRepositoryManifest,
+  TaskRepositoryDurability,
   ITaskSourceRecord,
   OperationId,
   TaskId,
@@ -71,6 +72,7 @@ import {
   ITaskRepository,
   ITaskRepositoryOpenParams,
   TaskRepositoryMode,
+  TaskRepositoryOpenOrInitializeResult,
   TaskRepositoryOpenResult
 } from './model';
 import {
@@ -261,7 +263,38 @@ export function initializeRepository(
   params: ITaskRepositoryOpenParams,
   factory: RepositoryFactory
 ): TaskResult<ITaskRepository> {
-  return _acquire(params).onSuccess((acquired) => {
+  return _acquire(params).onSuccess((acquired) => _initializeAcquired(params, acquired, factory));
+}
+
+/**
+ * Opens the repository a root holds, or initializes one when the root is empty — decided under the
+ * exclusive ownership both take, after interrupted writes' working files are reclaimed, by the same
+ * emptiness test `initialize` applies. Nothing can land in the root between the decision and the
+ * open or initialize it chooses.
+ * @internal
+ */
+export function openOrInitializeRepository(
+  params: ITaskRepositoryOpenParams,
+  factory: RepositoryFactory
+): TaskResult<TaskRepositoryOpenOrInitializeResult> {
+  return _acquire(params).onSuccess((acquired) =>
+    acquired.names.length === 0
+      ? _initializeAcquired(params, acquired, factory).onSuccess((repository) =>
+          ok<TaskRepositoryOpenOrInitializeResult>({ state: 'ready', repository, initialized: true })
+        )
+      : _openAcquired(params, acquired, factory).onSuccess((opened) =>
+          ok<TaskRepositoryOpenOrInitializeResult>(
+            opened.state === 'ready' ? { ...opened, initialized: false } : opened
+          )
+        )
+  );
+}
+
+function _initializeAcquired(
+  params: ITaskRepositoryOpenParams,
+  acquired: IAcquired,
+  factory: RepositoryFactory
+): TaskResult<ITaskRepository> {
     const refuse = (message: string, code: 'conflict' | 'invalid'): TaskResult<ITaskRepository> => {
       acquired.ownership.release();
       return taskFailure(message, code, 'after-host-action');
@@ -293,7 +326,8 @@ export function initializeRepository(
                 profile,
                 tasks: [],
                 consumers: [],
-                sources: []
+                sources: [],
+                initializedMode: _durabilityOf(acquired.mode)
               })
             )
         )
@@ -369,7 +403,6 @@ export function initializeRepository(
         }
       })
     );
-  });
 }
 
 /**
@@ -469,13 +502,24 @@ export function openRepository(
   params: ITaskRepositoryOpenParams,
   factory: RepositoryFactory
 ): TaskResult<TaskRepositoryOpenResult> {
-  return _acquire(params).onSuccess((acquired) => {
-    const result: TaskResult<TaskRepositoryOpenResult> = _scan(params, acquired, factory);
-    if (result.isFailure()) {
-      acquired.ownership.release();
-    }
-    return result;
-  });
+  return _acquire(params).onSuccess((acquired) => _openAcquired(params, acquired, factory));
+}
+
+function _openAcquired(
+  params: ITaskRepositoryOpenParams,
+  acquired: IAcquired,
+  factory: RepositoryFactory
+): TaskResult<TaskRepositoryOpenResult> {
+  const result: TaskResult<TaskRepositoryOpenResult> = _scan(params, acquired, factory);
+  if (result.isFailure()) {
+    acquired.ownership.release();
+  }
+  return result;
+}
+
+/** A repository mode's durability name. */
+function _durabilityOf(mode: TaskRepositoryMode): TaskRepositoryDurability {
+  return mode === 'session' ? 'session' : 'process-crash';
 }
 
 /**
@@ -569,6 +613,10 @@ function _scan(
     removed: acquired.removed,
     names: acquired.names,
     expectedProfile: params.profile,
+    openedAs: {
+      durability: _durabilityOf(acquired.mode),
+      allowSessionOverDurable: params.allowSessionOverDurable === true
+    },
     gate,
     checkpoints: acquired.checkpoints,
     defaultCheckpoints: acquired.defaultCheckpoints
@@ -607,6 +655,14 @@ export interface IScanInput {
   readonly names: ReadonlyArray<string>;
   /** On open, the profile the host expects; any difference refuses. Absent on rebuild. */
   readonly expectedProfile?: ITaskCapacityProfile;
+  /**
+   * On open, the durability the repository is being opened at, and whether opening a
+   * `process-crash`-initialized repository as `session` was explicitly permitted. Absent on rebuild.
+   */
+  readonly openedAs?: {
+    readonly durability: TaskRepositoryDurability;
+    readonly allowSessionOverDurable: boolean;
+  };
   readonly gate: MaterializationGate;
   readonly checkpoints: CheckpointPort;
   readonly defaultCheckpoints: boolean;
@@ -741,6 +797,23 @@ export function scanRoot(input: IScanInput): TaskResult<ScanOutcome> {
         'after-host-action'
       );
     }
+  }
+
+  // A durable repository is never silently carried on at a weaker durability: its records were
+  // committed against a crash, and a session open would keep committing without that guarantee.
+  const openedAs = input.openedAs;
+  if (
+    openedAs !== undefined &&
+    manifest.initializedMode === 'process-crash' &&
+    openedAs.durability === 'session' &&
+    !openedAs.allowSessionOverDurable
+  ) {
+    return taskFailure(
+      `open: the repository was initialized 'process-crash' and is being opened as 'session'; pass ` +
+        `allowSessionOverDurable to accept weaker commits over durable data`,
+      'unsupported',
+      'after-host-action'
+    );
   }
 
   const ledger: CapacityLedger = new CapacityLedger(profile, manifestEntry(manifestRead.bytes, profile));

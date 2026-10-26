@@ -316,7 +316,48 @@ export interface IBoundTaskWriter extends IBoundTaskView {
    * resolving and confirming — then the latest result. Installs no timer and starts no work. (T9.)
    */
   reconcileStop(request: IStopReconcileRequest): Promise<TaskResult<IStopResult>>;
+  /**
+   * Resumes a native registration left pending — accepted into the inventory, its record never
+   * written — from the canonical request the repository stored with it, so a host that lost the
+   * original request can still finish it.
+   *
+   * @remarks
+   * Nothing about authority is stored with the intent: `create` is authorized again now, against
+   * this view's current policy, exactly as an identical retry through this view would be, and the
+   * epoch it was authorized under is re-checked inside the writer immediately before the record is
+   * written. The task takes **this view's** creation scopes — the stored request does not carry
+   * scopes — and the registration must have been accepted for this view's principal; a pending
+   * registration of another principal is `not-found-or-denied`, like an id with none.
+   *
+   * A pending `register-external` registration is a trusted host operation with no authorization to
+   * repeat; it resumes through `TaskBroker.resumePendingRegistration`, and is `invalid` here.
+   * Withdrawing a pending identity, or recycling its slot, is not offered.
+   */
+  resumePendingRegistration(taskId: TaskId): Promise<TaskResult<ITaskMutationResult>>;
 }
+
+/**
+ * Wraps every write a broker makes — a cooperative write gate a host supplies to
+ * `TaskBroker.create`.
+ *
+ * @remarks
+ * Structural, so any host gate with this shape fits. `guard` is given the broker's whole writer
+ * section and must call it at most once; whatever it returns is the section's result. A gate that
+ * refuses returns a failure without calling `write`. A failure that carries no task detail — a gate
+ * typed over plain `Result` — is reported as `storage-unavailable`, retry `after-host-action`, since
+ * nothing was written; a gate that throws is a failed section, as any section that throws.
+ * @public
+ */
+export interface ITaskWriteGuard {
+  guard<T>(write: () => Promise<TaskResult<T>>): Promise<TaskResult<T>>;
+}
+
+/**
+ * Arms a one-shot timer and returns the function that cancels it — the broker's only use of time.
+ * Defaults to `setTimeout` / `clearTimeout`; tests inject their own.
+ * @public
+ */
+export type TaskScheduleTimer = (fn: () => void, ms: number) => () => void;
 
 /**
  * The state of one child, as the authoritative graph holds it.

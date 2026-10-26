@@ -101,9 +101,11 @@ import {
   ITaskSourceCommitRequest,
   ITaskRepository,
   ITaskRepositoryHealth,
+  ITaskPendingRegistration,
   ITaskRepositoryOpenParams,
   ITaskRepositoryWriter,
   TaskRepositoryMode,
+  TaskRepositoryOpenOrInitializeResult,
   TaskRepositoryOpenResult
 } from './model';
 import {
@@ -112,6 +114,7 @@ import {
   ISourceRecordState,
   indexContentOf,
   initializeRepository,
+  openOrInitializeRepository,
   openRepository,
   scanRoot
 } from './openRepository';
@@ -330,6 +333,23 @@ export class FileTreeTaskRepository implements ITaskRepository {
     return openRepository(params, (state) => new FileTreeTaskRepository(state));
   }
 
+  /**
+   * Opens the repository a root holds, or initializes one when the root is empty.
+   *
+   * @remarks
+   * The choice is made under the exclusive ownership `open` and `initialize` both take, after
+   * interrupted writes' working files are reclaimed, by `initialize`'s own emptiness test: a root
+   * that holds nothing else — no files and no directories — is initialized; anything else is opened,
+   * exactly as {@link FileTreeTaskRepository.open} would, including `recovery-required` for a root
+   * whose repository is damaged or whose manifest is missing. Nothing is repaired, and nothing can
+   * land in the root between the decision and the operation it chooses.
+   */
+  public static async openOrInitialize(
+    params: ITaskRepositoryOpenParams
+  ): Promise<TaskResult<TaskRepositoryOpenOrInitializeResult>> {
+    return openOrInitializeRepository(params, (state) => new FileTreeTaskRepository(state));
+  }
+
   /** {@inheritDoc ITaskRepository.profile} */
   public get profile(): ITaskCapacityProfile {
     return this._files.manifest.profile;
@@ -385,6 +405,25 @@ export class FileTreeTaskRepository implements ITaskRepository {
     return this._queryable().onSuccess((index) =>
       outstandingReport(request?.limit, index, this._pending, this._book)
     );
+  }
+
+  /** {@inheritDoc ITaskRepository.pendingRegistration} */
+  public pendingRegistration(taskId: TaskId): TaskResult<ITaskPendingRegistration | undefined> {
+    return this._usable().onSuccess(() => {
+      const entry: IPendingInventoryEntry | undefined = this._pending.get(taskId);
+      return ok<ITaskPendingRegistration | undefined>(
+        entry === undefined
+          ? undefined
+          : {
+              taskId,
+              operationId: entry.operationId,
+              operation: entry.operation,
+              principalKey: entry.principalKey,
+              recordType: entry.recordType,
+              request: entry.request
+            }
+      );
+    });
   }
 
   /** {@inheritDoc ITaskRepository.capacityStatus} */

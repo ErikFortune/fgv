@@ -333,9 +333,11 @@ export class FileTreeTaskRepository implements ITaskRepository {
     // (undocumented)
     readonly mode: TaskRepositoryMode;
     static open(params: ITaskRepositoryOpenParams): Promise<TaskResult<TaskRepositoryOpenResult>>;
+    static openOrInitialize(params: ITaskRepositoryOpenParams): Promise<TaskResult<TaskRepositoryOpenOrInitializeResult>>;
     outstanding(request?: {
         readonly limit?: number;
     }): TaskResult<ITaskOutstandingReport>;
+    pendingRegistration(taskId: TaskId): TaskResult<ITaskPendingRegistration | undefined>;
     get profile(): ITaskCapacityProfile;
     prunableTasks(request: IListCompletionCandidateQuery): Promise<TaskResult<ReadonlyArray<TaskId>>>;
     query(request: ITaskQuery): Promise<TaskResult<ITaskPage>>;
@@ -386,6 +388,7 @@ export interface IBoundTaskDelivery {
     abandon(deliveryId: DeliveryId): Promise<TaskResult<DeliveryId>>;
     // (undocumented)
     acknowledge(receipt: unknown): Promise<TaskResult<IAcknowledgementResult>>;
+    issued(): Promise<TaskResult<ReadonlyArray<ITaskIssuedReceiptSummary>>>;
     // (undocumented)
     pending(request?: {
         readonly limit?: number;
@@ -485,6 +488,7 @@ export interface IBoundTaskWriter extends IBoundTaskView {
     reparent(request: IReparentTask): Promise<TaskResult<ITaskMutationResult>>;
     requestStop(request: IStopRequest): Promise<TaskResult<IStopResult>>;
     resolveCommands(request: ICommandResolutionRequest): Promise<TaskResult<ICommandResolutionReport>>;
+    resumePendingRegistration(taskId: TaskId): Promise<TaskResult<ITaskMutationResult>>;
     // (undocumented)
     updateTracked(request: IUpdateTrackedTask): Promise<TaskResult<ITaskMutationResult>>;
 }
@@ -954,6 +958,12 @@ export type Instant = Brand<string, 'TaskInstant'>;
 
 // @public
 export const instant: Converter<Instant>;
+
+// @public
+export interface IOpenOrInitializeTaskRepositoryParams extends Omit<ITaskRepositoryOpenParams, 'mode'> {
+    // (undocumented)
+    readonly fallback: TaskRepositoryFallback;
+}
 
 // @public
 export interface IOwedUpdatePage {
@@ -1589,7 +1599,9 @@ export interface ITaskBrokerCreateParams {
     // (undocumented)
     readonly environment: ITaskEnvironment;
     readonly repository: ITaskRepository;
+    readonly schedule?: TaskScheduleTimer;
     readonly sources?: ReadonlyArray<ITaskSource>;
+    readonly writeGuard?: ITaskWriteGuard;
 }
 
 // @public
@@ -2105,6 +2117,16 @@ export interface ITaskInspectUnresolvedToolResult {
 export type ITaskInventoryEntry = ILiveInventoryEntry | IPendingInventoryEntry;
 
 // @public
+export interface ITaskIssuedReceiptSummary {
+    // (undocumented)
+    readonly deliveryId: DeliveryId;
+    // (undocumented)
+    readonly expiresAt: Instant;
+    // (undocumented)
+    readonly issuedAt: Instant;
+}
+
+// @public
 export interface ITaskKindDescriptor<T> {
     // (undocumented)
     readonly commands?: ReadonlyArray<ITaskCommandHandle>;
@@ -2269,6 +2291,20 @@ export interface ITaskPage {
     readonly nextCursor?: PageCursor;
     // (undocumented)
     readonly unresolved: ReadonlyArray<IUnresolvedTaskReference>;
+}
+
+// @public
+export interface ITaskPendingRegistration {
+    // (undocumented)
+    readonly operation: TaskCatalogOperationType;
+    // (undocumented)
+    readonly operationId: OperationId;
+    readonly principalKey: string;
+    // (undocumented)
+    readonly recordType: ITaskCommitRecord['recordType'];
+    readonly request: JsonValue;
+    // (undocumented)
+    readonly taskId: TaskId;
 }
 
 // @public
@@ -2567,6 +2603,7 @@ export interface ITaskRepository {
     outstanding(request?: {
         readonly limit?: number;
     }): TaskResult<ITaskOutstandingReport>;
+    pendingRegistration(taskId: TaskId): TaskResult<ITaskPendingRegistration | undefined>;
     readonly profile: ITaskCapacityProfile;
     prunableTasks(request: IListCompletionCandidateQuery): Promise<TaskResult<ReadonlyArray<TaskId>>>;
     query(request: ITaskQuery): Promise<TaskResult<ITaskPage>>;
@@ -2619,6 +2656,7 @@ export interface ITaskRepositoryManifest {
     readonly consumers: ReadonlyArray<ITaskConsumerInventoryEntry>;
     // (undocumented)
     readonly formatVersion: 1;
+    readonly initializedMode?: TaskRepositoryDurability;
     // (undocumented)
     readonly manifestRevision: number;
     // (undocumented)
@@ -2633,6 +2671,7 @@ export interface ITaskRepositoryManifest {
 
 // @public
 export interface ITaskRepositoryOpenParams {
+    readonly allowSessionOverDurable?: boolean;
     readonly checkpoints?: ITaskCheckpointStore;
     readonly converters?: TaskConverters;
     // (undocumented)
@@ -2643,6 +2682,26 @@ export interface ITaskRepositoryOpenParams {
     readonly recordCache?: ITaskRecordCacheOptions;
     readonly registry: ITaskKindRegistry;
     readonly root: FileTree.FileTreeItem;
+}
+
+// @public
+export interface ITaskRepositoryPlacementReport {
+    // (undocumented)
+    readonly durability: TaskRepositoryDurability;
+    readonly fallbackReason?: string;
+    readonly guarantees: ReadonlyArray<FileTree.AtomicWriteGuarantee>;
+    readonly initialized: boolean;
+    readonly mode: TaskRepositoryMode;
+    // (undocumented)
+    readonly placement: TaskRepositoryPlacement;
+    readonly recovery: ITaskRecoveryReport;
+}
+
+// @public
+export interface ITaskRepositoryRootProbe {
+    readonly guarantees: ReadonlyArray<FileTree.AtomicWriteGuarantee>;
+    readonly mode: TaskRepositoryMode | undefined;
+    readonly reason?: string;
 }
 
 // @public
@@ -2859,6 +2918,12 @@ export interface ITaskUpdate {
 }
 
 // @public
+export interface ITaskWriteGuard {
+    // (undocumented)
+    guard<T>(write: () => Promise<TaskResult<T>>): Promise<TaskResult<T>>;
+}
+
+// @public
 export interface ITrackedTaskPatch {
     // (undocumented)
     readonly attention?: ReadonlyArray<ITaskReference>;
@@ -2870,6 +2935,15 @@ export interface ITrackedTaskPatch {
     readonly progress?: ITaskProgress;
     // (undocumented)
     readonly title?: string;
+}
+
+// @public
+export interface ITrustedKindAuthorityParams {
+    readonly actions: ReadonlyArray<TaskAction>;
+    readonly epoch: string;
+    readonly kinds?: ReadonlyArray<string>;
+    readonly scopeMatch?: TrustedScopeMatch;
+    readonly scopes?: ReadonlyArray<ITaskScope>;
 }
 
 // @public
@@ -3024,6 +3098,24 @@ export type ObservationHealth = {
 };
 
 // @public
+export function openOrInitializeTaskRepository(params: IOpenOrInitializeTaskRepositoryParams): Promise<TaskResult<OpenOrInitializeTaskRepositoryResult>>;
+
+// @public
+export type OpenOrInitializeTaskRepositoryResult = {
+    readonly state: 'ready';
+    readonly repository: ITaskRepository;
+    readonly durability: TaskRepositoryDurability;
+    readonly placement: TaskRepositoryPlacement;
+    readonly report: ITaskRepositoryPlacementReport;
+} | {
+    readonly state: 'recovery-required';
+    readonly recovery: ITaskRecoveryHandle;
+    readonly durability: TaskRepositoryDurability;
+    readonly placement: TaskRepositoryPlacement;
+    readonly report: ITaskRepositoryPlacementReport;
+};
+
+// @public
 export const openTaskStatuses: ReadonlyArray<TaskLifecycleStatus>;
 
 // @public
@@ -3051,6 +3143,9 @@ export const positiveSafeInteger: Converter<number>;
 
 // @public
 export function prepareTaskPrompt(params: IPrepareTaskPromptParams): Promise<TaskResult<ITaskPromptHandoff>>;
+
+// @public
+export function probeTaskRepositoryRoot(root: FileTree.FileTreeItem): Result<ITaskRepositoryRootProbe>;
 
 // @public
 export type RecoveryDeclaration = 'reattach' | 'host-resume' | 'not-recoverable';
@@ -3184,7 +3279,9 @@ export class TaskBroker {
     reconcile(request: ISourceReconcileRequest): Promise<TaskResult<ISourceReconcileReport>>;
     recover(taskId: TaskId): Promise<TaskResult<ITaskRecoveryOutcome>>;
     registerExternal(principal: string, request: unknown): Promise<TaskResult<TaskRegistrationResult>>;
+    resumePendingRegistration(taskId: TaskId): Promise<TaskResult<TaskRegistrationResult>>;
     subscribe(binding: IBoundTaskViewParams, request: unknown): Promise<TaskResult<ITaskSubscription>>;
+    whenIdle(timeoutMs: number): Promise<TaskResult<true>>;
 }
 
 // @public
@@ -3398,11 +3495,27 @@ export type TaskRegistrationResult = {
 };
 
 // @public
+export type TaskRepositoryDurability = 'session' | 'process-crash';
+
+// @public
 export type TaskRepositoryFactory = () => Promise<TaskResult<ITaskRepository>>;
+
+// @public
+export type TaskRepositoryFallback = 'refuse' | 'in-memory';
 
 // @public
 export type TaskRepositoryMode = 'session' | {
     readonly durable: 'process-crash';
+};
+
+// @public
+export type TaskRepositoryOpenOrInitializeResult = {
+    readonly state: 'ready';
+    readonly repository: ITaskRepository;
+    readonly initialized: boolean;
+} | {
+    readonly state: 'recovery-required';
+    readonly recovery: ITaskRecoveryHandle;
 };
 
 // @public
@@ -3415,6 +3528,9 @@ export type TaskRepositoryOpenResult = {
 };
 
 // @public
+export type TaskRepositoryPlacement = 'root' | 'in-memory';
+
+// @public
 export type TaskResult<T> = DetailedResult<T, ITaskFailure>;
 
 // @public
@@ -3422,6 +3538,9 @@ export type TaskRevision = Brand<number, 'TaskRevision'>;
 
 // @public
 export const taskRevision: Converter<TaskRevision>;
+
+// @public
+export type TaskScheduleTimer = (fn: () => void, ms: number) => () => void;
 
 // @public
 export const taskStorageFormatVersion: 1;
@@ -3523,6 +3642,12 @@ export type TrackedTransition = {
     readonly disposition: 'rejected';
     readonly reason: 'invalid-transition' | 'unsupported';
 };
+
+// @public
+export function trustedKindAuthority(params: ITrustedKindAuthorityParams): ITaskAuthorization;
+
+// @public
+export type TrustedScopeMatch = 'every' | 'some';
 
 // @public
 export type UpdateCategory = 'lifecycle' | 'progress' | 'attention' | 'result' | 'assignment' | 'observation' | 'relationship';

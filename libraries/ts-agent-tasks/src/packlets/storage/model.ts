@@ -43,6 +43,7 @@ import {
   ITaskSourceRecord,
   OperationId,
   SourceHistoryContract,
+  TaskCatalogOperationType,
   TaskId,
   TaskRegistrationResult,
   TaskResult,
@@ -99,6 +100,14 @@ export interface ITaskRepositoryOpenParams {
    * durable task state. Everything the store returns is validated; see `ITaskCheckpointStore`.
    */
   readonly checkpoints?: ITaskCheckpointStore;
+  /**
+   * On `open`, permits opening as `'session'` a repository whose manifest records that it was
+   * initialized `process-crash`. Without it such an open is refused (`unsupported`) before anything
+   * is written, so a host whose root lost its durable capability does not silently carry on with
+   * weaker commits over durable data. A manifest that records no initialization mode opens in either
+   * mode regardless. Ignored by `initialize`.
+   */
+  readonly allowSessionOverDurable?: boolean;
 }
 
 /**
@@ -322,6 +331,22 @@ export interface ITaskRepositoryHealth {
 }
 
 /**
+ * A pending task registration as {@link ITaskRepository.pendingRegistration} answers it: everything a
+ * retry of it must repeat. Its capacity claims stay with the repository.
+ * @public
+ */
+export interface ITaskPendingRegistration {
+  readonly taskId: TaskId;
+  readonly operationId: OperationId;
+  readonly operation: TaskCatalogOperationType;
+  /** The principal the registration was accepted for. */
+  readonly principalKey: string;
+  readonly recordType: ITaskCommitRecord['recordType'];
+  /** The canonical creation request the registration was accepted with. */
+  readonly request: JsonValue;
+}
+
+/**
  * A writable repository over one root.
  * @public
  */
@@ -459,6 +484,13 @@ export interface ITaskRepository {
    * host API.
    */
   outstanding(request?: { readonly limit?: number }): TaskResult<ITaskOutstandingReport>;
+  /**
+   * A registration that is still pending — accepted into the inventory, its record never written —
+   * with the identity and canonical creation request it was accepted with, so it can be resumed.
+   * `undefined` when `taskId` names no pending registration, including a task that is already live.
+   * Answered from resident state. Trusted host API: a request may name tasks a principal cannot see.
+   */
+  pendingRegistration(taskId: TaskId): TaskResult<ITaskPendingRegistration | undefined>;
   /** Trusted host capacity status. Never for a model-facing tool. */
   capacityStatus(): TaskResult<ITaskCapacityStatus>;
   health(): ITaskRepositoryHealth;
@@ -491,4 +523,13 @@ export interface ITaskRecoveryHandle {
  */
 export type TaskRepositoryOpenResult =
   | { readonly state: 'ready'; readonly repository: ITaskRepository }
+  | { readonly state: 'recovery-required'; readonly recovery: ITaskRecoveryHandle };
+
+/**
+ * The outcome of {@link FileTreeTaskRepository.openOrInitialize}: a repository it opened or initialized
+ * — `initialized` says which — or the read-only handle of one that could not open healthily.
+ * @public
+ */
+export type TaskRepositoryOpenOrInitializeResult =
+  | { readonly state: 'ready'; readonly repository: ITaskRepository; readonly initialized: boolean }
   | { readonly state: 'recovery-required'; readonly recovery: ITaskRecoveryHandle };
