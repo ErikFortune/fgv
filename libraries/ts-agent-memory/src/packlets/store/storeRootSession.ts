@@ -145,11 +145,6 @@ export class StoreRootSession implements IRecordWriter {
     );
   }
 
-  /** Whether this session has released its root. */
-  public get released(): boolean {
-    return this._ownership.released;
-  }
-
   /** Release the root. Idempotent. */
   public release(): void {
     this._ownership.release();

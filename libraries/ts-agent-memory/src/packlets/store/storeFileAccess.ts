@@ -286,20 +286,26 @@ function writeAtomic(
         `${written.message}; the outcome could not be settled by re-reading (${m}): the file may hold ` +
         `the new record or the previous one, and the store's index keeps the previous one until reopened`
     )
-    .onSuccess((contents) =>
+    .onSuccess((contents: string | undefined) =>
       contents === raw
         ? committed()
         : fail<true>(`${written.message}; a re-read shows the write did not take effect`)
     );
 }
 
-/** Re-read a child file's text, failing when it is absent. */
-function readChildText(scopeDir: FileTree.IFileTreeDirectoryItem, fileName: string): Result<string> {
+/**
+ * Re-read a child file's text: `undefined` when it is absent, which after a write that would have
+ * created it means the write did not take effect.
+ */
+function readChildText(
+  scopeDir: FileTree.IFileTreeDirectoryItem,
+  fileName: string
+): Result<string | undefined> {
   return scopeDir.getChildren().onSuccess((children) => {
-    const file: FileTree.FileTreeItem | undefined = children.find(
-      (c) => c.type === 'file' && c.name === fileName
+    const file: FileTree.IFileTreeFileItem | undefined = children.find(
+      (c): c is FileTree.IFileTreeFileItem => c.type === 'file' && c.name === fileName
     );
-    return file?.type === 'file' ? file.getRawContents() : fail<string>('the file is absent');
+    return file === undefined ? succeed(undefined) : file.getRawContents();
   });
 }
 

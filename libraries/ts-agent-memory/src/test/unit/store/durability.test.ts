@@ -166,7 +166,7 @@ class PlainDir implements FileTree.IMutableFileTreeDirectoryItem {
   }
 
   protected _wrap(dir: FileTree.IMutableFileTreeDirectoryItem): FileTree.IMutableFileTreeDirectoryItem {
-    return this._script.childrenAtomic ? new ScriptedDir(dir, this._script) : new PlainDir(dir, this._script);
+    return new PlainDir(dir, this._script);
   }
 }
 
@@ -189,6 +189,10 @@ class ScriptedDir extends PlainDir implements FileTree.IAtomicFileTreeDirectoryI
 
   public cleanupAtomicTemporaries(): Result<ReadonlyArray<string>> {
     return this._script.cleanup?.() ?? this._inner.cleanupAtomicTemporaries();
+  }
+
+  protected _wrap(dir: FileTree.IMutableFileTreeDirectoryItem): FileTree.IMutableFileTreeDirectoryItem {
+    return this._script.childrenAtomic ? new ScriptedDir(dir, this._script) : new PlainDir(dir, this._script);
   }
 }
 
@@ -294,7 +298,7 @@ describe('FileTreeMemoryStore durability', () => {
       const first = open(new PlainDir(inner, script)).orThrow();
       expect(open(new PlainDir(inner, script))).toFailWith(/already open in this process/i);
       first.dispose();
-      expect(open(new PlainDir(inner, script))).toSucceed();
+      expect(open(new PlainDir(inner, script))).toSucceedAndSatisfy((second) => second.dispose());
     });
   });
 
@@ -310,6 +314,7 @@ describe('FileTreeMemoryStore durability', () => {
       expect(await store.put(record('intro', 'plain'))).toSucceed();
       expect(await store.put(record('intro', 'plain again'))).toSucceed();
       expect(persisted(inner)).toContain('plain again');
+      store.dispose();
     });
 
     test('refuses a requirement', () => {
@@ -326,6 +331,7 @@ describe('FileTreeMemoryStore durability', () => {
       expect(open(new ScriptedDir(inMemoryRoot(), none))).toSucceedAndSatisfy((store) => {
         expect(store.durability.atomic).toBe(false);
         expect(store.durability.reason).toBe('the root reports no atomic replacement');
+        store.dispose();
       });
       const some: IScript = {
         childrenAtomic: true,
@@ -446,15 +452,17 @@ describe('FileTreeMemoryStore durability', () => {
     });
 
     test("'unknown' that cannot be re-read says so, and names what the index holds", async () => {
-      const { script, store } = await seeded();
+      const { inner, script, store } = await seeded();
       script.write = writeThenFail('unknown', () => {
         script.failListing = true;
       });
       expect(await store.put(record('intro', 'after'))).toFailWith(
         /could not be settled by re-reading .*listing refused.*index keeps the previous one until reopened/i
       );
+      // The message was right to hedge: the file does hold the new record, and a reopen settles it.
       script.failListing = false;
-      expect(await bodyOf(store)).toBe('before');
+      store.dispose();
+      expect(await bodyOf(open(new ScriptedDir(inner, script)).orThrow())).toBe('after');
     });
   });
 
