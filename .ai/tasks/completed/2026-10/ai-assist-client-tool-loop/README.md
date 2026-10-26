@@ -1,6 +1,6 @@
 # ai-assist-client-tool-loop: a bounded client-tool runner and the stop primitive under it
 
-**Shipped:** 2026-10-26 into `integration/asks`. PR #TBD. Package: `@fgv/ts-extras` (plus the
+**Shipped:** 2026-10-26 into `integration/asks`. PR #755. Package: `@fgv/ts-extras` (plus the
 private `@fgv/testbed` sample). Origin: personaility#697 (fgv-ask).
 
 ## Summary

@@ -1,7 +1,7 @@
 id: ai-assist-client-tool-loop
 status: shipped
 packages: ['@fgv/ts-extras']
-prs: [] # #TBD — the PR that carries this branch into integration/asks
+prs: [755]
 openPrs: []
 opened: 2026-10-26
 closed: 2026-10-26

@@ -205,7 +205,7 @@ markers.*
 
 <!-- BEGIN GENERATED: recent-additions -->
 
-- **2026-10-26** — ai-assist can run a whole client-tool conversation: runClientToolLoop caps rounds and honours a deadline and caller abort even when… · `ts-extras`
+- **2026-10-26** — ai-assist can run a whole client-tool conversation: runClientToolLoop caps rounds and honours a deadline and caller abort even when… ([#755](https://github.com/ErikFortune/fgv/pull/755)) · `ts-extras`
 - **2026-10-26** — ICryptoProvider now generates and imports non-extractable HMAC-SHA256 keys itself, and composite ids can split at the first or last… ([#754](https://github.com/ErikFortune/fgv/pull/754)) · `ts-extras` `ts-web-extras` `ts-utils`
 - **2026-10-26** — The sqlite-vec indexes now store which embedding model wrote their vectors in the same file, and refuse to mix models or serve a… ([#753](https://github.com/ErikFortune/fgv/pull/753)) · `ts-agent-memory-sqlite-vec`
 - **2026-10-20** — mapSuccess and mapSuccessAsync now hand every failure to a supplied aggregator, even when some results succeeded, so a lenient fold… ([#752](https://github.com/ErikFortune/fgv/pull/752)) · `ts-utils`

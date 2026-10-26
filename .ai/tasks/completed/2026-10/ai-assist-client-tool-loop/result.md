@@ -4,7 +4,7 @@
 `async-control` packlet (`AsyncControl.raceStopConditions`); `executeClientToolTurn` no longer
 starts a tool after its signal aborts, and every call summary carries a required `durationMs`.
 
-Branch `ai-assist-client-tool-loop`, base `integration/asks`. PR #TBD. Package: `@fgv/ts-extras`
+Branch `ai-assist-client-tool-loop`, base `integration/asks`. PR #755. Package: `@fgv/ts-extras`
 (plus the private `@fgv/testbed` sample).
 
 ## What changed
