@@ -99,7 +99,7 @@ detail. `· pkg` names the owning package.*
 - **Need standalone HKDF-SHA256 key derivation?** → `HpkeProvider` · `ts-extras`
 - **Need X25519 key agreement?** → `ICryptoProvider` · `ts-extras`
 - **Need to sign data or verify a signature?** → `ICryptoProvider` · `ts-extras`
-- **Need HMAC-SHA256 authentication / MAC verification?** → `ICryptoProvider` `timingSafeEqual` `hmacSha256` · `ts-extras`
+- **Need HMAC-SHA256 authentication / MAC verification?** → `ICryptoProvider` `generateHmacKey` `importHmacKey` `hmacSha256` `timingSafeEqual` · `ts-extras`
 - **Need constant-time byte comparison?** → `ICryptoProvider` `timingSafeEqual` · `ts-extras`
 - **Parsing a JSON-shaped string (with optional inner validation)?** → `Converters.stringifiedJson` · `ts-json-base`
 - **Need typed JSON Schema for LLM tool authoring?** → `JsonSchema` `fromJson` · `ts-json-base`
