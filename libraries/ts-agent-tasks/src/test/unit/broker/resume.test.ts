@@ -5,7 +5,7 @@
 
 import '@fgv/ts-utils-jest';
 import { FileTree } from '@fgv/ts-json-base';
-import { FileTreeTaskRepository, ITaskRepository, TaskId } from '../../../index';
+import { FileTreeTaskRepository, ITaskRepository, TaskId, taskListKind } from '../../../index';
 import { FaultyRoot } from '../../helpers/faultyRoot';
 import {
   IBrokerHarness,
@@ -107,7 +107,7 @@ describe('resumePendingRegistration — a native registration left pending', () 
     );
     expect(await h.writer.resumePendingRegistration(tid('l'))).toSucceed();
     expect(await h.repository.read(tid('l'))).toSucceedAndSatisfy((read) => {
-      expect(read?.state === 'resolved' && read.task.envelope.kind).toBe('fgv.list');
+      expect(read?.state === 'resolved' && read.task.envelope.kind).toBe(taskListKind);
     });
   });
 

@@ -23,6 +23,12 @@ repositories. **`TaskBroker`** binds reads and writes to a principal: authorized
 tracked work and task lists with a transition table and host-pumped list completion; hierarchy and
 reassignment that keep parentage, responsibility, visibility and authority independent.
 
+For a host's boot path, **`openOrInitializeTaskRepository`** opens the repository at a root — or
+initializes one when the root is empty — in the strongest mode the root qualifies for, with an
+explicit, labelled in-memory fallback; `trustedKindAuthority` covers the host's own principal
+(never a model-facing one); `TaskBroker.whenIdle` and the `writeGuard` option let a host quiesce
+and gate broker writes.
+
 Durable mode claims **process-crash survival only**, and only on a root the FileTree atomic
 capability qualifies — Linux ext2/ext3/ext4 or tmpfs. A container's writable layer is
 overlayfs and is refused: put a durable root on a named volume or a Linux bind mount. Check a

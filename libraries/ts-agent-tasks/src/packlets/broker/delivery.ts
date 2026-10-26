@@ -524,7 +524,8 @@ export class BoundTaskDelivery implements IBoundTaskDelivery {
               issuedAt: manifest.issuedAt,
               expiresAt: manifest.expiresAt
             }))
-            .sort((a, b) => (a.issuedAt < b.issuedAt ? -1 : a.issuedAt > b.issuedAt ? 1 : 0))
+            // Canonical UTC instants order as text; a tie keeps the record's order.
+            .sort((a, b) => a.issuedAt.localeCompare(b.issuedAt))
         )
       )
     );

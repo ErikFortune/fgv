@@ -39,7 +39,11 @@ and `task_stop` / `task_stop_inspect`, which let a model request and read a casc
 release it or carry it out — and **prompt composition** (`checkTaskPrompt`, `prepareTaskPrompt`):
 fragment factories for a `ts-prompt-assist` prompt whose task context is one trailing per-request
 slot, a resolve that is refused unless the body sent is the body analyzed, and a delivery handoff
-whose receipt can be acknowledged only against the exact text that was sent.
+whose receipt can be acknowledged only against the exact text that was sent — and **host helpers**
+(the `host` packlet, plus three broker primitives): `openOrInitializeTaskRepository` with the root
+probe the repository itself uses, `trustedKindAuthority` for the host's own principal,
+`TaskBroker.whenIdle`, a `writeGuard` around every broker write, `IBoundTaskDelivery.issued`, and
+resumption of a pending registration from the request the repository stored.
 
 ## Storing tasks durably — `FileTreeTaskRepository`
 
@@ -144,7 +148,8 @@ committed record byte-for-byte, re-establishing the flush boundary rather than r
 success whose directory entry was never flushed.
 
 **Open validates everything and initializes nothing.** `open` requires a valid `repository.json`;
-`initialize` accepts only an empty root — no files and no directories. Both refuse a kind
+`initialize` accepts only an empty root — no files and no directories apart from the working files
+an interrupted atomic write left behind, which it reclaims first. Both refuse a kind
 registry that fails to freeze. Open reclaims interrupted writes' working files (valid only
 now, under exclusive in-process ownership), then checks every named record's presence, strict
 UTF-8 (durable mode), JSON, format version, strict converters, filename/ID agreement, the
@@ -603,6 +608,75 @@ bound by `logical-bytes`.
 it, keeping the report and the terminal graph. A blocked cancel is never archived as a successful
 stop (`retention-blocked`); a latching pause is released first.
 
+## Host helpers — opening, trusted authority, idle, write guard, resume
+
+The plumbing every broker host rewrites. None of it runs on its own: no timer is installed except
+the one `whenIdle` arms for its own bound, and nothing loops.
+
+**`openOrInitializeTaskRepository({ root, fallback, …open params })`.** One call from a provisioned
+root to a repository, in the strongest mode the root qualifies for.
+
+- **The mode** is `probeTaskRepositoryRoot(root)`'s answer — the same function the repository uses
+  to bind its store, so a host cannot decide a mode the repository would then refuse.
+  `{ durable: 'process-crash' }` when the root qualifies for it, else `'session'`. A root qualifies
+  for a guarantee only when it reports `atomicReplace` **and** lists the guarantee; checking
+  `getAtomicWriteCapabilities().guarantees` alone is the easy mistake.
+- **Open or initialize** is decided by `FileTreeTaskRepository.openOrInitialize`, under the
+  repository's exclusive ownership and after interrupted writes' working files are reclaimed, by
+  `initialize`'s own emptiness test. A root holding only such working files is empty. Any other
+  content without a manifest is `recovery-required` (`manifest-missing`), and nothing is touched.
+- **`recovery-required` is surfaced, never repaired** — the result carries the read-only handle.
+- **A root that qualifies for nothing** is refused (`fallback: 'refuse'`, `unsupported`) or replaced
+  by a fresh in-memory tree (`fallback: 'in-memory'`). The fallback is always labelled:
+  `placement: 'in-memory'` in the result and the report, with `fallbackReason`.
+- **Durability does not silently degrade.** `initialize` records `initializedMode` in the manifest.
+  Opening a `process-crash`-initialized repository as `session` — a root that lost its durable
+  capability — is refused (`unsupported`) unless `allowSessionOverDurable` is passed. A manifest
+  without the field (written before it existed) opens in either mode.
+- Building the broker stays with the host.
+
+**`trustedKindAuthority({ kinds?, scopes?, scopeMatch?, actions, epoch })`.** An `ITaskAuthorization`
+for a **trusted host principal only — never a model-facing one**: it answers from the request alone,
+with no notion of who asks. `actions` is required; there is no "all". A request naming a task (or
+an unresolved registration), in any role, needs its kind in `kinds` and *some* of its scopes in
+`scopes`. A request asking for scopes — a creation, a subscription, a scope change's targets —
+needs them matched by `scopeMatch`: `'every'` (default) or `'some'`, for tasks that carry a
+per-instance scope (a conversation) beside the kind's own. With `scopes` omitted, a request that
+names no task is refused. A creation names no kind, so `kinds` does not constrain it. The epoch is
+constant.
+
+**`TaskBroker.whenIdle(timeoutMs)`.** Resolves when no broker write is queued or running; fails
+`conflict`, retry `safe`, after `timeoutMs`. **It describes a moment, not a hold**: it never takes a
+turn in the writer queue, so it never takes the writer and never delays a write, and a write
+enqueued right after it resolves runs as usual. It sees only the broker's queue — direct
+`repository.withWriter` callers are invisible to it. The bound uses `TaskBroker.create`'s `schedule`
+(`(fn, ms) => cancel`, default `setTimeout`).
+
+**`TaskBroker.create({ writeGuard })`.** A structural `{ guard(write) }` applied inside the queue's
+turn, around the repository writer, for **every** broker write — bound writers, model tools, source
+passes, deliveries, retention and `cleanup`. A guard refusal without task detail (a gate typed over
+plain `Result`) is `storage-unavailable`, retry `after-host-action`; a guard that throws fails the
+section. **A long hold fills the queue**: at most 64 sections wait for the writer, and past that
+every further write fails at once with `conflict`, retry `safe`. `whenIdle` counts a held section as
+busy, so a host that holds writes and then waits for idle waits for its own hold.
+
+**`IBoundTaskDelivery.issued()`.** The subscription's unacknowledged issued receipts — delivery id,
+`issuedAt`, `expiresAt`, nothing they include — read under the writer, oldest first. How a host finds
+the receipt a crash left behind and `abandon`s it. A moment, not a hold: an acknowledgement may
+commit right after; abandoning a receipt acknowledged meanwhile loses nothing, and a later replay of
+that acknowledgement is then an invalid receipt. **There is no `releaseStale`**: the repository has no
+persisted open generation that would tell this open's receipts from an earlier one's.
+
+**Resuming a pending registration.** `ITaskRepository.pendingRegistration(taskId)` answers a
+registration accepted but never written, with its stored canonical request.
+`IBoundTaskWriter.resumePendingRegistration(taskId)` rebuilds a native one (`create-tracked`,
+`create-list`) from that request and **authorizes `create` again, now** — nothing about permission is
+stored with the intent — with the epoch rechecked inside the writer. It must be the same principal;
+the task takes the resuming view's creation scopes, which the stored request does not carry. A
+pending `register-external` resumes through `TaskBroker.resumePendingRegistration(taskId)`, a trusted
+host operation under the principal it was accepted for. Withdrawing a pending identity, or recycling
+its slot, is not offered.
+
 ## Host runbook — capacity pressure and a full repository
 
 The limits are finite by design (a finite history horizon; see `docs/design/agent-tasks/`
@@ -630,7 +704,7 @@ out-of-band file deletion is corruption, not maintenance, and open will report i
    what it names — **expiry alone does not release it**: an expired manifest stops pinning only when
    the next receipt issue or disposition on that subscription evicts it, and `cleanup` does neither,
    while `outstanding()` still counts it as `pinned` — so find it in the subscription's record
-   (`issued`, unacknowledged) and `abandon` it; and at the default 8,000-character context budget an older revision of a
+   (`IBoundTaskDelivery.issued()` lists it) and `abandon` it; and at the default 8,000-character context budget an older revision of a
    maximum-size task never fits beside its current one, so it stays owed until a delivery prepares
    with a larger budget or the host disposes of it. Neither is ever dropped. This releases non-archived slots, payload
    and receipt capacity — **not** retained identities, exact acknowledgement/disposition ids or

@@ -11,7 +11,8 @@ import {
   ITaskWriteGuard,
   TaskBroker,
   TaskResult,
-  TaskScheduleTimer
+  TaskScheduleTimer,
+  allUpdateCategories
 } from '../../../index';
 import { TestPolicy, alpha, brokerRegistry, op, tid, track } from '../../helpers/brokerFixtures';
 import { environment, memoryRoot } from '../../helpers/storageFixtures';
@@ -48,6 +49,7 @@ class HoldingGuard implements ITaskWriteGuard {
   public throwing: boolean = false;
   public guarded: number = 0;
   public inside: number = 0;
+  public completed: number = 0;
   private _release: Array<() => void> = [];
 
   public async guard<T>(write: () => Promise<TaskResult<T>>): Promise<TaskResult<T>> {
@@ -63,7 +65,13 @@ class HoldingGuard implements ITaskWriteGuard {
       await new Promise<void>((resolve) => this._release.push(resolve));
     }
     this.inside++;
-    return write();
+    const result = await write();
+    this.completed++;
+    return result;
+  }
+
+  public hold(): void {
+    this.holding = true;
   }
 
   public release(): void {
@@ -121,7 +129,7 @@ describe('TaskBroker.whenIdle', () => {
     const timer = new ManualTimer();
     const { broker, policy } = await harness({ guard, timer });
     const writer = broker.bind({ principal: 'alice', scopes: [alpha], authorization: policy }).orThrow();
-    guard.holding = true;
+    guard.hold();
     const first = track(writer, 'a');
     const second = track(writer, 'b');
     await settle();
@@ -144,7 +152,7 @@ describe('TaskBroker.whenIdle', () => {
     const timer = new ManualTimer();
     const { broker, policy, repository } = await harness({ guard, timer });
     const writer = broker.bind({ principal: 'alice', scopes: [alpha], authorization: policy }).orThrow();
-    guard.holding = true;
+    guard.hold();
     const write = track(writer, 'a');
     await settle();
     const idle = broker.whenIdle(250);
@@ -165,22 +173,22 @@ describe('TaskBroker.whenIdle', () => {
     const timer = new ManualTimer();
     const { broker, policy } = await harness({ guard, timer });
     const writer = broker.bind({ principal: 'alice', scopes: [alpha], authorization: policy }).orThrow();
-    guard.holding = true;
+    guard.hold();
     const first = track(writer, 'a');
     await settle();
-    const order: string[] = [];
+    const atIdle: { completed?: number } = {};
     const idle = broker.whenIdle(1000).then((r) => {
-      order.push('idle');
+      atIdle.completed = guard.completed;
       return r;
     });
-    const second = track(writer, 'b').then((r) => {
-      order.push('b');
-      return r;
-    });
+    // Enqueued after the wait began: the wait does not stand in front of it.
+    const second = track(writer, 'b');
     await settle();
     guard.release();
     await Promise.all([first, second, idle]);
-    expect(order).toEqual(['b', 'idle']);
+    expect(await idle).toSucceedWith(true);
+    // Idle was reached only once both writes had finished.
+    expect(atIdle.completed).toBe(2);
     // Two writes passed the guard; whenIdle passed it never.
     expect(guard.guarded).toBe(2);
   });
@@ -205,7 +213,7 @@ describe('TaskBroker.whenIdle', () => {
     ).orThrow();
     const broker = TaskBroker.create({ repository, environment: env, writeGuard: guard, schedule: sync }).orThrow();
     const writer = broker.bind({ principal: 'alice', scopes: [alpha], authorization: new TestPolicy() }).orThrow();
-    guard.holding = true;
+    guard.hold();
     const write = track(writer, 'a');
     await settle();
     expect(await broker.whenIdle(5)).toFailWithDetail(/still busy after 5 ms/, code('conflict'));
@@ -213,6 +221,30 @@ describe('TaskBroker.whenIdle', () => {
     guard.release();
     await write;
     expect(await broker.whenIdle(5)).toSucceedWith(true);
+  });
+
+  test('by default the bound is a real timer: fake timers drive it to a timeout, and an idle cancels it', async () => {
+    const guard = new HoldingGuard();
+    const { broker, policy } = await harness({ guard });
+    const writer = broker.bind({ principal: 'alice', scopes: [alpha], authorization: policy }).orThrow();
+    jest.useFakeTimers();
+    try {
+      guard.hold();
+      const write = track(writer, 'a');
+      await settle();
+      const timedOut = broker.whenIdle(10);
+      jest.advanceTimersByTime(10);
+      expect(await timedOut).toFailWithDetail(/still busy after 10 ms/, code('conflict'));
+      const idle = broker.whenIdle(1000);
+      expect(jest.getTimerCount()).toBe(1);
+      guard.release();
+      await write;
+      expect(await idle).toSucceedWith(true);
+      // The idle cancelled its timer.
+      expect(jest.getTimerCount()).toBe(0);
+    } finally {
+      jest.useRealTimers();
+    }
   });
 
   test('a schedule that throws, and an invalid timeout, are refused', async () => {
@@ -237,7 +269,7 @@ describe('TaskBroker.whenIdle', () => {
     expect(await broker.whenIdle(-1)).toFailWithDetail(/non-negative safe integer/, code('invalid'));
     expect(await broker.whenIdle(1.5)).toFailWithDetail(/non-negative safe integer/, code('invalid'));
     const writer = broker.bind({ principal: 'alice', scopes: [alpha], authorization: new TestPolicy() }).orThrow();
-    guard.holding = true;
+    guard.hold();
     const write = track(writer, 'a');
     await settle();
     expect(await broker.whenIdle(10)).toFailWithDetail(/schedule failed: no timers here/, code('invalid'));
@@ -262,7 +294,7 @@ describe('TaskBroker.create writeGuard', () => {
           operationId: op('sub'),
           selection: { scopes: [alpha], lifecycleClass: 'all' },
           start: 'current',
-          policy: { categories: ['lifecycle'] }
+          policy: { categories: [...allUpdateCategories].sort() }
         }
       )
     ).orThrow();
@@ -289,7 +321,7 @@ describe('TaskBroker.create writeGuard', () => {
     const guard = new HoldingGuard();
     const { broker, policy } = await harness({ guard });
     const writer = broker.bind({ principal: 'alice', scopes: [alpha], authorization: policy }).orThrow();
-    guard.holding = true;
+    guard.hold();
     const writes: Array<Promise<unknown>> = [];
     for (let i = 0; i < 64; i++) {
       writes.push(
