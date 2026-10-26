@@ -604,6 +604,36 @@ describe('Advanced converters', () => {
         expect(lastRestricted.convert('users:')).toFailWith(/numeric/i);
       });
 
+      test('exact with an empty separator keeps the split-based behaviour', () => {
+        const emptyExact = Converters.compositeIdFromString(Converters.string, '', Converters.string);
+        expect(emptyExact.convert('ab')).toSucceedWith({ collectionId: 'a', separator: '', itemId: 'b' });
+        expect(emptyExact.convert('a')).toFailWith(/separator '' not found/i);
+        expect(emptyExact.convert('')).toFailWith(/separator '' not found/i);
+        expect(emptyExact.convert('abc')).toFailWith(/multiple separators '' found\./i);
+      });
+
+      test('first and last refuse an empty separator', () => {
+        for (const split of ['first', 'last'] as const) {
+          const converter = Converters.compositeIdFromString(Converters.string, '', Converters.string, {
+            split
+          });
+          for (const value of ['ab', 'a', '']) {
+            expect(converter.convert(value)).toFailWith(/requires a non-empty separator/i);
+          }
+        }
+      });
+
+      test('first and last handle an overlapping separator', () => {
+        const firstOverlap = Converters.compositeIdFromString(Converters.string, 'aa', Converters.string, {
+          split: 'first'
+        });
+        const lastOverlap = Converters.compositeIdFromString(Converters.string, 'aa', Converters.string, {
+          split: 'last'
+        });
+        expect(firstOverlap.convert('aaa')).toSucceedWith({ collectionId: '', separator: 'aa', itemId: 'a' });
+        expect(lastOverlap.convert('aaa')).toSucceedWith({ collectionId: 'a', separator: 'aa', itemId: '' });
+      });
+
       test('a nested composite is validated as a string and then re-parsed', () => {
         const inner = Converters.compositeIdFromString(Converters.string, '.', Converters.string);
         const outer = Converters.compositeIdFromString(Converters.string, ':', Converters.string, {

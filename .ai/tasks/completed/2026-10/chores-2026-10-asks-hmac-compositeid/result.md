@@ -136,6 +136,30 @@ Logs are in `.gate-logs/` in the worktree.
 | `rush rebuild` (repo-wide) | Passes: `SUCCESS: 39 operations`, with 0 matches for the failure greps and no warning except the Git-tracked symlink notice. Log: `rebuild.log`. |
 | `rush test` (repo-wide) | 38 of 39 operations pass with 0 `not met` and no warnings. The one failure was `@fgv/ts-res-cli`: 5 integration tests (`cli-configuration` and `cli-integration`), every one a 5000 ms timeout. That package is on the known load-sensitive list. Re-run alone, it passes 67/67 with 0 failures and full coverage. Logs: `test.log`, `ts-res-cli-rerun.log`. |
 
+## Review follow-up
+The orchestrator's review found no P1s and one P2. All of it is applied:
+
+- **P2: an empty separator changed `'exact'` behaviour.** The first version took `'exact'`'s parts
+  from `indexOf`/`slice`, so with `separator === ''` the input `'ab'` became `{'', 'ab'}` instead
+  of `{a, b}`, and the inputs `'a'` and `''` succeeded instead of failing.
+  - `'exact'` again uses the old `value.split(separator)` logic, byte-identical to the original:
+    `< 2` parts gives "not found", `> 2` gives "multiple", and otherwise it returns
+    `[parts[0], parts[1]]`.
+  - `'first'` and `'last'` now refuse an empty separator with
+    `split '<mode>' requires a non-empty separator`. The doc for `CompositeIdSplitMode` says so.
+  - Both copies of the helper are changed.
+  - New tests cover `''` in every mode, for both the converter and the validator.
+- **P3:**
+  - Each `splitCompositeIdString` copy now carries a comment naming its twin.
+  - New tests pin an overlapping separator: `'aa'` on `'aaa'` splits to `['', 'a']` under
+    `first` and to `['a', '']` under `last`.
+  - A multi-character separator test was added for the validator.
+  - Both provider suites now assert the imported HMAC key's `algorithm.length`: 32 bytes gives 256
+    bits and 64 bytes gives 512.
+- **Re-gated:** package build, lint and test for `ts-utils` (1802 tests pass, 100% coverage, 0
+  warnings). `ts-extras` and `ts-web-extras` tests were re-run for the HMAC assertion: 0 failures,
+  100% coverage.
+
 ## Observations
 - **TSDoc links.** In `ts-extras/crypto-utils`, both the `{@link CryptoUtils.…}` form and the
   `{@link ICryptoProvider.…}` form bake an `ae-unresolved-link` warning into `etc/*.api.md`. My first

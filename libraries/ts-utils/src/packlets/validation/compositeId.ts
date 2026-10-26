@@ -39,6 +39,8 @@ export const allCompositeIdSplitModes = ['exact', 'first', 'last'] as const;
  * - `'last'` splits at the last separator; everything before it, including any
  *   further separators, is passed untouched to the collection ID converter or validator.
  *
+ * `'first'` and `'last'` require a non-empty separator and fail without one.
+ *
  * @remarks
  * To accept a nested composite as one part, split with `'first'` or `'last'` so
  * the nested value arrives intact, validate that part as a plain string, and then
@@ -47,13 +49,14 @@ export const allCompositeIdSplitModes = ['exact', 'first', 'last'] as const;
  */
 export type CompositeIdSplitMode = (typeof allCompositeIdSplitModes)[number];
 
+// Keep in step with the identical module-private copy in `conversion/advancedConverters.ts`.
 /**
  * Splits a composite ID string into its collection and item parts.
  * @param value - The composite ID string.
  * @param separator - The separator string.
  * @param split - The `CompositeIdSplitMode`.
  * @returns `Success` with the `[collectionId, itemId]` strings, or `Failure` if
- * the separator is missing or (for `'exact'`) repeated.
+ * the separator is missing, repeated (for `'exact'`), or empty (for `'first'` / `'last'`).
  */
 function splitCompositeIdString(
   value: string,
@@ -62,9 +65,15 @@ function splitCompositeIdString(
 ): Result<readonly [string, string]> {
   if (split === 'exact') {
     const parts = value.split(separator);
-    if (parts.length > 2) {
+    if (parts.length < 2) {
+      return fail(`${value}: invalid composite ID - separator '${separator}' not found.`);
+    } else if (parts.length > 2) {
       return fail(`${value}: invalid composite ID - multiple separators '${separator}' found.`);
     }
+    return succeed([parts[0], parts[1]]);
+  }
+  if (separator.length === 0) {
+    return fail(`${value}: invalid composite ID - split '${split}' requires a non-empty separator.`);
   }
   const index = split === 'last' ? value.lastIndexOf(separator) : value.indexOf(separator);
   if (index < 0) {

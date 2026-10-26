@@ -366,8 +366,13 @@ describe('NodeCryptoProvider — generateHmacKey / importHmacKey', () => {
       expect(new Uint8Array(await globalThis.crypto.subtle.exportKey('raw', key))).toEqual(raw32);
     });
 
-    test('accepts a key longer than 32 bytes', async () => {
-      expect(await provider.importHmacKey(new Uint8Array(64).fill(7))).toSucceed();
+    test('records the imported key length in bits', async () => {
+      expect(await provider.importHmacKey(raw32)).toSucceedAndSatisfy((key) => {
+        expect(key.algorithm).toEqual(expect.objectContaining({ length: 256 }));
+      });
+      expect(await provider.importHmacKey(new Uint8Array(64).fill(7))).toSucceedAndSatisfy((key) => {
+        expect(key.algorithm).toEqual(expect.objectContaining({ length: 512 }));
+      });
     });
 
     test('refuses a key shorter than 32 bytes', async () => {

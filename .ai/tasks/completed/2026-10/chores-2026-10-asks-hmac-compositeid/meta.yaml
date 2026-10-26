@@ -31,7 +31,9 @@ summary:
     to avoid ae-unresolved-link warnings in api.md. Not named in the brief but shipped: the
     Constants.HMAC_SHA256_KEY_SIZE constant, the named IHmacKeyOptions / ICompositeIdOptions
     interfaces in place of inline option literals, and a ts-utils CAPABILITIES.md shortcut for
-    composite-id split modes.
+    composite-id split modes. Orchestrator review (P2): an empty separator had changed 'exact'
+    behaviour; 'exact' was restored to the original split-based logic and 'first' / 'last' now
+    refuse an empty separator.
   sourceLine: '**Shipped:** `ICryptoProvider` can now generate and import HMAC-SHA256 keys itself, non-extractable by default, so callers no longer reach past the provider to `crypto.subtle.importKey`; and composite ids can split at the first or last separator, so one part may itself contain the separator.'
   headline: >
     ICryptoProvider now generates and imports non-extractable HMAC-SHA256 keys itself, and composite
@@ -50,4 +52,4 @@ keywords:
   - nested composite
   - CompositeIdSplitMode
   - fgv-ask
-sourceHash: sha256:c0edeacf0c3d4b9e # over brief.md + result.md + state.md
+sourceHash: sha256:42aeb8239d05057e # over brief.md + result.md + state.md
