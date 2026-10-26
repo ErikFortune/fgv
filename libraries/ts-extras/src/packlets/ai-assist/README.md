@@ -230,9 +230,10 @@ What it guarantees:
 - **A stop releases the caller at once**, even when a tool ignores its signal. The round's signal
   is aborted, its stream is no longer drained, and no further round starts. Side effects already
   in flight may still land: a tool that was running keeps running unless it honours the signal.
-  The outcome's `unsettledCalls` lists the calls that round had handed off without the runner
-  seeing their result. Resuming from `continuationMessages` after a stop may make the model
-  request those tools again; making that safe (idempotency) is the host's responsibility.
+  The outcome's `orphanedRoundCalls` lists every call that round had handed off, each marked
+  `settled` when its result was seen; the host never receives any of them in a recorded round.
+  Resuming from `continuationMessages` after a stop may make the model request any of them again;
+  making that safe (idempotency) is the host's responsibility.
 - **No tool starts after an abort.** `executeClientToolTurn` checks its signal before the
   `onBeforeToolExecute` gate and again before `execute`; a call it declines is reported as an
   `isError` result saying the turn was aborted.

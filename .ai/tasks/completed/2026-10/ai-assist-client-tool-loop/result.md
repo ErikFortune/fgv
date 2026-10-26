@@ -212,3 +212,35 @@ No P1s. Each finding, its fix, and the test that pins it:
 - **P3.9** — `deferred.md` cites personaility `599c50bd` for the reworked reference loop.
 - **P3.10** — the testbed scenario's final response again falls back to round 1's text when the
   final round's text is empty.
+
+## Independent review, round 2 (at `4cbabbd66`)
+
+The round-1 P2 fix was only half right, and it is **superseded** by what follows. The P2
+description above is kept as it was written.
+
+- **P2, reopened: `unsettledCalls` dropped calls that had already run when the stop came after
+  their results.** A tool's result was seen and the call removed from the list, but the round
+  holding that result was discarded. The common case shows it: tools dispatch inline, the turn goes
+  back to reading the network, the stream stalls, and the caller aborts. The outcome listed nothing,
+  although two tools had run (review probe G).
+- **Fix:** the field is renamed `orphanedRoundCalls: ReadonlyArray<IClientToolOrphanedCall>`, where
+  each entry is `{ toolName, callId?, args, settled, isError? }`.
+  - It lists **every** call the round in flight had handed off, settled or not. `settled` and
+    `isError` come from the call's `client-tool-result` when it was seen.
+  - As before, it is present only on `'aborted'` and `'deadline'`.
+  - Pairing is simplified to "a result settles the last call handed off". This relies on the
+    invariant, stated in a comment, that dispatch is serial and inline: `executeClientToolTurn` runs
+    each call to its result before it reads the next provider event, so at most one call is ever
+    awaiting a result. The id/name matching is gone.
+  - The TSDoc, README and CAPABILITIES now say these are calls the host never receives in a recorded
+    round, and that resuming may re-request any of them.
+- **Tests,** in the "orphaned round calls" block:
+  - probe G's shape (both results seen, then a stalled stream, then an abort) lists both calls
+    `settled: true`, one of them with `isError: true`;
+  - a call still running at the stop is listed `settled: false`;
+  - with no call ids, each result settles the last call;
+  - a stop before any call lists none;
+  - completed and round-limit outcomes carry no field.
+- **Red on `4cbabbd66`:** the new tests were run against `4cbabbd66`'s compiled `clientToolLoop.js`.
+  5 failed: all four stop-path tests in the new block, plus the updated mid-round caller-abort test
+  (`.gate-logs/red-orphaned.log`). All 48 pass on the fix.

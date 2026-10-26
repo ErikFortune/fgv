@@ -200,8 +200,8 @@ declare namespace AiAssist {
         IClientToolLoopObserver,
         IClientToolLoopOutcome,
         IClientToolLoopParams,
+        IClientToolOrphanedCall,
         IClientToolRound,
-        IClientToolUnsettledCall,
         runClientToolLoop,
         aiProviderId,
         aiServerToolType,
@@ -1703,9 +1703,9 @@ interface IClientToolLoopObserver {
 // @public
 interface IClientToolLoopOutcome {
     readonly continuationMessages?: ReadonlyArray<JsonObject>;
+    readonly orphanedRoundCalls?: ReadonlyArray<IClientToolOrphanedCall>;
     readonly rounds: ReadonlyArray<IClientToolRound>;
     readonly state: ClientToolLoopState;
-    readonly unsettledCalls?: ReadonlyArray<IClientToolUnsettledCall>;
 }
 
 // @public
@@ -1717,6 +1717,15 @@ interface IClientToolLoopParams extends Omit<IExecuteClientToolTurnParams, 'cont
 }
 
 // @public
+interface IClientToolOrphanedCall {
+    readonly args: JsonObject;
+    readonly callId?: string;
+    readonly isError?: boolean;
+    readonly settled: boolean;
+    readonly toolName: string;
+}
+
+// @public
 interface IClientToolRound {
     readonly calls: ReadonlyArray<IAiClientToolCallSummary>;
     readonly fullText: string;
@@ -1725,13 +1734,6 @@ interface IClientToolRound {
     readonly toolConflicts: IAiToolConflictReport;
     readonly truncated: boolean;
     readonly usage?: IAiCompletionUsage;
-}
-
-// @public
-interface IClientToolUnsettledCall {
-    readonly args: JsonObject;
-    readonly callId?: string;
-    readonly toolName: string;
 }
 
 // @public

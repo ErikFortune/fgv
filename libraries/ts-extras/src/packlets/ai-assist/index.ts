@@ -164,8 +164,8 @@ export {
   type IClientToolLoopObserver,
   type IClientToolLoopOutcome,
   type IClientToolLoopParams,
+  type IClientToolOrphanedCall,
   type IClientToolRound,
-  type IClientToolUnsettledCall,
   runClientToolLoop
 } from './clientToolLoop';
 
