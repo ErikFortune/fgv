@@ -14,7 +14,7 @@ import {
   TaskBroker,
   TaskResult
 } from '../../../index';
-import { succeedWithDetail } from '@fgv/ts-utils';
+import { failWithDetail, succeedWithDetail } from '@fgv/ts-utils';
 import { FaultyRoot } from '../../helpers/faultyRoot';
 import {
   IBrokerHarness,
@@ -288,12 +288,22 @@ describe('an identical external registration that loses a race', () => {
 });
 
 describe('retries are bounded when the repository keeps missing the live task', () => {
-  /** A repository whose outside-the-writer `readCommit` never sees a task; the writer's does. */
+  /**
+   * A repository whose outside-the-writer `readCommit` never sees a task; the writer's does. After
+   * ten reads it fails instead, so an unbounded retry ends in that failure rather than hanging.
+   */
   function lagging(real: ITaskRepository): ITaskRepository {
+    const counted: { reads: number } = { reads: 0 };
     return new Proxy(real, {
       get(target: ITaskRepository, key: string | symbol): unknown {
         if (key === 'readCommit') {
-          return async () => succeedWithDetail<undefined, ITaskFailure>(undefined);
+          return async () =>
+            ++counted.reads > 10
+              ? failWithDetail<undefined, ITaskFailure>('looped: more than ten reads', {
+                  code: 'storage-unavailable',
+                  retry: 'safe'
+                })
+              : succeedWithDetail<undefined, ITaskFailure>(undefined);
         }
         const value = Reflect.get(target, key);
         return typeof value === 'function' ? value.bind(target) : value;
