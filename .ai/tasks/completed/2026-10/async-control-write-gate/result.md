@@ -212,6 +212,27 @@ Run the same way as the matrix above. Each row was restored after its run; every
 The P2-1 tests were written before the `seen.started` change and confirmed red against the code
 before it (row B3).
 
+### Round-1 gates
+
+These ran on `ceb54d1a4`, merged with `origin/integration/asks` @ `da35380ee` (unchanged since the
+first gate), in the foreground from the repo root. A container restart killed the first round-1
+`rush test` at operation 24 of 39, so the whole set below was re-run on this HEAD. The first round-1
+rebuild ended `SUCCESS WITH WARNINGS` on one lint warning, a missing return type in the new ordering
+test. `ceb54d1a4` fixes it, and the gates below are clean.
+
+| Gate | Exit | Error grep | Warning grep |
+|---|---|---|---|
+| `rush install` | 0 | — | — |
+| `rush change --verify --target-branch origin/integration/asks` | 0 | — | — |
+| `rush rebuild` | 0 | 0 | symlink notice only; `SUCCESS: 39 operations` |
+| `rush test` | 0 | 0 | symlink notice only; `SUCCESS: 38 operations`, 38 `completed successfully`; no NUL padding |
+| ts-extras `rushx build` / `lint` / `test` | 0 / 0 / 0 | 0 | 0; coverage 100/100/100/100 |
+| ts-agent-tasks `rushx build` / `lint` / `test` | 0 / 0 / 0 | 0 | 0; coverage 100/100/100/100 |
+| prettier 2.8.8 `--check` on touched files | 0 | — | — |
+| feed `--check`, `verify-capability-docs` | 0 / 0 | — | 0 stale, 0 failed |
+
+None of the known load-sensitive tests failed.
+
 ## Brief deltas
 
 - **`ITaskWriteGuard` widened** (`PromiseLike<Result<T>>`). This was forced by the structural-fit
