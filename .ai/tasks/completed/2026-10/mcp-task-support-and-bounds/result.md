@@ -2,7 +2,7 @@
 
 **Shipped:** MCP tools that require task execution are skipped by `adaptMcpTools` with a structured `kind`, every skip says why in a closed `McpSkipKind`, a paged `listMcpTools` can be bounded by page count and total time, and a guarded fetch can cap the bytes a response delivers — each bound opt-in, and each failing loudly rather than truncating.
 
-Resolves personaility#689 and personaility#690. Base `integration/asks`; PR #TBD.
+Resolves personaility#689 and personaility#690. Base `integration/asks`; PR #757.
 
 ## What shipped, per brief decision
 

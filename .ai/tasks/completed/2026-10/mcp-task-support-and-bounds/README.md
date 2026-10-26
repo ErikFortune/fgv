@@ -1,6 +1,6 @@
 # `mcp-task-support-and-bounds`: MCP task-support carry-through, skip kinds, and bounded discovery and egress
 
-**Shipped 2026-10-26** onto `integration/asks` (PR #TBD).
+**Shipped 2026-10-26** onto `integration/asks` (PR #757).
 Origin: personaility#689 and personaility#690 (fgv-asks).
 
 ---

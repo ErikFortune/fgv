@@ -1,7 +1,7 @@
 id: mcp-task-support-and-bounds
 status: shipped
 packages: ['@fgv/ts-extras-mcp', '@fgv/ts-extras', '@fgv/testbed']
-prs: [TBD] # replace with the PR number when the PR opens
+prs: [757]
 openPrs: []
 opened: 2026-10-26
 closed: 2026-10-26
