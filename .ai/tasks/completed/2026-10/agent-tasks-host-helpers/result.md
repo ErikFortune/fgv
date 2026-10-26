@@ -251,3 +251,15 @@ which breaks ordinary concurrency and contradicts the brief's "a long pause fill
 queue" contract. So the rule is documented on `ITaskWriteGuard` and in CAPABILITIES ("the guard must
 not call the broker"; `whenIdle` is the one safe call and times out). If an async context becomes
 acceptable, detection is a small change in `_guarded`.
+
+### Round 2 gates
+
+| gate | result |
+|---|---|
+| package `build` / `lint` | 0 error/failure matches; no warning lines |
+| package `test` | 2492 passed, 0 failed; coverage 100 / 100 / 100 / 100 |
+| `rush rebuild` | `SUCCESS: 39 operations`; only the tracked-symlink notice |
+| `rush test` | `SUCCESS: 38 operations`, 38 completed, 0 failure matches |
+| `change --verify --target-branch origin/integration/asks` | passes |
+| prettier 2.8.8 | clean |
+| feed `--check` / `verify-capability-docs` | 0 stale / 0 failed |
