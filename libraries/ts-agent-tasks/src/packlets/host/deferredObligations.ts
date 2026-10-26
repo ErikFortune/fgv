@@ -600,28 +600,42 @@ export class DeferredObligations {
   /**
    * Ends `obligation` as merged into `into`, which already owes its changes, then archives it.
    * Nothing was discharged through `obligation`, so it is cancelled — under the `merged` code, with
-   * a reference to `into` — rather than succeeded. Fails, writing nothing, when `into` does not owe
-   * every change `obligation` does: merge the changes into `into` first, with
-   * {@link DeferredObligations.wait}.
+   * a reference to `into` — rather than succeeded. `into` is read again first, and the merge fails,
+   * writing nothing, unless it is waiting now and owes every change `obligation` does: merge the
+   * changes into `into` first, with {@link DeferredObligations.wait}.
    */
   public merged(obligation: IDeferredObligation, into: IDeferredObligation): Promise<Result<TaskId>> {
-    return guarded(this._guard, async () => {
-      const missing: ReadonlyArray<string> = obligation.changes.filter((c) => !into.changes.includes(c));
-      if (into.taskId === obligation.taskId || missing.length > 0) {
-        return fail(
-          `deferred obligations: ${obligation.taskId} cannot be merged into ${into.taskId}: ` +
-            (missing.length > 0 ? `it does not owe ${missing.join(', ')}` : 'they are the same obligation')
-        );
-      }
-      return this._cancel(obligation.taskId, obligation.revision, {
-        code: this._codes.merged,
-        summary: `its changes are owed by ${into.taskId}`,
-        attention: [
-          { namespace: this._namespaces.obligation, key: into.taskId },
-          ...this._changeReferences(obligation.changes)
-        ]
-      });
-    });
+    return guarded(this._guard, async () =>
+      (
+        await (
+          await this._stateOf(into.taskId)
+        ).thenOnSuccess(async (survivor) => {
+          // Decided on `into` as it is now, not as the caller last read it: a survivor settled since
+          // would take the merged changes with it.
+          const owes: ReadonlyArray<string> = survivor.state === 'waiting' ? survivor.obligation.changes : [];
+          const missing: ReadonlyArray<string> = obligation.changes.filter((c) => !owes.includes(c));
+          if (into.taskId === obligation.taskId || survivor.state !== 'waiting' || missing.length > 0) {
+            return fail<TaskId>(
+              into.taskId === obligation.taskId
+                ? 'they are the same obligation'
+                : survivor.state !== 'waiting'
+                ? `${into.taskId} is ${survivor.state}, not waiting`
+                : `${into.taskId} does not owe ${missing.join(', ')}`
+            );
+          }
+          return this._cancel(obligation.taskId, obligation.revision, {
+            code: this._codes.merged,
+            summary: `its changes are owed by ${into.taskId}`,
+            attention: [
+              { namespace: this._namespaces.obligation, key: into.taskId },
+              ...this._changeReferences(obligation.changes)
+            ]
+          });
+        })
+      ).withErrorFormat(
+        (message) => `deferred obligations: merging ${obligation.taskId} into ${into.taskId}: ${message}`
+      )
+    );
   }
 
   /**

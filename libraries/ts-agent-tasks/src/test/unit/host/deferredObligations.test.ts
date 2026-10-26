@@ -428,9 +428,13 @@ describe('DeferredObligations retries, discharge and sweeps', () => {
     expect(later.notBefore).toBe(new Date(h.clock.now + minute).toISOString());
     expect(later.changes).toEqual(['c1']);
     expect(later.waitsRemaining).toBe(waiting.waitsRemaining - 1);
-    // The same wait again writes nothing.
+    // The same wait again writes nothing — not even an unchanged operation, which would spend budget.
+    const operations = async (): Promise<number> =>
+      (await h.repository.readCommit(waiting.taskId)).orThrow()!.operations.length;
+    const before = await operations();
     expect(await obligations.wait(later, h.clock.now + minute)).toSucceedWith(later);
     expect(await revisionOf(h, waiting.taskId)).toBe(3);
+    expect(await operations()).toBe(before);
     // A wait from the earlier read is refused on its revision.
     expect(await obligations.wait(waiting, h.clock.now + 2 * minute)).toFailWith(/'wait' on wake:address:c1/);
     // Attention and summary can change with the wait.
@@ -500,7 +504,7 @@ describe('DeferredObligations retries, discharge and sweeps', () => {
   test('merged cancels with a reference to the surviving obligation', async () => {
     const lead = await deferred(obligations, deferralFor(h, 'a'));
     const other = await deferred(obligations, deferralFor(h, 'b'));
-    expect(await obligations.merged(other, lead)).toFailWith(/does not owe b/);
+    expect(await obligations.merged(other, lead)).toFailWith(/wake:address:a does not owe b/);
     expect(await obligations.merged(lead, lead)).toFailWith(/same obligation/);
     const grown = (await obligations.wait(lead, h.clock.now, { changes: ['a', 'b'] })).orThrow();
     expect(grown.changes).toEqual(['a', 'b']);
@@ -519,6 +523,55 @@ describe('DeferredObligations retries, discharge and sweeps', () => {
     });
     expect(await obligations.stateOf(other.key)).toSucceedAndSatisfy((state) => {
       expect(state.state).toBe('settled');
+    });
+  });
+
+  test('merged decides on the survivor as it is now, not as the caller last read it', async () => {
+    const lead = await deferred(obligations, deferralFor(h, 'a'));
+    const other = await deferred(obligations, deferralFor(h, 'b'));
+    // The caller's copy of the lead predates the wait that gave it b: the merge still goes through.
+    (await obligations.wait(lead, h.clock.now, { changes: ['a', 'b'] })).orThrow();
+    expect(await obligations.merged(other, lead)).toSucceedWith(other.taskId);
+    // A survivor settled since it was read is refused, and nothing is cancelled.
+    const third = await deferred(obligations, deferralFor(h, 'c'));
+    const fresh = (await obligations.waiting()).orThrow().obligations.find((o) => o.key.changeRef === 'a')!;
+    const grown = (await obligations.wait(fresh, h.clock.now, { changes: ['a', 'c'] })).orThrow();
+    (await obligations.succeed(grown, 'delivered')).orThrow();
+    expect(await obligations.merged(third, grown)).toFailWith(/wake:address:a is settled, not waiting/);
+    expect(await obligations.stateOf(third.key)).toSucceedAndSatisfy((state) => {
+      expect(state.state).toBe('waiting');
+    });
+  });
+
+  test('a cancel whose archive fails is finished by retrying the same cancel', async () => {
+    const waiting = await deferred(obligations, deferralFor(h, 'c1'));
+    let refuse: boolean = true;
+    const flaky = obligationsOver(h, {
+      broker: brokerWith(h, {
+        archive: async (request) =>
+          refuse
+            ? failWithDetail('archive refused', { code: 'storage-unavailable', retry: 'safe' })
+            : h.broker
+                .bind({ principal: 'host', scopes: [deferral], authorization: authority() })
+                .orThrow()
+                .archive(request)
+      })
+    });
+    expect(await flaky.cancel(waiting, 'its room is gone')).toFailWith(
+      /archiving wake:address:c1: archive refused/
+    );
+    expect(await flaky.stateOf(waiting.key)).toSucceedWith({
+      state: 'settled',
+      status: 'cancelled',
+      archived: false
+    });
+    refuse = false;
+    // The cancel replays its stored receipt (same task, same expected revision), then archives.
+    expect(await flaky.cancel(waiting, 'its room is gone')).toSucceedWith(waiting.taskId);
+    expect(await flaky.stateOf(waiting.key)).toSucceedWith({
+      state: 'settled',
+      status: 'cancelled',
+      archived: true
     });
   });
 

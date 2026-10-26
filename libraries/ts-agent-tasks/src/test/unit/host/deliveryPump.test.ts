@@ -201,12 +201,14 @@ describe('TaskDeliveryPump', () => {
 
   test('superseded revisions are disposed after a terminal discharge only', async () => {
     await track(h.writer, 't1');
+    await track(h.writer, 't2');
+    await command(h, 't2', 1, 'start');
     await command(h, 't1', 1, 'start');
     // A non-terminal discharge leaves the task's other owed revisions alone.
     const early = await prepared(pump);
     expect(early.entry.revision).toBe(1);
     expect((await pump.acknowledge(early)).orThrow().superseded).toEqual([]);
-    expect((await owed(h)).map((u) => u.revision)).toEqual([2]);
+    expect((await owed(h)).filter((u) => u.taskId === 't1').map((u) => u.revision)).toEqual([2]);
     await command(h, 't1', 2, 'succeed', succeeded);
     // The outcome is presented first, and discharging it ends the revision it supersedes.
     const outcome = await prepared(pump);
@@ -215,7 +217,8 @@ describe('TaskDeliveryPump', () => {
     expect(outcome.entry.categories).toEqual(['lifecycle', 'result']);
     const discharged = (await pump.acknowledge(outcome)).orThrow();
     expect(discharged.superseded).toEqual(['t1:2:0']);
-    expect(await owed(h)).toEqual([]);
+    // Only the discharged task's older revisions: another task's are left owed.
+    expect((await owed(h)).map((u) => u.id)).toEqual(['t2:1:0', 't2:2:0']);
     expect((await consumerRecord(h.repository, 's1')).disposed).toEqual([
       { updateId: 't1:2:0', reason: 'superseded by revision 3 of the same task' }
     ]);
