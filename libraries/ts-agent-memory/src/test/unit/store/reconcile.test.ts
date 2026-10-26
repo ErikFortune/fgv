@@ -320,7 +320,8 @@ describe('IMemoryStore.reconcile — record-vector', () => {
       vectorIndex: throwingHas,
       embed: okEmbed,
       warn: () => undefined,
-      embedsKind: () => true
+      embedsKind: () => true,
+      checkWritable: () => succeed(true)
     });
 
     const entries = (await store.listEntries()).orThrow();
@@ -659,7 +660,8 @@ describe('reconcileVectors — the injected stamp seam', () => {
       vectorIndex: index,
       embed: okEmbed,
       embedsKind: () => true,
-      warn: () => undefined
+      warn: () => undefined,
+      checkWritable: () => succeed(true)
     });
     const rec = record('a');
     const result = await reconcileVectors({
@@ -683,7 +685,11 @@ describe('VectorMaintenance repair entry points guard their own wiring', () => {
   // Reachable only by calling them directly — `reconcile` checks first. They are
   // still guards rather than c8-ignored defensive code, because they are
   // package-internal entry points a future caller could reach without the check.
-  const bare = new VectorMaintenance({ embedsKind: () => true, warn: () => undefined });
+  const bare = new VectorMaintenance({
+    embedsKind: () => true,
+    warn: () => undefined,
+    checkWritable: () => succeed(true)
+  });
   const t = { scope: knowledgeScope, id: 'a' as MemoryId };
 
   test('reembedRecord refuses an unwired record lane', async () => {

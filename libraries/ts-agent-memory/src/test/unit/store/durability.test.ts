@@ -7,20 +7,38 @@ import '@fgv/ts-utils-jest';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
-import { Converters, DetailedResult, Logging, Result, fail, failWithDetail, succeed } from '@fgv/ts-utils';
+import {
+  Converter,
+  Converters,
+  DetailedResult,
+  Logging,
+  Result,
+  fail,
+  failWithDetail,
+  succeed
+} from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
 import {
   BodyConverterRegistry,
   EntityId,
   FileTreeMemoryStore,
   IFileTreeMemoryStoreCreateParams,
+  IBodyConverterRegistry,
+  IEmbeddedFragment,
   IIdentityCodec,
   IMemoryRecord,
+  IMemoryStore,
   IMemoryStoreDurabilityOptions,
+  IWritePolicy,
+  InMemoryCosineIndex,
+  InMemoryFragmentCosineIndex,
   Kind,
   KnowledgeIdentityCodec,
+  MemoryCapCullPolicy,
   MemoryDurabilityRequirement,
-  envelopeConverter
+  MemoryIndex,
+  envelopeConverter,
+  memoryDurabilityRequirements
 } from '../../../index';
 
 const knowledgeKind: Kind = 'knowledge' as Kind;
@@ -32,6 +50,20 @@ function inMemoryRoot(): FileTree.IMutableFileTreeDirectoryItem {
     throw new Error('expected an atomic in-memory root');
   }
   return root;
+}
+
+function mutableDir(tree: FileTree.FileTree, at: string): FileTree.IMutableFileTreeDirectoryItem {
+  const dir = tree.getDirectory(at).orThrow();
+  if (!FileTree.isMutableDirectoryItem(dir)) {
+    throw new Error(`expected a mutable directory at ${at}`);
+  }
+  return dir;
+}
+
+function registryWith(converter: Converter<string>): IBodyConverterRegistry {
+  const registry = BodyConverterRegistry.create().orThrow();
+  registry.register(knowledgeKind, converter);
+  return registry;
 }
 
 function record(id: string, body: string): IMemoryRecord<unknown> {
@@ -239,6 +271,10 @@ describe('FileTreeMemoryStore durability', () => {
       expect(open(root)).toSucceed();
     });
 
+    test('declares the requirements once, weakest first', () => {
+      expect(memoryDurabilityRequirements).toEqual(['session', 'process-crash']);
+    });
+
     test('refuses an unrecognized requirement', () => {
       const durability: IMemoryStoreDurabilityOptions = {
         require: 'os-crash' as unknown as MemoryDurabilityRequirement
@@ -252,7 +288,7 @@ describe('FileTreeMemoryStore durability', () => {
       const root = inMemoryRoot();
       const first = open(root).orThrow();
       (await first.put(record('intro', 'first'))).orThrow();
-      expect(open(root)).toFailWith(/root '\/' is already open in this process/i);
+      expect(open(root)).toFailWith(/root '\/' overlaps root '\/', which is already open in this process/i);
 
       first.dispose();
       first.dispose();
@@ -292,13 +328,186 @@ describe('FileTreeMemoryStore durability', () => {
       });
     });
 
-    test('a root without atomic writes is held by path, whichever item reaches it', () => {
-      const inner = inMemoryRoot();
-      const script: IScript = { childrenAtomic: false };
-      const first = open(new PlainDir(inner, script)).orThrow();
-      expect(open(new PlainDir(inner, script))).toFailWith(/already open in this process/i);
+    test('two items for one directory of one tree are the same root', () => {
+      const tree = FileTree.inMemory([], { mutable: true }).orThrow();
+      const first = open(mutableDir(tree, '/')).orThrow();
+      expect(open(mutableDir(tree, '/'))).toFailWith(/overlaps root '\/', which is already open/i);
       first.dispose();
-      expect(open(new PlainDir(inner, script))).toSucceedAndSatisfy((second) => second.dispose());
+      expect(open(mutableDir(tree, '/'))).toSucceedAndSatisfy((second) => second.dispose());
+    });
+
+    test('a root nested inside another root of the same tree is refused, whichever opens first', () => {
+      const tree = FileTree.inMemory([{ path: '/vault/inner/keep.txt', contents: 'x' }], {
+        mutable: true
+      }).orThrow();
+      const outer = open(mutableDir(tree, '/vault')).orThrow();
+      expect(open(mutableDir(tree, '/vault/inner'))).toFailWith(/overlaps root '\/vault'/i);
+      outer.dispose();
+      const inner = open(mutableDir(tree, '/vault/inner')).orThrow();
+      expect(open(mutableDir(tree, '/vault'))).toFailWith(/overlaps root '\/vault\/inner'/i);
+      expect(open(mutableDir(tree, '/'))).toFail();
+      inner.dispose();
+    });
+
+    test('a sibling directory of the same tree is a different root', () => {
+      const tree = FileTree.inMemory(
+        [
+          { path: '/a/x.txt', contents: 'x' },
+          { path: '/ab/x.txt', contents: 'x' }
+        ],
+        {
+          mutable: true
+        }
+      ).orThrow();
+      const a = open(mutableDir(tree, '/a')).orThrow();
+      expect(open(mutableDir(tree, '/ab'))).toSucceedAndSatisfy((ab) => ab.dispose());
+      a.dispose();
+    });
+
+    test('two different backends without atomic writes, both rooted at /, are different roots', () => {
+      const a = open(new PlainDir(inMemoryRoot(), { childrenAtomic: false })).orThrow();
+      expect(open(new PlainDir(inMemoryRoot(), { childrenAtomic: false }))).toSucceedAndSatisfy((b) =>
+        b.dispose()
+      );
+      a.dispose();
+    });
+
+    test('a root item that cannot name its storage is identified by the item itself', () => {
+      const item = new PlainDir(inMemoryRoot(), { childrenAtomic: false });
+      const first = open(item).orThrow();
+      expect(open(item)).toFailWith(/already open in this process/i);
+      first.dispose();
+    });
+
+    test('an open that throws releases its claim', async () => {
+      const tree = FileTree.inMemory([], { mutable: true }).orThrow();
+      const seed = open(mutableDir(tree, '/')).orThrow();
+      (await seed.put(record('intro', 'body'))).orThrow();
+      seed.dispose();
+      const throwing = Converters.generic<string>(() => {
+        throw new Error('converter exploded');
+      });
+      expect(open(mutableDir(tree, '/'), { registry: registryWith(throwing) })).toFailWith(
+        /converter exploded/
+      );
+      expect(open(mutableDir(tree, '/'))).toSucceedAndSatisfy((store) => store.dispose());
+    });
+
+    test('an injected index that throws during the open releases the claim', () => {
+      const tree = FileTree.inMemory([], { mutable: true }).orThrow();
+      const exploding = new Proxy(MemoryIndex.create().orThrow(), {
+        get: (target, property) =>
+          property === 'rebuild'
+            ? (): never => {
+                throw new Error('index exploded');
+              }
+            : Reflect.get(target, property)
+      });
+      expect(open(mutableDir(tree, '/'), { index: exploding })).toFailWith(/index exploded/);
+      expect(open(mutableDir(tree, '/'))).toSucceedAndSatisfy((store) => store.dispose());
+    });
+
+    test('a host holding the interface can dispose', () => {
+      const tree = FileTree.inMemory([], { mutable: true }).orThrow();
+      const held: IMemoryStore = open(mutableDir(tree, '/')).orThrow();
+      held.dispose?.();
+      expect(open(mutableDir(tree, '/'))).toSucceedAndSatisfy((store) => store.dispose());
+    });
+  });
+
+  describe('a disposed store leaves no derived state behind', () => {
+    function gated(): { gate: Promise<void>; open: () => void } {
+      let release: () => void = () => undefined;
+      const gate = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      return { gate, open: () => release() };
+    }
+
+    test('a put whose embedding finishes after dispose adds no vector, and a queued put never embeds', async () => {
+      const tree = FileTree.inMemory([], { mutable: true }).orThrow();
+      const index = InMemoryCosineIndex.create().orThrow();
+      const { gate, open: release } = gated();
+      let embeds = 0;
+      const embed = async (): Promise<Result<Float32Array>> => {
+        embeds += 1;
+        await gate;
+        return succeed(Float32Array.from([1, 2, 3]));
+      };
+      const first = open(mutableDir(tree, '/'), { vectorIndex: index, embed }).orThrow();
+      const inFlight = first.put(record('intro', 'hello'));
+      const queued = first.put(record('other', 'queued'));
+      await new Promise((resolve) => setTimeout(resolve, 10));
+      first.dispose();
+      const next = open(mutableDir(tree, '/'), { vectorIndex: index }).orThrow();
+      release();
+      expect(await inFlight).toFailWith(/disposed/i);
+      expect(await queued).toFailWith(/disposed/i);
+      expect(embeds).toBe(1);
+      expect(index.size).toBe(0);
+      next.dispose();
+    });
+
+    test('a put whose fragment embedding finishes after dispose adds no fragments', async () => {
+      const tree = FileTree.inMemory([], { mutable: true }).orThrow();
+      const fragmentIndex = InMemoryFragmentCosineIndex.create().orThrow();
+      const { gate, open: release } = gated();
+      const fragmentEmbedder = async (): Promise<Result<ReadonlyArray<IEmbeddedFragment>>> => {
+        await gate;
+        return succeed([{ locator: { start: 0, end: 5 }, vector: Float32Array.from([1, 0]) }]);
+      };
+      const first = open(mutableDir(tree, '/'), { fragmentIndex, fragmentEmbedder }).orThrow();
+      const inFlight = first.put(record('intro', 'hello'));
+      await new Promise((resolve) => setTimeout(resolve, 10));
+      first.dispose();
+      release();
+      expect(await inFlight).toFailWith(/disposed/i);
+      expect(fragmentIndex.recordCount).toBe(0);
+    });
+
+    test('a reconcile is refused once disposed, and one in flight adds nothing after it', async () => {
+      const tree = FileTree.inMemory([], { mutable: true }).orThrow();
+      const index = InMemoryCosineIndex.create().orThrow();
+      const seed = open(mutableDir(tree, '/')).orThrow();
+      (await seed.put(record('intro', 'hello'))).orThrow();
+      seed.dispose();
+
+      const { gate, open: release } = gated();
+      const embed = async (): Promise<Result<Float32Array>> => {
+        await gate;
+        return succeed(Float32Array.from([1, 2, 3]));
+      };
+      const store = open(mutableDir(tree, '/'), { vectorIndex: index, embed }).orThrow();
+      const inFlight = store.reconcile(knowledgeKind, 'record-vector');
+      await new Promise((resolve) => setTimeout(resolve, 10));
+      store.dispose();
+      release();
+      expect(await inFlight).toSucceedAndSatisfy((report) => {
+        expect(report.repaired).toBe(0);
+      });
+      expect(index.size).toBe(0);
+      expect(await store.reconcile(knowledgeKind, 'record-vector')).toFailWith(/disposed/i);
+    });
+
+    test('a cull skipped because the store was disposed says so', async () => {
+      const inner = inMemoryRoot();
+      const script: IScript = { childrenAtomic: true };
+      const logger = new Logging.InMemoryLogger('info');
+      const capCull = MemoryCapCullPolicy.create({ maxRecords: 1, mutableFields: ['body'] }).orThrow();
+      const store = open(new ScriptedDir(inner, script), {
+        logger,
+        writePolicies: new Map<Kind, IWritePolicy>([[knowledgeKind, capCull]])
+      }).orThrow();
+      (await store.put(record('first', 'one'))).orThrow();
+      script.write = (dir, name, contents, options) => {
+        const written = dir.writeChildAtomically(name, contents, options);
+        store.dispose();
+        return written;
+      };
+      expect(await store.put(record('second', 'two'))).toSucceed();
+      expect(logger.logged.join('\n')).toMatch(
+        /eviction of 'first' skipped: the store was disposed after the write committed/i
+      );
     });
   });
 
@@ -343,11 +552,33 @@ describe('FileTreeMemoryStore durability', () => {
       });
     });
 
-    test('fails the open when the root cannot answer the inquiry', () => {
+    test('degrades when the root cannot answer the inquiry, and a requirement refuses it', async () => {
       const script: IScript = { childrenAtomic: true, capabilities: () => fail('no answer') };
-      expect(open(new ScriptedDir(inMemoryRoot(), script))).toFailWith(
-        /cannot ask root '\/' about atomic writes: no answer/i
+      const store = open(new ScriptedDir(inMemoryRoot(), script)).orThrow();
+      expect(store.durability).toEqual({
+        atomic: false,
+        reason: 'the root could not say what atomic writes it offers: no answer',
+        removedTemporaries: []
+      });
+      expect(await store.put(record('intro', 'plain'))).toSucceed();
+      expect(
+        open(new ScriptedDir(inMemoryRoot(), script), { durability: { require: 'session' } })
+      ).toFailWith(
+        /required 'session' guarantee: the root could not say what atomic writes it offers: no answer/i
       );
+    });
+
+    test('degrades when the inquiry throws', () => {
+      const script: IScript = {
+        childrenAtomic: true,
+        capabilities: () => {
+          throw new Error('inquiry exploded');
+        }
+      };
+      expect(open(new ScriptedDir(inMemoryRoot(), script))).toSucceedAndSatisfy((store) => {
+        expect(store.durability.atomic).toBe(false);
+        expect(store.durability.reason).toMatch(/inquiry exploded/);
+      });
     });
   });
 
@@ -468,21 +699,74 @@ describe('FileTreeMemoryStore durability', () => {
   });
 
   describe('the open-time sweep', () => {
-    test('a sweep that fails warns and does not fail the open', () => {
+    /** A root holding one record, so its scope directory is one the sweep visits. */
+    async function seededRoot(): Promise<FileTree.IMutableFileTreeDirectoryItem> {
+      const inner = inMemoryRoot();
+      const seed = open(inner).orThrow();
+      (await seed.put(record('intro', 'body'))).orThrow();
+      seed.dispose();
+      return inner;
+    }
+
+    test('a sweep that fails warns and does not fail the open', async () => {
       const logger = new Logging.InMemoryLogger('info');
       const script: IScript = { childrenAtomic: true, cleanup: () => fail('cannot remove') };
-      expect(open(new ScriptedDir(inMemoryRoot(), script), { logger })).toSucceedAndSatisfy((store) => {
+      expect(open(new ScriptedDir(await seededRoot(), script), { logger })).toSucceedAndSatisfy((store) => {
         expect(store.durability.removedTemporaries).toEqual([]);
       });
       expect(logger.logged.join('\n')).toMatch(
-        /could not sweep interrupted-write working files: cannot remove/i
+        /could not sweep every interrupted-write working file: knowledge: cannot remove/i
       );
     });
 
-    test('a sweep failure survives a throwing logger', () => {
+    test('a sweep that fails partway reports what it did remove', async () => {
+      const inner = await seededRoot();
+      const scope = inner
+        .getChildren()
+        .orThrow()
+        .find((c): c is FileTree.IFileTreeDirectoryItem => c.type === 'directory');
+      if (scope === undefined || !FileTree.isMutableDirectoryItem(scope)) {
+        throw new Error('expected a mutable scope directory');
+      }
+      scope.createChildFile('orphan.tmp', 'x').orThrow();
+      const script: IScript = {
+        childrenAtomic: true,
+        cleanup: () => {
+          scope.deleteChild('orphan.tmp').orThrow();
+          return fail('second removal failed');
+        }
+      };
+      const logger = new Logging.InMemoryLogger('info');
+      expect(open(new ScriptedDir(inner, script), { logger })).toSucceedAndSatisfy((store) => {
+        expect(store.durability.removedTemporaries).toEqual(['knowledge/orphan.tmp']);
+      });
+      expect(logger.logged.join('\n')).toMatch(/second removal failed/);
+    });
+
+    test('a sweep that throws is reported, and the open still succeeds', async () => {
+      const logger = new Logging.InMemoryLogger('info');
+      const script: IScript = {
+        childrenAtomic: true,
+        cleanup: () => {
+          throw new Error('sweep exploded');
+        }
+      };
+      expect(open(new ScriptedDir(await seededRoot(), script), { logger })).toSucceed();
+      expect(logger.logged.join('\n')).toMatch(/the sweep threw: .*sweep exploded/i);
+    });
+
+    test('a directory the sweep cannot list is reported', () => {
+      const logger = new Logging.InMemoryLogger('info');
+      const script: IScript = { childrenAtomic: true, failListing: true };
+      // The walk cannot list it either, so the open fails — but the sweep said why first.
+      expect(open(new ScriptedDir(inMemoryRoot(), script), { logger })).toFail();
+      expect(logger.logged.join('\n')).toMatch(/\/: cannot list: .*listing refused/i);
+    });
+
+    test('a sweep failure survives a throwing logger', async () => {
       const script: IScript = { childrenAtomic: true, cleanup: () => fail('cannot remove') };
       expect(
-        open(new ScriptedDir(inMemoryRoot(), script), { logger: new ThrowingLogger() })
+        open(new ScriptedDir(await seededRoot(), script), { logger: new ThrowingLogger() })
       ).toSucceedAndSatisfy((store) => {
         expect(store.durability.removedTemporaries).toEqual([]);
       });
@@ -565,6 +849,86 @@ describe('FileTreeMemoryStore durability on the filesystem', () => {
     const first = open(root).orThrow();
     expect(open(fsRoot(root.absolutePath))).toFailWith(/already open in this process/i);
     first.dispose();
+  });
+
+  /** A fresh container holding `real/vault`, with `alias` a symbolic link to `real`. */
+  function linkedLayout(): { real: string; alias: string } {
+    const container: string = fs.mkdtempSync(path.join(base, 'fgv-memory-links-'));
+    dirs.push(container);
+    const real: string = path.join(container, 'real');
+    fs.mkdirSync(path.join(real, 'vault'), { recursive: true });
+    const alias: string = path.join(container, 'alias');
+    fs.symlinkSync(real, alias);
+    return { real, alias };
+  }
+
+  test('a directory reached through an intermediate symbolic link is the same root', () => {
+    const { real, alias } = linkedLayout();
+    const first = open(fsRoot(path.join(real, 'vault'))).orThrow();
+    expect(open(fsRoot(path.join(alias, 'vault')))).toFailWith(/overlaps root .*real.vault/i);
+    first.dispose();
+  });
+
+  test('a root whose last component is a symbolic link opens, and is the same root as its target', async () => {
+    const { real, alias } = linkedLayout();
+    const viaLink = open(fsRoot(alias)).orThrow();
+    expect(viaLink.durability.atomic).toBe(qualified);
+    expect(await viaLink.put(record('intro', 'linked'))).toSucceed();
+    expect(fs.readFileSync(path.join(real, 'knowledge', 'intro.md'), 'utf8')).toContain('linked');
+    expect(open(fsRoot(real))).toFailWith(/already open in this process/i);
+    viaLink.dispose();
+  });
+
+  test('a scope directory that is a symbolic link is written through', async () => {
+    const { real } = linkedLayout();
+    const vault: string = path.join(real, 'vault');
+    const elsewhere: string = path.join(real, 'elsewhere');
+    fs.mkdirSync(elsewhere);
+    fs.symlinkSync(elsewhere, path.join(vault, 'knowledge'));
+    const store = open(fsRoot(vault)).orThrow();
+    expect(await store.put(record('intro', 'through the link'))).toSucceed();
+    expect(fs.readFileSync(path.join(elsewhere, 'intro.md'), 'utf8')).toContain('through the link');
+    store.dispose();
+  });
+
+  test('a root nested inside an open root is refused', () => {
+    const { real } = linkedLayout();
+    const outer = open(fsRoot(real)).orThrow();
+    expect(open(fsRoot(path.join(real, 'vault')))).toFailWith(/overlaps root/i);
+    outer.dispose();
+  });
+
+  whenQualified('the sweep removes working files only from directories that hold records', async () => {
+    const root = fsRoot();
+    const seed = open(root).orThrow();
+    (await seed.put(record('intro', 'body'))).orThrow();
+    seed.dispose();
+    const orphan: string = '.fgv-atomic-0123456789abcdef01234567.tmp';
+    fs.writeFileSync(path.join(root.absolutePath, 'knowledge', orphan), 'x');
+    fs.writeFileSync(path.join(root.absolutePath, orphan), 'x');
+    fs.mkdirSync(path.join(root.absolutePath, 'empty'));
+    fs.writeFileSync(path.join(root.absolutePath, 'empty', orphan), 'x');
+
+    const reopened = open(root).orThrow();
+    expect(reopened.durability.removedTemporaries).toEqual([`knowledge/${orphan}`]);
+    expect(fs.existsSync(path.join(root.absolutePath, orphan))).toBe(true);
+    expect(fs.existsSync(path.join(root.absolutePath, 'empty', orphan))).toBe(true);
+    reopened.dispose();
+  });
+
+  whenQualified('an ambiguous rename of a body with a lone surrogate is settled as committed', async () => {
+    const root = fsRoot();
+    const store = open(root).orThrow();
+    (await store.put(record('intro', 'before'))).orThrow();
+    const realRename = fs.renameSync;
+    jest.spyOn(fs, 'renameSync').mockImplementation((from: fs.PathLike, to: fs.PathLike) => {
+      realRename(from, to);
+      throw fsError('EIO');
+    });
+    expect(await store.put(record('intro', 'lone \uD800 surrogate'))).toSucceed();
+    jest.restoreAllMocks();
+    expect(await bodyOf(store)).toBe('lone � surrogate');
+    store.dispose();
   });
 
   whenQualified('a write interrupted before its replacement leaves the previous record whole', async () => {

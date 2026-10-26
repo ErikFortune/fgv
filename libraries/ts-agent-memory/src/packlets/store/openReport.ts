@@ -4,6 +4,7 @@
  */
 
 import { FileTree } from '@fgv/ts-json-base';
+import { StringOneOf } from '@fgv/ts-utils';
 import { MemoryScopeKey } from '../types';
 
 /**
@@ -44,12 +45,18 @@ export interface ISkippedRecord {
 }
 
 /**
- * An atomic-write guarantee a host can require of a {@link FileTreeMemoryStore}'s root. These
- * are the guarantees `@fgv/ts-json-base` can qualify a root for; `'process-crash'` is the
- * strongest.
+ * The atomic-write guarantees a host can require of a {@link FileTreeMemoryStore}'s root,
+ * weakest to strongest. These are the guarantees `@fgv/ts-json-base` can qualify a root for.
  * @public
  */
-export type MemoryDurabilityRequirement = 'session' | 'process-crash';
+export const memoryDurabilityRequirements = ['session', 'process-crash'] as const;
+
+/**
+ * An atomic-write guarantee a host can require of a {@link FileTreeMemoryStore}'s root. See
+ * {@link memoryDurabilityRequirements}.
+ * @public
+ */
+export type MemoryDurabilityRequirement = StringOneOf<typeof memoryDurabilityRequirements>;
 
 /**
  * How {@link FileTreeMemoryStore.create} treats its root's atomic-write capability.

@@ -138,6 +138,12 @@ export interface IVectorMaintenanceParams {
    * declaration and the gate that enforces it cannot disagree.
    */
   readonly embedsKind: (kind: Kind) => boolean;
+  /**
+   * Fails once the store has been disposed. Checked immediately before every `add` /
+   * `addFragments`, after the embedder's `await`, so a disposed store never leaves derived state
+   * in an index a new owner of the root may share.
+   */
+  readonly checkWritable: () => Result<true>;
 }
 
 /**
@@ -164,6 +170,7 @@ export class VectorMaintenance {
   private readonly _fragmentEmbedder: FragmentEmbedder | undefined;
   private readonly _warn: (message: string) => void;
   private readonly _embedsKind: (kind: Kind) => boolean;
+  private readonly _checkWritable: () => Result<true>;
 
   public constructor(params: IVectorMaintenanceParams) {
     this._vectorIndex = params.vectorIndex;
@@ -172,6 +179,7 @@ export class VectorMaintenance {
     this._fragmentEmbedder = params.fragmentEmbedder;
     this._warn = params.warn;
     this._embedsKind = params.embedsKind;
+    this._checkWritable = params.checkWritable;
   }
 
   /**
@@ -253,7 +261,10 @@ export class VectorMaintenance {
     // here would diverge from the write path for any index whose reference is
     // not the scoped key.
     return (
-      await captureVectorHook(() => index.add(target, vector), `vector add for '${record.envelope.id}'`)
+      await captureVectorHook(
+        async () => this._checkWritable().thenOnSuccess(() => index.add(target, vector)),
+        `vector add for '${record.envelope.id}'`
+      )
     ).onSuccess((ref) => succeed({ count: 1, ref }));
   }
 
@@ -283,7 +294,7 @@ export class VectorMaintenance {
     const fragments: ReadonlyArray<IEmbeddedFragment> = embedded.value;
     return (
       await captureVectorHook(
-        () => index.addFragments(target, fragments),
+        async () => this._checkWritable().thenOnSuccess(() => index.addFragments(target, fragments)),
         `fragment add for '${record.envelope.id}'`
       )
     ).onSuccess((n) =>
@@ -353,7 +364,7 @@ export class VectorMaintenance {
     // boundary below, and a local keeps the non-null assertion out of the code.
     const vector: Float32Array = embedded.value;
     const added: Result<string> = await this._tryVectorOp(
-      () => vectorIndex.add(target, vector),
+      async () => this._checkWritable().thenOnSuccess(() => vectorIndex.add(target, vector)),
       `vector add for '${built.envelope.id}'`
     );
     if (added.isFailure()) {
@@ -416,7 +427,8 @@ export class VectorMaintenance {
       return succeed(built);
     }
     await this._tryVectorOp(
-      () => fragmentIndex.addFragments(target, embedded.value),
+      async () =>
+        this._checkWritable().thenOnSuccess(() => fragmentIndex.addFragments(target, embedded.value)),
       `fragment add for '${built.envelope.id}'`
     );
     return succeed(built);

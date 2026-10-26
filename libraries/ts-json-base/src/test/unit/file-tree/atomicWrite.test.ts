@@ -32,6 +32,7 @@ import {
   IMutableFileTreeAccessors,
   InMemoryTreeAccessors,
   SaveDetail,
+  atomicWriteGuarantees,
   isAtomicAccessors,
   isAtomicDirectoryItem
 } from '../../../packlets/file-tree';
@@ -134,6 +135,23 @@ describe('isAtomicAccessors', () => {
     // The guard asserts the whole interface or none of it. Accepting a partial
     // shape would hand a caller a type that promises a method that is not there.
     expect(isAtomicAccessors(new PartiallyAtomicAccessors())).toBe(false);
+  });
+});
+
+describe('atomicWriteGuarantees', () => {
+  test('lists every guarantee, weakest to strongest', () => {
+    expect(atomicWriteGuarantees).toEqual(['session', 'process-crash', 'os-crash', 'power-loss']);
+  });
+});
+
+describe('DirectoryItem.getStorageIdentity', () => {
+  test('two items for one in-memory directory share accessors and path, and carry no real path', () => {
+    const accessors = InMemoryTreeAccessors.create([], { mutable: true }).orThrow();
+    const a = DirectoryItem.create('/', accessors).orThrow().getStorageIdentity();
+    const b = DirectoryItem.create('/', accessors).orThrow().getStorageIdentity();
+    expect(a).toEqual({ accessors, path: '/' });
+    expect(b.accessors).toBe(a.accessors);
+    expect(b.path).toBe(a.path);
   });
 });
 

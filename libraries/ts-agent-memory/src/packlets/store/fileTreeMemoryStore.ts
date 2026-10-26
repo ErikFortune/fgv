@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { Hash, Logging, Result, fail, mapResults, mapSuccess, succeed } from '@fgv/ts-utils';
+import { Hash, Logging, Result, captureResult, fail, mapResults, mapSuccess, succeed } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
 import {
   AdmissionDecision,
@@ -449,7 +449,8 @@ export class FileTreeMemoryStore implements IMemoryStore {
       fragmentIndex: params.fragmentIndex,
       fragmentEmbedder: params.fragmentEmbedder,
       warn: (message) => this._warnSwallowed(message),
-      embedsKind: (kind) => this.embedsKind(kind)
+      embedsKind: (kind) => this.embedsKind(kind),
+      checkWritable: () => this._session.checkWritable()
     });
     this._skippedRecords = [];
     this._seq = 0;
@@ -476,7 +477,8 @@ export class FileTreeMemoryStore implements IMemoryStore {
 
   /**
    * Release this store's in-process claim on its root, so another store may open it. Idempotent.
-   * Reads keep working from the resident index; every later write or delete fails.
+   * Every later write, delete or reconcile fails. Reads still answer, from this store's index —
+   * stale once a new owner writes.
    */
   public dispose(): void {
     this._session.release();
@@ -499,38 +501,40 @@ export class FileTreeMemoryStore implements IMemoryStore {
     const logger: Logging.ILogger = params.logger ?? new Logging.NoOpLogger();
     return KnowledgeLwwPolicy.create().onSuccess((defaultPolicy) =>
       FileTreeMemoryStore._resolveIndex(params.index).onSuccess((index) =>
-        StoreRootSession.open(params.root, params.durability, logger).onSuccess((session) => {
-          const store: FileTreeMemoryStore = new FileTreeMemoryStore({
-            root: params.root,
-            session,
-            registry: params.registry,
-            writePolicies: params.writePolicies ?? new Map<Kind, IWritePolicy>(),
-            codecs: params.codecs ?? new Map<Kind, IIdentityCodec>(),
-            rankProjectors: params.rankProjectors ?? new Map<Kind, RankProjector>(),
-            embedKinds: params.embedKinds,
-            defaultCodec: params.defaultCodec,
-            defaultPolicy,
-            scopes: {
-              encode: params.scopeEncoding ?? defaultMemoryScopeEncoding,
-              decode: params.scopeDecoding
-            },
-            clock: params.clock ?? Date.now,
-            index,
-            observers: params.observers ?? [],
-            logger,
-            vectorIndex: params.vectorIndex,
-            embed: params.embed,
-            fragmentIndex: params.fragmentIndex,
-            fragmentEmbedder: params.fragmentEmbedder
-          });
-          return store
-            ._initialIndex(params.onRecordError ?? 'fail')
-            .onSuccess(() => succeed(store))
+        StoreRootSession.open(params.root, params.durability, logger).onSuccess((session) =>
+          // Everything after the claim is captured, so neither a failure nor a throw leaves it held.
+          captureResult(() => {
+            const store: FileTreeMemoryStore = new FileTreeMemoryStore({
+              root: params.root,
+              session,
+              registry: params.registry,
+              writePolicies: params.writePolicies ?? new Map<Kind, IWritePolicy>(),
+              codecs: params.codecs ?? new Map<Kind, IIdentityCodec>(),
+              rankProjectors: params.rankProjectors ?? new Map<Kind, RankProjector>(),
+              embedKinds: params.embedKinds,
+              defaultCodec: params.defaultCodec,
+              defaultPolicy,
+              scopes: {
+                encode: params.scopeEncoding ?? defaultMemoryScopeEncoding,
+                decode: params.scopeDecoding
+              },
+              clock: params.clock ?? Date.now,
+              index,
+              observers: params.observers ?? [],
+              logger,
+              vectorIndex: params.vectorIndex,
+              embed: params.embed,
+              fragmentIndex: params.fragmentIndex,
+              fragmentEmbedder: params.fragmentEmbedder
+            });
+            return store._initialIndex(params.onRecordError ?? 'fail').onSuccess(() => succeed(store));
+          })
+            .onSuccess((opened) => opened)
             .onFailure((message) => {
               session.release();
               return fail(message);
-            });
-        })
+            })
+        )
       )
     );
   }
@@ -829,7 +833,10 @@ export class FileTreeMemoryStore implements IMemoryStore {
    * order; a failed task does not break the chain for subsequent ones.
    */
   private _enqueue<T>(task: () => Promise<Result<T>>): Promise<Result<T>> {
-    const result: Promise<Result<T>> = this._writeTail.then(task);
+    // A disposed store refuses at entry, so nothing queued behind a dispose embeds or writes.
+    const result: Promise<Result<T>> = this._writeTail.then(() =>
+      this._session.checkWritable().thenOnSuccess(task)
+    );
     this._writeTail = result.then(
       () => undefined,
       () => undefined
@@ -1111,7 +1118,9 @@ export class FileTreeMemoryStore implements IMemoryStore {
         evicted.push(result.value);
       } else {
         this._warnSwallowed(
-          `memory put: best-effort eviction of '${id}' failed (cap may be transiently exceeded; restored on the next write): ${result.message}`
+          this._session.released
+            ? `memory put: eviction of '${id}' skipped: the store was disposed after the write committed; the next owner's admission restores the cap`
+            : `memory put: best-effort eviction of '${id}' failed (cap may be transiently exceeded; restored on the next write): ${result.message}`
         );
       }
     }

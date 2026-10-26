@@ -4,7 +4,7 @@
  */
 
 import { FileTree } from '@fgv/ts-json-base';
-import { Result, captureResult, fail, mapResults, succeed } from '@fgv/ts-utils';
+import { Result, captureResult, fail, succeed } from '@fgv/ts-utils';
 import { Convert, MemoryScopeKey } from '../types';
 
 /** The record filename extension; the store's files are markdown + YAML frontmatter. */
@@ -287,7 +287,7 @@ function writeAtomic(
         `the new record or the previous one, and the store's index keeps the previous one until reopened`
     )
     .onSuccess((contents: string | undefined) =>
-      contents === raw
+      contents !== undefined && asStored(contents) === asStored(raw)
         ? committed()
         : fail<true>(`${written.message}; a re-read shows the write did not take effect`)
     );
@@ -307,34 +307,6 @@ function readChildText(
     );
     return file === undefined ? succeed(undefined) : file.getRawContents();
   });
-}
-
-/**
- * Remove the working files interrupted atomic writes left in `dir` and in every directory beneath
- * it. Valid only while the caller holds the root's single-writer guard, because the working file of
- * a live write is indistinguishable from an orphan.
- * @returns The removed files' paths, relative to the root.
- * @internal
- */
-export function sweepAtomicTemporaries(
-  dir: FileTree.IFileTreeDirectoryItem,
-  relativePath: string
-): Result<ReadonlyArray<string>> {
-  const under = (name: string): string => (relativePath === '' ? name : `${relativePath}/${name}`);
-  const here: Result<ReadonlyArray<string>> = FileTree.isAtomicDirectoryItem(dir)
-    ? dir.cleanupAtomicTemporaries().onSuccess((names) => succeed(names.map(under)))
-    : succeed([]);
-  return here.onSuccess((removed) =>
-    dir
-      .getChildren()
-      .onSuccess((children) =>
-        mapResults(
-          children
-            .filter((c): c is FileTree.IFileTreeDirectoryItem => c.type === 'directory')
-            .map((c) => sweepAtomicTemporaries(c, under(c.name)))
-        ).onSuccess((below) => succeed([...removed, ...below.flat()]))
-      )
-  );
 }
 
 /**
@@ -374,4 +346,75 @@ export function deleteRecordFile(
         return file.delete().onSuccess(() => succeed(true));
       });
     });
+}
+/**
+ * What `text` reads back as once stored as UTF-8 — a lone surrogate becomes U+FFFD — so a re-read
+ * compares with what the write could have produced rather than with what it was handed.
+ */
+function asStored(text: string): string {
+  return new TextDecoder().decode(new TextEncoder().encode(text));
+}
+
+/**
+ * What an open-time sweep removed, and what it could not. Never a failure: a working file left
+ * behind is not a record file, so it cannot be read as one, and an open does not fail over it.
+ * @internal
+ */
+export interface ISweepReport {
+  /** Removed working files, as paths relative to the root. */
+  readonly removed: ReadonlyArray<string>;
+  /** What could not be listed or swept, one message per directory. */
+  readonly failures: ReadonlyArray<string>;
+}
+
+/**
+ * Remove the working files interrupted atomic writes left in the store's scope directories — the
+ * directories beneath `root` that hold a record file, which are the ones the open walk reads records
+ * from. Valid only while the caller holds the root's single-writer guard, because the working file of
+ * a live write is indistinguishable from an orphan.
+ *
+ * @remarks
+ * A directory with no record file is not swept: the root and intermediate directories never hold
+ * records, and a scope directory whose only content is an interrupted first write is swept by a
+ * later open, once it holds a record. The working file is harmless meanwhile.
+ * @internal
+ */
+export function sweepAtomicTemporaries(root: FileTree.IFileTreeDirectoryItem): ISweepReport {
+  const removed: string[] = [];
+  const failures: string[] = [];
+  const visit = (dir: FileTree.IFileTreeDirectoryItem, relativePath: string): void => {
+    const listed: Result<ReadonlyArray<FileTree.FileTreeItem>> = dir.getChildren();
+    if (listed.isFailure()) {
+      failures.push(`${dir.absolutePath}: cannot list: ${listed.message}`);
+      return;
+    }
+    const under = (name: string): string => (relativePath === '' ? name : `${relativePath}/${name}`);
+    const holdsRecords: boolean =
+      relativePath !== '' &&
+      listed.value.some((c) => c.type === 'file' && c.name.endsWith(MEMORY_FILE_EXTENSION));
+    if (holdsRecords && FileTree.isAtomicDirectoryItem(dir)) {
+      const cleaned: Result<ReadonlyArray<string>> = dir.cleanupAtomicTemporaries();
+      if (cleaned.isSuccess()) {
+        removed.push(...cleaned.value.map(under));
+      } else {
+        // A failed sweep may still have removed some: what was listed before and is gone now.
+        const before: ReadonlyArray<string> = listed.value.map((c) => c.name);
+        const after: Set<string> = new Set(
+          dir
+            .getChildren()
+            .orDefault(listed.value)
+            .map((c) => c.name)
+        );
+        removed.push(...before.filter((n) => !after.has(n)).map(under));
+        failures.push(`${relativePath}: ${cleaned.message}`);
+      }
+    }
+    for (const child of listed.value) {
+      if (child.type === 'directory') {
+        visit(child, under(child.name));
+      }
+    }
+  };
+  visit(root, '');
+  return { removed, failures };
 }

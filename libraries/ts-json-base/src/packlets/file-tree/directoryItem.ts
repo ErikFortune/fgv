@@ -30,6 +30,7 @@ import {
   IAtomicWriteReceipt,
   IDeleteChildOptions,
   IFileTreeAccessors,
+  IFileTreeStorageIdentity,
   IMutableBinaryFileTreeDirectoryItem,
   IMutableFileTreeDirectoryItem,
   IMutableFileTreeFileItem,
@@ -148,6 +149,18 @@ export class DirectoryItem<TCT extends string = string>
 
     const filePath = hal.joinPaths(this.absolutePath, name);
     return this._createdChildFile(filePath, () => hal.saveFileBytes(filePath, bytes));
+  }
+
+  /**
+   * {@inheritDoc FileTree.IFileTreeDirectoryItem.getStorageIdentity}
+   */
+  public getStorageIdentity(): IFileTreeStorageIdentity<TCT> {
+    const realPath = this._hal.resolveRealPath?.(this.absolutePath);
+    return {
+      accessors: this._hal,
+      path: this.absolutePath,
+      ...(realPath?.isSuccess() ? { realPath: realPath.value } : {})
+    };
   }
 
   /**

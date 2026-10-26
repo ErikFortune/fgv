@@ -12,6 +12,7 @@ import { FileTree } from '@fgv/ts-json-base';
 import { JsonSchema } from '@fgv/ts-json-base';
 import { Logging } from '@fgv/ts-utils';
 import { Result } from '@fgv/ts-utils';
+import { StringOneOf } from '@fgv/ts-utils';
 
 // @public
 export type AdmissionDecision = {
@@ -622,6 +623,7 @@ export interface IMemoryStore extends IMemoryRecordResolver, IIdentityResolver {
     coverage(): Promise<Result<IDerivedStateCoverage>>;
     dedupScopeFor(kind: Kind): DedupScope;
     delete(kind: Kind, entityId: EntityId): Promise<Result<MemoryId>>;
+    dispose?(): void;
     embedsKind(kind: Kind): boolean;
     get(kind: Kind, entityId: EntityId): Promise<Result<IMemoryRecord<unknown> | undefined>>;
     getById(scope: MemoryScopeKey, id: MemoryId): Promise<Result<IMemoryRecord<unknown> | undefined>>;
@@ -956,7 +958,10 @@ export class MemoryCapCullPolicy implements IWritePolicy {
 export type MemoryDetailTier = 'gist' | 'full';
 
 // @public
-export type MemoryDurabilityRequirement = 'session' | 'process-crash';
+export type MemoryDurabilityRequirement = StringOneOf<typeof memoryDurabilityRequirements>;
+
+// @public
+export const memoryDurabilityRequirements: readonly ["session", "process-crash"];
 
 // @public
 export type MemoryEmbedder = (record: IMemoryRecord<unknown>) => Promise<Result<Float32Array | undefined>>;

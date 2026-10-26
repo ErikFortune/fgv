@@ -88,6 +88,47 @@ describe.each(atomicTestRoots())('FsFileTreeAccessors atomic writes on $label', 
     expect(isAtomicAccessors(accessors)).toBe(true);
   });
 
+  test('a directory reached through a symbolic link is qualified as its target', () => {
+    const link = path.join(container, 'link');
+    fs.symlinkSync(root, link);
+    const linked = new FsFileTreeAccessors({ prefix: link, mutable: true });
+    expect(linked.getAtomicWriteCapabilities(link)).toSucceedAndSatisfy((capabilities) => {
+      expect(capabilities.atomicReplace).toBe(qualified);
+    });
+    if (qualified) {
+      expect(
+        linked.writeFileAtomically(path.join(link, 'r.json'), NEW, { guarantee: 'process-crash' })
+      ).toSucceed();
+      expect(fs.readFileSync(path.join(root, 'r.json'), 'utf8')).toBe(NEW);
+    }
+  });
+
+  test('resolves real paths through symbolic links, and fails for a path that does not exist', () => {
+    const link = path.join(container, 'link');
+    fs.symlinkSync(root, link);
+    expect(accessors.resolveRealPath(link)).toSucceedWith(fs.realpathSync(root));
+    expect(accessors.resolveRealPath(path.join(container, 'absent'))).toFailWith(/cannot resolve real path/i);
+  });
+
+  test('a directory item names its storage, real path included', () => {
+    const link = path.join(container, 'link');
+    fs.symlinkSync(root, link);
+    const direct = DirectoryItem.create(root, accessors).orThrow().getStorageIdentity();
+    const viaLink = DirectoryItem.create(link, new FsFileTreeAccessors({ mutable: true }))
+      .orThrow()
+      .getStorageIdentity();
+    expect(direct.accessors).toBe(accessors);
+    expect(direct.path).toBe(root);
+    expect(viaLink.path).toBe(link);
+    expect(viaLink.realPath).toBe(direct.realPath);
+    expect(
+      DirectoryItem.create(path.join(container, 'absent'), accessors).orThrow().getStorageIdentity()
+    ).toEqual({
+      accessors,
+      path: path.join(container, 'absent')
+    });
+  });
+
   test('reports capabilities for the root, and never claims more than process-crash', () => {
     expect(accessors.getAtomicWriteCapabilities(root)).toSucceedAndSatisfy((capabilities) => {
       expect(capabilities.atomicReplace).toBe(qualified);

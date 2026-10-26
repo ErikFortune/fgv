@@ -4,24 +4,20 @@
  */
 
 import { FileTree } from '@fgv/ts-json-base';
-import { Converter, Converters, Logging, Result, fail, succeed } from '@fgv/ts-utils';
+import { Converter, Converters, Logging, Result, captureResult, fail, succeed } from '@fgv/ts-utils';
 import {
   IMemoryStoreDurability,
   IMemoryStoreDurabilityOptions,
-  MemoryDurabilityRequirement
+  MemoryDurabilityRequirement,
+  memoryDurabilityRequirements
 } from './openReport';
 import { IRootOwnership, acquireStoreRoot } from './rootOwnership';
-import { IRecordWriter, sweepAtomicTemporaries } from './storeFileAccess';
+import { IRecordWriter, ISweepReport, sweepAtomicTemporaries } from './storeFileAccess';
 
-const guaranteeRank: ReadonlyArray<FileTree.AtomicWriteGuarantee> = [
-  'session',
-  'process-crash',
-  'os-crash',
-  'power-loss'
-];
+const guaranteeRank: ReadonlyArray<FileTree.AtomicWriteGuarantee> = FileTree.atomicWriteGuarantees;
 
 const requirementConverter: Converter<MemoryDurabilityRequirement> =
-  Converters.enumeratedValue<MemoryDurabilityRequirement>(['session', 'process-crash']);
+  Converters.enumeratedValue<MemoryDurabilityRequirement>(memoryDurabilityRequirements);
 
 /** Log without letting a throwing logger affect the store operation. */
 function log(logger: Logging.ILogger, level: 'info' | 'warn', message: string): void {
@@ -37,14 +33,18 @@ interface IRootAnswer {
   readonly reason: string;
 }
 
-/** Ask the root what atomic writes it can make, and pick the strongest guarantee it lists. */
-function inquire(root: FileTree.IMutableFileTreeDirectoryItem): Result<IRootAnswer> {
+/**
+ * Ask the root what atomic writes it can make, and pick the strongest guarantee it lists. Never
+ * fails: a root that cannot answer (or throws) is answered as offering none, with the reason, so
+ * the store degrades exactly as it does for a root without the capability — and a `require`
+ * refuses it.
+ */
+function inquire(root: FileTree.IMutableFileTreeDirectoryItem): IRootAnswer {
   if (!FileTree.isAtomicDirectoryItem(root)) {
-    return succeed({ reason: 'the root does not implement atomic writes' });
+    return { reason: 'the root does not implement atomic writes' };
   }
-  return root
-    .getAtomicWriteCapabilities()
-    .withErrorFormat((m) => `memory store: cannot ask root '${root.absolutePath}' about atomic writes: ${m}`)
+  const asked: Result<IRootAnswer> = captureResult(() => root.getAtomicWriteCapabilities())
+    .onSuccess((answer) => answer)
     .onSuccess((capabilities) => {
       const offered: ReadonlyArray<FileTree.AtomicWriteGuarantee> = guaranteeRank.filter((g) =>
         capabilities.guarantees.includes(g)
@@ -59,6 +59,15 @@ function inquire(root: FileTree.IMutableFileTreeDirectoryItem): Result<IRootAnsw
           : `the root offers [${offered.join(', ')}]`);
       return succeed<IRootAnswer>({ guarantee, reason });
     });
+  return asked.isSuccess()
+    ? asked.value
+    : { reason: `the root could not say what atomic writes it offers: ${asked.message}` };
+}
+
+/** Sweep, turning a throw into a reported failure: the claim is already held. */
+function sweep(root: FileTree.IFileTreeDirectoryItem): ISweepReport {
+  const swept: Result<ISweepReport> = captureResult(() => sweepAtomicTemporaries(root));
+  return swept.isSuccess() ? swept.value : { removed: [], failures: [`the sweep threw: ${swept.message}`] };
 }
 
 /**
@@ -85,6 +94,11 @@ export class StoreRootSession implements IRecordWriter {
     return this.durability.guarantee;
   }
 
+  /** Whether this session has released its root (the store was disposed). */
+  public get released(): boolean {
+    return this._ownership.released;
+  }
+
   /**
    * Establish durability, claim the root, then sweep the working files interrupted writes left
    * behind. The sweep runs only once the claim is held, because a live writer's working file is
@@ -101,48 +115,46 @@ export class StoreRootSession implements IRecordWriter {
         : requirementConverter
             .convert(options.require)
             .withErrorFormat((m) => `memory store: durability.require: ${m}`);
-    return required.onSuccess((requirement) =>
-      inquire(root).onSuccess((answer) => {
-        if (
-          requirement !== undefined &&
-          (answer.guarantee === undefined ||
-            guaranteeRank.indexOf(answer.guarantee) < guaranteeRank.indexOf(requirement))
-        ) {
-          return fail<StoreRootSession>(
-            `memory store: root '${root.absolutePath}' cannot write records atomically at the required ` +
-              `'${requirement}' guarantee: ${answer.reason}`
+    return required.onSuccess((requirement) => {
+      const answer: IRootAnswer = inquire(root);
+      if (
+        requirement !== undefined &&
+        (answer.guarantee === undefined ||
+          guaranteeRank.indexOf(answer.guarantee) < guaranteeRank.indexOf(requirement))
+      ) {
+        return fail<StoreRootSession>(
+          `memory store: root '${root.absolutePath}' cannot write records atomically at the required ` +
+            `'${requirement}' guarantee: ${answer.reason}`
+        );
+      }
+      return acquireStoreRoot(root).onSuccess((ownership) => {
+        const swept: ISweepReport = sweep(root);
+        if (swept.removed.length > 0) {
+          log(
+            logger,
+            'info',
+            `memory store: removed ${
+              swept.removed.length
+            } interrupted-write working file(s): ${swept.removed.join(', ')}`
           );
         }
-        return acquireStoreRoot(root, answer.guarantee !== 'session').onSuccess((ownership) => {
-          const removedTemporaries: ReadonlyArray<string> = sweepAtomicTemporaries(root, '')
-            .onSuccess((removed) => {
-              if (removed.length > 0) {
-                log(
-                  logger,
-                  'info',
-                  `memory store: removed ${removed.length} interrupted-write working file(s): ${removed.join(
-                    ', '
-                  )}`
-                );
-              }
-              return succeed(removed);
-            })
-            .onFailure((m) => {
-              // A working file is not a record file, so one left behind cannot be read as a record.
-              log(logger, 'warn', `memory store: could not sweep interrupted-write working files: ${m}`);
-              return fail(m);
-            })
-            .orDefault([]);
-          const durability: IMemoryStoreDurability = {
-            atomic: answer.guarantee !== undefined,
-            ...(answer.guarantee !== undefined ? { guarantee: answer.guarantee } : {}),
-            reason: answer.reason,
-            removedTemporaries
-          };
-          return succeed(new StoreRootSession(durability, ownership, logger));
-        });
-      })
-    );
+        if (swept.failures.length > 0) {
+          // A working file is not a record file, so one left behind cannot be read as a record.
+          log(
+            logger,
+            'warn',
+            `memory store: could not sweep every interrupted-write working file: ${swept.failures.join('; ')}`
+          );
+        }
+        const durability: IMemoryStoreDurability = {
+          atomic: answer.guarantee !== undefined,
+          ...(answer.guarantee !== undefined ? { guarantee: answer.guarantee } : {}),
+          reason: answer.reason,
+          removedTemporaries: swept.removed
+        };
+        return succeed(new StoreRootSession(durability, ownership, logger));
+      });
+    });
   }
 
   /** Release the root. Idempotent. */

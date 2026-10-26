@@ -133,6 +133,16 @@ export class FsFileTreeAccessors<TCT extends string = string>
   }
 
   /**
+   * {@inheritDoc FileTree.IFileTreeAccessors.resolveRealPath}
+   */
+  public resolveRealPath(itemPath: string): Result<string> {
+    const absolutePath = this.resolveAbsolutePath(itemPath);
+    return captureResult(() => fs.realpathSync(absolutePath)).withErrorFormat(
+      (m) => `${absolutePath}: cannot resolve real path: ${m}`
+    );
+  }
+
+  /**
    * Gets the extension of a path.
    * @param itemPath - Path to get the extension of.
    * @returns The extension of the path.
@@ -425,7 +435,12 @@ export class FsFileTreeAccessors<TCT extends string = string>
    */
   private _qualifyDirectory(directory: string): Result<IAccessorQualification> {
     const absolutePath = this.resolveAbsolutePath(directory);
-    return qualifyAtomicWrites(defaultAtomicFsOperations, absolutePath, process.platform).onSuccess(
+    // Qualify what the path names, not the path: a directory reached through a
+    // symbolic link is the link's target, and the qualification inspects the
+    // directory without following a final link. A path that does not resolve is
+    // qualified as given, so the "not found" diagnosis still comes from there.
+    const qualifiedPath = this.resolveRealPath(absolutePath).orDefault(absolutePath);
+    return qualifyAtomicWrites(defaultAtomicFsOperations, qualifiedPath, process.platform).onSuccess(
       (qualification): Result<IAccessorQualification> => {
         // A refusal this accessor makes on POLICY grounds is `not-writable` —
         // the same code the in-memory store reports for the same conditions.
