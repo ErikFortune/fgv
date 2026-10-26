@@ -121,8 +121,6 @@ describe('the broker checks what an injected repository returns', () => {
       /storage down/
     );
     expect(await w.reconcileListCompletions({ limit: 5 })).toSucceedWith({ completed: [] });
-    const failing = faulty(h, () => ({ readCommit: async () => storageDown() }));
-    expect(await failing.registerExternal('host', vendorRequest('v'))).toFailWith(/storage down/);
   });
 
   test('read failures inside the writer are reported', async () => {
@@ -417,21 +415,6 @@ describe('the remaining refusals', () => {
         responsibility: 'unassigned'
       })
     ).toFailWith(/stored receipt of 'op-bad' does not convert/);
-  });
-
-  test('a parent that cannot be re-read inside the writer stops a creation', async () => {
-    const broker = faulty(
-      h,
-      () => ({}),
-      (real) => ({
-        readCommit: async (id: TaskId) => (id === 'p' ? storageDown() : real.readCommit(id))
-      })
-    );
-    const w = writerOf(broker, h);
-    expect(
-      await w.createTracked({ taskId: tid('n'), operationId: op(), title: 'n', parentId: tid('p') })
-    ).toFailWith(/storage down/);
-    expect(await broker.registerExternal('host', vendorRequest('v', 'p'))).toFailWith(/storage down/);
   });
 
   test('a related record that cannot be re-read inside the writer stops the move', async () => {

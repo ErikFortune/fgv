@@ -166,7 +166,6 @@ describe('IMemoryStore.coverage', () => {
     }).orThrow();
     (await wide.put(record('a', noteKind))).orThrow();
 
-    wide.dispose();
     const narrowed = FileTreeMemoryStore.create({
       root,
       registry: registry(),
@@ -217,7 +216,6 @@ describe('IMemoryStore.coverage', () => {
       )
       .orThrow();
 
-    store.dispose();
     const reopened = FileTreeMemoryStore.create({
       root,
       registry: registry(),
@@ -247,7 +245,6 @@ describe('IMemoryStore.coverage', () => {
     (await seeded.put(record('a'))).orThrow();
     (await seeded.put(record('b'))).orThrow();
 
-    seeded.dispose();
     const reopened = FileTreeMemoryStore.create({
       root,
       registry: registry(),

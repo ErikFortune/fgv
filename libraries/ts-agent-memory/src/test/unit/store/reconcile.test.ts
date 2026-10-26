@@ -178,7 +178,6 @@ describe('IMemoryStore.reconcile — record-vector', () => {
     const raw: string = file.getRawContents().orThrow();
     file.setRawContents(raw.replace(/^embeddingRef:.*\n/m, '')).orThrow();
 
-    store.dispose();
     const reopened = FileTreeMemoryStore.create({
       root,
       registry: registry(),
@@ -232,7 +231,6 @@ describe('IMemoryStore.reconcile — record-vector', () => {
       )
       .orThrow();
 
-    store.dispose();
     const reopened = FileTreeMemoryStore.create({
       root,
       registry: registry(),
@@ -320,8 +318,7 @@ describe('IMemoryStore.reconcile — record-vector', () => {
       vectorIndex: throwingHas,
       embed: okEmbed,
       warn: () => undefined,
-      embedsKind: () => true,
-      checkWritable: () => succeed(true)
+      embedsKind: () => true
     });
 
     const entries = (await store.listEntries()).orThrow();
@@ -382,7 +379,6 @@ describe('IMemoryStore.reconcile — record-vector', () => {
     (await store.put(record('a'))).orThrow();
     (await store.put(record('b'))).orThrow();
 
-    store.dispose();
     const wired = FileTreeMemoryStore.create({
       root: (store as unknown as { _root: FileTree.IMutableFileTreeDirectoryItem })._root,
       registry: registry(),
@@ -543,7 +539,6 @@ describe('IMemoryStore.reconcile — every casualty is collected, never fatal', 
     // restamp fails and is collected.
     const raw: string = file.getRawContents().orThrow();
     file.setRawContents(raw.replace(/^embeddingRef:.*\n/m, '')).orThrow();
-    store.dispose();
     const reopened = FileTreeMemoryStore.create({
       root,
       registry: registry(),
@@ -611,7 +606,6 @@ describe('IMemoryStore.reconcile — fragment-vector', () => {
     (await store.put(record('a'))).orThrow();
     (await index.remove({ scope: knowledgeScope, id: 'a' as MemoryId })).orThrow();
 
-    store.dispose();
     const failing = FileTreeMemoryStore.create({
       root,
       registry: registry(),
@@ -660,8 +654,7 @@ describe('reconcileVectors — the injected stamp seam', () => {
       vectorIndex: index,
       embed: okEmbed,
       embedsKind: () => true,
-      warn: () => undefined,
-      checkWritable: () => succeed(true)
+      warn: () => undefined
     });
     const rec = record('a');
     const result = await reconcileVectors({
@@ -685,11 +678,7 @@ describe('VectorMaintenance repair entry points guard their own wiring', () => {
   // Reachable only by calling them directly — `reconcile` checks first. They are
   // still guards rather than c8-ignored defensive code, because they are
   // package-internal entry points a future caller could reach without the check.
-  const bare = new VectorMaintenance({
-    embedsKind: () => true,
-    warn: () => undefined,
-    checkWritable: () => succeed(true)
-  });
+  const bare = new VectorMaintenance({ embedsKind: () => true, warn: () => undefined });
   const t = { scope: knowledgeScope, id: 'a' as MemoryId };
 
   test('reembedRecord refuses an unwired record lane', async () => {

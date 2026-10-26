@@ -30,10 +30,8 @@ import {
   edgeTargetKey
 } from '@fgv/ts-agent-memory';
 import { invokeHook, tally, withRollbackNote } from './rebuildHelpers';
-import { IndexIdentity } from './indexIdentity';
 import { closeOwnedConnection, openOwnedConnection } from './connection';
 import {
-  IIndexIdentityReport,
   ISqliteVecVectorIndexCreateParams,
   ISqliteVecVectorIndexHandle,
   ISqliteVecVectorIndexOpenParams
@@ -87,23 +85,6 @@ interface IKnnRow {
  * the seam for backing a record index and a fragment index with one connection.
  * With {@link SqliteVecVectorIndex.open} this package opens the file itself and
  * hands back a handle carrying the disposer for the connection it created.
- *
- * **The embedding identity lives in the file.** Pass `identity` (an opaque string
- * naming the embedding model) and the index stores it in an ordinary
- * `fgv_sqlite_vec_meta` table, one row per index table, so it travels with the
- * vectors through a copy or restore. {@link SqliteVecVectorIndex.identity} compares
- * it on every call. While the status is `'mismatch'` or `'incomplete'`, `add` and
- * `query` fail with a message naming the status; `rebuild` is always allowed and is
- * the remedy. The first `add` to a fresh index creates the table and stores the
- * identity in one transaction; each fence check shares a transaction with the read
- * or write it guards, and every write transaction is `IMMEDIATE`. Nothing is
- * deleted automatically. `has`, `remove` and `size` are deliberately unfenced, so
- * coverage reporting and cleanup still work on a mismatched or incomplete index.
- * A handle opened without an identity is fenced only on `'incomplete'`: it can
- * write under another handle's stored identity, and its rebuild leaves the status
- * `'absent'` — identity checking is opt-in, per handle. An older version of this
- * package ignores the meta table entirely, so a file written by it (or rebuilt by
- * it after a downgrade) carries a row that no longer describes its vectors.
  * @public
  */
 export class SqliteVecVectorIndex implements IVectorIndex {
@@ -118,20 +99,12 @@ export class SqliteVecVectorIndex implements IVectorIndex {
    * which means *no dimension established yet* — see the remarks on `release`.
    */
   private _released: boolean;
-  /** The embedding identity stored beside the vectors; see {@link SqliteVecVectorIndex.identity}. */
-  private readonly _identity: IndexIdentity;
 
-  private constructor(
-    db: BetterSqlite3.Database,
-    table: string,
-    dimension: number | undefined,
-    identity: IndexIdentity
-  ) {
+  private constructor(db: BetterSqlite3.Database, table: string, dimension: number | undefined) {
     this._db = db;
     this._table = table;
     this._dimension = dimension;
     this._released = false;
-    this._identity = identity;
     this._stmts = dimension === undefined ? undefined : this._prepare();
   }
 
@@ -183,12 +156,7 @@ export class SqliteVecVectorIndex implements IVectorIndex {
           params.database,
           table
         );
-        return new SqliteVecVectorIndex(
-          params.database,
-          table,
-          dimension,
-          new IndexIdentity(params.database, table, params.identity)
-        );
+        return new SqliteVecVectorIndex(params.database, table, dimension);
       }).withErrorFormat((e) => `sqlite-vec index: failed to initialize: ${e}`)
     );
   }
@@ -222,13 +190,7 @@ export class SqliteVecVectorIndex implements IVectorIndex {
     params: ISqliteVecVectorIndexOpenParams
   ): Promise<Result<ISqliteVecVectorIndexHandle>> {
     return (await openOwnedConnection(params.path, LABEL)).thenOnSuccess(async (database) =>
-      (
-        await SqliteVecVectorIndex.create({
-          database,
-          tableName: params.tableName,
-          identity: params.identity
-        })
-      )
+      (await SqliteVecVectorIndex.create({ database, tableName: params.tableName }))
         .onFailure((message) =>
           // This call opened the connection, so a failure to initialize on top of it
           // must not leave the file handle behind. A close that ALSO fails is said out
@@ -278,52 +240,6 @@ export class SqliteVecVectorIndex implements IVectorIndex {
   public release(): void {
     this._released = true;
     this._stmts = undefined;
-    this._identity.release();
-  }
-
-  /**
-   * Report the embedding identity stored in the database file, compared against
-   * the one this handle was opened with. Reads the database on every call and
-   * never writes, so it is safe on a read-only connection.
-   *
-   * @remarks
-   * See {@link IIndexIdentityReport} for what each status means. While the status
-   * is `'mismatch'` or `'incomplete'`, `add` and `query` fail; `rebuild` is the
-   * remedy, and nothing is ever deleted automatically. Both reads behind the
-   * report run in one read transaction, so it describes a single snapshot.
-   *
-   * @returns `Success` with the report, or `Failure` if the index has been
-   * released or the database could not be read.
-   */
-  public identity(): Result<IIndexIdentityReport> {
-    if (this._released) {
-      return fail('vector index: cannot read identity: the index has been released');
-    }
-    return this._identity.report().withErrorFormat((e) => `vector index: cannot read identity: ${e}`);
-  }
-
-  /**
-   * Record this handle's identity over stored vectors that have none, without
-   * re-embedding them — a one-time migration for a consumer that kept the identity
-   * somewhere else.
-   *
-   * @remarks
-   * Legal while {@link SqliteVecVectorIndex.identity} reports `'absent'`, and
-   * idempotent on `'match'`, where it succeeds without writing. `'mismatch'` and
-   * `'incomplete'` are refused because adopting would certify vectors that are
-   * known to be wrong or partial; they need a `rebuild`. `'fresh'` and
-   * `'unchecked'` are refused because there is nothing, or no identity, to adopt.
-   * The status check and the write run in one transaction.
-   *
-   * @returns `Success` with the report (`'match'`), or `Failure` naming the
-   * status that made adoption illegal, or a database error (for example on a
-   * read-only connection).
-   */
-  public adoptIdentity(): Result<IIndexIdentityReport> {
-    if (this._released) {
-      return fail('vector index: cannot adopt identity: the index has been released');
-    }
-    return this._identity.adopt().withErrorFormat((e) => `vector index: cannot adopt identity: ${e}`);
   }
 
   /**
@@ -338,96 +254,31 @@ export class SqliteVecVectorIndex implements IVectorIndex {
 
   /** {@inheritDoc IVectorIndex.add} */
   public add(target: IEdgeTarget, vector: Float32Array): Promise<Result<string>> {
-    return Promise.resolve(this._add(target, vector, 'fenced'));
-  }
-
-  /**
-   * The body of `add`. `'rebuild'` is `rebuild`'s own path: it skips the fence,
-   * which would refuse the `'incomplete'` state the rebuild itself is in, and does
-   * not commit an identity on table creation, which only the rebuild's final
-   * commit may do.
-   */
-  private _add(target: IEdgeTarget, vector: Float32Array, mode: WriteMode): Result<string> {
     const key: string = edgeTargetKey(target);
     if (this._released) {
-      return fail(`vector index: cannot add '${key}': the index has been released`);
+      return Promise.resolve(fail(`vector index: cannot add '${key}': the index has been released`));
     }
     if (vector.length === 0) {
-      return fail(`vector index: cannot add '${key}': empty vector`);
+      return Promise.resolve(fail(`vector index: cannot add '${key}': empty vector`));
     }
     if (this._dimension !== undefined && vector.length !== this._dimension) {
-      return fail(
-        `vector index: cannot add '${key}': dimension ${vector.length} does not match index dimension ${this._dimension}`
+      return Promise.resolve(
+        fail(
+          `vector index: cannot add '${key}': dimension ${vector.length} does not match index dimension ${this._dimension}`
+        )
       );
     }
-    const blob: Uint8Array = SqliteVecVectorIndex._toBlob(vector);
-    return this._establish(vector.length, mode)
-      .onSuccess((stmts) => {
-        const write = (): Result<string> => {
-          stmts.replace(key, blob);
-          return succeed(key);
-        };
-        // Fenced writes run the identity check and the write in one IMMEDIATE
-        // transaction, so another connection cannot start a rebuild or change the
-        // stored identity between them — and the write lock is taken up front, so a
-        // busy file waits on `busy_timeout` instead of failing a read-to-write
-        // lock upgrade at once.
-        return captureResult(() =>
-          mode === 'rebuild'
-            ? write()
-            : this._db.transaction(() => this._identity.fence().onSuccess(write)).immediate()
-        ).onSuccess((written) => written);
-      })
-      .withErrorFormat((e) => `vector index: cannot add '${key}': ${e}`);
-  }
-
-  /**
-   * Make sure the `vec0` table exists and the statements are prepared, creating
-   * the table at `dimension` if this handle has not seen it yet.
-   *
-   * @remarks
-   * A fenced first write creates the table and stores the handle's identity in one
-   * transaction, so they commit or roll back together — but only when the status
-   * read inside that transaction is `'fresh'`. If another connection created the
-   * table first, its row is left alone and the fence decides. A rebuild's own first
-   * write creates the table only if it is still absent and the row is still this
-   * rebuild's marker; anything else moved underneath the rebuild and fails it. The
-   * statements are prepared and kept only after that transaction commits, so a
-   * rolled-back creation leaves this handle exactly as it was.
-   */
-  private _establish(dimension: number, mode: WriteMode): Result<ISqliteVecStatements> {
-    if (this._stmts !== undefined) {
-      return succeed(this._stmts);
-    }
-    return captureResult(() =>
-      this._db
-        .transaction((): Result<true> => {
-          if (mode === 'rebuild') {
-            // The rebuild already marked the row; creating the table must not commit it.
-            return this._identity.checkRebuildTargetInTransaction().onSuccess(() => {
-              this._createTable(dimension);
-              return succeed<true>(true);
-            });
-          }
-          return this._identity.fence().onSuccess((report) => {
-            this._createTable(dimension);
-            if (report.status === 'fresh') {
-              this._identity.commitFirstWriteInTransaction();
-            }
-            return succeed<true>(true);
-          });
-        })
-        .immediate()
-    )
-      .onSuccess((established) => established)
-      .onSuccess(() =>
-        captureResult(() => {
-          const stmts: ISqliteVecStatements = this._prepare();
-          this._dimension = dimension;
-          this._stmts = stmts;
-          return stmts;
-        })
-      );
+    return Promise.resolve(
+      captureResult(() => {
+        if (this._stmts === undefined) {
+          this._createTable(vector.length);
+          this._dimension = vector.length;
+          this._stmts = this._prepare();
+        }
+        this._stmts.replace(key, SqliteVecVectorIndex._toBlob(vector));
+        return key;
+      }).withErrorFormat((e) => `vector index: cannot add '${key}': ${e}`)
+    );
   }
 
   /** {@inheritDoc IVectorIndex.has} */
@@ -473,22 +324,6 @@ export class SqliteVecVectorIndex implements IVectorIndex {
    * `'fail'` / `'skip'` modes therefore cover only failures JavaScript can catch:
    * a process kill mid-rebuild leaves the table holding neither the old index nor
    * the complete new one, and the remedy is to run `rebuild` again.
-   *
-   * **A partial table is detectable.** The clear and a `'rebuilding'` marker in the
-   * identity row commit in one transaction; only a final transaction at the end
-   * replaces the marker with the handle's identity. Until then
-   * {@link SqliteVecVectorIndex.identity} reports `'incomplete'` and `add` and
-   * `query` are fenced — after a crash, after a `'fail'` rollback, and after a
-   * final commit that could not be written (for example `SQLITE_BUSY` from another
-   * connection on the same file). The marker is a crash marker, not a lock: two
-   * rebuilds of one table on two connections at once are not coordinated.
-   *
-   * A rebuild cannot change the dimension. A vector whose width differs from the
-   * table's is **not** a per-record error: the rebuild fails in every mode,
-   * including `'skip'`, and leaves the index `'incomplete'`. A swap to a model of a
-   * different width needs the table dropped (or a fresh `tableName`) and
-   * re-indexed. A `release()` while the rebuild runs also fails it before the final
-   * commit, leaving `'incomplete'`.
    */
   public async rebuild(
     source: IMemoryRecordSource,
@@ -509,8 +344,7 @@ export class SqliteVecVectorIndex implements IVectorIndex {
     }
     const cleared: Result<true> = this._clear();
     if (cleared.isFailure()) {
-      // Also nothing established: the clear and its marker are one transaction,
-      // so the table still holds whatever it held.
+      // Also nothing established: the table still holds whatever it held.
       return failWithDetail(`vector index rebuild: failed to clear the index: ${cleared.message}`);
     }
     const indexed: Map<Kind, number> = new Map<Kind, number>();
@@ -543,22 +377,7 @@ export class SqliteVecVectorIndex implements IVectorIndex {
         tally(declined, kind);
         continue;
       }
-      // An empty vector is malformed rather than another width, and stays a
-      // per-record rejection by `_add`.
-      if (
-        this._dimension !== undefined &&
-        embedded.value.length !== 0 &&
-        embedded.value.length !== this._dimension
-      ) {
-        // Not a per-record error, so not skippable: every later record would fail
-        // the same way, and the table can never hold this model's vectors.
-        const error: string =
-          `vector index rebuild: '${edgeTargetKey(scoped.target)}' has dimension ${embedded.value.length} ` +
-          `but the table is fixed at ${this._dimension}; a rebuild cannot change the dimension — drop ` +
-          `the table (or use a fresh tableName) and re-index`;
-        return failWithDetail(withRollbackNote(error, this._clear()), report());
-      }
-      const added: Result<string> = this._add(scoped.target, embedded.value, 'rebuild');
+      const added: Result<string> = await this.add(scoped.target, embedded.value);
       if (added.isFailure()) {
         const error: string = `vector index rebuild: ${added.message}`;
         if (!lenient) {
@@ -572,23 +391,6 @@ export class SqliteVecVectorIndex implements IVectorIndex {
       // per-kind tally removes a failure path as well as a rounding of the answer.
       tally(indexed, kind);
     }
-    if (this._released) {
-      // Every write after the release was refused (and, in 'skip' mode, skipped),
-      // so the table is partial. Leave the marker: the index stays 'incomplete'.
-      return failWithDetail(
-        'vector index rebuild: the index was released while the rebuild ran; it stays incomplete',
-        report()
-      );
-    }
-    const committed: Result<true> = this._identity.commitRebuild();
-    if (committed.isFailure()) {
-      // Every vector is written, but nothing says so: the marker stays, the index
-      // reports `'incomplete'`, and a caller is told rather than handed a success.
-      return failWithDetail(
-        `vector index rebuild: failed to commit the index identity: ${committed.message}`,
-        report()
-      );
-    }
     return succeedWithDetail(report());
   }
 
@@ -599,21 +401,13 @@ export class SqliteVecVectorIndex implements IVectorIndex {
    * here where it would succeed on the in-memory sibling, which forgets its
    * dimension on reset. Changing dimension needs a drop-and-re-index; see the
    * note on `IVectorIndex.rebuild`.
-   *
-   * Marks the identity row `'rebuilding'` in the same transaction, so a clear is
-   * never committed without the marker that makes the partial table detectable.
-   * The rollback after a `'fail'` abort calls this again, which leaves the marker
-   * in place. On an index that has no table yet only the marker is written. A row
-   * this version cannot read (another `meta_version`) is refused, not overwritten.
-   *
-   * Whether to delete is decided from the file, not from this handle: a table
-   * another connection created after this handle opened is emptied too, and this
-   * handle then adopts it (dimension and statements), so the rebuild never
-   * certifies vectors it did not write.
    */
   private _clear(): Result<true> {
     if (this._released) {
       return fail('vector index: cannot clear: the index has been released');
+    }
+    if (this._stmts === undefined) {
+      return succeed(true);
     }
     // `exec`, not `prepare(...).run()`, and the reason is lifetime rather than
     // style. A prepared statement here would be referenced by nothing the moment
@@ -622,39 +416,12 @@ export class SqliteVecVectorIndex implements IVectorIndex {
     // during environment teardown, which is the frame the reported
     // `Statement::~Statement()` abort fires in. `exec` creates no `Statement` at
     // all, so there is no destructor and no cleanup hook to outlive anything.
+    // Safe here because this runs outside any transaction: `rebuild` is async
+    // and explicitly not transactional, and `add`'s transaction is its own.
     // Capture-wrapped like `add` / `remove` / `query`: a closed connection or an
     // I/O error here is a `Failure`, not an exception thrown out of a method
-    // whose signature promises a `Result`; a throw inside the transaction rolls
-    // the delete and the marker back together.
-    return captureResult(() =>
-      this._db
-        .transaction((): Result<boolean> => {
-          const tableExists: boolean = this._identity.tableExists();
-          return this._identity.markRebuildingInTransaction().onSuccess(() => {
-            if (tableExists) {
-              this._db.exec(`DELETE FROM "${this._table}"`);
-            }
-            return succeed(tableExists);
-          });
-        })
-        .immediate()
-    )
-      .onSuccess((cleared) => cleared)
-      .onSuccess((tableExists) =>
-        tableExists && this._stmts === undefined
-          ? // Taking over a table another connection created. The DDL is read through
-            // the identity's retained statement, so this path prepares nothing that
-            // `release()` could not drop.
-            this._identity.tableDdl().onSuccess((ddl) =>
-              captureResult(() => {
-                const stmts: ISqliteVecStatements = this._prepare();
-                this._dimension = SqliteVecVectorIndex._dimensionFromDdl(ddl);
-                this._stmts = stmts;
-                return true as const;
-              })
-            )
-          : succeed<true>(true)
-      );
+    // whose signature promises a `Result`.
+    return captureResult(() => this._db.exec(`DELETE FROM "${this._table}"`)).onSuccess(() => succeed(true));
   }
 
   /** {@inheritDoc IVectorIndex.query} */
@@ -663,14 +430,7 @@ export class SqliteVecVectorIndex implements IVectorIndex {
       return Promise.resolve(fail('vector index: cannot query: the index has been released'));
     }
     if (topK <= 0 || this._stmts === undefined) {
-      // Nothing to read, but the status still decides: a mismatched or incomplete
-      // index fails rather than answering an empty list.
-      return Promise.resolve(
-        this._identity
-          .fence()
-          .onSuccess(() => succeed<ReadonlyArray<IVectorQueryHit>>([]))
-          .withErrorFormat((e) => `vector index: query failed: ${e}`)
-      );
+      return Promise.resolve(succeed([]));
     }
     if (vector.length !== this._dimension) {
       return Promise.resolve(
@@ -679,28 +439,19 @@ export class SqliteVecVectorIndex implements IVectorIndex {
         )
       );
     }
-    const stmts: ISqliteVecStatements = this._stmts;
     return Promise.resolve(
-      captureResult(() =>
-        this._db.transaction(() =>
-          this._identity.fence().onSuccess(() => {
-            const rows: ReadonlyArray<IKnnRow> = stmts.query.all(
-              SqliteVecVectorIndex._toBlob(vector),
-              topK
-            ) as ReadonlyArray<IKnnRow>;
-            // sqlite-vec returns rows in ascending distance (nearest first); score is
-            // `1 - cosineDistance` = cosine similarity, so descending score is preserved.
-            return succeed<ReadonlyArray<IVectorQueryHit>>(
-              rows.map((row) => ({
-                target: SqliteVecVectorIndex._parseKey(row.target_key),
-                score: 1 - row.distance
-              }))
-            );
-          })
-        )()
-      )
-        .onSuccess((hits) => hits)
-        .withErrorFormat((e) => `vector index: query failed: ${e}`)
+      captureResult<ReadonlyArray<IVectorQueryHit>>(() => {
+        const rows: ReadonlyArray<IKnnRow> = this._stmts!.query.all(
+          SqliteVecVectorIndex._toBlob(vector),
+          topK
+        ) as ReadonlyArray<IKnnRow>;
+        // sqlite-vec returns rows in ascending distance (nearest first); score is
+        // `1 - cosineDistance` = cosine similarity, so descending score is preserved.
+        return rows.map((row) => ({
+          target: SqliteVecVectorIndex._parseKey(row.target_key),
+          score: 1 - row.distance
+        }));
+      }).withErrorFormat((e) => `vector index: query failed: ${e}`)
     );
   }
 
@@ -754,12 +505,7 @@ export class SqliteVecVectorIndex implements IVectorIndex {
     if (row === undefined) {
       return undefined;
     }
-    return SqliteVecVectorIndex._dimensionFromDdl(row.sql);
-  }
-
-  /** The `float[<n>]` dimension declared in a table's stored `CREATE` SQL, or `undefined` if none. */
-  private static _dimensionFromDdl(sql: string): number | undefined {
-    const match: RegExpMatchArray | null = sql.match(/float\[(\d+)\]/);
+    const match: RegExpMatchArray | null = row.sql.match(/float\[(\d+)\]/);
     return match === null ? undefined : Number(match[1]);
   }
 
@@ -780,13 +526,6 @@ export class SqliteVecVectorIndex implements IVectorIndex {
     };
   }
 }
-
-/**
- * How a write reaches the table: `'fenced'` for a caller's `add`, `'rebuild'` for
- * `rebuild`'s own writes, which run while the index is deliberately
- * `'incomplete'`.
- */
-type WriteMode = 'fenced' | 'rebuild';
 
 /** The prepared statements / helpers the index reuses once its table exists. */
 interface ISqliteVecStatements {

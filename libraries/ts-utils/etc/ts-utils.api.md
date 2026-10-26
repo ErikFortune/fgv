@@ -89,9 +89,6 @@ class AggregatedResultMapValidator<TCOMPOSITEID extends string, TCOLLECTIONID ex
     update(key: string, value: unknown): DetailedResult<TITEM, ResultMapResultDetail>;
 }
 
-// @public
-const allCompositeIdSplitModes: readonly ["exact", "first", "last"];
-
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
@@ -584,7 +581,7 @@ class CollectorValidator<TITEM extends ICollectible<any, any>> implements IReadO
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-function compositeId<TCOLLECTIONID extends string, TITEMID extends string, TC = unknown>(collectionIdConverter: Converter<TCOLLECTIONID, TC> | Validator<TCOLLECTIONID, TC>, separator: string, itemIdConverter: Converter<TITEMID, TC> | Validator<TITEMID, TC>, options?: ICompositeIdOptions): Converter<ICompositeId<TCOLLECTIONID, TITEMID>, TC>;
+function compositeId<TCOLLECTIONID extends string, TITEMID extends string, TC = unknown>(collectionIdConverter: Converter<TCOLLECTIONID, TC> | Validator<TCOLLECTIONID, TC>, separator: string, itemIdConverter: Converter<TITEMID, TC> | Validator<TITEMID, TC>): Converter<ICompositeId<TCOLLECTIONID, TITEMID>, TC>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -602,10 +599,7 @@ function compositeIdFromObject<TCOLLECTIONID extends string, TITEMID extends str
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-function compositeIdFromString<TCOLLECTIONID extends string, TITEMID extends string, TC = unknown>(collectionIdConverter: Converter<TCOLLECTIONID, TC> | Validator<TCOLLECTIONID, TC>, separator: string, itemIdConverter: Converter<TITEMID, TC> | Validator<TITEMID, TC>, options?: ICompositeIdOptions): Converter<ICompositeId<TCOLLECTIONID, TITEMID>, TC>;
-
-// @public
-type CompositeIdSplitMode = (typeof allCompositeIdSplitModes)[number];
+function compositeIdFromString<TCOLLECTIONID extends string, TITEMID extends string, TC = unknown>(collectionIdConverter: Converter<TCOLLECTIONID, TC> | Validator<TCOLLECTIONID, TC>, separator: string, itemIdConverter: Converter<TITEMID, TC> | Validator<TITEMID, TC>): Converter<ICompositeId<TCOLLECTIONID, TITEMID>, TC>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -627,8 +621,6 @@ class CompositeIdValidator<T extends string = string, TCOLLECTIONID extends stri
     // (undocumented)
     protected readonly _separator: string;
     // (undocumented)
-    protected readonly _split: CompositeIdSplitMode;
-    // (undocumented)
     protected _validate(value: unknown, context?: TC): boolean | Failure<T>;
 }
 
@@ -642,7 +634,6 @@ interface CompositeIdValidatorConstructorParams<T extends string = string, TCOLL
     readonly itemId: Validator<TITEMID, TC>;
     // (undocumented)
     readonly separator: string;
-    readonly split?: CompositeIdSplitMode;
 }
 
 // @public
@@ -793,7 +784,6 @@ declare namespace Converters {
         tuple,
         ICompositeId,
         IPartialCompositeId,
-        ICompositeIdOptions,
         FieldTransformers,
         TransformObjectOptions
     }
@@ -1389,11 +1379,6 @@ interface ICompositeId<TCOLLECTIONID extends string, TITEMID extends string> {
     readonly itemId: TITEMID;
     // (undocumented)
     readonly separator: string;
-}
-
-// @public
-interface ICompositeIdOptions {
-    readonly split?: CompositeIdSplitMode;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -2960,8 +2945,6 @@ export class ValidatingResultMap<TK extends string = string, TV = unknown> exten
 
 declare namespace Validation {
     export {
-        allCompositeIdSplitModes,
-        CompositeIdSplitMode,
         Base,
         Classes,
         Validators,

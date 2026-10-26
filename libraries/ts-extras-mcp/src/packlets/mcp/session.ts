@@ -342,7 +342,10 @@ async function _connectWithin(
     lost.signal.addEventListener('abort', () => reject(lost.signal.reason), { once: true });
   });
   const timer = setTimeout(() => lost.abort(makeTimeoutError(timeoutMs)), timeoutMs);
-  const stopListening = _onAbort(sdkOptions.signal, (reason) => lost.abort(reason));
+  const stopListening =
+    sdkOptions.signal !== undefined
+      ? _onAbort(sdkOptions.signal, (reason) => lost.abort(reason))
+      : (): void => undefined;
   // Whichever loses the race must not surface as an unhandled rejection.
   connecting.catch(() => undefined);
   deadline.catch(() => undefined);

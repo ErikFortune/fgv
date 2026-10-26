@@ -787,7 +787,6 @@ describe('FileTreeMemoryStore embed-on-write', () => {
       expect(index.size).toBe(1);
 
       // Reopen the SAME vault with the kind excluded, then re-put the record.
-      before.dispose();
       const after = FileTreeMemoryStore.create({
         root,
         registry,

@@ -336,22 +336,8 @@ export interface IAiClientToolCallSummary {
   readonly args: JsonObject;
   /** The stringified result (success value or error message). */
   readonly result: string;
-  /** Whether execution failed (schema validation failure, execute error, unknown tool, or an aborted turn). */
+  /** Whether execution failed (schema validation failure, execute error, or unknown tool). */
   readonly isError: boolean;
-  /**
-   * How long deciding and running this call took, in milliseconds on the turn's clock
-   * (`IExecuteClientToolTurnParams.clock`): from the moment its arguments were complete to the
-   * moment its result was ready, covering argument validation, the `onBeforeToolExecute` gate and
-   * `execute`.
-   *
-   * @remarks
-   * Required, for the same reason `toolConflicts` is: the library always knows it, so an absent
-   * value could only mean a defect. A call that was never dispatched — an unknown tool, invalid
-   * arguments, a denial, an aborted turn — still has one: the near-zero time spent deciding not to.
-   * The time a consumer spends between the call's `client-tool-call-done` and `client-tool-result`
-   * events is never included.
-   */
-  readonly durationMs: number;
 }
 
 /**

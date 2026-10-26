@@ -257,7 +257,7 @@ describe('numeric enum, const and {} on an adapted MCP tool', () => {
       expect(await adaptMcpTools(session, { logger })).toSucceedAndSatisfy((result) => {
         expect(result.tools.map((t) => t.config.name)).toEqual(['level']);
         expect(result.skipped).toEqual([
-          { name: 'configure', kind: 'wire', reason: expect.stringMatching(UNTYPED_SKIP), schema: CONFIGURE_SCHEMA }
+          { name: 'configure', reason: expect.stringMatching(UNTYPED_SKIP), schema: CONFIGURE_SCHEMA }
         ]);
       });
       expect(logger.logged.join('\n')).toMatch(/skipping tool 'configure': inputSchema cannot be adapted/);
@@ -479,7 +479,6 @@ describe('pattern on an adapted MCP tool', () => {
       expect(result.skipped).toEqual([
         {
           name: 'code',
-          kind: 'schema',
           reason: "#/properties/code: unsupported JSON Schema keyword 'pattern'",
           schema: CODE_SCHEMA
         }

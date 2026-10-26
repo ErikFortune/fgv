@@ -397,11 +397,8 @@ describe('partial-read store surface', () => {
 
     function firstFile(dir: FileTree.IFileTreeDirectoryItem): FileTree.IFileTreeFileItem | undefined {
       for (const child of dir.getChildren().orThrow()) {
-        if (child.type === 'file' && child.name.endsWith('.md')) {
-          return child;
-        }
         if (child.type === 'file') {
-          continue;
+          return child;
         }
         const nested: FileTree.IFileTreeFileItem | undefined = firstFile(child);
         if (nested !== undefined) {
@@ -452,7 +449,6 @@ describe('partial-read store surface', () => {
       // A second store over the same tree rebuilds its index by walking the vault.
       // Its `rebuild` takes projected entries, so the walk retains no bodies — and
       // reads still resolve, because the FileTree is the source of truth.
-      first.dispose();
       const second = FileTreeMemoryStore.create({ root, registry: registry(), codecs }).orThrow();
       expect(await second.listEntries()).toSucceedAndSatisfy(
         (entries: ReadonlyArray<IIndexedMemoryEntry>) => {

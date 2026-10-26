@@ -753,18 +753,16 @@ describe('SqliteVecVectorIndex', () => {
 
     test("'skip' reports an add failure too", async () => {
       const index = await makeIndex();
-      // An empty vector for 'b' is a per-record rejection by the index. (A width
-      // change is not: it fails the whole rebuild in every mode — pinned in the
-      // identity suite.)
-      const badVector: MemoryEmbedder = (r) =>
-        (r.envelope.id as string) === 'b' ? Promise.resolve(succeed(vec())) : embed(r);
-      expect(
-        await index.rebuild(source(['a', 'b']), badVector, { onRecordError: 'skip' })
-      ).toSucceedAndSatisfy((report: IVectorRebuildReport) => {
-        expect(report.indexed).toEqual(new Map([['note', 1]]));
-        expect(report.skipped).toHaveLength(1);
-        expect(report.skipped[0].error).toMatch(/empty vector/);
-      });
+      // Establish dimension 2, then hand the rebuild a 3-dim vector for 'b'.
+      const badDim: MemoryEmbedder = (r) =>
+        (r.envelope.id as string) === 'b' ? Promise.resolve(succeed(vec(1, 2, 3))) : embed(r);
+      expect(await index.rebuild(source(['a', 'b']), badDim, { onRecordError: 'skip' })).toSucceedAndSatisfy(
+        (report: IVectorRebuildReport) => {
+          expect(report.indexed).toEqual(new Map([['note', 1]]));
+          expect(report.skipped).toHaveLength(1);
+          expect(report.skipped[0].error).toMatch(/dimension/);
+        }
+      );
     });
 
     test("defaults to 'fail' on an ADD failure too, clearing the persisted table", async () => {
@@ -895,14 +893,6 @@ describe('SqliteVecVectorIndex', () => {
       const index = await makeIndex();
       // Establishes the dimension, so every statement the index reuses exists.
       (await index.add(target('knowledge', 'seed'), vec(1, 0))).orThrow();
-      // One rebuild first: the identity row's statements cannot be prepared before
-      // its table exists, so the first rebuild prepares them — and keeps them. The
-      // property pinned below is that no later rebuild prepares anything, which is
-      // exactly what a throwaway statement would violate.
-      const seed: IMemoryRecordSource = { list: () => Promise.resolve(succeed(listing(['seed']))) };
-      (await index.rebuild(seed, () => Promise.resolve(succeed(vec(1, 0))))).orThrow();
-      // The row read is prepared on the first read that finds the meta table.
-      index.identity().orThrow();
       return index;
     }
 

@@ -4,8 +4,8 @@
 
 LLM provider client + JSON-tolerant response handling. Provides `callProviderCompletion` /
 `callProviderCompletionStream` (OpenAI, xAI, Anthropic, Gemini), image generation, embeddings,
-harness-side client tools (`executeClientToolTurn` for one round, `runClientToolLoop` for a bounded
-multi-round loop), a provider/model registry, and the `AiPrompt` class. See the [`@fgv/ts-extras/ai-assist` entry in `LIBRARY_CAPABILITIES.md`](../../../../../.ai/instructions/LIBRARY_CAPABILITIES.md)
+harness-side client tools (`executeClientToolTurn`), a provider/model registry, and the `AiPrompt`
+class. See the [`@fgv/ts-extras/ai-assist` entry in `LIBRARY_CAPABILITIES.md`](../../../../../.ai/instructions/LIBRARY_CAPABILITIES.md)
 for the full capability surface.
 
 ## Model Aliases (`@<provider>:<role>`)
@@ -200,50 +200,6 @@ consumers reference the role alias and never see these numbers. OpenAI and Anthr
 the scheme with the same tier vocabulary (see the cross-provider tier table above). Note the `pro` role
 serves both the `advanced` slot and (via the cascade) `frontier`, which is exactly why alias roles are
 model-line-semantic rather than tier-named — one role can back multiple slots without duplication.
-
-## Client-tool loops
-
-`executeClientToolTurn` is one provider round: it streams the model's turn, dispatches the client
-tools the model calls while you drain `events`, and resolves `nextTurn` with a **cumulative**
-continuation. `runClientToolLoop` drives those rounds for you:
-
-```typescript
-const result = await AiAssist.runClientToolLoop({
-  descriptor, apiKey, system, messages, clientTools, model,   // ride every round unchanged
-  maxRounds: 4,                                               // required
-  deadlineMs: 60_000,                                         // the whole loop
-  signal,                                                     // the caller's cancellation
-  observer: { event: (round, e) => render(round, e), round: (r) => trace(r) }
-});
-// result.value.state: 'completed' | 'round-limit' | 'aborted' | 'deadline'
-// result.value.rounds[i]: fullText, truncated, calls (each with durationMs), providerDurationMs, usage
-// result.value.continuationMessages: the latest cumulative tail, to resume after 'round-limit'
-// on failure, result.detail.rounds holds the rounds that completed
-```
-
-What it guarantees:
-
-- **The continuation is replaced, never appended** — each round sends exactly the tail the
-  previous one returned.
-- **Stops are outcomes.** The cap, an abort and the deadline succeed with every completed round; a
-  failed round fails the call with those rounds as detail, and is not retried.
-- **A stop releases the caller at once**, even when a tool ignores its signal. The round's signal
-  is aborted, its stream is no longer drained, and no further round starts. Side effects already
-  in flight may still land: a tool that was running keeps running unless it honours the signal.
-  The outcome's `orphanedRoundCalls` lists every call that round had handed off, each marked
-  `settled` when its result was seen; the host never receives any of them in a recorded round.
-  Resuming from `continuationMessages` after a stop may make the model request any of them again;
-  making that safe (idempotency) is the host's responsibility.
-- **No tool starts after an abort.** `executeClientToolTurn` checks its signal before the
-  `onBeforeToolExecute` gate and again before `execute`; a call it declines is reported as an
-  `isError` result saying the turn was aborted.
-- **Observer hooks are synchronous.** A hook that throws is logged at `warn` through `logger` and
-  does not change the outcome; a hook that aborts the caller's own signal is a caller-driven stop.
-
-Truncation is reported per round (`truncated`) and never acted on. Model resolution, the
-duplicate-name check and schema pre-flight are `executeClientToolTurn`'s, so they surface as a
-failure of round 1. The stop mechanics are `AsyncControl.raceStopConditions`, usable on their own
-for any `Result`-returning async work.
 
 ## Structured output
 

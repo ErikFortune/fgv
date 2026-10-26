@@ -9,6 +9,5 @@ export * from './packlets/context';
 export * from './packlets/storage';
 export * from './packlets/implementations';
 export * from './packlets/broker';
-export * from './packlets/host';
 export * from './packlets/tools';
 export * from './packlets/prompt';

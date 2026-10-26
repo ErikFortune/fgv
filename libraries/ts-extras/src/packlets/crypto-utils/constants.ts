@@ -51,10 +51,3 @@ export const GCM_IV_SIZE: number = 12;
  * @public
  */
 export const GCM_AUTH_TAG_SIZE: number = 16;
-
-/**
- * Key size in bytes for an HMAC-SHA256 key: the SHA-256 output length (RFC 2104's `L`).
- * Generated HMAC keys have exactly this length, and imported raw keys may not be shorter.
- * @public
- */
-export const HMAC_SHA256_KEY_SIZE: number = 32;

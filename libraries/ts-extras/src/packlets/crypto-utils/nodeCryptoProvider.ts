@@ -36,7 +36,6 @@ import {
   ICryptoProvider,
   IEncryptBytesResult,
   IEncryptionResult,
-  IHmacKeyOptions,
   IWrapBytesOptions,
   IWrappedBytes,
   KeyPairAlgorithm,
@@ -477,49 +476,6 @@ export class NodeCryptoProvider implements ICryptoProvider {
   public timingSafeEqual(a: Uint8Array, b: Uint8Array): boolean {
     if (a.length !== b.length) return false;
     return crypto.timingSafeEqual(a, b);
-  }
-
-  /**
-   * Generates a fresh random 256-bit HMAC-SHA256 key with usages
-   * `['sign', 'verify']`, non-extractable by default.
-   * @param options - Optional `IHmacKeyOptions`.
-   * @returns `Success` with the HMAC `CryptoKey`, or `Failure` with error context.
-   */
-  public async generateHmacKey(options?: IHmacKeyOptions): Promise<Result<CryptoKey>> {
-    const result = await captureAsyncResult(() =>
-      crypto.webcrypto.subtle.generateKey(
-        { name: 'HMAC', hash: 'SHA-256', length: Constants.HMAC_SHA256_KEY_SIZE * 8 },
-        options?.extractable ?? false,
-        ['sign', 'verify']
-      )
-    );
-    return result.withErrorFormat((e) => `generateHmacKey failed: ${e}`);
-  }
-
-  /**
-   * Imports raw key bytes as an HMAC-SHA256 key with usages
-   * `['sign', 'verify']`, non-extractable by default. Refuses keys shorter
-   * than `Constants.HMAC_SHA256_KEY_SIZE` bytes.
-   * @param raw - The raw key bytes.
-   * @param options - Optional `IHmacKeyOptions`.
-   * @returns `Success` with the HMAC `CryptoKey`, or `Failure` with error context.
-   */
-  public async importHmacKey(raw: Uint8Array, options?: IHmacKeyOptions): Promise<Result<CryptoKey>> {
-    if (raw.length < Constants.HMAC_SHA256_KEY_SIZE) {
-      return fail(
-        `importHmacKey: key must be at least ${Constants.HMAC_SHA256_KEY_SIZE} bytes, got ${raw.length}`
-      );
-    }
-    const result = await captureAsyncResult(() =>
-      crypto.webcrypto.subtle.importKey(
-        'raw',
-        raw,
-        { name: 'HMAC', hash: 'SHA-256' },
-        options?.extractable ?? false,
-        ['sign', 'verify']
-      )
-    );
-    return result.withErrorFormat((e) => `importHmacKey failed: ${e}`);
   }
 
   /**

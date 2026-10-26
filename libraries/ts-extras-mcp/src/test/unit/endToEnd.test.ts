@@ -284,7 +284,6 @@ describe('@fgv/ts-extras-mcp end-to-end against a real in-memory MCP server', ()
         for (const tool of UNADAPTABLE_TOOLS) {
           const skipped = skippedByName.get(tool.name);
           expect(skipped).toBeDefined();
-          expect(skipped?.kind).toBe(tool.name === 'any_tool' ? 'wire' : 'schema');
           // JSON-pointer path into the offending node.
           expect(skipped?.reason).toMatch(/#\/properties\//);
           expect(skipped?.reason).toMatch(expectedReasonFragment[tool.name]);

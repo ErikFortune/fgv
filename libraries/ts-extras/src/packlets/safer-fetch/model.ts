@@ -452,15 +452,14 @@ export type GuardedFetch = (url: string | URL, init?: RequestInit) => Promise<Re
 /**
  * Options for {@link SaferFetch.createGuardedFetch}. A subset of {@link SaferFetch.ISaferFetchOptions}:
  * the per-request inputs (method, headers, body, signal) arrive on each call's `RequestInit`
- * instead, and every option that needs the body buffered is absent.
+ * instead, and every option that needs the body read is absent.
  *
  * @remarks
  * **Absent on purpose, and refused if supplied:** `timeoutMs` (a deadline over the body would cut
- * off a stream that is meant to live for an hour), `responseBodyGuard` (it needs the whole body,
- * which this entry point never buffers), and `retry` (it would replay a non-idempotent `POST`, and a
- * streaming caller has usually consumed part of the response before it could know to retry). A
- * caller who needs those wants a buffered entry point. `maxResponseBytes` is accepted: it is
- * enforced by counting the body as the caller reads it, never by reading it here.
+ * off a stream that is meant to live for an hour), `maxResponseBytes` and `responseBodyGuard` (both
+ * need the body read, which this entry point never does), and `retry` (it would replay a
+ * non-idempotent `POST`, and a streaming caller has usually consumed part of the response before it
+ * could know to retry). A caller who needs those wants a buffered entry point.
  * @public
  */
 export interface IGuardedFetchOptions {
@@ -509,28 +508,6 @@ export interface IGuardedFetchOptions {
    * accepts: a stream that then lives for an hour is not cut off.
    */
   readonly headersTimeoutMs?: number;
-
-  /**
-   * Cap on the response body, in bytes, counted as the caller reads it. Opt-in: with no value the
-   * body is unbounded and the platform's own `Response` is returned untouched.
-   *
-   * @remarks
-   * When set, the function still never reads the body itself. A response whose `Content-Length`
-   * already declares more than the cap is refused before it is returned: the call rejects with a
-   * {@link SaferFetch.GuardedFetchError} whose reason is `'too-large'` (`bytesRead: 0`), and the body
-   * is released. Any other response with a body is returned with that body wrapped in a counting
-   * stream, carrying the original status, status text, headers, `url` and `redirected`. The count is
-   * of **decoded** bytes, as with the buffered entry points, so a lying `Content-Length` and a gzip
-   * bomb both trip it. The chunk that takes the count past the cap is never delivered: the upstream
-   * body is cancelled, which releases the connection, and the stream errors with a
-   * `GuardedFetchError` whose reason is `'too-large'` (`bytesRead` is the count including that chunk)
-   * and whose message names `maxResponseBytes` and the limit. A body of exactly the cap is delivered
-   * whole.
-   *
-   * It bounds size, not time: a server that trickles bytes slowly, or holds the stream open, is
-   * still bounded only by the call's `init.signal`. Must be a positive finite number.
-   */
-  readonly maxResponseBytes?: number;
 
   /** Defaults to {@link SaferFetch.platformFetchTransport}. */
   readonly transport?: IFetchTransport;

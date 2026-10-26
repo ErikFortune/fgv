@@ -22,7 +22,6 @@
 
 /* c8 ignore start - Browser-specific export used conditionally in package.json */
 import * as AiAssist from './packlets/ai-assist';
-import * as AsyncControl from './packlets/async-control';
 // eslint-disable-next-line @rushstack/packlets/mechanics
 import * as CryptoUtils from './packlets/crypto-utils/index.browser';
 // eslint-disable-next-line @rushstack/packlets/mechanics
@@ -44,7 +43,6 @@ import { Converters } from './packlets/conversion';
 // Use BrowserCryptoProvider from @fgv/ts-web-extras for browser crypto
 export {
   AiAssist,
-  AsyncControl,
   Converters,
   CryptoUtils,
   CryptoUtils as Crypto,

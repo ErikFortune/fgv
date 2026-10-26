@@ -30,7 +30,6 @@ import {
   IAtomicWriteReceipt,
   IDeleteChildOptions,
   IFileTreeAccessors,
-  IFileTreeStorageIdentity,
   IMutableBinaryFileTreeDirectoryItem,
   IMutableFileTreeDirectoryItem,
   IMutableFileTreeFileItem,
@@ -152,27 +151,11 @@ export class DirectoryItem<TCT extends string = string>
   }
 
   /**
-   * {@inheritDoc FileTree.IFileTreeDirectoryItem.getStorageIdentity}
-   */
-  public getStorageIdentity(): IFileTreeStorageIdentity<TCT> {
-    const realPath = this._hal.resolveRealPath?.(this.absolutePath);
-    return {
-      accessors: this._hal,
-      path: this.absolutePath,
-      ...(realPath?.isSuccess() ? { realPath: realPath.value } : {})
-    };
-  }
-
-  /**
    * {@inheritDoc FileTree.IAtomicFileTreeDirectoryItem.getAtomicWriteCapabilities}
    */
   public getAtomicWriteCapabilities(): Result<IAtomicWriteCapabilities> {
     if (!isAtomicAccessors(this._hal)) {
-      return succeed({
-        atomicReplace: false,
-        guarantees: [],
-        reason: `${this.absolutePath}: the backing store does not implement atomic writes`
-      });
+      return succeed({ atomicReplace: false, guarantees: [] });
     }
     return this._hal.getAtomicWriteCapabilities(this.absolutePath);
   }
@@ -189,14 +172,13 @@ export class DirectoryItem<TCT extends string = string>
     //
     // Both separators are rejected regardless of platform: `FsFileTreeAccessors.joinPaths`
     // is `path.join`, which treats `\` as a separator on Windows, so `a\b` would otherwise
-    // become a nested path through that atomic-capable accessor.
+    // become a nested path once F2 makes that accessor atomic-capable.
     //
     // `.` and `..` are rejected for the sharper reason that `path.join` NORMALIZES them —
     // `joinPaths('/a/b', '..')` is `/a`, a path outside this directory entirely. The
-    // in-memory accessor preserves dot segments; the filesystem accessor normalizes them,
-    // and only confines a write when it has a root prefix — so for that accessor this
-    // check is what keeps a child write inside this directory, and it is the contract
-    // every future accessor is written against.
+    // in-memory accessor preserves dot segments and the filesystem one is not yet
+    // atomic-capable, so neither is exploitable today, but the contract is what every
+    // future accessor is written against and it should not admit a traversal.
     if (name.length === 0 || name === '.' || name === '..' || name.includes('/') || name.includes('\\')) {
       return failWithDetail(`${this.absolutePath}: '${name}' is not a valid child file name`, {
         code: 'not-writable',

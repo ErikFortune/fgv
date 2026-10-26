@@ -516,9 +516,8 @@ describe('listMcpTools', () => {
     expect(await listMcpTools(session)).toSucceedAndSatisfy((tools: ReadonlyArray<IMcpToolDescriptor>) => {
       expect(tools.map((t) => t.name)).toEqual(['a', 'b']);
     });
-    // The SDK always gets a per-call signal, never the caller's own.
-    expect(listTools).toHaveBeenNthCalledWith(1, undefined, { signal: expect.any(AbortSignal) });
-    expect(listTools).toHaveBeenNthCalledWith(2, { cursor: 'p2' }, { signal: expect.any(AbortSignal) });
+    expect(listTools).toHaveBeenNthCalledWith(1, undefined, {});
+    expect(listTools).toHaveBeenNthCalledWith(2, { cursor: 'p2' }, {});
   });
 
   test('coerces a missing/invalid inputSchema to null and a missing description to undefined', async () => {
@@ -539,77 +538,6 @@ describe('listMcpTools', () => {
     });
     const session = await connectWith(fake);
     expect(await listMcpTools(session)).toFailWith(/listMcpTools:.*protocol error/);
-  });
-
-  describe('execution metadata', () => {
-    async function listedExecution(execution: unknown, logger?: Logging.ILogger): Promise<unknown> {
-      const fake = makeFakeClient({
-        listTools: jest.fn(async () => ({ tools: [{ name: 'x', inputSchema: { type: 'object' }, execution }] }))
-      });
-      mockSdk.makeClient.mockReturnValueOnce(fake as unknown as sdk.ISdkClient);
-      const transport = createStdioTransport({ command: 'node' }).orThrow();
-      const session = (await connectMcpSession({ transport, ...(logger ? { logger } : {}) })).orThrow();
-      const tools = (await listMcpTools(session)).orThrow();
-      return tools[0];
-    }
-
-    test('a known taskSupport is carried', async () => {
-      expect(await listedExecution({ taskSupport: 'optional' })).toEqual(
-        expect.objectContaining({ execution: { taskSupport: 'optional' } })
-      );
-    });
-
-    test('an execution blob with no taskSupport leaves the field absent, silently', async () => {
-      const logger = new Logging.InMemoryLogger('all');
-      expect(await listedExecution({ other: 1 }, logger)).not.toHaveProperty('execution');
-      expect(logger.logged.join('\n')).not.toMatch(/execution/);
-    });
-
-    test('an unknown taskSupport is dropped and logged in fixed text, never failing discovery', async () => {
-      const logger = new Logging.InMemoryLogger('all');
-      expect(await listedExecution({ taskSupport: 'sometimes\nforged' }, logger)).not.toHaveProperty('execution');
-      const logged = logger.logged.join('\n');
-      expect(logged).toMatch(
-        /mcp: a tool's execution.taskSupport is not one of forbidden, optional, required; it was dropped/
-      );
-      expect(logged).not.toMatch(/sometimes|forged/);
-    });
-
-    test('a non-object execution blob is dropped and logged', async () => {
-      const logger = new Logging.InMemoryLogger('all');
-      expect(await listedExecution('required', logger)).not.toHaveProperty('execution');
-      expect(logger.logged.join('\n')).toMatch(/execution metadata is not a JSON object; it was dropped/);
-    });
-
-    test('drops quietly without a logger', async () => {
-      expect(await listedExecution(42)).not.toHaveProperty('execution');
-    });
-  });
-
-  describe('listing bounds', () => {
-    test('the deadline is checked before each page: one that elapsed while a page ran stops the next', async () => {
-      // A page that ignores the abort and settles late, as a request the transport could not cancel.
-      const listTools = jest.fn(async () => {
-        await new Promise((resolve) => setTimeout(resolve, 60));
-        return { tools: [{ name: 'a', inputSchema: { type: 'object' } }], nextCursor: 'p2' };
-      });
-      const session = await connectWith(makeFakeClient({ listTools }));
-      expect(await listMcpTools(session, { maxTotalMs: 20 })).toFailWithDetail(/maxTotalMs \(20 ms\)/, {
-        kind: 'limit-exceeded',
-        limit: 'maxTotalMs'
-      });
-      expect(listTools).toHaveBeenCalledTimes(1);
-    });
-
-    test('a page failure that is not an abort keeps its own classification under a deadline', async () => {
-      const listTools = jest.fn(async () => {
-        throw new Error('protocol error');
-      });
-      const session = await connectWith(makeFakeClient({ listTools }));
-      expect(await listMcpTools(session, { maxTotalMs: 1000 })).toFailWithDetail(/protocol error/, {
-        kind: 'transport'
-      });
-    });
   });
 });
 
@@ -639,9 +567,7 @@ describe('callMcpTool', () => {
         { type: 'text', text: 'line two' }
       ]
     });
-    expect(fake.callTool).toHaveBeenCalledWith({ name: 'a', arguments: args }, sdk.SDK_RAW_RESULT_SCHEMA, {
-      signal: expect.any(AbortSignal)
-    });
+    expect(fake.callTool).toHaveBeenCalledWith({ name: 'a', arguments: args }, sdk.SDK_RAW_RESULT_SCHEMA, {});
   });
 
   test('summarizes non-text blocks', async () => {
@@ -778,8 +704,6 @@ describe('adaptMcpTools', () => {
 
       expect(result.skipped).toHaveLength(2);
       const byName = new Map(result.skipped.map((s) => [s.name, s]));
-      expect(byName.get('forbidden')?.kind).toBe('schema');
-      expect(byName.get('nonobject')?.kind).toBe('schema');
       expect(byName.get('forbidden')?.reason).toMatch(/pattern/);
       expect(byName.get('forbidden')?.schema).toEqual(forbiddenSchema);
       expect(byName.get('nonobject')?.reason).toMatch(/not a JSON object/);
@@ -831,7 +755,7 @@ describe('adaptMcpTools', () => {
       expect(callTool).toHaveBeenCalledWith(
         { name: 'good', arguments: { q: 'hello' } },
         sdk.SDK_RAW_RESULT_SCHEMA,
-        { signal: expect.any(AbortSignal) }
+        {}
       );
     });
 

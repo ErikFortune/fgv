@@ -70,10 +70,7 @@ export type TaskAccessRole = 'subject' | 'parent' | 'previous-parent' | 'new-par
  * `task` is the envelope-only summary — never details — so a policy decides from the same
  * resident data a warm query holds. An unresolved registration is described by its `reference`
  * instead. A `create` subject has neither: `scopes` and `targetResponsibility` describe the task
- * it would be. A `change-scopes` request carries its subject **and** `scopes`: the complete scope
- * set the task will carry once the change commits. A `subscribe` request, and a `dispose-obligation`
- * over a whole subscription, carry the subscription's selection scopes. `targetResponsibility` is
- * `'unassigned'` for an explicit unassignment.
+ * it would be. `targetResponsibility` is `'unassigned'` for an explicit unassignment.
  * @public
  */
 export interface ITaskAccessRequest {

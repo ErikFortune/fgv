@@ -66,12 +66,7 @@ function arrayOf_2<T, TC = unknown>(validateElement: JsonCompatible_2.Validator<
 type ArrayValidator<T, TC = unknown> = Validation.Classes.ArrayValidator<JsonCompatibleType<T>, TC>;
 
 // @public
-type AtomicWriteGuarantee = (typeof atomicWriteGuarantees)[number];
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
-// @public
-const atomicWriteGuarantees: readonly ["session", "process-crash", "os-crash", "power-loss"];
+type AtomicWriteGuarantee = 'session' | 'process-crash' | 'os-crash' | 'power-loss';
 
 // @public
 const boolean: Converter<boolean, IJsonConverterContext>;
@@ -237,10 +232,6 @@ class DirectoryItem<TCT extends string = string> implements IMutableBinaryFileTr
     //
     // (undocumented)
     getChildren(): Result<ReadonlyArray<FileTreeItem<TCT>>>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
-    getStorageIdentity(): IFileTreeStorageIdentity<TCT>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     protected readonly _hal: IFileTreeAccessors<TCT>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -383,7 +374,6 @@ declare namespace FileTree {
         IMutableFileTreeFileItem,
         IMutableBinaryFileTreeFileItem,
         IFileTreeDirectoryItem,
-        IFileTreeStorageIdentity,
         IMutableFileTreeDirectoryItem,
         IMutableBinaryFileTreeDirectoryItem,
         FileTreeItem,
@@ -395,7 +385,6 @@ declare namespace FileTree {
         IBinaryFileTreeAccessors,
         IMutableBinaryFileTreeAccessors,
         IPersistentFileTreeAccessors,
-        atomicWriteGuarantees,
         AtomicWriteGuarantee,
         IAtomicWriteCapabilities,
         IAtomicWriteOptions,
@@ -506,10 +495,6 @@ class FsFileTreeAccessors<TCT extends string = string> implements IMutableBinary
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
-    resolveRealPath(itemPath: string): Result<string>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
     saveFileBytes(path: string, bytes: Uint8Array): Result<Uint8Array>;
     saveFileContents(path: string, contents: string): Result<string>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -567,7 +552,6 @@ interface IAtomicFileTreeDirectoryItem<TCT extends string = string> extends IMut
 interface IAtomicWriteCapabilities {
     readonly atomicReplace: boolean;
     readonly guarantees: ReadonlyArray<AtomicWriteGuarantee>;
-    readonly reason?: string;
 }
 
 // @public
@@ -645,15 +629,12 @@ interface IFileTreeAccessors<TCT extends string = string> {
     getItem(path: string): Result<FileTreeItem<TCT>>;
     joinPaths(...paths: string[]): string;
     resolveAbsolutePath(...paths: string[]): string;
-    resolveRealPath?(path: string): Result<string>;
 }
 
 // @public
 interface IFileTreeDirectoryItem<TCT extends string = string> {
     readonly absolutePath: string;
     getChildren(): Result<ReadonlyArray<FileTreeItem<TCT>>>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    getStorageIdentity?(): IFileTreeStorageIdentity<TCT>;
     readonly name: string;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly type: 'directory';
@@ -683,15 +664,6 @@ interface IFileTreeInitParams<TCT extends string = string> {
     mutable?: boolean | IFilterSpec;
     // (undocumented)
     prefix?: string;
-}
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
-// @public
-interface IFileTreeStorageIdentity<TCT extends string = string> {
-    readonly accessors: IFileTreeAccessors<TCT>;
-    readonly path: string;
-    readonly realPath?: string;
 }
 
 // @public

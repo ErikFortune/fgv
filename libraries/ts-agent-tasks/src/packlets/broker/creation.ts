@@ -15,7 +15,6 @@ import {
   ITaskEnvelope,
   ITaskMutationResult,
   ITaskRecordDraft,
-  ITaskScope,
   ITaskSource,
   ITaskUpdate,
   Instant,
@@ -29,7 +28,6 @@ import {
   taskListDetailVersion,
   taskListKind,
   trackedTaskDetailVersion,
-  _taskRecordScopes,
   trackedTaskKind
 } from '../types';
 import { ITaskRepositoryWriter } from '../storage';
@@ -112,45 +110,8 @@ export async function createNative(
   core: BrokerCore,
   ctx: AccessContext,
   input: unknown,
-  list: boolean,
-  committedScopes?: ReadonlyArray<ITaskScope>,
-  options?: { readonly resume?: boolean; readonly retried?: boolean }
+  list: boolean
 ): Promise<TaskResult<ITaskMutationResult>> {
-  // A creation that finds, inside the writer, that the task went live after it was authorized —
-  // a concurrent identical creation or resume won — commits nothing and runs again, once, which
-  // takes the existing-record path and its checks against the record as committed. The repository
-  // is host-supplied, so a second miss is answered rather than retried without bound.
-  // A retried attempt answers a second miss itself, so it never asks for another run.
-  const first = await _createOnce(core, ctx, input, list, committedScopes, options ?? {});
-  return first.isSuccess() && first.value === undefined
-    ? createNative(core, ctx, input, list, committedScopes, { ...options, retried: true })
-    : first.onSuccess((created) => ok(created!));
-}
-
-/** The answer when an operation kept losing the race it retries, correlated to its request. */
-function _keptChanging<T>(
-  what: string,
-  taskId: TaskId,
-  operationId: ITaskMutationResult['operationId']
-): TaskResult<T> {
-  return taskFailure<T>(
-    `${what} ${taskId}: the task kept changing while it was authorized; retry`,
-    'conflict',
-    'safe',
-    { operationId }
-  );
-}
-
-/** One authorize-then-commit attempt; `undefined` when the task went live under it and it should run again. */
-async function _createOnce(
-  core: BrokerCore,
-  ctx: AccessContext,
-  input: unknown,
-  list: boolean,
-  committedScopes: ReadonlyArray<ITaskScope> | undefined,
-  options: { readonly resume?: boolean; readonly retried?: boolean }
-): Promise<TaskResult<ITaskMutationResult | undefined>> {
-  const resume: boolean = options.resume === true;
   const converted = list
     ? convertRequest<ICreateTrackedTask | ICreateTaskList>(
         core,
@@ -171,12 +132,7 @@ async function _createOnce(
   const json: JsonValue = converted.value.json;
   const { taskId, operationId } = request;
   const operation: TaskCatalogOperationType = list ? 'create-list' : 'create-tracked';
-  // The scopes authorized are the scopes committed: a resume of a record that already landed commits
-  // that record's scopes, so it is those the policy is asked about (and the view must select them).
-  if (committedScopes !== undefined && !committedScopes.every((scope) => ctx.selects(scope))) {
-    return _noPending(taskId);
-  }
-  const scopes = committedScopes ?? ctx.creationScopes;
+  const scopes = ctx.creationScopes;
   const access = {
     scopes,
     ...(request.responsibility !== undefined ? { targetResponsibility: request.responsibility } : {})
@@ -194,9 +150,8 @@ async function _createOnce(
   }
   if (existing.value !== undefined) {
     const record: ITaskCommitRecord = existing.value;
-    // A resume answers an unseen task exactly as an id with no pending registration.
     if (!(await ctx.sees(subjectOf(record)))) {
-      return resume ? _noPending(taskId) : notFound(taskId, operationId);
+      return notFound(taskId, operationId);
     }
     if (!isSameCatalog(record.operations[0], operation, ctx.principal, json)) {
       return taskFailure(
@@ -206,8 +161,7 @@ async function _createOnce(
         { operationId }
       );
     }
-    // A replay is authorized for the scopes the task was committed with, whichever view asks.
-    if (!(await ctx.mayCreate({ ...access, scopes: _taskRecordScopes(record) }))) {
+    if (!(await ctx.mayCreate(access))) {
       return denied(taskId, 'create', operationId);
     }
     // The parent the request names is authorized again in its role, as the creation was.
@@ -247,22 +201,14 @@ async function _createOnce(
     parent = read.value;
   }
 
-  return core.gated(async (writer): Promise<TaskResult<ITaskMutationResult | undefined>> => {
-    // Went live since it was read: storage would replay it without this view's replay checks.
-    const now = await writer.readCommit(taskId);
-    if (now.isFailure()) {
-      return propagate(now);
-    }
-    if (now.value !== undefined) {
-      return options.retried === true ? _keptChanging('create', taskId, operationId) : ok(undefined);
-    }
+  return core.gated(async (writer) => {
     const parentNow = await recheckParent(core, writer, parent, taskId, operationId);
     if (parentNow.isFailure()) {
-      return propagate(parentNow);
+      return propagate<ITaskMutationResult>(parentNow);
     }
     const clock = core.now();
     if (clock.isFailure()) {
-      return propagate(clock);
+      return propagate<ITaskMutationResult>(clock);
     }
     const envelope: ITaskEnvelope = _nativeEnvelope(request, list, scopes, clock.value);
     const updates: ReadonlyArray<ITaskUpdate> = planUpdates(
@@ -359,142 +305,6 @@ async function _register(
 }
 
 /**
- * A registration to resume: one still pending, or — when an earlier resume committed it and its
- * response was lost — the live task it became. `scopes` are the scopes a resume will commit, when
- * those are already fixed: the landed record's, or the live task's.
- */
-interface IResumable {
-  readonly taskId: TaskId;
-  readonly operationId: ITaskMutationResult['operationId'];
-  readonly operation: TaskCatalogOperationType;
-  readonly principalKey: string;
-  readonly request: JsonValue;
-  readonly scopes?: ReadonlyArray<ITaskScope>;
-}
-
-/**
- * Resumes a pending native registration through a bound writer, from the request the repository
- * stored with it. `create` is authorized again here, now, by {@link createNative}, which asks the
- * policy and re-checks the epoch inside the writer — against the scopes that will be committed: the
- * landed record's when one exists, otherwise this view's creation scopes. A registration an earlier
- * resume already committed replays its receipt, re-authorized the same way.
- * @internal
- */
-export async function resumeNative(
-  core: BrokerCore,
-  ctx: AccessContext,
-  taskId: unknown
-): Promise<TaskResult<ITaskMutationResult>> {
-  return (await _resumable(core, taskId))
-    .onSuccess((resumable) =>
-      // Another principal's registration is answered as an id with none: it is not this view's.
-      resumable.principalKey !== ctx.principal ||
-      (resumable.operation === 'register-external' && !_selectsExternal(core, ctx, resumable))
-        ? _noPending<IResumable>(resumable.taskId)
-        : resumable.operation === 'register-external'
-        ? taskFailure<IResumable>(
-            `resumePendingRegistration: ${resumable.taskId} is an external registration; resume it ` +
-              `through TaskBroker.resumePendingRegistration`,
-            'invalid',
-            'after-host-action',
-            { operationId: resumable.operationId }
-          )
-        : ok(resumable)
-    )
-    .thenOnSuccess((resumable) =>
-      createNative(core, ctx, resumable.request, resumable.operation === 'create-list', resumable.scopes, {
-        resume: true
-      })
-    );
-}
-
-/**
- * Whether this view selects a scope of the external registration a resume names — the condition
- * for telling it which entry point resumes it, rather than answering as for an id with none.
- */
-function _selectsExternal(core: BrokerCore, ctx: AccessContext, resumable: IResumable): boolean {
-  const scopes: ReadonlyArray<ITaskScope> =
-    resumable.scopes ??
-    core.converters.broker.registerExternal
-      .convert(resumable.request)
-      .onSuccess((request) => ok<ReadonlyArray<ITaskScope>>(request.scopes))
-      .orDefault([]);
-  return scopes.some((scope) => ctx.selects(scope));
-}
-
-/**
- * Resumes a pending external registration — a trusted host operation, under the principal it was
- * accepted for, from the request the repository stored with it. One an earlier resume already
- * committed replays.
- * @internal
- */
-export async function resumeExternal(
-  core: BrokerCore,
-  taskId: unknown
-): Promise<TaskResult<TaskRegistrationResult>> {
-  return (await _resumable(core, taskId))
-    .onSuccess((resumable) =>
-      resumable.operation === 'register-external'
-        ? ok(resumable)
-        : taskFailure<IResumable>(
-            `resumePendingRegistration: ${resumable.taskId} is a native registration; resume it through a ` +
-              `bound writer, which authorizes it`,
-            'invalid',
-            'after-host-action',
-            { operationId: resumable.operationId }
-          )
-    )
-    .thenOnSuccess((resumable) => registerExternal(core, resumable.principalKey, resumable.request));
-}
-
-/**
- * The registration `taskId` names: pending, or live and created by a catalog registration — a
- * resume whose response was lost. Anything else is the one no-pending failure.
- */
-async function _resumable(core: BrokerCore, taskId: unknown): Promise<TaskResult<IResumable>> {
-  const id = core.converters.ids.taskId.convert(taskId);
-  if (id.isFailure()) {
-    return taskFailure(`resumePendingRegistration: ${id.message}`, 'invalid', 'after-host-action');
-  }
-  return core.repository.pendingRegistration(id.value).thenOnSuccess(
-    async (pending): Promise<TaskResult<IResumable>> =>
-      pending !== undefined
-        ? ok<IResumable>({
-            taskId: pending.taskId,
-            operationId: pending.operationId,
-            operation: pending.operation,
-            principalKey: pending.principalKey,
-            request: pending.request,
-            ...(pending.landedScopes !== undefined ? { scopes: pending.landedScopes } : {})
-          })
-        : (await core.repository.readCommit(id.value)).onSuccess((record) => _committed(id.value, record))
-  );
-}
-
-/** A live task as a resumable registration, when its creation was a catalog registration. */
-function _committed(taskId: TaskId, record: ITaskCommitRecord | undefined): TaskResult<IResumable> {
-  const creation = record?.operations[0];
-  return record !== undefined && creation !== undefined && creation.type === 'catalog'
-    ? ok<IResumable>({
-        taskId,
-        operationId: creation.operationId,
-        operation: creation.operation,
-        principalKey: creation.principalKey,
-        request: creation.request,
-        scopes: _taskRecordScopes(record)
-      })
-    : _noPending(taskId);
-}
-
-function _noPending<T>(taskId: TaskId): TaskResult<T> {
-  return taskFailure<T>(
-    `resumePendingRegistration: no pending registration ${taskId}`,
-    'not-found-or-denied',
-    'after-host-action'
-  );
-}
-
-/**
  * Registers an externally executed task: a trusted host operation, not a bound-view one.
  *
  * @remarks
@@ -507,8 +317,7 @@ function _noPending<T>(taskId: TaskId): TaskResult<T> {
 export async function registerExternal(
   core: BrokerCore,
   principal: string,
-  input: unknown,
-  retried: boolean = false
+  input: unknown
 ): Promise<TaskResult<TaskRegistrationResult>> {
   const key = core.converters.broker.principalKey.convert(principal);
   if (key.isFailure()) {
@@ -528,95 +337,41 @@ export async function registerExternal(
       { operationId }
     );
   }
-  const registered = await _registerExternalOnce(core, key.value, request, converted.value.json, retried);
-  if (registered.isFailure()) {
-    return propagate(registered);
-  }
-  // Went live (or vanished) under it: run again, once, with every check; a retried attempt answers
-  // a second miss itself, so a host-supplied repository that keeps missing is answered, not retried.
-  if (registered.value === undefined) {
-    return registerExternal(core, principal, input, true);
-  }
-  const read = await core.repository.read(taskId);
-  if (read.isFailure()) {
-    return propagate(read);
-  }
-  return read.value !== undefined ? ok(read.value) : notFound(taskId, operationId);
-}
-
-/**
- * One external registration attempt; `undefined` when the task went live after it was read.
- *
- * @remarks
- * A live registration identical to this one (operation, principal, canonical request) is a replay
- * after a lost response: it is replayed without the parent checks, which decided the original
- * registration and must not refuse its replay because the parent closed since.
- */
-async function _registerExternalOnce(
-  core: BrokerCore,
-  principal: string,
-  request: IRegisterExternalTask,
-  json: JsonValue,
-  retried: boolean
-): Promise<TaskResult<ITaskMutationResult | undefined>> {
-  const { taskId, operationId } = request;
-  const existing = await core.repository.readCommit(taskId);
-  if (existing.isFailure()) {
-    return propagate(existing);
-  }
-  const replaying: boolean =
-    existing.value !== undefined &&
-    isSameCatalog(existing.value.operations[0], 'register-external', principal, json);
-  if (existing.value !== undefined && !replaying) {
-    return taskFailure(
-      `registerExternal: task ${taskId} is already registered by a different operation or request`,
-      'conflict',
-      'after-host-action',
-      { operationId }
-    );
-  }
-  // The source's qualification decided the original registration; its replay is not refused because
-  // the source was detached or its history changed since.
-  if (!replaying) {
-    const qualified = _qualifyHistory(core, request);
-    if (qualified.isFailure()) {
-      return propagate(qualified);
-    }
+  const qualified = _qualifyHistory(core, request);
+  if (qualified.isFailure()) {
+    return propagate(qualified);
   }
   let parent: IRelatedTask | undefined = undefined;
-  if (request.parentId !== undefined && !replaying) {
+  if (request.parentId !== undefined) {
     const read = await readExisting(core, request.parentId);
     if (read.isFailure()) {
       return propagate(read);
     }
     parent = { id: request.parentId, role: 'parent', record: read.value };
   }
-  return core.gated(async (writer): Promise<TaskResult<ITaskMutationResult | undefined>> => {
-    // What was read outside the writer must still hold inside it: a registration about to be written
-    // must still be absent, and one about to be replayed must still be live. Otherwise nothing is
-    // committed and the bounded retry runs every check again, from what is there now.
-    const now = await writer.readCommit(taskId);
-    if (now.isFailure()) {
-      return propagate(now);
-    }
-    const absent: boolean = now.value === undefined;
-    if (replaying ? absent : !absent) {
-      return retried ? _keptChanging('registerExternal', taskId, operationId) : ok(undefined);
-    }
+  const registered = await core.gated(async (writer) => {
     const parentNow = await recheckParent(core, writer, parent, taskId, operationId);
     if (parentNow.isFailure()) {
-      return propagate(parentNow);
+      return propagate<ITaskMutationResult>(parentNow);
     }
-    const checkpoint = replaying ? ok<true>(true) : await _checkpointAgrees(core, writer, request);
+    const checkpoint = await _checkpointAgrees(core, writer, request);
     if (checkpoint.isFailure()) {
-      return propagate(checkpoint);
+      return propagate<ITaskMutationResult>(checkpoint);
     }
     const clock = core.now();
     if (clock.isFailure()) {
-      return propagate(clock);
+      return propagate<ITaskMutationResult>(clock);
     }
-    return _registerExternal(core, writer, request, json, principal, clock.value);
+    return _registerExternal(core, writer, request, converted.value.json, key.value, clock.value);
   });
+  if (registered.isFailure()) {
+    return propagate(registered);
+  }
+  const read = await core.repository.read(taskId);
+  if (read.isFailure()) {
+    return propagate(read);
+  }
+  return read.value !== undefined ? ok(read.value) : notFound(taskId, operationId);
 }
 
 /**

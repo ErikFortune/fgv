@@ -316,71 +316,7 @@ export interface IBoundTaskWriter extends IBoundTaskView {
    * resolving and confirming — then the latest result. Installs no timer and starts no work. (T9.)
    */
   reconcileStop(request: IStopReconcileRequest): Promise<TaskResult<IStopResult>>;
-  /**
-   * Resumes a native registration left pending — accepted into the inventory and not yet marked
-   * live; its first record may or may not have landed — from the canonical request the repository
-   * stored with it, so a host that lost the original request can still finish it.
-   *
-   * @remarks
-   * Nothing about authority is stored with the intent: `create` is authorized again now, against
-   * this view's current policy, and the epoch it was authorized under is re-checked inside the
-   * writer immediately before anything is committed. **It is authorized for the scopes that will be
-   * committed.** When the first record already landed (its write succeeded, marking it live did
-   * not), that record is committed as it is, so `create` is asked of the landed record's scopes,
-   * which this view must select. Otherwise the record is written now with this view's creation
-   * scopes (the stored request carries none). Storage independently refuses to adopt a landed
-   * record whose scopes differ from the ones a registration was authorized for — which also covers
-   * an identical `createTracked` retry from a view with other creation scopes.
-   *
-   * The registration must have been accepted for this view's principal; another principal's is
-   * `not-found-or-denied`, like an id with none. A registration an earlier resume committed — its
-   * response lost — replays its stored receipt, re-authorized for the live task's scopes, as an
-   * identical `createTracked` retry does.
-   *
-   * A pending `register-external` registration is a trusted host operation with no authorization to
-   * repeat; it resumes through `TaskBroker.resumePendingRegistration`, and is `invalid` here.
-   * Withdrawing a pending identity, or recycling its slot, is not offered.
-   */
-  resumePendingRegistration(taskId: TaskId): Promise<TaskResult<ITaskMutationResult>>;
 }
-
-/**
- * Wraps every write a broker makes — a cooperative write gate a host supplies to
- * `TaskBroker.create`.
- *
- * @remarks
- * Structural, so any host gate with this shape fits. `guard` is given the broker's whole writer
- * section and calls it at most once. The broker tracks whether it did:
- *
- * - **Not called.** A failure the gate returns is the operation's result; one carrying no task
- *   detail (a gate typed over plain `Result`) is reported as `storage-unavailable`, retry
- *   `after-host-action`, since nothing was written. A gate that throws is `invalid`.
- * - **Called.** The section's own result is the operation's result when the gate returns it, or
- *   any success. When the gate then fails or throws, the operation is `storage-unavailable`, retry
- *   `reconcile-first`: the section may have committed. A section the gate started without awaiting
- *   is awaited before the broker's turn ends.
- * - **Called twice.** The second call is refused without running (`invalid`).
- * - **Called after the gate returned.** Refused without running (`invalid`): the section must be
- *   started before `guard` returns, or it would run outside the broker's turn.
- *
- * **The gate must not call the broker.** A broker operation started from inside `guard` queues
- * behind the very section the gate is holding and never runs, and every later broker write queues
- * behind both. The broker cannot tell such a call from a concurrent caller's without an async
- * context the library does not assume, so it is not detected; `TaskBroker.whenIdle` from inside the
- * gate is the one safe call — it does not queue — and times out, since the gate's own section is
- * busy.
- * @public
- */
-export interface ITaskWriteGuard {
-  guard<T>(write: () => Promise<TaskResult<T>>): Promise<TaskResult<T>>;
-}
-
-/**
- * Arms a one-shot timer and returns the function that cancels it — the broker's only use of time.
- * Defaults to `setTimeout` / `clearTimeout`; tests inject their own.
- * @public
- */
-export type TaskScheduleTimer = (fn: () => void, ms: number) => () => void;
 
 /**
  * The state of one child, as the authoritative graph holds it.

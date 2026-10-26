@@ -380,13 +380,11 @@ export async function mapDetailedResultsAsync<TItem, T, TD>(
 
 /**
  * Aggregates successful results from a collection of deferred asynchronous work, running at most
- * {@link IAsyncResultOptions.concurrency} operations at once and failing only if everything
- * failed.
+ * {@link IAsyncResultOptions.concurrency} operations at once and discarding failures unless
+ * everything failed.
  * @remarks
  * This is the asynchronous sibling of {@link mapSuccess}, with the same fold.  Results are
- * returned in input order regardless of completion order.  Every failure is appended to
- * {@link IAsyncResultOptions.aggregatedErrors}, if supplied, in input order and whether or not
- * any work succeeded, so a partial fold can report what it dropped.
+ * returned in input order regardless of completion order.
  * @param work - The collection of {@link AsyncDeferredResult | AsyncDeferredResult<T>} to be run.
  * @param options - Optional {@link IAsyncResultOptions | options} for the call.
  * @returns {@link Success} with an array of `<T>` if any results were successful.  If all failed,
@@ -402,11 +400,7 @@ export function mapSuccessAsync<T>(
 /**
  * Applies an asynchronous {@link Result | Result<T>}-returning function to every element of a
  * collection, running at most {@link IAsyncResultOptions.concurrency} operations at once and
- * failing only if everything failed.
- * @remarks
- * Every failure is appended to {@link IAsyncResultOptions.aggregatedErrors}, if supplied, in
- * input order and whether or not any item succeeded, so a partial fold can report what it
- * dropped.
+ * discarding failures unless everything failed.
  * @param items - The collection of items to be processed.
  * @param fn - The asynchronous function to be applied to each item.
  * @param options - Optional {@link IAsyncResultOptions | options} for the call.

@@ -221,17 +221,12 @@ Package placement and public signatures remain decisions for that later design.
   fairness, hung-work behavior, and shutdown with observable unfinished work.
   Stopping future scheduling, requesting cancellation, and confirming execution
   stopped are different results. Preserve the approved bounded-stop semantics.
-- **Provider compatibility:** resolved for the bounded model/tool runner. The
-  [continuation contract](../../../libraries/ts-extras/src/packlets/ai-assist/toolTypes.ts)
-  is cumulative and requires replacement; the reference application's own loop was
-  reworked to replace rather than accumulate before extraction (personaility commit
-  `599c50bd`), and
-  `AiAssist.runClientToolLoop` (in
-  [`clientToolLoop.ts`](../../../libraries/ts-extras/src/packlets/ai-assist/clientToolLoop.ts))
-  now owns that contract, returning the latest cumulative tail so a host that resumes
-  never re-derives it. Its stop mechanics are the `async-control` packlet's
-  `raceStopConditions`. The second host is the `anthropic-client-tools` testbed
-  scenario. Context capture, admission, recovery and scheduling below remain open.
+- **Provider compatibility:** verify continuation semantics against the consumed
+  ai-assist version before extracting the app's loop. The inspected app accumulates
+  returned tails, while FGV's current [continuation contract](../../../libraries/ts-extras/src/packlets/ai-assist/toolTypes.ts)
+  is cumulative and requires replacement. This is an integration check, not a
+  claim about the consumer's installed version; copying the loop unchanged is
+  not a sound extraction strategy.
 
 **Trigger and first experiment:** after explicit follow-up agreement, explore two
 journeys in the current app: an interactive invocation using several tool rounds,

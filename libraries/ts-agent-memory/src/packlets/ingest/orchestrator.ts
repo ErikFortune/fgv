@@ -23,17 +23,10 @@ import {
   edgeTargetKey,
   isTemporalRecord,
   isVersionCurrent,
-  selectCurrentVersion,
   scopedAddressOf
 } from '../types';
 import { IBodyConverterRegistry } from '../converters';
-import {
-  IMemoryStore,
-  IMemoryWriteFailure,
-  MemoryWriteExpectation,
-  MemoryWriteResult,
-  scanEveryRecord
-} from '../store';
+import { IMemoryStore, scanEveryRecord } from '../store';
 import { IVectorIndex, MemoryEmbedder } from '../vector';
 import { ICycleGuardEdge, assertNoCycles } from './cycleGuard';
 import {
@@ -196,12 +189,6 @@ interface ICandidatePlan {
    * so a wholesale-replace merge never wipes them.
    */
   readonly mergeTarget?: IMemoryRecord<unknown>;
-  /**
-   * For a `merge-into` write, the `seq` of the target entity's current record in the pre-ingest
-   * snapshot (`'absent'` when it has none): the precondition stage 6 writes under, so a concurrent
-   * write to the target since the snapshot is a `conflict` rather than a silent overwrite.
-   */
-  readonly mergeExpected?: MemoryWriteExpectation;
 }
 
 /**
@@ -353,13 +340,10 @@ export class MemoryIngestOrchestrator implements IMemoryIngestOrchestrator {
     }
     const edges: ReadonlyArray<ICandidateEdge> = edgesResult.value;
 
-    // Stage 6: load-with-provenance, in extraction order. `written` carries the seq this pass left
-    // at each entity, so a later merge into an entity an earlier candidate just wrote expects that
-    // write rather than the snapshot's — the pass's own writes are not conflicts.
+    // Stage 6: load-with-provenance, in extraction order.
     const records: IIngestedRecordResult[] = [];
-    const written: Map<string, number> = new Map<string, number>();
     for (const plan of plans) {
-      const outcome: Result<IIngestedRecordResult> = await this._loadCandidate(item, plan, edges, written);
+      const outcome: Result<IIngestedRecordResult> = await this._loadCandidate(item, plan, edges);
       if (outcome.isFailure()) {
         return fail(outcome.message);
       }
@@ -395,27 +379,6 @@ export class MemoryIngestOrchestrator implements IMemoryIngestOrchestrator {
     return (await this._resolveVerdict(candidate, kind, body, addr, snapshot, byKey)).onSuccess((verdict) =>
       this._planFromVerdict(item, candidate, addr, verdict, byKey)
     );
-  }
-
-  /**
-   * The `seq` a merge into `target` expects: the target's own for a flat kind; for a versioned kind
-   * the entity's current version in the snapshot (`byKey` holds every snapshot record), since the
-   * verdict may name a superseded one.
-   */
-  private static _expectedAt(
-    target: IMemoryRecord<unknown>,
-    targetAddr: IIdentityCodecResult,
-    byKey: ReadonlyMap<string, IMemoryRecord<unknown>>
-  ): MemoryWriteExpectation {
-    if (!targetAddr.isVersioned) {
-      return target.envelope.seq;
-    }
-    const current: IMemoryRecord<unknown> | undefined = selectCurrentVersion(
-      [...byKey.values()].filter(
-        (r) => r.envelope.kind === target.envelope.kind && r.envelope.entityId === target.envelope.entityId
-      )
-    );
-    return current?.envelope.seq ?? 'absent';
   }
 
   /**
@@ -482,8 +445,7 @@ export class MemoryIngestOrchestrator implements IMemoryIngestOrchestrator {
             refId,
             refTarget: { scope: targetAddr.scope, id: refId },
             verdict,
-            mergeTarget: target,
-            mergeExpected: MemoryIngestOrchestrator._expectedAt(target, targetAddr, byKey)
+            mergeTarget: target
           })
         )
       );
@@ -829,8 +791,7 @@ export class MemoryIngestOrchestrator implements IMemoryIngestOrchestrator {
   private async _loadCandidate(
     item: IIngestItem,
     plan: ICandidatePlan,
-    allEdges: ReadonlyArray<ICandidateEdge>,
-    written: Map<string, number>
+    allEdges: ReadonlyArray<ICandidateEdge>
   ): Promise<Result<IIngestedRecordResult>> {
     const refKey: string = edgeTargetKey(plan.refTarget);
     const myEdges: ReadonlyArray<ICandidateEdge> = allEdges.filter((e) => edgeTargetKey(e.source) === refKey);
@@ -845,46 +806,10 @@ export class MemoryIngestOrchestrator implements IMemoryIngestOrchestrator {
         edges: myEdges
       });
     }
-    const entityKey: string = `${plan.candidate.envelope.kind}\0${plan.writeEntityId}`;
-    const expected: MemoryWriteExpectation | undefined =
-      plan.mergeExpected === undefined ? undefined : written.get(entityKey) ?? plan.mergeExpected;
-    return this._buildRecord(item, plan, myEdges).thenOnSuccess(async (record) => {
-      const put: MemoryWriteResult<IMemoryRecord<unknown>> = await this._store.put(
-        record,
-        expected === undefined ? undefined : { expected }
-      );
-      const failure: IMemoryWriteFailure | undefined = put.isFailure() ? put.detail : undefined;
-      if (failure?.code === 'duplicate') {
-        // The merged content already exists as another record, so nothing was written and that
-        // record satisfies the candidate — the meaning of `deduped`. Not retried.
-        return succeed<IIngestedRecordResult>({
-          candidate: plan.candidate,
-          resolution: plan.verdict,
-          disposition: 'deduped',
-          id: failure.existingId,
-          edges: myEdges
-        });
-      }
-      if (failure?.code === 'conflict') {
-        // Reported, not retried: the target moved since the snapshot this merge was planned from.
-        return succeed<IIngestedRecordResult>({
-          candidate: plan.candidate,
-          resolution: plan.verdict,
-          disposition: 'conflict',
-          id: plan.refId,
-          edges: myEdges,
-          conflict: failure
-        });
-      }
-      return put.asResult
+    return this._buildRecord(item, plan, myEdges).thenOnSuccess(async (record) =>
+      (await this._store.put(record))
         .withErrorFormat((msg) => `ingest '${item.id}': write failed: ${msg}`)
         .onSuccess((persisted) => {
-          if (
-            persisted.envelope.kind === plan.candidate.envelope.kind &&
-            persisted.envelope.entityId === plan.writeEntityId
-          ) {
-            written.set(entityKey, persisted.envelope.seq);
-          }
           const disposition: IngestDisposition = plan.verdict.verdict === 'merge-into' ? 'merged' : 'written';
           const interlock: 'temporal-versioned' | undefined =
             plan.writeAddress.isVersioned && myEdges.some((e) => e.edge.type === CONTRADICTS_LINK_TYPE)
@@ -899,8 +824,8 @@ export class MemoryIngestOrchestrator implements IMemoryIngestOrchestrator {
             edges: myEdges,
             ...(interlock !== undefined ? { interlock } : {})
           });
-        });
-    });
+        })
+    );
   }
 
   /** Build the fully-stamped record to persist (provenance + edges + placeholder txn fields). */

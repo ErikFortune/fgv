@@ -12,7 +12,6 @@ import { FileTree } from '@fgv/ts-json-base';
 import { JsonSchema } from '@fgv/ts-json-base';
 import { Logging } from '@fgv/ts-utils';
 import { Result } from '@fgv/ts-utils';
-import { StringOneOf } from '@fgv/ts-utils';
 
 // @public
 export type AdmissionDecision = {
@@ -24,9 +23,6 @@ export type AdmissionDecision = {
     readonly decision: 'cull-oldest';
     readonly evict: ReadonlyArray<MemoryId>;
 };
-
-// @public
-export const allMemoryWriteFailureCodes: readonly ["conflict", "duplicate", "invalid", "rejected", "not-found", "io"];
 
 // @public
 export class AsOfRetriever implements IMemoryRetriever {
@@ -131,16 +127,14 @@ export class FileTreeMemoryStore implements IMemoryStore {
     coverage(): Promise<Result<IDerivedStateCoverage>>;
     static create(params: IFileTreeMemoryStoreCreateParams): Result<FileTreeMemoryStore>;
     dedupScopeFor(kind: Kind): DedupScope;
-    delete(kind: Kind, entityId: EntityId, options?: IMemoryDeleteOptions): Promise<MemoryWriteResult<MemoryId>>;
-    dispose(): void;
-    get durability(): IMemoryStoreDurability;
+    delete(kind: Kind, entityId: EntityId): Promise<Result<MemoryId>>;
     embedsKind(kind: Kind): boolean;
     get(kind: Kind, entityId: EntityId): Promise<Result<IMemoryRecord<unknown> | undefined>>;
     getById(scope: MemoryScopeKey, id: MemoryId): Promise<Result<IMemoryRecord<unknown> | undefined>>;
     list(selection: MemoryListSelection): Promise<Result<ReadonlyArray<IMemoryRecord<unknown>>>>;
     listEntries(): Promise<Result<ReadonlyArray<IIndexedMemoryEntry>>>;
     listScoped(): Promise<Result<ReadonlyArray<IScopedMemoryRecord>>>;
-    put(record: IMemoryRecord<unknown>, options?: IMemoryWriteOptions): Promise<MemoryWriteResult<IMemoryRecord<unknown>>>;
+    put(record: IMemoryRecord<unknown>): Promise<Result<IMemoryRecord<unknown>>>;
     reconcile(kind: Kind, artifact: DerivedArtifact): Promise<Result<ReconcileReport>>;
     resolveIdentity(kind: Kind, entityId: EntityId): Result<IIdentityCodecResult>;
     resolveRecord(scope: MemoryScopeKey, id: MemoryId): Result<IMemoryRecord<unknown> | undefined>;
@@ -300,7 +294,6 @@ export interface IFileTreeMemoryStoreCreateParams {
     readonly clock?: () => number;
     readonly codecs?: ReadonlyMap<Kind, IIdentityCodec>;
     readonly defaultCodec?: IIdentityCodec;
-    readonly durability?: IMemoryStoreDurabilityOptions;
     readonly embed?: MemoryEmbedder;
     readonly embedKinds?: ReadonlySet<Kind>;
     readonly fragmentEmbedder?: FragmentEmbedder;
@@ -426,7 +419,6 @@ export interface IIndexedMemoryRecord {
 // @public
 export interface IIngestedRecordResult {
     readonly candidate: ICandidateRecord;
-    readonly conflict?: IMemoryWriteConflict;
     readonly disposition: IngestDisposition;
     readonly edges: ReadonlyArray<ICandidateEdge>;
     readonly id: MemoryId;
@@ -466,11 +458,6 @@ export interface IMemoryClassification {
 // @public
 export interface IMemoryClassifier {
     classify(item: IIngestItem): Promise<Result<IMemoryClassification>>;
-}
-
-// @public
-export interface IMemoryDeleteOptions {
-    readonly expected?: number;
 }
 
 // @public
@@ -631,29 +618,15 @@ export interface IMemoryStore extends IMemoryRecordResolver, IIdentityResolver {
     asRecordSource(): IMemoryRecordSource;
     coverage(): Promise<Result<IDerivedStateCoverage>>;
     dedupScopeFor(kind: Kind): DedupScope;
-    delete(kind: Kind, entityId: EntityId, options?: IMemoryDeleteOptions): Promise<MemoryWriteResult<MemoryId>>;
-    dispose?(): void;
+    delete(kind: Kind, entityId: EntityId): Promise<Result<MemoryId>>;
     embedsKind(kind: Kind): boolean;
     get(kind: Kind, entityId: EntityId): Promise<Result<IMemoryRecord<unknown> | undefined>>;
     getById(scope: MemoryScopeKey, id: MemoryId): Promise<Result<IMemoryRecord<unknown> | undefined>>;
     list(selection: MemoryListSelection): Promise<Result<ReadonlyArray<IMemoryRecord<unknown>>>>;
     listEntries(): Promise<Result<ReadonlyArray<IIndexedMemoryEntry>>>;
     listScoped(): Promise<Result<ReadonlyArray<IScopedMemoryRecord>>>;
-    put(record: IMemoryRecord<unknown>, options?: IMemoryWriteOptions): Promise<MemoryWriteResult<IMemoryRecord<unknown>>>;
+    put(record: IMemoryRecord<unknown>): Promise<Result<IMemoryRecord<unknown>>>;
     reconcile(kind: Kind, artifact: DerivedArtifact): Promise<Result<ReconcileReport>>;
-}
-
-// @public
-export interface IMemoryStoreDurability {
-    readonly atomic: boolean;
-    readonly guarantee?: FileTree.AtomicWriteGuarantee;
-    readonly reason: string;
-    readonly removedTemporaries: ReadonlyArray<string>;
-}
-
-// @public
-export interface IMemoryStoreDurabilityOptions {
-    readonly require?: MemoryDurabilityRequirement;
 }
 
 // @public
@@ -681,32 +654,6 @@ export interface IMemoryToolResultItem extends IMemoryToolItemProjection {
 }
 
 // @public
-export interface IMemoryWriteConflict {
-    readonly code: 'conflict';
-    readonly current: MemoryWriteExpectation;
-    readonly expected: MemoryWriteExpectation;
-}
-
-// @public
-export interface IMemoryWriteDuplicate {
-    readonly code: 'duplicate';
-    readonly existingId: MemoryId;
-}
-
-// @public
-export interface IMemoryWriteError {
-    readonly code: Exclude<MemoryWriteFailureCode, 'conflict' | 'duplicate'>;
-}
-
-// @public
-export type IMemoryWriteFailure = IMemoryWriteConflict | IMemoryWriteDuplicate | IMemoryWriteError;
-
-// @public
-export interface IMemoryWriteOptions {
-    readonly expected?: MemoryWriteExpectation;
-}
-
-// @public
 export interface IMemoryWriteResult {
     readonly entityId: EntityId;
     readonly id: MemoryId;
@@ -724,7 +671,7 @@ export interface IMergeStrategy {
 export function indexedRecordMatchesQuery(entry: IIndexedMemoryEntry, query: IMemoryQuery): boolean;
 
 // @public
-export type IngestDisposition = 'written' | 'deduped' | 'merged' | 'conflict';
+export type IngestDisposition = 'written' | 'deduped' | 'merged';
 
 // @public
 export class InMemoryCosineIndex implements IVectorIndex {
@@ -993,12 +940,6 @@ export class MemoryCapCullPolicy implements IWritePolicy {
 export type MemoryDetailTier = 'gist' | 'full';
 
 // @public
-export type MemoryDurabilityRequirement = StringOneOf<typeof memoryDurabilityRequirements>;
-
-// @public
-export const memoryDurabilityRequirements: readonly ["session", "process-crash"];
-
-// @public
 export type MemoryEmbedder = (record: IMemoryRecord<unknown>) => Promise<Result<Float32Array | undefined>>;
 
 // @public
@@ -1060,16 +1001,7 @@ export type MemoryScopeKey = Brand<string, 'MemoryScopeKey'>;
 export type MemoryToolName = 'memory_write' | 'memory_read' | 'memory_search' | 'memory_context' | 'memory_delete';
 
 // @public
-export type MemoryWriteExpectation = number | 'absent';
-
-// @public
-export type MemoryWriteFailureCode = StringOneOf<typeof allMemoryWriteFailureCodes>;
-
-// @public
 export type MemoryWriteOutcome = 'written' | 'deduped';
-
-// @public
-export type MemoryWriteResult<T> = DetailedResult<T, IMemoryWriteFailure>;
 
 // @public
 export class MtmIdentityCodec implements IIdentityCodec {

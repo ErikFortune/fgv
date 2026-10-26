@@ -31,13 +31,11 @@ class BrowserCryptoProvider implements CryptoUtils_2.ICryptoProvider {
     exportPublicKeyJwk(publicKey: CryptoKey): Promise<Result<JsonWebKey>>;
     exportPublicKeySpki(publicKey: CryptoKey): Promise<Result<Uint8Array>>;
     fromBase64(base64: string): Result<Uint8Array>;
-    generateHmacKey(options?: CryptoUtils_2.IHmacKeyOptions): Promise<Result<CryptoKey>>;
     generateKey(): Promise<Result<Uint8Array>>;
     generateKeyPair(algorithm: CryptoUtils_2.KeyPairAlgorithm, extractable: boolean): Promise<Result<CryptoKeyPair>>;
     generateRandomBytes(length: number): Result<Uint8Array>;
     generateUuid(): Result<Uuid>;
     hmacSha256(key: CryptoKey, data: Uint8Array): Promise<Result<Uint8Array>>;
-    importHmacKey(raw: Uint8Array, options?: CryptoUtils_2.IHmacKeyOptions): Promise<Result<CryptoKey>>;
     importKeyPairFromSeed(algorithm: CryptoUtils_2.SeedDerivableAlgorithm, seed: Uint8Array, extractable: boolean): Promise<Result<CryptoKeyPair>>;
     importPublicKeyJwk(jwk: JsonWebKey, algorithm: CryptoUtils_2.KeyPairAlgorithm): Promise<Result<CryptoKey>>;
     importPublicKeySpki(spkiBytes: Uint8Array, algorithm: CryptoUtils_2.KeyPairAlgorithm): Promise<Result<CryptoKey>>;

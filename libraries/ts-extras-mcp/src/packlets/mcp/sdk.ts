@@ -112,8 +112,6 @@ export interface ISdkToolDescriptor {
   readonly annotations?: unknown;
   /** The tool's declared output schema (untrusted; validated by the operations layer). */
   readonly outputSchema?: unknown;
-  /** Raw MCP `Tool.execution` (untrusted; validated/normalized by the operations layer). */
-  readonly execution?: unknown;
 }
 
 /**
@@ -150,8 +148,7 @@ export interface ISdkProgress {
  */
 export interface ISdkRequestOptions {
   readonly timeout?: number;
-  /** Always present: the per-call signal `runSdkRequest` aborts, never the caller's own. */
-  readonly signal: AbortSignal;
+  readonly signal?: AbortSignal;
   readonly onprogress?: (progress: ISdkProgress) => void;
   readonly resetTimeoutOnProgress?: boolean;
   readonly maxTotalTimeout?: number;

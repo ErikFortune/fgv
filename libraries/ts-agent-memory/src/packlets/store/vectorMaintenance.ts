@@ -138,13 +138,6 @@ export interface IVectorMaintenanceParams {
    * declaration and the gate that enforces it cannot disagree.
    */
   readonly embedsKind: (kind: Kind) => boolean;
-  /**
-   * Fails once the store has been disposed. Checked immediately before every `add` /
-   * `addFragments` / `remove`, after any `await` that precedes it, so a disposed store neither
-   * leaves derived state in an index a new owner of the root may share nor removes the new
-   * owner's entries.
-   */
-  readonly checkWritable: () => Result<true>;
 }
 
 /**
@@ -171,7 +164,6 @@ export class VectorMaintenance {
   private readonly _fragmentEmbedder: FragmentEmbedder | undefined;
   private readonly _warn: (message: string) => void;
   private readonly _embedsKind: (kind: Kind) => boolean;
-  private readonly _checkWritable: () => Result<true>;
 
   public constructor(params: IVectorMaintenanceParams) {
     this._vectorIndex = params.vectorIndex;
@@ -180,25 +172,12 @@ export class VectorMaintenance {
     this._fragmentEmbedder = params.fragmentEmbedder;
     this._warn = params.warn;
     this._embedsKind = params.embedsKind;
-    this._checkWritable = params.checkWritable;
   }
 
   /**
    * Best-effort removal of everything the two indexes hold for one record. Used
    * by the delete path and by cull-oldest eviction, both of which have already
    * committed by the time they call it.
-   *
-   * @remarks
-   * Each removal is skipped once the store is disposed, even though the delete it
-   * follows committed: after a dispose another store may own the root and may
-   * already have written a record at the same address, whose entries a removal
-   * here would delete. The cost is the opposite staleness — a dispose that lands
-   * between these steps leaves orphan entries (typically fragments) for a record
-   * that no longer exists, which only an index `rebuild` clears. A record-vector
-   * orphan is harmless to recall (`SemanticRetriever` drops a hit the resident
-   * index does not hold); a fragment orphan can surface as a fragment hit whose
-   * record a later read finds absent. Both are visible and repairable, whereas a
-   * removal of the new owner's entry would silently drop a live record from recall.
    */
   public async removeAll(target: IEdgeTarget): Promise<void> {
     await this._removeVectorBestEffort(target);
@@ -274,10 +253,7 @@ export class VectorMaintenance {
     // here would diverge from the write path for any index whose reference is
     // not the scoped key.
     return (
-      await captureVectorHook(
-        async () => this._checkWritable().thenOnSuccess(() => index.add(target, vector)),
-        `vector add for '${record.envelope.id}'`
-      )
+      await captureVectorHook(() => index.add(target, vector), `vector add for '${record.envelope.id}'`)
     ).onSuccess((ref) => succeed({ count: 1, ref }));
   }
 
@@ -307,7 +283,7 @@ export class VectorMaintenance {
     const fragments: ReadonlyArray<IEmbeddedFragment> = embedded.value;
     return (
       await captureVectorHook(
-        async () => this._checkWritable().thenOnSuccess(() => index.addFragments(target, fragments)),
+        () => index.addFragments(target, fragments),
         `fragment add for '${record.envelope.id}'`
       )
     ).onSuccess((n) =>
@@ -377,7 +353,7 @@ export class VectorMaintenance {
     // boundary below, and a local keeps the non-null assertion out of the code.
     const vector: Float32Array = embedded.value;
     const added: Result<string> = await this._tryVectorOp(
-      async () => this._checkWritable().thenOnSuccess(() => vectorIndex.add(target, vector)),
+      () => vectorIndex.add(target, vector),
       `vector add for '${built.envelope.id}'`
     );
     if (added.isFailure()) {
@@ -406,7 +382,7 @@ export class VectorMaintenance {
       return;
     }
     await this._tryVectorOp(
-      async () => this._checkWritable().thenOnSuccess(() => stale.index.remove(stale.target)),
+      () => stale.index.remove(stale.target),
       `vector remove for declined '${stale.target.id}'`
     );
   }
@@ -440,8 +416,7 @@ export class VectorMaintenance {
       return succeed(built);
     }
     await this._tryVectorOp(
-      async () =>
-        this._checkWritable().thenOnSuccess(() => fragmentIndex.addFragments(target, embedded.value)),
+      () => fragmentIndex.addFragments(target, embedded.value),
       `fragment add for '${built.envelope.id}'`
     );
     return succeed(built);
@@ -459,10 +434,7 @@ export class VectorMaintenance {
       return;
     }
     const fragmentIndex: IFragmentVectorIndex = this._fragmentIndex;
-    await this._tryVectorOp(
-      async () => this._checkWritable().thenOnSuccess(() => fragmentIndex.remove(target)),
-      `fragment removal for '${target.id}'`
-    );
+    await this._tryVectorOp(() => fragmentIndex.remove(target), `fragment removal for '${target.id}'`);
   }
 
   /**
@@ -501,9 +473,6 @@ export class VectorMaintenance {
       return;
     }
     const vectorIndex: IVectorIndex = this._vectorIndex;
-    await this._tryVectorOp(
-      async () => this._checkWritable().thenOnSuccess(() => vectorIndex.remove(target)),
-      `vector removal for '${target.id}'`
-    );
+    await this._tryVectorOp(() => vectorIndex.remove(target), `vector removal for '${target.id}'`);
   }
 }

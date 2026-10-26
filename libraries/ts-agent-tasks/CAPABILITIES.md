@@ -39,11 +39,7 @@ and `task_stop` / `task_stop_inspect`, which let a model request and read a casc
 release it or carry it out — and **prompt composition** (`checkTaskPrompt`, `prepareTaskPrompt`):
 fragment factories for a `ts-prompt-assist` prompt whose task context is one trailing per-request
 slot, a resolve that is refused unless the body sent is the body analyzed, and a delivery handoff
-whose receipt can be acknowledged only against the exact text that was sent — and **host helpers**
-(the `host` packlet, plus three broker primitives): `openOrInitializeTaskRepository` with the root
-probe the repository itself uses, `trustedKindAuthority` for the host's own principal,
-`TaskBroker.whenIdle`, a `writeGuard` around every broker write, `IBoundTaskDelivery.issued`, and
-resumption of a pending registration from the request the repository stored.
+whose receipt can be acknowledged only against the exact text that was sent.
 
 ## Storing tasks durably — `FileTreeTaskRepository`
 
@@ -148,8 +144,7 @@ committed record byte-for-byte, re-establishing the flush boundary rather than r
 success whose directory entry was never flushed.
 
 **Open validates everything and initializes nothing.** `open` requires a valid `repository.json`;
-`initialize` accepts only an empty root — no files and no directories apart from the working files
-an interrupted atomic write left behind, which it reclaims first. Both refuse a kind
+`initialize` accepts only an empty root — no files and no directories. Both refuse a kind
 registry that fails to freeze. Open reclaims interrupted writes' working files (valid only
 now, under exclusive in-process ownership), then checks every named record's presence, strict
 UTF-8 (durable mode), JSON, format version, strict converters, filename/ID agreement, the
@@ -608,107 +603,6 @@ bound by `logical-bytes`.
 it, keeping the report and the terminal graph. A blocked cancel is never archived as a successful
 stop (`retention-blocked`); a latching pause is released first.
 
-## Host helpers — opening, trusted authority, idle, write guard, resume
-
-The plumbing every broker host rewrites. None of it runs on its own: no timer is installed except
-the one `whenIdle` arms for its own bound, and nothing loops.
-
-**`openOrInitializeTaskRepository({ root, fallback, …open params })`.** One call from a provisioned
-root to a repository, in the strongest mode the root qualifies for.
-
-- **The mode** is `probeTaskRepositoryRoot(root)`'s answer — the same function the repository uses
-  to bind its store, so a host cannot decide a mode the repository would then refuse.
-  `{ durable: 'process-crash' }` when the root qualifies for it, else `'session'`. A root qualifies
-  for a guarantee only when it reports `atomicReplace` **and** lists the guarantee; checking
-  `getAtomicWriteCapabilities().guarantees` alone is the easy mistake.
-- **Open or initialize** is decided by `FileTreeTaskRepository.openOrInitialize`, under the
-  repository's exclusive ownership and after interrupted writes' working files are reclaimed, by
-  `initialize`'s own emptiness test. A root holding only such working files is empty. Any other
-  content without a manifest is `recovery-required` (`manifest-missing`), and nothing is touched.
-- **`recovery-required` is surfaced, never repaired** — the result carries the read-only handle.
-- **A root that qualifies for nothing** is refused (`fallback: 'refuse'`, `unsupported`) or replaced
-  by a fresh in-memory tree (`fallback: 'in-memory'`). The fallback is always labelled:
-  `placement: 'in-memory'` in the result and the report, with `fallbackReason`.
-- **Durability does not silently degrade.** `initialize` records `initializedMode` in the manifest.
-  Opening a `process-crash`-initialized repository as `session` — a root that lost its durable
-  capability — is refused (`unsupported`) unless `allowSessionOverDurable` is passed. A manifest
-  without the field (written before it existed) opens in either mode, and the first durable open
-  records `process-crash` in it, so it is protected from then on.
-- Building the broker stays with the host.
-
-**`trustedKindAuthority({ kinds?, scopes?, scopeMatch?, actions, epoch })`** → `Result<ITaskAuthorization>`,
-for a **trusted host principal only — never a model-facing one**: it answers from the request alone,
-with no notion of who asks, and ignores `role`, `command` and `targetResponsibility`. `actions` is
-required; there is no "all", and an empty `kinds`, `scopes` or `actions` list fails construction. A
-request naming a task (or an unresolved registration), in any role, needs its kind in `kinds` and
-*some* of its scopes in `scopes`; with `scopes` omitted it is decided on kind alone. A request
-**asking for scopes** — a creation, a subscription, and a scope change, which asks for the full scope
-set the task will carry — needs them matched by `scopeMatch`: `'every'` (default) or `'some'`, for
-tasks that carry a per-instance scope (a conversation) beside the kind's own — under which a scope
-change may also add scopes outside the authority while one allowed scope remains; with `scopes`
-omitted it is refused. A creation names no kind, so `kinds` does not constrain it. Under `'some'` a
-subscription over an allowed scope plus another accrues audience it cannot read (owed, withheld). The
-epoch is constant.
-
-**`TaskBroker.whenIdle(timeoutMs)`.** Resolves when no broker **section** is queued or running; fails
-`conflict`, retry `safe`, after `timeoutMs`. **It describes a moment between sections, not a hold and
-not the end of an operation**: it never takes a turn in the writer queue, so it never takes the writer
-and never delays a write, and one broker operation can span several sections (`acknowledge` and
-`prepare` match then commit, a creation authorizes before it queues, source passes and `cleanup` take
-a section per step), so it can resolve mid-operation. **To quiesce before a shutdown or snapshot,
-pause the `writeGuard`, then `whenIdle`**: it resolves once the sections already past the guard have
-finished. A write that arrives during the pause and is held *at* the guard is a queued section, so
-it keeps the broker busy until the pause lifts — a gate whose pause holds new writes should report
-its own quiet for that case. It sees only the broker's queue — direct
-`repository.withWriter` callers are invisible to it. The bound uses `TaskBroker.create`'s `schedule`
-(`(fn, ms) => cancel`, default `setTimeout`); a `schedule` or `cancel` that throws never reaches the
-writer queue.
-
-**`TaskBroker.create({ writeGuard })`.** A structural `{ guard(write) }` applied inside the queue's
-turn, around the repository writer, for **every** broker write — bound writers, model tools, source
-passes, deliveries, retention and `cleanup`. The broker tracks whether the guard ran the section:
-- refused without running it, with a failure carrying no task detail (a gate typed over plain
-  `Result`) — `storage-unavailable`, retry `after-host-action`;
-- threw without running it — `invalid`;
-- ran it, then failed or threw — `storage-unavailable`, retry **`reconcile-first`**: the section may
-  have committed. A section the guard started without awaiting is awaited before the turn ends;
-- ran it twice — the second call is refused unrun.
-
-**The guard must not call the broker.** A broker write started from inside `guard` queues behind
-the section the guard is holding and never runs, and everything after it queues too. It is not
-detected — telling it from a concurrent caller needs an async context the library does not assume —
-so it is the host's rule. `whenIdle` is the one safe call from inside the guard; it times out.
-
-**A long hold fills the queue**: at most 64 sections wait for the writer, and past that every further
-write fails at once with `conflict`, retry `safe`. `whenIdle` counts a held section as busy.
-
-**`IBoundTaskDelivery.issued()`.** The subscription's unacknowledged issued receipts — delivery id,
-`issuedAt`, `expiresAt`, nothing they include — read under the writer, oldest first. How a host finds
-the receipt a crash left behind and `abandon`s it. It is a gated section: it takes a queue slot and a
-paused guard holds it. A moment, not a hold: an acknowledgement may commit right after; abandoning a
-receipt acknowledged meanwhile loses nothing, and a later replay of that acknowledgement is then an
-invalid receipt. **There is no `releaseStale`**: the repository has no persisted open generation that
-would tell this open's receipts from an earlier one's.
-
-**Resuming a pending registration.** `ITaskRepository.pendingRegistration(taskId)` answers a
-registration accepted but never marked live, with its stored canonical request and — when its first
-record already landed — that record's `landedScopes`.
-`IBoundTaskWriter.resumePendingRegistration(taskId)` rebuilds a native one (`create-tracked`,
-`create-list`) from that request and **authorizes `create` again, now, for the scopes that will be
-committed**: the landed record's (the view must select them), or else this view's creation scopes.
-Nothing about permission is stored with the intent, and the epoch is rechecked inside the writer.
-Storage independently refuses to adopt a landed record whose scopes differ from those the
-registration was authorized for, which also covers an identical `createTracked` retry from a view
-with other creation scopes. It must be the same principal. A resume — or an identical creation —
-that finds inside the writer that the task went live meanwhile commits nothing and runs again
-through the replay path: visibility, `create` for the committed scopes, the parent and the
-unchanged-since-authorized check. A resume whose response was lost replays the committed receipt
-the same way. An external registration replayed after a lost response skips the parent checks that
-decided it, so it replays even after its parent closed. A view that selects none of a pending
-external registration's scopes is told nothing about it. A pending `register-external` resumes through
-`TaskBroker.resumePendingRegistration(taskId)`, a trusted host operation under the principal it was
-accepted for. Withdrawing a pending identity, or recycling its slot, is not offered.
-
 ## Host runbook — capacity pressure and a full repository
 
 The limits are finite by design (a finite history horizon; see `docs/design/agent-tasks/`
@@ -736,7 +630,7 @@ out-of-band file deletion is corruption, not maintenance, and open will report i
    what it names — **expiry alone does not release it**: an expired manifest stops pinning only when
    the next receipt issue or disposition on that subscription evicts it, and `cleanup` does neither,
    while `outstanding()` still counts it as `pinned` — so find it in the subscription's record
-   (`IBoundTaskDelivery.issued()` lists it) and `abandon` it; and at the default 8,000-character context budget an older revision of a
+   (`issued`, unacknowledged) and `abandon` it; and at the default 8,000-character context budget an older revision of a
    maximum-size task never fits beside its current one, so it stays owed until a delivery prepares
    with a larger budget or the host disposes of it. Neither is ever dropped. This releases non-archived slots, payload
    and receipt capacity — **not** retained identities, exact acknowledgement/disposition ids or
@@ -1330,7 +1224,6 @@ multi-process ownership, general event sourcing, and dependency DAGs.
 
 <!-- BEGIN GENERATED: recent-additions -->
 
-- **2026-10-26** — An agent-task host can open or initialize its repository in the strongest mode its root qualifies for, give its own principal a fixed trusted authority, wait for the broker to go idle and gate every broker write. ([#758](https://github.com/ErikFortune/fgv/pull/758))
 - **2026-10-01** — Agent task context can go into a cacheable prompt as one checked, trailing per-request slot, and a delivery's receipt is acknowledgeable only against the exact text that was sent. ([#707](https://github.com/ErikFortune/fgv/pull/707))
 - **2026-09-28** — A host can give a model bounded, per-call-authorized tools over its agent tasks: read-only by default, with create, update, reassign, typed commands and cascade-stop requests opt-in. ([#702](https://github.com/ErikFortune/fgv/pull/702))
 - **2026-09-22** — New @fgv/ts-agent-tasks records agent work without running it: typed task envelopes, a crash-safe FileTree store, and a principal-bound broker with exact-receipt delivery, external-source reconciliation, retention and persistent cascade stop. ([#684](https://github.com/ErikFortune/fgv/pull/684))

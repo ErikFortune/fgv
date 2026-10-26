@@ -4,7 +4,7 @@
  */
 
 import '@fgv/ts-utils-jest';
-import { Converters, Logging, Result, fail, failWithDetail, succeed, succeedWithDetail } from '@fgv/ts-utils';
+import { Converters, Logging, Result, fail, succeed, succeedWithDetail } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
 import {
   IIdentityCodecResult,
@@ -49,7 +49,6 @@ import {
   MemoryEmbedder,
   MtmIdentityCodec,
   MemoryId,
-  MemoryWriteResult,
   MemoryIngestOrchestrator,
   MemoryScopeKey,
   ResolutionVerdict,
@@ -552,12 +551,8 @@ function mockStore(overrides: Partial<IMemoryStore>): IMemoryStore {
         list: (): Promise<Result<IMemoryRecordListing>> =>
           Promise.resolve(succeed({ records: [], excluded: new Map<Kind, number>() }))
       })),
-    put:
-      overrides.put ??
-      ((r): Promise<MemoryWriteResult<IMemoryRecord<unknown>>> => Promise.resolve(succeedWithDetail(r))),
-    delete:
-      overrides.delete ??
-      ((): Promise<MemoryWriteResult<MemoryId>> => Promise.resolve(failWithDetail('n/a', { code: 'io' })))
+    put: overrides.put ?? ((r): Promise<Result<IMemoryRecord<unknown>>> => Promise.resolve(succeed(r))),
+    delete: overrides.delete ?? ((): Promise<Result<MemoryId>> => Promise.resolve(fail('n/a')))
   };
 }
 
@@ -659,7 +654,6 @@ describe('MemoryIngestOrchestrator — stage 4 similarity (layer 2)', () => {
       extractor: extractor(() => succeed([candidate(noteKind, 'doc-b', 'apple tart')]))
     });
     expect(await orch.ingestItem({ id: 'i', content: 'x' })).toSucceedAndSatisfy((r: IIngestItemResult) => {
-      expect(r.records[0].conflict).toBeUndefined();
       expect(r.records[0].disposition).toBe('merged');
       expect(r.records[0].id).toBe('doc-a');
     });
@@ -1204,7 +1198,7 @@ describe('MemoryIngestOrchestrator — store failure paths', () => {
   });
 
   test('a store put failure surfaces as a write failure', async () => {
-    const store = mockStore({ put: () => Promise.resolve(failWithDetail('put kaput', { code: 'io' })) });
+    const store = mockStore({ put: () => Promise.resolve(fail('put kaput')) });
     const orch = buildOrchestrator({ store });
     expect(await orch.ingestItem({ id: 'doc-1', content: 'x' })).toFailWith(/write failed.*put kaput/);
   });
@@ -1426,154 +1420,5 @@ describe('MemoryIngestOrchestrator — merge-into safety (second review)', () =>
     expect(await orch.ingestItem({ id: 'i', content: 'x' })).toFailWith(
       /duplicate-of target 'knowledge\/ghost' does not exist/
     );
-  });
-});
-
-describe('MemoryIngestOrchestrator — merge-into is a conditional write', () => {
-  function storeRecord(kind: Kind, id: string, body: string): IMemoryRecord<unknown> {
-    return {
-      envelope: {
-        id: id as MemoryId,
-        entityId: id as EntityId,
-        kind,
-        tags: [],
-        links: [],
-        created: 0,
-        updated: 0,
-        seq: 0,
-        contentHash: '',
-        provenance: { source: 'agent' }
-      },
-      body
-    };
-  }
-
-  test('a target written after the snapshot is a per-candidate conflict, not an overwrite', async () => {
-    const vectorIndex = InMemoryCosineIndex.create().orThrow();
-    const store = buildStore({ vectorIndex, embed });
-    const seeded = (await store.put(storeRecord(noteKind, 'doc-a', 'apple pie'))).orThrow().envelope.seq;
-    let moved: number = 0;
-    const orch = buildOrchestrator({
-      store,
-      vectorIndex,
-      embed,
-      // The resolver runs after the snapshot; a concurrent writer lands on the target meanwhile.
-      entityResolver: {
-        resolve: async (__c, similar) => {
-          moved = (await store.put(storeRecord(noteKind, 'doc-a', 'changed meanwhile'))).orThrow().envelope
-            .seq;
-          return succeed({ verdict: 'merge-into', target: similar[0].target });
-        }
-      },
-      extractor: extractor(() => succeed([candidate(noteKind, 'doc-b', 'apple tart')]))
-    });
-    expect(await orch.ingestItem({ id: 'i', content: 'x' })).toSucceedAndSatisfy((r: IIngestItemResult) => {
-      expect(r.records).toHaveLength(1);
-      expect(r.records[0].disposition).toBe('conflict');
-      expect(r.records[0].id).toBe('doc-a');
-      expect(r.records[0].record).toBeUndefined();
-      expect(r.records[0].conflict).toEqual({ code: 'conflict', expected: seeded, current: moved });
-    });
-    expect(await store.get(noteKind, 'doc-a' as EntityId)).toSucceedAndSatisfy(
-      (rec: IMemoryRecord<unknown> | undefined) => expect(rec?.body).toBe('changed meanwhile')
-    );
-  });
-
-  test('a merge whose content already exists elsewhere is deduped onto that record, not merged', async () => {
-    const vectorIndex = InMemoryCosineIndex.create().orThrow();
-    const store = buildStore({ vectorIndex, embed });
-    await putNote(store, 'doc-a', 'apple pie');
-    const orch = buildOrchestrator({
-      store,
-      vectorIndex,
-      embed,
-      // After the snapshot, another writer stores the merged content under a different id.
-      entityResolver: {
-        resolve: async (__c, similar) => {
-          await putNote(store, 'doc-z', 'apple tart');
-          return succeed({ verdict: 'merge-into', target: similar[0].target });
-        }
-      },
-      extractor: extractor(() => succeed([candidate(noteKind, 'doc-b', 'apple tart')]))
-    });
-    expect(await orch.ingestItem({ id: 'i', content: 'x' })).toSucceedAndSatisfy((r: IIngestItemResult) => {
-      expect(r.records[0].disposition).toBe('deduped');
-      expect(r.records[0].id).toBe('doc-z');
-      expect(r.records[0].record).toBeUndefined();
-    });
-    expect(await store.get(noteKind, 'doc-a' as EntityId)).toSucceedAndSatisfy(
-      (rec: IMemoryRecord<unknown> | undefined) => expect(rec?.body).toBe('apple pie')
-    );
-  });
-
-  test('two candidates merging into one target in one pass both merge', async () => {
-    const vectorIndex = InMemoryCosineIndex.create().orThrow();
-    const store = buildStore({ vectorIndex, embed });
-    await putNote(store, 'doc-a', 'apple pie');
-    const orch = buildOrchestrator({
-      store,
-      vectorIndex,
-      embed,
-      entityResolver: resolver((__c, similar) =>
-        succeed({ verdict: 'merge-into', target: similar[0].target })
-      ),
-      extractor: extractor(() =>
-        succeed([candidate(noteKind, 'doc-b', 'apple tart'), candidate(noteKind, 'doc-c', 'apple tart')])
-      )
-    });
-    expect(await orch.ingestItem({ id: 'i', content: 'x' })).toSucceedAndSatisfy((r: IIngestItemResult) => {
-      expect(r.records.map((rec) => rec.disposition)).toEqual(['merged', 'merged']);
-    });
-  });
-
-  test("a versioned merge naming a superseded version expects the entity's current version", async () => {
-    const vectorIndex = InMemoryCosineIndex.create().orThrow();
-    const store = buildStore({ vectorIndex, embed });
-    const v1 = (await store.put(storeRecord(factKind, 'f1', 'apple pie'))).orThrow();
-    (await store.put(storeRecord(factKind, 'f1', 'banana bread'))).orThrow();
-    const scope = store.resolveIdentity(factKind, 'f1' as EntityId).orThrow().scope;
-    const orch = buildOrchestrator({
-      store,
-      vectorIndex,
-      embed,
-      classifier: classifyFact,
-      entityResolver: resolver(() =>
-        succeed({ verdict: 'merge-into', target: { scope, id: v1.envelope.id } })
-      ),
-      extractor: extractor(() => succeed([candidate(factKind, 'f2', 'apple tart')]))
-    });
-    expect(await orch.ingestItem({ id: 'i', content: 'x' })).toSucceedAndSatisfy((r: IIngestItemResult) => {
-      expect(r.records[0].disposition).toBe('merged');
-    });
-    expect(await store.get(factKind, 'f1' as EntityId)).toSucceedAndSatisfy(
-      (rec: IMemoryRecord<unknown> | undefined) => expect(rec?.body).toBe('apple tart')
-    );
-  });
-
-  test("a versioned merge into a soft-deleted entity expects 'absent'", async () => {
-    const vectorIndex = InMemoryCosineIndex.create().orThrow();
-    const store = buildStore({ vectorIndex, embed });
-    const v1 = (await store.put(storeRecord(factKind, 'f1', 'apple pie'))).orThrow();
-    (await store.delete(factKind, 'f1' as EntityId)).orThrow();
-    const scope = store.resolveIdentity(factKind, 'f1' as EntityId).orThrow().scope;
-    const orch = buildOrchestrator({
-      store,
-      vectorIndex,
-      embed,
-      classifier: classifyFact,
-      entityResolver: resolver(() =>
-        succeed({ verdict: 'merge-into', target: { scope, id: v1.envelope.id } })
-      ),
-      extractor: extractor(() => succeed([candidate(factKind, 'f2', 'apple tart')]))
-    });
-    expect(await orch.ingestItem({ id: 'i', content: 'x' })).toSucceedAndSatisfy((r: IIngestItemResult) => {
-      expect(r.records[0].disposition).toBe('merged');
-    });
-  });
-
-  test('a write failure other than a conflict still fails the item', async () => {
-    const store = mockStore({ put: () => Promise.resolve(failWithDetail('refused', { code: 'rejected' })) });
-    const orch = buildOrchestrator({ store });
-    expect(await orch.ingestItem({ id: 'doc-1', content: 'x' })).toFailWith(/write failed.*refused/);
   });
 });

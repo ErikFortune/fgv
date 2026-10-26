@@ -5,15 +5,7 @@
 
 import '@fgv/ts-utils-jest';
 import { InMemoryRecordResolver } from '../../helpers/inMemoryRecordResolver';
-import {
-  Converter,
-  Converters,
-  Result,
-  fail,
-  failWithDetail,
-  succeed,
-  succeedWithDetail
-} from '@fgv/ts-utils';
+import { Converter, Converters, Result, fail, succeed } from '@fgv/ts-utils';
 import { FileTree, JsonObject } from '@fgv/ts-json-base';
 import { AiAssist } from '@fgv/ts-extras';
 import {
@@ -587,8 +579,8 @@ describe('createMemoryTools', () => {
         embedsKind: () => true,
         reconcile: async (kind: Kind) =>
           succeed({ artifact: 'rank' as const, kind, examined: 0, repaired: 0, failed: [] }),
-        put: async (record) => succeedWithDetail(record),
-        delete: async () => failWithDetail('unused', { code: 'io' })
+        put: async (record) => succeed(record),
+        delete: async () => fail('unused')
       };
       const tool = toolByName(
         createMemoryTools({
@@ -1219,8 +1211,8 @@ describe('result items carry their scope', () => {
       embedsKind: () => true,
       reconcile: async (kind: Kind) =>
         succeed({ artifact: 'rank' as const, kind, examined: 0, repaired: 0, failed: [] }),
-      put: async (r) => succeedWithDetail(r),
-      delete: async () => failWithDetail('unused', { code: 'io' })
+      put: async (r) => succeed(r),
+      delete: async () => fail('unused')
     };
   }
 

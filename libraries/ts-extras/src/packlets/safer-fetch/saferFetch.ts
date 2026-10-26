@@ -1446,14 +1446,13 @@ const GUARDED_FETCH_METHODS: ReadonlyArray<SaferFetchMethod> = SAFER_FETCH_METHO
 
 /**
  * {@link SaferFetch.ISaferFetchOptions} members a guarded fetch refuses at creation: each needs the
- * body buffered, would cut off a long-lived stream, or would replay a request, so accepting one
- * silently would advertise a protection the function does not give. The per-request members are
- * refused too — they belong on the call's `RequestInit`, and accepting them here would leave a
- * caller believing they applied. `maxResponseBytes` is not in the set: it is enforced by counting
- * the body as the caller reads it.
+ * body read or would replay a request, so accepting one silently would advertise a protection the
+ * function does not give. The per-request members are refused too — they belong on the call's
+ * `RequestInit`, and accepting them here would leave a caller believing they applied.
  */
 const GUARDED_FETCH_REFUSED_OPTIONS: ReadonlySet<string> = new Set([
   'timeoutMs',
+  'maxResponseBytes',
   'responseBodyGuard',
   'retry',
   'method',
@@ -1467,8 +1466,6 @@ interface IPreparedGuardedFetch {
   readonly guards: IResolvedGuards;
   readonly redirect: IResolvedRedirectOptions;
   readonly headersTimeoutMs: number;
-  /** The body cap, when the caller set one; `undefined` leaves the body unbounded and untouched. */
-  readonly maxResponseBytes: number | undefined;
   readonly transport: IFetchTransport;
   readonly logger: Logging.ILogger;
 }
@@ -1489,7 +1486,7 @@ function _asOutcome<T>(result: Result<T>): Outcome<T> {
   return result.isSuccess() ? _succeed(result.value) : _unknown<T>(result.message);
 }
 
-/** Refuses every option that needs the body buffered, would retry, or belongs on the call. */
+/** Refuses every option that needs the body read, would retry, or belongs on the call. */
 function _refuseUnsupportedOptions(options: IGuardedFetchOptions): Outcome<IGuardedFetchOptions> {
   // Read off the object's own entries rather than its type: a JavaScript caller, or a spread of a
   // buffered call's options, can carry any of these, and the type cannot see them.
@@ -1498,8 +1495,8 @@ function _refuseUnsupportedOptions(options: IGuardedFetchOptions): Outcome<IGuar
     .map(([name]) => name);
   return refused.length > 0
     ? _unknown<IGuardedFetchOptions>(
-        `createGuardedFetch does not support ${refused.join(', ')}: a guarded fetch never buffers the ` +
-          'body, sets no deadline over it, never retries, and takes per-request inputs from each call.'
+        `createGuardedFetch does not support ${refused.join(', ')}: a guarded fetch never reads the ` +
+          'body, never retries, and takes per-request inputs from each call.'
       )
     : _succeed(options);
 }
@@ -1513,30 +1510,17 @@ function _validHeadersTimeout(headersTimeoutMs: number): Outcome<number> {
     : _unknown<number>(_overTimerMessage('headersTimeoutMs', headersTimeoutMs));
 }
 
-/** Validates an opt-in body cap: absent (no cap), or a positive finite number of bytes. */
-function _validMaxResponseBytes(maxResponseBytes: number | undefined): Outcome<number | undefined> {
-  return maxResponseBytes === undefined || (Number.isFinite(maxResponseBytes) && maxResponseBytes > 0)
-    ? _succeed(maxResponseBytes)
-    : _unknown<number | undefined>(`maxResponseBytes must be a positive finite number; got ${maxResponseBytes}.`);
-}
-
 /** Validates a guarded fetch's options once, at creation, in the order the buffered entry points use. */
 function _prepareGuardedFetch(options: IGuardedFetchOptions): Outcome<IPreparedGuardedFetch> {
   return _refuseUnsupportedOptions(options)
     .onSuccess(() => _validHeadersTimeout(options.headersTimeoutMs ?? DEFAULT_HEADERS_TIMEOUT_MS))
     .onSuccess((headersTimeoutMs) =>
-      _validMaxResponseBytes(options.maxResponseBytes).onSuccess((maxResponseBytes) =>
-        _succeed({ headersTimeoutMs, maxResponseBytes })
-      )
-    )
-    .onSuccess(({ headersTimeoutMs, maxResponseBytes }) =>
       _resolveRedirectOptions(options).onSuccess((redirect) =>
         _asOutcome(resolveGuards(options)).onSuccess((guards) =>
           _succeed<IPreparedGuardedFetch>({
             guards,
             redirect,
             headersTimeoutMs,
-            maxResponseBytes,
             transport: options.transport ?? platformFetchTransport,
             logger: options.logger ?? new Logging.NoOpLogger()
           })
@@ -1615,115 +1599,16 @@ function _guardedRequest(input: unknown, init: RequestInit | undefined): Outcome
 }
 
 /**
- * Wraps `body` in a stream that passes each chunk through as the caller reads it, counting decoded
- * bytes, and errors the moment the count passes `limit`.
- *
- * @remarks
- * Nothing is read ahead (`highWaterMark: 0`): a chunk is pulled from upstream only when the caller
- * asks for one, so the wrapper buffers nothing. The chunk that takes the count past the cap is
- * withheld. The upstream body is cancelled **before** the stream is errored, so by the time the
- * caller sees the failure the connection has already been released. A cancel from the caller is
- * forwarded upstream with its reason; an upstream read that rejects (an abort through `init.signal`,
- * a dropped connection) errors this stream with the same reason.
- */
-function _countingBody(
-  body: ReadableStream<Uint8Array>,
-  limit: number,
-  declared: number | undefined
-): ReadableStream<Uint8Array> {
-  const reader = body.getReader();
-  let total: number = 0;
-  return new ReadableStream<Uint8Array>(
-    {
-      pull: async (controller): Promise<void> => {
-        const read = await reader.read();
-        if (read.done) {
-          controller.close();
-          return;
-        }
-        total += read.value.byteLength;
-        if (total > limit) {
-          await _cancelReader(reader);
-          controller.error(
-            new GuardedFetchError({
-              kind: 'too-large',
-              bytesRead: total,
-              limit,
-              ...(declared !== undefined ? { declared } : {})
-            })
-          );
-          return;
-        }
-        controller.enqueue(read.value);
-      },
-      cancel: async (reason: unknown): Promise<void> => {
-        await reader.cancel(reason).catch(() => undefined);
-      }
-    },
-    { highWaterMark: 0 }
-  );
-}
-
-/**
- * Applies a guarded fetch's body cap to the final response: refuses one whose `Content-Length`
- * already declares more than the cap, and wraps any other body in {@link _countingBody}.
- *
- * @remarks
- * The wrapper is a new `Response`, because a platform `Response`'s body cannot be replaced; it
- * carries the original status, status text and headers, and `url` and `redirected` are copied onto
- * it — and onto every clone of it — as own properties, since the constructor cannot set them. A response without a body is
- * returned unchanged: there is nothing to count.
- */
-function _capBody(response: Response, head: ISaferFetchResponseHead, limit: number): Outcome<Response> {
-  const declared = head.contentLength;
-  if (declared !== undefined && declared > limit) {
-    _discardBody(response);
-    return _fail<Response>(
-      { kind: 'too-large', bytesRead: 0, limit, declared },
-      `response declares ${declared} bytes, over the ${limit}-byte maxResponseBytes cap.`
-    );
-  }
-  const body = response.body ?? undefined;
-  if (body === undefined) {
-    return _succeed(response);
-  }
-  const capped = new Response(_countingBody(body, limit, declared), {
-    status: response.status,
-    statusText: response.statusText,
-    headers: response.headers
-  });
-  return _succeed(_keepOrigin(capped, response.url, response.redirected));
-}
-
-/**
- * Gives a constructed `Response` the `url` and `redirected` of the response it stands in for, as own
- * properties (the constructor cannot set them), and a `clone` that does the same for every clone.
- */
-function _keepOrigin(target: Response, url: string, redirected: boolean): Response {
-  const clone = target.clone.bind(target);
-  Object.defineProperties(target, {
-    url: { value: url },
-    redirected: { value: redirected },
-    clone: { value: (): Response => _keepOrigin(clone(), url, redirected) }
-  });
-  return target;
-}
-
-/**
  * The streaming finisher: runs the response-headers guard and hands the response back with its
- * body unread, whatever its status — wrapped in a counting stream when a body cap is set.
+ * body unread, whatever its status.
  */
-function _streamingFinisher(
-  guards: IResolvedGuards,
-  watch: DeadlineWatch,
-  maxResponseBytes: number | undefined
-): HopFinisher<Response> {
+function _streamingFinisher(guards: IResolvedGuards, watch: DeadlineWatch): HopFinisher<Response> {
   return async (response, head, url, chain) =>
     (await _checkResponseHead(response, head, url, chain, guards, watch)).onSuccess(() => {
       // Only now: the headers deadline also bounds the response-headers guard, which nothing else
       // would on this path.
       watch.headersReceived();
-      return maxResponseBytes === undefined ? _succeed(response) : _capBody(response, head, maxResponseBytes);
+      return _succeed(response);
     });
 }
 
@@ -1764,7 +1649,7 @@ async function _walkGuarded(
         logger: prepared.logger
       },
       watch,
-      finish: _streamingFinisher(prepared.guards, watch, prepared.maxResponseBytes),
+      finish: _streamingFinisher(prepared.guards, watch),
       finisherRetiresHeadersDeadline: true,
       ...(signal !== undefined ? { outliving: signal } : {})
     })
@@ -1823,18 +1708,11 @@ function _reasonOf(failure: DetailedFailure<Response, FetchFailureReason>): Fetc
  * the transport honoring `RequestInit.signal` for the body, as {@link SaferFetch.platformFetchTransport}
  * does; it needs `AbortSignal.any` (Node 20.3 or later; current browsers).
  *
- * **Size cap — opt-in.** With {@link SaferFetch.IGuardedFetchOptions.maxResponseBytes} set, a
- * response that declares a larger `Content-Length` is refused (`'too-large'`), and any other body
- * is returned wrapped in a stream that counts decoded bytes as the caller reads them and errors
- * with a `'too-large'` {@link SaferFetch.GuardedFetchError} — after cancelling the upstream body —
- * the moment the count passes the cap. The body is still never read here. There is no default cap.
- *
  * **What it does not protect against** — on top of everything {@link SaferFetch.saferFetchBytes}
- * lists, DNS rebinding included: there is **no deadline over the body**, **no body guard** and
- * **no retry**, and **no size cap unless `maxResponseBytes` is set**. A server can hold a returned
- * stream open for as long as the caller keeps reading, and without a cap send it without end;
- * bounding time is the caller's job, typically with `init.signal`. `timeoutMs`,
- * `responseBodyGuard` and `retry` are refused at creation rather than ignored.
+ * lists, DNS rebinding included: there is **no deadline over the body**, **no size cap**, **no
+ * body guard** and **no retry**. A server can hold a returned stream open, or send it without end,
+ * for as long as the caller keeps reading; bounding that is the caller's job, typically with
+ * `init.signal`. Each of those options is refused at creation rather than ignored.
  *
  * **Custom credential headers.** `fetch` strips only `authorization` on a cross-origin redirect.
  * Redirects are rejected by default; a caller who allows them must list every custom credential

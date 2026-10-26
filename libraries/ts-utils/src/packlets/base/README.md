@@ -38,7 +38,7 @@ A `Result<T>` represents the success or failure of an operation. A successful re
 | `captureResult(fn)` | Wrap a throwing function into a `Result<T>` |
 | `MessageAggregator` | Collect and format multiple error messages |
 | `mapResults(results)` | Aggregate array of results (all must succeed) |
-| `mapSuccess(results)` | Collect successful results (fails only if all fail; every failure still reaches an optional aggregator) |
+| `mapSuccess(results)` | Collect successful results (fails only if all fail) |
 | `mapFailures(results)` | Extract error messages from failed results |
 | `allSucceed(results, value)` | Ensure all results succeed, returning a value |
 | `firstSuccess(results)` | Return the first successful result |
@@ -273,18 +273,13 @@ function processItems(items: Item[]): Result<ProcessedItem[]> {
 
 ### mapSuccess
 
-Collect successful results, failing only if every result fails. Pass a `MessageAggregator` to
-learn what a partial fold dropped: every failure is appended to it, in input order, whether or not
-any result succeeded:
+Collect successful results, failing only if every result fails:
 
 ```typescript
-import { MessageAggregator, mapSuccess } from '@fgv/ts-utils';
+import { mapSuccess } from '@fgv/ts-utils';
 
-function processBestEffort(items: Item[], skipped: MessageAggregator): Result<ProcessedItem[]> {
-  return mapSuccess(
-    items.map((item) => processItem(item)),
-    skipped
-  );
+function processBestEffort(items: Item[]): Result<ProcessedItem[]> {
+  return mapSuccess(items.map((item) => processItem(item)));
 }
 ```
 

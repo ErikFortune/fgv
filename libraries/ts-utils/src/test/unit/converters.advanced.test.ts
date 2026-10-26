@@ -23,7 +23,7 @@
 import '../helpers/jest';
 
 import { Validation } from '../../index';
-import { Failure, fail, succeed } from '../../packlets/base';
+import { Failure, fail } from '../../packlets/base';
 import { Converter, Converters, Infer } from '../../packlets/conversion';
 
 describe('Advanced converters', () => {
@@ -514,144 +514,6 @@ describe('Advanced converters', () => {
       });
     });
 
-    describe('compositeIdFromString split modes', () => {
-      const exact = Converters.compositeIdFromString(Converters.string, ':', Converters.string);
-      const explicitExact = Converters.compositeIdFromString(Converters.string, ':', Converters.string, {
-        split: 'exact'
-      });
-      const first = Converters.compositeIdFromString(Converters.string, ':', Converters.string, {
-        split: 'first'
-      });
-      const last = Converters.compositeIdFromString(Converters.string, ':', Converters.string, {
-        split: 'last'
-      });
-
-      test('lists every split mode', () => {
-        expect(Validation.allCompositeIdSplitModes).toEqual(['exact', 'first', 'last']);
-      });
-
-      test('exact (default and explicit) refuses a remainder containing the separator', () => {
-        expect(exact.convert('a:b:c')).toFailWith(/multiple separators ':' found\./i);
-        expect(explicitExact.convert('a:b:c')).toFailWith(/multiple separators ':' found\./i);
-        expect(explicitExact.convert('a:b')).toSucceedWith({
-          collectionId: 'a',
-          separator: ':',
-          itemId: 'b'
-        });
-      });
-
-      test('first splits at the first separator and passes the remainder to the item converter', () => {
-        expect(first.convert('a:b:c')).toSucceedWith({ collectionId: 'a', separator: ':', itemId: 'b:c' });
-        expect(first.convert('a:b')).toSucceedWith({ collectionId: 'a', separator: ':', itemId: 'b' });
-      });
-
-      test('last splits at the last separator and passes the remainder to the collection converter', () => {
-        expect(last.convert('a:b:c')).toSucceedWith({ collectionId: 'a:b', separator: ':', itemId: 'c' });
-        expect(last.convert('a:b')).toSucceedWith({ collectionId: 'a', separator: ':', itemId: 'b' });
-      });
-
-      test('first and last handle multi-character separators', () => {
-        const firstMulti = Converters.compositeIdFromString(Converters.string, '::', Converters.string, {
-          split: 'first'
-        });
-        const lastMulti = Converters.compositeIdFromString(Converters.string, '::', Converters.string, {
-          split: 'last'
-        });
-        expect(firstMulti.convert('a::b::c')).toSucceedWith({
-          collectionId: 'a',
-          separator: '::',
-          itemId: 'b::c'
-        });
-        expect(lastMulti.convert('a::b::c')).toSucceedWith({
-          collectionId: 'a::b',
-          separator: '::',
-          itemId: 'c'
-        });
-      });
-
-      test('every mode fails when the separator is missing', () => {
-        for (const converter of [exact, first, last]) {
-          expect(converter.convert('noSeparator')).toFailWith(/separator ':' not found/i);
-          expect(converter.convert('')).toFailWith(/separator ':' not found/i);
-        }
-      });
-
-      test('every mode passes an empty part through to the part converters', () => {
-        for (const converter of [exact, first, last]) {
-          expect(converter.convert(':b')).toSucceedWith({ collectionId: '', separator: ':', itemId: 'b' });
-          expect(converter.convert('a:')).toSucceedWith({ collectionId: 'a', separator: ':', itemId: '' });
-        }
-        expect(first.convert('a::')).toSucceedWith({ collectionId: 'a', separator: ':', itemId: ':' });
-        expect(last.convert('::b')).toSucceedWith({ collectionId: ':', separator: ':', itemId: 'b' });
-      });
-
-      test('the part converters still validate what the split hands them', () => {
-        const firstRestricted = Converters.compositeIdFromString(
-          restrictedCollectionValidator,
-          ':',
-          restrictedItemValidator,
-          { split: 'first' }
-        );
-        const lastRestricted = Converters.compositeIdFromString(
-          restrictedCollectionValidator,
-          ':',
-          restrictedItemValidator,
-          { split: 'last' }
-        );
-        expect(firstRestricted.convert('users:123:456')).toFailWith(/numeric/i);
-        expect(lastRestricted.convert('users:other:123')).toFailWith(/alphabetic/i);
-        expect(firstRestricted.convert(':123')).toFailWith(/alphabetic/i);
-        expect(lastRestricted.convert('users:')).toFailWith(/numeric/i);
-      });
-
-      test('exact with an empty separator keeps the split-based behaviour', () => {
-        const emptyExact = Converters.compositeIdFromString(Converters.string, '', Converters.string);
-        expect(emptyExact.convert('ab')).toSucceedWith({ collectionId: 'a', separator: '', itemId: 'b' });
-        expect(emptyExact.convert('a')).toFailWith(/separator '' not found/i);
-        expect(emptyExact.convert('')).toFailWith(/separator '' not found/i);
-        expect(emptyExact.convert('abc')).toFailWith(/multiple separators '' found\./i);
-      });
-
-      test('first and last refuse an empty separator', () => {
-        for (const split of ['first', 'last'] as const) {
-          const converter = Converters.compositeIdFromString(Converters.string, '', Converters.string, {
-            split
-          });
-          for (const value of ['ab', 'a', '']) {
-            expect(converter.convert(value)).toFailWith(/requires a non-empty separator/i);
-          }
-        }
-      });
-
-      test('first and last handle an overlapping separator', () => {
-        const firstOverlap = Converters.compositeIdFromString(Converters.string, 'aa', Converters.string, {
-          split: 'first'
-        });
-        const lastOverlap = Converters.compositeIdFromString(Converters.string, 'aa', Converters.string, {
-          split: 'last'
-        });
-        expect(firstOverlap.convert('aaa')).toSucceedWith({ collectionId: '', separator: 'aa', itemId: 'a' });
-        expect(lastOverlap.convert('aaa')).toSucceedWith({ collectionId: 'a', separator: 'aa', itemId: '' });
-      });
-
-      test('a nested composite is validated as a string and then re-parsed', () => {
-        const inner = Converters.compositeIdFromString(Converters.string, '.', Converters.string);
-        const outer = Converters.compositeIdFromString(Converters.string, ':', Converters.string, {
-          split: 'first'
-        });
-        const nested = outer.map((parsed) =>
-          inner
-            .convert(parsed.itemId)
-            .onSuccess((item) => succeed({ collectionId: parsed.collectionId, item }))
-        );
-        expect(nested.convert('users:group.42')).toSucceedWith({
-          collectionId: 'users',
-          item: { collectionId: 'group', separator: '.', itemId: '42' }
-        });
-        expect(nested.convert('users:group')).toFailWith(/separator '\.' not found/i);
-      });
-    });
-
     describe('compositeId (combined)', () => {
       const converter = Converters.compositeId(collectionIdConverter, ':', itemIdConverter);
 
@@ -676,22 +538,6 @@ describe('Advanced converters', () => {
         expect(converter.convert(123)).toFail();
         expect(converter.convert(null)).toFail();
         expect(converter.convert('noSeparator')).toFail();
-      });
-    });
-
-    describe('compositeId (combined) split modes', () => {
-      test('applies split to the string representation', () => {
-        const first = Converters.compositeId(Converters.string, ':', Converters.string, { split: 'first' });
-        const last = Converters.compositeId(Converters.string, ':', Converters.string, { split: 'last' });
-        const exact = Converters.compositeId(Converters.string, ':', Converters.string);
-        expect(first.convert('a:b:c')).toSucceedWith({ collectionId: 'a', separator: ':', itemId: 'b:c' });
-        expect(last.convert('a:b:c')).toSucceedWith({ collectionId: 'a:b', separator: ':', itemId: 'c' });
-        expect(exact.convert('a:b:c')).toFailWith(/multiple separators ':' found\./i);
-        expect(first.convert({ collectionId: 'a', itemId: 'b:c' })).toSucceedWith({
-          collectionId: 'a',
-          separator: ':',
-          itemId: 'b:c'
-        });
       });
     });
 

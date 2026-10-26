@@ -4,7 +4,6 @@
  */
 
 import { JsonValue } from '@fgv/ts-json-base';
-import { StringOneOf } from '@fgv/ts-utils';
 import { ITaskCapacityClaim, ITaskCapacityProfile } from './capacity';
 import { ICommandReceipt, ICommandRequest } from './commands';
 import { ITaskSnapshot } from './envelope';
@@ -13,7 +12,6 @@ import { OperationId, SubscriptionId, TaskId } from './ids';
 import { ISourceRevision, SourceHistoryContract } from './source';
 import { IStopCommandMarker, IStopIntent } from './stop';
 import { IUnresolvedTaskReference } from './summary';
-import { ITaskScope } from './common';
 import { ITaskUpdate } from './updates';
 
 /**
@@ -231,15 +229,6 @@ export interface IUnresolvedTaskRecordDraft {
 export type ITaskRecordDraft = IResolvedTaskRecordDraft | IUnresolvedTaskRecordDraft;
 
 /**
- * The scopes a task record (or record draft) carries: its envelope's when resolved, its reference's
- * when unresolved. Shared between the package's packlets; not part of the published surface.
- * @internal
- */
-export function _taskRecordScopes(record: ITaskRecordDraft | ITaskCommitRecord): ReadonlyArray<ITaskScope> {
-  return record.recordType === 'resolved' ? record.task.envelope.scopes : record.reference.scopes;
-}
-
-/**
  * Which kind of record an inventory entry names.
  * @public
  */
@@ -335,26 +324,7 @@ export interface ITaskRepositoryManifest {
   readonly tasks: ReadonlyArray<ITaskInventoryEntry>;
   readonly consumers: ReadonlyArray<ITaskConsumerInventoryEntry>;
   readonly sources: ReadonlyArray<ITaskInventoryEntry>;
-  /**
-   * The durability the repository was initialized in. A repository initialized `process-crash`
-   * opens as `session` only on an explicit opt-in (`allowSessionOverDurable`). Absent from a
-   * manifest written before the field existed; such a repository opens in either mode, as it
-   * always did.
-   */
-  readonly initializedMode?: TaskRepositoryDurability;
 }
-
-/**
- * Every durability a repository can commit at, by name.
- * @public
- */
-export const allTaskRepositoryDurabilities = ['session', 'process-crash'] as const;
-
-/**
- * The durability a repository commits at, by name: `'session'` or `'process-crash'`.
- * @public
- */
-export type TaskRepositoryDurability = StringOneOf<typeof allTaskRepositoryDurabilities>;
 
 /**
  * A broker source-checkpoint record (`source-<sourceId>.json`): the committed reconciliation

@@ -21,27 +21,8 @@ import { MemoryEmbedder } from '@fgv/ts-agent-memory';
 import { Result } from '@fgv/ts-utils';
 
 // @public
-export type IIndexIdentityReport = {
-    readonly status: 'fresh';
-} | {
-    readonly status: 'match';
-} | {
-    readonly status: 'mismatch';
-    readonly stored: string;
-} | {
-    readonly status: 'absent';
-} | {
-    readonly status: 'incomplete';
-    readonly stored?: string;
-} | {
-    readonly status: 'unchecked';
-    readonly stored?: string;
-};
-
-// @public
 export interface ISqliteVecFragmentIndexCreateParams {
     readonly database: BetterSqlite3.Database;
-    readonly identity?: string;
     readonly tableName?: string;
 }
 
@@ -53,7 +34,6 @@ export interface ISqliteVecFragmentIndexHandle {
 
 // @public
 export interface ISqliteVecFragmentIndexOpenParams {
-    readonly identity?: string;
     readonly path: string;
     readonly tableName?: string;
 }
@@ -61,7 +41,6 @@ export interface ISqliteVecFragmentIndexOpenParams {
 // @public
 export interface ISqliteVecVectorIndexCreateParams {
     readonly database: BetterSqlite3.Database;
-    readonly identity?: string;
     readonly tableName?: string;
 }
 
@@ -73,7 +52,6 @@ export interface ISqliteVecVectorIndexHandle {
 
 // @public
 export interface ISqliteVecVectorIndexOpenParams {
-    readonly identity?: string;
     readonly path: string;
     readonly tableName?: string;
 }
@@ -84,14 +62,12 @@ export class SqliteVecFragmentIndex implements IFragmentVectorIndex {
     //
     // (undocumented)
     addFragments(target: IEdgeTarget, fragments: ReadonlyArray<IEmbeddedFragment>): Promise<Result<number>>;
-    adoptIdentity(): Result<IIndexIdentityReport>;
     static create(params: ISqliteVecFragmentIndexCreateParams): Promise<Result<SqliteVecFragmentIndex>>;
     get fragmentCount(): number;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-agent-memory-sqlite-vec" does not have an export "IFragmentVectorIndex"
     //
     // (undocumented)
     has(target: IEdgeTarget): Promise<Result<boolean>>;
-    identity(): Result<IIndexIdentityReport>;
     static open(params: ISqliteVecFragmentIndexOpenParams): Promise<Result<ISqliteVecFragmentIndexHandle>>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-agent-memory-sqlite-vec" does not have an export "IFragmentVectorIndex"
     //
@@ -115,13 +91,11 @@ export class SqliteVecVectorIndex implements IVectorIndex {
     //
     // (undocumented)
     add(target: IEdgeTarget, vector: Float32Array): Promise<Result<string>>;
-    adoptIdentity(): Result<IIndexIdentityReport>;
     static create(params: ISqliteVecVectorIndexCreateParams): Promise<Result<SqliteVecVectorIndex>>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-agent-memory-sqlite-vec" does not have an export "IVectorIndex"
     //
     // (undocumented)
     has(target: IEdgeTarget): Promise<Result<boolean>>;
-    identity(): Result<IIndexIdentityReport>;
     static open(params: ISqliteVecVectorIndexOpenParams): Promise<Result<ISqliteVecVectorIndexHandle>>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-agent-memory-sqlite-vec" does not have an export "IVectorIndex"
     //

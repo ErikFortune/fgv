@@ -194,20 +194,6 @@ export interface IWrapBytesOptions {
 }
 
 /**
- * Options for `ICryptoProvider.generateHmacKey`
- * and `ICryptoProvider.importHmacKey`.
- * @public
- */
-export interface IHmacKeyOptions {
-  /**
-   * Whether the resulting `CryptoKey` may be exported. Defaults to `false`:
-   * a non-extractable key can sign and verify but its bytes can never be read
-   * back out of the crypto implementation.
-   */
-  readonly extractable?: boolean;
-}
-
-/**
  * Output of {@link CryptoUtils.ICryptoProvider.wrapBytes | wrapBytes}. The
  * shape is JSON-serializable so it can travel directly over the wire or be
  * persisted as-is.
@@ -821,41 +807,12 @@ export interface ICryptoProvider {
   timingSafeEqual(a: Uint8Array, b: Uint8Array): boolean;
 
   /**
-   * Generates a fresh random HMAC-SHA256 key.
-   *
-   * The key is exactly `Constants.HMAC_SHA256_KEY_SIZE`
-   * bytes (256 bits), carries usages `['sign', 'verify']`, and is
-   * non-extractable unless `options.extractable` is `true`.
-   * @param options - Optional `IHmacKeyOptions`.
-   * @returns `Success` with the HMAC `CryptoKey`, or `Failure` with error context.
-   */
-  generateHmacKey(options?: IHmacKeyOptions): Promise<Result<CryptoKey>>;
-
-  /**
-   * Imports raw key bytes as an HMAC-SHA256 key.
-   *
-   * Use this for key material obtained elsewhere, including the output of
-   * `deriveKey`. Refuses a key shorter than
-   * `Constants.HMAC_SHA256_KEY_SIZE`
-   * bytes (RFC 2104's `L` for SHA-256). The key carries usages
-   * `['sign', 'verify']` and is non-extractable unless `options.extractable`
-   * is `true`.
-   * @param raw - The raw key bytes (at least 32).
-   * @param options - Optional `IHmacKeyOptions`.
-   * @returns `Success` with the HMAC `CryptoKey`, or `Failure` with error context.
-   */
-  importHmacKey(raw: Uint8Array, options?: IHmacKeyOptions): Promise<Result<CryptoKey>>;
-
-  /**
    * Computes an HMAC-SHA256 authentication code for `data` using `key`.
    *
    * The key must be a `CryptoKey` with `'sign'` usage and algorithm name
-   * `'HMAC'`. Obtain one from `generateHmacKey`,
-   * or from `importHmacKey` for raw key
-   * bytes — including bytes from `deriveKey`,
-   * which returns a `Uint8Array` rather than a `CryptoKey`.
-   * Use {@link ICryptoProvider.verifyHmacSha256} for constant-time
-   * verification of the output.
+   * `'HMAC'` (e.g. derived via PBKDF2 or imported with
+   * `crypto.subtle.importKey`). Use {@link ICryptoProvider.verifyHmacSha256}
+   * for constant-time verification of the output.
    * @param key - An HMAC `CryptoKey` with `'sign'` usage.
    * @param data - The bytes to authenticate.
    * @returns `Success` with the 32-byte MAC, or `Failure` with error context.
