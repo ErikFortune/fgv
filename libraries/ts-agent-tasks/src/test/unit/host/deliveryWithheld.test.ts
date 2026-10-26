@@ -276,9 +276,7 @@ describe('an owed update the principal may no longer acknowledge is withheld, ne
     }
     h.policy.denyOn('acknowledge', 't204');
     expect((await pump.disposeWithheld('gone')).orThrow().disposed).toBe(1);
-    expect((await consumerRecord(h.repository, 's1')).disposed.map((d) => d.updateId)).toEqual([
-      't204:1:0'
-    ]);
+    expect((await consumerRecord(h.repository, 's1')).disposed.map((d) => d.updateId)).toEqual(['t204:1:0']);
   });
 
   test('an unclassified probe failure is not retried', async () => {
@@ -349,7 +347,7 @@ describe('a refused acknowledgement gives up its receipt', () => {
 });
 
 describe('the budget failure names what is owed', () => {
-  test('it names only the revision that did not fit, never another task\'s updates', async () => {
+  test("it names only the revision that did not fit, never another task's updates", async () => {
     const h = await deliveryHarness();
     await subscribed(h, 's1');
     for (const id of ['t1', 't2']) {
@@ -452,7 +450,7 @@ describe('only the binding that owns the whole subscription may end what it with
     );
   }
 
-  test('another principal\'s binding is refused, and alice is still owed everything', async () => {
+  test("another principal's binding is refused, and alice is still owed everything", async () => {
     const before = await aliceOwes();
     expect(before).toEqual(['a1:1:0', 'b1:1:0']);
     // Bob's policy lets him see nothing, so to him everything is withheld.
@@ -492,7 +490,7 @@ describe('only the binding that owns the whole subscription may end what it with
     expect((await consumerRecord(h.repository, 's1')).disposed).toEqual([]);
   });
 
-  test('the grant is asked for the selection\'s scopes, naming no task', async () => {
+  test("the grant is asked for the selection's scopes, naming no task", async () => {
     const policy = h.policy;
     h.policy.denyOn('acknowledge', 'a1');
     (await deliveryOf(h, 's1').disposeWithheld({ reason: 'x' })).orThrow();
@@ -502,14 +500,19 @@ describe('only the binding that owns the whole subscription may end what it with
     expect(asked[0].reference).toBeUndefined();
   });
 
-  test('a hidden task\'s id never appears in anything disposeWithheld answers', async () => {
+  test("a hidden task's id never appears in anything disposeWithheld answers", async () => {
     await track(h.writer, 'secret-merger-acme');
     h.policy.hide('secret-merger-acme');
     const delivery = deliveryOf(h, 's1');
     const page = (await delivery.pending({ limit: 200 })).orThrow();
     expect(JSON.stringify(page)).not.toContain('secret');
     const answer = await delivery.disposeWithheld({ reason: 'hidden' });
-    expect(answer).toSucceedWith({ subscriptionId: 's1' as SubscriptionId, disposed: 1, pinned: 0, more: false });
+    expect(answer).toSucceedWith({
+      subscriptionId: 's1' as SubscriptionId,
+      disposed: 1,
+      pinned: 0,
+      more: false
+    });
     expect(JSON.stringify(answer)).not.toContain('secret');
     // A pinned one is counted, not named, too.
     const pump = pumpOver(h);

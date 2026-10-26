@@ -348,6 +348,19 @@ head, from the repo root, graded by exit code and by the same greps.
 | `rushx fixlint` (no changes), `build` / `lint` / `test` (`ts-agent-tasks`, 2607 tests, 100% all four metrics)                                                                                                                                                                                                                                                                                                                                                  | 0 / 0 / 0 / 0 | 0                         | 0                   |
 | feed `--check`, `verify-capability-docs`, prettier 2.8.8 `--check` on every touched file                                                                                                                                                                                                                                                                                                                                                                       | 0 / 0 / 0     | —                         | —                   |
 
+### Round-3 gates (code `3564f81aa`, docs after it)
+
+| Gate                                                                                                                        | Exit          | Fail grep | Warnings            |
+| --------------------------------------------------------------------------------------------------------------------------- | ------------- | --------- | ------------------- |
+| `rush change --verify --target-branch origin/integration/agent-tasks-host`                                                  | 0             | —         | —                   |
+| `rush rebuild` — `SUCCESS: 39 operations`, 5 min 1 s                                                                        | 0             | 0         | symlink notice only |
+| `rush test` — one unsplit run in the background, `SUCCESS: 38 operations` (+ `typedoc-compact-theme`, no work), 11 min 32 s | 0             | 0         | symlink notice only |
+| `rushx fixlint`, `build` / `lint` / `test` (`ts-agent-tasks`, 2615 tests, 100% all four metrics)                            | 0 / 0 / 0 / 0 | 0         | 0                   |
+| feed `--check`, `verify-capability-docs`, prettier 2.8.8 `--check` on every touched file                                    | 0 / 0 / 0     | —         | —                   |
+
+The last edit after these gates is prettier reformatting one test file; that file's suite and lint
+were re-run (25 tests, exit 0).
+
 ## Not done
 
 - No Copilot loop and no independent reviewer: the brief and the kickoff forbid sub-agents and PRs.
