@@ -893,6 +893,12 @@ describe('SqliteVecVectorIndex', () => {
       const index = await makeIndex();
       // Establishes the dimension, so every statement the index reuses exists.
       (await index.add(target('knowledge', 'seed'), vec(1, 0))).orThrow();
+      // One rebuild first: the identity row's statements cannot be prepared before
+      // its table exists, so the first rebuild prepares them — and keeps them. The
+      // property pinned below is that no later rebuild prepares anything, which is
+      // exactly what a throwaway statement would violate.
+      const seed: IMemoryRecordSource = { list: () => Promise.resolve(succeed(listing(['seed']))) };
+      (await index.rebuild(seed, () => Promise.resolve(succeed(vec(1, 0))))).orThrow();
       return index;
     }
 

@@ -33,8 +33,10 @@ import {
   edgeTargetKey
 } from '@fgv/ts-agent-memory';
 import { invokeHook, tally, withRollbackNote } from './rebuildHelpers';
+import { IndexIdentity } from './indexIdentity';
 import { closeOwnedConnection, openOwnedConnection } from './connection';
 import {
+  IIndexIdentityReport,
   ISqliteVecFragmentIndexCreateParams,
   ISqliteVecFragmentIndexHandle,
   ISqliteVecFragmentIndexOpenParams
@@ -152,12 +154,20 @@ export class SqliteVecFragmentIndex implements IFragmentVectorIndex {
    * which means *no dimension established yet* — see the remarks on `release`.
    */
   private _released: boolean;
+  /** The embedding identity stored beside the fragments; see {@link SqliteVecFragmentIndex.identity}. */
+  private readonly _identity: IndexIdentity;
 
-  private constructor(db: BetterSqlite3.Database, table: string, dimension: number | undefined) {
+  private constructor(
+    db: BetterSqlite3.Database,
+    table: string,
+    dimension: number | undefined,
+    identity: IndexIdentity
+  ) {
     this._db = db;
     this._table = table;
     this._dimension = dimension;
     this._released = false;
+    this._identity = identity;
     this._stmts = dimension === undefined ? undefined : this._prepare();
   }
 
@@ -222,7 +232,12 @@ export class SqliteVecFragmentIndex implements IFragmentVectorIndex {
           params.database,
           table
         );
-        return new SqliteVecFragmentIndex(params.database, table, dimension);
+        return new SqliteVecFragmentIndex(
+          params.database,
+          table,
+          dimension,
+          new IndexIdentity(params.database, table, params.identity)
+        );
       }).withErrorFormat((e) => `sqlite-vec fragment index: failed to initialize: ${e}`)
     );
   }
@@ -258,7 +273,13 @@ export class SqliteVecFragmentIndex implements IFragmentVectorIndex {
     params: ISqliteVecFragmentIndexOpenParams
   ): Promise<Result<ISqliteVecFragmentIndexHandle>> {
     return (await openOwnedConnection(params.path, LABEL)).thenOnSuccess(async (database) =>
-      (await SqliteVecFragmentIndex.create({ database, tableName: params.tableName }))
+      (
+        await SqliteVecFragmentIndex.create({
+          database,
+          tableName: params.tableName,
+          identity: params.identity
+        })
+      )
         .onFailure((message) =>
           // This call opened the connection, so a failure to initialize on top of it
           // must not leave the file handle behind. A close that ALSO fails is said out
@@ -309,6 +330,44 @@ export class SqliteVecFragmentIndex implements IFragmentVectorIndex {
   public release(): void {
     this._released = true;
     this._stmts = undefined;
+    this._identity.release();
+  }
+
+  /**
+   * Report the embedding identity stored in the database file for this table,
+   * compared against the one this handle was opened with. Reads the database on
+   * every call and never writes, so it is safe on a read-only connection.
+   *
+   * @remarks
+   * The fragment-lane counterpart of `SqliteVecVectorIndex.identity`; see
+   * {@link IIndexIdentityReport} for the statuses. While the status is
+   * `'mismatch'` or `'incomplete'`, `addFragments` and `query` fail; `rebuild` is
+   * the remedy, and nothing is ever deleted automatically.
+   *
+   * @returns `Success` with the report, or `Failure` if the index has been
+   * released or the database could not be read.
+   */
+  public identity(): Result<IIndexIdentityReport> {
+    if (this._released) {
+      return fail('fragment index: cannot read identity: the index has been released');
+    }
+    return this._identity.report().withErrorFormat((e) => `fragment index: cannot read identity: ${e}`);
+  }
+
+  /**
+   * Record this handle's identity over stored fragments that have none, without
+   * re-embedding them. Legal only while {@link SqliteVecFragmentIndex.identity}
+   * reports `'absent'`; `'mismatch'` and `'incomplete'` need a `rebuild`. The
+   * status check and the write run in one transaction.
+   *
+   * @returns `Success` with the new report (`'match'`), or `Failure` naming the
+   * status that made adoption illegal, or a database error.
+   */
+  public adoptIdentity(): Result<IIndexIdentityReport> {
+    if (this._released) {
+      return fail('fragment index: cannot adopt identity: the index has been released');
+    }
+    return this._identity.adopt().withErrorFormat((e) => `fragment index: cannot adopt identity: ${e}`);
   }
 
   /**
@@ -322,16 +381,34 @@ export class SqliteVecFragmentIndex implements IFragmentVectorIndex {
     }
   }
 
-  /** {@inheritDoc IFragmentVectorIndex.addFragments} */
+  /**
+   * {@inheritDoc IFragmentVectorIndex.addFragments}
+   *
+   * @remarks
+   * Fails while {@link SqliteVecFragmentIndex.identity} reports `'mismatch'` or
+   * `'incomplete'`. The first non-empty add to a fresh index creates the table and
+   * stores the handle's identity in one transaction.
+   */
   public addFragments(
     target: IEdgeTarget,
     fragments: ReadonlyArray<IEmbeddedFragment>
   ): Promise<Result<number>> {
+    return Promise.resolve(this._addFragments(target, fragments, 'fenced'));
+  }
+
+  /**
+   * The body of `addFragments`. `'rebuild'` skips the fence, which would refuse
+   * the `'incomplete'` state the rebuild itself is in, and does not commit an
+   * identity on table creation — only the rebuild's final commit may.
+   */
+  private _addFragments(
+    target: IEdgeTarget,
+    fragments: ReadonlyArray<IEmbeddedFragment>,
+    mode: WriteMode
+  ): Result<number> {
     const key: string = edgeTargetKey(target);
     if (this._released) {
-      return Promise.resolve(
-        fail(`fragment index: cannot add fragments for '${key}': the index has been released`)
-      );
+      return fail(`fragment index: cannot add fragments for '${key}': the index has been released`);
     }
     // Validate every fragment before touching the database, so a bad fragment never
     // leaves the record half-replaced or the dimension half-established (whole-record
@@ -341,16 +418,14 @@ export class SqliteVecFragmentIndex implements IFragmentVectorIndex {
     let dimension: number | undefined = this._dimension;
     for (const fragment of fragments) {
       if (fragment.vector.length === 0) {
-        return Promise.resolve(fail(`fragment index: cannot add '${key}': empty fragment vector`));
+        return fail(`fragment index: cannot add '${key}': empty fragment vector`);
       }
       // A fragment carrying neither identity cannot be resolved back to anything by a
       // consumer holding the hit — the same invariant `embeddedFragmentConverter`
       // enforces at the untyped boundary, re-checked here at the index seam.
       if (fragment.locator === undefined && fragment.fragmentId === undefined) {
-        return Promise.resolve(
-          fail(
-            `fragment index: cannot add '${key}': fragment requires at least one of 'locator' or 'fragmentId'`
-          )
+        return fail(
+          `fragment index: cannot add '${key}': fragment requires at least one of 'locator' or 'fragmentId'`
         );
       }
       // Locator offsets are persisted as SQLite integers (bound via BigInt). Reject a
@@ -362,44 +437,83 @@ export class SqliteVecFragmentIndex implements IFragmentVectorIndex {
         fragment.locator !== undefined &&
         (!Number.isSafeInteger(fragment.locator.start) || !Number.isSafeInteger(fragment.locator.end))
       ) {
-        return Promise.resolve(
-          fail(
-            `fragment index: cannot add '${key}': locator [${fragment.locator.start}, ${fragment.locator.end}) offsets must be safe integers`
-          )
+        return fail(
+          `fragment index: cannot add '${key}': locator [${fragment.locator.start}, ${fragment.locator.end}) offsets must be safe integers`
         );
       }
       if (dimension === undefined) {
         dimension = fragment.vector.length;
       } else if (fragment.vector.length !== dimension) {
-        return Promise.resolve(
-          fail(
-            `fragment index: cannot add '${key}': fragment dimension ${fragment.vector.length} does not match index dimension ${dimension}`
-          )
+        return fail(
+          `fragment index: cannot add '${key}': fragment dimension ${fragment.vector.length} does not match index dimension ${dimension}`
         );
       }
     }
-    return Promise.resolve(
-      captureResult(() => {
-        // A same-target re-author (or an empty batch) still needs the table to exist
-        // to delete prior fragments; create it lazily on the first non-empty add.
-        if (this._stmts === undefined) {
-          if (fragments.length === 0) {
-            // Nothing stored yet and nothing to store: no table, no work.
-            return 0;
-          }
-          // `fragments` is non-empty here (the empty case returned above), so the
-          // validation loop proved every fragment shares `fragments[0]`'s length —
-          // which IS the dimension to establish. Read it straight from the first
-          // fragment: no cast, no invariant-dependent narrowing.
-          const established: number = fragments[0].vector.length;
-          this._createTable(established);
-          this._dimension = established;
-          this._stmts = this._prepare();
+    // A same-target re-author (or an empty batch) still needs the table to exist
+    // to delete prior fragments; create it lazily on the first non-empty add.
+    if (this._stmts === undefined && fragments.length === 0) {
+      // Nothing stored yet and nothing to store: no table, no work.
+      return succeed(0);
+    }
+    // `fragments` is non-empty whenever the table still has to be created (the
+    // empty case returned above), so the validation loop proved every fragment
+    // shares `fragments[0]`'s length — which IS the dimension to establish. The
+    // dimension is ignored when the statements already exist.
+    return this._establish(fragments[0]?.vector.length ?? 0, mode)
+      .onSuccess((stmts) => {
+        const write = (): Result<number> => {
+          stmts.replace(key, fragments);
+          return succeed(fragments.length);
+        };
+        // Fenced writes run the identity check and the write in one transaction,
+        // so another connection cannot start a rebuild or change the stored
+        // identity between them.
+        return captureResult(() =>
+          mode === 'rebuild' ? write() : this._db.transaction(() => this._identity.fence().onSuccess(write))()
+        ).onSuccess((written) => written);
+      })
+      .withErrorFormat((e) => `fragment index: cannot add '${key}': ${e}`);
+  }
+
+  /**
+   * Make sure the `vec0` table exists and the statements are prepared, creating
+   * the table at `dimension` if this handle has not seen it yet.
+   *
+   * @remarks
+   * Same contract as the record index's: a fenced first write creates the table
+   * and stores the handle's identity in one transaction, but only when the status
+   * read inside that transaction is `'fresh'`; the statements are kept only after
+   * that transaction commits.
+   */
+  private _establish(dimension: number, mode: WriteMode): Result<IFragmentStatements> {
+    if (this._stmts !== undefined) {
+      return succeed(this._stmts);
+    }
+    return captureResult(() =>
+      this._db.transaction((): Result<true> => {
+        if (mode === 'rebuild') {
+          // The rebuild already marked the row; creating the table must not commit it.
+          this._createTable(dimension);
+          return succeed(true);
         }
-        this._stmts.replace(key, fragments);
-        return fragments.length;
-      }).withErrorFormat((e) => `fragment index: cannot add '${key}': ${e}`)
-    );
+        return this._identity.fence().onSuccess((report) => {
+          this._createTable(dimension);
+          if (report.status === 'fresh') {
+            this._identity.commitFirstWriteInTransaction();
+          }
+          return succeed<true>(true);
+        });
+      })()
+    )
+      .onSuccess((established) => established)
+      .onSuccess(() =>
+        captureResult(() => {
+          const stmts: IFragmentStatements = this._prepare();
+          this._dimension = dimension;
+          this._stmts = stmts;
+          return stmts;
+        })
+      );
   }
 
   /** {@inheritDoc IFragmentVectorIndex.remove} */
@@ -432,7 +546,17 @@ export class SqliteVecFragmentIndex implements IFragmentVectorIndex {
     );
   }
 
-  /** {@inheritDoc IFragmentVectorIndex.rebuild} */
+  /**
+   * {@inheritDoc IFragmentVectorIndex.rebuild}
+   *
+   * @remarks
+   * Not atomic across its `await`s, but a partial table is detectable: the clear
+   * and a `'rebuilding'` marker commit together, and only a final transaction
+   * commits the handle's identity. Until then {@link SqliteVecFragmentIndex.identity}
+   * reports `'incomplete'` and `addFragments` and `query` are fenced — after a
+   * crash, a `'fail'` rollback, or a final commit that could not be written. A
+   * rebuild cannot change the dimension; that still needs a drop-and-re-index.
+   */
   public async rebuild(
     source: IMemoryRecordSource,
     embed: FragmentEmbedder,
@@ -487,7 +611,7 @@ export class SqliteVecFragmentIndex implements IFragmentVectorIndex {
       }
       // An empty array is this lane's decline, and it is still WRITTEN — the
       // whole-record-replace is what clears any stale fragments.
-      const added: Result<number> = await this.addFragments(scoped.target, embedded.value);
+      const added: Result<number> = this._addFragments(scoped.target, embedded.value, 'rebuild');
       if (added.isFailure()) {
         const error: string = `fragment index rebuild: ${added.message}`;
         if (!lenient) {
@@ -503,6 +627,15 @@ export class SqliteVecFragmentIndex implements IFragmentVectorIndex {
       tally(indexed, kind);
       tally(fragments, kind, added.value);
     }
+    const committed: Result<true> = this._identity.commitRebuild();
+    if (committed.isFailure()) {
+      // Every fragment is written, but nothing says so: the marker stays, the
+      // index reports `'incomplete'`, and the caller is told.
+      return failWithDetail(
+        `fragment index rebuild: failed to commit the index identity: ${committed.message}`,
+        report()
+      );
+    }
     return succeedWithDetail(report());
   }
 
@@ -513,25 +646,40 @@ export class SqliteVecFragmentIndex implements IFragmentVectorIndex {
    * here where it would succeed on the in-memory sibling, which forgets its
    * dimension on reset. Changing dimension needs a drop-and-re-index; see the
    * note on `IVectorIndex.rebuild`. Tolerates a table that does not exist yet.
+   *
+   * Marks the identity row `'rebuilding'` in the same transaction, so a clear is
+   * never committed without the marker that makes the partial table detectable;
+   * the `'fail'` rollback calls this again and leaves the marker in place.
    */
   private _clear(): Result<true> {
     if (this._released) {
       return fail('fragment index: cannot clear: the index has been released');
     }
-    if (this._stmts === undefined) {
-      return succeed(true);
-    }
     // `exec`, not `prepare(...).run()` — see the note on the record index's
     // `_clear`. A statement prepared here is retained by nothing, so `release()`
     // cannot drop it and its native destructor runs whenever GC reaches it;
-    // `exec` creates no `Statement` at all. Safe outside a transaction, which is
-    // the only place `_clear` runs.
+    // `exec` creates no `Statement` at all.
     // Capture-wrapped like every other statement path: a closed connection or an
-    // I/O error is a `Failure`, not an exception out of a `Result`-returning method.
-    return captureResult(() => this._db.exec(`DELETE FROM "${this._table}"`)).onSuccess(() => succeed(true));
+    // I/O error is a `Failure`, not an exception out of a `Result`-returning
+    // method, and a throw inside the transaction rolls the delete and the marker
+    // back together.
+    return captureResult(() =>
+      this._db.transaction(() => {
+        if (this._stmts !== undefined) {
+          this._db.exec(`DELETE FROM "${this._table}"`);
+        }
+        this._identity.markRebuildingInTransaction();
+      })()
+    ).onSuccess(() => succeed(true));
   }
 
-  /** {@inheritDoc IFragmentVectorIndex.query} */
+  /**
+   * {@inheritDoc IFragmentVectorIndex.query}
+   *
+   * @remarks
+   * Fails while {@link SqliteVecFragmentIndex.identity} reports `'mismatch'` or
+   * `'incomplete'`.
+   */
   public query(
     vector: Float32Array,
     topK: number,
@@ -554,71 +702,80 @@ export class SqliteVecFragmentIndex implements IFragmentVectorIndex {
       );
     }
     const stmts: IFragmentStatements = this._stmts;
-    return Promise.resolve(
-      captureResult<ReadonlyArray<IVectorQueryHit>>(() => {
-        // With a per-record cap the topK winners may lie past the first topK rows (a
-        // capped record's later fragments are skipped), so fetch the full ranked set
-        // and apply the cap + topK cut here — exactly as the in-memory index does.
-        // Uncapped, KNN's own `k = topK` is already the answer.
-        // A scope-only narrowing (a versioned kind's per-entity subtree) spans several
-        // records, and `target_key` equality cannot express a prefix, so it is applied
-        // over the full ranked set below. Correct either way — the caller's `topK` is
-        // applied to the NARROWED set, which is the property that matters — but only
-        // the single-record case gets the partition push-down.
-        const recordKey: string | undefined =
-          scope !== undefined && id !== undefined ? edgeTargetKey({ scope, id }) : undefined;
-        // The cap forces the full ranked set ONLY when other records can fill from
-        // behind a capped one. Under a single-record narrowing every row belongs to
-        // that record, so the result is exactly `min(topK, maxPerRecord, fragments)`
-        // and those are the first rows KNN returns — `k = topK` suffices, and
-        // expanding to the table-wide `fragmentCount` would ask an
-        // already-partition-restricted query for far more rows than it can use.
-        const wholeSet: boolean =
-          recordKey === undefined && (maxPerRecord !== undefined || scope !== undefined);
-        const fetchK: number = wholeSet
-          ? Number((stmts.fragmentCount.get() as { c: number | bigint }).c)
-          : topK;
-        if (fetchK <= 0) {
-          return [];
+    const run = (): ReadonlyArray<IVectorQueryHit> => {
+      // With a per-record cap the topK winners may lie past the first topK rows (a
+      // capped record's later fragments are skipped), so fetch the full ranked set
+      // and apply the cap + topK cut here — exactly as the in-memory index does.
+      // Uncapped, KNN's own `k = topK` is already the answer.
+      // A scope-only narrowing (a versioned kind's per-entity subtree) spans several
+      // records, and `target_key` equality cannot express a prefix, so it is applied
+      // over the full ranked set below. Correct either way — the caller's `topK` is
+      // applied to the NARROWED set, which is the property that matters — but only
+      // the single-record case gets the partition push-down.
+      const recordKey: string | undefined =
+        scope !== undefined && id !== undefined ? edgeTargetKey({ scope, id }) : undefined;
+      // The cap forces the full ranked set ONLY when other records can fill from
+      // behind a capped one. Under a single-record narrowing every row belongs to
+      // that record, so the result is exactly `min(topK, maxPerRecord, fragments)`
+      // and those are the first rows KNN returns — `k = topK` suffices, and
+      // expanding to the table-wide `fragmentCount` would ask an
+      // already-partition-restricted query for far more rows than it can use.
+      const wholeSet: boolean =
+        recordKey === undefined && (maxPerRecord !== undefined || scope !== undefined);
+      const fetchK: number = wholeSet
+        ? Number((stmts.fragmentCount.get() as { c: number | bigint }).c)
+        : topK;
+      if (fetchK <= 0) {
+        return [];
+      }
+      const blob: Uint8Array = SqliteVecFragmentIndex._toBlob(vector);
+      const rows: ReadonlyArray<IKnnRow> = (
+        recordKey !== undefined
+          ? stmts.queryScopedToRecord.all(blob, fetchK, recordKey)
+          : stmts.query.all(blob, fetchK)
+      ) as ReadonlyArray<IKnnRow>;
+      // The scope prefix every record in `scope` shares. `edgeTargetKey` joins with
+      // a NUL, so this cannot collide with a longer scope that merely starts the
+      // same way.
+      const scopePrefix: string | undefined =
+        scope !== undefined && recordKey === undefined ? `${scope}\0` : undefined;
+      // sqlite-vec returns rows ascending by distance (nearest first); score is
+      // `1 - cosineDistance`, so this order is already descending score.
+      const hits: IVectorQueryHit[] = [];
+      const perRecord: Map<string, number> = new Map<string, number>();
+      for (const row of rows) {
+        if (hits.length >= topK) {
+          break;
         }
-        const blob: Uint8Array = SqliteVecFragmentIndex._toBlob(vector);
-        const rows: ReadonlyArray<IKnnRow> = (
-          recordKey !== undefined
-            ? stmts.queryScopedToRecord.all(blob, fetchK, recordKey)
-            : stmts.query.all(blob, fetchK)
-        ) as ReadonlyArray<IKnnRow>;
-        // The scope prefix every record in `scope` shares. `edgeTargetKey` joins with
-        // a NUL, so this cannot collide with a longer scope that merely starts the
-        // same way.
-        const scopePrefix: string | undefined =
-          scope !== undefined && recordKey === undefined ? `${scope}\0` : undefined;
-        // sqlite-vec returns rows ascending by distance (nearest first); score is
-        // `1 - cosineDistance`, so this order is already descending score.
-        const hits: IVectorQueryHit[] = [];
-        const perRecord: Map<string, number> = new Map<string, number>();
-        for (const row of rows) {
-          if (hits.length >= topK) {
-            break;
-          }
-          if (scopePrefix !== undefined && !row.target_key.startsWith(scopePrefix)) {
+        if (scopePrefix !== undefined && !row.target_key.startsWith(scopePrefix)) {
+          continue;
+        }
+        if (maxPerRecord !== undefined) {
+          const used: number = perRecord.get(row.target_key) ?? 0;
+          if (used >= maxPerRecord) {
             continue;
           }
-          if (maxPerRecord !== undefined) {
-            const used: number = perRecord.get(row.target_key) ?? 0;
-            if (used >= maxPerRecord) {
-              continue;
-            }
-            perRecord.set(row.target_key, used + 1);
-          }
-          const key: string = row.target_key;
-          hits.push({
-            target: SqliteVecFragmentIndex._parseKey(key),
-            score: 1 - row.distance,
-            ...SqliteVecFragmentIndex._toIdentity(row, key)
-          });
+          perRecord.set(row.target_key, used + 1);
         }
-        return hits;
-      }).withErrorFormat((e) => `fragment index: query failed: ${e}`)
+        const key: string = row.target_key;
+        hits.push({
+          target: SqliteVecFragmentIndex._parseKey(key),
+          score: 1 - row.distance,
+          ...SqliteVecFragmentIndex._toIdentity(row, key)
+        });
+      }
+      return hits;
+    };
+    // The identity check and the KNN read share one transaction, so they see the
+    // same state of the file.
+    return Promise.resolve(
+      captureResult(() =>
+        this._db.transaction(() =>
+          this._identity.fence().onSuccess(() => succeed<ReadonlyArray<IVectorQueryHit>>(run()))
+        )()
+      )
+        .onSuccess((hits) => hits)
+        .withErrorFormat((e) => `fragment index: query failed: ${e}`)
     );
   }
 
@@ -837,6 +994,13 @@ export class SqliteVecFragmentIndex implements IFragmentVectorIndex {
     return n;
   }
 }
+
+/**
+ * How a write reaches the table: `'fenced'` for a caller's `addFragments`,
+ * `'rebuild'` for `rebuild`'s own writes, which run while the index is
+ * deliberately `'incomplete'`.
+ */
+type WriteMode = 'fenced' | 'rebuild';
 
 /** The prepared statements / helpers the fragment index reuses once its table exists. */
 interface IFragmentStatements {
