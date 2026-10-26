@@ -54,6 +54,14 @@ import {
 } from './fs-atomic';
 
 /**
+ * `true` when `inner` is `outer` or lies beneath it — the same test the logical
+ * confinement check makes.
+ */
+function _isWithin(outer: string, inner: string): boolean {
+  return inner === outer || inner.startsWith(`${outer}${path.sep}`);
+}
+
+/**
  * A root's atomic-write qualification, together with the failure code to report
  * if it refuses.
  *
@@ -137,7 +145,7 @@ export class FsFileTreeAccessors<TCT extends string = string>
    */
   public resolveRealPath(itemPath: string): Result<string> {
     const absolutePath = this.resolveAbsolutePath(itemPath);
-    return captureResult(() => fs.realpathSync(absolutePath)).withErrorFormat(
+    return captureResult(() => fs.realpathSync.native(absolutePath)).withErrorFormat(
       (m) => `${absolutePath}: cannot resolve real path: ${m}`
     );
   }
@@ -348,7 +356,7 @@ export class FsFileTreeAccessors<TCT extends string = string>
     const absolutePath = this.resolveAbsolutePath(filePath);
     const directoryPath = path.dirname(absolutePath);
 
-    const confined = this._confineToRoot(absolutePath);
+    const confined = this._confineToRoot(absolutePath, directoryPath);
     if (confined.isFailure()) {
       return failWithDetail(confined.message, {
         code: 'not-writable',
@@ -472,18 +480,35 @@ export class FsFileTreeAccessors<TCT extends string = string>
    *
    * @remarks
    * `resolveAbsolutePath` ignores the prefix for an input that is already
-   * absolute, so confinement has to be checked rather than assumed. A tree with no prefix has no root to be
-   * confined to, and the check is vacuous.
+   * absolute, so confinement has to be checked rather than assumed. A tree with
+   * no prefix has no root to be confined to, and the check is vacuous.
+   *
+   * Qualification inspects the real path of the containing directory, so
+   * confinement checks it too: the real path of `directoryPath` must lie under
+   * the real path of the root. A directory inside the tree that is a symbolic
+   * link to somewhere else in the tree is accepted; one that leads outside the
+   * tree is refused. A directory that does not exist is left to the
+   * qualification, which reports it as not found.
    */
-  private _confineToRoot(absolutePath: string): Result<string> {
+  private _confineToRoot(absolutePath: string, directoryPath: string = absolutePath): Result<string> {
     if (this.prefix === undefined) {
       return succeed(absolutePath);
     }
     const root = path.resolve(this.prefix);
-    if (absolutePath === root || absolutePath.startsWith(`${root}${path.sep}`)) {
+    if (!_isWithin(root, absolutePath)) {
+      return fail(`${absolutePath}: resolves outside the tree root '${root}'`);
+    }
+    const realDirectory = this.resolveRealPath(directoryPath);
+    if (realDirectory.isFailure()) {
       return succeed(absolutePath);
     }
-    return fail(`${absolutePath}: resolves outside the tree root '${root}'`);
+    const realRoot = this.resolveRealPath(root).orDefault(root);
+    if (!_isWithin(realRoot, realDirectory.value)) {
+      return fail(
+        `${directoryPath}: resolves through a symbolic link to '${realDirectory.value}', outside the tree root '${realRoot}'`
+      );
+    }
+    return succeed(absolutePath);
   }
 
   /**

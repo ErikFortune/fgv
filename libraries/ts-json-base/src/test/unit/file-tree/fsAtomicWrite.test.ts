@@ -103,6 +103,40 @@ describe.each(atomicTestRoots())('FsFileTreeAccessors atomic writes on $label', 
     }
   });
 
+  test('a directory inside the root that links outside it is refused, by inquiry, write and cleanup alike', () => {
+    const outside = path.join(container, 'outside');
+    fs.mkdirSync(outside);
+    const escape = path.join(root, 'escape');
+    fs.symlinkSync(outside, escape);
+    expect(accessors.getAtomicWriteCapabilities(escape)).toFailWith(
+      /resolves through a symbolic link to .*outside the tree root/i
+    );
+    expect(
+      accessors.writeFileAtomically(path.join(escape, 'r.json'), NEW, { guarantee: 'process-crash' })
+    ).toFailWithDetail(/resolves through a symbolic link to .*outside the tree root/i, {
+      code: 'not-writable',
+      stage: 'validate',
+      visibility: 'unchanged'
+    });
+    expect(accessors.cleanupAtomicTemporaries(escape)).toFailWith(/outside the tree root/i);
+    expect(fs.existsSync(path.join(outside, 'r.json'))).toBe(false);
+  });
+
+  test('a directory inside the root that links elsewhere inside it is accepted', () => {
+    fs.mkdirSync(path.join(root, 'target'));
+    const inner = path.join(root, 'inner');
+    fs.symlinkSync(path.join(root, 'target'), inner);
+    expect(accessors.getAtomicWriteCapabilities(inner)).toSucceedAndSatisfy((capabilities) => {
+      expect(capabilities.atomicReplace).toBe(qualified);
+    });
+    if (qualified) {
+      expect(
+        accessors.writeFileAtomically(path.join(inner, 'r.json'), NEW, { guarantee: 'process-crash' })
+      ).toSucceed();
+      expect(fs.readFileSync(path.join(root, 'target', 'r.json'), 'utf8')).toBe(NEW);
+    }
+  });
+
   test('resolves real paths through symbolic links, and fails for a path that does not exist', () => {
     const link = path.join(container, 'link');
     fs.symlinkSync(root, link);

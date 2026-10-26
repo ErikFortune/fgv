@@ -142,6 +142,8 @@ interface IScript {
   ) => DetailedResult<FileTree.IAtomicWriteReceipt, FileTree.IAtomicWriteFailure>;
   cleanup?: () => Result<ReadonlyArray<string>>;
   failListing?: boolean;
+  /** Fail the listing of just the directory at this absolute path. */
+  failListingOf?: string;
 }
 
 /** A directory that is mutable but not atomic, delegating to a real in-memory directory. */
@@ -167,7 +169,7 @@ class PlainDir implements FileTree.IMutableFileTreeDirectoryItem {
   }
 
   public getChildren(): Result<ReadonlyArray<FileTree.FileTreeItem>> {
-    if (this._script.failListing === true) {
+    if (this._script.failListing === true || this._script.failListingOf === this.absolutePath) {
       return fail(`${this.absolutePath}: listing refused`);
     }
     return this._inner
@@ -372,6 +374,24 @@ describe('FileTreeMemoryStore durability', () => {
       a.dispose();
     });
 
+    test('Windows-style paths nest by backslash, and a name that merely shares a prefix does not', () => {
+      const accessors = FileTree.InMemoryTreeAccessors.create([], { mutable: true }).orThrow();
+      class Named extends PlainDir {
+        private readonly _path: string;
+        public constructor(at: string) {
+          super(inMemoryRoot(), { childrenAtomic: false });
+          this._path = at;
+        }
+        public getStorageIdentity(): FileTree.IFileTreeStorageIdentity {
+          return { accessors, path: this._path };
+        }
+      }
+      const vault = open(new Named('C:\\vault')).orThrow();
+      expect(open(new Named('C:\\vault\\inner'))).toFailWith(/overlaps root 'C:\\vault'/);
+      expect(open(new Named('C:\\vaultx'))).toSucceedAndSatisfy((other) => other.dispose());
+      vault.dispose();
+    });
+
     test('a root item that cannot name its storage is identified by the item itself', () => {
       const item = new PlainDir(inMemoryRoot(), { childrenAtomic: false });
       const first = open(item).orThrow();
@@ -489,6 +509,37 @@ describe('FileTreeMemoryStore durability', () => {
       expect(await store.reconcile(knowledgeKind, 'record-vector')).toFailWith(/disposed/i);
     });
 
+    test("a delete that is disposed partway removes none of the next owner's derived state", async () => {
+      const tree = FileTree.inMemory([], { mutable: true }).orThrow();
+      const fragmentIndex = InMemoryFragmentCosineIndex.create().orThrow();
+      let onRemove: () => void = () => undefined;
+      const vectorIndex = new Proxy(InMemoryCosineIndex.create().orThrow(), {
+        get: (target, property) => {
+          const value: unknown = Reflect.get(target, property);
+          if (property === 'remove' && typeof value === 'function') {
+            return (...args: unknown[]): unknown => {
+              onRemove();
+              return Reflect.apply(value, target, args);
+            };
+          }
+          return typeof value === 'function' ? value.bind(target) : value;
+        }
+      });
+      const store = open(mutableDir(tree, '/'), {
+        vectorIndex,
+        embed: async () => succeed(Float32Array.from([1, 2, 3])),
+        fragmentIndex,
+        fragmentEmbedder: async () =>
+          succeed([{ locator: { start: 0, end: 5 }, vector: Float32Array.from([1, 0]) }])
+      }).orThrow();
+      (await store.put(record('intro', 'hello'))).orThrow();
+      expect(fragmentIndex.recordCount).toBe(1);
+      onRemove = () => store.dispose();
+      expect(await store.delete(knowledgeKind, intro)).toSucceed();
+      // The record vector's removal ran (it disposed the store); the fragment removal after it did not.
+      expect(fragmentIndex.recordCount).toBe(1);
+    });
+
     test('a cull skipped because the store was disposed says so', async () => {
       const inner = inMemoryRoot();
       const script: IScript = { childrenAtomic: true };
@@ -552,33 +603,40 @@ describe('FileTreeMemoryStore durability', () => {
       });
     });
 
-    test('degrades when the root cannot answer the inquiry, and a requirement refuses it', async () => {
+    test('refuses the open when the root cannot answer the inquiry', () => {
       const script: IScript = { childrenAtomic: true, capabilities: () => fail('no answer') };
-      const store = open(new ScriptedDir(inMemoryRoot(), script)).orThrow();
-      expect(store.durability).toEqual({
-        atomic: false,
-        reason: 'the root could not say what atomic writes it offers: no answer',
-        removedTemporaries: []
-      });
-      expect(await store.put(record('intro', 'plain'))).toSucceed();
-      expect(
-        open(new ScriptedDir(inMemoryRoot(), script), { durability: { require: 'session' } })
-      ).toFailWith(
-        /required 'session' guarantee: the root could not say what atomic writes it offers: no answer/i
+      expect(open(new ScriptedDir(inMemoryRoot(), script))).toFailWith(
+        /memory store: cannot ask root '\/' about atomic writes: no answer/i
       );
     });
 
-    test('degrades when the inquiry throws', () => {
+    test('refuses the open when the inquiry throws', () => {
       const script: IScript = {
         childrenAtomic: true,
         capabilities: () => {
           throw new Error('inquiry exploded');
         }
       };
-      expect(open(new ScriptedDir(inMemoryRoot(), script))).toSucceedAndSatisfy((store) => {
-        expect(store.durability.atomic).toBe(false);
-        expect(store.durability.reason).toMatch(/inquiry exploded/);
-      });
+      expect(open(new ScriptedDir(inMemoryRoot(), script))).toFailWith(
+        /memory store: cannot ask root .*inquiry exploded/i
+      );
+    });
+
+    test('refuses the open, with context, when the root cannot be listed', () => {
+      expect(open(new PlainDir(inMemoryRoot(), { childrenAtomic: false, failListing: true }))).toFailWith(
+        /^memory store: cannot list root '\/': .*listing refused/i
+      );
+    });
+
+    test('refuses the open when the root cannot say what storage it names', () => {
+      class Unidentifiable extends PlainDir {
+        public getStorageIdentity(): FileTree.IFileTreeStorageIdentity {
+          throw new Error('identity exploded');
+        }
+      }
+      expect(open(new Unidentifiable(inMemoryRoot(), { childrenAtomic: false }))).toFailWith(
+        /memory store: cannot identify root '\/': .*identity exploded/i
+      );
     });
   });
 
@@ -755,12 +813,12 @@ describe('FileTreeMemoryStore durability', () => {
       expect(logger.logged.join('\n')).toMatch(/the sweep threw: .*sweep exploded/i);
     });
 
-    test('a directory the sweep cannot list is reported', () => {
+    test('a directory the sweep cannot list is reported', async () => {
       const logger = new Logging.InMemoryLogger('info');
-      const script: IScript = { childrenAtomic: true, failListing: true };
+      const script: IScript = { childrenAtomic: true, failListingOf: '/knowledge' };
       // The walk cannot list it either, so the open fails — but the sweep said why first.
-      expect(open(new ScriptedDir(inMemoryRoot(), script), { logger })).toFail();
-      expect(logger.logged.join('\n')).toMatch(/\/: cannot list: .*listing refused/i);
+      expect(open(new ScriptedDir(await seededRoot(), script), { logger })).toFail();
+      expect(logger.logged.join('\n')).toMatch(/\/knowledge: cannot list: .*listing refused/i);
     });
 
     test('a sweep failure survives a throwing logger', async () => {
@@ -882,7 +940,7 @@ describe('FileTreeMemoryStore durability on the filesystem', () => {
   test('a scope directory that is a symbolic link is written through', async () => {
     const { real } = linkedLayout();
     const vault: string = path.join(real, 'vault');
-    const elsewhere: string = path.join(real, 'elsewhere');
+    const elsewhere: string = path.join(vault, 'elsewhere');
     fs.mkdirSync(elsewhere);
     fs.symlinkSync(elsewhere, path.join(vault, 'knowledge'));
     const store = open(fsRoot(vault)).orThrow();
@@ -890,6 +948,56 @@ describe('FileTreeMemoryStore durability on the filesystem', () => {
     expect(fs.readFileSync(path.join(elsewhere, 'intro.md'), 'utf8')).toContain('through the link');
     store.dispose();
   });
+
+  test('a root outside its accessors’ tree is refused, not degraded to plain writes there', () => {
+    const container: string = fs.mkdtempSync(path.join(base, 'fgv-memory-outside-'));
+    dirs.push(container);
+    const prefix: string = path.join(container, 'tree');
+    const elsewhere: string = path.join(container, 'elsewhere');
+    fs.mkdirSync(prefix);
+    fs.mkdirSync(elsewhere);
+    const outside = FileTree.DirectoryItem.create(
+      elsewhere,
+      new FileTree.FsFileTreeAccessors({ prefix, mutable: true })
+    ).orThrow();
+    expect(open(outside)).toFailWith(/memory store: cannot ask root .* resolves outside the tree root/i);
+    expect(open(outside, { durability: { require: 'process-crash' } })).toFailWith(/outside the tree root/i);
+    expect(fs.readdirSync(elsewhere)).toEqual([]);
+  });
+
+  test('a root that does not exist is refused, with context', () => {
+    const missing: string = path.join(fs.mkdtempSync(path.join(base, 'fgv-memory-missing-')), 'absent');
+    dirs.push(path.dirname(missing));
+    expect(open(fsRoot(missing))).toFailWith(/^memory store: cannot ask root .*not found/i);
+  });
+
+  test('a scope directory that links outside the root refuses the write', async () => {
+    const { real } = linkedLayout();
+    const vault: string = path.join(real, 'vault');
+    const outside: string = path.join(path.dirname(real), 'outside');
+    fs.mkdirSync(outside);
+    fs.symlinkSync(outside, path.join(vault, 'knowledge'));
+    const store = open(fsRoot(vault)).orThrow();
+    if (store.durability.atomic) {
+      expect(await store.put(record('intro', 'escaped'))).toFailWith(
+        /resolves through a symbolic link to .*outside the tree root/i
+      );
+      expect(fs.readdirSync(outside)).toEqual([]);
+    }
+    store.dispose();
+  });
+
+  (process.platform === 'win32' ? test.skip : test)(
+    'a sibling whose name contains a backslash is not nested on POSIX',
+    () => {
+      const { real } = linkedLayout();
+      fs.mkdirSync(path.join(real, 'a'));
+      fs.mkdirSync(path.join(real, 'a\\b'));
+      const a = open(fsRoot(path.join(real, 'a'))).orThrow();
+      expect(open(fsRoot(path.join(real, 'a\\b')))).toSucceedAndSatisfy((sibling) => sibling.dispose());
+      a.dispose();
+    }
+  );
 
   test('a root nested inside an open root is refused', () => {
     const { real } = linkedLayout();

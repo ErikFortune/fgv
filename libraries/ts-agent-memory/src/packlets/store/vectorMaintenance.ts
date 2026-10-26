@@ -140,8 +140,9 @@ export interface IVectorMaintenanceParams {
   readonly embedsKind: (kind: Kind) => boolean;
   /**
    * Fails once the store has been disposed. Checked immediately before every `add` /
-   * `addFragments`, after the embedder's `await`, so a disposed store never leaves derived state
-   * in an index a new owner of the root may share.
+   * `addFragments` / `remove`, after any `await` that precedes it, so a disposed store neither
+   * leaves derived state in an index a new owner of the root may share nor removes the new
+   * owner's entries.
    */
   readonly checkWritable: () => Result<true>;
 }
@@ -393,7 +394,7 @@ export class VectorMaintenance {
       return;
     }
     await this._tryVectorOp(
-      () => stale.index.remove(stale.target),
+      async () => this._checkWritable().thenOnSuccess(() => stale.index.remove(stale.target)),
       `vector remove for declined '${stale.target.id}'`
     );
   }
@@ -446,7 +447,10 @@ export class VectorMaintenance {
       return;
     }
     const fragmentIndex: IFragmentVectorIndex = this._fragmentIndex;
-    await this._tryVectorOp(() => fragmentIndex.remove(target), `fragment removal for '${target.id}'`);
+    await this._tryVectorOp(
+      async () => this._checkWritable().thenOnSuccess(() => fragmentIndex.remove(target)),
+      `fragment removal for '${target.id}'`
+    );
   }
 
   /**
@@ -485,6 +489,9 @@ export class VectorMaintenance {
       return;
     }
     const vectorIndex: IVectorIndex = this._vectorIndex;
-    await this._tryVectorOp(() => vectorIndex.remove(target), `vector removal for '${target.id}'`);
+    await this._tryVectorOp(
+      async () => this._checkWritable().thenOnSuccess(() => vectorIndex.remove(target)),
+      `vector removal for '${target.id}'`
+    );
   }
 }

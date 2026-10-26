@@ -180,11 +180,15 @@ store.durability;
 - **The guarantee** is the strongest the root lists: `'process-crash'` on a
   qualified filesystem root (Linux, ext2/3/4 or tmpfs — see `@fgv/ts-json-base`),
   `'session'` on an in-memory tree. It is chosen once, at `create`.
-- **A root that cannot write atomically** (an unqualified filesystem, a custom
-  `FileTree` without the capability, or a root that cannot answer the
-  capability inquiry at all) gets plain writes, with `durability.atomic: false`
-  and the root's `reason`. To refuse such a root instead, pass
-  `durability: { require: 'process-crash' }` (or `'session'`).
+- **A root that cannot write atomically** (an unqualified filesystem, or a custom
+  `FileTree` without the capability) gets plain writes, with
+  `durability.atomic: false` and the root's `reason`. To refuse such a root
+  instead, pass `durability: { require: 'process-crash' }` (or `'session'`). A
+  root whose capability inquiry *fails* — it does not exist, or it lies outside
+  its accessors' tree — fails the open: only an answer degrades, never a refusal.
+- **Symbolic links.** A root or scope directory reached through a symbolic link
+  is qualified as its target. A scope directory that links *outside* the root
+  is refused for atomic writes.
 - **No silent fallback.** A later write that cannot honour the chosen guarantee
   — say a scope directory on another mount — fails; it is never retried as a
   plain write.
@@ -201,7 +205,10 @@ store.durability;
   same real filesystem directory**: two `getDirectory('/')` calls on one tree,
   two `FsTree`s over one directory, a symbolic-link alias. Two separate accessor
   objects over one non-filesystem backing store (two `localStorage` accessors on
-  one key, say) cannot be told apart and are not detected. A disposed store
+  one key, say) cannot be told apart and are not detected. The real path is
+  taken when the store opens, so retargeting a symlink afterwards is not
+  tracked, and on a case-insensitive filesystem whose real path is not
+  canonicalized, two case variants of one directory are not detected. A disposed store
   refuses writes, deletes and reconciles — including ones already queued, and
   vector adds whose embedding finishes after the dispose — and still reads, from
   what it last knew; once a new owner writes, those reads may be stale. This is
