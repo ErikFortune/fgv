@@ -965,6 +965,20 @@ describe('FileTreeMemoryStore durability on the filesystem', () => {
     expect(fs.readdirSync(elsewhere)).toEqual([]);
   });
 
+  test("a root whose accessors are prefixed at '/' opens and writes", async () => {
+    const at: string = fs.mkdtempSync(path.join(base, 'fgv-memory-rooted-'));
+    dirs.push(at);
+    const root = FileTree.DirectoryItem.create(
+      at,
+      new FileTree.FsFileTreeAccessors({ prefix: '/', mutable: true })
+    ).orThrow();
+    const store = open(root).orThrow();
+    expect(store.durability.atomic).toBe(qualified);
+    expect(await store.put(record('intro', 'rooted'))).toSucceed();
+    expect(fs.readFileSync(path.join(at, 'knowledge', 'intro.md'), 'utf8')).toContain('rooted');
+    store.dispose();
+  });
+
   test('a root that does not exist is refused, with context', () => {
     const missing: string = path.join(fs.mkdtempSync(path.join(base, 'fgv-memory-missing-')), 'absent');
     dirs.push(path.dirname(missing));

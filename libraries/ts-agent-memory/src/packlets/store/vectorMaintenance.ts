@@ -187,6 +187,18 @@ export class VectorMaintenance {
    * Best-effort removal of everything the two indexes hold for one record. Used
    * by the delete path and by cull-oldest eviction, both of which have already
    * committed by the time they call it.
+   *
+   * @remarks
+   * Each removal is skipped once the store is disposed, even though the delete it
+   * follows committed: after a dispose another store may own the root and may
+   * already have written a record at the same address, whose entries a removal
+   * here would delete. The cost is the opposite staleness — a dispose that lands
+   * between these steps leaves orphan entries (typically fragments) for a record
+   * that no longer exists, which only an index `rebuild` clears. A record-vector
+   * orphan is harmless to recall (`SemanticRetriever` drops a hit the resident
+   * index does not hold); a fragment orphan can surface as a fragment hit whose
+   * record a later read finds absent. Both are visible and repairable, whereas a
+   * removal of the new owner's entry would silently drop a live record from recall.
    */
   public async removeAll(target: IEdgeTarget): Promise<void> {
     await this._removeVectorBestEffort(target);

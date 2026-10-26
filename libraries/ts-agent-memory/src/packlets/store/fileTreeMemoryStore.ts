@@ -478,7 +478,8 @@ export class FileTreeMemoryStore implements IMemoryStore {
   /**
    * Release this store's in-process claim on its root, so another store may open it. Idempotent.
    * Every later write, delete or reconcile fails. Reads still answer, from this store's index —
-   * stale once a new owner writes.
+   * stale once a new owner writes. A dispose during a delete can leave orphan vector or fragment
+   * entries for the deleted record, which only an index rebuild clears (see `VectorMaintenance`).
    */
   public dispose(): void {
     this._session.release();

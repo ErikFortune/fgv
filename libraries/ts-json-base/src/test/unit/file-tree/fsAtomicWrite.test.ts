@@ -122,6 +122,43 @@ describe.each(atomicTestRoots())('FsFileTreeAccessors atomic writes on $label', 
     expect(fs.existsSync(path.join(outside, 'r.json'))).toBe(false);
   });
 
+  test("a tree rooted at '/' confines nothing away and still writes atomically", () => {
+    const rooted = new FsFileTreeAccessors({ prefix: '/', mutable: true });
+    expect(rooted.getAtomicWriteCapabilities(root)).toSucceedAndSatisfy((capabilities) => {
+      expect(capabilities.atomicReplace).toBe(qualified);
+    });
+    expect(rooted.cleanupAtomicTemporaries(root)).toSucceedWith([]);
+    if (qualified) {
+      expect(
+        rooted.writeFileAtomically(path.join(root, 'r.json'), NEW, { guarantee: 'process-crash' })
+      ).toSucceed();
+      expect(fs.readFileSync(path.join(root, 'r.json'), 'utf8')).toBe(NEW);
+    }
+  });
+
+  test('commits through the real directory the confinement check accepted', () => {
+    fs.mkdirSync(path.join(root, 'target'));
+    const inner = path.join(root, 'inner');
+    fs.symlinkSync(path.join(root, 'target'), inner);
+    const renames: string[] = [];
+    const realRename = fs.renameSync;
+    jest.spyOn(fs, 'renameSync').mockImplementation((from: fs.PathLike, to: fs.PathLike) => {
+      renames.push(String(to));
+      realRename(from, to);
+    });
+    try {
+      const written = accessors.writeFileAtomically(path.join(inner, 'r.json'), NEW, {
+        guarantee: 'process-crash'
+      });
+      if (qualified) {
+        expect(written).toSucceed();
+        expect(renames).toEqual([path.join(fs.realpathSync(path.join(root, 'target')), 'r.json')]);
+      }
+    } finally {
+      jest.restoreAllMocks();
+    }
+  });
+
   test('a directory inside the root that links elsewhere inside it is accepted', () => {
     fs.mkdirSync(path.join(root, 'target'));
     const inner = path.join(root, 'inner');

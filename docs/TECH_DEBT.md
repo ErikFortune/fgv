@@ -80,7 +80,10 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
   opened on `forFilesystem(prefix).getDirectory('/')` walked the real `/`, and a root item outside
   its accessors' prefix took plain writes outside the tree once its atomic inquiry was degraded
   rather than refused. The store now refuses a failed inquiry, which closes its own path; the
-  accessor behaviour is unchanged and reachable by any plain-write caller.
+  accessor behaviour is unchanged and reachable by any plain-write caller. In particular, plain
+  writes on a root that is not qualified for atomic writes (a non-atomic accessor, or an
+  unqualified platform such as darwin) still follow a symbolic link out of the tree, exactly as on
+  the base commit — the real-path confinement covers only the atomic methods.
 
   **Trigger**: the next change to `FsFileTreeAccessors` path resolution, or any consumer that hands
   untrusted or computed paths to a prefixed tree.
