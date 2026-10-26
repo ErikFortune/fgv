@@ -228,9 +228,6 @@ export const defaultDeliveryCategories: ReadonlyArray<UpdateCategory>;
 export const defaultMaxBaselineTasks: number;
 
 // @public
-export const defaultMaxStaleRenders: number;
-
-// @public
 export const defaultMaxStopTargets: number;
 
 // @public
@@ -273,6 +270,11 @@ export const defaultTaskProjector: ITaskProjector;
 export const defaultTaskToolBudget: ITaskToolBudget;
 
 // @public
+export type DeferOutcome = Extract<DeferredObligationState, {
+    readonly state: 'waiting' | 'settled';
+}>;
+
+// @public
 export type DeferralDecision = {
     readonly action: 'expire';
 } | {
@@ -286,7 +288,7 @@ export class DeferredObligations {
     archiveSettled(): Promise<Result<IDeferredObligationSweep<TaskId>>>;
     cancel(obligation: IDeferredObligation, reason: string): Promise<Result<TaskId>>;
     static create(params: IDeferredObligationsParams): Result<DeferredObligations>;
-    defer(deferral: IDeferral): Promise<Result<IDeferredObligation | 'settled'>>;
+    defer(deferral: IDeferral): Promise<Result<DeferOutcome>>;
     due(now: number): Promise<Result<IDeferredObligationListing>>;
     firstNotBefore(now: number): number;
     keyOf(taskId: TaskId): Result<IDeferredObligationKey>;
@@ -306,6 +308,8 @@ export type DeferredObligationState = {
     readonly state: 'pending';
     readonly revision: TaskRevision;
     readonly createdAt: Instant;
+    readonly kind: TaskKind;
+    readonly scopes: ReadonlyArray<ITaskScope>;
 } | {
     readonly state: 'waiting';
     readonly obligation: IDeferredObligation;
@@ -458,8 +462,7 @@ export interface IBoundTaskDelivery {
         readonly limit?: number;
         readonly cursor?: PageCursor;
     }): Promise<TaskResult<ITaskDeliveryPage>>;
-    // (undocumented)
-    prepare(budget?: ITaskContextBudget): Promise<TaskResult<IPreparedTaskContext>>;
+    prepare(budget?: ITaskContextBudget, options?: ITaskPrepareOptions): Promise<TaskResult<IPreparedTaskContext>>;
     // (undocumented)
     readonly subscriptionId: SubscriptionId;
 }
@@ -499,14 +502,21 @@ export interface IBoundTaskQuery {
     // (undocumented)
     readonly cursor?: PageCursor;
     // (undocumented)
-    readonly filter?: {
-        readonly responsibility?: IResponsibility;
-        readonly parentId?: TaskId;
-        readonly lifecycleClass?: TaskLifecycleClass;
-        readonly statuses?: ReadonlyArray<TaskLifecycleStatus>;
-    };
+    readonly filter?: IBoundTaskQueryFilter;
     // (undocumented)
     readonly limit?: number;
+}
+
+// @public
+export interface IBoundTaskQueryFilter {
+    // (undocumented)
+    readonly lifecycleClass?: TaskLifecycleClass;
+    // (undocumented)
+    readonly parentId?: TaskId;
+    // (undocumented)
+    readonly responsibility?: IResponsibility;
+    // (undocumented)
+    readonly statuses?: ReadonlyArray<TaskLifecycleStatus>;
 }
 
 // @public
@@ -2121,7 +2131,7 @@ export interface ITaskDeliveryDischarge {
     readonly discharged: ReadonlyArray<UpdateId>;
     readonly issues: ReadonlyArray<string>;
     // (undocumented)
-    readonly outcome: 'acknowledged' | 'disposed';
+    readonly outcome: TaskDeliveryOutcome;
     // (undocumented)
     readonly prepared: IPreparedTaskDelivery;
     readonly superseded: ReadonlyArray<UpdateId>;
@@ -2169,7 +2179,6 @@ export interface ITaskDeliveryPumpParams {
     readonly budget?: Partial<Omit<ITaskContextBudget, 'maxItems'>>;
     readonly delivery: IBoundTaskDeliveryParams;
     readonly guard?: ITaskHostWriteGuard;
-    readonly maxStaleRenders?: number;
 }
 
 // @public
@@ -2539,6 +2548,12 @@ export interface ITaskPerOwnerLimits {
     readonly maxAudiencePerUpdate: number;
     readonly maxOperationsPerTask: number;
     readonly maxOutstandingReceiptsPerSubscription: number;
+}
+
+// @public
+export interface ITaskPrepareOptions {
+    // (undocumented)
+    readonly currentState?: TaskPrepareCurrentState;
 }
 
 // @public
@@ -3592,6 +3607,9 @@ export class TaskConverters {
 export const taskDataInterpretationRules: string;
 
 // @public
+export type TaskDeliveryOutcome = 'acknowledged' | 'disposed';
+
+// @public
 export class TaskDeliveryPump {
     abandon(prepared: IPreparedTaskDelivery): Promise<Result<DeliveryId>>;
     acknowledge(prepared: IPreparedTaskDelivery): Promise<Result<ITaskDeliveryDischarge>>;
@@ -3710,6 +3728,9 @@ export type TaskMutationDisposition = 'changed' | 'unchanged';
 
 // @public
 export type TaskMutationToolGroup = 'tracked' | 'reassign';
+
+// @public
+export type TaskPrepareCurrentState = 'include' | 'owed-only';
 
 // @public
 export function taskPromptDescriptor(params: ITaskPromptDescriptorParams): Result<IPromptDescriptor>;

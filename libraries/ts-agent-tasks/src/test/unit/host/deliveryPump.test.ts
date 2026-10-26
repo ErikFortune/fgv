@@ -15,6 +15,10 @@ import {
   SubscriptionId,
   TaskBroker,
   TaskDeliveryPump,
+  DeferredObligations,
+  UpdateId,
+  allTaskActions,
+  trustedKindAuthority,
   TaskResult,
   TaskRevision
 } from '../../../index';
@@ -44,7 +48,6 @@ function pumpOver(
   h: IDeliveryHarness,
   extra?: {
     readonly guard?: ITaskHostWriteGuard;
-    readonly maxStaleRenders?: number;
     readonly maxChars?: number;
   }
 ): TaskDeliveryPump {
@@ -52,7 +55,6 @@ function pumpOver(
     broker: h.broker,
     delivery: binding(h),
     ...(extra?.guard !== undefined ? { guard: extra.guard } : {}),
-    ...(extra?.maxStaleRenders !== undefined ? { maxStaleRenders: extra.maxStaleRenders } : {}),
     ...(extra?.maxChars !== undefined ? { budget: { maxChars: extra.maxChars } } : {})
   }).orThrow();
 }
@@ -100,16 +102,20 @@ async function raiseAttention(h: IDeliveryHarness, id: string, revision: number)
 
 const succeeded = { outcome: { summary: 'done', artifacts: [] } };
 
+/** Presents and acknowledges until nothing is owed. */
+async function drain(pump: TaskDeliveryPump): Promise<void> {
+  for (let next = (await pump.next()).orThrow(); next !== undefined; next = (await pump.next()).orThrow()) {
+    (await pump.acknowledge(next)).orThrow();
+  }
+}
+
 describe('TaskDeliveryPump.create', () => {
-  test('refuses an unknown subscription and a non-positive stale bound', async () => {
+  test('refuses an unknown subscription', async () => {
     const h = await deliveryHarness();
     await subscribed(h, 's1');
     expect(TaskDeliveryPump.create({ broker: h.broker, delivery: binding(h, 'nope') })).toFailWith(
       /no subscription nope/
     );
-    expect(
-      TaskDeliveryPump.create({ broker: h.broker, delivery: binding(h), maxStaleRenders: 0 })
-    ).toFailWith(/maxStaleRenders/);
     expect(
       TaskDeliveryPump.create({ broker: h.broker, delivery: binding(h), budget: { maxDepth: 1 } })
     ).toSucceed();
@@ -165,7 +171,8 @@ describe('TaskDeliveryPump', () => {
     expect(await pump.abandon(first)).toSucceedWith(first.deliveryId);
     expect(await pump.delivery.issued()).toSucceedWith([]);
     expect((await prepared(pump)).entry.updateIds).toEqual(first.entry.updateIds);
-    expect(await pump.abandon(first)).toFailWith(/abandoning t1@1/);
+    // Decided once: the same object again is no longer this pump's to decide.
+    expect(await pump.abandon(first)).toFailWith(/abandoning a delivery: not a delivery this pump prepared/);
   });
 
   test('acknowledge discharges, then releases the receipt', async () => {
@@ -182,7 +189,7 @@ describe('TaskDeliveryPump', () => {
     expect(await owed(h)).toEqual([]);
     expect(await pump.next()).toSucceedWith(undefined);
     // A second acknowledgement of a released receipt is refused, and discharges nothing more.
-    expect(await pump.acknowledge(p)).toFailWith(/acknowledging t1@1/);
+    expect(await pump.acknowledge(p)).toFailWith(/not a delivery this pump prepared/);
   });
 
   test('dispose releases the receipt first, then records the reason', async () => {
@@ -224,6 +231,16 @@ describe('TaskDeliveryPump', () => {
     ]);
   });
 
+  test('a terminal discharge with nothing older owed disposes nothing', async () => {
+    await track(h.writer, 't1');
+    await drain(pump);
+    await command(h, 't1', 1, 'succeed', succeeded);
+    const outcome = await prepared(pump);
+    expect((await pump.acknowledge(outcome)).orThrow()).toEqual(
+      expect.objectContaining({ superseded: [], issues: [] })
+    );
+  });
+
   test('a terminal disposal also clears the older revisions', async () => {
     await track(h.writer, 't1');
     await command(h, 't1', 1, 'succeed', succeeded);
@@ -233,33 +250,71 @@ describe('TaskDeliveryPump', () => {
     expect(await owed(h)).toEqual([]);
   });
 
-  test('a render presenting the current state without an owed update is cleared, then the pass goes on', async () => {
+  test('an older revision is presented on its own after a newer one is acknowledged', async () => {
     await track(h.writer, 't1');
     await raiseAttention(h, 't1', 1);
-    // Attention is presented first; once it is acknowledged the current state carries nothing owed,
-    // and the older revision it supersedes is what remains.
+    // Attention is presented first; the revision it followed is still owed, and is presented next
+    // from its own snapshot — the current state, owed nothing, never takes its place.
     const attention = await prepared(pump);
     expect(attention.entry.revision).toBe(2);
     (await pump.acknowledge(attention)).orThrow();
-    expect((await owed(h)).map((u) => u.revision)).toEqual([1]);
+    const older = await prepared(pump);
+    expect([older.entry.taskId, older.entry.revision]).toEqual(['t1', 1]);
+    expect(older.entry.envelope.attention).toEqual([]);
+    (await pump.acknowledge(older)).orThrow();
     expect(await pump.next()).toSucceedWith(undefined);
-    expect(await owed(h)).toEqual([]);
-    expect((await consumerRecord(h.repository, 's1')).disposed).toEqual([
-      { updateId: 't1:1:0', reason: 'superseded by revision 2 of the same task' }
-    ]);
     expect(await pump.delivery.issued()).toSucceedWith([]);
   });
 
-  test('stale clearing is bounded: past maxStaleRenders the pass fails', async () => {
-    const bounded = pumpOver(h, { maxStaleRenders: 1 });
-    await track(h.writer, 't1');
-    await raiseAttention(h, 't1', 1);
-    (await pump.acknowledge(await prepared(pump))).orThrow();
-    expect(await bounded.next()).toFailWith(/more than 1 stale renders in a row/);
-    expect(await bounded.delivery.issued()).toSucceedWith([]);
+  test('a task owed nothing never blocks another: acknowledged attention', async () => {
+    await track(h.writer, 'a1');
+    await raiseAttention(h, 'a1', 1);
+    await drain(pump);
+    await track(h.writer, 'b1');
+    expect((await prepared(pump)).entry.taskId).toBe('b1');
   });
 
-  test('a render that delivers nothing and clears nothing fails loudly, holding no receipt', async () => {
+  test('a task owed nothing never blocks another: an acknowledged, unarchived outcome', async () => {
+    await track(h.writer, 'a1');
+    await command(h, 'a1', 1, 'succeed', succeeded);
+    await drain(pump);
+    await track(h.writer, 'b1');
+    expect((await prepared(pump)).entry.taskId).toBe('b1');
+  });
+
+  test('a task owed nothing never blocks another: a waiting obligation', async () => {
+    const obligations = DeferredObligations.create({
+      broker: h.broker,
+      principal: 'host',
+      authorization: trustedKindAuthority({ scopes: [alpha], actions: allTaskActions, epoch: 'e' }).orThrow(),
+      scope: alpha,
+      idPrefix: 'wake',
+      roles: ['address']
+    }).orThrow();
+    (
+      await obligations.defer({
+        key: { changeRef: 'c1', role: 'address' },
+        title: 'deliver c1',
+        notBefore: h.clock.now + minute,
+        attention: [{ namespace: 'room', key: 'r1' }]
+      })
+    ).orThrow();
+    await drain(pump);
+    await track(h.writer, 'b1');
+    expect((await prepared(pump)).entry.taskId).toBe('b1');
+  });
+
+  test('an update withheld from the principal neither blocks nor is presented', async () => {
+    await track(h.writer, 'a1');
+    await track(h.writer, 'b1');
+    h.policy.hide('a1');
+    expect((await prepared(pump)).entry.taskId).toBe('b1');
+    const only = pumpOver(h);
+    h.policy.hide('b1');
+    expect(await only.next()).toSucceedWith(undefined);
+  });
+
+  test('a revision too large for the budget fails loudly, holding no receipt', async () => {
     const tiny = pumpOver(h, { maxChars: 1500 });
     (
       await h.writer.createTracked({
@@ -269,30 +324,60 @@ describe('TaskDeliveryPump', () => {
         description: 'x'.repeat(4000)
       })
     ).orThrow();
-    expect(await tiny.next()).toFailWith(/renders without what it is owed/);
+    expect(await tiny.next()).toFailWith(
+      /t1@1, which renders abbreviated; it cannot be delivered within this budget/
+    );
     expect(await tiny.delivery.issued()).toSucceedWith([]);
     expect(await owed(h)).toHaveLength(1);
+    // A budget that fits delivers it.
+    expect((await prepared(pump)).entry.taskId).toBe('t1');
   });
 
-  test('a render with nothing in it is released and refused', async () => {
+  test('a render that omits the owed revision is released and refused; one with nothing visible is empty', async () => {
     await track(h.writer, 't1');
     const delivery = deliveryOf(h, 's1');
-    const empty = TaskDeliveryPump.create({
-      broker: brokerBinding(h, {
-        ...delivery,
-        pending: delivery.pending.bind(delivery),
-        abandon: delivery.abandon.bind(delivery),
-        issued: delivery.issued.bind(delivery),
-        acknowledge: delivery.acknowledge.bind(delivery),
-        prepare: async (budget) =>
-          (await delivery.prepare(budget)).onSuccess((p) =>
-            ok({ ...p, context: { ...p.context, entries: [] } })
-          )
-      }),
-      delivery: binding(h)
-    }).orThrow();
-    expect(await empty.next()).toFailWith(/the render included nothing/);
+    const rendering = (visibleItems: number): TaskDeliveryPump =>
+      TaskDeliveryPump.create({
+        broker: brokerBinding(h, {
+          ...delivery,
+          pending: delivery.pending.bind(delivery),
+          abandon: delivery.abandon.bind(delivery),
+          issued: delivery.issued.bind(delivery),
+          acknowledge: delivery.acknowledge.bind(delivery),
+          prepare: async (budget, options) =>
+            (await delivery.prepare(budget, options)).onSuccess((p) =>
+              ok({
+                ...p,
+                context: { ...p.context, entries: [], omissions: { ...p.context.omissions, visibleItems } }
+              })
+            )
+        }),
+        delivery: binding(h)
+      }).orThrow();
+    expect(await rendering(1).next()).toFailWith(/does not fit the render budget/);
     expect(await delivery.issued()).toSucceedWith([]);
+    expect(await rendering(0).next()).toSucceedWith(undefined);
+    expect(await delivery.issued()).toSucceedWith([]);
+  });
+
+  test("decisions read the pump's own record, never the object handed back", async () => {
+    await track(h.writer, 't1');
+    await track(h.writer, 't2');
+    const p = await prepared(pump);
+    expect(Object.isFrozen(p) && Object.isFrozen(p.entry)).toBe(true);
+    const forged: IPreparedTaskDelivery = {
+      ...p,
+      entry: { ...p.entry, terminal: true, updateIds: ['t2:1:0' as UpdateId] }
+    };
+    expect(await pump.dispose(forged, 'x')).toFailWith(/not a delivery this pump prepared/);
+    expect(await pump.acknowledge({ ...p })).toFailWith(/not a delivery this pump prepared/);
+    expect(await pumpOver(h).acknowledge(p)).toFailWith(/not a delivery this pump prepared/);
+    expect((await owed(h)).map((u) => u.id)).toEqual(['t1:1:0', 't2:1:0']);
+    expect(await pump.acknowledge(p)).toSucceedAndSatisfy((discharge) => {
+      expect(discharge.prepared).toBe(p);
+      expect(discharge.discharged).toEqual(['t1:1:0']);
+    });
+    expect((await owed(h)).map((u) => u.id)).toEqual(['t2:1:0']);
   });
 
   test('every write goes through the guard; a refusing guard prepares nothing', async () => {
@@ -418,6 +503,8 @@ describe('TaskDeliveryPump windows', () => {
     const restarted = TaskDeliveryPump.create({ broker: r.broker, delivery: binding(r) }).orThrow();
     const again = await prepared(restarted);
     expect(await restarted.dispose(again, 'undeliverable')).toFailWith(/disposing of t1@1/);
+    // The failed disposal already gave up its own receipt, so that object is spent.
+    expect(await restarted.acknowledge(again)).toFailWith(/not a delivery this pump prepared/);
     // Nothing was lost: it is presented again.
     const third = await prepared(restarted);
     expect(third.entry.updateIds).toEqual(again.entry.updateIds);
@@ -425,6 +512,67 @@ describe('TaskDeliveryPump windows', () => {
     const fresh = await prepared(restarted);
     expect(await restarted.dispose(fresh, 'undeliverable')).toSucceed();
     expect(await owed(r)).toEqual([]);
+  });
+
+  test("the start-up recipe — issued() then abandon — ends a crash-left receipt's reach", async () => {
+    await track(h.writer, 't1');
+    await command(h, 't1', 1, 'succeed', succeeded);
+    // The crashed process held a receipt over both revisions.
+    (await deliveryOf(h, 's1').prepare({ maxItems: 5, maxDepth: 3, maxChars: 8000 })).orThrow();
+    const r = await reopen(h);
+    const restarted = TaskDeliveryPump.create({ broker: r.broker, delivery: binding(r) }).orThrow();
+    for (const stale of (await restarted.delivery.issued()).orThrow()) {
+      (await restarted.delivery.abandon(stale.deliveryId)).orThrow();
+    }
+    const outcome = await prepared(restarted);
+    expect((await restarted.acknowledge(outcome)).orThrow()).toEqual(
+      expect.objectContaining({ superseded: ['t1:1:0'], issues: [] })
+    );
+    expect(
+      await r.writer.archive({
+        taskId: tid('t1'),
+        operationId: op('archive'),
+        expectedRevision: 2 as TaskRevision
+      })
+    ).toSucceed();
+  });
+
+  test('without the recipe the stale receipt blocks the superseded disposal and the archive', async () => {
+    await track(h.writer, 't1');
+    await command(h, 't1', 1, 'succeed', succeeded);
+    (await deliveryOf(h, 's1').prepare({ maxItems: 5, maxDepth: 3, maxChars: 8000 })).orThrow();
+    const r = await reopen(h);
+    const restarted = TaskDeliveryPump.create({ broker: r.broker, delivery: binding(r) }).orThrow();
+    const discharged = (await restarted.acknowledge(await prepared(restarted))).orThrow();
+    expect(discharged.issues).toEqual([expect.stringMatching(/named by an issued receipt/)]);
+    expect(
+      await r.writer.archive({
+        taskId: tid('t1'),
+        operationId: op('archive'),
+        expectedRevision: 2 as TaskRevision
+      })
+    ).toFailWith(/still owed/);
+    // The older revision is presented on its own and can be acknowledged — but the stale receipt
+    // still names it, and pins the task's archive even past its expiry, until it is abandoned.
+    (await restarted.acknowledge(await prepared(restarted))).orThrow();
+    r.clock.advance(16 * minute);
+    expect(
+      await r.writer.archive({
+        taskId: tid('t1'),
+        operationId: op('archive-2'),
+        expectedRevision: 2 as TaskRevision
+      })
+    ).toFailWith(/named by an issued receipt/);
+    for (const stale of (await restarted.delivery.issued()).orThrow()) {
+      (await restarted.delivery.abandon(stale.deliveryId)).orThrow();
+    }
+    expect(
+      await r.writer.archive({
+        taskId: tid('t1'),
+        operationId: op('archive-3'),
+        expectedRevision: 2 as TaskRevision
+      })
+    ).toSucceed();
   });
 
   test('after a crash, acknowledging the re-presented revision is not refused', async () => {
@@ -438,7 +586,7 @@ describe('TaskDeliveryPump windows', () => {
 
   test('a failed release after an acknowledgement is an issue, not a failure', async () => {
     await track(h.writer, 't1');
-    const p = await prepared(pump);
+    await track(h.writer, 't2');
     const delivery = deliveryOf(h, 's1');
     const leaky = TaskDeliveryPump.create({
       broker: brokerBinding(h, {
@@ -451,10 +599,13 @@ describe('TaskDeliveryPump windows', () => {
       }),
       delivery: binding(h)
     }).orThrow();
+    const p = await prepared(leaky);
     expect(await leaky.acknowledge(p)).toSucceedAndSatisfy((discharge) => {
       expect(discharge.issues).toEqual([expect.stringMatching(/releasing receipt .*store offline/)]);
     });
-    expect(await leaky.dispose(p, 'x')).toFailWith(/store offline/);
+    const q = await prepared(leaky);
+    expect(await leaky.dispose(q, 'x')).toFailWith(/disposing of t2@1: releasing receipt .*store offline/);
+    expect(await leaky.abandon(q)).toFailWith(/abandoning t2@1: releasing receipt .*store offline/);
   });
 
   test('an owed listing that fails fails the pass', async () => {
@@ -474,6 +625,27 @@ describe('TaskDeliveryPump windows', () => {
     expect(await blind.next()).toFailWith(/reading what is owed: index offline/);
   });
 
+  test('a listing that fails after the first page fails the pass, holding nothing', async () => {
+    await track(h.writer, 't1');
+    const delivery = deliveryOf(h, 's1');
+    const flaky = TaskDeliveryPump.create({
+      broker: brokerBinding(h, {
+        ...delivery,
+        prepare: delivery.prepare.bind(delivery),
+        issued: delivery.issued.bind(delivery),
+        acknowledge: delivery.acknowledge.bind(delivery),
+        abandon: delivery.abandon.bind(delivery),
+        pending: async (request) =>
+          request?.limit === 1
+            ? delivery.pending(request)
+            : failWithDetail('index offline', { code: 'storage-unavailable', retry: 'safe' })
+      }),
+      delivery: binding(h)
+    }).orThrow();
+    expect(await flaky.next()).toFailWith(/reading what is owed: index offline/);
+    expect(await delivery.issued()).toSucceedWith([]);
+  });
+
   test('owed updates are read across pages', async () => {
     for (let i = 0; i < 205; i++) {
       await track(h.writer, `t${String(i).padStart(3, '0')}`);
@@ -481,6 +653,12 @@ describe('TaskDeliveryPump windows', () => {
     const p = await prepared(pump);
     expect(p.entry.taskId).toBe('t000');
     expect(p.entry.categories).toEqual(['lifecycle']);
+    (await pump.abandon(p)).orThrow();
+    // An outcome on the last page: its superseded revision is found by reading every page.
+    await command(h, 't204', 1, 'succeed', succeeded);
+    const outcome = await prepared(pump);
+    expect(outcome.entry.taskId).toBe('t204');
+    expect((await pump.acknowledge(outcome)).orThrow().superseded).toEqual(['t204:1:0']);
   });
 });
 

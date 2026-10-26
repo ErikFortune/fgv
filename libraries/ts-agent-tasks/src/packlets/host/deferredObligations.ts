@@ -4,7 +4,7 @@
  */
 
 import { Converters as JsonConverters } from '@fgv/ts-json-base';
-import { DetailedFailure, Hash, Result, fail, succeed } from '@fgv/ts-utils';
+import { DetailedFailure, Hash, MessageAggregator, Result, fail, succeed } from '@fgv/ts-utils';
 import { TaskBroker } from '../broker';
 import { TaskConverters, instant } from '../converters';
 import {
@@ -21,13 +21,16 @@ import {
   OperationId,
   PageCursor,
   TaskId,
+  TaskKind,
   TaskLifecycleStatus,
   TaskResult,
   TaskRevision,
   TrackedCommand,
+  _taskScopeKey,
   defaultTaskPerOwnerLimits,
   isTerminalTaskStatus,
-  maxTaskPageLimit
+  maxTaskPageLimit,
+  trackedTaskKind
 } from '../types';
 import { ITaskHostWriteGuard, guarded } from './hostWriteGuard';
 
@@ -180,9 +183,24 @@ export interface IDeferredObligation {
  */
 export type DeferredObligationState =
   | { readonly state: 'absent' }
-  | { readonly state: 'pending'; readonly revision: TaskRevision; readonly createdAt: Instant }
+  | {
+      readonly state: 'pending';
+      readonly revision: TaskRevision;
+      readonly createdAt: Instant;
+      /** What the task under the obligation's id is — checked before it is adopted. */
+      readonly kind: TaskKind;
+      readonly scopes: ReadonlyArray<ITaskScope>;
+    }
   | { readonly state: 'waiting'; readonly obligation: IDeferredObligation }
   | { readonly state: 'settled'; readonly status: TaskLifecycleStatus; readonly archived: boolean };
+
+/**
+ * What {@link DeferredObligations.defer} answers: the obligation waiting, or the terminal status of
+ * one already settled — `succeeded` when it was discharged through its task, `cancelled` when it was
+ * ended undelivered, merged or abandoned (the reason code says which).
+ * @public
+ */
+export type DeferOutcome = Extract<DeferredObligationState, { readonly state: 'waiting' | 'settled' }>;
 
 /**
  * What {@link DeferredObligations.defer} records.
@@ -195,8 +213,9 @@ export interface IDeferral {
   /** When it is first due, in epoch milliseconds. See {@link DeferredObligations.firstNotBefore}. */
   readonly notBefore: number;
   /**
-   * Scopes the task carries beside the helper's own — a room, a document. Used only when the task
-   * is created, and a replay after a crash must name the same ones.
+   * Scopes the task carries beside the helper's own — a room, a document. A replay after a crash
+   * must name the same ones: a task left `pending` is set waiting only when it carries exactly the
+   * helper's scope plus these, and a pending registration is resumed with them.
    */
   readonly scopes?: ReadonlyArray<ITaskScope>;
   /** The host's references for the wait reason. None may use the change namespace. */
@@ -404,25 +423,23 @@ export class DeferredObligations {
       value.includes(':')
         ? fail(`${what} '${value}' contains ':'`)
         : converters.ids.identifier.convert(value).withErrorFormat((message) => `${what}: ${message}`);
-    const problems: string[] = [];
+    const problems: MessageAggregator = new MessageAggregator();
     const note = (result: Result<unknown>): void => {
-      if (result.isFailure()) {
-        problems.push(result.message);
-      }
+      result.aggregateError(problems);
     };
     note(segment(params.idPrefix, 'idPrefix'));
     if (params.roles.length === 0) {
-      problems.push('roles is empty');
+      problems.addMessage('roles is empty');
     }
     if (new Set(params.roles).size !== params.roles.length) {
-      problems.push('roles repeat');
+      problems.addMessage('roles repeat');
     }
     params.roles.forEach((role) => note(segment(role, 'role')));
     if (new Set(Object.values(codes)).size !== Object.values(codes).length) {
-      problems.push('two reason codes are the same');
+      problems.addMessage('two reason codes are the same');
     }
     if (namespaces.change === namespaces.obligation) {
-      problems.push('the change and obligation namespaces are the same');
+      problems.addMessage('the change and obligation namespaces are the same');
     }
     const ordered: boolean =
       [schedule.baseMs, schedule.capMs, schedule.maxDeferralMs].every((ms) => Number.isSafeInteger(ms)) &&
@@ -430,12 +447,12 @@ export class DeferredObligations {
       schedule.baseMs <= schedule.capMs &&
       schedule.capMs <= schedule.maxDeferralMs;
     if (!ordered) {
-      problems.push('schedule must satisfy 0 < baseMs <= capMs <= maxDeferralMs, in safe integers');
+      problems.addMessage('schedule must satisfy 0 < baseMs <= capMs <= maxDeferralMs, in safe integers');
     }
     if (!Number.isSafeInteger(operationBudget) || operationBudget < _closeoutSlots + 2) {
-      problems.push(`operationBudget must be a safe integer of at least ${_closeoutSlots + 2}`);
+      problems.addMessage(`operationBudget must be a safe integer of at least ${_closeoutSlots + 2}`);
     }
-    return problems.length === 0 ? succeed(true) : fail(problems.join('; '));
+    return problems.hasMessages ? fail(problems.toString('; ')) : succeed(true);
   }
 
   /**
@@ -507,26 +524,33 @@ export class DeferredObligations {
    * @remarks
    * Idempotent per change and role. An obligation already waiting is answered as it is; one left
    * `pending`, or as a pending registration, by an interrupted deferral is finished now; one already
-   * settled answers `'settled'` — it was discharged or ended through that task, and the host only
-   * needs to finish whatever it was deferring for.
+   * settled answers its terminal status — the host then only needs to finish whatever it was
+   * deferring for, and the status says whether the obligation was discharged (`succeeded`) or ended
+   * without it (`cancelled`).
+   *
+   * A `pending` task under the obligation's id is finished only when it is one this helper would
+   * have created: a `fgv.tracked@1` task carrying exactly the helper's scope and `deferral.scopes`.
+   * Anything else — another principal's task, a list, a task with other scopes — is refused, never
+   * adopted.
    */
-  public defer(deferral: IDeferral): Promise<Result<IDeferredObligation | 'settled'>> {
+  public defer(deferral: IDeferral): Promise<Result<DeferOutcome>> {
     return guarded(this._guard, async () =>
       (
         await this.taskIdFor(deferral.key).thenOnSuccess(async (taskId) =>
           (
             await this._stateOf(taskId)
-          ).thenOnSuccess(async (found): Promise<Result<IDeferredObligation | 'settled'>> => {
+          ).thenOnSuccess(async (found): Promise<Result<DeferOutcome>> => {
             switch (found.state) {
               case 'settled':
-                return succeed('settled');
               case 'waiting':
-                return succeed(found.obligation);
+                return succeed(found);
               case 'pending':
-                return this._waitFresh(taskId, found.revision, deferral);
+                return this._adoptable(taskId, found, deferral).thenOnSuccess(async () =>
+                  this._waiting(this._waitFresh(taskId, found.revision, deferral))
+                );
               default:
                 return (await this._create(taskId, deferral)).thenOnSuccess(async (revision) =>
-                  this._waitFresh(taskId, revision, deferral)
+                  this._waiting(this._waitFresh(taskId, revision, deferral))
                 );
             }
           })
@@ -601,8 +625,9 @@ export class DeferredObligations {
    * Ends `obligation` as merged into `into`, which already owes its changes, then archives it.
    * Nothing was discharged through `obligation`, so it is cancelled — under the `merged` code, with
    * a reference to `into` — rather than succeeded. `into` is read again first, and the merge fails,
-   * writing nothing, unless it is waiting now and owes every change `obligation` does: merge the
-   * changes into `into` first, with {@link DeferredObligations.wait}.
+   * writing nothing, unless it is waiting now, is owed to the **same role**, and owes every change
+   * `obligation` does: merge the changes into `into` first, with {@link DeferredObligations.wait}.
+   * Two roles are two obligations; one is never discharged through the other.
    */
   public merged(obligation: IDeferredObligation, into: IDeferredObligation): Promise<Result<TaskId>> {
     return guarded(this._guard, async () =>
@@ -612,16 +637,9 @@ export class DeferredObligations {
         ).thenOnSuccess(async (survivor) => {
           // Decided on `into` as it is now, not as the caller last read it: a survivor settled since
           // would take the merged changes with it.
-          const owes: ReadonlyArray<string> = survivor.state === 'waiting' ? survivor.obligation.changes : [];
-          const missing: ReadonlyArray<string> = obligation.changes.filter((c) => !owes.includes(c));
-          if (into.taskId === obligation.taskId || survivor.state !== 'waiting' || missing.length > 0) {
-            return fail<TaskId>(
-              into.taskId === obligation.taskId
-                ? 'they are the same obligation'
-                : survivor.state !== 'waiting'
-                ? `${into.taskId} is ${survivor.state}, not waiting`
-                : `${into.taskId} does not owe ${missing.join(', ')}`
-            );
+          const refused: string | undefined = this._mergeRefusal(obligation, into, survivor);
+          if (refused !== undefined) {
+            return fail<TaskId>(refused);
           }
           return this._cancel(obligation.taskId, obligation.revision, {
             code: this._codes.merged,
@@ -648,7 +666,13 @@ export class DeferredObligations {
    * carries the revision it was listed at, so one that a replayed deferral set waiting in between
    * is refused and reported as an issue, not ended. A pending obligation is finished only when its
    * change is deferred again, so one still pending long after its creation would otherwise hold its
-   * reservation for good.
+   * reservation for good. Only tasks that read as this helper's obligations — an id it makes, kind
+   * `fgv.tracked@1` — are considered; others are reported.
+   *
+   * **A creation interrupted inside the repository** — a pending registration, accepted and never
+   * marked live — is not swept here: it is not a task yet, and no bound view lists registrations.
+   * `defer` replayed for its key resumes it; a host that will never replay it finds it in the trusted
+   * `repository.outstanding()` report.
    */
   public abandonPending(before: number): Promise<Result<IDeferredObligationSweep<IDeferredObligationKey>>> {
     return guarded(this._guard, async () =>
@@ -658,25 +682,25 @@ export class DeferredObligations {
             await this._list((cursor) => this._query(['pending'], 'open', cursor))
           ).thenOnSuccess(async (envelopes) => {
             const done: IDeferredObligationKey[] = [];
-            const issues: string[] = [];
+            const issues: MessageAggregator = new MessageAggregator();
             for (const envelope of envelopes.filter((e) => e.createdAt < cutoff)) {
-              const ended: Result<IDeferredObligationKey> = await this.keyOf(envelope.id).thenOnSuccess(
-                async (key) =>
-                  (
-                    await this._cancel(envelope.id, envelope.revision, {
-                      code: this._codes.abandoned,
-                      summary: 'its deferral was interrupted and never finished',
-                      attention: this._changeReferences([key.changeRef])
-                    })
-                  ).onSuccess(() => succeed(key))
+              const ended: Result<IDeferredObligationKey> = await this._obligationKeyOf(
+                envelope
+              ).thenOnSuccess(async (key) =>
+                (
+                  await this._cancel(envelope.id, envelope.revision, {
+                    code: this._codes.abandoned,
+                    summary: 'its deferral was interrupted and never finished',
+                    attention: this._changeReferences([key.changeRef])
+                  })
+                ).onSuccess(() => succeed(key))
               );
-              if (ended.isSuccess()) {
-                done.push(ended.value);
-              } else {
-                issues.push(ended.message);
-              }
+              ended.onSuccess((key) => succeed(done.push(key))).aggregateError(issues);
             }
-            return succeed<IDeferredObligationSweep<IDeferredObligationKey>>({ done, issues });
+            return succeed<IDeferredObligationSweep<IDeferredObligationKey>>({
+              done,
+              issues: issues.messages
+            });
           })
         )
       ).withErrorFormat((message) => `deferred obligations: abandoning pending obligations: ${message}`)
@@ -712,7 +736,8 @@ export class DeferredObligations {
   /**
    * Archives every obligation that is settled but not yet archived — one whose archive did not land
    * after it was settled — which releases what it reserves. Answers the ids archived, and an issue
-   * for each it could not.
+   * for each it could not. A terminal task in the helper's scope that is not one of its obligations —
+   * an id it does not make, or another kind — is left alone and reported.
    */
   public archiveSettled(): Promise<Result<IDeferredObligationSweep<TaskId>>> {
     return guarded(this._guard, async () =>
@@ -721,20 +746,84 @@ export class DeferredObligations {
           await this._list((cursor) => this._query(undefined, 'terminal', cursor))
         ).thenOnSuccess(async (envelopes) => {
           const done: TaskId[] = [];
-          const issues: string[] = [];
+          const issues: MessageAggregator = new MessageAggregator();
           // One at a time: the repository has one writer.
           for (const envelope of envelopes) {
-            const archived: Result<TaskId> = await this._archive(envelope.id, envelope.revision);
-            if (archived.isSuccess()) {
-              done.push(archived.value);
-            } else {
-              issues.push(archived.message);
-            }
+            (
+              await this._obligationKeyOf(envelope).thenOnSuccess(async () =>
+                this._archive(envelope.id, envelope.revision)
+              )
+            )
+              .onSuccess((id) => succeed(done.push(id)))
+              .aggregateError(issues);
           }
-          return succeed<IDeferredObligationSweep<TaskId>>({ done, issues });
+          return succeed<IDeferredObligationSweep<TaskId>>({ done, issues: issues.messages });
         })
       ).withErrorFormat((message) => `deferred obligations: archiving settled obligations: ${message}`)
     );
+  }
+
+  /**
+   * Why `obligation` cannot be merged into `into`, read again as `survivor` — or `undefined` when it
+   * can: the survivor is another obligation, waiting now, for the same role, owing every change.
+   */
+  private _mergeRefusal(
+    obligation: IDeferredObligation,
+    into: IDeferredObligation,
+    survivor: DeferredObligationState
+  ): string | undefined {
+    if (into.taskId === obligation.taskId) {
+      return 'they are the same obligation';
+    }
+    if (survivor.state !== 'waiting') {
+      return `${into.taskId} is ${survivor.state}, not waiting`;
+    }
+    const own: Result<IDeferredObligationKey> = this.keyOf(obligation.taskId);
+    if (own.isFailure()) {
+      return own.message;
+    }
+    if (own.value.role !== survivor.obligation.key.role) {
+      return `${into.taskId} is owed to '${survivor.obligation.key.role}', not '${own.value.role}'`;
+    }
+    const missing: ReadonlyArray<string> = obligation.changes.filter(
+      (c) => !survivor.obligation.changes.includes(c)
+    );
+    return missing.length > 0 ? `${into.taskId} does not owe ${missing.join(', ')}` : undefined;
+  }
+
+  /** The key of a task that reads as one of this helper's obligations: an id it makes, a tracked task. */
+  private _obligationKeyOf(envelope: IProjectedTaskEnvelope): Result<IDeferredObligationKey> {
+    return envelope.kind === trackedTaskKind
+      ? this.keyOf(envelope.id)
+      : fail(`${envelope.id} is a ${envelope.kind} task, not an obligation`);
+  }
+
+  /** A waiting obligation as {@link DeferOutcome}. */
+  private async _waiting(obligation: Promise<Result<IDeferredObligation>>): Promise<Result<DeferOutcome>> {
+    return (await obligation).onSuccess((waiting) =>
+      succeed<DeferOutcome>({ state: 'waiting', obligation: waiting })
+    );
+  }
+
+  /**
+   * Whether the `pending` task under `taskId` is one this helper would have created for `deferral`:
+   * a tracked task carrying exactly the helper's scope and the deferral's.
+   */
+  private _adoptable(
+    taskId: TaskId,
+    envelope: Extract<DeferredObligationState, { readonly state: 'pending' }>,
+    deferral: IDeferral
+  ): Result<TaskId> {
+    const expected: ReadonlyArray<string> = [this._scope, ...(deferral.scopes ?? [])]
+      .map(_taskScopeKey)
+      .sort();
+    const actual: ReadonlyArray<string> = envelope.scopes.map(_taskScopeKey).sort();
+    return envelope.kind === trackedTaskKind && _same(expected, actual)
+      ? succeed(taskId)
+      : fail(
+          `${taskId} is pending but is not an obligation this helper created for it ` +
+            `(kind ${envelope.kind}, scopes ${actual.join(', ')})`
+        );
   }
 
   /** What the repository holds for `taskId`, read through the bound view. */
@@ -754,7 +843,13 @@ export class DeferredObligations {
       return succeed({ state: 'settled', status: envelope.lifecycle.status, archived: found.archived });
     }
     if (envelope.lifecycle.status === 'pending') {
-      return succeed({ state: 'pending', revision: envelope.revision, createdAt: envelope.createdAt });
+      return succeed({
+        state: 'pending',
+        revision: envelope.revision,
+        createdAt: envelope.createdAt,
+        kind: envelope.kind,
+        scopes: envelope.scopes
+      });
     }
     return this._obligationOf(envelope).onSuccess((obligation) =>
       succeed<DeferredObligationState>({ state: 'waiting', obligation })
@@ -936,16 +1031,13 @@ export class DeferredObligations {
   ): Promise<Result<IDeferredObligationListing>> {
     return (await this._list(page)).onSuccess((envelopes) => {
       const obligations: IDeferredObligation[] = [];
-      const issues: string[] = [];
+      const issues: MessageAggregator = new MessageAggregator();
       for (const envelope of envelopes) {
-        const read: Result<IDeferredObligation> = this._obligationOf(envelope);
-        if (read.isSuccess()) {
-          obligations.push(read.value);
-        } else {
-          issues.push(read.message);
-        }
+        this._obligationOf(envelope)
+          .onSuccess((obligation) => succeed(obligations.push(obligation)))
+          .aggregateError(issues);
       }
-      return succeed({ obligations, issues });
+      return succeed({ obligations, issues: issues.messages });
     });
   }
 
@@ -996,7 +1088,7 @@ export class DeferredObligations {
     if (changes.length === 0) {
       return fail(`${envelope.id} names no change`);
     }
-    return this.keyOf(envelope.id).onSuccess((key) =>
+    return this._obligationKeyOf(envelope).onSuccess((key) =>
       succeed<IDeferredObligation>({
         taskId: envelope.id,
         key,

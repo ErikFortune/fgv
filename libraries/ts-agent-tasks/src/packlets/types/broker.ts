@@ -199,6 +199,17 @@ export interface IRegisterExternalTask {
 }
 
 /**
+ * The narrowing filter of a bound view's query ({@link IBoundTaskQuery}, {@link IBoundTaskDueQuery}).
+ * @public
+ */
+export interface IBoundTaskQueryFilter {
+  readonly responsibility?: IResponsibility;
+  readonly parentId?: TaskId;
+  readonly lifecycleClass?: TaskLifecycleClass;
+  readonly statuses?: ReadonlyArray<TaskLifecycleStatus>;
+}
+
+/**
  * A bound view's query. Scopes are the view's own; a filter only narrows.
  * @remarks
  * `lifecycleClass` defaults to `all`. There is no `scopes` member, and the converter is strict:
@@ -206,12 +217,7 @@ export interface IRegisterExternalTask {
  * @public
  */
 export interface IBoundTaskQuery {
-  readonly filter?: {
-    readonly responsibility?: IResponsibility;
-    readonly parentId?: TaskId;
-    readonly lifecycleClass?: TaskLifecycleClass;
-    readonly statuses?: ReadonlyArray<TaskLifecycleStatus>;
-  };
+  readonly filter?: IBoundTaskQueryFilter;
   readonly limit?: number;
   readonly cursor?: PageCursor;
 }

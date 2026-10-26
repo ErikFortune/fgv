@@ -11,6 +11,7 @@ import {
   IArchiveTask,
   IBoundTaskDueQuery,
   IBoundTaskQuery,
+  IBoundTaskQueryFilter,
   IChangeTaskScopes,
   ICompleteTaskList,
   ICreateTaskList,
@@ -191,9 +192,7 @@ export function buildBrokerConverters(
     history: values.sourceHistoryDeclaration.optional()
   });
 
-  const boundFilter: Converter<NonNullable<IBoundTaskQuery['filter']>> = Converters.strictObject<
-    NonNullable<IBoundTaskQuery['filter']>
-  >({
+  const boundFilter: Converter<IBoundTaskQueryFilter> = Converters.strictObject<IBoundTaskQueryFilter>({
     responsibility: values.responsibility.optional(),
     parentId: ids.taskId.optional(),
     lifecycleClass: Converters.enumeratedValue<TaskLifecycleClass>(allTaskLifecycleClasses).optional(),

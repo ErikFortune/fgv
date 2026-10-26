@@ -21,6 +21,7 @@ import {
   ITaskEnvelope,
   ITaskInclusionReceipt,
   ITaskPage,
+  ITaskPrepareOptions,
   ITaskScope,
   ITaskSubscription,
   ITaskSummary,
@@ -30,6 +31,7 @@ import {
   PageCursor,
   SubscriptionId,
   TaskId,
+  TaskPrepareCurrentState,
   TaskResult,
   TaskRevision,
   UpdateCategory,
@@ -344,9 +346,23 @@ export class BoundTaskDelivery implements IBoundTaskDelivery {
    * 3. Return the context only once the manifest is committed. A failure returns nothing
    *    acknowledgeable.
    */
-  public async prepare(budget?: ITaskContextBudget): Promise<TaskResult<IPreparedTaskContext>> {
+  public async prepare(
+    budget?: ITaskContextBudget,
+    options?: ITaskPrepareOptions
+  ): Promise<TaskResult<IPreparedTaskContext>> {
+    const currentState: TaskPrepareCurrentState = options?.currentState ?? 'include';
+    if (currentState !== 'include' && currentState !== 'owed-only') {
+      return taskFailure(
+        `prepare ${this.subscriptionId}: currentState must be 'include' or 'owed-only'`,
+        'invalid',
+        'after-host-action'
+      );
+    }
     for (let attempt = 1; attempt <= maxDeliveryAttempts; attempt++) {
-      const outcome: TaskResult<IPreparedTaskContext | undefined> = await this._prepareOnce(budget);
+      const outcome: TaskResult<IPreparedTaskContext | undefined> = await this._prepareOnce(
+        budget,
+        currentState
+      );
       if (outcome.isFailure() || outcome.value !== undefined) {
         return outcome.isFailure() ? propagate(outcome) : ok(outcome.value!);
       }
@@ -538,7 +554,8 @@ export class BoundTaskDelivery implements IBoundTaskDelivery {
 
   /** One capture-render-issue attempt; `undefined` when something moved and it should retry. */
   private async _prepareOnce(
-    budget?: ITaskContextBudget
+    budget: ITaskContextBudget | undefined,
+    currentState: TaskPrepareCurrentState
   ): Promise<TaskResult<IPreparedTaskContext | undefined>> {
     const core: BrokerCore = this._core;
     const epoch: TaskResult<string> = this._access.epoch();
@@ -553,7 +570,7 @@ export class BoundTaskDelivery implements IBoundTaskDelivery {
     }
     // Bound to a retained subscription, active or closed; records are never removed.
     const captured: ITaskSubscription = subscription.value!;
-    const input = await this._captureInput(captured);
+    const input = await this._captureInput(captured, currentState);
     if (input.isFailure()) {
       return propagate(input);
     }
@@ -617,7 +634,10 @@ export class BoundTaskDelivery implements IBoundTaskDelivery {
   }
 
   /** The renderer's input: owed updates and the selection's current tasks, authorized and projected. */
-  private async _captureInput(subscription: ITaskSubscription): Promise<
+  private async _captureInput(
+    subscription: ITaskSubscription,
+    currentState: TaskPrepareCurrentState
+  ): Promise<
     TaskResult<{
       readonly tasks: ReadonlyArray<ITaskSummary>;
       readonly unresolved: ReadonlyArray<IUnresolvedTaskReference>;
@@ -652,9 +672,10 @@ export class BoundTaskDelivery implements IBoundTaskDelivery {
       return propagate(disclosed);
     }
     // A closed subscription is drained, not followed: it is presented what it is still owed, and no
-    // current state of a selection it has left.
+    // current state of a selection it has left. An owed-only preparation presents no current state
+    // either: each owed revision renders from its own snapshot.
     const current: TaskResult<ITaskPage> =
-      subscription.state === 'closed'
+      subscription.state === 'closed' || currentState === 'owed-only'
         ? ok<ITaskPage>({
             items: [],
             unresolved: [],

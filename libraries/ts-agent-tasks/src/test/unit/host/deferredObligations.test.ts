@@ -82,10 +82,10 @@ function deferralFor(h: IDeliveryHarness, changeRef: string, extra?: Partial<IDe
 
 async function deferred(obligations: DeferredObligations, request: IDeferral): Promise<IDeferredObligation> {
   const outcome = (await obligations.defer(request)).orThrow();
-  if (outcome === 'settled') {
+  if (outcome.state !== 'waiting') {
     throw new Error('expected a waiting obligation');
   }
-  return outcome;
+  return outcome.obligation;
 }
 
 /** A broker whose bound writers answer `overrides` instead of their own methods. */
@@ -229,10 +229,21 @@ describe('DeferredObligations.defer', () => {
     ]);
   });
 
-  test('a settled obligation answers settled', async () => {
+  test('a settled obligation answers its terminal status, telling delivered from ended', async () => {
+    const ended = await deferred(obligations, deferralFor(h, 'c2'));
+    expect(await obligations.cancel(ended, 'gone')).toSucceed();
+    expect(await obligations.defer(deferralFor(h, 'c2'))).toSucceedWith({
+      state: 'settled',
+      status: 'cancelled',
+      archived: true
+    });
     const waiting = await deferred(obligations, deferralFor(h, 'c1'));
     expect(await obligations.succeed(waiting, 'delivered')).toSucceedWith(waiting.taskId);
-    expect(await obligations.defer(deferralFor(h, 'c1'))).toSucceedWith('settled');
+    expect(await obligations.defer(deferralFor(h, 'c1'))).toSucceedWith({
+      state: 'settled',
+      status: 'succeeded',
+      archived: true
+    });
     expect(await obligations.stateOf(waiting.key)).toSucceedWith({
       state: 'settled',
       status: 'succeeded',
@@ -843,6 +854,111 @@ describe('DeferredObligations retries, discharge and sweeps', () => {
       })
     });
     expect(await refused.waiting()).toFailWith(/listing waiting obligations: denied/);
+  });
+});
+
+describe('DeferredObligations refuses what it did not make', () => {
+  let h: IDeliveryHarness;
+  let obligations: DeferredObligations;
+
+  beforeEach(async () => {
+    h = await deliveryHarness();
+    obligations = obligationsOver(h);
+  });
+
+  function hostWriter(scopes: ReadonlyArray<ITaskScope>, principal: string = 'mallory'): IBoundTaskWriter {
+    return h.broker.bind({ principal, scopes, authorization: authority() }).orThrow();
+  }
+
+  test('a pending task under an obligation id is adopted only if it carries exactly the expected scopes', async () => {
+    // Another principal's task, without the deferral's room scope.
+    await hostWriter([deferral]).createTracked({
+      taskId: 'wake:address:c9' as TaskId,
+      operationId: 'm-c' as never,
+      title: 'not yours'
+    });
+    expect(await obligations.defer(deferralFor(h, 'c9'))).toFailWith(
+      /wake:address:c9 is pending but is not an obligation this helper created/
+    );
+    expect(await obligations.stateOf({ changeRef: 'c9', role: 'address' })).toSucceedAndSatisfy((state) => {
+      expect(state.state).toBe('pending');
+    });
+    // A task list under an obligation id, with the right scopes, is refused for its kind.
+    await hostWriter([deferral, room]).createTaskList({
+      taskId: 'wake:address:c8' as TaskId,
+      operationId: 'm-l' as never,
+      title: 'list',
+      completion: 'manual'
+    });
+    expect(await obligations.defer(deferralFor(h, 'c8'))).toFailWith(
+      /is pending but is not an obligation this helper created for it \(kind fgv\.task-list/
+    );
+    // A deferral naming no scopes of its own adopts a task carrying the helper's scope alone.
+    await hostWriter([deferral], 'host').createTracked({
+      taskId: 'wake:address:c6' as TaskId,
+      operationId: 'h-6' as never,
+      title: 'interrupted'
+    });
+    expect(await obligations.defer({ ...deferralFor(h, 'c6'), scopes: undefined })).toSucceedAndSatisfy(
+      (outcome) => {
+        expect(outcome.state).toBe('waiting');
+      }
+    );
+    // A pending task with exactly the scopes it would have been created with is finished.
+    await hostWriter([deferral, room], 'host').createTracked({
+      taskId: 'wake:address:c7' as TaskId,
+      operationId: 'h-c' as never,
+      title: 'interrupted'
+    });
+    expect(await obligations.defer(deferralFor(h, 'c7'))).toSucceedAndSatisfy((outcome) => {
+      expect(outcome.state).toBe('waiting');
+    });
+  });
+
+  test('merged refuses a survivor owed to another role', async () => {
+    const address = await deferred(obligations, deferralFor(h, 'c1'));
+    const origin = await deferred(
+      obligations,
+      deferralFor(h, 'c1', { key: { changeRef: 'c1', role: 'origin' } })
+    );
+    expect(await obligations.merged(origin, address)).toFailWith(
+      /wake:address:c1 is owed to 'address', not 'origin'/
+    );
+    expect(await obligations.merged({ ...origin, taskId: 'stray' as TaskId }, address)).toFailWith(
+      /'stray' is not an obligation id/
+    );
+    expect(await obligations.stateOf(origin.key)).toSucceedAndSatisfy((state) => {
+      expect(state.state).toBe('waiting');
+    });
+  });
+
+  test('archiveSettled and abandonPending leave tasks that are not obligations alone', async () => {
+    const writer = hostWriter([deferral], 'host');
+    await writer.createTracked({ taskId: 'other-task' as TaskId, operationId: 'o-c' as never, title: 'x' });
+    await writer.execute({
+      taskId: 'other-task' as TaskId,
+      operationId: 'o-x' as never,
+      expectedRevision: 1 as TaskRevision,
+      command: 'cancel',
+      parameters: { reason: { code: 'nah', summary: 'n' } }
+    });
+    await writer.createTaskList({
+      taskId: 'wake:address:list' as TaskId,
+      operationId: 'o-l' as never,
+      title: 'list',
+      completion: 'manual'
+    });
+    const swept = (await obligations.archiveSettled()).orThrow();
+    expect(swept.done).toEqual([]);
+    expect(swept.issues).toEqual([expect.stringMatching(/'other-task' is not an obligation id/)]);
+    const read = (await h.repository.read('other-task' as TaskId)).orThrow();
+    expect(read?.state === 'resolved' && read.archived).toBe(false);
+    h.clock.advance(60 * minute);
+    const abandoned = (await obligations.abandonPending(h.clock.now)).orThrow();
+    expect(abandoned.done).toEqual([]);
+    expect(abandoned.issues).toEqual([
+      expect.stringMatching(/wake:address:list is a fgv\.task-list task, not an obligation/)
+    ]);
   });
 });
 
