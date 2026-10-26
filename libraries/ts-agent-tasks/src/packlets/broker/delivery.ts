@@ -950,7 +950,6 @@ export class BoundTaskDelivery implements IBoundTaskDelivery {
     return ok(decision);
   }
 
-  /** Whether this principal may see, and acknowledge, the task an entry names — as it is now. */
   /** The record revision that authorized acknowledging an entry's task, or `undefined` when denied. */
   private async _mayAcknowledge(entry: IInclusionEntry): Promise<number | undefined> {
     const record = await this._core.repository.readCommit(entry.taskId);

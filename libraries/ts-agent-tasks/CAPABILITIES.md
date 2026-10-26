@@ -749,21 +749,30 @@ if (next !== undefined) {
 - **`next()`** prepares one item in **`'owed-only'`** mode (`prepare(budget, { currentState:
   'owed-only' })`, below): each owed revision renders from its own snapshot and no current task state
   is a candidate, so a task owed nothing — acknowledged attention, an unarchived outcome, a waiting
-  obligation — never takes the slot. Owed revisions come by the renderer's priority. A revision too
-  large for `maxChars` (abbreviated, or omitted) is released and **fails loudly**, naming it, on every
-  call until the host raises the budget or disposes of its ids.
+  obligation — never takes the slot. Owed revisions come by the renderer's priority, and only those
+  the principal may **see and acknowledge now** (below); a withheld one is never presented, so it
+  never blocks the pump. An oversize revision is skipped while a smaller owed one fits; when none
+  fits (abbreviated, or omitted) the receipt is released and the call **fails loudly**, naming the
+  revision and the owed ids on the first page of `pending`, on every call until the host raises the
+  budget or disposes of those ids. At most 1,000 owed updates are read per preparation, so a
+  subscription whose first 1,000 are all withheld presents nothing until some are ended.
 - **It never acknowledges on its own** and is **at-least-once**: a prepared revision neither
   acknowledged nor disposed of is presented again. **Exactly-once is not this helper's property** —
   it is at-least-once here plus a host whose work is findable by `(taskId, revision)`.
 - **Decisions read the pump's own record.** `acknowledge`, `abandon` and `dispose` take back the
   frozen object `next` handed out and act on what the pump recorded for it — a copy, an edited entry or
   another pump's delivery is refused.
-- **`acknowledge`** fails with nothing discharged when the acknowledgement does not commit; once it
-  commits the call succeeds, then releases the receipt and — **after a terminal revision only** —
+- **`acknowledge`** fails with nothing discharged when the acknowledgement does not commit — and
+  then **releases the receipt** and spends the object, so a refusal pins nothing; once it commits the
+  call succeeds, then releases the receipt and — **after a terminal revision only** —
   disposes of the task's older owed revisions. A follow-up that fails is listed in `issues`, never a
   failure, since the decision stands. **`dispose(reason)`** releases the receipt first (the broker
   refuses to dispose of what an issued receipt names), then disposes; a disposal that fails after the
   release has spent the object, and the revision comes back from `next`. **`abandon`** only releases.
+- **`disposeWithheld(reason, limit?)`** ends owed updates the principal is now **withheld** — a task
+  moved out of the binding's scopes, reassigned, or no longer acknowledgeable — through
+  `IBoundTaskDelivery.disposeWithheld`. The pump never does this on its own: access can come back,
+  and a disposal cannot be undone, so the host decides when.
 - **Receipts a crash leaves behind — release them at start-up** (the loop above). Until abandoned, a
   stale receipt pins every revision it names: each is presented and can be acknowledged, but `dispose`
   of it fails; the superseded disposal after a terminal discharge fails (an `issue`), so older
@@ -775,7 +784,19 @@ if (next !== undefined) {
 **`IBoundTaskDelivery.prepare(budget?, { currentState? })`.** `'include'` (default) renders the
 selection's current tasks beside what is owed; a current task owed nothing renders with no update ids
 and ranks by its own state, so under a small item budget it can take every slot. `'owed-only'`
-renders owed revisions only. Any other value is `invalid`.
+renders owed revisions only. Any other value is `invalid`. **In both modes disclosure is decided
+now**: an owed update is presented only when its task's current record is one the principal may see
+**and acknowledge**, the same check `acknowledge` makes — anything else is counted in `withheld` and
+never rendered, so a receipt is never issued for what could not be acknowledged. `pending` decides
+the same way. The decisions are re-checked inside the commit's writer section (record revisions and
+the policy epoch), so a task that moves between the decision and the issue is captured again.
+
+**`IBoundTaskDelivery.disposeWithheld({ reason, limit? })`** → `{ subscriptionId, disposed, pinned,
+more }`. Ends up to `limit` owed updates the subscription holds that are withheld now. It is
+**authorized by ownership** — the subscription disposes of its own obligations, so no per-task
+`acknowledge` is asked for what the principal may no longer acknowledge — and each withheld decision
+is re-checked in the writer before anything is written. An id an unexpired, unacknowledged receipt
+names is left in `pinned`, not disposed; `more` says the listing went past `limit`.
 
 **`DeferredObligations.create({ broker, principal, authorization, scope, idPrefix, roles, codes?,
 namespaces?, schedule?, operationBudget?, guard? })`** — a durable retry obligation is a
@@ -790,8 +811,13 @@ namespaces?, schedule?, operationBudget?, guard? })`** — a durable retry oblig
   (`resumePendingRegistration`), so the replay need not repeat the title. Every write's operation id
   is `<taskId>.r<expectedRevision>` (or `.create`, `.archive`), so a write whose response was lost
   replays rather than applying twice. A waiting obligation is answered as it is; a settled one with
-  its terminal status (`succeeded` delivered, `cancelled` ended). A `pending` task under the id is
-  adopted only if it is a tracked task carrying exactly the helper's scope plus `deferral.scopes`.
+  its terminal status (`succeeded` delivered, `cancelled` ended). `deferral.scopes` that repeat a
+  scope or name the helper's own are refused before anything is read. A `pending` task under the id
+  is adopted only if it is a tracked task whose scopes are, as a set, the helper's plus
+  `deferral.scopes`. **Who created it is not checked** — neither the envelope nor a bound view names a
+  creator — so another principal the policy lets create in the helper's scope, with those scopes,
+  would be adopted: the policy is the boundary, and a policy that lets only the host's principal
+  create there closes it.
 - **`stateOf`**, **`wait(obligation, notBefore, { changes?, attention?, summary? })`**,
   **`succeed(obligation, summary)`**, **`cancel(obligation, reason)`** (each terminal step archives),
   and **`merged(obligation, into)`** — cancelled under the `merged` code with a reference to `into`,

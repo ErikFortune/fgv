@@ -130,6 +130,12 @@ Every `await` between a read and the write that relies on it, and what re-checks
 | D7 | `abandonPending`: list → cancel | a replayed deferral sets the task waiting in between | each cancel carries the revision it was listed at and is refused; reported in `issues`, the obligation left waiting | *abandonPending leaves a task that was set waiting after it was listed* (the deferral injected from the cancel's authorization check) |
 | D8 | listings: page → page | a commit moves the index mid-listing | the bound view refuses a stale page (`conflict`, `safe`) and the listing restarts, bounded at three attempts | *a listing the repository keeps moving under fails after bounded rereads* |
 | D10 | `defer` over a `pending` task: state read → wait | the task under the id is another principal's, a list, or carries other scopes | its kind and scopes, from the same read, must be exactly what this helper would have created; otherwise refused | *a pending task under an obligation id is adopted only if …* (F5) |
+| W1 | `pending` / `prepare`: disclosure decided outside the writer (epoch captured, then each owed task's record read and `sees` + `may('acknowledge')` asked) | the task moves, is reassigned or the policy changes after its decision | `pending`: after deciding, every decided record revision is re-read (`recordsHold`) and the epoch compared; a mismatch is `conflict`, `safe`, so no answer mixes before and after. `prepare`: the decision map rides into the writer section, where `fenceHolds(writer, disclosure)` re-reads each decided record beside the subscription and `'task'` fences, and the epoch is checked; any move re-captures (bounded at three) | *pending reports a conflict when a task it decided moves before it answers* (G4); *prepare captures again when a task it disclosed moves before it issues* (G3); *a policy that keeps moving makes disposeWithheld and pending report a conflict* |
+| W2 | `prepare` → `acknowledge` on a disclosed update | the principal loses acknowledge between them | `acknowledge` re-authorizes against the current record as before; a refusal is **released** by the pump (W5) and the update is withheld from the next `prepare` | *to where this principal may no longer see it …* (`windows.test.ts`); *the receipt is released and the object spent …* (G8) |
+| W3 | `disposeWithheld`: list owed → decide each task → clock → writer | a withheld task becomes visible again, or a receipt is issued, before the write | in the writer: the subscription record is read, each decided record revision is re-checked (`fenceHolds`), ids an unexpired unacknowledged manifest names are set aside as `pinned`, and the epoch compared; only then `disposeObligations` | *an id decided withheld that became visible before the write is not ended* (G5); *a limit bounds the call …; a receipt's pin is reported, not ended* (G6) |
+| W4 | `disposeWithheld` authorization | the principal may no longer acknowledge what it disposes | **by ownership**, deliberately: the subscription disposes of its own obligations, no per-task `acknowledge` is asked (that is the case it exists for), and nothing about the task is disclosed — the answer is ids only | *the withheld update's content is never disclosed …* |
+| W5 | pump: acknowledge refused → release | the receipt is kept and pins the revision | the record entry is deleted and the receipt released before the failure returns; a release that fails too is named in the message | *a refused acknowledgement gives up its receipt* (both; G8) |
+| W6 | pump: owed probe (`pending({ limit: 1 })`) while a commit lands | the probe's `conflict` stops the pump | retried while the failure is `retry: 'safe'`, bounded at three; any other failure is returned | *a revision arriving during prepare is never lost* (G10); *an unclassified probe failure is not retried* |
 | D9 | budget: `waitsRemaining` is derived, not read | another writer spent operations | the repository holds the closeout slots itself and refuses the wait (`backpressure`); closeout stays possible | *the repository budget … is what a wait finally answers to* |
 
 ## Revert matrix
@@ -194,6 +200,12 @@ non-terminal step has no older revision to catch.
 - **`IBoundTaskDelivery.prepare` gained an options argument** (round 1): `currentState: 'owed-only'`.
   Optional, so existing implementations still satisfy the interface; the only one is
   `BoundTaskDelivery`, and the pump's own test doubles were updated.
+- **`IBoundTaskDelivery` widened again** (round 2): `disposeWithheld`. Breaking for implementers; the
+  implementers swept are `BoundTaskDelivery`, `RecordingDelivery` in `prompt/handoff.test.ts`, and the
+  pump test doubles (built by spreading a real delivery). `samples/testbed` only consumes.
+- **Disclosure changed in the default `'include'` mode too** (round 2): decided on the task's current
+  record and on `acknowledge`, where it had been decided on the update's own snapshot by `sees` alone.
+  The change file says so.
 - **A committed acknowledgement is a success** with follow-up `issues`, not a failure.
 - **`retry` advises; it does not hold.** Backoff and the day bound are options of the helper, but a
   `hold` lives in the host's memory — the brief forbids a resident loop, and a held map would be one.
@@ -226,6 +238,27 @@ the fix alone (`revert2.py`; F1–F9 all compiled, lint-clean and red). Code in 
 
 **Original pump rows re-run against the new pump**, all red: R1 (2 tests), R2 (5), R3 (1 — *an
 older revision is presented on its own*), R4 (7), R7 (12), R8 (2), R9 (1).
+
+## Review round 2
+
+Findings on `9249de91e` (probes `r1`–`r5`, `p1`–`p8`; `p4`/`p5` updated for `DeferOutcome`), each fixed
+and tested, and the test shown red by reverting the fix alone (`revert3.py`; G1–G10, every row red).
+Code in `e4e01c3c2`.
+
+| Finding | Fix | Test(s) | Red when reverted |
+|---|---|---|---|
+| **P1-A** the pump stuck for good on an owed revision of a task that had left the binding's scopes (or was reassigned, or no longer acknowledgeable): disclosure judged the update's snapshot, `acknowledge` judged the current record, so the revision was presented, refused, presented again | **Disclosure is decided now**, on the same check `acknowledge` makes: `_decide` reads the task's current record and asks `sees` **and** `may('acknowledge')`, cached per task, in both `prepare` modes and in `pending`; the decisions are fenced (W1). Withheld updates are counted, never rendered. **`IBoundTaskDelivery.disposeWithheld`** ends them, authorized by the subscription's ownership, pin-aware and bounded (W3, W4); `TaskDeliveryPump.disposeWithheld` delegates. **The pump does not dispose on its own**: access can come back (a policy changing again, a task moved back) and a disposal cannot be undone — the host decides when, and gets an exact report | *a task moved out of the binding's scopes …*; *a policy that now denies acknowledging …*; *a reassignment …* (each: the pump delivers the next task); *the withheld update's content is never disclosed*; the `disposeWithheld` tests; `withheldFaults.test.ts` (seven). The P1-A scenario is the reviewer's probe `r2` on `9249de91e` (every `next` failed); the same probe now delivers the next task in both the move and deny-acknowledge cases; the tests call `disposeWithheld`, so they do not compile against it | G1 (visibility not decided on the current record: 12 tests); G2 (no `acknowledge` check: 8) |
+| **P2-A** the pump's record shared arrays with the object handed out, so `entry.updateIds.push(…)` edited what `dispose` would act on | the handed object is `_deepFrozen(structuredClone(issued))` and the record a separate deep-frozen clone | *the handed object is frozen all the way down, and dispose ends only what was prepared* | G7 |
+| **P2-B** `defer` replays were refused forever when `scopes` repeated (adoption compared lists) | `_scopesOf` refuses repeated scopes and the helper's own scope up front, before anything is read; adoption compares de-duplicated, sorted sets | *deferral scopes that repeat or name the helper's own are refused …*; *a pending task is compared … as a set of scopes, whatever the order* | G9 |
+| **P2-C** a foreign principal's `pending` task with matching kind and scopes is adopted | the creator is **not exposed** — neither the envelope nor a bound view names one — so it cannot be checked. The `defer` TSDoc and `CAPABILITIES.md` now say exactly what is checked (kind, scope set) and that the policy is the boundary; the test pins the residual and the mitigation (a policy letting only the host's principal create in the helper's scope refuses the stranger) | *who created a pending task is not checked: the policy is the boundary* | — (documents a residual) |
+| P3 budget failure named nothing owed | the nothing-fits path releases the receipt and fails naming the revision and up to 20 owed ids from the first `pending` page; an unreadable listing is named in their place. TSDoc: an oversize revision is skipped while a smaller one fits | *the budget failure names what is owed*; the pump budget test now expects `Owed: t1:1:0` | — |
+| P3 a failed acknowledge kept its receipt | released, object spent (W5) | *a refused acknowledgement gives up its receipt* (two) | G8 |
+| P3 `nothingVisible` past the 1,000 cap | documented on `next`, `prepare` and in `CAPABILITIES.md`: a subscription whose first 1,000 owed updates are all withheld presents nothing until `disposeWithheld` ends some | — | — |
+| P3 `abandonPending` / `_obligationKeyOf` scope checks to match `_adoptable` | `_obligationKeyOf` TSDoc says why a sweep cannot match exactly: it does not know which instance scopes a deferral named. Every sweep path comes through the helper's own view, which selects only tasks carrying the helper's scope — the scope check a sweep can make — beside kind and id; every write is still authorized by the broker | — | — |
+
+Also: the probe now retries a `safe` conflict (W6, G10), found when a commit injected during
+`pending` stopped the pump; `windows.test.ts` updated for disclosure-now (a task retitled out of view
+is withheld, and the acknowledge-check counts are measured from after `prepare`, which now asks too).
 
 ## Gates
 

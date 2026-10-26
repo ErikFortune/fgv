@@ -44,6 +44,7 @@ host-driven bounded calls — no timers, no resident loop:
 
 - `brief.md` — the frozen contract
 - `result.md` — placement and API decisions, per-helper surface, the check-then-act table, the
-  22-row revert matrix (each row red), the ask's contract tests mapped to tests, deviations, gates
+  22-row revert matrix (each row red), the ask's contract tests mapped to tests, deviations, the
+  two review rounds (finding, fix, test, revert row), gates
 - `state.md` — interpretations and open questions
 - `meta.yaml` — the index record
