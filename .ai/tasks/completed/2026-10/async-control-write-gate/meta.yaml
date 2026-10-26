@@ -32,6 +32,11 @@ summary:
     old Promise<TaskResult<T>> type could not admit. pause answers an AsyncDetailedResult (an
     AsyncResult subclass) so its failure is classified. Reverting the not-run-success
     classification hangs the broker suite, so that change also removes a latent non-termination.
+    Review round 1 (no P1) confirmed that hang as a production defect on release: createNative
+    recursed forever as microtasks. createNative and registerExternal now bound a retried miss
+    themselves. A section that ran and then rejected is reconcile-first rather than "nothing
+    written". WriteGate refuses a non-Result write as 'threw' and keeps FIFO order across a resume,
+    and the refusal detail is read structurally, so it survives a second copy of ts-utils.
   sourceLine: '**Shipped:** `@fgv/ts-extras` `AsyncControl.WriteGate` is a host-wide write switch. `raise` refuses every guarded write unrun, waiting ones included, and `pause` holds new writes until the ones under way drain, bounded and nestable. `@fgv/ts-agent-tasks` broker `writeGuard` takes it with no adapter.'
   headline: >
     A host can stop every write it routes through one AsyncControl.WriteGate, or hold them still for
@@ -49,4 +54,4 @@ keywords:
   - broker write guard
   - schedule timer
   - fgv-ask
-sourceHash: sha256:6653e8a402e47048 # over brief.md + state.md + result.md
+sourceHash: sha256:9a1cb1395f0923be # over brief.md + state.md + result.md

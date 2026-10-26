@@ -145,6 +145,73 @@ These ran on the tree combined with `origin/integration/asks` @ `da35380ee`, whi
 
 None of the known load-sensitive tests failed, so no package re-run was needed.
 
+## Review round 1
+
+Review of `53d1d2f8a` found no P1. The `WriteGate` state machine held under a 3000-operation stress
+run, and #758's guard contract had not regressed. The fixes are in `40e71570e`.
+
+### The R14 finding is a production defect on `release`
+
+The reviewer confirmed what revert row R14 showed. **On `release`, a write guard that answers
+success without running the section makes `createNative` recurse forever.** The section's
+"nothing to report" (`ok(undefined)`) reads as "went live under it, run again". The retried attempt's
+own bound sits inside `_createOnce`, which the fabricated answer never reaches. The recursion is
+pure microtasks, so it hangs the whole process; no timer, watchdog or test timeout can interrupt it.
+
+This branch fixes it in two places:
+
+- `_guarded` classifies a not-run success as `invalid`. That has been in since `599a8563f`.
+- **Defence in depth (round 1).** `createNative` and `registerExternal` now check the bound
+  themselves. A retried attempt that again finds nothing answers `invalid` / `after-host-action`
+  ("creation retried and still found nothing to report", and the same for registration) instead of
+  recursing.
+
+The reviewer's probe (`r14.js`) now settles in 1–2 ms with one guard call, in both its `undefined`
+and its value variant.
+
+### Changes
+
+| Item | Change |
+|---|---|
+| R14 defence in depth | The bound described above, in `createNative` and `registerExternal`. A test stands in for a regressed `_guarded` (a `BrokerCore.prototype.gated` spy answering "nothing to report"). The spy breaks the loop after 10 calls, so a missing bound is a red assertion rather than a hang. A test timeout cannot interrupt a microtask loop, which is why the test does not rely on one. The fabricating-guard test bounds itself the same way. |
+| **P2-1:** a section that ran and then rejected read as "nothing was written" | `_guarded` sets `seen.started` **before** calling the section. A started section whose promise rejects is `storage-unavailable` / `reconcile-first`, and the message carries the rejection (`its own outcome: rejected: …`). So is a guard that ran the section and then answered a non-`Result`. Not-run answers that are not a `Result` are `invalid`. The "either way nothing was written" comment is now scoped to the never-started branch. |
+| **P3-1:** late-start wording | "After the broker observed the answer" is now used in four places: the `ITaskWriteGuard` remarks, the `writeGuard` doc, `CAPABILITIES.md` and the `once` refusal message. Each also says that a start inside the few-microtask window is awaited and classified as started. A test pins that window. |
+| **P3-2:** non-`Result` writes | `WriteGate` refuses a write that resolves to anything other than a `Result` as `'threw'`, with "the write did not resolve to a Result". **Why `'threw'` rather than a new kind:** its documented meaning is now "the write ran and did not answer a `Result`", and a caller does the same thing in all three cases. A separate kind would add a branch that leads to no different action. |
+| **P3-3:** order across a resume | **Kept FIFO** (the preferred option). Writes woken by a resume are counted (`_waking`). A write that asks before they have all re-decided queues behind them. The last of them to decide wakes that queue, unless a pause was taken in between. This took about ten lines. |
+| **P3-4:** cross-copy `instanceof` | The not-run refusal's detail is read structurally (`'detail' in result`) and validated by the broker's `ITaskFailure` converter. There is no cast and no `instanceof`, so a failure built by another copy of ts-utils keeps its classification. |
+
+### Tests added
+
+- **ts-agent-tasks** (`guardRobustness.test.ts`, 9 tests):
+  - the fabricating guard;
+  - the creation and registration bound;
+  - P2-1 with a real `WriteGate` over a repository whose `withWriter` commits and then rejects;
+  - the forging-guard variant (it swallows the rejection and answers `conflict` / `safe`);
+  - a swallowing guard that answers success;
+  - a guard that answers a non-`Result`, once after running the section and once without;
+  - the late-start window;
+  - a refusal shaped like one from another copy of ts-utils.
+- **ts-extras:** a non-`Result` write refused as `'threw'`, and order kept across a resume.
+
+### Revert rows, round 1 (each red)
+
+Run the same way as the matrix above. Each row was restored after its run; every run had
+0 TypeScript errors and 0 lint errors.
+
+| Row | Mutation | Red |
+|---|---|---|
+| B1 | `createNative` recurses on a retried miss | 1: `creation and registration bound their own retry…` |
+| B2 | `registerExternal` recurses on a retried miss | 1: the same test |
+| B3 | Started marked only when the section fulfils (the P2-1 defect) | 10, incl. every real-`WriteGate` broker test and the P2-1 tests |
+| B4 | The guard's answer is not checked for being a `Result` | 2: both non-`Result` tests |
+| B5 | Refusal detail read by `instanceof` again | 1: `a refusal from another copy of ts-utils keeps its classification` |
+| B6 | Not-run success passed through (R14) | 2, **now as assertions rather than a hang**: `…answers success without running the section is invalid` and `…is refused invalid on its first answer, without a retry loop` |
+| B7 | `WriteGate` passes a non-`Result` through raw | 1: `refuses a write that resolves to something that is not a Result…` |
+| B8 | A new write overtakes woken writes after a resume | 1: `keeps order across a resume…` |
+
+The P2-1 tests were written before the `seen.started` change and confirmed red against the code
+before it (row B3).
+
 ## Brief deltas
 
 - **`ITaskWriteGuard` widened** (`PromiseLike<Result<T>>`). This was forced by the structural-fit
