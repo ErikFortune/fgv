@@ -1,0 +1,53 @@
+id: sqlite-vec-index-identity
+status: shipped
+packages: ['@fgv/ts-agent-memory-sqlite-vec']
+prs: [] # TBD — fill with the merged PR number into integration/asks
+openPrs: []
+opened: 2026-10-26
+closed: 2026-10-26
+summary:
+  intended: >
+    personaility#699: the two sqlite-vec index classes recover only the dimension on reopen, so two
+    same-width embedding models are indistinguishable and a model swap silently serves vectors from
+    another embedding space; rebuild is not atomic and a crash leaves an undetectable partial table.
+    Store an opaque identity in the index file (one fgv_sqlite_vec_meta row per table), report it
+    via identity() read every call, fence add/addFragments/query on mismatch or incomplete, commit
+    the identity with the first write and at the end of rebuild, allow adoptIdentity() only on
+    absent, and leave the interfaces and in-memory indexes untouched.
+  shipped: >
+    Exactly that surface on SqliteVecVectorIndex and SqliteVecFragmentIndex: identity?: string on
+    all four param interfaces, identity() and adoptIdentity() returning IIndexIdentityReport, a
+    lazily created meta table read through a strict converter (bigint-tolerant, meta_version 1
+    only), first-write table creation and identity row in one transaction, rebuild clear plus
+    'rebuilding' marker in one transaction with a conditional final commit, and every fence check in
+    the same transaction as the read or write it guards. README, CAPABILITIES and api.md updated;
+    change file minor.
+  diverged: >
+    The meta statements could not live in _stmts (undefined until a dimension exists) and went into
+    a retained, release()-dropped cache on a shared internal IndexIdentity helper instead. The
+    existing "a rebuild prepares nothing" tests had to warm up with one rebuild, because the first
+    rebuild now prepares and keeps the meta statements. Choices the brief left open: incomplete
+    outranks unchecked, an identity-less first write deletes an orphan row rather than creating the
+    meta table, an identity-less rebuild still writes the marker, and the final commit fails if the
+    marker changed underneath it. Left open and documented: concurrent rebuilds on two connections,
+    and standalone identity() not being snapshot-consistent across its two reads.
+  sourceLine: '**Shipped:** `SqliteVecVectorIndex` and `SqliteVecFragmentIndex` store an opaque embedding identity in the index file itself, report it with `identity()` on every call, fence writes and queries while it disagrees or a rebuild never finished, and make a partial rebuild detectable instead of silent.'
+  headline: >
+    The sqlite-vec indexes now store which embedding model wrote their vectors in the same file, and
+    refuse to mix models or serve a half-finished rebuild until you rebuild.
+keywords:
+  - embedding model swap
+  - same-dimension collision
+  - second source of truth
+  - sidecar identity
+  - crash during rebuild
+  - partial table detection
+  - fencing
+  - check-then-act
+  - better-sqlite3 transaction
+  - vec0 DDL rollback
+  - safe-integer mode
+  - orphan row
+  - adoptIdentity
+  - fgv-ask
+sourceHash: sha256:bf4bec8437a83d49 # over brief.md + result.md + state.md

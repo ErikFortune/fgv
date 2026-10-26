@@ -35,6 +35,7 @@
 
 <!-- BEGIN GENERATED: recent-additions -->
 
+- **2026-10-26** — The sqlite-vec indexes now store which embedding model wrote their vectors in the same file, and refuse to mix models or serve a half-finished rebuild until you rebuild.
 - **2026-08-22** — **Shipped:** the rebuild-path table clear runs through `exec`, so the one statement `release()` could never reach no longer exists. ([#654](https://github.com/ErikFortune/fgv/pull/654))
 - **2026-08-21** — **Shipped:** `release()` on both index classes — it drops the index's prepared statements and marks it unusable, and **never touches the connection**. A released index fails, or for the synchronous counts throws, rather than answering as an empty one. ([#651](https://github.com/ErikFortune/fgv/pull/651))
 - **2026-08-15** — **Outcome:** delivered. Additive; `create()` is untouched on both classes.
