@@ -13,8 +13,12 @@ import { ITaskSummary, IUnresolvedTaskReference } from './summary';
  * Everything a bound principal can ask to do, each checked separately.
  * @remarks
  * Scopes, hierarchy, responsibility, source binding and command receipts grant none of these.
- * `subscribe`, `acknowledge`, `stop`, `release-stop` and `dispose-obligation` are declared for the
- * slices that implement them (T7, T8, T9); T5 checks the rest.
+ *
+ * `acknowledge` and `dispose-obligation` are asked in two forms. Naming a task, they ask about that
+ * task. Naming **no task**, carrying only a subscription's selection `scopes`, they ask whether the
+ * principal may acknowledge, or dispose of obligations, **for any task in those scopes** —
+ * `IBoundTaskDelivery.disposeWithheld` asks this for both actions, and `closeSubscription` for
+ * `dispose-obligation`. See {@link ITaskAccessRequest}.
  * @public
  */
 export type TaskAction =
@@ -74,6 +78,14 @@ export type TaskAccessRole = 'subject' | 'parent' | 'previous-parent' | 'new-par
  * set the task will carry once the change commits. A `subscribe` request, and a `dispose-obligation`
  * over a whole subscription, carry the subscription's selection scopes. `targetResponsibility` is
  * `'unassigned'` for an explicit unassignment.
+ *
+ * **A missing `task` is never a grant.** An `acknowledge` or `dispose-obligation` request with no
+ * `task` and no `reference`, only `scopes`, asks the broadest question — may this principal
+ * acknowledge, or dispose, for **any** task in those scopes — and is what lets a delivery end
+ * obligations for tasks it can no longer be shown (`disposeWithheld`) or close a subscription with
+ * its obligations (`closeSubscription`). A policy must answer it on the scopes alone, and must not
+ * read the absent task as "nothing to check". A policy that grants it at the scope level but denies
+ * particular tasks still lets that binding end those tasks' obligations unseen.
  * @public
  */
 export interface ITaskAccessRequest {

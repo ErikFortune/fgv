@@ -802,7 +802,15 @@ no task — only a binding that could have acknowledged these obligations may en
 Otherwise `not-found-or-denied`. **The binding's policy decides what counts as withheld**: the checks
 refuse a binding narrower on principal, selectors or those grants, but not one merely narrower about
 a particular task than the consumer's real policy — so call it only through a binding built with
-**the consumer's own policy**. Each withheld decision is re-checked in the
+**the consumer's own policy**.
+
+**For policy authors: a scope-only request is the broadest question, never a free pass.**
+`acknowledge` and `dispose-obligation` are also asked with **no task named**, carrying only a
+subscription's selection `scopes` — by `disposeWithheld` (both actions) and `closeSubscription`
+(`dispose-obligation`). It means "may this principal acknowledge / dispose for **any** task in these
+scopes". Answer it on the scopes; never treat the missing `task` as a grant. A policy that grants it
+at the scope level while denying particular tasks still lets that binding end those tasks'
+obligations through `disposeWithheld`. Each withheld decision is re-checked in the
 writer before anything is written. An id an unexpired, unacknowledged receipt names is counted in
 `pinned`, not disposed; `more` says the listing went past `limit`.
 
