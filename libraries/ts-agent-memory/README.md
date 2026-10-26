@@ -186,9 +186,10 @@ store.durability;
   instead, pass `durability: { require: 'process-crash' }` (or `'session'`). A
   root whose capability inquiry *fails* — it does not exist, or it lies outside
   its accessors' tree — fails the open: only an answer degrades, never a refusal.
-- **Symbolic links.** A root or scope directory reached through a symbolic link
-  is qualified as its target. A scope directory that links *outside* the root
-  is refused for atomic writes.
+- **Symbolic links.** A root reached through a symbolic link is qualified as its
+  target and works normally. A scope directory that *is* a symbolic link is
+  refused: a filesystem listing does not show it, so no read, open walk or sweep
+  could ever find a record written through it.
 - **No silent fallback.** A later write that cannot honour the chosen guarantee
   — say a scope directory on another mount — fails; it is never retried as a
   plain write.

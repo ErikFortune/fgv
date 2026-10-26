@@ -937,16 +937,34 @@ describe('FileTreeMemoryStore durability on the filesystem', () => {
     viaLink.dispose();
   });
 
-  test('a scope directory that is a symbolic link is written through', async () => {
+  test('a scope directory that is a symbolic link is refused, not written where no read can find it', async () => {
     const { real } = linkedLayout();
     const vault: string = path.join(real, 'vault');
     const elsewhere: string = path.join(vault, 'elsewhere');
     fs.mkdirSync(elsewhere);
     fs.symlinkSync(elsewhere, path.join(vault, 'knowledge'));
     const store = open(fsRoot(vault)).orThrow();
-    expect(await store.put(record('intro', 'through the link'))).toSucceed();
-    expect(fs.readFileSync(path.join(elsewhere, 'intro.md'), 'utf8')).toContain('through the link');
+    expect(await store.put(record('intro', 'through the link'))).toFailWith(
+      /memory store: '.*knowledge' exists but is not a directory the store can list/i
+    );
+    expect(fs.readdirSync(elsewhere)).toEqual([]);
     store.dispose();
+  });
+
+  test('a scope directory linked to another scope directory is refused rather than silently unreadable', async () => {
+    const { real } = linkedLayout();
+    const vault: string = path.join(real, 'vault');
+    const store = open(fsRoot(vault)).orThrow();
+    (await store.put(record('other', 'a real record'))).orThrow();
+    store.dispose();
+    // Re-point the scope through a link: the listing hides it, so a write through it would land
+    // in a directory whose records belong to a different scope.
+    fs.renameSync(path.join(vault, 'knowledge'), path.join(vault, 'knowledge-real'));
+    fs.symlinkSync(path.join(vault, 'knowledge-real'), path.join(vault, 'knowledge'));
+    const reopened = open(fsRoot(vault), { onRecordError: 'skip' }).orThrow();
+    expect(await reopened.put(record('intro', 'unreadable'))).toFailWith(/exists but is not a directory/i);
+    expect(fs.existsSync(path.join(vault, 'knowledge-real', 'intro.md'))).toBe(false);
+    reopened.dispose();
   });
 
   test('a root outside its accessors’ tree is refused, not degraded to plain writes there', () => {
@@ -992,12 +1010,10 @@ describe('FileTreeMemoryStore durability on the filesystem', () => {
     fs.mkdirSync(outside);
     fs.symlinkSync(outside, path.join(vault, 'knowledge'));
     const store = open(fsRoot(vault)).orThrow();
-    if (store.durability.atomic) {
-      expect(await store.put(record('intro', 'escaped'))).toFailWith(
-        /resolves through a symbolic link to .*outside the tree root/i
-      );
-      expect(fs.readdirSync(outside)).toEqual([]);
-    }
+    // Refused by the store before the write reaches the accessor's own real-path confinement,
+    // which ts-json-base's suite pins directly.
+    expect(await store.put(record('intro', 'escaped'))).toFailWith(/exists but is not a directory/i);
+    expect(fs.readdirSync(outside)).toEqual([]);
     store.dispose();
   });
 

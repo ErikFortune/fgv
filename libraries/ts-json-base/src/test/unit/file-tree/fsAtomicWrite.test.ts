@@ -159,6 +159,22 @@ describe.each(atomicTestRoots())('FsFileTreeAccessors atomic writes on $label', 
     }
   });
 
+  test('sweeps through the real directory the confinement check accepted', () => {
+    fs.mkdirSync(path.join(root, 'target'));
+    const inner = path.join(root, 'inner');
+    fs.symlinkSync(path.join(root, 'target'), inner);
+    // A spy without an implementation calls through; only its arguments are of interest.
+    const readdir = jest.spyOn(fs, 'readdirSync');
+    try {
+      expect(accessors.cleanupAtomicTemporaries(inner)).toSucceedWith([]);
+      expect(readdir.mock.calls.map((call) => String(call[0]))).toEqual([
+        fs.realpathSync(path.join(root, 'target'))
+      ]);
+    } finally {
+      jest.restoreAllMocks();
+    }
+  });
+
   test('a directory inside the root that links elsewhere inside it is accepted', () => {
     fs.mkdirSync(path.join(root, 'target'));
     const inner = path.join(root, 'inner');

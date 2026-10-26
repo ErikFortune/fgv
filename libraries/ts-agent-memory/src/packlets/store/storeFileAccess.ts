@@ -151,6 +151,36 @@ export function resolveScopeDir(
   });
 }
 
+/**
+ * Create `name` under `parent`, then require the parent's listing to show it as a directory.
+ *
+ * @remarks
+ * A directory the store writes into must be one its reads can find. A filesystem listing shows only
+ * real files and directories, so an entry it hides — a symbolic link, say — is invisible to every
+ * read, the open walk and the sweep, while a create over it can still succeed and send the write
+ * through the link. A record written there could never be read back. Re-listing after the create
+ * is what tells "created" from "something unlisted was already there".
+ */
+function createListedDirectory(
+  parent: FileTree.IMutableFileTreeDirectoryItem,
+  name: string
+): Result<FileTree.IMutableFileTreeDirectoryItem> {
+  return parent
+    .createChildDirectory(name)
+    .onSuccess((created) =>
+      parent
+        .getChildren()
+        .onSuccess((children) =>
+          children.some((c) => c.type === 'directory' && c.name === name)
+            ? succeed(created)
+            : fail<FileTree.IMutableFileTreeDirectoryItem>(
+                `memory store: '${created.absolutePath}' exists but is not a directory the store can list ` +
+                  `(a symbolic link or other special entry); a record written there could never be read back`
+              )
+        )
+    );
+}
+
 /** Ensure the scope directory exists, creating segments as needed. */
 export function ensureScopeDir(
   root: FileTree.IMutableFileTreeDirectoryItem,
@@ -167,7 +197,7 @@ export function ensureScopeDir(
               (c) => c.type === 'directory' && c.name === segment
             );
             if (existing === undefined) {
-              return current.createChildDirectory(segment);
+              return createListedDirectory(current, segment);
             }
             /* c8 ignore next 3 -- defensive: a child of a mutable in-memory/fs tree is itself mutable; the guard protects against a read-only adapter handed in as root */
             if (!FileTree.isMutableDirectoryItem(existing)) {

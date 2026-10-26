@@ -428,13 +428,14 @@ export class FsFileTreeAccessors<TCT extends string = string>
    */
   public cleanupAtomicTemporaries(directory: string): Result<ReadonlyArray<string>> {
     const absolutePath = this.resolveAbsolutePath(directory);
-    return this._confineToRoot(absolutePath)
-      .onSuccess(() => this.fileIsMutable(directory).asResult)
-      .onSuccess(() =>
-        cleanupAtomicTemporaries(defaultAtomicFsOperations, absolutePath, (...paths: string[]) =>
+    // Sweep the real directory the confinement check accepted, as the write commits through it.
+    return this._confineToRoot(absolutePath).onSuccess((realDirectory) =>
+      this.fileIsMutable(directory).asResult.onSuccess(() =>
+        cleanupAtomicTemporaries(defaultAtomicFsOperations, realDirectory, (...paths: string[]) =>
           this.joinPaths(...paths)
         )
-      );
+      )
+    );
   }
 
   /**
