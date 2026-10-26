@@ -1,7 +1,7 @@
 id: agent-memory-atomic-writes
 status: shipped
 packages: ['@fgv/ts-agent-memory', '@fgv/ts-json-base']
-prs: [] # TBD — the PR number is filled in when the PR opens (#TBD in the ledger)
+prs: [756]
 openPrs: []
 opened: 2026-10-26
 closed: 2026-10-26

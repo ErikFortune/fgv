@@ -1,6 +1,6 @@
 # `agent-memory-atomic-writes` — atomic record writes and a single-writer guard for `FileTreeMemoryStore`
 
-**Status:** shipped via #TBD into `integration/asks` (2026-10-26). Origin: personaility#700.
+**Status:** shipped via #756 into `integration/asks` (2026-10-26). Origin: personaility#700.
 
 ## What it delivered
 

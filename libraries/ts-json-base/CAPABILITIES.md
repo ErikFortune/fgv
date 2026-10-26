@@ -42,7 +42,7 @@
 
 <!-- BEGIN GENERATED: recent-additions -->
 
-- **2026-10-26** — A crash mid-write no longer leaves a torn memory record that fails the next open: FileTreeMemoryStore writes atomically wherever its root can, says so on store.durability, and allows one store per root per process.
+- **2026-10-26** — A crash mid-write no longer leaves a torn memory record that fails the next open: FileTreeMemoryStore writes atomically wherever its root can, says so on store.durability, and allows one store per root per process. ([#756](https://github.com/ErikFortune/fgv/pull/756))
 - **2026-10-19** — New @fgv/ts-extras-re2: re2PatternValidator lets fromJson and adaptMcpTools accept an untrusted JSON Schema pattern — linear-time RE2 matching, ECMA-262 meaning or a named refusal. ([#746](https://github.com/ErikFortune/fgv/pull/746))
 - **2026-10-18** — ai-assist: verifiedEndpoint lets an endpoint override use the provider's keyword table, default is dropped instead of folded, client-tool turns are pre-flighted at creation, and Anthropic tools refuse a typeless root. ([#743](https://github.com/ErikFortune/fgv/pull/743))
 - **2026-10-18** — JsonSchema factories never throw: constraint keywords, default and examples arrive through numberOptions / integerOptions / stringOptions / schemaOptions, each a Result of a nominal options instance, and a raw constraint literal is a compile error. ([#740](https://github.com/ErikFortune/fgv/pull/740))

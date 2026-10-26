@@ -205,7 +205,7 @@ markers.*
 
 <!-- BEGIN GENERATED: recent-additions -->
 
-- **2026-10-26** — A crash mid-write no longer leaves a torn memory record that fails the next open: FileTreeMemoryStore writes atomically wherever… · `ts-agent-memory` `ts-json-base`
+- **2026-10-26** — A crash mid-write no longer leaves a torn memory record that fails the next open: FileTreeMemoryStore writes atomically wherever… ([#756](https://github.com/ErikFortune/fgv/pull/756)) · `ts-agent-memory` `ts-json-base`
 - **2026-10-26** — ai-assist can run a whole client-tool conversation: runClientToolLoop caps rounds and honours a deadline and caller abort even when… ([#755](https://github.com/ErikFortune/fgv/pull/755)) · `ts-extras`
 - **2026-10-26** — ICryptoProvider now generates and imports non-extractable HMAC-SHA256 keys itself, and composite ids can split at the first or last… ([#754](https://github.com/ErikFortune/fgv/pull/754)) · `ts-extras` `ts-web-extras` `ts-utils`
 - **2026-10-26** — The sqlite-vec indexes now store which embedding model wrote their vectors in the same file, and refuse to mix models or serve a… ([#753](https://github.com/ErikFortune/fgv/pull/753)) · `ts-agent-memory-sqlite-vec`
