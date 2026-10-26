@@ -154,4 +154,15 @@ without a rebuild per mutation), the named tests run, and the file restored. Log
 
 ## Gates
 
-See the "Gate results" section appended at the end of the run.
+Logs under the worktree's untracked `.gate-logs/`, graded by grep, not exit code.
+
+| gate | result |
+|---|---|
+| `ts-extras` build + lint + test | build and lint clean; tests `Failures: 0`, coverage 100% on every metric (after one fix: an uncovered default initializer in `stopConditions.ts` became a definite-assignment `let`) |
+| `testbed` build, lint, test | clean, `Failures: 0` (one `no-useless-concat` that prettier introduced was fixed) |
+| repo-wide `rush rebuild` | `SUCCESS: 39 operations`; 39 `completed` lines; `not met|FAILURE|Operations failed|error TS` = 0; only warning is the Git-tracked symlink notice |
+| repo-wide `rush test` | 37 succeeded, 1 no-op, 1 failure: `@fgv/ts-res-cli` "test consistent output by building same input twice", the known load-sensitive test. Re-run alone: `Failures: 0`. No other failure; `not met|error TS` = 0; no warnings beyond the symlink notice |
+| `rush change --verify --target-branch origin/integration/asks` | passes; one change file, `@fgv/ts-extras` `minor` |
+| prettier 2.8.8 `--check` on every changed `.ts` / `.json` / `.md` | all formatted |
+| `generate-capability-feed` then `--check` | 2 targets updated, then 0 stale |
+| `verify-capability-docs` | router 23,229/24,000 chars, 107 shortcuts (longest 225/240), 0 failed |

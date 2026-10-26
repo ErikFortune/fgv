@@ -74,6 +74,7 @@
 
 <!-- BEGIN GENERATED: recent-additions -->
 
+- **2026-10-26** — ai-assist can run a whole client-tool conversation: runClientToolLoop caps rounds and honours a deadline and caller abort even when a tool ignores its signal.
 - **2026-10-18** — ai-assist: verifiedEndpoint lets an endpoint override use the provider's keyword table, default is dropped instead of folded, client-tool turns are pre-flighted at creation, and Anthropic tools refuse a typeless root. ([#743](https://github.com/ErikFortune/fgv/pull/743))
 - **2026-10-18** — JsonSchema factories never throw: constraint keywords, default and examples arrive through numberOptions / integerOptions / stringOptions / schemaOptions, each a Result of a nominal options instance, and a raw constraint literal is a compile error. ([#740](https://github.com/ErikFortune/fgv/pull/740))
 - **2026-10-18** — JsonSchema pattern: a host's /…/u RegExp via stringOptions is enforced and sent where the wire documents pattern, and fromJson admits a server's pattern only through an injected patternValidator — the library never compiles one. ([#742](https://github.com/ErikFortune/fgv/pull/742))
