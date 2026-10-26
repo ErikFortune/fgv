@@ -148,6 +148,7 @@ detail. `· pkg` names the owning package.*
 - **Semantic recall over that vault** → `InMemoryCosineIndex` `SqliteVecVectorIndex` `SqliteVecFragmentIndex` `FragmentSemanticRetriever` · `ts-agent-memory`
 - **Vector/fragment embeddings must survive a process restart?** → `SqliteVecVectorIndex` `SqliteVecFragmentIndex` · `ts-agent-memory-sqlite-vec`
 - **Need to know whether a store's derived state is consistent with its records** → `IVectorIndex` · `ts-agent-memory`
+- **A memory read-modify-write that must not lose a concurrent update?** → `FileTreeMemoryStore` `MemoryWriteResult` · `ts-agent-memory`
 - **Need to measure a `FileTreeMemoryStore`'s resident-memory / open-cost behavior?** → `FileTree` `FileTreeMemoryStore` · `ts-agent-memory`
 - **Reading an envelope's embedding reference, or checking whether it has one?** → `embeddingRefOf` · `ts-agent-memory`
 - **Listing records from a store?** → `addressGuard` `allowAnyAddress` `scanEveryRecord` `listEntries` · `ts-agent-memory`
@@ -208,6 +209,7 @@ markers.*
 <!-- BEGIN GENERATED: recent-additions -->
 
 - **2026-10-26** — A crash mid-write no longer leaves a torn memory record that fails the next open: FileTreeMemoryStore writes atomically wherever… ([#756](https://github.com/ErikFortune/fgv/pull/756)) · `ts-agent-memory` `ts-json-base`
+- **2026-10-26** — A memory read-modify-write can no longer silently lose a concurrent update: FileTreeMemoryStore put and delete take an expected seq… ([#759](https://github.com/ErikFortune/fgv/pull/759)) · `ts-agent-memory`
 - **2026-10-26** — An agent-task host can open or initialize its repository in the strongest mode its root qualifies for, give its own principal a… ([#758](https://github.com/ErikFortune/fgv/pull/758)) · `ts-agent-tasks`
 - **2026-10-26** — ai-assist can run a whole client-tool conversation: runClientToolLoop caps rounds and honours a deadline and caller abort even when… ([#755](https://github.com/ErikFortune/fgv/pull/755)) · `ts-extras`
 - **2026-10-26** — A host can stop every write it routes through one AsyncControl.WriteGate, or hold them still for a snapshot until the writes under… ([#TBD](https://github.com/ErikFortune/fgv/pull/TBD)) · `ts-extras` `ts-agent-tasks`
@@ -216,8 +218,7 @@ markers.*
 - **2026-10-26** — The sqlite-vec indexes now store which embedding model wrote their vectors in the same file, and refuse to mix models or serve a… ([#753](https://github.com/ErikFortune/fgv/pull/753)) · `ts-agent-memory-sqlite-vec`
 - **2026-10-20** — mapSuccess and mapSuccessAsync now hand every failure to a supplied aggregator, even when some results succeeded, so a lenient fold… ([#752](https://github.com/ErikFortune/fgv/pull/752)) · `ts-utils`
 - **2026-10-19** — A memory vault written under a non-identity scope encoding now reopens: FileTreeMemoryStore takes a scopeDecoding inverse and… ([#747](https://github.com/ErikFortune/fgv/pull/747)) · `ts-agent-memory`
-- **2026-10-19** — New @fgv/ts-extras-re2: re2PatternValidator lets fromJson and adaptMcpTools accept an untrusted JSON Schema pattern — linear-time… ([#746](https://github.com/ErikFortune/fgv/pull/746)) · `ts-extras-re2` `ts-json-base` `ts-extras-mcp`
 
-*Showing the 10 most recent of 76. Per-package history is in each `CAPABILITIES.md`.*
+*Showing the 10 most recent of 77. Per-package history is in each `CAPABILITIES.md`.*
 
 <!-- END GENERATED: recent-additions -->

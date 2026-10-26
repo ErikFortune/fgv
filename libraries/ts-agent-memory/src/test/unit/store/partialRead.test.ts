@@ -397,8 +397,11 @@ describe('partial-read store surface', () => {
 
     function firstFile(dir: FileTree.IFileTreeDirectoryItem): FileTree.IFileTreeFileItem | undefined {
       for (const child of dir.getChildren().orThrow()) {
-        if (child.type === 'file') {
+        if (child.type === 'file' && child.name.endsWith('.md')) {
           return child;
+        }
+        if (child.type === 'file') {
+          continue;
         }
         const nested: FileTree.IFileTreeFileItem | undefined = firstFile(child);
         if (nested !== undefined) {
