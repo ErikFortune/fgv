@@ -123,7 +123,7 @@ export async function createNative(
   const first = await _createOnce(core, ctx, input, list, committedScopes, options?.resume === true);
   if (first.isSuccess() && first.value === undefined) {
     return options?.retried === true
-      ? _keptChanging(list ? 'createTaskList' : 'createTracked')
+      ? _keptChanging('create')
       : createNative(core, ctx, input, list, committedScopes, { ...options, retried: true });
   }
   return first.onSuccess((created) => ok(created!));
