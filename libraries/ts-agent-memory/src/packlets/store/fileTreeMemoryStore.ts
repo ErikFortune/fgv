@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { Hash, Logging, Result, fail, mapResults, mapSuccess, succeed } from '@fgv/ts-utils';
+import { Hash, Logging, Result, captureResult, fail, mapResults, mapSuccess, succeed } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
 import {
   AdmissionDecision,
@@ -68,46 +68,16 @@ import { defaultMemoryScopeEncoding } from './scopeEncoding';
 import { IMemoryStore } from './memoryStore';
 import { IMemoryStoreListFilter, MemoryListSelection, isWholeVaultScan } from './listSelection';
 import { vectorRecordSource } from './vectorRecordSource';
+import {
+  IMemoryStoreDurability,
+  IMemoryStoreDurabilityOptions,
+  ISkippedRecord,
+  MemoryRecordErrorMode
+} from './openReport';
+import { StoreRootSession } from './storeRootSession';
 
 /** The on-disk extension for a memory record file. */
 const MEMORY_FILE_EXTENSION: string = '.md';
-
-/**
- * Policy for how {@link FileTreeMemoryStore.create}'s initial vault walk reacts
- * to a record that fails to parse or validate.
- *
- * - `'fail'` (the default) — one unreadable record fails the whole open. The
- *   walk collapses per-record results with `mapResults`, so any single failure
- *   aborts `create()`. This is the historical behavior, preserved byte-for-byte.
- * - `'skip'` — an unreadable record is quarantined (not indexed) rather than
- *   failing the open. Every record that DOES parse loads normally; each skip is
- *   logged at `warn` and surfaced structurally on
- *   {@link FileTreeMemoryStore.skippedRecords}. The offending file is never
- *   deleted or mutated, so a later open (after the body converter is fixed)
- *   re-indexes it. A vault holds every kind in one store, so a required-field
- *   migration on one kind must not make every other record unreadable.
- * @public
- */
-export type MemoryRecordErrorMode = 'skip' | 'fail';
-
-/**
- * A record that {@link FileTreeMemoryStore.create} could not load and
- * quarantined (only produced in {@link MemoryRecordErrorMode | `'skip'` mode}).
- * The `path` identifies WHICH record was skipped so a host can repair it.
- * @public
- */
-export interface ISkippedRecord {
-  /** The record file's on-disk path within the vault (`<scope directory>/<filename>.md`). */
-  readonly path: string;
-  /**
-   * The scope the record lives under: its parent directory path, decoded through
-   * {@link IFileTreeMemoryStoreCreateParams.scopeDecoding | scopeDecoding} when one
-   * is supplied. Absent when that directory does not decode to a scope.
-   */
-  readonly scope?: MemoryScopeKey;
-  /** The parse/validation failure message (includes the record path). */
-  readonly error: string;
-}
 
 /**
  * Parameters for {@link FileTreeMemoryStore.create}.
@@ -329,6 +299,12 @@ export interface IFileTreeMemoryStoreCreateParams {
    * {@link MemoryRecordErrorMode}.
    */
   readonly onRecordError?: MemoryRecordErrorMode;
+  /**
+   * How record writes use the root's atomic-write capability. Absent, the store writes
+   * atomically when the root can and degrades to plain writes when it cannot, reporting which on
+   * {@link FileTreeMemoryStore.durability}. See {@link IMemoryStoreDurabilityOptions}.
+   */
+  readonly durability?: IMemoryStoreDurabilityOptions;
 }
 
 /**
@@ -354,6 +330,7 @@ interface IPutOutcome {
 
 interface IInternalParams {
   readonly root: FileTree.IMutableFileTreeDirectoryItem;
+  readonly session: StoreRootSession;
   readonly registry: IRegistry;
   readonly writePolicies: ReadonlyMap<Kind, IWritePolicy>;
   readonly codecs: ReadonlyMap<Kind, IIdentityCodec>;
@@ -396,6 +373,8 @@ interface IInternalParams {
  */
 export class FileTreeMemoryStore implements IMemoryStore {
   private readonly _root: FileTree.IMutableFileTreeDirectoryItem;
+  /** The single-writer claim on `_root`, and the writer every record write and delete uses. */
+  private readonly _session: StoreRootSession;
   private readonly _registry: IRegistry;
   private readonly _writePolicies: ReadonlyMap<Kind, IWritePolicy>;
   private readonly _codecs: ReadonlyMap<Kind, IIdentityCodec>;
@@ -450,6 +429,7 @@ export class FileTreeMemoryStore implements IMemoryStore {
 
   private constructor(params: IInternalParams) {
     this._root = params.root;
+    this._session = params.session;
     this._registry = params.registry;
     this._writePolicies = params.writePolicies;
     this._codecs = params.codecs;
@@ -469,7 +449,8 @@ export class FileTreeMemoryStore implements IMemoryStore {
       fragmentIndex: params.fragmentIndex,
       fragmentEmbedder: params.fragmentEmbedder,
       warn: (message) => this._warnSwallowed(message),
-      embedsKind: (kind) => this.embedsKind(kind)
+      embedsKind: (kind) => this.embedsKind(kind),
+      checkWritable: () => this._session.checkWritable()
     });
     this._skippedRecords = [];
     this._seq = 0;
@@ -489,12 +470,28 @@ export class FileTreeMemoryStore implements IMemoryStore {
     return this._skippedRecords;
   }
 
+  /** Whether record writes are atomic, at what guarantee, and why — established once at open. */
+  public get durability(): IMemoryStoreDurability {
+    return this._session.durability;
+  }
+
+  /**
+   * Release this store's in-process claim on its root, so another store may open it. Idempotent.
+   * Every later write, delete or reconcile fails. Reads still answer, from this store's index —
+   * stale once a new owner writes. A dispose during a delete can leave orphan vector or fragment
+   * entries for the deleted record, which only an index rebuild clears (see `VectorMaintenance`).
+   */
+  public dispose(): void {
+    this._session.release();
+  }
+
   /**
    * Family-convention factory. Resolves the derived index (the caller's
    * {@link IFileTreeMemoryStoreCreateParams.index | index} when supplied, a fresh
    * {@link MemoryIndex} otherwise) and a default LWW policy, then performs an
    * initial FileTree walk so an existing vault is indexed (and the `seq` counter
-   * resumes past the highest persisted `seq`).
+   * resumes past the highest persisted `seq`). Refuses a root another store in this process
+   * holds; the claim is taken before the walk and released if the open fails.
    */
   public static create(params: IFileTreeMemoryStoreCreateParams): Result<FileTreeMemoryStore> {
     if (params.scopeEncoding !== undefined && params.scopeDecoding === undefined) {
@@ -502,32 +499,44 @@ export class FileTreeMemoryStore implements IMemoryStore {
         'memory store: scopeEncoding requires scopeDecoding, so the open-time walk can recover each directory scope'
       );
     }
+    const logger: Logging.ILogger = params.logger ?? new Logging.NoOpLogger();
     return KnowledgeLwwPolicy.create().onSuccess((defaultPolicy) =>
-      FileTreeMemoryStore._resolveIndex(params.index).onSuccess((index) => {
-        const store: FileTreeMemoryStore = new FileTreeMemoryStore({
-          root: params.root,
-          registry: params.registry,
-          writePolicies: params.writePolicies ?? new Map<Kind, IWritePolicy>(),
-          codecs: params.codecs ?? new Map<Kind, IIdentityCodec>(),
-          rankProjectors: params.rankProjectors ?? new Map<Kind, RankProjector>(),
-          embedKinds: params.embedKinds,
-          defaultCodec: params.defaultCodec,
-          defaultPolicy,
-          scopes: {
-            encode: params.scopeEncoding ?? defaultMemoryScopeEncoding,
-            decode: params.scopeDecoding
-          },
-          clock: params.clock ?? Date.now,
-          index,
-          observers: params.observers ?? [],
-          logger: params.logger ?? new Logging.NoOpLogger(),
-          vectorIndex: params.vectorIndex,
-          embed: params.embed,
-          fragmentIndex: params.fragmentIndex,
-          fragmentEmbedder: params.fragmentEmbedder
-        });
-        return store._initialIndex(params.onRecordError ?? 'fail').onSuccess(() => succeed(store));
-      })
+      FileTreeMemoryStore._resolveIndex(params.index).onSuccess((index) =>
+        StoreRootSession.open(params.root, params.durability, logger).onSuccess((session) =>
+          // Everything after the claim is captured, so neither a failure nor a throw leaves it held.
+          captureResult(() => {
+            const store: FileTreeMemoryStore = new FileTreeMemoryStore({
+              root: params.root,
+              session,
+              registry: params.registry,
+              writePolicies: params.writePolicies ?? new Map<Kind, IWritePolicy>(),
+              codecs: params.codecs ?? new Map<Kind, IIdentityCodec>(),
+              rankProjectors: params.rankProjectors ?? new Map<Kind, RankProjector>(),
+              embedKinds: params.embedKinds,
+              defaultCodec: params.defaultCodec,
+              defaultPolicy,
+              scopes: {
+                encode: params.scopeEncoding ?? defaultMemoryScopeEncoding,
+                decode: params.scopeDecoding
+              },
+              clock: params.clock ?? Date.now,
+              index,
+              observers: params.observers ?? [],
+              logger,
+              vectorIndex: params.vectorIndex,
+              embed: params.embed,
+              fragmentIndex: params.fragmentIndex,
+              fragmentEmbedder: params.fragmentEmbedder
+            });
+            return store._initialIndex(params.onRecordError ?? 'fail').onSuccess(() => succeed(store));
+          })
+            .onSuccess((opened) => opened)
+            .onFailure((message) => {
+              session.release();
+              return fail(message);
+            })
+        )
+      )
     );
   }
 
@@ -825,7 +834,10 @@ export class FileTreeMemoryStore implements IMemoryStore {
    * order; a failed task does not break the chain for subsequent ones.
    */
   private _enqueue<T>(task: () => Promise<Result<T>>): Promise<Result<T>> {
-    const result: Promise<Result<T>> = this._writeTail.then(task);
+    // A disposed store refuses at entry, so nothing queued behind a dispose embeds or writes.
+    const result: Promise<Result<T>> = this._writeTail.then(() =>
+      this._session.checkWritable().thenOnSuccess(task)
+    );
     this._writeTail = result.then(
       () => undefined,
       () => undefined
@@ -1107,7 +1119,9 @@ export class FileTreeMemoryStore implements IMemoryStore {
         evicted.push(result.value);
       } else {
         this._warnSwallowed(
-          `memory put: best-effort eviction of '${id}' failed (cap may be transiently exceeded; restored on the next write): ${result.message}`
+          this._session.released
+            ? `memory put: eviction of '${id}' skipped: the store was disposed after the write committed; the next owner's admission restores the cap`
+            : `memory put: best-effort eviction of '${id}' failed (cap may be transiently exceeded; restored on the next write): ${result.message}`
         );
       }
     }
@@ -1174,7 +1188,7 @@ export class FileTreeMemoryStore implements IMemoryStore {
     idStem: string
   ): Result<IMemoryRecord<unknown>> {
     return serializeMemoryFile(record.envelope, record.body)
-      .onSuccess((raw) => writeRecordFile(this._root, this._scopes, scope, idStem, raw))
+      .onSuccess((raw) => writeRecordFile(this._root, this._scopes, this._session, scope, idStem, raw))
       .onSuccess(() => this._index.patch('put', { scope, record }))
       .onSuccess(() => succeed(record));
   }
@@ -1215,7 +1229,7 @@ export class FileTreeMemoryStore implements IMemoryStore {
       // Delete the record file + index entry (authoritative), then prune the
       // vector best-effort: a committed delete must not fail because the
       // derived index could not be pruned.
-      return deleteRecordFile(this._root, this._scopes, scope, idStem)
+      return deleteRecordFile(this._root, this._scopes, this._session, scope, idStem)
         .onSuccess(() => this._index.patch('delete', { scope, record: existing }))
         .thenOnSuccess(async () => {
           await this._vectors.removeAll({ scope, id: existing.envelope.id });
@@ -1529,7 +1543,7 @@ export class FileTreeMemoryStore implements IMemoryStore {
       if (existing === undefined) {
         return fail(`memory put: cannot evict '${id}' in scope '${scope}': not found`);
       }
-      return deleteRecordFile(this._root, this._scopes, scope, id)
+      return deleteRecordFile(this._root, this._scopes, this._session, scope, id)
         .onSuccess(() => this._index.patch('delete', { scope, record: existing }))
         .onSuccess(() => succeed(id));
     });

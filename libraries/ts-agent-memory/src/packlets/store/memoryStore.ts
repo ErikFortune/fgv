@@ -259,4 +259,12 @@ export interface IMemoryStore extends IMemoryRecordResolver, IIdentityResolver {
    * {@link MemoryId} is returned.
    */
   delete(kind: Kind, entityId: EntityId): Promise<Result<MemoryId>>;
+
+  /**
+   * Release whatever exclusive hold the store has on its storage, so another store may open it.
+   * Optional: a store that holds nothing need not implement it. Idempotent. After it, every write,
+   * delete and reconcile fails; reads still answer, from what this store last knew — once a new
+   * owner writes, they may be stale.
+   */
+  dispose?(): void;
 }

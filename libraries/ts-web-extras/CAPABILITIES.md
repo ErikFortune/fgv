@@ -32,6 +32,7 @@
 
 <!-- BEGIN GENERATED: recent-additions -->
 
+- **2026-10-26** — ICryptoProvider now generates and imports non-extractable HMAC-SHA256 keys itself, and composite ids can split at the first or last separator so one part may contain it. ([#754](https://github.com/ErikFortune/fgv/pull/754))
 - **2026-08** — Closed out the safer-fetch series. ([#601](https://github.com/ErikFortune/fgv/pull/601))
 - **2026-05** — **PR:** [#322](https://github.com/ErikFortune/fgv/pull/322) — `feat(auth-primitives-batch1): X25519 keypair, SPKI helpers, RFC 8785 canonicalize` ([#322](https://github.com/ErikFortune/fgv/pull/322))
 - **2026-05** — **Status:** Completed 2026-05 ([#343](https://github.com/ErikFortune/fgv/pull/343))

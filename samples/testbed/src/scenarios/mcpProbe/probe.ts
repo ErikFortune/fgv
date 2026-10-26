@@ -151,21 +151,22 @@ export function formatMcpProbeReport(
   }
   lines.push('');
 
-  lines.push(`Skipped — inputSchema outside the supported JSON Schema subset (${result.skipped.length}):`);
+  lines.push(`Skipped (${result.skipped.length}):`);
   if (result.skipped.length === 0) {
     lines.push('  (none)');
   } else {
     for (const skipped of result.skipped) {
-      lines.push(`  ✗ ${skipped.name}`);
+      lines.push(`  ✗ ${skipped.name} (${skipped.kind})`);
       lines.push(`      reason: ${skipped.reason}`);
       lines.push(`      schema: ${JSON.stringify(skipped.schema)}`);
     }
     lines.push('');
     lines.push(
-      'Each skipped tool names a JSON Schema feature `JsonSchema.fromJson` does not yet support, ' +
-        'or one the target wire cannot carry (adaptation uses the conservative wire table by default, ' +
-        'which skips a tool with an untyped `{}` parameter). The raw schema is printed so the subset ' +
-        'can be additively widened in @fgv/ts-json-base.'
+      'A `schema` skip names a JSON Schema feature `JsonSchema.fromJson` does not yet support; a ' +
+        '`wire` skip, one the target wire cannot carry (adaptation uses the conservative wire table by ' +
+        'default, which skips a tool with an untyped `{}` parameter); a `task-support` skip, a tool that ' +
+        'must be invoked as an MCP task. The raw schema is printed so the subset can be additively ' +
+        'widened in @fgv/ts-json-base.'
     );
   }
 
