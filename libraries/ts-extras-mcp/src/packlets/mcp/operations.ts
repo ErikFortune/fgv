@@ -28,27 +28,33 @@
 
 import {
   type DetailedResult,
+  type Converter,
   type Logging,
+  type Result,
   Converters as UtilsConverters,
   Validators,
   fail,
   failWithDetail,
+  succeed,
   succeedWithDetail
 } from '@fgv/ts-utils';
 import { Converters, type JsonObject, type JsonValue } from '@fgv/ts-json-base';
 
 import { line, projectContent, receivedJson, toContentBlocks } from './content';
 import {
+  type IListMcpToolsOptions,
   type IMcpCallToolOptions,
   type IMcpSession,
   type IMcpToolAnnotations,
   type IMcpToolCallResult,
-  type IMcpRequestOptions,
   type IMcpToolDescriptor,
-  type McpFailureReason
+  type IMcpToolExecution,
+  MCP_TASK_SUPPORT_VALUES,
+  type McpFailureReason,
+  type McpTaskSupport
 } from './model';
-import { runSdkRequest } from './request';
-import { type ISdkToolDescriptor, SDK_RAW_RESULT_SCHEMA, classifySdkError } from './sdk';
+import { runSdkRequest, validateTimeoutMs } from './request';
+import { type ISdkListToolsResult, type ISdkToolDescriptor, SDK_RAW_RESULT_SCHEMA, classifySdkError } from './sdk';
 import { McpSession } from './session';
 
 /**
@@ -87,6 +93,44 @@ function _normalizeAnnotations(raw: unknown): IMcpToolAnnotations | undefined {
   return Object.keys(normalized).length > 0 ? normalized : undefined;
 }
 
+const _taskSupport: Converter<McpTaskSupport, ReadonlyArray<McpTaskSupport>> =
+  UtilsConverters.enumeratedValue<McpTaskSupport>(MCP_TASK_SUPPORT_VALUES);
+
+/**
+ * Validates/normalizes a raw (untrusted) MCP `Tool.execution` blob into an {@link IMcpToolExecution}.
+ *
+ * @remarks
+ * Like {@link _normalizeAnnotations}: a blob that is absent, or not a JSON object, and a
+ * `taskSupport` outside the known vocabulary are dropped — never failing discovery, never propagated
+ * raw — and `undefined` is returned when nothing usable remains. A present value that is dropped is
+ * logged at `info`, in fixed text: nothing server-supplied is echoed. Through the SDK this only sees
+ * values that passed the SDK's own `tools/list` parse: an unknown or malformed value fails the page
+ * as `'protocol'` there, before it gets here.
+ */
+function _normalizeExecution(raw: unknown, logger: Logging.ILogger | undefined): IMcpToolExecution | undefined {
+  if (raw === undefined) {
+    return undefined;
+  }
+  const taskSupport = Converters.jsonObject
+    .convert(raw)
+    .withErrorFormat(() => "a tool's execution metadata is not a JSON object")
+    .onSuccess((obj) =>
+      obj.taskSupport === undefined
+        ? succeed(undefined)
+        : _taskSupport
+            .convert(obj.taskSupport)
+            .withErrorFormat(
+              () => `a tool's execution.taskSupport is not one of ${MCP_TASK_SUPPORT_VALUES.join(', ')}`
+            )
+    )
+    .onFailure((message) => {
+      logger?.info(`mcp: ${message}; it was dropped`);
+      return fail(message);
+    })
+    .orDefault();
+  return taskSupport !== undefined ? { taskSupport } : undefined;
+}
+
 /** `value` when it is a single line of printable text (see `line`); otherwise `undefined`. */
 function _line(value: unknown): string | undefined {
   return line.convert(value).orDefault();
@@ -119,10 +163,12 @@ function _receivedJsonOrOmit(
  * The raw `annotations` blob is validated/normalized (never propagated raw) per the MCP
  * untrusted-server warning. The `title` falls back to the annotations' title, each taken only when
  * it is a single line; the `outputSchema` is carried as raw JSON, or omitted (and the refusal logged
- * at `info`) when it is not JSON or holds a reserved key.
+ * at `info`) when it is not JSON or holds a reserved key. The `execution` blob is normalized like the
+ * annotations (see {@link _normalizeExecution}).
  */
 function _toDescriptor(tool: ISdkToolDescriptor, logger: Logging.ILogger | undefined): IMcpToolDescriptor {
   const annotations = _normalizeAnnotations(tool.annotations);
+  const execution = _normalizeExecution(tool.execution, logger);
   const title = _line(tool.title) ?? annotations?.title;
   const outputSchema = _receivedJsonOrOmit(tool.outputSchema, "a tool's outputSchema", logger);
   return {
@@ -131,7 +177,8 @@ function _toDescriptor(tool: ISdkToolDescriptor, logger: Logging.ILogger | undef
     description: tool.description,
     inputSchema: Converters.jsonValue.convert(tool.inputSchema).orDefault(null),
     ...(outputSchema !== undefined ? { outputSchema } : {}),
-    ...(annotations !== undefined ? { annotations } : {})
+    ...(annotations !== undefined ? { annotations } : {}),
+    ...(execution !== undefined ? { execution } : {})
   };
 }
 
@@ -143,48 +190,138 @@ function _classify(session: McpSession, err: unknown): McpFailureReason {
 }
 
 /**
- * Lists every tool a connected MCP server advertises, following the SDK's `nextCursor`
- * pagination until the full catalog is accumulated.
- *
- * @param session - A session from `connectMcpSession`.
- * @param options - Optional timeout, abort signal and progress callback, applied to each page.
- * @returns `Success` with the full tool catalog, or `Failure` on a foreign handle or a
- * transport/protocol error. The failure's detail is a {@link McpFailureReason}.
- * @public
+ * Validates a listing's bounds: `maxPages` a positive integer, `maxTotalMs` a positive finite number
+ * no greater than the timer limit (see `validateTimeoutMs`). Either may be absent.
  */
-export async function listMcpTools(
-  session: IMcpSession,
-  options?: IMcpRequestOptions
-): Promise<DetailedResult<ReadonlyArray<IMcpToolDescriptor>, McpFailureReason>> {
-  const sessionResult = McpSession.fromHandle(session);
-  if (sessionResult.isFailure()) {
-    return failWithDetail(`listMcpTools: ${sessionResult.message}`, { kind: 'invalid-handle' });
+function _validateListingBounds(options: IListMcpToolsOptions | undefined): Result<IListMcpToolsOptions> {
+  const maxPages = options?.maxPages;
+  if (maxPages !== undefined && !(Number.isSafeInteger(maxPages) && maxPages > 0)) {
+    return fail(`maxPages must be a positive integer (got ${maxPages})`);
   }
-  const mcpSession = sessionResult.value;
-  const { client } = mcpSession;
+  return validateTimeoutMs('maxTotalMs', options?.maxTotalMs).onSuccess(() => succeed(options ?? {}));
+}
 
+/**
+ * The overall deadline of one paged listing: a signal that aborts when `maxTotalMs` elapses or the
+ * caller's signal aborts, whichever happens first.
+ *
+ * @remarks
+ * Every page request is issued with {@link _ListingDeadline.signal} in place of the caller's, so an
+ * expiry aborts the page in flight exactly as a caller's abort would. Which of the two came first is
+ * decided by the reason the signal carries — `AbortSignal.any` keeps the reason of the first source
+ * to abort — never by re-reading a clock after the fact. `AbortSignal.any` holds its sources weakly,
+ * so a long-lived caller signal does not accumulate one listener per listing.
+ */
+class _ListingDeadline {
+  public readonly signal: AbortSignal;
+  private readonly _expiry: Error = new Error('listMcpTools: maxTotalMs elapsed');
+  private readonly _timer: ReturnType<typeof setTimeout>;
+
+  public constructor(maxTotalMs: number, callerSignal: AbortSignal | undefined) {
+    const expiry = new AbortController();
+    this._timer = setTimeout(() => expiry.abort(this._expiry), maxTotalMs);
+    this.signal = callerSignal === undefined ? expiry.signal : AbortSignal.any([callerSignal, expiry.signal]);
+  }
+
+  /** Whether the deadline, rather than the caller, is what aborted the listing. */
+  public get expired(): boolean {
+    return this.signal.reason === this._expiry;
+  }
+
+  public dispose(): void {
+    clearTimeout(this._timer);
+  }
+}
+
+/** Reads the pages of one listing, enforcing its bounds. See {@link listMcpTools}. */
+async function _listPages(
+  mcpSession: McpSession,
+  options: IListMcpToolsOptions,
+  deadline: _ListingDeadline | undefined
+): Promise<DetailedResult<ReadonlyArray<IMcpToolDescriptor>, McpFailureReason>> {
+  const { maxPages, maxTotalMs } = options;
+  const pageOptions = deadline !== undefined ? { ...options, signal: deadline.signal } : options;
   const all: IMcpToolDescriptor[] = [];
   let cursor: string | undefined;
+  let pages: number = 0;
 
   // Cursor-paginated loop: fetch each page, accumulate, advance until nextCursor is absent.
   do {
     const params = cursor !== undefined ? { cursor } : undefined;
-    const pageResult = await runSdkRequest(
+    const pageResult = await runSdkRequest<ISdkListToolsResult>(
       'listMcpTools',
-      options,
+      pageOptions,
       (err) => _classify(mcpSession, err),
-      (sdkOptions) => client.listTools(params, sdkOptions)
+      (sdkOptions) => mcpSession.client.listTools(params, sdkOptions)
     );
     if (pageResult.isFailure()) {
-      return failWithDetail(pageResult.message, pageResult.detail);
+      // A page that failed once the deadline had fired failed because of it: the expiry aborts the
+      // page in flight, and the SDK rejects with that abort. (The check runs in the same microtask
+      // chain as the failure, so no timer can fire between them.) A caller's abort that landed first
+      // keeps its own reason, and so its own classification.
+      return deadline?.expired === true
+        ? failWithDetail(`listMcpTools: the listing did not complete within maxTotalMs (${maxTotalMs} ms)`, {
+            kind: 'limit-exceeded',
+            limit: 'maxTotalMs'
+          })
+        : failWithDetail(pageResult.message, pageResult.detail);
     }
+    pages++;
     for (const tool of pageResult.value.tools) {
       all.push(_toDescriptor(tool, mcpSession.logger));
     }
     cursor = pageResult.value.nextCursor;
+    if (cursor !== undefined && maxPages !== undefined && pages >= maxPages) {
+      return failWithDetail(`listMcpTools: the server's tool list continues past maxPages (${maxPages})`, {
+        kind: 'limit-exceeded',
+        limit: 'maxPages'
+      });
+    }
   } while (cursor !== undefined);
 
   return succeedWithDetail(all);
+}
+
+/**
+ * Lists every tool a connected MCP server advertises, following the SDK's `nextCursor`
+ * pagination until the full catalog is accumulated.
+ *
+ * @remarks
+ * The request options (`timeoutMs`, `signal`, progress) apply to each page. Two optional bounds
+ * apply to the whole listing, and neither has a default: `maxPages` stops a server that pages
+ * without end, and `maxTotalMs` stops one that pages slowly. Exceeding either fails the listing with
+ * the `'limit-exceeded'` {@link McpFailureReason}, naming the bound; the pages already read are
+ * discarded, never returned as a truncated catalog.
+ *
+ * @param session - A session from `connectMcpSession`.
+ * @param options - Optional per-page request options, and the listing's bounds.
+ * @returns `Success` with the full tool catalog, or `Failure` on a foreign handle, an invalid option,
+ * an exceeded bound, or a transport/protocol error. The failure's detail is a {@link McpFailureReason}.
+ * @public
+ */
+export async function listMcpTools(
+  session: IMcpSession,
+  options?: IListMcpToolsOptions
+): Promise<DetailedResult<ReadonlyArray<IMcpToolDescriptor>, McpFailureReason>> {
+  return McpSession.fromHandle(session)
+    .withFailureDetail<McpFailureReason>({ kind: 'invalid-handle' })
+    .onSuccess((mcpSession) =>
+      _validateListingBounds(options)
+        .withFailureDetail<McpFailureReason>({ kind: 'invalid-options' })
+        .onSuccess((validated) => succeedWithDetail({ mcpSession, validated }))
+    )
+    .withErrorFormat((msg) => `listMcpTools: ${msg}`)
+    .thenOnSuccess(async ({ mcpSession, validated }) => {
+      const deadline =
+        validated.maxTotalMs !== undefined
+          ? new _ListingDeadline(validated.maxTotalMs, validated.signal)
+          : undefined;
+      try {
+        return await _listPages(mcpSession, validated, deadline);
+      } finally {
+        deadline?.dispose();
+      }
+    });
 }
 
 /**

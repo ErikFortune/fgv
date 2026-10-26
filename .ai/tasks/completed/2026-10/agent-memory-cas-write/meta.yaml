@@ -58,4 +58,4 @@ relatedStreams:
       id: agent-memory-atomic-writes,
       relationship: 'shipped the single-writer guard and atomic writes this guarantee relies on'
     }
-sourceHash: f50ac764caca4040 # first 16 hex of sha256 over brief.md, state.md and result.md concatenated in that order
+sourceHash: f49aae99910939ef # first 16 hex of sha256 over brief.md, state.md and result.md concatenated in that order
