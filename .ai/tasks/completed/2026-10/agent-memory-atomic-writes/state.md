@@ -40,3 +40,10 @@ Worker-owned working surface. The brief is the contract.
 - [x] docs + change files (979769be2)
 - [x] gates — see result.md / final report
 - [x] close-out
+
+## Review round 1
+
+Adversarial ref-only review of 5fed4dcb3 found the guard identity wrong (P1-1, P2-3, P2-4), a
+symlinked-root regression (P1-2), a thrown open leaking its claim (P2-1), and a disposed store
+still adding vectors (P2-2), plus P3-1 through P3-7. All are fixed per the coordinator's decisions.
+The findings table, tests and red evidence are in `result.md` § Review round 1.

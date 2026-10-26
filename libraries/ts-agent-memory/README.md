@@ -181,24 +181,38 @@ store.durability;
   qualified filesystem root (Linux, ext2/3/4 or tmpfs — see `@fgv/ts-json-base`),
   `'session'` on an in-memory tree. It is chosen once, at `create`.
 - **A root that cannot write atomically** (an unqualified filesystem, a custom
-  `FileTree` without the capability) degrades to plain writes, with
-  `durability.atomic: false` and the root's `reason`. To refuse such a root
-  instead, pass `durability: { require: 'process-crash' }` (or `'session'`).
+  `FileTree` without the capability, or a root that cannot answer the
+  capability inquiry at all) gets plain writes, with `durability.atomic: false`
+  and the root's `reason`. To refuse such a root instead, pass
+  `durability: { require: 'process-crash' }` (or `'session'`).
 - **No silent fallback.** A later write that cannot honour the chosen guarantee
   — say a scope directory on another mount — fails; it is never retried as a
   plain write.
 - **Uncertain outcomes are settled.** If the filesystem reports that the new
   file is already visible (`'replaced'`), the write is treated as committed and
   logged at `warn`. If the outcome is `'unknown'`, the store re-reads the file
-  and reports what it actually holds. Either way the in-memory index follows the
-  file.
+  and reports what it actually holds, and the in-memory index follows. The one
+  case it cannot settle — the re-read itself fails — is reported as a failure
+  that says the file may hold either record; reopening the store settles it.
 - **One store per root, per process.** Opening a second store on a root another
-  store holds fails until the first calls `dispose()`. A disposed store still
-  reads, but refuses writes and deletes. This is an in-process guard only — one
-  writer per root across processes remains the host's responsibility.
+  store holds — or on a directory nested inside it, or containing it — fails
+  until the first calls `dispose()` (also reachable as the optional
+  `IMemoryStore.dispose`). The guard detects **the same accessor instance, or the
+  same real filesystem directory**: two `getDirectory('/')` calls on one tree,
+  two `FsTree`s over one directory, a symbolic-link alias. Two separate accessor
+  objects over one non-filesystem backing store (two `localStorage` accessors on
+  one key, say) cannot be told apart and are not detected. A disposed store
+  refuses writes, deletes and reconciles — including ones already queued, and
+  vector adds whose embedding finishes after the dispose — and still reads, from
+  what it last knew; once a new owner writes, those reads may be stale. This is
+  an in-process guard only — one writer per root across processes remains the
+  host's responsibility.
 - **Interrupted writes are cleaned up.** At open, while holding the guard, the
-  store removes working files that interrupted atomic writes left behind and
-  lists them on `durability.removedTemporaries`.
+  store removes working files that interrupted atomic writes left in its scope
+  directories (those holding a record file) and lists them on
+  `durability.removedTemporaries`, including the ones a partly-failed sweep did
+  remove. A scope directory whose only content is an interrupted first write is
+  swept by a later open, once it holds a record.
 - **Multi-file operations are not atomic as a whole.** A versioned `put` writes
   the new version and then invalidates the previous current version; a
   cap-cull admission writes one record and deletes others. A crash between those

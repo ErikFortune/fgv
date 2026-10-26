@@ -13,6 +13,13 @@ Origin: personaility#700 (fgv-ask). Base / PR target: `integration/asks`.
   `InMemoryTreeAccessors` (`'in-memory tree: …'`, or mutability disabled), and by
   `DirectoryItem` over non-atomic accessors. Before this, the reason was computed by
   `qualifyAtomicWrites` and only reachable by attempting a write.
+- *(review round 1)* `DirectoryItem.getStorageIdentity()` (optional on `IFileTreeDirectoryItem`) →
+  `IFileTreeStorageIdentity { accessors, path, realPath? }`; optional
+  `IFileTreeAccessors.resolveRealPath(path)`, implemented by `FsFileTreeAccessors`
+  (`fs.realpathSync`); exported `atomicWriteGuarantees` (ordered; `AtomicWriteGuarantee` is now
+  derived from it — same type); `FsFileTreeAccessors` qualifies the **real path** of a directory, so
+  a root or scope directory reached through a symbolic link is qualified as its target instead of
+  failing `lstat` as "not a directory".
 - The stale comments in `DirectoryItem.writeChildAtomically` corrected (brief's `directoryItem.ts:179`
   "once F2 makes that accessor atomic-capable", plus the neighbouring "the filesystem one is not yet
   atomic-capable"; the filesystem accessor is atomic-capable and only confines a write when it has
@@ -36,19 +43,38 @@ removedTemporaries }`, computed once at `create`, strongest listed guarantee. No
   contents differ or file absent → failure "a re-read shows the write did not take effect", index
   untouched; re-read itself fails → failure whose message says the file may hold either record and
   the index keeps the previous one until reopened. `'unchanged'` → failure.
-- **Single-writer guard** (`rootOwnership.ts`). A root is held by its directory item always, and by
-  its absolute path unless it is session-only (strongest guarantee exactly `'session'` — the
-  in-memory tree). Non-atomic roots are path-held. `dispose()` (new, idempotent) releases; a failed
-  open releases; a disposed store reads but refuses writes and deletes (`checkWritable` on every
-  `writeRecordFile` / `deleteRecordFile`).
-- **Temporary sweep.** At open, after the claim and before the walk, `sweepAtomicTemporaries` calls
-  `cleanupAtomicTemporaries` on every directory under the root; removed paths go on
-  `durability.removedTemporaries` and are logged at `info`. A sweep failure logs `warn` and does not
-  fail the open (a working file is not a `.md` file, so it can never be read as a record).
+- **Single-writer guard** (`rootOwnership.ts`, as revised in review round 1). A root is claimed by
+  its storage identity: `(accessors instance, path)`, plus its `realPath` for a filesystem root; an
+  item that cannot name its storage is claimed by the item itself. Two claims conflict when they
+  share accessors and their paths **overlap** (equal, or one beneath the other), or when both carry
+  real paths that overlap. **Guarantee: the guard detects the same accessor instance, or the same
+  real filesystem directory** — two `getDirectory('/')` calls on one tree, two `FsTree` instances over
+  one directory, a final or intermediate symlink alias, macOS `/tmp` vs `/private/tmp`. **Not
+  detectable:** two separate accessor objects over one non-filesystem backing store (two
+  `localStorage` accessors on one key) — they carry no real path. **Nested roots are refused**
+  (ancestor/descendant overlap), unlike ts-agent-tasks, which checks equality only: a store's open
+  walk reads every directory beneath its root, so an outer and an inner store would both index and
+  write the inner records. `dispose()` (new, idempotent; also optional on `IMemoryStore`) releases;
+  a failed **or throwing** open releases. A disposed store refuses at the write lock (`_enqueue`, so
+  put / delete / reconcile, queued ones included), before every vector `add` / `addFragments`, and in
+  `writeRecordFile` / `deleteRecordFile`; it still reads, possibly stale once a new owner writes.
+- **Temporary sweep** (revised in round 1). At open, after the claim and before the walk,
+  `sweepAtomicTemporaries` calls `cleanupAtomicTemporaries` on each **scope directory** — a
+  directory beneath the root that holds a record file, i.e. the directories the walk reads records
+  from. The root, intermediate directories, and a scope directory whose only content is an
+  interrupted first write are not swept (the last is swept by a later open). Removed paths — including
+  the ones a sweep that then failed did remove, found by re-listing — go on
+  `durability.removedTemporaries` and are logged at `info`; failures (and a throwing sweep) log
+  `warn` and do not fail the open. A foreign store rooted beneath this one is out of scope: it is
+  refused in-process by the overlap rule, and across processes it is the host's single-writer
+  violation.
+- **Capability inquiry** (round 1). A root that cannot answer `getAtomicWriteCapabilities` (failure
+  or throw) degrades like a root without the capability (`atomic: false`, reason), unless `require`
+  is set, which refuses it.
 - **Layout.** New modules `openReport.ts` (public types; `MemoryRecordErrorMode` and
   `ISkippedRecord` moved here from `fileTreeMemoryStore.ts`, unchanged, same barrel), `storeRootSession.ts`
   (internal: inquiry, requirement, claim, sweep, writer), `rootOwnership.ts`. `fileTreeMemoryStore.ts`
-  is **1979** lines (cap 2000).
+  is **1988** lines (cap 2000).
 - **Consumers fixed** for the guard: 28 reopen sites across 9 test files and
   `perf/residentMemory.js` now dispose the first store. `samples/testbed` opens once (no change).
 
@@ -77,28 +103,65 @@ files, at the two sites the brief named.
 
 | window                                                                     | what is checked                                                    | what can change between check and act                                             | what re-checks after                                                                                                                                                                                                                                                                                                                                                                                               |
 | -------------------------------------------------------------------------- | ------------------------------------------------------------------ | --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| open: inquiry → requirement → claim                                        | `getAtomicWriteCapabilities()` on the root; requirement rank       | another store could claim the root between inquiry and claim                      | `acquireStoreRoot` is the synchronous check-and-set itself; nothing awaits between it and the inquiry, so no other store can interleave in-process                                                                                                                                                                                                                                                                 |
-| open: claim → sweep → walk                                                 | claim held                                                         | nothing in-process (guard); out-of-process writers are out of the fault model     | the sweep runs only under the claim; the walk follows synchronously. A failed walk releases the claim                                                                                                                                                                                                                                                                                                              |
+| open: inquiry → requirement → claim | `getAtomicWriteCapabilities()` (captured: a failure or throw degrades); requirement rank; storage identity (`getStorageIdentity`, real path resolved at claim time) | another store could claim an overlapping root between inquiry and claim; a symlink could be retargeted after the real path is resolved | `acquireStoreRoot` is the synchronous check-and-set over every held claim, by overlap; nothing awaits between inquiry and claim. A retargeted link is outside the guard's claim (it identified the directory at claim time) |
+| open: claim → sweep → walk | claim held | nothing in-process; out-of-process writers are out of the fault model | the sweep runs only under the claim and cannot throw out of it (captured); the walk, constructor and index rebuild run inside `captureResult`, and any failure or throw releases the claim |
 | open: guarantee chosen once → every later write                            | guarantee fixed in the session                                     | the scope directory may sit on another mount, or the root may have been remounted | `writeChildAtomically` re-qualifies the containing directory on every fs write and refuses at validate; the store fails on that refusal and never retries plainly                                                                                                                                                                                                                                                  |
 | write → visibility settle → index patch                                    | `writeChildAtomically` outcome                                     | on `'unknown'`, the file may or may not hold the new record                       | the re-read is the re-check; the index is patched (`_persist` `.onSuccess`) only when the result is success, i.e. only when the file holds the new record. The one window left open: re-read fails → reported failure, index keeps previous envelope, disk may hold the new record; the message says so and a reopen settles it. Reads materialize bodies from disk, so a read in that window returns the new body |
-| write/delete → disposed?                                                   | `checkWritable` at entry of `writeRecordFile` / `deleteRecordFile` | `dispose()` during an in-flight put's `await`                                     | `checkWritable` runs synchronously immediately before the file operation, after every `await` in the put path (the write funnel is synchronous from `_persist` on). A put whose file write already happened before `dispose()` completes normally                                                                                                                                                                  |
+| lock entry → embed → vector add → file write → evictions | `checkWritable` when the queued task starts (`_enqueue`), again immediately before every `add` / `addFragments`, again in `writeRecordFile` / `deleteRecordFile` | `dispose()` during the embedder's `await`, or between the file write and the evictions (`await pruneStaleVector`) | each check is synchronous with the act it guards: nothing awaits between the pre-add check and `add`'s call, nor between the file-access check and the file operation. A put whose file write landed before `dispose()` completes; its skipped evictions warn naming the dispose, and the next owner's admission restores the cap |
 | cap-cull admission (write + N deletes), versioned put (write + invalidate) | per file                                                           | a crash between files                                                             | not atomic by design; per-file atomicity + highest-`seq` current selection + re-cull at next admission (documented in README / CAPABILITIES)                                                                                                                                                                                                                                                                       |
 
 ## Decisions inside the brief's latitude
 
-- Path-keying: non-session roots only (see table). An earlier draft also made session and path
-  holders refuse each other at the same path, as ts-agent-tasks does; dropped, because an in-memory
-  tree is never the same root as a path-held one and the cross-check would refuse e.g. a browser
-  app's in-memory scratch store at `/` while a non-atomic store at `/` is open.
+- Guard identity: superseded in review round 1 by the coordinator's decision (storage identity +
+  real path, overlap refused). The first version keyed on the item always and on the absolute path
+  for non-session roots, which let two `getDirectory('/')` items of one tree both open, refused two
+  unrelated non-atomic backends at `/`, and missed intermediate symlinks.
 - Sweep failure warns rather than failing the open.
 - `durability.removedTemporaries` carries the sweep report (brief offered report or logger; both).
 - A disposed store refuses writes, so a disposed instance cannot be a second writer behind a new
   owner — the property #701's compare-and-set relies on.
 
+## Review round 1 (adversarial ref-only review of 5fed4dcb3)
+
+Every regression test below was run against the 5fed4dcb3 sources of both packages, with the new
+tests kept and `@ts-nocheck` added so they compile against the old API. Result: **ts-json-base, all 8
+new tests red; ts-agent-memory `durability.test`, 26 red** (every new test except the
+`IMemoryStore.dispose` one, plus existing tests whose messages or cascades changed). The probe
+scripts in the review's `aw/` directory were re-run after rebuilding; results are in the last column.
+
+| finding | fix | regression test(s) | red on 5fed4dcb3 | probe after |
+|---|---|---|---|---|
+| P1-1 two `getDirectory('/')` on one tree, and parent/child roots, both open | claim by storage identity; refuse overlap within an accessor and across real paths | _two items for one directory of one tree are the same root_; _a root nested inside another root of the same tree is refused_; fs _a root nested inside an open root is refused_ (_a sibling directory … is a different root_ pins the overlap rule's prefix edge) | yes (opened) | inmem2: second open refused; guard3 nested: refused |
+| P2-3 two non-atomic backends at `/` refuse each other | path is no longer a key on its own | _two different backends without atomic writes, both rooted at /, are different roots_ | yes (refused) | nonatomic: B ok |
+| P2-4 intermediate symlink → two `process-crash` writers | real path in the claim | fs _a directory reached through an intermediate symbolic link is the same root_ | yes (opened) | symlink2: B refused |
+| P1-2 final-component symlink root fails to open | ts-json-base qualifies the real path; an inquiry failure degrades unless `require` | ts-json-base _a directory reached through a symbolic link is qualified as its target_; fs _a root whose last component is a symbolic link opens …_; fs _a scope directory that is a symbolic link is written through_; _degrades when the root cannot answer the inquiry, and a requirement refuses it_; _degrades when the inquiry throws_ | yes | symlink: opens; symlinked-scope put ok |
+| P2-1 a thrown open leaks the claim | post-claim open in `captureResult`; sweep and inquiry captured | _an open that throws releases its claim_ (throwing body converter); _an injected index that throws during the open releases the claim_ | yes (threw, then refused) | leak: both reopens ok |
+| P2-2 disposed store still embeds and adds vectors | `checkWritable` in `_enqueue` (entry of `_putLocked` / `_deleteLocked` / `_reconcileLocked`) and immediately before every `add` / `addFragments` | _a put whose embedding finishes after dispose adds no vector, and a queued put never embeds_; _… fragment embedding … adds no fragments_; _a reconcile is refused once disposed, and one in flight adds nothing after it_ | yes (2 vectors) | disposeRace: 1 embed, 0 vectors |
+| P3-1 sweep failure loses partial removals | the report never fails; partial removals found by re-listing | _a sweep that fails partway reports what it did remove_; _a sweep that throws is reported …_; _a directory the sweep cannot list is reported_ | yes | — |
+| P3-2 sweep reaches every directory | only scope directories (holding a record) | fs _the sweep removes working files only from directories that hold records_ | yes (root's temp removed) | — |
+| P3-3 lone surrogate never compares equal on re-read | compare the UTF-8 round-trips of both | fs _an ambiguous rename of a body with a lone surrogate is settled as committed_ | yes | — |
+| P3-4 README drift | rewritten ("either way", the degrade wording, guard, sweep) | docs | — | — |
+| P3-5 requirement values declared twice; private guarantee rank | `memoryDurabilityRequirements` `as const` → `StringOneOf` type and the converter; `FileTree.atomicWriteGuarantees` exported and used | _declares the requirements once, weakest first_; ts-json-base _atomicWriteGuarantees lists every guarantee_ | yes | — |
+| P3-6 a host holding `IMemoryStore` cannot dispose | optional `dispose?(): void` on `IMemoryStore`; stale-read caveat documented | _a host holding the interface can dispose_ | compile-only (the runtime method already existed) | — |
+| P3-7 an eviction skipped after dispose is blamed on a transient cap | the warning names the dispose | _a cull skipped because the store was disposed says so_ | yes | — |
+
+Also checked: no other package defines `getStorageIdentity`, `resolveRealPath` or
+`atomicWriteGuarantees`. ts-agent-tasks is the other consumer of filesystem qualification, which now
+accepts symlinked directories; it passes **2407 / 0**. Outside scope: ts-agent-tasks'
+`rootOwnership.ts` still keys on `absolutePath`, so it has the P1-1 / P2-4 shape too.
+
+About the prefixed-tree probe (_guard3_, "prefixed tree root '/'"): `forFilesystem(prefix).getDirectory('/')`
+resolves to the filesystem root `/`, outside the prefix. Its capability inquiry fails, so it now
+degrades, as P1-2 requires, and the open walks `/`. 5fed4dcb3 refused it only because the inquiry
+failure happened to be fatal. This is a ts-json-base path-resolution quirk, not a store decision.
+
 ## Gates
 
 All logs under the worktree's `.gate-logs/`, graded by grep, not exit code.
 
+- Round 1 (after the fix commit): `ts-agent-memory` build, lint clean; test **1024 / 0**, 100%
+  coverage. `ts-json-base` build, lint clean; test **1600 / 0**, 100% coverage. `ts-agent-tasks` test
+  **2407 / 0**. The repo-wide runs below predate round 1.
 - `ts-agent-memory`: build, lint clean; test 1002 passed / 0 failed, 100% coverage, no warnings.
 - `ts-json-base`: build clean (api.md gains `reason?`); atomic suites 75 passed.
 - `rush rebuild`: `SUCCESS: 39 operations`, 0 error matches, only the Git-tracked symlink warning.
@@ -109,5 +172,5 @@ All logs under the worktree's `.gate-logs/`, graded by grep, not exit code.
   second run.
 - `rush change --verify --target-branch origin/integration/asks`: passes (both change files found).
 - prettier 2.8.8 (the `rush-prettier` autoinstaller) on every touched file.
-- `fileTreeMemoryStore.ts`: 1979 lines (cap 2000).
+- `fileTreeMemoryStore.ts`: 1988 lines after round 1 (cap 2000).
 - Capability feed regenerated; `--check` 0 stale; `verify-capability-docs` 0 failed.

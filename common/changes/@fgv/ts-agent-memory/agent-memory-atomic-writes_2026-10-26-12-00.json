@@ -2,7 +2,7 @@
   "changes": [
     {
       "packageName": "@fgv/ts-agent-memory",
-      "comment": "BREAKING: FileTreeMemoryStore refuses a second store on a root another store in this process holds, until that store calls the new dispose(); a disposed store refuses writes and deletes. Record files are now written atomically at the strongest guarantee the root offers, reported on the new store.durability (degrading to plain writes where the root offers none), with an opt-in create({ durability: { require } }) that refuses an unqualified root; uncertain write outcomes are settled before they are reported, and the open sweeps interrupted-write working files",
+      "comment": "BREAKING: FileTreeMemoryStore refuses a second store on a root — or on a directory nested inside or around it — that another store in this process holds, until that store calls the new dispose() (also optional on IMemoryStore); a disposed store refuses writes, deletes, reconciles and vector adds. Record files are now written atomically at the strongest guarantee the root offers, reported on the new store.durability (degrading to plain writes where the root offers none), with an opt-in create({ durability: { require } }) that refuses an unqualified root; uncertain write outcomes are settled before they are reported, and the open sweeps interrupted-write working files from its scope directories",
       "type": "minor"
     }
   ],

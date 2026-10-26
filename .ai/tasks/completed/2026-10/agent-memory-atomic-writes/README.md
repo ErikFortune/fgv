@@ -14,10 +14,16 @@
   `create({ durability: { require } })` refuses them instead.
 - **No silent fallback, no lying failure.** A write that cannot honour the chosen guarantee fails.
   `'replaced'` is committed; `'unknown'` is settled by re-reading; the index follows the file.
-- **One store per root per process.** A second store is refused until `dispose()`; a disposed store
-  reads but no longer writes.
+- **One store per root per process.** A second store on the same storage — or on a root nested
+  inside or around it — is refused until `dispose()`. The guard detects the same accessor instance or
+  the same real filesystem directory (symlink aliases included), not two accessor objects over one
+  non-filesystem store. A disposed store reads but no longer writes, reconciles or adds vectors.
 - **Open-time sweep** of interrupted-write working files, under the guard.
-- **`IAtomicWriteCapabilities.reason`** in `@fgv/ts-json-base`, so the store can explain itself.
+- **`@fgv/ts-json-base`, additive:** `IAtomicWriteCapabilities.reason`,
+  `DirectoryItem.getStorageIdentity`, `resolveRealPath`, `atomicWriteGuarantees`; symlinked
+  directories qualify as their targets.
+- **Review round 1** found and fixed six guard / lifecycle defects and seven smaller ones; the table
+  is in `result.md`.
 
 ## Where to look
 
