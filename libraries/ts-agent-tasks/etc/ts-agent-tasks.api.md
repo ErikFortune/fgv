@@ -213,6 +213,15 @@ export function createTaskCommandHandle<P>(descriptor: ITaskCommandDescriptor<P>
 export function createTaskTools(params: ICreateTaskToolsParams): Result<ReadonlyArray<AiAssist.IAiClientTool>>;
 
 // @public
+export const defaultDeferralSchedule: IDeferralSchedule;
+
+// @public
+export const defaultDeferredObligationCodes: IDeferredObligationCodes;
+
+// @public
+export const defaultDeferredObligationNamespaces: IDeferredObligationNamespaces;
+
+// @public
 export const defaultDeliveryCategories: ReadonlyArray<UpdateCategory>;
 
 // @public
@@ -259,6 +268,56 @@ export const defaultTaskProjector: ITaskProjector;
 
 // @public
 export const defaultTaskToolBudget: ITaskToolBudget;
+
+// @public
+export type DeferOutcome = Extract<DeferredObligationState, {
+    readonly state: 'waiting' | 'settled';
+}>;
+
+// @public
+export type DeferralDecision = {
+    readonly action: 'expire';
+} | {
+    readonly action: 'wait' | 'hold';
+    readonly notBefore: number;
+};
+
+// @public
+export class DeferredObligations {
+    abandonPending(before: number): Promise<Result<IDeferredObligationSweep<IDeferredObligationKey>>>;
+    archiveSettled(): Promise<Result<IDeferredObligationSweep<TaskId>>>;
+    cancel(obligation: IDeferredObligation, reason: string): Promise<Result<TaskId>>;
+    static create(params: IDeferredObligationsParams): Result<DeferredObligations>;
+    defer(deferral: IDeferral): Promise<Result<DeferOutcome>>;
+    due(now: number): Promise<Result<IDeferredObligationListing>>;
+    firstNotBefore(now: number): number;
+    keyOf(taskId: TaskId): Result<IDeferredObligationKey>;
+    merged(obligation: IDeferredObligation, into: IDeferredObligation): Promise<Result<TaskId>>;
+    retry(obligation: IDeferredObligation, now: number): DeferralDecision;
+    stateOf(key: IDeferredObligationKey): Promise<Result<DeferredObligationState>>;
+    succeed(obligation: IDeferredObligation, summary: string): Promise<Result<TaskId>>;
+    taskIdFor(key: IDeferredObligationKey): Result<TaskId>;
+    wait(obligation: IDeferredObligation, notBefore: number, change?: IDeferredObligationWait): Promise<Result<IDeferredObligation>>;
+    waiting(): Promise<Result<IDeferredObligationListing>>;
+}
+
+// @public
+export type DeferredObligationState = {
+    readonly state: 'absent';
+} | {
+    readonly state: 'pending';
+    readonly revision: TaskRevision;
+    readonly createdAt: Instant;
+    readonly kind: TaskKind;
+    readonly scopes: ReadonlyArray<ITaskScope>;
+} | {
+    readonly state: 'waiting';
+    readonly obligation: IDeferredObligation;
+} | {
+    readonly state: 'settled';
+    readonly status: TaskLifecycleStatus;
+    readonly archived: boolean;
+};
 
 // @public
 export type DeliveryId = Brand<string, 'DeliveryId'>;
@@ -362,6 +421,11 @@ export class FileTreeTaskRepository implements ITaskRepository {
     withWriter<T>(action: (writer: ITaskRepositoryWriter) => Promise<TaskResult<T>>): Promise<TaskResult<T>>;
 }
 
+// Warning: (ae-internal-missing-underscore) The name "guarded" should be prefixed with an underscore because the declaration is marked as @internal
+//
+// @internal
+export function guarded<T>(guard: ITaskHostWriteGuard | undefined, write: () => Promise<Result<T>>): Promise<Result<T>>;
+
 // @public
 export interface IAbandonCommandRequest {
     // (undocumented)
@@ -392,14 +456,13 @@ export interface IBoundTaskDelivery {
     abandon(deliveryId: DeliveryId): Promise<TaskResult<DeliveryId>>;
     // (undocumented)
     acknowledge(receipt: unknown): Promise<TaskResult<IAcknowledgementResult>>;
+    disposeWithheld(request: IDisposeWithheldRequest): Promise<TaskResult<ITaskWithheldDisposal>>;
     issued(): Promise<TaskResult<ReadonlyArray<ITaskIssuedReceiptSummary>>>;
-    // (undocumented)
     pending(request?: {
         readonly limit?: number;
         readonly cursor?: PageCursor;
     }): Promise<TaskResult<ITaskDeliveryPage>>;
-    // (undocumented)
-    prepare(budget?: ITaskContextBudget): Promise<TaskResult<IPreparedTaskContext>>;
+    prepare(budget?: ITaskContextBudget, options?: ITaskPrepareOptions): Promise<TaskResult<IPreparedTaskContext>>;
     // (undocumented)
     readonly subscriptionId: SubscriptionId;
 }
@@ -410,6 +473,12 @@ export interface IBoundTaskDeliveryParams extends IBoundTaskViewParams {
     readonly consumerId: ConsumerId;
     // (undocumented)
     readonly subscriptionId: SubscriptionId;
+}
+
+// @public
+export interface IBoundTaskDueQuery extends IBoundTaskQuery {
+    // (undocumented)
+    readonly cutoff: Instant;
 }
 
 // @public
@@ -433,14 +502,21 @@ export interface IBoundTaskQuery {
     // (undocumented)
     readonly cursor?: PageCursor;
     // (undocumented)
-    readonly filter?: {
-        readonly responsibility?: IResponsibility;
-        readonly parentId?: TaskId;
-        readonly lifecycleClass?: TaskLifecycleClass;
-        readonly statuses?: ReadonlyArray<TaskLifecycleStatus>;
-    };
+    readonly filter?: IBoundTaskQueryFilter;
     // (undocumented)
     readonly limit?: number;
+}
+
+// @public
+export interface IBoundTaskQueryFilter {
+    // (undocumented)
+    readonly lifecycleClass?: TaskLifecycleClass;
+    // (undocumented)
+    readonly parentId?: TaskId;
+    // (undocumented)
+    readonly responsibility?: IResponsibility;
+    // (undocumented)
+    readonly statuses?: ReadonlyArray<TaskLifecycleStatus>;
 }
 
 // @public
@@ -452,6 +528,7 @@ export interface IBoundTaskView {
     readonly principal: string;
     // (undocumented)
     query(request: IBoundTaskQuery): Promise<TaskResult<IBoundTaskPage>>;
+    queryDue(request: IBoundTaskDueQuery): Promise<TaskResult<IBoundTaskPage>>;
 }
 
 // @public
@@ -501,6 +578,7 @@ export interface IBoundTaskWriter extends IBoundTaskView {
 export interface IBrokerConverters {
     // (undocumented)
     readonly archive: Converter<IArchiveTask>;
+    readonly boundDueQuery: Converter<IBoundTaskDueQuery>;
     // (undocumented)
     readonly boundQuery: Converter<IBoundTaskQuery>;
     // (undocumented)
@@ -754,6 +832,108 @@ export interface ICreateTrackedTask {
 }
 
 // @public
+export interface IDeferral {
+    readonly attention?: ReadonlyArray<ITaskReference>;
+    // (undocumented)
+    readonly key: IDeferredObligationKey;
+    readonly notBefore: number;
+    readonly scopes?: ReadonlyArray<ITaskScope>;
+    readonly summary?: string;
+    readonly title: string;
+}
+
+// @public
+export interface IDeferralSchedule {
+    readonly baseMs: number;
+    readonly capMs: number;
+    readonly maxDeferralMs: number;
+}
+
+// @public
+export interface IDeferredObligation {
+    readonly attention: ReadonlyArray<ITaskReference>;
+    // (undocumented)
+    readonly changedAt: Instant;
+    readonly changes: ReadonlyArray<string>;
+    // (undocumented)
+    readonly createdAt: Instant;
+    readonly key: IDeferredObligationKey;
+    // (undocumented)
+    readonly notBefore?: Instant;
+    readonly reason: IWaitingReason;
+    readonly revision: TaskRevision;
+    // (undocumented)
+    readonly taskId: TaskId;
+    readonly waitsRemaining: number;
+}
+
+// @public
+export interface IDeferredObligationCodes {
+    readonly abandoned: string;
+    readonly cancelled: string;
+    readonly merged: string;
+    readonly wait: string;
+}
+
+// @public
+export interface IDeferredObligationKey {
+    readonly changeRef: string;
+    readonly role: string;
+}
+
+// @public
+export interface IDeferredObligationListing {
+    // (undocumented)
+    readonly issues: ReadonlyArray<string>;
+    // (undocumented)
+    readonly obligations: ReadonlyArray<IDeferredObligation>;
+}
+
+// @public
+export interface IDeferredObligationNamespaces {
+    readonly change: string;
+    readonly obligation: string;
+}
+
+// @public
+export interface IDeferredObligationsParams {
+    readonly authorization: ITaskAuthorization;
+    // (undocumented)
+    readonly broker: TaskBroker;
+    // (undocumented)
+    readonly codes?: Partial<IDeferredObligationCodes>;
+    readonly converters?: TaskConverters;
+    readonly guard?: ITaskHostWriteGuard;
+    readonly idPrefix: string;
+    // (undocumented)
+    readonly namespaces?: Partial<IDeferredObligationNamespaces>;
+    readonly operationBudget?: number;
+    readonly principal: string;
+    readonly roles: ReadonlyArray<string>;
+    // (undocumented)
+    readonly schedule?: Partial<IDeferralSchedule>;
+    readonly scope: ITaskScope;
+}
+
+// @public
+export interface IDeferredObligationSweep<T> {
+    // (undocumented)
+    readonly done: ReadonlyArray<T>;
+    // (undocumented)
+    readonly issues: ReadonlyArray<string>;
+}
+
+// @public
+export interface IDeferredObligationWait {
+    // (undocumented)
+    readonly attention?: ReadonlyArray<ITaskReference>;
+    // (undocumented)
+    readonly changes?: ReadonlyArray<string>;
+    // (undocumented)
+    readonly summary?: string;
+}
+
+// @public
 export interface IDeliveryConverters {
     // (undocumented)
     readonly abandonCommandRequest: Converter<IAbandonCommandRequest>;
@@ -767,6 +947,7 @@ export interface IDeliveryConverters {
     readonly consumerRecord: Converter<ITaskConsumerRecord>;
     // (undocumented)
     readonly disposeRequest: Converter<IDisposeObligationsRequest>;
+    readonly disposeWithheldRequest: Converter<IDisposeWithheldRequest>;
     readonly disposition: Converter<ITaskObligationDisposition>;
     readonly dispositionReason: Converter<string>;
     // (undocumented)
@@ -802,6 +983,14 @@ export interface IDisposeObligationsRequest {
     readonly subscriptionId: SubscriptionId;
     // (undocumented)
     readonly updateIds: ReadonlyArray<UpdateId>;
+}
+
+// @public
+export interface IDisposeWithheldRequest {
+    // (undocumented)
+    readonly limit?: number;
+    // (undocumented)
+    readonly reason: string;
 }
 
 // @public
@@ -1033,6 +1222,18 @@ export interface IPreparedTaskContext {
     readonly deliveryId: DeliveryId;
     // (undocumented)
     readonly expiresAt: Instant;
+}
+
+// @public
+export interface IPreparedTaskDelivery {
+    readonly context: ITaskContext;
+    // (undocumented)
+    readonly deliveryId: DeliveryId;
+    // (undocumented)
+    readonly entry: ITaskDeliveryEntry;
+    // (undocumented)
+    readonly expiresAt: Instant;
+    readonly receipt: ITaskInclusionReceipt;
 }
 
 // @public
@@ -1934,6 +2135,30 @@ export interface ITaskDeliveryDefaults {
 }
 
 // @public
+export interface ITaskDeliveryDischarge {
+    readonly alreadyDischarged: ReadonlyArray<UpdateId>;
+    readonly discharged: ReadonlyArray<UpdateId>;
+    readonly issues: ReadonlyArray<string>;
+    // (undocumented)
+    readonly outcome: TaskDeliveryOutcome;
+    // (undocumented)
+    readonly prepared: IPreparedTaskDelivery;
+    readonly superseded: ReadonlyArray<UpdateId>;
+}
+
+// @public
+export interface ITaskDeliveryEntry {
+    readonly categories: ReadonlyArray<UpdateCategory>;
+    readonly envelope: ITaskEnvelope;
+    // (undocumented)
+    readonly revision: TaskRevision;
+    // (undocumented)
+    readonly taskId: TaskId;
+    readonly terminal: boolean;
+    readonly updateIds: ReadonlyArray<UpdateId>;
+}
+
+// @public
 export interface ITaskDeliveryPage {
     // (undocumented)
     readonly nextCursor?: PageCursor;
@@ -1955,6 +2180,14 @@ export interface ITaskDeliveryPolicy {
     readonly history: SourceHistoryContract;
     // (undocumented)
     readonly schemaVersion: 1;
+}
+
+// @public
+export interface ITaskDeliveryPumpParams {
+    readonly broker: TaskBroker;
+    readonly budget?: Partial<Omit<ITaskContextBudget, 'maxItems'>>;
+    readonly delivery: IBoundTaskDeliveryParams;
+    readonly guard?: ITaskHostWriteGuard;
 }
 
 // @public
@@ -2075,6 +2308,12 @@ export interface ITaskFieldBounds {
     readonly maxScopes: number;
     readonly maxSummaryLength: number;
     readonly maxTitleLength: number;
+}
+
+// @public
+export interface ITaskHostWriteGuard {
+    // (undocumented)
+    guard<T>(write: () => Promise<Result<T>>): Promise<Result<T>>;
 }
 
 // @public
@@ -2318,6 +2557,12 @@ export interface ITaskPerOwnerLimits {
     readonly maxAudiencePerUpdate: number;
     readonly maxOperationsPerTask: number;
     readonly maxOutstandingReceiptsPerSubscription: number;
+}
+
+// @public
+export interface ITaskPrepareOptions {
+    // (undocumented)
+    readonly currentState?: TaskPrepareCurrentState;
 }
 
 // @public
@@ -2845,6 +3090,7 @@ export interface ITaskSubscription extends ITaskSubscriptionSpecification {
     readonly createdAt: Instant;
     // (undocumented)
     readonly id: SubscriptionId;
+    readonly principalKey: string;
     // (undocumented)
     readonly recordRevision: number;
     // (undocumented)
@@ -2923,6 +3169,15 @@ export interface ITaskUpdate {
     readonly snapshot: ITaskSummary;
     // (undocumented)
     readonly taskId: TaskId;
+}
+
+// @public
+export interface ITaskWithheldDisposal {
+    readonly disposed: number;
+    readonly more: boolean;
+    readonly pinned: number;
+    // (undocumented)
+    readonly subscriptionId: SubscriptionId;
 }
 
 // @public
@@ -3371,6 +3626,20 @@ export class TaskConverters {
 export const taskDataInterpretationRules: string;
 
 // @public
+export type TaskDeliveryOutcome = 'acknowledged' | 'disposed';
+
+// @public
+export class TaskDeliveryPump {
+    abandon(prepared: IPreparedTaskDelivery): Promise<Result<DeliveryId>>;
+    acknowledge(prepared: IPreparedTaskDelivery): Promise<Result<ITaskDeliveryDischarge>>;
+    static create(params: ITaskDeliveryPumpParams): Result<TaskDeliveryPump>;
+    get delivery(): IBoundTaskDelivery;
+    dispose(prepared: IPreparedTaskDelivery, reason: string): Promise<Result<ITaskDeliveryDischarge>>;
+    disposeWithheld(reason: string, limit?: number): Promise<Result<ITaskWithheldDisposal>>;
+    next(): Promise<Result<IPreparedTaskDelivery | undefined>>;
+}
+
+// @public
 export class TaskEnvironment implements ITaskEnvironment {
     // (undocumented)
     readonly clock: () => number;
@@ -3479,6 +3748,9 @@ export type TaskMutationDisposition = 'changed' | 'unchanged';
 
 // @public
 export type TaskMutationToolGroup = 'tracked' | 'reassign';
+
+// @public
+export type TaskPrepareCurrentState = 'include' | 'owed-only';
 
 // @public
 export function taskPromptDescriptor(params: ITaskPromptDescriptorParams): Result<IPromptDescriptor>;

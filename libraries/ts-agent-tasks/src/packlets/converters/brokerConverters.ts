@@ -9,7 +9,9 @@ import {
   ICommandResolutionRequest,
   ISourceReconcileRequest,
   IArchiveTask,
+  IBoundTaskDueQuery,
   IBoundTaskQuery,
+  IBoundTaskQueryFilter,
   IChangeTaskScopes,
   ICompleteTaskList,
   ICreateTaskList,
@@ -68,6 +70,8 @@ export interface IBrokerConverters {
   readonly archive: Converter<IArchiveTask>;
   readonly registerExternal: Converter<IRegisterExternalTask>;
   readonly boundQuery: Converter<IBoundTaskQuery>;
+  /** A bound view's due query: the bound query's members plus a `cutoff` instant. */
+  readonly boundDueQuery: Converter<IBoundTaskDueQuery>;
   readonly listCompletion: Converter<IListCompletionRequest>;
   /** A pass of the uncertain-command pump. */
   readonly commandResolution: Converter<ICommandResolutionRequest>;
@@ -188,19 +192,28 @@ export function buildBrokerConverters(
     history: values.sourceHistoryDeclaration.optional()
   });
 
+  const boundFilter: Converter<IBoundTaskQueryFilter> = Converters.strictObject<IBoundTaskQueryFilter>({
+    responsibility: values.responsibility.optional(),
+    parentId: ids.taskId.optional(),
+    lifecycleClass: Converters.enumeratedValue<TaskLifecycleClass>(allTaskLifecycleClasses).optional(),
+    statuses: boundedArrayOf(
+      Converters.enumeratedValue<TaskLifecycleStatus>(allTaskStatuses),
+      allTaskStatuses.length * 4,
+      'statuses'
+    ).optional()
+  });
+
   const boundQuery: Converter<IBoundTaskQuery> = Converters.strictObject<IBoundTaskQuery>({
-    filter: Converters.strictObject<NonNullable<IBoundTaskQuery['filter']>>({
-      responsibility: values.responsibility.optional(),
-      parentId: ids.taskId.optional(),
-      lifecycleClass: Converters.enumeratedValue<TaskLifecycleClass>(allTaskLifecycleClasses).optional(),
-      statuses: boundedArrayOf(
-        Converters.enumeratedValue<TaskLifecycleStatus>(allTaskStatuses),
-        allTaskStatuses.length * 4,
-        'statuses'
-      ).optional()
-    }).optional(),
+    filter: boundFilter.optional(),
     limit: queries.limit.optional(),
     cursor: queries.pageCursor.optional()
+  });
+
+  const boundDueQuery: Converter<IBoundTaskDueQuery> = Converters.strictObject<IBoundTaskDueQuery>({
+    filter: boundFilter.optional(),
+    limit: queries.limit.optional(),
+    cursor: queries.pageCursor.optional(),
+    cutoff: instant
   });
 
   const listCompletion: Converter<IListCompletionRequest> = Converters.strictObject<IListCompletionRequest>({
@@ -355,6 +368,7 @@ export function buildBrokerConverters(
     archive: mutationIdentity,
     registerExternal,
     boundQuery,
+    boundDueQuery,
     listCompletion,
     commandResolution,
     reconcile,

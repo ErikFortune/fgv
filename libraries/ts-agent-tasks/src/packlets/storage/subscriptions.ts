@@ -96,6 +96,7 @@ export function subscriptionState(
   return {
     descriptor: {
       id: record.id,
+      principalKey: record.registration.principalKey,
       consumerId: record.consumerId,
       selection: record.selection,
       start: record.start,

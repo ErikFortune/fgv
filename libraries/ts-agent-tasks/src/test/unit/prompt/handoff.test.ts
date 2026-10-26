@@ -70,6 +70,12 @@ class RecordingDelivery implements IBoundTaskDelivery {
     return this._inner.issued();
   }
 
+  public disposeWithheld(
+    ...args: Parameters<IBoundTaskDelivery['disposeWithheld']>
+  ): ReturnType<IBoundTaskDelivery['disposeWithheld']> {
+    return this._inner.disposeWithheld(...args);
+  }
+
   public acknowledge(receipt: unknown): ReturnType<IBoundTaskDelivery['acknowledge']> {
     if (this.throwAcknowledge) {
       throw new Error('delivery offline');

@@ -43,7 +43,10 @@ whose receipt can be acknowledged only against the exact text that was sent — 
 (the `host` packlet, plus three broker primitives): `openOrInitializeTaskRepository` with the root
 probe the repository itself uses, `trustedKindAuthority` for the host's own principal,
 `TaskBroker.whenIdle`, a `writeGuard` around every broker write, `IBoundTaskDelivery.issued`, and
-resumption of a pending registration from the request the repository stored.
+resumption of a pending registration from the request the repository stored — and the host's own
+**delivery and deferral loops**, as bounded calls: `TaskDeliveryPump` (one owed revision at a time,
+never self-acknowledging) and `DeferredObligations` (durable retry obligations as waiting tracked
+tasks, keyed by change and role, found again after a crash), over the bound view's `queryDue`.
 
 ## Storing tasks durably — `FileTreeTaskRepository`
 
@@ -324,6 +327,11 @@ refuses (`conflict`, `retry: 'safe'`) if the policy epoch moved or a record chan
 host `ITaskAuthorization` whose `policyEpoch()` changes whenever its answers might. A check that
 fails, throws or rejects is a denial. Requests carry no principal or scope field; a fabricated one
 is `invalid`.
+
+**A due pass is a view query too.** `view.queryDue({ cutoff, filter?, limit?, cursor? })` answers the
+waiting tasks within the view whose `notBefore` is at or before `cutoff`, from the repository's due
+index — authorized, projected and cursor-bound exactly like `query`, never a scan. `lifecycleClass`
+may not be `terminal`, and `statuses`, when given, must include `waiting`.
 
 **Views emit projected data only.** `IProjectedTaskEnvelope` has no `binding` member, details
 appear only through a host `ITaskProjector.details`, and `defaultTaskProjector` also removes
@@ -708,6 +716,147 @@ decided it, so it replays even after its parent closed. A view that selects none
 external registration's scopes is told nothing about it. A pending `register-external` resumes through
 `TaskBroker.resumePendingRegistration(taskId)`, a trusted host operation under the principal it was
 accepted for. Withdrawing a pending identity, or recycling its slot, is not offered.
+
+## Host helpers — the delivery pump and deferred obligations
+
+Two loops every broker host writes, as **host-driven bounded operations: no timers, no resident
+loop**. Both go through a binding the host supplies — never around authorization — and both take an
+optional structural write gate, `ITaskHostWriteGuard` (`{ guard(write) }` over plain `Result`), that
+wraps **each helper call as one unit**. The broker's own `writeGuard` wraps each writer section
+*inside* it. Give a pausing gate to one layer, not both: a helper call admitted at the gate whose
+sections then wait behind the same gate's pause is a wait only the gate's timeout ends. For the
+host's own principal, `trustedKindAuthority` is the way to get the authorization both take.
+
+**`TaskDeliveryPump.create({ broker, delivery, guard?, budget? })`** over one subscription's bound
+delivery (`delivery` is the `bindDelivery` binding; disposals use the same one). **One pump per
+subscription**: two are safe — each id still ends in exactly one history list — but both present the
+same top revision, and each one's receipt pins it against the other's disposal.
+
+```ts
+const pump = TaskDeliveryPump.create({ broker, delivery: { principal: 'host', scopes, authorization,
+  subscriptionId, consumerId } }).orThrow();
+// At start-up, as the subscription's only consumer: release receipts an earlier process left behind.
+for (const stale of (await pump.delivery.issued()).orThrow()) {
+  await pump.delivery.abandon(stale.deliveryId);
+}
+const next = (await pump.next()).orThrow();      // one owed task revision, receipt issued — or undefined
+if (next !== undefined) {
+  // … the host does its work; a re-presented revision is recognized by (taskId, revision) …
+  await pump.acknowledge(next);                  // or pump.abandon(next), or pump.dispose(next, reason)
+}
+```
+
+- **`next()`** prepares one item in **`'owed-only'`** mode (`prepare(budget, { currentState:
+  'owed-only' })`, below): each owed revision renders from its own snapshot and no current task state
+  is a candidate, so a task owed nothing — acknowledged attention, an unarchived outcome, a waiting
+  obligation — never takes the slot. Owed revisions come by the renderer's priority, and only those
+  the principal may **see and acknowledge now** (below); a withheld one is never presented, so it
+  never blocks the pump. An oversize revision is skipped while a smaller owed one fits; when none
+  fits (abbreviated, or omitted) the receipt is released and the call **fails loudly**, naming that
+  revision and **only its** update ids — never other tasks', so a host acting on the message ends
+  nothing else — on every call until the host raises the budget or disposes of them. At most 1,000 owed updates are read per preparation, so a
+  subscription whose first 1,000 are all withheld presents nothing until some are ended.
+- **It never acknowledges on its own** and is **at-least-once**: a prepared revision neither
+  acknowledged nor disposed of is presented again. **Exactly-once is not this helper's property** —
+  it is at-least-once here plus a host whose work is findable by `(taskId, revision)`.
+- **Decisions read the pump's own record.** `acknowledge`, `abandon` and `dispose` take back the
+  frozen object `next` handed out and act on what the pump recorded for it — a copy, an edited entry or
+  another pump's delivery is refused.
+- **`acknowledge`** fails with nothing discharged when the acknowledgement does not commit — and
+  then **releases the receipt** and spends the object, so a refusal pins nothing; once it commits the
+  call succeeds, then releases the receipt and — **after a terminal revision only** —
+  disposes of the task's older owed revisions. A follow-up that fails is listed in `issues`, never a
+  failure, since the decision stands. **`dispose(reason)`** releases the receipt first (the broker
+  refuses to dispose of what an issued receipt names), then disposes; a disposal that fails after the
+  release has spent the object, and the revision comes back from `next`. **`abandon`** only releases.
+- **`disposeWithheld(reason, limit?)`** ends owed updates the principal is now **withheld** — a task
+  moved out of the binding's scopes, reassigned, or no longer acknowledgeable — through
+  `IBoundTaskDelivery.disposeWithheld`. The pump never does this on its own: access can come back,
+  and a disposal cannot be undone, so the host decides when.
+- **Receipts a crash leaves behind — release them at start-up** (the loop above). Until abandoned, a
+  stale receipt pins every revision it names: each is presented and can be acknowledged, but `dispose`
+  of it fails; the superseded disposal after a terminal discharge fails (an `issue`), so older
+  revisions come one by one; the task cannot be archived and `cleanup` cannot prune what it names —
+  **and expiry alone does not end that**: an expired receipt stops pinning only when the next receipt
+  issue or disposal on the subscription evicts it. It also holds one of the subscription's 32
+  outstanding-receipt slots, so repeated crashes leave `next` refused with `backpressure`.
+
+**`IBoundTaskDelivery.prepare(budget?, { currentState? })`.** `'include'` (default) renders the
+selection's current tasks beside what is owed; a current task owed nothing renders with no update ids
+and ranks by its own state, so under a small item budget it can take every slot. `'owed-only'`
+renders owed revisions only. Any other value is `invalid`. **In both modes disclosure is decided
+now**: an owed update is presented only when its task's current record is one the principal may see
+**and acknowledge**, the same check `acknowledge` makes — anything else is counted in `withheld` and
+never rendered, so a receipt is never issued for what could not be acknowledged. `pending` decides
+the same way. The decisions are re-checked inside the commit's writer section (record revisions and
+the policy epoch), so a task that moves between the decision and the issue is captured again.
+
+**`IBoundTaskDelivery.disposeWithheld({ reason, limit? })`** → `{ subscriptionId, disposed, pinned,
+more }`, **counts only** — an update id embeds its task id, so a list would name tasks the principal
+may not read; the exact ids stay in the subscription's history for the trusted host. Ends up to
+`limit` owed updates the subscription holds that are withheld now. Not authorized per task, but by
+the subscription as a whole, and only when all three hold: the binding's principal **registered**
+the subscription; the binding's selectors **cover its whole selection**; and the binding's policy
+grants **both `acknowledge` and `dispose-obligation`**, each asked for the selection's scopes naming
+no task — only a binding that could have acknowledged these obligations may end them unseen.
+Otherwise `not-found-or-denied`. **The binding's policy decides what counts as withheld**: the checks
+refuse a binding narrower on principal, selectors or those grants, but not one merely narrower about
+a particular task than the consumer's real policy — so call it only through a binding built with
+**the consumer's own policy**.
+
+**For policy authors: a scope-only request is the broadest question, never a free pass.**
+`acknowledge` and `dispose-obligation` are also asked with **no task named**, carrying only a
+subscription's selection `scopes` — by `disposeWithheld` (both actions) and `closeSubscription`
+(`dispose-obligation`). It means "may this principal acknowledge / dispose for **any** task in these
+scopes". Answer it on the scopes; never treat the missing `task` as a grant. A policy that grants it
+at the scope level while denying particular tasks still lets that binding end those tasks'
+obligations through `disposeWithheld`. Each withheld decision is re-checked in the
+writer before anything is written. An id an unexpired, unacknowledged receipt names is counted in
+`pinned`, not disposed; `more` says the listing went past `limit`.
+
+**`bindDelivery` does not require the registering principal**: a host may subscribe on an agent's
+behalf and bind the agent's delivery. Disclosure and acknowledgement are decided under the binding's
+own authority, but a binding **drains** the subscription — what it acknowledges is no longer owed to
+that `consumerId` — so which principal drains which consumer is the host's to keep straight.
+
+**`DeferredObligations.create({ broker, principal, authorization, scope, idPrefix, roles, codes?,
+namespaces?, schedule?, operationBudget?, guard? })`** — a durable retry obligation is a
+`fgv.tracked@1` task waiting with a `notBefore` under `scope`.
+
+- **Identity**: `taskIdFor({ changeRef, role })` is `<idPrefix>:<role>:<changeRef>` — deterministic,
+  and injective because neither prefix nor role may contain `:`, so **two roles never share a task**.
+  `keyOf(taskId)` inverts it.
+- **`defer({ key, title, notBefore, scopes?, attention?, summary? })`** creates the task, then waits on
+  it. Replayed after a crash it finishes what was interrupted: a task left `pending` is set waiting;
+  a creation left as a pending registration is **resumed from the request the repository stored**
+  (`resumePendingRegistration`), so the replay need not repeat the title. Every write's operation id
+  is `<taskId>.r<expectedRevision>` (or `.create`, `.archive`), so a write whose response was lost
+  replays rather than applying twice. A waiting obligation is answered as it is; a settled one with
+  its terminal status (`succeeded` delivered, `cancelled` ended). `deferral.scopes` that repeat a
+  scope or name the helper's own are refused before anything is read. A `pending` task under the id
+  is adopted only if it is a tracked task whose scopes are, as a set, the helper's plus
+  `deferral.scopes`. **Who created it is not checked** — neither the envelope nor a bound view names a
+  creator — so another principal the policy lets create in the helper's scope, with those scopes,
+  would be adopted: the policy is the boundary, and a policy that lets only the host's principal
+  create there closes it.
+- **`stateOf`**, **`wait(obligation, notBefore, { changes?, attention?, summary? })`**,
+  **`succeed(obligation, summary)`**, **`cancel(obligation, reason)`** (each terminal step archives),
+  and **`merged(obligation, into)`** — cancelled under the `merged` code with a reference to `into`,
+  which is read again first and must be waiting, owed to the **same role**, and owe every change.
+- **`abandonPending(before)`** ends only obligations `pending` before the cutoff, each cancel carrying
+  the revision it was listed at, so one a replayed deferral set waiting in between is left alone and
+  reported. **`due(now)`** reads `queryDue` — never a scan; **`waiting()`**; **`archiveSettled()`**.
+  Sweeps touch only tasks that read as the helper's obligations (an id it makes, kind `fgv.tracked`),
+  report per-task `issues` and carry on. A creation interrupted *inside* the repository — a pending
+  registration — is not a task and is not swept: replaying `defer` resumes it, and the trusted
+  `repository.outstanding()` lists it.
+- **The operation budget.** An obligation reports `waitsRemaining` — the per-task operation limit,
+  less the two closeout slots the repository holds, less its revision — and `wait` refuses, writing
+  nothing, at zero; an identical wait writes nothing at all. **`retry(obligation, now)`** is pure
+  advice from the schedule (`baseMs`, `capMs`, `maxDeferralMs`; default 30 s / 5 min / 1 day):
+  `wait` with the next `notBefore` (backoff = age, clamped), `hold` it in memory at the cap or with no
+  waits left — a busy recipient at a capped backoff would otherwise spend a task's whole budget —
+  or `expire`.
 
 ## Host runbook — capacity pressure and a full repository
 
@@ -1330,6 +1479,7 @@ multi-process ownership, general event sourcing, and dependency DAGs.
 
 <!-- BEGIN GENERATED: recent-additions -->
 
+- **2026-10-26** — An agent-task host can drain a subscription one revision at a time, acknowledging only after its own work commits, and keep a durable retry obligation for a busy recipient that a crash cannot duplicate. ([#762](https://github.com/ErikFortune/fgv/pull/762))
 - **2026-10-26** — An agent-task host can open or initialize its repository in the strongest mode its root qualifies for, give its own principal a fixed trusted authority, wait for the broker to go idle and gate every broker write. ([#758](https://github.com/ErikFortune/fgv/pull/758))
 - **2026-10-01** — Agent task context can go into a cacheable prompt as one checked, trailing per-request slot, and a delivery's receipt is acknowledgeable only against the exact text that was sent. ([#707](https://github.com/ErikFortune/fgv/pull/707))
 - **2026-09-28** — A host can give a model bounded, per-call-authorized tools over its agent tasks: read-only by default, with create, update, reassign, typed commands and cascade-stop requests opt-in. ([#702](https://github.com/ErikFortune/fgv/pull/702))

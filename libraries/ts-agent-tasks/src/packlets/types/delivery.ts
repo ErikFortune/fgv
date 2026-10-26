@@ -201,6 +201,11 @@ export interface ITaskSubscriptionSpecification {
  */
 export interface ITaskSubscription extends ITaskSubscriptionSpecification {
   readonly id: SubscriptionId;
+  /**
+   * The principal that registered the subscription. Only a binding for this principal, whose
+   * selectors cover the whole selection, may {@link IBoundTaskDelivery.disposeWithheld}.
+   */
+  readonly principalKey: string;
   readonly state: TaskSubscriptionState;
   readonly recordRevision: number;
   readonly createdAt: Instant;
@@ -478,6 +483,29 @@ export interface IPreparedTaskContext {
 }
 
 /**
+ * What {@link IBoundTaskDelivery.prepare} renders beside the owed updates.
+ *
+ * @remarks
+ * - `'include'` — the default: the selection's current tasks too, so a context shows the work as it
+ *   is now as well as what changed. A current task the subscription is owed nothing for renders with
+ *   no update ids, and it ranks by its own state — attention and terminal outcomes above routine
+ *   changes — so under a small item budget it can take every slot and deliver nothing.
+ * - `'owed-only'` — only what is owed: each owed revision renders from its own frozen snapshot, and
+ *   no current state is a candidate. Every rendered entry then carries update ids unless the text
+ *   budget abbreviated it. For a consumer that decides one owed revision at a time.
+ * @public
+ */
+export type TaskPrepareCurrentState = 'include' | 'owed-only';
+
+/**
+ * Options for {@link IBoundTaskDelivery.prepare}.
+ * @public
+ */
+export interface ITaskPrepareOptions {
+  readonly currentState?: TaskPrepareCurrentState;
+}
+
+/**
  * A subscription's delivery, bound to one principal (design § 9, `IBoundTaskDelivery`).
  *
  * @remarks
@@ -489,11 +517,27 @@ export interface IPreparedTaskContext {
  */
 export interface IBoundTaskDelivery {
   readonly subscriptionId: SubscriptionId;
+  /**
+   * One page of what this subscription is owed, as this principal may be shown it now: an update is
+   * listed only when its task's committed record is one the principal may see and acknowledge; the
+   * rest are counted in `withheld`.
+   *
+   * @remarks
+   * Fails `conflict`, retry `safe`, when a task it decided on, or the policy epoch, moved before it
+   * answered — so a page never mixes two states. Retry the same call.
+   */
   pending(request?: {
     readonly limit?: number;
     readonly cursor?: PageCursor;
   }): Promise<TaskResult<ITaskDeliveryPage>>;
-  prepare(budget?: ITaskContextBudget): Promise<TaskResult<IPreparedTaskContext>>;
+  /**
+   * Renders a bounded context and issues its receipt. `options.currentState` chooses whether the
+   * selection's current tasks are rendered beside what is owed — see {@link TaskPrepareCurrentState}.
+   */
+  prepare(
+    budget?: ITaskContextBudget,
+    options?: ITaskPrepareOptions
+  ): Promise<TaskResult<IPreparedTaskContext>>;
   acknowledge(receipt: unknown): Promise<TaskResult<IAcknowledgementResult>>;
   /** Removes an issued manifest early. Its obligations stay owed; its history, if any, stays. */
   abandon(deliveryId: DeliveryId): Promise<TaskResult<DeliveryId>>;
@@ -514,6 +558,62 @@ export interface IBoundTaskDelivery {
    * takes a writer-queue slot and passes the broker's `writeGuard`, so a paused guard holds it.
    */
   issued(): Promise<TaskResult<ReadonlyArray<ITaskIssuedReceiptSummary>>>;
+  /**
+   * Ends, with `reason`, the obligations this subscription is owed that this principal is
+   * **withheld** — may no longer see or acknowledge, as each task's committed record stands — up to
+   * `limit` (default and maximum 200) per call.
+   *
+   * @remarks
+   * Not authorized per task — an obligation the principal can never be shown could otherwise never
+   * end, and would hold its task's archive for good — but by the subscription as a whole, and only
+   * when all of these hold: the binding's principal is the one that registered the subscription;
+   * every scope of the subscription's selection lies within the binding's selectors (the rule
+   * `subscribe` applied); and the binding's policy grants both `acknowledge` and `dispose-obligation`,
+   * each asked for those scopes with no task named — only a binding that could have acknowledged
+   * these obligations may end them unseen. Each refusal is the same `not-found-or-denied`.
+   *
+   * **The binding's policy decides what counts as withheld.** These checks refuse a binding that is
+   * narrower on principal, on selectors, or in the grants it is asked for; they cannot tell a policy
+   * that withholds a task for good from one that is merely narrower about that task than the
+   * consumer's real policy. So call this only through a binding built with **the consumer's own
+   * policy**: anything that policy withholds is what the consumer itself can no longer be shown.
+   *
+   * A binding for another principal (a host-registered subscription an agent drains) cannot use this;
+   * the registering principal can, and its own view decides what is withheld from it.
+   *
+   * It answers **counts only**. An update id embeds its task id and revision, so a list of the ids
+   * ended would disclose the identity of tasks the principal may not read; the exact ids stay in the
+   * subscription's history, for the trusted host to read through the repository.
+   *
+   * Each id is decided on its task's committed record, and the writer section re-reads every such
+   * record and the policy epoch before it commits, so an id that became visible meanwhile is not
+   * ended. An id an unexpired issued receipt names is counted in `pinned` rather than ended. `more`
+   * says the limit stopped it. Fails `conflict`, retry `safe`, when what it decided kept moving.
+   */
+  disposeWithheld(request: IDisposeWithheldRequest): Promise<TaskResult<ITaskWithheldDisposal>>;
+}
+
+/**
+ * A request to {@link IBoundTaskDelivery.disposeWithheld}.
+ * @public
+ */
+export interface IDisposeWithheldRequest {
+  readonly reason: string;
+  readonly limit?: number;
+}
+
+/**
+ * What {@link IBoundTaskDelivery.disposeWithheld} did.
+ * @public
+ */
+export interface ITaskWithheldDisposal {
+  readonly subscriptionId: SubscriptionId;
+  /** How many withheld obligations this call ended. */
+  readonly disposed: number;
+  /** How many withheld obligations an unexpired issued receipt still names: left owed. */
+  readonly pinned: number;
+  /** Whether more withheld ids remain past `limit`. */
+  readonly more: boolean;
 }
 
 /**

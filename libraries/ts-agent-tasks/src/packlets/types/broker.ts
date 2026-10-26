@@ -20,7 +20,7 @@ import {
   TaskInspection
 } from './authority';
 import { TaskResult } from './failure';
-import { OperationId, PageCursor, TaskId, TaskKind, TaskRevision, UpdateId } from './ids';
+import { Instant, OperationId, PageCursor, TaskId, TaskKind, TaskRevision, UpdateId } from './ids';
 import { TaskLifecycleClass } from './query';
 import { TaskLifecycleStatus } from './lifecycle';
 import { ISourceBinding, ISourceProjection, RecoveryDeclaration, SourceHistoryDeclaration } from './source';
@@ -199,6 +199,17 @@ export interface IRegisterExternalTask {
 }
 
 /**
+ * The narrowing filter of a bound view's query ({@link IBoundTaskQuery}, {@link IBoundTaskDueQuery}).
+ * @public
+ */
+export interface IBoundTaskQueryFilter {
+  readonly responsibility?: IResponsibility;
+  readonly parentId?: TaskId;
+  readonly lifecycleClass?: TaskLifecycleClass;
+  readonly statuses?: ReadonlyArray<TaskLifecycleStatus>;
+}
+
+/**
  * A bound view's query. Scopes are the view's own; a filter only narrows.
  * @remarks
  * `lifecycleClass` defaults to `all`. There is no `scopes` member, and the converter is strict:
@@ -206,14 +217,21 @@ export interface IRegisterExternalTask {
  * @public
  */
 export interface IBoundTaskQuery {
-  readonly filter?: {
-    readonly responsibility?: IResponsibility;
-    readonly parentId?: TaskId;
-    readonly lifecycleClass?: TaskLifecycleClass;
-    readonly statuses?: ReadonlyArray<TaskLifecycleStatus>;
-  };
+  readonly filter?: IBoundTaskQueryFilter;
   readonly limit?: number;
   readonly cursor?: PageCursor;
+}
+
+/**
+ * A bound view's due query: the waiting tasks within the view whose `notBefore` is at or before
+ * `cutoff`, answered from the repository's due index — never by scanning.
+ * @remarks
+ * The same narrowing filter as {@link IBoundTaskQuery}; `lifecycleClass` may not be `terminal` and
+ * `statuses`, when given, must include `waiting`. Pages are ordered by `(notBefore, taskId)`.
+ * @public
+ */
+export interface IBoundTaskDueQuery extends IBoundTaskQuery {
+  readonly cutoff: Instant;
 }
 
 /**
@@ -241,6 +259,13 @@ export interface IBoundTaskPage {
 export interface IBoundTaskView {
   readonly principal: string;
   query(request: IBoundTaskQuery): Promise<TaskResult<IBoundTaskPage>>;
+  /**
+   * The waiting tasks within this view that are due at `cutoff`, from the repository's due index,
+   * authorized and projected exactly as {@link IBoundTaskView.query} answers: denied candidates are
+   * dropped, and the cursor is bound to this view and policy epoch. Querying never starts or
+   * changes a task.
+   */
+  queryDue(request: IBoundTaskDueQuery): Promise<TaskResult<IBoundTaskPage>>;
   inspect(id: TaskId): Promise<TaskResult<TaskInspection>>;
   /**
    * One cascade stop's current result, as this principal may see it: the root must be visible, and

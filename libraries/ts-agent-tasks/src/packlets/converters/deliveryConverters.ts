@@ -8,6 +8,7 @@ import {
   IAbandonCommandRequest,
   ICloseSubscriptionRequest,
   IDisposeObligationsRequest,
+  IDisposeWithheldRequest,
   IIssuedTaskReceipt,
   ITaskObligationDisposal,
   ITaskObligationDisposition,
@@ -75,6 +76,8 @@ export interface IDeliveryConverters {
   readonly obligationDisposal: Converter<ITaskObligationDisposal>;
   readonly subscriptionClosure: Converter<ITaskSubscriptionClosure>;
   readonly disposeRequest: Converter<IDisposeObligationsRequest>;
+  /** A request to end a bound delivery's withheld obligations. */
+  readonly disposeWithheldRequest: Converter<IDisposeWithheldRequest>;
   readonly closeRequest: Converter<ICloseSubscriptionRequest>;
   readonly abandonCommandRequest: Converter<IAbandonCommandRequest>;
 }
@@ -350,6 +353,11 @@ export function buildDeliveryConverters(
       updateIds,
       reason: dispositionReason
     });
+  const disposeWithheldRequest: Converter<IDisposeWithheldRequest> =
+    Converters.strictObject<IDisposeWithheldRequest>({
+      reason: dispositionReason,
+      limit: queries.limit.optional()
+    });
   const closeRequest: Converter<ICloseSubscriptionRequest> =
     Converters.strictObject<ICloseSubscriptionRequest>({
       subscriptionId: ids.subscriptionId,
@@ -371,6 +379,7 @@ export function buildDeliveryConverters(
     obligationDisposal,
     subscriptionClosure,
     disposeRequest,
+    disposeWithheldRequest,
     closeRequest,
     start,
     categories,
