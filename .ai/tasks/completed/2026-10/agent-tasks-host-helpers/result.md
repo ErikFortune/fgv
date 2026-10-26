@@ -306,3 +306,16 @@ No P1 or P2. Shown red by reverting the fix in the current source (`scratchpad/r
 | P3-2 `_keptChanging` dropped correlation | it takes the task and operation ids: `create <taskId>` / `registerExternal <taskId>`, `{ operationId }` in the detail. A retried attempt answers the second miss itself inside the writer, so no extra branch | the two bounded-retry tests assert the message and `{ code, retry, operationId }` | yes — r4-kept-changing-ids (3 red) |
 | P3-3 `ae-internal-missing-underscore` in `api.md` | renamed `_taskScopeKey` / `_taskRecordScopes`; the report carries no `ae-` warning | — | — |
 | P3-4 (optional) | applied: a replay is authorized for `_taskRecordScopes(record)` whenever the record exists, so a scope change committed between passes is what is asked | existing replay tests | — |
+
+### Round 4 gates
+
+| gate | result |
+|---|---|
+| package `build` / `lint` | 0 error/failure matches; no warning lines |
+| package `test` | 2497 passed, 0 failed; coverage 100 / 100 / 100 / 100 |
+| `rush rebuild` | `SUCCESS: 39 operations`; only the tracked-symlink notice |
+| `rush test` (first run) | 34 succeeded, 2 failed, 2 blocked: `@fgv/ts-extras-mcp` (a headers-deadline timing test) and `@fgv/ts-res-cli` cli-configuration, both known load-sensitive and neither depending on this package; re-run alone 279 / 0 and 67 / 0 |
+| `rush test` (re-run) | `SUCCESS: 38 operations`; 0 error/failure matches; only the tracked-symlink notice |
+| `change --verify --target-branch origin/integration/asks` | passes |
+| prettier 2.8.8 | clean |
+| feed `--check` / `verify-capability-docs` | 0 stale / 0 failed |
