@@ -99,7 +99,7 @@ detail. `· pkg` names the owning package.*
 - **Need standalone HKDF-SHA256 key derivation?** → `HpkeProvider` · `ts-extras`
 - **Need X25519 key agreement?** → `ICryptoProvider` · `ts-extras`
 - **Need to sign data or verify a signature?** → `ICryptoProvider` · `ts-extras`
-- **Need HMAC-SHA256 authentication / MAC verification?** → `ICryptoProvider` `timingSafeEqual` `hmacSha256` · `ts-extras`
+- **Need HMAC-SHA256 authentication / MAC verification?** → `ICryptoProvider` `generateHmacKey` `importHmacKey` `hmacSha256` `timingSafeEqual` · `ts-extras`
 - **Need constant-time byte comparison?** → `ICryptoProvider` `timingSafeEqual` · `ts-extras`
 - **Parsing a JSON-shaped string (with optional inner validation)?** → `Converters.stringifiedJson` · `ts-json-base`
 - **Need typed JSON Schema for LLM tool authoring?** → `JsonSchema` `fromJson` · `ts-json-base`
@@ -206,6 +206,8 @@ markers.*
 <!-- BEGIN GENERATED: recent-additions -->
 
 - **2026-10-26** — ai-assist can run a whole client-tool conversation: runClientToolLoop caps rounds and honours a deadline and caller abort even when… · `ts-extras`
+- **2026-10-26** — ICryptoProvider now generates and imports non-extractable HMAC-SHA256 keys itself, and composite ids can split at the first or last… ([#754](https://github.com/ErikFortune/fgv/pull/754)) · `ts-extras` `ts-web-extras` `ts-utils`
+- **2026-10-26** — The sqlite-vec indexes now store which embedding model wrote their vectors in the same file, and refuse to mix models or serve a… ([#753](https://github.com/ErikFortune/fgv/pull/753)) · `ts-agent-memory-sqlite-vec`
 - **2026-10-20** — mapSuccess and mapSuccessAsync now hand every failure to a supplied aggregator, even when some results succeeded, so a lenient fold… ([#752](https://github.com/ErikFortune/fgv/pull/752)) · `ts-utils`
 - **2026-10-19** — A memory vault written under a non-identity scope encoding now reopens: FileTreeMemoryStore takes a scopeDecoding inverse and… ([#747](https://github.com/ErikFortune/fgv/pull/747)) · `ts-agent-memory`
 - **2026-10-19** — New @fgv/ts-extras-re2: re2PatternValidator lets fromJson and adaptMcpTools accept an untrusted JSON Schema pattern — linear-time… ([#746](https://github.com/ErikFortune/fgv/pull/746)) · `ts-extras-re2` `ts-json-base` `ts-extras-mcp`
@@ -213,9 +215,7 @@ markers.*
 - **2026-10-18** — JsonSchema factories never throw: constraint keywords, default and examples arrive through numberOptions / integerOptions /… ([#740](https://github.com/ErikFortune/fgv/pull/740)) · `ts-json-base` `ts-extras` `ts-extras-ollama`
 - **2026-10-18** — JsonSchema pattern: a host's /…/u RegExp via stringOptions is enforced and sent where the wire documents pattern, and fromJson… ([#742](https://github.com/ErikFortune/fgv/pull/742)) · `ts-json-base` `ts-extras` `ts-extras-mcp`
 - **2026-10-18** — Agent memory tool results now carry each record's id and scope, so two conversations' turn-3 are distinguishable and a link copied… ([#739](https://github.com/ErikFortune/fgv/pull/739)) · `ts-agent-memory`
-- **2026-10-18** — AiAssist.structuredOutputSchemaKeywords reads the keyword table a structured-output schema is adapted with, and the testbed… ([#738](https://github.com/ErikFortune/fgv/pull/738)) · `ts-extras` `testbed`
-- **2026-10-17** — HybridRetriever's score-union merge no longer collapses records that share an id across scopes — two conversations' turn-3 stay two… ([#731](https://github.com/ErikFortune/fgv/pull/731)) · `ts-agent-memory`
 
-*Showing the 10 most recent of 70. Per-package history is in each `CAPABILITIES.md`.*
+*Showing the 10 most recent of 72. Per-package history is in each `CAPABILITIES.md`.*
 
 <!-- END GENERATED: recent-additions -->

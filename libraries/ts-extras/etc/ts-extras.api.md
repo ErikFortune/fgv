@@ -539,7 +539,8 @@ declare namespace Constants {
         DEFAULT_ALGORITHM,
         AES_256_KEY_SIZE,
         GCM_IV_SIZE,
-        GCM_AUTH_TAG_SIZE
+        GCM_AUTH_TAG_SIZE,
+        HMAC_SHA256_KEY_SIZE
     }
 }
 
@@ -655,6 +656,7 @@ declare namespace CryptoUtils {
         KeyPairAlgorithm,
         SeedDerivableAlgorithm,
         IWrapBytesOptions,
+        IHmacKeyOptions,
         IWrappedBytes,
         allKeyPairAlgorithms,
         KeyDerivationFunction,
@@ -1124,6 +1126,9 @@ function hexDecode(encoded: string): Result<Uint8Array>;
 //
 // @public
 function hexEncode(data: Uint8Array): string;
+
+// @public
+const HMAC_SHA256_KEY_SIZE: number;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -1779,6 +1784,7 @@ interface ICryptoProvider {
     exportPublicKeyJwk(publicKey: CryptoKey): Promise<Result<JsonWebKey>>;
     exportPublicKeySpki(publicKey: CryptoKey): Promise<Result<Uint8Array>>;
     fromBase64(base64: string): Result<Uint8Array>;
+    generateHmacKey(options?: IHmacKeyOptions): Promise<Result<CryptoKey>>;
     generateKey(): Promise<Result<Uint8Array>>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     generateKeyPair(algorithm: KeyPairAlgorithm, extractable: boolean): Promise<Result<CryptoKeyPair>>;
@@ -1786,6 +1792,7 @@ interface ICryptoProvider {
     generateUuid(): Result<Uuid>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "ICryptoProvider"
     hmacSha256(key: CryptoKey, data: Uint8Array): Promise<Result<Uint8Array>>;
+    importHmacKey(raw: Uint8Array, options?: IHmacKeyOptions): Promise<Result<CryptoKey>>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -2086,6 +2093,11 @@ interface IGuardVerdict {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly pinnedAddress?: string;
     readonly url: URL;
+}
+
+// @public
+interface IHmacKeyOptions {
+    readonly extractable?: boolean;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "HpkeProvider"
@@ -3150,12 +3162,14 @@ class NodeCryptoProvider implements ICryptoProvider {
     exportPublicKeyJwk(publicKey: CryptoKey): Promise<Result<JsonWebKey>>;
     exportPublicKeySpki(publicKey: CryptoKey): Promise<Result<Uint8Array>>;
     fromBase64(base64: string): Result<Uint8Array>;
+    generateHmacKey(options?: IHmacKeyOptions): Promise<Result<CryptoKey>>;
     generateKey(): Promise<Result<Uint8Array>>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     generateKeyPair(algorithm: KeyPairAlgorithm, extractable: boolean): Promise<Result<CryptoKeyPair>>;
     generateRandomBytes(length: number): Result<Uint8Array>;
     generateUuid(): Result<Uuid>;
     hmacSha256(key: CryptoKey, data: Uint8Array): Promise<Result<Uint8Array>>;
+    importHmacKey(raw: Uint8Array, options?: IHmacKeyOptions): Promise<Result<CryptoKey>>;
     importKeyPairFromSeed(algorithm: SeedDerivableAlgorithm, seed: Uint8Array, extractable: boolean): Promise<Result<CryptoKeyPair>>;
     importPublicKeyJwk(jwk: JsonWebKey, algorithm: KeyPairAlgorithm): Promise<Result<CryptoKey>>;
     importPublicKeySpki(spkiBytes: Uint8Array, algorithm: KeyPairAlgorithm): Promise<Result<CryptoKey>>;
