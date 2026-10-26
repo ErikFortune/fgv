@@ -32,6 +32,7 @@ import {
   IMutableFileTreeAccessors,
   InMemoryTreeAccessors,
   SaveDetail,
+  atomicWriteGuarantees,
   isAtomicAccessors,
   isAtomicDirectoryItem
 } from '../../../packlets/file-tree';
@@ -137,6 +138,23 @@ describe('isAtomicAccessors', () => {
   });
 });
 
+describe('atomicWriteGuarantees', () => {
+  test('lists every guarantee, weakest to strongest', () => {
+    expect(atomicWriteGuarantees).toEqual(['session', 'process-crash', 'os-crash', 'power-loss']);
+  });
+});
+
+describe('DirectoryItem.getStorageIdentity', () => {
+  test('two items for one in-memory directory share accessors and path, and carry no real path', () => {
+    const accessors = InMemoryTreeAccessors.create([], { mutable: true }).orThrow();
+    const a = DirectoryItem.create('/', accessors).orThrow().getStorageIdentity();
+    const b = DirectoryItem.create('/', accessors).orThrow().getStorageIdentity();
+    expect(a).toEqual({ accessors, path: '/' });
+    expect(b.accessors).toBe(a.accessors);
+    expect(b.path).toBe(a.path);
+  });
+});
+
 describe('InMemoryTreeAccessors.getAtomicWriteCapabilities', () => {
   test('advertises session, and only session, for a mutable tree', () => {
     const accessors = InMemoryTreeAccessors.create([], { mutable: true }).orThrow();
@@ -144,6 +162,7 @@ describe('InMemoryTreeAccessors.getAtomicWriteCapabilities', () => {
       expect(caps.atomicReplace).toBe(true);
       expect(caps.guarantees).toEqual(['session']);
       expect(caps.guarantees).not.toContain('process-crash');
+      expect(caps.reason).toMatch(/in-memory tree/i);
     });
   });
 
@@ -152,6 +171,7 @@ describe('InMemoryTreeAccessors.getAtomicWriteCapabilities', () => {
     expect(accessors.getAtomicWriteCapabilities('/')).toSucceedAndSatisfy((caps) => {
       expect(caps.atomicReplace).toBe(false);
       expect(caps.guarantees).toEqual([]);
+      expect(caps.reason).toMatch(/mutability is disabled/i);
     });
   });
 
@@ -290,6 +310,7 @@ describe('DirectoryItem atomic delegation', () => {
     expect(dir.getAtomicWriteCapabilities()).toSucceedAndSatisfy((caps) => {
       expect(caps.atomicReplace).toBe(false);
       expect(caps.guarantees).toEqual([]);
+      expect(caps.reason).toMatch(/does not implement atomic writes/i);
     });
   });
 

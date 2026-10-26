@@ -545,6 +545,52 @@ export class BrowserCryptoProvider implements CryptoUtils.ICryptoProvider {
   }
 
   /**
+   * Generates a fresh random 256-bit HMAC-SHA256 key with usages
+   * `['sign', 'verify']`, non-extractable by default.
+   * @param options - Optional `IHmacKeyOptions`.
+   * @returns `Success` with the HMAC `CryptoKey`, or `Failure` with error context.
+   */
+  public async generateHmacKey(options?: CryptoUtils.IHmacKeyOptions): Promise<Result<CryptoKey>> {
+    const result = await captureAsyncResult(() =>
+      this._crypto.subtle.generateKey(
+        { name: 'HMAC', hash: 'SHA-256', length: CryptoUtils.Constants.HMAC_SHA256_KEY_SIZE * 8 },
+        options?.extractable ?? false,
+        ['sign', 'verify']
+      )
+    );
+    return result.withErrorFormat((e) => `generateHmacKey failed: ${e}`);
+  }
+
+  /**
+   * Imports raw key bytes as an HMAC-SHA256 key with usages
+   * `['sign', 'verify']`, non-extractable by default. Refuses keys shorter
+   * than `CryptoUtils.Constants.HMAC_SHA256_KEY_SIZE` bytes.
+   * @param raw - The raw key bytes.
+   * @param options - Optional `IHmacKeyOptions`.
+   * @returns `Success` with the HMAC `CryptoKey`, or `Failure` with error context.
+   */
+  public async importHmacKey(
+    raw: Uint8Array,
+    options?: CryptoUtils.IHmacKeyOptions
+  ): Promise<Result<CryptoKey>> {
+    if (raw.length < CryptoUtils.Constants.HMAC_SHA256_KEY_SIZE) {
+      return fail(
+        `importHmacKey: key must be at least ${CryptoUtils.Constants.HMAC_SHA256_KEY_SIZE} bytes, got ${raw.length}`
+      );
+    }
+    const result = await captureAsyncResult(() =>
+      this._crypto.subtle.importKey(
+        'raw',
+        toBufferView(raw),
+        { name: 'HMAC', hash: 'SHA-256' },
+        options?.extractable ?? false,
+        ['sign', 'verify']
+      )
+    );
+    return result.withErrorFormat((e) => `importHmacKey failed: ${e}`);
+  }
+
+  /**
    * Computes an HMAC-SHA256 MAC for `data` using `key`.
    * @param key - An HMAC `CryptoKey` with `'sign'` usage.
    * @param data - The bytes to authenticate.

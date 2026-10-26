@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-web-extras",
+      "comment": "BREAKING (implementers only): BrowserCryptoProvider implements the new ICryptoProvider.generateHmacKey and importHmacKey (HMAC-SHA256 CryptoKeys with sign/verify usages, non-extractable by default; import refuses keys shorter than 32 bytes)",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-web-extras"
+}

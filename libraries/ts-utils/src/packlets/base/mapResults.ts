@@ -103,11 +103,12 @@ export function mapDetailedResults<T, TD>(
  * Aggregates successful results from a a collection of {@link Result | Result<T>}.
  * @param results - An `Iterable` of {@link Result | Result<T>} from which success
  * results are to be aggregated.
- * @param aggregatedErrors  - Optional string array to which any returned error messages will be
- * appended.  Each error is appended as an individual string.
- * @returns {@link Success} with an array of `<T>` if any results were successful. If
- * all {@link Result | results} failed, returns {@link Failure} with a concatenated
- * summary of all error messages.
+ * @param aggregatedErrors  - Optional string array to which every returned error message will be
+ * appended, in input order, whether or not any result succeeded.  Each error is appended as an
+ * individual string.  This is how a caller of a partial fold learns what was dropped.
+ * @returns {@link Success} with an array of `<T>` if any results were successful, or if there
+ * were no results at all. If all {@link Result | results} failed, returns {@link Failure} with a
+ * concatenated summary of all error messages.
  * @public
  */
 export function mapSuccess<T>(
@@ -125,9 +126,11 @@ export function mapSuccess<T>(
     }
   }
 
-  if (elements.length === 0 && errors.length > 0) {
+  if (errors.length > 0) {
     aggregatedErrors?.addMessages(errors);
-    return fail(errors.join('\n'));
+    if (elements.length === 0) {
+      return fail(errors.join('\n'));
+    }
   }
   return succeed(elements);
 }

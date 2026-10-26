@@ -4,7 +4,7 @@
  */
 
 import { Converters as JsonConverters, JsonObject, JsonValue } from '@fgv/ts-json-base';
-import { Hash, Result, captureResult } from '@fgv/ts-utils';
+import { Hash, Result, captureAsyncResult, captureResult } from '@fgv/ts-utils';
 import { TaskContextRenderer } from '../context';
 import { TaskConverters, instant } from '../converters';
 import { TaskAudienceResolver } from '../implementations';
@@ -16,11 +16,13 @@ import {
   ITaskCommitRecord,
   DeliveryId,
   ITaskEnvironment,
+  ITaskWriteGuard,
   Instant,
   OperationId,
   TaskId,
   TaskResult,
-  TaskRevision
+  TaskRevision,
+  TaskScheduleTimer
 } from '../types';
 import { ITaskRepository, ITaskRepositoryWriter } from '../storage';
 import { IResolvedDeliveryDefaults } from './delivery';
@@ -29,6 +31,12 @@ import { ViewCursorTable } from './viewCursors';
 import { WriterQueue } from './writerQueue';
 
 const normalizer: Hash.Crc32Normalizer = new Hash.Crc32Normalizer();
+
+/** The default timer: `setTimeout`, cancelled by `clearTimeout`. */
+const defaultSchedule: TaskScheduleTimer = (fn, ms) => {
+  const handle = setTimeout(fn, ms);
+  return () => clearTimeout(handle);
+};
 
 /**
  * Canonical equality of two converter-validated values; an uncomparable pair is unequal, which
@@ -91,6 +99,95 @@ export function receiptJson(receipt: ITaskMutationResult | IReassignmentResult):
 }
 
 /**
+ * Runs `write` through a host's write guard, keeping a classified result whatever the guard does.
+ *
+ * @remarks
+ * The section is wrapped so the broker knows whether the guard ran it and what it returned:
+ * - not run, and the guard refused without task detail (a gate typed over plain `Result`) —
+ *   `storage-unavailable`, retry `after-host-action`: nothing was written;
+ * - not run, and the guard threw — `invalid`: nothing was written;
+ * - run, and the guard then returned the section's own result, or any success — the section's result;
+ * - run, and the guard then failed or threw — `storage-unavailable`, retry `reconcile-first`: the
+ *   section may have committed, so its outcome is re-read before anything is retried;
+ * - a second call to the section — refused without running it, `invalid`.
+ *
+ * A section the guard started and did not await is awaited before the turn ends, so the writer is
+ * never still held when the next section runs, and its outcome is classified as above. A section
+ * the guard tries to start **after** it has returned is refused without running (`invalid`): it
+ * would run outside the queue's turn.
+ */
+async function _guarded<T>(
+  guard: ITaskWriteGuard,
+  write: () => Promise<TaskResult<T>>
+): Promise<TaskResult<T>> {
+  const seen: { ran?: TaskResult<T>; running?: Promise<unknown>; calls: number; closed: boolean } = {
+    calls: 0,
+    closed: false
+  };
+  const once = async (): Promise<TaskResult<T>> => {
+    if (seen.closed) {
+      return taskFailure<T>(
+        `broker: the write guard started the section after it had returned; it was not run`,
+        'invalid',
+        'after-host-action'
+      );
+    }
+    seen.calls++;
+    if (seen.calls > 1) {
+      return taskFailure<T>(
+        `broker: the write guard ran the section more than once`,
+        'invalid',
+        'after-host-action'
+      );
+    }
+    const running: Promise<TaskResult<T>> = write().then((result) => {
+      seen.ran = result;
+      return result;
+    });
+    seen.running = running;
+    return running;
+  };
+  const outcome: Result<TaskResult<T>> = await captureAsyncResult(() => guard.guard(once));
+  // From here on the turn is ending: a section started now would run outside it.
+  seen.closed = true;
+  // A section the guard started but did not wait for still holds the writer: wait for it here.
+  if (seen.running !== undefined) {
+    await captureAsyncResult(() => seen.running!);
+  }
+  const written: TaskResult<T> | undefined = seen.ran;
+  if (written !== undefined) {
+    if (outcome.isSuccess() && (outcome.value === written || outcome.value.isSuccess())) {
+      return written;
+    }
+    const why: string = outcome.isFailure()
+      ? `threw: ${outcome.message}`
+      : `failed: ${outcome.value.message}`;
+    return taskFailure<T>(
+      `broker: the write guard ${why} after the section ran (its own outcome: ` +
+        `${written.isSuccess() ? 'success' : written.message}); re-read what it may have committed`,
+      'storage-unavailable',
+      'reconcile-first'
+    );
+  }
+  if (outcome.isFailure()) {
+    return taskFailure<T>(
+      `broker: the write guard threw: ${outcome.message}`,
+      'invalid',
+      'after-host-action'
+    );
+  }
+  const result: TaskResult<T> = outcome.value;
+  // A gate typed over plain Result refuses without task detail: nothing was written.
+  return result.isFailure() && result.detail === undefined
+    ? taskFailure<T>(
+        `broker: the write guard refused: ${result.message}`,
+        'storage-unavailable',
+        'after-host-action'
+      )
+    : result;
+}
+
+/**
  * The broker's shared state: one per repository.
  * @internal
  */
@@ -116,6 +213,8 @@ export class BrokerCore {
    */
   public readonly revalidatedStops: Set<string> = new Set<string>();
   private readonly _queue: WriterQueue = new WriterQueue();
+  private readonly _writeGuard: ITaskWriteGuard | undefined;
+  private readonly _schedule: TaskScheduleTimer;
   /** One reconciliation pass per source at a time: the tail of each source's chain. */
   private readonly _sourcePasses: Map<string, Promise<unknown>> = new Map();
   private _views: number = 0;
@@ -127,6 +226,8 @@ export class BrokerCore {
     readonly delivery: IResolvedDeliveryDefaults;
     readonly renderer: TaskContextRenderer;
     readonly sources?: ReadonlyMap<string, ITaskSource>;
+    readonly writeGuard?: ITaskWriteGuard;
+    readonly schedule?: TaskScheduleTimer;
   }) {
     const repository: ITaskRepository = params.repository;
     this.repository = repository;
@@ -136,6 +237,8 @@ export class BrokerCore {
     this.delivery = params.delivery;
     this.renderer = params.renderer;
     this.sources = params.sources ?? new Map();
+    this._writeGuard = params.writeGuard;
+    this._schedule = params.schedule ?? defaultSchedule;
   }
 
   /** A fresh delivery id from the host's id factory. */
@@ -188,7 +291,79 @@ export class BrokerCore {
   public gated<T>(
     section: (writer: ITaskRepositoryWriter) => Promise<TaskResult<T>>
   ): Promise<TaskResult<T>> {
-    return this._queue.run(() => this.repository.withWriter(section));
+    const write = (): Promise<TaskResult<T>> => this.repository.withWriter(section);
+    const guard: ITaskWriteGuard | undefined = this._writeGuard;
+    // Inside the queue's turn and around the writer: every gated section, whatever it writes, passes
+    // the host's gate, and a section the gate holds holds the queue behind it.
+    return this._queue.run(() => (guard === undefined ? write() : _guarded(guard, write)));
+  }
+
+  /**
+   * Resolves once no gated section is waiting or running, or fails after `timeoutMs`.
+   *
+   * @remarks
+   * Observes the queue and never takes a turn in it, so it never takes the writer. Idle is a moment
+   * between sections, not a hold and not the end of an operation: a section enqueued right after it
+   * resolves runs as usual.
+   */
+  public whenIdle(timeoutMs: number): Promise<TaskResult<true>> {
+    if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 0) {
+      return Promise.resolve(
+        taskFailure<true>(
+          `whenIdle: timeoutMs must be a non-negative safe integer`,
+          'invalid',
+          'after-host-action'
+        )
+      );
+    }
+    if (!this._queue.busy) {
+      return Promise.resolve(ok<true>(true));
+    }
+    return new Promise<TaskResult<true>>((resolve) => {
+      let settled: boolean = false;
+      let withdraw: (() => void) | undefined = undefined;
+      let cancel: (() => void) | undefined = undefined;
+      // The host's cancel is host code: a throw from it never escapes into the writer queue.
+      const cancelArmed = (): void => {
+        if (cancel !== undefined) {
+          captureResult(cancel);
+        }
+      };
+      const settle = (outcome: TaskResult<true>): void => {
+        if (!settled) {
+          settled = true;
+          withdraw?.();
+          cancelArmed();
+          resolve(outcome);
+        }
+      };
+      const armed: Result<() => void> = captureResult(() =>
+        this._schedule(
+          () =>
+            settle(
+              taskFailure<true>(
+                `whenIdle: the broker's writer queue was still busy after ${timeoutMs} ms`,
+                'conflict',
+                'safe'
+              )
+            ),
+          timeoutMs
+        )
+      );
+      if (armed.isFailure()) {
+        settle(
+          taskFailure<true>(`whenIdle: schedule failed: ${armed.message}`, 'invalid', 'after-host-action')
+        );
+        return;
+      }
+      cancel = armed.value;
+      // A timer that fired synchronously from `schedule` has settled already: cancel it, register nothing.
+      if (settled) {
+        cancelArmed();
+        return;
+      }
+      withdraw = this._queue.onIdle(() => settle(ok<true>(true)));
+    });
   }
 
   /** The current instant from the host clock. */

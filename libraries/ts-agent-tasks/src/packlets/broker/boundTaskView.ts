@@ -37,7 +37,7 @@ import { AccessContext } from './access';
 import { archive, changeScopes, completeList, reassign, reparent, updateTracked } from './catalogOperations';
 import { execute } from './commands';
 import { BrokerCore } from './core';
-import { createNative } from './creation';
+import { createNative, resumeNative } from './creation';
 import { resolveCommands } from './externalCommands';
 import { reconcileListCompletions } from './listCompletion';
 import { inspectView, queryView } from './reads';
@@ -134,6 +134,10 @@ export class BoundTaskWriter extends BoundTaskView implements IBoundTaskWriter {
 
   public releaseStop(request: IReleaseStop): Promise<TaskResult<IStopResult>> {
     return releaseStop(this._core, this._access, request);
+  }
+
+  public resumePendingRegistration(taskId: TaskId): Promise<TaskResult<ITaskMutationResult>> {
+    return resumeNative(this._core, this._access, taskId);
   }
 
   public reconcileStop(request: IStopReconcileRequest): Promise<TaskResult<IStopResult>> {

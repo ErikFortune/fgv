@@ -67,6 +67,46 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
 
 ## P2 — Fix before next major feature in affected area
 
+- **[P2] `FsFileTreeAccessors`' prefix does not confine: absolute paths escape it, and plain writes never check.**
+  Three behaviours in `libraries/ts-json-base/src/packlets/file-tree/fsTree.ts` combine:
+  `resolveAbsolutePath` ignores `prefix` for an input that is already absolute (`path.isAbsolute`
+  short-circuits to `path.resolve(...paths)`), so `FileTree.forFilesystem(prefix).getDirectory('/')`
+  names the filesystem root `/`, not the prefix; the plain mutators `saveFileContents`,
+  `createDirectory`, `deleteFile` and `deleteDirectory` check only the mutability filter, never
+  that the path lies under the prefix; and the field's doc says the prefix is prepended "to all
+  paths" (`fsTree.ts` `prefix`; `fileTreeHelpers.ts` says "relative paths", which is the true one).
+  Only the atomic methods confine (`_confineToRoot`, which since `agent-memory-atomic-writes` also
+  checks the real path of the containing directory). Found by that stream's review: a memory store
+  opened on `forFilesystem(prefix).getDirectory('/')` walked the real `/`, and a root item outside
+  its accessors' prefix took plain writes outside the tree once its atomic inquiry was degraded
+  rather than refused. The store now refuses a failed inquiry, which closes its own path; the
+  accessor behaviour is unchanged and reachable by any plain-write caller. In particular, plain
+  writes on a root that is not qualified for atomic writes (a non-atomic accessor, or an
+  unqualified platform such as darwin) still follow a symbolic link out of the tree, exactly as on
+  the base commit — the real-path confinement covers only the atomic methods. The same holds for a
+  record *file* that is a symbolic link on such a root: a plain put writes through the link, and
+  because the listing hides links the record then reads back as absent.
+
+  **Trigger**: the next change to `FsFileTreeAccessors` path resolution, or any consumer that hands
+  untrusted or computed paths to a prefixed tree.
+
+  **Scope sketch** — options, for the user to choose; not decided:
+  (a) **document it** — correct the `prefix` doc to "prepended to relative paths; absolute paths are
+  used as given, and only the atomic methods confine", no behaviour change;
+  (b) **confine plain mutators** — run `_confineToRoot` (logical, and optionally real-path) in
+  `saveFileContents` / `saveFileBytes` / `createDirectory` / `deleteFile` / `deleteDirectory`,
+  refusing paths outside the prefix — breaking for callers that rely on writing outside it;
+  (c) **resolve absolute paths under the prefix** — treat `/x` as `<prefix>/x`, matching the
+  in-memory tree, so `getDirectory('/')` names the prefix — breaking for callers that pass real
+  absolute paths, which is how `DirectoryItem.create(absolutePath, accessors)` is commonly used;
+  (d) **(b) behind an option** — `confine: true` on `IFileTreeInitParams`, default off.
+  `ts-json-base` is an established surface, so (b) and (c) need explicit sign-off.
+
+  **Not a P3**: the atomic path already confines, so the two paths answer the same question
+  differently, and the prefix reads as a sandbox to anyone who trusts its doc.
+
+  **Reference**: `agent-memory-atomic-writes` review round 2 (2026-10-26), probe `escape.js` §2–3.
+
 - **[P2] No shared ESLint layer — `no-prototype-builtins` is on in 4 of the 33 projects with an ESLint config.**
   Every project carries its own flat `eslint.config.js` (33 files, 8 distinct variants) extending
   `@rushstack/eslint-config/flat/profile/node`; the `heft-dual-rig` carries no ESLint config. So a
@@ -860,6 +900,44 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
   Copilot rounds 4 and 6 on #721 (threads r4213291067, r4214989996).
 
 ## P3 — Opportunistic cleanup
+
+- **[P3] `executeClientToolTurn`'s `onBeforeToolExecute` gate never receives the turn's signal.**
+  The gate is called as `onBeforeToolExecute(tool, args)` in `dispatchCall`
+  (`libraries/ts-extras/src/packlets/ai-assist/streamingAdapters/clientToolContinuationBuilder.ts`),
+  with no way to observe an abort. A gate that waits on something slow — a human confirmation, a
+  remote policy check — keeps waiting after the turn stops, and the orphaned event generator stays
+  pinned on it. `runClientToolLoop` still releases its caller, because the round is raced, but the
+  generator and whatever the gate holds are not freed until the gate returns. This predates the
+  runner; the runner only made orphaned rounds a normal outcome.
+
+  **Trigger**: a host whose gate can wait indefinitely, or a leak report from one.
+
+  **Scope sketch**: pass `{ signal }` to the gate as a third, optional context argument, the way
+  `IAiClientTool.execute` receives it. Additive for gate implementations.
+
+  **Not a P2**: the caller is never held; only background resources are.
+
+  **Reference**: the independent review of `ai-assist-client-tool-loop`
+  (`.ai/tasks/completed/2026-10/ai-assist-client-tool-loop/result.md`).
+
+- **[P3] safer-fetch's internal `DeadlineWatch` duplicates `AsyncControl.raceStopConditions`.**
+  `libraries/ts-extras/src/packlets/safer-fetch/deadline.ts` composes a caller signal with
+  deadlines through its own `AbortController` and listeners, and races a promise against them. The
+  `async-control` packlet now publishes that mechanism as `raceStopConditions`
+  (`libraries/ts-extras/src/packlets/async-control/stopConditions.ts`), with an injectable timer,
+  deadline-range validation and release on every path. Two implementations of the same ordering
+  logic can drift: a fix to one (a late stop, a listener leak) does not reach the other.
+
+  **Trigger**: the next change to `deadline.ts`, or a defect found in either implementation.
+
+  **Scope sketch**: `DeadlineWatch` tracks two deadlines (overall and headers) and remembers which
+  one stopped the call, so it cannot be replaced one-for-one. Either extend `IStopConditions` with
+  a named-deadline form, or rebuild `DeadlineWatch` on two nested `raceStopConditions` calls. The
+  safer-fetch tests in `src/test/unit/safer-fetch/deadline.test.ts` are the behaviour to keep.
+
+  **Not a P2**: both implementations are tested, and nothing is known to be wrong in either.
+
+  **Reference**: `.ai/tasks/completed/2026-10/ai-assist-client-tool-loop/` (brief § 1).
 
 - **[P3] Wall-clock assertions remain in tests outside the `deterministic-timing-tests` scope.**
   That stream made `ts-extras` and `ts-extras-mcp` deterministic, except for one file. It reported
