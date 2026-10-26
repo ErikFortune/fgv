@@ -159,6 +159,16 @@ export {
 } from './streamingClient';
 
 export {
+  type ClientToolLoopState,
+  type IClientToolLoopFailureDetail,
+  type IClientToolLoopObserver,
+  type IClientToolLoopOutcome,
+  type IClientToolLoopParams,
+  type IClientToolRound,
+  runClientToolLoop
+} from './clientToolLoop';
+
+export {
   aiProviderId,
   aiServerToolType,
   aiWebSearchToolConfig,

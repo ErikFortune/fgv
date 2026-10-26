@@ -195,6 +195,13 @@ declare namespace AiAssist {
         IExecuteClientToolTurnParams,
         IExecuteClientToolTurnResult,
         IToolExecutionDecision,
+        ClientToolLoopState,
+        IClientToolLoopFailureDetail,
+        IClientToolLoopObserver,
+        IClientToolLoopOutcome,
+        IClientToolLoopParams,
+        IClientToolRound,
+        runClientToolLoop,
         aiProviderId,
         aiServerToolType,
         aiWebSearchToolConfig,
@@ -515,6 +522,11 @@ function classifyAddress(address: string): Result<IClassifiedAddress>;
 //
 // @public
 function classifyJsonParseFailure(text: string): JsonParseFailureReason;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+type ClientToolLoopState = 'completed' | 'round-limit' | 'aborted' | 'deadline';
 
 // @public
 function clientToolSchemaKeywords(descriptor: IAiProviderDescriptor, options?: {
@@ -1677,6 +1689,51 @@ interface IClassifiedAddress {
     readonly classification: AddressClassification;
     readonly embeddedIpv4?: IEmbeddedIpv4;
     readonly family: AddressFamily;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IClientToolLoopFailureDetail {
+    readonly rounds: ReadonlyArray<IClientToolRound>;
+}
+
+// @public
+interface IClientToolLoopObserver {
+    event?(round: number, event: IAiStreamEvent): void;
+    round?(round: IClientToolRound): void;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IClientToolLoopOutcome {
+    readonly continuationMessages?: ReadonlyArray<JsonObject>;
+    readonly rounds: ReadonlyArray<IClientToolRound>;
+    readonly state: ClientToolLoopState;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IClientToolLoopParams extends Omit<IExecuteClientToolTurnParams, 'continuationMessages'> {
+    readonly deadlineMs?: number;
+    readonly maxRounds: number;
+    readonly observer?: IClientToolLoopObserver;
+    readonly schedule?: ScheduleTimer;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IClientToolRound {
+    readonly calls: ReadonlyArray<IAiClientToolCallSummary>;
+    readonly fullText: string;
+    readonly providerDurationMs: number;
+    readonly round: number;
+    readonly toolConflicts: IAiToolConflictReport;
+    readonly truncated: boolean;
+    readonly usage?: IAiCompletionUsage;
 }
 
 // @public
@@ -3291,6 +3348,9 @@ const RETRY_AFTER_STATUSES: ReadonlyArray<number>;
 //
 // @public
 const RETRYABLE_HTTP_STATUSES: ReadonlyArray<number>;
+
+// @public
+function runClientToolLoop(params: IClientToolLoopParams): AsyncDetailedResult<IClientToolLoopOutcome, IClientToolLoopFailureDetail>;
 
 // @public
 const SAFER_FETCH_METHODS: readonly ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE"];

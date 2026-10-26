@@ -141,7 +141,7 @@ function _race<T>(
     releases.splice(0).forEach((r) => r());
   };
   let settled = false;
-  let resolveStop: (r: DetailedResult<T, StopDetail>) => void = () => undefined;
+  let resolveStop!: (r: DetailedResult<T, StopDetail>) => void;
   const stopped = new Promise<DetailedResult<T, StopDetail>>((resolve) => {
     resolveStop = resolve;
   });

@@ -173,13 +173,13 @@ describe('executeClientToolTurn — durationMs', () => {
       },
       clock: clock.now
     }).orThrow();
-    let seen = 0;
-    for await (const __event of events) {
+    const seen: string[] = [];
+    for await (const event of events) {
       // A slow consumer: every event costs it 1000 ms, none of which is a tool's.
-      seen += 1;
+      seen.push(event.type);
       clock.advance(1000);
     }
-    expect(seen).toBeGreaterThan(0);
+    expect(seen).toContain('client-tool-result');
     expect(await nextTurn).toSucceedAndSatisfy((turn) => {
       expect(turn.continuation?.toolCallsSummary.map((c) => [c.toolName, c.durationMs])).toEqual([
         ['recall', 35],

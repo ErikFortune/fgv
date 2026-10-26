@@ -57,7 +57,8 @@ export function makeStalledReadable(chunks: ReadonlyArray<string>): ReadableStre
   });
 }
 
-function sseResponse(body: ReadableStream<Uint8Array>): unknown {
+/** A `fetch` response carrying `body` as an SSE stream. */
+export function sseResponse(body: ReadableStream<Uint8Array>): unknown {
   return {
     ok: true,
     status: 200,
@@ -155,15 +156,19 @@ export function makeAnthropicDescriptor(): IAiProviderDescriptor {
   };
 }
 
-export const recallSchema = JsonSchema.object({ query: JsonSchema.string() });
-export type RecallParams = JsonSchema.Static<typeof recallSchema>;
+export interface IRecallParams {
+  readonly query: string;
+}
+export const recallSchema: JsonSchema.ISchemaValidator<IRecallParams> = JsonSchema.object({
+  query: JsonSchema.string()
+});
 
 /** A `recall` tool whose `execute` is the test's to define; defaults to answering `"found"`. */
 export function makeRecallTool(
-  execute?: (args: RecallParams, context?: { signal?: AbortSignal }) => Promise<Result<unknown>>,
+  execute?: (args: IRecallParams, context?: { signal?: AbortSignal }) => Promise<Result<unknown>>,
   name: string = 'recall'
 ): IAiClientTool {
-  const tool: IAiClientTool<RecallParams> = {
+  const tool: IAiClientTool<IRecallParams> = {
     config: {
       type: 'client_tool',
       name,
