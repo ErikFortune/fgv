@@ -37,4 +37,7 @@ Worker-owned working surface. The brief is the contract.
 
 ## Progress
 
-- [ ] 1  - [ ] 2  - [ ] 3  - [ ] 4  - [ ] 5
+- [x] 1  - [x] 2  - [x] 3  - [x] 4  - [ ] 5 (gates, then close-out)
+
+The abort-before-dispatch test was red on the unmodified code (3 of 3); the revert matrix is in
+`result.md`.
