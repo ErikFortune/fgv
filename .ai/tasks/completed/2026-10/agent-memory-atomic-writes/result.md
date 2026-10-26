@@ -187,9 +187,31 @@ Not changed, as instructed: `forFilesystem(prefix).getDirectory('/')` resolution
 confinement. That probe case is now refused at the inquiry ("resolves outside the tree root"),
 instead of degrading and walking `/`.
 
+## Review round 3 (against 79fa8a73d)
+
+The reviewer confirmed P1-A and P2-A fixed. The red run used the 79fa8a73d sources of both packages
+with the new tests kept: **ts-json-base, 4 red** (2 new tests × 2 test roots); **ts-agent-memory, 1
+red** (the one new test).
+
+| finding | disposition | test(s) | red on 79fa8a73d |
+|---|---|---|---|
+| P2-C a tree prefixed at `/` failed to open: `_isWithin('/', …)` tested `startsWith('//')` | fixed: an `outer` that already ends in the separator is its own prefix; this applies to both the logical and the real-path check | ts-json-base _a tree rooted at '/' confines nothing away and still writes atomically_ (inquiry, cleanup, write); memory fs _a root whose accessors are prefixed at '/' opens and writes_ | yes |
+| P3-a check-then-rename window | fixed: `_confineToRoot` returns the containing directory's real path it accepted, and `commitFileAtomically` creates the temporary and renames through that directory, not the logical path | ts-json-base _commits through the real directory the confinement check accepted_ (the rename target is under the link's real target) | yes |
+| P3-b plain writes on an unqualified root still follow a symlink out | documented: one sentence in the `docs/TECH_DEBT.md` prefix-confinement entry; pre-existing, same as base | — | — |
+| P3-c a dispose mid-delete leaves orphan entries | **documented, not exempted.** Exempting the removals that follow this store's committed delete would reopen the round-2 P3 race this gate closed: once disposed, another store may own the root and have written a record at the same address, and an exempt removal would delete *its* entries. That silently drops a live record from recall. An orphan is visible and repairable: a record-vector orphan is dropped by `SemanticRetriever`, which ignores hits the resident index does not hold, and a fragment orphan surfaces as a fragment hit whose record a later read finds absent. Either way a `rebuild` clears it. Documented on `VectorMaintenance.removeAll` and in `FileTreeMemoryStore.dispose`'s TSDoc | — (no behaviour change) | — |
+
+Not changed: `forFilesystem(prefix).getDirectory('/')` resolution and plain-write confinement. Both
+remain recorded in TECH_DEBT for a decision.
+
 ## Gates
 
 All logs under the worktree's `.gate-logs/`, graded by grep, not exit code.
+
+- **Round 3, final code (6ba5f077a):** `ts-json-base` build (0 warnings), lint clean, test
+  **1608 / 0**, 100% coverage; `ts-agent-memory` build (0 warnings), lint clean, test **1033 / 0**,
+  100% coverage. Repo-wide `rush rebuild`: `SUCCESS: 39 operations`, 39 completed, 0 matches for
+  `not met|FAILURE|Operations failed|error TS`, only the symlink warning. `ts-agent-tasks` (the
+  other consumer of the changed atomic path) test **2407 / 0**. `fileTreeMemoryStore.ts` 1989 lines.
 
 - **Round 2, final code (5a4aa8018):** package gates: `ts-json-base` test **1604 / 0**, lint clean;
   `ts-agent-memory` build, lint clean, test **1032 / 0**, 100% coverage on both. Repo-wide
