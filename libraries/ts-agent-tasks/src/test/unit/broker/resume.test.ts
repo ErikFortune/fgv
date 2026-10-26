@@ -320,7 +320,11 @@ describe('resumePendingRegistration — a record that landed before it was marke
     const { h } = located;
     const elsewhere = bindWriter(h, { scopes: [alpha, beta], creationScopes: [beta] });
     expect(
-      await elsewhere.createTracked({ taskId: tid('t'), operationId: op('create-t-retry'), title: 'secret task' })
+      await elsewhere.createTracked({
+        taskId: tid('t'),
+        operationId: op('create-t-retry'),
+        title: 'secret task'
+      })
     ).toFail();
     const pending = h.repository.pendingRegistration(tid('t')).orThrow()!;
     const retry = await elsewhere.createTracked(pending.request as unknown as ICreateTrackedTask);

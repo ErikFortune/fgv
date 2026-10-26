@@ -310,7 +310,9 @@ export class TaskBroker {
    * broker operation can be several gated sections with work between them — `acknowledge` and
    * `prepare` match then commit, a creation authorizes before it queues, source passes and `cleanup`
    * take one section per step — so it can resolve in the middle of an operation. **To quiesce before
-   * a shutdown or snapshot, pause the `writeGuard` first, then wait for idle.** A host that needs the quiet to last holds its writes first — with
+   * a shutdown or snapshot, pause the `writeGuard` first, then wait for idle**: it resolves once the
+   * sections already past the guard have finished. A write held *at* the guard during the pause is a
+   * queued section and keeps the broker busy until the pause lifts. A host that needs the quiet to last holds its writes first — with
    * the `writeGuard` it gave {@link TaskBroker.create} — and a section that guard is holding counts as
    * busy. It sees only the broker's own queue: a caller using the repository's `withWriter` directly is
    * invisible to it. The wait is bounded by the `schedule` given to {@link TaskBroker.create}. A

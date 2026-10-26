@@ -655,7 +655,10 @@ not the end of an operation**: it never takes a turn in the writer queue, so it 
 and never delays a write, and one broker operation can span several sections (`acknowledge` and
 `prepare` match then commit, a creation authorizes before it queues, source passes and `cleanup` take
 a section per step), so it can resolve mid-operation. **To quiesce before a shutdown or snapshot,
-pause the `writeGuard`, then `whenIdle`.** It sees only the broker's queue — direct
+pause the `writeGuard`, then `whenIdle`**: it resolves once the sections already past the guard have
+finished. A write that arrives during the pause and is held *at* the guard is a queued section, so
+it keeps the broker busy until the pause lifts — a gate whose pause holds new writes should report
+its own quiet for that case. It sees only the broker's queue — direct
 `repository.withWriter` callers are invisible to it. The bound uses `TaskBroker.create`'s `schedule`
 (`(fn, ms) => cancel`, default `setTimeout`); a `schedule` or `cancel` that throws never reaches the
 writer queue.

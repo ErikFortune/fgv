@@ -111,12 +111,19 @@ export function receiptJson(receipt: ITaskMutationResult | IReassignmentResult):
  *   section may have committed, so its outcome is re-read before anything is retried;
  * - a second call to the section — refused without running it, `invalid`.
  */
-async function _guarded<T>(guard: ITaskWriteGuard, write: () => Promise<TaskResult<T>>): Promise<TaskResult<T>> {
+async function _guarded<T>(
+  guard: ITaskWriteGuard,
+  write: () => Promise<TaskResult<T>>
+): Promise<TaskResult<T>> {
   const seen: { ran?: TaskResult<T>; calls: number } = { calls: 0 };
   const once = async (): Promise<TaskResult<T>> => {
     seen.calls++;
     if (seen.calls > 1) {
-      return taskFailure<T>(`broker: the write guard ran the section more than once`, 'invalid', 'after-host-action');
+      return taskFailure<T>(
+        `broker: the write guard ran the section more than once`,
+        'invalid',
+        'after-host-action'
+      );
     }
     return write().then((result) => {
       seen.ran = result;
@@ -129,7 +136,9 @@ async function _guarded<T>(guard: ITaskWriteGuard, write: () => Promise<TaskResu
     if (outcome.isSuccess() && (outcome.value === written || outcome.value.isSuccess())) {
       return written;
     }
-    const why: string = outcome.isFailure() ? `threw: ${outcome.message}` : `failed: ${outcome.value.message}`;
+    const why: string = outcome.isFailure()
+      ? `threw: ${outcome.message}`
+      : `failed: ${outcome.value.message}`;
     return taskFailure<T>(
       `broker: the write guard ${why} after the section ran (its own outcome: ` +
         `${written.isSuccess() ? 'success' : written.message}); re-read what it may have committed`,
@@ -138,12 +147,20 @@ async function _guarded<T>(guard: ITaskWriteGuard, write: () => Promise<TaskResu
     );
   }
   if (outcome.isFailure()) {
-    return taskFailure<T>(`broker: the write guard threw: ${outcome.message}`, 'invalid', 'after-host-action');
+    return taskFailure<T>(
+      `broker: the write guard threw: ${outcome.message}`,
+      'invalid',
+      'after-host-action'
+    );
   }
   const result: TaskResult<T> = outcome.value;
   // A gate typed over plain Result refuses without task detail: nothing was written.
   return result.isFailure() && result.detail === undefined
-    ? taskFailure<T>(`broker: the write guard refused: ${result.message}`, 'storage-unavailable', 'after-host-action')
+    ? taskFailure<T>(
+        `broker: the write guard refused: ${result.message}`,
+        'storage-unavailable',
+        'after-host-action'
+      )
     : result;
 }
 

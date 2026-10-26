@@ -392,9 +392,8 @@ async function _resumable(core: BrokerCore, taskId: unknown): Promise<TaskResult
   if (id.isFailure()) {
     return taskFailure(`resumePendingRegistration: ${id.message}`, 'invalid', 'after-host-action');
   }
-  return core.repository
-    .pendingRegistration(id.value)
-    .thenOnSuccess(async (pending): Promise<TaskResult<IResumable>> =>
+  return core.repository.pendingRegistration(id.value).thenOnSuccess(
+    async (pending): Promise<TaskResult<IResumable>> =>
       pending !== undefined
         ? ok<IResumable>({
             taskId: pending.taskId,
@@ -405,7 +404,7 @@ async function _resumable(core: BrokerCore, taskId: unknown): Promise<TaskResult
             ...(pending.landedScopes !== undefined ? { scopes: pending.landedScopes } : {})
           })
         : (await core.repository.readCommit(id.value)).onSuccess((record) => _committed(id.value, record))
-    );
+  );
 }
 
 /** A live task as a resumable registration, when its creation was a catalog registration. */

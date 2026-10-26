@@ -28,6 +28,10 @@ summary:
     points by kind, since a native resume needs a view's authorization and creation scopes. No
     releaseStale: the repository has no open generation. The broker declares its own
     TaskScheduleTimer because the ts-extras ScheduleTimer is not yet on the base.
+    Review round 1 found three P1s, all fixed with regression tests red on revert: a resume of a
+    landed record committed unauthorized scopes, scope-change targets never reached the policy, and
+    a throwing timer cancel could poison the writer queue. trustedKindAuthority became a Result
+    factory, a resume after a lost response replays, and a durable open backfills initializedMode.
   sourceLine: '**Shipped:** `@fgv/ts-agent-tasks` gains the host plumbing every broker consumer rewrites: `openOrInitializeTaskRepository` with the exported root probe the repository itself uses, `trustedKindAuthority` for trusted host principals, `TaskBroker.whenIdle`, a `writeGuard` around every broker write, `IBoundTaskDelivery.issued()`, and resumption of a pending registration from the request the repository stored.'
   headline: >
     An agent-task host can open or initialize its repository in the strongest mode its root

@@ -134,33 +134,33 @@ function _result(
   placement: IPlacement,
   outcome: TaskRepositoryOpenOrInitializeResult
 ): TaskResult<OpenOrInitializeTaskRepositoryResult> {
-    const durability: TaskRepositoryDurability = placement.mode === 'session' ? 'session' : 'process-crash';
-    const report = (recovery: ITaskRecoveryReport, initialized: boolean): ITaskRepositoryPlacementReport => ({
-      placement: placement.placement,
-      durability,
-      mode: placement.mode,
-      guarantees: placement.guarantees,
-      initialized,
-      ...(placement.fallbackReason !== undefined ? { fallbackReason: placement.fallbackReason } : {}),
-      recovery
-    });
-    return succeedWithDetail<OpenOrInitializeTaskRepositoryResult, ITaskFailure>(
-      outcome.state === 'ready'
-        ? {
-            state: 'ready',
-            repository: outcome.repository,
-            durability,
-            placement: placement.placement,
-            report: report(outcome.repository.report, outcome.initialized)
-          }
-        : {
-            state: 'recovery-required',
-            recovery: outcome.recovery,
-            durability,
-            placement: placement.placement,
-            report: report(outcome.recovery.report, false)
-          }
-    );
+  const durability: TaskRepositoryDurability = placement.mode === 'session' ? 'session' : 'process-crash';
+  const report = (recovery: ITaskRecoveryReport, initialized: boolean): ITaskRepositoryPlacementReport => ({
+    placement: placement.placement,
+    durability,
+    mode: placement.mode,
+    guarantees: placement.guarantees,
+    initialized,
+    ...(placement.fallbackReason !== undefined ? { fallbackReason: placement.fallbackReason } : {}),
+    recovery
+  });
+  return succeedWithDetail<OpenOrInitializeTaskRepositoryResult, ITaskFailure>(
+    outcome.state === 'ready'
+      ? {
+          state: 'ready',
+          repository: outcome.repository,
+          durability,
+          placement: placement.placement,
+          report: report(outcome.repository.report, outcome.initialized)
+        }
+      : {
+          state: 'recovery-required',
+          recovery: outcome.recovery,
+          durability,
+          placement: placement.placement,
+          report: report(outcome.recovery.report, false)
+        }
+  );
 }
 
 /** The root and mode a probe allows, or the fallback when it allows none. */

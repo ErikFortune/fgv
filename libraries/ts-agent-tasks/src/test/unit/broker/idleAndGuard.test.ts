@@ -277,7 +277,9 @@ describe('TaskBroker.whenIdle', () => {
       writeGuard: guard,
       schedule: throwingCancel
     }).orThrow();
-    const writer = broker.bind({ principal: 'alice', scopes: [alpha], authorization: new TestPolicy() }).orThrow();
+    const writer = broker
+      .bind({ principal: 'alice', scopes: [alpha], authorization: new TestPolicy() })
+      .orThrow();
     guard.hold();
     const first = writer.createTracked({ taskId: tid('a'), operationId: op('create-a'), title: 'a' });
     await settle();
@@ -286,7 +288,9 @@ describe('TaskBroker.whenIdle', () => {
     expect(await first).toSucceed();
     expect(await idle).toSucceedWith(true);
     // The queue still runs every later section.
-    expect(await writer.createTracked({ taskId: tid('b'), operationId: op('create-b'), title: 'b' })).toSucceed();
+    expect(
+      await writer.createTracked({ taskId: tid('b'), operationId: op('create-b'), title: 'b' })
+    ).toSucceed();
     // A timer that fires synchronously and whose cancel throws settles at once, too.
     const syncThrowing: TaskScheduleTimer = (fn) => {
       fn();
@@ -309,7 +313,9 @@ describe('TaskBroker.whenIdle', () => {
     expect(await syncBroker.whenIdle(5)).toFailWithDetail(/still busy after 5 ms/, code('conflict'));
     guard.release();
     expect(await held).toSucceed();
-    expect(await syncWriter.createTracked({ taskId: tid('d'), operationId: op('create-d'), title: 'd' })).toSucceed();
+    expect(
+      await syncWriter.createTracked({ taskId: tid('d'), operationId: op('create-d'), title: 'd' })
+    ).toSucceed();
   });
 
   test('a schedule that throws, and an invalid timeout, are refused', async () => {
@@ -452,7 +458,10 @@ describe('TaskBroker.create writeGuard', () => {
     const { broker, policy, repository } = await harness({ guard: late });
     const writer = broker.bind({ principal: 'alice', scopes: [alpha], authorization: policy }).orThrow();
     const failed = await writer.createTracked({ taskId: tid('a'), operationId: op('create-a'), title: 'a' });
-    expect(failed).toFailWithDetail(/failed: gate closed late after the section ran/, code('storage-unavailable'));
+    expect(failed).toFailWithDetail(
+      /failed: gate closed late after the section ran/,
+      code('storage-unavailable')
+    );
     expect(failed.detail?.retry).toBe('reconcile-first');
     expect(await repository.read(tid('a'))).toSucceedAndSatisfy((r) => expect(r?.state).toBe('resolved'));
     mode.after = 'throw';
@@ -473,7 +482,9 @@ describe('TaskBroker.create writeGuard', () => {
     };
     const { broker, policy, repository } = await harness({ guard: twice });
     const writer = broker.bind({ principal: 'alice', scopes: [alpha], authorization: policy }).orThrow();
-    expect(await writer.createTracked({ taskId: tid('a'), operationId: op('create-a'), title: 'a' })).toSucceed();
+    expect(
+      await writer.createTracked({ taskId: tid('a'), operationId: op('create-a'), title: 'a' })
+    ).toSucceed();
     expect(seconds[0]).toFailWithDetail(/ran the section more than once/, code('invalid'));
     expect(await repository.read(tid('a'))).toSucceedAndSatisfy((r) => expect(r?.state).toBe('resolved'));
   });

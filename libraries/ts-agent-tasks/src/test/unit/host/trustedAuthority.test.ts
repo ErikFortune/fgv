@@ -44,7 +44,9 @@ describe('trustedKindAuthority', () => {
   test('permits only the listed actions, and reports its constant epoch', async () => {
     const authority = authorityOf({ kinds: ['k'], scopes: [alpha], actions: ['read'], epoch: 'v1' });
     expect(await allows(authority, { action: 'read', role: 'subject', task: task('k', [alpha]) })).toBe(true);
-    expect(await allows(authority, { action: 'archive', role: 'subject', task: task('k', [alpha]) })).toBe(false);
+    expect(await allows(authority, { action: 'archive', role: 'subject', task: task('k', [alpha]) })).toBe(
+      false
+    );
     expect(authority.policyEpoch()).toBe('v1');
     expect(authority.policyEpoch()).toBe('v1');
   });
@@ -59,24 +61,32 @@ describe('trustedKindAuthority', () => {
 
   test('a named task needs its kind listed and some of its own scopes allowed', async () => {
     const authority = authorityOf({ kinds: ['k'], scopes: [alpha], actions: every, epoch: 'v1' });
-    const read = (summary: ITaskSummary): ITaskAccessRequest => ({ action: 'read', role: 'subject', task: summary });
+    const read = (summary: ITaskSummary): ITaskAccessRequest => ({
+      action: 'read',
+      role: 'subject',
+      task: summary
+    });
     expect(await allows(authority, read(task('k', [alpha, beta])))).toBe(true);
     expect(await allows(authority, read(task('other', [alpha])))).toBe(false);
     expect(await allows(authority, read(task('k', [beta])))).toBe(false);
     // Any role: a parent is a named task too.
-    expect(await allows(authority, { action: 'create', role: 'parent', task: task('k', [beta]) })).toBe(false);
-    // An unresolved registration is decided the same way, from its reference.
-    expect(await allows(authority, { action: 'read', role: 'subject', reference: reference('k', [alpha]) })).toBe(
-      true
-    );
-    expect(await allows(authority, { action: 'read', role: 'subject', reference: reference('x', [alpha]) })).toBe(
+    expect(await allows(authority, { action: 'create', role: 'parent', task: task('k', [beta]) })).toBe(
       false
     );
+    // An unresolved registration is decided the same way, from its reference.
+    expect(
+      await allows(authority, { action: 'read', role: 'subject', reference: reference('k', [alpha]) })
+    ).toBe(true);
+    expect(
+      await allows(authority, { action: 'read', role: 'subject', reference: reference('x', [alpha]) })
+    ).toBe(false);
   });
 
   test('without kinds any kind is covered; without scopes a named task is decided on its kind alone', async () => {
     const anyKind = authorityOf({ scopes: [alpha], actions: every, epoch: 'v1' });
-    expect(await allows(anyKind, { action: 'read', role: 'subject', task: task('whatever', [alpha]) })).toBe(true);
+    expect(await allows(anyKind, { action: 'read', role: 'subject', task: task('whatever', [alpha]) })).toBe(
+      true
+    );
     const kindOnly = authorityOf({ kinds: ['k'], actions: every, epoch: 'v1' });
     expect(await allows(kindOnly, { action: 'read', role: 'subject', task: task('k', [beta]) })).toBe(true);
     expect(await allows(kindOnly, { action: 'read', role: 'subject', task: task('x', [beta]) })).toBe(false);
@@ -85,7 +95,9 @@ describe('trustedKindAuthority', () => {
   test("a creation or subscription needs every requested scope allowed under the default 'every'", async () => {
     const authority = authorityOf({ kinds: ['k'], scopes: [alpha, beta], actions: every, epoch: 'v1' });
     expect(await allows(authority, { action: 'create', role: 'subject', scopes: [alpha] })).toBe(true);
-    expect(await allows(authority, { action: 'subscribe', role: 'subject', scopes: [alpha, beta] })).toBe(true);
+    expect(await allows(authority, { action: 'subscribe', role: 'subject', scopes: [alpha, beta] })).toBe(
+      true
+    );
     expect(await allows(authority, { action: 'create', role: 'subject', scopes: [alpha, room] })).toBe(false);
     // Asking for nothing is never inside anything.
     expect(await allows(authority, { action: 'create', role: 'subject', scopes: [] })).toBe(false);
@@ -105,7 +117,12 @@ describe('trustedKindAuthority', () => {
     expect(await allows(authority, { action: 'create', role: 'subject', scopes: [alpha] })).toBe(false);
     expect(await allows(authority, { action: 'subscribe', role: 'subject', scopes: [alpha] })).toBe(false);
     expect(
-      await allows(authority, { action: 'change-scopes', role: 'subject', task: task('k', [alpha]), scopes: [beta] })
+      await allows(authority, {
+        action: 'change-scopes',
+        role: 'subject',
+        task: task('k', [alpha]),
+        scopes: [beta]
+      })
     ).toBe(false);
   });
 
@@ -117,17 +134,28 @@ describe('trustedKindAuthority', () => {
     kinds.push('other');
     scopes.push(beta);
     actions.push('archive');
-    expect(await allows(authority, { action: 'read', role: 'subject', task: task('other', [alpha]) })).toBe(false);
+    expect(await allows(authority, { action: 'read', role: 'subject', task: task('other', [alpha]) })).toBe(
+      false
+    );
     expect(await allows(authority, { action: 'read', role: 'subject', task: task('k', [beta]) })).toBe(false);
-    expect(await allows(authority, { action: 'archive', role: 'subject', task: task('k', [alpha]) })).toBe(false);
+    expect(await allows(authority, { action: 'archive', role: 'subject', task: task('k', [alpha]) })).toBe(
+      false
+    );
   });
 
   test('the two copies it replaces, each reproduced', async () => {
     // The ingestion catalog's: one kind, and a subscription over its kind scope and nothing else.
     const ingestion = { namespace: 'kind', key: 'ingestion' };
-    const catalog = authorityOf({ kinds: ['ingestion'], scopes: [ingestion], actions: every, epoch: 'hub-ingestion-v1' });
+    const catalog = authorityOf({
+      kinds: ['ingestion'],
+      scopes: [ingestion],
+      actions: every,
+      epoch: 'hub-ingestion-v1'
+    });
     expect(await allows(catalog, { action: 'subscribe', role: 'subject', scopes: [ingestion] })).toBe(true);
-    expect(await allows(catalog, { action: 'subscribe', role: 'subject', scopes: [ingestion, room] })).toBe(false);
+    expect(await allows(catalog, { action: 'subscribe', role: 'subject', scopes: [ingestion, room] })).toBe(
+      false
+    );
     // The wake tasks': tracked tasks carrying the wake scope, created beside a room scope.
     const wakes = authorityOf({
       kinds: [trackedTaskKind],
@@ -137,10 +165,12 @@ describe('trustedKindAuthority', () => {
       epoch: 'hub-wake-v1'
     });
     expect(await allows(wakes, { action: 'create', role: 'subject', scopes: [wake, room] })).toBe(true);
-    expect(await allows(wakes, { action: 'read', role: 'subject', task: task(trackedTaskKind, [wake, room]) })).toBe(
-      true
+    expect(
+      await allows(wakes, { action: 'read', role: 'subject', task: task(trackedTaskKind, [wake, room]) })
+    ).toBe(true);
+    expect(await allows(wakes, { action: 'read', role: 'subject', task: task('ingestion', [wake]) })).toBe(
+      false
     );
-    expect(await allows(wakes, { action: 'read', role: 'subject', task: task('ingestion', [wake]) })).toBe(false);
   });
 });
 
@@ -153,10 +183,17 @@ describe('trustedKindAuthority through a broker', () => {
         principal: 'host',
         scopes: [alpha, beta],
         creationScopes: [alpha],
-        authorization: authorityOf({ kinds: [trackedTaskKind], scopes: [alpha], actions: ['read', 'create'], epoch: 'h1' })
+        authorization: authorityOf({
+          kinds: [trackedTaskKind],
+          scopes: [alpha],
+          actions: ['read', 'create'],
+          epoch: 'h1'
+        })
       })
       .orThrow();
-    expect(await writer.createTracked({ taskId: tid('mine'), operationId: op('create-mine'), title: 'mine' })).toSucceed();
+    expect(
+      await writer.createTracked({ taskId: tid('mine'), operationId: op('create-mine'), title: 'mine' })
+    ).toSucceed();
     expect(await writer.inspect(tid('mine'))).toSucceed();
     expect(
       await writer.archive({ taskId: tid('mine'), operationId: op('archive-mine'), expectedRevision: rev(1) })
@@ -181,7 +218,12 @@ describe('trustedKindAuthority through a broker', () => {
         principal: 'host',
         scopes: [alpha, beta],
         creationScopes: [alpha],
-        authorization: authorityOf({ kinds: [trackedTaskKind], scopes: [alpha], actions: allTaskActions, epoch: 'h1' })
+        authorization: authorityOf({
+          kinds: [trackedTaskKind],
+          scopes: [alpha],
+          actions: allTaskActions,
+          epoch: 'h1'
+        })
       })
       .orThrow();
     await track(writer, 't');
@@ -193,13 +235,21 @@ describe('trustedKindAuthority through a broker', () => {
         add: [beta],
         remove: [alpha]
       })
-    ).toFailWithDetail(/'change-scopes' is not permitted/, expect.objectContaining({ code: 'not-found-or-denied' }));
+    ).toFailWithDetail(
+      /'change-scopes' is not permitted/,
+      expect.objectContaining({ code: 'not-found-or-denied' })
+    );
     expect(await h.repository.read(tid('t'))).toSucceedAndSatisfy((read) =>
       expect(read?.state === 'resolved' && read.task.envelope.scopes).toEqual([alpha])
     );
     // A change that keeps it inside is allowed, and the policy was told the resulting set.
     const asked: Array<ReadonlyArray<ITaskScope> | undefined> = [];
-    const watching = authorityOf({ kinds: [trackedTaskKind], scopes: [alpha, beta], actions: allTaskActions, epoch: 'h1' });
+    const watching = authorityOf({
+      kinds: [trackedTaskKind],
+      scopes: [alpha, beta],
+      actions: allTaskActions,
+      epoch: 'h1'
+    });
     const spy = h.broker
       .bind({
         principal: 'host',
@@ -216,7 +266,12 @@ describe('trustedKindAuthority through a broker', () => {
       })
       .orThrow();
     expect(
-      await spy.changeScopes({ taskId: tid('t'), operationId: op('widen-t'), expectedRevision: rev(1), add: [beta] })
+      await spy.changeScopes({
+        taskId: tid('t'),
+        operationId: op('widen-t'),
+        expectedRevision: rev(1),
+        add: [beta]
+      })
     ).toSucceed();
     expect(asked).toEqual([[alpha, beta]]);
   });

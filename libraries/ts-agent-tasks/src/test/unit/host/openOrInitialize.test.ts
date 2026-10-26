@@ -209,7 +209,9 @@ describe('the manifest records the mode a repository was initialized in', () => 
     const manifest = manifestOf(dir);
     delete manifest.initializedMode;
     fs.writeFileSync(path.join(dir, 'repository.json'), JSON.stringify(manifest));
-    const opened = (await FileTreeTaskRepository.open(params(nodeRootAt(dir), { durable: 'process-crash' }))).orThrow();
+    const opened = (
+      await FileTreeTaskRepository.open(params(nodeRootAt(dir), { durable: 'process-crash' }))
+    ).orThrow();
     expect(manifestOf(dir).initializedMode).toBe('process-crash');
     if (opened.state === 'ready') {
       // The rewritten manifest is the one the instance holds: a later write still commits.

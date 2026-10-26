@@ -9,16 +9,19 @@ per the brief. Change file typed `minor` (`BREAKING (implementers only):` — th
 
 ### B-3 — `trustedKindAuthority` (`host` packlet)
 
-`trustedKindAuthority({ kinds?, scopes?, scopeMatch?, actions, epoch }): ITaskAuthorization`.
+`trustedKindAuthority({ kinds?, scopes?, scopeMatch?, actions, epoch }): Result<ITaskAuthorization>`
+(a `Result` since review round 1: an empty `kinds`, `scopes` or `actions` list fails construction).
 
 - `actions` is required; a request whose action is not listed is refused.
 - A request **naming a task** (or an unresolved reference), in any role, needs its kind in `kinds`
-  (when given) and *some* of its own scopes in `scopes` (when given).
+  (when given) and *some* of its own scopes in `scopes` (when given); with `scopes` omitted it is
+  decided on kind alone.
 - A request **asking for scopes** (creation, subscription, dispose-over-subscription, and a scope
-  change's targets) needs them matched by `scopeMatch`: `'every'` (default, the brief's rule) or
-  `'some'`. An empty requested list is refused. With `scopes` omitted, a request naming no task is
-  refused.
-- A creation names no kind, so `kinds` does not constrain it.
+  change — which since round 1 asks for the full resulting scope set) needs them matched by
+  `scopeMatch`: `'every'` (default, the brief's rule) or `'some'`. An empty requested list is
+  refused. With `scopes` omitted, every request asking for scopes is refused.
+- A creation names no kind, so `kinds` does not constrain it. It ignores `role`, `command` and
+  `targetResponsibility`; under `'some'` a subscription can accrue audience it cannot read.
 - TSDoc says **trusted host principals only, never model-facing**. Parameters are copied.
 
 **The two PersonAIlity copies, and which rule each used** (personaility `working` @ `47991958`):
@@ -35,12 +38,17 @@ Neither copy checks the action. The catalog copy is `scopeMatch: 'every'`; the w
 ### B-7 — resume a pending registration (`broker` + `storage`)
 
 - `ITaskRepository.pendingRegistration(taskId)` answers a pending entry's identity and stored
-  canonical request (trusted host API, resident state). **Widens `ITaskRepository`.**
+  canonical request, plus `landedScopes` when its first record already landed (trusted host API).
+  **Widens `ITaskRepository`.**
 - `IBoundTaskWriter.resumePendingRegistration(taskId)` — native (`create-tracked` / `create-list`):
   the stored request is fed back through `createNative`, so `create` is authorized **now**, the
   epoch is captured before the policy is asked and re-checked inside the writer immediately before
   the record is written, and the repository's identity check matches it against the pending entry.
   Another principal's pending registration is answered exactly like an id with none.
+  **Since round 1:** `create` is asked of the scopes that will be committed — the landed record's
+  when it landed (which the view must select), otherwise the view's creation scopes — and storage
+  refuses to adopt a landed record whose scopes differ from the draft's (the authorized ones). A
+  resume whose response was lost replays the committed receipt, re-authorized.
 - `TaskBroker.resumePendingRegistration(taskId)` — external (`register-external`): a trusted host
   operation, resumed under the stored principal via `registerExternal`, which repeats every check.
 - Each refuses the other kind with `invalid`. Withdrawal / recycling not built (brief: out of scope).
@@ -57,7 +65,8 @@ Neither copy checks the action. The catalog copy is `scopeMatch: 'every'`; the w
 - **Manifest `initializedMode?: 'session' | 'process-crash'`**, written by `initialize`, carried by
   every manifest rewrite (all spread the prior manifest). `open` as `session` over a
   `process-crash`-initialized repository is refused (`unsupported`) unless
-  `allowSessionOverDurable: true`. A manifest without the field opens in either mode. An unknown
+  `allowSessionOverDurable: true`. A manifest without the field opens in either mode, and since
+  round 1 the first durable open backfills `initializedMode: 'process-crash'` into it. An unknown
   value is `manifest-invalid`.
 - **`openOrInitializeTaskRepository({ root, fallback, …})`** (`host`) → `{ state, repository |
   recovery, durability, placement, report }`. `fallback: 'in-memory'` is always labelled
@@ -87,13 +96,18 @@ Neither copy checks the action. The catalog copy is `scopeMatch: 'every'`; the w
 
 | window | check | act | what re-checks after the check |
 |---|---|---|---|
-| resume: authorize → commit | `pendingRegistration` (outside the writer), principal match, `mayCreate` | `writer.register` | epoch captured before the first policy question and re-checked inside the writer as the last step before `register`, which awaits nothing before writing; `register` compares the full identity (operation id, operation, principal, record type, canonical request) against the pending entry **under the writer**; a resume that loses a race to another resume finds a live record and replays its receipt (`createNative`'s existing path) |
+| resume: authorize → commit | `pendingRegistration` (outside the writer, incl. `landedScopes`), principal match, `mayCreate` for the scopes to be committed | `writer.register` | epoch captured before the first policy question and re-checked inside the writer as the last step before `register`, which awaits nothing before writing; `register` compares the full identity against the pending entry **under the writer**, and refuses to adopt a landed record whose scopes differ from the draft's — so a record that landed (or changed) after `landedScopes` was read can never be committed under scopes nobody authorized; a resume that loses a race replays the committed receipt |
+| resume after a lost response | `readCommit` finds a live record whose creation was a catalog registration | replay | `createNative`'s replay path re-checks visibility, identity and `create` for the live task's scopes, and `confirmUnchanged` re-checks epoch and revision inside the writer |
 | resume (external) | `pendingRegistration`, operation kind | `registerExternal` | parent re-read inside the writer, source checkpoint history compared inside the writer, identity matched by `register` under the writer |
-| open-or-init: probe → open/initialize | `probeTaskRepositoryRoot` (outside ownership) picks the mode | `_acquire` → initialize or open | `RecordStore.create` re-runs the **same probe** inside `_acquire`, so a root whose capability changed in between is refused rather than opened in the wrong mode; the open-vs-initialize decision is taken **after** `acquireRoot` and temporary cleanup, from the listing made under ownership — there is no window for content to land between the decision and the operation (in-process; cross-process exclusivity stays the host's requirement, as documented) |
-| open: manifest mode vs requested mode | `initializedMode` read in `scanRoot` | the scan's only write (completing landed registrations) | the check runs before any write, and a refusal releases ownership (`_openAcquired`) |
-| `whenIdle`: observing the queue vs a newly enqueued write | `busy` read synchronously | resolve | none, by design: a write enqueued after the resolve runs normally. A write enqueued while waiting keeps the count above zero, so the waiter fires only when **that** write is done too (test: `never takes the writer…`) |
-| the guard around `withWriter` | the guard's own decision | `withWriter(section)` | the guard runs inside the queue's turn, so nothing else can take the writer between its decision and the section; the section's own epoch / revision rechecks run after the guard, inside the writer, unchanged |
-| `issued()` vs a concurrent acknowledge | `readSubscription` under the writer | the host's later `abandon` | `abandon` re-reads the record under the writer and removes only a manifest still present; abandoning one acknowledged meanwhile removes a manifest whose history is already committed (nothing lost), and a later replay of that acknowledgement is refused as an invalid receipt (test: `a moment, not a hold…`) |
+| identical `createTracked` retry over a landed record | `mayCreate` for the view's creation scopes | `register` adopts the landed record | storage's scope comparison under the writer refuses (`conflict`) when the landed scopes are not the authorized ones |
+| scope change: authorize → commit | `change-scopes` asked with the resulting scope set computed from the record read before the writer | commit | the writer re-checks that record's revision (and the epoch), so the set it commits is the set authorized |
+| open-or-init: probe → open/initialize | `probeTaskRepositoryRoot` (outside ownership) picks the mode | `_acquire` → initialize or open | `RecordStore.create` re-runs the **same probe** inside `_acquire`; the open-vs-initialize decision is taken **after** `acquireRoot` and temporary cleanup, from the listing made under ownership (in-process; cross-process exclusivity stays the host's requirement) |
+| open: manifest mode vs requested mode | `initializedMode` read in `scanRoot` | the scan's writes (completing landed registrations, backfilling the mode) | the check runs before the scan writes anything, and a refusal releases ownership. **Correction:** it runs *after* `_acquire` has already reclaimed interrupted writes' temporaries, so a refused open is not write-free — it may have removed working files, which no reader treats as data |
+| open: backfill `initializedMode` | a durable open, manifest without the field | rewrite the manifest | the same fence as completing registrations: the manifest is re-read and must equal the scanned text before it is rewritten |
+| `whenIdle`: observing the queue vs a newly enqueued write | `busy` read synchronously | resolve | none, by design. It observes **sections**, not operations: one operation can resolve-idle between its sections (`acknowledge`, `prepare`, a creation's pre-writer authorization, multi-pass source/cleanup). Documented; quiescing means pausing the guard first |
+| `whenIdle` timer vs idle notification | `settle` called by either | resolve, withdraw, cancel | `settled` flag makes it once; the host's `cancel` runs under `captureResult`, and each idle waiter is called under `captureResult`, so host code cannot reject the queue's tail (which is also made non-rejecting) |
+| the guard around `withWriter` | the guard's own decision | `withWriter(section)` | the guard runs inside the queue's turn; the broker tracks whether the section ran: ran-then-failed is `reconcile-first`, a second call is refused unrun |
+| `issued()` vs a concurrent acknowledge | `readSubscription` under the writer | the host's later `abandon` | `abandon` re-reads under the writer; abandoning one acknowledged meanwhile loses nothing, and a later replay of that acknowledgement is an invalid receipt |
 
 ## Revert matrix
 
@@ -134,7 +148,10 @@ on the new refusal before the change), and `publicSurface.test.ts` lists the two
 
 `grep -rl 'ITaskRepository\|IBoundTaskWriter\|IBoundTaskDelivery' libraries tools samples`:
 the only implementations are `FileTreeTaskRepository`, `BoundTaskWriter`, `BoundTaskDelivery`, and
-the test double above. No consumer outside `ts-agent-tasks`.
+the test double above. **Correction (round 1):** there is a consumer outside the package —
+`samples/testbed/src/scenarios/agentTasks/journey.ts` uses `IBoundTaskWriter` and
+`IBoundTaskDelivery` — but it implements neither, so the widening does not break it; the repo-wide
+`rush rebuild` builds it.
 
 ## Gates
 
@@ -164,3 +181,29 @@ Logs under `.gate-logs/` in the worktree (not committed), graded by grep, not ex
   declares a structurally identical `TaskScheduleTimer`; consolidate once both land.
 - **`whenIdle` with a holding guard** waits for its own hold (a held section is queued work). A host
   using B-6's pause then `whenIdle` must pause *after* idling or use the gate's own quiet; documented.
+
+## Review round 1 (2026-10-26, on `b9b705bdd`)
+
+Each regression test was shown red by reverting exactly that fix in the current source — the
+behaviour `b9b705bdd` had — rebuilding, and running it (`scratchpad/revert.py r1-*`). The reviewer's
+probes `p1_landed`, `p2_poison`, `p4_guard` now report the fixed behaviour; `p3_scopes` uses the
+pre-round-1 `trustedKindAuthority` signature (now a `Result`), and its scenario is the broker test
+below.
+
+| finding | fix | test | red on revert |
+|---|---|---|---|
+| P1-1 resume of a landed record committed unauthorized scopes | `pendingRegistration` reports `landedScopes`; `createNative` authorizes (and requires the view to select) the scopes to be committed; storage refuses to adopt a landed record whose scopes differ from the draft's | `create is authorized against the landed record’s scopes…`; `a view that does not select the landed scopes…`; `an identical createTracked retry from a view with other creation scopes is refused, not adopted` | yes — r1-landed-authorize (2 red), r1-storage-refuse (1 red) |
+| P1-2 scope-change targets never reached the policy | `changeScopes` passes `access: { scopes: <resulting set> }` (access may now derive from the record); `ITaskAccessRequest` docs say so | `a scope change that would move a task out of the authority’s scopes is refused` (real broker; also asserts the policy saw `[alpha, beta]`) | yes — r1-changescopes-access |
+| P1-2 omitted-`scopes` rule | requested scopes with no `scopes` configured are refused, named or not | `without scopes, every request that asks for scopes is refused, named task or not` | yes — r1-omitted-scopes |
+| P1-3 a throwing `cancel` poisoned the queue | `cancel` captured in `settle` and the sync-fire branch; each idle waiter captured; `_tail` made non-rejecting | `a timer whose cancel throws neither breaks the writer queue nor leaves whenIdle unsettled` | yes — r1-cancel-capture |
+| P2-1 guard failing after `write()` claimed nothing was written | section wrapped; ran-then-failed/threw → `storage-unavailable`, `reconcile-first`; second call refused unrun | `a guard that fails or throws after running the section reports reconcile-first…`; `a guard that runs the section twice…` | yes — r1-guard-after, r1-guard-once |
+| P2-2 `whenIdle` mid-operation | documented: sections, not operations; pause the guard, then `whenIdle` (TSDoc, CAPABILITIES, README) | — (documentation) | — |
+| P2-3 imperative ladders | `_resumable` / `resumeNative` / `resumeExternal` and `openOrInitializeTaskRepository` chained with `onSuccess` / `thenOnSuccess` | existing tests | — |
+| P2-4 durability values declared twice | `allTaskRepositoryDurabilities` `as const` feeds `TaskRepositoryDurability` and both `enumeratedValue` converters | existing tests | — |
+| P3 empty lists | `trustedKindAuthority` returns `Result`, failing on an empty `kinds`/`scopes`/`actions` | `refuses an empty kinds, scopes or actions list at construction` | (new API) |
+| P3 TSDoc | ignores `role`/`command`/`targetResponsibility`; `'some'` audience note; `issued()` is gated | — | — |
+| P3 replay after a lost response | a live task whose creation was a catalog registration replays through the creation path, re-authorized | `resumes after a reopen…` (second resume replays, then a denying policy refuses); external `resumes through the broker…`; `a live task replays its creation` | yes — r1-replay (3 red) |
+| P3 probe union | `ITaskRepositoryRootProbe` discriminated on `mode`; no `reason!` | type-level | — |
+| P3 refusal after cleanup | corrected in the table above | — | — |
+| P3 backfill | a durable open of a manifest without `initializedMode` records `process-crash` | `a durable open backfills the mode into an older manifest, which then refuses a session open` | yes — r1-backfill |
+| P3 consumer sweep | corrected above (`samples/testbed/.../journey.ts`) | — | — |

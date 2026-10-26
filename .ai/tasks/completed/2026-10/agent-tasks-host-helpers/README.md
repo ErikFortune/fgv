@@ -28,12 +28,14 @@ stream moves those into the library, plus two broker gaps the ask surfaced.
 
 - **No `releaseStale`**: the repository has no open generation to tell this open's receipts from an
   earlier one's. `issued()` + `abandon` is the supported path.
-- **A resumed native task takes the resuming view's creation scopes** — they were never part of the
-  stored request.
-- **`whenIdle` counts a section the guard holds as busy.** Pausing writes and then waiting for idle
-  waits for the pause itself.
+- **A resume is authorized for the scopes it commits** — the landed record's when its first record
+  already landed, otherwise the resuming view's creation scopes (the stored request carries none);
+  see [A.1](#a1--the-resume-scope-claim).
+- **`whenIdle` observes sections, not operations.** To quiesce, pause the guard, then wait for idle;
+  a write held *at* the paused guard still counts as busy.
 - **Three interfaces widened** (`ITaskRepository`, `IBoundTaskWriter`, `IBoundTaskDelivery`); there is
-  no other implementation in the monorepo.
+  no other implementation in the monorepo, and one consumer
+  (`samples/testbed/src/scenarios/agentTasks/journey.ts`) that implements none of them.
 - **B-1, B-2 and B-6 were not built**, per the brief.
 
 ## Artifacts
@@ -43,3 +45,28 @@ stream moves those into the library, plus two broker gaps the ask surfaced.
   revert matrix, gates and brief deltas
 - `state.md` — the worker's checkpoint and interpretations
 - `meta.yaml` — the index record
+
+## Appendix A — corrections (2026-10-26)
+
+> Amended after review round 1 on `b9b705bdd`; the round's findings and fixes are in `result.md`
+> § *Review round 1*.
+
+### A.1 — the resume scope claim
+
+> **A resumed native task takes the resuming view's creation scopes** — they were never part of the
+> stored request.
+
+Wrong when the record had already landed: storage adopted the landed record, with its original
+scopes, after `create` was authorized for the resuming view's scopes. Fixed: authorization is asked
+of the scopes that will be committed, and storage refuses to adopt a landed record under other
+scopes. Verified by the `a record that landed before it was marked live` tests, each red on revert.
+
+### A.2 — "no other implementation", and a consumer
+
+`samples/testbed/src/scenarios/agentTasks/journey.ts` consumes `IBoundTaskWriter` and
+`IBoundTaskDelivery`; it implements neither, so the claim stands, but the sweep should have named it.
+
+### Checked and unchanged
+
+The `releaseStale` finding (no open generation), the placement and fallback labelling, the probe's
+`atomicReplace` requirement, and the B-1/B-2/B-6 exclusions.
