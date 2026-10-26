@@ -284,16 +284,18 @@ export class TaskBroker {
   }
 
   /**
-   * Resumes an external registration left pending — accepted into the inventory, its record never
-   * written — from the canonical request the repository stored with it, under the principal it was
-   * accepted for. A trusted host operation, as {@link TaskBroker.registerExternal} is.
+   * Resumes an external registration left pending — accepted into the inventory and not yet marked
+   * live; its first record may or may not have landed — from the canonical request the repository
+   * stored with it, under the principal it was accepted for. A trusted host operation, as
+   * {@link TaskBroker.registerExternal} is.
    *
    * @remarks
    * Every check registration makes is made again now: the request is converted, its parent re-read
    * and re-checked inside the writer, and the source's committed history compared. A native pending
    * registration resumes through a bound writer (`IBoundTaskWriter.resumePendingRegistration`), which
-   * authorizes it, and is `invalid` here. An id with no pending registration — including one already
-   * live — is `not-found-or-denied`.
+   * authorizes it, and is `invalid` here. A live task that an external registration created — a
+   * resume whose response was lost — replays that registration (without its parent checks, which
+   * decided the original); any other id is `not-found-or-denied`.
    */
   public resumePendingRegistration(taskId: TaskId): Promise<TaskResult<TaskRegistrationResult>> {
     return resumeExternal(this._core, taskId);

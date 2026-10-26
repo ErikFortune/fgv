@@ -57,7 +57,9 @@ import {
   TaskRegistrationResult,
   TaskResult,
   UpdateCategory,
-  isTerminalTaskStatus
+  isTerminalTaskStatus,
+  taskRecordScopes,
+  taskScopeKey
 } from '../types';
 import {
   ISourceReplayAdmission,
@@ -448,7 +450,7 @@ export class FileTreeTaskRepository implements ITaskRepository {
     }
     return this._gate
       .run(`pendingRegistration ${taskId}`, () => ok(this._readLanded(name, entry)))
-      .onSuccess((landed) => ok(landed.isSuccess() ? scopesOfRecord(landed.value.record) : undefined));
+      .onSuccess((landed) => ok(landed.isSuccess() ? taskRecordScopes(landed.value.record) : undefined));
   }
 
   /** {@inheritDoc ITaskRepository.capacityStatus} */
@@ -1266,7 +1268,7 @@ export class FileTreeTaskRepository implements ITaskRepository {
     }
     // The draft carries the scopes this registration was authorized for. Adopting a record that
     // landed under other scopes would commit what was never authorized.
-    if (!sameScopes(scopesOfRecord(landed.value.record), scopesOfRecord(draft))) {
+    if (!sameScopes(taskRecordScopes(landed.value.record), taskRecordScopes(draft))) {
       return taskFailure(
         `register ${taskId}: its record landed with scopes other than the ones this registration ` +
           `was authorized for; resume it with the scopes it landed with`,
@@ -1949,15 +1951,9 @@ export class FileTreeTaskRepository implements ITaskRepository {
   }
 }
 
-/** The scopes a task record or draft carries. */
-function scopesOfRecord(record: ITaskRecordDraft | ITaskCommitRecord): ReadonlyArray<ITaskScope> {
-  return record.recordType === 'resolved' ? record.task.envelope.scopes : record.reference.scopes;
-}
-
 /** Whether two scope lists name the same set. */
 function sameScopes(a: ReadonlyArray<ITaskScope>, b: ReadonlyArray<ITaskScope>): boolean {
-  const key = (scope: ITaskScope): string => JSON.stringify([scope.namespace, scope.key]);
-  const left: ReadonlySet<string> = new Set(a.map(key));
-  const right: ReadonlySet<string> = new Set(b.map(key));
+  const left: ReadonlySet<string> = new Set(a.map(taskScopeKey));
+  const right: ReadonlySet<string> = new Set(b.map(taskScopeKey));
   return left.size === right.size && [...left].every((k) => right.has(k));
 }

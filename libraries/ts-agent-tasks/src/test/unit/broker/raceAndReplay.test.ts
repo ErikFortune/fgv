@@ -1,0 +1,203 @@
+/*
+ * Copyright (c) 2026 Erik Fortune
+ * SPDX-License-Identifier: MIT
+ */
+
+import '@fgv/ts-utils-jest';
+import { FileTree } from '@fgv/ts-json-base';
+import { IBoundTaskWriter, ICreateTrackedTask, ITaskMutationResult, TaskResult } from '../../../index';
+import { FaultyRoot } from '../../helpers/faultyRoot';
+import {
+  IBrokerHarness,
+  TestPolicy,
+  alpha,
+  beta,
+  bindWriter,
+  brokerHarness,
+  op,
+  rev,
+  tid
+} from '../../helpers/brokerFixtures';
+import { jobKind, sourceHarness } from '../../helpers/sourceFixtures';
+import { memoryRoot } from '../../helpers/storageFixtures';
+
+const code = (c: string): unknown => expect.objectContaining({ code: c });
+
+/** A harness over a root whose `task-t.json` write fails once, leaving `t` pending, and two views. */
+async function pendingT(): Promise<{
+  readonly h: IBrokerHarness;
+  readonly a: IBoundTaskWriter;
+  readonly b: IBoundTaskWriter;
+}> {
+  const faulty = new FaultyRoot(memoryRoot() as FileTree.IAtomicFileTreeDirectoryItem);
+  const h = await brokerHarness({
+    root: faulty as unknown as FileTree.IFileTreeDirectoryItem,
+    scopes: [alpha, beta]
+  });
+  faulty.faults.push({ name: 'task-t.json', when: 'before', visibility: 'unchanged' });
+  const a = bindWriter(h, { scopes: [alpha], creationScopes: [alpha] });
+  expect(
+    await a.createTracked({ taskId: tid('t'), operationId: op('create-t'), title: 'the task' })
+  ).toFail();
+  return { h, a, b: viewB(h) };
+}
+
+/** View B: selects and creates in beta only, and its policy forbids creating in alpha. */
+function viewB(h: IBrokerHarness): IBoundTaskWriter {
+  const policy = new TestPolicy();
+  policy.deny.push((q) => q.action === 'create' && (q.scopes ?? []).some((s) => s.key === alpha.key));
+  return bindWriter(h, { scopes: [beta], creationScopes: [beta], authorization: policy });
+}
+
+/** The invariant a race must keep: one success, committed in the winner's scopes; the loser refused. */
+async function expectOneWinner(
+  h: IBrokerHarness,
+  results: ReadonlyArray<{
+    readonly scopes: ReadonlyArray<typeof alpha>;
+    readonly result: TaskResult<ITaskMutationResult>;
+  }>
+): Promise<void> {
+  const won = results.filter((r) => r.result.isSuccess());
+  const lost = results.filter((r) => r.result.isFailure());
+  expect(won).toHaveLength(1);
+  expect(lost).toHaveLength(1);
+  expect(lost[0].result).toFailWithDetail(
+    /not found or not visible|not permitted/,
+    code('not-found-or-denied')
+  );
+  const committed = (await h.repository.readCommit(tid('t'))).orThrow()!;
+  expect(committed.recordType === 'resolved' && committed.task.envelope.scopes).toEqual(won[0].scopes);
+}
+
+describe('a resume that loses a race replays through the replay checks', () => {
+  test('alpha first: the beta view, authorized only for beta, is refused rather than handed the alpha task', async () => {
+    const { h, a, b } = await pendingT();
+    const [ra, rb] = await Promise.all([
+      a.resumePendingRegistration(tid('t')),
+      b.resumePendingRegistration(tid('t'))
+    ]);
+    await expectOneWinner(h, [
+      { scopes: [alpha], result: ra },
+      { scopes: [beta], result: rb }
+    ]);
+  });
+
+  test('beta first: whichever commits, the other is refused', async () => {
+    const { h, a, b } = await pendingT();
+    const [rb, ra] = await Promise.all([
+      b.resumePendingRegistration(tid('t')),
+      a.resumePendingRegistration(tid('t'))
+    ]);
+    await expectOneWinner(h, [
+      { scopes: [alpha], result: ra },
+      { scopes: [beta], result: rb }
+    ]);
+  });
+});
+
+describe('an identical createTracked that loses a race replays through the replay checks', () => {
+  const request: ICreateTrackedTask = { taskId: tid('t'), operationId: op('create-t'), title: 'the task' };
+
+  test('alpha first', async () => {
+    const h = await brokerHarness({ scopes: [alpha, beta] });
+    const a = bindWriter(h, { scopes: [alpha], creationScopes: [alpha] });
+    const b = viewB(h);
+    const [ra, rb] = await Promise.all([a.createTracked(request), b.createTracked(request)]);
+    await expectOneWinner(h, [
+      { scopes: [alpha], result: ra },
+      { scopes: [beta], result: rb }
+    ]);
+  });
+
+  test('beta first', async () => {
+    const h = await brokerHarness({ scopes: [alpha, beta] });
+    const a = bindWriter(h, { scopes: [alpha], creationScopes: [alpha] });
+    const b = viewB(h);
+    const [rb, ra] = await Promise.all([b.createTracked(request), a.createTracked(request)]);
+    await expectOneWinner(h, [
+      { scopes: [alpha], result: ra },
+      { scopes: [beta], result: rb }
+    ]);
+  });
+
+  test('a replay from a view with other creation scopes is authorized for the committed scopes', async () => {
+    const h = await brokerHarness({ scopes: [alpha, beta] });
+    const a = bindWriter(h, { scopes: [alpha, beta], creationScopes: [alpha] });
+    expect(await a.createTracked(request)).toSucceed();
+    h.policy.deny.push((q) => q.action === 'create' && (q.scopes ?? []).some((s) => s.key === alpha.key));
+    const other = bindWriter(h, { scopes: [alpha, beta], creationScopes: [beta] });
+    expect(await other.createTracked(request)).toFailWithDetail(
+      /'create' is not permitted/,
+      code('not-found-or-denied')
+    );
+  });
+});
+
+describe('an external registration replayed after a lost response', () => {
+  test('replays even after its parent closed', async () => {
+    const h = await sourceHarness();
+    h.executor.addJob('j1');
+    expect(
+      await h.writer.createTracked({ taskId: tid('p'), operationId: op('create-p'), title: 'parent' })
+    ).toSucceed();
+    const register = {
+      taskId: tid('j1'),
+      operationId: op('register-j1'),
+      kind: jobKind,
+      detailVersion: 1,
+      title: 'j1',
+      parentId: tid('p'),
+      scopes: [alpha],
+      binding: h.executor.binding('j1'),
+      recovery: 'reattach'
+    };
+    expect(await h.broker.registerExternal('host', register)).toSucceed();
+    expect(
+      await h.writer.execute({
+        taskId: tid('p'),
+        operationId: op('cancel-p'),
+        expectedRevision: rev(1),
+        command: 'cancel',
+        parameters: { reason: { code: 'done', summary: 'closed' } }
+      })
+    ).toSucceed();
+    // The same registration again — its first response lost — replays.
+    expect(await h.broker.registerExternal('host', register)).toSucceedAndSatisfy((r) =>
+      expect(r.state).toBe('unresolved')
+    );
+    expect(await h.broker.resumePendingRegistration(tid('j1'))).toSucceed();
+    // A different registration under the id is still refused.
+    expect(await h.broker.registerExternal('host', { ...register, title: 'other' })).toFail();
+  });
+});
+
+describe('resumeNative and a pending external registration', () => {
+  test('a view that selects none of its scopes is told nothing about it', async () => {
+    const root = new FaultyRoot(memoryRoot() as FileTree.IAtomicFileTreeDirectoryItem);
+    const h = await sourceHarness({ root: root as unknown as FileTree.IFileTreeDirectoryItem });
+    h.executor.addJob('j1');
+    root.faults.push({ name: 'task-j1.json', when: 'before', visibility: 'unchanged' });
+    expect(
+      await h.broker.registerExternal('host', {
+        taskId: tid('j1'),
+        operationId: op('register-j1'),
+        kind: jobKind,
+        detailVersion: 1,
+        title: 'j1',
+        scopes: [alpha],
+        binding: h.executor.binding('j1'),
+        recovery: 'reattach'
+      })
+    ).toFail();
+    const blind = h.broker.bind({ principal: 'host', scopes: [beta], authorization: h.policy }).orThrow();
+    expect(await blind.resumePendingRegistration(tid('j1'))).toFailWithDetail(
+      /no pending registration j1$/,
+      code('not-found-or-denied')
+    );
+    const seeing = h.broker.bind({ principal: 'host', scopes: [alpha], authorization: h.policy }).orThrow();
+    expect(await seeing.resumePendingRegistration(tid('j1'))).toFailWithDetail(
+      /external registration/,
+      code('invalid')
+    );
+  });
+});

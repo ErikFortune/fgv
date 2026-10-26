@@ -4,8 +4,15 @@
  */
 
 import '@fgv/ts-utils-jest';
-import { FileTreeTaskRepository } from '../../../index';
-import { brokerRegistry, track } from '../../helpers/brokerFixtures';
+import { Logging } from '@fgv/ts-utils';
+import { FileTreeTaskRepository, SubscriptionId, defaultTaskProjector } from '../../../index';
+// eslint-disable-next-line @rushstack/packlets/mechanics
+import { AccessContext } from '../../../packlets/broker/access';
+// eslint-disable-next-line @rushstack/packlets/mechanics
+import { BrokerCore } from '../../../packlets/broker/core';
+// eslint-disable-next-line @rushstack/packlets/mechanics
+import { BoundTaskDelivery } from '../../../packlets/broker/delivery';
+import { alpha, brokerRegistry, track } from '../../helpers/brokerFixtures';
 import {
   TestClock,
   clockedEnvironment,
@@ -98,5 +105,21 @@ describe('IBoundTaskDelivery.issued', () => {
     const delivery = deliveryOf(h, 'sub');
     h.repository.close().orThrow();
     expect(await delivery.issued()).toFailWithDetail(/closed/, code('storage-unavailable'));
+  });
+
+  test('a delivery bound to a subscription the repository does not hold is refused, classified', async () => {
+    const h = await deliveryHarness();
+    const core = (h.broker as unknown as { readonly _core: BrokerCore })._core;
+    const access = new AccessContext({
+      view: 1,
+      principal: 'alice',
+      scopes: [alpha],
+      creationScopes: [alpha],
+      authorization: h.policy,
+      projector: defaultTaskProjector,
+      logger: new Logging.InMemoryLogger()
+    });
+    const ghost = new BoundTaskDelivery(core, access, 'ghost' as SubscriptionId);
+    expect(await ghost.issued()).toFailWithDetail(/no retained subscription/, code('not-found-or-denied'));
   });
 });

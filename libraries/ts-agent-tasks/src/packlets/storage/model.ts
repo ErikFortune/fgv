@@ -492,8 +492,9 @@ export interface ITaskRepository {
    */
   outstanding(request?: { readonly limit?: number }): TaskResult<ITaskOutstandingReport>;
   /**
-   * A registration that is still pending — accepted into the inventory, its record never written —
-   * with the identity and canonical creation request it was accepted with, so it can be resumed.
+   * A registration that is still pending — accepted into the inventory and not yet marked live; its
+   * first record may have landed (`landedScopes`) or not — with the identity and canonical creation
+   * request it was accepted with, so it can be resumed.
    * `undefined` when `taskId` names no pending registration, including a task that is already live.
    * Answered from resident state. Trusted host API: a request may name tasks a principal cannot see.
    */

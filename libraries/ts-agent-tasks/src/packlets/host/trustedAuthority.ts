@@ -4,7 +4,7 @@
  */
 
 import { Result, fail, succeed } from '@fgv/ts-utils';
-import { ITaskAccessRequest, ITaskAuthorization, ITaskScope, TaskAction } from '../types';
+import { ITaskAccessRequest, ITaskAuthorization, ITaskScope, TaskAction, taskScopeKey } from '../types';
 
 /**
  * How {@link trustedKindAuthority} matches the scopes a request **asks for** — a creation's, a
@@ -14,7 +14,9 @@ import { ITaskAccessRequest, ITaskAuthorization, ITaskScope, TaskAction } from '
  * - `'every'` — every requested scope must be an allowed scope. The default.
  * - `'some'` — at least one requested scope must be an allowed scope. For a host whose tasks carry
  *   a per-instance scope (a conversation, a document) beside the kind's own: under `'every'` the
- *   instance scope is outside the allowed set and the creation is refused.
+ *   instance scope is outside the allowed set and the creation is refused. It applies to a scope
+ *   change too, so under `'some'` a change may **add scopes outside the authority** as long as one
+ *   allowed scope remains.
  *
  * A request that names an existing task is always decided by *some* of that task's own scopes.
  * @public
@@ -66,7 +68,8 @@ export interface ITrustedKindAuthorityParams {
  * It **ignores** `role`, `command` and `targetResponsibility`: every listed action is allowed in every
  * role, for every command and toward any assignee. Under `scopeMatch: 'some'` a subscription over an
  * allowed scope plus another is allowed, and so accrues audience for tasks in that other scope it
- * cannot read — they are owed to it and withheld from it, never disclosed.
+ * cannot read — they are owed to it and withheld from it, never disclosed — and a scope change may
+ * add scopes outside the authority while one allowed scope remains.
  *
  * Fails when `kinds`, `scopes` or `actions` is an empty list — each would be a policy that silently
  * allows nothing (or, for `kinds`, reads like "any kind"). The parameters are copied: changing the
@@ -89,7 +92,7 @@ export function trustedKindAuthority(params: ITrustedKindAuthorityParams): Resul
   const kinds: ReadonlySet<string> | undefined =
     params.kinds !== undefined ? new Set(params.kinds) : undefined;
   const scopes: ReadonlySet<string> | undefined =
-    params.scopes !== undefined ? new Set(params.scopes.map(_key)) : undefined;
+    params.scopes !== undefined ? new Set(params.scopes.map(taskScopeKey)) : undefined;
   const scopeMatch: TrustedScopeMatch = params.scopeMatch ?? 'every';
   const epoch: string = params.epoch;
 
@@ -102,7 +105,7 @@ export function trustedKindAuthority(params: ITrustedKindAuthorityParams): Resul
       if (kinds !== undefined && !kinds.has(subject.kind)) {
         return false;
       }
-      if (scopes !== undefined && !subject.scopes.some((scope) => scopes.has(_key(scope)))) {
+      if (scopes !== undefined && !subject.scopes.some((scope) => scopes.has(taskScopeKey(scope)))) {
         return false;
       }
     }
@@ -112,7 +115,7 @@ export function trustedKindAuthority(params: ITrustedKindAuthorityParams): Resul
     }
     const requested: ReadonlyArray<ITaskScope> = request.scopes;
     // Scopes asked for with no boundary to hold them to are refused.
-    const inside = (scope: ITaskScope): boolean => scopes !== undefined && scopes.has(_key(scope));
+    const inside = (scope: ITaskScope): boolean => scopes !== undefined && scopes.has(taskScopeKey(scope));
     return (
       requested.length > 0 && (scopeMatch === 'every' ? requested.every(inside) : requested.some(inside))
     );
@@ -122,9 +125,4 @@ export function trustedKindAuthority(params: ITrustedKindAuthorityParams): Resul
     check: async (request: ITaskAccessRequest): Promise<Result<boolean>> => succeed(allowed(request)),
     policyEpoch: (): string => epoch
   });
-}
-
-/** A collision-free key for a scope. */
-function _key(scope: ITaskScope): string {
-  return JSON.stringify([scope.namespace, scope.key]);
 }

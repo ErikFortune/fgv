@@ -317,9 +317,9 @@ export interface IBoundTaskWriter extends IBoundTaskView {
    */
   reconcileStop(request: IStopReconcileRequest): Promise<TaskResult<IStopResult>>;
   /**
-   * Resumes a native registration left pending — accepted into the inventory, its record never
-   * written — from the canonical request the repository stored with it, so a host that lost the
-   * original request can still finish it.
+   * Resumes a native registration left pending — accepted into the inventory and not yet marked
+   * live; its first record may or may not have landed — from the canonical request the repository
+   * stored with it, so a host that lost the original request can still finish it.
    *
    * @remarks
    * Nothing about authority is stored with the intent: `create` is authorized again now, against
@@ -350,10 +350,23 @@ export interface IBoundTaskWriter extends IBoundTaskView {
  *
  * @remarks
  * Structural, so any host gate with this shape fits. `guard` is given the broker's whole writer
- * section and must call it at most once; whatever it returns is the section's result. A gate that
- * refuses returns a failure without calling `write`. A failure that carries no task detail — a gate
- * typed over plain `Result` — is reported as `storage-unavailable`, retry `after-host-action`, since
- * nothing was written; a gate that throws is a failed section, as any section that throws.
+ * section and calls it at most once. The broker tracks whether it did:
+ *
+ * - **Not called.** A failure the gate returns is the operation's result; one carrying no task
+ *   detail (a gate typed over plain `Result`) is reported as `storage-unavailable`, retry
+ *   `after-host-action`, since nothing was written. A gate that throws is `invalid`.
+ * - **Called.** The section's own result is the operation's result when the gate returns it, or
+ *   any success. When the gate then fails or throws, the operation is `storage-unavailable`, retry
+ *   `reconcile-first`: the section may have committed. A section the gate started without awaiting
+ *   is awaited before the broker's turn ends.
+ * - **Called twice.** The second call is refused without running (`invalid`).
+ *
+ * **The gate must not call the broker.** A broker operation started from inside `guard` queues
+ * behind the very section the gate is holding and never runs, and every later broker write queues
+ * behind both. The broker cannot tell such a call from a concurrent caller's without an async
+ * context the library does not assume, so it is not detected; `TaskBroker.whenIdle` from inside the
+ * gate is the one safe call — it does not queue — and times out, since the gate's own section is
+ * busy.
  * @public
  */
 export interface ITaskWriteGuard {

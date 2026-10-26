@@ -16,6 +16,14 @@ export interface ITaskScope {
 }
 
 /**
+ * A collision-free text key for a scope — namespace and key, never confusable with another pair.
+ * @public
+ */
+export function taskScopeKey(scope: ITaskScope): string {
+  return JSON.stringify([scope.namespace, scope.key]);
+}
+
+/**
  * A `(namespace, key)` reference to whoever is currently responsible for a task.
  * Independent of scopes, and likewise not a grant of permission.
  * @public

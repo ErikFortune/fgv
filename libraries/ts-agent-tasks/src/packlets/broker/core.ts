@@ -110,12 +110,15 @@ export function receiptJson(receipt: ITaskMutationResult | IReassignmentResult):
  * - run, and the guard then failed or threw — `storage-unavailable`, retry `reconcile-first`: the
  *   section may have committed, so its outcome is re-read before anything is retried;
  * - a second call to the section — refused without running it, `invalid`.
+ *
+ * A section the guard started and did not await is awaited before the turn ends, so the writer is
+ * never still held when the next section runs, and its outcome is classified as above.
  */
 async function _guarded<T>(
   guard: ITaskWriteGuard,
   write: () => Promise<TaskResult<T>>
 ): Promise<TaskResult<T>> {
-  const seen: { ran?: TaskResult<T>; calls: number } = { calls: 0 };
+  const seen: { ran?: TaskResult<T>; running?: Promise<unknown>; calls: number } = { calls: 0 };
   const once = async (): Promise<TaskResult<T>> => {
     seen.calls++;
     if (seen.calls > 1) {
@@ -125,12 +128,18 @@ async function _guarded<T>(
         'after-host-action'
       );
     }
-    return write().then((result) => {
+    const running: Promise<TaskResult<T>> = write().then((result) => {
       seen.ran = result;
       return result;
     });
+    seen.running = running;
+    return running;
   };
   const outcome: Result<TaskResult<T>> = await captureAsyncResult(() => guard.guard(once));
+  // A section the guard started but did not wait for still holds the writer: wait for it here.
+  if (seen.running !== undefined) {
+    await captureAsyncResult(() => seen.running!);
+  }
   const written: TaskResult<T> | undefined = seen.ran;
   if (written !== undefined) {
     if (outcome.isSuccess() && (outcome.value === written || outcome.value.isSuccess())) {

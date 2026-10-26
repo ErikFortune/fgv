@@ -3490,6 +3490,9 @@ export function taskPromptRecord(params: ITaskPromptRecordParams): Result<IStore
 export function taskPromptTemplate(params: ITaskPromptTemplateParams): Result<string>;
 
 // @public
+export function taskRecordScopes(record: ITaskRecordDraft | ITaskCommitRecord): ReadonlyArray<ITaskScope>;
+
+// @public
 export type TaskRecoveryIssueCode = 'manifest-missing' | 'manifest-invalid' | 'unreadable' | 'unknown-format-version' | 'record-invalid' | 'record-missing' | 'record-id-mismatch' | 'integrity' | 'unknown-kind' | 'unexpected-record' | 'pending-registration';
 
 // @public
@@ -3549,6 +3552,9 @@ export const taskRevision: Converter<TaskRevision>;
 
 // @public
 export type TaskScheduleTimer = (fn: () => void, ms: number) => () => void;
+
+// @public
+export function taskScopeKey(scope: ITaskScope): string;
 
 // @public
 export const taskStorageFormatVersion: 1;

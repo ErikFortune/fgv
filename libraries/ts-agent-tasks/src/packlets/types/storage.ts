@@ -13,6 +13,7 @@ import { OperationId, SubscriptionId, TaskId } from './ids';
 import { ISourceRevision, SourceHistoryContract } from './source';
 import { IStopCommandMarker, IStopIntent } from './stop';
 import { IUnresolvedTaskReference } from './summary';
+import { ITaskScope } from './common';
 import { ITaskUpdate } from './updates';
 
 /**
@@ -228,6 +229,15 @@ export interface IUnresolvedTaskRecordDraft {
  * @public
  */
 export type ITaskRecordDraft = IResolvedTaskRecordDraft | IUnresolvedTaskRecordDraft;
+
+/**
+ * The scopes a task record (or record draft) carries: its envelope's when resolved, its reference's
+ * when unresolved.
+ * @public
+ */
+export function taskRecordScopes(record: ITaskRecordDraft | ITaskCommitRecord): ReadonlyArray<ITaskScope> {
+  return record.recordType === 'resolved' ? record.task.envelope.scopes : record.reference.scopes;
+}
 
 /**
  * Which kind of record an inventory entry names.

@@ -644,8 +644,9 @@ request naming a task (or an unresolved registration), in any role, needs its ki
 *some* of its scopes in `scopes`; with `scopes` omitted it is decided on kind alone. A request
 **asking for scopes** — a creation, a subscription, and a scope change, which asks for the full scope
 set the task will carry — needs them matched by `scopeMatch`: `'every'` (default) or `'some'`, for
-tasks that carry a per-instance scope (a conversation) beside the kind's own; with `scopes` omitted
-it is refused. A creation names no kind, so `kinds` does not constrain it. Under `'some'` a
+tasks that carry a per-instance scope (a conversation) beside the kind's own — under which a scope
+change may also add scopes outside the authority while one allowed scope remains; with `scopes`
+omitted it is refused. A creation names no kind, so `kinds` does not constrain it. Under `'some'` a
 subscription over an allowed scope plus another accrues audience it cannot read (owed, withheld). The
 epoch is constant.
 
@@ -670,8 +671,13 @@ passes, deliveries, retention and `cleanup`. The broker tracks whether the guard
   `Result`) — `storage-unavailable`, retry `after-host-action`;
 - threw without running it — `invalid`;
 - ran it, then failed or threw — `storage-unavailable`, retry **`reconcile-first`**: the section may
-  have committed;
+  have committed. A section the guard started without awaiting is awaited before the turn ends;
 - ran it twice — the second call is refused unrun.
+
+**The guard must not call the broker.** A broker write started from inside `guard` queues behind
+the section the guard is holding and never runs, and everything after it queues too. It is not
+detected — telling it from a concurrent caller needs an async context the library does not assume —
+so it is the host's rule. `whenIdle` is the one safe call from inside the guard; it times out.
 
 **A long hold fills the queue**: at most 64 sections wait for the writer, and past that every further
 write fails at once with `conflict`, retry `safe`. `whenIdle` counts a held section as busy.
@@ -693,8 +699,13 @@ committed**: the landed record's (the view must select them), or else this view'
 Nothing about permission is stored with the intent, and the epoch is rechecked inside the writer.
 Storage independently refuses to adopt a landed record whose scopes differ from those the
 registration was authorized for, which also covers an identical `createTracked` retry from a view
-with other creation scopes. It must be the same principal. A resume whose response was lost replays
-the committed receipt, re-authorized. A pending `register-external` resumes through
+with other creation scopes. It must be the same principal. A resume — or an identical creation —
+that finds inside the writer that the task went live meanwhile commits nothing and runs again
+through the replay path: visibility, `create` for the committed scopes, the parent and the
+unchanged-since-authorized check. A resume whose response was lost replays the committed receipt
+the same way. An external registration replayed after a lost response skips the parent checks that
+decided it, so it replays even after its parent closed. A view that selects none of a pending
+external registration's scopes is told nothing about it. A pending `register-external` resumes through
 `TaskBroker.resumePendingRegistration(taskId)`, a trusted host operation under the principal it was
 accepted for. Withdrawing a pending identity, or recycling its slot, is not offered.
 

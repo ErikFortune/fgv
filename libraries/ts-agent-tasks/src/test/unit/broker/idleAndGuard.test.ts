@@ -4,7 +4,7 @@
  */
 
 import '@fgv/ts-utils-jest';
-import { fail, failWithDetail } from '@fgv/ts-utils';
+import { fail, failWithDetail, succeedWithDetail } from '@fgv/ts-utils';
 import {
   FileTreeTaskRepository,
   ITaskFailure,
@@ -505,6 +505,32 @@ describe('TaskBroker.create writeGuard', () => {
       await writer.createTracked({ taskId: tid('a'), operationId: op('create-a'), title: 'a' })
     ).toFailWithDetail(/held for a snapshot/, code('conflict'));
     expect(await repository.read(tid('a'))).toSucceedWith(undefined);
+  });
+
+  test('a guard that starts the section without awaiting it: the turn waits, and the outcome is reconcile-first', async () => {
+    const unawaited: ITaskWriteGuard = {
+      guard: async <T>(write: () => Promise<TaskResult<T>>): Promise<TaskResult<T>> => {
+        // Started and deliberately not awaited.
+        write().then(
+          () => undefined,
+          () => undefined
+        );
+        return fail('gate closed') as unknown as TaskResult<T>;
+      }
+    };
+    const { broker, policy, repository } = await harness({ guard: unawaited });
+    const writer = broker.bind({ principal: 'alice', scopes: [alpha], authorization: policy }).orThrow();
+    const result = await writer.createTracked({ taskId: tid('a'), operationId: op('create-a'), title: 'a' });
+    expect(result).toFailWithDetail(/failed: gate closed after the section ran/, code('storage-unavailable'));
+    expect(result.detail?.retry).toBe('reconcile-first');
+    expect(await repository.read(tid('a'))).toSucceedAndSatisfy((r) => expect(r?.state).toBe('resolved'));
+    // The section finished inside the turn: the writer is free for the next one.
+    expect(await broker.whenIdle(0)).toSucceedWith(true);
+    expect(
+      await repository.withWriter(async () =>
+        (await repository.read(tid('a'))).onSuccess(() => succeedWithDetail<boolean, ITaskFailure>(true))
+      )
+    ).toSucceed();
   });
 
   test('a guard that runs the section twice gets the second call refused, unrun', async () => {
