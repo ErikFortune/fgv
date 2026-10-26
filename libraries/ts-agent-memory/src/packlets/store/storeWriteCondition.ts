@@ -4,7 +4,7 @@
  */
 
 import { Result, fail, failWithDetail, succeed, succeedWithDetail } from '@fgv/ts-utils';
-import { IEnvelopeCarrier } from '../types';
+import { IEnvelopeCarrier, MemoryId } from '../types';
 import {
   IMemoryWriteFailure,
   MemoryWriteExpectation,
@@ -29,18 +29,27 @@ export class WriteRefusal {
 }
 
 /**
- * Require `expected` to be a non-negative integer or `'absent'`. A malformed value is a caller
- * error, refused before the store looks at the vault.
+ * Require `expected` to be a non-negative integer, or `'absent'` where `allowAbsent` (a `put`; a
+ * delete that expects nothing has no meaning). A malformed value is a caller error, refused before
+ * the store looks at the vault.
  * @internal
  */
 export function validateExpectation(
   expected: MemoryWriteExpectation | undefined,
-  label: string
+  label: string,
+  allowAbsent: boolean
 ): Result<MemoryWriteExpectation | undefined> {
-  if (expected === undefined || expected === 'absent' || (Number.isSafeInteger(expected) && expected >= 0)) {
+  if (
+    expected === undefined ||
+    (allowAbsent && expected === 'absent') ||
+    (Number.isSafeInteger(expected) && Number(expected) >= 0)
+  ) {
     return succeed(expected);
   }
-  return fail(`${label}: expected must be a non-negative integer seq or 'absent' (got ${String(expected)})`);
+  const allowed: string = allowAbsent
+    ? "a non-negative integer seq or 'absent'"
+    : 'a non-negative integer seq';
+  return fail(`${label}: expected must be ${allowed} (got ${JSON.stringify(expected) ?? String(expected)})`);
 }
 
 /** What a conditional write compares against: the record's `seq`, or `'absent'`. @internal */
@@ -71,12 +80,24 @@ export function checkExpectation(
 }
 
 /**
+ * Refuse a conditional `put` whose content already exists under `existing`'s (different) id.
+ * @internal
+ */
+export function duplicateRefusal(existing: IEnvelopeCarrier, label: string): WriteRefusal {
+  const existingId: MemoryId = existing.envelope.id;
+  return new WriteRefusal(
+    { code: 'duplicate', existingId },
+    `${label}: duplicate: the content already exists as '${existingId}'; nothing was written`
+  );
+}
+
+/**
  * Turn a plain `Result` into a classified one: a failure takes `code`.
  * @internal
  */
 export function classify<T>(
   result: Result<T>,
-  code: Exclude<MemoryWriteFailureCode, 'conflict'>
+  code: Exclude<MemoryWriteFailureCode, 'conflict' | 'duplicate'>
 ): Result<T | WriteRefusal> {
   return result.isSuccess() ? result : succeed(new WriteRefusal({ code }, result.message));
 }

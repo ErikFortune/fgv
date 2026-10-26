@@ -29,7 +29,35 @@ import {
 
 const knowledgeKind: Kind = 'knowledge' as Kind;
 const factKind: Kind = 'fact' as Kind;
-const HIGH_WATER_FILE: string = 'memory-store.seq.json';
+const SLOT_A: string = 'memory-store.seq.a.json';
+const SLOT_B: string = 'memory-store.seq.b.json';
+
+const slot = (reserved: number): string => JSON.stringify({ version: 1, reserved });
+
+function slotNames(root: FileTree.IFileTreeDirectoryItem): ReadonlyArray<string> {
+  return root
+    .getChildren()
+    .orThrow()
+    .map((c) => c.name)
+    .filter((n) => n === SLOT_A || n === SLOT_B);
+}
+
+function slotText(root: FileTree.IFileTreeDirectoryItem, name: string): string {
+  const file = root
+    .getChildren()
+    .orThrow()
+    .find((c): c is FileTree.IFileTreeFileItem => c.type === 'file' && c.name === name);
+  if (file === undefined) {
+    throw new Error(`expected slot ${name}`);
+  }
+  return file.getRawContents().orThrow();
+}
+
+function reservedIn(root: FileTree.IFileTreeDirectoryItem, name: string): number {
+  return Converters.object<{ reserved: number }>({ reserved: Converters.number })
+    .convert(JSON.parse(slotText(root, name)))
+    .orThrow().reserved;
+}
 
 function mutableRoot(): FileTree.IMutableFileTreeDirectoryItem {
   const root = FileTree.inMemory([], { mutable: true }).orThrow().getDirectory('/').orThrow();
@@ -95,7 +123,14 @@ function expectDetail<T>(result: MemoryWriteResult<T>, detail: IMemoryWriteFailu
 
 describe('FileTreeMemoryStore conditional writes', () => {
   test('the failure-code vocabulary is closed and complete', () => {
-    expect(allMemoryWriteFailureCodes).toEqual(['conflict', 'invalid', 'rejected', 'not-found', 'io']);
+    expect(allMemoryWriteFailureCodes).toEqual([
+      'conflict',
+      'duplicate',
+      'invalid',
+      'rejected',
+      'not-found',
+      'io'
+    ]);
   });
 
   describe('flat put', () => {
@@ -161,6 +196,55 @@ describe('FileTreeMemoryStore conditional writes', () => {
       expect(await store.put(note('a', 'beta'), { expected: second })).toSucceedAndSatisfy((r) => {
         expect(r.envelope.seq).toBe(second);
       });
+    });
+
+    test('under expected, a dedup onto another id is a duplicate, not a success', async () => {
+      const seen: IMemoryObservationRecord[] = [];
+      const store = open(mutableRoot(), {
+        observers: [{ observe: async (r) => succeed(seen.push(r)) }]
+      }).orThrow();
+      await seqOf(store.put(note('z', 'shared')));
+      const x = await seqOf(store.put(note('x', 'mine')));
+      const put = await store.put(note('x', 'shared'), { expected: x });
+      expect(put).toFailWith(/duplicate: the content already exists as 'z'; nothing was written/);
+      expectDetail(put, { code: 'duplicate', existingId: 'z' as MemoryId });
+      expect(await bodyOf(store, knowledgeKind, 'x')).toBe('mine');
+      expectDetail(await store.put(note('y', 'shared'), { expected: 'absent' }), {
+        code: 'duplicate',
+        existingId: 'z' as MemoryId
+      });
+      expect(await bodyOf(store, knowledgeKind, 'y')).toBeUndefined();
+      expect(
+        seen
+          .filter((o) => o.phase === 'write')
+          .slice(-2)
+          .map((o) => o.outcome)
+      ).toEqual(['failure', 'failure']);
+      // Without `expected` the dedup is unchanged: it answers with the existing record.
+      expect(await store.put(note('y', 'shared'))).toSucceedAndSatisfy((r) => {
+        expect(r.envelope.id).toBe('z');
+      });
+    });
+
+    test('a same-id file that cannot be read fails the put even when a cross-id duplicate exists', async () => {
+      // The same-id record is read before content dedup, so its corruption is no longer skipped.
+      const root = mutableRoot();
+      const store = open(root).orThrow();
+      await seqOf(store.put(note('x', 'xbody')));
+      await seqOf(store.put(note('z', 'shared')));
+      const dir = root
+        .getChildren()
+        .orThrow()
+        .find((c): c is FileTree.IFileTreeDirectoryItem => c.type === 'directory' && c.name === 'knowledge');
+      const file = dir
+        ?.getChildren()
+        .orThrow()
+        .find((c): c is FileTree.IFileTreeFileItem => c.type === 'file' && c.name === 'x.md');
+      if (file === undefined || !FileTree.isMutableFileItem(file)) {
+        throw new Error('expected a mutable x.md');
+      }
+      file.setRawContents('garbage').orThrow();
+      expectDetail(await store.put(note('x', 'shared')), { code: 'io' });
     });
 
     test('a conflict still emits a failed write observation', async () => {
@@ -290,6 +374,15 @@ describe('FileTreeMemoryStore conditional writes', () => {
       }
     );
 
+    test("delete refuses expected: 'absent' as invalid", async () => {
+      const store = open(mutableRoot()).orThrow();
+      const result = await store.delete(knowledgeKind, 'a' as EntityId, {
+        expected: 'absent' as unknown as number
+      });
+      expect(result).toFailWith(/expected must be a non-negative integer seq \(got "absent"\)/);
+      expectDetail(result, { code: 'invalid' });
+    });
+
     test('input refusals are invalid', async () => {
       const store = open(mutableRoot()).orThrow();
       expectDetail(await store.put({ ...note('a', 'x'), body: 42 }), { code: 'invalid' });
@@ -354,12 +447,12 @@ describe('FileTreeMemoryStore conditional writes', () => {
     });
 
     test('is persisted before the seq it covers is used', async () => {
-      // A directory squatting on the file's name makes the high-water write fail. The put must
-      // fail before its record is written: a record carrying a seq the mark does not cover is
-      // exactly what a crash could later re-issue.
+      // A directory squatting on the slot's name after the open makes the high-water write fail.
+      // The put must fail before its record is written: a record carrying a seq the mark does not
+      // cover is exactly what a crash could later re-issue.
       const root = mutableRoot();
-      root.createChildDirectory(HIGH_WATER_FILE).orThrow();
       const store = open(root).orThrow();
+      root.createChildDirectory(SLOT_A).orThrow();
       const put = await store.put(note('a', 'alpha'));
       expect(put).toFailWith(/cannot advance the seq high-water mark/);
       expectDetail(put, { code: 'io' });
@@ -370,34 +463,74 @@ describe('FileTreeMemoryStore conditional writes', () => {
 
     test('a reopen resumes past the persisted mark, not only past the records', async () => {
       const root = mutableRoot();
-      root.createChildFile(HIGH_WATER_FILE, JSON.stringify({ version: 1, reserved: 500 })).orThrow();
+      root.createChildFile(SLOT_A, slot(500)).orThrow();
       const store = open(root).orThrow();
       expect(await seqOf(store.put(note('a', 'alpha')))).toBeGreaterThan(500);
     });
 
-    test('a vault without the file derives seq from its records, then gains the file', async () => {
+    test('a vault without the mark derives seq from its records, then gains a slot', async () => {
       const root = mutableRoot();
       const first = open(root).orThrow();
       const seq = await seqOf(first.put(note('a', 'alpha')));
       first.dispose();
-      root.deleteChild(HIGH_WATER_FILE).orThrow();
+      for (const name of slotNames(root)) {
+        root.deleteChild(name).orThrow();
+      }
       const reopened = open(root).orThrow();
       expect(await seqOf(reopened.put(note('b', 'beta')))).toBeGreaterThan(seq);
-      expect(
-        root
-          .getChildren()
-          .orThrow()
-          .map((c) => c.name)
-      ).toContain(HIGH_WATER_FILE);
+      expect(slotNames(root)).toHaveLength(1);
     });
 
-    test('a file that cannot be read fails the open and names the remedy', () => {
+    test('a torn slot beside a good one opens, continues past the good ceiling, and is rewritten', async () => {
+      // A plain (non-atomic) root rewrites a slot in place, so a crash can tear it.
       const root = mutableRoot();
-      root.createChildFile(HIGH_WATER_FILE, JSON.stringify({ version: 1, reserved: -2 })).orThrow();
-      expect(open(root)).toFailWith(/cannot read the seq high-water file .*delete it to derive seq/);
+      root.createChildFile(SLOT_A, slot(100)).orThrow();
+      root.createChildFile(SLOT_B, '{"version":1,"reser').orThrow();
+      const store = open(root).orThrow();
+      expect(await seqOf(store.put(note('a', 'alpha')))).toBeGreaterThan(100);
+      // The write went to the torn slot; the only good one was not overwritten.
+      expect(slotText(root, SLOT_A)).toBe(slot(100));
+      expect(reservedIn(root, SLOT_B)).toBeGreaterThan(100);
+    });
+
+    test('the alternation survives a reopen: the next write takes the lower ceiling', async () => {
+      const root = mutableRoot();
+      root.createChildFile(SLOT_A, slot(300)).orThrow();
+      root.createChildFile(SLOT_B, slot(200)).orThrow();
+      const store = open(root).orThrow();
+      expect(await seqOf(store.put(note('a', 'alpha')))).toBeGreaterThan(300);
+      expect(slotText(root, SLOT_A)).toBe(slot(300));
+      expect(reservedIn(root, SLOT_B)).toBeGreaterThan(300);
+    });
+
+    test.each([
+      ['one slot, unreadable', [[SLOT_A, slot(-2)]]],
+      [
+        'both slots torn',
+        [
+          [SLOT_A, 'garbage'],
+          [SLOT_B, '{"version":1']
+        ]
+      ]
+    ])('%s fails the open, naming both slots and the cost of deleting them', (__l, files) => {
+      const root = mutableRoot();
+      for (const [name, text] of files) {
+        root.createChildFile(name, text).orThrow();
+      }
+      expect(open(root)).toFailWith(
+        /no seq high-water slot is readable \(memory-store\.seq\.a\.json, memory-store\.seq\.b\.json\).*reopens the hole.*re-issued/
+      );
       // The claim was released with the failed open.
-      root.deleteChild(HIGH_WATER_FILE).orThrow();
+      for (const [name] of files) {
+        root.deleteChild(name).orThrow();
+      }
       expect(open(root)).toSucceed();
+    });
+
+    test.each([SLOT_A, SLOT_B])('a root directory named %s is refused at open', (name) => {
+      const root = mutableRoot();
+      root.createChildDirectory(name).orThrow();
+      expect(open(root)).toFailWith(/a name reserved for the seq high-water mark/);
     });
   });
 });

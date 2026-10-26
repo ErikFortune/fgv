@@ -89,6 +89,7 @@ import {
   WriteRefusal,
   checkExpectation,
   classify,
+  duplicateRefusal,
   settleWrite,
   validateExpectation
 } from './storeWriteCondition';
@@ -279,6 +280,9 @@ export interface IFileTreeMemoryStoreCreateParams {
    * {@link IFileTreeMemoryStoreCreateParams.logger | logger} and the record
    * operation still succeeds — the vector index is a derived view that a later
    * `rebuild` reconciles, so a vector failure never fails an authoritative write.
+   *
+   * It runs inside the store's write lock, so it must not await a write (`put`, `delete`,
+   * `reconcile`) on this same store: that write queues behind the one waiting on it, and both hang.
    */
   readonly embed?: MemoryEmbedder;
   /**
@@ -303,7 +307,8 @@ export interface IFileTreeMemoryStoreCreateParams {
    * maintenance is **best-effort**, exactly like the record-vector path: a failed
    * (or throwing) `fragmentEmbedder` / `addFragments` / `remove` is logged at
    * `warn` and the record operation still succeeds — the fragment index is a
-   * derived view a later `rebuild` reconciles.
+   * derived view a later `rebuild` reconciles. Like `embed`, it runs inside the write lock and must
+   * not await a write on this same store.
    */
   readonly fragmentEmbedder?: FragmentEmbedder;
   /**
@@ -827,7 +832,7 @@ export class FileTreeMemoryStore implements IMemoryStore {
     return result;
   }
 
-  /** Fan out one observation for a completed op; see {@link ObservationFanout}. */
+  /** Fan out one observation for a completed op; see `ObservationFanout`. */
   private _fireObservation(
     phase: MemoryObservationPhase,
     kind: Kind,
@@ -887,7 +892,7 @@ export class FileTreeMemoryStore implements IMemoryStore {
       );
     }
     const body: string = record.body;
-    return validateExpectation(options?.expected, `memory put '${envelope.id}'`).onSuccess((expected) =>
+    return validateExpectation(options?.expected, `memory put '${envelope.id}'`, true).onSuccess((expected) =>
       this._registry
         .convert(envelope.kind, body)
         .withErrorFormat((msg) => `memory put '${envelope.id}': invalid body: ${msg}`)
@@ -964,7 +969,11 @@ export class FileTreeMemoryStore implements IMemoryStore {
           return fail(duplicate.message);
         }
         if (duplicate.value !== undefined) {
-          return succeed({ record: duplicate.value, evicted: [] });
+          // Under `expected`, success means the addressed record was written; a dedup onto another
+          // id is not that, so it is refused rather than reported as a write.
+          return target.expected === undefined
+            ? succeed({ record: duplicate.value, evicted: [] })
+            : succeed(duplicateRefusal(duplicate.value, `memory put '${record.envelope.id}'`));
         }
       }
       // Same-id re-put is a no-op ONLY when the content hash matches AND the
@@ -1167,7 +1176,8 @@ export class FileTreeMemoryStore implements IMemoryStore {
   ): Promise<Result<MemoryId | WriteRefusal>> {
     const resolved: Result<IIdentityCodecResult> = validateExpectation(
       expected,
-      `memory delete '${entityId}'`
+      `memory delete '${entityId}'`,
+      false
     )
       .onSuccess(() => this._codec(kind))
       .onSuccess((codec) =>

@@ -1479,6 +1479,33 @@ describe('MemoryIngestOrchestrator — merge-into is a conditional write', () =>
     );
   });
 
+  test('a merge whose content already exists elsewhere is deduped onto that record, not merged', async () => {
+    const vectorIndex = InMemoryCosineIndex.create().orThrow();
+    const store = buildStore({ vectorIndex, embed });
+    await putNote(store, 'doc-a', 'apple pie');
+    const orch = buildOrchestrator({
+      store,
+      vectorIndex,
+      embed,
+      // After the snapshot, another writer stores the merged content under a different id.
+      entityResolver: {
+        resolve: async (__c, similar) => {
+          await putNote(store, 'doc-z', 'apple tart');
+          return succeed({ verdict: 'merge-into', target: similar[0].target });
+        }
+      },
+      extractor: extractor(() => succeed([candidate(noteKind, 'doc-b', 'apple tart')]))
+    });
+    expect(await orch.ingestItem({ id: 'i', content: 'x' })).toSucceedAndSatisfy((r: IIngestItemResult) => {
+      expect(r.records[0].disposition).toBe('deduped');
+      expect(r.records[0].id).toBe('doc-z');
+      expect(r.records[0].record).toBeUndefined();
+    });
+    expect(await store.get(noteKind, 'doc-a' as EntityId)).toSucceedAndSatisfy(
+      (rec: IMemoryRecord<unknown> | undefined) => expect(rec?.body).toBe('apple pie')
+    );
+  });
+
   test('two candidates merging into one target in one pass both merge', async () => {
     const vectorIndex = InMemoryCosineIndex.create().orThrow();
     const store = buildStore({ vectorIndex, embed });

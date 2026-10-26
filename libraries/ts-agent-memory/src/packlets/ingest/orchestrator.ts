@@ -27,7 +27,13 @@ import {
   scopedAddressOf
 } from '../types';
 import { IBodyConverterRegistry } from '../converters';
-import { IMemoryStore, IMemoryWriteFailure, MemoryWriteExpectation, scanEveryRecord } from '../store';
+import {
+  IMemoryStore,
+  IMemoryWriteFailure,
+  MemoryWriteExpectation,
+  MemoryWriteResult,
+  scanEveryRecord
+} from '../store';
 import { IVectorIndex, MemoryEmbedder } from '../vector';
 import { ICycleGuardEdge, assertNoCycles } from './cycleGuard';
 import {
@@ -843,8 +849,22 @@ export class MemoryIngestOrchestrator implements IMemoryIngestOrchestrator {
     const expected: MemoryWriteExpectation | undefined =
       plan.mergeExpected === undefined ? undefined : written.get(entityKey) ?? plan.mergeExpected;
     return this._buildRecord(item, plan, myEdges).thenOnSuccess(async (record) => {
-      const put = await this._store.put(record, expected === undefined ? undefined : { expected });
+      const put: MemoryWriteResult<IMemoryRecord<unknown>> = await this._store.put(
+        record,
+        expected === undefined ? undefined : { expected }
+      );
       const failure: IMemoryWriteFailure | undefined = put.isFailure() ? put.detail : undefined;
+      if (failure?.code === 'duplicate') {
+        // The merged content already exists as another record, so nothing was written and that
+        // record satisfies the candidate — the meaning of `deduped`. Not retried.
+        return succeed<IIngestedRecordResult>({
+          candidate: plan.candidate,
+          resolution: plan.verdict,
+          disposition: 'deduped',
+          id: failure.existingId,
+          edges: myEdges
+        });
+      }
       if (failure?.code === 'conflict') {
         // Reported, not retried: the target moved since the snapshot this merge was planned from.
         return succeed<IIngestedRecordResult>({

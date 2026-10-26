@@ -3,7 +3,8 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { DetailedResult } from '@fgv/ts-utils';
+import { DetailedResult, StringOneOf } from '@fgv/ts-utils';
+import { MemoryId } from '../types';
 
 /**
  * What a conditional write expects to find at its address: the `seq` of the record there (for a
@@ -47,9 +48,25 @@ export interface IMemoryDeleteOptions {
 }
 
 /**
+ * Every {@link MemoryWriteFailureCode}, in a stable order.
+ * @public
+ */
+export const allMemoryWriteFailureCodes = [
+  'conflict',
+  'duplicate',
+  'invalid',
+  'rejected',
+  'not-found',
+  'io'
+] as const;
+
+/**
  * Why a write or delete failed.
  *
  * - `conflict` — `expected` did not match; nothing was written.
+ * - `duplicate` — a conditional `put` whose content already exists under a different id, which an
+ *   unconditional `put` would answer by returning that record unchanged. Under `expected`, success
+ *   means the addressed record was written, so this fails instead; nothing was written.
  * - `invalid` — the input was refused before the store looked at the vault (body, codec, layout,
  *   or a malformed `expected`); nothing was written.
  * - `rejected` — the kind's write policy refused admission; nothing was written.
@@ -58,43 +75,46 @@ export interface IMemoryDeleteOptions {
  *   The message says what; it does not promise the vault is unchanged.
  * @public
  */
-export type MemoryWriteFailureCode = 'conflict' | 'invalid' | 'rejected' | 'not-found' | 'io';
-
-/**
- * Every {@link MemoryWriteFailureCode}.
- * @public
- */
-export const allMemoryWriteFailureCodes: ReadonlyArray<MemoryWriteFailureCode> = [
-  'conflict',
-  'invalid',
-  'rejected',
-  'not-found',
-  'io'
-];
+export type MemoryWriteFailureCode = StringOneOf<typeof allMemoryWriteFailureCodes>;
 
 /**
  * The detail of a failed conditional write: what the caller expected and what the store found.
  * @public
  */
 export interface IMemoryWriteConflict {
+  /** Always `'conflict'`. */
   readonly code: 'conflict';
+  /** The `expected` the caller supplied. */
   readonly expected: MemoryWriteExpectation;
+  /** What the address held: the record's (or current version's) `seq`, or `'absent'`. */
   readonly current: MemoryWriteExpectation;
 }
 
 /**
- * The detail of a write that failed for a reason other than a conflict.
+ * The detail of a conditional `put` refused because its content already exists under another id.
+ * @public
+ */
+export interface IMemoryWriteDuplicate {
+  /** Always `'duplicate'`. */
+  readonly code: 'duplicate';
+  /** The id of the existing record, in the same scope, that holds the content. */
+  readonly existingId: MemoryId;
+}
+
+/**
+ * The detail of a write that failed for any other reason.
  * @public
  */
 export interface IMemoryWriteError {
-  readonly code: Exclude<MemoryWriteFailureCode, 'conflict'>;
+  /** The classification; see {@link MemoryWriteFailureCode}. */
+  readonly code: Exclude<MemoryWriteFailureCode, 'conflict' | 'duplicate'>;
 }
 
 /**
  * Classified detail for a failed {@link IMemoryStore.put} or {@link IMemoryStore.delete}.
  * @public
  */
-export type IMemoryWriteFailure = IMemoryWriteConflict | IMemoryWriteError;
+export type IMemoryWriteFailure = IMemoryWriteConflict | IMemoryWriteDuplicate | IMemoryWriteError;
 
 /**
  * What {@link IMemoryStore.put} and {@link IMemoryStore.delete} return. A failure always carries

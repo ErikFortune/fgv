@@ -220,6 +220,16 @@ export interface IMemoryStore extends IMemoryRecordResolver, IIdentityResolver {
    * write lock, after the address is resolved and **before dedup**, so a dedup no-op can never mask
    * a conflict.
    *
+   * **Under `expected`, success means the addressed record was written** (or, for an identical
+   * same-id re-put, is already exactly that). A `'content'`-scoped kind whose content already exists
+   * under a *different* id fails with `code: 'duplicate'` and that record's `existingId`, writing
+   * nothing; without `expected` the same put still succeeds by returning that other record, as it
+   * always has.
+   *
+   * The same-id record is read before content dedup on every flat put, so a same-id file that cannot
+   * be read fails the put (`io`) even when a cross-id duplicate exists — before, such a put could
+   * succeed by deduping onto the other record without ever reading its own.
+   *
    * `seq` is the token because the store issues it strictly increasing and never twice — a
    * persisted high-water mark carries it across restarts, including one that follows deleting the
    * highest record. `contentHash` is not: it excludes tags and provenance and can recur. A rewrite

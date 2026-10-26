@@ -4,7 +4,10 @@
 
 Origin: personaility#701 (fgv-ask). Base / PR target: `integration/asks` (contains #756).
 
-## What changed (`@fgv/ts-agent-memory`, minor, `BREAKING (implementers only):`)
+## What changed (`@fgv/ts-agent-memory`, minor, `BREAKING:`)
+
+*As amended by review round 1 (see the section of that name): plain `BREAKING:`, a `duplicate`
+code, and a two-slot high-water mark. Items below describe what ships.*
 
 Per brief decision:
 
@@ -13,9 +16,13 @@ Per brief decision:
      `delete(kind, entityId, options?: IMemoryDeleteOptions)` with `expected?: number`.
    - Both return `MemoryWriteResult<T>` = `DetailedResult<T, IMemoryWriteFailure>`, where
      `IMemoryWriteFailure = IMemoryWriteConflict { code: 'conflict'; expected; current } |
-     IMemoryWriteError { code: 'invalid' | 'rejected' | 'not-found' | 'io' }`, plus
-     `allMemoryWriteFailureCodes` (precedent: ts-agent-tasks `types/failure.ts`). New public
-     module `store/writeFailure.ts`.
+     IMemoryWriteDuplicate { code: 'duplicate'; existingId } |
+     IMemoryWriteError { code: 'invalid' | 'rejected' | 'not-found' | 'io' }`;
+     `MemoryWriteFailureCode` is `StringOneOf<typeof allMemoryWriteFailureCodes>` over one `as const`
+     array (precedent: ts-agent-tasks `types/failure.ts`, `openReport.ts`). New public module
+     `store/writeFailure.ts`.
+   - Under `expected`, success means the addressed record was written: a flat `'content'` put that
+     would dedup onto another id fails `duplicate` instead (round 1, P2-3).
    - A mismatch writes nothing; the `'write'` / `'delete'` failure observation still fires.
    - Classification is explicit, not inferred from messages: input refusals before the vault is read
      are `invalid` (`classify(..., 'invalid')`); a precondition mismatch or a policy rejection
@@ -27,19 +34,23 @@ Per brief decision:
    - versioned: `_putVersioned` checks against `selectCurrentVersion(versions)` immediately after
      the snapshot, before the content hash and entity dedup;
    - delete: `_deletable` checks before the not-found test on both layouts.
-3. **High-water mark.** `store/storeSeq.ts` `SeqHighWater`: file `memory-store.seq.json` at the
-   root, `{ version: 1, reserved }`, written through the same writer as records (atomic when the
-   root is; new `writeStoreFile` in `storeFileAccess.ts`). A `seq` past `reserved` is issued only
-   after a new ceiling (`current + 64`) is written; the open resumes at
-   `max(reserved, highest seq on disk)`. Missing file = derive from disk (old vaults open); an
-   unreadable file fails the open with the remedy in the message. Fault model in the class TSDoc.
+3. **High-water mark.** `store/storeSeq.ts` `SeqHighWater`: two root slots,
+   `memory-store.seq.a.json` / `memory-store.seq.b.json`, each `{ version: 1, reserved }`, written
+   through the same writer as records (atomic when the root is; new `writeStoreFile` in
+   `storeFileAccess.ts`). A `seq` past the mark is issued only after a new ceiling (`current + 64`)
+   is written — to the missing, unreadable or lower slot, never the only good one. The open takes
+   the larger readable ceiling and resumes at `max(mark, highest seq on disk)`. No slot = derive from
+   disk (old vaults open); slots present but none readable fail the open, naming both and the cost
+   of deleting them; a root directory with either name is refused. Fault model in the class TSDoc.
 4. **Ingest.** `merge-into` writes with `expected` = the target entity's seq in the pre-ingest
    snapshot (flat: the target's own; versioned: the entity's current version, `'absent'` if
    soft-deleted — the verdict may name a superseded version). The orchestrator carries the seq its
    own earlier writes left at an entity forward, so two candidates merging into one target in one
    pass do not conflict with each other. A conflict is reported per candidate as disposition
-   `'conflict'` with `IIngestedRecordResult.conflict`; the item succeeds and nothing is retried.
-   Other write failures still fail the item. Small; done in-stream.
+   `'conflict'` with `IIngestedRecordResult.conflict`; a `'duplicate'` (the merged content already
+   exists as another record) as the existing disposition `'deduped'` with `id` = that record's id —
+   its documented meaning, "not written; an existing record satisfied it". The item succeeds and
+   nothing is retried. Other write failures still fail the item. Small; done in-stream.
 5. **Interface.** Consumer sweep over `libraries/ tools/ samples/`:
    - real implementation: `FileTreeMemoryStore` (updated);
    - object-literal doubles: `ingest/orchestrator.test.ts` `mockStore` (+ its `put kaput` override),
@@ -50,11 +61,20 @@ Per brief decision:
      branch);
    - `samples/testbed` (`memoryToolsGate` uses `get` only), `tools/`, `ts-agent-memory-sqlite-vec`:
      no `put` / `delete` consumers found.
-   - **Not strictly implementers-only:** a caller chaining a plain-`Result` continuation onto
-     `put` / `delete` (as `memoryTools.ts` did) gets a compile error and needs `.asResult`. The
-     change file says so beside the brief's prefix.
+   - **Not implementers-only:** a caller chaining a plain-`Result` continuation onto `put` /
+     `delete` (as `memoryTools.ts` did) gets a compile error and needs `.asResult`. So the change
+     file, the ledger and this heading use plain `BREAKING:` (round 1, P2-1).
 
-Also, to keep `fileTreeMemoryStore.ts` under its cap (1989 → **1972** lines): mutable-patch
+**Behaviour change without `expected`:** a flat put now reads its same-id record before content
+dedup, so a same-id file that cannot be read fails the put (`io`) even when a cross-id duplicate
+exists; before, it could succeed by deduping without reading its own file. Pinned by
+`a same-id file that cannot be read fails the put even when a cross-id duplicate exists`.
+
+**Caveat (predates this stream):** `embed` and `fragmentEmbedder` run inside the write lock, so a
+hook that awaits `put` / `delete` / `reconcile` on the same store deadlocks — the write queues
+behind the one awaiting it. Now stated on both hooks' TSDoc and in the README.
+
+Also, to keep `fileTreeMemoryStore.ts` under its cap (1989 → **1982** lines after round 1): mutable-patch
 projection, the metadata comparison and `projectAsOf` moved to `store/storeMerge.ts`; the
 observation fan-out moved to `store/storeObservation.ts` (`ObservationFanout`). Pure moves.
 
@@ -77,8 +97,9 @@ the only thing that could interleave is a same-instance mutator, and those are s
 | W2 | versioned `put` | against `selectCurrentVersion(versions)` right after the `_versionsForEntity` snapshot | AsyncResult hops after `_contentHash` and `policy.admit`; `await` embed + fragment embed | `_persist` of the new version, then `_invalidateCurrents` (sync, after the commit) | same as W1; the snapshot that fed the check is the one `priorCurrents` is invalidated from, both inside the task |
 | W3 | flat `delete` | `_deletable` on the record read in `_deleteFlat` | none (`deleteRecordFile` and the index patch are synchronous) | `deleteRecordFile` | no window at all; vector pruning is post-commit and best-effort |
 | W4 | versioned `delete` | `_deletable` on `selectCurrentVersion` of the snapshot | none | `_invalidateCurrents` | no window |
-| S1 | seq allocation | `seq <= reserved` in `SeqHighWater.next` | none | the record write that uses the seq happens strictly after `next` returns | the ceiling write precedes the return of any seq it covers; a failed ceiling write returns a failure and issues nothing |
-| S2 | open | read `reserved` and the highest on-disk seq | none (synchronous `create`) | first `next` | resumes past both before any write is possible |
+| S1 | seq allocation | `seq <= reserved` in `SeqHighWater.next`, then the slot choice | none | the record write that uses the seq happens strictly after `next` returns | the ceiling write precedes the return of any seq it covers; a failed ceiling write returns a failure, issues nothing, and marks its slot unreadable so the good one is never the next target |
+| S2 | open | read both slots and the highest on-disk seq | none (synchronous `create`) | first `next` | resumes past both before any write is possible |
+| D1 | conditional flat put | content-dedup match under `expected` | none | refusal returned instead of the other record | the duplicate decision is made in the same locked task as the check, before anything is written |
 | I1 | ingest `merge-into` | snapshot → plan (`mergeExpected`) | host stages (resolver, relater, embed, cycle guard), and earlier candidates' writes | `store.put(record, { expected })` | **not** a guarded window by design: the orchestrator holds no lock, so the store's check (W1/W2) is what makes it sound; the in-pass `written` map keeps the pass's own writes from reading as conflicts |
 
 Derived-state rewrites that keep `seq` (`_rewriteEnvelope` restamps of `rank` / `embeddingRef`,
@@ -91,8 +112,8 @@ only, as the TSDoc on `IMemoryWriteOptions.expected` and `IMemoryStore.put` says
 ## Revert matrix
 
 Each guarantee was reverted in source, the package recompiled, and the named test run
-(`revert-matrix.py` in this directory, run after the final formatting; source restored after each). Every row
-went red.
+(`revert-matrix.py` in this directory, rerun in full after review round 1 on the final formatted
+code; source restored after each). Every row went red.
 
 | # | guarantee reverted | test | result |
 |---|---|---|---|
@@ -107,12 +128,17 @@ went red.
 | R8a | ingest passes no `expected` | `a target written after the snapshot is a per-candidate conflict` (got `merged`) | RED |
 | R8b | ingest ignores its own in-pass writes | `two candidates merging into one target in one pass both merge` | RED |
 | R8c | ingest expects the named (superseded) version | both versioned-merge tests (got `conflict`) | RED (2) |
+| R12 | conditional put dedups onto another id and reports success | `under expected, a dedup onto another id is a duplicate, not a success` | RED |
+| R12b | ingest does not map `duplicate` to `deduped` | `a merge whose content already exists elsewhere is deduped onto that record` | RED |
+| R13 | open fails on any unreadable slot | `a torn slot beside a good one opens, continues past the good ceiling` | RED |
+| R14 | no alternation: always write slot a | the torn-slot test and `the alternation survives a reopen` | RED (2) |
+| R15 | a root directory on a slot name is not refused | both `a root directory named … is refused at open` cases | RED (2) |
 
 Two existing ingest tests also went red during development before the `_expectedAt` fix
 (`resolver verdict merge-into re-addresses…`, `merge-into UNIONs…`), which is how the
 "`selectCurrentVersion` ignores flat records" mistake was caught.
 
-## Gates
+## Gates — before review round 1
 
 Run in the foreground from the worktree root on the committed tree (implementation `b0b69da24`,
 docs `d8adfeced`). Graded by `grep -acE 'not met|Operations failed|error TS'` (must be 0) and
@@ -129,3 +155,31 @@ docs `d8adfeced`). Graded by `grep -acE 'not met|Operations failed|error TS'` (m
 | `rushx fixlint`, prettier 2.8.8 on every changed `.ts` | clean | — | — |
 | `max-lines` | `fileTreeMemoryStore.ts` 1972 / 2000 | — | — |
 | `generate-capability-feed.mjs`, `--check`, `verify-capability-docs.mjs` | exit 0 / 0 stale / 0 failed | — | — |
+
+## Review round 1
+
+The coordinator's review of `6610ec8a0` found no P1s; check→write atomicity held under every probe.
+Each finding, what changed, the test that pins it, and the revert that turns it red:
+
+| finding | fix | test | red under |
+|---|---|---|---|
+| **P2-1** `.onSuccess` returning a plain `Result` no longer type-checks for callers, so not implementers-only | plain `BREAKING:` (still `minor`) in the change file, the ledger bullet and this file's heading; `.asResult` sentence kept | — (docs) | — |
+| **P2-2** a torn `memory-store.seq.json` on a plain root failed every open, `'skip'` notwithstanding | two alternating slots `memory-store.seq.{a,b}.json`; open takes the max readable; fails only if slots exist and none reads, naming both and that deleting them reopens the ABA hole; each write goes to the missing / unreadable / lower slot, re-derived at every open | `a torn slot beside a good one…`, `the alternation survives a reopen…`, `one slot, unreadable` / `both slots torn` fail the open | R13, R14 |
+| **P2-2 / P3** a root directory on a slot name | refused at open with a named message (the walk would otherwise read it as a scope) | `a root directory named %s is refused at open` ×2 | R15 |
+| **P2-3** a conditional put that content-dedups onto another id reported success, addressed record unchanged (probe4 [13]) | under `expected`, fail `duplicate` with `existingId`, write nothing, observation still fires; unconditional dedup unchanged | `under expected, a dedup onto another id is a duplicate, not a success` | R12 |
+| **P2-3** ingest | `duplicate` on a `merge-into` surfaces as disposition `'deduped'` with the existing record's id — that disposition's documented meaning — rather than `conflict`, which means "the target moved" and would send a host to re-read the wrong record | `a merge whose content already exists elsewhere is deduped onto that record, not merged` | R12b |
+| P3 `MemoryWriteFailureCode` | one `as const` array + `StringOneOf` | `the failure-code vocabulary is closed and complete` | — |
+| P3 api.md | `{@link ObservationFanout}` → code span; `IMemoryWriteConflict` / `IMemoryWriteDuplicate` / `IMemoryWriteError` members documented | api.md regenerated | — |
+| P3 `validateExpectation` | `allowAbsent` flag (delete refuses `'absent'`); message prints `JSON.stringify(expected)` | `delete refuses expected: 'absent' as invalid` (`got "absent"`) | — |
+| P3 seq-file wording | `writeStoreFile(…, subject)`: `'seq'` messages speak of "the seq high-water mark" and drop the index sentence; a root *listing* failure in `SeqHighWater.open` carries no delete remedy | — (message text) | — |
+| P3 behaviour change | documented: without `expected`, an unreadable same-id file now fails `io` even with a cross-id duplicate | `a same-id file that cannot be read fails the put even when a cross-id duplicate exists` | — |
+| P3 embed-hook deadlock caveat | stated here, on `embed` / `fragmentEmbedder` TSDoc, and in the README | — | — |
+| P3 annotation | `orchestrator.ts` `put: MemoryWriteResult<IMemoryRecord<unknown>>` | — | — |
+
+The merge of `origin/integration/asks` was a no-op: it had not advanced past `7f81295b1`. The
+duplicated "N streams, newest first" lines in `docs/workstreams/2026-10.md` were collapsed to one,
+recounted from the stream entry headings.
+
+## Gates — after review round 1
+
+Recorded below once run.

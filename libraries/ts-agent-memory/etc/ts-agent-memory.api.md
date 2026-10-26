@@ -26,7 +26,7 @@ export type AdmissionDecision = {
 };
 
 // @public
-export const allMemoryWriteFailureCodes: ReadonlyArray<MemoryWriteFailureCode>;
+export const allMemoryWriteFailureCodes: readonly ["conflict", "duplicate", "invalid", "rejected", "not-found", "io"];
 
 // @public
 export class AsOfRetriever implements IMemoryRetriever {
@@ -682,22 +682,24 @@ export interface IMemoryToolResultItem extends IMemoryToolItemProjection {
 
 // @public
 export interface IMemoryWriteConflict {
-    // (undocumented)
     readonly code: 'conflict';
-    // (undocumented)
     readonly current: MemoryWriteExpectation;
-    // (undocumented)
     readonly expected: MemoryWriteExpectation;
 }
 
 // @public
-export interface IMemoryWriteError {
-    // (undocumented)
-    readonly code: Exclude<MemoryWriteFailureCode, 'conflict'>;
+export interface IMemoryWriteDuplicate {
+    readonly code: 'duplicate';
+    readonly existingId: MemoryId;
 }
 
 // @public
-export type IMemoryWriteFailure = IMemoryWriteConflict | IMemoryWriteError;
+export interface IMemoryWriteError {
+    readonly code: Exclude<MemoryWriteFailureCode, 'conflict' | 'duplicate'>;
+}
+
+// @public
+export type IMemoryWriteFailure = IMemoryWriteConflict | IMemoryWriteDuplicate | IMemoryWriteError;
 
 // @public
 export interface IMemoryWriteOptions {
@@ -1061,7 +1063,7 @@ export type MemoryToolName = 'memory_write' | 'memory_read' | 'memory_search' | 
 export type MemoryWriteExpectation = number | 'absent';
 
 // @public
-export type MemoryWriteFailureCode = 'conflict' | 'invalid' | 'rejected' | 'not-found' | 'io';
+export type MemoryWriteFailureCode = StringOneOf<typeof allMemoryWriteFailureCodes>;
 
 // @public
 export type MemoryWriteOutcome = 'written' | 'deduped';
@@ -1224,10 +1226,6 @@ export class TemporalVersionedPolicy implements IWritePolicy {
 
 // @public
 export type VectorRebuildErrorMode = 'skip' | 'fail';
-
-// Warnings were encountered during analysis:
-//
-// src/packlets/store/fileTreeMemoryStore.ts:831:3 - (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-agent-memory" does not have an export "ObservationFanout"
 
 // (No @packageDocumentation comment for this package)
 

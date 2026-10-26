@@ -44,22 +44,17 @@ REVERTS = [
      [("      checkExpectation(expected, current, label) ??\n", "")],
      CW, 'a matching seq deletes; a stale one conflicts'),
     ('R6 seq issued even when the high-water write fails', SEQ,
-     [("""    return writeStoreFile(this._root, this._writer, SEQ_HIGH_WATER_FILE, raw)
-      .withErrorFormat((m) => `memory store: cannot advance the seq high-water mark: ${m}`)
-      .onSuccess(() => {
-        this._reserved = reserved;
-        this._issued = seq;
-        return succeed(seq);
-      });""", """    writeStoreFile(this._root, this._writer, SEQ_HIGH_WATER_FILE, raw);
-    this._reserved = reserved;
-    this._issued = seq;
-    return succeed(seq);""")],
+     [("""      .onFailure((m) => {
+        // A failed write may have torn the slot; treat it as unreadable so it is the next target.
+        this._slots[slot] = undefined;
+        return fail(`memory store: cannot advance the seq high-water mark: ${m}`);
+      })""", "      .onFailure(() => succeed(true))")],
      CW, 'is persisted before the seq it covers is used'),
     ('R6b no high-water persistence (derive from disk only)', SEQ,
      [("    if (seq <= this._reserved) {", "    if (seq <= this._reserved || true) {")],
      CW, 'not re-issued after a reopen'),
     ('R7 reopen ignores the persisted mark', SEQ,
-     [("    this._issued = reserved;\n    this._reserved = reserved;", "    this._issued = 0;\n    this._reserved = reserved;")],
+     [("    this._issued = this._reserved;", "    this._issued = 0;")],
      CW, 'resumes past the persisted mark'),
     ('R8a ingest passes no expected', ORCH,
      [("expected === undefined ? undefined : { expected }", "undefined")],
@@ -70,6 +65,23 @@ REVERTS = [
     ('R8c ingest expects the named (superseded) version', ORCH,
      [("    if (!targetAddr.isVersioned) {\n      return target.envelope.seq;", "    if (targetAddr.isVersioned || !targetAddr.isVersioned) {\n      return target.envelope.seq;")],
      OT, 'a versioned merge'),
+    ('R12 conditional put dedups onto another id and reports success', STORE,
+     [("          return target.expected === undefined", "          return target.expected === undefined || true")],
+     CW, 'a dedup onto another id is a duplicate'),
+    ('R12b ingest does not map duplicate to deduped', ORCH,
+     [("      if (failure?.code === 'duplicate') {", "      if (failure?.code === 'duplicate' && false) {")],
+     OT, 'a merge whose content already exists elsewhere'),
+    ('R13 open fails on any unreadable slot', SEQ,
+     [("if ((a.present || b.present) && a.reserved === undefined && b.reserved === undefined) {",
+       "if ((a.present && a.reserved === undefined) || (b.present && b.reserved === undefined)) {")],
+     CW, 'a torn slot beside a good one'),
+    ('R14 no alternation: always write slot a', SEQ,
+     [("    const slot: 0 | 1 = a === undefined ? 0 : b === undefined ? 1 : a <= b ? 0 : 1;",
+       "    const slot: 0 | 1 = a === undefined || true ? 0 : b === undefined ? 1 : a <= b ? 0 : 1;")],
+     CW, 'torn slot beside|alternation survives'),
+    ('R15 a directory on a slot name is not refused', SEQ,
+     [("    if (item.type === 'directory') {", "    if (item.type === 'directory' && item.name === '') {")],
+     CW, 'is refused at open'),
 ]
 
 
