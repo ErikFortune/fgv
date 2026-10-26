@@ -12,9 +12,11 @@ import {
   IPreparedTaskContext,
   ITaskContext,
   ITaskContextBudget,
+  ITaskContextEntry,
   ITaskEnvelope,
   ITaskInclusionReceipt,
   ITaskUpdate,
+  ITaskWithheldDisposal,
   Instant,
   PageCursor,
   TaskId,
@@ -111,6 +113,23 @@ export interface ITaskDeliveryDischarge {
    * decision itself stands either way.
    */
   readonly issues: ReadonlyArray<string>;
+}
+
+/** How many times `next` reads its one-update probe when the read is refused as safe to retry. */
+const _probeAttempts: number = 3;
+
+/** How many owed ids a budget failure names. */
+const _namedOnFailure: number = 20;
+
+/** `value`, frozen all the way down. */
+function _deepFrozen<T>(value: T): T {
+  if (typeof value === 'object' && value !== null && !Object.isFrozen(value)) {
+    Object.freeze(value);
+    for (const member of Object.values(value)) {
+      _deepFrozen(member);
+    }
+  }
+  return value;
 }
 
 /**
@@ -225,11 +244,14 @@ export class TaskDeliveryPump {
    * see is owed.
    *
    * @remarks
-   * One render of one owed revision. A render that delivers nothing although something is owed — an
-   * owed revision too large for the text bound, which renders abbreviated or not at all — is
-   * released and **fails loudly**, naming the revision, rather than being presented as if delivered.
-   * It fails again on every call until the host raises `budget.maxChars` or ends those ids itself
-   * (`TaskBroker.dispose`, with the ids the failure names).
+   * One render of one owed revision the principal may see and acknowledge now; withheld ones are
+   * never presented. An oversize revision is skipped while a smaller owed one fits. When none fits —
+   * the candidate renders abbreviated or not at all — the receipt is released and the call **fails
+   * loudly**, naming the revision and the owed ids on the first page of `pending`, rather than
+   * presenting it as if delivered. It fails again on every call until the host raises
+   * `budget.maxChars` or ends those ids (`TaskBroker.dispose`). At most 1,000 owed updates are read
+   * per preparation, so a subscription whose first 1,000 are all withheld presents nothing until
+   * {@link TaskDeliveryPump.disposeWithheld} ends some.
    */
   public next(): Promise<Result<IPreparedTaskDelivery | undefined>> {
     return guarded(this._guard, () => this._next());
@@ -241,9 +263,11 @@ export class TaskDeliveryPump {
    *
    * @remarks
    * Fails, with nothing discharged, when `prepared` is not an object this pump handed out, or the
-   * acknowledgement does not commit: the revision stays owed and is presented again. Once it commits
-   * the call succeeds, and anything after it that did not complete is listed in
-   * {@link ITaskDeliveryDischarge.issues}.
+   * acknowledgement does not commit — say the principal may no longer acknowledge the task. A refused
+   * acknowledgement **releases its receipt** and spends `prepared`: the revision stays owed and comes
+   * back from the next `next` (or, if it is now withheld, from nothing — see
+   * {@link TaskDeliveryPump.disposeWithheld}). Once it commits the call succeeds, and anything after
+   * it that did not complete is listed in {@link ITaskDeliveryDischarge.issues}.
    */
   public acknowledge(prepared: IPreparedTaskDelivery): Promise<Result<ITaskDeliveryDischarge>> {
     const label: string = this._label(prepared);
@@ -251,10 +275,17 @@ export class TaskDeliveryPump {
       (
         await this._recorded(prepared).thenOnSuccess(async (issued) => {
           const acknowledged = await this._delivery.acknowledge(issued.receipt);
-          if (acknowledged.isFailure()) {
-            return fail<ITaskDeliveryDischarge>(acknowledged.message);
-          }
+          // Decided either way: a refused acknowledgement gives its receipt up too, so it pins nothing
+          // and the revision comes back from the next `next`.
           this._prepared.delete(prepared);
+          if (acknowledged.isFailure()) {
+            const released: Result<DeliveryId> = await this._release(issued.deliveryId);
+            return fail<ITaskDeliveryDischarge>(
+              released.isSuccess()
+                ? `${acknowledged.message} (its receipt was released)`
+                : `${acknowledged.message}; and ${released.message}`
+            );
+          }
           const issues: MessageAggregator = new MessageAggregator();
           (await this._release(issued.deliveryId)).aggregateError(issues);
           return succeed(
@@ -334,7 +365,15 @@ export class TaskDeliveryPump {
 
   /** {@link TaskDeliveryPump.next}, inside the guard. */
   private async _next(): Promise<Result<IPreparedTaskDelivery | undefined>> {
-    const first = await this._delivery.pending({ limit: 1 });
+    // A page answered while a task it decided moved is refused as safe to retry: read again, bounded.
+    let first = await this._delivery.pending({ limit: 1 });
+    for (
+      let attempt = 1;
+      attempt < _probeAttempts && first.isFailure() && first.detail?.retry === 'safe';
+      attempt++
+    ) {
+      first = await this._delivery.pending({ limit: 1 });
+    }
     if (first.isFailure()) {
       return fail(`delivery pump: reading what is owed: ${first.message}`);
     }
@@ -358,17 +397,11 @@ export class TaskDeliveryPump {
       // Only owed revisions are candidates. None rendered and none omitted: nothing visible is owed.
       // Otherwise the one candidate did not fit the budget, and presenting it would deliver nothing.
       const nothingVisible: boolean = rendered === undefined && context.omissions.visibleItems === 0;
-      const what: string =
-        rendered === undefined
-          ? 'an owed revision that does not fit the render budget'
-          : `${rendered.summary.envelope.id}@${rendered.summary.envelope.revision}, which renders abbreviated`;
-      return (await this._release(deliveryId)).onSuccess(() =>
-        nothingVisible
-          ? succeed(undefined)
-          : fail<IPreparedTaskDelivery | undefined>(
-              `delivery pump: ${what}; it cannot be delivered within this budget — raise maxChars or dispose of it`
-            )
-      );
+      const released: Result<DeliveryId> = await this._release(deliveryId);
+      if (released.isFailure() || nothingVisible) {
+        return released.isFailure() ? fail(released.message) : succeed(undefined);
+      }
+      return fail(await this._undeliverable(rendered));
     }
     const envelope: ITaskEnvelope = rendered.summary.envelope;
     const looked: Result<ReadonlyArray<UpdateCategory>> = await this._categoriesOf(rendered.updateIds);
@@ -390,17 +423,54 @@ export class TaskDeliveryPump {
           envelope,
           terminal: isTerminalTaskStatus(envelope.lifecycle.status),
           categories,
-          updateIds: [...rendered.updateIds]
+          updateIds: rendered.updateIds
         }
       };
-      // The host gets a frozen copy; the pump keeps its own record to decide from.
-      const handed: IPreparedTaskDelivery = Object.freeze({
-        ...issued,
-        entry: Object.freeze({ ...issued.entry })
-      });
-      this._prepared.set(handed, issued);
+      // The host gets a deep-frozen copy and the pump keeps another: nothing is shared between them,
+      // so nothing the host holds can change what a decision acts on.
+      const handed: IPreparedTaskDelivery = _deepFrozen(structuredClone(issued));
+      this._prepared.set(handed, _deepFrozen(structuredClone(issued)));
       return succeed<IPreparedTaskDelivery | undefined>(handed);
     });
+  }
+
+  /**
+   * Ends, with `reason`, up to `limit` obligations the subscription is owed that this principal is
+   * **withheld** — a task moved out of the binding's scopes, reassigned, or no longer acknowledgeable
+   * under the policy — through `IBoundTaskDelivery.disposeWithheld`.
+   *
+   * @remarks
+   * `next` never presents a withheld update, so it never blocks the pump; but it stays owed, and holds
+   * its task's archive, until something ends it. The pump does **not** end them on its own: access can
+   * come back (a policy that changes again, a task moved back), and a disposal cannot be undone. The
+   * host decides when — on its own sweep, say — and this call is the bounded path, reporting exactly
+   * what it ended, what a receipt still pins, and whether more remain.
+   */
+  public disposeWithheld(reason: string, limit?: number): Promise<Result<ITaskWithheldDisposal>> {
+    return guarded(this._guard, async () =>
+      (
+        await this._delivery.disposeWithheld({ reason, ...(limit !== undefined ? { limit } : {}) })
+      ).asResult.withErrorFormat((message) => `delivery pump: disposing of withheld obligations: ${message}`)
+    );
+  }
+
+  /**
+   * Why nothing could be delivered although something visible is owed: the owed candidate did not fit
+   * the text budget. Names the ids on the first page of what is owed, for a host that disposes of them.
+   */
+  private async _undeliverable(rendered: ITaskContextEntry | undefined): Promise<string> {
+    const what: string =
+      rendered === undefined
+        ? 'an owed revision does not fit the render budget'
+        : `${rendered.summary.envelope.id}@${rendered.summary.envelope.revision} renders abbreviated`;
+    const page = await this._delivery.pending({ limit: _namedOnFailure });
+    const named: string = page.isSuccess()
+      ? page.value.updates.map((update) => update.id).join(', ')
+      : `(owed ids unreadable: ${page.message})`;
+    return (
+      `delivery pump: ${what}; it cannot be delivered within this budget — raise maxChars or dispose of ` +
+      `it. Owed: ${named}`
+    );
   }
 
   /** What this pump recorded when it prepared `prepared`, or a refusal for anything else. */

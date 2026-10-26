@@ -528,33 +528,42 @@ export class DeferredObligations {
    * deferring for, and the status says whether the obligation was discharged (`succeeded`) or ended
    * without it (`cancelled`).
    *
-   * A `pending` task under the obligation's id is finished only when it is one this helper would
-   * have created: a `fgv.tracked@1` task carrying exactly the helper's scope and `deferral.scopes`.
-   * Anything else — another principal's task, a list, a task with other scopes — is refused, never
-   * adopted.
+   * A `pending` task under the obligation's id is finished only when it **looks like** one this
+   * helper would have created: a `fgv.tracked@1` task carrying exactly the set of the helper's scope
+   * and `deferral.scopes`. A list, or a task with other scopes, is refused, never adopted.
+   *
+   * **What is not checked: who created it.** Neither the envelope nor a bound view exposes the
+   * creating principal, so a `pending` tracked task with the expected scopes is adopted whoever
+   * created it. The boundary is the authorization policy: only a principal the policy lets `create`
+   * in the helper's scope can put a task there, so grant that to the host's own principal alone.
+   *
+   * `deferral.scopes` may not repeat a scope or name the helper's own: refused before anything is
+   * read.
    */
   public defer(deferral: IDeferral): Promise<Result<DeferOutcome>> {
     return guarded(this._guard, async () =>
       (
-        await this.taskIdFor(deferral.key).thenOnSuccess(async (taskId) =>
-          (
-            await this._stateOf(taskId)
-          ).thenOnSuccess(async (found): Promise<Result<DeferOutcome>> => {
-            switch (found.state) {
-              case 'settled':
-              case 'waiting':
-                return succeed(found);
-              case 'pending':
-                return this._adoptable(taskId, found, deferral).thenOnSuccess(async () =>
-                  this._waiting(this._waitFresh(taskId, found.revision, deferral))
-                );
-              default:
-                return (await this._create(taskId, deferral)).thenOnSuccess(async (revision) =>
-                  this._waiting(this._waitFresh(taskId, revision, deferral))
-                );
-            }
-          })
-        )
+        await this._scopesOf(deferral)
+          .onSuccess(() => this.taskIdFor(deferral.key))
+          .thenOnSuccess(async (taskId) =>
+            (
+              await this._stateOf(taskId)
+            ).thenOnSuccess(async (found): Promise<Result<DeferOutcome>> => {
+              switch (found.state) {
+                case 'settled':
+                case 'waiting':
+                  return succeed(found);
+                case 'pending':
+                  return this._adoptable(taskId, found, deferral).thenOnSuccess(async () =>
+                    this._waiting(this._waitFresh(taskId, found.revision, deferral))
+                  );
+                default:
+                  return (await this._create(taskId, deferral)).thenOnSuccess(async (revision) =>
+                    this._waiting(this._waitFresh(taskId, revision, deferral))
+                  );
+              }
+            })
+          )
       ).withErrorFormat(
         (message) => `deferred obligations: deferring ${this._keyLabel(deferral.key)}: ${message}`
       )
@@ -791,7 +800,14 @@ export class DeferredObligations {
     return missing.length > 0 ? `${into.taskId} does not owe ${missing.join(', ')}` : undefined;
   }
 
-  /** The key of a task that reads as one of this helper's obligations: an id it makes, a tracked task. */
+  /**
+   * The key of a task that reads as one of this helper's obligations: an id it makes, a tracked task.
+   *
+   * @remarks
+   * It does not check scopes the way {@link DeferredObligations.defer} does, because a sweep does not
+   * know which instance scopes a deferral named. Every path here comes through the helper's own view,
+   * which selects only tasks that carry the helper's scope; that is the scope check a sweep can make.
+   */
   private _obligationKeyOf(envelope: IProjectedTaskEnvelope): Result<IDeferredObligationKey> {
     return envelope.kind === trackedTaskKind
       ? this.keyOf(envelope.id)
@@ -814,16 +830,28 @@ export class DeferredObligations {
     envelope: Extract<DeferredObligationState, { readonly state: 'pending' }>,
     deferral: IDeferral
   ): Result<TaskId> {
-    const expected: ReadonlyArray<string> = [this._scope, ...(deferral.scopes ?? [])]
-      .map(_taskScopeKey)
-      .sort();
-    const actual: ReadonlyArray<string> = envelope.scopes.map(_taskScopeKey).sort();
+    // Compared as sets: a stored scope list and a requested one may differ in order or repetition.
+    const expected: ReadonlyArray<string> = [
+      ...new Set([this._scope, ...(deferral.scopes ?? [])].map(_taskScopeKey))
+    ].sort();
+    const actual: ReadonlyArray<string> = [...new Set(envelope.scopes.map(_taskScopeKey))].sort();
     return envelope.kind === trackedTaskKind && _same(expected, actual)
       ? succeed(taskId)
       : fail(
           `${taskId} is pending but is not an obligation this helper created for it ` +
             `(kind ${envelope.kind}, scopes ${actual.join(', ')})`
         );
+  }
+
+  /** A deferral's own scopes, refused when one repeats or names the helper's scope. */
+  private _scopesOf(deferral: IDeferral): Result<ReadonlyArray<ITaskScope>> {
+    const own: string = _taskScopeKey(this._scope);
+    const keys: ReadonlyArray<string> = (deferral.scopes ?? []).map(_taskScopeKey);
+    return keys.includes(own)
+      ? fail(`deferral scopes name the helper's own scope ${this._scope.namespace}/${this._scope.key}`)
+      : new Set(keys).size !== keys.length
+      ? fail(`deferral scopes repeat a scope`)
+      : succeed(deferral.scopes ?? []);
   }
 
   /** What the repository holds for `taskId`, read through the bound view. */

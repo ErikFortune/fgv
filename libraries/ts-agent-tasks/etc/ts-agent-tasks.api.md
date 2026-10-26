@@ -456,6 +456,7 @@ export interface IBoundTaskDelivery {
     abandon(deliveryId: DeliveryId): Promise<TaskResult<DeliveryId>>;
     // (undocumented)
     acknowledge(receipt: unknown): Promise<TaskResult<IAcknowledgementResult>>;
+    disposeWithheld(request: IDisposeWithheldRequest): Promise<TaskResult<ITaskWithheldDisposal>>;
     issued(): Promise<TaskResult<ReadonlyArray<ITaskIssuedReceiptSummary>>>;
     // (undocumented)
     pending(request?: {
@@ -947,6 +948,7 @@ export interface IDeliveryConverters {
     readonly consumerRecord: Converter<ITaskConsumerRecord>;
     // (undocumented)
     readonly disposeRequest: Converter<IDisposeObligationsRequest>;
+    readonly disposeWithheldRequest: Converter<IDisposeWithheldRequest>;
     readonly disposition: Converter<ITaskObligationDisposition>;
     readonly dispositionReason: Converter<string>;
     // (undocumented)
@@ -982,6 +984,14 @@ export interface IDisposeObligationsRequest {
     readonly subscriptionId: SubscriptionId;
     // (undocumented)
     readonly updateIds: ReadonlyArray<UpdateId>;
+}
+
+// @public
+export interface IDisposeWithheldRequest {
+    // (undocumented)
+    readonly limit?: number;
+    // (undocumented)
+    readonly reason: string;
 }
 
 // @public
@@ -3162,6 +3172,15 @@ export interface ITaskUpdate {
 }
 
 // @public
+export interface ITaskWithheldDisposal {
+    readonly disposed: ReadonlyArray<UpdateId>;
+    readonly more: boolean;
+    readonly pinned: ReadonlyArray<UpdateId>;
+    // (undocumented)
+    readonly subscriptionId: SubscriptionId;
+}
+
+// @public
 export interface ITaskWriteGuard {
     // (undocumented)
     guard<T>(write: () => Promise<TaskResult<T>>): Promise<TaskResult<T>>;
@@ -3616,6 +3635,7 @@ export class TaskDeliveryPump {
     static create(params: ITaskDeliveryPumpParams): Result<TaskDeliveryPump>;
     get delivery(): IBoundTaskDelivery;
     dispose(prepared: IPreparedTaskDelivery, reason: string): Promise<Result<ITaskDeliveryDischarge>>;
+    disposeWithheld(reason: string, limit?: number): Promise<Result<ITaskWithheldDisposal>>;
     next(): Promise<Result<IPreparedTaskDelivery | undefined>>;
 }
 

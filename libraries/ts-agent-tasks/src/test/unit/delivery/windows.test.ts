@@ -11,6 +11,7 @@ import {
   allowEverything,
   deliveryHarness,
   deliveryOf,
+  consumerRecord,
   pendingIds,
   subscribed
 } from '../../helpers/deliveryFixtures';
@@ -73,13 +74,20 @@ describe('acknowledge: a task reassigned between authorization and commit', () =
       /may not acknowledge/i,
       expect.objectContaining({ code: 'not-found-or-denied' })
     );
-    // Nothing was acknowledged on the strength of the stale decision.
-    expect(await pendingIds(delivery)).toEqual([owed]);
+    // Nothing was acknowledged on the strength of the stale decision: it stays owed, and — since the
+    // principal may no longer see the task — is withheld rather than shown.
+    expect((await consumerRecord(h.repository, 'sub')).acknowledged).toEqual([]);
+    expect(await delivery.pending({ limit: 200 })).toSucceedAndSatisfy((page) => {
+      expect(page.updates).toEqual([]);
+      expect(page.withheld).toBe(1);
+    });
   });
 
   test('to where it is still visible: the retry re-authorizes and acknowledges', async () => {
     const delivery = deliveryOf(h, 'sub');
     const receipt = (await delivery.prepare()).orThrow().context.receipt;
+    // Preparing asks too (disclosure is decided on acknowledgeability); count from here.
+    const before: number = acknowledgeChecks();
     policy.afterDecision = async (request: ITaskAccessRequest) => {
       if (request.action === 'acknowledge') {
         policy.afterDecision = undefined;
@@ -89,12 +97,13 @@ describe('acknowledge: a task reassigned between authorization and commit', () =
     expect(await delivery.acknowledge(receipt)).toSucceedAndSatisfy((ack) => {
       expect(ack.newlyAcknowledged).toEqual([owed]);
     });
-    expect(acknowledgeChecks()).toBe(2);
+    expect(acknowledgeChecks() - before).toBe(2);
   });
 
   test('on every attempt: bounded, then a safe conflict, acknowledging nothing', async () => {
     const delivery = deliveryOf(h, 'sub');
     const receipt = (await delivery.prepare()).orThrow().context.receipt;
+    const before: number = acknowledgeChecks();
     let n: number = 0;
     policy.afterDecision = async (request: ITaskAccessRequest) => {
       // The host writer's own checks go to another policy, so this hook never re-enters.
@@ -106,7 +115,9 @@ describe('acknowledge: a task reassigned between authorization and commit', () =
       /kept changing/i,
       expect.objectContaining({ code: 'conflict', retry: 'safe' })
     );
-    expect(acknowledgeChecks()).toBe(3);
+    expect(acknowledgeChecks() - before).toBe(3);
+    // Unhooked, or reading what is owed (which asks too) would retitle again under the read.
+    policy.afterDecision = undefined;
     expect(await pendingIds(delivery)).toEqual([owed]);
   });
 });

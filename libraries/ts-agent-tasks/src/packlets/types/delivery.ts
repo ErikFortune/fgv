@@ -544,6 +544,44 @@ export interface IBoundTaskDelivery {
    * takes a writer-queue slot and passes the broker's `writeGuard`, so a paused guard holds it.
    */
   issued(): Promise<TaskResult<ReadonlyArray<ITaskIssuedReceiptSummary>>>;
+  /**
+   * Ends, with `reason`, the obligations this subscription is owed that this principal is
+   * **withheld** — may no longer see or acknowledge, as each task's committed record stands — up to
+   * `limit` (default and maximum 200) per call.
+   *
+   * @remarks
+   * Authorized by the subscription's ownership, which binding the delivery proved, not by visibility:
+   * an obligation the principal can never be shown could otherwise never end, and would hold its
+   * task's archive for good. It discloses nothing but the ids the subscription already holds. Each id
+   * is decided on its task's committed record, and the writer section re-reads every such record and
+   * the policy epoch before it commits, so an id that became visible meanwhile is not ended. An id an
+   * unexpired issued receipt names is reported in `pinned` rather than ended. `more` says the limit
+   * stopped it.
+   */
+  disposeWithheld(request: IDisposeWithheldRequest): Promise<TaskResult<ITaskWithheldDisposal>>;
+}
+
+/**
+ * A request to {@link IBoundTaskDelivery.disposeWithheld}.
+ * @public
+ */
+export interface IDisposeWithheldRequest {
+  readonly reason: string;
+  readonly limit?: number;
+}
+
+/**
+ * What {@link IBoundTaskDelivery.disposeWithheld} did.
+ * @public
+ */
+export interface ITaskWithheldDisposal {
+  readonly subscriptionId: SubscriptionId;
+  /** The withheld ids this call ended. */
+  readonly disposed: ReadonlyArray<UpdateId>;
+  /** Withheld ids an unexpired issued receipt still names: left owed. */
+  readonly pinned: ReadonlyArray<UpdateId>;
+  /** Whether more withheld ids remain past `limit`. */
+  readonly more: boolean;
 }
 
 /**

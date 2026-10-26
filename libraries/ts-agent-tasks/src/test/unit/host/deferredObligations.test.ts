@@ -5,7 +5,7 @@
 
 import '@fgv/ts-utils-jest';
 import { FileTree } from '@fgv/ts-json-base';
-import { Result, fail, failWithDetail, succeedWithDetail } from '@fgv/ts-utils';
+import { Result, fail, failWithDetail, succeed, succeedWithDetail } from '@fgv/ts-utils';
 import {
   DeferredObligations,
   FileTreeTaskRepository,
@@ -913,6 +913,61 @@ describe('DeferredObligations refuses what it did not make', () => {
     expect(await obligations.defer(deferralFor(h, 'c7'))).toSucceedAndSatisfy((outcome) => {
       expect(outcome.state).toBe('waiting');
     });
+  });
+
+  test("deferral scopes that repeat or name the helper's own are refused before anything is read", async () => {
+    expect(await obligations.defer(deferralFor(h, 'c1', { scopes: [room, room] }))).toFailWith(
+      /deferral scopes repeat a scope/
+    );
+    expect(await obligations.defer(deferralFor(h, 'c1', { scopes: [deferral, room] }))).toFailWith(
+      /name the helper's own scope kind\/deferral/
+    );
+    expect(await obligations.stateOf({ changeRef: 'c1', role: 'address' })).toSucceedWith({
+      state: 'absent'
+    });
+  });
+
+  test('a pending task is compared to the deferral as a set of scopes, whatever the order', async () => {
+    const other: ITaskScope = { namespace: 'room', key: 'r2' };
+    await hostWriter([room, deferral, other], 'host').createTracked({
+      taskId: 'wake:address:c5' as TaskId,
+      operationId: 'h-5' as never,
+      title: 'interrupted'
+    });
+    expect(await obligations.defer(deferralFor(h, 'c5', { scopes: [other, room] }))).toSucceedAndSatisfy(
+      (outcome) => {
+        expect(outcome.state).toBe('waiting');
+      }
+    );
+  });
+
+  test('who created a pending task is not checked: the policy is the boundary', async () => {
+    // Documented residual: another principal the policy lets create here, with the expected scopes, is
+    // adopted — neither the envelope nor a bound view names the creator.
+    await hostWriter([deferral, room], 'mallory').createTracked({
+      taskId: 'wake:address:c4' as TaskId,
+      operationId: 'm-4' as never,
+      title: 'mallory made this'
+    });
+    expect(await obligations.defer(deferralFor(h, 'c4'))).toSucceedAndSatisfy((outcome) => {
+      expect(outcome.state).toBe('waiting');
+    });
+    // The mitigation: a policy that lets only the host's principal create in the helper's scope.
+    const base = authority();
+    const hostOnly: ITaskAuthorization = {
+      policyEpoch: () => base.policyEpoch(),
+      check: async (request) => (request.action === 'create' ? succeed(false) : base.check(request))
+    };
+    const stranger = h.broker
+      .bind({ principal: 'mallory', scopes: [deferral, room], authorization: hostOnly })
+      .orThrow();
+    expect(
+      await stranger.createTracked({
+        taskId: 'wake:address:c3' as TaskId,
+        operationId: 'm-3' as never,
+        title: 'x'
+      })
+    ).toFailWith(/not permitted/);
   });
 
   test('merged refuses a survivor owed to another role', async () => {
