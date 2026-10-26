@@ -228,6 +228,75 @@ store.durability;
   wins current-version selection, and the next admission re-culls an exceeded
   cap.
 
+## Conditional writes — `expected`
+
+A read-modify-write loses a concurrent update unless the write can say what it
+read. `put` and `delete` take an optional `expected`: the `envelope.seq` of the
+record the caller read (for a versioned kind, the current version's), or
+`'absent'` for "nothing there" (`put` only).
+
+```ts
+const read = (await store.get(kind, entityId)).orThrow();
+const written = await store.put(revised, { expected: read?.envelope.seq ?? 'absent' });
+if (written.isFailure()) {
+  const detail = written.detail;
+  if (detail?.code === 'conflict') {
+    // Someone wrote since our read; nothing was written. `detail.current` is the seq found.
+  } else if (detail?.code === 'duplicate') {
+    // This content already exists as `detail.existingId`; nothing was written.
+  }
+}
+```
+
+- **Where the check runs.** Under the store's write lock, after the address
+  resolves and **before any dedup** — so neither a content-dedup hit on another
+  id nor a same-id no-op can mask a conflict. On a mismatch nothing is written,
+  and the failed write is still observed.
+- **Under `expected`, success means the addressed record was written.** On a
+  `'content'`-scoped kind an unconditional `put` whose content already exists
+  under another id succeeds by returning *that* record, unchanged. With
+  `expected` the same put fails `duplicate`, naming `existingId`, and writes
+  nothing. Without `expected` nothing changes.
+- **What the token is.** `seq`, which the store issues strictly increasing and
+  never twice. A derived-state rewrite (a reconcile restamp, a version
+  invalidation) keeps it; any write that follows recomputes that state, so it
+  cannot lose a caller's update. `contentHash` is not a token: it excludes tags
+  and provenance and can recur.
+- **Never re-issued, even across a restart.** The store persists a high-water
+  mark in two root files, `memory-store.seq.a.json` and `memory-store.seq.b.json`,
+  advanced (in blocks) before any `seq` it covers is used. Without it, deleting the
+  highest record and reopening would re-issue that record's `seq`, and a stale
+  writer holding it would pass. The two files are written alternately — each write
+  to the missing, unreadable, or lower one, never the only good one — so a write
+  torn by a crash on a root without atomic writes leaves the other intact, and the
+  open takes the larger readable ceiling. A vault with neither opens as before and
+  gains one on its first write. If they exist and neither reads, the open fails;
+  deleting both lets it open, at the cost of the guarantee. A root *directory* with
+  either name is refused. `seq` is therefore strictly increasing but **not
+  dense**: a reopen resumes past the last reservation.
+- **In-process only.** The guarantee holds among writers sharing one store
+  instance per root — which the single-writer guard above enforces within a
+  process. It is not fencing; a second process over the same storage is outside it.
+- **Failures are classified.** `put` and `delete` return
+  `MemoryWriteResult<T>`, a `DetailedResult` whose detail is an
+  `IMemoryWriteFailure`: `conflict` (with `expected` and `current`), `duplicate`
+  (with `existingId`), `invalid` (input refused before the vault was read),
+  `rejected` (the write policy refused), `not-found` (a delete with no record), or
+  `io`. Use `.asResult` to chain into plain `Result` code — **BREAKING:** a caller
+  that chained a plain-`Result` continuation onto `put` / `delete` must add it.
+- **One behaviour change without `expected`.** A flat `put` now reads its same-id
+  record before content dedup, so a same-id file that cannot be read fails the
+  put (`io`) even when its content exists under another id; before, such a put
+  could succeed by deduping without reading its own file.
+- **Embed hooks must not write to the same store.** `embed` and
+  `fragmentEmbedder` run inside the write lock; one that awaits `put` / `delete`
+  on that store waits on itself.
+- **Ingest.** A `merge-into` writes under the `seq` its target entity had in the
+  pre-ingest snapshot. If the target moved meanwhile, that candidate is reported
+  with disposition `'conflict'` and its `conflict` detail; if its merged content
+  already exists under another id, it is `'deduped'` with that record's id. The
+  item still succeeds and nothing is retried.
+
 ## Conventions
 
 `Result<T>` on every fallible operation; no `any`; Converters/Validators for
