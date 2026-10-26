@@ -12,7 +12,7 @@ The active/production split is therefore **per-surface, not per-library**. A lib
 
 | Library | Active surface(s) | Notes |
 |---------|-------------------|-------|
-| `ts-extras` | `ai-assist`, `crypto-utils` | Established packlets (csv, record-jar, yaml, mustache, hash, conversion, zip-file-tree) are stable — handle with care |
+| `ts-extras` | `ai-assist`, `crypto-utils`, `async-control` | Established packlets (csv, record-jar, yaml, mustache, hash, conversion, zip-file-tree) are stable — handle with care |
 | `ts-app-shell` | All packlets | New library, no consumers yet outside this repo |
 | `ts-http-storage` | All | New library |
 | `ts-web-extras` | All | New library |

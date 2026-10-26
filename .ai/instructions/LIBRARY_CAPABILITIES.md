@@ -37,7 +37,7 @@ getting-started material. This index routes; it does not duplicate.
 | [`ts-res`](libraries/ts-res/CAPABILITIES.md) | Multidimensional conditional resources — i18n, theming, A/B, environment overrides |
 | [`ts-res-ui-components`](libraries/ts-res-ui-components/CAPABILITIES.md) | React UI for browsing/editing ts-res resources |
 | [`ts-random`](libraries/ts-random/CAPABILITIES.md) | Seeded, reproducible PRNG (`SeededRandomSource`, `PseudoRandomGenerator`) + word/char corpora. **mulberry32 — never for tokens, salts or keys** |
-| [`ts-extras`](libraries/ts-extras/CAPABILITIES.md) | Crypto, `safer-fetch`, `ai-assist` (LLM clients, structured output incl. `adaptOptionalToNullable`), CSV, zip, mustache |
+| [`ts-extras`](libraries/ts-extras/CAPABILITIES.md) | Crypto, `safer-fetch`, `ai-assist` (LLM clients, structured output incl. `adaptOptionalToNullable`), `async-control`, CSV, zip, mustache |
 | [`ts-web-extras`](libraries/ts-web-extras/CAPABILITIES.md) | Browser siblings — crypto, File System Access `FileTree`, browser `safer-fetch` |
 | [`ts-extras-re2`](libraries/ts-extras-re2/CAPABILITIES.md) | RE2 (re2js) `patternValidator` for untrusted JSON Schema `pattern` — linear time, ECMA meaning or refusal |
 | [`ts-extras-argon2`](libraries/ts-extras-argon2/CAPABILITIES.md) · [`ts-web-extras-argon2`](libraries/ts-web-extras-argon2/CAPABILITIES.md) | Argon2id providers (Node native / browser WASM) |
@@ -108,6 +108,7 @@ detail. `· pkg` names the owning package.*
 - **Asking an LLM for JSON and getting a validated `T`?** → `generateJsonCompletion` `JsonSchema` · `ts-extras`
 - **Need the provider to constrain its output, not just be asked to?** → `structuredOutput` · `ts-extras`
 - **Running a tool-use conversation with harness-side client tools?** → `executeClientToolTurn` `JsonSchema` · `ts-extras`
+- **Multi-round client-tool loop with a round cap, deadline and abort — or any async work bounded that way?** → `runClientToolLoop` `raceStopConditions` · `ts-extras`
 - **Making an MCP server's tools callable from an ai-assist tool-use conversation?** → `executeClientToolTurn` `JsonSchema` `fromJson` `adaptMcpTools` · `ts-extras-mcp`
 - **Diagnosing an OpenAI/xAI Responses stream that completes empty?** → `executeClientToolTurn` · `ts-extras`
 - **Reading prompt-cache token counts off a completion (reads/writes, normalized)?** → `IAiCompletionUsage` `AiCacheReportingLevel` · `ts-extras`
