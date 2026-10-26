@@ -67,6 +67,46 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
 
 ## P2 — Fix before next major feature in affected area
 
+- **[P2] `FsFileTreeAccessors`' prefix does not confine: absolute paths escape it, and plain writes never check.**
+  Three behaviours in `libraries/ts-json-base/src/packlets/file-tree/fsTree.ts` combine:
+  `resolveAbsolutePath` ignores `prefix` for an input that is already absolute (`path.isAbsolute`
+  short-circuits to `path.resolve(...paths)`), so `FileTree.forFilesystem(prefix).getDirectory('/')`
+  names the filesystem root `/`, not the prefix; the plain mutators `saveFileContents`,
+  `createDirectory`, `deleteFile` and `deleteDirectory` check only the mutability filter, never
+  that the path lies under the prefix; and the field's doc says the prefix is prepended "to all
+  paths" (`fsTree.ts` `prefix`; `fileTreeHelpers.ts` says "relative paths", which is the true one).
+  Only the atomic methods confine (`_confineToRoot`, which since `agent-memory-atomic-writes` also
+  checks the real path of the containing directory). Found by that stream's review: a memory store
+  opened on `forFilesystem(prefix).getDirectory('/')` walked the real `/`, and a root item outside
+  its accessors' prefix took plain writes outside the tree once its atomic inquiry was degraded
+  rather than refused. The store now refuses a failed inquiry, which closes its own path; the
+  accessor behaviour is unchanged and reachable by any plain-write caller. In particular, plain
+  writes on a root that is not qualified for atomic writes (a non-atomic accessor, or an
+  unqualified platform such as darwin) still follow a symbolic link out of the tree, exactly as on
+  the base commit — the real-path confinement covers only the atomic methods. The same holds for a
+  record *file* that is a symbolic link on such a root: a plain put writes through the link, and
+  because the listing hides links the record then reads back as absent.
+
+  **Trigger**: the next change to `FsFileTreeAccessors` path resolution, or any consumer that hands
+  untrusted or computed paths to a prefixed tree.
+
+  **Scope sketch** — options, for the user to choose; not decided:
+  (a) **document it** — correct the `prefix` doc to "prepended to relative paths; absolute paths are
+  used as given, and only the atomic methods confine", no behaviour change;
+  (b) **confine plain mutators** — run `_confineToRoot` (logical, and optionally real-path) in
+  `saveFileContents` / `saveFileBytes` / `createDirectory` / `deleteFile` / `deleteDirectory`,
+  refusing paths outside the prefix — breaking for callers that rely on writing outside it;
+  (c) **resolve absolute paths under the prefix** — treat `/x` as `<prefix>/x`, matching the
+  in-memory tree, so `getDirectory('/')` names the prefix — breaking for callers that pass real
+  absolute paths, which is how `DirectoryItem.create(absolutePath, accessors)` is commonly used;
+  (d) **(b) behind an option** — `confine: true` on `IFileTreeInitParams`, default off.
+  `ts-json-base` is an established surface, so (b) and (c) need explicit sign-off.
+
+  **Not a P3**: the atomic path already confines, so the two paths answer the same question
+  differently, and the prefix reads as a sandbox to anyone who trusts its doc.
+
+  **Reference**: `agent-memory-atomic-writes` review round 2 (2026-10-26), probe `escape.js` §2–3.
+
 - **[P2] No shared ESLint layer — `no-prototype-builtins` is on in 4 of the 33 projects with an ESLint config.**
   Every project carries its own flat `eslint.config.js` (33 files, 8 distinct variants) extending
   `@rushstack/eslint-config/flat/profile/node`; the `heft-dual-rig` carries no ESLint config. So a
