@@ -1,0 +1,57 @@
+id: agent-memory-atomic-writes
+status: shipped
+packages: ['@fgv/ts-agent-memory', '@fgv/ts-json-base']
+prs: [] # TBD — the PR number is filled in when the PR opens (#TBD in the ledger)
+openPrs: []
+opened: 2026-10-26
+closed: 2026-10-26
+summary:
+  intended: >
+    personaility#700. FileTreeMemoryStore writes record files through writeChildAtomically at the
+    strongest guarantee the root lists, including the in-memory root at 'session'; a synchronous
+    store.durability { atomic, guarantee?, reason } computed once at create, not in coverage();
+    degrade-and-report by default with an opt-in create({ durability: { require } }) that refuses;
+    a later write that cannot honour the guarantee fails loudly; 'replaced' treated as committed and
+    'unknown' settled by re-reading; an in-process root-ownership guard released on dispose(); an
+    open-time sweep of atomic-write temporaries under the guard; multi-file operations documented as
+    non-atomic. Optional reason on IAtomicWriteCapabilities if the qualification reason was not
+    reachable, plus a stale directoryItem.ts comment fix.
+  shipped: >
+    All of it. writeRecordFile writes atomically (writePlain on a non-atomic root) and settles
+    'replaced' / 'unknown' / unclassified failures before reporting, so the index patch follows the
+    file. store.durability adds removedTemporaries. dispose() releases the guard and makes the
+    disposed store refuse writes and deletes. IAtomicWriteCapabilities.reason is populated by the
+    fs, in-memory and non-atomic DirectoryItem answers. Open-report types moved to openReport.ts to
+    keep fileTreeMemoryStore.ts at 1979 lines; 28 test reopen sites and the perf script now dispose.
+  diverged: >
+    The guard path-keys every root that is not session-only, including roots with no atomic write
+    at all, and does not make session and path holders refuse each other (ts-agent-tasks does);
+    a disposed store refusing writes and the removedTemporaries field were not in the brief. An
+    'unknown' write whose file is absent afterwards is settled as not taken effect. The ask's
+    on-disk index files do not exist, as the brief anticipated.
+  sourceLine: '**Shipped:** `FileTreeMemoryStore` writes every record file atomically at the strongest guarantee its root offers, reports what it established on `store.durability`, refuses a second store on the same root until the first is disposed, and sweeps interrupted-write working files at open.'
+  headline: >
+    A crash mid-write no longer leaves a torn memory record that fails the next open:
+    FileTreeMemoryStore writes atomically wherever its root can, says so on store.durability, and
+    allows one store per root per process.
+keywords:
+  [
+    'torn write',
+    'crash safety',
+    'atomic write',
+    'writeChildAtomically',
+    'process-crash',
+    'durability report',
+    'single writer',
+    'root ownership',
+    'dispose',
+    'cleanupAtomicTemporaries',
+    'visibility unknown',
+    'IAtomicWriteCapabilities reason'
+  ]
+relatedStreams:
+  - {
+      id: filetree-atomic-write,
+      relationship: 'shipped the ts-json-base atomic-write capability this consumes'
+    }
+sourceHash: TBD

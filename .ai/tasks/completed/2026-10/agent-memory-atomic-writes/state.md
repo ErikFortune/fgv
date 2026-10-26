@@ -20,6 +20,8 @@ Worker-owned working surface. The brief is the contract.
 - The guard keys a root by its directory item always, and additionally by absolute path unless
   the root's strongest guarantee is exactly `'session'` (an in-memory tree). A non-atomic root is
   path-keyed: nothing says it is not disk-backed, and refusing a duplicate is the safe answer.
+  Revised mid-stream: session and path holders do NOT refuse each other (ts-agent-tasks' rule),
+  since an in-memory tree is never the same root as a path-held one.
 - A disposed store refuses further writes and deletes (both go through the writer), so a disposed
   instance can never be the second writer behind a new owner.
 - A sweep failure warns and does not fail the open: a leftover temporary is not a `.md` file and
@@ -32,9 +34,9 @@ Worker-owned working surface. The brief is the contract.
 
 ## Progress
 
-- [ ] ts-json-base reason
-- [ ] store implementation
-- [ ] tests red-then-green
-- [ ] docs + change files
-- [ ] gates
-- [ ] close-out
+- [x] ts-json-base reason (525b04b13)
+- [x] store implementation (3953ef903)
+- [x] tests red-then-green (430bae8b8, 6b420f318) — evidence in result.md
+- [x] docs + change files (979769be2)
+- [x] gates — see result.md / final report
+- [x] close-out
