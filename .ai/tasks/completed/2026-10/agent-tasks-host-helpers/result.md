@@ -282,3 +282,15 @@ section refused and nothing committed; `p8_loop` answers `conflict` after three 
 |---|---|---|---|
 | guard returns vs a section it started later | the guard's promise settles | the queue turn ends | the turn is marked closed before it ends; a section started after that is refused unrun |
 | retry after a lost race | the task went live inside the writer | run once more | a second miss is answered `conflict`, never retried again |
+
+### Round 3 gates
+
+| gate | result |
+|---|---|
+| package `build` / `lint` | 0 error/failure matches; no warning lines |
+| package `test` | 2496 passed, 0 failed; coverage 100 / 100 / 100 / 100 |
+| `rush rebuild` | `SUCCESS: 39 operations`; only the tracked-symlink notice |
+| `rush test` | 37 succeeded, 1 failed: `@fgv/ts-res-cli` cli-configuration "test consistent output by building same input twice", the known load-sensitive test; re-run alone 67 passed, 0 failed |
+| `change --verify --target-branch origin/integration/asks` | passes |
+| prettier 2.8.8 | clean |
+| feed `--check` / `verify-capability-docs` | 0 stale / 0 failed |
