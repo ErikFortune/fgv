@@ -270,6 +270,31 @@ describe('resumePendingRegistration — an external registration left pending', 
     faulty.failChildren = false;
   });
 
+  test('an external registration whose unresolved record landed reports its scopes and resumes', async () => {
+    const root = new FaultyRoot(memoryRoot() as FileTree.IAtomicFileTreeDirectoryItem);
+    const h = await sourceHarness({ root: root as unknown as FileTree.IFileTreeDirectoryItem });
+    h.executor.addJob('j2');
+    root.faults.push({ name: 'repository.json', when: 'before', visibility: 'unchanged', skip: 1 });
+    expect(
+      await h.broker.registerExternal('host', {
+        taskId: tid('j2'),
+        operationId: op('register-j2'),
+        kind: jobKind,
+        detailVersion: 1,
+        title: 'j2',
+        scopes: [alpha],
+        binding: h.executor.binding('j2'),
+        recovery: 'reattach'
+      })
+    ).toFail();
+    expect(h.repository.pendingRegistration(tid('j2'))).toSucceedAndSatisfy((pending) =>
+      expect(pending?.landedScopes).toEqual([alpha])
+    );
+    expect(await h.broker.resumePendingRegistration(tid('j2'))).toSucceedAndSatisfy((registered) =>
+      expect(registered.state).toBe('unresolved')
+    );
+  });
+
   test('each kind resumes only through its own entry point', async () => {
     const h = await pendingExternal();
     const writer = h.broker.bind({ principal: 'host', scopes: [alpha], authorization: h.policy }).orThrow();
@@ -292,6 +317,23 @@ describe('resumePendingRegistration — an external registration left pending', 
 });
 
 describe('resumePendingRegistration — a record that landed before it was marked live', () => {
+  test('a file at the record name that is not this registration’s record reports no landed scopes, and blocks the resume', async () => {
+    const { h, faulty } = await withPending('t', (n) =>
+      n.writer.createTracked({ taskId: tid('t'), operationId: op('create-t'), title: 'the task' })
+    );
+    faulty.inner
+      .writeChildAtomically('task-t.json', '{"not":"a record"}', { guarantee: 'session' })
+      .orThrow();
+    expect(h.repository.pendingRegistration(tid('t'))).toSucceedAndSatisfy((pending) => {
+      expect(pending?.taskId).toBe('t');
+      expect(pending?.landedScopes).toBeUndefined();
+    });
+    expect(await h.writer.resumePendingRegistration(tid('t'))).toFailWithDetail(
+      /already exists but is not this registration's first record/,
+      code('conflict')
+    );
+  });
+
   /** The pending entry is written, the record lands, and the write marking it live fails. */
   async function landed(): Promise<{ readonly h: IBrokerHarness; readonly creator: IBoundTaskWriter }> {
     const faulty = new FaultyRoot(memoryRoot() as FileTree.IAtomicFileTreeDirectoryItem);
