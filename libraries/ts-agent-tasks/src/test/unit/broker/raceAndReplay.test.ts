@@ -208,6 +208,35 @@ describe('resumeNative and a pending external registration', () => {
   });
 });
 
+describe('resumeNative and a live external registration', () => {
+  test('is pointed at the broker only when the view selects the live task’s scopes', async () => {
+    const h = await sourceHarness();
+    h.executor.addJob('j1');
+    expect(
+      await h.broker.registerExternal('host', {
+        taskId: tid('j1'),
+        operationId: op('register-j1'),
+        kind: jobKind,
+        detailVersion: 1,
+        title: 'j1',
+        scopes: [alpha],
+        binding: h.executor.binding('j1'),
+        recovery: 'reattach'
+      })
+    ).toSucceed();
+    const seeing = h.broker.bind({ principal: 'host', scopes: [alpha], authorization: h.policy }).orThrow();
+    expect(await seeing.resumePendingRegistration(tid('j1'))).toFailWithDetail(
+      /external registration/,
+      code('invalid')
+    );
+    const blind = h.broker.bind({ principal: 'host', scopes: [beta], authorization: h.policy }).orThrow();
+    expect(await blind.resumePendingRegistration(tid('j1'))).toFailWithDetail(
+      /no pending registration j1$/,
+      code('not-found-or-denied')
+    );
+  });
+});
+
 describe('an identical external registration that loses a race', () => {
   test('replays the registration the winner committed', async () => {
     const h = await sourceHarness();
