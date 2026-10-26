@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-json-base",
+      "comment": "IAtomicWriteCapabilities gains an optional reason, populated by the filesystem, in-memory and non-atomic DirectoryItem answers, so a caller can explain a degraded or refused durable write without attempting one",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-json-base"
+}

@@ -164,6 +164,48 @@ ingest still should not fail.
 See `.claude/project/agent-memory-ingest-design.md` §1 and §3 for the full
 treatment.
 
+## Durability — atomic record writes, one store per root
+
+`FileTreeMemoryStore` writes each record file atomically whenever its root can,
+so a crash mid-write leaves the previous record intact instead of a torn file
+that fails the next open (with the default `onRecordError: 'fail'`, one torn
+record would fail the whole open).
+
+```ts
+const store = FileTreeMemoryStore.create({ root, registry, codecs }).orThrow();
+store.durability;
+// { atomic: true, guarantee: 'process-crash', reason: 'ext2/ext3/ext4 on linux', removedTemporaries: [] }
+```
+
+- **The guarantee** is the strongest the root lists: `'process-crash'` on a
+  qualified filesystem root (Linux, ext2/3/4 or tmpfs — see `@fgv/ts-json-base`),
+  `'session'` on an in-memory tree. It is chosen once, at `create`.
+- **A root that cannot write atomically** (an unqualified filesystem, a custom
+  `FileTree` without the capability) degrades to plain writes, with
+  `durability.atomic: false` and the root's `reason`. To refuse such a root
+  instead, pass `durability: { require: 'process-crash' }` (or `'session'`).
+- **No silent fallback.** A later write that cannot honour the chosen guarantee
+  — say a scope directory on another mount — fails; it is never retried as a
+  plain write.
+- **Uncertain outcomes are settled.** If the filesystem reports that the new
+  file is already visible (`'replaced'`), the write is treated as committed and
+  logged at `warn`. If the outcome is `'unknown'`, the store re-reads the file
+  and reports what it actually holds. Either way the in-memory index follows the
+  file.
+- **One store per root, per process.** Opening a second store on a root another
+  store holds fails until the first calls `dispose()`. A disposed store still
+  reads, but refuses writes and deletes. This is an in-process guard only — one
+  writer per root across processes remains the host's responsibility.
+- **Interrupted writes are cleaned up.** At open, while holding the guard, the
+  store removes working files that interrupted atomic writes left behind and
+  lists them on `durability.removedTemporaries`.
+- **Multi-file operations are not atomic as a whole.** A versioned `put` writes
+  the new version and then invalidates the previous current version; a
+  cap-cull admission writes one record and deletes others. A crash between those
+  writes leaves every file whole, and the next open copes: the highest `seq`
+  wins current-version selection, and the next admission re-culls an exceeded
+  cap.
+
 ## Conventions
 
 `Result<T>` on every fallible operation; no `any`; Converters/Validators for
