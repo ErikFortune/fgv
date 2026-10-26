@@ -14,6 +14,7 @@ describe('public surface', () => {
     // The host helpers add the root probe the repository itself uses, and one open-or-initialize.
     expect(names.filter((n) => /repository/i.test(n)).sort()).toEqual([
       'FileTreeTaskRepository',
+      'allTaskRepositoryDurabilities',
       'openOrInitializeTaskRepository',
       'probeTaskRepositoryRoot',
       'runTaskRepositoryConformance'

@@ -574,7 +574,7 @@ function _completeRegistrations(
     return written.isSuccess()
       ? ok({ manifest: next, bytes: encoded.bytes, text: encoded.text })
       : taskFailure<{ manifest: ITaskRepositoryManifest; bytes: number; text: string }>(
-          `open: rewriting ${manifestName} (completed registrations, initialization mode) failed: ${written.message}`,
+          `open: completing pending registrations failed: ${written.message}`,
           'storage-unavailable',
           writeRetry(written.detail)
         );

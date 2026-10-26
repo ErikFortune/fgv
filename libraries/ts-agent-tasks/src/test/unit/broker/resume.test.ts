@@ -11,6 +11,7 @@ import {
   ICreateTrackedTask,
   ITaskRepository,
   TaskId,
+  TaskRevision,
   taskListKind
 } from '../../../index';
 import { FaultyRoot } from '../../helpers/faultyRoot';
@@ -239,6 +240,34 @@ describe('resumePendingRegistration — an external registration left pending', 
     expect(await h.broker.resumePendingRegistration(tid('j1'))).toSucceedAndSatisfy((registered) =>
       expect(registered.state).toBe('unresolved')
     );
+  });
+
+  test('a scope change on an unresolved registration is authorized for its resulting scopes, then refused', async () => {
+    const h = await pendingExternal();
+    expect(await h.broker.resumePendingRegistration(tid('j1'))).toSucceed();
+    expect(
+      await h.writer.changeScopes({
+        taskId: tid('j1'),
+        operationId: op('cs-j1'),
+        expectedRevision: 1 as TaskRevision,
+        add: [alpha]
+      })
+    ).toFailWithDetail(/unresolved registration takes no catalog change/, code('unsupported'));
+    expect(h.policy.calls.filter((c) => c.action === 'change-scopes').map((c) => c.scopes)).toEqual([
+      [alpha]
+    ]);
+  });
+
+  test('a store that cannot list answers pendingRegistration as storage-unavailable', async () => {
+    const { h, faulty } = await withPending('t', (n) =>
+      n.writer.createTracked({ taskId: tid('t'), operationId: op('create-t'), title: 'the task' })
+    );
+    faulty.failChildren = true;
+    expect(h.repository.pendingRegistration(tid('t'))).toFailWithDetail(
+      /cannot list/,
+      code('storage-unavailable')
+    );
+    faulty.failChildren = false;
   });
 
   test('each kind resumes only through its own entry point', async () => {

@@ -4,9 +4,10 @@
  */
 
 import '@fgv/ts-utils-jest';
-import { fail } from '@fgv/ts-utils';
+import { fail, failWithDetail } from '@fgv/ts-utils';
 import {
   FileTreeTaskRepository,
+  ITaskFailure,
   ITaskRepository,
   ITaskWriteGuard,
   TaskBroker,
@@ -469,6 +470,41 @@ describe('TaskBroker.create writeGuard', () => {
     expect(threw).toFailWithDetail(/threw: boom after the section ran/, code('storage-unavailable'));
     expect(threw.detail?.retry).toBe('reconcile-first');
     expect(await repository.read(tid('b'))).toSucceedAndSatisfy((r) => expect(r?.state).toBe('resolved'));
+  });
+
+  test('a guard that fails after a section that itself failed reports both, reconcile-first', async () => {
+    const late: ITaskWriteGuard = {
+      guard: async <T>(write: () => Promise<TaskResult<T>>): Promise<TaskResult<T>> => {
+        await write();
+        return fail('gate closed late') as unknown as TaskResult<T>;
+      }
+    };
+    const { broker, policy } = await harness({ guard: late });
+    const writer = broker.bind({ principal: 'alice', scopes: [alpha], authorization: policy }).orThrow();
+    policy.afterDecision = (request) => {
+      if (request.action === 'create') {
+        policy.epoch = 'epoch-2';
+      }
+    };
+    const both = await writer.createTracked({ taskId: tid('a'), operationId: op('create-a'), title: 'a' });
+    expect(both).toFailWithDetail(
+      /gate closed late after the section ran \(its own outcome: .*authorization policy/i,
+      code('storage-unavailable')
+    );
+    expect(both.detail?.retry).toBe('reconcile-first');
+  });
+
+  test('a guard that refuses with a classified failure, without running the section, keeps its classification', async () => {
+    const refusing: ITaskWriteGuard = {
+      guard: async <T>(): Promise<TaskResult<T>> =>
+        failWithDetail<T, ITaskFailure>('held for a snapshot', { code: 'conflict', retry: 'safe' })
+    };
+    const { broker, policy, repository } = await harness({ guard: refusing });
+    const writer = broker.bind({ principal: 'alice', scopes: [alpha], authorization: policy }).orThrow();
+    expect(
+      await writer.createTracked({ taskId: tid('a'), operationId: op('create-a'), title: 'a' })
+    ).toFailWithDetail(/held for a snapshot/, code('conflict'));
+    expect(await repository.read(tid('a'))).toSucceedWith(undefined);
   });
 
   test('a guard that runs the section twice gets the second call refused, unrun', async () => {
