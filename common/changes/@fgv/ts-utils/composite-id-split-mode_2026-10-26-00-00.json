@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-utils",
+      "comment": "Converters.compositeIdFromString and Converters.compositeId take an optional { split: 'exact' | 'first' | 'last' } (ICompositeIdOptions), and CompositeIdValidatorConstructorParams gains a matching optional split. 'exact' is the default and keeps the existing behaviour; 'first' and 'last' split at the first or last separator and pass the remainder untouched to the item or collection part. Adds Validation.CompositeIdSplitMode and Validation.allCompositeIdSplitModes, and fixes the misplaced period in the multiple-separators error message",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-utils"
+}

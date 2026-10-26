@@ -20,9 +20,58 @@
  * SOFTWARE.
  */
 
-import { Failure, fail } from '../base';
+import { Failure, Result, fail, succeed } from '../base';
 import { Validator } from './validator';
 import { ValidatorBase, ValidatorBaseConstructorParams } from './validatorBase';
+
+/**
+ * All supported `CompositeIdSplitMode` values.
+ * @public
+ */
+export const allCompositeIdSplitModes = ['exact', 'first', 'last'] as const;
+
+/**
+ * How a composite ID string is split into its collection and item parts:
+ * - `'exact'` (the default) requires exactly one separator and fails if the
+ *   string contains more than one.
+ * - `'first'` splits at the first separator; everything after it, including any
+ *   further separators, is passed untouched to the item ID converter or validator.
+ * - `'last'` splits at the last separator; everything before it, including any
+ *   further separators, is passed untouched to the collection ID converter or validator.
+ *
+ * @remarks
+ * To accept a nested composite as one part, split with `'first'` or `'last'` so
+ * the nested value arrives intact, validate that part as a plain string, and then
+ * re-parse it with its own composite ID converter or validator.
+ * @public
+ */
+export type CompositeIdSplitMode = (typeof allCompositeIdSplitModes)[number];
+
+/**
+ * Splits a composite ID string into its collection and item parts.
+ * @param value - The composite ID string.
+ * @param separator - The separator string.
+ * @param split - The `CompositeIdSplitMode`.
+ * @returns `Success` with the `[collectionId, itemId]` strings, or `Failure` if
+ * the separator is missing or (for `'exact'`) repeated.
+ */
+function splitCompositeIdString(
+  value: string,
+  separator: string,
+  split: CompositeIdSplitMode
+): Result<readonly [string, string]> {
+  if (split === 'exact') {
+    const parts = value.split(separator);
+    if (parts.length > 2) {
+      return fail(`${value}: invalid composite ID - multiple separators '${separator}' found.`);
+    }
+  }
+  const index = split === 'last' ? value.lastIndexOf(separator) : value.indexOf(separator);
+  if (index < 0) {
+    return fail(`${value}: invalid composite ID - separator '${separator}' not found.`);
+  }
+  return succeed([value.slice(0, index), value.slice(index + separator.length)]);
+}
 
 /**
  * Parameters used to construct a {@link Validation.Classes.StringValidator | StringValidator}.
@@ -37,6 +86,11 @@ export interface CompositeIdValidatorConstructorParams<
   readonly collectionId: Validator<TCOLLECTIONID, TC>;
   readonly separator: string;
   readonly itemId: Validator<TITEMID, TC>;
+  /**
+   * How to split the composite ID string. Defaults to `'exact'`; see
+   * `CompositeIdSplitMode`.
+   */
+  readonly split?: CompositeIdSplitMode;
 }
 
 /**
@@ -52,6 +106,7 @@ export class CompositeIdValidator<
   protected readonly _collectionIdValidator: Validator<TCOLLECTIONID, TC>;
   protected readonly _itemIdValidator: Validator<TITEMID, TC>;
   protected readonly _separator: string;
+  protected readonly _split: CompositeIdSplitMode;
 
   /**
    * Constructs a new {@link Validation.Classes.StringValidator | StringValidator}.
@@ -63,7 +118,7 @@ export class CompositeIdValidator<
     super({
       ...params
     });
-    const { collectionId, separator, itemId } = params;
+    const { collectionId, separator, itemId, split } = params;
 
     this._collectionIdValidator = collectionId.withFormattedError(
       (value, err) => `${value}: invalid composite collection ID (${err}).`
@@ -72,22 +127,20 @@ export class CompositeIdValidator<
       (value, err) => `${value}: invalid composite item ID (${err}).`
     );
     this._separator = separator;
+    this._split = split ?? 'exact';
   }
 
   protected override _validate(value: unknown, context?: TC): boolean | Failure<T> {
     if (typeof value !== 'string') {
       return fail(`${value}: invalid non-string composite ID.`);
     }
-    const parts = value.split(this._separator);
-    if (parts.length < 2) {
-      return fail(`${value}: invalid composite ID - separator '${this._separator}' not found.`);
-    } else if (parts.length > 2) {
-      return fail(`${value}: invalid composite ID - multiple separators '${this._separator}.' found.`);
-    }
-    const [collectionId, itemId] = parts;
-    const result = this._collectionIdValidator
-      .validate(collectionId, context)
-      .onSuccess(() => this._itemIdValidator.validate(itemId, context));
-    return result.isSuccess() ? true : Failure.with<T>(`${value}: invalid composite ID - ${result.message}`);
+    const result = splitCompositeIdString(value, this._separator, this._split).onSuccess(
+      ([collectionId, itemId]) =>
+        this._collectionIdValidator
+          .validate(collectionId, context)
+          .onSuccess(() => this._itemIdValidator.validate(itemId, context))
+          .withErrorFormat((message) => `${value}: invalid composite ID - ${message}`)
+    );
+    return result.isSuccess() ? true : Failure.with<T>(result.message);
   }
 }

@@ -23,6 +23,7 @@
 import '../../helpers/jest';
 
 import { Failure, fail } from '../../../packlets/base';
+import * as Validation from '../../../packlets/validation';
 import { Classes, Validators } from '../../../packlets/validation';
 
 describe('CompositeIdValidator class', () => {
@@ -190,6 +191,72 @@ describe('CompositeIdValidator class', () => {
 
     test('fails for empty string', () => {
       expect(validator.validate('')).toFailWith(/separator ':' not found/i);
+    });
+  });
+
+  describe('split modes', () => {
+    const anyString = Validators.string;
+    function make(split?: Validation.CompositeIdSplitMode): Classes.CompositeIdValidator {
+      return Validators.compositeId({ collectionId: anyString, separator: ':', itemId: anyString, split });
+    }
+    const exact = make();
+    const explicitExact = make('exact');
+    const first = make('first');
+    const last = make('last');
+
+    test('exact (default and explicit) refuses a remainder containing the separator', () => {
+      expect(exact.validate('a:b:c')).toFailWith(/multiple separators ':' found\./i);
+      expect(explicitExact.validate('a:b:c')).toFailWith(/multiple separators ':' found\./i);
+      expect(explicitExact.validate('a:b')).toSucceedWith('a:b');
+    });
+
+    test('first and last accept a remainder containing the separator', () => {
+      expect(first.validate('a:b:c')).toSucceedWith('a:b:c');
+      expect(last.validate('a:b:c')).toSucceedWith('a:b:c');
+    });
+
+    test('first hands the remainder to the item validator', () => {
+      const v = Validators.compositeId<CompositeId, CollectionId, ItemId>({
+        collectionId: collectionIdValidator,
+        separator: ':',
+        itemId: itemIdValidator,
+        split: 'first'
+      });
+      expect(v.validate('collection:123')).toSucceed();
+      expect(v.validate('collection:1:2')).toFailWith(/collection:1:2.*invalid composite item ID.*numeric/i);
+    });
+
+    test('last hands the remainder to the collection validator', () => {
+      const v = Validators.compositeId<CompositeId, CollectionId, ItemId>({
+        collectionId: collectionIdValidator,
+        separator: ':',
+        itemId: itemIdValidator,
+        split: 'last'
+      });
+      expect(v.validate('collection:123')).toSucceed();
+      expect(v.validate('a:b:123')).toFailWith(/a:b:123.*invalid composite collection ID.*alphanumeric/i);
+    });
+
+    test('every mode fails when the separator is missing', () => {
+      for (const v of [exact, first, last]) {
+        expect(v.validate('noSeparator')).toFailWith(/separator ':' not found/i);
+        expect(v.validate('')).toFailWith(/separator ':' not found/i);
+      }
+    });
+
+    test('every mode hands an empty part to the part validators', () => {
+      for (const split of Validation.allCompositeIdSplitModes) {
+        const v = Validators.compositeId<CompositeId, CollectionId, ItemId>({
+          collectionId: collectionIdValidator,
+          separator: ':',
+          itemId: itemIdValidator,
+          split
+        });
+        expect(v.validate(':123')).toFailWith(/collection ID cannot be empty/i);
+        expect(v.validate('collection:')).toFailWith(/item ID cannot be empty/i);
+      }
+      expect(first.validate('a::')).toSucceedWith('a::');
+      expect(last.validate('::b')).toSucceedWith('::b');
     });
   });
 
