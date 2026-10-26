@@ -83,7 +83,9 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
   accessor behaviour is unchanged and reachable by any plain-write caller. In particular, plain
   writes on a root that is not qualified for atomic writes (a non-atomic accessor, or an
   unqualified platform such as darwin) still follow a symbolic link out of the tree, exactly as on
-  the base commit — the real-path confinement covers only the atomic methods.
+  the base commit — the real-path confinement covers only the atomic methods. The same holds for a
+  record *file* that is a symbolic link on such a root: a plain put writes through the link, and
+  because the listing hides links the record then reads back as absent.
 
   **Trigger**: the next change to `FsFileTreeAccessors` path resolution, or any consumer that hands
   untrusted or computed paths to a prefixed tree.
