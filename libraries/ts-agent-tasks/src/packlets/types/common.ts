@@ -17,7 +17,8 @@ export interface ITaskScope {
 
 /**
  * A collision-free text key for a scope — namespace and key, never confusable with another pair.
- * @public
+ * Shared between the package's packlets; not part of the published surface.
+ * @internal
  */
 export function taskScopeKey(scope: ITaskScope): string {
   return JSON.stringify([scope.namespace, scope.key]);

@@ -360,6 +360,8 @@ export interface IBoundTaskWriter extends IBoundTaskView {
  *   `reconcile-first`: the section may have committed. A section the gate started without awaiting
  *   is awaited before the broker's turn ends.
  * - **Called twice.** The second call is refused without running (`invalid`).
+ * - **Called after the gate returned.** Refused without running (`invalid`): the section must be
+ *   started before `guard` returns, or it would run outside the broker's turn.
  *
  * **The gate must not call the broker.** A broker operation started from inside `guard` queues
  * behind the very section the gate is holding and never runs, and every later broker write queues

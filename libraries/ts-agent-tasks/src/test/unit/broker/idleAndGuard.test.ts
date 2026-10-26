@@ -533,6 +533,25 @@ describe('TaskBroker.create writeGuard', () => {
     ).toSucceed();
   });
 
+  test('a guard that starts the section after it returned gets it refused, unrun, outside any turn', async () => {
+    const kept: Array<() => Promise<TaskResult<unknown>>> = [];
+    const deferred: ITaskWriteGuard = {
+      guard: async <T>(write: () => Promise<TaskResult<T>>): Promise<TaskResult<T>> => {
+        // Kept to be started later, once the guard has returned.
+        kept.push(write);
+        return fail('gate closed') as unknown as TaskResult<T>;
+      }
+    };
+    const { broker, policy, repository } = await harness({ guard: deferred });
+    const writer = broker.bind({ principal: 'alice', scopes: [alpha], authorization: policy }).orThrow();
+    expect(
+      await writer.createTracked({ taskId: tid('a'), operationId: op('create-a'), title: 'a' })
+    ).toFailWithDetail(/the write guard refused: gate closed/, code('storage-unavailable'));
+    expect(kept).toHaveLength(1);
+    expect(await kept[0]()).toFailWithDetail(/started the section after it had returned/, code('invalid'));
+    expect(await repository.read(tid('a'))).toSucceedWith(undefined);
+  });
+
   test('a guard that runs the section twice gets the second call refused, unrun', async () => {
     const seconds: Array<TaskResult<unknown>> = [];
     const twice: ITaskWriteGuard = {

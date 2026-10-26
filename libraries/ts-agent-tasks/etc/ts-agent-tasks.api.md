@@ -3489,7 +3489,9 @@ export function taskPromptRecord(params: ITaskPromptRecordParams): Result<IStore
 // @public
 export function taskPromptTemplate(params: ITaskPromptTemplateParams): Result<string>;
 
-// @public
+// Warning: (ae-internal-missing-underscore) The name "taskRecordScopes" should be prefixed with an underscore because the declaration is marked as @internal
+//
+// @internal
 export function taskRecordScopes(record: ITaskRecordDraft | ITaskCommitRecord): ReadonlyArray<ITaskScope>;
 
 // @public
@@ -3553,7 +3555,9 @@ export const taskRevision: Converter<TaskRevision>;
 // @public
 export type TaskScheduleTimer = (fn: () => void, ms: number) => () => void;
 
-// @public
+// Warning: (ae-internal-missing-underscore) The name "taskScopeKey" should be prefixed with an underscore because the declaration is marked as @internal
+//
+// @internal
 export function taskScopeKey(scope: ITaskScope): string;
 
 // @public

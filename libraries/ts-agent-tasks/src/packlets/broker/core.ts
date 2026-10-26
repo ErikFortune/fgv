@@ -112,14 +112,26 @@ export function receiptJson(receipt: ITaskMutationResult | IReassignmentResult):
  * - a second call to the section — refused without running it, `invalid`.
  *
  * A section the guard started and did not await is awaited before the turn ends, so the writer is
- * never still held when the next section runs, and its outcome is classified as above.
+ * never still held when the next section runs, and its outcome is classified as above. A section
+ * the guard tries to start **after** it has returned is refused without running (`invalid`): it
+ * would run outside the queue's turn.
  */
 async function _guarded<T>(
   guard: ITaskWriteGuard,
   write: () => Promise<TaskResult<T>>
 ): Promise<TaskResult<T>> {
-  const seen: { ran?: TaskResult<T>; running?: Promise<unknown>; calls: number } = { calls: 0 };
+  const seen: { ran?: TaskResult<T>; running?: Promise<unknown>; calls: number; closed: boolean } = {
+    calls: 0,
+    closed: false
+  };
   const once = async (): Promise<TaskResult<T>> => {
+    if (seen.closed) {
+      return taskFailure<T>(
+        `broker: the write guard started the section after it had returned; it was not run`,
+        'invalid',
+        'after-host-action'
+      );
+    }
     seen.calls++;
     if (seen.calls > 1) {
       return taskFailure<T>(
@@ -136,6 +148,8 @@ async function _guarded<T>(
     return running;
   };
   const outcome: Result<TaskResult<T>> = await captureAsyncResult(() => guard.guard(once));
+  // From here on the turn is ending: a section started now would run outside it.
+  seen.closed = true;
   // A section the guard started but did not wait for still holds the writer: wait for it here.
   if (seen.running !== undefined) {
     await captureAsyncResult(() => seen.running!);

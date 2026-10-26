@@ -113,16 +113,25 @@ export async function createNative(
   ctx: AccessContext,
   input: unknown,
   list: boolean,
-  committedScopes?: ReadonlyArray<ITaskScope>
+  committedScopes?: ReadonlyArray<ITaskScope>,
+  options?: { readonly resume?: boolean; readonly retried?: boolean }
 ): Promise<TaskResult<ITaskMutationResult>> {
   // A creation that finds, inside the writer, that the task went live after it was authorized —
-  // a concurrent identical creation or resume won — commits nothing and runs again, which takes the
-  // existing-record path and its checks against the record as committed.
-  // A live task never becomes absent again, so the second run always takes the existing-record path.
-  const first = await _createOnce(core, ctx, input, list, committedScopes);
-  return first.isSuccess() && first.value === undefined
-    ? createNative(core, ctx, input, list, committedScopes)
-    : first.onSuccess((created) => ok(created!));
+  // a concurrent identical creation or resume won — commits nothing and runs again, once, which
+  // takes the existing-record path and its checks against the record as committed. The repository
+  // is host-supplied, so a second miss is answered rather than retried without bound.
+  const first = await _createOnce(core, ctx, input, list, committedScopes, options?.resume === true);
+  if (first.isSuccess() && first.value === undefined) {
+    return options?.retried === true
+      ? _keptChanging(list ? 'createTaskList' : 'createTracked')
+      : createNative(core, ctx, input, list, committedScopes, { ...options, retried: true });
+  }
+  return first.onSuccess((created) => ok(created!));
+}
+
+/** The answer when an operation kept losing the race it retries. */
+function _keptChanging<T>(what: string): TaskResult<T> {
+  return taskFailure<T>(`${what}: the task kept changing while it was authorized; retry`, 'conflict', 'safe');
 }
 
 /** One authorize-then-commit attempt; `undefined` when the task went live under it and it should run again. */
@@ -131,7 +140,8 @@ async function _createOnce(
   ctx: AccessContext,
   input: unknown,
   list: boolean,
-  committedScopes: ReadonlyArray<ITaskScope> | undefined
+  committedScopes: ReadonlyArray<ITaskScope> | undefined,
+  resume: boolean
 ): Promise<TaskResult<ITaskMutationResult | undefined>> {
   const converted = list
     ? convertRequest<ICreateTrackedTask | ICreateTaskList>(
@@ -176,8 +186,9 @@ async function _createOnce(
   }
   if (existing.value !== undefined) {
     const record: ITaskCommitRecord = existing.value;
+    // A resume answers an unseen task exactly as an id with no pending registration.
     if (!(await ctx.sees(subjectOf(record)))) {
-      return notFound(taskId, operationId);
+      return resume ? _noPending(taskId) : notFound(taskId, operationId);
     }
     if (!isSameCatalog(record.operations[0], operation, ctx.principal, json)) {
       return taskFailure(
@@ -383,7 +394,9 @@ export async function resumeNative(
         : ok(resumable)
     )
     .thenOnSuccess((resumable) =>
-      createNative(core, ctx, resumable.request, resumable.operation === 'create-list', resumable.scopes)
+      createNative(core, ctx, resumable.request, resumable.operation === 'create-list', resumable.scopes, {
+        resume: true
+      })
     );
 }
 
@@ -486,7 +499,8 @@ function _noPending<T>(taskId: TaskId): TaskResult<T> {
 export async function registerExternal(
   core: BrokerCore,
   principal: string,
-  input: unknown
+  input: unknown,
+  retried: boolean = false
 ): Promise<TaskResult<TaskRegistrationResult>> {
   const key = core.converters.broker.principalKey.convert(principal);
   if (key.isFailure()) {
@@ -506,17 +520,14 @@ export async function registerExternal(
       { operationId }
     );
   }
-  const qualified = _qualifyHistory(core, request);
-  if (qualified.isFailure()) {
-    return propagate(qualified);
-  }
   const registered = await _registerExternalOnce(core, key.value, request, converted.value.json);
   if (registered.isFailure()) {
     return propagate(registered);
   }
-  // Went live under it: run again, which finds the live registration and replays it or conflicts.
+  // Went live under it: run again, once, which finds the live registration and replays it or
+  // conflicts; a host-supplied repository that misses it twice is answered, not retried.
   if (registered.value === undefined) {
-    return registerExternal(core, principal, input);
+    return retried ? _keptChanging('registerExternal') : registerExternal(core, principal, input, true);
   }
   const read = await core.repository.read(taskId);
   if (read.isFailure()) {
@@ -555,6 +566,14 @@ async function _registerExternalOnce(
       { operationId }
     );
   }
+  // The source's qualification decided the original registration; its replay is not refused because
+  // the source was detached or its history changed since.
+  if (!replaying) {
+    const qualified = _qualifyHistory(core, request);
+    if (qualified.isFailure()) {
+      return propagate(qualified);
+    }
+  }
   let parent: IRelatedTask | undefined = undefined;
   if (request.parentId !== undefined && !replaying) {
     const read = await readExisting(core, request.parentId);
@@ -577,7 +596,7 @@ async function _registerExternalOnce(
     if (parentNow.isFailure()) {
       return propagate(parentNow);
     }
-    const checkpoint = await _checkpointAgrees(core, writer, request);
+    const checkpoint = replaying ? ok<true>(true) : await _checkpointAgrees(core, writer, request);
     if (checkpoint.isFailure()) {
       return propagate(checkpoint);
     }
