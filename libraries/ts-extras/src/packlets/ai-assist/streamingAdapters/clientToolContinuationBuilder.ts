@@ -86,6 +86,41 @@ interface IToolCallResult {
   readonly args: JsonObject;
   readonly result: string;
   readonly isError: boolean;
+  readonly durationMs: number;
+}
+
+/**
+ * What deciding one client-tool call produced: the result text sent back to the model, whether it
+ * is an error, and whether it ends the turn (only a failing gate does).
+ * @internal
+ */
+interface IDispatchOutcome {
+  readonly result: string;
+  readonly isError: boolean;
+  readonly fatal: boolean;
+}
+
+/**
+ * The result reported for a call that was never dispatched because the turn's signal had aborted.
+ * @internal
+ */
+function abortedOutcome(toolName: string, callId: string | undefined): IDispatchOutcome {
+  return {
+    result: `${toolName} (callId=${callId}): tool not run: the turn was aborted`,
+    isError: true,
+    fatal: false
+  };
+}
+
+const defaultClock = (): number => performance.now();
+
+/**
+ * Reads the signal afresh. A function rather than an inline `signal?.aborted` so the compiler does
+ * not carry a narrowing of `aborted` across an `await`, after which the signal may have changed.
+ * @internal
+ */
+function isAborted(signal: AbortSignal | undefined): boolean {
+  return signal?.aborted === true;
 }
 
 // ============================================================================
@@ -242,7 +277,8 @@ export function buildAnthropicContinuation(
       callId: r.callId,
       args: r.args,
       result: r.result,
-      isError: r.isError
+      isError: r.isError,
+      durationMs: r.durationMs
     }))
   });
 }
@@ -328,7 +364,8 @@ export function buildOpenAiContinuation(
       callId: r.callId,
       args: r.args,
       result: r.result,
-      isError: r.isError
+      isError: r.isError,
+      durationMs: r.durationMs
     }))
   });
 }
@@ -400,7 +437,8 @@ export function buildGeminiContinuation(
       callId: r.callId,
       args: r.args,
       result: r.result,
-      isError: r.isError
+      isError: r.isError,
+      durationMs: r.durationMs
     }))
   };
 }
@@ -564,6 +602,12 @@ export interface IExecuteClientToolTurnParams extends IChatRequest {
    * provider exactly as `IProviderCompletionParams.cache` is on the non-streaming path.
    */
   readonly cache?: IAiCacheRequest;
+  /**
+   * Monotonic clock in milliseconds that each call's
+   * {@link AiAssist.IAiClientToolCallSummary.durationMs} is measured with. Defaults to
+   * `performance.now`; inject one to make timing deterministic in tests.
+   */
+  readonly clock?: () => number;
 }
 
 /**
@@ -619,8 +663,15 @@ export interface IExecuteClientToolTurnResult {
  * - Forwards `text-delta`, `tool-event`, `client-tool-call-start`, and
  *   `client-tool-call-done` events through to the consumer.
  * - For each `client-tool-call-done` event: validates the raw args against the
- *   tool's `parametersSchema`, invokes `execute(typedArgs)`, and emits a
- *   `client-tool-result` event.
+ *   tool's `parametersSchema`, consults `onBeforeToolExecute`, invokes
+ *   `execute(typedArgs)`, and emits a `client-tool-result` event. The call's
+ *   `durationMs` is measured around that dispatch.
+ *
+ * **No dispatch after abort.** `signal` is checked before the gate and again
+ * before `execute`, so once it has aborted no tool starts: the call still gets
+ * its `client-tool-call-done` / `client-tool-result` pair, with an `isError`
+ * result saying the turn was aborted. A tool already running is handed the
+ * signal and may stop early; one that ignores it runs to completion.
  * - After stream completion: builds the per-provider continuation (or
  *   `{ continuation: undefined }` when no tool calls occurred) and resolves
  *   `nextTurn`.
@@ -669,7 +720,8 @@ export function executeClientToolTurn(
     onBeforeToolExecute,
     maxTokens,
     toolConflictPolicy,
-    cache
+    cache,
+    clock = defaultClock
   } = params;
 
   const splitResult = splitChatRequest(system, messages);
@@ -849,6 +901,97 @@ export function executeClientToolTurn(
     resolveNextTurn = resolve;
   });
 
+  // Decides one call's result: validates its args, consults the gate, and runs the tool —
+  // unless the turn's signal has aborted, which is re-checked after every `await` that precedes
+  // `execute`, so a stopped turn never *starts* a tool. Never throws; a gate failure is the one
+  // outcome that ends the turn (`fatal`).
+  async function dispatchCall(
+    toolName: string,
+    callId: string | undefined,
+    args: JsonObject
+  ): Promise<IDispatchOutcome> {
+    const tool = toolsByName.get(toolName);
+    if (!tool) {
+      // A model naming a tool the host never registered is a *model* error, and this
+      // module's taxonomy (see IToolExecutionDecision's remarks) puts model errors on the
+      // continue side: an arg-validation failure, an `execute` failure and a gate `deny`
+      // all yield an isError tool-result and let the model react. Only host-machinery
+      // errors — a gate `fail`/reject — terminate the turn. A model that emits one bad tool
+      // name (for instance, reading a prose trailer in the prompt as a tool) is told and can
+      // try again.
+      //
+      // Safe on the wire: both continuation builders correlate results by call id and
+      // explicitly never by tool name, so an unrecognized name cannot malform the
+      // continuation — the id is the one the model just emitted.
+      return { result: `model called unknown tool: ${toolName}`, isError: true, fatal: false };
+    }
+
+    const validationResult = tool.config.parametersSchema.validate(args);
+    if (validationResult.isFailure()) {
+      return { result: `${toolName} (callId=${callId}): ${validationResult.message}`, isError: true, fatal: false };
+    }
+
+    if (isAborted(signal)) {
+      return abortedOutcome(toolName, callId);
+    }
+
+    // Host gate: run after arg-validation, before execute. A `deny` decision
+    // synthesizes a denial tool-result and continues the turn; a `fail`/reject
+    // from the gate itself is a hard error (mirrors an execute failure), never
+    // a silent deny.
+    if (onBeforeToolExecute !== undefined) {
+      const decisionResult: Result<IToolExecutionDecision> = (
+        await captureAsyncResult(async () => onBeforeToolExecute(tool, validationResult.value))
+      ).onSuccess((decision) => decision);
+
+      if (decisionResult.isFailure()) {
+        return { result: `${toolName} (callId=${callId}): ${decisionResult.message}`, isError: true, fatal: true };
+      }
+
+      if (decisionResult.value.action === 'deny') {
+        return {
+          result: `${toolName} (callId=${callId}): tool execution denied: ${decisionResult.value.reason}`,
+          isError: true,
+          fatal: false
+        };
+      }
+
+      // The gate awaited; the turn may have been stopped while it decided.
+      if (isAborted(signal)) {
+        return abortedOutcome(toolName, callId);
+      }
+    }
+
+    const executeResult = await captureAsyncResult(async () => tool.execute(validationResult.value, { signal }));
+    const executionResult: Result<unknown> = executeResult.isSuccess() ? executeResult.value : executeResult;
+
+    if (executionResult.isFailure()) {
+      return { result: `${toolName} (callId=${callId}): ${executionResult.message}`, isError: true, fatal: false };
+    }
+
+    // JSON.stringify can throw (circular references) or return undefined
+    // (e.g. for a bare `undefined` value, or a value of type `function`).
+    // Either outcome violates the client-tool-result event contract, so
+    // report an isError result with diagnostic context instead.
+    try {
+      const stringified = JSON.stringify(executionResult.value);
+      if (stringified === undefined) {
+        return {
+          result: `${toolName} (callId=${callId}): tool returned a non-serializable value (JSON.stringify produced undefined)`,
+          isError: true,
+          fatal: false
+        };
+      }
+      return { result: stringified, isError: false, fatal: false };
+    } catch (e) {
+      return {
+        result: `${toolName} (callId=${callId}): failed to serialize tool result: ${(e as Error).message}`,
+        isError: true,
+        fatal: false
+      };
+    }
+  }
+
   // The unified-event generator: opens the stream, proxies events, executes tools.
   async function* eventGenerator(): AsyncGenerator<IAiStreamEvent> {
     const streamResult = await streamPromise;
@@ -899,159 +1042,22 @@ export function executeClientToolTurn(
         yield event;
 
         const { toolName, callId, args } = event;
-        const tool = toolsByName.get(toolName);
-
-        if (!tool) {
-          const errMsg = `model called unknown tool: ${toolName}`;
-          const resultEvent: IAiStreamEvent = {
-            type: 'client-tool-result',
-            toolName,
-            callId,
-            result: errMsg,
-            isError: true
-          };
-          yield resultEvent;
-          toolResults.push({ toolName, callId, args, result: errMsg, isError: true });
-          // A model naming a tool the host never registered is a *model* error, and this
-          // module's taxonomy (see IToolExecutionDecision's remarks) puts model errors on the
-          // continue side: an arg-validation failure, an `execute` failure and a gate `deny`
-          // all yield an isError tool-result and let the model react. Only host-machinery
-          // errors — a gate `fail`/reject — terminate the turn. This branch used to terminate,
-          // which cost a recoverable turn: a model that emits one bad tool name (for instance,
-          // reading a prose trailer in the prompt as a tool) ended the stream instead of being
-          // told and trying again.
-          //
-          // Safe on the wire: both continuation builders correlate results by call id and
-          // explicitly never by tool name, so an unrecognized name cannot malform the
-          // continuation — the id is the one the model just emitted.
-          continue;
+        // Timed from here, after the call-done has been handed to the consumer, so the time a
+        // consumer spends between events is never charged to the tool.
+        const startedAt = clock();
+        const outcome = await dispatchCall(toolName, callId, args);
+        const durationMs = Math.max(0, clock() - startedAt);
+        yield { type: 'client-tool-result', toolName, callId, result: outcome.result, isError: outcome.isError };
+        toolResults.push({ toolName, callId, args, result: outcome.result, isError: outcome.isError, durationMs });
+        if (outcome.fatal) {
+          // Gate-fail is a hard, turn-terminating error (unlike a non-fatal `deny`, whose
+          // generator continues). Emit an explicit `error` event so a consumer watching only
+          // `events` sees the fatal failure inline and can distinguish it from a deny — matching
+          // the stream-open / continuation hard-error paths.
+          yield { type: 'error', message: outcome.result };
+          resolveNextTurn(fail(outcome.result));
+          return;
         }
-
-        const validationResult = tool.config.parametersSchema.validate(args);
-        if (validationResult.isFailure()) {
-          const errMsg = `${toolName} (callId=${callId}): ${validationResult.message}`;
-          const resultEvent: IAiStreamEvent = {
-            type: 'client-tool-result',
-            toolName,
-            callId,
-            result: errMsg,
-            isError: true
-          };
-          yield resultEvent;
-          toolResults.push({ toolName, callId, args, result: errMsg, isError: true });
-          continue;
-        }
-
-        // Host gate: run after arg-validation, before execute. A `deny` decision
-        // synthesizes a denial tool-result and continues the turn; a `fail`/reject
-        // from the gate itself is a hard error (mirrors an execute failure), never
-        // a silent deny.
-        if (onBeforeToolExecute !== undefined) {
-          const decisionResult: Result<IToolExecutionDecision> = (
-            await captureAsyncResult(async () => onBeforeToolExecute(tool, validationResult.value))
-          ).onSuccess((decision) => decision);
-
-          if (decisionResult.isFailure()) {
-            const errMsg = `${toolName} (callId=${callId}): ${decisionResult.message}`;
-            const resultEvent: IAiStreamEvent = {
-              type: 'client-tool-result',
-              toolName,
-              callId,
-              result: errMsg,
-              isError: true
-            };
-            yield resultEvent;
-            // Gate-fail is a hard, turn-terminating error (unlike a non-fatal `deny`, whose
-            // generator continues). Emit an explicit `error` event so a consumer watching only
-            // `events` sees the fatal failure inline and can distinguish it from a deny — matching
-            // the stream-open / continuation hard-error paths.
-            yield { type: 'error', message: errMsg };
-            toolResults.push({ toolName, callId, args, result: errMsg, isError: true });
-            resolveNextTurn(fail(errMsg));
-            return;
-          }
-
-          if (decisionResult.value.action === 'deny') {
-            const denialMsg = `${toolName} (callId=${callId}): tool execution denied: ${decisionResult.value.reason}`;
-            const resultEvent: IAiStreamEvent = {
-              type: 'client-tool-result',
-              toolName,
-              callId,
-              result: denialMsg,
-              isError: true
-            };
-            yield resultEvent;
-            toolResults.push({ toolName, callId, args, result: denialMsg, isError: true });
-            continue;
-          }
-        }
-
-        const executeResult = await captureAsyncResult(async () =>
-          tool.execute(validationResult.value, { signal })
-        );
-        const executionResult: Result<unknown> = executeResult.isSuccess()
-          ? executeResult.value
-          : executeResult;
-
-        if (executionResult.isFailure()) {
-          const errMsg = `${toolName} (callId=${callId}): ${executionResult.message}`;
-          const resultEvent: IAiStreamEvent = {
-            type: 'client-tool-result',
-            toolName,
-            callId,
-            result: errMsg,
-            isError: true
-          };
-          yield resultEvent;
-          toolResults.push({ toolName, callId, args, result: errMsg, isError: true });
-          continue;
-        }
-
-        // JSON.stringify can throw (circular references) or return undefined
-        // (e.g. for a bare `undefined` value, or a value of type `function`).
-        // Either outcome violates the client-tool-result event contract, so
-        // emit an isError result with diagnostic context instead.
-        let resultStr: string;
-        try {
-          const stringified = JSON.stringify(executionResult.value);
-          if (stringified === undefined) {
-            const errMsg = `${toolName} (callId=${callId}): tool returned a non-serializable value (JSON.stringify produced undefined)`;
-            const resultEvent: IAiStreamEvent = {
-              type: 'client-tool-result',
-              toolName,
-              callId,
-              result: errMsg,
-              isError: true
-            };
-            yield resultEvent;
-            toolResults.push({ toolName, callId, args, result: errMsg, isError: true });
-            continue;
-          }
-          resultStr = stringified;
-        } catch (e) {
-          const errMsg = `${toolName} (callId=${callId}): failed to serialize tool result: ${
-            (e as Error).message
-          }`;
-          const resultEvent: IAiStreamEvent = {
-            type: 'client-tool-result',
-            toolName,
-            callId,
-            result: errMsg,
-            isError: true
-          };
-          yield resultEvent;
-          toolResults.push({ toolName, callId, args, result: errMsg, isError: true });
-          continue;
-        }
-        const resultEvent: IAiStreamEvent = {
-          type: 'client-tool-result',
-          toolName,
-          callId,
-          result: resultStr,
-          isError: false
-        };
-        yield resultEvent;
-        toolResults.push({ toolName, callId, args, result: resultStr, isError: false });
         continue;
       }
 
