@@ -307,6 +307,35 @@ Findings on `c31307cb2` (probe `s1`, its same-principal narrower-policy case). N
 | **P2-1** the inversion survived on the policy axis: alice's own subscription, same principal and `[alpha]` selectors, under a policy denying only `acknowledge`, ended both obligations (`disposed: 2`) and the real consumer's `pending` became `[]` | `disposeWithheld` also requires the binding's policy to grant **`acknowledge`** for the selection, asked as a scope-only request in the same form as `dispose-obligation`; the same single `not-found-or-denied` otherwise. Only a binding that could have acknowledged these obligations may end them unseen. TSDoc and `CAPABILITIES.md` now say plainly that **the binding's policy decides what counts as withheld** — the checks refuse a binding narrower on principal, selectors or those grants, not one merely narrower about a particular task — so a host should call it only through a binding built with the consumer's own policy; the sentence implying the principal and selector checks alone close the inversion is gone | _the same principal and selectors under a policy that does not grant acknowledge is refused_ (consumer's `pending` and history unchanged); _the grant is asked …_ now checks both requests. Probe `s1`: refused, real consumer still owed `a1:1:0`, `b1:1:0` | I1 (2 tests)      |
 | P3 stale `next()` TSDoc                                                                                                                                                                                                                               | now: an abbreviated candidate is named with only its own update ids; one omitted outright names nothing and the message advises raising `maxChars`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | —                                                                                                                                                                                                                                                            | —                 |
 
+## Review round 5
+
+Round 5 on `3c23d7c54`: no P1 or P2. One doc P3, applied: `TaskAction` and `ITaskAccessRequest`
+(`types/authority.ts`) now document that `acknowledge` and `dispose-obligation` are also asked with
+**no task named**, carrying only the selection's scopes — by `disposeWithheld` (both) and
+`closeSubscription` (`dispose-obligation`) — meaning "may acknowledge / dispose for any task in these
+scopes", and that a policy must never read the missing `task` as a grant. The temporal reference
+"(T7, T8, T9); T5 checks the rest" is gone. `CAPABILITIES.md` carries the same note for policy
+authors. Doc comments only: `etc/ts-agent-tasks.api.md` did not move.
+
+**The five rounds, in one place.**
+
+| Round | What it found                                                                                                                                                                                          | What changed                                                                                                                                                                                                                                                     |
+| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1     | the pump stuck behind current tasks owed nothing; `merged` across roles; sweeps over foreign tasks; foreign `pending` adoption; crash-left receipts reaching further than documented                   | `prepare`'s `'owed-only'` mode; role, kind and scope checks; the start-up recipe; the pump's own frozen record                                                                                                                                                   |
+| 2     | the pump stuck on a revision whose task had left the view (disclosure judged the snapshot, `acknowledge` the current record); the record editable through shared arrays; scope lists compared as lists | disclosure decided now, on `sees` and `acknowledge`, in both modes; `disposeWithheld`; deep-frozen copies; set comparison and up-front scope refusal                                                                                                             |
+| 3     | `disposeWithheld` judged "withheld" under any binding brought, and named hidden tasks by id; the budget failure named other tasks' ids                                                                 | the registering principal, selectors covering the selection and a `dispose-obligation` grant; counts only; the failure names only its candidate. The release question (a foreign-principal binding drains a subscription) answered yes, documented and escalated |
+| 4     | the inversion survived on the policy axis: a same-principal binding whose policy denied only `acknowledge` ended everything                                                                            | a scope-only `acknowledge` grant is required too; the docs say the binding's policy decides what is withheld                                                                                                                                                     |
+| 5     | policy-author documentation of the scope-only form                                                                                                                                                     | this note                                                                                                                                                                                                                                                        |
+
+**Accepted residual (probe `s4`).** A binding built with a policy that grants scope-level
+`acknowledge` and `dispose-obligation` but denies particular tasks can still end those tasks'
+obligations through `disposeWithheld`: the scope-only grants are all the broker can ask about tasks
+it may not show, and it cannot tell a policy that withholds a task for good from one that is merely
+narrower than the consumer's real policy. Documented on `disposeWithheld`, on `ITaskAccessRequest`
+and in `CAPABILITIES.md` (call it only through a binding built with the consumer's own policy).
+Closing it needs a policy-identity token recorded on the subscription and checked at the call —
+future work, not this stream's.
+
 ## Gates
 
 All from the repo root unless noted; logs in `.gate-logs/` in the worktree. Graded by exit code and by
@@ -379,6 +408,17 @@ were re-run (25 tests, exit 0).
 | `rush test` — one unsplit run in the background, `SUCCESS: 38 operations` (+ `typedoc-compact-theme`, no work), 11 min 21 s | 0             | 0         | symlink notice only |
 | `rushx fixlint`, `build` / `lint` / `test` (`ts-agent-tasks`, 2616 tests, 100% all four metrics)                            | 0 / 0 / 0 / 0 | 0         | 0                   |
 | feed `--check`, `verify-capability-docs`, prettier 2.8.8 `--check` on every touched file                                    | 0 / 0 / 0     | —         | —                   |
+
+### Round-5 gates (doc comments only)
+
+| Gate                                                                                                      | Exit      | Fail grep | Warnings            |
+| --------------------------------------------------------------------------------------------------------- | --------- | --------- | ------------------- |
+| `rush change --verify --target-branch origin/integration/agent-tasks-host`                                | 0         | —         | —                   |
+| `rush rebuild` — `SUCCESS: 39 operations`, 4 min 39 s                                                     | 0         | 0         | symlink notice only |
+| `rushx build` / `lint` / `test` (`ts-agent-tasks`, 2616 tests, 100% all four metrics); `api.md` unchanged | 0 / 0 / 0 | 0         | 0                   |
+| feed `--check`, `verify-capability-docs`, prettier 2.8.8 `--check` on every touched file                  | 0 / 0 / 0 | —         | —                   |
+
+No repo-wide `rush test` re-run: no code and no `api.md` moved since round 4's.
 
 ## Not done
 
