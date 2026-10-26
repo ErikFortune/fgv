@@ -149,4 +149,31 @@ The pre-existing fixtures that pinned the old skip shape (`shapes.test.ts` ×2, 
 
 ## Gates
 
-See the gate section appended below after the run.
+Run in the foreground from the repo root on `b7867165b` plus the close-out commit, with logs under the
+worktree's `.gate-logs/`. Errors are counted with `grep -acE 'not met|Operations failed|error TS'`;
+warnings with `grep -aiE warning`.
+
+| gate | exit | errors | warnings |
+|---|---|---|---|
+| `rush install` | 0 | — | — |
+| `rush change --verify --target-branch origin/integration/asks` | 0 | — | — (3 change files found) |
+| `rush rebuild` (`SUCCESS: 39 operations`) | 0 | 0 | only the Git-tracked symlink notice |
+| `rush test` (`SUCCESS: 38 operations`) | 0 | 0 | only the Git-tracked symlink notice |
+| `ts-extras-mcp` `rushx build` / `lint` / `test` | 0 / 0 / 0 | 0 / 0 / 0 | 0 / 0 / 0 |
+| `ts-extras` `rushx build` / `lint` / `test` | 0 / 0 / 0 | 0 / 0 / 0 | 0 / 0 / 0 |
+| `samples/testbed` `rushx build` / `lint` / `test` | 0 / 0 / 0 | 0 / 0 / 0 | 0 / 0 / 0 |
+
+- Coverage is 100% on all four metrics in both libraries.
+- None of the known load-sensitive tests failed, so no package needed a re-run.
+- `rushx fixlint` ran in all three packages before the code commit.
+- `generate-capability-feed.mjs --check` and `verify-capability-docs.mjs` both pass.
+
+**Base drift.** `origin/integration/asks` moved on after kickoff with #755 (`0bcad8465`,
+`ai-assist-client-tool-loop`).
+- A trial merge, aborted afterwards, conflicted only in ledger and feed lines:
+  - `.ai/instructions/LIBRARY_CAPABILITIES.md`
+  - `docs/WORKSTREAMS.md`
+  - `docs/workstreams/2026-10.md`
+  - `libraries/ts-extras/CAPABILITIES.md`
+- `ts-extras.api.md` merged automatically.
+- The gates above ran on this branch alone, not on the combined tree.
