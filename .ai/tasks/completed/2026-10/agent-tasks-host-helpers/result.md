@@ -263,3 +263,22 @@ acceptable, detection is a small change in `_guarded`.
 | `change --verify --target-branch origin/integration/asks` | passes |
 | prettier 2.8.8 | clean |
 | feed `--check` / `verify-capability-docs` | 0 stale / 0 failed |
+
+## Review round 3 (2026-10-26, on `f31cfdc8e`)
+
+No P1s. Each regression test was shown red by reverting exactly that fix in the current source and
+rebuilding (`scratchpad/revert.py r3-*`). Probes: `p7_deferred_guard` now reports the late
+section refused and nothing committed; `p8_loop` answers `conflict` after three outer reads.
+
+| finding | fix | test | red on revert |
+|---|---|---|---|
+| P2-1 a guard that starts the section after returning bypasses the queue | `_guarded` marks the turn closed once the guard settles; a later call to the section is refused unrun (`invalid`); TSDoc says the section must be started before `guard` returns | `a guard that starts the section after it returned gets it refused, unrun, outside any turn` | yes — r3-guard-closed |
+| P3-1 unbounded self-call under a lagging host repository | one retry for `createNative` (`retried` option) and `registerExternal` (`retried` parameter); a second miss is `conflict`, retry `safe` ("kept changing") | `a creation answers conflict after one retry…`, `an external registration answers conflict after one retry…` (the probe repository fails after ten reads, so an unbounded loop fails rather than hangs) | yes — r3-retry-native, r3-retry-external |
+| P3-2 external replay not idempotent once the source changed | `_qualifyHistory` and the in-writer `_checkpointAgrees` are skipped when replaying an identical live registration | `a committed source-replay registration replays after its source is detached` (and a first registration there is still refused) | yes — r3-ext-replay-idempotent |
+| P3-3 `taskScopeKey` / `taskRecordScopes` | marked `@internal`: they exist for sharing between packlets, which may import only the `types` barrel | — | — |
+| P3-4 race loser and sequential resume answered differently | the resume path answers an unseen live task with the same `_noPending` message | resume race tests assert `/^resumePendingRegistration: no pending registration t$/` for the loser | yes — r3-nopending-message (2 red) |
+
+| window | check | act | what re-checks |
+|---|---|---|---|
+| guard returns vs a section it started later | the guard's promise settles | the queue turn ends | the turn is marked closed before it ends; a section started after that is refused unrun |
+| retry after a lost race | the task went live inside the writer | run once more | a second miss is answered `conflict`, never retried again |
