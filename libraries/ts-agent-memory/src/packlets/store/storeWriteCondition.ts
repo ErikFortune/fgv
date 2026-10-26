@@ -49,7 +49,7 @@ export function validateExpectation(
   const allowed: string = allowAbsent
     ? "a non-negative integer seq or 'absent'"
     : 'a non-negative integer seq';
-  return fail(`${label}: expected must be ${allowed} (got ${JSON.stringify(expected) ?? String(expected)})`);
+  return fail(`${label}: expected must be ${allowed} (got ${String(JSON.stringify(expected))})`);
 }
 
 /** What a conditional write compares against: the record's `seq`, or `'absent'`. @internal */

@@ -165,9 +165,9 @@ function childNames(dir: FileTree.IFileTreeDirectoryItem): ReadonlyArray<string>
     .sort();
 }
 
-/** The scope layout at the root: its children, less the store's own seq high-water file. */
+/** The scope layout at the root: its children, less the store's own seq high-water slots. */
 function scopeLayout(root: FileTree.IFileTreeDirectoryItem): ReadonlyArray<string> {
-  return childNames(root).filter((name) => name !== 'memory-store.seq.json');
+  return childNames(root).filter((name) => !/^memory-store\.seq\.[ab]\.json$/.test(name));
 }
 
 describe('FileTreeMemoryStore scopeDecoding', () => {

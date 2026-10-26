@@ -493,15 +493,21 @@ describe('FileTreeMemoryStore conditional writes', () => {
       expect(reservedIn(root, SLOT_B)).toBeGreaterThan(100);
     });
 
-    test('the alternation survives a reopen: the next write takes the lower ceiling', async () => {
-      const root = mutableRoot();
-      root.createChildFile(SLOT_A, slot(300)).orThrow();
-      root.createChildFile(SLOT_B, slot(200)).orThrow();
-      const store = open(root).orThrow();
-      expect(await seqOf(store.put(note('a', 'alpha')))).toBeGreaterThan(300);
-      expect(slotText(root, SLOT_A)).toBe(slot(300));
-      expect(reservedIn(root, SLOT_B)).toBeGreaterThan(300);
-    });
+    test.each([
+      [SLOT_A, 300, SLOT_B, 200],
+      [SLOT_B, 300, SLOT_A, 200]
+    ])(
+      'the alternation survives a reopen: %s at %d is kept, the lower %s at %d is rewritten',
+      async (keep, high, rewrite, low) => {
+        const root = mutableRoot();
+        root.createChildFile(keep, slot(high)).orThrow();
+        root.createChildFile(rewrite, slot(low)).orThrow();
+        const store = open(root).orThrow();
+        expect(await seqOf(store.put(note('a', 'alpha')))).toBeGreaterThan(high);
+        expect(slotText(root, keep)).toBe(slot(high));
+        expect(reservedIn(root, rewrite)).toBeGreaterThan(high);
+      }
+    );
 
     test.each([
       ['one slot, unreadable', [[SLOT_A, slot(-2)]]],
