@@ -87,6 +87,18 @@ interface IKnnRow {
  * the seam for backing a record index and a fragment index with one connection.
  * With {@link SqliteVecVectorIndex.open} this package opens the file itself and
  * hands back a handle carrying the disposer for the connection it created.
+ *
+ * **The embedding identity lives in the file.** Pass `identity` (an opaque string
+ * naming the embedding model) and the index stores it in an ordinary
+ * `fgv_sqlite_vec_meta` table, one row per index table, so it travels with the
+ * vectors through a copy or restore. {@link SqliteVecVectorIndex.identity} compares
+ * it on every call. While the status is `'mismatch'` or `'incomplete'`, `add` and
+ * `query` fail with a message naming the status; `rebuild` is always allowed and is
+ * the remedy. The first `add` to a fresh index creates the table and stores the
+ * identity in one transaction; each fence check shares a transaction with the read
+ * or write it guards. Nothing is deleted automatically. An older version of this
+ * package ignores the meta table entirely, so a file written by it (or rebuilt by
+ * it after a downgrade) carries a row that no longer describes its vectors.
  * @public
  */
 export class SqliteVecVectorIndex implements IVectorIndex {
@@ -316,15 +328,7 @@ export class SqliteVecVectorIndex implements IVectorIndex {
     }
   }
 
-  /**
-   * {@inheritDoc IVectorIndex.add}
-   *
-   * @remarks
-   * Fails while {@link SqliteVecVectorIndex.identity} reports `'mismatch'` or
-   * `'incomplete'`. The first `add` to a fresh index creates the table and stores
-   * the handle's identity in one transaction, so the identity is fixed at the same
-   * moment as the dimension.
-   */
+  /** {@inheritDoc IVectorIndex.add} */
   public add(target: IEdgeTarget, vector: Float32Array): Promise<Result<string>> {
     return Promise.resolve(this._add(target, vector, 'fenced'));
   }
@@ -582,14 +586,7 @@ export class SqliteVecVectorIndex implements IVectorIndex {
     ).onSuccess(() => succeed(true));
   }
 
-  /**
-   * {@inheritDoc IVectorIndex.query}
-   *
-   * @remarks
-   * Fails while {@link SqliteVecVectorIndex.identity} reports `'mismatch'` or
-   * `'incomplete'`. The identity check and the KNN read share one transaction, so
-   * they see the same state of the file.
-   */
+  /** {@inheritDoc IVectorIndex.query} */
   public query(vector: Float32Array, topK: number): Promise<Result<ReadonlyArray<IVectorQueryHit>>> {
     if (this._released) {
       return Promise.resolve(fail('vector index: cannot query: the index has been released'));

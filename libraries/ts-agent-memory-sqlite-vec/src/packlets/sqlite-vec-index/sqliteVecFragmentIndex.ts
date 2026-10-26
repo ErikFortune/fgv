@@ -140,6 +140,18 @@ type FragmentIdentity = Pick<IVectorQueryHit, 'locator' | 'fragmentId'>;
  * the seam for backing this index and a record index with one connection. With
  * {@link SqliteVecFragmentIndex.open} this package opens the file itself and hands
  * back a handle carrying the disposer for the connection it created.
+ *
+ * **The embedding identity lives in the file**, exactly as for
+ * {@link SqliteVecVectorIndex}: pass `identity` and
+ * {@link SqliteVecFragmentIndex.identity} compares it against the row stored for
+ * this table. While the status is `'mismatch'` or `'incomplete'`, `addFragments`
+ * and `query` fail; `rebuild` is always allowed and is the remedy. `rebuild` is not
+ * atomic across its `await`s, but a partial table is detectable: the clear and a
+ * `'rebuilding'` marker commit together, and only a final transaction commits the
+ * identity — so a crash, a `'fail'` rollback, or a final commit that could not be
+ * written all leave `'incomplete'`. A rebuild cannot change the dimension; that
+ * still needs a drop-and-re-index. An older version of this package ignores the
+ * meta table, so a downgrade leaves a row that may no longer describe the vectors.
  * @public
  */
 export class SqliteVecFragmentIndex implements IFragmentVectorIndex {
@@ -381,14 +393,7 @@ export class SqliteVecFragmentIndex implements IFragmentVectorIndex {
     }
   }
 
-  /**
-   * {@inheritDoc IFragmentVectorIndex.addFragments}
-   *
-   * @remarks
-   * Fails while {@link SqliteVecFragmentIndex.identity} reports `'mismatch'` or
-   * `'incomplete'`. The first non-empty add to a fresh index creates the table and
-   * stores the handle's identity in one transaction.
-   */
+  /** {@inheritDoc IFragmentVectorIndex.addFragments} */
   public addFragments(
     target: IEdgeTarget,
     fragments: ReadonlyArray<IEmbeddedFragment>
@@ -546,17 +551,7 @@ export class SqliteVecFragmentIndex implements IFragmentVectorIndex {
     );
   }
 
-  /**
-   * {@inheritDoc IFragmentVectorIndex.rebuild}
-   *
-   * @remarks
-   * Not atomic across its `await`s, but a partial table is detectable: the clear
-   * and a `'rebuilding'` marker commit together, and only a final transaction
-   * commits the handle's identity. Until then {@link SqliteVecFragmentIndex.identity}
-   * reports `'incomplete'` and `addFragments` and `query` are fenced — after a
-   * crash, a `'fail'` rollback, or a final commit that could not be written. A
-   * rebuild cannot change the dimension; that still needs a drop-and-re-index.
-   */
+  /** {@inheritDoc IFragmentVectorIndex.rebuild} */
   public async rebuild(
     source: IMemoryRecordSource,
     embed: FragmentEmbedder,
@@ -673,13 +668,7 @@ export class SqliteVecFragmentIndex implements IFragmentVectorIndex {
     ).onSuccess(() => succeed(true));
   }
 
-  /**
-   * {@inheritDoc IFragmentVectorIndex.query}
-   *
-   * @remarks
-   * Fails while {@link SqliteVecFragmentIndex.identity} reports `'mismatch'` or
-   * `'incomplete'`.
-   */
+  /** {@inheritDoc IFragmentVectorIndex.query} */
   public query(
     vector: Float32Array,
     topK: number,

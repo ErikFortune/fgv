@@ -69,10 +69,8 @@ export class IndexIdentity {
   private readonly _db: BetterSqlite3.Database;
   private readonly _table: string;
   private _tableExists: BetterSqlite3.Statement | undefined;
-  private _readRow: BetterSqlite3.Statement | undefined;
-  private _writeRow: BetterSqlite3.Statement | undefined;
-  private _deleteRow: BetterSqlite3.Statement | undefined;
-  private _completeRow: BetterSqlite3.Statement | undefined;
+  /** The meta table's statements, keyed by their SQL, prepared on first use and kept. */
+  private readonly _prepared: Map<string, BetterSqlite3.Statement>;
 
   /**
    * Prepares only a `sqlite_master` lookup, which works on any connection —
@@ -84,16 +82,14 @@ export class IndexIdentity {
     this._db = db;
     this._table = table;
     this.expected = expected;
+    this._prepared = new Map<string, BetterSqlite3.Statement>();
     this._tableExists = db.prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?");
   }
 
   /** Drops every statement this instance prepared. Idempotent. */
   public release(): void {
     this._tableExists = undefined;
-    this._readRow = undefined;
-    this._writeRow = undefined;
-    this._deleteRow = undefined;
-    this._completeRow = undefined;
+    this._prepared.clear();
   }
 
   /**
@@ -142,8 +138,7 @@ export class IndexIdentity {
   public commitFirstWriteInTransaction(): void {
     if (this.expected === undefined) {
       if (this._exists(META_TABLE)) {
-        this._deleteRow ??= this._db.prepare(`DELETE FROM ${META_TABLE} WHERE table_name = ?`);
-        this._deleteRow.run(this._table);
+        this._statement(`DELETE FROM ${META_TABLE} WHERE table_name = ?`).run(this._table);
       }
       return;
     }
@@ -162,13 +157,13 @@ export class IndexIdentity {
    * overwritten.
    */
   public commitRebuild(): Result<true> {
-    return captureResult(() => {
-      this._completeRow ??= this._db.prepare(
-        `UPDATE ${META_TABLE} SET identity = ?, state = 'complete' ` +
-          `WHERE table_name = ? AND state = 'rebuilding'`
-      );
-      return this._completeRow.run(this.expected ?? null, this._table).changes;
-    }).onSuccess((changes) =>
+    return captureResult(
+      () =>
+        this._statement(
+          `UPDATE ${META_TABLE} SET identity = ?, state = 'complete' ` +
+            `WHERE table_name = ? AND state = 'rebuilding'`
+        ).run(this.expected ?? null, this._table).changes
+    ).onSuccess((changes) =>
       changes === 1
         ? succeed<true>(true)
         : fail(`the rebuild marker for '${this._table}' changed while the rebuild ran`)
@@ -202,7 +197,6 @@ export class IndexIdentity {
     ).onSuccess((adopted) => adopted);
   }
 
-  // eslint-disable-next-line @rushstack/no-new-null -- SQL NULL is the stored form of "no identity"
   private _write(identity: string | null, state: MetaState): void {
     // Lazily, and only here: a read never creates the table, so `open` and
     // `identity()` stay safe on a read-only or consumer-owned connection.
@@ -212,10 +206,9 @@ export class IndexIdentity {
         `state TEXT NOT NULL CHECK (state IN ('complete','rebuilding')), ` +
         `meta_version INTEGER NOT NULL)`
     );
-    this._writeRow ??= this._db.prepare(
+    this._statement(
       `INSERT OR REPLACE INTO ${META_TABLE} (table_name, identity, state, meta_version) VALUES (?, ?, ?, ?)`
-    );
-    this._writeRow.run(this._table, identity, state, META_VERSION);
+    ).run(this._table, identity, state, META_VERSION);
   }
 
   private _readMetaRow(): Result<IMetaRow | undefined> {
@@ -223,10 +216,9 @@ export class IndexIdentity {
       if (!this._exists(META_TABLE)) {
         return undefined;
       }
-      this._readRow ??= this._db.prepare(
+      return this._statement(
         `SELECT identity, state, meta_version FROM ${META_TABLE} WHERE table_name = ?`
-      );
-      return this._readRow.get(this._table);
+      ).get(this._table);
     }).onSuccess((raw) =>
       raw === undefined
         ? succeed(undefined)
@@ -259,6 +251,19 @@ export class IndexIdentity {
       return { status: 'absent' };
     }
     return stored === this.expected ? { status: 'match' } : { status: 'mismatch', stored };
+  }
+
+  /**
+   * The meta-table statement for `sql`, prepared on first use and kept, so a
+   * repeated read or write never prepares a statement nothing retains.
+   */
+  private _statement(sql: string): BetterSqlite3.Statement {
+    let statement: BetterSqlite3.Statement | undefined = this._prepared.get(sql);
+    if (statement === undefined) {
+      statement = this._db.prepare(sql);
+      this._prepared.set(sql, statement);
+    }
+    return statement;
   }
 
   private _exists(name: string): boolean {
