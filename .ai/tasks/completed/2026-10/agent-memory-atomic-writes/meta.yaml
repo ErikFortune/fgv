@@ -61,4 +61,4 @@ relatedStreams:
       id: filetree-atomic-write,
       relationship: 'shipped the ts-json-base atomic-write capability this consumes'
     }
-sourceHash: 308aaebc2511e90d # first 16 hex of sha256 over brief.md, state.md and result.md concatenated in that order
+sourceHash: a88f9be362c61cfa # first 16 hex of sha256 over brief.md, state.md and result.md concatenated in that order
