@@ -209,7 +209,7 @@ markers.*
 <!-- BEGIN GENERATED: recent-additions -->
 
 - **2026-10-26** — A crash mid-write no longer leaves a torn memory record that fails the next open: FileTreeMemoryStore writes atomically wherever… ([#756](https://github.com/ErikFortune/fgv/pull/756)) · `ts-agent-memory` `ts-json-base`
-- **2026-10-26** — An agent-task host can drain a subscription one revision at a time, acknowledging only after its own work commits, and keep a… · `ts-agent-tasks`
+- **2026-10-26** — An agent-task host can drain a subscription one revision at a time, acknowledging only after its own work commits, and keep a… ([#762](https://github.com/ErikFortune/fgv/pull/762)) · `ts-agent-tasks`
 - **2026-10-26** — An agent-task host can open or initialize its repository in the strongest mode its root qualifies for, give its own principal a… ([#758](https://github.com/ErikFortune/fgv/pull/758)) · `ts-agent-tasks`
 - **2026-10-26** — ai-assist can run a whole client-tool conversation: runClientToolLoop caps rounds and honours a deadline and caller abort even when… ([#755](https://github.com/ErikFortune/fgv/pull/755)) · `ts-extras`
 - **2026-10-26** — ICryptoProvider now generates and imports non-extractable HMAC-SHA256 keys itself, and composite ids can split at the first or last… ([#754](https://github.com/ErikFortune/fgv/pull/754)) · `ts-extras` `ts-web-extras` `ts-utils`

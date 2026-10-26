@@ -1,6 +1,6 @@
 # agent-tasks-delivery-and-deferral — the host's delivery and deferral loops
 
-**Shipped**: 2026-10-26 into `integration/agent-tasks-host` via #TBD. Not promoted to `release` with
+**Shipped**: 2026-10-26 into `integration/agent-tasks-host` via #762. Not promoted to `release` with
 the asks batch, per the user's decision of 2026-10-26: the shape may still need revision.
 Package: `@fgv/ts-agent-tasks` (`host` packlet; `broker`, `converters`, `types` for `queryDue`).
 Origin: personaility#698 (fgv-ask), slices B-1 and B-2. Change file typed `minor`

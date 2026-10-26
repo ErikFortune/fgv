@@ -1,7 +1,7 @@
 id: agent-tasks-delivery-and-deferral
 status: shipped
 packages: ['@fgv/ts-agent-tasks']
-prs: [] # TBD — the PR into integration/agent-tasks-host is not open yet
+prs: [762]
 openPrs: []
 opened: 2026-10-26
 closed: 2026-10-26
