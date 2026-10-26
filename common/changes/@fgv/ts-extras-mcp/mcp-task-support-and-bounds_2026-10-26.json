@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "BREAKING: IMcpSkippedTool gains a required kind ('schema' | 'wire' | 'task-support', McpSkipKind), and McpFailureReason gains 'limit-exceeded' ({ limit: 'maxPages' | 'maxTotalMs' }). IMcpToolDescriptor carries the tool's execution.taskSupport as execution?: IMcpToolExecution; adaptMcpTools skips a tool whose taskSupport is 'required' with kind 'task-support'. listMcpTools takes IListMcpToolsOptions with opt-in maxPages and maxTotalMs bounds over the whole paged listing, which fail it as 'limit-exceeded' rather than truncating; adaptMcpTools forwards them via its new discovery option.",
+      "type": "minor",
+      "packageName": "@fgv/ts-extras-mcp"
+    }
+  ],
+  "packageName": "@fgv/ts-extras-mcp",
+  "email": "noreply@anthropic.com"
+}

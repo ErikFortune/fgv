@@ -23,11 +23,12 @@
 /**
  * The headline adapter — discovers an MCP server's tools and adapts each into an
  * `AiAssist.IAiClientTool`, gracefully degrading (Constraint 1) on any tool whose `inputSchema`
- * is outside the JSON Schema subset that `JsonSchema.fromJson` supports.
+ * is outside the JSON Schema subset that `JsonSchema.fromJson` supports, that the target wire
+ * cannot carry, or that requires task-augmented execution.
  * @packageDocumentation
  */
 
-import { type DetailedResult, type Result, succeed, succeedWithDetail } from '@fgv/ts-utils';
+import { type DetailedResult, type Result, succeedWithDetail } from '@fgv/ts-utils';
 import { AiAssist } from '@fgv/ts-extras';
 import { Converters, JsonSchema } from '@fgv/ts-json-base';
 
@@ -37,7 +38,8 @@ import {
   type IMcpSession,
   type IMcpSkippedTool,
   type IMcpToolDescriptor,
-  type McpFailureReason
+  type McpFailureReason,
+  type McpSkipKind
 } from './model';
 import { callMcpTool, listMcpTools } from './operations';
 import { printable } from './request';
@@ -75,10 +77,15 @@ function _makeExecute(
   };
 }
 
+/** The reason recorded for a `'task-support'` skip. */
+const TASK_REQUIRED_REASON: string =
+  "execution.taskSupport is 'required': the tool must be invoked as an MCP task, which this client cannot drive";
+
 /**
- * Adapts a single discovered tool. Returns a `skipped` outcome (never a failure) when the
- * tool's `inputSchema` is not a JSON object, is outside the `JsonSchema.fromJson` subset, or
- * cannot be carried by the target wire (`schemaKeywords`).
+ * Adapts a single discovered tool. Returns a `skipped` outcome (never a failure), with its
+ * {@link McpSkipKind}, when the tool requires task-augmented execution (`'task-support'`, checked
+ * first), when its `inputSchema` is not a JSON object or is outside the `JsonSchema.fromJson` subset
+ * (`'schema'`), or when the target wire cannot carry it (`'wire'`, per `schemaKeywords`).
  */
 function _adaptOne(
   session: IMcpSession,
@@ -86,22 +93,34 @@ function _adaptOne(
   schemaKeywords: JsonSchema.SchemaKeywordCapabilities,
   fromJsonOptions: JsonSchema.IFromJsonOptions
 ): IAdaptOutcome {
-  const { name, description, inputSchema, annotations } = descriptor;
+  const { name, description, inputSchema, annotations, execution } = descriptor;
 
+  const skip = (kind: McpSkipKind, reason: string): IAdaptOutcome => ({
+    kind: 'skipped',
+    skipped: { name, kind, reason, schema: inputSchema }
+  });
+
+  // First: a tool that must run as a task fails every plain call, whatever its schema.
+  if (execution?.taskSupport === 'required') {
+    return skip('task-support', TASK_REQUIRED_REASON);
+  }
+
+  // Two checks, kept apart because each failure names a different skip kind.
   const parsed = Converters.jsonObject
     .convert(inputSchema)
     .withErrorFormat((msg) => `inputSchema is not a JSON object (${msg})`)
-    .onSuccess((asObject) => JsonSchema.fromJson(asObject, fromJsonOptions))
-    .onSuccess((schema) =>
-      // Admission only: the target wire must be able to carry the schema, or one such tool would
-      // fail every request it rides on. The adapted result is discarded — the request path adapts
-      // the schema itself, once, when it is sent.
-      JsonSchema.adaptSchemaKeywords(schema.toJson(), schemaKeywords)
-        .withErrorFormat((msg) => `not sendable on the target wire: ${msg}`)
-        .onSuccess(() => succeed(schema))
-    );
+    .onSuccess((asObject) => JsonSchema.fromJson(asObject, fromJsonOptions));
   if (parsed.isFailure()) {
-    return { kind: 'skipped', skipped: { name, reason: parsed.message, schema: inputSchema } };
+    return skip('schema', parsed.message);
+  }
+  // Admission only: the target wire must be able to carry the schema, or one such tool would fail
+  // every request it rides on. The adapted result is discarded — the request path adapts the schema
+  // itself, once, when it is sent.
+  const sendable = JsonSchema.adaptSchemaKeywords(parsed.value.toJson(), schemaKeywords).withErrorFormat(
+    (msg) => `not sendable on the target wire: ${msg}`
+  );
+  if (sendable.isFailure()) {
+    return skip('wire', sendable.message);
   }
 
   const config: AiAssist.IAiClientToolConfig = {
@@ -141,6 +160,16 @@ function _adaptOne(
  * A tool whose schema uses `pattern` is skipped unless {@link IAdaptMcpToolsOptions.patternValidator}
  * is supplied: a server's pattern is never compiled by this package.
  *
+ * A tool that declares `execution.taskSupport: 'required'` is skipped too, whatever its schema: it
+ * must be invoked as an MCP task, which this client cannot drive, so every plain call to it would
+ * fail. One declaring `'optional'` (or nothing, or `'forbidden'`) is adapted and called normally.
+ *
+ * Every skip carries a {@link McpSkipKind} — `'schema'`, `'wire'` or `'task-support'` — so a caller
+ * branches on why without parsing the reason.
+ *
+ * Discovery runs {@link listMcpTools} with {@link IAdaptMcpToolsOptions.discovery}, so its bounds
+ * (`maxPages`, `maxTotalMs`) and per-page `timeoutMs` and `signal` apply here as well.
+ *
  * The whole catalog never fails on a single bad schema; the only failure mode is an upstream
  * `listMcpTools` error.
  *
@@ -154,7 +183,7 @@ export async function adaptMcpTools(
   session: IMcpSession,
   options?: IAdaptMcpToolsOptions
 ): Promise<DetailedResult<IAdaptMcpToolsResult, McpFailureReason>> {
-  return (await listMcpTools(session))
+  return (await listMcpTools(session, options?.discovery))
     .onSuccess((descriptors) => {
       const tools: AiAssist.IAiClientTool[] = [];
       const skipped: IMcpSkippedTool[] = [];
@@ -173,9 +202,13 @@ export async function adaptMcpTools(
           // The skip warning carries server-supplied text (the tool name, and the raw schema, whose
           // `JSON.stringify` form still leaves DEL, C1 and U+2028/U+2029 raw); the structured
           // `skipped` record is left as the server sent it.
+          const what =
+            outcome.skipped.kind === 'task-support'
+              ? 'it requires task-augmented execution'
+              : 'inputSchema cannot be adapted';
           options?.logger?.warn(
             printable(
-              `mcp: skipping tool '${outcome.skipped.name}': inputSchema cannot be adapted: ` +
+              `mcp: skipping tool '${outcome.skipped.name}': ${what}: ` +
                 `${outcome.skipped.reason}. ` +
                 `Raw schema: ${JSON.stringify(outcome.skipped.schema)}`
             )

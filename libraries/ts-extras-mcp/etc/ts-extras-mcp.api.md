@@ -37,6 +37,7 @@ export function createStdioTransport(params: IMcpStdioTransportParams): Result<I
 
 // @public
 export interface IAdaptMcpToolsOptions {
+    readonly discovery?: IListMcpToolsOptions;
     readonly logger?: Logging.ILogger;
     readonly patternValidator?: JsonSchema.SchemaPatternValidator;
     readonly schemaKeywords?: JsonSchema.SchemaKeywordCapabilities;
@@ -58,6 +59,12 @@ export interface IConnectMcpSessionParams {
     readonly signal?: AbortSignal;
     readonly timeoutMs?: number;
     readonly transport: IMcpTransport;
+}
+
+// @public
+export interface IListMcpToolsOptions extends IMcpRequestOptions {
+    readonly maxPages?: number;
+    readonly maxTotalMs?: number;
 }
 
 // @public
@@ -163,6 +170,7 @@ export interface IMcpSession {
 
 // @public
 export interface IMcpSkippedTool {
+    readonly kind: McpSkipKind;
     readonly name: string;
     readonly reason: string;
     readonly schema: JsonValue;
@@ -203,10 +211,16 @@ export interface IMcpToolCallResult {
 export interface IMcpToolDescriptor {
     readonly annotations?: IMcpToolAnnotations;
     readonly description: string | undefined;
+    readonly execution?: IMcpToolExecution;
     readonly inputSchema: JsonValue;
     readonly name: string;
     readonly outputSchema?: JsonValue;
     readonly title?: string;
+}
+
+// @public
+export interface IMcpToolExecution {
+    readonly taskSupport?: McpTaskSupport;
 }
 
 // @public
@@ -222,7 +236,7 @@ export interface IMcpUnknownBlock {
 }
 
 // @public
-export function listMcpTools(session: IMcpSession, options?: IMcpRequestOptions): Promise<DetailedResult<ReadonlyArray<IMcpToolDescriptor>, McpFailureReason>>;
+export function listMcpTools(session: IMcpSession, options?: IListMcpToolsOptions): Promise<DetailedResult<ReadonlyArray<IMcpToolDescriptor>, McpFailureReason>>;
 
 // @public
 export type McpContentBlock = IMcpTextBlock | IMcpResourceLinkBlock | IMcpEmbeddedTextResourceBlock | IMcpEmbeddedBlobResourceBlock | IMcpImageBlock | IMcpAudioBlock | IMcpUnknownBlock;
@@ -269,13 +283,27 @@ export type McpFailureReason = {
     readonly kind: 'invalid-handle';
 } | {
     readonly kind: 'invalid-options';
+}
+/** `limit` names the listing bound that was exceeded. */
+| {
+    readonly kind: 'limit-exceeded';
+    readonly limit: McpListingLimit;
 };
 
 // @public
 export type McpFetch = (url: string | URL, init?: RequestInit) => Promise<Response>;
 
 // @public
+export type McpListingLimit = 'maxPages' | 'maxTotalMs';
+
+// @public
 export type McpOAuthClientProvider = OAuthClientProvider;
+
+// @public
+export type McpSkipKind = 'schema' | 'wire' | 'task-support';
+
+// @public
+export type McpTaskSupport = 'forbidden' | 'optional' | 'required';
 
 // @public
 export type McpTransportKind = 'stdio' | 'http' | 'custom';

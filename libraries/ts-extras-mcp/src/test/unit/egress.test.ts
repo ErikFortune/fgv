@@ -142,6 +142,37 @@ describe('Streamable-HTTP egress through an injected fetch', () => {
     expect(real.methods).toEqual([]);
   });
 
+  test.each([
+    ['an SSE', false],
+    ['a JSON', true]
+  ])(
+    "a guarded fetch's maxResponseBytes, tripped by %s response, classifies as egress-blocked too-large",
+    async (__label, enableJsonResponse) => {
+      const server = await startRealMcpServer(undefined, { enableJsonResponse });
+      try {
+        const fetch = guardedFetch({ maxResponseBytes: 50 });
+        const result = await connectMcpSession({
+          transport: createHttpTransport({ url: server.url, fetch }).orThrow(),
+          timeoutMs: 5000
+        });
+        expect(result).toFailWithDetail(/connectMcpSession: .*exceeded maxResponseBytes \(50 bytes\)/, {
+          kind: 'egress-blocked',
+          reason: 'too-large'
+        });
+      } finally {
+        await server.stop();
+      }
+    }
+  );
+
+  test("a guarded fetch's maxResponseBytes above every response leaves the session working", async () => {
+    const session = await connectWith(guardedFetch({ maxResponseBytes: 64 * 1024 }));
+    expect(await listMcpTools(session)).toSucceed();
+    expect(await callMcpTool(session, 'echo', {})).toSucceedAndSatisfy((called) => {
+      expect(called.content).toBe('echoed');
+    });
+  });
+
   test('a refusal on a call classifies as egress-blocked, and the session stays usable', async () => {
     let refusing = false;
     const connected = await connectWith(

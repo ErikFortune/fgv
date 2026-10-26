@@ -129,14 +129,14 @@ describe('formatMcpProbeReport', () => {
   test('reports a mixed catalog with identity', () => {
     const result: IAdaptMcpToolsResult = {
       tools: [adaptedTool('alpha')],
-      skipped: [{ name: 'beta', reason: '#/properties/x: pattern', schema: { type: 'object' } }]
+      skipped: [{ name: 'beta', kind: 'schema', reason: '#/properties/x: pattern', schema: { type: 'object' } }]
     };
     const report = formatMcpProbeReport('HTTP http://h/mcp', { name: 'srv', version: '2.0' }, result);
     expect(report).toMatch(/Server: HTTP http:\/\/h\/mcp/);
     expect(report).toMatch(/Identity: srv@2.0/);
     expect(report).toMatch(/2 — 1 adapted, 1 skipped/);
     expect(report).toMatch(/✓ alpha/);
-    expect(report).toMatch(/✗ beta/);
+    expect(report).toMatch(/✗ beta \(schema\)/);
     expect(report).toMatch(/reason: #\/properties\/x: pattern/);
     expect(report).toContain(JSON.stringify({ type: 'object' }));
     expect(report).toMatch(/additively widened/);
@@ -187,29 +187,34 @@ describe('runMcpProbe', () => {
       skipped: [
         {
           name: 'ref_tool',
+          kind: 'schema',
           reason:
             "#/properties/x: unsupported JSON Schema keyword '$ref': '#/$defs/Foo' does not resolve: no '$defs'",
           schema: { type: 'object', properties: { x: { $ref: '#/$defs/Foo' } } }
         },
         {
           name: 'oneof_tool',
+          kind: 'schema',
           reason:
             '#/properties/x: unsupported JSON Schema keyword \'oneOf\' (supported only as exactly one schema plus {"type": "null"})',
           schema: { type: 'object', properties: { x: { oneOf: [] } } }
         },
         {
           name: 'anyof_tool',
+          kind: 'schema',
           reason:
             '#/properties/x: unsupported JSON Schema keyword \'anyOf\' (supported only as exactly one schema plus {"type": "null"})',
           schema: { type: 'object', properties: { x: { anyOf: [] } } }
         },
         {
           name: 'pattern_tool',
+          kind: 'schema',
           reason: "#/properties/code: unsupported JSON Schema keyword 'pattern'",
           schema: { type: 'object', properties: { code: { type: 'string', pattern: '^[A-Z]+$' } } }
         },
         {
           name: 'union_tool',
+          kind: 'schema',
           reason: "#/properties/x: union 'type' arrays are supported only as [<type>, 'null']",
           schema: { type: 'object', properties: { x: { type: ['string', 'number'] } } }
         }

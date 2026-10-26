@@ -29,9 +29,11 @@ import { fail, Logging, succeed, type Result } from '@fgv/ts-utils';
 import { SaferFetch } from '../../..';
 import {
   cancellableStreamOf,
+  erroringStreamOf,
   mockTransport,
   neverResponds,
   respondWith,
+  streamOf,
   utf8,
   type IMockTransport
 } from './mockTransport';
@@ -49,7 +51,7 @@ function guarded(
 }
 
 /** Awaits a guarded call that must reject, and returns its `GuardedFetchError`. */
-async function rejectionOf(call: Promise<Response>): Promise<SaferFetch.GuardedFetchError> {
+async function rejectionOf(call: Promise<unknown>): Promise<SaferFetch.GuardedFetchError> {
   const settled = await call.then(
     () => undefined,
     (err: unknown) => err
@@ -136,11 +138,10 @@ describe('createGuardedFetch', () => {
       );
     });
 
-    test('refuses every option that needs the body read, would retry, or belongs on the call', () => {
+    test('refuses every option that needs the body buffered, would retry, or belongs on the call', () => {
       const withRefused = {
         addressGuard: allowAnyAddress(),
         timeoutMs: 1000,
-        maxResponseBytes: 10,
         responseBodyGuard: { name: 'b', check: async () => succeed(true as const) },
         retry: { attempts: 1 },
         method: 'POST',
@@ -149,7 +150,7 @@ describe('createGuardedFetch', () => {
         signal: new AbortController().signal
       } as unknown as SaferFetch.IGuardedFetchOptions;
       expect(createGuardedFetch(withRefused)).toFailWith(
-        /does not support timeoutMs, maxResponseBytes, responseBodyGuard, retry, method, headers, body, signal/
+        /does not support timeoutMs, responseBodyGuard, retry, method, headers, body, signal: a guarded fetch never buffers the body, sets no deadline over it/
       );
     });
 
@@ -196,6 +197,137 @@ describe('createGuardedFetch', () => {
       // Released, so a refused response does not hold its connection open.
       await new Promise((resolve) => setTimeout(resolve, 0));
       expect(refused.wasCancelled()).toBe(true);
+    });
+  });
+
+  describe('maxResponseBytes (opt-in body cap)', () => {
+    /** Reads a stream to its end, returning the bytes delivered and the error it ended with, if any. */
+    async function drain(body: ReadableStream<Uint8Array>): Promise<{ bytes: number; error: unknown }> {
+      const reader = body.getReader();
+      let bytes: number = 0;
+      for (;;) {
+        const read = await reader.read().then(
+          (r) => ({ r, error: undefined }),
+          (error: unknown) => ({ r: undefined, error })
+        );
+        if (read.r === undefined) {
+          return { bytes, error: read.error };
+        }
+        if (read.r.done) {
+          return { bytes, error: undefined };
+        }
+        bytes += read.r.value.byteLength;
+      }
+    }
+
+    test('is validated at creation: a positive finite number', () => {
+      const base = { addressGuard: allowAnyAddress() };
+      for (const bad of [0, -1, Number.NaN, Number.POSITIVE_INFINITY]) {
+        expect(createGuardedFetch({ ...base, maxResponseBytes: bad })).toFailWith(
+          /maxResponseBytes must be a positive finite number/
+        );
+      }
+      expect(createGuardedFetch({ ...base, maxResponseBytes: 1 })).toSucceed();
+    });
+
+    test('with no cap, the platform response itself is returned', async () => {
+      const response = new Response('abc');
+      const fetch = guarded(respondWith(() => response));
+      expect(await fetch(URL_UNDER_TEST)).toBe(response);
+    });
+
+    test('a body under the cap is delivered whole, with status, status text and headers kept', async () => {
+      const fetch = guarded(
+        respondWith(
+          () =>
+            new Response(streamOf([utf8('abc'), utf8('def')]), {
+              status: 201,
+              statusText: 'Created',
+              headers: { 'content-type': 'text/plain', 'x-extra': '1' }
+            })
+        ),
+        { maxResponseBytes: 10 }
+      );
+      const returned = await fetch(URL_UNDER_TEST);
+      expect(returned.status).toBe(201);
+      expect(returned.statusText).toBe('Created');
+      expect(returned.headers.get('x-extra')).toBe('1');
+      await expect(returned.text()).resolves.toBe('abcdef');
+    });
+
+    test('a body of exactly the cap is delivered whole', async () => {
+      const fetch = guarded(respondWith(() => new Response(streamOf([utf8('abc'), utf8('def')]))), {
+        maxResponseBytes: 6
+      });
+      await expect((await fetch(URL_UNDER_TEST)).text()).resolves.toBe('abcdef');
+    });
+
+    test('the chunk that passes the cap is withheld; the upstream is cancelled and the stream errors too-large', async () => {
+      const upstream = cancellableStreamOf([utf8('abcd'), utf8('efgh'), utf8('ijkl')]);
+      const fetch = guarded(respondWith(() => new Response(upstream.stream)), { maxResponseBytes: 6 });
+      const returned = await fetch(URL_UNDER_TEST);
+      const { bytes, error } = await drain(returned.body!);
+      // Only the first chunk: the second would have taken the count to 8.
+      expect(bytes).toBe(4);
+      expect(error).toBeInstanceOf(GuardedFetchError);
+      const tooLarge = error as SaferFetch.GuardedFetchError;
+      expect(tooLarge.reason).toEqual({ kind: 'too-large', bytesRead: 8, limit: 6 });
+      expect(tooLarge.message).toMatch(/too-large: the response body exceeded maxResponseBytes \(6 bytes\)/);
+      expect(upstream.wasCancelled()).toBe(true);
+    });
+
+    test('a lying Content-Length under the cap does not help: the count trips, and the claim is carried', async () => {
+      const fetch = guarded(
+        respondWith(
+          () =>
+            new Response(streamOf([utf8('0123456789')]), {
+              headers: { 'content-length': '3' }
+            })
+        ),
+        { maxResponseBytes: 5 }
+      );
+      const error = await rejectionOf((await fetch(URL_UNDER_TEST)).text());
+      expect(error.reason).toEqual({ kind: 'too-large', bytesRead: 10, limit: 5, declared: 3 });
+    });
+
+    test('a Content-Length over the cap is refused before the response is returned, and the body released', async () => {
+      const upstream = cancellableStreamOf([utf8('never read')]);
+      const fetch = guarded(
+        respondWith(() => new Response(upstream.stream, { headers: { 'content-length': '100' } })),
+        { maxResponseBytes: 10 }
+      );
+      const error = await rejectionOf(fetch(URL_UNDER_TEST));
+      expect(error.reason).toEqual({ kind: 'too-large', bytesRead: 0, limit: 10, declared: 100 });
+      expect(error.message).toMatch(/maxResponseBytes \(10 bytes\)/);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(upstream.wasCancelled()).toBe(true);
+    });
+
+    test('a response with no body is returned unchanged', async () => {
+      const response = new Response(null, { status: 204 });
+      const fetch = guarded(
+        respondWith(() => response),
+        { maxResponseBytes: 10 }
+      );
+      expect(await fetch(URL_UNDER_TEST)).toBe(response);
+    });
+
+    test("the caller's cancel reaches the upstream body", async () => {
+      const upstream = cancellableStreamOf([utf8('abc')]);
+      const fetch = guarded(respondWith(() => new Response(upstream.stream)), { maxResponseBytes: 10 });
+      const returned = await fetch(URL_UNDER_TEST);
+      await returned.body!.cancel('done with it');
+      expect(upstream.wasCancelled()).toBe(true);
+    });
+
+    test('an upstream read failure errors the capped stream with the same error', async () => {
+      const broken = new TypeError('terminated');
+      const fetch = guarded(respondWith(() => new Response(erroringStreamOf([utf8('ab')], broken))), {
+        maxResponseBytes: 10
+      });
+      const { bytes, error } = await drain((await fetch(URL_UNDER_TEST)).body!);
+      expect(bytes).toBe(2);
+      expect(error).toBe(broken);
     });
   });
 
@@ -674,6 +806,25 @@ describe('createGuardedFetch', () => {
       });
       server = createServer((req: IncomingMessage, res: ServerResponse) => {
         res.on('close', () => markClosed());
+        if (req.url === '/big' || req.url === '/exact' || req.url === '/declared') {
+          // `/big` sends 3 KiB, then holds the rest until the test calls `finish` — which the cap
+          // tests never do, so any failure they see arrived before the whole body could have.
+          // `/exact` sends exactly 3 KiB and ends; `/declared` declares 10 KiB up front.
+          res.writeHead(200, {
+            'content-type': 'application/octet-stream',
+            ...(req.url === '/declared' ? { 'content-length': String(10 * 1024) } : {})
+          });
+          const kib = Buffer.alloc(1024, 0x61);
+          res.write(kib);
+          res.write(kib);
+          if (req.url === '/exact') {
+            res.end(kib);
+            return;
+          }
+          res.write(kib);
+          finished.then(() => res.end(Buffer.alloc(7 * 1024, 0x62))).catch(() => undefined);
+          return;
+        }
         res.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-cache' });
         res.write('data: first\n\n');
         if (req.url === '/slow') {
@@ -727,6 +878,31 @@ describe('createGuardedFetch', () => {
       await expect(readChunk(reader)).resolves.toBe('data: first\n\n');
       controller.abort();
       await expect(reader.read()).rejects.toBeDefined();
+      await clientClosed;
+    });
+
+    test('maxResponseBytes errors the body before the whole of it is delivered, and releases the connection', async () => {
+      const fetch = createGuardedFetch({ addressGuard: allowAnyAddress(), maxResponseBytes: 2500 }).orThrow();
+      const response = await fetch(`${baseUrl}/big`);
+      // The server is still holding the last 7 KiB: it sends them only on `finish`, never called here.
+      const error = await rejectionOf(response.arrayBuffer());
+      expect(error.reason).toEqual(expect.objectContaining({ kind: 'too-large', limit: 2500 }));
+      expect(error.message).toMatch(/maxResponseBytes \(2500 bytes\)/);
+      await clientClosed;
+    });
+
+    test('maxResponseBytes delivers a body of exactly the cap whole, keeping the url', async () => {
+      const fetch = createGuardedFetch({ addressGuard: allowAnyAddress(), maxResponseBytes: 3 * 1024 }).orThrow();
+      const response = await fetch(`${baseUrl}/exact`);
+      expect(response.url).toBe(`${baseUrl}/exact`);
+      expect(response.redirected).toBe(false);
+      expect((await response.arrayBuffer()).byteLength).toBe(3 * 1024);
+    });
+
+    test('maxResponseBytes refuses a declared Content-Length over the cap and releases the connection', async () => {
+      const fetch = createGuardedFetch({ addressGuard: allowAnyAddress(), maxResponseBytes: 4096 }).orThrow();
+      const error = await rejectionOf(fetch(`${baseUrl}/declared`));
+      expect(error.reason).toEqual({ kind: 'too-large', bytesRead: 0, limit: 4096, declared: 10 * 1024 });
       await clientClosed;
     });
 

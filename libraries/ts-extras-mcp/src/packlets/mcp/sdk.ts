@@ -112,6 +112,8 @@ export interface ISdkToolDescriptor {
   readonly annotations?: unknown;
   /** The tool's declared output schema (untrusted; validated by the operations layer). */
   readonly outputSchema?: unknown;
+  /** Raw MCP `Tool.execution` (untrusted; validated/normalized by the operations layer). */
+  readonly execution?: unknown;
 }
 
 /**
