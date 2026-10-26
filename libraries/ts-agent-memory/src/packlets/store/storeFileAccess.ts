@@ -244,14 +244,29 @@ export function writeRecordFile(
   idStem: string,
   raw: string
 ): Result<true> {
-  const fileName: string = `${idStem}${MEMORY_FILE_EXTENSION}`;
   return writer
     .checkWritable()
     .onSuccess(() => ensureScopeDir(root, scopes, scope))
-    .onSuccess((scopeDir) =>
+    .onSuccess((scopeDir) => writeStoreFile(scopeDir, writer, `${idStem}${MEMORY_FILE_EXTENSION}`, raw));
+}
+
+/**
+ * Write (create or overwrite) `fileName` in `dir` with `raw`, atomically when the writer does — the
+ * same contract as {@link writeRecordFile}, for a file the caller has already placed.
+ * @internal
+ */
+export function writeStoreFile(
+  dir: FileTree.IMutableFileTreeDirectoryItem,
+  writer: IRecordWriter,
+  fileName: string,
+  raw: string
+): Result<true> {
+  return writer
+    .checkWritable()
+    .onSuccess(() =>
       writer.guarantee === undefined
-        ? writePlain(scopeDir, fileName, raw)
-        : writeAtomic(scopeDir, fileName, raw, writer.guarantee, writer)
+        ? writePlain(dir, fileName, raw)
+        : writeAtomic(dir, fileName, raw, writer.guarantee, writer)
     );
 }
 
@@ -406,7 +421,9 @@ export interface ISweepReport {
  * @remarks
  * A directory with no record file is not swept: the root and intermediate directories never hold
  * records, and a scope directory whose only content is an interrupted first write is swept by a
- * later open, once it holds a record. The working file is harmless meanwhile.
+ * later open, once it holds a record. The working file is harmless meanwhile. That includes one an
+ * interrupted write of the root's seq high-water file leaves at the root, which is never swept:
+ * nothing reads it, and sweeping the root would sweep a directory the store does not otherwise own.
  * @internal
  */
 export function sweepAtomicTemporaries(root: FileTree.IFileTreeDirectoryItem): ISweepReport {

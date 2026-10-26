@@ -26,6 +26,9 @@ export type AdmissionDecision = {
 };
 
 // @public
+export const allMemoryWriteFailureCodes: ReadonlyArray<MemoryWriteFailureCode>;
+
+// @public
 export class AsOfRetriever implements IMemoryRetriever {
     get capabilities(): IMemoryRetrieverCapabilities;
     static create(params: IRetrieverCreateParams): Result<AsOfRetriever>;
@@ -128,7 +131,7 @@ export class FileTreeMemoryStore implements IMemoryStore {
     coverage(): Promise<Result<IDerivedStateCoverage>>;
     static create(params: IFileTreeMemoryStoreCreateParams): Result<FileTreeMemoryStore>;
     dedupScopeFor(kind: Kind): DedupScope;
-    delete(kind: Kind, entityId: EntityId): Promise<Result<MemoryId>>;
+    delete(kind: Kind, entityId: EntityId, options?: IMemoryDeleteOptions): Promise<MemoryWriteResult<MemoryId>>;
     dispose(): void;
     get durability(): IMemoryStoreDurability;
     embedsKind(kind: Kind): boolean;
@@ -137,7 +140,7 @@ export class FileTreeMemoryStore implements IMemoryStore {
     list(selection: MemoryListSelection): Promise<Result<ReadonlyArray<IMemoryRecord<unknown>>>>;
     listEntries(): Promise<Result<ReadonlyArray<IIndexedMemoryEntry>>>;
     listScoped(): Promise<Result<ReadonlyArray<IScopedMemoryRecord>>>;
-    put(record: IMemoryRecord<unknown>): Promise<Result<IMemoryRecord<unknown>>>;
+    put(record: IMemoryRecord<unknown>, options?: IMemoryWriteOptions): Promise<MemoryWriteResult<IMemoryRecord<unknown>>>;
     reconcile(kind: Kind, artifact: DerivedArtifact): Promise<Result<ReconcileReport>>;
     resolveIdentity(kind: Kind, entityId: EntityId): Result<IIdentityCodecResult>;
     resolveRecord(scope: MemoryScopeKey, id: MemoryId): Result<IMemoryRecord<unknown> | undefined>;
@@ -423,6 +426,7 @@ export interface IIndexedMemoryRecord {
 // @public
 export interface IIngestedRecordResult {
     readonly candidate: ICandidateRecord;
+    readonly conflict?: IMemoryWriteConflict;
     readonly disposition: IngestDisposition;
     readonly edges: ReadonlyArray<ICandidateEdge>;
     readonly id: MemoryId;
@@ -462,6 +466,11 @@ export interface IMemoryClassification {
 // @public
 export interface IMemoryClassifier {
     classify(item: IIngestItem): Promise<Result<IMemoryClassification>>;
+}
+
+// @public
+export interface IMemoryDeleteOptions {
+    readonly expected?: number;
 }
 
 // @public
@@ -622,7 +631,7 @@ export interface IMemoryStore extends IMemoryRecordResolver, IIdentityResolver {
     asRecordSource(): IMemoryRecordSource;
     coverage(): Promise<Result<IDerivedStateCoverage>>;
     dedupScopeFor(kind: Kind): DedupScope;
-    delete(kind: Kind, entityId: EntityId): Promise<Result<MemoryId>>;
+    delete(kind: Kind, entityId: EntityId, options?: IMemoryDeleteOptions): Promise<MemoryWriteResult<MemoryId>>;
     dispose?(): void;
     embedsKind(kind: Kind): boolean;
     get(kind: Kind, entityId: EntityId): Promise<Result<IMemoryRecord<unknown> | undefined>>;
@@ -630,7 +639,7 @@ export interface IMemoryStore extends IMemoryRecordResolver, IIdentityResolver {
     list(selection: MemoryListSelection): Promise<Result<ReadonlyArray<IMemoryRecord<unknown>>>>;
     listEntries(): Promise<Result<ReadonlyArray<IIndexedMemoryEntry>>>;
     listScoped(): Promise<Result<ReadonlyArray<IScopedMemoryRecord>>>;
-    put(record: IMemoryRecord<unknown>): Promise<Result<IMemoryRecord<unknown>>>;
+    put(record: IMemoryRecord<unknown>, options?: IMemoryWriteOptions): Promise<MemoryWriteResult<IMemoryRecord<unknown>>>;
     reconcile(kind: Kind, artifact: DerivedArtifact): Promise<Result<ReconcileReport>>;
 }
 
@@ -672,6 +681,30 @@ export interface IMemoryToolResultItem extends IMemoryToolItemProjection {
 }
 
 // @public
+export interface IMemoryWriteConflict {
+    // (undocumented)
+    readonly code: 'conflict';
+    // (undocumented)
+    readonly current: MemoryWriteExpectation;
+    // (undocumented)
+    readonly expected: MemoryWriteExpectation;
+}
+
+// @public
+export interface IMemoryWriteError {
+    // (undocumented)
+    readonly code: Exclude<MemoryWriteFailureCode, 'conflict'>;
+}
+
+// @public
+export type IMemoryWriteFailure = IMemoryWriteConflict | IMemoryWriteError;
+
+// @public
+export interface IMemoryWriteOptions {
+    readonly expected?: MemoryWriteExpectation;
+}
+
+// @public
 export interface IMemoryWriteResult {
     readonly entityId: EntityId;
     readonly id: MemoryId;
@@ -689,7 +722,7 @@ export interface IMergeStrategy {
 export function indexedRecordMatchesQuery(entry: IIndexedMemoryEntry, query: IMemoryQuery): boolean;
 
 // @public
-export type IngestDisposition = 'written' | 'deduped' | 'merged';
+export type IngestDisposition = 'written' | 'deduped' | 'merged' | 'conflict';
 
 // @public
 export class InMemoryCosineIndex implements IVectorIndex {
@@ -1025,7 +1058,16 @@ export type MemoryScopeKey = Brand<string, 'MemoryScopeKey'>;
 export type MemoryToolName = 'memory_write' | 'memory_read' | 'memory_search' | 'memory_context' | 'memory_delete';
 
 // @public
+export type MemoryWriteExpectation = number | 'absent';
+
+// @public
+export type MemoryWriteFailureCode = 'conflict' | 'invalid' | 'rejected' | 'not-found' | 'io';
+
+// @public
 export type MemoryWriteOutcome = 'written' | 'deduped';
+
+// @public
+export type MemoryWriteResult<T> = DetailedResult<T, IMemoryWriteFailure>;
 
 // @public
 export class MtmIdentityCodec implements IIdentityCodec {
@@ -1182,6 +1224,10 @@ export class TemporalVersionedPolicy implements IWritePolicy {
 
 // @public
 export type VectorRebuildErrorMode = 'skip' | 'fail';
+
+// Warnings were encountered during analysis:
+//
+// src/packlets/store/fileTreeMemoryStore.ts:831:3 - (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-agent-memory" does not have an export "ObservationFanout"
 
 // (No @packageDocumentation comment for this package)
 

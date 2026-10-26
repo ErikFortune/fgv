@@ -19,6 +19,7 @@ import { IMemoryRecordSource, IScopedMemoryRecord } from '../vector';
 import { MemoryListSelection } from './listSelection';
 import { IDerivedStateCoverage } from './coverage';
 import { DerivedArtifact, ReconcileReport } from './reconcile';
+import { IMemoryDeleteOptions, IMemoryWriteOptions, MemoryWriteResult } from './writeFailure';
 
 /**
  * The writable, FileTree-backed, content-hash-deduped memory store.
@@ -210,8 +211,31 @@ export interface IMemoryStore extends IMemoryRecordResolver, IIdentityResolver {
    * transaction-time metadata (`created` / `updated` / `seq` / `contentHash`),
    * writes the file, and patches the index. Returns the written record — or the
    * existing record unchanged on a dedup no-op.
+   *
+   * @remarks
+   * **Conditional write.** With {@link IMemoryWriteOptions.expected | options.expected} the write
+   * goes ahead only if the address still holds what the caller read — the record's `envelope.seq`
+   * (for a versioned kind, the current version's), or `'absent'` for nothing. A mismatch fails with
+   * `code: 'conflict'` and the `seq` found, and writes nothing. The check runs under the store's
+   * write lock, after the address is resolved and **before dedup**, so a dedup no-op can never mask
+   * a conflict.
+   *
+   * `seq` is the token because the store issues it strictly increasing and never twice — a
+   * persisted high-water mark carries it across restarts, including one that follows deleting the
+   * highest record. `contentHash` is not: it excludes tags and provenance and can recur. A rewrite
+   * of derived state (a reconcile restamp of `rank` or `embeddingRef`, a version invalidation)
+   * keeps `seq`, and is recomputed by any write that follows, so it cannot lose a caller's update.
+   *
+   * **In-process only.** The guarantee holds among writers sharing one store instance per root,
+   * which the store's single-writer guard enforces within a process. It is not fencing; a second
+   * process over the same storage is outside it.
+   *
+   * Every failure carries an {@link IMemoryWriteFailure}; `.asResult` drops it for plain chaining.
    */
-  put(record: IMemoryRecord<unknown>): Promise<Result<IMemoryRecord<unknown>>>;
+  put(
+    record: IMemoryRecord<unknown>,
+    options?: IMemoryWriteOptions
+  ): Promise<MemoryWriteResult<IMemoryRecord<unknown>>>;
 
   /**
    * Repair one derived artifact for one {@link Kind} — **targeted and
@@ -257,8 +281,19 @@ export interface IMemoryStore extends IMemoryRecordResolver, IIdentityResolver {
    * (versioned) kinds SOFT-delete: the current version is invalidated
    * (`invalid_at` set), history is retained, and the invalidated version's
    * {@link MemoryId} is returned.
+   *
+   * @remarks
+   * With {@link IMemoryDeleteOptions.expected | options.expected} the delete goes ahead only if the
+   * record (the current version, for a versioned kind) still carries that `seq`; otherwise it fails
+   * with `code: 'conflict'`, `current: 'absent'` when the record has gone. Same placement and the
+   * same in-process guarantee as {@link IMemoryStore.put}. Without it, an absent record fails with
+   * `code: 'not-found'`.
    */
-  delete(kind: Kind, entityId: EntityId): Promise<Result<MemoryId>>;
+  delete(
+    kind: Kind,
+    entityId: EntityId,
+    options?: IMemoryDeleteOptions
+  ): Promise<MemoryWriteResult<MemoryId>>;
 
   /**
    * Release whatever exclusive hold the store has on its storage, so another store may open it.
