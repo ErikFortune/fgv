@@ -391,6 +391,53 @@ describe('runClientToolLoop', () => {
       });
     });
 
+    test.each([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12])(
+      'a deadline that fires %p microtasks after a round settles is never followed by that round reaching the observer',
+      async (depth) => {
+        const timer = manualTimer();
+        const log: string[] = [];
+        let reads = 0;
+        const clock = (): number => {
+          reads += 1;
+          if (reads === 2) {
+            // The round's last clock read, just before its work settles.
+            let hop = (): void => {
+              log.push('stop');
+              timer.fire();
+            };
+            for (let i = 0; i < depth; i++) {
+              const next = hop;
+              hop = (): void => queueMicrotask(next);
+            }
+            queueMicrotask(hop);
+          }
+          return reads;
+        };
+        queueSse(anthropicTextSse('done'));
+        const result = await runClientToolLoop(
+          baseParams({
+            clock,
+            deadlineMs: 1000,
+            schedule: timer.schedule,
+            observer: { round: () => log.push('round') }
+          })
+        );
+        expect(result).toSucceedAndSatisfy((outcome) => {
+          // Whichever was observed first, the outcome agrees with the observer.
+          if (log[0] === 'round') {
+            expect(outcome.rounds).toHaveLength(1);
+          } else {
+            expect(outcome).toEqual({ state: 'deadline', rounds: [] });
+          }
+        });
+        for (let i = 0; i < 20; i++) {
+          await Promise.resolve();
+        }
+        // Nothing reaches the observer once the stop has fired.
+        expect(log.slice(log.indexOf('stop'))).not.toContain('round');
+      }
+    );
+
     test('a deadline that fires after the loop settled changes nothing', async () => {
       const timer = manualTimer();
       const rounds: number[] = [];
