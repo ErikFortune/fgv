@@ -201,6 +201,11 @@ export interface ITaskSubscriptionSpecification {
  */
 export interface ITaskSubscription extends ITaskSubscriptionSpecification {
   readonly id: SubscriptionId;
+  /**
+   * The principal that registered the subscription. Only a binding for this principal, whose
+   * selectors cover the whole selection, may {@link IBoundTaskDelivery.disposeWithheld}.
+   */
+  readonly principalKey: string;
   readonly state: TaskSubscriptionState;
   readonly recordRevision: number;
   readonly createdAt: Instant;
@@ -512,6 +517,15 @@ export interface ITaskPrepareOptions {
  */
 export interface IBoundTaskDelivery {
   readonly subscriptionId: SubscriptionId;
+  /**
+   * One page of what this subscription is owed, as this principal may be shown it now: an update is
+   * listed only when its task's committed record is one the principal may see and acknowledge; the
+   * rest are counted in `withheld`.
+   *
+   * @remarks
+   * Fails `conflict`, retry `safe`, when a task it decided on, or the policy epoch, moved before it
+   * answered — so a page never mixes two states. Retry the same call.
+   */
   pending(request?: {
     readonly limit?: number;
     readonly cursor?: PageCursor;
@@ -550,13 +564,25 @@ export interface IBoundTaskDelivery {
    * `limit` (default and maximum 200) per call.
    *
    * @remarks
-   * Authorized by the subscription's ownership, which binding the delivery proved, not by visibility:
-   * an obligation the principal can never be shown could otherwise never end, and would hold its
-   * task's archive for good. It discloses nothing but the ids the subscription already holds. Each id
-   * is decided on its task's committed record, and the writer section re-reads every such record and
-   * the policy epoch before it commits, so an id that became visible meanwhile is not ended. An id an
-   * unexpired issued receipt names is reported in `pinned` rather than ended. `more` says the limit
-   * stopped it.
+   * Not authorized per task — an obligation the principal can never be shown could otherwise never
+   * end, and would hold its task's archive for good — but by the subscription as a whole, and only
+   * when all three hold: the binding's principal is the one that registered the subscription; every
+   * scope of the subscription's selection lies within the binding's selectors (the rule `subscribe`
+   * applied); and the policy grants `dispose-obligation` asked for those scopes, with no task named.
+   * Each refusal is the same `not-found-or-denied`. Without the first two, "withheld" would be judged
+   * under whatever binding a caller brought, and the narrower that binding the more it could end.
+   *
+   * A binding for another principal (a host-registered subscription an agent drains) cannot use this;
+   * the registering principal can, and its own view decides what is withheld from it.
+   *
+   * It answers **counts only**. An update id embeds its task id and revision, so a list of the ids
+   * ended would disclose the identity of tasks the principal may not read; the exact ids stay in the
+   * subscription's history, for the trusted host to read through the repository.
+   *
+   * Each id is decided on its task's committed record, and the writer section re-reads every such
+   * record and the policy epoch before it commits, so an id that became visible meanwhile is not
+   * ended. An id an unexpired issued receipt names is counted in `pinned` rather than ended. `more`
+   * says the limit stopped it. Fails `conflict`, retry `safe`, when what it decided kept moving.
    */
   disposeWithheld(request: IDisposeWithheldRequest): Promise<TaskResult<ITaskWithheldDisposal>>;
 }
@@ -576,10 +602,10 @@ export interface IDisposeWithheldRequest {
  */
 export interface ITaskWithheldDisposal {
   readonly subscriptionId: SubscriptionId;
-  /** The withheld ids this call ended. */
-  readonly disposed: ReadonlyArray<UpdateId>;
-  /** Withheld ids an unexpired issued receipt still names: left owed. */
-  readonly pinned: ReadonlyArray<UpdateId>;
+  /** How many withheld obligations this call ended. */
+  readonly disposed: number;
+  /** How many withheld obligations an unexpired issued receipt still names: left owed. */
+  readonly pinned: number;
   /** Whether more withheld ids remain past `limit`. */
   readonly more: boolean;
 }

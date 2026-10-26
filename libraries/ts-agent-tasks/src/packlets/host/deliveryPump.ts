@@ -118,9 +118,6 @@ export interface ITaskDeliveryDischarge {
 /** How many times `next` reads its one-update probe when the read is refused as safe to retry. */
 const _probeAttempts: number = 3;
 
-/** How many owed ids a budget failure names. */
-const _namedOnFailure: number = 20;
-
 /** `value`, frozen all the way down. */
 function _deepFrozen<T>(value: T): T {
   if (typeof value === 'object' && value !== null && !Object.isFrozen(value)) {
@@ -456,20 +453,29 @@ export class TaskDeliveryPump {
 
   /**
    * Why nothing could be delivered although something visible is owed: the owed candidate did not fit
-   * the text budget. Names the ids on the first page of what is owed, for a host that disposes of them.
+   * the text budget. Names only that candidate's update ids — never other tasks' — so a host acting on
+   * the message ends nothing but the revision that could not be delivered.
    */
   private async _undeliverable(rendered: ITaskContextEntry | undefined): Promise<string> {
-    const what: string =
-      rendered === undefined
-        ? 'an owed revision does not fit the render budget'
-        : `${rendered.summary.envelope.id}@${rendered.summary.envelope.revision} renders abbreviated`;
-    const page = await this._delivery.pending({ limit: _namedOnFailure });
-    const named: string = page.isSuccess()
-      ? page.value.updates.map((update) => update.id).join(', ')
-      : `(owed ids unreadable: ${page.message})`;
+    if (rendered === undefined) {
+      // Omitted outright: the render names no candidate, so there is nothing to name.
+      return (
+        'delivery pump: an owed revision does not fit the render budget even as a reference; it cannot ' +
+        'be delivered within this budget — raise maxChars'
+      );
+    }
+    const { id, revision } = rendered.summary.envelope;
+    // Read to the end: a revision's updates are not assumed to be contiguous in the listing.
+    const owed: Result<ReadonlyArray<ITaskUpdate>> = await this._owedUntil(() => false);
+    const named: string = owed.isSuccess()
+      ? owed.value
+          .filter((update) => update.taskId === id && update.revision === revision)
+          .map((update) => update.id)
+          .join(', ')
+      : `(unreadable: ${owed.message})`;
     return (
-      `delivery pump: ${what}; it cannot be delivered within this budget — raise maxChars or dispose of ` +
-      `it. Owed: ${named}`
+      `delivery pump: ${id}@${revision} renders abbreviated; it cannot be delivered within this budget — ` +
+      `raise maxChars or dispose of its updates: ${named}`
     );
   }
 

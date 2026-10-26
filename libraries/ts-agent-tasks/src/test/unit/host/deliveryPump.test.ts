@@ -325,7 +325,7 @@ describe('TaskDeliveryPump', () => {
       })
     ).orThrow();
     expect(await tiny.next()).toFailWith(
-      /t1@1 renders abbreviated; it cannot be delivered within this budget .* Owed: t1:1:0/
+      /t1@1 renders abbreviated; it cannot be delivered within this budget .* dispose of its updates: t1:1:0$/
     );
     expect(await tiny.delivery.issued()).toSucceedWith([]);
     expect(await owed(h)).toHaveLength(1);

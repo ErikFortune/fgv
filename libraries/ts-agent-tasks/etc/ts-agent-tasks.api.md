@@ -458,7 +458,6 @@ export interface IBoundTaskDelivery {
     acknowledge(receipt: unknown): Promise<TaskResult<IAcknowledgementResult>>;
     disposeWithheld(request: IDisposeWithheldRequest): Promise<TaskResult<ITaskWithheldDisposal>>;
     issued(): Promise<TaskResult<ReadonlyArray<ITaskIssuedReceiptSummary>>>;
-    // (undocumented)
     pending(request?: {
         readonly limit?: number;
         readonly cursor?: PageCursor;
@@ -3091,6 +3090,7 @@ export interface ITaskSubscription extends ITaskSubscriptionSpecification {
     readonly createdAt: Instant;
     // (undocumented)
     readonly id: SubscriptionId;
+    readonly principalKey: string;
     // (undocumented)
     readonly recordRevision: number;
     // (undocumented)
@@ -3173,9 +3173,9 @@ export interface ITaskUpdate {
 
 // @public
 export interface ITaskWithheldDisposal {
-    readonly disposed: ReadonlyArray<UpdateId>;
+    readonly disposed: number;
     readonly more: boolean;
-    readonly pinned: ReadonlyArray<UpdateId>;
+    readonly pinned: number;
     // (undocumented)
     readonly subscriptionId: SubscriptionId;
 }

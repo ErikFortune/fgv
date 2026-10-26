@@ -15,7 +15,8 @@ import {
   TaskDeliveryPump,
   TaskResult,
   TaskRevision,
-  UpdateId
+  UpdateId,
+  trustedKindAuthority
 } from '../../../index';
 import { TestPolicy, alpha, beta, bob, op, tid, track } from '../../helpers/brokerFixtures';
 import {
@@ -136,9 +137,13 @@ describe('an owed update the principal may no longer acknowledge is withheld, ne
       (await delivery.abandon(context.deliveryId)).orThrow();
     }
     const disposed = (await pump.disposeWithheld('moved out of scope')).orThrow();
-    expect(JSON.stringify(disposed)).not.toContain('secret-a1-title');
-    expect(Object.keys(disposed).sort()).toEqual(['disposed', 'more', 'pinned', 'subscriptionId']);
-    expect(disposed.disposed.every((id) => id.startsWith('a1:'))).toBe(true);
+    // Counts only: an update id would name the task. The move is itself a revision, so a1 is owed twice.
+    expect(disposed).toEqual({ subscriptionId: 's1', disposed: 2, pinned: 0, more: false });
+    expect(JSON.stringify(disposed)).not.toContain('a1');
+    // The exact ids are the trusted host's, in the subscription's history.
+    const ended = (await consumerRecord(h.repository, 's1')).disposed.map((d) => d.updateId);
+    expect(ended).toHaveLength(2);
+    expect(ended.every((id) => id.startsWith('a1:'))).toBe(true);
   });
 
   test('disposeWithheld ends exactly what is withheld, through a bounded call that reports it', async () => {
@@ -146,19 +151,19 @@ describe('an owed update the principal may no longer acknowledge is withheld, ne
     const owedA1: ReadonlyArray<UpdateId> = (await consumerRecord(h.repository, 's1')).acknowledged;
     expect(owedA1).toEqual([]);
     const disposed = (await pump.disposeWithheld('moved out of scope')).orThrow();
-    expect(disposed.disposed.length).toBeGreaterThan(0);
-    expect(disposed.pinned).toEqual([]);
-    expect(disposed.more).toBe(false);
-    expect((await consumerRecord(h.repository, 's1')).disposed.map((d) => d.reason)).toEqual(
-      disposed.disposed.map(() => 'moved out of scope')
-    );
+    expect(disposed).toEqual({ subscriptionId: 's1', disposed: 2, pinned: 0, more: false });
+    const ended = (await consumerRecord(h.repository, 's1')).disposed;
+    expect(ended.map((d) => [d.updateId.split(':')[0], d.reason])).toEqual([
+      ['a1', 'moved out of scope'],
+      ['a1', 'moved out of scope']
+    ]);
     // b1 is visible, so it is not withheld and stays owed.
     expect((await prepared(pump)).entry.taskId).toBe('b1');
     // Nothing left to end.
     expect(await pump.disposeWithheld('again')).toSucceedWith({
       subscriptionId: 's1' as SubscriptionId,
-      disposed: [],
-      pinned: [],
+      disposed: 0,
+      pinned: 0,
       more: false
     });
   });
@@ -170,12 +175,17 @@ describe('an owed update the principal may no longer acknowledge is withheld, ne
     h.policy.denyOn('acknowledge', 'b1');
     const first = (await pump.disposeWithheld('gone', 1)).orThrow();
     expect(first.more).toBe(true);
-    expect([...first.disposed, ...first.pinned]).toHaveLength(1);
+    expect(first.disposed + first.pinned).toBe(1);
     const rest = (await pump.disposeWithheld('gone')).orThrow();
-    expect(rest.pinned).toEqual(expect.arrayContaining(['a1:1:0']));
+    // The pin names a1@1 and b1@1, both withheld now: counted, not ended. a1's move is not pinned.
+    expect(rest.pinned).toBe(2);
+    expect(rest.more).toBe(false);
     (await deliveryOf(h, 's1').abandon(pin.deliveryId)).orThrow();
-    expect((await pump.disposeWithheld('gone')).orThrow().disposed).toEqual(
-      expect.arrayContaining(['a1:1:0'])
+    const last = (await pump.disposeWithheld('gone')).orThrow();
+    expect(last.pinned).toBe(0);
+    expect(last.disposed).toBe(2);
+    expect((await consumerRecord(h.repository, 's1')).disposed.map((d) => d.updateId)).toEqual(
+      expect.arrayContaining(['a1:1:0', 'b1:1:0'])
     );
     expect(await pump.next()).toSucceedWith(undefined);
   });
@@ -212,7 +222,7 @@ describe('an owed update the principal may no longer acknowledge is withheld, ne
     const disposed = (await pump.disposeWithheld('moved')).orThrow();
     hook(policy, undefined);
     expect(moved).toBe(true);
-    expect(disposed.disposed).toEqual([]);
+    expect(disposed.disposed).toBe(0);
     expect((await prepared(pump)).entry.taskId).toBe('a1');
   });
 
@@ -265,7 +275,10 @@ describe('an owed update the principal may no longer acknowledge is withheld, ne
       await track(h.writer, `t${String(i).padStart(3, '0')}`);
     }
     h.policy.denyOn('acknowledge', 't204');
-    expect((await pump.disposeWithheld('gone')).orThrow().disposed).toEqual(['t204:1:0']);
+    expect((await pump.disposeWithheld('gone')).orThrow().disposed).toBe(1);
+    expect((await consumerRecord(h.repository, 's1')).disposed.map((d) => d.updateId)).toEqual([
+      't204:1:0'
+    ]);
   });
 
   test('an unclassified probe failure is not retried', async () => {
@@ -336,6 +349,28 @@ describe('a refused acknowledgement gives up its receipt', () => {
 });
 
 describe('the budget failure names what is owed', () => {
+  test('it names only the revision that did not fit, never another task\'s updates', async () => {
+    const h = await deliveryHarness();
+    await subscribed(h, 's1');
+    for (const id of ['t1', 't2']) {
+      (
+        await h.writer.createTracked({
+          taskId: tid(id),
+          operationId: op(`create-${id}`),
+          title: 'long',
+          description: 'x'.repeat(4000)
+        })
+      ).orThrow();
+    }
+    const outcome = await pumpOver(h, undefined, 1500).next();
+    expect(outcome).toFailWith(/(t1|t2)@1 renders abbreviated/);
+    const message: string = outcome.isFailure() ? outcome.message : '';
+    const candidate: string = /(t\d)@1 renders/.exec(message)![1];
+    const other: string = candidate === 't1' ? 't2' : 't1';
+    expect(message.endsWith(`dispose of its updates: ${candidate}:1:0`)).toBe(true);
+    expect(message).not.toContain(`${other}:`);
+  });
+
   test('a release or an owed read that fails is reported in its place', async () => {
     const h = await deliveryHarness();
     await subscribed(h, 's1');
@@ -368,7 +403,7 @@ describe('the budget failure names what is owed', () => {
           ? delivery.pending(request)
           : failWithDetail('index offline', { code: 'storage-unavailable', retry: 'safe' })
     });
-    expect(await unread.next()).toFailWith(/Owed: \(owed ids unreadable: index offline\)/);
+    expect(await unread.next()).toFailWith(/dispose of its updates: \(unreadable: .*index offline\)/);
     const stuck = wrapped({
       abandon: async () => failWithDetail('store offline', { code: 'storage-unavailable', retry: 'safe' })
     });
@@ -392,6 +427,96 @@ describe('the record a decision reads cannot be edited through what was handed o
     expect((await deliveryOf(h, 's1').pending({ limit: 50 })).orThrow().updates.map((u) => u.id)).toEqual([
       'b1:1:0',
       'c1:1:0'
+    ]);
+  });
+});
+
+describe('only the binding that owns the whole subscription may end what it withholds', () => {
+  let h: IDeliveryHarness;
+
+  beforeEach(async () => {
+    h = await deliveryHarness();
+    await subscribed(h, 's1');
+    await track(h.writer, 'a1');
+    await track(h.writer, 'b1');
+  });
+
+  async function aliceOwes(): Promise<ReadonlyArray<string>> {
+    return (await deliveryOf(h, 's1').pending({ limit: 200 })).orThrow().updates.map((u) => u.id);
+  }
+
+  async function refused(delivery: IBoundTaskDelivery): Promise<void> {
+    expect(await delivery.disposeWithheld({ reason: 'narrow' })).toFailWithDetail(
+      /disposeWithheld s1: not permitted/,
+      expect.objectContaining({ code: 'not-found-or-denied' })
+    );
+  }
+
+  test('another principal\'s binding is refused, and alice is still owed everything', async () => {
+    const before = await aliceOwes();
+    expect(before).toEqual(['a1:1:0', 'b1:1:0']);
+    // Bob's policy lets him see nothing, so to him everything is withheld.
+    const bobs: TestPolicy = new TestPolicy();
+    bobs.deny.push((r) => r.action === 'read');
+    await refused(h.broker.bindDelivery({ ...binding(h), principal: 'bob', authorization: bobs }).orThrow());
+    expect(await aliceOwes()).toEqual(before);
+    expect((await consumerRecord(h.repository, 's1')).disposed).toEqual([]);
+  });
+
+  test('a binding whose selectors do not cover the selection is refused', async () => {
+    const before = await aliceOwes();
+    await refused(h.broker.bindDelivery({ ...binding(h), scopes: [beta] }).orThrow());
+    expect(await aliceOwes()).toEqual(before);
+    expect((await consumerRecord(h.repository, 's1')).disposed).toEqual([]);
+  });
+
+  test('a binding whose selectors cover more than the selection may end what it withholds', async () => {
+    h.policy.denyOn('acknowledge', 'a1');
+    const wider = h.broker.bindDelivery({ ...binding(h), scopes: [alpha, beta] }).orThrow();
+    expect(await wider.disposeWithheld({ reason: 'x' })).toSucceedWith({
+      subscriptionId: 's1' as SubscriptionId,
+      disposed: 1,
+      pinned: 0,
+      more: false
+    });
+  });
+
+  test('a narrower policy that does not grant dispose-obligation cannot end what it withholds', async () => {
+    const before = await aliceOwes();
+    // Reads only: everything is withheld from it, and it is not allowed to end any of it.
+    const readOnly = trustedKindAuthority({ scopes: [alpha], actions: ['read'], epoch: 'r' }).orThrow();
+    const narrow = h.broker.bindDelivery({ ...binding(h), authorization: readOnly }).orThrow();
+    expect((await narrow.pending({ limit: 200 })).orThrow().withheld).toBe(2);
+    await refused(narrow);
+    expect(await aliceOwes()).toEqual(before);
+    expect((await consumerRecord(h.repository, 's1')).disposed).toEqual([]);
+  });
+
+  test('the grant is asked for the selection\'s scopes, naming no task', async () => {
+    const policy = h.policy;
+    h.policy.denyOn('acknowledge', 'a1');
+    (await deliveryOf(h, 's1').disposeWithheld({ reason: 'x' })).orThrow();
+    const asked = policy.calls.filter((c) => c.action === 'dispose-obligation');
+    expect(asked).toEqual([expect.objectContaining({ role: 'subject', scopes: [alpha] })]);
+    expect(asked[0].task).toBeUndefined();
+    expect(asked[0].reference).toBeUndefined();
+  });
+
+  test('a hidden task\'s id never appears in anything disposeWithheld answers', async () => {
+    await track(h.writer, 'secret-merger-acme');
+    h.policy.hide('secret-merger-acme');
+    const delivery = deliveryOf(h, 's1');
+    const page = (await delivery.pending({ limit: 200 })).orThrow();
+    expect(JSON.stringify(page)).not.toContain('secret');
+    const answer = await delivery.disposeWithheld({ reason: 'hidden' });
+    expect(answer).toSucceedWith({ subscriptionId: 's1' as SubscriptionId, disposed: 1, pinned: 0, more: false });
+    expect(JSON.stringify(answer)).not.toContain('secret');
+    // A pinned one is counted, not named, too.
+    const pump = pumpOver(h);
+    expect(JSON.stringify(await pump.disposeWithheld('again'))).not.toContain('secret');
+    // The trusted host can still read exactly what was ended.
+    expect((await consumerRecord(h.repository, 's1')).disposed.map((d) => d.updateId)).toEqual([
+      'secret-merger-acme:1:0'
     ]);
   });
 });

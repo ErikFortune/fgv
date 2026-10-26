@@ -381,6 +381,30 @@ export class BoundTaskDelivery implements IBoundTaskDelivery {
     if (epoch.isFailure()) {
       return propagate(epoch);
     }
+    const subscription: TaskResult<ITaskSubscription | undefined> = core.repository.subscription(
+      this.subscriptionId
+    );
+    if (subscription.isFailure()) {
+      return propagate(subscription);
+    }
+    // "Withheld" is judged under this binding, so only the binding that owns the whole subscription
+    // may act on it: the registering principal, with selectors covering the selection — otherwise a
+    // narrower binding would withhold, and so end, more. Then the policy grants it as a grant of its
+    // own, asked for the selection as a whole — never per task, since these are tasks it may not see.
+    // Bound to a retained subscription; records are never removed.
+    const found: ITaskSubscription = subscription.value!;
+    const scopes: ReadonlyArray<ITaskScope> = found.selection.scopes;
+    if (
+      found.principalKey !== this._access.principal ||
+      !scopes.every((scope) => this._access.selects(scope)) ||
+      !(await this._access.allows({ action: 'dispose-obligation', role: 'subject', scopes }))
+    ) {
+      return taskFailure(
+        `disposeWithheld ${this.subscriptionId}: not permitted`,
+        'not-found-or-denied',
+        'after-host-action'
+      );
+    }
     // Every owed update this principal is withheld, decided on each task's committed record.
     const withheld: UpdateId[] = [];
     const fence: Map<TaskId, number> = new Map();
@@ -438,8 +462,8 @@ export class BoundTaskDelivery implements IBoundTaskDelivery {
           .filter((manifest) => !manifest.acknowledged && manifest.expiresAt > clock.value)
           .flatMap((manifest) => manifest.receipt.included.flatMap((entry) => entry.updateIds))
       );
-      const pinned: UpdateId[] = withheld.filter((id) => pinnedIds.has(id));
       const ending: UpdateId[] = withheld.filter((id) => !pinnedIds.has(id)).sort();
+      const pinned: number = withheld.length - ending.length;
       // After the section's last await, immediately before the durable write.
       if (!this._access.epochIs(epoch.value)) {
         return ok<ITaskWithheldDisposal | undefined>(undefined);
@@ -447,7 +471,7 @@ export class BoundTaskDelivery implements IBoundTaskDelivery {
       if (ending.length === 0) {
         return ok<ITaskWithheldDisposal | undefined>({
           subscriptionId: this.subscriptionId,
-          disposed: [],
+          disposed: 0,
           pinned,
           more
         });
@@ -462,7 +486,7 @@ export class BoundTaskDelivery implements IBoundTaskDelivery {
       return disposed.onSuccess((d) =>
         ok<ITaskWithheldDisposal | undefined>({
           subscriptionId: this.subscriptionId,
-          disposed: d.newlyDisposed,
+          disposed: d.newlyDisposed.length,
           pinned,
           more
         })

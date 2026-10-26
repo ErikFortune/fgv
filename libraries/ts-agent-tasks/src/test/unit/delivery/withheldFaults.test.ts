@@ -76,6 +76,17 @@ describe('pending and disposeWithheld: reads that fail are reported', () => {
     expect(await deliveryOf(second, 'sub').pending()).toFailWith(/storage down/);
   });
 
+  test('a subscription descriptor that cannot be read fails disposeWithheld before anything is asked', async () => {
+    const h = await harness();
+    let reads: number = 0;
+    // The first read is bindDelivery's.
+    const faulty = faultyDelivery(h, (real) => ({
+      subscription: (id) => (++reads === 1 ? real.subscription(id) : storageDown())
+    }));
+    expect(await deliveryOf(faulty, 'sub').disposeWithheld({ reason: 'x' })).toFailWith(/storage down/);
+    expect(h.policy.calls.filter((c) => c.action === 'dispose-obligation')).toEqual([]);
+  });
+
   test('an owed listing that fails fails disposeWithheld', async () => {
     const h = await harness();
     const faulty = faultyDelivery(h, () => ({ listOwed: async () => storageDown() }));
