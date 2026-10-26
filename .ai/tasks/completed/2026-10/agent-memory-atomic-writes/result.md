@@ -191,6 +191,19 @@ instead of degrading and walking `/`.
 
 All logs under the worktree's `.gate-logs/`, graded by grep, not exit code.
 
+- **Round 2, final code (5a4aa8018):** package gates: `ts-json-base` test **1604 / 0**, lint clean;
+  `ts-agent-memory` build, lint clean, test **1032 / 0**, 100% coverage on both. Repo-wide
+  `rush rebuild`: `SUCCESS: 39 operations`, 39 completed, 0 error matches, only the symlink
+  warning. Repo-wide `rush test`: 34 succeeded (ts-json-base, ts-agent-memory, ts-agent-tasks among
+  them), 1 no-op, 2 failed and 2 blocked behind one of them. Both failures were 5000 ms jest
+  timeouts on a loaded machine: `@fgv/ts-res-cli` *cli-configuration*, which is on the known list, and
+  `@fgv/ts-extras-mcp` *"a slow tool on a JSON-response server outlives the guarded fetch's headers
+  deadline"*, a timing test in the same package as the known mcp ones, though that test is not itself
+  listed. Neither package uses the changed surfaces. Re-run alone: ts-extras-mcp **279 / 0**,
+  ts-res-cli **67 / 0**. The blocked packages: ts-extras-re2 **178 / 0**; testbed green (639
+  passed in its last suite summary; it prints pre-existing React `act(...)` console noise, not
+  warnings in the gate sense).
+
 - Round 1 (after the fix commit): `ts-agent-memory` build, lint clean; test **1024 / 0**, 100%
   coverage. `ts-json-base` build, lint clean; test **1600 / 0**, 100% coverage. `ts-agent-tasks` test
   **2407 / 0**. The repo-wide runs below predate round 1.
