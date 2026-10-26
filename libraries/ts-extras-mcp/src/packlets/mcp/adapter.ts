@@ -28,7 +28,7 @@
  * @packageDocumentation
  */
 
-import { type DetailedResult, type Result, mapResults, succeed, succeedWithDetail } from '@fgv/ts-utils';
+import { type DetailedResult, type Result, succeedWithDetail } from '@fgv/ts-utils';
 import { AiAssist } from '@fgv/ts-extras';
 import { Converters, JsonSchema } from '@fgv/ts-json-base';
 
@@ -82,56 +82,59 @@ const TASK_REQUIRED_REASON: string =
   "execution.taskSupport is 'required': the tool must be invoked as an MCP task, which this client cannot drive";
 
 /**
- * Adapts a single discovered tool. Always succeeds: a tool that cannot be adapted is a `skipped`
- * outcome, with its {@link McpSkipKind}, when it requires task-augmented execution
- * (`'task-support'`, checked first), when its `inputSchema` is not a JSON object or is outside the
- * `JsonSchema.fromJson` subset (`'schema'`), or when the target wire cannot carry it (`'wire'`, per
- * `schemaKeywords`).
+ * Adapts a single discovered tool. Returns a `skipped` outcome (never a failure), with its
+ * {@link McpSkipKind}, when the tool requires task-augmented execution (`'task-support'`, checked
+ * first), when its `inputSchema` is not a JSON object or is outside the `JsonSchema.fromJson` subset
+ * (`'schema'`), or when the target wire cannot carry it (`'wire'`, per `schemaKeywords`).
  */
 function _adaptOne(
   session: IMcpSession,
   descriptor: IMcpToolDescriptor,
   schemaKeywords: JsonSchema.SchemaKeywordCapabilities,
   fromJsonOptions: JsonSchema.IFromJsonOptions
-): Result<IAdaptOutcome> {
+): IAdaptOutcome {
   const { name, description, inputSchema, annotations, execution } = descriptor;
 
-  const skip =
-    (kind: McpSkipKind): ((reason: string) => Result<IAdaptOutcome>) =>
-    (reason: string): Result<IAdaptOutcome> =>
-    succeed({ kind: 'skipped', skipped: { name, kind, reason, schema: inputSchema } });
+  const skip = (kind: McpSkipKind, reason: string): IAdaptOutcome => ({
+    kind: 'skipped',
+    skipped: { name, kind, reason, schema: inputSchema }
+  });
 
   // First: a tool that must run as a task fails every plain call, whatever its schema.
   if (execution?.taskSupport === 'required') {
-    return skip('task-support')(TASK_REQUIRED_REASON);
+    return skip('task-support', TASK_REQUIRED_REASON);
   }
 
-  return Converters.jsonObject
+  // Two checks, kept apart because each failure is a different skip kind: a chain would carry the
+  // kind only as a failure detail, which is typed optional, and would end in a Result that cannot
+  // fail. The outcome stays a plain value, so no failure can be swallowed on the way out.
+  const parsed = Converters.jsonObject
     .convert(inputSchema)
     .withErrorFormat((msg) => `inputSchema is not a JSON object (${msg})`)
-    .onSuccess((asObject) => JsonSchema.fromJson(asObject, fromJsonOptions))
-    .onSuccess((parametersSchema) =>
-      // Admission only: the target wire must be able to carry the schema, or one such tool would
-      // fail every request it rides on. The adapted result is discarded — the request path adapts
-      // the schema itself, once, when it is sent.
-      JsonSchema.adaptSchemaKeywords(parametersSchema.toJson(), schemaKeywords)
-        .withErrorFormat((msg) => `not sendable on the target wire: ${msg}`)
-        .onSuccess(() => {
-          const config: AiAssist.IAiClientToolConfig = {
-            type: 'client_tool',
-            name,
-            description: description ?? name,
-            parametersSchema,
-            // IMcpToolAnnotations maps 1:1 onto AiAssist.IAiToolAnnotations. Only set the field when
-            // the server provided usable annotations, so a tool without them stays exactly as before.
-            ...(annotations !== undefined ? { annotations } : {})
-          };
-          return succeed<IAdaptOutcome>({ kind: 'tool', tool: { config, execute: _makeExecute(session, name) } });
-        })
-        // A wire refusal becomes a skip here, so the schema skip below sees only parse failures.
-        .onFailure(skip('wire'))
-    )
-    .onFailure(skip('schema'));
+    .onSuccess((asObject) => JsonSchema.fromJson(asObject, fromJsonOptions));
+  if (parsed.isFailure()) {
+    return skip('schema', parsed.message);
+  }
+  // Admission only: the target wire must be able to carry the schema, or one such tool would fail
+  // every request it rides on. The adapted result is discarded — the request path adapts the schema
+  // itself, once, when it is sent.
+  const sendable = JsonSchema.adaptSchemaKeywords(parsed.value.toJson(), schemaKeywords).withErrorFormat(
+    (msg) => `not sendable on the target wire: ${msg}`
+  );
+  if (sendable.isFailure()) {
+    return skip('wire', sendable.message);
+  }
+
+  const config: AiAssist.IAiClientToolConfig = {
+    type: 'client_tool',
+    name,
+    description: description ?? name,
+    parametersSchema: parsed.value,
+    // IMcpToolAnnotations maps 1:1 onto AiAssist.IAiToolAnnotations. Only set the field when the
+    // server provided usable annotations, so a tool without them stays exactly as before.
+    ...(annotations !== undefined ? { annotations } : {})
+  };
+  return { kind: 'tool', tool: { config, execute: _makeExecute(session, name) } };
 }
 
 /**
@@ -187,11 +190,9 @@ export async function adaptMcpTools(
       const fromJsonOptions =
         options?.patternValidator !== undefined ? { patternValidator: options.patternValidator } : {};
 
-      // `_adaptOne` never fails, so neither does this; a skip is an outcome, not a failure.
-      const outcomes = mapResults(
-        descriptors.map((descriptor) => _adaptOne(session, descriptor, schemaKeywords, fromJsonOptions))
-      ).orDefault([]);
-      for (const outcome of outcomes) {
+      // A skip is an outcome, not a failure, so adapting the catalog cannot fail.
+      for (const descriptor of descriptors) {
+        const outcome = _adaptOne(session, descriptor, schemaKeywords, fromJsonOptions);
         if (outcome.kind === 'tool') {
           tools.push(outcome.tool);
         } else {

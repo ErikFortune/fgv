@@ -201,6 +201,30 @@ describe('Streamable-HTTP egress through an injected fetch', () => {
     }
   );
 
+  test("an answer over the cap on a resumed (Last-Event-ID) GET fails its request promptly as egress-blocked too-large", async () => {
+    // The server closes the POST's stream before answering; the SDK resumes it with a GET carrying
+    // Last-Event-ID, and the 20 000-character answer arrives there.
+    const server = await startRealMcpServer(undefined, { resumable: true });
+    try {
+      const session = (
+        await connectMcpSession({
+          transport: createHttpTransport({ url: server.url, fetch: guardedFetch({ maxResponseBytes: 4096 }) }).orThrow(),
+          timeoutMs: 5000
+        })
+      ).orThrow();
+      sessions.push(session);
+      const started = Date.now();
+      expect(await callMcpTool(session, 'polled', {}, { timeoutMs: 15000 })).toFailWithDetail(
+        /callMcpTool 'polled': .*exceeded maxResponseBytes \(4096 bytes\)/,
+        { kind: 'egress-blocked', reason: 'too-large' }
+      );
+      expect(Date.now() - started).toBeLessThan(8000);
+      expect(await callMcpTool(session, 'echo', {})).toSucceed();
+    } finally {
+      await server.stop();
+    }
+  }, 20000);
+
   test("an over-cap standalone event stream is logged at detail and reconnected, and the session keeps working", async () => {
     const proxy = await startRechunkingProxy(real.url, { getStream: { size: 500, count: 100, everyMs: 5 } });
     const logger = new Logging.InMemoryLogger('all');

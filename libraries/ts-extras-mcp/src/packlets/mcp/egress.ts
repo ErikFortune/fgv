@@ -363,12 +363,29 @@ export class McpHttpEgress {
         throw err;
       });
     this._noteChallenge(target, response);
-    return this._observeEventStream(response, this._isEventStreamGet(target, init), request);
+    return this._observeEventStream(response, this._isStandaloneStream(target, init), request);
   }
 
-  /** Whether a request is the SDK's standalone `GET` event stream: exactly `GET` on the endpoint URL. */
+  /** Whether a request is an SDK event-stream `GET`: exactly `GET` on the endpoint URL. */
   private _isEventStreamGet(target: URL, init: RequestInit | undefined): boolean {
     return init?.method === 'GET' && target.href === this._endpoint.href;
+  }
+
+  /**
+   * Whether a request opens the standalone event stream rather than resuming a request's stream.
+   *
+   * @remarks
+   * A `GET` that carries `last-event-id` resumes a stream the server closed early — a `POST`'s, whose
+   * answer then arrives on it, or the standalone stream's own. The SDK schedules it from inside the
+   * read loop of the stream it resumes, so it runs in that stream's request context (or the connect's,
+   * settled long since, for the standalone stream). It is treated as belonging to that request.
+   */
+  private _isStandaloneStream(target: URL, init: RequestInit | undefined): boolean {
+    return (
+      init?.method === 'GET' &&
+      target.href === this._endpoint.href &&
+      !new Headers(init.headers).has('last-event-id')
+    );
   }
 
   /**
@@ -377,7 +394,7 @@ export class McpHttpEgress {
    */
   private _observeEventStream(
     response: Response,
-    isEventStreamGet: boolean,
+    isStandaloneStream: boolean,
     request: IMcpRequestContext | undefined
   ): Response {
     // A consumer `fetch` can return anything shaped like a response; one whose head cannot be read
@@ -391,7 +408,7 @@ export class McpHttpEgress {
       return response;
     }
     return new Response(
-      _observedBody(body, (err) => this._noteOversizedBody(err, isEventStreamGet, request)),
+      _observedBody(body, (err) => this._noteOversizedBody(err, isStandaloneStream, request)),
       { status: response.status, statusText: response.statusText, headers: response.headers }
     );
   }
@@ -402,17 +419,20 @@ export class McpHttpEgress {
    * @remarks
    * The SDK reads a `POST`'s SSE answer detached from the request it answers, and an error reading it
    * goes only to the transport's `onerror`, wrapped in a new message: the request itself is never
-   * rejected, and would wait out its whole timeout. So for a `POST`, the request the body belongs to
-   * — the one whose context the fetch ran in — is failed here, as `egress-blocked` with reason
-   * `'too-large'`, exactly as a refused JSON answer is classified. The session stays usable.
+   * rejected, and would wait out its whole timeout. So for a `POST`, and for a `GET` that resumes a
+   * request's stream (`last-event-id`, where the answer can arrive instead), the request the body
+   * belongs to — the one whose context the fetch ran in — is failed here, as `egress-blocked` with
+   * reason `'too-large'`, exactly as a refused JSON answer is classified. A request that has already
+   * settled is left alone. The session stays usable.
    *
-   * The standalone `GET` event stream has no request to fail. The SDK reconnects it at once, and the
-   * new response is counted from zero, so the cap bounds each connection rather than the session.
-   * Both cases are logged at `detail`, by the limit only, so the cut-off is never silent.
+   * The standalone `GET` event stream has no request to fail. The SDK reconnects it after its
+   * reconnection delay, and the new response is counted from zero, so the cap bounds each connection
+   * rather than the session. Both cases are logged at `detail`, by the limit only, so the cut-off is
+   * never silent.
    */
   private _noteOversizedBody(
     err: unknown,
-    isEventStreamGet: boolean,
+    isStandaloneStream: boolean,
     request: IMcpRequestContext | undefined
   ): void {
     const tooLarge = _tooLarge(err);
@@ -420,7 +440,7 @@ export class McpHttpEgress {
       return;
     }
     const { limit } = tooLarge;
-    if (isEventStreamGet) {
+    if (isStandaloneStream) {
       this._logger.detail(
         `mcp: the server event stream exceeded the egress guard's maxResponseBytes (${limit} bytes); ` +
           'the SDK reconnects it'

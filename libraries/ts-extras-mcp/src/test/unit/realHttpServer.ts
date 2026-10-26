@@ -32,6 +32,7 @@ import { type AddressInfo } from 'node:net';
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
+import { InMemoryEventStore } from '@modelcontextprotocol/sdk/examples/shared/inMemoryEventStore.js';
 
 /** Answers a request itself (resolving `true`), or lets the MCP server handle it (`false`). */
 export type RequestGate = (req: IncomingMessage, res: ServerResponse) => Promise<boolean>;
@@ -58,6 +59,12 @@ export interface IRealMcpServerOptions {
   readonly slowToolMs?: number;
   /** Registers this many extra tools, `bulk_<n>`, each with a 200-character description: a large `tools/list`. */
   readonly bulkTools?: number;
+  /**
+   * Makes the server resumable (an in-memory event store, a 50 ms retry hint) and registers a
+   * `polled` tool that closes its request's SSE stream before answering with 20 000 characters, so
+   * the answer reaches the client only on the `GET` it resumes with (`Last-Event-ID`).
+   */
+  readonly resumable?: boolean;
 }
 
 export async function startRealMcpServer(
@@ -88,6 +95,7 @@ export async function startRealMcpServer(
     const transport = new StreamableHTTPServerTransport({
       sessionIdGenerator: () => `session-${nextSession++}`,
       enableJsonResponse: options?.enableJsonResponse === true,
+      ...(options?.resumable === true ? { eventStore: new InMemoryEventStore(), retryInterval: 50 } : {}),
       onsessioninitialized: (sessionId) => {
         transports.set(sessionId, transport);
       },
@@ -103,6 +111,13 @@ export async function startRealMcpServer(
       mcp.registerTool(`bulk_${i}`, { description: 'd'.repeat(200) }, async () => ({
         content: [{ type: 'text', text: 'bulk' }]
       }));
+    }
+    if (options?.resumable === true) {
+      mcp.registerTool('polled', { description: 'answers on the resumed stream' }, async (extra) => {
+        extra.closeSSEStream?.();
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        return { content: [{ type: 'text', text: 'P'.repeat(20000) }] };
+      });
     }
     const slowMs = options?.slowToolMs;
     if (slowMs !== undefined) {

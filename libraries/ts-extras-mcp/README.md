@@ -132,11 +132,12 @@ const transport = createHttpTransport({ url, headers: { 'x-api-key': key }, fetc
   package cannot see the guarded fetch's deadline, so it does not warn.
 
 - **`maxResponseBytes` bounds what a server can send.** It is opt-in, and counts each HTTP response
-  separately as it is read. A `POST`'s answer past it — a JSON body or an SSE stream — fails that
-  request promptly as `egress-blocked` with reason `'too-large'`, and the session stays usable. The
-  standalone `GET` event stream is counted per connection: one that passes the cap is cut off and
-  logged at `detail`, and the SDK reconnects it with a fresh count, so the cap bounds each
-  connection rather than the session's total. Size it above your largest expected `tools/list` page
+  separately as it is read. A request's answer past it — a JSON body, an SSE stream, or the `GET`
+  the SDK resumes a closed stream with (`Last-Event-ID`) — fails that request promptly as
+  `egress-blocked` with reason `'too-large'`, and the session stays usable. The standalone `GET`
+  event stream is counted per connection: one that passes the cap is cut off and logged at
+  `detail`, and the SDK reconnects it after its reconnection delay (about 1 s by default) with a
+  fresh count, so the cap bounds each connection rather than the session's total. Size it above your largest expected `tools/list` page
   or tool result.
 
 - A refusal fails the operation with `egress-blocked`, carrying the refusal's kind only (never its
