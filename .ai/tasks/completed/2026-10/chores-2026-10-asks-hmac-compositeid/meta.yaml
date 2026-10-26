@@ -1,7 +1,7 @@
 id: chores-2026-10-asks-hmac-compositeid
 status: shipped
 packages: ['@fgv/ts-extras', '@fgv/ts-web-extras', '@fgv/ts-utils']
-prs: [] # #TBD: fill with the PR number once the PR is opened
+prs: [754]
 openPrs: []
 opened: 2026-10-26
 closed: 2026-10-26

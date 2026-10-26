@@ -2,7 +2,7 @@
 
 **Shipped:** `ICryptoProvider` can now generate and import HMAC-SHA256 keys itself, non-extractable by default, so callers no longer reach past the provider to `crypto.subtle.importKey`; and composite ids can split at the first or last separator, so one part may itself contain the separator.
 
-Origin: personaility#692 and #693 (fgv-asks). Base / target: `integration/asks`. One PR (#TBD), two
+Origin: personaility#692 and #693 (fgv-asks). Base / target: `integration/asks`. One PR (#754), two
 commits, one per item.
 
 ## Item 1 (#692): HMAC keys on `ICryptoProvider`

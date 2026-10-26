@@ -1,6 +1,6 @@
 # chores-2026-10-asks-hmac-compositeid — HMAC keys from the provider; composite ids that can contain their separator
 
-**Shipped**: 2026-10-26 into `integration/asks` via #TBD.
+**Shipped**: 2026-10-26 into `integration/asks` via #754.
 - **Packages:** `@fgv/ts-extras` (`crypto-utils`), `@fgv/ts-web-extras` (`crypto-utils`) and `@fgv/ts-utils` (`conversion`, `validation`).
 - **Origin:** personaility#692 and #693 (fgv-asks).
 - **Shape:** a chore batch of two items, shipped as one PR with one commit per item.
