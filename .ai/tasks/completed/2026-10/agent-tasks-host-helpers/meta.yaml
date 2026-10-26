@@ -45,4 +45,4 @@ keywords:
   - stale issued receipt
   - pending registration resume
   - fgv-ask
-sourceHash: PLACEHOLDER # over brief.md + result.md + state.md
+sourceHash: sha256:dbdf35a5e365902e # over brief.md + result.md + state.md

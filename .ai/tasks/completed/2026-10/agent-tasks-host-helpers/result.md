@@ -138,7 +138,18 @@ the test double above. No consumer outside `ts-agent-tasks`.
 
 ## Gates
 
-See the final section, filled at close.
+Logs under `.gate-logs/` in the worktree (not committed), graded by grep, not exit code.
+
+| gate | result |
+|---|---|
+| package `build` / `lint` | 0 error/failure matches; no warning lines |
+| package `test` | 2465 passed, 0 failed; coverage 100 / 100 / 100 / 100 |
+| `rush rebuild` | `SUCCESS: 39 operations`; 0 error/failure matches; the only warning is the tracked-symlink notice |
+| `rush test` | 37 succeeded, 1 failed: `@fgv/ts-res-cli` cli-configuration "test consistent output by building same input twice", a known load-sensitive test. Re-run alone: 67 passed, 0 failed |
+| `rush change --verify --target-branch origin/integration/asks` | passes; finds `agent-tasks-host-helpers_2026-10-26-18-00.json` (`minor`) |
+| prettier 2.8.8 `--check` over every changed file | clean (12 files reformatted before the final commit) |
+| `generate-capability-feed.mjs` / `--check` | 2 targets updated, then 0 stale |
+| `verify-capability-docs.mjs` | router 23,219/24,000, 0 failed |
 
 ## Anything in the brief that was wrong or underspecified
 
