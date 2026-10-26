@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras",
+      "comment": "BREAKING (implementers only): IAiClientToolCallSummary gains a required durationMs, measured by executeClientToolTurn around each call's dispatch with an optional clock param; code that builds summaries (fakes, test doubles) must supply it. executeClientToolTurn no longer starts a tool after its signal aborts: it checks before the onBeforeToolExecute gate and again before execute, and reports the call as an isError 'aborted' result. New AiAssist.runClientToolLoop drives bounded multi-round client-tool loops (round cap, whole-loop deadline, caller abort, replace-not-append continuation, observer hooks) and returns completed / round-limit / aborted / deadline outcomes with per-round traces and the final cumulative continuation. New async-control packlet (AsyncControl.raceStopConditions) races Result-returning work against a deadline and a caller signal so work that ignores its signal cannot hold the caller.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-extras",
+  "email": "noreply@anthropic.com"
+}

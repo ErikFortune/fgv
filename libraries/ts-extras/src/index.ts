@@ -21,6 +21,7 @@
  */
 
 import * as AiAssist from './packlets/ai-assist';
+import * as AsyncControl from './packlets/async-control';
 import * as CryptoUtils from './packlets/crypto-utils';
 import * as Csv from './packlets/csv';
 import * as Experimental from './packlets/experimental';
@@ -35,6 +36,7 @@ import { Converters } from './packlets/conversion';
 
 export {
   AiAssist,
+  AsyncControl,
   Converters,
   CryptoUtils,
   Csv,
