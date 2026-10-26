@@ -4,7 +4,8 @@
  */
 
 import '@fgv/ts-utils-jest';
-import { fail, failWithDetail, succeedWithDetail } from '@fgv/ts-utils';
+import { AsyncControl } from '@fgv/ts-extras';
+import { Result, fail, failWithDetail, succeed, succeedWithDetail } from '@fgv/ts-utils';
 import {
   FileTreeTaskRepository,
   ITaskFailure,
@@ -12,7 +13,6 @@ import {
   ITaskWriteGuard,
   TaskBroker,
   TaskResult,
-  TaskScheduleTimer,
   allUpdateCategories
 } from '../../../index';
 import { TestPolicy, alpha, brokerRegistry, op, tid, track } from '../../helpers/brokerFixtures';
@@ -23,7 +23,7 @@ const code = (c: string): unknown => expect.objectContaining({ code: c });
 /** A timer the test fires by hand. */
 class ManualTimer {
   public readonly armed: Array<{ fn: () => void; ms: number; cancelled: boolean }> = [];
-  public readonly schedule: TaskScheduleTimer = (fn, ms) => {
+  public readonly schedule: AsyncControl.ScheduleTimer = (fn, ms) => {
     const entry = { fn, ms, cancelled: false };
     this.armed.push(entry);
     return () => {
@@ -53,14 +53,14 @@ class HoldingGuard implements ITaskWriteGuard {
   public completed: number = 0;
   private _release: Array<() => void> = [];
 
-  public async guard<T>(write: () => Promise<TaskResult<T>>): Promise<TaskResult<T>> {
+  public async guard<T>(write: () => Promise<TaskResult<T>>): Promise<Result<T>> {
     this.guarded++;
     if (this.throwing) {
       throw new Error('gate offline');
     }
     if (this.refusing !== undefined) {
       // A gate typed over plain Result refuses without task detail.
-      return fail(this.refusing) as unknown as TaskResult<T>;
+      return fail(this.refusing);
     }
     if (this.holding) {
       await new Promise<void>((resolve) => this._release.push(resolve));
@@ -200,7 +200,7 @@ describe('TaskBroker.whenIdle', () => {
   test('a timer that fires synchronously settles at once, is cancelled, and leaves no waiter behind', async () => {
     const guard = new HoldingGuard();
     let cancelled = 0;
-    const sync: TaskScheduleTimer = (fn) => {
+    const sync: AsyncControl.ScheduleTimer = (fn) => {
       fn();
       return () => {
         cancelled++;
@@ -269,7 +269,7 @@ describe('TaskBroker.whenIdle', () => {
         registry: brokerRegistry()
       })
     ).orThrow();
-    const throwingCancel: TaskScheduleTimer = () => () => {
+    const throwingCancel: AsyncControl.ScheduleTimer = () => () => {
       throw new Error('cancel boom');
     };
     const broker = TaskBroker.create({
@@ -293,7 +293,7 @@ describe('TaskBroker.whenIdle', () => {
       await writer.createTracked({ taskId: tid('b'), operationId: op('create-b'), title: 'b' })
     ).toSucceed();
     // A timer that fires synchronously and whose cancel throws settles at once, too.
-    const syncThrowing: TaskScheduleTimer = (fn) => {
+    const syncThrowing: AsyncControl.ScheduleTimer = (fn) => {
       fn();
       return () => {
         throw new Error('cancel boom');
@@ -448,12 +448,12 @@ describe('TaskBroker.create writeGuard', () => {
   test('a guard that fails or throws after running the section reports reconcile-first, not "nothing written"', async () => {
     const mode: { after: 'fail' | 'throw' } = { after: 'fail' };
     const late: ITaskWriteGuard = {
-      guard: async <T>(write: () => Promise<TaskResult<T>>): Promise<TaskResult<T>> => {
+      guard: async <T>(write: () => Promise<TaskResult<T>>): Promise<Result<T>> => {
         await write();
         if (mode.after === 'throw') {
           throw new Error('boom');
         }
-        return fail('gate closed late') as unknown as TaskResult<T>;
+        return fail('gate closed late');
       }
     };
     const { broker, policy, repository } = await harness({ guard: late });
@@ -474,9 +474,9 @@ describe('TaskBroker.create writeGuard', () => {
 
   test('a guard that fails after a section that itself failed reports both, reconcile-first', async () => {
     const late: ITaskWriteGuard = {
-      guard: async <T>(write: () => Promise<TaskResult<T>>): Promise<TaskResult<T>> => {
+      guard: async <T>(write: () => Promise<TaskResult<T>>): Promise<Result<T>> => {
         await write();
-        return fail('gate closed late') as unknown as TaskResult<T>;
+        return fail('gate closed late');
       }
     };
     const { broker, policy } = await harness({ guard: late });
@@ -509,13 +509,13 @@ describe('TaskBroker.create writeGuard', () => {
 
   test('a guard that starts the section without awaiting it: the turn waits, and the outcome is reconcile-first', async () => {
     const unawaited: ITaskWriteGuard = {
-      guard: async <T>(write: () => Promise<TaskResult<T>>): Promise<TaskResult<T>> => {
+      guard: async <T>(write: () => Promise<TaskResult<T>>): Promise<Result<T>> => {
         // Started and deliberately not awaited.
         write().then(
           () => undefined,
           () => undefined
         );
-        return fail('gate closed') as unknown as TaskResult<T>;
+        return fail('gate closed');
       }
     };
     const { broker, policy, repository } = await harness({ guard: unawaited });
@@ -536,10 +536,10 @@ describe('TaskBroker.create writeGuard', () => {
   test('a guard that starts the section after it returned gets it refused, unrun, outside any turn', async () => {
     const kept: Array<() => Promise<TaskResult<unknown>>> = [];
     const deferred: ITaskWriteGuard = {
-      guard: async <T>(write: () => Promise<TaskResult<T>>): Promise<TaskResult<T>> => {
+      guard: async <T>(write: () => Promise<TaskResult<T>>): Promise<Result<T>> => {
         // Kept to be started later, once the guard has returned.
         kept.push(write);
-        return fail('gate closed') as unknown as TaskResult<T>;
+        return fail('gate closed');
       }
     };
     const { broker, policy, repository } = await harness({ guard: deferred });
@@ -568,6 +568,30 @@ describe('TaskBroker.create writeGuard', () => {
     ).toSucceed();
     expect(seconds[0]).toFailWithDetail(/ran the section more than once/, code('invalid'));
     expect(await repository.read(tid('a'))).toSucceedAndSatisfy((r) => expect(r?.state).toBe('resolved'));
+  });
+
+  test('a guard that answers success without running the section is invalid, and nothing is written', async () => {
+    const fabricating: ITaskWriteGuard = {
+      guard: async <T>(): Promise<Result<T>> => succeed(undefined as unknown as T)
+    };
+    const { broker, policy, repository } = await harness({ guard: fabricating });
+    const writer = broker.bind({ principal: 'alice', scopes: [alpha], authorization: policy }).orThrow();
+    expect(
+      await writer.createTracked({ taskId: tid('a'), operationId: op('create-a'), title: 'a' })
+    ).toFailWithDetail(/answered success without running the section/, code('invalid'));
+    expect(await repository.read(tid('a'))).toSucceedWith(undefined);
+  });
+
+  test('a guard that refuses with a detail that is not a task failure is storage-unavailable', async () => {
+    const foreign: ITaskWriteGuard = {
+      guard: async <T>(): Promise<Result<T>> => failWithDetail<T, string>('held', 'raised')
+    };
+    const { broker, policy, repository } = await harness({ guard: foreign });
+    const writer = broker.bind({ principal: 'alice', scopes: [alpha], authorization: policy }).orThrow();
+    const refused = await writer.createTracked({ taskId: tid('a'), operationId: op('create-a'), title: 'a' });
+    expect(refused).toFailWithDetail(/the write guard refused: held/, code('storage-unavailable'));
+    expect(refused.detail?.retry).toBe('after-host-action');
+    expect(await repository.read(tid('a'))).toSucceedWith(undefined);
   });
 
   test('a guard that throws fails the section, and nothing is written', async () => {

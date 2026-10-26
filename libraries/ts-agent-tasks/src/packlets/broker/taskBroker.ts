@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 
+import { AsyncControl } from '@fgv/ts-extras';
 import { Result, captureResult, fail, succeed } from '@fgv/ts-utils';
 import { TaskConverters } from '../converters';
 import { TaskContextRenderer } from '../context';
@@ -29,7 +30,6 @@ import {
   TaskId,
   TaskRegistrationResult,
   TaskResult,
-  TaskScheduleTimer,
   taskContextLimits
 } from '../types';
 import { ITaskRepository } from '../storage';
@@ -82,14 +82,16 @@ export interface ITaskBrokerCreateParams {
    * queued behind a held one, every further broker write fails at once with `conflict`, retry
    * `safe`, until the hold ends. {@link TaskBroker.whenIdle} counts a held section as busy.
    *
-   * A guard must call the section at most once. A guard that refuses without calling it, with a
-   * failure carrying no task detail, is `storage-unavailable` (retry `after-host-action`); one that
-   * fails or throws **after** calling it is `storage-unavailable` with retry `reconcile-first`,
-   * because the section may have committed; a second call is refused without running.
+   * A guard must call the section at most once, and before its own answer settles. A guard that
+   * refuses without calling it, with a failure carrying no valid task detail, is
+   * `storage-unavailable` (retry `after-host-action`); one that answers success without calling it
+   * is `invalid`; one that fails or throws **after** calling it is `storage-unavailable` with retry
+   * `reconcile-first`, because the section may have committed; a second call is refused without
+   * running. `AsyncControl.WriteGate` from `@fgv/ts-extras` fits as is.
    */
   readonly writeGuard?: ITaskWriteGuard;
   /** The timer {@link TaskBroker.whenIdle} bounds its wait with. Defaults to `setTimeout`. */
-  readonly schedule?: TaskScheduleTimer;
+  readonly schedule?: AsyncControl.ScheduleTimer;
 }
 
 /**

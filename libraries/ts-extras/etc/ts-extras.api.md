@@ -4,7 +4,9 @@
 
 ```ts
 
+import { AsyncDeferredResult } from '@fgv/ts-utils';
 import { AsyncDetailedResult } from '@fgv/ts-utils';
+import { AsyncResult } from '@fgv/ts-utils';
 import { Brand } from '@fgv/ts-utils';
 import { Conversion } from '@fgv/ts-utils';
 import { Converter } from '@fgv/ts-utils';
@@ -431,7 +433,12 @@ declare namespace AsyncControl {
         raceStopConditions,
         ScheduleTimer,
         StopDetail,
-        StopReason
+        StopReason,
+        IWriteGateOptions,
+        IWriteGatePause,
+        WriteGate,
+        WriteGatePauseFailure,
+        WriteGateRefusal
     }
 }
 export { AsyncControl }
@@ -2744,6 +2751,16 @@ interface IWrappedBytes {
 }
 
 // @public
+interface IWriteGateOptions {
+    readonly schedule?: ScheduleTimer;
+}
+
+// @public
+interface IWriteGatePause {
+    resume(): void;
+}
+
+// @public
 interface IXAiThinkingConfig {
     readonly effort?: 'none' | 'low' | 'medium' | 'high';
 }
@@ -3582,6 +3599,26 @@ function validateCacheBreakpoints(systemLength: number, cache: IAiCacheRequest, 
 
 // @public
 function validateResolvedOptions(modelId: string, capability: IAiImageModelCapability, resolved: IResolvedImageOptions): Result<IResolvedImageOptions>;
+
+// @public
+class WriteGate {
+    check(): Result<true>;
+    static create(options?: IWriteGateOptions): Result<WriteGate>;
+    guard<T>(write: AsyncDeferredResult<T>): AsyncResult<T>;
+    guardDetailed<T, TD>(write: () => Promise<DetailedResult<T, TD>>): AsyncDetailedResult<T, TD | WriteGateRefusal>;
+    get inFlight(): number;
+    lower(): void;
+    pause(timeoutMs: number): AsyncDetailedResult<IWriteGatePause, WriteGatePauseFailure>;
+    get quiet(): boolean;
+    raise(reason: string): void;
+    get waiting(): number;
+}
+
+// @public
+type WriteGatePauseFailure = 'timeout' | 'stalled' | 'invalid';
+
+// @public
+type WriteGateRefusal = 'raised' | 'threw';
 
 // @public
 type XAiThinkingModelNames = 'grok-3-mini' | 'grok-4.3' | 'grok-4' | 'grok-4.5' | 'grok-4.6' | 'grok-4.7';
