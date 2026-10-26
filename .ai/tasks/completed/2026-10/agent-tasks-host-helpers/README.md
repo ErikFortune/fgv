@@ -1,6 +1,6 @@
 # agent-tasks-host-helpers — the plumbing every broker host rewrites
 
-**Shipped**: 2026-10-26 into `integration/asks` via #TBD.
+**Shipped**: 2026-10-26 into `integration/asks` via #758.
 Package: `@fgv/ts-agent-tasks` (new `host` packlet; `broker`, `storage`, `types`). Origin:
 personaility#698 (fgv-ask), slices B-3, B-7, B-4, B-5 + F8. Change file typed `minor`
 (`BREAKING (implementers only):`).

@@ -1,7 +1,7 @@
 id: agent-tasks-host-helpers
 status: shipped
 packages: ['@fgv/ts-agent-tasks']
-prs: [] # TBD: the PR number is filled in when the PR opens
+prs: [758]
 openPrs: []
 opened: 2026-10-26
 closed: 2026-10-26
