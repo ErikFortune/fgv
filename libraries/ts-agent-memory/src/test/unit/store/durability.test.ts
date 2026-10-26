@@ -406,6 +406,7 @@ describe('FileTreeMemoryStore durability', () => {
     test("'replaced' still succeeds when the logger throws", async () => {
       const { script, store } = await seeded(new ThrowingLogger());
       script.write = writeThenFail('replaced');
+      expect(store.durability.atomic).toBe(true);
       expect(await store.put(record('intro', 'after'))).toSucceed();
       expect(await bodyOf(store)).toBe('after');
     });
@@ -480,7 +481,11 @@ describe('FileTreeMemoryStore durability', () => {
 
     test('a sweep failure survives a throwing logger', () => {
       const script: IScript = { childrenAtomic: true, cleanup: () => fail('cannot remove') };
-      expect(open(new ScriptedDir(inMemoryRoot(), script), { logger: new ThrowingLogger() })).toSucceed();
+      expect(
+        open(new ScriptedDir(inMemoryRoot(), script), { logger: new ThrowingLogger() })
+      ).toSucceedAndSatisfy((store) => {
+        expect(store.durability.removedTemporaries).toEqual([]);
+      });
     });
 
     test('the sweep walks directories that cannot hold working files', async () => {
@@ -603,7 +608,8 @@ describe('FileTreeMemoryStore durability on the filesystem', () => {
 
   whenQualified("a directory flush that fails after the replacement is committed ('replaced')", async () => {
     const root = fsRoot();
-    const store = open(root).orThrow();
+    const logger = new Logging.InMemoryLogger('info');
+    const store = open(root, { logger }).orThrow();
     (await store.put(record('intro', 'before'))).orThrow();
     const realFsync = fs.fsyncSync;
     let calls = 0;
@@ -618,6 +624,7 @@ describe('FileTreeMemoryStore durability on the filesystem', () => {
     jest.restoreAllMocks();
     expect(await bodyOf(store)).toBe('after');
     expect(persisted(root)).toContain('after');
+    expect(logger.logged.join('\n')).toMatch(/new record is in place, but .*could not be flushed/i);
     store.dispose();
   });
 
