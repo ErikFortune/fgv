@@ -294,3 +294,15 @@ section refused and nothing committed; `p8_loop` answers `conflict` after three 
 | `change --verify --target-branch origin/integration/asks` | passes |
 | prettier 2.8.8 | clean |
 | feed `--check` / `verify-capability-docs` | 0 stale / 0 failed |
+
+## Review round 4 (2026-10-26, on `101291697`)
+
+No P1 or P2. Shown red by reverting the fix in the current source (`scratchpad/revert.py r4-*`).
+`p9_replay_inverse` now answers `registerExternal v: the task kept changing…` and commits nothing.
+
+| finding | fix | test | red on revert |
+|---|---|---|---|
+| P3-1 a replay judged from the broker read, absent in the writer, registered a new task with no checks | the gated section always re-reads: a registration to write must still be absent, a replay must still be live; otherwise nothing is committed and the bounded retry re-runs every check. The native twin does not exist: its replay path ends in `confirmUnchanged`, which refuses a record absent in the writer and commits nothing | `a registration that reads as live outside but is absent in the writer is not written unchecked` | yes — r4-replay-writer-check |
+| P3-2 `_keptChanging` dropped correlation | it takes the task and operation ids: `create <taskId>` / `registerExternal <taskId>`, `{ operationId }` in the detail. A retried attempt answers the second miss itself inside the writer, so no extra branch | the two bounded-retry tests assert the message and `{ code, retry, operationId }` | yes — r4-kept-changing-ids (3 red) |
+| P3-3 `ae-internal-missing-underscore` in `api.md` | renamed `_taskScopeKey` / `_taskRecordScopes`; the report carries no `ae-` warning | — | — |
+| P3-4 (optional) | applied: a replay is authorized for `_taskRecordScopes(record)` whenever the record exists, so a scope change committed between passes is what is asked | existing replay tests | — |
