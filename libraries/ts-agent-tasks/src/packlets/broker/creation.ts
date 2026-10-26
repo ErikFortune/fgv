@@ -121,10 +121,19 @@ export async function createNative(
   // takes the existing-record path and its checks against the record as committed. The repository
   // is host-supplied, so a second miss is answered rather than retried without bound.
   // A retried attempt answers a second miss itself, so it never asks for another run.
+  // The bound is checked here too, not only inside `_createOnce`: a write guard that answers success
+  // without running the section also yields "nothing to report", and must not recurse forever.
   const first = await _createOnce(core, ctx, input, list, committedScopes, options ?? {});
-  return first.isSuccess() && first.value === undefined
-    ? createNative(core, ctx, input, list, committedScopes, { ...options, retried: true })
-    : first.onSuccess((created) => ok(created!));
+  if (first.isSuccess() && first.value === undefined) {
+    return options?.retried === true
+      ? taskFailure<ITaskMutationResult>(
+          'broker: creation retried and still found nothing to report',
+          'invalid',
+          'after-host-action'
+        )
+      : createNative(core, ctx, input, list, committedScopes, { ...options, retried: true });
+  }
+  return first.onSuccess((created) => ok(created!));
 }
 
 /** The answer when an operation kept losing the race it retries, correlated to its request. */
@@ -534,8 +543,16 @@ export async function registerExternal(
   }
   // Went live (or vanished) under it: run again, once, with every check; a retried attempt answers
   // a second miss itself, so a host-supplied repository that keeps missing is answered, not retried.
+  // Bounded here as well, for the same reason as `createNative`.
   if (registered.value === undefined) {
-    return registerExternal(core, principal, input, true);
+    return retried
+      ? taskFailure<TaskRegistrationResult>(
+          'broker: registration retried and still found nothing to report',
+          'invalid',
+          'after-host-action',
+          { operationId }
+        )
+      : registerExternal(core, principal, input, true);
   }
   const read = await core.repository.read(taskId);
   if (read.isFailure()) {

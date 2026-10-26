@@ -659,19 +659,26 @@ a section per step), so it can resolve mid-operation. **To quiesce before a shut
 pause the `writeGuard`, then `whenIdle`**: it resolves once the sections already past the guard have
 finished. A write that arrives during the pause and is held *at* the guard is a queued section, so
 it keeps the broker busy until the pause lifts — a gate whose pause holds new writes should report
-its own quiet for that case. It sees only the broker's queue — direct
+its own quiet for that case, as `AsyncControl.WriteGate.pause` does by resolving once its own writes
+under way have drained. It sees only the broker's queue — direct
 `repository.withWriter` callers are invisible to it. The bound uses `TaskBroker.create`'s `schedule`
-(`(fn, ms) => cancel`, default `setTimeout`); a `schedule` or `cancel` that throws never reaches the
-writer queue.
+(`AsyncControl.ScheduleTimer` from `@fgv/ts-extras`, `(fn, ms) => cancel`, default `setTimeout`); a
+`schedule` or `cancel` that throws never reaches the writer queue.
 
 **`TaskBroker.create({ writeGuard })`.** A structural `{ guard(write) }` applied inside the queue's
 turn, around the repository writer, for **every** broker write — bound writers, model tools, source
-passes, deliveries, retention and `cleanup`. The broker tracks whether the guard ran the section:
-- refused without running it, with a failure carrying no task detail (a gate typed over plain
-  `Result`) — `storage-unavailable`, retry `after-host-action`;
-- threw without running it — `invalid`;
-- ran it, then failed or threw — `storage-unavailable`, retry **`reconcile-first`**: the section may
-  have committed. A section the guard started without awaiting is awaited before the turn ends;
+passes, deliveries, retention and `cleanup`. `guard` answers any `PromiseLike<Result<T>>`, so
+`AsyncControl.WriteGate` from `@fgv/ts-extras` fits as is — raise it to refuse every broker write
+unrun, pause it to hold them. The section must be started before the guard answers (a gate may wait
+on a pause first): one started after the broker observed the answer is refused unrun, and one started
+in the few microtasks between the answer settling and the broker observing it is awaited and
+classified as run. The broker tracks whether the guard ran the section:
+- refused without running it — that failure when its detail converts as an `ITaskFailure`; otherwise
+  (a gate typed over plain `Result`) `storage-unavailable`, retry `after-host-action`;
+- answered success or a non-`Result`, or threw, without running it — `invalid`;
+- ran it, then failed, threw or answered a non-`Result`, or the section itself rejected —
+  `storage-unavailable`, retry **`reconcile-first`**: the section may have committed. A section the
+  guard started without awaiting is awaited before the turn ends;
 - ran it twice — the second call is refused unrun.
 
 **The guard must not call the broker.** A broker write started from inside `guard` queues behind
@@ -1331,6 +1338,7 @@ multi-process ownership, general event sourcing, and dependency DAGs.
 <!-- BEGIN GENERATED: recent-additions -->
 
 - **2026-10-26** — An agent-task host can open or initialize its repository in the strongest mode its root qualifies for, give its own principal a fixed trusted authority, wait for the broker to go idle and gate every broker write. ([#758](https://github.com/ErikFortune/fgv/pull/758))
+- **2026-10-26** — A host can stop every write it routes through one AsyncControl.WriteGate, or hold them still for a snapshot until the writes under way drain, and hand the same gate to a task broker as its writeGuard. ([#761](https://github.com/ErikFortune/fgv/pull/761))
 - **2026-10-01** — Agent task context can go into a cacheable prompt as one checked, trailing per-request slot, and a delivery's receipt is acknowledgeable only against the exact text that was sent. ([#707](https://github.com/ErikFortune/fgv/pull/707))
 - **2026-09-28** — A host can give a model bounded, per-call-authorized tools over its agent tasks: read-only by default, with create, update, reassign, typed commands and cascade-stop requests opt-in. ([#702](https://github.com/ErikFortune/fgv/pull/702))
 - **2026-09-22** — New @fgv/ts-agent-tasks records agent work without running it: typed task envelopes, a crash-safe FileTree store, and a principal-bound broker with exact-receipt delivery, external-source reconciliation, retention and persistent cascade stop. ([#684](https://github.com/ErikFortune/fgv/pull/684))
