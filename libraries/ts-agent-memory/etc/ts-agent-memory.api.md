@@ -12,6 +12,7 @@ import { FileTree } from '@fgv/ts-json-base';
 import { JsonSchema } from '@fgv/ts-json-base';
 import { Logging } from '@fgv/ts-utils';
 import { Result } from '@fgv/ts-utils';
+import { StringOneOf } from '@fgv/ts-utils';
 
 // @public
 export type AdmissionDecision = {
@@ -128,6 +129,8 @@ export class FileTreeMemoryStore implements IMemoryStore {
     static create(params: IFileTreeMemoryStoreCreateParams): Result<FileTreeMemoryStore>;
     dedupScopeFor(kind: Kind): DedupScope;
     delete(kind: Kind, entityId: EntityId): Promise<Result<MemoryId>>;
+    dispose(): void;
+    get durability(): IMemoryStoreDurability;
     embedsKind(kind: Kind): boolean;
     get(kind: Kind, entityId: EntityId): Promise<Result<IMemoryRecord<unknown> | undefined>>;
     getById(scope: MemoryScopeKey, id: MemoryId): Promise<Result<IMemoryRecord<unknown> | undefined>>;
@@ -294,6 +297,7 @@ export interface IFileTreeMemoryStoreCreateParams {
     readonly clock?: () => number;
     readonly codecs?: ReadonlyMap<Kind, IIdentityCodec>;
     readonly defaultCodec?: IIdentityCodec;
+    readonly durability?: IMemoryStoreDurabilityOptions;
     readonly embed?: MemoryEmbedder;
     readonly embedKinds?: ReadonlySet<Kind>;
     readonly fragmentEmbedder?: FragmentEmbedder;
@@ -619,6 +623,7 @@ export interface IMemoryStore extends IMemoryRecordResolver, IIdentityResolver {
     coverage(): Promise<Result<IDerivedStateCoverage>>;
     dedupScopeFor(kind: Kind): DedupScope;
     delete(kind: Kind, entityId: EntityId): Promise<Result<MemoryId>>;
+    dispose?(): void;
     embedsKind(kind: Kind): boolean;
     get(kind: Kind, entityId: EntityId): Promise<Result<IMemoryRecord<unknown> | undefined>>;
     getById(scope: MemoryScopeKey, id: MemoryId): Promise<Result<IMemoryRecord<unknown> | undefined>>;
@@ -627,6 +632,19 @@ export interface IMemoryStore extends IMemoryRecordResolver, IIdentityResolver {
     listScoped(): Promise<Result<ReadonlyArray<IScopedMemoryRecord>>>;
     put(record: IMemoryRecord<unknown>): Promise<Result<IMemoryRecord<unknown>>>;
     reconcile(kind: Kind, artifact: DerivedArtifact): Promise<Result<ReconcileReport>>;
+}
+
+// @public
+export interface IMemoryStoreDurability {
+    readonly atomic: boolean;
+    readonly guarantee?: FileTree.AtomicWriteGuarantee;
+    readonly reason: string;
+    readonly removedTemporaries: ReadonlyArray<string>;
+}
+
+// @public
+export interface IMemoryStoreDurabilityOptions {
+    readonly require?: MemoryDurabilityRequirement;
 }
 
 // @public
@@ -938,6 +956,12 @@ export class MemoryCapCullPolicy implements IWritePolicy {
 
 // @public
 export type MemoryDetailTier = 'gist' | 'full';
+
+// @public
+export type MemoryDurabilityRequirement = StringOneOf<typeof memoryDurabilityRequirements>;
+
+// @public
+export const memoryDurabilityRequirements: readonly ["session", "process-crash"];
 
 // @public
 export type MemoryEmbedder = (record: IMemoryRecord<unknown>) => Promise<Result<Float32Array | undefined>>;

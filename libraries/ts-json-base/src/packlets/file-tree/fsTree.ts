@@ -54,6 +54,14 @@ import {
 } from './fs-atomic';
 
 /**
+ * `true` when `inner` is `outer` or lies beneath it. An `outer` that already ends
+ * in a separator — the filesystem root — is its own prefix.
+ */
+function _isWithin(outer: string, inner: string): boolean {
+  return inner === outer || inner.startsWith(outer.endsWith(path.sep) ? outer : `${outer}${path.sep}`);
+}
+
+/**
  * A root's atomic-write qualification, together with the failure code to report
  * if it refuses.
  *
@@ -130,6 +138,16 @@ export class FsFileTreeAccessors<TCT extends string = string>
       return path.resolve(this.prefix, ...paths);
     }
     return path.resolve(...paths);
+  }
+
+  /**
+   * {@inheritDoc FileTree.IFileTreeAccessors.resolveRealPath}
+   */
+  public resolveRealPath(itemPath: string): Result<string> {
+    const absolutePath = this.resolveAbsolutePath(itemPath);
+    return captureResult(() => fs.realpathSync.native(absolutePath)).withErrorFormat(
+      (m) => `${absolutePath}: cannot resolve real path: ${m}`
+    );
   }
 
   /**
@@ -324,7 +342,7 @@ export class FsFileTreeAccessors<TCT extends string = string>
     // it, and two different answers to one question is worse than either.
     return this._confineToRoot(this.resolveAbsolutePath(directory))
       .onSuccess(() => this._qualifyDirectory(directory))
-      .onSuccess((qualification) => succeed(qualification.capabilities));
+      .onSuccess(({ capabilities, reason }) => succeed({ ...capabilities, reason }));
   }
 
   /**
@@ -338,7 +356,9 @@ export class FsFileTreeAccessors<TCT extends string = string>
     const absolutePath = this.resolveAbsolutePath(filePath);
     const directoryPath = path.dirname(absolutePath);
 
-    const confined = this._confineToRoot(absolutePath);
+    // `confined.value` is the containing directory's real path, the one the
+    // confinement check accepted; the commit goes through it below.
+    const confined = this._confineToRoot(absolutePath, directoryPath);
     if (confined.isFailure()) {
       return failWithDetail(confined.message, {
         code: 'not-writable',
@@ -390,9 +410,12 @@ export class FsFileTreeAccessors<TCT extends string = string>
       });
     }
 
+    // Commit through the directory confinement checked, not the logical path: a
+    // symbolic link retargeted between that check and the rename cannot redirect
+    // the write somewhere it was never checked.
     return commitFileAtomically({
-      destinationPath: absolutePath,
-      directoryPath,
+      destinationPath: path.join(confined.value, path.basename(absolutePath)),
+      directoryPath: confined.value,
       contents,
       guarantee: options.guarantee,
       ops: defaultAtomicFsOperations,
@@ -405,13 +428,14 @@ export class FsFileTreeAccessors<TCT extends string = string>
    */
   public cleanupAtomicTemporaries(directory: string): Result<ReadonlyArray<string>> {
     const absolutePath = this.resolveAbsolutePath(directory);
-    return this._confineToRoot(absolutePath)
-      .onSuccess(() => this.fileIsMutable(directory).asResult)
-      .onSuccess(() =>
-        cleanupAtomicTemporaries(defaultAtomicFsOperations, absolutePath, (...paths: string[]) =>
+    // Sweep the real directory the confinement check accepted, as the write commits through it.
+    return this._confineToRoot(absolutePath).onSuccess((realDirectory) =>
+      this.fileIsMutable(directory).asResult.onSuccess(() =>
+        cleanupAtomicTemporaries(defaultAtomicFsOperations, realDirectory, (...paths: string[]) =>
           this.joinPaths(...paths)
         )
-      );
+      )
+    );
   }
 
   /**
@@ -425,7 +449,12 @@ export class FsFileTreeAccessors<TCT extends string = string>
    */
   private _qualifyDirectory(directory: string): Result<IAccessorQualification> {
     const absolutePath = this.resolveAbsolutePath(directory);
-    return qualifyAtomicWrites(defaultAtomicFsOperations, absolutePath, process.platform).onSuccess(
+    // Qualify what the path names, not the path: a directory reached through a
+    // symbolic link is the link's target, and the qualification inspects the
+    // directory without following a final link. A path that does not resolve is
+    // qualified as given, so the "not found" diagnosis still comes from there.
+    const qualifiedPath = this.resolveRealPath(absolutePath).orDefault(absolutePath);
+    return qualifyAtomicWrites(defaultAtomicFsOperations, qualifiedPath, process.platform).onSuccess(
       (qualification): Result<IAccessorQualification> => {
         // A refusal this accessor makes on POLICY grounds is `not-writable` —
         // the same code the in-memory store reports for the same conditions.
@@ -457,18 +486,39 @@ export class FsFileTreeAccessors<TCT extends string = string>
    *
    * @remarks
    * `resolveAbsolutePath` ignores the prefix for an input that is already
-   * absolute, so confinement has to be checked rather than assumed. A tree with no prefix has no root to be
-   * confined to, and the check is vacuous.
+   * absolute, so confinement has to be checked rather than assumed. A tree with
+   * no prefix has no root to be confined to, and the check is vacuous.
+   *
+   * Qualification inspects the real path of the containing directory, so
+   * confinement checks it too: the real path of `directoryPath` must lie under
+   * the real path of the root. A directory inside the tree that is a symbolic
+   * link to somewhere else in the tree is accepted; one that leads outside the
+   * tree is refused. A directory that does not exist is left to the
+   * qualification, which reports it as not found.
+   *
+   * @returns `Success` with the real path of `directoryPath` — or `directoryPath`
+   * itself when it has none to resolve (it does not exist) — or `Failure` if the
+   * path lies outside the root.
    */
-  private _confineToRoot(absolutePath: string): Result<string> {
+  private _confineToRoot(absolutePath: string, directoryPath: string = absolutePath): Result<string> {
+    const realDirectory = this.resolveRealPath(directoryPath);
     if (this.prefix === undefined) {
-      return succeed(absolutePath);
+      return succeed(realDirectory.orDefault(directoryPath));
     }
     const root = path.resolve(this.prefix);
-    if (absolutePath === root || absolutePath.startsWith(`${root}${path.sep}`)) {
-      return succeed(absolutePath);
+    if (!_isWithin(root, absolutePath)) {
+      return fail(`${absolutePath}: resolves outside the tree root '${root}'`);
     }
-    return fail(`${absolutePath}: resolves outside the tree root '${root}'`);
+    if (realDirectory.isFailure()) {
+      return succeed(directoryPath);
+    }
+    const realRoot = this.resolveRealPath(root).orDefault(root);
+    if (!_isWithin(realRoot, realDirectory.value)) {
+      return fail(
+        `${directoryPath}: resolves through a symbolic link to '${realDirectory.value}', outside the tree root '${realRoot}'`
+      );
+    }
+    return succeed(realDirectory.value);
   }
 
   /**

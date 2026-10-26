@@ -8,4 +8,5 @@ export * from './reconcile';
 export * from './listSelection';
 export * from './memoryStore';
 export * from './fileTreeMemoryStore';
+export * from './openReport';
 export * from './scopeEncoding';
