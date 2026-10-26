@@ -1,0 +1,53 @@
+id: chores-2026-10-asks-hmac-compositeid
+status: shipped
+packages: ['@fgv/ts-extras', '@fgv/ts-web-extras', '@fgv/ts-utils']
+prs: [] # #TBD: fill with the PR number once the PR is opened
+openPrs: []
+opened: 2026-10-26
+closed: 2026-10-26
+summary:
+  intended: >
+    Two fgv-asks from personaility in one PR, one commit each. #692: add generateHmacKey and
+    importHmacKey to ICryptoProvider (HMAC-SHA256, sign/verify usages, non-extractable by default,
+    256-bit generate, import refuses keys under 32 bytes), implement them in NodeCryptoProvider and
+    BrowserCryptoProvider without widening the existing key parameter, fix the hmacSha256 doc that
+    pointed at crypto.subtle.importKey and claimed PBKDF2 yields a CryptoKey, and sweep for
+    structural doubles. #693: add split 'exact' | 'first' | 'last' to compositeIdFromString,
+    compositeId and CompositeIdValidator ('exact' default), declare the mode once as a named type
+    from an as-const array, fix the ':.' message typo in both places, and document the
+    nested-composite pattern.
+  shipped: >
+    Both items as briefed. ICryptoProvider has generateHmacKey / importHmacKey with IHmacKeyOptions
+    and Constants.HMAC_SHA256_KEY_SIZE, implemented in both providers; the implementer sweep found
+    only the two real providers. Composite ids take ICompositeIdOptions.split on the converters and
+    split on the validator params, with Validation.CompositeIdSplitMode declared over
+    allCompositeIdSplitModes, the typo fixed, and the nested pattern documented and tested.
+    Change files: ts-extras and ts-web-extras minor with a BREAKING (implementers only) prefix,
+    ts-utils minor.
+  diverged: >
+    The composite-id split helper is duplicated as a module-private function in the converter and
+    validator files rather than shared, because sharing across the packlet boundary would have made
+    it public API on an established surface. New crypto TSDoc uses code spans instead of {@link}
+    to avoid ae-unresolved-link warnings in api.md. Not named in the brief but shipped: the
+    Constants.HMAC_SHA256_KEY_SIZE constant, the named IHmacKeyOptions / ICompositeIdOptions
+    interfaces in place of inline option literals, and a ts-utils CAPABILITIES.md shortcut for
+    composite-id split modes.
+  sourceLine: '**Shipped:** `ICryptoProvider` can now generate and import HMAC-SHA256 keys itself, non-extractable by default, so callers no longer reach past the provider to `crypto.subtle.importKey`; and composite ids can split at the first or last separator, so one part may itself contain the separator.'
+  headline: >
+    ICryptoProvider now generates and imports non-extractable HMAC-SHA256 keys itself, and composite
+    ids can split at the first or last separator so one part may contain it.
+keywords:
+  - HMAC key
+  - CryptoKey
+  - non-extractable
+  - crypto.subtle.importKey bypass
+  - RFC 2104
+  - deriveKey
+  - implementers-only breaking change
+  - composite id
+  - separator split
+  - indexOf / lastIndexOf
+  - nested composite
+  - CompositeIdSplitMode
+  - fgv-ask
+sourceHash: sha256:c0edeacf0c3d4b9e # over brief.md + result.md + state.md

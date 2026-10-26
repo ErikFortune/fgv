@@ -5,8 +5,8 @@ Worker-owned working surface. The brief is frozen; questions go here.
 ## Progress
 - [x] Item 1 (#692) — `generateHmacKey` / `importHmacKey` on `ICryptoProvider`
 - [x] Item 2 (#693) — `split: 'exact' | 'first' | 'last'` for composite ids
-- [ ] Gates
-- [ ] Close-out
+- [x] Gates — see `result.md` § Gates; `ts-res-cli` timeouts under repo-wide load, green alone
+- [x] Close-out
 
 ## Notes
 
