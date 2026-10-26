@@ -1,0 +1,53 @@
+id: agent-tasks-delivery-and-deferral
+status: shipped
+packages: ['@fgv/ts-agent-tasks']
+prs: [] # TBD — the PR into integration/agent-tasks-host is not open yet
+openPrs: []
+opened: 2026-10-26
+closed: 2026-10-26
+summary:
+  intended: >
+    personaility#698 slices B-1 and B-2: a host-driven delivery pump over a bound delivery (one owed
+    revision per next, stale renders released and their superseded revisions disposed, bounded and
+    loud; acknowledge then release; dispose releases first; superseded disposal after a terminal
+    discharge only; never self-acknowledging, at-least-once, exactly-once documented as not its
+    property) and deferred-obligation tasks over tracked tasks with notBefore ((changeRef, role) to a
+    deterministic id, defer idempotent across a crash between create and wait, stateOf, wait,
+    succeed, cancel, merged, abandonPending, due over queryDue, waiting, archiveSettled, a per-task
+    operation budget), every write through an optional structural guard, PersonAIlity's names
+    generalised into options, and nothing that bypasses authorization.
+  shipped: >
+    TaskDeliveryPump, DeferredObligations and ITaskHostWriteGuard in the host packlet;
+    IBoundTaskView.queryDue (an authorized, projected due query over the due index) with its
+    converter; ids, codes, namespaces, schedule and budget as options; a pure retry() advising wait,
+    hold or expire; deterministic operation ids so a lost response replays; a check-then-act table,
+    a 22-row revert matrix each shown red, and every contract test in the ask mapped to a test.
+  diverged: >
+    IBoundTaskView was widened with queryDue, since the due index was reachable only through the
+    repository and the brief required the due pass to be both authorized and indexed. A committed
+    acknowledgement succeeds with its follow-up failures as issues rather than failing. The schedule
+    advises rather than holds, keeping no resident state. merged re-reads its survivor, and the
+    sweeps report per task and carry on; neither is in the PersonAIlity source. No stale-receipt
+    release: issued() plus abandon is documented instead. Repo-wide rush test ran in parts under a
+    ten-minute tool limit, all 39 operations covered.
+  sourceLine: "**Shipped:** `@fgv/ts-agent-tasks` gains the host's own delivery and deferral loops as bounded calls — `TaskDeliveryPump`, which drains a subscription one owed revision at a time and never acknowledges on its own, and `DeferredObligations`, durable retry obligations kept as waiting tracked tasks that a crash cannot duplicate — plus `IBoundTaskView.queryDue`, so the due pass is both authorized and indexed."
+  headline: >
+    An agent-task host can drain a subscription one revision at a time, acknowledging only after its
+    own work commits, and keep a durable retry obligation for a busy recipient that a crash cannot
+    duplicate.
+keywords:
+  - delivery pump
+  - at-least-once delivery
+  - stale render
+  - superseded revisions
+  - stale issued receipt
+  - deferred obligation
+  - durable retry
+  - notBefore
+  - due index
+  - crash idempotency
+  - operation budget
+  - backoff schedule
+  - write gate
+  - fgv-ask
+sourceHash: sha256:1764125c239c40cd # over brief.md + state.md + result.md
