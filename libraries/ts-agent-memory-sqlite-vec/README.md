@@ -104,6 +104,40 @@ window; it is not a proof against it.
 
 Vectors written in one process are present in the next. `SqliteVecVectorIndex.create` recovers the established dimension from the existing `vec0` table, so a reopened index answers queries immediately with **no re-embedding**. That is the entire point of the package. `SqliteVecFragmentIndex` gives the same guarantee for fragments.
 
+## Embedding identity
+
+The dimension recovered on reopen cannot tell two embedding models of the same width apart, so a model swap would otherwise keep serving vectors from another embedding space without an error. Pass an opaque `identity` — typically a model name and version — and the index stores it **in the same database file**, so a copy, restore or snapshot carries it along with the vectors:
+
+```ts
+const { index, close } = (
+  await SqliteVecVectorIndex.open({ path: '/path/to/vault/vectors.db', identity: 'text-embed-3@1' })
+).orThrow();
+
+const report = index.identity().orThrow();
+// { status: 'fresh' | 'match' | 'mismatch' | 'absent' | 'incomplete' | 'unchecked', stored? }
+```
+
+`identity()` reads the file on every call and never writes. The statuses:
+
+| status | meaning | `add` / `addFragments` / `query` |
+|---|---|---|
+| `fresh` | the table does not exist yet (a row left by a dropped table is ignored) | allowed |
+| `match` | the stored identity equals the handle's | allowed |
+| `mismatch` | another identity is stored; `stored` names it | **fail** |
+| `absent` | vectors exist, but no identity was ever stored | allowed |
+| `incomplete` | a `rebuild` started and never finished | **fail** |
+| `unchecked` | the handle was opened without an identity | allowed |
+
+- **The first write to a fresh index** creates the table and stores the identity in one transaction.
+- **`rebuild` is always allowed and is the remedy** for `mismatch` and `incomplete`. It clears the table and marks it `'rebuilding'` in one transaction, then commits the handle's identity in a final one. A crash, a `'fail'` rollback, or a final commit that cannot be written (for example `SQLITE_BUSY` from another connection) leaves `incomplete`, so a partial table is detectable. Nothing is ever deleted automatically.
+- **`adoptIdentity()`** records the handle's identity over `absent` vectors without re-embedding — a one-time migration for a consumer that kept the identity somewhere else. It is refused for every other status.
+- **A plain write to an `absent` index commits nothing**, so files written before identities existed keep working unchanged.
+- **Read-only and consumer-owned connections.** `open`, `create` and `identity()` never write; a write or adoption on a read-only connection is a `Failure`.
+
+The identity lives in an ordinary table, `fgv_sqlite_vec_meta`, with one row per index table, so a record index and a fragment index in one file are checked independently. It is created on the first write that needs it; there is no migration.
+
+**Limits.** A model swap to a **different width** still needs the table dropped (or a fresh `tableName`) and re-indexed — a rebuild cannot change a `vec0` table's dimension, and fails, leaving the index `incomplete`. The `'rebuilding'` marker is a crash marker, not a lock: two rebuilds of one table on two connections at once are not coordinated. And an **older version of this package ignores the meta table**: if it writes or rebuilds the file after a downgrade, the stored row may no longer describe the vectors. Rebuild after upgrading again.
+
 ## Fragment-granular index
 
 `SqliteVecFragmentIndex` is the durable `IFragmentVectorIndex` — the "discovery" half of a search-then-read contract, where a hit's `(target, locator)` tells you which record **and** which span matched. It is the persistent counterpart to `InMemoryFragmentCosineIndex` and shares its exact semantics.
