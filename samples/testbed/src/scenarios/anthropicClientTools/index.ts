@@ -45,6 +45,8 @@
  *   text + tool_use blocks in stream order) is accepted by the API.
  * - **Typed schema validation:** Memory tool args are validated via `JsonSchema` before
  *   `execute` is called.
+ * - **The bounded runner:** the rounds are driven by `AiAssist.runClientToolLoop` rather than a
+ *   hand-written loop over `executeClientToolTurn`, with a round cap and a deadline.
  *
  * @packageDocumentation
  */
@@ -141,6 +143,12 @@ const SYSTEM_PROMPT: string =
   'When the user asks about current facts, use `web_search` to look them up. ' +
   'Combine both sources when the question spans both.';
 
+/** At most this many provider rounds: one to call the tools, one to answer, and headroom. */
+const MAX_ROUNDS: number = 4;
+
+/** Bound on the whole loop, so a stalled provider or tool cannot hold the scenario. */
+const LOOP_DEADLINE_MS: number = 120000;
+
 // ---------------------------------------------------------------------------
 // CLI implementation
 // ---------------------------------------------------------------------------
@@ -185,146 +193,89 @@ const cliImpl: ICliScenarioImpl = {
     // Server tool: web_search.
     const serverTools: AiAssist.AiServerToolConfig[] = [{ type: 'web_search' }];
 
-    // First turn: execute with client tools + server tools + thinking.
-    context.logger.info('Starting first turn (client tools + server tools + thinking)...');
+    // The rounds are driven by `runClientToolLoop`: it replaces the cumulative continuation
+    // each round, dispatches the memory tool while each round's stream drains, and stops at
+    // the round cap or the deadline. The observer sees each round's events as they arrive.
+    context.logger.info('Running the client-tool loop (client tools + server tools + thinking)...');
 
-    const turnResult = AiAssist.executeClientToolTurn({
+    let serverToolEventCount = 0;
+    const observer: AiAssist.IClientToolLoopObserver = {
+      event: (round, event) => {
+        if (event.type === 'client-tool-call-done') {
+          context.logger.info(
+            `  [round ${round} client-tool-call-done] toolName=${event.toolName}` +
+              (event.callId !== undefined ? ` callId=${event.callId}` : '')
+          );
+        } else if (event.type === 'client-tool-result') {
+          context.logger.info(
+            `  [round ${round} client-tool-result] toolName=${event.toolName} isError=${String(event.isError)} ` +
+              `result=${event.result.slice(0, 80)}`
+          );
+        } else if (event.type === 'tool-event') {
+          serverToolEventCount++;
+          context.logger.info(
+            `  [round ${round} tool-event] toolType=${event.toolType} phase=${event.phase}` +
+              (event.detail !== undefined ? ` detail=${event.detail.slice(0, 80)}` : '')
+          );
+        } else if (event.type === 'error') {
+          context.logger.warn(`  [round ${round} error] ${event.message}`);
+        }
+      },
+      round: (r) => {
+        context.logger.info(
+          `Round ${r.round} complete: ${r.calls.length} tool call(s), provider ${Math.round(
+            r.providerDurationMs
+          )} ms, truncated=${String(r.truncated)}`
+        );
+      }
+    };
+
+    const loopResult = await AiAssist.runClientToolLoop({
       descriptor,
       apiKey,
       ...request,
       clientTools: [memoryTool],
       tools: serverTools,
       model,
-      resolvedThinking
+      resolvedThinking,
+      maxRounds: MAX_ROUNDS,
+      deadlineMs: LOOP_DEADLINE_MS,
+      logger: context.logger,
+      observer
     });
-
-    if (turnResult.isFailure()) {
-      return fail(`executeClientToolTurn failed: ${turnResult.message}`);
+    if (loopResult.isFailure()) {
+      return fail(
+        `runClientToolLoop failed after ${loopResult.detail?.rounds.length ?? 0} round(s): ${loopResult.message}`
+      );
     }
 
-    const { events, nextTurn } = turnResult.value;
-
-    // Collect events from the first turn.
-    let firstTurnText = '';
-    let clientToolCallCount = 0;
-    let serverToolEventCount = 0;
-
-    for await (const event of events) {
-      if (event.type === 'text-delta') {
-        firstTurnText += event.delta;
-      } else if (event.type === 'client-tool-call-done') {
-        clientToolCallCount++;
-        context.logger.info(
-          `  [client-tool-call-done] toolName=${event.toolName}` +
-            (event.callId !== undefined ? ` callId=${event.callId}` : '')
-        );
-      } else if (event.type === 'client-tool-result') {
-        context.logger.info(
-          `  [client-tool-result] toolName=${event.toolName} isError=${String(event.isError)} ` +
-            `result=${event.result.slice(0, 80)}`
-        );
-      } else if (event.type === 'tool-event') {
-        serverToolEventCount++;
-        context.logger.info(
-          `  [tool-event] toolType=${event.toolType} phase=${event.phase}` +
-            (event.detail !== undefined ? ` detail=${event.detail.slice(0, 80)}` : '')
-        );
-      } else if (event.type === 'error') {
-        return fail(`Stream error during first turn: ${event.message}`);
-      }
+    const outcome = loopResult.value;
+    if (outcome.state !== 'completed') {
+      return fail(`runClientToolLoop ended ${outcome.state} after ${outcome.rounds.length} round(s)`);
     }
 
-    // Await the first turn's completion.
-    const firstTurnCompletion = await nextTurn;
-    if (firstTurnCompletion.isFailure()) {
-      return fail(`First turn nextTurn failed: ${firstTurnCompletion.message}`);
-    }
-
-    const firstTurnOutcome = firstTurnCompletion.value;
-    context.logger.info('');
-    context.logger.info('First turn complete.');
-    context.logger.info(`  client-tool-call-done events: ${clientToolCallCount}`);
-    context.logger.info(`  server tool-event events: ${serverToolEventCount}`);
-    context.logger.info(`  continuation present: ${String(firstTurnOutcome.continuation !== undefined)}`);
-
-    let finalResponse = firstTurnText;
-
-    // If the model issued client-tool calls, the continuation contains the reconstructed
-    // assistant turn (with thinking blocks) and the tool results. Send the follow-up request.
-    if (firstTurnOutcome.continuation !== undefined) {
-      const { continuation } = firstTurnOutcome;
-      context.logger.info('');
-      context.logger.info('Starting continuation turn (follow-up after tool results)...');
-
-      // The continuation messages are the reconstructed assistant turn + tool results
-      // in Anthropic wire format. They are appended after the prompt's user message via
-      // `continuationMessages` so the follow-up request is:
-      //   [user: <question>, assistant: <thinking+text+tool_use>, user: <tool_result>]
-      const continuationTurnResult = AiAssist.executeClientToolTurn({
-        descriptor,
-        apiKey,
-        ...request,
-        continuationMessages: continuation.messages,
-        clientTools: [memoryTool],
-        tools: serverTools,
-        model,
-        resolvedThinking
-      });
-
-      if (continuationTurnResult.isFailure()) {
-        return fail(`Continuation turn failed: ${continuationTurnResult.message}`);
-      }
-
-      const { events: continuationEvents, nextTurn: continuationNextTurn } = continuationTurnResult.value;
-
-      let continuationText = '';
-      for await (const event of continuationEvents) {
-        if (event.type === 'text-delta') {
-          continuationText += event.delta;
-        } else if (event.type === 'client-tool-call-done') {
-          context.logger.info(`  [continuation client-tool-call-done] toolName=${event.toolName}`);
-        } else if (event.type === 'client-tool-result') {
-          context.logger.info(
-            `  [continuation client-tool-result] toolName=${event.toolName} ` +
-              `isError=${String(event.isError)}`
-          );
-        } else if (event.type === 'error') {
-          return fail(`Stream error during continuation turn: ${event.message}`);
-        }
-      }
-
-      const continuationCompletion = await continuationNextTurn;
-      if (continuationCompletion.isFailure()) {
-        return fail(`Continuation nextTurn failed: ${continuationCompletion.message}`);
-      }
-
-      context.logger.info('Continuation turn complete.');
-
-      if (continuationText.length > 0) {
-        finalResponse = continuationText;
-      }
-    }
+    const calls = outcome.rounds.flatMap((r) => r.calls);
+    const clientToolCallCount = calls.length;
+    const finalResponse = outcome.rounds[outcome.rounds.length - 1]?.fullText ?? '';
 
     context.logger.info('');
     context.logger.info('=== FINAL RESPONSE ===');
     context.logger.info(finalResponse.slice(0, 500) + (finalResponse.length > 500 ? '...' : ''));
-
-    // Build the summary output.
-    const toolCallsSummary = firstTurnOutcome.continuation?.toolCallsSummary ?? [];
 
     const summaryLines = [
       'B-6 anthropic-client-tools scenario: PASS',
       '',
       `Model: ${model}`,
       'Thinking: enabled (effort=low)',
+      `Rounds: ${outcome.rounds.length} (state=${outcome.state})`,
       `Client tools invoked: ${clientToolCallCount}`,
       `Server tool events: ${serverToolEventCount}`,
-      `Tool calls summary (${toolCallsSummary.length}):`,
-      ...toolCallsSummary.map(
+      `Tool calls summary (${calls.length}):`,
+      ...calls.map(
         (s) =>
           `  - ${s.toolName}` +
           (s.callId !== undefined ? ` (callId=${s.callId})` : '') +
-          ` → isError=${String(s.isError)}`
+          ` → isError=${String(s.isError)}, ${Math.round(s.durationMs)} ms`
       ),
       '',
       'Empirical gates verified:',
