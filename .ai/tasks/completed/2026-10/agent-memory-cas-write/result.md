@@ -182,4 +182,19 @@ recounted from the stream entry headings.
 
 ## Gates — after review round 1
 
-Recorded below once run.
+On the committed tree `7cf5b1cd6` (round-1 commits `ba2efdf14`, `7cf5b1cd6`); merging
+`origin/integration/asks` (`7f81295b1`) was a no-op. Same grading as above; exit codes checked too
+(a package test failure prints `Error: N Jest tests failed`, which the bad-pattern grep misses — it
+caught one stale layout filter in `scopeDecoding.test.ts` on the first round-1 run, fixed in
+`7cf5b1cd6`).
+
+| gate | result | bad | warnings |
+|---|---|---|---|
+| `rush change --verify --target-branch origin/integration/asks` | exit 0 | 0 | 0 |
+| `ts-agent-memory` `rushx build` / `lint` / `test` (100% coverage) | exit 0 / 0 / 0 | 0 / 0 / 0 | 0 / 0 / 0 |
+| `rush rebuild` (repo-wide) | exit 0, SUCCESS 39 operations, 13m27s | 0 | symlink notice only |
+| `rush test` (repo-wide) | exit 0, SUCCESS 38 operations, 20m50s — no load-sensitive reruns needed | 0 | symlink notice only |
+| `rushx fixlint`, prettier 2.8.8 on every changed `.ts` | clean | — | — |
+| `max-lines` | `fileTreeMemoryStore.ts` 1982 / 2000 | — | — |
+| feed `--check`, `verify-capability-docs.mjs` | 0 stale / 0 failed | — | — |
+| revert matrix (16 rows) | every row RED | — | — |
