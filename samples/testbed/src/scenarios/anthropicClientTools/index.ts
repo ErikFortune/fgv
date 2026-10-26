@@ -207,10 +207,10 @@ const cliImpl: ICliScenarioImpl = {
               (event.callId !== undefined ? ` callId=${event.callId}` : '')
           );
         } else if (event.type === 'client-tool-result') {
+          const isError = String(event.isError);
           context.logger.info(
-            `  [round ${round} client-tool-result] toolName=${event.toolName} isError=${String(
-              event.isError
-            )} ` + `result=${event.result.slice(0, 80)}`
+            `  [round ${round} client-tool-result] toolName=${event.toolName} isError=${isError} ` +
+              `result=${event.result.slice(0, 80)}`
           );
         } else if (event.type === 'tool-event') {
           serverToolEventCount++;

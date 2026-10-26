@@ -1,0 +1,52 @@
+id: ai-assist-client-tool-loop
+status: shipped
+packages: ['@fgv/ts-extras']
+prs: [] # #TBD — the PR that carries this branch into integration/asks
+openPrs: []
+opened: 2026-10-26
+closed: 2026-10-26
+summary:
+  intended: >
+    Move the reference application's client-tool loop into fgv as AiAssist.runClientToolLoop
+    (personaility#697): rounds through a stop primitive, replace-not-append continuation, stop
+    states and the round cap as outcomes, a failed round as a DetailedResult failure carrying the
+    completed rounds, a broken drain on stop, the final cumulative tail, isolated observer hooks,
+    truncation reported only. The stop primitive, raceStopConditions, goes in a new async-control
+    packlet. Two executeClientToolTurn prerequisites: no tool dispatch after abort, and a required
+    durationMs on IAiClientToolCallSummary. Port one testbed scenario; update deferred.md, the
+    README and CAPABILITIES; record DeadlineWatch convergence as tech debt.
+  shipped: >
+    All of it. raceStopConditions validates the deadline range, aborts the work signal and settles
+    at once on a stop, and releases its timer and listener on every path. executeClientToolTurn's
+    dispatch path became one helper that checks the signal before the gate and again before
+    execute, and measures durationMs with an injectable clock. runClientToolLoop runs the whole
+    loop under one race and each round under another. The anthropic-client-tools testbed scenario
+    runs through the runner. result.md carries the check-then-act table and a twelve-row revert
+    matrix, each guarantee shown red when reverted.
+  diverged: >
+    Small surface choices only: a named ScheduleTimer type instead of IStopConditions['schedule'];
+    clock lives on IExecuteClientToolTurnParams and is inherited by the loop; the failure detail is
+    a named IClientToolLoopFailureDetail; MAX_DEADLINE_MS and CancelTimer are exported. The abort
+    check runs after argument validation, so an invalid call on an aborted turn reports its
+    validation error. One guarantee (never awaiting nextTurn after a stop) is kept but has no test
+    that can observe it.
+  sourceLine: '**Shipped:** `AiAssist.runClientToolLoop`, a bounded multi-round client-tool runner, on a new `async-control` packlet (`AsyncControl.raceStopConditions`); `executeClientToolTurn` no longer starts a tool after its signal aborts, and every call summary carries a required `durationMs`.'
+  headline: >
+    ai-assist can run a whole client-tool conversation: runClientToolLoop caps rounds and honours
+    a deadline and caller abort even when a tool ignores its signal.
+keywords:
+  - tool-use loop
+  - multi-round
+  - continuation replace not append
+  - round cap
+  - deadline
+  - abort signal
+  - stop conditions
+  - race
+  - orphaned round
+  - tool dispatch after abort
+  - tool call duration
+  - observer hooks
+  - AsyncDetailedResult
+relatedStreams: []
+sourceHash: sha256:TBD # over brief.md + result.md + state.md
