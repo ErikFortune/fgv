@@ -201,9 +201,7 @@ async function _guarded<T>(
   // A refusal keeps its classification only when it carries a valid task failure; a gate typed over
   // plain Result refuses without one. Either way nothing was written.
   const classified: Result<ITaskFailure> =
-    result instanceof DetailedFailure
-      ? failure.convert(result.detail)
-      : fail('no task detail');
+    result instanceof DetailedFailure ? failure.convert(result.detail) : fail('no task detail');
   return classified.isSuccess()
     ? failWithDetail<T, ITaskFailure>(result.message, classified.value)
     : taskFailure<T>(

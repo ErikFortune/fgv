@@ -31,7 +31,13 @@ import {
   succeedWithDetail
 } from '@fgv/ts-utils';
 
-import { type CancelTimer, defaultSchedule, isTimerDelay, MAX_DEADLINE_MS, type ScheduleTimer } from './stopConditions';
+import {
+  type CancelTimer,
+  defaultSchedule,
+  isTimerDelay,
+  MAX_DEADLINE_MS,
+  type ScheduleTimer
+} from './stopConditions';
 
 /**
  * Why a guarded write's outcome came from the gate rather than from the write:
@@ -231,7 +237,9 @@ export class WriteGate {
     this._pauses += 1;
     const held: IWriteGatePause = this._holdHandle();
     if (this._inFlight === 0) {
-      return AsyncDetailedResult.fromDetailed(succeedWithDetail<IWriteGatePause, WriteGatePauseFailure>(held));
+      return AsyncDetailedResult.fromDetailed(
+        succeedWithDetail<IWriteGatePause, WriteGatePauseFailure>(held)
+      );
     }
     return new AsyncDetailedResult(this._drain(held, timeoutMs));
   }
@@ -244,7 +252,10 @@ export class WriteGate {
    * Admits, holds or refuses `write`. Every branch is decided synchronously, and a write that is
    * admitted is counted before it is called.
    */
-  private _run<R>(write: () => Promise<R>, refuse: (message: string, refusal: WriteGateRefusal) => R): Promise<R> {
+  private _run<R>(
+    write: () => Promise<R>,
+    refuse: (message: string, refusal: WriteGateRefusal) => R
+  ): Promise<R> {
     if (this._reason !== undefined) {
       return Promise.resolve(refuse(`${this._raisedMessage()}; the write was not run`, 'raised'));
     }

@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-agent-tasks",
+      "comment": "BREAKING: ITaskWriteGuard.guard now answers PromiseLike<Result<T>>, so AsyncControl.WriteGate from @fgv/ts-extras fits TaskBroker.create({ writeGuard }) as is. Every existing gate still fits. When the guard did not run the section, its failure is kept only if the failure's detail converts as an ITaskFailure; otherwise the result is storage-unavailable with retry after-host-action. A guard that answers success without running the section is invalid. TaskScheduleTimer is removed: TaskBroker.create({ schedule }) takes AsyncControl.ScheduleTimer, which is structurally identical.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-agent-tasks",
+  "email": "noreply@anthropic.com"
+}

@@ -57,7 +57,12 @@ async function harness(): Promise<{
     })
   ).orThrow();
   // The gate fits the structural writeGuard as is: no adapter.
-  const broker = TaskBroker.create({ repository, environment: env, writeGuard: gate, schedule: timer.schedule }).orThrow();
+  const broker = TaskBroker.create({
+    repository,
+    environment: env,
+    writeGuard: gate,
+    schedule: timer.schedule
+  }).orThrow();
   return { gate, timer, repository, broker, policy: new TestPolicy() };
 }
 
