@@ -96,9 +96,12 @@ Neither copy checks the action. The catalog copy is `scopeMatch: 'every'`; the w
 
 | window | check | act | what re-checks after the check |
 |---|---|---|---|
-| resume: authorize → commit | `pendingRegistration` (outside the writer, incl. `landedScopes`), principal match, `mayCreate` for the scopes to be committed | `writer.register` | epoch captured before the first policy question and re-checked inside the writer as the last step before `register`, which awaits nothing before writing; `register` compares the full identity against the pending entry **under the writer**, and refuses to adopt a landed record whose scopes differ from the draft's — so a record that landed (or changed) after `landedScopes` was read can never be committed under scopes nobody authorized; a resume that loses a race replays the committed receipt |
+| resume: authorize → commit | `pendingRegistration` (outside the writer, incl. `landedScopes`), principal match, `mayCreate` for the scopes to be committed | `writer.register` | epoch captured before the first policy question and re-checked inside the writer as the last step before `register`, which awaits nothing before writing; `register` compares the full identity against the pending entry **under the writer**, and refuses to adopt a landed record whose scopes differ from the draft's — so a record that landed (or changed) after `landedScopes` was read can never be committed under scopes nobody authorized. **Correction (round 2):** a resume that lost a race did *not* go through the replay checks — storage replayed the now-live registration inside the writer. Since round 2 the section reads the task first and, if it went live, commits nothing and runs again through the existing-record path |
 | resume after a lost response | `readCommit` finds a live record whose creation was a catalog registration | replay | `createNative`'s replay path re-checks visibility, identity and `create` for the live task's scopes, and `confirmUnchanged` re-checks epoch and revision inside the writer |
 | resume (external) | `pendingRegistration`, operation kind | `registerExternal` | parent re-read inside the writer, source checkpoint history compared inside the writer, identity matched by `register` under the writer |
+| a creation or resume vs a concurrent one that commits first | `mayCreate` for this view's scopes, outside the writer | `register` | inside the writer the task is read first; if it went live the section commits nothing and the operation runs again through the existing-record path — visibility, `create` for the **committed** scopes, parent, and `confirmUnchanged` — so the loser is never handed a task it was not authorized for |
+| external registration replay vs a closed parent | an identical live registration found by `readCommit` | `register` replays | the parent checks are skipped only for an identical live registration (operation, principal, canonical request); any other request under the id is a `conflict` before the writer; a non-replay that finds the task went live inside the writer runs again and then replays or conflicts |
+| guard returns before its started section settles | the guard's return | end of the queue turn | the started section is awaited before the turn ends, then classified as a section that ran |
 | identical `createTracked` retry over a landed record | `mayCreate` for the view's creation scopes | `register` adopts the landed record | storage's scope comparison under the writer refuses (`conflict`) when the landed scopes are not the authorized ones |
 | scope change: authorize → commit | `change-scopes` asked with the resulting scope set computed from the record read before the writer | commit | the writer re-checks that record's revision (and the epoch), so the set it commits is the set authorized |
 | open-or-init: probe → open/initialize | `probeTaskRepositoryRoot` (outside ownership) picks the mode | `_acquire` → initialize or open | `RecordStore.create` re-runs the **same probe** inside `_acquire`; the open-vs-initialize decision is taken **after** `acquireRoot` and temporary cleanup, from the listing made under ownership (in-process; cross-process exclusivity stays the host's requirement) |
@@ -219,3 +222,32 @@ below.
 | `change --verify --target-branch origin/integration/asks` | passes |
 | prettier 2.8.8 | clean over every changed file |
 | feed `--check` / `verify-capability-docs` | 0 stale / 0 failed (router 23,219/24,000) |
+
+## Review round 2 (2026-10-26, on `f8d636823`)
+
+No P1s. Each regression test was shown red by reverting exactly that fix in the current source and
+rebuilding (`scratchpad/revert.py r2-*`). The reviewer's probes `p1_race`, `p2_create_race`,
+`p3_guard_unawaited` and `p4_ext_replay` now report the fixed behaviour.
+
+| finding | fix | test | red on revert |
+|---|---|---|---|
+| P2-1 a creation/resume losing a race replayed inside the writer without replay checks | the gated section reads the task first; if live, commits nothing and `createNative` runs again through the existing-record branch; that branch authorizes `create` for the committed scopes (`committedScopes ?? taskRecordScopes(record)`); the external path does the same | `a resume that loses a race…` (alpha first, beta first), `an identical createTracked that loses a race…` (alpha first, beta first), `a replay from a view with other creation scopes is authorized for the committed scopes` | yes — r2-race-native (4 red), r2-replay-scopes (1 red) |
+| P2-2 a guard that started the section and returned early reported "nothing written" | the started section is awaited before the turn ends, then classified as ran (`reconcile-first` unless its own result is returned) | `a guard that starts the section without awaiting it…` | yes — r2-guard-unawaited |
+| P2-2b `ITaskWriteGuard` TSDoc drift | rewritten for not-called / called / called-twice, and the no-re-entry rule | — | — |
+| P2-3 resume / `pendingRegistration` TSDoc | live external tasks replay; "record never written" replaced by "not yet marked live; its first record may or may not have landed" (three sites) | — | — |
+| P3-1 external replay refused once the parent closed | an identical live registration is replayed without the parent checks; a different request under the id is a `conflict` | `replays even after its parent closed` | yes — r2-ext-replay-parent |
+| P3-2 a broker call from inside the guard wedges the broker | **documented, not detected** (see below) | — | — |
+| P3-3 `'some'` lets a scope change add outside scopes | documented in `TrustedScopeMatch` and `trustedKindAuthority` TSDoc and CAPABILITIES | — | — |
+| P3-4 `resumeNative` disclosed "external registration" | answered as no pending registration unless the view selects one of its scopes | `a view that selects none of its scopes is told nothing about it` | yes — r2-external-blind |
+| P3-5 DRY | `taskRecordScopes` and `taskScopeKey` (types packlet, public) replace the three record-scope copies and the three scope keys; `access.ts`'s `scopeKey` removed | existing tests | — |
+| P3-6 `record!.issued` | an absent record is `not-found-or-denied` | `a delivery bound to a subscription the repository does not hold is refused, classified` | yes — r2-issued-ghost |
+
+**P3-2, declined as detection, with reasoning.** A re-entrant call from inside the guard and a
+concurrent caller's call both reach `BrokerCore.gated` while the guard is running, and nothing
+portable tells them apart: that needs an async context (`AsyncLocalStorage`), which is Node-only and
+which no `@fgv/*` library assumes. A flag held while the guard runs would refuse **every**
+concurrent write during any guard's run — including a pass-through guard's, during every section —
+which breaks ordinary concurrency and contradicts the brief's "a long pause fills the 64-waiter
+queue" contract. So the rule is documented on `ITaskWriteGuard` and in CAPABILITIES ("the guard must
+not call the broker"; `whenIdle` is the one safe call and times out). If an async context becomes
+acceptable, detection is a small change in `_guarded`.
