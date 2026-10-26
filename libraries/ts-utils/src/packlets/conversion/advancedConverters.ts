@@ -20,8 +20,8 @@
  * SOFTWARE.
  */
 
-import { fail, isKeyOf, mapResults, succeed, Success } from '../base';
-import { Validator } from '../validation';
+import { fail, isKeyOf, mapResults, Result, succeed, Success } from '../base';
+import { CompositeIdSplitMode, Validator } from '../validation';
 import { BaseConverter, ConverterResultTypes } from './baseConverter';
 import { Converter } from './converter';
 import { literal } from './basicConverters';
@@ -46,6 +46,52 @@ export interface IPartialCompositeId<TCOLLECTIONID extends string, TITEMID exten
   readonly collectionId: TCOLLECTIONID;
   readonly separator?: string;
   readonly itemId: TITEMID;
+}
+
+/**
+ * Options for `compositeIdFromString` and
+ * `compositeId`.
+ * @public
+ */
+export interface ICompositeIdOptions {
+  /**
+   * How to split a composite ID string. Defaults to `'exact'`; see
+   * `CompositeIdSplitMode`.
+   */
+  readonly split?: CompositeIdSplitMode;
+}
+
+// Keep in step with the identical module-private copy in `validation/compositeId.ts`.
+/**
+ * Splits a composite ID string into its collection and item parts.
+ * @param value - The composite ID string.
+ * @param separator - The separator string.
+ * @param split - The `CompositeIdSplitMode`.
+ * @returns `Success` with the `[collectionId, itemId]` strings, or `Failure` if
+ * the separator is missing, repeated (for `'exact'`), or empty (for `'first'` / `'last'`).
+ */
+function splitCompositeIdString(
+  value: string,
+  separator: string,
+  split: CompositeIdSplitMode
+): Result<readonly [string, string]> {
+  if (split === 'exact') {
+    const parts = value.split(separator);
+    if (parts.length < 2) {
+      return fail(`${value}: invalid composite ID - separator '${separator}' not found.`);
+    } else if (parts.length > 2) {
+      return fail(`${value}: invalid composite ID - multiple separators '${separator}' found.`);
+    }
+    return succeed([parts[0], parts[1]]);
+  }
+  if (separator.length === 0) {
+    return fail(`${value}: invalid composite ID - split '${split}' requires a non-empty separator.`);
+  }
+  const index = split === 'last' ? value.lastIndexOf(separator) : value.indexOf(separator);
+  if (index < 0) {
+    return fail(`${value}: invalid composite ID - separator '${separator}' not found.`);
+  }
+  return succeed([value.slice(0, index), value.slice(index + separator.length)]);
 }
 
 /**
@@ -79,34 +125,33 @@ export function compositeIdFromObject<TCOLLECTIONID extends string, TITEMID exte
  * @param collectionIdConverter - {@link Converter | Converter} or {@link Validator | Validator} for the collection ID portion.
  * @param separator - The separator string.
  * @param itemIdConverter - {@link Converter | Converter} or {@link Validator | Validator} for the item ID portion.
+ * @param options - Optional `ICompositeIdOptions`; `split` defaults to `'exact'`.
  * @returns A {@link Converter | Converter} for the strongly-typed {@link Converters.ICompositeId | CompositeId}.
  * @public
  */
 export function compositeIdFromString<TCOLLECTIONID extends string, TITEMID extends string, TC = unknown>(
   collectionIdConverter: Converter<TCOLLECTIONID, TC> | Validator<TCOLLECTIONID, TC>,
   separator: string,
-  itemIdConverter: Converter<TITEMID, TC> | Validator<TITEMID, TC>
+  itemIdConverter: Converter<TITEMID, TC> | Validator<TITEMID, TC>,
+  options?: ICompositeIdOptions
 ): Converter<ICompositeId<TCOLLECTIONID, TITEMID>, TC> {
+  const split = options?.split ?? 'exact';
   return new BaseConverter<ICompositeId<TCOLLECTIONID, TITEMID>, TC>(
     (from: unknown, __self?: Converter<ICompositeId<TCOLLECTIONID, TITEMID>, TC>, context?: TC) => {
       if (typeof from !== 'string') {
         return fail(`${from}: invalid non-string composite ID.`);
       }
-      const parts = from.split(separator);
-      if (parts.length < 2) {
-        return fail(`${from}: invalid composite ID - separator '${separator}' not found.`);
-      } else if (parts.length > 2) {
-        return fail(`${from}: invalid composite ID - multiple separators '${separator}.' found.`);
-      }
-      return collectionIdConverter.convert(parts[0], context).onSuccess((collectionId) => {
-        return itemIdConverter.convert(parts[1], context).onSuccess((itemId) => {
-          return succeed({
-            collectionId,
-            separator,
-            itemId
-          });
-        });
-      });
+      return splitCompositeIdString(from, separator, split).onSuccess(([collectionPart, itemPart]) =>
+        collectionIdConverter.convert(collectionPart, context).onSuccess((collectionId) =>
+          itemIdConverter.convert(itemPart, context).onSuccess((itemId) =>
+            succeed({
+              collectionId,
+              separator,
+              itemId
+            })
+          )
+        )
+      );
     }
   );
 }
@@ -117,16 +162,19 @@ export function compositeIdFromString<TCOLLECTIONID extends string, TITEMID exte
  * @param collectionIdConverter - {@link Converter | Converter} or {@link Validator | Validator} for the collection ID portion.
  * @param separator - The separator string.
  * @param itemIdConverter - {@link Converter | Converter} or {@link Validator | Validator} for the item ID portion.
+ * @param options - Optional `ICompositeIdOptions`; `split` applies to the string
+ * representation and defaults to `'exact'`.
  * @returns A {@link Converter | Converter} for the strongly-typed {@link Converters.ICompositeId | CompositeId}.
  * @public
  */
 export function compositeId<TCOLLECTIONID extends string, TITEMID extends string, TC = unknown>(
   collectionIdConverter: Converter<TCOLLECTIONID, TC> | Validator<TCOLLECTIONID, TC>,
   separator: string,
-  itemIdConverter: Converter<TITEMID, TC> | Validator<TITEMID, TC>
+  itemIdConverter: Converter<TITEMID, TC> | Validator<TITEMID, TC>,
+  options?: ICompositeIdOptions
 ): Converter<ICompositeId<TCOLLECTIONID, TITEMID>, TC> {
   return compositeIdFromObject(collectionIdConverter, separator, itemIdConverter).or(
-    compositeIdFromString(collectionIdConverter, separator, itemIdConverter)
+    compositeIdFromString(collectionIdConverter, separator, itemIdConverter, options)
   );
 }
 
