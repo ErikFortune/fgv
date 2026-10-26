@@ -54,14 +54,18 @@ See [`docs/FUTURE.md`](../../docs/FUTURE.md) for the tracked follow-ups.
 | `closeMcpSession(session)` | `Promise<Result<true>>` — over Streamable HTTP, ends the server's session with a best-effort `DELETE` (bounded to 2 s) before closing |
 | `listMcpTools(session, options?)` | `Promise<DetailedResult<ReadonlyArray<IMcpToolDescriptor>, McpFailureReason>>` |
 | `callMcpTool(session, name, args, options?)` | `Promise<DetailedResult<IMcpToolCallResult, McpFailureReason>>` — `{ content, blocks, structuredContent? }` |
-| `adaptMcpTools(session, { logger? })` | `Promise<DetailedResult<IAdaptMcpToolsResult, McpFailureReason>>` |
+| `adaptMcpTools(session, { logger?, schemaKeywords?, patternValidator?, discovery? })` | `Promise<DetailedResult<IAdaptMcpToolsResult, McpFailureReason>>` |
 
-`listMcpTools`' `options` is an `IMcpRequestOptions`: `timeoutMs`, `signal`, `onProgress`,
-`resetTimeoutOnProgress`, `maxTotalTimeoutMs`. `callMcpTool`'s is an `IMcpCallToolOptions`: the same,
-plus `includeMediaData`. Every failure's `detail` is an `McpFailureReason` whose `kind` is one of
+`callMcpTool`'s `options` is an `IMcpCallToolOptions`: the per-request `IMcpRequestOptions`
+(`timeoutMs`, `signal`, `onProgress`, `resetTimeoutOnProgress`, `maxTotalTimeoutMs`) plus
+`includeMediaData`. `listMcpTools`' is an `IListMcpToolsOptions`: the per-request options, applied to
+each page, plus two opt-in bounds over the whole paged listing — `maxPages` and `maxTotalMs`. Neither
+has a default; exceeding either fails the listing as `limit-exceeded` (naming the bound in `limit`)
+rather than returning a truncated catalog. `adaptMcpTools` passes its `discovery` option to
+`listMcpTools`. Every failure's `detail` is an `McpFailureReason` whose `kind` is one of
 `tool-error`, `timeout`, `aborted`, `not-connected`, `session-expired`, `unauthorized`,
-`egress-blocked`, `protocol`, `transport`, `invalid-handle` or `invalid-options` — branch on it rather than on the message. See `CAPABILITIES.md`
-for how each SDK error maps to a kind.
+`egress-blocked`, `protocol`, `transport`, `invalid-handle`, `invalid-options` or `limit-exceeded` —
+branch on it rather than on the message. See `CAPABILITIES.md` for how each SDK error maps to a kind.
 
 ### Rich results
 
@@ -114,7 +118,9 @@ import { SaferFetch } from '@fgv/ts-extras';
 const fetch = SaferFetch.createGuardedFetch({
   addressGuard: SaferFetch.blockPrivateNetworks(),
   // At least your longest MCP request timeoutMs — see below.
-  headersTimeoutMs: 120_000
+  headersTimeoutMs: 120_000,
+  // Optional: a cap on each HTTP response, counted as it is read — see below.
+  maxResponseBytes: 8 * 1024 * 1024
 }).orThrow();
 const transport = createHttpTransport({ url, headers: { 'x-api-key': key }, fetch, authProvider }).orThrow();
 ```
@@ -124,6 +130,15 @@ const transport = createHttpTransport({ url, headers: { 'x-api-key': key }, fetc
   with JSON instead of an SSE stream holds a `tools/call`'s headers until the tool finishes, so a
   slow tool fails at that deadline — as `timeout` — whatever `timeoutMs` the call was given. The
   package cannot see the guarded fetch's deadline, so it does not warn.
+
+- **`maxResponseBytes` bounds what a server can send.** It is opt-in, and counts each HTTP response
+  separately as it is read. A request's answer past it — a JSON body, an SSE stream, or the `GET`
+  the SDK resumes a closed stream with (`Last-Event-ID`) — fails that request promptly as
+  `egress-blocked` with reason `'too-large'`, and the session stays usable. The standalone `GET`
+  event stream is counted per connection: one that passes the cap is cut off and logged at
+  `detail`, and the SDK reconnects it after its reconnection delay (about 1 s by default) with a
+  fresh count, so the cap bounds each connection rather than the session's total. Size it above your largest expected `tools/list` page
+  or tool result.
 
 - A refusal fails the operation with `egress-blocked`, carrying the refusal's kind only (never its
   URL). A refused `DELETE` does not fail the close. Every refusal is also logged at `detail`, by kind
@@ -192,8 +207,9 @@ const session = sessionResult.value;
 const adaptResult = (await adaptMcpTools(session, { logger })).orThrow();
 
 // adaptResult.tools  → ReadonlyArray<AiAssist.IAiClientTool>, ready to hand to the model
-// adaptResult.skipped → tools whose inputSchema is outside the supported JSON Schema subset
-//                       (each carries the failing schema + a JSON-pointer reason)
+// adaptResult.skipped → tools that could not be adapted, each with a `kind`: 'schema' (outside the
+//                       supported JSON Schema subset), 'wire' (the target wire cannot carry it) or
+//                       'task-support' (it requires MCP task execution), plus the reason and raw schema
 
 // 3. Drop the adapted tools straight into the client-tools turn loop.
 const turn = AiAssist.executeClientToolTurn({
@@ -214,9 +230,15 @@ await closeMcpSession(session);
 discovered tool's `inputSchema` is outside the JSON Schema subset that
 [`JsonSchema.fromJson`](../ts-json-base) supports, that one tool is excluded from `tools` (the
 model is never offered a tool whose arguments we can't validate), surfaced structurally on
-`skipped` (with the tool name, the JSON-pointer reason, and the raw failing schema), and — when a
-`logger` is supplied — logged as a NOISY `warning` carrying all three. Point this at a new server
-and you immediately see every schema feature that needs additive support in `JsonSchema.fromJson`.
+`skipped` (with the tool name, a `kind`, the JSON-pointer reason, and the raw failing schema), and —
+when a `logger` is supplied — logged as a NOISY `warning`. Point this at a new server and you
+immediately see every schema feature that needs additive support in `JsonSchema.fromJson`.
+
+A tool is skipped the same way when the target wire cannot carry its schema (`kind: 'wire'`), and
+when it declares `execution.taskSupport: 'required'` (`kind: 'task-support'`): such a tool must be
+invoked as an MCP task, which this client cannot drive, so every plain call to it would fail. A tool
+whose task support is `'optional'` is adapted and called normally. Each descriptor from
+`listMcpTools` carries the declared value as `execution.taskSupport`.
 
 ## Compatibility probe
 

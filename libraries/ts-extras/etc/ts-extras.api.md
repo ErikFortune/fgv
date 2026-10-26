@@ -604,6 +604,8 @@ function createEncryptedFileConverter<TMetadata = JsonValue>(metadataConverter?:
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 function createGuardedFetch(options: IGuardedFetchOptions): Result<GuardedFetch>;
@@ -1102,6 +1104,7 @@ type GrokImagineModelNames = 'grok-imagine-image' | 'grok-imagine-image-quality'
 // @public
 type GuardedFetch = (url: string | URL, init?: RequestInit) => Promise<Response>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
@@ -2079,6 +2082,8 @@ interface IGuardedFetchOptions {
     readonly logger?: Logging.ILogger;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly maxRedirects?: number;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly maxResponseBytes?: number;
     readonly redirectPolicy?: SaferFetchRedirectPolicy;
     readonly requestGuard?: IRequestGuard;
     readonly responseHeadersGuard?: IResponseHeadersGuard;
