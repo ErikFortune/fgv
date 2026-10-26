@@ -78,7 +78,7 @@ Origin: personaility#699 (fgv-ask). Base / PR target: `integration/asks`. Packag
 ## Red → green
 
 New tests: `src/test/unit/indexIdentity.test.ts`, run on **both** lanes via `describe.each`
-(48 cases per lane plus 2 cross-lane = 98 tests after review round 1). Evidence, logs under
+(50 cases per lane plus 2 cross-lane = 102 tests after review round 2). Evidence, logs under
 `.gate-logs/red-*.log`:
 
 - **Against the pre-stream source** (`9e68104bf` versions of `model.ts` and both index files): the
@@ -128,6 +128,16 @@ per-record rejection.
 | **P3-10** `eslint-disable @rushstack/no-new-null` at `indexIdentity.ts:28` | **Accepted as a SQL NULL boundary**, per the review; the line carries its one-line reason ("SQL NULL boundary: SQLite returns NULL for an identity that was never committed"). It is the only disable this stream added. | — | — | — |
 | **P3-11** | No change requested. | — | — | — |
 
+### Review round 2 (`edd0b64e8`): no P1/P2; two P3s
+
+| finding | fix | test (both lanes) | red on `edd0b64e8` |
+|---|---|---|---|
+| `_clear`'s take-over branch read the DDL through `_readExistingDimension`, a throwaway `prepare` — the `Statement::~Statement()` hazard the package documents | New `IndexIdentity.tableDdl()` reads `sqlite_master` through the identity's retained statement cache (dropped by `release()`). The DDL parsing is split into `_dimensionFromDdl`, which `_clear` uses. `create`'s schema probe is unchanged: it is the pre-existing unretained `prepare` already recorded in `CAPABILITIES.md`. | "taking over a table another connection created prepares no schema read that release() could not drop" — every `sqlite_master` statement prepared during the take-over must be in the identity cache | red |
+| Docs said a row left by a dropped table is ignored; only a `complete` row is | README status table, `IIndexIdentityReport` TSDoc (`'fresh'` and `'incomplete'` bullets), and the README § Limits remedy now reads "drop the table, then `rebuild`" | "a rebuilding row survives a DROP TABLE: plain writes stay refused until a rebuild completes" | passes — it pins existing behaviour that the docs now describe |
+
+p6.js (d) still lists one `SELECT sql FROM sqlite_master` prepare during the take-over. That is now
+the retained one, prepared once into the identity cache, which is exactly what the new test checks.
+
 The existing package suites needed three adjustments, each because a premise changed rather than a
 property:
 
@@ -160,7 +170,7 @@ Logs in `.gate-logs/` (not committed). Graded by grep, not exit code.
 |---|---|
 | `rushx build` (package) | exit 0; `not met|FAILURE|Operations failed|error TS` = 0; `warning` = 0 |
 | `rushx lint` (package) | exit 0; 0 / 0 |
-| `rushx test` (package) | exit 0; 0 / 0; **100 / 100 / 100 / 100**; 255 tests in 4 suites (re-run after review round 1) |
+| `rushx test` (package) | exit 0; 0 / 0; **100 / 100 / 100 / 100**; 259 tests in 4 suites (re-run after review round 2) |
 | `rush rebuild` (repo) | exit 0; bad = 0; only warning is the Git-tracked symlink notice; **SUCCESS: 39 operations** |
 | `rush test` (repo) | **36 of 38 operations green; 2 failed under load, both green when re-run alone** (below) |
 | `rush change --verify --target-branch origin/integration/asks` | exit 0; finds `sqlite-vec-index-identity_2026-10-26-00-00.json` |
