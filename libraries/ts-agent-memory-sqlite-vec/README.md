@@ -121,7 +121,7 @@ const report = index.identity().orThrow();
 
 | status | meaning | `add` / `addFragments` / `query` |
 |---|---|---|
-| `fresh` | the table does not exist yet (a row left by a dropped table is ignored) | allowed |
+| `fresh` | the table does not exist yet. A `complete` row left by a dropped table is ignored; a `rebuilding` row survives the drop and reads `incomplete` instead | allowed |
 | `match` | the stored identity equals the handle's | allowed |
 | `mismatch` | another identity is stored; `stored` names it | **fail** |
 | `absent` | vectors exist, but no identity was ever stored | allowed |
@@ -140,7 +140,7 @@ const report = index.identity().orThrow();
 
 The identity lives in an ordinary table, `fgv_sqlite_vec_meta`, with one row per index table, so a record index and a fragment index in one file are checked independently. It is created on the first write that needs it; there is no migration. A row with a `meta_version` this package does not read is refused by every read **and by `rebuild`**, never overwritten.
 
-**Limits.** A model swap to a **different width** cannot go through `rebuild`: a vector of another width is not treated as a per-record error, so the rebuild fails in every mode (`'skip'` included) and leaves the index `incomplete`. Drop the table (or use a fresh `tableName`) and re-index. The `'rebuilding'` marker is not a lock between rebuilds: two rebuilds of one table on two connections at once are not coordinated. And an **older version of this package ignores the meta table**: if it writes or rebuilds the file after a downgrade, the stored row may no longer describe the vectors. Rebuild after upgrading again.
+**Limits.** A model swap to a **different width** cannot go through `rebuild`: a vector of another width is not treated as a per-record error, so the rebuild fails in every mode (`'skip'` included) and leaves the index `incomplete`. Drop the table, then run `rebuild`: the failed rebuild's `rebuilding` marker survives the drop, so a plain `add` stays refused until a rebuild completes. (Pointing the index at a fresh `tableName` and rebuilding there works too.) The `'rebuilding'` marker is not a lock between rebuilds: two rebuilds of one table on two connections at once are not coordinated. And an **older version of this package ignores the meta table**: if it writes or rebuilds the file after a downgrade, the stored row may no longer describe the vectors. Rebuild after upgrading again.
 
 ## Fragment-granular index
 

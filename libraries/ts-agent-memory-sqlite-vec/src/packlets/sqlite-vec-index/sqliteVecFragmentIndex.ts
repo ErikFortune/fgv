@@ -721,16 +721,18 @@ export class SqliteVecFragmentIndex implements IFragmentVectorIndex {
       .onSuccess((cleared) => cleared)
       .onSuccess((tableExists) =>
         tableExists && this._stmts === undefined
-          ? captureResult(() => {
-              const dimension: number | undefined = SqliteVecFragmentIndex._readExistingDimension(
-                this._db,
-                this._table
-              );
-              const stmts: IFragmentStatements = this._prepare();
-              this._dimension = dimension;
-              this._stmts = stmts;
-              return true as const;
-            })
+          ? // Taking over a table another connection created. The DDL is read through
+            // the identity's retained statement, so this path prepares nothing that
+            // `release()` could not drop.
+            this._identity.tableDdl().onSuccess((ddl) =>
+              captureResult(() => {
+                const dimension: number = SqliteVecFragmentIndex._dimensionFromDdl(ddl, this._table);
+                const stmts: IFragmentStatements = this._prepare();
+                this._dimension = dimension;
+                this._stmts = stmts;
+                return true as const;
+              })
+            )
           : succeed<true>(true)
       );
   }
@@ -927,8 +929,17 @@ export class SqliteVecFragmentIndex implements IFragmentVectorIndex {
     if (row === undefined) {
       return undefined;
     }
-    SqliteVecFragmentIndex._verifyAuxiliaryColumns(row.sql, table);
-    const match: RegExpMatchArray | null = row.sql.match(/float\[(\d+)\]/);
+    return SqliteVecFragmentIndex._dimensionFromDdl(row.sql, table);
+  }
+
+  /**
+   * The dimension declared in an existing fragment table's stored `CREATE` SQL, after
+   * checking its auxiliary columns. Throws when the table is not a usable fragment
+   * index — see {@link SqliteVecFragmentIndex._readExistingDimension}.
+   */
+  private static _dimensionFromDdl(sql: string, table: string): number {
+    SqliteVecFragmentIndex._verifyAuxiliaryColumns(sql, table);
+    const match: RegExpMatchArray | null = sql.match(/float\[(\d+)\]/);
     if (match === null) {
       // The auxiliary columns matched but there is no `float[<n>]` embedding column,
       // so this is not a usable fragment index table. Same remedy as a column

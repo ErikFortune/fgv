@@ -64,6 +64,8 @@ interface IHarness {
     onRecordError?: 'fail' | 'skip'
   ): Promise<DetailedResult<unknown, unknown>>;
   size(): number;
+  /** The statements the index's identity helper holds — what `release()` drops. */
+  identityCache(): ReadonlyArray<unknown>;
 }
 
 interface IHandle {
@@ -77,6 +79,16 @@ interface ILane {
   readonly defaultTable: string;
   create(database: BetterSqlite3.Database, identity?: string, tableName?: string): Promise<Result<IHarness>>;
   open(dbPath: string, identity?: string): Promise<Result<IHandle>>;
+}
+
+/**
+ * The identity helper's retained statement cache. Reached through a structural view
+ * of a private field because retention is exactly the property under test, and it
+ * has no public surface.
+ */
+function identityCacheOf(index: SqliteVecVectorIndex | SqliteVecFragmentIndex): ReadonlyArray<unknown> {
+  const view = index as unknown as { readonly _identity: { readonly _prepared: Map<string, unknown> } };
+  return Array.from(view._identity._prepared.values());
 }
 
 function vectorHarness(index: SqliteVecVectorIndex): IHarness {
@@ -93,7 +105,8 @@ function vectorHarness(index: SqliteVecVectorIndex): IHarness {
           (await vectorFor(r.envelope.id as string)).onSuccess((v) => succeed(Float32Array.from(v))),
         { onRecordError }
       ),
-    size: () => index.size
+    size: () => index.size,
+    identityCache: () => identityCacheOf(index)
   };
 }
 
@@ -117,7 +130,8 @@ function fragmentHarness(index: SqliteVecFragmentIndex): IHarness {
           ),
         { onRecordError }
       ),
-    size: () => index.fragmentCount
+    size: () => index.fragmentCount,
+    identityCache: () => identityCacheOf(index)
   };
 }
 
@@ -648,6 +662,39 @@ describe.each(lanes)('$name identity', (lane: ILane) => {
       expect(await index.rebuild(['a', 'b'], (id) => ok(id === 'a' ? [1, 0] : []), 'skip')).toSucceed();
       expect(index.identity()).toSucceedWith({ status: 'match' });
       expect(index.size()).toBe(1);
+    });
+
+    test('taking over a table another connection created prepares no schema read that release() could not drop', async () => {
+      const db = connect();
+      const stale = await make('B', db);
+      (await (await make('A', connect())).write('foreign', [1, 0])).orThrow();
+      const prepared: Array<{ readonly sql: string; readonly statement: unknown }> = [];
+      const realPrepare = db.prepare.bind(db);
+      const spy = jest.spyOn(db, 'prepare').mockImplementation((sql: string) => {
+        const statement = realPrepare(sql);
+        prepared.push({ sql, statement });
+        return statement;
+      });
+      expect(await stale.rebuild(['1'], () => ok([0, 1]))).toSucceed();
+      spy.mockRestore();
+      const schemaReads = prepared.filter((p) => /sqlite_master/.test(p.sql));
+      expect(schemaReads.length).toBeGreaterThan(0);
+      const cache = stale.identityCache();
+      expect(schemaReads.every((p) => cache.includes(p.statement))).toBe(true);
+    });
+
+    test('a rebuilding row survives a DROP TABLE: plain writes stay refused until a rebuild completes', async () => {
+      const db = connect();
+      const index = await make('m1', db);
+      (await index.write('a', [1, 0])).orThrow();
+      expect(await index.rebuild(['a'], () => ok([1, 0, 0]))).toFailWith(/cannot change the dimension/);
+      db.exec(`DROP TABLE ${lane.defaultTable}`);
+      const reopened = await make('m1', db);
+      expect(reopened.identity()).toSucceedWith({ status: 'incomplete' });
+      expect(await reopened.write('b', [1, 0, 0])).toFailWith(/'incomplete'/);
+      expect(await reopened.rebuild(['b'], () => ok([1, 0, 0]))).toSucceed();
+      expect(reopened.identity()).toSucceedWith({ status: 'match' });
+      expect(reopened.size()).toBe(1);
     });
 
     test('a rebuild by a handle opened before another connection created the table empties that table too', async () => {

@@ -642,12 +642,17 @@ export class SqliteVecVectorIndex implements IVectorIndex {
       .onSuccess((cleared) => cleared)
       .onSuccess((tableExists) =>
         tableExists && this._stmts === undefined
-          ? captureResult(() => {
-              const stmts: ISqliteVecStatements = this._prepare();
-              this._dimension = SqliteVecVectorIndex._readExistingDimension(this._db, this._table);
-              this._stmts = stmts;
-              return true as const;
-            })
+          ? // Taking over a table another connection created. The DDL is read through
+            // the identity's retained statement, so this path prepares nothing that
+            // `release()` could not drop.
+            this._identity.tableDdl().onSuccess((ddl) =>
+              captureResult(() => {
+                const stmts: ISqliteVecStatements = this._prepare();
+                this._dimension = SqliteVecVectorIndex._dimensionFromDdl(ddl);
+                this._stmts = stmts;
+                return true as const;
+              })
+            )
           : succeed<true>(true)
       );
   }
@@ -749,7 +754,12 @@ export class SqliteVecVectorIndex implements IVectorIndex {
     if (row === undefined) {
       return undefined;
     }
-    const match: RegExpMatchArray | null = row.sql.match(/float\[(\d+)\]/);
+    return SqliteVecVectorIndex._dimensionFromDdl(row.sql);
+  }
+
+  /** The `float[<n>]` dimension declared in a table's stored `CREATE` SQL, or `undefined` if none. */
+  private static _dimensionFromDdl(sql: string): number | undefined {
+    const match: RegExpMatchArray | null = sql.match(/float\[(\d+)\]/);
     return match === null ? undefined : Number(match[1]);
   }
 

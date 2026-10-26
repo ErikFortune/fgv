@@ -45,6 +45,11 @@ const metaRowConverter: Converter<IMetaRow> = Converters.strictObject<IMetaRow>(
   ).map((v) => succeed(Number(v)))
 });
 
+/** One `sqlite_master` row's stored `CREATE` SQL. */
+const ddlRowConverter: Converter<{ readonly sql: string }> = Converters.strictObject<{
+  readonly sql: string;
+}>({ sql: Converters.string });
+
 /**
  * The embedding identity of one `sqlite-vec` index table, stored in the same
  * database file as its vectors.
@@ -145,6 +150,21 @@ export class IndexIdentity {
       }
       return succeed(report);
     });
+  }
+
+  /**
+   * The stored `CREATE` SQL of the index's own table, read through a retained
+   * statement (released by {@link IndexIdentity.release}). Fails when the table
+   * does not exist. Used when a rebuild takes over a table another connection
+   * created, so that path prepares nothing `release()` could not drop.
+   */
+  public tableDdl(): Result<string> {
+    return captureResult((): unknown =>
+      this._statement("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = ?").get(this._table)
+    )
+      .onSuccess((raw) => ddlRowConverter.convert(raw))
+      .onSuccess((row) => succeed(row.sql))
+      .withErrorFormat((e) => `cannot read the schema of '${this._table}': ${e}`);
   }
 
   /** Whether the index's own `vec0` table exists in the file right now. Throws once released. */
