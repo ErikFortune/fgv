@@ -135,6 +135,8 @@ detail. `· pkg` names the owning package.*
 - **Selecting agent tasks by scope/lifecycle, due time or owed update without reading records?** → `FileTreeTaskRepository` `runTaskRepositoryConformance` · `ts-agent-tasks`
 - **Opening an agent task repository at a host root, durable only when the root qualifies?** → `openOrInitializeTaskRepository` `probeTaskRepositoryRoot` · `ts-agent-tasks`
 - **Giving a principal (model tool, actor) authorized, projected access to agent tasks?** → `TaskBroker` `ITaskAuthorization` `defaultTaskProjector` · `ts-agent-tasks`
+- **Draining a task subscription one revision at a time, acknowledging only after your own work commits?** → `TaskDeliveryPump` `IBoundTaskDelivery` · `ts-agent-tasks`
+- **A durable retry obligation for a busy recipient, found again after a crash, with no scheduler?** → `DeferredObligations` `trustedKindAuthority` · `ts-agent-tasks`
 - **Tracking work an external executor runs — its state reconciled, commands dispatched, never set optimistically?** → `ExternalTaskSource` `ITaskSource` `TaskBroker` · `ts-agent-tasks`
 - **Telling a consumer what changed in its tasks, and acknowledging only what it was actually shown?** → `TaskBroker` `IBoundTaskDelivery` `ITaskCheckpointStore` · `ts-agent-tasks`
 - **Pausing or cancelling an agent task and its whole subtree, with an honest partial result?** → `requestStop` `reconcileStop` `releaseStop` `ISourceCapabilities` · `ts-agent-tasks`

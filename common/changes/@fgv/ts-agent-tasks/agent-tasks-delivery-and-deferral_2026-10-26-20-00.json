@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-agent-tasks",
+      "comment": "BREAKING (implementers only): delivery pump and deferred obligations. The host packlet gains TaskDeliveryPump (one owed revision per next(), never self-acknowledging and at-least-once; a stale render is released and its superseded revisions disposed, bounded and failing loudly when it clears nothing; acknowledge then release; dispose releases first; older revisions disposed only after a terminal discharge), DeferredObligations (durable retry obligations as waiting tracked tasks with deterministic (changeRef, role) ids, create-then-wait finished after a crash by resuming the stored registration, stateOf/wait/succeed/cancel/merged, abandonPending, due over the due index, waiting, archiveSettled, a pure retry schedule and a per-task wait budget) and ITaskHostWriteGuard, a structural gate around each helper call. IBoundTaskView gains queryDue, an authorized, projected due query over the repository's due index.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-agent-tasks"
+}
