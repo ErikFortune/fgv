@@ -1,7 +1,7 @@
 id: sqlite-vec-index-identity
 status: shipped
 packages: ['@fgv/ts-agent-memory-sqlite-vec']
-prs: [] # TBD — fill with the merged PR number into integration/asks
+prs: [753]
 openPrs: []
 opened: 2026-10-26
 closed: 2026-10-26

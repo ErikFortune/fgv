@@ -3,7 +3,7 @@
 **Shipped:** `SqliteVecVectorIndex` and `SqliteVecFragmentIndex` store an opaque embedding identity in the index file itself, report it with `identity()` on every call, fence writes and queries while it disagrees or a rebuild never finished, and make a partial rebuild detectable instead of silent.
 
 Origin: personaility#699 (fgv-ask). Base / PR target: `integration/asks`. Package:
-`@fgv/ts-agent-memory-sqlite-vec` only. Change file `minor` (additive). PR: #TBD.
+`@fgv/ts-agent-memory-sqlite-vec` only. Change file `minor` (additive). PR: #753.
 
 ## What shipped
 

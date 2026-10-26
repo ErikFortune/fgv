@@ -1,6 +1,6 @@
 # sqlite-vec-index-identity — the embedding identity lives in the index file
 
-**Shipped**: 2026-10-26 into `integration/asks` via #TBD.
+**Shipped**: 2026-10-26 into `integration/asks` via #753.
 Package: `@fgv/ts-agent-memory-sqlite-vec` (`sqlite-vec-index`). Origin: personaility#699
 (fgv-ask). Change file typed `minor` (additive).
 
