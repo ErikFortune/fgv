@@ -207,3 +207,15 @@ below.
 | P3 refusal after cleanup | corrected in the table above | — | — |
 | P3 backfill | a durable open of a manifest without `initializedMode` records `process-crash` | `a durable open backfills the mode into an older manifest, which then refuses a session open` | yes — r1-backfill |
 | P3 consumer sweep | corrected above (`samples/testbed/.../journey.ts`) | — | — |
+
+### Round 1 gates
+
+| gate | result |
+|---|---|
+| package `build` / `lint` | 0 error/failure matches; no warning lines |
+| package `test` | 2480 passed, 0 failed; coverage 100 / 100 / 100 / 100 |
+| `rush rebuild` | `SUCCESS: 39 operations`; only the tracked-symlink notice |
+| `rush test` | `SUCCESS: 38 operations`, 38 completed, 0 failure matches; only the tracked-symlink notice |
+| `change --verify --target-branch origin/integration/asks` | passes |
+| prettier 2.8.8 | clean over every changed file |
+| feed `--check` / `verify-capability-docs` | 0 stale / 0 failed (router 23,219/24,000) |
