@@ -101,15 +101,26 @@ export function receiptJson(receipt: ITaskMutationResult | IReassignmentResult):
 /**
  * Runs `write` through a host's write guard, keeping a classified result whatever the guard does.
  */
-async function _guarded<T>(guard: ITaskWriteGuard, write: () => Promise<TaskResult<T>>): Promise<TaskResult<T>> {
+async function _guarded<T>(
+  guard: ITaskWriteGuard,
+  write: () => Promise<TaskResult<T>>
+): Promise<TaskResult<T>> {
   const outcome: Result<TaskResult<T>> = await captureAsyncResult(() => guard.guard(write));
   if (outcome.isFailure()) {
-    return taskFailure<T>(`broker: the write guard threw: ${outcome.message}`, 'invalid', 'after-host-action');
+    return taskFailure<T>(
+      `broker: the write guard threw: ${outcome.message}`,
+      'invalid',
+      'after-host-action'
+    );
   }
   const result: TaskResult<T> = outcome.value;
   // A gate typed over plain Result refuses without task detail: nothing was written.
   return result.isFailure() && result.detail === undefined
-    ? taskFailure<T>(`broker: the write guard refused: ${result.message}`, 'storage-unavailable', 'after-host-action')
+    ? taskFailure<T>(
+        `broker: the write guard refused: ${result.message}`,
+        'storage-unavailable',
+        'after-host-action'
+      )
     : result;
 }
 
@@ -270,7 +281,9 @@ export class BrokerCore {
         )
       );
       if (armed.isFailure()) {
-        settle(taskFailure<true>(`whenIdle: schedule failed: ${armed.message}`, 'invalid', 'after-host-action'));
+        settle(
+          taskFailure<true>(`whenIdle: schedule failed: ${armed.message}`, 'invalid', 'after-host-action')
+        );
         return;
       }
       cancel = armed.value;

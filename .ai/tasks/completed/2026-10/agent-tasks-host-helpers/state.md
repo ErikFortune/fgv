@@ -41,10 +41,10 @@ Base: `origin/agent-tasks-host-helpers` @ `2b909e556` (brief commit over `integr
 
 ## Progress
 
-- [ ] B-4 storage: exported probe, manifest field, open opt-in
-- [ ] host packlet: `trustedKindAuthority`, `openOrInitializeTaskRepository`
-- [ ] B-7 resume
-- [ ] B-5: `whenIdle`, `writeGuard`, `issued()`
-- [ ] docs, api.md, change files
-- [ ] gates
-- [ ] close-out
+- [x] B-4 storage: exported probe, manifest field, open opt-in
+- [x] host packlet: `trustedKindAuthority`, `openOrInitializeTaskRepository`
+- [x] B-7 resume
+- [x] B-5: `whenIdle`, `writeGuard`, `issued()`
+- [x] docs, api.md, change files
+- [x] gates
+- [x] close-out

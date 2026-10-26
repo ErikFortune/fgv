@@ -1,0 +1,48 @@
+id: agent-tasks-host-helpers
+status: shipped
+packages: ['@fgv/ts-agent-tasks']
+prs: [] # TBD: the PR number is filled in when the PR opens
+openPrs: []
+opened: 2026-10-26
+closed: 2026-10-26
+summary:
+  intended: >
+    personaility#698 slices B-3, B-7, B-4 and B-5 + F8: a kind-scoped trusted authority
+    (trustedKindAuthority, some-scope for named tasks, every-scope for create/subscribe), a resume of a
+    pending registration from its stored request that re-authorizes create at the resume, an
+    openOrInitializeTaskRepository with the RecordStore mode probe exported and an optional manifest
+    initialization mode, and broker primitives whenIdle (never takes the writer, injected schedule),
+    an optional writeGuard around withWriter, and issued() on the bound delivery, with releaseStale
+    only if the repository exposes an open generation. B-1, B-2 and B-6 out of scope.
+  shipped: >
+    A new host packlet with trustedKindAuthority and openOrInitializeTaskRepository;
+    probeTaskRepositoryRoot exported and used by RecordStore; FileTreeTaskRepository.openOrInitialize
+    deciding under exclusive ownership; manifest initializedMode with an allowSessionOverDurable
+    opt-in; ITaskRepository.pendingRegistration; resumePendingRegistration on IBoundTaskWriter
+    (native) and TaskBroker (external); TaskBroker.whenIdle with a TaskScheduleTimer; a writeGuard
+    option applied in BrokerCore.gated; IBoundTaskDelivery.issued(). A check-then-act table and a
+    14-row revert matrix, each row shown red.
+  diverged: >
+    scopeMatch was interpreted as the knob for requested scopes ('every' default, 'some' added),
+    because the wake-task copy cannot be expressed under 'every'. The resume split into two entry
+    points by kind, since a native resume needs a view's authorization and creation scopes. No
+    releaseStale: the repository has no open generation. The broker declares its own
+    TaskScheduleTimer because the ts-extras ScheduleTimer is not yet on the base.
+  sourceLine: '**Shipped:** `@fgv/ts-agent-tasks` gains the host plumbing every broker consumer rewrites: `openOrInitializeTaskRepository` with the exported root probe the repository itself uses, `trustedKindAuthority` for trusted host principals, `TaskBroker.whenIdle`, a `writeGuard` around every broker write, `IBoundTaskDelivery.issued()`, and resumption of a pending registration from the request the repository stored.'
+  headline: >
+    An agent-task host can open or initialize its repository in the strongest mode its root
+    qualifies for, give its own principal a fixed trusted authority, wait for the broker to go idle
+    and gate every broker write.
+keywords:
+  - host boot path
+  - open or initialize
+  - atomic write capability probe
+  - session fallback
+  - durability downgrade
+  - trusted principal authorization
+  - writer idle
+  - write gate
+  - stale issued receipt
+  - pending registration resume
+  - fgv-ask
+sourceHash: PLACEHOLDER # over brief.md + result.md + state.md

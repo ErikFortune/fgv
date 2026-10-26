@@ -92,7 +92,9 @@ export function trustedKindAuthority(params: ITrustedKindAuthorityParams): ITask
     }
     const requested: ReadonlyArray<ITaskScope> = request.scopes;
     const inside = (scope: ITaskScope): boolean => scopes.has(_key(scope));
-    return requested.length > 0 && (scopeMatch === 'every' ? requested.every(inside) : requested.some(inside));
+    return (
+      requested.length > 0 && (scopeMatch === 'every' ? requested.every(inside) : requested.some(inside))
+    );
   };
 
   return {

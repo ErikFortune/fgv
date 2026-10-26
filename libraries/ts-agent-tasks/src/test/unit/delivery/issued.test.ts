@@ -51,7 +51,12 @@ describe('IBoundTaskDelivery.issued', () => {
     clock.now = h.clock.now;
     const { env, logger } = clockedEnvironment(clock);
     const opened = (
-      await FileTreeTaskRepository.open({ root: h.root, mode: 'session', environment: env, registry: brokerRegistry() })
+      await FileTreeTaskRepository.open({
+        root: h.root,
+        mode: 'session',
+        environment: env,
+        registry: brokerRegistry()
+      })
     ).orThrow();
     expect(opened.state).toBe('ready');
     if (opened.state === 'ready') {

@@ -21,7 +21,14 @@ import {
 } from '../../../index';
 import { FaultyRoot } from '../../helpers/faultyRoot';
 import { brokerRegistry } from '../../helpers/brokerFixtures';
-import { environment, memoryRoot, nodeRoot, nodeRootAt, params, registration } from '../../helpers/storageFixtures';
+import {
+  environment,
+  memoryRoot,
+  nodeRoot,
+  nodeRootAt,
+  params,
+  registration
+} from '../../helpers/storageFixtures';
 
 const code = (c: string): unknown => expect.objectContaining({ code: c });
 
@@ -29,7 +36,13 @@ function hostParams(
   root: FileTree.FileTreeItem,
   overrides?: Partial<IOpenOrInitializeTaskRepositoryParams>
 ): IOpenOrInitializeTaskRepositoryParams {
-  return { root, fallback: 'refuse', environment: environment().env, registry: brokerRegistry(), ...overrides };
+  return {
+    root,
+    fallback: 'refuse',
+    environment: environment().env,
+    registry: brokerRegistry(),
+    ...overrides
+  };
 }
 
 /** A directory with the plain directory methods and no atomic capability at all. */
@@ -44,7 +57,10 @@ function plainRoot(): FileTree.IFileTreeDirectoryItem {
 }
 
 /** A root over a real directory that reports only the capabilities given. */
-function reporting(dir: string, capabilities: FileTree.IAtomicWriteCapabilities): FileTree.IFileTreeDirectoryItem {
+function reporting(
+  dir: string,
+  capabilities: FileTree.IAtomicWriteCapabilities
+): FileTree.IFileTreeDirectoryItem {
   const faulty = new FaultyRoot(nodeRootAt(dir) as FileTree.IAtomicFileTreeDirectoryItem);
   faulty.capabilities = capabilities;
   return faulty as unknown as FileTree.IFileTreeDirectoryItem;
@@ -115,8 +131,11 @@ describe('probeTaskRepositoryRoot', () => {
       .find((c) => c.name === 'f.txt')!;
     expect(probeTaskRepositoryRoot(file)).toFailWith(/must be a directory/);
     const failing = new FaultyRoot(memoryRoot() as FileTree.IAtomicFileTreeDirectoryItem);
-    failing.getAtomicWriteCapabilities = (): Result<FileTree.IAtomicWriteCapabilities> => fail('inquiry offline');
-    expect(probeTaskRepositoryRoot(failing as unknown as FileTree.FileTreeItem)).toFailWith(/inquiry offline/);
+    failing.getAtomicWriteCapabilities = (): Result<FileTree.IAtomicWriteCapabilities> =>
+      fail('inquiry offline');
+    expect(probeTaskRepositoryRoot(failing as unknown as FileTree.FileTreeItem)).toFailWith(
+      /inquiry offline/
+    );
   });
 });
 
@@ -159,7 +178,9 @@ describe('the manifest records the mode a repository was initialized in', () => 
     const dir = freshDir();
     (await FileTreeTaskRepository.initialize(params(nodeRootAt(dir), 'session'))).orThrow().close();
     expect(manifestOf(dir).initializedMode).toBe('session');
-    const opened = (await FileTreeTaskRepository.open(params(nodeRootAt(dir), { durable: 'process-crash' }))).orThrow();
+    const opened = (
+      await FileTreeTaskRepository.open(params(nodeRootAt(dir), { durable: 'process-crash' }))
+    ).orThrow();
     expect(opened.state).toBe('ready');
     if (opened.state === 'ready') {
       opened.repository.close();
@@ -217,14 +238,18 @@ describe('openOrInitializeTaskRepository', () => {
     expect(second.state).toBe('ready');
     expect(second.report.initialized).toBe(false);
     if (second.state === 'ready') {
-      expect(await second.repository.read('t1' as TaskId)).toSucceedAndSatisfy((r) => expect(r).toBeDefined());
+      expect(await second.repository.read('t1' as TaskId)).toSucceedAndSatisfy((r) =>
+        expect(r).toBeDefined()
+      );
       second.repository.close();
     }
   });
 
   test('a root that qualifies only for session runs as a session on the root, labelled so', async () => {
     const result = (await openOrInitializeTaskRepository(hostParams(memoryRoot()))).orThrow();
-    expect(result).toEqual(expect.objectContaining({ state: 'ready', durability: 'session', placement: 'root' }));
+    expect(result).toEqual(
+      expect.objectContaining({ state: 'ready', durability: 'session', placement: 'root' })
+    );
     expect(result.report.mode).toBe('session');
     expect(result.report.guarantees).toEqual(['session']);
     if (result.state === 'ready') {
@@ -289,7 +314,9 @@ describe('openOrInitializeTaskRepository', () => {
     const accepted = (
       await openOrInitializeTaskRepository(hostParams(weakened(), { allowSessionOverDurable: true }))
     ).orThrow();
-    expect(accepted).toEqual(expect.objectContaining({ state: 'ready', durability: 'session', placement: 'root' }));
+    expect(accepted).toEqual(
+      expect.objectContaining({ state: 'ready', durability: 'session', placement: 'root' })
+    );
     if (accepted.state === 'ready') {
       accepted.repository.close();
     }
@@ -310,7 +337,12 @@ describe('openOrInitializeTaskRepository', () => {
       expect.objectContaining({ state: 'ready', durability: 'session', placement: 'in-memory' })
     );
     expect(result.report).toEqual(
-      expect.objectContaining({ placement: 'in-memory', durability: 'session', initialized: true, guarantees: [] })
+      expect.objectContaining({
+        placement: 'in-memory',
+        durability: 'session',
+        initialized: true,
+        guarantees: []
+      })
     );
     expect(result.report.fallbackReason).toMatch(/does not offer atomic writes/);
     if (result.state === 'ready') {
@@ -348,14 +380,14 @@ describe('openOrInitializeTaskRepository', () => {
     const factory =
       (root: () => FileTree.IFileTreeDirectoryItem): (() => Promise<TaskResult<ITaskRepository>>) =>
       async (): Promise<TaskResult<ITaskRepository>> =>
-      (await openOrInitializeTaskRepository(hostParams(root()))).onSuccess((opened) =>
-        opened.state === 'ready'
-          ? succeedWithDetail<ITaskRepository, ITaskFailure>(opened.repository)
-          : failWithDetail<ITaskRepository, ITaskFailure>('recovery required', {
-              code: 'storage-corrupt',
-              retry: 'after-host-action'
-            })
-      );
+        (await openOrInitializeTaskRepository(hostParams(root()))).onSuccess((opened) =>
+          opened.state === 'ready'
+            ? succeedWithDetail<ITaskRepository, ITaskFailure>(opened.repository)
+            : failWithDetail<ITaskRepository, ITaskFailure>('recovery required', {
+                code: 'storage-corrupt',
+                retry: 'after-host-action'
+              })
+        );
     expect(await runTaskRepositoryConformance(factory(() => memoryRoot()))).toSucceed();
     expect(await runTaskRepositoryConformance(factory(() => nodeRootAt(freshDir())))).toSucceed();
   });

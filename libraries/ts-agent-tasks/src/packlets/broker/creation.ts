@@ -341,7 +341,10 @@ export async function resumeNative(
  * accepted for, from the request the repository stored with it.
  * @internal
  */
-export async function resumeExternal(core: BrokerCore, taskId: unknown): Promise<TaskResult<TaskRegistrationResult>> {
+export async function resumeExternal(
+  core: BrokerCore,
+  taskId: unknown
+): Promise<TaskResult<TaskRegistrationResult>> {
   const pending = _pendingOf(core, taskId, 'resumePendingRegistration');
   if (pending.isFailure()) {
     return propagate(pending);

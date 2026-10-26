@@ -115,9 +115,10 @@ interface IPlacement {
 export async function openOrInitializeTaskRepository(
   params: IOpenOrInitializeTaskRepositoryParams
 ): Promise<TaskResult<OpenOrInitializeTaskRepositoryResult>> {
-  const placed: TaskResult<IPlacement> = _classified(probeTaskRepositoryRoot(params.root), 'invalid').onSuccess(
-    (probe) => _place(params, probe)
-  );
+  const placed: TaskResult<IPlacement> = _classified(
+    probeTaskRepositoryRoot(params.root),
+    'invalid'
+  ).onSuccess((probe) => _place(params, probe));
   if (placed.isFailure()) {
     return failWithDetail(placed.message, placed.detail);
   }
@@ -159,9 +160,17 @@ export async function openOrInitializeTaskRepository(
 }
 
 /** The root and mode a probe allows, or the fallback when it allows none. */
-function _place(params: IOpenOrInitializeTaskRepositoryParams, probe: ITaskRepositoryRootProbe): TaskResult<IPlacement> {
+function _place(
+  params: IOpenOrInitializeTaskRepositoryParams,
+  probe: ITaskRepositoryRootProbe
+): TaskResult<IPlacement> {
   if (probe.mode !== undefined) {
-    return succeedWithDetail({ root: params.root, mode: probe.mode, placement: 'root', guarantees: probe.guarantees });
+    return succeedWithDetail({
+      root: params.root,
+      mode: probe.mode,
+      placement: 'root',
+      guarantees: probe.guarantees
+    });
   }
   const reason: string = probe.reason!;
   if (params.fallback === 'refuse') {

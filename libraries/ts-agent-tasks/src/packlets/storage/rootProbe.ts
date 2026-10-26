@@ -66,7 +66,9 @@ export function probeTaskRepositoryRoot(root: FileTree.FileTreeItem): Result<ITa
     return succeed<ITaskRepositoryRootProbe>({
       guarantees,
       mode: undefined,
-      reason: `${root.absolutePath}: the root cannot honor a 'session' or 'process-crash' atomic write (it offers [${guarantees.join(
+      reason: `${
+        root.absolutePath
+      }: the root cannot honor a 'session' or 'process-crash' atomic write (it offers [${guarantees.join(
         ', '
       )}])`
     });

@@ -39,9 +39,7 @@ describe('durable mode on the Node filesystem', () => {
     durable.close();
     // A durable-initialized repository opens as a session only on the explicit opt-in.
     const session = (
-      await FileTreeTaskRepository.open(
-        params(nodeRootAt(dir), 'session', { allowSessionOverDurable: true })
-      )
+      await FileTreeTaskRepository.open(params(nodeRootAt(dir), 'session', { allowSessionOverDurable: true }))
     ).orThrow();
     expect(
       await FileTreeTaskRepository.open(params(nodeRootAt(dir), { durable: 'process-crash' }))

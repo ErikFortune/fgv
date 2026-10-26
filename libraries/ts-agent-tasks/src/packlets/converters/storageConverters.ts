@@ -318,7 +318,10 @@ export function buildStorageConverters(
     tasks: entries('task'),
     consumers: delivery.consumerInventory,
     sources: entries('source'),
-    initializedMode: Converters.enumeratedValue<TaskRepositoryDurability>(['session', 'process-crash']).optional()
+    initializedMode: Converters.enumeratedValue<TaskRepositoryDurability>([
+      'session',
+      'process-crash'
+    ]).optional()
   });
 
   // A cursor is opaque source text; the stored profile's `maxSourceCursorBytes` is checked by the

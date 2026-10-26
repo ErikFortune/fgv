@@ -93,7 +93,10 @@ async function settle(): Promise<void> {
   }
 }
 
-async function harness(options?: { readonly guard?: ITaskWriteGuard; readonly timer?: ManualTimer }): Promise<{
+async function harness(options?: {
+  readonly guard?: ITaskWriteGuard;
+  readonly timer?: ManualTimer;
+}): Promise<{
   readonly repository: ITaskRepository;
   readonly broker: TaskBroker;
   readonly policy: TestPolicy;
@@ -211,8 +214,15 @@ describe('TaskBroker.whenIdle', () => {
         registry: brokerRegistry()
       })
     ).orThrow();
-    const broker = TaskBroker.create({ repository, environment: env, writeGuard: guard, schedule: sync }).orThrow();
-    const writer = broker.bind({ principal: 'alice', scopes: [alpha], authorization: new TestPolicy() }).orThrow();
+    const broker = TaskBroker.create({
+      repository,
+      environment: env,
+      writeGuard: guard,
+      schedule: sync
+    }).orThrow();
+    const writer = broker
+      .bind({ principal: 'alice', scopes: [alpha], authorization: new TestPolicy() })
+      .orThrow();
     guard.hold();
     const write = track(writer, 'a');
     await settle();
@@ -268,7 +278,9 @@ describe('TaskBroker.whenIdle', () => {
     }).orThrow();
     expect(await broker.whenIdle(-1)).toFailWithDetail(/non-negative safe integer/, code('invalid'));
     expect(await broker.whenIdle(1.5)).toFailWithDetail(/non-negative safe integer/, code('invalid'));
-    const writer = broker.bind({ principal: 'alice', scopes: [alpha], authorization: new TestPolicy() }).orThrow();
+    const writer = broker
+      .bind({ principal: 'alice', scopes: [alpha], authorization: new TestPolicy() })
+      .orThrow();
     guard.hold();
     const write = track(writer, 'a');
     await settle();
@@ -343,11 +355,16 @@ describe('TaskBroker.create writeGuard', () => {
     const writer = broker.bind({ principal: 'alice', scopes: [alpha], authorization: policy }).orThrow();
     guard.refusing = 'writes are raised for a restore';
     const refused = await writer.createTracked({ taskId: tid('a'), operationId: op('create-a'), title: 'a' });
-    expect(refused).toFailWithDetail(/the write guard refused: writes are raised for a restore/, code('storage-unavailable'));
+    expect(refused).toFailWithDetail(
+      /the write guard refused: writes are raised for a restore/,
+      code('storage-unavailable')
+    );
     expect(refused.detail?.retry).toBe('after-host-action');
     expect(await repository.read(tid('a'))).toSucceedWith(undefined);
     guard.refusing = undefined;
-    expect(await writer.createTracked({ taskId: tid('a'), operationId: op('create-a2'), title: 'a' })).toSucceed();
+    expect(
+      await writer.createTracked({ taskId: tid('a'), operationId: op('create-a2'), title: 'a' })
+    ).toSucceed();
   });
 
   test('a classified failure from inside the guarded section passes through unchanged', async () => {
@@ -359,10 +376,9 @@ describe('TaskBroker.create writeGuard', () => {
         policy.epoch = 'epoch-2';
       }
     };
-    expect(await writer.createTracked({ taskId: tid('a'), operationId: op('create-a'), title: 'a' })).toFailWithDetail(
-      /authorization policy/i,
-      code('conflict')
-    );
+    expect(
+      await writer.createTracked({ taskId: tid('a'), operationId: op('create-a'), title: 'a' })
+    ).toFailWithDetail(/authorization policy/i, code('conflict'));
     expect(guard.inside).toBe(1);
     expect(await repository.read(tid('a'))).toSucceedWith(undefined);
   });
@@ -372,10 +388,9 @@ describe('TaskBroker.create writeGuard', () => {
     const { broker, policy, repository } = await harness({ guard });
     const writer = broker.bind({ principal: 'alice', scopes: [alpha], authorization: policy }).orThrow();
     guard.throwing = true;
-    expect(await writer.createTracked({ taskId: tid('a'), operationId: op('create-a'), title: 'a' })).toFailWithDetail(
-      /the write guard threw: gate offline/,
-      code('invalid')
-    );
+    expect(
+      await writer.createTracked({ taskId: tid('a'), operationId: op('create-a'), title: 'a' })
+    ).toFailWithDetail(/the write guard threw: gate offline/, code('invalid'));
     expect(await repository.read(tid('a'))).toSucceedWith(undefined);
   });
 });
