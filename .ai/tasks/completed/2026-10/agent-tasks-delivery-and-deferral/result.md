@@ -252,6 +252,20 @@ had cleaned `ts-res/lib` mid-test, so `ts-prompt-assist` failed to compile in a 
 until `ts-res` was re-run — a mechanic of the interruption, not a defect. None of the known
 load-sensitive tests failed.
 
+### Round-1 gates (on `5b5d9a8d7`)
+
+A container restart killed the first round-1 rebuild; every gate below was re-run on the committed
+head, from the repo root, graded by exit code and by the same greps.
+
+| Gate | Exit | Fail grep | Warnings |
+|---|---|---|---|
+| `rush install` | 0 | — | — |
+| `rush change --verify --target-branch origin/integration/agent-tasks-host` | 0 | — | — |
+| `rush rebuild` — `SUCCESS: 39 operations`, 8 min 36 s | 0 | 0 | symlink notice only |
+| `rush test` — **one unsplit run** in the background, `SUCCESS: 38 operations` (+ `typedoc-compact-theme`, no work), 19 min 44 s | 0 | 0 | symlink notice only |
+| `rushx fixlint` (no changes), `build` / `lint` / `test` (`ts-agent-tasks`, 2579 tests, 100% all four metrics) | 0 / 0 / 0 / 0 | 0 | 0 |
+| feed `--check`, `verify-capability-docs`, prettier 2.8.8 `--check` on every touched file | 0 / 0 / 0 | — | — |
+
 ## Not done
 
 - No Copilot loop and no independent reviewer: the brief and the kickoff forbid sub-agents and PRs.
