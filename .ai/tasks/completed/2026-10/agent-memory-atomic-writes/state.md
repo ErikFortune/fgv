@@ -47,3 +47,10 @@ Adversarial ref-only review of 5fed4dcb3 found the guard identity wrong (P1-1, P
 symlinked-root regression (P1-2), a thrown open leaking its claim (P2-1), and a disposed store
 still adding vectors (P2-2), plus P3-1 through P3-7. All are fixed per the coordinator's decisions.
 The findings table, tests and red evidence are in `result.md` § Review round 1.
+
+## Review round 2
+
+Against cc9e1dc43, the reviewer found a P1: degrading on a failed inquiry let plain writes go
+outside the prefix. It also found a P2: atomic writes followed a scope-directory symlink out of the
+root. Both are fixed per the coordinator's decisions, along with the six P3s; a TECH_DEBT entry
+covers the plain-mutator confinement. The table is in `result.md` § Review round 2.

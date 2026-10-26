@@ -68,9 +68,15 @@ removedTemporaries }`, computed once at `create`, strongest listed guarantee. No
   `warn` and do not fail the open. A foreign store rooted beneath this one is out of scope: it is
   refused in-process by the overlap rule, and across processes it is the host's single-writer
   violation.
-- **Capability inquiry** (round 1). A root that cannot answer `getAtomicWriteCapabilities` (failure
-  or throw) degrades like a root without the capability (`atomic: false`, reason), unless `require`
-  is set, which refuses it.
+- **Capability inquiry** (as settled in round 2). Only a successful answer that says "unqualified"
+  degrades (`atomic: false`, reason). An inquiry that fails or throws fails the open: the inquiry is
+  also where a root is checked against its accessors' confinement, and degrading on that refusal
+  wrote plainly outside the tree (round 1 briefly degraded; reversed). A root that cannot be listed
+  fails the open with `memory store: cannot list root …`.
+- **Real-path confinement** (round 2, ts-json-base). The atomic methods require the containing
+  directory's real path to lie under the root's real path, so a scope directory that links outside
+  the tree is refused; one linking elsewhere inside it is accepted. The plain mutators are unchanged
+  and do not confine; see `docs/TECH_DEBT.md`.
 - **Layout.** New modules `openReport.ts` (public types; `MemoryRecordErrorMode` and
   `ISkippedRecord` moved here from `fileTreeMemoryStore.ts`, unchanged, same barrel), `storeRootSession.ts`
   (internal: inquiry, requirement, claim, sweep, writer), `rootOwnership.ts`. `fileTreeMemoryStore.ts`
@@ -103,7 +109,7 @@ files, at the two sites the brief named.
 
 | window                                                                     | what is checked                                                    | what can change between check and act                                             | what re-checks after                                                                                                                                                                                                                                                                                                                                                                                               |
 | -------------------------------------------------------------------------- | ------------------------------------------------------------------ | --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| open: inquiry → requirement → claim | `getAtomicWriteCapabilities()` (captured: a failure or throw degrades); requirement rank; storage identity (`getStorageIdentity`, real path resolved at claim time) | another store could claim an overlapping root between inquiry and claim; a symlink could be retargeted after the real path is resolved | `acquireStoreRoot` is the synchronous check-and-set over every held claim, by overlap; nothing awaits between inquiry and claim. A retargeted link is outside the guard's claim (it identified the directory at claim time) |
+| open: inquiry → requirement → claim | `getAtomicWriteCapabilities()` (a failure or throw fails the open; only an unqualified answer degrades); root listing; requirement rank; storage identity (`getStorageIdentity`, real path resolved at claim time) | another store could claim an overlapping root between inquiry and claim; a symlink could be retargeted after the real path is resolved | `acquireStoreRoot` is the synchronous check-and-set over every held claim, by overlap; nothing awaits between inquiry and claim. A retargeted link is outside the guard's claim (it identified the directory at claim time) |
 | open: claim → sweep → walk | claim held | nothing in-process; out-of-process writers are out of the fault model | the sweep runs only under the claim and cannot throw out of it (captured); the walk, constructor and index rebuild run inside `captureResult`, and any failure or throw releases the claim |
 | open: guarantee chosen once → every later write                            | guarantee fixed in the session                                     | the scope directory may sit on another mount, or the root may have been remounted | `writeChildAtomically` re-qualifies the containing directory on every fs write and refuses at validate; the store fails on that refusal and never retries plainly                                                                                                                                                                                                                                                  |
 | write → visibility settle → index patch                                    | `writeChildAtomically` outcome                                     | on `'unknown'`, the file may or may not hold the new record                       | the re-read is the re-check; the index is patched (`_persist` `.onSuccess`) only when the result is success, i.e. only when the file holds the new record. The one window left open: re-read fails → reported failure, index keeps previous envelope, disk may hold the new record; the message says so and a reopen settles it. Reads materialize bodies from disk, so a read in that window returns the new body |
@@ -154,6 +160,32 @@ About the prefixed-tree probe (_guard3_, "prefixed tree root '/'"): `forFilesyst
 resolves to the filesystem root `/`, outside the prefix. Its capability inquiry fails, so it now
 degrades, as P1-2 requires, and the open walks `/`. 5fed4dcb3 refused it only because the inquiry
 failure happened to be fatal. This is a ts-json-base path-resolution quirk, not a store decision.
+_(Round 2 reversed degrade-on-failure, so this case is refused again; see below.)_
+
+## Review round 2 (against cc9e1dc43)
+
+The reviewer confirmed all nine round-1 findings fixed. This round's red run used the same method:
+the cc9e1dc43 sources of both packages, with the new tests kept and `@ts-nocheck` added. Result:
+**ts-json-base, 2 red** (the new escape test, on both test roots); **ts-agent-memory, 9 red**. The
+tests marked "non-regression" below pass on cc9e1dc43 by design: they pin behaviour that the fix
+must keep.
+
+| finding | fix | regression test(s) | red on cc9e1dc43 |
+|---|---|---|---|
+| P1-A an inquiry failure (outside the prefix, not found, throw) degraded to plain writes outside the tree | `inquire` returns a `Result`; a failure or throw fails the open with `memory store: cannot ask root …`; only a successful unqualified answer degrades | _refuses the open when the root cannot answer the inquiry_; _…when the inquiry throws_; fs _a root outside its accessors' tree is refused, not degraded to plain writes there_ (with and without `require`); fs _a root that does not exist is refused, with context_; _reports a capability answer that gives no reason_ (an unqualified answer still degrades; non-regression) | yes (5 of them) |
+| P2-A atomic writes followed a scope directory linking outside the root | ts-json-base `_confineToRoot` also requires `realpath(containing directory)` to lie under `realpath(prefix)`, for the inquiry, the write and the cleanup | ts-json-base _a directory inside the root that links outside it is refused, by inquiry, write and cleanup alike_; fs memory _a scope directory that links outside the root refuses the write_; non-regression: ts-json-base _…links elsewhere inside it is accepted_, memory _a scope directory that is a symbolic link is written through_ (now links inside the vault) | yes |
+| P2-B no repo-wide gate on the final head | fresh `rush rebuild` and `rush test` on this head (see Gates) | — | — |
+| P3 `\` treated as a separator on POSIX | separator taken from the path: `\` only for a path with no `/` | fs _a sibling whose name contains a backslash is not nested on POSIX_; _Windows-style paths nest by backslash, and a name that merely shares a prefix does not_ (non-regression) | yes / no |
+| P3 case-insensitive filesystems | `resolveRealPath` uses `fs.realpathSync.native`; the remaining gap (case variants the OS does not canonicalize) is documented in the guard remarks, README and CAPABILITIES | — (Linux CI cannot exercise it) | — |
+| P3 the real path is claim-time | one sentence in the guard remarks; README and CAPABILITIES too | — | — |
+| P3 a missing-root open lacked context | the open lists the root first: `memory store: cannot list root …`; a missing filesystem root fails earlier at the inquiry, also prefixed | _refuses the open, with context, when the root cannot be listed_; fs _a root that does not exist is refused, with context_ | yes |
+| P3 vector removals ran after dispose | `checkWritable` immediately before `remove` in the record lane, the fragment lane and `pruneStaleVector` (so `removeAll` and `removeEvictedVectors` too) | _a delete that is disposed partway removes none of the next owner's derived state_ | yes |
+| P3 a throwing `getStorageIdentity` escaped `create` | captured: `memory store: cannot identify root …` | _refuses the open when the root cannot say what storage it names_ | yes |
+| TECH_DEBT | new P2 entry: `resolveAbsolutePath` ignores the prefix for absolute paths; the plain mutators never confine; the prefix doc says "all paths". Options (a)–(d) are listed and the choice is left to the user | — | — |
+
+Not changed, as instructed: `forFilesystem(prefix).getDirectory('/')` resolution and plain-write
+confinement. That probe case is now refused at the inquiry ("resolves outside the tree root"),
+instead of degrading and walking `/`.
 
 ## Gates
 

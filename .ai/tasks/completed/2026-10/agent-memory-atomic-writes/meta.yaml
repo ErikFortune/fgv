@@ -29,9 +29,11 @@ summary:
   diverged: >
     A first guard keyed on item and path was found wrong by review and replaced, at the
     coordinator's decision, by storage identity with overlap refused (ts-agent-tasks checks equality
-    only); this needed new ts-json-base surface the brief did not name. An inquiry failure degrades
-    rather than failing the open. A disposed store refusing writes and the removedTemporaries field
-    were not in the brief. An
+    only); this needed new ts-json-base surface the brief did not name, including real-path
+    confinement of its atomic methods. Degrading on a failed capability inquiry was tried in round 1
+    and reversed in round 2, because it turned confinement refusals into plain writes outside the
+    tree. A disposed store refusing writes and the removedTemporaries field were not in the
+    brief. An
     'unknown' write whose file is absent afterwards is settled as not taken effect. The ask's
     on-disk index files do not exist, as the brief anticipated.
   sourceLine: '**Shipped:** `FileTreeMemoryStore` writes every record file atomically at the strongest guarantee its root offers, reports what it established on `store.durability`, refuses a second store on the same root until the first is disposed, and sweeps interrupted-write working files at open.'
