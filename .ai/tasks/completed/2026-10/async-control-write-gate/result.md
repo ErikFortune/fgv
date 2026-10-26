@@ -258,6 +258,34 @@ The review of `f558a32e1` found no P1: no deadlock, no count drift, and no write
 - **`wk.js`.** K1 `0,1,2,new`; K2 `0,1,A`; K3 every write refused, none run; K4 `0,2,A`, with no drift in the counts; K5 `0,1,A`; K6 `0,1,2,A`. K7 and K8 had **0 inversions** and every write settled.
 - **`started.js`.** S1 and S2 report `rejected: sync boom`, `reconcile-first`. S3–S5 are unchanged.
 
+### Round-2 gates
+
+These ran on `093aa5e00`, merged with `origin/integration/asks` @ `da35380ee` (still unchanged), in
+the foreground from the repo root. The repo-wide test ran in the background and was graded after
+its completion notice.
+
+| Gate | Exit | Error grep | Warning grep |
+|---|---|---|---|
+| `rush install` | 0 | — | — |
+| `rush change --verify --target-branch origin/integration/asks` | 0 | — | — |
+| `rush rebuild` | 0 | 0 | symlink notice only; `SUCCESS: 39 operations` |
+| `rush test`, first run | 1 | 5 | One unrelated test failed (see below), and the packages downstream of ts-extras were blocked |
+| ts-extras `rushx test`, re-run alone | 0 | 0 | 0; coverage 100% |
+| `rush test`, re-run | 0 | 0 | symlink notice only; `SUCCESS: 38 operations`, 38 `completed successfully`; no NUL padding |
+| ts-extras `rushx build` / `lint` / `test` | 0 / 0 / 0 | 0 | 0; coverage 100/100/100/100 |
+| ts-agent-tasks `rushx build` / `lint` / `test` | 0 / 0 / 0 | 0 | 0; coverage 100/100/100/100 |
+| prettier 2.8.8 `--check` on touched files | 0 | — | — |
+| feed `--check`, `verify-capability-docs` | 0 / 0 | — | 0 stale, 0 failed |
+
+**The first-run failure is a pre-existing flaky test, not this stream.** It is
+`keyStoreArgon2id.test.ts › verifySecretFromPasswordArgon2id › returns false when salt does not
+match`, which expected `false` and got `true`. The test's mock Argon2id provider
+(`makeDeterministicKey`) seeds its output from a weighted *sum* of the salt bytes. So two random
+16-byte salts collide with a probability of roughly 1 in 35,000, and the "other salt" then derives
+the same key. This stream does not touch that file or the KeyStore. It passed when ts-extras was
+re-run alone, and on the repo-wide re-run. It is not on the known load-sensitive list; I am
+reporting it as a separate defect rather than fixing it here.
+
 ## Brief deltas
 
 - **`ITaskWriteGuard` widened** (`PromiseLike<Result<T>>`). This was forced by the structural-fit
