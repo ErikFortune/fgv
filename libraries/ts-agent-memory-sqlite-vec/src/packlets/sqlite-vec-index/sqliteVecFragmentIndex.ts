@@ -148,10 +148,17 @@ type FragmentIdentity = Pick<IVectorQueryHit, 'locator' | 'fragmentId'>;
  * and `query` fail; `rebuild` is always allowed and is the remedy. `rebuild` is not
  * atomic across its `await`s, but a partial table is detectable: the clear and a
  * `'rebuilding'` marker commit together, and only a final transaction commits the
- * identity — so a crash, a `'fail'` rollback, or a final commit that could not be
- * written all leave `'incomplete'`. A rebuild cannot change the dimension; that
- * still needs a drop-and-re-index. An older version of this package ignores the
- * meta table, so a downgrade leaves a row that may no longer describe the vectors.
+ * identity — so a crash, a `'fail'` rollback, a `release()` mid-rebuild, or a final
+ * commit that could not be written all leave `'incomplete'`. While a rebuild runs,
+ * even on a fresh index whose table does not exist yet, every other handle is
+ * fenced. A rebuild cannot change the dimension: a fragment of another width fails
+ * it in every mode, `'skip'` included, and a width change still needs a
+ * drop-and-re-index. Every write transaction is `IMMEDIATE`. `has`, `remove`,
+ * `recordCount` and `fragmentCount` are deliberately unfenced, so coverage and
+ * cleanup still work on a mismatched or incomplete index. A handle opened without
+ * an identity is fenced only on `'incomplete'`, and its rebuild leaves the status
+ * `'absent'`. An older version of this package ignores the meta table, so a
+ * downgrade leaves a row that may no longer describe the vectors.
  * @public
  */
 export class SqliteVecFragmentIndex implements IFragmentVectorIndex {

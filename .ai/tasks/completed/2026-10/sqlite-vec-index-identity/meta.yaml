@@ -31,8 +31,12 @@ summary:
     meta table, an identity-less rebuild still writes the marker, and the final commit fails if the
     marker changed underneath it. Two close-out questions were answered yes and landed on the same
     branch: identity() takes its reads in one read transaction, and adoptIdentity() is an idempotent
-    no-op on match (the brief said absent-only). Left open and documented: concurrent rebuilds on two
-    connections.
+    no-op on match (the brief said absent-only). An adversarial review round then found that a
+    rebuilding row on a still-fresh index read as fresh, letting another handle certify its identity
+    over the rebuild (P1); a rebuilding row now reads incomplete regardless, every write transaction
+    is IMMEDIATE, the rebuild clears from the file's state, a width change fails in every mode, and
+    a release mid-rebuild leaves incomplete. Left open and documented: concurrent rebuilds on two
+    connections, and an identity-less handle neither gets nor gives protection.
   sourceLine: '**Shipped:** `SqliteVecVectorIndex` and `SqliteVecFragmentIndex` store an opaque embedding identity in the index file itself, report it with `identity()` on every call, fence writes and queries while it disagrees or a rebuild never finished, and make a partial rebuild detectable instead of silent.'
   headline: >
     The sqlite-vec indexes now store which embedding model wrote their vectors in the same file, and
@@ -52,4 +56,4 @@ keywords:
   - orphan row
   - adoptIdentity
   - fgv-ask
-sourceHash: sha256:ad51c87a7ec0fb62 # over brief.md + result.md + state.md
+sourceHash: sha256:ffe6a2c7e358108a # over brief.md + result.md + state.md

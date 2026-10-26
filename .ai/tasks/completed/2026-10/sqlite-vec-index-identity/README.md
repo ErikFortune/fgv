@@ -35,6 +35,12 @@ idempotent no-op on `match`. `identity()` takes its reads in one read transactio
 - **One existing test's premise changed:** a rebuild now prepares the meta statements once and keeps
   them. The "prepares nothing" tests warm up with one rebuild and still pin that no later rebuild
   prepares anything.
+- **Review round 1 changed the design in one place.** A `rebuilding` row reads `incomplete` even
+  while the table does not exist yet. The first version reported `fresh`, which let another handle
+  certify its own identity over a fresh index's rebuild (P1). The same round made every write
+  transaction `IMMEDIATE`, made the rebuild empty whatever table the file holds, made a width change
+  fail the rebuild in every mode, and fixed release-during-rebuild. The finding → fix → test → red
+  table is in `result.md`.
 - **Seven interpretations** where the brief was silent are listed in `result.md`. Two questions
   raised at close-out (a snapshot-consistent `identity()`, idempotent adopt on `match`) were
   answered yes by the orchestrator and landed in a follow-up commit on the same branch.

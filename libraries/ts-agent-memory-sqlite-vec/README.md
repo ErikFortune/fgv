@@ -47,7 +47,7 @@ handle.close(); // closes the connection THIS open() created; idempotent.
 `SqliteVecFragmentIndex.open({ path })` is the identical shape for the fragment lane.
 
 **Two `open` calls on one path give two independent connections, not a shared one.** To
-back a record index _and_ a fragment index with a single connection, own it yourself and
+back a record index *and* a fragment index with a single connection, own it yourself and
 pass it to both `create` methods:
 
 ```ts
@@ -62,7 +62,9 @@ const vectorIndex = (await SqliteVecVectorIndex.create({ database: db })).orThro
 
 // Wire it into the store exactly where InMemoryCosineIndex would go. On a reopened
 // vault, do NOT call rebuild() — the vectors are already in vectors.db.
-const store = (await FileTreeMemoryStore.create({ root, registry, vectorIndex, embed })).orThrow();
+const store = (
+  await FileTreeMemoryStore.create({ root, registry, vectorIndex, embed })
+).orThrow();
 
 // ...use the store; embeddings are written to vectors.db on every put.
 vectorIndex.release(); // drop this index's prepared statements — see below
@@ -87,7 +89,7 @@ has simply never had an `add` also holds no statements, and answering `0` from a
 released one would be indistinguishable from an empty one.
 
 Note the limit honestly: `better-sqlite3` exposes no public `finalize()`, so dropping
-the last reference does not finalize a statement — it makes it collectable _earlier_,
+the last reference does not finalize a statement — it makes it collectable *earlier*,
 while the environment is alive, instead of surviving to teardown. That narrows the
 window; it is not a proof against it.
 
@@ -117,24 +119,28 @@ const report = index.identity().orThrow();
 
 `identity()` reads the file on every call and never writes; its reads share one read transaction, so the report is a consistent snapshot. The statuses:
 
-| status       | meaning                                                                 | `add` / `addFragments` / `query` |
-| ------------ | ----------------------------------------------------------------------- | -------------------------------- |
-| `fresh`      | the table does not exist yet (a row left by a dropped table is ignored) | allowed                          |
-| `match`      | the stored identity equals the handle's                                 | allowed                          |
-| `mismatch`   | another identity is stored; `stored` names it                           | **fail**                         |
-| `absent`     | vectors exist, but no identity was ever stored                          | allowed                          |
-| `incomplete` | a `rebuild` started and never finished                                  | **fail**                         |
-| `unchecked`  | the handle was opened without an identity                               | allowed                          |
+| status | meaning | `add` / `addFragments` / `query` |
+|---|---|---|
+| `fresh` | the table does not exist yet (a row left by a dropped table is ignored) | allowed |
+| `match` | the stored identity equals the handle's | allowed |
+| `mismatch` | another identity is stored; `stored` names it | **fail** |
+| `absent` | vectors exist, but no identity was ever stored | allowed |
+| `incomplete` | a `rebuild` started and has not finished — including one still running on a fresh index, before its table exists | **fail** |
+| `unchecked` | the handle was opened without an identity | allowed |
 
 - **The first write to a fresh index** creates the table and stores the identity in one transaction.
-- **`rebuild` is always allowed and is the remedy** for `mismatch` and `incomplete`. It clears the table and marks it `'rebuilding'` in one transaction, then commits the handle's identity in a final one. A crash, a `'fail'` rollback, or a final commit that cannot be written (for example `SQLITE_BUSY` from another connection) leaves `incomplete`, so a partial table is detectable. Nothing is ever deleted automatically.
+- **`rebuild` is always allowed and is the remedy** for `mismatch` and `incomplete`. It clears the table and marks it `'rebuilding'` in one transaction, then commits the handle's identity in a final one. A crash, a `'fail'` rollback, a `release()` while it runs, or a final commit that cannot be written (for example `SQLITE_BUSY` from another connection) leaves `incomplete`, so a partial table is detectable. Nothing is ever deleted automatically.
+- **While a rebuild runs, every other handle is fenced** — even on a fresh index whose table does not exist yet — so nothing can write into the partial table or certify its own identity over it. The rebuild empties whatever table the file holds, including one another connection created after this handle opened, and fails if the table appears or its marker changes underneath it.
 - **`adoptIdentity()`** records the handle's identity over `absent` vectors without re-embedding — a one-time migration for a consumer that kept the identity somewhere else. On `match` it is a no-op that succeeds without writing, so a migration can safely run twice. It is refused for `mismatch` and `incomplete` (rebuild instead), and for `fresh` and `unchecked` (nothing to adopt).
 - **A plain write to an `absent` index commits nothing**, so files written before identities existed keep working unchanged.
-- **Read-only and consumer-owned connections.** `open`, `create` and `identity()` never write; a write or adoption on a read-only connection is a `Failure`.
+- **A handle opened without an identity gets no protection and gives none.** It is never fenced on `mismatch` (only on `incomplete`), so it can add vectors under another handle's stored identity; and its rebuild commits no identity, which turns the status to `absent` for every handle. That is by design — identity checking is opt-in — so open every handle on a file with an identity if any of them needs the guarantee.
+- **`has`, `remove`, `size` and the fragment counts are not fenced**, deliberately: coverage reporting and cleanup still work on a `mismatch` or `incomplete` index. `query` is fenced even when this handle has not yet seen the table — it fails rather than answering `[]`.
+- **Busy files wait.** Every write transaction (`add`, `addFragments`, `adoptIdentity`, the rebuild's clear and its final commit) is `IMMEDIATE`, so it takes the write lock up front and honours `busy_timeout` instead of failing a lock upgrade at once. Reads (`identity()`, `query`) stay deferred.
+- **Read-only and consumer-owned connections.** `open`, `create` and `identity()` never write; a write, an adoption that would write, or a rebuild on a read-only connection is a `Failure`.
 
-The identity lives in an ordinary table, `fgv_sqlite_vec_meta`, with one row per index table, so a record index and a fragment index in one file are checked independently. It is created on the first write that needs it; there is no migration.
+The identity lives in an ordinary table, `fgv_sqlite_vec_meta`, with one row per index table, so a record index and a fragment index in one file are checked independently. It is created on the first write that needs it; there is no migration. A row with a `meta_version` this package does not read is refused by every read **and by `rebuild`**, never overwritten.
 
-**Limits.** A model swap to a **different width** still needs the table dropped (or a fresh `tableName`) and re-indexed — a rebuild cannot change a `vec0` table's dimension, and fails, leaving the index `incomplete`. The `'rebuilding'` marker is a crash marker, not a lock: two rebuilds of one table on two connections at once are not coordinated. And an **older version of this package ignores the meta table**: if it writes or rebuilds the file after a downgrade, the stored row may no longer describe the vectors. Rebuild after upgrading again.
+**Limits.** A model swap to a **different width** cannot go through `rebuild`: a vector of another width is not treated as a per-record error, so the rebuild fails in every mode (`'skip'` included) and leaves the index `incomplete`. Drop the table (or use a fresh `tableName`) and re-index. The `'rebuilding'` marker is not a lock between rebuilds: two rebuilds of one table on two connections at once are not coordinated. And an **older version of this package ignores the meta table**: if it writes or rebuilds the file after a downgrade, the stored row may no longer describe the vectors. Rebuild after upgrading again.
 
 ## Fragment-granular index
 
@@ -167,7 +173,7 @@ const hits = (await retriever.retrieve({ semantic: 'refund policy', topK: 5, max
 - `query(vector, topK, maxPerRecord?)` applies the optional per-record cap **during selection, before the `topK` cut**, so one long document cannot crowd others out.
 - Same dimension-establishment, cosine scoring (`score = 1 − cosineDistance`), reopen-recovery, and loud-failure contract as the record index — byte-identical to `InMemoryFragmentCosineIndex`.
 
-A fragment must carry **at least one** of `locator` / `fragmentId`. The `locator` span is _advisory_ — the region of the body the fragment was derived from, **not** a slice guaranteed to reproduce its text — so a rewriting segmenter should omit it and supply a `fragmentId` instead. `fragmentId` is an **opaque bytestring**: stored and returned verbatim, never parsed, never filtered on. Its stability across re-embeds is the caller's business, not this index's (`addFragments` is whole-record-replace, so an updated record re-emits its whole fragment set).
+A fragment must carry **at least one** of `locator` / `fragmentId`. The `locator` span is *advisory* — the region of the body the fragment was derived from, **not** a slice guaranteed to reproduce its text — so a rewriting segmenter should omit it and supply a `fragmentId` instead. `fragmentId` is an **opaque bytestring**: stored and returned verbatim, never parsed, never filtered on. Its stability across re-embeds is the caller's business, not this index's (`addFragments` is whole-record-replace, so an updated record re-emits its whole fragment set).
 
 Hold the record and fragment indexes in **distinct tables** (default `memory_vectors` vs `memory_fragments`, or supply `tableName`); they are fully independent and may share one database file.
 
@@ -189,7 +195,7 @@ Deliberately excluded — reach for the upstream libraries (or a different backe
 
 - **ANN / large-N indexing.** Query is a brute-force `vec0` KNN scan — correct and durable for the same "thousands of records" regime the in-memory index targets. An approximate-nearest-neighbor structure for very large N is a different backend behind the same `IVectorIndex` / `IFragmentVectorIndex` seam. (This applies to both indexes, including `SqliteVecFragmentIndex`, whose capped query fetches the full ranked set.)
 - **Connection lifecycle beyond plain open/close.** With `create({ database })` you open and close the `better-sqlite3` `Database` and this index never does; with `open({ path })` this package opens the file and the returned handle's `close()` disposes of exactly what it opened. Either way, pooling, WAL/pragma tuning, backups, and multi-process coordination are yours.
-- **Embedding.** This is a vector _index_, not an embedder — the store's consumer-wired `MemoryEmbedder` produces the vectors (`@fgv/ts-extras/ai-assist` `callProviderEmbedding`, `@fgv/ts-extras-transformers`, etc.).
+- **Embedding.** This is a vector *index*, not an embedder — the store's consumer-wired `MemoryEmbedder` produces the vectors (`@fgv/ts-extras/ai-assist` `callProviderEmbedding`, `@fgv/ts-extras-transformers`, etc.).
 - **A browser sibling.** `better-sqlite3` is Node-only. A WASM-SQLite browser variant, if ever needed, is a separate package.
 - **Schema migration of any kind.** Re-embedding with a different-dimension model against an existing table fails loudly, and a package release that changes a `vec0` table's columns requires a drop-and-re-index — see [Upgrading](#upgrading-vec0-schema-changes-require-a-drop-and-re-index). Drop the table (or use a new `tableName`) to re-index; `vec0` cannot be altered in place.
 

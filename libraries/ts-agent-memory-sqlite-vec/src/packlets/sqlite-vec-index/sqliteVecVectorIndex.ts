@@ -96,7 +96,12 @@ interface IKnnRow {
  * `query` fail with a message naming the status; `rebuild` is always allowed and is
  * the remedy. The first `add` to a fresh index creates the table and stores the
  * identity in one transaction; each fence check shares a transaction with the read
- * or write it guards. Nothing is deleted automatically. An older version of this
+ * or write it guards, and every write transaction is `IMMEDIATE`. Nothing is
+ * deleted automatically. `has`, `remove` and `size` are deliberately unfenced, so
+ * coverage reporting and cleanup still work on a mismatched or incomplete index.
+ * A handle opened without an identity is fenced only on `'incomplete'`: it can
+ * write under another handle's stored identity, and its rebuild leaves the status
+ * `'absent'` — identity checking is opt-in, per handle. An older version of this
  * package ignores the meta table entirely, so a file written by it (or rebuilt by
  * it after a downgrade) carries a row that no longer describes its vectors.
  * @public
