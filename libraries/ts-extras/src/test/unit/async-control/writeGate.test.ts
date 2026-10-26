@@ -375,6 +375,120 @@ describe('AsyncControl.WriteGate', () => {
       expect(g.waiting).toBe(0);
     });
 
+    describe('order', () => {
+      /** A write that records when it starts. */
+      const recording =
+        (order: Array<string | number>, tag: string | number): (() => Promise<Result<string | number>>) =>
+        async (): Promise<Result<string | number>> => {
+          order.push(tag);
+          return succeed(tag);
+        };
+
+      test('a pause taken before woken writes decide keeps them ahead of a write that asked after the resume', async () => {
+        const g = gate();
+        const order: Array<string | number> = [];
+        const first = (await g.pause(10)).orThrow();
+        const writes = [g.guard(recording(order, 0)), g.guard(recording(order, 1))];
+        first.resume();
+        writes.push(g.guard(recording(order, 'A')));
+        const pausing = g.pause(10);
+        await flush();
+        expect(order).toEqual([]);
+        expect(g.waiting).toBe(3);
+        (await pausing).orThrow().resume();
+        await Promise.all(writes);
+        expect(order).toEqual([0, 1, 'A']);
+      });
+
+      test('a pause taken inside a woken write keeps the rest ahead of a later arrival', async () => {
+        const g = gate();
+        const order: Array<string | number> = [];
+        const held = (await g.pause(10)).orThrow();
+        let inner: ReturnType<WriteGate['pause']> | undefined;
+        const writes = [
+          g.guard(async () => {
+            order.push(0);
+            inner = g.pause(10);
+            return succeed(0);
+          }),
+          g.guard(recording(order, 1)),
+          g.guard(recording(order, 2))
+        ];
+        held.resume();
+        writes.push(g.guard(recording(order, 'A')));
+        await flush();
+        expect(order).toEqual([0]);
+        (await inner!).orThrow().resume();
+        await Promise.all(writes);
+        expect(order).toEqual([0, 1, 2, 'A']);
+      });
+
+      test('resume then an immediate re-pause: a new write stays behind the held ones', async () => {
+        const g = gate();
+        const order: Array<string | number> = [];
+        const held = (await g.pause(10)).orThrow();
+        const writes = [0, 1, 2].map((i) => g.guard(recording(order, i)));
+        held.resume();
+        const again = g.pause(10);
+        writes.push(g.guard(recording(order, 'new')));
+        const second = (await again).orThrow();
+        await flush();
+        expect(g.waiting).toBe(4);
+        second.resume();
+        await Promise.all(writes);
+        expect(order).toEqual([0, 1, 2, 'new']);
+      });
+
+      test('a seeded random run of guards, pauses and resumes starts every write in the order it asked', async () => {
+        // Park-Miller: deterministic, and the product stays within exact integer range.
+        let seed = 5;
+        const rnd = (): number => {
+          seed = (seed * 16807) % 2147483647;
+          return seed / 2147483647;
+        };
+        const ticks = async (n: number): Promise<void> => {
+          for (let i = 0; i < n; i++) {
+            await Promise.resolve();
+          }
+        };
+        const g = gate();
+        const holds: AsyncControl.IWriteGatePause[] = [];
+        const writes: Array<PromiseLike<Result<number>>> = [];
+        const started: number[] = [];
+        for (let i = 0, n = 0; i < 2000; i++) {
+          const x = rnd();
+          if (x < 0.5) {
+            const id = n++;
+            const delay = Math.floor(rnd() * 4);
+            writes.push(
+              g.guard(async () => {
+                started.push(id);
+                await ticks(delay);
+                return succeed(id);
+              })
+            );
+          } else if (x < 0.7) {
+            g.pause(10).then((r) => (r.isSuccess() ? holds.push(r.value) : 0), ignore);
+          } else if (holds.length > 0) {
+            holds.splice(Math.floor(rnd() * holds.length), 1)[0].resume();
+          }
+          if (rnd() < 0.3) {
+            await ticks(Math.floor(rnd() * 4));
+          }
+        }
+        for (let k = 0; k < 5; k++) {
+          await ticks(40);
+          holds.splice(0).forEach((h) => h.resume());
+        }
+        await Promise.all(writes);
+        const inversions = started.filter((id, k) => k > 0 && id < started[k - 1]).length;
+        expect(started).toHaveLength(writes.length);
+        expect(inversions).toBe(0);
+        expect(g.waiting).toBe(0);
+        expect(g.inFlight).toBe(0);
+      });
+    });
+
     test('a woken write decides again: a pause taken before its turn holds it once more', async () => {
       const g = gate();
       const first = (await g.pause(10)).orThrow();

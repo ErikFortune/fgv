@@ -102,9 +102,11 @@ export interface IWriteGateOptions {
  * it. A write woken from a pause decides again, so a pause taken between the wake and the write's
  * turn holds it once more.
  *
- * **Order across a resume is kept.** Writes held by a pause start in the order they asked, and a
- * write that asks while they are being woken — before each has decided again — queues behind
- * them rather than overtaking them.
+ * **Order is kept.** Every write takes a sequence number when it first calls `guard`, and the
+ * waiting list is kept in that order, so writes held by a pause start in the order they asked. A
+ * write that is woken and then held again — a pause taken before its turn — keeps its original
+ * place rather than going to the back, and a write that asks while earlier ones are still waiting
+ * or being woken waits behind them rather than overtaking them.
  *
  * **What a guarded write answers.** The write's own result, passed through as the same object.
  * A write that throws synchronously, rejects, or resolves to something that is not a `Result` is
@@ -127,10 +129,18 @@ export class WriteGate {
   private _reason: string | undefined = undefined;
   private _pauses: number = 0;
   private _inFlight: number = 0;
-  /** Writes woken and not yet decided again; a new write queues behind them. */
-  private _waking: number = 0;
-  /** Writes waiting on a pause; woken when the last pause ends, or when the gate is raised. */
-  private _waiters: Array<() => void> = [];
+  /** The sequence number the next write to call `guard` takes. */
+  private _nextSeq: number = 0;
+  /**
+   * Writes woken and not yet decided again, by sequence number. A later write waits behind them;
+   * a count would not do, since an earlier write can be woken again after a later one was.
+   */
+  private readonly _woken: Set<number> = new Set();
+  /**
+   * Writes waiting on a pause, in sequence order; woken when the last pause ends, or when the gate
+   * is raised.
+   */
+  private _waiters: Array<{ readonly seq: number; readonly wake: () => void }> = [];
   /** Pauses waiting for the writes under way to finish; told when `inFlight` reaches 0. */
   private _drains: Array<() => void> = [];
 
@@ -200,7 +210,7 @@ export class WriteGate {
    * @returns The write's own result; a refusal or a throw is a failure.
    */
   public guard<T>(write: AsyncDeferredResult<T>): AsyncResult<T> {
-    return new AsyncResult<T>(this._run<Result<T>>(write, (message) => fail<T>(message)));
+    return new AsyncResult<T>(this._run<Result<T>>(write, (message) => fail<T>(message), this._nextSeq++));
   }
 
   /**
@@ -213,8 +223,10 @@ export class WriteGate {
     write: () => Promise<DetailedResult<T, TD>>
   ): AsyncDetailedResult<T, TD | WriteGateRefusal> {
     return new AsyncDetailedResult<T, TD | WriteGateRefusal>(
-      this._run<DetailedResult<T, TD | WriteGateRefusal>>(write, (message, refusal) =>
-        failWithDetail<T, TD | WriteGateRefusal>(message, refusal)
+      this._run<DetailedResult<T, TD | WriteGateRefusal>>(
+        write,
+        (message, refusal) => failWithDetail<T, TD | WriteGateRefusal>(message, refusal),
+        this._nextSeq++
       )
     );
   }
@@ -256,23 +268,23 @@ export class WriteGate {
   }
 
   /**
-   * Admits, holds or refuses `write`. Every branch is decided synchronously, and a write that is
-   * admitted is counted before it is called.
+   * Admits, holds or refuses `write`, whose sequence number is `seq`. Every branch is decided
+   * synchronously, and a write that is admitted is counted before it is called.
    */
   private _run<R extends Result<unknown>>(
     write: () => Promise<R>,
     refuse: (message: string, refusal: WriteGateRefusal) => R,
-    woken: boolean = false
+    seq: number
   ): Promise<R> {
     if (this._reason !== undefined) {
       return Promise.resolve(refuse(`${this._raisedMessage()}; the write was not run`, 'raised'));
     }
-    if (this._pauses > 0 || (!woken && this._waking > 0)) {
-      return new Promise<void>((resolve) => this._waiters.push(resolve)).then(() => {
-        this._waking -= 1;
-        const decided = this._run(write, refuse, true);
-        // The last woken write has decided: anything that queued behind the wake goes next.
-        if (this._waking === 0 && this._pauses === 0 && this._waiters.length > 0) {
+    if (this._pauses > 0 || this._earlierPending(seq)) {
+      return new Promise<void>((resolve) => this._hold(seq, resolve)).then(() => {
+        this._woken.delete(seq);
+        const decided = this._run(write, refuse, seq);
+        // Every woken write has decided: anything held behind them goes next.
+        if (this._woken.size === 0 && this._pauses === 0 && this._waiters.length > 0) {
           this._wake();
         }
         return decided;
@@ -299,10 +311,21 @@ export class WriteGate {
     }
   }
 
+  /** Whether a write that asked before `seq` is still waiting, or woken and not yet decided. */
+  private _earlierPending(seq: number): boolean {
+    return (this._waiters.length > 0 && this._waiters[0].seq < seq) || [...this._woken].some((s) => s < seq);
+  }
+
+  /** Holds a write in sequence order, so one held again keeps its original place. */
+  private _hold(seq: number, wake: () => void): void {
+    const at = this._waiters.findIndex((waiter) => waiter.seq > seq);
+    this._waiters.splice(at < 0 ? this._waiters.length : at, 0, { seq, wake });
+  }
+
   private _wake(): void {
     const woken = this._waiters.splice(0);
-    this._waking += woken.length;
-    woken.forEach((wake) => wake());
+    woken.forEach((waiter) => this._woken.add(waiter.seq));
+    woken.forEach((waiter) => waiter.wake());
   }
 
   /** A handle that ends this one pause, once. */

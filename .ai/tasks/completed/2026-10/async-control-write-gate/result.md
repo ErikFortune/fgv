@@ -233,6 +233,31 @@ test. `ceb54d1a4` fixes it, and the gates below are clean.
 
 None of the known load-sensitive tests failed.
 
+## Review round 2
+
+The review of `f558a32e1` found no P1: no deadlock, no count drift, and no write left stranded.
+
+| Item | Change |
+|---|---|
+| **P2-1:** FIFO broke when a pause was taken before woken writes had re-decided | **Fixed with sequence numbers (the decided fix).** Each write takes a sequence number when it first calls `guard`. `_waiters` is kept sorted by it, so a re-held write keeps its original place. A write is admitted only when no pause is held and no write with a smaller number is still waiting or woken-but-undecided. When the last woken write decides, the writes held behind it are woken, unless a pause was taken in between. |
+| `_waking`, re-checked | It could not simply go. It is now a **set of woken sequence numbers**, not a count. A count is wrong because an earlier write can be woken again after a later one was, and the later one must then still wait for it. That set is the only extra state; the ordering itself comes from the sequence numbers. |
+| **P3-1:** a synchronous throw from `withWriter` said `rejected: undefined` | `once` now starts the section inside a `Promise` executor, so the throw becomes `running`'s rejection and its message, and the section counts as started. Both a real `WriteGate` and a pass-through guard now report `its own outcome: rejected: sync boom`, `reconcile-first`. |
+| **P3-2:** change files | ts-extras now says that `'threw'` also covers a non-`Result` resolution, and states the ordering guarantee. ts-agent-tasks now covers: started-then-rejected and synchronous `withWriter` throws are `reconcile-first`; a non-`Result` answer is `invalid` or `reconcile-first`; the structural detail check; and the `createNative` / `registerExternal` bound, described as the fix for the unbounded microtask recursion on `release`. |
+
+### Tests, red first
+
+- **ts-extras.** Four new tests:
+  - the reviewer's K2, K6 and P6b cases;
+  - a seeded (Park-Miller) stress run of 2000 mixed guard, pause and resume steps, which asserts zero inversions in start order.
+
+  All four were run against `f558a32e1`'s `writeGate.ts` and all four were **red**. The stress run had **15** inversions; the other three each started a write out of order. All four are green on this branch.
+- **ts-agent-tasks.** Two new tests for a synchronous `withWriter` throw, through a real `WriteGate` and through a pass-through guard. Both were **red** with the section started in the old way (`write().then(…)`).
+
+### Reviewer probes, on this branch
+
+- **`wk.js`.** K1 `0,1,2,new`; K2 `0,1,A`; K3 every write refused, none run; K4 `0,2,A`, with no drift in the counts; K5 `0,1,A`; K6 `0,1,2,A`. K7 and K8 had **0 inversions** and every write settled.
+- **`started.js`.** S1 and S2 report `rejected: sync boom`, `reconcile-first`. S3–S5 are unchanged.
+
 ## Brief deltas
 
 - **`ITaskWriteGuard` widened** (`PromiseLike<Result<T>>`). This was forced by the structural-fit

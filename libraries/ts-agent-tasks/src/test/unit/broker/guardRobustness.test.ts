@@ -151,6 +151,32 @@ describe('write guard robustness', () => {
     });
   });
 
+  describe('a repository whose withWriter throws synchronously', () => {
+    const throwsSync = (): ITaskRepository['withWriter'] => (): never => {
+      throw new Error('sync boom');
+    };
+
+    test('through a real WriteGate, reports the throw as the section rejecting', async () => {
+      const gate = AsyncControl.WriteGate.create().orThrow();
+      const result = await create(brokerWith(h, gate, throwsSync), h, 'a');
+      expect(result).toFailWithDetail(/its own outcome: rejected: sync boom/, code('storage-unavailable'));
+      expect(result.detail?.retry).toBe('reconcile-first');
+      expect(gate.inFlight).toBe(0);
+    });
+
+    test('through a pass-through guard, reports the throw rather than "rejected: undefined"', async () => {
+      const passThrough: ITaskWriteGuard = {
+        guard: <T>(write: () => Promise<TaskResult<T>>): PromiseLike<Result<T>> => write()
+      };
+      const result = await create(brokerWith(h, passThrough, throwsSync), h, 'a');
+      expect(result).toFailWithDetail(
+        /threw: sync boom after the section ran \(its own outcome: rejected: sync boom\)/,
+        code('storage-unavailable')
+      );
+      expect(result.detail?.retry).toBe('reconcile-first');
+    });
+  });
+
   describe('a guard that answers something that is not a Result', () => {
     test('after running the section is reconcile-first', async () => {
       const odd: ITaskWriteGuard = {

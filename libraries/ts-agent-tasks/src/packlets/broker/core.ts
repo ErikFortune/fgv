@@ -167,10 +167,14 @@ async function _guarded<T>(
     }
     // Marked before the section is called: a section that rejects may still have committed.
     seen.started = true;
-    const running: Promise<TaskResult<T>> = write().then((result) => {
-      seen.ran = result;
-      return result;
-    });
+    // Started inside an executor, so a repository whose `withWriter` throws synchronously becomes
+    // this promise's rejection — and its message — rather than an escape from `once`.
+    const running: Promise<TaskResult<T>> = new Promise<TaskResult<T>>((resolve) => resolve(write())).then(
+      (result) => {
+        seen.ran = result;
+        return result;
+      }
+    );
     seen.running = running;
     return running;
   };
