@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { Result, succeed } from '@fgv/ts-utils';
+import { Result, fail, succeed } from '@fgv/ts-utils';
 import { ITaskAccessRequest, ITaskAuthorization, ITaskScope, TaskAction } from '../types';
 
 /**
@@ -26,17 +26,18 @@ export type TrustedScopeMatch = 'every' | 'some';
  * @public
  */
 export interface ITrustedKindAuthorityParams {
-  /** The task kinds the authority covers, matched exactly. Omitted: any kind. */
+  /** The task kinds the authority covers, matched exactly. Omitted: any kind. Never empty. */
   readonly kinds?: ReadonlyArray<string>;
   /**
-   * The scopes the authority covers, matched by namespace and key. Omitted: any scope a task
-   * already carries — and then no request that names no task (a creation, a subscription) is
-   * allowed, because there is nothing to decide it by.
+   * The scopes the authority covers, matched by namespace and key. Never empty. Omitted: a request
+   * that only names a task is decided on its kind alone, and every request that asks for scopes —
+   * a creation, a subscription, a scope change — is refused, because there is no boundary to hold
+   * them to.
    */
   readonly scopes?: ReadonlyArray<ITaskScope>;
   /** How requested scopes are matched. Defaults to `'every'`. */
   readonly scopeMatch?: TrustedScopeMatch;
-  /** The actions the authority permits. Required: there is no default of "all". */
+  /** The actions the authority permits. Required and never empty: there is no default of "all". */
   readonly actions: ReadonlyArray<TaskAction>;
   /** The policy epoch the authority reports. It never changes: the answer never does. */
   readonly epoch: string;
@@ -56,15 +57,34 @@ export interface ITrustedKindAuthorityParams {
  * - **A request naming a task** (or an unresolved registration) — in any role — needs that task's kind
  *   among `kinds`, when given, and *some* of that task's scopes among `scopes`, when given.
  * - **A request asking for scopes** — a creation or a subscription, which name no task, and a scope
- *   change's targets — needs them matched by `scopeMatch` against `scopes`. It is refused when
+ *   change, which asks for the scope set the task will carry — needs them matched by `scopeMatch`
+ *   against `scopes`, besides passing the rule above when it also names a task. It is refused when
  *   `scopes` is omitted, and when it asks for no scope at all. A creation names no kind, so `kinds`
  *   does not constrain it: its scopes decide it.
  * - A request that names no task and asks for no scope is refused.
  *
- * The parameters are copied: changing the arrays afterwards changes nothing.
+ * It **ignores** `role`, `command` and `targetResponsibility`: every listed action is allowed in every
+ * role, for every command and toward any assignee. Under `scopeMatch: 'some'` a subscription over an
+ * allowed scope plus another is allowed, and so accrues audience for tasks in that other scope it
+ * cannot read — they are owed to it and withheld from it, never disclosed.
+ *
+ * Fails when `kinds`, `scopes` or `actions` is an empty list — each would be a policy that silently
+ * allows nothing (or, for `kinds`, reads like "any kind"). The parameters are copied: changing the
+ * arrays afterwards changes nothing.
  * @public
  */
-export function trustedKindAuthority(params: ITrustedKindAuthorityParams): ITaskAuthorization {
+export function trustedKindAuthority(params: ITrustedKindAuthorityParams): Result<ITaskAuthorization> {
+  const empty: string | undefined =
+    params.actions.length === 0
+      ? 'actions'
+      : params.kinds?.length === 0
+      ? 'kinds'
+      : params.scopes?.length === 0
+      ? 'scopes'
+      : undefined;
+  if (empty !== undefined) {
+    return fail(`trustedKindAuthority: ${empty} is empty; omit it or name at least one`);
+  }
   const actions: ReadonlySet<TaskAction> = new Set(params.actions);
   const kinds: ReadonlySet<string> | undefined =
     params.kinds !== undefined ? new Set(params.kinds) : undefined;
@@ -86,21 +106,22 @@ export function trustedKindAuthority(params: ITrustedKindAuthorityParams): ITask
         return false;
       }
     }
-    // Nothing asked for, or no boundary to hold it to: only a named task, already decided above.
-    if (request.scopes === undefined || scopes === undefined) {
+    // Nothing asked for: only a named task, already decided above.
+    if (request.scopes === undefined) {
       return subject !== undefined;
     }
     const requested: ReadonlyArray<ITaskScope> = request.scopes;
-    const inside = (scope: ITaskScope): boolean => scopes.has(_key(scope));
+    // Scopes asked for with no boundary to hold them to are refused.
+    const inside = (scope: ITaskScope): boolean => scopes !== undefined && scopes.has(_key(scope));
     return (
       requested.length > 0 && (scopeMatch === 'every' ? requested.every(inside) : requested.some(inside))
     );
   };
 
-  return {
+  return succeed({
     check: async (request: ITaskAccessRequest): Promise<Result<boolean>> => succeed(allowed(request)),
     policyEpoch: (): string => epoch
-  };
+  });
 }
 
 /** A collision-free key for a scope. */

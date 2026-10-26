@@ -100,27 +100,50 @@ export function receiptJson(receipt: ITaskMutationResult | IReassignmentResult):
 
 /**
  * Runs `write` through a host's write guard, keeping a classified result whatever the guard does.
+ *
+ * @remarks
+ * The section is wrapped so the broker knows whether the guard ran it and what it returned:
+ * - not run, and the guard refused without task detail (a gate typed over plain `Result`) —
+ *   `storage-unavailable`, retry `after-host-action`: nothing was written;
+ * - not run, and the guard threw — `invalid`: nothing was written;
+ * - run, and the guard then returned the section's own result, or any success — the section's result;
+ * - run, and the guard then failed or threw — `storage-unavailable`, retry `reconcile-first`: the
+ *   section may have committed, so its outcome is re-read before anything is retried;
+ * - a second call to the section — refused without running it, `invalid`.
  */
-async function _guarded<T>(
-  guard: ITaskWriteGuard,
-  write: () => Promise<TaskResult<T>>
-): Promise<TaskResult<T>> {
-  const outcome: Result<TaskResult<T>> = await captureAsyncResult(() => guard.guard(write));
-  if (outcome.isFailure()) {
+async function _guarded<T>(guard: ITaskWriteGuard, write: () => Promise<TaskResult<T>>): Promise<TaskResult<T>> {
+  const seen: { ran?: TaskResult<T>; calls: number } = { calls: 0 };
+  const once = async (): Promise<TaskResult<T>> => {
+    seen.calls++;
+    if (seen.calls > 1) {
+      return taskFailure<T>(`broker: the write guard ran the section more than once`, 'invalid', 'after-host-action');
+    }
+    return write().then((result) => {
+      seen.ran = result;
+      return result;
+    });
+  };
+  const outcome: Result<TaskResult<T>> = await captureAsyncResult(() => guard.guard(once));
+  const written: TaskResult<T> | undefined = seen.ran;
+  if (written !== undefined) {
+    if (outcome.isSuccess() && (outcome.value === written || outcome.value.isSuccess())) {
+      return written;
+    }
+    const why: string = outcome.isFailure() ? `threw: ${outcome.message}` : `failed: ${outcome.value.message}`;
     return taskFailure<T>(
-      `broker: the write guard threw: ${outcome.message}`,
-      'invalid',
-      'after-host-action'
+      `broker: the write guard ${why} after the section ran (its own outcome: ` +
+        `${written.isSuccess() ? 'success' : written.message}); re-read what it may have committed`,
+      'storage-unavailable',
+      'reconcile-first'
     );
+  }
+  if (outcome.isFailure()) {
+    return taskFailure<T>(`broker: the write guard threw: ${outcome.message}`, 'invalid', 'after-host-action');
   }
   const result: TaskResult<T> = outcome.value;
   // A gate typed over plain Result refuses without task detail: nothing was written.
   return result.isFailure() && result.detail === undefined
-    ? taskFailure<T>(
-        `broker: the write guard refused: ${result.message}`,
-        'storage-unavailable',
-        'after-host-action'
-      )
+    ? taskFailure<T>(`broker: the write guard refused: ${result.message}`, 'storage-unavailable', 'after-host-action')
     : result;
 }
 
@@ -239,8 +262,9 @@ export class BrokerCore {
    * Resolves once no gated section is waiting or running, or fails after `timeoutMs`.
    *
    * @remarks
-   * Observes the queue and never takes a turn in it, so it never takes the writer. Idle is a moment,
-   * not a hold: a section enqueued right after it resolves runs as usual.
+   * Observes the queue and never takes a turn in it, so it never takes the writer. Idle is a moment
+   * between sections, not a hold and not the end of an operation: a section enqueued right after it
+   * resolves runs as usual.
    */
   public whenIdle(timeoutMs: number): Promise<TaskResult<true>> {
     if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 0) {
@@ -259,11 +283,17 @@ export class BrokerCore {
       let settled: boolean = false;
       let withdraw: (() => void) | undefined = undefined;
       let cancel: (() => void) | undefined = undefined;
+      // The host's cancel is host code: a throw from it never escapes into the writer queue.
+      const cancelArmed = (): void => {
+        if (cancel !== undefined) {
+          captureResult(cancel);
+        }
+      };
       const settle = (outcome: TaskResult<true>): void => {
         if (!settled) {
           settled = true;
           withdraw?.();
-          cancel?.();
+          cancelArmed();
           resolve(outcome);
         }
       };
@@ -289,7 +319,7 @@ export class BrokerCore {
       cancel = armed.value;
       // A timer that fired synchronously from `schedule` has settled already: cancel it, register nothing.
       if (settled) {
-        cancel();
+        cancelArmed();
         return;
       }
       withdraw = this._queue.onIdle(() => settle(ok<true>(true)));

@@ -4,6 +4,7 @@
  */
 
 import { JsonValue } from '@fgv/ts-json-base';
+import { StringOneOf } from '@fgv/ts-utils';
 import { ITaskCapacityClaim, ITaskCapacityProfile } from './capacity';
 import { ICommandReceipt, ICommandRequest } from './commands';
 import { ITaskSnapshot } from './envelope';
@@ -334,10 +335,16 @@ export interface ITaskRepositoryManifest {
 }
 
 /**
+ * Every durability a repository can commit at, by name.
+ * @public
+ */
+export const allTaskRepositoryDurabilities = ['session', 'process-crash'] as const;
+
+/**
  * The durability a repository commits at, by name: `'session'` or `'process-crash'`.
  * @public
  */
-export type TaskRepositoryDurability = 'session' | 'process-crash';
+export type TaskRepositoryDurability = StringOneOf<typeof allTaskRepositoryDurabilities>;
 
 /**
  * A broker source-checkpoint record (`source-<sourceId>.json`): the committed reconciliation

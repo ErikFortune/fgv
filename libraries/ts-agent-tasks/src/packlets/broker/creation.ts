@@ -15,6 +15,7 @@ import {
   ITaskEnvelope,
   ITaskMutationResult,
   ITaskRecordDraft,
+  ITaskScope,
   ITaskSource,
   ITaskUpdate,
   Instant,
@@ -30,7 +31,7 @@ import {
   trackedTaskDetailVersion,
   trackedTaskKind
 } from '../types';
-import { ITaskPendingRegistration, ITaskRepositoryWriter } from '../storage';
+import { ITaskRepositoryWriter } from '../storage';
 import { AccessContext, subjectOf } from './access';
 import { IRelatedTask, confirmUnchanged, isSameCatalog, readExisting } from './catalogMutation';
 import { checkParentOpen, convertRequest, readParent, refuseUnderLatch } from './catalogOperations';
@@ -110,7 +111,8 @@ export async function createNative(
   core: BrokerCore,
   ctx: AccessContext,
   input: unknown,
-  list: boolean
+  list: boolean,
+  committedScopes?: ReadonlyArray<ITaskScope>
 ): Promise<TaskResult<ITaskMutationResult>> {
   const converted = list
     ? convertRequest<ICreateTrackedTask | ICreateTaskList>(
@@ -132,7 +134,12 @@ export async function createNative(
   const json: JsonValue = converted.value.json;
   const { taskId, operationId } = request;
   const operation: TaskCatalogOperationType = list ? 'create-list' : 'create-tracked';
-  const scopes = ctx.creationScopes;
+  // The scopes authorized are the scopes committed: a resume of a record that already landed commits
+  // that record's scopes, so it is those the policy is asked about (and the view must select them).
+  if (committedScopes !== undefined && !committedScopes.every((scope) => ctx.selects(scope))) {
+    return _noPending(taskId);
+  }
+  const scopes = committedScopes ?? ctx.creationScopes;
   const access = {
     scopes,
     ...(request.responsibility !== undefined ? { targetResponsibility: request.responsibility } : {})
@@ -305,9 +312,25 @@ async function _register(
 }
 
 /**
+ * A registration to resume: one still pending, or — when an earlier resume committed it and its
+ * response was lost — the live task it became. `scopes` are the scopes a resume will commit, when
+ * those are already fixed: the landed record's, or the live task's.
+ */
+interface IResumable {
+  readonly taskId: TaskId;
+  readonly operationId: ITaskMutationResult['operationId'];
+  readonly operation: TaskCatalogOperationType;
+  readonly principalKey: string;
+  readonly request: JsonValue;
+  readonly scopes?: ReadonlyArray<ITaskScope>;
+}
+
+/**
  * Resumes a pending native registration through a bound writer, from the request the repository
- * stored with it. `create` is authorized again here, now: {@link createNative} asks the policy and
- * re-checks the epoch inside the writer.
+ * stored with it. `create` is authorized again here, now, by {@link createNative}, which asks the
+ * policy and re-checks the epoch inside the writer — against the scopes that will be committed: the
+ * landed record's when one exists, otherwise this view's creation scopes. A registration an earlier
+ * resume already committed replays its receipt, re-authorized the same way.
  * @internal
  */
 export async function resumeNative(
@@ -315,64 +338,89 @@ export async function resumeNative(
   ctx: AccessContext,
   taskId: unknown
 ): Promise<TaskResult<ITaskMutationResult>> {
-  const pending = _pendingOf(core, taskId, 'resumePendingRegistration');
-  if (pending.isFailure()) {
-    return propagate(pending);
-  }
-  const registration: ITaskPendingRegistration = pending.value;
-  // Another principal's pending registration is answered as an id with none: it is not this view's.
-  if (registration.principalKey !== ctx.principal) {
-    return _noPending(registration.taskId);
-  }
-  if (registration.operation === 'register-external') {
-    return taskFailure(
-      `resumePendingRegistration: ${registration.taskId} is an external registration; resume it through ` +
-        `TaskBroker.resumePendingRegistration`,
-      'invalid',
-      'after-host-action',
-      { operationId: registration.operationId }
+  return (await _resumable(core, taskId))
+    .onSuccess((resumable) =>
+      // Another principal's registration is answered as an id with none: it is not this view's.
+      resumable.principalKey !== ctx.principal
+        ? _noPending<IResumable>(resumable.taskId)
+        : resumable.operation === 'register-external'
+        ? taskFailure<IResumable>(
+            `resumePendingRegistration: ${resumable.taskId} is an external registration; resume it ` +
+              `through TaskBroker.resumePendingRegistration`,
+            'invalid',
+            'after-host-action',
+            { operationId: resumable.operationId }
+          )
+        : ok(resumable)
+    )
+    .thenOnSuccess((resumable) =>
+      createNative(core, ctx, resumable.request, resumable.operation === 'create-list', resumable.scopes)
     );
-  }
-  return createNative(core, ctx, registration.request, registration.operation === 'create-list');
 }
 
 /**
  * Resumes a pending external registration — a trusted host operation, under the principal it was
- * accepted for, from the request the repository stored with it.
+ * accepted for, from the request the repository stored with it. One an earlier resume already
+ * committed replays.
  * @internal
  */
 export async function resumeExternal(
   core: BrokerCore,
   taskId: unknown
 ): Promise<TaskResult<TaskRegistrationResult>> {
-  const pending = _pendingOf(core, taskId, 'resumePendingRegistration');
-  if (pending.isFailure()) {
-    return propagate(pending);
-  }
-  const registration: ITaskPendingRegistration = pending.value;
-  if (registration.operation !== 'register-external') {
-    return taskFailure(
-      `resumePendingRegistration: ${registration.taskId} is a native registration; resume it through a ` +
-        `bound writer, which authorizes it`,
-      'invalid',
-      'after-host-action',
-      { operationId: registration.operationId }
-    );
-  }
-  return registerExternal(core, registration.principalKey, registration.request);
+  return (await _resumable(core, taskId))
+    .onSuccess((resumable) =>
+      resumable.operation === 'register-external'
+        ? ok(resumable)
+        : taskFailure<IResumable>(
+            `resumePendingRegistration: ${resumable.taskId} is a native registration; resume it through a ` +
+              `bound writer, which authorizes it`,
+            'invalid',
+            'after-host-action',
+            { operationId: resumable.operationId }
+          )
+    )
+    .thenOnSuccess((resumable) => registerExternal(core, resumable.principalKey, resumable.request));
 }
 
-/** The pending registration `taskId` names, or the failure that it names none. */
-function _pendingOf(core: BrokerCore, taskId: unknown, what: string): TaskResult<ITaskPendingRegistration> {
+/**
+ * The registration `taskId` names: pending, or live and created by a catalog registration — a
+ * resume whose response was lost. Anything else is the one no-pending failure.
+ */
+async function _resumable(core: BrokerCore, taskId: unknown): Promise<TaskResult<IResumable>> {
   const id = core.converters.ids.taskId.convert(taskId);
   if (id.isFailure()) {
-    return taskFailure(`${what}: ${id.message}`, 'invalid', 'after-host-action');
+    return taskFailure(`resumePendingRegistration: ${id.message}`, 'invalid', 'after-host-action');
   }
-  const pending = core.repository.pendingRegistration(id.value);
-  if (pending.isFailure()) {
-    return propagate(pending);
-  }
-  return pending.value === undefined ? _noPending(id.value) : ok(pending.value);
+  return core.repository
+    .pendingRegistration(id.value)
+    .thenOnSuccess(async (pending): Promise<TaskResult<IResumable>> =>
+      pending !== undefined
+        ? ok<IResumable>({
+            taskId: pending.taskId,
+            operationId: pending.operationId,
+            operation: pending.operation,
+            principalKey: pending.principalKey,
+            request: pending.request,
+            ...(pending.landedScopes !== undefined ? { scopes: pending.landedScopes } : {})
+          })
+        : (await core.repository.readCommit(id.value)).onSuccess((record) => _committed(id.value, record))
+    );
+}
+
+/** A live task as a resumable registration, when its creation was a catalog registration. */
+function _committed(taskId: TaskId, record: ITaskCommitRecord | undefined): TaskResult<IResumable> {
+  const creation = record?.operations[0];
+  return record !== undefined && creation !== undefined && creation.type === 'catalog'
+    ? ok<IResumable>({
+        taskId,
+        operationId: creation.operationId,
+        operation: creation.operation,
+        principalKey: creation.principalKey,
+        request: creation.request,
+        scopes: record.recordType === 'resolved' ? record.task.envelope.scopes : record.reference.scopes
+      })
+    : _noPending(taskId);
 }
 
 function _noPending<T>(taskId: TaskId): TaskResult<T> {

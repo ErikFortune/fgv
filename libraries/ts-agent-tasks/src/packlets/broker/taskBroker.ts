@@ -81,6 +81,11 @@ export interface ITaskBrokerCreateParams {
    * **A long hold fills the queue.** At most 64 sections wait for the writer; once that many are
    * queued behind a held one, every further broker write fails at once with `conflict`, retry
    * `safe`, until the hold ends. {@link TaskBroker.whenIdle} counts a held section as busy.
+   *
+   * A guard must call the section at most once. A guard that refuses without calling it, with a
+   * failure carrying no task detail, is `storage-unavailable` (retry `after-host-action`); one that
+   * fails or throws **after** calling it is `storage-unavailable` with retry `reconcile-first`,
+   * because the section may have committed; a second call is refused without running.
    */
   readonly writeGuard?: ITaskWriteGuard;
   /** The timer {@link TaskBroker.whenIdle} bounds its wait with. Defaults to `setTimeout`. */
@@ -299,9 +304,13 @@ export class TaskBroker {
    * retry `safe` — when that has not happened within `timeoutMs`.
    *
    * @remarks
-   * **It describes a moment, not a hold.** It observes the broker's writer queue and never takes a
-   * turn in it, so it never takes the writer and never delays a write; a write enqueued the instant
-   * after it resolves runs as usual. A host that needs the quiet to last holds its writes first — with
+   * **It describes a moment, not a hold — and a moment between sections, not between operations.**
+   * It observes the broker's writer queue and never takes a turn in it, so it never takes the writer
+   * and never delays a write; a write enqueued the instant after it resolves runs as usual. One
+   * broker operation can be several gated sections with work between them — `acknowledge` and
+   * `prepare` match then commit, a creation authorizes before it queues, source passes and `cleanup`
+   * take one section per step — so it can resolve in the middle of an operation. **To quiesce before
+   * a shutdown or snapshot, pause the `writeGuard` first, then wait for idle.** A host that needs the quiet to last holds its writes first — with
    * the `writeGuard` it gave {@link TaskBroker.create} — and a section that guard is holding counts as
    * busy. It sees only the broker's own queue: a caller using the repository's `withWriter` directly is
    * invisible to it. The wait is bounded by the `schedule` given to {@link TaskBroker.create}. A

@@ -632,50 +632,68 @@ root to a repository, in the strongest mode the root qualifies for.
 - **Durability does not silently degrade.** `initialize` records `initializedMode` in the manifest.
   Opening a `process-crash`-initialized repository as `session` — a root that lost its durable
   capability — is refused (`unsupported`) unless `allowSessionOverDurable` is passed. A manifest
-  without the field (written before it existed) opens in either mode.
+  without the field (written before it existed) opens in either mode, and the first durable open
+  records `process-crash` in it, so it is protected from then on.
 - Building the broker stays with the host.
 
-**`trustedKindAuthority({ kinds?, scopes?, scopeMatch?, actions, epoch })`.** An `ITaskAuthorization`
+**`trustedKindAuthority({ kinds?, scopes?, scopeMatch?, actions, epoch })`** → `Result<ITaskAuthorization>`,
 for a **trusted host principal only — never a model-facing one**: it answers from the request alone,
-with no notion of who asks. `actions` is required; there is no "all". A request naming a task (or
-an unresolved registration), in any role, needs its kind in `kinds` and *some* of its scopes in
-`scopes`. A request asking for scopes — a creation, a subscription, a scope change's targets —
-needs them matched by `scopeMatch`: `'every'` (default) or `'some'`, for tasks that carry a
-per-instance scope (a conversation) beside the kind's own. With `scopes` omitted, a request that
-names no task is refused. A creation names no kind, so `kinds` does not constrain it. The epoch is
-constant.
+with no notion of who asks, and ignores `role`, `command` and `targetResponsibility`. `actions` is
+required; there is no "all", and an empty `kinds`, `scopes` or `actions` list fails construction. A
+request naming a task (or an unresolved registration), in any role, needs its kind in `kinds` and
+*some* of its scopes in `scopes`; with `scopes` omitted it is decided on kind alone. A request
+**asking for scopes** — a creation, a subscription, and a scope change, which asks for the full scope
+set the task will carry — needs them matched by `scopeMatch`: `'every'` (default) or `'some'`, for
+tasks that carry a per-instance scope (a conversation) beside the kind's own; with `scopes` omitted
+it is refused. A creation names no kind, so `kinds` does not constrain it. Under `'some'` a
+subscription over an allowed scope plus another accrues audience it cannot read (owed, withheld). The
+epoch is constant.
 
-**`TaskBroker.whenIdle(timeoutMs)`.** Resolves when no broker write is queued or running; fails
-`conflict`, retry `safe`, after `timeoutMs`. **It describes a moment, not a hold**: it never takes a
-turn in the writer queue, so it never takes the writer and never delays a write, and a write
-enqueued right after it resolves runs as usual. It sees only the broker's queue — direct
+**`TaskBroker.whenIdle(timeoutMs)`.** Resolves when no broker **section** is queued or running; fails
+`conflict`, retry `safe`, after `timeoutMs`. **It describes a moment between sections, not a hold and
+not the end of an operation**: it never takes a turn in the writer queue, so it never takes the writer
+and never delays a write, and one broker operation can span several sections (`acknowledge` and
+`prepare` match then commit, a creation authorizes before it queues, source passes and `cleanup` take
+a section per step), so it can resolve mid-operation. **To quiesce before a shutdown or snapshot,
+pause the `writeGuard`, then `whenIdle`.** It sees only the broker's queue — direct
 `repository.withWriter` callers are invisible to it. The bound uses `TaskBroker.create`'s `schedule`
-(`(fn, ms) => cancel`, default `setTimeout`).
+(`(fn, ms) => cancel`, default `setTimeout`); a `schedule` or `cancel` that throws never reaches the
+writer queue.
 
 **`TaskBroker.create({ writeGuard })`.** A structural `{ guard(write) }` applied inside the queue's
 turn, around the repository writer, for **every** broker write — bound writers, model tools, source
-passes, deliveries, retention and `cleanup`. A guard refusal without task detail (a gate typed over
-plain `Result`) is `storage-unavailable`, retry `after-host-action`; a guard that throws fails the
-section. **A long hold fills the queue**: at most 64 sections wait for the writer, and past that
-every further write fails at once with `conflict`, retry `safe`. `whenIdle` counts a held section as
-busy, so a host that holds writes and then waits for idle waits for its own hold.
+passes, deliveries, retention and `cleanup`. The broker tracks whether the guard ran the section:
+- refused without running it, with a failure carrying no task detail (a gate typed over plain
+  `Result`) — `storage-unavailable`, retry `after-host-action`;
+- threw without running it — `invalid`;
+- ran it, then failed or threw — `storage-unavailable`, retry **`reconcile-first`**: the section may
+  have committed;
+- ran it twice — the second call is refused unrun.
+
+**A long hold fills the queue**: at most 64 sections wait for the writer, and past that every further
+write fails at once with `conflict`, retry `safe`. `whenIdle` counts a held section as busy.
 
 **`IBoundTaskDelivery.issued()`.** The subscription's unacknowledged issued receipts — delivery id,
 `issuedAt`, `expiresAt`, nothing they include — read under the writer, oldest first. How a host finds
-the receipt a crash left behind and `abandon`s it. A moment, not a hold: an acknowledgement may
-commit right after; abandoning a receipt acknowledged meanwhile loses nothing, and a later replay of
-that acknowledgement is then an invalid receipt. **There is no `releaseStale`**: the repository has no
-persisted open generation that would tell this open's receipts from an earlier one's.
+the receipt a crash left behind and `abandon`s it. It is a gated section: it takes a queue slot and a
+paused guard holds it. A moment, not a hold: an acknowledgement may commit right after; abandoning a
+receipt acknowledged meanwhile loses nothing, and a later replay of that acknowledgement is then an
+invalid receipt. **There is no `releaseStale`**: the repository has no persisted open generation that
+would tell this open's receipts from an earlier one's.
 
 **Resuming a pending registration.** `ITaskRepository.pendingRegistration(taskId)` answers a
-registration accepted but never written, with its stored canonical request.
+registration accepted but never marked live, with its stored canonical request and — when its first
+record already landed — that record's `landedScopes`.
 `IBoundTaskWriter.resumePendingRegistration(taskId)` rebuilds a native one (`create-tracked`,
-`create-list`) from that request and **authorizes `create` again, now** — nothing about permission is
-stored with the intent — with the epoch rechecked inside the writer. It must be the same principal;
-the task takes the resuming view's creation scopes, which the stored request does not carry. A
-pending `register-external` resumes through `TaskBroker.resumePendingRegistration(taskId)`, a trusted
-host operation under the principal it was accepted for. Withdrawing a pending identity, or recycling
-its slot, is not offered.
+`create-list`) from that request and **authorizes `create` again, now, for the scopes that will be
+committed**: the landed record's (the view must select them), or else this view's creation scopes.
+Nothing about permission is stored with the intent, and the epoch is rechecked inside the writer.
+Storage independently refuses to adopt a landed record whose scopes differ from those the
+registration was authorized for, which also covers an identical `createTracked` retry from a view
+with other creation scopes. It must be the same principal. A resume whose response was lost replays
+the committed receipt, re-authorized. A pending `register-external` resumes through
+`TaskBroker.resumePendingRegistration(taskId)`, a trusted host operation under the principal it was
+accepted for. Withdrawing a pending identity, or recycling its slot, is not offered.
 
 ## Host runbook — capacity pressure and a full repository
 

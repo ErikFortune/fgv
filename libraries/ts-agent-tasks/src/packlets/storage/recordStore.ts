@@ -63,10 +63,10 @@ export class RecordStore {
     guarantee: FileTree.AtomicWriteGuarantee
   ): Result<RecordStore> {
     return probeTaskRepositoryRoot(root).onSuccess((probe) => {
-      if (!FileTree.isAtomicDirectoryItem(root)) {
-        return fail<RecordStore>(probe.reason!);
+      if (probe.mode === undefined && !FileTree.isAtomicDirectoryItem(root)) {
+        return fail<RecordStore>(probe.reason);
       }
-      if (!probe.guarantees.includes(guarantee)) {
+      if (!FileTree.isAtomicDirectoryItem(root) || !probe.guarantees.includes(guarantee)) {
         return fail<RecordStore>(
           `${root.absolutePath}: the root cannot honor a '${guarantee}' atomic write ` +
             `(it offers [${probe.guarantees.join(', ')}]); a durable repository is refused ` +

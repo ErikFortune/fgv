@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { captureAsyncResult } from '@fgv/ts-utils';
+import { captureAsyncResult, captureResult } from '@fgv/ts-utils';
 import { TaskResult } from '../types';
 import { propagateFailure, taskFailure } from './failures';
 
@@ -66,15 +66,20 @@ export class WriterQueue {
         ? outcome.value
         : propagateFailure<T>(`broker: a gated section threw: ${outcome.message}`);
     });
-    this._tail = turn;
+    // The tail never rejects, whatever a turn does, so one failure cannot stop every later section.
+    this._tail = turn.then(
+      () => undefined,
+      () => undefined
+    );
     return turn;
   }
 
+  /** Calls every idle waiter once. A waiter that throws affects no other waiter and no section. */
   private _notifyIdle(): void {
     const waiters: ReadonlyArray<() => void> = [...this._idle];
     this._idle.clear();
     for (const waiter of waiters) {
-      waiter();
+      captureResult(waiter);
     }
   }
 }

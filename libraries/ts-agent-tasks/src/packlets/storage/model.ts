@@ -38,6 +38,7 @@ import {
   UpdateCategory,
   ITaskKindRegistry,
   ITaskRecordDraft,
+  ITaskScope,
   ITaskRecoveryReport,
   ISourceReplayEnvelope,
   ITaskSourceRecord,
@@ -344,6 +345,12 @@ export interface ITaskPendingRegistration {
   readonly recordType: ITaskCommitRecord['recordType'];
   /** The canonical creation request the registration was accepted with. */
   readonly request: JsonValue;
+  /**
+   * When the registration's first record already landed — its write succeeded and marking it live
+   * did not — the scopes that record carries. A resume commits that record as it is, so these are
+   * the scopes it must be authorized for.
+   */
+  readonly landedScopes?: ReadonlyArray<ITaskScope>;
 }
 
 /**

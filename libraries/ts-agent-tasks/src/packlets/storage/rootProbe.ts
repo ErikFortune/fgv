@@ -11,21 +11,27 @@ import { TaskRepositoryMode } from './model';
  * What a root offers a task repository, as {@link probeTaskRepositoryRoot} finds it.
  * @public
  */
-export interface ITaskRepositoryRootProbe {
-  /**
-   * The atomic write guarantees a repository can rely on at this root: the ones the root lists,
-   * provided it can replace a file atomically at all. Empty for a root without the atomic
-   * capability, and for one that lists guarantees but cannot replace atomically.
-   */
-  readonly guarantees: ReadonlyArray<FileTree.AtomicWriteGuarantee>;
-  /**
-   * The strongest repository mode the root supports — `{ durable: 'process-crash' }`, else
-   * `'session'` — or `undefined` when it supports none.
-   */
-  readonly mode: TaskRepositoryMode | undefined;
-  /** Why the root supports no mode, when it supports none. */
-  readonly reason?: string;
-}
+export type ITaskRepositoryRootProbe =
+  | {
+      /**
+       * The atomic write guarantees a repository can rely on at this root: the ones the root
+       * lists, provided it can replace a file atomically at all.
+       */
+      readonly guarantees: ReadonlyArray<FileTree.AtomicWriteGuarantee>;
+      /** The strongest repository mode the root supports: `{ durable: 'process-crash' }`, else `'session'`. */
+      readonly mode: TaskRepositoryMode;
+    }
+  | {
+      /**
+       * The guarantees the root qualifies for: empty for a root without the atomic capability,
+       * and for one that lists guarantees but cannot replace atomically.
+       */
+      readonly guarantees: ReadonlyArray<FileTree.AtomicWriteGuarantee>;
+      /** The root supports no repository mode. */
+      readonly mode: undefined;
+      /** Why the root supports no mode. */
+      readonly reason: string;
+    };
 
 /**
  * Asks a root which repository modes it can hold — the same question

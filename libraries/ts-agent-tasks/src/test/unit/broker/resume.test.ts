@@ -5,7 +5,14 @@
 
 import '@fgv/ts-utils-jest';
 import { FileTree } from '@fgv/ts-json-base';
-import { FileTreeTaskRepository, ITaskRepository, TaskId, taskListKind } from '../../../index';
+import {
+  FileTreeTaskRepository,
+  IBoundTaskWriter,
+  ICreateTrackedTask,
+  ITaskRepository,
+  TaskId,
+  taskListKind
+} from '../../../index';
 import { FaultyRoot } from '../../helpers/faultyRoot';
 import {
   IBrokerHarness,
@@ -89,9 +96,16 @@ describe('resumePendingRegistration — a native registration left pending', () 
       expect(read?.state === 'resolved' && read.task.envelope.title).toBe('the task');
       expect(read?.state === 'resolved' && read.task.envelope.scopes).toEqual([alpha]);
     });
-    // No longer pending: a second resume finds nothing to resume.
+    // A second resume — the first one's response lost — replays the committed receipt.
+    const first = (await r.repository.readCommit(tid('t'))).orThrow()!;
+    expect(await r.writer.resumePendingRegistration(tid('t'))).toSucceedAndSatisfy((receipt) => {
+      expect(receipt.taskId).toBe('t');
+      expect(receipt.operationId).toBe(first.operations[0].operationId);
+    });
+    // And it is re-authorized: a policy that now denies the task's scope refuses the replay.
+    r.policy.deny.push((request) => request.action === 'create');
     expect(await r.writer.resumePendingRegistration(tid('t'))).toFailWithDetail(
-      /no pending registration t/,
+      /'create' is not permitted/,
       code('not-found-or-denied')
     );
   });
@@ -154,7 +168,7 @@ describe('resumePendingRegistration — a native registration left pending', () 
     expect(pendingIds(h.repository)).toEqual(['t']);
   });
 
-  test('the task takes the resuming view’s creation scopes, which the stored request does not carry', async () => {
+  test('a record never written takes the resuming view’s creation scopes, which the stored request does not carry', async () => {
     const { h } = await withPending('t', (h) =>
       h.writer.createTracked({ taskId: tid('t'), operationId: op('create-t'), title: 'the task' })
     );
@@ -165,16 +179,16 @@ describe('resumePendingRegistration — a native registration left pending', () 
     });
   });
 
-  test('a malformed id is invalid, and a live task is not pending', async () => {
+  test('a malformed id is invalid, and a live task replays its creation', async () => {
     const h = await brokerHarness();
     await track(h.writer, 'live');
     expect(await h.writer.resumePendingRegistration('' as TaskId)).toFailWithDetail(
       /resumePendingRegistration/,
       code('invalid')
     );
-    expect(await h.writer.resumePendingRegistration(tid('live'))).toFailWithDetail(
-      /no pending registration live/,
-      code('not-found-or-denied')
+    // A live task its own catalog creation made is answered as a resume whose response was lost.
+    expect(await h.writer.resumePendingRegistration(tid('live'))).toSucceedAndSatisfy((receipt) =>
+      expect(receipt.taskId).toBe('live')
     );
   });
 
@@ -221,9 +235,9 @@ describe('resumePendingRegistration — an external registration left pending', 
       expect(registered.state).toBe('unresolved');
     });
     expect(h.repository.pendingRegistration(tid('j1'))).toSucceedWith(undefined);
-    expect(await h.broker.resumePendingRegistration(tid('j1'))).toFailWithDetail(
-      /no pending registration j1/,
-      code('not-found-or-denied')
+    // A second resume, its first response lost, replays the registration.
+    expect(await h.broker.resumePendingRegistration(tid('j1'))).toSucceedAndSatisfy((registered) =>
+      expect(registered.state).toBe('unresolved')
     );
   });
 
@@ -245,5 +259,76 @@ describe('resumePendingRegistration — an external registration left pending', 
       /resumePendingRegistration/,
       code('invalid')
     );
+  });
+});
+
+describe('resumePendingRegistration — a record that landed before it was marked live', () => {
+  /** The pending entry is written, the record lands, and the write marking it live fails. */
+  async function landed(): Promise<{ readonly h: IBrokerHarness; readonly creator: IBoundTaskWriter }> {
+    const faulty = new FaultyRoot(memoryRoot() as FileTree.IAtomicFileTreeDirectoryItem);
+    const h = await brokerHarness({
+      root: faulty as unknown as FileTree.IFileTreeDirectoryItem,
+      scopes: [alpha, beta]
+    });
+    const creator = bindWriter(h, { scopes: [alpha, beta], creationScopes: [alpha] });
+    faulty.faults.push({ name: 'repository.json', when: 'before', visibility: 'unchanged', skip: 1 });
+    expect(
+      await creator.createTracked({ taskId: tid('t'), operationId: op('create-t'), title: 'secret task' })
+    ).toFail();
+    return { h, creator };
+  }
+
+  test('the repository reports the scopes the landed record carries', async () => {
+    const { h } = await landed();
+    expect(h.repository.pendingRegistration(tid('t'))).toSucceedAndSatisfy((pending) =>
+      expect(pending?.landedScopes).toEqual([alpha])
+    );
+  });
+
+  test('create is authorized against the landed record’s scopes, not the resuming view’s', async () => {
+    const { h } = await landed();
+    h.policy.deny.push(
+      (request) => request.action === 'create' && (request.scopes ?? []).some((s) => s.key === alpha.key)
+    );
+    const elsewhere = bindWriter(h, { scopes: [alpha, beta], creationScopes: [beta] });
+    expect(await elsewhere.resumePendingRegistration(tid('t'))).toFailWithDetail(
+      /'create' is not permitted/,
+      code('not-found-or-denied')
+    );
+    expect(pendingIds(h.repository)).toEqual(['t']);
+    expect(h.policy.calls.filter((c) => c.action === 'create').map((c) => c.scopes)).toContainEqual([alpha]);
+    // Allowed again, it commits the record as it landed.
+    h.policy.deny.splice(0);
+    expect(await elsewhere.resumePendingRegistration(tid('t'))).toSucceed();
+    expect(await h.repository.read(tid('t'))).toSucceedAndSatisfy((read) =>
+      expect(read?.state === 'resolved' && read.task.envelope.scopes).toEqual([alpha])
+    );
+  });
+
+  test('a view that does not select the landed scopes cannot resume it', async () => {
+    const { h } = await landed();
+    const narrow = bindWriter(h, { scopes: [beta] });
+    expect(await narrow.resumePendingRegistration(tid('t'))).toFailWithDetail(
+      /no pending registration t/,
+      code('not-found-or-denied')
+    );
+    expect(pendingIds(h.repository)).toEqual(['t']);
+  });
+
+  test('an identical createTracked retry from a view with other creation scopes is refused, not adopted', async () => {
+    const located = await landed();
+    const { h } = located;
+    const elsewhere = bindWriter(h, { scopes: [alpha, beta], creationScopes: [beta] });
+    expect(
+      await elsewhere.createTracked({ taskId: tid('t'), operationId: op('create-t-retry'), title: 'secret task' })
+    ).toFail();
+    const pending = h.repository.pendingRegistration(tid('t')).orThrow()!;
+    const retry = await elsewhere.createTracked(pending.request as unknown as ICreateTrackedTask);
+    expect(retry).toFailWithDetail(/landed with scopes other than/, code('conflict'));
+    expect(pendingIds(h.repository)).toEqual(['t']);
+    // Through the view it was created in, the same retry completes it.
+    const { creator } = located;
+    expect(await creator.createTracked(pending.request as unknown as ICreateTrackedTask)).toSucceed();
+    expect(pendingIds(h.repository)).toEqual([]);
   });
 });

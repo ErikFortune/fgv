@@ -36,6 +36,7 @@ import {
   ITaskEnvironment,
   ITaskKindRegistry,
   ITaskRecordDraft,
+  ITaskScope,
   IStoredCatalogOperation,
   ITaskRecoveryReport,
   ITaskRepositoryManifest,
@@ -411,19 +412,43 @@ export class FileTreeTaskRepository implements ITaskRepository {
   public pendingRegistration(taskId: TaskId): TaskResult<ITaskPendingRegistration | undefined> {
     return this._usable().onSuccess(() => {
       const entry: IPendingInventoryEntry | undefined = this._pending.get(taskId);
-      return ok<ITaskPendingRegistration | undefined>(
-        entry === undefined
-          ? undefined
-          : {
-              taskId,
-              operationId: entry.operationId,
-              operation: entry.operation,
-              principalKey: entry.principalKey,
-              recordType: entry.recordType,
-              request: entry.request
-            }
+      if (entry === undefined) {
+        return ok<ITaskPendingRegistration | undefined>(undefined);
+      }
+      return this._landedScopes(taskId, entry).onSuccess((landedScopes) =>
+        ok<ITaskPendingRegistration | undefined>({
+          taskId,
+          operationId: entry.operationId,
+          operation: entry.operation,
+          principalKey: entry.principalKey,
+          recordType: entry.recordType,
+          request: entry.request,
+          ...(landedScopes !== undefined ? { landedScopes } : {})
+        })
       );
     });
+  }
+
+  /**
+   * The scopes of a pending registration's first record when that record already landed and is
+   * this registration's own; `undefined` when nothing is at its name. A file there that is not this
+   * registration's record answers `undefined` too: resuming it is refused by `register`.
+   */
+  private _landedScopes(
+    taskId: TaskId,
+    entry: IPendingInventoryEntry
+  ): TaskResult<ReadonlyArray<ITaskScope> | undefined> {
+    const name: string = recordName('task', taskId);
+    const listed: Result<ReadonlyArray<string>> = this._store.list();
+    if (listed.isFailure()) {
+      return taskFailure(`pendingRegistration ${taskId}: ${listed.message}`, 'storage-unavailable', 'safe');
+    }
+    if (!listed.value.includes(name)) {
+      return ok(undefined);
+    }
+    return this._gate
+      .run(`pendingRegistration ${taskId}`, () => ok(this._readLanded(name, entry)))
+      .onSuccess((landed) => ok(landed.isSuccess() ? scopesOfRecord(landed.value.record) : undefined));
   }
 
   /** {@inheritDoc ITaskRepository.capacityStatus} */
@@ -1239,6 +1264,17 @@ export class FileTreeTaskRepository implements ITaskRepository {
         { operationId }
       );
     }
+    // The draft carries the scopes this registration was authorized for. Adopting a record that
+    // landed under other scopes would commit what was never authorized.
+    if (!sameScopes(scopesOfRecord(landed.value.record), scopesOfRecord(draft))) {
+      return taskFailure(
+        `register ${taskId}: its record landed with scopes other than the ones this registration ` +
+          `was authorized for; resume it with the scopes it landed with`,
+        'conflict',
+        'after-host-action',
+        { operationId }
+      );
+    }
     return this._finishRegistration(taskId, operationId, landed.value, false);
   }
 
@@ -1911,4 +1947,17 @@ export class FileTreeTaskRepository implements ITaskRepository {
       taskRecordLimit(this.profile)
     );
   }
+}
+
+/** The scopes a task record or draft carries. */
+function scopesOfRecord(record: ITaskRecordDraft | ITaskCommitRecord): ReadonlyArray<ITaskScope> {
+  return record.recordType === 'resolved' ? record.task.envelope.scopes : record.reference.scopes;
+}
+
+/** Whether two scope lists name the same set. */
+function sameScopes(a: ReadonlyArray<ITaskScope>, b: ReadonlyArray<ITaskScope>): boolean {
+  const key = (scope: ITaskScope): string => JSON.stringify([scope.namespace, scope.key]);
+  const left: ReadonlySet<string> = new Set(a.map(key));
+  const right: ReadonlySet<string> = new Set(b.map(key));
+  return left.size === right.size && [...left].every((k) => right.has(k));
 }

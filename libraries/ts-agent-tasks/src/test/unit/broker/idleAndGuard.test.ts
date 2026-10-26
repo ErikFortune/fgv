@@ -257,6 +257,61 @@ describe('TaskBroker.whenIdle', () => {
     }
   });
 
+  test('a timer whose cancel throws neither breaks the writer queue nor leaves whenIdle unsettled', async () => {
+    const guard = new HoldingGuard();
+    const { env } = environment('c');
+    const repository = (
+      await FileTreeTaskRepository.initialize({
+        root: memoryRoot(),
+        mode: 'session',
+        environment: env,
+        registry: brokerRegistry()
+      })
+    ).orThrow();
+    const throwingCancel: TaskScheduleTimer = () => () => {
+      throw new Error('cancel boom');
+    };
+    const broker = TaskBroker.create({
+      repository,
+      environment: env,
+      writeGuard: guard,
+      schedule: throwingCancel
+    }).orThrow();
+    const writer = broker.bind({ principal: 'alice', scopes: [alpha], authorization: new TestPolicy() }).orThrow();
+    guard.hold();
+    const first = writer.createTracked({ taskId: tid('a'), operationId: op('create-a'), title: 'a' });
+    await settle();
+    const idle = broker.whenIdle(1000);
+    guard.release();
+    expect(await first).toSucceed();
+    expect(await idle).toSucceedWith(true);
+    // The queue still runs every later section.
+    expect(await writer.createTracked({ taskId: tid('b'), operationId: op('create-b'), title: 'b' })).toSucceed();
+    // A timer that fires synchronously and whose cancel throws settles at once, too.
+    const syncThrowing: TaskScheduleTimer = (fn) => {
+      fn();
+      return () => {
+        throw new Error('cancel boom');
+      };
+    };
+    const syncBroker = TaskBroker.create({
+      repository,
+      environment: env,
+      writeGuard: guard,
+      schedule: syncThrowing
+    }).orThrow();
+    const syncWriter = syncBroker
+      .bind({ principal: 'alice', scopes: [alpha], authorization: new TestPolicy() })
+      .orThrow();
+    guard.hold();
+    const held = syncWriter.createTracked({ taskId: tid('c'), operationId: op('create-c'), title: 'c' });
+    await settle();
+    expect(await syncBroker.whenIdle(5)).toFailWithDetail(/still busy after 5 ms/, code('conflict'));
+    guard.release();
+    expect(await held).toSucceed();
+    expect(await syncWriter.createTracked({ taskId: tid('d'), operationId: op('create-d'), title: 'd' })).toSucceed();
+  });
+
   test('a schedule that throws, and an invalid timeout, are refused', async () => {
     const guard = new HoldingGuard();
     const { env } = environment('t');
@@ -381,6 +436,46 @@ describe('TaskBroker.create writeGuard', () => {
     ).toFailWithDetail(/authorization policy/i, code('conflict'));
     expect(guard.inside).toBe(1);
     expect(await repository.read(tid('a'))).toSucceedWith(undefined);
+  });
+
+  test('a guard that fails or throws after running the section reports reconcile-first, not "nothing written"', async () => {
+    const mode: { after: 'fail' | 'throw' } = { after: 'fail' };
+    const late: ITaskWriteGuard = {
+      guard: async <T>(write: () => Promise<TaskResult<T>>): Promise<TaskResult<T>> => {
+        await write();
+        if (mode.after === 'throw') {
+          throw new Error('boom');
+        }
+        return fail('gate closed late') as unknown as TaskResult<T>;
+      }
+    };
+    const { broker, policy, repository } = await harness({ guard: late });
+    const writer = broker.bind({ principal: 'alice', scopes: [alpha], authorization: policy }).orThrow();
+    const failed = await writer.createTracked({ taskId: tid('a'), operationId: op('create-a'), title: 'a' });
+    expect(failed).toFailWithDetail(/failed: gate closed late after the section ran/, code('storage-unavailable'));
+    expect(failed.detail?.retry).toBe('reconcile-first');
+    expect(await repository.read(tid('a'))).toSucceedAndSatisfy((r) => expect(r?.state).toBe('resolved'));
+    mode.after = 'throw';
+    const threw = await writer.createTracked({ taskId: tid('b'), operationId: op('create-b'), title: 'b' });
+    expect(threw).toFailWithDetail(/threw: boom after the section ran/, code('storage-unavailable'));
+    expect(threw.detail?.retry).toBe('reconcile-first');
+    expect(await repository.read(tid('b'))).toSucceedAndSatisfy((r) => expect(r?.state).toBe('resolved'));
+  });
+
+  test('a guard that runs the section twice gets the second call refused, unrun', async () => {
+    const seconds: Array<TaskResult<unknown>> = [];
+    const twice: ITaskWriteGuard = {
+      guard: async <T>(write: () => Promise<TaskResult<T>>): Promise<TaskResult<T>> => {
+        const first = await write();
+        seconds.push(await write());
+        return first;
+      }
+    };
+    const { broker, policy, repository } = await harness({ guard: twice });
+    const writer = broker.bind({ principal: 'alice', scopes: [alpha], authorization: policy }).orThrow();
+    expect(await writer.createTracked({ taskId: tid('a'), operationId: op('create-a'), title: 'a' })).toSucceed();
+    expect(seconds[0]).toFailWithDetail(/ran the section more than once/, code('invalid'));
+    expect(await repository.read(tid('a'))).toSucceedAndSatisfy((r) => expect(r?.state).toBe('resolved'));
   });
 
   test('a guard that throws fails the section, and nothing is written', async () => {

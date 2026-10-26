@@ -23,6 +23,7 @@ import {
   ITaskRecoveryReport,
   ITaskRepositoryManifest,
   TaskRepositoryDurability,
+  allTaskRepositoryDurabilities,
   ITaskSourceRecord,
   OperationId,
   TaskId,
@@ -218,7 +219,7 @@ function _acquireWith(params: ITaskRepositoryOpenParams, converters: TaskConvert
     const checkpointStore: ITaskCheckpointStore =
       params.checkpoints ?? new FileTreeCheckpointStore(store.value);
     const durability: Result<string> = captureResult(() => checkpointStore.durability).onSuccess((d) =>
-      Converters.enumeratedValue<string>(['session', 'process-crash']).convert(d)
+      Converters.enumeratedValue<TaskRepositoryDurability>([...allTaskRepositoryDurabilities]).convert(d)
     );
     if (durability.isFailure() || (guarantee !== 'session' && durability.value !== 'process-crash')) {
       ownership.value.release();
@@ -531,7 +532,8 @@ function _completeRegistrations(
   converters: TaskConverters,
   scanned: { manifest: ITaskRepositoryManifest; text: string },
   done: ReadonlySet<string>,
-  doneConsumers: ReadonlySet<string>
+  doneConsumers: ReadonlySet<string>,
+  backfill: TaskRepositoryDurability | undefined
 ): TaskResult<{ manifest: ITaskRepositoryManifest; bytes: number; text: string }> {
   const manifest: ITaskRepositoryManifest = scanned.manifest;
   // The one write open performs is fenced like every other manifest rewrite: the manifest on
@@ -557,7 +559,8 @@ function _completeRegistrations(
     tasks: manifest.tasks.map((entry) => (done.has(entry.id) ? { id: entry.id, state: 'live' } : entry)),
     consumers: manifest.consumers.map((entry) =>
       doneConsumers.has(entry.id) ? { id: entry.id, state: 'live' } : entry
-    )
+    ),
+    ...(backfill !== undefined ? { initializedMode: backfill } : {})
   };
   return classify(
     encodeRecord(next)
@@ -571,7 +574,7 @@ function _completeRegistrations(
     return written.isSuccess()
       ? ok({ manifest: next, bytes: encoded.bytes, text: encoded.text })
       : taskFailure<{ manifest: ITaskRepositoryManifest; bytes: number; text: string }>(
-          `open: completing pending registrations failed: ${written.message}`,
+          `open: rewriting ${manifestName} (completed registrations, initialization mode) failed: ${written.message}`,
           'storage-unavailable',
           writeRetry(written.detail)
         );
@@ -1315,15 +1318,22 @@ export function scanRoot(input: IScanInput): TaskResult<ScanOutcome> {
   }
 
   // ---- complete registrations that died after their record was written ----
+  // A durable open of a manifest that predates the initialization mode records it now, so a later
+  // session open of the same repository is refused like one initialized with it.
+  const backfill: TaskRepositoryDurability | undefined =
+    input.openedAs?.durability === 'process-crash' && manifest.initializedMode === undefined
+      ? 'process-crash'
+      : undefined;
   const completion: TaskResult<{ manifest: ITaskRepositoryManifest; bytes: number; text: string }> =
-    completed.length === 0 && consumers.completed.length === 0
+    completed.length === 0 && consumers.completed.length === 0 && backfill === undefined
       ? ok({ manifest, bytes: manifestRead.bytes, text: manifestRead.text })
       : _completeRegistrations(
           store,
           converters,
           { manifest, text: manifestRead.text },
           new Set<string>(completed),
-          new Set<string>(consumers.completed)
+          new Set<string>(consumers.completed),
+          backfill
         );
   if (completion.isFailure()) {
     return propagate(completion);

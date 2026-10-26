@@ -237,6 +237,9 @@ export async function changeScopes(
     identity: request,
     request: converted.value.json,
     receiptConverter: core.converters.broker.mutationResult,
+    // The policy is told the scope set the task will carry, decided from the record it authorizes
+    // against; the writer re-checks that record's revision, so the set it commits is this one.
+    access: (record) => ({ scopes: _nextScopes(scopesOfRecord(record), add, remove) }),
     evaluate: async (current): Promise<TaskResult<CatalogChange>> => {
       const envelope: ITaskEnvelope = current.task.envelope;
       const scopes: ReadonlyArray<ITaskScope> = _nextScopes(envelope.scopes, add, remove);
@@ -571,4 +574,9 @@ async function settleStops(
     settled.push({ ...intent, state: 'settled' });
   }
   return ok(settled);
+}
+
+/** The scopes a committed record carries. */
+function scopesOfRecord(record: ITaskCommitRecord): ReadonlyArray<ITaskScope> {
+  return record.recordType === 'resolved' ? record.task.envelope.scopes : record.reference.scopes;
 }

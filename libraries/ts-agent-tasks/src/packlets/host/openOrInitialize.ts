@@ -12,6 +12,7 @@ import {
   ITaskRepositoryOpenParams,
   ITaskRepositoryRootProbe,
   TaskRepositoryMode,
+  TaskRepositoryOpenOrInitializeResult,
   probeTaskRepositoryRoot
 } from '../storage';
 import { ITaskFailure, ITaskRecoveryReport, TaskRepositoryDurability, TaskResult } from '../types';
@@ -115,20 +116,24 @@ interface IPlacement {
 export async function openOrInitializeTaskRepository(
   params: IOpenOrInitializeTaskRepositoryParams
 ): Promise<TaskResult<OpenOrInitializeTaskRepositoryResult>> {
-  const placed: TaskResult<IPlacement> = _classified(
-    probeTaskRepositoryRoot(params.root),
-    'invalid'
-  ).onSuccess((probe) => _place(params, probe));
-  if (placed.isFailure()) {
-    return failWithDetail(placed.message, placed.detail);
-  }
-  const placement: IPlacement = placed.value;
-  const opened = await FileTreeTaskRepository.openOrInitialize({
-    ...params,
-    root: placement.root,
-    mode: placement.mode
-  });
-  return opened.onSuccess((outcome) => {
+  return _classified(probeTaskRepositoryRoot(params.root), 'invalid')
+    .onSuccess((probe) => _place(params, probe))
+    .thenOnSuccess(async (placement) =>
+      (
+        await FileTreeTaskRepository.openOrInitialize({
+          ...params,
+          root: placement.root,
+          mode: placement.mode
+        })
+      ).onSuccess((outcome) => _result(placement, outcome))
+    );
+}
+
+/** What an open or initialize at `placement` answers, labelled with where and how durably. */
+function _result(
+  placement: IPlacement,
+  outcome: TaskRepositoryOpenOrInitializeResult
+): TaskResult<OpenOrInitializeTaskRepositoryResult> {
     const durability: TaskRepositoryDurability = placement.mode === 'session' ? 'session' : 'process-crash';
     const report = (recovery: ITaskRecoveryReport, initialized: boolean): ITaskRepositoryPlacementReport => ({
       placement: placement.placement,
@@ -156,7 +161,6 @@ export async function openOrInitializeTaskRepository(
             report: report(outcome.recovery.report, false)
           }
     );
-  });
 }
 
 /** The root and mode a probe allows, or the fallback when it allows none. */
@@ -172,7 +176,7 @@ function _place(
       guarantees: probe.guarantees
     });
   }
-  const reason: string = probe.reason!;
+  const reason: string = probe.reason;
   if (params.fallback === 'refuse') {
     return failWithDetail(`openOrInitializeTaskRepository: ${reason}`, {
       code: 'unsupported',

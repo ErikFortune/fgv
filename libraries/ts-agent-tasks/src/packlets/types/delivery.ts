@@ -510,7 +510,8 @@ export interface IBoundTaskDelivery {
    * committed — nothing is lost — and a later replay of that acknowledgement is then refused as an
    * invalid receipt. Expired manifests not yet removed are listed with their `expiresAt`.
    *
-   * Lists identities and times only, never what a receipt included.
+   * Lists identities and times only, never what a receipt included. The read is a gated section: it
+   * takes a writer-queue slot and passes the broker's `writeGuard`, so a paused guard holds it.
    */
   issued(): Promise<TaskResult<ReadonlyArray<ITaskIssuedReceiptSummary>>>;
 }

@@ -25,6 +25,7 @@ import { PromptSubstitutions } from '@fgv/ts-prompt-assist';
 import { Result } from '@fgv/ts-utils';
 import { ScopeKey } from '@fgv/ts-prompt-assist';
 import { SlotName } from '@fgv/ts-prompt-assist';
+import { StringOneOf } from '@fgv/ts-utils';
 
 // @public
 export const allCapacityClaimPurposes: ReadonlyArray<CapacityClaimPurpose>;
@@ -58,6 +59,9 @@ export const allTaskLifecycleClasses: ReadonlyArray<TaskLifecycleClass>;
 
 // @public
 export const allTaskMutationToolGroups: ReadonlyArray<TaskMutationToolGroup>;
+
+// @public
+export const allTaskRepositoryDurabilities: readonly ["session", "process-crash"];
 
 // @public
 export const allTaskStatuses: ReadonlyArray<TaskLifecycleStatus>;
@@ -2295,6 +2299,7 @@ export interface ITaskPage {
 
 // @public
 export interface ITaskPendingRegistration {
+    readonly landedScopes?: ReadonlyArray<ITaskScope>;
     // (undocumented)
     readonly operation: TaskCatalogOperationType;
     // (undocumented)
@@ -2698,11 +2703,14 @@ export interface ITaskRepositoryPlacementReport {
 }
 
 // @public
-export interface ITaskRepositoryRootProbe {
+export type ITaskRepositoryRootProbe = {
     readonly guarantees: ReadonlyArray<FileTree.AtomicWriteGuarantee>;
-    readonly mode: TaskRepositoryMode | undefined;
-    readonly reason?: string;
-}
+    readonly mode: TaskRepositoryMode;
+} | {
+    readonly guarantees: ReadonlyArray<FileTree.AtomicWriteGuarantee>;
+    readonly mode: undefined;
+    readonly reason: string;
+};
 
 // @public
 export interface ITaskRepositoryWriter {
@@ -3495,7 +3503,7 @@ export type TaskRegistrationResult = {
 };
 
 // @public
-export type TaskRepositoryDurability = 'session' | 'process-crash';
+export type TaskRepositoryDurability = StringOneOf<typeof allTaskRepositoryDurabilities>;
 
 // @public
 export type TaskRepositoryFactory = () => Promise<TaskResult<ITaskRepository>>;
@@ -3644,7 +3652,7 @@ export type TrackedTransition = {
 };
 
 // @public
-export function trustedKindAuthority(params: ITrustedKindAuthorityParams): ITaskAuthorization;
+export function trustedKindAuthority(params: ITrustedKindAuthorityParams): Result<ITaskAuthorization>;
 
 // @public
 export type TrustedScopeMatch = 'every' | 'some';

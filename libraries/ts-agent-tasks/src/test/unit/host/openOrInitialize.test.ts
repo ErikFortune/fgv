@@ -88,7 +88,7 @@ describe('probeTaskRepositoryRoot', () => {
     expect(probeTaskRepositoryRoot(memoryRoot())).toSucceedAndSatisfy((probe) => {
       expect(probe.mode).toBe('session');
       expect(probe.guarantees).toEqual(['session']);
-      expect(probe.reason).toBeUndefined();
+      expect('reason' in probe).toBe(false);
     });
     expect(probeTaskRepositoryRoot(nodeRootAt(freshDir()))).toSucceedAndSatisfy((probe) => {
       expect(probe.mode).toEqual({ durable: 'process-crash' });
@@ -101,7 +101,7 @@ describe('probeTaskRepositoryRoot', () => {
     expect(probeTaskRepositoryRoot(root)).toSucceedAndSatisfy((probe) => {
       expect(probe.mode).toBeUndefined();
       expect(probe.guarantees).toEqual([]);
-      expect(probe.reason).toMatch(/cannot honor a 'session' or 'process-crash'/);
+      expect(probe.mode === undefined && probe.reason).toMatch(/cannot honor a 'session' or 'process-crash'/);
     });
   });
 
@@ -120,8 +120,7 @@ describe('probeTaskRepositoryRoot', () => {
 
   test('a root without the capability succeeds with a reason; a file, or a failing inquiry, fails', () => {
     expect(probeTaskRepositoryRoot(plainRoot())).toSucceedAndSatisfy((probe) => {
-      expect(probe.mode).toBeUndefined();
-      expect(probe.reason).toMatch(/does not offer atomic writes/);
+      expect(probe.mode === undefined && probe.reason).toMatch(/does not offer atomic writes/);
     });
     const dir = freshDir();
     fs.writeFileSync(path.join(dir, 'f.txt'), 'x');
@@ -200,6 +199,27 @@ describe('the manifest records the mode a repository was initialized in', () => 
     if (opened.state === 'ready') {
       opened.repository.close();
     }
+  });
+
+  test('a durable open backfills the mode into an older manifest, which then refuses a session open', async () => {
+    const dir = freshDir();
+    (await FileTreeTaskRepository.initialize(params(nodeRootAt(dir), { durable: 'process-crash' })))
+      .orThrow()
+      .close();
+    const manifest = manifestOf(dir);
+    delete manifest.initializedMode;
+    fs.writeFileSync(path.join(dir, 'repository.json'), JSON.stringify(manifest));
+    const opened = (await FileTreeTaskRepository.open(params(nodeRootAt(dir), { durable: 'process-crash' }))).orThrow();
+    expect(manifestOf(dir).initializedMode).toBe('process-crash');
+    if (opened.state === 'ready') {
+      // The rewritten manifest is the one the instance holds: a later write still commits.
+      expect(await opened.repository.withWriter((w) => w.register(registration('t1')))).toSucceed();
+      opened.repository.close();
+    }
+    expect(await FileTreeTaskRepository.open(params(nodeRootAt(dir), 'session'))).toFailWithDetail(
+      /initialized 'process-crash'/,
+      code('unsupported')
+    );
   });
 
   test('an initialization mode it does not know makes the manifest invalid', async () => {

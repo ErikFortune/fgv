@@ -323,11 +323,19 @@ export interface IBoundTaskWriter extends IBoundTaskView {
    *
    * @remarks
    * Nothing about authority is stored with the intent: `create` is authorized again now, against
-   * this view's current policy, exactly as an identical retry through this view would be, and the
-   * epoch it was authorized under is re-checked inside the writer immediately before the record is
-   * written. The task takes **this view's** creation scopes — the stored request does not carry
-   * scopes — and the registration must have been accepted for this view's principal; a pending
-   * registration of another principal is `not-found-or-denied`, like an id with none.
+   * this view's current policy, and the epoch it was authorized under is re-checked inside the
+   * writer immediately before anything is committed. **It is authorized for the scopes that will be
+   * committed.** When the first record already landed (its write succeeded, marking it live did
+   * not), that record is committed as it is, so `create` is asked of the landed record's scopes,
+   * which this view must select. Otherwise the record is written now with this view's creation
+   * scopes (the stored request carries none). Storage independently refuses to adopt a landed
+   * record whose scopes differ from the ones a registration was authorized for — which also covers
+   * an identical `createTracked` retry from a view with other creation scopes.
+   *
+   * The registration must have been accepted for this view's principal; another principal's is
+   * `not-found-or-denied`, like an id with none. A registration an earlier resume committed — its
+   * response lost — replays its stored receipt, re-authorized for the live task's scopes, as an
+   * identical `createTracked` retry does.
    *
    * A pending `register-external` registration is a trusted host operation with no authorization to
    * repeat; it resumes through `TaskBroker.resumePendingRegistration`, and is `invalid` here.
