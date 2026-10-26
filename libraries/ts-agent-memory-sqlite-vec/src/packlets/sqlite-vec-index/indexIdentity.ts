@@ -95,15 +95,24 @@ export class IndexIdentity {
   /**
    * Read the stored identity and classify it against {@link IndexIdentity.expected}.
    * Never writes.
+   *
+   * @remarks
+   * The two reads — whether the `vec0` table exists, then the meta row — run in one
+   * (deferred, read-only) transaction, so the report describes a single snapshot
+   * of the file even when another connection is writing it. Called inside an
+   * enclosing transaction, this becomes a savepoint of it.
    */
   public report(): Result<IIndexIdentityReport> {
-    return captureResult(() => this._exists(this._table)).onSuccess((indexExists) =>
-      // The vec0 table decides first: a row whose table was dropped describes
-      // vectors that no longer exist, and must never read as a match for new ones.
-      indexExists
-        ? this._readMetaRow().onSuccess((row) => succeed(this._classify(row)))
-        : succeed<IIndexIdentityReport>({ status: 'fresh' })
-    );
+    return captureResult(() =>
+      this._db.transaction(
+        (): Result<IIndexIdentityReport> =>
+          // The vec0 table decides first: a row whose table was dropped describes
+          // vectors that no longer exist, and must never read as a match for new ones.
+          this._exists(this._table)
+            ? this._readMetaRow().onSuccess((row) => succeed(this._classify(row)))
+            : succeed<IIndexIdentityReport>({ status: 'fresh' })
+      )()
+    ).onSuccess((report) => report);
   }
 
   /**
@@ -172,15 +181,19 @@ export class IndexIdentity {
 
   /**
    * Record the expected identity over vectors that have none, without
-   * re-embedding. Legal only while the status is `'absent'`; the check and the
-   * write share one transaction, so no other connection can change the status
-   * between them.
+   * re-embedding. Legal while the status is `'absent'`; idempotent on `'match'`,
+   * where the stored identity already equals the expected one and nothing is
+   * written. The check and the write share one transaction, so no other
+   * connection can change the status between them.
    */
   public adopt(): Result<IIndexIdentityReport> {
     return captureResult(() =>
       this._db.transaction((): Result<IIndexIdentityReport> => {
         const expected: string | undefined = this.expected;
         return this.report().onSuccess((report) => {
+          if (report.status === 'match') {
+            return succeed(report);
+          }
           if (report.status !== 'absent' || expected === undefined) {
             return fail(
               `cannot adopt an identity while the status is '${report.status}'; adoption is only ` +

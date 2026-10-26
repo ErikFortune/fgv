@@ -284,7 +284,8 @@ export class SqliteVecVectorIndex implements IVectorIndex {
    * @remarks
    * See {@link IIndexIdentityReport} for what each status means. While the status
    * is `'mismatch'` or `'incomplete'`, `add` and `query` fail; `rebuild` is the
-   * remedy, and nothing is ever deleted automatically.
+   * remedy, and nothing is ever deleted automatically. Both reads behind the
+   * report run in one read transaction, so it describes a single snapshot.
    *
    * @returns `Success` with the report, or `Failure` if the index has been
    * released or the database could not be read.
@@ -302,12 +303,14 @@ export class SqliteVecVectorIndex implements IVectorIndex {
    * somewhere else.
    *
    * @remarks
-   * Legal only while {@link SqliteVecVectorIndex.identity} reports `'absent'`.
-   * `'mismatch'` and `'incomplete'` are refused because adopting would certify
-   * vectors that are known to be wrong or partial; they need a `rebuild`. The
-   * status check and the write run in one transaction.
+   * Legal while {@link SqliteVecVectorIndex.identity} reports `'absent'`, and
+   * idempotent on `'match'`, where it succeeds without writing. `'mismatch'` and
+   * `'incomplete'` are refused because adopting would certify vectors that are
+   * known to be wrong or partial; they need a `rebuild`. `'fresh'` and
+   * `'unchecked'` are refused because there is nothing, or no identity, to adopt.
+   * The status check and the write run in one transaction.
    *
-   * @returns `Success` with the new report (`'match'`), or `Failure` naming the
+   * @returns `Success` with the report (`'match'`), or `Failure` naming the
    * status that made adoption illegal, or a database error (for example on a
    * read-only connection).
    */

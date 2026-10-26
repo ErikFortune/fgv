@@ -415,13 +415,33 @@ describe.each(lanes)('$name identity', (lane: ILane) => {
       expect((await make('m2')).identity()).toSucceedWith({ status: 'mismatch', stored: 'm1' });
     });
 
-    test('is refused for every other status, naming it', async () => {
+    test("is refused for 'fresh', 'mismatch' and 'unchecked', naming the status", async () => {
       const fresh = await make('m1');
       expect(fresh.adoptIdentity()).toFailWith(/status is 'fresh'/);
       (await fresh.write('a', [1, 0])).orThrow();
-      expect(fresh.adoptIdentity()).toFailWith(/status is 'match'/);
       expect((await make('m2')).adoptIdentity()).toFailWith(/status is 'mismatch'.*rebuild the index/);
       expect((await make()).adoptIdentity()).toFailWith(/status is 'unchecked'/);
+    });
+
+    test("is an idempotent no-op on 'match' that writes nothing", async () => {
+      const db = connect();
+      const index = await make('m1', db);
+      (await index.write('a', [1, 0])).orThrow();
+      const before = metaRow(db, lane.defaultTable);
+      expect(index.adoptIdentity()).toSucceedWith({ status: 'match' });
+      expect(index.adoptIdentity()).toSucceedWith({ status: 'match' });
+      expect(metaRow(db, lane.defaultTable)).toEqual(before);
+      // A read-only connection proves it: any write there would be a Failure.
+      const reader = await make('m1', connect({ readonly: true }));
+      expect(reader.adoptIdentity()).toSucceedWith({ status: 'match' });
+    });
+
+    test('a migration that adopts twice succeeds both times', async () => {
+      (await (await make()).write('a', [1, 0])).orThrow();
+      const index = await make('m1');
+      expect(index.identity()).toSucceedWith({ status: 'absent' });
+      expect(index.adoptIdentity()).toSucceedWith({ status: 'match' });
+      expect(index.adoptIdentity()).toSucceedWith({ status: 'match' });
     });
 
     test('fails on a read-only connection rather than pretending to adopt', async () => {
@@ -516,6 +536,35 @@ describe.each(lanes)('$name identity', (lane: ILane) => {
     const again = (await lane.open(file, 'm2')).orThrow();
     expect(again.harness.identity()).toSucceedWith({ status: 'mismatch', stored: 'm1' });
     expect(again.close()).toSucceed();
+  });
+
+  test('identity() takes both of its reads inside one transaction — a single snapshot', async () => {
+    // Another connection cannot be made to run between two synchronous reads in
+    // one JS turn, so the interleaving itself is not reproducible here. What is
+    // pinned instead is the property that excludes it: each of the three reads
+    // runs while the connection is inside a transaction, and none is left open
+    // afterwards. Before the change, all three ran outside one.
+    const db = connect();
+    (await (await make('m1', db)).write('a', [1, 0])).orThrow();
+    const reads: Array<{ readonly sql: string; readonly inTransaction: boolean }> = [];
+    const realPrepare = db.prepare.bind(db);
+    const prepare = jest.spyOn(db, 'prepare').mockImplementation((sql: string) => {
+      const statement = realPrepare(sql);
+      const realGet = statement.get.bind(statement);
+      jest.spyOn(statement, 'get').mockImplementation((...params: unknown[]) => {
+        reads.push({ sql, inTransaction: db.inTransaction });
+        return realGet(...params);
+      });
+      return statement;
+    });
+    const index = await make('m1', db);
+    expect(index.identity()).toSucceedWith({ status: 'match' });
+    prepare.mockRestore();
+    const identityReads = reads.filter((r) => /sqlite_master|FROM fgv_sqlite_vec_meta/.test(r.sql));
+    // sqlite_master for the vec0 table, sqlite_master for the meta table, the row.
+    expect(identityReads.length).toBeGreaterThanOrEqual(3);
+    expect(identityReads.slice(-3).every((r) => r.inTransaction)).toBe(true);
+    expect(db.inTransaction).toBe(false);
   });
 
   describe('failures', () => {

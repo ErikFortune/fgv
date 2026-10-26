@@ -354,7 +354,8 @@ export class SqliteVecFragmentIndex implements IFragmentVectorIndex {
    * The fragment-lane counterpart of `SqliteVecVectorIndex.identity`; see
    * {@link IIndexIdentityReport} for the statuses. While the status is
    * `'mismatch'` or `'incomplete'`, `addFragments` and `query` fail; `rebuild` is
-   * the remedy, and nothing is ever deleted automatically.
+   * the remedy, and nothing is ever deleted automatically. Both reads behind the
+   * report run in one read transaction, so it describes a single snapshot.
    *
    * @returns `Success` with the report, or `Failure` if the index has been
    * released or the database could not be read.
@@ -368,11 +369,12 @@ export class SqliteVecFragmentIndex implements IFragmentVectorIndex {
 
   /**
    * Record this handle's identity over stored fragments that have none, without
-   * re-embedding them. Legal only while {@link SqliteVecFragmentIndex.identity}
-   * reports `'absent'`; `'mismatch'` and `'incomplete'` need a `rebuild`. The
-   * status check and the write run in one transaction.
+   * re-embedding them. Legal while {@link SqliteVecFragmentIndex.identity} reports
+   * `'absent'`, and idempotent on `'match'`, where it succeeds without writing;
+   * `'mismatch'` and `'incomplete'` need a `rebuild`, and `'fresh'` / `'unchecked'`
+   * have nothing to adopt. The status check and the write run in one transaction.
    *
-   * @returns `Success` with the new report (`'match'`), or `Failure` naming the
+   * @returns `Success` with the report (`'match'`), or `Failure` naming the
    * status that made adoption illegal, or a database error.
    */
   public adoptIdentity(): Result<IIndexIdentityReport> {
