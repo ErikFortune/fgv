@@ -727,12 +727,18 @@ wraps **each helper call as one unit**. The broker's own `writeGuard` wraps each
 sections then wait behind the same gate's pause is a wait only the gate's timeout ends. For the
 host's own principal, `trustedKindAuthority` is the way to get the authorization both take.
 
-**`TaskDeliveryPump.create({ broker, delivery, guard?, budget?, maxStaleRenders? })`** over one
-subscription's bound delivery (`delivery` is the `bindDelivery` binding; disposals use the same one).
+**`TaskDeliveryPump.create({ broker, delivery, guard?, budget? })`** over one subscription's bound
+delivery (`delivery` is the `bindDelivery` binding; disposals use the same one). **One pump per
+subscription**: two are safe — each id still ends in exactly one history list — but both present the
+same top revision, and each one's receipt pins it against the other's disposal.
 
 ```ts
 const pump = TaskDeliveryPump.create({ broker, delivery: { principal: 'host', scopes, authorization,
   subscriptionId, consumerId } }).orThrow();
+// At start-up, as the subscription's only consumer: release receipts an earlier process left behind.
+for (const stale of (await pump.delivery.issued()).orThrow()) {
+  await pump.delivery.abandon(stale.deliveryId);
+}
 const next = (await pump.next()).orThrow();      // one owed task revision, receipt issued — or undefined
 if (next !== undefined) {
   // … the host does its work; a re-presented revision is recognized by (taskId, revision) …
@@ -740,24 +746,36 @@ if (next !== undefined) {
 }
 ```
 
-- **`next()`** renders one item (budget `maxItems: 1`), by the renderer's priority. A render that
-  shows a task's **current** state with nothing owed means the subscription is owed older revisions
-  it supersedes: the receipt is released, those older revisions are disposed of as superseded, and
-  the pass renders again. Each round must clear something, so a revision that renders abbreviated
-  (too large for `maxChars`) **fails loudly** rather than being presented forever, and so does a
-  pass past `maxStaleRenders` (default 20) rounds.
+- **`next()`** prepares one item in **`'owed-only'`** mode (`prepare(budget, { currentState:
+  'owed-only' })`, below): each owed revision renders from its own snapshot and no current task state
+  is a candidate, so a task owed nothing — acknowledged attention, an unarchived outcome, a waiting
+  obligation — never takes the slot. Owed revisions come by the renderer's priority. A revision too
+  large for `maxChars` (abbreviated, or omitted) is released and **fails loudly**, naming it, on every
+  call until the host raises the budget or disposes of its ids.
 - **It never acknowledges on its own** and is **at-least-once**: a prepared revision neither
   acknowledged nor disposed of is presented again. **Exactly-once is not this helper's property** —
   it is at-least-once here plus a host whose work is findable by `(taskId, revision)`.
+- **Decisions read the pump's own record.** `acknowledge`, `abandon` and `dispose` take back the
+  frozen object `next` handed out and act on what the pump recorded for it — a copy, an edited entry or
+  another pump's delivery is refused.
 - **`acknowledge`** fails with nothing discharged when the acknowledgement does not commit; once it
   commits the call succeeds, then releases the receipt and — **after a terminal revision only** —
   disposes of the task's older owed revisions. A follow-up that fails is listed in `issues`, never a
   failure, since the decision stands. **`dispose(reason)`** releases the receipt first (the broker
-  refuses to dispose of what an issued receipt names), then disposes. **`abandon`** only releases.
-- **A receipt a crash left behind** still names the revision, so after a restart the revision is
-  presented again and can be acknowledged, but **`dispose` is refused until that receipt expires**
-  (the broker's `receiptLifetimeMs`). A host that is its subscription's only consumer can list
-  `IBoundTaskDelivery.issued()` at start-up and `abandon` what an earlier process issued.
+  refuses to dispose of what an issued receipt names), then disposes; a disposal that fails after the
+  release has spent the object, and the revision comes back from `next`. **`abandon`** only releases.
+- **Receipts a crash leaves behind — release them at start-up** (the loop above). Until abandoned, a
+  stale receipt pins every revision it names: each is presented and can be acknowledged, but `dispose`
+  of it fails; the superseded disposal after a terminal discharge fails (an `issue`), so older
+  revisions come one by one; the task cannot be archived and `cleanup` cannot prune what it names —
+  **and expiry alone does not end that**: an expired receipt stops pinning only when the next receipt
+  issue or disposal on the subscription evicts it. It also holds one of the subscription's 32
+  outstanding-receipt slots, so repeated crashes leave `next` refused with `backpressure`.
+
+**`IBoundTaskDelivery.prepare(budget?, { currentState? })`.** `'include'` (default) renders the
+selection's current tasks beside what is owed; a current task owed nothing renders with no update ids
+and ranks by its own state, so under a small item budget it can take every slot. `'owed-only'`
+renders owed revisions only. Any other value is `invalid`.
 
 **`DeferredObligations.create({ broker, principal, authorization, scope, idPrefix, roles, codes?,
 namespaces?, schedule?, operationBudget?, guard? })`** — a durable retry obligation is a
@@ -771,16 +789,20 @@ namespaces?, schedule?, operationBudget?, guard? })`** — a durable retry oblig
   a creation left as a pending registration is **resumed from the request the repository stored**
   (`resumePendingRegistration`), so the replay need not repeat the title. Every write's operation id
   is `<taskId>.r<expectedRevision>` (or `.create`, `.archive`), so a write whose response was lost
-  replays rather than applying twice. A waiting obligation is answered as it is; a settled one,
-  `'settled'`.
+  replays rather than applying twice. A waiting obligation is answered as it is; a settled one with
+  its terminal status (`succeeded` delivered, `cancelled` ended). A `pending` task under the id is
+  adopted only if it is a tracked task carrying exactly the helper's scope plus `deferral.scopes`.
 - **`stateOf`**, **`wait(obligation, notBefore, { changes?, attention?, summary? })`**,
   **`succeed(obligation, summary)`**, **`cancel(obligation, reason)`** (each terminal step archives),
   and **`merged(obligation, into)`** — cancelled under the `merged` code with a reference to `into`,
-  which is read again first and must be waiting and owe every change.
+  which is read again first and must be waiting, owed to the **same role**, and owe every change.
 - **`abandonPending(before)`** ends only obligations `pending` before the cutoff, each cancel carrying
   the revision it was listed at, so one a replayed deferral set waiting in between is left alone and
   reported. **`due(now)`** reads `queryDue` — never a scan; **`waiting()`**; **`archiveSettled()`**.
-  Sweeps report per-task `issues` and carry on.
+  Sweeps touch only tasks that read as the helper's obligations (an id it makes, kind `fgv.tracked`),
+  report per-task `issues` and carry on. A creation interrupted *inside* the repository — a pending
+  registration — is not a task and is not swept: replaying `defer` resumes it, and the trusted
+  `repository.outstanding()` lists it.
 - **The operation budget.** An obligation reports `waitsRemaining` — the per-task operation limit,
   less the two closeout slots the repository holds, less its revision — and `wait` refuses, writing
   nothing, at zero; an identical wait writes nothing at all. **`retry(obligation, now)`** is pure

@@ -18,13 +18,18 @@ summary:
     generalised into options, and nothing that bypasses authorization.
   shipped: >
     TaskDeliveryPump, DeferredObligations and ITaskHostWriteGuard in the host packlet;
-    IBoundTaskView.queryDue (an authorized, projected due query over the due index) with its
-    converter; ids, codes, namespaces, schedule and budget as options; a pure retry() advising wait,
-    hold or expire; deterministic operation ids so a lost response replays; a check-then-act table,
-    a 22-row revert matrix each shown red, and every contract test in the ask mapped to a test.
+    IBoundTaskView.queryDue (an authorized, projected due query over the due index) and
+    IBoundTaskDelivery.prepare's owed-only mode, which the pump uses so a task owed nothing never
+    blocks another; ids, codes, namespaces, schedule and budget as options; a pure retry() advising
+    wait, hold or expire; deterministic operation ids so a lost response replays; decisions read from
+    the pump's own record; obligations adopted and swept only when they read as the helper's own; a
+    check-then-act table, revert matrices for the build and for review round 1, each row shown red,
+    and every contract test in the ask mapped to a test.
   diverged: >
     IBoundTaskView was widened with queryDue, since the due index was reachable only through the
-    repository and the brief required the due pass to be both authorized and indexed. A committed
+    repository and the brief required the due pass to be both authorized and indexed. Review round 1
+    found the pump stuck behind current tasks owed nothing; prepare gained an owed-only mode and the
+    stale-render loop the brief described was removed as unnecessary. A committed
     acknowledgement succeeds with its follow-up failures as issues rather than failing. The schedule
     advises rather than holds, keeping no resident state. merged re-reads its survivor, and the
     sweeps report per task and carry on; neither is in the PersonAIlity source. No stale-receipt
