@@ -118,17 +118,10 @@ export async function createNative(
   // A creation that finds, inside the writer, that the task went live after it was authorized —
   // a concurrent identical creation or resume won — commits nothing and runs again, which takes the
   // existing-record path and its checks against the record as committed.
+  // A live task never becomes absent again, so the second run always takes the existing-record path.
   const first = await _createOnce(core, ctx, input, list, committedScopes);
   return first.isSuccess() && first.value === undefined
-    ? (await _createOnce(core, ctx, input, list, committedScopes)).onSuccess((again) =>
-        again !== undefined
-          ? ok(again)
-          : taskFailure<ITaskMutationResult>(
-              `create: the task kept changing while it was authorized; retry`,
-              'conflict',
-              'safe'
-            )
-      )
+    ? createNative(core, ctx, input, list, committedScopes)
     : first.onSuccess((created) => ok(created!));
 }
 
@@ -517,16 +510,14 @@ export async function registerExternal(
   if (qualified.isFailure()) {
     return propagate(qualified);
   }
-  const first = await _registerExternalOnce(core, key.value, request, converted.value.json);
-  // Went live under it: run again, which finds the live registration and replays it.
-  const registered =
-    first.isSuccess() && first.value === undefined
-      ? await _registerExternalOnce(core, key.value, request, converted.value.json)
-      : first;
+  const registered = await _registerExternalOnce(core, key.value, request, converted.value.json);
   if (registered.isFailure()) {
     return propagate(registered);
   }
-  // A second attempt sees the live task, so it replays or conflicts; it never finds it moving again.
+  // Went live under it: run again, which finds the live registration and replays it or conflicts.
+  if (registered.value === undefined) {
+    return registerExternal(core, principal, input);
+  }
   const read = await core.repository.read(taskId);
   if (read.isFailure()) {
     return propagate(read);

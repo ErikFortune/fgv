@@ -5,7 +5,13 @@
 
 import '@fgv/ts-utils-jest';
 import { FileTree } from '@fgv/ts-json-base';
-import { IBoundTaskWriter, ICreateTrackedTask, ITaskMutationResult, TaskResult } from '../../../index';
+import {
+  IBoundTaskWriter,
+  ICreateTrackedTask,
+  ITaskMutationResult,
+  TaskBroker,
+  TaskResult
+} from '../../../index';
 import { FaultyRoot } from '../../helpers/faultyRoot';
 import {
   IBrokerHarness,
@@ -199,5 +205,46 @@ describe('resumeNative and a pending external registration', () => {
       /external registration/,
       code('invalid')
     );
+  });
+});
+
+describe('an identical external registration that loses a race', () => {
+  test('replays the registration the winner committed', async () => {
+    const h = await sourceHarness();
+    h.executor.addJob('j1');
+    const register = {
+      taskId: tid('j1'),
+      operationId: op('register-j1'),
+      kind: jobKind,
+      detailVersion: 1,
+      title: 'j1',
+      scopes: [alpha],
+      binding: h.executor.binding('j1'),
+      recovery: 'reattach'
+    };
+    // Hold the first registration inside the writer until the second has read and found nothing.
+    const gate: { release?: () => void; held: boolean } = { held: true };
+    const broker = TaskBroker.create({
+      repository: h.repository,
+      environment: h.env,
+      sources: [h.source],
+      writeGuard: {
+        guard: async <T>(write: () => Promise<TaskResult<T>>): Promise<TaskResult<T>> => {
+          if (gate.held) {
+            gate.held = false;
+            await new Promise<void>((resolve) => (gate.release = resolve));
+          }
+          return write();
+        }
+      }
+    }).orThrow();
+    const firstCall = broker.registerExternal('host', register);
+    await new Promise((resolve) => setImmediate(resolve));
+    const secondCall = broker.registerExternal('host', register);
+    await new Promise((resolve) => setImmediate(resolve));
+    gate.release!();
+    const [first, second] = await Promise.all([firstCall, secondCall]);
+    expect(first).toSucceedAndSatisfy((r) => expect(r.state).toBe('unresolved'));
+    expect(second).toSucceedAndSatisfy((r) => expect(r.state).toBe('unresolved'));
   });
 });
