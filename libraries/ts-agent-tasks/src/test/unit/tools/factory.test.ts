@@ -560,6 +560,7 @@ describe('execute re-validates its arguments with no harness in front', () => {
         calls.push('inspect');
         return view.inspect(id);
       },
+      queryDue: async (request) => view.queryDue(request),
       inspectStop: async (request) => view.inspectStop(request)
     };
     tools = taskTools({ view: counting });

@@ -388,6 +388,7 @@ describe('a failure tells the model a code, never host text', () => {
       principal: 'alice',
       query: misbehave,
       inspect: misbehave,
+      queryDue: misbehave,
       inspectStop: misbehave
     };
     const logger = new Logging.InMemoryLogger('detail');
@@ -415,6 +416,7 @@ describe('a failure tells the model a code, never host text', () => {
         principal: 'alice',
         query: leaky(code),
         inspect: leaky(code),
+        queryDue: leaky(code),
         inspectStop: leaky(code)
       };
       const tools = taskTools({ view, logger });
@@ -431,6 +433,7 @@ describe('a failure tells the model a code, never host text', () => {
       principal: 'alice',
       query: async () => fail<never>('at /srv/secret') as TaskResult<never>,
       inspect: async () => fail<never>('at /srv/secret') as TaskResult<never>,
+      queryDue: async () => fail<never>('at /srv/secret') as TaskResult<never>,
       inspectStop: async () => fail<never>('at /srv/secret') as TaskResult<never>
     };
     const tools = taskTools({ view });
@@ -449,6 +452,7 @@ describe('what a page carries besides the rendered text is checked, not trusted'
       principal: 'alice',
       query: async () => succeedWithDetail(page),
       inspect: unused,
+      queryDue: unused,
       inspectStop: unused
     };
   }
@@ -499,7 +503,13 @@ describe('a view is any IBoundTaskView: every field it returns to the model is c
         code: secret as unknown as TaskFailureCode,
         retry: 'safe'
       });
-    const view: IBoundTaskView = { principal: 'alice', query: forged, inspect: forged, inspectStop: forged };
+    const view: IBoundTaskView = {
+      principal: 'alice',
+      query: forged,
+      inspect: forged,
+      queryDue: forged,
+      inspectStop: forged
+    };
     const tools = taskTools({ view });
     expect(await query(tools, {})).toFailWith(/^task_query: the request failed$/);
     expect(await inspect(tools, { taskId: 't1' })).toFailWith(/^task_inspect: the request failed$/);
@@ -524,6 +534,7 @@ describe('a view is any IBoundTaskView: every field it returns to the model is c
         principal: 'alice',
         query: async () => succeedWithDetail(page),
         inspect: unused,
+        queryDue: unused,
         inspectStop: unused
       };
       const result = await query(taskTools({ view }), {});
@@ -548,6 +559,7 @@ describe('a view is any IBoundTaskView: every field it returns to the model is c
         principal: 'alice',
         query: unused,
         inspect: async () => succeedWithDetail(inspection),
+        queryDue: unused,
         inspectStop: unused
       };
       const result = await inspect(taskTools({ view }), { taskId: 't1' });
@@ -562,6 +574,7 @@ describe('a view is any IBoundTaskView: every field it returns to the model is c
       principal: 'alice',
       query: unused,
       inspect: async () => succeedWithDetail(atCap),
+      queryDue: unused,
       inspectStop: unused
     };
     expect(await inspect(taskTools({ view }), { taskId: 't1' })).toSucceed();
@@ -576,6 +589,7 @@ describe("a view's whole answer is converted before anything reads it", () => {
     principal: 'alice',
     query: async () => succeedWithDetail(page as IBoundTaskPage),
     inspect: unused,
+    queryDue: unused,
     inspectStop: unused
   });
   const base: IBoundTaskPage = {
@@ -599,6 +613,7 @@ describe("a view's whole answer is converted before anything reads it", () => {
         principal: 'alice',
         query: unused,
         inspect: async () => succeedWithDetail(forged as unknown as TaskInspection),
+        queryDue: unused,
         inspectStop: unused
       };
       expect(await inspect(taskTools({ view }), { taskId: 't1' })).toFailWith(REFUSED_INSPECT);
