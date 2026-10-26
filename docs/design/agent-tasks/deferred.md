@@ -224,7 +224,8 @@ Package placement and public signatures remain decisions for that later design.
 - **Provider compatibility:** resolved for the bounded model/tool runner. The
   [continuation contract](../../../libraries/ts-extras/src/packlets/ai-assist/toolTypes.ts)
   is cumulative and requires replacement; the reference application's own loop was
-  reworked to replace rather than accumulate before extraction, and
+  reworked to replace rather than accumulate before extraction (personaility commit
+  `599c50bd`), and
   `AiAssist.runClientToolLoop` (in
   [`clientToolLoop.ts`](../../../libraries/ts-extras/src/packlets/ai-assist/clientToolLoop.ts))
   now owns that contract, returning the latest cumulative tail so a host that resumes

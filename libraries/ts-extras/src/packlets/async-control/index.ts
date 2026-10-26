@@ -30,5 +30,6 @@ export {
   MAX_DEADLINE_MS,
   raceStopConditions,
   type ScheduleTimer,
-  type StopDetail
+  type StopDetail,
+  type StopReason
 } from './stopConditions';

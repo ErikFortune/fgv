@@ -146,6 +146,36 @@ export function anthropicTextSse(
   ];
 }
 
+/** A Gemini round in which the model calls each of `names`, in order. Gemini assigns no call ids. */
+export function geminiToolCallsSse(names: ReadonlyArray<string>): string[] {
+  return [
+    `data: ${JSON.stringify({
+      candidates: [
+        {
+          content: { parts: names.map((name) => ({ functionCall: { name, args: { query: 'q' } } })) },
+          finishReason: 'STOP'
+        }
+      ]
+    })}\n\n`
+  ];
+}
+
+export function makeGeminiDescriptor(): IAiProviderDescriptor {
+  return {
+    id: 'google-gemini',
+    label: 'Gemini',
+    buttonLabel: 'Gemini',
+    needsSecret: true,
+    apiFormat: 'gemini',
+    baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
+    defaultModel: 'gemini-2.5-flash',
+    supportedTools: ['web_search'],
+    corsRestricted: false,
+    streamingCorsRestricted: false,
+    acceptsImageInput: false
+  };
+}
+
 export function makeAnthropicDescriptor(): IAiProviderDescriptor {
   return {
     id: 'anthropic',

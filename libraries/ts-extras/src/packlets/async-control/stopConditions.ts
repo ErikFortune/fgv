@@ -27,7 +27,7 @@ import {
 } from '@fgv/ts-utils';
 
 /**
- * Why a {@link AsyncControl.raceStopConditions} race ended without the work's own success:
+ * Why a `raceStopConditions` race ended without the work's own success:
  * - `'aborted'` — the caller's signal aborted, before or while the work ran.
  * - `'deadline'` — the deadline expired while the work ran.
  * - `'failed'` — the work failed, threw or rejected, or the conditions themselves were invalid.
@@ -36,7 +36,13 @@ import {
 export type StopDetail = 'aborted' | 'deadline' | 'failed';
 
 /**
- * Cancels a timer started by a {@link AsyncControl.ScheduleTimer}. Must be safe to call more than
+ * The two `StopDetail` values that mean a stop condition fired, rather than the work failing.
+ * @public
+ */
+export type StopReason = Exclude<StopDetail, 'failed'>;
+
+/**
+ * Cancels a timer started by a `ScheduleTimer`. Must be safe to call more than
  * once, and after the timer has fired.
  * @public
  */
@@ -50,7 +56,7 @@ export type CancelTimer = () => void;
 export type ScheduleTimer = (fn: () => void, ms: number) => CancelTimer;
 
 /**
- * The conditions under which {@link AsyncControl.raceStopConditions} stops waiting for its work.
+ * The conditions under which `raceStopConditions` stops waiting for its work.
  * @public
  */
 export interface IStopConditions {
@@ -91,11 +97,14 @@ const defaultSchedule: ScheduleTimer = (fn, ms) => {
  *
  * **Which settlement wins** is decided by which is observed first. A stop that fires after the
  * work's settlement has been observed is ignored, even through a timer whose cancel could not take
- * effect; a stop that fires before then wins, and the work's value is discarded.
+ * effect; a stop that fires before then wins, and the work's value is discarded. "Observed" lags
+ * the work's own settlement by a few microtasks, so work whose promise has already resolved can
+ * still lose to a stop that fires inside that window.
  *
  * **The work's own result passes through unchanged**: a success is a success, and a failure keeps
  * its message, with detail `'failed'`. A synchronous throw from `work` or a rejected promise is
- * captured as a `'failed'` failure, never escaped.
+ * captured as a `'failed'` failure, never escaped, and so is work that resolves to something that
+ * is not a `Result`.
  *
  * **Nothing is left behind.** The timer is cancelled and the signal listener removed on every path,
  * so a fast work leaves nothing pending. A signal already aborted on entry stops at once without
@@ -128,7 +137,7 @@ export function raceStopConditions<T>(
   return new AsyncDetailedResult(_race(work, signal, deadlineMs, schedule));
 }
 
-function _stopped<T>(detail: 'aborted' | 'deadline'): DetailedResult<T, StopDetail> {
+function _stopped<T>(detail: StopReason): DetailedResult<T, StopDetail> {
   return failWithDetail<T, StopDetail>(
     detail === 'aborted' ? 'stopped: the caller aborted' : 'stopped: the deadline expired',
     detail
@@ -151,7 +160,7 @@ function _race<T>(
   const stopped = new Promise<DetailedResult<T, StopDetail>>((resolve) => {
     resolveStop = resolve;
   });
-  const stop = (detail: 'aborted' | 'deadline'): void => {
+  const stop = (detail: StopReason): void => {
     if (settled || controller.signal.aborted) {
       return;
     }
@@ -185,7 +194,16 @@ function _race<T>(
     .thenOnSuccess((pending) => pending)
     .then((result) => {
       settled = true;
-      return result.withFailureDetail<StopDetail>('failed');
+      // A `work` that resolves to something other than a `Result` (an untyped caller) has no
+      // `withFailureDetail`; report it as a failure rather than letting the TypeError escape as a
+      // detail-less rejection.
+      const detailed = captureResult(() => result.withFailureDetail<StopDetail>('failed'));
+      return detailed.isSuccess()
+        ? detailed.value
+        : failWithDetail<T, StopDetail>(
+            `raceStopConditions: work did not resolve to a Result: ${detailed.message}`,
+            'failed'
+          );
     });
   return Promise.race([working, stopped]).finally(release);
 }

@@ -35,7 +35,7 @@ import {
 } from '@fgv/ts-utils';
 import { type JsonObject } from '@fgv/ts-json-base';
 
-import { raceStopConditions, type ScheduleTimer, type StopDetail } from '../async-control';
+import { raceStopConditions, type ScheduleTimer, type StopDetail, type StopReason } from '../async-control';
 import { type IAiStreamEvent } from './model';
 import {
   executeClientToolTurn,
@@ -49,7 +49,7 @@ import {
 import { type IAiCompletionUsage } from './usageTypes';
 
 /**
- * How a {@link AiAssist.runClientToolLoop} loop ended, when it did not fail:
+ * How a `runClientToolLoop` loop ended, when it did not fail:
  * - `'completed'` — a round returned no continuation: the model finished.
  * - `'round-limit'` — `maxRounds` rounds ran and the model was still asking for tools.
  * - `'aborted'` — the caller's signal aborted.
@@ -59,7 +59,7 @@ import { type IAiCompletionUsage } from './usageTypes';
 export type ClientToolLoopState = 'completed' | 'round-limit' | 'aborted' | 'deadline';
 
 /**
- * One completed round of a {@link AiAssist.runClientToolLoop} loop.
+ * One completed round of a `runClientToolLoop` loop.
  * @public
  */
 export interface IClientToolRound {
@@ -75,8 +75,9 @@ export interface IClientToolRound {
   /** The tool calls made this round, each with its `durationMs` (empty on a completing round). */
   readonly calls: ReadonlyArray<IAiClientToolCallSummary>;
   /**
-   * The round's elapsed time on the loop's clock with every call's `durationMs` subtracted,
-   * floored at zero: the time attributable to the provider rather than to tools.
+   * The round's elapsed time on the loop's clock minus the sum of its calls' `durationMs`, floored
+   * at zero. Everything that is not tool time counts — the provider, and also the time spent in
+   * synchronous `observer.event` hooks during the drain.
    */
   readonly providerDurationMs: number;
   /** The round's token usage, when the provider reported it. Never a fabricated zero. */
@@ -86,7 +87,25 @@ export interface IClientToolRound {
 }
 
 /**
- * The outcome of a {@link AiAssist.runClientToolLoop} loop that did not fail.
+ * A tool call the round in flight at a stop had already handed off for dispatch, whose result the
+ * runner never saw: it saw the call's `client-tool-call-done` event and no `client-tool-result`.
+ *
+ * @remarks
+ * The tool may have run, may still be running, or may have been declined because the turn had
+ * aborted — the runner cannot tell which. Its effects, if any, are recorded in no round.
+ * @public
+ */
+export interface IClientToolUnsettledCall {
+  /** The name of the tool the model called. */
+  readonly toolName: string;
+  /** Provider-assigned call identifier (absent for Gemini). */
+  readonly callId?: string;
+  /** The call's arguments as the model sent them. */
+  readonly args: JsonObject;
+}
+
+/**
+ * The outcome of a `runClientToolLoop` loop that did not fail.
  * @public
  */
 export interface IClientToolLoopOutcome {
@@ -103,12 +122,23 @@ export interface IClientToolLoopOutcome {
    * the continuation yourself. After `'completed'` it is the tail the final round was sent (the
    * final round's own text is its `fullText`). After a stop it is the tail of the last round that
    * completed before the stop.
+   *
+   * **Resuming after a stop may re-request tools that already ran.** The tail does not include the
+   * round that was in flight at the stop, so the model sees none of that round's calls and may make
+   * them again. Those calls are listed in `unsettledCalls`; making a repeated call safe
+   * (idempotency, or reconciling against `unsettledCalls`) is the host's responsibility.
    */
   readonly continuationMessages?: ReadonlyArray<JsonObject>;
+  /**
+   * Present after `'aborted'` and `'deadline'` only: the calls the round in flight at the stop had
+   * already handed off for dispatch without the runner seeing their result, in arrival order.
+   * Empty when the stop came between rounds or before any call. See `IClientToolUnsettledCall`.
+   */
+  readonly unsettledCalls?: ReadonlyArray<IClientToolUnsettledCall>;
 }
 
 /**
- * The detail a failed {@link AiAssist.runClientToolLoop} call carries.
+ * The detail a failed `runClientToolLoop` call carries.
  * @public
  */
 export interface IClientToolLoopFailureDetail {
@@ -117,9 +147,10 @@ export interface IClientToolLoopFailureDetail {
 }
 
 /**
- * Read-only hooks into a running loop. Both are synchronous and isolated: a hook that throws is
- * logged at `warn` through the turn's `logger` and cannot change the outcome. Neither is called
- * after the loop has been stopped.
+ * Read-only hooks into a running loop. Both are synchronous. A hook that **throws** is isolated:
+ * the throw is logged at `warn` through the turn's `logger` and does not change the outcome.
+ * Neither is called after the loop has been stopped. A hook that aborts the caller's own `signal`
+ * is not isolated from — that is a caller-driven stop, and the loop ends `'aborted'`.
  * @public
  */
 export interface IClientToolLoopObserver {
@@ -130,7 +161,7 @@ export interface IClientToolLoopObserver {
 }
 
 /**
- * Parameters for {@link AiAssist.runClientToolLoop}: one client-tool turn's parameters, which ride
+ * Parameters for `runClientToolLoop`: one client-tool turn's parameters, which ride
  * every round unchanged, plus the loop's own bounds.
  *
  * @remarks
@@ -164,6 +195,8 @@ class ClientToolLoop {
   private readonly _clock: () => number;
   private readonly _rounds: IClientToolRound[] = [];
   private _tail: ReadonlyArray<JsonObject> | undefined;
+  /** Calls the current round has handed off whose result has not been seen. */
+  private _unsettled: IClientToolUnsettledCall[] = [];
 
   public constructor(
     turnParams: Omit<IExecuteClientToolTurnParams, 'continuationMessages' | 'signal'>,
@@ -196,6 +229,7 @@ class ClientToolLoop {
       }
       const { record, turn } = result.value;
       this._rounds.push(record);
+      this._unsettled = [];
       this._tail = turn.continuation?.messages ?? this._tail;
       this._notify('round', () => this._observer?.round?.(record));
       if (turn.continuation === undefined) {
@@ -213,9 +247,13 @@ class ClientToolLoop {
       return succeedWithDetail(result.value);
     }
     if (result.detail === 'aborted' || result.detail === 'deadline') {
-      return succeedWithDetail(this._outcome(result.detail));
+      return succeedWithDetail(this._stoppedOutcome(result.detail));
     }
     return failWithDetail(result.message, { rounds: [...this._rounds] });
+  }
+
+  private _stoppedOutcome(state: StopReason): IClientToolLoopOutcome {
+    return { ...this._outcome(state), unsettledCalls: [...this._unsettled] };
   }
 
   private _outcome(state: ClientToolLoopState): IClientToolLoopOutcome {
@@ -236,6 +274,7 @@ class ClientToolLoop {
     roundSignal: AbortSignal
   ): Promise<Result<{ record: IClientToolRound; turn: IAiClientToolTurnResult }>> {
     const startedAt = this._clock();
+    this._unsettled = [];
     return executeClientToolTurn({
       ...this._turnParams,
       signal: roundSignal,
@@ -246,6 +285,7 @@ class ClientToolLoop {
           if (roundSignal.aborted) {
             break;
           }
+          this._track(event);
           this._notify('event', () => this._observer?.event?.(round, event));
         }
         return roundSignal.aborted ? fail<IAiClientToolTurnResult>('runClientToolLoop: stopped') : nextTurn;
@@ -264,6 +304,26 @@ class ClientToolLoop {
         };
         return succeed({ record, turn });
       });
+  }
+
+  /** Keeps `_unsettled` as the calls handed off this round whose result has not arrived. */
+  private _track(event: IAiStreamEvent): void {
+    if (event.type === 'client-tool-call-done') {
+      this._unsettled.push({
+        toolName: event.toolName,
+        ...(event.callId !== undefined ? { callId: event.callId } : {}),
+        args: event.args
+      });
+    } else if (event.type === 'client-tool-result') {
+      // By call id when there is one; Gemini omits ids, and pairs by name in arrival order.
+      const index = this._unsettled.findIndex((c) =>
+        event.callId !== undefined
+          ? c.callId === event.callId
+          : c.callId === undefined && c.toolName === event.toolName
+      );
+      // `findIndex` is -1 when nothing matches, which removes nothing.
+      this._unsettled = this._unsettled.filter((__c, i) => i !== index);
+    }
   }
 
   private _notify(hook: 'round' | 'event', call: () => void): void {
@@ -287,11 +347,13 @@ class ClientToolLoop {
  *   `'deadline'` succeed with every completed round; a failed round fails the call, with the
  *   completed rounds as detail. A failed round is not retried.
  * - **A stop releases the caller at once.** The whole loop and each round run under
- *   `AsyncControl.raceStopConditions`, so a tool that ignores its signal cannot hold the caller.
+ *   `raceStopConditions`, so a tool that ignores its signal cannot hold the caller.
  *   On a stop the orphaned round's event stream is no longer drained past the event in hand and
  *   its next turn is never awaited, and no further round starts. **Side effects already in flight
  *   may still land**: a tool that was running keeps running unless it honours its signal, and its
- *   writes stand; only its result is discarded.
+ *   writes stand; only its result is discarded. Such calls are reported in the outcome's
+ *   `unsettledCalls`, and a host that resumes from `continuationMessages` may see the model
+ *   request them again — idempotency is the host's responsibility.
  * - **Every round carries the same parameters**; duplicate tool names, schema pre-flight and model
  *   choice are `executeClientToolTurn`'s, so they surface as a failure of round 1.
  * - **Truncation is reported per round, never resolved.**

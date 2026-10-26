@@ -140,6 +140,11 @@ describe('AsyncControl.raceStopConditions', () => {
       expect(result).toFailWithDetail(/threw at once/, 'failed');
     });
 
+    test('work that resolves to something other than a Result is a failed result', async () => {
+      const untyped = (async () => 'not a result') as unknown as () => Promise<Result<string>>;
+      expect(await raceStopConditions(untyped, {})).toFailWithDetail(/did not resolve to a Result/, 'failed');
+    });
+
     test('a rejected work promise is captured as failed', async () => {
       const result = await raceStopConditions<string>(() => Promise.reject(new Error('rejected')), {});
       expect(result).toFailWithDetail(/rejected/, 'failed');

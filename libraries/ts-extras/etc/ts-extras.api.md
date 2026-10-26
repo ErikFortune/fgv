@@ -201,6 +201,7 @@ declare namespace AiAssist {
         IClientToolLoopOutcome,
         IClientToolLoopParams,
         IClientToolRound,
+        IClientToolUnsettledCall,
         runClientToolLoop,
         aiProviderId,
         aiServerToolType,
@@ -429,7 +430,8 @@ declare namespace AsyncControl {
         MAX_DEADLINE_MS,
         raceStopConditions,
         ScheduleTimer,
-        StopDetail
+        StopDetail,
+        StopReason
     }
 }
 export { AsyncControl }
@@ -504,8 +506,6 @@ function callProxiedImageGeneration(proxyUrl: string, params: IProviderImageGene
 // @public
 function callProxiedListModels(proxyUrl: string, params: IProviderListModelsParams): Promise<Result<ReadonlyArray<IAiModelInfo>>>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
 // @public
 type CancelTimer = () => void;
 
@@ -523,8 +523,6 @@ function classifyAddress(address: string): Result<IClassifiedAddress>;
 // @public
 function classifyJsonParseFailure(text: string): JsonParseFailureReason;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
 // @public
 type ClientToolLoopState = 'completed' | 'round-limit' | 'aborted' | 'deadline';
 
@@ -1691,8 +1689,6 @@ interface IClassifiedAddress {
     readonly family: AddressFamily;
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
 // @public
 interface IClientToolLoopFailureDetail {
     readonly rounds: ReadonlyArray<IClientToolRound>;
@@ -1704,17 +1700,14 @@ interface IClientToolLoopObserver {
     round?(round: IClientToolRound): void;
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
 // @public
 interface IClientToolLoopOutcome {
     readonly continuationMessages?: ReadonlyArray<JsonObject>;
     readonly rounds: ReadonlyArray<IClientToolRound>;
     readonly state: ClientToolLoopState;
+    readonly unsettledCalls?: ReadonlyArray<IClientToolUnsettledCall>;
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
 // @public
 interface IClientToolLoopParams extends Omit<IExecuteClientToolTurnParams, 'continuationMessages'> {
     readonly deadlineMs?: number;
@@ -1723,8 +1716,6 @@ interface IClientToolLoopParams extends Omit<IExecuteClientToolTurnParams, 'cont
     readonly schedule?: ScheduleTimer;
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
 // @public
 interface IClientToolRound {
     readonly calls: ReadonlyArray<IAiClientToolCallSummary>;
@@ -1734,6 +1725,13 @@ interface IClientToolRound {
     readonly toolConflicts: IAiToolConflictReport;
     readonly truncated: boolean;
     readonly usage?: IAiCompletionUsage;
+}
+
+// @public
+interface IClientToolUnsettledCall {
+    readonly args: JsonObject;
+    readonly callId?: string;
+    readonly toolName: string;
 }
 
 // @public
@@ -1899,7 +1897,6 @@ interface IExecuteClientToolTurnParams extends IChatRequest {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly cache?: IAiCacheRequest;
     readonly clientTools: ReadonlyArray<IAiClientTool>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly clock?: () => number;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly continuationMessages?: ReadonlyArray<JsonObject>;
@@ -2663,8 +2660,6 @@ function isResponsesOnlyModel(descriptor: IAiProviderDescriptor, modelId: string
 // @public
 function isThinkingRequiredModel(descriptor: IAiProviderDescriptor, modelId: string): boolean;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
 // @public
 interface IStopConditions {
     readonly deadlineMs?: number;
@@ -3467,10 +3462,11 @@ const SMART_JSON_PROMPT_HINT: string;
 // @public
 function spkiToRawX25519(spki: Uint8Array): Result<Uint8Array>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
 // @public
 type StopDetail = 'aborted' | 'deadline' | 'failed';
+
+// @public
+type StopReason = Exclude<StopDetail, 'failed'>;
 
 // @public
 type StructuredOutputEnforcement = 'none' | 'json-mode' | 'schema' | 'tool-forced';

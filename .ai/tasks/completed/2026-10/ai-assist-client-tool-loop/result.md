@@ -166,3 +166,49 @@ Logs under the worktree's untracked `.gate-logs/`, graded by grep, not exit code
 | prettier 2.8.8 `--check` on every changed `.ts` / `.json` / `.md` | all formatted |
 | `generate-capability-feed` then `--check` | 2 targets updated, then 0 stale |
 | `verify-capability-docs` | router 23,229/24,000 chars, 107 shortcuts (longest 225/240), 0 failed |
+
+The repo-wide gates above were run at `d61e3a5ff`, before the review round below. That round's
+changes are confined to `ts-extras` and the testbed scenario, and were gated per package.
+
+## Independent review, round 1 (at `d61e3a5ff`)
+
+No P1s. Each finding, its fix, and the test that pins it:
+
+- **P2 — calls dispatched in a stopped round were invisible, so a resumed host could run a tool
+  twice.** The stop outcome (`'aborted'` / `'deadline'`) now carries
+  `unsettledCalls: ReadonlyArray<IClientToolUnsettledCall>` (`toolName`, `callId?`, `args`): every
+  `client-tool-call-done` the runner saw in the round in flight with no `client-tool-result` after
+  it. Results pair by call id, or by name in arrival order when there is none (Gemini). The list
+  resets when a round starts and when a round is recorded, and only the drain writes to it, after
+  its abort check. `continuationMessages`' remarks, the `runClientToolLoop` TSDoc, the README and
+  CAPABILITIES all say that resuming after a stop may re-request those tools and that
+  idempotency is the host's responsibility. Tests: the "unsettled calls" block in
+  `clientToolLoop.test.ts`: a write that lands after the stop is reported; a call whose result was
+  seen is not, with no call ids; a stop before any call reports none; completed and round-limit
+  carry no field. **Red:** removing the `_track(event)` call fails 3 tests; returning the stop
+  outcome without the field fails 3 (`.gate-logs/revert-review.log`).
+- **P3.1 — work resolving to a non-`Result` gave `detail: undefined`.** The settlement now goes
+  through `captureResult`, so it is a `'failed'` failure ("work did not resolve to a Result").
+  Test: "work that resolves to something other than a Result is a failed result". **Red:** without
+  the `captureResult` it fails.
+- **P3.2** — the `raceStopConditions` TSDoc now says that work that has already resolved can still
+  lose to a stop within the few-microtask "observed first" window.
+- **P3.3** — the observer TSDoc, README and CAPABILITIES now limit isolation to a hook that
+  *throws*, and say that a hook aborting the caller's signal is a caller-driven stop.
+- **P3.4** — `providerDurationMs` is documented as elapsed time minus tool time. That includes
+  synchronous `observer.event` time. Excluding hook time was not chosen: it would cost two more
+  clock reads per event, for a figure that is advisory anyway.
+- **P3.5** — the new `StopReason = Exclude<StopDetail, 'failed'>` type is exported and used for
+  `stop()`, `_stopped()` and the loop's stopped outcome.
+- **P3.6 — `dispatchCall`'s stacked checks are left as they are.** Each guard returns a different
+  `IDispatchOutcome`, and two of them sit on either side of the gate's `await`. A chained form
+  would fold the abort re-check into a continuation, where its position relative to the `await`
+  is harder to see. That position is the thing the check-then-act table pins.
+- **P3.7** — a new TECH_DEBT P3: the `onBeforeToolExecute` gate never receives the signal, so a
+  gate that hangs pins the orphaned generator. This predates the stream.
+- **P3.8** — the namespace-qualified `{@link AsyncControl…}` / `{@link AiAssist…}` links in new
+  TSDoc are now code spans. `etc/ts-extras.api.md` has the same 392 `ae-unresolved-link` lines as
+  `origin/integration/asks`, and the set of lines is identical.
+- **P3.9** — `deferred.md` cites personaility `599c50bd` for the reworked reference loop.
+- **P3.10** — the testbed scenario's final response again falls back to round 1's text when the
+  final round's text is empty.

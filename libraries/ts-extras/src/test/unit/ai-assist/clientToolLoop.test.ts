@@ -31,7 +31,9 @@ import { AiAssist, AsyncControl } from '../../..';
 import {
   anthropicTextSse,
   anthropicToolUseSse,
+  geminiToolCallsSse,
   makeAnthropicDescriptor,
+  makeGeminiDescriptor,
   makeReadable,
   makeRecallTool,
   queueSse,
@@ -289,7 +291,7 @@ describe('runClientToolLoop', () => {
       caller.abort();
       expect(await runClientToolLoop(baseParams({ signal: caller.signal }))).toSucceedAndSatisfy(
         (outcome) => {
-          expect(outcome).toEqual({ state: 'aborted', rounds: [] });
+          expect(outcome).toEqual({ state: 'aborted', rounds: [], unsettledCalls: [] });
         }
       );
       expect(fetchMock()).not.toHaveBeenCalled();
@@ -306,7 +308,11 @@ describe('runClientToolLoop', () => {
       expect(
         await runClientToolLoop(baseParams({ clientTools: [stuck], signal: caller.signal }))
       ).toSucceedAndSatisfy((outcome) => {
-        expect(outcome).toEqual({ state: 'aborted', rounds: [] });
+        expect(outcome).toEqual({
+          state: 'aborted',
+          rounds: [],
+          unsettledCalls: [{ toolName: 'recall', callId: 'toolu_1', args: { query: 'q' } }]
+        });
       });
       expect(fetchMock()).toHaveBeenCalledTimes(1);
       expect(fetchInit(0).signal?.aborted).toBe(true);
@@ -377,7 +383,7 @@ describe('runClientToolLoop', () => {
       expect(
         await runClientToolLoop(baseParams({ deadlineMs: 1000, schedule: timer.schedule, observer }))
       ).toSucceedAndSatisfy((outcome) => {
-        expect(outcome).toEqual({ state: 'deadline', rounds: [] });
+        expect(outcome).toEqual({ state: 'deadline', rounds: [], unsettledCalls: [] });
       });
     });
 
@@ -431,7 +437,7 @@ describe('runClientToolLoop', () => {
           if (log[0] === 'round') {
             expect(outcome.rounds).toHaveLength(1);
           } else {
-            expect(outcome).toEqual({ state: 'deadline', rounds: [] });
+            expect(outcome).toEqual({ state: 'deadline', rounds: [], unsettledCalls: [] });
           }
         });
         for (let i = 0; i < 20; i++) {
@@ -457,6 +463,93 @@ describe('runClientToolLoop', () => {
       ).toSucceedAndSatisfy((outcome) => expect(outcome.state).toBe('completed'));
       timer.fire();
       expect(rounds).toEqual([1]);
+    });
+  });
+
+  describe('unsettled calls', () => {
+    test('a stop reports the calls the orphaned round handed off whose result the runner never saw', async () => {
+      const caller = new AbortController();
+      const writes: string[] = [];
+      let release: () => void = () => undefined;
+      const writer = makeRecallTool(async (args) => {
+        caller.abort();
+        await new Promise<void>((resolve) => {
+          release = resolve;
+        });
+        writes.push(args.query);
+        return succeed('written');
+      });
+      const seen: string[] = [];
+      queueSse(anthropicToolUseSse([{ id: 'toolu_w', name: 'recall', args: '{"query":"w1"}' }], 'a'));
+      const result = await runClientToolLoop(
+        baseParams({
+          clientTools: [writer],
+          signal: caller.signal,
+          observer: { event: (__round, e) => seen.push(e.type) }
+        })
+      );
+      // The write lands after the stop.
+      release();
+      for (let i = 0; i < 20; i++) {
+        await new Promise((resolve) => setImmediate(resolve));
+      }
+      expect(writes).toEqual(['w1']);
+      expect(seen).not.toContain('client-tool-result');
+      expect(result).toSucceedAndSatisfy((outcome) => {
+        expect(outcome.state).toBe('aborted');
+        expect(outcome.rounds).toEqual([]);
+        expect(outcome.continuationMessages).toBeUndefined();
+        expect(outcome.unsettledCalls).toEqual([
+          { toolName: 'recall', callId: 'toolu_w', args: { query: 'w1' } }
+        ]);
+      });
+    });
+
+    test('a call whose result the runner saw is not unsettled; pairing is by name when there are no call ids', async () => {
+      const caller = new AbortController();
+      let calls = 0;
+      const tool = makeRecallTool(async () => {
+        calls += 1;
+        if (calls === 2) {
+          caller.abort();
+          return never<Result<unknown>>();
+        }
+        return succeed('found');
+      });
+      queueSse(geminiToolCallsSse(['recall', 'recall']));
+      expect(
+        await runClientToolLoop(
+          baseParams({ descriptor: makeGeminiDescriptor(), clientTools: [tool], signal: caller.signal })
+        )
+      ).toSucceedAndSatisfy((outcome) => {
+        expect(outcome.state).toBe('aborted');
+        expect(outcome.unsettledCalls).toEqual([{ toolName: 'recall', args: { query: 'q' } }]);
+      });
+    });
+
+    test('a stop before the in-flight round makes any call leaves no unsettled calls, and recorded calls are not listed', async () => {
+      const timer = manualTimer();
+      queueSse(geminiToolCallsSse(['other']));
+      queueStalledSse([]);
+      const pending = runClientToolLoop(
+        baseParams({ descriptor: makeGeminiDescriptor(), deadlineMs: 1000, schedule: timer.schedule })
+      );
+      await until(() => fetchMock().mock.calls.length === 2);
+      timer.fire();
+      expect(await pending).toSucceedAndSatisfy((outcome) => {
+        expect(outcome.state).toBe('deadline');
+        // Round 1's unknown-tool call settled and was recorded; round 2 had made no call.
+        expect(outcome.rounds.map((r) => r.calls.map((c) => c.toolName))).toEqual([['other']]);
+        expect(outcome.unsettledCalls).toEqual([]);
+      });
+    });
+
+    test('completed and round-limit outcomes carry no unsettledCalls', async () => {
+      queueSse(anthropicToolUseSse([{ id: 'toolu_1', name: 'recall' }]));
+      expect(await runClientToolLoop(baseParams({ maxRounds: 1 }))).toSucceedAndSatisfy((outcome) => {
+        expect(outcome.state).toBe('round-limit');
+        expect('unsettledCalls' in outcome).toBe(false);
+      });
     });
   });
 

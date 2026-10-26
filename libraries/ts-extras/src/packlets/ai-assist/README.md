@@ -230,11 +230,14 @@ What it guarantees:
 - **A stop releases the caller at once**, even when a tool ignores its signal. The round's signal
   is aborted, its stream is no longer drained, and no further round starts. Side effects already
   in flight may still land: a tool that was running keeps running unless it honours the signal.
+  The outcome's `unsettledCalls` lists the calls that round had handed off without the runner
+  seeing their result. Resuming from `continuationMessages` after a stop may make the model
+  request those tools again; making that safe (idempotency) is the host's responsibility.
 - **No tool starts after an abort.** `executeClientToolTurn` checks its signal before the
   `onBeforeToolExecute` gate and again before `execute`; a call it declines is reported as an
   `isError` result saying the turn was aborted.
-- **Observer hooks are read-only.** They are synchronous; a throw is logged at `warn` through
-  `logger` and cannot change the outcome.
+- **Observer hooks are synchronous.** A hook that throws is logged at `warn` through `logger` and
+  does not change the outcome; a hook that aborts the caller's own signal is a caller-driven stop.
 
 Truncation is reported per round (`truncated`) and never acted on. Model resolution, the
 duplicate-name check and schema pre-flight are `executeClientToolTurn`'s, so they surface as a

@@ -861,6 +861,25 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
 
 ## P3 — Opportunistic cleanup
 
+- **[P3] `executeClientToolTurn`'s `onBeforeToolExecute` gate never receives the turn's signal.**
+  The gate is called as `onBeforeToolExecute(tool, args)` in `dispatchCall`
+  (`libraries/ts-extras/src/packlets/ai-assist/streamingAdapters/clientToolContinuationBuilder.ts`),
+  with no way to observe an abort. A gate that waits on something slow — a human confirmation, a
+  remote policy check — keeps waiting after the turn stops, and the orphaned event generator stays
+  pinned on it. `runClientToolLoop` still releases its caller, because the round is raced, but the
+  generator and whatever the gate holds are not freed until the gate returns. This predates the
+  runner; the runner only made orphaned rounds a normal outcome.
+
+  **Trigger**: a host whose gate can wait indefinitely, or a leak report from one.
+
+  **Scope sketch**: pass `{ signal }` to the gate as a third, optional context argument, the way
+  `IAiClientTool.execute` receives it. Additive for gate implementations.
+
+  **Not a P2**: the caller is never held; only background resources are.
+
+  **Reference**: the independent review of `ai-assist-client-tool-loop`
+  (`.ai/tasks/completed/2026-10/ai-assist-client-tool-loop/result.md`).
+
 - **[P3] safer-fetch's internal `DeadlineWatch` duplicates `AsyncControl.raceStopConditions`.**
   `libraries/ts-extras/src/packlets/safer-fetch/deadline.ts` composes a caller signal with
   deadlines through its own `AbortController` and listeners, and races a promise against them. The

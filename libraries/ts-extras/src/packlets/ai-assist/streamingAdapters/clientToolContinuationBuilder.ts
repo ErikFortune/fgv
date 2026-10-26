@@ -603,8 +603,8 @@ export interface IExecuteClientToolTurnParams extends IChatRequest {
    */
   readonly cache?: IAiCacheRequest;
   /**
-   * Monotonic clock in milliseconds that each call's
-   * {@link AiAssist.IAiClientToolCallSummary.durationMs} is measured with. Defaults to
+   * Monotonic clock in milliseconds that each call's `IAiClientToolCallSummary.durationMs` is
+   * measured with. Defaults to
    * `performance.now`; inject one to make timing deterministic in tests.
    */
   readonly clock?: () => number;

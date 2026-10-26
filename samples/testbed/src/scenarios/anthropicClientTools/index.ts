@@ -259,7 +259,9 @@ const cliImpl: ICliScenarioImpl = {
 
     const calls = outcome.rounds.flatMap((r) => r.calls);
     const clientToolCallCount = calls.length;
-    const finalResponse = outcome.rounds[outcome.rounds.length - 1]?.fullText ?? '';
+    // The final round's text, falling back to round 1's when the final round said nothing.
+    const lastText = outcome.rounds[outcome.rounds.length - 1]?.fullText ?? '';
+    const finalResponse = lastText.length > 0 ? lastText : outcome.rounds[0]?.fullText ?? '';
 
     context.logger.info('');
     context.logger.info('=== FINAL RESPONSE ===');
