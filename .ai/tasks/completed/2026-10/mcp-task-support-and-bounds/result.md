@@ -200,3 +200,13 @@ Side effect to note: every SDK call now receives a `signal`, the per-call one, e
 gave none. Three unit tests that pinned the exact SDK options (`{}`) now expect
 `{ signal: expect.any(AbortSignal) }`. `ISdkRequestOptions.signal` is required, and the connect race
 always links it.
+
+### Round-1 gates, on the merged tree
+
+Run on `c7143bf30`, which includes #755 and #756. Grading is the same as above.
+
+- `change --verify`: exit 0. Feed `--check` and `verify-capability-docs`: both pass.
+- `rush rebuild`: exit 0, `SUCCESS: 39 operations`. Errors 0. The only warning is the symlink notice.
+- `rush test`: errors 0, and 37 of 38 operations succeeded. One `ts-res-cli` test failed: `CLI Configuration Tests › … test consistent output by building same input twice`, which is a known load-sensitive test. Re-running `ts-res-cli` on its own gave exit 0, 0 failures and 0 errors.
+- `rushx build` / `lint` / `test` in `ts-extras-mcp`, `ts-extras` and `samples/testbed`: every exit 0, every error count 0, every warning count 0.
+- Coverage is 100% in both libraries.
