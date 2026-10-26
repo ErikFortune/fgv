@@ -1,7 +1,7 @@
 id: async-control-write-gate
 status: shipped
 packages: ['@fgv/ts-extras', '@fgv/ts-agent-tasks']
-prs: [TBD]
+prs: [761]
 openPrs: []
 opened: 2026-10-26
 closed: 2026-10-26

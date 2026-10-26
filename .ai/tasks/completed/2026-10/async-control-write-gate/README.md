@@ -1,6 +1,6 @@
 # async-control-write-gate — one switch every guarded write consults
 
-**Shipped**: 2026-10-26 into `integration/asks` via #TBD.
+**Shipped**: 2026-10-26 into `integration/asks` via #761.
 
 Packages: `@fgv/ts-extras` (`async-control` packlet) and `@fgv/ts-agent-tasks` (`broker`, `types`).
 Origin: personaility#698 (fgv-ask), slice B-6. It generalises personaility's `IngestionStopSignal`.
