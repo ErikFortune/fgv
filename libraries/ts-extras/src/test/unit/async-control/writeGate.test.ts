@@ -355,10 +355,12 @@ describe('AsyncControl.WriteGate', () => {
       const g = gate();
       const held = (await g.pause(10)).orThrow();
       const order: string[] = [];
-      const write = (name: string) => async (): Promise<Result<string>> => {
-        order.push(name);
-        return succeed(name);
-      };
+      const write =
+        (name: string): (() => Promise<Result<string>>) =>
+        async (): Promise<Result<string>> => {
+          order.push(name);
+          return succeed(name);
+        };
       const a = g.guard(write('a'));
       const b = g.guard(write('b'));
       await flush();
