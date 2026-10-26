@@ -4,6 +4,7 @@
 
 ```ts
 
+import { AsyncDetailedResult } from '@fgv/ts-utils';
 import { Brand } from '@fgv/ts-utils';
 import { Conversion } from '@fgv/ts-utils';
 import { Converter } from '@fgv/ts-utils';
@@ -194,6 +195,14 @@ declare namespace AiAssist {
         IExecuteClientToolTurnParams,
         IExecuteClientToolTurnResult,
         IToolExecutionDecision,
+        ClientToolLoopState,
+        IClientToolLoopFailureDetail,
+        IClientToolLoopObserver,
+        IClientToolLoopOutcome,
+        IClientToolLoopParams,
+        IClientToolOrphanedCall,
+        IClientToolRound,
+        runClientToolLoop,
         aiProviderId,
         aiServerToolType,
         aiWebSearchToolConfig,
@@ -414,6 +423,19 @@ const ARGON2ID_PASSPHRASE: IArgon2idParams;
 // @public
 const argon2idKeyDerivationParams: Converter<IArgon2idKeyDerivationParams>;
 
+declare namespace AsyncControl {
+    export {
+        CancelTimer,
+        IStopConditions,
+        MAX_DEADLINE_MS,
+        raceStopConditions,
+        ScheduleTimer,
+        StopDetail,
+        StopReason
+    }
+}
+export { AsyncControl }
+
 // @public
 const base64String: Converter<string>;
 
@@ -484,6 +506,9 @@ function callProxiedImageGeneration(proxyUrl: string, params: IProviderImageGene
 // @public
 function callProxiedListModels(proxyUrl: string, params: IProviderListModelsParams): Promise<Result<ReadonlyArray<IAiModelInfo>>>;
 
+// @public
+type CancelTimer = () => void;
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IClassifiedAddress"
 //
 // @public
@@ -499,6 +524,9 @@ function classifyAddress(address: string): Result<IClassifiedAddress>;
 function classifyJsonParseFailure(text: string): JsonParseFailureReason;
 
 // @public
+type ClientToolLoopState = 'completed' | 'round-limit' | 'aborted' | 'deadline';
+
+// @public
 function clientToolSchemaKeywords(descriptor: IAiProviderDescriptor, options?: {
     readonly model?: string;
     readonly endpoint?: string;
@@ -511,7 +539,8 @@ declare namespace Constants {
         DEFAULT_ALGORITHM,
         AES_256_KEY_SIZE,
         GCM_IV_SIZE,
-        GCM_AUTH_TAG_SIZE
+        GCM_AUTH_TAG_SIZE,
+        HMAC_SHA256_KEY_SIZE
     }
 }
 
@@ -575,6 +604,8 @@ function createEncryptedFileConverter<TMetadata = JsonValue>(metadataConverter?:
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 function createGuardedFetch(options: IGuardedFetchOptions): Result<GuardedFetch>;
@@ -627,6 +658,7 @@ declare namespace CryptoUtils {
         KeyPairAlgorithm,
         SeedDerivableAlgorithm,
         IWrapBytesOptions,
+        IHmacKeyOptions,
         IWrappedBytes,
         allKeyPairAlgorithms,
         KeyDerivationFunction,
@@ -1073,6 +1105,7 @@ type GrokImagineModelNames = 'grok-imagine-image' | 'grok-imagine-image-quality'
 type GuardedFetch = (url: string | URL, init?: RequestInit) => Promise<Response>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 class GuardedFetchError extends Error {
@@ -1096,6 +1129,9 @@ function hexDecode(encoded: string): Result<Uint8Array>;
 //
 // @public
 function hexEncode(data: Uint8Array): string;
+
+// @public
+const HMAC_SHA256_KEY_SIZE: number;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -1231,6 +1267,7 @@ interface IAiClientTool<TParams = unknown> {
 interface IAiClientToolCallSummary {
     readonly args: JsonObject;
     readonly callId?: string;
+    readonly durationMs: number;
     readonly isError: boolean;
     readonly result: string;
     readonly toolName: string;
@@ -1661,6 +1698,53 @@ interface IClassifiedAddress {
 }
 
 // @public
+interface IClientToolLoopFailureDetail {
+    readonly rounds: ReadonlyArray<IClientToolRound>;
+}
+
+// @public
+interface IClientToolLoopObserver {
+    event?(round: number, event: IAiStreamEvent): void;
+    round?(round: IClientToolRound): void;
+}
+
+// @public
+interface IClientToolLoopOutcome {
+    readonly continuationMessages?: ReadonlyArray<JsonObject>;
+    readonly orphanedRoundCalls?: ReadonlyArray<IClientToolOrphanedCall>;
+    readonly rounds: ReadonlyArray<IClientToolRound>;
+    readonly state: ClientToolLoopState;
+}
+
+// @public
+interface IClientToolLoopParams extends Omit<IExecuteClientToolTurnParams, 'continuationMessages'> {
+    readonly deadlineMs?: number;
+    readonly maxRounds: number;
+    readonly observer?: IClientToolLoopObserver;
+    readonly schedule?: ScheduleTimer;
+}
+
+// @public
+interface IClientToolOrphanedCall {
+    readonly args: JsonObject;
+    readonly callId?: string;
+    readonly isError?: boolean;
+    readonly settled: boolean;
+    readonly toolName: string;
+}
+
+// @public
+interface IClientToolRound {
+    readonly calls: ReadonlyArray<IAiClientToolCallSummary>;
+    readonly fullText: string;
+    readonly providerDurationMs: number;
+    readonly round: number;
+    readonly toolConflicts: IAiToolConflictReport;
+    readonly truncated: boolean;
+    readonly usage?: IAiCompletionUsage;
+}
+
+// @public
 interface IContextValidationResult {
     readonly isValid: boolean;
     readonly missingDetails: readonly IMissingVariableDetail[];
@@ -1703,6 +1787,7 @@ interface ICryptoProvider {
     exportPublicKeyJwk(publicKey: CryptoKey): Promise<Result<JsonWebKey>>;
     exportPublicKeySpki(publicKey: CryptoKey): Promise<Result<Uint8Array>>;
     fromBase64(base64: string): Result<Uint8Array>;
+    generateHmacKey(options?: IHmacKeyOptions): Promise<Result<CryptoKey>>;
     generateKey(): Promise<Result<Uint8Array>>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     generateKeyPair(algorithm: KeyPairAlgorithm, extractable: boolean): Promise<Result<CryptoKeyPair>>;
@@ -1710,6 +1795,7 @@ interface ICryptoProvider {
     generateUuid(): Result<Uuid>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "ICryptoProvider"
     hmacSha256(key: CryptoKey, data: Uint8Array): Promise<Result<Uint8Array>>;
+    importHmacKey(raw: Uint8Array, options?: IHmacKeyOptions): Promise<Result<CryptoKey>>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -1823,6 +1909,7 @@ interface IExecuteClientToolTurnParams extends IChatRequest {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly cache?: IAiCacheRequest;
     readonly clientTools: ReadonlyArray<IAiClientTool>;
+    readonly clock?: () => number;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly continuationMessages?: ReadonlyArray<JsonObject>;
     readonly descriptor: IAiProviderDescriptor;
@@ -1995,6 +2082,8 @@ interface IGuardedFetchOptions {
     readonly logger?: Logging.ILogger;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly maxRedirects?: number;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly maxResponseBytes?: number;
     readonly redirectPolicy?: SaferFetchRedirectPolicy;
     readonly requestGuard?: IRequestGuard;
     readonly responseHeadersGuard?: IResponseHeadersGuard;
@@ -2009,6 +2098,11 @@ interface IGuardVerdict {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly pinnedAddress?: string;
     readonly url: URL;
+}
+
+// @public
+interface IHmacKeyOptions {
+    readonly extractable?: boolean;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "HpkeProvider"
@@ -2585,6 +2679,13 @@ function isResponsesOnlyModel(descriptor: IAiProviderDescriptor, modelId: string
 // @public
 function isThinkingRequiredModel(descriptor: IAiProviderDescriptor, modelId: string): boolean;
 
+// @public
+interface IStopConditions {
+    readonly deadlineMs?: number;
+    readonly schedule?: ScheduleTimer;
+    readonly signal?: AbortSignal;
+}
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -2944,6 +3045,9 @@ const keystoreSymmetricSecretType: Converter<KeyStoreSymmetricSecretType>;
 const keystoreVaultContents: Converter<IKeyStoreVaultContents>;
 
 // @public
+const MAX_DEADLINE_MS: number;
+
+// @public
 class Md5Normalizer extends Hash_2.HashingNormalizer {
     constructor();
     // (undocumented)
@@ -3063,12 +3167,14 @@ class NodeCryptoProvider implements ICryptoProvider {
     exportPublicKeyJwk(publicKey: CryptoKey): Promise<Result<JsonWebKey>>;
     exportPublicKeySpki(publicKey: CryptoKey): Promise<Result<Uint8Array>>;
     fromBase64(base64: string): Result<Uint8Array>;
+    generateHmacKey(options?: IHmacKeyOptions): Promise<Result<CryptoKey>>;
     generateKey(): Promise<Result<Uint8Array>>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     generateKeyPair(algorithm: KeyPairAlgorithm, extractable: boolean): Promise<Result<CryptoKeyPair>>;
     generateRandomBytes(length: number): Result<Uint8Array>;
     generateUuid(): Result<Uuid>;
     hmacSha256(key: CryptoKey, data: Uint8Array): Promise<Result<Uint8Array>>;
+    importHmacKey(raw: Uint8Array, options?: IHmacKeyOptions): Promise<Result<CryptoKey>>;
     importKeyPairFromSeed(algorithm: SeedDerivableAlgorithm, seed: Uint8Array, extractable: boolean): Promise<Result<CryptoKeyPair>>;
     importPublicKeyJwk(jwk: JsonWebKey, algorithm: KeyPairAlgorithm): Promise<Result<CryptoKey>>;
     importPublicKeySpki(spkiBytes: Uint8Array, algorithm: KeyPairAlgorithm): Promise<Result<CryptoKey>>;
@@ -3117,6 +3223,9 @@ const platformFetchTransport: IFetchTransport;
 
 // @public
 function providerApiKeySecretName(providerId: AiProviderId): string;
+
+// @public
+function raceStopConditions<T>(work: (signal: AbortSignal) => Promise<Result<T>>, conditions: IStopConditions): AsyncDetailedResult<T, StopDetail>;
 
 // @public
 class RangeOf<T> implements RangeOfProperties<T> {
@@ -3257,6 +3366,9 @@ const RETRY_AFTER_STATUSES: ReadonlyArray<number>;
 const RETRYABLE_HTTP_STATUSES: ReadonlyArray<number>;
 
 // @public
+function runClientToolLoop(params: IClientToolLoopParams): AsyncDetailedResult<IClientToolLoopOutcome, IClientToolLoopFailureDetail>;
+
+// @public
 const SAFER_FETCH_METHODS: readonly ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE"];
 
 declare namespace SaferFetch {
@@ -3348,6 +3460,9 @@ type SaferFetchRedirectPolicy = 'reject' | 'validate-each-hop';
 function saferFetchText(url: string | URL, options: ISaferFetchOptions): Promise<DetailedResult<ISaferFetchResponse<string>, FetchFailureReason>>;
 
 // @public
+type ScheduleTimer = (fn: () => void, ms: number) => CancelTimer;
+
+// @public
 type SecretProvider = (secretName: string) => Promise<Result<Uint8Array>>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -3367,6 +3482,12 @@ const SMART_JSON_PROMPT_HINT: string;
 //
 // @public
 function spkiToRawX25519(spki: Uint8Array): Result<Uint8Array>;
+
+// @public
+type StopDetail = 'aborted' | 'deadline' | 'failed';
+
+// @public
+type StopReason = Exclude<StopDetail, 'failed'>;
 
 // @public
 type StructuredOutputEnforcement = 'none' | 'json-mode' | 'schema' | 'tool-forced';

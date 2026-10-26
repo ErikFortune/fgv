@@ -153,6 +153,7 @@ async function writeVault(params: ScopeParams): Promise<FileTree.IMutableFileTre
   (await store.put(makeRecord(knowledgeKind, 'intro', 'intro', 'hello'))).orThrow();
   (await store.put(makeRecord(mtmKind, 'turn-1', 'c1:1', 'first turn'))).orThrow();
   (await store.put(makeRecord(mtmKind, 'turn-2', 'c1:2', 'second turn'))).orThrow();
+  store.dispose();
   return root;
 }
 
@@ -162,6 +163,11 @@ function childNames(dir: FileTree.IFileTreeDirectoryItem): ReadonlyArray<string>
     .orThrow()
     .map((c) => c.name)
     .sort();
+}
+
+/** The scope layout at the root: its children, less the store's own seq high-water slots. */
+function scopeLayout(root: FileTree.IFileTreeDirectoryItem): ReadonlyArray<string> {
+  return childNames(root).filter((name) => !/^memory-store\.seq\.[ab]\.json$/.test(name));
 }
 
 describe('FileTreeMemoryStore scopeDecoding', () => {
@@ -183,7 +189,7 @@ describe('FileTreeMemoryStore scopeDecoding', () => {
       '%s: every record is retrievable by get, getById and list',
       async (__name, params, dirs) => {
         const root = await writeVault(params);
-        expect(childNames(root)).toEqual(dirs);
+        expect(scopeLayout(root)).toEqual(dirs);
 
         const store = open(root, params).orThrow();
         expect(store.skippedRecords).toEqual([]);
@@ -229,6 +235,7 @@ describe('FileTreeMemoryStore scopeDecoding', () => {
       expect(await store.put(makeRecord(knowledgeKind, 'intro', 'intro', 'revised'))).toSucceed();
       expect(await store.delete(mtmKind, 'c1:1' as EntityId)).toSucceedWith('turn-1' as MemoryId);
 
+      store.dispose();
       const reopened = open(root, params).orThrow();
       expect(await reopened.list(scanEveryRecord())).toSucceedAndSatisfy(
         (listed: ReadonlyArray<IMemoryRecord<unknown>>) => {
@@ -269,7 +276,7 @@ describe('FileTreeMemoryStore scopeDecoding', () => {
     test('a decoding alone pairs with the default encoding', async () => {
       const params: ScopeParams = { scopeDecoding: (encoded) => Convert.scopeKey.convert(encoded) };
       const root = await writeVault(params);
-      expect(childNames(root)).toEqual(['conversations', 'knowledge']);
+      expect(scopeLayout(root)).toEqual(['conversations', 'knowledge']);
       expect(open(root, params)).toSucceedAndSatisfy((store) => {
         expect(store.skippedRecords).toEqual([]);
       });
@@ -523,8 +530,9 @@ describe('FileTreeMemoryStore scopeDecoding', () => {
       const writer = create(root).orThrow();
       (await writer.put(makeRecord(factKind, 'fact-1', 'fact-1', 'first'))).orThrow();
       (await writer.put(makeRecord(factKind, 'fact-1', 'fact-1', 'second'))).orThrow();
-      expect(childNames(root)).toEqual(['s-facts']);
+      expect(scopeLayout(root)).toEqual(['s-facts']);
 
+      writer.dispose();
       const store = create(root).orThrow();
       expect(store.skippedRecords).toEqual([]);
       expect(await store.get(factKind, 'fact-1' as EntityId)).toSucceedAndSatisfy(
@@ -564,6 +572,7 @@ describe('FileTreeMemoryStore scopeDecoding', () => {
       (await writer.put(makeRecord(pathKind, 'p', 'a~p', 'parent'))).orThrow();
       (await writer.put(makeRecord(pathKind, 'c', 'a/b~c', 'child'))).orThrow();
 
+      writer.dispose();
       const store = create(root).orThrow();
       expect(store.skippedRecords).toEqual([]);
       expect(await store.list({ scope: 'a' as MemoryScopeKey })).toSucceedAndSatisfy(

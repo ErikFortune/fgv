@@ -626,7 +626,7 @@ function buildWriteTool(ctx: IToolContext): AiAssist.IAiClientTool {
           // it rather than defaulting it away, so a genuine store fault surfaces
           // instead of being masked as a normal write.
           (await ctx.store.get(kind, entityId)).thenOnSuccess(async (before) =>
-            (await ctx.store.put(record)).onSuccess((persisted) =>
+            (await ctx.store.put(record)).asResult.onSuccess((persisted) =>
               // The persisted record can be a different entity (content-scope
               // dedup), so its address is resolved from the record, not the request.
               //
@@ -813,7 +813,7 @@ function buildDeleteTool(ctx: IToolContext): AiAssist.IAiClientTool {
           )
         )
         .thenOnSuccess(async ({ kind, entityId }) =>
-          (await ctx.store.delete(kind, entityId)).onSuccess((id) =>
+          (await ctx.store.delete(kind, entityId)).asResult.onSuccess((id) =>
             succeed({ deleted: true, id, entityId, kind })
           )
         )

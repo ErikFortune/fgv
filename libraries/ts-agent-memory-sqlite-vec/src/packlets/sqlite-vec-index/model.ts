@@ -31,6 +31,24 @@ export interface ISqliteVecVectorIndexCreateParams {
    * database file.
    */
   readonly tableName?: string;
+
+  /**
+   * The embedding identity this handle expects the stored vectors to have — an
+   * opaque string such as a model name and version. Optional.
+   *
+   * @remarks
+   * The identity is stored **inside the database file**, next to the vectors, so a
+   * copy, restore or snapshot carries it along. {@link SqliteVecVectorIndex.identity}
+   * compares it on every call, and `add` and `query` are fenced: while the stored
+   * identity differs from this one (`'mismatch'`), or a rebuild started and never
+   * finished (`'incomplete'`), they fail rather than mix vectors from two embedding
+   * spaces. `rebuild` is always allowed and commits this identity when it completes.
+   *
+   * Omit it and the index behaves as it did before identities existed;
+   * `identity()` then answers `'unchecked'`. The value is only ever bound as a SQL
+   * parameter, never interpolated.
+   */
+  readonly identity?: string;
 }
 
 /**
@@ -59,6 +77,12 @@ export interface ISqliteVecVectorIndexOpenParams {
    * database file.
    */
   readonly tableName?: string;
+
+  /**
+   * The embedding identity this handle expects — see
+   * {@link ISqliteVecVectorIndexCreateParams.identity}.
+   */
+  readonly identity?: string;
 }
 
 /**
@@ -110,6 +134,12 @@ export interface ISqliteVecFragmentIndexOpenParams {
    * `'memory_fragments'`.
    */
   readonly tableName?: string;
+
+  /**
+   * The embedding identity this handle expects — see
+   * {@link ISqliteVecFragmentIndexCreateParams.identity}.
+   */
+  readonly identity?: string;
 }
 
 /**
@@ -153,4 +183,54 @@ export interface ISqliteVecFragmentIndexCreateParams {
    * a single database file.
    */
   readonly tableName?: string;
+
+  /**
+   * The embedding identity this handle expects the stored fragment vectors to
+   * have — an opaque string such as a model name and version. Optional.
+   *
+   * @remarks
+   * Same contract as {@link ISqliteVecVectorIndexCreateParams.identity}:
+   * stored in the database file, compared by
+   * {@link SqliteVecFragmentIndex.identity}, and fenced on `addFragments` and
+   * `query` while the status is `'mismatch'` or `'incomplete'`. Each table carries
+   * its own identity, so a record index and a fragment index in one file are
+   * checked independently.
+   */
+  readonly identity?: string;
 }
+
+/**
+ * What {@link SqliteVecVectorIndex.identity} and
+ * {@link SqliteVecFragmentIndex.identity} report about the embedding identity
+ * stored in the database file, compared against the one the handle was opened
+ * with.
+ *
+ * @remarks
+ * - `'fresh'` — the index's `vec0` table does not exist yet. A `complete` row left
+ *   behind by a dropped table is ignored, so a dropped-and-recreated index never
+ *   reports `'match'` against vectors it did not write. A `rebuilding` row is not:
+ *   it survives the drop and reads `'incomplete'` (see below), so a plain write
+ *   stays refused until a `rebuild` completes.
+ * - `'match'` — the stored identity equals the handle's.
+ * - `'mismatch'` — the stored identity differs; `stored` names it. Writes and
+ *   queries are fenced until a `rebuild` completes.
+ * - `'absent'` — vectors exist but no identity was ever stored (a file written
+ *   before identities existed, or written by a handle without one). Not fenced;
+ *   `adoptIdentity()` records the handle's identity without re-embedding.
+ * - `'incomplete'` — a `rebuild` cleared the index and has not committed, so the
+ *   table may hold any subset of the records. Reported whether or not the table
+ *   exists (a rebuild of a fresh index, or a table dropped after a failed
+ *   rebuild) and whether or not the handle has an identity; fenced until a
+ *   `rebuild` completes.
+ * - `'unchecked'` — the handle was opened without an identity, so there is
+ *   nothing to compare; `stored` names the stored one, if any.
+ *
+ * @public
+ */
+export type IIndexIdentityReport =
+  | { readonly status: 'fresh' }
+  | { readonly status: 'match' }
+  | { readonly status: 'mismatch'; readonly stored: string }
+  | { readonly status: 'absent' }
+  | { readonly status: 'incomplete'; readonly stored?: string }
+  | { readonly status: 'unchecked'; readonly stored?: string };

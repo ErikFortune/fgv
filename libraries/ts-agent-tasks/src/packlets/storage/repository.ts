@@ -36,6 +36,7 @@ import {
   ITaskEnvironment,
   ITaskKindRegistry,
   ITaskRecordDraft,
+  ITaskScope,
   IStoredCatalogOperation,
   ITaskRecoveryReport,
   ITaskRepositoryManifest,
@@ -56,7 +57,9 @@ import {
   TaskRegistrationResult,
   TaskResult,
   UpdateCategory,
-  isTerminalTaskStatus
+  isTerminalTaskStatus,
+  _taskRecordScopes,
+  _taskScopeKey
 } from '../types';
 import {
   ISourceReplayAdmission,
@@ -101,9 +104,11 @@ import {
   ITaskSourceCommitRequest,
   ITaskRepository,
   ITaskRepositoryHealth,
+  ITaskPendingRegistration,
   ITaskRepositoryOpenParams,
   ITaskRepositoryWriter,
   TaskRepositoryMode,
+  TaskRepositoryOpenOrInitializeResult,
   TaskRepositoryOpenResult
 } from './model';
 import {
@@ -112,6 +117,7 @@ import {
   ISourceRecordState,
   indexContentOf,
   initializeRepository,
+  openOrInitializeRepository,
   openRepository,
   scanRoot
 } from './openRepository';
@@ -330,6 +336,23 @@ export class FileTreeTaskRepository implements ITaskRepository {
     return openRepository(params, (state) => new FileTreeTaskRepository(state));
   }
 
+  /**
+   * Opens the repository a root holds, or initializes one when the root is empty.
+   *
+   * @remarks
+   * The choice is made under the exclusive ownership `open` and `initialize` both take, after
+   * interrupted writes' working files are reclaimed, by `initialize`'s own emptiness test: a root
+   * that holds nothing else — no files and no directories — is initialized; anything else is opened,
+   * exactly as {@link FileTreeTaskRepository.open} would, including `recovery-required` for a root
+   * whose repository is damaged or whose manifest is missing. Nothing is repaired, and nothing can
+   * land in the root between the decision and the operation it chooses.
+   */
+  public static async openOrInitialize(
+    params: ITaskRepositoryOpenParams
+  ): Promise<TaskResult<TaskRepositoryOpenOrInitializeResult>> {
+    return openOrInitializeRepository(params, (state) => new FileTreeTaskRepository(state));
+  }
+
   /** {@inheritDoc ITaskRepository.profile} */
   public get profile(): ITaskCapacityProfile {
     return this._files.manifest.profile;
@@ -385,6 +408,49 @@ export class FileTreeTaskRepository implements ITaskRepository {
     return this._queryable().onSuccess((index) =>
       outstandingReport(request?.limit, index, this._pending, this._book)
     );
+  }
+
+  /** {@inheritDoc ITaskRepository.pendingRegistration} */
+  public pendingRegistration(taskId: TaskId): TaskResult<ITaskPendingRegistration | undefined> {
+    return this._usable().onSuccess(() => {
+      const entry: IPendingInventoryEntry | undefined = this._pending.get(taskId);
+      if (entry === undefined) {
+        return ok<ITaskPendingRegistration | undefined>(undefined);
+      }
+      return this._landedScopes(taskId, entry).onSuccess((landedScopes) =>
+        ok<ITaskPendingRegistration | undefined>({
+          taskId,
+          operationId: entry.operationId,
+          operation: entry.operation,
+          principalKey: entry.principalKey,
+          recordType: entry.recordType,
+          request: entry.request,
+          ...(landedScopes !== undefined ? { landedScopes } : {})
+        })
+      );
+    });
+  }
+
+  /**
+   * The scopes of a pending registration's first record when that record already landed and is
+   * this registration's own; `undefined` when nothing is at its name. A file there that is not this
+   * registration's record answers `undefined` too: resuming it is refused by `register`.
+   */
+  private _landedScopes(
+    taskId: TaskId,
+    entry: IPendingInventoryEntry
+  ): TaskResult<ReadonlyArray<ITaskScope> | undefined> {
+    const name: string = recordName('task', taskId);
+    const listed: Result<ReadonlyArray<string>> = this._store.list();
+    if (listed.isFailure()) {
+      return taskFailure(`pendingRegistration ${taskId}: ${listed.message}`, 'storage-unavailable', 'safe');
+    }
+    if (!listed.value.includes(name)) {
+      return ok(undefined);
+    }
+    return this._gate
+      .run(`pendingRegistration ${taskId}`, () => ok(this._readLanded(name, entry)))
+      .onSuccess((landed) => ok(landed.isSuccess() ? _taskRecordScopes(landed.value.record) : undefined));
   }
 
   /** {@inheritDoc ITaskRepository.capacityStatus} */
@@ -1200,6 +1266,17 @@ export class FileTreeTaskRepository implements ITaskRepository {
         { operationId }
       );
     }
+    // The draft carries the scopes this registration was authorized for. Adopting a record that
+    // landed under other scopes would commit what was never authorized.
+    if (!sameScopes(_taskRecordScopes(landed.value.record), _taskRecordScopes(draft))) {
+      return taskFailure(
+        `register ${taskId}: its record landed with scopes other than the ones this registration ` +
+          `was authorized for; resume it with the scopes it landed with`,
+        'conflict',
+        'after-host-action',
+        { operationId }
+      );
+    }
     return this._finishRegistration(taskId, operationId, landed.value, false);
   }
 
@@ -1872,4 +1949,11 @@ export class FileTreeTaskRepository implements ITaskRepository {
       taskRecordLimit(this.profile)
     );
   }
+}
+
+/** Whether two scope lists name the same set. */
+function sameScopes(a: ReadonlyArray<ITaskScope>, b: ReadonlyArray<ITaskScope>): boolean {
+  const left: ReadonlySet<string> = new Set(a.map(_taskScopeKey));
+  const right: ReadonlySet<string> = new Set(b.map(_taskScopeKey));
+  return left.size === right.size && [...left].every((k) => right.has(k));
 }

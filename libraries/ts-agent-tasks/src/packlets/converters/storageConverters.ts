@@ -20,6 +20,8 @@ import {
   ITaskSourceRecord,
   SourceHistoryContract,
   ITaskRepositoryManifest,
+  TaskRepositoryDurability,
+  allTaskRepositoryDurabilities,
   ITaskUpdate,
   IUnresolvedTaskCommitRecord,
   IUnresolvedTaskRecordDraft,
@@ -316,7 +318,10 @@ export function buildStorageConverters(
     profile: capacity.profile,
     tasks: entries('task'),
     consumers: delivery.consumerInventory,
-    sources: entries('source')
+    sources: entries('source'),
+    initializedMode: Converters.enumeratedValue<TaskRepositoryDurability>([
+      ...allTaskRepositoryDurabilities
+    ]).optional()
   });
 
   // A cursor is opaque source text; the stored profile's `maxSourceCursorBytes` is checked by the

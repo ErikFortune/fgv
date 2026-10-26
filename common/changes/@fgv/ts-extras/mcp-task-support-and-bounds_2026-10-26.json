@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "SaferFetch.createGuardedFetch accepts an opt-in maxResponseBytes (no default): a declared Content-Length over it rejects the call with a 'too-large' GuardedFetchError, and any other body is returned wrapped in a counting stream that cancels the upstream and errors with a 'too-large' GuardedFetchError once the decoded byte count passes the cap. The body is still never read by the guarded fetch itself. A 'too-large' GuardedFetchError's message names maxResponseBytes and the limit.",
+      "type": "minor",
+      "packageName": "@fgv/ts-extras"
+    }
+  ],
+  "packageName": "@fgv/ts-extras",
+  "email": "noreply@anthropic.com"
+}
