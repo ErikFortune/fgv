@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-agent-memory",
+      "comment": "BREAKING (implementers only): IMemoryStore.put / delete take an optional { expected } precondition (the record's seq, or 'absent' for put), checked under the write lock before dedup, and return MemoryWriteResult<T> — a DetailedResult carrying a classified IMemoryWriteFailure (conflict / invalid / rejected / not-found / io); a caller that chains a plain-Result continuation onto put / delete adds .asResult. FileTreeMemoryStore persists a seq high-water mark (memory-store.seq.json at the root) so a seq is never re-issued across a restart; seq stays strictly increasing but is no longer dense. Ingest merge-into writes under the snapshot seq and reports a moved target as disposition 'conflict'.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-agent-memory"
+}

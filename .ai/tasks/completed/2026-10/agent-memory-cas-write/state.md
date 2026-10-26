@@ -22,8 +22,10 @@ Worker-owned. The brief is frozen; questions and deviations live here.
    needs a generic "write this named file atomically through the session" — factored out as
    `writeStoreFile`, which `writeRecordFile` now calls.
 2. The open-time sweep (`sweepAtomicTemporaries`) only sweeps directories that hold a record file,
-   and never the root. An interrupted high-water write leaves its working file at the root, so the
-   sweep now also covers the root when it holds the high-water file.
+   and never the root. An interrupted high-water write can leave a working file at the root. I first
+   extended the sweep to the root, then reverted that: it changed the sweep's documented contract
+   and five #700 sweep tests for a rare, harmless, never-read leftover. Documented in the sweep's and
+   `SeqHighWater`'s TSDoc instead.
 3. The open walk already ignores every file at the root (`scopeSegments.length === 0`), so a
    root-level store file cannot be mistaken for a record. No change needed there.
 
@@ -35,6 +37,9 @@ Worker-owned. The brief is frozen; questions and deviations live here.
   costs one root write per 64 seq-consuming writes instead of one per write. Consequence: after a
   reopen the next `seq` resumes past the ceiling, so `seq` is strictly increasing but **not dense**.
   It never was a count (a failed write after `++seq` already burned one).
+- **Ingest `expected` for a versioned target** is the entity's *current* version in the snapshot,
+  not the verdict target's own seq (`selectCurrentVersion` ignores flat records, which is how a
+  first version of this got every flat merge wrong — caught by two existing ingest tests).
 - **Failure codes.** `invalid` = the input was refused before the store looked at the vault
   (non-string body, body converter, codec, layout, bad `expected`); `conflict` = precondition
   mismatch; `rejected` = the write policy's admission decision refused; `not-found` = delete of a

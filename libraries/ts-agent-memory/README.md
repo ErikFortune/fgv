@@ -228,6 +228,52 @@ store.durability;
   wins current-version selection, and the next admission re-culls an exceeded
   cap.
 
+## Conditional writes — `expected`
+
+A read-modify-write loses a concurrent update unless the write can say what it
+read. `put` and `delete` take an optional `expected`: the `envelope.seq` of the
+record the caller read (for a versioned kind, the current version's), or
+`'absent'` for "nothing there" (`put` only).
+
+```ts
+const read = (await store.get(kind, entityId)).orThrow();
+const written = await store.put(revised, { expected: read?.envelope.seq ?? 'absent' });
+if (written.isFailure() && written.detail?.code === 'conflict') {
+  // Someone wrote since our read; nothing was written. `written.detail.current` is the seq found.
+}
+```
+
+- **Where the check runs.** Under the store's write lock, after the address
+  resolves and **before any dedup** — so neither a content-dedup hit on another
+  id nor a same-id no-op can mask a conflict. On a mismatch nothing is written,
+  and the failed write is still observed.
+- **What the token is.** `seq`, which the store issues strictly increasing and
+  never twice. A derived-state rewrite (a reconcile restamp, a version
+  invalidation) keeps it; any write that follows recomputes that state, so it
+  cannot lose a caller's update. `contentHash` is not a token: it excludes tags
+  and provenance and can recur.
+- **Never re-issued, even across a restart.** The store persists a high-water
+  mark, `memory-store.seq.json` at the root, advanced (in blocks) before any `seq`
+  it covers is used. Without it, deleting the highest record and reopening would
+  re-issue that record's `seq`, and a stale writer holding it would pass. A vault
+  without the file opens as before and gains it on its first write; an unreadable
+  file fails the open (delete it to fall back to deriving `seq` from the records).
+  `seq` is therefore strictly increasing but **not dense**: a reopen resumes past
+  the last reservation.
+- **In-process only.** The guarantee holds among writers sharing one store
+  instance per root — which the single-writer guard above enforces within a
+  process. It is not fencing; a second process over the same storage is outside it.
+- **Failures are classified.** `put` and `delete` return
+  `MemoryWriteResult<T>`, a `DetailedResult` whose detail is an
+  `IMemoryWriteFailure`: `conflict` (with `expected` and `current`), `invalid`
+  (input refused before the vault was read), `rejected` (the write policy
+  refused), `not-found` (a delete with no record), or `io`. Use `.asResult` to
+  chain into plain `Result` code.
+- **Ingest.** A `merge-into` writes under the `seq` its target entity had in the
+  pre-ingest snapshot. If the target moved meanwhile, that candidate is reported
+  with disposition `'conflict'` and its `conflict` detail; the item still
+  succeeds and nothing is retried.
+
 ## Conventions
 
 `Result<T>` on every fallible operation; no `any`; Converters/Validators for
