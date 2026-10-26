@@ -12,10 +12,12 @@ Origin: personaility#699 (fgv-ask). Base / PR target: `integration/asks`. Packag
 - **`identity(): Result<IIndexIdentityReport>`** on both classes, and the exported
   `IIndexIdentityReport` union exactly as the brief specified
   (`fresh | match | mismatch{stored} | absent | incomplete{stored?} | unchecked{stored?}`). It
-  reads `sqlite_master` and the meta row on every call and never writes. The `vec0` table's
-  existence is checked first, so an orphan row reads as `fresh`.
-- **`adoptIdentity(): Result<IIndexIdentityReport>`** on both classes: legal only on `absent`;
-  status check and write in one transaction; returns `{ status: 'match' }`.
+  reads `sqlite_master` and the meta row on every call, inside one read transaction (a consistent
+  snapshot), and never writes. The `vec0` table's existence is checked first, so an orphan row reads
+  as `fresh`.
+- **`adoptIdentity(): Result<IIndexIdentityReport>`** on both classes: writes on `absent`; an
+  idempotent no-op that succeeds without writing on `match`; refused for `mismatch`, `incomplete`,
+  `fresh` and `unchecked`. Status check and write in one transaction; returns `{ status: 'match' }`.
 - **Storage:** `fgv_sqlite_vec_meta(table_name TEXT PRIMARY KEY, identity TEXT, state TEXT NOT NULL
   CHECK (state IN ('complete','rebuilding')), meta_version INTEGER NOT NULL)`, created lazily by
   the first write that needs it. No migration. `meta_version` is `1`; a row with any other value is
@@ -47,8 +49,10 @@ Origin: personaility#699 (fgv-ask). Base / PR target: `integration/asks`. Packag
 4. **The final rebuild commit is conditional** on `state='rebuilding'` and must change exactly one
    row; a row deleted or committed by someone else during the loop fails the rebuild loudly instead
    of being overwritten.
-5. **`adoptIdentity()` is refused on `match`** too. The brief says "legal only when absent". An
-   idempotent re-adopt would be friendlier; I followed the brief literally.
+5. **`adoptIdentity()` on `match`** — first shipped refused (brief-literal: "legal only when
+   absent"), raised as a question, and **changed on the orchestrator's answer**: it is now an
+   idempotent no-op that succeeds without writing, so a migration can run twice. Pinned on a
+   read-only connection, where any write would fail.
 6. **Fence ordering in `query`:** the existing cheap returns (`released`, `topK <= 0`, no table in
    this handle → `[]`, dimension mismatch) still come first; the fence runs immediately before the
    KNN read, inside the same transaction.
@@ -65,13 +69,13 @@ Origin: personaility#699 (fgv-ask). Base / PR target: `integration/asks`. Packag
 | **identity read → write: `adoptIdentity`** | another connection writes an identity or starts a rebuild between the `absent` check and the adopt write | Check and write in one transaction. |
 | **clear → embed loop → commit** (`rebuild`) | the loop `await`s the embedder; any other connection may run in between, and the process may die | (a) The clear and the `rebuilding` marker commit together, so a cleared table is never unmarked. (b) While the marker stands, every *other* handle's `add`/`query` is fenced as `incomplete`, so foreign writes cannot land in the partial table. (c) The final commit is conditional on the marker still being there (exactly one row changed); a deleted or already-committed marker fails the rebuild. (d) A crash, a `'fail'` rollback, or an unwritable final commit (`SQLITE_BUSY`, pinned) leaves `incomplete`. **Not closed:** a second `rebuild` of the same table on another connection is unfenced and writes the same marker, so two concurrent rebuilds are not detected. Documented in README and TSDoc as "a crash marker, not a lock". |
 | **fence check → query** | another connection starts a rebuild between the check and the KNN read | Fence and KNN read share one (read) transaction, so they see one snapshot. |
-| **standalone `identity()`** | between its two reads (`sqlite_master`, then the meta row) | **Not wrapped in a transaction.** It is advisory; every place that *acts* on the status reads it inside a transaction. Wrapping it is a two-line change if a reviewer wants the report itself snapshot-consistent. |
+| **standalone `identity()`** | another connection commits between its reads (`sqlite_master` for the table, `sqlite_master` for the meta table, then the row) | **Closed on the orchestrator's answer:** the reads share one deferred read transaction (a savepoint when called inside the fence's own transaction). The interleaving itself cannot be reproduced in a test — the reads are synchronous in one JS turn — so the test pins the property that excludes it: each of the three reads observes `db.inTransaction === true`, and none is left open afterwards. |
 | **handle-cached `_stmts` vs the file** | the table is dropped externally after this handle prepared its statements | Pre-existing behaviour: the next statement fails loudly ("no such table"). `identity()` reads `fresh` from the file. |
 
 ## Red → green
 
 New tests: `src/test/unit/indexIdentity.test.ts`, run on **both** lanes via `describe.each`
-(32 cases per lane plus 2 cross-lane = 66 tests). Evidence, logs under `.gate-logs/red-*.log`:
+(35 cases per lane plus 2 cross-lane = 72 tests). Evidence, logs under `.gate-logs/red-*.log`:
 
 - **Against the pre-stream source** (`9e68104bf` versions of `model.ts` and both index files): the
   suite does not compile (`TS2339 Property 'identity' does not exist on type 'SqliteVecVectorIndex'`,
@@ -91,6 +95,11 @@ New tests: `src/test/unit/indexIdentity.test.ts`, run on **both** lanes via `des
 | `adoptIdentity` allowed for any status | `is refused for every other status`, `'incomplete' after a 'fail' rollback…` (both lanes) |
 | fragment `query` unfenced | crash case + mismatch case (fragment lane) |
 | record `add` unfenced | crash case + mismatch case (record lane) |
+| *(follow-up)* `adoptIdentity` not idempotent on `match` | `is an idempotent no-op on 'match'…`, `a migration that adopts twice…` (both lanes) |
+| *(follow-up)* `identity()` reads outside a transaction | `identity() takes both of its reads inside one transaction…` (both lanes) |
+
+The mutation run for row 7 predates the follow-up; that refusal test was later renamed to
+`is refused for 'fresh', 'mismatch' and 'unchecked'`.
 
 ### An existing test whose premise changed
 
@@ -104,13 +113,17 @@ would still fail it.
 
 ## Gates
 
+The repo-wide `rush rebuild` and `rush test` below ran on `9d12ff12c`, before the follow-up commit
+(snapshot-consistent `identity()`, idempotent adopt on `match`). The orchestrator gates the merged
+tree; after the follow-up only the package build, lint and test were re-run.
+
 Logs in `.gate-logs/` (not committed). Graded by grep, not exit code.
 
 | gate | result |
 |---|---|
 | `rushx build` (package) | exit 0; `not met|FAILURE|Operations failed|error TS` = 0; `warning` = 0 |
 | `rushx lint` (package) | exit 0; 0 / 0 |
-| `rushx test` (package) | exit 0; 0 / 0; **100 / 100 / 100 / 100**; 223 tests in 4 suites |
+| `rushx test` (package) | exit 0; 0 / 0; **100 / 100 / 100 / 100**; 229 tests in 4 suites (re-run after the follow-up) |
 | `rush rebuild` (repo) | exit 0; bad = 0; only warning is the Git-tracked symlink notice; **SUCCESS: 39 operations** |
 | `rush test` (repo) | **36 of 38 operations green; 2 failed under load, both green when re-run alone** (below) |
 | `rush change --verify --target-branch origin/integration/asks` | exit 0; finds `sqlite-vec-index-identity_2026-10-26-00-00.json` |
@@ -146,8 +159,6 @@ Logs in `.gate-logs/` (not committed). Graded by grep, not exit code.
 
 ## Open / deferred
 
-- Standalone `identity()` is not snapshot-consistent across its two reads (see table). Not deferred
-  anywhere else; recorded here for the reviewer.
 - Concurrent rebuilds of one table on two connections remain undetected (documented limit).
 - Pre-existing, untouched: the `sqlite_master` schema probe in `create` is an unretained `prepare()`
   (already recorded in `CAPABILITIES.md`).

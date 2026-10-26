@@ -29,8 +29,10 @@ summary:
     rebuild now prepares and keeps the meta statements. Choices the brief left open: incomplete
     outranks unchecked, an identity-less first write deletes an orphan row rather than creating the
     meta table, an identity-less rebuild still writes the marker, and the final commit fails if the
-    marker changed underneath it. Left open and documented: concurrent rebuilds on two connections,
-    and standalone identity() not being snapshot-consistent across its two reads.
+    marker changed underneath it. Two close-out questions were answered yes and landed on the same
+    branch: identity() takes its reads in one read transaction, and adoptIdentity() is an idempotent
+    no-op on match (the brief said absent-only). Left open and documented: concurrent rebuilds on two
+    connections.
   sourceLine: '**Shipped:** `SqliteVecVectorIndex` and `SqliteVecFragmentIndex` store an opaque embedding identity in the index file itself, report it with `identity()` on every call, fence writes and queries while it disagrees or a rebuild never finished, and make a partial rebuild detectable instead of silent.'
   headline: >
     The sqlite-vec indexes now store which embedding model wrote their vectors in the same file, and
@@ -50,4 +52,4 @@ keywords:
   - orphan row
   - adoptIdentity
   - fgv-ask
-sourceHash: sha256:bf4bec8437a83d49 # over brief.md + result.md + state.md
+sourceHash: sha256:ad51c87a7ec0fb62 # over brief.md + result.md + state.md

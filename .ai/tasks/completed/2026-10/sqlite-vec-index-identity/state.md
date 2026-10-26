@@ -33,3 +33,10 @@ marker; `adoptIdentity` is refused on `match` (brief-literal).
   not their property. See `result.md` § "An existing test whose premise changed".
 - Repo prettier is 2.8 (`common/autoinstallers/rush-prettier`), but `npx prettier` resolves 3.x.
   Formatting was done with a scratch-installed 2.8.8.
+
+## Resolved after close-out (orchestrator answers)
+
+1. Yes — `identity()` now takes its reads inside one read transaction. Pinned by a test that
+   observes `db.inTransaction` on each read (a true interleave is not reproducible in-process).
+2. Yes — `adoptIdentity()` is an idempotent no-op on `match`, still refused for `mismatch`,
+   `incomplete`, `fresh` and `unchecked`. README, CAPABILITIES and TSDoc updated.
