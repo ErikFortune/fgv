@@ -25,7 +25,7 @@ Origin: personaility#700 (fgv-ask). Base / PR target: `integration/asks`.
   (the old path, now `writePlain`). Every rewrite (flat put, versioned new version,
   `_invalidateVersion`, reconcile restamp) still funnels through `_persist` → `writeRecordFile`.
 - **Durability report.** `store.durability: IMemoryStoreDurability` — `{ atomic, guarantee?, reason,
-  removedTemporaries }`, computed once at `create`, strongest listed guarantee. Not in `coverage()`.
+removedTemporaries }`, computed once at `create`, strongest listed guarantee. Not in `coverage()`.
 - **Non-qualified roots.** Default degrades and reports (`atomic: false` + reason). Opt-in
   `create({ durability: { require: 'session' | 'process-crash' } })` refuses, before the root is
   claimed; an unrecognized requirement is refused by converter. A write that later cannot honour the
@@ -64,7 +64,7 @@ files, at the two sites the brief named.
   3 failed, `fsAtomicWrite.test` 41 passed / 3 failed (6 red: every `reason` assertion). Green after.
 - **ts-agent-memory** — base sources of both packages restored, `durability.test.ts` run with
   `@ts-nocheck` and `dispose?.()` so it compiles against the old API: **25 failed, 6 passed**. The
-  centrepiece, *"a write interrupted before its replacement leaves the previous record whole"*, fails
+  centrepiece, _"a write interrupted before its replacement leaves the previous record whole"_, fails
   on base because the file is left holding `---\nid:` — the torn record of the ask. Of the 6 that
   passed on base, 3 were then strengthened so they discriminate (a `durability` assertion on two, a
   `warn`-logged assertion on the fs `'replaced'` test); those 3 were not re-run against base, but each
@@ -75,14 +75,14 @@ files, at the two sites the brief named.
 
 ## Check-then-act windows
 
-| window | what is checked | what can change between check and act | what re-checks after |
-|---|---|---|---|
-| open: inquiry → requirement → claim | `getAtomicWriteCapabilities()` on the root; requirement rank | another store could claim the root between inquiry and claim | `acquireStoreRoot` is the synchronous check-and-set itself; nothing awaits between it and the inquiry, so no other store can interleave in-process |
-| open: claim → sweep → walk | claim held | nothing in-process (guard); out-of-process writers are out of the fault model | the sweep runs only under the claim; the walk follows synchronously. A failed walk releases the claim |
-| open: guarantee chosen once → every later write | guarantee fixed in the session | the scope directory may sit on another mount, or the root may have been remounted | `writeChildAtomically` re-qualifies the containing directory on every fs write and refuses at validate; the store fails on that refusal and never retries plainly |
-| write → visibility settle → index patch | `writeChildAtomically` outcome | on `'unknown'`, the file may or may not hold the new record | the re-read is the re-check; the index is patched (`_persist` `.onSuccess`) only when the result is success, i.e. only when the file holds the new record. The one window left open: re-read fails → reported failure, index keeps previous envelope, disk may hold the new record; the message says so and a reopen settles it. Reads materialize bodies from disk, so a read in that window returns the new body |
-| write/delete → disposed? | `checkWritable` at entry of `writeRecordFile` / `deleteRecordFile` | `dispose()` during an in-flight put's `await` | `checkWritable` runs synchronously immediately before the file operation, after every `await` in the put path (the write funnel is synchronous from `_persist` on). A put whose file write already happened before `dispose()` completes normally |
-| cap-cull admission (write + N deletes), versioned put (write + invalidate) | per file | a crash between files | not atomic by design; per-file atomicity + highest-`seq` current selection + re-cull at next admission (documented in README / CAPABILITIES) |
+| window                                                                     | what is checked                                                    | what can change between check and act                                             | what re-checks after                                                                                                                                                                                                                                                                                                                                                                                               |
+| -------------------------------------------------------------------------- | ------------------------------------------------------------------ | --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| open: inquiry → requirement → claim                                        | `getAtomicWriteCapabilities()` on the root; requirement rank       | another store could claim the root between inquiry and claim                      | `acquireStoreRoot` is the synchronous check-and-set itself; nothing awaits between it and the inquiry, so no other store can interleave in-process                                                                                                                                                                                                                                                                 |
+| open: claim → sweep → walk                                                 | claim held                                                         | nothing in-process (guard); out-of-process writers are out of the fault model     | the sweep runs only under the claim; the walk follows synchronously. A failed walk releases the claim                                                                                                                                                                                                                                                                                                              |
+| open: guarantee chosen once → every later write                            | guarantee fixed in the session                                     | the scope directory may sit on another mount, or the root may have been remounted | `writeChildAtomically` re-qualifies the containing directory on every fs write and refuses at validate; the store fails on that refusal and never retries plainly                                                                                                                                                                                                                                                  |
+| write → visibility settle → index patch                                    | `writeChildAtomically` outcome                                     | on `'unknown'`, the file may or may not hold the new record                       | the re-read is the re-check; the index is patched (`_persist` `.onSuccess`) only when the result is success, i.e. only when the file holds the new record. The one window left open: re-read fails → reported failure, index keeps previous envelope, disk may hold the new record; the message says so and a reopen settles it. Reads materialize bodies from disk, so a read in that window returns the new body |
+| write/delete → disposed?                                                   | `checkWritable` at entry of `writeRecordFile` / `deleteRecordFile` | `dispose()` during an in-flight put's `await`                                     | `checkWritable` runs synchronously immediately before the file operation, after every `await` in the put path (the write funnel is synchronous from `_persist` on). A put whose file write already happened before `dispose()` completes normally                                                                                                                                                                  |
+| cap-cull admission (write + N deletes), versioned put (write + invalidate) | per file                                                           | a crash between files                                                             | not atomic by design; per-file atomicity + highest-`seq` current selection + re-cull at next admission (documented in README / CAPABILITIES)                                                                                                                                                                                                                                                                       |
 
 ## Decisions inside the brief's latitude
 
@@ -97,4 +97,17 @@ files, at the two sites the brief named.
 
 ## Gates
 
-Recorded in the final report and `state.md`.
+All logs under the worktree's `.gate-logs/`, graded by grep, not exit code.
+
+- `ts-agent-memory`: build, lint clean; test 1002 passed / 0 failed, 100% coverage, no warnings.
+- `ts-json-base`: build clean (api.md gains `reason?`); atomic suites 75 passed.
+- `rush rebuild`: `SUCCESS: 39 operations`, 0 error matches, only the Git-tracked symlink warning.
+- `rush test`: 37 succeeded, 1 no-op, 1 failure — `@fgv/ts-res-cli` _cli-configuration_ "test
+  consistent output by building same input twice", a 5000 ms timeout at load average ~24 (other
+  workers running). That is one of the known load-sensitive tests; ts-res-cli does not use the
+  atomic surface. Re-run alone: failed the same timeout once, then **67 passed / 0 failed** on the
+  second run.
+- `rush change --verify --target-branch origin/integration/asks`: passes (both change files found).
+- prettier 2.8.8 (the `rush-prettier` autoinstaller) on every touched file.
+- `fileTreeMemoryStore.ts`: 1979 lines (cap 2000).
+- Capability feed regenerated; `--check` 0 stale; `verify-capability-docs` 0 failed.
