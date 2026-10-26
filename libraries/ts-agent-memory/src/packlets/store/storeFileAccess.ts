@@ -4,7 +4,7 @@
  */
 
 import { FileTree } from '@fgv/ts-json-base';
-import { Result, captureResult, fail, succeed } from '@fgv/ts-utils';
+import { Result, captureResult, fail, mapResults, succeed } from '@fgv/ts-utils';
 import { Convert, MemoryScopeKey } from '../types';
 
 /** The record filename extension; the store's files are markdown + YAML frontmatter. */
@@ -181,29 +181,153 @@ export function ensureScopeDir(
   });
 }
 
-/** Write (create or overwrite) `<scope>/<idStem>.md` with `raw`. */
+/**
+ * How the store writes record files, resolved once at open.
+ * @internal
+ */
+export interface IRecordWriter {
+  /**
+   * The atomic guarantee every record write must honour, or `undefined` when the root offers no
+   * atomic write and the store degrades to plain writes. There is no per-write fallback: a write
+   * that cannot honour this guarantee fails.
+   */
+  readonly guarantee?: FileTree.AtomicWriteGuarantee;
+  /** Fails once the store may no longer mutate its root (it has been disposed). */
+  checkWritable(): Result<true>;
+  /** Reports a write that committed despite a failure the caller should know about. */
+  warn(message: string): void;
+}
+
+/**
+ * Write (create or overwrite) `<scope>/<idStem>.md` with `raw`.
+ *
+ * @remarks
+ * Success means the file now holds the new record. Failure means it does not, with one
+ * exception the message names: an atomic write whose outcome was `'unknown'` and whose re-read
+ * also failed, where the file may hold either record until the store is reopened.
+ */
 export function writeRecordFile(
   root: FileTree.IMutableFileTreeDirectoryItem,
   scopes: IScopeCoding,
+  writer: IRecordWriter,
   scope: MemoryScopeKey,
   idStem: string,
   raw: string
 ): Result<true> {
-  return ensureScopeDir(root, scopes, scope).onSuccess((scopeDir) =>
-    scopeDir.getChildren().onSuccess((children) => {
-      const fileName: string = `${idStem}${MEMORY_FILE_EXTENSION}`;
-      const existing: FileTree.FileTreeItem | undefined = children.find(
-        (c) => c.type === 'file' && c.name === fileName
-      );
-      if (existing === undefined) {
-        return scopeDir.createChildFile(fileName, raw).onSuccess(() => succeed(true));
-      }
-      /* c8 ignore next 3 -- defensive: a file in a mutable tree is mutable; guards a read-only adapter */
-      if (!FileTree.isMutableFileItem(existing)) {
-        return fail(`${existing.absolutePath}: file is not mutable`);
-      }
-      return existing.setRawContents(raw).onSuccess(() => succeed(true));
-    })
+  const fileName: string = `${idStem}${MEMORY_FILE_EXTENSION}`;
+  return writer
+    .checkWritable()
+    .onSuccess(() => ensureScopeDir(root, scopes, scope))
+    .onSuccess((scopeDir) =>
+      writer.guarantee === undefined
+        ? writePlain(scopeDir, fileName, raw)
+        : writeAtomic(scopeDir, fileName, raw, writer.guarantee, writer)
+    );
+}
+
+/** The degraded path: an ordinary create, or an in-place overwrite. */
+function writePlain(
+  scopeDir: FileTree.IMutableFileTreeDirectoryItem,
+  fileName: string,
+  raw: string
+): Result<true> {
+  return scopeDir.getChildren().onSuccess((children) => {
+    const existing: FileTree.FileTreeItem | undefined = children.find(
+      (c) => c.type === 'file' && c.name === fileName
+    );
+    if (existing === undefined) {
+      return scopeDir.createChildFile(fileName, raw).onSuccess(() => succeed(true));
+    }
+    /* c8 ignore next 3 -- defensive: a file in a mutable tree is mutable; guards a read-only adapter */
+    if (!FileTree.isMutableFileItem(existing)) {
+      return fail(`${existing.absolutePath}: file is not mutable`);
+    }
+    return existing.setRawContents(raw).onSuccess(() => succeed(true));
+  });
+}
+
+/**
+ * The atomic path. A refusal is never retried as a plain write, and a failure that may already
+ * have changed the file is settled before it is reported, so the caller's index patch follows
+ * what the file actually holds.
+ */
+function writeAtomic(
+  scopeDir: FileTree.IMutableFileTreeDirectoryItem,
+  fileName: string,
+  raw: string,
+  guarantee: FileTree.AtomicWriteGuarantee,
+  writer: IRecordWriter
+): Result<true> {
+  const target: string = `${scopeDir.absolutePath}/${fileName}`;
+  if (!FileTree.isAtomicDirectoryItem(scopeDir)) {
+    return fail(
+      `${target}: the store writes atomically at '${guarantee}' and this directory cannot write atomically`
+    );
+  }
+  const written = scopeDir.writeChildAtomically(fileName, raw, { guarantee });
+  if (written.isSuccess()) {
+    return succeed(true);
+  }
+  const committed = (): Result<true> => {
+    writer.warn(`${target}: the new record is in place, but the write reported: ${written.message}`);
+    return succeed(true);
+  };
+  // An unclassified failure is treated as the ambiguous case: settled by reading, never assumed.
+  const visibility: FileTree.IAtomicWriteFailure['visibility'] = written.detail?.visibility ?? 'unknown';
+  if (visibility === 'replaced') {
+    return committed();
+  }
+  if (visibility === 'unchanged') {
+    return fail(written.message);
+  }
+  return readChildText(scopeDir, fileName)
+    .withErrorFormat(
+      (m) =>
+        `${written.message}; the outcome could not be settled by re-reading (${m}): the file may hold ` +
+        `the new record or the previous one, and the store's index keeps the previous one until reopened`
+    )
+    .onSuccess((contents) =>
+      contents === raw
+        ? committed()
+        : fail<true>(`${written.message}; a re-read shows the write did not take effect`)
+    );
+}
+
+/** Re-read a child file's text, failing when it is absent. */
+function readChildText(scopeDir: FileTree.IFileTreeDirectoryItem, fileName: string): Result<string> {
+  return scopeDir.getChildren().onSuccess((children) => {
+    const file: FileTree.FileTreeItem | undefined = children.find(
+      (c) => c.type === 'file' && c.name === fileName
+    );
+    return file?.type === 'file' ? file.getRawContents() : fail<string>('the file is absent');
+  });
+}
+
+/**
+ * Remove the working files interrupted atomic writes left in `dir` and in every directory beneath
+ * it. Valid only while the caller holds the root's single-writer guard, because the working file of
+ * a live write is indistinguishable from an orphan.
+ * @returns The removed files' paths, relative to the root.
+ * @internal
+ */
+export function sweepAtomicTemporaries(
+  dir: FileTree.IFileTreeDirectoryItem,
+  relativePath: string
+): Result<ReadonlyArray<string>> {
+  const under = (name: string): string => (relativePath === '' ? name : `${relativePath}/${name}`);
+  const here: Result<ReadonlyArray<string>> = FileTree.isAtomicDirectoryItem(dir)
+    ? dir.cleanupAtomicTemporaries().onSuccess((names) => succeed(names.map(under)))
+    : succeed([]);
+  return here.onSuccess((removed) =>
+    dir
+      .getChildren()
+      .onSuccess((children) =>
+        mapResults(
+          children
+            .filter((c): c is FileTree.IFileTreeDirectoryItem => c.type === 'directory')
+            .map((c) => sweepAtomicTemporaries(c, under(c.name)))
+        ).onSuccess((below) => succeed([...removed, ...below.flat()]))
+      )
   );
 }
 
@@ -216,28 +340,32 @@ export function writeRecordFile(
 export function deleteRecordFile(
   root: FileTree.IMutableFileTreeDirectoryItem,
   scopes: IScopeCoding,
+  writer: IRecordWriter,
   scope: MemoryScopeKey,
   idStem: string
 ): Result<true> {
-  return resolveScopeDir(root, scopes, scope).onSuccess((scopeDir) => {
-    /* c8 ignore next 3 -- unreachable: callers read the record (hence the scope dir) first */
-    if (scopeDir === undefined) {
-      return fail(`memory delete: scope '${scope}' not found`);
-    }
-    const fileName: string = `${idStem}${MEMORY_FILE_EXTENSION}`;
-    return scopeDir.getChildren().onSuccess((children) => {
-      const file: FileTree.FileTreeItem | undefined = children.find(
-        (c) => c.type === 'file' && c.name === fileName
-      );
-      /* c8 ignore next 3 -- unreachable: callers read the record (hence the file) first */
-      if (file === undefined) {
-        return fail(`memory delete: file '${fileName}' not found in scope '${scope}'`);
+  return writer
+    .checkWritable()
+    .onSuccess(() => resolveScopeDir(root, scopes, scope))
+    .onSuccess((scopeDir) => {
+      /* c8 ignore next 3 -- unreachable: callers read the record (hence the scope dir) first */
+      if (scopeDir === undefined) {
+        return fail(`memory delete: scope '${scope}' not found`);
       }
-      /* c8 ignore next 3 -- defensive: a file in a mutable tree is mutable; guards a read-only adapter */
-      if (!FileTree.isMutableFileItem(file)) {
-        return fail(`${file.absolutePath}: file is not mutable`);
-      }
-      return file.delete().onSuccess(() => succeed(true));
+      const fileName: string = `${idStem}${MEMORY_FILE_EXTENSION}`;
+      return scopeDir.getChildren().onSuccess((children) => {
+        const file: FileTree.FileTreeItem | undefined = children.find(
+          (c) => c.type === 'file' && c.name === fileName
+        );
+        /* c8 ignore next 3 -- unreachable: callers read the record (hence the file) first */
+        if (file === undefined) {
+          return fail(`memory delete: file '${fileName}' not found in scope '${scope}'`);
+        }
+        /* c8 ignore next 3 -- defensive: a file in a mutable tree is mutable; guards a read-only adapter */
+        if (!FileTree.isMutableFileItem(file)) {
+          return fail(`${file.absolutePath}: file is not mutable`);
+        }
+        return file.delete().onSuccess(() => succeed(true));
+      });
     });
-  });
 }

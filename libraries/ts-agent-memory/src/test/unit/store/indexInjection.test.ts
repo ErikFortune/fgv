@@ -334,6 +334,7 @@ describe('FileTreeMemoryStore index injection', () => {
       const first = storeWith(undefined, root);
       (await first.put(knowledgeRecord('doc-a', 'alpha'))).orThrow();
 
+      first.dispose();
       const reopened = storeWith(undefined, root);
       expect(await reopened.list(scanEveryRecord())).toSucceedAndSatisfy(
         (records: ReadonlyArray<IMemoryRecord<unknown>>) => {
@@ -376,6 +377,7 @@ describe('FileTreeMemoryStore index injection', () => {
       (await seeded.put(knowledgeRecord('doc-b', 'beta'))).orThrow();
 
       const recording = RecordingMemoryIndex.create().orThrow();
+      seeded.dispose();
       const reopened = storeWith(recording, root);
 
       // create() rebuilt the injected index exactly once, with both persisted records.

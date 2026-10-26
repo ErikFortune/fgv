@@ -178,6 +178,7 @@ describe('IMemoryStore.reconcile — record-vector', () => {
     const raw: string = file.getRawContents().orThrow();
     file.setRawContents(raw.replace(/^embeddingRef:.*\n/m, '')).orThrow();
 
+    store.dispose();
     const reopened = FileTreeMemoryStore.create({
       root,
       registry: registry(),
@@ -231,6 +232,7 @@ describe('IMemoryStore.reconcile — record-vector', () => {
       )
       .orThrow();
 
+    store.dispose();
     const reopened = FileTreeMemoryStore.create({
       root,
       registry: registry(),
@@ -379,6 +381,7 @@ describe('IMemoryStore.reconcile — record-vector', () => {
     (await store.put(record('a'))).orThrow();
     (await store.put(record('b'))).orThrow();
 
+    store.dispose();
     const wired = FileTreeMemoryStore.create({
       root: (store as unknown as { _root: FileTree.IMutableFileTreeDirectoryItem })._root,
       registry: registry(),
@@ -539,6 +542,7 @@ describe('IMemoryStore.reconcile — every casualty is collected, never fatal', 
     // restamp fails and is collected.
     const raw: string = file.getRawContents().orThrow();
     file.setRawContents(raw.replace(/^embeddingRef:.*\n/m, '')).orThrow();
+    store.dispose();
     const reopened = FileTreeMemoryStore.create({
       root,
       registry: registry(),
@@ -606,6 +610,7 @@ describe('IMemoryStore.reconcile — fragment-vector', () => {
     (await store.put(record('a'))).orThrow();
     (await index.remove({ scope: knowledgeScope, id: 'a' as MemoryId })).orThrow();
 
+    store.dispose();
     const failing = FileTreeMemoryStore.create({
       root,
       registry: registry(),

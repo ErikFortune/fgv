@@ -153,6 +153,7 @@ async function writeVault(params: ScopeParams): Promise<FileTree.IMutableFileTre
   (await store.put(makeRecord(knowledgeKind, 'intro', 'intro', 'hello'))).orThrow();
   (await store.put(makeRecord(mtmKind, 'turn-1', 'c1:1', 'first turn'))).orThrow();
   (await store.put(makeRecord(mtmKind, 'turn-2', 'c1:2', 'second turn'))).orThrow();
+  store.dispose();
   return root;
 }
 
@@ -229,6 +230,7 @@ describe('FileTreeMemoryStore scopeDecoding', () => {
       expect(await store.put(makeRecord(knowledgeKind, 'intro', 'intro', 'revised'))).toSucceed();
       expect(await store.delete(mtmKind, 'c1:1' as EntityId)).toSucceedWith('turn-1' as MemoryId);
 
+      store.dispose();
       const reopened = open(root, params).orThrow();
       expect(await reopened.list(scanEveryRecord())).toSucceedAndSatisfy(
         (listed: ReadonlyArray<IMemoryRecord<unknown>>) => {
@@ -525,6 +527,7 @@ describe('FileTreeMemoryStore scopeDecoding', () => {
       (await writer.put(makeRecord(factKind, 'fact-1', 'fact-1', 'second'))).orThrow();
       expect(childNames(root)).toEqual(['s-facts']);
 
+      writer.dispose();
       const store = create(root).orThrow();
       expect(store.skippedRecords).toEqual([]);
       expect(await store.get(factKind, 'fact-1' as EntityId)).toSucceedAndSatisfy(
@@ -564,6 +567,7 @@ describe('FileTreeMemoryStore scopeDecoding', () => {
       (await writer.put(makeRecord(pathKind, 'p', 'a~p', 'parent'))).orThrow();
       (await writer.put(makeRecord(pathKind, 'c', 'a/b~c', 'child'))).orThrow();
 
+      writer.dispose();
       const store = create(root).orThrow();
       expect(store.skippedRecords).toEqual([]);
       expect(await store.list({ scope: 'a' as MemoryScopeKey })).toSucceedAndSatisfy(

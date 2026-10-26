@@ -703,7 +703,11 @@ export class InMemoryTreeAccessors<TCT extends string = string>
       return fail(`${absolutePath}: not a directory`);
     }
     if (this._mutable === false) {
-      return succeed({ atomicReplace: false, guarantees: [], reason: `${absolutePath}: mutability is disabled` });
+      return succeed({
+        atomicReplace: false,
+        guarantees: [],
+        reason: `${absolutePath}: mutability is disabled`
+      });
     }
     return succeed({
       atomicReplace: true,
