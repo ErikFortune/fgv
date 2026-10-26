@@ -436,7 +436,8 @@ describe('durability: a weak checkpoint cannot be paired with durable task state
         root,
         mode: 'session',
         environment: env,
-        registry: brokerRegistry()
+        registry: brokerRegistry(),
+        allowSessionOverDurable: true
       })
     ).orThrow();
     expect(opened.state).toBe('ready');

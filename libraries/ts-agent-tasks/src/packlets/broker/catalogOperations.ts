@@ -26,10 +26,12 @@ import {
   isLatchingStopState,
   isTerminalTaskStatus,
   taskListKind,
-  trackedTaskKind
+  trackedTaskKind,
+  _taskRecordScopes,
+  _taskScopeKey
 } from '../types';
 import { ITaskRepositoryWriter } from '../storage';
-import { AccessContext, scopeKey, subjectOf } from './access';
+import { AccessContext, subjectOf } from './access';
 import { CatalogChange, IRelatedTask, readExisting, runCatalogMutation } from './catalogMutation';
 import { BrokerCore } from './core';
 import { notFound, ok, propagate, taskFailure } from './failures';
@@ -192,11 +194,11 @@ function _nextScopes(
   add: ReadonlyArray<ITaskScope>,
   remove: ReadonlyArray<ITaskScope>
 ): ReadonlyArray<ITaskScope> {
-  const removed: Set<string> = new Set(remove.map(scopeKey));
+  const removed: Set<string> = new Set(remove.map(_taskScopeKey));
   const out: ITaskScope[] = [];
   const seen: Set<string> = new Set<string>();
   for (const scope of [...current, ...add]) {
-    const key: string = scopeKey(scope);
+    const key: string = _taskScopeKey(scope);
     if (!removed.has(key) && !seen.has(key)) {
       seen.add(key);
       out.push(scope);
@@ -237,12 +239,15 @@ export async function changeScopes(
     identity: request,
     request: converted.value.json,
     receiptConverter: core.converters.broker.mutationResult,
+    // The policy is told the scope set the task will carry, decided from the record it authorizes
+    // against; the writer re-checks that record's revision, so the set it commits is this one.
+    access: (record) => ({ scopes: _nextScopes(_taskRecordScopes(record), add, remove) }),
     evaluate: async (current): Promise<TaskResult<CatalogChange>> => {
       const envelope: ITaskEnvelope = current.task.envelope;
       const scopes: ReadonlyArray<ITaskScope> = _nextScopes(envelope.scopes, add, remove);
       const same: boolean =
         scopes.length === envelope.scopes.length &&
-        scopes.every((scope, i) => scopeKey(scope) === scopeKey(envelope.scopes[i]));
+        scopes.every((scope, i) => _taskScopeKey(scope) === _taskScopeKey(envelope.scopes[i]));
       return ok(
         same
           ? { disposition: 'unchanged' }
