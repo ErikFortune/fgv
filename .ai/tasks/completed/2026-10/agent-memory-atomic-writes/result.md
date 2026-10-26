@@ -140,7 +140,7 @@ scripts in the review's `aw/` directory were re-run after rebuilding; results ar
 | P1-1 two `getDirectory('/')` on one tree, and parent/child roots, both open | claim by storage identity; refuse overlap within an accessor and across real paths | _two items for one directory of one tree are the same root_; _a root nested inside another root of the same tree is refused_; fs _a root nested inside an open root is refused_ (_a sibling directory … is a different root_ pins the overlap rule's prefix edge) | yes (opened) | inmem2: second open refused; guard3 nested: refused |
 | P2-3 two non-atomic backends at `/` refuse each other | path is no longer a key on its own | _two different backends without atomic writes, both rooted at /, are different roots_ | yes (refused) | nonatomic: B ok |
 | P2-4 intermediate symlink → two `process-crash` writers | real path in the claim | fs _a directory reached through an intermediate symbolic link is the same root_ | yes (opened) | symlink2: B refused |
-| P1-2 final-component symlink root fails to open | ts-json-base qualifies the real path; an inquiry failure degrades unless `require` | ts-json-base _a directory reached through a symbolic link is qualified as its target_; fs _a root whose last component is a symbolic link opens …_; fs _a scope directory that is a symbolic link is written through_; _degrades when the root cannot answer the inquiry, and a requirement refuses it_; _degrades when the inquiry throws_ | yes | symlink: opens; symlinked-scope put ok |
+| P1-2 final-component symlink root fails to open | ts-json-base qualifies the real path; an inquiry failure degrades unless `require` | ts-json-base _a directory reached through a symbolic link is qualified as its target_; fs _a root whose last component is a symbolic link opens …_; fs ~~_a scope directory that is a symbolic link is written through_~~ (see [round 4](#review-round-4-against-8affa23b8)); _degrades when the root cannot answer the inquiry, and a requirement refuses it_; _degrades when the inquiry throws_ | yes | symlink: opens; symlinked-scope put ok — **wrong, corrected in round 4**: that put succeeded but its record could never be read back |
 | P2-1 a thrown open leaks the claim | post-claim open in `captureResult`; sweep and inquiry captured | _an open that throws releases its claim_ (throwing body converter); _an injected index that throws during the open releases the claim_ | yes (threw, then refused) | leak: both reopens ok |
 | P2-2 disposed store still embeds and adds vectors | `checkWritable` in `_enqueue` (entry of `_putLocked` / `_deleteLocked` / `_reconcileLocked`) and immediately before every `add` / `addFragments` | _a put whose embedding finishes after dispose adds no vector, and a queued put never embeds_; _… fragment embedding … adds no fragments_; _a reconcile is refused once disposed, and one in flight adds nothing after it_ | yes (2 vectors) | disposeRace: 1 embed, 0 vectors |
 | P3-1 sweep failure loses partial removals | the report never fails; partial removals found by re-listing | _a sweep that fails partway reports what it did remove_; _a sweep that throws is reported …_; _a directory the sweep cannot list is reported_ | yes | — |
@@ -173,7 +173,7 @@ must keep.
 | finding | fix | regression test(s) | red on cc9e1dc43 |
 |---|---|---|---|
 | P1-A an inquiry failure (outside the prefix, not found, throw) degraded to plain writes outside the tree | `inquire` returns a `Result`; a failure or throw fails the open with `memory store: cannot ask root …`; only a successful unqualified answer degrades | _refuses the open when the root cannot answer the inquiry_; _…when the inquiry throws_; fs _a root outside its accessors' tree is refused, not degraded to plain writes there_ (with and without `require`); fs _a root that does not exist is refused, with context_; _reports a capability answer that gives no reason_ (an unqualified answer still degrades; non-regression) | yes (5 of them) |
-| P2-A atomic writes followed a scope directory linking outside the root | ts-json-base `_confineToRoot` also requires `realpath(containing directory)` to lie under `realpath(prefix)`, for the inquiry, the write and the cleanup | ts-json-base _a directory inside the root that links outside it is refused, by inquiry, write and cleanup alike_; fs memory _a scope directory that links outside the root refuses the write_; non-regression: ts-json-base _…links elsewhere inside it is accepted_, memory _a scope directory that is a symbolic link is written through_ (now links inside the vault) | yes |
+| P2-A atomic writes followed a scope directory linking outside the root | ts-json-base `_confineToRoot` also requires `realpath(containing directory)` to lie under `realpath(prefix)`, for the inquiry, the write and the cleanup | ts-json-base _a directory inside the root that links outside it is refused, by inquiry, write and cleanup alike_; fs memory _a scope directory that links outside the root refuses the write_; non-regression: ts-json-base _…links elsewhere inside it is accepted_; ~~memory _a scope directory that is a symbolic link is written through_ (now links inside the vault)~~ — reversed in round 4, now a refusal | yes |
 | P2-B no repo-wide gate on the final head | fresh `rush rebuild` and `rush test` on this head (see Gates) | — | — |
 | P3 `\` treated as a separator on POSIX | separator taken from the path: `\` only for a path with no `/` | fs _a sibling whose name contains a backslash is not nested on POSIX_; _Windows-style paths nest by backslash, and a name that merely shares a prefix does not_ (non-regression) | yes / no |
 | P3 case-insensitive filesystems | `resolveRealPath` uses `fs.realpathSync.native`; the remaining gap (case variants the OS does not canonicalize) is documented in the guard remarks, README and CAPABILITIES | — (Linux CI cannot exercise it) | — |
@@ -202,6 +202,29 @@ red** (the one new test).
 
 Not changed: `forFilesystem(prefix).getDirectory('/')` resolution and plain-write confinement. Both
 remain recorded in TECH_DEBT for a decision.
+
+## Review round 4 (against 8affa23b8)
+
+**The round-1 P1-2 justification was partly wrong, and this round corrects it.** P1-2 had two
+halves. The first, a root whose last path component is a symlink failing to open, was a real
+regression; it stays fixed and is still pinned by _a root whose last component is a symbolic link
+opens …_. The second was "a put into a symlinked scope directory works", pinned by _a scope
+directory that is a symbolic link is written through_. That test checked only that the write
+landed. It never checked that the record could be read. `FsFileTreeAccessors.getChildren` lists only
+`Dirent.isDirectory()` / `isFile()` entries, so a symlinked scope directory is invisible to
+`resolveScopeDir`, the open walk and the sweep. `ensureScopeDir` then created the segment "over" the
+link: `mkdirSync({ recursive: true })` succeeds there, and the write went through the link. `get` and
+`getById` returned `undefined` in the same session, and a reopen either lost the record or failed on
+a scope mismatch. "Put ok" was the defect, not the fix. The base commit's plain write had the same
+property: it also succeeded through the link and was equally unreadable.
+
+The red run used the 8affa23b8 sources of both packages with the new tests kept: **ts-json-base, 2
+red** (the sweep test on both roots); **ts-agent-memory, 3 red**.
+
+| finding | disposition | test(s) | red on 8affa23b8 |
+|---|---|---|---|
+| P2-D a symlinked scope directory accepts writes the store can never read back | fixed in ts-agent-memory: `ensureScopeDir` creates each missing segment through `createListedDirectory`, which re-lists the parent and refuses a segment the listing does not show. The message is `memory store: '<path>' exists but is not a directory the store can list (a symbolic link or other special entry) …`. This covers every store-owned directory, versioned subtrees included. `getChildren`'s classification and `createDirectory`'s `recursive` semantics are unchanged. Tightening `createDirectory` would change the plain, established path, not a confined one, so it stays out | fs _a scope directory that is a symbolic link is refused, not written where no read can find it_ (the changed test); fs _a scope directory linked to another scope directory is refused rather than silently unreadable_ (new); fs _a scope directory that links outside the root refuses the write_ (now refused by the store, before the accessor's confinement, which ts-json-base's suite pins directly) | yes (all 3) |
+| P3 cleanup through the confined real path | fixed: `cleanupAtomicTemporaries` sweeps the real directory `_confineToRoot` accepted, as the write commits through it | ts-json-base _sweeps through the real directory the confinement check accepted_ (call-through `readdirSync` spy) | yes |
 
 ## Gates
 
