@@ -25,7 +25,7 @@ type MetaState = 'complete' | 'rebuilding';
 
 /** One row of {@link META_TABLE}, as read back. */
 interface IMetaRow {
-  // eslint-disable-next-line @rushstack/no-new-null -- SQLite returns NULL for an identity that was never committed
+  // eslint-disable-next-line @rushstack/no-new-null -- SQL NULL boundary: SQLite returns NULL for an identity that was never committed
   readonly identity: string | null;
   readonly state: MetaState;
   readonly meta_version: number;
@@ -54,12 +54,13 @@ const metaRowConverter: Converter<IMetaRow> = Converters.strictObject<IMetaRow>(
  * nothing is cached at open — because another connection, or a copy of the file,
  * can change the answer between two calls.
  *
- * The methods named `...InTransaction` **throw** on a database error, and must only
- * be called inside a `better-sqlite3` `transaction()`: a throw is what makes that
- * transaction roll back. Their callers wrap the transaction in `captureResult`.
+ * The methods named `...InTransaction` must only be called inside a
+ * `better-sqlite3` `transaction()`. Those returning `void` **throw** on a database
+ * error, because a throw is what makes that transaction roll back; their callers
+ * wrap the transaction in `captureResult`.
  *
  * Every statement this class prepares is held in a field and dropped by
- * {@link IndexIdentity.release}, so none outlives the index that made it.
+ * {@link IndexIdentity.release}; after it, nothing is prepared or run.
  * @internal
  */
 export class IndexIdentity {
@@ -68,6 +69,7 @@ export class IndexIdentity {
 
   private readonly _db: BetterSqlite3.Database;
   private readonly _table: string;
+  /** The `sqlite_master` lookup; `undefined` once released, which is what marks this instance released. */
   private _tableExists: BetterSqlite3.Statement | undefined;
   /** The meta table's statements, keyed by their SQL, prepared on first use and kept. */
   private readonly _prepared: Map<string, BetterSqlite3.Statement>;
@@ -86,7 +88,7 @@ export class IndexIdentity {
     this._tableExists = db.prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?");
   }
 
-  /** Drops every statement this instance prepared. Idempotent. */
+  /** Drops every statement this instance prepared and refuses all further work. Idempotent. */
   public release(): void {
     this._tableExists = undefined;
     this._prepared.clear();
@@ -97,28 +99,35 @@ export class IndexIdentity {
    * Never writes.
    *
    * @remarks
-   * The two reads — whether the `vec0` table exists, then the meta row — run in one
-   * (deferred, read-only) transaction, so the report describes a single snapshot
-   * of the file even when another connection is writing it. Called inside an
-   * enclosing transaction, this becomes a savepoint of it.
+   * Whether the `vec0` table exists decides first, because a row whose table was
+   * dropped describes vectors that no longer exist and must never read as a match
+   * for new ones — **except a `rebuilding` row**, which reads as `'incomplete'`
+   * even while the table does not exist yet. A rebuild of a fresh index is in
+   * flight; reporting `'fresh'` would let another writer create the table and
+   * certify its own identity over the rebuild's vectors.
+   *
+   * The reads run in one (deferred, read-only) transaction, so the report describes
+   * a single snapshot of the file even when another connection is writing it.
+   * Called inside an enclosing transaction, this becomes a savepoint of it.
    */
   public report(): Result<IIndexIdentityReport> {
     return captureResult(() =>
-      this._db.transaction(
-        (): Result<IIndexIdentityReport> =>
-          // The vec0 table decides first: a row whose table was dropped describes
-          // vectors that no longer exist, and must never read as a match for new ones.
-          this._exists(this._table)
-            ? this._readMetaRow().onSuccess((row) => succeed(this._classify(row)))
-            : succeed<IIndexIdentityReport>({ status: 'fresh' })
-      )()
+      this._db.transaction((): Result<IIndexIdentityReport> => {
+        const indexExists: boolean = this.tableExists();
+        return this._readMetaRow().onSuccess((row) =>
+          succeed(
+            indexExists || row?.state === 'rebuilding' ? this._classify(row) : { status: 'fresh' as const }
+          )
+        );
+      })()
     ).onSuccess((report) => report);
   }
 
   /**
    * {@link IndexIdentity.report}, failing when the status forbids reading or
    * writing vectors: `'mismatch'` (another embedding space) or `'incomplete'`
-   * (a partial table). The message names the status and the remedy.
+   * (a partial table, or a rebuild in flight). The message names the status and
+   * the remedy.
    */
   public fence(): Result<IIndexIdentityReport> {
     return this.report().onSuccess((report) => {
@@ -130,7 +139,7 @@ export class IndexIdentity {
       }
       if (report.status === 'incomplete') {
         return fail(
-          `index identity is 'incomplete': a rebuild cleared the index and never finished, ` +
+          `index identity is 'incomplete': a rebuild cleared the index and has not finished, ` +
             `so it may hold any subset of the records; rebuild the index`
         );
       }
@@ -138,40 +147,89 @@ export class IndexIdentity {
     });
   }
 
+  /** Whether the index's own `vec0` table exists in the file right now. Throws once released. */
+  public tableExists(): boolean {
+    return this._exists(this._table);
+  }
+
   /**
    * Fix the identity at the moment the `vec0` table is created, in the same
    * transaction. With no expected identity, any row left behind by a dropped table
    * of the same name is deleted instead, so it cannot later describe these
    * vectors; and the meta table is not created just to record nothing.
+   *
+   * @remarks
+   * Never touches a `rebuilding` row. The fence that runs first in the same
+   * transaction already refuses one; the SQL is conditioned on `state = 'complete'`
+   * as well, so a marker cannot be erased or overwritten through this path even if
+   * that ordering changes.
    */
   public commitFirstWriteInTransaction(): void {
     if (this.expected === undefined) {
       if (this._exists(META_TABLE)) {
-        this._statement(`DELETE FROM ${META_TABLE} WHERE table_name = ?`).run(this._table);
+        this._statement(`DELETE FROM ${META_TABLE} WHERE table_name = ? AND state = 'complete'`).run(
+          this._table
+        );
       }
       return;
     }
-    this._write(this.expected, 'complete');
+    this._ensureMetaTable();
+    this._statement(
+      `INSERT INTO ${META_TABLE} (table_name, identity, state, meta_version) VALUES (?, ?, 'complete', ?) ` +
+        `ON CONFLICT(table_name) DO UPDATE SET identity = excluded.identity, ` +
+        `meta_version = excluded.meta_version WHERE state = 'complete'`
+    ).run(this._table, this.expected, META_VERSION);
   }
 
-  /** Mark the table as being rebuilt, with no committed identity. */
-  public markRebuildingInTransaction(): void {
-    this._write(null, 'rebuilding');
+  /**
+   * Mark the table as being rebuilt, with no committed identity. Refuses — before
+   * writing anything — a row this version cannot read (another `meta_version`, or
+   * malformed), so a rebuild never overwrites what it would refuse to interpret.
+   */
+  public markRebuildingInTransaction(): Result<true> {
+    return this.report().onSuccess(() => {
+      this._ensureMetaTable();
+      this._statement(
+        `INSERT OR REPLACE INTO ${META_TABLE} (table_name, identity, state, meta_version) VALUES (?, NULL, 'rebuilding', ?)`
+      ).run(this._table, META_VERSION);
+      return succeed<true>(true);
+    });
+  }
+
+  /**
+   * Check, inside the transaction that would create the table during a rebuild,
+   * that nothing moved underneath the rebuild: the table must still be absent, and
+   * the row must still be this rebuild's uncommitted marker.
+   */
+  public checkRebuildTargetInTransaction(): Result<true> {
+    if (this.tableExists()) {
+      return fail(`table '${this._table}' appeared while the rebuild ran`);
+    }
+    return this._readMetaRow().onSuccess((row) =>
+      row?.state === 'rebuilding' && row.identity === null
+        ? succeed<true>(true)
+        : fail(`the rebuild marker for '${this._table}' changed while the rebuild ran`)
+    );
   }
 
   /**
    * Commit the expected identity at the end of a rebuild. Conditional on the row
    * still being marked as rebuilding: a row that changed underneath the rebuild
    * (deleted, or committed by another connection) fails loudly rather than being
-   * overwritten.
+   * overwritten. An immediate transaction, so it waits on `busy_timeout` rather than
+   * failing a lock upgrade.
    */
   public commitRebuild(): Result<true> {
-    return captureResult(
-      () =>
-        this._statement(
-          `UPDATE ${META_TABLE} SET identity = ?, state = 'complete' ` +
-            `WHERE table_name = ? AND state = 'rebuilding'`
-        ).run(this.expected ?? null, this._table).changes
+    return captureResult(() =>
+      this._db
+        .transaction(
+          (): number =>
+            this._statement(
+              `UPDATE ${META_TABLE} SET identity = ?, state = 'complete' ` +
+                `WHERE table_name = ? AND state = 'rebuilding'`
+            ).run(this.expected ?? null, this._table).changes
+        )
+        .immediate()
     ).onSuccess((changes) =>
       changes === 1
         ? succeed<true>(true)
@@ -183,45 +241,49 @@ export class IndexIdentity {
    * Record the expected identity over vectors that have none, without
    * re-embedding. Legal while the status is `'absent'`; idempotent on `'match'`,
    * where the stored identity already equals the expected one and nothing is
-   * written. The check and the write share one transaction, so no other
+   * written. The check and the write share one immediate transaction, so no other
    * connection can change the status between them.
    */
   public adopt(): Result<IIndexIdentityReport> {
     return captureResult(() =>
-      this._db.transaction((): Result<IIndexIdentityReport> => {
-        const expected: string | undefined = this.expected;
-        return this.report().onSuccess((report) => {
-          if (report.status === 'match') {
-            return succeed(report);
-          }
-          if (report.status !== 'absent' || expected === undefined) {
-            return fail(
-              `cannot adopt an identity while the status is '${report.status}'; adoption is only ` +
-                `for vectors with no stored identity` +
-                (report.status === 'mismatch' || report.status === 'incomplete'
-                  ? ', so rebuild the index'
-                  : '')
-            );
-          }
-          this._write(expected, 'complete');
-          return succeed<IIndexIdentityReport>({ status: 'match' });
-        });
-      })()
+      this._db
+        .transaction((): Result<IIndexIdentityReport> => {
+          const expected: string | undefined = this.expected;
+          return this.report().onSuccess((report) => {
+            if (report.status === 'match') {
+              return succeed(report);
+            }
+            if (report.status !== 'absent' || expected === undefined) {
+              return fail(
+                `cannot adopt an identity while the status is '${report.status}'; adoption is only ` +
+                  `for vectors with no stored identity` +
+                  (report.status === 'mismatch' || report.status === 'incomplete'
+                    ? ', so rebuild the index'
+                    : '')
+              );
+            }
+            this._ensureMetaTable();
+            this._statement(
+              `INSERT OR REPLACE INTO ${META_TABLE} (table_name, identity, state, meta_version) VALUES (?, ?, 'complete', ?)`
+            ).run(this._table, expected, META_VERSION);
+            return succeed<IIndexIdentityReport>({ status: 'match' });
+          });
+        })
+        .immediate()
     ).onSuccess((adopted) => adopted);
   }
 
-  private _write(identity: string | null, state: MetaState): void {
-    // Lazily, and only here: a read never creates the table, so `open` and
-    // `identity()` stay safe on a read-only or consumer-owned connection.
+  /**
+   * Lazily, and only from a write: a read never creates the table, so `open` and
+   * `identity()` stay safe on a read-only or consumer-owned connection.
+   */
+  private _ensureMetaTable(): void {
     this._db.exec(
       `CREATE TABLE IF NOT EXISTS ${META_TABLE} (` +
         `table_name TEXT PRIMARY KEY, identity TEXT, ` +
         `state TEXT NOT NULL CHECK (state IN ('complete','rebuilding')), ` +
         `meta_version INTEGER NOT NULL)`
     );
-    this._statement(
-      `INSERT OR REPLACE INTO ${META_TABLE} (table_name, identity, state, meta_version) VALUES (?, ?, ?, ?)`
-    ).run(this._table, identity, state, META_VERSION);
   }
 
   private _readMetaRow(): Result<IMetaRow | undefined> {
@@ -268,9 +330,11 @@ export class IndexIdentity {
 
   /**
    * The meta-table statement for `sql`, prepared on first use and kept, so a
-   * repeated read or write never prepares a statement nothing retains.
+   * repeated read or write never prepares a statement nothing retains. Refuses
+   * once released, so nothing is prepared that `release()` could no longer drop.
    */
   private _statement(sql: string): BetterSqlite3.Statement {
+    this._assertUsable();
     let statement: BetterSqlite3.Statement | undefined = this._prepared.get(sql);
     if (statement === undefined) {
       statement = this._db.prepare(sql);
@@ -280,9 +344,14 @@ export class IndexIdentity {
   }
 
   private _exists(name: string): boolean {
+    return this._assertUsable().get(name) !== undefined;
+  }
+
+  /** The `sqlite_master` lookup, or a throw once this instance has been released. */
+  private _assertUsable(): BetterSqlite3.Statement {
     if (this._tableExists === undefined) {
       throw new Error('the index has been released');
     }
-    return this._tableExists.get(name) !== undefined;
+    return this._tableExists;
   }
 }

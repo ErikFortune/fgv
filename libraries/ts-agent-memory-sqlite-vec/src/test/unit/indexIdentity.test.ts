@@ -343,12 +343,13 @@ describe.each(lanes)('$name identity', (lane: ILane) => {
       const db = connect();
       const index = await make('m1', db);
       const report = await index.rebuild(['a'], () => {
-        // The table does not exist yet, so the status is still 'fresh'.
+        // The table does not exist yet, but a rebuild is in flight: 'incomplete', not 'fresh'.
         expect(metaRow(db, lane.defaultTable)).toEqual({
           identity: null,
           state: 'rebuilding',
           meta_version: 1
         });
+        expect(index.identity()).toSucceedWith({ status: 'incomplete' });
         return ok([1, 0]);
       });
       expect(report).toSucceed();
@@ -364,10 +365,24 @@ describe.each(lanes)('$name identity', (lane: ILane) => {
       expect((await make('m1')).identity()).toSucceedWith({ status: 'absent' });
     });
 
-    test('a rebuild cannot change the dimension: it fails and leaves the index incomplete', async () => {
+    test.each(['fail', 'skip'] as const)(
+      "a rebuild cannot change the dimension: it fails in '%s' mode and leaves the index incomplete",
+      async (mode) => {
+        const index = await make('m1');
+        (await index.write('a', [1, 0])).orThrow();
+        expect(await index.rebuild(['a', 'b'], () => ok([1, 0, 0]), mode)).toFailWith(
+          /dimension 3 but the table is fixed at 2; a rebuild cannot change the dimension/
+        );
+        expect(index.identity()).toSucceedWith({ status: 'incomplete' });
+        expect(index.size()).toBe(0);
+      }
+    );
+
+    test('a width change mid-way through a rebuild of a fresh index also fails, whatever the mode', async () => {
       const index = await make('m1');
-      (await index.write('a', [1, 0])).orThrow();
-      expect(await index.rebuild(['a'], () => ok([1, 0, 0]))).toFailWith(/dimension 3 does not match/);
+      expect(await index.rebuild(['a', 'b'], (id) => ok(id === 'a' ? [1, 0] : [1, 0, 0]), 'skip')).toFailWith(
+        /cannot change the dimension/
+      );
       expect(index.identity()).toSucceedWith({ status: 'incomplete' });
     });
 
@@ -565,6 +580,163 @@ describe.each(lanes)('$name identity', (lane: ILane) => {
     expect(identityReads.length).toBeGreaterThanOrEqual(3);
     expect(identityReads.slice(-3).every((r) => r.inTransaction)).toBe(true);
     expect(db.inTransaction).toBe(false);
+  });
+
+  describe('other writers while a rebuild runs', () => {
+    test('a fresh index being rebuilt reads incomplete to every other handle, which cannot write, query or certify', async () => {
+      const rebuilder = await make('B', connect());
+      const other = await make('A', connect());
+      const unchecked = await make(undefined, connect());
+      const db = connect();
+      let first: boolean = true;
+      const seen: Array<Result<unknown>> = [];
+      const report = await rebuilder.rebuild(['1', '2'], async () => {
+        if (first) {
+          first = false;
+          seen.push(other.identity());
+          seen.push(await other.write('x', [1, 0]));
+          seen.push(await other.query([1, 0]));
+          seen.push(await unchecked.write('y', [1, 0]));
+          seen.push(succeed(metaRow(db, lane.defaultTable)));
+        }
+        return ok([0, 1]);
+      });
+      expect(seen[0]).toSucceedWith({ status: 'incomplete' });
+      expect(seen[1]).toFailWith(/'incomplete'/);
+      expect(seen[2]).toFailWith(/'incomplete'/);
+      expect(seen[3]).toFailWith(/'incomplete'/);
+      // The identity-less handle did not delete the in-flight marker.
+      expect(seen[4]).toSucceedWith({ identity: null, state: 'rebuilding', meta_version: 1 });
+      expect(report).toSucceed();
+      expect(rebuilder.identity()).toSucceedWith({ status: 'match' });
+      expect(rebuilder.size()).toBe(2);
+      expect(other.identity()).toSucceedWith({ status: 'mismatch', stored: 'B' });
+    });
+
+    test('a rebuild fails if the table appears underneath it, and the index stays incomplete', async () => {
+      const db = connect();
+      const index = await make('m1', db);
+      const report = await index.rebuild(['1'], () => {
+        connect().exec(`CREATE TABLE ${lane.defaultTable} (x)`);
+        return ok([1, 0]);
+      });
+      expect(report).toFailWith(/appeared while the rebuild ran/);
+      expect(index.identity()).toSucceedWith({ status: 'incomplete' });
+    });
+
+    test.each([
+      ['committed by someone else', `UPDATE ${META} SET identity = 'other', state = 'complete'`],
+      ['deleted', `DELETE FROM ${META}`],
+      ['given an identity while still rebuilding', `UPDATE ${META} SET identity = 'other'`]
+    ])(
+      'a rebuild fails before writing anything if its marker is %s underneath it',
+      async (__label, tamper) => {
+        const db = connect();
+        const index = await make('m1', db);
+        const report = await index.rebuild(['1'], () => {
+          db.exec(tamper);
+          return ok([1, 0]);
+        });
+        expect(report).toFailWith(/marker .* changed while the rebuild ran/);
+        expect(tableExists(db, lane.defaultTable)).toBe(false);
+      }
+    );
+
+    test("an empty vector in a rebuild is still a per-record rejection that 'skip' skips", async () => {
+      const index = await make('m1');
+      (await index.write('a', [1, 0])).orThrow();
+      expect(await index.rebuild(['a', 'b'], (id) => ok(id === 'a' ? [1, 0] : []), 'skip')).toSucceed();
+      expect(index.identity()).toSucceedWith({ status: 'match' });
+      expect(index.size()).toBe(1);
+    });
+
+    test('a rebuild by a handle opened before another connection created the table empties that table too', async () => {
+      const stale = await make('B', connect());
+      const foreign = await make('A', connect());
+      (await foreign.write('foreign', [1, 0])).orThrow();
+      expect(await stale.rebuild(['1'], () => ok([0, 1]))).toSucceed();
+      expect(stale.size()).toBe(1);
+      const reader = await make('B');
+      expect(reader.identity()).toSucceedWith({ status: 'match' });
+      expect(await reader.query([1, 0])).toSucceedAndSatisfy((hits: ReadonlyArray<IVectorQueryHit>) => {
+        expect(hits.map((h) => h.target.id)).toEqual(['1']);
+      });
+    });
+
+    test("a release during a 'skip' rebuild fails it before the commit, leaves it incomplete, and prepares nothing after", async () => {
+      const db = connect();
+      const index = await make('m1', db);
+      (await index.write('0', [1, 0])).orThrow();
+      let n: number = 0;
+      let spy: jest.SpyInstance | undefined;
+      const report = await index.rebuild(
+        ['1', '2', '3'],
+        () => {
+          n += 1;
+          if (n === 2) {
+            index.release();
+            spy = jest.spyOn(db, 'prepare');
+          }
+          return ok([1, 0]);
+        },
+        'skip'
+      );
+      expect(report).toFailWith(/released while the rebuild ran; it stays incomplete/);
+      expect(spy).toBeDefined();
+      expect(spy?.mock.calls).toEqual([]);
+      spy?.mockRestore();
+      expect((await make('m1')).identity()).toSucceedWith({ status: 'incomplete' });
+    });
+
+    test('rebuild refuses a meta row it cannot read rather than overwriting it', async () => {
+      const db = connect();
+      const index = await make('m1', db);
+      (await index.write('a', [1, 0])).orThrow();
+      db.prepare(`UPDATE ${META} SET meta_version = 2`).run();
+      expect(await index.rebuild(['a'], () => ok([1, 0]))).toFailWith(/failed to clear.*meta_version 2/);
+      expect(metaRow(db, lane.defaultTable)).toEqual({ identity: 'm1', state: 'complete', meta_version: 2 });
+      expect(index.size()).toBe(1);
+    });
+
+    test('a query from a handle that never saw the table still fails on mismatch, not []', async () => {
+      const early = await make('m2');
+      (await (await make('m1')).write('a', [1, 0])).orThrow();
+      expect(await early.query([1, 0])).toFailWith(/query failed: index identity is 'mismatch'/);
+    });
+
+    test('a fenced write takes the write lock before its fence read (immediate, honours busy_timeout)', async () => {
+      const db = connect();
+      const other = connect({ timeout: 0 });
+      let armed: boolean = false;
+      let otherCouldStartAWrite: boolean | undefined;
+      const realPrepare = db.prepare.bind(db);
+      const prepare = jest.spyOn(db, 'prepare').mockImplementation((sql: string) => {
+        const statement = realPrepare(sql);
+        if (/sqlite_master/.test(sql)) {
+          const realGet = statement.get.bind(statement);
+          jest.spyOn(statement, 'get').mockImplementation((...params: unknown[]) => {
+            if (armed) {
+              armed = false;
+              try {
+                other.exec('BEGIN IMMEDIATE');
+                other.exec('ROLLBACK');
+                otherCouldStartAWrite = true;
+              } catch {
+                otherCouldStartAWrite = false;
+              }
+            }
+            return realGet(...params);
+          });
+        }
+        return statement;
+      });
+      const index = await make('m1', db);
+      (await index.write('a', [1, 0])).orThrow();
+      armed = true;
+      expect(await index.write('b', [0, 1])).toSucceed();
+      prepare.mockRestore();
+      expect(otherCouldStartAWrite).toBe(false);
+    });
   });
 
   describe('failures', () => {

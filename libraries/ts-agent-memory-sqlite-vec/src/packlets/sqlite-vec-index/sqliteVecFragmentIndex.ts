@@ -472,11 +472,14 @@ export class SqliteVecFragmentIndex implements IFragmentVectorIndex {
           stmts.replace(key, fragments);
           return succeed(fragments.length);
         };
-        // Fenced writes run the identity check and the write in one transaction,
-        // so another connection cannot start a rebuild or change the stored
-        // identity between them.
+        // Fenced writes run the identity check and the write in one IMMEDIATE
+        // transaction: no other connection can start a rebuild or change the stored
+        // identity between them, and a busy file waits on `busy_timeout` instead of
+        // failing a read-to-write lock upgrade at once.
         return captureResult(() =>
-          mode === 'rebuild' ? write() : this._db.transaction(() => this._identity.fence().onSuccess(write))()
+          mode === 'rebuild'
+            ? write()
+            : this._db.transaction(() => this._identity.fence().onSuccess(write)).immediate()
         ).onSuccess((written) => written);
       })
       .withErrorFormat((e) => `fragment index: cannot add '${key}': ${e}`);
@@ -489,28 +492,33 @@ export class SqliteVecFragmentIndex implements IFragmentVectorIndex {
    * @remarks
    * Same contract as the record index's: a fenced first write creates the table
    * and stores the handle's identity in one transaction, but only when the status
-   * read inside that transaction is `'fresh'`; the statements are kept only after
-   * that transaction commits.
+   * read inside that transaction is `'fresh'`; a rebuild's own first write creates
+   * the table only if it is still absent and the row is still this rebuild's
+   * marker; the statements are kept only after that transaction commits.
    */
   private _establish(dimension: number, mode: WriteMode): Result<IFragmentStatements> {
     if (this._stmts !== undefined) {
       return succeed(this._stmts);
     }
     return captureResult(() =>
-      this._db.transaction((): Result<true> => {
-        if (mode === 'rebuild') {
-          // The rebuild already marked the row; creating the table must not commit it.
-          this._createTable(dimension);
-          return succeed(true);
-        }
-        return this._identity.fence().onSuccess((report) => {
-          this._createTable(dimension);
-          if (report.status === 'fresh') {
-            this._identity.commitFirstWriteInTransaction();
+      this._db
+        .transaction((): Result<true> => {
+          if (mode === 'rebuild') {
+            // The rebuild already marked the row; creating the table must not commit it.
+            return this._identity.checkRebuildTargetInTransaction().onSuccess(() => {
+              this._createTable(dimension);
+              return succeed<true>(true);
+            });
           }
-          return succeed<true>(true);
-        });
-      })()
+          return this._identity.fence().onSuccess((report) => {
+            this._createTable(dimension);
+            if (report.status === 'fresh') {
+              this._identity.commitFirstWriteInTransaction();
+            }
+            return succeed<true>(true);
+          });
+        })
+        .immediate()
     )
       .onSuccess((established) => established)
       .onSuccess(() =>
@@ -606,6 +614,24 @@ export class SqliteVecFragmentIndex implements IFragmentVectorIndex {
         skipped.push({ target: scoped.target, error });
         continue;
       }
+      const established: number | undefined = this._dimension;
+      const offWidth: IEmbeddedFragment | undefined =
+        established === undefined
+          ? undefined
+          : // An empty vector is malformed rather than another width, and stays a
+            // per-record rejection by `_addFragments`.
+            embedded.value.find(
+              (fragment) => fragment.vector.length !== 0 && fragment.vector.length !== established
+            );
+      if (offWidth !== undefined) {
+        // Not a per-record error, so not skippable: the table can never hold this
+        // model's vectors, and every later record would fail the same way.
+        const error: string =
+          `fragment index rebuild: '${edgeTargetKey(scoped.target)}' has a fragment of dimension ` +
+          `${offWidth.vector.length} but the table is fixed at ${established}; a rebuild cannot change ` +
+          `the dimension — drop the table (or use a fresh tableName) and re-index`;
+        return failWithDetail(withRollbackNote(error, this._clear()), report());
+      }
       // An empty array is this lane's decline, and it is still WRITTEN — the
       // whole-record-replace is what clears any stale fragments.
       const added: Result<number> = this._addFragments(scoped.target, embedded.value, 'rebuild');
@@ -623,6 +649,14 @@ export class SqliteVecFragmentIndex implements IFragmentVectorIndex {
       }
       tally(indexed, kind);
       tally(fragments, kind, added.value);
+    }
+    if (this._released) {
+      // Every write after the release was refused (and, in 'skip' mode, skipped),
+      // so the table is partial. Leave the marker: the index stays 'incomplete'.
+      return failWithDetail(
+        'fragment index rebuild: the index was released while the rebuild ran; it stays incomplete',
+        report()
+      );
     }
     const committed: Result<true> = this._identity.commitRebuild();
     if (committed.isFailure()) {
@@ -646,7 +680,11 @@ export class SqliteVecFragmentIndex implements IFragmentVectorIndex {
    *
    * Marks the identity row `'rebuilding'` in the same transaction, so a clear is
    * never committed without the marker that makes the partial table detectable;
-   * the `'fail'` rollback calls this again and leaves the marker in place.
+   * the `'fail'` rollback calls this again and leaves the marker in place. A row
+   * this version cannot read (another `meta_version`) is refused, not overwritten.
+   * Whether to delete is decided from the file rather than from this handle, and a
+   * table another connection created after this handle opened is emptied and
+   * adopted, so a rebuild never certifies fragments it did not write.
    */
   private _clear(): Result<true> {
     if (this._released) {
@@ -661,13 +699,33 @@ export class SqliteVecFragmentIndex implements IFragmentVectorIndex {
     // method, and a throw inside the transaction rolls the delete and the marker
     // back together.
     return captureResult(() =>
-      this._db.transaction(() => {
-        if (this._stmts !== undefined) {
-          this._db.exec(`DELETE FROM "${this._table}"`);
-        }
-        this._identity.markRebuildingInTransaction();
-      })()
-    ).onSuccess(() => succeed(true));
+      this._db
+        .transaction((): Result<boolean> => {
+          const tableExists: boolean = this._identity.tableExists();
+          return this._identity.markRebuildingInTransaction().onSuccess(() => {
+            if (tableExists) {
+              this._db.exec(`DELETE FROM "${this._table}"`);
+            }
+            return succeed(tableExists);
+          });
+        })
+        .immediate()
+    )
+      .onSuccess((cleared) => cleared)
+      .onSuccess((tableExists) =>
+        tableExists && this._stmts === undefined
+          ? captureResult(() => {
+              const dimension: number | undefined = SqliteVecFragmentIndex._readExistingDimension(
+                this._db,
+                this._table
+              );
+              const stmts: IFragmentStatements = this._prepare();
+              this._dimension = dimension;
+              this._stmts = stmts;
+              return true as const;
+            })
+          : succeed<true>(true)
+      );
   }
 
   /** {@inheritDoc IFragmentVectorIndex.query} */
@@ -683,7 +741,14 @@ export class SqliteVecFragmentIndex implements IFragmentVectorIndex {
       return Promise.resolve(fail('fragment index: cannot query: the index has been released'));
     }
     if (topK <= 0 || this._stmts === undefined) {
-      return Promise.resolve(succeed([]));
+      // Nothing to read, but the status still decides: a mismatched or incomplete
+      // index fails rather than answering an empty list.
+      return Promise.resolve(
+        this._identity
+          .fence()
+          .onSuccess(() => succeed<ReadonlyArray<IVectorQueryHit>>([]))
+          .withErrorFormat((e) => `fragment index: query failed: ${e}`)
+      );
     }
     if (vector.length !== this._dimension) {
       return Promise.resolve(

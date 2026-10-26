@@ -1101,9 +1101,12 @@ describe('SqliteVecFragmentIndex', () => {
       let calls: number = 0;
       const embedThenBad = (): Promise<Result<ReadonlyArray<IEmbeddedFragment>>> => {
         calls += 1;
-        // A dimension mismatch against the established dimension is an add-side
-        // rejection, distinct from an embedder failure.
-        return Promise.resolve(calls === 1 ? succeed([frag(0, 5, 1, 1)]) : succeed([frag(0, 5, 1, 1, 1)]));
+        // A fragment carrying neither a locator nor a fragmentId is an add-side,
+        // per-record rejection, distinct from an embedder failure. (A width change
+        // is not per-record: it fails the whole rebuild in every mode.)
+        return Promise.resolve(
+          calls === 1 ? succeed([frag(0, 5, 1, 1)]) : succeed([{ vector: Float32Array.from([1, 1]) }])
+        );
       };
       const source = new FakeSource(succeed([scoped('knowledge', 'a'), scoped('conv-a', 't1')]));
       expect(await index.rebuild(source, embedThenBad, { onRecordError: 'skip' })).toSucceedAndSatisfy(
@@ -1281,6 +1284,8 @@ describe('SqliteVecFragmentIndex', () => {
           Promise.resolve(succeed<ReadonlyArray<IEmbeddedFragment>>([frag(0, 4, 1, 0)]))
         )
       ).orThrow();
+      // The row read is prepared on the first read that finds the meta table.
+      index.identity().orThrow();
       return index;
     }
 
