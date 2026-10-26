@@ -758,6 +758,13 @@ export interface IAtomicWriteCapabilities {
    * weakest to strongest. Empty when `atomicReplace` is `false`.
    */
   readonly guarantees: ReadonlyArray<AtomicWriteGuarantee>;
+
+  /**
+   * Why the store answered as it did, in a form that can be shown to a caller
+   * whose durable write would be refused — for a capable store as well as an
+   * incapable one. Optional: a store that cannot say leaves it absent.
+   */
+  readonly reason?: string;
 }
 
 /**

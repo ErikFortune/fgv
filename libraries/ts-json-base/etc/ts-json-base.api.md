@@ -552,6 +552,7 @@ interface IAtomicFileTreeDirectoryItem<TCT extends string = string> extends IMut
 interface IAtomicWriteCapabilities {
     readonly atomicReplace: boolean;
     readonly guarantees: ReadonlyArray<AtomicWriteGuarantee>;
+    readonly reason?: string;
 }
 
 // @public

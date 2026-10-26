@@ -324,7 +324,7 @@ export class FsFileTreeAccessors<TCT extends string = string>
     // it, and two different answers to one question is worse than either.
     return this._confineToRoot(this.resolveAbsolutePath(directory))
       .onSuccess(() => this._qualifyDirectory(directory))
-      .onSuccess((qualification) => succeed(qualification.capabilities));
+      .onSuccess(({ capabilities, reason }) => succeed({ ...capabilities, reason }));
   }
 
   /**

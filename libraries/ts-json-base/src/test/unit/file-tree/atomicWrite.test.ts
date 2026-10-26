@@ -144,6 +144,7 @@ describe('InMemoryTreeAccessors.getAtomicWriteCapabilities', () => {
       expect(caps.atomicReplace).toBe(true);
       expect(caps.guarantees).toEqual(['session']);
       expect(caps.guarantees).not.toContain('process-crash');
+      expect(caps.reason).toMatch(/in-memory tree/i);
     });
   });
 
@@ -152,6 +153,7 @@ describe('InMemoryTreeAccessors.getAtomicWriteCapabilities', () => {
     expect(accessors.getAtomicWriteCapabilities('/')).toSucceedAndSatisfy((caps) => {
       expect(caps.atomicReplace).toBe(false);
       expect(caps.guarantees).toEqual([]);
+      expect(caps.reason).toMatch(/mutability is disabled/i);
     });
   });
 
@@ -290,6 +292,7 @@ describe('DirectoryItem atomic delegation', () => {
     expect(dir.getAtomicWriteCapabilities()).toSucceedAndSatisfy((caps) => {
       expect(caps.atomicReplace).toBe(false);
       expect(caps.guarantees).toEqual([]);
+      expect(caps.reason).toMatch(/does not implement atomic writes/i);
     });
   });
 

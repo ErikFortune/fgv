@@ -1,0 +1,40 @@
+# State: `agent-memory-atomic-writes`
+
+Worker-owned working surface. The brief is the contract.
+
+## Plan
+
+1. ts-json-base: additive optional `reason` on `IAtomicWriteCapabilities`, populated by the fs,
+   in-memory and non-atomic `DirectoryItem` answers; fix the stale `directoryItem.ts` comment.
+2. ts-agent-memory:
+   - `rootOwnership.ts` — in-process guard (mirrors ts-agent-tasks).
+   - `storeOpen.ts` — durability report/options types, resolution at open, temporary sweep, and
+     the open-time types moved out of `fileTreeMemoryStore.ts` to keep it under the line cap.
+   - `storeFileAccess.ts` — `writeRecordFile` / `deleteRecordFile` take the store's writer; atomic
+     path with visibility settlement.
+   - `fileTreeMemoryStore.ts` — wire `durability`, `dispose()`, create ordering.
+3. Tests (red against base first), docs, change files, gates, close-out.
+
+## Decisions taken inside the brief's latitude
+
+- The guard keys a root by its directory item always, and additionally by absolute path unless
+  the root's strongest guarantee is exactly `'session'` (an in-memory tree). A non-atomic root is
+  path-keyed: nothing says it is not disk-backed, and refusing a duplicate is the safe answer.
+- A disposed store refuses further writes and deletes (both go through the writer), so a disposed
+  instance can never be the second writer behind a new owner.
+- A sweep failure warns and does not fail the open: a leftover temporary is not a `.md` file and
+  cannot be read as a record.
+- The durability report carries `removedTemporaries` alongside `atomic` / `guarantee` / `reason`.
+
+## Open questions
+
+(none yet)
+
+## Progress
+
+- [ ] ts-json-base reason
+- [ ] store implementation
+- [ ] tests red-then-green
+- [ ] docs + change files
+- [ ] gates
+- [ ] close-out

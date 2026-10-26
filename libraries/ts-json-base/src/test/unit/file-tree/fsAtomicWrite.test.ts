@@ -95,6 +95,9 @@ describe.each(atomicTestRoots())('FsFileTreeAccessors atomic writes on $label', 
       expect(capabilities.guarantees).not.toContain('power-loss');
       if (qualified) {
         expect(capabilities.guarantees).toEqual(['session', 'process-crash']);
+        expect(capabilities.reason).toMatch(/on linux$/);
+      } else {
+        expect(capabilities.reason).toMatch(/not qualified|cannot identify/i);
       }
     });
   });
@@ -387,6 +390,7 @@ describe('FsFileTreeAccessors atomic writes and mutability policy', () => {
     expect(accessors.getAtomicWriteCapabilities('/proc')).toSucceedAndSatisfy((capabilities) => {
       expect(capabilities.atomicReplace).toBe(false);
       expect(capabilities.guarantees).toEqual([]);
+      expect(capabilities.reason).toMatch(/filesystem type 0x9fa0 .* is not qualified/);
     });
     expect(
       accessors.writeFileAtomically('/proc/fgv-atomic-probe.json', NEW, { guarantee: 'process-crash' })
