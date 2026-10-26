@@ -18,7 +18,13 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import { AsyncDetailedResult, captureResult, type DetailedResult, failWithDetail, type Result } from '@fgv/ts-utils';
+import {
+  AsyncDetailedResult,
+  captureResult,
+  type DetailedResult,
+  failWithDetail,
+  type Result
+} from '@fgv/ts-utils';
 
 /**
  * Why a {@link AsyncControl.raceStopConditions} race ended without the work's own success:

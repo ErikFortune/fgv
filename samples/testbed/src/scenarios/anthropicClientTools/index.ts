@@ -208,8 +208,9 @@ const cliImpl: ICliScenarioImpl = {
           );
         } else if (event.type === 'client-tool-result') {
           context.logger.info(
-            `  [round ${round} client-tool-result] toolName=${event.toolName} isError=${String(event.isError)} ` +
-              `result=${event.result.slice(0, 80)}`
+            `  [round ${round} client-tool-result] toolName=${event.toolName} isError=${String(
+              event.isError
+            )} ` + `result=${event.result.slice(0, 80)}`
           );
         } else if (event.type === 'tool-event') {
           serverToolEventCount++;
@@ -245,7 +246,9 @@ const cliImpl: ICliScenarioImpl = {
     });
     if (loopResult.isFailure()) {
       return fail(
-        `runClientToolLoop failed after ${loopResult.detail?.rounds.length ?? 0} round(s): ${loopResult.message}`
+        `runClientToolLoop failed after ${loopResult.detail?.rounds.length ?? 0} round(s): ${
+          loopResult.message
+        }`
       );
     }
 

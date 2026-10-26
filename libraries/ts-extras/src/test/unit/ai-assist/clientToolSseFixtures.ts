@@ -90,7 +90,10 @@ export function anthropicToolUseSse(calls: ReadonlyArray<IFakeToolUse>, text?: s
     text === undefined
       ? []
       : [
-          `event: content_block_start\ndata: ${JSON.stringify({ index: 0, content_block: { type: 'text' } })}\n\n`,
+          `event: content_block_start\ndata: ${JSON.stringify({
+            index: 0,
+            content_block: { type: 'text' }
+          })}\n\n`,
           `event: content_block_delta\ndata: ${JSON.stringify({
             index: 0,
             delta: { type: 'text_delta', text }
@@ -130,7 +133,10 @@ export function anthropicTextSse(
         ]
       : []),
     `event: content_block_start\ndata: ${JSON.stringify({ index: 0, content_block: { type: 'text' } })}\n\n`,
-    `event: content_block_delta\ndata: ${JSON.stringify({ index: 0, delta: { type: 'text_delta', text } })}\n\n`,
+    `event: content_block_delta\ndata: ${JSON.stringify({
+      index: 0,
+      delta: { type: 'text_delta', text }
+    })}\n\n`,
     `event: content_block_stop\ndata: ${JSON.stringify({ index: 0 })}\n\n`,
     `event: message_delta\ndata: ${JSON.stringify({
       delta: { stop_reason: options?.stopReason ?? 'end_turn' },

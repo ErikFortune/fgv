@@ -928,7 +928,11 @@ export function executeClientToolTurn(
 
     const validationResult = tool.config.parametersSchema.validate(args);
     if (validationResult.isFailure()) {
-      return { result: `${toolName} (callId=${callId}): ${validationResult.message}`, isError: true, fatal: false };
+      return {
+        result: `${toolName} (callId=${callId}): ${validationResult.message}`,
+        isError: true,
+        fatal: false
+      };
     }
 
     if (isAborted(signal)) {
@@ -945,7 +949,11 @@ export function executeClientToolTurn(
       ).onSuccess((decision) => decision);
 
       if (decisionResult.isFailure()) {
-        return { result: `${toolName} (callId=${callId}): ${decisionResult.message}`, isError: true, fatal: true };
+        return {
+          result: `${toolName} (callId=${callId}): ${decisionResult.message}`,
+          isError: true,
+          fatal: true
+        };
       }
 
       if (decisionResult.value.action === 'deny') {
@@ -962,11 +970,17 @@ export function executeClientToolTurn(
       }
     }
 
-    const executeResult = await captureAsyncResult(async () => tool.execute(validationResult.value, { signal }));
+    const executeResult = await captureAsyncResult(async () =>
+      tool.execute(validationResult.value, { signal })
+    );
     const executionResult: Result<unknown> = executeResult.isSuccess() ? executeResult.value : executeResult;
 
     if (executionResult.isFailure()) {
-      return { result: `${toolName} (callId=${callId}): ${executionResult.message}`, isError: true, fatal: false };
+      return {
+        result: `${toolName} (callId=${callId}): ${executionResult.message}`,
+        isError: true,
+        fatal: false
+      };
     }
 
     // JSON.stringify can throw (circular references) or return undefined
@@ -1047,8 +1061,21 @@ export function executeClientToolTurn(
         const startedAt = clock();
         const outcome = await dispatchCall(toolName, callId, args);
         const durationMs = Math.max(0, clock() - startedAt);
-        yield { type: 'client-tool-result', toolName, callId, result: outcome.result, isError: outcome.isError };
-        toolResults.push({ toolName, callId, args, result: outcome.result, isError: outcome.isError, durationMs });
+        yield {
+          type: 'client-tool-result',
+          toolName,
+          callId,
+          result: outcome.result,
+          isError: outcome.isError
+        };
+        toolResults.push({
+          toolName,
+          callId,
+          args,
+          result: outcome.result,
+          isError: outcome.isError,
+          durationMs
+        });
         if (outcome.fatal) {
           // Gate-fail is a hard, turn-terminating error (unlike a non-fatal `deny`, whose
           // generator continues). Emit an explicit `error` event so a consumer watching only

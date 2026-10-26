@@ -275,7 +275,9 @@ describe('runClientToolLoop', () => {
     });
 
     test('duplicate tool names are refused by round 1, with no rounds', async () => {
-      const result = await runClientToolLoop(baseParams({ clientTools: [makeRecallTool(), makeRecallTool()] }));
+      const result = await runClientToolLoop(
+        baseParams({ clientTools: [makeRecallTool(), makeRecallTool()] })
+      );
       expect(result).toFailWithDetail(/duplicate client tool name 'recall'/, { rounds: [] });
       expect(fetchMock()).not.toHaveBeenCalled();
     });
@@ -285,9 +287,11 @@ describe('runClientToolLoop', () => {
     test('an already-aborted caller signal starts no round', async () => {
       const caller = new AbortController();
       caller.abort();
-      expect(await runClientToolLoop(baseParams({ signal: caller.signal }))).toSucceedAndSatisfy((outcome) => {
-        expect(outcome).toEqual({ state: 'aborted', rounds: [] });
-      });
+      expect(await runClientToolLoop(baseParams({ signal: caller.signal }))).toSucceedAndSatisfy(
+        (outcome) => {
+          expect(outcome).toEqual({ state: 'aborted', rounds: [] });
+        }
+      );
       expect(fetchMock()).not.toHaveBeenCalled();
     });
 
@@ -444,7 +448,11 @@ describe('runClientToolLoop', () => {
       queueSse(anthropicTextSse('done'));
       expect(
         await runClientToolLoop(
-          baseParams({ deadlineMs: 1000, schedule: timer.schedule, observer: { round: (r) => rounds.push(r.round) } })
+          baseParams({
+            deadlineMs: 1000,
+            schedule: timer.schedule,
+            observer: { round: (r) => rounds.push(r.round) }
+          })
         )
       ).toSucceedAndSatisfy((outcome) => expect(outcome.state).toBe('completed'));
       timer.fire();

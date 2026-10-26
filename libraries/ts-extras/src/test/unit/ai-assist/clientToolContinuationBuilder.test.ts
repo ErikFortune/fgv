@@ -150,7 +150,14 @@ describe('buildAnthropicContinuation', () => {
       buffer.set(1, { type: 'tool_use', id: 'toolu_05', name: 'recall', argsBuffer: '{"q":"x"}' });
 
       const results = [
-        { toolName: 'recall', callId: 'toolu_05', args: { q: 'x' }, result: '"result"', isError: false, durationMs: 0 }
+        {
+          toolName: 'recall',
+          callId: 'toolu_05',
+          args: { q: 'x' },
+          result: '"result"',
+          isError: false,
+          durationMs: 0
+        }
       ];
 
       const cont = buildAnthropicContinuation(buffer, results).orThrow();
@@ -170,7 +177,9 @@ describe('buildAnthropicContinuation', () => {
       buffer.set(0, { type: 'thinking', thinking: 'Thinking...', signature: fullSignature });
       buffer.set(1, { type: 'tool_use', id: 'toolu_06', name: 'recall', argsBuffer: '{}' });
 
-      const results = [{ toolName: 'recall', callId: 'toolu_06', args: {}, result: '"x"', isError: false, durationMs: 0 }];
+      const results = [
+        { toolName: 'recall', callId: 'toolu_06', args: {}, result: '"x"', isError: false, durationMs: 0 }
+      ];
 
       const cont = buildAnthropicContinuation(buffer, results).orThrow();
       const assistantContent = cont.messages[0].content as unknown[];
@@ -182,7 +191,9 @@ describe('buildAnthropicContinuation', () => {
       buffer.set(0, { type: 'redacted_thinking', data: 'opaque-encrypted-string' });
       buffer.set(1, { type: 'tool_use', id: 'toolu_07', name: 'recall', argsBuffer: '{}' });
 
-      const results = [{ toolName: 'recall', callId: 'toolu_07', args: {}, result: '"x"', isError: false, durationMs: 0 }];
+      const results = [
+        { toolName: 'recall', callId: 'toolu_07', args: {}, result: '"x"', isError: false, durationMs: 0 }
+      ];
 
       const cont = buildAnthropicContinuation(buffer, results).orThrow();
       const assistantContent = cont.messages[0].content as unknown[];
@@ -200,8 +211,22 @@ describe('buildAnthropicContinuation', () => {
       buffer.set(4, { type: 'tool_use', id: 'toolu_b', name: 'recall', argsBuffer: '{"q":"b"}' });
 
       const results = [
-        { toolName: 'recall', callId: 'toolu_a', args: { q: 'a' }, result: '"res-a"', isError: false, durationMs: 0 },
-        { toolName: 'recall', callId: 'toolu_b', args: { q: 'b' }, result: '"res-b"', isError: false, durationMs: 0 }
+        {
+          toolName: 'recall',
+          callId: 'toolu_a',
+          args: { q: 'a' },
+          result: '"res-a"',
+          isError: false,
+          durationMs: 0
+        },
+        {
+          toolName: 'recall',
+          callId: 'toolu_b',
+          args: { q: 'b' },
+          result: '"res-b"',
+          isError: false,
+          durationMs: 0
+        }
       ];
 
       const cont = buildAnthropicContinuation(buffer, results).orThrow();
@@ -226,8 +251,22 @@ describe('buildAnthropicContinuation', () => {
       buffer.set(2, { type: 'tool_use', id: 'toolu_p2', name: 'search', argsBuffer: '{"q":"p2"}' });
 
       const results = [
-        { toolName: 'recall', callId: 'toolu_p1', args: { q: 'p1' }, result: '"r1"', isError: false, durationMs: 0 },
-        { toolName: 'search', callId: 'toolu_p2', args: { q: 'p2' }, result: '"r2"', isError: false, durationMs: 0 }
+        {
+          toolName: 'recall',
+          callId: 'toolu_p1',
+          args: { q: 'p1' },
+          result: '"r1"',
+          isError: false,
+          durationMs: 0
+        },
+        {
+          toolName: 'search',
+          callId: 'toolu_p2',
+          args: { q: 'p2' },
+          result: '"r2"',
+          isError: false,
+          durationMs: 0
+        }
       ];
 
       const cont = buildAnthropicContinuation(buffer, results).orThrow();
@@ -249,7 +288,9 @@ describe('buildAnthropicContinuation', () => {
       buffer.set(0, { type: 'thinking', thinking: 'Thinking...', signature: 'sig' });
       buffer.set(1, { type: 'tool_use', id: 'toolu_08', name: 'recall', argsBuffer: '{}' });
 
-      const results = [{ toolName: 'recall', callId: 'toolu_08', args: {}, result: '"x"', isError: false, durationMs: 0 }];
+      const results = [
+        { toolName: 'recall', callId: 'toolu_08', args: {}, result: '"x"', isError: false, durationMs: 0 }
+      ];
 
       const cont = buildAnthropicContinuation(buffer, results).orThrow();
       for (const msg of cont.messages) {
@@ -265,7 +306,14 @@ describe('buildAnthropicContinuation', () => {
       buffer.set(0, { type: 'tool_use', id: 'toolu_err', name: 'recall', argsBuffer: '{}' });
 
       const results = [
-        { toolName: 'recall', callId: 'toolu_err', args: {}, result: 'validation failed', isError: true, durationMs: 0 }
+        {
+          toolName: 'recall',
+          callId: 'toolu_err',
+          args: {},
+          result: 'validation failed',
+          isError: true,
+          durationMs: 0
+        }
       ];
 
       const cont = buildAnthropicContinuation(buffer, results).orThrow();
@@ -314,7 +362,14 @@ describe('buildAnthropicContinuation', () => {
       buffer.set(0, { type: 'tool_use', id: 'toolu_real', name: 'recall', argsBuffer: '{}' });
 
       const results = [
-        { toolName: 'recall', callId: 'toolu_mismatch', args: {}, result: '"x"', isError: false, durationMs: 0 }
+        {
+          toolName: 'recall',
+          callId: 'toolu_mismatch',
+          args: {},
+          result: '"x"',
+          isError: false,
+          durationMs: 0
+        }
       ];
 
       expect(buildAnthropicContinuation(buffer, results)).toFailWith(
@@ -329,7 +384,9 @@ describe('buildAnthropicContinuation', () => {
       // the assistant turn.
       buffer.set(0, { type: 'tool_use', id: '', name: 'recall', argsBuffer: '{}' });
 
-      const results = [{ toolName: 'recall', callId: '', args: {}, result: '"x"', isError: false, durationMs: 0 }];
+      const results = [
+        { toolName: 'recall', callId: '', args: {}, result: '"x"', isError: false, durationMs: 0 }
+      ];
 
       expect(buildAnthropicContinuation(buffer, results)).toFailWith(
         /buffered tool_use block.*recall.*empty id/i
@@ -343,7 +400,14 @@ describe('buildAnthropicContinuation', () => {
       buffer.set(0, { type: 'tool_use', id: 'toolu_sum', name: 'recall', argsBuffer: '{"q":"summary"}' });
 
       const results = [
-        { toolName: 'recall', callId: 'toolu_sum', args: { q: 'summary' }, result: '"data"', isError: false, durationMs: 0 }
+        {
+          toolName: 'recall',
+          callId: 'toolu_sum',
+          args: { q: 'summary' },
+          result: '"data"',
+          isError: false,
+          durationMs: 0
+        }
       ];
 
       const cont = buildAnthropicContinuation(buffer, results).orThrow();
@@ -403,7 +467,9 @@ describe('buildAnthropicContinuation', () => {
     test('logs the tool_use.id ↔ tool_result.tool_use_id pairing at detail level', () => {
       const buffer = new Map<number, IAccumulatedBlock>();
       buffer.set(0, { type: 'tool_use', id: 'toolu_diag', name: 'recall', argsBuffer: '{}' });
-      const results = [{ toolName: 'recall', callId: 'toolu_diag', args: {}, result: '"x"', isError: false, durationMs: 0 }];
+      const results = [
+        { toolName: 'recall', callId: 'toolu_diag', args: {}, result: '"x"', isError: false, durationMs: 0 }
+      ];
 
       const logger = new Logging.InMemoryLogger('all');
       expect(buildAnthropicContinuation(buffer, results, logger)).toSucceed();
@@ -457,8 +523,22 @@ describe('buildOpenAiContinuation', () => {
     calls.set('call_2', { id: 'call_2', name: 'search', argsBuffer: '{"q":"b"}' });
 
     const results = [
-      { toolName: 'recall', callId: 'call_1', args: { q: 'a' }, result: '"r1"', isError: false, durationMs: 0 },
-      { toolName: 'search', callId: 'call_2', args: { q: 'b' }, result: '"r2"', isError: false, durationMs: 0 }
+      {
+        toolName: 'recall',
+        callId: 'call_1',
+        args: { q: 'a' },
+        result: '"r1"',
+        isError: false,
+        durationMs: 0
+      },
+      {
+        toolName: 'search',
+        callId: 'call_2',
+        args: { q: 'b' },
+        result: '"r2"',
+        isError: false,
+        durationMs: 0
+      }
     ];
 
     const cont = buildOpenAiContinuation(calls, results).orThrow();
@@ -479,7 +559,9 @@ describe('buildOpenAiContinuation', () => {
     const calls = new Map<string, IAccumulatedFunctionCall>();
     calls.set('call_s', { id: 'call_s', name: 'recall', argsBuffer: '{}' });
 
-    const results = [{ toolName: 'recall', callId: 'call_s', args: {}, result: '"x"', isError: false, durationMs: 0 }];
+    const results = [
+      { toolName: 'recall', callId: 'call_s', args: {}, result: '"x"', isError: false, durationMs: 0 }
+    ];
 
     const cont = buildOpenAiContinuation(calls, results).orThrow();
     expect(cont.toolCallsSummary).toHaveLength(1);
@@ -511,7 +593,9 @@ describe('buildOpenAiContinuation', () => {
     const calls = new Map<string, IAccumulatedFunctionCall>();
     calls.set('call_real', { id: 'call_real', name: 'recall', argsBuffer: '{}' });
 
-    const results = [{ toolName: 'recall', callId: '', args: {}, result: '"x"', isError: false, durationMs: 0 }];
+    const results = [
+      { toolName: 'recall', callId: '', args: {}, result: '"x"', isError: false, durationMs: 0 }
+    ];
 
     expect(buildOpenAiContinuation(calls, results)).toFailWith(/recall.*no call id.*missing or empty/i);
   });
@@ -520,7 +604,9 @@ describe('buildOpenAiContinuation', () => {
     const calls = new Map<string, IAccumulatedFunctionCall>();
     calls.set('call_real', { id: 'call_real', name: 'recall', argsBuffer: '{}' });
 
-    const results = [{ toolName: 'recall', callId: 'call_ghost', args: {}, result: '"x"', isError: false, durationMs: 0 }];
+    const results = [
+      { toolName: 'recall', callId: 'call_ghost', args: {}, result: '"x"', isError: false, durationMs: 0 }
+    ];
 
     expect(buildOpenAiContinuation(calls, results)).toFailWith(
       /recall.*call_ghost.*does not match any accumulated/i
@@ -530,7 +616,9 @@ describe('buildOpenAiContinuation', () => {
   test('logs the function_call.call_id ↔ output.call_id pairing at detail level', () => {
     const calls = new Map<string, IAccumulatedFunctionCall>();
     calls.set('call_diag', { id: 'call_diag', name: 'recall', argsBuffer: '{}' });
-    const results = [{ toolName: 'recall', callId: 'call_diag', args: {}, result: '"x"', isError: false, durationMs: 0 }];
+    const results = [
+      { toolName: 'recall', callId: 'call_diag', args: {}, result: '"x"', isError: false, durationMs: 0 }
+    ];
 
     const logger = new Logging.InMemoryLogger('all');
     expect(buildOpenAiContinuation(calls, results, logger)).toSucceed();
@@ -595,14 +683,18 @@ describe('buildGeminiContinuation', () => {
   });
   test('includes correct toolCallsSummary', () => {
     const calls: IAccumulatedGeminiFunctionCall[] = [{ name: 'recall', args: { q: 'z' } }];
-    const results = [{ toolName: 'recall', args: { q: 'z' }, result: '"data"', isError: false, durationMs: 0 }];
+    const results = [
+      { toolName: 'recall', args: { q: 'z' }, result: '"data"', isError: false, durationMs: 0 }
+    ];
     const cont = buildGeminiContinuation(calls, results);
     expect(cont.toolCallsSummary).toHaveLength(1);
     expect(cont.toolCallsSummary[0].toolName).toBe('recall');
     expect(cont.toolCallsSummary[0].args).toEqual({ q: 'z' });
   });
 
-  const sigResults = [{ toolName: 'recall', args: { q: 'z' }, result: '"data"', isError: false, durationMs: 0 }];
+  const sigResults = [
+    { toolName: 'recall', args: { q: 'z' }, result: '"data"', isError: false, durationMs: 0 }
+  ];
   test('replays thoughtSignature as a sibling of functionCall on the model part when present', () => {
     const calls: IAccumulatedGeminiFunctionCall[] = [
       { name: 'recall', args: { q: 'z' }, thoughtSignature: 'sig-xyz789' }

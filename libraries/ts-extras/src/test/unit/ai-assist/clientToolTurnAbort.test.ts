@@ -69,13 +69,22 @@ describe('executeClientToolTurn — no dispatch after abort', () => {
     const seen = await collect(events);
     expect(toolEvents(seen)).toEqual(['call-done', 'result:error']);
     expect(seen).toContainEqual(
-      expect.objectContaining({ type: 'client-tool-result', isError: true, result: expect.stringMatching(/aborted/) })
+      expect.objectContaining({
+        type: 'client-tool-result',
+        isError: true,
+        result: expect.stringMatching(/aborted/)
+      })
     );
     expect(gate).not.toHaveBeenCalled();
     expect(execute).not.toHaveBeenCalled();
     expect(await nextTurn).toSucceedAndSatisfy((turn) => {
       expect(turn.continuation?.toolCallsSummary).toEqual([
-        expect.objectContaining({ toolName: 'recall', callId: 'toolu_1', isError: true, result: expect.stringMatching(/aborted/) })
+        expect.objectContaining({
+          toolName: 'recall',
+          callId: 'toolu_1',
+          isError: true,
+          result: expect.stringMatching(/aborted/)
+        })
       ]);
     });
   });
@@ -121,7 +130,12 @@ describe('executeClientToolTurn — no dispatch after abort', () => {
       clientTools: [makeRecallTool(execute)],
       signal: controller.signal
     }).orThrow();
-    expect(toolEvents(await collect(events))).toEqual(['call-done', 'result:ok', 'call-done', 'result:error']);
+    expect(toolEvents(await collect(events))).toEqual([
+      'call-done',
+      'result:ok',
+      'call-done',
+      'result:error'
+    ]);
     expect(execute).toHaveBeenCalledTimes(1);
     expect(await nextTurn).toSucceedAndSatisfy((turn) => {
       expect(turn.continuation?.toolCallsSummary.map((c) => c.isError)).toEqual([false, true]);
