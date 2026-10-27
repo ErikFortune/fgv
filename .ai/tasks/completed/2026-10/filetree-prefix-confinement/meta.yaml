@@ -1,7 +1,7 @@
 id: filetree-prefix-confinement
 status: shipped
 packages: ['@fgv/ts-json-base']
-prs: [] # #TBD — not yet opened; fill on PR open
+prs: [763]
 openPrs: []
 opened: 2026-10-27
 closed: 2026-10-27

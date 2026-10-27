@@ -2,7 +2,7 @@
 
 **Shipped:** `FsFileTreeAccessors` and `FileTree.forFilesystem` take an `absolutePathPolicy` — `'unconfined'` (the default, unchanged), `'confined'` or `'verified'` — and a `realPath` option, applied to every read, listing, stat and write, so a prefixed filesystem tree can finally be a sandbox; asking for either without a prefix fails creation.
 
-Base `integration/asks`. Package: `@fgv/ts-json-base` (`file-tree` packlet). PR: #TBD.
+Base `integration/asks`. Package: `@fgv/ts-json-base` (`file-tree` packlet). PR: #763.
 
 ## The API as shipped
 

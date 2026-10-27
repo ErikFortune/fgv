@@ -208,7 +208,7 @@ markers.*
 
 <!-- BEGIN GENERATED: recent-additions -->
 
-- **2026-10-27** — A filesystem FileTree can now be a sandbox: absolutePathPolicy 'confined' maps every path beneath the prefix, 'verified' refuses… · `ts-json-base`
+- **2026-10-27** — A filesystem FileTree can now be a sandbox: absolutePathPolicy 'confined' maps every path beneath the prefix, 'verified' refuses… ([#763](https://github.com/ErikFortune/fgv/pull/763)) · `ts-json-base`
 - **2026-10-26** — A crash mid-write no longer leaves a torn memory record that fails the next open: FileTreeMemoryStore writes atomically wherever… ([#756](https://github.com/ErikFortune/fgv/pull/756)) · `ts-agent-memory` `ts-json-base`
 - **2026-10-26** — A memory read-modify-write can no longer silently lose a concurrent update: FileTreeMemoryStore put and delete take an expected seq… ([#759](https://github.com/ErikFortune/fgv/pull/759)) · `ts-agent-memory`
 - **2026-10-26** — An agent-task host can open or initialize its repository in the strongest mode its root qualifies for, give its own principal a… ([#758](https://github.com/ErikFortune/fgv/pull/758)) · `ts-agent-tasks`

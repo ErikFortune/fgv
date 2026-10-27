@@ -1,6 +1,6 @@
 # `filetree-prefix-confinement` — configurable prefix confinement for `FsFileTreeAccessors`
 
-**Status:** shipped via #TBD into `integration/asks` (2026-10-27). Origin: the `docs/TECH_DEBT.md`
+**Status:** shipped via #763 into `integration/asks` (2026-10-27). Origin: the `docs/TECH_DEBT.md`
 P2 "`FsFileTreeAccessors`' prefix does not confine", found by the `agent-memory-atomic-writes`
 review (#756). Design decided by the user, 2026-10-27.
 
