@@ -11,8 +11,8 @@ namespace (Node barrel only; the browser barrel already excludes `fsTree`).
 
 | symbol | shape |
 |---|---|
-| `FsAbsolutePathPolicy` | `'unconfined' \| 'confined' \| 'verified'` |
-| `allFsAbsolutePathPolicies` | `ReadonlyArray<FsAbsolutePathPolicy>`, weakest first |
+| `FsAbsolutePathPolicy` | `StringOneOf<typeof allFsAbsolutePathPolicies>` — `'unconfined' \| 'confined' \| 'verified'` |
+| `allFsAbsolutePathPolicies` | `readonly ['unconfined', 'confined', 'verified']` (`as const`), weakest first |
 | `IFsFileTreeInitParams<TCT>` | `extends IFileTreeInitParams<TCT>` + `absolutePathPolicy?: FsAbsolutePathPolicy` + `realPath?: boolean` |
 | `FsFileTreeAccessors` constructor | now takes `IFsFileTreeInitParams` (a subtype-compatible widening); throws on an invalid combination |
 | `FsFileTreeAccessors.create(params?)` | **new** — `Result<FsFileTreeAccessors<TCT>>`; the `Failure` the constructor would throw |
@@ -193,7 +193,9 @@ a resolution/behaviour test; every `unconfined` and inside row passed.
 ## Revert matrix
 
 Each row reverts one confinement site in `fsTree.ts`, recompiles, and runs `fsTreeConfinement`,
-`fsTree`, `fsAtomicWrite` and `fileTreeHelpers` (235 tests). **Every row is red.** Script:
+`fsTree`, `fsAtomicWrite` and `fileTreeHelpers`. **Every row is red.** Rows R1–R19 were first run at
+`e32e3feef` (235 tests); after review round 1 all 21 rows were re-run at `678e85976` (244 tests),
+all red again — R7–R11 then fail 3 more each, from the round-1 non-string test. Script:
 `revert.py` in the session scratchpad; run on the committed tree, which was restored and rebuilt
 after.
 
@@ -218,11 +220,51 @@ after.
 | R17 | `realPath` under `'unconfined'` accepted | RED | 1 failed |
 | R18 | `realPath` defaults off under `'verified'` | RED | 7 failed |
 | R19 | unknown policy accepted (no converter) | RED | 1 failed |
+| R20 | *(round 1, P2-1)* atomic `_confineToRoot` re-resolves a relative prefix per call instead of using the fixed root | RED | 2 failed |
+| R21 | *(round 1, P3-2)* `_resolveConfined` resolves outside `captureResult`, so a non-string path throws | RED | 3 failed |
 
 R14 is the one that matters most and is not obvious: making `resolveRealPath` policy-checked would,
 on its own, have let the atomic write commit through a link out of the tree, because
 `_confineToRoot` read a failed real-path lookup as "does not exist". `_confineToRoot` and
 `_qualifyDirectory` now use a raw helper.
+
+## Review round 1
+
+The review of `e7084d9fc` found no P1. Every escape probe was blocked, and #756's atomic confinement
+held. Applied in `678e85976`:
+
+- **P2-1 — the atomic methods judged a relative prefix against a different root after a `chdir`.**
+  `_confineToRoot` re-resolved `path.resolve(this.prefix)` on every call, while `_root` is fixed at
+  construction (D7). Under `'confined'` / `'verified'`, after a `chdir`, plain saves landed in the
+  original root while `writeFileAtomically` and `getAtomicWriteCapabilities` refused. It now uses
+  `this._root ?? path.resolve(this.prefix)`; the default policy keeps its per-call resolution.
+  - The red-first test chdirs between creation and the writes, with cwd restored in `finally`. It
+    failed with `resolves outside the tree root '<base>/elsewhere/root'`.
+  - Revert row R20.
+- **P3-1 — item-relative escapes.** A `..` in a child name given to `createChildFile`,
+  `createChildDirectory` or `deleteChild` is joined onto the item's absolute path. Under
+  `'confined'` it therefore follows the absolute-path (prepend) rule, not D3's chroot rule. Both
+  stay inside the prefix.
+  - Documented in the `resolveAbsolutePath` TSDoc, the README table and `CAPABILITIES.md`.
+  - A test pins that the outside file is untouched.
+  - `..` in child names is not refused. That would be a behaviour change and is left as a follow-up.
+- **P3-2 — a non-string path argument threw under the default.** This affected `getItem`,
+  `getFileContents`, `getFileBytes` and `getChildren`, which returned a `Failure` on the base.
+  `_resolveConfined` now wraps the resolve in `captureResult`.
+  - Red-first test: `getItem(undefined as unknown as string)` fails rather than throws, under every
+    policy.
+  - Revert row R21.
+- **P3-3 — the closed union was declared twice.** It is now `allFsAbsolutePathPolicies = [...] as
+  const` with `FsAbsolutePathPolicy = StringOneOf<typeof allFsAbsolutePathPolicies>`.
+- **P3-4 — `realPath` limits are now in the public docs** (README, `CAPABILITIES.md`, TSDoc on
+  `realPath`):
+  - Hard links and bind mounts are invisible to it. A hard link inside the prefix to an outside file
+    is written through under `'verified'` (probe p4).
+  - Under `'verified'` with a symlinked prefix, an absolute input spelled through the real path is
+    refused. This is safe.
+  - Under `realPath`, a dangling link cannot be deleted through the API at all.
+- **P3-5 — test style.** The `realPath`-defaults test is a `test.each` with `toSucceedAndSatisfy`,
+  in place of `orThrow()` inside assertions.
 
 ## Check-then-act
 
@@ -259,7 +301,11 @@ Repo-wide `rush rebuild` and `rush test` are the gate, below.
 
 ## Gates
 
-Run from the repo root on implementation commit `e32e3feef`. Logs are in the worktree's
+Round 1 re-gate, on `678e85976`, from the repo root: package build / lint / test exit 0 with 0
+bad patterns and 0 warnings, coverage 100/100/100/100; `change --verify` exit 0; `rebuild` exit
+0, 39 completed, 0 bad patterns, only the tracked-symlink notice; repo-wide `test` exit 0, SUCCESS: 38 operations, 0 bad patterns, only the tracked-symlink notice, no NUL padding, no known-flaky failures.
+
+Original gate, run from the repo root on implementation commit `e32e3feef`. Logs are in the worktree's
 `.gate-logs/` (not committed). Grading: exit code, then
 `grep -acE 'not met|Operations failed|error TS|Jest tests? failed'` must be 0, and
 `grep -aiE warning` may show only the tracked-symlink notice.

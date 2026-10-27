@@ -38,3 +38,7 @@ review (#756). Design decided by the user, 2026-10-27.
 
 - A plain operation checks, then acts on the logical path: a link swapped in between is not seen.
 - Windows separators are designed for but untested (Linux only).
+- `realPath` cannot see hard links or bind mounts (documented).
+- A `..` in a directory item's child name is not refused. Under `'confined'` it is mapped by the
+  absolute-path rule and stays inside. Refusing it is a follow-up.
+- Review round 1 (no P1) is summarised in `result.md` § "Review round 1".

@@ -20,7 +20,10 @@ summary:
     constructor throws for an invalid combination. Every filesystem-touching operation goes through
     one _resolveConfined step. Also exported: FsAbsolutePathPolicy, allFsAbsolutePathPolicies, and
     the effective absolutePathPolicy / realPath on the accessors. Escape matrix 5 configurations x 10
-    path classes x 15 operations, observed and asserted; revert matrix 19 rows, all red.
+    path classes x 15 operations, observed and asserted; revert matrix 21 rows, all red. Review
+    round 1 (no P1): the atomic methods use the fixed root, a non-string path fails rather than
+    throws, the union is declared once, and realPath's limits (hard links, bind mounts) are
+    documented.
   diverged: >
     A relative '..' escape under 'confined' resolves against the prefix as though it were the root,
     rather than being refused (the brief left the choice open), because resolveAbsolutePath is total
@@ -55,4 +58,4 @@ relatedStreams:
       id: agent-memory-atomic-writes,
       relationship: 'its review found the defect this closes, and added the atomic real-path confinement reused here'
     }
-sourceHash: c2e89d9dbd29c856 # first 16 hex of sha256 over brief.md, state.md and result.md concatenated in that order
+sourceHash: d80a07bb6c25a749 # first 16 hex of sha256 over brief.md, state.md and result.md concatenated in that order
