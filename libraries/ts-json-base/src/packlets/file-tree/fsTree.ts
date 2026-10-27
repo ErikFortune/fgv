@@ -42,6 +42,7 @@ import {
   fail,
   failWithDetail,
   Result,
+  StringOneOf,
   succeed,
   succeedWithDetail
 } from '@fgv/ts-utils';
@@ -79,6 +80,13 @@ function _entryExists(p: string): boolean {
 }
 
 /**
+ * Every {@link FileTree.FsAbsolutePathPolicy | FsAbsolutePathPolicy}, in order of
+ * increasing strictness.
+ * @public
+ */
+export const allFsAbsolutePathPolicies = ['unconfined', 'confined', 'verified'] as const;
+
+/**
  * How {@link FileTree.FsFileTreeAccessors | FsFileTreeAccessors} treats a path
  * that resolves outside its `prefix`.
  *
@@ -93,18 +101,7 @@ function _entryExists(p: string): boolean {
  *   naming the path and the prefix, and touches nothing.
  * @public
  */
-export type FsAbsolutePathPolicy = 'unconfined' | 'confined' | 'verified';
-
-/**
- * Every {@link FileTree.FsAbsolutePathPolicy | FsAbsolutePathPolicy}, in order of
- * increasing strictness.
- * @public
- */
-export const allFsAbsolutePathPolicies: ReadonlyArray<FsAbsolutePathPolicy> = [
-  'unconfined',
-  'confined',
-  'verified'
-];
+export type FsAbsolutePathPolicy = StringOneOf<typeof allFsAbsolutePathPolicies>;
 
 const absolutePathPolicy: Converter<FsAbsolutePathPolicy> =
   Converters.enumeratedValue<FsAbsolutePathPolicy>(allFsAbsolutePathPolicies);
@@ -198,6 +195,15 @@ export class FsFileTreeAccessors<TCT extends string = string>
   /**
    * Whether every operation also checks the real path — symbolic links
    * followed — of what it touches against the real path of the prefix.
+   *
+   * @remarks
+   * Limits: hard links and bind mounts are invisible to it — a hard link inside
+   * the prefix to a file outside it has a real path inside, so a write through it
+   * reaches the outside file. Under `'verified'` with a prefix that is itself a
+   * symbolic link, an absolute input spelled through the prefix's *real* path is
+   * refused, because it does not lie under the prefix as given (safe, but
+   * surprising). A dangling symbolic link is refused for every operation, so it
+   * cannot be deleted through these accessors at all.
    */
   public readonly realPath: boolean;
 
@@ -284,6 +290,13 @@ export class FsFileTreeAccessors<TCT extends string = string>
    *
    * "Under" means equal to the prefix or beginning with the prefix and a
    * separator, so `/prefixx/a` is not under `/prefix`.
+   *
+   * A `..` in a name handed to a directory item — `createChildFile`,
+   * `createChildDirectory`, `deleteChild` — is joined onto the item's absolute
+   * path, so under `'confined'` it follows the absolute-path rule (prepend), not
+   * the relative-escape rule: `<prefix>/sub` + `../../x` resolves to the
+   * absolute path above the prefix, which then has the prefix prepended.
+   * Either way it stays under the prefix.
    * @param paths - Paths to resolve.
    * @returns The resolved absolute path.
    */
@@ -328,14 +341,15 @@ export class FsFileTreeAccessors<TCT extends string = string>
    * path and the prefix.
    */
   private _resolveConfined(...paths: string[]): Result<string> {
-    const absolutePath = this.resolveAbsolutePath(...paths);
-    if (this._root === undefined) {
-      return succeed(absolutePath);
-    }
-    if (!_isWithin(this._root, absolutePath)) {
-      return fail(`${absolutePath}: resolves outside the tree prefix '${this._root}'`);
-    }
-    return this.realPath ? this._confineRealPath(absolutePath, this._root) : succeed(absolutePath);
+    return captureResult(() => this.resolveAbsolutePath(...paths)).onSuccess((absolutePath) => {
+      if (this._root === undefined) {
+        return succeed(absolutePath);
+      }
+      if (!_isWithin(this._root, absolutePath)) {
+        return fail(`${absolutePath}: resolves outside the tree prefix '${this._root}'`);
+      }
+      return this.realPath ? this._confineRealPath(absolutePath, this._root) : succeed(absolutePath);
+    });
   }
 
   /**
@@ -744,7 +758,7 @@ export class FsFileTreeAccessors<TCT extends string = string>
     if (this.prefix === undefined) {
       return succeed(realDirectory.orDefault(directoryPath));
     }
-    const root = path.resolve(this.prefix);
+    const root = this._root ?? path.resolve(this.prefix);
     if (!_isWithin(root, absolutePath)) {
       return fail(`${absolutePath}: resolves outside the tree root '${root}'`);
     }

@@ -22,7 +22,7 @@ function adaptSchemaKeywords(schema: JsonValue, capabilities: SchemaKeywordCapab
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-const allFsAbsolutePathPolicies: ReadonlyArray<FsAbsolutePathPolicy>;
+const allFsAbsolutePathPolicies: readonly ["unconfined", "confined", "verified"];
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -422,8 +422,8 @@ declare namespace FileTree {
         forFilesystem,
         IInMemoryFile,
         InMemoryTreeAccessors,
-        FsAbsolutePathPolicy,
         allFsAbsolutePathPolicies,
+        FsAbsolutePathPolicy,
         IFsFileTreeInitParams,
         FsFileTreeAccessors
     }
@@ -477,7 +477,7 @@ function fromJson(json: JsonObject, options?: IFromJsonOptions): Result<ISchemaV
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-type FsAbsolutePathPolicy = 'unconfined' | 'confined' | 'verified';
+type FsAbsolutePathPolicy = StringOneOf<typeof allFsAbsolutePathPolicies>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver

@@ -435,21 +435,15 @@ describe('FsFileTreeAccessors prefix confinement — options', () => {
     expect(new FsFileTreeAccessors().absolutePathPolicy).toBe('unconfined');
   });
 
-  test('realPath defaults on under verified and off under confined', () => {
-    expect(
-      FsFileTreeAccessors.create({ prefix: '/p', absolutePathPolicy: 'verified' }).orThrow().realPath
-    ).toBe(true);
-    expect(
-      FsFileTreeAccessors.create({ prefix: '/p', absolutePathPolicy: 'confined' }).orThrow().realPath
-    ).toBe(false);
-    expect(
-      FsFileTreeAccessors.create({ prefix: '/p', absolutePathPolicy: 'confined', realPath: true }).orThrow()
-        .realPath
-    ).toBe(true);
-    expect(
-      FsFileTreeAccessors.create({ prefix: '/p', absolutePathPolicy: 'verified', realPath: false }).orThrow()
-        .realPath
-    ).toBe(false);
+  test.each([
+    [{ absolutePathPolicy: 'verified' }, true],
+    [{ absolutePathPolicy: 'confined' }, false],
+    [{ absolutePathPolicy: 'confined', realPath: true }, true],
+    [{ absolutePathPolicy: 'verified', realPath: false }, false]
+  ] as const)('realPath for %j is %s', (params, expected) => {
+    expect(FsFileTreeAccessors.create({ prefix: '/p', ...params })).toSucceedAndSatisfy((a) => {
+      expect(a.realPath).toBe(expected);
+    });
   });
 
   test('lists every policy', () => {
@@ -701,5 +695,73 @@ describe('FsFileTreeAccessors prefix confinement — real paths', () => {
   test('confined without realPath still follows a link out, as documented', () => {
     const accessors = new FsFileTreeAccessors({ prefix: fx.root, absolutePathPolicy: 'confined' });
     expect(accessors.getFileContents(path.join(fx.root, 'linkfile'))).toSucceedWith('OUTSIDE');
+  });
+});
+
+describe('FsFileTreeAccessors prefix confinement — review round 1', () => {
+  let fx: IFixture;
+  beforeEach(() => {
+    fx = makeFixture();
+  });
+  afterEach(() => {
+    fs.rmSync(fx.base, { recursive: true, force: true });
+  });
+
+  test.each(['confined', 'verified'] as const)(
+    '%s: a relative prefix is judged against the same root by plain and atomic writes after a chdir',
+    (policy) => {
+      const cwd = process.cwd();
+      const elsewhere = path.join(fx.base, 'elsewhere');
+      fs.mkdirSync(path.join(elsewhere, 'root'), { recursive: true });
+      try {
+        process.chdir(fx.base);
+        const accessors = FsFileTreeAccessors.create({
+          prefix: 'root',
+          absolutePathPolicy: policy,
+          mutable: true
+        }).orThrow();
+        process.chdir(elsewhere);
+        expect(accessors.saveFileContents('plain.txt', 'P')).toSucceed();
+        expect(accessors.getAtomicWriteCapabilities('.')).toSucceed();
+        expect(
+          accessors.writeFileAtomically('atomic.txt', 'A', { guarantee: 'process-crash' }).asResult
+        ).not.toFailWith(/outside the tree root/);
+        expect(fs.existsSync(path.join(fx.root, 'plain.txt'))).toBe(true);
+        expect(fs.existsSync(path.join(elsewhere, 'root', 'plain.txt'))).toBe(false);
+        expect(fs.existsSync(path.join(elsewhere, 'root', 'atomic.txt'))).toBe(false);
+      } finally {
+        process.chdir(cwd);
+      }
+    }
+  );
+
+  test.each(['unconfined', 'confined', 'verified'] as const)(
+    '%s: a non-string path fails rather than throws',
+    (policy) => {
+      const accessors = new FsFileTreeAccessors({ prefix: fx.root, absolutePathPolicy: policy });
+      const bad = undefined as unknown as string;
+      expect(() => accessors.getItem(bad)).not.toThrow();
+      expect(accessors.getItem(bad)).toFail();
+      expect(accessors.getFileContents(bad)).toFail();
+      expect(accessors.getFileBytes(bad)).toFail();
+      expect(accessors.getChildren(bad)).toFail();
+      expect(accessors.resolveRealPath(bad)).toFail();
+    }
+  );
+
+  test('confined: an item-relative child name follows the absolute-path rule and stays inside', () => {
+    const tree = forFilesystem({ prefix: fx.root, absolutePathPolicy: 'confined', mutable: true }).orThrow();
+    const created = tree
+      .getDirectory('sub')
+      .onSuccess((dir) =>
+        isMutableDirectoryItem(dir)
+          ? dir.createChildFile('../../outside/out.txt', 'WRITTEN')
+          : fail(`${dir.absolutePath}: not mutable`)
+      );
+    // `<prefix>/sub/../../outside/out.txt` resolves to `<base>/outside/out.txt`, an absolute path
+    // outside the prefix, which `confined` maps to `<prefix>/<base>/outside/out.txt`; that parent
+    // does not exist, so the write fails — and the real outside file is untouched.
+    expect(created).toFail();
+    expect(fs.readFileSync(path.join(fx.outside, 'out.txt'), 'utf8')).toBe('OUTSIDE');
   });
 });

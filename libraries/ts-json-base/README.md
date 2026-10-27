@@ -203,7 +203,7 @@ const verified = FileTree.forFilesystem({ prefix: root, absolutePathPolicy: 'ver
 | `absolutePathPolicy` | a path that resolves outside the prefix | `realPath` default |
 |---|---|---|
 | `'unconfined'` (default) | used as given — the behaviour of a tree created without the option | off (and cannot be turned on) |
-| `'confined'` | mapped beneath the prefix: `/x` → `<prefix>/x`, `../x` → `<prefix>/x` | off |
+| `'confined'` | mapped beneath the prefix: `/x` → `<prefix>/x`, `../x` → `<prefix>/x` (a `..` in a child name given to a directory item is joined onto the item's absolute path, so it is mapped by the `/x` rule instead — still inside) | off |
 | `'verified'` | the operation fails and touches nothing | on |
 
 `realPath: true` also checks the real path of what each operation touches, so a symbolic link
@@ -211,4 +211,10 @@ inside the prefix that leads outside it — or a dangling one — is refused. Wi
 `'confined'` and `'verified'` judge the path string only, and a link can still lead out. Asking for
 either option without a prefix fails creation: `FsFileTreeAccessors.create` and `forFilesystem`
 return a `Failure`, and the constructor throws.
+
+`realPath` has limits. **Hard links and bind mounts are invisible to it**: a hard link inside the
+prefix to a file outside it has a real path inside, so a write through it reaches the outside file.
+Under `'verified'` with a prefix that is itself a symbolic link, an absolute path spelled through the
+prefix's real path is refused (safe, but surprising). And a dangling symbolic link is refused for
+every operation, so it cannot be deleted through the tree at all.
 
