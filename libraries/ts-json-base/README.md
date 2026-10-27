@@ -182,3 +182,33 @@ const handlersMap = new MapOf<WithHandlers>();
 4. **Runtime protection**: Prevents serialization errors in production
 5. **IDE support**: Full autocomplete and error highlighting
 
+### Filesystem trees and prefix confinement
+
+`FileTree.forFilesystem(prefix)` gives a `FileTree` over the Node filesystem whose relative paths
+resolve against `prefix`. By default the prefix is **not** a sandbox: an absolute path is used as
+given, a relative `..` can climb out, and only the atomic-write methods confine. Pass
+`absolutePathPolicy` to make it one, for every operation — reads, listings, stats and writes:
+
+```ts
+import { FileTree } from '@fgv/ts-json-base';
+
+// '/x' means '<prefix>/x'; getDirectory('/') names the prefix.
+const confined = FileTree.forFilesystem({ prefix: root, absolutePathPolicy: 'confined' });
+
+// A path outside the prefix fails, naming the path and the prefix. Symbolic links that
+// lead outside are refused too: `realPath` defaults on under 'verified'.
+const verified = FileTree.forFilesystem({ prefix: root, absolutePathPolicy: 'verified', mutable: true });
+```
+
+| `absolutePathPolicy` | a path that resolves outside the prefix | `realPath` default |
+|---|---|---|
+| `'unconfined'` (default) | used as given — the behaviour of a tree created without the option | off (and cannot be turned on) |
+| `'confined'` | mapped beneath the prefix: `/x` → `<prefix>/x`, `../x` → `<prefix>/x` | off |
+| `'verified'` | the operation fails and touches nothing | on |
+
+`realPath: true` also checks the real path of what each operation touches, so a symbolic link
+inside the prefix that leads outside it — or a dangling one — is refused. Without it,
+`'confined'` and `'verified'` judge the path string only, and a link can still lead out. Asking for
+either option without a prefix fails creation: `FsFileTreeAccessors.create` and `forFilesystem`
+return a `Failure`, and the constructor throws.
+
