@@ -867,6 +867,29 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
 
 ## P3 — Opportunistic cleanup
 
+- **[P3] The recursive JSON converters walk into a cycle until the stack runs out.**
+  `jsonObject`, `jsonArray` and `jsonValue` in `libraries/ts-json-base/src/packlets/converters/`
+  and `.../validators/` recurse through `self` with no record of what they are already inside. On a
+  cyclic input they recurse until V8 throws `RangeError: Maximum call stack size exceeded`. Since
+  `converter-safe-failure-format`, the `BaseConverter` / `GenericValidator` boundary turns that into
+  a `Failure` instead of an escaped throw. The message, though, carries one property-path prefix
+  per level walked: 27 KB on a two-key cycle, measured by
+  `libraries/ts-json-base/src/test/unit/failureFormatSafety.test.ts`, which skips the length bound
+  for exactly those cases. The walk also costs a full stack's worth of frames before failing.
+
+  **Trigger**: a consumer reports a huge JSON-conversion failure message, or a log line truncated by
+  one.
+
+  **Scope sketch**: thread an ancestor set through the recursive converters (via the existing
+  context, or a private recursive helper) and fail at the first revisit with
+  `circular reference at <path>`. JSON cannot be cyclic, so no valid input changes behaviour.
+
+  **Not a P2**: the conversion fails correctly and no longer throws; only the message size and
+  cost are wrong.
+
+  **Reference**: `.ai/tasks/completed/2026-10/converter-safe-failure-format/result.md`
+  § "Observations, not fixed".
+
 - **[P3] `executeClientToolTurn`'s `onBeforeToolExecute` gate never receives the turn's signal.**
   The gate is called as `onBeforeToolExecute(tool, args)` in `dispatchCall`
   (`libraries/ts-extras/src/packlets/ai-assist/streamingAdapters/clientToolContinuationBuilder.ts`),

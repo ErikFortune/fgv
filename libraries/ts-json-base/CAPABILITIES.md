@@ -43,6 +43,7 @@
 
 <!-- BEGIN GENERATED: recent-additions -->
 
+- **2026-10-30** — A converter or validator handed a cyclic, BigInt or Proxy value now fails instead of throwing, via a new formatValueForMessage that matches JSON.stringify for ordinary values.
 - **2026-10-27** — A filesystem FileTree can now be a sandbox: absolutePathPolicy 'confined' maps every path beneath the prefix, 'verified' refuses one outside it, and realPath refuses symbolic links that lead out. The default is unchanged. ([#763](https://github.com/ErikFortune/fgv/pull/763))
 - **2026-10-26** — A crash mid-write no longer leaves a torn memory record that fails the next open: FileTreeMemoryStore writes atomically wherever its root can, says so on store.durability, and allows one store per root per process. ([#756](https://github.com/ErikFortune/fgv/pull/756))
 - **2026-10-19** — New @fgv/ts-extras-re2: re2PatternValidator lets fromJson and adaptMcpTools accept an untrusted JSON Schema pattern — linear-time RE2 matching, ECMA-262 meaning or a named refusal. ([#746](https://github.com/ErikFortune/fgv/pull/746))
