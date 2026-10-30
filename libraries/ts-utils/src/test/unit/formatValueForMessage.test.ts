@@ -25,6 +25,7 @@ import '../helpers/jest';
 import {
   DEFAULT_FORMAT_VALUE_MAX_DEPTH,
   DEFAULT_FORMAT_VALUE_MAX_LENGTH,
+  DEFAULT_FORMAT_VALUE_STRING_MAX_LENGTH,
   formatValueForMessage
 } from '../../packlets/base';
 import { SeededJsonValues } from '../helpers/seededJsonValues';
@@ -52,6 +53,16 @@ function throwingProxy(): object {
       }
     }
   );
+}
+
+/** Adds an enumerable getter that throws, which makes JSON.stringify throw and selects the fallback. */
+function withBomb<T extends object>(value: T): T {
+  return Object.defineProperty(value, 'boom', {
+    enumerable: true,
+    get(): never {
+      throw new Error('bomb');
+    }
+  });
 }
 
 describe('formatValueForMessage', () => {
@@ -152,40 +163,86 @@ describe('formatValueForMessage', () => {
     });
   });
 
-  describe('values JSON.stringify throws on or drops', () => {
-    test('renders a cycle as [Circular] and returns', () => {
-      const node: Record<string, unknown> = { name: 'node' };
-      node.self = node;
-      expect(() => JSON.stringify(node)).toThrow(/circular/i);
-      expect(formatValueForMessage(node)).toBe('{"name":"node","self":[Circular]}');
-    });
+  describe('values JSON.stringify used to render without throwing are rendered byte-identically', () => {
+    class Foo {
+      public readonly a: number = 1;
+    }
+    class LateDate extends Date {
+      public toJSON(): string {
+        return 'z';
+      }
+    }
+    const previouslyRendered: Array<[string, unknown]> = [
+      ['undefined property', { a: 1, b: undefined }],
+      ['undefined in an array', [1, undefined]],
+      ['function property', { a: 1, f(): void {} }],
+      ['symbol property value', { a: Symbol('x') }],
+      ['class instance', new Foo()],
+      ['toJSON object', { toJSON: (): string => 'X', a: 1 }],
+      ['Map', new Map([[1, 2]])],
+      ['Set', new Set([1])],
+      ['Error', new Error('e')],
+      ['boxed primitives', [Object('ab') as unknown, Object(1) as unknown, Object(true) as unknown]],
+      ['typed array', new Uint8Array([1, 2])],
+      ['Date subclass with toJSON', new LateDate(0)],
+      ['array with an extra property', Object.assign([1], { x: 2 })],
+      ['nesting deeper than maxDepth', JSON.parse(`${'['.repeat(17)}1${']'.repeat(17)}`)],
+      ['repeated non-cyclic reference', ((s): unknown => ({ a: s, b: [s, s] }))({ s: 1 })]
+    ];
 
-    test('renders a cycle through a class instance with its constructor name', () => {
-      expect(formatValueForMessage(cyclicSocket())).toBe(
-        'Socket {"connecting":false,"parser":{"socket":[Circular]}}'
+    test.each(previouslyRendered)('%s', (__, value) => {
+      expect(formatValueForMessage(value)).toBe(JSON.stringify(value));
+      expect(formatValueForMessage(value, { indent: 2, maxLength: 10_000 })).toBe(
+        JSON.stringify(value, undefined, 2)
       );
     });
 
-    test('renders a cycle through an array', () => {
+    test('invokes toJSON, as JSON.stringify does', () => {
+      let calls = 0;
+      const value = {
+        a: 1,
+        toJSON(): string {
+          calls++;
+          return 'projected';
+        }
+      };
+      expect(formatValueForMessage(value)).toBe('"projected"');
+      expect(calls).toBe(1);
+    });
+  });
+
+  describe('values JSON.stringify throws on', () => {
+    test('renders a cycle on the active path as "[Circular]"', () => {
+      const node: Record<string, unknown> = { name: 'node' };
+      node.self = node;
+      expect(() => JSON.stringify(node)).toThrow(/circular/i);
+      expect(formatValueForMessage(node)).toBe('{"name":"node","self":"[Circular]"}');
+      expect(formatValueForMessage(cyclicSocket())).toBe(
+        '{"connecting":false,"parser":{"socket":"[Circular]"}}'
+      );
       const arr: unknown[] = [1];
       arr.push(arr);
-      expect(formatValueForMessage(arr)).toBe('[1,[Circular]]');
+      expect(formatValueForMessage(arr)).toBe('[1,"[Circular]"]');
     });
 
-    test('renders BigInt, symbol, function and undefined as readable tokens', () => {
-      expect(formatValueForMessage(BigInt(123))).toBe('123n');
+    test('renders a cycle reached through toJSON', () => {
+      const node: Record<string, unknown> = {};
+      const projected = { node };
+      node.toJSON = (): unknown => projected;
+      expect(formatValueForMessage(node)).toBe('{"node":"[Circular]"}');
+    });
+
+    test('renders a BigInt as "123n"', () => {
+      expect(formatValueForMessage(BigInt(123))).toBe('"123n"');
+      expect(formatValueForMessage({ big: BigInt(-5), n: [BigInt(1)] })).toBe('{"big":"-5n","n":["1n"]}');
+    });
+
+    test('renders a top-level undefined, symbol or function as a readable token', () => {
+      expect(formatValueForMessage(undefined)).toBe('undefined');
       expect(formatValueForMessage(Symbol('tag'))).toBe('Symbol(tag)');
       expect(formatValueForMessage(Symbol())).toBe('Symbol()');
       expect(formatValueForMessage(function named(): void {})).toBe('[Function named]');
       expect(formatValueForMessage(() => 1)).toBe('[Function (anonymous)]');
-      expect(formatValueForMessage(undefined)).toBe('undefined');
-      expect(formatValueForMessage({ big: BigInt(-5), u: undefined, f: Math.max, s: Symbol('x') })).toBe(
-        '{"big":-5n,"u":undefined,"f":[Function max],"s":Symbol(x)}'
-      );
-      expect(formatValueForMessage([undefined, BigInt(1)])).toBe('[undefined,1n]');
-    });
-
-    test('renders a function whose name cannot be read as anonymous', () => {
       const fn = new Proxy(() => 1, {
         get(): never {
           throw new Error('nope');
@@ -195,15 +252,21 @@ describe('formatValueForMessage', () => {
       const unnamed = Object.defineProperty(() => 1, 'name', { value: 42 });
       expect(formatValueForMessage(unnamed)).toBe('[Function (anonymous)]');
     });
+  });
 
+  describe('the fallback renderer, used when JSON.stringify still throws', () => {
     test('contains a throwing getter as [Unreadable]', () => {
+      expect(formatValueForMessage(withBomb({ ok: 1 }))).toBe('{"ok":1,"boom":[Unreadable]}');
+    });
+
+    test('contains a throwing toJSON', () => {
       const value = {
-        ok: 1,
-        get bad(): string {
-          throw new Error('getter');
+        a: 1,
+        toJSON(): never {
+          throw new Error('toJSON exploded');
         }
       };
-      expect(formatValueForMessage(value)).toBe('{"ok":1,"bad":[Unreadable]}');
+      expect(formatValueForMessage(value)).toBe('{"a":1,"toJSON":[Function toJSON]}');
     });
 
     test('contains a Proxy whose traps throw', () => {
@@ -218,56 +281,78 @@ describe('formatValueForMessage', () => {
         }
       );
       expect(formatValueForMessage(getOnly)).toBe('{"a":[Unreadable]}');
-    });
-
-    test('contains a revoked Proxy', () => {
       const { proxy, revoke } = Proxy.revocable({}, {});
       revoke();
       expect(formatValueForMessage(proxy)).toBe('[Unreadable]');
     });
 
-    test('does not invoke a user toJSON', () => {
-      let calls = 0;
-      const value = {
-        a: 1,
-        toJSON(): string {
-          calls++;
-          return 'projected';
-        }
-      };
-      expect(formatValueForMessage(value)).toBe('{"a":1,"toJSON":[Function toJSON]}');
-      expect(calls).toBe(0);
+    test('renders cycles, BigInt, symbols, functions and undefined as bare tokens', () => {
+      const node: Record<string, unknown> = { name: 'node' };
+      node.self = node;
+      expect(
+        formatValueForMessage(
+          withBomb({ node, big: BigInt(-5), u: undefined, f: Math.max, s: Symbol('x'), a: [undefined] })
+        )
+      ).toBe(
+        '{"node":{"name":"node","self":[Circular]},"big":-5n,"u":undefined,"f":[Function max],' +
+          '"s":Symbol(x),"a":[undefined],"boom":[Unreadable]}'
+      );
     });
 
-    test('renders class instances, typed arrays and collections with their constructor name', () => {
+    test('renders class instances, typed arrays, dates and collections', () => {
       class Point {
         public readonly x: number;
-        public readonly y: number;
-        public constructor(x: number, y: number) {
+        public constructor(x: number) {
           this.x = x;
-          this.y = y;
         }
       }
-      expect(formatValueForMessage(new Point(1, 2))).toBe('Point {"x":1,"y":2}');
-      expect(formatValueForMessage(new Point(1, 2), { indent: 2 })).toBe('Point {\n  "x": 1,\n  "y": 2\n}');
-      expect(formatValueForMessage(new Uint8Array([1, 2, 3]))).toBe('Uint8Array [1,2,3]');
-      expect(formatValueForMessage(new Map([['a', 1]]))).toBe('Map {}');
-      expect(formatValueForMessage(new Error('boom'))).toBe('Error {}');
-      expect(formatValueForMessage(new DataView(new ArrayBuffer(2)))).toBe('DataView {}');
+      expect(formatValueForMessage(withBomb(new Point(1)))).toBe('Point {"x":1,"boom":[Unreadable]}');
+      expect(formatValueForMessage(withBomb(new Point(1)), { indent: 2 })).toBe(
+        'Point {\n  "x": 1,\n  "boom": [Unreadable]\n}'
+      );
+      expect(
+        formatValueForMessage(
+          withBomb({
+            t: new Uint8Array([1, 2, 3]),
+            m: new Map([['a', 1]]),
+            e: new Error('boom'),
+            v: new DataView(new ArrayBuffer(2)),
+            d: new Date(0),
+            bad: new Date(NaN),
+            pd: new Proxy(new Date(0), {})
+          })
+        )
+      ).toBe(
+        '{"t":Uint8Array [1,2,3],"m":Map {},"e":Error {},"v":DataView {},' +
+          '"d":"1970-01-01T00:00:00.000Z","bad":null,"pd":Date {},"boom":[Unreadable]}'
+      );
     });
 
-    test('names an instance whose prototype has no usable constructor as Object', () => {
+    test('renders null-prototype and orphaned-prototype objects', () => {
+      const bare = Object.assign(Object.create(null) as Record<string, unknown>, { a: 1 });
       const orphan = Object.create(Object.create(null) as object) as Record<string, unknown>;
       orphan.a = 1;
-      expect(formatValueForMessage(orphan)).toBe('Object {"a":1}');
       const nested = Object.create({ inherited: true }) as Record<string, unknown>;
       nested.own = 1;
-      expect(formatValueForMessage(nested)).toBe('Object {"own":1}');
+      expect(formatValueForMessage(withBomb({ bare, orphan, nested }))).toBe(
+        '{"bare":{"a":1},"orphan":Object {"a":1},"nested":Object {"own":1},"boom":[Unreadable]}'
+      );
     });
 
-    test('renders a Proxy of a Date as an object, not a date', () => {
-      const proxied = new Proxy(new Date(0), {});
-      expect(formatValueForMessage(proxied)).toBe('Date {}');
+    test('elides containers beyond the maximum depth', () => {
+      expect(formatValueForMessage(withBomb({ a: [[1]] }), { maxDepth: 2 })).toBe(
+        '{"a":[[…]],"boom":[Unreadable]}'
+      );
+      expect(formatValueForMessage(withBomb({ a: { b: 1 }, e: [] }), { maxDepth: 1 })).toBe(
+        '{"a":{…},"e":[],"boom":[Unreadable]}'
+      );
+      expect(formatValueForMessage(withBomb({ a: [] }), { maxDepth: 0 })).toBe('{…}');
+      expect(DEFAULT_FORMAT_VALUE_MAX_DEPTH).toBeGreaterThan(0);
+    });
+
+    test('renders a long string inside a fallback rendering without serializing all of it', () => {
+      const text = formatValueForMessage(withBomb({ s: 'x'.repeat(10_000_000) }), { maxLength: 12 });
+      expect(text).toBe('{"s":"xxxxx…');
     });
   });
 
@@ -277,7 +362,7 @@ describe('formatValueForMessage', () => {
       const text = formatValueForMessage(large);
       expect(text.length).toBe(DEFAULT_FORMAT_VALUE_MAX_LENGTH);
       expect(text.endsWith('…')).toBe(true);
-      expect(text.startsWith('[0,1,2,3,')).toBe(true);
+      expect(JSON.stringify(large).startsWith(text.slice(0, -1))).toBe(true);
     });
 
     test('truncates a very long string without serializing all of it', () => {
@@ -290,22 +375,7 @@ describe('formatValueForMessage', () => {
       expect(formatValueForMessage('a😀😀', { maxLength: 4 })).toBe('"a…');
     });
 
-    test('elides containers beyond the maximum depth', () => {
-      let deep: unknown = 'bottom';
-      for (let i = 0; i < 40; i++) {
-        deep = i % 2 === 0 ? [deep] : { d: deep };
-      }
-      const text = formatValueForMessage(deep, { maxLength: 10_000 });
-      expect(text).toContain('…');
-      expect(text).not.toContain('bottom');
-      expect(formatValueForMessage([[1]], { maxDepth: 1 })).toBe('[[…]]');
-      expect(formatValueForMessage({ a: { b: 1 } }, { maxDepth: 1 })).toBe('{"a":{…}}');
-      expect(formatValueForMessage({ a: [] }, { maxDepth: 0 })).toBe('{…}');
-      expect(formatValueForMessage([], { maxDepth: 0 })).toBe('[]');
-      expect(DEFAULT_FORMAT_VALUE_MAX_DEPTH).toBeGreaterThan(0);
-    });
-
-    test('stops walking a large cyclic graph once the budget is spent', () => {
+    test('stops walking a large graph once the output is known to exceed the bound', () => {
       const wide: Record<string, unknown> = {};
       for (let i = 0; i < 1000; i++) {
         wide[`k${i}`] = wide;
@@ -313,6 +383,20 @@ describe('formatValueForMessage', () => {
       const text = formatValueForMessage(wide, { maxLength: 50 });
       expect(text.length).toBe(50);
       expect(text).toMatch(/^\{"k0":\[Circular\],"k1":\[Circular\]/);
+      let dag: unknown = 'leaf';
+      for (let i = 0; i < 64; i++) {
+        dag = { l: dag, r: dag };
+      }
+      // 2^64 paths: only a bounded walk returns at all
+      expect(formatValueForMessage(dag).length).toBe(DEFAULT_FORMAT_VALUE_MAX_LENGTH);
+    });
+
+    test('caps a walk over members JSON.stringify omits', () => {
+      const sparse: Record<string, unknown> = { first: 1 };
+      for (let i = 0; i < 20_000; i++) {
+        sparse[`u${i}`] = undefined;
+      }
+      expect(formatValueForMessage(sparse, { maxLength: 30 })).toBe('{"first":1,"u0":undefined,"u1…');
     });
 
     test('ignores invalid options and clamps indent like JSON.stringify', () => {
@@ -338,20 +422,24 @@ describe('formatValueForMessage', () => {
       expect(formatValueForMessage({ a: 1 }, hostile)).toBe('[Unreadable]');
     });
 
-    test('renders with String() in the string style, falling back to the JSON rendering', () => {
+    test('renders with String() in the string style, with its own larger default bound', () => {
       expect(formatValueForMessage('text', { style: 'string' })).toBe('text');
       expect(formatValueForMessage({ a: 1 }, { style: 'string' })).toBe('[object Object]');
       expect(formatValueForMessage([1, [2, 3]], { style: 'string' })).toBe('1,2,3');
       expect(formatValueForMessage(Symbol('s'), { style: 'string' })).toBe('Symbol(s)');
       expect(formatValueForMessage(undefined, { style: 'string' })).toBe('undefined');
+      expect(formatValueForMessage('y'.repeat(500), { style: 'string' })).toBe('y'.repeat(500));
+      expect(formatValueForMessage('y'.repeat(5000), { style: 'string' })).toBe(
+        `${'y'.repeat(DEFAULT_FORMAT_VALUE_STRING_MAX_LENGTH - 1)}…`
+      );
+      expect(formatValueForMessage('y'.repeat(500), { style: 'string', maxLength: 5 })).toBe('yyyy…');
       const bare = Object.assign(Object.create(null) as Record<string, unknown>, { a: 1 });
       expect(formatValueForMessage(bare, { style: 'string' })).toBe('{"a":1}');
       expect(formatValueForMessage(throwingProxy(), { style: 'string' })).toBe('[Unreadable]');
-      expect(formatValueForMessage('y'.repeat(500), { style: 'string', maxLength: 5 })).toBe('yyyy…');
       expect(formatValueForMessage({ a: 1 }, { style: 'json' })).toBe('{"a":1}');
     });
 
-    test('returns [Unreadable] rather than throwing when both bounds are lifted on a graph deeper than the stack', () => {
+    test('does not throw when both bounds are lifted on a graph deeper than the stack', () => {
       let deep: unknown[] = [];
       for (let i = 0; i < 200_000; i++) {
         deep = [deep];

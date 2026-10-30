@@ -76,42 +76,64 @@ would be a promise the library cannot keep.
 ## `formatValueForMessage` — failure text that cannot throw
 
 `formatValueForMessage(value, { maxLength?, maxDepth?, indent?, style? })` renders any value as text
-for an error or diagnostic message. It **never throws** and runs no code of its own with side
-effects. Every converter and validator in `ts-utils` and `ts-json-base` formats its failure
-messages with it.
+for an error or diagnostic message, and **never throws**. Every converter and validator in
+`ts-utils` and `ts-json-base` formats its failure messages with it.
 
 **Why it exists.** A converter that formats its own failure with `JSON.stringify(from)` throws on a
 cyclic input: `TypeError: Converting circular structure to JSON`. The throw escapes `convert`, skips
 every `Result` combinator downstream, and turns a clean failure into a crash. personaility#713 was a
 production 500 caused by a nested `Converters.object` over a live Node socket graph.
 
-**Compatibility contract.** For a JSON-safe value whose rendering fits within `maxLength` (default
-`DEFAULT_FORMAT_VALUE_MAX_LENGTH`, 200) and `maxDepth` (default `DEFAULT_FORMAT_VALUE_MAX_DEPTH`, 16),
-the output is **exactly** `JSON.stringify(value, undefined, indent)`. So existing failure text, and
-the tests that pin it, are unchanged. A top-level `undefined` renders as `undefined`, which matches
-what a template literal around `JSON.stringify(undefined)` produced.
+**Compatibility contract.** It calls the real `JSON.stringify(value, replacer, indent)` first. The
+replacer changes only what would make `JSON.stringify` throw: a reference back to an object on the
+active ancestor path becomes the string `"[Circular]"`, and a `BigInt` becomes `"123n"`. So **every
+value `JSON.stringify` rendered without throwing renders byte-identically**, up to `maxLength`
+(default `DEFAULT_FORMAT_VALUE_MAX_LENGTH`, 200). That includes dropped `undefined` and function
+properties, `toJSON`, class instances, `Map`s and boxed primitives. Text changes only for inputs
+that used to throw, and for values longer than the bound, which are cut and end in `…`.
+
+Where `JSON.stringify` still throws, or produces nothing, a fallback renderer takes over:
 
 | input | renders as |
 |---|---|
-| a reference back to an ancestor | `[Circular]` |
-| `BigInt(5)` / `Symbol('s')` / a function / `undefined` (anywhere) | `5n` / `Symbol(s)` / `[Function name]` / `undefined` |
-| a class instance | `Socket {"connecting":false,…}`, with its own enumerable properties behind the constructor name |
-| a typed array | `Uint8Array [1,2,3]` |
-| a getter or Proxy trap that throws | `[Unreadable]` |
-| output over `maxLength` | cut, ending in `…`; the walk stops as soon as the budget is spent |
+| a top-level `undefined` / symbol / function | `undefined` / `Symbol(s)` / `[Function name]` |
+| a throwing getter, Proxy trap or `toJSON` | the value's own properties, with `[Unreadable]` for what could not be read |
+| in a fallback rendering: a cycle, `BigInt`, class instance, typed array | `[Circular]`, `5n`, `Socket {…}`, `Uint8Array [1,2,3]` |
+| in a fallback rendering: nesting deeper than `maxDepth` (16) | `{…}` / `[…]` |
 
-A user `toJSON` is **not** called, because it is arbitrary code. Getters are read, as `JSON.stringify`
-reads them, and any error they throw is contained.
+**What runs.** Like `JSON.stringify`, it invokes getters, Proxy traps and `toJSON`, and contains any
+error they throw. The fallback does not call `toJSON`, because that may be what threw. Both
+renderers stop once the output is known to exceed `maxLength`. The work is therefore proportional
+to `maxLength`, plus any members that `JSON.stringify` omits. Those are capped at fifty calls per
+character of the bound, with a floor of 10 000.
 
 `style: 'string'` keeps the text of a message that has always interpolated the value directly
-(`"${from}": not a string`). It uses `String(value)`, and falls back to the JSON rendering where
-that throws, such as for a symbol, a null-prototype object or a Proxy.
+(`"${from}": not a string`). It uses `String(value)`, which invokes `toString`. Where that throws, as
+for a null-prototype object or a trapping Proxy, it falls back to the JSON rendering. Its default
+bound is the larger `DEFAULT_FORMAT_VALUE_STRING_MAX_LENGTH` (1000), so `String()` of a huge array
+cannot produce a megabyte message.
 
 **The boundary holds as well.** `BaseConverter` and `GenericValidator` catch a throw from the
-function they wrap and return it as a `Failure` carrying the error's message, and `guard` returns
-`false`. So `convert`, `convertOptional`, `validate` and `guard` never throw, even when a custom
-callback has a bug, or a getter or Proxy trap on the input throws while it is being converted. The
-error still surfaces, as a `Failure` the caller can see.
+function they wrap. They return it as a `Failure` reading `converter threw: <message>` or
+`validator threw: <message>`, so a bug in a callback reads differently from invalid input. As a
+result, `convert`, `convertOptional`, `validate` and `guard` never throw, even when a getter or
+Proxy trap on the input throws mid-conversion.
+
+Stack exhaustion is the exception. Inside nested converters it is re-thrown until it reaches the
+outermost one, and fails once there. Converting it at every level would let each level move on to
+its next sibling and exhaust the stack again, which on a graph with shared references multiplies
+into a hang.
+
+**Be honest about the masking.** A buggy callback now produces a failure, so anything that expects
+failures will hide it:
+
+- `convertOptional` with `ignoreErrors`;
+- `oneOf`, `or` and `withAction` alternatives;
+- `orDefault`;
+- `guard`, which simply answers `false`.
+
+`orThrow` re-raises the message, but not the original error's class or stack. Search for the
+`threw:` prefix when a conversion fails for no visible reason.
 
 ## Recent additions
 

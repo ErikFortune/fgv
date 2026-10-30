@@ -19,7 +19,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-import { Brand, Result, _errorMessage, fail, formatValueForMessage, mapResults, succeed } from '../base';
+import { Brand, Result, _atResultBoundary, fail, formatValueForMessage, mapResults, succeed } from '../base';
 import {
   ConstraintOptions,
   ConversionErrorFormatter,
@@ -104,20 +104,25 @@ export class BaseConverter<T, TC = unknown> implements Converter<T, TC> {
    * @remarks
    * The converter is a `Result` boundary, so it never throws: if the supplied function throws
    * (a bug in a custom callback, or a getter or Proxy trap on the value being converted), the
-   * conversion fails with the thrown error's message instead.
+   * conversion fails with `converter threw: <message>` instead. Stack exhaustion inside nested
+   * converters unwinds to the outermost converter and fails once there.
+   *
+   * The conversion to a `Failure` masks the error wherever a failure is expected: `convertOptional`
+   * with `ignoreErrors`, `oneOf` (which tries the next converter), `orDefault`, and `guard` all
+   * treat a buggy callback like invalid input. `orThrow` re-raises the message, but not the original
+   * error's class or stack.
    * @param converter - The conversion function to be applied.
    * @param defaultContext - Optional conversion context to be used by default.
    * @param traits - Optional {@link Conversion.ConverterTraits | traits} to be assigned to the resulting
    * converter.
    */
   public constructor(converter: ConverterFunc<T, TC>, defaultContext?: TC, traits?: ConverterTraits) {
-    this._converter = (from: unknown, self: Converter<T, TC>, context?: TC): Result<T> => {
-      try {
-        return converter(from, self, context);
-      } catch (err) {
-        return fail(_errorMessage(err));
-      }
-    };
+    this._converter = (from: unknown, self: Converter<T, TC>, context?: TC): Result<T> =>
+      _atResultBoundary<Result<T>>(
+        'converter',
+        () => converter(from, self, context),
+        (message) => fail(message)
+      );
     this._defaultContext = defaultContext;
     this._isOptional = traits?.isOptional === true;
     this._brand = traits?.brand;

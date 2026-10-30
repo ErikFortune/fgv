@@ -19,7 +19,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-import { MessageLogLevel, Success, captureResult, formatValueForMessage, succeed } from '../base';
+import { MessageLogLevel, Success, captureResult, fail, formatValueForMessage, succeed } from '../base';
 import {
   IDetailLogger,
   ILogger,
@@ -67,19 +67,22 @@ export function shouldLog(message: MessageLogLevel, reporter: ReporterLogLevel):
  * @public
  */
 export function stringifyLogValue(value: unknown, maxLength?: number): string {
-  maxLength = maxLength ?? 40;
+  const limit = maxLength ?? 40;
+  const truncate = (s: string): string => (s.length < limit ? s : s.substring(0, limit - 3) + '...');
   if (typeof value === 'string') {
     return value;
   }
-  // a value with no usable string conversion (a null-prototype object, a Proxy) is still logged
-  const str = captureResult(() => String(value)).orDefaultWith(() =>
-    formatValueForMessage(value, { maxLength })
-  );
+  const str = captureResult((): string | undefined => String(value)).orDefault(undefined);
+  if (str === undefined) {
+    // no usable string conversion (a null-prototype object, a Proxy): render it instead, cut the
+    // same way as the JSON text below (one past the limit, so the cut decides the marker)
+    return truncate(formatValueForMessage(value, { maxLength: limit + 1 }));
+  }
   if (str === '[object Object]') {
     return captureResult(() => JSON.stringify(value))
-      .onSuccess((s) => {
-        return succeed(s.length < maxLength ? s : s.substring(0, maxLength - 3) + '...');
-      })
+      .onSuccess((s: string | undefined) =>
+        typeof s === 'string' ? succeed(truncate(s)) : fail<string>('no JSON text')
+      )
       .orDefault(str);
   }
   return str;

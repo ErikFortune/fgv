@@ -176,14 +176,23 @@ export function isJsonArray(from: unknown): from is JsonArray {
  * @public
  */
 export function classifyJsonValue(from: unknown): Result<JsonValueType> {
-  if (isJsonPrimitive(from)) {
-    return succeed('primitive');
-  } else if (isJsonObject(from)) {
-    return succeed('object');
-  } else if (isJsonArray(from)) {
-    return succeed('array');
-  }
-  return fail(`Invalid JSON: ${formatValueForMessage(from, { style: 'string' })}`);
+  // the type guards read the value, so a Proxy whose traps throw makes them throw
+  return captureResult((): JsonValueType | undefined => {
+    if (isJsonPrimitive(from)) {
+      return 'primitive';
+    } else if (isJsonObject(from)) {
+      return 'object';
+    } else if (isJsonArray(from)) {
+      return 'array';
+    }
+    return undefined;
+  })
+    .withErrorFormat((msg) => `Invalid JSON: ${formatValueForMessage(from, { style: 'string' })}: ${msg}`)
+    .onSuccess((kind) =>
+      kind === undefined
+        ? fail<JsonValueType>(`Invalid JSON: ${formatValueForMessage(from, { style: 'string' })}`)
+        : succeed(kind)
+    );
 }
 
 /**

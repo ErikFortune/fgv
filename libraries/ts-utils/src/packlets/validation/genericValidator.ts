@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { Brand, Failure, Result, _errorMessage, fail, formatValueForMessage, succeed } from '../base';
+import { Brand, Failure, Result, _atResultBoundary, fail, formatValueForMessage, succeed } from '../base';
 import { ConstraintTrait, ValidatorTraits } from './traits';
 import {
   Constraint,
@@ -65,8 +65,12 @@ export class GenericValidator<T, TC = unknown> implements Validator<T, TC> {
    * @remarks
    * The validator is a `Result` boundary, so it never throws: if the supplied validator function
    * throws (a bug in a custom callback, or a getter or Proxy trap on the value being validated),
-   * validation fails with the thrown error's message instead, and `guard`
-   * returns `false`.
+   * validation fails with `validator threw: <message>` instead, and `guard` returns `false`. Stack
+   * exhaustion inside nested validators unwinds to the outermost one and fails once there.
+   *
+   * The conversion to a `Failure` masks the error wherever a failure is expected: `guard`, `or` and
+   * `oneOf` (which try the alternative), and `orDefault` all treat a buggy callback like invalid
+   * input. `orThrow` re-raises the message, but not the original error's class or stack.
    * @param params - The {@link Validation.Base.GenericValidatorConstructorParams | constructor params}
    * used to configure validation.
    */
@@ -75,13 +79,12 @@ export class GenericValidator<T, TC = unknown> implements Validator<T, TC> {
       throw new Error('No validator function supplied');
     }
     const validator = params.validator;
-    this._validator = (from: unknown, context?: TC, self?: Validator<T, TC>): boolean | Failure<T> => {
-      try {
-        return validator(from, context, self);
-      } catch (err) {
-        return fail(_errorMessage(err));
-      }
-    };
+    this._validator = (from: unknown, context?: TC, self?: Validator<T, TC>): boolean | Failure<T> =>
+      _atResultBoundary<boolean | Failure<T>>(
+        'validator',
+        () => validator(from, context, self),
+        (message) => fail<T>(message)
+      );
     this._options = params.options ?? {};
     this.traits = new ValidatorTraits(params.traits);
   }

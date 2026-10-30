@@ -28,14 +28,16 @@ export interface IFormatValueForMessageOptions {
   /**
    * Maximum length of the returned text, in UTF-16 code units, including the trailing
    * ellipsis (`…`) that marks a truncated rendering. Values below 1 or that are not numbers
-   * select the default. Default {@link DEFAULT_FORMAT_VALUE_MAX_LENGTH}.
+   * select the default. Default {@link DEFAULT_FORMAT_VALUE_MAX_LENGTH} for the `'json'` style and
+   * {@link DEFAULT_FORMAT_VALUE_STRING_MAX_LENGTH} for the `'string'` style.
    */
   readonly maxLength?: number;
 
   /**
-   * Maximum depth of nested objects and arrays that are rendered. A container nested more deeply
-   * is elided as `{…}` or `[…]`. Negative values or values that are not numbers select the default.
-   * Default {@link DEFAULT_FORMAT_VALUE_MAX_DEPTH}.
+   * Maximum depth of nested objects and arrays rendered by the fallback renderer (used only when
+   * `JSON.stringify` throws). A container nested more deeply is elided as `{…}` or `[…]`. Negative
+   * values or values that are not numbers select the default. Default
+   * {@link DEFAULT_FORMAT_VALUE_MAX_DEPTH}.
    */
   readonly maxDepth?: number;
 
@@ -47,14 +49,16 @@ export interface IFormatValueForMessageOptions {
 
   /**
    * How to render the value:
-   * - `'json'` (default): the JSON-compatible rendering described at {@link formatValueForMessage}.
-   * - `'string'`: `String(value)` — the text a template literal interpolating the value produces —
-   *   falling back to the `'json'` rendering when that conversion throws (a symbol in a template
-   *   literal, a null-prototype object, a Proxy, a throwing `toString`). For use where a message has
-   *   always interpolated the value directly and its text must not change. Unlike `'json'`, this
-   *   runs the value's own `toString`, so prefer `'json'` for new messages.
-   *
-   * Both styles are bounded by `maxLength`.
+   * - `'json'` (default): the `JSON.stringify`-based rendering described at
+   *   {@link formatValueForMessage}.
+   * - `'string'`: `String(value)`, which is what interpolating the value into a template literal
+   *   produces, except for a symbol, where a template literal throws and `String()` does not. Falls
+   *   back to the `'json'` rendering when `String()` throws (a null-prototype object, a Proxy whose
+   *   traps throw, a throwing `toString`). For messages that have always interpolated the value
+   *   directly and whose text must not change. It invokes the value's own `toString` /
+   *   `Symbol.toPrimitive`. Its default bound is the larger
+   *   {@link DEFAULT_FORMAT_VALUE_STRING_MAX_LENGTH}: the text of such a message was never bounded,
+   *   and is unchanged up to that length, but `String()` of a large array runs to megabytes.
    */
   readonly style?: 'json' | 'string';
 }
@@ -72,6 +76,13 @@ export const DEFAULT_FORMAT_VALUE_MAX_LENGTH: number = 200;
  * @public
  */
 export const DEFAULT_FORMAT_VALUE_MAX_DEPTH: number = 16;
+
+/**
+ * Default {@link IFormatValueForMessageOptions.maxLength | maximum length} used by
+ * {@link formatValueForMessage} in the `'string'` style.
+ * @public
+ */
+export const DEFAULT_FORMAT_VALUE_STRING_MAX_LENGTH: number = 1000;
 
 const ELLIPSIS: string = '…';
 const UNREADABLE: string = '[Unreadable]';
@@ -105,6 +116,78 @@ function _truncate(text: string, maxLength: number): string {
     cut = cut.slice(0, -1);
   }
   return `${cut}${ELLIPSIS}`;
+}
+
+/**
+ * Thrown from the replacer to abandon `JSON.stringify` once the output is known to exceed the
+ * length budget or the call budget, so the caller falls back to the bounded renderer.
+ */
+const OVER_BUDGET: object = Object.freeze({});
+
+/**
+ * A lower bound on the characters one replacer call adds to the output: the key and colon for an
+ * object member, and the value's own minimum. Escaping and indentation only add to it, so a running
+ * total above the budget proves the result will be truncated.
+ */
+function _lowerBound(key: string, value: unknown, inArray: boolean, isRoot: boolean): number {
+  let own: number;
+  switch (typeof value) {
+    case 'string':
+      own = value.length + 2;
+      break;
+    case 'number':
+      own = JSON.stringify(value).length;
+      break;
+    case 'boolean':
+      own = value ? 4 : 5;
+      break;
+    case 'object':
+      own = value === null ? 4 : 2;
+      break;
+    default:
+      // undefined, function, symbol: "null" in an array, omitted from an object
+      return inArray ? 4 : 0;
+  }
+  return isRoot || inArray ? own : own + key.length + 3;
+}
+
+/**
+ * `JSON.stringify(value, replacer, indent)`, where the replacer intervenes only where
+ * `JSON.stringify` would throw: a reference back to an object on the active ancestor path becomes
+ * the string `"[Circular]"`, and a `BigInt` becomes `"123n"`. Returns `undefined` when
+ * `JSON.stringify` does (a top-level `undefined`, function or symbol), when it throws anyway (a
+ * throwing getter, Proxy trap or `toJSON`, or stack exhaustion), or when the output is shown to
+ * exceed `maxLength` or the walk exceeds its call budget.
+ */
+function _stringifyOrUndefined(value: unknown, indent: number, maxLength: number): string | undefined {
+  const ancestors: unknown[] = [];
+  const callBudget = Math.max(10_000, maxLength * 50);
+  let calls = 0;
+  let length = 0;
+  const replacer = function (this: unknown, key: string, member: unknown): unknown {
+    calls++;
+    let replaced: unknown = typeof member === 'bigint' ? `${member}n` : member;
+    if (typeof replaced === 'object' && replaced !== null) {
+      // the holder is the deepest ancestor still open; anything after it has been closed
+      ancestors.length = ancestors.lastIndexOf(this) + 1;
+      if (ancestors.includes(replaced)) {
+        replaced = CIRCULAR;
+      } else {
+        ancestors.push(replaced);
+      }
+    }
+    length += _lowerBound(key, replaced, Array.isArray(this), calls === 1);
+    if (length > maxLength || calls > callBudget) {
+      throw OVER_BUDGET;
+    }
+    return replaced;
+  };
+  try {
+    const text: unknown = JSON.stringify(value, replacer, indent);
+    return typeof text === 'string' ? text : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 function _optionOrDefault(value: unknown, min: number, fallback: number): number {
@@ -288,34 +371,39 @@ class MessageValueWriter {
 
 /**
  * Renders an arbitrary value as text for inclusion in a failure or diagnostic message. Never
- * throws, and has no side effects of its own.
+ * throws.
  *
  * @remarks
- * **Compatibility:** for a JSON-safe value (strings, finite numbers, booleans, `null`, and plain
- * objects and arrays of them) whose rendering fits within `maxLength` and `maxDepth`, the result
- * is exactly `JSON.stringify(value, undefined, indent)`. A top-level `undefined` renders as
- * `undefined`, which is what a template literal made of `JSON.stringify(undefined)` produced.
+ * **Compatibility:** the value is first rendered with `JSON.stringify(value, replacer, indent)`. The
+ * replacer intervenes only where `JSON.stringify` would throw — a reference back to an object on
+ * the active ancestor path becomes `"[Circular]"`, and a `BigInt` becomes `"123n"` — so every value
+ * `JSON.stringify` rendered without throwing renders byte-identically, up to `maxLength`. That
+ * includes its treatment of `undefined`, functions and symbols, `toJSON`, class instances, `Map`s
+ * and boxed primitives.
  *
- * Everything else renders as readable text rather than throwing or disappearing:
- * - a reference back to an object currently being rendered renders as `[Circular]`;
+ * Where `JSON.stringify` would produce no text at all (a top-level `undefined`, function or
+ * symbol), or still throws (a throwing getter, Proxy trap or `toJSON`, or a graph too deep for the
+ * stack), a fallback renderer produces readable text instead:
+ * - a reference back to an ancestor renders as `[Circular]`;
  * - a `BigInt` renders as `123n`, a symbol as `Symbol(description)`, a function as
- *   `[Function name]`, and `undefined` anywhere as `undefined` (it is not dropped);
+ *   `[Function name]`, and `undefined` as `undefined`;
  * - a class instance renders its own enumerable properties behind its constructor name, as in
  *   `Socket {"connecting":false,…}`; typed arrays render their elements, as in `Uint8Array [1,2]`;
  * - a property whose getter or Proxy trap throws renders as `[Unreadable]`, as does an object
  *   whose shape cannot be read at all;
- * - a `Date` renders as `JSON.stringify` renders it, but through the intrinsic `Date` methods.
+ * - containers nested deeper than `maxDepth` are elided.
+ * The fallback does not invoke `toJSON`, since that may be what threw.
  *
- * A user-defined `toJSON` is deliberately **not** invoked: it is arbitrary code that can have side
- * effects or throw, and the point of the message is to describe the value that was received, not
- * a projection of it. Getters, by contrast, are read (as `JSON.stringify` reads them), with any
- * error contained.
+ * **What runs.** Like `JSON.stringify`, the first attempt invokes getters, Proxy traps and
+ * `toJSON`; the fallback invokes getters and Proxy traps. Any error they throw is contained. The
+ * {@link IFormatValueForMessageOptions.style | `'string'` style} invokes `toString` /
+ * `Symbol.toPrimitive` instead.
  *
- * The {@link IFormatValueForMessageOptions.style | `'string'` style} instead preserves the text of a
- * message that has always interpolated the value directly.
- *
- * Output longer than `maxLength` is cut and ends with `…`; the walk stops as soon as the budget is
- * exceeded, so formatting a very large graph costs about as much as formatting a small one.
+ * **Cost.** Output longer than `maxLength` is cut and ends with `…`. Both renderers stop once the
+ * output is known to exceed `maxLength`, so the work is proportional to `maxLength` plus any members
+ * `JSON.stringify` omits (an `undefined` or function property), which are capped by a call budget of
+ * fifty per character of `maxLength` (at least 10 000). A value whose walk exceeds that budget is
+ * rendered by the fallback.
  *
  * @param value - The value to render.
  * @param options - Optional {@link IFormatValueForMessageOptions | formatting options}.
@@ -324,16 +412,24 @@ class MessageValueWriter {
  */
 export function formatValueForMessage(value: unknown, options?: IFormatValueForMessageOptions): string {
   try {
-    const maxLength = _optionOrDefault(options?.maxLength, 1, DEFAULT_FORMAT_VALUE_MAX_LENGTH);
-    const maxDepth = _optionOrDefault(options?.maxDepth, 0, DEFAULT_FORMAT_VALUE_MAX_DEPTH);
+    const requestedLength: unknown = options?.maxLength;
+    const maxLength = _optionOrDefault(requestedLength, 1, DEFAULT_FORMAT_VALUE_MAX_LENGTH);
     if (options?.style === 'string') {
       const text = _stringOrUndefined(value);
       if (text !== undefined) {
-        return _truncate(text, maxLength);
+        return _truncate(
+          text,
+          requestedLength === undefined ? DEFAULT_FORMAT_VALUE_STRING_MAX_LENGTH : maxLength
+        );
       }
     }
-    const gap = ' '.repeat(Math.min(10, _optionOrDefault(options?.indent, 0, 0)));
-    const writer = new MessageValueWriter(maxLength, maxDepth, gap);
+    const indent = Math.min(10, _optionOrDefault(options?.indent, 0, 0));
+    const json = _stringifyOrUndefined(value, indent, maxLength);
+    if (json !== undefined) {
+      return _truncate(json, maxLength);
+    }
+    const maxDepth = _optionOrDefault(options?.maxDepth, 0, DEFAULT_FORMAT_VALUE_MAX_DEPTH);
+    const writer = new MessageValueWriter(maxLength, maxDepth, ' '.repeat(indent));
     writer.value(value, 0, '');
     return writer.text();
   } catch {

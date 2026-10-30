@@ -26,6 +26,7 @@ import { Normalizer, Result, fail, succeed } from '../../packlets/base';
 import { KeyValueConverters } from '../../packlets/collections';
 import { Converter, Converters } from '../../packlets/conversion';
 import { Validator, Validators } from '../../packlets/validation';
+import { runIsolated } from '../helpers/isolatedRun';
 
 /**
  * Generous ceiling on a failure message: a bounded rendering of the value plus the converter's
@@ -287,7 +288,7 @@ describe('failure messages never throw', () => {
       incoming: Converters.object({ socket: Converters.object({ remoteAddress: Converters.string }) })
     });
     expect(nodeBindings.convert({ incoming: { socket } })).toFailWith(
-      /remoteAddress.*Socket \{"connecting":false,"parser":\{"socket":\[Circular\]\}\}/
+      /remoteAddress.*\{"connecting":false,"parser":\{"socket":"\[Circular\]"\}\}/
     );
     expect(
       nodeBindings
@@ -305,7 +306,7 @@ describe('failure messages never throw', () => {
     expect(() => {
       result = kv.convertEntry(cyclic);
     }).not.toThrow();
-    expect(result).toFailWith(/malformed entry: "\{"self":\[Circular\]\}"/);
+    expect(result).toFailWith(/malformed entry: "\{"self":"\[Circular\]"\}"/);
   });
 
   test('a normalizer reports an unnormalizable value rather than rendering undefined', () => {
@@ -319,7 +320,7 @@ describe('the converter and validator boundary never throws', () => {
     const throwing: Converter<string> = Converters.generic<string>(() => {
       throw new Error('callback exploded');
     });
-    expect(throwing.convert('x')).toFailWith(/callback exploded/);
+    expect(throwing.convert('x')).toFailWith(/^converter threw: callback exploded$/);
     expect(throwing.convertOptional('x', undefined, 'failOnError')).toFailWith(/callback exploded/);
     expect(throwing.optional().convert('x')).toFailWith(/callback exploded/);
     expect(Converters.object({ a: throwing }).convert({ a: 'x' })).toFailWith(/a: .*callback exploded/);
@@ -329,7 +330,7 @@ describe('the converter and validator boundary never throws', () => {
     const throwing: Validator<string> = Validators.generic<string>(() => {
       throw new Error('validator exploded');
     });
-    expect(throwing.validate('x')).toFailWith(/validator exploded/);
+    expect(throwing.validate('x')).toFailWith(/^validator threw: validator exploded$/);
     expect(throwing.convert('x')).toFailWith(/validator exploded/);
     expect(throwing.guard('x')).toBe(false);
   });
@@ -339,4 +340,120 @@ describe('the converter and validator boundary never throws', () => {
     expect(Converters.generic(() => fail('plain failure')).convert(1)).toFailWith(/^plain failure$/);
     expect(Validators.generic(() => fail('plain failure')).validate(1)).toFailWith(/^plain failure$/);
   });
+});
+
+describe('stack exhaustion inside nested converters and validators', () => {
+  // A converter that recurses through every member of its input, as the recursive JSON converters
+  // do, with no cycle check of its own.
+  const walk: Converter<unknown> = Converters.generic<unknown>((from, self) =>
+    Converters.recordOf(self).convert(from)
+  );
+  const validateWalk: Validator<unknown> = Validators.generic<unknown>((from) => {
+    const inner = Validators.recordOf(validateWalk).validate(from);
+    return inner.isSuccess() ? true : fail(inner.message);
+  });
+
+  function selfCycle(edges: number): Record<string, unknown> {
+    const node: Record<string, unknown> = {};
+    for (let i = 0; i < edges; i++) {
+      node[`k${i}`] = node;
+    }
+    return node;
+  }
+
+  test('fails once, at the outermost boundary, with a short message', () => {
+    for (const result of [walk.convert(selfCycle(1)), validateWalk.validate(selfCycle(1))]) {
+      expect(result).toFailWith(/^(converter|validator) threw: .*(call stack|recursion)/i);
+      expect(result.message?.length).toBeLessThan(200);
+    }
+  });
+
+  test('a RangeError that is not stack exhaustion is also propagated to the outermost boundary', () => {
+    const inner = Converters.generic<unknown>(() => {
+      throw new RangeError('Invalid array length');
+    });
+    const outer = Converters.object({ a: Converters.object({ b: inner }) });
+    expect(outer.convert({ a: { b: 1 } })).toFailWith(/^converter threw: Invalid array length$/);
+  });
+
+  test('an error that only looks like a RangeError by name is propagated the same way', () => {
+    const inner = Converters.generic<unknown>(() => {
+      throw Object.assign(new Error('too much recursion'), { name: 'InternalError' });
+    });
+    const unreadable = Converters.generic<unknown>(() => {
+      throw new Proxy(
+        {},
+        {
+          getPrototypeOf(): never {
+            throw new Error('trap');
+          },
+          get(): never {
+            throw new Error('trap');
+          }
+        }
+      );
+    });
+    expect(Converters.object({ a: inner }).convert({ a: 1 })).toFailWith(
+      /^converter threw: too much recursion$/
+    );
+    const text: unknown = 'plain text';
+    const thrownText = Converters.generic<unknown>(() => {
+      throw text;
+    });
+    expect(Converters.object({ a: thrownText }).convert({ a: 1 })).toFailWith(
+      /^Field a: converter threw: plain text$/
+    );
+    expect(Converters.object({ a: unreadable }).convert({ a: 1 })).toFailWith(
+      /^converter threw: an error whose message could not be read$/
+    );
+  });
+
+  // Each case runs in its own process with a hard limit: before the fix, each one did not finish.
+  const entryPoint = require.resolve('../../index');
+  const cases: Array<[string, string]> = [
+    [
+      'two back-edges (converter)',
+      `const a = {}; a.k0 = a; a.k1 = a;
+       const walk = lib.Converters.generic((from, self) => lib.Converters.recordOf(self).convert(from));
+       const r = walk.convert(a);`
+    ],
+    [
+      'two back-edges (validator)',
+      `const a = {}; a.k0 = a; a.k1 = a;
+       const walk = lib.Validators.generic((from, ctx, self) => {
+         const inner = lib.Validators.recordOf(self).validate(from);
+         return inner.isSuccess() ? true : lib.fail(inner.message);
+       });
+       const r = walk.validate(a);`
+    ],
+    [
+      'a socket-shaped graph with several back-edges',
+      `const s = { connecting: false }; s.parser = { socket: s }; s.server = { owner: s }; s.self = s;
+       const walk = lib.Converters.generic((from, self) =>
+         typeof from === 'object' && from !== null ? lib.Converters.recordOf(self).convert(from) : lib.fail('leaf'));
+       const r = walk.convert(s);`
+    ],
+    [
+      'a deep DAG with two edges per level',
+      `let d = 'leaf'; for (let i = 0; i < 20000; i++) d = { l: d, r: d };
+       const walk = lib.Converters.generic((from, self) =>
+         typeof from === 'object' ? lib.Converters.recordOf(self).convert(from) : lib.succeed(from));
+       const r = walk.convert(d);`
+    ]
+  ];
+
+  test.each(cases)(
+    '%s finishes quickly and fails with a short message',
+    (__, script) => {
+      const run = runIsolated(
+        entryPoint,
+        `${script}\nprocess.stdout.write(JSON.stringify({ failed: r.isFailure(), length: r.message.length }) + '\\n');`,
+        15_000
+      );
+      expect(run.timedOut).toBe(false);
+      expect(run.report).toEqual({ failed: true, length: expect.any(Number) });
+      expect((run.report as { length: number }).length).toBeLessThan(500);
+    },
+    30_000
+  );
 });

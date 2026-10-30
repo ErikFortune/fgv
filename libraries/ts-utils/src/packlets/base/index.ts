@@ -20,6 +20,7 @@
  * SOFTWARE.
  */
 
+export * from './boundary';
 export * from './brand';
 export * from './formatValue';
 export * from './mapResults';

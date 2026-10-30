@@ -51,7 +51,7 @@ describe('Iana common validators', () => {
       const cyclic: Record<string, unknown> = {};
       cyclic.self = cyclic;
       expect(Iana.Validate.yearMonthDateSpec.toCanonical(cyclic)).toFailWith(
-        /invalid Year-Month-Date.*\("\{"self":\[Circular\]\}"\)/i
+        /invalid Year-Month-Date.*\("\{"self":"\[Circular\]"\}"\)/i
       );
     });
   });

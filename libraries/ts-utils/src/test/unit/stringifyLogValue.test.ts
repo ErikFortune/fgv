@@ -362,6 +362,12 @@ describe('stringifyLogValue', () => {
       );
       expect(() => stringifyLogValue(hostile)).not.toThrow();
       expect(stringifyLogValue(Object.create(null) as object, 5)).toBe('{}');
+      const long = Object.assign(Object.create(null) as Record<string, unknown>, { key: 'v'.repeat(100) });
+      expect(stringifyLogValue(long)).toBe(`{"key":"${'v'.repeat(29)}...`);
+    });
+
+    test('falls back to [object Object] when toJSON yields no JSON text', () => {
+      expect(stringifyLogValue({ toJSON: (): undefined => undefined })).toBe('[object Object]');
     });
   });
 

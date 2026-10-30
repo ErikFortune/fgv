@@ -214,6 +214,9 @@ export class AsyncResult<T> implements PromiseLike<Result<T>> {
 // @public
 export type AsyncSuccessContinuation<T, TN> = (value: T) => PromiseLike<Result<TN>>;
 
+// @internal
+export function _atResultBoundary<T>(kind: string, body: () => T, failure: (message: string) => T): T;
+
 declare namespace Base {
     export {
         GenericValidatorConstructorParams,
@@ -900,6 +903,9 @@ export const DEFAULT_FORMAT_VALUE_MAX_DEPTH: number;
 
 // @public
 export const DEFAULT_FORMAT_VALUE_MAX_LENGTH: number;
+
+// @public
+export const DEFAULT_FORMAT_VALUE_STRING_MAX_LENGTH: number;
 
 // @public
 export const DEFAULT_RESULT_CONCURRENCY: number;
@@ -1813,6 +1819,9 @@ function isIterable<TE = unknown, TI extends Iterable<TE> = Iterable<TE>, TO = u
 
 // @public
 export function isKeyOf<T extends object>(key: string | number | symbol, item: T): key is keyof T;
+
+// @internal
+export function _isStackExhaustion(err: unknown): boolean;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
