@@ -348,6 +348,23 @@ describe('stringifyLogValue', () => {
     });
   });
 
+  describe('values with no usable string conversion', () => {
+    test('renders a null-prototype object or a throwing Proxy instead of throwing', () => {
+      const bare = Object.assign(Object.create(null) as Record<string, unknown>, { key: 'value' });
+      expect(stringifyLogValue(bare)).toBe('{"key":"value"}');
+      const hostile = new Proxy(
+        {},
+        {
+          get(): never {
+            throw new Error('trap');
+          }
+        }
+      );
+      expect(() => stringifyLogValue(hostile)).not.toThrow();
+      expect(stringifyLogValue(Object.create(null) as object, 5)).toBe('{}');
+    });
+  });
+
   describe('performance and memory considerations', () => {
     test('should handle large arrays efficiently', () => {
       const largeArray = new Array(1000).fill('item');

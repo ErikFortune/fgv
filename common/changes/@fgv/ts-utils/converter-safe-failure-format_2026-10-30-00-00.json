@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-utils",
+      "comment": "Add formatValueForMessage, which renders any value for a failure or diagnostic message without throwing: cycles render as [Circular], BigInt as 123n, symbols, functions and undefined as readable tokens, class instances behind their constructor name, and throwing getters or Proxy traps as [Unreadable], all bounded by length and depth. Every converter and validator failure message now uses it, and BaseConverter and GenericValidator turn a throw from the function they wrap into a Failure, so convert, validate and guard never throw (personaility#714). For JSON-safe values within the bounds the text is byte-identical to JSON.stringify. Failure text changes only for inputs that previously threw or rendered as 'undefined', and for values longer than 200 characters, which are now truncated with an ellipsis. stringifyLogValue no longer throws for a value with no string conversion.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-utils"
+}

@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-json-base",
+      "comment": "Converter and validator failure messages (jsonPrimitive, literal, enumeratedValue) and classifyJsonValue now format the offending value with formatValueForMessage, so a cyclic, BigInt or symbol input yields a Failure instead of throwing. The text is unchanged for inputs that previously rendered.",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@fgv/ts-json-base"
+}

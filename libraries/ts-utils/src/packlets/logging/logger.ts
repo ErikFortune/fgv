@@ -19,7 +19,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-import { MessageLogLevel, Success, captureResult, succeed } from '../base';
+import { MessageLogLevel, Success, captureResult, formatValueForMessage, succeed } from '../base';
 import {
   IDetailLogger,
   ILogger,
@@ -60,7 +60,7 @@ export function shouldLog(message: MessageLogLevel, reporter: ReporterLogLevel):
 }
 
 /**
- * Stringifies an arbitrary value for logging.
+ * Stringifies an arbitrary value for logging. Never throws.
  * @param value - The value to stringify.
  * @returns The stringified value.
  * @param maxLength - The maximum length of the stringified value.
@@ -71,7 +71,10 @@ export function stringifyLogValue(value: unknown, maxLength?: number): string {
   if (typeof value === 'string') {
     return value;
   }
-  const str = String(value);
+  // a value with no usable string conversion (a null-prototype object, a Proxy) is still logged
+  const str = captureResult(() => String(value)).orDefaultWith(() =>
+    formatValueForMessage(value, { maxLength })
+  );
   if (str === '[object Object]') {
     return captureResult(() => JSON.stringify(value))
       .onSuccess((s) => {

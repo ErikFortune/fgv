@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { Failure, fail } from '../base';
+import { Failure, fail, formatValueForMessage } from '../base';
 import { Validator, ValidatorOptions } from './validator';
 import { ValidatorBase, ValidatorBaseConstructorParams } from './validatorBase';
 
@@ -79,6 +79,6 @@ export class ArrayValidator<T, TC = unknown> extends ValidatorBase<T[], TC> {
       }
       return true;
     }
-    return fail<T[]>(`"${from}": not an array`);
+    return fail<T[]>(`"${formatValueForMessage(from, { style: 'string' })}": not an array`);
   }
 }

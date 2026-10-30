@@ -896,6 +896,12 @@ class Crc32Normalizer extends HashingNormalizer {
 }
 
 // @public
+export const DEFAULT_FORMAT_VALUE_MAX_DEPTH: number;
+
+// @public
+export const DEFAULT_FORMAT_VALUE_MAX_LENGTH: number;
+
+// @public
 export const DEFAULT_RESULT_CONCURRENCY: number;
 
 // @public (undocumented)
@@ -1121,6 +1127,9 @@ export function firstSuccessAsync<T>(work: Iterable<AsyncDeferredResult<T>>, agg
 
 // @internal
 export function _formatShouldNotFailMessage(originalMessage: string, label: string | undefined, frame: _IShouldNotFailFrame): string;
+
+// @public
+export function formatValueForMessage(value: unknown, options?: IFormatValueForMessageOptions): string;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -1425,6 +1434,14 @@ interface IConvertingResultMapConstructorParams<TK extends string, TSRC, TTARGET
 interface IDetailLogger extends ILogger {
     errorWithDetail(message: string, detail: unknown): Success<string | undefined>;
     warnWithDetail(message: string, detail: unknown): Success<string | undefined>;
+}
+
+// @public
+export interface IFormatValueForMessageOptions {
+    readonly indent?: number;
+    readonly maxDepth?: number;
+    readonly maxLength?: number;
+    readonly style?: 'json' | 'string';
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver

@@ -29,6 +29,7 @@ import {
   Validator,
   captureResult,
   fail,
+  formatValueForMessage,
   succeed
 } from '@fgv/ts-utils';
 import { JsonArray, JsonObject, JsonPrimitive, JsonValue, isJsonArray, isJsonObject } from '../json';
@@ -66,7 +67,7 @@ export const jsonPrimitive: Converter<JsonPrimitive, IJsonConverterContext> = ne
         }
         break;
     }
-    return fail(`"${String(from)}": invalid JSON primitive.`);
+    return fail(`"${formatValueForMessage(from, { style: 'string' })}": invalid JSON primitive.`);
   }
 );
 
@@ -261,7 +262,7 @@ export function enumeratedValue<T>(
       if (index >= 0) {
         return succeed(effectiveValues[index]);
       }
-      return fail(message ?? `Invalid enumerated value ${JSON.stringify(from)}`);
+      return fail(message ?? `Invalid enumerated value ${formatValueForMessage(from)}`);
     }
   );
 }

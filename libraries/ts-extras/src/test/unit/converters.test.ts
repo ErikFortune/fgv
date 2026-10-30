@@ -124,6 +124,20 @@ describe('Converters module', () => {
     });
   });
 
+  describe('failure messages for values JSON.stringify cannot render', () => {
+    test('name a cyclic or BigInt value instead of throwing', () => {
+      const cyclic: Record<string, unknown> = { name: 'loop' };
+      cyclic.self = cyclic;
+      const rendered = '{"name":"loop","self":[Circular]}';
+      expect(ExtraConverters.templateString().convert(cyclic)).toFailWith(/^Not a string: \{"name":"loop"/);
+      expect(ExtraConverters.isoDate.convert(cyclic)).toFailWith(`Cannot convert ${rendered} to Date`);
+      expect(ExtraConverters.isoDateTime.convert(cyclic)).toFailWith(
+        `Cannot convert ${rendered} to DateTime`
+      );
+      expect(ExtraConverters.isoDate.convert(BigInt(7))).toFailWith('Cannot convert 7n to Date');
+    });
+  });
+
   describe('extendedArrayOf converter', () => {
     test('converts a valid array', () => {
       const srcArray = ['s1', 's2', 's3'];

@@ -19,7 +19,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-import { Brand, Result, fail, mapResults, succeed } from '../base';
+import { Brand, Result, _errorMessage, fail, formatValueForMessage, mapResults, succeed } from '../base';
 import {
   ConstraintOptions,
   ConversionErrorFormatter,
@@ -101,13 +101,23 @@ export class BaseConverter<T, TC = unknown> implements Converter<T, TC> {
 
   /**
    * Constructs a new {@link Converter} which uses the supplied function to perform the conversion.
+   * @remarks
+   * The converter is a `Result` boundary, so it never throws: if the supplied function throws
+   * (a bug in a custom callback, or a getter or Proxy trap on the value being converted), the
+   * conversion fails with the thrown error's message instead.
    * @param converter - The conversion function to be applied.
    * @param defaultContext - Optional conversion context to be used by default.
    * @param traits - Optional {@link Conversion.ConverterTraits | traits} to be assigned to the resulting
    * converter.
    */
   public constructor(converter: ConverterFunc<T, TC>, defaultContext?: TC, traits?: ConverterTraits) {
-    this._converter = converter;
+    this._converter = (from: unknown, self: Converter<T, TC>, context?: TC): Result<T> => {
+      try {
+        return converter(from, self, context);
+      } catch (err) {
+        return fail(_errorMessage(err));
+      }
+    };
     this._defaultContext = defaultContext;
     this._isOptional = traits?.isOptional === true;
     this._brand = traits?.brand;
@@ -297,7 +307,7 @@ export class BaseConverter<T, TC = unknown> implements Converter<T, TC> {
         message = message ?? 'invalid type';
         return guard(inner, this._context(context))
           ? succeed(inner)
-          : fail(`${message}: ${JSON.stringify(from)}`);
+          : fail(`${message}: ${formatValueForMessage(from)}`);
       });
     })._with(this._traits());
   }
@@ -325,7 +335,7 @@ export class BaseConverter<T, TC = unknown> implements Converter<T, TC> {
               message = message ?? 'invalid type';
               return guard(i, this._context(context))
                 ? succeed(i)
-                : fail(`${message}: ${JSON.stringify(from)}`);
+                : fail(`${message}: ${formatValueForMessage(from)}`);
             })
           );
         }
@@ -357,7 +367,9 @@ export class BaseConverter<T, TC = unknown> implements Converter<T, TC> {
           return constraintResult
             ? result
             : fail(
-                `"${JSON.stringify(result.value)}": ${options?.description ?? 'does not meet constraint'}`
+                `"${formatValueForMessage(result.value)}": ${
+                  options?.description ?? 'does not meet constraint'
+                }`
               );
         }
         return constraintResult;

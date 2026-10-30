@@ -35,6 +35,7 @@
 - **Two-part composite ID (`collection:item`) whose one part may itself contain the separator?** → `Converters.compositeIdFromString` / `Converters.compositeId` with `{ split: 'first' | 'last' }`, or `Validators.compositeId({ …, split })`. `'exact'` (the default) refuses a second separator; `'first'` / `'last'` hand the remainder untouched to the item / collection part. For a nested composite, validate that part as a plain string and re-parse it with its own composite converter — don't hand-roll `indexOf` + `slice`.
 - **Generating a UUID?** → `generateUuid()` from `@fgv/ts-utils/base` for the call-site one-liner; `ICryptoProvider.generateUuid()` from `@fgv/ts-extras/crypto-utils` when you already hold a provider or want a deterministic test override. Never call `globalThis.crypto.randomUUID()` directly.
 - **Hashing / canonical hash of an object?** → `Crc32Normalizer` (`ts-utils/hash`) or `Md5Normalizer` (`ts-extras/hash` / `ts-web-extras/crypto-utils`).
+- **Putting an arbitrary value into a failure or diagnostic message?** → `formatValueForMessage(value, options?)` from `@fgv/ts-utils/base`. Never `JSON.stringify` it: that throws on a cycle or a `BigInt` and renders a function or symbol as `undefined`. See [below](#formatvalueformessage--failure-text-that-cannot-throw).
 - **Need stable canonical JSON (RFC 8785)?** → `Normalizer.canonicalize()` (available on `HashingNormalizer`, `Crc32Normalizer`, or any `Normalizer` subclass) from `@fgv/ts-utils` hash packlet.
 
 ---
@@ -71,6 +72,46 @@ have settled grammars and good libraries; prompt framing has neither, and a rewr
 would be a promise the library cannot keep.
 
 ---
+
+## `formatValueForMessage` — failure text that cannot throw
+
+`formatValueForMessage(value, { maxLength?, maxDepth?, indent?, style? })` renders any value as text
+for an error or diagnostic message. It **never throws** and runs no code of its own with side
+effects. Every converter and validator in `ts-utils` and `ts-json-base` formats its failure
+messages with it.
+
+**Why it exists.** A converter that formats its own failure with `JSON.stringify(from)` throws on a
+cyclic input: `TypeError: Converting circular structure to JSON`. The throw escapes `convert`, skips
+every `Result` combinator downstream, and turns a clean failure into a crash. personaility#713 was a
+production 500 caused by a nested `Converters.object` over a live Node socket graph.
+
+**Compatibility contract.** For a JSON-safe value whose rendering fits within `maxLength` (default
+`DEFAULT_FORMAT_VALUE_MAX_LENGTH`, 200) and `maxDepth` (default `DEFAULT_FORMAT_VALUE_MAX_DEPTH`, 16),
+the output is **exactly** `JSON.stringify(value, undefined, indent)`. So existing failure text, and
+the tests that pin it, are unchanged. A top-level `undefined` renders as `undefined`, which matches
+what a template literal around `JSON.stringify(undefined)` produced.
+
+| input | renders as |
+|---|---|
+| a reference back to an ancestor | `[Circular]` |
+| `BigInt(5)` / `Symbol('s')` / a function / `undefined` (anywhere) | `5n` / `Symbol(s)` / `[Function name]` / `undefined` |
+| a class instance | `Socket {"connecting":false,…}`, with its own enumerable properties behind the constructor name |
+| a typed array | `Uint8Array [1,2,3]` |
+| a getter or Proxy trap that throws | `[Unreadable]` |
+| output over `maxLength` | cut, ending in `…`; the walk stops as soon as the budget is spent |
+
+A user `toJSON` is **not** called, because it is arbitrary code. Getters are read, as `JSON.stringify`
+reads them, and any error they throw is contained.
+
+`style: 'string'` keeps the text of a message that has always interpolated the value directly
+(`"${from}": not a string`). It uses `String(value)`, and falls back to the JSON rendering where
+that throws, such as for a symbol, a null-prototype object or a Proxy.
+
+**The boundary holds as well.** `BaseConverter` and `GenericValidator` catch a throw from the
+function they wrap and return it as a `Failure` carrying the error's message, and `guard` returns
+`false`. So `convert`, `convertOptional`, `validate` and `guard` never throw, even when a custom
+callback has a bug, or a getter or Proxy trap on the input throws while it is being converted. The
+error still surfaces, as a `Failure` the caller can see.
 
 ## Recent additions
 

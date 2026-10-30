@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { Brand, Failure, Result, fail, succeed } from '../base';
+import { Brand, Failure, Result, _errorMessage, fail, formatValueForMessage, succeed } from '../base';
 import { ConstraintTrait, ValidatorTraits } from './traits';
 import {
   Constraint,
@@ -62,6 +62,11 @@ export class GenericValidator<T, TC = unknown> implements Validator<T, TC> {
 
   /**
    * Constructs a new {@link Validation.Base.GenericValidator | GenericValidator<T>}.
+   * @remarks
+   * The validator is a `Result` boundary, so it never throws: if the supplied validator function
+   * throws (a bug in a custom callback, or a getter or Proxy trap on the value being validated),
+   * validation fails with the thrown error's message instead, and `guard`
+   * returns `false`.
    * @param params - The {@link Validation.Base.GenericValidatorConstructorParams | constructor params}
    * used to configure validation.
    */
@@ -69,7 +74,14 @@ export class GenericValidator<T, TC = unknown> implements Validator<T, TC> {
     if (!params.validator) {
       throw new Error('No validator function supplied');
     }
-    this._validator = params.validator;
+    const validator = params.validator;
+    this._validator = (from: unknown, context?: TC, self?: Validator<T, TC>): boolean | Failure<T> => {
+      try {
+        return validator(from, context, self);
+      } catch (err) {
+        return fail(_errorMessage(err));
+      }
+    };
     this._options = params.options ?? {};
     this.traits = new ValidatorTraits(params.traits);
   }
@@ -149,7 +161,7 @@ export class GenericValidator<T, TC = unknown> implements Validator<T, TC> {
           if (typeof constraintResult === 'boolean') {
             return constraintResult
               ? true
-              : fail(`Invalid value "${JSON.stringify(from)}":  does not meet constraint.`);
+              : fail(`Invalid value "${formatValueForMessage(from)}":  does not meet constraint.`);
           }
           return constraintResult;
         }

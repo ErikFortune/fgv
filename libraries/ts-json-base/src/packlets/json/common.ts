@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { Result, captureResult, fail, succeed } from '@fgv/ts-utils';
+import { Result, captureResult, fail, formatValueForMessage, succeed } from '@fgv/ts-utils';
 
 /**
  * Primitive (terminal) values allowed in by JSON.
@@ -183,7 +183,7 @@ export function classifyJsonValue(from: unknown): Result<JsonValueType> {
   } else if (isJsonArray(from)) {
     return succeed('array');
   }
-  return fail(`Invalid JSON: ${from}`);
+  return fail(`Invalid JSON: ${formatValueForMessage(from, { style: 'string' })}`);
 }
 
 /**
