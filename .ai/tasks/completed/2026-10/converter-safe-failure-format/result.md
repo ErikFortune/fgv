@@ -9,7 +9,7 @@ every value `JSON.stringify` rendered without throwing, up to its length bound. 
 cycle.
 
 Origin: personaility#714 (fgv-ask), found by personaility#713. Base / PR target: `integration/asks`.
-PR: #TBD.
+PR: #764.
 
 ## The formatter
 

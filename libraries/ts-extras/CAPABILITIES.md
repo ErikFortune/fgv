@@ -75,7 +75,7 @@
 
 <!-- BEGIN GENERATED: recent-additions -->
 
-- **2026-10-30** — A converter or validator handed a cyclic, BigInt or Proxy value now fails instead of throwing, via a new formatValueForMessage that matches JSON.stringify for ordinary values.
+- **2026-10-30** — A converter or validator handed a cyclic, BigInt or Proxy value now fails instead of throwing, via a new formatValueForMessage that matches JSON.stringify for ordinary values. ([#764](https://github.com/ErikFortune/fgv/pull/764))
 - **2026-10-26** — ai-assist can run a whole client-tool conversation: runClientToolLoop caps rounds and honours a deadline and caller abort even when a tool ignores its signal. ([#755](https://github.com/ErikFortune/fgv/pull/755))
 - **2026-10-26** — A host can stop every write it routes through one AsyncControl.WriteGate, or hold them still for a snapshot until the writes under way drain, and hand the same gate to a task broker as its writeGuard. ([#761](https://github.com/ErikFortune/fgv/pull/761))
 - **2026-10-26** — ICryptoProvider now generates and imports non-extractable HMAC-SHA256 keys itself, and composite ids can split at the first or last separator so one part may contain it. ([#754](https://github.com/ErikFortune/fgv/pull/754))

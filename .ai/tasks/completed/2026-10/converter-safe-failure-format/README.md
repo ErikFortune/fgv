@@ -1,6 +1,6 @@
 # converter-safe-failure-format — failure messages that cannot throw
 
-**Shipped**: 2026-10-30 into `integration/asks` via #TBD.
+**Shipped**: 2026-10-30 into `integration/asks` via #764.
 Packages: `@fgv/ts-utils` (`base`, `conversion`, `validation`, `collections`, `hash`, `logging`),
 `@fgv/ts-json-base` (`converters`, `validators`, `json`), and the same pattern in `@fgv/ts-extras`
 (`conversion`) and `@fgv/ts-bcp47` (`utils`). Origin: personaility#714 (fgv-ask), found by

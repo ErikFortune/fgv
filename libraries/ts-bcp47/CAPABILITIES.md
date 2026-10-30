@@ -28,6 +28,6 @@
 
 <!-- BEGIN GENERATED: recent-additions -->
 
-- **2026-10-30** — A converter or validator handed a cyclic, BigInt or Proxy value now fails instead of throwing, via a new formatValueForMessage that matches JSON.stringify for ordinary values.
+- **2026-10-30** — A converter or validator handed a cyclic, BigInt or Proxy value now fails instead of throwing, via a new formatValueForMessage that matches JSON.stringify for ordinary values. ([#764](https://github.com/ErikFortune/fgv/pull/764))
 
 <!-- END GENERATED: recent-additions -->

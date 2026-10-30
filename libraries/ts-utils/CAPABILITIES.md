@@ -143,7 +143,7 @@ failures will hide it:
 
 <!-- BEGIN GENERATED: recent-additions -->
 
-- **2026-10-30** — A converter or validator handed a cyclic, BigInt or Proxy value now fails instead of throwing, via a new formatValueForMessage that matches JSON.stringify for ordinary values.
+- **2026-10-30** — A converter or validator handed a cyclic, BigInt or Proxy value now fails instead of throwing, via a new formatValueForMessage that matches JSON.stringify for ordinary values. ([#764](https://github.com/ErikFortune/fgv/pull/764))
 - **2026-10-26** — ICryptoProvider now generates and imports non-extractable HMAC-SHA256 keys itself, and composite ids can split at the first or last separator so one part may contain it. ([#754](https://github.com/ErikFortune/fgv/pull/754))
 - **2026-10-20** — mapSuccess and mapSuccessAsync now hand every failure to a supplied aggregator, even when some results succeeded, so a lenient fold can report what it dropped. ([#752](https://github.com/ErikFortune/fgv/pull/752))
 - **2026-09-26** — A converter handed an Object.create(null) value now returns a Result instead of throwing — isKeyOf, strictObject and six ts-json / ts-res-ui-components property probes stopped calling hasOwnProperty on the object itself. ([#700](https://github.com/ErikFortune/fgv/pull/700))
