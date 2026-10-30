@@ -147,3 +147,14 @@ until it was aliased.
 
 `_rawJsonText`'s no-`JSON.isRawJSON` branch. See `result.md` § Review round 2.
 
+## Review round 3 decisions
+
+- **D11 superseded.** The `c8 ignore` is gone. `_rawJsonText` takes the `JSON`-like object as a
+  parameter, defaulting to the real `JSON`, so both branches are testable with a fake, and coverage
+  no longer depends on the Node version.
+- **D12 — the boundary depth is process-wide.** It is held in
+  `globalThis[Symbol.for('@fgv/ts-utils.resultBoundary')]`, so two copies of `ts-utils` in one
+  process see one nesting depth. Otherwise a converter from one copy nested in one from another would
+  treat itself as outermost, and convert stack exhaustion locally again. The module-local alias keeps
+  the hot path at round-2 speed.
+

@@ -249,7 +249,7 @@ except the `[object Object]` pins in `logger.test.ts`, below.
 | **P3-4** `stringifyLogValue`'s `[object Object]` case | Routed through `formatValueForMessage` for a cyclic, `BigInt` or partly unreadable object. `[object Object]` is kept only where the rendering is nothing at all (a throwing `toJSON`, or one returning `undefined`). The three `logger.test.ts` pins, and three `stringifyLogValue.test.ts` pins, were changed. The new text is strictly better: `{"name":"test","self":"[Circular]"}` instead of `[object Object]` names the content and the cycle. The `...` marker and the 40-character limit are unchanged. | the changed pins and a `BigInt` case | yes |
 | **P3-5** `captureResult` between nested levels | One sentence in both constructors' TSDoc and in `CAPABILITIES.md`. | the propagated exhaustion is caught by a `captureResult` between two converters | – |
 
-**Coverage directive.** `_rawJsonText` has a `c8 ignore` on the branch for engines without
+**Coverage directive** *(superseded in round 3: removed)*. `_rawJsonText` had a `c8 ignore` on the branch for engines without
 `JSON.isRawJSON`, which the Node the suite runs on always has. `jest.replaceProperty` refuses to
 replace a function, and a hand-rolled save/restore of a global is a named anti-pattern here. **This
 needs your approval**, per the testing guidelines; the alternative is to drop `rawJSON` support,
@@ -268,4 +268,26 @@ pre-guard `ts-utils` (`88c3f0172`), `round1` is `3fdbb7a4b`, and `round2` is thi
 
 Round 2 is within noise on the object case (+2%) and about 12% on the 3M-number case, where the
 per-call work is smallest and the `try`/`finally` is the largest share.
+
+## Review round 3
+
+Reviewed at `a1fcd0aef`: nothing substantive. The oracle showed 0 diffs, and the perf numbers were
+within noise on realistic workloads. Four follow-ups were applied in `5c811e9e9`.
+
+| item | change | test | red |
+|---|---|---|---|
+| Remove the `c8 ignore` on `_rawJsonText` | It is now an internal function, `_rawJsonText(value, json = JSON)`, taking an `IRawJsonSupport`. It has no directive, so coverage no longer depends on the Node version: on Node 20, which lacks `JSON.isRawJSON`, the real call takes the other branch. | Fake `json` objects: no `isRawJSON`, one answering `false`, and one answering `true`. There are no global mutations. | – |
+| Boundary depth shared across copies of `ts-utils` | The depth lives in a process-wide slot, `globalThis[Symbol.for('@fgv/ts-utils.resultBoundary')] ??= { depth: 0 }`, through `_resolveResultBoundary()`. `_resultBoundary` is resolved from it once, and each wrapper still holds a module-local `const` alias, so the hot path is unchanged. | A copy of the boundary module loaded with `jest.isolateModulesAsync` has the same `_resultBoundary` object as the package's. | Yes, shown in node rather than Jest: loading `boundary.js` twice (clearing the require cache between) gives two distinct objects on the `a1fcd0aef` build (`shared: false`) and one on this one (`shared: true`). The Jest test cannot compile against the old sources, because it imports `_resolveResultBoundary`. |
+| Move the alias below the imports | Done, in `baseConverter.ts` and `genericValidator.ts`. | – | – |
+| Note the getter re-entry false positive | Added to the `_JsonActivePath` remarks: an accessor on the walked value whose getter converts an ancestor fails, from inside the getter, as `circular reference at $`. | `p8.js` "getter re-enters on ancestor" | – |
+
+Gates for round 3:
+
+| gate | result |
+|---|---|
+| package build / lint / test, all four packages | exit 0 each; error grep 0; warnings 0 |
+| `rush rebuild` | exit 0; grep 0; only the tracked-symlink notice |
+| `rush test` | exit 0; 39 of 39 projects; grep 0; only the tracked-symlink notice; no flaky re-runs |
+| `change --verify`, feed `--check`, `verify-capability-docs`, prettier | 0, 0, 0, 0 |
+| coverage | 100% on every touched file, with no `c8 ignore` added by this stream |
 
