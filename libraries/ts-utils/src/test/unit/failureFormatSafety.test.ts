@@ -22,7 +22,7 @@
 
 import '../helpers/jest';
 
-import { Normalizer, Result, fail, succeed } from '../../packlets/base';
+import { Normalizer, Result, captureResult, fail, succeed } from '../../packlets/base';
 import { KeyValueConverters } from '../../packlets/collections';
 import { Converter, Converters } from '../../packlets/conversion';
 import { Validator, Validators } from '../../packlets/validation';
@@ -368,12 +368,70 @@ describe('stack exhaustion inside nested converters and validators', () => {
     }
   });
 
-  test('a RangeError that is not stack exhaustion is also propagated to the outermost boundary', () => {
-    const inner = Converters.generic<unknown>(() => {
+  describe('an ordinary RangeError is handled by the nearest boundary', () => {
+    // new Date('bad').toISOString() throws RangeError: Invalid time value
+    const date = Converters.generic<string>((from) =>
+      succeed(new Date(typeof from === 'number' ? from : String(from)).toISOString())
+    );
+    const throwsRangeError: Validator<unknown> = Validators.generic<unknown>(() => {
       throw new RangeError('Invalid array length');
     });
-    const outer = Converters.object({ a: Converters.object({ b: inner }) });
-    expect(outer.convert({ a: { b: 1 } })).toFailWith(/^converter threw: Invalid array length$/);
+
+    test('keeping its nested path', () => {
+      const outer = Converters.object({ a: Converters.object({ b: date }) });
+      expect(outer.convert({ a: { b: 'bad' } })).toFailWith(
+        /^Field a: Field b: converter threw: Invalid time value$/
+      );
+    });
+
+    test('so ignoreErrors, oneOf and optional still apply', () => {
+      expect(Converters.arrayOf(date, 'ignoreErrors').convert([0, 'bad'])).toSucceedWith([
+        '1970-01-01T00:00:00.000Z'
+      ]);
+      expect(Converters.oneOf<string>([date, Converters.string]).convert('bad')).toSucceedWith('bad');
+      expect(
+        Converters.object({ d: date.optional('ignoreErrors'), n: Converters.number }).convert({
+          d: 'bad',
+          n: 1
+        })
+      ).toSucceedWith({ d: undefined, n: 1 });
+      expect(
+        Converters.object({ x: Converters.number })
+          .convert({ x: 1 })
+          .onSuccess(() => date.convertOptional('bad', undefined, 'ignoreErrors'))
+      ).toSucceedWith(undefined);
+    });
+
+    test('so a nested guard answers false instead of throwing', () => {
+      const guarded = Converters.isA('anything', (v: unknown): v is unknown => throwsRangeError.guard(v));
+      expect(Converters.arrayOf(guarded, 'ignoreErrors').convert([1])).toSucceedWith([]);
+      expect(
+        Converters.arrayOf(Converters.generic((v) => throwsRangeError.validate(v))).convert([1])
+      ).toFailWith(/validator threw: Invalid array length/);
+    });
+
+    test('while a RangeError that reads as stack exhaustion is propagated', () => {
+      for (const message of ['Maximum call stack size exceeded', 'too much recursion']) {
+        const inner = Converters.generic<unknown>(() => {
+          throw new RangeError(message);
+        });
+        expect(Converters.object({ a: Converters.object({ b: inner }) }).convert({ a: { b: 1 } })).toFailWith(
+          `converter threw: ${message}`
+        );
+      }
+    });
+  });
+
+  test('a captureResult between two nested converters catches the propagated exhaustion itself', () => {
+    const inner = Converters.generic<unknown>(() => {
+      throw new RangeError('Maximum call stack size exceeded');
+    });
+    const between = Converters.generic<unknown>((from) =>
+      captureResult(() => inner.convert(from)).onSuccess((r) => r)
+    );
+    expect(Converters.object({ a: between }).convert({ a: 1 })).toFailWith(
+      /^Field a: Maximum call stack size exceeded$/
+    );
   });
 
   test('an error that only looks like a RangeError by name is propagated the same way', () => {

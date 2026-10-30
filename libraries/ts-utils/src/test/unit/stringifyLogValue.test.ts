@@ -229,15 +229,15 @@ describe('stringifyLogValue', () => {
   });
 
   describe('fallback behavior', () => {
-    test('should fallback to [object Object] for circular references', () => {
+    test('should render circular references, marking the cycle', () => {
       const obj: Record<string, unknown> = { name: 'test' };
       obj.self = obj; // Create circular reference
 
       const result = stringifyLogValue(obj);
-      expect(result).toBe('[object Object]');
+      expect(result).toBe('{"name":"test","self":"[Circular]"}');
     });
 
-    test('should fallback to [object Object] for objects that throw in JSON.stringify', () => {
+    test('should render objects whose getters throw, marking what could not be read', () => {
       const obj = {
         get problematic() {
           throw new Error('Cannot serialize');
@@ -245,7 +245,7 @@ describe('stringifyLogValue', () => {
       };
 
       const result = stringifyLogValue(obj);
-      expect(result).toBe('[object Object]');
+      expect(result).toBe('{"problematic":[Unreadable]}');
     });
 
     test('should handle complex circular references', () => {
@@ -255,7 +255,11 @@ describe('stringifyLogValue', () => {
       obj2.ref = obj1; // Circular reference
 
       const result = stringifyLogValue(obj1);
-      expect(result).toBe('[object Object]');
+      expect(result).toBe('{"name":"obj1","ref":{"name":"obj2","...');
+    });
+
+    test('should render a BigInt member', () => {
+      expect(stringifyLogValue({ n: BigInt(5) })).toBe('{"n":"5n"}');
     });
 
     test('should handle objects with toJSON that throws', () => {

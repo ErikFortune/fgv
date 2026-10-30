@@ -19,7 +19,23 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-import { Brand, Result, _atResultBoundary, fail, formatValueForMessage, mapResults, succeed } from '../base';
+import {
+  Brand,
+  Result,
+  _errorMessage,
+  _isStackExhaustion,
+  _resultBoundary,
+  fail,
+  formatValueForMessage,
+  mapResults,
+  succeed
+} from '../base';
+
+/**
+ * The shared boundary state, held locally: reading it through the package's re-export chain costs
+ * a getter call per access on the hot path.
+ */
+const boundary: { depth: number } = _resultBoundary;
 import {
   ConstraintOptions,
   ConversionErrorFormatter,
@@ -105,7 +121,8 @@ export class BaseConverter<T, TC = unknown> implements Converter<T, TC> {
    * The converter is a `Result` boundary, so it never throws: if the supplied function throws
    * (a bug in a custom callback, or a getter or Proxy trap on the value being converted), the
    * conversion fails with `converter threw: <message>` instead. Stack exhaustion inside nested
-   * converters unwinds to the outermost converter and fails once there.
+   * converters unwinds to the outermost converter and fails once there; a `captureResult` (or any
+   * `try`) the caller places between two nested converters catches it there instead.
    *
    * The conversion to a `Failure` masks the error wherever a failure is expected: `convertOptional`
    * with `ignoreErrors`, `oneOf` (which tries the next converter), `orDefault`, and `guard` all
@@ -117,12 +134,23 @@ export class BaseConverter<T, TC = unknown> implements Converter<T, TC> {
    * converter.
    */
   public constructor(converter: ConverterFunc<T, TC>, defaultContext?: TC, traits?: ConverterTraits) {
-    this._converter = (from: unknown, self: Converter<T, TC>, context?: TC): Result<T> =>
-      _atResultBoundary<Result<T>>(
-        'converter',
-        () => converter(from, self, context),
-        (message) => fail(message)
-      );
+    this._converter = (from: unknown, self: Converter<T, TC>, context?: TC): Result<T> => {
+      // written out rather than shared so the hot path allocates nothing; see _resultBoundary
+      const nested = boundary.depth > 0;
+      let result: Result<T>;
+      boundary.depth++;
+      try {
+        result = converter(from, self, context);
+      } catch (err) {
+        if (nested && _isStackExhaustion(err)) {
+          throw err;
+        }
+        result = fail(`converter threw: ${_errorMessage(err)}`);
+      } finally {
+        boundary.depth--;
+      }
+      return result;
+    };
     this._defaultContext = defaultContext;
     this._isOptional = traits?.isOptional === true;
     this._brand = traits?.brand;

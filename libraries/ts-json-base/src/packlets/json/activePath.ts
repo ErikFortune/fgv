@@ -26,10 +26,15 @@
  * the path fails at once, rather than recursing until the stack is exhausted.
  *
  * @remarks
- * One instance is shared by every recursive JSON converter and validator, because they call one
- * another. The walk is synchronous, so module-level state is safe. When the outermost container
- * exits, the state is cleared outright, so an exit cut short by stack exhaustion cannot leave a
- * stale entry behind to report a false cycle later.
+ * The converters and the validators each hold one private instance, shared by their three
+ * recursive members because those call one another. The walk is synchronous, so module-level state
+ * is safe. When the outermost container exits, the state is cleared outright, so an exit cut short
+ * by stack exhaustion cannot leave a stale entry behind to report a false cycle later.
+ *
+ * The state is per walk only in the sense that one walk is in progress at a time. A recursive JSON
+ * conversion started *during* another one — from a getter on a value being walked, say — over an
+ * object the outer walk is still inside reports that object as circular, although neither walk
+ * alone would. JSON values have no getters, so this needs a value that is not JSON to begin with.
  * @internal
  */
 export class _JsonActivePath {
@@ -86,9 +91,3 @@ export class _JsonActivePath {
     }
   }
 }
-
-/**
- * The shared active path for the recursive JSON converters and validators.
- * @internal
- */
-export const _jsonActivePath: _JsonActivePath = new _JsonActivePath();

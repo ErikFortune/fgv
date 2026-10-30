@@ -32,15 +32,8 @@ import {
   formatValueForMessage,
   succeed
 } from '@fgv/ts-utils';
-import {
-  JsonArray,
-  JsonObject,
-  JsonPrimitive,
-  JsonValue,
-  _jsonActivePath,
-  isJsonArray,
-  isJsonObject
-} from '../json';
+import { JsonArray, JsonObject, JsonPrimitive, JsonValue, isJsonArray, isJsonObject } from '../json';
+import { activePath } from './activePath';
 
 /* eslint-disable @typescript-eslint/no-use-before-define */
 
@@ -100,7 +93,7 @@ export const jsonObject: Converter<JsonObject, IJsonConverterContext> = new Conv
     if (!isJsonObject(from)) {
       return fail('invalid JSON object.');
     }
-    return _jsonActivePath.container<Result<JsonObject>>(from, fail, () => {
+    return activePath.container<Result<JsonObject>>(from, fail, () => {
       const obj: JsonObject = {};
       const errors: string[] = [];
       for (const [name, value] of Object.entries(from)) {
@@ -112,7 +105,7 @@ export const jsonObject: Converter<JsonObject, IJsonConverterContext> = new Conv
           // Never copied: see the doc comment.
           continue;
         }
-        _jsonActivePath
+        activePath
           .member(name, () => jsonValue.convert(value, ctx))
           .onSuccess((v: JsonValue) => {
             obj[name] = v;
@@ -149,7 +142,7 @@ export const jsonArray: Converter<JsonArray, IJsonConverterContext> = new Conver
     if (!isJsonArray(from)) {
       return fail('not an array');
     }
-    return _jsonActivePath.container<Result<JsonArray>>(from, fail, () => {
+    return activePath.container<Result<JsonArray>>(from, fail, () => {
       const arr: JsonValue[] = [];
       const errors: string[] = [];
       for (let i = 0; i < from.length; i++) {
@@ -159,7 +152,7 @@ export const jsonArray: Converter<JsonArray, IJsonConverterContext> = new Conver
           arr.push(null);
           continue;
         }
-        _jsonActivePath
+        activePath
           .member(i, () => jsonValue.convert(value, ctx))
           .onSuccess((v) => {
             arr.push(v);

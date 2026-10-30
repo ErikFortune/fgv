@@ -19,7 +19,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-import { MessageLogLevel, Success, captureResult, fail, formatValueForMessage, succeed } from '../base';
+import { MessageLogLevel, Success, captureResult, formatValueForMessage, succeed } from '../base';
 import {
   IDetailLogger,
   ILogger,
@@ -61,6 +61,13 @@ export function shouldLog(message: MessageLogLevel, reporter: ReporterLogLevel):
 
 /**
  * Stringifies an arbitrary value for logging. Never throws.
+ *
+ * @remarks
+ * A string is returned as is, and anything else as `String(value)` unless that is
+ * `"[object Object]"` or throws. Those are rendered with {@link formatValueForMessage} — the
+ * `JSON.stringify` text, with a cycle as `"[Circular]"`, a `BigInt` as `"123n"` and an unreadable
+ * member as `[Unreadable]` — and cut to `maxLength` with `...`. A value whose rendering is nothing
+ * at all (a throwing or empty `toJSON`) falls back to `"[object Object]"`.
  * @param value - The value to stringify.
  * @returns The stringified value.
  * @param maxLength - The maximum length of the stringified value.
@@ -73,19 +80,12 @@ export function stringifyLogValue(value: unknown, maxLength?: number): string {
     return value;
   }
   const str = captureResult((): string | undefined => String(value)).orDefault(undefined);
-  if (str === undefined) {
-    // no usable string conversion (a null-prototype object, a Proxy): render it instead, cut the
-    // same way as the JSON text below (one past the limit, so the cut decides the marker)
-    return truncate(formatValueForMessage(value, { maxLength: limit + 1 }));
+  if (str !== undefined && str !== '[object Object]') {
+    return str;
   }
-  if (str === '[object Object]') {
-    return captureResult(() => JSON.stringify(value))
-      .onSuccess((s: string | undefined) =>
-        typeof s === 'string' ? succeed(truncate(s)) : fail<string>('no JSON text')
-      )
-      .orDefault(str);
-  }
-  return str;
+  // rendered one past the limit, so that the cut below decides the marker
+  const rendered = formatValueForMessage(value, { maxLength: limit + 1 });
+  return rendered === '[Unreadable]' || rendered === 'undefined' ? '[object Object]' : truncate(rendered);
 }
 
 /**

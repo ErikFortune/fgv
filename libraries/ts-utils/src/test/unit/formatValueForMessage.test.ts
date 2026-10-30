@@ -23,7 +23,6 @@
 import '../helpers/jest';
 
 import {
-  DEFAULT_FORMAT_VALUE_MAX_DEPTH,
   DEFAULT_FORMAT_VALUE_MAX_LENGTH,
   DEFAULT_FORMAT_VALUE_STRING_MAX_LENGTH,
   formatValueForMessage
@@ -133,10 +132,7 @@ describe('formatValueForMessage', () => {
           expect(formatValueForMessage(value)).toBe(expected);
           compared++;
         }
-        const unbounded = formatValueForMessage(value, {
-          maxLength: Number.MAX_SAFE_INTEGER,
-          maxDepth: Number.MAX_SAFE_INTEGER
-        });
+        const unbounded = formatValueForMessage(value, { maxLength: Number.MAX_SAFE_INTEGER });
         expect(unbounded).toBe(expected);
         expect(formatValueForMessage(value, { indent: 2, maxLength: Number.MAX_SAFE_INTEGER })).toBe(
           JSON.stringify(value, undefined, 2)
@@ -186,7 +182,7 @@ describe('formatValueForMessage', () => {
       ['typed array', new Uint8Array([1, 2])],
       ['Date subclass with toJSON', new LateDate(0)],
       ['array with an extra property', Object.assign([1], { x: 2 })],
-      ['nesting deeper than maxDepth', JSON.parse(`${'['.repeat(17)}1${']'.repeat(17)}`)],
+      ['deep nesting', JSON.parse(`${'['.repeat(17)}1${']'.repeat(17)}`)],
       ['repeated non-cyclic reference', ((s): unknown => ({ a: s, b: [s, s] }))({ s: 1 })]
     ];
 
@@ -255,104 +251,240 @@ describe('formatValueForMessage', () => {
   });
 
   describe('the fallback renderer, used when JSON.stringify still throws', () => {
-    test('contains a throwing getter as [Unreadable]', () => {
+    /** What the fallback should produce for `value` with a throwing `boom` member appended. */
+    function withBombText(value: object): string {
+      const json = JSON.stringify(value);
+      return json === '{}' ? '{"boom":[Unreadable]}' : `${json.slice(0, -1)},"boom":[Unreadable]}`;
+    }
+
+    test('contains a throwing getter as [Unreadable], in place', () => {
       expect(formatValueForMessage(withBomb({ ok: 1 }))).toBe('{"ok":1,"boom":[Unreadable]}');
+      expect(formatValueForMessage([1, withBomb({})])).toBe('[1,{"boom":[Unreadable]}]');
     });
 
-    test('contains a throwing toJSON', () => {
+    test('contains a throwing toJSON as [Unreadable]', () => {
       const value = {
         a: 1,
         toJSON(): never {
           throw new Error('toJSON exploded');
         }
       };
-      expect(formatValueForMessage(value)).toBe('{"a":1,"toJSON":[Function toJSON]}');
+      expect(formatValueForMessage(value)).toBe('[Unreadable]');
+      expect(formatValueForMessage({ before: 1, value })).toBe('{"before":1,"value":[Unreadable]}');
     });
 
     test('contains a Proxy whose traps throw', () => {
       expect(formatValueForMessage(throwingProxy())).toBe('[Unreadable]');
       expect(formatValueForMessage({ inner: throwingProxy() })).toBe('{"inner":[Unreadable]}');
-      const getOnly = new Proxy(
+      const ownKeysOnly = new Proxy(
         { a: 1 },
         {
-          get(): never {
-            throw new Error('get trap');
+          ownKeys(): never {
+            throw new Error('ownKeys trap');
           }
         }
       );
-      expect(formatValueForMessage(getOnly)).toBe('{"a":[Unreadable]}');
+      expect(formatValueForMessage([ownKeysOnly])).toBe('[[Unreadable]]');
+      const throwingLength = new Proxy([1, 2], {
+        get(target: number[], key: string | symbol): unknown {
+          if (key === 'length') {
+            throw new Error('length trap');
+          }
+          return Reflect.get(target, key) as unknown;
+        }
+      });
+      expect(formatValueForMessage({ arr: throwingLength })).toBe('{"arr":[Unreadable]}');
       const { proxy, revoke } = Proxy.revocable({}, {});
       revoke();
       expect(formatValueForMessage(proxy)).toBe('[Unreadable]');
     });
 
-    test('renders cycles, BigInt, symbols, functions and undefined as bare tokens', () => {
-      const node: Record<string, unknown> = { name: 'node' };
-      node.self = node;
-      expect(
-        formatValueForMessage(
-          withBomb({ node, big: BigInt(-5), u: undefined, f: Math.max, s: Symbol('x'), a: [undefined] })
-        )
-      ).toBe(
-        '{"node":{"name":"node","self":[Circular]},"big":-5n,"u":undefined,"f":[Function max],' +
-          '"s":Symbol(x),"a":[undefined],"boom":[Unreadable]}'
+    test('reads an array length the way JSON.stringify does', () => {
+      const withLength = (length: unknown): unknown =>
+        new Proxy([1, 2], {
+          get(target: number[], key: string | symbol): unknown {
+            return key === 'length' ? length : (Reflect.get(target, key) as unknown);
+          }
+        });
+      const value = { nan: withLength('abc'), negative: withLength(-3), fraction: withLength(1.7) };
+      expect(JSON.stringify(value)).toBe('{"nan":[],"negative":[],"fraction":[1]}');
+      expect(formatValueForMessage(withBomb(value))).toBe(
+        '{"nan":[],"negative":[],"fraction":[1],"boom":[Unreadable]}'
       );
     });
 
-    test('renders class instances, typed arrays, dates and collections', () => {
+    test('renders JSON.rawJSON text', () => {
+      const raw = (JSON as unknown as { rawJSON: (text: string) => unknown }).rawJSON('12');
+      expect(formatValueForMessage(withBomb({ raw }))).toBe('{"raw":12,"boom":[Unreadable]}');
+    });
+
+    test('renders like JSON.stringify for everything JSON.stringify could render', () => {
       class Point {
         public readonly x: number;
+        public readonly hidden: undefined = undefined;
         public constructor(x: number) {
           this.x = x;
         }
       }
-      expect(formatValueForMessage(withBomb(new Point(1)))).toBe('Point {"x":1,"boom":[Unreadable]}');
-      expect(formatValueForMessage(withBomb(new Point(1)), { indent: 2 })).toBe(
-        'Point {\n  "x": 1,\n  "boom": [Unreadable]\n}'
+      const members = {
+        point: new Point(1),
+        u: undefined,
+        f: Math.max,
+        s: Symbol('x'),
+        a: [undefined, Math.max, Symbol('y'), 1],
+        typed: new Uint8Array([1, 2, 3]),
+        map: new Map([['a', 1]]),
+        error: new Error('boom'),
+        view: new DataView(new ArrayBuffer(2)),
+        date: new Date(0),
+        badDate: new Date(NaN),
+        boxed: [Object(1) as unknown, Object('s') as unknown, Object(false) as unknown],
+        projected: { toJSON: (key: string): string => `key=${key}` },
+        raw: (JSON as unknown as { rawJSON: (text: string) => unknown }).rawJSON('12'),
+        empty: {},
+        emptyArray: []
+      };
+      expect(formatValueForMessage(withBomb({ ...members }), { maxLength: 10_000 })).toBe(
+        withBombText(members)
       );
-      expect(
-        formatValueForMessage(
-          withBomb({
-            t: new Uint8Array([1, 2, 3]),
-            m: new Map([['a', 1]]),
-            e: new Error('boom'),
-            v: new DataView(new ArrayBuffer(2)),
-            d: new Date(0),
-            bad: new Date(NaN),
-            pd: new Proxy(new Date(0), {})
-          })
-        )
-      ).toBe(
-        '{"t":Uint8Array [1,2,3],"m":Map {},"e":Error {},"v":DataView {},' +
-          '"d":"1970-01-01T00:00:00.000Z","bad":null,"pd":Date {},"boom":[Unreadable]}'
+      expect(formatValueForMessage(withBomb({ ...members }), { maxLength: 10_000, indent: 2 })).toBe(
+        `${JSON.stringify(members, undefined, 2).slice(0, -2)},\n  "boom": [Unreadable]\n}`
       );
     });
 
-    test('renders null-prototype and orphaned-prototype objects', () => {
+    test('renders cycles and BigInt exactly as the fast path does', () => {
+      const node: Record<string, unknown> = { name: 'node' };
+      node.self = node;
+      const value = { node, big: BigInt(-5), boxedBig: Object(BigInt(7)) as unknown };
+      expect(formatValueForMessage(withBomb(value))).toBe(
+        '{"node":{"name":"node","self":"[Circular]"},"big":"-5n","boxedBig":"7n","boom":[Unreadable]}'
+      );
+      expect(formatValueForMessage({ node, big: BigInt(-5) })).toBe(
+        '{"node":{"name":"node","self":"[Circular]"},"big":"-5n"}'
+      );
+    });
+
+    test('renders null-prototype and orphaned-prototype objects as plain objects', () => {
       const bare = Object.assign(Object.create(null) as Record<string, unknown>, { a: 1 });
       const orphan = Object.create(Object.create(null) as object) as Record<string, unknown>;
       orphan.a = 1;
       const nested = Object.create({ inherited: true }) as Record<string, unknown>;
       nested.own = 1;
       expect(formatValueForMessage(withBomb({ bare, orphan, nested }))).toBe(
-        '{"bare":{"a":1},"orphan":Object {"a":1},"nested":Object {"own":1},"boom":[Unreadable]}'
+        '{"bare":{"a":1},"orphan":{"a":1},"nested":{"own":1},"boom":[Unreadable]}'
       );
-    });
-
-    test('elides containers beyond the maximum depth', () => {
-      expect(formatValueForMessage(withBomb({ a: [[1]] }), { maxDepth: 2 })).toBe(
-        '{"a":[[…]],"boom":[Unreadable]}'
-      );
-      expect(formatValueForMessage(withBomb({ a: { b: 1 }, e: [] }), { maxDepth: 1 })).toBe(
-        '{"a":{…},"e":[],"boom":[Unreadable]}'
-      );
-      expect(formatValueForMessage(withBomb({ a: [] }), { maxDepth: 0 })).toBe('{…}');
-      expect(DEFAULT_FORMAT_VALUE_MAX_DEPTH).toBeGreaterThan(0);
     });
 
     test('renders a long string inside a fallback rendering without serializing all of it', () => {
       const text = formatValueForMessage(withBomb({ s: 'x'.repeat(10_000_000) }), { maxLength: 12 });
       expect(text).toBe('{"s":"xxxxx…');
+    });
+  });
+
+  describe('parity with JSON.stringify above the length bound', () => {
+    // A seeded generator of values JSON.stringify renders without throwing, including members it
+    // omits or converts: undefined, functions, symbols, dates, boxed primitives, collections,
+    // errors, toJSON objects and typed arrays.
+    function generator(seed: number): () => unknown {
+      let state = seed;
+      const next = (): number => {
+        state = (state * 48271) % 2147483647;
+        return state / 2147483647;
+      };
+      const leaves = (): unknown[] => [
+        1,
+        -0,
+        NaN,
+        's"\n\ud800',
+        true,
+        null,
+        undefined,
+        (): number => 1,
+        Symbol('z'),
+        new Date(0),
+        Object(3) as unknown,
+        Object('bx') as unknown,
+        new Map(),
+        new Error('e'),
+        { toJSON: (): string => 'T' },
+        new Uint8Array([1])
+      ];
+      const gen = (depth: number): unknown => {
+        const r = next();
+        if (depth > 4 || r < 0.3) {
+          const pool = leaves();
+          return pool[Math.floor(next() * pool.length)];
+        }
+        if (r < 0.65) {
+          return Array.from({ length: Math.floor(next() * 8) }, () => gen(depth + 1));
+        }
+        const obj: Record<string, unknown> = {};
+        const size = Math.floor(next() * 8);
+        for (let i = 0; i < size; i++) {
+          obj[`k${Math.floor(next() * 20)}`] = gen(depth + 1);
+        }
+        return obj;
+      };
+      return () => gen(0);
+    }
+
+    function truncated(text: string, maxLength: number): string {
+      if (text.length <= maxLength) {
+        return text;
+      }
+      let cut = text.slice(0, maxLength - 1);
+      const last = cut.charCodeAt(cut.length - 1);
+      if (last >= 0xd800 && last <= 0xdbff) {
+        cut = cut.slice(0, -1);
+      }
+      return `${cut}…`;
+    }
+
+    test('f(v, { maxLength }) is JSON.stringify(v), truncated, for generated values', () => {
+      const next = generator(12345);
+      let compared = 0;
+      let overBound = 0;
+      for (let i = 0; i < 4000; i++) {
+        const value = next();
+        const json = JSON.stringify(value) as string | undefined;
+        if (json === undefined) {
+          continue;
+        }
+        for (const maxLength of [20, 50, 200]) {
+          expect(formatValueForMessage(value, { maxLength })).toBe(truncated(json, maxLength));
+          compared++;
+          overBound += json.length > maxLength ? 1 : 0;
+        }
+        const indented = JSON.stringify(value, undefined, 2);
+        expect(formatValueForMessage(value, { maxLength: 60, indent: 2 })).toBe(truncated(indented, 60));
+      }
+      expect(compared).toBeGreaterThan(5000);
+      expect(overBound).toBeGreaterThan(1000);
+    });
+
+    test('holds for the shapes that used to switch renderers', () => {
+      class Foo {
+        public readonly name: string = 'x'.repeat(300);
+        public readonly u: undefined = undefined;
+      }
+      const values: unknown[] = [
+        new Foo(),
+        { a: 1, b: undefined, c: 'x'.repeat(300) },
+        { f(): void {}, a: Array.from({ length: 100 }, (__, i) => i) },
+        { m: new Map([[1, 2]]), s: 'y'.repeat(300) },
+        { d: { toJSON: (): string => 'Z' }, s: 'y'.repeat(300) },
+        Object.assign(new Array(100), [1]),
+        Array.from({ length: 100 }, () => Object(1) as unknown),
+        { d: new Date(0), s: 'q'.repeat(300) },
+        Array.from({ length: 66 }, () => [])
+      ];
+      for (const value of values) {
+        expect(formatValueForMessage(value)).toBe(truncated(JSON.stringify(value), 200));
+        expect(formatValueForMessage(value, { indent: 2 })).toBe(
+          truncated(JSON.stringify(value, undefined, 2), 200)
+        );
+      }
+      expect(formatValueForMessage(Object(5) as unknown, { maxLength: 1 })).toBe('5');
     });
   });
 
@@ -382,30 +514,31 @@ describe('formatValueForMessage', () => {
       }
       const text = formatValueForMessage(wide, { maxLength: 50 });
       expect(text.length).toBe(50);
-      expect(text).toMatch(/^\{"k0":\[Circular\],"k1":\[Circular\]/);
+      expect(text).toMatch(/^\{"k0":"\[Circular\]","k1":"\[Circular\]"/);
       let dag: unknown = 'leaf';
       for (let i = 0; i < 64; i++) {
         dag = { l: dag, r: dag };
       }
       // 2^64 paths: only a bounded walk returns at all
       expect(formatValueForMessage(dag).length).toBe(DEFAULT_FORMAT_VALUE_MAX_LENGTH);
+      expect(formatValueForMessage(withBomb({ dag })).length).toBe(DEFAULT_FORMAT_VALUE_MAX_LENGTH);
     });
 
-    test('caps a walk over members JSON.stringify omits', () => {
+    test('renders members JSON.stringify omits exactly, however many there are', () => {
       const sparse: Record<string, unknown> = { first: 1 };
       for (let i = 0; i < 20_000; i++) {
         sparse[`u${i}`] = undefined;
+        sparse[`f${i}`] = Math.max;
       }
-      expect(formatValueForMessage(sparse, { maxLength: 30 })).toBe('{"first":1,"u0":undefined,"u1…');
+      expect(formatValueForMessage(sparse, { maxLength: 30 })).toBe('{"first":1}');
     });
 
     test('ignores invalid options and clamps indent like JSON.stringify', () => {
       const value = { a: [1] };
-      expect(formatValueForMessage(value, { maxLength: 0, maxDepth: -1, indent: -3 })).toBe('{"a":[1]}');
+      expect(formatValueForMessage(value, { maxLength: 0, indent: -3 })).toBe('{"a":[1]}');
       expect(
         formatValueForMessage(value, {
           maxLength: 'x' as unknown as number,
-          maxDepth: NaN,
           indent: 'y' as unknown as number
         })
       ).toBe('{"a":[1]}');
@@ -439,12 +572,12 @@ describe('formatValueForMessage', () => {
       expect(formatValueForMessage({ a: 1 }, { style: 'json' })).toBe('{"a":1}');
     });
 
-    test('does not throw when both bounds are lifted on a graph deeper than the stack', () => {
+    test('does not throw when the bound is lifted on a graph deeper than the stack', () => {
       let deep: unknown[] = [];
       for (let i = 0; i < 200_000; i++) {
         deep = [deep];
       }
-      expect(() => formatValueForMessage(deep, { maxLength: Infinity, maxDepth: Infinity })).not.toThrow();
+      expect(() => formatValueForMessage(deep, { maxLength: Infinity })).not.toThrow();
     });
   });
 });

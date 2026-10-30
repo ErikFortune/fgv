@@ -20,68 +20,52 @@
  * SOFTWARE.
  */
 
-import { _errorMessage } from './result';
-
 /**
- * How many guarded boundary calls are on the stack right now. Shared by every converter and
- * validator, so the outermost one can be told apart from the nested ones. Each call reads it into
- * a local before incrementing it and restores it in a `finally` by arithmetic alone, so nothing that
- * needs stack space stands between the two.
+ * Shared state of the converter / validator `Result` boundary.
+ *
+ * @remarks
+ * `depth` counts the guarded converter and validator calls on the stack. Each wrapper reads it into
+ * a local, increments it before calling its function and decrements it in a `finally`. Both are
+ * plain property arithmetic, so nothing that needs stack space stands between them, and the count
+ * is restored even when the stack is too close to its limit for a call. The wrappers are written
+ * out in `BaseConverter` and `GenericValidator` rather than sharing a helper, so the hot path
+ * allocates nothing.
+ * @internal
  */
-let boundaryDepth: number = 0;
+export const _resultBoundary: { depth: number } = { depth: 0 };
 
 /**
- * Whether a caught value should be treated as stack exhaustion: a `RangeError` (V8, JavaScriptCore)
- * or an `InternalError` (SpiderMonkey's "too much recursion"), judged by constructor and name rather
- * than by message text, which differs by engine. Other `RangeError`s (an invalid array length,
- * `toFixed(200)`) are rare in a conversion callback and lose nothing but nested path context by
- * being treated the same. If the check itself throws — the stack is too close to its limit to run
- * it, or the thrown value is a Proxy whose traps throw — the answer is yes, because propagating to
- * the outermost boundary is the safe direction.
+ * Whether a caught value is stack exhaustion, which the boundary re-throws below the outermost level
+ * so that it fails once instead of at every level.
+ *
+ * @remarks
+ * Yes for SpiderMonkey's `InternalError`, and for a `RangeError` whose message reads as stack
+ * exhaustion: V8 and JavaScriptCore say "Maximum call stack size exceeded", SpiderMonkey "too much
+ * recursion". Both are judged by `name`, which also holds for an error from another realm, and the
+ * message by plain substring: a regular expression is compiled on first use, and V8 aborts the
+ * process when it compiles one with the stack nearly exhausted, which is exactly when this runs. The
+ * message is matched because a `RangeError` alone is not evidence: an invalid date
+ * or array length raises one too, and that is an ordinary error the nearest boundary must handle. If
+ * the check itself throws — the stack is too close to its limit to run it, or the thrown value is a
+ * Proxy whose traps throw — the answer is yes, because propagating to the outermost boundary is the
+ * direction that cannot multiply work.
  * @internal
  */
 export function _isStackExhaustion(err: unknown): boolean {
   try {
-    if (err instanceof RangeError) {
+    if (typeof err !== 'object' || err === null) {
+      return false;
+    }
+    const { name, message } = err as { name?: unknown; message?: unknown };
+    if (name === 'InternalError') {
       return true;
     }
-    const name: unknown =
-      typeof err === 'object' && err !== null ? (err as { name?: unknown }).name : undefined;
-    return name === 'RangeError' || name === 'InternalError';
+    return (
+      name === 'RangeError' &&
+      typeof message === 'string' &&
+      (message.includes('call stack') || message.includes('too much recursion'))
+    );
   } catch {
     return true;
   }
-}
-
-/**
- * Runs one converter or validator body at the `Result` boundary.
- *
- * @remarks
- * A throw from the body becomes `failure('<kind> threw: <message>')`, so a bug in a callback reads
- * differently from invalid input. Stack exhaustion is the exception: below the outermost boundary it
- * is re-thrown, so it unwinds straight to the outermost boundary and fails once. Converting it at
- * every level would let each level go on to its next sibling and exhaust the stack again, which on a
- * graph with shared or cyclic references multiplies into an effectively unbounded walk.
- *
- * @param kind - `'converter'` or `'validator'`, used in the failure message.
- * @param body - The guarded call.
- * @param failure - Builds the failure value from a message.
- * @internal
- */
-export function _atResultBoundary<T>(kind: string, body: () => T, failure: (message: string) => T): T {
-  const nested = boundaryDepth > 0;
-  let outcome: T;
-  boundaryDepth++;
-  try {
-    outcome = body();
-  } catch (err) {
-    if (nested && _isStackExhaustion(err)) {
-      throw err;
-    }
-    outcome = failure(`${kind} threw: ${_errorMessage(err)}`);
-  } finally {
-    // arithmetic only: this must run even when the stack is too close to its limit for a call
-    boundaryDepth--;
-  }
-  return outcome;
 }

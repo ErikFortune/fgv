@@ -214,9 +214,6 @@ export class AsyncResult<T> implements PromiseLike<Result<T>> {
 // @public
 export type AsyncSuccessContinuation<T, TN> = (value: T) => PromiseLike<Result<TN>>;
 
-// @internal
-export function _atResultBoundary<T>(kind: string, body: () => T, failure: (message: string) => T): T;
-
 declare namespace Base {
     export {
         GenericValidatorConstructorParams,
@@ -899,9 +896,6 @@ class Crc32Normalizer extends HashingNormalizer {
 }
 
 // @public
-export const DEFAULT_FORMAT_VALUE_MAX_DEPTH: number;
-
-// @public
 export const DEFAULT_FORMAT_VALUE_MAX_LENGTH: number;
 
 // @public
@@ -1445,7 +1439,6 @@ interface IDetailLogger extends ILogger {
 // @public
 export interface IFormatValueForMessageOptions {
     readonly indent?: number;
-    readonly maxDepth?: number;
     readonly maxLength?: number;
     readonly style?: 'json' | 'string';
 }
@@ -2517,6 +2510,11 @@ const reporterLogLevel: Converter<ReporterLogLevel, ReadonlyArray<ReporterLogLev
 
 // @public
 export type Result<T> = Success<T> | Failure<T>;
+
+// @internal
+export const _resultBoundary: {
+    depth: number;
+};
 
 // @beta
 export type ResultDetailType<T> = T extends DetailedResult<unknown, infer TD> ? TD : never;

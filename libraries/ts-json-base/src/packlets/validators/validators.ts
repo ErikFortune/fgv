@@ -21,15 +21,8 @@
  */
 
 import { Failure, Validation, Validator, fail, formatValueForMessage } from '@fgv/ts-utils';
-import {
-  JsonArray,
-  JsonObject,
-  JsonPrimitive,
-  JsonValue,
-  _jsonActivePath,
-  isJsonArray,
-  isJsonObject
-} from '../json';
+import { JsonArray, JsonObject, JsonPrimitive, JsonValue, isJsonArray, isJsonObject } from '../json';
+import { activePath } from './activePath';
 
 /* eslint-disable @typescript-eslint/no-use-before-define */
 
@@ -89,10 +82,10 @@ export const jsonObject: Validator<JsonObject, IJsonValidatorContext> = new Vali
     if (!isJsonObject(from)) {
       return fail('invalid JSON object.');
     }
-    return _jsonActivePath.container<boolean | Failure<JsonObject>>(from, fail, () => {
+    return activePath.container<boolean | Failure<JsonObject>>(from, fail, () => {
       const errors: string[] = [];
       for (const [name, value] of Object.entries(from)) {
-        _jsonActivePath
+        activePath
           .member(name, () => jsonValue.validate(value, ctx))
           .onFailure((m) => {
             errors.push(`${name}: ${m}`);
@@ -123,11 +116,11 @@ export const jsonArray: Validator<JsonArray, IJsonValidatorContext> = new Valida
     if (!isJsonArray(from)) {
       return fail('not an array');
     }
-    return _jsonActivePath.container<boolean | Failure<JsonArray>>(from, fail, () => {
+    return activePath.container<boolean | Failure<JsonArray>>(from, fail, () => {
       const errors: string[] = [];
       for (let i = 0; i < from.length; i++) {
         const value = from[i];
-        _jsonActivePath
+        activePath
           .member(i, () => jsonValue.validate(value, ctx))
           .onFailure((m) => {
             errors.push(`${i}: ${m}`);

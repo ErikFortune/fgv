@@ -1166,9 +1166,6 @@ export class _JsonActivePath {
     get path(): string;
 }
 
-// @internal
-export const _jsonActivePath: _JsonActivePath;
-
 // @public
 export interface JsonArray extends Array<JsonValue> {
 }

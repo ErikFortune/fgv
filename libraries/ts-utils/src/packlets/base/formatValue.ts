@@ -34,14 +34,6 @@ export interface IFormatValueForMessageOptions {
   readonly maxLength?: number;
 
   /**
-   * Maximum depth of nested objects and arrays rendered by the fallback renderer (used only when
-   * `JSON.stringify` throws). A container nested more deeply is elided as `{…}` or `[…]`. Negative
-   * values or values that are not numbers select the default. Default
-   * {@link DEFAULT_FORMAT_VALUE_MAX_DEPTH}.
-   */
-  readonly maxDepth?: number;
-
-  /**
    * Number of spaces used to indent nested members, with the same meaning (and the same clamp to
    * 0–10) as the `space` argument of `JSON.stringify`. Default `0` (compact).
    */
@@ -49,8 +41,7 @@ export interface IFormatValueForMessageOptions {
 
   /**
    * How to render the value:
-   * - `'json'` (default): the `JSON.stringify`-based rendering described at
-   *   {@link formatValueForMessage}.
+   * - `'json'` (default): the `JSON.stringify` rendering described at {@link formatValueForMessage}.
    * - `'string'`: `String(value)`, which is what interpolating the value into a template literal
    *   produces, except for a symbol, where a template literal throws and `String()` does not. Falls
    *   back to the `'json'` rendering when `String()` throws (a null-prototype object, a Proxy whose
@@ -71,13 +62,6 @@ export interface IFormatValueForMessageOptions {
 export const DEFAULT_FORMAT_VALUE_MAX_LENGTH: number = 200;
 
 /**
- * Default {@link IFormatValueForMessageOptions.maxDepth | maximum depth} used by
- * {@link formatValueForMessage}.
- * @public
- */
-export const DEFAULT_FORMAT_VALUE_MAX_DEPTH: number = 16;
-
-/**
  * Default {@link IFormatValueForMessageOptions.maxLength | maximum length} used by
  * {@link formatValueForMessage} in the `'string'` style.
  * @public
@@ -89,13 +73,10 @@ const UNREADABLE: string = '[Unreadable]';
 const CIRCULAR: string = '[Circular]';
 
 /**
- * What a container looks like once its shape has been read. Reading it can run caller code (a
- * getter, a Proxy trap), so it is read once, inside a `try`, before anything is written.
+ * Thrown from the replacer to abandon `JSON.stringify` once the output is known to exceed the
+ * length budget, so the caller renders with the bounded writer instead.
  */
-type ContainerShape =
-  | { readonly kind: 'array'; readonly prefix: string; readonly length: number }
-  | { readonly kind: 'object'; readonly prefix: string; readonly keys: readonly string[] }
-  | { readonly kind: 'text'; readonly text: string };
+const OVER_BUDGET: object = Object.freeze({});
 
 function _stringOrUndefined(value: unknown): string | undefined {
   try {
@@ -118,16 +99,15 @@ function _truncate(text: string, maxLength: number): string {
   return `${cut}${ELLIPSIS}`;
 }
 
-/**
- * Thrown from the replacer to abandon `JSON.stringify` once the output is known to exceed the
- * length budget or the call budget, so the caller falls back to the bounded renderer.
- */
-const OVER_BUDGET: object = Object.freeze({});
+function _optionOrDefault(value: unknown, min: number, fallback: number): number {
+  return typeof value === 'number' && value >= min ? Math.floor(value) : fallback;
+}
 
 /**
  * A lower bound on the characters one replacer call adds to the output: the key and colon for an
- * object member, and the value's own minimum. Escaping and indentation only add to it, so a running
- * total above the budget proves the result will be truncated.
+ * object member, and the value's own minimum. A non-null object counts 1, the shortest it can render
+ * (a boxed number). Escaping and indentation only add to it, so a running total above the budget
+ * proves the result will be truncated.
  */
 function _lowerBound(key: string, value: unknown, inArray: boolean, isRoot: boolean): number {
   let own: number;
@@ -142,7 +122,7 @@ function _lowerBound(key: string, value: unknown, inArray: boolean, isRoot: bool
       own = value ? 4 : 5;
       break;
     case 'object':
-      own = value === null ? 4 : 2;
+      own = value === null ? 4 : 1;
       break;
     default:
       // undefined, function, symbol: "null" in an array, omitted from an object
@@ -155,13 +135,11 @@ function _lowerBound(key: string, value: unknown, inArray: boolean, isRoot: bool
  * `JSON.stringify(value, replacer, indent)`, where the replacer intervenes only where
  * `JSON.stringify` would throw: a reference back to an object on the active ancestor path becomes
  * the string `"[Circular]"`, and a `BigInt` becomes `"123n"`. Returns `undefined` when
- * `JSON.stringify` does (a top-level `undefined`, function or symbol), when it throws anyway (a
- * throwing getter, Proxy trap or `toJSON`, or stack exhaustion), or when the output is shown to
- * exceed `maxLength` or the walk exceeds its call budget.
+ * `JSON.stringify` does, when it throws anyway (a throwing getter, Proxy trap or `toJSON`, or stack
+ * exhaustion), or when the output is shown to exceed `maxLength`.
  */
 function _stringifyOrUndefined(value: unknown, indent: number, maxLength: number): string | undefined {
   const ancestors: unknown[] = [];
-  const callBudget = Math.max(10_000, maxLength * 50);
   let calls = 0;
   let length = 0;
   const replacer = function (this: unknown, key: string, member: unknown): unknown {
@@ -177,7 +155,7 @@ function _stringifyOrUndefined(value: unknown, indent: number, maxLength: number
       }
     }
     length += _lowerBound(key, replaced, Array.isArray(this), calls === 1);
-    if (length > maxLength || calls > callBudget) {
+    if (length > maxLength) {
       throw OVER_BUDGET;
     }
     return replaced;
@@ -190,25 +168,73 @@ function _stringifyOrUndefined(value: unknown, indent: number, maxLength: number
   }
 }
 
-function _optionOrDefault(value: unknown, min: number, fallback: number): number {
-  return typeof value === 'number' && value >= min ? Math.floor(value) : fallback;
+/**
+ * What one member serializes to once it has been read: its finished text, nothing at all (an
+ * `undefined`, function or symbol, which `JSON.stringify` omits from an object and writes as `null`
+ * in an array), or a container still to be walked.
+ */
+type Prepared =
+  | { readonly kind: 'text'; readonly text: string }
+  | { readonly kind: 'omit'; readonly value: unknown }
+  | { readonly kind: 'container'; readonly value: object };
+
+const UNREADABLE_TEXT: Prepared = Object.freeze({ kind: 'text', text: UNREADABLE });
+
+/**
+ * Reads `JSON.rawJSON` text when the runtime supports it; `undefined` otherwise.
+ */
+function _rawJsonText(value: object): string | undefined {
+  const runtime = JSON as unknown as { isRawJSON?: (candidate: unknown) => boolean };
+  /* c8 ignore next 3 - runtime-only: engines without JSON.isRawJSON (before ES2025) take the other side */
+  if (runtime.isRawJSON === undefined) {
+    return undefined;
+  }
+  return runtime.isRawJSON(value) ? String((value as { rawJSON?: unknown }).rawJSON) : undefined;
 }
 
 /**
- * Accumulates the rendering and stops accepting text once the length budget is exceeded, so the
- * walk over a large graph ends as soon as the result is known to be truncated.
+ * The primitive a boxed `Number`, `String`, `Boolean` or `BigInt` holds, converted the way
+ * `JSON.stringify` converts it, or the object itself when it is not boxed.
  */
-class MessageValueWriter {
+function _unboxed(value: object): unknown {
+  const probe = (valueOf: () => unknown): boolean => {
+    try {
+      valueOf.call(value);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+  if (probe(Number.prototype.valueOf)) {
+    return Number(value);
+  }
+  if (probe(String.prototype.valueOf)) {
+    return String(value);
+  }
+  if (probe(Boolean.prototype.valueOf)) {
+    return Boolean.prototype.valueOf.call(value);
+  }
+  if (probe(BigInt.prototype.valueOf)) {
+    return BigInt.prototype.valueOf.call(value);
+  }
+  return value;
+}
+
+/**
+ * A reimplementation of `JSON.stringify`'s serialization, with the same replacer behaviour as the
+ * fast path, that contains every read of caller code and stops writing once the output exceeds the
+ * length budget. Used when `JSON.stringify` throws or is abandoned for length, so that up to the cut
+ * the text is what `JSON.stringify` would have produced.
+ */
+class JsonFallbackWriter {
   private readonly _parts: string[] = [];
   private _length: number = 0;
   private readonly _ancestors: object[] = [];
   private readonly _maxLength: number;
-  private readonly _maxDepth: number;
   private readonly _gap: string;
 
-  public constructor(maxLength: number, maxDepth: number, gap: string) {
+  public constructor(maxLength: number, gap: string) {
     this._maxLength = maxLength;
-    this._maxDepth = maxDepth;
     this._gap = gap;
   }
 
@@ -220,35 +246,12 @@ class MessageValueWriter {
     return _truncate(this._parts.join(''), this._maxLength);
   }
 
-  public value(value: unknown, depth: number, indent: string): void {
-    switch (typeof value) {
-      case 'string':
-        // escaping only lengthens a string, so a prefix one past the budget renders identically
-        // up to the cut and bounds the cost of a very long string
-        this._write(JSON.stringify(value.length > this._maxLength ? value.slice(0, this._maxLength) : value));
-        return;
-      case 'number':
-      case 'boolean':
-        this._write(JSON.stringify(value));
-        return;
-      case 'bigint':
-        this._write(`${value}n`);
-        return;
-      case 'symbol':
-        this._write(String(value));
-        return;
-      case 'function':
-        this._write(`[Function ${MessageValueWriter._functionName(value)}]`);
-        return;
-      case 'object':
-        if (value === null) {
-          this._write('null');
-        } else {
-          this._container(value, depth, indent);
-        }
-        return;
-      default:
-        this._write('undefined');
+  public root(value: unknown): void {
+    const prepared = this._prepare(value, '');
+    if (prepared.kind === 'omit') {
+      this._write(JsonFallbackWriter._token(prepared.value));
+    } else {
+      this._emit(prepared, '');
     }
   }
 
@@ -259,113 +262,125 @@ class MessageValueWriter {
     }
   }
 
-  private _container(value: object, depth: number, indent: string): void {
-    if (this._ancestors.includes(value)) {
-      this._write(CIRCULAR);
-      return;
-    }
-    const shape = MessageValueWriter._shape(value);
-    if (shape.kind === 'text') {
-      this._write(shape.text);
-      return;
-    }
-    const [open, close] = shape.kind === 'array' ? ['[', ']'] : ['{', '}'];
-    const count = shape.kind === 'array' ? shape.length : shape.keys.length;
-    if (count === 0) {
-      this._write(`${shape.prefix}${open}${close}`);
-      return;
-    }
-    if (depth >= this._maxDepth) {
-      this._write(`${shape.prefix}${open}${ELLIPSIS}${close}`);
-      return;
-    }
-
-    const inner = `${indent}${this._gap}`;
-    const separator = this._gap ? `,\n${inner}` : ',';
-    this._write(`${shape.prefix}${open}${this._gap ? `\n${inner}` : ''}`);
-    this._ancestors.push(value);
-    for (let i = 0; i < count && !this.full; i++) {
-      if (i > 0) {
-        this._write(separator);
+  /**
+   * Applies `toJSON`, the replacer's two substitutions and boxed-primitive unwrapping to a value
+   * already read, exactly as `SerializeJSONProperty` does.
+   */
+  private _prepare(read: unknown, key: string): Prepared {
+    let value = read;
+    try {
+      if ((typeof value === 'object' && value !== null) || typeof value === 'bigint') {
+        const toJson: unknown = (value as { toJSON?: unknown }).toJSON;
+        if (typeof toJson === 'function') {
+          value = toJson.call(value, key);
+        }
       }
-      if (shape.kind === 'object') {
-        this._write(`${JSON.stringify(shape.keys[i])}:${this._gap ? ' ' : ''}`);
+      if (typeof value === 'bigint') {
+        return { kind: 'text', text: JSON.stringify(`${value}n`) };
       }
-      this._member(value, shape.kind === 'array' ? i : shape.keys[i], depth + 1, inner);
+      if (typeof value === 'object' && value !== null) {
+        if (this._ancestors.includes(value)) {
+          return { kind: 'text', text: JSON.stringify(CIRCULAR) };
+        }
+        const raw = _rawJsonText(value);
+        if (raw !== undefined) {
+          return { kind: 'text', text: raw };
+        }
+        value = _unboxed(value);
+      }
+    } catch {
+      return UNREADABLE_TEXT;
     }
-    this._ancestors.pop();
-    this._write(`${this._gap ? `\n${indent}` : ''}${close}`);
+    switch (typeof value) {
+      case 'string':
+        // escaping only lengthens a string, so a prefix one past the budget renders identically
+        // up to the cut and bounds the cost of a very long string
+        return {
+          kind: 'text',
+          text: JSON.stringify(value.length > this._maxLength ? value.slice(0, this._maxLength) : value)
+        };
+      case 'number':
+      case 'boolean':
+        return { kind: 'text', text: JSON.stringify(value) };
+      case 'bigint':
+        // a boxed BigInt, which JSON.stringify would refuse
+        return { kind: 'text', text: JSON.stringify(`${value}n`) };
+      case 'object':
+        return value === null ? { kind: 'text', text: 'null' } : { kind: 'container', value };
+      default:
+        return { kind: 'omit', value };
+    }
   }
 
-  private _member(container: object, key: string | number, depth: number, indent: string): void {
-    let member: unknown;
+  private _emit(prepared: Exclude<Prepared, { kind: 'omit' }>, indent: string): void {
+    if (prepared.kind === 'text') {
+      this._write(prepared.text);
+      return;
+    }
+    const value = prepared.value;
+    let isArray: boolean;
+    let keys: readonly string[] = [];
+    let length = 0;
     try {
-      member = (container as Record<string | number, unknown>)[key];
+      isArray = Array.isArray(value);
+      if (isArray) {
+        const raw = Number((value as { length?: unknown }).length);
+        length = Number.isNaN(raw) ? 0 : Math.min(Math.max(Math.floor(raw), 0), Number.MAX_SAFE_INTEGER);
+      } else {
+        keys = Object.keys(value);
+      }
     } catch {
       this._write(UNREADABLE);
       return;
     }
-    this.value(member, depth, indent);
-  }
-
-  private static _shape(value: object): ContainerShape {
-    try {
-      if (Array.isArray(value)) {
-        return { kind: 'array', prefix: '', length: value.length };
+    const inner = `${indent}${this._gap}`;
+    const separator = this._gap ? `,\n${inner}` : ',';
+    const [open, close] = isArray ? ['[', ']'] : ['{', '}'];
+    let written = 0;
+    this._ancestors.push(value);
+    const count = isArray ? length : keys.length;
+    for (let i = 0; i < count && !this.full; i++) {
+      const key = isArray ? String(i) : keys[i];
+      let read: unknown;
+      let prepared: Prepared;
+      try {
+        read = (value as Record<string, unknown>)[key];
+        prepared = this._prepare(read, key);
+      } catch {
+        prepared = UNREADABLE_TEXT;
       }
-      const date = MessageValueWriter._dateText(value);
-      if (date !== undefined) {
-        return { kind: 'text', text: date };
+      if (prepared.kind === 'omit' && !isArray) {
+        continue;
       }
-      const prefix = MessageValueWriter._prefix(value);
-      if (ArrayBuffer.isView(value) && !(value instanceof DataView)) {
-        return { kind: 'array', prefix, length: (value as unknown as ArrayLike<unknown>).length };
+      this._write(written === 0 ? `${open}${this._gap ? `\n${inner}` : ''}` : separator);
+      written++;
+      if (!isArray) {
+        this._write(`${JSON.stringify(key)}:${this._gap ? ' ' : ''}`);
       }
-      return { kind: 'object', prefix, keys: Object.keys(value) };
-    } catch {
-      return { kind: 'text', text: UNREADABLE };
+      if (prepared.kind === 'omit') {
+        this._write('null');
+      } else {
+        this._emit(prepared, inner);
+      }
     }
+    this._ancestors.pop();
+    this._write(written === 0 ? `${open}${close}` : `${this._gap ? `\n${indent}` : ''}${close}`);
   }
 
   /**
-   * Renders a real `Date` as `JSON.stringify` would, through the intrinsic methods rather than any
-   * `toJSON` override. Anything that is not a `Date` (including a Proxy of one) yields `undefined`.
+   * The readable token for a top-level value `JSON.stringify` renders as nothing.
    */
-  private static _dateText(value: object): string | undefined {
-    let time: number;
-    try {
-      time = Date.prototype.getTime.call(value);
-    } catch {
-      return undefined;
+  private static _token(value: unknown): string {
+    if (typeof value === 'function') {
+      let name: unknown;
+      try {
+        name = (value as { name?: unknown }).name;
+      } catch {
+        name = undefined;
+      }
+      return `[Function ${typeof name === 'string' && name.length > 0 ? name : '(anonymous)'}]`;
     }
-    return Number.isNaN(time) ? 'null' : JSON.stringify(Date.prototype.toISOString.call(value));
-  }
-
-  /**
-   * The constructor-name prefix for a class instance, or `''` for a plain object. An object whose
-   * prototype is null, or is a root prototype whose constructor is `Object` (from any realm), is
-   * plain.
-   */
-  private static _prefix(value: object): string {
-    const proto: unknown = Object.getPrototypeOf(value);
-    if (proto === null) {
-      return '';
-    }
-    const ctor: unknown = Object.getOwnPropertyDescriptor(proto, 'constructor')?.value;
-    const name = typeof ctor === 'function' && typeof ctor.name === 'string' ? ctor.name : '';
-    if (name === 'Object' && Object.getPrototypeOf(proto) === null) {
-      return '';
-    }
-    return `${name || 'Object'} `;
-  }
-
-  private static _functionName(value: unknown): string {
-    try {
-      const name: unknown = (value as { name?: unknown }).name;
-      return typeof name === 'string' && name.length > 0 ? name : '(anonymous)';
-    } catch {
-      return '(anonymous)';
-    }
+    return String(value);
   }
 }
 
@@ -374,36 +389,30 @@ class MessageValueWriter {
  * throws.
  *
  * @remarks
- * **Compatibility:** the value is first rendered with `JSON.stringify(value, replacer, indent)`. The
- * replacer intervenes only where `JSON.stringify` would throw — a reference back to an object on
- * the active ancestor path becomes `"[Circular]"`, and a `BigInt` becomes `"123n"` — so every value
- * `JSON.stringify` rendered without throwing renders byte-identically, up to `maxLength`. That
- * includes its treatment of `undefined`, functions and symbols, `toJSON`, class instances, `Map`s
- * and boxed primitives.
+ * **Compatibility:** the text is what `JSON.stringify(value, undefined, indent)` produces, cut to
+ * `maxLength` with a trailing `…`, for every value `JSON.stringify` renders without throwing —
+ * including its treatment of `undefined`, functions and symbols, `toJSON`, class instances, `Map`s,
+ * typed arrays and boxed primitives. It departs from `JSON.stringify` only where `JSON.stringify`
+ * would throw or produce nothing:
+ * - a reference back to an object on the active ancestor path renders as `"[Circular]"`;
+ * - a `BigInt` renders as `"123n"`;
+ * - a value whose getter, Proxy trap or `toJSON` throws renders as `[Unreadable]`, in place;
+ * - a top-level `undefined`, symbol or function renders as `undefined`, `Symbol(description)` or
+ *   `[Function name]`.
  *
- * Where `JSON.stringify` would produce no text at all (a top-level `undefined`, function or
- * symbol), or still throws (a throwing getter, Proxy trap or `toJSON`, or a graph too deep for the
- * stack), a fallback renderer produces readable text instead:
- * - a reference back to an ancestor renders as `[Circular]`;
- * - a `BigInt` renders as `123n`, a symbol as `Symbol(description)`, a function as
- *   `[Function name]`, and `undefined` as `undefined`;
- * - a class instance renders its own enumerable properties behind its constructor name, as in
- *   `Socket {"connecting":false,…}`; typed arrays render their elements, as in `Uint8Array [1,2]`;
- * - a property whose getter or Proxy trap throws renders as `[Unreadable]`, as does an object
- *   whose shape cannot be read at all;
- * - containers nested deeper than `maxDepth` are elided.
- * The fallback does not invoke `toJSON`, since that may be what threw.
+ * **How.** It calls `JSON.stringify` with a replacer that makes the first two substitutions. If that
+ * still throws, or the output is shown to exceed `maxLength`, a reimplementation of the same
+ * serialization renders instead, containing every read and stopping once the bound is reached.
  *
- * **What runs.** Like `JSON.stringify`, the first attempt invokes getters, Proxy traps and
- * `toJSON`; the fallback invokes getters and Proxy traps. Any error they throw is contained. The
- * {@link IFormatValueForMessageOptions.style | `'string'` style} invokes `toString` /
+ * **What runs.** Like `JSON.stringify`, it invokes getters, Proxy traps and `toJSON`. When the first
+ * attempt throws partway or is abandoned for length, the reimplementation walks the value again, so
+ * a getter or `toJSON` can run twice; one with side effects can make the second walk differ from the
+ * first. The {@link IFormatValueForMessageOptions.style | `'string'` style} invokes `toString` /
  * `Symbol.toPrimitive` instead.
  *
- * **Cost.** Output longer than `maxLength` is cut and ends with `…`. Both renderers stop once the
- * output is known to exceed `maxLength`, so the work is proportional to `maxLength` plus any members
- * `JSON.stringify` omits (an `undefined` or function property), which are capped by a call budget of
- * fifty per character of `maxLength` (at least 10 000). A value whose walk exceeds that budget is
- * rendered by the fallback.
+ * **Cost.** Proportional to `maxLength`, plus any members `JSON.stringify` omits (an `undefined` or
+ * function property), which take no output space and so are not bounded by it. A graph nested more
+ * deeply than the stack allows, with `maxLength` lifted, renders as `[Unreadable]`.
  *
  * @param value - The value to render.
  * @param options - Optional {@link IFormatValueForMessageOptions | formatting options}.
@@ -428,13 +437,12 @@ export function formatValueForMessage(value: unknown, options?: IFormatValueForM
     if (json !== undefined) {
       return _truncate(json, maxLength);
     }
-    const maxDepth = _optionOrDefault(options?.maxDepth, 0, DEFAULT_FORMAT_VALUE_MAX_DEPTH);
-    const writer = new MessageValueWriter(maxLength, maxDepth, ' '.repeat(indent));
-    writer.value(value, 0, '');
+    const writer = new JsonFallbackWriter(maxLength, ' '.repeat(indent));
+    writer.root(value);
     return writer.text();
   } catch {
     // reads of the value are contained where they happen; this catches what is left — options
-    // whose accessors throw, or exhausting the stack or string length once the bounds are lifted
+    // whose accessors throw, or exhausting the stack or string length once the bound is lifted
     return UNREADABLE;
   }
 }

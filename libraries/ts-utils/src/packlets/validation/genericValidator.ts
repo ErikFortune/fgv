@@ -20,7 +20,23 @@
  * SOFTWARE.
  */
 
-import { Brand, Failure, Result, _atResultBoundary, fail, formatValueForMessage, succeed } from '../base';
+import {
+  Brand,
+  Failure,
+  Result,
+  _errorMessage,
+  _isStackExhaustion,
+  _resultBoundary,
+  fail,
+  formatValueForMessage,
+  succeed
+} from '../base';
+
+/**
+ * The shared boundary state, held locally: reading it through the package's re-export chain costs
+ * a getter call per access on the hot path.
+ */
+const boundary: { depth: number } = _resultBoundary;
 import { ConstraintTrait, ValidatorTraits } from './traits';
 import {
   Constraint,
@@ -66,7 +82,9 @@ export class GenericValidator<T, TC = unknown> implements Validator<T, TC> {
    * The validator is a `Result` boundary, so it never throws: if the supplied validator function
    * throws (a bug in a custom callback, or a getter or Proxy trap on the value being validated),
    * validation fails with `validator threw: <message>` instead, and `guard` returns `false`. Stack
-   * exhaustion inside nested validators unwinds to the outermost one and fails once there.
+   * exhaustion inside nested validators unwinds to the outermost one and fails once there; a
+   * `captureResult` (or any `try`) the caller places between two nested validators catches it there
+   * instead.
    *
    * The conversion to a `Failure` masks the error wherever a failure is expected: `guard`, `or` and
    * `oneOf` (which try the alternative), and `orDefault` all treat a buggy callback like invalid
@@ -79,12 +97,23 @@ export class GenericValidator<T, TC = unknown> implements Validator<T, TC> {
       throw new Error('No validator function supplied');
     }
     const validator = params.validator;
-    this._validator = (from: unknown, context?: TC, self?: Validator<T, TC>): boolean | Failure<T> =>
-      _atResultBoundary<boolean | Failure<T>>(
-        'validator',
-        () => validator(from, context, self),
-        (message) => fail<T>(message)
-      );
+    this._validator = (from: unknown, context?: TC, self?: Validator<T, TC>): boolean | Failure<T> => {
+      // written out rather than shared so the hot path allocates nothing; see _resultBoundary
+      const nested = boundary.depth > 0;
+      let result: boolean | Failure<T>;
+      boundary.depth++;
+      try {
+        result = validator(from, context, self);
+      } catch (err) {
+        if (nested && _isStackExhaustion(err)) {
+          throw err;
+        }
+        result = fail<T>(`validator threw: ${_errorMessage(err)}`);
+      } finally {
+        boundary.depth--;
+      }
+      return result;
+    };
     this._options = params.options ?? {};
     this.traits = new ValidatorTraits(params.traits);
   }
