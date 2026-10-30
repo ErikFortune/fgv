@@ -156,15 +156,17 @@ describe('the recursive JSON converters and validators on a cycle', () => {
     return node;
   }
 
+  // In-process cases use one back-edge only: before the fix a single edge was linear, so a red run
+  // fails here instead of hanging. Two or more edges are exercised in a child process below.
   test('fail at once, naming the path to the repeated object', () => {
     const results = [
-      Converters.jsonValue.convert(selfCycle(2)),
-      Converters.jsonObject.convert(selfCycle(2)),
-      Validators.jsonValue.validate(selfCycle(2)),
-      Validators.jsonObject.validate(selfCycle(2))
+      Converters.jsonValue.convert(selfCycle(1)),
+      Converters.jsonObject.convert(selfCycle(1)),
+      Validators.jsonValue.validate(selfCycle(1)),
+      Validators.jsonObject.validate(selfCycle(1))
     ];
     for (const result of results) {
-      expect(result).toFailWith(/k0: circular reference at \$\.k0\nk1: circular reference at \$\.k1$/);
+      expect(result).toFailWith(/^invalid JSON object:\nk0: circular reference at \$\.k0$/);
     }
     const arr: unknown[] = [1];
     arr.push({ back: arr });
@@ -217,6 +219,19 @@ describe('the recursive JSON converters and validators on a cycle', () => {
       "let d = 'x'; for (let i = 0; i < 20000; i++) d = { l: d, r: d }; const r = lib.Converters.jsonValue.convert(d);"
     ]
   ];
+
+  test('two back-edges are both named, with their paths', () => {
+    const run = runIsolated(
+      entryPoint,
+      `const a = {}; a.k0 = a; a.k1 = a; const r = lib.Converters.jsonValue.convert(a);
+       process.stdout.write(JSON.stringify({ message: r.message }) + '\\n');`,
+      15_000
+    );
+    expect(run.timedOut).toBe(false);
+    expect(run.report).toEqual({
+      message: 'invalid JSON object:\nk0: circular reference at $.k0\nk1: circular reference at $.k1'
+    });
+  }, 30_000);
 
   test.each(cases)(
     '%s finishes quickly and fails with a short message',
