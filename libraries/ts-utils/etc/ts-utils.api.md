@@ -1558,6 +1558,14 @@ interface IPartialCompositeId<TCOLLECTIONID extends string, TITEMID extends stri
     readonly separator?: string;
 }
 
+// Warning: (ae-internal-missing-underscore) The name "IRawJsonSupport" should be prefixed with an underscore because the declaration is marked as @internal
+//
+// @internal
+export interface IRawJsonSupport {
+    // (undocumented)
+    readonly isRawJSON?: (candidate: unknown) => boolean;
+}
+
 // @public
 interface IReadonlyAggregatedResultMapEntry<TCOLLECTIONID extends string = string, TITEMID extends string = string, TITEM = unknown, TMETADATA = unknown> {
     // (undocumented)
@@ -2432,6 +2440,9 @@ export interface PopulateObjectOptions<T> {
 // @public
 export function propagateWithDetail<T, TD>(result: Result<T>, detail: TD, successDetail?: TD): DetailedResult<T, TD>;
 
+// @internal
+export function _rawJsonText(value: object, json?: IRawJsonSupport): string | undefined;
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
@@ -2508,6 +2519,11 @@ type ReporterLogLevel = 'all' | 'detail' | 'info' | 'warning' | 'error' | 'silen
 // @public
 const reporterLogLevel: Converter<ReporterLogLevel, ReadonlyArray<ReporterLogLevel>>;
 
+// @internal
+export function _resolveResultBoundary(): {
+    depth: number;
+};
+
 // @public
 export type Result<T> = Success<T> | Failure<T>;
 
@@ -2515,6 +2531,9 @@ export type Result<T> = Success<T> | Failure<T>;
 export const _resultBoundary: {
     depth: number;
 };
+
+// @internal
+export const _resultBoundaryKey: symbol;
 
 // @beta
 export type ResultDetailType<T> = T extends DetailedResult<unknown, infer TD> ? TD : never;

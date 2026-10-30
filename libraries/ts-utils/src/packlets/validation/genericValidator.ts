@@ -31,12 +31,6 @@ import {
   formatValueForMessage,
   succeed
 } from '../base';
-
-/**
- * The shared boundary state, held locally: reading it through the package's re-export chain costs
- * a getter call per access on the hot path.
- */
-const boundary: { depth: number } = _resultBoundary;
 import { ConstraintTrait, ValidatorTraits } from './traits';
 import {
   Constraint,
@@ -45,6 +39,12 @@ import {
   ValidatorFunc,
   ValidatorOptions
 } from './validator';
+
+/**
+ * The shared boundary state, held locally: reading it through the package's re-export chain costs
+ * a getter call per access on the hot path.
+ */
+const boundary: { depth: number } = _resultBoundary;
 
 /**
  * Options used to initialize a {@link Validation.Base.GenericValidator | GenericValidator}.

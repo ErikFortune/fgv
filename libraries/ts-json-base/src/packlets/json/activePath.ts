@@ -34,7 +34,9 @@
  * The state is per walk only in the sense that one walk is in progress at a time. A recursive JSON
  * conversion started *during* another one — from a getter on a value being walked, say — over an
  * object the outer walk is still inside reports that object as circular, although neither walk
- * alone would. JSON values have no getters, so this needs a value that is not JSON to begin with.
+ * alone would. JSON values have no getters, so this needs a value that is not JSON to begin with:
+ * for example an accessor property on the walked value whose getter itself converts an ancestor of
+ * that value, which then fails as `circular reference at $` from inside the getter.
  * @internal
  */
 export class _JsonActivePath {

@@ -181,15 +181,28 @@ type Prepared =
 const UNREADABLE_TEXT: Prepared = Object.freeze({ kind: 'text', text: UNREADABLE });
 
 /**
- * Reads `JSON.rawJSON` text when the runtime supports it; `undefined` otherwise.
+ * The part of the `JSON` object {@link _rawJsonText} relies on. `isRawJSON` is absent on engines
+ * before ES2025 (Node 20, for one).
+ * @internal
  */
-function _rawJsonText(value: object): string | undefined {
-  const runtime = JSON as unknown as { isRawJSON?: (candidate: unknown) => boolean };
-  /* c8 ignore next 3 - runtime-only: engines without JSON.isRawJSON (before ES2025) take the other side */
-  if (runtime.isRawJSON === undefined) {
+export interface IRawJsonSupport {
+  readonly isRawJSON?: (candidate: unknown) => boolean;
+}
+
+/**
+ * Reads `JSON.rawJSON` text when `json` supports raw JSON and `value` is one; `undefined` otherwise.
+ * @param value - The object to inspect.
+ * @param json - The `JSON`-like object to consult; the real `JSON` by default.
+ * @internal
+ */
+export function _rawJsonText(
+  value: object,
+  json: IRawJsonSupport = JSON as unknown as IRawJsonSupport
+): string | undefined {
+  if (json.isRawJSON === undefined) {
     return undefined;
   }
-  return runtime.isRawJSON(value) ? String((value as { rawJSON?: unknown }).rawJSON) : undefined;
+  return json.isRawJSON(value) ? String((value as { rawJSON?: unknown }).rawJSON) : undefined;
 }
 
 /**

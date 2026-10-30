@@ -21,7 +21,27 @@
  */
 
 /**
- * Shared state of the converter / validator `Result` boundary.
+ * The key of the process-wide slot holding the boundary state.
+ * @internal
+ */
+export const _resultBoundaryKey: symbol = Symbol.for('@fgv/ts-utils.resultBoundary');
+
+/**
+ * Returns the process-wide boundary state, creating it on first use. Every copy of `@fgv/ts-utils`
+ * loaded into one process (two installed versions, or a bundle beside a dependency) resolves the
+ * same object, so a converter from one copy nested inside a converter from another still sees the
+ * true nesting depth.
+ * @internal
+ */
+export function _resolveResultBoundary(): { depth: number } {
+  const slots = globalThis as unknown as Record<symbol, { depth: number } | undefined>;
+  slots[_resultBoundaryKey] ??= { depth: 0 };
+  return slots[_resultBoundaryKey] as { depth: number };
+}
+
+/**
+ * Shared state of the converter / validator `Result` boundary, resolved once from the process-wide
+ * slot (see {@link _resolveResultBoundary}).
  *
  * @remarks
  * `depth` counts the guarded converter and validator calls on the stack. Each wrapper reads it into
@@ -32,7 +52,7 @@
  * allocates nothing.
  * @internal
  */
-export const _resultBoundary: { depth: number } = { depth: 0 };
+export const _resultBoundary: { depth: number } = _resolveResultBoundary();
 
 /**
  * Whether a caught value is stack exhaustion, which the boundary re-throws below the outermost level

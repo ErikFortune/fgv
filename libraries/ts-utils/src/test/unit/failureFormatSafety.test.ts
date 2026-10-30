@@ -22,7 +22,15 @@
 
 import '../helpers/jest';
 
-import { Normalizer, Result, captureResult, fail, succeed } from '../../packlets/base';
+import {
+  Normalizer,
+  Result,
+  _resolveResultBoundary,
+  _resultBoundary,
+  captureResult,
+  fail,
+  succeed
+} from '../../packlets/base';
 import { KeyValueConverters } from '../../packlets/collections';
 import { Converter, Converters } from '../../packlets/conversion';
 import { Validator, Validators } from '../../packlets/validation';
@@ -339,6 +347,19 @@ describe('the converter and validator boundary never throws', () => {
     expect(Converters.generic((from) => succeed(from)).convert(1)).toSucceedWith(1);
     expect(Converters.generic(() => fail('plain failure')).convert(1)).toFailWith(/^plain failure$/);
     expect(Validators.generic(() => fail('plain failure')).validate(1)).toFailWith(/^plain failure$/);
+  });
+});
+
+describe('the boundary depth across copies of the package', () => {
+  test('two independently loaded copies of the boundary module share one depth', async () => {
+    let copy: { _resultBoundary: { depth: number } } | undefined;
+    await jest.isolateModulesAsync(async () => {
+      copy = await import('../../packlets/base/boundary');
+    });
+    expect(copy).toBeDefined();
+    expect(copy?._resultBoundary).toBe(_resultBoundary);
+    expect(_resolveResultBoundary()).toBe(_resultBoundary);
+    expect(_resultBoundary.depth).toBe(0);
   });
 });
 

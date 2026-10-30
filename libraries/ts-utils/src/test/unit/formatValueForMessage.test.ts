@@ -25,6 +25,7 @@ import '../helpers/jest';
 import {
   DEFAULT_FORMAT_VALUE_MAX_LENGTH,
   DEFAULT_FORMAT_VALUE_STRING_MAX_LENGTH,
+  _rawJsonText,
   formatValueForMessage
 } from '../../packlets/base';
 import { SeededJsonValues } from '../helpers/seededJsonValues';
@@ -316,6 +317,13 @@ describe('formatValueForMessage', () => {
     test('renders JSON.rawJSON text', () => {
       const raw = (JSON as unknown as { rawJSON: (text: string) => unknown }).rawJSON('12');
       expect(formatValueForMessage(withBomb({ raw }))).toBe('{"raw":12,"boom":[Unreadable]}');
+    });
+
+    test('reads raw JSON only where the runtime supports it', () => {
+      const candidate = { rawJSON: '7' };
+      expect(_rawJsonText(candidate, {})).toBeUndefined();
+      expect(_rawJsonText(candidate, { isRawJSON: () => false })).toBeUndefined();
+      expect(_rawJsonText(candidate, { isRawJSON: () => true })).toBe('7');
     });
 
     test('renders like JSON.stringify for everything JSON.stringify could render', () => {

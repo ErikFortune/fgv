@@ -30,12 +30,6 @@ import {
   mapResults,
   succeed
 } from '../base';
-
-/**
- * The shared boundary state, held locally: reading it through the package's re-export chain costs
- * a getter call per access on the hot path.
- */
-const boundary: { depth: number } = _resultBoundary;
 import {
   ConstraintOptions,
   ConversionErrorFormatter,
@@ -45,6 +39,12 @@ import {
   OnError
 } from './converter';
 import { GenericDefaultingConverter } from './defaultingConverter';
+
+/**
+ * The shared boundary state, held locally: reading it through the package's re-export chain costs
+ * a getter call per access on the hot path.
+ */
+const boundary: { depth: number } = _resultBoundary;
 
 /**
  * Internal helper that recursively unwraps converter and array types.
