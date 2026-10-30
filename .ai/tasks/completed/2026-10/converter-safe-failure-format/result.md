@@ -3,49 +3,55 @@
 **Shipped:** converter and validator failure messages can no longer throw. A new
 `formatValueForMessage` in `@fgv/ts-utils` renders any value — cyclic, `BigInt`, symbol, Proxy,
 throwing getter, huge or deep — as bounded text, and is byte-identical to `JSON.stringify` for
-JSON-safe values within its bounds. `BaseConverter` and `GenericValidator` additionally turn any
-throw from the function they wrap into a `Failure`, so `convert`, `validate` and `guard` never throw.
+every value `JSON.stringify` rendered without throwing, up to its length bound. `BaseConverter` and
+`GenericValidator` additionally turn any throw from the function they wrap into a `Failure`, so
+`convert`, `validate` and `guard` never throw, and the recursive JSON converters fail at once on a
+cycle.
 
 Origin: personaility#714 (fgv-ask), found by personaility#713. Base / PR target: `integration/asks`.
 PR: #TBD.
 
 ## The formatter
 
+*As revised in review round 1 (below); the round-0 design rendered everything with its own walker.*
+
 `formatValueForMessage(value: unknown, options?: IFormatValueForMessageOptions): string` in
 `ts-utils` `base` (`src/packlets/base/formatValue.ts`), exported from the package root with
 `IFormatValueForMessageOptions` (`maxLength?`, `maxDepth?`, `indent?`, `style?: 'json' | 'string'`),
-`DEFAULT_FORMAT_VALUE_MAX_LENGTH` (200) and `DEFAULT_FORMAT_VALUE_MAX_DEPTH` (16).
+`DEFAULT_FORMAT_VALUE_MAX_LENGTH` (200), `DEFAULT_FORMAT_VALUE_MAX_DEPTH` (16) and
+`DEFAULT_FORMAT_VALUE_STRING_MAX_LENGTH` (1000).
 
-| input | rendering |
-|---|---|
-| JSON-safe, within bounds | exactly `JSON.stringify(value, undefined, indent)` |
-| top-level `undefined` | `undefined` (what `${JSON.stringify(undefined)}` produced) |
-| reference back to an ancestor | `[Circular]` |
-| `BigInt` / symbol / function / nested `undefined` | `5n` / `Symbol(s)` / `[Function f]` / `undefined` |
-| class instance | `Socket {"connecting":false,"parser":{"socket":[Circular]}}` |
-| typed array | `Uint8Array [1,2,3]` |
-| throwing getter, Proxy trap, revoked Proxy | `[Unreadable]` (per property, or for the whole object) |
-| `Date` | as `JSON.stringify`, through the intrinsic `Date` methods |
-| user `toJSON` | **not invoked** |
-| over `maxLength` | cut to `maxLength` ending in `…`; walk stops once the budget is spent |
-| options whose accessors throw, stack exhaustion with bounds lifted | `[Unreadable]` |
+1. **`JSON.stringify(value, replacer, indent)` first.** The replacer intervenes only where
+   `JSON.stringify` would throw: a reference back to an object on the active ancestor path becomes
+   `"[Circular]"`, a `BigInt` becomes `"123n"`. It also keeps a lower bound on the output length and a
+   call count, and abandons the call once the output must exceed `maxLength` or the walk exceeds
+   `max(10 000, 50 × maxLength)` calls.
+2. **Fallback renderer** when that produces nothing (a top-level `undefined`, symbol or function),
+   still throws (a throwing getter, Proxy trap or `toJSON`, stack exhaustion) or is abandoned: bare
+   tokens `[Circular]`, `5n`, `Symbol(s)`, `[Function f]`, `undefined`, `Class {…}` prefixes,
+   `[Unreadable]` for what cannot be read, `maxDepth` elision, no `toJSON`.
+3. **Then the `maxLength` cut**, ending in `…`.
 
-`style: 'string'` is `String(value)` (template-literal text), falling back to the JSON rendering when
-that throws, bounded by `maxLength`. It exists so the sites that always interpolated the value
-directly keep their text. Decisions and reasoning are in `state.md` D1–D2.
+So every value `JSON.stringify` rendered without throwing renders byte-identically up to the bound,
+including dropped `undefined`/function members, `toJSON`, class instances, `Map`s, boxed primitives
+and nesting deeper than 16. `style: 'string'` is `String(value)` with the JSON rendering as the
+fallback where `String()` throws, bounded at 1000 by default.
 
 **Compatibility evidence** (`formatValueForMessage.test.ts`): 20 representative JSON values compared
 compact and indented (2 and 4); NaN/±Infinity, null-prototype objects, `Date`s, repeated non-cyclic
-references; 500 seeded generated JSON values (strings with escapes, astral and lone-surrogate
-characters, `-0`, exponents, numeric keys) compared at default bounds — the test asserts both sides
-of the 200-char bound were exercised — plus unbounded and indented; 300 more checking that a
-truncated rendering is a prefix of `JSON.stringify` plus `…`.
+references; 500 seeded generated JSON values compared at default bounds — the test asserts both
+sides of the 200-char bound were exercised — plus unbounded and indented; 300 more checking that a
+truncated rendering is a prefix of `JSON.stringify` plus `…`; and, from round 1, 15 values that are
+not JSON-safe but rendered without throwing (the reviewer's `p2.js` set), compared compact and
+indented. The reviewer's `p2.js` probe now reports `DIFF` only for values over 200 characters and,
+in the `'string'` style, for the two inputs that used to throw.
 
 ## Boundary guard: added
 
-See `state.md` D3. Short form: the formatter cannot cover a throw from the converter's own property
-reads (a Proxy `get` trap inside `Converters.object`), the guard is one place, and the error is not
-lost — it becomes the `Failure` message.
+See `state.md` D3 and D5. Short form: the formatter cannot cover a throw from the converter's own
+property reads (a Proxy `get` trap inside `Converters.object`), and the guard is one place. The error
+is not lost: it becomes a failure reading `converter threw: <message>` or `validator threw: <message>`.
+Stack exhaustion is re-thrown below the outermost boundary so that it fails once (review round 1).
 
 ## Sweep table — every `JSON.stringify` in the two packages' non-test sources
 
@@ -152,8 +158,9 @@ These throw on a symbol (template literal) or on a null-prototype object / trapp
 
 ## Downstream test text changes
 
-None. No test outside the four new or extended test files was edited, and the repo-wide `rush test`
-passed (below), which is the evidence for the compatibility contract.
+None. No test outside the four new or extended test files was edited, in round 0 or round 1, and
+the repo-wide `rush test` passed both times (below), which is the evidence for the compatibility
+contract.
 
 ## Gates
 
@@ -165,6 +172,10 @@ Run from the repo root of the worktree, logs in `.gate-logs/`.
 | `rush change --verify --target-branch origin/integration/asks` | 0 | – | – |
 | `rush rebuild` | 0 | 0 | 1 (tracked-symlink notice) |
 | `rush test` (39 of 39 projects, no flaky re-runs needed) | 0 | 0 | 1 (tracked-symlink notice) |
+| **round 1:** `rush rebuild` | 0 | 0 | 1 (tracked-symlink notice) |
+| **round 1:** `rush test` (39 of 39, no flaky re-runs) | 0 | 0 | 1 (tracked-symlink notice) |
+| **round 1:** package build / lint / test, all four packages | 0 / 0 / 0 each | 0 | 0 |
+| **round 1:** `change --verify`, feed `--check`, `verify-capability-docs`, prettier `--check` | 0, 0, 0, 0 | – | – |
 | `ts-utils` build / lint / test | 0 / 0 / 0 | 0 | 0 |
 | `ts-json-base` build / lint / test | 0 / 0 / 0 | 0 | 0 |
 | `ts-extras` build / lint / test | 0 / 0 / 0 | 0 | 0 |
@@ -180,14 +191,37 @@ untouched by this stream.
 
 ## Observations, not fixed
 
-- **The recursive JSON converters** (`ts-json-base` `jsonObject` / `jsonArray` / `jsonValue`, both
-  families) recurse into a cycle until the stack is exhausted. The guard makes that a `Failure`, but
-  the message carries one path prefix per level (27 KB measured on a two-key cycle). A cycle check
-  there would fail fast. Recorded in `docs/TECH_DEBT.md`.
-- **`isJsonObject` / `isJsonPrimitive` throw on a Proxy whose traps throw**, so
-  `classifyJsonValue(proxy)` still throws. These are type guards, outside this stream.
+- ~~The recursive JSON converters recurse into a cycle until the stack is exhausted~~ — fixed in
+  review round 1 (P1-1); the TECH_DEBT entry this stream had added was retired in the same PR.
+- ~~`classifyJsonValue(proxy)` still throws~~ — fixed in review round 1 (P2-3). `isJsonObject` /
+  `isJsonPrimitive` themselves still throw on a trapping Proxy; they are type guards.
 - **Element-wise converters aggregate one message per element**, so a huge invalid array yields a
   huge message. That is by design and not a formatting issue; the tests skip the large-array case
   for those families.
-- **`maxDepth` 16 is part of the contract.** A JSON value nested more than 16 deep but under 200
-  characters renders with `[…]` where `JSON.stringify` would not. No downstream test hit it.
+- ~~`maxDepth` 16 is part of the contract~~ — since round 1 it applies to the fallback only.
+- **The JSON active path is module state.** A recursive JSON conversion started from inside a
+  callback of another one, over an object the outer walk is still inside, reports a cycle. JSON
+  cannot be cyclic, and nothing in the repo does this.
+- **Two `RangeError`s that are not stack exhaustion** (an invalid array length, `toFixed(200)`) also
+  propagate to the outermost boundary, losing only their nested path prefix. Detection is by
+  constructor and name (`RangeError`, `InternalError`), not by message, and a check that itself throws
+  counts as exhaustion.
+
+## Review round 1
+
+Reviewed at `fd26efbae`: one P1, three P2s, five P3s. Fixes in `610d9cf78` and `1551fd708`. "Red"
+means the new test failed when run against the `fd26efbae` sources (`tsutils-red2.log`: 10 of 340
+failed; `tsjb-red2.log`: 28 of 117 failed). The child-process cases were killed at their 15 s limit
+(`timedOut` true), and the suite did not hang.
+
+| finding | fix | test | red on `fd26efbae` |
+|---|---|---|---|
+| **P1-1** guard turns a fast stack overflow into an exponential hang (`a.k0 = a; a.k1 = a`, the socket shape, a 100k-deep DAG) | (1) `_atResultBoundary` in `ts-utils` `base/boundary.ts`: shared depth counter read into a local and restored in `finally` by arithmetic; below the outermost boundary a `RangeError`/`InternalError` (by constructor and name; a check that throws counts) is re-thrown, so it fails once. (2) `_JsonActivePath` in `ts-json-base` `json/activePath.ts`: `jsonObject`/`jsonArray`/`jsonValue`, converter and validator, fail at once with `circular reference at $.k0`; state is cleared outright when the outermost container exits. (4) TECH_DEBT P3 retired. | ts-utils: 4 child-process cases (two back-edges, converter and validator; socket shape; 20 000-deep DAG), each with a 15 s hard kill; in-process single-edge and propagation tests. ts-json-base: 5 child-process cases (two back-edges converter/validator, socket shape converter/validator, 20 000-deep DAG), a child-process path-message test, in-process single-edge, DAG-without-cycle, and "no state left behind" tests. | yes, except the ts-utils validator two-back-edge case, which finished in time on the old code; the ts-json-base validator cases were red |
+| **P2-1** failure text changed for inputs that rendered before | `JSON.stringify` with a minimal replacer first, the rich renderer only as the fallback, then the cut; `maxDepth` applies to the fallback only; top-level `undefined`/symbol/function render as tokens | 15 `p2.js`-style values asserted byte-identical, compact and indented; `toJSON` invoked once; existing compatibility tests | the byte-identity rows are new-contract tests and not meaningful against the old renderer; the reviewer's `p2.js` is the before/after evidence |
+| **P2-2** guard masks errors silently | failures read `converter threw: …` / `validator threw: …`; masking documented in both constructors' TSDoc, `CAPABILITIES.md` and `state.md` D5 (`ignoreErrors`, `oneOf`/`or`/`withAction`, `orDefault`, `guard`; `orThrow` loses class and stack) | `^converter threw: callback exploded$`, `^validator threw: validator exploded$` | yes (both) |
+| **P2-3** `classifyJsonValue` throws on a trapping Proxy | classification wrapped in `captureResult`, failure `Invalid JSON: <value>: <error>` | `classifyJsonValue › fails instead of throwing for a Proxy whose traps throw` | yes |
+| **P3-1** symbol-fallback wording; say what runs | option and function TSDoc rewritten: getters, Proxy traps and `toJSON` run (as in `JSON.stringify`); `toString` in the `'string'` style | – | – |
+| **P3-2** `'string'` style truncates at 200 | own default `DEFAULT_FORMAT_VALUE_STRING_MAX_LENGTH` (1000). Unbounded was rejected: `String()` of the 100 000-element fixture is 588 KB. Text changes only above 1000 characters, which is documented | `'y'.repeat(500)` unchanged; `'y'.repeat(5000)` cut at 1000; the large-array rows of the hostile table stay under 1500 | – |
+| **P3-3** `stringifyLogValue` fallback and marker | the `String()`-throws fallback renders with `formatValueForMessage` at limit + 1 and is cut with the same `...` as the JSON path; a `toJSON` returning `undefined` (which threw `TypeError` inside `onSuccess`) falls back to `[object Object]`. The established `[object Object]` fallback for cycles is kept: it is pinned in `logger.test.ts` and is not a throw | null-prototype long value ends in `...` at 40; `toJSON` → `undefined` case | – |
+| **P3-4** "costs about as much as a small one" overclaim | replaced by the actual bound: proportional to `maxLength` plus omitted members, capped at max(10 000, 50 × maxLength) calls | 2^64-path DAG returns at the bound; 20 000 omitted members capped | – |
+| **P3-5** `Error`/`Map`/`Set` readability in the fallback (optional) | not done: these now render exactly as `JSON.stringify` does unless something in the value throws | – | – |

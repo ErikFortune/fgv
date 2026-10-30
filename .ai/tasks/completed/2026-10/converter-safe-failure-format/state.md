@@ -80,3 +80,43 @@ Reasoning:
   `classifyJsonValue(proxy)` still throws. Type guards, not failure messages; not changed.
 - Element-wise converters (`arrayOf`, `recordOf`, `mapOf`, `tuple`, `Validators.arrayOf`) aggregate
   one message per element, so a 100 000-element input yields a long message. Not a formatting issue.
+
+## Review round 1 decisions
+
+### D5 — the boundary, revised
+
+- **Stack exhaustion propagates to the outermost boundary.** Converting it at every level let each
+  level go on to its next sibling and exhaust the stack again, which on two back-edges is
+  exponential. The nesting depth is a module-level counter. Each call reads it into a local before
+  incrementing, and restores it in a `finally` by arithmetic alone. A first attempt that restored it
+  outside a `finally` leaked the count when the catch itself hit the stack limit, and let the
+  exhaustion escape the outermost converter; the child-process tests caught that.
+- **Detection is by constructor and name, not message.** `RangeError` (V8, JavaScriptCore) or
+  `InternalError` (SpiderMonkey). A check that throws, because the stack is too close to its limit or
+  the thrown value is a trapping Proxy, counts as exhaustion, since propagating is the safe direction.
+  The cost is that a rare non-exhaustion `RangeError` loses its nested path prefix.
+- **Failures are prefixed** `converter threw:` / `validator threw:`.
+- **Masking, stated plainly.** A buggy callback is a failure, so whatever expects failures hides it:
+  `convertOptional` with `ignoreErrors`, `oneOf` / `or` / `withAction`, `orDefault`, and `guard`
+  (`false`). `orThrow` re-raises the message without the original class or stack.
+
+### D6 — the formatter, revised (supersedes D1's "no `toJSON`")
+
+`JSON.stringify` with a minimal replacer first; the D1 walker is now the fallback for what still
+throws. Byte identity therefore extends to everything `JSON.stringify` rendered, which a hand-written
+walker could only approximate. The replacer's lower-bound length and call budget keep the first
+attempt bounded on a huge or exponentially shared graph. Tokens inside a `JSON.stringify` rendering
+are quoted strings (`"[Circular]"`, `"123n"`), because a replacer can only return JSON values; the
+fallback keeps them bare.
+
+### D7 — the JSON cycle check
+
+`_JsonActivePath` (internal export of `ts-json-base` `json`) is shared by the six recursive JSON
+converters and validators, because they call one another. It is cleared outright when the outermost
+container exits, so an exit cut short by stack exhaustion cannot leave an entry that reports a false
+cycle later.
+
+### Not done
+
+- P3-5 (readable `Error`/`Map`/`Set` in the fallback): optional, and after D6 these render exactly as
+  `JSON.stringify` does unless something in the value throws.

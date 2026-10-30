@@ -16,22 +16,27 @@ summary:
     captureResult guard at the converter / validator boundary; classify every site; show regression
     tests red first; repo-wide rush test.
   shipped: >
-    formatValueForMessage(value, options?) in ts-utils base, with IFormatValueForMessageOptions
-    (maxLength 200, maxDepth 16, indent, style) and two default constants. Every failure-message
-    JSON.stringify in both packages routed through it, plus the normalizers' unnormalizable-value
-    messages. BaseConverter and GenericValidator wrap their function so a throw becomes a Failure
-    carrying the error's message. Same pattern fixed in ts-extras conversion and ts-bcp47
-    validationHelpers. stringifyLogValue made total. 240 of 333 hostile-input cases red before the
-    fix; repo-wide rush test green with no downstream test text changed.
+    formatValueForMessage(value, options?) in ts-utils base: JSON.stringify with a replacer that only
+    turns an active-path cycle into "[Circular]" and a BigInt into "123n" (byte-identical for every
+    value JSON.stringify rendered, up to 200 characters), with a never-throwing fallback renderer for
+    what still throws; IFormatValueForMessageOptions and three default constants. Every
+    failure-message JSON.stringify in both packages routed through it, plus the normalizers'
+    messages. BaseConverter and GenericValidator turn a throw into a "converter threw:" /
+    "validator threw:" Failure and re-throw stack exhaustion to the outermost boundary. The recursive
+    ts-json-base JSON converters and validators fail at once on a cycle. classifyJsonValue no longer
+    throws. Same pattern fixed in ts-extras conversion and ts-bcp47 validationHelpers;
+    stringifyLogValue made total. 240 of 333 hostile-input cases red before the fix; repo-wide rush
+    test green with no downstream test text changed.
   diverged: >
-    The sweep found the same throw in template-literal and String() failure sites (symbols,
-    null-prototype objects, Proxies) that the brief's JSON.stringify count did not cover; they were
-    fixed with an added style: 'string' option that keeps their text rather than switching them to
-    the JSON rendering. The compatibility contract is stated as within maxLength and maxDepth, not
-    length alone. The boundary guard was added (the brief left it open). Two c8 ignore directives on
-    reachable failure lines were removed. Left open: the recursive ts-json-base JSON converters walk
-    a cycle to stack exhaustion and fail with a very long message (TECH_DEBT P3), and
-    classifyJsonValue still throws on a trapping Proxy.
+    The sweep found the same throw in template-literal and String() failure sites that the brief's
+    JSON.stringify count did not cover; they were fixed with an added style: 'string' option that
+    keeps their text. The boundary guard was added (the brief left it open). Review round 1 reversed
+    two round-0 calls: the guard as first written turned stack overflow into an exponential hang and
+    now re-throws exhaustion to the outermost boundary; and the formatter, first a hand-written walker
+    that skipped toJSON per the brief, now calls JSON.stringify itself so every previously-rendered
+    value is byte-identical, with the walker as fallback. The recursive JSON converters gained a cycle
+    check (first recorded as TECH_DEBT, then fixed in the same stream). Two c8 ignore directives on
+    reachable failure lines were removed.
   sourceLine: '**Shipped:** converter and validator failure messages can no longer throw. A new `formatValueForMessage` in `@fgv/ts-utils` renders any value — cyclic, `BigInt`, symbol, Proxy, throwing getter, huge or deep — as bounded text, and is byte-identical to `JSON.stringify` for JSON-safe values within its bounds. `BaseConverter` and `GenericValidator` additionally turn any throw from the function they wrap into a `Failure`, so `convert`, `validate` and `guard` never throw.'
   headline: >
     A converter or validator handed a cyclic, BigInt or Proxy value now fails instead of throwing,
@@ -49,4 +54,4 @@ keywords:
   - bounded message length
   - compatibility contract
   - fgv-ask
-sourceHash: sha256:61d9b94cacd6cb48 # over brief.md + state.md + result.md
+sourceHash: sha256:a04c5a857795e01a # over brief.md + state.md + result.md
