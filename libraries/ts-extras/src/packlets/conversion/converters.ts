@@ -20,7 +20,16 @@
  * SOFTWARE.
  */
 
-import { Conversion, Converter, Converters, Result, captureResult, fail, succeed } from '@fgv/ts-utils';
+import {
+  Conversion,
+  Converter,
+  Converters,
+  Result,
+  captureResult,
+  fail,
+  formatValueForMessage,
+  succeed
+} from '@fgv/ts-utils';
 import { DateTime } from 'luxon';
 import Mustache from 'mustache';
 import { ExtendedArray, RangeOf, RangeOfProperties } from '../experimental';
@@ -41,7 +50,7 @@ export function templateString(defaultContext?: unknown): Conversion.StringConve
     undefined,
     (from: unknown, __self: Converter<string, unknown>, context?: unknown) => {
       if (typeof from !== 'string') {
-        return fail(`Not a string: ${JSON.stringify(from)}`);
+        return fail(`Not a string: ${formatValueForMessage(from)}`);
       }
       return captureResult(() => Mustache.render(from, context));
     }
@@ -70,7 +79,7 @@ export const isoDate: Converter<Date, unknown> = new Conversion.BaseConverter<Da
     }
     return fail(`Invalid date: ${from.invalidExplanation}`);
   }
-  return fail(`Cannot convert ${JSON.stringify(from)} to Date`);
+  return fail(`Cannot convert ${formatValueForMessage(from)} to Date`);
 });
 
 /**
@@ -97,7 +106,7 @@ export const isoDateTime: Converter<DateTime, unknown> = new Conversion.BaseConv
       }
       return fail(`Invalid date: ${from.invalidExplanation}`);
     }
-    return fail(`Cannot convert ${JSON.stringify(from)} to DateTime`);
+    return fail(`Cannot convert ${formatValueForMessage(from)} to DateTime`);
   }
 );
 

@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { Failure, Result, fail, succeed } from '../base';
+import { Failure, Result, fail, formatValueForMessage, succeed } from '../base';
 import { Validator } from './validator';
 import { ValidatorBase, ValidatorBaseConstructorParams } from './validatorBase';
 
@@ -141,7 +141,7 @@ export class CompositeIdValidator<
 
   protected override _validate(value: unknown, context?: TC): boolean | Failure<T> {
     if (typeof value !== 'string') {
-      return fail(`${value}: invalid non-string composite ID.`);
+      return fail(`${formatValueForMessage(value, { style: 'string' })}: invalid non-string composite ID.`);
     }
     const result = splitCompositeIdString(value, this._separator, this._split).onSuccess(
       ([collectionId, itemId]) =>

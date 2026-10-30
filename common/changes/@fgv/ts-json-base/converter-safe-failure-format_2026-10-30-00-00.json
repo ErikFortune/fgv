@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-json-base",
+      "comment": "The recursive jsonObject, jsonArray and jsonValue converters and validators fail at once on a cyclic input with 'circular reference at $.path', instead of recursing until the stack is exhausted. Their failure messages, and those of jsonPrimitive, literal and enumeratedValue, format the offending value with formatValueForMessage, and classifyJsonValue returns a Failure instead of throwing for a Proxy whose traps throw. Text is unchanged for inputs that previously rendered without throwing.",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@fgv/ts-json-base"
+}

@@ -20,7 +20,15 @@
  * SOFTWARE.
  */
 
-import { Converter, Converters, Result, Validation, fail, succeed } from '@fgv/ts-utils';
+import {
+  Converter,
+  Converters,
+  Result,
+  Validation,
+  fail,
+  formatValueForMessage,
+  succeed
+} from '@fgv/ts-utils';
 
 /**
  * A function which accepts a value of the expected type and reformats it to match
@@ -109,7 +117,7 @@ export class ValidationHelpers<T extends string, TC = unknown> {
       /* c8 ignore next 2 */
       return fail(`cannot convert "${from}" to canonical ${this.description}`);
     }
-    return fail(`invalid ${this.description} ("${JSON.stringify(from)}")`);
+    return fail(`invalid ${this.description} ("${formatValueForMessage(from)}")`);
   }
 
   /**

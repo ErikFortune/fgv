@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { Failure, fail } from '../base';
+import { Failure, fail, formatValueForMessage } from '../base';
 import { GenericValidator, GenericValidatorConstructorParams } from './genericValidator';
 
 /**
@@ -58,6 +58,6 @@ export class BooleanValidator<TC = unknown> extends GenericValidator<boolean, TC
     if (typeof from === 'boolean') {
       return true;
     }
-    return fail(`"${from}": not a boolean`);
+    return fail(`"${formatValueForMessage(from, { style: 'string' })}": not a boolean`);
   }
 }

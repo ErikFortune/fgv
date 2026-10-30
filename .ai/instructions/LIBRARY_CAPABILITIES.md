@@ -66,6 +66,7 @@ detail. `· pkg` names the owning package.*
 - **Error handling / fallible function?** → `Result<T>` · `ts-utils`
 - **Validating untyped JSON / config input?** → `Converters.object` · `ts-utils`
 - **Validating an existing class instance?** → `Validators` · `ts-utils`
+- **Putting an arbitrary value into a failure message?** → `formatValueForMessage`; never `JSON.stringify`, which throws on a cycle · `ts-utils`
 - **Map/collection with validation?** → `ResultMap` · `ts-utils`
 - **Constrain a string to one line — no breaks or control chars — where it will be framed?** → `singleLine`; a shape, NOT safety; closed domain → `enumeratedValue` · `ts-utils`
 - **Need a bounded most-recent-N ring of records with monotonic `seq` cursor paging…?** → `RetainingRingBuffer` · `ts-utils`
@@ -208,6 +209,7 @@ markers.*
 
 <!-- BEGIN GENERATED: recent-additions -->
 
+- **2026-10-30** — A converter or validator handed a cyclic, BigInt or Proxy value now fails instead of throwing, via a new formatValueForMessage that… ([#764](https://github.com/ErikFortune/fgv/pull/764)) · `ts-utils` `ts-json-base` `ts-extras` `ts-bcp47`
 - **2026-10-27** — A filesystem FileTree can now be a sandbox: absolutePathPolicy 'confined' maps every path beneath the prefix, 'verified' refuses… ([#763](https://github.com/ErikFortune/fgv/pull/763)) · `ts-json-base`
 - **2026-10-26** — A crash mid-write no longer leaves a torn memory record that fails the next open: FileTreeMemoryStore writes atomically wherever… ([#756](https://github.com/ErikFortune/fgv/pull/756)) · `ts-agent-memory` `ts-json-base`
 - **2026-10-26** — A memory read-modify-write can no longer silently lose a concurrent update: FileTreeMemoryStore put and delete take an expected seq… ([#759](https://github.com/ErikFortune/fgv/pull/759)) · `ts-agent-memory`
@@ -217,8 +219,7 @@ markers.*
 - **2026-10-26** — ICryptoProvider now generates and imports non-extractable HMAC-SHA256 keys itself, and composite ids can split at the first or last… ([#754](https://github.com/ErikFortune/fgv/pull/754)) · `ts-extras` `ts-web-extras` `ts-utils`
 - **2026-10-26** — MCP tools that need task execution are skipped with a reason kind, tool listing can be bounded by pages and total time, and a… ([#757](https://github.com/ErikFortune/fgv/pull/757)) · `ts-extras-mcp` `ts-extras` `testbed`
 - **2026-10-26** — The sqlite-vec indexes now store which embedding model wrote their vectors in the same file, and refuse to mix models or serve a… ([#753](https://github.com/ErikFortune/fgv/pull/753)) · `ts-agent-memory-sqlite-vec`
-- **2026-10-20** — mapSuccess and mapSuccessAsync now hand every failure to a supplied aggregator, even when some results succeeded, so a lenient fold… ([#752](https://github.com/ErikFortune/fgv/pull/752)) · `ts-utils`
 
-*Showing the 10 most recent of 78. Per-package history is in each `CAPABILITIES.md`.*
+*Showing the 10 most recent of 79. Per-package history is in each `CAPABILITIES.md`.*
 
 <!-- END GENERATED: recent-additions -->

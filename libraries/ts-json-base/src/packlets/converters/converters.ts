@@ -29,9 +29,11 @@ import {
   Validator,
   captureResult,
   fail,
+  formatValueForMessage,
   succeed
 } from '@fgv/ts-utils';
 import { JsonArray, JsonObject, JsonPrimitive, JsonValue, isJsonArray, isJsonObject } from '../json';
+import { activePath } from './activePath';
 
 /* eslint-disable @typescript-eslint/no-use-before-define */
 
@@ -66,7 +68,7 @@ export const jsonPrimitive: Converter<JsonPrimitive, IJsonConverterContext> = ne
         }
         break;
     }
-    return fail(`"${String(from)}": invalid JSON primitive.`);
+    return fail(`"${formatValueForMessage(from, { style: 'string' })}": invalid JSON primitive.`);
   }
 );
 
@@ -91,32 +93,34 @@ export const jsonObject: Converter<JsonObject, IJsonConverterContext> = new Conv
     if (!isJsonObject(from)) {
       return fail('invalid JSON object.');
     }
-    const obj: JsonObject = {};
-    const errors: string[] = [];
-    for (const [name, value] of Object.entries(from)) {
-      if (value === undefined && ctx?.ignoreUndefinedProperties === true) {
-        // optionally ignore undefined values
-        continue;
+    return activePath.container<Result<JsonObject>>(from, fail, () => {
+      const obj: JsonObject = {};
+      const errors: string[] = [];
+      for (const [name, value] of Object.entries(from)) {
+        if (value === undefined && ctx?.ignoreUndefinedProperties === true) {
+          // optionally ignore undefined values
+          continue;
+        }
+        if (name === '__proto__') {
+          // Never copied: see the doc comment.
+          continue;
+        }
+        activePath
+          .member(name, () => jsonValue.convert(value, ctx))
+          .onSuccess((v: JsonValue) => {
+            obj[name] = v;
+            return succeed(v);
+          })
+          .onFailure((m) => {
+            errors.push(`${name}: ${m}`);
+            return fail(m);
+          });
       }
-      if (name === '__proto__') {
-        // Never copied: see the doc comment.
-        continue;
+      if (errors.length > 0) {
+        return fail(`invalid JSON object:\n${errors.join('\n')}`);
       }
-      jsonValue
-        .convert(value, ctx)
-        .onSuccess((v: JsonValue) => {
-          obj[name] = v;
-          return succeed(v);
-        })
-        .onFailure((m) => {
-          errors.push(`${name}: ${m}`);
-          return fail(m);
-        });
-    }
-    if (errors.length > 0) {
-      return fail(`invalid JSON object:\n${errors.join('\n')}`);
-    }
-    return succeed(obj);
+      return succeed(obj);
+    });
   }
 );
 
@@ -138,30 +142,32 @@ export const jsonArray: Converter<JsonArray, IJsonConverterContext> = new Conver
     if (!isJsonArray(from)) {
       return fail('not an array');
     }
-    const arr: JsonValue[] = [];
-    const errors: string[] = [];
-    for (let i = 0; i < from.length; i++) {
-      const value = from[i];
-      if (value === undefined && ctx?.ignoreUndefinedProperties === true) {
-        // convert undefined to 'null' for parity with JSON.stringify
-        arr.push(null);
-        continue;
+    return activePath.container<Result<JsonArray>>(from, fail, () => {
+      const arr: JsonValue[] = [];
+      const errors: string[] = [];
+      for (let i = 0; i < from.length; i++) {
+        const value = from[i];
+        if (value === undefined && ctx?.ignoreUndefinedProperties === true) {
+          // convert undefined to 'null' for parity with JSON.stringify
+          arr.push(null);
+          continue;
+        }
+        activePath
+          .member(i, () => jsonValue.convert(value, ctx))
+          .onSuccess((v) => {
+            arr.push(v);
+            return succeed(v);
+          })
+          .onFailure((m) => {
+            errors.push(`${i}: ${m}`);
+            return fail(m);
+          });
       }
-      jsonValue
-        .convert(value, ctx)
-        .onSuccess((v) => {
-          arr.push(v);
-          return succeed(v);
-        })
-        .onFailure((m) => {
-          errors.push(`${i}: ${m}`);
-          return fail(m);
-        });
-    }
-    if (errors.length > 0) {
-      return fail(`array contains non-json elements:\n${errors.join('\n')}`);
-    }
-    return succeed(arr);
+      if (errors.length > 0) {
+        return fail(`array contains non-json elements:\n${errors.join('\n')}`);
+      }
+      return succeed(arr);
+    });
   }
 );
 
@@ -261,7 +267,7 @@ export function enumeratedValue<T>(
       if (index >= 0) {
         return succeed(effectiveValues[index]);
       }
-      return fail(message ?? `Invalid enumerated value ${JSON.stringify(from)}`);
+      return fail(message ?? `Invalid enumerated value ${formatValueForMessage(from)}`);
     }
   );
 }

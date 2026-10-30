@@ -1159,6 +1159,13 @@ interface IStringSchemaOptions extends ISchemaOptions {
 // @public
 type ItemNameTransformFunction<T> = (name: string, item: T) => Result<string>;
 
+// @internal
+export class _JsonActivePath {
+    container<R>(container: object, onCycle: (message: string) => R, body: () => R): R;
+    member<T>(member: string | number, body: () => T): T;
+    get path(): string;
+}
+
 // @public
 export interface JsonArray extends Array<JsonValue> {
 }
