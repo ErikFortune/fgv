@@ -120,3 +120,30 @@ cycle later.
 
 - P3-5 (readable `Error`/`Map`/`Set` in the fallback): optional, and after D6 these render exactly as
   `JSON.stringify` does unless something in the value throws.
+
+## Review round 2 decisions
+
+### D8 — the fallback is `JSON.stringify` reimplemented (supersedes D1 and D6's walker)
+
+Above the bound, the fast path is abandoned. A fallback with its own semantics made the cut text
+differ from `JSON.stringify`'s, so the fallback now follows `SerializeJSONProperty` member for member.
+`maxDepth` is removed: the length bound already limits recursion, and a depth cut would be another
+deviation. The call budget is removed: omitted members are leaves, so they are bounded by the visited
+objects' own keys, and a cap would change the text of a valid value.
+
+### D9 — exhaustion detection by name and substring
+
+`InternalError`, or a `RangeError` whose message contains `call stack` or `too much recursion`. A
+`RegExp` is unusable here: V8 compiles it on first use, and compiling one near stack exhaustion is a
+fatal process abort, not an exception.
+
+### D10 — the boundary inlined
+
+Written out in both wrappers with the shared depth held in a module-local alias. Through the package
+re-export chain every access was a getter call, which made the inlined version slower than round 1
+until it was aliased.
+
+### D11 — one coverage directive, pending approval
+
+`_rawJsonText`'s no-`JSON.isRawJSON` branch. See `result.md` § Review round 2.
+

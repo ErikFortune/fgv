@@ -13,29 +13,30 @@ PR: #TBD.
 
 ## The formatter
 
-*As revised in review round 1 (below); the round-0 design rendered everything with its own walker.*
+*As revised in review rounds 1 and 2 (below); the round-0 design rendered everything with its own
+walker.*
 
 `formatValueForMessage(value: unknown, options?: IFormatValueForMessageOptions): string` in
 `ts-utils` `base` (`src/packlets/base/formatValue.ts`), exported from the package root with
-`IFormatValueForMessageOptions` (`maxLength?`, `maxDepth?`, `indent?`, `style?: 'json' | 'string'`),
-`DEFAULT_FORMAT_VALUE_MAX_LENGTH` (200), `DEFAULT_FORMAT_VALUE_MAX_DEPTH` (16) and
-`DEFAULT_FORMAT_VALUE_STRING_MAX_LENGTH` (1000).
+`IFormatValueForMessageOptions` (`maxLength?`, `indent?`, `style?: 'json' | 'string'`),
+`DEFAULT_FORMAT_VALUE_MAX_LENGTH` (200) and `DEFAULT_FORMAT_VALUE_STRING_MAX_LENGTH` (1000).
 
 1. **`JSON.stringify(value, replacer, indent)` first.** The replacer intervenes only where
    `JSON.stringify` would throw: a reference back to an object on the active ancestor path becomes
-   `"[Circular]"`, a `BigInt` becomes `"123n"`. It also keeps a lower bound on the output length and a
-   call count, and abandons the call once the output must exceed `maxLength` or the walk exceeds
-   `max(10 000, 50 × maxLength)` calls.
-2. **Fallback renderer** when that produces nothing (a top-level `undefined`, symbol or function),
-   still throws (a throwing getter, Proxy trap or `toJSON`, stack exhaustion) or is abandoned: bare
-   tokens `[Circular]`, `5n`, `Symbol(s)`, `[Function f]`, `undefined`, `Class {…}` prefixes,
-   `[Unreadable]` for what cannot be read, `maxDepth` elision, no `toJSON`.
+   `"[Circular]"`, a `BigInt` becomes `"123n"`. It also keeps a lower bound on the output length
+   (a non-null object counts 1) and abandons the call once the output must exceed `maxLength`.
+2. **A reimplementation of the same serialization** when that throws (a getter, Proxy trap or
+   `toJSON`, stack exhaustion), produces nothing (a top-level `undefined`, symbol or function), or is
+   abandoned. It follows `SerializeJSONProperty` — `toJSON`, the two substitutions, `rawJSON`, boxed
+   primitives, omitted members, `null` in arrays, `ToLength` on array lengths — contains every read
+   as `[Unreadable]` in place, and stops writing at the bound.
 3. **Then the `maxLength` cut**, ending in `…`.
 
-So every value `JSON.stringify` rendered without throwing renders byte-identically up to the bound,
-including dropped `undefined`/function members, `toJSON`, class instances, `Map`s, boxed primitives
-and nesting deeper than 16. `style: 'string'` is `String(value)` with the JSON rendering as the
-fallback where `String()` throws, bounded at 1000 by default.
+So for every value `JSON.stringify` renders without throwing, the text is `JSON.stringify`'s, cut to
+the bound, and above the bound a cut rendering is a prefix of it. The only departures are the
+`"[Circular]"` and `"123n"` substitutions, `[Unreadable]`, and the top-level tokens. `style:
+'string'` is `String(value)` with the JSON rendering as the fallback where `String()` throws,
+bounded at 1000 by default.
 
 **Compatibility evidence** (`formatValueForMessage.test.ts`): 20 representative JSON values compared
 compact and indented (2 and 4); NaN/±Infinity, null-prototype objects, `Date`s, repeated non-cyclic
@@ -176,6 +177,10 @@ Run from the repo root of the worktree, logs in `.gate-logs/`.
 | **round 1:** `rush test` (39 of 39, no flaky re-runs) | 0 | 0 | 1 (tracked-symlink notice) |
 | **round 1:** package build / lint / test, all four packages | 0 / 0 / 0 each | 0 | 0 |
 | **round 1:** `change --verify`, feed `--check`, `verify-capability-docs`, prettier `--check` | 0, 0, 0, 0 | – | – |
+| **round 2:** package build / lint / test, all four packages | 0 / 0 / 0 each | 0 | 0 |
+| **round 2:** `rush rebuild` | 0 | 0 | 1 (tracked-symlink notice) |
+| **round 2:** `rush test` (39 of 39, no flaky re-runs) | 0 | 0 | 1 (tracked-symlink notice) |
+| **round 2:** `change --verify`, feed `--check`, `verify-capability-docs`, prettier `--check` | 0, 0, 0, 0 | – | – |
 | `ts-utils` build / lint / test | 0 / 0 / 0 | 0 | 0 |
 | `ts-json-base` build / lint / test | 0 / 0 / 0 | 0 | 0 |
 | `ts-extras` build / lint / test | 0 / 0 / 0 | 0 | 0 |
@@ -198,7 +203,7 @@ untouched by this stream.
 - **Element-wise converters aggregate one message per element**, so a huge invalid array yields a
   huge message. That is by design and not a formatting issue; the tests skip the large-array case
   for those families.
-- ~~`maxDepth` 16 is part of the contract~~ — since round 1 it applies to the fallback only.
+- ~~`maxDepth` 16 is part of the contract~~ — removed in round 2; the length bound limits depth.
 - **The JSON active path is module state.** A recursive JSON conversion started from inside a
   callback of another one, over an object the outer walk is still inside, reports a cycle. JSON
   cannot be cyclic, and nothing in the repo does this.
@@ -225,3 +230,42 @@ failed; `tsjb-red2.log`: 28 of 117 failed). The child-process cases were killed 
 | **P3-3** `stringifyLogValue` fallback and marker | the `String()`-throws fallback renders with `formatValueForMessage` at limit + 1 and is cut with the same `...` as the JSON path; a `toJSON` returning `undefined` (which threw `TypeError` inside `onSuccess`) falls back to `[object Object]`. The established `[object Object]` fallback for cycles is kept: it is pinned in `logger.test.ts` and is not a throw | null-prototype long value ends in `...` at 40; `toJSON` → `undefined` case | – |
 | **P3-4** "costs about as much as a small one" overclaim | replaced by the actual bound: proportional to `maxLength` plus omitted members, capped at max(10 000, 50 × maxLength) calls | 2^64-path DAG returns at the bound; 20 000 omitted members capped | – |
 | **P3-5** `Error`/`Map`/`Set` readability in the fallback (optional) | not done: these now render exactly as `JSON.stringify` does unless something in the value throws | – | – |
+
+## Review round 2
+
+Reviewed at `3fdbb7a4b`: P1-1, P2-2 and P2-3 confirmed fixed, three P2s and five P3s remaining. Fixes
+in `9d57cf017`. "Red" means the new test failed against the `3fdbb7a4b` sources
+(`tsutils-red3.log`: 20 of 2235 failed). No downstream test outside this stream's own was changed
+except the `[object Object]` pins in `logger.test.ts`, below.
+
+| finding | fix | test | red on `3fdbb7a4b` |
+|---|---|---|---|
+| **P2-A** byte identity breaks above `maxLength`: the length budget switched to a renderer with different semantics (`p6.js`: 23k of 57k cut renderings were not a prefix of `JSON.stringify`) | The fallback is now a reimplementation of `JSON.stringify`'s serialization with the same replacer behaviour: `toJSON` in a `try` (`[Unreadable]` on a throw), `undefined`/function/symbol omitted from objects and `null` in arrays, boxed primitives unwrapped (a boxed `BigInt` as `"7n"`), `JSON.rawJSON` honoured, `ToLength` on array lengths, no class prefixes, so typed arrays, `Map`s and errors render as `JSON.stringify` renders them. `"[Circular]"` and `"123n"` are quoted in both paths. `maxDepth` and its default constant are removed, since a depth cut is a further deviation and the length bound already limits depth. P3-1: the lower bound counts a non-null object as 1 (a boxed number renders as `5`). P3-2: the call budget is removed, because members `JSON.stringify` omits are leaves, so the walk is bounded by the visited objects' own keys, and any cap would change the text of an object with many omitted members. | A seeded property test over `p6.js`'s generator: 4 000 values × `maxLength` 20/50/200, plus indent 2 at 60, each asserting `f(v, { maxLength }) === truncate(JSON.stringify(v))`. The test asserts more than 1 000 cases are over the bound. Also the nine `p6.js` shapes, compact and indented; a member-by-member parity test of the fallback (forced by a throwing sibling) against `JSON.stringify`; array-length `ToLength`; `rawJSON`; and 40 000 omitted members rendering exactly. `p6.js` now reports `random 56712 diffs 0`. | yes |
+| **P2-B** `_isStackExhaustion` matched every `RangeError` (`p7.js`) | Stack exhaustion only: `name === 'InternalError'`, or `name === 'RangeError'` with a message containing `call stack` or `too much recursion`. Judged by `name`, which also works across realms. "Check throws ⇒ yes" is kept. **The message is matched by substring, not by the suggested `RegExp`.** V8 compiles a regular expression on first use, and compiling one with the stack nearly exhausted aborts the process (`FATAL ERROR: RegExpCompiler Allocation failed`), which is exactly when the check runs. The first version used a `RegExp` and crashed the Jest worker. The doc claiming this "loses nothing but nested path context" is replaced. | An ordinary `RangeError` (`new Date('bad').toISOString()`) keeps its nested path; is dropped by `arrayOf(…, 'ignoreErrors')`; is skipped by `oneOf`; is absorbed by `optional('ignoreErrors')` and `convertOptional(…, 'ignoreErrors')`; and a nested `guard` answers `false`. A `RangeError` reading as exhaustion is still propagated. `p7.js` now shows every `ignoreErrors`/`oneOf`/`optional`/`guard` row as `OK`. | yes (3 tests) |
+| **P2-C** two closures per call; hot path about 1.5× slower | The boundary is written out in each wrapper (`baseConverter.ts`, `genericValidator.ts`), passing the arguments straight through, with no per-call allocation. The shared depth lives in an internal `_resultBoundary` object, aliased to a module-local `const` in each file. Read through the package's `export *` chain, every access was a getter call: with the inlined wrapper alone the benchmark got *slower* (object median ≈ 900 ms), and with the alias it reached the baseline. | `p5b.js`, below | – |
+| **P3-1** getters can run twice | Documented in the `formatValueForMessage` TSDoc and in `CAPABILITIES.md`. | – | – |
+| **P3-2** `_JsonActivePath` false positive | Documented on the class: a JSON conversion started *during* another one, such as from a getter, over an object the outer walk is still inside reports a cycle. `p8.js` "getter re-enters on ancestor" shows it. | – | – |
+| **P3-3** mutable singleton exported from the package root | Each of the `converters` and `validators` packlets now holds its own instance in a file its index does not export (`converters/activePath.ts`, `validators/activePath.ts`). Their three recursive members call only each other, so nothing needs a shared instance. Only the stateless class `_JsonActivePath` is still exported, because the packlet rule allows a cross-packlet import only through the `json` index, and the root re-exports that index wholesale. `p8.js` reports `_jsonActivePath` as `undefined` on the package. | `ts-json-base` suite | – |
+| **P3-4** `stringifyLogValue`'s `[object Object]` case | Routed through `formatValueForMessage` for a cyclic, `BigInt` or partly unreadable object. `[object Object]` is kept only where the rendering is nothing at all (a throwing `toJSON`, or one returning `undefined`). The three `logger.test.ts` pins, and three `stringifyLogValue.test.ts` pins, were changed. The new text is strictly better: `{"name":"test","self":"[Circular]"}` instead of `[object Object]` names the content and the cycle. The `...` marker and the 40-character limit are unchanged. | the changed pins and a `BigInt` case | yes |
+| **P3-5** `captureResult` between nested levels | One sentence in both constructors' TSDoc and in `CAPABILITIES.md`. | the propagated exhaustion is caught by a `captureResult` between two converters | – |
+
+**Coverage directive.** `_rawJsonText` has a `c8 ignore` on the branch for engines without
+`JSON.isRawJSON`, which the Node the suite runs on always has. `jest.replaceProperty` refuses to
+replace a function, and a hand-rolled save/restore of a global is a named anti-pattern here. **This
+needs your approval**, per the testing guidelines; the alternative is to drop `rawJSON` support,
+which would break parity on runtimes that have it.
+
+### `p5b.js`, same machine, back to back
+
+Runs alternated base / round 1 / round 2, six iterations each per invocation. `base` is the
+pre-guard `ts-utils` (`88c3f0172`), `round1` is `3fdbb7a4b`, and `round2` is this commit.
+
+| build | `arrayOf(object)` over 1M (median ms) | `arrayOf(number)` over 3M (median ms) |
+|---|---|---|
+| base (no guard) | 516 | 190 |
+| round 1 (two closures per call) | 782 | 312 |
+| round 2 | 528 | 213 |
+
+Round 2 is within noise on the object case (+2%) and about 12% on the 3M-number case, where the
+per-call work is smallest and the `try`/`finally` is the largest share.
+

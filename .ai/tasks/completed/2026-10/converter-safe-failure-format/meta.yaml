@@ -35,8 +35,12 @@ summary:
     now re-throws exhaustion to the outermost boundary; and the formatter, first a hand-written walker
     that skipped toJSON per the brief, now calls JSON.stringify itself so every previously-rendered
     value is byte-identical, with the walker as fallback. The recursive JSON converters gained a cycle
-    check (first recorded as TECH_DEBT, then fixed in the same stream). Two c8 ignore directives on
-    reachable failure lines were removed.
+    check (first recorded as TECH_DEBT, then fixed in the same stream). Review round 2 made the
+    fallback a reimplementation of JSON.stringify so parity holds above the length bound, removed
+    maxDepth, narrowed stack-exhaustion detection to name plus message substring (a RegExp aborts V8
+    near the stack limit), and inlined the boundary back to baseline speed. Two c8 ignore directives
+    on reachable failure lines were removed; one was added for engines without JSON.isRawJSON,
+    pending approval.
   sourceLine: '**Shipped:** converter and validator failure messages can no longer throw. A new `formatValueForMessage` in `@fgv/ts-utils` renders any value — cyclic, `BigInt`, symbol, Proxy, throwing getter, huge or deep — as bounded text, and is byte-identical to `JSON.stringify` for JSON-safe values within its bounds. `BaseConverter` and `GenericValidator` additionally turn any throw from the function they wrap into a `Failure`, so `convert`, `validate` and `guard` never throw.'
   headline: >
     A converter or validator handed a cyclic, BigInt or Proxy value now fails instead of throwing,
@@ -54,4 +58,4 @@ keywords:
   - bounded message length
   - compatibility contract
   - fgv-ask
-sourceHash: sha256:a04c5a857795e01a # over brief.md + state.md + result.md
+sourceHash: sha256:ed02a020768812ff # over brief.md + state.md + result.md
