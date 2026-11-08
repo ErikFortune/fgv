@@ -258,4 +258,15 @@ must be 0; the only `warning` allowed is Rush's tracked-symlink notice).
 | repo-wide `rush test` | 36 passed; `@fgv/ts-extras-mcp` failed one test in `egress.test` ("a slow tool … outlives the guarded fetch's headers deadline"), the known flake, which blocked `@fgv/testbed` and `@fgv/ts-extras-re2`. Retried those three once with `--only`: all pass, 0 failure patterns. No NUL padding | `r2-gate-test.log`, `r2-gate-test-retry.log` |
 | `rush change --verify`, prettier 2.8.8, `verify-capability-docs`, `generate-capability-feed --check` | pass (feed regenerated: the line now tags `testbed`) | — |
 
+### Review round 2 re-run
+
+| gate | result | log |
+|---|---|---|
+| `ts-extras` build / lint / test | pass; 100% coverage | `r3-build2.log`, `r3-lint.log`, `r3-test3.log` |
+| `testbed` build / lint / test | pass | `r3-tb-build.log`, `r3-tb-lint.log`, `r3-tb-test.log` |
+| red-then-green, A5 and A6 (§ 3b) | 20 red without the accepted default; 4 red without the client-tool guard; 61/61 restored | `r3-red-p1.log`, `r3-red-p2.log`, `r3-green.log` |
+| repo-wide `rush rebuild` | pass — 0 failure patterns, tracked-symlink notice only, 7m35s | `r3-gate-rebuild.log` |
+| repo-wide `rush test` | 36 passed; `@fgv/ts-extras-mcp` failed one timing test in `egress.test` ("an answer over the cap on a resumed (Last-Event-ID) GET fails its request promptly…") — **not** the named slow-tool flake but the same file and the same timing class, in a package this branch does not touch; it blocked `@fgv/testbed` and `@fgv/ts-extras-re2`. Retried those three once with `--only`: all pass, 0 failure patterns. No NUL padding | `r3-gate-test.log`, `r3-gate-test-retry.log` |
+| `rush change --verify`, prettier 2.8.8, `verify-capability-docs`, `generate-capability-feed --check` | pass | — |
+
 No `c8 ignore` was added. No `code-reviewer` pass was run (per the brief; the orchestrator reviews).
