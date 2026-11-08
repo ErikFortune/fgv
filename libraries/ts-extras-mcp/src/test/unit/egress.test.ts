@@ -415,14 +415,16 @@ describe('static headers and redirects through globalThis.fetch', () => {
     const mcp = await listen((res) => res.writeHead(307, { location: `${other.origin}/elsewhere` }).end());
     servers.push(other.server, mcp.server);
 
-    // Control: without static headers the platform follows the redirect, so the other origin is
-    // reachable and would see whatever the request carried.
+    // Control: without static headers the request goes out with the SDK's own default
+    // `redirectPolicy: 'same-origin'`, so the MCP origin is reached and the cross-origin hop is not
+    // followed even before this package's refusal applies.
     await connectMcpSession({
       transport: createHttpTransport({ url: `${mcp.origin}/mcp` }).orThrow(),
       timeoutMs: 2000
     });
-    expect(other.seen.length).toBeGreaterThan(0);
-    other.seen.length = 0;
+    expect(mcp.seen.length).toBeGreaterThan(0);
+    expect(other.seen).toEqual([]);
+    mcp.seen.length = 0;
 
     const connected = await connectMcpSession({
       transport: createHttpTransport({

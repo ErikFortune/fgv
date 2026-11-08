@@ -118,9 +118,11 @@ export interface IMcpHttpTransportParams {
    * `'transport'`.
    *
    * **Any other `fetch` gets no protection from this package.** When omitted, the platform's
-   * `globalThis.fetch` is used, which follows redirects and connects to any address — including a
-   * private one — and the same is true of any function supplied here that does not guard. A custom
-   * `fetch` is still the right seam for a metered or pinned egress path.
+   * `globalThis.fetch` is used, which connects to any address — including a private one — and the
+   * same is true of any function supplied here that does not guard. A custom `fetch` is still the
+   * right seam for a metered or pinned egress path. Redirects are then bounded only by the SDK's
+   * own default `redirectPolicy: 'same-origin'`, which follows a redirect that keeps the method and
+   * the origin (or goes from http to https on the same host) and fails the request on any other.
    *
    * If the guarded fetch allows redirects, list the static credential headers above and
    * `mcp-session-id` in its `sensitiveHeaders`: `fetch` strips only `authorization` on a

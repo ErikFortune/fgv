@@ -2,7 +2,7 @@
   "changes": [
     {
       "packageName": "@fgv/ts-extras-mcp",
-      "comment": "dependency refresh: @modelcontextprotocol/sdk floor ^1.29.0 → ^1.32.2, above the vulnerable ranges of GHSA-6qxp-vccf-f47h and the other SDK advisories (OAuth credential exposure; transitive hono, ip-address, zod and @hono/node-server advisories).",
+      "comment": "dependency refresh: @modelcontextprotocol/sdk floor ^1.29.0 → ^1.32.2, above the vulnerable ranges of GHSA-6qxp-vccf-f47h and the other SDK advisories (OAuth credential exposure; transitive hono, ip-address, zod and @hono/node-server advisories). Behaviour change that arrives with it: SDK 1.32 defaults the Streamable HTTP transport to redirectPolicy same-origin, so without a consumer fetch a redirect to another origin now fails the request instead of being followed by the platform; the TSDoc and README say so.",
       "type": "patch"
     }
   ],
