@@ -952,6 +952,25 @@ export interface IAiProviderDescriptor {
    */
   readonly structuredOutput?: ReadonlyArray<IAiStructuredOutputCapability>;
   /**
+   * Per-model maximum output tokens — the largest `maxTokens` the provider accepts for a
+   * completion on that model — longest-prefix matched against the **resolved** completion model
+   * id. Absent (or no matching entry) means the limit is unknown.
+   *
+   * @remarks
+   * Same declaration idiom as `imageGeneration`, `embedding` and `structuredOutput`, resolved
+   * through the same alias-first helper by {@link AiAssist.resolveMaxOutputTokens}.
+   *
+   * The library's own registry declares **no catch-all** (`modelPrefix: ''`) here, and a test
+   * pins that. A wrong number is worse than none: a value above the real limit is refused by
+   * Anthropic and OpenAI, and a value below it silently truncates. A hand-built descriptor may
+   * still declare a catch-all; whether every model it can reach shares one limit is that
+   * descriptor's call.
+   *
+   * Each value is the limit a request **as ai-assist sends it** gets: a higher limit available only
+   * behind an opt-in beta header or a batch endpoint that ai-assist does not use is not recorded.
+   */
+  readonly maxOutputTokens?: ReadonlyArray<IAiMaxOutputTokensCapability>;
+  /**
    * Concrete model ids (prefix-matched) that must be invoked via the OpenAI
    * Responses API rather than chat completions — e.g. `gpt-5.5-pro`. Non-OpenAI
    * `apiFormat`s ignore this.
@@ -1084,6 +1103,23 @@ export interface IAiEmbeddingModelCapability {
    * rejects batches larger than this up front (no auto-chunking in v1).
    */
   readonly maxBatchSize?: number;
+}
+
+/**
+ * Maximum output tokens for a model family within a provider. Used as an entry in
+ * `IAiProviderDescriptor.maxOutputTokens`.
+ *
+ * @public
+ */
+export interface IAiMaxOutputTokensCapability {
+  /**
+   * Prefix matched against the resolved completion model id. The empty string is the catch-all
+   * and matches every model; the library's own registry never declares one. When multiple rules'
+   * prefixes match a model id, the longest prefix wins; ties are broken by first-encountered.
+   */
+  readonly modelPrefix: string;
+  /** The largest `maxTokens` the provider accepts for a completion on a matching model. */
+  readonly maxOutputTokens: number;
 }
 
 /**

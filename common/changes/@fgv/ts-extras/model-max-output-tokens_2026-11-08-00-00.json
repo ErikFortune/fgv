@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras",
+      "comment": "ai-assist: new resolveMaxOutputTokens(descriptor, modelId) returns a model's maximum output tokens (the largest maxTokens the provider accepts), or undefined when unknown. Alias-first and longest-prefix, like resolveStructuredOutputCapability. Declared through a new optional IAiProviderDescriptor.maxOutputTokens array of IAiMaxOutputTokensCapability. The shipped registry records Anthropic and OpenAI completion models from their provider pages and declares no catch-all. No request behaviour changes: an explicit maxTokens is not clamped, and DEFAULT_ANTHROPIC_MAX_TOKENS (4096) is below every recorded Anthropic limit.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-extras",
+  "email": "noreply@anthropic.com"
+}

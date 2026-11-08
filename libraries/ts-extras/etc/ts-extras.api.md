@@ -97,6 +97,7 @@ declare namespace AiAssist {
         IAiEmbeddingUsage,
         IAiEmbeddingResult,
         IAiImageModelCapability,
+        IAiMaxOutputTokensCapability,
         IAiProviderDescriptor,
         IAiAssistProviderConfig,
         IAiAssistSettings,
@@ -177,6 +178,7 @@ declare namespace AiAssist {
         supportsEmbedding,
         resolveStructuredOutputCapability,
         supportsStructuredOutput,
+        resolveMaxOutputTokens,
         DEFAULT_MODEL_CAPABILITY_CONFIG,
         callProviderCompletion,
         callProxiedCompletion,
@@ -1422,6 +1424,12 @@ interface IAiImageModelCapability {
 }
 
 // @public
+interface IAiMaxOutputTokensCapability {
+    readonly maxOutputTokens: number;
+    readonly modelPrefix: string;
+}
+
+// @public
 interface IAiModelCapabilityConfig {
     readonly global?: ReadonlyArray<IAiModelCapabilityRule>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -1475,6 +1483,8 @@ interface IAiProviderDescriptor {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "ModelSpecKey"
     readonly imageGeneration?: ReadonlyArray<IAiImageModelCapability>;
     readonly label: string;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly maxOutputTokens?: ReadonlyArray<IAiMaxOutputTokensCapability>;
     readonly needsSecret: boolean;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly responsesOnlyModelPrefixes?: ReadonlyArray<string>;
@@ -3345,6 +3355,11 @@ function resolveImageCapability(descriptor: IAiProviderDescriptor, modelId: stri
 
 // @public
 function resolveImageOptions(modelId: string, capability: IAiImageModelCapability, options: IAiImageGenerationOptions | undefined): IResolvedImageOptions;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
+//
+// @public
+function resolveMaxOutputTokens(descriptor: IAiProviderDescriptor, modelId: string): number | undefined;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "ModelSpec"
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "MODEL_SPEC_BASE_KEY"

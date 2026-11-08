@@ -29,6 +29,7 @@ import {
   type AiProviderId,
   type IAiEmbeddingModelCapability,
   type IAiImageModelCapability,
+  type IAiMaxOutputTokensCapability,
   type IAiModelCapabilityConfig,
   type IAiProviderDescriptor,
   resolveModelAlias
@@ -117,6 +118,22 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
       { modelPrefix: 'claude-fable-5-1', format: 'anthropic-output-format' },
       { modelPrefix: 'claude-mythos-5-1', format: 'anthropic-output-format' },
       { modelPrefix: '', format: 'anthropic-tool-forced' }
+    ],
+    // Synchronous Messages API limits, from each model's page on platform.claude.com/docs/en/models
+    // ("Max output: 128K tokens"; Haiku 4.5 "64K tokens"), and for Mythos the context-windows page
+    // ("can generate up to 128k output tokens"), fetched 2026-11-08. K is read as 1,000, as those
+    // docs use it. The 300k Batch-API limit needs a beta header on a batch endpoint ai-assist does
+    // not use, so it is not recorded. No catch-all: an unlisted model has an unknown limit.
+    maxOutputTokens: [
+      { modelPrefix: 'claude-fable-5-1', maxOutputTokens: 128000 },
+      { modelPrefix: 'claude-fable-5', maxOutputTokens: 128000 },
+      { modelPrefix: 'claude-mythos-5', maxOutputTokens: 128000 },
+      { modelPrefix: 'claude-opus-5-5', maxOutputTokens: 128000 },
+      { modelPrefix: 'claude-opus-5', maxOutputTokens: 128000 },
+      { modelPrefix: 'claude-sonnet-5-5', maxOutputTokens: 128000 },
+      { modelPrefix: 'claude-sonnet-5', maxOutputTokens: 128000 },
+      { modelPrefix: 'claude-haiku-5-5', maxOutputTokens: 128000 },
+      { modelPrefix: 'claude-haiku-4-5', maxOutputTokens: 64000 }
     ]
   },
   {
@@ -274,6 +291,14 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     // on different calls. The dispatcher supplies that axis; a second declaration
     // of it here could only ever disagree.
     structuredOutput: [{ modelPrefix: '', format: 'openai-json-schema' }],
+    // "128,000 max output tokens" on each model's page at developers.openai.com/api/docs/models,
+    // fetched 2026-11-08. Completion models only; no catch-all.
+    maxOutputTokens: [
+      { modelPrefix: 'gpt-6-luna', maxOutputTokens: 128000 },
+      { modelPrefix: 'gpt-6-sol', maxOutputTokens: 128000 },
+      { modelPrefix: 'gpt-6-astra', maxOutputTokens: 128000 },
+      { modelPrefix: 'gpt-5.4-nano', maxOutputTokens: 128000 }
+    ],
     embedding: [
       {
         modelPrefix: 'text-embedding-3',
@@ -543,6 +568,37 @@ export function resolveStructuredOutputCapability(
  */
 export function supportsStructuredOutput(descriptor: IAiProviderDescriptor): boolean {
   return (descriptor.structuredOutput?.length ?? 0) > 0;
+}
+
+/**
+ * The largest `maxTokens` the provider accepts for a completion on `modelId`, or `undefined`
+ * when the limit is unknown.
+ *
+ * @remarks
+ * Alias-first, exactly like its `imageGeneration` / `embedding` / `structuredOutput` siblings:
+ * `modelId` is resolved through the descriptor's aliases before the longest-prefix match against
+ * {@link IAiProviderDescriptor.maxOutputTokens}, so an alias and the concrete id it names give the
+ * same answer. Returns `undefined` for an unresolvable alias, a provider that declares no limits,
+ * and a model no entry matches.
+ *
+ * Nothing in ai-assist applies this limit to a caller's explicit `maxTokens`. Lowering an explicit
+ * value would turn a loud refusal into a silent truncation, so the clamp is the caller's decision —
+ * typically `Math.min(myCap, resolveMaxOutputTokens(descriptor, model) ?? myCap)`.
+ *
+ * @param descriptor - The provider descriptor.
+ * @param modelId - A concrete model id or an `@provider:role` alias.
+ * @returns The model's maximum output tokens, or `undefined` when unknown.
+ * @public
+ */
+export function resolveMaxOutputTokens(
+  descriptor: IAiProviderDescriptor,
+  modelId: string
+): number | undefined {
+  return resolveCapabilityForModel<IAiMaxOutputTokensCapability>(
+    descriptor,
+    modelId,
+    descriptor.maxOutputTokens
+  )?.maxOutputTokens;
 }
 
 /**

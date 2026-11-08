@@ -123,6 +123,7 @@ detail. `· pkg` names the owning package.*
 - **Generating images from an LLM provider?** → `size` `quality` · `ts-extras`
 - **Declaring image generation capability on a provider?** → `IAiProviderDescriptor` `format` · `ts-extras`
 - **Looking up a model's image/embedding capability by id?** → `resolveImageCapability` · `ts-extras`
+- **Which `maxTokens` will a model accept?** → `resolveMaxOutputTokens` · `ts-extras`
 - **Enabling extended thinking / reasoning on LLM completions?** → `callProviderCompletion` `callProviderCompletionStream` · `ts-extras`
 - **Managing a local Ollama sidecar** → `callProviderEmbedding` `JsonSchema` · `ts-extras-ollama`
 - **Running a HuggingFace model locally with a Result boundary?** → `loadPipeline` `classify` · `ts-extras-transformers`

@@ -35,6 +35,7 @@ export {
   type IAiEmbeddingUsage,
   type IAiEmbeddingResult,
   type IAiImageModelCapability,
+  type IAiMaxOutputTokensCapability,
   type IAiProviderDescriptor,
   type IAiAssistProviderConfig,
   type IAiAssistSettings,
@@ -121,6 +122,7 @@ export {
   supportsEmbedding,
   resolveStructuredOutputCapability,
   supportsStructuredOutput,
+  resolveMaxOutputTokens,
   DEFAULT_MODEL_CAPABILITY_CONFIG
 } from './registry';
 
