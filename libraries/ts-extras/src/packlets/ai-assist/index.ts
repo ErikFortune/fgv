@@ -87,6 +87,7 @@ export {
   isResponsesOnlyModel,
   isAdaptiveThinkingModel,
   isThinkingRequiredModel,
+  rejectsSamplingParams,
   usesMaxCompletionTokensField,
   toDataUrl,
   type IThinkingConfig,

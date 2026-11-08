@@ -36,6 +36,7 @@ import { schemaWireProviderId } from './schemaKeywords';
 import {
   type IAiStreamEvent,
   type ModelSpecKey,
+  checkSamplingParams,
   isAdaptiveThinkingModel,
   isThinkingRequiredModel,
   isResponsesOnlyModel,
@@ -183,6 +184,10 @@ export async function callProviderCompletionStream(
         return fail(conflictResult.message);
       }
     }
+  }
+  const samplingResult = checkSamplingParams(descriptor, model, temperature);
+  if (samplingResult.isFailure()) {
+    return fail(samplingResult.message);
   }
 
   const config: IStreamApiConfig = {

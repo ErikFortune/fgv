@@ -103,3 +103,51 @@ summarising fetch. Raw copies are in the scratchpad (`alias/pages/`), not commit
   alias concern; noted only.
 - **Q6** `gpt-5.1` registry comment said "retired March 2026"; the deprecations page now shows it
   deprecated with shutdown 2027-04-01. Comment corrected (comment-only).
+
+## Amendments — orchestrator review round 1 (head `923f0aa1`)
+
+Recorded here because `brief.md` is frozen. Decisions are the orchestrator's; the worker carried
+them out.
+
+- **A1 (P2-1) `'none'` must mean thinking off on Anthropic adaptive models.** A generic
+  `effort: 'none'` used to omit `thinking`, which on an adaptive model is adaptive thinking at the
+  default effort. Chosen shape (the "adaptive default with an exception list" option, no new
+  descriptor field): on a model in `adaptiveThinkingModelPrefixes`, `'none'` sends
+  `thinking: {type: 'disabled'}`; the exception list is the existing
+  `thinkingRequiredModelPrefixes`, now populated for Anthropic with the models whose "disabled"
+  column reads "400 error", so `'none'` degrades to `'low'` there or refuses under
+  `onUnsupported: 'fail'`. Older models keep the omission (their "No `thinking` field" column reads
+  "Thinking off"). Carried by a new `IResolvedThinkingConfig.anthropicThinkingDisabled` flag set by
+  the resolver and read at both Anthropic emit sites. Per-model verdicts in `result.md` § 3a.
+  - Found while doing it: `claude-mythos-5` (not only `-5-1`) is adaptive-only per the same table,
+    so the adaptive entry widened from `claude-mythos-5-1` to `claude-mythos-5`; without that, a
+    degraded `'low'` on mythos-5 would have gone out as a 400ing budget.
+- **A2 (P2-2a) refuse sampling parameters before the wire.** New descriptor field
+  `samplingParamsRejectedModelPrefixes` and public predicate `rejectsSamplingParams`; the completion,
+  streaming and client-tool paths refuse a `temperature` on a listed model ("… does not accept
+  temperature on any request: remove temperature"). ai-assist sends no `top_p`/`top_k`, so
+  temperature is the only parameter checked. Anthropic list from the thinking page's sampling
+  paragraph; OpenAI `gpt-6-astra` and `gpt-6.1-sol` from the GPT-6 guide (no `'none'`, so always
+  rejected). Verdicts in `result.md` § 3b.
+- **A3 (P2-2b) disclose every consumer-visible change** in the change file, `result.md` § 5 and the
+  ai-assist README.
+- **A4 (P3)** correct the image-wire claim (the client sends `contents` plus an optional
+  `generationConfig.imageConfig`, no `responseModalities`; the guide's basic REST example sends the
+  same); add request-body tests for `@anthropic:sonnet` (JSON outputs, no `tool_choice`) and
+  `@anthropic:haiku` (forced tool); record the `@google-gemini:pro` preview target as an explicit
+  exception to the GA rule; list `@fgv/testbed` in `meta.yaml` packages.
+- **Q1 decided:** keep `@openai:nano` → `gpt-6-luna`. Removing an alias is a break, not a currency
+  change.
+- **Left as is (orchestrator):** the plain-`startsWith` structured-output prefix matching.
+
+### New open questions from this round
+
+- **Q7** `claude-opus-4-8` and `claude-opus-4-7` are not in `adaptiveThinkingModelPrefixes`, yet the
+  same per-model table gives "400 error" for `"enabled"` with `budget_tokens` on both. A non-`'none'`
+  effort on either therefore 400s today. Pre-existing, reachable only by `modelOverride`, outside
+  the `'none'` contract; not changed.
+- **Q8** `gpt-6-luna` (both `@openai:mini` and now `@openai:nano`) and `gpt-6-sol` reject
+  `temperature` unless the call sets effort `'none'` (default `medium`; GPT-6 guide: "When reasoning
+  effort is not none, remove temperature"). `gpt-5.4-nano` defaulted to `none`, so `@openai:nano` +
+  `temperature` with no thinking config used to work and now 400s at the provider. This is
+  effort-conditional, not a per-model rule, so it is disclosed but not guarded.

@@ -94,7 +94,24 @@ describe('AiAssist.registry', () => {
           ['gemini-3.8-flash', 'gemini-3.5-flash-lite']
         ],
         ['xai-grok', ['grok-4.7', 'grok-4.6', 'grok-4.5'], ['grok-4.3', 'grok-4']],
-        ['anthropic', [], ['claude-opus-5', 'claude-opus-5-5']]
+        [
+          'anthropic',
+          [
+            'claude-opus-5-5',
+            'claude-sonnet-5-5',
+            'claude-fable-5',
+            'claude-fable-5-1',
+            'claude-mythos-5',
+            'claude-mythos-5-1'
+          ],
+          [
+            'claude-opus-5',
+            'claude-sonnet-5',
+            'claude-haiku-5-5',
+            'claude-haiku-4-5-20251001',
+            'claude-opus-4-8'
+          ]
+        ]
       ] as const) {
         const d = AiAssist.getProviderDescriptor(providerId).orThrow();
         for (const id of required) {

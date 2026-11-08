@@ -149,6 +149,7 @@ declare namespace AiAssist {
         isResponsesOnlyModel,
         isAdaptiveThinkingModel,
         isThinkingRequiredModel,
+        rejectsSamplingParams,
         usesMaxCompletionTokensField,
         toDataUrl,
         IThinkingConfig,
@@ -1488,6 +1489,9 @@ interface IAiProviderDescriptor {
     readonly needsSecret: boolean;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly responsesOnlyModelPrefixes?: ReadonlyArray<string>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly samplingParamsRejectedModelPrefixes?: ReadonlyArray<string>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly serverToolsExclusiveWithClientTools?: ReadonlyArray<AiServerToolType>;
@@ -2554,6 +2558,8 @@ interface IResolvedImageOptions {
 interface IResolvedThinkingConfig {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly anthropicEffort?: IAnthropicThinkingConfig['effort'];
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IResolvedThinkingConfig"
+    readonly anthropicThinkingDisabled?: true;
     readonly geminiThinkingBudget?: number;
     readonly openAiEffort?: IOpenAiThinkingConfig['effort'];
     readonly otherParams?: JsonObject;
@@ -2713,6 +2719,7 @@ function isValidMultibaseSpkiPublicKey(value: unknown): value is MultibaseSpkiPu
 
 // @public
 interface IThinkingConfig {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IThinkingConfig"
@@ -3339,6 +3346,11 @@ export { RecordJar }
 
 // @public
 const REDIRECT_STATUSES: ReadonlyArray<number>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
+//
+// @public
+function rejectsSamplingParams(descriptor: IAiProviderDescriptor, modelId: string): boolean;
 
 // @public
 function resolveEffectiveTools(descriptor: IAiProviderDescriptor, settingsTools?: ReadonlyArray<IAiToolEnablement>, perCallTools?: ReadonlyArray<AiServerToolConfig>): ReadonlyArray<AiServerToolConfig>;

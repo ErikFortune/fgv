@@ -103,14 +103,44 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     // claude-haiku-5-5 ("Manual extended thinking returns an error",
     // https://platform.claude.com/docs/en/models/haiku-5-5/whats-new-haiku-5-5, fetched 2026-11-08) is
     // listed by its own id: claude-haiku-4-5 keeps the budget shape, and no page states a family rule.
-    // claude-mythos-5-1 ("Same capabilities as Claude Fable 5.1"; budget_tokens and disabled both
-    // 400, https://platform.claude.com/docs/en/models/fable-5-1/whats-new-fable-5-1, fetched
-    // 2026-09-25) is listed by its own id: no page fetched says the same of claude-mythos-5.
+    // claude-mythos-5 (and so claude-mythos-5-1): the per-model table on
+    // https://platform.claude.com/docs/en/build-with-claude/thinking (fetched 2026-11-08) lists both
+    // Mythos 5 and Mythos 5.1 as "Adaptive thinking" with no `thinking` field and a "400 error" for
+    // "enabled" with budget_tokens.
     adaptiveThinkingModelPrefixes: [
       'claude-sonnet-5',
       'claude-opus-5',
       'claude-fable-5',
-      'claude-mythos-5-1',
+      'claude-mythos-5',
+      'claude-haiku-5-5'
+    ],
+    // A generic effort 'none' sends `thinking: {type: 'disabled'}` to an adaptive model, because it
+    // thinks by default. These reject 'disabled' ("400 error" in the "disabled" column of the
+    // per-model table, https://platform.claude.com/docs/en/build-with-claude/thinking, fetched
+    // 2026-11-08: "Claude Fable 5.1, Claude Mythos 5.1, Claude Fable 5, Claude Mythos 5, Claude Opus
+    // 5.5, and Claude Mythos Preview reject `thinking: {type: "disabled"}`", and Claude Sonnet 5.5
+    // "rejects `thinking: {type: "disabled"}` with a 400 error"), so 'none' is sent as 'low' there,
+    // or refused. claude-opus-5, claude-sonnet-5 and claude-haiku-5-5 accept it (Opus 5 and Haiku 5.5
+    // "at `high` effort or below"; a 'none' sends no effort, and their defaults are high and medium).
+    thinkingRequiredModelPrefixes: [
+      'claude-opus-5-5',
+      'claude-sonnet-5-5',
+      'claude-fable-5',
+      'claude-mythos-5'
+    ],
+    // "On Claude Fable 5.1, Claude Mythos 5.1, Claude Fable 5, Claude Mythos 5, Claude Mythos Preview,
+    // Claude Opus 5.5, Claude Opus 5, Claude Opus 4.8, Claude Opus 4.7, Claude Sonnet 5.5, Claude
+    // Sonnet 5, and Claude Haiku 5.5, non-default `temperature`, `top_p`, or `top_k` values return a
+    // 400 error on every request, regardless of whether thinking is used"
+    // (https://platform.claude.com/docs/en/build-with-claude/thinking, fetched 2026-11-08). The
+    // dash-bounded entries cover each 5.x point release named there.
+    samplingParamsRejectedModelPrefixes: [
+      'claude-fable-5',
+      'claude-mythos-5',
+      'claude-opus-5',
+      'claude-opus-4-8',
+      'claude-opus-4-7',
+      'claude-sonnet-5',
       'claude-haiku-5-5'
     ],
     // Two mechanisms, split by what each line accepts. claude-opus-5-5, claude-fable-5-1,
@@ -337,6 +367,12 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     // gpt-6.1-sol: its page lists "reasoning.effort supports low, medium (default), high, xhigh, and
     // max" (fetched 2026-11-08); gpt-6-sol, which lists 'none', is not matched.
     thinkingRequiredModelPrefixes: ['gpt-6-astra', 'gpt-6.1-sol'],
+    // "When reasoning effort is not none, remove temperature, top_p, and top_logprobs"
+    // (https://developers.openai.com/api/docs/guides/latest-model, fetched 2026-11-08). These two
+    // have no 'none' effort, so they reject temperature on every request. gpt-6-luna and gpt-6-sol
+    // accept it only when the call sets effort 'none' (their default is medium), which is not a
+    // per-model rule and is not declared here.
+    samplingParamsRejectedModelPrefixes: ['gpt-6-astra', 'gpt-6.1-sol'],
     // Declared once for the whole line. The Chat-Completions-vs-Responses split is
     // NOT declared here on purpose: the route depends on whether the call carries
     // server tools as well as on the model, so the same model takes both endpoints

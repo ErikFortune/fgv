@@ -1,7 +1,8 @@
 # model-alias-refresh — every ai-assist alias and default checked against current provider pages
 
 **Shipped**: 2026-11-08 into `integration/asks` via #TBD.
-Package: `@fgv/ts-extras` (`ai-assist`); `samples/testbed` updated where it pins alias targets.
+Packages: `@fgv/ts-extras` (`ai-assist`); `@fgv/testbed` (`samples/testbed`) updated where it pins
+alias targets.
 Change file: `minor`.
 
 ## Summary
@@ -26,6 +27,12 @@ Each new target got the declarations its pages require: `claude-sonnet-5-5` on t
 cited `maxOutputTokens` for `gpt-6.1-sol`, the three Gemini completion targets and Groq's default.
 
 ## What a reader should know
+
+- **Review round 1 widened the stream** (`state.md` § Amendments). A generic `effort: 'none'` had
+  never turned thinking off on Anthropic adaptive models; it now sends `thinking: {type:
+  'disabled'}` where the model accepts it and `'low'` (or a refusal) where it does not. And a new
+  `samplingParamsRejectedModelPrefixes` refuses `temperature` before the wire on every Claude 5.x
+  model, Opus 4.7/4.8, `gpt-6-astra` and `gpt-6.1-sol`. Verdicts per model are in `result.md` §§ 3a–3b.
 
 - **Behaviour changes for alias users**: Anthropic's base tier now sends structured output as
   `output_config.format`; OpenAI's advanced tier no longer runs with thinking off (`'none'` → `'low'`

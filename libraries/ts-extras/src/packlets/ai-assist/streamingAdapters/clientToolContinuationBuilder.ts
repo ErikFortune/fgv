@@ -50,6 +50,7 @@ import {
   type IAiStreamEvent,
   type IChatRequest,
   type IAiProviderDescriptor,
+  checkSamplingParams,
   isAdaptiveThinkingModel,
   resolveProviderModel
 } from '../model';
@@ -792,6 +793,10 @@ export function executeClientToolTurn(
     return fail(modelResult.message);
   }
   const resolvedModel = modelResult.value;
+  const samplingResult = checkSamplingParams(descriptor, resolvedModel, temperature);
+  if (samplingResult.isFailure()) {
+    return fail(`executeClientToolTurn: ${samplingResult.message}`);
+  }
   const baseUrlResult = resolveEffectiveBaseUrl(descriptor, endpoint);
   if (baseUrlResult.isFailure()) {
     return fail(baseUrlResult.message);

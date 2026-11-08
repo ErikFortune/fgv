@@ -1,6 +1,6 @@
 id: model-alias-refresh
 status: shipped
-packages: ['@fgv/ts-extras']
+packages: ['@fgv/ts-extras', '@fgv/testbed']
 prs: []
 openPrs: []
 opened: 2026-11-08
@@ -26,7 +26,13 @@ summary:
     size set is unstated) and gemini-embedding-2 (changes vector space). @openai:nano now duplicates
     @openai:mini because OpenAI names Luna as nano's replacement. samples/testbed was changed beyond
     its pins: the Anthropic canary gained a haiku row, the Gemini canary a live image, and the wire
-    probe moved to haiku and sonnet, so the rotated paths stay live-exercised.
+    probe moved to haiku and sonnet, so the rotated paths stay live-exercised. Review round 1 found
+    that a generic effort 'none' left every Anthropic adaptive model thinking and that the rotations
+    made temperature a provider 400 on more targets; the stream then made 'none' send thinking
+    disabled where a model accepts it (and 'low' where it does not), added
+    samplingParamsRejectedModelPrefixes with an up-front temperature refusal across Claude 5.x,
+    Opus 4.7/4.8, gpt-6-astra and gpt-6.1-sol, widened the Mythos adaptive entry to claude-mythos-5,
+    and disclosed every consumer-visible behaviour change.
   sourceLine: '**Shipped:** every `ai-assist` alias and default model was checked against provider pages fetched on 2026-11-08, and seven targets moved — `@anthropic:sonnet`, `@anthropic:haiku`, `@openai:flagship`, `@openai:nano`, `@google-gemini:flash-image`, Groq''s default and Mistral''s base default — each with the per-model wire declarations its new target needs; the rest are held with a cited reason.'
   headline: >
     ai-assist aliases now reach current models — Claude Sonnet 5.5 and Haiku 5.5, GPT-6.1 Sol,
@@ -43,4 +49,7 @@ keywords:
   - capability detection idPattern
   - default model currency
   - structured output wire per model
+  - thinking disabled
+  - temperature refusal
+  - sampling parameters rejected
 sourceHash: sha256:471f1c2d26f30ec5 # over brief.md + state.md + result.md

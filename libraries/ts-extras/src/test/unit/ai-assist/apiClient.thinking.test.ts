@@ -487,8 +487,25 @@ describe('thinking-config wire encoding (non-streaming)', () => {
       expect(global.fetch).not.toHaveBeenCalled();
     });
 
-    test("an 'other' block that sets reasoning_effort owns the wire: sent as written, temperature allowed", async () => {
+    test("an 'other' block that sets reasoning_effort owns the wire: sent as written", async () => {
       mockFetchResponse(openAiResponse('ok'));
+      const result = await AiAssist.callProviderCompletion({
+        descriptor: openai,
+        apiKey: 'sk',
+        ...testPrompt.toRequest(),
+        tier: 'frontier',
+        thinking: {
+          effort: 'none',
+          providers: [{ provider: 'other', models: ['gpt-6-astra'], config: { reasoning_effort: 'none' } }]
+        }
+      });
+      expect(result).toSucceed();
+      expect(sentBody()).toMatchObject({ model: 'gpt-6-astra', reasoning_effort: 'none' });
+    });
+
+    test("an 'other' block does not lift gpt-6-astra's temperature refusal", async () => {
+      // gpt-6-astra has no 'none' effort, so it rejects temperature on every request; a block that
+      // writes reasoning_effort does not change what the model accepts.
       const result = await AiAssist.callProviderCompletion({
         descriptor: openai,
         apiKey: 'sk',
@@ -500,8 +517,8 @@ describe('thinking-config wire encoding (non-streaming)', () => {
           providers: [{ provider: 'other', models: ['gpt-6-astra'], config: { reasoning_effort: 'none' } }]
         }
       });
-      expect(result).toSucceed();
-      expect(sentBody()).toMatchObject({ model: 'gpt-6-astra', reasoning_effort: 'none', temperature: 0.7 });
+      expect(result).toFailWith(/gpt-6-astra does not accept temperature on any request: remove temperature/);
+      expect(global.fetch).not.toHaveBeenCalled();
     });
 
     test("onUnsupported: 'fail' does not refuse when a typed block sets the effort that goes out", async () => {

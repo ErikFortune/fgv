@@ -48,7 +48,7 @@ Fetch date for every row: **2026-11-08**.
 | `@openai:embedding` | `text-embedding-3-small` | catalog: "text-embedding-3-small · Small embedding model"; not deprecated |
 | `@google-gemini:flash` | `gemini-3.8-flash` | "For any new projects, use our latest models: 3.5 Flash-Lite or 3.8 Flash."; deprecations: "No shutdown date announced" |
 | `@google-gemini:flash-lite` | `gemini-3.5-flash-lite` | same sentence; Stable; no Flash-Lite newer than 3.5 except TTS |
-| `@google-gemini:pro` | `gemini-3.1-pro-preview` | **held, Q3**: Gemini 4 Argon is Stable and the flagship, but its wire is not one ai-assist sends (§3) |
+| `@google-gemini:pro` | `gemini-3.1-pro-preview` | **held, Q3 — an explicit exception to the GA rule.** The target is a preview model; the only GA candidate, Gemini 4 Argon, requires a `thinkingLevel` wire ai-assist does not send. It stays on the preview until that wire exists |
 | `@google-gemini:embedding` | `gemini-embedding-001` | "Stable: `gemini-embedding-001`"; **Q4** for `gemini-embedding-2` |
 | `@xai-grok:standard` | `grok-4.3` | grok-4.3 page: $1.25 / $2.50, reasoning "none, low, medium, high, xhigh"; nothing newer in that band |
 | `@xai-grok:flagship` | `grok-4.7` | models page: "For everything else, including code, use Grok 4.7. It is the most capable model we've built." |
@@ -61,21 +61,70 @@ Fetch date for every row: **2026-11-08**.
 |---|---|---|---|
 | `claude-sonnet-5-5` | structured output | whats-new: "Claude Sonnet 5.5 doesn't support forced tool use. `tool_choice` set to `{"type": "any"}` or `{"type": "tool", "name": "..."}` returns a 400 `invalid_request_error`"; structured-outputs `supportedModels` lists `claude-sonnet-5-5` | **added** `{ modelPrefix: 'claude-sonnet-5-5', format: 'anthropic-output-format' }` |
 | | thinking shape | "Manual thinking budgets (`thinking: {"type": "enabled", "budget_tokens": N}`) return a 400 error" | already adaptive via the dash-bounded `claude-sonnet-5` prefix; test pins it |
-| | thinking off | "a request that sends `thinking: {"type": "disabled"}` returns a 400"; "omit the `thinking` field or send `thinking: {"type": "adaptive"}`, which is equivalent" | none — ai-assist's `'none'` omits `thinking` and never sends `disabled` |
-| | sampling / image input / max output | Claude 5 already rejects temperature (sent only when the caller sets it); overview: all current models take image input; "Max output 128K tokens" | none (entry existed from #765) |
+| | thinking off | "a request that sends `thinking: {"type": "disabled"}` returns a 400"; "omit the `thinking` field or send `thinking: {"type": "adaptive"}`, which is equivalent" | **superseded in review round 1** (§ 3a): first version said "none — `'none'` omits `thinking`", which leaves adaptive thinking on. Now on `thinkingRequiredModelPrefixes`, so `'none'` → `'low'` |
+| | sampling / image input / max output | thinking page sampling list includes Sonnet 5.5; overview: all current models take image input; "Max output 128K tokens" | temperature refused before the wire (§ 3b, review round 1); max-output entry existed from #765 |
 | `claude-haiku-5-5` | thinking shape | whats-new: "Manual extended thinking returns an error \| Breaking \| Replace `budget_tokens` with adaptive thinking." | **added** to `adaptiveThinkingModelPrefixes` by its own id (claude-haiku-4-5 keeps the budget shape) |
 | | structured output / tool choice | migration guide: "Claude Haiku 5.5 accepts a forced `tool_choice` (`any` or a named tool), but the response starts with the tool call and has no `thinking` block." | none — stays on the `anthropic-tool-forced` catch-all; test pins it |
-| | sampling, prefill | "Sampling parameters can return an error … Omit `temperature`, `top_p`, and `top_k`"; "Assistant message prefill returns an error" | none — temperature is sent only when the caller sets it (as for every Claude 5 model); ai-assist sends no prefill |
+| | sampling, prefill | "Sampling parameters can return an error … Omit `temperature`, `top_p`, and `top_k`"; "Assistant message prefill returns an error" | **amended in review round 1** (§ 3b): a caller's `temperature` is now refused before the wire via `samplingParamsRejectedModelPrefixes`; ai-assist sends no prefill |
 | | capability detection | overview: adaptive thinking, text and image input, tool use | **added** `/^claude-haiku-5-5/` → chat, tools, vision, thinking (otherwise only `/^claude-/` matched and thinking was lost) |
 | `gpt-6.1-sol` | thinking off | page: "reasoning.effort supports low, medium (default), high, xhigh, and max." | **added** to `thinkingRequiredModelPrefixes` (gpt-6-sol, which lists `none`, is unmatched) |
 | | Responses-only | endpoints: Chat Completions and Responses both supported; "Tool calling requires the Responses API." | none — not Responses-only; every tool-bearing OpenAI call already routes to `/responses` |
 | | structured output / image input / max output | "Structured outputs Supported"; "Input Text, Image"; "128,000 max output tokens" | **added** `maxOutputTokens` 128000; `/^gpt-6/` detection already covers it; `max_completion_tokens` rule is provider-keyed (`usesMaxCompletionTokensField` → `openai`), so it applies unchanged |
 | `gpt-6-luna` (nano) | all | already the base-tier target | none (existing entries) |
-| `gemini-nano-banana-2.1` | image wire | image guide (`?generate-content=true`) drives `gemini-nano-banana-2.1` via `:generateContent` with `responseModalities: ['TEXT','IMAGE']` and `imageConfig.aspectRatio` — the shape `callGeminiImageOutGeneration` sends | none — the `gemini-image-out` catch-all applies; test pins it |
+| `gemini-nano-banana-2.1` | image wire | image guide (`?generate-content=true`): the basic REST example posts only `contents` to `…/gemini-nano-banana-2.1:generateContent`; `imageConfig.aspectRatio` is documented for it. `callGeminiImageOutGeneration` sends `contents` plus, only when an aspect ratio is set, `generationConfig.imageConfig` — no `responseModalities` *(corrected in review round 1; the first version said it sent `responseModalities`)* | none — the `gemini-image-out` catch-all applies; test pins it |
 | | capability detection | "Image generation: Supported"; its id has no `-image` | **added** `/^gemini-nano-banana/` → image-generation |
 | | model-name union | — | **added** to `GeminiFlashImageModelNames` |
 | `openai/gpt-oss-120b` | input / output / limit | model page: "INPUT Text OUTPUT Text"; "MAX OUTPUT TOKENS 65,536" | **added** Groq `maxOutputTokens` 65536; `acceptsImageInput: false` already right; ai-assist sends no thinking params to Groq |
 | `mistral-large-4` | structured output | Large 4 page: "Structured Outputs /v1/chat/completions" | none — the `openai-json-schema` catch-all applies; no max output stated, nothing recorded |
+
+## 3a. `effort: 'none'` on every Anthropic adaptive model *(review round 1, P2-1)*
+
+Source for every row: the per-model table on
+https://platform.claude.com/docs/en/build-with-claude/thinking (fetched 2026-11-08), column
+`"disabled"`, plus the prose under it: *"Claude Fable 5.1, Claude Mythos 5.1, Claude Fable 5, Claude
+Mythos 5, Claude Opus 5.5, and Claude Mythos Preview reject `thinking: {type: "disabled"}`"*; *"Claude
+Sonnet 5.5 … rejects `thinking: {type: "disabled"}` with a 400 error"*; *"Claude Opus 5 also has
+thinking on by default and accepts `thinking: {type: "disabled"}` at effort `high` or below"*;
+*"Claude Haiku 5.5 also has thinking on by default and accepts `thinking: {type: "disabled"}` at
+effort `high` or below"*. A `'none'` sends no effort, so the model's default applies: Opus 5 `high`
+(its overview page), Haiku 5.5 `medium` (models overview).
+
+| model | "disabled" column | verdict | what a generic `'none'` now sends |
+|---|---|---|---|
+| `claude-sonnet-5` | "Thinking off" | accepted | `thinking: {type: 'disabled'}` |
+| `claude-opus-5` | "Thinking off at `high` effort or below" | accepted (default `high`) | `thinking: {type: 'disabled'}` |
+| `claude-haiku-5-5` | "Thinking off at `high` effort or below" | accepted (default `medium`) | `thinking: {type: 'disabled'}` |
+| `claude-sonnet-5-5` | "400 error" | rejected → thinking-required | adaptive + `output_config.effort: 'low'`, or refused under `onUnsupported: 'fail'` |
+| `claude-opus-5-5` | "400 error" | rejected → thinking-required | same |
+| `claude-fable-5-1`, `claude-fable-5` | "400 error" | rejected → thinking-required (`claude-fable-5`, dash-bounded) | same |
+| `claude-mythos-5-1`, `claude-mythos-5` | "400 error" | rejected → thinking-required (`claude-mythos-5`, dash-bounded) | same — and `claude-mythos-5` is now adaptive too: its "enabled with budget_tokens" column reads "400 error" |
+| older models (`claude-haiku-4-5`, `-sonnet-4-6`, `-opus-4-8`, …) | — | not adaptive | no `thinking` field — their "No `thinking` field" column reads "Thinking off" |
+
+The shape is "adaptive default with an exception list": no new descriptor field; the exception list
+is `thinkingRequiredModelPrefixes`. Before this, the Anthropic thinking-required list was empty and
+every adaptive model ran with thinking on when asked for `'none'`.
+
+## 3b. Models that reject sampling parameters *(review round 1, P2-2a)*
+
+ai-assist sends only `temperature` (never `top_p` / `top_k`), so `temperature` is what is refused.
+
+| provider | model(s) declared | source (fetched 2026-11-08) |
+|---|---|---|
+| anthropic | `claude-fable-5` (+5-1), `claude-mythos-5` (+5-1), `claude-opus-5` (+5-5), `claude-opus-4-8`, `claude-opus-4-7`, `claude-sonnet-5` (+5-5), `claude-haiku-5-5` | thinking page: *"On Claude Fable 5.1, Claude Mythos 5.1, Claude Fable 5, Claude Mythos 5, Claude Mythos Preview, Claude Opus 5.5, Claude Opus 5, Claude Opus 4.8, Claude Opus 4.7, Claude Sonnet 5.5, Claude Sonnet 5, and Claude Haiku 5.5, non-default `temperature`, `top_p`, or `top_k` values return a 400 error on every request, regardless of whether thinking is used"*; Haiku 5.5 migration guide: *"On Claude Haiku 5.5, omit `temperature`, `top_p`, and `top_k`"* |
+| openai | `gpt-6-astra`, `gpt-6.1-sol` | https://developers.openai.com/api/docs/guides/latest-model: *"When reasoning effort is not none, remove temperature, top_p, and top_logprobs"*; neither model has a `none` effort |
+| — not declared | `claude-haiku-4-5`, `claude-sonnet-4-6` and older | not in that list; ai-assist pins `anthropic-version: 2023-06-01`, before the `2026-10-21` version that rejects temperature on every model, so they reject it only with thinking on (already refused by `checkTemperatureConflict`) |
+| — not declared | `gpt-6-luna`, `gpt-6-sol` | reject temperature unless effort is `none` (default `medium`) — effort-conditional, not a per-model rule; disclosed in § 5, Q8 |
+| — not declared | Gemini, xAI, Groq, Mistral targets | no fetched page states a sampling restriction for the alias targets |
+
+The refusal runs after the thinking checks, so `{ effort: 'none', temperature }` on
+`gpt-6.1-sol` still gets the existing, more specific "'none' was sent as 'low' … remove temperature"
+message.
+
+**Red-then-green.** With `'claude-sonnet-5-5'` removed from `thinkingRequiredModelPrefixes` and
+`'claude-haiku-5-5'` removed from `samplingParamsRejectedModelPrefixes`, exactly seven tests in
+`thinkingOffAndSampling.test.ts` failed (the three sonnet-5-5 `'none'` rows, and the four haiku
+temperature refusals across completion, streaming and client-tool paths); restoring the registry
+returned it to 41/41 (`red-test.log`, `green-test.log`).
 
 **Holds re-checked.** The `claude-opus-5-5` / `claude-fable-5-1` / `claude-mythos-5-1` forced-tool
 hold stands (Opus 5.5 / Fable 5.1 what's-new pages unchanged in substance). The `gpt-6-astra` and
@@ -104,13 +153,37 @@ pattern widened to allow `/` for Groq's owner-prefixed ids.
 
 ## 5. Behaviour consumers will see
 
-- `@anthropic:sonnet` (the Anthropic **base tier**) structured output now goes out as
-  `output_config.format`, not a forced tool, and `structuredOutputSchemaKeywords` returns the
-  JSON-outputs table for it.
-- `@openai:flagship` (OpenAI **advanced tier**) no longer accepts thinking `'none'`: it is sent as
-  `'low'` by default, or refused with `onUnsupported: 'fail'`.
-- `@openai:nano` and `@openai:mini` now name the same model.
-- Groq and Mistral callers that rely on the default model get a different model.
+*(Expanded in review round 1: the first version disclosed only the first, third and last items.)*
+
+- **Anthropic base tier (`@anthropic:sonnet` → `claude-sonnet-5-5`):**
+  - structured output now goes out as `output_config.format`, not a forced tool, and
+    `structuredOutputSchemaKeywords` returns the JSON-outputs table for it;
+  - text the model writes between tool calls longer than a sentence or two comes back as
+    progress-update `thinking` blocks (empty at the default `display`), so a client streaming that
+    text goes quiet between tool calls;
+  - its thinking blocks are bound to the model and conversation: it reads earlier Sonnet 5 / Haiku
+    blocks but not Opus 5 / 5.5 / Fable / Mythos ones, which are dropped; editing earlier history
+    and replaying a block can 400;
+  - it cannot turn thinking off: `'none'` is now sent as `'low'` (or refused under
+    `onUnsupported: 'fail'`);
+  - any `temperature` is refused before the wire (it was a provider 400).
+- **`@anthropic:haiku` (→ `claude-haiku-5-5`):** thinks by default (Haiku 4.5 did not), so a call with
+  no thinking config now thinks and spends output tokens on it; the same text counts as ~30% more
+  tokens; `'none'` now sends `thinking: {type: 'disabled'}`; any `temperature` is refused before the
+  wire; structured output still uses the forced tool.
+- **Every Anthropic adaptive model:** a generic `'none'` now means thinking off —
+  `thinking: {type: 'disabled'}` on `claude-sonnet-5`, `claude-opus-5` and `claude-haiku-5-5`, and
+  `'low'` (or a refusal) on Opus 5.5, Sonnet 5.5, Fable and Mythos, which cannot turn thinking off.
+  Before, `'none'` silently ran with thinking on at the default effort on all of them.
+  `temperature` is refused before the wire on every Claude 5.x model and Opus 4.7 / 4.8.
+- **OpenAI advanced tier (`@openai:flagship` → `gpt-6.1-sol`):** `'none'` is sent as `'low'` by
+  default or refused with `onUnsupported: 'fail'`; `{ effort: 'none', temperature }` is refused
+  before sending; any `temperature` is refused before the wire. `gpt-6-astra` (frontier) now gets the
+  same up-front temperature refusal.
+- **`@openai:nano` (→ `gpt-6-luna`):** names the same model as `@openai:mini`; `temperature` without
+  effort `'none'` now 400s at the provider (Luna defaults to `medium`; `gpt-5.4-nano` defaulted to
+  `none`) — not guarded, Q8.
+- **Groq and Mistral** callers relying on the default model get a different model.
 
 ## 6. Testbed
 
@@ -123,9 +196,11 @@ scenario probes forced tool on haiku and JSON outputs on the default. The wire p
 
 ## 7. Open questions (in `state.md`)
 
-Q1 `@openai:nano` duplicates `@openai:mini` — retire it? · Q2 `gpt-image-2.6-sunburst` role mapping ·
+Q1 **decided** (orchestrator): keep `@openai:nano` → `gpt-6-luna`; removing an alias is a break · Q2 `gpt-image-2.6-sunburst` role mapping ·
 Q3 Gemini 4 Argon needs a `thinkingLevel` wire before `@google-gemini:pro` can move · Q4
-`gemini-embedding-2` is GA but changes vector space · Q5 Groq marks `max_tokens` deprecated.
+`gemini-embedding-2` is GA but changes vector space · Q5 Groq marks `max_tokens` deprecated · Q7
+`claude-opus-4-8` / `-4-7` 400 on budget thinking but are not declared adaptive (pre-existing) · Q8
+`gpt-6-luna` / `gpt-6-sol` reject `temperature` unless effort is `'none'` (effort-conditional).
 
 ## 8. Gates
 

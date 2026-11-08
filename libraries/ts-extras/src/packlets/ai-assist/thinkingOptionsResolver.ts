@@ -86,6 +86,13 @@ export interface IResolvedThinkingConfig {
    * {@link AiAssist.IAnthropicThinkingConfig.effort}.
    */
   readonly anthropicEffort?: IAnthropicThinkingConfig['effort'];
+  /**
+   * Anthropic: a generic `effort: 'none'` asked for thinking off. On an adaptive-thinking model
+   * (thinking on by default) the emit-site sends `thinking: { type: 'disabled' }`; on an older
+   * model it sends nothing, which is already off. Ignored when {@link
+   * IResolvedThinkingConfig.anthropicEffort} is set.
+   */
+  readonly anthropicThinkingDisabled?: true;
   /** OpenAI Chat: reasoning_effort value; OpenAI Responses: reasoning.effort */
   readonly openAiEffort?: IOpenAiThinkingConfig['effort'];
   /** Gemini: generationConfig.thinkingConfig.thinkingBudget */
@@ -377,13 +384,15 @@ export function resolveThinkingConfig(
   if (effort !== undefined) {
     switch (discriminator) {
       case 'anthropic':
-        // Anthropic has no 'none' value: "off" means no `thinking` wire param at all,
-        // so 'none' leaves `anthropicEffort` unset rather than mapping to a value. That
+        // Anthropic has no 'none' effort value: 'none' leaves `anthropicEffort` unset and marks
+        // thinking off, which the emit-site turns into `thinking: { type: 'disabled' }` on an
+        // adaptive model and into no `thinking` field on an older one. Leaving the effort unset
         // also satisfies checkTemperatureConflict's anthropic gate (which fails only when
-        // anthropicEffort is set), so temperature survives without any special-casing there.
-        if (effort !== 'none') {
-          resolved = { ...resolved, anthropicEffort: genericEffortToAnthropic(effort) };
-        }
+        // anthropicEffort is set).
+        resolved =
+          effort === 'none'
+            ? { ...resolved, anthropicThinkingDisabled: true }
+            : { ...resolved, anthropicEffort: genericEffortToAnthropic(effort) };
         break;
       case 'openai':
         resolved = { ...resolved, openAiEffort: genericEffortToOpenAi(effort) };

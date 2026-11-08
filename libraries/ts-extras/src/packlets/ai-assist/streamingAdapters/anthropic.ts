@@ -575,6 +575,10 @@ export async function callAnthropicStream(
         budget_tokens: anthropicEffortToBudgetTokens(resolvedThinking.anthropicEffort)
       };
     }
+  } else if (resolvedThinking?.anthropicThinkingDisabled === true && useAdaptiveThinking) {
+    // Adaptive models think by default, so omitting `thinking` would not turn it off. A model that
+    // rejects 'disabled' is on thinkingRequiredModelPrefixes and never gets here with 'none'.
+    body.thinking = { type: 'disabled' };
   }
   if (resolvedThinking?.otherParams !== undefined) {
     Object.assign(body, resolvedThinking.otherParams);
