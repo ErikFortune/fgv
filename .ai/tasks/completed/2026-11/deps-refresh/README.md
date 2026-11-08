@@ -3,7 +3,7 @@
 > Amended 2026-11-08 after review round 1. Corrections are inline, with the original wording in
 > Appendix A.
 
-**Shipped**: 2026-11-08 into `integration/asks` via #TBD.
+**Shipped**: 2026-11-08 into `integration/asks` via #766.
 Scope: the whole Rush monorepo: 38 projects touched, 35 of them published. Origin: a user request, after GitHub's
 push response pointed at Dependabot alerts. Change files: 22 `patch`, 13 `none`.
 

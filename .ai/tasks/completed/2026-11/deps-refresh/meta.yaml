@@ -38,8 +38,8 @@ packages:
     '@fgv/ts-web-extras-webauthn',
     '@fgv/typedoc-compact-theme'
   ]
-prs: []
-openPrs: [] # PR not yet opened (#TBD); the orchestrator opens it
+prs: [766]
+openPrs: []
 opened: 2026-11-08
 closed: 2026-11-08
 summary:
