@@ -255,6 +255,9 @@ describe('AiAssist.resolveMaxOutputTokens', () => {
       ).toSucceed();
 
       const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      // Most recorded limits are equal, so pin the model id too: the lookup must answer for
+      // exactly the model the call sent, not merely one with the same limit.
+      expect(body.model).toBe(AiAssist.resolveProviderModel(descriptor, spec, tier).orThrow());
       const sentLimit = AiAssist.resolveMaxOutputTokens(descriptor, body.model);
       expect(sentLimit).toBeDefined();
       expect(AiAssist.resolveMaxOutputTokens(descriptor, spec, tier)).toBe(sentLimit);
