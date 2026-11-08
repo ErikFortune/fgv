@@ -38,7 +38,7 @@
   },
   "dependencies": {
     "@fgv/ts-utils": "workspace:*",
-    "hono": "~4.7.11"
+    "hono": "~4.13.16"
   },
   "devDependencies": {
     "@microsoft/api-documenter": "^7.28.2",

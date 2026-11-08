@@ -60,7 +60,7 @@
   "devDependencies": {
     "@fgv/heft-dual-rig": "workspace:*",
     "@fgv/ts-utils": "workspace:*",
-    "@huggingface/transformers": "~4.2.0",
+    "@huggingface/transformers": "~4.3.2",
     "@fgv/ts-utils-jest": "workspace:*",
     "@microsoft/api-extractor": "^7.55.2",
     "@rushstack/eslint-config": "4.6.4",
@@ -86,6 +86,6 @@
   },
   "peerDependencies": {
     "@fgv/ts-utils": "workspace:*",
-    "@huggingface/transformers": "~4.2.0"
+    "@huggingface/transformers": "~4.3.2"
   }
 }

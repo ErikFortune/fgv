@@ -124,7 +124,7 @@
     "papaparse": "^5.4.1",
     "fflate": "~0.8.2",
     "@fgv/ts-json-base": "workspace:*",
-    "js-yaml": "~4.1.1"
+    "js-yaml": "~4.3.2"
   },
   "peerDependencies": {
     "@fgv/ts-utils": "workspace:*"

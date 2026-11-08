@@ -85,7 +85,7 @@
     "@rushstack/heft-node-rig": "2.11.50",
     "@types/heft-jest": "1.0.6",
     "eslint-plugin-tsdoc": "~0.5.2",
-    "@modelcontextprotocol/sdk": "^1.29.0"
+    "@modelcontextprotocol/sdk": "^1.32.2"
   },
   "dependencies": {
     "re2js": "2.8.8"
