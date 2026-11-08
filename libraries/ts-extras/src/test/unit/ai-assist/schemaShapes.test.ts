@@ -300,6 +300,9 @@ describe('AiAssist.structuredOutputSchemaKeywords — the table a structured-out
     ).toBe(schemaKeywordsFor('anthropic-json-outputs', { providerId: 'anthropic' }));
     expect(
       AiAssist.structuredOutputSchemaKeywords(registered('anthropic'), { model: '@anthropic:sonnet' })
+    ).toBe(schemaKeywordsFor('anthropic-json-outputs', { providerId: 'anthropic' }));
+    expect(
+      AiAssist.structuredOutputSchemaKeywords(registered('anthropic'), { model: '@anthropic:haiku' })
     ).toBe(schemaKeywordsFor('anthropic-tools', { providerId: 'anthropic' }));
     expect(
       AiAssist.structuredOutputSchemaKeywords(registered('google-gemini'), { model: '@google-gemini:flash' })

@@ -36,6 +36,8 @@ import { schemaWireProviderId } from './schemaKeywords';
 import {
   type IAiStreamEvent,
   type ModelSpecKey,
+  checkSamplingParams,
+  temperatureAcceptedWithThinking,
   isAdaptiveThinkingModel,
   isThinkingRequiredModel,
   isResponsesOnlyModel,
@@ -177,12 +179,17 @@ export async function callProviderCompletionStream(
         resolvedThinking,
         discriminator,
         temperature,
-        mergeResult.value.noneDegraded
+        mergeResult.value.noneDegraded,
+        temperatureAcceptedWithThinking(descriptor, model)
       );
       if (conflictResult.isFailure()) {
         return fail(conflictResult.message);
       }
     }
+  }
+  const samplingResult = checkSamplingParams(descriptor, model, temperature);
+  if (samplingResult.isFailure()) {
+    return fail(samplingResult.message);
   }
 
   const config: IStreamApiConfig = {
@@ -252,7 +259,8 @@ export async function callProviderCompletionStream(
         undefined,
         isAdaptiveThinkingModel(descriptor, config.model),
         maxTokens,
-        cache
+        cache,
+        temperatureAcceptedWithThinking(descriptor, config.model)
       );
     case 'gemini':
       return callGeminiStream(

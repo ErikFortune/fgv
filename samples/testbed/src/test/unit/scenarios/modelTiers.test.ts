@@ -87,7 +87,7 @@ describe('resolveTierResolutions', () => {
       (resolutions) => {
         expect(resolutions).toEqual([
           { tier: 'base', alias: '@openai:mini', concrete: 'gpt-6-luna', cascaded: false },
-          { tier: 'advanced', alias: '@openai:flagship', concrete: 'gpt-6-sol', cascaded: false },
+          { tier: 'advanced', alias: '@openai:flagship', concrete: 'gpt-6.1-sol', cascaded: false },
           { tier: 'frontier', alias: '@openai:pro', concrete: 'gpt-6-astra', cascaded: false }
         ]);
       }
@@ -228,7 +228,7 @@ describe('runTierCanary (offline — STOP-FLAG)', () => {
     );
     expect(result).toSucceedAndSatisfy((report: string) => {
       expect(report).toMatch(/=== anthropic model-tier canary ===/);
-      expect(report).toMatch(/\[PASS\] base\s+@anthropic:sonnet -> claude-sonnet-5/);
+      expect(report).toMatch(/\[PASS\] base\s+@anthropic:sonnet -> claude-sonnet-5-5/);
       expect(report).toMatch(
         /\[PASS\] frontier\s+@anthropic:opus -> claude-opus-5-5 \(cascaded from a lower tier\)/
       );
@@ -236,7 +236,7 @@ describe('runTierCanary (offline — STOP-FLAG)', () => {
       expect(report).toMatch(/RESOLVER-VERIFIED; LIVE CANARY PENDING \(STOP-FLAG/);
     });
     // The alias -> concrete log lines match the shipped maintenance-loop format.
-    expect(logger.logged).toContain("resolved @anthropic:sonnet -> claude-sonnet-5 (tier 'base')");
+    expect(logger.logged).toContain("resolved @anthropic:sonnet -> claude-sonnet-5-5 (tier 'base')");
     expect(logger.logged).toContain(
       "resolved @anthropic:opus -> claude-opus-5-5 (tier 'frontier' request cascaded)"
     );
@@ -331,7 +331,7 @@ describe('runTierCanary (live — injected completion)', () => {
     );
     expect(result).toSucceedAndSatisfy((report: string) => {
       expect(report).toMatch(/LIVE BLOCKED/);
-      expect(report).toMatch(/\[BLOCKED\(param\)\] base\s+claude-sonnet-5\s+\(AI API returned 400/);
+      expect(report).toMatch(/\[BLOCKED\(param\)\] base\s+claude-sonnet-5-5\s+\(AI API returned 400/);
     });
   });
 
@@ -685,7 +685,7 @@ describe('runTierCanary (structured-output probes)', () => {
     providerId: 'anthropic',
     descriptor: anthropic,
     tiers: ['base', 'advanced'] as ReadonlyArray<CanaryTier>,
-    extraModels: ['@anthropic:fable'],
+    extraModels: ['@anthropic:fable', '@anthropic:haiku'],
     structuredOutputProbe: true
   };
 
@@ -709,8 +709,9 @@ describe('runTierCanary (structured-output probes)', () => {
     });
   }
 
-  test('the registry splits Anthropic by line: forced tool on sonnet-5, schema on opus-5-5 / fable-5-1', () => {
-    expect(expectedStructuredEnforcement(anthropic, 'claude-sonnet-5')).toBe('tool-forced');
+  test('the registry splits Anthropic by line: forced tool on haiku-5-5, schema on sonnet-5-5 / opus-5-5 / fable-5-1', () => {
+    expect(expectedStructuredEnforcement(anthropic, 'claude-haiku-5-5')).toBe('tool-forced');
+    expect(expectedStructuredEnforcement(anthropic, 'claude-sonnet-5-5')).toBe('schema');
     expect(expectedStructuredEnforcement(anthropic, 'claude-opus-5-5')).toBe('schema');
     expect(expectedStructuredEnforcement(anthropic, 'claude-fable-5-1')).toBe('schema');
     expect(expectedStructuredEnforcement(anthropic, '@anthropic:nope')).toBe('none');
@@ -723,7 +724,10 @@ describe('runTierCanary (structured-output probes)', () => {
     const result = await runTierCanary(spec, { complete }, new Logging.InMemoryLogger());
     expect(result).toSucceedAndSatisfy((report: string) => {
       expect(report).toMatch(/Structured-output probes \(schema, onUnsupported 'fail'\):/);
-      expect(report).toMatch(/\[PASS\] base schema\s+claude-sonnet-5\s+\(enforcement 'tool-forced'\)/);
+      expect(report).toMatch(/\[PASS\] base schema\s+claude-sonnet-5-5\s+\(enforcement 'schema'\)/);
+      expect(report).toMatch(
+        /\[PASS\] @anthropic:haiku schema\s+claude-haiku-5-5\s+\(enforcement 'tool-forced'\)/
+      );
       expect(report).toMatch(/\[PASS\] advanced schema\s+claude-opus-5-5\s+\(enforcement 'schema'\)/);
       expect(report).toMatch(
         /\[PASS\] @anthropic:fable schema\s+claude-fable-5-1\s+\(enforcement 'schema'\)/
@@ -733,7 +737,7 @@ describe('runTierCanary (structured-output probes)', () => {
     const structuredCalls = complete.mock.calls.filter(
       ([, options]) => options?.structuredOutput !== undefined
     );
-    expect(structuredCalls).toHaveLength(3);
+    expect(structuredCalls).toHaveLength(4);
     for (const [, options] of structuredCalls) {
       expect(options?.structuredOutput).toMatchObject({ mode: 'schema', onUnsupported: 'fail' });
     }
@@ -773,9 +777,12 @@ describe('runTierCanary (structured-output probes)', () => {
       new Logging.InMemoryLogger()
     );
     expect(result).toSucceedAndSatisfy((report: string) => {
-      expect(report).toMatch(/\[PASS\] base schema\s+claude-sonnet-5/);
+      expect(report).toMatch(/\[PASS\] base schema\s+claude-sonnet-5-5/);
       expect(report).toMatch(
-        /\[PASS\] base schema\+effort=low\s+claude-sonnet-5\s+\(enforcement 'tool-forced'\)/
+        /\[PASS\] base schema\+effort=low\s+claude-sonnet-5-5\s+\(enforcement 'schema'\)/
+      );
+      expect(report).toMatch(
+        /\[PASS\] @anthropic:haiku schema\+effort=low\s+claude-haiku-5-5\s+\(enforcement 'tool-forced'\)/
       );
       expect(report).toMatch(
         /\[PASS\] advanced schema\+effort=low\s+claude-opus-5-5\s+\(enforcement 'schema'\)/
@@ -787,10 +794,10 @@ describe('runTierCanary (structured-output probes)', () => {
     const structuredCalls = complete.mock.calls.filter(
       ([, options]) => options?.structuredOutput !== undefined
     );
-    // 3 plain + 3 with effort (base, advanced, @anthropic:fable).
-    expect(structuredCalls).toHaveLength(6);
+    // 4 plain + 4 with effort (base, advanced, @anthropic:fable, @anthropic:haiku).
+    expect(structuredCalls).toHaveLength(8);
     const withEffort = structuredCalls.filter(([, options]) => options?.effort !== undefined);
-    expect(withEffort).toHaveLength(3);
+    expect(withEffort).toHaveLength(4);
     for (const [, options] of withEffort) {
       expect(options).toMatchObject({
         effort: 'low',
@@ -1014,10 +1021,11 @@ describe('model-tier scenarios', () => {
     expect(result).toSucceedAndSatisfy((report: string) => {
       expect(report).toMatch(/=== google-gemini model-tier canary ===/);
       expect(report).toMatch(/@google-gemini:pro -> gemini-3\.1-pro-preview \(cascaded from a lower tier\)/);
-      expect(report).toMatch(/\[PASS\] image\s+@google-gemini:flash-image -> gemini-3\.1-flash-image\b/);
+      expect(report).toMatch(/\[PASS\] image\s+@google-gemini:flash-image -> gemini-nano-banana-2\.1\b/);
       expect(report).toMatch(/\[PENDING\] frontier effort=none\s+gemini-3\.1-pro-preview/);
       expect(report).toMatch(/\[PENDING\] @google-gemini:flash-lite\s+gemini-3\.5-flash-lite/);
-      expect(report).not.toMatch(/Live image probe:/);
+      // The rotated image tier gets a live generation, pending without a key.
+      expect(report).toMatch(/\[PENDING\] image\s+gemini-nano-banana-2\.1/);
       expect(report).toMatch(/RESOLVER-VERIFIED; LIVE CANARY PENDING \(STOP-FLAG/);
     });
   });
@@ -1059,7 +1067,9 @@ describe('model-tier scenarios', () => {
     expect(result).toSucceedAndSatisfy((report: string) => {
       expect(report).toMatch(/@anthropic:opus -> claude-opus-5-5 \(cascaded from a lower tier\)/);
       expect(report).toMatch(/\[PENDING\] @anthropic:fable\s+claude-fable-5-1/);
-      expect(report).toMatch(/\[PENDING\] base schema\s+claude-sonnet-5/);
+      expect(report).toMatch(/\[PENDING\] base schema\s+claude-sonnet-5-5/);
+      expect(report).toMatch(/\[PENDING\] @anthropic:haiku\s+claude-haiku-5-5/);
+      expect(report).toMatch(/\[PENDING\] @anthropic:haiku schema\s+claude-haiku-5-5/);
       expect(report).toMatch(/\[PENDING\] frontier schema\s+claude-opus-5-5/);
       expect(report).toMatch(/\[PENDING\] @anthropic:fable schema\s+claude-fable-5-1/);
       expect(report).toMatch(/\[PENDING\] advanced schema\+effort=low\s+claude-opus-5-5/);

@@ -50,7 +50,10 @@ import {
   type IAiStreamEvent,
   type IChatRequest,
   type IAiProviderDescriptor,
+  checkSamplingParams,
+  temperatureAcceptedWithThinking,
   isAdaptiveThinkingModel,
+  isThinkingRequiredModel,
   resolveProviderModel
 } from '../model';
 import { adaptClientToolParameters, resolveToolConflicts } from '../toolFormats';
@@ -792,6 +795,22 @@ export function executeClientToolTurn(
     return fail(modelResult.message);
   }
   const resolvedModel = modelResult.value;
+  const samplingResult = checkSamplingParams(descriptor, resolvedModel, temperature);
+  if (samplingResult.isFailure()) {
+    return fail(`executeClientToolTurn: ${samplingResult.message}`);
+  }
+  // A caller-built resolvedThinking skips the resolver that degrades or refuses 'none', so the
+  // same rule is applied here: the flag would send thinking disabled to a model that rejects it.
+  if (
+    resolvedThinking?.anthropicThinkingDisabled === true &&
+    resolvedThinking.anthropicEffort === undefined &&
+    isThinkingRequiredModel(descriptor, resolvedModel)
+  ) {
+    return fail(
+      `executeClientToolTurn: ${resolvedModel} cannot run with thinking off: ` +
+        `drop anthropicThinkingDisabled or set an anthropicEffort`
+    );
+  }
   const baseUrlResult = resolveEffectiveBaseUrl(descriptor, endpoint);
   if (baseUrlResult.isFailure()) {
     return fail(baseUrlResult.message);
@@ -842,7 +861,8 @@ export function executeClientToolTurn(
           continuationMessages,
           isAdaptiveThinkingModel(descriptor, config.model),
           maxTokens,
-          cache
+          cache,
+          temperatureAcceptedWithThinking(descriptor, config.model)
         );
       case 'openai': {
         // Same gating as callProviderCompletion's 'openai' case in completionClient.ts — see the

@@ -585,6 +585,71 @@ export function isThinkingRequiredModel(descriptor: IAiProviderDescriptor, model
 }
 
 /**
+ * Whether a concrete (already-resolved) model restricts a caller-supplied `temperature`, per the
+ * descriptor's {@link IAiProviderDescriptor.samplingParamsRejectedModelPrefixes}
+ * (exact-or-dash-bounded match).
+ *
+ * @remarks
+ * A listed model rejects every `temperature` except the descriptor's
+ * {@link IAiProviderDescriptor.samplingParamsAcceptedTemperature}, when one is declared. The
+ * completion (`callProviderCompletion`), streaming (`callProviderCompletionStream`) and
+ * client-tool (`executeClientToolTurn`) paths refuse any other value before anything is sent,
+ * rather than letting the provider return a 400.
+ *
+ * @param descriptor - The provider descriptor supplying the prefix list.
+ * @param modelId - The resolved concrete model id to test.
+ * @returns `true` when `modelId` restricts `temperature`.
+ * @public
+ */
+export function rejectsSamplingParams(descriptor: IAiProviderDescriptor, modelId: string): boolean {
+  return (
+    descriptor.samplingParamsRejectedModelPrefixes?.some((p) => isExactOrDashBoundedPrefix(modelId, p)) ??
+    false
+  );
+}
+
+/**
+ * The `temperature` a model accepts even with thinking on: the descriptor's
+ * {@link IAiProviderDescriptor.samplingParamsAcceptedTemperature} on a model that
+ * {@link AiAssist.rejectsSamplingParams | restricts temperature} (such models apply that rule with or
+ * without thinking), otherwise `undefined`.
+ * @internal
+ */
+export function temperatureAcceptedWithThinking(
+  descriptor: IAiProviderDescriptor,
+  modelId: string
+): number | undefined {
+  return rejectsSamplingParams(descriptor, modelId)
+    ? descriptor.samplingParamsAcceptedTemperature
+    : undefined;
+}
+
+/**
+ * Refuses a `temperature` aimed at a model that rejects sampling parameters (see
+ * {@link AiAssist.rejectsSamplingParams}). Succeeds with the temperature otherwise.
+ * @internal
+ */
+export function checkSamplingParams(
+  descriptor: IAiProviderDescriptor,
+  modelId: string,
+  temperature: number | undefined
+): Result<number | undefined> {
+  if (temperature === undefined || !rejectsSamplingParams(descriptor, modelId)) {
+    return succeed(temperature);
+  }
+  const accepted = descriptor.samplingParamsAcceptedTemperature;
+  if (accepted === undefined) {
+    return fail(`${modelId} does not accept temperature on any request: remove temperature`);
+  }
+  if (temperature === accepted) {
+    return succeed(temperature);
+  }
+  return fail(
+    `${modelId} does not accept a non-default temperature (${temperature}): remove temperature, or send ${accepted}`
+  );
+}
+
+/**
  * Determines whether a provider's OpenAI-compatible Chat Completions request
  * should use the modern `max_completion_tokens` field instead of the legacy
  * `max_tokens` field for capping output length.
@@ -1011,7 +1076,8 @@ export interface IAiProviderDescriptor {
    * Concrete model ids (exact-or-dash-bounded-prefix-matched, like
    * {@link IAiProviderDescriptor.adaptiveThinkingModelPrefixes}) that cannot run with thinking off.
    * The provider rejects the off value ai-assist would send for a generic `effort: 'none'`:
-   * `reasoning_effort: 'none'` (OpenAI, xAI) or `thinkingBudget: 0` (Gemini).
+   * `reasoning_effort: 'none'` (OpenAI, xAI), `thinkingBudget: 0` (Gemini), or
+   * `thinking: { type: 'disabled' }` (Anthropic adaptive-thinking models).
    *
    * @remarks
    * A generic `'none'` on a listed model is handled by {@link IThinkingConfig.onUnsupported}. It
@@ -1021,6 +1087,23 @@ export interface IAiProviderDescriptor {
    * block's `effort` or `thinkingBudget`, or an `'other'` block's wire field). Empty or undefined means every model accepts `'none'`.
    */
   readonly thinkingRequiredModelPrefixes?: ReadonlyArray<string>;
+  /**
+   * Concrete model ids (exact-or-dash-bounded-prefix-matched, like
+   * {@link IAiProviderDescriptor.thinkingRequiredModelPrefixes}) that reject a caller-supplied
+   * `temperature` with or without thinking — every value, or every value but
+   * {@link IAiProviderDescriptor.samplingParamsAcceptedTemperature} when the descriptor declares
+   * one. A call that sets a rejected `temperature` on a listed model is refused before the wire (see
+   * {@link AiAssist.rejectsSamplingParams}). Empty or undefined means every model accepts
+   * `temperature` (subject to the thinking-mode conflict).
+   */
+  readonly samplingParamsRejectedModelPrefixes?: ReadonlyArray<string>;
+  /**
+   * The one `temperature` that the models on
+   * {@link IAiProviderDescriptor.samplingParamsRejectedModelPrefixes} still accept — the provider's
+   * own default, which a provider that rejects only non-default values lets through. Undefined
+   * means those models accept no `temperature` at all.
+   */
+  readonly samplingParamsAcceptedTemperature?: number;
 }
 
 /**
@@ -1238,7 +1321,7 @@ export type GrokImagineModelNames =
   | 'grok-imagine-image-2.0';
 
 /** Model names in the Gemini Flash Image family. @public */
-export type GeminiFlashImageModelNames = 'gemini-3.1-flash-image';
+export type GeminiFlashImageModelNames = 'gemini-3.1-flash-image' | 'gemini-nano-banana-2.1';
 
 // ---- Family-level config shapes ----
 
@@ -1538,6 +1621,8 @@ export type AnthropicThinkingModelNames =
   | 'claude-sonnet-4-5'
   | 'claude-sonnet-4-6'
   | 'claude-sonnet-5'
+  | 'claude-sonnet-5-5'
+  | 'claude-haiku-5-5'
   | 'claude-opus-4-6'
   | 'claude-opus-4-7'
   | 'claude-opus-4-8'
@@ -1566,6 +1651,7 @@ export type OpenAiThinkingModelNames =
   | 'gpt-5-pro'
   | 'gpt-6-astra'
   | 'gpt-6-sol'
+  | 'gpt-6.1-sol'
   | 'gpt-6-luna';
 
 /**
@@ -1765,8 +1851,10 @@ export interface IThinkingConfig {
    *
    * @remarks
    * `'none'` is the one cross-provider spelling for "thinking off". Anthropic has no
-   * off value in its own effort vocabulary — off there means omitting the `thinking`
-   * wire param entirely — so `'none'` maps to that omission rather than to a value.
+   * off value in its own effort vocabulary, so `'none'` maps to a `thinking` value rather than
+   * an effort: on an adaptive-thinking model (see {@link AiAssist.isAdaptiveThinkingModel}),
+   * where thinking is on by default, it sends `thinking: { type: 'disabled' }`; on an older
+   * model, where thinking is off by default, it omits the `thinking` field.
    * On a model that accepts `'none'`, whichever provider is in play, `'none'` also re-enables
    * `temperature` (see `checkTemperatureConflict` in `thinkingOptionsResolver.ts`). On a model
    * listed in {@link IAiProviderDescriptor.thinkingRequiredModelPrefixes} it does not: there

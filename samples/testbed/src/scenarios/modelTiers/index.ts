@@ -240,7 +240,7 @@ function makeTierScenario(params: ITierScenarioParams): IScenario {
 
 /**
  * OpenAI model-tier canary — exercises `base` / `advanced` / `frontier` (all three tiers now resolve
- * to the gpt-6 family: luna / sol / astra) plus the `image` tier resolution (`gpt-image-2.5-sunburst`). The
+ * to the gpt-6 line: gpt-6-luna / gpt-6.1-sol / gpt-6-astra) plus the `image` tier resolution (`gpt-image-2.5-sunburst`). The
  * gpt-6 family works on chat completions, so the frontier tier needs no Responses-only routing
  * (the earlier `gpt-5.5-pro` remains reachable via `modelOverride` and still routes via
  * `responsesOnlyModelPrefixes`). Each tier is also probed with thinking effort `none` and `low`,
@@ -254,7 +254,7 @@ export const openaiModelTiersScenario: IScenario = makeTierScenario({
   title: 'OpenAI Model Tiers',
   description:
     'Resolves and (with OPENAI_API_KEY) live-canaries the OpenAI base/advanced/frontier tiers ' +
-    '(gpt-6-luna / gpt-6-sol / gpt-6-astra), probes each with thinking effort none and low (and none with onUnsupported fail), and ' +
+    '(gpt-6-luna / gpt-6.1-sol / gpt-6-astra), probes each with thinking effort none and low (and none with onUnsupported fail), and ' +
     'fires one live image generation (gpt-image-2.5-sunburst, quality low). Logs each alias -> ' +
     'concrete id. The image may be access-gated — reported BLOCKED, not failed. Web-runnable.',
   tags: ['openai'],
@@ -275,10 +275,10 @@ export const openaiModelTiersScenario: IScenario = makeTierScenario({
 /**
  * Anthropic model-tier canary — exercises `base` / `advanced` and a `frontier` request that
  * cascades to the `advanced` (opus) id (the log line for that request is the live cascade proof),
- * plus a live row for the `modelOverride`-only `@anthropic:fable` alias. Every one of those also
- * gets a structured-output probe: the two Anthropic formats split by line (`claude-sonnet-5` forces
- * a tool; `claude-opus-5-5` and `claude-fable-5-1` send `output_config.format`), so the run
- * exercises both mechanisms live, not only the ids. Each probe is repeated with thinking effort
+ * plus live rows for the `modelOverride`-only `@anthropic:fable` and `@anthropic:haiku` aliases.
+ * Every one of those also gets a structured-output probe: the two Anthropic formats split by line
+ * (`claude-haiku-5-5` forces a tool; `claude-sonnet-5-5`, `claude-opus-5-5` and `claude-fable-5-1`
+ * send `output_config.format`), so the run exercises both mechanisms live, not only the ids. Each probe is repeated with thinking effort
  * `low`, so `output_config` carries `effort` and `format` together on the adaptive successors.
  * Requires `ANTHROPIC_API_KEY` for the live half.
  * @public
@@ -289,17 +289,17 @@ export const anthropicModelTiersScenario: IScenario = makeTierScenario({
   description:
     'Resolves and (with ANTHROPIC_API_KEY) live-canaries the Anthropic base/advanced tiers plus a ' +
     'frontier request that cascades to the advanced (opus) id — the cascade proof — and ' +
-    '@anthropic:fable, and fires a schema structured-output probe on each (forced tool on ' +
-    'claude-sonnet-5, output_config.format on claude-opus-5-5 / claude-fable-5-1), with and ' +
+    '@anthropic:fable and @anthropic:haiku, and fires a schema structured-output probe on each (forced tool on ' +
+    'claude-haiku-5-5, output_config.format on claude-sonnet-5-5 / claude-opus-5-5 / claude-fable-5-1), with and ' +
     'without thinking effort low. Logs each ' +
     'alias -> concrete id. Web-runnable.',
   tags: ['anthropic'],
   tiers: ['base', 'advanced', 'frontier'],
-  extraModels: ['@anthropic:fable'],
+  extraModels: ['@anthropic:fable', '@anthropic:haiku'],
   structuredOutputProbe: true,
-  // Repeat each schema probe with an effort: on claude-opus-5-5 / claude-fable-5-1 that sends
-  // output_config { effort, format } together; on claude-sonnet-5 it sends a forced tool with
-  // adaptive thinking, which Anthropic's thinking page says works ("incompatible with manual
+  // Repeat each schema probe with an effort: on claude-sonnet-5-5 / claude-opus-5-5 / claude-fable-5-1
+  // that sends output_config { effort, format } together; on claude-haiku-5-5 it sends a forced tool
+  // with adaptive thinking, which Anthropic's thinking page says works ("incompatible with manual
   // extended thinking but works with adaptive thinking").
   structuredOutputEfforts: ['low'],
   requiredSecrets: [
@@ -313,9 +313,9 @@ export const anthropicModelTiersScenario: IScenario = makeTierScenario({
 
 /**
  * Gemini model-tier canary — exercises `base` / `advanced` and a `frontier` request that cascades
- * to the `advanced` (pro) id, plus the `image` tier resolution (`@google-gemini:flash-image` →
- * `gemini-3.1-flash-image` — the GA id that replaced the retired preview id). The image tier is
- * offline-resolved and logged only (it was not rotated). Each tier is probed with thinking effort
+ * to the `advanced` (pro) id, plus the `image` tier (`@google-gemini:flash-image` →
+ * `gemini-nano-banana-2.1`, the update to Nano Banana 2 / `gemini-3.1-flash-image`), which gets one
+ * live generation because it was rotated. Each tier is probed with thinking effort
  * `none` and `low`, and the `modelOverride`-only `@google-gemini:flash-lite` alias gets its own
  * live row. Requires `GEMINI_API_KEY` (or `GOOGLE_API_KEY`) for the live half.
  * @public
@@ -327,13 +327,15 @@ export const geminiModelTiersScenario: IScenario = makeTierScenario({
     'Resolves and (with GEMINI_API_KEY/GOOGLE_API_KEY) live-canaries the Gemini base/advanced tiers ' +
     'plus a frontier request that cascades to the advanced (pro) id, probes each with thinking ' +
     'effort none and low (and none with onUnsupported fail), live-canaries @google-gemini:flash-lite, and resolves the image tier ' +
-    '(gemini-3.1-flash-image). Logs each alias -> concrete id. Web-runnable.',
+    '(gemini-nano-banana-2.1) with one live generation. Logs each alias -> concrete id. The image may be ' +
+    'access-gated — reported BLOCKED, not failed. Web-runnable.',
   tags: ['gemini', 'google'],
   tiers: ['base', 'advanced', 'frontier'],
   imageTier: true,
   thinkingEfforts: THINKING_PROBE_EFFORTS,
   strictNoneProbe: true,
   extraModels: ['@google-gemini:flash-lite'],
+  liveImage: {},
   requiredSecrets: [
     {
       id: AiAssist.providerApiKeySecretName('google-gemini'),
