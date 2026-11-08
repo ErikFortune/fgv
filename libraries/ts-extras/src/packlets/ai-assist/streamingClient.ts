@@ -37,6 +37,7 @@ import {
   type IAiStreamEvent,
   type ModelSpecKey,
   checkSamplingParams,
+  temperatureAcceptedWithThinking,
   isAdaptiveThinkingModel,
   isThinkingRequiredModel,
   isResponsesOnlyModel,
@@ -178,7 +179,8 @@ export async function callProviderCompletionStream(
         resolvedThinking,
         discriminator,
         temperature,
-        mergeResult.value.noneDegraded
+        mergeResult.value.noneDegraded,
+        temperatureAcceptedWithThinking(descriptor, model)
       );
       if (conflictResult.isFailure()) {
         return fail(conflictResult.message);
@@ -257,7 +259,8 @@ export async function callProviderCompletionStream(
         undefined,
         isAdaptiveThinkingModel(descriptor, config.model),
         maxTokens,
-        cache
+        cache,
+        temperatureAcceptedWithThinking(descriptor, config.model)
       );
     case 'gemini':
       return callGeminiStream(

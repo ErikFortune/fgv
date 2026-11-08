@@ -240,22 +240,27 @@ describe('per-model thinking-off and sampling-parameter rules', () => {
       expect(sentBody().thinking).toBeUndefined();
     });
 
-    test.each(['@anthropic:sonnet', 'claude-opus-5-5', 'claude-fable-5-1', 'claude-mythos-5'])(
-      'executeClientToolTurn refuses a caller-built thinking-off flag on %s',
-      (model) => {
-        mockSse();
-        const result = AiAssist.executeClientToolTurn({
-          descriptor: anthropic,
-          apiKey: 'k',
-          ...prompt.toRequest(),
-          clientTools: [],
-          model,
-          resolvedThinking: { anthropicThinkingDisabled: true }
-        });
-        expect(result).toFailWith(/executeClientToolTurn: claude-[a-z0-9-]+ cannot run with thinking off/);
-        expect(global.fetch).not.toHaveBeenCalled();
-      }
-    );
+    // claude-mythos-preview is thinking-required but keeps the budget shape: the flag would send no
+    // thinking field and the model would think, so it is refused too.
+    test.each([
+      '@anthropic:sonnet',
+      'claude-opus-5-5',
+      'claude-fable-5-1',
+      'claude-mythos-5',
+      'claude-mythos-preview'
+    ])('executeClientToolTurn refuses a caller-built thinking-off flag on %s', (model) => {
+      mockSse();
+      const result = AiAssist.executeClientToolTurn({
+        descriptor: anthropic,
+        apiKey: 'k',
+        ...prompt.toRequest(),
+        clientTools: [],
+        model,
+        resolvedThinking: { anthropicThinkingDisabled: true }
+      });
+      expect(result).toFailWith(/executeClientToolTurn: claude-[a-z0-9-]+ cannot run with thinking off/);
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
 
     test('executeClientToolTurn lets an effort beside the flag through on a thinking-required model', async () => {
       mockSse();
@@ -460,6 +465,131 @@ describe('per-model thinking-off and sampling-parameter rules', () => {
       expect(AiAssist.rejectsSamplingParams(anthropic, 'claude-opus-50')).toBe(false);
       expect(AiAssist.rejectsSamplingParams(anthropic, 'claude-haiku-4-5')).toBe(false);
       expect(AiAssist.rejectsSamplingParams(getDescriptor('groq'), 'openai/gpt-oss-120b')).toBe(false);
+    });
+  });
+
+  describe('the accepted default temperature alongside thinking', () => {
+    const anthropic = getDescriptor('anthropic');
+
+    // "non-default … values return a 400 error on every request, regardless of whether thinking is
+    // used": the default is accepted with thinking on too, on the models that restrict sampling.
+    test.each(['claude-haiku-5-5', 'claude-sonnet-5-5', '@anthropic:opus'])(
+      'completion: %s sends temperature 1 with effort low',
+      async (model) => {
+        mockJson(anthropicOk);
+        expect(
+          await AiAssist.callProviderCompletion({
+            descriptor: anthropic,
+            apiKey: 'k',
+            ...prompt.toRequest(),
+            modelOverride: model,
+            temperature: 1,
+            thinking: { effort: 'low' }
+          })
+        ).toSucceed();
+        expect(sentBody()).toMatchObject({
+          temperature: 1,
+          thinking: { type: 'adaptive' },
+          output_config: { effort: 'low' }
+        });
+      }
+    );
+
+    test.each(['claude-haiku-5-5', 'claude-sonnet-5-5'])(
+      'streaming: %s sends temperature 1 with effort low',
+      async (model) => {
+        mockSse();
+        const result = await AiAssist.callProviderCompletionStream({
+          descriptor: anthropic,
+          apiKey: 'k',
+          ...prompt.toRequest(),
+          modelOverride: model,
+          temperature: 1,
+          thinking: { effort: 'low' }
+        });
+        await drain(result.orThrow());
+        expect(sentBody()).toMatchObject({ temperature: 1, output_config: { effort: 'low' } });
+      }
+    );
+
+    test.each(['claude-haiku-5-5', 'claude-sonnet-5-5'])(
+      'client-tool: %s sends temperature 1 with a resolved effort',
+      async (model) => {
+        mockSse();
+        const result = AiAssist.executeClientToolTurn({
+          descriptor: anthropic,
+          apiKey: 'k',
+          ...prompt.toRequest(),
+          clientTools: [],
+          model,
+          temperature: 1,
+          resolvedThinking: { anthropicEffort: 'low' }
+        });
+        await drain(result.orThrow().events);
+        expect(sentBody()).toMatchObject({ temperature: 1, output_config: { effort: 'low' } });
+      }
+    );
+
+    test.each([
+      ['claude-haiku-5-5', 0.3],
+      ['claude-sonnet-5-5', 0.3]
+    ] as ReadonlyArray<[string, number]>)(
+      'completion: %s still refuses temperature %s with effort low',
+      async (model, temperature) => {
+        mockJson(anthropicOk);
+        const result = await AiAssist.callProviderCompletion({
+          descriptor: anthropic,
+          apiKey: 'k',
+          ...prompt.toRequest(),
+          modelOverride: model,
+          temperature,
+          thinking: { effort: 'low' }
+        });
+        expect(result).toFail();
+        expect(global.fetch).not.toHaveBeenCalled();
+      }
+    );
+
+    // Older models keep the thinking/temperature conflict: they accept temperature only with thinking off.
+    test.each(['claude-haiku-4-5-20251001', 'claude-opus-4-6'])(
+      'completion and streaming: %s refuses temperature 1 with effort low',
+      async (model) => {
+        mockJson(anthropicOk);
+        const completion = await AiAssist.callProviderCompletion({
+          descriptor: anthropic,
+          apiKey: 'k',
+          ...prompt.toRequest(),
+          modelOverride: model,
+          temperature: 1,
+          thinking: { effort: 'low' }
+        });
+        expect(completion).toFailWith(/thinking mode is not compatible with temperature/);
+        const stream = await AiAssist.callProviderCompletionStream({
+          descriptor: anthropic,
+          apiKey: 'k',
+          ...prompt.toRequest(),
+          modelOverride: model,
+          temperature: 1,
+          thinking: { effort: 'low' }
+        });
+        expect(stream).toFailWith(/thinking mode is not compatible with temperature/);
+        expect(global.fetch).not.toHaveBeenCalled();
+      }
+    );
+
+    test('client-tool: claude-haiku-4-5 drops temperature 1 beside a resolved effort (adapter safety net)', async () => {
+      mockSse();
+      const result = AiAssist.executeClientToolTurn({
+        descriptor: anthropic,
+        apiKey: 'k',
+        ...prompt.toRequest(),
+        clientTools: [],
+        model: 'claude-haiku-4-5-20251001',
+        temperature: 1,
+        resolvedThinking: { anthropicEffort: 'low' }
+      });
+      await drain(result.orThrow().events);
+      expect(sentBody().temperature).toBeUndefined();
     });
   });
 });

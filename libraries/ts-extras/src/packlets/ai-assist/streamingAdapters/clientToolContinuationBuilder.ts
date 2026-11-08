@@ -51,6 +51,7 @@ import {
   type IChatRequest,
   type IAiProviderDescriptor,
   checkSamplingParams,
+  temperatureAcceptedWithThinking,
   isAdaptiveThinkingModel,
   isThinkingRequiredModel,
   resolveProviderModel
@@ -803,7 +804,6 @@ export function executeClientToolTurn(
   if (
     resolvedThinking?.anthropicThinkingDisabled === true &&
     resolvedThinking.anthropicEffort === undefined &&
-    isAdaptiveThinkingModel(descriptor, resolvedModel) &&
     isThinkingRequiredModel(descriptor, resolvedModel)
   ) {
     return fail(
@@ -861,7 +861,8 @@ export function executeClientToolTurn(
           continuationMessages,
           isAdaptiveThinkingModel(descriptor, config.model),
           maxTokens,
-          cache
+          cache,
+          temperatureAcceptedWithThinking(descriptor, config.model)
         );
       case 'openai': {
         // Same gating as callProviderCompletion's 'openai' case in completionClient.ts — see the

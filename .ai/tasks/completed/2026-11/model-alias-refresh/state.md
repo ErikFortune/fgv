@@ -172,3 +172,20 @@ them out.
 - **A9 (P3)** registry comment states that the dash-bounded thinking/sampling lists match a future
   point release of a listed family on purpose (the safe direction for a refusal), unlike the
   exact-id max-output rule.
+
+## Amendments — orchestrator review round 3 (head `d0b50fe7`)
+
+- **A10 (P2) the accepted default temperature also passes with thinking on.** The sampling-
+  restricting Anthropic models reject a non-default temperature "regardless of whether thinking is
+  used", so their default is not a thinking conflict either. `checkTemperatureConflict` takes an
+  optional `acceptedTemperature` and lets it through; callers pass
+  `temperatureAcceptedWithThinking(descriptor, model)` (the descriptor's
+  `samplingParamsAcceptedTemperature` on a model that `rejectsSamplingParams`, else undefined), and
+  the Anthropic streaming adapter takes the same value so its client-tool safety net keeps the
+  default. No provider branch. Older models (haiku-4-5, opus-4-6, …) keep the conflict.
+- **A11 (P3) the client-tool thinking-off guard keys on thinking-required alone.** It also covers
+  `claude-mythos-preview`, which is thinking-required but keeps the budget shape, so the flag would
+  have sent no field and the model would have thought.
+- **TECH_DEBT** gained a P3 for the `ts-extras-mcp` resumed-GET timing flake seen in round 2.
+- **Base merge:** `integration/asks` (with #766, the dependency refresh) merged in with a merge
+  commit; see `result.md` § 8.

@@ -518,15 +518,22 @@ function temperatureConflict(provider: string, noneDegraded: boolean): Result<un
  * `noneDegraded` (from `resolveThinkingConfig`) says a generic `'none'` reached the wire as `'low'`.
  * It affects only the failure message, never the decision.
  *
+ * `acceptedTemperature`, when given, is never a conflict: it is the value a model that restricts
+ * sampling parameters accepts regardless of thinking (see `temperatureAcceptedWithThinking`).
+ *
  * @internal
  */
 export function checkTemperatureConflict(
   resolved: IResolvedThinkingConfig,
   discriminator: ThinkingProviderDiscriminator,
   temperature: number | undefined,
-  noneDegraded: boolean = false
+  noneDegraded: boolean = false,
+  acceptedTemperature?: number
 ): Result<undefined> {
-  if (temperature === undefined) {
+  // `acceptedTemperature` is the one value a model that restricts sampling parameters still takes
+  // with or without thinking (see `temperatureAcceptedWithThinking`); every other value on such a
+  // model is refused by `checkSamplingParams` instead.
+  if (temperature === undefined || temperature === acceptedTemperature) {
     return succeed(undefined);
   }
 

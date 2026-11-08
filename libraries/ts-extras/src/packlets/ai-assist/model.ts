@@ -609,6 +609,22 @@ export function rejectsSamplingParams(descriptor: IAiProviderDescriptor, modelId
 }
 
 /**
+ * The `temperature` a model accepts even with thinking on: the descriptor's
+ * {@link IAiProviderDescriptor.samplingParamsAcceptedTemperature} on a model that
+ * {@link AiAssist.rejectsSamplingParams | restricts temperature} (such models apply that rule with or
+ * without thinking), otherwise `undefined`.
+ * @internal
+ */
+export function temperatureAcceptedWithThinking(
+  descriptor: IAiProviderDescriptor,
+  modelId: string
+): number | undefined {
+  return rejectsSamplingParams(descriptor, modelId)
+    ? descriptor.samplingParamsAcceptedTemperature
+    : undefined;
+}
+
+/**
  * Refuses a `temperature` aimed at a model that rejects sampling parameters (see
  * {@link AiAssist.rejectsSamplingParams}). Succeeds with the temperature otherwise.
  * @internal

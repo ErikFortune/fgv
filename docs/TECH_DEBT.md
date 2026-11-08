@@ -867,6 +867,10 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
 
 ## P3 — Opportunistic cleanup
 
+- **[P3] `@fgv/ts-extras-mcp` `egress.test`: a resumed-GET over-cap test flaked once under full-suite load.** "an answer over the cap on a resumed (Last-Event-ID) GET fails its request promptly as egress-blocked too-large" failed once in a repo-wide `rush test` on the `model-alias-refresh` branch (2026-11-08), passed on retry; the branch does not touch the package. Same file and timing class as the known slow-tool flake.
+
+  **Trigger**: a second failure, or the next stream touching `egress.test.ts`.
+
 - **[P3] `resolveModel` throws on a `ModelSpec` outside its type instead of failing.**
   `resolveModel` (`libraries/ts-extras/src/packlets/ai-assist/model.ts`) recurses into whatever
   value a spec key holds. A spec such as `{ base: undefined }` — reachable from untyped JSON or a

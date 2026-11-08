@@ -535,7 +535,8 @@ export async function callAnthropicStream(
   continuationMessages?: ReadonlyArray<JsonObject>,
   useAdaptiveThinking: boolean = false,
   maxTokens?: number,
-  cache?: IAiCacheRequest
+  cache?: IAiCacheRequest,
+  temperatureAcceptedWithThinking?: number
 ): Promise<Result<AsyncIterable<IAiStreamEvent>>> {
   const url = `${config.baseUrl}/messages`;
   const messages = buildAnthropicMessages(prompt, {
@@ -555,13 +556,15 @@ export async function callAnthropicStream(
     max_tokens: maxTokens ?? DEFAULT_ANTHROPIC_MAX_TOKENS,
     stream: true
   };
-  // Temperature is sent only when explicitly provided (Claude-5 rejects any temperature). When
-  // thinking is active it is also rejected — the completion/streaming paths validate this upstream,
-  // and the effort gate here is the safety net for the (unguarded) client-tool path.
-  if (resolvedThinking?.anthropicEffort === undefined) {
-    if (temperature !== undefined) {
-      body.temperature = temperature;
-    }
+  // Temperature is sent only when explicitly provided. With thinking active it conflicts — the
+  // completion/streaming paths validate this upstream, and the effort gate here is the safety net for
+  // the (unguarded) client-tool path — except for `temperatureAcceptedWithThinking`, the default a
+  // model that restricts sampling parameters accepts with or without thinking.
+  if (
+    temperature !== undefined &&
+    (resolvedThinking?.anthropicEffort === undefined || temperature === temperatureAcceptedWithThinking)
+  ) {
+    body.temperature = temperature;
   }
   if (resolvedThinking?.anthropicEffort !== undefined) {
     if (useAdaptiveThinking) {

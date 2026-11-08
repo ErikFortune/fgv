@@ -169,8 +169,8 @@ thinking off. `@anthropic:haiku` (`claude-haiku-5-5`) thinks by default and coun
 - A `temperature` aimed at a model in `samplingParamsRejectedModelPrefixes` is refused before the wire
   on the completion, streaming and client-tool paths. On Anthropic (every Claude 5.x model,
   `claude-mythos-preview`, `claude-opus-4-8`, `claude-opus-4-7`) only a non-default value is refused:
-  `samplingParamsAcceptedTemperature: 1` lets Anthropic's default through, as the provider does on
-  the pinned API version. On OpenAI (`gpt-6-astra`, `gpt-6.1-sol`) every value is refused. `AiAssist.rejectsSamplingParams` answers the
+  `samplingParamsAcceptedTemperature: 1` lets Anthropic's default through, with or without thinking,
+  as the provider does on the pinned API version. On OpenAI (`gpt-6-astra`, `gpt-6.1-sol`) every value is refused. `AiAssist.rejectsSamplingParams` answers the
   question for a concrete id. Not guarded, because it depends on the effort: `gpt-6-luna` (`mini`,
   `nano`) and `gpt-6-sol` reject `temperature` unless the call sets effort `'none'`.
 

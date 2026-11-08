@@ -102,10 +102,11 @@ effort `high` or below"*. A `'none'` sends no effort, so the model's default app
 | `claude-mythos-preview` *(round 2)* — id from the deprecations page ("claude-mythos-preview \| Deprecated") | "400 error" | rejected → thinking-required; not adaptive ("Extended thinking" for a budget) | budget shape at `'low'` |
 | older models (`claude-haiku-4-5`, `-sonnet-4-6`, `-opus-4-6`, …) | — | not adaptive | no `thinking` field — their "No `thinking` field" column reads "Thinking off" |
 
-*Round 2 (A6):* `executeClientToolTurn` takes a caller-built `IResolvedThinkingConfig`, which skips
-the resolver. It now refuses `anthropicThinkingDisabled` with no `anthropicEffort` on an adaptive,
-thinking-required model ("… cannot run with thinking off …") before dispatch; the two emit-site
-comments say so.
+*Round 2 (A6), widened in round 3 (A11):* `executeClientToolTurn` takes a caller-built
+`IResolvedThinkingConfig`, which skips the resolver. It now refuses `anthropicThinkingDisabled` with
+no `anthropicEffort` on any thinking-required model ("… cannot run with thinking off …") before
+dispatch — including `claude-mythos-preview`, which keeps the budget shape, so the flag would have
+sent no field and left it thinking. The two emit-site comments say so.
 
 The shape is "adaptive default with an exception list": no new descriptor field; the exception list
 is `thinkingRequiredModelPrefixes`. Before this, the Anthropic thinking-required list was empty and
@@ -141,7 +142,19 @@ message.
 temperature refusals across completion, streaming and client-tool paths); restoring the registry
 returned it to 41/41 (`red-test.log`, `green-test.log`).
 
-**Review round 2 red-then-green** (file now 61 tests):
+*Round 3 (A10):* on those models the accepted default is not a thinking conflict either ("…
+regardless of whether thinking is used"), so `{ temperature: 1, thinking: { effort: 'low' } }` is
+sent on every path; a non-default value with thinking is still refused, and older models keep the
+existing thinking/temperature conflict.
+
+**Review round 3 red-then-green** (file now 74 tests): dropping the accepted-default exemption from
+`checkTemperatureConflict` and the Anthropic adapter turned exactly the seven "sends temperature 1
+with effort low" rows red (completion ×3, streaming ×2, client-tool ×2); restoring the guard's
+adaptive condition turned exactly the `claude-mythos-preview` thinking-off-flag row red; each restored
+to 74/74 (`r4-red-1.log`, `r4-red-2.log`, `r4-green.log`). A first item-1 mutation compared with
+`NaN`, failed lint, and was not counted.
+
+**Review round 2 red-then-green** (file then 61 tests):
 - **A5:** removing `samplingParamsAcceptedTemperature: 1` turned 20 tests red — the seven "sends
   temperature 1" rows (haiku-5-5 and sonnet-5-5 across completion, streaming and client-tool, plus
   `@anthropic:opus`), and the thirteen Anthropic refusal rows whose assertion names the
@@ -191,7 +204,8 @@ pattern widened to allow `/` for Groq's owner-prefixed ids.
     and replaying a block can 400;
   - it cannot turn thinking off: `'none'` is now sent as `'low'` (or refused under
     `onUnsupported: 'fail'`);
-  - a non-default `temperature` is refused before the wire (it was a provider 400); `1` is still sent.
+  - a non-default `temperature` is refused before the wire (it was a provider 400); `1` is still sent,
+    with or without thinking.
 - **`@anthropic:haiku` (→ `claude-haiku-5-5`):** thinks by default (Haiku 4.5 did not), so a call with
   no thinking config now thinks and spends output tokens on it; the same text counts as ~30% more
   tokens; `'none'` now sends `thinking: {type: 'disabled'}`; a non-default `temperature` is refused

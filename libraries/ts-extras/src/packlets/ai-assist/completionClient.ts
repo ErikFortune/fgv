@@ -50,6 +50,7 @@ import {
   type ModelSpec,
   type ModelSpecKey,
   checkSamplingParams,
+  temperatureAcceptedWithThinking,
   isAdaptiveThinkingModel,
   isThinkingRequiredModel,
   isResponsesOnlyModel,
@@ -634,9 +635,8 @@ async function callAnthropicCompletion(
     // Anthropic's Messages API requires max_tokens on every request — see
     // AiAssist.DEFAULT_ANTHROPIC_MAX_TOKENS for why only this provider defaults it.
     max_tokens: maxTokens ?? DEFAULT_ANTHROPIC_MAX_TOKENS,
-    // Temperature is sent only when explicitly provided (Claude-5 rejects any temperature). The
-    // completion path rejects temperature + thinking upstream (checkTemperatureConflict), so no
-    // effort gate is needed here.
+    // Temperature is sent only when explicitly provided. The completion path refuses a rejected value
+    // upstream (checkSamplingParams, checkTemperatureConflict), so no effort gate is needed here.
     ...(temperature !== undefined ? { temperature } : {})
   };
 
@@ -895,7 +895,8 @@ export async function callProviderCompletion(
         resolvedThinking,
         discriminator,
         temperature,
-        mergeResult.value.noneDegraded
+        mergeResult.value.noneDegraded,
+        temperatureAcceptedWithThinking(descriptor, model)
       );
       if (conflictResult.isFailure()) {
         return fail(conflictResult.message);
