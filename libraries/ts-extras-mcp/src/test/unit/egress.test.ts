@@ -383,18 +383,28 @@ describe('Streamable-HTTP egress through an injected fetch', () => {
 });
 
 describe('static headers and redirects through globalThis.fetch', () => {
-  /** A loopback server answering every request with `respond`, recording each request's headers. */
-  async function listen(
-    respond: (res: ServerResponse) => void
-  ): Promise<{ server: Server; origin: string; seen: IncomingHttpHeaders[] }> {
+  /**
+   * A loopback server answering every request with `respond`, recording each request's headers and
+   * path.
+   */
+  async function listen(respond: (res: ServerResponse, path: string, origin: string) => void): Promise<{
+    server: Server;
+    origin: string;
+    seen: IncomingHttpHeaders[];
+    paths: string[];
+  }> {
     const seen: IncomingHttpHeaders[] = [];
+    const paths: string[] = [];
+    let origin = '';
     const server = createServer((req, res) => {
       seen.push(req.headers);
+      paths.push(req.url ?? '');
       req.resume();
-      respond(res);
+      respond(res, req.url ?? '', origin);
     });
     await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', () => resolve()));
-    return { server, origin: `http://127.0.0.1:${(server.address() as AddressInfo).port}`, seen };
+    origin = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+    return { server, origin, seen, paths };
   }
 
   const servers: Server[] = [];
@@ -436,5 +446,27 @@ describe('static headers and redirects through globalThis.fetch', () => {
     expect(connected).toFail();
     expect(mcp.seen.map((headers) => headers['x-api-key'])).toContain('k-static-3e9a');
     expect(other.seen).toEqual([]);
+  });
+
+  test('a same-origin 307 is refused for a request carrying static headers, though the SDK would follow it', async () => {
+    // The SDK follows a method-preserving redirect within the origin, so only this package's own
+    // `redirect: 'error'` for requests carrying static headers keeps the second path unrequested.
+    const mcp = await listen((res, path, origin) =>
+      path === '/mcp'
+        ? res.writeHead(307, { location: `${origin}/mcp-elsewhere` }).end()
+        : res.writeHead(500).end()
+    );
+    servers.push(mcp.server);
+
+    const connected = await connectMcpSession({
+      transport: createHttpTransport({
+        url: `${mcp.origin}/mcp`,
+        headers: { 'x-api-key': 'k-static-5b1c' }
+      }).orThrow(),
+      timeoutMs: 2000
+    });
+    expect(connected).toFail();
+    expect(mcp.paths.length).toBeGreaterThan(0);
+    expect(mcp.paths.every((path) => path === '/mcp')).toBe(true);
   });
 });
