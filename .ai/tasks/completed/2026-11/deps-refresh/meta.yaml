@@ -52,12 +52,18 @@ summary:
     majors-only-with-a-reason; never pick a version younger than the release-age policy, and prove
     a clean rush install accepts the lockfile.
   shipped: >
-    Audit 173 advisories (4 critical, 73 high, 84 moderate, 12 low) to 4 (2 moderate, 2 low): Rush
+    Rush lockfile audit 173 advisories (4 critical, 73 high, 84 moderate, 12 low) to 3 (2 moderate,
+    1 low). Root package-lock.json (Dependabot's target) 11 high / 6 moderate / 2 low to 1 high
+    (@azure/msal-node, open: needs a major below Rush) / 1 moderate. rush-pack-check autoinstaller
+    2 high to 0. Means: Rush
     5.177.2 to 5.182.1, pnpm 11.12.0 to 11.28.9, one rush update --full, six direct security bumps
     (hono, js-yaml, @huggingface/transformers, and raised floors for @modelcontextprotocol/sdk,
     axios, react-router-dom), two overrides (css-minimizer-webpack-plugin>serialize-javascript,
     sockjs>uuid), and 58 more direct ranges to the latest release in their major. No major taken.
-    22 patch and 13 none change files. 22 majors reported with effort.
+    22 patch and 13 none change files. 22 majors reported with effort. Review round 1 added: root
+    @microsoft/rush ^5.182.1 with an npm-regenerated lock, the three autoinstaller lockfiles
+    refreshed, @types/node to 22.x, unused crypto-browserify removed (closing elliptic), and a
+    same-origin redirect test that pins ts-extras-mcp's own guard.
   diverged: >
     The Rush bump became a precondition: on 5.177.2, globalOverrides was silently ignored, because
     Rush wrote it where pnpm 11 does not read it. The Heft toolchain family was taken, failed
@@ -67,7 +73,11 @@ summary:
     forced source change was not anticipated: MCP SDK 1.32 defaults to same-origin redirects. That
     broke a ts-extras-mcp test control, which only the repo-wide rush test caught, and made that
     package's TSDoc and README inaccurate. All three were updated. The open glob and minimatch
-    moderates need a transitive major that their parents do not range.
+    moderates need a transitive major that their parents do not range. Review round 1 found the
+    first close-out had audited only the Rush lockfile, while Dependabot scans the root npm
+    lockfile. It also found the close-out had stated a Node 20 floor, taken from a stale
+    MONOREPO_GUIDE, where rush.json requires 22.22 or 24.15. And the MCP test fix had stopped
+    exercising the package's own redirect refusal.
   sourceLine: "**Shipped:** the monorepo's dependency audit went from 173 advisories (4 critical, 73 high, 84 moderate, 12 low) to 4 (2 moderate, 2 low, none with a fix that a direct bump or a same-major override can deliver), with Rush 5.182.1 / pnpm 11.28.9, a full lockfile refresh, six direct bumps, two scoped overrides, and a minor/patch refresh of 58 more direct dependencies within their current major."
   headline: '' # opted out: a dependency refresh adds no capability a consumer would look up
 keywords:
@@ -86,4 +96,4 @@ keywords:
   - heft-lint-plugin non-TS files
   - MCP SDK redirectPolicy same-origin
   - majors report
-sourceHash: sha256:67fb89c74ce6b4f1 # over brief.md + state.md + result.md
+sourceHash: sha256:498d2439976640b8 # over brief.md + state.md + result.md

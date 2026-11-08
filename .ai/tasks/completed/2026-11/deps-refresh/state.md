@@ -9,9 +9,9 @@ Worker-owned. The brief is frozen; questions and decisions live here.
 - [x] Toolchain: Rush 5.182.1 / pnpm 11.28.9 (`aeb5a83a`)
 - [x] Security fixes — `rush update --full`, 6 direct bumps, 2 overrides (`aeb5a83a`); audit 173 → 4
 - [x] Minor/patch refresh (`5ef14173`); Heft family held after rebuild failure (`cbe61f9d`)
-- [ ] Clean `rush install` (release-age check)
-- [ ] Gates: rebuild, lint, test, change --verify, prettier, capability docs/feed
-- [ ] Close-out
+- [x] Clean `rush install` (release-age check) — final and round-1 lockfiles
+- [x] Gates: rebuild, lint, test, change --verify, prettier, capability docs/feed
+- [x] Close-out (`72a83930`), then review round 1 (below)
 
 ## Findings / decisions
 1. **`globalOverrides` is silently ignored on the baseline toolchain.** Rush 5.177.2 writes
@@ -51,3 +51,26 @@ Worker-owned. The brief is frozen; questions and decisions live here.
    `@simplewebauthn/*` preferred versions raised. It also dropped one empty `"dependencies": {}`.
 9. **Orchestrator note:** the finalize-task skill says not to commit a ledger entry unreviewed;
    the brief asks for one. Written with `#TBD` for orchestrator review.
+
+## Amendments — orchestrator review round 1 (on `72a83930`)
+
+These are orchestrator decisions. They change scope, not the frozen brief.
+
+- **A1 (P1, decision): the root `package.json` / `package-lock.json` is in scope, and is updated
+  with npm.** It is npm-native, outside Rush, and the file Dependabot scans. This is an explicit
+  exception to "never npm". Root `@microsoft/rush` → `^5.182.1`; regenerate with
+  `npm install --package-lock-only`, then `npm audit fix` without `--force`, keeping the same
+  release-age margin (`--before=2026-11-06`). A high that needs a major below `@microsoft/rush` is
+  recorded as open with its reason. Every "0 critical / 0 high" claim is re-scoped to name the
+  lockfile it covers. → Done (`3fdcd3e0`, see result § 2c). `@azure/msal-node` stays open.
+- **A2 (P2-1): pin the package's own redirect guard.** Add a same-origin 307 case and show it red
+  with `egress.ts:476` reverted. → Done (`819e64d1`), red/green evidence in result § 6.
+- **A3 (P2-2): audit and refresh the three autoinstaller lockfiles**, then verify CI's uses of
+  them locally. → Done (`66c59723`), result § 2d.
+- **A4 (P2-3): the Node floor is rush.json's, 22.22 / 24.15, not 20.** Correct § 4d and the
+  ledger, fix MONOREPO_GUIDE's runtime line, and take `@types/node` to the latest 22.x. → Done
+  (`00c2dcba`).
+- **A5 (P3s):** correct the remaining "a consumer fetch owns its redirect handling" sentences;
+  make the change-file comments precise (ts-extras-mcp, both transformers packages); remove the
+  unused `crypto-browserify` from both tools; record ts-http-storage's `Hono` public-API exposure;
+  tick Progress. **Keep the `sockjs>uuid` override.** → Done.

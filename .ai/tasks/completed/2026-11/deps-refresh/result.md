@@ -2,6 +2,20 @@
 
 **Shipped:** the monorepo's dependency audit went from 173 advisories (4 critical, 73 high, 84 moderate, 12 low) to 4 (2 moderate, 2 low, none with a fix that a direct bump or a same-major override can deliver), with Rush 5.182.1 / pnpm 11.28.9, a full lockfile refresh, six direct bumps, two scoped overrides, and a minor/patch refresh of 58 more direct dependencies within their current major.
 
+> **Amended in review round 1 (2026-11-08).** The line above is the original authored claim, and
+> its figures describe the **Rush lockfile** (`common/config/rush/pnpm-lock.yaml`) only, at
+> `72a83930`. The scoped state after round 1:
+>
+> | lockfile | before | after |
+> |---|---|---|
+> | Rush `common/config/rush/pnpm-lock.yaml` | 4 critical, 73 high, 84 moderate, 12 low | 0 critical, 0 high, 2 moderate, 1 low (`elliptic` closed by removing unused `crypto-browserify`) |
+> | root `package-lock.json` (what Dependabot scans) | 0 critical, 11 high, 6 moderate, 2 low (distinct advisories; one apparent critical is a name collision, § 2c) | 0 critical, **1 high** (open, § 2c), 1 moderate |
+> | `common/autoinstallers/rush-pack-check` | 2 high, 2 moderate | 0 high, 1 moderate (`minimatch`, as in § 2a) |
+> | `common/autoinstallers/rush-prettier`, `rush-bundler-check` | none | none |
+>
+> "0 critical / 0 high" holds for the Rush lockfile and the autoinstallers. It does **not** hold for
+> the root `package-lock.json`, where one high remains below `@microsoft/rush`.
+
 Base: `integration/asks` at `c3ab4e48`. Branch `deps-refresh`. No PR opened (per brief).
 
 ## 1. Method
@@ -18,9 +32,15 @@ Base: `integration/asks` at `c3ab4e48`. Branch `deps-refresh`. No PR opened (per
   transitive pinned by the lockfile below what its parent's range already allowed, and only a full
   re-resolution reaches those). No `npm`, no hand-edited dependency blocks.
 - **Order of commits:** `aeb5a83a` security fixes (toolchain, full refresh, direct security bumps,
-  overrides) → `5ef14173` minor/patch refresh → `cbe61f9d` hold the Heft family, api.md, change files.
+  overrides) → `5ef14173` minor/patch refresh → `cbe61f9d` hold the Heft family, api.md, change files
+  → `67171b4a` ts-extras-mcp → `72a83930` close-out. Review round 1: `3fdcd3e0` root npm lockfile →
+  `66c59723` autoinstallers → `819e64d1` ts-extras-mcp same-origin test → `00c2dcba` `@types/node`
+  22, `crypto-browserify`, MONOREPO_GUIDE → round-1 docs commit.
 
-## 2. Before / after
+## 2. Before / after — Rush lockfile (`common/config/rush/pnpm-lock.yaml`)
+
+As of `72a83930`. Review round 1 removed `crypto-browserify`, which closed `elliptic` and left 3
+(2 moderate, 1 low). The root and autoinstaller lockfiles are in § 2c and § 2d.
 
 | severity | before | after |
 |---|---|---|
@@ -37,7 +57,65 @@ Base: `integration/asks` at `c3ab4e48`. Branch `deps-refresh`. No PR opened (per
 | moderate | `glob` | 10.5.0, 13.0.7 | [GHSA-3g3m-2fjr-6pw4](https://github.com/advisories/GHSA-3g3m-2fjr-6pw4) | >=14.0.2 | **Fix needs a major of a transitive, against its parents' ranges.** Every path is build/test tooling (`jest` internals, `test-exclude`, via the Heft rigs). glob 14 changes `walk()` return types, `ignore` semantics and moves to minimatch 11; no consumer (jest 30, test-exclude) ranges it. **Not reachable:** the advisory is AbortSignal cancellation of a walk; the patterns are the repo's own jest config, never untrusted input, and no signal is aborted. |
 | moderate | `minimatch` | 9.0.9, 10.2.3, 10.2.6 | [GHSA-g3hv-75wg-m249](https://github.com/advisories/GHSA-g3hv-75wg-m249) | >=11.0.1 | **Fix needs a major of a transitive.** minimatch 11 removes `makeRe()`, `Minimatch#regexp`, the `AST` class and `matchOne()`, and changes matching of empty portions; consumers are `@microsoft/api-extractor`, `@typescript-eslint/typescript-estree`, `glob`, `test-exclude`, `typedoc`, none of which ranges 11. **Not reachable:** a globparts-amplification DoS needs an attacker-chosen pattern; every pattern here is authored in repo config and evaluated by dev-only tools. |
 | low | `deepmerge` | 4.3.1 | [GHSA-gcqx-w48m-w2h4](https://github.com/advisories/GHSA-gcqx-w48m-w2h4) | none | **No fix published** (4.3.1 is the latest). Reached only through `jest-config`, merging the repo's own jest configuration. |
-| low | `elliptic` | 6.6.1 | [GHSA-848j-6mx2-7j84](https://github.com/advisories/GHSA-848j-6mx2-7j84) | none | **No fix published** (6.6.1 is the latest). Reached only through `crypto-browserify` in the webpack polyfill set of `tools/ts-res-browser` and `tools/ts-res-ui-playground`; no fgv code signs or derives keys with it (fgv crypto goes through `ICryptoProvider` → WebCrypto / node:crypto). |
+| low | `elliptic` | 6.6.1 | [GHSA-848j-6mx2-7j84](https://github.com/advisories/GHSA-848j-6mx2-7j84) | none | **Closed in review round 1.** No fix is published. It was reached only through `crypto-browserify`, an unused direct dependency of `tools/ts-res-browser` and `tools/ts-res-ui-playground`: both webpack configs set `resolve.fallback.crypto: false`, and no source imports it. Both were removed with `rush remove -p crypto-browserify` (`00c2dcba`), and `elliptic` left the lockfile. *(Originally recorded here as "in the webpack polyfill set", which was wrong: nothing polyfilled with it.)* |
+
+### 2c. Root `package-lock.json` (added in review round 1)
+
+`.github/dependabot.yml` scans npm at `/`: the root `package.json`, which pins only
+`@microsoft/rush`, and its npm-native `package-lock.json`. Rush never touches either. **Orchestrator
+decision (an exception to "never npm", recorded in `state.md` A1):** the root range is set to
+`^5.182.1` to match `rush.json`, and the lockfile is regenerated with
+`npm install @microsoft/rush@^5.182.1 --package-lock-only --before=2026-11-06T00:00:00Z
+--ignore-scripts`, followed by `npm audit fix --package-lock-only --before=…` (no `--force`). The
+`--before` date is the same release-age margin used everywhere else. Lock: `@microsoft/rush`
+5.178.1 → 5.182.1.
+
+Audited with `npm audit --package-lock-only --json` and with the bulk endpoint, keyed by each
+package's *registry* name taken from `resolved`
+(`scratchpad/deps/root-audit-{before,after}.json`, `root-bulk-{before2,after}.json`).
+
+**One apparent critical is a false positive.** Keyed by install path, the bulk endpoint matches
+`js-yaml` 0.0.6 and 0.0.11 to GHSA-xxvw-45rp-3mj2 (critical, `<2.0.5`) and to three 3.x advisories.
+Those two entries are the aliased fork `@zkochan/js-yaml` (`resolved:
+…/@zkochan/js-yaml/-/js-yaml-0.0.11.tgz`), installed under `node_modules/js-yaml` paths inside
+`@pnpm/lockfile.fs-pnpm-lock-v9` and `@rushstack/rush-pnpm-kit-v8`. `npm audit` does not report
+them, and keying by registry name returns nothing for them, before or after.
+
+| severity | package | before | after | advisory | status |
+|---|---|---|---|---|---|
+| high | `@azure/msal-node` | 5.5.0 | 6.0.1 | [GHSA-xcx6-jx8p-x3h5](https://github.com/advisories/GHSA-xcx6-jx8p-x3h5) (fixed >=7.1.0) | **open** — see below |
+| high ×2, moderate ×1 | `brace-expansion` | 1.1.18, 2.1.4, 5.0.9 | 1.1.21, 2.1.7, 5.0.12 | GHSA-qhr7-859c-m2p7, GHSA-6j4f-fj2g-mc7p, GHSA-q2hr-2g5m-vwhr | closed |
+| high ×5, moderate ×3, low ×2 | `fast-uri` | 3.1.5 | 3.1.9 | GHSA-5jgf-p345-68v8, -f65p-4m7j-42xc, -fph4-wmhf-6fwf, -jqff-g426-hqxp, -qw65-cvwx-89v3; -hrr3-gc8f-f4qj, -w74x-v6f9-j3xg, -wjr9-j795-jxcr; -333x-w4r6-6crp, -xhq7-xmqj-769h | closed |
+| high ×3, moderate ×1 | `js-yaml` | 4.1.1 | 4.3.2 | GHSA-52cp-r559-cp3m, -5p4m-2wfm-xmqj, -2883-xcg3-v3hh; -h67p-54hq-rp68 | closed |
+| moderate | `minimatch` | 3.1.5, 5.1.9, 10.2.3 | unchanged | [GHSA-g3hv-75wg-m249](https://github.com/advisories/GHSA-g3hv-75wg-m249) (fixed >=11.0.1) | open, same reasoning as § 2a; `@microsoft/rush-lib` ranges it |
+
+**`@azure/msal-node` stays open: the fix needs a major below `@microsoft/rush`.**
+`@rushstack/rush-azure-storage-build-cache-plugin` 5.182.1, which ships with Rush, pins
+`@azure/identity ~4.13.1`. 4.13.3 is the newest in that range, and it requires `@azure/msal-node
+^6.0.0`. The fix is in msal-node 7.1.0, which only `@azure/identity` 4.14.1 (2026-10-29) ranges.
+Reaching it means either an override across msal-node's major beneath Rush, or a Rush release that
+moves its pin. Reachability: the plugin loads only when the repo configures an Azure build cache.
+`common/config/rush/build-cache.json` here does not select the Azure provider, so neither CI nor a
+local run loads `@azure/identity` at all. `npm audit fix --force` proposes downgrading
+`@microsoft/rush` to 5.157.0; it was not run.
+
+### 2d. Autoinstaller lockfiles (added in review round 1)
+
+`rush update-autoinstaller --name <n>` for all three. Audited by posting each `pnpm-lock.yaml`'s
+packages to the bulk endpoint (`scratchpad/deps/ai-<n>-{before,after}.md`).
+
+| autoinstaller | used by | before | after | changed versions |
+|---|---|---|---|---|
+| `rush-pack-check` | CI (`verify-tarball-exports`), every publish workflow | high GHSA-qhr7-859c-m2p7, high GHSA-6j4f-fj2g-mc7p, moderate GHSA-q2hr-2g5m-vwhr (`brace-expansion` 5.0.9); moderate GHSA-g3hv-75wg-m249 (`minimatch` 10.2.6) | `minimatch` moderate only (major-only fix, § 2a) | brace-expansion 5.0.9 → 5.0.12 (2026-09-14) |
+| `rush-prettier` | `rush prettier` | none | none | tslib 2.8.1 → 2.9.1; prettier stays 2.8.8 |
+| `rush-bundler-check` | CI (`verify-bundler-resolution`) | none | none | esbuild 0.28.1 → 0.28.2 (2026-08-08) |
+
+**CI's uses still work.** I ran locally the same steps `ci.yml` runs (`scratchpad/deps/ci-checks.log`):
+`install-autoinstaller --name rush-bundler-check`, `verify-esm-entrypoints.mjs` (26 checked, 0
+failed), `verify-bundler-resolution.mjs --measure` (22 checked, 0 failed),
+`install-autoinstaller --name rush-pack-check`, `verify-tarball-exports.mjs` (28 packages, 218
+manifest paths, 0 failed). `install-autoinstaller --name rush-prettier` installs prettier 2.8.8
+and pretty-quick.
 
 ### 2b. Baseline (all 173), with what closed each
 
@@ -271,7 +349,7 @@ same way. Anyone who had added an override on 5.177.2 would have seen it accepte
 | `@types/better-sqlite3` | ^7.6.11 | ^7.6.13 | 2 |
 | `@types/luxon` | ^3.7.1 | ^3.7.6 | 5 |
 | `@types/mustache` | ^4.2.5 | ^4.2.6 | 3 |
-| `@types/node` | ^20.14.9 | ^20.19.43 | 38 |
+| `@types/node` | ^20.14.9 | ^22.20.5 (round 1; ^20.19.43 at `72a83930`) | 38 |
 | `@types/papaparse` | ^5.3.14 | ^5.5.2 | 1 |
 | `@types/react` | ~19.2.8 | ~19.3.0 | 8 |
 | `@types/react-dom` | ~19.2.3 | ~19.3.0 | 7 |
@@ -314,7 +392,7 @@ same way. Anyone who had added an override on 5.177.2 would have seen it accepte
 | `webpack-dev-server` | ~5.2.2 | ~5.2.7 | 4 |
 
 Toolchain rows above stay inside their major as the brief requires: `eslint` 9.39.5 (9.x is
-marked unsupported upstream — see 4d), `@typescript-eslint/*` 8.72.1, `@types/node` 20.19.43,
+marked unsupported upstream — see 4d), `@typescript-eslint/*` 8.72.1, `@types/node` 22.20.5 (moved from 20.19.43 in round 1: 22 is the oldest supported runtime),
 `react` / `react-dom` 19.3.1, `prettier` 3.9.10. `typescript` stays 5.9.3, the latest 5.x.
 `@testing-library/jest-dom` moves to `~6.9.1`, not `^6.x`: 6.10.0 is deprecated upstream as *"Incorrect
 minor release with breaking changes (Node >=22 and required @testing-library/dom peer)"*, and a caret
@@ -332,32 +410,35 @@ would resolve it.
 
 ### 4d. Majors available — reported for a follow-up decision
 
-Effort: S ≈ an hour or two, M ≈ a day, L ≈ a stream. "Node ≥22" matters because MONOREPO_GUIDE
-still states Node 20 LTS as the floor.
+Effort: S ≈ an hour or two, M ≈ a day, L ≈ a stream. **The Node floor does not block any of these.**
+`rush.json` `nodeSupportedVersionRange` is `>=22.22.0 <23.0.0 || >=24.15.0 <25.0.0`, the tools'
+`engines` agree, and CI runs 24.15.0. Every engines range quoted below is satisfied by that floor.
+*(Amended in review round 1: this paragraph first said the floor was Node 20, which it took from a stale
+MONOREPO_GUIDE. That guide is now corrected in this branch.)*
 
 | dependency | at → latest | breaking change that affects us | effort |
 |---|---|---|---|
 | `typescript` | 5.9.3 → 7.0.2 (6.0.3 also out) | New native compiler line; 6.0's deprecations become errors in 7. Every package's tsconfig and the api-extractor / ts-jest / typescript-eslint chain must support it. (api-extractor 7.60 already bundles TS 6.0.3 for its own analysis.) | L |
 | Heft family + `@rushstack/eslint-config` 4.9 | see 4c | Non-TS files linted (up to 36 `eslint.config.js` files set `@rushstack/packlets/mechanics` in a block that may need `files` scoping; not counted per block) and `prefer-ecmascript-private-members` across every class. Needs a decision: migrate to `#private`, or a repo-level rule disposition. | L |
 | `eslint` | 9.39.5 → 10.14.0 | 9.x is marked "no longer supported" upstream. Needs `@rushstack/eslint-config` / heft-lint-plugin support for 10 first, so it follows the Heft decision. | M |
-| `@types/node` | 20.19.43 → 26.6.6 | Types for a newer runtime than the stated Node 20 floor; would let code use APIs absent on Node 20. Tie to a Node-floor decision. | S–M |
+| `@types/node` | 22.20.5 → 26.6.6 | Taken to the latest 22.x in round 1 (§ 4b), because 22 is the oldest runtime `rush.json` supports. Typing for 24 or later would let code use APIs that are absent on Node 22, which the range still admits. | S |
 | pnpm | 11.28.9 → 12.18.0 | Rush 5.182 adds PNPM 12 handling (rejects `--resolution-only`, new store/cache env vars). Needs a Rush-side compatibility check on the install/CI path. | M |
 | `@simplewebauthn/server` / `browser` | 13.3.x → 14.0.x | Major of the upstream wrapped by `ts-extras-webauthn` / `ts-web-extras-webauthn` (Result boundaries); option and response shapes re-reviewed against each README's in-scope list. | M |
 | `@typesafe-ai/sdk` | 0.6.0 → 0.7.0 | 0.x minor = wire change for `ts-extras-system-one` (14 source files) by that package's policy. | M |
 | `js-yaml` | 4.3.2 → 5.5.0 | `ts-extras` yaml packlet is an established ("handle with care") surface; 2 source files. API surface of 5 not assessed here. | S–M |
-| `better-sqlite3` | 12.11.1 → 13.0.3 | Node ≥22. Dev + peer of `ts-agent-memory-sqlite-vec` (peer move is consumer-facing); 11 source files touch it. With `@types/better-sqlite3` 7 → 9. | S–M |
+| `better-sqlite3` | 12.11.1 → 13.0.3 | Node ≥22 (within the floor). Dev + peer of `ts-agent-memory-sqlite-vec` (peer move is consumer-facing); 11 source files touch it. With `@types/better-sqlite3` 7 → 9. | S–M |
 | `tailwindcss` | 3.4.19 → 4.3.4 | v4 is CSS-first config and moves the PostCSS plugin to a separate package; 5 packages' build config. | M |
-| `@babel/core` + presets | 7.29 → 8.x | ESM-only, Node `^22.18 || >=24.11`; webpack builds of the playground / browser tools. | S–M |
-| `webpack-dev-server` | 5.2.7 → 6.1.0 | ESM-only, Node ≥22.15; also drops sockjs, which would retire the `sockjs>uuid` override. | S |
+| `@babel/core` + presets | 7.29 → 8.x | ESM-only; Node `^22.18 || >=24.11` is within the floor; webpack builds of the playground / browser tools. | S–M |
+| `webpack-dev-server` | 5.2.7 → 6.1.0 | ESM-only; Node ≥22.15 is within the floor; also drops sockjs, which would retire the `sockjs>uuid` override. | S |
 | `webpack-cli` | 6.0.1 → 7.3.1 | Node ≥20.9; new optional peers. | S |
-| `commander` | 11.1.0 → 15.0.0 | ESM-only, Node ≥22.12; 5 CLI packages, 7 source files. | S–M |
+| `commander` | 11.1.0 → 15.0.0 | ESM-only, which affects these CommonJS CLIs; Node ≥22.12 is within the floor; 5 CLI packages, 7 source files. | S–M |
 | `clipboardy` | 3.0.0 → 5.3.2 | ESM-only since 4; 1 source file. | S |
-| `@testing-library/jest-dom` | 6.9.1 → 7.0.1 | Node ≥22 and a required `@testing-library/dom` peer; 4 packages. | S |
+| `@testing-library/jest-dom` | 6.9.1 → 7.0.1 | Node ≥22 (within the floor) and a required `@testing-library/dom` peer; 4 packages. | S |
 | `jest-extended` | 4.0.2 → 7.0.0 | Peers `jest >=27.2.5`, `typescript >=5`; setup-file usage only (0 source imports). | S |
 | `eslint-plugin-react-hooks` | 5.2.0 → 7.1.1 | New rules in its recommended set will produce lint findings in the 4 React packages. | M |
 | `eslint-plugin-n` | 17.24.0 → 18.5.0 | ESM-only; Node `^20.19 || ^22.13 || >=24`. | S |
 | `json-edit-react` | 1.30.2 → 2.0.5 | Major of a UI component used in `ts-res-ui-components` (1 source file); props API not assessed. | S–M |
-| `cspell` | 8.19.4 → 10.4.0 | ESM-only, Node ≥22.18; one package's spell-check script. | S |
+| `cspell` | 8.19.4 → 10.4.0 | ESM-only; Node ≥22.18 is within the floor; one package's spell-check script. | S |
 | transitive `glob` / `minimatch` | 10/13, 9/10 → 14, 11 | See § 2a; arrive when jest / typescript-eslint / api-extractor move. | — |
 
 ## 5. Rush and pnpm advisories
@@ -392,6 +473,29 @@ returned no advisories for `pnpm` 11.12.0 / 11.28.9 or `@microsoft/rush` 5.177.2
   Prettier 2.8 still flags formatting at lines 182–234 of `egress.test.ts`, which this change did not
   touch and which fail the same check on the base. The edited lines conform, and the file was not
   reformatted.
+- **Round 1: the package's own guard is pinned again** (`819e64d1`). With SDK 1.32 refusing the
+  cross-origin hop itself, the test above passes whether or not `egress.ts:476`
+  (`redirect: 'error'` for requests that carry static headers) exists. A new test, *"a same-origin
+  307 is refused for a request carrying static headers, though the SDK would follow it"*, has the
+  MCP server answer `/mcp` with a 307 to `/mcp-elsewhere` on the same origin. It asserts that the
+  connect fails and that only `/mcp` is ever requested. **Watched red:** with line 476 changed to
+  `{ ...init, headers }`, `rushx test` failed exactly that test (`egress.test.js`, 19 passed, 1
+  failed; `scratchpad/deps/p21-red.log`), and the cross-origin test still passed. With the line
+  restored, all 20 passed (`p21-green1.log`). The cross-origin case is kept.
+  The same round corrected two sentences that still said a consumer `fetch` owns its redirect
+  handling: `IMcpHttpTransportParams.headers` TSDoc and the `egress.ts` comment. They now say that
+  the SDK calls any fetch with `redirect: 'manual'` and follows same-origin hops for a fetch that
+  honours it. The `.fetch` paragraph gained the same qualifier.
+- **Round 1: `crypto-browserify` removed** from `tools/ts-res-browser` (a `dependencies` entry in a
+  published tool) and `tools/ts-res-ui-playground` (`00c2dcba`). It is unused: both
+  `webpack.config.js` files set `resolve.fallback.crypto: false`, and a grep of `src`, configs and
+  manifests finds no import. This closed `elliptic` (§ 2a).
+- **Round 1: `@types/node` ^20.19.43 → ^22.20.5** (the latest 22.x older than the cutoff), because
+  22.22 is the oldest runtime `rush.json` supports. The build, lint and test are green on it.
+- **Noted, pre-existing, not changed:** `@fgv/ts-http-storage` exposes `Hono` in its public API
+  (`createStorageRoutes(...): Hono`, `etc/ts-http-storage.api.md`) while depending on `hono`
+  directly rather than as a peer. A consumer holding a different `hono` copy gets a type-identity
+  mismatch. The `~4.7 → ~4.13` move makes that more likely, for consumers who pin hono themselves.
 - **No other TypeScript, test or lint-config source changed.** The Heft-family bump would have
   forced config changes in up to 36 `eslint.config.js` files plus a repo-wide private-member migration;
   it was held instead (4c).
@@ -410,6 +514,12 @@ returned no advisories for `pnpm` 11.12.0 / 11.28.9 or `@microsoft/rush` 5.177.2
   `watchpack@2.6.4` (2026-11-07T14:53Z, ~28 h), then `hono@4.13.17` (2026-11-07T04:56Z, ~38 h).
   None is under 24 h, and ages only grow before CI runs. That pnpm resolved nothing younger
   matches its 1440-minute default being honoured at resolution as well.
+- **Round 1 re-check.** The Rush lockfile after round 1 has 315 entries new against the base, and
+  the youngest is still `watchpack@2.6.4`. The root `package-lock.json` was resolved with
+  `--before=2026-11-06T00:00:00Z`. Of its 54 changed entries, the youngest is
+  `@azure/msal-browser@5.28.0` (2026-11-05T03:34Z). The autoinstaller bumps date from 2026-08-08 to
+  2026-09-14. A clean install of the round-1 lockfile is `install-clean-r2.log`: exit 0, no
+  rejection.
 - **`rush install` from an empty `common/temp`** (`rm -rf common/temp`) accepted the final
   lockfile: exit 0, no `ERR_PNPM`, no rejection (`scratchpad/deps/install-clean-final.log`; an
   earlier clean install before the Heft hold is `install-clean.log`).
@@ -429,6 +539,19 @@ Logs are under `/tmp/claude-0/-home-user/ddedaf44-7531-52e1-a2c4-05cab5230430/sc
 Each log was graded with `grep -acE 'not met|Operations failed|error TS|Jest tests? failed|FAILURE|ERR_PNPM'`
 (must be 0), `grep -aciE warning` (only the tracked-symlink notice allowed), and the absence of
 `SUCCESS WITH WARNINGS`.
+
+**Round 1 (final tree):**
+
+| gate | log | result |
+|---|---|---|
+| `rush install` from empty `common/temp` | `install-clean-r2.log` | exit 0, 0 rejections |
+| `rush rebuild` | `rebuild-r2.log` | 39/39; 0 error patterns; symlink notice only; no SUCCESS WITH WARNINGS |
+| `rush lint` | `lint-r2.log` | 34/34; 0; symlink notice only; none |
+| `rush test` | `test-r2.log` | 38/38; 0; symlink notice only; none; no flake retries |
+| CI autoinstaller checks (bundler, ESM entry, tarball exports) | `ci-checks.log` | 0 failed in each |
+| `rush change --verify`, prettier 2.8.8, `verify-capability-docs`, `generate-capability-feed --check` | — | pass (re-run on the final tree) |
+
+**At `72a83930` (before round 1):**
 
 | gate | log | result |
 |---|---|---|
