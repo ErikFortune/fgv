@@ -1,0 +1,44 @@
+id: model-max-output-tokens
+status: shipped
+packages: ['@fgv/ts-extras']
+prs: []
+openPrs: []
+opened: 2026-11-08
+closed: 2026-11-08
+summary:
+  intended: >
+    personaility#724: Anthropic and OpenAI refuse a maxTokens above a model's output limit, and
+    aliases resolve inside fgv, so a consumer cannot know the limit of the model a slot reaches. Add
+    IAiMaxOutputTokensCapability, an optional IAiProviderDescriptor field and an alias-first
+    resolveMaxOutputTokens built on resolveCapabilityForModel; no catch-all in the shipped registry;
+    populate every cloud provider from provider pages fetched in the run, with a citations table;
+    pin alias coverage; check DEFAULT_ANTHROPIC_MAX_TOKENS against every Anthropic limit; never clamp
+    an explicit maxTokens.
+  shipped: >
+    resolveMaxOutputTokens(descriptor, modelId) and IAiMaxOutputTokensCapability, with the
+    descriptor field maxOutputTokens. The registry records 9 Anthropic prefixes (128000; Haiku 4.5
+    64000) and 4 OpenAI completion models (128000), each cited, with no catch-all. A test.each
+    requires every cloud alias to resolve or sit on a commented exclusion list that cannot go stale.
+    DEFAULT_ANTHROPIC_MAX_TOKENS (4096) is below every recorded limit, so no adapter changed; a test
+    pins that finding.
+  diverged: >
+    Not every cloud provider could be populated. Gemini, Groq and Mistral docs hosts were outside
+    the session's network, and xAI's docs state only a default output length, not a maximum, so
+    those providers record nothing and their completion aliases are on the exclusion list. Anthropic
+    pages give "128K" without an exact integer; recorded as 128000 on the docs' own k = 1,000 usage.
+  sourceLine: '**Shipped:** `AiAssist.resolveMaxOutputTokens(descriptor, modelId)` in `@fgv/ts-extras` returns the largest `maxTokens` a provider accepts for a model, or `undefined` when the limit is unknown.'
+  headline: >
+    resolveMaxOutputTokens tells you the largest maxTokens a model accepts, through an alias, so a
+    slot can be capped at min(your cap, the model's limit) instead of being refused.
+keywords:
+  - max output tokens
+  - maxTokens refusal
+  - output token limit
+  - model alias resolution
+  - provider capability lookup
+  - longest-prefix match
+  - no catch-all
+  - DEFAULT_ANTHROPIC_MAX_TOKENS
+  - silent truncation
+  - fgv-ask
+sourceHash: sha256:a69f5ff5357458c9 # over brief.md + state.md + result.md

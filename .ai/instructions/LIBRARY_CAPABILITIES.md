@@ -210,6 +210,7 @@ markers.*
 
 <!-- BEGIN GENERATED: recent-additions -->
 
+- **2026-11-08** — resolveMaxOutputTokens tells you the largest maxTokens a model accepts, through an alias, so a slot can be capped at min(your cap… · `ts-extras`
 - **2026-10-30** — A converter or validator handed a cyclic, BigInt or Proxy value now fails instead of throwing, via a new formatValueForMessage that… ([#764](https://github.com/ErikFortune/fgv/pull/764)) · `ts-utils` `ts-json-base` `ts-extras` `ts-bcp47`
 - **2026-10-27** — A filesystem FileTree can now be a sandbox: absolutePathPolicy 'confined' maps every path beneath the prefix, 'verified' refuses… ([#763](https://github.com/ErikFortune/fgv/pull/763)) · `ts-json-base`
 - **2026-10-26** — A crash mid-write no longer leaves a torn memory record that fails the next open: FileTreeMemoryStore writes atomically wherever… ([#756](https://github.com/ErikFortune/fgv/pull/756)) · `ts-agent-memory` `ts-json-base`
@@ -219,8 +220,7 @@ markers.*
 - **2026-10-26** — A host can stop every write it routes through one AsyncControl.WriteGate, or hold them still for a snapshot until the writes under… ([#761](https://github.com/ErikFortune/fgv/pull/761)) · `ts-extras` `ts-agent-tasks`
 - **2026-10-26** — ICryptoProvider now generates and imports non-extractable HMAC-SHA256 keys itself, and composite ids can split at the first or last… ([#754](https://github.com/ErikFortune/fgv/pull/754)) · `ts-extras` `ts-web-extras` `ts-utils`
 - **2026-10-26** — MCP tools that need task execution are skipped with a reason kind, tool listing can be bounded by pages and total time, and a… ([#757](https://github.com/ErikFortune/fgv/pull/757)) · `ts-extras-mcp` `ts-extras` `testbed`
-- **2026-10-26** — The sqlite-vec indexes now store which embedding model wrote their vectors in the same file, and refuse to mix models or serve a… ([#753](https://github.com/ErikFortune/fgv/pull/753)) · `ts-agent-memory-sqlite-vec`
 
-*Showing the 10 most recent of 79. Per-package history is in each `CAPABILITIES.md`.*
+*Showing the 10 most recent of 80. Per-package history is in each `CAPABILITIES.md`.*
 
 <!-- END GENERATED: recent-additions -->

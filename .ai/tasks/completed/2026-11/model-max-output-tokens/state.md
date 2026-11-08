@@ -4,7 +4,8 @@ Worker-owned. Brief is frozen; questions and decisions live here.
 
 ## Status
 
-In progress on `model-max-output-tokens` (base `integration/asks` @ `ac99bdc2`).
+Implementation committed on `model-max-output-tokens` (base `integration/asks` @ `ac99bdc2`).
+Gates green (below). Closed out to `.ai/tasks/completed/2026-11/model-max-output-tokens/`.
 
 ## Source research (fetched 2026-11-08)
 
@@ -35,3 +36,32 @@ In progress on `model-max-output-tokens` (base `integration/asks` @ `ac99bdc2`).
   "Retirement: Not sooner than October 15, 2026". Alias rotation is not this brief's work.
 - OpenAI's `gpt-5.4-nano` page marks its only snapshot (`gpt-5.4-nano-2026-03-17`) "Deprecated";
   the registry comment says "not deprecated as of 2026-09-24".
+
+## Decisions
+
+- **D1 — field name `maxOutputTokens`**, matching the entry's own field; sits after
+  `structuredOutput` on the descriptor. The interface lives in `model.ts` beside its siblings
+  (1886 lines, under the `max-lines` cap).
+- **D2 — per-model prefixes, not family prefixes like `gpt-6-`.** Only ids a fetched page names are
+  recorded, so a future `gpt-6-*` model does not inherit a number nobody checked. Anthropic's
+  `claude-opus-5` / `claude-fable-5` / `claude-sonnet-5` prefixes do also match their `-5` / `-5-1`
+  siblings, which are listed explicitly with the same cited value.
+- **D3 — decision 5 finding: no adapter change.** Default 4096 < lowest recorded limit 64000. Added
+  a test pinning `DEFAULT_ANTHROPIC_MAX_TOKENS <= every recorded Anthropic limit`; watched it go red
+  (3 failures) with Haiku temporarily set to 4000, then restored.
+- **D4 — no `c8 ignore` needed**; `ts-extras` is at 100% on all four metrics.
+
+## Gates (logs under `/tmp/claude-0/-home-user/ddedaf44-7531-52e1-a2c4-05cab5230430/scratchpad/mot/`)
+
+- `install.log` — `rush install` OK.
+- `ext-build.log`, `ext-lint.log`, `ext-test.log` — `ts-extras` build / lint / test exit 0, 0 error
+  matches, 0 warnings in build; coverage 100/100/100/100.
+- `rebuild.log` — repo-wide `rush rebuild`: `SUCCESS: 39 operations`, 0 error matches, only the
+  tracked-symlink warning.
+- `test.log` — repo-wide `rush test`: `SUCCESS: 38 operations`, 0 error matches, only the
+  tracked-symlink warning, no NUL padding. No known flake fired; no retries.
+- `rush change --verify --target-branch origin/integration/asks` — passes (ts-extras change file).
+- prettier 2.8.8 `--check` on touched TS and the change file — clean.
+- `verify-capability-docs` — 0 failed (router 23,929/24,000 after feed regeneration).
+- Ledger gap report (finalize-task step 8): 17 directories without an entry and 5 entries without a
+  directory, all pre-existing; this stream has its entry.
