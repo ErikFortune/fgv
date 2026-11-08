@@ -220,4 +220,15 @@ must be 0; the only `warning` allowed is Rush's tracked-symlink notice).
 | `verify-capability-docs.mjs` | pass, 0 failed | — |
 | `generate-capability-feed.mjs --check` | pass, 0 stale (regenerated: the stream's `headline` is in both feeds) | — |
 
+### Review round 1 re-run
+
+| gate | result | log |
+|---|---|---|
+| `ts-extras` build / lint / test | pass; 100% coverage on every touched file (`registry.ts`, `model.ts`, `thinkingOptionsResolver.ts`, `completionClient.ts`, `streamingClient.ts`, `anthropic.ts`, `clientToolContinuationBuilder.ts`) | `r2-build3.log`, `r2-lint.log`, `r2-test4.log` |
+| `testbed` build / lint / test | pass | `r2-tb-build.log`, `r2-tb-lint.log`, `r2-tb-test.log` |
+| red-then-green (§ 3b) | 7 red with the two declarations removed; 41/41 green restored | `red-test.log`, `green-test.log` |
+| repo-wide `rush rebuild` | pass — 0 failure patterns, tracked-symlink notice only, 4m50s | `r2-gate-rebuild.log` |
+| repo-wide `rush test` | 36 passed; `@fgv/ts-extras-mcp` failed one test in `egress.test` ("a slow tool … outlives the guarded fetch's headers deadline"), the known flake, which blocked `@fgv/testbed` and `@fgv/ts-extras-re2`. Retried those three once with `--only`: all pass, 0 failure patterns. No NUL padding | `r2-gate-test.log`, `r2-gate-test-retry.log` |
+| `rush change --verify`, prettier 2.8.8, `verify-capability-docs`, `generate-capability-feed --check` | pass (feed regenerated: the line now tags `testbed`) | — |
+
 No `c8 ignore` was added. No `code-reviewer` pass was run (per the brief; the orchestrator reviews).
