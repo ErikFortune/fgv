@@ -1,10 +1,10 @@
 # Result: `deps-refresh`
 
-**Shipped:** the monorepo's dependency audit went from 173 advisories (4 critical, 73 high, 84 moderate, 12 low) to 4 (2 moderate, 2 low, none with a fix that a direct bump or a same-major override can deliver), with Rush 5.182.1 / pnpm 11.28.9, a full lockfile refresh, six direct bumps, two scoped overrides, and a minor/patch refresh of 58 more direct dependencies within their current major.
+**Shipped:** the Rush lockfile's audit went from 173 advisories (4 critical, 73 high, 84 moderate, 12 low) to 3 (2 moderate, 1 low, none with a fix that a direct bump or a same-major override can deliver), and the root `package-lock.json` Dependabot scans went from 11 high to 1 high (open below `@microsoft/rush`), with Rush 5.182.1 / pnpm 11.28.9, a full lockfile refresh, six direct bumps, two scoped overrides, and a minor/patch refresh of 58 more direct dependencies within their current major.
 
-> **Amended in review round 1 (2026-11-08).** The line above is the original authored claim, and
-> its figures describe the **Rush lockfile** (`common/config/rush/pnpm-lock.yaml`) only, at
-> `72a83930`. The scoped state after round 1:
+> **Amended in review rounds 1–2 (2026-11-08).** The line above was first written at `72a83930` as
+> *"the monorepo's dependency audit went from 173 advisories … to 4 (2 moderate, 2 low …)"*. Those
+> figures described the Rush lockfile only, before `crypto-browserify` was removed. The scoped state now:
 >
 > | lockfile | before | after |
 > |---|---|---|
@@ -282,8 +282,8 @@ and pretty-quick.
 | 159 | moderate | `serialize-javascript` | 6.0.2 | [GHSA-qj8w-gfj5-8c6v](https://github.com/advisories/GHSA-qj8w-gfj5-8c6v) | `apps/sudoku › @rushstack/heft-web-rig › css-minimizer-webpack-plugin › serialize-javascript` (5) | >=7.0.5 | override `css-minimizer-webpack-plugin>serialize-javascript` |
 | 160 | moderate | `svgo` | 2.8.2 | [GHSA-4vpr-x523-8j87](https://github.com/advisories/GHSA-4vpr-x523-8j87) | `apps/sudoku › @rushstack/heft-web-rig › css-minimizer-webpack-plugin › cssnano › cssnano-preset-default › postcss-svgo › svgo` (5) | >=2.8.4 | lockfile refresh (`rush update --full`) |
 | 161 | moderate | `uuid` | 8.3.2 | [GHSA-w5hq-g745-h8pq](https://github.com/advisories/GHSA-w5hq-g745-h8pq) | `apps/sudoku › @rushstack/heft-web-rig › @rushstack/heft-webpack5-plugin › webpack › webpack-cli › @webpack-cli/serve › webpack-dev-server › sockjs › uuid` (100) | >=11.1.1 | override `sockjs>uuid` |
-| 162 | low | `deepmerge` | 4.3.1 | [GHSA-gcqx-w48m-w2h4](https://github.com/advisories/GHSA-gcqx-w48m-w2h4) | `apps/sudoku › @rushstack/heft-web-rig › @rushstack/heft-jest-plugin › @jest/core › jest-config › deepmerge` (100) | >=4.3.2 | **open** — see below |
-| 163 | low | `elliptic` | 6.6.1 | [GHSA-848j-6mx2-7j84](https://github.com/advisories/GHSA-848j-6mx2-7j84) | `tools/ts-res-browser › crypto-browserify › browserify-sign › elliptic` (4) | >=6.6.2 | **open** — see below |
+| 162 | low | `deepmerge` | 4.3.1 | [GHSA-gcqx-w48m-w2h4](https://github.com/advisories/GHSA-gcqx-w48m-w2h4) | `apps/sudoku › @rushstack/heft-web-rig › @rushstack/heft-jest-plugin › @jest/core › jest-config › deepmerge` (100) | no fix published | **open**: no fix published (§ 2a) |
+| 163 | low | `elliptic` | 6.6.1 | [GHSA-848j-6mx2-7j84](https://github.com/advisories/GHSA-848j-6mx2-7j84) | `tools/ts-res-browser › crypto-browserify › browserify-sign › elliptic` (4) | no fix published | no fix published; **closed in round 1** by removing unused `crypto-browserify` (gone from the lockfile) |
 | 164 | low | `fast-uri` | 3.1.3 | [GHSA-333x-w4r6-6crp](https://github.com/advisories/GHSA-333x-w4r6-6crp) | `apps/sudoku › @rushstack/heft › @rushstack/heft-config-file › @rushstack/node-core-library › ajv › fast-uri` (100) | >=3.1.9 | lockfile refresh (`rush update --full`) |
 | 165 | low | `fast-uri` | 3.1.3 | [GHSA-xhq7-xmqj-769h](https://github.com/advisories/GHSA-xhq7-xmqj-769h) | `apps/sudoku › @rushstack/heft › @rushstack/heft-config-file › @rushstack/node-core-library › ajv › fast-uri` (100) | >=3.1.9 | lockfile refresh (`rush update --full`) |
 | 166 | low | `hono` | 4.12.29, 4.7.11 | [GHSA-79qm-7rj5-m7r9](https://github.com/advisories/GHSA-79qm-7rj5-m7r9) | `libraries/ts-extras-mcp › @modelcontextprotocol/sdk › @hono/node-server › hono` (5) | >=4.12.34 | direct bump `hono` ~4.13.16 (ts-http-storage); MCP SDK's copy by lockfile refresh |

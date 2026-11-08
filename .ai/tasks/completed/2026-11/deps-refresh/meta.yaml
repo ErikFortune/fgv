@@ -78,7 +78,7 @@ summary:
     lockfile. It also found the close-out had stated a Node 20 floor, taken from a stale
     MONOREPO_GUIDE, where rush.json requires 22.22 or 24.15. And the MCP test fix had stopped
     exercising the package's own redirect refusal.
-  sourceLine: "**Shipped:** the monorepo's dependency audit went from 173 advisories (4 critical, 73 high, 84 moderate, 12 low) to 4 (2 moderate, 2 low, none with a fix that a direct bump or a same-major override can deliver), with Rush 5.182.1 / pnpm 11.28.9, a full lockfile refresh, six direct bumps, two scoped overrides, and a minor/patch refresh of 58 more direct dependencies within their current major."
+  sourceLine: "**Shipped:** the Rush lockfile's audit went from 173 advisories (4 critical, 73 high, 84 moderate, 12 low) to 3 (2 moderate, 1 low, none with a fix that a direct bump or a same-major override can deliver), and the root `package-lock.json` Dependabot scans went from 11 high to 1 high (open below `@microsoft/rush`), with Rush 5.182.1 / pnpm 11.28.9, a full lockfile refresh, six direct bumps, two scoped overrides, and a minor/patch refresh of 58 more direct dependencies within their current major."
   headline: '' # opted out: a dependency refresh adds no capability a consumer would look up
 keywords:
   - dependency audit
@@ -96,4 +96,4 @@ keywords:
   - heft-lint-plugin non-TS files
   - MCP SDK redirectPolicy same-origin
   - majors report
-sourceHash: sha256:498d2439976640b8 # over brief.md + state.md + result.md
+sourceHash: sha256:7298683df79c6ede # over brief.md + state.md + result.md

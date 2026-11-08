@@ -74,3 +74,10 @@ These are orchestrator decisions. They change scope, not the frozen brief.
   make the change-file comments precise (ts-extras-mcp, both transformers packages); remove the
   unused `crypto-browserify` from both tools; record ts-http-storage's `Hono` public-API exposure;
   tick Progress. **Keep the `sockjs>uuid` override.** → Done.
+- **A1 follow-up (review round 2):** the regenerated `package-lock.json` took its name from the
+  worktree directory (`"fgv-deps"`), because the root `package.json` had no `name`. The root
+  `package.json` now has `"name": "fgv"`. Re-running `npm install --package-lock-only
+  --before=2026-11-06T00:00:00Z --ignore-scripts` changed only the lockfile's two name fields,
+  both now `"fgv"`; no version moved. Also in round 2: the headline figures were updated to the
+  current per-lockfile counts, the §2b fixed-version cells for deepmerge and elliptic now read
+  "no fix published", and the change-file comments name the @types/node 20 → 22.x move.

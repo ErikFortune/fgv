@@ -2,7 +2,7 @@
   "changes": [
     {
       "packageName": "@fgv/ts-extras-re2",
-      "comment": "dependency refresh: dev-only minor/patch updates within the current major.",
+      "comment": "dependency refresh: dev-only updates — minor/patch within the current major, and @types/node 20 → 22.x to match the supported Node range (rush.json: >=22.22.0 <23 || >=24.15.0 <25).",
       "type": "none"
     }
   ],
