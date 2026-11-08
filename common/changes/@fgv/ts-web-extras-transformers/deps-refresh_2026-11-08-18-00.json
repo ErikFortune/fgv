@@ -2,7 +2,7 @@
   "changes": [
     {
       "packageName": "@fgv/ts-web-extras-transformers",
-      "comment": "dependency refresh: @huggingface/transformers peer and dev range ~4.2.0 → ~4.3.2, which brings sharp 0.35.5 (GHSA-f88m-g3jw-g9cj, GHSA-rgj7-g3m4-5g8c, GHSA-wq5f-xc86-pv6w) and adm-zip 0.6.1 via onnxruntime-node (GHSA-xcpc-8h2w-3j85 and six more). Consumers must provide @huggingface/transformers 4.3.x.",
+      "comment": "dependency refresh: @huggingface/transformers peer and dev range ~4.2.0 → ~4.3.2, which brings sharp 0.35.5 (GHSA-f88m-g3jw-g9cj, GHSA-rgj7-g3m4-5g8c, GHSA-wq5f-xc86-pv6w) and adm-zip 0.6.1 via onnxruntime-node (GHSA-xcpc-8h2w-3j85 and six more). Consumers must move to @huggingface/transformers 4.3.2 or later within 4.3.x; the peer range no longer admits 4.2.",
       "type": "patch"
     }
   ],

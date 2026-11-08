@@ -73,7 +73,7 @@
     "@rushstack/heft-node-rig": "2.11.50",
     "@types/heft-jest": "1.0.6",
     "@types/jest": "^30.0.0",
-    "@types/node": "^20.19.43",
+    "@types/node": "^22.20.5",
     "@typescript-eslint/eslint-plugin": "^8.72.1",
     "@typescript-eslint/parser": "^8.72.1",
     "eslint": "^9.39.5",
