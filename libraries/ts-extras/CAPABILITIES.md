@@ -76,7 +76,7 @@
 
 <!-- BEGIN GENERATED: recent-additions -->
 
-- **2026-11-08** — resolveMaxOutputTokens tells you the largest maxTokens the model a call will use accepts, from the same ModelSpec and tier, so a slot can be capped at min(your cap, the model's limit).
+- **2026-11-08** — resolveMaxOutputTokens tells you the largest maxTokens the model a call will use accepts, from the same ModelSpec and tier, so a slot can be capped at min(your cap, the model's limit). ([#765](https://github.com/ErikFortune/fgv/pull/765))
 - **2026-10-30** — A converter or validator handed a cyclic, BigInt or Proxy value now fails instead of throwing, via a new formatValueForMessage that matches JSON.stringify for ordinary values. ([#764](https://github.com/ErikFortune/fgv/pull/764))
 - **2026-10-26** — ai-assist can run a whole client-tool conversation: runClientToolLoop caps rounds and honours a deadline and caller abort even when a tool ignores its signal. ([#755](https://github.com/ErikFortune/fgv/pull/755))
 - **2026-10-26** — A host can stop every write it routes through one AsyncControl.WriteGate, or hold them still for a snapshot until the writes under way drain, and hand the same gate to a task broker as its writeGuard. ([#761](https://github.com/ErikFortune/fgv/pull/761))

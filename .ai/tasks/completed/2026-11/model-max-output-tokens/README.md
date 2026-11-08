@@ -1,6 +1,6 @@
 # model-max-output-tokens — each model's maximum output tokens, resolvable through aliases
 
-**Shipped**: 2026-11-08 into `integration/asks` via #TBD.
+**Shipped**: 2026-11-08 into `integration/asks` via #765.
 Package: `@fgv/ts-extras` (`ai-assist`). Origin: personaility#724 (fgv-ask). Change file: `minor`.
 
 ## Summary

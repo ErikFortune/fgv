@@ -8,7 +8,7 @@ than the model that slot resolves to today. Limits are matched to the exact mode
 by prefix or snapshot suffix, and the shipped registry records only Anthropic and OpenAI completion
 models, each cited from a provider page fetched during the run.
 
-Origin: personaility#724 (fgv-ask). Base / PR target: `integration/asks`. PR: #TBD.
+Origin: personaility#724 (fgv-ask). Base / PR target: `integration/asks`. PR: #765.
 
 ## API
 

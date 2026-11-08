@@ -1,7 +1,7 @@
 id: model-max-output-tokens
 status: shipped
 packages: ['@fgv/ts-extras']
-prs: []
+prs: [765]
 openPrs: []
 opened: 2026-11-08
 closed: 2026-11-08
@@ -49,4 +49,4 @@ keywords:
   - DEFAULT_ANTHROPIC_MAX_TOKENS
   - silent truncation
   - fgv-ask
-sourceHash: sha256:0f5e7945476b165a # over brief.md + state.md + result.md
+sourceHash: sha256:ea2dbc1ba1cf5643 # over brief.md + state.md + result.md
