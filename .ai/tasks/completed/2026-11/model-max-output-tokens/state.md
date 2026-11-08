@@ -104,3 +104,14 @@ matched their `-5` / `-5-1` siblings described exactly the inheritance A1 remove
   positives for both forms, `ModelSpec` / tier / undefined-default / string-alias cases, and an
   equality test over every provider × three specs × every `ModelSpecKey` against
   `resolveMaxOutputTokens(descriptor, resolveProviderModel(...))`.
+
+### Round-1 gates (logs under the same scratchpad directory, `2` suffix)
+
+- `ext-build2.log`, `ext-lint2.log`, `ext-test2.log` — `ts-extras` build / lint / test exit 0, no
+  warnings after the api.md update, 49 cases in the new file, coverage 100/100/100/100.
+- `rebuild2.log` — repo-wide `rush rebuild`: `SUCCESS: 39 operations`, 0 error matches, only the
+  tracked-symlink warning.
+- `test2.log` — repo-wide `rush test`: `SUCCESS: 38 operations`, 0 error matches, only the
+  tracked-symlink warning, no NUL padding, no flake fired.
+- `rush change --verify --target-branch origin/integration/asks`, prettier 2.8.8 `--check`,
+  `verify-capability-docs` (router 23,928/24,000) and `generate-capability-feed --check` — pass.

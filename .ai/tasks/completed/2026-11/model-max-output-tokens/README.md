@@ -9,18 +9,21 @@ Anthropic and OpenAI refuse a request whose `maxTokens` is above the model's out
 not clamp it. Because aliases resolve inside fgv, a consumer holding `@anthropic:opus` cannot know
 which model it will reach, and had to choose one number for every model the slot might name.
 
-`AiAssist.resolveMaxOutputTokens(descriptor, modelId)` now answers that, alias-first, through the
-same helper as the image / embedding / structured-output capability lookups. It returns `undefined`
-when the limit is unknown. A consumer caps with `Math.min(cap, limit ?? cap)`; ai-assist itself never
+`AiAssist.resolveMaxOutputTokens(descriptor, modelOverride?, context?)` now answers that. It takes
+the same `ModelSpec` and tier a completion call takes, resolves them through `resolveProviderModel`,
+and returns the limit of the model that call would use, or `undefined` when the limit is unknown. A consumer caps with `Math.min(cap, limit ?? cap)`; ai-assist itself never
 lowers an explicit `maxTokens`, because that would turn a loud refusal into silent truncation.
 
 ## What a reader should know
 
-- **Only cited values are recorded.** Anthropic (9 prefixes) and OpenAI (4 completion models), each
+- **Only cited values are recorded.** Anthropic (10 model ids) and OpenAI (4 completion models), each
   from a provider page fetched on 2026-11-08; the citations table is in `result.md`. Gemini, Groq and
-  Mistral docs were unreachable from the session, and xAI states no maximum, so those return
-  `undefined` today and their completion aliases are on the test's exclusion list.
-- **No catch-all** in the shipped registry, pinned by test. A wrong number is worse than none.
+  Mistral docs could not be read, and xAI states no maximum, so those return `undefined` and their
+  completion aliases are on the test's exclusion list.
+- **Exact model ids, never prefixes.** An entry matches its own id or a dated snapshot of it
+  (`-YYYYMMDD`, `-YYYY-MM-DD`). Review round 1 found that longest-prefix matching gave uncited
+  numbers to `-mini` siblings and later point releases, and the orchestrator amended the brief
+  (`state.md` A1). A wrong number is worse than none.
 - **Anthropic "128K" is recorded as 128000**, reading `k` as the docs do elsewhere. If it meant
   1,024 the value is 3,072 low: it can cap early, never cause a refusal.
 - **`DEFAULT_ANTHROPIC_MAX_TOKENS` (4096) is below every recorded limit**, so no adapter changed. A

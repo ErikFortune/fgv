@@ -163,8 +163,9 @@ logs keep their names; round-1 logs (after the orchestrator amendments) carry a 
 
 - `ts-extras` build (`ext-build2.log`), lint (`ext-lint2.log`) and test (`ext-test2.log`): clean,
   49 cases in the new file, 100% statements, branches, functions and lines.
-- Repo-wide `rush rebuild` (`rebuild2.log`) and `rush test` (`test2.log`): see `state.md`
-  § Round-1 gates.
+- Repo-wide `rush rebuild` (`rebuild2.log`): `SUCCESS: 39 operations`; `rush test` (`test2.log`):
+  `SUCCESS: 38 operations`. 0 error matches in either; the only warning is the tracked-symlink
+  notice; no flake fired.
 - `rush change --verify --target-branch origin/integration/asks`, prettier 2.8.8 `--check`,
   `verify-capability-docs` and `generate-capability-feed --check`: pass.
 

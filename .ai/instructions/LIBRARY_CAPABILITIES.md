@@ -210,7 +210,7 @@ markers.*
 
 <!-- BEGIN GENERATED: recent-additions -->
 
-- **2026-11-08** — resolveMaxOutputTokens tells you the largest maxTokens a model accepts, through an alias, so a slot can be capped at min(your cap… · `ts-extras`
+- **2026-11-08** — resolveMaxOutputTokens tells you the largest maxTokens the model a call will use accepts, from the same ModelSpec and tier, so a… · `ts-extras`
 - **2026-10-30** — A converter or validator handed a cyclic, BigInt or Proxy value now fails instead of throwing, via a new formatValueForMessage that… ([#764](https://github.com/ErikFortune/fgv/pull/764)) · `ts-utils` `ts-json-base` `ts-extras` `ts-bcp47`
 - **2026-10-27** — A filesystem FileTree can now be a sandbox: absolutePathPolicy 'confined' maps every path beneath the prefix, 'verified' refuses… ([#763](https://github.com/ErikFortune/fgv/pull/763)) · `ts-json-base`
 - **2026-10-26** — A crash mid-write no longer leaves a torn memory record that fails the next open: FileTreeMemoryStore writes atomically wherever… ([#756](https://github.com/ErikFortune/fgv/pull/756)) · `ts-agent-memory` `ts-json-base`

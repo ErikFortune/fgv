@@ -15,21 +15,25 @@ summary:
     pin alias coverage; check DEFAULT_ANTHROPIC_MAX_TOKENS against every Anthropic limit; never clamp
     an explicit maxTokens.
   shipped: >
-    resolveMaxOutputTokens(descriptor, modelId) and IAiMaxOutputTokensCapability, with the
-    descriptor field maxOutputTokens. The registry records 9 Anthropic prefixes (128000; Haiku 4.5
-    64000) and 4 OpenAI completion models (128000), each cited, with no catch-all. A test.each
-    requires every cloud alias to resolve or sit on a commented exclusion list that cannot go stale.
-    DEFAULT_ANTHROPIC_MAX_TOKENS (4096) is below every recorded limit, so no adapter changed; a test
-    pins that finding.
+    resolveMaxOutputTokens(descriptor, modelOverride?, context?) — resolveProviderModel's model
+    arguments, resolved through it — and IAiMaxOutputTokensCapability { modelId, maxOutputTokens }
+    on the descriptor field maxOutputTokens, matched by exact id or a dated snapshot of it. The
+    registry records 10 Anthropic ids (128000; Haiku 4.5 64000) and 4 OpenAI completion models
+    (128000), each cited. A test.each requires every cloud alias to resolve or sit on a commented
+    exclusion list that cannot go stale. DEFAULT_ANTHROPIC_MAX_TOKENS (4096) is below every recorded
+    limit, so no adapter changed; a test pins that finding.
   diverged: >
-    Not every cloud provider could be populated. Gemini, Groq and Mistral docs hosts were outside
-    the session's network, and xAI's docs state only a default output length, not a maximum, so
-    those providers record nothing and their completion aliases are on the exclusion list. Anthropic
-    pages give "128K" without an exact integer; recorded as 128000 on the docs' own k = 1,000 usage.
-  sourceLine: '**Shipped:** `AiAssist.resolveMaxOutputTokens(descriptor, modelId)` in `@fgv/ts-extras` returns the largest `maxTokens` a provider accepts for a model, or `undefined` when the limit is unknown.'
+    Review round 1 amended the brief twice: longest-prefix matching (the briefed idiom) gave uncited
+    limits to sibling ids such as claude-opus-5-6 and gpt-6-luna-mini, so matching became exact id
+    plus dated snapshot through its own matcher rather than resolveCapabilityForModel; and the lookup
+    took only a string, so it was given resolveProviderModel's ModelSpec and context parameters. Not
+    every cloud provider could be populated: Gemini, Groq and Mistral docs could not be read, and
+    xAI's docs state only a default output length, so those record nothing. Anthropic pages give
+    "128K" without an exact integer; recorded as 128000 on the docs' own k = 1,000 usage.
+  sourceLine: '**Shipped:** `AiAssist.resolveMaxOutputTokens(descriptor, modelOverride?, context?)` in'
   headline: >
-    resolveMaxOutputTokens tells you the largest maxTokens a model accepts, through an alias, so a
-    slot can be capped at min(your cap, the model's limit) instead of being refused.
+    resolveMaxOutputTokens tells you the largest maxTokens the model a call will use accepts, from
+    the same ModelSpec and tier, so a slot can be capped at min(your cap, the model's limit).
 keywords:
   - max output tokens
   - maxTokens refusal
@@ -41,4 +45,4 @@ keywords:
   - DEFAULT_ANTHROPIC_MAX_TOKENS
   - silent truncation
   - fgv-ask
-sourceHash: sha256:a69f5ff5357458c9 # over brief.md + state.md + result.md
+sourceHash: sha256:96b65997b1af7f64 # over brief.md + state.md + result.md
