@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras-mcp",
+      "comment": "dependency refresh: @modelcontextprotocol/sdk floor ^1.29.0 → ^1.32.2, above the vulnerable ranges of GHSA-6qxp-vccf-f47h and the other SDK advisories (OAuth credential exposure; transitive hono, ip-address, zod and @hono/node-server advisories).",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@fgv/ts-extras-mcp",
+  "email": "noreply@anthropic.com"
+}

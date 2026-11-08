@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/typedoc-compact-theme",
+      "comment": "dependency refresh: dev-only minor/patch updates within the current major.",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/typedoc-compact-theme",
+  "email": "noreply@anthropic.com"
+}

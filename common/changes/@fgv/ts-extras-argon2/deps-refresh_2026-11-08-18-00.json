@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras-argon2",
+      "comment": "dependency refresh: argon2 ^0.45.0 → ^0.45.2 (latest minor/patch in the current major).",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@fgv/ts-extras-argon2",
+  "email": "noreply@anthropic.com"
+}

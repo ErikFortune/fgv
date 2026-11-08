@@ -4,29 +4,29 @@
 
 ```ts
 
-import type { AuthenticationResponseJSON } from '@simplewebauthn/browser';
+import type { AuthenticationResponseJSON as AuthenticationResponseJSON_2 } from '@simplewebauthn/browser';
 import type { PublicKeyCredentialCreationOptionsJSON as PublicKeyCredentialCreationOptionsJSON_2 } from '@simplewebauthn/browser';
 import type { PublicKeyCredentialRequestOptionsJSON as PublicKeyCredentialRequestOptionsJSON_2 } from '@simplewebauthn/browser';
-import type { RegistrationResponseJSON } from '@simplewebauthn/browser';
+import type { RegistrationResponseJSON as RegistrationResponseJSON_2 } from '@simplewebauthn/browser';
 import { Result } from '@fgv/ts-utils';
 import type { StartAuthenticationOpts } from '@simplewebauthn/browser';
 import type { StartRegistrationOpts } from '@simplewebauthn/browser';
 
-export { AuthenticationResponseJSON }
+export { AuthenticationResponseJSON_2 as AuthenticationResponseJSON }
 
 export { PublicKeyCredentialCreationOptionsJSON_2 as PublicKeyCredentialCreationOptionsJSON }
 
 export { PublicKeyCredentialRequestOptionsJSON_2 as PublicKeyCredentialRequestOptionsJSON }
 
-export { RegistrationResponseJSON }
+export { RegistrationResponseJSON_2 as RegistrationResponseJSON }
 
 // @public
-export function startAuthentication(options: StartAuthenticationOpts): Promise<Result<AuthenticationResponseJSON>>;
+export function startAuthentication(options: StartAuthenticationOpts): Promise<Result<AuthenticationResponseJSON_2>>;
 
 export { StartAuthenticationOpts }
 
 // @public
-export function startRegistration(options: StartRegistrationOpts): Promise<Result<RegistrationResponseJSON>>;
+export function startRegistration(options: StartRegistrationOpts): Promise<Result<RegistrationResponseJSON_2>>;
 
 export { StartRegistrationOpts }
 

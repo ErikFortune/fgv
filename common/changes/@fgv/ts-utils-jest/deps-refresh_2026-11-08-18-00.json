@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-utils-jest",
+      "comment": "dependency refresh: dev-only minor/patch updates within the current major.",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-utils-jest",
+  "email": "noreply@anthropic.com"
+}

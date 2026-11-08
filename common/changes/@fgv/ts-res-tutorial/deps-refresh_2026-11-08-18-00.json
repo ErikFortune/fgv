@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-res-tutorial",
+      "comment": "dependency refresh: commander ^11.0.0 → ^11.1.0 (latest minor/patch in the current major).",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@fgv/ts-res-tutorial",
+  "email": "noreply@anthropic.com"
+}

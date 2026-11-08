@@ -4,12 +4,12 @@
 
 ```ts
 
-import type { AuthenticationResponseJSON } from '@simplewebauthn/server';
+import type { AuthenticationResponseJSON as AuthenticationResponseJSON_2 } from '@simplewebauthn/server';
 import type { GenerateAuthenticationOptionsOpts } from '@simplewebauthn/server';
 import type { GenerateRegistrationOptionsOpts } from '@simplewebauthn/server';
 import type { PublicKeyCredentialCreationOptionsJSON as PublicKeyCredentialCreationOptionsJSON_2 } from '@simplewebauthn/server';
 import type { PublicKeyCredentialRequestOptionsJSON as PublicKeyCredentialRequestOptionsJSON_2 } from '@simplewebauthn/server';
-import type { RegistrationResponseJSON } from '@simplewebauthn/server';
+import type { RegistrationResponseJSON as RegistrationResponseJSON_2 } from '@simplewebauthn/server';
 import { Result } from '@fgv/ts-utils';
 import type { VerifiedAuthenticationResponse } from '@simplewebauthn/server';
 import type { VerifiedRegistrationResponse } from '@simplewebauthn/server';
@@ -17,7 +17,7 @@ import type { VerifyAuthenticationResponseOpts } from '@simplewebauthn/server';
 import type { VerifyRegistrationResponseOpts } from '@simplewebauthn/server';
 import type { WebAuthnCredential } from '@simplewebauthn/server';
 
-export { AuthenticationResponseJSON }
+export { AuthenticationResponseJSON_2 as AuthenticationResponseJSON }
 
 // @public
 export function generateAuthenticationOptions(options: GenerateAuthenticationOptionsOpts): Promise<Result<PublicKeyCredentialRequestOptionsJSON_2>>;
@@ -33,7 +33,7 @@ export { PublicKeyCredentialCreationOptionsJSON_2 as PublicKeyCredentialCreation
 
 export { PublicKeyCredentialRequestOptionsJSON_2 as PublicKeyCredentialRequestOptionsJSON }
 
-export { RegistrationResponseJSON }
+export { RegistrationResponseJSON_2 as RegistrationResponseJSON }
 
 export { VerifiedAuthenticationResponse }
 
