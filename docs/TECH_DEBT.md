@@ -67,6 +67,29 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
 
 ## P2 — Fix before next major feature in affected area
 
+- **[P2] The Heft toolchain family is held at its 2026-09-14 pins.**
+  `@rushstack/heft` 1.3.0, `heft-node-rig` 2.11.50, `heft-web-rig` 1.4.34, `heft-jest-plugin`
+  2.0.17, `heft-lint-plugin` 1.2.27 and the api-extractor / sass / webpack5 plugins. The latest
+  versions fail `rush rebuild`. `heft-lint-plugin` 1.3.0 lints files outside the TypeScript program,
+  so an `eslint.config.js` block that sets `@rushstack/packlets/mechanics` without a `files` glob
+  becomes a config error (36 configs set that rule). And `@rushstack/eslint-config` 4.9.0 enables
+  `@rushstack/prefer-ecmascript-private-members: 'warn'`, which flags every `private _member`. The
+  plugins pin `@rushstack/heft` exactly, so the family cannot be split. `eslint` 10 waits on it,
+  and 9.x is already marked unsupported upstream.
+
+  **Trigger**: the next dependency refresh, or any need for a Heft or eslint fix newer than these
+  pins.
+
+  **Scope sketch**: add `files` scoping to the affected config blocks. Then decide the
+  private-members rule: migrate to `#private`, which changes runtime semantics and the
+  `enforceLeadingUnderscoreWhenPrivate` naming rule, or make a repo-level, reasoned rule
+  disposition. Then take the family together.
+
+  **Not a P3**: the toolchain falls further behind upstream fixes, including security ones, until
+  this is done.
+
+  **Reference**: `.ai/tasks/completed/2026-11/deps-refresh/result.md` § 4c, § 4d.
+
 - *Closed — `FsFileTreeAccessors`' prefix did not confine (absolute paths escaped it; plain writes
   never checked).* Resolved by the `filetree-prefix-confinement` stream (PR #TBD), which added the
   user-decided `absolutePathPolicy: 'unconfined' | 'confined' | 'verified'` and `realPath` options on

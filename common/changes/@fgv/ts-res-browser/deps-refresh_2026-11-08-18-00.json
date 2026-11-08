@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-res-browser",
+      "comment": "dependency refresh: react ~19.2.3 → ~19.3.1; react-dom ~19.2.3 → ~19.3.1; core-js ~3.48.0 → ~3.51.0; serve-handler ~6.1.6 → ~6.1.7; json-edit-react ~1.29.0 → ~1.30.2 (latest minor/patch in the current major). Removes the unused crypto-browserify dependency (webpack sets crypto: false and no source imports it), which also drops elliptic and its advisory GHSA-848j-6mx2-7j84. Dev dependencies: minor/patch within the current major, and @types/node 20 → 22.x to match the supported Node range.",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@fgv/ts-res-browser",
+  "email": "noreply@anthropic.com"
+}

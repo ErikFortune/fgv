@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-app-shell",
+      "comment": "dependency refresh: tslib ^2.8.1 → ^2.9.1 (latest minor/patch in the current major). Dev dependencies: minor/patch within the current major, and @types/node 20 → 22.x to match the supported Node range.",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@fgv/ts-app-shell",
+  "email": "noreply@anthropic.com"
+}
