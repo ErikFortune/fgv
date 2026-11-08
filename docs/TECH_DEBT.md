@@ -867,6 +867,25 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
 
 ## P3 — Opportunistic cleanup
 
+- **[P3] `resolveModel` throws on a `ModelSpec` outside its type instead of failing.**
+  `resolveModel` (`libraries/ts-extras/src/packlets/ai-assist/model.ts`) recurses into whatever
+  value a spec key holds. A spec such as `{ base: undefined }` — reachable from untyped JSON or a
+  cast — reaches `key in undefined` and throws a `TypeError`. `resolveProviderModel` calls it
+  without a guard, so `resolveProviderModel`, the completion and streaming calls that resolve
+  through it, and `resolveMaxOutputTokens` all throw rather than return a `Failure`.
+
+  **Trigger**: any path that builds a `ModelSpec` from unvalidated input, or the next change to
+  `resolveModel`.
+
+  **Scope sketch**: either validate the spec with a converter at the boundary that accepts it, or
+  make `resolveProviderModel` wrap the walk in `captureResult` and fail with the provider id and
+  the offending key.
+
+  **Not a P2**: well-typed callers cannot construct such a spec; it needs a cast or untyped input.
+
+  **Reference**: review round 2 of `model-max-output-tokens`
+  (`.ai/tasks/completed/2026-11/model-max-output-tokens/state.md`, amendment A4).
+
 - **[P3] `executeClientToolTurn`'s `onBeforeToolExecute` gate never receives the turn's signal.**
   The gate is called as `onBeforeToolExecute(tool, args)` in `dispatchCall`
   (`libraries/ts-extras/src/packlets/ai-assist/streamingAdapters/clientToolContinuationBuilder.ts`),

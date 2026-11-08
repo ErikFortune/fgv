@@ -952,6 +952,25 @@ export interface IAiProviderDescriptor {
    */
   readonly structuredOutput?: ReadonlyArray<IAiStructuredOutputCapability>;
   /**
+   * Per-model maximum output tokens — the largest `maxTokens` the provider accepts for a
+   * completion on that model. Absent (or no matching entry) means the limit is unknown.
+   *
+   * @remarks
+   * Read through {@link AiAssist.resolveMaxOutputTokens}, which resolves the model the same way a
+   * completion call does (the `ModelSpec` walk, then aliases) before matching.
+   *
+   * Unlike `imageGeneration`, `embedding` and `structuredOutput`, entries are **not**
+   * prefix-matched. An output limit is a fact about one model, and the sibling a prefix would
+   * also catch (a `-mini` or `-nano` variant, a later point release) is exactly where the limit
+   * changes, and a dated snapshot is a separate model id. An entry applies only to the model whose
+   * resolved id equals its `modelId`. A wrong number is worse than none: a value above the real
+   * limit is refused by Anthropic and OpenAI, and a value below it silently truncates.
+   *
+   * Each value is the limit a request **as ai-assist sends it** gets: a higher limit available only
+   * behind an opt-in beta header or a batch endpoint that ai-assist does not use is not recorded.
+   */
+  readonly maxOutputTokens?: ReadonlyArray<IAiMaxOutputTokensCapability>;
+  /**
    * Concrete model ids (prefix-matched) that must be invoked via the OpenAI
    * Responses API rather than chat completions — e.g. `gpt-5.5-pro`. Non-OpenAI
    * `apiFormat`s ignore this.
@@ -1084,6 +1103,23 @@ export interface IAiEmbeddingModelCapability {
    * rejects batches larger than this up front (no auto-chunking in v1).
    */
   readonly maxBatchSize?: number;
+}
+
+/**
+ * Maximum output tokens for one model within a provider. Used as an entry in
+ * `IAiProviderDescriptor.maxOutputTokens`.
+ *
+ * @public
+ */
+export interface IAiMaxOutputTokensCapability {
+  /**
+   * The concrete model id this limit belongs to. It matches only a resolved model id equal to it:
+   * a dated snapshot (`claude-haiku-4-5-20251001`) needs an entry of its own, and no other id
+   * inherits this one by prefix.
+   */
+  readonly modelId: string;
+  /** The largest `maxTokens` the provider accepts for a completion on this model. */
+  readonly maxOutputTokens: number;
 }
 
 /**
