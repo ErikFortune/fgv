@@ -4,8 +4,14 @@ Worker-owned. The brief is frozen; questions, decisions and progress live here.
 
 ## Status
 
-Research done 2026-11-08 (all six providers reachable). Implementation in progress on
-`model-alias-refresh` (base `integration/asks` @ `c3ab4e48`).
+Research done 2026-11-08 (all six providers reachable). Implementation committed on
+`model-alias-refresh` (base `integration/asks` @ `c3ab4e48`); gates in `result.md` § 8. Closed out to
+`.ai/tasks/completed/2026-11/model-alias-refresh/`.
+
+Testbed scope note: `samples/testbed` probes and tests pin alias targets, so they were updated in
+this branch (brief: "Touch other packages only where a repo-wide test pins an alias target"). The
+tier canary also gained a `@anthropic:haiku` row and a Gemini live image, so the forced-tool path
+and the rotated image tier stay live-exercised.
 
 ## Source reachability (2026-11-08)
 
