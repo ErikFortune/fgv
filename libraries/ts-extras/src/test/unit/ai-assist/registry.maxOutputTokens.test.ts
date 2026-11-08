@@ -42,10 +42,6 @@ const ALIASES_WITHOUT_A_LIMIT: ReadonlyArray<string> = [
   '@openai:image',
   '@openai:embedding',
   '@xai-grok:imagine',
-  // No cited limit recorded.
-  '@google-gemini:flash',
-  '@google-gemini:pro',
-  '@google-gemini:flash-lite',
   // docs.x.ai states a context window and a default `max_output_tokens` (128,000 when unset,
   // "set a larger value to allow longer generations"), but no maximum.
   '@xai-grok:standard',
@@ -100,11 +96,23 @@ describe('AiAssist.resolveMaxOutputTokens', () => {
 
     test('an alias resolves to the same limit as the concrete id it names', () => {
       const anthropic = getDescriptor('anthropic');
-      expect(AiAssist.resolveMaxOutputTokens(anthropic, '@anthropic:haiku')).toBe(64000);
+      expect(AiAssist.resolveMaxOutputTokens(anthropic, '@anthropic:haiku')).toBe(
+        AiAssist.resolveMaxOutputTokens(anthropic, 'claude-haiku-5-5')
+      );
       expect(AiAssist.resolveMaxOutputTokens(anthropic, '@anthropic:opus')).toBe(
         AiAssist.resolveMaxOutputTokens(anthropic, 'claude-opus-5-5')
       );
       expect(AiAssist.resolveMaxOutputTokens(getDescriptor('openai'), '@openai:nano')).toBe(128000);
+      expect(AiAssist.resolveMaxOutputTokens(getDescriptor('google-gemini'), '@google-gemini:pro')).toBe(
+        65536
+      );
+    });
+
+    test('a provider default with no alias resolves to its recorded limit', () => {
+      // Groq names openai/gpt-oss-120b directly; its model page states 65,536.
+      expect(AiAssist.resolveMaxOutputTokens(getDescriptor('groq'))).toBe(65536);
+      // Mistral's Large 4 page states no maximum, so nothing is recorded.
+      expect(AiAssist.resolveMaxOutputTokens(getDescriptor('mistral'))).toBe(undefined);
     });
 
     test('an unresolvable alias yields undefined', () => {
@@ -117,9 +125,7 @@ describe('AiAssist.resolveMaxOutputTokens', () => {
 
     test('a provider that declares no limits yields undefined', () => {
       expect(AiAssist.resolveMaxOutputTokens(getDescriptor('ollama'), 'llama3.3')).toBe(undefined);
-      expect(AiAssist.resolveMaxOutputTokens(getDescriptor('groq'), 'llama-3.3-70b-versatile')).toBe(
-        undefined
-      );
+      expect(AiAssist.resolveMaxOutputTokens(getDescriptor('mistral'), 'mistral-large-4')).toBe(undefined);
     });
 
     test('a model no entry names yields undefined', () => {
@@ -129,12 +135,16 @@ describe('AiAssist.resolveMaxOutputTokens', () => {
       expect(AiAssist.resolveMaxOutputTokens(getDescriptor('openai'), 'text-embedding-3-small')).toBe(
         undefined
       );
+      expect(AiAssist.resolveMaxOutputTokens(getDescriptor('groq'), 'llama-3.3-70b-versatile')).toBe(
+        undefined
+      );
     });
 
     test('every shipped entry names a non-empty concrete model id', () => {
       for (const descriptor of AiAssist.getProviderDescriptors()) {
         for (const entry of descriptor.maxOutputTokens ?? []) {
-          expect(entry.modelId).toMatch(/^[a-z0-9][a-z0-9.-]*$/);
+          // Groq ids carry an owner prefix (`openai/gpt-oss-120b`), hence the '/'.
+          expect(entry.modelId).toMatch(/^[a-z0-9][a-z0-9./-]*$/);
           expect(entry.modelId.startsWith(AiAssist.MODEL_ALIAS_SIGIL)).toBe(false);
         }
       }
@@ -163,7 +173,8 @@ describe('AiAssist.resolveMaxOutputTokens', () => {
     });
 
     test('a spec object is walked for the requested tier', () => {
-      const spec: AiAssist.ModelSpec = { base: '@anthropic:haiku', advanced: '@anthropic:opus' };
+      // claude-haiku-4-5 (64000) against the opus alias (128000), so the two tiers differ.
+      const spec: AiAssist.ModelSpec = { base: 'claude-haiku-4-5', advanced: '@anthropic:opus' };
       const anthropic = getDescriptor('anthropic');
       expect(AiAssist.resolveMaxOutputTokens(anthropic, spec)).toBe(64000);
       expect(AiAssist.resolveMaxOutputTokens(anthropic, spec, 'base')).toBe(64000);
@@ -173,9 +184,12 @@ describe('AiAssist.resolveMaxOutputTokens', () => {
     });
 
     test('a string alias works as the spec', () => {
+      expect(AiAssist.resolveMaxOutputTokens(getDescriptor('openai'), '@openai:flagship', 'advanced')).toBe(
+        128000
+      );
       expect(
-        AiAssist.resolveMaxOutputTokens(getDescriptor('anthropic'), '@anthropic:haiku', 'advanced')
-      ).toBe(64000);
+        AiAssist.resolveMaxOutputTokens(getDescriptor('google-gemini'), '@google-gemini:flash', 'advanced')
+      ).toBe(65536);
     });
 
     test('a provider with no default model yields undefined', () => {
@@ -219,7 +233,8 @@ describe('AiAssist.resolveMaxOutputTokens', () => {
 
     const responses: Partial<Record<AiAssist.AiProviderId, unknown>> = {
       anthropic: { content: [{ type: 'text', text: 'ok' }], stop_reason: 'end_turn' },
-      openai: { choices: [{ message: { content: 'ok' }, finish_reason: 'stop' }] }
+      openai: { choices: [{ message: { content: 'ok' }, finish_reason: 'stop' }] },
+      groq: { choices: [{ message: { content: 'ok' }, finish_reason: 'stop' }] }
     };
     type Tier = 'advanced' | 'frontier' | undefined;
     const cases: ReadonlyArray<[AiAssist.AiProviderId, string, Tier, AiAssist.ModelSpec | undefined]> = [
@@ -232,7 +247,8 @@ describe('AiAssist.resolveMaxOutputTokens', () => {
       ['openai', 'default', 'advanced', undefined],
       ['openai', 'default', 'frontier', undefined],
       ['openai', 'spec', undefined, { base: '@openai:nano', advanced: '@openai:flagship' }],
-      ['openai', 'spec', 'frontier', { base: '@openai:nano', advanced: '@openai:flagship' }]
+      ['openai', 'spec', 'frontier', { base: '@openai:nano', advanced: '@openai:flagship' }],
+      ['groq', 'default', undefined, undefined]
     ];
 
     test.each(cases)('%s %s model, tier %s', async (id, __label, tier, spec) => {

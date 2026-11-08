@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras",
+      "comment": "ai-assist: model alias and default refresh from provider pages fetched 2026-11-08. Moved: @anthropic:sonnet claude-sonnet-5 -> claude-sonnet-5-5 (now on the anthropic-output-format structured-output wire, since it rejects a forced tool_choice); @anthropic:haiku claude-haiku-4-5-20251001 -> claude-haiku-5-5 (adaptive thinking only, added to adaptiveThinkingModelPrefixes); @openai:flagship gpt-6-sol -> gpt-6.1-sol (added to thinkingRequiredModelPrefixes: it has no reasoning effort 'none'); @openai:nano gpt-5.4-nano -> gpt-6-luna (gpt-5.4-nano is deprecated and OpenAI names gpt-6-luna as its replacement, so nano and mini now name the same model); @google-gemini:flash-image gemini-3.1-flash-image -> gemini-nano-banana-2.1; Groq defaultModel llama-3.3-70b-versatile -> openai/gpt-oss-120b; Mistral defaultModel.base mistral-large-latest -> mistral-large-4. Unchanged: @anthropic:opus, @anthropic:fable, @openai:mini, @openai:pro, @openai:image, @openai:embedding, @google-gemini:flash, :pro, :flash-lite, :embedding, every xAI alias, Mistral embedding. New cited maxOutputTokens entries: gpt-6.1-sol 128000; gemini-3.8-flash, gemini-3.5-flash-lite and gemini-3.1-pro-preview 65536; Groq openai/gpt-oss-120b 65536. Capability detection gains /^claude-haiku-5-5/ (thinking) and /^gemini-nano-banana/ (image-generation). The model-name unions gain claude-sonnet-5-5, claude-haiku-5-5, gpt-6.1-sol and gemini-nano-banana-2.1.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-extras",
+  "email": "noreply@anthropic.com"
+}

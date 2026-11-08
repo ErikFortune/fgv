@@ -1238,7 +1238,7 @@ export type GrokImagineModelNames =
   | 'grok-imagine-image-2.0';
 
 /** Model names in the Gemini Flash Image family. @public */
-export type GeminiFlashImageModelNames = 'gemini-3.1-flash-image';
+export type GeminiFlashImageModelNames = 'gemini-3.1-flash-image' | 'gemini-nano-banana-2.1';
 
 // ---- Family-level config shapes ----
 
@@ -1538,6 +1538,8 @@ export type AnthropicThinkingModelNames =
   | 'claude-sonnet-4-5'
   | 'claude-sonnet-4-6'
   | 'claude-sonnet-5'
+  | 'claude-sonnet-5-5'
+  | 'claude-haiku-5-5'
   | 'claude-opus-4-6'
   | 'claude-opus-4-7'
   | 'claude-opus-4-8'
@@ -1566,6 +1568,7 @@ export type OpenAiThinkingModelNames =
   | 'gpt-5-pro'
   | 'gpt-6-astra'
   | 'gpt-6-sol'
+  | 'gpt-6.1-sol'
   | 'gpt-6-luna';
 
 /**

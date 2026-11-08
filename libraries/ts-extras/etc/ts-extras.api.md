@@ -414,7 +414,7 @@ const ANTHROPIC_STRUCTURED_OUTPUT_TOOL_NAME: string;
 function anthropicEffortToBudgetTokens(effort: NonNullable<IAnthropicThinkingConfig['effort']>): number;
 
 // @public
-type AnthropicThinkingModelNames = 'claude-sonnet-4-5' | 'claude-sonnet-4-6' | 'claude-sonnet-5' | 'claude-opus-4-6' | 'claude-opus-4-7' | 'claude-opus-4-8' | 'claude-opus-5' | 'claude-opus-5-5' | 'claude-fable-5' | 'claude-fable-5-1' | 'claude-mythos-5-1';
+type AnthropicThinkingModelNames = 'claude-sonnet-4-5' | 'claude-sonnet-4-6' | 'claude-sonnet-5' | 'claude-sonnet-5-5' | 'claude-haiku-5-5' | 'claude-opus-4-6' | 'claude-opus-4-7' | 'claude-opus-4-8' | 'claude-opus-5' | 'claude-opus-5-5' | 'claude-fable-5' | 'claude-fable-5-1' | 'claude-mythos-5-1';
 
 // @public
 const ARGON2ID_OWASP_MIN: IArgon2idParams;
@@ -1078,7 +1078,7 @@ const GCM_AUTH_TAG_SIZE: number;
 const GCM_IV_SIZE: number;
 
 // @public
-type GeminiFlashImageModelNames = 'gemini-3.1-flash-image';
+type GeminiFlashImageModelNames = 'gemini-3.1-flash-image' | 'gemini-nano-banana-2.1';
 
 // @public
 type GeminiThinkingModelNames = 'gemini-3.1-pro-preview' | 'gemini-3.8-flash' | 'gemini-3.5-flash' | 'gemini-3.5-flash-lite' | 'gemini-3.1-flash-lite';
@@ -3230,7 +3230,7 @@ const nodeCryptoProvider: NodeCryptoProvider;
 const nodeHostResolver: HostResolver;
 
 // @public
-type OpenAiThinkingModelNames = 'o3' | 'o4-mini' | 'gpt-5' | 'gpt-5.1' | 'gpt-5.2' | 'gpt-5.4-mini' | 'gpt-5.5' | 'gpt-5.5-pro' | 'gpt-5.6-sol' | 'gpt-5.6-terra' | 'gpt-5.6-luna' | 'gpt-5-pro' | 'gpt-6-astra' | 'gpt-6-sol' | 'gpt-6-luna';
+type OpenAiThinkingModelNames = 'o3' | 'o4-mini' | 'gpt-5' | 'gpt-5.1' | 'gpt-5.2' | 'gpt-5.4-mini' | 'gpt-5.5' | 'gpt-5.5-pro' | 'gpt-5.6-sol' | 'gpt-5.6-terra' | 'gpt-5.6-luna' | 'gpt-5-pro' | 'gpt-6-astra' | 'gpt-6-sol' | 'gpt-6.1-sol' | 'gpt-6-luna';
 
 // @beta
 function parseCsvString(body: string, options?: CsvOptions): Result<unknown>;
