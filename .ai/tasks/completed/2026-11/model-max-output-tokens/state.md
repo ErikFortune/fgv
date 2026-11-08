@@ -136,3 +136,12 @@ matched their `-5` / `-5-1` siblings described exactly the inheritance A1 remove
   3 of 62 failed, including `anthropic spec model, tier advanced` (expected 128000, received
   64000). Restored; 62 pass. The other request-body cases cannot go red this way because their
   models share the 128000 limit.
+
+### Round-2 gates (`3` suffix)
+
+- `ext-build3.log`, `ext-lint3.log`, `ext-test3.log` — `ts-extras` build / lint / test exit 0, no
+  build warnings, 62 cases in the new file, coverage 100/100/100/100.
+- `rebuild3.log` — `SUCCESS: 39 operations`; `test3.log` — `SUCCESS: 38 operations`. 0 error
+  matches in either, only the tracked-symlink warning, no NUL padding, no flake fired.
+- `change --verify`, prettier 2.8.8 `--check`, `verify-capability-docs` (router 23,928/24,000),
+  `generate-capability-feed --check` — pass.
