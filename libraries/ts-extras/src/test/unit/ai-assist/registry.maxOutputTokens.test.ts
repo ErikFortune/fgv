@@ -64,12 +64,10 @@ describe('AiAssist.resolveMaxOutputTokens', () => {
       expect(AiAssist.resolveMaxOutputTokens(getDescriptor('openai'), 'gpt-6-luna')).toBe(128000);
     });
 
-    test("a dated snapshot of a recorded id resolves, in both providers' snapshot forms", () => {
-      // Anthropic: -YYYYMMDD
+    test('a snapshot a provider page names has its own entry', () => {
       expect(AiAssist.resolveMaxOutputTokens(getDescriptor('anthropic'), 'claude-haiku-4-5-20251001')).toBe(
         64000
       );
-      // OpenAI: -YYYY-MM-DD
       expect(AiAssist.resolveMaxOutputTokens(getDescriptor('openai'), 'gpt-5.4-nano-2026-03-17')).toBe(
         128000
       );
@@ -87,9 +85,14 @@ describe('AiAssist.resolveMaxOutputTokens', () => {
       ['openai', 'gpt-6-solar'],
       ['openai', 'gpt-5.4-nano-2026-03'],
       ['openai', 'gpt-6'],
-      ['openai', 'gpt-5.4']
+      ['openai', 'gpt-5.4'],
+      // snapshots no fetched page names
+      ['openai', 'gpt-6-luna-2026-13-45'],
+      ['openai', 'gpt-5.4-nano-20260317'],
+      ['anthropic', 'claude-haiku-4-5-2025-10-01'],
+      ['anthropic', 'claude-opus-5-20260101']
     ] as ReadonlyArray<[AiAssist.AiProviderId, string]>)(
-      '%s %s — a sibling, prefix or non-date suffix of a recorded id gets no limit',
+      '%s %s — a sibling, prefix, suffix or unnamed snapshot of a recorded id gets no limit',
       (id, model) => {
         expect(AiAssist.resolveMaxOutputTokens(getDescriptor(id), model)).toBeUndefined();
       }
@@ -202,6 +205,62 @@ describe('AiAssist.resolveMaxOutputTokens', () => {
     });
   });
 
+  describe('agrees with the model a completion call actually sends', () => {
+    const originalFetch = global.fetch;
+    const prompt = new AiAssist.AiPrompt('Say ok', 'You are terse');
+
+    beforeEach(() => {
+      global.fetch = jest.fn();
+    });
+
+    afterEach(() => {
+      global.fetch = originalFetch;
+    });
+
+    const responses: Partial<Record<AiAssist.AiProviderId, unknown>> = {
+      anthropic: { content: [{ type: 'text', text: 'ok' }], stop_reason: 'end_turn' },
+      openai: { choices: [{ message: { content: 'ok' }, finish_reason: 'stop' }] }
+    };
+    type Tier = 'advanced' | 'frontier' | undefined;
+    const cases: ReadonlyArray<[AiAssist.AiProviderId, string, Tier, AiAssist.ModelSpec | undefined]> = [
+      ['anthropic', 'default', undefined, undefined],
+      ['anthropic', 'default', 'advanced', undefined],
+      ['anthropic', 'default', 'frontier', undefined],
+      ['anthropic', 'spec', undefined, { base: '@anthropic:haiku', advanced: '@anthropic:opus' }],
+      ['anthropic', 'spec', 'advanced', { base: '@anthropic:haiku', advanced: '@anthropic:opus' }],
+      ['openai', 'default', undefined, undefined],
+      ['openai', 'default', 'advanced', undefined],
+      ['openai', 'default', 'frontier', undefined],
+      ['openai', 'spec', undefined, { base: '@openai:nano', advanced: '@openai:flagship' }],
+      ['openai', 'spec', 'frontier', { base: '@openai:nano', advanced: '@openai:flagship' }]
+    ];
+
+    test.each(cases)('%s %s model, tier %s', async (id, __label, tier, spec) => {
+      const descriptor = getDescriptor(id);
+      (global.fetch as jest.Mock).mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: jest.fn().mockResolvedValue(responses[id]),
+        text: jest.fn().mockResolvedValue(JSON.stringify(responses[id]))
+      });
+
+      expect(
+        await AiAssist.callProviderCompletion({
+          descriptor,
+          apiKey: 'test-key',
+          ...prompt.toRequest(),
+          modelOverride: spec,
+          tier
+        })
+      ).toSucceed();
+
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      const sentLimit = AiAssist.resolveMaxOutputTokens(descriptor, body.model);
+      expect(sentLimit).toBeDefined();
+      expect(AiAssist.resolveMaxOutputTokens(descriptor, spec, tier)).toBe(sentLimit);
+    });
+  });
+
   describe('alias coverage', () => {
     const cloudAliases: ReadonlyArray<[AiAssist.AiProviderId, string]> = AiAssist.getProviderDescriptors()
       .filter((d) => !NON_CLOUD_PROVIDERS.includes(d.id))
@@ -247,19 +306,6 @@ describe('AiAssist.resolveMaxOutputTokens', () => {
 
   describe('with a hand-built descriptor', () => {
     const base = getDescriptor('anthropic');
-
-    test('an exact entry wins over a snapshot match of a shorter entry', () => {
-      const descriptor: AiAssist.IAiProviderDescriptor = {
-        ...base,
-        maxOutputTokens: [
-          { modelId: 'claude-x', maxOutputTokens: 1000 },
-          { modelId: 'claude-x-20260101', maxOutputTokens: 2000 }
-        ]
-      };
-      expect(AiAssist.resolveMaxOutputTokens(descriptor, 'claude-x-20260101')).toBe(2000);
-      expect(AiAssist.resolveMaxOutputTokens(descriptor, 'claude-x-20260202')).toBe(1000);
-      expect(AiAssist.resolveMaxOutputTokens(descriptor, 'claude-x')).toBe(1000);
-    });
 
     test('a descriptor with no entries yields undefined', () => {
       const descriptor: AiAssist.IAiProviderDescriptor = { ...base, maxOutputTokens: undefined };

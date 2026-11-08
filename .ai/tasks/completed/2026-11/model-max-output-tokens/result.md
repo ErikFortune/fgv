@@ -4,16 +4,16 @@
 `@fgv/ts-extras` returns the largest `maxTokens` a provider accepts for the model a completion call
 with the same arguments would use, or `undefined` when the limit is unknown. It takes a `ModelSpec`
 and tier exactly as `resolveProviderModel` does, so a consumer asks about the slot it holds rather
-than the model that slot resolves to today. Limits are matched to one model id (or a dated snapshot
-of it), never by prefix, and the shipped registry records only Anthropic and OpenAI completion
+than the model that slot resolves to today. Limits are matched to the exact model id an entry names, never
+by prefix or snapshot suffix, and the shipped registry records only Anthropic and OpenAI completion
 models, each cited from a provider page fetched during the run.
 
 Origin: personaility#724 (fgv-ask). Base / PR target: `integration/asks`. PR: #TBD.
 
 ## API
 
-*As amended by the orchestrator after review round 1 (`state.md` A1, A2): exact-id matching and
-`ModelSpec` parameters.*
+*As amended by the orchestrator after review rounds 1 and 2 (`state.md` A1, A2, A4): exact-id
+matching and `ModelSpec` parameters.*
 
 - `IAiMaxOutputTokensCapability { readonly modelId: string; readonly maxOutputTokens: number }`
   (`model.ts`, exported from `AiAssist`).
@@ -23,13 +23,17 @@ Origin: personaility#724 (fgv-ask). Base / PR target: `integration/asks`. PR: #T
   resolves through it — the `ModelSpec` walk for the tier, the descriptor default when no model is
   passed, then aliases — so a consumer passes exactly what the completion call gets. A plain string
   (concrete id or `@alias`) is a `ModelSpec` and still works.
-- **Matching is exact, never by prefix.** An entry applies when the resolved id equals its
-  `modelId`, or equals it followed by a dated-snapshot suffix: `-YYYYMMDD` (Anthropic,
-  `claude-haiku-4-5-20251001`) or `-YYYY-MM-DD` (OpenAI, `gpt-5.4-nano-2026-03-17`). An exact entry
-  wins over a snapshot match. A sibling (`gpt-6-luna-mini`), a later point release
-  (`claude-opus-5-6`) or a lookalike (`claude-sonnet-50`, `gpt-6-solar`) gets `undefined`. The
-  matcher is an internal `findModelEntry` beside `resolveCapabilityForModel`; the latter and the
-  other capabilities are unchanged.
+- **Matching is exact equality, nothing else.** An entry applies only when the resolved id equals
+  its `modelId`. A sibling (`gpt-6-luna-mini`), a later point release (`claude-opus-5-6`), a
+  lookalike (`claude-sonnet-50`, `gpt-6-solar`) and a dated snapshot no page names
+  (`claude-opus-5-20260101`, `gpt-5.4-nano-20260317`) all get `undefined`. A snapshot a page does
+  name has its own cited entry (`claude-haiku-4-5-20251001`, `gpt-5.4-nano-2026-03-17`). The
+  matcher is an internal one-line `findModelEntry` beside `resolveCapabilityForModel`; the latter
+  and the other capabilities are unchanged.
+- **Proxied calls and other model selectors.** For a proxied call (`callProxiedCompletion` or the
+  streaming proxy) with no tier and no override, the proxy's descriptor chooses the model, so pass
+  the explicit spec or tier. A model chosen outside `ModelSpecKey` (a consumer's own
+  `resolveModel(spec, 'tools')`) is passed as the resolved string.
 - Returns `undefined` when no model resolves (an unregistered alias, an empty default), when the
   provider declares no limits, and when no entry names the model.
 
@@ -68,11 +72,13 @@ All pages were fetched on 2026-11-08.
 | anthropic | `claude-fable-5` | `claude-fable-5` | 128000 | https://platform.claude.com/docs/en/models/fable-5/overview | "Context window: 1M tokens · Max output: 128K tokens" |
 | anthropic | `claude-mythos-5-1` | `claude-mythos-5-1` | 128000 | https://platform.claude.com/docs/en/models/mythos-5-1/overview | "Model ID: `claude-mythos-5-1`" … "Context window: 1M tokens · Max output: 128K tokens" |
 | anthropic | `claude-mythos-5` | `claude-mythos-5` | 128000 | https://platform.claude.com/docs/en/models/mythos-5/overview | "Model ID: `claude-mythos-5`" … "Context window: 1M tokens · Max output: 128K tokens" |
-| anthropic | `claude-haiku-4-5-20251001` (`@anthropic:haiku`), via the snapshot rule | `claude-haiku-4-5` | 64000 | https://platform.claude.com/docs/en/models/haiku-4-5/overview | "Context window: 200K tokens · Max output: 64K tokens" |
+| anthropic | `claude-haiku-4-5` (Claude API alias) | `claude-haiku-4-5` | 64000 | https://platform.claude.com/docs/en/models/haiku-4-5/overview | "Claude API alias \| `claude-haiku-4-5`" … "Context window: 200K tokens · Max output: 64K tokens" |
+| anthropic | `claude-haiku-4-5-20251001` (`@anthropic:haiku`) | `claude-haiku-4-5-20251001` | 64000 | https://platform.claude.com/docs/en/models/haiku-4-5/overview | "Model ID: `claude-haiku-4-5-20251001`" … "Context window: 200K tokens · Max output: 64K tokens" |
 | openai | `gpt-6-luna` (`@openai:mini`) | `gpt-6-luna` | 128000 | https://developers.openai.com/api/docs/models/gpt-6-luna | "128,000 max output tokens" |
 | openai | `gpt-6-sol` (`@openai:flagship`) | `gpt-6-sol` | 128000 | https://developers.openai.com/api/docs/models/gpt-6-sol | "128,000 max output tokens" |
 | openai | `gpt-6-astra` (`@openai:pro`) | `gpt-6-astra` | 128000 | https://developers.openai.com/api/docs/models/gpt-6-astra | "128,000 max output tokens" |
-| openai | `gpt-5.4-nano` (`@openai:nano`); snapshot `gpt-5.4-nano-2026-03-17` via the snapshot rule | `gpt-5.4-nano` | 128000 | https://developers.openai.com/api/docs/models/gpt-5.4-nano | "128,000 max output tokens" |
+| openai | `gpt-5.4-nano` (`@openai:nano`) | `gpt-5.4-nano` | 128000 | https://developers.openai.com/api/docs/models/gpt-5.4-nano | "128,000 max output tokens" |
+| openai | `gpt-5.4-nano-2026-03-17` | `gpt-5.4-nano-2026-03-17` | 128000 | https://developers.openai.com/api/docs/models/gpt-5.4-nano | "Default snapshot: `gpt-5.4-nano-2026-03-17`", "`gpt-5.4-nano-2026-03-17` — Deprecated" … "128,000 max output tokens" (re-fetched 2026-11-08) |
 
 **How "128K" was read.** No Anthropic page fetched gives the exact integer. The Models API page
 shows `max_tokens: 0` in its example. Anthropic's docs use `k` to mean 1,000: the context-windows
@@ -130,20 +136,31 @@ entry temporarily set to 4000, 3 tests failed: this one plus the two that assert
 entry was then restored. If a future model's limit falls below the default, this test is the prompt
 to add `min(default, resolved limit)` at those two sites.
 
-## Tests (`src/test/unit/ai-assist/registry.maxOutputTokens.test.ts`, 49 cases)
+## Tests (`src/test/unit/ai-assist/registry.maxOutputTokens.test.ts`, 62 cases)
 
-- Concrete ids; a dated snapshot in each provider's form (`claude-haiku-4-5-20251001`,
-  `gpt-5.4-nano-2026-03-17`); an alias; an unresolvable alias (including another provider's alias);
-  a provider with no entries (`ollama`, `groq`); a model no entry names.
+- Concrete ids; each named snapshot (`claude-haiku-4-5-20251001` → 64000,
+  `gpt-5.4-nano-2026-03-17` → 128000); an alias; an unresolvable alias (including another
+  provider's alias); a provider with no entries (`ollama`, `groq`); a model no entry names.
 - **Probes that must get `undefined`:** `claude-opus-5-6`, `claude-sonnet-5-6`, `claude-sonnet-50`,
   `claude-haiku-4-5-1`, `claude-haiku-4-5-2025100`, `claude-haiku-4-5-20251001-v2`,
-  `gpt-6-luna-mini`, `gpt-6-sol-pro`, `gpt-6-solar`, `gpt-5.4-nano-2026-03`, `gpt-6`, `gpt-5.4`.
-  Red check: with the matcher reverted to plain `startsWith`, 10 of 49 failed.
+  `gpt-6-luna-mini`, `gpt-6-sol-pro`, `gpt-6-solar`, `gpt-5.4-nano-2026-03`, `gpt-6`, `gpt-5.4`,
+  and the unnamed snapshots `gpt-6-luna-2026-13-45`, `gpt-5.4-nano-20260317`,
+  `claude-haiku-4-5-2025-10-01`, `claude-opus-5-20260101`. Round-1 red check: with the matcher
+  reverted to plain `startsWith`, 10 of 49 failed.
 - **`ModelSpec` and context:** undefined model (descriptor default), a spec object walked per tier
   (including the frontier → advanced cascade), a string alias as the spec, a provider with no
-  default; and an equality test over every provider × three specs × every `ModelSpecKey` that the
-  lookup equals the lookup of `resolveProviderModel(...)`'s result.
-- An exact entry wins over a snapshot match of a shorter entry (hand-built descriptor).
+  default; and an equality test over every provider × three specs × every `ModelSpecKey` against
+  the lookup of `resolveProviderModel(...)`'s result.
+- **Request-body agreement (round 2).** For anthropic and openai, 10 cases (the descriptor default
+  and a spec object, with no tier, `'advanced'` and `'frontier'`) drive `callProviderCompletion`
+  against a mocked `fetch`, read `body.model` from the captured request, and assert that
+  `resolveMaxOutputTokens(d, body.model)` is defined and equals `resolveMaxOutputTokens(d, spec,
+  tier)`. **Red then green:** with the lookup's context handling broken (`context && undefined`
+  passed to `resolveProviderModel`), 3 of 62 failed — the spec-walk test, the equality test, and
+  the request-body case `anthropic spec model, tier advanced` (expected 128000, received 64000,
+  because the call sent `claude-opus-5-5` while the broken lookup answered for Haiku). Restored;
+  62 of 62 pass. Only the Anthropic spec case can go red this way, because every other model in
+  the cases has the same 128000 limit.
 - Every shipped `modelId` is a non-empty concrete id; every recorded limit is a positive integer;
   non-cloud providers declare nothing.
 - The alias coverage and exclusion-staleness tests described above.
@@ -161,9 +178,9 @@ compiled all 39 projects. No package other than `ts-extras` was touched.
 Logs are in `/tmp/claude-0/-home-user/ddedaf44-7531-52e1-a2c4-05cab5230430/scratchpad/mot/`. Round-0
 logs keep their names; round-1 logs (after the orchestrator amendments) carry a `2` suffix.
 
-- `ts-extras` build (`ext-build2.log`), lint (`ext-lint2.log`) and test (`ext-test2.log`): clean,
-  49 cases in the new file, 100% statements, branches, functions and lines.
-- Repo-wide `rush rebuild` (`rebuild2.log`): `SUCCESS: 39 operations`; `rush test` (`test2.log`):
+- `ts-extras` build (`ext-build3.log`), lint (`ext-lint3.log`) and test (`ext-test3.log`): clean,
+  62 cases in the new file, 100% statements, branches, functions and lines.
+- Repo-wide `rush rebuild` (`rebuild3.log`): `SUCCESS: 39 operations`; `rush test` (`test3.log`):
   `SUCCESS: 38 operations`. 0 error matches in either; the only warning is the tracked-symlink
   notice; no flake fired.
 - `rush change --verify --target-branch origin/integration/asks`, prettier 2.8.8 `--check`,

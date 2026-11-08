@@ -962,10 +962,9 @@ export interface IAiProviderDescriptor {
    * Unlike `imageGeneration`, `embedding` and `structuredOutput`, entries are **not**
    * prefix-matched. An output limit is a fact about one model, and the sibling a prefix would
    * also catch (a `-mini` or `-nano` variant, a later point release) is exactly where the limit
-   * changes. An entry applies to the model whose id equals its `modelId`, or equals it followed by
-   * a dated-snapshot suffix (`-YYYYMMDD` or `-YYYY-MM-DD`), and to nothing else. A wrong number is
-   * worse than none: a value above the real limit is refused by Anthropic and OpenAI, and a value
-   * below it silently truncates.
+   * changes, and a dated snapshot is a separate model id. An entry applies only to the model whose
+   * resolved id equals its `modelId`. A wrong number is worse than none: a value above the real
+   * limit is refused by Anthropic and OpenAI, and a value below it silently truncates.
    *
    * Each value is the limit a request **as ai-assist sends it** gets: a higher limit available only
    * behind an opt-in beta header or a batch endpoint that ai-assist does not use is not recorded.
@@ -1114,10 +1113,9 @@ export interface IAiEmbeddingModelCapability {
  */
 export interface IAiMaxOutputTokensCapability {
   /**
-   * The concrete model id this limit belongs to. It matches a resolved model id that equals it, or
-   * equals it followed by a dated-snapshot suffix (`-YYYYMMDD`, as in
-   * `claude-haiku-4-5-20251001`, or `-YYYY-MM-DD`, as in `gpt-5.4-nano-2026-03-17`). It is never
-   * prefix-matched against other models.
+   * The concrete model id this limit belongs to. It matches only a resolved model id equal to it:
+   * a dated snapshot (`claude-haiku-4-5-20251001`) needs an entry of its own, and no other id
+   * inherits this one by prefix.
    */
   readonly modelId: string;
   /** The largest `maxTokens` the provider accepts for a completion on this model. */

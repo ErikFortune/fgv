@@ -125,7 +125,8 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     // the model's page under platform.claude.com/docs/en/models, or for Sonnet 5.5 and Haiku 5.5 the
     // models overview, fetched 2026-11-08. K is read as 1,000, as those docs use it. The 300k
     // Batch-API limit needs a beta header on a batch endpoint ai-assist does not use, so it is not
-    // recorded. One entry per model: limits are never inherited by a sibling id.
+    // recorded. One entry per model id a page names: limits are never inherited by a sibling id
+    // or a snapshot.
     maxOutputTokens: [
       { modelId: 'claude-fable-5-1', maxOutputTokens: 128000 },
       { modelId: 'claude-fable-5', maxOutputTokens: 128000 },
@@ -136,9 +137,9 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
       { modelId: 'claude-sonnet-5-5', maxOutputTokens: 128000 },
       { modelId: 'claude-sonnet-5', maxOutputTokens: 128000 },
       { modelId: 'claude-haiku-5-5', maxOutputTokens: 128000 },
-      // the page names the alias claude-haiku-4-5 and the snapshot claude-haiku-4-5-20251001,
-      // which the dated-snapshot rule covers
-      { modelId: 'claude-haiku-4-5', maxOutputTokens: 64000 }
+      // the page names both the alias claude-haiku-4-5 and the snapshot claude-haiku-4-5-20251001
+      { modelId: 'claude-haiku-4-5', maxOutputTokens: 64000 },
+      { modelId: 'claude-haiku-4-5-20251001', maxOutputTokens: 64000 }
     ]
   },
   {
@@ -297,13 +298,14 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     // of it here could only ever disagree.
     structuredOutput: [{ modelPrefix: '', format: 'openai-json-schema' }],
     // "128,000 max output tokens" on each model's page at developers.openai.com/api/docs/models,
-    // fetched 2026-11-08. One entry per completion model; gpt-5.4-nano's listed snapshot
-    // gpt-5.4-nano-2026-03-17 is covered by the dated-snapshot rule.
+    // fetched 2026-11-08. One entry per completion model id the pages name, including
+    // gpt-5.4-nano's listed snapshot gpt-5.4-nano-2026-03-17.
     maxOutputTokens: [
       { modelId: 'gpt-6-luna', maxOutputTokens: 128000 },
       { modelId: 'gpt-6-sol', maxOutputTokens: 128000 },
       { modelId: 'gpt-6-astra', maxOutputTokens: 128000 },
-      { modelId: 'gpt-5.4-nano', maxOutputTokens: 128000 }
+      { modelId: 'gpt-5.4-nano', maxOutputTokens: 128000 },
+      { modelId: 'gpt-5.4-nano-2026-03-17', maxOutputTokens: 128000 }
     ],
     embedding: [
       {
@@ -577,31 +579,15 @@ export function supportsStructuredOutput(descriptor: IAiProviderDescriptor): boo
 }
 
 /**
- * A dated-snapshot suffix: `-YYYYMMDD` (Anthropic) or `-YYYY-MM-DD` (OpenAI).
- * @internal
- */
-const DATED_SNAPSHOT_SUFFIX: RegExp = /^-(?:\d{8}|\d{4}-\d{2}-\d{2})$/;
-
-/**
- * Exact-id match for per-model facts. An entry applies to `concreteModelId` when the ids are equal,
- * or when `concreteModelId` is the entry's id followed by a dated-snapshot suffix. An exact match
- * wins over a snapshot match. Deliberately not a prefix match: see
- * {@link IAiProviderDescriptor.maxOutputTokens}.
+ * Exact-id match for per-model facts: an entry applies only to the concrete model id it names.
+ * Deliberately not a prefix or snapshot match — see {@link IAiProviderDescriptor.maxOutputTokens}.
  * @internal
  */
 function findModelEntry<TEntry extends { readonly modelId: string }>(
   entries: ReadonlyArray<TEntry> | undefined,
   concreteModelId: string
 ): TEntry | undefined {
-  const all = entries ?? [];
-  return (
-    all.find((e) => e.modelId === concreteModelId) ??
-    all.find(
-      (e) =>
-        concreteModelId.startsWith(e.modelId) &&
-        DATED_SNAPSHOT_SUFFIX.test(concreteModelId.slice(e.modelId.length))
-    )
-  );
+  return entries?.find((e) => e.modelId === concreteModelId);
 }
 
 /**
@@ -614,10 +600,15 @@ function findModelEntry<TEntry extends { readonly modelId: string }>(
  * absent), then alias resolution. So pass exactly what you pass to the completion call, and the
  * answer is the limit of the model that call will reach.
  *
- * The resolved id is matched against {@link IAiProviderDescriptor.maxOutputTokens} exactly, or with
- * a dated-snapshot suffix — never by prefix. Returns `undefined` when no model resolves (an
- * unregistered alias, an empty default), when the provider declares no limits, and when no entry
- * names the model.
+ * The resolved id is matched against {@link IAiProviderDescriptor.maxOutputTokens} by exact
+ * equality — never by prefix, and a dated snapshot gets a limit only from an entry of its own.
+ * Returns `undefined` when no model resolves (an unregistered alias, an empty default), when the
+ * provider declares no limits, and when no entry names the model.
+ *
+ * For a proxied call (`callProxiedCompletion` or the streaming proxy) with no tier and no override,
+ * the proxy's own descriptor chooses the model, so pass the explicit spec or tier you want the
+ * answer for. A model chosen outside the `ModelSpecKey` axis — say, a consumer's own
+ * `resolveModel(spec, 'tools')` — is passed here as the resolved string.
  *
  * Nothing in ai-assist applies this limit to a caller's explicit `maxTokens`. Lowering an explicit
  * value would turn a loud refusal into a silent truncation, so the clamp is the caller's decision:

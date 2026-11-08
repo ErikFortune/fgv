@@ -115,3 +115,24 @@ matched their `-5` / `-5-1` siblings described exactly the inheritance A1 remove
   tracked-symlink warning, no NUL padding, no flake fired.
 - `rush change --verify --target-branch origin/integration/asks`, prettier 2.8.8 `--check`,
   `verify-capability-docs` (router 23,928/24,000) and `generate-capability-feed --check` — pass.
+
+## Orchestrator amendment A4 — review round 2 (brief.md unchanged)
+
+- **A4 — exact equality only; the dated-snapshot suffix rule is dropped.** Probes
+  `gpt-6-luna-2026-13-45`, `gpt-5.4-nano-20260317`, `claude-haiku-4-5-2025-10-01` and
+  `claude-opus-5-20260101` each got a cited base id's limit for a snapshot no page names, and a
+  snapshot need not share its base id's limit. `DATED_SNAPSHOT_SUFFIX` and the exact-then-snapshot
+  precedence are gone; `findModelEntry` is `entries?.find((e) => e.modelId === id)`. Explicit cited
+  entries added for `claude-haiku-4-5-20251001` (its page: "Model ID: `claude-haiku-4-5-20251001`")
+  and `gpt-5.4-nano-2026-03-17` (re-fetched; quoted "Default snapshot: `gpt-5.4-nano-2026-03-17`").
+  The alias-coverage test stays green because both alias targets now have their own entries.
+- **P3s:** proxied-call and outside-`ModelSpecKey` sentences in the TSDoc and CAPABILITIES.md; a
+  request-body agreement test through `callProviderCompletion`; `meta.yaml` `sourceLine` is the full
+  opening sentence and the stale keywords are replaced; a `docs/TECH_DEBT.md` P3 for
+  `resolveModel` throwing on an out-of-type `ModelSpec` (not fixed here).
+- The A1 note "Implemented as an internal `findModelEntry` … Exact match wins over a snapshot match"
+  and the round-1 implementation note on the snapshot rule are superseded by A4.
+- **Red-then-green (P3 item 2):** broke the lookup's context handling (`context && undefined`);
+  3 of 62 failed, including `anthropic spec model, tier advanced` (expected 128000, received
+  64000). Restored; 62 pass. The other request-body cases cannot go red this way because their
+  models share the 128000 limit.
