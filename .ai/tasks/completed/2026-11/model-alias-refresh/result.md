@@ -6,7 +6,7 @@
 per-model wire declarations its new target needs; the rest are held with a cited reason.
 
 Base / PR target: `integration/asks`. Package: `@fgv/ts-extras` (change file `minor`). Also touched:
-`samples/testbed` (private sample; its probes and tests pin alias targets). PR: #TBD.
+`samples/testbed` (private sample; its probes and tests pin alias targets). PR: #767.
 
 ## Method
 

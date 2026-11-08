@@ -1,6 +1,6 @@
 # model-alias-refresh — every ai-assist alias and default checked against current provider pages
 
-**Shipped**: 2026-11-08 into `integration/asks` via #TBD.
+**Shipped**: 2026-11-08 into `integration/asks` via #767.
 Packages: `@fgv/ts-extras` (`ai-assist`); `@fgv/testbed` (`samples/testbed`) updated where it pins
 alias targets.
 Change file: `minor`.
