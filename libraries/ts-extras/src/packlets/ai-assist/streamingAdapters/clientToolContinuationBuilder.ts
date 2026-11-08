@@ -52,6 +52,7 @@ import {
   type IAiProviderDescriptor,
   checkSamplingParams,
   isAdaptiveThinkingModel,
+  isThinkingRequiredModel,
   resolveProviderModel
 } from '../model';
 import { adaptClientToolParameters, resolveToolConflicts } from '../toolFormats';
@@ -796,6 +797,19 @@ export function executeClientToolTurn(
   const samplingResult = checkSamplingParams(descriptor, resolvedModel, temperature);
   if (samplingResult.isFailure()) {
     return fail(`executeClientToolTurn: ${samplingResult.message}`);
+  }
+  // A caller-built resolvedThinking skips the resolver that degrades or refuses 'none', so the
+  // same rule is applied here: the flag would send thinking disabled to a model that rejects it.
+  if (
+    resolvedThinking?.anthropicThinkingDisabled === true &&
+    resolvedThinking.anthropicEffort === undefined &&
+    isAdaptiveThinkingModel(descriptor, resolvedModel) &&
+    isThinkingRequiredModel(descriptor, resolvedModel)
+  ) {
+    return fail(
+      `executeClientToolTurn: ${resolvedModel} cannot run with thinking off: ` +
+        `drop anthropicThinkingDisabled or set an anthropicEffort`
+    );
   }
   const baseUrlResult = resolveEffectiveBaseUrl(descriptor, endpoint);
   if (baseUrlResult.isFailure()) {

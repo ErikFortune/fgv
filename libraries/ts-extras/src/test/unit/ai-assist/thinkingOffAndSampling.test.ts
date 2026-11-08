@@ -108,16 +108,21 @@ describe('per-model thinking-off and sampling-parameter rules', () => {
       return sentBody();
     }
 
-    // "disabled" column of the per-model table: "Thinking off" (Sonnet 5), "Thinking off at `high`
-    // effort or below" (Opus 5, Haiku 5.5). A 'none' sends no effort, so the model's default applies.
-    test.each(['claude-sonnet-5', 'claude-opus-5', 'claude-haiku-5-5', '@anthropic:haiku'])(
-      '%s sends thinking disabled and no effort',
-      async (model) => {
-        const body = await sendNone(model);
-        expect(body.thinking).toEqual({ type: 'disabled' });
-        expect(body.output_config).toBeUndefined();
-      }
-    );
+    // "disabled" column of the per-model table: "Thinking off" (Sonnet 5, Opus 4.8, Opus 4.7),
+    // "Thinking off at `high` effort or below" (Opus 5, Haiku 5.5). A 'none' sends no effort, so the
+    // model's default applies.
+    test.each([
+      'claude-sonnet-5',
+      'claude-opus-5',
+      'claude-haiku-5-5',
+      '@anthropic:haiku',
+      'claude-opus-4-8',
+      'claude-opus-4-7'
+    ])('%s sends thinking disabled and no effort', async (model) => {
+      const body = await sendNone(model);
+      expect(body.thinking).toEqual({ type: 'disabled' });
+      expect(body.output_config).toBeUndefined();
+    });
 
     // "disabled" column: "400 error". 'none' degrades to the least thinking the model accepts.
     test.each([
@@ -153,12 +158,40 @@ describe('per-model thinking-off and sampling-parameter rules', () => {
     );
 
     // "No `thinking` field: Thinking off" — omission is already off on the older models.
-    test.each(['claude-haiku-4-5-20251001', 'claude-opus-4-8', 'claude-sonnet-4-6'])(
+    test.each(['claude-haiku-4-5-20251001', 'claude-sonnet-4-6'])(
       '%s sends no thinking field',
       async (model) => {
         const body = await sendNone(model);
         expect(body.thinking).toBeUndefined();
         expect(body.output_config).toBeUndefined();
+      }
+    );
+
+    test('claude-mythos-preview keeps the budget shape and cannot turn thinking off', async () => {
+      // Table row: "Adaptive thinking | Adaptive thinking | Extended thinking | 400 error | 400 error".
+      const body = await sendNone('claude-mythos-preview');
+      expect(body.thinking).toMatchObject({ type: 'enabled' });
+      expect(body.output_config).toBeUndefined();
+    });
+
+    test.each(['claude-opus-4-8', 'claude-opus-4-7'])(
+      '%s takes the adaptive shape for an effort (a budget 400s)',
+      async (model) => {
+        mockJson(anthropicOk);
+        expect(
+          await AiAssist.callProviderCompletion({
+            descriptor: anthropic,
+            apiKey: 'k',
+            ...prompt.toRequest(),
+            modelOverride: model,
+            thinking: { effort: 'low' }
+          })
+        ).toSucceed();
+        expect(sentBody()).toMatchObject({
+          thinking: { type: 'adaptive' },
+          output_config: { effort: 'low' }
+        });
+        expect(JSON.stringify(sentBody())).not.toContain('budget_tokens');
       }
     );
 
@@ -207,6 +240,51 @@ describe('per-model thinking-off and sampling-parameter rules', () => {
       expect(sentBody().thinking).toBeUndefined();
     });
 
+    test.each(['@anthropic:sonnet', 'claude-opus-5-5', 'claude-fable-5-1', 'claude-mythos-5'])(
+      'executeClientToolTurn refuses a caller-built thinking-off flag on %s',
+      (model) => {
+        mockSse();
+        const result = AiAssist.executeClientToolTurn({
+          descriptor: anthropic,
+          apiKey: 'k',
+          ...prompt.toRequest(),
+          clientTools: [],
+          model,
+          resolvedThinking: { anthropicThinkingDisabled: true }
+        });
+        expect(result).toFailWith(/executeClientToolTurn: claude-[a-z0-9-]+ cannot run with thinking off/);
+        expect(global.fetch).not.toHaveBeenCalled();
+      }
+    );
+
+    test('executeClientToolTurn lets an effort beside the flag through on a thinking-required model', async () => {
+      mockSse();
+      const result = AiAssist.executeClientToolTurn({
+        descriptor: anthropic,
+        apiKey: 'k',
+        ...prompt.toRequest(),
+        clientTools: [],
+        model: '@anthropic:sonnet',
+        resolvedThinking: { anthropicThinkingDisabled: true, anthropicEffort: 'low' }
+      });
+      await drain(result.orThrow().events);
+      expect(sentBody()).toMatchObject({ thinking: { type: 'adaptive' }, output_config: { effort: 'low' } });
+    });
+
+    test('executeClientToolTurn sends no thinking field for the flag on a non-adaptive model', async () => {
+      mockSse();
+      const result = AiAssist.executeClientToolTurn({
+        descriptor: anthropic,
+        apiKey: 'k',
+        ...prompt.toRequest(),
+        clientTools: [],
+        model: 'claude-haiku-4-5-20251001',
+        resolvedThinking: { anthropicThinkingDisabled: true }
+      });
+      await drain(result.orThrow().events);
+      expect(sentBody().thinking).toBeUndefined();
+    });
+
     test('executeClientToolTurn sends thinking disabled for a resolved none on claude-sonnet-5', async () => {
       mockSse();
       const result = AiAssist.executeClientToolTurn({
@@ -235,10 +313,9 @@ describe('per-model thinking-off and sampling-parameter rules', () => {
       ['anthropic', 'claude-mythos-5'],
       ['anthropic', 'claude-opus-4-8'],
       ['anthropic', 'claude-opus-4-7'],
-      ['openai', '@openai:flagship'],
-      ['openai', 'gpt-6-astra']
+      ['anthropic', 'claude-mythos-preview']
     ] as ReadonlyArray<[AiAssist.AiProviderId, string]>)(
-      '%s %s refuses temperature before the wire',
+      '%s %s refuses a non-default temperature before the wire',
       async (id, model) => {
         // A valid reply is mocked so a missing guard shows as a failed assertion, not a crash.
         mockJson(id === 'anthropic' ? anthropicOk : openAiOk);
@@ -247,10 +324,82 @@ describe('per-model thinking-off and sampling-parameter rules', () => {
           apiKey: 'k',
           ...prompt.toRequest(),
           modelOverride: model,
-          temperature: 0.2
+          temperature: 0.3
         });
-        expect(result).toFailWith(/does not accept temperature on any request: remove temperature/);
+        expect(result).toFailWith(
+          /does not accept a non-default temperature \(0\.3\): remove temperature, or send 1/
+        );
         expect(global.fetch).not.toHaveBeenCalled();
+      }
+    );
+
+    // OpenAI's rule has no default carve-out, so even 1 is refused.
+    test.each([
+      ['@openai:flagship', 0.3],
+      ['@openai:flagship', 1],
+      ['gpt-6-astra', 0.3],
+      ['gpt-6-astra', 1]
+    ] as ReadonlyArray<[string, number]>)('openai %s refuses temperature %s', async (model, temperature) => {
+      mockJson(openAiOk);
+      const result = await AiAssist.callProviderCompletion({
+        descriptor: getDescriptor('openai'),
+        apiKey: 'k',
+        ...prompt.toRequest(),
+        modelOverride: model,
+        temperature
+      });
+      expect(result).toFailWith(/does not accept temperature on any request: remove temperature/);
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
+
+    // Anthropic rejects only non-default values on the pinned API version; its default, 1, is sent.
+    test.each(['claude-haiku-5-5', 'claude-sonnet-5-5', '@anthropic:opus'])(
+      'anthropic %s sends temperature 1 on the completion path',
+      async (model) => {
+        mockJson(anthropicOk);
+        expect(
+          await AiAssist.callProviderCompletion({
+            descriptor: getDescriptor('anthropic'),
+            apiKey: 'k',
+            ...prompt.toRequest(),
+            modelOverride: model,
+            temperature: 1
+          })
+        ).toSucceed();
+        expect(sentBody().temperature).toBe(1);
+      }
+    );
+
+    test.each(['claude-haiku-5-5', 'claude-sonnet-5-5'])(
+      'anthropic %s sends temperature 1 on the streaming path',
+      async (model) => {
+        mockSse();
+        const result = await AiAssist.callProviderCompletionStream({
+          descriptor: getDescriptor('anthropic'),
+          apiKey: 'k',
+          ...prompt.toRequest(),
+          modelOverride: model,
+          temperature: 1
+        });
+        await drain(result.orThrow());
+        expect(sentBody().temperature).toBe(1);
+      }
+    );
+
+    test.each(['claude-haiku-5-5', 'claude-sonnet-5-5'])(
+      'anthropic %s sends temperature 1 on the client-tool path',
+      async (model) => {
+        mockSse();
+        const result = AiAssist.executeClientToolTurn({
+          descriptor: getDescriptor('anthropic'),
+          apiKey: 'k',
+          ...prompt.toRequest(),
+          clientTools: [],
+          model,
+          temperature: 1
+        });
+        await drain(result.orThrow().events);
+        expect(sentBody().temperature).toBe(1);
       }
     );
 
@@ -285,7 +434,7 @@ describe('per-model thinking-off and sampling-parameter rules', () => {
         modelOverride: '@anthropic:haiku',
         temperature: 0.2
       });
-      expect(result).toFailWith(/claude-haiku-5-5 does not accept temperature/);
+      expect(result).toFailWith(/claude-haiku-5-5 does not accept a non-default temperature/);
       expect(global.fetch).not.toHaveBeenCalled();
     });
 
@@ -299,7 +448,9 @@ describe('per-model thinking-off and sampling-parameter rules', () => {
         model: '@anthropic:haiku',
         temperature: 0.2
       });
-      expect(result).toFailWith(/executeClientToolTurn: claude-haiku-5-5 does not accept temperature/);
+      expect(result).toFailWith(
+        /executeClientToolTurn: claude-haiku-5-5 does not accept a non-default temperature/
+      );
       expect(global.fetch).not.toHaveBeenCalled();
     });
 

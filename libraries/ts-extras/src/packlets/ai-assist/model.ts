@@ -585,19 +585,20 @@ export function isThinkingRequiredModel(descriptor: IAiProviderDescriptor, model
 }
 
 /**
- * Whether a concrete (already-resolved) model rejects a caller-supplied `temperature` on every
- * request, per the descriptor's {@link IAiProviderDescriptor.samplingParamsRejectedModelPrefixes}
+ * Whether a concrete (already-resolved) model restricts a caller-supplied `temperature`, per the
+ * descriptor's {@link IAiProviderDescriptor.samplingParamsRejectedModelPrefixes}
  * (exact-or-dash-bounded match).
  *
  * @remarks
- * The completion (`callProviderCompletion`), streaming (`callProviderCompletionStream`) and
- * client-tool (`executeClientToolTurn`) paths consult this and refuse a call that sets
- * `temperature` on a listed model before anything is sent, rather than letting the provider
- * return a 400.
+ * A listed model rejects every `temperature` except the descriptor's
+ * {@link IAiProviderDescriptor.samplingParamsAcceptedTemperature}, when one is declared. The
+ * completion (`callProviderCompletion`), streaming (`callProviderCompletionStream`) and
+ * client-tool (`executeClientToolTurn`) paths refuse any other value before anything is sent,
+ * rather than letting the provider return a 400.
  *
  * @param descriptor - The provider descriptor supplying the prefix list.
  * @param modelId - The resolved concrete model id to test.
- * @returns `true` when `modelId` rejects any `temperature`.
+ * @returns `true` when `modelId` restricts `temperature`.
  * @public
  */
 export function rejectsSamplingParams(descriptor: IAiProviderDescriptor, modelId: string): boolean {
@@ -617,10 +618,19 @@ export function checkSamplingParams(
   modelId: string,
   temperature: number | undefined
 ): Result<number | undefined> {
-  if (temperature !== undefined && rejectsSamplingParams(descriptor, modelId)) {
+  if (temperature === undefined || !rejectsSamplingParams(descriptor, modelId)) {
+    return succeed(temperature);
+  }
+  const accepted = descriptor.samplingParamsAcceptedTemperature;
+  if (accepted === undefined) {
     return fail(`${modelId} does not accept temperature on any request: remove temperature`);
   }
-  return succeed(temperature);
+  if (temperature === accepted) {
+    return succeed(temperature);
+  }
+  return fail(
+    `${modelId} does not accept a non-default temperature (${temperature}): remove temperature, or send ${accepted}`
+  );
 }
 
 /**
@@ -1064,11 +1074,20 @@ export interface IAiProviderDescriptor {
   /**
    * Concrete model ids (exact-or-dash-bounded-prefix-matched, like
    * {@link IAiProviderDescriptor.thinkingRequiredModelPrefixes}) that reject a caller-supplied
-   * `temperature` on every request, with or without thinking. A call that sets `temperature` on a
-   * listed model is refused before the wire (see {@link AiAssist.rejectsSamplingParams}). Empty or
-   * undefined means every model accepts `temperature` (subject to the thinking-mode conflict).
+   * `temperature` with or without thinking — every value, or every value but
+   * {@link IAiProviderDescriptor.samplingParamsAcceptedTemperature} when the descriptor declares
+   * one. A call that sets a rejected `temperature` on a listed model is refused before the wire (see
+   * {@link AiAssist.rejectsSamplingParams}). Empty or undefined means every model accepts
+   * `temperature` (subject to the thinking-mode conflict).
    */
   readonly samplingParamsRejectedModelPrefixes?: ReadonlyArray<string>;
+  /**
+   * The one `temperature` that the models on
+   * {@link IAiProviderDescriptor.samplingParamsRejectedModelPrefixes} still accept — the provider's
+   * own default, which a provider that rejects only non-default values lets through. Undefined
+   * means those models accept no `temperature` at all.
+   */
+  readonly samplingParamsAcceptedTemperature?: number;
 }
 
 /**

@@ -32,7 +32,10 @@ summary:
     disabled where a model accepts it (and 'low' where it does not), added
     samplingParamsRejectedModelPrefixes with an up-front temperature refusal across Claude 5.x,
     Opus 4.7/4.8, gpt-6-astra and gpt-6.1-sol, widened the Mythos adaptive entry to claude-mythos-5,
-    and disclosed every consumer-visible behaviour change.
+    and disclosed every consumer-visible behaviour change. Review round 2 narrowed the Anthropic
+    refusal to non-default values (samplingParamsAcceptedTemperature 1, matching the pinned API
+    version), made executeClientToolTurn refuse a caller-built thinking-off flag for a model that
+    cannot run with thinking off, made Opus 4.7/4.8 adaptive, and added claude-mythos-preview.
   sourceLine: '**Shipped:** every `ai-assist` alias and default model was checked against provider pages fetched on 2026-11-08, and seven targets moved — `@anthropic:sonnet`, `@anthropic:haiku`, `@openai:flagship`, `@openai:nano`, `@google-gemini:flash-image`, Groq''s default and Mistral''s base default — each with the per-model wire declarations its new target needs; the rest are held with a cited reason.'
   headline: >
     ai-assist aliases now reach current models — Claude Sonnet 5.5 and Haiku 5.5, GPT-6.1 Sol,

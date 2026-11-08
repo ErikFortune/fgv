@@ -151,3 +151,24 @@ them out.
   effort is not none, remove temperature"). `gpt-5.4-nano` defaulted to `none`, so `@openai:nano` +
   `temperature` with no thinking config used to work and now 400s at the provider. This is
   effort-conditional, not a per-model rule, so it is disclosed but not guarded.
+
+## Amendments — orchestrator review round 2 (head `9a3b5aab`)
+
+- **A5 (P1) Anthropic rejects a *non-default* temperature only.** The thinking page's wording is
+  "non-default"; the default-too rule belongs to API version `2026-10-21` and ai-assist pins
+  `anthropic-version: 2023-06-01`. Chosen shape: a sibling descriptor field
+  `samplingParamsAcceptedTemperature` (Anthropic `1`, OpenAI unset), read by `checkSamplingParams`
+  — no provider branch at the call site. Message for Anthropic: "… does not accept a non-default
+  temperature (x): remove temperature, or send 1"; OpenAI keeps "… on any request".
+- **A6 (P2) refuse a caller-built thinking-off flag on a thinking-required model.**
+  `executeClientToolTurn` refuses `anthropicThinkingDisabled` with no `anthropicEffort` when the
+  resolved model is adaptive and on `thinkingRequiredModelPrefixes` — exactly the case the emit site
+  would turn into `thinking: {type: 'disabled'}`. Emit-site comments corrected for every path.
+- **A7 (P3, resolves Q7)** `claude-opus-4-8` and `claude-opus-4-7` added to
+  `adaptiveThinkingModelPrefixes`, citing their table rows.
+- **A8 (P3)** `claude-mythos-preview` added to the thinking-required and sampling lists: the
+  deprecations page names that id, and the thinking page's row and sampling sentence name the model.
+  It is not adaptive (its budget column reads "Extended thinking"), so it is not on that list.
+- **A9 (P3)** registry comment states that the dash-bounded thinking/sampling lists match a future
+  point release of a listed family on purpose (the safe direction for a refusal), unlike the
+  exact-id max-output rule.

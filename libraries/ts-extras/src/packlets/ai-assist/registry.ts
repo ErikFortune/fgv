@@ -107,12 +107,17 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     // https://platform.claude.com/docs/en/build-with-claude/thinking (fetched 2026-11-08) lists both
     // Mythos 5 and Mythos 5.1 as "Adaptive thinking" with no `thinking` field and a "400 error" for
     // "enabled" with budget_tokens.
+    // claude-opus-4-8 and claude-opus-4-7: the same table's rows read "Claude Opus 4.8 | Thinking off |
+    // Adaptive thinking | 400 error | 400 error | Thinking off" (and the same for 4.7) — adaptive is
+    // accepted and a budget 400s, so they take the adaptive shape too.
     adaptiveThinkingModelPrefixes: [
       'claude-sonnet-5',
       'claude-opus-5',
       'claude-fable-5',
       'claude-mythos-5',
-      'claude-haiku-5-5'
+      'claude-haiku-5-5',
+      'claude-opus-4-8',
+      'claude-opus-4-7'
     ],
     // A generic effort 'none' sends `thinking: {type: 'disabled'}` to an adaptive model, because it
     // thinks by default. These reject 'disabled' ("400 error" in the "disabled" column of the
@@ -122,27 +127,41 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     // "rejects `thinking: {type: "disabled"}` with a 400 error"), so 'none' is sent as 'low' there,
     // or refused. claude-opus-5, claude-sonnet-5 and claude-haiku-5-5 accept it (Opus 5 and Haiku 5.5
     // "at `high` effort or below"; a 'none' sends no effort, and their defaults are high and medium).
+    // claude-mythos-preview is named by that id on
+    // https://platform.claude.com/docs/en/about-claude/model-deprecations ("claude-mythos-preview |
+    // Deprecated"); its table row reads "Adaptive thinking | Adaptive thinking | Extended thinking |
+    // 400 error | 400 error", so it keeps the budget shape and cannot turn thinking off.
+    //
+    // These lists and the sampling list below are dash-bounded on purpose: a future point release
+    // of a listed family (claude-opus-5-6, a dated snapshot) is matched and so degraded or refused
+    // locally until someone reviews it. That is the safe direction for a refusal. It deliberately
+    // differs from maxOutputTokens, which matches exact ids only, because a guessed limit is unsafe.
     thinkingRequiredModelPrefixes: [
       'claude-opus-5-5',
       'claude-sonnet-5-5',
       'claude-fable-5',
-      'claude-mythos-5'
+      'claude-mythos-5',
+      'claude-mythos-preview'
     ],
     // "On Claude Fable 5.1, Claude Mythos 5.1, Claude Fable 5, Claude Mythos 5, Claude Mythos Preview,
     // Claude Opus 5.5, Claude Opus 5, Claude Opus 4.8, Claude Opus 4.7, Claude Sonnet 5.5, Claude
     // Sonnet 5, and Claude Haiku 5.5, non-default `temperature`, `top_p`, or `top_k` values return a
     // 400 error on every request, regardless of whether thinking is used"
     // (https://platform.claude.com/docs/en/build-with-claude/thinking, fetched 2026-11-08). The
-    // dash-bounded entries cover each 5.x point release named there.
+    // dash-bounded entries cover each 5.x point release named there. "Non-default": the rule that
+    // rejects the default too belongs to API version 2026-10-21, and ai-assist pins
+    // anthropic-version 2023-06-01, so Anthropic's default temperature, 1, is still sent.
     samplingParamsRejectedModelPrefixes: [
       'claude-fable-5',
       'claude-mythos-5',
+      'claude-mythos-preview',
       'claude-opus-5',
       'claude-opus-4-8',
       'claude-opus-4-7',
       'claude-sonnet-5',
       'claude-haiku-5-5'
     ],
+    samplingParamsAcceptedTemperature: 1,
     // Two mechanisms, split by what each line accepts. claude-opus-5-5, claude-fable-5-1,
     // claude-mythos-5-1 and claude-sonnet-5-5 return a 400 on a forced tool_choice ({type:'any'} /
     // {type:'tool'}): "Forced tool use is not supported",

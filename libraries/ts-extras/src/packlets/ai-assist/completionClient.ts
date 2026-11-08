@@ -651,8 +651,9 @@ async function callAnthropicCompletion(
       body.thinking = { type: 'enabled', budget_tokens: anthropicEffortToBudgetTokens(effort) };
     }
   } else if (resolvedThinking?.anthropicThinkingDisabled === true && useAdaptiveThinking) {
-    // Adaptive models think by default, so omitting `thinking` would not turn it off. A model that
-    // rejects 'disabled' is on thinkingRequiredModelPrefixes and never gets here with 'none'.
+    // Adaptive models think by default, so omitting `thinking` would not turn it off. A model on
+    // thinkingRequiredModelPrefixes never gets here: a generic 'none' is degraded or refused when it
+    // is resolved, and the client-tool path refuses a caller-built flag for it before dispatch.
     body.thinking = { type: 'disabled' };
   }
   if (resolvedThinking?.otherParams !== undefined) {

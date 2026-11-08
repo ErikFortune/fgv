@@ -576,8 +576,9 @@ export async function callAnthropicStream(
       };
     }
   } else if (resolvedThinking?.anthropicThinkingDisabled === true && useAdaptiveThinking) {
-    // Adaptive models think by default, so omitting `thinking` would not turn it off. A model that
-    // rejects 'disabled' is on thinkingRequiredModelPrefixes and never gets here with 'none'.
+    // Adaptive models think by default, so omitting `thinking` would not turn it off. A model on
+    // thinkingRequiredModelPrefixes never gets here: a generic 'none' is degraded or refused when it
+    // is resolved, and executeClientToolTurn refuses a caller-built flag for it before dispatch.
     body.thinking = { type: 'disabled' };
   }
   if (resolvedThinking?.otherParams !== undefined) {

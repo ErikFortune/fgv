@@ -164,11 +164,13 @@ thinking off. `@anthropic:haiku` (`claude-haiku-5-5`) thinks by default and coun
   `thinking: { type: 'disabled' }` to an adaptive model that accepts it (`claude-sonnet-5`,
   `claude-opus-5`, `claude-haiku-5-5`), no `thinking` field to an older model (already off), and
   `'low'` — or a refusal under `onUnsupported: 'fail'` — to a model that cannot turn thinking off
-  (`claude-sonnet-5-5`, `claude-opus-5-5`, Fable and Mythos 5.x; declared in
+  (`claude-sonnet-5-5`, `claude-opus-5-5`, Fable and Mythos 5.x, `claude-mythos-preview`; declared in
   `thinkingRequiredModelPrefixes`, alongside `gpt-6-astra` and `gpt-6.1-sol`).
-- A `temperature` aimed at a model in `samplingParamsRejectedModelPrefixes` (every Claude 5.x model,
-  `claude-opus-4-8`, `claude-opus-4-7`, `gpt-6-astra`, `gpt-6.1-sol`) is refused before the wire on
-  the completion, streaming and client-tool paths. `AiAssist.rejectsSamplingParams` answers the
+- A `temperature` aimed at a model in `samplingParamsRejectedModelPrefixes` is refused before the wire
+  on the completion, streaming and client-tool paths. On Anthropic (every Claude 5.x model,
+  `claude-mythos-preview`, `claude-opus-4-8`, `claude-opus-4-7`) only a non-default value is refused:
+  `samplingParamsAcceptedTemperature: 1` lets Anthropic's default through, as the provider does on
+  the pinned API version. On OpenAI (`gpt-6-astra`, `gpt-6.1-sol`) every value is refused. `AiAssist.rejectsSamplingParams` answers the
   question for a concrete id. Not guarded, because it depends on the effort: `gpt-6-luna` (`mini`,
   `nano`) and `gpt-6-sol` reject `temperature` unless the call sets effort `'none'`.
 

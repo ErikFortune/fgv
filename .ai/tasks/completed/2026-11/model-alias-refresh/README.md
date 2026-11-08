@@ -31,8 +31,11 @@ cited `maxOutputTokens` for `gpt-6.1-sol`, the three Gemini completion targets a
 - **Review round 1 widened the stream** (`state.md` § Amendments). A generic `effort: 'none'` had
   never turned thinking off on Anthropic adaptive models; it now sends `thinking: {type:
   'disabled'}` where the model accepts it and `'low'` (or a refusal) where it does not. And a new
-  `samplingParamsRejectedModelPrefixes` refuses `temperature` before the wire on every Claude 5.x
-  model, Opus 4.7/4.8, `gpt-6-astra` and `gpt-6.1-sol`. Verdicts per model are in `result.md` §§ 3a–3b.
+  `samplingParamsRejectedModelPrefixes` refuses `temperature` before the wire — on Anthropic (every
+  Claude 5.x model, Mythos Preview, Opus 4.7/4.8) only a non-default value, `1` still being sent; on
+  `gpt-6-astra` and `gpt-6.1-sol` any value. Round 2 also made Opus 4.7/4.8 adaptive and made the
+  client-tool path refuse a caller-built thinking-off flag. Verdicts per model are in `result.md`
+  §§ 3a–3b.
 
 - **Behaviour changes for alias users**: Anthropic's base tier now sends structured output as
   `output_config.format`; OpenAI's advanced tier no longer runs with thinking off (`'none'` → `'low'`
