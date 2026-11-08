@@ -953,18 +953,19 @@ export interface IAiProviderDescriptor {
   readonly structuredOutput?: ReadonlyArray<IAiStructuredOutputCapability>;
   /**
    * Per-model maximum output tokens — the largest `maxTokens` the provider accepts for a
-   * completion on that model — longest-prefix matched against the **resolved** completion model
-   * id. Absent (or no matching entry) means the limit is unknown.
+   * completion on that model. Absent (or no matching entry) means the limit is unknown.
    *
    * @remarks
-   * Same declaration idiom as `imageGeneration`, `embedding` and `structuredOutput`, resolved
-   * through the same alias-first helper by {@link AiAssist.resolveMaxOutputTokens}.
+   * Read through {@link AiAssist.resolveMaxOutputTokens}, which resolves the model the same way a
+   * completion call does (the `ModelSpec` walk, then aliases) before matching.
    *
-   * The library's own registry declares **no catch-all** (`modelPrefix: ''`) here, and a test
-   * pins that. A wrong number is worse than none: a value above the real limit is refused by
-   * Anthropic and OpenAI, and a value below it silently truncates. A hand-built descriptor may
-   * still declare a catch-all; whether every model it can reach shares one limit is that
-   * descriptor's call.
+   * Unlike `imageGeneration`, `embedding` and `structuredOutput`, entries are **not**
+   * prefix-matched. An output limit is a fact about one model, and the sibling a prefix would
+   * also catch (a `-mini` or `-nano` variant, a later point release) is exactly where the limit
+   * changes. An entry applies to the model whose id equals its `modelId`, or equals it followed by
+   * a dated-snapshot suffix (`-YYYYMMDD` or `-YYYY-MM-DD`), and to nothing else. A wrong number is
+   * worse than none: a value above the real limit is refused by Anthropic and OpenAI, and a value
+   * below it silently truncates.
    *
    * Each value is the limit a request **as ai-assist sends it** gets: a higher limit available only
    * behind an opt-in beta header or a batch endpoint that ai-assist does not use is not recorded.
@@ -1106,19 +1107,20 @@ export interface IAiEmbeddingModelCapability {
 }
 
 /**
- * Maximum output tokens for a model family within a provider. Used as an entry in
+ * Maximum output tokens for one model within a provider. Used as an entry in
  * `IAiProviderDescriptor.maxOutputTokens`.
  *
  * @public
  */
 export interface IAiMaxOutputTokensCapability {
   /**
-   * Prefix matched against the resolved completion model id. The empty string is the catch-all
-   * and matches every model; the library's own registry never declares one. When multiple rules'
-   * prefixes match a model id, the longest prefix wins; ties are broken by first-encountered.
+   * The concrete model id this limit belongs to. It matches a resolved model id that equals it, or
+   * equals it followed by a dated-snapshot suffix (`-YYYYMMDD`, as in
+   * `claude-haiku-4-5-20251001`, or `-YYYY-MM-DD`, as in `gpt-5.4-nano-2026-03-17`). It is never
+   * prefix-matched against other models.
    */
-  readonly modelPrefix: string;
-  /** The largest `maxTokens` the provider accepts for a completion on a matching model. */
+  readonly modelId: string;
+  /** The largest `maxTokens` the provider accepts for a completion on this model. */
   readonly maxOutputTokens: number;
 }
 

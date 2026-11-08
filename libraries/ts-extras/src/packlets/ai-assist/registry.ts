@@ -29,10 +29,12 @@ import {
   type AiProviderId,
   type IAiEmbeddingModelCapability,
   type IAiImageModelCapability,
-  type IAiMaxOutputTokensCapability,
   type IAiModelCapabilityConfig,
   type IAiProviderDescriptor,
-  resolveModelAlias
+  type ModelSpec,
+  type ModelSpecKey,
+  resolveModelAlias,
+  resolveProviderModel
 } from './model';
 import type { IAiStructuredOutputCapability } from './structuredOutputTypes';
 
@@ -119,21 +121,24 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
       { modelPrefix: 'claude-mythos-5-1', format: 'anthropic-output-format' },
       { modelPrefix: '', format: 'anthropic-tool-forced' }
     ],
-    // Synchronous Messages API limits, from each model's page on platform.claude.com/docs/en/models
-    // ("Max output: 128K tokens"; Haiku 4.5 "64K tokens"), and for Mythos the context-windows page
-    // ("can generate up to 128k output tokens"), fetched 2026-11-08. K is read as 1,000, as those
-    // docs use it. The 300k Batch-API limit needs a beta header on a batch endpoint ai-assist does
-    // not use, so it is not recorded. No catch-all: an unlisted model has an unknown limit.
+    // Synchronous Messages API limits ("Max output: 128K tokens"; Haiku 4.5 "64K tokens"), each from
+    // the model's page under platform.claude.com/docs/en/models, or for Sonnet 5.5 and Haiku 5.5 the
+    // models overview, fetched 2026-11-08. K is read as 1,000, as those docs use it. The 300k
+    // Batch-API limit needs a beta header on a batch endpoint ai-assist does not use, so it is not
+    // recorded. One entry per model: limits are never inherited by a sibling id.
     maxOutputTokens: [
-      { modelPrefix: 'claude-fable-5-1', maxOutputTokens: 128000 },
-      { modelPrefix: 'claude-fable-5', maxOutputTokens: 128000 },
-      { modelPrefix: 'claude-mythos-5', maxOutputTokens: 128000 },
-      { modelPrefix: 'claude-opus-5-5', maxOutputTokens: 128000 },
-      { modelPrefix: 'claude-opus-5', maxOutputTokens: 128000 },
-      { modelPrefix: 'claude-sonnet-5-5', maxOutputTokens: 128000 },
-      { modelPrefix: 'claude-sonnet-5', maxOutputTokens: 128000 },
-      { modelPrefix: 'claude-haiku-5-5', maxOutputTokens: 128000 },
-      { modelPrefix: 'claude-haiku-4-5', maxOutputTokens: 64000 }
+      { modelId: 'claude-fable-5-1', maxOutputTokens: 128000 },
+      { modelId: 'claude-fable-5', maxOutputTokens: 128000 },
+      { modelId: 'claude-mythos-5-1', maxOutputTokens: 128000 },
+      { modelId: 'claude-mythos-5', maxOutputTokens: 128000 },
+      { modelId: 'claude-opus-5-5', maxOutputTokens: 128000 },
+      { modelId: 'claude-opus-5', maxOutputTokens: 128000 },
+      { modelId: 'claude-sonnet-5-5', maxOutputTokens: 128000 },
+      { modelId: 'claude-sonnet-5', maxOutputTokens: 128000 },
+      { modelId: 'claude-haiku-5-5', maxOutputTokens: 128000 },
+      // the page names the alias claude-haiku-4-5 and the snapshot claude-haiku-4-5-20251001,
+      // which the dated-snapshot rule covers
+      { modelId: 'claude-haiku-4-5', maxOutputTokens: 64000 }
     ]
   },
   {
@@ -292,12 +297,13 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     // of it here could only ever disagree.
     structuredOutput: [{ modelPrefix: '', format: 'openai-json-schema' }],
     // "128,000 max output tokens" on each model's page at developers.openai.com/api/docs/models,
-    // fetched 2026-11-08. Completion models only; no catch-all.
+    // fetched 2026-11-08. One entry per completion model; gpt-5.4-nano's listed snapshot
+    // gpt-5.4-nano-2026-03-17 is covered by the dated-snapshot rule.
     maxOutputTokens: [
-      { modelPrefix: 'gpt-6-luna', maxOutputTokens: 128000 },
-      { modelPrefix: 'gpt-6-sol', maxOutputTokens: 128000 },
-      { modelPrefix: 'gpt-6-astra', maxOutputTokens: 128000 },
-      { modelPrefix: 'gpt-5.4-nano', maxOutputTokens: 128000 }
+      { modelId: 'gpt-6-luna', maxOutputTokens: 128000 },
+      { modelId: 'gpt-6-sol', maxOutputTokens: 128000 },
+      { modelId: 'gpt-6-astra', maxOutputTokens: 128000 },
+      { modelId: 'gpt-5.4-nano', maxOutputTokens: 128000 }
     ],
     embedding: [
       {
@@ -571,34 +577,74 @@ export function supportsStructuredOutput(descriptor: IAiProviderDescriptor): boo
 }
 
 /**
- * The largest `maxTokens` the provider accepts for a completion on `modelId`, or `undefined`
- * when the limit is unknown.
+ * A dated-snapshot suffix: `-YYYYMMDD` (Anthropic) or `-YYYY-MM-DD` (OpenAI).
+ * @internal
+ */
+const DATED_SNAPSHOT_SUFFIX: RegExp = /^-(?:\d{8}|\d{4}-\d{2}-\d{2})$/;
+
+/**
+ * Exact-id match for per-model facts. An entry applies to `concreteModelId` when the ids are equal,
+ * or when `concreteModelId` is the entry's id followed by a dated-snapshot suffix. An exact match
+ * wins over a snapshot match. Deliberately not a prefix match: see
+ * {@link IAiProviderDescriptor.maxOutputTokens}.
+ * @internal
+ */
+function findModelEntry<TEntry extends { readonly modelId: string }>(
+  entries: ReadonlyArray<TEntry> | undefined,
+  concreteModelId: string
+): TEntry | undefined {
+  const all = entries ?? [];
+  return (
+    all.find((e) => e.modelId === concreteModelId) ??
+    all.find(
+      (e) =>
+        concreteModelId.startsWith(e.modelId) &&
+        DATED_SNAPSHOT_SUFFIX.test(concreteModelId.slice(e.modelId.length))
+    )
+  );
+}
+
+/**
+ * The largest `maxTokens` the provider accepts for a completion on the model a call would use, or
+ * `undefined` when that limit is unknown.
  *
  * @remarks
- * Alias-first, exactly like its `imageGeneration` / `embedding` / `structuredOutput` siblings:
- * `modelId` is resolved through the descriptor's aliases before the longest-prefix match against
- * {@link IAiProviderDescriptor.maxOutputTokens}, so an alias and the concrete id it names give the
- * same answer. Returns `undefined` for an unresolvable alias, a provider that declares no limits,
- * and a model no entry matches.
+ * Takes the same model arguments as {@link resolveProviderModel}, and resolves through it: the
+ * `ModelSpec` walk for `context` (falling back to `descriptor.defaultModel` when `modelOverride` is
+ * absent), then alias resolution. So pass exactly what you pass to the completion call, and the
+ * answer is the limit of the model that call will reach.
+ *
+ * The resolved id is matched against {@link IAiProviderDescriptor.maxOutputTokens} exactly, or with
+ * a dated-snapshot suffix — never by prefix. Returns `undefined` when no model resolves (an
+ * unregistered alias, an empty default), when the provider declares no limits, and when no entry
+ * names the model.
  *
  * Nothing in ai-assist applies this limit to a caller's explicit `maxTokens`. Lowering an explicit
- * value would turn a loud refusal into a silent truncation, so the clamp is the caller's decision —
- * typically `Math.min(myCap, resolveMaxOutputTokens(descriptor, model) ?? myCap)`.
+ * value would turn a loud refusal into a silent truncation, so the clamp is the caller's decision:
+ *
+ * ```ts
+ * const limit = resolveMaxOutputTokens(descriptor, modelOverride, 'advanced');
+ * const maxTokens = Math.min(myCap, limit ?? myCap);
+ * ```
  *
  * @param descriptor - The provider descriptor.
- * @param modelId - A concrete model id or an `@provider:role` alias.
+ * @param modelOverride - The model spec the call will pass: a concrete id, an `@provider:role`
+ *   alias, a context-keyed map, or `undefined` for the descriptor's default.
+ * @param context - The model-spec key the call will pass (a tier such as `'advanced'`).
  * @returns The model's maximum output tokens, or `undefined` when unknown.
  * @public
  */
 export function resolveMaxOutputTokens(
   descriptor: IAiProviderDescriptor,
-  modelId: string
+  modelOverride?: ModelSpec,
+  context?: ModelSpecKey
 ): number | undefined {
-  return resolveCapabilityForModel<IAiMaxOutputTokensCapability>(
-    descriptor,
-    modelId,
-    descriptor.maxOutputTokens
-  )?.maxOutputTokens;
+  return resolveProviderModel(descriptor, modelOverride, context)
+    .onSuccess<number>((concreteModelId) => {
+      const entry = findModelEntry(descriptor.maxOutputTokens, concreteModelId);
+      return entry ? succeed(entry.maxOutputTokens) : fail(`${concreteModelId}: no recorded output limit`);
+    })
+    .orDefault();
 }
 
 /**

@@ -1426,7 +1426,7 @@ interface IAiImageModelCapability {
 // @public
 interface IAiMaxOutputTokensCapability {
     readonly maxOutputTokens: number;
-    readonly modelPrefix: string;
+    readonly modelId: string;
 }
 
 // @public
@@ -3356,10 +3356,11 @@ function resolveImageCapability(descriptor: IAiProviderDescriptor, modelId: stri
 // @public
 function resolveImageOptions(modelId: string, capability: IAiImageModelCapability, options: IAiImageGenerationOptions | undefined): IResolvedImageOptions;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "resolveProviderModel"
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
 //
 // @public
-function resolveMaxOutputTokens(descriptor: IAiProviderDescriptor, modelId: string): number | undefined;
+function resolveMaxOutputTokens(descriptor: IAiProviderDescriptor, modelOverride?: ModelSpec, context?: ModelSpecKey): number | undefined;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "ModelSpec"
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "MODEL_SPEC_BASE_KEY"

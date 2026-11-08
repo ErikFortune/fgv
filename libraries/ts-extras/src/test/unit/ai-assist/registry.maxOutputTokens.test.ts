@@ -32,7 +32,7 @@ const NON_CLOUD_PROVIDERS: ReadonlyArray<AiAssist.AiProviderId> = ['copy-paste',
 
 /**
  * Registered aliases that deliberately resolve to no recorded limit. Every other alias of every
- * cloud provider must resolve to one. When a limit is recorded for one of these, the second test
+ * cloud provider must resolve to one. When a limit is recorded for one of these, the exclusion test
  * below fails until the alias is removed from this list.
  */
 const ALIASES_WITHOUT_A_LIMIT: ReadonlyArray<string> = [
@@ -42,9 +42,7 @@ const ALIASES_WITHOUT_A_LIMIT: ReadonlyArray<string> = [
   '@openai:image',
   '@openai:embedding',
   '@xai-grok:imagine',
-  // No provider page could be fetched: ai.google.dev now redirects to aistudio.google.com,
-  // which was outside the network the limits were researched from. Recorded nothing rather than
-  // a number from memory.
+  // No cited limit recorded.
   '@google-gemini:flash',
   '@google-gemini:pro',
   '@google-gemini:flash-lite',
@@ -62,11 +60,40 @@ describe('AiAssist.resolveMaxOutputTokens', () => {
   describe('against the shipped registry', () => {
     test('a concrete model id resolves to its recorded limit', () => {
       expect(AiAssist.resolveMaxOutputTokens(getDescriptor('anthropic'), 'claude-opus-5-5')).toBe(128000);
+      expect(AiAssist.resolveMaxOutputTokens(getDescriptor('anthropic'), 'claude-haiku-4-5')).toBe(64000);
+      expect(AiAssist.resolveMaxOutputTokens(getDescriptor('openai'), 'gpt-6-luna')).toBe(128000);
+    });
+
+    test("a dated snapshot of a recorded id resolves, in both providers' snapshot forms", () => {
+      // Anthropic: -YYYYMMDD
       expect(AiAssist.resolveMaxOutputTokens(getDescriptor('anthropic'), 'claude-haiku-4-5-20251001')).toBe(
         64000
       );
-      expect(AiAssist.resolveMaxOutputTokens(getDescriptor('openai'), 'gpt-6-luna')).toBe(128000);
+      // OpenAI: -YYYY-MM-DD
+      expect(AiAssist.resolveMaxOutputTokens(getDescriptor('openai'), 'gpt-5.4-nano-2026-03-17')).toBe(
+        128000
+      );
     });
+
+    test.each([
+      ['anthropic', 'claude-opus-5-6'],
+      ['anthropic', 'claude-sonnet-5-6'],
+      ['anthropic', 'claude-sonnet-50'],
+      ['anthropic', 'claude-haiku-4-5-1'],
+      ['anthropic', 'claude-haiku-4-5-2025100'],
+      ['anthropic', 'claude-haiku-4-5-20251001-v2'],
+      ['openai', 'gpt-6-luna-mini'],
+      ['openai', 'gpt-6-sol-pro'],
+      ['openai', 'gpt-6-solar'],
+      ['openai', 'gpt-5.4-nano-2026-03'],
+      ['openai', 'gpt-6'],
+      ['openai', 'gpt-5.4']
+    ] as ReadonlyArray<[AiAssist.AiProviderId, string]>)(
+      '%s %s — a sibling, prefix or non-date suffix of a recorded id gets no limit',
+      (id, model) => {
+        expect(AiAssist.resolveMaxOutputTokens(getDescriptor(id), model)).toBeUndefined();
+      }
+    );
 
     test('an alias resolves to the same limit as the concrete id it names', () => {
       const anthropic = getDescriptor('anthropic');
@@ -92,7 +119,7 @@ describe('AiAssist.resolveMaxOutputTokens', () => {
       );
     });
 
-    test('a model no entry matches yields undefined', () => {
+    test('a model no entry names yields undefined', () => {
       expect(AiAssist.resolveMaxOutputTokens(getDescriptor('anthropic'), 'claude-3-opus-20240229')).toBe(
         undefined
       );
@@ -101,18 +128,12 @@ describe('AiAssist.resolveMaxOutputTokens', () => {
       );
     });
 
-    test('no shipped descriptor declares a catch-all', () => {
+    test('every shipped entry names a non-empty concrete model id', () => {
       for (const descriptor of AiAssist.getProviderDescriptors()) {
         for (const entry of descriptor.maxOutputTokens ?? []) {
-          expect({ provider: descriptor.id, modelPrefix: entry.modelPrefix }).not.toEqual({
-            provider: descriptor.id,
-            modelPrefix: ''
-          });
+          expect(entry.modelId).toMatch(/^[a-z0-9][a-z0-9.-]*$/);
+          expect(entry.modelId.startsWith(AiAssist.MODEL_ALIAS_SIGIL)).toBe(false);
         }
-      }
-      // An id no entry names gets nothing, whatever the provider.
-      for (const descriptor of AiAssist.getProviderDescriptors()) {
-        expect(AiAssist.resolveMaxOutputTokens(descriptor, 'zz-no-such-model')).toBe(undefined);
       }
     });
 
@@ -127,6 +148,56 @@ describe('AiAssist.resolveMaxOutputTokens', () => {
     test('self-hosted and copy-paste providers declare nothing', () => {
       for (const id of NON_CLOUD_PROVIDERS) {
         expect(getDescriptor(id).maxOutputTokens).toBeUndefined();
+      }
+    });
+  });
+
+  describe('with a ModelSpec and context, as a completion call takes them', () => {
+    test('an undefined model resolves the descriptor default', () => {
+      // anthropic defaultModel: base @anthropic:sonnet, advanced @anthropic:opus
+      expect(AiAssist.resolveMaxOutputTokens(getDescriptor('anthropic'))).toBe(128000);
+      expect(AiAssist.resolveMaxOutputTokens(getDescriptor('anthropic'), undefined, 'advanced')).toBe(128000);
+    });
+
+    test('a spec object is walked for the requested tier', () => {
+      const spec: AiAssist.ModelSpec = { base: '@anthropic:haiku', advanced: '@anthropic:opus' };
+      const anthropic = getDescriptor('anthropic');
+      expect(AiAssist.resolveMaxOutputTokens(anthropic, spec)).toBe(64000);
+      expect(AiAssist.resolveMaxOutputTokens(anthropic, spec, 'base')).toBe(64000);
+      expect(AiAssist.resolveMaxOutputTokens(anthropic, spec, 'advanced')).toBe(128000);
+      // frontier cascades to advanced
+      expect(AiAssist.resolveMaxOutputTokens(anthropic, spec, 'frontier')).toBe(128000);
+    });
+
+    test('a string alias works as the spec', () => {
+      expect(
+        AiAssist.resolveMaxOutputTokens(getDescriptor('anthropic'), '@anthropic:haiku', 'advanced')
+      ).toBe(64000);
+    });
+
+    test('a provider with no default model yields undefined', () => {
+      expect(AiAssist.resolveMaxOutputTokens(getDescriptor('ollama'))).toBe(undefined);
+    });
+
+    test('for every provider and tier, the lookup equals the lookup of the model resolveProviderModel picks', () => {
+      const specs: ReadonlyArray<AiAssist.ModelSpec | undefined> = [
+        undefined,
+        { base: '@anthropic:haiku', advanced: '@anthropic:opus' },
+        { base: '@openai:nano', advanced: '@openai:flagship', frontier: '@openai:pro' }
+      ];
+      for (const descriptor of AiAssist.getProviderDescriptors()) {
+        for (const spec of specs) {
+          for (const context of AiAssist.allModelSpecKeys) {
+            const picked = AiAssist.resolveProviderModel(descriptor, spec, context).orDefault();
+            const expected =
+              picked === undefined ? undefined : AiAssist.resolveMaxOutputTokens(descriptor, picked);
+            expect({
+              provider: descriptor.id,
+              context,
+              limit: AiAssist.resolveMaxOutputTokens(descriptor, spec, context)
+            }).toEqual({ provider: descriptor.id, context, limit: expected });
+          }
+        }
       }
     });
   });
@@ -177,28 +248,17 @@ describe('AiAssist.resolveMaxOutputTokens', () => {
   describe('with a hand-built descriptor', () => {
     const base = getDescriptor('anthropic');
 
-    test('the longest matching prefix wins, whatever the entry order', () => {
+    test('an exact entry wins over a snapshot match of a shorter entry', () => {
       const descriptor: AiAssist.IAiProviderDescriptor = {
         ...base,
         maxOutputTokens: [
-          { modelPrefix: 'claude-', maxOutputTokens: 1000 },
-          { modelPrefix: 'claude-opus-5-5', maxOutputTokens: 3000 },
-          { modelPrefix: 'claude-opus-', maxOutputTokens: 2000 }
+          { modelId: 'claude-x', maxOutputTokens: 1000 },
+          { modelId: 'claude-x-20260101', maxOutputTokens: 2000 }
         ]
       };
-      expect(AiAssist.resolveMaxOutputTokens(descriptor, 'claude-opus-5-5')).toBe(3000);
-      expect(AiAssist.resolveMaxOutputTokens(descriptor, '@anthropic:opus')).toBe(3000);
-      expect(AiAssist.resolveMaxOutputTokens(descriptor, 'claude-opus-5')).toBe(2000);
-      expect(AiAssist.resolveMaxOutputTokens(descriptor, 'claude-sonnet-5')).toBe(1000);
-    });
-
-    test('a catch-all is honoured when a descriptor declares one, but never for an unresolvable alias', () => {
-      const descriptor: AiAssist.IAiProviderDescriptor = {
-        ...base,
-        maxOutputTokens: [{ modelPrefix: '', maxOutputTokens: 8192 }]
-      };
-      expect(AiAssist.resolveMaxOutputTokens(descriptor, 'anything-at-all')).toBe(8192);
-      expect(AiAssist.resolveMaxOutputTokens(descriptor, '@anthropic:nonexistent')).toBe(undefined);
+      expect(AiAssist.resolveMaxOutputTokens(descriptor, 'claude-x-20260101')).toBe(2000);
+      expect(AiAssist.resolveMaxOutputTokens(descriptor, 'claude-x-20260202')).toBe(1000);
+      expect(AiAssist.resolveMaxOutputTokens(descriptor, 'claude-x')).toBe(1000);
     });
 
     test('a descriptor with no entries yields undefined', () => {

@@ -1,34 +1,47 @@
 # Result: `model-max-output-tokens`
 
-**Shipped:** `AiAssist.resolveMaxOutputTokens(descriptor, modelId)` in `@fgv/ts-extras` returns
-the largest `maxTokens` a provider accepts for a model, or `undefined` when the limit is unknown. It
-is alias-first, so a consumer can ask about the slot it holds (`@anthropic:opus`) rather than the
-model that slot resolves to today. The shipped registry records Anthropic and OpenAI completion
-models from provider pages fetched during the run, and declares no catch-all.
+**Shipped:** `AiAssist.resolveMaxOutputTokens(descriptor, modelOverride?, context?)` in
+`@fgv/ts-extras` returns the largest `maxTokens` a provider accepts for the model a completion call
+with the same arguments would use, or `undefined` when the limit is unknown. It takes a `ModelSpec`
+and tier exactly as `resolveProviderModel` does, so a consumer asks about the slot it holds rather
+than the model that slot resolves to today. Limits are matched to one model id (or a dated snapshot
+of it), never by prefix, and the shipped registry records only Anthropic and OpenAI completion
+models, each cited from a provider page fetched during the run.
 
 Origin: personaility#724 (fgv-ask). Base / PR target: `integration/asks`. PR: #TBD.
 
 ## API
 
-- `IAiMaxOutputTokensCapability { readonly modelPrefix: string; readonly maxOutputTokens: number }`
+*As amended by the orchestrator after review round 1 (`state.md` A1, A2): exact-id matching and
+`ModelSpec` parameters.*
+
+- `IAiMaxOutputTokensCapability { readonly modelId: string; readonly maxOutputTokens: number }`
   (`model.ts`, exported from `AiAssist`).
-- `IAiProviderDescriptor.maxOutputTokens?: ReadonlyArray<IAiMaxOutputTokensCapability>`, the
-  sibling of `imageGeneration`, `embedding` and `structuredOutput`. The field name matches the
-  entry's own field and the request option it bounds.
-- `resolveMaxOutputTokens(descriptor, modelId): number | undefined` (`registry.ts`). It is a thin
-  wrapper over the existing `resolveCapabilityForModel`, so it adds no second matching helper. It
-  returns `undefined` for an unresolvable alias, for a provider with no entries and for a model no
-  entry matches. The longest prefix wins.
+- `IAiProviderDescriptor.maxOutputTokens?: ReadonlyArray<IAiMaxOutputTokensCapability>`.
+- `resolveMaxOutputTokens(descriptor, modelOverride?: ModelSpec, context?: ModelSpecKey): number |
+  undefined` (`registry.ts`). It takes the same model arguments as `resolveProviderModel` and
+  resolves through it — the `ModelSpec` walk for the tier, the descriptor default when no model is
+  passed, then aliases — so a consumer passes exactly what the completion call gets. A plain string
+  (concrete id or `@alias`) is a `ModelSpec` and still works.
+- **Matching is exact, never by prefix.** An entry applies when the resolved id equals its
+  `modelId`, or equals it followed by a dated-snapshot suffix: `-YYYYMMDD` (Anthropic,
+  `claude-haiku-4-5-20251001`) or `-YYYY-MM-DD` (OpenAI, `gpt-5.4-nano-2026-03-17`). An exact entry
+  wins over a snapshot match. A sibling (`gpt-6-luna-mini`), a later point release
+  (`claude-opus-5-6`) or a lookalike (`claude-sonnet-50`, `gpt-6-solar`) gets `undefined`. The
+  matcher is an internal `findModelEntry` beside `resolveCapabilityForModel`; the latter and the
+  other capabilities are unchanged.
+- Returns `undefined` when no model resolves (an unregistered alias, an empty default), when the
+  provider declares no limits, and when no entry names the model.
 
 ### Decision 6: an explicit `maxTokens` is not clamped
 
 Nothing in ai-assist lowers a caller's explicit `maxTokens` to the model's limit. A too-high value
 is refused by the provider, and the refusal is loud. If the library lowered the value silently, the
 reply could be truncated with nothing to say why. This lookup exists so the consumer can make the
-call themselves:
+call themselves, with the same arguments they give the completion call:
 
 ```ts
-const limit = AiAssist.resolveMaxOutputTokens(descriptor, '@anthropic:opus');
+const limit = AiAssist.resolveMaxOutputTokens(descriptor, modelOverride, 'advanced');
 const maxTokens = Math.min(curatorCap, limit ?? curatorCap);
 ```
 
@@ -37,16 +50,14 @@ condition, `min(curator cap, model limit)`.
 
 ### Decision 2: no catch-all
 
-No shipped descriptor declares `modelPrefix: ''`. A test pins this: it covers every entry of every
-descriptor, and also checks that an id no entry names resolves to `undefined` on every provider. A
-hand-built descriptor may still declare a catch-all. The TSDoc on the field and on the entry's
-`modelPrefix` says that this is the descriptor's call.
+With exact matching a catch-all cannot be expressed. A test pins that every shipped `modelId` is a
+non-empty concrete id (lowercase, no `@` alias sigil).
 
 ## Citations
 
 All pages were fetched on 2026-11-08.
 
-| provider | model | prefix | value | URL | quoted line |
+| provider | model | `modelId` | value | URL | quoted line |
 |---|---|---|---|---|---|
 | anthropic | `claude-opus-5-5` (`@anthropic:opus`) | `claude-opus-5-5` | 128000 | https://platform.claude.com/docs/en/models/opus-5-5/overview | "Context window: 1M tokens · Max output: 128K tokens" |
 | anthropic | `claude-opus-5` | `claude-opus-5` | 128000 | https://platform.claude.com/docs/en/models/opus-5/overview | "Context window: 1M tokens · Max output: 128K tokens" |
@@ -55,12 +66,13 @@ All pages were fetched on 2026-11-08.
 | anthropic | `claude-haiku-5-5` | `claude-haiku-5-5` | 128000 | https://platform.claude.com/docs/en/about-claude/models/overview | (same row) |
 | anthropic | `claude-fable-5-1` (`@anthropic:fable`) | `claude-fable-5-1` | 128000 | https://platform.claude.com/docs/en/models/fable-5-1/overview | "Context window: 1M tokens · Max output: 128K tokens" |
 | anthropic | `claude-fable-5` | `claude-fable-5` | 128000 | https://platform.claude.com/docs/en/models/fable-5/overview | "Context window: 1M tokens · Max output: 128K tokens" |
-| anthropic | `claude-mythos-5`, `claude-mythos-5-1` | `claude-mythos-5` | 128000 | https://platform.claude.com/docs/en/build-with-claude/context-windows | "Claude Fable 5.1, Claude Mythos 5.1, Claude Fable 5, Claude Mythos 5, … A single request to any of them can generate up to 128k output tokens (`max_tokens`)." |
-| anthropic | `claude-haiku-4-5-20251001` (`@anthropic:haiku`) | `claude-haiku-4-5` | 64000 | https://platform.claude.com/docs/en/models/haiku-4-5/overview | "Context window: 200K tokens · Max output: 64K tokens" |
+| anthropic | `claude-mythos-5-1` | `claude-mythos-5-1` | 128000 | https://platform.claude.com/docs/en/models/mythos-5-1/overview | "Model ID: `claude-mythos-5-1`" … "Context window: 1M tokens · Max output: 128K tokens" |
+| anthropic | `claude-mythos-5` | `claude-mythos-5` | 128000 | https://platform.claude.com/docs/en/models/mythos-5/overview | "Model ID: `claude-mythos-5`" … "Context window: 1M tokens · Max output: 128K tokens" |
+| anthropic | `claude-haiku-4-5-20251001` (`@anthropic:haiku`), via the snapshot rule | `claude-haiku-4-5` | 64000 | https://platform.claude.com/docs/en/models/haiku-4-5/overview | "Context window: 200K tokens · Max output: 64K tokens" |
 | openai | `gpt-6-luna` (`@openai:mini`) | `gpt-6-luna` | 128000 | https://developers.openai.com/api/docs/models/gpt-6-luna | "128,000 max output tokens" |
 | openai | `gpt-6-sol` (`@openai:flagship`) | `gpt-6-sol` | 128000 | https://developers.openai.com/api/docs/models/gpt-6-sol | "128,000 max output tokens" |
 | openai | `gpt-6-astra` (`@openai:pro`) | `gpt-6-astra` | 128000 | https://developers.openai.com/api/docs/models/gpt-6-astra | "128,000 max output tokens" |
-| openai | `gpt-5.4-nano` (`@openai:nano`) | `gpt-5.4-nano` | 128000 | https://developers.openai.com/api/docs/models/gpt-5.4-nano | "128,000 max output tokens" |
+| openai | `gpt-5.4-nano` (`@openai:nano`); snapshot `gpt-5.4-nano-2026-03-17` via the snapshot rule | `gpt-5.4-nano` | 128000 | https://developers.openai.com/api/docs/models/gpt-5.4-nano | "128,000 max output tokens" |
 
 **How "128K" was read.** No Anthropic page fetched gives the exact integer. The Models API page
 shows `max_tokens: 0` in its example. Anthropic's docs use `k` to mean 1,000: the context-windows
@@ -86,8 +98,8 @@ The lookup returns `undefined` for every model of these providers.
 | `ollama`, `openai-compat` | — | Self-hosted. They declare nothing, by design (decision 3). |
 | `copy-paste` | — | Reaches no API. |
 
-To fill the Gemini, Groq and Mistral gaps, allow `aistudio.google.com`, `console.groq.com` and
-`docs.mistral.ai` in the network settings, then run the same fetches.
+To fill the Gemini, Groq and Mistral gaps, those docs hosts must be reachable; then run the same
+fetches.
 
 ## Alias coverage (decision 4)
 
@@ -118,15 +130,22 @@ entry temporarily set to 4000, 3 tests failed: this one plus the two that assert
 entry was then restored. If a future model's limit falls below the default, this test is the prompt
 to add `min(default, resolved limit)` at those two sites.
 
-## Tests (`src/test/unit/ai-assist/registry.maxOutputTokens.test.ts`, 32 cases)
+## Tests (`src/test/unit/ai-assist/registry.maxOutputTokens.test.ts`, 49 cases)
 
-- Concrete ids, an alias, an unresolvable alias (including another provider's alias), a provider
-  with no entries (`ollama`, `groq`), and a model no entry matches.
-- Longest-prefix precedence on a hand-built descriptor with its entries out of order, covering both
-  the alias and the concrete id.
-- A hand-built catch-all is honoured, but never for an unresolvable alias.
-- No shipped catch-all, every recorded limit is a positive integer, and non-cloud providers declare
-  nothing.
+- Concrete ids; a dated snapshot in each provider's form (`claude-haiku-4-5-20251001`,
+  `gpt-5.4-nano-2026-03-17`); an alias; an unresolvable alias (including another provider's alias);
+  a provider with no entries (`ollama`, `groq`); a model no entry names.
+- **Probes that must get `undefined`:** `claude-opus-5-6`, `claude-sonnet-5-6`, `claude-sonnet-50`,
+  `claude-haiku-4-5-1`, `claude-haiku-4-5-2025100`, `claude-haiku-4-5-20251001-v2`,
+  `gpt-6-luna-mini`, `gpt-6-sol-pro`, `gpt-6-solar`, `gpt-5.4-nano-2026-03`, `gpt-6`, `gpt-5.4`.
+  Red check: with the matcher reverted to plain `startsWith`, 10 of 49 failed.
+- **`ModelSpec` and context:** undefined model (descriptor default), a spec object walked per tier
+  (including the frontier → advanced cascade), a string alias as the spec, a provider with no
+  default; and an equality test over every provider × three specs × every `ModelSpecKey` that the
+  lookup equals the lookup of `resolveProviderModel(...)`'s result.
+- An exact entry wins over a snapshot match of a shorter entry (hand-built descriptor).
+- Every shipped `modelId` is a non-empty concrete id; every recorded limit is a positive integer;
+  non-cloud providers declare nothing.
 - The alias coverage and exclusion-staleness tests described above.
 - The Anthropic-default pin.
 
@@ -139,22 +158,21 @@ compiled all 39 projects. No package other than `ts-extras` was touched.
 
 ## Gates
 
-Logs are in `/tmp/claude-0/-home-user/ddedaf44-7531-52e1-a2c4-05cab5230430/scratchpad/mot/`.
+Logs are in `/tmp/claude-0/-home-user/ddedaf44-7531-52e1-a2c4-05cab5230430/scratchpad/mot/`. Round-0
+logs keep their names; round-1 logs (after the orchestrator amendments) carry a `2` suffix.
 
-- `ts-extras` build (`ext-build.log`) and lint (`ext-lint.log`) are clean. Test (`ext-test.log`):
-  all pass, with 100% statements, branches, functions and lines.
-- Repo-wide `rush rebuild` (`rebuild.log`): `SUCCESS: 39 operations`. 0 error matches. The only
-  warning is the known tracked-symlink notice.
-- Repo-wide `rush test` (`test.log`): `SUCCESS: 38 operations`, 0 error matches, only the
-  tracked-symlink warning; no flake fired.
-- `rush change --verify --target-branch origin/integration/asks`: passes.
-- prettier 2.8.8 `--check` on the touched TS files, and `verify-capability-docs`: pass.
+- `ts-extras` build (`ext-build2.log`), lint (`ext-lint2.log`) and test (`ext-test2.log`): clean,
+  49 cases in the new file, 100% statements, branches, functions and lines.
+- Repo-wide `rush rebuild` (`rebuild2.log`) and `rush test` (`test2.log`): see `state.md`
+  § Round-1 gates.
+- `rush change --verify --target-branch origin/integration/asks`, prettier 2.8.8 `--check`,
+  `verify-capability-docs` and `generate-capability-feed --check`: pass.
 
 ## Docs
 
 - `libraries/ts-extras/CAPABILITIES.md` has a new shortcut, "Which `maxTokens` will a model
-  accept?". It documents the lookup, the lack of a catch-all, and the clamp the consumer applies
-  themselves.
+  accept?". It documents the `ModelSpec` parameters, exact-id matching, and the clamp the consumer
+  applies themselves.
 - `.ai/instructions/LIBRARY_CAPABILITIES.md` has the matching one-line shortcut. It fits the router
   budget.
 

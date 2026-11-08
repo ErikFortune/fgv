@@ -65,3 +65,42 @@ Gates green (below). Closed out to `.ai/tasks/completed/2026-11/model-max-output
 - `verify-capability-docs` — 0 failed (router 23,929/24,000 after feed regeneration).
 - Ledger gap report (finalize-task step 8): 17 directories without an entry and 5 entries without a
   directory, all pre-existing; this stream has its entry.
+
+## Orchestrator amendments — review round 1 (brief.md unchanged)
+
+- **A1 (amends brief decision 1) — exact-id matching, not longest prefix.** Review probes
+  `claude-opus-5-6`, `claude-sonnet-5-6`, `claude-sonnet-50`, `claude-haiku-4-5-1`,
+  `gpt-6-luna-mini`, `gpt-6-sol-pro`, `gpt-6-solar` all returned a recorded limit under prefix
+  matching — an uncited number, and a too-high one is a refusal. Entry is now
+  `IAiMaxOutputTokensCapability { modelId, maxOutputTokens }`, matched when the alias-resolved id
+  equals `modelId` or equals it plus a dated-snapshot suffix (`-YYYYMMDD` / `-YYYY-MM-DD`), nothing
+  else. Implemented as an internal `findModelEntry` beside `resolveCapabilityForModel`, which is
+  unchanged. Exact match wins over a snapshot match. With no prefix matching there is no catch-all;
+  the catch-all test is replaced by "every shipped `modelId` is a non-empty concrete id".
+- **A2 — `resolveMaxOutputTokens(descriptor, modelOverride?: ModelSpec, context?: ModelSpecKey)`**,
+  the same model parameters as `resolveProviderModel`, resolving through it. A consumer holding a
+  `ModelSpec` and a tier gets the limit of the model the call will use; previously passing a spec
+  threw (`model.startsWith is not a function`).
+- **A3 (P3s)** — the Gemini exclusion comment in the test now says only "No cited limit recorded";
+  the CAPABILITIES.md entry no longer says "today".
+
+### D2 superseded
+
+D2 above ("per-model prefixes, not family prefixes") is superseded by A1: prefixes are gone
+entirely. D2's claim that the Anthropic `claude-opus-5` / `-fable-5` / `-sonnet-5` entries also
+matched their `-5` / `-5-1` siblings described exactly the inheritance A1 removes.
+
+### Round-1 implementation notes
+
+- Registry re-keyed to one entry per cited id: 10 Anthropic (added `claude-mythos-5` and
+  `claude-mythos-5-1` as separate entries, each from its own model page fetched 2026-11-08 —
+  "Model ID: `claude-mythos-5`" / "`claude-mythos-5-1`", "Max output: 128K tokens"), 4 OpenAI.
+  `claude-haiku-4-5` is the undated id its page names; `claude-haiku-4-5-20251001` (the alias
+  target) reaches it through the snapshot rule, as does `gpt-5.4-nano-2026-03-17`.
+- Red check: with the matcher temporarily reverted to a plain `startsWith`, 10 of 49 tests failed
+  (the probe set); restored.
+- Tests now 49: probes (the reviewer's seven plus `claude-haiku-4-5-2025100`,
+  `claude-haiku-4-5-20251001-v2`, `gpt-5.4-nano-2026-03`, `gpt-6`, `gpt-5.4`), dated-snapshot
+  positives for both forms, `ModelSpec` / tier / undefined-default / string-alias cases, and an
+  equality test over every provider × three specs × every `ModelSpecKey` against
+  `resolveMaxOutputTokens(descriptor, resolveProviderModel(...))`.
