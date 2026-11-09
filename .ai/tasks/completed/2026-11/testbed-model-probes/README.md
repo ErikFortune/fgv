@@ -1,6 +1,6 @@
 # testbed-model-probes — live probes for the thinking-off, temperature and max-output claims
 
-**Shipped**: 2026-11-09 into `integration/asks` via #TBD.
+**Shipped**: 2026-11-09 into `integration/asks` via #768.
 Package: `@fgv/testbed` (`samples/testbed`, private). No change file needed.
 
 ## Summary

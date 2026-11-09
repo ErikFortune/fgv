@@ -1,7 +1,7 @@
 id: testbed-model-probes
 status: shipped
 packages: ['@fgv/testbed']
-prs: [] # TBD: fill with the PR number on open
+prs: [768]
 openPrs: []
 opened: 2026-11-09
 closed: 2026-11-09
