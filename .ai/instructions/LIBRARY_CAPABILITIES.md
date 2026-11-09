@@ -210,7 +210,7 @@ markers.*
 
 <!-- BEGIN GENERATED: recent-additions -->
 
-- **2026-11-09** — ai-assist turns thinking off on Claude Sonnet 5.5 with its own between_tools value, declared per model, and stops claiming… · `ts-extras` `testbed`
+- **2026-11-09** — ai-assist turns thinking off on Claude Sonnet 5.5 with its own between_tools value, declared per model, and stops claiming… ([#769](https://github.com/ErikFortune/fgv/pull/769)) · `ts-extras` `testbed`
 - **2026-11-08** — ai-assist aliases now reach current models — Claude Sonnet 5.5 and Haiku 5.5, GPT-6.1 Sol, Nano Banana 2.1, and new Groq and… ([#767](https://github.com/ErikFortune/fgv/pull/767)) · `ts-extras` `testbed`
 - **2026-11-08** — resolveMaxOutputTokens tells you the largest maxTokens the model a call will use accepts, from the same ModelSpec and tier, so a… ([#765](https://github.com/ErikFortune/fgv/pull/765)) · `ts-extras`
 - **2026-10-30** — A converter or validator handed a cyclic, BigInt or Proxy value now fails instead of throwing, via a new formatValueForMessage that… ([#764](https://github.com/ErikFortune/fgv/pull/764)) · `ts-utils` `ts-json-base` `ts-extras` `ts-bcp47`

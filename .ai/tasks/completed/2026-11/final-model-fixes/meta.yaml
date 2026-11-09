@@ -1,7 +1,7 @@
 id: final-model-fixes
 status: shipped
 packages: ['@fgv/ts-extras', '@fgv/testbed']
-prs: [] # PR #TBD — not opened by the worker; add the number when it exists
+prs: [769]
 openPrs: []
 opened: 2026-11-09
 closed: 2026-11-09
@@ -43,4 +43,4 @@ keywords:
 relatedStreams:
   - { id: testbed-model-probes, relationship: 'acts on its first live run and updates its probes' }
   - { id: model-alias-refresh, relationship: 'revises its thinking-required listing for sonnet-5-5' }
-sourceHash: sha256:ca1de201d90c8931 # over brief.md + state.md + result.md
+sourceHash: sha256:30ca936178d8545c # over brief.md + state.md + result.md

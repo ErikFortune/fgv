@@ -1,6 +1,6 @@
 # final-model-fixes — what the first live testbed run showed
 
-**Shipped**: 2026-11-09, PR #TBD (targets `integration/asks`).
+**Shipped**: 2026-11-09, PR #769 (targets `integration/asks`).
 Packages: `@fgv/ts-extras` (`ai-assist`, change file `minor`) and `@fgv/testbed` (private).
 
 ## Summary

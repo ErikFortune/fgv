@@ -8,7 +8,7 @@ canaries probe all of it, plus a report-only `temperature: 1` row on `gpt-6.1-so
 Packages: `@fgv/ts-extras` (`ai-assist`, change file `minor`) and `@fgv/testbed` (private, no change
 file). Branch `final-model-fixes`, based on `testbed-model-probes` (#768, since squash-merged into
 `integration/asks` as `eeceb8bfa`; the diff against `origin/integration/asks` is this stream's files
-only). PR: #TBD.
+only). PR: #769.
 
 ## 1. What changed in `ai-assist`
 
@@ -146,8 +146,8 @@ Found and fixed:
 - The canary module header described raw rows on listed models only, and the temperature
   expectations without `observed`; both updated.
 
-Declined: a sub-agent reviewer (forbidden by the kickoff). `prs` is empty because no PR exists yet;
-the ledger and README say `#TBD`.
+Declined: a sub-agent reviewer (forbidden by the kickoff). `prs` was empty at close-out because no PR existed yet; the orchestrator filled in #769 on opening it.
+
 
 ## 7. Gates after the base merge and review P3s
 
