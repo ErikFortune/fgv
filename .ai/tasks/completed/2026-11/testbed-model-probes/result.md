@@ -189,8 +189,8 @@ match 0 times, and the only allowed `warning` is the tracked-symlink notice.
 | testbed build | pass, 0 warnings | `r2-build.log` |
 | testbed lint | pass, 0 warnings | `r2-lint.log` |
 | testbed test | 698/698, 100% coverage, 0 warnings (after review round 1) | `r2-test.log` |
-| repo `rush rebuild` | pass, 0 failure lines, symlink notice only | `rebuild.log` |
-| repo `rush test` | pass, 39/39 projects, 0 failure lines, symlink notice only; no flake retries needed | `test.log` |
+| repo `rush rebuild` | pass, 0 failure lines, symlink notice only (re-run after review round 1) | `r2-rebuild.log` |
+| repo `rush test` | pass, 39/39 projects, 0 failure lines, symlink notice only; no flake retries needed (re-run after review round 1) | `r2-test-all.log` |
 | `rush change --verify --target-branch origin/integration/asks` | pass, no change file needed | `change.log` |
 | prettier 2.8.8 `--check` on the diff | pass | `prettier.log` |
 | `verify-capability-docs` | pass, 0 failed | `capdocs.log` |
