@@ -220,6 +220,11 @@ export interface ICanaryTemperatureProbe {
   /** Concrete ids the probe applies to. Absent: every tier and extra model. */
   readonly models?: ReadonlyArray<string>;
   readonly expect: CanaryExpectation;
+  /**
+   * For `expect: 'expected-reject'`: the text the provider's rejection must match, so a 400 for an
+   * unrelated reason (a usage limit) is not mistaken for the expected one.
+   */
+  readonly rejectPattern?: RegExp;
 }
 
 /**
@@ -314,6 +319,11 @@ export interface ITierCanarySpec {
    * is wrong.
    */
   readonly strictNoneProbe?: boolean;
+  /**
+   * The text a `none raw` row's provider rejection must match (see
+   * {@link ICanaryTemperatureProbe.rejectPattern}). Absent: any 400 counts as the expected rejection.
+   */
+  readonly rawNoneRejection?: RegExp;
   /** Temperature probes, each with its own expectation (see {@link ICanaryTemperatureProbe}). */
   readonly temperatureProbes?: ReadonlyArray<ICanaryTemperatureProbe>;
   /**
@@ -702,7 +712,7 @@ function strictNoneProbe(
   result: Result<AiAssist.IAiCompletionResponse>
 ): ICanaryProbeResult {
   if (listed) {
-    return classifyExpectedProbe(label, concrete, 'refused-locally', result, 'as listed');
+    return classifyExpectedProbe(label, concrete, 'refused-locally', result, { note: 'as listed' });
   }
   return completionProbe(label, concrete, result, classifyThinkingFailure);
 }
@@ -747,7 +757,7 @@ async function runStrictNoneProbes(
       // The local refusal above never reaches the provider, so it cannot notice a provider that
       // has started accepting 'none'. Ask the provider directly, bypassing the gate.
       const raw = await deps.complete(target.tier, targetOptions(target, { rawNone: true }));
-      rows.push(rawNoneProbe(rawLabel, target.concrete, raw));
+      rows.push(rawNoneProbe(rawLabel, target.concrete, raw, spec.rawNoneRejection));
     }
   }
   return rows;
@@ -761,7 +771,8 @@ async function runStrictNoneProbes(
 function rawNoneProbe(
   label: string,
   concrete: string,
-  result: Result<AiAssist.IAiCompletionResponse>
+  result: Result<AiAssist.IAiCompletionResponse>,
+  rejectPattern: RegExp | undefined
 ): ICanaryProbeResult {
   if (result.isSuccess()) {
     return {
@@ -771,13 +782,21 @@ function rawNoneProbe(
       detail: 'the provider accepted none; the thinking-required listing is stale'
     };
   }
-  return classifyExpectedProbe(
-    label,
-    concrete,
-    'expected-reject',
-    result,
-    'the provider still rejects none, as listed'
-  );
+  return classifyExpectedProbe(label, concrete, 'expected-reject', result, {
+    note: 'the provider still rejects none, as listed',
+    rejectPattern
+  });
+}
+
+/**
+ * Options for {@link classifyExpectedProbe}.
+ * @public
+ */
+export interface ICanaryExpectationOptions {
+  /** Detail on a passing row (prefixed to the provider text on an `expected-reject` row). */
+  readonly note?: string;
+  /** The text an `expected-reject` row's provider rejection must match. */
+  readonly rejectPattern?: RegExp;
 }
 
 /**
@@ -792,7 +811,10 @@ function rawNoneProbe(
  * - `'accepted'`: passes on a non-empty answer. A local refusal is an `error` (the library is
  *   stricter than the probe expects); a provider failure is classified as a thinking failure.
  *
- * `note`, when given, is the detail on a passing row.
+ * `options.note`, when given, is the detail on a passing row; on an `expected-reject` row the
+ * provider's own text follows it, so the report always shows what the provider said.
+ * `options.rejectPattern`, when given, must match an `expected-reject` row's provider text: a 400
+ * for some other reason (a usage limit, a malformed request) is an `error` carrying that text.
  * @public
  */
 export function classifyExpectedProbe(
@@ -800,8 +822,9 @@ export function classifyExpectedProbe(
   concrete: string,
   expect: CanaryExpectation,
   result: Result<AiAssist.IAiCompletionResponse>,
-  note?: string
+  options: ICanaryExpectationOptions = {}
 ): ICanaryProbeResult {
+  const { note, rejectPattern } = options;
   const local = result.isFailure() && isLocalRefusal(result.message);
   const passDetail = note !== undefined ? { detail: note } : {};
   switch (expect) {
@@ -840,9 +863,23 @@ export function classifyExpectedProbe(
         };
       }
       const outcome = classifyThinkingFailure(result.message);
-      return outcome === 'param-failed'
-        ? { label, concrete, outcome: 'expected-reject', detail: note ?? result.message }
-        : { label, concrete, outcome, detail: result.message };
+      if (outcome !== 'param-failed') {
+        return { label, concrete, outcome, detail: result.message };
+      }
+      if (rejectPattern !== undefined && !rejectPattern.test(result.message)) {
+        return {
+          label,
+          concrete,
+          outcome: 'error',
+          detail: `the provider rejected this, but not for the expected reason: ${result.message}`
+        };
+      }
+      return {
+        label,
+        concrete,
+        outcome: 'expected-reject',
+        detail: note !== undefined ? `${note}: ${result.message}` : result.message
+      };
     }
     case 'accepted':
       if (local) {
@@ -907,7 +944,11 @@ async function runTemperatureProbes(
           ...(probe.effort !== undefined ? { effort: probe.effort } : {})
         })
       );
-      rows.push(classifyExpectedProbe(label, target.concrete, probe.expect, result));
+      rows.push(
+        classifyExpectedProbe(label, target.concrete, probe.expect, result, {
+          rejectPattern: probe.rejectPattern
+        })
+      );
     }
   }
   return rows;

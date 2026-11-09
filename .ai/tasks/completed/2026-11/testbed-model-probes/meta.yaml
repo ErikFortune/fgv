@@ -40,4 +40,4 @@ keywords:
 relatedStreams:
   - { id: model-alias-refresh, relationship: 'probes the thinking-off and temperature rules it added' }
   - { id: model-max-output-tokens, relationship: 'probes the resolveMaxOutputTokens limits it recorded' }
-sourceHash: sha256:ac5407bbad4f1f4d # over brief.md + state.md + result.md
+sourceHash: sha256:c67f14d411fa3d14 # over brief.md + state.md + result.md

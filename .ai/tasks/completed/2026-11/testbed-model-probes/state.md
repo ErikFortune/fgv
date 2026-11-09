@@ -13,7 +13,8 @@ Worker-owned. The brief is frozen; decisions and questions live here.
   `buildCanaryCompletionParams`.
 - [x] Anthropic, OpenAI, Gemini scenarios opted in; descriptions, TSDoc and README updated.
 - [x] Stale `anthropicClientTools` comment corrected.
-- [x] testbed build / lint / test green (100% coverage, no new `c8 ignore`).
+- [x] testbed build / lint / test green (100% coverage, no new `c8 ignore`; after review round 1 the
+  live-seam `c8 ignore` is gone entirely).
 - [x] Repo-wide gates (see `result.md`).
 
 ## Decisions
@@ -63,11 +64,37 @@ Worker-owned. The brief is frozen; decisions and questions live here.
 
 ## Open questions
 
-- **Q1 (for the live run)** Anthropic `max_tokens: 128000` on the non-streaming Messages API: the
-  docs record 128K as the synchronous limit; ai-assist calls by raw `fetch`, so the SDK's
-  long-request guard does not apply. If the API itself refuses a non-streaming 128K request, the row
-  shows `FAIL(param) … the recorded limit 128000 is too high` — that would mean the limit is
-  streaming-only, not that the number is wrong. Noted in the run sheet.
+- **Q1 — resolved (review round 1, P3-1).** Anthropic `max_tokens: 128000` on a non-streaming
+  request is not refused by the API: the 10-minute non-streaming check is SDK-only (Anthropic's errors
+  page: "The Claude SDK validates that your non-streaming Messages API requests are not expected to
+  exceed a 10-minute timeout"), ai-assist uses raw `fetch`, and `max_tokens` does not count toward
+  OTPM. The only residual risk is a long generation timing out, which shows as a plain `FAIL`; with
+  the one-word prompt that is not expected.
+
+## Amendments — review round 1 (head `7360b451`)
+
+- **A1 (P2-1) Expected-reject rows show the provider's text.** The stated reason is now followed by
+  the provider message (`<note>: <provider text>`) instead of replacing it. This matters for the
+  Sonnet 5.5 raw row: Anthropic's errors page documents that 400 as "To turn thinking off on this
+  model, send "thinking": {"type": "between_tools"} instead…", which the user must see. That message
+  means Sonnet 5.5 can turn up-front thinking off via `between_tools` — a pending ai-assist question,
+  not in this PR's scope.
+- **A2 (P2-2) Expected-reject rows must match a stated reason.** `classifyExpectedProbe` takes
+  `{ note, rejectPattern }`; a 400 whose text does not match is an `error` carrying the provider
+  text, so e.g. an Anthropic "You have reached your specified API usage limits" 400 can no longer
+  pass. Patterns: raw rows per provider in `RAW_NONE_REJECTIONS` (Anthropic
+  `/thinking|disabled|between_tools/i` — the documented text names `thinking` and `between_tools`;
+  OpenAI `/reasoning[_.]effort/i`, per the live 400 recorded in `registry.ts`; Gemini
+  `/budget|thinking/i`; xAI `/reasoning|effort/i`), and the luna temperature row `/temperature/i`.
+  Both paths unit-tested (raw row and temperature row; match passes, unrelated 400 fails).
+- **A3 (P3-1)** Q1 resolved, above; run sheet and ledger corrected.
+- **A4 (P3-2) Live-seam `c8 ignore` removed entirely.** `buildLiveComplete` and `buildLiveImage` are
+  driven by the keyed stubbed-`fetch` runs; a new keyed Gemini run covers the image seam's
+  no-quality branch, so coverage holds at 100% with no directive.
+- **A5 (P3-3)** Gemini stubbed-fetch cases assert `generationConfig.maxOutputTokens: 65536` on each
+  tier (direct requests) and on all four Gemini targets (the keyed scenario run).
+- **A6 (P3-4)** Run sheet states that `REFUSED-LOCALLY` rows prove ai-assist's gate, not the
+  provider's current behaviour.
 
 ## ts-extras defects
 

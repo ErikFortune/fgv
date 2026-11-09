@@ -32,6 +32,7 @@ import { isLocalRefusal } from '../../../scenarios/modelTiers/canary';
 import {
   anthropicModelTiersScenario,
   buildCanaryCompletionParams,
+  geminiModelTiersScenario,
   openaiModelTiersScenario,
   rawNoneBlock
 } from '../../../scenarios/modelTiers';
@@ -229,6 +230,26 @@ describe('a refused-locally request is refused before fetch', () => {
   });
 });
 
+describe('max-output requests carry the recorded limit on the wire', () => {
+  test.each([
+    ['base' as const, 'gemini-3.8-flash'],
+    ['advanced' as const, 'gemini-3.1-pro-preview'],
+    ['frontier' as const, 'gemini-3.1-pro-preview']
+  ])('gemini %s (%s) sends generationConfig.maxOutputTokens 65536', async (tier, concrete) => {
+    const sent = stubFetch(() => ({
+      status: 200,
+      json: { candidates: [{ content: { parts: [{ text: 'pong' }] }, finishReason: 'STOP' }] }
+    }));
+    const limit = AiAssist.resolveMaxOutputTokens(gemini, undefined, tier === 'base' ? undefined : tier);
+    expect(limit).toBe(65536);
+    const params = buildCanaryCompletionParams(gemini, 'k', tier, { maxTokens: limit }).orThrow();
+    expect(await AiAssist.callProviderCompletion(params)).toSucceed();
+    expect(sent).toHaveLength(1);
+    expect(sent[0].url).toContain(concrete);
+    expect((sent[0].body.generationConfig as { maxOutputTokens?: number }).maxOutputTokens).toBe(65536);
+  });
+});
+
 // ---------------------------------------------------------------------------
 // Keyed dry runs: the real scenarios, through the real library, against a fake provider
 // ---------------------------------------------------------------------------
@@ -244,7 +265,16 @@ const ANTHROPIC_REJECTS_DISABLED: ReadonlyArray<string> = [
 const fakeAnthropic: FakeProvider = ({ body }) => {
   const thinking = body.thinking as { type?: string } | undefined;
   if (thinking?.type === 'disabled' && ANTHROPIC_REJECTS_DISABLED.includes(String(body.model))) {
-    return { status: 400, json: { error: { message: 'thinking.type: disabled is not supported' } } };
+    // The wording Anthropic's errors page documents for this 400.
+    return {
+      status: 400,
+      json: {
+        error: {
+          message:
+            'To turn thinking off on this model, send "thinking": {"type": "between_tools"} instead of "disabled".'
+        }
+      }
+    };
   }
   if (body.temperature !== undefined && body.temperature !== 1) {
     return { status: 400, json: { error: { message: 'non-default temperature' } } };
@@ -289,6 +319,10 @@ describe('anthropic-model-tiers, keyed, against a fake Anthropic', () => {
       );
       expect(report).toMatch(/\[PASS\] @anthropic:fable effort=low\s+claude-fable-5-1/);
       // 'fail' refuses locally on the three thinking-required models; raw disabled is the provider's 400.
+      // The provider's own text is shown after the stated reason.
+      expect(report).toMatch(
+        /\[EXPECTED-REJECT\] base none raw\s+claude-sonnet-5-5\s+\(the provider still rejects none, as listed: AI API returned 400: .*between_tools/
+      );
       for (const label of ['base', 'advanced', 'frontier', '@anthropic:fable']) {
         expect(report).toContain(`[REFUSED-LOCALLY] ${label} none+fail `);
         expect(report).toContain(`[EXPECTED-REJECT] ${label} none raw `);
@@ -345,5 +379,47 @@ describe('openai-model-tiers, keyed, against a fake OpenAI', () => {
       'gpt-6-luna'
     ]);
     expect(bodies.filter((b) => b.max_completion_tokens === 128000)).toHaveLength(3);
+  });
+});
+
+/** Answers like Gemini generateContent: text, image parts for the image model, budget-0 rule on pro. */
+const fakeGemini: FakeProvider = ({ url, body }) => {
+  if (url.includes('nano-banana')) {
+    return {
+      status: 200,
+      json: {
+        candidates: [{ content: { parts: [{ inlineData: { mimeType: 'image/png', data: 'aGVsbG8=' } }] } }]
+      }
+    };
+  }
+  const config = body.generationConfig as { thinkingConfig?: { thinkingBudget?: number } } | undefined;
+  if (config?.thinkingConfig?.thinkingBudget === 0 && url.includes('pro')) {
+    return {
+      status: 400,
+      json: { error: { message: 'Budget 0 is invalid. This model only works in thinking mode.' } }
+    };
+  }
+  return {
+    status: 200,
+    json: { candidates: [{ content: { parts: [{ text: 'pong' }] }, finishReason: 'STOP' }] }
+  };
+};
+
+describe('google-gemini-model-tiers, keyed, against a fake Gemini', () => {
+  test('max-output rows send the recorded limit, and the image seam sends no quality', async () => {
+    const sent = stubFetch(fakeGemini);
+    const result = await runScenario(geminiModelTiersScenario);
+    expect(result).toSucceedAndSatisfy((report: string) => {
+      expect(report).toMatch(/\[PASS\] @google-gemini:flash-lite max=65536\s+gemini-3\.5-flash-lite/);
+      expect(report).toMatch(
+        /\[EXPECTED-REJECT\] advanced none raw\s+gemini-3\.1-pro-preview\s+\(.*Budget 0/
+      );
+      expect(report).toMatch(/\[PASS\] image\s+gemini-nano-banana-2\.1/);
+      expect(report).toMatch(/LIVE-VERIFIED/);
+    });
+    const capped = sent.filter(
+      (s) => (s.body.generationConfig as { maxOutputTokens?: number } | undefined)?.maxOutputTokens === 65536
+    );
+    expect(capped).toHaveLength(4);
   });
 });

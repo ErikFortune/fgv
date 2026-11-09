@@ -86,7 +86,7 @@ const ANTHROPIC_TEMPERATURE_PROBES: ReadonlyArray<ICanaryTemperatureProbe> = [
  */
 const OPENAI_TEMPERATURE_PROBES: ReadonlyArray<ICanaryTemperatureProbe> = [
   { temperature: 0.3, effort: 'none', models: ['gpt-6-luna'], expect: 'accepted' },
-  { temperature: 0.3, models: ['gpt-6-luna'], expect: 'expected-reject' },
+  { temperature: 0.3, models: ['gpt-6-luna'], expect: 'expected-reject', rejectPattern: /temperature/i },
   { temperature: 0.3, models: ['gpt-6.1-sol', 'gpt-6-astra'], expect: 'refused-locally' }
 ];
 
@@ -134,6 +134,19 @@ export function rawNoneBlock(
       return fail(`${descriptor.id}: no raw 'none' block for this provider; add one to rawNoneBlock`);
   }
 }
+
+/**
+ * The text each provider's rejection of its raw thinking-off value must match, so a `none raw` row
+ * passes only on that rejection and not on a 400 for some other reason (a usage limit, say).
+ * Anthropic's documented 400 for `disabled` on a model that rejects it names `thinking` and points
+ * at `between_tools`; OpenAI's names `reasoning_effort`; Gemini's names the thinking budget.
+ */
+const RAW_NONE_REJECTIONS: Readonly<Record<string, RegExp>> = {
+  anthropic: /thinking|disabled|between_tools/i,
+  openai: /reasoning[_.]effort/i,
+  'xai-grok': /reasoning|effort/i,
+  'google-gemini': /budget|thinking/i
+};
 
 /** The thinking config one canary request sends, or `undefined` for none. */
 function canaryThinking(
@@ -194,12 +207,9 @@ export function buildCanaryCompletionParams(
  * through the real `callProviderCompletion`; returns `undefined` (→ the keyless STOP-FLAG
  * resolver-only path) when no key was resolved.
  *
- * This function is the keyed live seam and is coverage-ignored: it needs a real API key. The
- * request it sends is built and tested in `buildCanaryCompletionParams`; the canary logic
- * (resolution / classification / report / verdict) and the keyless path are covered via injected
- * deps and keyless `cli.run` in `modelTiers.test.ts`.
+ * The keyed path is unit-tested with a dummy key against a stubbed `fetch`
+ * (`modelTiersRequests.test.ts`); only a live run shows what the provider itself answers.
  */
-/* c8 ignore start - live completion seam: needs a real API key. */
 function buildLiveComplete(
   descriptor: AiAssist.IAiProviderDescriptor,
   apiKey: string | undefined
@@ -234,8 +244,6 @@ function buildLiveImage(
       params: { prompt: IMAGE_PROMPT, options: quality !== undefined ? { quality } : undefined }
     });
 }
-/* c8 ignore stop */
-
 /** Parameters describing one provider's tier canary. */
 interface ITierScenarioParams {
   readonly providerId: string;
@@ -280,6 +288,7 @@ function makeTierScenario(params: ITierScenarioParams): IScenario {
         thinkingEfforts: params.thinkingEfforts,
         extraModels: params.extraModels,
         strictNoneProbe: params.strictNoneProbe,
+        rawNoneRejection: RAW_NONE_REJECTIONS[params.providerId],
         structuredOutputProbe: params.structuredOutputProbe,
         structuredOutputEfforts: params.structuredOutputEfforts,
         temperatureProbes: params.temperatureProbes,

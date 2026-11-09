@@ -27,8 +27,9 @@ found. No change file is needed (`rush change --verify` reports none).
 
 **Scenarios (`src/scenarios/modelTiers/index.ts`).**
 - `buildCanaryCompletionParams` is new: a pure, exported, tested builder of the exact
-  `callProviderCompletion` params. The coverage-ignored live seam is now one chained call. The seam
-  was already the only ignored region, and no new `c8 ignore` was added.
+  `callProviderCompletion` params. The live seam is now one chained call, and its `c8 ignore` is
+  gone: the keyed stubbed-`fetch` runs cover it (review round 1, state.md A4). No `c8 ignore` was
+  added.
 - `rawNoneBlock` replaces the `RAW_NONE_BLOCKS` map and adds Anthropic:
   `{ provider: 'other', models: [concrete], config: { thinking: { type: 'disabled' } } }` (state.md
   D1).
@@ -60,7 +61,10 @@ with `output_config.effort: 'low'` on the Claude 5 family. Only older models con
    - sonnet `'none'` goes out as `thinking: {type: 'adaptive'}` with `output_config: {effort: 'low'}`;
    - 5 Anthropic bodies carry `max_tokens: 128000` and 3 OpenAI bodies carry
      `max_completion_tokens: 128000`;
-   - only the two `gpt-6-luna` rows carry a temperature.
+   - only the two `gpt-6-luna` rows carry a temperature;
+   - and, after review round 1, a keyed Gemini run: all four Gemini targets send
+     `generationConfig.maxOutputTokens: 65536`, the raw row on Pro is an expected reject, and the
+     image seam answers.
 
 ## 3. Keyless runs
 
@@ -142,6 +146,14 @@ OPENAI_API_KEY=…    node bin/testbed.js --scenario openai-model-tiers
 GEMINI_API_KEY=…    node bin/testbed.js --scenario google-gemini-model-tiers
 ```
 
+**`REFUSED-LOCALLY` rows prove ai-assist's gate, not the provider.** Nothing is sent for them, so
+they show the library still refuses the value; they say nothing about whether the provider would
+still reject it. Only the `EXPECTED-REJECT` rows ask the provider.
+
+An `EXPECTED-REJECT` row passes only when the provider's text matches the stated reason (thinking for
+the raw rows, temperature for luna); the row prints the stated reason followed by the provider's own
+text.
+
 A clean run ends `Verdict: LIVE-VERIFIED`. If a row is access-gated, it ends `LIVE BLOCKED`. Any
 `FAIL` row exits non-zero, and the report goes to stderr.
 
@@ -151,14 +163,15 @@ A clean run ends `Verdict: LIVE-VERIFIED`. If a row is access-gated, it ends `LI
 | anthropic | `base` / `advanced` / `frontier` / `@anthropic:fable effort=none` | `PASS (degraded to 'low')` | `FAIL(param)`: the adaptive `'low'` wire is rejected on that model |
 | anthropic | `… effort=low` (all five) | `PASS` | `FAIL(param)`: the adaptive effort wire is wrong for that model |
 | anthropic | `base` / `advanced` / `frontier` / `@anthropic:fable none+fail` | `REFUSED-LOCALLY (as listed)` | `FAIL … went through`: the model is no longer matched by `thinkingRequiredModelPrefixes` |
-| anthropic | `… none raw` (same four) | `EXPECTED-REJECT` | `FAIL … the provider accepted none`: the model now accepts `disabled`. The listing is stale; drop it so `'none'` turns thinking off |
+| anthropic | `… none raw` (same four) | `EXPECTED-REJECT (… as listed: <provider text>)` | `FAIL … the provider accepted none`: the model now accepts `disabled`. The listing is stale; drop it so `'none'` turns thinking off. `FAIL … not for the expected reason`: a 400 that does not mention thinking (a usage limit, say) — read the provider text |
+| anthropic | `base none raw` (sonnet-5-5), provider text | expected to read like "To turn thinking off on this model, send "thinking": {"type": "between_tools"} instead…" | that wording means Sonnet 5.5 can turn up-front thinking off via `between_tools`. This is a pending ai-assist question, not a defect in this run |
 | anthropic | `@anthropic:haiku none+fail` | `PASS` | `FAIL(param)`: as for haiku `effort=none` |
 | anthropic | `… temp=1` (all five) | `PASS` | `FAIL(param)`: the default temperature is rejected too (the 2026-10-21 API-version rule now applies at the pinned version). Unset `samplingParamsAcceptedTemperature` |
 | anthropic | `… temp=1+effort=low` (all five) | `PASS` | as above, or temperature + adaptive thinking conflict on that model |
 | anthropic | `… temp=0.3` (all five) | `REFUSED-LOCALLY` | `FAIL … went through`: the model fell off `samplingParamsRejectedModelPrefixes` |
-| anthropic | `… max=128000` (all five) | `PASS` | `FAIL(param) … recorded limit 128000 is too high`: lower that model's `maxOutputTokens`. If the error says the request must stream, the limit holds only for streaming (state.md Q1) |
+| anthropic | `… max=128000` (all five) | `PASS` | `FAIL(param) … recorded limit 128000 is too high`: lower that model's `maxOutputTokens`. The 10-minute non-streaming check is SDK-only and ai-assist uses raw `fetch`, so no streaming refusal is expected; a long generation timing out would show as a plain `FAIL` (state.md Q1, resolved) |
 | openai | `base temp=0.3+effort=none` (gpt-6-luna) | `PASS` | `FAIL(param)`: luna rejects temperature even with effort `none`, so add it to `samplingParamsRejectedModelPrefixes` |
-| openai | `base temp=0.3` (gpt-6-luna) | `EXPECTED-REJECT` | `FAIL … it answered`: #767 Q8 is wrong, and luna takes temperature at its default effort |
+| openai | `base temp=0.3` (gpt-6-luna) | `EXPECTED-REJECT (<provider text naming temperature>)` | `FAIL … it answered`: #767 Q8 is wrong, and luna takes temperature at its default effort. `FAIL … not for the expected reason`: a 400 that does not mention temperature — read the provider text |
 | openai | `advanced temp=0.3` / `frontier temp=0.3` | `REFUSED-LOCALLY` | `FAIL … went through`: sol or astra fell off `samplingParamsRejectedModelPrefixes` |
 | openai | `… max=128000` (three tiers) | `PASS` | `FAIL(param) … too high`: lower that model's `maxOutputTokens` |
 | gemini | `… max=65536` (three tiers + flash-lite) | `PASS` | `FAIL(param) … too high`: lower that model's `maxOutputTokens` |
@@ -173,9 +186,9 @@ match 0 times, and the only allowed `warning` is the tracked-symlink notice.
 
 | gate | result | log |
 |---|---|---|
-| testbed build | pass, 0 warnings | `build3.log` |
-| testbed lint | pass, 0 warnings | `lint2.log` |
-| testbed test | 691/691, 100% coverage, 0 warnings | `t5.log` |
+| testbed build | pass, 0 warnings | `r2-build.log` |
+| testbed lint | pass, 0 warnings | `r2-lint.log` |
+| testbed test | 698/698, 100% coverage, 0 warnings (after review round 1) | `r2-test.log` |
 | repo `rush rebuild` | pass, 0 failure lines, symlink notice only | `rebuild.log` |
 | repo `rush test` | pass, 39/39 projects, 0 failure lines, symlink notice only; no flake retries needed | `test.log` |
 | `rush change --verify --target-branch origin/integration/asks` | pass, no change file needed | `change.log` |

@@ -140,7 +140,7 @@ Most rows pass as `PASS`. Three more outcomes are passes too, because the probe 
 | tag                   | means                                                                                                                                                                            |
 | --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `[REFUSED-LOCALLY]`   | ai-assist refused the request before building it, so nothing was sent (a `temperature` the model rejects, or `'none'` with `onUnsupported: 'fail'` on a thinking-required model) |
-| `[EXPECTED-REJECT]`   | the provider returned the 400 the probe expected (a raw thinking-off value on a thinking-required model; temperature on `gpt-6-luna` without effort `'none'`)                    |
+| `[EXPECTED-REJECT]`   | the provider returned the 400 the probe expected, for the expected reason (a raw thinking-off value on a thinking-required model; temperature on `gpt-6-luna` without effort `'none'`). The row prints the provider's own text; a 400 for another reason is a `FAIL`                    |
 | `[NO-RECORDED-LIMIT]` | a max-output probe on a model with no `maxOutputTokens` entry: nothing to check, no call                                                                                         |
 
 The probe families:
@@ -158,6 +158,9 @@ The probe families:
 - **Max output** (`max=N`, Anthropic, OpenAI and Gemini): `maxTokens` set to
   `resolveMaxOutputTokens` for that exact model. It must be accepted. A refusal naming the token cap
   is `FAIL(param)`: the recorded limit is too high.
+
+`[REFUSED-LOCALLY]` rows prove ai-assist's own gate: nothing is sent, so they say nothing about
+whether the provider would still reject the value.
 
 A `FAIL` on any row fails the run. `BLOCKED` (access or a parameter incompatibility) does not.
 

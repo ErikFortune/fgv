@@ -29,7 +29,9 @@ Three new outcomes are expected non-answers that do not fail a run: `[REFUSED-LO
   replaces `fetch` with a recorder. It runs the live seam's exact params through
   `callProviderCompletion` and runs both scenarios against fake providers, and asserts that the
   refused rows send nothing and that the bodies sent are the documented wire.
-- Decisions D1–D7 and open question Q1 (Anthropic 128K non-streaming) are in `state.md`.
+- Decisions D1–D7, review amendments A1–A6 and the resolved Q1 (Anthropic 128K non-streaming is
+  fine over raw `fetch`) are in `state.md`. `EXPECTED-REJECT` rows pass only on the stated reason
+  and print the provider's own text.
 
 ## Artifacts
 

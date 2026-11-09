@@ -531,7 +531,7 @@ describe('runTierCanary (strict-none probes)', () => {
       expect(report).toMatch(/\[PASS\] base none\+fail\s+gpt-6-luna/);
       expect(report).toMatch(/\[REFUSED-LOCALLY\] frontier none\+fail\s+gpt-6-astra\s+\(as listed\)/);
       expect(report).toMatch(
-        /\[EXPECTED-REJECT\] frontier none raw\s+gpt-6-astra\s+\(the provider still rejects none, as listed\)/
+        /\[EXPECTED-REJECT\] frontier none raw\s+gpt-6-astra\s+\(the provider still rejects none, as listed: AI API returned 400: 'reasoning_effort'/
       );
       expect(report).not.toMatch(/base none raw/);
       expect(report).toMatch(/LIVE-VERIFIED/);
@@ -606,6 +606,27 @@ describe('runTierCanary (strict-none probes)', () => {
       expect(report).toMatch(/\[REFUSED-LOCALLY\] frontier none\+fail\s+gpt-6-astra/);
       expect(report).toMatch(/\[BLOCKED\(access\)\] frontier none raw\s+gpt-6-astra/);
     });
+  });
+
+  test('a raw none rejected for an unrelated reason fails when the spec states the expected rejection', async () => {
+    const limited = fail<AiAssist.IAiCompletionResponse>(
+      'AI API returned 400: You have reached your specified API usage limits'
+    );
+    const deps: ITierCanaryDeps = {
+      complete: async (tier: CanaryTier, options?: ICanaryCompleteOptions) =>
+        answer(tier, options, { raw: limited })
+    };
+    const strict = { ...spec, rawNoneRejection: /reasoning[_.]effort/i };
+    expect(await runTierCanary(strict, deps, new Logging.InMemoryLogger())).toFailWith(
+      /\[FAIL\] frontier none raw\s+gpt-6-astra\s+\(the provider rejected this, but not for the expected reason: AI API returned 400: You have reached/
+    );
+    // The documented rejection still passes under the same pattern.
+    const ok: ITierCanaryDeps = { complete: async (tier, options) => answer(tier, options) };
+    expect(await runTierCanary(strict, ok, new Logging.InMemoryLogger())).toSucceedAndSatisfy(
+      (report: string) => {
+        expect(report).toMatch(/\[EXPECTED-REJECT\] frontier none raw\s+gpt-6-astra/);
+      }
+    );
   });
 
   test('keyless, every strict-none probe is PENDING', async () => {
@@ -1085,10 +1106,29 @@ describe('classifyExpectedProbe', () => {
     }
   });
 
-  test('a note becomes the detail of a passing row', () => {
-    expect(classifyExpectedProbe('l', 'm', 'accepted', pong(), 'why').detail).toBe('why');
-    expect(classifyExpectedProbe('l', 'm', 'refused-locally', LOCAL, 'why').detail).toBe('why');
-    expect(classifyExpectedProbe('l', 'm', 'expected-reject', PROVIDER_400, 'why').detail).toBe('why');
+  test('a note becomes the detail of a passing row, ahead of the provider text on an expected reject', () => {
+    expect(classifyExpectedProbe('l', 'm', 'accepted', pong(), { note: 'why' }).detail).toBe('why');
+    expect(classifyExpectedProbe('l', 'm', 'refused-locally', LOCAL, { note: 'why' }).detail).toBe('why');
+    expect(classifyExpectedProbe('l', 'm', 'expected-reject', PROVIDER_400, { note: 'why' }).detail).toBe(
+      'why: AI API returned 400: temperature not supported'
+    );
+  });
+
+  test('an expected reject passes only when the provider text matches the stated pattern', () => {
+    const matched = classifyExpectedProbe('l', 'm', 'expected-reject', PROVIDER_400, {
+      rejectPattern: /temperature/i
+    });
+    expect(matched.outcome).toBe('expected-reject');
+    const unrelated = fail<AiAssist.IAiCompletionResponse>(
+      'AI API returned 400: You have reached your specified API usage limits'
+    );
+    const row = classifyExpectedProbe('l', 'm', 'expected-reject', unrelated, {
+      rejectPattern: /temperature/i
+    });
+    expect(row.outcome).toBe('error');
+    expect(row.detail).toMatch(
+      /rejected this, but not for the expected reason: AI API returned 400: You have reached your specified API usage limits/
+    );
   });
 });
 
@@ -1151,6 +1191,27 @@ describe('runTierCanary (temperature probes)', () => {
       /\[FAIL\] base temp=0\.3\s+gpt-6-luna\s+\(expected the provider to reject this/
     );
     expect(result).toFailWith(/temperature, max-output/);
+  });
+
+  test('an expected-reject row rejected for an unrelated reason fails the run with the provider text', async () => {
+    const withPattern = {
+      ...spec,
+      temperatureProbes: [
+        {
+          temperature: 0.3,
+          models: ['gpt-6-luna'],
+          expect: 'expected-reject' as const,
+          rejectPattern: /temperature/i
+        }
+      ]
+    };
+    const deps: ITierCanaryDeps = {
+      complete: async (tier: CanaryTier, options?: ICanaryCompleteOptions) =>
+        options?.temperature !== undefined ? fail('AI API returned 400: usage limit reached') : pong()
+    };
+    expect(await runTierCanary(withPattern, deps, new Logging.InMemoryLogger())).toFailWith(
+      /\[FAIL\] base temp=0\.3\s+gpt-6-luna\s+\(the provider rejected this, but not for the expected reason: AI API returned 400: usage limit reached\)/
+    );
   });
 
   test('a refused-locally row that reaches the provider fails the run', async () => {
