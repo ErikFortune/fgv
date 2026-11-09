@@ -148,3 +148,20 @@ Found and fixed:
 
 Declined: a sub-agent reviewer (forbidden by the kickoff). `prs` is empty because no PR exists yet;
 the ledger and README say `#TBD`.
+
+## 7. Gates after the base merge and review P3s
+
+`origin/integration/asks` (`eeceb8bfa`) merged with a merge commit; the merged tree was identical to
+`db10d9bd` before the doc-only P3 edits. Logs under
+`/tmp/claude-0/-home-user/ddedaf44-7531-52e1-a2c4-05cab5230430/scratchpad/final/r2/`, graded as above.
+
+| gate | result | log |
+|---|---|---|
+| `rush purge` + `rush install` | pass | `purge.log`, `install.log` |
+| repo `rush rebuild` | exit 0, 0 failure lines, symlink notice only | `rebuild.log` |
+| repo `rush lint` | exit 0, 34 operations, symlink notice only | `lint-all.log` |
+| repo `rush test` (includes ts-extras and testbed at their 100% thresholds) | exit 0, 38 operations, 0 failure lines, symlink notice only; no flake retries | `test-all.log` |
+| `rush change --verify --target-branch origin/integration/asks` | pass | `change.log` |
+| prettier 2.8.8 `--check` on the diff | pass | `prettier.log` |
+| `verify-capability-docs` | 0 failed | `capdocs.log` |
+| `generate-capability-feed --check` | 0 stale | `feed.log` |
