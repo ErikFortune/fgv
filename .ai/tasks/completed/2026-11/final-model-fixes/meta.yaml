@@ -43,4 +43,4 @@ keywords:
 relatedStreams:
   - { id: testbed-model-probes, relationship: 'acts on its first live run and updates its probes' }
   - { id: model-alias-refresh, relationship: 'revises its thinking-required listing for sonnet-5-5' }
-sourceHash: sha256:2f19654b1110af3e # over brief.md + state.md + result.md
+sourceHash: sha256:d09344811c2ccc3d # over brief.md + state.md + result.md

@@ -654,8 +654,9 @@ async function callAnthropicCompletion(
     }
   } else if (resolvedThinking?.anthropicThinkingDisabled === true && useAdaptiveThinking) {
     // Adaptive models think by default, so omitting `thinking` would not turn it off. The off value
-    // is per model (resolveAnthropicThinkingOffType), and no effort goes beside it: this branch runs
-    // only when anthropicEffort is unset, which also keeps between_tools clear of its 400 at
+    // is per model (resolveAnthropicThinkingOffType), and a generic 'none' sends no effort beside it:
+    // this branch runs only when anthropicEffort is unset (an 'other' block's otherParams, merged
+    // below, can still add one), which also keeps between_tools clear of its 400 at
     // effort xhigh and max. A model on thinkingRequiredModelPrefixes never gets here: a generic
     // 'none' is degraded or refused when it is resolved, and the client-tool path refuses a caller-built flag
     // for it before dispatch.

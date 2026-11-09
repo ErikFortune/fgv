@@ -175,14 +175,21 @@ only with its own value, `thinking: { type: 'between_tools' }` (see below). `@an
   (and a caller-built `anthropicThinkingDisabled` flag is sent the same way rather than refused). This
   is the second change to the base tier's `'none'` in a row — it was degraded to `'low'` — and it is
   real thinking-off: the model does not think before it responds, **but the short updates it writes
-  between tool calls still come back as `thinking` blocks**. `between_tools` 400s at effort `xhigh`
-  and `max`; a `'none'` never sends an effort beside it.
-- **Gemini 3.x Flash cannot be turned off by a budget.** `gemini-3.5-flash-lite` rejects
-  `thinkingBudget: 0` (`400 INVALID_ARGUMENT`), and `gemini-3.8-flash` accepts it but lists no level
-  below `low`, so both are on `thinkingRequiredModelPrefixes`: `'none'` on `@google-gemini:flash`
-  (the base tier) and `@google-gemini:flash-lite` is now sent as `'low'` (budget 1024), or refused
-  under `onUnsupported: 'fail'`. This is interim: Gemini 3.x is controlled by `thinkingLevel`, which
-  ai-assist does not send yet; once it does, `'none'` maps to `minimal` where a model lists it.
+  between tool calls still come back as `thinking` blocks**. A generic `'none'` never sends an
+  effort beside it; an explicit `'other'` block or caller-built `otherParams` can, and Anthropic
+  rejects `between_tools` (and `disabled`) above `high` (`between_tools` 400s at `xhigh` and `max`).
+- **`gemini-3.8-flash` and `gemini-3.5-flash-lite` cannot be turned off by a budget.**
+  `gemini-3.5-flash-lite` rejects `thinkingBudget: 0` (`400 INVALID_ARGUMENT`), and
+  `gemini-3.8-flash` accepts it but lists no level below `low`, so both are on
+  `thinkingRequiredModelPrefixes`: `'none'` on `@google-gemini:flash` (the base tier) and
+  `@google-gemini:flash-lite` is now sent as `'low'` (budget 1024), or refused under
+  `onUnsupported: 'fail'`. That changes thinking cost and latency on those aliases; the direction
+  is unknown, since `gemini-3.8-flash` may have been ignoring budget 0 and thinking at its default.
+  `gemini-3.6-flash` and `gemini-3.5-flash` stay unlisted: neither is an alias target, and there is
+  no evidence either rejects or ignores budget 0. The entries are dash-bounded, so they deliberately
+  also match future variants of a listed id (e.g. a `gemini-3.8-flash-lite`). This is interim:
+  Gemini 3.x is controlled by `thinkingLevel`, which ai-assist does not send yet; once it does,
+  `'none'` maps to `minimal` where a model lists it.
 - A `temperature` aimed at a model in `samplingParamsRejectedModelPrefixes` is refused before the wire
   on the completion, streaming and client-tool paths. On Anthropic (every Claude 5.x model,
   `claude-mythos-preview`, `claude-opus-4-8`, `claude-opus-4-7`) only a non-default value is refused:

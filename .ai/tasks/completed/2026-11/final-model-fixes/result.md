@@ -96,6 +96,12 @@ log directory. Rows not listed here are as in #768's run sheet
 | openai | `advanced temp=1 raw` (gpt-6.1-sol) | `OBSERVED (accepted)` or `OBSERVED (rejected: <provider text>)` | **no pass/fail claim.** Either reading is the answer to the open question. `FAIL … refused locally`: the `'other'` bypass stopped bypassing — a testbed defect |
 | openai | `frontier temp=1 raw` (gpt-6-astra) | as above | as above |
 
+**Confirm the `gemini-3.8-flash` listing on the next keyed run.** Nothing in the canary sends it budget
+0 any more. Send one raw `thinkingBudget: 0` request to `gemini-3.8-flash` by hand (or a temporary
+row) and read `usageMetadata.thoughtsTokenCount` on the response: a non-zero count confirms that it
+ignores budget 0 and the listing is right; zero means budget 0 does turn thinking off there and the
+entry should come off the list. Recorded as follow-up F3 in `state.md`.
+
 **Follow-up from the OBSERVED rows.** If both read `accepted`, OpenAI's sol/astra take the default
 temperature, and ai-assist's refusal of every temperature there is stricter than the provider: a
 separate change would declare `samplingParamsAcceptedTemperature: 1` for those models (state.md Q1:

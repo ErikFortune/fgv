@@ -149,7 +149,9 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     // 400 (2026-11-09): "To turn thinking off on this model, send "thinking": {"type":
     // "between_tools"} instead of {"type": "disabled"}. The model does not think before responding.
     // The short updates it writes between tool calls come back as thinking blocks." between_tools
-    // 400s at effort xhigh and max; a 'none' sends no effort beside it, so that cannot be reached.
+    // 400s at effort xhigh and max; a generic 'none' sends no effort beside it, so that cannot be
+    // reached that way (an explicit 'other' block or caller-built otherParams still can). Like the
+    // lists above, the rule is dash-bounded on purpose: it also matches future variants of the id.
     anthropicThinkingOffTypes: [{ modelPrefix: 'claude-sonnet-5-5', type: 'between_tools' }],
     // "On Claude Fable 5.1, Claude Mythos 5.1, Claude Fable 5, Claude Mythos 5, Claude Mythos Preview,
     // Claude Opus 5.5, Claude Opus 5, Claude Opus 4.8, Claude Opus 4.7, Claude Sonnet 5.5, Claude
@@ -269,6 +271,11 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     // This is interim: Gemini 3.x is controlled by `thinkingLevel`, which ai-assist does not send
     // yet; once it does, 'none' maps to `minimal` on the models that list it (flash-lite), and the
     // flash-lite entry comes off this list.
+    // The entries are dash-bounded on purpose, so they also match future variants of a listed id
+    // (gemini-3.8-flash matches a gemini-3.8-flash-lite or a dated snapshot): the safe direction
+    // for a degrade-or-refuse list, until someone reviews the new id. gemini-3.6-flash and
+    // gemini-3.5-flash stay unlisted: neither is an alias target, and there is no evidence that
+    // either rejects or ignores budget 0.
     thinkingRequiredModelPrefixes: [
       'gemini-3.1-pro-preview',
       'gemini-2.5-pro',

@@ -1094,7 +1094,8 @@ export interface IAiProviderDescriptor {
    * Per-model Anthropic thinking-off values for adaptive-thinking models that turn thinking off
    * with something other than `thinking: { type: 'disabled' }`, the default. Each rule's
    * `modelPrefix` is matched exact-or-dash-bounded, like
-   * {@link IAiProviderDescriptor.adaptiveThinkingModelPrefixes}; the first match wins.
+   * {@link IAiProviderDescriptor.adaptiveThinkingModelPrefixes}; the first match wins. Like those
+   * lists, a rule deliberately also matches future variants of its id (`claude-sonnet-5-5-<date>`).
    *
    * @remarks
    * Read by the completion, streaming and client-tool Anthropic emit sites (via
@@ -1871,8 +1872,10 @@ export interface IThinkingConfig {
    * an effort: on an adaptive-thinking model (see {@link AiAssist.isAdaptiveThinkingModel}),
    * where thinking is on by default, it sends the model's off value — `thinking: { type: 'disabled' }`,
    * or the per-model value in {@link IAiProviderDescriptor.anthropicThinkingOffTypes} (for example
-   * `{ type: 'between_tools' }` on `claude-sonnet-5-5`) — and never an `output_config.effort` beside
-   * it; on an older model, where thinking is off by default, it omits the `thinking` field.
+   * `{ type: 'between_tools' }` on `claude-sonnet-5-5`); a generic `'none'` never sends an
+   * `output_config.effort` beside it (an explicit `'other'` block or caller-built `otherParams` can,
+   * and Anthropic rejects `between_tools` and `disabled` above `high`); on an older model, where
+   * thinking is off by default, it omits the `thinking` field.
    * On a model that accepts `'none'`, whichever provider is in play, `'none'` also re-enables
    * `temperature` (see `checkTemperatureConflict` in `thinkingOptionsResolver.ts`). On a model
    * listed in {@link IAiProviderDescriptor.thinkingRequiredModelPrefixes} it does not: there

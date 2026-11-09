@@ -70,3 +70,17 @@ Implementation, tests and docs done; gates and close-out follow. See `result.md`
   sol/astra, setting it to 1 on the OpenAI descriptor would also let `temperature: 1` through to any
   other model on `samplingParamsRejectedModelPrefixes` there — currently only those two, so fine,
   but worth a look when the live answer arrives.
+
+## Post-review additions (orchestrator review of `db10d9bd`, approved with doc-only P3s)
+
+- Merged `origin/integration/asks` (`eeceb8bfa`, #768 squashed) with a merge commit; every conflict
+  resolved to this branch's side and the merged tree equals `db10d9bd`.
+- P3 doc edits: the "no effort beside the off value" claim now says a *generic* `'none'`, noting an
+  explicit `'other'` block or `otherParams` can add one; the Gemini change-file and README text say
+  `'none'` → budget 1024 changes cost/latency in an unknown direction; the dash-bounded lists are
+  stated to match future variants on purpose; the README heading names the two listed models and
+  says why `gemini-3.6-flash` / `gemini-3.5-flash` stay unlisted.
+- **F3 (follow-up)** On the next keyed run, send one raw `thinkingBudget: 0` to `gemini-3.8-flash` and
+  read `usageMetadata.thoughtsTokenCount`: non-zero confirms the listing (it ignores budget 0); zero
+  means budget 0 works there and the entry should be dropped. The canary has no such row (by design:
+  pass/fail on the answer alone cannot tell the two apart).
