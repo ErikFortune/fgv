@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 
+import { Result } from '@fgv/ts-utils';
 import {
   IResponsibility,
   ITaskOutcome,
@@ -349,19 +350,26 @@ export interface IBoundTaskWriter extends IBoundTaskView {
  * `TaskBroker.create`.
  *
  * @remarks
- * Structural, so any host gate with this shape fits. `guard` is given the broker's whole writer
- * section and calls it at most once. The broker tracks whether it did:
+ * Structural, so any host gate with this shape fits — including `AsyncControl.WriteGate` from
+ * `@fgv/ts-extras`, whose `guard` answers an `AsyncResult` over a plain `Result`. `guard` is given
+ * the broker's whole writer section and calls it at most once. The broker tracks whether it did:
  *
- * - **Not called.** A failure the gate returns is the operation's result; one carrying no task
- *   detail (a gate typed over plain `Result`) is reported as `storage-unavailable`, retry
- *   `after-host-action`, since nothing was written. A gate that throws is `invalid`.
+ * - **Not called.** A failure the gate returns is the operation's result when its detail is a valid
+ *   task failure; any other failure (a gate typed over plain `Result`) is reported as
+ *   `storage-unavailable`, retry `after-host-action`, since nothing was written. A gate that
+ *   answers success or something that is not a `Result` without calling the section, or throws,
+ *   is `invalid`.
  * - **Called.** The section's own result is the operation's result when the gate returns it, or
- *   any success. When the gate then fails or throws, the operation is `storage-unavailable`, retry
+ *   any success. When the gate then fails, throws or answers something that is not a `Result` —
+ *   or the section itself rejects — the operation is `storage-unavailable`, retry
  *   `reconcile-first`: the section may have committed. A section the gate started without awaiting
  *   is awaited before the broker's turn ends.
  * - **Called twice.** The second call is refused without running (`invalid`).
- * - **Called after the gate returned.** Refused without running (`invalid`): the section must be
- *   started before `guard` returns, or it would run outside the broker's turn.
+ * - **Called after the broker observed the gate's answer.** Refused without running (`invalid`): it
+ *   would run outside the broker's turn. The broker observes the answer a few microtasks after it
+ *   settles; a section started inside that window is awaited and classified as called, so
+ *   `reconcile-first` unless the gate answered its result. A gate may wait — on a pause, say —
+ *   before starting it, as long as it starts it before answering.
  *
  * **The gate must not call the broker.** A broker operation started from inside `guard` queues
  * behind the very section the gate is holding and never runs, and every later broker write queues
@@ -372,15 +380,8 @@ export interface IBoundTaskWriter extends IBoundTaskView {
  * @public
  */
 export interface ITaskWriteGuard {
-  guard<T>(write: () => Promise<TaskResult<T>>): Promise<TaskResult<T>>;
+  guard<T>(write: () => Promise<TaskResult<T>>): PromiseLike<Result<T>>;
 }
-
-/**
- * Arms a one-shot timer and returns the function that cancels it — the broker's only use of time.
- * Defaults to `setTimeout` / `clearTimeout`; tests inject their own.
- * @public
- */
-export type TaskScheduleTimer = (fn: () => void, ms: number) => () => void;
 
 /**
  * The state of one child, as the authoritative graph holds it.

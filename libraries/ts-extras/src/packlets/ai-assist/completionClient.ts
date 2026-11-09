@@ -27,6 +27,7 @@
  * @packageDocumentation
  */
 
+import { type AnthropicThinkingOffType, resolveAnthropicThinkingOffType } from './anthropicThinkingOff';
 import { isJsonObject, type JsonObject } from '@fgv/ts-json-base';
 import {
   captureResult,
@@ -49,6 +50,8 @@ import {
   type IThinkingConfig,
   type ModelSpec,
   type ModelSpecKey,
+  checkSamplingParams,
+  temperatureAcceptedWithThinking,
   isAdaptiveThinkingModel,
   isThinkingRequiredModel,
   isResponsesOnlyModel,
@@ -618,7 +621,8 @@ async function callAnthropicCompletion(
   useAdaptiveThinking: boolean = false,
   maxTokens?: number,
   structured: IResolvedStructuredOutput = NO_STRUCTURED_OUTPUT,
-  cache?: IAiCacheRequest
+  cache?: IAiCacheRequest,
+  thinkingOffType: AnthropicThinkingOffType = 'disabled'
 ): Promise<Result<IAiCompletionResponse>> {
   const url = `${config.baseUrl}/messages`;
   const messages = buildAnthropicMessages(prompt, { head });
@@ -633,9 +637,8 @@ async function callAnthropicCompletion(
     // Anthropic's Messages API requires max_tokens on every request — see
     // AiAssist.DEFAULT_ANTHROPIC_MAX_TOKENS for why only this provider defaults it.
     max_tokens: maxTokens ?? DEFAULT_ANTHROPIC_MAX_TOKENS,
-    // Temperature is sent only when explicitly provided (Claude-5 rejects any temperature). The
-    // completion path rejects temperature + thinking upstream (checkTemperatureConflict), so no
-    // effort gate is needed here.
+    // Temperature is sent only when explicitly provided. The completion path refuses a rejected value
+    // upstream (checkSamplingParams, checkTemperatureConflict), so no effort gate is needed here.
     ...(temperature !== undefined ? { temperature } : {})
   };
 
@@ -649,6 +652,15 @@ async function callAnthropicCompletion(
     } else {
       body.thinking = { type: 'enabled', budget_tokens: anthropicEffortToBudgetTokens(effort) };
     }
+  } else if (resolvedThinking?.anthropicThinkingDisabled === true && useAdaptiveThinking) {
+    // Adaptive models think by default, so omitting `thinking` would not turn it off. The off value
+    // is per model (resolveAnthropicThinkingOffType), and a generic 'none' sends no effort beside it:
+    // this branch runs only when anthropicEffort is unset (an 'other' block's otherParams, merged
+    // below, can still add one), which also keeps between_tools clear of its 400 at
+    // effort xhigh and max. A model on thinkingRequiredModelPrefixes never gets here: a generic
+    // 'none' is degraded or refused when it is resolved, and the client-tool path refuses a caller-built flag
+    // for it before dispatch.
+    body.thinking = { type: thinkingOffType };
   }
   if (resolvedThinking?.otherParams !== undefined) {
     Object.assign(body, resolvedThinking.otherParams);
@@ -889,12 +901,17 @@ export async function callProviderCompletion(
         resolvedThinking,
         discriminator,
         temperature,
-        mergeResult.value.noneDegraded
+        mergeResult.value.noneDegraded,
+        temperatureAcceptedWithThinking(descriptor, model)
       );
       if (conflictResult.isFailure()) {
         return fail(conflictResult.message);
       }
     }
+  }
+  const samplingResult = checkSamplingParams(descriptor, model, temperature);
+  if (samplingResult.isFailure()) {
+    return fail(samplingResult.message);
   }
 
   // Resolved against the CONCRETE model, after resolveProviderModel — passing an
@@ -1021,7 +1038,8 @@ export async function callProviderCompletion(
         isAdaptiveThinkingModel(descriptor, config.model),
         maxTokens,
         resolvedStructured,
-        cache
+        cache,
+        resolveAnthropicThinkingOffType(descriptor, config.model)
       );
     case 'gemini':
       return callGeminiCompletion(

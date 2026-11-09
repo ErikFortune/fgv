@@ -67,45 +67,34 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
 
 ## P2 — Fix before next major feature in affected area
 
-- **[P2] `FsFileTreeAccessors`' prefix does not confine: absolute paths escape it, and plain writes never check.**
-  Three behaviours in `libraries/ts-json-base/src/packlets/file-tree/fsTree.ts` combine:
-  `resolveAbsolutePath` ignores `prefix` for an input that is already absolute (`path.isAbsolute`
-  short-circuits to `path.resolve(...paths)`), so `FileTree.forFilesystem(prefix).getDirectory('/')`
-  names the filesystem root `/`, not the prefix; the plain mutators `saveFileContents`,
-  `createDirectory`, `deleteFile` and `deleteDirectory` check only the mutability filter, never
-  that the path lies under the prefix; and the field's doc says the prefix is prepended "to all
-  paths" (`fsTree.ts` `prefix`; `fileTreeHelpers.ts` says "relative paths", which is the true one).
-  Only the atomic methods confine (`_confineToRoot`, which since `agent-memory-atomic-writes` also
-  checks the real path of the containing directory). Found by that stream's review: a memory store
-  opened on `forFilesystem(prefix).getDirectory('/')` walked the real `/`, and a root item outside
-  its accessors' prefix took plain writes outside the tree once its atomic inquiry was degraded
-  rather than refused. The store now refuses a failed inquiry, which closes its own path; the
-  accessor behaviour is unchanged and reachable by any plain-write caller. In particular, plain
-  writes on a root that is not qualified for atomic writes (a non-atomic accessor, or an
-  unqualified platform such as darwin) still follow a symbolic link out of the tree, exactly as on
-  the base commit — the real-path confinement covers only the atomic methods. The same holds for a
-  record *file* that is a symbolic link on such a root: a plain put writes through the link, and
-  because the listing hides links the record then reads back as absent.
+- **[P2] The Heft toolchain family is held at its 2026-09-14 pins.**
+  `@rushstack/heft` 1.3.0, `heft-node-rig` 2.11.50, `heft-web-rig` 1.4.34, `heft-jest-plugin`
+  2.0.17, `heft-lint-plugin` 1.2.27 and the api-extractor / sass / webpack5 plugins. The latest
+  versions fail `rush rebuild`. `heft-lint-plugin` 1.3.0 lints files outside the TypeScript program,
+  so an `eslint.config.js` block that sets `@rushstack/packlets/mechanics` without a `files` glob
+  becomes a config error (36 configs set that rule). And `@rushstack/eslint-config` 4.9.0 enables
+  `@rushstack/prefer-ecmascript-private-members: 'warn'`, which flags every `private _member`. The
+  plugins pin `@rushstack/heft` exactly, so the family cannot be split. `eslint` 10 waits on it,
+  and 9.x is already marked unsupported upstream.
 
-  **Trigger**: the next change to `FsFileTreeAccessors` path resolution, or any consumer that hands
-  untrusted or computed paths to a prefixed tree.
+  **Trigger**: the next dependency refresh, or any need for a Heft or eslint fix newer than these
+  pins.
 
-  **Scope sketch** — options, for the user to choose; not decided:
-  (a) **document it** — correct the `prefix` doc to "prepended to relative paths; absolute paths are
-  used as given, and only the atomic methods confine", no behaviour change;
-  (b) **confine plain mutators** — run `_confineToRoot` (logical, and optionally real-path) in
-  `saveFileContents` / `saveFileBytes` / `createDirectory` / `deleteFile` / `deleteDirectory`,
-  refusing paths outside the prefix — breaking for callers that rely on writing outside it;
-  (c) **resolve absolute paths under the prefix** — treat `/x` as `<prefix>/x`, matching the
-  in-memory tree, so `getDirectory('/')` names the prefix — breaking for callers that pass real
-  absolute paths, which is how `DirectoryItem.create(absolutePath, accessors)` is commonly used;
-  (d) **(b) behind an option** — `confine: true` on `IFileTreeInitParams`, default off.
-  `ts-json-base` is an established surface, so (b) and (c) need explicit sign-off.
+  **Scope sketch**: add `files` scoping to the affected config blocks. Then decide the
+  private-members rule: migrate to `#private`, which changes runtime semantics and the
+  `enforceLeadingUnderscoreWhenPrivate` naming rule, or make a repo-level, reasoned rule
+  disposition. Then take the family together.
 
-  **Not a P3**: the atomic path already confines, so the two paths answer the same question
-  differently, and the prefix reads as a sandbox to anyone who trusts its doc.
+  **Not a P3**: the toolchain falls further behind upstream fixes, including security ones, until
+  this is done.
 
-  **Reference**: `agent-memory-atomic-writes` review round 2 (2026-10-26), probe `escape.js` §2–3.
+  **Reference**: `.ai/tasks/completed/2026-11/deps-refresh/result.md` § 4c, § 4d.
+
+- *Closed — `FsFileTreeAccessors`' prefix did not confine (absolute paths escaped it; plain writes
+  never checked).* Resolved by the `filetree-prefix-confinement` stream (PR #TBD), which added the
+  user-decided `absolutePathPolicy: 'unconfined' | 'confined' | 'verified'` and `realPath` options on
+  `IFsFileTreeInitParams`, applied to every operation; the default stays `'unconfined'`. Escape and
+  revert matrices: `.ai/tasks/completed/2026-10/filetree-prefix-confinement/result.md`.
 
 - **[P2] No shared ESLint layer — `no-prototype-builtins` is on in 4 of the 33 projects with an ESLint config.**
   Every project carries its own flat `eslint.config.js` (33 files, 8 distinct variants) extending
@@ -900,6 +889,29 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
   Copilot rounds 4 and 6 on #721 (threads r4213291067, r4214989996).
 
 ## P3 — Opportunistic cleanup
+
+- **[P3] `@fgv/ts-extras-mcp` `egress.test`: a resumed-GET over-cap test flaked once under full-suite load.** "an answer over the cap on a resumed (Last-Event-ID) GET fails its request promptly as egress-blocked too-large" failed once in a repo-wide `rush test` on the `model-alias-refresh` branch (2026-11-08), passed on retry; the branch does not touch the package. Same file and timing class as the known slow-tool flake.
+
+  **Trigger**: a second failure, or the next stream touching `egress.test.ts`.
+
+- **[P3] `resolveModel` throws on a `ModelSpec` outside its type instead of failing.**
+  `resolveModel` (`libraries/ts-extras/src/packlets/ai-assist/model.ts`) recurses into whatever
+  value a spec key holds. A spec such as `{ base: undefined }` — reachable from untyped JSON or a
+  cast — reaches `key in undefined` and throws a `TypeError`. `resolveProviderModel` calls it
+  without a guard, so `resolveProviderModel`, the completion and streaming calls that resolve
+  through it, and `resolveMaxOutputTokens` all throw rather than return a `Failure`.
+
+  **Trigger**: any path that builds a `ModelSpec` from unvalidated input, or the next change to
+  `resolveModel`.
+
+  **Scope sketch**: either validate the spec with a converter at the boundary that accepts it, or
+  make `resolveProviderModel` wrap the walk in `captureResult` and fail with the provider id and
+  the offending key.
+
+  **Not a P2**: well-typed callers cannot construct such a spec; it needs a cast or untyped input.
+
+  **Reference**: review round 2 of `model-max-output-tokens`
+  (`.ai/tasks/completed/2026-11/model-max-output-tokens/state.md`, amendment A4).
 
 - **[P3] `executeClientToolTurn`'s `onBeforeToolExecute` gate never receives the turn's signal.**
   The gate is called as `onBeforeToolExecute(tool, args)` in `dispatchCall`

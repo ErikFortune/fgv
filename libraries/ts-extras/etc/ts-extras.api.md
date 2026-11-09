@@ -4,7 +4,9 @@
 
 ```ts
 
+import { AsyncDeferredResult } from '@fgv/ts-utils';
 import { AsyncDetailedResult } from '@fgv/ts-utils';
+import { AsyncResult } from '@fgv/ts-utils';
 import { Brand } from '@fgv/ts-utils';
 import { Conversion } from '@fgv/ts-utils';
 import { Converter } from '@fgv/ts-utils';
@@ -95,6 +97,7 @@ declare namespace AiAssist {
         IAiEmbeddingUsage,
         IAiEmbeddingResult,
         IAiImageModelCapability,
+        IAiMaxOutputTokensCapability,
         IAiProviderDescriptor,
         IAiAssistProviderConfig,
         IAiAssistSettings,
@@ -146,6 +149,7 @@ declare namespace AiAssist {
         isResponsesOnlyModel,
         isAdaptiveThinkingModel,
         isThinkingRequiredModel,
+        rejectsSamplingParams,
         usesMaxCompletionTokensField,
         toDataUrl,
         IThinkingConfig,
@@ -163,6 +167,9 @@ declare namespace AiAssist {
         OpenAiThinkingModelNames,
         GeminiThinkingModelNames,
         XAiThinkingModelNames,
+        AnthropicThinkingOffType,
+        IAnthropicThinkingOffRule,
+        resolveAnthropicThinkingOffType,
         IResolvedImageOptions,
         resolveImageOptions,
         validateResolvedOptions,
@@ -175,6 +182,7 @@ declare namespace AiAssist {
         supportsEmbedding,
         resolveStructuredOutputCapability,
         supportsStructuredOutput,
+        resolveMaxOutputTokens,
         DEFAULT_MODEL_CAPABILITY_CONFIG,
         callProviderCompletion,
         callProxiedCompletion,
@@ -410,7 +418,10 @@ const ANTHROPIC_STRUCTURED_OUTPUT_TOOL_NAME: string;
 function anthropicEffortToBudgetTokens(effort: NonNullable<IAnthropicThinkingConfig['effort']>): number;
 
 // @public
-type AnthropicThinkingModelNames = 'claude-sonnet-4-5' | 'claude-sonnet-4-6' | 'claude-sonnet-5' | 'claude-opus-4-6' | 'claude-opus-4-7' | 'claude-opus-4-8' | 'claude-opus-5' | 'claude-opus-5-5' | 'claude-fable-5' | 'claude-fable-5-1' | 'claude-mythos-5-1';
+type AnthropicThinkingModelNames = 'claude-sonnet-4-5' | 'claude-sonnet-4-6' | 'claude-sonnet-5' | 'claude-sonnet-5-5' | 'claude-haiku-5-5' | 'claude-opus-4-6' | 'claude-opus-4-7' | 'claude-opus-4-8' | 'claude-opus-5' | 'claude-opus-5-5' | 'claude-fable-5' | 'claude-fable-5-1' | 'claude-mythos-5-1';
+
+// @public
+type AnthropicThinkingOffType = 'disabled' | 'between_tools';
 
 // @public
 const ARGON2ID_OWASP_MIN: IArgon2idParams;
@@ -431,7 +442,12 @@ declare namespace AsyncControl {
         raceStopConditions,
         ScheduleTimer,
         StopDetail,
-        StopReason
+        StopReason,
+        IWriteGateOptions,
+        IWriteGatePause,
+        WriteGate,
+        WriteGatePauseFailure,
+        WriteGateRefusal
     }
 }
 export { AsyncControl }
@@ -1069,7 +1085,7 @@ const GCM_AUTH_TAG_SIZE: number;
 const GCM_IV_SIZE: number;
 
 // @public
-type GeminiFlashImageModelNames = 'gemini-3.1-flash-image';
+type GeminiFlashImageModelNames = 'gemini-3.1-flash-image' | 'gemini-nano-banana-2.1';
 
 // @public
 type GeminiThinkingModelNames = 'gemini-3.1-pro-preview' | 'gemini-3.8-flash' | 'gemini-3.5-flash' | 'gemini-3.5-flash-lite' | 'gemini-3.1-flash-lite';
@@ -1415,6 +1431,12 @@ interface IAiImageModelCapability {
 }
 
 // @public
+interface IAiMaxOutputTokensCapability {
+    readonly maxOutputTokens: number;
+    readonly modelId: string;
+}
+
+// @public
 interface IAiModelCapabilityConfig {
     readonly global?: ReadonlyArray<IAiModelCapabilityRule>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -1455,6 +1477,9 @@ interface IAiProviderDescriptor {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "resolveProviderModel"
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "ModelSpecKey"
     readonly aliases?: IModelAliasMap;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly anthropicThinkingOffTypes?: ReadonlyArray<IAnthropicThinkingOffRule>;
     readonly apiFormat: AiApiFormat;
     readonly baseUrl: string;
     readonly buttonLabel: string;
@@ -1468,9 +1493,17 @@ interface IAiProviderDescriptor {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "ModelSpecKey"
     readonly imageGeneration?: ReadonlyArray<IAiImageModelCapability>;
     readonly label: string;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly maxOutputTokens?: ReadonlyArray<IAiMaxOutputTokensCapability>;
     readonly needsSecret: boolean;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly responsesOnlyModelPrefixes?: ReadonlyArray<string>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
+    readonly samplingParamsAcceptedTemperature?: number;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly samplingParamsRejectedModelPrefixes?: ReadonlyArray<string>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly serverToolsExclusiveWithClientTools?: ReadonlyArray<AiServerToolType>;
@@ -1478,6 +1511,7 @@ interface IAiProviderDescriptor {
     readonly streamingCorsRestricted: boolean;
     readonly structuredOutput?: ReadonlyArray<IAiStructuredOutputCapability>;
     readonly supportedTools: ReadonlyArray<AiServerToolType>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IThinkingConfig"
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IThinkingConfig"
@@ -1609,6 +1643,14 @@ interface IAiWebSearchToolConfig {
 interface IAnthropicThinkingConfig {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly effort?: 'low' | 'medium' | 'high' | 'max';
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
+//
+// @public
+interface IAnthropicThinkingOffRule {
+    readonly modelPrefix: string;
+    readonly type: AnthropicThinkingOffType;
 }
 
 // @public
@@ -2537,6 +2579,9 @@ interface IResolvedImageOptions {
 interface IResolvedThinkingConfig {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly anthropicEffort?: IAnthropicThinkingConfig['effort'];
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IResolvedThinkingConfig"
+    readonly anthropicThinkingDisabled?: true;
     readonly geminiThinkingBudget?: number;
     readonly openAiEffort?: IOpenAiThinkingConfig['effort'];
     readonly otherParams?: JsonObject;
@@ -2696,6 +2741,8 @@ function isValidMultibaseSpkiPublicKey(value: unknown): value is MultibaseSpkiPu
 
 // @public
 interface IThinkingConfig {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IThinkingConfig"
@@ -2741,6 +2788,16 @@ interface IWrappedBytes {
     readonly ciphertext: string;
     readonly ephemeralPublicKey: JsonWebKey;
     readonly nonce: string;
+}
+
+// @public
+interface IWriteGateOptions {
+    readonly schedule?: ScheduleTimer;
+}
+
+// @public
+interface IWriteGatePause {
+    resume(): void;
 }
 
 // @public
@@ -3203,7 +3260,7 @@ const nodeCryptoProvider: NodeCryptoProvider;
 const nodeHostResolver: HostResolver;
 
 // @public
-type OpenAiThinkingModelNames = 'o3' | 'o4-mini' | 'gpt-5' | 'gpt-5.1' | 'gpt-5.2' | 'gpt-5.4-mini' | 'gpt-5.5' | 'gpt-5.5-pro' | 'gpt-5.6-sol' | 'gpt-5.6-terra' | 'gpt-5.6-luna' | 'gpt-5-pro' | 'gpt-6-astra' | 'gpt-6-sol' | 'gpt-6-luna';
+type OpenAiThinkingModelNames = 'o3' | 'o4-mini' | 'gpt-5' | 'gpt-5.1' | 'gpt-5.2' | 'gpt-5.4-mini' | 'gpt-5.5' | 'gpt-5.5-pro' | 'gpt-5.6-sol' | 'gpt-5.6-terra' | 'gpt-5.6-luna' | 'gpt-5-pro' | 'gpt-6-astra' | 'gpt-6-sol' | 'gpt-6.1-sol' | 'gpt-6-luna';
 
 // @beta
 function parseCsvString(body: string, options?: CsvOptions): Result<unknown>;
@@ -3313,6 +3370,17 @@ export { RecordJar }
 // @public
 const REDIRECT_STATUSES: ReadonlyArray<number>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
+//
+// @public
+function rejectsSamplingParams(descriptor: IAiProviderDescriptor, modelId: string): boolean;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
+//
+// @public
+function resolveAnthropicThinkingOffType(descriptor: IAiProviderDescriptor, modelId: string): AnthropicThinkingOffType;
+
 // @public
 function resolveEffectiveTools(descriptor: IAiProviderDescriptor, settingsTools?: ReadonlyArray<IAiToolEnablement>, perCallTools?: ReadonlyArray<AiServerToolConfig>): ReadonlyArray<AiServerToolConfig>;
 
@@ -3328,6 +3396,12 @@ function resolveImageCapability(descriptor: IAiProviderDescriptor, modelId: stri
 
 // @public
 function resolveImageOptions(modelId: string, capability: IAiImageModelCapability, options: IAiImageGenerationOptions | undefined): IResolvedImageOptions;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "resolveProviderModel"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
+//
+// @public
+function resolveMaxOutputTokens(descriptor: IAiProviderDescriptor, modelOverride?: ModelSpec, context?: ModelSpecKey): number | undefined;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "ModelSpec"
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "MODEL_SPEC_BASE_KEY"
@@ -3582,6 +3656,26 @@ function validateCacheBreakpoints(systemLength: number, cache: IAiCacheRequest, 
 
 // @public
 function validateResolvedOptions(modelId: string, capability: IAiImageModelCapability, resolved: IResolvedImageOptions): Result<IResolvedImageOptions>;
+
+// @public
+class WriteGate {
+    check(): Result<true>;
+    static create(options?: IWriteGateOptions): Result<WriteGate>;
+    guard<T>(write: AsyncDeferredResult<T>): AsyncResult<T>;
+    guardDetailed<T, TD>(write: () => Promise<DetailedResult<T, TD>>): AsyncDetailedResult<T, TD | WriteGateRefusal>;
+    get inFlight(): number;
+    lower(): void;
+    pause(timeoutMs: number): AsyncDetailedResult<IWriteGatePause, WriteGatePauseFailure>;
+    get quiet(): boolean;
+    raise(reason: string): void;
+    get waiting(): number;
+}
+
+// @public
+type WriteGatePauseFailure = 'timeout' | 'stalled' | 'invalid';
+
+// @public
+type WriteGateRefusal = 'raised' | 'threw';
 
 // @public
 type XAiThinkingModelNames = 'grok-3-mini' | 'grok-4.3' | 'grok-4' | 'grok-4.5' | 'grok-4.6' | 'grok-4.7';

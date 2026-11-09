@@ -4,7 +4,16 @@
  */
 
 import { Converters as JsonConverters, JsonObject, JsonValue } from '@fgv/ts-json-base';
-import { Hash, Result, captureAsyncResult, captureResult } from '@fgv/ts-utils';
+import { AsyncControl } from '@fgv/ts-extras';
+import {
+  Converter,
+  Hash,
+  Result,
+  captureAsyncResult,
+  captureResult,
+  fail,
+  failWithDetail
+} from '@fgv/ts-utils';
 import { TaskContextRenderer } from '../context';
 import { TaskConverters, instant } from '../converters';
 import { TaskAudienceResolver } from '../implementations';
@@ -16,13 +25,13 @@ import {
   ITaskCommitRecord,
   DeliveryId,
   ITaskEnvironment,
+  ITaskFailure,
   ITaskWriteGuard,
   Instant,
   OperationId,
   TaskId,
   TaskResult,
-  TaskRevision,
-  TaskScheduleTimer
+  TaskRevision
 } from '../types';
 import { ITaskRepository, ITaskRepositoryWriter } from '../storage';
 import { IResolvedDeliveryDefaults } from './delivery';
@@ -33,7 +42,7 @@ import { WriterQueue } from './writerQueue';
 const normalizer: Hash.Crc32Normalizer = new Hash.Crc32Normalizer();
 
 /** The default timer: `setTimeout`, cancelled by `clearTimeout`. */
-const defaultSchedule: TaskScheduleTimer = (fn, ms) => {
+const defaultSchedule: AsyncControl.ScheduleTimer = (fn, ms) => {
   const handle = setTimeout(fn, ms);
   return () => clearTimeout(handle);
 };
@@ -102,32 +111,48 @@ export function receiptJson(receipt: ITaskMutationResult | IReassignmentResult):
  * Runs `write` through a host's write guard, keeping a classified result whatever the guard does.
  *
  * @remarks
- * The section is wrapped so the broker knows whether the guard ran it and what it returned:
- * - not run, and the guard refused without task detail (a gate typed over plain `Result`) —
+ * The section is wrapped so the broker knows whether the guard started it and how it settled:
+ * - not started, and the guard refused with a valid task failure as its detail — that failure;
+ * - not started, and the guard refused without one (a gate typed over plain `Result`) —
  *   `storage-unavailable`, retry `after-host-action`: nothing was written;
- * - not run, and the guard threw — `invalid`: nothing was written;
- * - run, and the guard then returned the section's own result, or any success — the section's result;
- * - run, and the guard then failed or threw — `storage-unavailable`, retry `reconcile-first`: the
- *   section may have committed, so its outcome is re-read before anything is retried;
+ * - not started, and the guard answered success or something that is not a `Result` — `invalid`:
+ *   there is no section result to report;
+ * - not started, and the guard threw — `invalid`: nothing was written;
+ * - started and fulfilled, and the guard then returned the section's own result, or any success —
+ *   the section's result;
+ * - started, and then the guard failed, threw or answered something that is not a `Result`, or the
+ *   section itself rejected — `storage-unavailable`, retry `reconcile-first`: the section may have
+ *   committed, so its outcome is re-read before anything is retried;
  * - a second call to the section — refused without running it, `invalid`.
  *
  * A section the guard started and did not await is awaited before the turn ends, so the writer is
  * never still held when the next section runs, and its outcome is classified as above. A section
- * the guard tries to start **after** it has returned is refused without running (`invalid`): it
- * would run outside the queue's turn.
+ * the guard tries to start **after the broker has observed its answer** is refused without running
+ * (`invalid`): it would run outside the queue's turn. Observing lags the answer's settlement by a
+ * few microtasks; a section started inside that window is awaited and classified as started.
  */
 async function _guarded<T>(
   guard: ITaskWriteGuard,
-  write: () => Promise<TaskResult<T>>
+  write: () => Promise<TaskResult<T>>,
+  failure: Converter<ITaskFailure>
 ): Promise<TaskResult<T>> {
-  const seen: { ran?: TaskResult<T>; running?: Promise<unknown>; calls: number; closed: boolean } = {
+  const seen: {
+    started: boolean;
+    ran?: TaskResult<T>;
+    running: Promise<unknown>;
+    calls: number;
+    closed: boolean;
+  } = {
+    started: false,
+    // Replaced by the section's own promise once the guard starts it.
+    running: Promise.resolve(),
     calls: 0,
     closed: false
   };
   const once = async (): Promise<TaskResult<T>> => {
     if (seen.closed) {
       return taskFailure<T>(
-        `broker: the write guard started the section after it had returned; it was not run`,
+        `broker: the write guard started the section after the broker had observed its answer; it was not run`,
         'invalid',
         'after-host-action'
       );
@@ -140,31 +165,52 @@ async function _guarded<T>(
         'after-host-action'
       );
     }
-    const running: Promise<TaskResult<T>> = write().then((result) => {
-      seen.ran = result;
-      return result;
-    });
+    // Marked before the section is called: a section that rejects may still have committed.
+    seen.started = true;
+    // Started inside an executor, so a repository whose `withWriter` throws synchronously becomes
+    // this promise's rejection — and its message — rather than an escape from `once`.
+    const running: Promise<TaskResult<T>> = new Promise<TaskResult<T>>((resolve) => resolve(write())).then(
+      (result) => {
+        seen.ran = result;
+        return result;
+      }
+    );
     seen.running = running;
     return running;
   };
-  const outcome: Result<TaskResult<T>> = await captureAsyncResult(() => guard.guard(once));
+  // The guard answers any PromiseLike; awaiting it inside an async function adopts it.
+  const outcome: Result<Result<T>> = await captureAsyncResult(async () => guard.guard(once));
   // From here on the turn is ending: a section started now would run outside it.
   seen.closed = true;
   // A section the guard started but did not wait for still holds the writer: wait for it here.
-  if (seen.running !== undefined) {
-    await captureAsyncResult(() => seen.running!);
-  }
-  const written: TaskResult<T> | undefined = seen.ran;
-  if (written !== undefined) {
-    if (outcome.isSuccess() && (outcome.value === written || outcome.value.isSuccess())) {
+  const settled: Result<unknown> = await captureAsyncResult(() => seen.running);
+  // Whether the guard's answer is a success; a failure here means it threw or is not a Result.
+  const answered: Result<boolean> = outcome.onSuccess((value) => captureResult(() => value.isSuccess()));
+  if (seen.started) {
+    const written: TaskResult<T> | undefined = seen.ran;
+    if (
+      written !== undefined &&
+      answered.isSuccess() &&
+      (answered.value || outcome.orDefault() === written)
+    ) {
       return written;
     }
-    const why: string = outcome.isFailure()
+    const guardDid: string = outcome.isFailure()
       ? `threw: ${outcome.message}`
+      : answered.isFailure()
+      ? `answered something that is not a Result`
+      : answered.value
+      ? `answered success`
       : `failed: ${outcome.value.message}`;
+    const own: string =
+      written === undefined
+        ? `rejected: ${String(settled.message)}`
+        : written.isSuccess()
+        ? 'success'
+        : written.message;
     return taskFailure<T>(
-      `broker: the write guard ${why} after the section ran (its own outcome: ` +
-        `${written.isSuccess() ? 'success' : written.message}); re-read what it may have committed`,
+      `broker: the write guard ${guardDid} after the section ran (its own outcome: ${own}); ` +
+        `re-read what it may have committed`,
       'storage-unavailable',
       'reconcile-first'
     );
@@ -176,15 +222,34 @@ async function _guarded<T>(
       'after-host-action'
     );
   }
-  const result: TaskResult<T> = outcome.value;
-  // A gate typed over plain Result refuses without task detail: nothing was written.
-  return result.isFailure() && result.detail === undefined
-    ? taskFailure<T>(
+  if (answered.isFailure()) {
+    return taskFailure<T>(
+      `broker: the write guard answered something that is not a Result without running the section`,
+      'invalid',
+      'after-host-action'
+    );
+  }
+  const result: Result<T> = outcome.value;
+  if (result.isSuccess()) {
+    return taskFailure<T>(
+      `broker: the write guard answered success without running the section`,
+      'invalid',
+      'after-host-action'
+    );
+  }
+  // The section was never started, so nothing was written. A refusal keeps its classification only
+  // when it carries a valid task failure; a gate typed over plain Result refuses without one. The
+  // check is structural and the converter validates the detail, so a failure built by another copy
+  // of ts-utils is read the same way an `instanceof` check would miss.
+  const classified: Result<ITaskFailure> =
+    'detail' in result ? failure.convert(result.detail) : fail('no task detail');
+  return classified.isSuccess()
+    ? failWithDetail<T, ITaskFailure>(result.message, classified.value)
+    : taskFailure<T>(
         `broker: the write guard refused: ${result.message}`,
         'storage-unavailable',
         'after-host-action'
-      )
-    : result;
+      );
 }
 
 /**
@@ -214,7 +279,7 @@ export class BrokerCore {
   public readonly revalidatedStops: Set<string> = new Set<string>();
   private readonly _queue: WriterQueue = new WriterQueue();
   private readonly _writeGuard: ITaskWriteGuard | undefined;
-  private readonly _schedule: TaskScheduleTimer;
+  private readonly _schedule: AsyncControl.ScheduleTimer;
   /** One reconciliation pass per source at a time: the tail of each source's chain. */
   private readonly _sourcePasses: Map<string, Promise<unknown>> = new Map();
   private _views: number = 0;
@@ -227,7 +292,7 @@ export class BrokerCore {
     readonly renderer: TaskContextRenderer;
     readonly sources?: ReadonlyMap<string, ITaskSource>;
     readonly writeGuard?: ITaskWriteGuard;
-    readonly schedule?: TaskScheduleTimer;
+    readonly schedule?: AsyncControl.ScheduleTimer;
   }) {
     const repository: ITaskRepository = params.repository;
     this.repository = repository;
@@ -295,7 +360,9 @@ export class BrokerCore {
     const guard: ITaskWriteGuard | undefined = this._writeGuard;
     // Inside the queue's turn and around the writer: every gated section, whatever it writes, passes
     // the host's gate, and a section the gate holds holds the queue behind it.
-    return this._queue.run(() => (guard === undefined ? write() : _guarded(guard, write)));
+    return this._queue.run(() =>
+      guard === undefined ? write() : _guarded(guard, write, this.converters.failures.failure)
+    );
   }
 
   /**

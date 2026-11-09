@@ -280,8 +280,13 @@ describe('isAdaptiveThinkingModel', () => {
 
   test('the real anthropic descriptor keeps legacy 4.x models on the legacy shape', () => {
     expect(AiAssist.isAdaptiveThinkingModel(descriptor, 'claude-sonnet-4-6')).toBe(false);
-    expect(AiAssist.isAdaptiveThinkingModel(descriptor, 'claude-opus-4-8')).toBe(false);
+    expect(AiAssist.isAdaptiveThinkingModel(descriptor, 'claude-opus-4-6')).toBe(false);
     expect(AiAssist.isAdaptiveThinkingModel(descriptor, 'claude-haiku-4-5-20251001')).toBe(false);
+  });
+
+  test('claude-opus-4-8 and claude-opus-4-7 take the adaptive shape (a budget 400s on both)', () => {
+    expect(AiAssist.isAdaptiveThinkingModel(descriptor, 'claude-opus-4-8')).toBe(true);
+    expect(AiAssist.isAdaptiveThinkingModel(descriptor, 'claude-opus-4-7')).toBe(true);
   });
 
   test('a dated Claude 5 snapshot id (dash-bounded) matches', () => {

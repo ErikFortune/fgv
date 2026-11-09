@@ -160,7 +160,7 @@ function _caseVariantDuplicates(
  * const transport = createHttpTransport({ url, fetch }).orThrow();
  * ```
  * Without it, requests go out through
- * `globalThis.fetch` with no address guard and default redirect following. See
+ * `globalThis.fetch` with no address guard, and redirects follow the SDK's same-origin default. See
  * {@link IMcpHttpTransportParams.fetch}.
  *
  * @param params - The endpoint URL, optional static headers, and the optional `fetch`.

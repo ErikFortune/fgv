@@ -24,7 +24,7 @@ fgv-stable token (`flash`, `pro`, `flash-image`, `embedding`, …) that outlives
 ```typescript
 // Registered today (each provider descriptor's `aliases` map):
 '@google-gemini:flash'  ->  'gemini-3.8-flash'   // fgv alias → concrete id
-'@openai:flagship'      ->  'gpt-6-sol'
+'@openai:flagship'      ->  'gpt-6.1-sol'
 '@anthropic:opus'       ->  'claude-opus-5-5'
 
 // When an RHS is itself a provider-native undated alias rather than a dated snapshot, resolution
@@ -147,9 +147,62 @@ there is no 2-D selection and no competition between the axes.
 
 | slot | OpenAI | Anthropic | Gemini |
 |---|---|---|---|
-| `base` | `@openai:mini` → `gpt-6-luna` | `@anthropic:sonnet` → `claude-sonnet-5` | `@google-gemini:flash` → `gemini-3.8-flash` |
-| `advanced` | `@openai:flagship` → `gpt-6-sol` | `@anthropic:opus` → `claude-opus-5-5` | `@google-gemini:pro` → `gemini-3.1-pro-preview` |
+| `base` | `@openai:mini` → `gpt-6-luna` | `@anthropic:sonnet` → `claude-sonnet-5-5` | `@google-gemini:flash` → `gemini-3.8-flash` |
+| `advanced` | `@openai:flagship` → `gpt-6.1-sol` | `@anthropic:opus` → `claude-opus-5-5` | `@google-gemini:pro` → `gemini-3.1-pro-preview` |
 | `frontier` | `@openai:pro` → `gpt-6-astra` | *(unset → advanced/opus)* | *(unset → advanced/pro)* |
+
+**What moving to these targets changed for callers (2026-11).** Anthropic's base tier
+(`claude-sonnet-5-5`) sends structured output as `output_config.format` rather than a forced tool,
+returns text written between tool calls as progress-update `thinking` blocks, ties its thinking blocks
+to the model and conversation (edit history and a replayed block can 400), and turns thinking off
+only with its own value, `thinking: { type: 'between_tools' }` (see below). `@anthropic:haiku` (`claude-haiku-5-5`) thinks by default and counts the same text as
+~30% more tokens than Haiku 4.5. The OpenAI advanced tier (`gpt-6.1-sol`) has no `'none'` effort.
+
+**Per-model rules ai-assist now enforces.**
+
+- A generic `thinking: { effort: 'none' }` means thinking off on every Anthropic model: it sends
+  `thinking: { type: 'disabled' }` to an adaptive model that accepts it (`claude-sonnet-5`,
+  `claude-opus-5`, `claude-haiku-5-5`), no `thinking` field to an older model (already off), and
+  `'low'` — or a refusal under `onUnsupported: 'fail'` — to a model that cannot turn thinking off
+  (`claude-opus-5-5`, Fable and Mythos 5.x, `claude-mythos-preview`; declared in
+  `thinkingRequiredModelPrefixes`, alongside `gpt-6-astra`, `gpt-6.1-sol`, `gemini-3.1-pro-preview`,
+  `gemini-3.8-flash` and `gemini-3.5-flash-lite`).
+- **`claude-sonnet-5-5` (`@anthropic:sonnet`, the base tier) turns thinking off with `between_tools`.**
+  It rejects `disabled`, and its own off value is declared as data:
+  `IAiProviderDescriptor.anthropicThinkingOffTypes` (`[{ modelPrefix: 'claude-sonnet-5-5', type:
+  'between_tools' }]`, read through `AiAssist.resolveAnthropicThinkingOffType`). So a `'none'` there
+  now sends `thinking: { type: 'between_tools' }` on the completion, streaming and client-tool paths
+  (and a caller-built `anthropicThinkingDisabled` flag is sent the same way rather than refused). This
+  is the second change to the base tier's `'none'` in a row — it was degraded to `'low'` — and it is
+  real thinking-off: the model does not think before it responds, **but the short updates it writes
+  between tool calls still come back as `thinking` blocks**. A generic `'none'` never sends an
+  effort beside it; an explicit `'other'` block or caller-built `otherParams` can, and Anthropic
+  rejects `between_tools` (and `disabled`) above `high` (`between_tools` 400s at `xhigh` and `max`).
+- **`gemini-3.8-flash` and `gemini-3.5-flash-lite` cannot be turned off by a budget.**
+  `gemini-3.5-flash-lite` rejects `thinkingBudget: 0` (`400 INVALID_ARGUMENT`), and
+  `gemini-3.8-flash` accepts it but lists no level below `low`, so both are on
+  `thinkingRequiredModelPrefixes`: `'none'` on `@google-gemini:flash` (the base tier) and
+  `@google-gemini:flash-lite` is now sent as `'low'` (budget 1024), or refused under
+  `onUnsupported: 'fail'`. That changes thinking cost and latency on those aliases; the direction
+  is unknown, since `gemini-3.8-flash` may have been ignoring budget 0 and thinking at its default.
+  `gemini-3.6-flash` and `gemini-3.5-flash` stay unlisted: neither is an alias target, and there is
+  no evidence either rejects or ignores budget 0. The entries are dash-bounded, so they deliberately
+  also match future variants of a listed id (e.g. a `gemini-3.8-flash-lite`). This is interim:
+  Gemini 3.x is controlled by `thinkingLevel`, which ai-assist does not send yet; once it does,
+  `'none'` maps to `minimal` where a model lists it.
+- A `temperature` aimed at a model in `samplingParamsRejectedModelPrefixes` is refused before the wire
+  on the completion, streaming and client-tool paths. On Anthropic (every Claude 5.x model,
+  `claude-mythos-preview`, `claude-opus-4-8`, `claude-opus-4-7`) only a non-default value is refused:
+  `samplingParamsAcceptedTemperature: 1` lets Anthropic's default through, with or without thinking,
+  as the provider does on the pinned API version. On OpenAI (`gpt-6-astra`, `gpt-6.1-sol`) every value is refused. `AiAssist.rejectsSamplingParams` answers the
+  question for a concrete id. Not guarded, because it depends on the effort: `gpt-6-luna` (`mini`,
+  `nano`) and `gpt-6-sol` reject `temperature` unless the call sets effort `'none'`.
+
+Non-tier aliases, reachable through `modelOverride` only: `@openai:nano` → `gpt-6-luna` (the same
+model as `base`: OpenAI names it as the replacement for the deprecated `gpt-5.4-nano`, and GPT-6 has
+nothing smaller), `@anthropic:haiku` → `claude-haiku-5-5`, `@anthropic:fable` → `claude-fable-5-1`,
+`@google-gemini:flash-lite` → `gemini-3.5-flash-lite`. Groq and Mistral carry no aliases; their
+`defaultModel`s are `openai/gpt-oss-120b` and `{ base: 'mistral-large-4', embedding: 'mistral-embed' }`.
 
 ### Maintenance loop — one map edit + a testbed run
 
@@ -181,7 +234,10 @@ the new ids: a successor can change what a declared mechanism does. The 2026-09 
 `@anthropic:opus` at `claude-opus-5` for exactly this reason — `claude-opus-5-5` rejects the forced
 `tool_choice` that `anthropic-tool-forced` structured output is built on. The rotation shipped only
 once a non-forcing format (`anthropic-output-format`) was declared for it by a longer `modelPrefix`
-than the `''` catch-all. A catch-all is a claim about **every** future id.
+than the `''` catch-all. A catch-all is a claim about **every** future id. The 2026-11 rotation is the
+same lesson the other way round: `claude-sonnet-5-5` rejects forcing and needed its own entry, while
+`claude-haiku-5-5` accepts forcing and stays on the catch-all but needed an
+`adaptiveThinkingModelPrefixes` entry, because it rejects the budget thinking shape.
 
 ### Gemini defaults (first migrated provider)
 
@@ -191,11 +247,11 @@ than the `''` catch-all. A catch-all is a claim about **every** future id.
 |---|---|---|
 | `@google-gemini:flash` | `gemini-3.8-flash` | `base` |
 | `@google-gemini:pro` | `gemini-3.1-pro-preview` | `advanced` (also the `frontier` cascade target) |
-| `@google-gemini:flash-image` | `gemini-3.1-flash-image` | `image` |
+| `@google-gemini:flash-image` | `gemini-nano-banana-2.1` | `image` |
 | `@google-gemini:embedding` | `gemini-embedding-001` | `embedding` |
 | `@google-gemini:flash-lite` | `gemini-3.5-flash-lite` | non-tier role (`modelOverride` only) |
 
-The per-role version split (flash at 3.8, flash-lite at 3.5, pro and flash-image at 3.1) follows Google's models page —
+The per-role version split (flash at 3.8, flash-lite at 3.5, pro at 3.1, flash-image on the Nano Banana 2.1 line) follows Google's models page —
 consumers reference the role alias and never see these numbers. OpenAI and Anthropic have since adopted
 the scheme with the same tier vocabulary (see the cross-provider tier table above). Note the `pro` role
 serves both the `advanced` slot and (via the cascade) `frontier`, which is exactly why alias roles are

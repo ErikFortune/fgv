@@ -187,7 +187,10 @@ const cliImpl: ICliScenarioImpl = {
 
     // Construct the resolved thinking config directly (IResolvedThinkingConfig is the output
     // of mergeThinkingConfig; we bypass the full IThinkingConfig pipeline here for simplicity).
-    // anthropicEffort: 'low' maps to the lowest thinking budget — sufficient for the scenario.
+    // anthropicEffort: 'low' is the lowest effort. On an adaptive-thinking model (the Claude 5
+    // family, which @anthropic:sonnet resolves to) it is sent as `thinking: { type: 'adaptive' }`
+    // plus `output_config.effort: 'low'`, with no token budget; only an older model converts it to
+    // the lowest `budget_tokens`. Either way, sufficient for the scenario.
     const resolvedThinking: AiAssist.IResolvedThinkingConfig = { anthropicEffort: 'low' };
 
     // Server tool: web_search.

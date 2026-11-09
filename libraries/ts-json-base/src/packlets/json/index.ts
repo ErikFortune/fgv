@@ -20,4 +20,5 @@
  * SOFTWARE.
  */
 
+export * from './activePath';
 export * from './common';

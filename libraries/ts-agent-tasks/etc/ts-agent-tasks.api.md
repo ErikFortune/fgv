@@ -5,6 +5,7 @@
 ```ts
 
 import { AiAssist } from '@fgv/ts-extras';
+import { AsyncControl } from '@fgv/ts-extras';
 import { Brand } from '@fgv/ts-utils';
 import { Converter } from '@fgv/ts-utils';
 import { DetailedResult } from '@fgv/ts-utils';
@@ -1603,7 +1604,7 @@ export interface ITaskBrokerCreateParams {
     // (undocumented)
     readonly environment: ITaskEnvironment;
     readonly repository: ITaskRepository;
-    readonly schedule?: TaskScheduleTimer;
+    readonly schedule?: AsyncControl.ScheduleTimer;
     readonly sources?: ReadonlyArray<ITaskSource>;
     readonly writeGuard?: ITaskWriteGuard;
 }
@@ -2928,7 +2929,7 @@ export interface ITaskUpdate {
 // @public
 export interface ITaskWriteGuard {
     // (undocumented)
-    guard<T>(write: () => Promise<TaskResult<T>>): Promise<TaskResult<T>>;
+    guard<T>(write: () => Promise<TaskResult<T>>): PromiseLike<Result<T>>;
 }
 
 // @public
@@ -3549,9 +3550,6 @@ export type TaskRevision = Brand<number, 'TaskRevision'>;
 
 // @public
 export const taskRevision: Converter<TaskRevision>;
-
-// @public
-export type TaskScheduleTimer = (fn: () => void, ms: number) => () => void;
 
 // @internal
 export function _taskScopeKey(scope: ITaskScope): string;

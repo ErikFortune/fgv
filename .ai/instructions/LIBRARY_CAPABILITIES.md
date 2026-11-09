@@ -66,6 +66,7 @@ detail. `· pkg` names the owning package.*
 - **Error handling / fallible function?** → `Result<T>` · `ts-utils`
 - **Validating untyped JSON / config input?** → `Converters.object` · `ts-utils`
 - **Validating an existing class instance?** → `Validators` · `ts-utils`
+- **Putting an arbitrary value into a failure message?** → `formatValueForMessage`; never `JSON.stringify`, which throws on a cycle · `ts-utils`
 - **Map/collection with validation?** → `ResultMap` · `ts-utils`
 - **Constrain a string to one line — no breaks or control chars — where it will be framed?** → `singleLine`; a shape, NOT safety; closed domain → `enumeratedValue` · `ts-utils`
 - **Need a bounded most-recent-N ring of records with monotonic `seq` cursor paging…?** → `RetainingRingBuffer` · `ts-utils`
@@ -109,6 +110,7 @@ detail. `· pkg` names the owning package.*
 - **Need the provider to constrain its output, not just be asked to?** → `structuredOutput` · `ts-extras`
 - **Running a tool-use conversation with harness-side client tools?** → `executeClientToolTurn` `JsonSchema` · `ts-extras`
 - **Multi-round client-tool loop with a round cap, deadline and abort — or any async work bounded that way?** → `runClientToolLoop` `raceStopConditions` · `ts-extras`
+- **Stopping, or briefly holding still, every write a host makes (restore, snapshot, shutdown)?** → `WriteGate` `guard` `pause` · `ts-extras`
 - **Making an MCP server's tools callable from an ai-assist tool-use conversation?** → `executeClientToolTurn` `JsonSchema` `fromJson` `adaptMcpTools` · `ts-extras-mcp`
 - **Diagnosing an OpenAI/xAI Responses stream that completes empty?** → `executeClientToolTurn` · `ts-extras`
 - **Reading prompt-cache token counts off a completion (reads/writes, normalized)?** → `IAiCompletionUsage` `AiCacheReportingLevel` · `ts-extras`
@@ -121,6 +123,7 @@ detail. `· pkg` names the owning package.*
 - **Generating images from an LLM provider?** → `size` `quality` · `ts-extras`
 - **Declaring image generation capability on a provider?** → `IAiProviderDescriptor` `format` · `ts-extras`
 - **Looking up a model's image/embedding capability by id?** → `resolveImageCapability` · `ts-extras`
+- **Which `maxTokens` will a model accept?** → `resolveMaxOutputTokens` · `ts-extras`
 - **Enabling extended thinking / reasoning on LLM completions?** → `callProviderCompletion` `callProviderCompletionStream` · `ts-extras`
 - **Managing a local Ollama sidecar** → `callProviderEmbedding` `JsonSchema` · `ts-extras-ollama`
 - **Running a HuggingFace model locally with a Result boundary?** → `loadPipeline` `classify` · `ts-extras-transformers`
@@ -207,17 +210,17 @@ markers.*
 
 <!-- BEGIN GENERATED: recent-additions -->
 
+- **2026-11-09** — ai-assist turns thinking off on Claude Sonnet 5.5 with its own between_tools value, declared per model, and stops claiming… ([#769](https://github.com/ErikFortune/fgv/pull/769)) · `ts-extras` `testbed`
+- **2026-11-08** — ai-assist aliases now reach current models — Claude Sonnet 5.5 and Haiku 5.5, GPT-6.1 Sol, Nano Banana 2.1, and new Groq and… ([#767](https://github.com/ErikFortune/fgv/pull/767)) · `ts-extras` `testbed`
+- **2026-11-08** — resolveMaxOutputTokens tells you the largest maxTokens the model a call will use accepts, from the same ModelSpec and tier, so a… ([#765](https://github.com/ErikFortune/fgv/pull/765)) · `ts-extras`
+- **2026-10-30** — A converter or validator handed a cyclic, BigInt or Proxy value now fails instead of throwing, via a new formatValueForMessage that… ([#764](https://github.com/ErikFortune/fgv/pull/764)) · `ts-utils` `ts-json-base` `ts-extras` `ts-bcp47`
+- **2026-10-27** — A filesystem FileTree can now be a sandbox: absolutePathPolicy 'confined' maps every path beneath the prefix, 'verified' refuses… ([#763](https://github.com/ErikFortune/fgv/pull/763)) · `ts-json-base`
 - **2026-10-26** — A crash mid-write no longer leaves a torn memory record that fails the next open: FileTreeMemoryStore writes atomically wherever… ([#756](https://github.com/ErikFortune/fgv/pull/756)) · `ts-agent-memory` `ts-json-base`
 - **2026-10-26** — A memory read-modify-write can no longer silently lose a concurrent update: FileTreeMemoryStore put and delete take an expected seq… ([#759](https://github.com/ErikFortune/fgv/pull/759)) · `ts-agent-memory`
 - **2026-10-26** — An agent-task host can open or initialize its repository in the strongest mode its root qualifies for, give its own principal a… ([#758](https://github.com/ErikFortune/fgv/pull/758)) · `ts-agent-tasks`
 - **2026-10-26** — ai-assist can run a whole client-tool conversation: runClientToolLoop caps rounds and honours a deadline and caller abort even when… ([#755](https://github.com/ErikFortune/fgv/pull/755)) · `ts-extras`
-- **2026-10-26** — ICryptoProvider now generates and imports non-extractable HMAC-SHA256 keys itself, and composite ids can split at the first or last… ([#754](https://github.com/ErikFortune/fgv/pull/754)) · `ts-extras` `ts-web-extras` `ts-utils`
-- **2026-10-26** — MCP tools that need task execution are skipped with a reason kind, tool listing can be bounded by pages and total time, and a… ([#757](https://github.com/ErikFortune/fgv/pull/757)) · `ts-extras-mcp` `ts-extras` `testbed`
-- **2026-10-26** — The sqlite-vec indexes now store which embedding model wrote their vectors in the same file, and refuse to mix models or serve a… ([#753](https://github.com/ErikFortune/fgv/pull/753)) · `ts-agent-memory-sqlite-vec`
-- **2026-10-20** — mapSuccess and mapSuccessAsync now hand every failure to a supplied aggregator, even when some results succeeded, so a lenient fold… ([#752](https://github.com/ErikFortune/fgv/pull/752)) · `ts-utils`
-- **2026-10-19** — A memory vault written under a non-identity scope encoding now reopens: FileTreeMemoryStore takes a scopeDecoding inverse and… ([#747](https://github.com/ErikFortune/fgv/pull/747)) · `ts-agent-memory`
-- **2026-10-19** — New @fgv/ts-extras-re2: re2PatternValidator lets fromJson and adaptMcpTools accept an untrusted JSON Schema pattern — linear-time… ([#746](https://github.com/ErikFortune/fgv/pull/746)) · `ts-extras-re2` `ts-json-base` `ts-extras-mcp`
+- **2026-10-26** — A host can stop every write it routes through one AsyncControl.WriteGate, or hold them still for a snapshot until the writes under… ([#761](https://github.com/ErikFortune/fgv/pull/761)) · `ts-extras` `ts-agent-tasks`
 
-*Showing the 10 most recent of 76. Per-package history is in each `CAPABILITIES.md`.*
+*Showing the 10 most recent of 82. Per-package history is in each `CAPABILITIES.md`.*
 
 <!-- END GENERATED: recent-additions -->

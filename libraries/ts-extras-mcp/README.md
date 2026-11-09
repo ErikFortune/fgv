@@ -110,7 +110,7 @@ aborting the turn cancels the in-flight MCP request (the server receives `notifi
 Every HTTP request a session makes — each `POST`, the standalone `GET` event stream, the `DELETE`
 on close, and with OAuth every discovery and token request — goes through the transport's `fetch`.
 **Give it a guarded fetch**: without one, requests use `globalThis.fetch`, with no address guard and
-default redirect following.
+only the SDK's default same-origin redirect policy.
 
 ```typescript
 import { SaferFetch } from '@fgv/ts-extras';

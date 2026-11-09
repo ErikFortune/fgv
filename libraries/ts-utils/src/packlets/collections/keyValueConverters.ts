@@ -23,6 +23,7 @@
 import {
   DetailedResult,
   failWithDetail,
+  formatValueForMessage,
   MessageAggregator,
   Result,
   succeed,
@@ -113,8 +114,7 @@ export class KeyValueConverters<TK extends string = string, TV = unknown> {
       const detail = key ? 'invalid-value' : 'invalid-key';
       return failWithDetail(`invalid entry: ${errors.toString()}`, detail);
     }
-    /* c8 ignore next 2 */
-    return failWithDetail(`malformed entry: "${JSON.stringify(entry)}"`, 'invalid-value');
+    return failWithDetail(`malformed entry: "${formatValueForMessage(entry)}"`, 'invalid-value');
   }
 
   /**

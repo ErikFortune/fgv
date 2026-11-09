@@ -35,6 +35,7 @@ export {
   type IAiEmbeddingUsage,
   type IAiEmbeddingResult,
   type IAiImageModelCapability,
+  type IAiMaxOutputTokensCapability,
   type IAiProviderDescriptor,
   type IAiAssistProviderConfig,
   type IAiAssistSettings,
@@ -86,6 +87,7 @@ export {
   isResponsesOnlyModel,
   isAdaptiveThinkingModel,
   isThinkingRequiredModel,
+  rejectsSamplingParams,
   usesMaxCompletionTokensField,
   toDataUrl,
   type IThinkingConfig,
@@ -106,6 +108,12 @@ export {
 } from './model';
 
 export {
+  type AnthropicThinkingOffType,
+  type IAnthropicThinkingOffRule,
+  resolveAnthropicThinkingOffType
+} from './anthropicThinkingOff';
+
+export {
   type IResolvedImageOptions,
   resolveImageOptions,
   validateResolvedOptions
@@ -121,6 +129,7 @@ export {
   supportsEmbedding,
   resolveStructuredOutputCapability,
   supportsStructuredOutput,
+  resolveMaxOutputTokens,
   DEFAULT_MODEL_CAPABILITY_CONFIG
 } from './registry';
 

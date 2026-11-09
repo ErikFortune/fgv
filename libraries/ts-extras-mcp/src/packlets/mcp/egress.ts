@@ -472,7 +472,8 @@ export class McpHttpEgress {
       headers.set(name, value);
     }
     // `globalThis.fetch` follows a redirect with every custom header, to any origin, so a request
-    // carrying static headers refuses redirects. A consumer `fetch` owns its own redirect policy.
+    // carrying static headers refuses redirects, including the same-origin ones the SDK would
+    // follow. A consumer `fetch` receives the SDK's `redirect: 'manual'` unchanged.
     return this._underlying === undefined ? { ...init, headers, redirect: 'error' } : { ...init, headers };
   }
 

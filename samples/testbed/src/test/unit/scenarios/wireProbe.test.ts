@@ -371,13 +371,13 @@ describe('wireProbe', () => {
 
     test('wireSchemaKeywords reads the tool or the structured-output table', () => {
       const anthropic = descriptor('anthropic');
-      expect(wireSchemaKeywords(wire('anthropic-tools'), anthropic, 'claude-sonnet-5')).toBe(
-        AiAssist.clientToolSchemaKeywords(anthropic, { model: 'claude-sonnet-5' })
+      expect(wireSchemaKeywords(wire('anthropic-tools'), anthropic, 'claude-haiku-5-5')).toBe(
+        AiAssist.clientToolSchemaKeywords(anthropic, { model: 'claude-haiku-5-5' })
       );
       // JSON outputs on the model ai-assist sends them to: numeric constraints fold there.
-      expect(wireSchemaKeywords(wire('anthropic-json-outputs'), anthropic, 'claude-opus-5-5')?.minimum).toBe(
-        'fold'
-      );
+      expect(
+        wireSchemaKeywords(wire('anthropic-json-outputs'), anthropic, 'claude-sonnet-5-5')?.minimum
+      ).toBe('fold');
     });
 
     test('buildRawRequest: Anthropic tools and JSON outputs', () => {
@@ -441,7 +441,7 @@ describe('wireProbe', () => {
         wire('gemini-tools')
       ]);
       expect(result).toSucceedAndSatisfy((report) => {
-        expect(report).toContain('--- Anthropic tools · anthropic · claude-sonnet-5 ---');
+        expect(report).toContain('--- Anthropic tools · anthropic · claude-haiku-5-5 ---');
         expect(report).toContain('SKIPPED: no google-gemini key');
         expect(report).toContain('UNSAFE (raw): none');
         expect(report).toContain('UNSAFE (end to end): none');

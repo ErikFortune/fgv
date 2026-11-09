@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { fail, isKeyOf, mapResults, Result, succeed, Success } from '../base';
+import { fail, formatValueForMessage, isKeyOf, mapResults, Result, succeed, Success } from '../base';
 import { CompositeIdSplitMode, Validator } from '../validation';
 import { BaseConverter, ConverterResultTypes } from './baseConverter';
 import { Converter } from './converter';
@@ -139,7 +139,7 @@ export function compositeIdFromString<TCOLLECTIONID extends string, TITEMID exte
   return new BaseConverter<ICompositeId<TCOLLECTIONID, TITEMID>, TC>(
     (from: unknown, __self?: Converter<ICompositeId<TCOLLECTIONID, TITEMID>, TC>, context?: TC) => {
       if (typeof from !== 'string') {
-        return fail(`${from}: invalid non-string composite ID.`);
+        return fail(`${formatValueForMessage(from, { style: 'string' })}: invalid non-string composite ID.`);
       }
       return splitCompositeIdString(from, separator, split).onSuccess(([collectionPart, itemPart]) =>
         collectionIdConverter.convert(collectionPart, context).onSuccess((collectionId) =>
@@ -395,12 +395,12 @@ export function tuple<T extends readonly Converter<unknown, TC>[], TC = unknown>
   return new BaseConverter<ConverterResultTypes<T>, TC>(
     (from: unknown, __self: Converter<ConverterResultTypes<T>, TC>, context?: TC) => {
       if (!Array.isArray(from)) {
-        return fail(`Not an array: ${JSON.stringify(from)}`);
+        return fail(`Not an array: ${formatValueForMessage(from)}`);
       }
 
       if (from.length !== converters.length) {
         return fail(
-          `Expected array of length ${converters.length}, got ${from.length}: ${JSON.stringify(from)}`
+          `Expected array of length ${converters.length}, got ${from.length}: ${formatValueForMessage(from)}`
         );
       }
 

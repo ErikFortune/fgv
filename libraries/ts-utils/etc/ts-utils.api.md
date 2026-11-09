@@ -896,6 +896,12 @@ class Crc32Normalizer extends HashingNormalizer {
 }
 
 // @public
+export const DEFAULT_FORMAT_VALUE_MAX_LENGTH: number;
+
+// @public
+export const DEFAULT_FORMAT_VALUE_STRING_MAX_LENGTH: number;
+
+// @public
 export const DEFAULT_RESULT_CONCURRENCY: number;
 
 // @public (undocumented)
@@ -1121,6 +1127,9 @@ export function firstSuccessAsync<T>(work: Iterable<AsyncDeferredResult<T>>, agg
 
 // @internal
 export function _formatShouldNotFailMessage(originalMessage: string, label: string | undefined, frame: _IShouldNotFailFrame): string;
+
+// @public
+export function formatValueForMessage(value: unknown, options?: IFormatValueForMessageOptions): string;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -1427,6 +1436,13 @@ interface IDetailLogger extends ILogger {
     warnWithDetail(message: string, detail: unknown): Success<string | undefined>;
 }
 
+// @public
+export interface IFormatValueForMessageOptions {
+    readonly indent?: number;
+    readonly maxLength?: number;
+    readonly style?: 'json' | 'string';
+}
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
@@ -1540,6 +1556,14 @@ interface IPartialCompositeId<TCOLLECTIONID extends string, TITEMID extends stri
     readonly itemId: TITEMID;
     // (undocumented)
     readonly separator?: string;
+}
+
+// Warning: (ae-internal-missing-underscore) The name "IRawJsonSupport" should be prefixed with an underscore because the declaration is marked as @internal
+//
+// @internal
+export interface IRawJsonSupport {
+    // (undocumented)
+    readonly isRawJSON?: (candidate: unknown) => boolean;
 }
 
 // @public
@@ -1796,6 +1820,9 @@ function isIterable<TE = unknown, TI extends Iterable<TE> = Iterable<TE>, TO = u
 
 // @public
 export function isKeyOf<T extends object>(key: string | number | symbol, item: T): key is keyof T;
+
+// @internal
+export function _isStackExhaustion(err: unknown): boolean;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -2413,6 +2440,9 @@ export interface PopulateObjectOptions<T> {
 // @public
 export function propagateWithDetail<T, TD>(result: Result<T>, detail: TD, successDetail?: TD): DetailedResult<T, TD>;
 
+// @internal
+export function _rawJsonText(value: object, json?: IRawJsonSupport): string | undefined;
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
@@ -2489,8 +2519,21 @@ type ReporterLogLevel = 'all' | 'detail' | 'info' | 'warning' | 'error' | 'silen
 // @public
 const reporterLogLevel: Converter<ReporterLogLevel, ReadonlyArray<ReporterLogLevel>>;
 
+// @internal
+export function _resolveResultBoundary(): {
+    depth: number;
+};
+
 // @public
 export type Result<T> = Success<T> | Failure<T>;
+
+// @internal
+export const _resultBoundary: {
+    depth: number;
+};
+
+// @internal
+export const _resultBoundaryKey: symbol;
 
 // @beta
 export type ResultDetailType<T> = T extends DetailedResult<unknown, infer TD> ? TD : never;

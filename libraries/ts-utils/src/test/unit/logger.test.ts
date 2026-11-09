@@ -201,7 +201,7 @@ describe('Logger class', () => {
 
         logger.info('Circular: ', obj);
 
-        expect(logger.logged).toEqual(['Circular: [object Object]']);
+        expect(logger.logged).toEqual(['Circular: {"name":"test","self":"[Circular]"}']);
       });
 
       test('should handle arrays in log messages', () => {
@@ -497,7 +497,7 @@ describe('Logger class', () => {
           expect(logger.logged[2]).toBe('123');
         });
 
-        test('should fall back to [object Object] when JSON.stringify throws (circular)', () => {
+        test('should render a circular object, marking the cycle', () => {
           const logger = new InMemoryLogger();
           const reporter = new LogReporter<unknown>({ logger });
           // create circular object
@@ -506,7 +506,7 @@ describe('Logger class', () => {
 
           reporter.reportSuccess('info', obj);
 
-          expect(logger.logged).toEqual(['[object Object]']);
+          expect(logger.logged).toEqual(['{"a":1,"self":"[Circular]"}']);
         });
 
         test('should use stringifyLogValue for object truncation with default formatter', () => {
@@ -596,7 +596,7 @@ describe('Logger class', () => {
 
           reporter.reportSuccess('info', objWithThrowingGetter);
 
-          expect(logger.logged).toEqual(['[object Object]']);
+          expect(logger.logged).toEqual(['{"normal":"value","problematic":[Unre...']);
         });
 
         test('should handle empty objects and arrays', () => {

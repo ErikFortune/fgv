@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras",
+      "comment": "async-control: add WriteGate, a cooperative gate that every guarded write consults. guard(write) and guardDetailed(write) run a write at once while the gate is open, hold it while any pause(timeoutMs) is held, and refuse it unrun ('raised') while raise(reason) is up; raising also wakes and refuses writes waiting on a pause. pause resolves to an idempotent IWriteGatePause handle once the writes under way drain. Otherwise it withdraws itself and fails 'timeout', or 'stalled' when writes were waiting on it, which is the shape of a guarded write calling guard on the same gate. Admission is synchronous and counted before the write is called. The inFlight slot is released on success, failure, throw and rejection. 'threw' means the write ran and did not answer a Result: it threw, rejected, or resolved to something that is not a Result. Writes start in the order they first called guard, including across a resume and when a pause holds a woken write again. The timer is the injectable ScheduleTimer, with raceStopConditions' range rule. No Node-only API.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-extras",
+  "email": "noreply@anthropic.com"
+}

@@ -27,6 +27,7 @@ import { fail, type Result, succeed } from '@fgv/ts-utils';
 import { type JsonObject } from '@fgv/ts-json-base';
 import type { IAiStructuredOutputCapability, StructuredOutputEnforcement } from './structuredOutputTypes';
 import type { IAiCompletionUsage } from './usageTypes';
+import type { IAnthropicThinkingOffRule } from './anthropicThinkingOff';
 import type {
   AiServerToolType,
   IAiStreamToolUseComplete,
@@ -535,7 +536,7 @@ export function isResponsesOnlyModel(descriptor: IAiProviderDescriptor, modelId:
  * (versioned/dated-snapshot ids, e.g. `'claude-sonnet-5'` matches `'claude-sonnet-5-20260115'`
  * but not `'claude-sonnet-50'`). @internal
  */
-function isExactOrDashBoundedPrefix(modelId: string, prefix: string): boolean {
+export function isExactOrDashBoundedPrefix(modelId: string, prefix: string): boolean {
   return modelId === prefix || modelId.startsWith(`${prefix}-`);
 }
 
@@ -581,6 +582,71 @@ export function isAdaptiveThinkingModel(descriptor: IAiProviderDescriptor, model
 export function isThinkingRequiredModel(descriptor: IAiProviderDescriptor, modelId: string): boolean {
   return (
     descriptor.thinkingRequiredModelPrefixes?.some((p) => isExactOrDashBoundedPrefix(modelId, p)) ?? false
+  );
+}
+
+/**
+ * Whether a concrete (already-resolved) model restricts a caller-supplied `temperature`, per the
+ * descriptor's {@link IAiProviderDescriptor.samplingParamsRejectedModelPrefixes}
+ * (exact-or-dash-bounded match).
+ *
+ * @remarks
+ * A listed model rejects every `temperature` except the descriptor's
+ * {@link IAiProviderDescriptor.samplingParamsAcceptedTemperature}, when one is declared. The
+ * completion (`callProviderCompletion`), streaming (`callProviderCompletionStream`) and
+ * client-tool (`executeClientToolTurn`) paths refuse any other value before anything is sent,
+ * rather than letting the provider return a 400.
+ *
+ * @param descriptor - The provider descriptor supplying the prefix list.
+ * @param modelId - The resolved concrete model id to test.
+ * @returns `true` when `modelId` restricts `temperature`.
+ * @public
+ */
+export function rejectsSamplingParams(descriptor: IAiProviderDescriptor, modelId: string): boolean {
+  return (
+    descriptor.samplingParamsRejectedModelPrefixes?.some((p) => isExactOrDashBoundedPrefix(modelId, p)) ??
+    false
+  );
+}
+
+/**
+ * The `temperature` a model accepts even with thinking on: the descriptor's
+ * {@link IAiProviderDescriptor.samplingParamsAcceptedTemperature} on a model that
+ * {@link AiAssist.rejectsSamplingParams | restricts temperature} (such models apply that rule with or
+ * without thinking), otherwise `undefined`.
+ * @internal
+ */
+export function temperatureAcceptedWithThinking(
+  descriptor: IAiProviderDescriptor,
+  modelId: string
+): number | undefined {
+  return rejectsSamplingParams(descriptor, modelId)
+    ? descriptor.samplingParamsAcceptedTemperature
+    : undefined;
+}
+
+/**
+ * Refuses a `temperature` aimed at a model that rejects sampling parameters (see
+ * {@link AiAssist.rejectsSamplingParams}). Succeeds with the temperature otherwise.
+ * @internal
+ */
+export function checkSamplingParams(
+  descriptor: IAiProviderDescriptor,
+  modelId: string,
+  temperature: number | undefined
+): Result<number | undefined> {
+  if (temperature === undefined || !rejectsSamplingParams(descriptor, modelId)) {
+    return succeed(temperature);
+  }
+  const accepted = descriptor.samplingParamsAcceptedTemperature;
+  if (accepted === undefined) {
+    return fail(`${modelId} does not accept temperature on any request: remove temperature`);
+  }
+  if (temperature === accepted) {
+    return succeed(temperature);
+  }
+  return fail(
+    `${modelId} does not accept a non-default temperature (${temperature}): remove temperature, or send ${accepted}`
   );
 }
 
@@ -952,6 +1018,25 @@ export interface IAiProviderDescriptor {
    */
   readonly structuredOutput?: ReadonlyArray<IAiStructuredOutputCapability>;
   /**
+   * Per-model maximum output tokens — the largest `maxTokens` the provider accepts for a
+   * completion on that model. Absent (or no matching entry) means the limit is unknown.
+   *
+   * @remarks
+   * Read through {@link AiAssist.resolveMaxOutputTokens}, which resolves the model the same way a
+   * completion call does (the `ModelSpec` walk, then aliases) before matching.
+   *
+   * Unlike `imageGeneration`, `embedding` and `structuredOutput`, entries are **not**
+   * prefix-matched. An output limit is a fact about one model, and the sibling a prefix would
+   * also catch (a `-mini` or `-nano` variant, a later point release) is exactly where the limit
+   * changes, and a dated snapshot is a separate model id. An entry applies only to the model whose
+   * resolved id equals its `modelId`. A wrong number is worse than none: a value above the real
+   * limit is refused by Anthropic and OpenAI, and a value below it silently truncates.
+   *
+   * Each value is the limit a request **as ai-assist sends it** gets: a higher limit available only
+   * behind an opt-in beta header or a batch endpoint that ai-assist does not use is not recorded.
+   */
+  readonly maxOutputTokens?: ReadonlyArray<IAiMaxOutputTokensCapability>;
+  /**
    * Concrete model ids (prefix-matched) that must be invoked via the OpenAI
    * Responses API rather than chat completions — e.g. `gpt-5.5-pro`. Non-OpenAI
    * `apiFormat`s ignore this.
@@ -992,7 +1077,10 @@ export interface IAiProviderDescriptor {
    * Concrete model ids (exact-or-dash-bounded-prefix-matched, like
    * {@link IAiProviderDescriptor.adaptiveThinkingModelPrefixes}) that cannot run with thinking off.
    * The provider rejects the off value ai-assist would send for a generic `effort: 'none'`:
-   * `reasoning_effort: 'none'` (OpenAI, xAI) or `thinkingBudget: 0` (Gemini).
+   * `reasoning_effort: 'none'` (OpenAI, xAI), `thinkingBudget: 0` (Gemini), or the model's off
+   * `thinking` value (Anthropic adaptive-thinking models; see
+   * {@link IAiProviderDescriptor.anthropicThinkingOffTypes}). A model that accepts the off value but
+   * ignores it, still thinking, is listed too, so that `'none'` never claims an effect it lacks.
    *
    * @remarks
    * A generic `'none'` on a listed model is handled by {@link IThinkingConfig.onUnsupported}. It
@@ -1002,6 +1090,37 @@ export interface IAiProviderDescriptor {
    * block's `effort` or `thinkingBudget`, or an `'other'` block's wire field). Empty or undefined means every model accepts `'none'`.
    */
   readonly thinkingRequiredModelPrefixes?: ReadonlyArray<string>;
+  /**
+   * Per-model Anthropic thinking-off values for adaptive-thinking models that turn thinking off
+   * with something other than `thinking: { type: 'disabled' }`, the default. Each rule's
+   * `modelPrefix` is matched exact-or-dash-bounded, like
+   * {@link IAiProviderDescriptor.adaptiveThinkingModelPrefixes}; the first match wins. Like those
+   * lists, a rule deliberately also matches future variants of its id (`claude-sonnet-5-5-<date>`).
+   *
+   * @remarks
+   * Read by the completion, streaming and client-tool Anthropic emit sites (via
+   * {@link AiAssist.resolveAnthropicThinkingOffType}) when a generic `effort: 'none'` (or a
+   * caller-built `anthropicThinkingDisabled` flag) turns thinking off on an adaptive model. Empty
+   * or undefined means every model uses `'disabled'`.
+   */
+  readonly anthropicThinkingOffTypes?: ReadonlyArray<IAnthropicThinkingOffRule>;
+  /**
+   * Concrete model ids (exact-or-dash-bounded-prefix-matched, like
+   * {@link IAiProviderDescriptor.thinkingRequiredModelPrefixes}) that reject a caller-supplied
+   * `temperature` with or without thinking — every value, or every value but
+   * {@link IAiProviderDescriptor.samplingParamsAcceptedTemperature} when the descriptor declares
+   * one. A call that sets a rejected `temperature` on a listed model is refused before the wire (see
+   * {@link AiAssist.rejectsSamplingParams}). Empty or undefined means every model accepts
+   * `temperature` (subject to the thinking-mode conflict).
+   */
+  readonly samplingParamsRejectedModelPrefixes?: ReadonlyArray<string>;
+  /**
+   * The one `temperature` that the models on
+   * {@link IAiProviderDescriptor.samplingParamsRejectedModelPrefixes} still accept — the provider's
+   * own default, which a provider that rejects only non-default values lets through. Undefined
+   * means those models accept no `temperature` at all.
+   */
+  readonly samplingParamsAcceptedTemperature?: number;
 }
 
 /**
@@ -1084,6 +1203,23 @@ export interface IAiEmbeddingModelCapability {
    * rejects batches larger than this up front (no auto-chunking in v1).
    */
   readonly maxBatchSize?: number;
+}
+
+/**
+ * Maximum output tokens for one model within a provider. Used as an entry in
+ * `IAiProviderDescriptor.maxOutputTokens`.
+ *
+ * @public
+ */
+export interface IAiMaxOutputTokensCapability {
+  /**
+   * The concrete model id this limit belongs to. It matches only a resolved model id equal to it:
+   * a dated snapshot (`claude-haiku-4-5-20251001`) needs an entry of its own, and no other id
+   * inherits this one by prefix.
+   */
+  readonly modelId: string;
+  /** The largest `maxTokens` the provider accepts for a completion on this model. */
+  readonly maxOutputTokens: number;
 }
 
 /**
@@ -1202,7 +1338,7 @@ export type GrokImagineModelNames =
   | 'grok-imagine-image-2.0';
 
 /** Model names in the Gemini Flash Image family. @public */
-export type GeminiFlashImageModelNames = 'gemini-3.1-flash-image';
+export type GeminiFlashImageModelNames = 'gemini-3.1-flash-image' | 'gemini-nano-banana-2.1';
 
 // ---- Family-level config shapes ----
 
@@ -1502,6 +1638,8 @@ export type AnthropicThinkingModelNames =
   | 'claude-sonnet-4-5'
   | 'claude-sonnet-4-6'
   | 'claude-sonnet-5'
+  | 'claude-sonnet-5-5'
+  | 'claude-haiku-5-5'
   | 'claude-opus-4-6'
   | 'claude-opus-4-7'
   | 'claude-opus-4-8'
@@ -1530,6 +1668,7 @@ export type OpenAiThinkingModelNames =
   | 'gpt-5-pro'
   | 'gpt-6-astra'
   | 'gpt-6-sol'
+  | 'gpt-6.1-sol'
   | 'gpt-6-luna';
 
 /**
@@ -1722,15 +1861,21 @@ export type IThinkingProviderConfig =
 export interface IThinkingConfig {
   /**
    * Cross-provider effort level. Common-subset mapping:
-   * - 'none': Anthropic — no thinking param emitted | OpenAI effort:none | Gemini thinkingBudget:0 | xAI reasoning_effort:none
+   * - 'none': Anthropic — the model's thinking-off value (see remarks) | OpenAI effort:none | Gemini thinkingBudget:0 | xAI reasoning_effort:none
    * - 'low': Anthropic effort:low | OpenAI effort:low | Gemini thinkingBudget:1024 | xAI reasoning_effort:low
    * - 'medium': Anthropic effort:medium | OpenAI effort:medium | Gemini thinkingBudget:4096 | xAI reasoning_effort:medium
    * - 'high': Anthropic effort:high | OpenAI effort:high | Gemini thinkingBudget:8192 | xAI reasoning_effort:high
    *
    * @remarks
    * `'none'` is the one cross-provider spelling for "thinking off". Anthropic has no
-   * off value in its own effort vocabulary — off there means omitting the `thinking`
-   * wire param entirely — so `'none'` maps to that omission rather than to a value.
+   * off value in its own effort vocabulary, so `'none'` maps to a `thinking` value rather than
+   * an effort: on an adaptive-thinking model (see {@link AiAssist.isAdaptiveThinkingModel}),
+   * where thinking is on by default, it sends the model's off value — `thinking: { type: 'disabled' }`,
+   * or the per-model value in {@link IAiProviderDescriptor.anthropicThinkingOffTypes} (for example
+   * `{ type: 'between_tools' }` on `claude-sonnet-5-5`); a generic `'none'` never sends an
+   * `output_config.effort` beside it (an explicit `'other'` block or caller-built `otherParams` can,
+   * and Anthropic rejects `between_tools` and `disabled` above `high`); on an older model, where
+   * thinking is off by default, it omits the `thinking` field.
    * On a model that accepts `'none'`, whichever provider is in play, `'none'` also re-enables
    * `temperature` (see `checkTemperatureConflict` in `thinkingOptionsResolver.ts`). On a model
    * listed in {@link IAiProviderDescriptor.thinkingRequiredModelPrefixes} it does not: there
