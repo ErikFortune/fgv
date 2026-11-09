@@ -37,7 +37,7 @@
  * @packageDocumentation
  */
 
-import { fail } from '@fgv/ts-utils';
+import { fail, succeed } from '@fgv/ts-utils';
 import type { Result } from '@fgv/ts-utils';
 import { AiAssist } from '@fgv/ts-extras';
 
@@ -46,6 +46,7 @@ import {
   type CanaryThinkingEffort,
   type CanaryTier,
   type ICanaryCompleteOptions,
+  type ICanaryTemperatureProbe,
   type ITierCanaryDeps,
   type ITierCanarySpec,
   runTierCanary
@@ -63,6 +64,31 @@ const IMAGE_PROMPT: string = 'A single red circle on a white background.';
  * off level); `'low'` is the control that shows thinking itself is accepted.
  */
 const THINKING_PROBE_EFFORTS: ReadonlyArray<CanaryThinkingEffort> = ['none', 'low'];
+
+/**
+ * Anthropic temperature probes, on every tier and extra model. Every Claude 5.x model rejects a
+ * *non-default* temperature with or without thinking, and ai-assist pins an API version under which
+ * the default, 1, is still accepted (`samplingParamsAcceptedTemperature`). So 1 must answer with
+ * and without thinking, and 0.3 must be refused before anything is sent.
+ */
+const ANTHROPIC_TEMPERATURE_PROBES: ReadonlyArray<ICanaryTemperatureProbe> = [
+  { temperature: 1, expect: 'accepted' },
+  { temperature: 1, effort: 'low', expect: 'accepted' },
+  { temperature: 0.3, expect: 'refused-locally' }
+];
+
+/**
+ * OpenAI temperature probes. GPT-6 accepts `temperature` only when reasoning effort is `'none'`.
+ * `gpt-6-luna` (base) has a `'none'` effort but defaults to `medium`, so a temperature with effort
+ * `'none'` answers and one with no effort is a provider 400 — a rule ai-assist does not guard, so
+ * that row expects the provider's rejection. `gpt-6.1-sol` and `gpt-6-astra` have no `'none'`, so
+ * the library refuses any temperature before the wire.
+ */
+const OPENAI_TEMPERATURE_PROBES: ReadonlyArray<ICanaryTemperatureProbe> = [
+  { temperature: 0.3, effort: 'none', models: ['gpt-6-luna'], expect: 'accepted' },
+  { temperature: 0.3, models: ['gpt-6-luna'], expect: 'expected-reject' },
+  { temperature: 0.3, models: ['gpt-6.1-sol', 'gpt-6-astra'], expect: 'refused-locally' }
+];
 
 /**
  * Resolves the provider's API key via `context.resolveSecret`, trying each of the scenario's
@@ -84,24 +110,94 @@ export async function resolveTierApiKey(
 }
 
 /**
- * The explicit provider block that sends each rotated provider's thinking-off value, bypassing the
- * library's `'none'` gate (an explicit block owns the wire). Used by the raw-`none` probe.
+ * The explicit provider block that sends `concrete`'s thinking-off value, bypassing the library's
+ * `'none'` gate (an explicit block owns the wire). Used by the raw-`none` probe. Anthropic has no
+ * typed off value, so its block is an `'other'` block carrying `thinking: { type: 'disabled' }`
+ * for exactly that model — the body a generic `'none'` would send if the gate let it through.
+ * @public
  */
-const RAW_NONE_BLOCKS: Readonly<Record<string, AiAssist.IThinkingProviderConfig>> = {
-  openai: { provider: 'openai', config: { effort: 'none' } },
-  'xai-grok': { provider: 'xai', config: { effort: 'none' } },
-  'google-gemini': { provider: 'google', config: { thinkingBudget: 0 } }
-};
+export function rawNoneBlock(
+  descriptor: AiAssist.IAiProviderDescriptor,
+  concrete: string
+): Result<AiAssist.IThinkingProviderConfig> {
+  switch (descriptor.id) {
+    case 'openai':
+      return succeed({ provider: 'openai', config: { effort: 'none' } });
+    case 'xai-grok':
+      return succeed({ provider: 'xai', config: { effort: 'none' } });
+    case 'google-gemini':
+      return succeed({ provider: 'google', config: { thinkingBudget: 0 } });
+    case 'anthropic':
+      return succeed({ provider: 'other', models: [concrete], config: { thinking: { type: 'disabled' } } });
+    default:
+      // Sending no thinking config here would succeed and read as "the listing is stale".
+      return fail(`${descriptor.id}: no raw 'none' block for this provider; add one to rawNoneBlock`);
+  }
+}
+
+/** The thinking config one canary request sends, or `undefined` for none. */
+function canaryThinking(
+  descriptor: AiAssist.IAiProviderDescriptor,
+  tier: CanaryTier,
+  options: ICanaryCompleteOptions
+): Result<AiAssist.IThinkingConfig | undefined> {
+  if (options.rawNone === true) {
+    return AiAssist.resolveProviderModel(
+      descriptor,
+      options.modelOverride,
+      tier === 'base' ? undefined : tier
+    )
+      .onSuccess((concrete) => rawNoneBlock(descriptor, concrete))
+      .onSuccess((block) => succeed({ providers: [block] }));
+  }
+  if (options.effort === undefined) {
+    return succeed(undefined);
+  }
+  return succeed({
+    effort: options.effort,
+    ...(options.onUnsupported !== undefined ? { onUnsupported: options.onUnsupported } : {})
+  });
+}
+
+/**
+ * The exact `callProviderCompletion` parameters the live seam sends for one canary request: the
+ * tiny prompt, the tier (`base` sent as `undefined`, as the completion path expects), and each
+ * option the request sets. Pure — the live seam only adds the call — so the request a probe makes
+ * is unit-tested here, including that a `refused-locally` request is refused before `fetch`.
+ * @public
+ */
+export function buildCanaryCompletionParams(
+  descriptor: AiAssist.IAiProviderDescriptor,
+  apiKey: string,
+  tier: CanaryTier,
+  options: ICanaryCompleteOptions = {}
+): Result<AiAssist.IProviderCompletionParams> {
+  return canaryThinking(descriptor, tier, options).onSuccess((thinking) =>
+    succeed({
+      descriptor,
+      apiKey,
+      messages: [{ role: 'user', content: CANARY_PROMPT }],
+      // The completion path takes `tier` verbatim (`undefined` = base).
+      tier: tier === 'base' ? undefined : tier,
+      ...(options.modelOverride !== undefined ? { modelOverride: options.modelOverride } : {}),
+      ...(thinking !== undefined ? { thinking } : {}),
+      ...(options.structuredOutput !== undefined ? { structuredOutput: options.structuredOutput } : {}),
+      ...(options.temperature !== undefined ? { temperature: options.temperature } : {}),
+      ...(options.maxTokens !== undefined ? { maxTokens: options.maxTokens } : {})
+    })
+  );
+}
 
 /**
  * Builds the live-completion seam for a provider: given an already-resolved `apiKey` (or
- * `undefined`), returns a `complete` callback that fires a minimal completion at the requested
- * tier via the real `callProviderCompletion`; returns `undefined` (→ the keyless STOP-FLAG
+ * `undefined`), returns a `complete` callback that sends {@link buildCanaryCompletionParams}
+ * through the real `callProviderCompletion`; returns `undefined` (→ the keyless STOP-FLAG
  * resolver-only path) when no key was resolved.
  *
- * This whole function is the keyed live seam and is coverage-ignored: it needs a real API key, and
- * the canary logic (resolution / classification / report / verdict) plus the keyless (empty-deps)
- * path are covered via injected deps and keyless `cli.run` in `modelTiers.test.ts`.
+ * This function is the keyed live seam and is coverage-ignored: it needs a real API key. The
+ * request it sends is built and tested in `buildCanaryCompletionParams`; the canary logic
+ * (resolution / classification / report / verdict) and the keyless path are covered via injected
+ * deps and keyless `cli.run` in `modelTiers.test.ts`.
  */
 /* c8 ignore start - live completion seam: needs a real API key. */
 function buildLiveComplete(
@@ -112,35 +208,10 @@ function buildLiveComplete(
     return undefined;
   }
   const key = apiKey;
-  const rawNone = RAW_NONE_BLOCKS[descriptor.id];
-  return (tier: CanaryTier, options?: ICanaryCompleteOptions) => {
-    if (options?.rawNone === true && rawNone === undefined) {
-      // Sending no thinking config here would succeed and read as "the listing is stale".
-      return Promise.resolve(
-        fail<AiAssist.IAiCompletionResponse>(
-          `${descriptor.id}: no raw 'none' block for this provider; add one to RAW_NONE_BLOCKS`
-        )
-      );
-    }
-    return AiAssist.callProviderCompletion({
-      descriptor,
-      apiKey: key,
-      messages: [{ role: 'user', content: CANARY_PROMPT }],
-      // The completion path takes `tier` verbatim (`undefined` = base).
-      tier: tier === 'base' ? undefined : tier,
-      ...(options?.modelOverride !== undefined ? { modelOverride: options.modelOverride } : {}),
-      ...(options?.effort !== undefined
-        ? {
-            thinking: {
-              effort: options.effort,
-              ...(options.onUnsupported !== undefined ? { onUnsupported: options.onUnsupported } : {})
-            }
-          }
-        : {}),
-      ...(options?.rawNone === true && rawNone !== undefined ? { thinking: { providers: [rawNone] } } : {}),
-      ...(options?.structuredOutput !== undefined ? { structuredOutput: options.structuredOutput } : {})
-    });
-  };
+  return async (tier: CanaryTier, options?: ICanaryCompleteOptions) =>
+    buildCanaryCompletionParams(descriptor, key, tier, options).thenOnSuccess((params) =>
+      AiAssist.callProviderCompletion(params)
+    );
 }
 
 /**
@@ -178,6 +249,8 @@ interface ITierScenarioParams {
   readonly strictNoneProbe?: boolean;
   readonly structuredOutputProbe?: boolean;
   readonly structuredOutputEfforts?: ReadonlyArray<CanaryThinkingEffort>;
+  readonly temperatureProbes?: ReadonlyArray<ICanaryTemperatureProbe>;
+  readonly maxOutputProbe?: boolean;
   /** Fire one live image generation at the `image` tier; `quality` is sent when set. */
   readonly liveImage?: { readonly quality?: AiAssist.AiImageQuality };
   readonly requiredSecrets: readonly ISecretSpec[];
@@ -209,6 +282,8 @@ function makeTierScenario(params: ITierScenarioParams): IScenario {
         strictNoneProbe: params.strictNoneProbe,
         structuredOutputProbe: params.structuredOutputProbe,
         structuredOutputEfforts: params.structuredOutputEfforts,
+        temperatureProbes: params.temperatureProbes,
+        maxOutputProbe: params.maxOutputProbe,
         liveImage: params.liveImage !== undefined
       };
 
@@ -244,7 +319,11 @@ function makeTierScenario(params: ITierScenarioParams): IScenario {
  * gpt-6 family works on chat completions, so the frontier tier needs no Responses-only routing
  * (the earlier `gpt-5.5-pro` remains reachable via `modelOverride` and still routes via
  * `responsesOnlyModelPrefixes`). Each tier is also probed with thinking effort `none` and `low`,
- * and the image tier gets one live generation. `image` is a flagged access risk: a
+ * and the image tier gets one live generation. Temperature probes: on `gpt-6-luna`, temperature
+ * with effort `none` answers and temperature with no effort is an `expected-reject` (a provider
+ * 400); on `gpt-6.1-sol` and `gpt-6-astra` any temperature is `refused-locally`. Max-output probes
+ * send each tier its recorded `resolveMaxOutputTokens` limit, which must be accepted. `image` is a
+ * flagged access risk: a
  * resolver-correct + access-denied outcome is reported BLOCKED, not a failure. Requires
  * `OPENAI_API_KEY` for the live half.
  * @public
@@ -254,7 +333,9 @@ export const openaiModelTiersScenario: IScenario = makeTierScenario({
   title: 'OpenAI Model Tiers',
   description:
     'Resolves and (with OPENAI_API_KEY) live-canaries the OpenAI base/advanced/frontier tiers ' +
-    '(gpt-6-luna / gpt-6.1-sol / gpt-6-astra), probes each with thinking effort none and low (and none with onUnsupported fail), and ' +
+    '(gpt-6-luna / gpt-6.1-sol / gpt-6-astra), probes each with thinking effort none and low (and none with onUnsupported fail), ' +
+    'probes temperature (gpt-6-luna: accepted with effort none, a provider 400 without; gpt-6.1-sol / ' +
+    'gpt-6-astra: refused locally), sends each tier its recorded max output tokens, and ' +
     'fires one live image generation (gpt-image-2.5-sunburst, quality low). Logs each alias -> ' +
     'concrete id. The image may be access-gated — reported BLOCKED, not failed. Web-runnable.',
   tags: ['openai'],
@@ -262,6 +343,8 @@ export const openaiModelTiersScenario: IScenario = makeTierScenario({
   imageTier: true,
   thinkingEfforts: THINKING_PROBE_EFFORTS,
   strictNoneProbe: true,
+  temperatureProbes: OPENAI_TEMPERATURE_PROBES,
+  maxOutputProbe: true,
   liveImage: { quality: 'low' },
   requiredSecrets: [
     {
@@ -280,6 +363,19 @@ export const openaiModelTiersScenario: IScenario = makeTierScenario({
  * (`claude-haiku-5-5` forces a tool; `claude-sonnet-5-5`, `claude-opus-5-5` and `claude-fable-5-1`
  * send `output_config.format`), so the run exercises both mechanisms live, not only the ids. Each probe is repeated with thinking effort
  * `low`, so `output_config` carries `effort` and `format` together on the adaptive successors.
+ *
+ * Every tier and extra model is also probed with:
+ * - thinking effort `none` and `low`. `'none'` on `claude-haiku-5-5` sends
+ *   `thinking: { type: 'disabled' }` and must answer; on `claude-sonnet-5-5`, `claude-opus-5-5` and
+ *   `claude-fable-5-1` (thinking-required) it is degraded to `'low'` and must answer. `'low'` is
+ *   adaptive everywhere and must answer.
+ * - `'none'` with `onUnsupported: 'fail'`: `refused-locally` on the three thinking-required models,
+ *   answered on haiku. Each thinking-required model also gets a raw `thinking: { type: 'disabled' }`
+ *   row, which must be the provider's 400 (`expected-reject`); an answer means the listing is stale.
+ * - temperature 1 without and with effort `low` (both answer) and temperature 0.3
+ *   (`refused-locally`).
+ * - `maxTokens` at the recorded output limit, which must be accepted.
+ *
  * Requires `ANTHROPIC_API_KEY` for the live half.
  * @public
  */
@@ -291,8 +387,10 @@ export const anthropicModelTiersScenario: IScenario = makeTierScenario({
     'frontier request that cascades to the advanced (opus) id — the cascade proof — and ' +
     '@anthropic:fable and @anthropic:haiku, and fires a schema structured-output probe on each (forced tool on ' +
     'claude-haiku-5-5, output_config.format on claude-sonnet-5-5 / claude-opus-5-5 / claude-fable-5-1), with and ' +
-    'without thinking effort low. Logs each ' +
-    'alias -> concrete id. Web-runnable.',
+    'without thinking effort low. Probes each with thinking effort none and low (and none with onUnsupported fail, ' +
+    'refused locally on the thinking-required models, plus a raw thinking-disabled row the provider must reject), ' +
+    'temperature 1 with and without effort low (accepted) and 0.3 (refused locally), and its recorded max output ' +
+    'tokens. Logs each alias -> concrete id. Web-runnable.',
   tags: ['anthropic'],
   tiers: ['base', 'advanced', 'frontier'],
   extraModels: ['@anthropic:fable', '@anthropic:haiku'],
@@ -302,6 +400,10 @@ export const anthropicModelTiersScenario: IScenario = makeTierScenario({
   // with adaptive thinking, which Anthropic's thinking page says works ("incompatible with manual
   // extended thinking but works with adaptive thinking").
   structuredOutputEfforts: ['low'],
+  thinkingEfforts: THINKING_PROBE_EFFORTS,
+  strictNoneProbe: true,
+  temperatureProbes: ANTHROPIC_TEMPERATURE_PROBES,
+  maxOutputProbe: true,
   requiredSecrets: [
     {
       id: AiAssist.providerApiKeySecretName('anthropic'),
@@ -317,7 +419,9 @@ export const anthropicModelTiersScenario: IScenario = makeTierScenario({
  * `gemini-nano-banana-2.1`, the update to Nano Banana 2 / `gemini-3.1-flash-image`), which gets one
  * live generation because it was rotated. Each tier is probed with thinking effort
  * `none` and `low`, and the `modelOverride`-only `@google-gemini:flash-lite` alias gets its own
- * live row. Requires `GEMINI_API_KEY` (or `GOOGLE_API_KEY`) for the live half.
+ * live row and the same thinking probes. Max-output probes send each tier and flash-lite its
+ * recorded `resolveMaxOutputTokens` limit, which must be accepted. Requires `GEMINI_API_KEY` (or
+ * `GOOGLE_API_KEY`) for the live half.
  * @public
  */
 export const geminiModelTiersScenario: IScenario = makeTierScenario({
@@ -326,7 +430,8 @@ export const geminiModelTiersScenario: IScenario = makeTierScenario({
   description:
     'Resolves and (with GEMINI_API_KEY/GOOGLE_API_KEY) live-canaries the Gemini base/advanced tiers ' +
     'plus a frontier request that cascades to the advanced (pro) id, probes each with thinking ' +
-    'effort none and low (and none with onUnsupported fail), live-canaries @google-gemini:flash-lite, and resolves the image tier ' +
+    'effort none and low (and none with onUnsupported fail), live-canaries @google-gemini:flash-lite, sends each its recorded ' +
+    'max output tokens, and resolves the image tier ' +
     '(gemini-nano-banana-2.1) with one live generation. Logs each alias -> concrete id. The image may be ' +
     'access-gated — reported BLOCKED, not failed. Web-runnable.',
   tags: ['gemini', 'google'],
@@ -335,6 +440,7 @@ export const geminiModelTiersScenario: IScenario = makeTierScenario({
   thinkingEfforts: THINKING_PROBE_EFFORTS,
   strictNoneProbe: true,
   extraModels: ['@google-gemini:flash-lite'],
+  maxOutputProbe: true,
   liveImage: {},
   requiredSecrets: [
     {
