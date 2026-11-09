@@ -43,14 +43,16 @@
  *    - thinking probes: one completion per tier, extra model and effort (`thinkingEfforts`)
  *    - strict-none probes: `'none'` plus `onUnsupported: 'fail'` on every tier and extra model,
  *      checked against `thinkingRequiredModelPrefixes` (`strictNoneProbe`). A listed model must be
- *      `refused-locally`. On a listed model, a second, raw `'none'` bypasses the library gate, and
- *      the provider's own rejection (`expected-reject`) keeps the listing honest in the other
- *      direction.
+ *      `refused-locally`. On a listed model, and on a model with its own off value
+ *      (`anthropicThinkingOffTypes`), a second, raw `'none'` sends the provider's default off value
+ *      past the library gate, and the provider's own rejection (`expected-reject`) keeps the listing
+ *      honest in the other direction (`rawNoneModels` can name a model's rejection text or skip it)
  *    - model-override rows for aliases no tier reaches (`extraModels`)
  *    - temperature probes: a `temperature` (optionally with an effort) on the tiers and extra
  *      models a probe names, each with a stated expectation — accepted, `refused-locally` (the
- *      library refuses before any request is sent) or `expected-reject` (the provider is expected
- *      to return a 400) (`temperatureProbes`)
+ *      library refuses before any request is sent), `expected-reject` (the provider is expected
+ *      to return a 400) or `observed` (report-only; a `raw` probe sends the temperature in an
+ *      `'other'` block, past the library gate) (`temperatureProbes`)
  *    - max-output probes: one completion per tier and extra model with `maxTokens` set to the
  *      recorded `resolveMaxOutputTokens` limit, or a `no-recorded-limit` row and no call when none
  *      is recorded (`maxOutputProbe`)

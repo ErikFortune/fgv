@@ -1860,7 +1860,7 @@ export type IThinkingProviderConfig =
 export interface IThinkingConfig {
   /**
    * Cross-provider effort level. Common-subset mapping:
-   * - 'none': Anthropic — no thinking param emitted | OpenAI effort:none | Gemini thinkingBudget:0 | xAI reasoning_effort:none
+   * - 'none': Anthropic — the model's thinking-off value (see remarks) | OpenAI effort:none | Gemini thinkingBudget:0 | xAI reasoning_effort:none
    * - 'low': Anthropic effort:low | OpenAI effort:low | Gemini thinkingBudget:1024 | xAI reasoning_effort:low
    * - 'medium': Anthropic effort:medium | OpenAI effort:medium | Gemini thinkingBudget:4096 | xAI reasoning_effort:medium
    * - 'high': Anthropic effort:high | OpenAI effort:high | Gemini thinkingBudget:8192 | xAI reasoning_effort:high

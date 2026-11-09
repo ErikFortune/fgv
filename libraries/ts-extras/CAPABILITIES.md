@@ -76,6 +76,7 @@
 
 <!-- BEGIN GENERATED: recent-additions -->
 
+- **2026-11-09** — ai-assist turns thinking off on Claude Sonnet 5.5 with its own between_tools value, declared per model, and stops claiming thinking-off on Gemini 3.x Flash models a budget of 0 cannot turn off.
 - **2026-11-08** — ai-assist aliases now reach current models — Claude Sonnet 5.5 and Haiku 5.5, GPT-6.1 Sol, Nano Banana 2.1, and new Groq and Mistral defaults — each with the wire settings its provider requires. ([#767](https://github.com/ErikFortune/fgv/pull/767))
 - **2026-11-08** — resolveMaxOutputTokens tells you the largest maxTokens the model a call will use accepts, from the same ModelSpec and tier, so a slot can be capped at min(your cap, the model's limit). ([#765](https://github.com/ErikFortune/fgv/pull/765))
 - **2026-10-30** — A converter or validator handed a cyclic, BigInt or Proxy value now fails instead of throwing, via a new formatValueForMessage that matches JSON.stringify for ordinary values. ([#764](https://github.com/ErikFortune/fgv/pull/764))
