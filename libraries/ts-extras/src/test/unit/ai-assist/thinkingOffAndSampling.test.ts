@@ -22,13 +22,17 @@
 
 /**
  * Request-body tests, against the shipped registry, for two per-model rules:
- * - a generic effort 'none' turns thinking off on every Anthropic model: a disabled thinking value
- *   where the model thinks by default and accepts it, no thinking field on an older model, and
- *   'low' (or a refusal) where the model cannot turn thinking off;
+ * - a generic effort 'none' turns thinking off on every Anthropic model: the model's declared off
+ *   value (`disabled`, or `between_tools` on claude-sonnet-5-5) where it thinks by default, no
+ *   thinking field on an older model, and 'low' (or a refusal) where the model cannot turn thinking
+ *   off;
+ * - Gemini models whose thinking cannot be turned off by a budget of 0 degrade or refuse 'none';
  * - a `temperature` aimed at a model that rejects sampling parameters is refused before the wire.
  */
 
 import '@fgv/ts-utils-jest';
+
+import { JsonSchema } from '@fgv/ts-json-base';
 
 import { AiAssist } from '../../..';
 
@@ -125,14 +129,52 @@ describe('per-model thinking-off and sampling-parameter rules', () => {
     });
 
     // "disabled" column: "400 error". 'none' degrades to the least thinking the model accepts.
+    // claude-sonnet-5-5 400s on 'disabled' with "To turn thinking off on this model, send
+    // "thinking": {"type": "between_tools"} instead" (live, 2026-11-09). A 'none' sends no effort,
+    // so between_tools' 400 at effort xhigh and max cannot be reached.
+    test.each(['claude-sonnet-5-5', '@anthropic:sonnet'])(
+      '%s sends thinking between_tools and no effort',
+      async (model) => {
+        const body = await sendNone(model);
+        expect(body.thinking).toEqual({ type: 'between_tools' });
+        expect(body.output_config).toBeUndefined();
+      }
+    );
+
+    test("claude-sonnet-5-5 with onUnsupported 'fail' sends between_tools", async () => {
+      const body = await sendNone('claude-sonnet-5-5', 'fail');
+      expect(body.thinking).toEqual({ type: 'between_tools' });
+      expect(body.output_config).toBeUndefined();
+    });
+
+    test('claude-sonnet-5-5 keeps its structured-output format beside between_tools, with no effort', async () => {
+      mockJson({ content: [{ type: 'text', text: '{"a":1}' }], stop_reason: 'end_turn' });
+      expect(
+        await AiAssist.callProviderCompletion({
+          descriptor: anthropic,
+          apiKey: 'k',
+          ...prompt.toRequest(),
+          modelOverride: 'claude-sonnet-5-5',
+          thinking: { effort: 'none' },
+          structuredOutput: {
+            mode: 'schema',
+            schema: JsonSchema.object({ a: JsonSchema.number() }),
+            onUnsupported: 'fail'
+          }
+        })
+      ).toSucceed();
+      const body = sentBody();
+      expect(body.thinking).toEqual({ type: 'between_tools' });
+      expect(body.output_config).toBeDefined();
+      expect((body.output_config as Record<string, unknown>).effort).toBeUndefined();
+    });
+
     test.each([
       'claude-opus-5-5',
-      'claude-sonnet-5-5',
       'claude-fable-5',
       'claude-fable-5-1',
       'claude-mythos-5',
       'claude-mythos-5-1',
-      '@anthropic:sonnet',
       '@anthropic:opus',
       '@anthropic:fable'
     ])('%s cannot turn thinking off: none is sent as adaptive low', async (model) => {
@@ -141,7 +183,7 @@ describe('per-model thinking-off and sampling-parameter rules', () => {
       expect(body.output_config).toEqual({ effort: 'low' });
     });
 
-    test.each(['claude-sonnet-5-5', 'claude-mythos-5'])(
+    test.each(['claude-opus-5-5', 'claude-mythos-5'])(
       "%s with onUnsupported 'fail' is refused before the wire",
       async (model) => {
         expect(
@@ -243,7 +285,7 @@ describe('per-model thinking-off and sampling-parameter rules', () => {
     // claude-mythos-preview is thinking-required but keeps the budget shape: the flag would send no
     // thinking field and the model would think, so it is refused too.
     test.each([
-      '@anthropic:sonnet',
+      '@anthropic:opus',
       'claude-opus-5-5',
       'claude-fable-5-1',
       'claude-mythos-5',
@@ -269,11 +311,40 @@ describe('per-model thinking-off and sampling-parameter rules', () => {
         apiKey: 'k',
         ...prompt.toRequest(),
         clientTools: [],
-        model: '@anthropic:sonnet',
+        model: '@anthropic:opus',
         resolvedThinking: { anthropicThinkingDisabled: true, anthropicEffort: 'low' }
       });
       await drain(result.orThrow().events);
       expect(sentBody()).toMatchObject({ thinking: { type: 'adaptive' }, output_config: { effort: 'low' } });
+    });
+
+    test('callProviderCompletionStream sends thinking between_tools to claude-sonnet-5-5', async () => {
+      mockSse();
+      const result = await AiAssist.callProviderCompletionStream({
+        descriptor: anthropic,
+        apiKey: 'k',
+        ...prompt.toRequest(),
+        modelOverride: '@anthropic:sonnet',
+        thinking: { effort: 'none', onUnsupported: 'fail' }
+      });
+      await drain(result.orThrow());
+      expect(sentBody().thinking).toEqual({ type: 'between_tools' });
+      expect(sentBody().output_config).toBeUndefined();
+    });
+
+    test('executeClientToolTurn sends thinking between_tools for the flag on claude-sonnet-5-5', async () => {
+      mockSse();
+      const result = AiAssist.executeClientToolTurn({
+        descriptor: anthropic,
+        apiKey: 'k',
+        ...prompt.toRequest(),
+        clientTools: [],
+        model: '@anthropic:sonnet',
+        resolvedThinking: { anthropicThinkingDisabled: true }
+      });
+      await drain(result.orThrow().events);
+      expect(sentBody().thinking).toEqual({ type: 'between_tools' });
+      expect(sentBody().output_config).toBeUndefined();
     });
 
     test('executeClientToolTurn sends no thinking field for the flag on a non-adaptive model', async () => {
@@ -302,6 +373,70 @@ describe('per-model thinking-off and sampling-parameter rules', () => {
       });
       await drain(result.orThrow().events);
       expect(sentBody().thinking).toEqual({ type: 'disabled' });
+    });
+  });
+
+  describe("Gemini effort 'none' on models a budget of 0 cannot turn off", () => {
+    const gemini = getDescriptor('google-gemini');
+    const geminiOk = { candidates: [{ content: { parts: [{ text: 'ok' }] }, finishReason: 'STOP' }] };
+
+    // gemini-3.5-flash-lite 400s on thinkingBudget 0 ("Request contains an invalid argument.", live
+    // 2026-11-09); gemini-3.8-flash accepts it but lists no level below low. Either way 'none' is
+    // sent as the low budget, or refused.
+    test.each([
+      'gemini-3.5-flash-lite',
+      '@google-gemini:flash-lite',
+      'gemini-3.8-flash',
+      '@google-gemini:flash'
+    ])('%s sends none as the low budget', async (model) => {
+      mockJson(geminiOk);
+      expect(
+        await AiAssist.callProviderCompletion({
+          descriptor: gemini,
+          apiKey: 'k',
+          ...prompt.toRequest(),
+          modelOverride: model,
+          thinking: { effort: 'none' }
+        })
+      ).toSucceed();
+      expect(sentBody()).toMatchObject({ generationConfig: { thinkingConfig: { thinkingBudget: 1024 } } });
+    });
+
+    test.each(['gemini-3.5-flash-lite', 'gemini-3.8-flash'])(
+      "%s with onUnsupported 'fail' is refused before the wire",
+      async (model) => {
+        expect(
+          await AiAssist.callProviderCompletion({
+            descriptor: gemini,
+            apiKey: 'k',
+            ...prompt.toRequest(),
+            modelOverride: model,
+            thinking: { effort: 'none', onUnsupported: 'fail' }
+          })
+        ).toFailWith(/cannot run with thinking off/);
+        expect(global.fetch).not.toHaveBeenCalled();
+      }
+    );
+  });
+
+  describe('resolveAnthropicThinkingOffType', () => {
+    const anthropic = getDescriptor('anthropic');
+
+    test.each([
+      ['claude-sonnet-5-5', 'between_tools'],
+      ['claude-sonnet-5-5-20261101', 'between_tools'],
+      ['claude-sonnet-5', 'disabled'],
+      ['claude-sonnet-5-50', 'disabled'],
+      ['claude-haiku-5-5', 'disabled'],
+      ['claude-opus-5', 'disabled']
+    ] as const)('%s turns thinking off with %s', (model, expected) => {
+      expect(AiAssist.resolveAnthropicThinkingOffType(anthropic, model)).toBe(expected);
+    });
+
+    test('a descriptor with no rules uses disabled', () => {
+      expect(AiAssist.resolveAnthropicThinkingOffType(getDescriptor('openai'), 'claude-sonnet-5-5')).toBe(
+        'disabled'
+      );
     });
   });
 

@@ -27,6 +27,7 @@
  * @packageDocumentation
  */
 
+import { type AnthropicThinkingOffType, resolveAnthropicThinkingOffType } from './anthropicThinkingOff';
 import { isJsonObject, type JsonObject } from '@fgv/ts-json-base';
 import {
   captureResult,
@@ -620,7 +621,8 @@ async function callAnthropicCompletion(
   useAdaptiveThinking: boolean = false,
   maxTokens?: number,
   structured: IResolvedStructuredOutput = NO_STRUCTURED_OUTPUT,
-  cache?: IAiCacheRequest
+  cache?: IAiCacheRequest,
+  thinkingOffType: AnthropicThinkingOffType = 'disabled'
 ): Promise<Result<IAiCompletionResponse>> {
   const url = `${config.baseUrl}/messages`;
   const messages = buildAnthropicMessages(prompt, { head });
@@ -651,10 +653,13 @@ async function callAnthropicCompletion(
       body.thinking = { type: 'enabled', budget_tokens: anthropicEffortToBudgetTokens(effort) };
     }
   } else if (resolvedThinking?.anthropicThinkingDisabled === true && useAdaptiveThinking) {
-    // Adaptive models think by default, so omitting `thinking` would not turn it off. A model on
-    // thinkingRequiredModelPrefixes never gets here: a generic 'none' is degraded or refused when it
-    // is resolved, and the client-tool path refuses a caller-built flag for it before dispatch.
-    body.thinking = { type: 'disabled' };
+    // Adaptive models think by default, so omitting `thinking` would not turn it off. The off value
+    // is per model (resolveAnthropicThinkingOffType), and no effort goes beside it: this branch runs
+    // only when anthropicEffort is unset, which also keeps between_tools clear of its 400 at
+    // effort xhigh and max. A model on thinkingRequiredModelPrefixes never gets here: a generic
+    // 'none' is degraded or refused when it is resolved, and the client-tool path refuses a caller-built flag
+    // for it before dispatch.
+    body.thinking = { type: thinkingOffType };
   }
   if (resolvedThinking?.otherParams !== undefined) {
     Object.assign(body, resolvedThinking.otherParams);
@@ -1032,7 +1037,8 @@ export async function callProviderCompletion(
         isAdaptiveThinkingModel(descriptor, config.model),
         maxTokens,
         resolvedStructured,
-        cache
+        cache,
+        resolveAnthropicThinkingOffType(descriptor, config.model)
       );
     case 'gemini':
       return callGeminiCompletion(

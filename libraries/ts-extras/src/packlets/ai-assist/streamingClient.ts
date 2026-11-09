@@ -27,6 +27,7 @@
  * @packageDocumentation
  */
 
+import { resolveAnthropicThinkingOffType } from './anthropicThinkingOff';
 import { fail, Result } from '@fgv/ts-utils';
 
 import { type IAiCacheRequest } from './cacheRequest';
@@ -260,7 +261,8 @@ export async function callProviderCompletionStream(
         isAdaptiveThinkingModel(descriptor, config.model),
         maxTokens,
         cache,
-        temperatureAcceptedWithThinking(descriptor, config.model)
+        temperatureAcceptedWithThinking(descriptor, config.model),
+        resolveAnthropicThinkingOffType(descriptor, config.model)
       );
     case 'gemini':
       return callGeminiStream(

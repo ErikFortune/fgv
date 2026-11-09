@@ -108,6 +108,12 @@ export {
 } from './model';
 
 export {
+  type AnthropicThinkingOffType,
+  type IAnthropicThinkingOffRule,
+  resolveAnthropicThinkingOffType
+} from './anthropicThinkingOff';
+
+export {
   type IResolvedImageOptions,
   resolveImageOptions,
   validateResolvedOptions

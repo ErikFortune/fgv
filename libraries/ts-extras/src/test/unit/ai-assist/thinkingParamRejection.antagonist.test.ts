@@ -363,6 +363,8 @@ describe('generic effort "none" — cross-provider "thinking off" spelling (anta
       apiKey: 'sk',
       temperature: 0.7,
       thinking: { effort: 'none' },
+      // The base tier (gemini-3.8-flash) cannot turn thinking off, so pin a model that can.
+      modelOverride: 'gemini-2.5-flash',
       ...testPrompt.toRequest()
     });
 

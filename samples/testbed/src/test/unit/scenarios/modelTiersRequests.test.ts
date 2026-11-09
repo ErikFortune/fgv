@@ -188,6 +188,45 @@ describe('buildCanaryCompletionParams', () => {
     });
   });
 
+  test('a raw temperature goes in an other block for the model the request reaches, not as temperature', () => {
+    expect(buildCanaryCompletionParams(openai, 'k', 'advanced', { rawTemperature: 1 })).toSucceedAndSatisfy(
+      (params) => {
+        expect(params.temperature).toBeUndefined();
+        expect(params.thinking).toEqual({
+          providers: [{ provider: 'other', models: ['gpt-6.1-sol'], config: { temperature: 1 } }]
+        });
+      }
+    );
+    expect(
+      buildCanaryCompletionParams(openai, 'k', 'base', { rawTemperature: 1, effort: 'low' })
+    ).toSucceedAndSatisfy((params) => {
+      expect(params.thinking).toEqual({
+        effort: 'low',
+        providers: [{ provider: 'other', models: ['gpt-6-luna'], config: { temperature: 1 } }]
+      });
+    });
+  });
+
+  test.each(['advanced' as const, 'frontier' as const])(
+    'a raw temperature 1 reaches the wire on openai %s, past the local gate',
+    async (tier) => {
+      const sent = stubFetch(() => ({
+        status: 200,
+        json: { choices: [{ message: { role: 'assistant', content: 'pong' }, finish_reason: 'stop' }] }
+      }));
+      const params = buildCanaryCompletionParams(openai, 'k', tier, { rawTemperature: 1 }).orThrow();
+      expect(await AiAssist.callProviderCompletion(params)).toSucceed();
+      expect(sent).toHaveLength(1);
+      expect(sent[0].body.temperature).toBe(1);
+    }
+  );
+
+  test('a raw temperature fails for an unresolvable model', () => {
+    expect(
+      buildCanaryCompletionParams(openai, 'k', 'base', { modelOverride: '@openai:nope', rawTemperature: 1 })
+    ).toFail();
+  });
+
   test("a raw 'none' fails for an unresolvable model or a provider with no off value", () => {
     expect(
       buildCanaryCompletionParams(anthropic, 'k', 'base', { modelOverride: '@anthropic:nope', rawNone: true })
@@ -219,7 +258,14 @@ describe('a refused-locally request is refused before fetch', () => {
       { modelOverride: '@anthropic:fable', effort: 'none' as const, onUnsupported: 'fail' as const }
     ],
     ['openai', openai, 'advanced' as const, { temperature: 0.3 }],
-    ['openai', openai, 'frontier' as const, { temperature: 0.3 }]
+    ['openai', openai, 'frontier' as const, { temperature: 0.3 }],
+    ['gemini', gemini, 'base' as const, { effort: 'none' as const, onUnsupported: 'fail' as const }],
+    [
+      'gemini',
+      gemini,
+      'base' as const,
+      { modelOverride: '@google-gemini:flash-lite', effort: 'none' as const, onUnsupported: 'fail' as const }
+    ]
   ])('%s %s %j', async (__, descriptor, tier, options) => {
     const sent = stubFetch(() => ({ status: 200, json: {} }));
     const params = buildCanaryCompletionParams(descriptor, 'k', tier, options).orThrow();
@@ -261,9 +307,25 @@ const ANTHROPIC_REJECTS_DISABLED: ReadonlyArray<string> = [
   'claude-fable-5-1'
 ];
 
+/** Ids the fake Anthropic accepts `thinking: {type: 'between_tools'}` for (live, 2026-11-09). */
+const ANTHROPIC_ACCEPTS_BETWEEN_TOOLS: ReadonlyArray<string> = ['claude-sonnet-5-5'];
+
 /** Answers like Anthropic's Messages API, applying the documented rejections the probes exercise. */
 const fakeAnthropic: FakeProvider = ({ body }) => {
   const thinking = body.thinking as { type?: string } | undefined;
+  if (thinking?.type === 'between_tools') {
+    const effort = (body.output_config as { effort?: string } | undefined)?.effort;
+    if (
+      !ANTHROPIC_ACCEPTS_BETWEEN_TOOLS.includes(String(body.model)) ||
+      effort === 'xhigh' ||
+      effort === 'max'
+    ) {
+      return {
+        status: 400,
+        json: { error: { message: 'thinking.type between_tools is not supported here' } }
+      };
+    }
+  }
   if (thinking?.type === 'disabled' && ANTHROPIC_REJECTS_DISABLED.includes(String(body.model))) {
     // The wording Anthropic's errors page documents for this 400.
     return {
@@ -296,6 +358,13 @@ const fakeOpenAi: FakeProvider = ({ url, body }) => {
   if (effort === 'none' && ['gpt-6.1-sol', 'gpt-6-astra'].includes(String(body.model))) {
     return { status: 400, json: { error: { message: "'reasoning_effort' does not support 'none'" } } };
   }
+  // Unknown live; the fake accepts the default on sol and rejects it on astra so both readings render.
+  if (body.temperature === 1 && body.model === 'gpt-6.1-sol') {
+    return {
+      status: 200,
+      json: { choices: [{ message: { role: 'assistant', content: 'pong' }, finish_reason: 'stop' }] }
+    };
+  }
   if (body.temperature !== undefined && effort !== 'none') {
     return { status: 400, json: { error: { message: 'temperature is not supported with reasoning' } } };
   }
@@ -310,20 +379,25 @@ describe('anthropic-model-tiers, keyed, against a fake Anthropic', () => {
     const sent = stubFetch(fakeAnthropic);
     const result = await runScenario(anthropicModelTiersScenario);
     expect(result).toSucceedAndSatisfy((report: string) => {
-      // haiku 'none' answers; the thinking-required models degrade to 'low' and answer.
+      // haiku 'none' sends disabled and sonnet 'none' sends between_tools; both answer. The
+      // thinking-required models degrade to 'low' and answer.
       expect(report).toMatch(
         /\[PASS\] @anthropic:haiku effort=none\s+claude-haiku-5-5\s+\(sent with thinking off\)/
       );
       expect(report).toMatch(
-        /\[PASS\] base effort=none\s+claude-sonnet-5-5\s+\(degraded to 'low' \(thinking-required\)\)/
+        /\[PASS\] base effort=none\s+claude-sonnet-5-5\s+\(sent with thinking off \(between_tools\)\)/
+      );
+      expect(report).toMatch(
+        /\[PASS\] advanced effort=none\s+claude-opus-5-5\s+\(degraded to 'low' \(thinking-required\)\)/
       );
       expect(report).toMatch(/\[PASS\] @anthropic:fable effort=low\s+claude-fable-5-1/);
-      // 'fail' refuses locally on the three thinking-required models; raw disabled is the provider's 400.
-      // The provider's own text is shown after the stated reason.
+      // 'fail' answers on sonnet (between_tools) and refuses locally on the thinking-required models.
+      // Raw disabled is the provider's 400 on all four; its own text is shown after the stated reason.
+      expect(report).toMatch(/\[PASS\] base none\+fail\s+claude-sonnet-5-5\n/);
       expect(report).toMatch(
-        /\[EXPECTED-REJECT\] base none raw\s+claude-sonnet-5-5\s+\(the provider still rejects none, as listed: AI API returned 400: .*between_tools/
+        /\[EXPECTED-REJECT\] base none raw\s+claude-sonnet-5-5\s+\(the provider still rejects disabled; this model's off value is between_tools: AI API returned 400: .*between_tools/
       );
-      for (const label of ['base', 'advanced', 'frontier', '@anthropic:fable']) {
+      for (const label of ['advanced', 'frontier', '@anthropic:fable']) {
         expect(report).toContain(`[REFUSED-LOCALLY] ${label} none+fail `);
         expect(report).toContain(`[EXPECTED-REJECT] ${label} none raw `);
       }
@@ -348,10 +422,18 @@ describe('anthropic-model-tiers, keyed, against a fake Anthropic', () => {
     );
     // haiku effort=none and haiku none+fail — both send thinking disabled.
     expect(haikuDisabled).toHaveLength(2);
-    // sonnet effort=none goes out as adaptive 'low'.
+    // sonnet effort=none and none+fail go out as between_tools, with no effort beside it.
+    const sonnetOff = bodies.filter(
+      (b) => b.model === 'claude-sonnet-5-5' && (b.thinking as { type?: string })?.type === 'between_tools'
+    );
+    expect(sonnetOff).toHaveLength(2);
+    for (const b of sonnetOff) {
+      expect(b.output_config).toBeUndefined();
+    }
+    // opus effort=none goes out as adaptive 'low'.
     expect(bodies).toContainEqual(
       expect.objectContaining({
-        model: 'claude-sonnet-5-5',
+        model: 'claude-opus-5-5',
         thinking: { type: 'adaptive' },
         output_config: { effort: 'low' }
       })
@@ -369,20 +451,30 @@ describe('openai-model-tiers, keyed, against a fake OpenAI', () => {
       expect(report).toMatch(/\[EXPECTED-REJECT\] base temp=0\.3\s+gpt-6-luna\s+\(AI API returned 400/);
       expect(report).toMatch(/\[REFUSED-LOCALLY\] advanced temp=0\.3\s+gpt-6\.1-sol/);
       expect(report).toMatch(/\[REFUSED-LOCALLY\] frontier temp=0\.3\s+gpt-6-astra/);
+      // Report-only: the raw temperature 1 rows record what the provider said, without a verdict.
+      expect(report).toMatch(/\[OBSERVED\] advanced temp=1 raw\s+gpt-6\.1-sol\s+\(accepted\)/);
+      expect(report).toMatch(
+        /\[OBSERVED\] frontier temp=1 raw\s+gpt-6-astra\s+\(rejected: AI API returned 400: .*temperature is not supported/
+      );
       expect(report).toMatch(/\[PASS\] frontier max=128000\s+gpt-6-astra/);
       expect(report).toMatch(/LIVE-VERIFIED/);
     });
     const bodies = sent.map((s) => s.body);
-    // Only the two luna rows carry a temperature.
-    expect(bodies.filter((b) => b.temperature !== undefined).map((b) => b.model)).toEqual([
-      'gpt-6-luna',
-      'gpt-6-luna'
+    // The two luna rows carry 0.3; the two raw rows carry 1, past the local gate.
+    expect(bodies.filter((b) => b.temperature !== undefined).map((b) => [b.model, b.temperature])).toEqual([
+      ['gpt-6-luna', 0.3],
+      ['gpt-6-luna', 0.3],
+      ['gpt-6.1-sol', 1],
+      ['gpt-6-astra', 1]
     ]);
     expect(bodies.filter((b) => b.max_completion_tokens === 128000)).toHaveLength(3);
   });
 });
 
-/** Answers like Gemini generateContent: text, image parts for the image model, budget-0 rule on pro. */
+/**
+ * Answers like Gemini generateContent: text, image parts for the image model, and the budget-0
+ * rejections seen on pro and flash-lite. gemini-3.8-flash accepts budget 0, as it does live.
+ */
 const fakeGemini: FakeProvider = ({ url, body }) => {
   if (url.includes('nano-banana')) {
     return {
@@ -399,6 +491,10 @@ const fakeGemini: FakeProvider = ({ url, body }) => {
       json: { error: { message: 'Budget 0 is invalid. This model only works in thinking mode.' } }
     };
   }
+  if (config?.thinkingConfig?.thinkingBudget === 0 && url.includes('flash-lite')) {
+    // The live wording (2026-11-09): names neither the budget nor thinking.
+    return { status: 400, json: { error: { message: 'Request contains an invalid argument.' } } };
+  }
   return {
     status: 200,
     json: { candidates: [{ content: { parts: [{ text: 'pong' }] }, finishReason: 'STOP' }] }
@@ -414,9 +510,31 @@ describe('google-gemini-model-tiers, keyed, against a fake Gemini', () => {
       expect(report).toMatch(
         /\[EXPECTED-REJECT\] advanced none raw\s+gemini-3\.1-pro-preview\s+\(.*Budget 0/
       );
+      expect(report).toMatch(
+        /\[EXPECTED-REJECT\] @google-gemini:flash-lite none raw\s+gemini-3\.5-flash-lite\s+\(.*invalid argument/
+      );
+      expect(report).toMatch(
+        /\[PASS\] base effort=none\s+gemini-3\.8-flash\s+\(degraded to 'low' \(thinking-required\)\)/
+      );
+      expect(report).toMatch(/\[REFUSED-LOCALLY\] base none\+fail\s+gemini-3\.8-flash/);
+      expect(report).toMatch(
+        /\[REFUSED-LOCALLY\] @google-gemini:flash-lite none\+fail\s+gemini-3\.5-flash-lite/
+      );
+      expect(report).not.toMatch(/base none raw/);
       expect(report).toMatch(/\[PASS\] image\s+gemini-nano-banana-2\.1/);
       expect(report).toMatch(/LIVE-VERIFIED/);
     });
+    // Only the raw rows send budget 0, and never to gemini-3.8-flash.
+    const budgetZero = sent.filter(
+      (s) =>
+        (s.body.generationConfig as { thinkingConfig?: { thinkingBudget?: number } } | undefined)
+          ?.thinkingConfig?.thinkingBudget === 0
+    );
+    expect(budgetZero.map((s) => s.url.match(/models\/([^:]+)/)?.[1])).toEqual([
+      'gemini-3.1-pro-preview',
+      'gemini-3.1-pro-preview',
+      'gemini-3.5-flash-lite'
+    ]);
     const capped = sent.filter(
       (s) => (s.body.generationConfig as { maxOutputTokens?: number } | undefined)?.maxOutputTokens === 65536
     );

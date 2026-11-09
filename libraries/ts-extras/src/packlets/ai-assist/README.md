@@ -154,8 +154,8 @@ there is no 2-D selection and no competition between the axes.
 **What moving to these targets changed for callers (2026-11).** Anthropic's base tier
 (`claude-sonnet-5-5`) sends structured output as `output_config.format` rather than a forced tool,
 returns text written between tool calls as progress-update `thinking` blocks, ties its thinking blocks
-to the model and conversation (edit history and a replayed block can 400), and cannot run with
-thinking off. `@anthropic:haiku` (`claude-haiku-5-5`) thinks by default and counts the same text as
+to the model and conversation (edit history and a replayed block can 400), and turns thinking off
+only with its own value, `thinking: { type: 'between_tools' }` (see below). `@anthropic:haiku` (`claude-haiku-5-5`) thinks by default and counts the same text as
 ~30% more tokens than Haiku 4.5. The OpenAI advanced tier (`gpt-6.1-sol`) has no `'none'` effort.
 
 **Per-model rules ai-assist now enforces.**
@@ -164,8 +164,25 @@ thinking off. `@anthropic:haiku` (`claude-haiku-5-5`) thinks by default and coun
   `thinking: { type: 'disabled' }` to an adaptive model that accepts it (`claude-sonnet-5`,
   `claude-opus-5`, `claude-haiku-5-5`), no `thinking` field to an older model (already off), and
   `'low'` — or a refusal under `onUnsupported: 'fail'` — to a model that cannot turn thinking off
-  (`claude-sonnet-5-5`, `claude-opus-5-5`, Fable and Mythos 5.x, `claude-mythos-preview`; declared in
-  `thinkingRequiredModelPrefixes`, alongside `gpt-6-astra` and `gpt-6.1-sol`).
+  (`claude-opus-5-5`, Fable and Mythos 5.x, `claude-mythos-preview`; declared in
+  `thinkingRequiredModelPrefixes`, alongside `gpt-6-astra`, `gpt-6.1-sol`, `gemini-3.1-pro-preview`,
+  `gemini-3.8-flash` and `gemini-3.5-flash-lite`).
+- **`claude-sonnet-5-5` (`@anthropic:sonnet`, the base tier) turns thinking off with `between_tools`.**
+  It rejects `disabled`, and its own off value is declared as data:
+  `IAiProviderDescriptor.anthropicThinkingOffTypes` (`[{ modelPrefix: 'claude-sonnet-5-5', type:
+  'between_tools' }]`, read through `AiAssist.resolveAnthropicThinkingOffType`). So a `'none'` there
+  now sends `thinking: { type: 'between_tools' }` on the completion, streaming and client-tool paths
+  (and a caller-built `anthropicThinkingDisabled` flag is sent the same way rather than refused). This
+  is the second change to the base tier's `'none'` in a row — it was degraded to `'low'` — and it is
+  real thinking-off: the model does not think before it responds, **but the short updates it writes
+  between tool calls still come back as `thinking` blocks**. `between_tools` 400s at effort `xhigh`
+  and `max`; a `'none'` never sends an effort beside it.
+- **Gemini 3.x Flash cannot be turned off by a budget.** `gemini-3.5-flash-lite` rejects
+  `thinkingBudget: 0` (`400 INVALID_ARGUMENT`), and `gemini-3.8-flash` accepts it but lists no level
+  below `low`, so both are on `thinkingRequiredModelPrefixes`: `'none'` on `@google-gemini:flash`
+  (the base tier) and `@google-gemini:flash-lite` is now sent as `'low'` (budget 1024), or refused
+  under `onUnsupported: 'fail'`. This is interim: Gemini 3.x is controlled by `thinkingLevel`, which
+  ai-assist does not send yet; once it does, `'none'` maps to `minimal` where a model lists it.
 - A `temperature` aimed at a model in `samplingParamsRejectedModelPrefixes` is refused before the wire
   on the completion, streaming and client-tool paths. On Anthropic (every Claude 5.x model,
   `claude-mythos-preview`, `claude-opus-4-8`, `claude-opus-4-7`) only a non-default value is refused:
