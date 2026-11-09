@@ -123,10 +123,13 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     // thinks by default. These reject 'disabled' ("400 error" in the "disabled" column of the
     // per-model table, https://platform.claude.com/docs/en/build-with-claude/thinking, fetched
     // 2026-11-08: "Claude Fable 5.1, Claude Mythos 5.1, Claude Fable 5, Claude Mythos 5, Claude Opus
-    // 5.5, and Claude Mythos Preview reject `thinking: {type: "disabled"}`", and Claude Sonnet 5.5
-    // "rejects `thinking: {type: "disabled"}` with a 400 error"), so 'none' is sent as 'low' there,
-    // or refused. claude-opus-5, claude-sonnet-5 and claude-haiku-5-5 accept it (Opus 5 and Haiku 5.5
-    // "at `high` effort or below"; a 'none' sends no effort, and their defaults are high and medium).
+    // 5.5, and Claude Mythos Preview reject `thinking: {type: "disabled"}`"), so 'none' is sent as
+    // 'low' there, or refused. Opus 5.5 and Fable 5.1 confirm it live (2026-11-09): "`thinking.type.
+    // disabled` is not supported for this model. Use `thinking.type.adaptive` and
+    // `output_config.effort`". claude-opus-5, claude-sonnet-5 and claude-haiku-5-5 accept it (Opus 5
+    // and Haiku 5.5 "at `high` effort or below"; a 'none' sends no effort, and their defaults are
+    // high and medium). claude-sonnet-5-5 rejects 'disabled' too but has its own off value; see
+    // anthropicThinkingOffTypes below.
     // claude-mythos-preview is named by that id on
     // https://platform.claude.com/docs/en/about-claude/model-deprecations ("claude-mythos-preview |
     // Deprecated"); its table row reads "Adaptive thinking | Adaptive thinking | Extended thinking |
@@ -138,11 +141,18 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     // differs from maxOutputTokens, which matches exact ids only, because a guessed limit is unsafe.
     thinkingRequiredModelPrefixes: [
       'claude-opus-5-5',
-      'claude-sonnet-5-5',
       'claude-fable-5',
       'claude-mythos-5',
       'claude-mythos-preview'
     ],
+    // claude-sonnet-5-5 turns thinking off with `between_tools`. A live `{type: 'disabled'}` returned
+    // 400 (2026-11-09): "To turn thinking off on this model, send "thinking": {"type":
+    // "between_tools"} instead of {"type": "disabled"}. The model does not think before responding.
+    // The short updates it writes between tool calls come back as thinking blocks." between_tools
+    // 400s at effort xhigh and max; a generic 'none' sends no effort beside it, so that cannot be
+    // reached that way (an explicit 'other' block or caller-built otherParams still can). Like the
+    // lists above, the rule is dash-bounded on purpose: it also matches future variants of the id.
+    anthropicThinkingOffTypes: [{ modelPrefix: 'claude-sonnet-5-5', type: 'between_tools' }],
     // "On Claude Fable 5.1, Claude Mythos 5.1, Claude Fable 5, Claude Mythos 5, Claude Mythos Preview,
     // Claude Opus 5.5, Claude Opus 5, Claude Opus 4.8, Claude Opus 4.7, Claude Sonnet 5.5, Claude
     // Sonnet 5, and Claude Haiku 5.5, non-default `temperature`, `top_p`, or `top_k` values return a
@@ -250,7 +260,28 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     // only works in thinking mode." (2026-09-25); Google's thinking page lists its levels as
     // low/medium/high. gemini-2.5-pro: IGeminiThinkingConfig.thinkingBudget documents 0 as
     // erroring on Pro.
-    thinkingRequiredModelPrefixes: ['gemini-3.1-pro-preview', 'gemini-2.5-pro'],
+    // gemini-3.5-flash-lite and gemini-3.8-flash cannot be turned off by a budget either. § "Controlling
+    // thinking" on https://ai.google.dev/gemini-api/docs/thinking.md.txt (fetched 2026-11-09):
+    //   | gemini-3.8-flash | On (medium) | low, medium, high |
+    //   | gemini-3.6-flash | On (medium) | minimal, low, medium, high |
+    //   | gemini-3.5-flash-lite | On (minimal) | minimal, low, medium, high |
+    // flash-lite returned 400 INVALID_ARGUMENT "Request contains an invalid argument." for
+    // thinkingBudget 0 (live, 2026-11-09); 3.8-flash accepts budget 0 but lists no level that turns
+    // thinking off, so 'none' would claim an effect it does not have. Both degrade to 'low' or refuse.
+    // This is interim: Gemini 3.x is controlled by `thinkingLevel`, which ai-assist does not send
+    // yet; once it does, 'none' maps to `minimal` on the models that list it (flash-lite), and the
+    // flash-lite entry comes off this list.
+    // The entries are dash-bounded on purpose, so they also match future variants of a listed id
+    // (gemini-3.8-flash matches a gemini-3.8-flash-lite or a dated snapshot): the safe direction
+    // for a degrade-or-refuse list, until someone reviews the new id. gemini-3.6-flash and
+    // gemini-3.5-flash stay unlisted: neither is an alias target, and there is no evidence that
+    // either rejects or ignores budget 0.
+    thinkingRequiredModelPrefixes: [
+      'gemini-3.1-pro-preview',
+      'gemini-2.5-pro',
+      'gemini-3.5-flash-lite',
+      'gemini-3.8-flash'
+    ],
     corsRestricted: false,
     streamingCorsRestricted: false,
     acceptsImageInput: true,

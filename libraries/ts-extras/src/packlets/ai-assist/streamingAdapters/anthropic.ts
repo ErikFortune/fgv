@@ -31,6 +31,7 @@
  * @packageDocumentation
  */
 
+import { type AnthropicThinkingOffType } from '../anthropicThinkingOff';
 import { fail, type Logging, Result, succeed, type Validator, Validators } from '@fgv/ts-utils';
 import { type JsonObject } from '@fgv/ts-json-base';
 
@@ -536,7 +537,8 @@ export async function callAnthropicStream(
   useAdaptiveThinking: boolean = false,
   maxTokens?: number,
   cache?: IAiCacheRequest,
-  temperatureAcceptedWithThinking?: number
+  temperatureAcceptedWithThinking?: number,
+  thinkingOffType: AnthropicThinkingOffType = 'disabled'
 ): Promise<Result<AsyncIterable<IAiStreamEvent>>> {
   const url = `${config.baseUrl}/messages`;
   const messages = buildAnthropicMessages(prompt, {
@@ -579,10 +581,14 @@ export async function callAnthropicStream(
       };
     }
   } else if (resolvedThinking?.anthropicThinkingDisabled === true && useAdaptiveThinking) {
-    // Adaptive models think by default, so omitting `thinking` would not turn it off. A model on
-    // thinkingRequiredModelPrefixes never gets here: a generic 'none' is degraded or refused when it
-    // is resolved, and executeClientToolTurn refuses a caller-built flag for it before dispatch.
-    body.thinking = { type: 'disabled' };
+    // Adaptive models think by default, so omitting `thinking` would not turn it off. The off value
+    // is per model (resolveAnthropicThinkingOffType), and a generic 'none' sends no effort beside it:
+    // this branch runs only when anthropicEffort is unset (an 'other' block's otherParams, merged
+    // below, can still add one), which also keeps between_tools clear of its 400 at
+    // effort xhigh and max. A model on thinkingRequiredModelPrefixes never gets here: a generic
+    // 'none' is degraded or refused when it is resolved, and executeClientToolTurn refuses a caller-built flag
+    // for it before dispatch.
+    body.thinking = { type: thinkingOffType };
   }
   if (resolvedThinking?.otherParams !== undefined) {
     Object.assign(body, resolvedThinking.otherParams);

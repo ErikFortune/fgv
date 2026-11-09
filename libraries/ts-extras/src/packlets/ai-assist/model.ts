@@ -27,6 +27,7 @@ import { fail, type Result, succeed } from '@fgv/ts-utils';
 import { type JsonObject } from '@fgv/ts-json-base';
 import type { IAiStructuredOutputCapability, StructuredOutputEnforcement } from './structuredOutputTypes';
 import type { IAiCompletionUsage } from './usageTypes';
+import type { IAnthropicThinkingOffRule } from './anthropicThinkingOff';
 import type {
   AiServerToolType,
   IAiStreamToolUseComplete,
@@ -535,7 +536,7 @@ export function isResponsesOnlyModel(descriptor: IAiProviderDescriptor, modelId:
  * (versioned/dated-snapshot ids, e.g. `'claude-sonnet-5'` matches `'claude-sonnet-5-20260115'`
  * but not `'claude-sonnet-50'`). @internal
  */
-function isExactOrDashBoundedPrefix(modelId: string, prefix: string): boolean {
+export function isExactOrDashBoundedPrefix(modelId: string, prefix: string): boolean {
   return modelId === prefix || modelId.startsWith(`${prefix}-`);
 }
 
@@ -1076,8 +1077,10 @@ export interface IAiProviderDescriptor {
    * Concrete model ids (exact-or-dash-bounded-prefix-matched, like
    * {@link IAiProviderDescriptor.adaptiveThinkingModelPrefixes}) that cannot run with thinking off.
    * The provider rejects the off value ai-assist would send for a generic `effort: 'none'`:
-   * `reasoning_effort: 'none'` (OpenAI, xAI), `thinkingBudget: 0` (Gemini), or
-   * `thinking: { type: 'disabled' }` (Anthropic adaptive-thinking models).
+   * `reasoning_effort: 'none'` (OpenAI, xAI), `thinkingBudget: 0` (Gemini), or the model's off
+   * `thinking` value (Anthropic adaptive-thinking models; see
+   * {@link IAiProviderDescriptor.anthropicThinkingOffTypes}). A model that accepts the off value but
+   * ignores it, still thinking, is listed too, so that `'none'` never claims an effect it lacks.
    *
    * @remarks
    * A generic `'none'` on a listed model is handled by {@link IThinkingConfig.onUnsupported}. It
@@ -1087,6 +1090,20 @@ export interface IAiProviderDescriptor {
    * block's `effort` or `thinkingBudget`, or an `'other'` block's wire field). Empty or undefined means every model accepts `'none'`.
    */
   readonly thinkingRequiredModelPrefixes?: ReadonlyArray<string>;
+  /**
+   * Per-model Anthropic thinking-off values for adaptive-thinking models that turn thinking off
+   * with something other than `thinking: { type: 'disabled' }`, the default. Each rule's
+   * `modelPrefix` is matched exact-or-dash-bounded, like
+   * {@link IAiProviderDescriptor.adaptiveThinkingModelPrefixes}; the first match wins. Like those
+   * lists, a rule deliberately also matches future variants of its id (`claude-sonnet-5-5-<date>`).
+   *
+   * @remarks
+   * Read by the completion, streaming and client-tool Anthropic emit sites (via
+   * {@link AiAssist.resolveAnthropicThinkingOffType}) when a generic `effort: 'none'` (or a
+   * caller-built `anthropicThinkingDisabled` flag) turns thinking off on an adaptive model. Empty
+   * or undefined means every model uses `'disabled'`.
+   */
+  readonly anthropicThinkingOffTypes?: ReadonlyArray<IAnthropicThinkingOffRule>;
   /**
    * Concrete model ids (exact-or-dash-bounded-prefix-matched, like
    * {@link IAiProviderDescriptor.thinkingRequiredModelPrefixes}) that reject a caller-supplied
@@ -1844,7 +1861,7 @@ export type IThinkingProviderConfig =
 export interface IThinkingConfig {
   /**
    * Cross-provider effort level. Common-subset mapping:
-   * - 'none': Anthropic — no thinking param emitted | OpenAI effort:none | Gemini thinkingBudget:0 | xAI reasoning_effort:none
+   * - 'none': Anthropic — the model's thinking-off value (see remarks) | OpenAI effort:none | Gemini thinkingBudget:0 | xAI reasoning_effort:none
    * - 'low': Anthropic effort:low | OpenAI effort:low | Gemini thinkingBudget:1024 | xAI reasoning_effort:low
    * - 'medium': Anthropic effort:medium | OpenAI effort:medium | Gemini thinkingBudget:4096 | xAI reasoning_effort:medium
    * - 'high': Anthropic effort:high | OpenAI effort:high | Gemini thinkingBudget:8192 | xAI reasoning_effort:high
@@ -1853,8 +1870,12 @@ export interface IThinkingConfig {
    * `'none'` is the one cross-provider spelling for "thinking off". Anthropic has no
    * off value in its own effort vocabulary, so `'none'` maps to a `thinking` value rather than
    * an effort: on an adaptive-thinking model (see {@link AiAssist.isAdaptiveThinkingModel}),
-   * where thinking is on by default, it sends `thinking: { type: 'disabled' }`; on an older
-   * model, where thinking is off by default, it omits the `thinking` field.
+   * where thinking is on by default, it sends the model's off value — `thinking: { type: 'disabled' }`,
+   * or the per-model value in {@link IAiProviderDescriptor.anthropicThinkingOffTypes} (for example
+   * `{ type: 'between_tools' }` on `claude-sonnet-5-5`); a generic `'none'` never sends an
+   * `output_config.effort` beside it (an explicit `'other'` block or caller-built `otherParams` can,
+   * and Anthropic rejects `between_tools` and `disabled` above `high`); on an older model, where
+   * thinking is off by default, it omits the `thinking` field.
    * On a model that accepts `'none'`, whichever provider is in play, `'none'` also re-enables
    * `temperature` (see `checkTemperatureConflict` in `thinkingOptionsResolver.ts`). On a model
    * listed in {@link IAiProviderDescriptor.thinkingRequiredModelPrefixes} it does not: there

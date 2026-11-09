@@ -135,26 +135,33 @@ GEMINI_API_KEY=…    node bin/testbed.js --scenario google-gemini-model-tiers
 XAI_API_KEY=…       node bin/testbed.js --scenario xai-grok-model-tiers
 ```
 
-Most rows pass as `PASS`. Three more outcomes are passes too, because the probe stated them up front:
+Most rows pass as `PASS`. Three more outcomes are passes too, because the probe stated them up front,
+and one row kind makes no claim at all:
 
 | tag                   | means                                                                                                                                                                            |
 | --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `[REFUSED-LOCALLY]`   | ai-assist refused the request before building it, so nothing was sent (a `temperature` the model rejects, or `'none'` with `onUnsupported: 'fail'` on a thinking-required model) |
 | `[EXPECTED-REJECT]`   | the provider returned the 400 the probe expected, for the expected reason (a raw thinking-off value on a thinking-required model; temperature on `gpt-6-luna` without effort `'none'`). The row prints the provider's own text; a 400 for another reason is a `FAIL`                    |
 | `[NO-RECORDED-LIMIT]` | a max-output probe on a model with no `maxOutputTokens` entry: nothing to check, no call                                                                                         |
+| `[OBSERVED]`          | report-only: the answer is not known yet, so the row prints `accepted` or `rejected: <provider text>` and neither passes nor fails (OpenAI's raw `temperature: 1` on `gpt-6.1-sol` and `gpt-6-astra`) |
 
 The probe families:
 
 - **Thinking** (`effort=none` / `effort=low`, on every tier and extra model): `'none'` on a
   thinking-required model is sent as `'low'`; elsewhere it turns thinking off (on Anthropic,
-  `thinking: {type: 'disabled'}`). Both must answer.
+  `thinking: {type: 'disabled'}`, or the model's own value — `between_tools` on `claude-sonnet-5-5`).
+  Both must answer.
 - **Strict none** (`none+fail`): refused locally on a thinking-required model, answered on any other.
-  Each thinking-required model also gets a `none raw` row that bypasses the library and must be the
-  provider's 400. A raw row that answers means the `thinkingRequiredModelPrefixes` entry is stale.
+  Each thinking-required model, and each model with its own off value, also gets a `none raw` row
+  that bypasses the library, sends the provider's default off value, and must be the provider's 400.
+  A raw row that answers means the `thinkingRequiredModelPrefixes` (or `anthropicThinkingOffTypes`)
+  entry is stale. `gemini-3.8-flash` gets no raw row: it accepts budget 0 and goes on thinking, so the
+  row could not tell anything apart.
 - **Temperature** (`temp=…`, Anthropic and OpenAI): each row names its expected outcome. Anthropic
   accepts `1` with and without thinking and refuses `0.3` locally; OpenAI accepts `0.3` on
   `gpt-6-luna` with effort `'none'`, expects a provider 400 without it, and refuses it locally on
-  `gpt-6.1-sol` and `gpt-6-astra`.
+  `gpt-6.1-sol` and `gpt-6-astra`. A `temp=1 raw` row on `gpt-6.1-sol` and `gpt-6-astra` sends `1`
+  in an `'other'` provider block, past the library's gate, and is `[OBSERVED]` only.
 - **Max output** (`max=N`, Anthropic, OpenAI and Gemini): `maxTokens` set to
   `resolveMaxOutputTokens` for that exact model. It must be accepted. A refusal naming the token cap
   is `FAIL(param)`: the recorded limit is too high.

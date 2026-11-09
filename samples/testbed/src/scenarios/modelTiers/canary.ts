@@ -43,14 +43,16 @@
  *    - thinking probes: one completion per tier, extra model and effort (`thinkingEfforts`)
  *    - strict-none probes: `'none'` plus `onUnsupported: 'fail'` on every tier and extra model,
  *      checked against `thinkingRequiredModelPrefixes` (`strictNoneProbe`). A listed model must be
- *      `refused-locally`. On a listed model, a second, raw `'none'` bypasses the library gate, and
- *      the provider's own rejection (`expected-reject`) keeps the listing honest in the other
- *      direction.
+ *      `refused-locally`. On a listed model, and on a model with its own off value
+ *      (`anthropicThinkingOffTypes`), a second, raw `'none'` sends the provider's default off value
+ *      past the library gate, and the provider's own rejection (`expected-reject`) keeps the listing
+ *      honest in the other direction (`rawNoneModels` can name a model's rejection text or skip it)
  *    - model-override rows for aliases no tier reaches (`extraModels`)
  *    - temperature probes: a `temperature` (optionally with an effort) on the tiers and extra
  *      models a probe names, each with a stated expectation — accepted, `refused-locally` (the
- *      library refuses before any request is sent) or `expected-reject` (the provider is expected
- *      to return a 400) (`temperatureProbes`)
+ *      library refuses before any request is sent), `expected-reject` (the provider is expected
+ *      to return a 400) or `observed` (report-only; a `raw` probe sends the temperature in an
+ *      `'other'` block, past the library gate) (`temperatureProbes`)
  *    - max-output probes: one completion per tier and extra model with `maxTokens` set to the
  *      recorded `resolveMaxOutputTokens` limit, or a `no-recorded-limit` row and no call when none
  *      is recorded (`maxOutputProbe`)
@@ -146,6 +148,11 @@ export type TierLiveOutcome =
    * expected exactly that — e.g. a raw `'none'` on a thinking-required model. Not a failure.
    */
   | 'expected-reject'
+  /**
+   * A report-only probe whose answer is not known yet: the row records whether the provider
+   * accepted the request or what it said rejecting it, and makes no pass/fail claim. Not a failure.
+   */
+  | 'observed'
   /** A max-output probe on a model with no recorded output limit: nothing to verify, no call made. */
   | 'no-recorded-limit'
   /** Live call not attempted (no API key) — STOP-FLAG: resolver verified, live pending a keyed run. */
@@ -193,6 +200,12 @@ export interface ICanaryCompleteOptions {
    * library's `'none'` gate, so the provider itself answers whether it accepts `'none'`.
    */
   readonly rawNone?: boolean;
+  /**
+   * Send this `temperature` inside an `'other'` provider block for the target model rather than as
+   * the `temperature` parameter. The library sends such a block verbatim and does not check it, so
+   * the provider itself answers whether it accepts the value.
+   */
+  readonly rawTemperature?: number;
   /** Send this `structuredOutput` request (a structured-output probe). */
   readonly structuredOutput?: AiAssist.StructuredOutputRequest;
   /** Send this `temperature` (a temperature probe). */
@@ -203,10 +216,11 @@ export interface ICanaryCompleteOptions {
 
 /**
  * What a probe expects of one request: that the provider answers it, that the library refuses it
- * before anything is sent, or that the provider rejects it.
+ * before anything is sent, that the provider rejects it, or — `'observed'` — nothing yet: the row
+ * reports what the provider said without a pass/fail claim.
  * @public
  */
-export type CanaryExpectation = 'accepted' | 'refused-locally' | 'expected-reject';
+export type CanaryExpectation = 'accepted' | 'refused-locally' | 'expected-reject' | 'observed';
 
 /**
  * One temperature probe: a `temperature` (optionally with a thinking effort) sent to the tiers and
@@ -225,6 +239,27 @@ export interface ICanaryTemperatureProbe {
    * unrelated reason (a usage limit) is not mistaken for the expected one.
    */
   readonly rejectPattern?: RegExp;
+  /**
+   * Send the temperature through an `'other'` provider block (see
+   * {@link ICanaryCompleteOptions.rawTemperature}) instead of the `temperature` parameter, so the
+   * library's own temperature gate does not answer for the provider.
+   */
+  readonly raw?: boolean;
+}
+
+/**
+ * Per-model handling of the `none raw` row, keyed by concrete model id (see
+ * {@link ITierCanarySpec.rawNoneModels}).
+ * @public
+ */
+export interface ICanaryRawNoneRule {
+  /** The text this model's rejection must match, in place of {@link ITierCanarySpec.rawNoneRejection}. */
+  readonly rejectPattern?: RegExp;
+  /**
+   * Send no raw row for this model, for the reason given: the raw value cannot tell anything apart
+   * on it (for example, a model that accepts the off value but goes on thinking).
+   */
+  readonly skip?: string;
 }
 
 /**
@@ -316,7 +351,8 @@ export interface ITierCanarySpec {
    * When true, probe every tier and extra model with `effort: 'none'` + `onUnsupported: 'fail'`.
    * The expectation comes from the registry: a model listed in `thinkingRequiredModelPrefixes` must
    * be refused locally, and any other model must answer live. A mismatch either way means the list
-   * is wrong.
+   * is wrong. A listed model, and a model with its own off value (`anthropicThinkingOffTypes`), also
+   * gets a `none raw` row sending the provider's default off value, which must be rejected.
    */
   readonly strictNoneProbe?: boolean;
   /**
@@ -324,6 +360,8 @@ export interface ITierCanarySpec {
    * {@link ICanaryTemperatureProbe.rejectPattern}). Absent: any 400 counts as the expected rejection.
    */
   readonly rawNoneRejection?: RegExp;
+  /** Per-model overrides of the `none raw` row, keyed by concrete id (see {@link ICanaryRawNoneRule}). */
+  readonly rawNoneModels?: Readonly<Record<string, ICanaryRawNoneRule>>;
   /** Temperature probes, each with its own expectation (see {@link ICanaryTemperatureProbe}). */
   readonly temperatureProbes?: ReadonlyArray<ICanaryTemperatureProbe>;
   /**
@@ -490,6 +528,8 @@ function liveTag(outcome: TierLiveOutcome): string {
       return 'REFUSED-LOCALLY';
     case 'expected-reject':
       return 'EXPECTED-REJECT';
+    case 'observed':
+      return 'OBSERVED';
     case 'no-recorded-limit':
       return 'NO-RECORDED-LIMIT';
     case 'not-run':
@@ -660,7 +700,8 @@ export function isLocalRefusal(message: string): boolean {
 
 /**
  * The expectation a thinking probe states for its row, read off the registry: `'none'` on a
- * thinking-required model is sent as `'low'`; elsewhere it turns thinking off.
+ * thinking-required model is sent as `'low'`; elsewhere it turns thinking off, naming the off value
+ * when the model has its own (`anthropicThinkingOffTypes`).
  */
 function thinkingExpectation(
   spec: ITierCanarySpec,
@@ -670,9 +711,34 @@ function thinkingExpectation(
   if (effort !== 'none') {
     return undefined;
   }
-  return AiAssist.isThinkingRequiredModel(spec.descriptor, concrete)
-    ? "degraded to 'low' (thinking-required)"
-    : 'sent with thinking off';
+  if (AiAssist.isThinkingRequiredModel(spec.descriptor, concrete)) {
+    return "degraded to 'low' (thinking-required)";
+  }
+  const offType = AiAssist.resolveAnthropicThinkingOffType(spec.descriptor, concrete);
+  return offType === 'disabled' ? 'sent with thinking off' : `sent with thinking off (${offType})`;
+}
+
+/**
+ * Whether a target gets a `none raw` row, and the rejection text it must match. A thinking-required
+ * model and a model with its own off value both reject the provider's default off value; a rule in
+ * {@link ITierCanarySpec.rawNoneModels} can name its own text, or skip the row.
+ */
+function rawNonePlan(
+  spec: ITierCanarySpec,
+  concrete: string,
+  listed: boolean
+): { readonly note: string; readonly rejectPattern?: RegExp } | undefined {
+  const offType = AiAssist.resolveAnthropicThinkingOffType(spec.descriptor, concrete);
+  const rule = spec.rawNoneModels?.[concrete];
+  if ((!listed && offType === 'disabled') || rule?.skip !== undefined) {
+    return undefined;
+  }
+  return {
+    note: listed
+      ? 'the provider still rejects none, as listed'
+      : `the provider still rejects disabled; this model's off value is ${offType}`,
+    rejectPattern: rule?.rejectPattern ?? spec.rawNoneRejection
+  };
 }
 
 /** Runs the thinking probes: one live completion per (tier or extra model, effort). */
@@ -731,6 +797,7 @@ async function runStrictNoneProbes(
     const label = `${target.label} none+fail`;
     const rawLabel = `${target.label} none raw`;
     const listed = AiAssist.isThinkingRequiredModel(spec.descriptor, target.concrete);
+    const raw = rawNonePlan(spec, target.concrete, listed);
     if (deps.complete === undefined) {
       rows.push({
         label,
@@ -738,7 +805,7 @@ async function runStrictNoneProbes(
         outcome: 'not-run',
         detail: listed ? 'expect refused-locally' : 'expect accepted'
       });
-      if (listed) {
+      if (raw !== undefined) {
         rows.push({
           label: rawLabel,
           concrete: target.concrete,
@@ -753,25 +820,28 @@ async function runStrictNoneProbes(
       targetOptions(target, { effort: 'none', onUnsupported: 'fail' })
     );
     rows.push(strictNoneProbe(label, target.concrete, listed, result));
-    if (listed) {
+    if (raw !== undefined) {
       // The local refusal above never reaches the provider, so it cannot notice a provider that
-      // has started accepting 'none'. Ask the provider directly, bypassing the gate.
-      const raw = await deps.complete(target.tier, targetOptions(target, { rawNone: true }));
-      rows.push(rawNoneProbe(rawLabel, target.concrete, raw, spec.rawNoneRejection));
+      // has started accepting 'none'. Ask the provider directly, bypassing the gate. On a model
+      // with its own off value, this pins that the default value is still rejected.
+      const rawResult = await deps.complete(target.tier, targetOptions(target, { rawNone: true }));
+      rows.push(rawNoneProbe(rawLabel, target.concrete, rawResult, raw.note, raw.rejectPattern));
     }
   }
   return rows;
 }
 
 /**
- * Classifies a raw-`none` probe on a listed model. A provider 400 (or rejected-parameter message)
- * is the expected answer: the listing is still needed. A success fails: the provider now accepts
- * `'none'` and the `thinkingRequiredModelPrefixes` entry is stale.
+ * Classifies a raw-`none` probe. A provider 400 (or rejected-parameter message) is the expected
+ * answer: the listing, or the model's own off value, is still needed. A success fails: the provider
+ * now accepts its default off value, and the `thinkingRequiredModelPrefixes` or
+ * `anthropicThinkingOffTypes` entry is stale.
  */
 function rawNoneProbe(
   label: string,
   concrete: string,
   result: Result<AiAssist.IAiCompletionResponse>,
+  note: string,
   rejectPattern: RegExp | undefined
 ): ICanaryProbeResult {
   if (result.isSuccess()) {
@@ -779,13 +849,10 @@ function rawNoneProbe(
       label,
       concrete,
       outcome: 'error',
-      detail: 'the provider accepted none; the thinking-required listing is stale'
+      detail: 'the provider accepted none; the thinking-required or off-value listing is stale'
     };
   }
-  return classifyExpectedProbe(label, concrete, 'expected-reject', result, {
-    note: 'the provider still rejects none, as listed',
-    rejectPattern
-  });
+  return classifyExpectedProbe(label, concrete, 'expected-reject', result, { note, rejectPattern });
 }
 
 /**
@@ -810,6 +877,9 @@ export interface ICanaryExpectationOptions {
  *   stale-id failure keeps its usual meaning.
  * - `'accepted'`: passes on a non-empty answer. A local refusal is an `error` (the library is
  *   stricter than the probe expects); a provider failure is classified as a thinking failure.
+ * - `'observed'`: report-only. An answer reads `accepted`; a provider rejection of the request reads
+ *   `rejected: <provider text>`; neither fails. A local refusal is an `error` (the probe meant to
+ *   reach the provider), and an access or stale-id failure keeps its usual meaning.
  *
  * `options.note`, when given, is the detail on a passing row; on an `expected-reject` row the
  * provider's own text follows it, so the report always shows what the provider said.
@@ -891,7 +961,33 @@ export function classifyExpectedProbe(
         };
       }
       return withPassDetail(completionProbe(label, concrete, result, classifyThinkingFailure), note);
+    case 'observed':
+      return observedProbe(label, concrete, result, local);
   }
+}
+
+/** Classifies a report-only probe (see {@link classifyExpectedProbe}'s `'observed'`). */
+function observedProbe(
+  label: string,
+  concrete: string,
+  result: Result<AiAssist.IAiCompletionResponse>,
+  local: boolean
+): ICanaryProbeResult {
+  if (result.isSuccess()) {
+    return { label, concrete, outcome: 'observed', detail: 'accepted' };
+  }
+  if (local) {
+    return {
+      label,
+      concrete,
+      outcome: 'error',
+      detail: `the probe meant to reach the provider, but it was refused locally: ${result.message}`
+    };
+  }
+  const outcome = classifyThinkingFailure(result.message);
+  return outcome === 'param-failed'
+    ? { label, concrete, outcome: 'observed', detail: `rejected: ${result.message}` }
+    : { label, concrete, outcome, detail: result.message };
 }
 
 /** `row` with `detail` set to `note` when the row passed and a note is given. */
@@ -902,7 +998,8 @@ function withPassDetail(row: ICanaryProbeResult, note: string | undefined): ICan
 /** The row label for one temperature probe on one target. */
 function temperatureLabel(target: ICanaryTarget, probe: ICanaryTemperatureProbe): string {
   const effort = probe.effort !== undefined ? `+effort=${probe.effort}` : '';
-  return `${target.label} temp=${probe.temperature}${effort}`;
+  const raw = probe.raw === true ? ' raw' : '';
+  return `${target.label} temp=${probe.temperature}${effort}${raw}`;
 }
 
 /**
@@ -940,7 +1037,9 @@ async function runTemperatureProbes(
       const result = await deps.complete(
         target.tier,
         targetOptions(target, {
-          temperature: probe.temperature,
+          ...(probe.raw === true
+            ? { rawTemperature: probe.temperature }
+            : { temperature: probe.temperature }),
           ...(probe.effort !== undefined ? { effort: probe.effort } : {})
         })
       );
@@ -1254,8 +1353,8 @@ export async function runTierCanary(
   // Verdict: a stale id (`id-wrong`), a non-chat-callable id (`wrong-endpoint`), a rejected thinking
   // config (`param-failed`), or a plain `error` — on a tier or on any probe — fails the run.
   // `access-gated` / `param-rejected` (resolver + id correct; access or a completion-path parameter
-  // is the blocker), `not-run` (STOP-FLAG: pending the keyed run), and the expected outcomes
-  // `refused-locally`, `expected-reject` and `no-recorded-limit` do not.
+  // is the blocker), `not-run` (STOP-FLAG: pending the keyed run), the expected outcomes
+  // `refused-locally`, `expected-reject` and `no-recorded-limit`, and the report-only `observed` do not.
   const realFailure = [
     ...liveResults,
     ...thinking,

@@ -578,7 +578,7 @@ describe('thinking-config wire encoding (non-streaming)', () => {
       expect(sentBody()).toMatchObject({ generationConfig: { thinkingConfig: { thinkingBudget: 1024 } } });
     });
 
-    test('gemini base (gemini-3.8-flash) still sends budget 0 — it accepts it', async () => {
+    test('gemini base (gemini-3.8-flash): none is sent as the low budget — it lists no level below low', async () => {
       mockFetchResponse(geminiResponse('ok'));
       const sent3 = await AiAssist.callProviderCompletion({
         descriptor: gemini,
@@ -587,7 +587,7 @@ describe('thinking-config wire encoding (non-streaming)', () => {
         thinking: { effort: 'none' }
       });
       expect(sent3).toSucceed();
-      expect(sentBody()).toMatchObject({ generationConfig: { thinkingConfig: { thinkingBudget: 0 } } });
+      expect(sentBody()).toMatchObject({ generationConfig: { thinkingConfig: { thinkingBudget: 1024 } } });
     });
 
     test('xai advanced (grok-4.7): none is sent as low; base (grok-4.3) keeps none', async () => {

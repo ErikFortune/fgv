@@ -88,7 +88,9 @@ export interface IResolvedThinkingConfig {
   readonly anthropicEffort?: IAnthropicThinkingConfig['effort'];
   /**
    * Anthropic: a generic `effort: 'none'` asked for thinking off. On an adaptive-thinking model
-   * (thinking on by default) the emit-site sends `thinking: { type: 'disabled' }`; on an older
+   * (thinking on by default) the emit-site sends the model's off value (`thinking: { type: 'disabled' }`
+   * unless {@link AiAssist.IAiProviderDescriptor.anthropicThinkingOffTypes} names another) and no
+   * effort; on an older
    * model it sends nothing, which is already off. Ignored when {@link
    * IResolvedThinkingConfig.anthropicEffort} is set.
    */
@@ -385,7 +387,7 @@ export function resolveThinkingConfig(
     switch (discriminator) {
       case 'anthropic':
         // Anthropic has no 'none' effort value: 'none' leaves `anthropicEffort` unset and marks
-        // thinking off, which the emit-site turns into `thinking: { type: 'disabled' }` on an
+        // thinking off, which the emit-site turns into the model's off `thinking` value on an
         // adaptive model and into no `thinking` field on an older one. Leaving the effort unset
         // also satisfies checkTemperatureConflict's anthropic gate (which fails only when
         // anthropicEffort is set).

@@ -36,6 +36,7 @@
  * @packageDocumentation
  */
 
+import { resolveAnthropicThinkingOffType } from '../anthropicThinkingOff';
 import { captureAsyncResult, fail, type Logging, mapResults, Result, succeed } from '@fgv/ts-utils';
 import { type JsonArray, type JsonObject } from '@fgv/ts-json-base';
 
@@ -800,7 +801,9 @@ export function executeClientToolTurn(
     return fail(`executeClientToolTurn: ${samplingResult.message}`);
   }
   // A caller-built resolvedThinking skips the resolver that degrades or refuses 'none', so the
-  // same rule is applied here: the flag would send thinking disabled to a model that rejects it.
+  // same rule is applied here: the flag would send the off value to a model that rejects it. A
+  // model with a per-model off value (anthropicThinkingOffTypes) is not thinking-required, so the
+  // flag goes through and the adapter sends that value.
   if (
     resolvedThinking?.anthropicThinkingDisabled === true &&
     resolvedThinking.anthropicEffort === undefined &&
@@ -862,7 +865,8 @@ export function executeClientToolTurn(
           isAdaptiveThinkingModel(descriptor, config.model),
           maxTokens,
           cache,
-          temperatureAcceptedWithThinking(descriptor, config.model)
+          temperatureAcceptedWithThinking(descriptor, config.model),
+          resolveAnthropicThinkingOffType(descriptor, config.model)
         );
       case 'openai': {
         // Same gating as callProviderCompletion's 'openai' case in completionClient.ts — see the
