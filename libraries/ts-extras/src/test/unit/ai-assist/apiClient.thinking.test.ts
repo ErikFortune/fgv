@@ -482,8 +482,11 @@ describe('thinking-config wire encoding (non-streaming)', () => {
         temperature: 0.7,
         thinking: { effort: 'none', providers: [{ provider: 'openai', config: { effort: 'high' } }] }
       });
-      expect(result).toFailWith(/remove temperature or disable thinking/);
-      expect(result).not.toFailWith(/was sent as 'low'/);
+      // astra restricts temperature with or without thinking, so the refusal is the model's own.
+      expect(result).toFailWith(
+        /gpt-6-astra does not accept a non-default temperature \(0\.7\): remove temperature, or send 1/
+      );
+      expect(result).not.toFailWith(/was sent as 'low'|disable thinking/);
       expect(global.fetch).not.toHaveBeenCalled();
     });
 
@@ -504,8 +507,8 @@ describe('thinking-config wire encoding (non-streaming)', () => {
     });
 
     test("an 'other' block does not lift gpt-6-astra's temperature refusal", async () => {
-      // gpt-6-astra has no 'none' effort, so it rejects temperature on every request; a block that
-      // writes reasoning_effort does not change what the model accepts.
+      // gpt-6-astra has no 'none' effort, so it rejects every temperature but its default, 1, on
+      // every request; a block that writes reasoning_effort does not change what the model accepts.
       const result = await AiAssist.callProviderCompletion({
         descriptor: openai,
         apiKey: 'sk',
@@ -517,7 +520,9 @@ describe('thinking-config wire encoding (non-streaming)', () => {
           providers: [{ provider: 'other', models: ['gpt-6-astra'], config: { reasoning_effort: 'none' } }]
         }
       });
-      expect(result).toFailWith(/gpt-6-astra does not accept temperature on any request: remove temperature/);
+      expect(result).toFailWith(
+        /gpt-6-astra does not accept a non-default temperature \(0\.7\): remove temperature, or send 1/
+      );
       expect(global.fetch).not.toHaveBeenCalled();
     });
 
@@ -578,7 +583,7 @@ describe('thinking-config wire encoding (non-streaming)', () => {
       expect(sentBody()).toMatchObject({ generationConfig: { thinkingConfig: { thinkingBudget: 1024 } } });
     });
 
-    test('gemini base (gemini-3.8-flash): none is sent as the low budget — it lists no level below low', async () => {
+    test('gemini base (gemini-3.8-flash): none is sent as budget 0 — a budget of 0 turns its thinking off', async () => {
       mockFetchResponse(geminiResponse('ok'));
       const sent3 = await AiAssist.callProviderCompletion({
         descriptor: gemini,
@@ -587,7 +592,8 @@ describe('thinking-config wire encoding (non-streaming)', () => {
         thinking: { effort: 'none' }
       });
       expect(sent3).toSucceed();
-      expect(sentBody()).toMatchObject({ generationConfig: { thinkingConfig: { thinkingBudget: 1024 } } });
+      expect((global.fetch as jest.Mock).mock.calls[0][0]).toContain('gemini-3.8-flash');
+      expect(sentBody()).toMatchObject({ generationConfig: { thinkingConfig: { thinkingBudget: 0 } } });
     });
 
     test('xai advanced (grok-4.7): none is sent as low; base (grok-4.3) keeps none', async () => {

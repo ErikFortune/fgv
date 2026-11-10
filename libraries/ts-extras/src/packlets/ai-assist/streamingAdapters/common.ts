@@ -95,7 +95,10 @@ export interface IProviderCompletionStreamParams extends IChatRequest {
   readonly apiKey: string;
   /**
    * Sampling temperature. Sent to the provider only when explicitly provided; omitted otherwise
-   * so the provider's own default applies (current-gen models reject a caller-supplied default).
+   * so the provider's own default applies. Many current-gen models reject a non-default value;
+   * a model on `IAiProviderDescriptor.samplingParamsRejectedModelPrefixes` still accepts the
+   * descriptor's `samplingParamsAcceptedTemperature`, with or without thinking, and is refused
+   * any other value before the wire.
    */
   readonly temperature?: number;
   /** Optional model override — string or context-aware map. */

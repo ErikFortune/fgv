@@ -518,7 +518,10 @@ export interface IExecuteClientToolTurnParams extends IChatRequest {
   readonly continuationMessages?: ReadonlyArray<JsonObject>;
   /**
    * Sampling temperature. Sent to the provider only when explicitly provided; omitted otherwise
-   * so the provider's own default applies (current-gen models reject a caller-supplied default).
+   * so the provider's own default applies. Many current-gen models reject a non-default value;
+   * a model on `IAiProviderDescriptor.samplingParamsRejectedModelPrefixes` still accepts the
+   * descriptor's `samplingParamsAcceptedTemperature`, with or without thinking, and is refused
+   * any other value before the wire.
    */
   readonly temperature?: number;
   /** Server-side tools to include. */
@@ -894,7 +897,8 @@ export function executeClientToolTurn(
           continuationMessages,
           maxTokens,
           supportsCacheUsageReporting(descriptor),
-          gatedCache
+          gatedCache,
+          temperatureAcceptedWithThinking(descriptor, config.model)
         );
       }
       case 'gemini':

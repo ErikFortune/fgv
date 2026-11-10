@@ -165,8 +165,8 @@ only with its own value, `thinking: { type: 'between_tools' }` (see below). `@an
   `claude-opus-5`, `claude-haiku-5-5`), no `thinking` field to an older model (already off), and
   `'low'` — or a refusal under `onUnsupported: 'fail'` — to a model that cannot turn thinking off
   (`claude-opus-5-5`, Fable and Mythos 5.x, `claude-mythos-preview`; declared in
-  `thinkingRequiredModelPrefixes`, alongside `gpt-6-astra`, `gpt-6.1-sol`, `gemini-3.1-pro-preview`,
-  `gemini-3.8-flash` and `gemini-3.5-flash-lite`).
+  `thinkingRequiredModelPrefixes`, alongside `gpt-6-astra`, `gpt-6.1-sol`, `gemini-3.1-pro-preview`
+  and `gemini-3.5-flash-lite`).
 - **`claude-sonnet-5-5` (`@anthropic:sonnet`, the base tier) turns thinking off with `between_tools`.**
   It rejects `disabled`, and its own off value is declared as data:
   `IAiProviderDescriptor.anthropicThinkingOffTypes` (`[{ modelPrefix: 'claude-sonnet-5-5', type:
@@ -178,23 +178,29 @@ only with its own value, `thinking: { type: 'between_tools' }` (see below). `@an
   between tool calls still come back as `thinking` blocks**. A generic `'none'` never sends an
   effort beside it; an explicit `'other'` block or caller-built `otherParams` can, and Anthropic
   rejects `between_tools` (and `disabled`) above `high` (`between_tools` 400s at `xhigh` and `max`).
-- **`gemini-3.8-flash` and `gemini-3.5-flash-lite` cannot be turned off by a budget.**
-  `gemini-3.5-flash-lite` rejects `thinkingBudget: 0` (`400 INVALID_ARGUMENT`), and
-  `gemini-3.8-flash` accepts it but lists no level below `low`, so both are on
-  `thinkingRequiredModelPrefixes`: `'none'` on `@google-gemini:flash` (the base tier) and
-  `@google-gemini:flash-lite` is now sent as `'low'` (budget 1024), or refused under
-  `onUnsupported: 'fail'`. That changes thinking cost and latency on those aliases; the direction
-  is unknown, since `gemini-3.8-flash` may have been ignoring budget 0 and thinking at its default.
-  `gemini-3.6-flash` and `gemini-3.5-flash` stay unlisted: neither is an alias target, and there is
-  no evidence either rejects or ignores budget 0. The entries are dash-bounded, so they deliberately
-  also match future variants of a listed id (e.g. a `gemini-3.8-flash-lite`). This is interim:
-  Gemini 3.x is controlled by `thinkingLevel`, which ai-assist does not send yet; once it does,
-  `'none'` maps to `minimal` where a model lists it.
+- **`gemini-3.5-flash-lite` cannot be turned off by a budget.** It rejects `thinkingBudget: 0`
+  (`400 INVALID_ARGUMENT`), so it is on `thinkingRequiredModelPrefixes`: `'none'` on
+  `@google-gemini:flash-lite` is sent as `'low'` (budget 1024), or refused under
+  `onUnsupported: 'fail'`. This is interim: Gemini 3.x is controlled by `thinkingLevel`, which
+  ai-assist does not send yet; once it does, `'none'` maps to `minimal` where a model lists it.
+- **`gemini-3.8-flash` (`@google-gemini:flash`, the base tier) turns thinking off with budget 0.** A
+  live budget-0 request (2026-11-10) came back with no `thoughtsTokenCount` in `usageMetadata`, so
+  it is not listed, although Google's level table names no level below `low` for it: a generic
+  `'none'` sends `thinkingBudget: 0`, and `onUnsupported: 'fail'` has nothing to refuse. The list
+  is dash-bounded, so its entries deliberately match future variants of a listed id; with
+  `gemini-3.8-flash` off it, its variants (a `gemini-3.8-flash-lite`, a dated snapshot) are no
+  longer matched either. `gemini-3.6-flash` and `gemini-3.5-flash` stay unlisted: neither is an
+  alias target, and there is no evidence either rejects or ignores budget 0.
 - A `temperature` aimed at a model in `samplingParamsRejectedModelPrefixes` is refused before the wire
   on the completion, streaming and client-tool paths. On Anthropic (every Claude 5.x model,
   `claude-mythos-preview`, `claude-opus-4-8`, `claude-opus-4-7`) only a non-default value is refused:
   `samplingParamsAcceptedTemperature: 1` lets Anthropic's default through, with or without thinking,
-  as the provider does on the pinned API version. On OpenAI (`gpt-6-astra`, `gpt-6.1-sol`) every value is refused. `AiAssist.rejectsSamplingParams` answers the
+  as the provider does on the pinned API version. OpenAI (`gpt-6-astra`, `gpt-6.1-sol`) declares the
+  same `1`: both accepted `temperature: 1` live with thinking on (2026-11-10), so `1` is sent with or
+  without an effort and any other value is refused with the same message, with or without an effort
+  ("does not accept a non-default temperature (x): remove temperature, or send 1"; never "disable
+  thinking", which these models' rule does not depend on). The value is descriptor-wide; OpenAI's
+  list is exactly those two models. `AiAssist.rejectsSamplingParams` answers the
   question for a concrete id. Not guarded, because it depends on the effort: `gpt-6-luna` (`mini`,
   `nano`) and `gpt-6-sol` reject `temperature` unless the call sets effort `'none'`.
 

@@ -143,7 +143,7 @@ and one row kind makes no claim at all:
 | `[REFUSED-LOCALLY]`   | ai-assist refused the request before building it, so nothing was sent (a `temperature` the model rejects, or `'none'` with `onUnsupported: 'fail'` on a thinking-required model) |
 | `[EXPECTED-REJECT]`   | the provider returned the 400 the probe expected, for the expected reason (a raw thinking-off value on a thinking-required model; temperature on `gpt-6-luna` without effort `'none'`). The row prints the provider's own text; a 400 for another reason is a `FAIL`                    |
 | `[NO-RECORDED-LIMIT]` | a max-output probe on a model with no `maxOutputTokens` entry: nothing to check, no call                                                                                         |
-| `[OBSERVED]`          | report-only: the answer is not known yet, so the row prints `accepted` or `rejected: <provider text>` and neither passes nor fails (OpenAI's raw `temperature: 1` on `gpt-6.1-sol` and `gpt-6-astra`) |
+| `[OBSERVED]`          | report-only: the answer is not known yet, so the row prints `accepted` or `rejected: <provider text>` and neither passes nor fails (no scenario sends one at present; the mechanism is kept for the next open question) |
 
 The probe families:
 
@@ -155,13 +155,14 @@ The probe families:
   Each thinking-required model, and each model with its own off value, also gets a `none raw` row
   that bypasses the library, sends the provider's default off value, and must be the provider's 400.
   A raw row that answers means the `thinkingRequiredModelPrefixes` (or `anthropicThinkingOffTypes`)
-  entry is stale. `gemini-3.8-flash` gets no raw row: it accepts budget 0 and goes on thinking, so the
-  row could not tell anything apart.
+  entry is stale. `gemini-3.8-flash` (the Gemini base tier) is not thinking-required — budget 0 turns
+  its thinking off — so its `effort=none` is sent with thinking off, its `none+fail` passes, and it
+  gets no raw row.
 - **Temperature** (`temp=…`, Anthropic and OpenAI): each row names its expected outcome. Anthropic
   accepts `1` with and without thinking and refuses `0.3` locally; OpenAI accepts `0.3` on
-  `gpt-6-luna` with effort `'none'`, expects a provider 400 without it, and refuses it locally on
-  `gpt-6.1-sol` and `gpt-6-astra`. A `temp=1 raw` row on `gpt-6.1-sol` and `gpt-6-astra` sends `1`
-  in an `'other'` provider block, past the library's gate, and is `[OBSERVED]` only.
+  `gpt-6-luna` with effort `'none'` and expects a provider 400 without it, and on `gpt-6.1-sol` and
+  `gpt-6-astra` accepts `1` with and without effort `low` (`temp=1`, `temp=1+effort=low`, sent
+  through the library) and refuses `0.3` locally.
 - **Max output** (`max=N`, Anthropic, OpenAI and Gemini): `maxTokens` set to
   `resolveMaxOutputTokens` for that exact model. It must be accepted. A refusal naming the token cap
   is `FAIL(param)`: the recorded limit is too high.
