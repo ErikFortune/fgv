@@ -210,6 +210,7 @@ markers.*
 
 <!-- BEGIN GENERATED: recent-additions -->
 
+- **2026-11-10** — ai-assist sends temperature 1 to GPT-6.1 Sol and GPT-6 Astra, with or without reasoning effort, and still refuses any other value… · `ts-extras` `testbed`
 - **2026-11-09** — ai-assist turns thinking off on Claude Sonnet 5.5 with its own between_tools value, declared per model, and stops claiming… ([#769](https://github.com/ErikFortune/fgv/pull/769)) · `ts-extras` `testbed`
 - **2026-11-08** — ai-assist aliases now reach current models — Claude Sonnet 5.5 and Haiku 5.5, GPT-6.1 Sol, Nano Banana 2.1, and new Groq and… ([#767](https://github.com/ErikFortune/fgv/pull/767)) · `ts-extras` `testbed`
 - **2026-11-08** — resolveMaxOutputTokens tells you the largest maxTokens the model a call will use accepts, from the same ModelSpec and tier, so a… ([#765](https://github.com/ErikFortune/fgv/pull/765)) · `ts-extras`
@@ -219,8 +220,7 @@ markers.*
 - **2026-10-26** — A memory read-modify-write can no longer silently lose a concurrent update: FileTreeMemoryStore put and delete take an expected seq… ([#759](https://github.com/ErikFortune/fgv/pull/759)) · `ts-agent-memory`
 - **2026-10-26** — An agent-task host can open or initialize its repository in the strongest mode its root qualifies for, give its own principal a… ([#758](https://github.com/ErikFortune/fgv/pull/758)) · `ts-agent-tasks`
 - **2026-10-26** — ai-assist can run a whole client-tool conversation: runClientToolLoop caps rounds and honours a deadline and caller abort even when… ([#755](https://github.com/ErikFortune/fgv/pull/755)) · `ts-extras`
-- **2026-10-26** — A host can stop every write it routes through one AsyncControl.WriteGate, or hold them still for a snapshot until the writes under… ([#761](https://github.com/ErikFortune/fgv/pull/761)) · `ts-extras` `ts-agent-tasks`
 
-*Showing the 10 most recent of 82. Per-package history is in each `CAPABILITIES.md`.*
+*Showing the 10 most recent of 83. Per-package history is in each `CAPABILITIES.md`.*
 
 <!-- END GENERATED: recent-additions -->

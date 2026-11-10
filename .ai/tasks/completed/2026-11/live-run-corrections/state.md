@@ -9,8 +9,9 @@ Worker-owned. The brief is frozen; questions and decisions go here.
 - [x] Red tests (ts-extras + testbed) written and run red.
 - [x] Registry + adapter change; green (per-package build/lint/test at 100%).
 - [x] Docs (README, CAPABILITIES, change files, testbed README, FUTURE.md).
-- [ ] Commit, then gates.
-- [ ] Close-out per `finalize-task`.
+- [x] Commit (`ff80f053a`), then gates — all green (result.md § 6).
+- [x] Close-out per `finalize-task`: migrated to `completed/2026-11/`, meta.yaml, README, ledger entry
+  (`#TBD`), feed regenerated.
 
 ## Decisions (worker)
 
