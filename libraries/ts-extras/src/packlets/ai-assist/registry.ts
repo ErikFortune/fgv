@@ -260,28 +260,28 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     // only works in thinking mode." (2026-09-25); Google's thinking page lists its levels as
     // low/medium/high. gemini-2.5-pro: IGeminiThinkingConfig.thinkingBudget documents 0 as
     // erroring on Pro.
-    // gemini-3.5-flash-lite and gemini-3.8-flash cannot be turned off by a budget either. § "Controlling
-    // thinking" on https://ai.google.dev/gemini-api/docs/thinking.md.txt (fetched 2026-11-09):
+    // gemini-3.5-flash-lite cannot be turned off by a budget either. § "Controlling thinking" on
+    // https://ai.google.dev/gemini-api/docs/thinking.md.txt (fetched 2026-11-09):
     //   | gemini-3.8-flash | On (medium) | low, medium, high |
     //   | gemini-3.6-flash | On (medium) | minimal, low, medium, high |
     //   | gemini-3.5-flash-lite | On (minimal) | minimal, low, medium, high |
     // flash-lite returned 400 INVALID_ARGUMENT "Request contains an invalid argument." for
-    // thinkingBudget 0 (live, 2026-11-09); 3.8-flash accepts budget 0 but lists no level that turns
-    // thinking off, so 'none' would claim an effect it does not have. Both degrade to 'low' or refuse.
+    // thinkingBudget 0 (live, 2026-11-09), so 'none' degrades to 'low' or refuses there.
     // This is interim: Gemini 3.x is controlled by `thinkingLevel`, which ai-assist does not send
     // yet; once it does, 'none' maps to `minimal` on the models that list it (flash-lite), and the
     // flash-lite entry comes off this list.
-    // The entries are dash-bounded on purpose, so they also match future variants of a listed id
-    // (gemini-3.8-flash matches a gemini-3.8-flash-lite or a dated snapshot): the safe direction
-    // for a degrade-or-refuse list, until someone reviews the new id. gemini-3.6-flash and
+    // gemini-3.8-flash is NOT listed, although the level table above names no level that turns its
+    // thinking off: a live generateContent with thinkingConfig.thinkingBudget 0 (2026-11-10) returned
+    // usageMetadata promptTokenCount 8, candidatesTokenCount 1, totalTokenCount 9 and no
+    // thoughtsTokenCount, so budget 0 does turn thinking off on it and 'none' sends budget 0.
+    // The entries are dash-bounded on purpose, so they also match future variants of a listed id (a
+    // dated snapshot): the safe direction for a degrade-or-refuse list, until someone reviews the new
+    // id. The converse holds for an unlisted id: with gemini-3.8-flash off the list, its variants
+    // (gemini-3.8-flash-lite, gemini-3.8-flash-<date>) are no longer caught here either, and a
+    // 'none' sends them budget 0 until one is listed on its own evidence. gemini-3.6-flash and
     // gemini-3.5-flash stay unlisted: neither is an alias target, and there is no evidence that
     // either rejects or ignores budget 0.
-    thinkingRequiredModelPrefixes: [
-      'gemini-3.1-pro-preview',
-      'gemini-2.5-pro',
-      'gemini-3.5-flash-lite',
-      'gemini-3.8-flash'
-    ],
+    thinkingRequiredModelPrefixes: ['gemini-3.1-pro-preview', 'gemini-2.5-pro', 'gemini-3.5-flash-lite'],
     corsRestricted: false,
     streamingCorsRestricted: false,
     acceptsImageInput: true,
@@ -419,10 +419,16 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     thinkingRequiredModelPrefixes: ['gpt-6-astra', 'gpt-6.1-sol'],
     // "When reasoning effort is not none, remove temperature, top_p, and top_logprobs"
     // (https://developers.openai.com/api/docs/guides/latest-model, fetched 2026-11-08). These two
-    // have no 'none' effort, so they reject temperature on every request. gpt-6-luna and gpt-6-sol
+    // have no 'none' effort, so they restrict temperature on every request. gpt-6-luna and gpt-6-sol
     // accept it only when the call sets effort 'none' (their default is medium), which is not a
     // per-model rule and is not declared here.
     samplingParamsRejectedModelPrefixes: ['gpt-6-astra', 'gpt-6.1-sol'],
+    // The restriction spares the default. A live temperature: 1 was accepted by both gpt-6.1-sol and
+    // gpt-6-astra (2026-11-10), each sent through a verbatim 'other' block at the default effort, so
+    // with thinking on; gpt-6-luna's 400 for 0.3 reads "Only the default (1) value is supported".
+    // The value is descriptor-wide, and that is right here: the list above is exactly the two models
+    // the evidence covers.
+    samplingParamsAcceptedTemperature: 1,
     // Declared once for the whole line. The Chat-Completions-vs-Responses split is
     // NOT declared here on purpose: the route depends on whether the call carries
     // server tools as well as on the model, so the same model takes both endpoints

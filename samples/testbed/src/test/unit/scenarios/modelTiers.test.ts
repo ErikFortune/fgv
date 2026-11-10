@@ -1105,7 +1105,7 @@ describe('isLocalRefusal', () => {
 
 describe('classifyExpectedProbe', () => {
   const LOCAL = fail<AiAssist.IAiCompletionResponse>(
-    'gpt-6-astra does not accept temperature on any request: remove temperature'
+    'gpt-6-astra does not accept a non-default temperature (0.3): remove temperature, or send 1'
   );
   const PROVIDER_400 = fail<AiAssist.IAiCompletionResponse>('AI API returned 400: temperature not supported');
   const DENIED = fail<AiAssist.IAiCompletionResponse>('AI API returned 403: forbidden');
@@ -1176,7 +1176,8 @@ describe('runTierCanary (temperature probes)', () => {
       { temperature: 0.3, models: ['gpt-6.1-sol'], expect: 'refused-locally' as const }
     ]
   };
-  const REFUSAL = 'gpt-6.1-sol does not accept temperature on any request: remove temperature';
+  const REFUSAL =
+    'gpt-6.1-sol does not accept a non-default temperature (0.3): remove temperature, or send 1';
 
   /** Answers like GPT-6: temperature only with effort none, sol refused locally. */
   async function answer(
@@ -1283,6 +1284,31 @@ describe('runTierCanary (temperature probes)', () => {
     expect(result).toFailWith(
       /\[FAIL\] temp=0\.3\s+gpt-5-gone\s+\(the probe names a model no tier or extra model resolves to/
     );
+  });
+
+  test('a raw, report-only probe prints what the provider said without passing or failing the run', async () => {
+    // No scenario sends a raw probe now; the mechanism stays for the next open question.
+    const observing = {
+      ...spec,
+      temperatureProbes: [
+        { temperature: 1, models: ['gpt-6-luna'], raw: true, expect: 'observed' as const },
+        { temperature: 1, models: ['gpt-6.1-sol'], raw: true, expect: 'observed' as const }
+      ]
+    };
+    const complete = jest.fn(async (tier: CanaryTier, options?: ICanaryCompleteOptions) =>
+      tier === 'advanced' && options?.rawTemperature !== undefined
+        ? fail<AiAssist.IAiCompletionResponse>('AI API returned 400: temperature not supported')
+        : pong()
+    );
+    const result = await runTierCanary(observing, { complete }, new Logging.InMemoryLogger());
+    expect(result).toSucceedAndSatisfy((report: string) => {
+      expect(report).toMatch(/\[OBSERVED\] base temp=1 raw\s+gpt-6-luna\s+\(accepted\)/);
+      expect(report).toMatch(
+        /\[OBSERVED\] advanced temp=1 raw\s+gpt-6\.1-sol\s+\(rejected: AI API returned 400: temperature not supported\)/
+      );
+      expect(report).toMatch(/LIVE-VERIFIED/);
+    });
+    expect(complete).toHaveBeenCalledWith('base', { rawTemperature: 1 });
   });
 
   test('keyless, each row is PENDING with its expectation', async () => {
@@ -1552,9 +1578,11 @@ describe('model-tier scenarios', () => {
       expect(report).toMatch(/\[PENDING\] advanced temp=0\.3\s+gpt-6\.1-sol\s+\(expect refused-locally\)/);
       expect(report).toMatch(/\[PENDING\] frontier temp=0\.3\s+gpt-6-astra\s+\(expect refused-locally\)/);
       expect(report).not.toMatch(/base temp=0\.3\s+gpt-6\.1-sol/);
-      expect(report).toMatch(/\[PENDING\] advanced temp=1 raw\s+gpt-6\.1-sol\s+\(expect observed\)/);
-      expect(report).toMatch(/\[PENDING\] frontier temp=1 raw\s+gpt-6-astra\s+\(expect observed\)/);
-      expect(report).not.toMatch(/base temp=1 raw/);
+      expect(report).toMatch(/\[PENDING\] advanced temp=1\s+gpt-6\.1-sol\s+\(expect accepted\)/);
+      expect(report).toMatch(/\[PENDING\] frontier temp=1\s+gpt-6-astra\s+\(expect accepted\)/);
+      expect(report).toMatch(/\[PENDING\] advanced temp=1\+effort=low\s+gpt-6\.1-sol\s+\(expect accepted\)/);
+      expect(report).toMatch(/\[PENDING\] frontier temp=1\+effort=low\s+gpt-6-astra\s+\(expect accepted\)/);
+      expect(report).not.toMatch(/base temp=1|temp=1 raw|expect observed/);
       expect(report).toMatch(/\[PENDING\] frontier max=128000\s+gpt-6-astra/);
     });
   });
@@ -1572,16 +1600,16 @@ describe('model-tier scenarios', () => {
         /\[PENDING\] @google-gemini:flash-lite effort=none\s+gemini-3\.5-flash-lite\s+\(expect degraded to 'low'/
       );
       expect(report).toMatch(
-        /\[PENDING\] base effort=none\s+gemini-3\.8-flash\s+\(expect degraded to 'low' \(thinking-required\)\)/
+        /\[PENDING\] base effort=none\s+gemini-3\.8-flash\s+\(expect sent with thinking off\)/
       );
-      expect(report).toMatch(/\[PENDING\] base none\+fail\s+gemini-3\.8-flash\s+\(expect refused-locally\)/);
+      expect(report).toMatch(/\[PENDING\] base none\+fail\s+gemini-3\.8-flash\s+\(expect accepted\)/);
       expect(report).toMatch(
         /\[PENDING\] @google-gemini:flash-lite none\+fail\s+gemini-3\.5-flash-lite\s+\(expect refused-locally\)/
       );
       expect(report).toMatch(
         /\[PENDING\] @google-gemini:flash-lite none raw\s+gemini-3\.5-flash-lite\s+\(expect expected-reject\)/
       );
-      // gemini-3.8-flash accepts budget 0 and goes on thinking: a raw row could tell nothing apart.
+      // gemini-3.8-flash is not thinking-required, so it gets no raw row.
       expect(report).not.toMatch(/base none raw/);
     });
   });

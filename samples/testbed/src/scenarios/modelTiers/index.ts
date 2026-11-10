@@ -61,8 +61,8 @@ const IMAGE_PROMPT: string = 'A single red circle on a white background.';
 
 /**
  * Thinking efforts probed on every tier of the rotated providers. `'none'` is the value most
- * likely to be refused (the 2026-09 rotation's `gpt-6-astra` and `gemini-3.8-flash` document no
- * off level); `'low'` is the control that shows thinking itself is accepted.
+ * likely to be refused (the 2026-09 rotation's `gpt-6-astra` documents no off level); `'low'` is
+ * the control that shows thinking itself is accepted.
  */
 const THINKING_PROBE_EFFORTS: ReadonlyArray<CanaryThinkingEffort> = ['none', 'low'];
 
@@ -79,23 +79,19 @@ const ANTHROPIC_TEMPERATURE_PROBES: ReadonlyArray<ICanaryTemperatureProbe> = [
 ];
 
 /**
- * OpenAI temperature probes. GPT-6 accepts `temperature` only when reasoning effort is `'none'`.
- * `gpt-6-luna` (base) has a `'none'` effort but defaults to `medium`, so a temperature with effort
- * `'none'` answers and one with no effort is a provider 400 — a rule ai-assist does not guard, so
- * that row expects the provider's rejection. `gpt-6.1-sol` and `gpt-6-astra` have no `'none'`, so
- * the library refuses any temperature before the wire.
- *
- * The `raw` row is report-only. Luna's live rejection of 0.3 read "Only the default (1) value is
- * supported", which suggests sol and astra may accept `temperature: 1` too, while ai-assist refuses
- * every temperature on them. The row sends 1 through an `'other'` provider block, which the library
- * sends verbatim and does not check, and reports what the provider says. The registry is unchanged
- * until a live run answers it.
+ * OpenAI temperature probes. GPT-6 accepts a non-default `temperature` only when reasoning effort
+ * is `'none'`. `gpt-6-luna` (base) has a `'none'` effort but defaults to `medium`, so a temperature
+ * with effort `'none'` answers and one with no effort is a provider 400 — a rule ai-assist does not
+ * guard, so that row expects the provider's rejection. `gpt-6.1-sol` and `gpt-6-astra` have no
+ * `'none'`: they accept their default, 1, with and without an effort (live, 2026-11-10;
+ * `samplingParamsAcceptedTemperature`), and the library refuses any other value before the wire.
  */
 const OPENAI_TEMPERATURE_PROBES: ReadonlyArray<ICanaryTemperatureProbe> = [
   { temperature: 0.3, effort: 'none', models: ['gpt-6-luna'], expect: 'accepted' },
   { temperature: 0.3, models: ['gpt-6-luna'], expect: 'expected-reject', rejectPattern: /temperature/i },
-  { temperature: 0.3, models: ['gpt-6.1-sol', 'gpt-6-astra'], expect: 'refused-locally' },
-  { temperature: 1, models: ['gpt-6.1-sol', 'gpt-6-astra'], raw: true, expect: 'observed' }
+  { temperature: 1, models: ['gpt-6.1-sol', 'gpt-6-astra'], expect: 'accepted' },
+  { temperature: 1, effort: 'low', models: ['gpt-6.1-sol', 'gpt-6-astra'], expect: 'accepted' },
+  { temperature: 0.3, models: ['gpt-6.1-sol', 'gpt-6-astra'], expect: 'refused-locally' }
 ];
 
 /**
@@ -160,13 +156,10 @@ const RAW_NONE_REJECTIONS: Readonly<Record<string, RegExp>> = {
 /**
  * Per-model `none raw` rules for Gemini. `gemini-3.5-flash-lite` rejects `thinkingBudget: 0` with
  * the generic "Request contains an invalid argument." (live, 2026-11-09), which names neither the
- * budget nor thinking. `gemini-3.8-flash` gets no raw row: it accepts budget 0 and goes on thinking
- * (its documented levels are low, medium and high), so the row would answer whether or not the
- * listing is still right and could tell nothing apart.
+ * budget nor thinking.
  */
 const GEMINI_RAW_NONE_MODELS: Readonly<Record<string, ICanaryRawNoneRule>> = {
-  'gemini-3.5-flash-lite': { rejectPattern: /invalid argument/i },
-  'gemini-3.8-flash': { skip: 'accepts thinkingBudget 0 and ignores it' }
+  'gemini-3.5-flash-lite': { rejectPattern: /invalid argument/i }
 };
 
 /** The thinking config one canary request sends, or `undefined` for none. */
@@ -366,9 +359,8 @@ function makeTierScenario(params: ITierScenarioParams): IScenario {
  * `responsesOnlyModelPrefixes`). Each tier is also probed with thinking effort `none` and `low`,
  * and the image tier gets one live generation. Temperature probes: on `gpt-6-luna`, temperature
  * with effort `none` answers and temperature with no effort is an `expected-reject` (a provider
- * 400); on `gpt-6.1-sol` and `gpt-6-astra` any temperature is `refused-locally`, and a raw
- * `temperature: 1` (sent in an `'other'` block, past the library's gate) is report-only
- * (`observed`): it records whether the provider accepts the default. Max-output probes
+ * 400); on `gpt-6.1-sol` and `gpt-6-astra`, `temperature: 1` answers with and without effort `low`
+ * and `0.3` is `refused-locally`. Max-output probes
  * send each tier its recorded `resolveMaxOutputTokens` limit, which must be accepted. `image` is a
  * flagged access risk: a
  * resolver-correct + access-denied outcome is reported BLOCKED, not a failure. Requires
@@ -382,7 +374,7 @@ export const openaiModelTiersScenario: IScenario = makeTierScenario({
     'Resolves and (with OPENAI_API_KEY) live-canaries the OpenAI base/advanced/frontier tiers ' +
     '(gpt-6-luna / gpt-6.1-sol / gpt-6-astra), probes each with thinking effort none and low (and none with onUnsupported fail), ' +
     'probes temperature (gpt-6-luna: accepted with effort none, a provider 400 without; gpt-6.1-sol / ' +
-    'gpt-6-astra: refused locally, plus a report-only raw temperature 1), sends each tier its recorded max output tokens, and ' +
+    'gpt-6-astra: 1 accepted with and without effort low, 0.3 refused locally), sends each tier its recorded max output tokens, and ' +
     'fires one live image generation (gpt-image-2.5-sunburst, quality low). Logs each alias -> ' +
     'concrete id. The image may be access-gated — reported BLOCKED, not failed. Web-runnable.',
   tags: ['openai'],
@@ -469,10 +461,10 @@ export const anthropicModelTiersScenario: IScenario = makeTierScenario({
  * `gemini-nano-banana-2.1`, the update to Nano Banana 2 / `gemini-3.1-flash-image`), which gets one
  * live generation because it was rotated. Each tier is probed with thinking effort
  * `none` and `low`, and the `modelOverride`-only `@google-gemini:flash-lite` alias gets its own
- * live row and the same thinking probes. `gemini-3.8-flash` (base) and `gemini-3.5-flash-lite` cannot
- * turn thinking off with a budget, so `'none'` is degraded to `'low'` there and `none+fail` is
- * refused locally, as on pro. Raw budget-0 rows: pro and flash-lite must reject; `gemini-3.8-flash`
- * gets none, since it accepts budget 0 and goes on thinking. Max-output probes send each tier and flash-lite its
+ * live row and the same thinking probes. `gemini-3.8-flash` (base) turns thinking off with budget 0,
+ * so `'none'` sends it and `none+fail` answers. `gemini-3.5-flash-lite` cannot turn thinking off
+ * with a budget, so `'none'` is degraded to `'low'` there and `none+fail` is refused locally, as on
+ * pro. Raw budget-0 rows: pro and flash-lite must reject. Max-output probes send each tier and flash-lite its
  * recorded `resolveMaxOutputTokens` limit, which must be accepted. Requires `GEMINI_API_KEY` (or
  * `GOOGLE_API_KEY`) for the live half.
  * @public
@@ -483,8 +475,8 @@ export const geminiModelTiersScenario: IScenario = makeTierScenario({
   description:
     'Resolves and (with GEMINI_API_KEY/GOOGLE_API_KEY) live-canaries the Gemini base/advanced tiers ' +
     'plus a frontier request that cascades to the advanced (pro) id, probes each with thinking ' +
-    'effort none and low (none degrades to low on every listed target; none with onUnsupported fail is refused locally ' +
-    'there, and a raw budget-0 row must be rejected on pro and flash-lite), live-canaries @google-gemini:flash-lite, sends each its recorded ' +
+    'effort none and low (none degrades to low on pro and flash-lite; none with onUnsupported fail is refused locally ' +
+    'there, and a raw budget-0 row must be rejected), live-canaries @google-gemini:flash-lite, sends each its recorded ' +
     'max output tokens, and resolves the image tier ' +
     '(gemini-nano-banana-2.1) with one live generation. Logs each alias -> concrete id. The image may be ' +
     'access-gated — reported BLOCKED, not failed. Web-runnable.',

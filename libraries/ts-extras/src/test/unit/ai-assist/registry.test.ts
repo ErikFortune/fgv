@@ -90,8 +90,14 @@ describe('AiAssist.registry', () => {
         ],
         [
           'google-gemini',
-          ['gemini-3.1-pro-preview', 'gemini-2.5-pro', 'gemini-3.8-flash', 'gemini-3.5-flash-lite'],
-          ['gemini-2.5-flash', 'gemini-3.6-flash', 'gemini-3.5-flash']
+          ['gemini-3.1-pro-preview', 'gemini-2.5-pro', 'gemini-3.5-flash-lite'],
+          [
+            'gemini-3.8-flash',
+            'gemini-3.8-flash-lite',
+            'gemini-2.5-flash',
+            'gemini-3.6-flash',
+            'gemini-3.5-flash'
+          ]
         ],
         ['xai-grok', ['grok-4.7', 'grok-4.6', 'grok-4.5'], ['grok-4.3', 'grok-4']],
         [

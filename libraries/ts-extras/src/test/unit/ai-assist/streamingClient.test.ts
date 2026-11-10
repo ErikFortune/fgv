@@ -951,7 +951,9 @@ describe('callProviderCompletionStream', () => {
       expect(body).toMatchObject({ model: 'gpt-6-astra', reasoning_effort: 'low' });
     });
 
-    test("real OpenAI registry descriptor: frontier + effort 'none' + temperature names the degrade", async () => {
+    // astra restricts temperature with or without thinking, so the refusal is the model's own, not
+    // the degrade note (which xAI's degrade tests still pin).
+    test("real OpenAI registry descriptor: frontier + effort 'none' + temperature is refused for the model", async () => {
       const openai = AiAssist.getProviderDescriptor('openai').orThrow();
       const result = await AiAssist.callProviderCompletionStream({
         descriptor: openai,
@@ -962,7 +964,7 @@ describe('callProviderCompletionStream', () => {
         thinking: { effort: 'none' }
       });
       expect(result).toFailWith(
-        /thinking effort 'none' was sent as 'low'.*provider openai: remove temperature/
+        /gpt-6-astra does not accept a non-default temperature \(0\.7\): remove temperature, or send 1/
       );
       expect(global.fetch).not.toHaveBeenCalled();
     });

@@ -127,7 +127,10 @@ export interface IProviderCompletionParams extends IChatRequest {
   readonly apiKey: string;
   /**
    * Sampling temperature. Sent to the provider only when explicitly provided; omitted otherwise
-   * so the provider's own default applies (current-gen models reject a caller-supplied default).
+   * so the provider's own default applies. Many current-gen models reject a non-default value;
+   * a model on `IAiProviderDescriptor.samplingParamsRejectedModelPrefixes` still accepts the
+   * descriptor's `samplingParamsAcceptedTemperature`, with or without thinking, and is refused
+   * any other value before the wire.
    */
   readonly temperature?: number;
   /** Optional model override — string or context-aware map (uses descriptor.defaultModel otherwise) */
@@ -165,7 +168,8 @@ export interface IProviderCompletionParams extends IChatRequest {
   readonly verifiedEndpoint?: IAiVerifiedEndpoint;
   /**
    * Optional thinking/reasoning config. Anthropic, OpenAI, and xAI reject `temperature` when
-   * the effective merged effort is non-`'none'`; Gemini always accepts both.
+   * the effective merged effort is non-`'none'`, except a model's accepted default
+   * (`IAiProviderDescriptor.samplingParamsAcceptedTemperature`); Gemini always accepts both.
    */
   readonly thinking?: IThinkingConfig;
   /**
@@ -354,7 +358,8 @@ async function callOpenAiCompletion(
     // Temperature is sent only when the caller explicitly provided one — omitting it lets each
     // provider apply its own default (current-gen models reject a non-default temperature). The
     // completion path already rejects temperature + non-'none' thinking upstream
-    // (checkTemperatureConflict), so no effort gate is needed here.
+    // (checkTemperatureConflict), so no effort gate is needed here: beside an effort, the only
+    // temperature that reaches this point is a model's accepted default.
     ...(temperature !== undefined ? { temperature } : {}),
     ...(effort !== undefined && config.model !== 'grok-4' ? { reasoning_effort: effort } : {}),
     // Omitted when the caller doesn't set maxTokens — every non-Anthropic provider applies its
