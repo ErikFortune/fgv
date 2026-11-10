@@ -1117,8 +1117,10 @@ export interface IAiProviderDescriptor {
   /**
    * The one `temperature` that the models on
    * {@link IAiProviderDescriptor.samplingParamsRejectedModelPrefixes} still accept — the provider's
-   * own default, which a provider that rejects only non-default values lets through. Undefined
-   * means those models accept no `temperature` at all.
+   * own default, which a provider that rejects only non-default values lets through, with or without
+   * thinking. Undefined means those models accept no `temperature` at all. Descriptor-wide, not per
+   * model: declare it only when the evidence covers every listed model (OpenAI's list is exactly
+   * `gpt-6.1-sol` and `gpt-6-astra`, and both accepted `temperature: 1` live).
    */
   readonly samplingParamsAcceptedTemperature?: number;
 }
@@ -1879,7 +1881,8 @@ export interface IThinkingConfig {
    * On a model that accepts `'none'`, whichever provider is in play, `'none'` also re-enables
    * `temperature` (see `checkTemperatureConflict` in `thinkingOptionsResolver.ts`). On a model
    * listed in {@link IAiProviderDescriptor.thinkingRequiredModelPrefixes} it does not: there
-   * `'none'` is sent as `'low'` (or refused), and on OpenAI and xAI that rejects `temperature`.
+   * `'none'` is sent as `'low'` (or refused), and on OpenAI and xAI that rejects `temperature`
+   * (but not a model's accepted default, `IAiProviderDescriptor.samplingParamsAcceptedTemperature`).
    *
    * The mapping is not model-aware, with one exception: `'none'`. Thinking *availability* is still
    * not gated at the call path (see `ModelSpecKey`'s remarks), but some models cannot run with

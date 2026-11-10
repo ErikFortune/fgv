@@ -381,14 +381,46 @@ describe('per-model thinking-off and sampling-parameter rules', () => {
     const geminiOk = { candidates: [{ content: { parts: [{ text: 'ok' }] }, finishReason: 'STOP' }] };
 
     // gemini-3.5-flash-lite 400s on thinkingBudget 0 ("Request contains an invalid argument.", live
-    // 2026-11-09); gemini-3.8-flash accepts it but lists no level below low. Either way 'none' is
-    // sent as the low budget, or refused.
+    // 2026-11-09), so 'none' is sent as the low budget there, or refused.
+    test.each(['gemini-3.5-flash-lite', '@google-gemini:flash-lite'])(
+      '%s sends none as the low budget',
+      async (model) => {
+        mockJson(geminiOk);
+        expect(
+          await AiAssist.callProviderCompletion({
+            descriptor: gemini,
+            apiKey: 'k',
+            ...prompt.toRequest(),
+            modelOverride: model,
+            thinking: { effort: 'none' }
+          })
+        ).toSucceed();
+        expect(sentBody()).toMatchObject({ generationConfig: { thinkingConfig: { thinkingBudget: 1024 } } });
+      }
+    );
+
+    test("gemini-3.5-flash-lite with onUnsupported 'fail' is refused before the wire", async () => {
+      expect(
+        await AiAssist.callProviderCompletion({
+          descriptor: gemini,
+          apiKey: 'k',
+          ...prompt.toRequest(),
+          modelOverride: 'gemini-3.5-flash-lite',
+          thinking: { effort: 'none', onUnsupported: 'fail' }
+        })
+      ).toFailWith(/cannot run with thinking off/);
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
+
+    // gemini-3.8-flash turns thinking off with a budget of 0: a live budget-0 request returned
+    // usageMetadata with no thoughtsTokenCount (2026-11-10). So 'none' sends budget 0, and
+    // onUnsupported 'fail' has nothing to refuse.
     test.each([
-      'gemini-3.5-flash-lite',
-      '@google-gemini:flash-lite',
-      'gemini-3.8-flash',
-      '@google-gemini:flash'
-    ])('%s sends none as the low budget', async (model) => {
+      ['gemini-3.8-flash', undefined],
+      ['@google-gemini:flash', undefined],
+      ['gemini-3.8-flash', 'fail' as const],
+      ['@google-gemini:flash', 'fail' as const]
+    ])('%s sends none as budget 0 (onUnsupported %s)', async (model, onUnsupported) => {
       mockJson(geminiOk);
       expect(
         await AiAssist.callProviderCompletion({
@@ -396,27 +428,11 @@ describe('per-model thinking-off and sampling-parameter rules', () => {
           apiKey: 'k',
           ...prompt.toRequest(),
           modelOverride: model,
-          thinking: { effort: 'none' }
+          thinking: { effort: 'none', ...(onUnsupported !== undefined ? { onUnsupported } : {}) }
         })
       ).toSucceed();
-      expect(sentBody()).toMatchObject({ generationConfig: { thinkingConfig: { thinkingBudget: 1024 } } });
+      expect(sentBody()).toMatchObject({ generationConfig: { thinkingConfig: { thinkingBudget: 0 } } });
     });
-
-    test.each(['gemini-3.5-flash-lite', 'gemini-3.8-flash'])(
-      "%s with onUnsupported 'fail' is refused before the wire",
-      async (model) => {
-        expect(
-          await AiAssist.callProviderCompletion({
-            descriptor: gemini,
-            apiKey: 'k',
-            ...prompt.toRequest(),
-            modelOverride: model,
-            thinking: { effort: 'none', onUnsupported: 'fail' }
-          })
-        ).toFailWith(/cannot run with thinking off/);
-        expect(global.fetch).not.toHaveBeenCalled();
-      }
-    );
   });
 
   describe('resolveAnthropicThinkingOffType', () => {
@@ -473,22 +489,94 @@ describe('per-model thinking-off and sampling-parameter rules', () => {
       }
     );
 
-    // OpenAI's rule has no default carve-out, so even 1 is refused.
+    // OpenAI's sol and astra reject only non-default values too: the live default, 1, was accepted
+    // on both (2026-11-10), so any other value is refused before the wire with the same wording.
     test.each([
-      ['@openai:flagship', 0.3],
-      ['@openai:flagship', 1],
-      ['gpt-6-astra', 0.3],
-      ['gpt-6-astra', 1]
-    ] as ReadonlyArray<[string, number]>)('openai %s refuses temperature %s', async (model, temperature) => {
+      ['@openai:flagship', /^gpt-6\.1-sol does not accept a non-default temperature/],
+      ['gpt-6.1-sol', /^gpt-6\.1-sol does not accept a non-default temperature/],
+      ['@openai:pro', /^gpt-6-astra does not accept a non-default temperature/],
+      ['gpt-6-astra', /^gpt-6-astra does not accept a non-default temperature/]
+    ] as ReadonlyArray<[string, RegExp]>)('openai %s refuses temperature 0.3', async (model, refusal) => {
       mockJson(openAiOk);
       const result = await AiAssist.callProviderCompletion({
         descriptor: getDescriptor('openai'),
         apiKey: 'k',
         ...prompt.toRequest(),
         modelOverride: model,
-        temperature
+        temperature: 0.3
       });
-      expect(result).toFailWith(/does not accept temperature on any request: remove temperature/);
+      expect(result).toFailWith(refusal);
+      expect(result).toFailWith(/\(0\.3\): remove temperature, or send 1$/);
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
+
+    test.each(['@openai:flagship', 'gpt-6.1-sol', '@openai:pro', 'gpt-6-astra'])(
+      'openai %s sends temperature 1 on the completion path',
+      async (model) => {
+        mockJson(openAiOk);
+        expect(
+          await AiAssist.callProviderCompletion({
+            descriptor: getDescriptor('openai'),
+            apiKey: 'k',
+            ...prompt.toRequest(),
+            modelOverride: model,
+            temperature: 1
+          })
+        ).toSucceed();
+        expect(sentBody().temperature).toBe(1);
+      }
+    );
+
+    test.each(['gpt-6.1-sol', 'gpt-6-astra'])(
+      'openai %s sends temperature 1 on the streaming path',
+      async (model) => {
+        mockSse();
+        const result = await AiAssist.callProviderCompletionStream({
+          descriptor: getDescriptor('openai'),
+          apiKey: 'k',
+          ...prompt.toRequest(),
+          modelOverride: model,
+          temperature: 1
+        });
+        await drain(result.orThrow());
+        expect(sentBody().temperature).toBe(1);
+      }
+    );
+
+    test.each(['gpt-6.1-sol', 'gpt-6-astra'])(
+      'openai %s sends temperature 1 on the client-tool path',
+      async (model) => {
+        mockSse();
+        const result = AiAssist.executeClientToolTurn({
+          descriptor: getDescriptor('openai'),
+          apiKey: 'k',
+          ...prompt.toRequest(),
+          clientTools: [],
+          model,
+          temperature: 1
+        });
+        await drain(result.orThrow().events);
+        expect(sentBody().temperature).toBe(1);
+      }
+    );
+
+    test('a descriptor that declares no accepted temperature refuses every value on a listed model', async () => {
+      const strict: AiAssist.IAiProviderDescriptor = {
+        ...getDescriptor('openai'),
+        samplingParamsAcceptedTemperature: undefined
+      };
+      for (const temperature of [0.3, 1]) {
+        const result = await AiAssist.callProviderCompletion({
+          descriptor: strict,
+          apiKey: 'k',
+          ...prompt.toRequest(),
+          modelOverride: 'gpt-6.1-sol',
+          temperature
+        });
+        expect(result).toFailWith(
+          /gpt-6\.1-sol does not accept temperature on any request: remove temperature/
+        );
+      }
       expect(global.fetch).not.toHaveBeenCalled();
     });
 
@@ -684,6 +772,115 @@ describe('per-model thinking-off and sampling-parameter rules', () => {
         expect(global.fetch).not.toHaveBeenCalled();
       }
     );
+
+    // The same exemption, read from the OpenAI descriptor: sol and astra take their default, 1,
+    // with a reasoning effort as well as without (live, 2026-11-10, at the default effort).
+    test.each(['gpt-6.1-sol', 'gpt-6-astra'])(
+      'completion: openai %s sends temperature 1 with effort low',
+      async (model) => {
+        mockJson(openAiOk);
+        expect(
+          await AiAssist.callProviderCompletion({
+            descriptor: getDescriptor('openai'),
+            apiKey: 'k',
+            ...prompt.toRequest(),
+            modelOverride: model,
+            temperature: 1,
+            thinking: { effort: 'low' }
+          })
+        ).toSucceed();
+        expect(sentBody()).toMatchObject({ model, temperature: 1, reasoning_effort: 'low' });
+      }
+    );
+
+    test.each(['gpt-6.1-sol', 'gpt-6-astra'])(
+      'streaming: openai %s sends temperature 1 with effort low',
+      async (model) => {
+        mockSse();
+        const result = await AiAssist.callProviderCompletionStream({
+          descriptor: getDescriptor('openai'),
+          apiKey: 'k',
+          ...prompt.toRequest(),
+          modelOverride: model,
+          temperature: 1,
+          thinking: { effort: 'low' }
+        });
+        await drain(result.orThrow());
+        expect(sentBody()).toMatchObject({ model, temperature: 1, reasoning_effort: 'low' });
+      }
+    );
+
+    // With tools, OpenAI streaming routes through the Responses adapter, which drops temperature
+    // beside an effort unless it is the accepted default.
+    test.each(['gpt-6.1-sol', 'gpt-6-astra'])(
+      'streaming with tools: openai %s sends temperature 1 with effort low',
+      async (model) => {
+        mockSse();
+        const result = await AiAssist.callProviderCompletionStream({
+          descriptor: getDescriptor('openai'),
+          apiKey: 'k',
+          ...prompt.toRequest(),
+          modelOverride: model,
+          tools: [{ type: 'web_search' }],
+          temperature: 1,
+          thinking: { effort: 'low' }
+        });
+        await drain(result.orThrow());
+        expect((global.fetch as jest.Mock).mock.calls[0][0]).toMatch(/\/responses$/);
+        expect(sentBody()).toMatchObject({ model, temperature: 1, reasoning: { effort: 'low' } });
+      }
+    );
+
+    test.each(['gpt-6.1-sol', 'gpt-6-astra'])(
+      'client-tool: openai %s sends temperature 1 with a resolved effort',
+      async (model) => {
+        mockSse();
+        const result = AiAssist.executeClientToolTurn({
+          descriptor: getDescriptor('openai'),
+          apiKey: 'k',
+          ...prompt.toRequest(),
+          clientTools: [],
+          model,
+          temperature: 1,
+          resolvedThinking: { openAiEffort: 'low' }
+        });
+        await drain(result.orThrow().events);
+        expect(sentBody()).toMatchObject({ model, temperature: 1, reasoning: { effort: 'low' } });
+      }
+    );
+
+    test.each(['gpt-6.1-sol', 'gpt-6-astra'])(
+      'completion: openai %s still refuses temperature 0.3 with effort low',
+      async (model) => {
+        mockJson(openAiOk);
+        const result = await AiAssist.callProviderCompletion({
+          descriptor: getDescriptor('openai'),
+          apiKey: 'k',
+          ...prompt.toRequest(),
+          modelOverride: model,
+          temperature: 0.3,
+          thinking: { effort: 'low' }
+        });
+        expect(result).toFail();
+        expect(global.fetch).not.toHaveBeenCalled();
+      }
+    );
+
+    // A model off the rejected list keeps the thinking/temperature conflict, for 1 as for any value.
+    test('client-tool: openai gpt-6-luna drops temperature 1 beside a resolved effort (adapter safety net)', async () => {
+      mockSse();
+      const result = AiAssist.executeClientToolTurn({
+        descriptor: getDescriptor('openai'),
+        apiKey: 'k',
+        ...prompt.toRequest(),
+        clientTools: [],
+        model: 'gpt-6-luna',
+        temperature: 1,
+        resolvedThinking: { openAiEffort: 'low' }
+      });
+      await drain(result.orThrow().events);
+      expect(sentBody().temperature).toBeUndefined();
+    });
 
     // Older models keep the thinking/temperature conflict: they accept temperature only with thinking off.
     test.each(['claude-haiku-4-5-20251001', 'claude-opus-4-6'])(

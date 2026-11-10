@@ -259,7 +259,7 @@ describe('a refused-locally request is refused before fetch', () => {
     ],
     ['openai', openai, 'advanced' as const, { temperature: 0.3 }],
     ['openai', openai, 'frontier' as const, { temperature: 0.3 }],
-    ['gemini', gemini, 'base' as const, { effort: 'none' as const, onUnsupported: 'fail' as const }],
+    ['gemini', gemini, 'advanced' as const, { effort: 'none' as const, onUnsupported: 'fail' as const }],
     [
       'gemini',
       gemini,
@@ -358,14 +358,11 @@ const fakeOpenAi: FakeProvider = ({ url, body }) => {
   if (effort === 'none' && ['gpt-6.1-sol', 'gpt-6-astra'].includes(String(body.model))) {
     return { status: 400, json: { error: { message: "'reasoning_effort' does not support 'none'" } } };
   }
-  // Unknown live; the fake accepts the default on sol and rejects it on astra so both readings render.
-  if (body.temperature === 1 && body.model === 'gpt-6.1-sol') {
-    return {
-      status: 200,
-      json: { choices: [{ message: { role: 'assistant', content: 'pong' }, finish_reason: 'stop' }] }
-    };
-  }
-  if (body.temperature !== undefined && effort !== 'none') {
+  // sol and astra take their default, 1, at any effort (live, 2026-11-10); a non-default value
+  // needs effort 'none', which neither has.
+  const acceptsDefault =
+    ['gpt-6.1-sol', 'gpt-6-astra'].includes(String(body.model)) && body.temperature === 1;
+  if (body.temperature !== undefined && effort !== 'none' && !acceptsDefault) {
     return { status: 400, json: { error: { message: 'temperature is not supported with reasoning' } } };
   }
   return {
@@ -451,21 +448,29 @@ describe('openai-model-tiers, keyed, against a fake OpenAI', () => {
       expect(report).toMatch(/\[EXPECTED-REJECT\] base temp=0\.3\s+gpt-6-luna\s+\(AI API returned 400/);
       expect(report).toMatch(/\[REFUSED-LOCALLY\] advanced temp=0\.3\s+gpt-6\.1-sol/);
       expect(report).toMatch(/\[REFUSED-LOCALLY\] frontier temp=0\.3\s+gpt-6-astra/);
-      // Report-only: the raw temperature 1 rows record what the provider said, without a verdict.
-      expect(report).toMatch(/\[OBSERVED\] advanced temp=1 raw\s+gpt-6\.1-sol\s+\(accepted\)/);
-      expect(report).toMatch(
-        /\[OBSERVED\] frontier temp=1 raw\s+gpt-6-astra\s+\(rejected: AI API returned 400: .*temperature is not supported/
-      );
+      // The default, 1, is sent through the library and answers, with and without an effort.
+      expect(report).toMatch(/\[PASS\] advanced temp=1\s+gpt-6\.1-sol/);
+      expect(report).toMatch(/\[PASS\] frontier temp=1\s+gpt-6-astra/);
+      expect(report).toMatch(/\[PASS\] advanced temp=1\+effort=low\s+gpt-6\.1-sol/);
+      expect(report).toMatch(/\[PASS\] frontier temp=1\+effort=low\s+gpt-6-astra/);
+      expect(report).not.toMatch(/OBSERVED|temp=1 raw/);
       expect(report).toMatch(/\[PASS\] frontier max=128000\s+gpt-6-astra/);
       expect(report).toMatch(/LIVE-VERIFIED/);
     });
     const bodies = sent.map((s) => s.body);
-    // The two luna rows carry 0.3; the two raw rows carry 1, past the local gate.
-    expect(bodies.filter((b) => b.temperature !== undefined).map((b) => [b.model, b.temperature])).toEqual([
-      ['gpt-6-luna', 0.3],
-      ['gpt-6-luna', 0.3],
-      ['gpt-6.1-sol', 1],
-      ['gpt-6-astra', 1]
+    // The two luna rows carry 0.3; sol and astra carry 1, as the temperature parameter, alone and
+    // beside reasoning_effort 'low'. Nothing carries 0.3 to sol or astra.
+    expect(
+      bodies
+        .filter((b) => b.temperature !== undefined)
+        .map((b) => [b.model, b.temperature, b.reasoning_effort])
+    ).toEqual([
+      ['gpt-6-luna', 0.3, 'none'],
+      ['gpt-6-luna', 0.3, undefined],
+      ['gpt-6.1-sol', 1, undefined],
+      ['gpt-6-astra', 1, undefined],
+      ['gpt-6.1-sol', 1, 'low'],
+      ['gpt-6-astra', 1, 'low']
     ]);
     expect(bodies.filter((b) => b.max_completion_tokens === 128000)).toHaveLength(3);
   });
@@ -513,10 +518,10 @@ describe('google-gemini-model-tiers, keyed, against a fake Gemini', () => {
       expect(report).toMatch(
         /\[EXPECTED-REJECT\] @google-gemini:flash-lite none raw\s+gemini-3\.5-flash-lite\s+\(.*invalid argument/
       );
-      expect(report).toMatch(
-        /\[PASS\] base effort=none\s+gemini-3\.8-flash\s+\(degraded to 'low' \(thinking-required\)\)/
-      );
-      expect(report).toMatch(/\[REFUSED-LOCALLY\] base none\+fail\s+gemini-3\.8-flash/);
+      // gemini-3.8-flash turns thinking off with budget 0 (live, 2026-11-10): 'none' is sent as
+      // budget 0 and answers, and onUnsupported 'fail' has nothing to refuse.
+      expect(report).toMatch(/\[PASS\] base effort=none\s+gemini-3\.8-flash\s+\(sent with thinking off\)/);
+      expect(report).toMatch(/\[PASS\] base none\+fail\s+gemini-3\.8-flash/);
       expect(report).toMatch(
         /\[REFUSED-LOCALLY\] @google-gemini:flash-lite none\+fail\s+gemini-3\.5-flash-lite/
       );
@@ -524,13 +529,16 @@ describe('google-gemini-model-tiers, keyed, against a fake Gemini', () => {
       expect(report).toMatch(/\[PASS\] image\s+gemini-nano-banana-2\.1/);
       expect(report).toMatch(/LIVE-VERIFIED/);
     });
-    // Only the raw rows send budget 0, and never to gemini-3.8-flash.
+    // gemini-3.8-flash gets budget 0 from its effort=none and none+fail rows; pro and flash-lite get
+    // it only from their raw rows.
     const budgetZero = sent.filter(
       (s) =>
         (s.body.generationConfig as { thinkingConfig?: { thinkingBudget?: number } } | undefined)
           ?.thinkingConfig?.thinkingBudget === 0
     );
     expect(budgetZero.map((s) => s.url.match(/models\/([^:]+)/)?.[1])).toEqual([
+      'gemini-3.8-flash',
+      'gemini-3.8-flash',
       'gemini-3.1-pro-preview',
       'gemini-3.1-pro-preview',
       'gemini-3.5-flash-lite'

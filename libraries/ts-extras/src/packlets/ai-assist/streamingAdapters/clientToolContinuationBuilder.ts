@@ -894,7 +894,8 @@ export function executeClientToolTurn(
           continuationMessages,
           maxTokens,
           supportsCacheUsageReporting(descriptor),
-          gatedCache
+          gatedCache,
+          temperatureAcceptedWithThinking(descriptor, config.model)
         );
       }
       case 'gemini':

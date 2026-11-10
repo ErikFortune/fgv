@@ -489,7 +489,8 @@ export async function callOpenAiResponsesStream(
   continuationMessages?: ReadonlyArray<JsonObject>,
   maxTokens?: number,
   reportsUsage: boolean = false,
-  cache?: IAiCacheRequest
+  cache?: IAiCacheRequest,
+  temperatureAcceptedWithThinking?: number
 ): Promise<Result<AsyncIterable<IAiStreamEvent>>> {
   const url = `${config.baseUrl}/responses`;
   const systemContentResult = buildOpenAiResponsesSystemContent(prompt.system, cache);
@@ -530,10 +531,14 @@ export async function callOpenAiResponsesStream(
     body.reasoning = { effort };
   }
   // Temperature is sent only when the caller explicitly provided one (see callOpenAiChatStream).
-  if (effort === undefined || effort === 'none') {
-    if (temperature !== undefined) {
-      body.temperature = temperature;
-    }
+  // Beside an effort it is dropped — the client-tool path reaches this adapter unguarded — except
+  // for `temperatureAcceptedWithThinking`, the default a model that restricts sampling parameters
+  // accepts with thinking on (see `temperatureAcceptedWithThinking` in model.ts).
+  if (
+    temperature !== undefined &&
+    (effort === undefined || effort === 'none' || temperature === temperatureAcceptedWithThinking)
+  ) {
+    body.temperature = temperature;
   }
   // Shared by OpenAI and xAI — both route through the Responses API with the same field name.
   if (maxTokens !== undefined) {
