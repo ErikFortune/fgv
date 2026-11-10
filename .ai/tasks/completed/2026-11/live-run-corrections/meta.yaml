@@ -41,6 +41,6 @@ keywords:
   - Responses adapter temperature
   - report-only probe retired
 relatedStreams:
-  - { id: final-model-fixes, relationship: 'answers its F3, Q1 and OBSERVED follow-ups; drops its 3.8-flash listing' }
+  - { id: final-model-fixes, relationship: 'answers its F3, Q1 and OBSERVED follow-ups' }
   - { id: testbed-model-probes, relationship: 'updates its OpenAI temperature and Gemini thinking rows' }
 sourceHash: sha256:6ac8aa732af43ea5 # over brief.md + state.md + result.md
