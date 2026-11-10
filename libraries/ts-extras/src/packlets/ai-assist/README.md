@@ -197,8 +197,9 @@ only with its own value, `thinking: { type: 'between_tools' }` (see below). `@an
   `samplingParamsAcceptedTemperature: 1` lets Anthropic's default through, with or without thinking,
   as the provider does on the pinned API version. OpenAI (`gpt-6-astra`, `gpt-6.1-sol`) declares the
   same `1`: both accepted `temperature: 1` live with thinking on (2026-11-10), so `1` is sent with or
-  without an effort and any other value is refused with the same message ("does not accept a
-  non-default temperature (x): remove temperature, or send 1"). The value is descriptor-wide; OpenAI's
+  without an effort and any other value is refused with the same message, with or without an effort
+  ("does not accept a non-default temperature (x): remove temperature, or send 1"; never "disable
+  thinking", which these models' rule does not depend on). The value is descriptor-wide; OpenAI's
   list is exactly those two models. `AiAssist.rejectsSamplingParams` answers the
   question for a concrete id. Not guarded, because it depends on the effort: `gpt-6-luna` (`mini`,
   `nano`) and `gpt-6-sol` reject `temperature` unless the call sets effort `'none'`.

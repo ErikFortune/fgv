@@ -5,8 +5,7 @@ base tier sends `thinkingBudget: 0` again; and OpenAI's `gpt-6.1-sol` and `gpt-6
 `temperature: 1` with or without an effort, while every other value is still refused before the wire.
 
 Packages: `@fgv/ts-extras` (`ai-assist`, change file `minor`) and `@fgv/testbed` (private, change file
-`none`). Branch `live-run-corrections`, based on `origin/integration/asks` @ `e9fe435f9`. PR: #771
-(none opened, per the brief).
+`none`). Branch `live-run-corrections`, based on `origin/integration/asks` @ `e9fe435f9`. PR: #771.
 
 ## 1. What changed in `ai-assist`
 
@@ -21,7 +20,7 @@ No provider or model branch was added. `checkTemperatureConflict` already exempt
 `temperatureAcceptedWithThinking`, which is read off the descriptor, so declaring `1` on OpenAI is what
 lets `temperature: 1` beside an effort through on the completion and chat-streaming paths; the
 Responses adapter was the one place that still dropped it. The refusal wording for `0.3` is now
-Anthropic's, with no code change: `checkSamplingParams` picks it whenever an accepted value is
+Anthropic's, with no code change on the no-effort path: `checkSamplingParams` picks it whenever an accepted value is
 declared — "`gpt-6.1-sol does not accept a non-default temperature (0.3): remove temperature, or send
 1`". The "accepts no temperature at all" branch stays, covered by a test on a descriptor copy with the
 field removed (D2).
@@ -89,6 +88,31 @@ changed row below prints there as `PENDING` with the stated expectation. Rows no
 - The pending `final-model-fixes` change file no longer says `gemini-3.8-flash` joined the list (D5);
   `docs/FUTURE.md`'s `thinkingLevel` entry keeps every claim and now names flash-lite alone as listed
   (D6).
+
+## 5a. Review round (orchestrator review of #771, P3s)
+
+- **Refusal beside an effort.** With an effort set, a non-default temperature on a sampling-restricted
+  model (sol, astra, and every Anthropic model on the list) was refused by `checkTemperatureConflict`
+  with "remove temperature or disable thinking" — wrong advice for a rule that holds with or without
+  thinking, on models that mostly cannot turn thinking off. `checkTemperatureConflict` now stands aside
+  whenever the descriptor gives the model an accepted temperature (`temperatureAcceptedWithThinking`
+  is defined), and `checkSamplingParams`, which both callers run next, refuses with "`<model>` does not
+  accept a non-default temperature (x): remove temperature, or send `<accepted>`". Data-driven: the
+  condition is the descriptor value, not a provider. Models off the list keep the conflict message.
+- **Red, then green** (`red2-ts-extras.log` → `green2-targeted.log`): 10 red before the change —
+  completion ×4 and streaming ×4 (claude-haiku-5-5, claude-opus-5-5, gpt-6.1-sol, gpt-6-astra, 0.3 with
+  effort `low`), the `checkTemperatureConflict` unit test, and `apiClient.thinking`'s astra 0.7 with an
+  explicit `high` block. The four client-tool rows were already green: that path runs
+  `checkSamplingParams` first and has no conflict check; they pin the message there.
+- Two existing expectations changed with it: `apiClient.thinking` (astra 0.7 beside an explicit `high`
+  block) and `streamingClient` (astra 0.7 with a degraded `'none'`) now expect the model's own refusal
+  rather than the conflict or degrade message; the degrade note stays pinned on xAI, whose models do
+  not restrict temperature.
+- Comments and public TSDoc made true: `temperature` on `IProviderCompletionParams`,
+  `IExecuteClientToolTurnParams` and `IProviderCompletionStreamParams`, `thinking` on `IProviderCompletionParams`,
+  and the no-effort-gate notes in `callOpenAiCompletion` and `callOpenAiChatStream`.
+- README, CAPABILITIES and the change file now say the refusal reads the same with or without an
+  effort.
 
 ## 6. Gates
 

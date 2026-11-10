@@ -753,26 +753,6 @@ describe('per-model thinking-off and sampling-parameter rules', () => {
       }
     );
 
-    test.each([
-      ['claude-haiku-5-5', 0.3],
-      ['claude-sonnet-5-5', 0.3]
-    ] as ReadonlyArray<[string, number]>)(
-      'completion: %s still refuses temperature %s with effort low',
-      async (model, temperature) => {
-        mockJson(anthropicOk);
-        const result = await AiAssist.callProviderCompletion({
-          descriptor: anthropic,
-          apiKey: 'k',
-          ...prompt.toRequest(),
-          modelOverride: model,
-          temperature,
-          thinking: { effort: 'low' }
-        });
-        expect(result).toFail();
-        expect(global.fetch).not.toHaveBeenCalled();
-      }
-    );
-
     // The same exemption, read from the OpenAI descriptor: sol and astra take their default, 1,
     // with a reasoning effort as well as without (live, 2026-11-10, at the default effort).
     test.each(['gpt-6.1-sol', 'gpt-6-astra'])(
@@ -849,19 +829,65 @@ describe('per-model thinking-off and sampling-parameter rules', () => {
       }
     );
 
-    test.each(['gpt-6.1-sol', 'gpt-6-astra'])(
-      'completion: openai %s still refuses temperature 0.3 with effort low',
-      async (model) => {
-        mockJson(openAiOk);
+    // Beside an effort, a non-default temperature on a model that restricts it is refused with the
+    // model's own message: "disable thinking" would be wrong advice for a model whose rule applies
+    // with or without thinking (and several of them cannot turn thinking off at all).
+    const RESTRICTED: ReadonlyArray<[AiAssist.AiProviderId, string, RegExp]> = [
+      ['anthropic', 'claude-haiku-5-5', /claude-haiku-5-5 does not accept a non-default temperature/],
+      ['anthropic', 'claude-opus-5-5', /claude-opus-5-5 does not accept a non-default temperature/],
+      ['openai', 'gpt-6.1-sol', /gpt-6\.1-sol does not accept a non-default temperature/],
+      ['openai', 'gpt-6-astra', /gpt-6-astra does not accept a non-default temperature/]
+    ];
+    const SEND_DEFAULT = /\(0\.3\): remove temperature, or send 1$/;
+
+    test.each(RESTRICTED)(
+      'completion: %s %s refuses 0.3 with effort low, naming the default',
+      async (id, model, refusal) => {
         const result = await AiAssist.callProviderCompletion({
-          descriptor: getDescriptor('openai'),
+          descriptor: getDescriptor(id),
           apiKey: 'k',
           ...prompt.toRequest(),
           modelOverride: model,
           temperature: 0.3,
           thinking: { effort: 'low' }
         });
-        expect(result).toFail();
+        expect(result).toFailWith(refusal);
+        expect(result).toFailWith(SEND_DEFAULT);
+        expect(global.fetch).not.toHaveBeenCalled();
+      }
+    );
+
+    test.each(RESTRICTED)(
+      'streaming: %s %s refuses 0.3 with effort low, naming the default',
+      async (id, model, refusal) => {
+        const result = await AiAssist.callProviderCompletionStream({
+          descriptor: getDescriptor(id),
+          apiKey: 'k',
+          ...prompt.toRequest(),
+          modelOverride: model,
+          temperature: 0.3,
+          thinking: { effort: 'low' }
+        });
+        expect(result).toFailWith(refusal);
+        expect(result).toFailWith(SEND_DEFAULT);
+        expect(global.fetch).not.toHaveBeenCalled();
+      }
+    );
+
+    test.each(RESTRICTED)(
+      'client-tool: %s %s refuses 0.3 with a resolved effort, naming the default',
+      (id, model, refusal) => {
+        const result = AiAssist.executeClientToolTurn({
+          descriptor: getDescriptor(id),
+          apiKey: 'k',
+          ...prompt.toRequest(),
+          clientTools: [],
+          model,
+          temperature: 0.3,
+          resolvedThinking: id === 'openai' ? { openAiEffort: 'low' } : { anthropicEffort: 'low' }
+        });
+        expect(result).toFailWith(refusal);
+        expect(result).toFailWith(SEND_DEFAULT);
         expect(global.fetch).not.toHaveBeenCalled();
       }
     );

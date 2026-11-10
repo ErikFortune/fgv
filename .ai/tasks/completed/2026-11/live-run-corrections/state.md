@@ -11,7 +11,7 @@ Worker-owned. The brief is frozen; questions and decisions go here.
 - [x] Docs (README, CAPABILITIES, change files, testbed README, FUTURE.md).
 - [x] Commit (`ff80f053a`), then gates — all green (result.md § 6).
 - [x] Close-out per `finalize-task`: migrated to `completed/2026-11/`, meta.yaml, README, ledger entry
-  (`#TBD`), feed regenerated.
+  (#771), feed regenerated.
 
 ## Decisions (worker)
 
@@ -50,6 +50,20 @@ Worker-owned. The brief is frozen; questions and decisions go here.
   are mutants: flash-lite removed from the Gemini list (3 tests red), and OpenAI's accepted
   temperature set to 0.3 (the 0.3-refusal tests red). The adapter threading (D1) was shown red the
   same way (4 tests red with the adapter's accepted-default clause removed).
+
+- **D8 (review round on #771)** — the conflict check stands aside for a model with an accepted
+  temperature, so the sampling check's message (which names the model and the accepted value) is the
+  refusal beside an effort too. See result.md § 5a.
+
+## Follow-ups (not this PR)
+
+- **F1** — the client-tool path has no OpenAI guard for a caller-built `resolvedThinking: { openAiEffort:
+  'none' }` aimed at a thinking-required model (sol, astra); it reaches the wire and the provider 400s.
+  The Anthropic flag has a guard (`anthropicThinkingDisabled` on a thinking-required model is refused).
+- **F2** — `gpt-6-luna` and `gpt-6-sol` with `temperature: 1` beside an effort are refused locally by
+  the thinking/temperature conflict, though the provider likely accepts its default there too (luna's
+  400 for 0.3 reads "Only the default (1) value is supported"). A canary probe row (`temp=1+effort=low`
+  on luna, expected `observed`) could settle it before any registry change.
 
 ## Questions
 

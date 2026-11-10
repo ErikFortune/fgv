@@ -482,8 +482,11 @@ describe('thinking-config wire encoding (non-streaming)', () => {
         temperature: 0.7,
         thinking: { effort: 'none', providers: [{ provider: 'openai', config: { effort: 'high' } }] }
       });
-      expect(result).toFailWith(/remove temperature or disable thinking/);
-      expect(result).not.toFailWith(/was sent as 'low'/);
+      // astra restricts temperature with or without thinking, so the refusal is the model's own.
+      expect(result).toFailWith(
+        /gpt-6-astra does not accept a non-default temperature \(0\.7\): remove temperature, or send 1/
+      );
+      expect(result).not.toFailWith(/was sent as 'low'|disable thinking/);
       expect(global.fetch).not.toHaveBeenCalled();
     });
 
