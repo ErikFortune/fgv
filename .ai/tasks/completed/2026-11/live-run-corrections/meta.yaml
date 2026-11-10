@@ -1,7 +1,7 @@
 id: live-run-corrections
 status: shipped
 packages: ['@fgv/ts-extras', '@fgv/testbed']
-prs: [] # TBD: no PR opened by the worker; fill in at PR time
+prs: [771]
 openPrs: []
 opened: 2026-11-10
 closed: 2026-11-10
@@ -43,4 +43,4 @@ keywords:
 relatedStreams:
   - { id: final-model-fixes, relationship: 'answers its F3, Q1 and OBSERVED follow-ups' }
   - { id: testbed-model-probes, relationship: 'updates its OpenAI temperature and Gemini thinking rows' }
-sourceHash: sha256:6ac8aa732af43ea5 # over brief.md + state.md + result.md
+sourceHash: sha256:b021c3403ccb7f77 # over brief.md + state.md + result.md

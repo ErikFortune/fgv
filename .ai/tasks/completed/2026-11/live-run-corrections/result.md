@@ -5,7 +5,7 @@ base tier sends `thinkingBudget: 0` again; and OpenAI's `gpt-6.1-sol` and `gpt-6
 `temperature: 1` with or without an effort, while every other value is still refused before the wire.
 
 Packages: `@fgv/ts-extras` (`ai-assist`, change file `minor`) and `@fgv/testbed` (private, change file
-`none`). Branch `live-run-corrections`, based on `origin/integration/asks` @ `e9fe435f9`. PR: `#TBD`
+`none`). Branch `live-run-corrections`, based on `origin/integration/asks` @ `e9fe435f9`. PR: #771
 (none opened, per the brief).
 
 ## 1. What changed in `ai-assist`

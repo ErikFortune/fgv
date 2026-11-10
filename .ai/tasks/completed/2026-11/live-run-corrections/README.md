@@ -1,6 +1,6 @@
 # live-run-corrections — two registry corrections from the 2026-11-10 keyed run
 
-**Shipped**: 2026-11-10, PR `#TBD` (targets `integration/asks`).
+**Shipped**: 2026-11-10, PR #771 (targets `integration/asks`).
 Packages: `@fgv/ts-extras` (`ai-assist`, change file `minor`) and `@fgv/testbed` (private, change file
 `none`).
 
