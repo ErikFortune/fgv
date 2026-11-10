@@ -43,4 +43,4 @@ keywords:
 relatedStreams:
   - { id: final-model-fixes, relationship: 'answers its F3, Q1 and OBSERVED follow-ups' }
   - { id: testbed-model-probes, relationship: 'updates its OpenAI temperature and Gemini thinking rows' }
-sourceHash: sha256:b021c3403ccb7f77 # over brief.md + state.md + result.md
+sourceHash: sha256:1e850f47cb2b3836 # over brief.md + state.md + result.md

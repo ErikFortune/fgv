@@ -132,3 +132,10 @@ allowed `warning` is the tracked-symlink notice.
 | `rush rebuild` | pass, 0 graded hits, only the symlink notice | `rebuild.log` |
 | `rush lint` | pass, 0 graded hits, only the symlink notice | `lint.log` |
 | `rush test` (background, waited for) | pass: `SUCCESS: 38 operations`, 0 graded hits, only the symlink notice, no flakes and no retries; log not NUL-padded | `test.log` |
+
+**Review round (after § 5a), re-gated on `e28c02dcb`:** ts-extras build + test 100% (`ts-extras-test2.log`),
+ts-extras lint (`ts-extras-lint2.log`), `rush rebuild` (`rebuild2.log`), `rush lint` (`lint2.log`),
+`rush test` `SUCCESS: 38 operations` with no retries (`test2.log`), `change --verify`
+(`change-verify2.log`), prettier 2.8.8, `verify-capability-docs` (`verify-cap2.log`),
+`generate-capability-feed --check` (`feed-check2.log`) — all pass, 0 graded hits, only the symlink
+notice.
