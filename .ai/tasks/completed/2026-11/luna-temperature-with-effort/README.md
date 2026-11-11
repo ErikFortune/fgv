@@ -1,6 +1,6 @@
 # luna-temperature-with-effort — accept the default temperature beside an effort on `gpt-6-luna`
 
-**Shipped**: 2026-11-11, PR #TBD (targets `integration/asks`, after #775).
+**Shipped**: 2026-11-11, PR #776 (targets `integration/asks`, after #775).
 Packages: `@fgv/ts-extras` (`ai-assist`, change file `minor`) and `@fgv/testbed` (private, change file
 `none`).
 

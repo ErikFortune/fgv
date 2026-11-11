@@ -1,7 +1,7 @@
 id: luna-temperature-with-effort
 status: shipped
 packages: ['@fgv/ts-extras', '@fgv/testbed']
-prs: [] # TBD: fill with the PR number when it opens
+prs: [776]
 openPrs: []
 opened: 2026-11-11
 closed: 2026-11-11
