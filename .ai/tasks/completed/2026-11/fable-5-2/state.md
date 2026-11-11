@@ -15,6 +15,8 @@ Worker-owned. The brief is frozen; questions and decisions go here.
 - [x] Docs, change files.
 - [x] Commit, then gates.
 - [x] Close-out per `finalize-task`.
+- [x] Orchestrator decision on Q1 (2026-11-11): fix in this stream. Red test, adapter + builder
+  change, green; docs updated; gates re-run.
 
 ## Decisions (worker)
 
@@ -40,17 +42,31 @@ Worker-owned. The brief is frozen; questions and decisions go here.
 - **D5 — the testbed check is a second scenario id, `anthropic-client-tools-fable`.** An env var
   would not reach the web runner; a second id built from the same implementation (a `makeCliImpl(model)`
   factory) keeps the original scenario unchanged and adds one registry line. It keeps `web_search`
-  so it stays the same round-trip as the sonnet scenario — see Q1 for what that means on 5.2.
-- **D6 — the preserved-thinking answer is "yes for thinking, text and tool_use; no when a server
-  tool's blocks are in the same turn".** See result.md § 3. Not fixed here: the fix is larger than a
-  few lines (Q1).
+  so it stays the same round-trip as the sonnet scenario, search path included (Q1, now fixed).
+- **D6 — the preserved-thinking answer was "yes for thinking, text and tool_use; no when a server
+  tool's blocks are in the same turn".** First parked as larger than the brief's bound (Q1); the
+  orchestrator then directed the fix into this stream (D7).
+- **D7 — the Q1 fix keeps the raw block.** `server_tool_use` and `web_search_tool_result` are buffered
+  as the `content_block_start` JSON object itself (the start validator now checks the typed fields and
+  keeps the object, rather than a typed copy), so every field the API sent comes back in its original
+  key order. `server_tool_use.input` is replaced by its parsed `input_json_delta` chunks when any
+  arrived; unparseable or non-object input fails the continuation rather than inventing one. Any
+  `server_tool_use` is buffered, not only `web_search` (only `web_search` still emits a `tool-event`);
+  `web_search_tool_result` is the only result type the adapter recognized, so it is the only one
+  added. There is no separate continuation validator to widen: `rawTailMessageConverter` already
+  accepts any content array.
+- **D8 — citations are part of the same fix.** A search round streams `citations_delta` events onto the
+  text blocks that cite it; the adapter dropped them, so the replayed text block lost its `citations` —
+  the same edit by the page's definition, in the same round. They are now appended per text block and
+  replayed as `{type, text, citations}`. Without this, fixing the two block types would still have left
+  the search path non-append-only.
 
 ## Questions / parked
 
-- **Q1 — server-tool blocks are dropped from the replayed assistant turn (not fixed; larger than a
-  few lines).** The Anthropic streaming adapter buffers only `thinking`, `redacted_thinking`, `text`
+- **Q1 — RESOLVED (D7, D8), at the orchestrator's direction.** Original finding: server-tool blocks
+  were dropped from the replayed assistant turn. The Anthropic streaming adapter buffered only `thinking`, `redacted_thinking`, `text`
   and `tool_use` blocks (`streamingAdapters/anthropic.ts`, `content_block_start` handler);
-  `server_tool_use` and `web_search_tool_result` only emit a `tool-event`. So when `web_search` runs in
+  `server_tool_use` and `web_search_tool_result` only emitted a `tool-event`. So when `web_search` runs in
   the same round as a client tool call, `buildAnthropicContinuation` sends the assistant turn back
   without those blocks. The preserved-thinking page lists "drops unknown block types" as an edit and
   requires "every block type, in the order received". Any thinking block after the dropped blocks —
@@ -59,10 +75,8 @@ Worker-owned. The brief is frozen; questions and decisions go here.
   Anthropic does not list `web_search` as exclusive with client tools in this registry
   (`serverToolsExclusiveWithClientTools` is Gemini-only), so the path is reachable, and the testbed's
   `anthropic-client-tools*` scenarios exercise it whenever the model searches in a tool-calling round.
-  The fix: buffer `server_tool_use` (id, name, input from `input_json_delta`) and
-  `web_search_tool_result` (its `content` from `content_block_start`, which the start-payload validator
-  would need to keep), and emit them in stream order in the continuation — plus request-body tests.
-  Recorded in `docs/TECH_DEBT.md`.
+  The fix as built is D7 and D8.
+  Was recorded in `docs/TECH_DEBT.md`; that entry is now closed.
 - **Q2 — empty text blocks are dropped (left alone).** `buildAnthropicContinuation` skips a `text`
   block with no text. The API rejects an empty text block on input, so sending it back is not an
   option; whether the API ever streams one in a thinking-model turn is not stated on any fetched page.

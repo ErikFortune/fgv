@@ -2,6 +2,11 @@
 
 **Shipped:** `@anthropic:fable` now resolves to `claude-fable-5-2`, and `claude-fable-5-2` and `claude-mythos-5-2` are covered by every per-model declaration in `ai-assist`, so structured output uses JSON outputs, `'none'` degrades to `'low'`, a non-default temperature is refused locally, and `resolveMaxOutputTokens` answers 128000 for both.
 
+Client-tool continuations also now replay each Anthropic assistant turn exactly as it streamed,
+including `server_tool_use` / `web_search_tool_result` blocks and text citations, so a `web_search`
+round beside a client tool no longer edits the history that 5.2's every-account prefix check
+verifies (§ 3).
+
 Packages: `@fgv/ts-extras` (`ai-assist`, change file `minor`) and `@fgv/testbed` (private, change file
 `none`). Branch `fable-5-2`, based on `origin/integration/asks` @ `f66b7f0c0`. PR: none opened (#TBD).
 
@@ -45,11 +50,15 @@ The brief's summary matched the pages on every point.
 | `adaptiveThinkingModelPrefixes`, `thinkingRequiredModelPrefixes`, `samplingParamsRejectedModelPrefixes` | covered by dash-bounded `claude-fable-5` / `claude-mythos-5` | unchanged entries; comments now cite the 2026-11-11 pages (state.md D1) |
 | `anthropicThinkingOffTypes` | — | unchanged: the 5.2 ids resolve to the default `disabled`, which is never sent because both are thinking-required (D2) |
 | `samplingParamsAcceptedTemperature` | 1 | unchanged (D3) |
+| Anthropic streaming adapter (internal) | buffered thinking, redacted thinking, text, tool_use | also `server_tool_use` (start object + `input_json_delta` buffer, any tool name), `web_search_tool_result` (start object), and text `citations` from `citations_delta`; the start-payload validator keeps the block as its JSON object (state.md D7, D8) |
+| `buildAnthropicContinuation` (internal) | replayed the four buffered types | replays the server-tool blocks and citations in stream order; fails on a `server_tool_use` input that does not parse to an object |
 
 ## 3. Preserved thinking: is the replayed history append-only?
 
-**For thinking, redacted thinking, text and client `tool_use` blocks: yes.** **When a server tool
-(`web_search`) runs in the same turn: no — not fixed here (state.md Q1, `docs/TECH_DEBT.md`).**
+**Yes, after the fix in this stream.** As first traced, thinking, redacted thinking, text and client
+`tool_use` blocks were replayed unchanged, but a turn where a server tool (`web_search`) ran lost its
+`server_tool_use` and `web_search_tool_result` blocks and its text citations. At the orchestrator's
+direction that is fixed here (state.md D7, D8); the `docs/TECH_DEBT.md` entry is closed.
 
 The trace:
 
@@ -58,11 +67,15 @@ The trace:
   `signature: ''`; `thinking_delta` and `signature_delta` are **appended** (`+=`), so an empty-text
   block that receives only its signature is kept with its full signature. `redacted_thinking` keeps
   `data` from the start event. `text` and `tool_use` (id, name, args buffer) are kept.
-  `server_tool_use` and `web_search_tool_result` only yield a `tool-event`; they are **not** buffered.
+  Every `server_tool_use` is buffered as its `content_block_start` object with an args buffer fed by
+  `input_json_delta`; `web_search_tool_result` is buffered as its start object (it arrives complete);
+  `citations_delta` appends to the text block's `citations`. `web_search` still yields `tool-event`s.
 - **Rebuild.** `buildAnthropicContinuation` (`streamingAdapters/clientToolContinuationBuilder.ts`)
   walks the buffer in index order and emits `{type:'thinking', thinking, signature}` unchanged
-  (including empty `thinking`), `{type:'redacted_thinking', data}`, non-empty `text`, and
-  `{type:'tool_use', id, name, input}`, then a user turn of `tool_result` blocks.
+  (including empty `thinking`), `{type:'redacted_thinking', data}`, non-empty `text` (with
+  `citations` when any arrived), the `server_tool_use` start object with `input` replaced by the parsed
+  chunks (a failure if they do not parse to an object), the `web_search_tool_result` object as
+  streamed, and `{type:'tool_use', id, name, input}`, then a user turn of `tool_result` blocks.
 - **Accumulate.** `executeClientToolTurn` prepends the inbound `continuationMessages` to the new
   continuation (`[...continuationMessages, ...continuation.messages]`), so each round's tail is the
   previous one plus two messages; `runClientToolLoop` replaces its tail with that cumulative value
@@ -76,15 +89,20 @@ The trace:
   on every request, that each request's `messages` begins with the previous request's `messages`
   serialized byte-for-byte and adds exactly two, and that the assistant turns carry each block as
   streamed. Mutating the builder to skip empty-text thinking blocks turns all three red
-  (`pt-mutant.log`); restored, green (`pt.log`).
+  (`pt-mutant.log`); restored, green (`pt.log`). Two more cases replay a round that interleaves
+  thinking → `server_tool_use` (input split over two deltas) → `web_search_tool_result` → cited text
+  (two `citations_delta`) → client `tool_use`, on `claude-fable-5-2` with thinking and on
+  `claude-haiku-4-5` without, and assert the serialized assistant turn is byte-identical to the
+  streamed blocks on both later requests and that every request extends the last. Both were red on the
+  unfixed code (the server blocks and citations were missing, `q1-red.log`) and are green after it
+  (`q1-green-targeted.log`, `q1-extras-test.log`).
 
-The gaps, all recorded in `state.md`:
+What remains, recorded in `state.md`:
 
-- **Q1 (real, parked):** dropped `server_tool_use` / `web_search_tool_result` blocks are an edit by
-  the page's own definition. Reachable on Anthropic, where `web_search` is not exclusive with client
-  tools, and exercised by both testbed `anthropic-client-tools*` scenarios. Fix is larger than a few
-  lines (buffer two more block types, keep the result content the start-payload validator now
-  discards, tests). Tracked in `docs/TECH_DEBT.md` [P2].
+- **Q1 (resolved):** the dropped server-tool blocks and citations, fixed as above. Unit cover for the
+  new branches: a `server_tool_use` with no input deltas replays its start object unchanged; unparseable
+  or non-object input fails the continuation; any server tool (not only `web_search`) is buffered; a
+  citation aimed at a non-text or missing block, or a `citations_delta` with no citation, is ignored.
 - **Q2:** an empty `text` block is skipped; the API rejects empty text on input, and no page says one
   is streamed. Left alone.
 - **Q3:** `tool_use.input` is replayed as the parsed object, not the streamed bytes. Same value.
@@ -95,6 +113,8 @@ The gaps, all recorded in `state.md`:
   (now built by `makeCliImpl(model)`), run on `@anthropic:fable`. Run it with
   `ANTHROPIC_API_KEY=… node samples/testbed/bin/testbed.js --scenario anthropic-client-tools-fable` (or the
   web runner). Its summary line names the resolved id (`Model: @anthropic:fable (claude-fable-5-2)`).
+  Any 400 from it, including "The block is bound to a different conversation", is now a finding: the
+  replay is meant to be append-only whether or not the model searched.
 - Rows that follow `@anthropic:fable` pick up 5.2 through the registry; every pinned `claude-fable-5-1`
   in testbed source, TSDoc and tests now reads `claude-fable-5-2`. The scenario-id snapshot gains the
   new id. The wire-probe comment names the 5.2 lines among those that get JSON outputs.
@@ -110,6 +130,8 @@ The gaps, all recorded in `state.md`:
 | preserved-thinking test, builder mutated to drop empty-text thinking | 3 red | `pt-mutant.log` |
 | testbed tests against ts-extras built from the old registry | **11 red** (every `@anthropic:fable` row expecting `claude-fable-5-2`, plus the scenario-id snapshot) | `red-testbed.log` |
 | testbed, new registry | green, 100% | `green-testbed.log` |
+| Q1: new server-tool replay cases, unfixed adapter and builder | **2 red** (fable-5-2 with thinking, haiku-4-5 without): the replayed turn lacked `server_tool_use`, `web_search_tool_result` and the text's `citations` | `q1-red.log` |
+| Q1: after the fix | 5/5 targeted green; full ts-extras suite green at 100% | `q1-green-targeted.log`, `q1-extras-test.log` |
 
 ## 6. Gates
 
@@ -141,5 +163,5 @@ Rows not listed are as in `live-run-corrections/result.md` § 4 and earlier shee
 | anthropic-model-tiers | `@anthropic:fable max=128000` | `PASS` on `claude-fable-5-2` | a 400 on `max_tokens`: the cited 128K limit is wrong for this key |
 | anthropic-model-tiers | `@anthropic:fable temp=1` / `temp=1+effort=low` / `temp=0.3` | `PASS` / `PASS` / `REFUSED-LOCALLY` | a 400 on `temperature: 1`: 5.2 rejects the default under `2023-06-01` too |
 | anthropic-structured-output | `anthropic output_config.format (@anthropic:fable)` | `PASS` on `claude-fable-5-2` | as for the schema rows above |
-| **new** anthropic-client-tools-fable | whole run | `PASS`, `Model: @anthropic:fable (claude-fable-5-2)` | **400 "The block is bound to a different conversation"**: a replayed turn was edited. If `Server tool events` > 0 in the same round as a `recall_memory` call, this is the known gap (state.md Q1), not a regression — re-run (the model does not always search) and file the run against the TECH_DEBT entry. If no search happened, it is a new finding in the thinking/text/tool_use replay. Any other 400 — read the provider text |
-| anthropic-client-tools (sonnet) | whole run | unchanged | the same 400 on an account created on or after 2026-08-31 is the same gap |
+| **new** anthropic-client-tools-fable | whole run | `PASS`, `Model: @anthropic:fable (claude-fable-5-2)` | **400 "The block is bound to a different conversation"**: a replayed turn was edited — a finding, whether or not `Server tool events` > 0. Note which block types the failing round streamed (the logger lists tool events per round) and compare them with what § 3 says is replayed. Any other 400 — read the provider text |
+| anthropic-client-tools (sonnet) | whole run | unchanged | the same 400 is the same finding |

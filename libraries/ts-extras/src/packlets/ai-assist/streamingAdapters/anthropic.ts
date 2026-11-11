@@ -33,7 +33,7 @@
 
 import { type AnthropicThinkingOffType } from '../anthropicThinkingOff';
 import { fail, type Logging, Result, succeed, type Validator, Validators } from '@fgv/ts-utils';
-import { type JsonObject } from '@fgv/ts-json-base';
+import { isJsonObject, type JsonObject } from '@fgv/ts-json-base';
 
 import { buildAnthropicMessages, buildAnthropicSystem } from '../chatRequestBuilders';
 import { type IAiCacheRequest } from '../cacheRequest';
@@ -93,6 +93,11 @@ export interface IAccumulatedRedactedThinkingBlock {
 export interface IAccumulatedTextBlock {
   readonly type: 'text';
   text: string;
+  /**
+   * The citations a server tool's results put on this text, in `citations_delta` order. Absent
+   * when none arrived; replayed with the text, since dropping them edits the assistant turn.
+   */
+  citations?: JsonObject[];
 }
 
 /**
@@ -108,6 +113,28 @@ export interface IAccumulatedToolUseBlock {
 }
 
 /**
+ * An accumulated `server_tool_use` block (a provider-run tool such as `web_search`). `block` is the
+ * `content_block_start` object exactly as streamed; `argsBuffer` is the concatenation of its
+ * `input_json_delta` chunks, which replaces `block.input` when the turn is replayed.
+ * @internal
+ */
+export interface IAccumulatedServerToolUseBlock {
+  readonly type: 'server_tool_use';
+  readonly block: JsonObject;
+  argsBuffer: string;
+}
+
+/**
+ * An accumulated server-tool result block (`web_search_tool_result`). It arrives complete in its
+ * `content_block_start` event and is replayed exactly as streamed.
+ * @internal
+ */
+export interface IAccumulatedServerToolResultBlock {
+  readonly type: 'server_tool_result';
+  readonly block: JsonObject;
+}
+
+/**
  * Discriminated union of all accumulated Anthropic content block types.
  * The ordered accumulation buffer is a `Map<number, IAccumulatedBlock>` keyed
  * by the SSE `index` field from `content_block_start` events.
@@ -117,7 +144,21 @@ export type IAccumulatedBlock =
   | IAccumulatedThinkingBlock
   | IAccumulatedRedactedThinkingBlock
   | IAccumulatedTextBlock
-  | IAccumulatedToolUseBlock;
+  | IAccumulatedToolUseBlock
+  | IAccumulatedServerToolUseBlock
+  | IAccumulatedServerToolResultBlock;
+
+/**
+ * A `content_block` object from a `content_block_start` event: the raw JSON object, with the
+ * fields the translator reads typed.
+ * @internal
+ */
+type AnthropicContentBlock = JsonObject & {
+  readonly type?: string;
+  readonly name?: string;
+  readonly id?: string;
+  readonly data?: string;
+};
 
 // ============================================================================
 // Event payload shapes
@@ -131,12 +172,7 @@ export type IAccumulatedBlock =
  */
 interface IAnthropicContentBlockStartPayload {
   readonly index?: number;
-  readonly content_block: {
-    readonly type?: string;
-    readonly name?: string;
-    readonly id?: string;
-    readonly data?: string;
-  };
+  readonly content_block: AnthropicContentBlock;
 }
 
 /**
@@ -146,6 +182,7 @@ interface IAnthropicContentBlockStartPayload {
  * - `input_json_delta`: tool argument accumulation
  * - `thinking_delta`: thinking text accumulation
  * - `signature_delta`: thinking signature accumulation (MUST be appended, not overwritten)
+ * - `citations_delta`: one citation appended to a text block
  *
  * The `index` field is optional; absent index defaults to 0 in the stream translator.
  * @internal
@@ -158,6 +195,7 @@ interface IAnthropicContentBlockDeltaPayload {
     readonly partial_json?: string;
     readonly thinking?: string;
     readonly signature?: string;
+    readonly citation?: JsonObject;
   };
 }
 
@@ -213,11 +251,17 @@ const anthropicContentBlockInner: Validator<{
   { options: { optionalFields: ['type', 'name', 'id', 'data'] } }
 );
 
+/** The typed fields checked, and the block kept as the JSON object it arrived as. */
+const anthropicContentBlock: Validator<AnthropicContentBlock> = Validators.isA<AnthropicContentBlock>(
+  'Anthropic content block',
+  (v): v is AnthropicContentBlock => isJsonObject(v) && anthropicContentBlockInner.validate(v).isSuccess()
+);
+
 const anthropicContentBlockStartPayload: Validator<IAnthropicContentBlockStartPayload> =
   Validators.object<IAnthropicContentBlockStartPayload>(
     {
       index: Validators.number.optional(),
-      content_block: anthropicContentBlockInner
+      content_block: anthropicContentBlock
     },
     { options: { optionalFields: ['index'] } }
   );
@@ -228,21 +272,24 @@ const anthropicContentBlockDeltaInner: Validator<{
   partial_json?: string;
   thinking?: string;
   signature?: string;
+  citation?: JsonObject;
 }> = Validators.object<{
   type?: string;
   text?: string;
   partial_json?: string;
   thinking?: string;
   signature?: string;
+  citation?: JsonObject;
 }>(
   {
     type: Validators.string.optional(),
     text: Validators.string.optional(),
     partial_json: Validators.string.optional(),
     thinking: Validators.string.optional(),
-    signature: Validators.string.optional()
+    signature: Validators.string.optional(),
+    citation: jsonObjectValidator.optional()
   },
-  { options: { optionalFields: ['type', 'text', 'partial_json', 'thinking', 'signature'] } }
+  { options: { optionalFields: ['type', 'text', 'partial_json', 'thinking', 'signature', 'citation'] } }
 );
 
 const anthropicContentBlockDeltaPayload: Validator<IAnthropicContentBlockDeltaPayload> =
@@ -314,7 +361,9 @@ const RECOGNIZED_ANTHROPIC_EVENTS: ReadonlySet<string> = new Set<string>([
  * Translates an Anthropic Messages API SSE stream into unified events.
  *
  * Maintains an ordered accumulation buffer (keyed by SSE `index`) for all
- * content blocks: `thinking`, `redacted_thinking`, `text`, and `tool_use`.
+ * content blocks: `thinking`, `redacted_thinking`, `text` (with its citations), `tool_use`, and the
+ * server-tool blocks `server_tool_use` and `web_search_tool_result`, so a continuation can send the
+ * assistant turn back exactly as it streamed.
  * The buffer is available on the returned generator via `.accumulationBuffer`.
  *
  * Unrecognized event names are reported once per stream via `logger?.warn` —
@@ -392,9 +441,13 @@ async function* translateAnthropicStream(
                 `This usually indicates provider drift or a truncated stream.`
             );
           }
-        } else if (block.type === 'server_tool_use' && block.name === 'web_search') {
-          yield { type: 'tool-event', toolType: 'web_search', phase: 'started' };
+        } else if (block.type === 'server_tool_use') {
+          accumulationBuffer.set(index, { type: 'server_tool_use', block, argsBuffer: '' });
+          if (block.name === 'web_search') {
+            yield { type: 'tool-event', toolType: 'web_search', phase: 'started' };
+          }
         } else if (block.type === 'web_search_tool_result') {
+          accumulationBuffer.set(index, { type: 'server_tool_result', block });
           yield { type: 'tool-event', toolType: 'web_search', phase: 'completed' };
         }
       } else if (eventName === 'content_block_delta') {
@@ -419,13 +472,17 @@ async function* translateAnthropicStream(
           }
         } else if (delta.type === 'input_json_delta' && typeof delta.partial_json === 'string') {
           /* c8 ignore next 1 - defensive: delta arrives only after block_start sets buffer entry */
-          if (block?.type === 'tool_use') {
+          if (block?.type === 'tool_use' || block?.type === 'server_tool_use') {
             block.argsBuffer += delta.partial_json;
           }
         } else if (delta.type === 'thinking_delta' && typeof delta.thinking === 'string') {
           /* c8 ignore next 1 - defensive: delta arrives only after block_start sets buffer entry */
           if (block?.type === 'thinking') {
             block.thinking += delta.thinking;
+          }
+        } else if (delta.type === 'citations_delta' && delta.citation !== undefined) {
+          if (block?.type === 'text') {
+            block.citations = [...(block.citations ?? []), delta.citation];
           }
         } else if (delta.type === 'signature_delta' && typeof delta.signature === 'string') {
           // CRITICAL (E5): signature must be APPENDED, not overwritten.

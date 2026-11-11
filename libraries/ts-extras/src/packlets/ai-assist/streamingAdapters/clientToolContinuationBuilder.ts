@@ -24,8 +24,8 @@
  *
  * Each provider requires a different wire format for the follow-up request:
  * - **Anthropic**: assistant turn reconstructed from the ordered accumulation
- *   buffer (thinking / redacted_thinking / text / tool_use in original stream
- *   order) + user turn with `tool_result` blocks. When thinking is active, the
+ *   buffer (thinking / redacted_thinking / text with its citations / tool_use / server_tool_use /
+ *   web_search_tool_result in original stream order) + user turn with `tool_result` blocks. When thinking is active, the
  *   follow-up request must NOT set `tool_choice: { type: 'any' }` or
  *   `tool_choice: { type: 'tool', ... }` (E3 / §5.4 of b4-spike-findings).
  * - **OpenAI / xAI Responses API**: `function_call` input items +
@@ -37,7 +37,15 @@
  */
 
 import { resolveAnthropicThinkingOffType } from '../anthropicThinkingOff';
-import { captureAsyncResult, fail, type Logging, mapResults, Result, succeed } from '@fgv/ts-utils';
+import {
+  captureAsyncResult,
+  captureResult,
+  fail,
+  type Logging,
+  mapResults,
+  Result,
+  succeed
+} from '@fgv/ts-utils';
 import { type JsonArray, type JsonObject } from '@fgv/ts-json-base';
 
 import { type IAiCacheRequest } from '../cacheRequest';
@@ -63,13 +71,13 @@ import type { IAiCompletionUsage } from '../usageTypes';
 import { type IResolvedThinkingConfig } from '../thinkingOptionsResolver';
 import { splitChatRequest } from '../chatRequestBuilders';
 import { resolveEffectiveBaseUrl } from '../endpoint';
-import { type IAccumulatedBlock } from './anthropic';
+import { type IAccumulatedBlock, type IAccumulatedServerToolUseBlock } from './anthropic';
 import { type IAccumulatedFunctionCall } from './openaiResponses';
 import { type IAccumulatedGeminiFunctionCall } from './gemini';
 import { callAnthropicStream } from './anthropic';
 import { callOpenAiResponsesStream } from './openaiResponses';
 import { callGeminiStream } from './gemini';
-import { type IStreamApiConfig } from './common';
+import { type IStreamApiConfig, jsonObjectValidator } from './common';
 import {
   supportsCacheUsageReporting,
   supportsPromptCacheBreakpoints,
@@ -146,6 +154,23 @@ function isUsableId(id: string | undefined): id is string {
 }
 
 /**
+ * A buffered `server_tool_use` block as it streamed: its `content_block_start` object, with `input`
+ * replaced by the parsed `input_json_delta` chunks when any arrived. Fails on unparseable chunks
+ * rather than replaying an input the model never sent.
+ */
+function replayServerToolUse(block: IAccumulatedServerToolUseBlock): Result<JsonObject> {
+  if (block.argsBuffer.length === 0) {
+    return succeed(block.block);
+  }
+  return captureResult(() => JSON.parse(block.argsBuffer) as unknown)
+    .onSuccess((parsed) => jsonObjectValidator.validate(parsed))
+    .onSuccess((input) => succeed({ ...block.block, input }))
+    .withErrorFormat(
+      (msg) => `Anthropic continuation: server_tool_use block has an unreadable input (${msg})`
+    );
+}
+
+/**
  * Builds the Anthropic follow-up messages for a client-tool round-trip.
  *
  * Reconstructs the assistant turn from the ordered accumulation buffer
@@ -199,8 +224,20 @@ export function buildAnthropicContinuation(
       });
     } else if (block.type === 'text') {
       if (block.text.length > 0) {
-        assistantContent.push({ type: 'text', text: block.text });
+        assistantContent.push(
+          block.citations === undefined
+            ? { type: 'text', text: block.text }
+            : { type: 'text', text: block.text, citations: block.citations }
+        );
       }
+    } else if (block.type === 'server_tool_use') {
+      const replayed = replayServerToolUse(block);
+      if (replayed.isFailure()) {
+        return fail(replayed.message);
+      }
+      assistantContent.push(replayed.value);
+    } else if (block.type === 'server_tool_result') {
+      assistantContent.push(block.block);
     } else if (block.type === 'tool_use') {
       // A buffered tool_use with an empty id can never be referenced by a valid
       // tool_result; emitting it would corrupt the assistant turn. Fail loud.

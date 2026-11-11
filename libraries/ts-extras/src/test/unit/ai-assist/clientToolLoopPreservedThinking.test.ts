@@ -159,4 +159,111 @@ describe('runClientToolLoop keeps the history append-only (prefix check)', () =>
       expect(fetchBody(2).model).toBe(model === '@anthropic:fable' ? 'claude-fable-5-2' : model);
     }
   );
+
+  // A web_search round beside a client tool: the server tool's blocks, and the citations its search
+  // put on the text, are part of the assistant turn and must come back exactly as streamed. Run with
+  // thinking (a model that runs the prefix check on every account) and without it.
+  test.each([
+    { label: 'claude-fable-5-2 with thinking', model: 'claude-fable-5-2', thinking: true },
+    { label: 'claude-haiku-4-5 without thinking', model: 'claude-haiku-4-5', thinking: false }
+  ])('$label: server-tool blocks and citations are replayed in place', async ({ model, thinking }) => {
+    const searchResult = {
+      type: 'web_search_tool_result',
+      // eslint-disable-next-line @typescript-eslint/naming-convention
+      tool_use_id: 'srvtoolu_1',
+      content: [
+        {
+          type: 'web_search_result',
+          url: 'https://example.com/ts',
+          title: 'TypeScript',
+          encrypted_content: 'ENC_1',
+          page_age: '1 day'
+        }
+      ]
+    };
+    const citationA = {
+      type: 'web_search_result_location',
+      url: 'https://example.com/ts',
+      title: 'TypeScript',
+      encrypted_index: 'IDX_A',
+      cited_text: 'TypeScript 6'
+    };
+    const citationB = { ...citationA, encrypted_index: 'IDX_B' };
+    queueSse(
+      roundSse([
+        ...(thinking
+          ? [
+              {
+                start: { type: 'thinking', thinking: '', signature: '' },
+                deltas: [{ type: 'signature_delta', signature: 'SIG_T' }]
+              }
+            ]
+          : []),
+        {
+          start: { type: 'server_tool_use', id: 'srvtoolu_1', name: 'web_search', input: {} },
+          deltas: [
+            { type: 'input_json_delta', partial_json: '{"query":' },
+            { type: 'input_json_delta', partial_json: '"typescript"}' }
+          ]
+        },
+        { start: searchResult, deltas: [] },
+        {
+          start: { type: 'text', text: '' },
+          deltas: [
+            { type: 'citations_delta', citation: citationA },
+            { type: 'citations_delta', citation: citationB },
+            { type: 'text_delta', text: 'The latest is TypeScript 6.' }
+          ]
+        },
+        {
+          start: { type: 'tool_use', id: 'toolu_1', name: 'recall' },
+          deltas: [{ type: 'input_json_delta', partial_json: '{"query":"display-mode"}' }]
+        }
+      ])
+    );
+    queueSse(
+      roundSse([
+        {
+          start: { type: 'tool_use', id: 'toolu_2', name: 'recall' },
+          deltas: [{ type: 'input_json_delta', partial_json: '{"query":"again"}' }]
+        }
+      ])
+    );
+    queueSse(anthropicTextSse('done'));
+
+    expect(
+      await AiAssist.runClientToolLoop({
+        descriptor: AiAssist.getProviderDescriptor('anthropic').orThrow(),
+        apiKey: 'k',
+        model,
+        system: 'You are a helpful agent.',
+        messages: [{ role: 'user', content: 'Look it up.' }],
+        clientTools: [makeRecallTool()],
+        tools: [{ type: 'web_search' }],
+        maxRounds: 8
+      })
+    ).toSucceedAndSatisfy((outcome) => {
+      expect(outcome.state).toBe('completed');
+    });
+    expect(global.fetch).toHaveBeenCalledTimes(3);
+
+    const expectedTurn = {
+      role: 'assistant',
+      content: [
+        ...(thinking ? [{ type: 'thinking', thinking: '', signature: 'SIG_T' }] : []),
+        { type: 'server_tool_use', id: 'srvtoolu_1', name: 'web_search', input: { query: 'typescript' } },
+        searchResult,
+        { type: 'text', text: 'The latest is TypeScript 6.', citations: [citationA, citationB] },
+        { type: 'tool_use', id: 'toolu_1', name: 'recall', input: { query: 'display-mode' } }
+      ]
+    };
+    // Byte-identical: the serialized turn, key order included, on both later requests.
+    expect(JSON.stringify(messagesOf(1)[1])).toBe(JSON.stringify(expectedTurn));
+    expect(JSON.stringify(messagesOf(2)[1])).toBe(JSON.stringify(expectedTurn));
+    for (const call of [1, 2]) {
+      const before = messagesOf(call - 1);
+      expect(JSON.stringify(messagesOf(call).slice(0, before.length))).toBe(JSON.stringify(before));
+      expect(JSON.stringify(fetchBody(call).tools)).toBe(JSON.stringify(fetchBody(0).tools));
+    }
+  });
 });

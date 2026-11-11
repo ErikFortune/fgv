@@ -49,6 +49,47 @@ import type { IAccumulatedGeminiFunctionCall } from '../../../packlets/ai-assist
 // ============================================================================
 
 describe('buildAnthropicContinuation', () => {
+  describe('server-tool blocks', () => {
+    const result = {
+      toolName: 'recall',
+      callId: 'toolu_s',
+      args: {},
+      result: '"ok"',
+      isError: false,
+      durationMs: 0
+    };
+
+    function bufferWith(serverToolUse: IAccumulatedBlock): Map<number, IAccumulatedBlock> {
+      const buffer = new Map<number, IAccumulatedBlock>();
+      buffer.set(0, serverToolUse);
+      buffer.set(1, { type: 'tool_use', id: 'toolu_s', name: 'recall', argsBuffer: '{}' });
+      return buffer;
+    }
+
+    test('a server_tool_use with no input deltas is replayed exactly as it started', () => {
+      const started = { type: 'server_tool_use', id: 'srv_1', name: 'web_search', input: { query: 'q' } };
+      expect(
+        buildAnthropicContinuation(bufferWith({ type: 'server_tool_use', block: started, argsBuffer: '' }), [
+          result
+        ])
+      ).toSucceedAndSatisfy((cont) => {
+        expect((cont.messages[0].content as unknown[])[0]).toBe(started);
+      });
+    });
+
+    test.each([
+      ['unparseable', '{"query":'],
+      ['not an object', '["q"]']
+    ])('a server_tool_use whose input is %s fails the continuation', (__label, argsBuffer) => {
+      const started = { type: 'server_tool_use', id: 'srv_1', name: 'web_search', input: {} };
+      expect(
+        buildAnthropicContinuation(bufferWith({ type: 'server_tool_use', block: started, argsBuffer }), [
+          result
+        ])
+      ).toFailWith(/server_tool_use block has an unreadable input/);
+    });
+  });
+
   describe('thinking-inactive path (no thinking blocks in buffer)', () => {
     test('emits tool_use + tool_result for a single call without thinking', () => {
       const buffer = new Map<number, IAccumulatedBlock>();

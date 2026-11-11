@@ -263,6 +263,49 @@ describe('Anthropic streaming adapter — C2 client tool extensions', () => {
     }
   });
 
+  test('buffers server-tool blocks as streamed and ignores a citation aimed at a non-text or missing block, or carrying none', async () => {
+    const accBuffer = new Map<number, IAccumulatedBlock>();
+    const ev = (name: string, data: unknown): string => `event: ${name}\ndata: ${JSON.stringify(data)}\n\n`;
+    const citation = { type: 'web_search_result_location', url: 'https://example.com', cited_text: 'x' };
+    mockSseResponse([
+      ev('content_block_start', {
+        index: 0,
+        content_block: { type: 'server_tool_use', id: 'srv_1', name: 'code_execution', input: {} }
+      }),
+      ev('content_block_delta', {
+        index: 0,
+        delta: { type: 'input_json_delta', partial_json: '{"code":"1"}' }
+      }),
+      ev('content_block_delta', { index: 0, delta: { type: 'citations_delta', citation } }),
+      ev('content_block_delta', { index: 0, delta: { type: 'citations_delta' } }),
+      ev('content_block_delta', { index: 9, delta: { type: 'citations_delta', citation } }),
+      ev('content_block_stop', { index: 0 }),
+      ev('message_delta', { delta: { stop_reason: 'end_turn' } }),
+      ev('message_stop', {})
+    ]);
+    const { callAnthropicStream } = await import('../../../packlets/ai-assist/streamingAdapters/anthropic');
+    const streamResult = await callAnthropicStream(
+      { baseUrl: 'https://api.anthropic.com/v1', model: 'claude-haiku-4-5', apiKey: 'sk-test' },
+      TEST_PROMPT,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      accBuffer
+    );
+    expect(streamResult).toSucceed();
+    const events = await collect(streamResult.orThrow());
+    // Only web_search surfaces a tool-event; any server tool is buffered for the replay.
+    expect(events.filter((e) => e.type === 'tool-event')).toEqual([]);
+    expect(accBuffer.get(0)).toEqual({
+      type: 'server_tool_use',
+      block: { type: 'server_tool_use', id: 'srv_1', name: 'code_execution', input: {} },
+      argsBuffer: '{"code":"1"}'
+    });
+  });
+
   test('passes redacted_thinking block through to the accumulation buffer unchanged', async () => {
     const accBuffer = new Map<number, IAccumulatedBlock>();
     const opaqueData = 'REDACTED_BASE64_DATA_OPAQUE_BLOB';

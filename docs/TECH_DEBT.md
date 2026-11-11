@@ -67,30 +67,11 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
 
 ## P2 — Fix before next major feature in affected area
 
-- **[P2] Anthropic client-tool continuations drop server-tool blocks, which breaks preserved thinking.**
-  The Anthropic streaming adapter (`libraries/ts-extras/src/packlets/ai-assist/streamingAdapters/anthropic.ts`)
-  buffers only `thinking`, `redacted_thinking`, `text` and `tool_use` blocks; `server_tool_use` and
-  `web_search_tool_result` only emit a `tool-event`. When `web_search` runs in the same round as a
-  client tool call, `buildAnthropicContinuation` (`streamingAdapters/clientToolContinuationBuilder.ts`)
-  sends the assistant turn back without those blocks. Anthropic's preserved-thinking page counts a
-  dropped block type as an edit of the prefix, so every later thinking block fails the prefix check:
-  a 400 ("The block is bound to a different conversation") on every account for `claude-fable-5-2`
-  and `claude-mythos-5-2`, and for accounts created on or after 2026-08-31 on Sonnet 5.5, Opus 5.5,
-  Haiku 5.5 and Fable 5.1. Thinking, text and tool_use blocks are replayed unchanged
-  (`clientToolLoopPreservedThinking.test.ts`).
-
-  **Trigger**: the first live 400 naming "a different conversation" from an `anthropic-client-tools*`
-  testbed run, or any consumer that pairs `web_search` with client tools on a current Claude model.
-
-  **Scope sketch**: buffer `server_tool_use` (id, name, input from `input_json_delta`) and
-  `web_search_tool_result` (its `content` from `content_block_start`, which the start-payload
-  validator must then keep), emit both in stream order in the continuation, and pin it with a
-  request-body test that replays a round containing a search.
-
-  **Not a P3**: on the models the `@anthropic:fable` alias now reaches it is a hard 400, not a quality
-  loss.
-
-  **Reference**: `.ai/tasks/completed/2026-11/fable-5-2/state.md` Q1 and `result.md` § 3.
+- *Closed — Anthropic client-tool continuations dropped server-tool blocks, which broke preserved
+  thinking.* Resolved in the `fable-5-2` stream (PR #TBD): the Anthropic streaming adapter now buffers
+  `server_tool_use` and `web_search_tool_result` blocks and text-block citations as streamed, and
+  `buildAnthropicContinuation` replays them in place. Request-body proof:
+  `clientToolLoopPreservedThinking.test.ts`; see `.ai/tasks/completed/2026-11/fable-5-2/result.md` § 3.
 
 - **[P2] The Heft toolchain family is held at its 2026-09-14 pins.**
   `@rushstack/heft` 1.3.0, `heft-node-rig` 2.11.50, `heft-web-rig` 1.4.34, `heft-jest-plugin`

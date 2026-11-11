@@ -17,21 +17,20 @@ adaptive and sampling lists already covered both through their dash-bounded `cla
 ## What a reader should know
 
 - **Preserved thinking is enforced on every account for 5.2.** The client-tool replay keeps thinking
-  (including empty-text blocks and split signatures), redacted thinking, text and tool_use blocks
-  unchanged and append-only — pinned by `clientToolLoopPreservedThinking.test.ts`. It **drops
-  `server_tool_use` / `web_search_tool_result` blocks**, which is an edit: a `web_search` + client-tool
-  round on 5.2 can 400. Not fixed here (larger than the brief allowed); `docs/TECH_DEBT.md` [P2],
-  `state.md` Q1.
+  (including empty-text blocks and split signatures), redacted thinking, text, client tool_use — and,
+  fixed in this stream, `server_tool_use` / `web_search_tool_result` blocks and text citations, which
+  it used to drop — unchanged and append-only, pinned by `clientToolLoopPreservedThinking.test.ts`
+  (`state.md` D7, D8).
 - Temperature is unchanged: the docs restrict only non-default values on 5.2, as on 5.1, under the
   `2023-06-01` API version ai-assist pins.
-- New testbed scenario `anthropic-client-tools-fable`: the live check of the replay on 5.2. Its run-sheet
-  row says how to tell the known gap from a new finding.
+- New testbed scenario `anthropic-client-tools-fable`: the live check of the replay on 5.2. Any 400 from
+  it is a finding.
 - No live call was made; every change is proven by stubbed-fetch request-body tests shown red first
   (`result.md` § 5).
 
 ## Artifacts
 
 - `brief.md`: the frozen contract
-- `state.md`: decisions D1–D6, parked Q1–Q3
+- `state.md`: decisions D1–D8, Q1 resolved, Q2–Q3 noted
 - `result.md`: citations, changes, preserved-thinking trace, red/green evidence, gates, run sheet
 - `meta.yaml`
