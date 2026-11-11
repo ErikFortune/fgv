@@ -53,4 +53,4 @@ relatedStreams:
   - { id: model-alias-refresh, relationship: 'answers its Q5; re-checks its held Q2 and Q4' }
   - { id: model-max-output-tokens, relationship: 'closes the resolveModel TECH_DEBT entry from its review round 2' }
   - { id: deterministic-timing-tests, relationship: 'its #745 had already fixed the saferFetchRetry flake' }
-sourceHash: sha256:6d3ec7c7ad4f87d4 # over brief.md + state.md + result.md
+sourceHash: sha256:6595e4acb358b8e0 # over brief.md + state.md + result.md

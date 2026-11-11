@@ -267,3 +267,17 @@ Logs under the same directory, prefixed `r1-`.
    the ledger says the CLI test got timeout headroom, not that it was made deterministic.
 
 **Re-gate** — see § 11.
+
+## 11. Gates, review round 1 (on `b84774f8d`)
+
+Same grading as § 9; logs prefixed `r1-`; no log NUL-padded.
+
+| gate | result | log |
+|---|---|---|
+| `rush install` | pass | `r1-gate-install.log` |
+| `change --verify --target-branch origin/integration/asks` | pass | `r1-gate-change.log` |
+| `rush rebuild` | `SUCCESS: 39 operations`, 0 graded hits, symlink notice only | `r1-gate-rebuild.log` |
+| `rush lint` | `SUCCESS: 34 operations`, 0 graded hits, symlink notice only | `r1-gate-lint.log` |
+| `rush test` (groups A / B / C, all 39 projects) | `SUCCESS: 13`, `SUCCESS: 9`, `SUCCESS: 16` operations, 0 graded hits, symlink notice only, no coverage warning | `r1-gate-test-{A,B,C}.log` |
+| `ts-extras` `heft test --clean` | 3633/3633, 100% coverage, 0 warnings | `r1-x-test-full.log` |
+| prettier 2.8.8 `--check`, `verify-capability-docs`, `generate-capability-feed --check` | pass | — |
