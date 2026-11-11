@@ -11,7 +11,7 @@ Worker-owned. Brief is frozen; questions and decisions live here.
 - [x] 5 — flake hardening: 4 fixed or confirmed fixed, egress narrowed (no repro)
 - [x] 6 — held aliases re-check: both stay held; FUTURE entry for gemini-embedding-2
 - [x] docs / change files / ledger / meta / result
-- [ ] gate
+- [x] gate (graded clean; testbed coverage gap found and fixed at the gate — result.md § 9)
 
 ## Decisions
 

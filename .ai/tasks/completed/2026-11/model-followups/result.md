@@ -197,4 +197,21 @@ Run over the source diff before the full-coverage run. Findings and dispositions
 
 ## 9. Gates
 
-(see § 9 below, filled after the gate)
+Graded by grep over each log, not by exit code: `not met|Operations failed|error TS|Jest tests? failed|FAILURE`
+must be 0, and the only `warning` allowed is Rush's tracked-symlink notice. Every log checked for NUL
+padding (byte count with and without NULs equal). Run from `/home/user/fgv-followups`, foreground,
+after committing.
+
+| gate | result | log |
+|---|---|---|
+| `rush install` | pass | `gate-install.log` |
+| `rush change --verify --target-branch origin/integration/asks` | pass — change files found for `testbed`, `ts-extras-mcp`, `ts-extras`, `ts-res-cli` | `gate-change.log` |
+| `rush rebuild` | `SUCCESS: 39 operations`, 0 graded hits, symlink notice only, 7m12s | `gate-rebuild.log` |
+| `rush lint` | `SUCCESS: 34 operations`, 0 graded hits, symlink notice only | `gate-lint.log` |
+| `rush test`, in three `--only` groups (each foreground run had to fit the tool's 10-minute limit; together they cover all 39 projects) | A (core + sudoku, 13 ops) and B (`ts-extras` family + `ts-res-cli`, 9 ops) clean. **C first run: `@fgv/testbed` `SUCCESS WITH WARNINGS` — branch coverage 99.95%**: the wire probe's `max_tokens` branch became unreached once xAI declared `max_completion_tokens` (my earlier testbed runs used `--disable-code-coverage`). Fixed with a test that a descriptor declaring no field gets `max_tokens` (commit after `915a93031`); testbed re-run alone: `SUCCESS: 1 operation`, 0 graded hits; `rush lint --only @fgv/testbed` clean. The other 15 C projects passed on the first run | `gate-test-A.log`, `gate-test-B.log`, `gate-test-C.log`, `gate-test-C2.log`, `gate-lint-C2.log` |
+| prettier 2.8.8 `--check` on every changed `.ts` / `.json` / `.md` | pass (2.8.8 installed into the scratchpad only; the repo's store has 3.x, which disagrees on pre-existing lines) | — |
+| `verify-capability-docs` | pass, 0 failed | — |
+| `generate-capability-feed --check` | pass, 0 stale (regenerated: this stream's `headline`) | — |
+| per-package `heft test --clean` with coverage | `ts-extras` 3617/3617, 100% (incl. new `modelSpecResolver.ts`); `testbed` 710/710, 100% | `x-test-full2.log`, `tb-full2.log` |
+
+No `c8 ignore` added (one removed). No subagent spawned; review applied inline (§ 7).
