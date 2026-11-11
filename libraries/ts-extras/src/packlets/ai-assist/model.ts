@@ -23,7 +23,7 @@
  * @packageDocumentation
  */
 
-import { fail, type Result, succeed } from '@fgv/ts-utils';
+import { fail, formatValueForMessage, type Result, succeed } from '@fgv/ts-utils';
 import { type JsonObject } from '@fgv/ts-json-base';
 import type { IAiStructuredOutputCapability, StructuredOutputEnforcement } from './structuredOutputTypes';
 import type { IAiCompletionUsage } from './usageTypes';
@@ -348,7 +348,12 @@ const TIER_FALLBACK: { readonly [k: string]: ReadonlyArray<ModelSpecKey> } = {
  *    every other context resolves flat (`[context]`); `undefined` resolves to
  *    the shared `base` fallback. The first present key wins.
  * 3. Otherwise, fall back to the {@link MODEL_SPEC_BASE_KEY | 'base'} key.
- * 4. If neither context nor `'base'` exists, use the first available value.
+ * 4. If neither context nor `'base'` exists, use the first available value; an
+ *    empty spec resolves to `''`.
+ *
+ * A spec outside the {@link ModelSpec} type — a key holding `undefined`, `null` or a number,
+ * reachable from untyped JSON or a cast — also resolves to `''` rather than throwing. Use
+ * {@link AiAssist.resolveProviderModel} for a `Failure` that names the provider and the offending key.
  *
  * @param spec - The model specification to resolve
  * @param context - Optional context key (e.g. `'advanced'`)
@@ -356,32 +361,37 @@ const TIER_FALLBACK: { readonly [k: string]: ReadonlyArray<ModelSpecKey> } = {
  * @public
  */
 export function resolveModel(spec: ModelSpec, context?: string): string {
+  return walkModelSpec(spec, context, 'spec').orDefault('');
+}
+
+/**
+ * The walk behind {@link resolveModel} and {@link resolveProviderModel}: the same rules, failing
+ * with the dotted path of a key whose value is neither a model id nor a spec object.
+ */
+function walkModelSpec(spec: ModelSpec, context: string | undefined, path: string): Result<string> {
   if (typeof spec === 'string') {
-    return spec;
+    return succeed(spec);
+  }
+  // `ModelSpec` excludes this, but untyped JSON or a cast does not: refuse the value here rather
+  // than let the `in` below throw on it.
+  if (typeof spec !== 'object' || spec === null) {
+    return fail(
+      `model spec ${path} is ${formatValueForMessage(spec)}: expected a model id or a model spec object`
+    );
   }
 
   // Ordered candidate keys for this context: a tier key cascades via
   // TIER_FALLBACK; any other key resolves flat as [context]; undefined drops
   // straight to the shared 'base' fallback below.
   const order: ReadonlyArray<string> = context === undefined ? [] : TIER_FALLBACK[context] ?? [context];
-  for (const key of order) {
-    if (key in spec) {
-      return resolveModel(spec[key]);
-    }
+  const key =
+    order.find((candidate) => candidate in spec) ??
+    (MODEL_SPEC_BASE_KEY in spec ? MODEL_SPEC_BASE_KEY : Object.keys(spec)[0]);
+  // Last resort exhausted: an empty spec names no model.
+  if (key === undefined) {
+    return succeed('');
   }
-
-  // Fall back to 'base'
-  if (MODEL_SPEC_BASE_KEY in spec) {
-    return resolveModel(spec[MODEL_SPEC_BASE_KEY]);
-  }
-
-  // Last resort: first value in the record
-  const first = Object.values(spec)[0];
-  /* c8 ignore next 3 - defensive: only reachable with empty object (prevented by converter) */
-  if (first === undefined) {
-    return '';
-  }
-  return resolveModel(first);
+  return walkModelSpec(spec[key], undefined, `${path}.${key}`);
 }
 
 // ============================================================================
@@ -493,7 +503,9 @@ export function resolveModelAlias(descriptor: IAiProviderDescriptor, model: stri
  * @param modelOverride - An optional caller-supplied `ModelSpec` that takes precedence
  * over `descriptor.defaultModel`. May itself contain or be an alias.
  * @param context - Optional {@link ModelSpecKey} selecting the spec branch.
- * @returns `Result` with the concrete provider model id, or a failure.
+ * @returns `Result` with the concrete provider model id, or a failure. A spec outside the
+ * {@link ModelSpec} type fails with the provider id and the dotted path of the offending key
+ * (`provider "openai": model spec modelOverride.base is undefined: …`).
  * @public
  */
 export function resolveProviderModel(
@@ -501,13 +513,16 @@ export function resolveProviderModel(
   modelOverride: ModelSpec | undefined,
   context?: ModelSpecKey
 ): Result<string> {
-  const resolved = resolveModel(modelOverride ?? descriptor.defaultModel, context);
-  if (resolved.length === 0) {
-    return fail(
-      `provider "${descriptor.id}": no model resolved; pass modelOverride or set descriptor.defaultModel`
+  const spec = modelOverride ?? descriptor.defaultModel;
+  return walkModelSpec(spec, context, modelOverride !== undefined ? 'modelOverride' : 'defaultModel')
+    .withErrorFormat((msg) => `provider "${descriptor.id}": ${msg}`)
+    .onSuccess((resolved) =>
+      resolved.length === 0
+        ? fail<string>(
+            `provider "${descriptor.id}": no model resolved; pass modelOverride or set descriptor.defaultModel`
+          )
+        : resolveModelAlias(descriptor, resolved)
     );
-  }
-  return resolveModelAlias(descriptor, resolved);
 }
 
 /**
