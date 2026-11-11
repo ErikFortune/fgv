@@ -27,6 +27,9 @@ import { spawn } from 'child_process';
 import * as TsRes from '@fgv/ts-res';
 
 describe('CLI Configuration Tests', () => {
+  /** The Jest timeout every single-spawn test in this file runs under (the default). */
+  const SINGLE_SPAWN_BUDGET_MS: number = 5000;
+
   let tempDir: string;
   let cliBin: string;
   let customConfigTestDataDir: string;
@@ -158,52 +161,59 @@ describe('CLI Configuration Tests', () => {
       );
     });
 
-    test('test consistent output by building same input twice', async () => {
-      const resourcesDir = path.join(customConfigTestDataDir, 'resources');
-      const configFile = path.join(customConfigTestDataDir, 'resources-config.json');
-      const firstOutputFile = path.join(tempDir, 'first-build.json');
-      const secondOutputFile = path.join(tempDir, 'second-build.json');
+    // Two CLI spawns, so two of the budget each single-spawn test in this file runs under (Jest's
+    // 5 s default). One spawn takes about 0.7 s idle; under a loaded repo-wide gate the pair has
+    // outrun a single budget.
+    test(
+      'test consistent output by building same input twice',
+      async () => {
+        const resourcesDir = path.join(customConfigTestDataDir, 'resources');
+        const configFile = path.join(customConfigTestDataDir, 'resources-config.json');
+        const firstOutputFile = path.join(tempDir, 'first-build.json');
+        const secondOutputFile = path.join(tempDir, 'second-build.json');
 
-      // First compilation
-      const firstResult = await runCli([
-        'compile',
-        '--input',
-        resourcesDir,
-        '--output',
-        firstOutputFile,
-        '--config',
-        configFile,
-        '--format',
-        'source'
-      ]);
+        // First compilation
+        const firstResult = await runCli([
+          'compile',
+          '--input',
+          resourcesDir,
+          '--output',
+          firstOutputFile,
+          '--config',
+          configFile,
+          '--format',
+          'source'
+        ]);
 
-      expect(firstResult.exitCode).toBe(0);
+        expect(firstResult.exitCode).toBe(0);
 
-      // Second compilation of the same input
-      const secondResult = await runCli([
-        'compile',
-        '--input',
-        resourcesDir,
-        '--output',
-        secondOutputFile,
-        '--config',
-        configFile,
-        '--format',
-        'source'
-      ]);
+        // Second compilation of the same input
+        const secondResult = await runCli([
+          'compile',
+          '--input',
+          resourcesDir,
+          '--output',
+          secondOutputFile,
+          '--config',
+          configFile,
+          '--format',
+          'source'
+        ]);
 
-      expect(secondResult.exitCode).toBe(0);
-      expect(secondResult.stdout).toMatch(/Successfully compiled resources/);
+        expect(secondResult.exitCode).toBe(0);
+        expect(secondResult.stdout).toMatch(/Successfully compiled resources/);
 
-      // Compare the outputs - they should be identical for consistency
-      const firstOutput = await fs.readFile(firstOutputFile, 'utf-8');
-      const secondOutput = await fs.readFile(secondOutputFile, 'utf-8');
+        // Compare the outputs - they should be identical for consistency
+        const firstOutput = await fs.readFile(firstOutputFile, 'utf-8');
+        const secondOutput = await fs.readFile(secondOutputFile, 'utf-8');
 
-      const firstParsed = JSON.parse(firstOutput);
-      const secondParsed = JSON.parse(secondOutput);
+        const firstParsed = JSON.parse(firstOutput);
+        const secondParsed = JSON.parse(secondOutput);
 
-      expect(secondParsed).toEqual(firstParsed);
-    });
+        expect(secondParsed).toEqual(firstParsed);
+      },
+      2 * SINGLE_SPAWN_BUDGET_MS
+    );
 
     test('validates configuration file format', async () => {
       const resourcesDir = path.join(customConfigTestDataDir, 'src/resources');

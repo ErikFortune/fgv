@@ -140,8 +140,6 @@ declare namespace AiAssist {
         ModelSpecKey,
         IModelSpecMap,
         allModelSpecKeys,
-        MODEL_SPEC_BASE_KEY,
-        resolveModel,
         IModelAliasMap,
         MODEL_ALIAS_SIGIL,
         resolveModelAlias,
@@ -151,6 +149,7 @@ declare namespace AiAssist {
         isThinkingRequiredModel,
         rejectsSamplingParams,
         usesMaxCompletionTokensField,
+        ChatOutputTokensField,
         toDataUrl,
         IThinkingConfig,
         IThinkingProviderConfig,
@@ -167,6 +166,8 @@ declare namespace AiAssist {
         OpenAiThinkingModelNames,
         GeminiThinkingModelNames,
         XAiThinkingModelNames,
+        MODEL_SPEC_BASE_KEY,
+        resolveModel,
         AnthropicThinkingOffType,
         IAnthropicThinkingOffRule,
         resolveAnthropicThinkingOffType,
@@ -524,6 +525,11 @@ function callProxiedListModels(proxyUrl: string, params: IProviderListModelsPara
 
 // @public
 type CancelTimer = () => void;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+type ChatOutputTokensField = 'max_tokens' | 'max_completion_tokens';
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IClassifiedAddress"
 //
@@ -1483,6 +1489,8 @@ interface IAiProviderDescriptor {
     readonly apiFormat: AiApiFormat;
     readonly baseUrl: string;
     readonly buttonLabel: string;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly chatOutputTokensField?: ChatOutputTokensField;
     readonly corsRestricted: boolean;
     readonly defaultModel: ModelSpec;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -3119,7 +3127,7 @@ const MIN_SALT_LENGTH: number;
 // @public
 const MODEL_ALIAS_SIGIL: '@';
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "ModelSpec"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 const MODEL_SPEC_BASE_KEY: ModelSpecKey;
@@ -3403,8 +3411,10 @@ function resolveImageOptions(modelId: string, capability: IAiImageModelCapabilit
 // @public
 function resolveMaxOutputTokens(descriptor: IAiProviderDescriptor, modelOverride?: ModelSpec, context?: ModelSpecKey): number | undefined;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "ModelSpec"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "MODEL_SPEC_BASE_KEY"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 function resolveModel(spec: ModelSpec, context?: string): string;
@@ -3418,6 +3428,7 @@ function resolveModelAlias(descriptor: IAiProviderDescriptor, model: string): Re
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "resolveModel"
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "resolveModelAlias"
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "ModelSpecKey"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 function resolveProviderModel(descriptor: IAiProviderDescriptor, modelOverride: ModelSpec | undefined, context?: ModelSpecKey): Result<string>;
@@ -3639,6 +3650,8 @@ function tryDecryptFile<TPayload extends JsonValue = JsonValue, TMetadata = Json
 // @public
 const uint8ArrayFromBase64: Converter<Uint8Array>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
 // @public
 function usesMaxCompletionTokensField(descriptor: IAiProviderDescriptor): boolean;
 

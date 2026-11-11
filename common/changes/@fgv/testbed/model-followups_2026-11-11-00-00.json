@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/testbed",
+      "comment": "OpenAI model-tier canary: two report-only gpt-6-luna rows send temperature 1 and 0.3 beside effort low past the library's gate; the wire probe expects max_completion_tokens on xAI.",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/testbed",
+  "email": "noreply@anthropic.com"
+}

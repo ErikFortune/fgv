@@ -143,7 +143,7 @@ and one row kind makes no claim at all:
 | `[REFUSED-LOCALLY]`   | ai-assist refused the request before building it, so nothing was sent (a `temperature` the model rejects, or `'none'` with `onUnsupported: 'fail'` on a thinking-required model) |
 | `[EXPECTED-REJECT]`   | the provider returned the 400 the probe expected, for the expected reason (a raw thinking-off value on a thinking-required model; temperature on `gpt-6-luna` without effort `'none'`). The row prints the provider's own text; a 400 for another reason is a `FAIL`                    |
 | `[NO-RECORDED-LIMIT]` | a max-output probe on a model with no `maxOutputTokens` entry: nothing to check, no call                                                                                         |
-| `[OBSERVED]`          | report-only: the answer is not known yet, so the row prints `accepted` or `rejected: <provider text>` and neither passes nor fails (no scenario sends one at present; the mechanism is kept for the next open question) |
+| `[OBSERVED]`          | report-only: the answer is not known yet, so the row prints `accepted` or `rejected: <provider text>` and neither passes nor fails (the OpenAI scenario sends two, for `gpt-6-luna` temperature beside an effort) |
 
 The probe families:
 
@@ -162,7 +162,10 @@ The probe families:
   accepts `1` with and without thinking and refuses `0.3` locally; OpenAI accepts `0.3` on
   `gpt-6-luna` with effort `'none'` and expects a provider 400 without it, and on `gpt-6.1-sol` and
   `gpt-6-astra` accepts `1` with and without effort `low` (`temp=1`, `temp=1+effort=low`, sent
-  through the library) and refuses `0.3` locally.
+  through the library) and refuses `0.3` locally. Two `gpt-6-luna` rows are report-only
+  (`[OBSERVED] base temp=1+effort=low raw`, `temp=0.3+effort=low raw`): they send the temperature
+  past the library's gate, beside effort `low`, and print what the provider said. `accepted` on the
+  `1` row means luna takes its default beside an effort, as sol and astra do.
 - **Max output** (`max=N`, Anthropic, OpenAI and Gemini): `maxTokens` set to
   `resolveMaxOutputTokens` for that exact model. It must be accepted. A refusal naming the token cap
   is `FAIL(param)`: the recorded limit is too high.
