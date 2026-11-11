@@ -67,12 +67,6 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
 
 ## P2 — Fix before next major feature in affected area
 
-- *Closed — Anthropic client-tool continuations dropped server-tool blocks, which broke preserved
-  thinking.* Resolved in the `fable-5-2` stream (PR #TBD): the Anthropic streaming adapter now buffers
-  `server_tool_use` and `web_search_tool_result` blocks and text-block citations as streamed, and
-  `buildAnthropicContinuation` replays them in place. Request-body proof:
-  `clientToolLoopPreservedThinking.test.ts`; see `.ai/tasks/completed/2026-11/fable-5-2/result.md` § 3.
-
 - **[P2] The Heft toolchain family is held at its 2026-09-14 pins.**
   `@rushstack/heft` 1.3.0, `heft-node-rig` 2.11.50, `heft-web-rig` 1.4.34, `heft-jest-plugin`
   2.0.17, `heft-lint-plugin` 1.2.27 and the api-extractor / sass / webpack5 plugins. The latest

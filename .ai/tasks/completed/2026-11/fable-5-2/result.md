@@ -50,15 +50,29 @@ The brief's summary matched the pages on every point.
 | `adaptiveThinkingModelPrefixes`, `thinkingRequiredModelPrefixes`, `samplingParamsRejectedModelPrefixes` | covered by dash-bounded `claude-fable-5` / `claude-mythos-5` | unchanged entries; comments now cite the 2026-11-11 pages (state.md D1) |
 | `anthropicThinkingOffTypes` | — | unchanged: the 5.2 ids resolve to the default `disabled`, which is never sent because both are thinking-required (D2) |
 | `samplingParamsAcceptedTemperature` | 1 | unchanged (D3) |
-| Anthropic streaming adapter (internal) | buffered thinking, redacted thinking, text, tool_use | also `server_tool_use` (start object + `input_json_delta` buffer, any tool name), `web_search_tool_result` (start object), and text `citations` from `citations_delta`; the start-payload validator keeps the block as its JSON object (state.md D7, D8) |
-| `buildAnthropicContinuation` (internal) | replayed the four buffered types | replays the server-tool blocks and citations in stream order; fails on a `server_tool_use` input that does not parse to an object |
+| Anthropic streaming adapter (internal) | buffered thinking, redacted thinking, text, tool_use as rebuilt objects | thinking and text keep their `content_block_start` objects; also `web_search`'s `server_tool_use` (start object + `input_json_delta` buffer) and `web_search_tool_result` (start object), and text `citations` from `citations_delta`; any other block type is not buffered and is warned about once per type (state.md D7, D8, R1) |
+| `buildAnthropicContinuation` (internal) | imperative loop over the four buffered types | `mapResults` over the blocks in stream order with a per-block helper; replays the server-tool blocks and citations in place; fails on a `server_tool_use` input that does not parse to an object |
 
 ## 3. Preserved thinking: is the replayed history append-only?
 
-**Yes, after the fix in this stream.** As first traced, thinking, redacted thinking, text and client
-`tool_use` blocks were replayed unchanged, but a turn where a server tool (`web_search`) ran lost its
-`server_tool_use` and `web_search_tool_result` blocks and its text citations. At the orchestrator's
-direction that is fixed here (state.md D7, D8); the `docs/TECH_DEBT.md` entry is closed.
+**Yes, for these block types, which are replayed as streamed:**
+
+- `thinking` — its `content_block_start` object with the accumulated `thinking` (empty included) and
+  `signature` laid over it;
+- `text` — its start object with the accumulated `text` and, when any arrived, `citations` laid over it;
+- `redacted_thinking` — `{type, data}`;
+- `web_search`'s `server_tool_use` — its start object, with `input` replaced by the parsed
+  `input_json_delta` chunks when any arrived — and `web_search_tool_result` — its start object.
+
+**Not replayed as streamed:** any other block type, including other server tools' `server_tool_use`
+(not buffered at all; a one-time warning per type — replaying a server tool call without its result
+would itself be rejected); an empty `text` block (skipped; the API rejects empty text on input); and a
+client `tool_use`, rebuilt as `{type, id, name, input}` with `input` re-serialized from its parsed
+value.
+
+As first traced, a turn where `web_search` ran lost its server-tool blocks and text citations. At the
+orchestrator's direction that is fixed here (state.md D7, D8); review round 1 narrowed and hardened it
+(R1).
 
 The trace:
 
@@ -66,16 +80,13 @@ The trace:
   SSE `index`. A `thinking` block is created at `content_block_start` with `thinking: ''` and
   `signature: ''`; `thinking_delta` and `signature_delta` are **appended** (`+=`), so an empty-text
   block that receives only its signature is kept with its full signature. `redacted_thinking` keeps
-  `data` from the start event. `text` and `tool_use` (id, name, args buffer) are kept.
-  Every `server_tool_use` is buffered as its `content_block_start` object with an args buffer fed by
-  `input_json_delta`; `web_search_tool_result` is buffered as its start object (it arrives complete);
-  `citations_delta` appends to the text block's `citations`. `web_search` still yields `tool-event`s.
+  `data` from the start event. `text` keeps its start object; `tool_use` keeps id, name and an args
+  buffer. A `web_search` `server_tool_use` is buffered as its start object with an args buffer fed by
+  `input_json_delta`; `web_search_tool_result` as its start object (it arrives complete);
+  `citations_delta` appends to the text block's `citations`. Any other block type is not buffered.
 - **Rebuild.** `buildAnthropicContinuation` (`streamingAdapters/clientToolContinuationBuilder.ts`)
-  walks the buffer in index order and emits `{type:'thinking', thinking, signature}` unchanged
-  (including empty `thinking`), `{type:'redacted_thinking', data}`, non-empty `text` (with
-  `citations` when any arrived), the `server_tool_use` start object with `input` replaced by the parsed
-  chunks (a failure if they do not parse to an object), the `web_search_tool_result` object as
-  streamed, and `{type:'tool_use', id, name, input}`, then a user turn of `tool_result` blocks.
+  maps the buffer in index order through one helper per block (`mapResults`), emitting the list
+  above, then a user turn of `tool_result` blocks correlated against the buffered `tool_use` ids.
 - **Accumulate.** `executeClientToolTurn` prepends the inbound `continuationMessages` to the new
   continuation (`[...continuationMessages, ...continuation.messages]`), so each round's tail is the
   previous one plus two messages; `runClientToolLoop` replaces its tail with that cumulative value
@@ -101,8 +112,10 @@ What remains, recorded in `state.md`:
 
 - **Q1 (resolved):** the dropped server-tool blocks and citations, fixed as above. Unit cover for the
   new branches: a `server_tool_use` with no input deltas replays its start object unchanged; unparseable
-  or non-object input fails the continuation; any server tool (not only `web_search`) is buffered; a
-  citation aimed at a non-text or missing block, or a `citations_delta` with no citation, is ignored.
+  or non-object input fails the continuation; a non-`web_search` server tool and an unknown block type
+  are not buffered and warn once each (and drop quietly with no logger); a citation aimed at a non-text
+  or missing block, or a `citations_delta` with no citation, is ignored; a field on a text or thinking
+  start object is replayed.
 - **Q2:** an empty `text` block is skipped; the API rejects empty text on input, and no page says one
   is streamed. Left alone.
 - **Q3:** `tool_use.input` is replayed as the parsed object, not the streamed bytes. Same value.
@@ -132,6 +145,9 @@ What remains, recorded in `state.md`:
 | testbed, new registry | green, 100% | `green-testbed.log` |
 | Q1: new server-tool replay cases, unfixed adapter and builder | **2 red** (fable-5-2 with thinking, haiku-4-5 without): the replayed turn lacked `server_tool_use`, `web_search_tool_result` and the text's `citations` | `q1-red.log` |
 | Q1: after the fix | 5/5 targeted green; full ts-extras suite green at 100% | `q1-green-targeted.log`, `q1-extras-test.log` |
+| R1 items 1, 3, 8, new tests, before the R1 change | **4 red**: a `code_execution` `server_tool_use` was buffered (and nothing warned); start-object fields on text / thinking were not replayed; `claude-mythos-5-20260601` and `claude-mythos-5-10` were tagged thinking | `r1-red-extras.log` |
+| R1 item 5, old unconditional-PASS verdicts extracted into `clientToolRunVerdicts` | **3 red**: one-round run printed `PASS`; no `[exercised]` / `[not exercised]` line (the first test's two regexes were also corrected afterwards) | `r1-red-testbed-behaviour.log` |
+| R1 after the change | ts-extras green at 100%, 0 warnings; testbed green | `r1-green-extras.log`, `r1-green-testbed.log` |
 
 ## 6. Gates
 
@@ -171,5 +187,7 @@ Rows not listed are as in `live-run-corrections/result.md` § 4 and earlier shee
 | anthropic-model-tiers | `@anthropic:fable max=128000` | `PASS` on `claude-fable-5-2` | a 400 on `max_tokens`: the cited 128K limit is wrong for this key |
 | anthropic-model-tiers | `@anthropic:fable temp=1` / `temp=1+effort=low` / `temp=0.3` | `PASS` / `PASS` / `REFUSED-LOCALLY` | a 400 on `temperature: 1`: 5.2 rejects the default under `2023-06-01` too |
 | anthropic-structured-output | `anthropic output_config.format (@anthropic:fable)` | `PASS` on `claude-fable-5-2` | as for the schema rows above |
-| **new** anthropic-client-tools-fable | whole run | `PASS`, `Model: @anthropic:fable (claude-fable-5-2)` | **400 "The block is bound to a different conversation"**: a replayed turn was edited — a finding, whether or not `Server tool events` > 0. Note which block types the failing round streamed (the logger lists tool events per round) and compare them with what § 3 says is replayed. Any other 400 — read the provider text |
-| anthropic-client-tools (sonnet) | whole run | unchanged | the same 400 is the same finding |
+| **new** anthropic-client-tools-fable | header | `…: PASS` when ≥ 2 rounds ran; `…: NOT EXERCISED (only one round ran…)` otherwise | `NOT EXERCISED`: the model answered without a tool, so nothing was replayed — re-run; it is not a pass |
+| anthropic-client-tools-fable | `Continuation replay` / `Thinking-block signature` | `[PASS]` | `[NOT EXERCISED]`: as above. A 400 "The block is bound to a different conversation" fails the run: a replayed turn was edited — a finding. Compare the block types the failing round streamed with § 3's list; an `is not replayed` warning in the log names a type that was dropped |
+| anthropic-client-tools-fable | `Server tool and client tool in one round, replayed` | `[exercised]` is the run that checks the server-tool replay path | `[not exercised]`: the model did not search in a tool-calling round; the run proves the thinking/text/tool_use replay only. Re-run for the server-tool path |
+| anthropic-client-tools (sonnet) | same rows | same reading | the same 400 is the same finding |

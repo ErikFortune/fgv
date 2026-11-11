@@ -71,7 +71,11 @@ import type { IAiCompletionUsage } from '../usageTypes';
 import { type IResolvedThinkingConfig } from '../thinkingOptionsResolver';
 import { splitChatRequest } from '../chatRequestBuilders';
 import { resolveEffectiveBaseUrl } from '../endpoint';
-import { type IAccumulatedBlock, type IAccumulatedServerToolUseBlock } from './anthropic';
+import {
+  type IAccumulatedBlock,
+  type IAccumulatedServerToolUseBlock,
+  type IAccumulatedToolUseBlock
+} from './anthropic';
 import { type IAccumulatedFunctionCall } from './openaiResponses';
 import { type IAccumulatedGeminiFunctionCall } from './gemini';
 import { callAnthropicStream } from './anthropic';
@@ -171,6 +175,57 @@ function replayServerToolUse(block: IAccumulatedServerToolUseBlock): Result<Json
 }
 
 /**
+ * A buffered client `tool_use` block, with its input parsed from the accumulated chunks. Fails on a
+ * block with no usable id, which no `tool_result` could reference.
+ */
+function replayToolUse(block: IAccumulatedToolUseBlock): Result<JsonObject> {
+  // A buffered tool_use with an empty id can never be referenced by a valid
+  // tool_result; emitting it would corrupt the assistant turn. Fail loud.
+  if (!isUsableId(block.id)) {
+    return fail(
+      `Anthropic continuation: buffered tool_use block for tool '${block.name}' has an empty id; ` +
+        `cannot build a valid continuation`
+    );
+  }
+  // The adapter has already parsed these chunks before dispatching the call; a malformed or
+  // non-object buffer is sent as an empty input, as the adapter dispatched it.
+  const input = captureResult(() => JSON.parse(block.argsBuffer || '{}') as unknown)
+    .onSuccess((parsed) => jsonObjectValidator.validate(parsed))
+    .orDefault({});
+  return succeed({ type: 'tool_use', id: block.id, name: block.name, input });
+}
+
+/**
+ * One buffered block as it goes back in the assistant turn, or `undefined` for a block that is not
+ * sent (an empty text block, which the API rejects on input). Text and thinking keep their
+ * `content_block_start` object with the accumulated fields laid over it.
+ */
+function replayAnthropicBlock(block: IAccumulatedBlock): Result<JsonObject | undefined> {
+  switch (block.type) {
+    case 'thinking':
+      return succeed({ ...block.block, thinking: block.thinking, signature: block.signature });
+    case 'redacted_thinking':
+      return succeed({ type: 'redacted_thinking', data: block.data });
+    case 'text':
+      return succeed(
+        block.text.length === 0
+          ? undefined
+          : {
+              ...block.block,
+              text: block.text,
+              ...(block.citations !== undefined ? { citations: block.citations } : {})
+            }
+      );
+    case 'server_tool_use':
+      return replayServerToolUse(block);
+    case 'server_tool_result':
+      return succeed(block.block);
+    case 'tool_use':
+      return replayToolUse(block);
+  }
+}
+
+/**
  * Builds the Anthropic follow-up messages for a client-tool round-trip.
  *
  * Reconstructs the assistant turn from the ordered accumulation buffer
@@ -199,73 +254,30 @@ export function buildAnthropicContinuation(
   toolResults: IToolCallResult[],
   logger?: Logging.ILogger
 ): Result<IAiClientToolContinuation> {
-  // Reconstruct the assistant turn from the ordered accumulation buffer.
-  // Sort by buffer key (SSE index) to restore original stream order.
-  const sortedKeys = Array.from(accBuffer.keys()).sort((a, b) => a - b);
-  const assistantContent: JsonArray = [];
-  // The set of assistant tool_use ids — the single source of truth every
-  // tool_result.tool_use_id must be drawn from.
-  const bufferedToolUseIds = new Set<string>();
+  // Reconstruct the assistant turn from the ordered accumulation buffer, sorted by buffer key (SSE
+  // index) to restore the original stream order.
+  const blocks = Array.from(accBuffer.entries())
+    .sort(([a], [b]) => a - b)
+    .map(([, block]) => block);
+  return mapResults(blocks.map((block) => replayAnthropicBlock(block))).onSuccess((replayed) => {
+    const assistantContent: JsonArray = replayed.filter((b): b is JsonObject => b !== undefined);
+    // The set of assistant tool_use ids — the single source of truth every
+    // tool_result.tool_use_id must be drawn from.
+    const bufferedToolUseIds = new Set(blocks.flatMap((b) => (b.type === 'tool_use' ? [b.id] : [])));
+    return buildAnthropicToolResultTurn(assistantContent, bufferedToolUseIds, toolResults, logger);
+  });
+}
 
-  for (const key of sortedKeys) {
-    const block = accBuffer.get(key);
-    /* c8 ignore next 1 - defensive: key always exists in map since we iterate its keys */
-    if (!block) continue;
-    if (block.type === 'thinking') {
-      assistantContent.push({
-        type: 'thinking',
-        thinking: block.thinking,
-        signature: block.signature
-      });
-    } else if (block.type === 'redacted_thinking') {
-      assistantContent.push({
-        type: 'redacted_thinking',
-        data: block.data
-      });
-    } else if (block.type === 'text') {
-      if (block.text.length > 0) {
-        assistantContent.push(
-          block.citations === undefined
-            ? { type: 'text', text: block.text }
-            : { type: 'text', text: block.text, citations: block.citations }
-        );
-      }
-    } else if (block.type === 'server_tool_use') {
-      const replayed = replayServerToolUse(block);
-      if (replayed.isFailure()) {
-        return fail(replayed.message);
-      }
-      assistantContent.push(replayed.value);
-    } else if (block.type === 'server_tool_result') {
-      assistantContent.push(block.block);
-    } else if (block.type === 'tool_use') {
-      // A buffered tool_use with an empty id can never be referenced by a valid
-      // tool_result; emitting it would corrupt the assistant turn. Fail loud.
-      if (!isUsableId(block.id)) {
-        return fail(
-          `Anthropic continuation: buffered tool_use block for tool '${block.name}' has an empty id; ` +
-            `cannot build a valid continuation`
-        );
-      }
-      let parsedInput: JsonObject;
-      try {
-        /* c8 ignore next 1 - defensive: argsBuffer is JSON-parsed in the adapter before emitting client-tool-call-done */
-        parsedInput = JSON.parse(block.argsBuffer || '{}') as JsonObject;
-        /* c8 ignore start - defensive: malformed argsBuffer defaults to empty object */
-      } catch {
-        parsedInput = {};
-      }
-      /* c8 ignore stop */
-      bufferedToolUseIds.add(block.id);
-      assistantContent.push({
-        type: 'tool_use',
-        id: block.id,
-        name: block.name,
-        input: parsedInput
-      });
-    }
-  }
-
+/**
+ * Builds the user turn of `tool_result` blocks for an Anthropic continuation and assembles the
+ * continuation around the replayed assistant turn.
+ */
+function buildAnthropicToolResultTurn(
+  assistantContent: JsonArray,
+  bufferedToolUseIds: ReadonlySet<string>,
+  toolResults: IToolCallResult[],
+  logger?: Logging.ILogger
+): Result<IAiClientToolContinuation> {
   // Build user turn with tool_result blocks for each tool call. Correlate each
   // result to a buffered tool_use id — the SAME id that keys the assistant
   // tool_use block — and fail loud on a missing / empty / mismatched id. A

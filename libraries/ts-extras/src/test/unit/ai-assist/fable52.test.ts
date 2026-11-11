@@ -177,16 +177,28 @@ describe('Claude Fable 5.2 and Claude Mythos 5.2', () => {
     expect(AiAssist.isThinkingRequiredModel(anthropic, model)).toBe(true);
   });
 
-  test.each(IDS_52)('capability detection tags %s as chat, tools, vision and thinking', (modelId) => {
-    const rules = AiAssist.DEFAULT_MODEL_CAPABILITY_CONFIG.perProvider?.anthropic ?? [];
-    const caps = new Set<string>();
-    for (const rule of rules) {
-      if (rule.idPattern.test(modelId)) {
-        rule.capabilities.forEach((c) => caps.add(c));
-      }
+  async function listedCapabilities(ids: ReadonlyArray<string>): Promise<Map<string, string[]>> {
+    mockJson({ data: ids.map((id) => ({ id })) });
+    const listed = await AiAssist.callProviderListModels({ descriptor: anthropic, apiKey: 'k' });
+    return new Map(listed.orThrow().map((m) => [m.id, [...m.capabilities].sort()]));
+  }
+
+  test('model listing tags both 5.2 ids as chat, tools, vision and thinking', async () => {
+    const byId = await listedCapabilities(IDS_52);
+    for (const id of IDS_52) {
+      expect(byId.get(id)).toEqual(['chat', 'thinking', 'tools', 'vision']);
     }
-    expect([...caps].sort()).toEqual(['chat', 'thinking', 'tools', 'vision']);
   });
+
+  // The Mythos rules are per point release, so they must not reach another id that merely starts
+  // with the same characters (a dated claude-mythos-5 snapshot, say).
+  test.each(['claude-mythos-5-20260601', 'claude-mythos-5-10'])(
+    'model listing does not stretch the Mythos rules to %s',
+    async (id) => {
+      const byId = await listedCapabilities([id]);
+      expect(byId.get(id)).toEqual(['chat', 'tools', 'vision']);
+    }
+  );
 
   test('the thinking-model name union names both 5.2 ids', () => {
     const names: ReadonlyArray<AiAssist.AnthropicThinkingModelNames> = [

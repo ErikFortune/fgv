@@ -61,6 +61,35 @@ Worker-owned. The brief is frozen; questions and decisions go here.
   replayed as `{type, text, citations}`. Without this, fixing the two block types would still have left
   the search path non-append-only.
 
+## Review round 1 (independent review of `701106dba`)
+
+- **R1.1 (P2) orphaned `server_tool_use` — applied.** Only `web_search`'s `server_tool_use` is
+  buffered, paired with the `web_search_tool_result` the adapter recognises; any other server tool, and
+  any unknown block type, is not buffered and draws one `ai-assist:unrecognized-event` warning per type
+  per stream (the logger was in reach). Red first (`r1-red-extras.log`).
+- **R1.2 (P2) imperative loop — applied.** `buildAnthropicContinuation` maps the sorted blocks through
+  `replayAnthropicBlock` (`Result<JsonObject | undefined>`) with `mapResults`, then derives the
+  `tool_use` id set from the blocks. The client `tool_use` input parse became `captureResult` +
+  `jsonObjectValidator` + `orDefault({})` — same output for every object input and for malformed JSON
+  (`{}`); a non-object JSON value is now `{}` rather than cast. Three old `c8 ignore` directives went
+  with the loop; none added. One behavioural nuance: with several failing blocks, `mapResults` reports
+  all of them rather than the first.
+- **R1.3 (P3) keep start objects — applied.** Text and thinking keep their `content_block_start`
+  object, with the accumulated fields laid over it; a start-object field is replayed (test, red first).
+- **R1.4 (P1-doc) overclaim — applied** to the adapter TSDoc, change file, result.md § 3 and README.
+  The orchestrator asked the change file to warn that a tail persisted under the previous target "will
+  not resume on 5.2"; the what's-new page says the opposite direction holds — Fable 5.2 reads Fable 5.1
+  blocks, and it is a tail made **on** 5.2 that loses its reasoning on any other model (the API drops
+  the blocks without an error). The change file states it that way, plus the account binding.
+- **R1.5 (P3) vacuous PASS — applied.** `clientToolRunVerdicts` (exported, unit-tested): `PASS` only
+  when ≥ 2 rounds ran, else `NOT EXERCISED`; a `[exercised]` / `[not exercised]` line for a replayed
+  round with both a server-tool event and a client call. Red first with the old logic extracted
+  (`r1-red-testbed-behaviour.log`).
+- **R1.6 – R1.9 — applied.** Redundant `optionalFields` removed from the delta validator; the 5.2
+  capability test goes through `callProviderListModels`; the Mythos rules are dash-bounded
+  (`(?:-|$)`), with `claude-mythos-5-20260601` and `claude-mythos-5-10` tested (red first); the closed
+  TECH_DEBT entry is dropped (it was added and closed on this branch).
+
 ## Questions / parked
 
 - **Q1 — RESOLVED (D7, D8), at the orchestrator's direction.** Original finding: server-tool blocks
@@ -76,7 +105,7 @@ Worker-owned. The brief is frozen; questions and decisions go here.
   (`serverToolsExclusiveWithClientTools` is Gemini-only), so the path is reachable, and the testbed's
   `anthropic-client-tools*` scenarios exercise it whenever the model searches in a tool-calling round.
   The fix as built is D7 and D8.
-  Was recorded in `docs/TECH_DEBT.md`; that entry is now closed.
+  Was recorded in `docs/TECH_DEBT.md` and closed; the entry was then dropped (R1.9).
 - **Q2 — empty text blocks are dropped (left alone).** `buildAnthropicContinuation` skips a `text`
   block with no text. The API rejects an empty text block on input, so sending it back is not an
   option; whether the API ever streams one in a thinking-model turn is not stated on any fetched page.

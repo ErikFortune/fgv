@@ -71,6 +71,8 @@ import {
  */
 export interface IAccumulatedThinkingBlock {
   readonly type: 'thinking';
+  /** The `content_block_start` object as streamed; the accumulated fields are laid over it. */
+  readonly block: JsonObject;
   thinking: string;
   signature: string;
 }
@@ -92,6 +94,8 @@ export interface IAccumulatedRedactedThinkingBlock {
  */
 export interface IAccumulatedTextBlock {
   readonly type: 'text';
+  /** The `content_block_start` object as streamed; the accumulated fields are laid over it. */
+  readonly block: JsonObject;
   text: string;
   /**
    * The citations a server tool's results put on this text, in `citations_delta` order. Absent
@@ -280,17 +284,14 @@ const anthropicContentBlockDeltaInner: Validator<{
   thinking?: string;
   signature?: string;
   citation?: JsonObject;
-}>(
-  {
-    type: Validators.string.optional(),
-    text: Validators.string.optional(),
-    partial_json: Validators.string.optional(),
-    thinking: Validators.string.optional(),
-    signature: Validators.string.optional(),
-    citation: jsonObjectValidator.optional()
-  },
-  { options: { optionalFields: ['type', 'text', 'partial_json', 'thinking', 'signature', 'citation'] } }
-);
+}>({
+  type: Validators.string.optional(),
+  text: Validators.string.optional(),
+  partial_json: Validators.string.optional(),
+  thinking: Validators.string.optional(),
+  signature: Validators.string.optional(),
+  citation: jsonObjectValidator.optional()
+});
 
 const anthropicContentBlockDeltaPayload: Validator<IAnthropicContentBlockDeltaPayload> =
   Validators.object<IAnthropicContentBlockDeltaPayload>(
@@ -360,10 +361,13 @@ const RECOGNIZED_ANTHROPIC_EVENTS: ReadonlySet<string> = new Set<string>([
 /**
  * Translates an Anthropic Messages API SSE stream into unified events.
  *
- * Maintains an ordered accumulation buffer (keyed by SSE `index`) for all
- * content blocks: `thinking`, `redacted_thinking`, `text` (with its citations), `tool_use`, and the
- * server-tool blocks `server_tool_use` and `web_search_tool_result`, so a continuation can send the
- * assistant turn back exactly as it streamed.
+ * Maintains an ordered accumulation buffer (keyed by SSE `index`) of the content blocks a
+ * client-tool continuation sends back: `thinking` and `text` (their `content_block_start` objects
+ * with the accumulated `thinking` / `signature`, or `text` / `citations`, laid over them),
+ * `redacted_thinking`, client `tool_use`, and `web_search`'s `server_tool_use` and
+ * `web_search_tool_result` (as streamed, with the server tool's input taken from its deltas). Any
+ * other block type is not buffered and so not replayed, with a one-time warning per type; the
+ * continuation builder also skips an empty `text` block and re-serializes client `tool_use` input.
  * The buffer is available on the returned generator via `.accumulationBuffer`.
  *
  * Unrecognized event names are reported once per stream via `logger?.warn` —
@@ -386,6 +390,8 @@ async function* translateAnthropicStream(
   // Track unrecognized event names we have already warned about, so a hot stream of
   // an unknown event type produces exactly one log line per name per stream.
   const warnedEvents = new Set<string>();
+  // Block types that are not buffered for a continuation, warned about once each per stream.
+  const warnedBlockTypes = new Set<string>();
 
   try {
     /* c8 ignore next - body is non-null at this point per openSseConnection */
@@ -409,7 +415,7 @@ async function* translateAnthropicStream(
         const index = rawIndex ?? 0;
 
         if (block.type === 'thinking') {
-          accumulationBuffer.set(index, { type: 'thinking', thinking: '', signature: '' });
+          accumulationBuffer.set(index, { type: 'thinking', block, thinking: '', signature: '' });
         } else if (block.type === 'redacted_thinking') {
           accumulationBuffer.set(index, {
             type: 'redacted_thinking',
@@ -417,7 +423,7 @@ async function* translateAnthropicStream(
             data: block.data ?? ''
           });
         } else if (block.type === 'text') {
-          accumulationBuffer.set(index, { type: 'text', text: '' });
+          accumulationBuffer.set(index, { type: 'text', block, text: '' });
         } else if (block.type === 'tool_use') {
           // A tool_use block_start MUST carry a non-empty id and name: the id is the
           // sole correlation key for the follow-up tool_result, and dropping the block
@@ -441,14 +447,26 @@ async function* translateAnthropicStream(
                 `This usually indicates provider drift or a truncated stream.`
             );
           }
-        } else if (block.type === 'server_tool_use') {
+        } else if (block.type === 'server_tool_use' && block.name === 'web_search') {
+          // Only the web_search pair is buffered: its result block is the one this adapter
+          // recognizes, and a server_tool_use replayed without its result would be rejected.
           accumulationBuffer.set(index, { type: 'server_tool_use', block, argsBuffer: '' });
-          if (block.name === 'web_search') {
-            yield { type: 'tool-event', toolType: 'web_search', phase: 'started' };
-          }
+          yield { type: 'tool-event', toolType: 'web_search', phase: 'started' };
         } else if (block.type === 'web_search_tool_result') {
           accumulationBuffer.set(index, { type: 'server_tool_result', block });
           yield { type: 'tool-event', toolType: 'web_search', phase: 'completed' };
+        } else {
+          // Any other block is not buffered, so a client-tool continuation will not send it back;
+          // say so once per block type, since that edits the turn the API returned.
+          const kind =
+            block.type === 'server_tool_use' ? `server_tool_use (${String(block.name)})` : String(block.type);
+          if (!warnedBlockTypes.has(kind)) {
+            warnedBlockTypes.add(kind);
+            logger?.warn(
+              `${UNRECOGNIZED_EVENT_WARN_TAG} Anthropic streaming adapter: content block ${kind} at index ` +
+                `${index} is not replayed in a client-tool continuation`
+            );
+          }
         }
       } else if (eventName === 'content_block_delta') {
         const payload = validateEventPayload(

@@ -136,7 +136,7 @@ describe('buildAnthropicContinuation', () => {
 
     test('preserves text blocks when present and non-empty', () => {
       const buffer = new Map<number, IAccumulatedBlock>();
-      buffer.set(0, { type: 'text', text: 'Let me look that up.' });
+      buffer.set(0, { type: 'text', block: { type: 'text' }, text: 'Let me look that up.' });
       buffer.set(1, { type: 'tool_use', id: 'toolu_02', name: 'recall', argsBuffer: '{}' });
 
       const results = [
@@ -153,7 +153,7 @@ describe('buildAnthropicContinuation', () => {
 
     test('omits empty text blocks', () => {
       const buffer = new Map<number, IAccumulatedBlock>();
-      buffer.set(0, { type: 'text', text: '' });
+      buffer.set(0, { type: 'text', block: { type: 'text' }, text: '' });
       buffer.set(1, { type: 'tool_use', id: 'toolu_03', name: 'recall', argsBuffer: '{}' });
 
       const results = [
@@ -187,7 +187,12 @@ describe('buildAnthropicContinuation', () => {
   describe('thinking-active path', () => {
     test('includes thinking block before tool_use in original stream order', () => {
       const buffer = new Map<number, IAccumulatedBlock>();
-      buffer.set(0, { type: 'thinking', thinking: 'I should recall memory.', signature: 'sig-abc' });
+      buffer.set(0, {
+        type: 'thinking',
+        block: { type: 'thinking' },
+        thinking: 'I should recall memory.',
+        signature: 'sig-abc'
+      });
       buffer.set(1, { type: 'tool_use', id: 'toolu_05', name: 'recall', argsBuffer: '{"q":"x"}' });
 
       const results = [
@@ -215,7 +220,12 @@ describe('buildAnthropicContinuation', () => {
       // signature that C3 passes through unmodified — the round-trip regression.
       const fullSignature = 'BDaL4VrbR2Oj0hO4XpJxT28J5TILnCrrUXoKiiNBZW9P+nr8';
       const buffer = new Map<number, IAccumulatedBlock>();
-      buffer.set(0, { type: 'thinking', thinking: 'Thinking...', signature: fullSignature });
+      buffer.set(0, {
+        type: 'thinking',
+        block: { type: 'thinking' },
+        thinking: 'Thinking...',
+        signature: fullSignature
+      });
       buffer.set(1, { type: 'tool_use', id: 'toolu_06', name: 'recall', argsBuffer: '{}' });
 
       const results = [
@@ -245,10 +255,20 @@ describe('buildAnthropicContinuation', () => {
     test('interleaved thinking ordering: thinking + text + tool_use + thinking + tool_use (E6)', () => {
       // Simulates Claude 4 adaptive thinking with interleaved thinking blocks.
       const buffer = new Map<number, IAccumulatedBlock>();
-      buffer.set(0, { type: 'thinking', thinking: 'First thought', signature: 'sig-1' });
-      buffer.set(1, { type: 'text', text: 'I will recall first.' });
+      buffer.set(0, {
+        type: 'thinking',
+        block: { type: 'thinking' },
+        thinking: 'First thought',
+        signature: 'sig-1'
+      });
+      buffer.set(1, { type: 'text', block: { type: 'text' }, text: 'I will recall first.' });
       buffer.set(2, { type: 'tool_use', id: 'toolu_a', name: 'recall', argsBuffer: '{"q":"a"}' });
-      buffer.set(3, { type: 'thinking', thinking: 'Second thought', signature: 'sig-2' });
+      buffer.set(3, {
+        type: 'thinking',
+        block: { type: 'thinking' },
+        thinking: 'Second thought',
+        signature: 'sig-2'
+      });
       buffer.set(4, { type: 'tool_use', id: 'toolu_b', name: 'recall', argsBuffer: '{"q":"b"}' });
 
       const results = [
@@ -287,7 +307,12 @@ describe('buildAnthropicContinuation', () => {
 
     test('parallel tool_use blocks all go into a single assistant turn', () => {
       const buffer = new Map<number, IAccumulatedBlock>();
-      buffer.set(0, { type: 'thinking', thinking: 'Parallel calls.', signature: 'sig-par' });
+      buffer.set(0, {
+        type: 'thinking',
+        block: { type: 'thinking' },
+        thinking: 'Parallel calls.',
+        signature: 'sig-par'
+      });
       buffer.set(1, { type: 'tool_use', id: 'toolu_p1', name: 'recall', argsBuffer: '{"q":"p1"}' });
       buffer.set(2, { type: 'tool_use', id: 'toolu_p2', name: 'search', argsBuffer: '{"q":"p2"}' });
 
@@ -326,7 +351,12 @@ describe('buildAnthropicContinuation', () => {
 
     test('does NOT set tool_choice on continuation — no forced tool_choice when thinking is active (E3)', () => {
       const buffer = new Map<number, IAccumulatedBlock>();
-      buffer.set(0, { type: 'thinking', thinking: 'Thinking...', signature: 'sig' });
+      buffer.set(0, {
+        type: 'thinking',
+        block: { type: 'thinking' },
+        thinking: 'Thinking...',
+        signature: 'sig'
+      });
       buffer.set(1, { type: 'tool_use', id: 'toolu_08', name: 'recall', argsBuffer: '{}' });
 
       const results = [

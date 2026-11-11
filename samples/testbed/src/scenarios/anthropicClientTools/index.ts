@@ -150,6 +150,67 @@ const MAX_ROUNDS: number = 4;
 const LOOP_DEADLINE_MS: number = 120000;
 
 // ---------------------------------------------------------------------------
+// Run verdicts
+// ---------------------------------------------------------------------------
+
+/**
+ * What a run of the scenario actually did, as the verdicts need it.
+ * @public
+ */
+export interface IClientToolRunEvidence {
+  /** Provider rounds run. A continuation is sent back only from round 2 on. */
+  readonly rounds: number;
+  /** Client tool calls across all rounds. */
+  readonly clientToolCalls: number;
+  /** Server tool (`web_search`) events across all rounds. */
+  readonly serverToolEvents: number;
+  /** Rounds that had both a server tool event and a client tool call. */
+  readonly mixedRounds: number;
+}
+
+/**
+ * The scenario's header line and gate lines for a run.
+ * @public
+ */
+export interface IClientToolRunVerdicts {
+  readonly header: string;
+  readonly gates: ReadonlyArray<string>;
+}
+
+/**
+ * Turns what a run did into its verdicts.
+ * @public
+ */
+export function clientToolRunVerdicts(evidence: IClientToolRunEvidence): IClientToolRunVerdicts {
+  // A continuation is only sent back from round 2 on; with one round, the replay was never tried.
+  const replayed = evidence.rounds >= 2;
+  const oneRound = 'only one round ran, so no continuation was sent back';
+  const mixed = replayed && evidence.mixedRounds > 0;
+  return {
+    header: replayed
+      ? 'B-6 anthropic-client-tools scenario: PASS'
+      : `B-6 anthropic-client-tools scenario: NOT EXERCISED (${oneRound})`,
+    gates: [
+      replayed
+        ? '  [PASS] Continuation replay: the API accepted the replayed history without HTTP 400'
+        : `  [NOT EXERCISED] Continuation replay: ${oneRound}`,
+      replayed
+        ? '  [PASS] Thinking-block signature preserved (the API accepted the continuation)'
+        : `  [NOT EXERCISED] Thinking-block signature: ${oneRound}`,
+      `  [${evidence.clientToolCalls > 0 ? 'PASS' : 'SKIP'}] Client tool (recall_memory) invoked: ${
+        evidence.clientToolCalls > 0 ? 'YES' : 'not triggered in this run'
+      }`,
+      `  [${evidence.serverToolEvents > 0 ? 'PASS' : 'SKIP'}] Server tool (web_search) events: ${
+        evidence.serverToolEvents > 0 ? 'YES' : 'not triggered in this run'
+      }`,
+      mixed
+        ? '  [exercised] Server tool and client tool in one round, replayed (the server-tool replay path)'
+        : '  [not exercised] Server tool and client tool in one round, replayed (the server-tool replay path)'
+    ]
+  };
+}
+
+// ---------------------------------------------------------------------------
 // CLI implementation
 // ---------------------------------------------------------------------------
 
@@ -202,6 +263,7 @@ function makeCliImpl(model: string): ICliScenarioImpl {
       context.logger.info('Running the client-tool loop (client tools + server tools + thinking)...');
 
       let serverToolEventCount = 0;
+      const roundsWithServerToolEvents = new Set<number>();
       const observer: AiAssist.IClientToolLoopObserver = {
         event: (round, event) => {
           if (event.type === 'client-tool-call-done') {
@@ -217,6 +279,7 @@ function makeCliImpl(model: string): ICliScenarioImpl {
             );
           } else if (event.type === 'tool-event') {
             serverToolEventCount++;
+            roundsWithServerToolEvents.add(round);
             context.logger.info(
               `  [round ${round} tool-event] toolType=${event.toolType} phase=${event.phase}` +
                 (event.detail !== undefined ? ` detail=${event.detail.slice(0, 80)}` : '')
@@ -270,8 +333,16 @@ function makeCliImpl(model: string): ICliScenarioImpl {
       context.logger.info('=== FINAL RESPONSE ===');
       context.logger.info(finalResponse.slice(0, 500) + (finalResponse.length > 500 ? '...' : ''));
 
+      const verdicts = clientToolRunVerdicts({
+        rounds: outcome.rounds.length,
+        clientToolCalls: clientToolCallCount,
+        serverToolEvents: serverToolEventCount,
+        mixedRounds: outcome.rounds.filter(
+          (r) => r.calls.length > 0 && roundsWithServerToolEvents.has(r.round)
+        ).length
+      });
       const summaryLines = [
-        'B-6 anthropic-client-tools scenario: PASS',
+        verdicts.header,
         '',
         `Model: ${model} (${AiAssist.resolveProviderModel(descriptor, model, undefined).orDefault(model)})`,
         'Thinking: enabled (effort=low)',
@@ -286,15 +357,8 @@ function makeCliImpl(model: string): ICliScenarioImpl {
             ` → isError=${String(s.isError)}, ${Math.round(s.durationMs)} ms`
         ),
         '',
-        'Empirical gates verified:',
-        '  [PASS] Live API round-trip completed without HTTP 400',
-        '  [PASS] Thinking-block signature preserved (server accepted continuation)',
-        `  [${clientToolCallCount > 0 ? 'PASS' : 'SKIP'}] Client tool (recall_memory) invoked: ${
-          clientToolCallCount > 0 ? 'YES' : 'not triggered in this run'
-        }`,
-        `  [${serverToolEventCount > 0 ? 'PASS' : 'SKIP'}] Server tool (web_search) events: ${
-          serverToolEventCount > 0 ? 'YES' : 'not triggered in this run'
-        }`,
+        'Empirical gates:',
+        ...verdicts.gates,
         '  [PASS] Server + client tool coexistence: both tool types present in request',
         '',
         'Final response (first 300 chars):',

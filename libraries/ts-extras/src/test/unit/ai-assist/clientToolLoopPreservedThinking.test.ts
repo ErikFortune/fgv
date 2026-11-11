@@ -266,4 +266,44 @@ describe('runClientToolLoop keeps the history append-only (prefix check)', () =>
       expect(JSON.stringify(fetchBody(call).tools)).toBe(JSON.stringify(fetchBody(0).tools));
     }
   });
+
+  // A field the API adds to a block's start object (one this library does not know) is part of what
+  // streamed, so it comes back with the accumulated text, thinking and signature laid over it.
+  test('fields on a text or thinking block start object are replayed', async () => {
+    queueSse(
+      roundSse([
+        {
+          start: { type: 'thinking', thinking: '', signature: '', future_field: 'kept-t' },
+          deltas: [{ type: 'signature_delta', signature: 'SIG' }]
+        },
+        {
+          start: { type: 'text', text: '', future_field: 'kept-x' },
+          deltas: [{ type: 'text_delta', text: 'Checking.' }]
+        },
+        { start: { type: 'tool_use', id: 'toolu_1', name: 'recall' }, deltas: [] }
+      ])
+    );
+    queueSse(anthropicTextSse('done'));
+    expect(
+      await AiAssist.runClientToolLoop({
+        descriptor: AiAssist.getProviderDescriptor('anthropic').orThrow(),
+        apiKey: 'k',
+        model: 'claude-fable-5-2',
+        system: 'You are a helpful agent.',
+        messages: [{ role: 'user', content: 'Look it up.' }],
+        clientTools: [makeRecallTool()],
+        maxRounds: 8
+      })
+    ).toSucceed();
+    expect(JSON.stringify(messagesOf(1)[1])).toBe(
+      JSON.stringify({
+        role: 'assistant',
+        content: [
+          { type: 'thinking', thinking: '', signature: 'SIG', future_field: 'kept-t' },
+          { type: 'text', text: 'Checking.', future_field: 'kept-x' },
+          { type: 'tool_use', id: 'toolu_1', name: 'recall', input: {} }
+        ]
+      })
+    );
+  });
 });

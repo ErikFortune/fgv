@@ -17,8 +17,10 @@ summary:
     (128000) and Mythos 5.2 capability detection; both ids in AnthropicThinkingModelNames; the
     dash-bounded thinking-required, adaptive and sampling lists confirmed with 5.2 citations.
     A request-body test pins the three-round replay as append-only with thinking blocks unchanged.
-    The Anthropic adapter and continuation builder now also replay server_tool_use and
-    web_search_tool_result blocks and text citations in place, proven with and without thinking.
+    The Anthropic adapter and continuation builder now also replay web_search's server_tool_use and
+    web_search_tool_result blocks, text citations and text/thinking start objects in place, proven
+    with and without thinking; other block types are not replayed and are warned about once. The
+    testbed client-tool scenarios report PASS only when a continuation was actually sent.
     New anthropic-client-tools-fable scenario and rotated testbed pins.
   diverged: >
     The replay trace found that server_tool_use, web_search_tool_result and text citations were
@@ -46,4 +48,4 @@ keywords:
 relatedStreams:
   - { id: live-run-corrections, relationship: 'follows; same registry declarations' }
   - { id: model-alias-refresh, relationship: 'earlier @anthropic:fable rotation to claude-fable-5-1' }
-sourceHash: sha256:c1c8a2819e87e3c7 # over brief.md + state.md + result.md
+sourceHash: sha256:22e7a7c3aa59b5b0 # over brief.md + state.md + result.md

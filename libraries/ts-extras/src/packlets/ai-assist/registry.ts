@@ -895,9 +895,10 @@ export const DEFAULT_MODEL_CAPABILITY_CONFIG: IAiModelCapabilityConfig = {
       // fetched 2026-09-25), and "Same capabilities as Claude Fable 5.2" ("Text and images → text",
       // https://platform.claude.com/docs/en/models/fable-5-2/whats-new-fable-5-2 and
       // .../models/fable-5-2/overview, fetched 2026-11-11). No fetched page states the other Mythos
-      // ids' capabilities, so the rules are not family-wide.
-      { idPattern: /^claude-mythos-5-1/, capabilities: ['chat', 'tools', 'vision', 'thinking'] },
-      { idPattern: /^claude-mythos-5-2/, capabilities: ['chat', 'tools', 'vision', 'thinking'] },
+      // ids' capabilities, so the rules are not family-wide, and each is dash-bounded so it cannot
+      // reach an id that merely shares its characters (a dated claude-mythos-5 snapshot).
+      { idPattern: /^claude-mythos-5-1(?:-|$)/, capabilities: ['chat', 'tools', 'vision', 'thinking'] },
+      { idPattern: /^claude-mythos-5-2(?:-|$)/, capabilities: ['chat', 'tools', 'vision', 'thinking'] },
       // claude-haiku-5-5 only: adaptive thinking, text and image input, tool use (models overview and
       // https://platform.claude.com/docs/en/models/haiku-5-5/whats-new-haiku-5-5, fetched 2026-11-08).
       // claude-haiku-4-5 keeps the /^claude-/ catch-all.
