@@ -399,7 +399,7 @@ export const openaiModelTiersScenario: IScenario = makeTierScenario({
  * cascades to the `advanced` (opus) id (the log line for that request is the live cascade proof),
  * plus live rows for the `modelOverride`-only `@anthropic:fable` and `@anthropic:haiku` aliases.
  * Every one of those also gets a structured-output probe: the two Anthropic formats split by line
- * (`claude-haiku-5-5` forces a tool; `claude-sonnet-5-5`, `claude-opus-5-5` and `claude-fable-5-1`
+ * (`claude-haiku-5-5` forces a tool; `claude-sonnet-5-5`, `claude-opus-5-5` and `claude-fable-5-2`
  * send `output_config.format`), so the run exercises both mechanisms live, not only the ids. Each probe is repeated with thinking effort
  * `low`, so `output_config` carries `effort` and `format` together on the adaptive successors.
  *
@@ -407,7 +407,7 @@ export const openaiModelTiersScenario: IScenario = makeTierScenario({
  * - thinking effort `none` and `low`. `'none'` on `claude-haiku-5-5` sends
  *   `thinking: { type: 'disabled' }` and must answer; on `claude-sonnet-5-5` it sends
  *   `thinking: { type: 'between_tools' }` (that model's off value) and must answer; on
- *   `claude-opus-5-5` and `claude-fable-5-1` (thinking-required) it is degraded to `'low'` and must
+ *   `claude-opus-5-5` and `claude-fable-5-2` (thinking-required) it is degraded to `'low'` and must
  *   answer. `'low'` is adaptive everywhere and must answer.
  * - `'none'` with `onUnsupported: 'fail'`: `refused-locally` on the two thinking-required models,
  *   answered on sonnet and haiku. Each thinking-required model, and sonnet, also gets a raw
@@ -427,7 +427,7 @@ export const anthropicModelTiersScenario: IScenario = makeTierScenario({
     'Resolves and (with ANTHROPIC_API_KEY) live-canaries the Anthropic base/advanced tiers plus a ' +
     'frontier request that cascades to the advanced (opus) id — the cascade proof — and ' +
     '@anthropic:fable and @anthropic:haiku, and fires a schema structured-output probe on each (forced tool on ' +
-    'claude-haiku-5-5, output_config.format on claude-sonnet-5-5 / claude-opus-5-5 / claude-fable-5-1), with and ' +
+    'claude-haiku-5-5, output_config.format on claude-sonnet-5-5 / claude-opus-5-5 / claude-fable-5-2), with and ' +
     'without thinking effort low. Probes each with thinking effort none and low (none is between_tools on ' +
     'claude-sonnet-5-5), none with onUnsupported fail (refused locally on the thinking-required models), and a raw ' +
     'thinking-disabled row the provider must reject on those models and on claude-sonnet-5-5, ' +
@@ -437,7 +437,7 @@ export const anthropicModelTiersScenario: IScenario = makeTierScenario({
   tiers: ['base', 'advanced', 'frontier'],
   extraModels: ['@anthropic:fable', '@anthropic:haiku'],
   structuredOutputProbe: true,
-  // Repeat each schema probe with an effort: on claude-sonnet-5-5 / claude-opus-5-5 / claude-fable-5-1
+  // Repeat each schema probe with an effort: on claude-sonnet-5-5 / claude-opus-5-5 / claude-fable-5-2
   // that sends output_config { effort, format } together; on claude-haiku-5-5 it sends a forced tool
   // with adaptive thinking, which Anthropic's thinking page says works ("incompatible with manual
   // extended thinking but works with adaptive thinking").

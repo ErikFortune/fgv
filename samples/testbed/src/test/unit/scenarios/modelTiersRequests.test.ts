@@ -182,7 +182,7 @@ describe('buildCanaryCompletionParams', () => {
     ).toSucceedAndSatisfy((params) => {
       expect(params.thinking).toEqual({
         providers: [
-          { provider: 'other', models: ['claude-fable-5-1'], config: { thinking: { type: 'disabled' } } }
+          { provider: 'other', models: ['claude-fable-5-2'], config: { thinking: { type: 'disabled' } } }
         ]
       });
     });
@@ -304,7 +304,7 @@ describe('max-output requests carry the recorded limit on the wire', () => {
 const ANTHROPIC_REJECTS_DISABLED: ReadonlyArray<string> = [
   'claude-sonnet-5-5',
   'claude-opus-5-5',
-  'claude-fable-5-1'
+  'claude-fable-5-2'
 ];
 
 /** Ids the fake Anthropic accepts `thinking: {type: 'between_tools'}` for (live, 2026-11-09). */
@@ -387,7 +387,7 @@ describe('anthropic-model-tiers, keyed, against a fake Anthropic', () => {
       expect(report).toMatch(
         /\[PASS\] advanced effort=none\s+claude-opus-5-5\s+\(degraded to 'low' \(thinking-required\)\)/
       );
-      expect(report).toMatch(/\[PASS\] @anthropic:fable effort=low\s+claude-fable-5-1/);
+      expect(report).toMatch(/\[PASS\] @anthropic:fable effort=low\s+claude-fable-5-2/);
       // 'fail' answers on sonnet (between_tools) and refuses locally on the thinking-required models.
       // Raw disabled is the provider's 400 on all four; its own text is shown after the stated reason.
       expect(report).toMatch(/\[PASS\] base none\+fail\s+claude-sonnet-5-5\n/);
@@ -406,7 +406,7 @@ describe('anthropic-model-tiers, keyed, against a fake Anthropic', () => {
       expect(report).toMatch(/\[REFUSED-LOCALLY\] @anthropic:haiku temp=0\.3\s/);
       expect(report).toMatch(/\[REFUSED-LOCALLY\] base temp=0\.3\s/);
       // Max output at the recorded limit answers.
-      expect(report).toMatch(/\[PASS\] @anthropic:fable max=128000\s+claude-fable-5-1/);
+      expect(report).toMatch(/\[PASS\] @anthropic:fable max=128000\s+claude-fable-5-2/);
       expect(report).toMatch(/LIVE-VERIFIED/);
     });
 

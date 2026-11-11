@@ -732,11 +732,11 @@ describe('runTierCanary (structured-output probes)', () => {
     });
   }
 
-  test('the registry splits Anthropic by line: forced tool on haiku-5-5, schema on sonnet-5-5 / opus-5-5 / fable-5-1', () => {
+  test('the registry splits Anthropic by line: forced tool on haiku-5-5, schema on sonnet-5-5 / opus-5-5 / fable-5-2', () => {
     expect(expectedStructuredEnforcement(anthropic, 'claude-haiku-5-5')).toBe('tool-forced');
     expect(expectedStructuredEnforcement(anthropic, 'claude-sonnet-5-5')).toBe('schema');
     expect(expectedStructuredEnforcement(anthropic, 'claude-opus-5-5')).toBe('schema');
-    expect(expectedStructuredEnforcement(anthropic, 'claude-fable-5-1')).toBe('schema');
+    expect(expectedStructuredEnforcement(anthropic, 'claude-fable-5-2')).toBe('schema');
     expect(expectedStructuredEnforcement(anthropic, '@anthropic:nope')).toBe('none');
   });
 
@@ -753,7 +753,7 @@ describe('runTierCanary (structured-output probes)', () => {
       );
       expect(report).toMatch(/\[PASS\] advanced schema\s+claude-opus-5-5\s+\(enforcement 'schema'\)/);
       expect(report).toMatch(
-        /\[PASS\] @anthropic:fable schema\s+claude-fable-5-1\s+\(enforcement 'schema'\)/
+        /\[PASS\] @anthropic:fable schema\s+claude-fable-5-2\s+\(enforcement 'schema'\)/
       );
       expect(report).toMatch(/LIVE-VERIFIED/);
     });
@@ -786,7 +786,7 @@ describe('runTierCanary (structured-output probes)', () => {
     const result = await runTierCanary(spec, {}, new Logging.InMemoryLogger());
     expect(result).toSucceedAndSatisfy((report: string) => {
       expect(report).toMatch(/\[PENDING\] advanced schema\s+claude-opus-5-5/);
-      expect(report).toMatch(/\[PENDING\] @anthropic:fable schema\s+claude-fable-5-1/);
+      expect(report).toMatch(/\[PENDING\] @anthropic:fable schema\s+claude-fable-5-2/);
     });
   });
 
@@ -811,7 +811,7 @@ describe('runTierCanary (structured-output probes)', () => {
         /\[PASS\] advanced schema\+effort=low\s+claude-opus-5-5\s+\(enforcement 'schema'\)/
       );
       expect(report).toMatch(
-        /\[PASS\] @anthropic:fable schema\+effort=low\s+claude-fable-5-1\s+\(enforcement 'schema'\)/
+        /\[PASS\] @anthropic:fable schema\+effort=low\s+claude-fable-5-2\s+\(enforcement 'schema'\)/
       );
     });
     const structuredCalls = complete.mock.calls.filter(
@@ -977,7 +977,7 @@ describe('runTierCanary (live image probe)', () => {
 // ---------------------------------------------------------------------------
 
 describe('runTierCanary (thinking and strict-none probes on extra models)', () => {
-  const REFUSAL = "thinking effort 'none' is not supported by claude-fable-5-1: the model cannot run";
+  const REFUSAL = "thinking effort 'none' is not supported by claude-fable-5-2: the model cannot run";
   const spec = {
     providerId: 'anthropic',
     descriptor: anthropic,
@@ -1013,18 +1013,18 @@ describe('runTierCanary (thinking and strict-none probes on extra models)', () =
         /\[PASS\] @anthropic:haiku effort=none\s+claude-haiku-5-5\s+\(sent with thinking off\)\n/
       );
       expect(report).toMatch(
-        /\[PASS\] @anthropic:fable effort=none\s+claude-fable-5-1\s+\(degraded to 'low' \(thinking-required\)\)/
+        /\[PASS\] @anthropic:fable effort=none\s+claude-fable-5-2\s+\(degraded to 'low' \(thinking-required\)\)/
       );
-      expect(report).toMatch(/\[PASS\] @anthropic:fable effort=low\s+claude-fable-5-1\n/);
+      expect(report).toMatch(/\[PASS\] @anthropic:fable effort=low\s+claude-fable-5-2\n/);
       // sonnet has its own off value, so 'fail' answers, and a raw 'disabled' must still be rejected.
       expect(report).toMatch(/\[PASS\] base none\+fail\s+claude-sonnet-5-5\n/);
       expect(report).toMatch(
         /\[EXPECTED-REJECT\] base none raw\s+claude-sonnet-5-5\s+\(the provider still rejects disabled; this model's off value is between_tools: AI API returned 400/
       );
       expect(report).toMatch(
-        /\[REFUSED-LOCALLY\] @anthropic:fable none\+fail\s+claude-fable-5-1\s+\(as listed\)/
+        /\[REFUSED-LOCALLY\] @anthropic:fable none\+fail\s+claude-fable-5-2\s+\(as listed\)/
       );
-      expect(report).toMatch(/\[EXPECTED-REJECT\] @anthropic:fable none raw\s+claude-fable-5-1/);
+      expect(report).toMatch(/\[EXPECTED-REJECT\] @anthropic:fable none raw\s+claude-fable-5-2/);
       expect(report).toMatch(/\[PASS\] @anthropic:haiku none\+fail\s+claude-haiku-5-5/);
       expect(report).not.toMatch(/@anthropic:haiku none raw/);
       expect(report).toMatch(/LIVE-VERIFIED/);
@@ -1053,7 +1053,7 @@ describe('runTierCanary (thinking and strict-none probes on extra models)', () =
       expect(report).toMatch(/\[PENDING\] base none\+fail\s+claude-sonnet-5-5\s+\(expect accepted\)/);
       expect(report).toMatch(/\[PENDING\] base none raw\s+claude-sonnet-5-5\s+\(expect expected-reject\)/);
       expect(report).toMatch(
-        /\[PENDING\] @anthropic:fable none\+fail\s+claude-fable-5-1\s+\(expect refused-locally\)/
+        /\[PENDING\] @anthropic:fable none\+fail\s+claude-fable-5-2\s+\(expect refused-locally\)/
       );
     });
   });
@@ -1527,14 +1527,14 @@ describe('model-tier scenarios', () => {
     const result = await anthropicModelTiersScenario.cli.run(makeContext());
     expect(result).toSucceedAndSatisfy((report: string) => {
       expect(report).toMatch(/@anthropic:opus -> claude-opus-5-5 \(cascaded from a lower tier\)/);
-      expect(report).toMatch(/\[PENDING\] @anthropic:fable\s+claude-fable-5-1/);
+      expect(report).toMatch(/\[PENDING\] @anthropic:fable\s+claude-fable-5-2/);
       expect(report).toMatch(/\[PENDING\] base schema\s+claude-sonnet-5-5/);
       expect(report).toMatch(/\[PENDING\] @anthropic:haiku\s+claude-haiku-5-5/);
       expect(report).toMatch(/\[PENDING\] @anthropic:haiku schema\s+claude-haiku-5-5/);
       expect(report).toMatch(/\[PENDING\] frontier schema\s+claude-opus-5-5/);
-      expect(report).toMatch(/\[PENDING\] @anthropic:fable schema\s+claude-fable-5-1/);
+      expect(report).toMatch(/\[PENDING\] @anthropic:fable schema\s+claude-fable-5-2/);
       expect(report).toMatch(/\[PENDING\] advanced schema\+effort=low\s+claude-opus-5-5/);
-      expect(report).toMatch(/\[PENDING\] @anthropic:fable schema\+effort=low\s+claude-fable-5-1/);
+      expect(report).toMatch(/\[PENDING\] @anthropic:fable schema\+effort=low\s+claude-fable-5-2/);
     });
   });
 
@@ -1551,7 +1551,7 @@ describe('model-tier scenarios', () => {
         /\[PENDING\] base effort=none\s+claude-sonnet-5-5\s+\(expect sent with thinking off \(between_tools\)\)/
       );
       expect(report).toMatch(
-        /\[PENDING\] @anthropic:fable none\+fail\s+claude-fable-5-1\s+\(expect refused-locally\)/
+        /\[PENDING\] @anthropic:fable none\+fail\s+claude-fable-5-2\s+\(expect refused-locally\)/
       );
       expect(report).toMatch(/\[PENDING\] base none\+fail\s+claude-sonnet-5-5\s+\(expect accepted\)/);
       expect(report).toMatch(/\[PENDING\] base none raw\s+claude-sonnet-5-5\s+\(expect expected-reject\)/);
@@ -1562,7 +1562,7 @@ describe('model-tier scenarios', () => {
         /\[PENDING\] @anthropic:haiku temp=1\+effort=low\s+claude-haiku-5-5\s+\(expect accepted\)/
       );
       expect(report).toMatch(/\[PENDING\] advanced temp=0\.3\s+claude-opus-5-5\s+\(expect refused-locally\)/);
-      expect(report).toMatch(/\[PENDING\] @anthropic:fable max=128000\s+claude-fable-5-1/);
+      expect(report).toMatch(/\[PENDING\] @anthropic:fable max=128000\s+claude-fable-5-2/);
       expect(report).toMatch(/RESOLVER-VERIFIED; LIVE CANARY PENDING \(STOP-FLAG/);
     });
   });

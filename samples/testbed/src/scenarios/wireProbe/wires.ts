@@ -54,8 +54,8 @@ export interface IWireProbeWire {
  * rather than cheap:
  * - **Anthropic JSON outputs** uses `@anthropic:sonnet` (`claude-sonnet-5-5`), not
  *   `@anthropic:haiku`: `ai-assist` sends `output_config.format` only for the lines that reject
- *   forced tool use (sonnet-5-5, opus-5-5, fable-5-1, mythos-5-1), and sonnet-5-5 is the cheapest of
- *   them. Probing JSON outputs on a model `ai-assist` never sends them to would test a wire we do
+ *   forced tool use (sonnet-5-5, opus-5-5, and Fable and Mythos 5.1 and 5.2), and sonnet-5-5 is the
+ *   cheapest of them. Probing JSON outputs on a model `ai-assist` never sends them to would test a wire we do
  *   not use.
  *
  * Every request is one turn with a 16-token cap (OpenAI's Responses minimum), so a probe run costs
