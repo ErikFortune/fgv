@@ -29,6 +29,7 @@
 
 import { resolveAnthropicThinkingOffType } from './anthropicThinkingOff';
 import { resolveGeminiModelThinking } from './geminiThinking';
+import { checkSamplingParams, temperatureAcceptedWithThinking } from './samplingParams';
 import { fail, Result } from '@fgv/ts-utils';
 
 import { type IAiCacheRequest } from './cacheRequest';
@@ -38,8 +39,6 @@ import { schemaWireProviderId } from './schemaKeywords';
 import {
   type IAiStreamEvent,
   type ModelSpecKey,
-  checkSamplingParams,
-  temperatureAcceptedWithThinking,
   isAdaptiveThinkingModel,
   isThinkingRequiredModel,
   isResponsesOnlyModel,
@@ -190,7 +189,7 @@ export async function callProviderCompletionStream(
       }
     }
   }
-  const samplingResult = checkSamplingParams(descriptor, model, temperature);
+  const samplingResult = checkSamplingParams(descriptor, model, temperature, resolvedThinking);
   if (samplingResult.isFailure()) {
     return fail(samplingResult.message);
   }

@@ -148,7 +148,6 @@ declare namespace AiAssist {
         isResponsesOnlyModel,
         isAdaptiveThinkingModel,
         isThinkingRequiredModel,
-        rejectsSamplingParams,
         usesMaxCompletionTokensField,
         ChatOutputTokensField,
         toDataUrl,
@@ -177,6 +176,8 @@ declare namespace AiAssist {
         allGeminiThinkingLevels,
         rejectsGeminiThinkingLevel,
         resolveGeminiThinkingLevels,
+        rejectsSamplingParams,
+        rejectsSamplingParamsWithThinking,
         IResolvedImageOptions,
         resolveImageOptions,
         validateResolvedOptions,
@@ -1534,11 +1535,17 @@ interface IAiProviderDescriptor {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly responsesOnlyModelPrefixes?: ReadonlyArray<string>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
     readonly samplingParamsAcceptedTemperature?: number;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly samplingParamsRejectedModelPrefixes?: ReadonlyArray<string>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
+    readonly samplingParamsRejectedWithThinkingModelPrefixes?: ReadonlyArray<string>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly serverToolsExclusiveWithClientTools?: ReadonlyArray<AiServerToolType>;
@@ -3431,6 +3438,13 @@ function rejectsGeminiThinkingLevel(descriptor: IAiProviderDescriptor, modelId: 
 //
 // @public
 function rejectsSamplingParams(descriptor: IAiProviderDescriptor, modelId: string): boolean;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
+//
+// @public
+function rejectsSamplingParamsWithThinking(descriptor: IAiProviderDescriptor, modelId: string): boolean;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
 //

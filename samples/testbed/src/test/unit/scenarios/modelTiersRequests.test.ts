@@ -354,12 +354,19 @@ const fakeOpenAi: FakeProvider = ({ url, body }) => {
   if (effort === 'none' && ['gpt-6.1-sol', 'gpt-6-astra'].includes(String(body.model))) {
     return { status: 400, json: { error: { message: "'reasoning_effort' does not support 'none'" } } };
   }
-  // sol and astra take their default, 1, at any effort (live, 2026-11-10); a non-default value
-  // needs effort 'none', which neither has.
-  const acceptsDefault =
-    ['gpt-6.1-sol', 'gpt-6-astra'].includes(String(body.model)) && body.temperature === 1;
-  if (body.temperature !== undefined && effort !== 'none' && !acceptsDefault) {
-    return { status: 400, json: { error: { message: 'temperature is not supported with reasoning' } } };
+  // sol, astra and luna take their default, 1, at any effort (live, 2026-11-10 and 2026-11-11); a
+  // non-default value needs effort 'none', which sol and astra lack. The text is luna's live 400.
+  if (body.temperature !== undefined && effort !== 'none' && body.temperature !== 1) {
+    return {
+      status: 400,
+      json: {
+        error: {
+          message:
+            `Unsupported value: 'temperature' does not support ${String(body.temperature)} with this model. ` +
+            'Only the default (1) value is supported.'
+        }
+      }
+    };
   }
   return {
     status: 200,
@@ -441,7 +448,13 @@ describe('openai-model-tiers, keyed, against a fake OpenAI', () => {
     const result = await runScenario(openaiModelTiersScenario);
     expect(result).toSucceedAndSatisfy((report: string) => {
       expect(report).toMatch(/\[PASS\] base temp=0\.3\+effort=none\s+gpt-6-luna/);
-      expect(report).toMatch(/\[EXPECTED-REJECT\] base temp=0\.3\s+gpt-6-luna\s+\(AI API returned 400/);
+      expect(report).toMatch(/\[REFUSED-LOCALLY\] base temp=0\.3\s+gpt-6-luna/);
+      expect(report).toMatch(/\[PASS\] base temp=1\+effort=low\s+gpt-6-luna/);
+      expect(report).toMatch(/\[REFUSED-LOCALLY\] base temp=0\.3\+effort=low\s+gpt-6-luna/);
+      // The raw row reaches the provider past the local gate, and its 400 is the expected one.
+      expect(report).toMatch(
+        /\[EXPECTED-REJECT\] base temp=0\.3\+effort=low raw\s+gpt-6-luna\s+\(.*Only the default \(1\) value is supported/
+      );
       expect(report).toMatch(/\[REFUSED-LOCALLY\] advanced temp=0\.3\s+gpt-6\.1-sol/);
       expect(report).toMatch(/\[REFUSED-LOCALLY\] frontier temp=0\.3\s+gpt-6-astra/);
       // The default, 1, is sent through the library and answers, with and without an effort.
@@ -449,28 +462,22 @@ describe('openai-model-tiers, keyed, against a fake OpenAI', () => {
       expect(report).toMatch(/\[PASS\] frontier temp=1\s+gpt-6-astra/);
       expect(report).toMatch(/\[PASS\] advanced temp=1\+effort=low\s+gpt-6\.1-sol/);
       expect(report).toMatch(/\[PASS\] frontier temp=1\+effort=low\s+gpt-6-astra/);
-      // The luna raw rows only report what the provider said; this fake rejects both.
-      expect(report).toMatch(
-        /\[OBSERVED\] base temp=1\+effort=low raw\s+gpt-6-luna\s+\(rejected: AI API returned 400/
-      );
-      expect(report).toMatch(
-        /\[OBSERVED\] base temp=0\.3\+effort=low raw\s+gpt-6-luna\s+\(rejected: AI API returned 400/
-      );
+      expect(report).not.toMatch(/\[OBSERVED\]/);
       expect(report).not.toMatch(/(advanced|frontier) temp=[0-9.]+(\+effort=low)? raw/);
       expect(report).toMatch(/\[PASS\] frontier max=128000\s+gpt-6-astra/);
       expect(report).toMatch(/LIVE-VERIFIED/);
     });
     const bodies = sent.map((s) => s.body);
-    // The typed luna rows carry 0.3; the raw luna rows carry 1 and 0.3 beside reasoning_effort
-    // 'low', past the library's gate; sol and astra carry 1, as the temperature parameter, alone and
-    // beside reasoning_effort 'low'. Nothing carries 0.3 to sol or astra.
+    // luna carries 0.3 only with reasoning_effort 'none' through the library, 1 beside 'low', and
+    // 0.3 beside 'low' only on the raw row, past the library's gate; sol and astra carry 1, as the
+    // temperature parameter, alone and beside reasoning_effort 'low'. Nothing carries 0.3 to sol or
+    // astra, and nothing carries 0.3 to luna without an effort.
     expect(
       bodies
         .filter((b) => b.temperature !== undefined)
         .map((b) => [b.model, b.temperature, b.reasoning_effort])
     ).toEqual([
       ['gpt-6-luna', 0.3, 'none'],
-      ['gpt-6-luna', 0.3, undefined],
       ['gpt-6-luna', 1, 'low'],
       ['gpt-6-luna', 0.3, 'low'],
       ['gpt-6.1-sol', 1, undefined],

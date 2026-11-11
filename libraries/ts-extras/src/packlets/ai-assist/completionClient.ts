@@ -29,6 +29,7 @@
 
 import { type AnthropicThinkingOffType, resolveAnthropicThinkingOffType } from './anthropicThinkingOff';
 import { resolveGeminiModelThinking } from './geminiThinking';
+import { checkSamplingParams, temperatureAcceptedWithThinking } from './samplingParams';
 import { isJsonObject, type JsonObject } from '@fgv/ts-json-base';
 import {
   captureResult,
@@ -51,8 +52,6 @@ import {
   type IThinkingConfig,
   type ModelSpec,
   type ModelSpecKey,
-  checkSamplingParams,
-  temperatureAcceptedWithThinking,
   isAdaptiveThinkingModel,
   isThinkingRequiredModel,
   isResponsesOnlyModel,
@@ -132,7 +131,9 @@ export interface IProviderCompletionParams extends IChatRequest {
    * so the provider's own default applies. Many current-gen models reject a non-default value;
    * a model on `IAiProviderDescriptor.samplingParamsRejectedModelPrefixes` still accepts the
    * descriptor's `samplingParamsAcceptedTemperature`, with or without thinking, and is refused
-   * any other value before the wire.
+   * any other value before the wire; a model on
+   * `IAiProviderDescriptor.samplingParamsRejectedWithThinkingModelPrefixes` applies the same rule
+   * unless the request turns thinking off (effort `'none'`), when any value is sent.
    */
   readonly temperature?: number;
   /** Optional model override — string or context-aware map (uses descriptor.defaultModel otherwise) */
@@ -920,7 +921,7 @@ export async function callProviderCompletion(
       }
     }
   }
-  const samplingResult = checkSamplingParams(descriptor, model, temperature);
+  const samplingResult = checkSamplingParams(descriptor, model, temperature, resolvedThinking);
   if (samplingResult.isFailure()) {
     return fail(samplingResult.message);
   }

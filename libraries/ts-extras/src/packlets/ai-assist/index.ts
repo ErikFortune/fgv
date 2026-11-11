@@ -85,7 +85,6 @@ export {
   isResponsesOnlyModel,
   isAdaptiveThinkingModel,
   isThinkingRequiredModel,
-  rejectsSamplingParams,
   usesMaxCompletionTokensField,
   type ChatOutputTokensField,
   toDataUrl,
@@ -120,6 +119,8 @@ export {
   rejectsGeminiThinkingLevel,
   resolveGeminiThinkingLevels
 } from './geminiThinking';
+
+export { rejectsSamplingParams, rejectsSamplingParamsWithThinking } from './samplingParams';
 
 export {
   type IResolvedImageOptions,

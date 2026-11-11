@@ -485,14 +485,19 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     // "When reasoning effort is not none, remove temperature, top_p, and top_logprobs"
     // (https://developers.openai.com/api/docs/guides/latest-model, fetched 2026-11-08). These two
     // have no 'none' effort, so they restrict temperature on every request. gpt-6-luna and gpt-6-sol
-    // accept it only when the call sets effort 'none' (their default is medium), which is not a
-    // per-model rule and is not declared here.
+    // accept any temperature when the call sets effort 'none' (their default is medium), so neither
+    // belongs on this effort-blind list.
     samplingParamsRejectedModelPrefixes: ['gpt-6-astra', 'gpt-6.1-sol'],
+    // Restricted only while reasoning. Live on gpt-6-luna (2026-11-11): temperature 0.3 with effort
+    // 'none' accepted; 0.3 with effort low, and 0.3 with no effort (default medium), each a 400
+    // "Only the default (1) value is supported"; 1 with effort low accepted. gpt-6-sol is not
+    // listed: the evidence covers luna only.
+    samplingParamsRejectedWithThinkingModelPrefixes: ['gpt-6-luna'],
     // The restriction spares the default. A live temperature: 1 was accepted by both gpt-6.1-sol and
     // gpt-6-astra (2026-11-10), each sent through a verbatim 'other' block at the default effort, so
-    // with thinking on; gpt-6-luna's 400 for 0.3 reads "Only the default (1) value is supported".
-    // The value is descriptor-wide, and that is right here: the list above is exactly the two models
-    // the evidence covers.
+    // with thinking on; gpt-6-luna accepted temperature: 1 beside effort low (2026-11-11), and its 400
+    // for 0.3 reads "Only the default (1) value is supported". The value is descriptor-wide, and that
+    // is right here: the two lists above are exactly the three models the evidence covers.
     samplingParamsAcceptedTemperature: 1,
     // Declared once for the whole line. The Chat-Completions-vs-Responses split is
     // NOT declared here on purpose: the route depends on whether the call carries

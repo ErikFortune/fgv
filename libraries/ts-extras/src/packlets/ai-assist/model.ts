@@ -522,71 +522,6 @@ export function isThinkingRequiredModel(descriptor: IAiProviderDescriptor, model
 }
 
 /**
- * Whether a concrete (already-resolved) model restricts a caller-supplied `temperature`, per the
- * descriptor's {@link IAiProviderDescriptor.samplingParamsRejectedModelPrefixes}
- * (exact-or-dash-bounded match).
- *
- * @remarks
- * A listed model rejects every `temperature` except the descriptor's
- * {@link IAiProviderDescriptor.samplingParamsAcceptedTemperature}, when one is declared. The
- * completion (`callProviderCompletion`), streaming (`callProviderCompletionStream`) and
- * client-tool (`executeClientToolTurn`) paths refuse any other value before anything is sent,
- * rather than letting the provider return a 400.
- *
- * @param descriptor - The provider descriptor supplying the prefix list.
- * @param modelId - The resolved concrete model id to test.
- * @returns `true` when `modelId` restricts `temperature`.
- * @public
- */
-export function rejectsSamplingParams(descriptor: IAiProviderDescriptor, modelId: string): boolean {
-  return (
-    descriptor.samplingParamsRejectedModelPrefixes?.some((p) => isExactOrDashBoundedPrefix(modelId, p)) ??
-    false
-  );
-}
-
-/**
- * The `temperature` a model accepts even with thinking on: the descriptor's
- * {@link IAiProviderDescriptor.samplingParamsAcceptedTemperature} on a model that
- * {@link AiAssist.rejectsSamplingParams | restricts temperature} (such models apply that rule with or
- * without thinking), otherwise `undefined`.
- * @internal
- */
-export function temperatureAcceptedWithThinking(
-  descriptor: IAiProviderDescriptor,
-  modelId: string
-): number | undefined {
-  return rejectsSamplingParams(descriptor, modelId)
-    ? descriptor.samplingParamsAcceptedTemperature
-    : undefined;
-}
-
-/**
- * Refuses a `temperature` aimed at a model that rejects sampling parameters (see
- * {@link AiAssist.rejectsSamplingParams}). Succeeds with the temperature otherwise.
- * @internal
- */
-export function checkSamplingParams(
-  descriptor: IAiProviderDescriptor,
-  modelId: string,
-  temperature: number | undefined
-): Result<number | undefined> {
-  if (temperature === undefined || !rejectsSamplingParams(descriptor, modelId)) {
-    return succeed(temperature);
-  }
-  const accepted = descriptor.samplingParamsAcceptedTemperature;
-  if (accepted === undefined) {
-    return fail(`${modelId} does not accept temperature on any request: remove temperature`);
-  }
-  if (temperature === accepted) {
-    return succeed(temperature);
-  }
-  return fail(
-    `${modelId} does not accept a non-default temperature (${temperature}): remove temperature, or send ${accepted}`
-  );
-}
-
-/**
  * The Chat Completions request field that caps output length (see
  * {@link AiAssist.IAiProviderDescriptor.chatOutputTokensField}).
  * @public
@@ -1084,12 +1019,33 @@ export interface IAiProviderDescriptor {
    */
   readonly samplingParamsRejectedModelPrefixes?: ReadonlyArray<string>;
   /**
+   * Concrete model ids (exact-or-dash-bounded-prefix-matched, like
+   * {@link IAiProviderDescriptor.samplingParamsRejectedModelPrefixes}) that reason by default and
+   * reject a caller-supplied `temperature` only while reasoning — every value, or every value but
+   * {@link IAiProviderDescriptor.samplingParamsAcceptedTemperature} when the descriptor declares
+   * one. With thinking off they accept any `temperature`.
+   *
+   * @remarks
+   * Thinking counts as off only when the request turns it off through ai-assist's own thinking
+   * fields — a generic `effort: 'none'`, or the equivalent resolved field (an OpenAI or xAI effort of
+   * `'none'`, an Anthropic thinking-off request with no effort, a Gemini budget of `0`). A verbatim
+   * provider block is not inspected. A request with no effort runs at the model's default, which for
+   * a listed model reasons. A rejected `temperature` on a listed model is refused before
+   * the wire on the completion, streaming and client-tool paths (see
+   * {@link AiAssist.rejectsSamplingParamsWithThinking}). A model on both lists follows
+   * {@link IAiProviderDescriptor.samplingParamsRejectedModelPrefixes}.
+   */
+  readonly samplingParamsRejectedWithThinkingModelPrefixes?: ReadonlyArray<string>;
+  /**
    * The one `temperature` that the models on
-   * {@link IAiProviderDescriptor.samplingParamsRejectedModelPrefixes} still accept — the provider's
-   * own default, which a provider that rejects only non-default values lets through, with or without
-   * thinking. Undefined means those models accept no `temperature` at all. Descriptor-wide, not per
-   * model: declare it only when the evidence covers every listed model (OpenAI's list is exactly
-   * `gpt-6.1-sol` and `gpt-6-astra`, and both accepted `temperature: 1` live).
+   * {@link IAiProviderDescriptor.samplingParamsRejectedModelPrefixes} still accept, with or without
+   * thinking, and that the models on
+   * {@link IAiProviderDescriptor.samplingParamsRejectedWithThinkingModelPrefixes} still accept while
+   * reasoning — the provider's own default, which a provider that rejects only non-default values
+   * lets through. Undefined means those models accept no `temperature` where they restrict it.
+   * Descriptor-wide, not per model: declare it only when the evidence covers every listed model
+   * (OpenAI lists `gpt-6.1-sol` and `gpt-6-astra` on the first list and `gpt-6-luna` on the second,
+   * and all three accepted `temperature: 1` live with thinking on).
    */
   readonly samplingParamsAcceptedTemperature?: number;
 }

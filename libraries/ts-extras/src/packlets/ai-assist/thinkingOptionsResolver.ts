@@ -692,11 +692,11 @@ function temperatureConflict(provider: string, noneDegraded: boolean): Result<un
  * `noneDegraded` (from `resolveThinkingConfig`) says a generic `'none'` reached the wire as `'low'`.
  * It affects only the failure message, never the decision.
  *
- * `acceptedTemperature`, when given, means the model restricts sampling parameters with or without
- * thinking (see `temperatureAcceptedWithThinking`). That value is never a conflict, and no other value
- * is reported here either: thinking is not the reason it is refused, so "disable thinking" would be
- * wrong advice. `checkSamplingParams`, which every caller runs next, refuses it with the model's own
- * message ("remove temperature, or send <accepted>").
+ * `acceptedTemperature`, when given, means the model declares its own sampling rule — restricted with
+ * or without thinking, or only while reasoning (see `temperatureAcceptedWithThinking`). That value is
+ * never a conflict, and no other value is reported here either: `checkSamplingParams`, which every
+ * caller runs next, refuses it with the model's own message ("remove temperature, or send
+ * <accepted>", plus "or set effort 'none'" on a model restricted only while reasoning).
  *
  * @internal
  */
@@ -707,9 +707,9 @@ export function checkTemperatureConflict(
   noneDegraded: boolean = false,
   acceptedTemperature?: number
 ): Result<undefined> {
-  // `acceptedTemperature` is the one value a model that restricts sampling parameters still takes
-  // with or without thinking (see `temperatureAcceptedWithThinking`); every other value on such a
-  // model is refused by `checkSamplingParams` instead, whose message names the accepted value.
+  // `acceptedTemperature` is the one value a model that declares its own sampling rule still takes
+  // with thinking on (see `temperatureAcceptedWithThinking`); every other value on such a model is
+  // refused by `checkSamplingParams` instead, whose message names the accepted value.
   if (temperature === undefined || acceptedTemperature !== undefined) {
     return succeed(undefined);
   }

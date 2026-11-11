@@ -141,9 +141,9 @@ and one row kind makes no claim at all:
 | tag                   | means                                                                                                                                                                            |
 | --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `[REFUSED-LOCALLY]`   | ai-assist refused the request before building it, so nothing was sent (a `temperature` the model rejects, or `'none'` with `onUnsupported: 'fail'` on a thinking-required model) |
-| `[EXPECTED-REJECT]`   | the provider returned the 400 the probe expected, for the expected reason (a raw thinking-off value on a thinking-required model; temperature on `gpt-6-luna` without effort `'none'`). The row prints the provider's own text; a 400 for another reason is a `FAIL`                    |
+| `[EXPECTED-REJECT]`   | the provider returned the 400 the probe expected, for the expected reason (a raw thinking-off value on a thinking-required model; a raw `0.3` beside an effort on `gpt-6-luna`). The row prints the provider's own text; a 400 for another reason is a `FAIL`                    |
 | `[NO-RECORDED-LIMIT]` | a max-output probe on a model with no `maxOutputTokens` entry: nothing to check, no call                                                                                         |
-| `[OBSERVED]`          | report-only: the answer is not known yet, so the row prints `accepted` or `rejected: <provider text>` and neither passes nor fails (the OpenAI scenario sends two, for `gpt-6-luna` temperature beside an effort) |
+| `[OBSERVED]`          | report-only: the answer is not known yet, so the row prints `accepted` or `rejected: <provider text>` and neither passes nor fails |
 
 The probe families:
 
@@ -159,13 +159,14 @@ The probe families:
   its thinking off — so its `effort=none` is sent with thinking off, its `none+fail` passes, and it
   gets no raw row.
 - **Temperature** (`temp=…`, Anthropic and OpenAI): each row names its expected outcome. Anthropic
-  accepts `1` with and without thinking and refuses `0.3` locally; OpenAI accepts `0.3` on
-  `gpt-6-luna` with effort `'none'` and expects a provider 400 without it, and on `gpt-6.1-sol` and
-  `gpt-6-astra` accepts `1` with and without effort `low` (`temp=1`, `temp=1+effort=low`, sent
-  through the library) and refuses `0.3` locally. Two `gpt-6-luna` rows are report-only
-  (`[OBSERVED] base temp=1+effort=low raw`, `temp=0.3+effort=low raw`): they send the temperature
-  past the library's gate, beside effort `low`, and print what the provider said. `accepted` on the
-  `1` row means luna takes its default beside an effort, as sol and astra do.
+  accepts `1` with and without thinking and refuses `0.3` locally. OpenAI's `gpt-6-luna` restricts
+  temperature only while it reasons: `0.3` with effort `'none'` and `1` beside effort `low` answer,
+  and `0.3` with no effort (luna defaults to `medium`) or beside effort `low` is refused locally. One
+  more luna row (`[EXPECTED-REJECT] base temp=0.3+effort=low raw`) sends `0.3` past the library's
+  gate and must be the provider's "Only the default (1) value is supported" 400; if it answers, the
+  `samplingParamsRejectedWithThinkingModelPrefixes` entry is stale. On `gpt-6.1-sol` and
+  `gpt-6-astra` OpenAI accepts `1` with and without effort `low` (`temp=1`, `temp=1+effort=low`,
+  sent through the library) and refuses `0.3` locally.
 - **Max output** (`max=N`, Anthropic, OpenAI and Gemini): `maxTokens` set to
   `resolveMaxOutputTokens` for that exact model. It must be accepted. A refusal naming the token cap
   is `FAIL(param)`: the recorded limit is too high.

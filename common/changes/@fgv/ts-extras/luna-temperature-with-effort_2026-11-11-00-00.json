@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras",
+      "comment": "ai-assist: a new descriptor list, IAiProviderDescriptor.samplingParamsRejectedWithThinkingModelPrefixes (queried with the new rejectsSamplingParamsWithThinking), declares models that restrict temperature only while they reason, reusing samplingParamsAcceptedTemperature. OpenAI lists gpt-6-luna (the base tier, @openai:mini): temperature 1 is now sent beside any reasoning effort (it was refused as the thinking/temperature conflict), any temperature is still sent with effort 'none', and any other value with thinking on, including a call with no effort (luna defaults to medium), is refused before the wire on the completion, streaming and client-tool paths with \"does not accept a non-default temperature (x) while reasoning: remove temperature, send 1, or set effort 'none'\" (with no effort it used to reach the provider and come back a 400).",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-extras",
+  "email": "noreply@anthropic.com"
+}
