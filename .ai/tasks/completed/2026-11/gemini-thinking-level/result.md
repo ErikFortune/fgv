@@ -199,4 +199,8 @@ built) passed on both trees, as they should. With the source restored, all pass;
 `testbed` are at 100% on every metric. The `max=` and `resolveMaxOutputTokens` pins for Argon were moved
 to 32768 (item 3).
 
-**Gates (round 1).** Logs `r1-*` under the scratchpad `gemini/`. RESULT_R1_GATES
+**Gates (round 1).** Fix committed first; `origin/integration/asks` still at `5dcc3000f` (already an
+ancestor, no merge needed). Logs `r1-*` under the scratchpad `gemini/`, graded by grep as in § 5:
+`install` exit 0 (0 hits); `change --verify` exit 0; `rebuild` exit 0 (0 hits, 1 warning line: tracked
+symlink); `lint` exit 0 (0 hits, same 1 line); `test` exit 0, `SUCCESS: 38 operations`, 0 hits, same
+1 line.
