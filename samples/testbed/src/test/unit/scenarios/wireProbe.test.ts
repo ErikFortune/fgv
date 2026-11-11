@@ -428,6 +428,11 @@ describe('wireProbe', () => {
       // xAI declares max_completion_tokens (its API reference deprecates max_tokens).
       expect(Object.keys(xaiOut.body)).toContain('max_completion_tokens');
       expect(Object.keys(xaiOut.body)).not.toContain('max_tokens');
+      // The field follows the descriptor's declaration, so a provider declaring none gets max_tokens.
+      const legacy = { ...descriptor('xai-grok'), chatOutputTokensField: undefined };
+      const legacyOut = buildRawRequest(wire('xai-strict-output'), legacy, 'g', 'k', schema);
+      expect(Object.keys(legacyOut.body)).toContain('max_tokens');
+      expect(Object.keys(legacyOut.body)).not.toContain('max_completion_tokens');
     });
   });
 
