@@ -1,7 +1,7 @@
 id: gemini-thinking-level
 status: shipped
 packages: ['@fgv/ts-extras', '@fgv/testbed']
-prs: [] # #TBD — the orchestrator opens the PR; fill in its number (and the README / ledger #TBD) then
+prs: [775]
 openPrs: []
 opened: 2026-11-11
 closed: 2026-11-11
@@ -59,4 +59,4 @@ relatedStreams:
   - { id: final-model-fixes, relationship: 'put gemini-3.5-flash-lite on the thinking-required list as an interim' }
   - { id: live-run-corrections, relationship: 'took gemini-3.8-flash off that list on live evidence' }
   - { id: model-followups, relationship: 'merged ahead (#774); added the OpenAI-format client-tool guard Q3 asks about' }
-sourceHash: sha256:7062e9959601a372 # over brief.md + state.md + result.md
+sourceHash: sha256:af6539559a65cdde # over brief.md + state.md + result.md

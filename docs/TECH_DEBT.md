@@ -1569,7 +1569,7 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
   **Reference**: `.ai/tasks/completed/2026-11/gemini-thinking-level/` (`state.md` Q1).
 
 - ~~**[P3] Generic `effort: 'none'` maps to a Gemini value that errors on Pro-family models.**~~
-  **Resolved by `gemini-thinking-level` (PR #TBD).** A generic `'none'` never sends
+  **Resolved by `gemini-thinking-level` (PR #775).** A generic `'none'` never sends
   `thinkingBudget: 0` to a Pro-family model: every Pro id with evidence (`gemini-3.1-pro-preview`,
   `gemini-3-pro-preview`, `gemini-2.5-pro`) is on `thinkingRequiredModelPrefixes`, so `'none'` is sent
   as the low budget or, under `onUnsupported: 'fail'`, refused with "the model cannot run with thinking

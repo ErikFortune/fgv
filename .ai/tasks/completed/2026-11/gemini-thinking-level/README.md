@@ -1,6 +1,6 @@
 # gemini-thinking-level — send Gemini's `thinkingLevel`; rotate `@google-gemini:pro` to Gemini 4
 
-**Shipped**: 2026-11-11, PR #TBD (targets `integration/asks`, after #774).
+**Shipped**: 2026-11-11, PR #775 (targets `integration/asks`, after #774).
 Packages: `@fgv/ts-extras` (`ai-assist`, change file `minor`, `BREAKING:`) and `@fgv/testbed` (private,
 change file `none`).
 

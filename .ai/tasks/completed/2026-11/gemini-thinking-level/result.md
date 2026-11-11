@@ -156,7 +156,7 @@ No live call was made in this stream.
 - `docs/FUTURE.md` § "`ai-assist` — send Gemini's `thinkingLevel`, then rotate `@google-gemini:pro` to
   Gemini 4" — removed.
 - `docs/TECH_DEBT.md` "[P3] Generic `effort: 'none'` maps to a Gemini value that errors on Pro-family
-  models" — struck through, "Resolved by `gemini-thinking-level` (PR #TBD)".
+  models" — struck through, "Resolved by `gemini-thinking-level` (PR #775)".
 - `model-alias-refresh` Q3 (held Argon rotation) — done; the alias comment in `registry.ts` rewritten.
 - The flash-lite interim on `thinkingRequiredModelPrefixes` — removed.
 
@@ -172,9 +172,8 @@ Checked against the artifacts: every Google quote in § 2 re-matched against the
 Argon rotation (`result.md:51` there); the FUTURE entry did list `gemini-3.8-flash` as a level model,
 so keeping it on the budget wire is a real divergence and is recorded in `meta.yaml`; counts (66 new
 tests, 29 data-red, 21 type errors, 1 and 21 call-site reds) are from the logs of those runs. The
-PR number is unknown at close: `meta.yaml` `prs` is empty and the README, ledger entry and TECH_DEBT
-line say `#TBD`, so the capability-feed line has no PR link until `prs` is filled and the feed is
-regenerated. Q1–Q3 are recorded in `state.md`, this file and the ledger entry, not in
+PR is #775; `meta.yaml` `prs`, the README, ledger entry and TECH_DEBT line carry it, and the
+capability feed was regenerated. Q1–Q3 are recorded in `state.md`, this file and the ledger entry, not in
 `FUTURE.md` / `TECH_DEBT.md` — left for the orchestrator to route.
 
 ## 10. Review round 1 (independent review of `21eb1cb54`; no P1, four P2)
