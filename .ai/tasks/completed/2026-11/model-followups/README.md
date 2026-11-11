@@ -1,6 +1,6 @@
 # model-followups — sweep of the follow-ups recorded by the 2026-11 model streams
 
-**Shipped**: 2026-11-11, PR #TBD (targets `integration/asks`).
+**Shipped**: 2026-11-11, PR #774 (targets `integration/asks`).
 Packages: `@fgv/ts-extras` (`ai-assist`, change file `minor`), `@fgv/ts-extras-mcp` and
 `@fgv/ts-res-cli` (tests only, `none`), `@fgv/testbed` (private, `none`).
 

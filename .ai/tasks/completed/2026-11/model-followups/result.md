@@ -8,7 +8,7 @@ sampling-restricted list, with two report-only canary rows to settle it; both he
 
 Packages: `@fgv/ts-extras` (`ai-assist`, change file `minor`), `@fgv/ts-extras-mcp` (tests, `none`),
 `@fgv/ts-res-cli` (tests, `none`), `@fgv/testbed` (private, `none`). Branch `model-followups`, based on
-`origin/integration/asks` @ `f66b7f0c0`. PR: #TBD.
+`origin/integration/asks` @ `f66b7f0c0`. PR: #774.
 
 Logs are under `/tmp/claude-0/-home-user/ddedaf44-7531-52e1-a2c4-05cab5230430/scratchpad/followups/`.
 

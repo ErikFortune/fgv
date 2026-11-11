@@ -211,7 +211,7 @@ markers.*
 <!-- BEGIN GENERATED: recent-additions -->
 
 - **2026-11-11** — ai-assist's @anthropic:fable alias now reaches Claude Fable 5.2, and Fable 5.2 and Mythos 5.2 get JSON-outputs structured output… ([#773](https://github.com/ErikFortune/fgv/pull/773)) · `ts-extras` `testbed`
-- **2026-11-11** — ai-assist sends max_completion_tokens to Groq and xAI, refuses a hand-built 'none' effort on models that cannot turn thinking off… · `ts-extras` `ts-extras-mcp` `ts-res-cli` `testbed`
+- **2026-11-11** — ai-assist sends max_completion_tokens to Groq and xAI, refuses a hand-built 'none' effort on models that cannot turn thinking off… ([#774](https://github.com/ErikFortune/fgv/pull/774)) · `ts-extras` `ts-extras-mcp` `ts-res-cli` `testbed`
 - **2026-11-10** — ai-assist sends temperature 1 to GPT-6.1 Sol and GPT-6 Astra, with or without reasoning effort, and still refuses any other value… ([#771](https://github.com/ErikFortune/fgv/pull/771)) · `ts-extras` `testbed`
 - **2026-11-09** — ai-assist turns thinking off on Claude Sonnet 5.5 with its own between_tools value, declared per model, and stops claiming… ([#769](https://github.com/ErikFortune/fgv/pull/769)) · `ts-extras` `testbed`
 - **2026-11-08** — ai-assist aliases now reach current models — Claude Sonnet 5.5 and Haiku 5.5, GPT-6.1 Sol, Nano Banana 2.1, and new Groq and… ([#767](https://github.com/ErikFortune/fgv/pull/767)) · `ts-extras` `testbed`
