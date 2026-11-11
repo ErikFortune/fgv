@@ -424,7 +424,7 @@ export function resolveModelAlias(descriptor: IAiProviderDescriptor, model: stri
  * over `descriptor.defaultModel`. May itself contain or be an alias.
  * @param context - Optional {@link ModelSpecKey} selecting the spec branch.
  * @returns `Result` with the concrete provider model id, or a failure. A spec outside the
- * {@link ModelSpec} type fails with the provider id and the dotted path of the offending key
+ * {@link AiAssist.ModelSpec} type fails with the provider id and the dotted path of the offending key
  * (`provider "openai": model spec modelOverride.base is undefined: …`).
  * @public
  */
@@ -587,7 +587,7 @@ export function checkSamplingParams(
 
 /**
  * The Chat Completions request field that caps output length (see
- * {@link IAiProviderDescriptor.chatOutputTokensField}).
+ * {@link AiAssist.IAiProviderDescriptor.chatOutputTokensField}).
  * @public
  */
 export type ChatOutputTokensField = 'max_tokens' | 'max_completion_tokens';
@@ -598,7 +598,7 @@ export type ChatOutputTokensField = 'max_tokens' | 'max_completion_tokens';
  * `max_tokens` field for capping output length.
  *
  * @remarks
- * Reads the descriptor's {@link IAiProviderDescriptor.chatOutputTokensField} declaration.
+ * Reads the descriptor's {@link AiAssist.IAiProviderDescriptor.chatOutputTokensField} declaration.
  * In the shipped registry OpenAI, Groq and xAI Grok declare `'max_completion_tokens'` (each
  * API reference marks `max_tokens` deprecated in its favor); Mistral, Ollama and self-hosted
  * `openai-compat` servers declare nothing and keep `max_tokens`. Consulted

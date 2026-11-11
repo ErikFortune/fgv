@@ -71,6 +71,12 @@ describe('a malformed ModelSpec fails instead of throwing', () => {
       );
     });
 
+    test('resolves a context named like an Object.prototype member to base', () => {
+      expect(
+        AiAssist.resolveProviderModel(openai, { base: 'gpt-6-luna' }, 'constructor' as AiAssist.ModelSpecKey)
+      ).toSucceedWith('gpt-6-luna');
+    });
+
     test('still reports an empty spec as no model resolved', () => {
       expect(AiAssist.resolveProviderModel(openai, {})).toFailWith(/provider "openai": no model resolved/);
     });
@@ -123,6 +129,14 @@ describe('a malformed ModelSpec fails instead of throwing', () => {
       expect(AiAssist.resolveModel(badOverride)).toBe('');
       expect(AiAssist.resolveModel(badNested, 'advanced')).toBe('');
     });
+
+    // Only the spec's own keys count: an inherited Object.prototype member is not a context entry.
+    test.each(['constructor', 'toString', '__proto__'])(
+      'falls back to base for the context %s',
+      (context) => {
+        expect(AiAssist.resolveModel({ base: 'B', advanced: 'A' }, context)).toBe('B');
+      }
+    );
 
     test('resolves an empty spec to the empty string', () => {
       expect(AiAssist.resolveModel({})).toBe('');

@@ -22,7 +22,7 @@ import { fail, formatValueForMessage, type Result, succeed } from '@fgv/ts-utils
 import type { ModelSpec, ModelSpecKey } from './model';
 
 /**
- * Default context key used as fallback when resolving a {@link ModelSpec}.
+ * Default context key used as fallback when resolving a {@link AiAssist.ModelSpec}.
  * @public
  */
 export const MODEL_SPEC_BASE_KEY: ModelSpecKey = 'base';
@@ -45,7 +45,7 @@ const TIER_FALLBACK: { readonly [k: string]: ReadonlyArray<ModelSpecKey> } = {
 };
 
 /**
- * Resolves a {@link ModelSpec} to a concrete model string given an optional context key.
+ * Resolves a {@link AiAssist.ModelSpec} to a concrete model string given an optional context key.
  *
  * @remarks
  * Resolution rules:
@@ -55,12 +55,12 @@ const TIER_FALLBACK: { readonly [k: string]: ReadonlyArray<ModelSpecKey> } = {
  *    tier-fallback table (`frontier → advanced → base`, `advanced → base`);
  *    every other context resolves flat (`[context]`); `undefined` resolves to
  *    the shared `base` fallback. The first present key wins.
- * 3. Otherwise, fall back to the {@link MODEL_SPEC_BASE_KEY | 'base'} key.
+ * 3. Otherwise, fall back to the {@link AiAssist.MODEL_SPEC_BASE_KEY | 'base'} key.
  * 4. If neither context nor `'base'` exists, use the first available value; an
  *    empty spec resolves to `''`.
  *
- * A spec outside the {@link ModelSpec} type — a key holding `undefined`, `null` or a number,
- * reachable from untyped JSON or a cast — also resolves to `''` rather than throwing. Use
+ * A spec outside the {@link AiAssist.ModelSpec} type — a key holding `undefined`, `null` or a
+ * number, reachable from untyped JSON or a cast — also resolves to `''` rather than throwing. Use
  * {@link AiAssist.resolveProviderModel} for a `Failure` that names the provider and the offending key.
  *
  * @param spec - The model specification to resolve
@@ -73,8 +73,8 @@ export function resolveModel(spec: ModelSpec, context?: string): string {
 }
 
 /**
- * The walk behind {@link resolveModel} and {@link resolveProviderModel}: the same rules, failing
- * with the dotted path of a key whose value is neither a model id nor a spec object.
+ * The walk behind {@link AiAssist.resolveModel} and {@link AiAssist.resolveProviderModel}: the same
+ * rules, failing with the dotted path of a key whose value is neither a model id nor a spec object.
  * @internal
  */
 export function walkModelSpec(spec: ModelSpec, context: string | undefined, path: string): Result<string> {
@@ -92,10 +92,15 @@ export function walkModelSpec(spec: ModelSpec, context: string | undefined, path
   // Ordered candidate keys for this context: a tier key cascades via
   // TIER_FALLBACK; any other key resolves flat as [context]; undefined drops
   // straight to the shared 'base' fallback below.
-  const order: ReadonlyArray<string> = context === undefined ? [] : TIER_FALLBACK[context] ?? [context];
-  const key =
-    order.find((candidate) => candidate in spec) ??
-    (MODEL_SPEC_BASE_KEY in spec ? MODEL_SPEC_BASE_KEY : Object.keys(spec)[0]);
+  // Own keys only, in the spec and in the fallback table: `in` and a plain index would also find
+  // `Object.prototype` members, so a context such as `'constructor'` would walk into a function
+  // instead of falling back to `base`.
+  const hasOwn = (target: object, candidate: string): boolean =>
+    Object.prototype.hasOwnProperty.call(target, candidate);
+  const order: ReadonlyArray<string> =
+    context === undefined ? [] : hasOwn(TIER_FALLBACK, context) ? TIER_FALLBACK[context] : [context];
+  const own = (candidate: string): boolean => hasOwn(spec, candidate);
+  const key = order.find(own) ?? (own(MODEL_SPEC_BASE_KEY) ? MODEL_SPEC_BASE_KEY : Object.keys(spec)[0]);
   // Last resort exhausted: an empty spec names no model.
   if (key === undefined) {
     return succeed('');

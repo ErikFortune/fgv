@@ -37,12 +37,19 @@ ignores `openAiEffort`) pass both ways by design.
 
 ## 2. F2 — `gpt-6-luna` / `gpt-6-sol` with `temperature: 1` beside an effort
 
-**Current behaviour on the base** (established with no source change, `f2-base.log`): on both models a
-`temperature` beside any non-`'none'` effort — `1` included — is refused locally by
-`checkTemperatureConflict` ("thinking mode is not compatible with temperature on provider openai"),
-because neither is on `samplingParamsRejectedModelPrefixes`, so `temperatureAcceptedWithThinking` is
-undefined for them; `0.3` with effort `'none'` is sent. #771's 5a did not change this: its exemption
-applies only to listed models.
+"Sol" below always means `gpt-6-sol`, the older Sol model reachable only by `modelOverride` — not
+`gpt-6.1-sol` (`@openai:flagship`), which is on the sampling-restricted list.
+
+**Current behaviour on the base** (established with no source change, `f2-base.log`), *corrected in
+review round 1*: on the **completion and streaming** paths, on both models, a `temperature` beside any
+non-`'none'` effort — `1` included — is refused locally by `checkTemperatureConflict` ("thinking mode is
+not compatible with temperature on provider openai"), because neither is on
+`samplingParamsRejectedModelPrefixes`, so `temperatureAcceptedWithThinking` is undefined for them;
+`0.3` with effort `'none'` is sent. #771's 5a did not change this: its exemption applies only to listed
+models. **The client-tool path was different, and the first version of this section missed it:**
+`executeClientToolTurn` ran `checkSamplingParams` but not `checkTemperatureConflict`, so the same
+temperature beside a caller-built `openAiEffort` reached the OpenAI Responses adapter, which dropped it
+silently and the call succeeded. Fixed in review round 1 (§ 10).
 
 **Decision: luna stays off `samplingParamsRejectedModelPrefixes`** (state.md D2). That list is
 effort-blind: a listed model's every non-accepted temperature is refused with or without an effort.
@@ -56,7 +63,8 @@ effort-conditional accepted temperature, a new descriptor shape, not this list.
 
 **Evidence the decision is pinned.** Tests in `openAiThinkingAndTemperature.test.ts`: `0.3` +
 effort `'none'` is sent to `gpt-6-luna`, `@openai:mini` and `gpt-6-sol`; `1` and `0.3` beside effort
-`low` are refused on luna and sol. Mutant — luna added to the list (`f2-mutant-luna-listed.log`):
+`low` are refused on `gpt-6-luna` and `gpt-6-sol` — on the completion path in the first version, and
+on all three paths after review round 1. Mutant — luna added to the list (`f2-mutant-luna-listed.log`):
 4 red (`0.3`+`'none'` on luna and `@openai:mini` refused; luna `1` and `0.3` beside `low` no longer
 the conflict message). Restored: all green.
 
@@ -215,3 +223,47 @@ after committing.
 | per-package `heft test --clean` with coverage | `ts-extras` 3617/3617, 100% (incl. new `modelSpecResolver.ts`); `testbed` 710/710, 100% | `x-test-full2.log`, `tb-full2.log` |
 
 No `c8 ignore` added (one removed). No subagent spawned; review applied inline (§ 7).
+
+## 10. Review round 1 (independent review of `2f3ffa6dc`, no P1)
+
+Logs under the same directory, prefixed `r1-`.
+
+1. **(P2) Silent temperature drop on the client-tool path — fixed.** `executeClientToolTurn` now runs
+   `checkTemperatureConflict` before `checkSamplingParams`, the order the completion and streaming
+   paths use, with the caller-built `resolvedThinking` (no degrade, so `noneDegraded` is false) and
+   `temperatureAcceptedWithThinking`. The OpenAI Responses adapter's silent drop is gone: it now sends
+   any temperature the caller provided, as the Chat adapter already did, and its
+   `temperatureAcceptedWithThinking` argument is removed (both callers refuse a conflicting value
+   first). Consequence, disclosed in the change file: on a provider with no thinking discriminator
+   (Groq, Mistral, Ollama, `openai-compat`), a caller-built effort and temperature are both sent as
+   built rather than the temperature being dropped.
+   - **Red → green:** new rows for `gpt-6-luna` and `gpt-6-sol` × {0.3, 1} beside effort `low`, on
+     completion, streaming and client-tool (plus `gpt-6-sol` 0.3 on completion, which was missing).
+     Before the fix the four client-tool rows were red (each succeeded and sent the request),
+     completion and streaming already green (`r1-p2-red.log`). After: green.
+   - Two existing tests in `thinkingOffAndSampling.test.ts` pinned the drop ("adapter safety net",
+     `gpt-6-luna` and `claude-haiku-4-5`); they now expect the refusal. The Anthropic adapter's own
+     drop is unchanged and no longer reachable from the client-tool path for that case.
+2. **(P3) Anthropic guard keyed on `apiFormat` — fixed.** The `anthropicThinkingDisabled` refusal now
+   applies only to an Anthropic-format descriptor. Tests both ways: an OpenAI descriptor carrying the
+   flag on `gpt-6.1-sol` is sent (`reasoning.effort: 'low'`), and the Anthropic refusal still fires.
+   Red: with the `apiFormat` clause removed, the OpenAI-direction test fails (`r1-p3a-red.log`, 1 red).
+3. **(P3) Change file** — now starts `BREAKING (implementers only):` for the `chatOutputTokensField`
+   behaviour change on hand-built descriptors, states the xAI open question, and discloses items 1
+   and 5 here.
+4. **(P3) TSDoc links** — `ChatOutputTokensField` and the `usesMaxCompletionTokensField` remarks use
+   `{@link AiAssist.IAiProviderDescriptor.chatOutputTokensField}`; the moved `modelSpecResolver.ts`
+   links and the `resolveProviderModel` return note use `AiAssist.`-qualified links too.
+   `etc/ts-extras.api.md`: "does not have an export" warnings 103 now (base 106, previous head 110),
+   so none of this stream's remain; the qualified form carries api-extractor's
+   "not supported yet by the resolver" note, as every sibling `AiAssist.` link does (320, base 311).
+5. **(P3) Own-key lookup in `modelSpecResolver.ts` — fixed.** Both the spec and the tier fallback
+   table are read through `Object.prototype.hasOwnProperty` (the package's `lib` is ES2018, so no
+   `Object.hasOwn`). The table lookup mattered as much as the spec: `TIER_FALLBACK['constructor']` was
+   `Object`, which made the walk throw `order.find is not a function`. Tests: `resolveModel` with
+   contexts `constructor`, `toString`, `__proto__` falls back to `base`; `resolveProviderModel` with
+   `'constructor'` resolves the base model. Red against the previous head: 4 red (`r1-p5-red.log`).
+6. **(P3) Wording** — the cancellation test comment now says 90 ms have elapsed, past the 70 ms cap;
+   the ledger says the CLI test got timeout headroom, not that it was made deterministic.
+
+**Re-gate** — see § 11.

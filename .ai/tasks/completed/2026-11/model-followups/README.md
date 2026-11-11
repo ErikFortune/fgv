@@ -30,6 +30,9 @@ Six follow-ups left by `live-run-corrections`, `model-alias-refresh` and the tec
   `model.ts` sat two lines under the 2000-line lint cap.
 - A hand-built descriptor that relied on `id: 'openai'` for `max_completion_tokens` must now declare
   `chatOutputTokensField`.
+- Review round 1 made the client-tool path refuse a temperature beside a caller-built effort, as the
+  completion and streaming paths do, instead of the Responses adapter dropping it silently
+  (`result.md` § 10). "Sol" in this stream means `gpt-6-sol`, not `gpt-6.1-sol`.
 - No live call was made. Every change is proven by stubbed-fetch request-body tests shown red first,
   or, for the flakes, by 20 loaded runs (`result.md` § 5).
 - Open: xAI's `max_completion_tokens` bounds visible output only (`result.md` § 8 Q1); the luna rows in

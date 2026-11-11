@@ -201,19 +201,23 @@ only with its own value, `thinking: { type: 'between_tools' }` (see below). `@an
   ("does not accept a non-default temperature (x): remove temperature, or send 1"; never "disable
   thinking", which these models' rule does not depend on). The value is descriptor-wide; OpenAI's
   list is exactly those two models. `AiAssist.rejectsSamplingParams` answers the
-  question for a concrete id. Not guarded, because it depends on the effort: `gpt-6-luna` (`mini`,
-  `nano`) and `gpt-6-sol` reject `temperature` unless the call sets effort `'none'`. They are
-  deliberately **not** on `samplingParamsRejectedModelPrefixes`, which is effort-blind and would
-  refuse `0.3` with effort `'none'` — the case OpenAI documents as supported. So beside any other
-  effort their `temperature`, `1` included, is the thinking/temperature conflict; whether luna takes
-  `1` there is an open testbed `[OBSERVED]` row.
+  question for a concrete id. `gpt-6-luna` (`mini`, `nano`) and `gpt-6-sol` (the older Sol, not
+  `gpt-6.1-sol`; reachable by `modelOverride` only) reject `temperature` unless the call sets effort
+  `'none'`. They are deliberately **not** on `samplingParamsRejectedModelPrefixes`, which is
+  effort-blind and would refuse `0.3` with effort `'none'` — the case OpenAI documents as supported.
+  So beside any other effort their `temperature`, `1` included, is the thinking/temperature conflict,
+  refused before the wire on all three paths: completion, streaming, and the client-tool path, where
+  a caller-built `resolvedThinking` effort is checked the same way (it used to be dropped silently
+  by the Responses adapter). Whether luna takes `1` beside an effort is an open testbed `[OBSERVED]`
+  row.
 - **`executeClientToolTurn` refuses a caller-built `'none'` effort on a model that cannot run with
   thinking off.** A `resolvedThinking` skips the resolver that degrades or refuses `'none'`, so the
   client-tool path applies the rule itself: on an OpenAI-format descriptor, `openAiEffort: 'none'`
   (or `xaiEffort: 'none'`) aimed at a model on `thinkingRequiredModelPrefixes` (`gpt-6.1-sol`,
   `gpt-6-astra`, `grok-4.7` / `-4.6` / `-4.5`) fails before the wire ("… cannot run with thinking off:
-  set openAiEffort to an effort other than 'none'"), as `anthropicThinkingDisabled` already did on a
-  thinking-required Claude model.
+  set openAiEffort to an effort other than 'none'"), as `anthropicThinkingDisabled` does on a
+  thinking-required Claude model. Each refusal applies only on the wire that reads its field: the
+  Anthropic flag on an Anthropic-format descriptor, the effort on an OpenAI-format one.
 - **The Chat Completions output-token field is declared per provider.**
   `IAiProviderDescriptor.chatOutputTokensField` (read through `usesMaxCompletionTokensField`) names
   the field `maxTokens` is sent as on the OpenAI-format chat path: `max_completion_tokens` for OpenAI,

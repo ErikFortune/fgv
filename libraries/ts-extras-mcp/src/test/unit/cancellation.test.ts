@@ -309,8 +309,9 @@ describe('per-request options against a real in-memory MCP server', () => {
   });
 
   test('maxTotalTimeoutMs caps a call that progress would otherwise extend', async () => {
-    // Progress at 30 and 60 ms resets the 80 ms request deadline to 140 ms; the progress at 90 ms
-    // finds 70 ms already spent and ends the call on the total cap, well before either deadline.
+    // Progress at 30 and 60 ms resets the 80 ms request deadline to 140 ms. The progress at 90 ms
+    // finds 90 ms elapsed, past the 70 ms cap, and ends the call on the total cap, before the 140 ms
+    // request deadline.
     expect(
       await onFakeClock(
         () =>

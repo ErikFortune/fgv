@@ -60,7 +60,11 @@ import {
 import { adaptClientToolParameters, resolveToolConflicts } from '../toolFormats';
 import { type IAiVerifiedEndpoint, clientToolWireFormat, schemaWireProviderId } from '../schemaKeywords';
 import type { IAiCompletionUsage } from '../usageTypes';
-import { type IResolvedThinkingConfig } from '../thinkingOptionsResolver';
+import {
+  checkTemperatureConflict,
+  type IResolvedThinkingConfig,
+  providerDiscriminatorForId
+} from '../thinkingOptionsResolver';
 import { splitChatRequest } from '../chatRequestBuilders';
 import { resolveEffectiveBaseUrl } from '../endpoint';
 import { type IAccumulatedBlock } from './anthropic';
@@ -521,7 +525,9 @@ export interface IExecuteClientToolTurnParams extends IChatRequest {
    * so the provider's own default applies. Many current-gen models reject a non-default value;
    * a model on `IAiProviderDescriptor.samplingParamsRejectedModelPrefixes` still accepts the
    * descriptor's `samplingParamsAcceptedTemperature`, with or without thinking, and is refused
-   * any other value before the wire.
+   * any other value before the wire. Beside a `resolvedThinking` effort, a temperature the
+   * provider's thinking mode rejects is refused before the wire too, as on the completion and
+   * streaming paths, rather than dropped.
    */
   readonly temperature?: number;
   /** Server-side tools to include. */
@@ -804,15 +810,33 @@ export function executeClientToolTurn(
     return fail(modelResult.message);
   }
   const resolvedModel = modelResult.value;
+  // The same order as the completion and streaming paths: the thinking/temperature conflict, then the
+  // model's own sampling rule. A caller-built resolvedThinking carries no degrade, so `noneDegraded`
+  // is false. Without this a temperature beside an effort would reach the adapter and be dropped.
+  const discriminator = providerDiscriminatorForId(descriptor.id);
+  if (resolvedThinking !== undefined && discriminator !== undefined) {
+    const conflictResult = checkTemperatureConflict(
+      resolvedThinking,
+      discriminator,
+      temperature,
+      false,
+      temperatureAcceptedWithThinking(descriptor, resolvedModel)
+    );
+    if (conflictResult.isFailure()) {
+      return fail(`executeClientToolTurn: ${conflictResult.message}`);
+    }
+  }
   const samplingResult = checkSamplingParams(descriptor, resolvedModel, temperature);
   if (samplingResult.isFailure()) {
     return fail(`executeClientToolTurn: ${samplingResult.message}`);
   }
   // A caller-built resolvedThinking skips the resolver that degrades or refuses 'none', so the
-  // same rule is applied here: the flag would send the off value to a model that rejects it. A
+  // same rule is applied here: the flag would send the off value to a model that rejects it. Keyed on
+  // the Anthropic wire, the only adapter that reads the flag. A
   // model with a per-model off value (anthropicThinkingOffTypes) is not thinking-required, so the
   // flag goes through and the adapter sends that value.
   if (
+    descriptor.apiFormat === 'anthropic' &&
     resolvedThinking?.anthropicThinkingDisabled === true &&
     resolvedThinking.anthropicEffort === undefined &&
     isThinkingRequiredModel(descriptor, resolvedModel)
@@ -914,8 +938,7 @@ export function executeClientToolTurn(
           continuationMessages,
           maxTokens,
           supportsCacheUsageReporting(descriptor),
-          gatedCache,
-          temperatureAcceptedWithThinking(descriptor, config.model)
+          gatedCache
         );
       }
       case 'gemini':

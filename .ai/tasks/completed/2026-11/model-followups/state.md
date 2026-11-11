@@ -43,3 +43,20 @@ Worker-owned. Brief is frozen; questions and decisions live here.
 
 - Q1 — xAI's `max_completion_tokens` bounds visible output only; whether deprecated `max_tokens` also
   bounded reasoning is undocumented (result.md § 8).
+
+## Review round 1 (independent review of `2f3ffa6dc`) — dispositions
+
+All six applied; details and red/green in result.md § 10.
+
+- **R1.1 (P2)** client-tool path now runs `checkTemperatureConflict` before `checkSamplingParams`;
+  the Responses adapter no longer drops a temperature (its `temperatureAcceptedWithThinking`
+  argument is removed). Two "adapter safety net" tests now expect the refusal. The result.md § 2
+  "current behaviour" claim was wrong for the client-tool path and is corrected there, with "sol"
+  disambiguated to `gpt-6-sol` throughout.
+- **R1.2 (P3)** `anthropicThinkingDisabled` refusal keyed on `apiFormat === 'anthropic'`.
+- **R1.3 (P3)** change file: `BREAKING (implementers only):` prefix, xAI open question.
+- **R1.4 (P3)** `AiAssist.`-qualified `{@link}`s; no "does not have an export" warning of this
+  stream's remains in `api.md`.
+- **R1.5 (P3)** own-property lookups in the spec and in the tier fallback table (the table lookup
+  was a second instance of the same defect: `'constructor'` made the walk throw).
+- **R1.6 (P3)** comment and ledger wording.
