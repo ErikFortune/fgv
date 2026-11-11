@@ -85,9 +85,12 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
       // "not sooner than 2026-10-15" retirement date). claude-haiku-5-5 is adaptive-only and accepts
       // a forced tool_choice.
       '@anthropic:haiku': 'claude-haiku-5-5',
-      // NON-tier alias; modelOverride only (was claude-fable-5, held for the same forced-tool_choice
-      // reason and rotated with opus; claude-fable-5 stays Active, not sooner than 2027-06-09)
-      '@anthropic:fable': 'claude-fable-5-1'
+      // NON-tier alias; modelOverride only (was claude-fable-5-1, which is still served; before that
+      // claude-fable-5, held for the forced-tool_choice reason and rotated with opus). claude-fable-5-2
+      // is the same role at a lower price ($8 / $40 per MTok against 5.1's $10 / $50) with 5.1's request
+      // surface: https://platform.claude.com/docs/en/models/fable-5-2/whats-new-fable-5-2, fetched
+      // 2026-11-11.
+      '@anthropic:fable': 'claude-fable-5-2'
       // NOTE: no thinking/image/embedding keys — Anthropic completions are all text; base
       // (sonnet-5-5) and advanced (opus-5-5) are both thinking-capable, so a thinking-context
       // call flat-falls to base safely.
@@ -99,7 +102,10 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     // Claude 5 family requires the adaptive thinking wire shape (thinking.type: 'adaptive' +
     // output_config.effort) and 400s on the legacy thinking.type: 'enabled' + budget_tokens
     // shape; see AiAssist.isAdaptiveThinkingModel. The dash-bounded match also covers
-    // claude-opus-5-5, claude-fable-5-1 and claude-sonnet-5-5, which are adaptive-only as well.
+    // claude-opus-5-5, claude-fable-5-1, claude-fable-5-2, claude-mythos-5-2 and claude-sonnet-5-5,
+    // which are adaptive-only as well (Fable 5.2 and Mythos 5.2: "`thinking: {"type": "enabled"}` with
+    // `budget_tokens` and `thinking: {"type": "disabled"}` both return a 400 error",
+    // https://platform.claude.com/docs/en/models/fable-5-2/whats-new-fable-5-2, fetched 2026-11-11).
     // claude-haiku-5-5 ("Manual extended thinking returns an error",
     // https://platform.claude.com/docs/en/models/haiku-5-5/whats-new-haiku-5-5, fetched 2026-11-08) is
     // listed by its own id: claude-haiku-4-5 keeps the budget shape, and no page states a family rule.
@@ -123,7 +129,9 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     // thinks by default. These reject 'disabled' ("400 error" in the "disabled" column of the
     // per-model table, https://platform.claude.com/docs/en/build-with-claude/thinking, fetched
     // 2026-11-08: "Claude Fable 5.1, Claude Mythos 5.1, Claude Fable 5, Claude Mythos 5, Claude Opus
-    // 5.5, and Claude Mythos Preview reject `thinking: {type: "disabled"}`"), so 'none' is sent as
+    // 5.5, and Claude Mythos Preview reject `thinking: {type: "disabled"}`"; refetched 2026-11-11, the
+    // sentence now opens "Claude Fable 5.2, Claude Mythos 5.2, ..." and the 'claude-fable-5' and
+    // 'claude-mythos-5' entries cover both 5.2 ids), so 'none' is sent as
     // 'low' there, or refused. Opus 5.5 and Fable 5.1 confirm it live (2026-11-09): "`thinking.type.
     // disabled` is not supported for this model. Use `thinking.type.adaptive` and
     // `output_config.effort`". claude-opus-5, claude-sonnet-5 and claude-haiku-5-5 accept it (Opus 5
@@ -153,11 +161,11 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     // reached that way (an explicit 'other' block or caller-built otherParams still can). Like the
     // lists above, the rule is dash-bounded on purpose: it also matches future variants of the id.
     anthropicThinkingOffTypes: [{ modelPrefix: 'claude-sonnet-5-5', type: 'between_tools' }],
-    // "On Claude Fable 5.1, Claude Mythos 5.1, Claude Fable 5, Claude Mythos 5, Claude Mythos Preview,
-    // Claude Opus 5.5, Claude Opus 5, Claude Opus 4.8, Claude Opus 4.7, Claude Sonnet 5.5, Claude
-    // Sonnet 5, and Claude Haiku 5.5, non-default `temperature`, `top_p`, or `top_k` values return a
-    // 400 error on every request, regardless of whether thinking is used"
-    // (https://platform.claude.com/docs/en/build-with-claude/thinking, fetched 2026-11-08). The
+    // "On Claude Fable 5.2, Claude Mythos 5.2, Claude Fable 5.1, Claude Mythos 5.1, Claude Fable 5,
+    // Claude Mythos 5, Claude Mythos Preview, Claude Opus 5.5, Claude Opus 5, Claude Opus 4.8, Claude
+    // Opus 4.7, Claude Sonnet 5.5, Claude Sonnet 5, and Claude Haiku 5.5, non-default `temperature`,
+    // `top_p`, or `top_k` values return a 400 error on every request, regardless of whether thinking is
+    // used" (https://platform.claude.com/docs/en/build-with-claude/thinking, fetched 2026-11-11). The
     // dash-bounded entries cover each 5.x point release named there. "Non-default": the rule that
     // rejects the default too belongs to API version 2026-10-21, and ai-assist pins
     // anthropic-version 2023-06-01, so Anthropic's default temperature, 1, is still sent.
@@ -173,15 +181,20 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     ],
     samplingParamsAcceptedTemperature: 1,
     // Two mechanisms, split by what each line accepts. claude-opus-5-5, claude-fable-5-1,
-    // claude-mythos-5-1 and claude-sonnet-5-5 return a 400 on a forced tool_choice ({type:'any'} /
+    // claude-mythos-5-1, claude-fable-5-2, claude-mythos-5-2 and claude-sonnet-5-5 return a 400 on a
+    // forced tool_choice ({type:'any'} /
     // {type:'tool'}): "Forced tool use is not supported",
     // https://platform.claude.com/docs/en/models/opus-5-5/whats-new-opus-5-5 and
     // https://platform.claude.com/docs/en/models/fable-5-1/whats-new-fable-5-1 ("Claude Fable
     // 5.1 and Claude Mythos 5.1 don't support forced tool use") (fetched 2026-09-25), and
     // https://platform.claude.com/docs/en/models/sonnet-5-5/whats-new-sonnet-5-5 ("Claude Sonnet 5.5
-    // doesn't support forced tool use", fetched 2026-11-08). They get JSON outputs
-    // (`output_config.format`), which all four are listed as supporting on
-    // https://platform.claude.com/docs/en/build-with-claude/structured-outputs. Every other line
+    // doesn't support forced tool use", fetched 2026-11-08), and
+    // https://platform.claude.com/docs/en/models/fable-5-2/whats-new-fable-5-2 ("Forced tool use isn't
+    // supported. `tool_choice` set to `{"type": "any"}` or `{"type": "tool", "name": "..."}` returns a
+    // 400 `invalid_request_error`", for Fable 5.2 and Mythos 5.2, fetched 2026-11-11). They get JSON
+    // outputs (`output_config.format`), which all six are listed as supporting on
+    // https://platform.claude.com/docs/en/build-with-claude/structured-outputs (supportedModels,
+    // fetched 2026-11-11). Every other line
     // keeps forced tool use under the catch-all, including claude-haiku-5-5 ("accepts a forced
     // `tool_choice`", its migration guide, fetched 2026-11-08): the '' entry is only correct because
     // the longer prefixes win for the lines that reject it (longest prefix wins; array order does
@@ -191,18 +204,24 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
       { modelPrefix: 'claude-opus-5-5', format: 'anthropic-output-format' },
       { modelPrefix: 'claude-fable-5-1', format: 'anthropic-output-format' },
       { modelPrefix: 'claude-mythos-5-1', format: 'anthropic-output-format' },
+      { modelPrefix: 'claude-fable-5-2', format: 'anthropic-output-format' },
+      { modelPrefix: 'claude-mythos-5-2', format: 'anthropic-output-format' },
       { modelPrefix: 'claude-sonnet-5-5', format: 'anthropic-output-format' },
       { modelPrefix: '', format: 'anthropic-tool-forced' }
     ],
     // Synchronous Messages API limits ("Max output: 128K tokens"; Haiku 4.5 "64K tokens"), each from
     // the model's page under platform.claude.com/docs/en/models, or for Sonnet 5.5 and Haiku 5.5 the
-    // models overview, fetched 2026-11-08. K is read as 1,000, as those docs use it. The 300k
+    // models overview, fetched 2026-11-08; Fable 5.2 and Mythos 5.2 ("Max output: 128K tokens") from
+    // https://platform.claude.com/docs/en/models/fable-5-2/overview and .../models/mythos-5-2/overview,
+    // fetched 2026-11-11. K is read as 1,000, as those docs use it. The 300k
     // Batch-API limit needs a beta header on a batch endpoint ai-assist does not use, so it is not
     // recorded. One entry per model id a page names: limits are never inherited by a sibling id
     // or a snapshot.
     maxOutputTokens: [
+      { modelId: 'claude-fable-5-2', maxOutputTokens: 128000 },
       { modelId: 'claude-fable-5-1', maxOutputTokens: 128000 },
       { modelId: 'claude-fable-5', maxOutputTokens: 128000 },
+      { modelId: 'claude-mythos-5-2', maxOutputTokens: 128000 },
       { modelId: 'claude-mythos-5-1', maxOutputTokens: 128000 },
       { modelId: 'claude-mythos-5', maxOutputTokens: 128000 },
       { modelId: 'claude-opus-5-5', maxOutputTokens: 128000 },
@@ -880,10 +899,15 @@ export const DEFAULT_MODEL_CAPABILITY_CONFIG: IAiModelCapabilityConfig = {
       { idPattern: /^claude-opus-/, capabilities: ['chat', 'tools', 'vision', 'thinking'] },
       { idPattern: /^claude-sonnet-/, capabilities: ['chat', 'tools', 'vision', 'thinking'] },
       { idPattern: /^claude-fable-/, capabilities: ['chat', 'tools', 'vision', 'thinking'] },
-      // claude-mythos-5-1 only: "Same capabilities as Claude Fable 5.1", adaptive thinking always on
-      // (https://platform.claude.com/docs/en/models/fable-5-1/whats-new-fable-5-1, fetched 2026-09-25).
-      // No fetched page states the other Mythos ids' capabilities, so the rule is not family-wide.
-      { idPattern: /^claude-mythos-5-1/, capabilities: ['chat', 'tools', 'vision', 'thinking'] },
+      // claude-mythos-5-1 and claude-mythos-5-2 only: "Same capabilities as Claude Fable 5.1", adaptive
+      // thinking always on (https://platform.claude.com/docs/en/models/fable-5-1/whats-new-fable-5-1,
+      // fetched 2026-09-25), and "Same capabilities as Claude Fable 5.2" ("Text and images → text",
+      // https://platform.claude.com/docs/en/models/fable-5-2/whats-new-fable-5-2 and
+      // .../models/fable-5-2/overview, fetched 2026-11-11). No fetched page states the other Mythos
+      // ids' capabilities, so the rules are not family-wide, and each is dash-bounded so it cannot
+      // reach an id that merely shares its characters (a dated claude-mythos-5 snapshot).
+      { idPattern: /^claude-mythos-5-1(?:-|$)/, capabilities: ['chat', 'tools', 'vision', 'thinking'] },
+      { idPattern: /^claude-mythos-5-2(?:-|$)/, capabilities: ['chat', 'tools', 'vision', 'thinking'] },
       // claude-haiku-5-5 only: adaptive thinking, text and image input, tool use (models overview and
       // https://platform.claude.com/docs/en/models/haiku-5-5/whats-new-haiku-5-5, fetched 2026-11-08).
       // claude-haiku-4-5 keeps the /^claude-/ catch-all.

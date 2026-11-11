@@ -263,6 +263,92 @@ describe('Anthropic streaming adapter — C2 client tool extensions', () => {
     }
   });
 
+  test('buffers web_search blocks as streamed; drops and warns once about any other server tool', async () => {
+    const accBuffer = new Map<number, IAccumulatedBlock>();
+    const logger = new Logging.InMemoryLogger('all');
+    const ev = (name: string, data: unknown): string => `event: ${name}\ndata: ${JSON.stringify(data)}\n\n`;
+    const citation = { type: 'web_search_result_location', url: 'https://example.com', cited_text: 'x' };
+    const search = { type: 'server_tool_use', id: 'srv_1', name: 'web_search', input: {} };
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    const result = { type: 'web_search_tool_result', tool_use_id: 'srv_1', content: [] };
+    const other = { type: 'server_tool_use', id: 'srv_2', name: 'code_execution', input: {} };
+    mockSseResponse([
+      ev('content_block_start', { index: 0, content_block: search }),
+      ev('content_block_delta', {
+        index: 0,
+        delta: { type: 'input_json_delta', partial_json: '{"query":"q"}' }
+      }),
+      ev('content_block_delta', { index: 0, delta: { type: 'citations_delta', citation } }),
+      ev('content_block_delta', { index: 0, delta: { type: 'citations_delta' } }),
+      ev('content_block_delta', { index: 9, delta: { type: 'citations_delta', citation } }),
+      ev('content_block_stop', { index: 0 }),
+      ev('content_block_start', { index: 1, content_block: result }),
+      ev('content_block_stop', { index: 1 }),
+      ev('content_block_start', { index: 2, content_block: other }),
+      ev('content_block_delta', {
+        index: 2,
+        delta: { type: 'input_json_delta', partial_json: '{"code":"1"}' }
+      }),
+      ev('content_block_stop', { index: 2 }),
+      ev('content_block_start', { index: 3, content_block: { type: 'mcp_tool_use', id: 'm1' } }),
+      ev('content_block_start', { index: 4, content_block: { type: 'mcp_tool_use', id: 'm2' } }),
+      ev('message_delta', { delta: { stop_reason: 'end_turn' } }),
+      ev('message_stop', {})
+    ]);
+    const { callAnthropicStream } = await import('../../../packlets/ai-assist/streamingAdapters/anthropic');
+    const streamResult = await callAnthropicStream(
+      { baseUrl: 'https://api.anthropic.com/v1', model: 'claude-haiku-4-5', apiKey: 'sk-test' },
+      TEST_PROMPT,
+      undefined,
+      undefined,
+      undefined,
+      logger,
+      undefined,
+      undefined,
+      accBuffer
+    );
+    expect(streamResult).toSucceed();
+    const events = await collect(streamResult.orThrow());
+    expect(
+      events.filter((e) => e.type === 'tool-event').map((e) => e.type === 'tool-event' && e.phase)
+    ).toEqual(['started', 'completed']);
+    // The web_search pair is buffered as streamed; a citation aimed at it, or at no block, is ignored.
+    expect([...accBuffer.keys()]).toEqual([0, 1]);
+    expect(accBuffer.get(0)).toEqual({ type: 'server_tool_use', block: search, argsBuffer: '{"query":"q"}' });
+    expect(accBuffer.get(1)).toEqual({ type: 'server_tool_result', block: result });
+    // A server tool the adapter cannot pair with its result is not replayed (an orphaned
+    // server_tool_use would 400); one warning per unreplayed block type.
+    const warnings = logger.logged.filter((m) => m.includes('is not replayed'));
+    expect(warnings).toHaveLength(2);
+    expect(warnings[0]).toMatch(/server_tool_use \(code_execution\)/);
+    expect(warnings[1]).toMatch(/mcp_tool_use/);
+  });
+
+  test('drops an unreplayed block quietly when no logger is supplied', async () => {
+    const accBuffer = new Map<number, IAccumulatedBlock>();
+    mockSseResponse([
+      `event: content_block_start\ndata: ${JSON.stringify({
+        index: 0,
+        content_block: { type: 'mcp_tool_use' }
+      })}\n\n`,
+      `event: message_stop\ndata: {}\n\n`
+    ]);
+    const { callAnthropicStream } = await import('../../../packlets/ai-assist/streamingAdapters/anthropic');
+    const streamResult = await callAnthropicStream(
+      { baseUrl: 'https://api.anthropic.com/v1', model: 'claude-haiku-4-5', apiKey: 'sk-test' },
+      TEST_PROMPT,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      accBuffer
+    );
+    await collect(streamResult.orThrow());
+    expect(accBuffer.size).toBe(0);
+  });
+
   test('passes redacted_thinking block through to the accumulation buffer unchanged', async () => {
     const accBuffer = new Map<number, IAccumulatedBlock>();
     const opaqueData = 'REDACTED_BASE64_DATA_OPAQUE_BLOB';

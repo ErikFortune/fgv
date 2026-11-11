@@ -1670,7 +1670,7 @@ describe('structured output', () => {
       {
         label: '@anthropic:fable via modelOverride',
         route: { modelOverride: '@anthropic:fable' },
-        model: 'claude-fable-5-1'
+        model: 'claude-fable-5-2'
       }
     ])(
       '$label sends output_config.format, no tool_choice, and reports "schema"',

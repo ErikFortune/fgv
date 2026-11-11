@@ -419,7 +419,7 @@ const ANTHROPIC_STRUCTURED_OUTPUT_TOOL_NAME: string;
 function anthropicEffortToBudgetTokens(effort: NonNullable<IAnthropicThinkingConfig['effort']>): number;
 
 // @public
-type AnthropicThinkingModelNames = 'claude-sonnet-4-5' | 'claude-sonnet-4-6' | 'claude-sonnet-5' | 'claude-sonnet-5-5' | 'claude-haiku-5-5' | 'claude-opus-4-6' | 'claude-opus-4-7' | 'claude-opus-4-8' | 'claude-opus-5' | 'claude-opus-5-5' | 'claude-fable-5' | 'claude-fable-5-1' | 'claude-mythos-5-1';
+type AnthropicThinkingModelNames = 'claude-sonnet-4-5' | 'claude-sonnet-4-6' | 'claude-sonnet-5' | 'claude-sonnet-5-5' | 'claude-haiku-5-5' | 'claude-opus-4-6' | 'claude-opus-4-7' | 'claude-opus-4-8' | 'claude-opus-5' | 'claude-opus-5-5' | 'claude-fable-5' | 'claude-fable-5-1' | 'claude-fable-5-2' | 'claude-mythos-5-1' | 'claude-mythos-5-2';
 
 // @public
 type AnthropicThinkingOffType = 'disabled' | 'between_tools';

@@ -76,6 +76,7 @@
 
 <!-- BEGIN GENERATED: recent-additions -->
 
+- **2026-11-11** — ai-assist's @anthropic:fable alias now reaches Claude Fable 5.2, and Fable 5.2 and Mythos 5.2 get JSON-outputs structured output, thinking and temperature guards, and a 128K output limit. ([#773](https://github.com/ErikFortune/fgv/pull/773))
 - **2026-11-11** — ai-assist sends max_completion_tokens to Groq and xAI, refuses a hand-built 'none' effort on models that cannot turn thinking off, and fails rather than throws on a malformed model spec.
 - **2026-11-10** — ai-assist sends temperature 1 to GPT-6.1 Sol and GPT-6 Astra, with or without reasoning effort, and still refuses any other value before the wire. ([#771](https://github.com/ErikFortune/fgv/pull/771))
 - **2026-11-09** — ai-assist turns thinking off on Claude Sonnet 5.5 with its own between_tools value, declared per model, and stops claiming thinking-off on Gemini 3.x Flash models a budget of 0 cannot turn off. ([#769](https://github.com/ErikFortune/fgv/pull/769))

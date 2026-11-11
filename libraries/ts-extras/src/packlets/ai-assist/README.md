@@ -228,7 +228,7 @@ only with its own value, `thinking: { type: 'between_tools' }` (see below). `@an
 
 Non-tier aliases, reachable through `modelOverride` only: `@openai:nano` → `gpt-6-luna` (the same
 model as `base`: OpenAI names it as the replacement for the deprecated `gpt-5.4-nano`, and GPT-6 has
-nothing smaller), `@anthropic:haiku` → `claude-haiku-5-5`, `@anthropic:fable` → `claude-fable-5-1`,
+nothing smaller), `@anthropic:haiku` → `claude-haiku-5-5`, `@anthropic:fable` → `claude-fable-5-2`,
 `@google-gemini:flash-lite` → `gemini-3.5-flash-lite`. Groq and Mistral carry no aliases; their
 `defaultModel`s are `openai/gpt-oss-120b` and `{ base: 'mistral-large-4', embedding: 'mistral-embed' }`.
 
@@ -426,8 +426,9 @@ Gemini's schema is an OpenAPI-3.0 subset that **rejects** draft-07 keywords rath
 than ignoring them, so the schema goes through the same sanitizer the Gemini tool
 path uses.
 
-Anthropic has two mechanisms, split by model line. `claude-opus-5-5`,
-`claude-fable-5-1` and `claude-mythos-5-1` return a 400 on a forced `tool_choice`, so they declare
+Anthropic has two mechanisms, split by model line. `claude-opus-5-5`, `claude-sonnet-5-5`,
+`claude-fable-5-1`, `claude-mythos-5-1`, `claude-fable-5-2` and `claude-mythos-5-2` return a 400 on a
+forced `tool_choice`, so they declare
 `anthropic-output-format`: Anthropic's JSON outputs, constrained decoding with the
 reply as text, reported as `'schema'`. (`tool_choice: auto` + a `strict` tool was the
 other documented option and was declined: `auto` lets the model answer in text
