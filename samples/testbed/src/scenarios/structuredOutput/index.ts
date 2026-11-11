@@ -26,7 +26,7 @@
  *   `tool-forced` on `@anthropic:haiku` → `claude-haiku-5-5`, whose reply arrives in a
  *   `tool_use` block and is re-serialized, and `output_config.format` (reported
  *   `'schema'`) on the default model (`@anthropic:sonnet` → `claude-sonnet-5-5`),
- *   `@anthropic:opus` → `claude-opus-5-5` and `@anthropic:fable` → `claude-fable-5-1`,
+ *   `@anthropic:opus` → `claude-opus-5-5` and `@anthropic:fable` → `claude-fable-5-2`,
  *   which return a 400 on a forced `tool_choice`. Against the
  *   hostile prompt, a pass on the second pair proves the grammar suppressed both the
  *   requested fence and the requested extra `funFact` field.
@@ -170,7 +170,7 @@ export const anthropicStructuredOutputScenario: IScenario = makeStructuredScenar
     'Live-verifies both Anthropic structured-output mechanisms: forced tool use on ' +
     '@anthropic:haiku (claude-haiku-5-5; the reply arrives in a tool_use block and is re-serialized), and ' +
     'JSON outputs (output_config.format) on the default model (claude-sonnet-5-5), @anthropic:opus ' +
-    '(claude-opus-5-5) and @anthropic:fable (claude-fable-5-1), which reject a forced tool_choice. Requires ' +
+    '(claude-opus-5-5) and @anthropic:fable (claude-fable-5-2), which reject a forced tool_choice. Requires ' +
     'ANTHROPIC_API_KEY. Web-runnable.',
   tags: ['anthropic'],
   requiredSecrets: [

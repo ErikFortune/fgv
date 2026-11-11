@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras",
+      "comment": "ai-assist: the non-tier @anthropic:fable alias now resolves to claude-fable-5-2 (was claude-fable-5-1, which is still served). claude-fable-5-2 and claude-mythos-5-2 are declared on every per-model table: anthropic-output-format structured output (they reject a forced tool_choice), maxOutputTokens 128000, mythos-5-2 capability detection, and the AnthropicThinkingModelNames union; the adaptive-thinking, thinking-required and sampling-parameter lists already cover both through their dash-bounded claude-fable-5 / claude-mythos-5 entries.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-extras",
+  "email": "noreply@anthropic.com"
+}

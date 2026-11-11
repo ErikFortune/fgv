@@ -197,7 +197,7 @@ describe('AiAssist.registry', () => {
 
     test('the non-tier @anthropic:fable alias resolves via modelOverride only', () => {
       expect(AiAssist.resolveProviderModel(desc, '@anthropic:fable', undefined)).toSucceedWith(
-        'claude-fable-5-1'
+        'claude-fable-5-2'
       );
     });
 
