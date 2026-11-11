@@ -318,7 +318,12 @@ describe('per-request options against a real in-memory MCP server', () => {
             fixture.session,
             'progress',
             {},
-            { timeoutMs: 80, resetTimeoutOnProgress: true, maxTotalTimeoutMs: 70, onProgress: () => undefined }
+            {
+              timeoutMs: 80,
+              resetTimeoutOnProgress: true,
+              maxTotalTimeoutMs: 70,
+              onProgress: () => undefined
+            }
           ),
         200
       )

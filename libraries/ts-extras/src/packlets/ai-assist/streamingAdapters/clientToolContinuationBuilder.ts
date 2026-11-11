@@ -553,7 +553,12 @@ export interface IExecuteClientToolTurnParams extends IChatRequest {
   readonly verifiedEndpoint?: IAiVerifiedEndpoint;
   /** Optional logger for diagnostics. */
   readonly logger?: Logging.ILogger;
-  /** Optional resolved thinking config (pre-resolved by the caller). */
+  /**
+   * Optional resolved thinking config (pre-resolved by the caller). Sent as built, except that a
+   * thinking-off value aimed at a model in `thinkingRequiredModelPrefixes` — `anthropicThinkingDisabled`
+   * with no `anthropicEffort`, or an OpenAI-format `openAiEffort` / `xaiEffort` of `'none'` — is
+   * refused before the wire, since the provider rejects it.
+   */
   readonly resolvedThinking?: IResolvedThinkingConfig;
   /** Resolved model string (pre-resolved by the caller). When omitted, uses the descriptor's default model. */
   readonly model?: string;

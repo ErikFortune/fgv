@@ -329,7 +329,9 @@ describe('usesMaxCompletionTokensField', () => {
 
   test('reads the declaration, not the provider id', () => {
     const openai = AiAssist.getProviderDescriptor('openai').orThrow();
-    expect(AiAssist.usesMaxCompletionTokensField({ ...openai, chatOutputTokensField: undefined })).toBe(false);
-    expect(AiAssist.usesMaxCompletionTokensField({ ...openai, chatOutputTokensField: 'max_tokens' })).toBe(false);
+    const unset = { ...openai, chatOutputTokensField: undefined };
+    const legacy: AiAssist.IAiProviderDescriptor = { ...openai, chatOutputTokensField: 'max_tokens' };
+    expect(AiAssist.usesMaxCompletionTokensField(unset)).toBe(false);
+    expect(AiAssist.usesMaxCompletionTokensField(legacy)).toBe(false);
   });
 });

@@ -23,11 +23,12 @@
  * @packageDocumentation
  */
 
-import { fail, formatValueForMessage, type Result, succeed } from '@fgv/ts-utils';
+import { fail, type Result, succeed } from '@fgv/ts-utils';
 import { type JsonObject } from '@fgv/ts-json-base';
 import type { IAiStructuredOutputCapability, StructuredOutputEnforcement } from './structuredOutputTypes';
 import type { IAiCompletionUsage } from './usageTypes';
 import type { IAnthropicThinkingOffRule } from './anthropicThinkingOff';
+import { walkModelSpec } from './modelSpecResolver';
 import type {
   AiServerToolType,
   IAiStreamToolUseComplete,
@@ -283,12 +284,6 @@ export const allModelSpecKeys: ReadonlyArray<ModelSpecKey> = [
 ];
 
 /**
- * Default context key used as fallback when resolving a {@link ModelSpec}.
- * @public
- */
-export const MODEL_SPEC_BASE_KEY: ModelSpecKey = 'base';
-
-/**
  * A model specification: either a simple model string or a record mapping
  * context keys to nested model specs.
  *
@@ -318,81 +313,6 @@ export interface IModelSpecMap {
  * @public
  */
 export type ModelSpec = string | IModelSpecMap;
-
-/**
- * Ordered fallback candidates for each quality-tier context key.
- *
- * @remarks
- * A `frontier` request cascades `frontier → advanced → base`; an `advanced`
- * request cascades `advanced → base`. Any context not listed here (the
- * `image`/`embedding` modality keys, or an arbitrary caller-supplied string)
- * resolves flat — just the context itself, then the shared `base` fallback
- * below — matching the pre-tier behavior. `base` maps to `['base']` so a
- * `base` request never over-reaches into a tier branch.
- */
-const TIER_FALLBACK: { readonly [k: string]: ReadonlyArray<ModelSpecKey> } = {
-  base: ['base'],
-  advanced: ['advanced', 'base'],
-  frontier: ['frontier', 'advanced', 'base']
-};
-
-/**
- * Resolves a {@link ModelSpec} to a concrete model string given an optional context key.
- *
- * @remarks
- * Resolution rules:
- * 1. If the spec is a string, return it directly (context is irrelevant).
- * 2. If the spec is an object, walk the ordered candidate keys for the context:
- *    a quality-tier context (`advanced`/`frontier`) cascades through the
- *    tier-fallback table (`frontier → advanced → base`, `advanced → base`);
- *    every other context resolves flat (`[context]`); `undefined` resolves to
- *    the shared `base` fallback. The first present key wins.
- * 3. Otherwise, fall back to the {@link MODEL_SPEC_BASE_KEY | 'base'} key.
- * 4. If neither context nor `'base'` exists, use the first available value; an
- *    empty spec resolves to `''`.
- *
- * A spec outside the {@link ModelSpec} type — a key holding `undefined`, `null` or a number,
- * reachable from untyped JSON or a cast — also resolves to `''` rather than throwing. Use
- * {@link AiAssist.resolveProviderModel} for a `Failure` that names the provider and the offending key.
- *
- * @param spec - The model specification to resolve
- * @param context - Optional context key (e.g. `'advanced'`)
- * @returns The resolved model string
- * @public
- */
-export function resolveModel(spec: ModelSpec, context?: string): string {
-  return walkModelSpec(spec, context, 'spec').orDefault('');
-}
-
-/**
- * The walk behind {@link resolveModel} and {@link resolveProviderModel}: the same rules, failing
- * with the dotted path of a key whose value is neither a model id nor a spec object.
- */
-function walkModelSpec(spec: ModelSpec, context: string | undefined, path: string): Result<string> {
-  if (typeof spec === 'string') {
-    return succeed(spec);
-  }
-  // `ModelSpec` excludes this, but untyped JSON or a cast does not: refuse the value here rather
-  // than let the `in` below throw on it.
-  if (typeof spec !== 'object' || spec === null) {
-    return fail(
-      `model spec ${path} is ${formatValueForMessage(spec)}: expected a model id or a model spec object`
-    );
-  }
-
-  // Ordered candidate keys for this context: a tier key cascades via
-  // TIER_FALLBACK; any other key resolves flat as [context]; undefined drops
-  // straight to the shared 'base' fallback below.
-  const order: ReadonlyArray<string> = context === undefined ? [] : TIER_FALLBACK[context] ?? [context];
-  const key =
-    order.find((candidate) => candidate in spec) ??
-    (MODEL_SPEC_BASE_KEY in spec ? MODEL_SPEC_BASE_KEY : Object.keys(spec)[0]);
-  // Last resort exhausted: an empty spec names no model.
-  if (key === undefined) {
-    return succeed('');
-  }
-  return walkModelSpec(spec[key], undefined, `${path}.${key}`);
-}
 
 // ============================================================================
 // Model Alias Layer

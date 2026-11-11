@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras",
+      "comment": "ai-assist: (1) executeClientToolTurn refuses a caller-built resolvedThinking whose OpenAI-format effort (openAiEffort, or xaiEffort) is 'none' when the model is on thinkingRequiredModelPrefixes (gpt-6.1-sol, gpt-6-astra, grok-4.7/4.6/4.5), before the wire, with '<model> cannot run with thinking off: set openAiEffort to an effort other than 'none'' \u2014 the provider 400s it; anthropicThinkingDisabled already had the same guard. (2) New IAiProviderDescriptor.chatOutputTokensField ('max_tokens' | 'max_completion_tokens', exported type ChatOutputTokensField) declares the Chat Completions output-token field; usesMaxCompletionTokensField now reads it instead of matching the provider id 'openai'. OpenAI, Groq and xAI Grok declare 'max_completion_tokens' (each API reference marks max_tokens deprecated), so Groq and xAI chat requests now send maxTokens as max_completion_tokens rather than max_tokens; Mistral, Ollama and openai-compat keep max_tokens. A hand-built descriptor that relied on id 'openai' to get max_completion_tokens must now declare the field. (3) resolveProviderModel \u2014 and the completion, streaming, client-tool and resolveMaxOutputTokens paths through it \u2014 fails with the provider id and the offending key's path on a ModelSpec outside its type (e.g. { base: undefined } from untyped JSON) instead of throwing a TypeError; resolveModel resolves such a spec to ''.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-extras",
+  "email": "noreply@anthropic.com"
+}

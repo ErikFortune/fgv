@@ -78,8 +78,6 @@ export {
   type ModelSpecKey,
   type IModelSpecMap,
   allModelSpecKeys,
-  MODEL_SPEC_BASE_KEY,
-  resolveModel,
   type IModelAliasMap,
   MODEL_ALIAS_SIGIL,
   resolveModelAlias,
@@ -107,6 +105,7 @@ export {
   type GeminiThinkingModelNames,
   type XAiThinkingModelNames
 } from './model';
+export { MODEL_SPEC_BASE_KEY, resolveModel } from './modelSpecResolver';
 
 export {
   type AnthropicThinkingOffType,

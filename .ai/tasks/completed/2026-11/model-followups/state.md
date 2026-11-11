@@ -6,11 +6,11 @@ Worker-owned. Brief is frozen; questions and decisions live here.
 
 - [x] F1 — OpenAI-format client-tool `'none'` guard (red 5 → green 9/9)
 - [x] F2 — luna/sol temperature beside an effort: decided NOT to list luna; OBSERVED rows added
-- [ ] 3 — `resolveModel` fails instead of throwing
-- [ ] 4 — Groq `max_completion_tokens`
-- [ ] 5 — flake hardening (5 tests)
-- [ ] 6 — held aliases re-check
-- [ ] docs / change files / ledger / meta / result
+- [x] 3 — `resolveModel` fails instead of throwing (walk moved to `modelSpecResolver.ts`: `model.ts` hit `max-lines`)
+- [x] 4 — Groq `max_completion_tokens` (also xAI, documented; Mistral/Ollama not)
+- [x] 5 — flake hardening: 4 fixed or confirmed fixed, egress narrowed (no repro)
+- [x] 6 — held aliases re-check: both stay held; FUTURE entry for gemini-embedding-2
+- [x] docs / change files / ledger / meta / result
 - [ ] gate
 
 ## Decisions
@@ -30,6 +30,16 @@ Worker-owned. Brief is frozen; questions and decisions live here.
   effort-conditional accepted temperature, which is a new descriptor shape, not this list.
   gpt-6-sol is not a tier model, so no row reaches it; the same reasoning applies.
 
+- **D3 (item 3)** `resolveModel` keeps its `string` signature (an external consumer calls it
+  directly); a malformed spec resolves to `''` there. `resolveProviderModel`, already a `Result`,
+  carries the failure with provider id and path.
+- **D4 (item 4)** xAI declared too: its API reference marks `max_tokens` deprecated. Mistral and
+  Ollama document only `max_tokens`. docs.ollama.com does not resolve from this session; the same
+  page was read from the ollama/ollama repository.
+- **D5 (item 5, egress)** Not changed: no reproduction in 37 loaded runs, and the recorded failure
+  (a full 15 s timeout) is not a margin a bound would fix. Entry narrowed instead.
+
 ## Questions
 
-(none)
+- Q1 — xAI's `max_completion_tokens` bounds visible output only; whether deprecated `max_tokens` also
+  bounded reasoning is undocumented (result.md § 8).

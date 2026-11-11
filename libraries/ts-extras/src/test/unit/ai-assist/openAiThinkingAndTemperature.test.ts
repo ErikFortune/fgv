@@ -130,19 +130,22 @@ describe("executeClientToolTurn: caller-built OpenAI-format effort 'none'", () =
     expect(global.fetch).not.toHaveBeenCalled();
   });
 
-  test.each(['gpt-6-luna', 'gpt-6-sol'])("sends openAiEffort 'none' to %s, which accepts it", async (model) => {
-    mockSse();
-    const result = AiAssist.executeClientToolTurn({
-      descriptor: openai,
-      apiKey: 'k',
-      ...prompt.toRequest(),
-      clientTools: [],
-      model,
-      resolvedThinking: { openAiEffort: 'none' }
-    });
-    await drain(result.orThrow().events);
-    expect(sentBody()).toMatchObject({ model, reasoning: { effort: 'none' } });
-  });
+  test.each(['gpt-6-luna', 'gpt-6-sol'])(
+    "sends openAiEffort 'none' to %s, which accepts it",
+    async (model) => {
+      mockSse();
+      const result = AiAssist.executeClientToolTurn({
+        descriptor: openai,
+        apiKey: 'k',
+        ...prompt.toRequest(),
+        clientTools: [],
+        model,
+        resolvedThinking: { openAiEffort: 'none' }
+      });
+      await drain(result.orThrow().events);
+      expect(sentBody()).toMatchObject({ model, reasoning: { effort: 'none' } });
+    }
+  );
 
   test('sends a non-none effort to a thinking-required model', async () => {
     mockSse();

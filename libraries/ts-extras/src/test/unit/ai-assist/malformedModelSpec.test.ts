@@ -72,9 +72,7 @@ describe('a malformed ModelSpec fails instead of throwing', () => {
     });
 
     test('still reports an empty spec as no model resolved', () => {
-      expect(AiAssist.resolveProviderModel(openai, {})).toFailWith(
-        /provider "openai": no model resolved/
-      );
+      expect(AiAssist.resolveProviderModel(openai, {})).toFailWith(/provider "openai": no model resolved/);
     });
   });
 
