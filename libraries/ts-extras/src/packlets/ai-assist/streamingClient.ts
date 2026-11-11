@@ -230,8 +230,7 @@ export async function callProviderCompletionStream(
           undefined,
           maxTokens,
           supportsCacheUsageReporting(descriptor),
-          gatedCache,
-          temperatureAcceptedWithThinking(descriptor, config.model)
+          gatedCache
         );
       }
       return callOpenAiChatStream(

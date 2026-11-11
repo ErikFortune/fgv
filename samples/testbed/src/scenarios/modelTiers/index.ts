@@ -84,10 +84,19 @@ const ANTHROPIC_TEMPERATURE_PROBES: ReadonlyArray<ICanaryTemperatureProbe> = [
  * guard, so that row expects the provider's rejection. `gpt-6.1-sol` and `gpt-6-astra` have no
  * `'none'`: they accept their default, 1, with and without an effort (live, 2026-11-10;
  * `samplingParamsAcceptedTemperature`), and the library refuses any other value before the wire.
+ *
+ * Open question: does `gpt-6-luna` accept its default, 1, beside an explicit effort, the way sol and
+ * astra do? Its 400 for 0.3 at the default effort reads "Only the default (1) value is supported".
+ * The library refuses any temperature beside a non-`'none'` effort on luna (it is not on
+ * `samplingParamsRejectedModelPrefixes`, because that list would also refuse 0.3 with effort
+ * `'none'`), so the two report-only rows send the temperature raw, past that gate: `1` and, as the
+ * control that the raw value reaches the provider, `0.3`, each with effort `low`.
  */
 const OPENAI_TEMPERATURE_PROBES: ReadonlyArray<ICanaryTemperatureProbe> = [
   { temperature: 0.3, effort: 'none', models: ['gpt-6-luna'], expect: 'accepted' },
   { temperature: 0.3, models: ['gpt-6-luna'], expect: 'expected-reject', rejectPattern: /temperature/i },
+  { temperature: 1, effort: 'low', models: ['gpt-6-luna'], raw: true, expect: 'observed' },
+  { temperature: 0.3, effort: 'low', models: ['gpt-6-luna'], raw: true, expect: 'observed' },
   { temperature: 1, models: ['gpt-6.1-sol', 'gpt-6-astra'], expect: 'accepted' },
   { temperature: 1, effort: 'low', models: ['gpt-6.1-sol', 'gpt-6-astra'], expect: 'accepted' },
   { temperature: 0.3, models: ['gpt-6.1-sol', 'gpt-6-astra'], expect: 'refused-locally' }
@@ -382,7 +391,8 @@ export const openaiModelTiersScenario: IScenario = makeTierScenario({
   description:
     'Resolves and (with OPENAI_API_KEY) live-canaries the OpenAI base/advanced/frontier tiers ' +
     '(gpt-6-luna / gpt-6.1-sol / gpt-6-astra), probes each with thinking effort none and low (and none with onUnsupported fail), ' +
-    'probes temperature (gpt-6-luna: accepted with effort none, a provider 400 without; gpt-6.1-sol / ' +
+    'probes temperature (gpt-6-luna: accepted with effort none, a provider 400 without, and 1 / 0.3 beside effort low ' +
+    'sent raw and only reported; gpt-6.1-sol / ' +
     'gpt-6-astra: 1 accepted with and without effort low, 0.3 refused locally), sends each tier its recorded max output tokens, and ' +
     'fires one live image generation (gpt-image-2.5-sunburst, quality low). Logs each alias -> ' +
     'concrete id. The image may be access-gated — reported BLOCKED, not failed. Web-runnable.',

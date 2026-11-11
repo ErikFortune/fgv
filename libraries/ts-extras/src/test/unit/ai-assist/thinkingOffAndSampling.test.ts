@@ -884,7 +884,7 @@ describe('per-model thinking-off and sampling-parameter rules', () => {
     );
 
     // A model off the rejected list keeps the thinking/temperature conflict, for 1 as for any value.
-    test('client-tool: openai gpt-6-luna drops temperature 1 beside a resolved effort (adapter safety net)', async () => {
+    test('client-tool: openai gpt-6-luna refuses temperature 1 beside a resolved effort', () => {
       mockSse();
       const result = AiAssist.executeClientToolTurn({
         descriptor: getDescriptor('openai'),
@@ -895,8 +895,8 @@ describe('per-model thinking-off and sampling-parameter rules', () => {
         temperature: 1,
         resolvedThinking: { openAiEffort: 'low' }
       });
-      await drain(result.orThrow().events);
-      expect(sentBody().temperature).toBeUndefined();
+      expect(result).toFailWith(/thinking mode is not compatible with temperature/);
+      expect(global.fetch).not.toHaveBeenCalled();
     });
 
     // Older models keep the thinking/temperature conflict: they accept temperature only with thinking off.
@@ -926,7 +926,7 @@ describe('per-model thinking-off and sampling-parameter rules', () => {
       }
     );
 
-    test('client-tool: claude-haiku-4-5 drops temperature 1 beside a resolved effort (adapter safety net)', async () => {
+    test('client-tool: claude-haiku-4-5 refuses temperature 1 beside a resolved effort', () => {
       mockSse();
       const result = AiAssist.executeClientToolTurn({
         descriptor: anthropic,
@@ -937,8 +937,8 @@ describe('per-model thinking-off and sampling-parameter rules', () => {
         temperature: 1,
         resolvedThinking: { anthropicEffort: 'low' }
       });
-      await drain(result.orThrow().events);
-      expect(sentBody().temperature).toBeUndefined();
+      expect(result).toFailWith(/thinking mode is not compatible with temperature/);
+      expect(global.fetch).not.toHaveBeenCalled();
     });
   });
 });

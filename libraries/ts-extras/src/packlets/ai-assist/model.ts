@@ -29,6 +29,7 @@ import type { IAiStructuredOutputCapability, StructuredOutputEnforcement } from 
 import type { IAiCompletionUsage } from './usageTypes';
 import type { IAnthropicThinkingOffRule } from './anthropicThinkingOff';
 import type { IGeminiThinkingConfig, IGeminiThinkingLevelRule } from './geminiThinking';
+import { walkModelSpec } from './modelSpecResolver';
 import type {
   AiServerToolType,
   IAiStreamToolUseComplete,
@@ -284,12 +285,6 @@ export const allModelSpecKeys: ReadonlyArray<ModelSpecKey> = [
 ];
 
 /**
- * Default context key used as fallback when resolving a {@link ModelSpec}.
- * @public
- */
-export const MODEL_SPEC_BASE_KEY: ModelSpecKey = 'base';
-
-/**
  * A model specification: either a simple model string or a record mapping
  * context keys to nested model specs.
  *
@@ -319,71 +314,6 @@ export interface IModelSpecMap {
  * @public
  */
 export type ModelSpec = string | IModelSpecMap;
-
-/**
- * Ordered fallback candidates for each quality-tier context key.
- *
- * @remarks
- * A `frontier` request cascades `frontier → advanced → base`; an `advanced`
- * request cascades `advanced → base`. Any context not listed here (the
- * `image`/`embedding` modality keys, or an arbitrary caller-supplied string)
- * resolves flat — just the context itself, then the shared `base` fallback
- * below — matching the pre-tier behavior. `base` maps to `['base']` so a
- * `base` request never over-reaches into a tier branch.
- */
-const TIER_FALLBACK: { readonly [k: string]: ReadonlyArray<ModelSpecKey> } = {
-  base: ['base'],
-  advanced: ['advanced', 'base'],
-  frontier: ['frontier', 'advanced', 'base']
-};
-
-/**
- * Resolves a {@link ModelSpec} to a concrete model string given an optional context key.
- *
- * @remarks
- * Resolution rules:
- * 1. If the spec is a string, return it directly (context is irrelevant).
- * 2. If the spec is an object, walk the ordered candidate keys for the context:
- *    a quality-tier context (`advanced`/`frontier`) cascades through the
- *    tier-fallback table (`frontier → advanced → base`, `advanced → base`);
- *    every other context resolves flat (`[context]`); `undefined` resolves to
- *    the shared `base` fallback. The first present key wins.
- * 3. Otherwise, fall back to the {@link MODEL_SPEC_BASE_KEY | 'base'} key.
- * 4. If neither context nor `'base'` exists, use the first available value.
- *
- * @param spec - The model specification to resolve
- * @param context - Optional context key (e.g. `'advanced'`)
- * @returns The resolved model string
- * @public
- */
-export function resolveModel(spec: ModelSpec, context?: string): string {
-  if (typeof spec === 'string') {
-    return spec;
-  }
-
-  // Ordered candidate keys for this context: a tier key cascades via
-  // TIER_FALLBACK; any other key resolves flat as [context]; undefined drops
-  // straight to the shared 'base' fallback below.
-  const order: ReadonlyArray<string> = context === undefined ? [] : TIER_FALLBACK[context] ?? [context];
-  for (const key of order) {
-    if (key in spec) {
-      return resolveModel(spec[key]);
-    }
-  }
-
-  // Fall back to 'base'
-  if (MODEL_SPEC_BASE_KEY in spec) {
-    return resolveModel(spec[MODEL_SPEC_BASE_KEY]);
-  }
-
-  // Last resort: first value in the record
-  const first = Object.values(spec)[0];
-  /* c8 ignore next 3 - defensive: only reachable with empty object (prevented by converter) */
-  if (first === undefined) {
-    return '';
-  }
-  return resolveModel(first);
-}
 
 // ============================================================================
 // Model Alias Layer
@@ -494,7 +424,9 @@ export function resolveModelAlias(descriptor: IAiProviderDescriptor, model: stri
  * @param modelOverride - An optional caller-supplied `ModelSpec` that takes precedence
  * over `descriptor.defaultModel`. May itself contain or be an alias.
  * @param context - Optional {@link ModelSpecKey} selecting the spec branch.
- * @returns `Result` with the concrete provider model id, or a failure.
+ * @returns `Result` with the concrete provider model id, or a failure. A spec outside the
+ * {@link AiAssist.ModelSpec} type fails with the provider id and the dotted path of the offending key
+ * (`provider "openai": model spec modelOverride.base is undefined: …`).
  * @public
  */
 export function resolveProviderModel(
@@ -502,13 +434,16 @@ export function resolveProviderModel(
   modelOverride: ModelSpec | undefined,
   context?: ModelSpecKey
 ): Result<string> {
-  const resolved = resolveModel(modelOverride ?? descriptor.defaultModel, context);
-  if (resolved.length === 0) {
-    return fail(
-      `provider "${descriptor.id}": no model resolved; pass modelOverride or set descriptor.defaultModel`
+  const spec = modelOverride ?? descriptor.defaultModel;
+  return walkModelSpec(spec, context, modelOverride !== undefined ? 'modelOverride' : 'defaultModel')
+    .withErrorFormat((msg) => `provider "${descriptor.id}": ${msg}`)
+    .onSuccess((resolved) =>
+      resolved.length === 0
+        ? fail<string>(
+            `provider "${descriptor.id}": no model resolved; pass modelOverride or set descriptor.defaultModel`
+          )
+        : resolveModelAlias(descriptor, resolved)
     );
-  }
-  return resolveModelAlias(descriptor, resolved);
 }
 
 /**
@@ -652,16 +587,22 @@ export function checkSamplingParams(
 }
 
 /**
+ * The Chat Completions request field that caps output length (see
+ * {@link AiAssist.IAiProviderDescriptor.chatOutputTokensField}).
+ * @public
+ */
+export type ChatOutputTokensField = 'max_tokens' | 'max_completion_tokens';
+
+/**
  * Determines whether a provider's OpenAI-compatible Chat Completions request
  * should use the modern `max_completion_tokens` field instead of the legacy
  * `max_tokens` field for capping output length.
  *
  * @remarks
- * OpenAI's Chat Completions API deprecated `max_tokens` in favor of
- * `max_completion_tokens`. Every other provider routed through the shared
- * OpenAI-compatible chat-completions adapter (xAI Grok, Groq, Mistral, Ollama,
- * self-hosted `openai-compat` servers) still expects the legacy `max_tokens`
- * field, so this returns `true` only for the `'openai'` provider id. Consulted
+ * Reads the descriptor's {@link AiAssist.IAiProviderDescriptor.chatOutputTokensField} declaration.
+ * In the shipped registry OpenAI, Groq and xAI Grok declare `'max_completion_tokens'` (each
+ * API reference marks `max_tokens` deprecated in its favor); Mistral, Ollama and self-hosted
+ * `openai-compat` servers declare nothing and keep `max_tokens`. Consulted
  * by both the completion (`callProviderCompletion`) and streaming
  * (`callProviderCompletionStream`) chat-completions dispatch branches. Not
  * consulted on the Responses API path — `max_output_tokens` applies uniformly
@@ -669,11 +610,11 @@ export function checkSamplingParams(
  * nor by any non-`'openai'`-format provider (Anthropic, Gemini).
  *
  * @param descriptor - The provider descriptor.
- * @returns `true` only for the `'openai'` provider id.
+ * @returns `true` when the descriptor declares `'max_completion_tokens'`.
  * @public
  */
 export function usesMaxCompletionTokensField(descriptor: IAiProviderDescriptor): boolean {
-  return descriptor.id === 'openai';
+  return descriptor.chatOutputTokensField === 'max_completion_tokens';
 }
 
 // ============================================================================
@@ -1037,6 +978,15 @@ export interface IAiProviderDescriptor {
    * behind an opt-in beta header or a batch endpoint that ai-assist does not use is not recorded.
    */
   readonly maxOutputTokens?: ReadonlyArray<IAiMaxOutputTokensCapability>;
+  /**
+   * The Chat Completions request field that carries `maxTokens` on this provider's
+   * OpenAI-format chat path: `'max_completion_tokens'`, or the legacy `'max_tokens'` (the
+   * default when undefined). Declare `'max_completion_tokens'` only where the provider's API
+   * reference accepts it; a server that does not know the field ignores it and the cap is lost.
+   * Read through {@link AiAssist.usesMaxCompletionTokensField}. Not consulted on the Responses API
+   * path (`max_output_tokens`) or by a non-`'openai'` `apiFormat`.
+   */
+  readonly chatOutputTokensField?: ChatOutputTokensField;
   /**
    * Concrete model ids (prefix-matched) that must be invoked via the OpenAI
    * Responses API rather than chat completions — e.g. `gpt-5.5-pro`. Non-OpenAI

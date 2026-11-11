@@ -448,12 +448,20 @@ describe('openai-model-tiers, keyed, against a fake OpenAI', () => {
       expect(report).toMatch(/\[PASS\] frontier temp=1\s+gpt-6-astra/);
       expect(report).toMatch(/\[PASS\] advanced temp=1\+effort=low\s+gpt-6\.1-sol/);
       expect(report).toMatch(/\[PASS\] frontier temp=1\+effort=low\s+gpt-6-astra/);
-      expect(report).not.toMatch(/OBSERVED|temp=1 raw/);
+      // The luna raw rows only report what the provider said; this fake rejects both.
+      expect(report).toMatch(
+        /\[OBSERVED\] base temp=1\+effort=low raw\s+gpt-6-luna\s+\(rejected: AI API returned 400/
+      );
+      expect(report).toMatch(
+        /\[OBSERVED\] base temp=0\.3\+effort=low raw\s+gpt-6-luna\s+\(rejected: AI API returned 400/
+      );
+      expect(report).not.toMatch(/(advanced|frontier) temp=[0-9.]+(\+effort=low)? raw/);
       expect(report).toMatch(/\[PASS\] frontier max=128000\s+gpt-6-astra/);
       expect(report).toMatch(/LIVE-VERIFIED/);
     });
     const bodies = sent.map((s) => s.body);
-    // The two luna rows carry 0.3; sol and astra carry 1, as the temperature parameter, alone and
+    // The typed luna rows carry 0.3; the raw luna rows carry 1 and 0.3 beside reasoning_effort
+    // 'low', past the library's gate; sol and astra carry 1, as the temperature parameter, alone and
     // beside reasoning_effort 'low'. Nothing carries 0.3 to sol or astra.
     expect(
       bodies
@@ -462,6 +470,8 @@ describe('openai-model-tiers, keyed, against a fake OpenAI', () => {
     ).toEqual([
       ['gpt-6-luna', 0.3, 'none'],
       ['gpt-6-luna', 0.3, undefined],
+      ['gpt-6-luna', 1, 'low'],
+      ['gpt-6-luna', 0.3, 'low'],
       ['gpt-6.1-sol', 1, undefined],
       ['gpt-6-astra', 1, undefined],
       ['gpt-6.1-sol', 1, 'low'],

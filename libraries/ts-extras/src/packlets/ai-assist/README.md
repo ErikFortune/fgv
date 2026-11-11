@@ -55,7 +55,7 @@ export interface IModelAliasMap {
 | Function | Use for |
 |---|---|
 | `resolveModelAlias(descriptor, model)` | Resolve a single (possibly-aliased) string. No `@` → verbatim. `@` + registered → target, following the `@`-alias chain (one hop is typical; an alias may target another `@`-alias) until a non-`@` id is reached; cycle-guarded. `@` + unregistered → loud fail. |
-| `resolveProviderModel(descriptor, modelOverride, context?)` | The call-time chokepoint: the `ModelSpecKey` walk (`resolveModel`) **then** `resolveModelAlias`. Used by the completion, streaming, image, embedding, and client-tool paths. |
+| `resolveProviderModel(descriptor, modelOverride, context?)` | The call-time chokepoint: the `ModelSpecKey` walk (`resolveModel`) **then** `resolveModelAlias`. Used by the completion, streaming, image, embedding, and client-tool paths. A spec outside the `ModelSpec` type (a key holding `undefined`, `null` or a number — untyped JSON or a cast) fails here with the provider id and the offending key's path (`provider "openai": model spec modelOverride.base is undefined: …`) instead of throwing; `resolveModel` itself resolves such a spec to `''`. |
 
 Resolution is **call-time**, not registry-build-time, so the registry stays a pure inspectable data
 structure and the proxy path resolves server-side via the reconstructed descriptor — **except for a
@@ -216,8 +216,30 @@ only with its own value, `thinking: { type: 'between_tools' }` (see below). `@an
   ("does not accept a non-default temperature (x): remove temperature, or send 1"; never "disable
   thinking", which these models' rule does not depend on). The value is descriptor-wide; OpenAI's
   list is exactly those two models. `AiAssist.rejectsSamplingParams` answers the
-  question for a concrete id. Not guarded, because it depends on the effort: `gpt-6-luna` (`mini`,
-  `nano`) and `gpt-6-sol` reject `temperature` unless the call sets effort `'none'`.
+  question for a concrete id. `gpt-6-luna` (`mini`, `nano`) and `gpt-6-sol` (the older Sol, not
+  `gpt-6.1-sol`; reachable by `modelOverride` only) reject `temperature` unless the call sets effort
+  `'none'`. They are deliberately **not** on `samplingParamsRejectedModelPrefixes`, which is
+  effort-blind and would refuse `0.3` with effort `'none'` — the case OpenAI documents as supported.
+  So beside any other effort their `temperature`, `1` included, is the thinking/temperature conflict,
+  refused before the wire on all three paths: completion, streaming, and the client-tool path, where
+  a caller-built `resolvedThinking` effort is checked the same way (it used to be dropped silently
+  by the Responses adapter). Whether luna takes `1` beside an effort is an open testbed `[OBSERVED]`
+  row.
+- **`executeClientToolTurn` refuses a caller-built `'none'` effort on a model that cannot run with
+  thinking off.** A `resolvedThinking` skips the resolver that degrades or refuses `'none'`, so the
+  client-tool path applies the rule itself: on an OpenAI-format descriptor, `openAiEffort: 'none'`
+  (or `xaiEffort: 'none'`) aimed at a model on `thinkingRequiredModelPrefixes` (`gpt-6.1-sol`,
+  `gpt-6-astra`, `grok-4.7` / `-4.6` / `-4.5`) fails before the wire ("… cannot run with thinking off:
+  set openAiEffort to an effort other than 'none'"), as `anthropicThinkingDisabled` does on a
+  thinking-required Claude model. Each refusal applies only on the wire that reads its field: the
+  Anthropic flag on an Anthropic-format descriptor, the effort on an OpenAI-format one.
+- **The Chat Completions output-token field is declared per provider.**
+  `IAiProviderDescriptor.chatOutputTokensField` (read through `usesMaxCompletionTokensField`) names
+  the field `maxTokens` is sent as on the OpenAI-format chat path: `max_completion_tokens` for OpenAI,
+  Groq and xAI Grok, whose API references mark `max_tokens` deprecated in its favor (Groq and xAI
+  switched from `max_tokens` here); `max_tokens`, the default, for Mistral, Ollama and `openai-compat`,
+  which document only that. xAI describes `max_completion_tokens` as bounding visible output only, not
+  reasoning tokens. The Responses path keeps `max_output_tokens`.
 
 Non-tier aliases, reachable through `modelOverride` only: `@openai:nano` → `gpt-6-luna` (the same
 model as `base`: OpenAI names it as the replacement for the deprecated `gpt-5.4-nano`, and GPT-6 has
