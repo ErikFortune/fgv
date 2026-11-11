@@ -160,7 +160,8 @@ The probe families:
   gets no raw row.
 - **Temperature** (`temp=…`, Anthropic and OpenAI): each row names its expected outcome. Anthropic
   accepts `1` with and without thinking and refuses `0.3` locally. OpenAI's `gpt-6-luna` restricts
-  temperature only while it reasons: `0.3` with effort `'none'` and `1` beside effort `low` answer,
+  temperature only while it reasons: `0.3` with effort `'none'` and `1` with no effort or beside
+  effort `low` answer,
   and `0.3` with no effort (luna defaults to `medium`) or beside effort `low` is refused locally. One
   more luna row (`[EXPECTED-REJECT] base temp=0.3+effort=low raw`) sends `0.3` past the library's
   gate and must be the provider's "Only the default (1) value is supported" 400; if it answers, the

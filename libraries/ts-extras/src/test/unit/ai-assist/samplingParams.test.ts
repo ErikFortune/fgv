@@ -22,35 +22,52 @@ import '@fgv/ts-utils-jest';
 
 import { AiAssist } from '../../..';
 // eslint-disable-next-line @rushstack/packlets/mechanics
-import { checkSamplingParams, requestTurnsThinkingOff } from '../../../packlets/ai-assist/samplingParams';
+import { checkSamplingParams } from '../../../packlets/ai-assist/samplingParams';
+// eslint-disable-next-line @rushstack/packlets/mechanics
+import { requestTurnsThinkingOff } from '../../../packlets/ai-assist/thinkingOptionsResolver';
 
 const openai = AiAssist.getProviderDescriptor('openai').orThrow();
 
 describe('requestTurnsThinkingOff', () => {
+  type Case = [string, AiAssist.AiApiFormat, AiAssist.IResolvedThinkingConfig | undefined];
+
   test.each([
-    ["an OpenAI effort 'none'", { openAiEffort: 'none' }],
-    ["an xAI effort 'none'", { xaiEffort: 'none' }],
-    ['an Anthropic thinking-off request with no effort', { anthropicThinkingDisabled: true }],
-    ['a Gemini thinking budget of 0', { geminiThinkingBudget: 0 }]
-  ] as ReadonlyArray<[string, AiAssist.IResolvedThinkingConfig]>)('is true for %s', (__label, resolved) => {
-    expect(requestTurnsThinkingOff(resolved)).toBe(true);
+    ["an OpenAI effort 'none'", 'openai', { openAiEffort: 'none' }],
+    ["an xAI effort 'none' (the OpenAI-format adapter sends openAiEffort ?? xaiEffort)", 'openai', { xaiEffort: 'none' }],
+    ["an 'other' reasoning_effort 'none' over a typed low", 'openai', { openAiEffort: 'low', otherParams: { reasoning_effort: 'none' } }],
+    ["an 'other' reasoning.effort 'none' with no typed effort", 'openai', { otherParams: { reasoning: { effort: 'none' } } }],
+    ['an Anthropic thinking-off request with no effort', 'anthropic', { anthropicThinkingDisabled: true }],
+    ["an 'other' thinking disabled", 'anthropic', { anthropicEffort: 'low', otherParams: { thinking: { type: 'disabled' } } }],
+    ["an 'other' thinking between_tools", 'anthropic', { otherParams: { thinking: { type: 'between_tools' } } }],
+    ['a Gemini thinking budget of 0', 'gemini', { geminiThinkingBudget: 0 }],
+    ["an 'other' thinkingConfig budget 0", 'gemini', { geminiThinkingBudget: 1024, otherParams: { thinkingConfig: { thinkingBudget: 0 } } }]
+  ] as ReadonlyArray<Case>)('is true for %s', (__label, apiFormat, resolved) => {
+    expect(requestTurnsThinkingOff(resolved, apiFormat)).toBe(true);
   });
 
   test.each([
-    ['no thinking config (the model default)', undefined],
-    ['an empty resolved config', {}],
-    ['an OpenAI effort low', { openAiEffort: 'low' }],
-    ['an xAI effort low', { xaiEffort: 'low' }],
-    ['an Anthropic thinking-off flag beside an effort', { anthropicThinkingDisabled: true, anthropicEffort: 'low' }],
-    ['a nonzero Gemini budget', { geminiThinkingBudget: 1024 }],
-    ['a Gemini thinking level', { geminiThinkingLevel: 'minimal' }],
-    ['a verbatim provider block', { otherParams: { reasoning_effort: 'none' } }]
-  ] as ReadonlyArray<[string, AiAssist.IResolvedThinkingConfig | undefined]>)(
-    'is false for %s',
-    (__label, resolved) => {
-      expect(requestTurnsThinkingOff(resolved)).toBe(false);
-    }
-  );
+    ['no thinking config (the model default)', 'openai', undefined],
+    ['an empty resolved config', 'openai', {}],
+    ['an OpenAI effort low', 'openai', { openAiEffort: 'low' }],
+    ["openAiEffort low beside xaiEffort 'none' (the adapter sends openAiEffort)", 'openai', { openAiEffort: 'low', xaiEffort: 'none' }],
+    ["an 'other' reasoning_effort low over a typed 'none'", 'openai', { openAiEffort: 'none', otherParams: { reasoning_effort: 'low' } }],
+    ["an 'other' reasoning.effort low over a typed 'none'", 'openai', { openAiEffort: 'none', otherParams: { reasoning: { effort: 'low' } } }],
+    ["an 'other' reasoning that is not an object", 'openai', { openAiEffort: 'none', otherParams: { reasoning: 'none' } }],
+    ["an 'other' block without an effort key leaves the typed effort deciding", 'openai', { openAiEffort: 'low', otherParams: { temperature: 1 } }],
+    ['Anthropic thinking-off on the OpenAI wire', 'openai', { anthropicThinkingDisabled: true }],
+    ['a Gemini budget of 0 on the OpenAI wire', 'openai', { geminiThinkingBudget: 0 }],
+    ["an OpenAI effort 'none' on the Anthropic wire", 'anthropic', { openAiEffort: 'none' }],
+    ['an Anthropic thinking-off flag beside an effort', 'anthropic', { anthropicThinkingDisabled: true, anthropicEffort: 'low' }],
+    ["an 'other' thinking adaptive over a typed off", 'anthropic', { anthropicThinkingDisabled: true, otherParams: { thinking: { type: 'adaptive' } } }],
+    ["an 'other' thinking that is not an object", 'anthropic', { otherParams: { thinking: 'disabled' } }],
+    ["an OpenAI effort 'none' on the Gemini wire", 'gemini', { openAiEffort: 'none' }],
+    ['a nonzero Gemini budget', 'gemini', { geminiThinkingBudget: 1024 }],
+    ['a Gemini thinking level', 'gemini', { geminiThinkingLevel: 'minimal' }],
+    ["an 'other' thinkingConfig level over a typed budget 0", 'gemini', { geminiThinkingBudget: 0, otherParams: { thinkingConfig: { thinkingLevel: 'minimal' } } }],
+    ["an 'other' thinkingConfig that is not an object", 'gemini', { otherParams: { thinkingConfig: 0 } }]
+  ] as ReadonlyArray<Case>)('is false for %s', (__label, apiFormat, resolved) => {
+    expect(requestTurnsThinkingOff(resolved, apiFormat)).toBe(false);
+  });
 });
 
 describe('checkSamplingParams on a model restricted only while reasoning', () => {
@@ -91,5 +108,37 @@ describe('checkSamplingParams on a model restricted only while reasoning', () =>
 
   test('an unlisted model is not restricted', () => {
     expect(checkSamplingParams(openai, 'gpt-6-sol', 0.3, { openAiEffort: 'low' })).toSucceedWith(0.3);
+  });
+
+  test("offers effort 'none' only where it would turn thinking off", () => {
+    const required: AiAssist.IAiProviderDescriptor = {
+      ...openai,
+      thinkingRequiredModelPrefixes: [...(openai.thinkingRequiredModelPrefixes ?? []), 'gpt-6-luna']
+    };
+    expect(checkSamplingParams(required, 'gpt-6-luna', 0.3, undefined)).toFailWith(
+      /^gpt-6-luna does not accept a non-default temperature \(0\.3\) while reasoning: remove temperature, or send 1$/
+    );
+    const strictRequired: AiAssist.IAiProviderDescriptor = { ...required, samplingParamsAcceptedTemperature: undefined };
+    expect(checkSamplingParams(strictRequired, 'gpt-6-luna', 0.3, undefined)).toFailWith(
+      /^gpt-6-luna does not accept temperature while reasoning: remove temperature$/
+    );
+    const gemini = AiAssist.getProviderDescriptor('google-gemini').orThrow();
+    const levelModel: AiAssist.IAiProviderDescriptor = {
+      ...gemini,
+      samplingParamsRejectedWithThinkingModelPrefixes: ['gemini-3.5-flash-lite'],
+      samplingParamsAcceptedTemperature: 1
+    };
+    expect(checkSamplingParams(levelModel, 'gemini-3.5-flash-lite', 0.3, undefined)).toFailWith(
+      /^gemini-3\.5-flash-lite does not accept a non-default temperature \(0\.3\) while reasoning: remove temperature, or send 1$/
+    );
+    // A budget model: 'none' is sent as budget 0, which is off, so the hint is offered.
+    const budgetModel: AiAssist.IAiProviderDescriptor = {
+      ...levelModel,
+      samplingParamsRejectedWithThinkingModelPrefixes: ['gemini-3.8-flash']
+    };
+    expect(checkSamplingParams(budgetModel, 'gemini-3.8-flash', 0.3, undefined)).toFailWith(
+      /send 1, or set effort 'none'$/
+    );
+    expect(checkSamplingParams(budgetModel, 'gemini-3.8-flash', 0.3, { geminiThinkingBudget: 0 })).toSucceedWith(0.3);
   });
 });

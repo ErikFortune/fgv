@@ -235,9 +235,13 @@ only with its own value, `thinking: { type: 'between_tools' }` (see below). `@an
   three paths (completion, streaming, client-tool) luna sends `1` beside any effort, sends any value
   with effort `'none'`, and refuses any other value before the wire with "does not accept a
   non-default temperature (x) while reasoning: remove temperature, send 1, or set effort 'none'" —
-  including a call with no effort at all. Thinking counts as off only when ai-assist's own fields
-  say so (a generic `effort: 'none'`, or a resolved OpenAI/xAI effort `'none'`, Anthropic thinking
-  off with no effort, Gemini budget `0`); a verbatim provider block is not inspected. Luna is
+  including a call with no effort at all. Thinking counts as off when the request sends the
+  descriptor's wire format its off value: on the OpenAI format the effort the adapter sends
+  (`openAiEffort ?? xaiEffort`) is `'none'`; Anthropic and Gemini fields are not read there. A
+  verbatim `'other'` block that sets the wire's effort key (`reasoning_effort`, `reasoning`) is
+  merged last and decides — `{ reasoning_effort: 'none' }` counts as off, `{ reasoning_effort:
+  'low' }` as reasoning even beside a generic `'none'`. "set effort 'none'" is offered only where
+  `'none'` would turn thinking off (not on a thinking-required model, nor a Gemini level model). Luna is
   deliberately **not** on `samplingParamsRejectedModelPrefixes`, which is effort-blind and would
   refuse the documented `0.3` + `'none'`. `AiAssist.rejectsSamplingParamsWithThinking` answers the
   question for a concrete id. `gpt-6-sol` (the older Sol, not `gpt-6.1-sol`; reachable by

@@ -16,9 +16,11 @@ while reasoning. OpenAI lists `gpt-6-luna` alone.
 
 ## What a reader should know
 
-- **Thinking counts as off only through ai-assist's own fields** — effort `'none'` (or the resolved
-  equivalent). No effort means the model's default, which for a listed model reasons. A verbatim
-  `other` block is not inspected.
+- **Thinking off is read from the wire the descriptor speaks** — on the OpenAI format, the effort the
+  adapter sends (`openAiEffort ?? xaiEffort`) is `'none'`. A verbatim `'other'` block that sets the
+  wire's effort key decides, since it is merged last. No effort means the model's default, which for
+  a listed model reasons. Only luna requests the provider would 400 change outcome, plus `1` beside an
+  effort, now sent; an `'other'` `'none'` is sent as before. (Review round 1 — `result.md` § 2a.)
 - **Same rule on all three paths** — completion, streaming, client-tool — with the message "… does not
   accept a non-default temperature (x) while reasoning: remove temperature, send 1, or set effort
   'none'".
@@ -33,5 +35,5 @@ while reasoning. OpenAI lists `gpt-6-luna` alone.
 ## Artifacts
 
 - `brief.md`: the frozen contract
-- `state.md`: decisions D1–D6, red/green notes, inline review, open question Q1
-- `result.md`: change summary, red/green per path, testbed row table, gates
+- `state.md`: decisions D1–D6, red/green notes, inline review, review round 1 R1.1–R1.5, open question Q1
+- `result.md`: change summary, red/green per path (and for review round 1), testbed row table, gates

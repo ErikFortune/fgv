@@ -47,3 +47,25 @@
 
 ## Open questions
 - Q1: `gpt-6-sol` likely behaves like luna, but there is no evidence; left unlisted per the brief.
+
+## Review round 1 (independent review @ da08a2e4c: no P1, two P2, three P3)
+
+- **R1.1 (P2-1) `other` blocks decide.** `requestTurnsThinkingOff` ignored `otherParams`, but
+  `applyBlock` merges them last and they win on the wire, so luna + 0.3 + an `other`
+  `{ reasoning_effort: 'none' }` (sent and accepted on base) was refused with circular advice, and a
+  generic `'none'` overridden by an `other` `low` counted as off. The predicate moved to
+  `thinkingOptionsResolver.ts`, beside `EFFORT_WIRE_KEYS`, and reads the wire's effort keys from
+  `otherParams` first (`reasoning_effort`, then `reasoning.effort`; Anthropic `thinking.type`
+  `disabled`/`between_tools`; Gemini `thinkingConfig.thinkingBudget: 0`), else the typed field.
+  Red→green: 6 end-to-end tests (completion, streaming, client-tool × off/on), all red on da08a2e4c.
+- **R1.2 (P2-2) keyed on wire format.** The predicate takes `descriptor.apiFormat`; on the OpenAI
+  format it reads `openAiEffort ?? xaiEffort` exactly as the adapter does, and ignores Anthropic and
+  Gemini fields. Red→green on client-tool: luna 0.3 with `anthropicThinkingDisabled`,
+  `geminiThinkingBudget: 0`, `openAiEffort: 'low'` + `xaiEffort: 'none'` → refused (all 3 red on
+  da08a2e4c).
+- **R1.3 (P3-1) hint.** "set effort 'none'" is dropped when the model is thinking-required or has a
+  Gemini level table; the field doc and README say so. Unit tests cover both and the budget-model case.
+- **R1.4 (P3-2) testbed `base temp=1`** for luna, expected PASS. Confirmed it discriminates: with the
+  fake made to reject luna `1` at the default effort, the row reads `FAIL(param)` and the suite goes red.
+- **R1.5 (P3-3)** long TSDoc lines wrapped (`samplingParams.ts`, the client-tool `temperature` doc).
+- Disclosure (item 6) is in the change file and `result.md` § 1.

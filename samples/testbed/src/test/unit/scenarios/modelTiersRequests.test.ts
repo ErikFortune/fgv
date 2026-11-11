@@ -449,6 +449,7 @@ describe('openai-model-tiers, keyed, against a fake OpenAI', () => {
     expect(result).toSucceedAndSatisfy((report: string) => {
       expect(report).toMatch(/\[PASS\] base temp=0\.3\+effort=none\s+gpt-6-luna/);
       expect(report).toMatch(/\[REFUSED-LOCALLY\] base temp=0\.3\s+gpt-6-luna/);
+      expect(report).toMatch(/\[PASS\] base temp=1\s+gpt-6-luna/);
       expect(report).toMatch(/\[PASS\] base temp=1\+effort=low\s+gpt-6-luna/);
       expect(report).toMatch(/\[REFUSED-LOCALLY\] base temp=0\.3\+effort=low\s+gpt-6-luna/);
       // The raw row reaches the provider past the local gate, and its 400 is the expected one.
@@ -468,7 +469,7 @@ describe('openai-model-tiers, keyed, against a fake OpenAI', () => {
       expect(report).toMatch(/LIVE-VERIFIED/);
     });
     const bodies = sent.map((s) => s.body);
-    // luna carries 0.3 only with reasoning_effort 'none' through the library, 1 beside 'low', and
+    // luna carries 0.3 only with reasoning_effort 'none' through the library, 1 alone and beside 'low', and
     // 0.3 beside 'low' only on the raw row, past the library's gate; sol and astra carry 1, as the
     // temperature parameter, alone and beside reasoning_effort 'low'. Nothing carries 0.3 to sol or
     // astra, and nothing carries 0.3 to luna without an effort.
@@ -478,6 +479,7 @@ describe('openai-model-tiers, keyed, against a fake OpenAI', () => {
         .map((b) => [b.model, b.temperature, b.reasoning_effort])
     ).toEqual([
       ['gpt-6-luna', 0.3, 'none'],
+      ['gpt-6-luna', 1, undefined],
       ['gpt-6-luna', 1, 'low'],
       ['gpt-6-luna', 0.3, 'low'],
       ['gpt-6.1-sol', 1, undefined],

@@ -1026,11 +1026,13 @@ export interface IAiProviderDescriptor {
    * one. With thinking off they accept any `temperature`.
    *
    * @remarks
-   * Thinking counts as off only when the request turns it off through ai-assist's own thinking
-   * fields — a generic `effort: 'none'`, or the equivalent resolved field (an OpenAI or xAI effort of
-   * `'none'`, an Anthropic thinking-off request with no effort, a Gemini budget of `0`). A verbatim
-   * provider block is not inspected. A request with no effort runs at the model's default, which for
-   * a listed model reasons. A rejected `temperature` on a listed model is refused before
+   * Thinking counts as off when the request sends the descriptor's wire format its off value: on
+   * the OpenAI format an effort of `'none'`, on Anthropic thinking disabled, on Gemini a budget of
+   * `0`. A verbatim `'other'` block that sets the wire's effort key decides, since it is merged last;
+   * otherwise the typed effort does. A request with no effort runs at the model's default, which for a
+   * listed model reasons. A generic `effort: 'none'` turns thinking off only where it is sent as off —
+   * not on a thinking-required model, which degrades it, nor on a Gemini level model, which sends a
+   * level. A rejected `temperature` on a listed model is refused before
    * the wire on the completion, streaming and client-tool paths (see
    * {@link AiAssist.rejectsSamplingParamsWithThinking}). A model on both lists follows
    * {@link IAiProviderDescriptor.samplingParamsRejectedModelPrefixes}.

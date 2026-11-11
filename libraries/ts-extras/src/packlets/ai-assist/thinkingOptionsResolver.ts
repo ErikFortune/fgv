@@ -23,12 +23,13 @@
  * @packageDocumentation
  */
 
-import { type JsonObject } from '@fgv/ts-json-base';
+import { isJsonObject, type JsonObject } from '@fgv/ts-json-base';
 import { fail, Result, succeed } from '@fgv/ts-utils';
 
 import { geminiThinkingLevel } from './converters';
 import type { GeminiThinkingLevel, IGeminiModelThinking } from './geminiThinking';
 import type {
+  AiApiFormat,
   IThinkingConfig,
   IThinkingProviderConfig,
   IAnthropicThinkingConfig,
@@ -345,6 +346,61 @@ const EFFORT_WIRE_KEYS: Readonly<Record<ThinkingProviderDiscriminator, ReadonlyA
   google: ['thinkingConfig'],
   anthropic: ['thinking', 'output_config']
 };
+
+/**
+ * Whether the request a resolved thinking config produces runs with thinking off on the wire
+ * `apiFormat` speaks. An `'other'` block's `otherParams` are merged last and win on the wire, so when
+ * they carry one of the wire's effort keys ({@link EFFORT_WIRE_KEYS}) that key decides; otherwise the
+ * resolved field that wire's adapter reads does. Off means:
+ * - OpenAI format: an effort of `'none'` — `reasoning_effort`, else `reasoning.effort`, else
+ *   `openAiEffort ?? xaiEffort`, the value the adapter sends.
+ * - Anthropic: a `thinking.type` of `'disabled'` or `'between_tools'`, else `anthropicThinkingDisabled`
+ *   with no `anthropicEffort`.
+ * - Gemini: a `thinkingConfig.thinkingBudget` of `0`, else `geminiThinkingBudget: 0` (`minimal` is a
+ *   level, not off).
+ *
+ * `undefined` (no thinking config) is not off: the request runs at the model's default. Fields another
+ * wire's adapter reads are ignored, as the adapter ignores them.
+ * @internal
+ */
+export function requestTurnsThinkingOff(
+  resolved: IResolvedThinkingConfig | undefined,
+  apiFormat: AiApiFormat
+): boolean {
+  if (resolved === undefined) {
+    return false;
+  }
+  const other: JsonObject = resolved.otherParams ?? {};
+  switch (apiFormat) {
+    case 'openai': {
+      const [effortKey, reasoningKey] = EFFORT_WIRE_KEYS.openai;
+      if (effortKey in other) {
+        return other[effortKey] === 'none';
+      }
+      if (reasoningKey in other) {
+        const reasoning = other[reasoningKey];
+        return isJsonObject(reasoning) && reasoning.effort === 'none';
+      }
+      return (resolved.openAiEffort ?? resolved.xaiEffort) === 'none';
+    }
+    case 'anthropic': {
+      const [thinkingKey] = EFFORT_WIRE_KEYS.anthropic;
+      if (thinkingKey in other) {
+        const thinking = other[thinkingKey];
+        return isJsonObject(thinking) && (thinking.type === 'disabled' || thinking.type === 'between_tools');
+      }
+      return resolved.anthropicThinkingDisabled === true && resolved.anthropicEffort === undefined;
+    }
+    case 'gemini': {
+      const [thinkingConfigKey] = EFFORT_WIRE_KEYS.google;
+      if (thinkingConfigKey in other) {
+        const thinkingConfig = other[thinkingConfigKey];
+        return isJsonObject(thinkingConfig) && thinkingConfig.thinkingBudget === 0;
+      }
+      return resolved.geminiThinkingBudget === 0;
+    }
+  }
+}
 
 /** Whether one applicable block sets `discriminator`'s effort, typed or through `otherParams`. */
 function blockSetsEffort(

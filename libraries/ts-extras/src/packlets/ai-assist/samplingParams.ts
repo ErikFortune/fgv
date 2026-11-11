@@ -25,8 +25,9 @@
 
 import { fail, type Result, succeed } from '@fgv/ts-utils';
 
-import { type IAiProviderDescriptor, isExactOrDashBoundedPrefix } from './model';
-import type { IResolvedThinkingConfig } from './thinkingOptionsResolver';
+import { type IAiProviderDescriptor, isExactOrDashBoundedPrefix, isThinkingRequiredModel } from './model';
+import { resolveGeminiThinkingLevels } from './geminiThinking';
+import { type IResolvedThinkingConfig, requestTurnsThinkingOff } from './thinkingOptionsResolver';
 
 /**
  * Whether a concrete (already-resolved) model restricts a caller-supplied `temperature`, per the
@@ -61,45 +62,23 @@ export function rejectsSamplingParams(descriptor: IAiProviderDescriptor, modelId
  * @remarks
  * A listed model reasons by default, and while it reasons rejects every `temperature` except the
  * descriptor's {@link IAiProviderDescriptor.samplingParamsAcceptedTemperature}, when one is
- * declared. A request that turns thinking off through ai-assist's own thinking fields (see
- * {@link IAiProviderDescriptor.samplingParamsRejectedWithThinkingModelPrefixes}) may send any value. The completion, streaming and client-tool paths refuse a rejected value before
- * anything is sent.
+ * declared. A request that turns thinking off on the wire (see
+ * {@link IAiProviderDescriptor.samplingParamsRejectedWithThinkingModelPrefixes}) may send any value.
+ * The completion, streaming and client-tool paths refuse a rejected value before anything is sent.
  *
  * @param descriptor - The provider descriptor supplying the prefix list.
  * @param modelId - The resolved concrete model id to test.
  * @returns `true` when `modelId` restricts `temperature` while reasoning.
  * @public
  */
-export function rejectsSamplingParamsWithThinking(descriptor: IAiProviderDescriptor, modelId: string): boolean {
+export function rejectsSamplingParamsWithThinking(
+  descriptor: IAiProviderDescriptor,
+  modelId: string
+): boolean {
   return (
     descriptor.samplingParamsRejectedWithThinkingModelPrefixes?.some((p) =>
       isExactOrDashBoundedPrefix(modelId, p)
     ) ?? false
-  );
-}
-
-/**
- * Whether a resolved thinking config explicitly turns thinking off: an OpenAI or xAI effort of
- * `'none'`, an Anthropic thinking-off request with no effort, or a Gemini thinking budget of `0`.
- * `undefined` (no thinking config) is not off: the request runs at the model's default.
- *
- * @remarks
- * Only ai-assist's own resolved fields are read. A verbatim provider block that reaches the wire as
- * `otherParams` is not inspected, so a thinking-off value sent that way is not recognized here.
- *
- * @param resolved - The resolved thinking config the request will send, if any.
- * @returns `true` when the request turns thinking off.
- * @internal
- */
-export function requestTurnsThinkingOff(resolved: IResolvedThinkingConfig | undefined): boolean {
-  if (resolved === undefined) {
-    return false;
-  }
-  return (
-    resolved.openAiEffort === 'none' ||
-    resolved.xaiEffort === 'none' ||
-    (resolved.anthropicThinkingDisabled === true && resolved.anthropicEffort === undefined) ||
-    resolved.geminiThinkingBudget === 0
   );
 }
 
@@ -147,18 +126,25 @@ export function checkSamplingParams(
           `${modelId} does not accept a non-default temperature (${temperature}): remove temperature, or send ${accepted}`
         );
   }
-  if (!rejectsSamplingParamsWithThinking(descriptor, modelId) || requestTurnsThinkingOff(resolvedThinking)) {
+  if (
+    !rejectsSamplingParamsWithThinking(descriptor, modelId) ||
+    requestTurnsThinkingOff(resolvedThinking, descriptor.apiFormat)
+  ) {
     return succeed(temperature);
   }
+  // A generic 'none' turns thinking off only where it is sent as off: a thinking-required model
+  // degrades it, and a Gemini level model sends it as a level.
+  const noneTurnsOff =
+    !isThinkingRequiredModel(descriptor, modelId) &&
+    resolveGeminiThinkingLevels(descriptor, modelId) === undefined;
+  const offHint = noneTurnsOff ? ", or set effort 'none'" : '';
   if (accepted === undefined) {
-    return fail(
-      `${modelId} does not accept temperature while reasoning: remove temperature, or set effort 'none'`
-    );
+    return fail(`${modelId} does not accept temperature while reasoning: remove temperature${offHint}`);
   }
   return temperature === accepted
     ? succeed(temperature)
     : fail(
         `${modelId} does not accept a non-default temperature (${temperature}) while reasoning: ` +
-          `remove temperature, send ${accepted}, or set effort 'none'`
+          `remove temperature${noneTurnsOff ? ',' : ', or'} send ${accepted}${offHint}`
       );
 }

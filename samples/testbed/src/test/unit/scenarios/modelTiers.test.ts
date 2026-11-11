@@ -1577,6 +1577,7 @@ describe('model-tier scenarios', () => {
     expect(result).toSucceedAndSatisfy((report: string) => {
       expect(report).toMatch(/\[PENDING\] base temp=0\.3\+effort=none\s+gpt-6-luna\s+\(expect accepted\)/);
       expect(report).toMatch(/\[PENDING\] base temp=0\.3\s+gpt-6-luna\s+\(expect refused-locally\)/);
+      expect(report).toMatch(/\[PENDING\] base temp=1\s+gpt-6-luna\s+\(expect accepted\)/);
       expect(report).toMatch(/\[PENDING\] base temp=1\+effort=low\s+gpt-6-luna\s+\(expect accepted\)/);
       expect(report).toMatch(
         /\[PENDING\] base temp=0\.3\+effort=low\s+gpt-6-luna\s+\(expect refused-locally\)/

@@ -81,8 +81,8 @@ const ANTHROPIC_TEMPERATURE_PROBES: ReadonlyArray<ICanaryTemperatureProbe> = [
  * OpenAI temperature probes. GPT-6 accepts a non-default `temperature` only when reasoning effort
  * is `'none'`. `gpt-6-luna` (base) has a `'none'` effort but defaults to `medium`; it is on
  * `samplingParamsRejectedWithThinkingModelPrefixes`, so a temperature with effort `'none'` answers,
- * its default, 1, answers beside an effort (live, 2026-11-11), and 0.3 beside an effort or with no
- * effort is refused before the wire. `gpt-6.1-sol` and `gpt-6-astra` have no `'none'`: they accept
+ * its default, 1, answers with no effort and beside an effort (live, 2026-11-11), and 0.3 beside an
+ * effort or with no effort is refused before the wire. `gpt-6.1-sol` and `gpt-6-astra` have no `'none'`: they accept
  * their default, 1, with and without an effort (live, 2026-11-10;
  * `samplingParamsAcceptedTemperature`), and the library refuses any other value before the wire.
  *
@@ -92,6 +92,7 @@ const ANTHROPIC_TEMPERATURE_PROBES: ReadonlyArray<ICanaryTemperatureProbe> = [
  */
 const OPENAI_TEMPERATURE_PROBES: ReadonlyArray<ICanaryTemperatureProbe> = [
   { temperature: 0.3, effort: 'none', models: ['gpt-6-luna'], expect: 'accepted' },
+  { temperature: 1, models: ['gpt-6-luna'], expect: 'accepted' },
   { temperature: 0.3, models: ['gpt-6-luna'], expect: 'refused-locally' },
   { temperature: 1, effort: 'low', models: ['gpt-6-luna'], expect: 'accepted' },
   { temperature: 0.3, effort: 'low', models: ['gpt-6-luna'], expect: 'refused-locally' },
@@ -382,8 +383,8 @@ function makeTierScenario(params: ITierScenarioParams): IScenario {
  * (the earlier `gpt-5.5-pro` remains reachable via `modelOverride` and still routes via
  * `responsesOnlyModelPrefixes`). Each tier is also probed with thinking effort `none` and `low`,
  * and the image tier gets one live generation. Temperature probes: on `gpt-6-luna`, 0.3 with
- * effort `none` and 1 beside effort `low` answer, 0.3 with no effort or beside effort `low` is
- * `refused-locally`, and 0.3 beside effort `low` sent raw is an `expected-reject` (the provider's
+ * effort `none` and 1 with no effort or beside effort `low` answer, 0.3 with no effort or beside
+ * effort `low` is `refused-locally`, and 0.3 beside effort `low` sent raw is an `expected-reject` (the provider's
  * own 400); on `gpt-6.1-sol` and `gpt-6-astra`, `temperature: 1` answers with and without effort
  * `low` and `0.3` is `refused-locally`. Max-output probes
  * send each tier its recorded `resolveMaxOutputTokens` limit, which must be accepted. `image` is a
@@ -398,7 +399,7 @@ export const openaiModelTiersScenario: IScenario = makeTierScenario({
   description:
     'Resolves and (with OPENAI_API_KEY) live-canaries the OpenAI base/advanced/frontier tiers ' +
     '(gpt-6-luna / gpt-6.1-sol / gpt-6-astra), probes each with thinking effort none and low (and none with onUnsupported fail), ' +
-    'probes temperature (gpt-6-luna: 0.3 accepted with effort none, 1 accepted beside effort low, 0.3 refused ' +
+    'probes temperature (gpt-6-luna: 0.3 accepted with effort none, 1 accepted with and without effort low, 0.3 refused ' +
     'locally with no effort or beside effort low, and 0.3 beside effort low sent raw for the provider 400; gpt-6.1-sol / ' +
     'gpt-6-astra: 1 accepted with and without effort low, 0.3 refused locally), sends each tier its recorded max output tokens, and ' +
     'fires one live image generation (gpt-image-2.5-sunburst, quality low). Logs each alias -> ' +
