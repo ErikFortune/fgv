@@ -117,6 +117,7 @@ export {
   type IGeminiThinkingConfig,
   type IGeminiThinkingLevelRule,
   allGeminiThinkingLevels,
+  rejectsGeminiThinkingLevel,
   resolveGeminiThinkingLevels
 } from './geminiThinking';
 

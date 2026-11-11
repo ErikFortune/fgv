@@ -28,7 +28,7 @@
  */
 
 import { resolveAnthropicThinkingOffType } from './anthropicThinkingOff';
-import { resolveGeminiThinkingLevels } from './geminiThinking';
+import { resolveGeminiModelThinking } from './geminiThinking';
 import { fail, Result } from '@fgv/ts-utils';
 
 import { type IAiCacheRequest } from './cacheRequest';
@@ -172,7 +172,7 @@ export async function callProviderCompletionStream(
         model,
         discriminator,
         isThinkingRequiredModel(descriptor, model),
-        resolveGeminiThinkingLevels(descriptor, model)
+        resolveGeminiModelThinking(descriptor, model)
       );
       if (mergeResult.isFailure()) {
         return fail(mergeResult.message);

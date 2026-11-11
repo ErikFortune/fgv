@@ -12,8 +12,8 @@ Branch `gemini-thinking-level` off `origin/integration/asks` @ `5170a1d11`. Pack
 | 1. per-model level table, declared data | `IAiProviderDescriptor.geminiThinkingLevels` (`IGeminiThinkingLevelRule { modelPrefix, levels }`, lowest first), read by `resolveGeminiThinkingLevels` (exact-or-dash-bounded, longest prefix wins). A matching model is sent `thinkingLevel`; every other model keeps `thinkingBudget` byte-for-byte. No provider/model `if` in adapter code: the adapters call `geminiThinkingConfigWire`. Listed: `gemini-4-argon`, `gemini-4-carbon` (low/medium/high), `gemini-3.6-flash`, `gemini-3.5-flash-lite` (minimal/low/medium/high). Not listed, with reasons in the registry comment and `state.md` D2/D3: `gemini-3.8-flash`, `gemini-3.1-pro-preview`, `gemini-3.1-flash-lite`, the 2.5 line. |
 | 2. generic effort mapping | `'none'` → `minimal` where listed; `low`/`medium`/`high` 1:1; an unlisted effort is refused naming the allowed set. `'none'` on a level model without `minimal`: thinking-required → the existing degrade-to-`low` / `onUnsupported: 'fail'` policy, whose refusal now names the lowest level; otherwise refused "it has no thinking-off level; its lowest thinking level is '…'". |
 | 3. Pro budget-0 leak (TECH_DEBT) | Closed. Listed Pro ids already degraded/refused; the remaining reachable unlisted Pro id, `gemini-3-pro-preview`, is added to `thinkingRequiredModelPrefixes`. A generic `'none'` no longer emits `thinkingBudget: 0` to any Pro id with evidence. |
-| 4. caller-explicit config | `IGeminiThinkingConfig.thinkingLevel?: GeminiThinkingLevel`, validated by the new public converter `geminiThinkingLevel`; a level a declared model does not list is refused; level + budget in one block is refused (docs: 400 on Gemini 4; D6 explains refusing it on every model); a later block's level replaces an earlier budget and vice versa. A caller-built `resolvedThinking` with both is refused by the Gemini streaming adapter (the `executeClientToolTurn` entrance). |
-| 5. rotate `@google-gemini:pro` → `gemini-4-argon` | Done: Argon is "Stable" (§ 2). Declared on `maxOutputTokens` (65536), `GeminiThinkingModelNames` (with `gemini-4-carbon`), capability detection (`/^gemini-4/` → chat, tools, vision, thinking), `thinkingRequiredModelPrefixes`, the level table. Structured output is the existing Gemini catch-all (`gemini-response-schema`), which Argon supports. Change file `minor`, `BREAKING:`. |
+| 4. caller-explicit config | `IGeminiThinkingConfig.thinkingLevel?: GeminiThinkingLevel`, validated by the new public converter `geminiThinkingLevel`; a level a declared model does not list is refused; level + budget in one block is refused (docs: 400 on Gemini 4; D6 explains refusing it on every model); a later block's level replaces an earlier budget and vice versa. A caller-built `resolvedThinking` is checked up front by `executeClientToolTurn` (review round 1, § 10): both fields, budget 0 on a thinking-required model, or a level the model does not accept is a `Failure` before streaming; the streaming adapter keeps the both-fields check as a backstop. The 2.5 line takes budgets only and refuses an explicit level. |
+| 5. rotate `@google-gemini:pro` → `gemini-4-argon` | Done: Argon is "Stable" (§ 2). Declared on `maxOutputTokens` (32768 after review round 1; § 10), `GeminiThinkingModelNames` (with `gemini-4-carbon`), capability detection (`/^gemini-4/` → chat, tools, vision, thinking), `thinkingRequiredModelPrefixes`, the level table. Structured output is the existing Gemini catch-all (`gemini-response-schema`), which Argon supports. Change file `minor`, `BREAKING:`. |
 | 6. flash-lite interim | Removed from `thinkingRequiredModelPrefixes`; `'none'` is sent as `thinkingLevel: 'minimal'`. |
 
 Also: `IGeminiThinkingConfig` moved from `model.ts` to the new `geminiThinking.ts` (still exported from
@@ -47,7 +47,12 @@ authority; where the two pages disagree it wins (D1).
   (`thinking_level`) and returns a warning; sending `thinkingBudget` and `thinkingLevel` together
   returns a `400` error."
 - Budget table: "2.5 Pro | Dynamic thinking | `128` to `32768` | N/A: Cannot disable thinking".
-- Gemini 4 limits: "a single non-streaming request (`generateContent`) returns up to `32,768` tokens".
+- Gemini 4 limits: "A single streaming request (`streamGenerateContent`) returns up to `65,536` tokens,
+  and a single non-streaming request (`generateContent`) returns up to `32,768` tokens."
+- Level table columns (for review round 1): "Gemini 3.8 Flash · Gemini 4 Carbon & Argon · Gemini 3.5 &
+  3.1 Flash-Lite · Gemini 3.1 Flash-Lite Image · Gemini 3 Flash · Gemini 3.6 Flash · Gemini Robotics
+  ER 2"; the Flash-Lite Image column reads `minimal` "Supported (Default)", `low` and `medium` "Not
+  supported", `high` "Supported (Dynamic)".
 
 **Thinking (Interactions)** — `https://aistudio.google.com/docs/thinking.md`, § Controlling thinking:
 "| gemini-4-argon | On (medium) | low, medium, high |", "| gemini-3.5-flash-lite | On (minimal) | minimal,
@@ -137,12 +142,13 @@ Keyless (`PENDING`, expectation in parentheses) → keyed expectation:
 | `@google-gemini:flash-lite none+fail` | gemini-3.5-flash-lite | `minimal` | PASS |
 | `advanced level=low` (and `frontier`) | gemini-4-argon | explicit `thinkingLevel: 'low'` | PASS |
 | `@google-gemini:flash-lite level=minimal` | gemini-3.5-flash-lite | explicit `minimal` | PASS |
-| `max=65536` rows | 3.8-flash, argon ×2, flash-lite | `maxOutputTokens: 65536` | PASS |
+| `max=` rows | 3.8-flash and flash-lite (65536), argon ×2 (32768) | `maxOutputTokens` = recorded limit | PASS |
 
 Run: `GEMINI_API_KEY=… node samples/testbed/lib/cli.js run google-gemini-model-tiers` (or the web runner).
 Findings to watch: an Argon raw-minimal row that *answers* (Google started accepting `minimal`); a
-`FAIL(param)` on any level row (a declared level is wrong); a non-streaming Argon `max=65536` row that
-stops at 32,768 (Q2). The keyed path is dry-run against a fake Gemini in `modelTiersRequests.test.ts`.
+`FAIL(param)` on any level row (a declared level is wrong). The Argon `max=32768` row only shows the
+recorded limit is accepted; it cannot detect a truncation, and a stop at the cap reads as a pass. The
+keyed path is dry-run against a fake Gemini in `modelTiersRequests.test.ts`.
 No live call was made in this stream.
 
 ## 7. Records closed
@@ -156,9 +162,8 @@ No live call was made in this stream.
 
 ## 8. Open questions
 
-See `state.md` § Open questions: Q1 (Argon ignores `temperature`; ai-assist still sends it), Q2 (Argon
-non-streaming 32,768-token hop cap vs the recorded 65,536), Q3 (a hand-built Gemini off value on a
-thinking-required model is not refused on the client-tool path, unlike #774's OpenAI-format guard).
+After review round 1: Q1 (Argon ignores `temperature`) is a `docs/TECH_DEBT.md` P3 with behaviour
+unchanged; Q2 and Q3 are resolved (§ 10).
 
 ## 9. Close-out antagonist pass (self-run; no subagent could be spawned)
 
@@ -171,3 +176,27 @@ PR number is unknown at close: `meta.yaml` `prs` is empty and the README, ledger
 line say `#TBD`, so the capability-feed line has no PR link until `prs` is filled and the feed is
 regenerated. Q1–Q3 are recorded in `state.md`, this file and the ledger entry, not in
 `FUTURE.md` / `TECH_DEBT.md` — left for the orchestrator to route.
+
+## 10. Review round 1 (independent review of `21eb1cb54`; no P1, four P2)
+
+Per-item decisions are in `state.md` R1.1–R1.6. Summary:
+
+| item | change |
+|---|---|
+| P2-1 client-tool guard | `checkCallerGeminiThinking` in `executeClientToolTurn` on `apiFormat === 'gemini'`: budget 0 on a thinking-required model, an unaccepted level, a level on the budget-only 2.5 line (new declared list `geminiThinkingLevelRejectedModelPrefixes`, predicate `rejectsGeminiThinkingLevel`) |
+| P2-2 both fields | a `Failure` from the same guard before streaming; the adapter check stays as a backstop |
+| P2-3 Argon output | `maxOutputTokens: 32768` with both figures quoted in the registry comment; testbed `max=` rows and run sheet updated |
+| P2-4 prefix hazard | rules for `gemini-3.1-flash-lite` (minimal–high), `gemini-3.1-flash-lite-image` (minimal, high; outranks the shorter rule) and `gemini-3-flash-preview` (minimal–high); a registry comment on dated suffixes and future variants |
+| P3 | README line; `GeminiThinkingModelNames`; `AiAssist.X` links; `StringOneOf` over the `as const` array; `withType` instead of re-wrapping; top-of-file import; TECH_DEBT entry for Q1 |
+
+**Red → green.** The new `geminiThinkingCallerGuards.test.ts` was run with the packlet's source reset to
+`21eb1cb54` (tests kept): **18 failures** — all 7 client-tool refusals (Argon budget 0, `@google-gemini:pro`
+budget 0, `gemini-3.1-pro-preview` budget 0, Argon `minimal`, `@google-gemini:pro` `minimal`,
+`gemini-2.5-pro` level, Argon level + budget — the last is item 2), the 3 explicit-level refusals on the
+2.5 line, and all 8 prefix-rule cases (item 4: `gemini-3.1-flash-lite-image` takes `minimal, high`,
+`-preview` takes its parent's rule, `'low'` on the image model refused). The positive cases (sent as
+built) passed on both trees, as they should. With the source restored, all pass; `ts-extras` and
+`testbed` are at 100% on every metric. The `max=` and `resolveMaxOutputTokens` pins for Argon were moved
+to 32768 (item 3).
+
+**Gates (round 1).** Logs `r1-*` under the scratchpad `gemini/`. RESULT_R1_GATES

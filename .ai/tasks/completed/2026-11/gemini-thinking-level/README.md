@@ -26,12 +26,16 @@ advanced tier and the frontier cascade) now resolves to `gemini-4-argon`.
   the model declares; level + budget in one block is refused (Gemini 4 400s on the pair).
 - No live call was made. Every change is proven by request-body tests shown red first
   (`result.md` § 3); the testbed tier canary carries PENDING rows for a keyed run (`result.md` § 6).
-- Open: Argon ignores `temperature` (Q1); Argon's non-streaming 32K hop cap vs the recorded 65,536
-  (Q2); a hand-built Gemini off value on the client-tool path is not refused locally (Q3).
+- **Review round 1** added: a Gemini guard on `executeClientToolTurn` (budget 0 on a thinking-required
+  model, an unaccepted level, or level + budget is a `Failure` before streaming); the budget-only 2.5
+  line refuses an explicit level; level rules for `gemini-3.1-flash-lite`, `gemini-3.1-flash-lite-image`
+  (minimal, high — a longer rule that outranks the shorter one) and `gemini-3-flash-preview`; and
+  Argon's recorded output limit is 32,768, the per-request non-streaming cap.
+- Open: Argon ignores `temperature` — recorded as a `docs/TECH_DEBT.md` P3, behaviour unchanged.
 
 ## Artifacts
 
 - `brief.md`: the frozen contract
-- `state.md`: decisions D1–D7, open questions Q1–Q3
+- `state.md`: decisions D1–D7, review round 1 R1.1–R1.6, open questions Q1–Q3 (Q2, Q3 resolved)
 - `result.md`: outcome per decision, doc citations, red/green evidence, gates, run sheet
 - `meta.yaml`

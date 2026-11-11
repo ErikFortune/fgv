@@ -28,7 +28,7 @@
  */
 
 import { type AnthropicThinkingOffType, resolveAnthropicThinkingOffType } from './anthropicThinkingOff';
-import { resolveGeminiThinkingLevels } from './geminiThinking';
+import { resolveGeminiModelThinking } from './geminiThinking';
 import { isJsonObject, type JsonObject } from '@fgv/ts-json-base';
 import {
   captureResult,
@@ -902,7 +902,7 @@ export async function callProviderCompletion(
         model,
         discriminator,
         isThinkingRequiredModel(descriptor, model),
-        resolveGeminiThinkingLevels(descriptor, model)
+        resolveGeminiModelThinking(descriptor, model)
       );
       if (mergeResult.isFailure()) {
         return fail(mergeResult.message);

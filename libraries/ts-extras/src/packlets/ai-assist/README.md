@@ -196,16 +196,25 @@ only with its own value, `thinking: { type: 'between_tools' }` (see below). `@an
   (`AiAssist.geminiThinkingLevel`) and, on a model with a level declaration, must be one of its
   levels; elsewhere it is sent verbatim. `thinkingLevel` and `thinkingBudget` in one block are
   refused — Gemini 4 returns a 400 for the pair — and a later block's level replaces an earlier
-  budget (and vice versa), so the wire never carries both. A caller-built `resolvedThinking` with
-  both is refused by the Gemini streaming adapter.
+  budget (and vice versa), so the wire never carries both. The 2.5 line takes budgets only ("Gemini
+  2.5 series models don't support `thinkingLevel`"): an explicit level is refused there
+  (`geminiThinkingLevelRejectedModelPrefixes`, read through `AiAssist.rejectsGeminiThinkingLevel`).
+- **Level rules match longest prefix first.** `gemini-3.1-flash-lite-image` (levels `minimal` and
+  `high` only) has its own rule, longer than `gemini-3.1-flash-lite`'s, so it never inherits the
+  shorter rule's `low` / `medium`. A dated snapshot or `-preview` of a listed id takes that id's rule;
+  a new variant with a different level set needs its own longer rule.
+- **`gemini-4-argon`'s recorded output limit is 32,768**, the most a single non-streaming
+  `generateContent` request returns (its page's 65,536 is the streaming / default-synchronous figure,
+  and beyond that needs long decode, which ai-assist does not run).
 - **`gemini-3.8-flash` (`@google-gemini:flash`, the base tier) turns thinking off with budget 0.** A
   live budget-0 request (2026-11-10) came back with no `thoughtsTokenCount` in `usageMetadata`, so
   it is not listed, although Google's level table names no level below `low` for it: a generic
   `'none'` sends `thinkingBudget: 0`, and `onUnsupported: 'fail'` has nothing to refuse. The list
   is dash-bounded, so its entries deliberately match future variants of a listed id; with
   `gemini-3.8-flash` off it, its variants (a `gemini-3.8-flash-lite`, a dated snapshot) are no
-  longer matched either. `gemini-3.6-flash` and `gemini-3.5-flash` stay unlisted: neither is an
-  alias target, and there is no evidence either rejects or ignores budget 0.
+  longer matched either. `gemini-3.5-flash` stays unlisted: it is not an alias target, and there is
+  no evidence it rejects or ignores budget 0. (`gemini-3.6-flash` is a level model, so `'none'` is
+  `minimal` there.)
 - A `temperature` aimed at a model in `samplingParamsRejectedModelPrefixes` is refused before the wire
   on the completion, streaming and client-tool paths. On Anthropic (every Claude 5.x model,
   `claude-mythos-preview`, `claude-opus-4-8`, `claude-opus-4-7`) only a non-default value is refused:
@@ -231,8 +240,12 @@ only with its own value, `thinking: { type: 'between_tools' }` (see below). `@an
   (or `xaiEffort: 'none'`) aimed at a model on `thinkingRequiredModelPrefixes` (`gpt-6.1-sol`,
   `gpt-6-astra`, `grok-4.7` / `-4.6` / `-4.5`) fails before the wire ("… cannot run with thinking off:
   set openAiEffort to an effort other than 'none'"), as `anthropicThinkingDisabled` does on a
-  thinking-required Claude model. Each refusal applies only on the wire that reads its field: the
-  Anthropic flag on an Anthropic-format descriptor, the effort on an OpenAI-format one.
+  thinking-required Claude model. On a Gemini descriptor it refuses `geminiThinkingBudget: 0` on a
+  thinking-required model (Gemini 4, the Pro ids), a `geminiThinkingLevel` the model does not accept
+  (one its level rule does not list, or any level on the 2.5 line), and a level beside a budget — each
+  as a `Failure` before anything streams. Each refusal applies only on the wire that reads its field:
+  the Anthropic flag on an Anthropic-format descriptor, the effort on an OpenAI-format one, the Gemini
+  fields on a Gemini one.
 - **The Chat Completions output-token field is declared per provider.**
   `IAiProviderDescriptor.chatOutputTokensField` (read through `usesMaxCompletionTokensField`) names
   the field `maxTokens` is sent as on the OpenAI-format chat path: `max_completion_tokens` for OpenAI,

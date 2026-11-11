@@ -272,22 +272,23 @@ describe('a refused-locally request is refused before fetch', () => {
 });
 
 describe('max-output requests carry the recorded limit on the wire', () => {
+  // gemini-4-argon records 32,768: a single non-streaming generateContent request returns at most that.
   test.each([
-    ['base' as const, 'gemini-3.8-flash'],
-    ['advanced' as const, 'gemini-4-argon'],
-    ['frontier' as const, 'gemini-4-argon']
-  ])('gemini %s (%s) sends generationConfig.maxOutputTokens 65536', async (tier, concrete) => {
+    ['base' as const, 'gemini-3.8-flash', 65536],
+    ['advanced' as const, 'gemini-4-argon', 32768],
+    ['frontier' as const, 'gemini-4-argon', 32768]
+  ])('gemini %s (%s) sends generationConfig.maxOutputTokens %d', async (tier, concrete, expected) => {
     const sent = stubFetch(() => ({
       status: 200,
       json: { candidates: [{ content: { parts: [{ text: 'pong' }] }, finishReason: 'STOP' }] }
     }));
     const limit = AiAssist.resolveMaxOutputTokens(gemini, undefined, tier === 'base' ? undefined : tier);
-    expect(limit).toBe(65536);
+    expect(limit).toBe(expected);
     const params = buildCanaryCompletionParams(gemini, 'k', tier, { maxTokens: limit }).orThrow();
     expect(await AiAssist.callProviderCompletion(params)).toSucceed();
     expect(sent).toHaveLength(1);
     expect(sent[0].url).toContain(concrete);
-    expect((sent[0].body.generationConfig as { maxOutputTokens?: number }).maxOutputTokens).toBe(65536);
+    expect((sent[0].body.generationConfig as { maxOutputTokens?: number }).maxOutputTokens).toBe(expected);
   });
 });
 
@@ -585,9 +586,17 @@ describe('google-gemini-model-tiers, keyed, against a fake Gemini', () => {
       ['gemini-4-argon', 'low'],
       ['gemini-3.5-flash-lite', 'minimal']
     ]);
-    const capped = sent.filter(
-      (s) => (s.body.generationConfig as { maxOutputTokens?: number } | undefined)?.maxOutputTokens === 65536
-    );
-    expect(capped).toHaveLength(4);
+    const capped = sent
+      .map((s) => [
+        s.url.match(/models\/([^:]+)/)?.[1],
+        (s.body.generationConfig as { maxOutputTokens?: number } | undefined)?.maxOutputTokens
+      ])
+      .filter(([, max]) => max !== undefined);
+    expect(capped).toEqual([
+      ['gemini-3.8-flash', 65536],
+      ['gemini-4-argon', 32768],
+      ['gemini-4-argon', 32768],
+      ['gemini-3.5-flash-lite', 65536]
+    ]);
   });
 });

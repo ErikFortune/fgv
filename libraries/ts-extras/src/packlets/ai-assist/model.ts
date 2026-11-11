@@ -1030,7 +1030,7 @@ export interface IAiProviderDescriptor {
    * The provider rejects the off value ai-assist would send for a generic `effort: 'none'`:
    * `reasoning_effort: 'none'` (OpenAI, xAI), `thinkingBudget: 0` (Gemini on the budget wire; on
    * the level wire, a model with no `'minimal'` level — see
-   * {@link IAiProviderDescriptor.geminiThinkingLevels}), or the model's off
+   * {@link AiAssist.IAiProviderDescriptor.geminiThinkingLevels}), or the model's off
    * `thinking` value (Anthropic adaptive-thinking models; see
    * {@link IAiProviderDescriptor.anthropicThinkingOffTypes}). A model that accepts the off value but
    * ignores it, still thinking, is listed too, so that `'none'` never claims an effect it lacks.
@@ -1065,6 +1065,14 @@ export interface IAiProviderDescriptor {
    * efforts map 1:1 or are refused when unlisted. Unmatched models keep the budget wire.
    */
   readonly geminiThinkingLevels?: ReadonlyArray<IGeminiThinkingLevelRule>;
+  /**
+   * Gemini models (exact-or-dash-bounded) that do not support `thinkingLevel` at all and take only
+   * `thinkingBudget`. An explicit `thinkingLevel` aimed at one — in a `google` block, or in a
+   * caller-built `resolvedThinking` on `executeClientToolTurn` — is refused before the wire (see
+   * {@link AiAssist.rejectsGeminiThinkingLevel}). Models on neither this list nor
+   * {@link AiAssist.IAiProviderDescriptor.geminiThinkingLevels} are sent an explicit level verbatim.
+   */
+  readonly geminiThinkingLevelRejectedModelPrefixes?: ReadonlyArray<string>;
   /**
    * Concrete model ids (exact-or-dash-bounded-prefix-matched, like
    * {@link IAiProviderDescriptor.thinkingRequiredModelPrefixes}) that reject a caller-supplied
@@ -1643,6 +1651,8 @@ export type OpenAiThinkingModelNames =
 export type GeminiThinkingModelNames =
   | 'gemini-4-argon'
   | 'gemini-4-carbon'
+  | 'gemini-3.6-flash'
+  | 'gemini-3-pro-preview'
   | 'gemini-3.1-pro-preview'
   | 'gemini-3.8-flash'
   | 'gemini-3.5-flash'
@@ -1810,7 +1820,7 @@ export interface IThinkingConfig {
    * - 'medium': Anthropic effort:medium | OpenAI effort:medium | Gemini thinkingLevel:medium or thinkingBudget:4096 | xAI reasoning_effort:medium
    * - 'high': Anthropic effort:high | OpenAI effort:high | Gemini thinkingLevel:high or thinkingBudget:8192 | xAI reasoning_effort:high
    *
-   * Gemini takes `thinkingLevel` on the models in {@link IAiProviderDescriptor.geminiThinkingLevels}
+   * Gemini takes `thinkingLevel` on the models in {@link AiAssist.IAiProviderDescriptor.geminiThinkingLevels}
    * (where an effort the model does not list is refused) and `thinkingBudget` on every other model.
    *
    * @remarks

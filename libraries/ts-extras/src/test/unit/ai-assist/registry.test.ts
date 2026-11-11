@@ -285,9 +285,11 @@ describe('AiAssist.registry', () => {
     });
 
     test('the completion targets carry their cited output limits', () => {
-      for (const alias of ['@google-gemini:flash', '@google-gemini:flash-lite', '@google-gemini:pro']) {
+      for (const alias of ['@google-gemini:flash', '@google-gemini:flash-lite']) {
         expect(AiAssist.resolveMaxOutputTokens(desc, alias)).toBe(65536);
       }
+      // gemini-4-argon: the per-request non-streaming cap, not the 65,536 streaming figure
+      expect(AiAssist.resolveMaxOutputTokens(desc, '@google-gemini:pro')).toBe(32768);
     });
 
     test('embedding tier is unchanged by the advanced-key addition', () => {

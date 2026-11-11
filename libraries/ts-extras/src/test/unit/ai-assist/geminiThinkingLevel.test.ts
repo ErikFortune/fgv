@@ -30,6 +30,8 @@
 import '@fgv/ts-utils-jest';
 
 import { AiAssist } from '../../..';
+// eslint-disable-next-line @rushstack/packlets/mechanics
+import { callGeminiStream } from '../../../packlets/ai-assist/streamingAdapters/gemini';
 
 const prompt = new AiAssist.AiPrompt('Say ok', 'You are terse');
 const geminiOk = { candidates: [{ content: { parts: [{ text: 'ok' }] }, finishReason: 'STOP' }] };
@@ -358,7 +360,6 @@ describe('Gemini thinkingLevel', () => {
 
   describe('a caller-built resolved config carrying both fields', () => {
     test('the streaming adapter refuses it before the wire', async () => {
-      const { callGeminiStream } = await import('../../../packlets/ai-assist/streamingAdapters/gemini');
       mockSse();
       expect(
         await callGeminiStream(
@@ -376,30 +377,6 @@ describe('Gemini thinkingLevel', () => {
           { geminiThinkingLevel: 'high', geminiThinkingBudget: 1024 }
         )
       ).toFailWith(/thinkingLevel and thinkingBudget cannot be sent together/);
-      expect(global.fetch).not.toHaveBeenCalled();
-    });
-
-    test('executeClientToolTurn reports it as an error event before the wire', async () => {
-      mockSse();
-      const turn = AiAssist.executeClientToolTurn({
-        descriptor: gemini(),
-        apiKey: 'k',
-        ...prompt.toRequest(),
-        model: 'gemini-4-argon',
-        clientTools: [],
-        resolvedThinking: { geminiThinkingLevel: 'low', geminiThinkingBudget: 0 }
-      });
-      expect(turn).toSucceed();
-      const events: AiAssist.IAiStreamEvent[] = [];
-      for await (const event of turn.orThrow().events) {
-        events.push(event);
-      }
-      expect(events).toContainEqual(
-        expect.objectContaining({
-          type: 'error',
-          message: expect.stringMatching(/thinkingLevel and thinkingBudget cannot be sent together/)
-        })
-      );
       expect(global.fetch).not.toHaveBeenCalled();
     });
   });
@@ -426,8 +403,9 @@ describe('Gemini thinkingLevel', () => {
       expect(sent().thinkingConfig).toEqual({ thinkingLevel: 'medium' });
     });
 
-    test('gemini-4-argon records its 65,536-token output limit', () => {
-      expect(AiAssist.resolveMaxOutputTokens(gemini(), '@google-gemini:pro')).toBe(65536);
+    test('gemini-4-argon records 32,768, the per-request non-streaming output cap', () => {
+      expect(AiAssist.resolveMaxOutputTokens(gemini(), '@google-gemini:pro')).toBe(32768);
+      expect(AiAssist.resolveMaxOutputTokens(gemini(), 'gemini-4-argon')).toBe(32768);
     });
 
     test('gemini-4-argon is thinking-required; gemini-3.5-flash-lite no longer is', () => {

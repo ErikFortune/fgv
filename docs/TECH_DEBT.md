@@ -1547,6 +1547,27 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
 
   **Reference**: #668; `design.md` §8; `streamUsageCapability.ts`.
 
+- **[P3] Gemini 4 Argon ignores `temperature`, and ai-assist still sends a caller's value.**
+  Google's Argon migration notes say: "Remove deprecated parameters: Remove `temperature`, `top_p`,
+  `top_k`, and `candidate_count` from requests. If provided, sampling parameters are ignored."
+  (https://aistudio.google.com/docs/whats-new-gemini-4-argon.md?generate-content=true, fetched
+  2026-11-11). `samplingParamsRejectedModelPrefixes` covers models that **reject** sampling
+  parameters with a 400; Argon accepts and drops them, so a caller's `temperature` on
+  `@google-gemini:pro` is silently ineffective and nothing says so.
+
+  **Scope sketch**: a sibling declaration for models that *ignore* sampling parameters (a descriptor
+  list, matched like the rejected list), and a decision on what a call with `temperature` does there
+  — refuse, or send it and report it as ignored. Not done in `gemini-thinking-level`, which kept
+  behaviour unchanged.
+
+  **Trigger**: a consumer relies on `temperature` with `@google-gemini:pro`, or any stream that touches
+  the sampling-parameter declarations.
+
+  **Not a P2**: nothing on the wire is wrong and nothing fails; the cost is a setting that has no
+  effect.
+
+  **Reference**: `.ai/tasks/completed/2026-11/gemini-thinking-level/` (`state.md` Q1).
+
 - ~~**[P3] Generic `effort: 'none'` maps to a Gemini value that errors on Pro-family models.**~~
   **Resolved by `gemini-thinking-level` (PR #TBD).** A generic `'none'` never sends
   `thinkingBudget: 0` to a Pro-family model: every Pro id with evidence (`gemini-3.1-pro-preview`,

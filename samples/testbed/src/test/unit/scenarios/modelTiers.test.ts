@@ -1599,7 +1599,7 @@ describe('model-tier scenarios', () => {
     const result = await geminiModelTiersScenario.cli.run(makeContext());
     expect(result).toSucceedAndSatisfy((report: string) => {
       expect(report).toMatch(/\[PENDING\] base max=65536\s+gemini-3\.8-flash/);
-      expect(report).toMatch(/\[PENDING\] frontier max=65536\s+gemini-4-argon/);
+      expect(report).toMatch(/\[PENDING\] frontier max=32768\s+gemini-4-argon/);
       expect(report).toMatch(/\[PENDING\] @google-gemini:flash-lite max=65536\s+gemini-3\.5-flash-lite/);
       // flash-lite: thinkingLevel, 'none' is its minimal level
       expect(report).toMatch(

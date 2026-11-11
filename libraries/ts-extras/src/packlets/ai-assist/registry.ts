@@ -311,16 +311,28 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     // Flash" columns support minimal, low, medium and high. On Gemini 4 the budget is deprecated: "If
     // passed alone, it maps to the nearest `thinkingLevel` … and returns a warning; sending
     // `thinkingBudget` and `thinkingLevel` together returns a `400` error."
+    // The "Gemini 3.1 Flash-Lite Image" column supports minimal and high only (low and medium "Not
+    // supported"), so its rule is longer than, and so outranks, the gemini-3.1-flash-lite rule its id
+    // would otherwise match. The "Gemini 3 Flash" column is gemini-3-flash-preview. Rules match
+    // exact-or-dash-bounded, longest prefix first: a dated snapshot or `-preview` of a listed id takes
+    // that id's rule (gemini-3.1-flash-lite-preview takes gemini-3.1-flash-lite's). The pages fetched
+    // name no other variant of gemini-3.6-flash, gemini-3.5-flash-lite or Gemini 4; a future variant
+    // with a different level set (an `-image` or `-live` sibling) must get its own longer rule here.
     // Deliberately not listed: gemini-3.8-flash (see above: budget 0 is its only off switch);
-    // gemini-3.1-pro-preview (no column in the generateContent table); gemini-3.1-flash-lite (as a
-    // dash-bounded prefix it would also reach gemini-3.1-flash-lite-image, whose levels are minimal
-    // and high only); the 2.5 line ("Gemini 2.5 series models don't support `thinkingLevel`").
+    // gemini-3.1-pro-preview (no column in the generateContent table); the 2.5 line, which is on
+    // geminiThinkingLevelRejectedModelPrefixes instead.
     geminiThinkingLevels: [
       { modelPrefix: 'gemini-4-argon', levels: ['low', 'medium', 'high'] },
       { modelPrefix: 'gemini-4-carbon', levels: ['low', 'medium', 'high'] },
       { modelPrefix: 'gemini-3.6-flash', levels: ['minimal', 'low', 'medium', 'high'] },
-      { modelPrefix: 'gemini-3.5-flash-lite', levels: ['minimal', 'low', 'medium', 'high'] }
+      { modelPrefix: 'gemini-3.5-flash-lite', levels: ['minimal', 'low', 'medium', 'high'] },
+      { modelPrefix: 'gemini-3.1-flash-lite', levels: ['minimal', 'low', 'medium', 'high'] },
+      { modelPrefix: 'gemini-3.1-flash-lite-image', levels: ['minimal', 'high'] },
+      { modelPrefix: 'gemini-3-flash-preview', levels: ['minimal', 'low', 'medium', 'high'] }
     ],
+    // "Gemini 2.5 series models don't support `thinkingLevel`; use `thinkingBudget` instead"
+    // (generateContent thinking page, fetched 2026-11-11). An explicit level is refused there.
+    geminiThinkingLevelRejectedModelPrefixes: ['gemini-2.5'],
     corsRestricted: false,
     streamingCorsRestricted: false,
     acceptsImageInput: true,
@@ -329,14 +341,18 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     structuredOutput: [{ modelPrefix: '', format: 'gemini-response-schema' }],
     // "Output token limit 65,536" on each model's page under ai.google.dev/gemini-api/docs/models
     // (served from aistudio.google.com/docs/models), fetched 2026-11-08. Completion alias targets
-    // only, plus the previous pro target. gemini-4-argon: "Max output 65,536 (default synchronous) /
-    // up to 1,048,576 (with long decode)" (https://aistudio.google.com/docs/models/gemini-4-argon.md,
-    // fetched 2026-11-11); long decode needs a continuation loop ai-assist does not run, so the
-    // synchronous figure is recorded.
+    // only, plus the previous pro target. gemini-4-argon records 32768, the lower of two figures.
+    // Its model page says "Max output 65,536 (default synchronous) / up to 1,048,576 (with long
+    // decode)" (https://aistudio.google.com/docs/models/gemini-4-argon.md), but "a single streaming
+    // request (`streamGenerateContent`) returns up to `65,536` tokens, and a single non-streaming
+    // request (`generateContent`) returns up to `32,768` tokens" (thinking page, generateContent;
+    // both fetched 2026-11-11). maxOutputTokens is the largest maxTokens every call path can be
+    // given, and callProviderCompletion sends non-streaming generateContent; long decode needs a
+    // continuation loop ai-assist does not run. So 32768 is declared, not 65536.
     maxOutputTokens: [
       { modelId: 'gemini-3.8-flash', maxOutputTokens: 65536 },
       { modelId: 'gemini-3.5-flash-lite', maxOutputTokens: 65536 },
-      { modelId: 'gemini-4-argon', maxOutputTokens: 65536 },
+      { modelId: 'gemini-4-argon', maxOutputTokens: 32768 },
       { modelId: 'gemini-3.1-pro-preview', maxOutputTokens: 65536 }
     ],
     embedding: [

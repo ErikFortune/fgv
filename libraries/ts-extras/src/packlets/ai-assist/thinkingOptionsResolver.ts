@@ -27,7 +27,7 @@ import { type JsonObject } from '@fgv/ts-json-base';
 import { fail, Result, succeed } from '@fgv/ts-utils';
 
 import { geminiThinkingLevel } from './converters';
-import type { GeminiThinkingLevel } from './geminiThinking';
+import type { GeminiThinkingLevel, IGeminiModelThinking } from './geminiThinking';
 import type {
   IThinkingConfig,
   IThinkingProviderConfig,
@@ -271,6 +271,9 @@ function isModelSpecific(block: IThinkingProviderConfig): boolean {
 // Merge function
 // ============================================================================
 
+/** A model with no Gemini level declaration that accepts an explicit level: the budget wire. */
+const NO_GEMINI_MODEL_THINKING: IGeminiModelThinking = { rejectsLevel: false };
+
 /**
  * Resolves the effective thinking wire parameters for a specific resolved model
  * by merging all applicable config blocks in precedence order.
@@ -291,18 +294,17 @@ function isModelSpecific(block: IThinkingProviderConfig): boolean {
  * is sent as `'low'`, or refused when `config.onUnsupported` is `'fail'`. Provider blocks are
  * not checked against that rule — a caller writing one has taken control of the wire value.
  *
- * On Gemini, `geminiLevels` (the model's declared levels, see `resolveGeminiThinkingLevels`)
- * selects the `thinkingLevel` wire; without it the model is sent `thinkingBudget`. A generic effort
- * the model's levels do not include, and an explicit `thinkingLevel` they do not include, are
- * refused.
+ * On Gemini, `gemini` (see `resolveGeminiModelThinking`) carries the model's declared levels, which
+ * select the `thinkingLevel` wire (without them the model is sent `thinkingBudget`), and whether the
+ * model rejects `thinkingLevel` altogether. A generic effort the model's levels do not include, and an
+ * explicit `thinkingLevel` the model does not accept, are refused.
  *
  * @param config - The caller's IThinkingConfig
  * @param resolvedModel - The concrete model string after registry resolution
  * @param discriminator - Coarse provider family
  * @param thinkingRequired - Whether `resolvedModel` rejects the off value (see
  *   `isThinkingRequiredModel`)
- * @param geminiLevels - The thinking levels `resolvedModel` accepts, lowest first, when it is a
- *   Gemini level model
+ * @param gemini - What `resolvedModel` accepts on the Gemini thinking wire, for a Gemini model
  * @returns Merged effective config for wire encoding, or a failure when an effort or block is refused
  * @internal
  */
@@ -311,15 +313,11 @@ export function mergeThinkingConfig(
   resolvedModel: string,
   discriminator: ThinkingProviderDiscriminator,
   thinkingRequired: boolean = false,
-  geminiLevels?: ReadonlyArray<GeminiThinkingLevel>
+  gemini: IGeminiModelThinking = NO_GEMINI_MODEL_THINKING
 ): Result<IResolvedThinkingConfig> {
-  return resolveThinkingConfig(
-    config,
-    resolvedModel,
-    discriminator,
-    thinkingRequired,
-    geminiLevels
-  ).onSuccess((r) => succeed(r.resolved));
+  return resolveThinkingConfig(config, resolvedModel, discriminator, thinkingRequired, gemini).onSuccess(
+    (r) => succeed(r.resolved)
+  );
 }
 
 /**
@@ -406,9 +404,10 @@ export function resolveThinkingConfig(
   resolvedModel: string,
   discriminator: ThinkingProviderDiscriminator,
   thinkingRequired: boolean,
-  geminiLevels?: ReadonlyArray<GeminiThinkingLevel>
+  gemini: IGeminiModelThinking = NO_GEMINI_MODEL_THINKING
 ): Result<IThinkingResolution> {
   let resolved: IResolvedThinkingConfig = {};
+  const geminiLevels = gemini.levels;
 
   const blockSetsEffort = providerBlockSetsEffort(config, resolvedModel, discriminator);
   let effort = config.effort;
@@ -450,7 +449,7 @@ export function resolveThinkingConfig(
           // checked: the block owns the wire.
           const levelResult = genericEffortToGeminiLevel(effort, geminiLevels, resolvedModel);
           if (levelResult.isFailure()) {
-            return fail(levelResult.message);
+            return levelResult.withType<IThinkingResolution>();
           }
           resolved = { ...resolved, geminiThinkingLevel: levelResult.value };
         }
@@ -481,22 +480,53 @@ export function resolveThinkingConfig(
   return [...genericBlocks, ...specificBlocks]
     .reduce<Result<IResolvedThinkingConfig>>(
       (acc, block) =>
-        acc.onSuccess((current) => applyBlock(current, block, discriminator, resolvedModel, geminiLevels)),
+        acc.onSuccess((current) => applyBlock(current, block, discriminator, resolvedModel, gemini)),
       succeed(resolved)
     )
     .onSuccess((merged) => succeed(outcome(merged)));
 }
 
 /**
+ * Checks an explicit Gemini `thinkingLevel` against what the model accepts: it must be a
+ * `GeminiThinkingLevel`, one of the model's declared levels when it has a level declaration, and is
+ * refused on a model that rejects `thinkingLevel` altogether.
+ * @internal
+ */
+export function checkGeminiThinkingLevel(
+  thinkingLevel: unknown,
+  resolvedModel: string,
+  gemini: IGeminiModelThinking
+): Result<GeminiThinkingLevel> {
+  return geminiThinkingLevel
+    .convert(thinkingLevel)
+    .withErrorFormat((msg) => `${resolvedModel}: invalid Gemini thinkingLevel: ${msg}`)
+    .onSuccess((level) => {
+      if (gemini.rejectsLevel) {
+        return fail(
+          `thinkingLevel '${level}' is not supported by ${resolvedModel}: the model takes thinkingBudget only`
+        );
+      }
+      const levels = gemini.levels;
+      return levels !== undefined && !levels.includes(level)
+        ? fail(
+            `thinkingLevel '${level}' is not supported by ${resolvedModel}: its thinking levels are ${levels.join(
+              ', '
+            )}`
+          )
+        : succeed(level);
+    });
+}
+
+/**
  * Applies a `google` block. A level replaces any earlier budget and a budget any earlier level, so
  * the resolved config never carries both; a block that sets both, or a level the model does not
- * list, is refused.
+ * accept, is refused.
  */
 function applyGeminiBlock(
   current: IResolvedThinkingConfig,
   block: IGeminiThinkingOptions,
   resolvedModel: string,
-  geminiLevels: ReadonlyArray<GeminiThinkingLevel> | undefined
+  gemini: IGeminiModelThinking
 ): Result<IResolvedThinkingConfig> {
   const { thinkingBudget, thinkingLevel } = block.config;
   if (thinkingLevel !== undefined) {
@@ -506,18 +536,9 @@ function applyGeminiBlock(
           `(Gemini 4 returns a 400 for the pair): set one of them`
       );
     }
-    return geminiThinkingLevel
-      .convert(thinkingLevel)
-      .withErrorFormat((msg) => `${resolvedModel}: invalid Gemini thinkingLevel: ${msg}`)
-      .onSuccess((level) =>
-        geminiLevels !== undefined && !geminiLevels.includes(level)
-          ? fail(
-              `thinkingLevel '${level}' is not supported by ${resolvedModel}: its thinking levels are ${geminiLevels.join(
-                ', '
-              )}`
-            )
-          : succeed({ ...current, geminiThinkingBudget: undefined, geminiThinkingLevel: level })
-      );
+    return checkGeminiThinkingLevel(thinkingLevel, resolvedModel, gemini).onSuccess((level) =>
+      succeed({ ...current, geminiThinkingBudget: undefined, geminiThinkingLevel: level })
+    );
   }
   if (thinkingBudget !== undefined) {
     return succeed({ ...current, geminiThinkingLevel: undefined, geminiThinkingBudget: thinkingBudget });
@@ -534,7 +555,7 @@ function applyBlock(
   block: IThinkingProviderConfig,
   discriminator: ThinkingProviderDiscriminator,
   resolvedModel: string,
-  geminiLevels: ReadonlyArray<GeminiThinkingLevel> | undefined
+  gemini: IGeminiModelThinking
 ): Result<IResolvedThinkingConfig> {
   if (block.provider === 'other') {
     const merged =
@@ -543,7 +564,7 @@ function applyBlock(
   }
   if (block.provider === 'google') {
     // blockApplies guarantees the discriminator is 'google' for a google block.
-    return applyGeminiBlock(current, block, resolvedModel, geminiLevels);
+    return applyGeminiBlock(current, block, resolvedModel, gemini);
   }
 
   switch (discriminator) {
@@ -575,7 +596,7 @@ function applyBlock(
 /**
  * The `generationConfig.thinkingConfig` the Gemini adapters send for a resolved config:
  * `{ thinkingLevel }`, `{ thinkingBudget }`, or `undefined` when neither is set. The resolver never
- * sets both; a caller-built config that does is refused by {@link checkGeminiThinkingExclusive}
+ * sets both; a caller-built config that does is refused by `checkGeminiThinkingExclusive`
  * on the path that accepts one.
  * @internal
  */
@@ -594,7 +615,8 @@ export function geminiThinkingConfigWire(
 /**
  * Refuses a resolved config that carries both a Gemini level and a budget — the pair Gemini 4
  * rejects with a 400. Only a caller-built config (`executeClientToolTurn`'s `resolvedThinking`)
- * can carry both; the resolver never produces it.
+ * can carry both; the resolver never produces it. `checkCallerGeminiThinking` applies this up
+ * front on that path; the Gemini streaming adapter keeps it as a backstop.
  * @internal
  */
 export function checkGeminiThinkingExclusive(
@@ -607,6 +629,34 @@ export function checkGeminiThinkingExclusive(
     );
   }
   return succeed(resolved);
+}
+
+/**
+ * Checks a caller-built `resolvedThinking` for a Gemini model before anything is sent, since it
+ * skips the resolver: both a level and a budget is refused; `geminiThinkingBudget: 0` is refused on
+ * a model that cannot run with thinking off (`thinkingRequired`); and `geminiThinkingLevel` must be
+ * a level the model accepts (see {@link checkGeminiThinkingLevel}).
+ * @internal
+ */
+export function checkCallerGeminiThinking(
+  resolved: IResolvedThinkingConfig | undefined,
+  resolvedModel: string,
+  thinkingRequired: boolean,
+  gemini: IGeminiModelThinking
+): Result<IResolvedThinkingConfig | undefined> {
+  return checkGeminiThinkingExclusive(resolved).onSuccess((checked) => {
+    if (checked?.geminiThinkingBudget === 0 && thinkingRequired) {
+      return fail(
+        `${resolvedModel} cannot run with thinking off: set geminiThinkingBudget to a value other than 0`
+      );
+    }
+    if (checked?.geminiThinkingLevel !== undefined) {
+      return checkGeminiThinkingLevel(checked.geminiThinkingLevel, resolvedModel, gemini).onSuccess(() =>
+        succeed(checked)
+      );
+    }
+    return succeed(checked);
+  });
 }
 
 // ============================================================================
