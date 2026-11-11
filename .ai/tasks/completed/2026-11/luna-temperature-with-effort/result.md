@@ -92,6 +92,11 @@ Run from `/home/user/fgv-luna` on `9130c265e` (the work commit), logs under the 
 | `lint` | exit 0, `SUCCESS: 34 operations`; greps 0; `warning` 1 (tracked-symlink notice) |
 | `test` | exit 0, `SUCCESS: 38 operations` + `NO OP: 1`; `not met` / `Jest tests failed` / `error TS` 0; `warning` 1 (tracked-symlink notice); no NUL padding |
 
+Review round 1, on `cfe5df073` (logs prefixed `r1-`): install exit 0; `change --verify` exit 0;
+`rebuild` `SUCCESS: 39 operations`; `lint` `SUCCESS: 34 operations`; `test` `SUCCESS: 38 operations` +
+`NO OP: 1`. Failure greps 0 in each; `warning` 1 in each of rebuild, lint and test (the tracked-symlink
+notice); no NUL padding. `origin/integration/asks` still at `c8a84c9d2`, so no merge was needed.
+
 `ts-extras` coverage: `samplingParams.ts`, `model.ts`, `registry.ts`, `completionClient.ts`,
 `streamingClient.ts`, `clientToolContinuationBuilder.ts` all 100 / 100 / 100 / 100.
 

@@ -46,4 +46,4 @@ relatedStreams:
   - { id: live-run-corrections, relationship: 'added samplingParamsAcceptedTemperature for gpt-6.1-sol and gpt-6-astra (#771)' }
   - { id: model-followups, relationship: 'made the client-tool path run the conflict and sampling checks (#774)' }
   - { id: gemini-thinking-level, relationship: 'merged ahead (#775)' }
-sourceHash: sha256:44a9101eafb9eb65 # over brief.md + state.md + result.md
+sourceHash: sha256:a228d7e3ed508696 # over brief.md + state.md + result.md
