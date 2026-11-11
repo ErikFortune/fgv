@@ -46,7 +46,7 @@
  *      `refused-locally`. On a listed model, and on a model with its own off value
  *      (`anthropicThinkingOffTypes`), a second, raw `'none'` sends the provider's default off value
  *      past the library gate, and the provider's own rejection (`expected-reject`) keeps the listing
- *      honest in the other direction (`rawNoneModels` can name a model's rejection text or skip it)
+ *      honest in the other direction
  *    - model-override rows for aliases no tier reaches (`extraModels`)
  *    - temperature probes: a `temperature` (optionally with an effort) on the tiers and extra
  *      models a probe names, each with a stated expectation — accepted, `refused-locally` (the
@@ -212,6 +212,11 @@ export interface ICanaryCompleteOptions {
   readonly temperature?: number;
   /** Send this `maxTokens` (a max-output probe). */
   readonly maxTokens?: number;
+  /**
+   * Send this Gemini `thinkingLevel` in an explicit `google` block (an explicit-level probe). The
+   * library sends a declared level verbatim, so the provider itself answers whether it accepts it.
+   */
+  readonly thinkingLevel?: AiAssist.GeminiThinkingLevel;
 }
 
 /**
@@ -248,21 +253,6 @@ export interface ICanaryTemperatureProbe {
 }
 
 /**
- * Per-model handling of the `none raw` row, keyed by concrete model id (see
- * {@link ITierCanarySpec.rawNoneModels}).
- * @public
- */
-export interface ICanaryRawNoneRule {
-  /** The text this model's rejection must match, in place of {@link ITierCanarySpec.rawNoneRejection}. */
-  readonly rejectPattern?: RegExp;
-  /**
-   * Send no raw row for this model, for the reason given: the raw value cannot tell anything apart
-   * on it (for example, a model that accepts the off value but goes on thinking).
-   */
-  readonly skip?: string;
-}
-
-/**
  * The schema every structured-output probe sends, and validates the reply against — the same
  * object, so the wire schema and the check cannot drift.
  * @public
@@ -295,6 +285,7 @@ export interface ICanaryProbeResults {
   readonly temperature: ReadonlyArray<ICanaryProbeResult>;
   readonly maxOutput: ReadonlyArray<ICanaryProbeResult>;
   readonly structured: ReadonlyArray<ICanaryProbeResult>;
+  readonly explicitLevel: ReadonlyArray<ICanaryProbeResult>;
   readonly image: ReadonlyArray<ICanaryProbeResult>;
 }
 
@@ -360,8 +351,6 @@ export interface ITierCanarySpec {
    * {@link ICanaryTemperatureProbe.rejectPattern}). Absent: any 400 counts as the expected rejection.
    */
   readonly rawNoneRejection?: RegExp;
-  /** Per-model overrides of the `none raw` row, keyed by concrete id (see {@link ICanaryRawNoneRule}). */
-  readonly rawNoneModels?: Readonly<Record<string, ICanaryRawNoneRule>>;
   /** Temperature probes, each with its own expectation (see {@link ICanaryTemperatureProbe}). */
   readonly temperatureProbes?: ReadonlyArray<ICanaryTemperatureProbe>;
   /**
@@ -387,6 +376,12 @@ export interface ITierCanarySpec {
    * here — the response does not report it — and is pinned by ts-extras' request-body tests instead.
    */
   readonly structuredOutputEfforts?: ReadonlyArray<CanaryThinkingEffort>;
+  /**
+   * When true, fire one completion per tier and extra model whose concrete id has a Gemini level
+   * declaration (`resolveGeminiThinkingLevels`), sending its lowest declared level in an explicit
+   * `google` block. It must be accepted: a provider 400 means the declared level list is wrong.
+   */
+  readonly explicitLevelProbe?: boolean;
 }
 
 /**
@@ -555,6 +550,7 @@ export function formatTierCanaryReport(
         ...probes.temperature,
         ...probes.maxOutput,
         ...probes.structured,
+        ...probes.explicitLevel,
         ...probes.image
       ]
     : [];
@@ -567,7 +563,7 @@ export function formatTierCanaryReport(
   const verdict = anyTierFailure
     ? 'FAILED — a tier is not chat-completions-callable (wrong endpoint) or resolves to a stale id (see FAIL lines below)'
     : anyProbeFailure
-    ? 'FAILED — a thinking, strict-none, model-override, temperature, max-output, structured-output or image probe failed (see FAIL lines below)'
+    ? 'FAILED — a thinking, strict-none, model-override, temperature, max-output, structured-output, explicit-level or image probe failed (see FAIL lines below)'
     : anyNotRun
     ? 'RESOLVER-VERIFIED; LIVE CANARY PENDING (STOP-FLAG: set the provider API key to run the keyed gate)'
     : anyBlocked
@@ -617,6 +613,10 @@ export function formatTierCanaryReport(
     ...probeSection('Temperature probes (each row states its expected outcome):', probes?.temperature ?? []),
     ...probeSection('Max-output probes (maxTokens = recorded output limit):', probes?.maxOutput ?? []),
     ...probeSection("Structured-output probes (schema, onUnsupported 'fail'):", probes?.structured ?? []),
+    ...probeSection(
+      'Explicit thinkingLevel probes (lowest declared level, sent verbatim):',
+      probes?.explicitLevel ?? []
+    ),
     ...probeSection('Live image probe:', probes?.image ?? []),
     '',
     `Verdict: ${verdict}`
@@ -686,7 +686,8 @@ function allTargets(
 const LOCAL_REFUSALS: ReadonlyArray<RegExp> = [
   /thinking effort 'none' is not supported by/,
   /does not accept (a non-default )?temperature/,
-  /thinking mode is not compatible with temperature/
+  /thinking mode is not compatible with temperature/,
+  /is not supported by \S+: its thinking levels are/
 ];
 
 /**
@@ -701,17 +702,28 @@ export function isLocalRefusal(message: string): boolean {
 /**
  * The expectation a thinking probe states for its row, read off the registry: `'none'` on a
  * thinking-required model is sent as `'low'`; elsewhere it turns thinking off, naming the off value
- * when the model has its own (`anthropicThinkingOffTypes`).
+ * when the model has its own (`anthropicThinkingOffTypes`). On a Gemini level model
+ * (`resolveGeminiThinkingLevels`) every row names the `thinkingLevel` it is sent as.
  */
 function thinkingExpectation(
   spec: ITierCanarySpec,
   concrete: string,
   effort: CanaryThinkingEffort
 ): string | undefined {
+  const levels = AiAssist.resolveGeminiThinkingLevels(spec.descriptor, concrete);
+  const required = AiAssist.isThinkingRequiredModel(spec.descriptor, concrete);
+  if (levels !== undefined) {
+    if (effort === 'none') {
+      return required
+        ? "degraded to thinkingLevel 'low' (thinking-required)"
+        : "sent as thinkingLevel 'minimal'";
+    }
+    return `sent as thinkingLevel '${effort}'`;
+  }
   if (effort !== 'none') {
     return undefined;
   }
-  if (AiAssist.isThinkingRequiredModel(spec.descriptor, concrete)) {
+  if (required) {
     return "degraded to 'low' (thinking-required)";
   }
   const offType = AiAssist.resolveAnthropicThinkingOffType(spec.descriptor, concrete);
@@ -720,8 +732,7 @@ function thinkingExpectation(
 
 /**
  * Whether a target gets a `none raw` row, and the rejection text it must match. A thinking-required
- * model and a model with its own off value both reject the provider's default off value; a rule in
- * {@link ITierCanarySpec.rawNoneModels} can name its own text, or skip the row.
+ * model and a model with its own off value both reject the provider's default off value.
  */
 function rawNonePlan(
   spec: ITierCanarySpec,
@@ -729,15 +740,14 @@ function rawNonePlan(
   listed: boolean
 ): { readonly note: string; readonly rejectPattern?: RegExp } | undefined {
   const offType = AiAssist.resolveAnthropicThinkingOffType(spec.descriptor, concrete);
-  const rule = spec.rawNoneModels?.[concrete];
-  if ((!listed && offType === 'disabled') || rule?.skip !== undefined) {
+  if (!listed && offType === 'disabled') {
     return undefined;
   }
   return {
     note: listed
       ? 'the provider still rejects none, as listed'
       : `the provider still rejects disabled; this model's off value is ${offType}`,
-    rejectPattern: rule?.rejectPattern ?? spec.rawNoneRejection
+    rejectPattern: spec.rawNoneRejection
   };
 }
 
@@ -766,6 +776,40 @@ async function runThinkingProbes(
         withPassDetail(completionProbe(label, target.concrete, result, classifyThinkingFailure), expectation)
       );
     }
+  }
+  return rows;
+}
+
+/**
+ * Runs the explicit-level probes: on every target whose concrete id has a Gemini level declaration,
+ * one completion sending its lowest declared level in an explicit block. Targets with no declaration
+ * get no row.
+ */
+async function runExplicitLevelProbes(
+  spec: ITierCanarySpec,
+  targets: ReadonlyArray<ICanaryTarget>,
+  deps: ITierCanaryDeps
+): Promise<ICanaryProbeResult[]> {
+  const rows: ICanaryProbeResult[] = [];
+  if (!spec.explicitLevelProbe) {
+    return rows;
+  }
+  for (const target of targets) {
+    const lowest = AiAssist.resolveGeminiThinkingLevels(spec.descriptor, target.concrete)?.[0];
+    if (lowest === undefined) {
+      continue;
+    }
+    const label = `${target.label} level=${lowest}`;
+    if (deps.complete === undefined) {
+      rows.push({ label, concrete: target.concrete, outcome: 'not-run', detail: 'expect accepted' });
+      continue;
+    }
+    const result = await deps.complete(target.tier, targetOptions(target, { thinkingLevel: lowest }));
+    rows.push(
+      classifyExpectedProbe(label, target.concrete, 'accepted', result, {
+        note: `thinkingLevel '${lowest}' accepted`
+      })
+    );
   }
   return rows;
 }
@@ -1330,6 +1374,7 @@ export async function runTierCanary(
   const temperature = await runTemperatureProbes(spec, targets, deps);
   const maxOutput = await runMaxOutputProbes(spec, targets, deps);
   const structured = await runStructuredOutputProbes(spec, targets, deps);
+  const explicitLevel = await runExplicitLevelProbes(spec, targets, deps);
   const image: ICanaryProbeResult[] = [];
   if (spec.liveImage && imageResolution) {
     image.push(
@@ -1345,6 +1390,7 @@ export async function runTierCanary(
     temperature,
     maxOutput,
     structured,
+    explicitLevel,
     image
   };
 
@@ -1363,6 +1409,7 @@ export async function runTierCanary(
     ...temperature,
     ...maxOutput,
     ...structured,
+    ...explicitLevel,
     ...image
   ].some((r) => isRealFailure(r.outcome));
   return realFailure ? fail(report) : succeed(report);

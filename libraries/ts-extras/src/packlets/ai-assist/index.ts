@@ -78,8 +78,6 @@ export {
   type ModelSpecKey,
   type IModelSpecMap,
   allModelSpecKeys,
-  MODEL_SPEC_BASE_KEY,
-  resolveModel,
   type IModelAliasMap,
   MODEL_ALIAS_SIGIL,
   resolveModelAlias,
@@ -87,8 +85,8 @@ export {
   isResponsesOnlyModel,
   isAdaptiveThinkingModel,
   isThinkingRequiredModel,
-  rejectsSamplingParams,
   usesMaxCompletionTokensField,
+  type ChatOutputTokensField,
   toDataUrl,
   type IThinkingConfig,
   type IThinkingProviderConfig,
@@ -99,19 +97,30 @@ export {
   type IOtherThinkingOptions,
   type IAnthropicThinkingConfig,
   type IOpenAiThinkingConfig,
-  type IGeminiThinkingConfig,
   type IXAiThinkingConfig,
   type AnthropicThinkingModelNames,
   type OpenAiThinkingModelNames,
   type GeminiThinkingModelNames,
   type XAiThinkingModelNames
 } from './model';
+export { MODEL_SPEC_BASE_KEY, resolveModel } from './modelSpecResolver';
 
 export {
   type AnthropicThinkingOffType,
   type IAnthropicThinkingOffRule,
   resolveAnthropicThinkingOffType
 } from './anthropicThinkingOff';
+
+export {
+  type GeminiThinkingLevel,
+  type IGeminiThinkingConfig,
+  type IGeminiThinkingLevelRule,
+  allGeminiThinkingLevels,
+  rejectsGeminiThinkingLevel,
+  resolveGeminiThinkingLevels
+} from './geminiThinking';
+
+export { rejectsSamplingParams, rejectsSamplingParamsWithThinking } from './samplingParams';
 
 export {
   type IResolvedImageOptions,
@@ -189,7 +198,8 @@ export {
   aiAssistProviderConfig,
   aiAssistSettings,
   modelSpecKey,
-  modelSpec
+  modelSpec,
+  geminiThinkingLevel
 } from './converters';
 
 export {

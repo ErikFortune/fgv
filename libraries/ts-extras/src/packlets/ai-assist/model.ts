@@ -28,6 +28,8 @@ import { type JsonObject } from '@fgv/ts-json-base';
 import type { IAiStructuredOutputCapability, StructuredOutputEnforcement } from './structuredOutputTypes';
 import type { IAiCompletionUsage } from './usageTypes';
 import type { IAnthropicThinkingOffRule } from './anthropicThinkingOff';
+import type { IGeminiThinkingConfig, IGeminiThinkingLevelRule } from './geminiThinking';
+import { walkModelSpec } from './modelSpecResolver';
 import type {
   AiServerToolType,
   IAiStreamToolUseComplete,
@@ -283,12 +285,6 @@ export const allModelSpecKeys: ReadonlyArray<ModelSpecKey> = [
 ];
 
 /**
- * Default context key used as fallback when resolving a {@link ModelSpec}.
- * @public
- */
-export const MODEL_SPEC_BASE_KEY: ModelSpecKey = 'base';
-
-/**
  * A model specification: either a simple model string or a record mapping
  * context keys to nested model specs.
  *
@@ -318,71 +314,6 @@ export interface IModelSpecMap {
  * @public
  */
 export type ModelSpec = string | IModelSpecMap;
-
-/**
- * Ordered fallback candidates for each quality-tier context key.
- *
- * @remarks
- * A `frontier` request cascades `frontier → advanced → base`; an `advanced`
- * request cascades `advanced → base`. Any context not listed here (the
- * `image`/`embedding` modality keys, or an arbitrary caller-supplied string)
- * resolves flat — just the context itself, then the shared `base` fallback
- * below — matching the pre-tier behavior. `base` maps to `['base']` so a
- * `base` request never over-reaches into a tier branch.
- */
-const TIER_FALLBACK: { readonly [k: string]: ReadonlyArray<ModelSpecKey> } = {
-  base: ['base'],
-  advanced: ['advanced', 'base'],
-  frontier: ['frontier', 'advanced', 'base']
-};
-
-/**
- * Resolves a {@link ModelSpec} to a concrete model string given an optional context key.
- *
- * @remarks
- * Resolution rules:
- * 1. If the spec is a string, return it directly (context is irrelevant).
- * 2. If the spec is an object, walk the ordered candidate keys for the context:
- *    a quality-tier context (`advanced`/`frontier`) cascades through the
- *    tier-fallback table (`frontier → advanced → base`, `advanced → base`);
- *    every other context resolves flat (`[context]`); `undefined` resolves to
- *    the shared `base` fallback. The first present key wins.
- * 3. Otherwise, fall back to the {@link MODEL_SPEC_BASE_KEY | 'base'} key.
- * 4. If neither context nor `'base'` exists, use the first available value.
- *
- * @param spec - The model specification to resolve
- * @param context - Optional context key (e.g. `'advanced'`)
- * @returns The resolved model string
- * @public
- */
-export function resolveModel(spec: ModelSpec, context?: string): string {
-  if (typeof spec === 'string') {
-    return spec;
-  }
-
-  // Ordered candidate keys for this context: a tier key cascades via
-  // TIER_FALLBACK; any other key resolves flat as [context]; undefined drops
-  // straight to the shared 'base' fallback below.
-  const order: ReadonlyArray<string> = context === undefined ? [] : TIER_FALLBACK[context] ?? [context];
-  for (const key of order) {
-    if (key in spec) {
-      return resolveModel(spec[key]);
-    }
-  }
-
-  // Fall back to 'base'
-  if (MODEL_SPEC_BASE_KEY in spec) {
-    return resolveModel(spec[MODEL_SPEC_BASE_KEY]);
-  }
-
-  // Last resort: first value in the record
-  const first = Object.values(spec)[0];
-  /* c8 ignore next 3 - defensive: only reachable with empty object (prevented by converter) */
-  if (first === undefined) {
-    return '';
-  }
-  return resolveModel(first);
-}
 
 // ============================================================================
 // Model Alias Layer
@@ -493,7 +424,9 @@ export function resolveModelAlias(descriptor: IAiProviderDescriptor, model: stri
  * @param modelOverride - An optional caller-supplied `ModelSpec` that takes precedence
  * over `descriptor.defaultModel`. May itself contain or be an alias.
  * @param context - Optional {@link ModelSpecKey} selecting the spec branch.
- * @returns `Result` with the concrete provider model id, or a failure.
+ * @returns `Result` with the concrete provider model id, or a failure. A spec outside the
+ * {@link AiAssist.ModelSpec} type fails with the provider id and the dotted path of the offending key
+ * (`provider "openai": model spec modelOverride.base is undefined: …`).
  * @public
  */
 export function resolveProviderModel(
@@ -501,13 +434,16 @@ export function resolveProviderModel(
   modelOverride: ModelSpec | undefined,
   context?: ModelSpecKey
 ): Result<string> {
-  const resolved = resolveModel(modelOverride ?? descriptor.defaultModel, context);
-  if (resolved.length === 0) {
-    return fail(
-      `provider "${descriptor.id}": no model resolved; pass modelOverride or set descriptor.defaultModel`
+  const spec = modelOverride ?? descriptor.defaultModel;
+  return walkModelSpec(spec, context, modelOverride !== undefined ? 'modelOverride' : 'defaultModel')
+    .withErrorFormat((msg) => `provider "${descriptor.id}": ${msg}`)
+    .onSuccess((resolved) =>
+      resolved.length === 0
+        ? fail<string>(
+            `provider "${descriptor.id}": no model resolved; pass modelOverride or set descriptor.defaultModel`
+          )
+        : resolveModelAlias(descriptor, resolved)
     );
-  }
-  return resolveModelAlias(descriptor, resolved);
 }
 
 /**
@@ -586,69 +522,11 @@ export function isThinkingRequiredModel(descriptor: IAiProviderDescriptor, model
 }
 
 /**
- * Whether a concrete (already-resolved) model restricts a caller-supplied `temperature`, per the
- * descriptor's {@link IAiProviderDescriptor.samplingParamsRejectedModelPrefixes}
- * (exact-or-dash-bounded match).
- *
- * @remarks
- * A listed model rejects every `temperature` except the descriptor's
- * {@link IAiProviderDescriptor.samplingParamsAcceptedTemperature}, when one is declared. The
- * completion (`callProviderCompletion`), streaming (`callProviderCompletionStream`) and
- * client-tool (`executeClientToolTurn`) paths refuse any other value before anything is sent,
- * rather than letting the provider return a 400.
- *
- * @param descriptor - The provider descriptor supplying the prefix list.
- * @param modelId - The resolved concrete model id to test.
- * @returns `true` when `modelId` restricts `temperature`.
+ * The Chat Completions request field that caps output length (see
+ * {@link AiAssist.IAiProviderDescriptor.chatOutputTokensField}).
  * @public
  */
-export function rejectsSamplingParams(descriptor: IAiProviderDescriptor, modelId: string): boolean {
-  return (
-    descriptor.samplingParamsRejectedModelPrefixes?.some((p) => isExactOrDashBoundedPrefix(modelId, p)) ??
-    false
-  );
-}
-
-/**
- * The `temperature` a model accepts even with thinking on: the descriptor's
- * {@link IAiProviderDescriptor.samplingParamsAcceptedTemperature} on a model that
- * {@link AiAssist.rejectsSamplingParams | restricts temperature} (such models apply that rule with or
- * without thinking), otherwise `undefined`.
- * @internal
- */
-export function temperatureAcceptedWithThinking(
-  descriptor: IAiProviderDescriptor,
-  modelId: string
-): number | undefined {
-  return rejectsSamplingParams(descriptor, modelId)
-    ? descriptor.samplingParamsAcceptedTemperature
-    : undefined;
-}
-
-/**
- * Refuses a `temperature` aimed at a model that rejects sampling parameters (see
- * {@link AiAssist.rejectsSamplingParams}). Succeeds with the temperature otherwise.
- * @internal
- */
-export function checkSamplingParams(
-  descriptor: IAiProviderDescriptor,
-  modelId: string,
-  temperature: number | undefined
-): Result<number | undefined> {
-  if (temperature === undefined || !rejectsSamplingParams(descriptor, modelId)) {
-    return succeed(temperature);
-  }
-  const accepted = descriptor.samplingParamsAcceptedTemperature;
-  if (accepted === undefined) {
-    return fail(`${modelId} does not accept temperature on any request: remove temperature`);
-  }
-  if (temperature === accepted) {
-    return succeed(temperature);
-  }
-  return fail(
-    `${modelId} does not accept a non-default temperature (${temperature}): remove temperature, or send ${accepted}`
-  );
-}
+export type ChatOutputTokensField = 'max_tokens' | 'max_completion_tokens';
 
 /**
  * Determines whether a provider's OpenAI-compatible Chat Completions request
@@ -656,11 +534,10 @@ export function checkSamplingParams(
  * `max_tokens` field for capping output length.
  *
  * @remarks
- * OpenAI's Chat Completions API deprecated `max_tokens` in favor of
- * `max_completion_tokens`. Every other provider routed through the shared
- * OpenAI-compatible chat-completions adapter (xAI Grok, Groq, Mistral, Ollama,
- * self-hosted `openai-compat` servers) still expects the legacy `max_tokens`
- * field, so this returns `true` only for the `'openai'` provider id. Consulted
+ * Reads the descriptor's {@link AiAssist.IAiProviderDescriptor.chatOutputTokensField} declaration.
+ * In the shipped registry OpenAI, Groq and xAI Grok declare `'max_completion_tokens'` (each
+ * API reference marks `max_tokens` deprecated in its favor); Mistral, Ollama and self-hosted
+ * `openai-compat` servers declare nothing and keep `max_tokens`. Consulted
  * by both the completion (`callProviderCompletion`) and streaming
  * (`callProviderCompletionStream`) chat-completions dispatch branches. Not
  * consulted on the Responses API path — `max_output_tokens` applies uniformly
@@ -668,11 +545,11 @@ export function checkSamplingParams(
  * nor by any non-`'openai'`-format provider (Anthropic, Gemini).
  *
  * @param descriptor - The provider descriptor.
- * @returns `true` only for the `'openai'` provider id.
+ * @returns `true` when the descriptor declares `'max_completion_tokens'`.
  * @public
  */
 export function usesMaxCompletionTokensField(descriptor: IAiProviderDescriptor): boolean {
-  return descriptor.id === 'openai';
+  return descriptor.chatOutputTokensField === 'max_completion_tokens';
 }
 
 // ============================================================================
@@ -1037,6 +914,15 @@ export interface IAiProviderDescriptor {
    */
   readonly maxOutputTokens?: ReadonlyArray<IAiMaxOutputTokensCapability>;
   /**
+   * The Chat Completions request field that carries `maxTokens` on this provider's
+   * OpenAI-format chat path: `'max_completion_tokens'`, or the legacy `'max_tokens'` (the
+   * default when undefined). Declare `'max_completion_tokens'` only where the provider's API
+   * reference accepts it; a server that does not know the field ignores it and the cap is lost.
+   * Read through {@link AiAssist.usesMaxCompletionTokensField}. Not consulted on the Responses API
+   * path (`max_output_tokens`) or by a non-`'openai'` `apiFormat`.
+   */
+  readonly chatOutputTokensField?: ChatOutputTokensField;
+  /**
    * Concrete model ids (prefix-matched) that must be invoked via the OpenAI
    * Responses API rather than chat completions — e.g. `gpt-5.5-pro`. Non-OpenAI
    * `apiFormat`s ignore this.
@@ -1077,7 +963,9 @@ export interface IAiProviderDescriptor {
    * Concrete model ids (exact-or-dash-bounded-prefix-matched, like
    * {@link IAiProviderDescriptor.adaptiveThinkingModelPrefixes}) that cannot run with thinking off.
    * The provider rejects the off value ai-assist would send for a generic `effort: 'none'`:
-   * `reasoning_effort: 'none'` (OpenAI, xAI), `thinkingBudget: 0` (Gemini), or the model's off
+   * `reasoning_effort: 'none'` (OpenAI, xAI), `thinkingBudget: 0` (Gemini on the budget wire; on
+   * the level wire, a model with no `'minimal'` level — see
+   * {@link AiAssist.IAiProviderDescriptor.geminiThinkingLevels}), or the model's off
    * `thinking` value (Anthropic adaptive-thinking models; see
    * {@link IAiProviderDescriptor.anthropicThinkingOffTypes}). A model that accepts the off value but
    * ignores it, still thinking, is listed too, so that `'none'` never claims an effect it lacks.
@@ -1087,7 +975,7 @@ export interface IAiProviderDescriptor {
    * is sent as `'low'` by default, or refused before the wire. Provider-specific blocks in
    * {@link IThinkingConfig.providers} are sent verbatim and are not checked, and the `'none'`
    * handling stands aside entirely when an applicable block sets the provider's effort (a typed
-   * block's `effort` or `thinkingBudget`, or an `'other'` block's wire field). Empty or undefined means every model accepts `'none'`.
+   * block's `effort`, `thinkingBudget` or `thinkingLevel`, or an `'other'` block's wire field). Empty or undefined means every model accepts `'none'`.
    */
   readonly thinkingRequiredModelPrefixes?: ReadonlyArray<string>;
   /**
@@ -1105,6 +993,22 @@ export interface IAiProviderDescriptor {
    */
   readonly anthropicThinkingOffTypes?: ReadonlyArray<IAnthropicThinkingOffRule>;
   /**
+   * Gemini models sent `thinkingLevel` rather than `thinkingBudget`, each with the levels it
+   * accepts, lowest first; matched exact-or-dash-bounded, longest prefix wins (see
+   * {@link AiAssist.resolveGeminiThinkingLevels}). On a matching model a generic `'none'` is sent as
+   * `'minimal'` where listed (otherwise handled like a thinking-required model, or refused), other
+   * efforts map 1:1 or are refused when unlisted. Unmatched models keep the budget wire.
+   */
+  readonly geminiThinkingLevels?: ReadonlyArray<IGeminiThinkingLevelRule>;
+  /**
+   * Gemini models (exact-or-dash-bounded) that do not support `thinkingLevel` at all and take only
+   * `thinkingBudget`. An explicit `thinkingLevel` aimed at one — in a `google` block, or in a
+   * caller-built `resolvedThinking` on `executeClientToolTurn` — is refused before the wire (see
+   * {@link AiAssist.rejectsGeminiThinkingLevel}). Models on neither this list nor
+   * {@link AiAssist.IAiProviderDescriptor.geminiThinkingLevels} are sent an explicit level verbatim.
+   */
+  readonly geminiThinkingLevelRejectedModelPrefixes?: ReadonlyArray<string>;
+  /**
    * Concrete model ids (exact-or-dash-bounded-prefix-matched, like
    * {@link IAiProviderDescriptor.thinkingRequiredModelPrefixes}) that reject a caller-supplied
    * `temperature` with or without thinking — every value, or every value but
@@ -1115,12 +1019,35 @@ export interface IAiProviderDescriptor {
    */
   readonly samplingParamsRejectedModelPrefixes?: ReadonlyArray<string>;
   /**
+   * Concrete model ids (exact-or-dash-bounded-prefix-matched, like
+   * {@link IAiProviderDescriptor.samplingParamsRejectedModelPrefixes}) that reason by default and
+   * reject a caller-supplied `temperature` only while reasoning — every value, or every value but
+   * {@link IAiProviderDescriptor.samplingParamsAcceptedTemperature} when the descriptor declares
+   * one. With thinking off they accept any `temperature`.
+   *
+   * @remarks
+   * Thinking counts as off when the request sends the descriptor's wire format its off value: on
+   * the OpenAI format an effort of `'none'`, on Anthropic thinking disabled, on Gemini a budget of
+   * `0`. A verbatim `'other'` block that sets the wire's effort key decides, since it is merged last;
+   * otherwise the typed effort does. A request with no effort runs at the model's default, which for a
+   * listed model reasons. A generic `effort: 'none'` turns thinking off only where it is sent as off —
+   * not on a thinking-required model, which degrades it, nor on a Gemini level model, which sends a
+   * level. A rejected `temperature` on a listed model is refused before
+   * the wire on the completion, streaming and client-tool paths (see
+   * {@link AiAssist.rejectsSamplingParamsWithThinking}). A model on both lists follows
+   * {@link IAiProviderDescriptor.samplingParamsRejectedModelPrefixes}.
+   */
+  readonly samplingParamsRejectedWithThinkingModelPrefixes?: ReadonlyArray<string>;
+  /**
    * The one `temperature` that the models on
-   * {@link IAiProviderDescriptor.samplingParamsRejectedModelPrefixes} still accept — the provider's
-   * own default, which a provider that rejects only non-default values lets through, with or without
-   * thinking. Undefined means those models accept no `temperature` at all. Descriptor-wide, not per
-   * model: declare it only when the evidence covers every listed model (OpenAI's list is exactly
-   * `gpt-6.1-sol` and `gpt-6-astra`, and both accepted `temperature: 1` live).
+   * {@link IAiProviderDescriptor.samplingParamsRejectedModelPrefixes} still accept, with or without
+   * thinking, and that the models on
+   * {@link IAiProviderDescriptor.samplingParamsRejectedWithThinkingModelPrefixes} still accept while
+   * reasoning — the provider's own default, which a provider that rejects only non-default values
+   * lets through. Undefined means those models accept no `temperature` where they restrict it.
+   * Descriptor-wide, not per model: declare it only when the evidence covers every listed model
+   * (OpenAI lists `gpt-6.1-sol` and `gpt-6-astra` on the first list and `gpt-6-luna` on the second,
+   * and all three accepted `temperature: 1` live with thinking on).
    */
   readonly samplingParamsAcceptedTemperature?: number;
 }
@@ -1630,10 +1557,10 @@ export interface IAiImageGenerationResponse {
  * @remarks
  * Only thinking-capable lines are listed. The non-tier `@anthropic:haiku` alias (reachable via
  * `modelOverride` only) is deliberately omitted — it is not documented as thinking-capable, so
- * naming it in a thinking-model filter would be misleading. `claude-fable-5` (the `@anthropic:fable`
- * non-tier alias) is thinking-capable and reachable via `modelOverride`, so it is listed; so is
- * `claude-mythos-5-1`, which no alias reaches but which is a documented adaptive-thinking model
- * (listed in `adaptiveThinkingModelPrefixes`).
+ * naming it in a thinking-model filter would be misleading. The Fable ids (`claude-fable-5-2` is the
+ * `@anthropic:fable` non-tier alias, reachable via `modelOverride`) are thinking-capable, so they are
+ * listed; so are `claude-mythos-5-1` and `claude-mythos-5-2`, which no alias reaches but which are
+ * documented adaptive-thinking models (covered by `adaptiveThinkingModelPrefixes`).
  * @public
  */
 export type AnthropicThinkingModelNames =
@@ -1649,7 +1576,9 @@ export type AnthropicThinkingModelNames =
   | 'claude-opus-5-5'
   | 'claude-fable-5'
   | 'claude-fable-5-1'
-  | 'claude-mythos-5-1';
+  | 'claude-fable-5-2'
+  | 'claude-mythos-5-1'
+  | 'claude-mythos-5-2';
 
 /**
  * Model IDs for OpenAI thinking-capable models.
@@ -1678,6 +1607,10 @@ export type OpenAiThinkingModelNames =
  * @public
  */
 export type GeminiThinkingModelNames =
+  | 'gemini-4-argon'
+  | 'gemini-4-carbon'
+  | 'gemini-3.6-flash'
+  | 'gemini-3-pro-preview'
   | 'gemini-3.1-pro-preview'
   | 'gemini-3.8-flash'
   | 'gemini-3.5-flash'
@@ -1746,29 +1679,6 @@ export interface IOpenAiThinkingConfig {
    * thinking config co-exist without a Result.fail.
    */
   readonly effort?: 'none' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh';
-}
-
-/**
- * Google Gemini-specific thinking configuration.
- * @public
- */
-export interface IGeminiThinkingConfig {
-  /**
-   * Token budget for thinking. Maps 1:1 to `thinkingBudget` on the wire.
-   * - 0: disable thinking (Flash and Flash-Lite only; error on Pro)
-   * - positive integer: soft token cap
-   * - -1: dynamic
-   * - omitted: model default
-   */
-  readonly thinkingBudget?: number;
-  /**
-   * Whether to include thought summaries in the response.
-   * @remarks
-   * Reserved for forward compatibility and **currently ignored by every
-   * adapter** — nothing reads this field, so setting it has no effect on the
-   * request. Surfacing thinking output as stream events is not yet built.
-   */
-  readonly includeThoughts?: boolean;
 }
 
 /**
@@ -1863,10 +1773,13 @@ export type IThinkingProviderConfig =
 export interface IThinkingConfig {
   /**
    * Cross-provider effort level. Common-subset mapping:
-   * - 'none': Anthropic — the model's thinking-off value (see remarks) | OpenAI effort:none | Gemini thinkingBudget:0 | xAI reasoning_effort:none
-   * - 'low': Anthropic effort:low | OpenAI effort:low | Gemini thinkingBudget:1024 | xAI reasoning_effort:low
-   * - 'medium': Anthropic effort:medium | OpenAI effort:medium | Gemini thinkingBudget:4096 | xAI reasoning_effort:medium
-   * - 'high': Anthropic effort:high | OpenAI effort:high | Gemini thinkingBudget:8192 | xAI reasoning_effort:high
+   * - 'none': Anthropic — the model's thinking-off value (see remarks) | OpenAI effort:none | Gemini thinkingLevel:minimal or thinkingBudget:0 | xAI reasoning_effort:none
+   * - 'low': Anthropic effort:low | OpenAI effort:low | Gemini thinkingLevel:low or thinkingBudget:1024 | xAI reasoning_effort:low
+   * - 'medium': Anthropic effort:medium | OpenAI effort:medium | Gemini thinkingLevel:medium or thinkingBudget:4096 | xAI reasoning_effort:medium
+   * - 'high': Anthropic effort:high | OpenAI effort:high | Gemini thinkingLevel:high or thinkingBudget:8192 | xAI reasoning_effort:high
+   *
+   * Gemini takes `thinkingLevel` on the models in {@link AiAssist.IAiProviderDescriptor.geminiThinkingLevels}
+   * (where an effort the model does not list is refused) and `thinkingBudget` on every other model.
    *
    * @remarks
    * `'none'` is the one cross-provider spelling for "thinking off". Anthropic has no
@@ -1887,7 +1800,8 @@ export interface IThinkingConfig {
    * The mapping is not model-aware, with one exception: `'none'`. Thinking *availability* is still
    * not gated at the call path (see `ModelSpecKey`'s remarks), but some models cannot run with
    * thinking off at all. For example, Gemini Pro rejects
-   * `thinkingBudget: 0`, and `gpt-6-astra` and `grok-4.7` reject `reasoning_effort: 'none'`.
+   * `thinkingBudget: 0`, Gemini 4 has no off level, and `gpt-6-astra` and `grok-4.7` reject
+   * `reasoning_effort: 'none'`.
    * Each descriptor lists these in
    * {@link IAiProviderDescriptor.thinkingRequiredModelPrefixes}, and a `'none'` sent to one of
    * them is handled by {@link IThinkingConfig.onUnsupported}. An explicit `providers` block

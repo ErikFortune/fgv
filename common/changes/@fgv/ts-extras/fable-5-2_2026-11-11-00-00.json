@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras",
+      "comment": "ai-assist: the non-tier @anthropic:fable alias now resolves to claude-fable-5-2 (was claude-fable-5-1, which is still served). Thinking blocks are bound to the model that produced them. A client-tool tail persisted under the previous target keeps its reasoning when it resumes on claude-fable-5-2, which reads Fable 5.1 blocks; but a tail made on claude-fable-5-2 loses its reasoning if it is resumed on any other model, Fable 5.1 included, because only Fable 5.2 and Mythos 5.2 read 5.2 blocks (the API drops them without an error). 5.2 blocks are also bound to the account that produced them. claude-fable-5-2 and claude-mythos-5-2 are declared on every per-model table: anthropic-output-format structured output (they reject a forced tool_choice), maxOutputTokens 128000, dash-bounded Mythos 5.1 and 5.2 capability detection, and the AnthropicThinkingModelNames union; the adaptive-thinking, thinking-required and sampling-parameter lists already cover both through their dash-bounded claude-fable-5 / claude-mythos-5 entries. On every Anthropic model, client-tool continuations now send back the assistant turn's thinking and text blocks as their streamed start objects with the accumulated thinking, signature, text and citations laid over them, redacted_thinking, client tool_use, and web_search's server_tool_use and web_search_tool_result blocks as streamed. Other block types (including other server tools) are not replayed, with a one-time warning per type; an empty text block is skipped; and client tool_use input is re-serialized from its parsed value.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-extras",
+  "email": "noreply@anthropic.com"
+}

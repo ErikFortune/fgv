@@ -55,7 +55,7 @@ export interface IModelAliasMap {
 | Function | Use for |
 |---|---|
 | `resolveModelAlias(descriptor, model)` | Resolve a single (possibly-aliased) string. No `@` → verbatim. `@` + registered → target, following the `@`-alias chain (one hop is typical; an alias may target another `@`-alias) until a non-`@` id is reached; cycle-guarded. `@` + unregistered → loud fail. |
-| `resolveProviderModel(descriptor, modelOverride, context?)` | The call-time chokepoint: the `ModelSpecKey` walk (`resolveModel`) **then** `resolveModelAlias`. Used by the completion, streaming, image, embedding, and client-tool paths. |
+| `resolveProviderModel(descriptor, modelOverride, context?)` | The call-time chokepoint: the `ModelSpecKey` walk (`resolveModel`) **then** `resolveModelAlias`. Used by the completion, streaming, image, embedding, and client-tool paths. A spec outside the `ModelSpec` type (a key holding `undefined`, `null` or a number — untyped JSON or a cast) fails here with the provider id and the offending key's path (`provider "openai": model spec modelOverride.base is undefined: …`) instead of throwing; `resolveModel` itself resolves such a spec to `''`. |
 
 Resolution is **call-time**, not registry-build-time, so the registry stays a pure inspectable data
 structure and the proxy path resolves server-side via the reconstructed descriptor — **except for a
@@ -148,7 +148,7 @@ there is no 2-D selection and no competition between the axes.
 | slot | OpenAI | Anthropic | Gemini |
 |---|---|---|---|
 | `base` | `@openai:mini` → `gpt-6-luna` | `@anthropic:sonnet` → `claude-sonnet-5-5` | `@google-gemini:flash` → `gemini-3.8-flash` |
-| `advanced` | `@openai:flagship` → `gpt-6.1-sol` | `@anthropic:opus` → `claude-opus-5-5` | `@google-gemini:pro` → `gemini-3.1-pro-preview` |
+| `advanced` | `@openai:flagship` → `gpt-6.1-sol` | `@anthropic:opus` → `claude-opus-5-5` | `@google-gemini:pro` → `gemini-4-argon` |
 | `frontier` | `@openai:pro` → `gpt-6-astra` | *(unset → advanced/opus)* | *(unset → advanced/pro)* |
 
 **What moving to these targets changed for callers (2026-11).** Anthropic's base tier
@@ -165,8 +165,8 @@ only with its own value, `thinking: { type: 'between_tools' }` (see below). `@an
   `claude-opus-5`, `claude-haiku-5-5`), no `thinking` field to an older model (already off), and
   `'low'` — or a refusal under `onUnsupported: 'fail'` — to a model that cannot turn thinking off
   (`claude-opus-5-5`, Fable and Mythos 5.x, `claude-mythos-preview`; declared in
-  `thinkingRequiredModelPrefixes`, alongside `gpt-6-astra`, `gpt-6.1-sol`, `gemini-3.1-pro-preview`
-  and `gemini-3.5-flash-lite`).
+  `thinkingRequiredModelPrefixes`, alongside `gpt-6-astra`, `gpt-6.1-sol`, Gemini 4 and the Gemini
+  Pro ids).
 - **`claude-sonnet-5-5` (`@anthropic:sonnet`, the base tier) turns thinking off with `between_tools`.**
   It rejects `disabled`, and its own off value is declared as data:
   `IAiProviderDescriptor.anthropicThinkingOffTypes` (`[{ modelPrefix: 'claude-sonnet-5-5', type:
@@ -178,19 +178,43 @@ only with its own value, `thinking: { type: 'between_tools' }` (see below). `@an
   between tool calls still come back as `thinking` blocks**. A generic `'none'` never sends an
   effort beside it; an explicit `'other'` block or caller-built `otherParams` can, and Anthropic
   rejects `between_tools` (and `disabled`) above `high` (`between_tools` 400s at `xhigh` and `max`).
-- **`gemini-3.5-flash-lite` cannot be turned off by a budget.** It rejects `thinkingBudget: 0`
-  (`400 INVALID_ARGUMENT`), so it is on `thinkingRequiredModelPrefixes`: `'none'` on
-  `@google-gemini:flash-lite` is sent as `'low'` (budget 1024), or refused under
-  `onUnsupported: 'fail'`. This is interim: Gemini 3.x is controlled by `thinkingLevel`, which
-  ai-assist does not send yet; once it does, `'none'` maps to `minimal` where a model lists it.
+- **Gemini 4 and the 3.x Flash-Lite / 3.6 Flash lines are sent `thinkingLevel`, not
+  `thinkingBudget`.** `IAiProviderDescriptor.geminiThinkingLevels` declares each such model and the
+  levels it accepts (read through `AiAssist.resolveGeminiThinkingLevels`): `gemini-4-argon` and
+  `gemini-4-carbon` take `low` / `medium` / `high`; `gemini-3.5-flash-lite` and `gemini-3.6-flash`
+  also take `minimal`. A generic effort maps 1:1 there, and `'none'` becomes `minimal` (Google: "Matches
+  the 'no thinking' setting for most queries", not a guarantee). Gemini 4 cannot turn thinking off,
+  so it is on `thinkingRequiredModelPrefixes`: `'none'` is sent as `low`, or refused naming that
+  lowest level under `onUnsupported: 'fail'`. An effort a model does not list is refused before the
+  wire. Every other Gemini model keeps the `thinkingBudget` wire exactly as before.
+- **`@google-gemini:pro` (the advanced tier, and the frontier cascade) is `gemini-4-argon`.** For
+  alias users this means levels instead of budgets, thinking always on, and a deprecated
+  `thinkingBudget` if one is sent explicitly (Google maps a lone budget to the nearest level with a
+  warning). Argon ignores `temperature` ("If provided, sampling parameters are ignored"); ai-assist
+  still sends a caller's value.
+- **Explicit Gemini blocks.** `{ provider: 'google', config: { thinkingLevel } }` is validated
+  (`AiAssist.geminiThinkingLevel`) and, on a model with a level declaration, must be one of its
+  levels; elsewhere it is sent verbatim. `thinkingLevel` and `thinkingBudget` in one block are
+  refused — Gemini 4 returns a 400 for the pair — and a later block's level replaces an earlier
+  budget (and vice versa), so the wire never carries both. The 2.5 line takes budgets only ("Gemini
+  2.5 series models don't support `thinkingLevel`"): an explicit level is refused there
+  (`geminiThinkingLevelRejectedModelPrefixes`, read through `AiAssist.rejectsGeminiThinkingLevel`).
+- **Level rules match longest prefix first.** `gemini-3.1-flash-lite-image` (levels `minimal` and
+  `high` only) has its own rule, longer than `gemini-3.1-flash-lite`'s, so it never inherits the
+  shorter rule's `low` / `medium`. A dated snapshot or `-preview` of a listed id takes that id's rule;
+  a new variant with a different level set needs its own longer rule.
+- **`gemini-4-argon`'s recorded output limit is 32,768**, the most a single non-streaming
+  `generateContent` request returns (its page's 65,536 is the streaming / default-synchronous figure,
+  and beyond that needs long decode, which ai-assist does not run).
 - **`gemini-3.8-flash` (`@google-gemini:flash`, the base tier) turns thinking off with budget 0.** A
   live budget-0 request (2026-11-10) came back with no `thoughtsTokenCount` in `usageMetadata`, so
   it is not listed, although Google's level table names no level below `low` for it: a generic
   `'none'` sends `thinkingBudget: 0`, and `onUnsupported: 'fail'` has nothing to refuse. The list
   is dash-bounded, so its entries deliberately match future variants of a listed id; with
   `gemini-3.8-flash` off it, its variants (a `gemini-3.8-flash-lite`, a dated snapshot) are no
-  longer matched either. `gemini-3.6-flash` and `gemini-3.5-flash` stay unlisted: neither is an
-  alias target, and there is no evidence either rejects or ignores budget 0.
+  longer matched either. `gemini-3.5-flash` stays unlisted: it is not an alias target, and there is
+  no evidence it rejects or ignores budget 0. (`gemini-3.6-flash` is a level model, so `'none'` is
+  `minimal` there.)
 - A `temperature` aimed at a model in `samplingParamsRejectedModelPrefixes` is refused before the wire
   on the completion, streaming and client-tool paths. On Anthropic (every Claude 5.x model,
   `claude-mythos-preview`, `claude-opus-4-8`, `claude-opus-4-7`) only a non-default value is refused:
@@ -201,12 +225,52 @@ only with its own value, `thinking: { type: 'between_tools' }` (see below). `@an
   ("does not accept a non-default temperature (x): remove temperature, or send 1"; never "disable
   thinking", which these models' rule does not depend on). The value is descriptor-wide; OpenAI's
   list is exactly those two models. `AiAssist.rejectsSamplingParams` answers the
-  question for a concrete id. Not guarded, because it depends on the effort: `gpt-6-luna` (`mini`,
-  `nano`) and `gpt-6-sol` reject `temperature` unless the call sets effort `'none'`.
+  question for a concrete id.
+- **`samplingParamsRejectedWithThinkingModelPrefixes` restricts `temperature` only while the model
+  reasons.** A listed model reasons by default and, with thinking on, rejects every `temperature`
+  but `samplingParamsAcceptedTemperature`; with thinking off it takes any value. OpenAI lists
+  `gpt-6-luna` (`mini`, `nano`) alone, on live evidence (2026-11-11): `0.3` with effort `'none'` is
+  accepted, `0.3` beside effort `low` — or with no effort, since luna defaults to `medium` — is a
+  400 "Only the default (1) value is supported", and `1` beside effort `low` is accepted. So on all
+  three paths (completion, streaming, client-tool) luna sends `1` beside any effort, sends any value
+  with effort `'none'`, and refuses any other value before the wire with "does not accept a
+  non-default temperature (x) while reasoning: remove temperature, send 1, or set effort 'none'" —
+  including a call with no effort at all. Thinking counts as off when the request sends the
+  descriptor's wire format its off value: on the OpenAI format the effort the adapter sends
+  (`openAiEffort ?? xaiEffort`) is `'none'`; Anthropic and Gemini fields are not read there. A
+  verbatim `'other'` block that sets the wire's effort key (`reasoning_effort`, `reasoning`) is
+  merged last and decides — `{ reasoning_effort: 'none' }` counts as off, `{ reasoning_effort:
+  'low' }` as reasoning even beside a generic `'none'`. "set effort 'none'" is offered only where
+  `'none'` would turn thinking off (not on a thinking-required model, nor a Gemini level model). Luna is
+  deliberately **not** on `samplingParamsRejectedModelPrefixes`, which is effort-blind and would
+  refuse the documented `0.3` + `'none'`. `AiAssist.rejectsSamplingParamsWithThinking` answers the
+  question for a concrete id. `gpt-6-sol` (the older Sol, not `gpt-6.1-sol`; reachable by
+  `modelOverride` only) is on neither list — the evidence covers luna only — so beside any effort
+  other than `'none'` its `temperature`, `1` included, remains the thinking/temperature conflict,
+  refused before the wire on all three paths.
+- **`executeClientToolTurn` refuses a caller-built `'none'` effort on a model that cannot run with
+  thinking off.** A `resolvedThinking` skips the resolver that degrades or refuses `'none'`, so the
+  client-tool path applies the rule itself: on an OpenAI-format descriptor, `openAiEffort: 'none'`
+  (or `xaiEffort: 'none'`) aimed at a model on `thinkingRequiredModelPrefixes` (`gpt-6.1-sol`,
+  `gpt-6-astra`, `grok-4.7` / `-4.6` / `-4.5`) fails before the wire ("… cannot run with thinking off:
+  set openAiEffort to an effort other than 'none'"), as `anthropicThinkingDisabled` does on a
+  thinking-required Claude model. On a Gemini descriptor it refuses `geminiThinkingBudget: 0` on a
+  thinking-required model (Gemini 4, the Pro ids), a `geminiThinkingLevel` the model does not accept
+  (one its level rule does not list, or any level on the 2.5 line), and a level beside a budget — each
+  as a `Failure` before anything streams. Each refusal applies only on the wire that reads its field:
+  the Anthropic flag on an Anthropic-format descriptor, the effort on an OpenAI-format one, the Gemini
+  fields on a Gemini one.
+- **The Chat Completions output-token field is declared per provider.**
+  `IAiProviderDescriptor.chatOutputTokensField` (read through `usesMaxCompletionTokensField`) names
+  the field `maxTokens` is sent as on the OpenAI-format chat path: `max_completion_tokens` for OpenAI,
+  Groq and xAI Grok, whose API references mark `max_tokens` deprecated in its favor (Groq and xAI
+  switched from `max_tokens` here); `max_tokens`, the default, for Mistral, Ollama and `openai-compat`,
+  which document only that. xAI describes `max_completion_tokens` as bounding visible output only, not
+  reasoning tokens. The Responses path keeps `max_output_tokens`.
 
 Non-tier aliases, reachable through `modelOverride` only: `@openai:nano` → `gpt-6-luna` (the same
 model as `base`: OpenAI names it as the replacement for the deprecated `gpt-5.4-nano`, and GPT-6 has
-nothing smaller), `@anthropic:haiku` → `claude-haiku-5-5`, `@anthropic:fable` → `claude-fable-5-1`,
+nothing smaller), `@anthropic:haiku` → `claude-haiku-5-5`, `@anthropic:fable` → `claude-fable-5-2`,
 `@google-gemini:flash-lite` → `gemini-3.5-flash-lite`. Groq and Mistral carry no aliases; their
 `defaultModel`s are `openai/gpt-oss-120b` and `{ base: 'mistral-large-4', embedding: 'mistral-embed' }`.
 
@@ -404,8 +468,9 @@ Gemini's schema is an OpenAPI-3.0 subset that **rejects** draft-07 keywords rath
 than ignoring them, so the schema goes through the same sanitizer the Gemini tool
 path uses.
 
-Anthropic has two mechanisms, split by model line. `claude-opus-5-5`,
-`claude-fable-5-1` and `claude-mythos-5-1` return a 400 on a forced `tool_choice`, so they declare
+Anthropic has two mechanisms, split by model line. `claude-opus-5-5`, `claude-sonnet-5-5`,
+`claude-fable-5-1`, `claude-mythos-5-1`, `claude-fable-5-2` and `claude-mythos-5-2` return a 400 on a
+forced `tool_choice`, so they declare
 `anthropic-output-format`: Anthropic's JSON outputs, constrained decoding with the
 reply as text, reported as `'schema'`. (`tool_choice: auto` + a `strict` tool was the
 other documented option and was declined: `auto` lets the model answer in text

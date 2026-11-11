@@ -19,6 +19,7 @@ import { JsonSchema } from '@fgv/ts-json-base';
 import { JsonValue } from '@fgv/ts-json-base';
 import { Logging } from '@fgv/ts-utils';
 import { Result } from '@fgv/ts-utils';
+import { StringOneOf } from '@fgv/ts-utils';
 import { Uuid } from '@fgv/ts-utils';
 import { Validator } from '@fgv/ts-utils';
 
@@ -140,8 +141,6 @@ declare namespace AiAssist {
         ModelSpecKey,
         IModelSpecMap,
         allModelSpecKeys,
-        MODEL_SPEC_BASE_KEY,
-        resolveModel,
         IModelAliasMap,
         MODEL_ALIAS_SIGIL,
         resolveModelAlias,
@@ -149,8 +148,8 @@ declare namespace AiAssist {
         isResponsesOnlyModel,
         isAdaptiveThinkingModel,
         isThinkingRequiredModel,
-        rejectsSamplingParams,
         usesMaxCompletionTokensField,
+        ChatOutputTokensField,
         toDataUrl,
         IThinkingConfig,
         IThinkingProviderConfig,
@@ -161,15 +160,24 @@ declare namespace AiAssist {
         IOtherThinkingOptions,
         IAnthropicThinkingConfig,
         IOpenAiThinkingConfig,
-        IGeminiThinkingConfig,
         IXAiThinkingConfig,
         AnthropicThinkingModelNames,
         OpenAiThinkingModelNames,
         GeminiThinkingModelNames,
         XAiThinkingModelNames,
+        MODEL_SPEC_BASE_KEY,
+        resolveModel,
         AnthropicThinkingOffType,
         IAnthropicThinkingOffRule,
         resolveAnthropicThinkingOffType,
+        GeminiThinkingLevel,
+        IGeminiThinkingConfig,
+        IGeminiThinkingLevelRule,
+        allGeminiThinkingLevels,
+        rejectsGeminiThinkingLevel,
+        resolveGeminiThinkingLevels,
+        rejectsSamplingParams,
+        rejectsSamplingParamsWithThinking,
         IResolvedImageOptions,
         resolveImageOptions,
         validateResolvedOptions,
@@ -222,6 +230,7 @@ declare namespace AiAssist {
         aiAssistSettings,
         modelSpecKey,
         modelSpec,
+        geminiThinkingLevel,
         resolveEffectiveTools,
         resolveToolConflicts,
         defaultToolConflictPolicy,
@@ -371,6 +380,11 @@ const aiToolEnablement: Converter<IAiToolEnablement>;
 // @public
 const aiWebSearchToolConfig: Converter<IAiWebSearchToolConfig>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const allGeminiThinkingLevels: readonly ["minimal", "low", "medium", "high"];
+
 // @public
 const allKeyPairAlgorithms: ReadonlyArray<KeyPairAlgorithm>;
 
@@ -418,7 +432,7 @@ const ANTHROPIC_STRUCTURED_OUTPUT_TOOL_NAME: string;
 function anthropicEffortToBudgetTokens(effort: NonNullable<IAnthropicThinkingConfig['effort']>): number;
 
 // @public
-type AnthropicThinkingModelNames = 'claude-sonnet-4-5' | 'claude-sonnet-4-6' | 'claude-sonnet-5' | 'claude-sonnet-5-5' | 'claude-haiku-5-5' | 'claude-opus-4-6' | 'claude-opus-4-7' | 'claude-opus-4-8' | 'claude-opus-5' | 'claude-opus-5-5' | 'claude-fable-5' | 'claude-fable-5-1' | 'claude-mythos-5-1';
+type AnthropicThinkingModelNames = 'claude-sonnet-4-5' | 'claude-sonnet-4-6' | 'claude-sonnet-5' | 'claude-sonnet-5-5' | 'claude-haiku-5-5' | 'claude-opus-4-6' | 'claude-opus-4-7' | 'claude-opus-4-8' | 'claude-opus-5' | 'claude-opus-5-5' | 'claude-fable-5' | 'claude-fable-5-1' | 'claude-fable-5-2' | 'claude-mythos-5-1' | 'claude-mythos-5-2';
 
 // @public
 type AnthropicThinkingOffType = 'disabled' | 'between_tools';
@@ -524,6 +538,11 @@ function callProxiedListModels(proxyUrl: string, params: IProviderListModelsPara
 
 // @public
 type CancelTimer = () => void;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+type ChatOutputTokensField = 'max_tokens' | 'max_completion_tokens';
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IClassifiedAddress"
 //
@@ -1087,8 +1106,18 @@ const GCM_IV_SIZE: number;
 // @public
 type GeminiFlashImageModelNames = 'gemini-3.1-flash-image' | 'gemini-nano-banana-2.1';
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
 // @public
-type GeminiThinkingModelNames = 'gemini-3.1-pro-preview' | 'gemini-3.8-flash' | 'gemini-3.5-flash' | 'gemini-3.5-flash-lite' | 'gemini-3.1-flash-lite';
+type GeminiThinkingLevel = StringOneOf<typeof allGeminiThinkingLevels>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const geminiThinkingLevel: Converter<GeminiThinkingLevel>;
+
+// @public
+type GeminiThinkingModelNames = 'gemini-4-argon' | 'gemini-4-carbon' | 'gemini-3.6-flash' | 'gemini-3-pro-preview' | 'gemini-3.1-pro-preview' | 'gemini-3.8-flash' | 'gemini-3.5-flash' | 'gemini-3.5-flash-lite' | 'gemini-3.1-flash-lite';
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -1483,11 +1512,18 @@ interface IAiProviderDescriptor {
     readonly apiFormat: AiApiFormat;
     readonly baseUrl: string;
     readonly buttonLabel: string;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly chatOutputTokensField?: ChatOutputTokensField;
     readonly corsRestricted: boolean;
     readonly defaultModel: ModelSpec;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "ModelSpecKey"
     readonly embedding?: ReadonlyArray<IAiEmbeddingModelCapability>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly geminiThinkingLevelRejectedModelPrefixes?: ReadonlyArray<string>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly geminiThinkingLevels?: ReadonlyArray<IGeminiThinkingLevelRule>;
     readonly id: AiProviderId;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "ModelSpecKey"
@@ -1499,11 +1535,17 @@ interface IAiProviderDescriptor {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly responsesOnlyModelPrefixes?: ReadonlyArray<string>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
     readonly samplingParamsAcceptedTemperature?: number;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly samplingParamsRejectedModelPrefixes?: ReadonlyArray<string>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
+    readonly samplingParamsRejectedWithThinkingModelPrefixes?: ReadonlyArray<string>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly serverToolsExclusiveWithClientTools?: ReadonlyArray<AiServerToolType>;
@@ -1512,6 +1554,7 @@ interface IAiProviderDescriptor {
     readonly structuredOutput?: ReadonlyArray<IAiStructuredOutputCapability>;
     readonly supportedTools: ReadonlyArray<AiServerToolType>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IThinkingConfig"
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IThinkingConfig"
@@ -2028,7 +2071,20 @@ interface IGeminiFlashImageModelOptions extends INamedModelFamilyConfig {
 // @public
 interface IGeminiThinkingConfig {
     readonly includeThoughts?: boolean;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly thinkingBudget?: number;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly thinkingLevel?: GeminiThinkingLevel;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IGeminiThinkingLevelRule {
+    readonly levels: ReadonlyArray<GeminiThinkingLevel>;
+    readonly modelPrefix: string;
 }
 
 // @public
@@ -2583,6 +2639,7 @@ interface IResolvedThinkingConfig {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IResolvedThinkingConfig"
     readonly anthropicThinkingDisabled?: true;
     readonly geminiThinkingBudget?: number;
+    readonly geminiThinkingLevel?: GeminiThinkingLevel;
     readonly openAiEffort?: IOpenAiThinkingConfig['effort'];
     readonly otherParams?: JsonObject;
     readonly xaiEffort?: IXAiThinkingConfig['effort'];
@@ -2741,6 +2798,7 @@ function isValidMultibaseSpkiPublicKey(value: unknown): value is MultibaseSpkiPu
 
 // @public
 interface IThinkingConfig {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
@@ -3119,7 +3177,7 @@ const MIN_SALT_LENGTH: number;
 // @public
 const MODEL_ALIAS_SIGIL: '@';
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "ModelSpec"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 const MODEL_SPEC_BASE_KEY: ModelSpecKey;
@@ -3370,11 +3428,23 @@ export { RecordJar }
 // @public
 const REDIRECT_STATUSES: ReadonlyArray<number>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function rejectsGeminiThinkingLevel(descriptor: IAiProviderDescriptor, modelId: string): boolean;
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
 //
 // @public
 function rejectsSamplingParams(descriptor: IAiProviderDescriptor, modelId: string): boolean;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
+//
+// @public
+function rejectsSamplingParamsWithThinking(descriptor: IAiProviderDescriptor, modelId: string): boolean;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
 //
@@ -3388,6 +3458,11 @@ function resolveEffectiveTools(descriptor: IAiProviderDescriptor, settingsTools?
 //
 // @public
 function resolveEmbeddingCapability(descriptor: IAiProviderDescriptor, modelId: string): IAiEmbeddingModelCapability | undefined;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function resolveGeminiThinkingLevels(descriptor: IAiProviderDescriptor, modelId: string): ReadonlyArray<GeminiThinkingLevel> | undefined;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
 //
@@ -3403,8 +3478,10 @@ function resolveImageOptions(modelId: string, capability: IAiImageModelCapabilit
 // @public
 function resolveMaxOutputTokens(descriptor: IAiProviderDescriptor, modelOverride?: ModelSpec, context?: ModelSpecKey): number | undefined;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "ModelSpec"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "MODEL_SPEC_BASE_KEY"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 function resolveModel(spec: ModelSpec, context?: string): string;
@@ -3418,6 +3495,7 @@ function resolveModelAlias(descriptor: IAiProviderDescriptor, model: string): Re
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "resolveModel"
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "resolveModelAlias"
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "ModelSpecKey"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 function resolveProviderModel(descriptor: IAiProviderDescriptor, modelOverride: ModelSpec | undefined, context?: ModelSpecKey): Result<string>;
@@ -3639,6 +3717,8 @@ function tryDecryptFile<TPayload extends JsonValue = JsonValue, TMetadata = Json
 // @public
 const uint8ArrayFromBase64: Converter<Uint8Array>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
 // @public
 function usesMaxCompletionTokensField(descriptor: IAiProviderDescriptor): boolean;
 

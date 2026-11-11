@@ -23,28 +23,37 @@ Description with the user's framing expanded with the design space.
 
 ---
 
-## `ai-assist` — send Gemini's `thinkingLevel`, then rotate `@google-gemini:pro` to Gemini 4
+## `ai-assist` — offer `gemini-embedding-2` without moving `@google-gemini:embedding`
 
-Gemini 3.x controls thinking with `thinkingLevel` (`minimal` / `low` / `medium` / `high`, per model),
-and Gemini 4 requires it and deprecates the `thinkingBudget` field ai-assist sends. Google's thinking
-page (§ "Controlling thinking", fetched 2026-11-09) lists `gemini-3.8-flash` as low/medium/high and
-`gemini-3.5-flash-lite` and `gemini-3.6-flash` as minimal/low/medium/high. Until the level is sent,
-`gemini-3.5-flash-lite` sits on `thinkingRequiredModelPrefixes` as an interim, so a generic `'none'`
-is sent as `'low'` (budget 1024) or refused there. (`gemini-3.8-flash` came off the list in stream
-`live-run-corrections`: budget 0 does turn its thinking off, live 2026-11-10.) Once `thinkingLevel` is sent, `'none'`
-maps to `minimal` on the models that list it, and the flash-lite entry comes off the list. The held
-`gemini-4-argon` rotation of `@google-gemini:pro` (see the alias comment in `registry.ts`) waits on
-the same work.
+`gemini-embedding-2` is Google's latest embedding model and is listed stable, but its vectors live in
+a different space: "The embedding spaces between `gemini-embedding-001` and `gemini-embedding-2` are
+incompatible … If you are upgrading to `gemini-embedding-2`, you must re-embed all of your existing
+data" (https://aistudio.google.com/docs/embeddings, fetched 2026-11-11). Rotating
+`@google-gemini:embedding` would therefore silently change the space under every index a consumer has
+persisted with that alias — the next query would be compared against vectors from the other model.
+So the alias stays on `gemini-embedding-001`, which the same page keeps available, and a migration is
+a consumer decision, not a registry rotation.
 
-**Why deferred**: a wire change in its own right (a new generic-effort mapping per model, a level
-table, the Gemini 4 deprecation), larger than the live-run fixes that surfaced it.
+What a consumer must do to migrate, and what ai-assist would add to make it explicit:
+- Re-embed the whole corpus with the new model and rebuild the index; vectors from the two models
+  must never share an index. (`ts-agent-memory-sqlite-vec` already refuses to mix embedding models in
+  one file, which is the safety net for its consumers.)
+- Select the new model explicitly — `modelOverride: 'gemini-embedding-2'` today, or a **separate**
+  alias (e.g. `@google-gemini:embedding-2`) so the old alias keeps meaning the old space.
+- Stop sending `taskType`: "You cannot use the `task_type` field for the `gemini-embedding-2` model"
+  (same page); task instructions go in the text instead. The Gemini descriptor's embedding catch-all
+  declares `supportsTaskType: true`, so a `gemini-embedding-2` entry with `supportsTaskType: false`
+  must precede it before that model is offered.
+- Both models default to 3072 dimensions, so a dimension check alone will not catch the switch.
 
-**Dependencies**: a per-model level table in the Gemini descriptor, and a keyed run against
-`gemini-4-argon` to confirm the level wire.
+**Why deferred**: no consumer has asked for the new model, and the alias must not move; adding a
+second alias plus the per-model `taskType` entry is small but has no driver yet.
 
-**Reference**: stream `final-model-fixes` (2026-11-09): live 400 `INVALID_ARGUMENT` on
-`gemini-3.5-flash-lite` for `thinkingBudget: 0`; `.ai/tasks/completed/2026-11/model-alias-refresh/`
-(the held Argon rotation).
+**Dependencies**: a consumer that wants the new space, and a keyed run confirming the
+`gemini-embedding-2` wire (no `taskType`, `outputDimensionality` honoured).
+
+**Reference**: `.ai/tasks/completed/2026-11/model-alias-refresh/` Q4 (held), re-checked in stream
+`model-followups` (2026-11-11).
 
 ## `ts-random` — weighted pick without replacement (`pickWeightedSequence`)
 

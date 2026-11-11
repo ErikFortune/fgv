@@ -104,7 +104,7 @@ describe('AiAssist.resolveMaxOutputTokens', () => {
       );
       expect(AiAssist.resolveMaxOutputTokens(getDescriptor('openai'), '@openai:nano')).toBe(128000);
       expect(AiAssist.resolveMaxOutputTokens(getDescriptor('google-gemini'), '@google-gemini:pro')).toBe(
-        65536
+        AiAssist.resolveMaxOutputTokens(getDescriptor('google-gemini'), 'gemini-4-argon')
       );
     });
 

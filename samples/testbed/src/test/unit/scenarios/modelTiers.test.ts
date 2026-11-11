@@ -118,13 +118,13 @@ describe('resolveTierResolutions', () => {
         expect(resolutions[1]).toEqual({
           tier: 'advanced',
           alias: '@google-gemini:pro',
-          concrete: 'gemini-3.1-pro-preview',
+          concrete: 'gemini-4-argon',
           cascaded: false
         });
         expect(resolutions[2]).toEqual({
           tier: 'frontier',
           alias: '@google-gemini:pro',
-          concrete: 'gemini-3.1-pro-preview',
+          concrete: 'gemini-4-argon',
           cascaded: true
         });
       }
@@ -452,7 +452,7 @@ describe('runTierCanary (thinking probes)', () => {
     expect(result).toFailWith(/\[PASS\] frontier\s+gpt-6-astra/);
     expect(result).toFailWith(/\[FAIL\(param\)\] frontier effort=none\s+gpt-6-astra\s+\(AI API returned 400/);
     expect(result).toFailWith(
-      /FAILED — a thinking, strict-none, model-override, temperature, max-output, structured-output or image probe failed/
+      /FAILED — a thinking, strict-none, model-override, temperature, max-output, structured-output, explicit-level or image probe failed/
     );
   });
 
@@ -551,7 +551,7 @@ describe('runTierCanary (strict-none probes)', () => {
     const result = await runTierCanary(spec, deps, new Logging.InMemoryLogger());
     expect(result).toFailWith(/\[FAIL\(param\)\] base none\+fail\s+gpt-6-luna/);
     expect(result).toFailWith(
-      /FAILED — a thinking, strict-none, model-override, temperature, max-output, structured-output or image probe failed/
+      /FAILED — a thinking, strict-none, model-override, temperature, max-output, structured-output, explicit-level or image probe failed/
     );
   });
 
@@ -680,7 +680,7 @@ describe('runTierCanary (model-override probes)', () => {
     const result = await runTierCanary(spec, deps, new Logging.InMemoryLogger());
     expect(result).toFailWith(/\[FAIL\(id\)\] @google-gemini:flash-lite\s+gemini-3\.5-flash-lite/);
     expect(result).toFailWith(
-      /FAILED — a thinking, strict-none, model-override, temperature, max-output, structured-output or image probe failed/
+      /FAILED — a thinking, strict-none, model-override, temperature, max-output, structured-output, explicit-level or image probe failed/
     );
   });
 
@@ -732,11 +732,11 @@ describe('runTierCanary (structured-output probes)', () => {
     });
   }
 
-  test('the registry splits Anthropic by line: forced tool on haiku-5-5, schema on sonnet-5-5 / opus-5-5 / fable-5-1', () => {
+  test('the registry splits Anthropic by line: forced tool on haiku-5-5, schema on sonnet-5-5 / opus-5-5 / fable-5-2', () => {
     expect(expectedStructuredEnforcement(anthropic, 'claude-haiku-5-5')).toBe('tool-forced');
     expect(expectedStructuredEnforcement(anthropic, 'claude-sonnet-5-5')).toBe('schema');
     expect(expectedStructuredEnforcement(anthropic, 'claude-opus-5-5')).toBe('schema');
-    expect(expectedStructuredEnforcement(anthropic, 'claude-fable-5-1')).toBe('schema');
+    expect(expectedStructuredEnforcement(anthropic, 'claude-fable-5-2')).toBe('schema');
     expect(expectedStructuredEnforcement(anthropic, '@anthropic:nope')).toBe('none');
   });
 
@@ -753,7 +753,7 @@ describe('runTierCanary (structured-output probes)', () => {
       );
       expect(report).toMatch(/\[PASS\] advanced schema\s+claude-opus-5-5\s+\(enforcement 'schema'\)/);
       expect(report).toMatch(
-        /\[PASS\] @anthropic:fable schema\s+claude-fable-5-1\s+\(enforcement 'schema'\)/
+        /\[PASS\] @anthropic:fable schema\s+claude-fable-5-2\s+\(enforcement 'schema'\)/
       );
       expect(report).toMatch(/LIVE-VERIFIED/);
     });
@@ -779,14 +779,14 @@ describe('runTierCanary (structured-output probes)', () => {
     };
     const result = await runTierCanary(spec, deps, new Logging.InMemoryLogger());
     expect(result).toFailWith(/\[FAIL\(param\)\] advanced schema\s+claude-opus-5-5/);
-    expect(result).toFailWith(/structured-output or image probe failed/);
+    expect(result).toFailWith(/structured-output, explicit-level or image probe failed/);
   });
 
   test('keyless, every structured probe is PENDING', async () => {
     const result = await runTierCanary(spec, {}, new Logging.InMemoryLogger());
     expect(result).toSucceedAndSatisfy((report: string) => {
       expect(report).toMatch(/\[PENDING\] advanced schema\s+claude-opus-5-5/);
-      expect(report).toMatch(/\[PENDING\] @anthropic:fable schema\s+claude-fable-5-1/);
+      expect(report).toMatch(/\[PENDING\] @anthropic:fable schema\s+claude-fable-5-2/);
     });
   });
 
@@ -811,7 +811,7 @@ describe('runTierCanary (structured-output probes)', () => {
         /\[PASS\] advanced schema\+effort=low\s+claude-opus-5-5\s+\(enforcement 'schema'\)/
       );
       expect(report).toMatch(
-        /\[PASS\] @anthropic:fable schema\+effort=low\s+claude-fable-5-1\s+\(enforcement 'schema'\)/
+        /\[PASS\] @anthropic:fable schema\+effort=low\s+claude-fable-5-2\s+\(enforcement 'schema'\)/
       );
     });
     const structuredCalls = complete.mock.calls.filter(
@@ -977,7 +977,7 @@ describe('runTierCanary (live image probe)', () => {
 // ---------------------------------------------------------------------------
 
 describe('runTierCanary (thinking and strict-none probes on extra models)', () => {
-  const REFUSAL = "thinking effort 'none' is not supported by claude-fable-5-1: the model cannot run";
+  const REFUSAL = "thinking effort 'none' is not supported by claude-fable-5-2: the model cannot run";
   const spec = {
     providerId: 'anthropic',
     descriptor: anthropic,
@@ -1013,18 +1013,18 @@ describe('runTierCanary (thinking and strict-none probes on extra models)', () =
         /\[PASS\] @anthropic:haiku effort=none\s+claude-haiku-5-5\s+\(sent with thinking off\)\n/
       );
       expect(report).toMatch(
-        /\[PASS\] @anthropic:fable effort=none\s+claude-fable-5-1\s+\(degraded to 'low' \(thinking-required\)\)/
+        /\[PASS\] @anthropic:fable effort=none\s+claude-fable-5-2\s+\(degraded to 'low' \(thinking-required\)\)/
       );
-      expect(report).toMatch(/\[PASS\] @anthropic:fable effort=low\s+claude-fable-5-1\n/);
+      expect(report).toMatch(/\[PASS\] @anthropic:fable effort=low\s+claude-fable-5-2\n/);
       // sonnet has its own off value, so 'fail' answers, and a raw 'disabled' must still be rejected.
       expect(report).toMatch(/\[PASS\] base none\+fail\s+claude-sonnet-5-5\n/);
       expect(report).toMatch(
         /\[EXPECTED-REJECT\] base none raw\s+claude-sonnet-5-5\s+\(the provider still rejects disabled; this model's off value is between_tools: AI API returned 400/
       );
       expect(report).toMatch(
-        /\[REFUSED-LOCALLY\] @anthropic:fable none\+fail\s+claude-fable-5-1\s+\(as listed\)/
+        /\[REFUSED-LOCALLY\] @anthropic:fable none\+fail\s+claude-fable-5-2\s+\(as listed\)/
       );
-      expect(report).toMatch(/\[EXPECTED-REJECT\] @anthropic:fable none raw\s+claude-fable-5-1/);
+      expect(report).toMatch(/\[EXPECTED-REJECT\] @anthropic:fable none raw\s+claude-fable-5-2/);
       expect(report).toMatch(/\[PASS\] @anthropic:haiku none\+fail\s+claude-haiku-5-5/);
       expect(report).not.toMatch(/@anthropic:haiku none raw/);
       expect(report).toMatch(/LIVE-VERIFIED/);
@@ -1053,7 +1053,7 @@ describe('runTierCanary (thinking and strict-none probes on extra models)', () =
       expect(report).toMatch(/\[PENDING\] base none\+fail\s+claude-sonnet-5-5\s+\(expect accepted\)/);
       expect(report).toMatch(/\[PENDING\] base none raw\s+claude-sonnet-5-5\s+\(expect expected-reject\)/);
       expect(report).toMatch(
-        /\[PENDING\] @anthropic:fable none\+fail\s+claude-fable-5-1\s+\(expect refused-locally\)/
+        /\[PENDING\] @anthropic:fable none\+fail\s+claude-fable-5-2\s+\(expect refused-locally\)/
       );
     });
   });
@@ -1287,7 +1287,7 @@ describe('runTierCanary (temperature probes)', () => {
   });
 
   test('a raw, report-only probe prints what the provider said without passing or failing the run', async () => {
-    // No scenario sends a raw probe now; the mechanism stays for the next open question.
+    // The mechanism on its own, with both outcomes; the OpenAI scenario uses it for gpt-6-luna.
     const observing = {
       ...spec,
       temperatureProbes: [
@@ -1481,9 +1481,11 @@ describe('model-tier scenarios', () => {
     const result = await geminiModelTiersScenario.cli.run(makeContext());
     expect(result).toSucceedAndSatisfy((report: string) => {
       expect(report).toMatch(/=== google-gemini model-tier canary ===/);
-      expect(report).toMatch(/@google-gemini:pro -> gemini-3\.1-pro-preview \(cascaded from a lower tier\)/);
+      expect(report).toMatch(/@google-gemini:pro -> gemini-4-argon \(cascaded from a lower tier\)/);
       expect(report).toMatch(/\[PASS\] image\s+@google-gemini:flash-image -> gemini-nano-banana-2\.1\b/);
-      expect(report).toMatch(/\[PENDING\] frontier effort=none\s+gemini-3\.1-pro-preview/);
+      expect(report).toMatch(
+        /\[PENDING\] frontier effort=none\s+gemini-4-argon\s+\(expect degraded to thinkingLevel 'low'/
+      );
       expect(report).toMatch(/\[PENDING\] @google-gemini:flash-lite\s+gemini-3\.5-flash-lite/);
       // The rotated image tier gets a live generation, pending without a key.
       expect(report).toMatch(/\[PENDING\] image\s+gemini-nano-banana-2\.1/);
@@ -1527,14 +1529,14 @@ describe('model-tier scenarios', () => {
     const result = await anthropicModelTiersScenario.cli.run(makeContext());
     expect(result).toSucceedAndSatisfy((report: string) => {
       expect(report).toMatch(/@anthropic:opus -> claude-opus-5-5 \(cascaded from a lower tier\)/);
-      expect(report).toMatch(/\[PENDING\] @anthropic:fable\s+claude-fable-5-1/);
+      expect(report).toMatch(/\[PENDING\] @anthropic:fable\s+claude-fable-5-2/);
       expect(report).toMatch(/\[PENDING\] base schema\s+claude-sonnet-5-5/);
       expect(report).toMatch(/\[PENDING\] @anthropic:haiku\s+claude-haiku-5-5/);
       expect(report).toMatch(/\[PENDING\] @anthropic:haiku schema\s+claude-haiku-5-5/);
       expect(report).toMatch(/\[PENDING\] frontier schema\s+claude-opus-5-5/);
-      expect(report).toMatch(/\[PENDING\] @anthropic:fable schema\s+claude-fable-5-1/);
+      expect(report).toMatch(/\[PENDING\] @anthropic:fable schema\s+claude-fable-5-2/);
       expect(report).toMatch(/\[PENDING\] advanced schema\+effort=low\s+claude-opus-5-5/);
-      expect(report).toMatch(/\[PENDING\] @anthropic:fable schema\+effort=low\s+claude-fable-5-1/);
+      expect(report).toMatch(/\[PENDING\] @anthropic:fable schema\+effort=low\s+claude-fable-5-2/);
     });
   });
 
@@ -1551,7 +1553,7 @@ describe('model-tier scenarios', () => {
         /\[PENDING\] base effort=none\s+claude-sonnet-5-5\s+\(expect sent with thinking off \(between_tools\)\)/
       );
       expect(report).toMatch(
-        /\[PENDING\] @anthropic:fable none\+fail\s+claude-fable-5-1\s+\(expect refused-locally\)/
+        /\[PENDING\] @anthropic:fable none\+fail\s+claude-fable-5-2\s+\(expect refused-locally\)/
       );
       expect(report).toMatch(/\[PENDING\] base none\+fail\s+claude-sonnet-5-5\s+\(expect accepted\)/);
       expect(report).toMatch(/\[PENDING\] base none raw\s+claude-sonnet-5-5\s+\(expect expected-reject\)/);
@@ -1562,7 +1564,7 @@ describe('model-tier scenarios', () => {
         /\[PENDING\] @anthropic:haiku temp=1\+effort=low\s+claude-haiku-5-5\s+\(expect accepted\)/
       );
       expect(report).toMatch(/\[PENDING\] advanced temp=0\.3\s+claude-opus-5-5\s+\(expect refused-locally\)/);
-      expect(report).toMatch(/\[PENDING\] @anthropic:fable max=128000\s+claude-fable-5-1/);
+      expect(report).toMatch(/\[PENDING\] @anthropic:fable max=128000\s+claude-fable-5-2/);
       expect(report).toMatch(/RESOLVER-VERIFIED; LIVE CANARY PENDING \(STOP-FLAG/);
     });
   });
@@ -1574,7 +1576,12 @@ describe('model-tier scenarios', () => {
     const result = await openaiModelTiersScenario.cli.run(makeContext());
     expect(result).toSucceedAndSatisfy((report: string) => {
       expect(report).toMatch(/\[PENDING\] base temp=0\.3\+effort=none\s+gpt-6-luna\s+\(expect accepted\)/);
-      expect(report).toMatch(/\[PENDING\] base temp=0\.3\s+gpt-6-luna\s+\(expect expected-reject\)/);
+      expect(report).toMatch(/\[PENDING\] base temp=0\.3\s+gpt-6-luna\s+\(expect refused-locally\)/);
+      expect(report).toMatch(/\[PENDING\] base temp=1\s+gpt-6-luna\s+\(expect accepted\)/);
+      expect(report).toMatch(/\[PENDING\] base temp=1\+effort=low\s+gpt-6-luna\s+\(expect accepted\)/);
+      expect(report).toMatch(
+        /\[PENDING\] base temp=0\.3\+effort=low\s+gpt-6-luna\s+\(expect refused-locally\)/
+      );
       expect(report).toMatch(/\[PENDING\] advanced temp=0\.3\s+gpt-6\.1-sol\s+\(expect refused-locally\)/);
       expect(report).toMatch(/\[PENDING\] frontier temp=0\.3\s+gpt-6-astra\s+\(expect refused-locally\)/);
       expect(report).not.toMatch(/base temp=0\.3\s+gpt-6\.1-sol/);
@@ -1582,35 +1589,57 @@ describe('model-tier scenarios', () => {
       expect(report).toMatch(/\[PENDING\] frontier temp=1\s+gpt-6-astra\s+\(expect accepted\)/);
       expect(report).toMatch(/\[PENDING\] advanced temp=1\+effort=low\s+gpt-6\.1-sol\s+\(expect accepted\)/);
       expect(report).toMatch(/\[PENDING\] frontier temp=1\+effort=low\s+gpt-6-astra\s+\(expect accepted\)/);
-      expect(report).not.toMatch(/base temp=1|temp=1 raw|expect observed/);
+      // One luna row is sent raw, past the library's gate, for the provider's own rejection.
+      expect(report).toMatch(
+        /\[PENDING\] base temp=0\.3\+effort=low raw\s+gpt-6-luna\s+\(expect expected-reject\)/
+      );
+      expect(report).not.toMatch(/base temp=1\+effort=low raw/);
+      expect(report).not.toMatch(/(advanced|frontier) temp=[0-9.]+(\+effort=low)? raw/);
       expect(report).toMatch(/\[PENDING\] frontier max=128000\s+gpt-6-astra/);
     });
   });
 
-  test('gemini cli.run without a key lists the max-output rows and flash-lite thinking rows', async () => {
+  test('gemini cli.run without a key lists the max-output, level and thinking rows', async () => {
     if (!geminiModelTiersScenario.cli) {
       throw new Error('expected a CLI implementation');
     }
     const result = await geminiModelTiersScenario.cli.run(makeContext());
     expect(result).toSucceedAndSatisfy((report: string) => {
       expect(report).toMatch(/\[PENDING\] base max=65536\s+gemini-3\.8-flash/);
-      expect(report).toMatch(/\[PENDING\] frontier max=65536\s+gemini-3\.1-pro-preview/);
+      expect(report).toMatch(/\[PENDING\] frontier max=32768\s+gemini-4-argon/);
       expect(report).toMatch(/\[PENDING\] @google-gemini:flash-lite max=65536\s+gemini-3\.5-flash-lite/);
+      // flash-lite: thinkingLevel, 'none' is its minimal level
       expect(report).toMatch(
-        /\[PENDING\] @google-gemini:flash-lite effort=none\s+gemini-3\.5-flash-lite\s+\(expect degraded to 'low'/
+        /\[PENDING\] @google-gemini:flash-lite effort=none\s+gemini-3\.5-flash-lite\s+\(expect sent as thinkingLevel 'minimal'\)/
       );
+      expect(report).toMatch(
+        /\[PENDING\] @google-gemini:flash-lite effort=high\s+gemini-3\.5-flash-lite\s+\(expect sent as thinkingLevel 'high'\)/
+      );
+      expect(report).toMatch(
+        /\[PENDING\] @google-gemini:flash-lite none\+fail\s+gemini-3\.5-flash-lite\s+\(expect accepted\)/
+      );
+      expect(report).not.toMatch(/flash-lite none raw/);
+      expect(report).toMatch(
+        /\[PENDING\] @google-gemini:flash-lite level=minimal\s+gemini-3\.5-flash-lite\s+\(expect accepted\)/
+      );
+      // gemini-4-argon (advanced, and frontier by cascade): thinkingLevel, cannot turn thinking off
+      expect(report).toMatch(
+        /\[PENDING\] advanced effort=none\s+gemini-4-argon\s+\(expect degraded to thinkingLevel 'low' \(thinking-required\)\)/
+      );
+      expect(report).toMatch(
+        /\[PENDING\] advanced effort=low\s+gemini-4-argon\s+\(expect sent as thinkingLevel 'low'\)/
+      );
+      expect(report).toMatch(/\[PENDING\] advanced none\+fail\s+gemini-4-argon\s+\(expect refused-locally\)/);
+      expect(report).toMatch(/\[PENDING\] advanced none raw\s+gemini-4-argon\s+\(expect expected-reject\)/);
+      expect(report).toMatch(/\[PENDING\] advanced level=low\s+gemini-4-argon\s+\(expect accepted\)/);
+      // gemini-3.8-flash stays on the budget wire: budget 0 turns its thinking off
       expect(report).toMatch(
         /\[PENDING\] base effort=none\s+gemini-3\.8-flash\s+\(expect sent with thinking off\)/
       );
+      expect(report).toMatch(/\[PENDING\] base effort=high\s+gemini-3\.8-flash$/m);
       expect(report).toMatch(/\[PENDING\] base none\+fail\s+gemini-3\.8-flash\s+\(expect accepted\)/);
-      expect(report).toMatch(
-        /\[PENDING\] @google-gemini:flash-lite none\+fail\s+gemini-3\.5-flash-lite\s+\(expect refused-locally\)/
-      );
-      expect(report).toMatch(
-        /\[PENDING\] @google-gemini:flash-lite none raw\s+gemini-3\.5-flash-lite\s+\(expect expected-reject\)/
-      );
-      // gemini-3.8-flash is not thinking-required, so it gets no raw row.
-      expect(report).not.toMatch(/base none raw/);
+      // gemini-3.8-flash is not thinking-required and has no level declaration: no raw or level row.
+      expect(report).not.toMatch(/base none raw|base level=/);
     });
   });
 });

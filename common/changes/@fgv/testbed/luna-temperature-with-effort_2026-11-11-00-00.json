@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/testbed",
+      "comment": "openai-model-tiers: gpt-6-luna temperature rows state their outcomes through the library (temp=1+effort=low PASS, temp=0.3+effort=low and temp=0.3 REFUSED-LOCALLY); one raw temp=0.3+effort=low row expects the provider's own 'Only the default (1) value is supported' 400. The two report-only OBSERVED rows are gone.",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/testbed",
+  "email": "noreply@anthropic.com"
+}

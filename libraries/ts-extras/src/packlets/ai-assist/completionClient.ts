@@ -28,6 +28,8 @@
  */
 
 import { type AnthropicThinkingOffType, resolveAnthropicThinkingOffType } from './anthropicThinkingOff';
+import { resolveGeminiModelThinking } from './geminiThinking';
+import { checkSamplingParams, temperatureAcceptedWithThinking } from './samplingParams';
 import { isJsonObject, type JsonObject } from '@fgv/ts-json-base';
 import {
   captureResult,
@@ -50,8 +52,6 @@ import {
   type IThinkingConfig,
   type ModelSpec,
   type ModelSpecKey,
-  checkSamplingParams,
-  temperatureAcceptedWithThinking,
   isAdaptiveThinkingModel,
   isThinkingRequiredModel,
   isResponsesOnlyModel,
@@ -64,6 +64,7 @@ import type { IAiCompletionUsage } from './usageTypes';
 import {
   anthropicEffortToBudgetTokens,
   checkTemperatureConflict,
+  geminiThinkingConfigWire,
   resolveThinkingConfig,
   providerDiscriminatorForId,
   type IResolvedThinkingConfig
@@ -130,7 +131,9 @@ export interface IProviderCompletionParams extends IChatRequest {
    * so the provider's own default applies. Many current-gen models reject a non-default value;
    * a model on `IAiProviderDescriptor.samplingParamsRejectedModelPrefixes` still accepts the
    * descriptor's `samplingParamsAcceptedTemperature`, with or without thinking, and is refused
-   * any other value before the wire.
+   * any other value before the wire; a model on
+   * `IAiProviderDescriptor.samplingParamsRejectedWithThinkingModelPrefixes` applies the same rule
+   * unless the request turns thinking off (effort `'none'`), when any value is sent.
    */
   readonly temperature?: number;
   /** Optional model override — string or context-aware map (uses descriptor.defaultModel otherwise) */
@@ -174,9 +177,10 @@ export interface IProviderCompletionParams extends IChatRequest {
   readonly thinking?: IThinkingConfig;
   /**
    * Optional cap on generated output tokens, mapped to each provider's native field:
-   * Anthropic `max_tokens`, OpenAI Chat Completions `max_completion_tokens`, OpenAI/xAI
-   * Responses `max_output_tokens`, Gemini `generationConfig.maxOutputTokens`, and the
-   * xAI/Groq/Mistral/Ollama/`openai-compat` chat-completions path `max_tokens`. When unset,
+   * Anthropic `max_tokens`, OpenAI/xAI Responses `max_output_tokens`, Gemini
+   * `generationConfig.maxOutputTokens`, and on the chat-completions path the descriptor's
+   * `chatOutputTokensField` (`max_completion_tokens` for OpenAI, Groq and xAI; `max_tokens` for
+   * Mistral, Ollama and `openai-compat`). When unset,
    * every provider except Anthropic omits the field and applies its own default; Anthropic's
    * Messages API requires the field, so it falls back to `DEFAULT_ANTHROPIC_MAX_TOKENS`.
    */
@@ -766,8 +770,10 @@ async function callGeminiCompletion(
   if (maxTokens !== undefined) {
     generationConfig.maxOutputTokens = maxTokens;
   }
-  if (resolvedThinking?.geminiThinkingBudget !== undefined) {
-    generationConfig.thinkingConfig = { thinkingBudget: resolvedThinking.geminiThinkingBudget };
+  // The resolver never sets both a level and a budget (see geminiThinkingConfigWire).
+  const thinkingConfig = geminiThinkingConfigWire(resolvedThinking);
+  if (thinkingConfig !== undefined) {
+    generationConfig.thinkingConfig = thinkingConfig;
   }
   if (resolvedThinking?.otherParams !== undefined) {
     Object.assign(generationConfig, resolvedThinking.otherParams);
@@ -896,7 +902,8 @@ export async function callProviderCompletion(
         thinking,
         model,
         discriminator,
-        isThinkingRequiredModel(descriptor, model)
+        isThinkingRequiredModel(descriptor, model),
+        resolveGeminiModelThinking(descriptor, model)
       );
       if (mergeResult.isFailure()) {
         return fail(mergeResult.message);
@@ -914,7 +921,7 @@ export async function callProviderCompletion(
       }
     }
   }
-  const samplingResult = checkSamplingParams(descriptor, model, temperature);
+  const samplingResult = checkSamplingParams(descriptor, model, temperature, resolvedThinking);
   if (samplingResult.isFailure()) {
     return fail(samplingResult.message);
   }

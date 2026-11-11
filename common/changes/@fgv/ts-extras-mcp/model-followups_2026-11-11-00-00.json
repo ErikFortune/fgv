@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras-mcp",
+      "comment": "Tests only: the three progress-deadline cancellation tests run on a fake clock, so the order of the server's progress timers and the SDK's deadlines no longer depends on machine load.",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-extras-mcp",
+  "email": "noreply@anthropic.com"
+}

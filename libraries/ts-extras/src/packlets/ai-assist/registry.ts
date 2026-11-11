@@ -85,9 +85,12 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
       // "not sooner than 2026-10-15" retirement date). claude-haiku-5-5 is adaptive-only and accepts
       // a forced tool_choice.
       '@anthropic:haiku': 'claude-haiku-5-5',
-      // NON-tier alias; modelOverride only (was claude-fable-5, held for the same forced-tool_choice
-      // reason and rotated with opus; claude-fable-5 stays Active, not sooner than 2027-06-09)
-      '@anthropic:fable': 'claude-fable-5-1'
+      // NON-tier alias; modelOverride only (was claude-fable-5-1, which is still served; before that
+      // claude-fable-5, held for the forced-tool_choice reason and rotated with opus). claude-fable-5-2
+      // is the same role at a lower price ($8 / $40 per MTok against 5.1's $10 / $50) with 5.1's request
+      // surface: https://platform.claude.com/docs/en/models/fable-5-2/whats-new-fable-5-2, fetched
+      // 2026-11-11.
+      '@anthropic:fable': 'claude-fable-5-2'
       // NOTE: no thinking/image/embedding keys — Anthropic completions are all text; base
       // (sonnet-5-5) and advanced (opus-5-5) are both thinking-capable, so a thinking-context
       // call flat-falls to base safely.
@@ -99,7 +102,10 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     // Claude 5 family requires the adaptive thinking wire shape (thinking.type: 'adaptive' +
     // output_config.effort) and 400s on the legacy thinking.type: 'enabled' + budget_tokens
     // shape; see AiAssist.isAdaptiveThinkingModel. The dash-bounded match also covers
-    // claude-opus-5-5, claude-fable-5-1 and claude-sonnet-5-5, which are adaptive-only as well.
+    // claude-opus-5-5, claude-fable-5-1, claude-fable-5-2, claude-mythos-5-2 and claude-sonnet-5-5,
+    // which are adaptive-only as well (Fable 5.2 and Mythos 5.2: "`thinking: {"type": "enabled"}` with
+    // `budget_tokens` and `thinking: {"type": "disabled"}` both return a 400 error",
+    // https://platform.claude.com/docs/en/models/fable-5-2/whats-new-fable-5-2, fetched 2026-11-11).
     // claude-haiku-5-5 ("Manual extended thinking returns an error",
     // https://platform.claude.com/docs/en/models/haiku-5-5/whats-new-haiku-5-5, fetched 2026-11-08) is
     // listed by its own id: claude-haiku-4-5 keeps the budget shape, and no page states a family rule.
@@ -123,7 +129,9 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     // thinks by default. These reject 'disabled' ("400 error" in the "disabled" column of the
     // per-model table, https://platform.claude.com/docs/en/build-with-claude/thinking, fetched
     // 2026-11-08: "Claude Fable 5.1, Claude Mythos 5.1, Claude Fable 5, Claude Mythos 5, Claude Opus
-    // 5.5, and Claude Mythos Preview reject `thinking: {type: "disabled"}`"), so 'none' is sent as
+    // 5.5, and Claude Mythos Preview reject `thinking: {type: "disabled"}`"; refetched 2026-11-11, the
+    // sentence now opens "Claude Fable 5.2, Claude Mythos 5.2, ..." and the 'claude-fable-5' and
+    // 'claude-mythos-5' entries cover both 5.2 ids), so 'none' is sent as
     // 'low' there, or refused. Opus 5.5 and Fable 5.1 confirm it live (2026-11-09): "`thinking.type.
     // disabled` is not supported for this model. Use `thinking.type.adaptive` and
     // `output_config.effort`". claude-opus-5, claude-sonnet-5 and claude-haiku-5-5 accept it (Opus 5
@@ -153,11 +161,11 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     // reached that way (an explicit 'other' block or caller-built otherParams still can). Like the
     // lists above, the rule is dash-bounded on purpose: it also matches future variants of the id.
     anthropicThinkingOffTypes: [{ modelPrefix: 'claude-sonnet-5-5', type: 'between_tools' }],
-    // "On Claude Fable 5.1, Claude Mythos 5.1, Claude Fable 5, Claude Mythos 5, Claude Mythos Preview,
-    // Claude Opus 5.5, Claude Opus 5, Claude Opus 4.8, Claude Opus 4.7, Claude Sonnet 5.5, Claude
-    // Sonnet 5, and Claude Haiku 5.5, non-default `temperature`, `top_p`, or `top_k` values return a
-    // 400 error on every request, regardless of whether thinking is used"
-    // (https://platform.claude.com/docs/en/build-with-claude/thinking, fetched 2026-11-08). The
+    // "On Claude Fable 5.2, Claude Mythos 5.2, Claude Fable 5.1, Claude Mythos 5.1, Claude Fable 5,
+    // Claude Mythos 5, Claude Mythos Preview, Claude Opus 5.5, Claude Opus 5, Claude Opus 4.8, Claude
+    // Opus 4.7, Claude Sonnet 5.5, Claude Sonnet 5, and Claude Haiku 5.5, non-default `temperature`,
+    // `top_p`, or `top_k` values return a 400 error on every request, regardless of whether thinking is
+    // used" (https://platform.claude.com/docs/en/build-with-claude/thinking, fetched 2026-11-11). The
     // dash-bounded entries cover each 5.x point release named there. "Non-default": the rule that
     // rejects the default too belongs to API version 2026-10-21, and ai-assist pins
     // anthropic-version 2023-06-01, so Anthropic's default temperature, 1, is still sent.
@@ -173,15 +181,20 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     ],
     samplingParamsAcceptedTemperature: 1,
     // Two mechanisms, split by what each line accepts. claude-opus-5-5, claude-fable-5-1,
-    // claude-mythos-5-1 and claude-sonnet-5-5 return a 400 on a forced tool_choice ({type:'any'} /
+    // claude-mythos-5-1, claude-fable-5-2, claude-mythos-5-2 and claude-sonnet-5-5 return a 400 on a
+    // forced tool_choice ({type:'any'} /
     // {type:'tool'}): "Forced tool use is not supported",
     // https://platform.claude.com/docs/en/models/opus-5-5/whats-new-opus-5-5 and
     // https://platform.claude.com/docs/en/models/fable-5-1/whats-new-fable-5-1 ("Claude Fable
     // 5.1 and Claude Mythos 5.1 don't support forced tool use") (fetched 2026-09-25), and
     // https://platform.claude.com/docs/en/models/sonnet-5-5/whats-new-sonnet-5-5 ("Claude Sonnet 5.5
-    // doesn't support forced tool use", fetched 2026-11-08). They get JSON outputs
-    // (`output_config.format`), which all four are listed as supporting on
-    // https://platform.claude.com/docs/en/build-with-claude/structured-outputs. Every other line
+    // doesn't support forced tool use", fetched 2026-11-08), and
+    // https://platform.claude.com/docs/en/models/fable-5-2/whats-new-fable-5-2 ("Forced tool use isn't
+    // supported. `tool_choice` set to `{"type": "any"}` or `{"type": "tool", "name": "..."}` returns a
+    // 400 `invalid_request_error`", for Fable 5.2 and Mythos 5.2, fetched 2026-11-11). They get JSON
+    // outputs (`output_config.format`), which all six are listed as supporting on
+    // https://platform.claude.com/docs/en/build-with-claude/structured-outputs (supportedModels,
+    // fetched 2026-11-11). Every other line
     // keeps forced tool use under the catch-all, including claude-haiku-5-5 ("accepts a forced
     // `tool_choice`", its migration guide, fetched 2026-11-08): the '' entry is only correct because
     // the longer prefixes win for the lines that reject it (longest prefix wins; array order does
@@ -191,18 +204,24 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
       { modelPrefix: 'claude-opus-5-5', format: 'anthropic-output-format' },
       { modelPrefix: 'claude-fable-5-1', format: 'anthropic-output-format' },
       { modelPrefix: 'claude-mythos-5-1', format: 'anthropic-output-format' },
+      { modelPrefix: 'claude-fable-5-2', format: 'anthropic-output-format' },
+      { modelPrefix: 'claude-mythos-5-2', format: 'anthropic-output-format' },
       { modelPrefix: 'claude-sonnet-5-5', format: 'anthropic-output-format' },
       { modelPrefix: '', format: 'anthropic-tool-forced' }
     ],
     // Synchronous Messages API limits ("Max output: 128K tokens"; Haiku 4.5 "64K tokens"), each from
     // the model's page under platform.claude.com/docs/en/models, or for Sonnet 5.5 and Haiku 5.5 the
-    // models overview, fetched 2026-11-08. K is read as 1,000, as those docs use it. The 300k
+    // models overview, fetched 2026-11-08; Fable 5.2 and Mythos 5.2 ("Max output: 128K tokens") from
+    // https://platform.claude.com/docs/en/models/fable-5-2/overview and .../models/mythos-5-2/overview,
+    // fetched 2026-11-11. K is read as 1,000, as those docs use it. The 300k
     // Batch-API limit needs a beta header on a batch endpoint ai-assist does not use, so it is not
     // recorded. One entry per model id a page names: limits are never inherited by a sibling id
     // or a snapshot.
     maxOutputTokens: [
+      { modelId: 'claude-fable-5-2', maxOutputTokens: 128000 },
       { modelId: 'claude-fable-5-1', maxOutputTokens: 128000 },
       { modelId: 'claude-fable-5', maxOutputTokens: 128000 },
+      { modelId: 'claude-mythos-5-2', maxOutputTokens: 128000 },
       { modelId: 'claude-mythos-5-1', maxOutputTokens: 128000 },
       { modelId: 'claude-mythos-5', maxOutputTokens: 128000 },
       { modelId: 'claude-opus-5-5', maxOutputTokens: 128000 },
@@ -230,17 +249,17 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
       // no frontier key → a frontier request cascades advanced → pro (see resolveModel)
     },
     aliases: {
-      // NOTE: the base flash line is at 3.8, flash-lite at 3.5 and pro at 3.1 — this is NOT a typo.
-      // Google's models page recommends "3.5 Flash-Lite or 3.8 Flash" for new projects and lists no
-      // Pro newer than 3.1. Its newer flagship, gemini-4-argon, is not the pro target yet: Gemini 4
-      // requires `thinkingLevel` and deprecates the `thinkingBudget` field this adapter sends
-      // (https://ai.google.dev/gemini-api/docs/thinking?generate-content=true, fetched 2026-11-08).
-      // The per-role version split is exactly why the alias layer exists — consumers never see
-      // these numbers.
+      // NOTE: the base flash line is at 3.8, flash-lite at 3.5 and pro at Gemini 4 Argon — this is NOT
+      // a typo. The pro role is Google's Gemini 4 frontier reasoning line: "Gemini 4 Argon
+      // (`gemini-4-argon`) is our efficient Gemini 4 frontier reasoning model", Versions "Stable:
+      // `gemini-4-argon`" (https://aistudio.google.com/docs/models/gemini-4-argon.md, fetched
+      // 2026-11-11). Gemini 4 requires `thinkingLevel`, which this adapter sends for it (see
+      // geminiThinkingLevels below). The per-role version split is exactly why the alias layer
+      // exists — consumers never see these numbers.
       // The 2026-10-16 shutdown recorded below for the 2.5 line has since been withdrawn: Google now
       // lists 2.5 as "not deprecated", served to existing users only (as of 2026-09-24).
       '@google-gemini:flash': 'gemini-3.8-flash', // base (was gemini-3.5-flash, no shutdown announced as of 2026-09-24; before that gemini-2.5-flash, then slated for 2026-10-16). NOTE: 3.8 Flash thinking levels are low/medium/high — no 'minimal'
-      '@google-gemini:pro': 'gemini-3.1-pro-preview', // advanced-tier role (wired to the 'advanced' defaultModel key); also the frontier cascade target (was gemini-2.5-pro, then slated for 2026-10-16)
+      '@google-gemini:pro': 'gemini-4-argon', // advanced-tier role (wired to the 'advanced' defaultModel key); also the frontier cascade target (was gemini-3.1-pro-preview; before that gemini-2.5-pro, then slated for 2026-10-16)
       '@google-gemini:flash-lite': 'gemini-3.5-flash-lite', // cheaper thinking-capable line; available via modelOverride only (was gemini-3.1-flash-lite, shutdown 2027-05-07; before that gemini-2.5-flash-lite)
       // image (was gemini-3.1-flash-image, Stable; before that gemini-3.1-flash-image-preview, retired
       // 2026-06-25). Nano Banana 2.1 is "An update to Nano Banana 2 (Gemini 3.1 Flash Image)" with
@@ -256,32 +275,64 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     // back without the host changing anything, so it wants the same evidence a
     // capability claim wants.
     serverToolsExclusiveWithClientTools: ['web_search'],
-    // Reject thinkingBudget 0. gemini-3.1-pro-preview: live 400 "Budget 0 is invalid. This model
-    // only works in thinking mode." (2026-09-25); Google's thinking page lists its levels as
-    // low/medium/high. gemini-2.5-pro: IGeminiThinkingConfig.thinkingBudget documents 0 as
-    // erroring on Pro.
-    // gemini-3.5-flash-lite cannot be turned off by a budget either. § "Controlling thinking" on
-    // https://ai.google.dev/gemini-api/docs/thinking.md.txt (fetched 2026-11-09):
-    //   | gemini-3.8-flash | On (medium) | low, medium, high |
-    //   | gemini-3.6-flash | On (medium) | minimal, low, medium, high |
-    //   | gemini-3.5-flash-lite | On (minimal) | minimal, low, medium, high |
-    // flash-lite returned 400 INVALID_ARGUMENT "Request contains an invalid argument." for
-    // thinkingBudget 0 (live, 2026-11-09), so 'none' degrades to 'low' or refuses there.
-    // This is interim: Gemini 3.x is controlled by `thinkingLevel`, which ai-assist does not send
-    // yet; once it does, 'none' maps to `minimal` on the models that list it (flash-lite), and the
-    // flash-lite entry comes off this list.
-    // gemini-3.8-flash is NOT listed, although the level table above names no level that turns its
-    // thinking off: a live generateContent with thinkingConfig.thinkingBudget 0 (2026-11-10) returned
-    // usageMetadata promptTokenCount 8, candidatesTokenCount 1, totalTokenCount 9 and no
-    // thoughtsTokenCount, so budget 0 does turn thinking off on it and 'none' sends budget 0.
+    // Models that cannot run with thinking off, so a generic 'none' is degraded to 'low' or refused.
+    // Budget-wire Pro models reject thinkingBudget 0. gemini-3.1-pro-preview: live 400 "Budget 0 is
+    // invalid. This model only works in thinking mode." (2026-09-25). gemini-2.5-pro: "2.5 Pro |
+    // Dynamic thinking | `128` to `32768` | N/A: Cannot disable thinking" (budget table,
+    // https://aistudio.google.com/docs/thinking.md?generate-content=true, fetched 2026-11-11).
+    // gemini-3-pro-preview: "| gemini-3-pro-preview | On (high) | low, high |" — no off level
+    // (https://aistudio.google.com/docs/thinking.md, § Controlling thinking, fetched 2026-11-11).
+    // Gemini 4 (level wire): "You cannot disable thinking for Gemini 4 Carbon or Gemini 4 Argon"
+    // (generateContent thinking page, fetched 2026-11-11); their lowest level is 'low'.
+    // gemini-3.8-flash is NOT listed, although its levels (low, medium, high) name no off level: a
+    // live generateContent with thinkingConfig.thinkingBudget 0 (2026-11-10) returned usageMetadata
+    // promptTokenCount 8, candidatesTokenCount 1, totalTokenCount 9 and no thoughtsTokenCount, so
+    // budget 0 does turn thinking off on it. It stays on the budget wire (no geminiThinkingLevels
+    // entry) for that reason, and 'none' sends it budget 0.
+    // gemini-3.5-flash-lite is NOT listed: it is a level model with a 'minimal' level, which 'none'
+    // is sent as (its live 400 for thinkingBudget 0, 2026-11-09, no longer applies).
     // The entries are dash-bounded on purpose, so they also match future variants of a listed id (a
     // dated snapshot): the safe direction for a degrade-or-refuse list, until someone reviews the new
-    // id. The converse holds for an unlisted id: with gemini-3.8-flash off the list, its variants
-    // (gemini-3.8-flash-lite, gemini-3.8-flash-<date>) are no longer caught here either, and a
-    // 'none' sends them budget 0 until one is listed on its own evidence. gemini-3.6-flash and
-    // gemini-3.5-flash stay unlisted: neither is an alias target, and there is no evidence that
-    // either rejects or ignores budget 0.
-    thinkingRequiredModelPrefixes: ['gemini-3.1-pro-preview', 'gemini-2.5-pro', 'gemini-3.5-flash-lite'],
+    // id. gemini-3.6-flash and gemini-3.5-flash stay unlisted: there is no evidence that either
+    // rejects or ignores its off value.
+    thinkingRequiredModelPrefixes: [
+      'gemini-4-argon',
+      'gemini-4-carbon',
+      'gemini-3.1-pro-preview',
+      'gemini-3-pro-preview',
+      'gemini-2.5-pro'
+    ],
+    // Models sent `thinkingLevel` instead of `thinkingBudget`, from the generateContent level table
+    // (§ "Thinking levels (Gemini 4 and Gemini 3)",
+    // https://aistudio.google.com/docs/thinking.md?generate-content=true, fetched 2026-11-11):
+    // "The `thinkingLevel` parameter, required for Gemini 4 and recommended for Gemini 3 models";
+    // "Gemini 4 (`gemini-4-carbon` and `gemini-4-argon`) supports `low`, `medium` (default), and
+    // `high`" ('minimal': "Not supported (error)"); the "Gemini 3.5 & 3.1 Flash-Lite" and "Gemini 3.6
+    // Flash" columns support minimal, low, medium and high. On Gemini 4 the budget is deprecated: "If
+    // passed alone, it maps to the nearest `thinkingLevel` … and returns a warning; sending
+    // `thinkingBudget` and `thinkingLevel` together returns a `400` error."
+    // The "Gemini 3.1 Flash-Lite Image" column supports minimal and high only (low and medium "Not
+    // supported"), so its rule is longer than, and so outranks, the gemini-3.1-flash-lite rule its id
+    // would otherwise match. The "Gemini 3 Flash" column is gemini-3-flash-preview. Rules match
+    // exact-or-dash-bounded, longest prefix first: a dated snapshot or `-preview` of a listed id takes
+    // that id's rule (gemini-3.1-flash-lite-preview takes gemini-3.1-flash-lite's). The pages fetched
+    // name no other variant of gemini-3.6-flash, gemini-3.5-flash-lite or Gemini 4; a future variant
+    // with a different level set (an `-image` or `-live` sibling) must get its own longer rule here.
+    // Deliberately not listed: gemini-3.8-flash (see above: budget 0 is its only off switch);
+    // gemini-3.1-pro-preview (no column in the generateContent table); the 2.5 line, which is on
+    // geminiThinkingLevelRejectedModelPrefixes instead.
+    geminiThinkingLevels: [
+      { modelPrefix: 'gemini-4-argon', levels: ['low', 'medium', 'high'] },
+      { modelPrefix: 'gemini-4-carbon', levels: ['low', 'medium', 'high'] },
+      { modelPrefix: 'gemini-3.6-flash', levels: ['minimal', 'low', 'medium', 'high'] },
+      { modelPrefix: 'gemini-3.5-flash-lite', levels: ['minimal', 'low', 'medium', 'high'] },
+      { modelPrefix: 'gemini-3.1-flash-lite', levels: ['minimal', 'low', 'medium', 'high'] },
+      { modelPrefix: 'gemini-3.1-flash-lite-image', levels: ['minimal', 'high'] },
+      { modelPrefix: 'gemini-3-flash-preview', levels: ['minimal', 'low', 'medium', 'high'] }
+    ],
+    // "Gemini 2.5 series models don't support `thinkingLevel`; use `thinkingBudget` instead"
+    // (generateContent thinking page, fetched 2026-11-11). An explicit level is refused there.
+    geminiThinkingLevelRejectedModelPrefixes: ['gemini-2.5'],
     corsRestricted: false,
     streamingCorsRestricted: false,
     acceptsImageInput: true,
@@ -289,10 +340,19 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     // (responseMimeType + responseSchema), uniform across the family.
     structuredOutput: [{ modelPrefix: '', format: 'gemini-response-schema' }],
     // "Output token limit 65,536" on each model's page under ai.google.dev/gemini-api/docs/models
-    // (served from aistudio.google.com/docs/models), fetched 2026-11-08. Completion alias targets only.
+    // (served from aistudio.google.com/docs/models), fetched 2026-11-08. Completion alias targets
+    // only, plus the previous pro target. gemini-4-argon records 32768, the lower of two figures.
+    // Its model page says "Max output 65,536 (default synchronous) / up to 1,048,576 (with long
+    // decode)" (https://aistudio.google.com/docs/models/gemini-4-argon.md), but "a single streaming
+    // request (`streamGenerateContent`) returns up to `65,536` tokens, and a single non-streaming
+    // request (`generateContent`) returns up to `32,768` tokens" (thinking page, generateContent;
+    // both fetched 2026-11-11). maxOutputTokens is the largest maxTokens every call path can be
+    // given, and callProviderCompletion sends non-streaming generateContent; long decode needs a
+    // continuation loop ai-assist does not run. So 32768 is declared, not 65536.
     maxOutputTokens: [
       { modelId: 'gemini-3.8-flash', maxOutputTokens: 65536 },
       { modelId: 'gemini-3.5-flash-lite', maxOutputTokens: 65536 },
+      { modelId: 'gemini-4-argon', maxOutputTokens: 32768 },
       { modelId: 'gemini-3.1-pro-preview', maxOutputTokens: 65536 }
     ],
     embedding: [
@@ -334,7 +394,10 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     acceptsImageInput: false,
     // "MAX OUTPUT TOKENS 65,536" on https://console.groq.com/docs/model/openai/gpt-oss-120b, fetched
     // 2026-11-08.
-    maxOutputTokens: [{ modelId: 'openai/gpt-oss-120b', maxOutputTokens: 65536 }]
+    maxOutputTokens: [{ modelId: 'openai/gpt-oss-120b', maxOutputTokens: 65536 }],
+    // max_tokens: "Deprecated in favor of max_completion_tokens" (https://console.groq.com/docs/api-reference,
+    // chat completions, fetched 2026-11-11).
+    chatOutputTokensField: 'max_completion_tokens'
   },
   {
     id: 'mistral',
@@ -412,6 +475,8 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     streamingCorsRestricted: false,
     acceptsImageInput: true,
     responsesOnlyModelPrefixes: ['gpt-5.5-pro'],
+    // OpenAI's Chat Completions API deprecated max_tokens in favor of max_completion_tokens.
+    chatOutputTokensField: 'max_completion_tokens',
     // Reject reasoning_effort 'none'. gpt-6-astra: model page lists effort low..max, and a live
     // call returned 400 "'reasoning_effort' does not support 'none' with this model" (2026-09-25).
     // gpt-6.1-sol: its page lists "reasoning.effort supports low, medium (default), high, xhigh, and
@@ -420,14 +485,19 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     // "When reasoning effort is not none, remove temperature, top_p, and top_logprobs"
     // (https://developers.openai.com/api/docs/guides/latest-model, fetched 2026-11-08). These two
     // have no 'none' effort, so they restrict temperature on every request. gpt-6-luna and gpt-6-sol
-    // accept it only when the call sets effort 'none' (their default is medium), which is not a
-    // per-model rule and is not declared here.
+    // accept any temperature when the call sets effort 'none' (their default is medium), so neither
+    // belongs on this effort-blind list.
     samplingParamsRejectedModelPrefixes: ['gpt-6-astra', 'gpt-6.1-sol'],
+    // Restricted only while reasoning. Live on gpt-6-luna (2026-11-11): temperature 0.3 with effort
+    // 'none' accepted; 0.3 with effort low, and 0.3 with no effort (default medium), each a 400
+    // "Only the default (1) value is supported"; 1 with effort low accepted. gpt-6-sol is not
+    // listed: the evidence covers luna only.
+    samplingParamsRejectedWithThinkingModelPrefixes: ['gpt-6-luna'],
     // The restriction spares the default. A live temperature: 1 was accepted by both gpt-6.1-sol and
     // gpt-6-astra (2026-11-10), each sent through a verbatim 'other' block at the default effort, so
-    // with thinking on; gpt-6-luna's 400 for 0.3 reads "Only the default (1) value is supported".
-    // The value is descriptor-wide, and that is right here: the list above is exactly the two models
-    // the evidence covers.
+    // with thinking on; gpt-6-luna accepted temperature: 1 beside effort low (2026-11-11), and its 400
+    // for 0.3 reads "Only the default (1) value is supported". The value is descriptor-wide, and that
+    // is right here: the two lists above are exactly the three models the evidence covers.
     samplingParamsAcceptedTemperature: 1,
     // Declared once for the whole line. The Chat-Completions-vs-Responses split is
     // NOT declared here on purpose: the route depends on whether the call carries
@@ -518,6 +588,10 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     // returned a live 400 "This model does not support `reasoning_effort` value `none`"
     // (2026-09-25). grok-4.3 lists 'none' and accepts it.
     thinkingRequiredModelPrefixes: ['grok-4.7', 'grok-4.6', 'grok-4.5'],
+    // max_tokens: "[DEPRECATED] … Deprecated in favor of `max_completion_tokens`", which xAI describes
+    // as bounding visible output only, not reasoning tokens
+    // (https://docs.x.ai/developers/rest-api-reference/inference/chat-completions, fetched 2026-11-11).
+    chatOutputTokensField: 'max_completion_tokens',
     structuredOutput: [{ modelPrefix: '', format: 'openai-json-schema' }],
     imageGeneration: [
       {
@@ -856,6 +930,9 @@ export const DEFAULT_MODEL_CAPABILITY_CONFIG: IAiModelCapabilityConfig = {
       // 2026-11-08); without this rule only /^gemini-/ matches it and image-generation is lost.
       { idPattern: /^gemini-nano-banana/, capabilities: ['image-generation'] },
       { idPattern: /embedding/, capabilities: ['embedding'] },
+      // Gemini 4: "Inputs Text, Image, Video, Audio, and PDF", function calling and thinking
+      // "Supported" (https://aistudio.google.com/docs/models/gemini-4-argon.md, fetched 2026-11-11).
+      { idPattern: /^gemini-4/, capabilities: ['chat', 'tools', 'vision', 'thinking'] },
       { idPattern: /^gemini-3/, capabilities: ['chat', 'tools', 'vision', 'thinking'] },
       { idPattern: /^gemini-2\.5/, capabilities: ['chat', 'tools', 'vision', 'thinking'] },
       { idPattern: /^gemini-/, capabilities: ['chat', 'tools', 'vision'] }
@@ -871,10 +948,15 @@ export const DEFAULT_MODEL_CAPABILITY_CONFIG: IAiModelCapabilityConfig = {
       { idPattern: /^claude-opus-/, capabilities: ['chat', 'tools', 'vision', 'thinking'] },
       { idPattern: /^claude-sonnet-/, capabilities: ['chat', 'tools', 'vision', 'thinking'] },
       { idPattern: /^claude-fable-/, capabilities: ['chat', 'tools', 'vision', 'thinking'] },
-      // claude-mythos-5-1 only: "Same capabilities as Claude Fable 5.1", adaptive thinking always on
-      // (https://platform.claude.com/docs/en/models/fable-5-1/whats-new-fable-5-1, fetched 2026-09-25).
-      // No fetched page states the other Mythos ids' capabilities, so the rule is not family-wide.
-      { idPattern: /^claude-mythos-5-1/, capabilities: ['chat', 'tools', 'vision', 'thinking'] },
+      // claude-mythos-5-1 and claude-mythos-5-2 only: "Same capabilities as Claude Fable 5.1", adaptive
+      // thinking always on (https://platform.claude.com/docs/en/models/fable-5-1/whats-new-fable-5-1,
+      // fetched 2026-09-25), and "Same capabilities as Claude Fable 5.2" ("Text and images → text",
+      // https://platform.claude.com/docs/en/models/fable-5-2/whats-new-fable-5-2 and
+      // .../models/fable-5-2/overview, fetched 2026-11-11). No fetched page states the other Mythos
+      // ids' capabilities, so the rules are not family-wide, and each is dash-bounded so it cannot
+      // reach an id that merely shares its characters (a dated claude-mythos-5 snapshot).
+      { idPattern: /^claude-mythos-5-1(?:-|$)/, capabilities: ['chat', 'tools', 'vision', 'thinking'] },
+      { idPattern: /^claude-mythos-5-2(?:-|$)/, capabilities: ['chat', 'tools', 'vision', 'thinking'] },
       // claude-haiku-5-5 only: adaptive thinking, text and image input, tool use (models overview and
       // https://platform.claude.com/docs/en/models/haiku-5-5/whats-new-haiku-5-5, fetched 2026-11-08).
       // claude-haiku-4-5 keeps the /^claude-/ catch-all.

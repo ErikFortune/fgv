@@ -28,6 +28,8 @@
  */
 
 import { resolveAnthropicThinkingOffType } from './anthropicThinkingOff';
+import { resolveGeminiModelThinking } from './geminiThinking';
+import { checkSamplingParams, temperatureAcceptedWithThinking } from './samplingParams';
 import { fail, Result } from '@fgv/ts-utils';
 
 import { type IAiCacheRequest } from './cacheRequest';
@@ -37,8 +39,6 @@ import { schemaWireProviderId } from './schemaKeywords';
 import {
   type IAiStreamEvent,
   type ModelSpecKey,
-  checkSamplingParams,
-  temperatureAcceptedWithThinking,
   isAdaptiveThinkingModel,
   isThinkingRequiredModel,
   isResponsesOnlyModel,
@@ -170,7 +170,8 @@ export async function callProviderCompletionStream(
         thinking,
         model,
         discriminator,
-        isThinkingRequiredModel(descriptor, model)
+        isThinkingRequiredModel(descriptor, model),
+        resolveGeminiModelThinking(descriptor, model)
       );
       if (mergeResult.isFailure()) {
         return fail(mergeResult.message);
@@ -188,7 +189,7 @@ export async function callProviderCompletionStream(
       }
     }
   }
-  const samplingResult = checkSamplingParams(descriptor, model, temperature);
+  const samplingResult = checkSamplingParams(descriptor, model, temperature, resolvedThinking);
   if (samplingResult.isFailure()) {
     return fail(samplingResult.message);
   }
@@ -228,8 +229,7 @@ export async function callProviderCompletionStream(
           undefined,
           maxTokens,
           supportsCacheUsageReporting(descriptor),
-          gatedCache,
-          temperatureAcceptedWithThinking(descriptor, config.model)
+          gatedCache
         );
       }
       return callOpenAiChatStream(

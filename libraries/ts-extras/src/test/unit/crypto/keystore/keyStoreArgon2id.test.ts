@@ -258,7 +258,10 @@ describe('KeyStore Argon2id methods', () => {
         await keystore.addSecretFromPasswordArgon2id('a2-secret', 'my-password', mockArgon2idProvider)
       ).orThrow();
       const kd = added.keyDerivation as CryptoUtils.IArgon2idKeyDerivationParams;
-      const otherSalt = provider.generateRandomBytes(16).orThrow();
+      // Flip one bit of the stored salt rather than drawing a fresh one: the fake KDF folds the salt
+      // into a weighted sum, which two random salts can share, but one changed byte always moves it.
+      const otherSalt = CryptoUtils.fromBase64(kd.salt);
+      otherSalt[0] ^= 1;
       const result = await keystore.verifySecretFromPasswordArgon2id(
         'a2-secret',
         'my-password',
