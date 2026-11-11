@@ -1,6 +1,6 @@
 # fable-5-2 — rotate `@anthropic:fable` to Claude Fable 5.2 and register Mythos 5.2
 
-**Shipped**: 2026-11-11, PR #TBD (targets `integration/asks`).
+**Shipped**: 2026-11-11, PR #773 (targets `integration/asks`).
 Packages: `@fgv/ts-extras` (`ai-assist`, change file `minor`) and `@fgv/testbed` (private, change file
 `none`).
 

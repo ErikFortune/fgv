@@ -1,7 +1,7 @@
 id: fable-5-2
 status: shipped
 packages: ['@fgv/ts-extras', '@fgv/testbed']
-prs: [] # TBD: the PR number is filled when the PR is opened
+prs: [773]
 openPrs: []
 opened: 2026-11-11
 closed: 2026-11-11
@@ -48,4 +48,4 @@ keywords:
 relatedStreams:
   - { id: live-run-corrections, relationship: 'follows; same registry declarations' }
   - { id: model-alias-refresh, relationship: 'earlier @anthropic:fable rotation to claude-fable-5-1' }
-sourceHash: sha256:36dfe7764ea885ff # over brief.md + state.md + result.md
+sourceHash: sha256:e61e63f3e52e6708 # over brief.md + state.md + result.md

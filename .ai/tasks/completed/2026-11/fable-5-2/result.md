@@ -8,7 +8,7 @@ round beside a client tool no longer edits the history that 5.2's every-account 
 verifies (§ 3).
 
 Packages: `@fgv/ts-extras` (`ai-assist`, change file `minor`) and `@fgv/testbed` (private, change file
-`none`). Branch `fable-5-2`, based on `origin/integration/asks` @ `f66b7f0c0`. PR: none opened (#TBD).
+`none`). Branch `fable-5-2`, based on `origin/integration/asks` @ `f66b7f0c0`. PR: #773.
 
 Logs and the fetched pages are under
 `/tmp/claude-0/-home-user/ddedaf44-7531-52e1-a2c4-05cab5230430/scratchpad/fable/` (pages in `docs/`).
