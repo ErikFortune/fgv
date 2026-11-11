@@ -817,6 +817,18 @@ export function executeClientToolTurn(
         `drop anthropicThinkingDisabled or set an anthropicEffort`
     );
   }
+  // The same rule for the OpenAI-format wire, which sends `openAiEffort ?? xaiEffort` as the
+  // reasoning effort: 'none' aimed at a model that cannot run with thinking off is a provider 400.
+  // Keyed on the wire the descriptor speaks — another format's adapter never reads these fields.
+  if (descriptor.apiFormat === 'openai' && isThinkingRequiredModel(descriptor, resolvedModel)) {
+    const effortField = resolvedThinking?.openAiEffort !== undefined ? 'openAiEffort' : 'xaiEffort';
+    if ((resolvedThinking?.openAiEffort ?? resolvedThinking?.xaiEffort) === 'none') {
+      return fail(
+        `executeClientToolTurn: ${resolvedModel} cannot run with thinking off: ` +
+          `set ${effortField} to an effort other than 'none'`
+      );
+    }
+  }
   const baseUrlResult = resolveEffectiveBaseUrl(descriptor, endpoint);
   if (baseUrlResult.isFailure()) {
     return fail(baseUrlResult.message);
