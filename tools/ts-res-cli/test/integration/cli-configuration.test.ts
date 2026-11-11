@@ -27,6 +27,9 @@ import { spawn } from 'child_process';
 import * as TsRes from '@fgv/ts-res';
 
 describe('CLI Configuration Tests', () => {
+  /** The Jest timeout every single-spawn test in this file runs under (the default). */
+  const SINGLE_SPAWN_BUDGET_MS: number = 5000;
+
   let tempDir: string;
   let cliBin: string;
   let customConfigTestDataDir: string;
@@ -203,7 +206,10 @@ describe('CLI Configuration Tests', () => {
       const secondParsed = JSON.parse(secondOutput);
 
       expect(secondParsed).toEqual(firstParsed);
-    });
+      // Two CLI spawns, so two of the budget each single-spawn test in this file runs under (Jest's
+      // 5 s default). One spawn takes about 0.7 s idle; under a loaded repo-wide gate the pair has
+      // outrun a single budget.
+    }, 2 * SINGLE_SPAWN_BUDGET_MS);
 
     test('validates configuration file format', async () => {
       const resourcesDir = path.join(customConfigTestDataDir, 'src/resources');
