@@ -103,9 +103,21 @@ Rubric applied to the diff before coverage closure:
   No `c8 ignore` added.
 - `max-lines` on `model.ts` (2042 > 2000) resolved by moving `IGeminiThinkingConfig` to `geminiThinking.ts`.
 
-## 5. Gates (from `/home/user/fgv-gemini`, after the work commit)
+## 5. Gates (from `/home/user/fgv-gemini`)
 
-Logs under the scratchpad `gemini/`. See § 8 for the results recorded at close.
+Work committed first (`b1ff1b03b`), then merged with `origin/integration/asks` @ `5dcc3000f` (#774)
+as `eaaa791a1` (conflicts: `model.ts` imports, kept both; `docs/FUTURE.md`, kept #774's
+`gemini-embedding-2` entry and dropped the closed one). Gated on the merged tree, graded by grep
+(`not met|Operations failed|error TS|Jest tests? failed|ERR_PNPM` must be 0; `grep -ci warning` only
+the tracked-symlink notice):
+
+| gate | result |
+|---|---|
+| `install` | exit 0, 0 hits |
+| `change --verify --target-branch origin/integration/asks` | exit 0 (ts-extras, testbed change files found) |
+| `rebuild` | exit 0, 0 hits, 1 warning line (tracked symlink) |
+| `lint` | exit 0, 0 hits, 1 warning line (tracked symlink) |
+| `test` | exit 0, `SUCCESS: 38 operations` (1 more defines no work), 0 hits, 1 warning line (tracked symlink); `ts-extras` and `testbed` at 100% coverage |
 
 ## 6. Testbed run sheet — `google-gemini-model-tiers`
 
@@ -145,4 +157,17 @@ No live call was made in this stream.
 ## 8. Open questions
 
 See `state.md` § Open questions: Q1 (Argon ignores `temperature`; ai-assist still sends it), Q2 (Argon
-non-streaming 32,768-token hop cap vs the recorded 65,536).
+non-streaming 32,768-token hop cap vs the recorded 65,536), Q3 (a hand-built Gemini off value on a
+thinking-required model is not refused on the client-tool path, unlike #774's OpenAI-format guard).
+
+## 9. Close-out antagonist pass (self-run; no subagent could be spawned)
+
+Checked against the artifacts: every Google quote in § 2 re-matched against the saved page copies
+(the Argon what's-new quote drops the page's bold markup only); `model-alias-refresh` Q3 is the held
+Argon rotation (`result.md:51` there); the FUTURE entry did list `gemini-3.8-flash` as a level model,
+so keeping it on the budget wire is a real divergence and is recorded in `meta.yaml`; counts (66 new
+tests, 29 data-red, 21 type errors, 1 and 21 call-site reds) are from the logs of those runs. The
+PR number is unknown at close: `meta.yaml` `prs` is empty and the README, ledger entry and TECH_DEBT
+line say `#TBD`, so the capability-feed line has no PR link until `prs` is filled and the feed is
+regenerated. Q1–Q3 are recorded in `state.md`, this file and the ledger entry, not in
+`FUTURE.md` / `TECH_DEBT.md` — left for the orchestrator to route.

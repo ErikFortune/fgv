@@ -12,11 +12,16 @@ Worker-owned. The brief is frozen; questions and decisions go here.
     ai-assist sends; level table, budget table, Gemini 4 deprecation callout).
   - `https://aistudio.google.com/docs/models/gemini-4-argon.md`, `.../docs/models.md`,
     `.../docs/whats-new-gemini-4-argon.md?generate-content=true`.
-- [ ] Red tests → implementation → green.
-- [ ] Testbed rows.
-- [ ] Docs, change files.
-- [ ] Inline code-review pass, then coverage.
-- [ ] Commit, gates, push, close-out.
+- [x] Red tests → implementation → green (result.md § 3).
+- [x] Testbed rows.
+- [x] Docs, change files.
+- [x] Inline code-review pass, then coverage (100% both packages, no `c8 ignore` added).
+- [x] Work committed (`b1ff1b03b`); first gate run (install, change, rebuild, lint green) — test run
+  stopped when the orchestrator reported `integration/asks` moved to `5dcc3000f` (#774).
+- [x] Merged `origin/integration/asks` (`eaaa791a1`, no rebase). One conflict in `model.ts` (imports:
+  kept both) and one in `docs/FUTURE.md` (kept #774's new `gemini-embedding-2` entry, dropped the
+  entry this stream closes). Gates re-run on the merged tree.
+- [x] Close-out per `finalize-task`.
 
 ## Decisions (worker)
 
@@ -49,6 +54,12 @@ Worker-owned. The brief is frozen; questions and decisions go here.
   the table). On an unlisted model the block is sent verbatim (the caller owns the wire).
 
 ## Open questions
+
+- Q3 — #774 added client-tool guards refusing a hand-built OpenAI-format `'none'` effort on a
+  thinking-required model. The Gemini analogue (a caller-built `resolvedThinking` with
+  `geminiThinkingBudget: 0` for `gemini-3.1-pro-preview`, or `geminiThinkingLevel: 'minimal'` for
+  `gemini-4-argon`) still reaches the wire as a provider 400; only the level+budget pair is refused
+  locally. Not in this brief's scope (the client-tool builder belonged to `model-followups`).
 
 - Q1 — Gemini 4 Argon "Remove deprecated parameters: Remove `temperature`, `top_p`, `top_k` …
   If provided, sampling parameters are ignored." ai-assist still sends a caller's temperature
