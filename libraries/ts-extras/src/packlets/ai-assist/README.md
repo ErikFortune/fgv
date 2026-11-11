@@ -225,15 +225,29 @@ only with its own value, `thinking: { type: 'between_tools' }` (see below). `@an
   ("does not accept a non-default temperature (x): remove temperature, or send 1"; never "disable
   thinking", which these models' rule does not depend on). The value is descriptor-wide; OpenAI's
   list is exactly those two models. `AiAssist.rejectsSamplingParams` answers the
-  question for a concrete id. `gpt-6-luna` (`mini`, `nano`) and `gpt-6-sol` (the older Sol, not
-  `gpt-6.1-sol`; reachable by `modelOverride` only) reject `temperature` unless the call sets effort
-  `'none'`. They are deliberately **not** on `samplingParamsRejectedModelPrefixes`, which is
-  effort-blind and would refuse `0.3` with effort `'none'` — the case OpenAI documents as supported.
-  So beside any other effort their `temperature`, `1` included, is the thinking/temperature conflict,
-  refused before the wire on all three paths: completion, streaming, and the client-tool path, where
-  a caller-built `resolvedThinking` effort is checked the same way (it used to be dropped silently
-  by the Responses adapter). Whether luna takes `1` beside an effort is an open testbed `[OBSERVED]`
-  row.
+  question for a concrete id.
+- **`samplingParamsRejectedWithThinkingModelPrefixes` restricts `temperature` only while the model
+  reasons.** A listed model reasons by default and, with thinking on, rejects every `temperature`
+  but `samplingParamsAcceptedTemperature`; with thinking off it takes any value. OpenAI lists
+  `gpt-6-luna` (`mini`, `nano`) alone, on live evidence (2026-11-11): `0.3` with effort `'none'` is
+  accepted, `0.3` beside effort `low` — or with no effort, since luna defaults to `medium` — is a
+  400 "Only the default (1) value is supported", and `1` beside effort `low` is accepted. So on all
+  three paths (completion, streaming, client-tool) luna sends `1` beside any effort, sends any value
+  with effort `'none'`, and refuses any other value before the wire with "does not accept a
+  non-default temperature (x) while reasoning: remove temperature, send 1, or set effort 'none'" —
+  including a call with no effort at all. Thinking counts as off when the request sends the
+  descriptor's wire format its off value: on the OpenAI format the effort the adapter sends
+  (`openAiEffort ?? xaiEffort`) is `'none'`; Anthropic and Gemini fields are not read there. A
+  verbatim `'other'` block that sets the wire's effort key (`reasoning_effort`, `reasoning`) is
+  merged last and decides — `{ reasoning_effort: 'none' }` counts as off, `{ reasoning_effort:
+  'low' }` as reasoning even beside a generic `'none'`. "set effort 'none'" is offered only where
+  `'none'` would turn thinking off (not on a thinking-required model, nor a Gemini level model). Luna is
+  deliberately **not** on `samplingParamsRejectedModelPrefixes`, which is effort-blind and would
+  refuse the documented `0.3` + `'none'`. `AiAssist.rejectsSamplingParamsWithThinking` answers the
+  question for a concrete id. `gpt-6-sol` (the older Sol, not `gpt-6.1-sol`; reachable by
+  `modelOverride` only) is on neither list — the evidence covers luna only — so beside any effort
+  other than `'none'` its `temperature`, `1` included, remains the thinking/temperature conflict,
+  refused before the wire on all three paths.
 - **`executeClientToolTurn` refuses a caller-built `'none'` effort on a model that cannot run with
   thinking off.** A `resolvedThinking` skips the resolver that degrades or refuses `'none'`, so the
   client-tool path applies the rule itself: on an OpenAI-format descriptor, `openAiEffort: 'none'`

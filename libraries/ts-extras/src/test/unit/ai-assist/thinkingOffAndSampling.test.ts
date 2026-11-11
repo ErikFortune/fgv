@@ -625,7 +625,6 @@ describe('per-model thinking-off and sampling-parameter rules', () => {
     test.each([
       ['anthropic', 'claude-haiku-4-5-20251001', anthropicOk],
       ['anthropic', 'claude-sonnet-4-6', anthropicOk],
-      ['openai', 'gpt-6-luna', openAiOk],
       ['openai', 'gpt-6-sol', openAiOk]
     ] as ReadonlyArray<[AiAssist.AiProviderId, string, unknown]>)(
       '%s %s still sends temperature',
@@ -883,15 +882,15 @@ describe('per-model thinking-off and sampling-parameter rules', () => {
       }
     );
 
-    // A model off the rejected list keeps the thinking/temperature conflict, for 1 as for any value.
-    test('client-tool: openai gpt-6-luna refuses temperature 1 beside a resolved effort', () => {
+    // A model on neither rejected list keeps the thinking/temperature conflict, for 1 as for any value.
+    test('client-tool: openai gpt-6-sol refuses temperature 1 beside a resolved effort', () => {
       mockSse();
       const result = AiAssist.executeClientToolTurn({
         descriptor: getDescriptor('openai'),
         apiKey: 'k',
         ...prompt.toRequest(),
         clientTools: [],
-        model: 'gpt-6-luna',
+        model: 'gpt-6-sol',
         temperature: 1,
         resolvedThinking: { openAiEffort: 'low' }
       });

@@ -25,9 +25,13 @@
  * - a caller-built `resolvedThinking` whose effort is `'none'` is refused on a model listed in
  *   `thinkingRequiredModelPrefixes` (the provider rejects it), and still sent everywhere else;
  * - `gpt-6-luna` and `gpt-6-sol` (the older Sol, not `gpt-6.1-sol`) are not on
- *   `samplingParamsRejectedModelPrefixes`: they take a non-default temperature with effort `'none'`,
- *   so a temperature beside any other effort is the thinking/temperature conflict, `1` included —
- *   refused before the wire on the completion, streaming and client-tool paths alike;
+ *   `samplingParamsRejectedModelPrefixes`: they take a non-default temperature with effort `'none'`;
+ * - `gpt-6-luna` is on `samplingParamsRejectedWithThinkingModelPrefixes`: while it reasons (any
+ *   effort but `'none'`, or no effort, since it defaults to `medium`) it takes only the accepted
+ *   default `1`, and any other value is refused before the wire on the completion, streaming and
+ *   client-tool paths alike;
+ * - `gpt-6-sol` is on neither list, so a temperature beside any effort but `'none'` is the
+ *   thinking/temperature conflict, `1` included, on all three paths;
  * - each client-tool thinking-off refusal applies only on the wire format whose adapter reads it.
  */
 
@@ -213,7 +217,7 @@ describe("executeClientToolTurn: caller-built OpenAI-format effort 'none'", () =
   });
 });
 
-describe('gpt-6-luna and gpt-6-sol temperature beside an effort', () => {
+describe('gpt-6-luna and gpt-6-sol temperature with effort none, and gpt-6-sol beside an effort', () => {
   const originalFetch = global.fetch;
   const openai = getDescriptor('openai');
 
@@ -245,12 +249,9 @@ describe('gpt-6-luna and gpt-6-sol temperature beside an effort', () => {
     }
   );
 
-  // Not listed, so no accepted temperature is declared for them, and 1 beside an effort is the
-  // conflict like any other value — on all three paths, refused rather than silently dropped.
-  // Whether the provider takes 1 there is the testbed's OBSERVED row.
+  // gpt-6-sol is on neither list, so no accepted temperature applies to it, and 1 beside an effort
+  // is the conflict like any other value — on all three paths, refused rather than silently dropped.
   const besideEffort: ReadonlyArray<[string, number]> = [
-    ['gpt-6-luna', 1],
-    ['gpt-6-luna', 0.3],
     ['gpt-6-sol', 1],
     ['gpt-6-sol', 0.3]
   ];
@@ -323,4 +324,295 @@ describe('gpt-6-luna and gpt-6-sol temperature beside an effort', () => {
     await drain(result.orThrow().events);
     expect(sentBody()).toMatchObject({ temperature: 0.3, reasoning: { effort: 'none' } });
   });
+});
+
+describe('gpt-6-luna restricts temperature only while reasoning', () => {
+  const originalFetch = global.fetch;
+  const openai = getDescriptor('openai');
+  const whileReasoning =
+    /gpt-6-luna does not accept a non-default temperature \(0\.3\) while reasoning: remove temperature, send 1, or set effort 'none'/;
+
+  beforeEach(() => {
+    global.fetch = jest.fn();
+  });
+
+  afterEach(() => {
+    global.fetch = originalFetch;
+  });
+
+  test('the descriptor lists gpt-6-luna on the while-reasoning list only', () => {
+    expect(AiAssist.rejectsSamplingParamsWithThinking(openai, 'gpt-6-luna')).toBe(true);
+    expect(AiAssist.rejectsSamplingParams(openai, 'gpt-6-luna')).toBe(false);
+    expect(AiAssist.rejectsSamplingParamsWithThinking(openai, 'gpt-6-sol')).toBe(false);
+    expect(AiAssist.rejectsSamplingParamsWithThinking(openai, 'gpt-6-lunar')).toBe(false);
+    expect(AiAssist.rejectsSamplingParamsWithThinking(getDescriptor('anthropic'), 'gpt-6-luna')).toBe(false);
+  });
+
+  describe('callProviderCompletion', () => {
+    test.each(['gpt-6-luna', '@openai:mini'])('sends temperature 1 beside effort low to %s', async (model) => {
+      mockJson(openAiOk);
+      expect(
+        await AiAssist.callProviderCompletion({
+          descriptor: openai,
+          apiKey: 'k',
+          ...prompt.toRequest(),
+          modelOverride: model,
+          temperature: 1,
+          thinking: { effort: 'low' }
+        })
+      ).toSucceed();
+      expect(sentBody()).toMatchObject({ model: 'gpt-6-luna', temperature: 1, reasoning_effort: 'low' });
+    });
+
+    test('sends temperature 1 with no effort (the default, medium)', async () => {
+      mockJson(openAiOk);
+      expect(
+        await AiAssist.callProviderCompletion({
+          descriptor: openai,
+          apiKey: 'k',
+          ...prompt.toRequest(),
+          modelOverride: 'gpt-6-luna',
+          temperature: 1
+        })
+      ).toSucceed();
+      expect(sentBody()).toMatchObject({ temperature: 1 });
+      expect(sentBody().reasoning_effort).toBeUndefined();
+    });
+
+    test.each([
+      ['beside effort low', { effort: 'low' }],
+      ['with no effort (the default, medium)', undefined]
+    ] as ReadonlyArray<[string, AiAssist.IThinkingConfig | undefined]>)(
+      'refuses temperature 0.3 %s before the wire',
+      async (__label, thinking) => {
+        expect(
+          await AiAssist.callProviderCompletion({
+            descriptor: openai,
+            apiKey: 'k',
+            ...prompt.toRequest(),
+            modelOverride: 'gpt-6-luna',
+            temperature: 0.3,
+            thinking
+          })
+        ).toFailWith(whileReasoning);
+        expect(global.fetch).not.toHaveBeenCalled();
+      }
+    );
+  });
+
+  describe('callProviderCompletionStream', () => {
+    test("sends temperature 0.3 with effort 'none'", async () => {
+      mockSse();
+      const result = await AiAssist.callProviderCompletionStream({
+        descriptor: openai,
+        apiKey: 'k',
+        ...prompt.toRequest(),
+        modelOverride: 'gpt-6-luna',
+        temperature: 0.3,
+        thinking: { effort: 'none' }
+      });
+      await drain(result.orThrow());
+      expect(sentBody()).toMatchObject({ temperature: 0.3, reasoning_effort: 'none' });
+    });
+
+    test('sends temperature 1 beside effort low', async () => {
+      mockSse();
+      const result = await AiAssist.callProviderCompletionStream({
+        descriptor: openai,
+        apiKey: 'k',
+        ...prompt.toRequest(),
+        modelOverride: 'gpt-6-luna',
+        temperature: 1,
+        thinking: { effort: 'low' }
+      });
+      await drain(result.orThrow());
+      expect(sentBody()).toMatchObject({ temperature: 1, reasoning_effort: 'low' });
+    });
+
+    test.each([
+      ['beside effort low', { effort: 'low' }],
+      ['with no effort (the default, medium)', undefined]
+    ] as ReadonlyArray<[string, AiAssist.IThinkingConfig | undefined]>)(
+      'refuses temperature 0.3 %s before the wire',
+      async (__label, thinking) => {
+        expect(
+          await AiAssist.callProviderCompletionStream({
+            descriptor: openai,
+            apiKey: 'k',
+            ...prompt.toRequest(),
+            modelOverride: 'gpt-6-luna',
+            temperature: 0.3,
+            thinking
+          })
+        ).toFailWith(whileReasoning);
+        expect(global.fetch).not.toHaveBeenCalled();
+      }
+    );
+  });
+
+  describe('executeClientToolTurn', () => {
+    test('sends temperature 1 beside a caller-built effort low', async () => {
+      mockSse();
+      const result = AiAssist.executeClientToolTurn({
+        descriptor: openai,
+        apiKey: 'k',
+        ...prompt.toRequest(),
+        clientTools: [],
+        model: 'gpt-6-luna',
+        temperature: 1,
+        resolvedThinking: { openAiEffort: 'low' }
+      });
+      await drain(result.orThrow().events);
+      expect(sentBody()).toMatchObject({ temperature: 1, reasoning: { effort: 'low' } });
+    });
+
+    test.each([
+      ['beside a caller-built effort low', { openAiEffort: 'low' }],
+      ['with no resolved thinking (the default, medium)', undefined]
+    ] as ReadonlyArray<[string, AiAssist.IResolvedThinkingConfig | undefined]>)(
+      'refuses temperature 0.3 %s before the wire',
+      (__label, resolvedThinking) => {
+        mockSse();
+        expect(
+          AiAssist.executeClientToolTurn({
+            descriptor: openai,
+            apiKey: 'k',
+            ...prompt.toRequest(),
+            clientTools: [],
+            model: 'gpt-6-luna',
+            temperature: 0.3,
+            resolvedThinking
+          })
+        ).toFailWith(
+          /executeClientToolTurn: gpt-6-luna does not accept a non-default temperature \(0\.3\) while reasoning/
+        );
+        expect(global.fetch).not.toHaveBeenCalled();
+      }
+    );
+  });
+
+  // A verbatim 'other' block is merged last and wins on the wire, so its effort decides whether luna
+  // reasons — in both directions.
+  const otherOff: AiAssist.IThinkingConfig = {
+    providers: [{ provider: 'other', models: ['gpt-6-luna'], config: { reasoning_effort: 'none' } }]
+  };
+  const otherOnOverNone: AiAssist.IThinkingConfig = {
+    effort: 'none',
+    providers: [{ provider: 'other', models: ['gpt-6-luna'], config: { reasoning_effort: 'low' } }]
+  };
+
+  describe("an 'other' block's effort decides", () => {
+    test("callProviderCompletion sends 0.3 beside an 'other' reasoning_effort 'none'", async () => {
+      mockJson(openAiOk);
+      expect(
+        await AiAssist.callProviderCompletion({
+          descriptor: openai,
+          apiKey: 'k',
+          ...prompt.toRequest(),
+          modelOverride: 'gpt-6-luna',
+          temperature: 0.3,
+          thinking: otherOff
+        })
+      ).toSucceed();
+      expect(sentBody()).toMatchObject({ temperature: 0.3, reasoning_effort: 'none' });
+    });
+
+    test("callProviderCompletion refuses 0.3 when an 'other' reasoning_effort low overrides a generic 'none'", async () => {
+      expect(
+        await AiAssist.callProviderCompletion({
+          descriptor: openai,
+          apiKey: 'k',
+          ...prompt.toRequest(),
+          modelOverride: 'gpt-6-luna',
+          temperature: 0.3,
+          thinking: otherOnOverNone
+        })
+      ).toFailWith(whileReasoning);
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
+
+    test("callProviderCompletionStream sends 0.3 beside an 'other' reasoning_effort 'none'", async () => {
+      mockSse();
+      const result = await AiAssist.callProviderCompletionStream({
+        descriptor: openai,
+        apiKey: 'k',
+        ...prompt.toRequest(),
+        modelOverride: 'gpt-6-luna',
+        temperature: 0.3,
+        thinking: otherOff
+      });
+      await drain(result.orThrow());
+      expect(sentBody()).toMatchObject({ temperature: 0.3, reasoning_effort: 'none' });
+    });
+
+    test("callProviderCompletionStream refuses 0.3 when an 'other' reasoning_effort low overrides a generic 'none'", async () => {
+      expect(
+        await AiAssist.callProviderCompletionStream({
+          descriptor: openai,
+          apiKey: 'k',
+          ...prompt.toRequest(),
+          modelOverride: 'gpt-6-luna',
+          temperature: 0.3,
+          thinking: otherOnOverNone
+        })
+      ).toFailWith(whileReasoning);
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
+
+    test("executeClientToolTurn sends 0.3 beside an otherParams reasoning.effort 'none'", async () => {
+      mockSse();
+      const result = AiAssist.executeClientToolTurn({
+        descriptor: openai,
+        apiKey: 'k',
+        ...prompt.toRequest(),
+        clientTools: [],
+        model: 'gpt-6-luna',
+        temperature: 0.3,
+        resolvedThinking: { otherParams: { reasoning: { effort: 'none' } } }
+      });
+      await drain(result.orThrow().events);
+      expect(sentBody()).toMatchObject({ temperature: 0.3, reasoning: { effort: 'none' } });
+    });
+
+    test("executeClientToolTurn refuses 0.3 when otherParams reasoning.effort low overrides openAiEffort 'none'", () => {
+      mockSse();
+      expect(
+        AiAssist.executeClientToolTurn({
+          descriptor: openai,
+          apiKey: 'k',
+          ...prompt.toRequest(),
+          clientTools: [],
+          model: 'gpt-6-luna',
+          temperature: 0.3,
+          resolvedThinking: { openAiEffort: 'none', otherParams: { reasoning: { effort: 'low' } } }
+        })
+      ).toFailWith(/executeClientToolTurn: gpt-6-luna does not accept a non-default temperature \(0\.3\) while reasoning/);
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
+  });
+
+  // Only the fields the OpenAI-format adapter reads count: another wire's thinking-off field, or an
+  // xaiEffort the adapter never sends beside an openAiEffort, leaves luna reasoning.
+  test.each([
+    ['anthropicThinkingDisabled', { anthropicThinkingDisabled: true }],
+    ['geminiThinkingBudget 0', { geminiThinkingBudget: 0 }],
+    ["openAiEffort low beside xaiEffort 'none'", { openAiEffort: 'low', xaiEffort: 'none' }]
+  ] as ReadonlyArray<[string, AiAssist.IResolvedThinkingConfig]>)(
+    'executeClientToolTurn refuses 0.3 with a caller-built %s on the OpenAI wire',
+    (__label, resolvedThinking) => {
+      mockSse();
+      expect(
+        AiAssist.executeClientToolTurn({
+          descriptor: openai,
+          apiKey: 'k',
+          ...prompt.toRequest(),
+          clientTools: [],
+          model: 'gpt-6-luna',
+          temperature: 0.3,
+          resolvedThinking
+        })
+      ).toFailWith(/executeClientToolTurn: gpt-6-luna does not accept a non-default temperature \(0\.3\) while reasoning/);
+      expect(global.fetch).not.toHaveBeenCalled();
+    }
+  );
 });

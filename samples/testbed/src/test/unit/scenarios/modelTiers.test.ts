@@ -1576,7 +1576,12 @@ describe('model-tier scenarios', () => {
     const result = await openaiModelTiersScenario.cli.run(makeContext());
     expect(result).toSucceedAndSatisfy((report: string) => {
       expect(report).toMatch(/\[PENDING\] base temp=0\.3\+effort=none\s+gpt-6-luna\s+\(expect accepted\)/);
-      expect(report).toMatch(/\[PENDING\] base temp=0\.3\s+gpt-6-luna\s+\(expect expected-reject\)/);
+      expect(report).toMatch(/\[PENDING\] base temp=0\.3\s+gpt-6-luna\s+\(expect refused-locally\)/);
+      expect(report).toMatch(/\[PENDING\] base temp=1\s+gpt-6-luna\s+\(expect accepted\)/);
+      expect(report).toMatch(/\[PENDING\] base temp=1\+effort=low\s+gpt-6-luna\s+\(expect accepted\)/);
+      expect(report).toMatch(
+        /\[PENDING\] base temp=0\.3\+effort=low\s+gpt-6-luna\s+\(expect refused-locally\)/
+      );
       expect(report).toMatch(/\[PENDING\] advanced temp=0\.3\s+gpt-6\.1-sol\s+\(expect refused-locally\)/);
       expect(report).toMatch(/\[PENDING\] frontier temp=0\.3\s+gpt-6-astra\s+\(expect refused-locally\)/);
       expect(report).not.toMatch(/base temp=0\.3\s+gpt-6\.1-sol/);
@@ -1584,9 +1589,11 @@ describe('model-tier scenarios', () => {
       expect(report).toMatch(/\[PENDING\] frontier temp=1\s+gpt-6-astra\s+\(expect accepted\)/);
       expect(report).toMatch(/\[PENDING\] advanced temp=1\+effort=low\s+gpt-6\.1-sol\s+\(expect accepted\)/);
       expect(report).toMatch(/\[PENDING\] frontier temp=1\+effort=low\s+gpt-6-astra\s+\(expect accepted\)/);
-      // luna's default beside an explicit effort is an open question: sent raw, report-only.
-      expect(report).toMatch(/\[PENDING\] base temp=1\+effort=low raw\s+gpt-6-luna\s+\(expect observed\)/);
-      expect(report).toMatch(/\[PENDING\] base temp=0\.3\+effort=low raw\s+gpt-6-luna\s+\(expect observed\)/);
+      // One luna row is sent raw, past the library's gate, for the provider's own rejection.
+      expect(report).toMatch(
+        /\[PENDING\] base temp=0\.3\+effort=low raw\s+gpt-6-luna\s+\(expect expected-reject\)/
+      );
+      expect(report).not.toMatch(/base temp=1\+effort=low raw/);
       expect(report).not.toMatch(/(advanced|frontier) temp=[0-9.]+(\+effort=low)? raw/);
       expect(report).toMatch(/\[PENDING\] frontier max=128000\s+gpt-6-astra/);
     });

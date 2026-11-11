@@ -212,6 +212,7 @@ markers.*
 
 - **2026-11-11** — ai-assist's @anthropic:fable alias now reaches Claude Fable 5.2, and Fable 5.2 and Mythos 5.2 get JSON-outputs structured output… ([#773](https://github.com/ErikFortune/fgv/pull/773)) · `ts-extras` `testbed`
 - **2026-11-11** — ai-assist sends Gemini's thinkingLevel from a declared per-model table — 'none' is minimal on Flash-Lite — and @google-gemini:pro… ([#775](https://github.com/ErikFortune/fgv/pull/775)) · `ts-extras` `testbed`
+- **2026-11-11** — ai-assist sends temperature 1 beside a reasoning effort on GPT-6 Luna and refuses any other value while it reasons, from a declared… ([#776](https://github.com/ErikFortune/fgv/pull/776)) · `ts-extras` `testbed`
 - **2026-11-11** — ai-assist sends max_completion_tokens to Groq and xAI, refuses a hand-built 'none' effort on models that cannot turn thinking off… ([#774](https://github.com/ErikFortune/fgv/pull/774)) · `ts-extras` `ts-extras-mcp` `ts-res-cli` `testbed`
 - **2026-11-10** — ai-assist sends temperature 1 to GPT-6.1 Sol and GPT-6 Astra, with or without reasoning effort, and still refuses any other value… ([#771](https://github.com/ErikFortune/fgv/pull/771)) · `ts-extras` `testbed`
 - **2026-11-09** — ai-assist turns thinking off on Claude Sonnet 5.5 with its own between_tools value, declared per model, and stops claiming… ([#769](https://github.com/ErikFortune/fgv/pull/769)) · `ts-extras` `testbed`
@@ -219,8 +220,7 @@ markers.*
 - **2026-11-08** — resolveMaxOutputTokens tells you the largest maxTokens the model a call will use accepts, from the same ModelSpec and tier, so a… ([#765](https://github.com/ErikFortune/fgv/pull/765)) · `ts-extras`
 - **2026-10-30** — A converter or validator handed a cyclic, BigInt or Proxy value now fails instead of throwing, via a new formatValueForMessage that… ([#764](https://github.com/ErikFortune/fgv/pull/764)) · `ts-utils` `ts-json-base` `ts-extras` `ts-bcp47`
 - **2026-10-27** — A filesystem FileTree can now be a sandbox: absolutePathPolicy 'confined' maps every path beneath the prefix, 'verified' refuses… ([#763](https://github.com/ErikFortune/fgv/pull/763)) · `ts-json-base`
-- **2026-10-26** — A crash mid-write no longer leaves a torn memory record that fails the next open: FileTreeMemoryStore writes atomically wherever… ([#756](https://github.com/ErikFortune/fgv/pull/756)) · `ts-agent-memory` `ts-json-base`
 
-*Showing the 10 most recent of 86. Per-package history is in each `CAPABILITIES.md`.*
+*Showing the 10 most recent of 87. Per-package history is in each `CAPABILITIES.md`.*
 
 <!-- END GENERATED: recent-additions -->
