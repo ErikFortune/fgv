@@ -37,6 +37,7 @@
  */
 
 import { resolveAnthropicThinkingOffType } from '../anthropicThinkingOff';
+import { resolveGeminiModelThinking } from '../geminiThinking';
 import {
   captureAsyncResult,
   captureResult,
@@ -69,6 +70,7 @@ import { adaptClientToolParameters, resolveToolConflicts } from '../toolFormats'
 import { type IAiVerifiedEndpoint, clientToolWireFormat, schemaWireProviderId } from '../schemaKeywords';
 import type { IAiCompletionUsage } from '../usageTypes';
 import {
+  checkCallerGeminiThinking,
   checkTemperatureConflict,
   type IResolvedThinkingConfig,
   providerDiscriminatorForId
@@ -611,8 +613,11 @@ export interface IExecuteClientToolTurnParams extends IChatRequest {
   /**
    * Optional resolved thinking config (pre-resolved by the caller). Sent as built, except that a
    * thinking-off value aimed at a model in `thinkingRequiredModelPrefixes` — `anthropicThinkingDisabled`
-   * with no `anthropicEffort`, or an OpenAI-format `openAiEffort` / `xaiEffort` of `'none'` — is
-   * refused before the wire, since the provider rejects it.
+   * with no `anthropicEffort`, an OpenAI-format `openAiEffort` / `xaiEffort` of `'none'`, or a Gemini
+   * `geminiThinkingBudget` of `0` — is refused before the wire, since the provider rejects it. On
+   * Gemini, a `geminiThinkingLevel` the model does not accept (one its level declaration does not
+   * list, or any level on a model in `geminiThinkingLevelRejectedModelPrefixes`), and a level and a
+   * budget together, are refused too.
    */
   readonly resolvedThinking?: IResolvedThinkingConfig;
   /** Resolved model string (pre-resolved by the caller). When omitted, uses the descriptor's default model. */
@@ -905,6 +910,19 @@ export function executeClientToolTurn(
         `executeClientToolTurn: ${resolvedModel} cannot run with thinking off: ` +
           `set ${effortField} to an effort other than 'none'`
       );
+    }
+  }
+  // The same rule for the Gemini wire: budget 0 on a model that cannot run with thinking off, a level
+  // the model does not accept, and a level beside a budget are each a provider 400.
+  if (descriptor.apiFormat === 'gemini') {
+    const geminiResult = checkCallerGeminiThinking(
+      resolvedThinking,
+      resolvedModel,
+      isThinkingRequiredModel(descriptor, resolvedModel),
+      resolveGeminiModelThinking(descriptor, resolvedModel)
+    );
+    if (geminiResult.isFailure()) {
+      return fail(`executeClientToolTurn: ${geminiResult.message}`);
     }
   }
   const baseUrlResult = resolveEffectiveBaseUrl(descriptor, endpoint);

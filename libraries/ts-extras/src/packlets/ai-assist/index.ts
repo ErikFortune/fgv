@@ -98,7 +98,6 @@ export {
   type IOtherThinkingOptions,
   type IAnthropicThinkingConfig,
   type IOpenAiThinkingConfig,
-  type IGeminiThinkingConfig,
   type IXAiThinkingConfig,
   type AnthropicThinkingModelNames,
   type OpenAiThinkingModelNames,
@@ -112,6 +111,15 @@ export {
   type IAnthropicThinkingOffRule,
   resolveAnthropicThinkingOffType
 } from './anthropicThinkingOff';
+
+export {
+  type GeminiThinkingLevel,
+  type IGeminiThinkingConfig,
+  type IGeminiThinkingLevelRule,
+  allGeminiThinkingLevels,
+  rejectsGeminiThinkingLevel,
+  resolveGeminiThinkingLevels
+} from './geminiThinking';
 
 export {
   type IResolvedImageOptions,
@@ -189,7 +197,8 @@ export {
   aiAssistProviderConfig,
   aiAssistSettings,
   modelSpecKey,
-  modelSpec
+  modelSpec,
+  geminiThinkingLevel
 } from './converters';
 
 export {

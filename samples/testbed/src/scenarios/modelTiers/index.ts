@@ -46,7 +46,6 @@ import {
   type CanaryThinkingEffort,
   type CanaryTier,
   type ICanaryCompleteOptions,
-  type ICanaryRawNoneRule,
   type ICanaryTemperatureProbe,
   type ITierCanaryDeps,
   type ITierCanarySpec,
@@ -140,6 +139,16 @@ export function rawNoneBlock(
     case 'xai-grok':
       return succeed({ provider: 'xai', config: { effort: 'none' } });
     case 'google-gemini':
+      // A budget model's off value is budget 0. A level model's is 'minimal', which the library
+      // refuses locally where the model does not declare it, so it travels in an 'other' block,
+      // merged into generationConfig verbatim, for the provider itself to answer.
+      if (AiAssist.resolveGeminiThinkingLevels(descriptor, concrete) !== undefined) {
+        return succeed({
+          provider: 'other',
+          models: [concrete],
+          config: { thinkingConfig: { thinkingLevel: 'minimal' } }
+        });
+      }
       return succeed({ provider: 'google', config: { thinkingBudget: 0 } });
     case 'anthropic':
       return succeed({ provider: 'other', models: [concrete], config: { thinking: { type: 'disabled' } } });
@@ -163,13 +172,10 @@ const RAW_NONE_REJECTIONS: Readonly<Record<string, RegExp>> = {
 };
 
 /**
- * Per-model `none raw` rules for Gemini. `gemini-3.5-flash-lite` rejects `thinkingBudget: 0` with
- * the generic "Request contains an invalid argument." (live, 2026-11-09), which names neither the
- * budget nor thinking.
+ * Thinking efforts probed on every Gemini tier and extra model: `'none'` and `'low'` as elsewhere,
+ * plus `'high'`, so each level model's top level is sent live too.
  */
-const GEMINI_RAW_NONE_MODELS: Readonly<Record<string, ICanaryRawNoneRule>> = {
-  'gemini-3.5-flash-lite': { rejectPattern: /invalid argument/i }
-};
+const GEMINI_THINKING_PROBE_EFFORTS: ReadonlyArray<CanaryThinkingEffort> = ['none', 'low', 'high'];
 
 /** The thinking config one canary request sends, or `undefined` for none. */
 function canaryThinking(
@@ -189,6 +195,9 @@ function canaryThinking(
         providers: [{ provider: 'other' as const, models: [concrete], config: { temperature } }]
       })
     );
+  }
+  if (options.thinkingLevel !== undefined) {
+    return succeed({ providers: [{ provider: 'google', config: { thinkingLevel: options.thinkingLevel } }] });
   }
   if (options.rawNone === true) {
     return AiAssist.resolveProviderModel(
@@ -291,9 +300,9 @@ interface ITierScenarioParams {
   readonly thinkingEfforts?: ReadonlyArray<CanaryThinkingEffort>;
   readonly extraModels?: ReadonlyArray<string>;
   readonly strictNoneProbe?: boolean;
-  readonly rawNoneModels?: Readonly<Record<string, ICanaryRawNoneRule>>;
   readonly structuredOutputProbe?: boolean;
   readonly structuredOutputEfforts?: ReadonlyArray<CanaryThinkingEffort>;
+  readonly explicitLevelProbe?: boolean;
   readonly temperatureProbes?: ReadonlyArray<ICanaryTemperatureProbe>;
   readonly maxOutputProbe?: boolean;
   /** Fire one live image generation at the `image` tier; `quality` is sent when set. */
@@ -326,9 +335,9 @@ function makeTierScenario(params: ITierScenarioParams): IScenario {
         extraModels: params.extraModels,
         strictNoneProbe: params.strictNoneProbe,
         rawNoneRejection: RAW_NONE_REJECTIONS[params.providerId],
-        rawNoneModels: params.rawNoneModels,
         structuredOutputProbe: params.structuredOutputProbe,
         structuredOutputEfforts: params.structuredOutputEfforts,
+        explicitLevelProbe: params.explicitLevelProbe,
         temperatureProbes: params.temperatureProbes,
         maxOutputProbe: params.maxOutputProbe,
         liveImage: params.liveImage !== undefined
@@ -467,16 +476,17 @@ export const anthropicModelTiersScenario: IScenario = makeTierScenario({
 
 /**
  * Gemini model-tier canary — exercises `base` / `advanced` and a `frontier` request that cascades
- * to the `advanced` (pro) id, plus the `image` tier (`@google-gemini:flash-image` →
- * `gemini-nano-banana-2.1`, the update to Nano Banana 2 / `gemini-3.1-flash-image`), which gets one
- * live generation because it was rotated. Each tier is probed with thinking effort
- * `none` and `low`, and the `modelOverride`-only `@google-gemini:flash-lite` alias gets its own
- * live row and the same thinking probes. `gemini-3.8-flash` (base) turns thinking off with budget 0,
- * so `'none'` sends it and `none+fail` answers. `gemini-3.5-flash-lite` cannot turn thinking off
- * with a budget, so `'none'` is degraded to `'low'` there and `none+fail` is refused locally, as on
- * pro. Raw budget-0 rows: pro and flash-lite must reject. Max-output probes send each tier and flash-lite its
- * recorded `resolveMaxOutputTokens` limit, which must be accepted. Requires `GEMINI_API_KEY` (or
- * `GOOGLE_API_KEY`) for the live half.
+ * to the `advanced` (pro) id, `gemini-4-argon`, plus the `image` tier (`@google-gemini:flash-image` →
+ * `gemini-nano-banana-2.1`), which gets one live generation. Each tier and the `modelOverride`-only
+ * `@google-gemini:flash-lite` alias is probed with thinking effort `none`, `low` and `high`.
+ * `gemini-3.8-flash` (base) stays on the `thinkingBudget` wire and turns thinking off with budget 0,
+ * so `'none'` sends it and `none+fail` answers. `gemini-3.5-flash-lite` and `gemini-4-argon` are sent
+ * `thinkingLevel`: `'none'` is `minimal` on flash-lite (and `none+fail` answers); Argon cannot turn
+ * thinking off, so `'none'` degrades to `low` there and `none+fail` is refused locally, and its raw
+ * row sends `thinkingLevel: 'minimal'`, which it must reject. Each level model also gets one
+ * explicit-level row sending its lowest declared level verbatim, which must be accepted. Max-output
+ * probes send each tier and flash-lite its recorded `resolveMaxOutputTokens` limit. Requires
+ * `GEMINI_API_KEY` (or `GOOGLE_API_KEY`) for the live half.
  * @public
  */
 export const geminiModelTiersScenario: IScenario = makeTierScenario({
@@ -484,18 +494,19 @@ export const geminiModelTiersScenario: IScenario = makeTierScenario({
   title: 'Gemini Model Tiers',
   description:
     'Resolves and (with GEMINI_API_KEY/GOOGLE_API_KEY) live-canaries the Gemini base/advanced tiers ' +
-    'plus a frontier request that cascades to the advanced (pro) id, probes each with thinking ' +
-    'effort none and low (none degrades to low on pro and flash-lite; none with onUnsupported fail is refused locally ' +
-    'there, and a raw budget-0 row must be rejected), live-canaries @google-gemini:flash-lite, sends each its recorded ' +
-    'max output tokens, and resolves the image tier ' +
-    '(gemini-nano-banana-2.1) with one live generation. Logs each alias -> concrete id. The image may be ' +
-    'access-gated — reported BLOCKED, not failed. Web-runnable.',
+    'plus a frontier request that cascades to the advanced (gemini-4-argon) id, probes each with thinking ' +
+    'effort none, low and high (thinkingLevel on flash-lite and argon, where none is minimal on flash-lite ' +
+    'and degrades to low on argon; none with onUnsupported fail is refused locally on argon, and a raw ' +
+    'minimal row must be rejected there), sends each level model its lowest level explicitly, ' +
+    'live-canaries @google-gemini:flash-lite, sends each its recorded max output tokens, and resolves the ' +
+    'image tier (gemini-nano-banana-2.1) with one live generation. Logs each alias -> concrete id. The ' +
+    'image may be access-gated — reported BLOCKED, not failed. Web-runnable.',
   tags: ['gemini', 'google'],
   tiers: ['base', 'advanced', 'frontier'],
   imageTier: true,
-  thinkingEfforts: THINKING_PROBE_EFFORTS,
+  thinkingEfforts: GEMINI_THINKING_PROBE_EFFORTS,
   strictNoneProbe: true,
-  rawNoneModels: GEMINI_RAW_NONE_MODELS,
+  explicitLevelProbe: true,
   extraModels: ['@google-gemini:flash-lite'],
   maxOutputProbe: true,
   liveImage: {},

@@ -118,13 +118,13 @@ describe('resolveTierResolutions', () => {
         expect(resolutions[1]).toEqual({
           tier: 'advanced',
           alias: '@google-gemini:pro',
-          concrete: 'gemini-3.1-pro-preview',
+          concrete: 'gemini-4-argon',
           cascaded: false
         });
         expect(resolutions[2]).toEqual({
           tier: 'frontier',
           alias: '@google-gemini:pro',
-          concrete: 'gemini-3.1-pro-preview',
+          concrete: 'gemini-4-argon',
           cascaded: true
         });
       }
@@ -452,7 +452,7 @@ describe('runTierCanary (thinking probes)', () => {
     expect(result).toFailWith(/\[PASS\] frontier\s+gpt-6-astra/);
     expect(result).toFailWith(/\[FAIL\(param\)\] frontier effort=none\s+gpt-6-astra\s+\(AI API returned 400/);
     expect(result).toFailWith(
-      /FAILED — a thinking, strict-none, model-override, temperature, max-output, structured-output or image probe failed/
+      /FAILED — a thinking, strict-none, model-override, temperature, max-output, structured-output, explicit-level or image probe failed/
     );
   });
 
@@ -551,7 +551,7 @@ describe('runTierCanary (strict-none probes)', () => {
     const result = await runTierCanary(spec, deps, new Logging.InMemoryLogger());
     expect(result).toFailWith(/\[FAIL\(param\)\] base none\+fail\s+gpt-6-luna/);
     expect(result).toFailWith(
-      /FAILED — a thinking, strict-none, model-override, temperature, max-output, structured-output or image probe failed/
+      /FAILED — a thinking, strict-none, model-override, temperature, max-output, structured-output, explicit-level or image probe failed/
     );
   });
 
@@ -680,7 +680,7 @@ describe('runTierCanary (model-override probes)', () => {
     const result = await runTierCanary(spec, deps, new Logging.InMemoryLogger());
     expect(result).toFailWith(/\[FAIL\(id\)\] @google-gemini:flash-lite\s+gemini-3\.5-flash-lite/);
     expect(result).toFailWith(
-      /FAILED — a thinking, strict-none, model-override, temperature, max-output, structured-output or image probe failed/
+      /FAILED — a thinking, strict-none, model-override, temperature, max-output, structured-output, explicit-level or image probe failed/
     );
   });
 
@@ -779,7 +779,7 @@ describe('runTierCanary (structured-output probes)', () => {
     };
     const result = await runTierCanary(spec, deps, new Logging.InMemoryLogger());
     expect(result).toFailWith(/\[FAIL\(param\)\] advanced schema\s+claude-opus-5-5/);
-    expect(result).toFailWith(/structured-output or image probe failed/);
+    expect(result).toFailWith(/structured-output, explicit-level or image probe failed/);
   });
 
   test('keyless, every structured probe is PENDING', async () => {
@@ -1481,9 +1481,11 @@ describe('model-tier scenarios', () => {
     const result = await geminiModelTiersScenario.cli.run(makeContext());
     expect(result).toSucceedAndSatisfy((report: string) => {
       expect(report).toMatch(/=== google-gemini model-tier canary ===/);
-      expect(report).toMatch(/@google-gemini:pro -> gemini-3\.1-pro-preview \(cascaded from a lower tier\)/);
+      expect(report).toMatch(/@google-gemini:pro -> gemini-4-argon \(cascaded from a lower tier\)/);
       expect(report).toMatch(/\[PASS\] image\s+@google-gemini:flash-image -> gemini-nano-banana-2\.1\b/);
-      expect(report).toMatch(/\[PENDING\] frontier effort=none\s+gemini-3\.1-pro-preview/);
+      expect(report).toMatch(
+        /\[PENDING\] frontier effort=none\s+gemini-4-argon\s+\(expect degraded to thinkingLevel 'low'/
+      );
       expect(report).toMatch(/\[PENDING\] @google-gemini:flash-lite\s+gemini-3\.5-flash-lite/);
       // The rotated image tier gets a live generation, pending without a key.
       expect(report).toMatch(/\[PENDING\] image\s+gemini-nano-banana-2\.1/);
@@ -1590,30 +1592,47 @@ describe('model-tier scenarios', () => {
     });
   });
 
-  test('gemini cli.run without a key lists the max-output rows and flash-lite thinking rows', async () => {
+  test('gemini cli.run without a key lists the max-output, level and thinking rows', async () => {
     if (!geminiModelTiersScenario.cli) {
       throw new Error('expected a CLI implementation');
     }
     const result = await geminiModelTiersScenario.cli.run(makeContext());
     expect(result).toSucceedAndSatisfy((report: string) => {
       expect(report).toMatch(/\[PENDING\] base max=65536\s+gemini-3\.8-flash/);
-      expect(report).toMatch(/\[PENDING\] frontier max=65536\s+gemini-3\.1-pro-preview/);
+      expect(report).toMatch(/\[PENDING\] frontier max=32768\s+gemini-4-argon/);
       expect(report).toMatch(/\[PENDING\] @google-gemini:flash-lite max=65536\s+gemini-3\.5-flash-lite/);
+      // flash-lite: thinkingLevel, 'none' is its minimal level
       expect(report).toMatch(
-        /\[PENDING\] @google-gemini:flash-lite effort=none\s+gemini-3\.5-flash-lite\s+\(expect degraded to 'low'/
+        /\[PENDING\] @google-gemini:flash-lite effort=none\s+gemini-3\.5-flash-lite\s+\(expect sent as thinkingLevel 'minimal'\)/
       );
+      expect(report).toMatch(
+        /\[PENDING\] @google-gemini:flash-lite effort=high\s+gemini-3\.5-flash-lite\s+\(expect sent as thinkingLevel 'high'\)/
+      );
+      expect(report).toMatch(
+        /\[PENDING\] @google-gemini:flash-lite none\+fail\s+gemini-3\.5-flash-lite\s+\(expect accepted\)/
+      );
+      expect(report).not.toMatch(/flash-lite none raw/);
+      expect(report).toMatch(
+        /\[PENDING\] @google-gemini:flash-lite level=minimal\s+gemini-3\.5-flash-lite\s+\(expect accepted\)/
+      );
+      // gemini-4-argon (advanced, and frontier by cascade): thinkingLevel, cannot turn thinking off
+      expect(report).toMatch(
+        /\[PENDING\] advanced effort=none\s+gemini-4-argon\s+\(expect degraded to thinkingLevel 'low' \(thinking-required\)\)/
+      );
+      expect(report).toMatch(
+        /\[PENDING\] advanced effort=low\s+gemini-4-argon\s+\(expect sent as thinkingLevel 'low'\)/
+      );
+      expect(report).toMatch(/\[PENDING\] advanced none\+fail\s+gemini-4-argon\s+\(expect refused-locally\)/);
+      expect(report).toMatch(/\[PENDING\] advanced none raw\s+gemini-4-argon\s+\(expect expected-reject\)/);
+      expect(report).toMatch(/\[PENDING\] advanced level=low\s+gemini-4-argon\s+\(expect accepted\)/);
+      // gemini-3.8-flash stays on the budget wire: budget 0 turns its thinking off
       expect(report).toMatch(
         /\[PENDING\] base effort=none\s+gemini-3\.8-flash\s+\(expect sent with thinking off\)/
       );
+      expect(report).toMatch(/\[PENDING\] base effort=high\s+gemini-3\.8-flash$/m);
       expect(report).toMatch(/\[PENDING\] base none\+fail\s+gemini-3\.8-flash\s+\(expect accepted\)/);
-      expect(report).toMatch(
-        /\[PENDING\] @google-gemini:flash-lite none\+fail\s+gemini-3\.5-flash-lite\s+\(expect refused-locally\)/
-      );
-      expect(report).toMatch(
-        /\[PENDING\] @google-gemini:flash-lite none raw\s+gemini-3\.5-flash-lite\s+\(expect expected-reject\)/
-      );
-      // gemini-3.8-flash is not thinking-required, so it gets no raw row.
-      expect(report).not.toMatch(/base none raw/);
+      // gemini-3.8-flash is not thinking-required and has no level declaration: no raw or level row.
+      expect(report).not.toMatch(/base none raw|base level=/);
     });
   });
 });

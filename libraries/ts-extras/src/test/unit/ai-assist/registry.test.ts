@@ -90,8 +90,16 @@ describe('AiAssist.registry', () => {
         ],
         [
           'google-gemini',
-          ['gemini-3.1-pro-preview', 'gemini-2.5-pro', 'gemini-3.5-flash-lite'],
           [
+            'gemini-4-argon',
+            'gemini-4-carbon',
+            'gemini-3.1-pro-preview',
+            'gemini-3-pro-preview',
+            'gemini-2.5-pro'
+          ],
+          [
+            'gemini-3.5-flash-lite',
+            'gemini-4-argonite',
             'gemini-3.8-flash',
             'gemini-3.8-flash-lite',
             'gemini-2.5-flash',
@@ -252,20 +260,16 @@ describe('AiAssist.registry', () => {
       expect(AiAssist.resolveProviderModel(desc, undefined, 'base')).toSucceedWith('gemini-3.8-flash');
     });
 
-    test('advanced tier resolves to gemini-3.1-pro-preview (reuses the @google-gemini:pro alias)', () => {
+    test('advanced tier resolves to gemini-4-argon (reuses the @google-gemini:pro alias)', () => {
       expect(AiAssist.resolveModel(desc.defaultModel, 'advanced')).toBe('@google-gemini:pro');
-      expect(AiAssist.resolveProviderModel(desc, undefined, 'advanced')).toSucceedWith(
-        'gemini-3.1-pro-preview'
-      );
+      expect(AiAssist.resolveProviderModel(desc, undefined, 'advanced')).toSucceedWith('gemini-4-argon');
     });
 
     test('frontier cascades to the advanced id (no frontier key on the descriptor)', () => {
       // The Gemini map deliberately omits a frontier key, so a frontier request must
       // cascade frontier → advanced → pro. This is the real registry descriptor, so it is
       // the live proof of the cascade against the shipped Gemini defaults.
-      expect(AiAssist.resolveProviderModel(desc, undefined, 'frontier')).toSucceedWith(
-        'gemini-3.1-pro-preview'
-      );
+      expect(AiAssist.resolveProviderModel(desc, undefined, 'frontier')).toSucceedWith('gemini-4-argon');
     });
 
     test('image tier is unchanged by the advanced-key addition', () => {
@@ -281,9 +285,11 @@ describe('AiAssist.registry', () => {
     });
 
     test('the completion targets carry their cited output limits', () => {
-      for (const alias of ['@google-gemini:flash', '@google-gemini:flash-lite', '@google-gemini:pro']) {
+      for (const alias of ['@google-gemini:flash', '@google-gemini:flash-lite']) {
         expect(AiAssist.resolveMaxOutputTokens(desc, alias)).toBe(65536);
       }
+      // gemini-4-argon: the per-request non-streaming cap, not the 65,536 streaming figure
+      expect(AiAssist.resolveMaxOutputTokens(desc, '@google-gemini:pro')).toBe(32768);
     });
 
     test('embedding tier is unchanged by the advanced-key addition', () => {
