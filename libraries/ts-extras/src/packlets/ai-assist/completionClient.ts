@@ -28,6 +28,7 @@
  */
 
 import { type AnthropicThinkingOffType, resolveAnthropicThinkingOffType } from './anthropicThinkingOff';
+import { resolveGeminiThinkingLevels } from './geminiThinking';
 import { isJsonObject, type JsonObject } from '@fgv/ts-json-base';
 import {
   captureResult,
@@ -64,6 +65,7 @@ import type { IAiCompletionUsage } from './usageTypes';
 import {
   anthropicEffortToBudgetTokens,
   checkTemperatureConflict,
+  geminiThinkingConfigWire,
   resolveThinkingConfig,
   providerDiscriminatorForId,
   type IResolvedThinkingConfig
@@ -766,8 +768,10 @@ async function callGeminiCompletion(
   if (maxTokens !== undefined) {
     generationConfig.maxOutputTokens = maxTokens;
   }
-  if (resolvedThinking?.geminiThinkingBudget !== undefined) {
-    generationConfig.thinkingConfig = { thinkingBudget: resolvedThinking.geminiThinkingBudget };
+  // The resolver never sets both a level and a budget (see geminiThinkingConfigWire).
+  const thinkingConfig = geminiThinkingConfigWire(resolvedThinking);
+  if (thinkingConfig !== undefined) {
+    generationConfig.thinkingConfig = thinkingConfig;
   }
   if (resolvedThinking?.otherParams !== undefined) {
     Object.assign(generationConfig, resolvedThinking.otherParams);
@@ -896,7 +900,8 @@ export async function callProviderCompletion(
         thinking,
         model,
         discriminator,
-        isThinkingRequiredModel(descriptor, model)
+        isThinkingRequiredModel(descriptor, model),
+        resolveGeminiThinkingLevels(descriptor, model)
       );
       if (mergeResult.isFailure()) {
         return fail(mergeResult.message);

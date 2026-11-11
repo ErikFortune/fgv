@@ -148,7 +148,7 @@ there is no 2-D selection and no competition between the axes.
 | slot | OpenAI | Anthropic | Gemini |
 |---|---|---|---|
 | `base` | `@openai:mini` → `gpt-6-luna` | `@anthropic:sonnet` → `claude-sonnet-5-5` | `@google-gemini:flash` → `gemini-3.8-flash` |
-| `advanced` | `@openai:flagship` → `gpt-6.1-sol` | `@anthropic:opus` → `claude-opus-5-5` | `@google-gemini:pro` → `gemini-3.1-pro-preview` |
+| `advanced` | `@openai:flagship` → `gpt-6.1-sol` | `@anthropic:opus` → `claude-opus-5-5` | `@google-gemini:pro` → `gemini-4-argon` |
 | `frontier` | `@openai:pro` → `gpt-6-astra` | *(unset → advanced/opus)* | *(unset → advanced/pro)* |
 
 **What moving to these targets changed for callers (2026-11).** Anthropic's base tier
@@ -165,8 +165,8 @@ only with its own value, `thinking: { type: 'between_tools' }` (see below). `@an
   `claude-opus-5`, `claude-haiku-5-5`), no `thinking` field to an older model (already off), and
   `'low'` — or a refusal under `onUnsupported: 'fail'` — to a model that cannot turn thinking off
   (`claude-opus-5-5`, Fable and Mythos 5.x, `claude-mythos-preview`; declared in
-  `thinkingRequiredModelPrefixes`, alongside `gpt-6-astra`, `gpt-6.1-sol`, `gemini-3.1-pro-preview`
-  and `gemini-3.5-flash-lite`).
+  `thinkingRequiredModelPrefixes`, alongside `gpt-6-astra`, `gpt-6.1-sol`, Gemini 4 and the Gemini
+  Pro ids).
 - **`claude-sonnet-5-5` (`@anthropic:sonnet`, the base tier) turns thinking off with `between_tools`.**
   It rejects `disabled`, and its own off value is declared as data:
   `IAiProviderDescriptor.anthropicThinkingOffTypes` (`[{ modelPrefix: 'claude-sonnet-5-5', type:
@@ -178,11 +178,26 @@ only with its own value, `thinking: { type: 'between_tools' }` (see below). `@an
   between tool calls still come back as `thinking` blocks**. A generic `'none'` never sends an
   effort beside it; an explicit `'other'` block or caller-built `otherParams` can, and Anthropic
   rejects `between_tools` (and `disabled`) above `high` (`between_tools` 400s at `xhigh` and `max`).
-- **`gemini-3.5-flash-lite` cannot be turned off by a budget.** It rejects `thinkingBudget: 0`
-  (`400 INVALID_ARGUMENT`), so it is on `thinkingRequiredModelPrefixes`: `'none'` on
-  `@google-gemini:flash-lite` is sent as `'low'` (budget 1024), or refused under
-  `onUnsupported: 'fail'`. This is interim: Gemini 3.x is controlled by `thinkingLevel`, which
-  ai-assist does not send yet; once it does, `'none'` maps to `minimal` where a model lists it.
+- **Gemini 4 and the 3.x Flash-Lite / 3.6 Flash lines are sent `thinkingLevel`, not
+  `thinkingBudget`.** `IAiProviderDescriptor.geminiThinkingLevels` declares each such model and the
+  levels it accepts (read through `AiAssist.resolveGeminiThinkingLevels`): `gemini-4-argon` and
+  `gemini-4-carbon` take `low` / `medium` / `high`; `gemini-3.5-flash-lite` and `gemini-3.6-flash`
+  also take `minimal`. A generic effort maps 1:1 there, and `'none'` becomes `minimal` (Google: "Matches
+  the 'no thinking' setting for most queries", not a guarantee). Gemini 4 cannot turn thinking off,
+  so it is on `thinkingRequiredModelPrefixes`: `'none'` is sent as `low`, or refused naming that
+  lowest level under `onUnsupported: 'fail'`. An effort a model does not list is refused before the
+  wire. Every other Gemini model keeps the `thinkingBudget` wire exactly as before.
+- **`@google-gemini:pro` (the advanced tier, and the frontier cascade) is `gemini-4-argon`.** For
+  alias users this means levels instead of budgets, thinking always on, and a deprecated
+  `thinkingBudget` if one is sent explicitly (Google maps a lone budget to the nearest level with a
+  warning). Argon ignores `temperature` ("If provided, sampling parameters are ignored"); ai-assist
+  still sends a caller's value.
+- **Explicit Gemini blocks.** `{ provider: 'google', config: { thinkingLevel } }` is validated
+  (`AiAssist.geminiThinkingLevel`) and, on a model with a level declaration, must be one of its
+  levels; elsewhere it is sent verbatim. `thinkingLevel` and `thinkingBudget` in one block are
+  refused — Gemini 4 returns a 400 for the pair — and a later block's level replaces an earlier
+  budget (and vice versa), so the wire never carries both. A caller-built `resolvedThinking` with
+  both is refused by the Gemini streaming adapter.
 - **`gemini-3.8-flash` (`@google-gemini:flash`, the base tier) turns thinking off with budget 0.** A
   live budget-0 request (2026-11-10) came back with no `thoughtsTokenCount` in `usageMetadata`, so
   it is not listed, although Google's level table names no level below `low` for it: a generic

@@ -23,29 +23,6 @@ Description with the user's framing expanded with the design space.
 
 ---
 
-## `ai-assist` — send Gemini's `thinkingLevel`, then rotate `@google-gemini:pro` to Gemini 4
-
-Gemini 3.x controls thinking with `thinkingLevel` (`minimal` / `low` / `medium` / `high`, per model),
-and Gemini 4 requires it and deprecates the `thinkingBudget` field ai-assist sends. Google's thinking
-page (§ "Controlling thinking", fetched 2026-11-09) lists `gemini-3.8-flash` as low/medium/high and
-`gemini-3.5-flash-lite` and `gemini-3.6-flash` as minimal/low/medium/high. Until the level is sent,
-`gemini-3.5-flash-lite` sits on `thinkingRequiredModelPrefixes` as an interim, so a generic `'none'`
-is sent as `'low'` (budget 1024) or refused there. (`gemini-3.8-flash` came off the list in stream
-`live-run-corrections`: budget 0 does turn its thinking off, live 2026-11-10.) Once `thinkingLevel` is sent, `'none'`
-maps to `minimal` on the models that list it, and the flash-lite entry comes off the list. The held
-`gemini-4-argon` rotation of `@google-gemini:pro` (see the alias comment in `registry.ts`) waits on
-the same work.
-
-**Why deferred**: a wire change in its own right (a new generic-effort mapping per model, a level
-table, the Gemini 4 deprecation), larger than the live-run fixes that surfaced it.
-
-**Dependencies**: a per-model level table in the Gemini descriptor, and a keyed run against
-`gemini-4-argon` to confirm the level wire.
-
-**Reference**: stream `final-model-fixes` (2026-11-09): live 400 `INVALID_ARGUMENT` on
-`gemini-3.5-flash-lite` for `thinkingBudget: 0`; `.ai/tasks/completed/2026-11/model-alias-refresh/`
-(the held Argon rotation).
-
 ## `ts-random` — weighted pick without replacement (`pickWeightedSequence`)
 
 `pickWeighted` / `pickWeightedAt` choose one item. A weighted draw of several **distinct** items

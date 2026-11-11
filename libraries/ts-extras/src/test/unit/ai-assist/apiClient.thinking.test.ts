@@ -569,7 +569,7 @@ describe('thinking-config wire encoding (non-streaming)', () => {
       expect(sentBody().reasoning_effort).toBe('none');
     });
 
-    test('gemini advanced (gemini-3.1-pro-preview): none is sent as the low budget', async () => {
+    test('gemini advanced (gemini-4-argon): none is sent as its lowest level, low', async () => {
       mockFetchResponse(geminiResponse('ok'));
       const sent2 = await AiAssist.callProviderCompletion({
         descriptor: gemini,
@@ -579,8 +579,8 @@ describe('thinking-config wire encoding (non-streaming)', () => {
         thinking: { effort: 'none' }
       });
       expect(sent2).toSucceed();
-      expect((global.fetch as jest.Mock).mock.calls[0][0]).toContain('gemini-3.1-pro-preview');
-      expect(sentBody()).toMatchObject({ generationConfig: { thinkingConfig: { thinkingBudget: 1024 } } });
+      expect((global.fetch as jest.Mock).mock.calls[0][0]).toContain('gemini-4-argon');
+      expect(sentBody()).toMatchObject({ generationConfig: { thinkingConfig: { thinkingLevel: 'low' } } });
     });
 
     test('gemini base (gemini-3.8-flash): none is sent as budget 0 — a budget of 0 turns its thinking off', async () => {

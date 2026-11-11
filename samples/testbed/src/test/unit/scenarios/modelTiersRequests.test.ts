@@ -260,12 +260,7 @@ describe('a refused-locally request is refused before fetch', () => {
     ['openai', openai, 'advanced' as const, { temperature: 0.3 }],
     ['openai', openai, 'frontier' as const, { temperature: 0.3 }],
     ['gemini', gemini, 'advanced' as const, { effort: 'none' as const, onUnsupported: 'fail' as const }],
-    [
-      'gemini',
-      gemini,
-      'base' as const,
-      { modelOverride: '@google-gemini:flash-lite', effort: 'none' as const, onUnsupported: 'fail' as const }
-    ]
+    ['gemini', gemini, 'advanced' as const, { thinkingLevel: 'minimal' as const }]
   ])('%s %s %j', async (__, descriptor, tier, options) => {
     const sent = stubFetch(() => ({ status: 200, json: {} }));
     const params = buildCanaryCompletionParams(descriptor, 'k', tier, options).orThrow();
@@ -279,8 +274,8 @@ describe('a refused-locally request is refused before fetch', () => {
 describe('max-output requests carry the recorded limit on the wire', () => {
   test.each([
     ['base' as const, 'gemini-3.8-flash'],
-    ['advanced' as const, 'gemini-3.1-pro-preview'],
-    ['frontier' as const, 'gemini-3.1-pro-preview']
+    ['advanced' as const, 'gemini-4-argon'],
+    ['frontier' as const, 'gemini-4-argon']
   ])('gemini %s (%s) sends generationConfig.maxOutputTokens 65536', async (tier, concrete) => {
     const sent = stubFetch(() => ({
       status: 200,
@@ -477,8 +472,9 @@ describe('openai-model-tiers, keyed, against a fake OpenAI', () => {
 });
 
 /**
- * Answers like Gemini generateContent: text, image parts for the image model, and the budget-0
- * rejections seen on pro and flash-lite. gemini-3.8-flash accepts budget 0, as it does live.
+ * Answers like Gemini generateContent: text, image parts for the image model, and the rejections
+ * of each model's raw off value: budget 0 on a budget-wire Pro model, and a level a level model does
+ * not list (Gemini 4's 'minimal'). gemini-3.8-flash accepts budget 0, as it does live.
  */
 const fakeGemini: FakeProvider = ({ url, body }) => {
   if (url.includes('nano-banana')) {
@@ -489,16 +485,20 @@ const fakeGemini: FakeProvider = ({ url, body }) => {
       }
     };
   }
-  const config = body.generationConfig as { thinkingConfig?: { thinkingBudget?: number } } | undefined;
+  const config = body.generationConfig as
+    | { thinkingConfig?: { thinkingBudget?: number; thinkingLevel?: string } }
+    | undefined;
   if (config?.thinkingConfig?.thinkingBudget === 0 && url.includes('pro')) {
     return {
       status: 400,
       json: { error: { message: 'Budget 0 is invalid. This model only works in thinking mode.' } }
     };
   }
-  if (config?.thinkingConfig?.thinkingBudget === 0 && url.includes('flash-lite')) {
-    // The live wording (2026-11-09): names neither the budget nor thinking.
-    return { status: 400, json: { error: { message: 'Request contains an invalid argument.' } } };
+  if (config?.thinkingConfig?.thinkingLevel === 'minimal' && url.includes('gemini-4')) {
+    return {
+      status: 400,
+      json: { error: { message: 'Thinking level MINIMAL is not supported for this model.' } }
+    };
   }
   return {
     status: 200,
@@ -507,41 +507,73 @@ const fakeGemini: FakeProvider = ({ url, body }) => {
 };
 
 describe('google-gemini-model-tiers, keyed, against a fake Gemini', () => {
-  test('max-output rows send the recorded limit, and the image seam sends no quality', async () => {
+  test('thinking rows send the declared wire, and max-output rows the recorded limit', async () => {
     const sent = stubFetch(fakeGemini);
     const result = await runScenario(geminiModelTiersScenario);
     expect(result).toSucceedAndSatisfy((report: string) => {
       expect(report).toMatch(/\[PASS\] @google-gemini:flash-lite max=65536\s+gemini-3\.5-flash-lite/);
+      expect(report).toMatch(/\[EXPECTED-REJECT\] advanced none raw\s+gemini-4-argon\s+\(.*Thinking level/);
+      expect(report).toMatch(/\[REFUSED-LOCALLY\] advanced none\+fail\s+gemini-4-argon/);
       expect(report).toMatch(
-        /\[EXPECTED-REJECT\] advanced none raw\s+gemini-3\.1-pro-preview\s+\(.*Budget 0/
+        /\[PASS\] advanced effort=none\s+gemini-4-argon\s+\(degraded to thinkingLevel 'low' \(thinking-required\)\)/
       );
       expect(report).toMatch(
-        /\[EXPECTED-REJECT\] @google-gemini:flash-lite none raw\s+gemini-3\.5-flash-lite\s+\(.*invalid argument/
+        /\[PASS\] advanced level=low\s+gemini-4-argon\s+\(thinkingLevel 'low' accepted\)/
       );
+      expect(report).toMatch(
+        /\[PASS\] @google-gemini:flash-lite effort=none\s+gemini-3\.5-flash-lite\s+\(sent as thinkingLevel 'minimal'\)/
+      );
+      expect(report).toMatch(/\[PASS\] @google-gemini:flash-lite none\+fail\s+gemini-3\.5-flash-lite/);
+      expect(report).toMatch(/\[PASS\] @google-gemini:flash-lite level=minimal\s+gemini-3\.5-flash-lite/);
       // gemini-3.8-flash turns thinking off with budget 0 (live, 2026-11-10): 'none' is sent as
       // budget 0 and answers, and onUnsupported 'fail' has nothing to refuse.
       expect(report).toMatch(/\[PASS\] base effort=none\s+gemini-3\.8-flash\s+\(sent with thinking off\)/);
       expect(report).toMatch(/\[PASS\] base none\+fail\s+gemini-3\.8-flash/);
-      expect(report).toMatch(
-        /\[REFUSED-LOCALLY\] @google-gemini:flash-lite none\+fail\s+gemini-3\.5-flash-lite/
-      );
-      expect(report).not.toMatch(/base none raw/);
+      expect(report).not.toMatch(/base none raw|base level=/);
       expect(report).toMatch(/\[PASS\] image\s+gemini-nano-banana-2\.1/);
       expect(report).toMatch(/LIVE-VERIFIED/);
     });
-    // gemini-3.8-flash gets budget 0 from its effort=none and none+fail rows; pro and flash-lite get
-    // it only from their raw rows.
-    const budgetZero = sent.filter(
-      (s) =>
-        (s.body.generationConfig as { thinkingConfig?: { thinkingBudget?: number } } | undefined)
-          ?.thinkingConfig?.thinkingBudget === 0
-    );
-    expect(budgetZero.map((s) => s.url.match(/models\/([^:]+)/)?.[1])).toEqual([
+    const thinkingConfigs = sent
+      .map((s) => ({
+        model: s.url.match(/models\/([^:]+)/)?.[1],
+        thinking: (s.body.generationConfig as { thinkingConfig?: Record<string, unknown> } | undefined)
+          ?.thinkingConfig
+      }))
+      .filter((s) => s.thinking !== undefined);
+    // Budget 0 goes only to gemini-3.8-flash (effort=none and none+fail); no level model is ever
+    // sent a budget, and no budget model a level.
+    expect(thinkingConfigs.filter((s) => s.thinking?.thinkingBudget === 0).map((s) => s.model)).toEqual([
       'gemini-3.8-flash',
-      'gemini-3.8-flash',
-      'gemini-3.1-pro-preview',
-      'gemini-3.1-pro-preview',
-      'gemini-3.5-flash-lite'
+      'gemini-3.8-flash'
+    ]);
+    expect(
+      thinkingConfigs.filter((s) => s.thinking?.thinkingBudget !== undefined).map((s) => s.model)
+    ).toEqual(['gemini-3.8-flash', 'gemini-3.8-flash', 'gemini-3.8-flash', 'gemini-3.8-flash']);
+    expect(
+      thinkingConfigs
+        .filter((s) => s.thinking?.thinkingLevel !== undefined)
+        .map((s) => [s.model, s.thinking?.thinkingLevel])
+    ).toEqual([
+      // advanced: effort none (degraded), low, high; then frontier (same id by cascade)
+      ['gemini-4-argon', 'low'],
+      ['gemini-4-argon', 'low'],
+      ['gemini-4-argon', 'high'],
+      ['gemini-4-argon', 'low'],
+      ['gemini-4-argon', 'low'],
+      ['gemini-4-argon', 'high'],
+      // flash-lite: effort none, low, high
+      ['gemini-3.5-flash-lite', 'minimal'],
+      ['gemini-3.5-flash-lite', 'low'],
+      ['gemini-3.5-flash-lite', 'high'],
+      // strict none: argon refuses locally and sends its raw minimal row (advanced, frontier);
+      // flash-lite's none+fail is sent as minimal
+      ['gemini-4-argon', 'minimal'],
+      ['gemini-4-argon', 'minimal'],
+      ['gemini-3.5-flash-lite', 'minimal'],
+      // explicit-level rows: each target's lowest declared level
+      ['gemini-4-argon', 'low'],
+      ['gemini-4-argon', 'low'],
+      ['gemini-3.5-flash-lite', 'minimal']
     ]);
     const capped = sent.filter(
       (s) => (s.body.generationConfig as { maxOutputTokens?: number } | undefined)?.maxOutputTokens === 65536

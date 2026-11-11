@@ -26,7 +26,7 @@
  *   value (`disabled`, or `between_tools` on claude-sonnet-5-5) where it thinks by default, no
  *   thinking field on an older model, and 'low' (or a refusal) where the model cannot turn thinking
  *   off;
- * - Gemini models whose thinking cannot be turned off by a budget of 0 degrade or refuse 'none';
+ * - Gemini flash-lite sends 'none' as its 'minimal' level and gemini-3.8-flash as budget 0;
  * - a `temperature` aimed at a model that rejects sampling parameters is refused before the wire.
  */
 
@@ -376,40 +376,31 @@ describe('per-model thinking-off and sampling-parameter rules', () => {
     });
   });
 
-  describe("Gemini effort 'none' on models a budget of 0 cannot turn off", () => {
+  describe("Gemini effort 'none' on flash-lite and flash", () => {
     const gemini = getDescriptor('google-gemini');
     const geminiOk = { candidates: [{ content: { parts: [{ text: 'ok' }] }, finishReason: 'STOP' }] };
 
     // gemini-3.5-flash-lite 400s on thinkingBudget 0 ("Request contains an invalid argument.", live
-    // 2026-11-09), so 'none' is sent as the low budget there, or refused.
-    test.each(['gemini-3.5-flash-lite', '@google-gemini:flash-lite'])(
-      '%s sends none as the low budget',
-      async (model) => {
-        mockJson(geminiOk);
-        expect(
-          await AiAssist.callProviderCompletion({
-            descriptor: gemini,
-            apiKey: 'k',
-            ...prompt.toRequest(),
-            modelOverride: model,
-            thinking: { effort: 'none' }
-          })
-        ).toSucceed();
-        expect(sentBody()).toMatchObject({ generationConfig: { thinkingConfig: { thinkingBudget: 1024 } } });
-      }
-    );
-
-    test("gemini-3.5-flash-lite with onUnsupported 'fail' is refused before the wire", async () => {
+    // 2026-11-09). It is a level model whose lowest level is 'minimal', so 'none' is sent as that
+    // level, with or without onUnsupported 'fail'.
+    test.each([
+      ['gemini-3.5-flash-lite', undefined],
+      ['@google-gemini:flash-lite', undefined],
+      ['gemini-3.5-flash-lite', 'fail' as const]
+    ])('%s sends none as thinkingLevel minimal (onUnsupported %s)', async (model, onUnsupported) => {
+      mockJson(geminiOk);
       expect(
         await AiAssist.callProviderCompletion({
           descriptor: gemini,
           apiKey: 'k',
           ...prompt.toRequest(),
-          modelOverride: 'gemini-3.5-flash-lite',
-          thinking: { effort: 'none', onUnsupported: 'fail' }
+          modelOverride: model,
+          thinking: { effort: 'none', ...(onUnsupported !== undefined ? { onUnsupported } : {}) }
         })
-      ).toFailWith(/cannot run with thinking off/);
-      expect(global.fetch).not.toHaveBeenCalled();
+      ).toSucceed();
+      expect(sentBody()).toMatchObject({
+        generationConfig: { thinkingConfig: { thinkingLevel: 'minimal' } }
+      });
     });
 
     // gemini-3.8-flash turns thinking off with a budget of 0: a live budget-0 request returned

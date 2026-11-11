@@ -331,17 +331,13 @@ describe('google-gemini Tier 2 alias migration', () => {
   test('advanced resolves to pro; frontier cascades (advanced → pro) — B4 tier extension', () => {
     // B4 adds `advanced: '@google-gemini:pro'` (reusing the existing pro alias). Frontier is
     // left unset, so a frontier request cascades frontier → advanced → pro.
-    expect(AiAssist.resolveProviderModel(gemini, undefined, 'advanced')).toSucceedWith(
-      'gemini-3.1-pro-preview'
-    );
-    expect(AiAssist.resolveProviderModel(gemini, undefined, 'frontier')).toSucceedWith(
-      'gemini-3.1-pro-preview'
-    );
+    expect(AiAssist.resolveProviderModel(gemini, undefined, 'advanced')).toSucceedWith('gemini-4-argon');
+    expect(AiAssist.resolveProviderModel(gemini, undefined, 'frontier')).toSucceedWith('gemini-4-argon');
   });
 
   test('each declared alias maps to its concrete target', () => {
     expect(AiAssist.resolveModelAlias(gemini, '@google-gemini:flash')).toSucceedWith('gemini-3.8-flash');
-    expect(AiAssist.resolveModelAlias(gemini, '@google-gemini:pro')).toSucceedWith('gemini-3.1-pro-preview');
+    expect(AiAssist.resolveModelAlias(gemini, '@google-gemini:pro')).toSucceedWith('gemini-4-argon');
     expect(AiAssist.resolveModelAlias(gemini, '@google-gemini:flash-lite')).toSucceedWith(
       'gemini-3.5-flash-lite'
     );

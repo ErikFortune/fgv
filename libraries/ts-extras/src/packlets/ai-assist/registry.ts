@@ -249,17 +249,17 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
       // no frontier key → a frontier request cascades advanced → pro (see resolveModel)
     },
     aliases: {
-      // NOTE: the base flash line is at 3.8, flash-lite at 3.5 and pro at 3.1 — this is NOT a typo.
-      // Google's models page recommends "3.5 Flash-Lite or 3.8 Flash" for new projects and lists no
-      // Pro newer than 3.1. Its newer flagship, gemini-4-argon, is not the pro target yet: Gemini 4
-      // requires `thinkingLevel` and deprecates the `thinkingBudget` field this adapter sends
-      // (https://ai.google.dev/gemini-api/docs/thinking?generate-content=true, fetched 2026-11-08).
-      // The per-role version split is exactly why the alias layer exists — consumers never see
-      // these numbers.
+      // NOTE: the base flash line is at 3.8, flash-lite at 3.5 and pro at Gemini 4 Argon — this is NOT
+      // a typo. The pro role is Google's Gemini 4 frontier reasoning line: "Gemini 4 Argon
+      // (`gemini-4-argon`) is our efficient Gemini 4 frontier reasoning model", Versions "Stable:
+      // `gemini-4-argon`" (https://aistudio.google.com/docs/models/gemini-4-argon.md, fetched
+      // 2026-11-11). Gemini 4 requires `thinkingLevel`, which this adapter sends for it (see
+      // geminiThinkingLevels below). The per-role version split is exactly why the alias layer
+      // exists — consumers never see these numbers.
       // The 2026-10-16 shutdown recorded below for the 2.5 line has since been withdrawn: Google now
       // lists 2.5 as "not deprecated", served to existing users only (as of 2026-09-24).
       '@google-gemini:flash': 'gemini-3.8-flash', // base (was gemini-3.5-flash, no shutdown announced as of 2026-09-24; before that gemini-2.5-flash, then slated for 2026-10-16). NOTE: 3.8 Flash thinking levels are low/medium/high — no 'minimal'
-      '@google-gemini:pro': 'gemini-3.1-pro-preview', // advanced-tier role (wired to the 'advanced' defaultModel key); also the frontier cascade target (was gemini-2.5-pro, then slated for 2026-10-16)
+      '@google-gemini:pro': 'gemini-4-argon', // advanced-tier role (wired to the 'advanced' defaultModel key); also the frontier cascade target (was gemini-3.1-pro-preview; before that gemini-2.5-pro, then slated for 2026-10-16)
       '@google-gemini:flash-lite': 'gemini-3.5-flash-lite', // cheaper thinking-capable line; available via modelOverride only (was gemini-3.1-flash-lite, shutdown 2027-05-07; before that gemini-2.5-flash-lite)
       // image (was gemini-3.1-flash-image, Stable; before that gemini-3.1-flash-image-preview, retired
       // 2026-06-25). Nano Banana 2.1 is "An update to Nano Banana 2 (Gemini 3.1 Flash Image)" with
@@ -275,32 +275,52 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     // back without the host changing anything, so it wants the same evidence a
     // capability claim wants.
     serverToolsExclusiveWithClientTools: ['web_search'],
-    // Reject thinkingBudget 0. gemini-3.1-pro-preview: live 400 "Budget 0 is invalid. This model
-    // only works in thinking mode." (2026-09-25); Google's thinking page lists its levels as
-    // low/medium/high. gemini-2.5-pro: IGeminiThinkingConfig.thinkingBudget documents 0 as
-    // erroring on Pro.
-    // gemini-3.5-flash-lite cannot be turned off by a budget either. § "Controlling thinking" on
-    // https://ai.google.dev/gemini-api/docs/thinking.md.txt (fetched 2026-11-09):
-    //   | gemini-3.8-flash | On (medium) | low, medium, high |
-    //   | gemini-3.6-flash | On (medium) | minimal, low, medium, high |
-    //   | gemini-3.5-flash-lite | On (minimal) | minimal, low, medium, high |
-    // flash-lite returned 400 INVALID_ARGUMENT "Request contains an invalid argument." for
-    // thinkingBudget 0 (live, 2026-11-09), so 'none' degrades to 'low' or refuses there.
-    // This is interim: Gemini 3.x is controlled by `thinkingLevel`, which ai-assist does not send
-    // yet; once it does, 'none' maps to `minimal` on the models that list it (flash-lite), and the
-    // flash-lite entry comes off this list.
-    // gemini-3.8-flash is NOT listed, although the level table above names no level that turns its
-    // thinking off: a live generateContent with thinkingConfig.thinkingBudget 0 (2026-11-10) returned
-    // usageMetadata promptTokenCount 8, candidatesTokenCount 1, totalTokenCount 9 and no
-    // thoughtsTokenCount, so budget 0 does turn thinking off on it and 'none' sends budget 0.
+    // Models that cannot run with thinking off, so a generic 'none' is degraded to 'low' or refused.
+    // Budget-wire Pro models reject thinkingBudget 0. gemini-3.1-pro-preview: live 400 "Budget 0 is
+    // invalid. This model only works in thinking mode." (2026-09-25). gemini-2.5-pro: "2.5 Pro |
+    // Dynamic thinking | `128` to `32768` | N/A: Cannot disable thinking" (budget table,
+    // https://aistudio.google.com/docs/thinking.md?generate-content=true, fetched 2026-11-11).
+    // gemini-3-pro-preview: "| gemini-3-pro-preview | On (high) | low, high |" — no off level
+    // (https://aistudio.google.com/docs/thinking.md, § Controlling thinking, fetched 2026-11-11).
+    // Gemini 4 (level wire): "You cannot disable thinking for Gemini 4 Carbon or Gemini 4 Argon"
+    // (generateContent thinking page, fetched 2026-11-11); their lowest level is 'low'.
+    // gemini-3.8-flash is NOT listed, although its levels (low, medium, high) name no off level: a
+    // live generateContent with thinkingConfig.thinkingBudget 0 (2026-11-10) returned usageMetadata
+    // promptTokenCount 8, candidatesTokenCount 1, totalTokenCount 9 and no thoughtsTokenCount, so
+    // budget 0 does turn thinking off on it. It stays on the budget wire (no geminiThinkingLevels
+    // entry) for that reason, and 'none' sends it budget 0.
+    // gemini-3.5-flash-lite is NOT listed: it is a level model with a 'minimal' level, which 'none'
+    // is sent as (its live 400 for thinkingBudget 0, 2026-11-09, no longer applies).
     // The entries are dash-bounded on purpose, so they also match future variants of a listed id (a
     // dated snapshot): the safe direction for a degrade-or-refuse list, until someone reviews the new
-    // id. The converse holds for an unlisted id: with gemini-3.8-flash off the list, its variants
-    // (gemini-3.8-flash-lite, gemini-3.8-flash-<date>) are no longer caught here either, and a
-    // 'none' sends them budget 0 until one is listed on its own evidence. gemini-3.6-flash and
-    // gemini-3.5-flash stay unlisted: neither is an alias target, and there is no evidence that
-    // either rejects or ignores budget 0.
-    thinkingRequiredModelPrefixes: ['gemini-3.1-pro-preview', 'gemini-2.5-pro', 'gemini-3.5-flash-lite'],
+    // id. gemini-3.6-flash and gemini-3.5-flash stay unlisted: there is no evidence that either
+    // rejects or ignores its off value.
+    thinkingRequiredModelPrefixes: [
+      'gemini-4-argon',
+      'gemini-4-carbon',
+      'gemini-3.1-pro-preview',
+      'gemini-3-pro-preview',
+      'gemini-2.5-pro'
+    ],
+    // Models sent `thinkingLevel` instead of `thinkingBudget`, from the generateContent level table
+    // (§ "Thinking levels (Gemini 4 and Gemini 3)",
+    // https://aistudio.google.com/docs/thinking.md?generate-content=true, fetched 2026-11-11):
+    // "The `thinkingLevel` parameter, required for Gemini 4 and recommended for Gemini 3 models";
+    // "Gemini 4 (`gemini-4-carbon` and `gemini-4-argon`) supports `low`, `medium` (default), and
+    // `high`" ('minimal': "Not supported (error)"); the "Gemini 3.5 & 3.1 Flash-Lite" and "Gemini 3.6
+    // Flash" columns support minimal, low, medium and high. On Gemini 4 the budget is deprecated: "If
+    // passed alone, it maps to the nearest `thinkingLevel` … and returns a warning; sending
+    // `thinkingBudget` and `thinkingLevel` together returns a `400` error."
+    // Deliberately not listed: gemini-3.8-flash (see above: budget 0 is its only off switch);
+    // gemini-3.1-pro-preview (no column in the generateContent table); gemini-3.1-flash-lite (as a
+    // dash-bounded prefix it would also reach gemini-3.1-flash-lite-image, whose levels are minimal
+    // and high only); the 2.5 line ("Gemini 2.5 series models don't support `thinkingLevel`").
+    geminiThinkingLevels: [
+      { modelPrefix: 'gemini-4-argon', levels: ['low', 'medium', 'high'] },
+      { modelPrefix: 'gemini-4-carbon', levels: ['low', 'medium', 'high'] },
+      { modelPrefix: 'gemini-3.6-flash', levels: ['minimal', 'low', 'medium', 'high'] },
+      { modelPrefix: 'gemini-3.5-flash-lite', levels: ['minimal', 'low', 'medium', 'high'] }
+    ],
     corsRestricted: false,
     streamingCorsRestricted: false,
     acceptsImageInput: true,
@@ -308,10 +328,15 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     // (responseMimeType + responseSchema), uniform across the family.
     structuredOutput: [{ modelPrefix: '', format: 'gemini-response-schema' }],
     // "Output token limit 65,536" on each model's page under ai.google.dev/gemini-api/docs/models
-    // (served from aistudio.google.com/docs/models), fetched 2026-11-08. Completion alias targets only.
+    // (served from aistudio.google.com/docs/models), fetched 2026-11-08. Completion alias targets
+    // only, plus the previous pro target. gemini-4-argon: "Max output 65,536 (default synchronous) /
+    // up to 1,048,576 (with long decode)" (https://aistudio.google.com/docs/models/gemini-4-argon.md,
+    // fetched 2026-11-11); long decode needs a continuation loop ai-assist does not run, so the
+    // synchronous figure is recorded.
     maxOutputTokens: [
       { modelId: 'gemini-3.8-flash', maxOutputTokens: 65536 },
       { modelId: 'gemini-3.5-flash-lite', maxOutputTokens: 65536 },
+      { modelId: 'gemini-4-argon', maxOutputTokens: 65536 },
       { modelId: 'gemini-3.1-pro-preview', maxOutputTokens: 65536 }
     ],
     embedding: [
@@ -875,6 +900,9 @@ export const DEFAULT_MODEL_CAPABILITY_CONFIG: IAiModelCapabilityConfig = {
       // 2026-11-08); without this rule only /^gemini-/ matches it and image-generation is lost.
       { idPattern: /^gemini-nano-banana/, capabilities: ['image-generation'] },
       { idPattern: /embedding/, capabilities: ['embedding'] },
+      // Gemini 4: "Inputs Text, Image, Video, Audio, and PDF", function calling and thinking
+      // "Supported" (https://aistudio.google.com/docs/models/gemini-4-argon.md, fetched 2026-11-11).
+      { idPattern: /^gemini-4/, capabilities: ['chat', 'tools', 'vision', 'thinking'] },
       { idPattern: /^gemini-3/, capabilities: ['chat', 'tools', 'vision', 'thinking'] },
       { idPattern: /^gemini-2\.5/, capabilities: ['chat', 'tools', 'vision', 'thinking'] },
       { idPattern: /^gemini-/, capabilities: ['chat', 'tools', 'vision'] }

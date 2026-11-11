@@ -1621,7 +1621,14 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
 
   **Reference**: #668; `design.md` §8; `streamUsageCapability.ts`.
 
-- **[P3] Generic `effort: 'none'` maps to a Gemini value that errors on Pro-family models.**
+- ~~**[P3] Generic `effort: 'none'` maps to a Gemini value that errors on Pro-family models.**~~
+  **Resolved by `gemini-thinking-level` (PR #TBD).** A generic `'none'` never sends
+  `thinkingBudget: 0` to a Pro-family model: every Pro id with evidence (`gemini-3.1-pro-preview`,
+  `gemini-3-pro-preview`, `gemini-2.5-pro`) is on `thinkingRequiredModelPrefixes`, so `'none'` is sent
+  as the low budget or, under `onUnsupported: 'fail'`, refused with "the model cannot run with thinking
+  off". Gemini 4 (`gemini-4-argon`, `gemini-4-carbon`) is on the level wire and degrades to `low` or is
+  refused naming its lowest level. An explicit `{ thinkingBudget: 0 }` block is still sent verbatim
+  (the caller owns the wire). Original entry kept below.
   `ai-assist-thinking-anchoring` (#667) added `'none'` to `IThinkingConfig.effort` as the
   cross-provider spelling for "thinking off". On Gemini it maps to `thinkingBudget: 0` in
   `thinkingOptionsResolver.ts`'s `genericEffortToGemini`. But
