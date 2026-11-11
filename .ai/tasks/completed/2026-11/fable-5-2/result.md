@@ -171,6 +171,15 @@ with 0 error-grep hits and only the tracked-symlink notice (`q1-gate-rebuild.log
 `verify-capability-docs` 0 failed (`q1-gate-capdocs.log`), `generate-capability-feed --check` 0 stale
 (`q1-gate-feed.log`). No new `c8 ignore`; no flake retries.
 
+**Re-run after review round 1 (commit `d07953986`), new logs:** ts-extras build / lint / test at
+100%, 0 warnings (`r1-build-extras.log`, `r1-lint-extras.log`, `r1-green-extras.log`); testbed test /
+lint (`r1-green-testbed.log`, `r1-lint-testbed.log`); `rush rebuild`, `rush lint`, `rush test`
+(background, waited for) all rc 0 with 0 error-grep hits and only the tracked-symlink notice
+(`r1-gate-rebuild.log`, `r1-gate-lint.log`, `r1-gate-test.log`); `change --verify`
+(`r1-gate-change.log`), prettier (`r1-gate-prettier.log`), `verify-capability-docs` 0 failed
+(`r1-gate-capdocs.log`), `generate-capability-feed --check` 0 stale (`r1-gate-feed.log`). No new
+`c8 ignore` (three removed); no flake retries.
+
 ## 7. Run sheet — changed and new rows
 
 Rows not listed are as in `live-run-corrections/result.md` § 4 and earlier sheets. Keyless output:
