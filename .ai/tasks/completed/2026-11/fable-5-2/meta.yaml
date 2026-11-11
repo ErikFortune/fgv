@@ -46,4 +46,4 @@ keywords:
 relatedStreams:
   - { id: live-run-corrections, relationship: 'follows; same registry declarations' }
   - { id: model-alias-refresh, relationship: 'earlier @anthropic:fable rotation to claude-fable-5-1' }
-sourceHash: sha256:81d8fe0dbbaf2a53 # over brief.md + state.md + result.md
+sourceHash: sha256:c1c8a2819e87e3c7 # over brief.md + state.md + result.md

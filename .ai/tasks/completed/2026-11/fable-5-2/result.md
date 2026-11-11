@@ -147,6 +147,14 @@ What remains, recorded in `state.md`:
 | `verify-capability-docs` | 0 failed | `gate-capdocs.log` |
 | `generate-capability-feed --check` (after regenerating) | 0 stale | `gate-feed.log` |
 
+**Re-run after the Q1 fix (commit `73fa8e72d`), new logs:** ts-extras build / lint / test at 100%,
+0 warnings (`q1-build-extras.log`, `q1-lint-extras.log`, `q1-extras-test.log`); testbed test
+(`q1-testbed-test.log`); `rush rebuild`, `rush lint`, `rush test` (background, waited for) all rc 0
+with 0 error-grep hits and only the tracked-symlink notice (`q1-gate-rebuild.log`, `q1-gate-lint.log`,
+`q1-gate-test.log`); `change --verify` (`q1-gate-change.log`), prettier (`q1-gate-prettier.log`),
+`verify-capability-docs` 0 failed (`q1-gate-capdocs.log`), `generate-capability-feed --check` 0 stale
+(`q1-gate-feed.log`). No new `c8 ignore`; no flake retries.
+
 ## 7. Run sheet — changed and new rows
 
 Rows not listed are as in `live-run-corrections/result.md` § 4 and earlier sheets. Keyless output:
