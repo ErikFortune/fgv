@@ -334,7 +334,10 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     acceptsImageInput: false,
     // "MAX OUTPUT TOKENS 65,536" on https://console.groq.com/docs/model/openai/gpt-oss-120b, fetched
     // 2026-11-08.
-    maxOutputTokens: [{ modelId: 'openai/gpt-oss-120b', maxOutputTokens: 65536 }]
+    maxOutputTokens: [{ modelId: 'openai/gpt-oss-120b', maxOutputTokens: 65536 }],
+    // max_tokens: "Deprecated in favor of max_completion_tokens" (https://console.groq.com/docs/api-reference,
+    // chat completions, fetched 2026-11-11).
+    chatOutputTokensField: 'max_completion_tokens'
   },
   {
     id: 'mistral',
@@ -412,6 +415,8 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     streamingCorsRestricted: false,
     acceptsImageInput: true,
     responsesOnlyModelPrefixes: ['gpt-5.5-pro'],
+    // OpenAI's Chat Completions API deprecated max_tokens in favor of max_completion_tokens.
+    chatOutputTokensField: 'max_completion_tokens',
     // Reject reasoning_effort 'none'. gpt-6-astra: model page lists effort low..max, and a live
     // call returned 400 "'reasoning_effort' does not support 'none' with this model" (2026-09-25).
     // gpt-6.1-sol: its page lists "reasoning.effort supports low, medium (default), high, xhigh, and
@@ -518,6 +523,10 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     // returned a live 400 "This model does not support `reasoning_effort` value `none`"
     // (2026-09-25). grok-4.3 lists 'none' and accepts it.
     thinkingRequiredModelPrefixes: ['grok-4.7', 'grok-4.6', 'grok-4.5'],
+    // max_tokens: "[DEPRECATED] … Deprecated in favor of `max_completion_tokens`", which xAI describes
+    // as bounding visible output only, not reasoning tokens
+    // (https://docs.x.ai/developers/rest-api-reference/inference/chat-completions, fetched 2026-11-11).
+    chatOutputTokensField: 'max_completion_tokens',
     structuredOutput: [{ modelPrefix: '', format: 'openai-json-schema' }],
     imageGeneration: [
       {

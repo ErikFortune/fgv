@@ -666,16 +666,22 @@ export function checkSamplingParams(
 }
 
 /**
+ * The Chat Completions request field that caps output length (see
+ * {@link IAiProviderDescriptor.chatOutputTokensField}).
+ * @public
+ */
+export type ChatOutputTokensField = 'max_tokens' | 'max_completion_tokens';
+
+/**
  * Determines whether a provider's OpenAI-compatible Chat Completions request
  * should use the modern `max_completion_tokens` field instead of the legacy
  * `max_tokens` field for capping output length.
  *
  * @remarks
- * OpenAI's Chat Completions API deprecated `max_tokens` in favor of
- * `max_completion_tokens`. Every other provider routed through the shared
- * OpenAI-compatible chat-completions adapter (xAI Grok, Groq, Mistral, Ollama,
- * self-hosted `openai-compat` servers) still expects the legacy `max_tokens`
- * field, so this returns `true` only for the `'openai'` provider id. Consulted
+ * Reads the descriptor's {@link IAiProviderDescriptor.chatOutputTokensField} declaration.
+ * In the shipped registry OpenAI, Groq and xAI Grok declare `'max_completion_tokens'` (each
+ * API reference marks `max_tokens` deprecated in its favor); Mistral, Ollama and self-hosted
+ * `openai-compat` servers declare nothing and keep `max_tokens`. Consulted
  * by both the completion (`callProviderCompletion`) and streaming
  * (`callProviderCompletionStream`) chat-completions dispatch branches. Not
  * consulted on the Responses API path — `max_output_tokens` applies uniformly
@@ -683,11 +689,11 @@ export function checkSamplingParams(
  * nor by any non-`'openai'`-format provider (Anthropic, Gemini).
  *
  * @param descriptor - The provider descriptor.
- * @returns `true` only for the `'openai'` provider id.
+ * @returns `true` when the descriptor declares `'max_completion_tokens'`.
  * @public
  */
 export function usesMaxCompletionTokensField(descriptor: IAiProviderDescriptor): boolean {
-  return descriptor.id === 'openai';
+  return descriptor.chatOutputTokensField === 'max_completion_tokens';
 }
 
 // ============================================================================
@@ -1051,6 +1057,15 @@ export interface IAiProviderDescriptor {
    * behind an opt-in beta header or a batch endpoint that ai-assist does not use is not recorded.
    */
   readonly maxOutputTokens?: ReadonlyArray<IAiMaxOutputTokensCapability>;
+  /**
+   * The Chat Completions request field that carries `maxTokens` on this provider's
+   * OpenAI-format chat path: `'max_completion_tokens'`, or the legacy `'max_tokens'` (the
+   * default when undefined). Declare `'max_completion_tokens'` only where the provider's API
+   * reference accepts it; a server that does not know the field ignores it and the cap is lost.
+   * Read through {@link AiAssist.usesMaxCompletionTokensField}. Not consulted on the Responses API
+   * path (`max_output_tokens`) or by a non-`'openai'` `apiFormat`.
+   */
+  readonly chatOutputTokensField?: ChatOutputTokensField;
   /**
    * Concrete model ids (prefix-matched) that must be invoked via the OpenAI
    * Responses API rather than chat completions — e.g. `gpt-5.5-pro`. Non-OpenAI

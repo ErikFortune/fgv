@@ -607,7 +607,7 @@ describe('callProviderCompletionStream', () => {
       expect(body.max_completion_tokens).toBeUndefined();
     });
 
-    test('sends maxTokens as max_tokens (not max_completion_tokens) for the xAI provider id', async () => {
+    test('sends maxTokens as max_tokens (not max_completion_tokens) for a descriptor declaring no field', async () => {
       mockSseResponse(openAiChatSse(['ok']));
       await AiAssist.callProviderCompletionStream({
         descriptor: makeDescriptor({ id: 'xai-grok' }),
@@ -620,10 +620,10 @@ describe('callProviderCompletionStream', () => {
       expect(body.max_completion_tokens).toBeUndefined();
     });
 
-    test('sends maxTokens as max_completion_tokens (not max_tokens) for the openai provider id', async () => {
+    test('sends maxTokens as max_completion_tokens (not max_tokens) for a descriptor declaring it', async () => {
       mockSseResponse(openAiChatSse(['ok']));
       await AiAssist.callProviderCompletionStream({
-        descriptor: makeDescriptor({ id: 'openai' }),
+        descriptor: makeDescriptor({ id: 'openai', chatOutputTokensField: 'max_completion_tokens' }),
         apiKey: 'sk',
         ...TEST_PROMPT.toRequest(),
         maxTokens: 8000

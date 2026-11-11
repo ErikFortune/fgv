@@ -89,6 +89,7 @@ export {
   isThinkingRequiredModel,
   rejectsSamplingParams,
   usesMaxCompletionTokensField,
+  type ChatOutputTokensField,
   toDataUrl,
   type IThinkingConfig,
   type IThinkingProviderConfig,

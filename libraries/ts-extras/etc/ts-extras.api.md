@@ -151,6 +151,7 @@ declare namespace AiAssist {
         isThinkingRequiredModel,
         rejectsSamplingParams,
         usesMaxCompletionTokensField,
+        ChatOutputTokensField,
         toDataUrl,
         IThinkingConfig,
         IThinkingProviderConfig,
@@ -524,6 +525,11 @@ function callProxiedListModels(proxyUrl: string, params: IProviderListModelsPara
 
 // @public
 type CancelTimer = () => void;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
+//
+// @public
+type ChatOutputTokensField = 'max_tokens' | 'max_completion_tokens';
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IClassifiedAddress"
 //
@@ -1483,6 +1489,8 @@ interface IAiProviderDescriptor {
     readonly apiFormat: AiApiFormat;
     readonly baseUrl: string;
     readonly buttonLabel: string;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly chatOutputTokensField?: ChatOutputTokensField;
     readonly corsRestricted: boolean;
     readonly defaultModel: ModelSpec;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -3642,6 +3650,8 @@ function tryDecryptFile<TPayload extends JsonValue = JsonValue, TMetadata = Json
 // @public
 const uint8ArrayFromBase64: Converter<Uint8Array>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
+//
 // @public
 function usesMaxCompletionTokensField(descriptor: IAiProviderDescriptor): boolean;
 
