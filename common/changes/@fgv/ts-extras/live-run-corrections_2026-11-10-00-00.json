@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras",
+      "comment": "ai-assist: OpenAI's gpt-6.1-sol (@openai:flagship) and gpt-6-astra (@openai:pro) now accept temperature 1. The OpenAI descriptor declares samplingParamsAcceptedTemperature 1 (both models accepted it live with thinking on, 2026-11-10), so temperature 1 there is sent with or without a reasoning effort, on the completion, streaming and client-tool paths; the OpenAI Responses streaming adapter keeps that accepted default beside an effort, as the Anthropic adapter does. Any other temperature on those two models is still refused before the wire, now with the same message as Anthropic: 'does not accept a non-default temperature (x): remove temperature, or send 1'. On every model that restricts temperature (those two and the Anthropic list), that is now also the refusal beside a reasoning effort, which used to read 'thinking mode is not compatible with temperature … remove temperature or disable thinking' — wrong advice for a rule that applies with or without thinking. Gemini: gemini-3.8-flash (@google-gemini:flash, the base tier) is deliberately not on thinkingRequiredModelPrefixes — a live thinkingBudget 0 request returned no thoughtsTokenCount, so budget 0 does turn its thinking off — and a generic effort 'none' there keeps sending thinkingBudget 0.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-extras",
+  "email": "noreply@anthropic.com"
+}

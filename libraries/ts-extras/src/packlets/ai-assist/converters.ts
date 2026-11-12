@@ -27,6 +27,7 @@ import { type Converter, Converters, type Validator, Validators } from '@fgv/ts-
 import { type JsonSchema, Converters as JsonConverters } from '@fgv/ts-json-base';
 
 import type { AiCacheReportingLevel, IAiCompletionUsage } from './usageTypes';
+import { type GeminiThinkingLevel, allGeminiThinkingLevels } from './geminiThinking';
 
 import {
   type AiProviderId,
@@ -53,6 +54,17 @@ import { allProviderIds } from './registry';
  * @public
  */
 export const aiProviderId: Converter<AiProviderId> = Converters.enumeratedValue<AiProviderId>(allProviderIds);
+
+// ============================================================================
+// Gemini thinking level
+// ============================================================================
+
+/**
+ * Converter for {@link AiAssist.GeminiThinkingLevel}.
+ * @public
+ */
+export const geminiThinkingLevel: Converter<GeminiThinkingLevel> =
+  Converters.enumeratedValue<GeminiThinkingLevel>(allGeminiThinkingLevels);
 
 // ============================================================================
 // Server-Side Tool Converters

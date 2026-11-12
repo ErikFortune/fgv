@@ -19,8 +19,9 @@
 // SOFTWARE.
 
 /**
- * Stop conditions for asynchronous work: a deadline and a caller signal, raced against the work
- * so that work which ignores its signal still cannot hold its caller.
+ * Control for asynchronous work: stop conditions — a deadline and a caller signal, raced against the
+ * work so that work which ignores its signal still cannot hold its caller — and a write gate that
+ * stops or holds every write routed through it.
  * @packageDocumentation
  */
 
@@ -33,3 +34,10 @@ export {
   type StopDetail,
   type StopReason
 } from './stopConditions';
+export {
+  type IWriteGateOptions,
+  type IWriteGatePause,
+  WriteGate,
+  type WriteGatePauseFailure,
+  type WriteGateRefusal
+} from './writeGate';

@@ -51,8 +51,20 @@ describe('AiAssist.registry', () => {
       expect(AiAssist.resolveProviderModel(desc, undefined, 'base')).toSucceedWith('gpt-6-luna');
     });
 
-    test('advanced tier resolves to gpt-6-sol', () => {
-      expect(AiAssist.resolveProviderModel(desc, undefined, 'advanced')).toSucceedWith('gpt-6-sol');
+    test('advanced tier resolves to gpt-6.1-sol', () => {
+      expect(AiAssist.resolveProviderModel(desc, undefined, 'advanced')).toSucceedWith('gpt-6.1-sol');
+    });
+
+    test('gpt-6.1-sol carries the wire declarations its page states', () => {
+      // reasoning.effort low..max (no 'none'), both Chat Completions and Responses, structured
+      // outputs, a cited 128,000 output limit. gpt-6-sol, which lists 'none', stays unmatched.
+      expect(AiAssist.isThinkingRequiredModel(desc, 'gpt-6.1-sol')).toBe(true);
+      expect(AiAssist.isThinkingRequiredModel(desc, 'gpt-6-sol')).toBe(false);
+      expect(AiAssist.isResponsesOnlyModel(desc, 'gpt-6.1-sol')).toBe(false);
+      expect(AiAssist.resolveStructuredOutputCapability(desc, '@openai:flagship')?.format).toBe(
+        'openai-json-schema'
+      );
+      expect(AiAssist.resolveMaxOutputTokens(desc, '@openai:flagship')).toBe(128000);
     });
 
     test('frontier resolves to gpt-6-astra via @openai:pro', () => {
@@ -71,14 +83,43 @@ describe('AiAssist.registry', () => {
 
     test('only the tier targets documented and observed to reject thinking-off are thinking-required', () => {
       for (const [providerId, required, accepts] of [
-        ['openai', ['gpt-6-astra', 'gpt-6-astra-2026-09-01'], ['gpt-6-sol', 'gpt-6-luna', 'gpt-6-astral']],
+        [
+          'openai',
+          ['gpt-6-astra', 'gpt-6-astra-2026-09-01', 'gpt-6.1-sol'],
+          ['gpt-6-sol', 'gpt-6-luna', 'gpt-6-astral', 'gpt-6.1-solar', 'gpt-6.1-terra']
+        ],
         [
           'google-gemini',
-          ['gemini-3.1-pro-preview', 'gemini-2.5-pro'],
-          ['gemini-3.8-flash', 'gemini-3.5-flash-lite']
+          [
+            'gemini-4-argon',
+            'gemini-4-carbon',
+            'gemini-3.1-pro-preview',
+            'gemini-3-pro-preview',
+            'gemini-2.5-pro'
+          ],
+          [
+            'gemini-3.5-flash-lite',
+            'gemini-4-argonite',
+            'gemini-3.8-flash',
+            'gemini-3.8-flash-lite',
+            'gemini-2.5-flash',
+            'gemini-3.6-flash',
+            'gemini-3.5-flash'
+          ]
         ],
         ['xai-grok', ['grok-4.7', 'grok-4.6', 'grok-4.5'], ['grok-4.3', 'grok-4']],
-        ['anthropic', [], ['claude-opus-5', 'claude-opus-5-5']]
+        [
+          'anthropic',
+          ['claude-opus-5-5', 'claude-fable-5', 'claude-fable-5-1', 'claude-mythos-5', 'claude-mythos-5-1'],
+          [
+            'claude-opus-5',
+            'claude-sonnet-5',
+            'claude-sonnet-5-5',
+            'claude-haiku-5-5',
+            'claude-haiku-4-5-20251001',
+            'claude-opus-4-8'
+          ]
+        ]
       ] as const) {
         const d = AiAssist.getProviderDescriptor(providerId).orThrow();
         for (const id of required) {
@@ -91,7 +132,7 @@ describe('AiAssist.registry', () => {
     });
 
     test('no gpt-6 id is Responses-only — every tier target keeps both OpenAI routes', () => {
-      for (const id of ['gpt-6-luna', 'gpt-6-sol', 'gpt-6-astra']) {
+      for (const id of ['gpt-6-luna', 'gpt-6.1-sol', 'gpt-6-sol', 'gpt-6-astra']) {
         expect(AiAssist.isResponsesOnlyModel(desc, id)).toBe(false);
       }
     });
@@ -105,7 +146,10 @@ describe('AiAssist.registry', () => {
     });
 
     test('the non-tier @openai:nano alias resolves via modelOverride only', () => {
-      expect(AiAssist.resolveProviderModel(desc, '@openai:nano', undefined)).toSucceedWith('gpt-5.4-nano');
+      // gpt-5.4-nano is deprecated and OpenAI names gpt-6-luna as its replacement, so nano now
+      // names the same model as the base tier.
+      expect(AiAssist.resolveProviderModel(desc, '@openai:nano', undefined)).toSucceedWith('gpt-6-luna');
+      expect(AiAssist.isThinkingRequiredModel(desc, 'gpt-6-luna')).toBe(false);
     });
 
     test('a raw modelOverride passes through verbatim (no alias resolution)', () => {
@@ -118,10 +162,18 @@ describe('AiAssist.registry', () => {
   describe('anthropic model tiers (B3)', () => {
     const desc = AiAssist.getProviderDescriptor('anthropic').shouldNotFail('anthropic descriptor');
 
-    test('base tier resolves to claude-sonnet-5', () => {
+    test('base tier resolves to claude-sonnet-5-5', () => {
       // undefined context falls to base; explicit 'base' resolves identically.
-      expect(AiAssist.resolveProviderModel(desc, undefined, undefined)).toSucceedWith('claude-sonnet-5');
-      expect(AiAssist.resolveProviderModel(desc, undefined, 'base')).toSucceedWith('claude-sonnet-5');
+      expect(AiAssist.resolveProviderModel(desc, undefined, undefined)).toSucceedWith('claude-sonnet-5-5');
+      expect(AiAssist.resolveProviderModel(desc, undefined, 'base')).toSucceedWith('claude-sonnet-5-5');
+    });
+
+    test('claude-sonnet-5-5 is adaptive and uses the non-forcing structured-output format', () => {
+      expect(AiAssist.isAdaptiveThinkingModel(desc, 'claude-sonnet-5-5')).toBe(true);
+      expect(AiAssist.resolveStructuredOutputCapability(desc, '@anthropic:sonnet')?.format).toBe(
+        'anthropic-output-format'
+      );
+      expect(AiAssist.resolveMaxOutputTokens(desc, '@anthropic:sonnet')).toBe(128000);
     });
 
     test('advanced tier resolves to claude-opus-5-5', () => {
@@ -137,13 +189,23 @@ describe('AiAssist.registry', () => {
 
     test('the non-tier @anthropic:haiku alias resolves via modelOverride only', () => {
       expect(AiAssist.resolveProviderModel(desc, '@anthropic:haiku', undefined)).toSucceedWith(
-        'claude-haiku-4-5-20251001'
+        'claude-haiku-5-5'
       );
+    });
+
+    test('claude-haiku-5-5 is adaptive but keeps forced tool use; claude-haiku-4-5 keeps the budget shape', () => {
+      expect(AiAssist.isAdaptiveThinkingModel(desc, 'claude-haiku-5-5')).toBe(true);
+      expect(AiAssist.isAdaptiveThinkingModel(desc, 'claude-haiku-4-5-20251001')).toBe(false);
+      expect(AiAssist.isAdaptiveThinkingModel(desc, 'claude-haiku-5')).toBe(false);
+      expect(AiAssist.resolveStructuredOutputCapability(desc, '@anthropic:haiku')?.format).toBe(
+        'anthropic-tool-forced'
+      );
+      expect(AiAssist.resolveMaxOutputTokens(desc, '@anthropic:haiku')).toBe(128000);
     });
 
     test('the non-tier @anthropic:fable alias resolves via modelOverride only', () => {
       expect(AiAssist.resolveProviderModel(desc, '@anthropic:fable', undefined)).toSucceedWith(
-        'claude-fable-5-1'
+        'claude-fable-5-2'
       );
     });
 
@@ -156,11 +218,15 @@ describe('AiAssist.registry', () => {
       ['claude-opus-5-5-20260922', 'anthropic-output-format'],
       ['claude-fable-5-1', 'anthropic-output-format'],
       ['claude-mythos-5-1', 'anthropic-output-format'],
+      ['claude-sonnet-5-5', 'anthropic-output-format'],
       ['@anthropic:opus', 'anthropic-output-format'],
+      ['@anthropic:sonnet', 'anthropic-output-format'],
       ['@anthropic:fable', 'anthropic-output-format'],
       ['claude-opus-5', 'anthropic-tool-forced'],
       ['claude-fable-5', 'anthropic-tool-forced'],
       ['claude-sonnet-5', 'anthropic-tool-forced'],
+      ['claude-haiku-5-5', 'anthropic-tool-forced'],
+      ['@anthropic:haiku', 'anthropic-tool-forced'],
       ['claude-haiku-4-5-20251001', 'anthropic-tool-forced'],
       ['claude-opus-4-8', 'anthropic-tool-forced']
     ] as const)('structured-output capability for %s is %s', (model, format) => {
@@ -194,25 +260,36 @@ describe('AiAssist.registry', () => {
       expect(AiAssist.resolveProviderModel(desc, undefined, 'base')).toSucceedWith('gemini-3.8-flash');
     });
 
-    test('advanced tier resolves to gemini-3.1-pro-preview (reuses the @google-gemini:pro alias)', () => {
+    test('advanced tier resolves to gemini-4-argon (reuses the @google-gemini:pro alias)', () => {
       expect(AiAssist.resolveModel(desc.defaultModel, 'advanced')).toBe('@google-gemini:pro');
-      expect(AiAssist.resolveProviderModel(desc, undefined, 'advanced')).toSucceedWith(
-        'gemini-3.1-pro-preview'
-      );
+      expect(AiAssist.resolveProviderModel(desc, undefined, 'advanced')).toSucceedWith('gemini-4-argon');
     });
 
     test('frontier cascades to the advanced id (no frontier key on the descriptor)', () => {
       // The Gemini map deliberately omits a frontier key, so a frontier request must
       // cascade frontier → advanced → pro. This is the real registry descriptor, so it is
       // the live proof of the cascade against the shipped Gemini defaults.
-      expect(AiAssist.resolveProviderModel(desc, undefined, 'frontier')).toSucceedWith(
-        'gemini-3.1-pro-preview'
-      );
+      expect(AiAssist.resolveProviderModel(desc, undefined, 'frontier')).toSucceedWith('gemini-4-argon');
     });
 
     test('image tier is unchanged by the advanced-key addition', () => {
       expect(AiAssist.resolveModel(desc.defaultModel, 'image')).toBe('@google-gemini:flash-image');
-      expect(AiAssist.resolveProviderModel(desc, undefined, 'image')).toSucceedWith('gemini-3.1-flash-image');
+      expect(AiAssist.resolveProviderModel(desc, undefined, 'image')).toSucceedWith('gemini-nano-banana-2.1');
+    });
+
+    test('gemini-nano-banana-2.1 resolves to the gemini-image-out wire', () => {
+      expect(AiAssist.resolveImageCapability(desc, '@google-gemini:flash-image')).toMatchObject({
+        format: 'gemini-image-out',
+        acceptsImageReferenceInput: true
+      });
+    });
+
+    test('the completion targets carry their cited output limits', () => {
+      for (const alias of ['@google-gemini:flash', '@google-gemini:flash-lite']) {
+        expect(AiAssist.resolveMaxOutputTokens(desc, alias)).toBe(65536);
+      }
+      // gemini-4-argon: the per-request non-streaming cap, not the 65,536 streaming figure
+      expect(AiAssist.resolveMaxOutputTokens(desc, '@google-gemini:pro')).toBe(32768);
     });
 
     test('embedding tier is unchanged by the advanced-key addition', () => {
@@ -291,6 +368,25 @@ describe('AiAssist.registry', () => {
     });
   });
 
+  describe('groq and mistral default models', () => {
+    test('groq defaults to openai/gpt-oss-120b, text-only with a cited output limit', () => {
+      const desc = AiAssist.getProviderDescriptor('groq').orThrow();
+      expect(AiAssist.resolveProviderModel(desc, undefined, undefined)).toSucceedWith('openai/gpt-oss-120b');
+      expect(AiAssist.resolveProviderModel(desc, undefined, 'advanced')).toSucceedWith('openai/gpt-oss-120b');
+      expect(desc.acceptsImageInput).toBe(false);
+      expect(AiAssist.resolveMaxOutputTokens(desc)).toBe(65536);
+    });
+
+    test('mistral defaults to mistral-large-4 on the json-schema structured-output wire', () => {
+      const desc = AiAssist.getProviderDescriptor('mistral').orThrow();
+      expect(AiAssist.resolveProviderModel(desc, undefined, 'base')).toSucceedWith('mistral-large-4');
+      expect(AiAssist.resolveProviderModel(desc, undefined, 'embedding')).toSucceedWith('mistral-embed');
+      expect(AiAssist.resolveStructuredOutputCapability(desc, 'mistral-large-4')?.format).toBe(
+        'openai-json-schema'
+      );
+    });
+  });
+
   describe('getProviderDescriptor', () => {
     test('returns descriptor for known provider', () => {
       expect(AiAssist.getProviderDescriptor('xai-grok')).toSucceedAndSatisfy((desc) => {
@@ -353,7 +449,7 @@ describe('AiAssist.registry', () => {
         // The default image model is now an alias that resolves to the surviving flash-image id.
         expect(AiAssist.resolveModel(desc.defaultModel, 'image')).toBe('@google-gemini:flash-image');
         expect(AiAssist.resolveProviderModel(desc, undefined, 'image')).toSucceedWith(
-          'gemini-3.1-flash-image'
+          'gemini-nano-banana-2.1'
         );
       });
     });
@@ -817,7 +913,10 @@ describe('DEFAULT_MODEL_CAPABILITY_CONFIG', () => {
     ['anthropic', 'claude-opus-5-5'],
     ['anthropic', 'claude-fable-5-1'],
     ['anthropic', 'claude-mythos-5-1'],
-    ['openai', 'gpt-5.6-terra']
+    ['anthropic', 'claude-sonnet-5-5'],
+    ['anthropic', 'claude-haiku-5-5'],
+    ['openai', 'gpt-5.6-terra'],
+    ['openai', 'gpt-6.1-sol']
   ] as const)('%s tags %s with the thinking capability', (provider, modelId) => {
     const rules = config.perProvider?.[provider] ?? [];
     const caps = new Set<string>();
@@ -827,5 +926,30 @@ describe('DEFAULT_MODEL_CAPABILITY_CONFIG', () => {
       }
     }
     expect(caps.has('thinking')).toBe(true);
+  });
+
+  test.each([
+    ['google-gemini', 'gemini-nano-banana-2.1'],
+    ['google-gemini', 'gemini-3.1-flash-image']
+  ] as const)('%s tags %s with the image-generation capability', (provider, modelId) => {
+    const rules = config.perProvider?.[provider] ?? [];
+    const caps = new Set<string>();
+    for (const rule of rules) {
+      if (rule.idPattern.test(modelId)) {
+        rule.capabilities.forEach((c) => caps.add(c));
+      }
+    }
+    expect(caps.has('image-generation')).toBe(true);
+  });
+
+  test('claude-haiku-4-5 is not tagged thinking by the claude-haiku-5-5 rule', () => {
+    const rules = config.perProvider?.anthropic ?? [];
+    const caps = new Set<string>();
+    for (const rule of rules) {
+      if (rule.idPattern.test('claude-haiku-4-5-20251001')) {
+        rule.capabilities.forEach((c) => caps.add(c));
+      }
+    }
+    expect(caps.has('thinking')).toBe(false);
   });
 });

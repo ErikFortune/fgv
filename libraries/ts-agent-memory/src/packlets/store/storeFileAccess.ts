@@ -244,14 +244,45 @@ export function writeRecordFile(
   idStem: string,
   raw: string
 ): Result<true> {
-  const fileName: string = `${idStem}${MEMORY_FILE_EXTENSION}`;
   return writer
     .checkWritable()
     .onSuccess(() => ensureScopeDir(root, scopes, scope))
     .onSuccess((scopeDir) =>
+      writeStoreFile(scopeDir, writer, `${idStem}${MEMORY_FILE_EXTENSION}`, raw, 'record')
+    );
+}
+
+/**
+ * What a store file holds, for the messages an unsettled write reports: a record (which the
+ * resident index mirrors) or the seq high-water mark (which nothing mirrors).
+ * @internal
+ */
+export type StoreFileSubject = 'record' | 'seq';
+
+/** How each subject's messages name it, and what keeps the previous one meanwhile. */
+const subjectWording: Readonly<Record<StoreFileSubject, { readonly noun: string; readonly held: string }>> = {
+  record: { noun: 'record', held: ", and the store's index keeps the previous one until reopened" },
+  seq: { noun: 'seq high-water mark', held: '; the next open reads whichever it holds' }
+};
+
+/**
+ * Write (create or overwrite) `fileName` in `dir` with `raw`, atomically when the writer does — the
+ * same contract as {@link writeRecordFile}, for a file the caller has already placed.
+ * @internal
+ */
+export function writeStoreFile(
+  dir: FileTree.IMutableFileTreeDirectoryItem,
+  writer: IRecordWriter,
+  fileName: string,
+  raw: string,
+  subject: StoreFileSubject
+): Result<true> {
+  return writer
+    .checkWritable()
+    .onSuccess(() =>
       writer.guarantee === undefined
-        ? writePlain(scopeDir, fileName, raw)
-        : writeAtomic(scopeDir, fileName, raw, writer.guarantee, writer)
+        ? writePlain(dir, fileName, raw)
+        : writeAtomic(dir, fileName, raw, writer.guarantee, writer, subject)
     );
 }
 
@@ -286,9 +317,11 @@ function writeAtomic(
   fileName: string,
   raw: string,
   guarantee: FileTree.AtomicWriteGuarantee,
-  writer: IRecordWriter
+  writer: IRecordWriter,
+  subject: StoreFileSubject
 ): Result<true> {
   const target: string = `${scopeDir.absolutePath}/${fileName}`;
+  const { noun, held } = subjectWording[subject];
   if (!FileTree.isAtomicDirectoryItem(scopeDir)) {
     return fail(
       `${target}: the store writes atomically at '${guarantee}' and this directory cannot write atomically`
@@ -299,7 +332,7 @@ function writeAtomic(
     return succeed(true);
   }
   const committed = (): Result<true> => {
-    writer.warn(`${target}: the new record is in place, but the write reported: ${written.message}`);
+    writer.warn(`${target}: the new ${noun} is in place, but the write reported: ${written.message}`);
     return succeed(true);
   };
   // An unclassified failure is treated as the ambiguous case: settled by reading, never assumed.
@@ -314,7 +347,7 @@ function writeAtomic(
     .withErrorFormat(
       (m) =>
         `${written.message}; the outcome could not be settled by re-reading (${m}): the file may hold ` +
-        `the new record or the previous one, and the store's index keeps the previous one until reopened`
+        `the new ${noun} or the previous one${held}`
     )
     .onSuccess((contents: string | undefined) =>
       contents !== undefined && asStored(contents) === asStored(raw)
@@ -406,7 +439,9 @@ export interface ISweepReport {
  * @remarks
  * A directory with no record file is not swept: the root and intermediate directories never hold
  * records, and a scope directory whose only content is an interrupted first write is swept by a
- * later open, once it holds a record. The working file is harmless meanwhile.
+ * later open, once it holds a record. The working file is harmless meanwhile. That includes one an
+ * interrupted write of the root's seq high-water file leaves at the root, which is never swept:
+ * nothing reads it, and sweeping the root would sweep a directory the store does not otherwise own.
  * @internal
  */
 export function sweepAtomicTemporaries(root: FileTree.IFileTreeDirectoryItem): ISweepReport {

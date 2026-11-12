@@ -20,15 +20,17 @@
  * SOFTWARE.
  */
 
-import { captureResult, Result } from '@fgv/ts-utils';
+import { Result } from '@fgv/ts-utils';
 import { FileTree } from './fileTree';
-import { FsFileTreeAccessors } from './fsTree';
-import { IFileTreeInitParams } from './fileTreeAccessors';
+import { FsFileTreeAccessors, IFsFileTreeInitParams } from './fsTree';
 
 /**
  * Helper function to create a new {@link FileTree.FileTree | FileTree} instance
  * with accessors for the filesystem.
- * @param prefix - An optional prefix to prepended to supplied relative paths.
+ * @param prefix - An optional prefix, against which relative paths are resolved.
+ * An absolute path is used as given (the default `'unconfined'` policy); pass
+ * {@link FileTree.IFsFileTreeInitParams | parameters} with `absolutePathPolicy` to
+ * confine paths to the prefix.
  * @returns `Success` with the new {@link FileTree.FileTree | FileTree} instance
  * if successful, or `Failure` with an error message otherwise.
  * @public
@@ -38,17 +40,19 @@ export function forFilesystem<TCT extends string = string>(prefix?: string): Res
 /**
  * Helper function to create a new {@link FileTree.FileTree | FileTree} instance
  * with accessors for the filesystem.
- * @param params - Optional {@link FileTree.IFileTreeInitParams | initialization parameters} for the file tree.
+ * @param params - Optional {@link FileTree.IFsFileTreeInitParams | initialization parameters} for the file tree.
  * @returns `Success` with the new {@link FileTree.FileTree | FileTree} instance
- * if successful, or `Failure` with an error message otherwise.
+ * if successful, or `Failure` with an error message otherwise — including when
+ * `params` asks for confinement without a `prefix` (see
+ * {@link FileTree.FsFileTreeAccessors.create | FsFileTreeAccessors.create}).
  * @public
  */
 export function forFilesystem<TCT extends string = string>(
-  params?: IFileTreeInitParams<TCT>
+  params?: IFsFileTreeInitParams<TCT>
 ): Result<FileTree<TCT>>;
 export function forFilesystem<TCT extends string = string>(
-  params?: IFileTreeInitParams<TCT> | string
+  params?: IFsFileTreeInitParams<TCT> | string
 ): Result<FileTree<TCT>> {
   params = typeof params === 'string' ? { prefix: params } : params;
-  return captureResult(() => new FsFileTreeAccessors<TCT>(params)).onSuccess((hal) => FileTree.create(hal));
+  return FsFileTreeAccessors.create<TCT>(params).onSuccess((hal) => FileTree.create(hal));
 }

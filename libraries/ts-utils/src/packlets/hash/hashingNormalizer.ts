@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { Normalizer, Result, captureResult, fail, mapResults, succeed } from '../base';
+import { Normalizer, Result, captureResult, fail, formatValueForMessage, mapResults, succeed } from '../base';
 
 /**
  * Function to compute a hash from a pre-normalized array of strings.
@@ -98,6 +98,6 @@ export class HashingNormalizer extends Normalizer {
       return succeed(`RegExp:[[[${from.toString()}]]]`);
     }
     /* c8 ignore next 2 */
-    return fail(`cannot normalize ${JSON.stringify(from)}`);
+    return fail(`cannot normalize ${formatValueForMessage(from)}`);
   }
 }

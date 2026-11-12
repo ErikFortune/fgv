@@ -3,7 +3,17 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { Hash, Logging, Result, captureResult, fail, mapResults, mapSuccess, succeed } from '@fgv/ts-utils';
+import {
+  Hash,
+  Logging,
+  Result,
+  captureResult,
+  fail,
+  mapResults,
+  mapSuccess,
+  succeed,
+  succeedWithDetail
+} from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
 import {
   AdmissionDecision,
@@ -15,7 +25,6 @@ import {
   IIdentityCodec,
   IMemoryEnvelope,
   IMemoryRecord,
-  IProvenance,
   ITemporalIdentityCodec,
   IWritePolicy,
   Kind,
@@ -24,10 +33,8 @@ import {
   MemoryScopeKey,
   RankProjector,
   isTemporalIdentityCodec,
-  isTemporalRecord,
   isVersionCurrent,
-  selectCurrentVersion,
-  selectVersionAsOf
+  selectCurrentVersion
 } from '../types';
 import {
   IBodyConverterRegistry as IRegistry,
@@ -49,13 +56,8 @@ import {
 import { DerivedArtifact, ReconcileReport } from './reconcile';
 import { reconcileVectors } from './storeReconcile';
 import { IIndexedMemoryEntry, IMemoryIndex, MemoryIndex } from '../index';
-import {
-  IMemoryObservationRecord,
-  IMemoryObserver,
-  MemoryEmbedOutcome,
-  MemoryObservationOutcome,
-  MemoryObservationPhase
-} from '../observe';
+import { IMemoryObserver, MemoryEmbedOutcome, MemoryObservationPhase } from '../observe';
+import { IObservationDetails, ObservationFanout } from './storeObservation';
 import {
   FragmentEmbedder,
   IFragmentVectorIndex,
@@ -75,6 +77,22 @@ import {
   MemoryRecordErrorMode
 } from './openReport';
 import { StoreRootSession } from './storeRootSession';
+import { SeqHighWater } from './storeSeq';
+import { isMutableMetadataUnchanged, projectAsOf, projectMutablePatch } from './storeMerge';
+import {
+  IMemoryDeleteOptions,
+  IMemoryWriteOptions,
+  MemoryWriteExpectation,
+  MemoryWriteResult
+} from './writeFailure';
+import {
+  WriteRefusal,
+  checkExpectation,
+  classify,
+  duplicateRefusal,
+  settleWrite,
+  validateExpectation
+} from './storeWriteCondition';
 
 /** The on-disk extension for a memory record file. */
 const MEMORY_FILE_EXTENSION: string = '.md';
@@ -262,6 +280,9 @@ export interface IFileTreeMemoryStoreCreateParams {
    * {@link IFileTreeMemoryStoreCreateParams.logger | logger} and the record
    * operation still succeeds — the vector index is a derived view that a later
    * `rebuild` reconciles, so a vector failure never fails an authoritative write.
+   *
+   * It runs inside the store's write lock, so it must not await a write (`put`, `delete`,
+   * `reconcile`) on this same store: that write queues behind the one waiting on it, and both hang.
    */
   readonly embed?: MemoryEmbedder;
   /**
@@ -286,7 +307,8 @@ export interface IFileTreeMemoryStoreCreateParams {
    * maintenance is **best-effort**, exactly like the record-vector path: a failed
    * (or throwing) `fragmentEmbedder` / `addFragments` / `remove` is logged at
    * `warn` and the record operation still succeeds — the fragment index is a
-   * derived view a later `rebuild` reconciles.
+   * derived view a later `rebuild` reconciles. Like `embed`, it runs inside the write lock and must
+   * not await a write on this same store.
    */
   readonly fragmentEmbedder?: FragmentEmbedder;
   /**
@@ -328,9 +350,22 @@ interface IPutOutcome {
   readonly embed?: MemoryEmbedOutcome;
 }
 
+/**
+ * A `put` whose input has been accepted: the body, the resolved address, and the caller's
+ * precondition. `temporal` is set exactly when the kind is versioned.
+ */
+interface IResolvedPut {
+  readonly body: string;
+  readonly scope: MemoryScopeKey;
+  readonly idStem: string;
+  readonly expected?: MemoryWriteExpectation;
+  readonly temporal?: ITemporalIdentityCodec;
+}
+
 interface IInternalParams {
   readonly root: FileTree.IMutableFileTreeDirectoryItem;
   readonly session: StoreRootSession;
+  readonly seqs: SeqHighWater;
   readonly registry: IRegistry;
   readonly writePolicies: ReadonlyMap<Kind, IWritePolicy>;
   readonly codecs: ReadonlyMap<Kind, IIdentityCodec>;
@@ -387,7 +422,7 @@ export class FileTreeMemoryStore implements IMemoryStore {
   private readonly _clock: () => number;
   private readonly _index: IMemoryIndex;
   private readonly _hasher: Hash.Crc32Normalizer;
-  private readonly _observers: ReadonlyArray<IMemoryObserver>;
+  private readonly _observations: ObservationFanout;
   /** Record- and fragment-vector maintenance; every operation is best-effort. */
   private readonly _vectors: VectorMaintenance;
   private readonly _logger: Logging.ILogger;
@@ -397,39 +432,15 @@ export class FileTreeMemoryStore implements IMemoryStore {
    */
   private readonly _skippedRecords: ISkippedRecord[];
 
-  /** Monotonic write counter; incremented inside the write-lock on each put. */
-  private _seq: number;
-  /**
-   * Monotonic observation-sequence counter. A distinct authority from `_seq`
-   * (the envelope write counter): it numbers the audit stream so a single
-   * {@link MemoryObservationStore} fed by this store sees strictly increasing
-   * `seq`, satisfying the ring buffer's cursor contract.
-   */
-  private _observationSeq: number;
+  /** The envelope `seq` allocator, with its persisted high-water mark; used inside the write lock. */
+  private readonly _seqs: SeqHighWater;
   /** Tail of the write-lock promise chain that serializes mutating ops. */
   private _writeTail: Promise<unknown>;
-
-  /**
-   * The record-level mutable-field vocabulary: maps a declared mutable field
-   * name to its canonical location on a record. Used to project an incoming
-   * record into a merge-patch on update. B1 ships the knowledge-LWW surface
-   * (body + envelope metadata); body-internal mutable fields (Phase-C cap-cull)
-   * extend this map.
-   */
-  private static readonly _mutableFieldAccessors: ReadonlyMap<
-    string,
-    (record: IMemoryRecord<unknown>) => unknown
-  > = new Map<string, (record: IMemoryRecord<unknown>) => unknown>([
-    ['body', (r) => r.body],
-    ['tags', (r) => r.envelope.tags],
-    ['links', (r) => r.envelope.links],
-    ['provenance', (r) => r.envelope.provenance],
-    ['embeddingRef', (r) => r.envelope.embeddingRef]
-  ]);
 
   private constructor(params: IInternalParams) {
     this._root = params.root;
     this._session = params.session;
+    this._seqs = params.seqs;
     this._registry = params.registry;
     this._writePolicies = params.writePolicies;
     this._codecs = params.codecs;
@@ -441,7 +452,7 @@ export class FileTreeMemoryStore implements IMemoryStore {
     this._clock = params.clock;
     this._index = params.index;
     this._hasher = new Hash.Crc32Normalizer();
-    this._observers = params.observers;
+    this._observations = new ObservationFanout(params.observers, params.clock, (m) => this._warnSwallowed(m));
     this._logger = params.logger;
     this._vectors = new VectorMaintenance({
       vectorIndex: params.vectorIndex,
@@ -453,8 +464,6 @@ export class FileTreeMemoryStore implements IMemoryStore {
       checkWritable: () => this._session.checkWritable()
     });
     this._skippedRecords = [];
-    this._seq = 0;
-    this._observationSeq = 0;
     this._writeTail = Promise.resolve();
   }
 
@@ -504,32 +513,35 @@ export class FileTreeMemoryStore implements IMemoryStore {
       FileTreeMemoryStore._resolveIndex(params.index).onSuccess((index) =>
         StoreRootSession.open(params.root, params.durability, logger).onSuccess((session) =>
           // Everything after the claim is captured, so neither a failure nor a throw leaves it held.
-          captureResult(() => {
-            const store: FileTreeMemoryStore = new FileTreeMemoryStore({
-              root: params.root,
-              session,
-              registry: params.registry,
-              writePolicies: params.writePolicies ?? new Map<Kind, IWritePolicy>(),
-              codecs: params.codecs ?? new Map<Kind, IIdentityCodec>(),
-              rankProjectors: params.rankProjectors ?? new Map<Kind, RankProjector>(),
-              embedKinds: params.embedKinds,
-              defaultCodec: params.defaultCodec,
-              defaultPolicy,
-              scopes: {
-                encode: params.scopeEncoding ?? defaultMemoryScopeEncoding,
-                decode: params.scopeDecoding
-              },
-              clock: params.clock ?? Date.now,
-              index,
-              observers: params.observers ?? [],
-              logger,
-              vectorIndex: params.vectorIndex,
-              embed: params.embed,
-              fragmentIndex: params.fragmentIndex,
-              fragmentEmbedder: params.fragmentEmbedder
-            });
-            return store._initialIndex(params.onRecordError ?? 'fail').onSuccess(() => succeed(store));
-          })
+          captureResult(() =>
+            SeqHighWater.open(params.root, session).onSuccess((seqs) => {
+              const store: FileTreeMemoryStore = new FileTreeMemoryStore({
+                root: params.root,
+                session,
+                seqs,
+                registry: params.registry,
+                writePolicies: params.writePolicies ?? new Map<Kind, IWritePolicy>(),
+                codecs: params.codecs ?? new Map<Kind, IIdentityCodec>(),
+                rankProjectors: params.rankProjectors ?? new Map<Kind, RankProjector>(),
+                embedKinds: params.embedKinds,
+                defaultCodec: params.defaultCodec,
+                defaultPolicy,
+                scopes: {
+                  encode: params.scopeEncoding ?? defaultMemoryScopeEncoding,
+                  decode: params.scopeDecoding
+                },
+                clock: params.clock ?? Date.now,
+                index,
+                observers: params.observers ?? [],
+                logger,
+                vectorIndex: params.vectorIndex,
+                embed: params.embed,
+                fragmentIndex: params.fragmentIndex,
+                fragmentEmbedder: params.fragmentEmbedder
+              });
+              return store._initialIndex(params.onRecordError ?? 'fail').onSuccess(() => succeed(store));
+            })
+          )
             .onSuccess((opened) => opened)
             .onFailure((message) => {
               session.release();
@@ -629,7 +641,7 @@ export class FileTreeMemoryStore implements IMemoryStore {
         ? // No temporal projection requested: the flat-path guarantee — every
           // version is returned.
           selected
-        : FileTreeMemoryStore._projectAsOf(selected, selection.asOf);
+        : projectAsOf(selected, selection.asOf);
     return this._materialize(projected);
   }
 
@@ -750,50 +762,19 @@ export class FileTreeMemoryStore implements IMemoryStore {
     return vectorRecordSource(this);
   }
 
-  /**
-   * Collapse temporal records to the single version valid at `asOf` per entity;
-   * non-temporal records are timeless and pass through unchanged (valid-time
-   * `asOf` applies only to versioned kinds; transaction-time / full bi-temporal
-   * filtering is deferred — OQ-9). An entity with no version valid at `asOf`
-   * contributes nothing.
-   */
-  private static _projectAsOf(
-    entries: ReadonlyArray<IIndexedMemoryEntry>,
-    asOf: number
-  ): ReadonlyArray<IIndexedMemoryEntry> {
-    const passthrough: IIndexedMemoryEntry[] = [];
-    const groups: Map<string, IIndexedMemoryEntry[]> = new Map<string, IIndexedMemoryEntry[]>();
-    for (const entry of entries) {
-      if (!isTemporalRecord(entry)) {
-        passthrough.push(entry);
-        continue;
-      }
-      const key: string = `${entry.envelope.kind}\0${entry.envelope.entityId}`;
-      const existing: IIndexedMemoryEntry[] | undefined = groups.get(key);
-      if (existing === undefined) {
-        groups.set(key, [entry]);
-      } else {
-        existing.push(entry);
-      }
-    }
-    const result: IIndexedMemoryEntry[] = [...passthrough];
-    for (const versions of groups.values()) {
-      const valid: IIndexedMemoryEntry | undefined = selectVersionAsOf(versions, asOf);
-      if (valid !== undefined) {
-        result.push(valid);
-      }
-    }
-    return result;
-  }
-
   /** {@inheritDoc IMemoryStore.reconcile} */
   public async reconcile(kind: Kind, artifact: DerivedArtifact): Promise<Result<ReconcileReport>> {
     return this._enqueue(() => this._reconcileLocked(kind, artifact));
   }
 
   /** {@inheritDoc IMemoryStore.put} */
-  public async put(record: IMemoryRecord<unknown>): Promise<Result<IMemoryRecord<unknown>>> {
-    const result: Result<IPutOutcome> = await this._enqueue(() => this._putLocked(record));
+  public async put(
+    record: IMemoryRecord<unknown>,
+    options?: IMemoryWriteOptions
+  ): Promise<MemoryWriteResult<IMemoryRecord<unknown>>> {
+    const result: MemoryWriteResult<IPutOutcome> = settleWrite(
+      await this._enqueue(() => this._putLocked(record, options))
+    );
     await this._fireObservation('write', record.envelope.kind, record.envelope.entityId, {
       outcome: result.isSuccess() ? 'success' : 'failure',
       id: result.isSuccess() ? result.value.record.envelope.id : record.envelope.id,
@@ -815,12 +796,18 @@ export class FileTreeMemoryStore implements IMemoryStore {
         });
       }
     }
-    return result.onSuccess((outcome) => succeed(outcome.record));
+    return result.onSuccess((outcome) => succeedWithDetail(outcome.record));
   }
 
   /** {@inheritDoc IMemoryStore.delete} */
-  public async delete(kind: Kind, entityId: EntityId): Promise<Result<MemoryId>> {
-    const result: Result<MemoryId> = await this._enqueue(() => this._deleteLocked(kind, entityId));
+  public async delete(
+    kind: Kind,
+    entityId: EntityId,
+    options?: IMemoryDeleteOptions
+  ): Promise<MemoryWriteResult<MemoryId>> {
+    const result: MemoryWriteResult<MemoryId> = settleWrite(
+      await this._enqueue(() => this._deleteLocked(kind, entityId, options?.expected))
+    );
     await this._fireObservation('delete', kind, entityId, {
       outcome: result.isSuccess() ? 'success' : 'failure',
       id: result.isSuccess() ? result.value : undefined,
@@ -845,63 +832,14 @@ export class FileTreeMemoryStore implements IMemoryStore {
     return result;
   }
 
-  /**
-   * Build and fan out one observation record for a completed op. A no-op when no
-   * observers are wired (the additive-default path pays nothing). The store is
-   * the seq authority — it mints `seq` / `timestamp` so every observer sees the
-   * same record. The scope is resolved best-effort via the codec.
-   */
-  private async _fireObservation(
+  /** Fan out one observation for a completed op; see `ObservationFanout`. */
+  private _fireObservation(
     phase: MemoryObservationPhase,
     kind: Kind,
     entityId: EntityId,
-    details: {
-      readonly outcome: MemoryObservationOutcome;
-      readonly id?: MemoryId;
-      readonly provenance?: IProvenance;
-      readonly error?: string;
-      readonly embed?: MemoryEmbedOutcome;
-    }
+    details: IObservationDetails
   ): Promise<void> {
-    if (this._observers.length === 0) {
-      return;
-    }
-    const record: IMemoryObservationRecord = {
-      seq: ++this._observationSeq,
-      timestamp: this._clock(),
-      phase,
-      scope: this._scopeBestEffort(kind, entityId),
-      id: details.id,
-      kind,
-      outcome: details.outcome,
-      error: details.error,
-      provenance: details.provenance,
-      embed: details.embed
-    };
-    const awaited: Promise<void>[] = [];
-    for (const observer of this._observers) {
-      if (observer.fireAndForget === true) {
-        // Intentionally not awaited: a fire-and-forget observer must not extend
-        // the store op's latency. `_safeObserve` swallows internally; the
-        // `.catch` keeps the detached promise from being flagged as floating.
-        this._safeObserve(observer, record).catch(() => undefined);
-      } else {
-        awaited.push(this._safeObserve(observer, record));
-      }
-    }
-    await Promise.all(awaited);
-  }
-
-  /** Invoke one observer, swallowing any failure or throw (logged at `warn`). */
-  private async _safeObserve(observer: IMemoryObserver, record: IMemoryObservationRecord): Promise<void> {
-    try {
-      const observed: Result<unknown> = await observer.observe(record);
-      if (observed.isFailure()) {
-        this._warnSwallowed(`memory observer failed (swallowed): ${observed.message}`);
-      }
-    } catch (error) {
-      this._warnSwallowed(`memory observer threw (swallowed): ${String(error)}`);
-    }
+    return this._observations.fire(phase, kind, () => this._scopeBestEffort(kind, entityId), details);
   }
 
   /**
@@ -925,7 +863,28 @@ export class FileTreeMemoryStore implements IMemoryStore {
       .orDefault();
   }
 
-  private async _putLocked(record: IMemoryRecord<unknown>): Promise<Result<IPutOutcome>> {
+  private async _putLocked(
+    record: IMemoryRecord<unknown>,
+    options: IMemoryWriteOptions | undefined
+  ): Promise<Result<IPutOutcome | WriteRefusal>> {
+    // Input refusals are `invalid` and read nothing; the precondition is checked per layout, under
+    // this lock and before dedup. The flat path keeps its dedup/policy ordering; the versioned path
+    // is a wholly separate branch.
+    return classify(this._resolvePut(record, options), 'invalid').thenOnSuccess((resolved) => {
+      if (resolved instanceof WriteRefusal) {
+        return Promise.resolve(succeed<IPutOutcome | WriteRefusal>(resolved));
+      }
+      if (resolved.temporal !== undefined) {
+        return this._putVersioned(record, resolved, resolved.temporal);
+      }
+      return this._contentHash(record.envelope.kind, resolved.body, record.envelope.links).thenOnSuccess(
+        (hash) => this._writeResolved(record, resolved, hash)
+      );
+    });
+  }
+
+  /** Accept or refuse a `put`'s input: body, `expected`, codec, and layout. Reads no records. */
+  private _resolvePut(record: IMemoryRecord<unknown>, options?: IMemoryWriteOptions): Result<IResolvedPut> {
     const envelope: IMemoryEnvelope = record.envelope;
     if (typeof record.body !== 'string') {
       return fail(
@@ -933,38 +892,29 @@ export class FileTreeMemoryStore implements IMemoryStore {
       );
     }
     const body: string = record.body;
-    // Resolve the body converter + codec, then dispatch on layout. The flat
-    // (non-versioned) path keeps its exact dedup/policy ordering; the versioned
-    // path is a wholly separate branch so the flat path is behaviorally
-    // unchanged (the consumer adoption guarantee).
-    return this._registry
-      .convert(envelope.kind, body)
-      .withErrorFormat((msg) => `memory put '${envelope.id}': invalid body: ${msg}`)
-      .onSuccess(() => this._codec(envelope.kind))
-      .thenOnSuccess((codec) =>
-        codec.encode(envelope.entityId).thenOnSuccess((addr) => {
-          if (addr.isVersioned) {
-            if (!isTemporalIdentityCodec(codec)) {
-              return Promise.resolve(
-                fail<IPutOutcome>(
-                  `memory put '${envelope.entityId}': codec for versioned kind '${envelope.kind}' does not implement the temporal codec interface`
-                )
-              );
+    return validateExpectation(options?.expected, `memory put '${envelope.id}'`, true).onSuccess((expected) =>
+      this._registry
+        .convert(envelope.kind, body)
+        .withErrorFormat((msg) => `memory put '${envelope.id}': invalid body: ${msg}`)
+        .onSuccess(() => this._codec(envelope.kind))
+        .onSuccess((codec) =>
+          codec.encode(envelope.entityId).onSuccess((addr) => {
+            const resolved: IResolvedPut = { body, scope: addr.scope, idStem: addr.idStem, expected };
+            if (addr.isVersioned) {
+              return isTemporalIdentityCodec(codec)
+                ? succeed({ ...resolved, temporal: codec })
+                : fail<IResolvedPut>(
+                    `memory put '${envelope.entityId}': codec for versioned kind '${envelope.kind}' does not implement the temporal codec interface`
+                  );
             }
-            return this._putVersioned(record, body, codec, addr.scope);
-          }
-          if (envelope.id !== addr.idStem) {
-            return Promise.resolve(
-              fail<IPutOutcome>(
-                `memory put: envelope id '${envelope.id}' does not match codec-derived stem '${addr.idStem}'`
-              )
-            );
-          }
-          return this._contentHash(envelope.kind, body, envelope.links).thenOnSuccess((hash) =>
-            this._writeResolved(record, body, addr.scope, addr.idStem, hash)
-          );
-        })
-      );
+            return envelope.id === addr.idStem
+              ? succeed(resolved)
+              : fail<IResolvedPut>(
+                  `memory put: envelope id '${envelope.id}' does not match codec-derived stem '${addr.idStem}'`
+                );
+          })
+        )
+    );
   }
 
   /**
@@ -975,11 +925,10 @@ export class FileTreeMemoryStore implements IMemoryStore {
    */
   private async _writeResolved(
     record: IMemoryRecord<unknown>,
-    body: string,
-    scope: MemoryScopeKey,
-    idStem: string,
+    target: IResolvedPut,
     hash: string
-  ): Promise<Result<IPutOutcome>> {
+  ): Promise<Result<IPutOutcome | WriteRefusal>> {
+    const { body, scope, idStem } = target;
     const policy: IWritePolicy = this._policyFor(record.envelope.kind);
     // Read through the public accessor so the write path and every external
     // caller (the ingest orchestrator's layer-1) resolve dedup granularity from
@@ -994,26 +943,39 @@ export class FileTreeMemoryStore implements IMemoryStore {
     //     families). The same-id check is folded into the `_readRecord` below.
     // (Tags / provenance are metadata and are NOT part of the hash; see
     // design-lock §2.5.)
-    if (dedupScope === 'content') {
-      // Cross-id content collapse: an identical { kind, body, links } triple under
-      // a DIFFERENT id is a no-op (knowledge family). A same-id match is excluded
-      // here and falls through to the LWW path below so a metadata-only revision
-      // (tags / provenance — outside the content hash but inside the policy's
-      // mutableFields) actually applies. Content-dedup must never shadow LWW for
-      // the same entity.
-      const duplicate: Result<IMemoryRecord<unknown> | undefined> = this._findByContentHash(
-        scope,
-        hash,
-        record.envelope.id
+    // The same-id record is read FIRST, for the precondition: content dedup below can answer with a
+    // different id's record, so a check after it would let a dedup no-op mask a conflict.
+    return this._readRecord(scope, idStem, record.envelope.kind).thenOnSuccess(async (existing) => {
+      const refusal: WriteRefusal | undefined = checkExpectation(
+        target.expected,
+        existing,
+        `memory put '${record.envelope.id}'`
       );
-      if (duplicate.isFailure()) {
-        return fail(duplicate.message);
+      if (refusal !== undefined) {
+        return succeed(refusal);
       }
-      if (duplicate.value !== undefined) {
-        return succeed({ record: duplicate.value, evicted: [] });
+      if (dedupScope === 'content') {
+        // Cross-id content collapse: an identical { kind, body, links } triple under a DIFFERENT id
+        // is a no-op (knowledge family). A same-id match is excluded here and falls through to the
+        // LWW path below so a metadata-only revision (tags / provenance — outside the content hash
+        // but inside the policy's mutableFields) actually applies. Content-dedup must never shadow
+        // LWW for the same entity.
+        const duplicate: Result<IMemoryRecord<unknown> | undefined> = this._findByContentHash(
+          scope,
+          hash,
+          record.envelope.id
+        );
+        if (duplicate.isFailure()) {
+          return fail(duplicate.message);
+        }
+        if (duplicate.value !== undefined) {
+          // Under `expected`, success means the addressed record was written; a dedup onto another
+          // id is not that, so it is refused rather than reported as a write.
+          return target.expected === undefined
+            ? succeed({ record: duplicate.value, evicted: [] })
+            : succeed(duplicateRefusal(duplicate.value, `memory put '${record.envelope.id}'`));
+        }
       }
-    }
-    return this._readRecord(scope, idStem, record.envelope.kind).thenOnSuccess((existing) => {
       // Same-id re-put is a no-op ONLY when the content hash matches AND the
       // mutable metadata is also unchanged. The content hash covers
       // { kind, body, links }; a matching hash with revised tags/provenance is a
@@ -1022,9 +984,9 @@ export class FileTreeMemoryStore implements IMemoryStore {
       if (
         existing !== undefined &&
         existing.envelope.contentHash === hash &&
-        this._isMutableMetadataUnchanged(existing, record)
+        isMutableMetadataUnchanged(this._hasher, existing, record)
       ) {
-        return Promise.resolve(succeed({ record: existing, evicted: [] }));
+        return succeed({ record: existing, evicted: [] });
       }
       // The admission cohort is the set of records the policy's cap applies to:
       // every record in this scope of this kind EXCEPT the target id. On a first
@@ -1065,9 +1027,11 @@ export class FileTreeMemoryStore implements IMemoryStore {
     policy: IWritePolicy,
     existing: IMemoryRecord<unknown> | undefined,
     decision: AdmissionDecision
-  ): Promise<Result<IPutOutcome>> {
+  ): Promise<Result<IPutOutcome | WriteRefusal>> {
     if (decision.decision === 'reject') {
-      return fail(`memory put: rejected by policy: ${decision.reason}`);
+      return succeed(
+        new WriteRefusal({ code: 'rejected' }, `memory put: rejected by policy: ${decision.reason}`)
+      );
     }
     return this._buildRecord(record, body, existing, policy, hash)
       .onSuccess((built) => succeed(this._stampRank(built)))
@@ -1147,14 +1111,26 @@ export class FileTreeMemoryStore implements IMemoryStore {
     hash: string
   ): Result<IMemoryRecord<string>> {
     const now: number = this._clock();
-    const seq: number = ++this._seq;
-    if (existing === undefined) {
-      return succeed({
-        envelope: { ...incoming.envelope, created: now, updated: now, seq, contentHash: hash },
-        body
-      });
-    }
-    const patch: Record<string, unknown> = this._projectMutablePatch(incoming, policy.mutableFields);
+    return this._seqs.next().onSuccess((seq) => {
+      if (existing === undefined) {
+        return succeed({
+          envelope: { ...incoming.envelope, created: now, updated: now, seq, contentHash: hash },
+          body
+        });
+      }
+      return this._mergeRecord(incoming, existing, policy, now, seq);
+    });
+  }
+
+  /** The update branch of {@link FileTreeMemoryStore._buildRecord}. */
+  private _mergeRecord(
+    incoming: IMemoryRecord<unknown>,
+    existing: IMemoryRecord<unknown>,
+    policy: IWritePolicy,
+    now: number,
+    seq: number
+  ): Result<IMemoryRecord<string>> {
+    const patch: Record<string, unknown> = projectMutablePatch(incoming, policy.mutableFields);
     return policy
       .applyUpdate(existing, patch)
       .withErrorFormat((msg) => `memory put '${incoming.envelope.id}': update failed: ${msg}`)
@@ -1193,22 +1169,36 @@ export class FileTreeMemoryStore implements IMemoryStore {
       .onSuccess(() => succeed(record));
   }
 
-  private async _deleteLocked(kind: Kind, entityId: EntityId): Promise<Result<MemoryId>> {
-    return this._codec(kind).thenOnSuccess((codec) =>
-      codec.encode(entityId).thenOnSuccess((addr) => {
-        if (addr.isVersioned) {
-          if (!isTemporalIdentityCodec(codec)) {
-            return Promise.resolve(
-              fail<MemoryId>(
-                `memory delete '${entityId}': codec for versioned kind '${kind}' does not implement the temporal codec interface`
-              )
-            );
-          }
-          return this._deleteVersioned(entityId, addr.scope, kind);
-        }
-        return this._deleteFlat(entityId, addr.scope, addr.idStem, kind);
-      })
-    );
+  private async _deleteLocked(
+    kind: Kind,
+    entityId: EntityId,
+    expected: number | undefined
+  ): Promise<Result<MemoryId | WriteRefusal>> {
+    const resolved: Result<IIdentityCodecResult> = validateExpectation(
+      expected,
+      `memory delete '${entityId}'`,
+      false
+    )
+      .onSuccess(() => this._codec(kind))
+      .onSuccess((codec) =>
+        codec
+          .encode(entityId)
+          .onSuccess((addr) =>
+            addr.isVersioned && !isTemporalIdentityCodec(codec)
+              ? fail<IIdentityCodecResult>(
+                  `memory delete '${entityId}': codec for versioned kind '${kind}' does not implement the temporal codec interface`
+                )
+              : succeed(addr)
+          )
+      );
+    return classify(resolved, 'invalid').thenOnSuccess((addr) => {
+      if (addr instanceof WriteRefusal) {
+        return Promise.resolve(succeed<MemoryId | WriteRefusal>(addr));
+      }
+      return addr.isVersioned
+        ? this._deleteVersioned(entityId, addr.scope, kind, expected)
+        : this._deleteFlat(entityId, addr.scope, addr.idStem, kind, expected);
+    });
   }
 
   /**
@@ -1220,22 +1210,45 @@ export class FileTreeMemoryStore implements IMemoryStore {
     entityId: EntityId,
     scope: MemoryScopeKey,
     idStem: string,
-    kind: Kind
-  ): Promise<Result<MemoryId>> {
+    kind: Kind,
+    expected: number | undefined
+  ): Promise<Result<MemoryId | WriteRefusal>> {
     return this._readRecord(scope, idStem, kind).thenOnSuccess((existing) => {
-      if (existing === undefined) {
-        return Promise.resolve(fail<MemoryId>(`memory delete '${entityId}': no record found`));
+      const target: IMemoryRecord<unknown> | WriteRefusal = FileTreeMemoryStore._deletable(
+        entityId,
+        existing,
+        expected
+      );
+      if (target instanceof WriteRefusal) {
+        return Promise.resolve(succeed<MemoryId | WriteRefusal>(target));
       }
       // Delete the record file + index entry (authoritative), then prune the
       // vector best-effort: a committed delete must not fail because the
       // derived index could not be pruned.
       return deleteRecordFile(this._root, this._scopes, this._session, scope, idStem)
-        .onSuccess(() => this._index.patch('delete', { scope, record: existing }))
+        .onSuccess(() => this._index.patch('delete', { scope, record: target }))
         .thenOnSuccess(async () => {
-          await this._vectors.removeAll({ scope, id: existing.envelope.id });
-          return succeed(existing.envelope.id);
+          await this._vectors.removeAll({ scope, id: target.envelope.id });
+          return succeed<MemoryId | WriteRefusal>(target.envelope.id);
         });
     });
+  }
+
+  /**
+   * The record a delete acts on, or why it may not: a conflict when `expected` does not match
+   * `current`, a `not-found` when there is nothing to delete.
+   */
+  private static _deletable(
+    entityId: EntityId,
+    current: IMemoryRecord<unknown> | undefined,
+    expected: number | undefined
+  ): IMemoryRecord<unknown> | WriteRefusal {
+    const label: string = `memory delete '${entityId}'`;
+    return (
+      checkExpectation(expected, current, label) ??
+      current ??
+      new WriteRefusal({ code: 'not-found' }, `${label}: no record found`)
+    );
   }
 
   /**
@@ -1302,10 +1315,10 @@ export class FileTreeMemoryStore implements IMemoryStore {
    */
   private async _putVersioned(
     record: IMemoryRecord<unknown>,
-    body: string,
-    codec: ITemporalIdentityCodec,
-    scope: MemoryScopeKey
-  ): Promise<Result<IPutOutcome>> {
+    target: IResolvedPut,
+    codec: ITemporalIdentityCodec
+  ): Promise<Result<IPutOutcome | WriteRefusal>> {
+    const { body, scope } = target;
     const envelope: IMemoryEnvelope = record.envelope;
     const entityId: EntityId = envelope.entityId;
     const kind: Kind = envelope.kind;
@@ -1320,6 +1333,15 @@ export class FileTreeMemoryStore implements IMemoryStore {
     const versions: ReadonlyArray<IMemoryRecord<unknown>> = snapshot.value;
     const priorCurrents: ReadonlyArray<IMemoryRecord<unknown>> = versions.filter(isVersionCurrent);
     const current: IMemoryRecord<unknown> | undefined = selectCurrentVersion(versions);
+    // The precondition compares with the CURRENT version, before entity dedup can answer with it.
+    const refusal: WriteRefusal | undefined = checkExpectation(
+      target.expected,
+      current,
+      `memory put '${entityId}'`
+    );
+    if (refusal !== undefined) {
+      return succeed(refusal);
+    }
     const policy: IWritePolicy = this._policyFor(kind);
     // Same single-owner read as the flat path (see `_writeResolved`).
     const dedupScope: DedupScope = this.dedupScopeFor(kind);
@@ -1335,29 +1357,36 @@ export class FileTreeMemoryStore implements IMemoryStore {
         dedupScope === 'entity' &&
         current !== undefined &&
         current.envelope.contentHash === hash &&
-        this._isMutableMetadataUnchanged(current, record)
+        isMutableMetadataUnchanged(this._hasher, current, record)
       ) {
-        return Promise.resolve(succeed<IPutOutcome>({ record: current, evicted: [] }));
+        return Promise.resolve(succeed<IPutOutcome | WriteRefusal>({ record: current, evicted: [] }));
       }
       // On the versioned path the admission cohort is the entity's ENTIRE version
       // history (no target id to exclude — the new version does not exist yet),
       // which differs from the flat path's "cohort excluding target id" shape.
       return policy.admit(record, versions).thenOnSuccess((decision) => {
         if (decision.decision === 'reject') {
-          return Promise.resolve(fail<IPutOutcome>(`memory put: rejected by policy: ${decision.reason}`));
+          const reason: string = `memory put: rejected by policy: ${decision.reason}`;
+          return Promise.resolve(
+            succeed<IPutOutcome | WriteRefusal>(new WriteRefusal({ code: 'rejected' }, reason))
+          );
         }
         // No culling on the versioned path — history is retained (invalidate-don't-delete).
         const now: number = this._clock();
-        const seq: number = ++this._seq;
         // World-truth start of the new version. Each prior current version's
         // world-truth interval CLOSES at this same instant (not at `now`) so a
         // backdated/future-dated `valid_at` leaves no gap or overlap on the
         // valid-time axis.
         const validAt: number = envelope.temporal?.valid_at ?? now;
-        return codec
-          .encodeVersion(entityId, seq)
-          .withErrorFormat((msg) => `memory put '${entityId}': ${msg}`)
-          .thenOnSuccess((versionStem) =>
+        return this._seqs
+          .next()
+          .onSuccess((seq) =>
+            codec
+              .encodeVersion(entityId, seq)
+              .withErrorFormat((msg) => `memory put '${entityId}': ${msg}`)
+              .onSuccess((versionStem) => succeed({ seq, versionStem }))
+          )
+          .thenOnSuccess(({ seq, versionStem }) =>
             this._buildVersionedRecord(record, body, current, policy, hash, versionStem, validAt, now, seq)
               .onSuccess((built) => succeed(this._stampRank(built)))
               .thenOnSuccess((built) => this._vectors.embedOnWrite(built, scope))
@@ -1379,7 +1408,7 @@ export class FileTreeMemoryStore implements IMemoryStore {
               // Post-commit and best-effort, exactly as on the flat path.
               .thenOnSuccess(async ({ persisted, stale, embed }) => {
                 await this._vectors.pruneStaleVector(stale);
-                return succeed({ record: persisted, evicted: [], embed });
+                return succeed<IPutOutcome | WriteRefusal>({ record: persisted, evicted: [], embed });
               })
           );
       });
@@ -1444,7 +1473,7 @@ export class FileTreeMemoryStore implements IMemoryStore {
       };
       return succeed({ envelope, body });
     }
-    const patch: Record<string, unknown> = this._projectMutablePatch(incoming, policy.mutableFields);
+    const patch: Record<string, unknown> = projectMutablePatch(incoming, policy.mutableFields);
     return policy
       .applyUpdate(current, patch)
       .withErrorFormat((msg) => `memory put '${incoming.envelope.entityId}': update failed: ${msg}`)
@@ -1517,8 +1546,9 @@ export class FileTreeMemoryStore implements IMemoryStore {
   private async _deleteVersioned(
     entityId: EntityId,
     scope: MemoryScopeKey,
-    kind: Kind
-  ): Promise<Result<MemoryId>> {
+    kind: Kind,
+    expected: number | undefined
+  ): Promise<Result<MemoryId | WriteRefusal>> {
     const snapshot: Result<ReadonlyArray<IMemoryRecord<unknown>>> = this._versionsForEntity(scope, kind);
     if (snapshot.isFailure()) {
       return fail(snapshot.message);
@@ -1526,15 +1556,22 @@ export class FileTreeMemoryStore implements IMemoryStore {
     const versions: ReadonlyArray<IMemoryRecord<unknown>> = snapshot.value;
     const currents: ReadonlyArray<IMemoryRecord<unknown>> = versions.filter(isVersionCurrent);
     const current: IMemoryRecord<unknown> | undefined = selectCurrentVersion(versions);
-    if (current === undefined) {
-      return fail(`memory delete '${entityId}': no record found`);
+    const target: IMemoryRecord<unknown> | WriteRefusal = FileTreeMemoryStore._deletable(
+      entityId,
+      current,
+      expected
+    );
+    if (target instanceof WriteRefusal) {
+      return succeed(target);
     }
     // A delete closes the world-truth interval at the delete instant (`now` for both
     // the transaction stamp and the `invalid_at` boundary). Every still-current
     // version is invalidated (self-heals a stuck two-current state — P2-7); the
     // highest-`seq` current's id is returned.
     const now: number = this._clock();
-    return this._invalidateCurrents(scope, currents, now, now).onSuccess(() => succeed(current.envelope.id));
+    return this._invalidateCurrents(scope, currents, now, now).onSuccess(() =>
+      succeed<MemoryId | WriteRefusal>(target.envelope.id)
+    );
   }
 
   /** Evict (physically delete) a single record file by id, patching the index. */
@@ -1547,25 +1584,6 @@ export class FileTreeMemoryStore implements IMemoryStore {
         .onSuccess(() => this._index.patch('delete', { scope, record: existing }))
         .onSuccess(() => succeed(id));
     });
-  }
-
-  /** Project the incoming record's mutable fields into a merge-patch. */
-  private _projectMutablePatch(
-    record: IMemoryRecord<unknown>,
-    mutableFields: ReadonlyArray<string>
-  ): Record<string, unknown> {
-    const patch: Record<string, unknown> = {};
-    for (const field of mutableFields) {
-      const accessor: ((record: IMemoryRecord<unknown>) => unknown) | undefined =
-        FileTreeMemoryStore._mutableFieldAccessors.get(field);
-      if (accessor !== undefined) {
-        const value: unknown = accessor(record);
-        if (value !== undefined) {
-          patch[field] = value;
-        }
-      }
-    }
-    return patch;
   }
 
   /**
@@ -1613,31 +1631,6 @@ export class FileTreeMemoryStore implements IMemoryStore {
           entry.scope === scope && entry.envelope.contentHash === hash && entry.envelope.id !== excludeId
       );
     return match === undefined ? succeed(undefined) : this._resolveRequired(match);
-  }
-
-  /**
-   * True when `incoming`'s caller-authored mutable metadata (`tags` / `provenance`)
-   * canonically equals `existing`'s. `body` and `links` are covered by the content
-   * hash; `embeddingRef` is store-derived (not caller metadata) and is deliberately
-   * excluded so a same-content re-put is not treated as changed merely because the
-   * store already stamped an embedding. Used to keep an identical re-put a no-op
-   * without swallowing a genuine metadata revision.
-   *
-   * Canonicalization never fails for a validated record (`tags`/`provenance` are
-   * always plain JSON); a failure is defaulted to a non-matching sentinel so the
-   * write flows to `applyUpdate` (which re-validates) rather than silently
-   * no-op-ing on an un-canonicalizable value.
-   */
-  private _isMutableMetadataUnchanged(
-    existing: IMemoryRecord<unknown>,
-    incoming: IMemoryRecord<unknown>
-  ): boolean {
-    const key = (record: IMemoryRecord<unknown>): string =>
-      this._hasher
-        .canonicalize({ tags: record.envelope.tags, provenance: record.envelope.provenance })
-        .orDefault('');
-    const existingKey: string = key(existing);
-    return existingKey !== '' && existingKey === key(incoming);
   }
 
   private _contentHash(kind: Kind, body: string, links: IMemoryEnvelope['links']): Result<string> {
@@ -1888,7 +1881,9 @@ export class FileTreeMemoryStore implements IMemoryStore {
 
   /**
    * Walk the FileTree once and rebuild the index. Also resumes the `seq`
-   * counter past the highest persisted `seq` so new writes stay monotonic.
+   * allocator past the highest persisted `seq` — and past the persisted
+   * high-water mark, which `SeqHighWater` already holds — so a `seq` is never
+   * re-issued.
    *
    * In `'skip'` mode each per-record failure is captured structurally on
    * `this._skippedRecords` (path + scope + path-tagged error) at its failure
@@ -1898,9 +1893,7 @@ export class FileTreeMemoryStore implements IMemoryStore {
     return this._collectEntries(this._root, [], onRecordError).onSuccess((entries) =>
       this._index.rebuild(entries).onSuccess(() => {
         for (const entry of entries) {
-          if (entry.envelope.seq > this._seq) {
-            this._seq = entry.envelope.seq;
-          }
+          this._seqs.observe(entry.envelope.seq);
         }
         return succeed(true);
       })

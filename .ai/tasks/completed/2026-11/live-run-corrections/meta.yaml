@@ -1,0 +1,46 @@
+id: live-run-corrections
+status: shipped
+packages: ['@fgv/ts-extras', '@fgv/testbed']
+prs: [771]
+openPrs: []
+opened: 2026-11-10
+closed: 2026-11-10
+summary:
+  intended: >
+    Act on the 2026-11-10 keyed run: take gemini-3.8-flash off Gemini thinkingRequiredModelPrefixes
+    (budget 0 returned no thoughtsTokenCount), keeping flash-lite and its thinkingLevel lift
+    condition; declare samplingParamsAcceptedTemperature 1 on OpenAI so temperature 1 reaches
+    gpt-6.1-sol and gpt-6-astra with or without effort, data-driven, with Anthropic's refusal
+    wording for other values; replace the testbed's OBSERVED raw rows with typed temp=1 and
+    temp=1+effort=low rows; update docs and resolve final-model-fixes F3, Q1 and the OBSERVED
+    follow-up.
+  shipped: >
+    The two registry changes, with the evidence quoted at each declaration and the dash-bounded side
+    effect stated. The OpenAI Responses streaming adapter now keeps the accepted default beside an
+    effort, threaded from temperatureAcceptedWithThinking like the Anthropic adapter. Testbed rows
+    replaced; the 3.8-flash raw-none skip rule removed; the OBSERVED mechanism kept with its own test.
+    The pending final-model-fixes change file was corrected so the published CHANGELOG never claims
+    the 3.8-flash listing.
+  diverged: >
+    The brief named only a registry value for OpenAI; the client-tool and streaming-with-tools paths
+    also needed the Responses adapter to stop dropping temperature 1 beside an effort, so one internal
+    argument was threaded there. The earlier stream's pending change file was edited rather than only
+    countered, since it had not been published.
+  sourceLine: "**Shipped:** `gemini-3.8-flash` is no longer thinking-required, so a generic `'none'` on the Gemini base tier sends `thinkingBudget: 0` again; and OpenAI's `gpt-6.1-sol` and `gpt-6-astra` accept `temperature: 1` with or without an effort, while every other value is still refused before the wire."
+  headline: >
+    ai-assist sends temperature 1 to GPT-6.1 Sol and GPT-6 Astra, with or without reasoning effort,
+    and still refuses any other value before the wire.
+keywords:
+  - live run correction
+  - samplingParamsAcceptedTemperature
+  - default temperature
+  - thinkingRequiredModelPrefixes
+  - thinkingBudget 0
+  - thoughtsTokenCount
+  - descriptor-wide value
+  - Responses adapter temperature
+  - report-only probe retired
+relatedStreams:
+  - { id: final-model-fixes, relationship: 'answers its F3, Q1 and OBSERVED follow-ups' }
+  - { id: testbed-model-probes, relationship: 'updates its OpenAI temperature and Gemini thinking rows' }
+sourceHash: sha256:1e850f47cb2b3836 # over brief.md + state.md + result.md

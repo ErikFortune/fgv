@@ -17,10 +17,10 @@
   "author": "Erik Fortune",
   "license": "MIT",
   "devDependencies": {
-    "typedoc": "~0.28.16",
-    "typedoc-plugin-markdown": "~4.9.0",
+    "typedoc": "~0.28.20",
+    "typedoc-plugin-markdown": "~4.14.1",
     "typescript": "5.9.3",
-    "@types/node": "^20.14.9"
+    "@types/node": "^22.20.5"
   },
   "peerDependencies": {
     "typedoc": ">=0.28.0",

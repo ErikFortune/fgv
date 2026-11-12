@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-json-base",
+      "comment": "FsFileTreeAccessors and FileTree.forFilesystem accept IFsFileTreeInitParams with an absolutePathPolicy ('unconfined', the default and unchanged behaviour; 'confined', which maps a path outside the prefix beneath it; 'verified', which fails any operation outside the prefix) and realPath (refuse a symbolic link that leads outside, on by default under 'verified'), applied to every read, listing, stat and write; asking for either without a prefix fails creation; adds FsFileTreeAccessors.create, FsAbsolutePathPolicy and allFsAbsolutePathPolicies, and corrects the prefix documentation",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-json-base"
+}

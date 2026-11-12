@@ -79,10 +79,23 @@ export interface IStopConditions {
  */
 export const MAX_DEADLINE_MS: number = 2147483647;
 
-const defaultSchedule: ScheduleTimer = (fn, ms) => {
+/**
+ * The platform timer: `setTimeout`, cancelled by `clearTimeout`.
+ * @internal
+ */
+export const defaultSchedule: ScheduleTimer = (fn, ms) => {
   const handle = setTimeout(fn, ms);
   return () => clearTimeout(handle);
 };
+
+/**
+ * Whether `ms` is a delay a platform timer honours: a finite integer in `0 ≤ ms ≤ MAX_DEADLINE_MS`.
+ * The one rule every timed wait in this packlet applies before it schedules anything.
+ * @internal
+ */
+export function isTimerDelay(ms: number): boolean {
+  return Number.isInteger(ms) && ms >= 0 && ms <= MAX_DEADLINE_MS;
+}
 
 /**
  * Runs `work` under an optional deadline and an optional caller signal, and settles with whichever
@@ -120,10 +133,7 @@ export function raceStopConditions<T>(
   conditions: IStopConditions
 ): AsyncDetailedResult<T, StopDetail> {
   const { deadlineMs, signal, schedule = defaultSchedule } = conditions;
-  if (
-    deadlineMs !== undefined &&
-    !(Number.isInteger(deadlineMs) && deadlineMs >= 0 && deadlineMs <= MAX_DEADLINE_MS)
-  ) {
+  if (deadlineMs !== undefined && !isTimerDelay(deadlineMs)) {
     return AsyncDetailedResult.fromDetailed(
       failWithDetail<T, StopDetail>(
         `raceStopConditions: deadlineMs must be an integer in [0, ${MAX_DEADLINE_MS}] (got ${deadlineMs})`,

@@ -35,21 +35,21 @@
     "@fgv/ts-extras": "workspace:*",
     "@fgv/ts-json": "workspace:*",
     "@fgv/ts-json-base": "workspace:*",
-    "commander": "^11.0.0"
+    "commander": "^11.1.0"
   },
   "devDependencies": {
     "@fgv/ts-utils-jest": "workspace:*",
     "@rushstack/heft": "1.3.0",
     "@rushstack/heft-node-rig": "2.11.50",
-    "@rushstack/eslint-config": "4.6.4",
+    "@rushstack/eslint-config": "4.7.0",
     "@types/heft-jest": "1.0.6",
     "@types/jest": "^30.0.0",
-    "@types/node": "^20.14.9",
-    "@typescript-eslint/eslint-plugin": "^8.52.0",
-    "@typescript-eslint/parser": "^8.52.0",
-    "eslint": "^9.39.2",
+    "@types/node": "^22.20.5",
+    "@typescript-eslint/eslint-plugin": "^8.72.1",
+    "@typescript-eslint/parser": "^8.72.1",
+    "eslint": "^9.39.5",
     "jest": "^30.5.2",
-    "ts-jest": "^29.4.12",
+    "ts-jest": "^29.4.15",
     "typescript": "5.9.3",
     "@rushstack/heft-jest-plugin": "2.0.17"
   },

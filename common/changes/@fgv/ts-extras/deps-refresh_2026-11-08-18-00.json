@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras",
+      "comment": "dependency refresh: js-yaml ~4.1.1 → ~4.3.2 (fixes GHSA-h67p-54hq-rp68, GHSA-52cp-r559-cp3m, GHSA-5p4m-2wfm-xmqj, GHSA-2883-xcg3-v3hh — quadratic-CPU merge-key / !!omap handling); papaparse ^5.7.0, fflate ~0.8.3, @types/luxon ^3.7.6. Dev dependencies: minor/patch within the current major, and @types/node 20 → 22.x to match the supported Node range.",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@fgv/ts-extras",
+  "email": "noreply@anthropic.com"
+}

@@ -42,21 +42,21 @@
     "@fgv/ts-json-base": "workspace:*",
     "@fgv/ts-utils": "workspace:*",
     "clipboardy": "^3.0.0",
-    "commander": "^11.0.0"
+    "commander": "^11.1.0"
   },
   "devDependencies": {
     "@fgv/ts-utils-jest": "workspace:*",
-    "@rushstack/eslint-config": "4.6.4",
+    "@rushstack/eslint-config": "4.7.0",
     "@rushstack/heft": "1.3.0",
     "@rushstack/heft-node-rig": "2.11.50",
     "@rushstack/heft-jest-plugin": "2.0.17",
     "@types/jest": "^30.0.0",
-    "@types/node": "^20.14.9",
-    "eslint": "^9.39.2",
+    "@types/node": "^22.20.5",
+    "eslint": "^9.39.5",
     "jest": "^30.5.2",
     "typescript": "5.9.3",
     "@types/heft-jest": "1.0.6",
-    "ts-jest": "^29.4.12"
+    "ts-jest": "^29.4.15"
   },
   "repository": {
     "type": "git",

@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-res-cli",
+      "comment": "Tests only: the CLI test that compiles the same input twice has a timeout sized to its two spawns.",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-res-cli",
+  "email": "noreply@anthropic.com"
+}

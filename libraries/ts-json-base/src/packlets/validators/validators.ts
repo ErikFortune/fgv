@@ -20,8 +20,9 @@
  * SOFTWARE.
  */
 
-import { Failure, Validation, Validator, fail } from '@fgv/ts-utils';
+import { Failure, Validation, Validator, fail, formatValueForMessage } from '@fgv/ts-utils';
 import { JsonArray, JsonObject, JsonPrimitive, JsonValue, isJsonArray, isJsonObject } from '../json';
+import { activePath } from './activePath';
 
 /* eslint-disable @typescript-eslint/no-use-before-define */
 
@@ -61,7 +62,7 @@ export const jsonPrimitive: Validator<JsonPrimitive, IJsonValidatorContext> =
       if (from === undefined && ctx?.ignoreUndefinedProperties === true) {
         return true;
       }
-      return fail(`"${String(from)}": invalid JSON primitive.`);
+      return fail(`"${formatValueForMessage(from, { style: 'string' })}": invalid JSON primitive.`);
     }
   });
 
@@ -81,17 +82,21 @@ export const jsonObject: Validator<JsonObject, IJsonValidatorContext> = new Vali
     if (!isJsonObject(from)) {
       return fail('invalid JSON object.');
     }
-    const errors: string[] = [];
-    for (const [name, value] of Object.entries(from)) {
-      jsonValue.validate(value, ctx).onFailure((m) => {
-        errors.push(`${name}: ${m}`);
-        return fail(m);
-      });
-    }
-    if (errors.length > 0) {
-      return fail(`invalid JSON object:\n${errors.join('\n')}`);
-    }
-    return true;
+    return activePath.container<boolean | Failure<JsonObject>>(from, fail, () => {
+      const errors: string[] = [];
+      for (const [name, value] of Object.entries(from)) {
+        activePath
+          .member(name, () => jsonValue.validate(value, ctx))
+          .onFailure((m) => {
+            errors.push(`${name}: ${m}`);
+            return fail(m);
+          });
+      }
+      if (errors.length > 0) {
+        return fail(`invalid JSON object:\n${errors.join('\n')}`);
+      }
+      return true;
+    });
   }
 });
 
@@ -111,18 +116,22 @@ export const jsonArray: Validator<JsonArray, IJsonValidatorContext> = new Valida
     if (!isJsonArray(from)) {
       return fail('not an array');
     }
-    const errors: string[] = [];
-    for (let i = 0; i < from.length; i++) {
-      const value = from[i];
-      jsonValue.validate(value, ctx).onFailure((m) => {
-        errors.push(`${i}: ${m}`);
-        return fail(m);
-      });
-    }
-    if (errors.length > 0) {
-      return fail(`array contains non-json elements:\n${errors.join('\n')}`);
-    }
-    return true;
+    return activePath.container<boolean | Failure<JsonArray>>(from, fail, () => {
+      const errors: string[] = [];
+      for (let i = 0; i < from.length; i++) {
+        const value = from[i];
+        activePath
+          .member(i, () => jsonValue.validate(value, ctx))
+          .onFailure((m) => {
+            errors.push(`${i}: ${m}`);
+            return fail(m);
+          });
+      }
+      if (errors.length > 0) {
+        return fail(`array contains non-json elements:\n${errors.join('\n')}`);
+      }
+      return true;
+    });
   }
 });
 
@@ -187,7 +196,9 @@ export const boolean: Validator<boolean, IJsonValidatorContext> =
 export function literal<T>(value: T): Validator<T, IJsonValidatorContext> {
   return new Validation.Base.GenericValidator<T, IJsonValidatorContext>({
     validator: (from: unknown): boolean | Failure<T> => {
-      return from === value ? true : fail(`Expected literal ${String(value)}, found ${JSON.stringify(from)}`);
+      return from === value
+        ? true
+        : fail(`Expected literal ${String(value)}, found ${formatValueForMessage(from)}`);
     }
   });
 }
@@ -217,7 +228,7 @@ export function enumeratedValue<T>(
       if (index >= 0) {
         return true;
       }
-      return fail(message ?? `Invalid enumerated value ${JSON.stringify(from)}`);
+      return fail(message ?? `Invalid enumerated value ${formatValueForMessage(from)}`);
     }
   });
 }

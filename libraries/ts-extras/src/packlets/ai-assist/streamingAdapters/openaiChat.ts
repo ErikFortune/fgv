@@ -239,10 +239,11 @@ export async function callOpenAiChatStream(
     body.reasoning_effort = effort;
   }
   // Temperature is sent only when the caller explicitly provided one; omitting it lets the
-  // provider apply its own default (current-gen models reject a caller-supplied default). This
+  // provider apply its own default (many current-gen models reject a non-default value). This
   // adapter is reached only via the conflict-guarded streaming entry point — the client-tool path
   // routes OpenAI through the Responses adapter, not chat — so, like callOpenAiCompletion, no
-  // effort gate is needed: temperature is present here only when the effort is undefined/'none'.
+  // effort gate is needed: beside an effort other than 'none', the only temperature present here
+  // is a model's accepted default (samplingParamsAcceptedTemperature).
   if (temperature !== undefined) {
     body.temperature = temperature;
   }

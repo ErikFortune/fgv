@@ -35,6 +35,7 @@ export {
   type IAiEmbeddingUsage,
   type IAiEmbeddingResult,
   type IAiImageModelCapability,
+  type IAiMaxOutputTokensCapability,
   type IAiProviderDescriptor,
   type IAiAssistProviderConfig,
   type IAiAssistSettings,
@@ -77,8 +78,6 @@ export {
   type ModelSpecKey,
   type IModelSpecMap,
   allModelSpecKeys,
-  MODEL_SPEC_BASE_KEY,
-  resolveModel,
   type IModelAliasMap,
   MODEL_ALIAS_SIGIL,
   resolveModelAlias,
@@ -87,6 +86,7 @@ export {
   isAdaptiveThinkingModel,
   isThinkingRequiredModel,
   usesMaxCompletionTokensField,
+  type ChatOutputTokensField,
   toDataUrl,
   type IThinkingConfig,
   type IThinkingProviderConfig,
@@ -97,13 +97,30 @@ export {
   type IOtherThinkingOptions,
   type IAnthropicThinkingConfig,
   type IOpenAiThinkingConfig,
-  type IGeminiThinkingConfig,
   type IXAiThinkingConfig,
   type AnthropicThinkingModelNames,
   type OpenAiThinkingModelNames,
   type GeminiThinkingModelNames,
   type XAiThinkingModelNames
 } from './model';
+export { MODEL_SPEC_BASE_KEY, resolveModel } from './modelSpecResolver';
+
+export {
+  type AnthropicThinkingOffType,
+  type IAnthropicThinkingOffRule,
+  resolveAnthropicThinkingOffType
+} from './anthropicThinkingOff';
+
+export {
+  type GeminiThinkingLevel,
+  type IGeminiThinkingConfig,
+  type IGeminiThinkingLevelRule,
+  allGeminiThinkingLevels,
+  rejectsGeminiThinkingLevel,
+  resolveGeminiThinkingLevels
+} from './geminiThinking';
+
+export { rejectsSamplingParams, rejectsSamplingParamsWithThinking } from './samplingParams';
 
 export {
   type IResolvedImageOptions,
@@ -121,6 +138,7 @@ export {
   supportsEmbedding,
   resolveStructuredOutputCapability,
   supportsStructuredOutput,
+  resolveMaxOutputTokens,
   DEFAULT_MODEL_CAPABILITY_CONFIG
 } from './registry';
 
@@ -180,7 +198,8 @@ export {
   aiAssistProviderConfig,
   aiAssistSettings,
   modelSpecKey,
-  modelSpec
+  modelSpec,
+  geminiThinkingLevel
 } from './converters';
 
 export {

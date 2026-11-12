@@ -89,8 +89,15 @@
    * PNPM documentation: https://pnpm.io/package_json#pnpmoverrides
    */
   "globalOverrides": {
-    // "example1": "^1.0.0",
-    // "example2": "npm:@company/example2@^1.0.0"
+    // GHSA-5c6j-r48x-rmvq (high), GHSA-qj8w-gfj5-8c6v (moderate), GHSA-m5mm-p8h7-m29v (low):
+    // @rushstack/heft-web-rig pins css-minimizer-webpack-plugin ~3.4.1, which ranges
+    // serialize-javascript ^6 and has no fixed release in its line. 7.x keeps the same CJS
+    // default-export API; its only break is Node >=20.
+    "css-minimizer-webpack-plugin>serialize-javascript": "^7.1.4",
+    // GHSA-w5hq-g745-h8pq (moderate): sockjs (latest 0.3.24, via webpack-dev-server 5.x)
+    // ranges uuid ^8.3.2 and has no fixed release. It only calls uuid.v4(), which uuid 11
+    // exports unchanged from its CommonJS entry.
+    "sockjs>uuid": "^11.1.1"
   },
 
   /**
