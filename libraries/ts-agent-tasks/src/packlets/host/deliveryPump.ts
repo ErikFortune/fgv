@@ -326,7 +326,9 @@ export class TaskDeliveryPump {
    * Ends a prepared delivery's obligations without acknowledging them, recording `reason` in the
    * subscription's history — the receipt released first, since the broker refuses to dispose of
    * what an issued receipt names; then, for a terminal revision, the task's older owed revisions
-   * disposed of too.
+   * disposed of too. The disposal is made through the pump's own binding, which is a drain
+   * principal of the subscription — the rule `TaskBroker.dispose` applies — so it fails, like every
+   * other pump operation, once the host removes that principal.
    *
    * @remarks
    * Fails, with nothing disposed, when `prepared` is not an object this pump handed out, or the

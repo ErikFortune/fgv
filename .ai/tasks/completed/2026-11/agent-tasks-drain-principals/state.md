@@ -85,6 +85,57 @@ Worker-owned. Brief is frozen; refinements and their reasons are recorded here.
 - P3: `_stillDrains` reads the descriptor outside the writer — deliberate for `pending`, which is a
   read and takes no writer slot; its last check sits after its last await.
 
+## Independent review — findings and what changed
+
+The orchestrator's gate-time review returned two P2s and four P3s, each decided by the orchestrator.
+
+- **P2-1 — `bindDelivery` was an existence oracle.** It read the subscription before deciding the
+  binding, so a malformed binding (bad principal key, bad scopes, creation scopes outside the
+  selectors, a throwing or multi-line `policyIdentity`) answered `invalid` only when the
+  subscription existed. Now `_access(params)` is decided first; existence, consumer and drain
+  membership are decided together after it, with the one `denied()`. `TaskDeliveryPump.create` goes
+  through `bindDelivery`, so it inherits the order. `setSubscriptionDrain`, `dispose` and
+  `closeSubscription` already decided the binding (`TaskBroker._access`) and converted the request
+  before reading the subscription — no change needed; within them every refusal after the read is
+  the same not-found-or-denied.
+- **P2-2 — `dispose` / `closeSubscription({ obligations: 'dispose' })` let any covering binding end
+  another consumer's obligations.** Both now require the binding's principal to be one of the
+  subscription's drain principals, refused with the missing-subscription answer *before* any task is
+  put to the policy, and re-decided inside the writer on the record the write is conditioned on
+  (`drainPrincipalsOf(record)`, so a legacy record means its registrant). **Plain
+  `closeSubscription({ obligations: 'retain' })`: the registrant or a drain principal.** Reason:
+  closing ends nothing owed — what is owed stays owed and drainable — but it does stop the
+  subscription joining future audiences, which silences the consumer's feed; so a binding unrelated
+  to the subscription must not be able to do it, while the principal that created it may undo its
+  own act. Consequence, documented: a host that registered on an agent's behalf and must dispose
+  names itself among the drain principals first. The pump's own `dispose` path goes through its own
+  binding, which is a drain principal by construction (pump tests unchanged and green). Two
+  `lifetime.test.ts` sites closed alice's subscriptions through an unrelated `host` binding; they now
+  use the registrant's binding.
+- **P3-1 — legacy registrations always conflicted on retry.** `_sameIdentity` and `_replay` now
+  compare through `_resolvedDrain` (absent reads as `[registrant]`, the `drainPrincipalsOf` rule) on
+  both sides.
+- **P3-2 — retry after `setSubscriptionDrain` is `conflict`.** Kept; stated in the `subscribe` and
+  `setSubscriptionDrain` TSDoc, on `ISubscriptionDrainRequest`, and as a recovery paragraph in
+  `CAPABILITIES.md`.
+- **P3-3 — `setSubscriptionDrain`'s stacked `isFailure` returns and `record.value!`.** Rewritten as
+  one chain (`epoch → descriptor → owner decision → gated read → epoch fence → write → descriptor`);
+  a record or descriptor that reads back missing is the not-found answer rather than an assertion.
+  **Sibling sweep** over code this stream added: `pending`'s two added drain checks were stacked
+  early returns — the entry check now chains into a private `_pendingPage`, the final check chains
+  the result; `_stillDrains` dropped its `found!`; `bindDelivery` (P2-1) and disposition's
+  `_subscription` are single chains. Not touched: `!`/`isFailure` sequences that predate this stream
+  (`_disposeWithheldOnce`, `prepare`, `_recordIn`), where this stream only added a check.
+- **P3-4 — cap before de-duplication.** The request converter now de-duplicates, then requires 1 to
+  `maxDrainPrincipals` distinct principals; the raw entries read are bounded at four times the cap
+  so a repetitive list cannot cost unbounded conversion work.
+- **Extra revert rows** for the stored list's strict-ascending rule and for a throwing
+  `policyIdentity` at binding.
+
+Revert-matrix script fix: its compile-error detector only matched `error TS…`, while Heft prints
+`(TS2367)`; a row that failed to compile read as "0 red". It now matches both (found when R28's first
+form narrowed a literal union and stopped compiling).
+
 ## Open questions
 
 - **A receipt a removed principal prepared** stays issued and may be acknowledged by a principal

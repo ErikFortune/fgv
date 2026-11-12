@@ -503,7 +503,11 @@ pressure, not cleanup — ends one. Both land in the subscription's exact histor
 (`ITaskConsumerRecord.acknowledged` / `.disposed`), which is retained for the record's life.
 
 - **`TaskBroker.dispose(binding, { subscriptionId, updateIds, reason })`** — a trusted host
-  operation; `binding`'s policy must also allow `dispose-obligation` on every task the ids name.
+  operation through a binding whose principal is one of the subscription's **drain principals** (the
+  consumer the obligations are owed to — one consumer's binding never ends another's); its policy
+  must also allow `dispose-obligation` on every task the ids name. Anyone else gets
+  `not-found-or-denied`, the missing-subscription answer, before any task is put to the policy; the
+  drain rule is decided again in the writing section, on the record written.
   Every id must be owed now (or already discharged — reported, not rewritten); an id an
   unacknowledged issued receipt names is refused until that receipt is acknowledged or abandoned.
   The reason is bounded by the profile's `maxDispositionReasonBytes`. It converts the evidence slot
@@ -512,8 +516,11 @@ pressure, not cleanup — ends one. Both land in the subscription's exact histor
   subscription joins no audience again and releases its future-update reservation. `retain` keeps
   what it is owed, drainable through its bound delivery (a closed subscription's `prepare`
   presents only what it is still owed); `dispose` abandons its unacknowledged receipts and disposes
-  everything it is owed, with `reason`. Its record, identity slot and history are retained; its id
-  is never reused. Once a closed subscription owes nothing it releases its 64 KiB preparation.
+  everything it is owed, with `reason`. `dispose` takes a drain principal's binding, as `dispose`
+  does; `retain` takes a drain principal's or the registering principal's, since it ends nothing
+  owed. Anyone else is `not-found-or-denied`, decided again in the writing section. A host that
+  registered on an agent's behalf and must dispose names itself among the drain principals first.
+  Its record, identity slot and history are retained; its id is never reused. Once a closed subscription owes nothing it releases its 64 KiB preparation.
 - **`TaskBroker.abandonCommand(binding, { taskId, operationId, reason })`** — ends tracking of an
   external command whose outcome is not known (never sent, sent-and-held, or awaiting a
   `source-replay` feed revision). The receipt becomes `{ state: 'abandoned', reason, from }`: it
@@ -832,11 +839,12 @@ writer before anything is written. An id an unexpired, unacknowledged receipt na
 
 **Only a subscription's drain principals may bind its delivery.** A binding **drains** the
 subscription — what it acknowledges is no longer owed to that `consumerId` — so `subscribe` records
-who may: `drainPrincipals` (non-empty, at most `maxDrainPrincipals`, de-duplicated and stored
-ascending), by default the registering principal alone. A host that subscribes on an agent's behalf
+who may: `drainPrincipals` (de-duplicated, then non-empty and at most `maxDrainPrincipals` distinct;
+stored ascending), by default the registering principal alone. The same principals may `dispose` of
+what it is owed (see *Retention*). A host that subscribes on an agent's behalf
 names the agent; the registrant is not added implicitly. `bindDelivery` refuses anyone else with
 `not-found-or-denied` — the answer a missing subscription or a wrong `consumerId` gets, so it
-discloses nothing — and so does `TaskDeliveryPump.create`. Every bound-delivery operation (`pending`,
+discloses nothing; a malformed binding is `invalid` whether or not the subscription exists — and so does `TaskDeliveryPump.create`. Every bound-delivery operation (`pending`,
 `prepare`, `acknowledge`, `abandon`, `issued`, `disposeWithheld`) applies the rule again to the
 subscription as it stands, so a principal removed after binding is refused from then on; a receipt it
 prepared stays issued until a principal still named acknowledges or abandons it, or it expires.
@@ -846,11 +854,16 @@ Disclosure and acknowledgement are still decided under the binding's own authori
 replaces the drain principals and the recorded policy identity (an omitted identity removes it) — a
 trusted host operation through the **registering** principal's binding, whose selectors cover the
 selection and whose policy grants `subscribe` for it; anything else is `not-found-or-denied`. Active
-or closed; a request that changes nothing writes nothing. `subscribe` is not an update path: a retry
-must repeat the drain authority exactly, and a retry of the original registration after a change is
-`conflict`. A subscription recorded before drain principals existed is drained by its registrant
-alone (`drainPrincipalsOf(record)`; `ITaskSubscription.drainPrincipals` reports the rule applied),
-until `setSubscriptionDrain` gives it a list.
+or closed; a request that changes nothing writes nothing. A subscription recorded before drain
+principals existed is drained by its registrant alone (`drainPrincipalsOf(record)`;
+`ITaskSubscription.drainPrincipals` reports the rule applied), until `setSubscriptionDrain` gives it
+a list; a retry of its original `subscribe` — which now names the registrant — still replays.
+
+**Recovery: `subscribe` is not an update path.** A retry is compared with the subscription as it
+stands, so after `setSubscriptionDrain` a retry of the original registration is `conflict`. A host
+that re-runs `subscribe` at boot makes every drain change through `setSubscriptionDrain` alone, and
+on `conflict` either retries with the current list and identity or reads the subscription
+(`repository.subscription(id)`) and carries on from what it holds.
 
 **`DeferredObligations.create({ broker, principal, authorization, scope, idPrefix, roles, codes?,
 namespaces?, schedule?, operationBudget?, guard? })`** — a durable retry obligation is a

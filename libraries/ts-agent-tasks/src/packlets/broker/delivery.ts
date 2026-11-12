@@ -313,56 +313,75 @@ export async function setSubscriptionDrain(
     return taskFailure(`setSubscriptionDrain: ${converted.message}`, 'invalid', 'after-host-action');
   }
   const req: ISubscriptionDrainRequest = converted.value;
-  const epoch: TaskResult<string> = access.epoch();
-  if (epoch.isFailure()) {
-    return propagate(epoch);
-  }
-  const subscription: TaskResult<ITaskSubscription | undefined> = core.repository.subscription(
-    req.subscriptionId
-  );
-  if (subscription.isFailure()) {
-    return propagate(subscription);
-  }
-  // Only the subscription's owner re-delegates its drain: the registering principal, with selectors
-  // covering the selection, whose policy grants `subscribe` for it — what registering it required.
-  // The registrant and the selection never change, so this decision holds for the record the write
-  // is conditioned on; the policy is fenced by its epoch, checked after the section's last await.
-  const found: ITaskSubscription | undefined = subscription.value;
-  if (
-    found === undefined ||
-    found.principalKey !== access.principal ||
-    !found.selection.scopes.every((scope) => access.selects(scope)) ||
-    !(await access.allows({ action: 'subscribe', role: 'subject', scopes: found.selection.scopes }))
-  ) {
-    return taskFailure(
+  const denied = <T>(): TaskResult<T> =>
+    taskFailure<T>(
       `setSubscriptionDrain ${req.subscriptionId}: not permitted`,
       'not-found-or-denied',
       'after-host-action'
     );
-  }
-  return core.gated(async (writer) => {
-    const record: TaskResult<ITaskConsumerRecord | undefined> = await writer.readSubscription(
-      req.subscriptionId
+  return access
+    .epoch()
+    .thenOnSuccess((epoch) =>
+      core.repository
+        .subscription(req.subscriptionId)
+        .thenOnSuccess(async (found) =>
+          found !== undefined && (await _ownsDrain(access, found))
+            ? _writeDrain(core, access, req, epoch, denied)
+            : denied<ITaskSubscription>()
+        )
     );
-    if (record.isFailure()) {
-      return propagate<ITaskSubscription>(record);
-    }
-    if (!access.epochIs(epoch.value)) {
-      return changedSinceAuthorized<ITaskSubscription>(
-        `setSubscriptionDrain ${req.subscriptionId}: the policy`
-      );
-    }
-    // Bound to a retained subscription; records are never removed.
-    const changed: TaskResult<ITaskConsumerRecord> = await writer.setSubscriptionDrain({
-      subscriptionId: req.subscriptionId,
-      expectedRecordRevision: record.value!.recordRevision,
-      drainPrincipals: req.drainPrincipals,
-      ...(req.policyIdentity !== undefined ? { policyIdentity: req.policyIdentity } : {})
-    });
-    return changed.onSuccess(() =>
-      core.repository.subscription(req.subscriptionId).onSuccess((descriptor) => ok(descriptor!))
-    );
-  });
+}
+
+/**
+ * Whether `access` may re-delegate `found`'s drain: the registering principal, with selectors
+ * covering the selection, whose policy grants `subscribe` for it — what registering it required.
+ */
+async function _ownsDrain(access: AccessContext, found: ITaskSubscription): Promise<boolean> {
+  return (
+    found.principalKey === access.principal &&
+    found.selection.scopes.every((scope) => access.selects(scope)) &&
+    (await access.allows({ action: 'subscribe', role: 'subject', scopes: found.selection.scopes }))
+  );
+}
+
+/**
+ * The write `setSubscriptionDrain` authorized. The registrant and the selection never change, so
+ * the owner decision holds for the record the write is conditioned on; the policy is fenced by its
+ * epoch, checked after the section's last await.
+ */
+function _writeDrain(
+  core: BrokerCore,
+  access: AccessContext,
+  req: ISubscriptionDrainRequest,
+  epoch: string,
+  denied: <T>() => TaskResult<T>
+): Promise<TaskResult<ITaskSubscription>> {
+  return core.gated(async (writer) =>
+    (await writer.readSubscription(req.subscriptionId))
+      .onSuccess((record) => (record !== undefined ? ok(record) : denied<ITaskConsumerRecord>()))
+      .onSuccess((record) =>
+        access.epochIs(epoch)
+          ? ok(record)
+          : changedSinceAuthorized<ITaskConsumerRecord>(
+              `setSubscriptionDrain ${req.subscriptionId}: the policy`
+            )
+      )
+      .thenOnSuccess((record) =>
+        writer.setSubscriptionDrain({
+          subscriptionId: req.subscriptionId,
+          expectedRecordRevision: record.recordRevision,
+          drainPrincipals: req.drainPrincipals,
+          ...(req.policyIdentity !== undefined ? { policyIdentity: req.policyIdentity } : {})
+        })
+      )
+      .onSuccess(() =>
+        core.repository
+          .subscription(req.subscriptionId)
+          .onSuccess((descriptor) =>
+            descriptor !== undefined ? ok(descriptor) : denied<ITaskSubscription>()
+          )
+      )
+  );
 }
 
 // ------------------------------------------------------------------------------------------
@@ -420,10 +439,13 @@ export class BoundTaskDelivery implements IBoundTaskDelivery {
 
   /** Whether this binding's principal is still a drain principal, as the committed descriptor stands. */
   private _stillDrains(operation: string): TaskResult<true> {
-    return this._core.repository.subscription(this.subscriptionId).onSuccess((found) =>
-      // Bound to a retained subscription; records are never removed.
-      this._drains(found!.drainPrincipals) ? ok<true>(true) : this._denied<true>(operation)
-    );
+    return this._core.repository
+      .subscription(this.subscriptionId)
+      .onSuccess((found) =>
+        found !== undefined && this._drains(found.drainPrincipals)
+          ? ok<true>(true)
+          : this._denied<true>(operation)
+      );
   }
 
   /** {@inheritDoc IBoundTaskDelivery.pending} */
@@ -431,10 +453,14 @@ export class BoundTaskDelivery implements IBoundTaskDelivery {
     readonly limit?: number;
     readonly cursor?: PageCursor;
   }): Promise<TaskResult<ITaskDeliveryPage>> {
-    const drains: TaskResult<true> = this._stillDrains('pending');
-    if (drains.isFailure()) {
-      return propagate(drains);
-    }
+    return this._stillDrains('pending').thenOnSuccess(() => this._pendingPage(request));
+  }
+
+  /** One page of `pending`, for a binding that was a drain principal when it began. */
+  private async _pendingPage(request?: {
+    readonly limit?: number;
+    readonly cursor?: PageCursor;
+  }): Promise<TaskResult<ITaskDeliveryPage>> {
     const page = await this._core.repository.listOwed({
       subscription: this.subscriptionId,
       ...(request?.limit !== undefined ? { limit: request.limit } : {}),
@@ -461,15 +487,13 @@ export class BoundTaskDelivery implements IBoundTaskDelivery {
       return changedSinceAuthorized(`pending ${this.subscriptionId}: a task or the policy`);
     }
     // The drain principals may have changed while the page was decided.
-    const stillDrains: TaskResult<true> = this._stillDrains('pending');
-    if (stillDrains.isFailure()) {
-      return propagate(stillDrains);
-    }
-    return ok<ITaskDeliveryPage>({
-      updates: disclosed.value.updates,
-      withheld: disclosed.value.withheld,
-      ...(page.value.nextCursor !== undefined ? { nextCursor: page.value.nextCursor } : {})
-    });
+    return this._stillDrains('pending').onSuccess(() =>
+      ok<ITaskDeliveryPage>({
+        updates: disclosed.value.updates,
+        withheld: disclosed.value.withheld,
+        ...(page.value.nextCursor !== undefined ? { nextCursor: page.value.nextCursor } : {})
+      })
+    );
   }
 
   /** {@inheritDoc IBoundTaskDelivery.disposeWithheld} */

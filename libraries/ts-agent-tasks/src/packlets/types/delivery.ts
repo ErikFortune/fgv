@@ -493,10 +493,12 @@ export interface ISubscribeRequest {
   readonly start: SubscriptionStart;
   readonly policy?: Partial<Omit<ITaskDeliveryPolicy, 'schemaVersion'>>;
   /**
-   * The principals that may bind this subscription's delivery and so drain it. Non-empty when
-   * given; each a valid principal key; duplicates are removed and the list is stored ascending.
-   * Default: the registering principal alone. A host that subscribes on an agent's behalf names the
-   * agent here — the registering principal is not added implicitly.
+   * The principals that may bind this subscription's delivery and so drain it — and that may end
+   * or dispose of what it is owed (`TaskBroker.dispose`, `closeSubscription`). Each a valid principal
+   * key; duplicates are removed, then at least one and at most `maxDrainPrincipals` distinct
+   * principals must remain; stored ascending. Default: the registering principal alone. A host that
+   * subscribes on an agent's behalf names the agent here — the registering principal is not added
+   * implicitly.
    */
   readonly drainPrincipals?: ReadonlyArray<string>;
   /**
@@ -512,7 +514,8 @@ export interface ISubscribeRequest {
  *
  * @remarks
  * `drainPrincipals` follows the rules of {@link ISubscribeRequest.drainPrincipals}. An omitted
- * `policyIdentity` removes the recorded one.
+ * `policyIdentity` removes the recorded one. After a change, a retry of the original `subscribe` is
+ * `conflict`: it no longer matches the subscription as it stands.
  * @public
  */
 export interface ISubscriptionDrainRequest {

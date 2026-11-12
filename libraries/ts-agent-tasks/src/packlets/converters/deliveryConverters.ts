@@ -62,8 +62,9 @@ export interface IDeliveryConverters {
   readonly policyOverrides: Converter<Partial<Omit<ITaskDeliveryPolicy, 'schemaVersion'>>>;
   readonly specification: Converter<ITaskSubscriptionSpecification>;
   /**
-   * A requested drain-principal list: non-empty, at most {@link maxDrainPrincipals}, each a
-   * principal key. Duplicates are removed and the result is ascending.
+   * A requested drain-principal list: each entry a principal key. Duplicates are removed, then the
+   * result must name at least one and at most {@link maxDrainPrincipals} distinct principals, and is
+   * ascending. At most four times that many entries are read.
    */
   readonly drainPrincipalsRequest: Converter<ReadonlyArray<string>>;
   /** A stored drain-principal list: non-empty, bounded, unique and ascending. */
@@ -100,6 +101,9 @@ export interface IDeliveryConverters {
  * @public
  */
 export const maxDrainPrincipals: number = 32;
+
+/** How many entries a drain-principal request may hold per principal it can name, duplicates included. */
+const drainRequestEntriesPerPrincipal: number = 4;
 
 /** Whether values are strictly ascending — unique and in canonical order. */
 function _ascending(values: ReadonlyArray<string>): boolean {
@@ -186,12 +190,23 @@ export function buildDeliveryConverters(
     maxDrainPrincipals,
     'drain principals'
   );
-  const drainPrincipalsRequest: Converter<ReadonlyArray<string>> = principalList.withConstraint(
-    (value: ReadonlyArray<string>): Result<ReadonlyArray<string>> =>
-      value.length > 0
-        ? succeed(Array.from(new Set(value)).sort())
-        : fail(`drain principals must name at least one principal`)
-  );
+  // A request is de-duplicated before the cap applies, so the cap counts distinct principals; the
+  // entries read are bounded too, by a multiple of it, so a repetitive list cannot cost unbounded work.
+  const drainPrincipalsRequest: Converter<ReadonlyArray<string>> = boundedArrayOf(
+    principalKey,
+    maxDrainPrincipals * drainRequestEntriesPerPrincipal,
+    'drain principals'
+  ).withConstraint((value: ReadonlyArray<string>): Result<ReadonlyArray<string>> => {
+    const distinct: ReadonlyArray<string> = Array.from(new Set(value)).sort();
+    if (distinct.length === 0) {
+      return fail(`drain principals must name at least one principal`);
+    }
+    return distinct.length <= maxDrainPrincipals
+      ? succeed(distinct)
+      : fail(
+          `drain principals: ${distinct.length} distinct principals exceeds the maximum of ${maxDrainPrincipals}`
+        );
+  });
   const drainPrincipals: Converter<ReadonlyArray<string>> = principalList.withConstraint(
     (value: ReadonlyArray<string>): Result<ReadonlyArray<string>> =>
       value.length > 0 && _ascending(value)

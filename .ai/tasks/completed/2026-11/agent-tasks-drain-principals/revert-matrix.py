@@ -15,12 +15,38 @@ DELIVERY = PKG / 'src/packlets/broker/delivery.ts'
 BROKER = PKG / 'src/packlets/broker/taskBroker.ts'
 CONVERTERS = PKG / 'src/packlets/converters/deliveryConverters.ts'
 RECORDS = PKG / 'src/packlets/storage/consumerRecords.ts'
+DISPOSITION = PKG / 'src/packlets/broker/disposition.ts'
 TYPES = PKG / 'src/packlets/types/delivery.ts'
-PATTERN = 'drainPrincipals|deliveryWithheld|withheldFaults|deliveryPump|receipts|accounting'
+PATTERN = ('drainPrincipals|drainDisposition|deliveryWithheld|withheldFaults|deliveryPump|receipts|accounting|'
+           'storage/subscriptions|unit/delivery/disposition|dispositionFaults|retention')
+
+# bindDelivery as it was before the review fix: existence and consumer decided before the binding.
+_OLD_BIND = '''    const subscription: TaskResult<ITaskSubscription | undefined> = this._core.repository.subscription(
+      params.subscriptionId
+    );
+    const consumer = ids.consumerId.convert(params.consumerId);
+    if (subscription.isFailure()) {
+      return propagateTask(subscription);
+    }
+    if (
+      subscription.value === undefined ||
+      consumer.isFailure() ||
+      subscription.value.consumerId !== consumer.value
+    ) {
+      return denied();
+    }
+    const found: ITaskSubscription = subscription.value;
+    return this._access(params).onSuccess((access) =>
+      found.drainPrincipals.includes(access.principal)
+        ? ok<IBoundTaskDelivery>(new BoundTaskDelivery(this._core, access, found.id))
+        : denied()
+    );
+'''
+_NEW_BIND_START = '    // The binding itself is decided before the subscription is read'
 
 ROWS = [
     ('R1 bindDelivery ignores drain principals', BROKER,
-     'found.drainPrincipals.includes(access.principal)\n        ? ok', 'true\n        ? ok'),
+     'found.drainPrincipals.includes(access.principal)\n            ? ok', 'true\n            ? ok'),
     ('R2 subscribe default is not the registrant', DELIVERY,
      'drainPrincipals: req.drainPrincipals ?? [access.principal],',
      "drainPrincipals: req.drainPrincipals ?? [access.principal, 'bob'],"),
@@ -28,15 +54,14 @@ ROWS = [
      'return record.drainPrincipals ?? [record.registration.principalKey];',
      "return record.drainPrincipals ?? [record.registration.principalKey, 'bob'];"),
     ('R4 request list not de-duplicated / sorted', CONVERTERS,
-     'succeed(Array.from(new Set(value)).sort())', 'succeed(value)'),
+     'const distinct: ReadonlyArray<string> = Array.from(new Set(value)).sort();',
+     'const distinct: ReadonlyArray<string> = value;'),
     ('R5 request list may be empty', CONVERTERS,
-     '      value.length > 0\n        ? succeed(Array.from', '      value.length >= 0\n        ? succeed(Array.from'),
+     '    if (distinct.length === 0) {', '    if (false) {'),
     ('R6 pending: no first drain check', DELIVERY,
-     "    const drains: TaskResult<true> = this._stillDrains('pending');\n",
-     "    const drains: TaskResult<true> = ok<true>(true);\n"),
+     "    return this._stillDrains('pending').thenOnSuccess(", "    return ok<true>(true).thenOnSuccess("),
     ('R7 pending: no final drain check', DELIVERY,
-     "    const stillDrains: TaskResult<true> = this._stillDrains('pending');",
-     "    const stillDrains: TaskResult<true> = ok<true>(true);"),
+     "    return this._stillDrains('pending').onSuccess(() =>", "    return ok<true>(true).onSuccess(() =>"),
     ('R8 prepare: no drain check', DELIVERY,
      "    if (!this._drains(captured.drainPrincipals)) {\n      return this._denied('prepare');",
      "    if (false) {\n      return this._denied('prepare');"),
@@ -58,24 +83,54 @@ ROWS = [
      "      !this._withheldAuthority(found.drainPrincipals, found.policyIdentity) ||",
      "      !this._withheldAuthority([found.principalKey], found.policyIdentity) ||"),
     ('R15 setSubscriptionDrain: any principal may change it', DELIVERY,
-     "    found.principalKey !== access.principal ||\n", ""),
+     "    found.principalKey === access.principal &&\n", ""),
     ('R16 setSubscriptionDrain: no subscribe grant asked', DELIVERY,
-     "    !(await access.allows({ action: 'subscribe', role: 'subject', scopes: found.selection.scopes }))",
-     "    false"),
+     "    (await access.allows({ action: 'subscribe', role: 'subject', scopes: found.selection.scopes }))",
+     "    true"),
     ('R17 setSubscriptionDrain: no epoch fence', DELIVERY,
-     "    if (!access.epochIs(epoch.value)) {\n      return changedSinceAuthorized<ITaskSubscription>",
-     "    if (false) {\n      return changedSinceAuthorized<ITaskSubscription>"),
+     "        access.epochIs(epoch)\n          ? ok(record)", "        true\n          ? ok(record)"),
     ('R18 setDrain: omitted identity not removed', RECORDS,
      "return this._replace(state, rest, {", "return this._replace(state, record, {"),
     ('R19 setDrain: no-op still writes', RECORDS,
      "        ) {\n          return ok(record);\n        }\n        return this._replace(state, rest",
      "        && false) {\n          return ok(record);\n        }\n        return this._replace(state, rest"),
     ('R20 replay ignores drain authority', RECORDS,
-     "          specification: specificationOf(record)",
-     "          specification: { ...specificationOf(record), drainPrincipals: registration.specification.drainPrincipals, policyIdentity: registration.specification.policyIdentity }"),
+     "_resolvedDrain(specificationOf(record), record.registration.principalKey)",
+     "_resolvedDrain({ ...specificationOf(record), drainPrincipals: registration.specification.drainPrincipals, policyIdentity: registration.specification.policyIdentity }, record.registration.principalKey)"),
     ('R21 selectors not required for setSubscriptionDrain', DELIVERY,
-     "    !found.selection.scopes.every((scope) => access.selects(scope)) ||\n    !(await access.allows({ action: 'subscribe'",
-     "    !(await access.allows({ action: 'subscribe'"),
+     "    found.selection.scopes.every((scope) => access.selects(scope)) &&\n    (await access.allows({ action: 'subscribe'",
+     "    (await access.allows({ action: 'subscribe'"),
+    # Review round: ordering, disposition authority, legacy identity, request cap, and two missing rows.
+    ('R22 bindDelivery decides existence before the binding (oracle)', BROKER, None, None),
+    ('R23 dispose: no drain-principal requirement before authorizing tasks', DISPOSITION,
+     "_subscription(core, access, request.subscriptionId, what, 'drainers');",
+     "_subscription(core, access, request.subscriptionId, what, 'drainers-or-registrant');"),
+    ('R24 dispose/close: no in-writer drain re-check', DISPOSITION,
+     "    _actsOn(access, drainPrincipalsOf(record), record.registration.principalKey, actors)\n      ? ok(record)",
+     "    true\n      ? ok(record)"),
+    ('R25 in-writer re-check reads the raw list, not the legacy rule', DISPOSITION,
+     "_actsOn(access, drainPrincipalsOf(record), record.registration.principalKey, actors)",
+     "_actsOn(access, record.drainPrincipals ?? [], record.registration.principalKey, actors)"),
+    ('R26 closeSubscription disposing admits the registrant', DISPOSITION,
+     "request.obligations === 'dispose' ? 'drainers' : 'drainers-or-registrant'", "'drainers-or-registrant'"),
+    ('R27 closeSubscription retaining refuses the registrant', DISPOSITION,
+     "(actors === 'drainers-or-registrant' && registrant === access.principal)", "false"),
+    ('R28 closeSubscription retaining admits anyone', DISPOSITION,
+     "(actors === 'drainers-or-registrant' && registrant === access.principal)",
+     "actors === 'drainers-or-registrant'"),
+    ('R29 pending registration compared without the legacy rule', RECORDS,
+     "_resolvedDrain(pending.specification, pending.principalKey)", "pending.specification"),
+    ('R30 live registration compared without the legacy rule', RECORDS,
+     "_resolvedDrain(specificationOf(record), record.registration.principalKey)", "specificationOf(record)"),
+    ('R31 request list capped before de-duplication', CONVERTERS,
+     "maxDrainPrincipals * drainRequestEntriesPerPrincipal,", "maxDrainPrincipals,"),
+    ('R32 request list: distinct principals not capped', CONVERTERS,
+     "distinct.length <= maxDrainPrincipals\n", "true\n"),
+    ('R33 stored list: strict ascending not required', CONVERTERS,
+     "value.length > 0 && _ascending(value)\n        ? succeed(value)\n        : fail(`drain principals",
+     "value.length > 0\n        ? succeed(value)\n        : fail(`drain principals"),
+    ('R34 bind: a throwing policyIdentity is not captured', BROKER,
+     "captureResult(() => authorization.policyIdentity)", "succeed(authorization.policyIdentity)"),
 ]
 
 
@@ -84,7 +139,7 @@ def run() -> int:
         ['npx', 'heft', 'test', '--test-path-pattern', PATTERN, '--disable-code-coverage'],
         cwd=PKG, capture_output=True, text=True, timeout=590)
     out = proc.stdout + proc.stderr
-    if re.search(r'error TS\d+', out):
+    if re.search(r'error TS\d+|\(TS\d+\)', out):
         return -1
     return sum(int(n) for n in re.findall(r'(\d+) failed\)', out))
 
@@ -97,6 +152,12 @@ def main() -> None:
         if only and name.split()[0] not in only:
             continue
         text = path.read_text()
+        if old is None:
+            # R22: put the pre-fix bindDelivery body back in place of the fixed one.
+            start = text.index(_NEW_BIND_START)
+            end = text.index('  }\n', start)
+            old = text[start:end]
+            new = _OLD_BIND
         if text.count(old) != 1:
             print(f'| {name} | PATTERN NOT FOUND ({text.count(old)}) |')
             continue

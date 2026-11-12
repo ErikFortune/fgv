@@ -164,6 +164,13 @@ export class TaskBroker {
    * the registering principal alone) and, optionally, the identity of the consumer's own policy that
    * `disposeWithheld` requires. A retry must repeat both exactly.
    *
+   * A retry is compared with the subscription **as it stands**: once its drain principals or identity
+   * have been changed through {@link TaskBroker.setSubscriptionDrain}, re-running the original
+   * request is `conflict`. A host that re-runs `subscribe` at boot treats drain changes as made through
+   * `setSubscriptionDrain` alone, and either retries with the current list or reads the subscription
+   * (`repository.subscription`) instead. A subscription recorded before drain principals existed is
+   * the same registration as a retry naming its registrant alone.
+   *
    * @remarks
    * The baseline is captured and authorized, then one writer section re-proves that no selected task
    * moved or appeared and that the policy epoch is unchanged before it writes the record and activates
@@ -183,9 +190,11 @@ export class TaskBroker {
    * with its reason in the subscription's exact history. See {@link IDisposeObligationsRequest}.
    *
    * @remarks
-   * `binding`'s policy must allow `dispose-obligation` on every task the ids name, and the
-   * subscription's selection must lie within its selectors; otherwise the answer is
-   * `not-found-or-denied`. Every id must be owed now or already discharged; an id an unacknowledged
+   * `binding`'s principal must be one of the subscription's drain principals — the consumer the
+   * obligations are owed to, so one consumer's binding cannot end another's — its policy must allow
+   * `dispose-obligation` on every task the ids name, and the subscription's selection must lie within
+   * its selectors; otherwise the answer is `not-found-or-denied`, the answer a missing subscription
+   * gets. The drain rule is decided again inside the writing section, on the record written. Every id must be owed now or already discharged; an id an unacknowledged
    * issued receipt names is refused until that receipt is acknowledged or abandoned. The obligation
    * ends for this subscription alone and consumes the evidence slot it already reserved.
    */
@@ -204,7 +213,12 @@ export class TaskBroker {
    *
    * @remarks
    * `binding`'s policy must allow `dispose-obligation` over the subscription's scopes, and — for
-   * `dispose` — on every task it is owed an update of.
+   * `dispose` — on every task it is owed an update of. Its principal must be one of the
+   * subscription's drain principals; a close that `retain`s may also be made by the registering
+   * principal, since it ends nothing owed. Anything else is `not-found-or-denied`, the answer a missing
+   * subscription gets, decided again inside the writing section on the record written. A host that
+   * registered on an agent's behalf and must dispose names itself among the drain principals
+   * ({@link TaskBroker.setSubscriptionDrain}).
    */
   public async closeSubscription(
     binding: IBoundTaskViewParams,
@@ -267,25 +281,19 @@ export class TaskBroker {
         'not-found-or-denied',
         'after-host-action'
       );
-    const subscription: TaskResult<ITaskSubscription | undefined> = this._core.repository.subscription(
-      params.subscriptionId
-    );
-    const consumer = ids.consumerId.convert(params.consumerId);
-    if (subscription.isFailure()) {
-      return propagateTask(subscription);
-    }
-    if (
-      subscription.value === undefined ||
-      consumer.isFailure() ||
-      subscription.value.consumerId !== consumer.value
-    ) {
-      return denied();
-    }
-    const found: ITaskSubscription = subscription.value;
+    // The binding itself is decided before the subscription is read, so a malformed binding gets the
+    // same answer whether or not the subscription exists; existence, consumer and drain membership
+    // are then decided together, with one answer.
     return this._access(params).onSuccess((access) =>
-      found.drainPrincipals.includes(access.principal)
-        ? ok<IBoundTaskDelivery>(new BoundTaskDelivery(this._core, access, found.id))
-        : denied()
+      this._core.repository
+        .subscription(params.subscriptionId)
+        .onSuccess((found) =>
+          found !== undefined &&
+          ids.consumerId.convert(params.consumerId).orDefault() === found.consumerId &&
+          found.drainPrincipals.includes(access.principal)
+            ? ok<IBoundTaskDelivery>(new BoundTaskDelivery(this._core, access, found.id))
+            : denied()
+        )
     );
   }
 
@@ -300,7 +308,9 @@ export class TaskBroker {
    * subscriptions alike; a request that changes nothing writes nothing.
    *
    * Takes effect for bindings already made, too: every bound-delivery operation re-applies the drain
-   * rule to the subscription as it stands. A receipt a removed principal prepared stays issued until
+   * rule to the subscription as it stands. A change makes a retry of the original `subscribe`
+   * `conflict`: the retry is compared with the subscription as it now stands (see
+   * {@link TaskBroker.subscribe}). A receipt a removed principal prepared stays issued until
    * it is acknowledged by a principal still named, abandoned, or expires.
    */
   public async setSubscriptionDrain(

@@ -6,6 +6,7 @@
 import '@fgv/ts-utils-jest';
 import {
   CapacityDimension,
+  IBoundTaskViewParams,
   ITaskCapacityProfile,
   ITaskCommitRecord,
   TaskResult,
@@ -98,6 +99,9 @@ async function cycle(h: IDeliveryHarness, id: string, sub: string): Promise<Task
   });
 }
 
+/** The registering principal's host binding: who may close a subscription the harness made. */
+const registrant: IBoundTaskViewParams = { ...hostBinding, principal: 'alice' };
+
 describe('lifetime acknowledgement exhaustion', () => {
   test('on one subscription: its history fills from drained, archived work, never shrinks, and then refuses new obligations', async () => {
     const h = await deliveryHarness({
@@ -131,7 +135,7 @@ describe('lifetime acknowledgement exhaustion', () => {
     // Closing ends the subscription's future obligations — work may be admitted again — but keeps
     // every id it acknowledged, which reopen finds exactly.
     (
-      await h.broker.closeSubscription(hostBinding, { subscriptionId: 'sub', obligations: 'retain' })
+      await h.broker.closeSubscription(registrant, { subscriptionId: 'sub', obligations: 'retain' })
     ).orThrow();
     expect((await consumerRecord(h.repository, 'sub')).acknowledged).toHaveLength(full);
     expect(
@@ -162,7 +166,7 @@ describe('lifetime acknowledgement exhaustion', () => {
         break;
       }
       (
-        await h.broker.closeSubscription(hostBinding, { subscriptionId: sub, obligations: 'retain' })
+        await h.broker.closeSubscription(registrant, { subscriptionId: sub, obligations: 'retain' })
       ).orThrow();
       closed += 1;
     }

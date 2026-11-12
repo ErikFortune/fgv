@@ -4,7 +4,7 @@
  */
 
 import '@fgv/ts-utils-jest';
-import { failWithDetail, succeed } from '@fgv/ts-utils';
+import { failWithDetail, succeed, succeedWithDetail } from '@fgv/ts-utils';
 import {
   IBoundTaskDelivery,
   IBoundTaskDeliveryParams,
@@ -611,5 +611,128 @@ describe('reads that fail on the drain paths are reported', () => {
         })
       )
     ).toFailWithDetail(/setSubscriptionDrain: .*unique and ascending/, code('invalid'));
+  });
+});
+
+describe('a binding is decided before anything about the subscription', () => {
+  test('a malformed binding gets the same invalid answer whether or not the subscription exists', async () => {
+    const h = await deliveryHarness();
+    await subscribed(h, 's1');
+    const throwing: ITaskAuthorization = {
+      check: async () => succeed(true),
+      policyEpoch: () => 'e',
+      get policyIdentity(): string {
+        throw new Error('identity gone');
+      }
+    };
+    const multiLine = new TestPolicy();
+    multiLine.policyIdentity = 'two\nlines';
+    const malformed: ReadonlyArray<Partial<IBoundTaskDeliveryParams>> = [
+      { principal: '' },
+      { scopes: 'not-scopes' as unknown as IBoundTaskDeliveryParams['scopes'] },
+      { creationScopes: [beta] },
+      { authorization: throwing },
+      { authorization: multiLine }
+    ];
+    const answer = (r: ReturnType<typeof bindAs>): unknown =>
+      r.isFailure() ? { message: r.message, detail: r.detail } : 'bound';
+    // A drain principal, and a principal that is not one: neither existence nor membership shows.
+    for (const principal of ['alice', 'bob']) {
+      for (const overrides of malformed) {
+        const existing = bindAs(h, principal, overrides);
+        expect(existing).toFailWithDetail(/^bind: /, code('invalid'));
+        expect(answer(bindAs(h, principal, { ...overrides, subscriptionId: sid('nope') }))).toEqual(
+          answer(existing)
+        );
+      }
+    }
+  });
+});
+
+describe('a registration recorded before drain principals existed, retried by the broker', () => {
+  test('replays: the broker names the registrant, which is what the record means', async () => {
+    const checkpoints = new InMemoryCheckpointStore();
+    const first = await deliveryHarness({ checkpoints });
+    await subscribed(first, 's1');
+    const { drainPrincipals: dropped, ...legacy } = checkpoints.records.get('s1')!;
+    expect(dropped).toEqual(['alice']);
+    checkpoints.records.set('s1', legacy);
+    const h = await reopen(first);
+    expect(await subscribeAs(h, 's1')).toSucceedAndSatisfy((s) => {
+      expect(s.drainPrincipals).toEqual(['alice']);
+    });
+    expect(await subscribeAs(h, 's1', { drainPrincipals: ['bob'] })).toFailWithDetail(
+      /different operation or specification/,
+      code('conflict')
+    );
+  });
+});
+
+describe('a requested drain-principal list is de-duplicated before it is capped', () => {
+  const converters = taskConverters.delivery;
+  const distinct = (n: number): string[] => [...Array(n).keys()].map((i) => `p${i}`);
+
+  test('repetition does not count against the cap', () => {
+    expect(
+      converters.drainPrincipalsRequest.convert([...Array(64).keys()].map((i) => (i % 2 ? 'b' : 'a')))
+    ).toSucceedWith(['a', 'b']);
+    const all: string[] = distinct(maxDrainPrincipals);
+    expect(converters.drainPrincipalsRequest.convert([...all, ...all, ...all, ...all])).toSucceedWith(
+      [...all].sort()
+    );
+  });
+
+  test('more distinct principals than the cap, or more entries than four times it, are refused', () => {
+    expect(converters.drainPrincipalsRequest.convert(distinct(maxDrainPrincipals + 1))).toFailWith(
+      /33 distinct principals exceeds the maximum of 32/
+    );
+    expect(
+      converters.drainPrincipalsRequest.convert([...Array(maxDrainPrincipals * 4 + 1)].map(() => 'a'))
+    ).toFailWith(/129 entries exceeds the maximum of 128/);
+  });
+});
+
+describe('a subscription that a read reports missing is refused, never assumed', () => {
+  let h: IDeliveryHarness;
+
+  beforeEach(async () => {
+    h = await deliveryHarness();
+    await subscribed(h, 's1');
+    await track(h.writer, 't1');
+  });
+
+  test('pending: a descriptor read that finds nothing is not-found-or-denied', async () => {
+    // Read 1 is bindDelivery's; read 2 is pending's first check.
+    let reads: number = 0;
+    const faulty = faultyDelivery(h, (real) => ({
+      subscription: (id) => (++reads === 2 ? succeedWithDetail(undefined) : real.subscription(id))
+    }));
+    expect(await drainer(faulty, 'alice').pending()).toFailWithDetail(
+      /pending s1: not permitted/,
+      code('not-found-or-denied')
+    );
+  });
+
+  test('setSubscriptionDrain: an in-writer record read that finds nothing writes nothing', async () => {
+    const faulty = faultyDelivery(
+      h,
+      () => ({}),
+      () => ({ readSubscription: async () => succeedWithDetail(undefined) })
+    );
+    expect(
+      await faulty.broker.setSubscriptionDrain(owner(), { subscriptionId: 's1', drainPrincipals: ['bob'] })
+    ).toFailWithDetail(/setSubscriptionDrain s1: not permitted/, code('not-found-or-denied'));
+    expect((await consumerRecord(h.repository, 's1')).drainPrincipals).toEqual(['alice']);
+  });
+
+  test('setSubscriptionDrain: a descriptor that vanishes after the write is not reported as the result', async () => {
+    // Read 1 decides the owner; read 2 reports the result.
+    let reads: number = 0;
+    const faulty = faultyDelivery(h, (real) => ({
+      subscription: (id) => (++reads === 2 ? succeedWithDetail(undefined) : real.subscription(id))
+    }));
+    expect(
+      await faulty.broker.setSubscriptionDrain(owner(), { subscriptionId: 's1', drainPrincipals: ['bob'] })
+    ).toFailWithDetail(/setSubscriptionDrain s1: not permitted/, code('not-found-or-denied'));
   });
 });

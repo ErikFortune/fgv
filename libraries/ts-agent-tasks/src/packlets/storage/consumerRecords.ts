@@ -77,6 +77,18 @@ export function specificationOf(record: ITaskConsumerRecord): ITaskSubscriptionS
 }
 
 /**
+ * `specification` with its drain principals as the rule applies them — absent reads as `registrant`
+ * alone, as `drainPrincipalsOf` reads a record — so a registration written before drain principals
+ * existed is the same registration as a retry that names its registrant explicitly.
+ */
+function _resolvedDrain(
+  specification: ITaskSubscriptionSpecification,
+  registrant: string
+): ITaskSubscriptionSpecification {
+  return { ...specification, drainPrincipals: specification.drainPrincipals ?? [registrant] };
+}
+
+/**
  * What the subscription-record operations need from the repository that owns them.
  * @internal
  */
@@ -276,12 +288,12 @@ export class SubscriptionRecords {
       {
         operationId: pending.operationId,
         principalKey: pending.principalKey,
-        specification: pending.specification
+        specification: _resolvedDrain(pending.specification, pending.principalKey)
       },
       {
         operationId: registration.operationId,
         principalKey: registration.principalKey,
-        specification: registration.specification
+        specification: _resolvedDrain(registration.specification, registration.principalKey)
       }
     );
   }
@@ -297,11 +309,11 @@ export class SubscriptionRecords {
       const same: boolean = canonicallyEqual(
         {
           registration: record.registration,
-          specification: specificationOf(record)
+          specification: _resolvedDrain(specificationOf(record), record.registration.principalKey)
         },
         {
           registration: { operationId: registration.operationId, principalKey: registration.principalKey },
-          specification: registration.specification
+          specification: _resolvedDrain(registration.specification, registration.principalKey)
         }
       );
       if (!same) {

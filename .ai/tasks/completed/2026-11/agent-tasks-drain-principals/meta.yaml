@@ -23,7 +23,11 @@ summary:
     legacy records; TaskBroker.setSubscriptionDrain plus ITaskRepositoryWriter.setSubscriptionDrain;
     ITaskAuthorization.policyIdentity and ISubscribeRequest.policyIdentity, which disposeWithheld now
     requires to agree; trustedKindAuthority takes an identity; testbed journey names every drainer and
-    checks an unnamed one is refused; a 21-row revert matrix and a check-then-act table. Step 0 merged
+    checks an unnamed one is refused; a 34-row revert matrix and a check-then-act table. After the
+    independent review, bindDelivery decides the binding before the subscription (no existence oracle),
+    dispose and a disposing closeSubscription require a drain principal (a retaining close, the
+    registrant or a drain principal), re-decided in the writer; a legacy registration replays for a
+    retry naming its registrant; the request list is de-duplicated before it is capped. Step 0 merged
     release cleanly against #758 as the effective base and trimmed the capability router under its cap.
   diverged: >
     Decision 4 was built rather than deferred. Beyond the brief, every bound-delivery operation
@@ -31,7 +35,8 @@ summary:
     principal was removed cannot keep draining; and disposeWithheld's principal rule moved from the
     registering principal to any drain principal. When a list is given the registrant is not added.
     Re-subscribe was not an update path, so setSubscriptionDrain was added, and a retry of the
-    original subscribe after a change is conflict. The #780 TECH_DEBT entry was not on the branch
+    original subscribe after a change is conflict. Restricting dispose and closeSubscription to drain
+    principals was not in the brief; the independent review found the same cross-consumer harm there. The #780 TECH_DEBT entry was not on the branch
     after Step 0, so its closure is recorded in result.md for the orchestrator to reconcile.
   sourceLine: "**Shipped:** a subscription now records the principals that may bind and drain its delivery — `bindDelivery` refuses anyone else exactly as it refuses a missing subscription, every bound-delivery operation re-applies the rule, the host can change the list through `TaskBroker.setSubscriptionDrain`, and `disposeWithheld` ends withheld obligations only through a binding whose policy carries the identity the subscription recorded as the consumer's own."
   headline: >
