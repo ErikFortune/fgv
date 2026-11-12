@@ -12,3 +12,7 @@ yarn.lock                    merge=binary
 # For more information, see this issue: https://github.com/microsoft/rushstack/issues/1088
 #
 *.json                       linguist-language=JSON-with-Comments
+
+# Executable entry points must keep LF line endings: a CRLF shebang breaks them on Unix, and
+# pnpm refuses to publish a package whose bin file has one (ERR_PNPM_BIN_CRLF).
+**/bin/*.js text eol=lf
