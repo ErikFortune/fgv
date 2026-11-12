@@ -37,6 +37,15 @@ function binding(h: IDeliveryHarness): IBoundTaskDeliveryParams {
   };
 }
 
+/** The consumer's own policy identity, which `disposeWithheld` requires. */
+const alicePolicy: string = 'alice-policy';
+
+/** Subscribes `s1` recording alice's policy identity, and gives her policy that identity. */
+async function consumerSubscribed(h: IDeliveryHarness): Promise<void> {
+  h.policy.policyIdentity = alicePolicy;
+  await subscribed(h, 's1', { policyIdentity: alicePolicy });
+}
+
 function pumpOver(h: IDeliveryHarness, broker?: TaskBroker, maxChars?: number): TaskDeliveryPump {
   return TaskDeliveryPump.create({
     broker: broker ?? h.broker,
@@ -91,7 +100,7 @@ describe('an owed update the principal may no longer acknowledge is withheld, ne
 
   beforeEach(async () => {
     h = await deliveryHarness();
-    await subscribed(h, 's1');
+    await consumerSubscribed(h);
     pump = pumpOver(h);
     await track(h.writer, 'a1', { title: 'secret-a1-title' });
     await track(h.writer, 'b1');
@@ -313,7 +322,7 @@ describe('an owed update the principal may no longer acknowledge is withheld, ne
 describe('a refused acknowledgement gives up its receipt', () => {
   test('the receipt is released and the object spent; the revision is withheld from then on', async () => {
     const h = await deliveryHarness();
-    await subscribed(h, 's1');
+    await consumerSubscribed(h);
     const pump = pumpOver(h);
     await track(h.writer, 't1');
     const p = await prepared(pump);
@@ -326,7 +335,7 @@ describe('a refused acknowledgement gives up its receipt', () => {
 
   test('a release that also fails is reported with the refusal', async () => {
     const h = await deliveryHarness();
-    await subscribed(h, 's1');
+    await consumerSubscribed(h);
     await track(h.writer, 't1');
     const delivery = deliveryOf(h, 's1');
     const leaky = pumpOver(
@@ -349,7 +358,7 @@ describe('a refused acknowledgement gives up its receipt', () => {
 describe('the budget failure names what is owed', () => {
   test("it names only the revision that did not fit, never another task's updates", async () => {
     const h = await deliveryHarness();
-    await subscribed(h, 's1');
+    await consumerSubscribed(h);
     for (const id of ['t1', 't2']) {
       (
         await h.writer.createTracked({
@@ -371,7 +380,7 @@ describe('the budget failure names what is owed', () => {
 
   test('a release or an owed read that fails is reported in its place', async () => {
     const h = await deliveryHarness();
-    await subscribed(h, 's1');
+    await consumerSubscribed(h);
     (
       await h.writer.createTracked({
         taskId: tid('t1'),
@@ -412,7 +421,7 @@ describe('the budget failure names what is owed', () => {
 describe('the record a decision reads cannot be edited through what was handed out', () => {
   test('the handed object is frozen all the way down, and dispose ends only what was prepared', async () => {
     const h = await deliveryHarness();
-    await subscribed(h, 's1');
+    await consumerSubscribed(h);
     const pump = pumpOver(h);
     await track(h.writer, 'a1');
     await track(h.writer, 'b1');
@@ -434,7 +443,7 @@ describe('only the binding that owns the whole subscription may end what it with
 
   beforeEach(async () => {
     h = await deliveryHarness();
-    await subscribed(h, 's1');
+    await consumerSubscribed(h);
     await track(h.writer, 'a1');
     await track(h.writer, 'b1');
   });
@@ -453,10 +462,15 @@ describe('only the binding that owns the whole subscription may end what it with
   test("another principal's binding is refused, and alice is still owed everything", async () => {
     const before = await aliceOwes();
     expect(before).toEqual(['a1:1:0', 'b1:1:0']);
-    // Bob's policy lets him see nothing, so to him everything is withheld.
+    // Bob's policy lets him see nothing, so to him everything would be withheld — and it carries
+    // alice's identity. He is not a drain principal, so he cannot bind at all.
     const bobs: TestPolicy = new TestPolicy();
+    bobs.policyIdentity = alicePolicy;
     bobs.deny.push((r) => r.action === 'read');
-    await refused(h.broker.bindDelivery({ ...binding(h), principal: 'bob', authorization: bobs }).orThrow());
+    expect(h.broker.bindDelivery({ ...binding(h), principal: 'bob', authorization: bobs })).toFailWithDetail(
+      /no subscription s1 for this consumer/,
+      expect.objectContaining({ code: 'not-found-or-denied' })
+    );
     expect(await aliceOwes()).toEqual(before);
     expect((await consumerRecord(h.repository, 's1')).disposed).toEqual([]);
   });
@@ -483,6 +497,7 @@ describe('only the binding that owns the whole subscription may end what it with
     const before = await aliceOwes();
     // Denies only acknowledging: everything is withheld from it, and dispose-obligation is granted.
     const noAck: TestPolicy = new TestPolicy();
+    noAck.policyIdentity = alicePolicy;
     noAck.deny.push((r) => r.action === 'acknowledge');
     const narrow = h.broker.bindDelivery({ ...binding(h), authorization: noAck }).orThrow();
     expect((await narrow.pending({ limit: 200 })).orThrow().withheld).toBe(2);
@@ -494,7 +509,12 @@ describe('only the binding that owns the whole subscription may end what it with
   test('a narrower policy that does not grant dispose-obligation cannot end what it withholds', async () => {
     const before = await aliceOwes();
     // Reads only: everything is withheld from it, and it is not allowed to end any of it.
-    const readOnly = trustedKindAuthority({ scopes: [alpha], actions: ['read'], epoch: 'r' }).orThrow();
+    const readOnly = trustedKindAuthority({
+      scopes: [alpha],
+      actions: ['read'],
+      epoch: 'r',
+      policyIdentity: alicePolicy
+    }).orThrow();
     const narrow = h.broker.bindDelivery({ ...binding(h), authorization: readOnly }).orThrow();
     expect((await narrow.pending({ limit: 200 })).orThrow().withheld).toBe(2);
     await refused(narrow);

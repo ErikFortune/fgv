@@ -20,7 +20,16 @@
  * SOFTWARE.
  */
 
-import { Failure, MessageLogLevel, Result, allMessageLogLevels, fail, isKeyOf, succeed } from '../base';
+import {
+  Failure,
+  MessageLogLevel,
+  Result,
+  allMessageLogLevels,
+  fail,
+  formatValueForMessage,
+  isKeyOf,
+  succeed
+} from '../base';
 import { TypeGuardWithContext, Validator, Base as ValidationBase } from '../validation';
 import { BaseConverter, ConverterFunc } from './baseConverter';
 import { Converter, OnError, allOnError } from './converter';
@@ -56,7 +65,7 @@ export function enumeratedValue<T>(values: ReadonlyArray<T>): Converter<T, Reado
     (from: unknown, __self: Converter<T, ReadonlyArray<T>>, context?: ReadonlyArray<T>): Result<T> => {
       const v = context ?? values;
       const index = v.indexOf(from as T);
-      return index >= 0 ? succeed(v[index]) : fail(`Invalid enumerated value ${JSON.stringify(from)}`);
+      return index >= 0 ? succeed(v[index]) : fail(`Invalid enumerated value ${formatValueForMessage(from)}`);
     }
   );
 }
@@ -102,8 +111,8 @@ export function mappedEnumeratedValue<T, TC = unknown>(
       }
       return fail(
         message
-          ? `${JSON.stringify(from)}: ${message}`
-          : `Cannot map '${JSON.stringify(from)}' to a supported value`
+          ? `${formatValueForMessage(from)}: ${message}`
+          : `Cannot map '${formatValueForMessage(from)}' to a supported value`
       );
     }
   );
@@ -121,7 +130,7 @@ export function literal<T, TC = unknown>(value: T): Converter<T, TC> {
     (from: unknown, __self: Converter<T, TC>, __context?: unknown): Result<T> => {
       return from === value
         ? succeed(value)
-        : fail(`${JSON.stringify(from)}: does not match ${JSON.stringify(value)}`);
+        : fail(`${formatValueForMessage(from)}: does not match ${formatValueForMessage(value)}`);
     }
   );
 }
@@ -144,7 +153,7 @@ export const value = literal;
 export const number: Converter<number, unknown> = new BaseConverter<number, unknown>((from: unknown) => {
   if (typeof from !== 'number') {
     const num: number = typeof from === 'string' ? Number(from) : NaN;
-    return isNaN(num) ? fail(`Not a number: ${JSON.stringify(from)}`) : succeed(num);
+    return isNaN(num) ? fail(`Not a number: ${formatValueForMessage(from)}`) : succeed(num);
   }
   return succeed(from);
 });
@@ -160,7 +169,7 @@ const booleanConverter: Converter<boolean, unknown> = new BaseConverter<boolean,
         return succeed(false);
     }
   }
-  return fail(`Not a boolean: ${JSON.stringify(from)}`);
+  return fail(`Not a boolean: ${formatValueForMessage(from)}`);
 });
 
 /**
@@ -285,7 +294,7 @@ export function isA<T, TC = unknown>(
     if (guard(from, context)) {
       return succeed(from);
     }
-    return fail(`invalid ${description} (${JSON.stringify(from)})`);
+    return fail(`invalid ${description} (${formatValueForMessage(from)})`);
   });
 }
 
@@ -345,7 +354,7 @@ export function oneOf<T, TC = unknown>(
         errors.push(result.message);
       }
     }
-    return fail(`No matching converter for ${JSON.stringify(from)}: ${errors.join('\n')}`);
+    return fail(`No matching converter for ${formatValueForMessage(from)}: ${errors.join('\n')}`);
   });
 }
 
@@ -366,7 +375,7 @@ export function arrayOf<T, TC = unknown>(
 ): Converter<T[], TC> {
   return new BaseConverter((from: unknown, __self: Converter<T[], TC>, context?: TC) => {
     if (!Array.isArray(from)) {
-      return fail(`Not an array: ${JSON.stringify(from)}`);
+      return fail(`Not an array: ${formatValueForMessage(from)}`);
     }
 
     const successes: T[] = [];
@@ -491,7 +500,7 @@ export function recordOf<T, TC = unknown, TK extends string = string>(
     typeof option === 'string' ? { onError: option } : { onError: 'fail', ...option };
   return new BaseConverter((from: unknown, __self: Converter<Record<TK, T>, TC>, context?: TC) => {
     if (typeof from !== 'object' || from === null || Array.isArray(from)) {
-      return fail(`Not a string-keyed object: ${JSON.stringify(from)}`);
+      return fail(`Not a string-keyed object: ${formatValueForMessage(from)}`);
     }
 
     const record: Record<string, T> = {};
@@ -586,7 +595,7 @@ export function mapOf<T, TC = unknown, TK extends string = string>(
   const options = typeof option === 'string' ? { onError: option } : { onError: 'fail', ...option };
   return new BaseConverter((from: unknown, __self: Converter<Map<TK, T>, TC>, context?: TC) => {
     if (typeof from !== 'object' || from === null || Array.isArray(from)) {
-      return fail(`Not a string-keyed object: ${JSON.stringify(from)}`);
+      return fail(`Not a string-keyed object: ${formatValueForMessage(from)}`);
     }
 
     const map = new Map<TK, T>();
@@ -634,7 +643,7 @@ export function validateWith<T, TC = unknown>(
     if (validator(from)) {
       return succeed(from);
     }
-    return fail(`${JSON.stringify(from)}: invalid ${description ?? 'value'}`);
+    return fail(`${formatValueForMessage(from)}: invalid ${description ?? 'value'}`);
   });
 }
 
@@ -715,9 +724,9 @@ export function field<T, TC = unknown>(
           return fail(`Field ${name}: ${message}`);
         });
       }
-      return fail(`Field ${name} not found in: ${JSON.stringify(from)}`);
+      return fail(`Field ${name} not found in: ${formatValueForMessage(from)}`);
     }
-    return fail(`Cannot convert field "${name}" from non-object ${JSON.stringify(from)}`);
+    return fail(`Cannot convert field "${name}" from non-object ${formatValueForMessage(from)}`);
   });
 }
 
@@ -754,7 +763,7 @@ export function optionalField<T, TC = unknown>(
         }
         return succeed(undefined);
       }
-      return fail(`Cannot convert field "${name}" from non-object ${JSON.stringify(from)}`);
+      return fail(`Cannot convert field "${name}" from non-object ${formatValueForMessage(from)}`);
     },
     undefined,
     { isOptional: true }
@@ -927,10 +936,12 @@ export function discriminatedObject<T, TD extends string = string, TC = unknown>
 ): Converter<T, TC> {
   return new BaseConverter<T, TC>((from: unknown, self: Converter<T, TC>, context?: TC) => {
     if (typeof from !== 'object' || Array.isArray(from) || from === null) {
-      return fail(`Not a discriminated object: "${JSON.stringify(from)}"`);
+      return fail(`Not a discriminated object: "${formatValueForMessage(from)}"`);
     }
     if (!isKeyOf(discriminatorProp, from) || !from[discriminatorProp]) {
-      return fail(`Discriminator property ${discriminatorProp} not present in "${JSON.stringify(from)}"`);
+      return fail(
+        `Discriminator property ${discriminatorProp} not present in "${formatValueForMessage(from)}"`
+      );
     }
 
     const discriminatorValue = from[discriminatorProp] as TD;

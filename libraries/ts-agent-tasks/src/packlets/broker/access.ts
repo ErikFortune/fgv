@@ -57,6 +57,8 @@ export class AccessContext {
   public readonly scopes: ReadonlyArray<ITaskScope>;
   public readonly creationScopes: ReadonlyArray<ITaskScope>;
   public readonly projector: ITaskProjector;
+  /** The policy's identity as converted when the binding was made, if it has one. */
+  public readonly policyIdentity: string | undefined;
   private readonly _taskScopeKeys: ReadonlySet<string>;
   private readonly _authorization: ITaskAuthorization;
   private readonly _logger: Logging.ILogger;
@@ -68,6 +70,7 @@ export class AccessContext {
     readonly creationScopes: ReadonlyArray<ITaskScope>;
     readonly authorization: ITaskAuthorization;
     readonly projector: ITaskProjector;
+    readonly policyIdentity?: string;
     readonly logger: Logging.ILogger;
   }) {
     this.view = params.view;
@@ -75,6 +78,7 @@ export class AccessContext {
     this.scopes = params.scopes;
     this.creationScopes = params.creationScopes;
     this.projector = params.projector;
+    this.policyIdentity = params.policyIdentity;
     this._taskScopeKeys = new Set(params.scopes.map(_taskScopeKey));
     this._authorization = params.authorization;
     this._logger = params.logger;

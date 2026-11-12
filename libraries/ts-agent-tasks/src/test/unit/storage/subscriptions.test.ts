@@ -113,6 +113,40 @@ async function owedIds(repository: ITaskRepository, id: string): Promise<string[
     .updates.map((u) => u.id);
 }
 
+/** `registration(id)` naming `drainPrincipals`, as a registration this release writes does. */
+function withDrain(id: string, drainPrincipals: ReadonlyArray<string>): ITaskSubscriptionRegistration {
+  const r: ITaskSubscriptionRegistration = registration(id);
+  return { ...r, specification: { ...r.specification, drainPrincipals } };
+}
+
+describe('a registration recorded without drain principals means its registrant alone', () => {
+  test('a pending one resumes for a retry naming its registrant, and conflicts for any other list', async () => {
+    const { root, repository } = await faultyRepository();
+    root.faults.push({ name: 'consumer-s1.json', when: 'before', visibility: 'unchanged' });
+    expect(await register(repository, registration('s1'))).toFail();
+    expect(
+      inspectRepository(repository)!.book.pending.get('s1' as SubscriptionId)!.specification.drainPrincipals
+    ).toBeUndefined();
+    expect(await register(repository, withDrain('s1', ['other']))).toFailWithDetail(
+      /different registration of this subscription is pending/i,
+      expect.objectContaining({ code: 'conflict' })
+    );
+    expect(await register(repository, withDrain('s1', ['host']))).toSucceed();
+  });
+
+  test('a live one replays for a retry naming its registrant, and conflicts for any other list', async () => {
+    const { repository } = await faultyRepository();
+    expect(await register(repository, registration('s1'))).toSucceedAndSatisfy((r) => {
+      expect(r.drainPrincipals).toBeUndefined();
+    });
+    expect(await register(repository, withDrain('s1', ['host']))).toSucceed();
+    expect(await register(repository, withDrain('s1', ['other']))).toFailWithDetail(
+      /already registered by a different operation or specification/i,
+      expect.objectContaining({ code: 'conflict' })
+    );
+  });
+});
+
 describe('subscription registration: the ordered inventory protocol', () => {
   test('a record write that fails cleanly leaves a pending, inactive subscription holding its reservation; a retry resumes', async () => {
     const { root, repository } = await faultyRepository();

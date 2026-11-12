@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-web-extras",
+      "comment": "dependency refresh: idb-keyval ^6.2.2 → ^6.3.0 (latest minor/patch in the current major). Dev dependencies: minor/patch within the current major, and @types/node 20 → 22.x to match the supported Node range.",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@fgv/ts-web-extras",
+  "email": "noreply@anthropic.com"
+}

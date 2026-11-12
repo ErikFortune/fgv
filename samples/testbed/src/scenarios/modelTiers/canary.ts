@@ -40,12 +40,22 @@
  *    `complete` and every tier is reported as `not-run` (STOP-FLAG: resolver verified, live
  *    canary pending the orchestrator's keyed run).
  * 3. **Supplementary probes (keyed, opt-in per spec).** Each has its own report section:
- *    - thinking probes: one completion per tier and effort (`thinkingEfforts`)
- *    - strict-none probes: `'none'` plus `onUnsupported: 'fail'`, checked against
- *      `thinkingRequiredModelPrefixes` (`strictNoneProbe`). On a listed model, a second, raw
- *      `'none'` bypasses the library gate, so the provider's own rejection keeps the listing
- *      honest in the other direction.
+ *    - thinking probes: one completion per tier, extra model and effort (`thinkingEfforts`)
+ *    - strict-none probes: `'none'` plus `onUnsupported: 'fail'` on every tier and extra model,
+ *      checked against `thinkingRequiredModelPrefixes` (`strictNoneProbe`). A listed model must be
+ *      `refused-locally`. On a listed model, and on a model with its own off value
+ *      (`anthropicThinkingOffTypes`), a second, raw `'none'` sends the provider's default off value
+ *      past the library gate, and the provider's own rejection (`expected-reject`) keeps the listing
+ *      honest in the other direction
  *    - model-override rows for aliases no tier reaches (`extraModels`)
+ *    - temperature probes: a `temperature` (optionally with an effort) on the tiers and extra
+ *      models a probe names, each with a stated expectation — accepted, `refused-locally` (the
+ *      library refuses before any request is sent), `expected-reject` (the provider is expected
+ *      to return a 400) or `observed` (report-only; a `raw` probe sends the temperature in an
+ *      `'other'` block, past the library gate) (`temperatureProbes`)
+ *    - max-output probes: one completion per tier and extra model with `maxTokens` set to the
+ *      recorded `resolveMaxOutputTokens` limit, or a `no-recorded-limit` row and no call when none
+ *      is recorded (`maxOutputProbe`)
  *    - structured-output probes: a schema-mode completion per tier and extra model with
  *      `onUnsupported: 'fail'` (`structuredOutputProbe`), checked against the registry's declared
  *      format — the reported enforcement must match it and the reply must satisfy the schema.
@@ -127,6 +137,24 @@ export type TierLiveOutcome =
   | 'param-failed'
   /** Any other live failure (or a 200 with an empty body) — a real failure. */
   | 'error'
+  /**
+   * The library refused the request before sending anything, and the probe expected exactly that
+   * (a temperature the model rejects, or `'none'` with `onUnsupported: 'fail'` on a thinking-required
+   * model). Not a failure. A local refusal returns before `fetch`, so no network call was made.
+   */
+  | 'refused-locally'
+  /**
+   * The provider rejected the request (an HTTP 400 or a rejected-parameter message), and the probe
+   * expected exactly that — e.g. a raw `'none'` on a thinking-required model. Not a failure.
+   */
+  | 'expected-reject'
+  /**
+   * A report-only probe whose answer is not known yet: the row records whether the provider
+   * accepted the request or what it said rejecting it, and makes no pass/fail claim. Not a failure.
+   */
+  | 'observed'
+  /** A max-output probe on a model with no recorded output limit: nothing to verify, no call made. */
+  | 'no-recorded-limit'
   /** Live call not attempted (no API key) — STOP-FLAG: resolver verified, live pending a keyed run. */
   | 'not-run';
 
@@ -172,8 +200,56 @@ export interface ICanaryCompleteOptions {
    * library's `'none'` gate, so the provider itself answers whether it accepts `'none'`.
    */
   readonly rawNone?: boolean;
+  /**
+   * Send this `temperature` inside an `'other'` provider block for the target model rather than as
+   * the `temperature` parameter. The library sends such a block verbatim and does not check it, so
+   * the provider itself answers whether it accepts the value.
+   */
+  readonly rawTemperature?: number;
   /** Send this `structuredOutput` request (a structured-output probe). */
   readonly structuredOutput?: AiAssist.StructuredOutputRequest;
+  /** Send this `temperature` (a temperature probe). */
+  readonly temperature?: number;
+  /** Send this `maxTokens` (a max-output probe). */
+  readonly maxTokens?: number;
+  /**
+   * Send this Gemini `thinkingLevel` in an explicit `google` block (an explicit-level probe). The
+   * library sends a declared level verbatim, so the provider itself answers whether it accepts it.
+   */
+  readonly thinkingLevel?: AiAssist.GeminiThinkingLevel;
+}
+
+/**
+ * What a probe expects of one request: that the provider answers it, that the library refuses it
+ * before anything is sent, that the provider rejects it, or — `'observed'` — nothing yet: the row
+ * reports what the provider said without a pass/fail claim.
+ * @public
+ */
+export type CanaryExpectation = 'accepted' | 'refused-locally' | 'expected-reject' | 'observed';
+
+/**
+ * One temperature probe: a `temperature` (optionally with a thinking effort) sent to the tiers and
+ * extra models it names, with the outcome it expects.
+ * @public
+ */
+export interface ICanaryTemperatureProbe {
+  readonly temperature: number;
+  /** Send `thinking: { effort }` alongside the temperature. */
+  readonly effort?: CanaryThinkingEffort;
+  /** Concrete ids the probe applies to. Absent: every tier and extra model. */
+  readonly models?: ReadonlyArray<string>;
+  readonly expect: CanaryExpectation;
+  /**
+   * For `expect: 'expected-reject'`: the text the provider's rejection must match, so a 400 for an
+   * unrelated reason (a usage limit) is not mistaken for the expected one.
+   */
+  readonly rejectPattern?: RegExp;
+  /**
+   * Send the temperature through an `'other'` provider block (see
+   * {@link ICanaryCompleteOptions.rawTemperature}) instead of the `temperature` parameter, so the
+   * library's own temperature gate does not answer for the provider.
+   */
+  readonly raw?: boolean;
 }
 
 /**
@@ -206,7 +282,10 @@ export interface ICanaryProbeResults {
   readonly thinking: ReadonlyArray<ICanaryProbeResult>;
   readonly strictNone: ReadonlyArray<ICanaryProbeResult>;
   readonly extraModels: ReadonlyArray<ICanaryProbeResult>;
+  readonly temperature: ReadonlyArray<ICanaryProbeResult>;
+  readonly maxOutput: ReadonlyArray<ICanaryProbeResult>;
   readonly structured: ReadonlyArray<ICanaryProbeResult>;
+  readonly explicitLevel: ReadonlyArray<ICanaryProbeResult>;
   readonly image: ReadonlyArray<ICanaryProbeResult>;
 }
 
@@ -246,8 +325,10 @@ export interface ITierCanarySpec {
   /** When true, also resolve + log the `image` tier (e.g. OpenAI's `@openai:image → gpt-image-2.5-sunburst`). */
   readonly imageTier?: boolean;
   /**
-   * Thinking efforts to probe on every tier, one extra live completion per (tier, effort). Catches
-   * an effort the resolved model rejects (e.g. `'none'` on a model whose effort floor is `low`).
+   * Thinking efforts to probe on every tier and extra model, one extra live completion per (target,
+   * effort). Catches an effort the resolved model rejects (e.g. `'none'` on a model whose effort
+   * floor is `low`). A `'none'` row on a thinking-required model is expected to be degraded to
+   * `'low'` and answer; on any other model it is expected to answer with thinking off.
    */
   readonly thinkingEfforts?: ReadonlyArray<CanaryThinkingEffort>;
   /**
@@ -258,11 +339,27 @@ export interface ITierCanarySpec {
   /** When true (and `imageTier` is set), fire one live image generation at the `image` tier. */
   readonly liveImage?: boolean;
   /**
-   * When true, probe every tier with `effort: 'none'` + `onUnsupported: 'fail'`. The expectation
-   * comes from the registry: a model listed in `thinkingRequiredModelPrefixes` must be refused
-   * locally, and any other model must answer live. A mismatch either way means the list is wrong.
+   * When true, probe every tier and extra model with `effort: 'none'` + `onUnsupported: 'fail'`.
+   * The expectation comes from the registry: a model listed in `thinkingRequiredModelPrefixes` must
+   * be refused locally, and any other model must answer live. A mismatch either way means the list
+   * is wrong. A listed model, and a model with its own off value (`anthropicThinkingOffTypes`), also
+   * gets a `none raw` row sending the provider's default off value, which must be rejected.
    */
   readonly strictNoneProbe?: boolean;
+  /**
+   * The text a `none raw` row's provider rejection must match (see
+   * {@link ICanaryTemperatureProbe.rejectPattern}). Absent: any 400 counts as the expected rejection.
+   */
+  readonly rawNoneRejection?: RegExp;
+  /** Temperature probes, each with its own expectation (see {@link ICanaryTemperatureProbe}). */
+  readonly temperatureProbes?: ReadonlyArray<ICanaryTemperatureProbe>;
+  /**
+   * When true, fire one completion per tier and extra model with `maxTokens` set to
+   * `resolveMaxOutputTokens` for it. It must be accepted: a refusal naming the output limit means
+   * the recorded value is too high. A model with no recorded limit gets a `no-recorded-limit` row
+   * and no call.
+   */
+  readonly maxOutputProbe?: boolean;
   /**
    * When true, fire one schema-mode structured-output completion (`onUnsupported: 'fail'`) per
    * tier and per extra model. The expectation comes from the registry: the response must report
@@ -279,6 +376,12 @@ export interface ITierCanarySpec {
    * here — the response does not report it — and is pinned by ts-extras' request-body tests instead.
    */
   readonly structuredOutputEfforts?: ReadonlyArray<CanaryThinkingEffort>;
+  /**
+   * When true, fire one completion per tier and extra model whose concrete id has a Gemini level
+   * declaration (`resolveGeminiThinkingLevels`), sending its lowest declared level in an explicit
+   * `google` block. It must be accepted: a provider 400 means the declared level list is wrong.
+   */
+  readonly explicitLevelProbe?: boolean;
 }
 
 /**
@@ -416,6 +519,14 @@ function liveTag(outcome: TierLiveOutcome): string {
       return 'FAIL(param)';
     case 'error':
       return 'FAIL';
+    case 'refused-locally':
+      return 'REFUSED-LOCALLY';
+    case 'expected-reject':
+      return 'EXPECTED-REJECT';
+    case 'observed':
+      return 'OBSERVED';
+    case 'no-recorded-limit':
+      return 'NO-RECORDED-LIMIT';
     case 'not-run':
       return 'PENDING';
   }
@@ -432,7 +543,16 @@ export function formatTierCanaryReport(
   probes?: ICanaryProbeResults
 ): string {
   const probeResults = probes
-    ? [...probes.thinking, ...probes.strictNone, ...probes.extraModels, ...probes.structured, ...probes.image]
+    ? [
+        ...probes.thinking,
+        ...probes.strictNone,
+        ...probes.extraModels,
+        ...probes.temperature,
+        ...probes.maxOutput,
+        ...probes.structured,
+        ...probes.explicitLevel,
+        ...probes.image
+      ]
     : [];
   const outcomes = [...liveResults.map((r) => r.outcome), ...probeResults.map((r) => r.outcome)];
   const anyTierFailure = liveResults.some((r) => isRealFailure(r.outcome));
@@ -443,7 +563,7 @@ export function formatTierCanaryReport(
   const verdict = anyTierFailure
     ? 'FAILED — a tier is not chat-completions-callable (wrong endpoint) or resolves to a stale id (see FAIL lines below)'
     : anyProbeFailure
-    ? 'FAILED — a thinking, strict-none, model-override, structured-output or image probe failed (see FAIL lines below)'
+    ? 'FAILED — a thinking, strict-none, model-override, temperature, max-output, structured-output, explicit-level or image probe failed (see FAIL lines below)'
     : anyNotRun
     ? 'RESOLVER-VERIFIED; LIVE CANARY PENDING (STOP-FLAG: set the provider API key to run the keyed gate)'
     : anyBlocked
@@ -475,7 +595,7 @@ export function formatTierCanaryReport(
           title,
           ...rows.map((r) => {
             const detail = r.detail ? `  (${r.detail})` : '';
-            return `  [${liveTag(r.outcome)}] ${r.label.padEnd(24)} ${r.concrete}${detail}`;
+            return `  [${liveTag(r.outcome)}] ${r.label.padEnd(28)} ${r.concrete}${detail}`;
           })
         ];
 
@@ -490,7 +610,13 @@ export function formatTierCanaryReport(
     ...probeSection('Thinking probes (tier + effort):', probes?.thinking ?? []),
     ...probeSection("Strict-none probes (effort none, onUnsupported 'fail'):", probes?.strictNone ?? []),
     ...probeSection('Model-override probes:', probes?.extraModels ?? []),
+    ...probeSection('Temperature probes (each row states its expected outcome):', probes?.temperature ?? []),
+    ...probeSection('Max-output probes (maxTokens = recorded output limit):', probes?.maxOutput ?? []),
     ...probeSection("Structured-output probes (schema, onUnsupported 'fail'):", probes?.structured ?? []),
+    ...probeSection(
+      'Explicit thinkingLevel probes (lowest declared level, sent verbatim):',
+      probes?.explicitLevel ?? []
+    ),
     ...probeSection('Live image probe:', probes?.image ?? []),
     '',
     `Verdict: ${verdict}`
@@ -529,29 +655,164 @@ function imageProbe(
     : { label: 'image', concrete, outcome: 'error', detail: 'HTTP 200 but no image data' };
 }
 
-/** Runs the thinking probes: one live completion per (tier, effort). */
+/**
+ * One request target shared by the per-target probes: a tier, or an extra model reached through
+ * `modelOverride` (always at the `base` tier). `label` is the tier name or the model string.
+ */
+interface ICanaryTarget {
+  readonly label: string;
+  readonly concrete: string;
+  readonly tier: CanaryTier;
+  readonly modelOverride?: string;
+}
+
+/** The completion options for `target`, adding its `modelOverride` (when it has one) to `options`. */
+function targetOptions(target: ICanaryTarget, options: ICanaryCompleteOptions): ICanaryCompleteOptions {
+  return target.modelOverride !== undefined ? { ...options, modelOverride: target.modelOverride } : options;
+}
+
+/** The tier targets followed by the extra-model targets, in report order. */
+function allTargets(
+  resolutions: ReadonlyArray<ITierResolution>,
+  extraModels: ReadonlyArray<ICanaryTarget>
+): ICanaryTarget[] {
+  return [...resolutions.map((r) => ({ label: r.tier, concrete: r.concrete, tier: r.tier })), ...extraModels];
+}
+
+/**
+ * The library's local refusals: each is returned before the request is built, so before `fetch`.
+ * A provider failure always carries `returned <status>` (see `isLocalRefusal`).
+ */
+const LOCAL_REFUSALS: ReadonlyArray<RegExp> = [
+  /thinking effort 'none' is not supported by/,
+  /does not accept (a non-default )?temperature/,
+  /thinking mode is not compatible with temperature/,
+  /is not supported by \S+: its thinking levels are/
+];
+
+/**
+ * True when a failure message is one of the library's own pre-wire refusals rather than a provider
+ * response: it matches a known local refusal and carries no HTTP status.
+ * @public
+ */
+export function isLocalRefusal(message: string): boolean {
+  return !/returned \d{3}/.test(message) && LOCAL_REFUSALS.some((re) => re.test(message));
+}
+
+/**
+ * The expectation a thinking probe states for its row, read off the registry: `'none'` on a
+ * thinking-required model is sent as `'low'`; elsewhere it turns thinking off, naming the off value
+ * when the model has its own (`anthropicThinkingOffTypes`). On a Gemini level model
+ * (`resolveGeminiThinkingLevels`) every row names the `thinkingLevel` it is sent as.
+ */
+function thinkingExpectation(
+  spec: ITierCanarySpec,
+  concrete: string,
+  effort: CanaryThinkingEffort
+): string | undefined {
+  const levels = AiAssist.resolveGeminiThinkingLevels(spec.descriptor, concrete);
+  const required = AiAssist.isThinkingRequiredModel(spec.descriptor, concrete);
+  if (levels !== undefined) {
+    if (effort === 'none') {
+      return required
+        ? "degraded to thinkingLevel 'low' (thinking-required)"
+        : "sent as thinkingLevel 'minimal'";
+    }
+    return `sent as thinkingLevel '${effort}'`;
+  }
+  if (effort !== 'none') {
+    return undefined;
+  }
+  if (required) {
+    return "degraded to 'low' (thinking-required)";
+  }
+  const offType = AiAssist.resolveAnthropicThinkingOffType(spec.descriptor, concrete);
+  return offType === 'disabled' ? 'sent with thinking off' : `sent with thinking off (${offType})`;
+}
+
+/**
+ * Whether a target gets a `none raw` row, and the rejection text it must match. A thinking-required
+ * model and a model with its own off value both reject the provider's default off value.
+ */
+function rawNonePlan(
+  spec: ITierCanarySpec,
+  concrete: string,
+  listed: boolean
+): { readonly note: string; readonly rejectPattern?: RegExp } | undefined {
+  const offType = AiAssist.resolveAnthropicThinkingOffType(spec.descriptor, concrete);
+  if (!listed && offType === 'disabled') {
+    return undefined;
+  }
+  return {
+    note: listed
+      ? 'the provider still rejects none, as listed'
+      : `the provider still rejects disabled; this model's off value is ${offType}`,
+    rejectPattern: spec.rawNoneRejection
+  };
+}
+
+/** Runs the thinking probes: one live completion per (tier or extra model, effort). */
 async function runThinkingProbes(
   spec: ITierCanarySpec,
-  resolutions: ReadonlyArray<ITierResolution>,
+  targets: ReadonlyArray<ICanaryTarget>,
   deps: ITierCanaryDeps
 ): Promise<ICanaryProbeResult[]> {
   const rows: ICanaryProbeResult[] = [];
-  for (const resolution of resolutions) {
+  for (const target of targets) {
     for (const effort of spec.thinkingEfforts ?? []) {
-      const label = `${resolution.tier} effort=${effort}`;
+      const label = `${target.label} effort=${effort}`;
+      const expectation = thinkingExpectation(spec, target.concrete, effort);
       if (deps.complete === undefined) {
-        rows.push({ label, concrete: resolution.concrete, outcome: 'not-run' });
+        rows.push({
+          label,
+          concrete: target.concrete,
+          outcome: 'not-run',
+          ...(expectation !== undefined ? { detail: `expect ${expectation}` } : {})
+        });
         continue;
       }
-      const result = await deps.complete(resolution.tier, { effort });
-      rows.push(completionProbe(label, resolution.concrete, result, classifyThinkingFailure));
+      const result = await deps.complete(target.tier, targetOptions(target, { effort }));
+      rows.push(
+        withPassDetail(completionProbe(label, target.concrete, result, classifyThinkingFailure), expectation)
+      );
     }
   }
   return rows;
 }
 
-/** The library's local refusal for `'none'` + `onUnsupported: 'fail'` on a thinking-required model. */
-const LOCAL_NONE_REFUSAL: RegExp = /thinking effort 'none' is not supported by/;
+/**
+ * Runs the explicit-level probes: on every target whose concrete id has a Gemini level declaration,
+ * one completion sending its lowest declared level in an explicit block. Targets with no declaration
+ * get no row.
+ */
+async function runExplicitLevelProbes(
+  spec: ITierCanarySpec,
+  targets: ReadonlyArray<ICanaryTarget>,
+  deps: ITierCanaryDeps
+): Promise<ICanaryProbeResult[]> {
+  const rows: ICanaryProbeResult[] = [];
+  if (!spec.explicitLevelProbe) {
+    return rows;
+  }
+  for (const target of targets) {
+    const lowest = AiAssist.resolveGeminiThinkingLevels(spec.descriptor, target.concrete)?.[0];
+    if (lowest === undefined) {
+      continue;
+    }
+    const label = `${target.label} level=${lowest}`;
+    if (deps.complete === undefined) {
+      rows.push({ label, concrete: target.concrete, outcome: 'not-run', detail: 'expect accepted' });
+      continue;
+    }
+    const result = await deps.complete(target.tier, targetOptions(target, { thinkingLevel: lowest }));
+    rows.push(
+      classifyExpectedProbe(label, target.concrete, 'accepted', result, {
+        note: `thinkingLevel '${lowest}' accepted`
+      })
+    );
+  }
+  return rows;
+}
 
 /** Classifies one strict-none probe against the registry's expectation for that model. */
 function strictNoneProbe(
@@ -561,84 +822,345 @@ function strictNoneProbe(
   result: Result<AiAssist.IAiCompletionResponse>
 ): ICanaryProbeResult {
   if (listed) {
-    if (result.isFailure() && LOCAL_NONE_REFUSAL.test(result.message)) {
-      return { label, concrete, outcome: 'live-pass', detail: 'refused locally, as listed' };
-    }
-    return result.isSuccess()
-      ? {
-          label,
-          concrete,
-          outcome: 'error',
-          detail: 'listed as thinking-required, but the call went through'
-        }
-      : {
-          label,
-          concrete,
-          outcome: 'error',
-          detail: `listed as thinking-required, but not refused locally: ${result.message}`
-        };
+    return classifyExpectedProbe(label, concrete, 'refused-locally', result, { note: 'as listed' });
   }
   return completionProbe(label, concrete, result, classifyThinkingFailure);
 }
 
-/** Runs the strict-none probes: one `none` + `onUnsupported: 'fail'` completion per tier. */
+/** Runs the strict-none probes: one `none` + `onUnsupported: 'fail'` completion per target. */
 async function runStrictNoneProbes(
   spec: ITierCanarySpec,
-  resolutions: ReadonlyArray<ITierResolution>,
+  targets: ReadonlyArray<ICanaryTarget>,
   deps: ITierCanaryDeps
 ): Promise<ICanaryProbeResult[]> {
   const rows: ICanaryProbeResult[] = [];
   if (!spec.strictNoneProbe) {
     return rows;
   }
-  for (const resolution of resolutions) {
-    const label = `${resolution.tier} none+fail`;
-    const listed = AiAssist.isThinkingRequiredModel(spec.descriptor, resolution.concrete);
+  for (const target of targets) {
+    const label = `${target.label} none+fail`;
+    const rawLabel = `${target.label} none raw`;
+    const listed = AiAssist.isThinkingRequiredModel(spec.descriptor, target.concrete);
+    const raw = rawNonePlan(spec, target.concrete, listed);
     if (deps.complete === undefined) {
-      rows.push({ label, concrete: resolution.concrete, outcome: 'not-run' });
-      if (listed) {
+      rows.push({
+        label,
+        concrete: target.concrete,
+        outcome: 'not-run',
+        detail: listed ? 'expect refused-locally' : 'expect accepted'
+      });
+      if (raw !== undefined) {
         rows.push({
-          label: `${resolution.tier} none raw`,
-          concrete: resolution.concrete,
-          outcome: 'not-run'
+          label: rawLabel,
+          concrete: target.concrete,
+          outcome: 'not-run',
+          detail: 'expect expected-reject'
         });
       }
       continue;
     }
-    const result = await deps.complete(resolution.tier, { effort: 'none', onUnsupported: 'fail' });
-    rows.push(strictNoneProbe(label, resolution.concrete, listed, result));
-    if (listed) {
+    const result = await deps.complete(
+      target.tier,
+      targetOptions(target, { effort: 'none', onUnsupported: 'fail' })
+    );
+    rows.push(strictNoneProbe(label, target.concrete, listed, result));
+    if (raw !== undefined) {
       // The local refusal above never reaches the provider, so it cannot notice a provider that
-      // has started accepting 'none'. Ask the provider directly, bypassing the gate.
-      const raw = await deps.complete(resolution.tier, { rawNone: true });
-      rows.push(rawNoneProbe(`${resolution.tier} none raw`, resolution.concrete, raw));
+      // has started accepting 'none'. Ask the provider directly, bypassing the gate. On a model
+      // with its own off value, this pins that the default value is still rejected.
+      const rawResult = await deps.complete(target.tier, targetOptions(target, { rawNone: true }));
+      rows.push(rawNoneProbe(rawLabel, target.concrete, rawResult, raw.note, raw.rejectPattern));
     }
   }
   return rows;
 }
 
 /**
- * Classifies a raw-`none` probe on a listed model. A provider 400 (or rejected-parameter message)
- * is the expected answer and passes: the listing is still needed. A success fails: the provider now
- * accepts `'none'` and the `thinkingRequiredModelPrefixes` entry is stale.
+ * Classifies a raw-`none` probe. A provider 400 (or rejected-parameter message) is the expected
+ * answer: the listing, or the model's own off value, is still needed. A success fails: the provider
+ * now accepts its default off value, and the `thinkingRequiredModelPrefixes` or
+ * `anthropicThinkingOffTypes` entry is stale.
  */
 function rawNoneProbe(
   label: string,
   concrete: string,
-  result: Result<AiAssist.IAiCompletionResponse>
+  result: Result<AiAssist.IAiCompletionResponse>,
+  note: string,
+  rejectPattern: RegExp | undefined
 ): ICanaryProbeResult {
   if (result.isSuccess()) {
     return {
       label,
       concrete,
       outcome: 'error',
-      detail: 'the provider accepted none; the thinking-required listing is stale'
+      detail: 'the provider accepted none; the thinking-required or off-value listing is stale'
+    };
+  }
+  return classifyExpectedProbe(label, concrete, 'expected-reject', result, { note, rejectPattern });
+}
+
+/**
+ * Options for {@link classifyExpectedProbe}.
+ * @public
+ */
+export interface ICanaryExpectationOptions {
+  /** Detail on a passing row (prefixed to the provider text on an `expected-reject` row). */
+  readonly note?: string;
+  /** The text an `expected-reject` row's provider rejection must match. */
+  readonly rejectPattern?: RegExp;
+}
+
+/**
+ * Classifies a probe whose expected outcome is stated up front.
+ *
+ * - `'refused-locally'`: passes only on one of the library's pre-wire refusals
+ *   ({@link isLocalRefusal}); a call that went through, or reached the provider and failed there,
+ *   is an `error`.
+ * - `'expected-reject'`: passes only on a provider rejection of the request (HTTP 400 or a
+ *   rejected-parameter message). A success, or a local refusal, is an `error`; an access or
+ *   stale-id failure keeps its usual meaning.
+ * - `'accepted'`: passes on a non-empty answer. A local refusal is an `error` (the library is
+ *   stricter than the probe expects); a provider failure is classified as a thinking failure.
+ * - `'observed'`: report-only. An answer reads `accepted`; a provider rejection of the request reads
+ *   `rejected: <provider text>`; neither fails. A local refusal is an `error` (the probe meant to
+ *   reach the provider), and an access or stale-id failure keeps its usual meaning.
+ *
+ * `options.note`, when given, is the detail on a passing row; on an `expected-reject` row the
+ * provider's own text follows it, so the report always shows what the provider said.
+ * `options.rejectPattern`, when given, must match an `expected-reject` row's provider text: a 400
+ * for some other reason (a usage limit, a malformed request) is an `error` carrying that text.
+ * @public
+ */
+export function classifyExpectedProbe(
+  label: string,
+  concrete: string,
+  expect: CanaryExpectation,
+  result: Result<AiAssist.IAiCompletionResponse>,
+  options: ICanaryExpectationOptions = {}
+): ICanaryProbeResult {
+  const { note, rejectPattern } = options;
+  const local = result.isFailure() && isLocalRefusal(result.message);
+  const passDetail = note !== undefined ? { detail: note } : {};
+  switch (expect) {
+    case 'refused-locally':
+      if (result.isSuccess()) {
+        return {
+          label,
+          concrete,
+          outcome: 'error',
+          detail: 'expected a local refusal, but the call went through'
+        };
+      }
+      return local
+        ? { label, concrete, outcome: 'refused-locally', ...passDetail }
+        : {
+            label,
+            concrete,
+            outcome: 'error',
+            detail: `expected a local refusal, but the request reached the provider: ${result.message}`
+          };
+    case 'expected-reject': {
+      if (result.isSuccess()) {
+        return {
+          label,
+          concrete,
+          outcome: 'error',
+          detail: 'expected the provider to reject this, but it answered — the expectation is stale'
+        };
+      }
+      if (local) {
+        return {
+          label,
+          concrete,
+          outcome: 'error',
+          detail: `expected the provider to reject this, but it was refused locally: ${result.message}`
+        };
+      }
+      const outcome = classifyThinkingFailure(result.message);
+      if (outcome !== 'param-failed') {
+        return { label, concrete, outcome, detail: result.message };
+      }
+      if (rejectPattern !== undefined && !rejectPattern.test(result.message)) {
+        return {
+          label,
+          concrete,
+          outcome: 'error',
+          detail: `the provider rejected this, but not for the expected reason: ${result.message}`
+        };
+      }
+      return {
+        label,
+        concrete,
+        outcome: 'expected-reject',
+        detail: note !== undefined ? `${note}: ${result.message}` : result.message
+      };
+    }
+    case 'accepted':
+      if (local) {
+        return {
+          label,
+          concrete,
+          outcome: 'error',
+          detail: `expected the provider to answer, but it was refused locally: ${result.message}`
+        };
+      }
+      return withPassDetail(completionProbe(label, concrete, result, classifyThinkingFailure), note);
+    case 'observed':
+      return observedProbe(label, concrete, result, local);
+  }
+}
+
+/** Classifies a report-only probe (see {@link classifyExpectedProbe}'s `'observed'`). */
+function observedProbe(
+  label: string,
+  concrete: string,
+  result: Result<AiAssist.IAiCompletionResponse>,
+  local: boolean
+): ICanaryProbeResult {
+  if (result.isSuccess()) {
+    return { label, concrete, outcome: 'observed', detail: 'accepted' };
+  }
+  if (local) {
+    return {
+      label,
+      concrete,
+      outcome: 'error',
+      detail: `the probe meant to reach the provider, but it was refused locally: ${result.message}`
     };
   }
   const outcome = classifyThinkingFailure(result.message);
   return outcome === 'param-failed'
-    ? { label, concrete, outcome: 'live-pass', detail: 'the provider still rejects none, as listed' }
+    ? { label, concrete, outcome: 'observed', detail: `rejected: ${result.message}` }
     : { label, concrete, outcome, detail: result.message };
+}
+
+/** `row` with `detail` set to `note` when the row passed and a note is given. */
+function withPassDetail(row: ICanaryProbeResult, note: string | undefined): ICanaryProbeResult {
+  return row.outcome === 'live-pass' && note !== undefined ? { ...row, detail: note } : row;
+}
+
+/** The row label for one temperature probe on one target. */
+function temperatureLabel(target: ICanaryTarget, probe: ICanaryTemperatureProbe): string {
+  const effort = probe.effort !== undefined ? `+effort=${probe.effort}` : '';
+  const raw = probe.raw === true ? ' raw' : '';
+  return `${target.label} temp=${probe.temperature}${effort}${raw}`;
+}
+
+/**
+ * Runs the temperature probes: each probe on every target it names (every target when it names
+ * none), classified against the probe's stated expectation.
+ */
+async function runTemperatureProbes(
+  spec: ITierCanarySpec,
+  targets: ReadonlyArray<ICanaryTarget>,
+  deps: ITierCanaryDeps
+): Promise<ICanaryProbeResult[]> {
+  const rows: ICanaryProbeResult[] = [];
+  for (const probe of spec.temperatureProbes ?? []) {
+    // A probe that names a model no target reaches would silently produce no rows once an alias
+    // moves; report it instead, so the probe gets updated with the alias.
+    for (const model of probe.models ?? []) {
+      if (!targets.some((t) => t.concrete === model)) {
+        rows.push({
+          label: `temp=${probe.temperature}`,
+          concrete: model,
+          outcome: 'error',
+          detail: 'the probe names a model no tier or extra model resolves to; update the probe'
+        });
+      }
+    }
+    for (const target of targets) {
+      if (probe.models !== undefined && !probe.models.includes(target.concrete)) {
+        continue;
+      }
+      const label = temperatureLabel(target, probe);
+      if (deps.complete === undefined) {
+        rows.push({ label, concrete: target.concrete, outcome: 'not-run', detail: `expect ${probe.expect}` });
+        continue;
+      }
+      const result = await deps.complete(
+        target.tier,
+        targetOptions(target, {
+          ...(probe.raw === true
+            ? { rawTemperature: probe.temperature }
+            : { temperature: probe.temperature }),
+          ...(probe.effort !== undefined ? { effort: probe.effort } : {})
+        })
+      );
+      rows.push(
+        classifyExpectedProbe(label, target.concrete, probe.expect, result, {
+          rejectPattern: probe.rejectPattern
+        })
+      );
+    }
+  }
+  return rows;
+}
+
+/** A refusal that names the output-token cap: the recorded limit is above what the provider takes. */
+const OUTPUT_LIMIT_REFUSAL: RegExp =
+  /max_tokens|max_completion_tokens|max_output_tokens|maxOutputTokens|output limit|output tokens/i;
+
+/**
+ * Classifies one max-output probe. A non-empty answer passes. A refusal naming the output-token cap
+ * is `param-failed` with the recorded limit in the detail: that value is too high. Any other
+ * failure keeps its thinking-probe classification.
+ * @public
+ */
+export function classifyMaxOutputProbe(
+  label: string,
+  concrete: string,
+  limit: number,
+  result: Result<AiAssist.IAiCompletionResponse>
+): ICanaryProbeResult {
+  if (result.isFailure() && OUTPUT_LIMIT_REFUSAL.test(result.message)) {
+    return {
+      label,
+      concrete,
+      outcome: 'param-failed',
+      detail: `the recorded limit ${limit} is too high: ${result.message}`
+    };
+  }
+  return completionProbe(label, concrete, result, classifyThinkingFailure);
+}
+
+/**
+ * Runs the max-output probes: per target, `maxTokens` = `resolveMaxOutputTokens` for exactly the
+ * model the call reaches. No recorded limit → a `no-recorded-limit` row and no call.
+ */
+async function runMaxOutputProbes(
+  spec: ITierCanarySpec,
+  targets: ReadonlyArray<ICanaryTarget>,
+  deps: ITierCanaryDeps
+): Promise<ICanaryProbeResult[]> {
+  const rows: ICanaryProbeResult[] = [];
+  if (!spec.maxOutputProbe) {
+    return rows;
+  }
+  for (const target of targets) {
+    const limit = AiAssist.resolveMaxOutputTokens(
+      spec.descriptor,
+      target.modelOverride,
+      target.tier === 'base' ? undefined : target.tier
+    );
+    if (limit === undefined) {
+      rows.push({
+        label: `${target.label} max`,
+        concrete: target.concrete,
+        outcome: 'no-recorded-limit',
+        detail: 'no maxOutputTokens entry for this model; no call made'
+      });
+      continue;
+    }
+    const label = `${target.label} max=${limit}`;
+    if (deps.complete === undefined) {
+      rows.push({ label, concrete: target.concrete, outcome: 'not-run', detail: 'expect accepted' });
+      continue;
+    }
+    const result = await deps.complete(target.tier, targetOptions(target, { maxTokens: limit }));
+    rows.push(classifyMaxOutputProbe(label, target.concrete, limit, result));
+  }
+  return rows;
 }
 
 /**
@@ -703,8 +1225,7 @@ export function classifyStructuredProbe(
  */
 async function runStructuredOutputProbes(
   spec: ITierCanarySpec,
-  resolutions: ReadonlyArray<ITierResolution>,
-  extraModels: ReadonlyArray<ICanaryProbeResult>,
+  targets: ReadonlyArray<ICanaryTarget>,
   deps: ITierCanaryDeps
 ): Promise<ICanaryProbeResult[]> {
   const rows: ICanaryProbeResult[] = [];
@@ -716,73 +1237,58 @@ async function runStructuredOutputProbes(
     schema: CANARY_STRUCTURED_SCHEMA,
     onUnsupported: 'fail'
   };
-  // Extra models reuse the model-override rows' already-resolved ids; each row's label is the
-  // model string it was resolved from.
-  const bases: Array<{ label: string; concrete: string; tier: CanaryTier; modelOverride?: string }> = [
-    ...resolutions.map((r) => ({ label: `${r.tier} schema`, concrete: r.concrete, tier: r.tier })),
-    ...extraModels.map((r) => ({
-      label: `${r.label} schema`,
-      concrete: r.concrete,
-      tier: 'base' as const,
-      modelOverride: r.label
-    }))
+  const efforts: ReadonlyArray<CanaryThinkingEffort | undefined> = [
+    undefined,
+    ...(spec.structuredOutputEfforts ?? [])
   ];
-  const targets: Array<{
-    label: string;
-    concrete: string;
-    tier: CanaryTier;
-    modelOverride?: string;
-    effort?: CanaryThinkingEffort;
-  }> = [
-    ...bases,
-    ...(spec.structuredOutputEfforts ?? []).flatMap((effort) =>
-      bases.map((b) => ({ ...b, label: `${b.label}+effort=${effort}`, effort }))
-    )
-  ];
-  for (const target of targets) {
-    if (deps.complete === undefined) {
-      rows.push({ label: target.label, concrete: target.concrete, outcome: 'not-run' });
-      continue;
+  for (const effort of efforts) {
+    for (const target of targets) {
+      const label = `${target.label} schema${effort !== undefined ? `+effort=${effort}` : ''}`;
+      if (deps.complete === undefined) {
+        rows.push({ label, concrete: target.concrete, outcome: 'not-run' });
+        continue;
+      }
+      const result = await deps.complete(
+        target.tier,
+        targetOptions(target, { structuredOutput, ...(effort !== undefined ? { effort } : {}) })
+      );
+      rows.push(
+        classifyStructuredProbe(
+          label,
+          target.concrete,
+          expectedStructuredEnforcement(spec.descriptor, target.concrete),
+          result
+        )
+      );
     }
-    const result = await deps.complete(target.tier, {
-      structuredOutput,
-      ...(target.modelOverride !== undefined ? { modelOverride: target.modelOverride } : {}),
-      ...(target.effort !== undefined ? { effort: target.effort } : {})
-    });
-    rows.push(
-      classifyStructuredProbe(
-        target.label,
-        target.concrete,
-        expectedStructuredEnforcement(spec.descriptor, target.concrete),
-        result
-      )
-    );
   }
   return rows;
 }
 
-/** Resolves (offline) and fires (live) each extra model via `modelOverride`. */
+/** Resolves (offline) one extra model to a `modelOverride` target. */
+function resolveExtraModel(spec: ITierCanarySpec, model: string): Result<ICanaryTarget> {
+  return AiAssist.resolveProviderModel(spec.descriptor, model, undefined)
+    .withErrorFormat((msg) => `model override '${model}': resolver failed: ${msg}`)
+    .onSuccess((concrete) =>
+      succeed({ label: model, concrete, tier: 'base' as const, modelOverride: model })
+    );
+}
+
+/** Fires (live) each extra model via `modelOverride`. */
 async function runExtraModelProbes(
-  spec: ITierCanarySpec,
-  deps: ITierCanaryDeps,
-  logger: Logging.ILogger
-): Promise<Result<ICanaryProbeResult[]>> {
+  extraModels: ReadonlyArray<ICanaryTarget>,
+  deps: ITierCanaryDeps
+): Promise<ICanaryProbeResult[]> {
   const rows: ICanaryProbeResult[] = [];
-  for (const model of spec.extraModels ?? []) {
-    const concreteResult = AiAssist.resolveProviderModel(spec.descriptor, model, undefined);
-    if (concreteResult.isFailure()) {
-      return fail(`model override '${model}': resolver failed: ${concreteResult.message}`);
-    }
-    const concrete = concreteResult.value;
-    logger.info(`resolved ${model} -> ${concrete} (modelOverride)`);
+  for (const target of extraModels) {
     if (deps.complete === undefined) {
-      rows.push({ label: model, concrete, outcome: 'not-run' });
+      rows.push({ label: target.label, concrete: target.concrete, outcome: 'not-run' });
       continue;
     }
-    const result = await deps.complete('base', { modelOverride: model });
-    rows.push(completionProbe(model, concrete, result, classifyLiveFailure));
+    const result = await deps.complete('base', targetOptions(target, {}));
+    rows.push(completionProbe(target.label, target.concrete, result, classifyLiveFailure));
   }
-  return succeed(rows);
+  return rows;
 }
 
 /**
@@ -852,13 +1358,23 @@ export async function runTierCanary(
     }
   }
 
-  const thinking = await runThinkingProbes(spec, resolutions, deps);
-  const strictNone = await runStrictNoneProbes(spec, resolutions, deps);
-  const extraModelsResult = await runExtraModelProbes(spec, deps, logger);
-  if (extraModelsResult.isFailure()) {
-    return fail(`${spec.providerId} tier canary: ${extraModelsResult.message}`);
+  const extraTargetsResult = mapResults((spec.extraModels ?? []).map((m) => resolveExtraModel(spec, m)));
+  if (extraTargetsResult.isFailure()) {
+    return fail(`${spec.providerId} tier canary: ${extraTargetsResult.message}`);
   }
-  const structured = await runStructuredOutputProbes(spec, resolutions, extraModelsResult.value, deps);
+  const extraTargets = extraTargetsResult.value;
+  for (const t of extraTargets) {
+    logger.info(`resolved ${t.label} -> ${t.concrete} (modelOverride)`);
+  }
+  const targets = allTargets(resolutions, extraTargets);
+
+  const thinking = await runThinkingProbes(spec, targets, deps);
+  const strictNone = await runStrictNoneProbes(spec, targets, deps);
+  const extraModels = await runExtraModelProbes(extraTargets, deps);
+  const temperature = await runTemperatureProbes(spec, targets, deps);
+  const maxOutput = await runMaxOutputProbes(spec, targets, deps);
+  const structured = await runStructuredOutputProbes(spec, targets, deps);
+  const explicitLevel = await runExplicitLevelProbes(spec, targets, deps);
   const image: ICanaryProbeResult[] = [];
   if (spec.liveImage && imageResolution) {
     image.push(
@@ -870,8 +1386,11 @@ export async function runTierCanary(
   const probes: ICanaryProbeResults = {
     thinking,
     strictNone,
-    extraModels: extraModelsResult.value,
+    extraModels,
+    temperature,
+    maxOutput,
     structured,
+    explicitLevel,
     image
   };
 
@@ -880,13 +1399,17 @@ export async function runTierCanary(
   // Verdict: a stale id (`id-wrong`), a non-chat-callable id (`wrong-endpoint`), a rejected thinking
   // config (`param-failed`), or a plain `error` — on a tier or on any probe — fails the run.
   // `access-gated` / `param-rejected` (resolver + id correct; access or a completion-path parameter
-  // is the blocker) and `not-run` (STOP-FLAG: pending the keyed run) do not.
+  // is the blocker), `not-run` (STOP-FLAG: pending the keyed run), the expected outcomes
+  // `refused-locally`, `expected-reject` and `no-recorded-limit`, and the report-only `observed` do not.
   const realFailure = [
     ...liveResults,
     ...thinking,
     ...strictNone,
-    ...probes.extraModels,
+    ...extraModels,
+    ...temperature,
+    ...maxOutput,
     ...structured,
+    ...explicitLevel,
     ...image
   ].some((r) => isRealFailure(r.outcome));
   return realFailure ? fail(report) : succeed(report);

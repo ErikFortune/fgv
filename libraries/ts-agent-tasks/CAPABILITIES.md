@@ -444,7 +444,8 @@ shown.** The host subscribes; a principal then works a bound delivery (`IBoundTa
 await broker.subscribe(
   { principal: 'host', scopes: [projectScope], authorization: policy },
   { subscriptionId, operationId, consumerId, selection: { scopes: [projectScope], lifecycleClass: 'all' },
-    start: 'current' /* or 'from-now' */, policy: { categories: ['attention', 'lifecycle', 'result'] } }
+    start: 'current' /* or 'from-now' */, policy: { categories: ['attention', 'lifecycle', 'result'] },
+    drainPrincipals: ['agent:ada'] /* who may bind and drain it; default: the registrant alone */ }
 );
 const delivery = broker.bindDelivery({ principal: 'agent:ada', scopes: [projectScope], authorization: policy,
   subscriptionId, consumerId }).orThrow();
@@ -452,6 +453,10 @@ const { context } = (await delivery.prepare({ maxItems: 20, maxDepth: 3, maxChar
 // … the host processes `context` (model call, etc.) …
 await delivery.acknowledge(context.receipt); // only after the host's own success boundary
 ```
+
+**Only the principals a subscription names may bind its delivery** — a binding drains it. See
+*Only a subscription's drain principals may bind its delivery* under the host helpers below, and
+`TaskBroker.setSubscriptionDrain` for changing them.
 
 **Audience is storage's.** An update is owed to an active subscription iff its category is in the
 subscription's `policy.categories` (`attention`, `lifecycle`, `result` are always included) and the
@@ -498,7 +503,11 @@ pressure, not cleanup — ends one. Both land in the subscription's exact histor
 (`ITaskConsumerRecord.acknowledged` / `.disposed`), which is retained for the record's life.
 
 - **`TaskBroker.dispose(binding, { subscriptionId, updateIds, reason })`** — a trusted host
-  operation; `binding`'s policy must also allow `dispose-obligation` on every task the ids name.
+  operation through a binding whose principal is one of the subscription's **drain principals** (the
+  consumer the obligations are owed to — one consumer's binding never ends another's); its policy
+  must also allow `dispose-obligation` on every task the ids name. Anyone else gets
+  `not-found-or-denied`, the missing-subscription answer, before any task is put to the policy; the
+  drain rule is decided again in the writing section, on the record written.
   Every id must be owed now (or already discharged — reported, not rewritten); an id an
   unacknowledged issued receipt names is refused until that receipt is acknowledged or abandoned.
   The reason is bounded by the profile's `maxDispositionReasonBytes`. It converts the evidence slot
@@ -507,8 +516,11 @@ pressure, not cleanup — ends one. Both land in the subscription's exact histor
   subscription joins no audience again and releases its future-update reservation. `retain` keeps
   what it is owed, drainable through its bound delivery (a closed subscription's `prepare`
   presents only what it is still owed); `dispose` abandons its unacknowledged receipts and disposes
-  everything it is owed, with `reason`. Its record, identity slot and history are retained; its id
-  is never reused. Once a closed subscription owes nothing it releases its 64 KiB preparation.
+  everything it is owed, with `reason`. `dispose` takes a drain principal's binding, as `TaskBroker.dispose`
+  does; `retain` takes a drain principal's or the registering principal's, since it ends nothing
+  owed. Anyone else is `not-found-or-denied`, decided again in the writing section. A host that
+  registered on an agent's behalf and must dispose names itself among the drain principals first.
+  Its record, identity slot and history are retained; its id is never reused. Once a closed subscription owes nothing it releases its 64 KiB preparation.
 - **`TaskBroker.abandonCommand(binding, { taskId, operationId, reason })`** — ends tracking of an
   external command whose outcome is not known (never sent, sent-and-held, or awaiting a
   `source-replay` feed revision). The receipt becomes `{ state: 'abandoned', reason, from }`: it
@@ -667,19 +679,26 @@ a section per step), so it can resolve mid-operation. **To quiesce before a shut
 pause the `writeGuard`, then `whenIdle`**: it resolves once the sections already past the guard have
 finished. A write that arrives during the pause and is held *at* the guard is a queued section, so
 it keeps the broker busy until the pause lifts — a gate whose pause holds new writes should report
-its own quiet for that case. It sees only the broker's queue — direct
+its own quiet for that case, as `AsyncControl.WriteGate.pause` does by resolving once its own writes
+under way have drained. It sees only the broker's queue — direct
 `repository.withWriter` callers are invisible to it. The bound uses `TaskBroker.create`'s `schedule`
-(`(fn, ms) => cancel`, default `setTimeout`); a `schedule` or `cancel` that throws never reaches the
-writer queue.
+(`AsyncControl.ScheduleTimer` from `@fgv/ts-extras`, `(fn, ms) => cancel`, default `setTimeout`); a
+`schedule` or `cancel` that throws never reaches the writer queue.
 
 **`TaskBroker.create({ writeGuard })`.** A structural `{ guard(write) }` applied inside the queue's
 turn, around the repository writer, for **every** broker write — bound writers, model tools, source
-passes, deliveries, retention and `cleanup`. The broker tracks whether the guard ran the section:
-- refused without running it, with a failure carrying no task detail (a gate typed over plain
-  `Result`) — `storage-unavailable`, retry `after-host-action`;
-- threw without running it — `invalid`;
-- ran it, then failed or threw — `storage-unavailable`, retry **`reconcile-first`**: the section may
-  have committed. A section the guard started without awaiting is awaited before the turn ends;
+passes, deliveries, retention and `cleanup`. `guard` answers any `PromiseLike<Result<T>>`, so
+`AsyncControl.WriteGate` from `@fgv/ts-extras` fits as is — raise it to refuse every broker write
+unrun, pause it to hold them. The section must be started before the guard answers (a gate may wait
+on a pause first): one started after the broker observed the answer is refused unrun, and one started
+in the few microtasks between the answer settling and the broker observing it is awaited and
+classified as run. The broker tracks whether the guard ran the section:
+- refused without running it — that failure when its detail converts as an `ITaskFailure`; otherwise
+  (a gate typed over plain `Result`) `storage-unavailable`, retry `after-host-action`;
+- answered success or a non-`Result`, or threw, without running it — `invalid`;
+- ran it, then failed, threw or answered a non-`Result`, or the section itself rejected —
+  `storage-unavailable`, retry **`reconcile-first`**: the section may have committed. A section the
+  guard started without awaiting is awaited before the turn ends;
 - ran it twice — the second call is refused unrun.
 
 **The guard must not call the broker.** A broker write started from inside `guard` queues behind
@@ -795,14 +814,18 @@ the policy epoch), so a task that moves between the decision and the issue is ca
 more }`, **counts only** — an update id embeds its task id, so a list would name tasks the principal
 may not read; the exact ids stay in the subscription's history for the trusted host. Ends up to
 `limit` owed updates the subscription holds that are withheld now. Not authorized per task, but by
-the subscription as a whole, and only when all three hold: the binding's principal **registered**
-the subscription; the binding's selectors **cover its whole selection**; and the binding's policy
-grants **both `acknowledge` and `dispose-obligation`**, each asked for the selection's scopes naming
-no task — only a binding that could have acknowledged these obligations may end them unseen.
-Otherwise `not-found-or-denied`. **The binding's policy decides what counts as withheld**: the checks
-refuse a binding narrower on principal, selectors or those grants, but not one merely narrower about
-a particular task than the consumer's real policy — so call it only through a binding built with
-**the consumer's own policy**.
+the subscription as a whole, and only when all of these hold: the binding's principal is a **drain
+principal**; the subscription **recorded a policy identity** (`subscribe`'s `policyIdentity`) and the
+binding's policy **carries the same one** (`ITaskAuthorization.policyIdentity`, read at binding); the
+binding's selectors **cover its whole selection**; and the binding's policy grants **both
+`acknowledge` and `dispose-obligation`**, each asked for the selection's scopes naming no task — only
+a binding that could have acknowledged these obligations may end them unseen. Otherwise
+`not-found-or-denied`; a subscription with no recorded identity refuses every binding. **The
+binding's policy decides what counts as withheld**, and the identity is what ties it to the
+consumer's own: the grant checks alone cannot tell a policy that withholds a task for good from one
+merely narrower about it. The identity is a name the host gives, not a credential — the broker checks
+that the recorded and presented names agree. The drain principals and identity are re-decided inside
+the writer, on the record the write is conditioned on.
 
 **For policy authors: a scope-only request is the broadest question, never a free pass.**
 `acknowledge` and `dispose-obligation` are also asked with **no task named**, carrying only a
@@ -814,10 +837,33 @@ obligations through `disposeWithheld`. Each withheld decision is re-checked in t
 writer before anything is written. An id an unexpired, unacknowledged receipt names is counted in
 `pinned`, not disposed; `more` says the listing went past `limit`.
 
-**`bindDelivery` does not require the registering principal**: a host may subscribe on an agent's
-behalf and bind the agent's delivery. Disclosure and acknowledgement are decided under the binding's
-own authority, but a binding **drains** the subscription — what it acknowledges is no longer owed to
-that `consumerId` — so which principal drains which consumer is the host's to keep straight.
+**Only a subscription's drain principals may bind its delivery.** A binding **drains** the
+subscription — what it acknowledges is no longer owed to that `consumerId` — so `subscribe` records
+who may: `drainPrincipals` (de-duplicated, then non-empty and at most `maxDrainPrincipals` distinct;
+stored ascending), by default the registering principal alone. The same principals may `dispose` of
+what it is owed (see *Retention*). A host that subscribes on an agent's behalf
+names the agent; the registrant is not added implicitly. `bindDelivery` refuses anyone else with
+`not-found-or-denied` — the answer a missing subscription or a wrong `consumerId` gets, so it
+discloses nothing — and so does `TaskDeliveryPump.create`; a malformed binding is `invalid` whether or not the subscription exists. Every bound-delivery operation (`pending`,
+`prepare`, `acknowledge`, `abandon`, `issued`, `disposeWithheld`) applies the rule again to the
+subscription as it stands, so a principal removed after binding is refused from then on; a receipt it
+prepared stays issued until a principal still named acknowledges or abandons it, or it expires.
+Disclosure and acknowledgement are still decided under the binding's own authority.
+
+**`TaskBroker.setSubscriptionDrain(binding, { subscriptionId, drainPrincipals, policyIdentity? })`**
+replaces the drain principals and the recorded policy identity (an omitted identity removes it) — a
+trusted host operation through the **registering** principal's binding, whose selectors cover the
+selection and whose policy grants `subscribe` for it; anything else is `not-found-or-denied`. Active
+or closed; a request that changes nothing writes nothing. A subscription recorded before drain
+principals existed is drained by its registrant alone (`drainPrincipalsOf(record)`;
+`ITaskSubscription.drainPrincipals` reports the rule applied), until `setSubscriptionDrain` gives it
+a list; a retry of its original `subscribe` — which now names the registrant — still replays.
+
+**Recovery: `subscribe` is not an update path.** A retry is compared with the subscription as it
+stands, so after `setSubscriptionDrain` a retry of the original registration is `conflict`. A host
+that re-runs `subscribe` at boot makes every drain change through `setSubscriptionDrain` alone, and
+on `conflict` either retries with the current list and identity or reads the subscription
+(`repository.subscription(id)`) and carries on from what it holds.
 
 **`DeferredObligations.create({ broker, principal, authorization, scope, idPrefix, roles, codes?,
 namespaces?, schedule?, operationBudget?, guard? })`** — a durable retry obligation is a
@@ -1479,8 +1525,10 @@ multi-process ownership, general event sourcing, and dependency DAGs.
 
 <!-- BEGIN GENERATED: recent-additions -->
 
+- **2026-11-12** — Only the principals an agent-task subscription names may bind and drain its delivery, and disposeWithheld ends withheld obligations only through the consumer's own policy, by identity. ([#781](https://github.com/ErikFortune/fgv/pull/781))
 - **2026-10-26** — An agent-task host can drain a subscription one revision at a time, acknowledging only after its own work commits, and keep a durable retry obligation for a busy recipient that a crash cannot duplicate. ([#762](https://github.com/ErikFortune/fgv/pull/762))
 - **2026-10-26** — An agent-task host can open or initialize its repository in the strongest mode its root qualifies for, give its own principal a fixed trusted authority, wait for the broker to go idle and gate every broker write. ([#758](https://github.com/ErikFortune/fgv/pull/758))
+- **2026-10-26** — A host can stop every write it routes through one AsyncControl.WriteGate, or hold them still for a snapshot until the writes under way drain, and hand the same gate to a task broker as its writeGuard. ([#761](https://github.com/ErikFortune/fgv/pull/761))
 - **2026-10-01** — Agent task context can go into a cacheable prompt as one checked, trailing per-request slot, and a delivery's receipt is acknowledgeable only against the exact text that was sent. ([#707](https://github.com/ErikFortune/fgv/pull/707))
 - **2026-09-28** — A host can give a model bounded, per-call-authorized tools over its agent tasks: read-only by default, with create, update, reassign, typed commands and cascade-stop requests opt-in. ([#702](https://github.com/ErikFortune/fgv/pull/702))
 - **2026-09-22** — New @fgv/ts-agent-tasks records agent work without running it: typed task envelopes, a crash-safe FileTree store, and a principal-bound broker with exact-receipt delivery, external-source reconciliation, retention and persistent cascade stop. ([#684](https://github.com/ErikFortune/fgv/pull/684))

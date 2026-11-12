@@ -21,6 +21,7 @@ import {
   ITaskObligationDisposal,
   ITaskObligationDisposition,
   ITaskSubscriptionClosure,
+  ITaskSubscriptionDrainChange,
   ITaskReceiptAbandonment,
   ITaskReceiptAcknowledgement,
   ITaskReceiptIssue,
@@ -59,6 +60,33 @@ import {
   valueBytes
 } from './subscriptions';
 import { TaskIndex } from './taskIndex';
+
+/**
+ * A record's registration specification as it stands: what a replay of its registration must repeat.
+ * @internal
+ */
+export function specificationOf(record: ITaskConsumerRecord): ITaskSubscriptionSpecification {
+  return {
+    consumerId: record.consumerId,
+    selection: record.selection,
+    start: record.start,
+    policy: record.policy,
+    ...(record.drainPrincipals !== undefined ? { drainPrincipals: record.drainPrincipals } : {}),
+    ...(record.policyIdentity !== undefined ? { policyIdentity: record.policyIdentity } : {})
+  };
+}
+
+/**
+ * `specification` with its drain principals as the rule applies them — absent reads as `registrant`
+ * alone, as `drainPrincipalsOf` reads a record — so a registration written before drain principals
+ * existed is the same registration as a retry that names its registrant explicitly.
+ */
+function _resolvedDrain(
+  specification: ITaskSubscriptionSpecification,
+  registrant: string
+): ITaskSubscriptionSpecification {
+  return { ...specification, drainPrincipals: specification.drainPrincipals ?? [registrant] };
+}
 
 /**
  * What the subscription-record operations need from the repository that owns them.
@@ -260,12 +288,12 @@ export class SubscriptionRecords {
       {
         operationId: pending.operationId,
         principalKey: pending.principalKey,
-        specification: pending.specification
+        specification: _resolvedDrain(pending.specification, pending.principalKey)
       },
       {
         operationId: registration.operationId,
         principalKey: registration.principalKey,
-        specification: registration.specification
+        specification: _resolvedDrain(registration.specification, registration.principalKey)
       }
     );
   }
@@ -281,16 +309,11 @@ export class SubscriptionRecords {
       const same: boolean = canonicallyEqual(
         {
           registration: record.registration,
-          specification: {
-            consumerId: record.consumerId,
-            selection: record.selection,
-            start: record.start,
-            policy: record.policy
-          }
+          specification: _resolvedDrain(specificationOf(record), record.registration.principalKey)
         },
         {
           registration: { operationId: registration.operationId, principalKey: registration.principalKey },
-          specification: registration.specification
+          specification: _resolvedDrain(registration.specification, registration.principalKey)
         }
       );
       if (!same) {
@@ -917,6 +940,37 @@ export class SubscriptionRecords {
     );
   }
 
+  /**
+   * Replaces a subscription's drain principals and policy identity, active or closed. Nothing is
+   * written when both already stand as asked.
+   */
+  public setDrain(request: ITaskSubscriptionDrainChange): TaskResult<ITaskConsumerRecord> {
+    const converted = this._host.converters.delivery.drainChange.convert(request);
+    if (converted.isFailure()) {
+      return taskFailure(`setSubscriptionDrain: ${converted.message}`, 'invalid', 'after-host-action');
+    }
+    const change: ITaskSubscriptionDrainChange = converted.value;
+    return this._current(change.subscriptionId, change.expectedRecordRevision).onSuccess(
+      ({ state, record }) => {
+        // The identity is replaced whole: an omitted one leaves the record without it.
+        const { policyIdentity: recorded, ...rest } = record;
+        if (
+          canonicallyEqual(
+            { drainPrincipals: rest.drainPrincipals, policyIdentity: recorded },
+            { drainPrincipals: change.drainPrincipals, policyIdentity: change.policyIdentity }
+          )
+        ) {
+          return ok(record);
+        }
+        return this._replace(state, rest, {
+          issued: record.issued,
+          drainPrincipals: change.drainPrincipals,
+          ...(change.policyIdentity !== undefined ? { policyIdentity: change.policyIdentity } : {})
+        });
+      }
+    );
+  }
+
   /** A disposition reason within the stored profile's byte bound, measured as it is encoded. */
   private _reason(reason: string): TaskResult<string> {
     const max: number = this._host.profile().encoded.maxDispositionReasonBytes;
@@ -1031,7 +1085,12 @@ export class SubscriptionRecords {
     state: ISubscriptionState,
     record: ITaskConsumerRecord,
     changes: Pick<ITaskConsumerRecord, 'issued'> &
-      Partial<Pick<ITaskConsumerRecord, 'acknowledged' | 'disposed' | 'baseline' | 'state'>>,
+      Partial<
+        Pick<
+          ITaskConsumerRecord,
+          'acknowledged' | 'disposed' | 'baseline' | 'state' | 'drainPrincipals' | 'policyIdentity'
+        >
+      >,
     satisfied: ReadonlyArray<UpdateId> = []
   ): TaskResult<ITaskConsumerRecord> {
     const host: ISubscriptionHost = this._host;

@@ -19,7 +19,17 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-import { Brand, Result, fail, mapResults, succeed } from '../base';
+import {
+  Brand,
+  Result,
+  _errorMessage,
+  _isStackExhaustion,
+  _resultBoundary,
+  fail,
+  formatValueForMessage,
+  mapResults,
+  succeed
+} from '../base';
 import {
   ConstraintOptions,
   ConversionErrorFormatter,
@@ -29,6 +39,12 @@ import {
   OnError
 } from './converter';
 import { GenericDefaultingConverter } from './defaultingConverter';
+
+/**
+ * The shared boundary state, held locally: reading it through the package's re-export chain costs
+ * a getter call per access on the hot path.
+ */
+const boundary: { depth: number } = _resultBoundary;
 
 /**
  * Internal helper that recursively unwraps converter and array types.
@@ -101,13 +117,40 @@ export class BaseConverter<T, TC = unknown> implements Converter<T, TC> {
 
   /**
    * Constructs a new {@link Converter} which uses the supplied function to perform the conversion.
+   * @remarks
+   * The converter is a `Result` boundary, so it never throws: if the supplied function throws
+   * (a bug in a custom callback, or a getter or Proxy trap on the value being converted), the
+   * conversion fails with `converter threw: <message>` instead. Stack exhaustion inside nested
+   * converters unwinds to the outermost converter and fails once there; a `captureResult` (or any
+   * `try`) the caller places between two nested converters catches it there instead.
+   *
+   * The conversion to a `Failure` masks the error wherever a failure is expected: `convertOptional`
+   * with `ignoreErrors`, `oneOf` (which tries the next converter), `orDefault`, and `guard` all
+   * treat a buggy callback like invalid input. `orThrow` re-raises the message, but not the original
+   * error's class or stack.
    * @param converter - The conversion function to be applied.
    * @param defaultContext - Optional conversion context to be used by default.
    * @param traits - Optional {@link Conversion.ConverterTraits | traits} to be assigned to the resulting
    * converter.
    */
   public constructor(converter: ConverterFunc<T, TC>, defaultContext?: TC, traits?: ConverterTraits) {
-    this._converter = converter;
+    this._converter = (from: unknown, self: Converter<T, TC>, context?: TC): Result<T> => {
+      // written out rather than shared so the hot path allocates nothing; see _resultBoundary
+      const nested = boundary.depth > 0;
+      let result: Result<T>;
+      boundary.depth++;
+      try {
+        result = converter(from, self, context);
+      } catch (err) {
+        if (nested && _isStackExhaustion(err)) {
+          throw err;
+        }
+        result = fail(`converter threw: ${_errorMessage(err)}`);
+      } finally {
+        boundary.depth--;
+      }
+      return result;
+    };
     this._defaultContext = defaultContext;
     this._isOptional = traits?.isOptional === true;
     this._brand = traits?.brand;
@@ -297,7 +340,7 @@ export class BaseConverter<T, TC = unknown> implements Converter<T, TC> {
         message = message ?? 'invalid type';
         return guard(inner, this._context(context))
           ? succeed(inner)
-          : fail(`${message}: ${JSON.stringify(from)}`);
+          : fail(`${message}: ${formatValueForMessage(from)}`);
       });
     })._with(this._traits());
   }
@@ -325,7 +368,7 @@ export class BaseConverter<T, TC = unknown> implements Converter<T, TC> {
               message = message ?? 'invalid type';
               return guard(i, this._context(context))
                 ? succeed(i)
-                : fail(`${message}: ${JSON.stringify(from)}`);
+                : fail(`${message}: ${formatValueForMessage(from)}`);
             })
           );
         }
@@ -357,7 +400,9 @@ export class BaseConverter<T, TC = unknown> implements Converter<T, TC> {
           return constraintResult
             ? result
             : fail(
-                `"${JSON.stringify(result.value)}": ${options?.description ?? 'does not meet constraint'}`
+                `"${formatValueForMessage(result.value)}": ${
+                  options?.description ?? 'does not meet constraint'
+                }`
               );
         }
         return constraintResult;

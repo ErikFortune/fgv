@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { Result, fail, succeed } from '../base';
+import { Result, fail, formatValueForMessage, succeed } from '../base';
 import { BaseConverter } from './baseConverter';
 import { Converter, ConverterTraits } from './converter';
 
@@ -79,7 +79,9 @@ export class StringConverter<T extends string = string, TC = unknown> extends Ba
    * @internal
    */
   protected static _convert<T extends string>(from: unknown): Result<T> {
-    return typeof from === 'string' ? succeed(from as T) : fail(`Not a string: ${JSON.stringify(from)}`);
+    return typeof from === 'string'
+      ? succeed(from as T)
+      : fail(`Not a string: ${formatValueForMessage(from)}`);
   }
 
   /**

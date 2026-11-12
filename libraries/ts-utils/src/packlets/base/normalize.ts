@@ -21,6 +21,7 @@
  */
 
 import { mapResults } from './mapResults';
+import { formatValueForMessage } from './formatValue';
 import { Result, captureResult, fail, succeed } from './result';
 
 /**
@@ -192,7 +193,6 @@ export class Normalizer {
     if (from instanceof RegExp) {
       return succeed(from);
     }
-    /* c8 ignore next 2 */
-    return fail(`cannot normalize ${JSON.stringify(from)}`);
+    return fail(`cannot normalize ${formatValueForMessage(from)}`);
   }
 }

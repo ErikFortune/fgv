@@ -28,11 +28,13 @@ import {
   type CanaryTier,
   type ICanaryCompleteOptions,
   type ITierCanaryDeps,
+  classifyExpectedProbe,
   classifyLiveFailure,
   classifyStructuredProbe,
   classifyThinkingFailure,
   expectedStructuredEnforcement,
   formatTierCanaryReport,
+  isLocalRefusal,
   resolveTierResolutions,
   runTierCanary
 } from '../../../scenarios/modelTiers/canary';
@@ -87,7 +89,7 @@ describe('resolveTierResolutions', () => {
       (resolutions) => {
         expect(resolutions).toEqual([
           { tier: 'base', alias: '@openai:mini', concrete: 'gpt-6-luna', cascaded: false },
-          { tier: 'advanced', alias: '@openai:flagship', concrete: 'gpt-6-sol', cascaded: false },
+          { tier: 'advanced', alias: '@openai:flagship', concrete: 'gpt-6.1-sol', cascaded: false },
           { tier: 'frontier', alias: '@openai:pro', concrete: 'gpt-6-astra', cascaded: false }
         ]);
       }
@@ -116,13 +118,13 @@ describe('resolveTierResolutions', () => {
         expect(resolutions[1]).toEqual({
           tier: 'advanced',
           alias: '@google-gemini:pro',
-          concrete: 'gemini-3.1-pro-preview',
+          concrete: 'gemini-4-argon',
           cascaded: false
         });
         expect(resolutions[2]).toEqual({
           tier: 'frontier',
           alias: '@google-gemini:pro',
-          concrete: 'gemini-3.1-pro-preview',
+          concrete: 'gemini-4-argon',
           cascaded: true
         });
       }
@@ -228,7 +230,7 @@ describe('runTierCanary (offline — STOP-FLAG)', () => {
     );
     expect(result).toSucceedAndSatisfy((report: string) => {
       expect(report).toMatch(/=== anthropic model-tier canary ===/);
-      expect(report).toMatch(/\[PASS\] base\s+@anthropic:sonnet -> claude-sonnet-5/);
+      expect(report).toMatch(/\[PASS\] base\s+@anthropic:sonnet -> claude-sonnet-5-5/);
       expect(report).toMatch(
         /\[PASS\] frontier\s+@anthropic:opus -> claude-opus-5-5 \(cascaded from a lower tier\)/
       );
@@ -236,7 +238,7 @@ describe('runTierCanary (offline — STOP-FLAG)', () => {
       expect(report).toMatch(/RESOLVER-VERIFIED; LIVE CANARY PENDING \(STOP-FLAG/);
     });
     // The alias -> concrete log lines match the shipped maintenance-loop format.
-    expect(logger.logged).toContain("resolved @anthropic:sonnet -> claude-sonnet-5 (tier 'base')");
+    expect(logger.logged).toContain("resolved @anthropic:sonnet -> claude-sonnet-5-5 (tier 'base')");
     expect(logger.logged).toContain(
       "resolved @anthropic:opus -> claude-opus-5-5 (tier 'frontier' request cascaded)"
     );
@@ -331,7 +333,7 @@ describe('runTierCanary (live — injected completion)', () => {
     );
     expect(result).toSucceedAndSatisfy((report: string) => {
       expect(report).toMatch(/LIVE BLOCKED/);
-      expect(report).toMatch(/\[BLOCKED\(param\)\] base\s+claude-sonnet-5\s+\(AI API returned 400/);
+      expect(report).toMatch(/\[BLOCKED\(param\)\] base\s+claude-sonnet-5-5\s+\(AI API returned 400/);
     });
   });
 
@@ -450,7 +452,7 @@ describe('runTierCanary (thinking probes)', () => {
     expect(result).toFailWith(/\[PASS\] frontier\s+gpt-6-astra/);
     expect(result).toFailWith(/\[FAIL\(param\)\] frontier effort=none\s+gpt-6-astra\s+\(AI API returned 400/);
     expect(result).toFailWith(
-      /FAILED — a thinking, strict-none, model-override, structured-output or image probe failed/
+      /FAILED — a thinking, strict-none, model-override, temperature, max-output, structured-output, explicit-level or image probe failed/
     );
   });
 
@@ -527,9 +529,9 @@ describe('runTierCanary (strict-none probes)', () => {
     expect(result).toSucceedAndSatisfy((report: string) => {
       expect(report).toMatch(/Strict-none probes \(effort none, onUnsupported 'fail'\):/);
       expect(report).toMatch(/\[PASS\] base none\+fail\s+gpt-6-luna/);
-      expect(report).toMatch(/\[PASS\] frontier none\+fail\s+gpt-6-astra\s+\(refused locally, as listed\)/);
+      expect(report).toMatch(/\[REFUSED-LOCALLY\] frontier none\+fail\s+gpt-6-astra\s+\(as listed\)/);
       expect(report).toMatch(
-        /\[PASS\] frontier none raw\s+gpt-6-astra\s+\(the provider still rejects none, as listed\)/
+        /\[EXPECTED-REJECT\] frontier none raw\s+gpt-6-astra\s+\(the provider still rejects none, as listed: AI API returned 400: 'reasoning_effort'/
       );
       expect(report).not.toMatch(/base none raw/);
       expect(report).toMatch(/LIVE-VERIFIED/);
@@ -549,7 +551,7 @@ describe('runTierCanary (strict-none probes)', () => {
     const result = await runTierCanary(spec, deps, new Logging.InMemoryLogger());
     expect(result).toFailWith(/\[FAIL\(param\)\] base none\+fail\s+gpt-6-luna/);
     expect(result).toFailWith(
-      /FAILED — a thinking, strict-none, model-override, structured-output or image probe failed/
+      /FAILED — a thinking, strict-none, model-override, temperature, max-output, structured-output, explicit-level or image probe failed/
     );
   });
 
@@ -560,7 +562,7 @@ describe('runTierCanary (strict-none probes)', () => {
     };
     const result = await runTierCanary(spec, deps, new Logging.InMemoryLogger());
     expect(result).toFailWith(
-      /\[FAIL\] frontier none\+fail\s+gpt-6-astra\s+\(listed as thinking-required, but the call went through\)/
+      /\[FAIL\] frontier none\+fail\s+gpt-6-astra\s+\(expected a local refusal, but the call went through\)/
     );
   });
 
@@ -571,7 +573,7 @@ describe('runTierCanary (strict-none probes)', () => {
     };
     const result = await runTierCanary(spec, deps, new Logging.InMemoryLogger());
     expect(result).toFailWith(
-      /\[FAIL\] frontier none raw\s+gpt-6-astra\s+\(the provider accepted none; the thinking-required listing is stale\)/
+      /\[FAIL\] frontier none raw\s+gpt-6-astra\s+\(the provider accepted none; the thinking-required or off-value listing is stale\)/
     );
   });
 
@@ -589,7 +591,7 @@ describe('runTierCanary (strict-none probes)', () => {
     };
     const result = await runTierCanary(spec, deps, new Logging.InMemoryLogger());
     expect(result).toFailWith(
-      /\[FAIL\] frontier none\+fail\s+gpt-6-astra\s+\(listed as thinking-required, but not refused locally: AI API returned/
+      /\[FAIL\] frontier none\+fail\s+gpt-6-astra\s+\(expected a local refusal, but the request reached the provider: AI API returned/
     );
   });
 
@@ -601,9 +603,30 @@ describe('runTierCanary (strict-none probes)', () => {
     };
     const result = await runTierCanary(spec, deps, new Logging.InMemoryLogger());
     expect(result).toSucceedAndSatisfy((report: string) => {
-      expect(report).toMatch(/\[PASS\] frontier none\+fail\s+gpt-6-astra/);
+      expect(report).toMatch(/\[REFUSED-LOCALLY\] frontier none\+fail\s+gpt-6-astra/);
       expect(report).toMatch(/\[BLOCKED\(access\)\] frontier none raw\s+gpt-6-astra/);
     });
+  });
+
+  test('a raw none rejected for an unrelated reason fails when the spec states the expected rejection', async () => {
+    const limited = fail<AiAssist.IAiCompletionResponse>(
+      'AI API returned 400: You have reached your specified API usage limits'
+    );
+    const deps: ITierCanaryDeps = {
+      complete: async (tier: CanaryTier, options?: ICanaryCompleteOptions) =>
+        answer(tier, options, { raw: limited })
+    };
+    const strict = { ...spec, rawNoneRejection: /reasoning[_.]effort/i };
+    expect(await runTierCanary(strict, deps, new Logging.InMemoryLogger())).toFailWith(
+      /\[FAIL\] frontier none raw\s+gpt-6-astra\s+\(the provider rejected this, but not for the expected reason: AI API returned 400: You have reached/
+    );
+    // The documented rejection still passes under the same pattern.
+    const ok: ITierCanaryDeps = { complete: async (tier, options) => answer(tier, options) };
+    expect(await runTierCanary(strict, ok, new Logging.InMemoryLogger())).toSucceedAndSatisfy(
+      (report: string) => {
+        expect(report).toMatch(/\[EXPECTED-REJECT\] frontier none raw\s+gpt-6-astra/);
+      }
+    );
   });
 
   test('keyless, every strict-none probe is PENDING', async () => {
@@ -657,7 +680,7 @@ describe('runTierCanary (model-override probes)', () => {
     const result = await runTierCanary(spec, deps, new Logging.InMemoryLogger());
     expect(result).toFailWith(/\[FAIL\(id\)\] @google-gemini:flash-lite\s+gemini-3\.5-flash-lite/);
     expect(result).toFailWith(
-      /FAILED — a thinking, strict-none, model-override, structured-output or image probe failed/
+      /FAILED — a thinking, strict-none, model-override, temperature, max-output, structured-output, explicit-level or image probe failed/
     );
   });
 
@@ -685,7 +708,7 @@ describe('runTierCanary (structured-output probes)', () => {
     providerId: 'anthropic',
     descriptor: anthropic,
     tiers: ['base', 'advanced'] as ReadonlyArray<CanaryTier>,
-    extraModels: ['@anthropic:fable'],
+    extraModels: ['@anthropic:fable', '@anthropic:haiku'],
     structuredOutputProbe: true
   };
 
@@ -709,10 +732,11 @@ describe('runTierCanary (structured-output probes)', () => {
     });
   }
 
-  test('the registry splits Anthropic by line: forced tool on sonnet-5, schema on opus-5-5 / fable-5-1', () => {
-    expect(expectedStructuredEnforcement(anthropic, 'claude-sonnet-5')).toBe('tool-forced');
+  test('the registry splits Anthropic by line: forced tool on haiku-5-5, schema on sonnet-5-5 / opus-5-5 / fable-5-2', () => {
+    expect(expectedStructuredEnforcement(anthropic, 'claude-haiku-5-5')).toBe('tool-forced');
+    expect(expectedStructuredEnforcement(anthropic, 'claude-sonnet-5-5')).toBe('schema');
     expect(expectedStructuredEnforcement(anthropic, 'claude-opus-5-5')).toBe('schema');
-    expect(expectedStructuredEnforcement(anthropic, 'claude-fable-5-1')).toBe('schema');
+    expect(expectedStructuredEnforcement(anthropic, 'claude-fable-5-2')).toBe('schema');
     expect(expectedStructuredEnforcement(anthropic, '@anthropic:nope')).toBe('none');
   });
 
@@ -723,17 +747,20 @@ describe('runTierCanary (structured-output probes)', () => {
     const result = await runTierCanary(spec, { complete }, new Logging.InMemoryLogger());
     expect(result).toSucceedAndSatisfy((report: string) => {
       expect(report).toMatch(/Structured-output probes \(schema, onUnsupported 'fail'\):/);
-      expect(report).toMatch(/\[PASS\] base schema\s+claude-sonnet-5\s+\(enforcement 'tool-forced'\)/);
+      expect(report).toMatch(/\[PASS\] base schema\s+claude-sonnet-5-5\s+\(enforcement 'schema'\)/);
+      expect(report).toMatch(
+        /\[PASS\] @anthropic:haiku schema\s+claude-haiku-5-5\s+\(enforcement 'tool-forced'\)/
+      );
       expect(report).toMatch(/\[PASS\] advanced schema\s+claude-opus-5-5\s+\(enforcement 'schema'\)/);
       expect(report).toMatch(
-        /\[PASS\] @anthropic:fable schema\s+claude-fable-5-1\s+\(enforcement 'schema'\)/
+        /\[PASS\] @anthropic:fable schema\s+claude-fable-5-2\s+\(enforcement 'schema'\)/
       );
       expect(report).toMatch(/LIVE-VERIFIED/);
     });
     const structuredCalls = complete.mock.calls.filter(
       ([, options]) => options?.structuredOutput !== undefined
     );
-    expect(structuredCalls).toHaveLength(3);
+    expect(structuredCalls).toHaveLength(4);
     for (const [, options] of structuredCalls) {
       expect(options?.structuredOutput).toMatchObject({ mode: 'schema', onUnsupported: 'fail' });
     }
@@ -752,14 +779,14 @@ describe('runTierCanary (structured-output probes)', () => {
     };
     const result = await runTierCanary(spec, deps, new Logging.InMemoryLogger());
     expect(result).toFailWith(/\[FAIL\(param\)\] advanced schema\s+claude-opus-5-5/);
-    expect(result).toFailWith(/structured-output or image probe failed/);
+    expect(result).toFailWith(/structured-output, explicit-level or image probe failed/);
   });
 
   test('keyless, every structured probe is PENDING', async () => {
     const result = await runTierCanary(spec, {}, new Logging.InMemoryLogger());
     expect(result).toSucceedAndSatisfy((report: string) => {
       expect(report).toMatch(/\[PENDING\] advanced schema\s+claude-opus-5-5/);
-      expect(report).toMatch(/\[PENDING\] @anthropic:fable schema\s+claude-fable-5-1/);
+      expect(report).toMatch(/\[PENDING\] @anthropic:fable schema\s+claude-fable-5-2/);
     });
   });
 
@@ -773,24 +800,27 @@ describe('runTierCanary (structured-output probes)', () => {
       new Logging.InMemoryLogger()
     );
     expect(result).toSucceedAndSatisfy((report: string) => {
-      expect(report).toMatch(/\[PASS\] base schema\s+claude-sonnet-5/);
+      expect(report).toMatch(/\[PASS\] base schema\s+claude-sonnet-5-5/);
       expect(report).toMatch(
-        /\[PASS\] base schema\+effort=low\s+claude-sonnet-5\s+\(enforcement 'tool-forced'\)/
+        /\[PASS\] base schema\+effort=low\s+claude-sonnet-5-5\s+\(enforcement 'schema'\)/
+      );
+      expect(report).toMatch(
+        /\[PASS\] @anthropic:haiku schema\+effort=low\s+claude-haiku-5-5\s+\(enforcement 'tool-forced'\)/
       );
       expect(report).toMatch(
         /\[PASS\] advanced schema\+effort=low\s+claude-opus-5-5\s+\(enforcement 'schema'\)/
       );
       expect(report).toMatch(
-        /\[PASS\] @anthropic:fable schema\+effort=low\s+claude-fable-5-1\s+\(enforcement 'schema'\)/
+        /\[PASS\] @anthropic:fable schema\+effort=low\s+claude-fable-5-2\s+\(enforcement 'schema'\)/
       );
     });
     const structuredCalls = complete.mock.calls.filter(
       ([, options]) => options?.structuredOutput !== undefined
     );
-    // 3 plain + 3 with effort (base, advanced, @anthropic:fable).
-    expect(structuredCalls).toHaveLength(6);
+    // 4 plain + 4 with effort (base, advanced, @anthropic:fable, @anthropic:haiku).
+    expect(structuredCalls).toHaveLength(8);
     const withEffort = structuredCalls.filter(([, options]) => options?.effort !== undefined);
-    expect(withEffort).toHaveLength(3);
+    expect(withEffort).toHaveLength(4);
     for (const [, options] of withEffort) {
       expect(options).toMatchObject({
         effort: 'low',
@@ -943,6 +973,444 @@ describe('runTierCanary (live image probe)', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Extra-model thinking and strict-none probes
+// ---------------------------------------------------------------------------
+
+describe('runTierCanary (thinking and strict-none probes on extra models)', () => {
+  const REFUSAL = "thinking effort 'none' is not supported by claude-fable-5-2: the model cannot run";
+  const spec = {
+    providerId: 'anthropic',
+    descriptor: anthropic,
+    tiers: ['base'] as ReadonlyArray<CanaryTier>,
+    extraModels: ['@anthropic:fable', '@anthropic:haiku'],
+    thinkingEfforts: ['none', 'low'] as const,
+    strictNoneProbe: true
+  };
+
+  /** Refuses 'fail' locally on the listed model (fable), rejects a raw none, answers the rest. */
+  async function answer(
+    tier: CanaryTier,
+    options?: ICanaryCompleteOptions
+  ): Promise<Result<AiAssist.IAiCompletionResponse>> {
+    const listed = options?.modelOverride === '@anthropic:fable';
+    if (options?.onUnsupported === 'fail' && listed) {
+      return fail(REFUSAL);
+    }
+    if (options?.rawNone === true) {
+      return fail('AI API returned 400: thinking.type disabled is not supported');
+    }
+    return pong();
+  }
+
+  test('extra models get thinking and strict-none rows, sent via modelOverride, with stated expectations', async () => {
+    const complete = jest.fn(answer);
+    const result = await runTierCanary(spec, { complete }, new Logging.InMemoryLogger());
+    expect(result).toSucceedAndSatisfy((report: string) => {
+      expect(report).toMatch(
+        /\[PASS\] base effort=none\s+claude-sonnet-5-5\s+\(sent with thinking off \(between_tools\)\)/
+      );
+      expect(report).toMatch(
+        /\[PASS\] @anthropic:haiku effort=none\s+claude-haiku-5-5\s+\(sent with thinking off\)\n/
+      );
+      expect(report).toMatch(
+        /\[PASS\] @anthropic:fable effort=none\s+claude-fable-5-2\s+\(degraded to 'low' \(thinking-required\)\)/
+      );
+      expect(report).toMatch(/\[PASS\] @anthropic:fable effort=low\s+claude-fable-5-2\n/);
+      // sonnet has its own off value, so 'fail' answers, and a raw 'disabled' must still be rejected.
+      expect(report).toMatch(/\[PASS\] base none\+fail\s+claude-sonnet-5-5\n/);
+      expect(report).toMatch(
+        /\[EXPECTED-REJECT\] base none raw\s+claude-sonnet-5-5\s+\(the provider still rejects disabled; this model's off value is between_tools: AI API returned 400/
+      );
+      expect(report).toMatch(
+        /\[REFUSED-LOCALLY\] @anthropic:fable none\+fail\s+claude-fable-5-2\s+\(as listed\)/
+      );
+      expect(report).toMatch(/\[EXPECTED-REJECT\] @anthropic:fable none raw\s+claude-fable-5-2/);
+      expect(report).toMatch(/\[PASS\] @anthropic:haiku none\+fail\s+claude-haiku-5-5/);
+      expect(report).not.toMatch(/@anthropic:haiku none raw/);
+      expect(report).toMatch(/LIVE-VERIFIED/);
+    });
+    expect(complete).toHaveBeenCalledWith('base', { effort: 'none', modelOverride: '@anthropic:haiku' });
+    expect(complete).toHaveBeenCalledWith('base', {
+      effort: 'none',
+      onUnsupported: 'fail',
+      modelOverride: '@anthropic:fable'
+    });
+    expect(complete).toHaveBeenCalledWith('base', { rawNone: true, modelOverride: '@anthropic:fable' });
+    expect(complete).toHaveBeenCalledWith('base', { rawNone: true });
+    expect(complete).not.toHaveBeenCalledWith('base', { rawNone: true, modelOverride: '@anthropic:haiku' });
+  });
+
+  test('keyless, the rows state what each is expected to do', async () => {
+    const result = await runTierCanary(spec, {}, new Logging.InMemoryLogger());
+    expect(result).toSucceedAndSatisfy((report: string) => {
+      expect(report).toMatch(
+        /\[PENDING\] base effort=none\s+claude-sonnet-5-5\s+\(expect sent with thinking off \(between_tools\)\)/
+      );
+      expect(report).toMatch(/\[PENDING\] base effort=low\s+claude-sonnet-5-5\n/);
+      expect(report).toMatch(
+        /\[PENDING\] @anthropic:haiku none\+fail\s+claude-haiku-5-5\s+\(expect accepted\)/
+      );
+      expect(report).toMatch(/\[PENDING\] base none\+fail\s+claude-sonnet-5-5\s+\(expect accepted\)/);
+      expect(report).toMatch(/\[PENDING\] base none raw\s+claude-sonnet-5-5\s+\(expect expected-reject\)/);
+      expect(report).toMatch(
+        /\[PENDING\] @anthropic:fable none\+fail\s+claude-fable-5-2\s+\(expect refused-locally\)/
+      );
+    });
+  });
+
+  test('a thinking probe that fails keeps its failure detail rather than the expectation', async () => {
+    const deps: ITierCanaryDeps = {
+      complete: async (tier: CanaryTier, options?: ICanaryCompleteOptions) =>
+        options?.effort === 'none' && options.onUnsupported === undefined
+          ? fail('AI API returned 400: nope')
+          : answer(tier, options)
+    };
+    const result = await runTierCanary(spec, deps, new Logging.InMemoryLogger());
+    expect(result).toFailWith(
+      /\[FAIL\(param\)\] base effort=none\s+claude-sonnet-5-5\s+\(AI API returned 400: nope\)/
+    );
+  });
+
+  test('a model with its own off value whose provider now accepts disabled fails — the off value is stale', async () => {
+    const deps: ITierCanaryDeps = {
+      complete: async (tier: CanaryTier, options?: ICanaryCompleteOptions) =>
+        options?.rawNone === true && options.modelOverride === undefined ? pong() : answer(tier, options)
+    };
+    const result = await runTierCanary(spec, deps, new Logging.InMemoryLogger());
+    expect(result).toFailWith(
+      /\[FAIL\] base none raw\s+claude-sonnet-5-5\s+\(the provider accepted none; the thinking-required or off-value listing is stale\)/
+    );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// isLocalRefusal / classifyExpectedProbe
+// ---------------------------------------------------------------------------
+
+describe('isLocalRefusal', () => {
+  test.each([
+    "thinking effort 'none' is not supported by gpt-6-astra: the model cannot run with thinking off",
+    'claude-sonnet-5-5 does not accept a non-default temperature (0.3): remove temperature, or send 1',
+    'gpt-6-astra does not accept temperature on any request: remove temperature',
+    'thinking mode is not compatible with temperature on provider openai: remove temperature or disable thinking'
+  ])('recognizes the library refusal %p', (message) => {
+    expect(isLocalRefusal(message)).toBe(true);
+  });
+
+  test('a provider response is never a local refusal, even when its text matches', () => {
+    expect(isLocalRefusal('AI API returned 400: model does not accept temperature')).toBe(false);
+    expect(isLocalRefusal('AI API request failed: network down')).toBe(false);
+  });
+});
+
+describe('classifyExpectedProbe', () => {
+  const LOCAL = fail<AiAssist.IAiCompletionResponse>(
+    'gpt-6-astra does not accept a non-default temperature (0.3): remove temperature, or send 1'
+  );
+  const PROVIDER_400 = fail<AiAssist.IAiCompletionResponse>('AI API returned 400: temperature not supported');
+  const DENIED = fail<AiAssist.IAiCompletionResponse>('AI API returned 403: forbidden');
+
+  test.each([
+    ['refused-locally', LOCAL, 'refused-locally', undefined],
+    ['refused-locally', pong(), 'error', /the call went through/],
+    ['refused-locally', PROVIDER_400, 'error', /reached the provider: AI API returned 400/],
+    ['expected-reject', PROVIDER_400, 'expected-reject', /AI API returned 400/],
+    ['expected-reject', pong(), 'error', /it answered — the expectation is stale/],
+    ['expected-reject', LOCAL, 'error', /it was refused locally/],
+    ['expected-reject', DENIED, 'access-gated', /403/],
+    ['accepted', pong(), 'live-pass', undefined],
+    ['accepted', LOCAL, 'error', /expected the provider to answer, but it was refused locally/],
+    ['accepted', PROVIDER_400, 'param-failed', /AI API returned 400/],
+    ['observed', pong(), 'observed', /^accepted$/],
+    ['observed', PROVIDER_400, 'observed', /^rejected: AI API returned 400: temperature not supported$/],
+    ['observed', LOCAL, 'error', /meant to reach the provider, but it was refused locally/],
+    ['observed', DENIED, 'access-gated', /403/]
+  ] as const)('expect %s, given %#, is %s', (expectation, result, outcome, detail) => {
+    const row = classifyExpectedProbe('l', 'm', expectation, result);
+    expect(row.outcome).toBe(outcome);
+    if (detail === undefined) {
+      expect(row.detail).toBeUndefined();
+    } else {
+      expect(row.detail).toMatch(detail);
+    }
+  });
+
+  test('a note becomes the detail of a passing row, ahead of the provider text on an expected reject', () => {
+    expect(classifyExpectedProbe('l', 'm', 'accepted', pong(), { note: 'why' }).detail).toBe('why');
+    expect(classifyExpectedProbe('l', 'm', 'refused-locally', LOCAL, { note: 'why' }).detail).toBe('why');
+    expect(classifyExpectedProbe('l', 'm', 'expected-reject', PROVIDER_400, { note: 'why' }).detail).toBe(
+      'why: AI API returned 400: temperature not supported'
+    );
+  });
+
+  test('an expected reject passes only when the provider text matches the stated pattern', () => {
+    const matched = classifyExpectedProbe('l', 'm', 'expected-reject', PROVIDER_400, {
+      rejectPattern: /temperature/i
+    });
+    expect(matched.outcome).toBe('expected-reject');
+    const unrelated = fail<AiAssist.IAiCompletionResponse>(
+      'AI API returned 400: You have reached your specified API usage limits'
+    );
+    const row = classifyExpectedProbe('l', 'm', 'expected-reject', unrelated, {
+      rejectPattern: /temperature/i
+    });
+    expect(row.outcome).toBe('error');
+    expect(row.detail).toMatch(
+      /rejected this, but not for the expected reason: AI API returned 400: You have reached your specified API usage limits/
+    );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Temperature probes
+// ---------------------------------------------------------------------------
+
+describe('runTierCanary (temperature probes)', () => {
+  const spec = {
+    providerId: 'openai',
+    descriptor: openai,
+    tiers: ['base', 'advanced'] as ReadonlyArray<CanaryTier>,
+    temperatureProbes: [
+      { temperature: 0.3, effort: 'none' as const, models: ['gpt-6-luna'], expect: 'accepted' as const },
+      { temperature: 0.3, models: ['gpt-6-luna'], expect: 'expected-reject' as const },
+      { temperature: 0.3, models: ['gpt-6.1-sol'], expect: 'refused-locally' as const }
+    ]
+  };
+  const REFUSAL =
+    'gpt-6.1-sol does not accept a non-default temperature (0.3): remove temperature, or send 1';
+
+  /** Answers like GPT-6: temperature only with effort none, sol refused locally. */
+  async function answer(
+    tier: CanaryTier,
+    options?: ICanaryCompleteOptions
+  ): Promise<Result<AiAssist.IAiCompletionResponse>> {
+    if (options?.temperature === undefined) {
+      return pong();
+    }
+    if (tier === 'advanced') {
+      return fail(REFUSAL);
+    }
+    return options.effort === 'none' ? pong() : fail('AI API returned 400: temperature is not supported');
+  }
+
+  test('each row lands on its stated outcome, and only the named models are probed', async () => {
+    const complete = jest.fn(answer);
+    const result = await runTierCanary(spec, { complete }, new Logging.InMemoryLogger());
+    expect(result).toSucceedAndSatisfy((report: string) => {
+      expect(report).toMatch(/Temperature probes \(each row states its expected outcome\):/);
+      expect(report).toMatch(/\[PASS\] base temp=0\.3\+effort=none\s+gpt-6-luna/);
+      expect(report).toMatch(/\[EXPECTED-REJECT\] base temp=0\.3\s+gpt-6-luna\s+\(AI API returned 400/);
+      expect(report).toMatch(/\[REFUSED-LOCALLY\] advanced temp=0\.3\s+gpt-6\.1-sol/);
+      expect(report).not.toMatch(/advanced temp=0\.3\+effort/);
+      expect(report).toMatch(/LIVE-VERIFIED/);
+    });
+    expect(complete).toHaveBeenCalledWith('base', { temperature: 0.3, effort: 'none' });
+    expect(complete).toHaveBeenCalledWith('base', { temperature: 0.3 });
+    expect(complete).toHaveBeenCalledWith('advanced', { temperature: 0.3 });
+    // 2 plain tier calls + 3 probe rows.
+    expect(complete).toHaveBeenCalledTimes(5);
+  });
+
+  test('a provider that starts accepting the expected-reject row fails the run', async () => {
+    const deps: ITierCanaryDeps = {
+      complete: async (tier: CanaryTier, options?: ICanaryCompleteOptions) =>
+        tier === 'base' ? pong() : answer(tier, options)
+    };
+    const result = await runTierCanary(spec, deps, new Logging.InMemoryLogger());
+    expect(result).toFailWith(
+      /\[FAIL\] base temp=0\.3\s+gpt-6-luna\s+\(expected the provider to reject this/
+    );
+    expect(result).toFailWith(/temperature, max-output/);
+  });
+
+  test('an expected-reject row rejected for an unrelated reason fails the run with the provider text', async () => {
+    const withPattern = {
+      ...spec,
+      temperatureProbes: [
+        {
+          temperature: 0.3,
+          models: ['gpt-6-luna'],
+          expect: 'expected-reject' as const,
+          rejectPattern: /temperature/i
+        }
+      ]
+    };
+    const deps: ITierCanaryDeps = {
+      complete: async (tier: CanaryTier, options?: ICanaryCompleteOptions) =>
+        options?.temperature !== undefined ? fail('AI API returned 400: usage limit reached') : pong()
+    };
+    expect(await runTierCanary(withPattern, deps, new Logging.InMemoryLogger())).toFailWith(
+      /\[FAIL\] base temp=0\.3\s+gpt-6-luna\s+\(the provider rejected this, but not for the expected reason: AI API returned 400: usage limit reached\)/
+    );
+  });
+
+  test('a refused-locally row that reaches the provider fails the run', async () => {
+    const deps: ITierCanaryDeps = {
+      complete: async (tier: CanaryTier, options?: ICanaryCompleteOptions) =>
+        tier === 'advanced' && options?.temperature !== undefined
+          ? fail('AI API returned 400: temperature')
+          : answer(tier, options)
+    };
+    const result = await runTierCanary(spec, deps, new Logging.InMemoryLogger());
+    expect(result).toFailWith(/\[FAIL\] advanced temp=0\.3\s+gpt-6\.1-sol\s+\(expected a local refusal/);
+  });
+
+  test('a probe with no models list runs on every tier and extra model', async () => {
+    const complete = jest.fn(async () => pong());
+    const result = await runTierCanary(
+      {
+        providerId: 'anthropic',
+        descriptor: anthropic,
+        tiers: ['base'],
+        extraModels: ['@anthropic:haiku'],
+        temperatureProbes: [{ temperature: 1, expect: 'accepted' }]
+      },
+      { complete },
+      new Logging.InMemoryLogger()
+    );
+    expect(result).toSucceedAndSatisfy((report: string) => {
+      expect(report).toMatch(/\[PASS\] base temp=1\s+claude-sonnet-5-5/);
+      expect(report).toMatch(/\[PASS\] @anthropic:haiku temp=1\s+claude-haiku-5-5/);
+    });
+    expect(complete).toHaveBeenCalledWith('base', { temperature: 1, modelOverride: '@anthropic:haiku' });
+  });
+
+  test('a probe naming a model no target reaches is reported, keyed or not', async () => {
+    const stale = {
+      ...spec,
+      temperatureProbes: [{ temperature: 0.3, models: ['gpt-5-gone'], expect: 'accepted' as const }]
+    };
+    const result = await runTierCanary(stale, {}, new Logging.InMemoryLogger());
+    expect(result).toFailWith(
+      /\[FAIL\] temp=0\.3\s+gpt-5-gone\s+\(the probe names a model no tier or extra model resolves to/
+    );
+  });
+
+  test('a raw, report-only probe prints what the provider said without passing or failing the run', async () => {
+    // The mechanism on its own, with both outcomes; the OpenAI scenario uses it for gpt-6-luna.
+    const observing = {
+      ...spec,
+      temperatureProbes: [
+        { temperature: 1, models: ['gpt-6-luna'], raw: true, expect: 'observed' as const },
+        { temperature: 1, models: ['gpt-6.1-sol'], raw: true, expect: 'observed' as const }
+      ]
+    };
+    const complete = jest.fn(async (tier: CanaryTier, options?: ICanaryCompleteOptions) =>
+      tier === 'advanced' && options?.rawTemperature !== undefined
+        ? fail<AiAssist.IAiCompletionResponse>('AI API returned 400: temperature not supported')
+        : pong()
+    );
+    const result = await runTierCanary(observing, { complete }, new Logging.InMemoryLogger());
+    expect(result).toSucceedAndSatisfy((report: string) => {
+      expect(report).toMatch(/\[OBSERVED\] base temp=1 raw\s+gpt-6-luna\s+\(accepted\)/);
+      expect(report).toMatch(
+        /\[OBSERVED\] advanced temp=1 raw\s+gpt-6\.1-sol\s+\(rejected: AI API returned 400: temperature not supported\)/
+      );
+      expect(report).toMatch(/LIVE-VERIFIED/);
+    });
+    expect(complete).toHaveBeenCalledWith('base', { rawTemperature: 1 });
+  });
+
+  test('keyless, each row is PENDING with its expectation', async () => {
+    const result = await runTierCanary(spec, {}, new Logging.InMemoryLogger());
+    expect(result).toSucceedAndSatisfy((report: string) => {
+      expect(report).toMatch(/\[PENDING\] base temp=0\.3\s+gpt-6-luna\s+\(expect expected-reject\)/);
+      expect(report).toMatch(/\[PENDING\] advanced temp=0\.3\s+gpt-6\.1-sol\s+\(expect refused-locally\)/);
+      expect(report).toMatch(/LIVE CANARY PENDING/);
+    });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Max-output probes
+// ---------------------------------------------------------------------------
+
+describe('runTierCanary (max-output probes)', () => {
+  const spec = {
+    providerId: 'anthropic',
+    descriptor: anthropic,
+    tiers: ['base', 'advanced'] as ReadonlyArray<CanaryTier>,
+    extraModels: ['@anthropic:haiku'],
+    maxOutputProbe: true
+  };
+
+  test('each target is sent its recorded limit and passes when it answers', async () => {
+    const complete = jest.fn(async () => pong());
+    const result = await runTierCanary(spec, { complete }, new Logging.InMemoryLogger());
+    expect(result).toSucceedAndSatisfy((report: string) => {
+      expect(report).toMatch(/Max-output probes \(maxTokens = recorded output limit\):/);
+      expect(report).toMatch(/\[PASS\] base max=128000\s+claude-sonnet-5-5/);
+      expect(report).toMatch(/\[PASS\] @anthropic:haiku max=128000\s+claude-haiku-5-5/);
+      expect(report).toMatch(/LIVE-VERIFIED/);
+    });
+    expect(complete).toHaveBeenCalledWith('advanced', { maxTokens: 128000 });
+    expect(complete).toHaveBeenCalledWith('base', { maxTokens: 128000, modelOverride: '@anthropic:haiku' });
+  });
+
+  test('a refusal naming the output cap says the recorded limit is too high', async () => {
+    const deps: ITierCanaryDeps = {
+      complete: async (tier: CanaryTier, options?: ICanaryCompleteOptions) =>
+        options?.maxTokens !== undefined && tier === 'advanced'
+          ? fail('AI API returned 400: max_tokens: 128000 > 64000, which is the maximum allowed')
+          : pong()
+    };
+    const result = await runTierCanary(spec, deps, new Logging.InMemoryLogger());
+    expect(result).toFailWith(
+      /\[FAIL\(param\)\] advanced max=128000\s+claude-opus-5-5\s+\(the recorded limit 128000 is too high: AI API returned 400/
+    );
+    expect(result).toFailWith(/temperature, max-output/);
+  });
+
+  test('any other failure keeps its usual classification', async () => {
+    const deps: ITierCanaryDeps = {
+      complete: async (tier: CanaryTier, options?: ICanaryCompleteOptions) =>
+        options?.maxTokens !== undefined ? fail('AI API returned 403: forbidden') : pong()
+    };
+    const result = await runTierCanary(spec, deps, new Logging.InMemoryLogger());
+    expect(result).toSucceedAndSatisfy((report: string) => {
+      expect(report).toMatch(/\[BLOCKED\(access\)\] base max=128000/);
+    });
+  });
+
+  test('a model with no recorded limit gets a NO-RECORDED-LIMIT row and no call', async () => {
+    const complete = jest.fn(async () => pong());
+    const result = await runTierCanary(
+      { providerId: 'xai-grok', descriptor: xai, tiers: ['base'], maxOutputProbe: true },
+      { complete },
+      new Logging.InMemoryLogger()
+    );
+    expect(result).toSucceedAndSatisfy((report: string) => {
+      expect(report).toMatch(/\[NO-RECORDED-LIMIT\] base max\s+grok-4\.3\s+\(no maxOutputTokens entry/);
+      expect(report).toMatch(/LIVE-VERIFIED/);
+    });
+    // Only the plain tier call.
+    expect(complete).toHaveBeenCalledTimes(1);
+  });
+
+  test('keyless, a recorded limit is PENDING and a missing one is still NO-RECORDED-LIMIT', async () => {
+    const result = await runTierCanary(spec, {}, new Logging.InMemoryLogger());
+    expect(result).toSucceedAndSatisfy((report: string) => {
+      expect(report).toMatch(/\[PENDING\] base max=128000\s+claude-sonnet-5-5\s+\(expect accepted\)/);
+    });
+    const xaiResult = await runTierCanary(
+      { providerId: 'xai-grok', descriptor: xai, tiers: ['base'], maxOutputProbe: true },
+      {},
+      new Logging.InMemoryLogger()
+    );
+    expect(xaiResult).toSucceedAndSatisfy((report: string) => {
+      expect(report).toMatch(/\[NO-RECORDED-LIMIT\] base max\s+grok-4\.3/);
+    });
+  });
+
+  test('without maxOutputProbe no max-output section is produced', async () => {
+    const result = await runTierCanary({ ...spec, maxOutputProbe: false }, {}, new Logging.InMemoryLogger());
+    expect(result).toSucceedAndSatisfy((report: string) => {
+      expect(report).not.toMatch(/Max-output probes/);
+    });
+  });
+});
+
+// ---------------------------------------------------------------------------
 // formatTierCanaryReport — direct verdict coverage
 // ---------------------------------------------------------------------------
 
@@ -1013,11 +1481,14 @@ describe('model-tier scenarios', () => {
     const result = await geminiModelTiersScenario.cli.run(makeContext());
     expect(result).toSucceedAndSatisfy((report: string) => {
       expect(report).toMatch(/=== google-gemini model-tier canary ===/);
-      expect(report).toMatch(/@google-gemini:pro -> gemini-3\.1-pro-preview \(cascaded from a lower tier\)/);
-      expect(report).toMatch(/\[PASS\] image\s+@google-gemini:flash-image -> gemini-3\.1-flash-image\b/);
-      expect(report).toMatch(/\[PENDING\] frontier effort=none\s+gemini-3\.1-pro-preview/);
+      expect(report).toMatch(/@google-gemini:pro -> gemini-4-argon \(cascaded from a lower tier\)/);
+      expect(report).toMatch(/\[PASS\] image\s+@google-gemini:flash-image -> gemini-nano-banana-2\.1\b/);
+      expect(report).toMatch(
+        /\[PENDING\] frontier effort=none\s+gemini-4-argon\s+\(expect degraded to thinkingLevel 'low'/
+      );
       expect(report).toMatch(/\[PENDING\] @google-gemini:flash-lite\s+gemini-3\.5-flash-lite/);
-      expect(report).not.toMatch(/Live image probe:/);
+      // The rotated image tier gets a live generation, pending without a key.
+      expect(report).toMatch(/\[PENDING\] image\s+gemini-nano-banana-2\.1/);
       expect(report).toMatch(/RESOLVER-VERIFIED; LIVE CANARY PENDING \(STOP-FLAG/);
     });
   });
@@ -1058,12 +1529,117 @@ describe('model-tier scenarios', () => {
     const result = await anthropicModelTiersScenario.cli.run(makeContext());
     expect(result).toSucceedAndSatisfy((report: string) => {
       expect(report).toMatch(/@anthropic:opus -> claude-opus-5-5 \(cascaded from a lower tier\)/);
-      expect(report).toMatch(/\[PENDING\] @anthropic:fable\s+claude-fable-5-1/);
-      expect(report).toMatch(/\[PENDING\] base schema\s+claude-sonnet-5/);
+      expect(report).toMatch(/\[PENDING\] @anthropic:fable\s+claude-fable-5-2/);
+      expect(report).toMatch(/\[PENDING\] base schema\s+claude-sonnet-5-5/);
+      expect(report).toMatch(/\[PENDING\] @anthropic:haiku\s+claude-haiku-5-5/);
+      expect(report).toMatch(/\[PENDING\] @anthropic:haiku schema\s+claude-haiku-5-5/);
       expect(report).toMatch(/\[PENDING\] frontier schema\s+claude-opus-5-5/);
-      expect(report).toMatch(/\[PENDING\] @anthropic:fable schema\s+claude-fable-5-1/);
+      expect(report).toMatch(/\[PENDING\] @anthropic:fable schema\s+claude-fable-5-2/);
       expect(report).toMatch(/\[PENDING\] advanced schema\+effort=low\s+claude-opus-5-5/);
-      expect(report).toMatch(/\[PENDING\] @anthropic:fable schema\+effort=low\s+claude-fable-5-1/);
+      expect(report).toMatch(/\[PENDING\] @anthropic:fable schema\+effort=low\s+claude-fable-5-2/);
+    });
+  });
+
+  test('anthropic cli.run without a key lists the thinking, temperature and max-output rows with expectations', async () => {
+    if (!anthropicModelTiersScenario.cli) {
+      throw new Error('expected a CLI implementation');
+    }
+    const result = await anthropicModelTiersScenario.cli.run(makeContext());
+    expect(result).toSucceedAndSatisfy((report: string) => {
+      expect(report).toMatch(
+        /\[PENDING\] @anthropic:haiku effort=none\s+claude-haiku-5-5\s+\(expect sent with thinking off\)/
+      );
+      expect(report).toMatch(
+        /\[PENDING\] base effort=none\s+claude-sonnet-5-5\s+\(expect sent with thinking off \(between_tools\)\)/
+      );
+      expect(report).toMatch(
+        /\[PENDING\] @anthropic:fable none\+fail\s+claude-fable-5-2\s+\(expect refused-locally\)/
+      );
+      expect(report).toMatch(/\[PENDING\] base none\+fail\s+claude-sonnet-5-5\s+\(expect accepted\)/);
+      expect(report).toMatch(/\[PENDING\] base none raw\s+claude-sonnet-5-5\s+\(expect expected-reject\)/);
+      expect(report).toMatch(
+        /\[PENDING\] @anthropic:haiku none\+fail\s+claude-haiku-5-5\s+\(expect accepted\)/
+      );
+      expect(report).toMatch(
+        /\[PENDING\] @anthropic:haiku temp=1\+effort=low\s+claude-haiku-5-5\s+\(expect accepted\)/
+      );
+      expect(report).toMatch(/\[PENDING\] advanced temp=0\.3\s+claude-opus-5-5\s+\(expect refused-locally\)/);
+      expect(report).toMatch(/\[PENDING\] @anthropic:fable max=128000\s+claude-fable-5-2/);
+      expect(report).toMatch(/RESOLVER-VERIFIED; LIVE CANARY PENDING \(STOP-FLAG/);
+    });
+  });
+
+  test('openai cli.run without a key lists the temperature and max-output rows', async () => {
+    if (!openaiModelTiersScenario.cli) {
+      throw new Error('expected a CLI implementation');
+    }
+    const result = await openaiModelTiersScenario.cli.run(makeContext());
+    expect(result).toSucceedAndSatisfy((report: string) => {
+      expect(report).toMatch(/\[PENDING\] base temp=0\.3\+effort=none\s+gpt-6-luna\s+\(expect accepted\)/);
+      expect(report).toMatch(/\[PENDING\] base temp=0\.3\s+gpt-6-luna\s+\(expect refused-locally\)/);
+      expect(report).toMatch(/\[PENDING\] base temp=1\s+gpt-6-luna\s+\(expect accepted\)/);
+      expect(report).toMatch(/\[PENDING\] base temp=1\+effort=low\s+gpt-6-luna\s+\(expect accepted\)/);
+      expect(report).toMatch(
+        /\[PENDING\] base temp=0\.3\+effort=low\s+gpt-6-luna\s+\(expect refused-locally\)/
+      );
+      expect(report).toMatch(/\[PENDING\] advanced temp=0\.3\s+gpt-6\.1-sol\s+\(expect refused-locally\)/);
+      expect(report).toMatch(/\[PENDING\] frontier temp=0\.3\s+gpt-6-astra\s+\(expect refused-locally\)/);
+      expect(report).not.toMatch(/base temp=0\.3\s+gpt-6\.1-sol/);
+      expect(report).toMatch(/\[PENDING\] advanced temp=1\s+gpt-6\.1-sol\s+\(expect accepted\)/);
+      expect(report).toMatch(/\[PENDING\] frontier temp=1\s+gpt-6-astra\s+\(expect accepted\)/);
+      expect(report).toMatch(/\[PENDING\] advanced temp=1\+effort=low\s+gpt-6\.1-sol\s+\(expect accepted\)/);
+      expect(report).toMatch(/\[PENDING\] frontier temp=1\+effort=low\s+gpt-6-astra\s+\(expect accepted\)/);
+      // One luna row is sent raw, past the library's gate, for the provider's own rejection.
+      expect(report).toMatch(
+        /\[PENDING\] base temp=0\.3\+effort=low raw\s+gpt-6-luna\s+\(expect expected-reject\)/
+      );
+      expect(report).not.toMatch(/base temp=1\+effort=low raw/);
+      expect(report).not.toMatch(/(advanced|frontier) temp=[0-9.]+(\+effort=low)? raw/);
+      expect(report).toMatch(/\[PENDING\] frontier max=128000\s+gpt-6-astra/);
+    });
+  });
+
+  test('gemini cli.run without a key lists the max-output, level and thinking rows', async () => {
+    if (!geminiModelTiersScenario.cli) {
+      throw new Error('expected a CLI implementation');
+    }
+    const result = await geminiModelTiersScenario.cli.run(makeContext());
+    expect(result).toSucceedAndSatisfy((report: string) => {
+      expect(report).toMatch(/\[PENDING\] base max=65536\s+gemini-3\.8-flash/);
+      expect(report).toMatch(/\[PENDING\] frontier max=32768\s+gemini-4-argon/);
+      expect(report).toMatch(/\[PENDING\] @google-gemini:flash-lite max=65536\s+gemini-3\.5-flash-lite/);
+      // flash-lite: thinkingLevel, 'none' is its minimal level
+      expect(report).toMatch(
+        /\[PENDING\] @google-gemini:flash-lite effort=none\s+gemini-3\.5-flash-lite\s+\(expect sent as thinkingLevel 'minimal'\)/
+      );
+      expect(report).toMatch(
+        /\[PENDING\] @google-gemini:flash-lite effort=high\s+gemini-3\.5-flash-lite\s+\(expect sent as thinkingLevel 'high'\)/
+      );
+      expect(report).toMatch(
+        /\[PENDING\] @google-gemini:flash-lite none\+fail\s+gemini-3\.5-flash-lite\s+\(expect accepted\)/
+      );
+      expect(report).not.toMatch(/flash-lite none raw/);
+      expect(report).toMatch(
+        /\[PENDING\] @google-gemini:flash-lite level=minimal\s+gemini-3\.5-flash-lite\s+\(expect accepted\)/
+      );
+      // gemini-4-argon (advanced, and frontier by cascade): thinkingLevel, cannot turn thinking off
+      expect(report).toMatch(
+        /\[PENDING\] advanced effort=none\s+gemini-4-argon\s+\(expect degraded to thinkingLevel 'low' \(thinking-required\)\)/
+      );
+      expect(report).toMatch(
+        /\[PENDING\] advanced effort=low\s+gemini-4-argon\s+\(expect sent as thinkingLevel 'low'\)/
+      );
+      expect(report).toMatch(/\[PENDING\] advanced none\+fail\s+gemini-4-argon\s+\(expect refused-locally\)/);
+      expect(report).toMatch(/\[PENDING\] advanced none raw\s+gemini-4-argon\s+\(expect expected-reject\)/);
+      expect(report).toMatch(/\[PENDING\] advanced level=low\s+gemini-4-argon\s+\(expect accepted\)/);
+      // gemini-3.8-flash stays on the budget wire: budget 0 turns its thinking off
+      expect(report).toMatch(
+        /\[PENDING\] base effort=none\s+gemini-3\.8-flash\s+\(expect sent with thinking off\)/
+      );
+      expect(report).toMatch(/\[PENDING\] base effort=high\s+gemini-3\.8-flash$/m);
+      expect(report).toMatch(/\[PENDING\] base none\+fail\s+gemini-3\.8-flash\s+\(expect accepted\)/);
+      // gemini-3.8-flash is not thinking-required and has no level declaration: no raw or level row.
+      expect(report).not.toMatch(/base none raw|base level=/);
     });
   });
 });

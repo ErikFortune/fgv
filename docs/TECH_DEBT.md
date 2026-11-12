@@ -67,45 +67,34 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
 
 ## P2 — Fix before next major feature in affected area
 
-- **[P2] `FsFileTreeAccessors`' prefix does not confine: absolute paths escape it, and plain writes never check.**
-  Three behaviours in `libraries/ts-json-base/src/packlets/file-tree/fsTree.ts` combine:
-  `resolveAbsolutePath` ignores `prefix` for an input that is already absolute (`path.isAbsolute`
-  short-circuits to `path.resolve(...paths)`), so `FileTree.forFilesystem(prefix).getDirectory('/')`
-  names the filesystem root `/`, not the prefix; the plain mutators `saveFileContents`,
-  `createDirectory`, `deleteFile` and `deleteDirectory` check only the mutability filter, never
-  that the path lies under the prefix; and the field's doc says the prefix is prepended "to all
-  paths" (`fsTree.ts` `prefix`; `fileTreeHelpers.ts` says "relative paths", which is the true one).
-  Only the atomic methods confine (`_confineToRoot`, which since `agent-memory-atomic-writes` also
-  checks the real path of the containing directory). Found by that stream's review: a memory store
-  opened on `forFilesystem(prefix).getDirectory('/')` walked the real `/`, and a root item outside
-  its accessors' prefix took plain writes outside the tree once its atomic inquiry was degraded
-  rather than refused. The store now refuses a failed inquiry, which closes its own path; the
-  accessor behaviour is unchanged and reachable by any plain-write caller. In particular, plain
-  writes on a root that is not qualified for atomic writes (a non-atomic accessor, or an
-  unqualified platform such as darwin) still follow a symbolic link out of the tree, exactly as on
-  the base commit — the real-path confinement covers only the atomic methods. The same holds for a
-  record *file* that is a symbolic link on such a root: a plain put writes through the link, and
-  because the listing hides links the record then reads back as absent.
+- **[P2] The Heft toolchain family is held at its 2026-09-14 pins.**
+  `@rushstack/heft` 1.3.0, `heft-node-rig` 2.11.50, `heft-web-rig` 1.4.34, `heft-jest-plugin`
+  2.0.17, `heft-lint-plugin` 1.2.27 and the api-extractor / sass / webpack5 plugins. The latest
+  versions fail `rush rebuild`. `heft-lint-plugin` 1.3.0 lints files outside the TypeScript program,
+  so an `eslint.config.js` block that sets `@rushstack/packlets/mechanics` without a `files` glob
+  becomes a config error (36 configs set that rule). And `@rushstack/eslint-config` 4.9.0 enables
+  `@rushstack/prefer-ecmascript-private-members: 'warn'`, which flags every `private _member`. The
+  plugins pin `@rushstack/heft` exactly, so the family cannot be split. `eslint` 10 waits on it,
+  and 9.x is already marked unsupported upstream.
 
-  **Trigger**: the next change to `FsFileTreeAccessors` path resolution, or any consumer that hands
-  untrusted or computed paths to a prefixed tree.
+  **Trigger**: the next dependency refresh, or any need for a Heft or eslint fix newer than these
+  pins.
 
-  **Scope sketch** — options, for the user to choose; not decided:
-  (a) **document it** — correct the `prefix` doc to "prepended to relative paths; absolute paths are
-  used as given, and only the atomic methods confine", no behaviour change;
-  (b) **confine plain mutators** — run `_confineToRoot` (logical, and optionally real-path) in
-  `saveFileContents` / `saveFileBytes` / `createDirectory` / `deleteFile` / `deleteDirectory`,
-  refusing paths outside the prefix — breaking for callers that rely on writing outside it;
-  (c) **resolve absolute paths under the prefix** — treat `/x` as `<prefix>/x`, matching the
-  in-memory tree, so `getDirectory('/')` names the prefix — breaking for callers that pass real
-  absolute paths, which is how `DirectoryItem.create(absolutePath, accessors)` is commonly used;
-  (d) **(b) behind an option** — `confine: true` on `IFileTreeInitParams`, default off.
-  `ts-json-base` is an established surface, so (b) and (c) need explicit sign-off.
+  **Scope sketch**: add `files` scoping to the affected config blocks. Then decide the
+  private-members rule: migrate to `#private`, which changes runtime semantics and the
+  `enforceLeadingUnderscoreWhenPrivate` naming rule, or make a repo-level, reasoned rule
+  disposition. Then take the family together.
 
-  **Not a P3**: the atomic path already confines, so the two paths answer the same question
-  differently, and the prefix reads as a sandbox to anyone who trusts its doc.
+  **Not a P3**: the toolchain falls further behind upstream fixes, including security ones, until
+  this is done.
 
-  **Reference**: `agent-memory-atomic-writes` review round 2 (2026-10-26), probe `escape.js` §2–3.
+  **Reference**: `.ai/tasks/completed/2026-11/deps-refresh/result.md` § 4c, § 4d.
+
+- *Closed — `FsFileTreeAccessors`' prefix did not confine (absolute paths escaped it; plain writes
+  never checked).* Resolved by the `filetree-prefix-confinement` stream (PR #TBD), which added the
+  user-decided `absolutePathPolicy: 'unconfined' | 'confined' | 'verified'` and `realPath` options on
+  `IFsFileTreeInitParams`, applied to every operation; the default stays `'unconfined'`. Escape and
+  revert matrices: `.ai/tasks/completed/2026-10/filetree-prefix-confinement/result.md`.
 
 - **[P2] No shared ESLint layer — `no-prototype-builtins` is on in 4 of the 33 projects with an ESLint config.**
   Every project carries its own flat `eslint.config.js` (33 files, 8 distinct variants) extending
@@ -144,8 +133,9 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
   2000 ms and `deltaGenerator.core` at 5000 ms. (`ts-sudoku-lib` has four more, out of scope —
   that package is leaving this repo.) **Remedy:** assert the property the test is really about —
   a counter, a call count, an absence of quadratic blowup — or delete the assertion. Raising the
-  threshold buys time and keeps the defect. The existing safer-fetch entry in this file is the same
-  family and should be closed with this one.
+  threshold buys time and keeps the defect. *(Checked 2026-11-11: the `md5Normalizer.browser` and
+  `saferFetchRetry` assertions are gone — `deterministic-timing-tests`, #745 — leaving the two
+  `deltaGenerator` bounds.)*
 
   **(b) `rush install` does not retry a dependency fetch.** On #687 the job died in 71 seconds:
   `onnxruntime-node`'s postinstall hit `ETIMEDOUT`/`ENETUNREACH` fetching its native binary and Rush
@@ -153,7 +143,9 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
   rather than a network blip. **Remedy:** a retry around the install step, or a cached/vendored
   binary for that package.
 
-  **(c) An Argon2id test mock derives colliding keys from distinct salts.**
+  **(c) ~~An Argon2id test mock derives colliding keys from distinct salts.~~ Resolved by
+  `model-followups` (2026-11-11):** the test now flips one bit of the stored salt instead of drawing a
+  fresh one, which always moves the mock's seed. The original text follows.
   `libraries/ts-extras/src/test/unit/crypto/keystore/keyStoreArgon2id.test.ts`'s
   `makeDeterministicKey` folds the salt in as `seed += salt[i] * (i + 1)` — a weighted **sum**. Two
   different 16-byte salts sharing that sum derive an identical key, so *"returns false when salt does
@@ -300,6 +292,19 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
   unacknowledged manifest as not pinning at prune time (disposal already does, since T8 PR 1's
   antagonist finding), or have `cleanup` evict expired manifests; and keep `prunable` consistent with
   what cleanup will do. **Reference**: `agent-tasks-t8b` `state.md` § *antagonist*.
+
+- **[P3] `ts-agent-tasks` a receipt a removed drain principal prepared stays acknowledgeable by
+  another.** After `TaskBroker.setSubscriptionDrain` removes a principal, a receipt it prepared stays
+  issued; a principal still named can acknowledge it under its own authority, discharging what the
+  removed principal was shown. Manifests (`IIssuedTaskReceipt`) do not record who prepared them, so
+  the broker cannot tell. Host-reachable only — the host holds the receipt object.
+
+  **Trigger**: a host that removes a drain principal while that principal has receipts in flight, or
+  hands receipts between principals. **Scope sketch**: record the preparing principal on the
+  manifest and either abandon a removed principal's receipts in `setSubscriptionDrain`'s write or
+  refuse to acknowledge a receipt prepared by another principal. **Not a P2**: it needs the host to
+  pass one principal's receipt to another, and every acknowledged id was shown to someone the host
+  named. **Reference**: `agent-tasks-drain-principals` `result.md` § *Open questions*.
 
 - **[P4] A baseline is never checked against `maxUpdateBytes`, and a profile may set `maxUpdateBytes`
   below an envelope plus framing.** `_checkBaseline` has no size check, so under such a profile a
@@ -541,35 +546,6 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
 
 
 
-
-- **[P2] A `safer-fetch` retry test asserts a probabilistic outcome, and flakes CI for every
-  unrelated PR at roughly 1 run in 170.**
-  `libraries/ts-extras/src/test/unit/safer-fetch/saferFetchRetry.test.ts` §
-  *"an exhausted deadline fails with the attempt's own failure"* drives
-  `{ timeoutMs: 30, retry: { attempts: 5, baseDelayMs: 10_000 } }` and asserts
-  `expect(transport.calls).toHaveLength(1)` — i.e. that the backoff outlasts the 30 ms overall
-  deadline so no second attempt is made.
-
-  **The implementation is correct; the test is over-specified.** `computeRetryDelayMs` applies
-  **full jitter** — the delay is uniform on `[0, cap)` where `cap = min(baseDelayMs * 2^attempt,
-  maxDelayMs)`. With `DEFAULT_RETRY_MAX_DELAY_MS = 5_000` the cap is 5 000 ms, so the delay lands
-  under the 30 ms deadline about **0.6% of the time**, and a second attempt is then both legal and
-  correct. Observed 2026-08-18 on #640 — a promotion PR touching only `ts-agent-memory`,
-  `ts-agent-memory-sqlite-vec` and docs — where it failed `rush test`, blocked 18 downstream
-  projects as `BLOCKED: operations failed`, and cost a full re-run. The same suite passed 5/5
-  locally immediately after.
-
-  **The fix is small and the seam already exists.** `IRetryDelayParams.random` is documented
-  *"Injected for determinism in tests; the call path passes `Math.random`"* — and `grep -n random`
-  in that test file returns **nothing**. The test should inject a `random` that returns a value
-  putting the delay safely past the deadline (or the deadline/base pair should be chosen so the
-  assertion holds for every point in `[0, cap)`). Worth a sweep of the sibling retry tests for the
-  same shape while in there.
-
-  **Why P2 rather than P3**: it is not this package's own gate that suffers, it is *everyone's* — a
-  flake in a widely-depended-on package fails `rush test` for PRs that never touched it, and the
-  failure reads as "your change broke `ts-extras`" to whoever is looking. That is a tax on unrelated
-  work plus an erosion of the one gate this repo trusts most.
 
 - **[P2] The `samples/testbed` fake `IVectorIndex` has broken on two consecutive `ts-agent-memory`
   contract changes, with the rule codified in between.**
@@ -901,6 +877,26 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
 
 ## P3 — Opportunistic cleanup
 
+- **[P3] `@fgv/ts-extras-mcp` `egress.test`: a resumed-GET over-cap test flaked once under full-suite load.** "an answer over the cap on a resumed (Last-Event-ID) GET fails its request promptly as egress-blocked too-large" failed once in a repo-wide `rush test` on the `model-alias-refresh` branch (2026-11-08), passed on retry; the branch does not touch the package.
+
+  **Narrowed by `model-followups` (2026-11-11) — it is not a timing margin.** The recorded failure
+  is `MCP error -32001: Request timed out` with `{ kind: 'timeout' }` after the call's full 15 s, not
+  the over-cap failure arriving late: the 20 000-character answer never reached the client at all,
+  so raising a bound would not have helped. The answer reaches the client only through the SDK's
+  resume path — it reconnects a `POST` stream with `Last-Event-ID` only after it has read a priming
+  event with an id from that stream, and then retries at most twice — and the egress guard fails
+  the request only when the over-cap read happens in that `POST`'s request context. One of those
+  steps did not happen. It did not reproduce: 25 runs of the test alone and 12 runs of the whole
+  file, each under 6–8 CPU-bound loops on 4 cores, all passed. No change was made, for want of a
+  failure to diagnose against.
+
+  **Trigger**: a second failure. Capture that run's log, and if possible rerun with the session's
+  logger attached, which records every egress cut-off at `detail`.
+
+  **Scope sketch**: decide from the second failure which step was lost — no priming event read
+  before the close, a resume that exhausted its two retries, or an over-cap read outside the
+  request's context — and pin that step in `realHttpServer.ts`'s `polled` fixture or the egress.
+
 - **[P3] `executeClientToolTurn`'s `onBeforeToolExecute` gate never receives the turn's signal.**
   The gate is called as `onBeforeToolExecute(tool, args)` in `dispatchCall`
   (`libraries/ts-extras/src/packlets/ai-assist/streamingAdapters/clientToolContinuationBuilder.ts`),
@@ -950,9 +946,6 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
     ms. These are the tightest, and the likeliest to flake next.
   - `libraries/ts-sudoku-lib/src/test/unit/hints/integration.test.ts`, `puzzles/anyPuzzle.test.ts`
     and `puzzles/sudokuXPuzzle.test.ts`.
-  - `tools/ts-res-cli/test/integration/cli-configuration.test.ts` "test consistent output by
-    building same input twice" spawns the CLI twice inside Jest's default 5 s timeout. It **did**
-    fail once under load during this stream's repo-wide `test` gate, and passed when re-run alone.
 
   **Trigger**: any of these failing under a loaded gate. The sudoku packages are slated to leave
   the repo, so their entries may lapse instead.
@@ -967,31 +960,6 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
   **Not a P2**: none of them has been observed failing yet.
 
   **Reference**: `.ai/tasks/completed/2026-10/deterministic-timing-tests/result.md` § Sweep.
-
-- **[P3] A `ts-extras-mcp` cancellation test races two real timers 10 ms apart, and fails under load.**
-  The test is `libraries/ts-extras-mcp/src/test/unit/cancellation.test.ts` §
-  *"maxTotalTimeoutMs caps a call that progress would otherwise extend"*. It calls a progress-emitting
-  tool on a real in-memory MCP server with
-  `{ timeoutMs: 80, resetTimeoutOnProgress: true, maxTotalTimeoutMs: 70 }`. It asserts that the
-  70 ms total cap fires (`/Maximum total timeout exceeded/`) before the 80 ms per-request timeout,
-  using real timers.
-  - **Observed:** on a loaded machine the 80 ms timer won instead. The test got
-    `MCP error -32001: Request timed out` with the right `{ kind: 'timeout' }` detail but the wrong
-    message, and that failed a repo-wide `rush test` for an unrelated stream.
-  - **The implementation is not at fault:** which SDK timer fires first is a property of the
-    scheduler, not of the package.
-
-  **Trigger**: the next stream touching `cancellation.test.ts`, or the next CI run it flakes.
-
-  **Scope sketch**: drive the timers with a fake clock, as #745 did for the safer-fetch timing tests.
-  The two deadlines then fire in a fixed order, and the assertion pins the cap rather than the
-  scheduler. Sweep the file's sibling real-timer tests for the same shape while there.
-
-  **Not a P2**: it is one test with a ~10 ms margin; it has been seen once, and a re-run passes.
-
-  **Reference**: `safer-fetch-walk-chain` (2026-10-19), second repo-wide `rush test`; recorded in
-  that stream's `result.md` § Gates.
-
 
 - **[P3] `ts-extras-mcp` tool schemas can lose an own `__proto__` key without the package seeing it.**
   `listMcpTools` (`libraries/ts-extras-mcp/src/packlets/mcp/operations.ts`) reads `tools/list` through
@@ -1216,23 +1184,6 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
   **Not a P4**: a stale row is a protection nobody is checking.
 
   **Reference**: `.ai/tasks/completed/2026-10/agent-tasks-p1/result.md` § Revert matrix.
-
-- **[P3] A `ts-extras` KeyStore Argon2id test is flaky: its fake KDF cannot tell random salts apart.**
-  `libraries/ts-extras/src/test/unit/crypto/keystore/keyStoreArgon2id.test.ts` › *returns false when
-  salt does not match* draws a second random salt and expects verification to fail. The test's
-  `makeDeterministicKey` folds the salt into its seed as `sum(salt[i] * (i + 1))`, a range of ~35k
-  values concentrated near its mean, so two random salts occasionally collide and the "wrong" salt
-  derives the same key. Seen red once in P1's repo-wide `rush test` (2026-10-01), on a branch that does
-  not touch `ts-extras`; it then blocks every downstream project's tests.
-
-  **Trigger**: the next red run, or any `ts-extras` crypto touch.
-
-  **Scope sketch**: make the mismatched salt deterministically different (change one byte of the stored
-  salt, which always moves the weighted sum), or hash the salt in the fake KDF.
-
-  **Not a P4**: an intermittent red on an unrelated package blocks CI for everyone downstream.
-
-  **Reference**: `.ai/tasks/completed/2026-10/agent-tasks-p1/result.md` § Gates.
 
 - **[P3] `JsonSchema.integer` cannot state a range, so `task_query`'s `limit` bound is prose on the
   wire.** `libraries/ts-json-base/src/packlets/json-schema-builder/factories.ts` has no
@@ -1609,7 +1560,35 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
 
   **Reference**: #668; `design.md` §8; `streamUsageCapability.ts`.
 
-- **[P3] Generic `effort: 'none'` maps to a Gemini value that errors on Pro-family models.**
+- **[P3] Gemini 4 Argon ignores `temperature`, and ai-assist still sends a caller's value.**
+  Google's Argon migration notes say: "Remove deprecated parameters: Remove `temperature`, `top_p`,
+  `top_k`, and `candidate_count` from requests. If provided, sampling parameters are ignored."
+  (https://aistudio.google.com/docs/whats-new-gemini-4-argon.md?generate-content=true, fetched
+  2026-11-11). `samplingParamsRejectedModelPrefixes` covers models that **reject** sampling
+  parameters with a 400; Argon accepts and drops them, so a caller's `temperature` on
+  `@google-gemini:pro` is silently ineffective and nothing says so.
+
+  **Scope sketch**: a sibling declaration for models that *ignore* sampling parameters (a descriptor
+  list, matched like the rejected list), and a decision on what a call with `temperature` does there
+  — refuse, or send it and report it as ignored. Not done in `gemini-thinking-level`, which kept
+  behaviour unchanged.
+
+  **Trigger**: a consumer relies on `temperature` with `@google-gemini:pro`, or any stream that touches
+  the sampling-parameter declarations.
+
+  **Not a P2**: nothing on the wire is wrong and nothing fails; the cost is a setting that has no
+  effect.
+
+  **Reference**: `.ai/tasks/completed/2026-11/gemini-thinking-level/` (`state.md` Q1).
+
+- ~~**[P3] Generic `effort: 'none'` maps to a Gemini value that errors on Pro-family models.**~~
+  **Resolved by `gemini-thinking-level` (PR #775).** A generic `'none'` never sends
+  `thinkingBudget: 0` to a Pro-family model: every Pro id with evidence (`gemini-3.1-pro-preview`,
+  `gemini-3-pro-preview`, `gemini-2.5-pro`) is on `thinkingRequiredModelPrefixes`, so `'none'` is sent
+  as the low budget or, under `onUnsupported: 'fail'`, refused with "the model cannot run with thinking
+  off". Gemini 4 (`gemini-4-argon`, `gemini-4-carbon`) is on the level wire and degrades to `low` or is
+  refused naming its lowest level. An explicit `{ thinkingBudget: 0 }` block is still sent verbatim
+  (the caller owns the wire). Original entry kept below.
   `ai-assist-thinking-anchoring` (#667) added `'none'` to `IThinkingConfig.effort` as the
   cross-provider spelling for "thinking off". On Gemini it maps to `thinkingBudget: 0` in
   `thinkingOptionsResolver.ts`'s `genericEffortToGemini`. But

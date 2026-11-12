@@ -37,6 +37,7 @@ A `Result<T>` represents the success or failure of an operation. A successful re
 | `fail(message)` | Create a `Failure<T>` |
 | `captureResult(fn)` | Wrap a throwing function into a `Result<T>` |
 | `MessageAggregator` | Collect and format multiple error messages |
+| `formatValueForMessage(value, options?)` | Render any value for a failure message without throwing (cycles, `BigInt`, Proxies); identical to `JSON.stringify` for JSON-safe values within its bounds |
 | `mapResults(results)` | Aggregate array of results (all must succeed) |
 | `mapSuccess(results)` | Collect successful results (fails only if all fail; every failure still reaches an optional aggregator) |
 | `mapFailures(results)` | Extract error messages from failed results |

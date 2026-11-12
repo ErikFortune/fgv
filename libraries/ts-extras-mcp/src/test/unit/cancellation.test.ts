@@ -140,6 +140,36 @@ async function startFixture(): Promise<IFixture> {
   };
 }
 
+/**
+ * Runs `work` with `setTimeout` / `setInterval` and `Date` on a fake clock, advanced only by
+ * `advance`. The in-memory transport runs on promise jobs, which stay real, so the server's progress
+ * timers and the SDK's request and total deadlines fire in the order their times say — not in the
+ * order a loaded machine gets round to them.
+ */
+async function onFakeClock<T>(work: () => Promise<T>, advanceMs: number): Promise<T> {
+  jest.useFakeTimers({
+    doNotFake: [
+      'hrtime',
+      'performance',
+      'nextTick',
+      'queueMicrotask',
+      'setImmediate',
+      'clearImmediate',
+      'requestAnimationFrame',
+      'cancelAnimationFrame',
+      'requestIdleCallback',
+      'cancelIdleCallback'
+    ]
+  });
+  try {
+    const pending = work();
+    await jest.advanceTimersByTimeAsync(advanceMs);
+    return await pending;
+  } finally {
+    jest.useRealTimers();
+  }
+}
+
 describe('per-request options against a real in-memory MCP server', () => {
   let fixture: IFixture;
 
@@ -251,30 +281,52 @@ describe('per-request options against a real in-memory MCP server', () => {
     ]);
   });
 
+  // The three progress tests below race the server's 30 ms progress timers against the SDK's
+  // deadlines, so they run on a fake clock: on real timers a loaded machine can delay a progress
+  // notification past a deadline it was meant to beat.
   test('without resetTimeoutOnProgress, a call that outlives timeoutMs times out despite progress', async () => {
     expect(
-      await callMcpTool(fixture.session, 'progress', {}, { timeoutMs: 80, onProgress: () => undefined })
+      await onFakeClock(
+        () => callMcpTool(fixture.session, 'progress', {}, { timeoutMs: 80, onProgress: () => undefined }),
+        200
+      )
     ).toFailWithDetail(/Request timed out/, { kind: 'timeout' });
   });
 
   test('resetTimeoutOnProgress lets a reporting call outlive timeoutMs', async () => {
     expect(
-      await callMcpTool(
-        fixture.session,
-        'progress',
-        {},
-        { timeoutMs: 80, resetTimeoutOnProgress: true, onProgress: () => undefined }
+      await onFakeClock(
+        () =>
+          callMcpTool(
+            fixture.session,
+            'progress',
+            {},
+            { timeoutMs: 80, resetTimeoutOnProgress: true, onProgress: () => undefined }
+          ),
+        200
       )
     ).toSucceedWith({ content: 'finished', blocks: [{ type: 'text', text: 'finished' }] });
   });
 
   test('maxTotalTimeoutMs caps a call that progress would otherwise extend', async () => {
+    // Progress at 30 and 60 ms resets the 80 ms request deadline to 140 ms. The progress at 90 ms
+    // finds 90 ms elapsed, past the 70 ms cap, and ends the call on the total cap, before the 140 ms
+    // request deadline.
     expect(
-      await callMcpTool(
-        fixture.session,
-        'progress',
-        {},
-        { timeoutMs: 80, resetTimeoutOnProgress: true, maxTotalTimeoutMs: 70, onProgress: () => undefined }
+      await onFakeClock(
+        () =>
+          callMcpTool(
+            fixture.session,
+            'progress',
+            {},
+            {
+              timeoutMs: 80,
+              resetTimeoutOnProgress: true,
+              maxTotalTimeoutMs: 70,
+              onProgress: () => undefined
+            }
+          ),
+        200
       )
     ).toFailWithDetail(/Maximum total timeout exceeded/, { kind: 'timeout' });
   });

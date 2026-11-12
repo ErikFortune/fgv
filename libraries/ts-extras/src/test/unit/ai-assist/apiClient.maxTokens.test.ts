@@ -111,7 +111,7 @@ describe('callProviderCompletion — maxTokens', () => {
       expect(body.max_completion_tokens).toBeUndefined();
     });
 
-    test('sends maxTokens as max_tokens (not max_completion_tokens) for the xAI provider id', async () => {
+    test('sends maxTokens as max_tokens (not max_completion_tokens) for a descriptor declaring no field', async () => {
       mockFetchResponse(openAiResponse('ok'));
 
       await AiAssist.callProviderCompletion({
@@ -126,9 +126,13 @@ describe('callProviderCompletion — maxTokens', () => {
       expect(body.max_completion_tokens).toBeUndefined();
     });
 
-    test('sends maxTokens as max_completion_tokens (not max_tokens) for the openai provider id', async () => {
+    test('sends maxTokens as max_completion_tokens (not max_tokens) for a descriptor declaring it', async () => {
       mockFetchResponse(openAiResponse('ok'));
-      const openAiDescriptor = makeDescriptor({ id: 'openai', apiFormat: 'openai' });
+      const openAiDescriptor = makeDescriptor({
+        id: 'openai',
+        apiFormat: 'openai',
+        chatOutputTokensField: 'max_completion_tokens'
+      });
 
       await AiAssist.callProviderCompletion({
         descriptor: openAiDescriptor,
@@ -144,7 +148,11 @@ describe('callProviderCompletion — maxTokens', () => {
 
     test('omits max_completion_tokens when maxTokens is not provided (openai)', async () => {
       mockFetchResponse(openAiResponse('ok'));
-      const openAiDescriptor = makeDescriptor({ id: 'openai', apiFormat: 'openai' });
+      const openAiDescriptor = makeDescriptor({
+        id: 'openai',
+        apiFormat: 'openai',
+        chatOutputTokensField: 'max_completion_tokens'
+      });
 
       await AiAssist.callProviderCompletion({
         descriptor: openAiDescriptor,

@@ -20,7 +20,8 @@ import {
   TaskId,
   TaskLifecycleStatus,
   UpdateCategory,
-  UpdateId
+  UpdateId,
+  drainPrincipalsOf
 } from '../types';
 import { DimensionAmounts, ILedgerEntry, heldCharges, zeroAmounts } from './ledger';
 import { utf8Length } from './layout';
@@ -101,6 +102,8 @@ export function subscriptionState(
       selection: record.selection,
       start: record.start,
       policy: record.policy,
+      drainPrincipals: drainPrincipalsOf(record),
+      ...(record.policyIdentity !== undefined ? { policyIdentity: record.policyIdentity } : {}),
       state: record.state,
       recordRevision: record.recordRevision,
       createdAt: record.createdAt

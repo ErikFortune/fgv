@@ -24,8 +24,8 @@
  *
  * Each provider requires a different wire format for the follow-up request:
  * - **Anthropic**: assistant turn reconstructed from the ordered accumulation
- *   buffer (thinking / redacted_thinking / text / tool_use in original stream
- *   order) + user turn with `tool_result` blocks. When thinking is active, the
+ *   buffer (thinking / redacted_thinking / text with its citations / tool_use / server_tool_use /
+ *   web_search_tool_result in original stream order) + user turn with `tool_result` blocks. When thinking is active, the
  *   follow-up request must NOT set `tool_choice: { type: 'any' }` or
  *   `tool_choice: { type: 'tool', ... }` (E3 / §5.4 of b4-spike-findings).
  * - **OpenAI / xAI Responses API**: `function_call` input items +
@@ -36,7 +36,18 @@
  * @packageDocumentation
  */
 
-import { captureAsyncResult, fail, type Logging, mapResults, Result, succeed } from '@fgv/ts-utils';
+import { resolveAnthropicThinkingOffType } from '../anthropicThinkingOff';
+import { resolveGeminiModelThinking } from '../geminiThinking';
+import { checkSamplingParams, temperatureAcceptedWithThinking } from '../samplingParams';
+import {
+  captureAsyncResult,
+  captureResult,
+  fail,
+  type Logging,
+  mapResults,
+  Result,
+  succeed
+} from '@fgv/ts-utils';
 import { type JsonArray, type JsonObject } from '@fgv/ts-json-base';
 
 import { type IAiCacheRequest } from '../cacheRequest';
@@ -51,21 +62,31 @@ import {
   type IChatRequest,
   type IAiProviderDescriptor,
   isAdaptiveThinkingModel,
+  isThinkingRequiredModel,
   resolveProviderModel
 } from '../model';
 import { adaptClientToolParameters, resolveToolConflicts } from '../toolFormats';
 import { type IAiVerifiedEndpoint, clientToolWireFormat, schemaWireProviderId } from '../schemaKeywords';
 import type { IAiCompletionUsage } from '../usageTypes';
-import { type IResolvedThinkingConfig } from '../thinkingOptionsResolver';
+import {
+  checkCallerGeminiThinking,
+  checkTemperatureConflict,
+  type IResolvedThinkingConfig,
+  providerDiscriminatorForId
+} from '../thinkingOptionsResolver';
 import { splitChatRequest } from '../chatRequestBuilders';
 import { resolveEffectiveBaseUrl } from '../endpoint';
-import { type IAccumulatedBlock } from './anthropic';
+import {
+  type IAccumulatedBlock,
+  type IAccumulatedServerToolUseBlock,
+  type IAccumulatedToolUseBlock
+} from './anthropic';
 import { type IAccumulatedFunctionCall } from './openaiResponses';
 import { type IAccumulatedGeminiFunctionCall } from './gemini';
 import { callAnthropicStream } from './anthropic';
 import { callOpenAiResponsesStream } from './openaiResponses';
 import { callGeminiStream } from './gemini';
-import { type IStreamApiConfig } from './common';
+import { type IStreamApiConfig, jsonObjectValidator } from './common';
 import {
   supportsCacheUsageReporting,
   supportsPromptCacheBreakpoints,
@@ -142,6 +163,74 @@ function isUsableId(id: string | undefined): id is string {
 }
 
 /**
+ * A buffered `server_tool_use` block as it streamed: its `content_block_start` object, with `input`
+ * replaced by the parsed `input_json_delta` chunks when any arrived. Fails on unparseable chunks
+ * rather than replaying an input the model never sent.
+ */
+function replayServerToolUse(block: IAccumulatedServerToolUseBlock): Result<JsonObject> {
+  if (block.argsBuffer.length === 0) {
+    return succeed(block.block);
+  }
+  return captureResult(() => JSON.parse(block.argsBuffer) as unknown)
+    .onSuccess((parsed) => jsonObjectValidator.validate(parsed))
+    .onSuccess((input) => succeed({ ...block.block, input }))
+    .withErrorFormat(
+      (msg) => `Anthropic continuation: server_tool_use block has an unreadable input (${msg})`
+    );
+}
+
+/**
+ * A buffered client `tool_use` block, with its input parsed from the accumulated chunks. Fails on a
+ * block with no usable id, which no `tool_result` could reference.
+ */
+function replayToolUse(block: IAccumulatedToolUseBlock): Result<JsonObject> {
+  // A buffered tool_use with an empty id can never be referenced by a valid
+  // tool_result; emitting it would corrupt the assistant turn. Fail loud.
+  if (!isUsableId(block.id)) {
+    return fail(
+      `Anthropic continuation: buffered tool_use block for tool '${block.name}' has an empty id; ` +
+        `cannot build a valid continuation`
+    );
+  }
+  // The adapter has already parsed these chunks before dispatching the call; a malformed or
+  // non-object buffer is sent as an empty input, as the adapter dispatched it.
+  const input = captureResult(() => JSON.parse(block.argsBuffer || '{}') as unknown)
+    .onSuccess((parsed) => jsonObjectValidator.validate(parsed))
+    .orDefault({});
+  return succeed({ type: 'tool_use', id: block.id, name: block.name, input });
+}
+
+/**
+ * One buffered block as it goes back in the assistant turn, or `undefined` for a block that is not
+ * sent (an empty text block, which the API rejects on input). Text and thinking keep their
+ * `content_block_start` object with the accumulated fields laid over it.
+ */
+function replayAnthropicBlock(block: IAccumulatedBlock): Result<JsonObject | undefined> {
+  switch (block.type) {
+    case 'thinking':
+      return succeed({ ...block.block, thinking: block.thinking, signature: block.signature });
+    case 'redacted_thinking':
+      return succeed({ type: 'redacted_thinking', data: block.data });
+    case 'text':
+      return succeed(
+        block.text.length === 0
+          ? undefined
+          : {
+              ...block.block,
+              text: block.text,
+              ...(block.citations !== undefined ? { citations: block.citations } : {})
+            }
+      );
+    case 'server_tool_use':
+      return replayServerToolUse(block);
+    case 'server_tool_result':
+      return succeed(block.block);
+    case 'tool_use':
+      return replayToolUse(block);
+  }
+}
+
+/**
  * Builds the Anthropic follow-up messages for a client-tool round-trip.
  *
  * Reconstructs the assistant turn from the ordered accumulation buffer
@@ -170,61 +259,30 @@ export function buildAnthropicContinuation(
   toolResults: IToolCallResult[],
   logger?: Logging.ILogger
 ): Result<IAiClientToolContinuation> {
-  // Reconstruct the assistant turn from the ordered accumulation buffer.
-  // Sort by buffer key (SSE index) to restore original stream order.
-  const sortedKeys = Array.from(accBuffer.keys()).sort((a, b) => a - b);
-  const assistantContent: JsonArray = [];
-  // The set of assistant tool_use ids — the single source of truth every
-  // tool_result.tool_use_id must be drawn from.
-  const bufferedToolUseIds = new Set<string>();
+  // Reconstruct the assistant turn from the ordered accumulation buffer, sorted by buffer key (SSE
+  // index) to restore the original stream order.
+  const blocks = Array.from(accBuffer.entries())
+    .sort(([a], [b]) => a - b)
+    .map(([, block]) => block);
+  return mapResults(blocks.map((block) => replayAnthropicBlock(block))).onSuccess((replayed) => {
+    const assistantContent: JsonArray = replayed.filter((b): b is JsonObject => b !== undefined);
+    // The set of assistant tool_use ids — the single source of truth every
+    // tool_result.tool_use_id must be drawn from.
+    const bufferedToolUseIds = new Set(blocks.flatMap((b) => (b.type === 'tool_use' ? [b.id] : [])));
+    return buildAnthropicToolResultTurn(assistantContent, bufferedToolUseIds, toolResults, logger);
+  });
+}
 
-  for (const key of sortedKeys) {
-    const block = accBuffer.get(key);
-    /* c8 ignore next 1 - defensive: key always exists in map since we iterate its keys */
-    if (!block) continue;
-    if (block.type === 'thinking') {
-      assistantContent.push({
-        type: 'thinking',
-        thinking: block.thinking,
-        signature: block.signature
-      });
-    } else if (block.type === 'redacted_thinking') {
-      assistantContent.push({
-        type: 'redacted_thinking',
-        data: block.data
-      });
-    } else if (block.type === 'text') {
-      if (block.text.length > 0) {
-        assistantContent.push({ type: 'text', text: block.text });
-      }
-    } else if (block.type === 'tool_use') {
-      // A buffered tool_use with an empty id can never be referenced by a valid
-      // tool_result; emitting it would corrupt the assistant turn. Fail loud.
-      if (!isUsableId(block.id)) {
-        return fail(
-          `Anthropic continuation: buffered tool_use block for tool '${block.name}' has an empty id; ` +
-            `cannot build a valid continuation`
-        );
-      }
-      let parsedInput: JsonObject;
-      try {
-        /* c8 ignore next 1 - defensive: argsBuffer is JSON-parsed in the adapter before emitting client-tool-call-done */
-        parsedInput = JSON.parse(block.argsBuffer || '{}') as JsonObject;
-        /* c8 ignore start - defensive: malformed argsBuffer defaults to empty object */
-      } catch {
-        parsedInput = {};
-      }
-      /* c8 ignore stop */
-      bufferedToolUseIds.add(block.id);
-      assistantContent.push({
-        type: 'tool_use',
-        id: block.id,
-        name: block.name,
-        input: parsedInput
-      });
-    }
-  }
-
+/**
+ * Builds the user turn of `tool_result` blocks for an Anthropic continuation and assembles the
+ * continuation around the replayed assistant turn.
+ */
+function buildAnthropicToolResultTurn(
+  assistantContent: JsonArray,
+  bufferedToolUseIds: ReadonlySet<string>,
+  toolResults: IToolCallResult[],
+  logger?: Logging.ILogger
+): Result<IAiClientToolContinuation> {
   // Build user turn with tool_result blocks for each tool call. Correlate each
   // result to a buffered tool_use id — the SAME id that keys the assistant
   // tool_use block — and fail loud on a missing / empty / mismatched id. A
@@ -514,7 +572,14 @@ export interface IExecuteClientToolTurnParams extends IChatRequest {
   readonly continuationMessages?: ReadonlyArray<JsonObject>;
   /**
    * Sampling temperature. Sent to the provider only when explicitly provided; omitted otherwise
-   * so the provider's own default applies (current-gen models reject a caller-supplied default).
+   * so the provider's own default applies. Many current-gen models reject a non-default value;
+   * a model on `IAiProviderDescriptor.samplingParamsRejectedModelPrefixes` still accepts the
+   * descriptor's `samplingParamsAcceptedTemperature`, with or without thinking, and is refused
+   * any other value before the wire; a model on
+   * `IAiProviderDescriptor.samplingParamsRejectedWithThinkingModelPrefixes` applies the same rule
+   * unless the request turns thinking off (effort `'none'`), when any value is sent. Beside a
+   * `resolvedThinking` effort, a temperature the provider's thinking mode rejects is refused before
+   * the wire too, as on the completion and streaming paths, rather than dropped.
    */
   readonly temperature?: number;
   /** Server-side tools to include. */
@@ -546,7 +611,15 @@ export interface IExecuteClientToolTurnParams extends IChatRequest {
   readonly verifiedEndpoint?: IAiVerifiedEndpoint;
   /** Optional logger for diagnostics. */
   readonly logger?: Logging.ILogger;
-  /** Optional resolved thinking config (pre-resolved by the caller). */
+  /**
+   * Optional resolved thinking config (pre-resolved by the caller). Sent as built, except that a
+   * thinking-off value aimed at a model in `thinkingRequiredModelPrefixes` — `anthropicThinkingDisabled`
+   * with no `anthropicEffort`, an OpenAI-format `openAiEffort` / `xaiEffort` of `'none'`, or a Gemini
+   * `geminiThinkingBudget` of `0` — is refused before the wire, since the provider rejects it. On
+   * Gemini, a `geminiThinkingLevel` the model does not accept (one its level declaration does not
+   * list, or any level on a model in `geminiThinkingLevelRejectedModelPrefixes`), and a level and a
+   * budget together, are refused too.
+   */
   readonly resolvedThinking?: IResolvedThinkingConfig;
   /** Resolved model string (pre-resolved by the caller). When omitted, uses the descriptor's default model. */
   readonly model?: string;
@@ -792,6 +865,67 @@ export function executeClientToolTurn(
     return fail(modelResult.message);
   }
   const resolvedModel = modelResult.value;
+  // The same order as the completion and streaming paths: the thinking/temperature conflict, then the
+  // model's own sampling rule. A caller-built resolvedThinking carries no degrade, so `noneDegraded`
+  // is false. Without this a temperature beside an effort would reach the adapter and be dropped.
+  const discriminator = providerDiscriminatorForId(descriptor.id);
+  if (resolvedThinking !== undefined && discriminator !== undefined) {
+    const conflictResult = checkTemperatureConflict(
+      resolvedThinking,
+      discriminator,
+      temperature,
+      false,
+      temperatureAcceptedWithThinking(descriptor, resolvedModel)
+    );
+    if (conflictResult.isFailure()) {
+      return fail(`executeClientToolTurn: ${conflictResult.message}`);
+    }
+  }
+  const samplingResult = checkSamplingParams(descriptor, resolvedModel, temperature, resolvedThinking);
+  if (samplingResult.isFailure()) {
+    return fail(`executeClientToolTurn: ${samplingResult.message}`);
+  }
+  // A caller-built resolvedThinking skips the resolver that degrades or refuses 'none', so the
+  // same rule is applied here: the flag would send the off value to a model that rejects it. Keyed on
+  // the Anthropic wire, the only adapter that reads the flag. A
+  // model with a per-model off value (anthropicThinkingOffTypes) is not thinking-required, so the
+  // flag goes through and the adapter sends that value.
+  if (
+    descriptor.apiFormat === 'anthropic' &&
+    resolvedThinking?.anthropicThinkingDisabled === true &&
+    resolvedThinking.anthropicEffort === undefined &&
+    isThinkingRequiredModel(descriptor, resolvedModel)
+  ) {
+    return fail(
+      `executeClientToolTurn: ${resolvedModel} cannot run with thinking off: ` +
+        `drop anthropicThinkingDisabled or set an anthropicEffort`
+    );
+  }
+  // The same rule for the OpenAI-format wire, which sends `openAiEffort ?? xaiEffort` as the
+  // reasoning effort: 'none' aimed at a model that cannot run with thinking off is a provider 400.
+  // Keyed on the wire the descriptor speaks — another format's adapter never reads these fields.
+  if (descriptor.apiFormat === 'openai' && isThinkingRequiredModel(descriptor, resolvedModel)) {
+    const effortField = resolvedThinking?.openAiEffort !== undefined ? 'openAiEffort' : 'xaiEffort';
+    if ((resolvedThinking?.openAiEffort ?? resolvedThinking?.xaiEffort) === 'none') {
+      return fail(
+        `executeClientToolTurn: ${resolvedModel} cannot run with thinking off: ` +
+          `set ${effortField} to an effort other than 'none'`
+      );
+    }
+  }
+  // The same rule for the Gemini wire: budget 0 on a model that cannot run with thinking off, a level
+  // the model does not accept, and a level beside a budget are each a provider 400.
+  if (descriptor.apiFormat === 'gemini') {
+    const geminiResult = checkCallerGeminiThinking(
+      resolvedThinking,
+      resolvedModel,
+      isThinkingRequiredModel(descriptor, resolvedModel),
+      resolveGeminiModelThinking(descriptor, resolvedModel)
+    );
+    if (geminiResult.isFailure()) {
+      return fail(`executeClientToolTurn: ${geminiResult.message}`);
+    }
+  }
   const baseUrlResult = resolveEffectiveBaseUrl(descriptor, endpoint);
   if (baseUrlResult.isFailure()) {
     return fail(baseUrlResult.message);
@@ -842,7 +976,9 @@ export function executeClientToolTurn(
           continuationMessages,
           isAdaptiveThinkingModel(descriptor, config.model),
           maxTokens,
-          cache
+          cache,
+          temperatureAcceptedWithThinking(descriptor, config.model),
+          resolveAnthropicThinkingOffType(descriptor, config.model)
         );
       case 'openai': {
         // Same gating as callProviderCompletion's 'openai' case in completionClient.ts — see the

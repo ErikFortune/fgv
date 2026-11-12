@@ -27,11 +27,11 @@
     "@fgv/ts-utils-jest": "workspace:*",
     "@types/heft-jest": "1.0.6",
     "@types/jest": "^30.0.0",
-    "@types/node": "^20.14.9",
+    "@types/node": "^22.20.5",
     "typescript": "5.9.3",
-    "@rushstack/eslint-config": "4.6.4",
-    "eslint": "^9.39.2",
-    "typedoc": "~0.28.16",
+    "@rushstack/eslint-config": "4.7.0",
+    "eslint": "^9.39.5",
+    "typedoc": "~0.28.20",
     "@fgv/typedoc-compact-theme": "workspace:*"
   },
   "repository": {

@@ -38,7 +38,11 @@ import { geminiAuthHeader } from '../endpoint';
 import { AiPrompt, type AiToolConfig, type IAiStreamEvent, type IChatMessage } from '../model';
 import { parseSseEventJson, readSseEvents } from '../sseParser';
 import { toGeminiTools } from '../toolFormats';
-import { type IResolvedThinkingConfig } from '../thinkingOptionsResolver';
+import {
+  checkGeminiThinkingExclusive,
+  geminiThinkingConfigWire,
+  type IResolvedThinkingConfig
+} from '../thinkingOptionsResolver';
 import { normalizeGeminiUsage } from '../usageNormalization';
 import { IStreamApiConfig, jsonObjectValidator, openSseConnection, validateEventPayload } from './common';
 
@@ -256,8 +260,15 @@ export async function callGeminiStream(
   if (maxTokens !== undefined) {
     generationConfig.maxOutputTokens = maxTokens;
   }
-  if (resolvedThinking?.geminiThinkingBudget !== undefined) {
-    generationConfig.thinkingConfig = { thinkingBudget: resolvedThinking.geminiThinkingBudget };
+  // A caller-built resolvedThinking (executeClientToolTurn) can carry both a level and a budget;
+  // the resolver never does. Gemini 4 rejects the pair, so it is refused before the wire.
+  const exclusive = checkGeminiThinkingExclusive(resolvedThinking);
+  if (exclusive.isFailure()) {
+    return fail(`Gemini streaming: ${exclusive.message}`);
+  }
+  const thinkingConfig = geminiThinkingConfigWire(resolvedThinking);
+  if (thinkingConfig !== undefined) {
+    generationConfig.thinkingConfig = thinkingConfig;
   }
   if (resolvedThinking?.otherParams !== undefined) {
     Object.assign(generationConfig, resolvedThinking.otherParams);

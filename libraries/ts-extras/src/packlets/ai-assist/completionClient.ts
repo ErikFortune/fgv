@@ -27,6 +27,9 @@
  * @packageDocumentation
  */
 
+import { type AnthropicThinkingOffType, resolveAnthropicThinkingOffType } from './anthropicThinkingOff';
+import { resolveGeminiModelThinking } from './geminiThinking';
+import { checkSamplingParams, temperatureAcceptedWithThinking } from './samplingParams';
 import { isJsonObject, type JsonObject } from '@fgv/ts-json-base';
 import {
   captureResult,
@@ -61,6 +64,7 @@ import type { IAiCompletionUsage } from './usageTypes';
 import {
   anthropicEffortToBudgetTokens,
   checkTemperatureConflict,
+  geminiThinkingConfigWire,
   resolveThinkingConfig,
   providerDiscriminatorForId,
   type IResolvedThinkingConfig
@@ -124,7 +128,12 @@ export interface IProviderCompletionParams extends IChatRequest {
   readonly apiKey: string;
   /**
    * Sampling temperature. Sent to the provider only when explicitly provided; omitted otherwise
-   * so the provider's own default applies (current-gen models reject a caller-supplied default).
+   * so the provider's own default applies. Many current-gen models reject a non-default value;
+   * a model on `IAiProviderDescriptor.samplingParamsRejectedModelPrefixes` still accepts the
+   * descriptor's `samplingParamsAcceptedTemperature`, with or without thinking, and is refused
+   * any other value before the wire; a model on
+   * `IAiProviderDescriptor.samplingParamsRejectedWithThinkingModelPrefixes` applies the same rule
+   * unless the request turns thinking off (effort `'none'`), when any value is sent.
    */
   readonly temperature?: number;
   /** Optional model override — string or context-aware map (uses descriptor.defaultModel otherwise) */
@@ -162,14 +171,16 @@ export interface IProviderCompletionParams extends IChatRequest {
   readonly verifiedEndpoint?: IAiVerifiedEndpoint;
   /**
    * Optional thinking/reasoning config. Anthropic, OpenAI, and xAI reject `temperature` when
-   * the effective merged effort is non-`'none'`; Gemini always accepts both.
+   * the effective merged effort is non-`'none'`, except a model's accepted default
+   * (`IAiProviderDescriptor.samplingParamsAcceptedTemperature`); Gemini always accepts both.
    */
   readonly thinking?: IThinkingConfig;
   /**
    * Optional cap on generated output tokens, mapped to each provider's native field:
-   * Anthropic `max_tokens`, OpenAI Chat Completions `max_completion_tokens`, OpenAI/xAI
-   * Responses `max_output_tokens`, Gemini `generationConfig.maxOutputTokens`, and the
-   * xAI/Groq/Mistral/Ollama/`openai-compat` chat-completions path `max_tokens`. When unset,
+   * Anthropic `max_tokens`, OpenAI/xAI Responses `max_output_tokens`, Gemini
+   * `generationConfig.maxOutputTokens`, and on the chat-completions path the descriptor's
+   * `chatOutputTokensField` (`max_completion_tokens` for OpenAI, Groq and xAI; `max_tokens` for
+   * Mistral, Ollama and `openai-compat`). When unset,
    * every provider except Anthropic omits the field and applies its own default; Anthropic's
    * Messages API requires the field, so it falls back to `DEFAULT_ANTHROPIC_MAX_TOKENS`.
    */
@@ -351,7 +362,8 @@ async function callOpenAiCompletion(
     // Temperature is sent only when the caller explicitly provided one — omitting it lets each
     // provider apply its own default (current-gen models reject a non-default temperature). The
     // completion path already rejects temperature + non-'none' thinking upstream
-    // (checkTemperatureConflict), so no effort gate is needed here.
+    // (checkTemperatureConflict), so no effort gate is needed here: beside an effort, the only
+    // temperature that reaches this point is a model's accepted default.
     ...(temperature !== undefined ? { temperature } : {}),
     ...(effort !== undefined && config.model !== 'grok-4' ? { reasoning_effort: effort } : {}),
     // Omitted when the caller doesn't set maxTokens — every non-Anthropic provider applies its
@@ -618,7 +630,8 @@ async function callAnthropicCompletion(
   useAdaptiveThinking: boolean = false,
   maxTokens?: number,
   structured: IResolvedStructuredOutput = NO_STRUCTURED_OUTPUT,
-  cache?: IAiCacheRequest
+  cache?: IAiCacheRequest,
+  thinkingOffType: AnthropicThinkingOffType = 'disabled'
 ): Promise<Result<IAiCompletionResponse>> {
   const url = `${config.baseUrl}/messages`;
   const messages = buildAnthropicMessages(prompt, { head });
@@ -633,9 +646,8 @@ async function callAnthropicCompletion(
     // Anthropic's Messages API requires max_tokens on every request — see
     // AiAssist.DEFAULT_ANTHROPIC_MAX_TOKENS for why only this provider defaults it.
     max_tokens: maxTokens ?? DEFAULT_ANTHROPIC_MAX_TOKENS,
-    // Temperature is sent only when explicitly provided (Claude-5 rejects any temperature). The
-    // completion path rejects temperature + thinking upstream (checkTemperatureConflict), so no
-    // effort gate is needed here.
+    // Temperature is sent only when explicitly provided. The completion path refuses a rejected value
+    // upstream (checkSamplingParams, checkTemperatureConflict), so no effort gate is needed here.
     ...(temperature !== undefined ? { temperature } : {})
   };
 
@@ -649,6 +661,15 @@ async function callAnthropicCompletion(
     } else {
       body.thinking = { type: 'enabled', budget_tokens: anthropicEffortToBudgetTokens(effort) };
     }
+  } else if (resolvedThinking?.anthropicThinkingDisabled === true && useAdaptiveThinking) {
+    // Adaptive models think by default, so omitting `thinking` would not turn it off. The off value
+    // is per model (resolveAnthropicThinkingOffType), and a generic 'none' sends no effort beside it:
+    // this branch runs only when anthropicEffort is unset (an 'other' block's otherParams, merged
+    // below, can still add one), which also keeps between_tools clear of its 400 at
+    // effort xhigh and max. A model on thinkingRequiredModelPrefixes never gets here: a generic
+    // 'none' is degraded or refused when it is resolved, and the client-tool path refuses a caller-built flag
+    // for it before dispatch.
+    body.thinking = { type: thinkingOffType };
   }
   if (resolvedThinking?.otherParams !== undefined) {
     Object.assign(body, resolvedThinking.otherParams);
@@ -749,8 +770,10 @@ async function callGeminiCompletion(
   if (maxTokens !== undefined) {
     generationConfig.maxOutputTokens = maxTokens;
   }
-  if (resolvedThinking?.geminiThinkingBudget !== undefined) {
-    generationConfig.thinkingConfig = { thinkingBudget: resolvedThinking.geminiThinkingBudget };
+  // The resolver never sets both a level and a budget (see geminiThinkingConfigWire).
+  const thinkingConfig = geminiThinkingConfigWire(resolvedThinking);
+  if (thinkingConfig !== undefined) {
+    generationConfig.thinkingConfig = thinkingConfig;
   }
   if (resolvedThinking?.otherParams !== undefined) {
     Object.assign(generationConfig, resolvedThinking.otherParams);
@@ -879,7 +902,8 @@ export async function callProviderCompletion(
         thinking,
         model,
         discriminator,
-        isThinkingRequiredModel(descriptor, model)
+        isThinkingRequiredModel(descriptor, model),
+        resolveGeminiModelThinking(descriptor, model)
       );
       if (mergeResult.isFailure()) {
         return fail(mergeResult.message);
@@ -889,12 +913,17 @@ export async function callProviderCompletion(
         resolvedThinking,
         discriminator,
         temperature,
-        mergeResult.value.noneDegraded
+        mergeResult.value.noneDegraded,
+        temperatureAcceptedWithThinking(descriptor, model)
       );
       if (conflictResult.isFailure()) {
         return fail(conflictResult.message);
       }
     }
+  }
+  const samplingResult = checkSamplingParams(descriptor, model, temperature, resolvedThinking);
+  if (samplingResult.isFailure()) {
+    return fail(samplingResult.message);
   }
 
   // Resolved against the CONCRETE model, after resolveProviderModel — passing an
@@ -1021,7 +1050,8 @@ export async function callProviderCompletion(
         isAdaptiveThinkingModel(descriptor, config.model),
         maxTokens,
         resolvedStructured,
-        cache
+        cache,
+        resolveAnthropicThinkingOffType(descriptor, config.model)
       );
     case 'gemini':
       return callGeminiCompletion(

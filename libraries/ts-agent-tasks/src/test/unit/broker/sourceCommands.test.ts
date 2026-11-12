@@ -80,6 +80,7 @@ function hooked(
             abandonReceipt: (r) => w.abandonReceipt(r),
             disposeObligations: (r) => w.disposeObligations(r),
             closeSubscription: (r) => w.closeSubscription(r),
+            setSubscriptionDrain: (r) => w.setSubscriptionDrain(r),
             pruneTask: (id) => w.pruneTask(id)
           }) as never
       )

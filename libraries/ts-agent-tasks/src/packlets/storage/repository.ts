@@ -49,6 +49,7 @@ import {
   ITaskReceiptIssue,
   ITaskObligationDisposal,
   ITaskSubscriptionClosure,
+  ITaskSubscriptionDrainChange,
   ITaskSubscription,
   ITaskSubscriptionRegistration,
   OperationId,
@@ -933,6 +934,8 @@ export class FileTreeTaskRepository implements ITaskRepository {
         guard().onSuccess(() => this._records.dispose(request)),
       closeSubscription: async (request: ITaskSubscriptionClosure) =>
         guard().onSuccess(() => this._records.close(request)),
+      setSubscriptionDrain: async (request: ITaskSubscriptionDrainChange) =>
+        guard().onSuccess(() => this._records.setDrain(request)),
       pruneTask: async (taskId: TaskId) => guard().onSuccess(() => this._prune(taskId))
     };
   }

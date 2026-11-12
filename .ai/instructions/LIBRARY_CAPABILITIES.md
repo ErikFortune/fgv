@@ -46,7 +46,7 @@ getting-started material. This index routes; it does not duplicate.
 | [`ts-extras-mcp`](libraries/ts-extras-mcp/CAPABILITIES.md) | MCP server tools → ai-assist client tools |
 | [`ts-extras-ollama`](libraries/ts-extras-ollama/CAPABILITIES.md) | Ollama *native* API — model management, grammar-constrained output |
 | [`ts-extras-system-one`](libraries/ts-extras-system-one/CAPABILITIES.md) | System-1 decision servers (CLM, openjev, Jev) — mandatory input bound, validated answers, no `confidence` |
-| [`ts-agent-tasks`](libraries/ts-agent-tasks/CAPABILITIES.md) | Agent task recording and mediation — envelope, lifecycle/observation/command/recovery unions, kind+command registry, finite capacity model, snapshot-only context renderer with pure inclusion receipts, FileTree task repository with one-record atomic commit, resident-index queries/paging/due/owed, principal-bound broker (authorized projected views, lists, hierarchy, reassignment), external sources (ordered reconciliation, reserved command dispatch, held uncertain outcomes), subscriptions with issued receipts and exact-ID acknowledgement, retention (authorized disposition, subscription closure, command abandonment, evidence-checked pruning and archive, a capacity runbook), cascade stop (persisted intent over the whole subtree, frozen admission, honest partial results), model tools with bounded output — read-only by default, create/update/reassign, typed commands and cascade-stop requests opt-in; checked prompt composition (one trailing per-request task slot, receipt acknowledgeable only against the exact body sent). **Records work; runs no agent loop** |
+| [`ts-agent-tasks`](libraries/ts-agent-tasks/CAPABILITIES.md) | Agent task recording and mediation — envelope, lifecycle/observation/command/recovery unions, kind+command registry, finite capacity model, snapshot-only context renderer with pure inclusion receipts, FileTree task repository with one-record atomic commit, resident-index queries/paging/due/owed, principal-bound broker (authorized projected views, lists, hierarchy, reassignment), external sources (ordered reconciliation, reserved command dispatch, held uncertain outcomes), subscriptions with issued receipts and exact-ID acknowledgement, retention (disposition, subscription closure, command abandonment, evidence-checked pruning and archive), cascade stop (persisted intent over the whole subtree, frozen admission, honest partial results), model tools with bounded output — read-only by default, create/update/reassign, typed commands and cascade-stop requests opt-in; checked prompt composition (receipt acknowledgeable only against the exact body sent). **Records work; runs no agent loop** |
 | [`ts-agent-memory`](libraries/ts-agent-memory/CAPABILITIES.md) | Agent memory/knowledge vault — records, dedup (`dedupScopeFor`), edges, retrieval, `IVectorIndex` / `IFragmentVectorIndex`, `embedsKind` |
 | [`ts-agent-memory-sqlite-vec`](libraries/ts-agent-memory-sqlite-vec/CAPABILITIES.md) | Durable vector + fragment indexes (SQLite `vec0`) |
 | [`ts-prompt-assist`](libraries/ts-prompt-assist/CAPABILITIES.md) | Conditional prompt authoring, resolution, composition, observation |
@@ -66,6 +66,7 @@ detail. `· pkg` names the owning package.*
 - **Error handling / fallible function?** → `Result<T>` · `ts-utils`
 - **Validating untyped JSON / config input?** → `Converters.object` · `ts-utils`
 - **Validating an existing class instance?** → `Validators` · `ts-utils`
+- **Putting an arbitrary value into a failure message?** → `formatValueForMessage`; never `JSON.stringify`, which throws on a cycle · `ts-utils`
 - **Map/collection with validation?** → `ResultMap` · `ts-utils`
 - **Constrain a string to one line — no breaks or control chars — where it will be framed?** → `singleLine`; a shape, NOT safety; closed domain → `enumeratedValue` · `ts-utils`
 - **Need a bounded most-recent-N ring of records with monotonic `seq` cursor paging…?** → `RetainingRingBuffer` · `ts-utils`
@@ -109,6 +110,7 @@ detail. `· pkg` names the owning package.*
 - **Need the provider to constrain its output, not just be asked to?** → `structuredOutput` · `ts-extras`
 - **Running a tool-use conversation with harness-side client tools?** → `executeClientToolTurn` `JsonSchema` · `ts-extras`
 - **Multi-round client-tool loop with a round cap, deadline and abort — or any async work bounded that way?** → `runClientToolLoop` `raceStopConditions` · `ts-extras`
+- **Stopping, or briefly holding still, every write a host makes (restore, snapshot, shutdown)?** → `WriteGate` `guard` `pause` · `ts-extras`
 - **Making an MCP server's tools callable from an ai-assist tool-use conversation?** → `executeClientToolTurn` `JsonSchema` `fromJson` `adaptMcpTools` · `ts-extras-mcp`
 - **Diagnosing an OpenAI/xAI Responses stream that completes empty?** → `executeClientToolTurn` · `ts-extras`
 - **Reading prompt-cache token counts off a completion (reads/writes, normalized)?** → `IAiCompletionUsage` `AiCacheReportingLevel` · `ts-extras`
@@ -121,6 +123,7 @@ detail. `· pkg` names the owning package.*
 - **Generating images from an LLM provider?** → `size` `quality` · `ts-extras`
 - **Declaring image generation capability on a provider?** → `IAiProviderDescriptor` `format` · `ts-extras`
 - **Looking up a model's image/embedding capability by id?** → `resolveImageCapability` · `ts-extras`
+- **Which `maxTokens` will a model accept?** → `resolveMaxOutputTokens` · `ts-extras`
 - **Enabling extended thinking / reasoning on LLM completions?** → `callProviderCompletion` `callProviderCompletionStream` · `ts-extras`
 - **Managing a local Ollama sidecar** → `callProviderEmbedding` `JsonSchema` · `ts-extras-ollama`
 - **Running a HuggingFace model locally with a Result boundary?** → `loadPipeline` `classify` · `ts-extras-transformers`
@@ -129,26 +132,27 @@ detail. `· pkg` names the owning package.*
 - **Embedding text via a cloud or self-hosted provider?** → `callProviderEmbedding` · `ts-extras`
 - **Calling a self-hosted Ollama or OpenAI-compatible model?** → `executeClientToolTurn` · `ts-extras`
 - **Asking a System-1 model (CLM, Jev) a typed yes/no, choice or score question?** → `askSystemOne` `noul` `choice` `score`; never truncate the state yourself · `ts-extras-system-one`
-- **Recording agent work — lifecycle, observations, commands — without building a runner?** → `ITaskEnvelope` `TaskLifecycle` `TaskKindRegistry` `TaskConverters` · `ts-agent-tasks`
-- **Rendering task snapshots into bounded prompt context, with a receipt of exactly what was included?** → `TaskContextRenderer` `ITaskInclusionReceipt` · `ts-agent-tasks`
+- **Recording agent work (lifecycle, observations, commands), no runner?** → `ITaskEnvelope` `TaskLifecycle` `TaskKindRegistry` `TaskConverters` · `ts-agent-tasks`
+- **Rendering task snapshots into bounded prompt context, with an inclusion receipt?** → `TaskContextRenderer` `ITaskInclusionReceipt` · `ts-agent-tasks`
 - **Persisting agent task state + owed updates so a process crash loses neither?** → `FileTreeTaskRepository` `FileTree` · `ts-agent-tasks`
-- **Selecting agent tasks by scope/lifecycle, due time or owed update without reading records?** → `FileTreeTaskRepository` `runTaskRepositoryConformance` · `ts-agent-tasks`
-- **Opening an agent task repository at a host root, durable only when the root qualifies?** → `openOrInitializeTaskRepository` `probeTaskRepositoryRoot` · `ts-agent-tasks`
-- **Giving a principal (model tool, actor) authorized, projected access to agent tasks?** → `TaskBroker` `ITaskAuthorization` `defaultTaskProjector` · `ts-agent-tasks`
-- **Draining a task subscription one revision at a time, acknowledging only after your own work commits?** → `TaskDeliveryPump` `IBoundTaskDelivery` · `ts-agent-tasks`
-- **A durable retry obligation for a busy recipient, found again after a crash, with no scheduler?** → `DeferredObligations` `trustedKindAuthority` · `ts-agent-tasks`
-- **Tracking work an external executor runs — its state reconciled, commands dispatched, never set optimistically?** → `ExternalTaskSource` `ITaskSource` `TaskBroker` · `ts-agent-tasks`
-- **Telling a consumer what changed in its tasks, and acknowledging only what it was actually shown?** → `TaskBroker` `IBoundTaskDelivery` `ITaskCheckpointStore` · `ts-agent-tasks`
-- **Pausing or cancelling an agent task and its whole subtree, with an honest partial result?** → `requestStop` `reconcileStop` `releaseStop` `ISourceCapabilities` · `ts-agent-tasks`
-- **Ending an agent-task obligation nobody will acknowledge, or freeing a full task repository?** → `TaskBroker` `dispose` `closeSubscription` `cleanup` · `ts-agent-tasks`
+- **Selecting agent tasks by scope, due time or owed update without reading records?** → `FileTreeTaskRepository` `runTaskRepositoryConformance` · `ts-agent-tasks`
+- **Opening a task repository at a host root, durable only if the root qualifies?** → `openOrInitializeTaskRepository` `probeTaskRepositoryRoot` · `ts-agent-tasks`
+- **Giving a principal (tool, actor) authorized, projected access to agent tasks?** → `TaskBroker` `ITaskAuthorization` `defaultTaskProjector` · `ts-agent-tasks`
+- **Draining a task subscription, acknowledging after your work commits?** → `TaskDeliveryPump` `IBoundTaskDelivery` · `ts-agent-tasks`
+- **Crash-durable retry, no scheduler?** → `DeferredObligations` `trustedKindAuthority` · `ts-agent-tasks`
+- **Tracking work an external executor runs — reconciled, never set optimistically?** → `ExternalTaskSource` `ITaskSource` `TaskBroker` · `ts-agent-tasks`
+- **Telling a consumer what changed in its tasks, acknowledging only what it was shown?** → `TaskBroker` `IBoundTaskDelivery` `ITaskCheckpointStore` · `ts-agent-tasks`
+- **Pausing or cancelling an agent task subtree, with an honest partial result?** → `requestStop` `reconcileStop` `releaseStop` `ISourceCapabilities` · `ts-agent-tasks`
+- **Ending an unacknowledged task obligation, or freeing a full task repository?** → `TaskBroker` `dispose` `closeSubscription` `cleanup` · `ts-agent-tasks`
 - **Giving a model read-only, bounded tools over the agent tasks a principal may see?** → `createTaskTools` `IBoundTaskView` · `ts-agent-tasks`
 - **Letting a model create, update or reassign agent tasks, authorized per call?** → `createTaskTools` `ITaskMutationToolOptions` · `ts-agent-tasks`
-- **Letting a model pause or cancel a tree of agent tasks — but never release or carry out the stop?** → `createTaskTools` `ITaskStopToolOptions` · `ts-agent-tasks`
-- **Putting agent task context in a cacheable prompt, acknowledging only what was actually sent?** → `checkTaskPrompt` `prepareTaskPrompt` `taskPromptRecord` · `ts-agent-tasks`
+- **Letting a model request a stop on a tree of agent tasks, but never release it?** → `createTaskTools` `ITaskStopToolOptions` · `ts-agent-tasks`
+- **Putting agent task context in a cacheable prompt, acknowledging only what was sent?** → `checkTaskPrompt` `prepareTaskPrompt` `taskPromptRecord` · `ts-agent-tasks`
 - **Storing agent memory / a knowledge vault?** → `FileTree` `FileTreeMemoryStore` · `ts-agent-memory`
 - **Semantic recall over that vault** → `InMemoryCosineIndex` `SqliteVecVectorIndex` `SqliteVecFragmentIndex` `FragmentSemanticRetriever` · `ts-agent-memory`
 - **Vector/fragment embeddings must survive a process restart?** → `SqliteVecVectorIndex` `SqliteVecFragmentIndex` · `ts-agent-memory-sqlite-vec`
 - **Need to know whether a store's derived state is consistent with its records** → `IVectorIndex` · `ts-agent-memory`
+- **A memory read-modify-write that must not lose a concurrent update?** → `FileTreeMemoryStore` `MemoryWriteResult` · `ts-agent-memory`
 - **Need to measure a `FileTreeMemoryStore`'s resident-memory / open-cost behavior?** → `FileTree` `FileTreeMemoryStore` · `ts-agent-memory`
 - **Reading an envelope's embedding reference, or checking whether it has one?** → `embeddingRefOf` · `ts-agent-memory`
 - **Listing records from a store?** → `addressGuard` `allowAnyAddress` `scanEveryRecord` `listEntries` · `ts-agent-memory`
@@ -208,17 +212,17 @@ markers.*
 
 <!-- BEGIN GENERATED: recent-additions -->
 
-- **2026-10-26** — A crash mid-write no longer leaves a torn memory record that fails the next open: FileTreeMemoryStore writes atomically wherever… ([#756](https://github.com/ErikFortune/fgv/pull/756)) · `ts-agent-memory` `ts-json-base`
-- **2026-10-26** — An agent-task host can drain a subscription one revision at a time, acknowledging only after its own work commits, and keep a… ([#762](https://github.com/ErikFortune/fgv/pull/762)) · `ts-agent-tasks`
-- **2026-10-26** — An agent-task host can open or initialize its repository in the strongest mode its root qualifies for, give its own principal a… ([#758](https://github.com/ErikFortune/fgv/pull/758)) · `ts-agent-tasks`
-- **2026-10-26** — ai-assist can run a whole client-tool conversation: runClientToolLoop caps rounds and honours a deadline and caller abort even when… ([#755](https://github.com/ErikFortune/fgv/pull/755)) · `ts-extras`
-- **2026-10-26** — ICryptoProvider now generates and imports non-extractable HMAC-SHA256 keys itself, and composite ids can split at the first or last… ([#754](https://github.com/ErikFortune/fgv/pull/754)) · `ts-extras` `ts-web-extras` `ts-utils`
-- **2026-10-26** — MCP tools that need task execution are skipped with a reason kind, tool listing can be bounded by pages and total time, and a… ([#757](https://github.com/ErikFortune/fgv/pull/757)) · `ts-extras-mcp` `ts-extras` `testbed`
-- **2026-10-26** — The sqlite-vec indexes now store which embedding model wrote their vectors in the same file, and refuse to mix models or serve a… ([#753](https://github.com/ErikFortune/fgv/pull/753)) · `ts-agent-memory-sqlite-vec`
-- **2026-10-20** — mapSuccess and mapSuccessAsync now hand every failure to a supplied aggregator, even when some results succeeded, so a lenient fold… ([#752](https://github.com/ErikFortune/fgv/pull/752)) · `ts-utils`
-- **2026-10-19** — A memory vault written under a non-identity scope encoding now reopens: FileTreeMemoryStore takes a scopeDecoding inverse and… ([#747](https://github.com/ErikFortune/fgv/pull/747)) · `ts-agent-memory`
-- **2026-10-19** — New @fgv/ts-extras-re2: re2PatternValidator lets fromJson and adaptMcpTools accept an untrusted JSON Schema pattern — linear-time… ([#746](https://github.com/ErikFortune/fgv/pull/746)) · `ts-extras-re2` `ts-json-base` `ts-extras-mcp`
+- **2026-11-12** — Only the principals an agent-task subscription names may bind and drain its delivery, and disposeWithheld ends withheld obligations… ([#781](https://github.com/ErikFortune/fgv/pull/781)) · `ts-agent-tasks` `testbed`
+- **2026-11-11** — ai-assist's @anthropic:fable alias now reaches Claude Fable 5.2, and Fable 5.2 and Mythos 5.2 get JSON-outputs structured output… ([#773](https://github.com/ErikFortune/fgv/pull/773)) · `ts-extras` `testbed`
+- **2026-11-11** — ai-assist sends Gemini's thinkingLevel from a declared per-model table — 'none' is minimal on Flash-Lite — and @google-gemini:pro… ([#775](https://github.com/ErikFortune/fgv/pull/775)) · `ts-extras` `testbed`
+- **2026-11-11** — ai-assist sends temperature 1 beside a reasoning effort on GPT-6 Luna and refuses any other value while it reasons, from a declared… ([#776](https://github.com/ErikFortune/fgv/pull/776)) · `ts-extras` `testbed`
+- **2026-11-11** — ai-assist sends max_completion_tokens to Groq and xAI, refuses a hand-built 'none' effort on models that cannot turn thinking off… ([#774](https://github.com/ErikFortune/fgv/pull/774)) · `ts-extras` `ts-extras-mcp` `ts-res-cli` `testbed`
+- **2026-11-10** — ai-assist sends temperature 1 to GPT-6.1 Sol and GPT-6 Astra, with or without reasoning effort, and still refuses any other value… ([#771](https://github.com/ErikFortune/fgv/pull/771)) · `ts-extras` `testbed`
+- **2026-11-09** — ai-assist turns thinking off on Claude Sonnet 5.5 with its own between_tools value, declared per model, and stops claiming… ([#769](https://github.com/ErikFortune/fgv/pull/769)) · `ts-extras` `testbed`
+- **2026-11-08** — ai-assist aliases now reach current models — Claude Sonnet 5.5 and Haiku 5.5, GPT-6.1 Sol, Nano Banana 2.1, and new Groq and… ([#767](https://github.com/ErikFortune/fgv/pull/767)) · `ts-extras` `testbed`
+- **2026-11-08** — resolveMaxOutputTokens tells you the largest maxTokens the model a call will use accepts, from the same ModelSpec and tier, so a… ([#765](https://github.com/ErikFortune/fgv/pull/765)) · `ts-extras`
+- **2026-10-30** — A converter or validator handed a cyclic, BigInt or Proxy value now fails instead of throwing, via a new formatValueForMessage that… ([#764](https://github.com/ErikFortune/fgv/pull/764)) · `ts-utils` `ts-json-base` `ts-extras` `ts-bcp47`
 
-*Showing the 10 most recent of 76. Per-package history is in each `CAPABILITIES.md`.*
+*Showing the 10 most recent of 89. Per-package history is in each `CAPABILITIES.md`.*
 
 <!-- END GENERATED: recent-additions -->

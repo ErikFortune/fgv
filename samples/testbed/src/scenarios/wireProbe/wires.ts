@@ -50,15 +50,13 @@ export interface IWireProbeWire {
  * The wires, with the model each is probed with.
  *
  * @remarks
- * The cheapest registered model on each line, with two exceptions that keep the probe honest
+ * The cheapest registered model on each line, with one exception that keeps the probe honest
  * rather than cheap:
- * - **Anthropic tools** uses the base tier (`claude-sonnet-5`), not `@anthropic:haiku`: the
- *   registry marks haiku a non-tier alias whose retirement was due no sooner than 2026-10-15, and a
- *   retired model turns every row inconclusive.
- * - **Anthropic JSON outputs** uses `claude-opus-5-5`: `ai-assist` sends `output_config.format`
- *   only for the lines that reject forced tool use (opus-5-5, fable-5-1, mythos-5-1), and opus-5-5
- *   is the cheapest of them. Probing JSON outputs on a model `ai-assist` never sends them to would
- *   test a wire we do not use.
+ * - **Anthropic JSON outputs** uses `@anthropic:sonnet` (`claude-sonnet-5-5`), not
+ *   `@anthropic:haiku`: `ai-assist` sends `output_config.format` only for the lines that reject
+ *   forced tool use (sonnet-5-5, opus-5-5, and Fable and Mythos 5.1 and 5.2), and sonnet-5-5 is the
+ *   cheapest of them. Probing JSON outputs on a model `ai-assist` never sends them to would test a wire we do
+ *   not use.
  *
  * Every request is one turn with a 16-token cap (OpenAI's Responses minimum), so a probe run costs
  * a few hundred short requests.
@@ -69,14 +67,14 @@ export const WIRE_PROBE_WIRES: ReadonlyArray<IWireProbeWire> = [
     id: 'anthropic-tools',
     label: 'Anthropic tools',
     providerId: 'anthropic',
-    model: '@anthropic:sonnet',
+    model: '@anthropic:haiku',
     kind: 'tools'
   },
   {
     id: 'anthropic-json-outputs',
     label: 'Anthropic JSON outputs',
     providerId: 'anthropic',
-    model: '@anthropic:opus',
+    model: '@anthropic:sonnet',
     kind: 'structured-output'
   },
   {

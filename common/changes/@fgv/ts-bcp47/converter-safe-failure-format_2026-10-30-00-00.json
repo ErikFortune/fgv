@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-bcp47",
+      "comment": "The validation helpers' toCanonical formats an invalid value with formatValueForMessage, so a cyclic input fails instead of throwing. The text is unchanged for inputs that previously rendered.",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@fgv/ts-bcp47"
+}
