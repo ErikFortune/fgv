@@ -136,7 +136,11 @@ worker cannot spawn one — the orchestrator's gate-time review is the independe
 | `change --verify --target-branch origin/release` | 0 | — | — |
 | `rebuild` | 0 | 0 | 1 (tracked-symlink notice) |
 | `lint` | 0 | 0 | 1 (tracked-symlink notice) |
-| `test` | see `## Gates — test` below | | |
+| `test` | 0 | 0 | 1 (tracked-symlink notice) |
+
+All rows are the final run, on `7398671dd`. The first `rush test` (on `45f2b9de3`) was **red**:
+`@fgv/testbed` branch coverage 99.9%, because the new journey check compared a ternary the run never
+took both ways. It now compares the refusal's detail directly; the re-gate above is clean.
 
 Package-level: `heft test --clean` in `ts-agent-tasks` exit 0, 100% on all four measures.
 
