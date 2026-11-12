@@ -378,7 +378,14 @@ function _writeDrain(
         core.repository
           .subscription(req.subscriptionId)
           .onSuccess((descriptor) =>
-            descriptor !== undefined ? ok(descriptor) : denied<ITaskSubscription>()
+            descriptor !== undefined
+              ? ok(descriptor)
+              : taskFailure<ITaskSubscription>(
+                  `setSubscriptionDrain ${req.subscriptionId}: the change was written but the ` +
+                    `subscription did not read back; re-read it`,
+                  'storage-unavailable',
+                  'reconcile-first'
+                )
           )
       )
   );

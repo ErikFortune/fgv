@@ -516,7 +516,7 @@ pressure, not cleanup — ends one. Both land in the subscription's exact histor
   subscription joins no audience again and releases its future-update reservation. `retain` keeps
   what it is owed, drainable through its bound delivery (a closed subscription's `prepare`
   presents only what it is still owed); `dispose` abandons its unacknowledged receipts and disposes
-  everything it is owed, with `reason`. `dispose` takes a drain principal's binding, as `dispose`
+  everything it is owed, with `reason`. `dispose` takes a drain principal's binding, as `TaskBroker.dispose`
   does; `retain` takes a drain principal's or the registering principal's, since it ends nothing
   owed. Anyone else is `not-found-or-denied`, decided again in the writing section. A host that
   registered on an agent's behalf and must dispose names itself among the drain principals first.
@@ -844,7 +844,7 @@ stored ascending), by default the registering principal alone. The same principa
 what it is owed (see *Retention*). A host that subscribes on an agent's behalf
 names the agent; the registrant is not added implicitly. `bindDelivery` refuses anyone else with
 `not-found-or-denied` — the answer a missing subscription or a wrong `consumerId` gets, so it
-discloses nothing; a malformed binding is `invalid` whether or not the subscription exists — and so does `TaskDeliveryPump.create`. Every bound-delivery operation (`pending`,
+discloses nothing — and so does `TaskDeliveryPump.create`; a malformed binding is `invalid` whether or not the subscription exists. Every bound-delivery operation (`pending`,
 `prepare`, `acknowledge`, `abandon`, `issued`, `disposeWithheld`) applies the rule again to the
 subscription as it stands, so a principal removed after binding is refused from then on; a receipt it
 prepared stays issued until a principal still named acknowledges or abandons it, or it expires.

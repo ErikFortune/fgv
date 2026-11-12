@@ -194,8 +194,8 @@ export class TaskBroker {
    * obligations are owed to, so one consumer's binding cannot end another's — its policy must allow
    * `dispose-obligation` on every task the ids name, and the subscription's selection must lie within
    * its selectors; otherwise the answer is `not-found-or-denied`, the answer a missing subscription
-   * gets. The drain rule is decided again inside the writing section, on the record written. Every id must be owed now or already discharged; an id an unacknowledged
-   * issued receipt names is refused until that receipt is acknowledged or abandoned. The obligation
+   * gets. The drain rule is decided again inside the writing section, on the record written. Every
+   * id must be owed now or already discharged; an id an unacknowledged issued receipt names is refused until that receipt is acknowledged or abandoned. The obligation
    * ends for this subscription alone and consumes the evidence slot it already reserved.
    */
   public async dispose(

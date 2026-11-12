@@ -725,7 +725,7 @@ describe('a subscription that a read reports missing is refused, never assumed',
     expect((await consumerRecord(h.repository, 's1')).drainPrincipals).toEqual(['alice']);
   });
 
-  test('setSubscriptionDrain: a descriptor that vanishes after the write is not reported as the result', async () => {
+  test('setSubscriptionDrain: a descriptor that vanishes after the write is reported as a committed write to re-read', async () => {
     // Read 1 decides the owner; read 2 reports the result.
     let reads: number = 0;
     const faulty = faultyDelivery(h, (real) => ({
@@ -733,6 +733,10 @@ describe('a subscription that a read reports missing is refused, never assumed',
     }));
     expect(
       await faulty.broker.setSubscriptionDrain(owner(), { subscriptionId: 's1', drainPrincipals: ['bob'] })
-    ).toFailWithDetail(/setSubscriptionDrain s1: not permitted/, code('not-found-or-denied'));
+    ).toFailWithDetail(
+      /setSubscriptionDrain s1: the change was written.*re-read it/,
+      expect.objectContaining({ code: 'storage-unavailable', retry: 'reconcile-first' })
+    );
+    expect((await consumerRecord(h.repository, 's1')).drainPrincipals).toEqual(['bob']);
   });
 });

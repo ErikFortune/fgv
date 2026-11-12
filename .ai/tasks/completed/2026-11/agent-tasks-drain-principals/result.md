@@ -206,3 +206,15 @@ four measures. `rushx fixlint` and prettier were run before the commit.
   on `IIssuedTaskReceipt`; not built. Recorded as a P3 in `docs/TECH_DEBT.md`.
 - `setSubscriptionDrain` requires the registrant. A host whose registering principal is ephemeral
   would have no way to re-delegate; none observed.
+
+## Second independent review — follow-ups (orchestrator)
+
+The re-review of the fixes approved them and raised two P3s, applied directly:
+
+- **P3-a** — `setSubscriptionDrain` reported a committed drain change as `not-found-or-denied` when
+  the descriptor read back after the write was missing. It now fails `storage-unavailable` /
+  `reconcile-first` ("the change was written but the subscription did not read back; re-read it").
+  The pinning test asserts that answer and that the change is durable; under the previous code it
+  goes red, since that code answered `not-found-or-denied`.
+- **P3-b** — two `CAPABILITIES.md` slips (a misplaced "and so does `TaskDeliveryPump.create`", and a
+  circular "as `dispose` does") and one over-long TSDoc line on `TaskBroker.dispose`.
