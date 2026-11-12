@@ -472,6 +472,30 @@ Two streams, same gate, same class of miss. The research was sound in both cases
 
 ---
 
+### L41. A finding handed over as "verified" gets less scrutiny than one marked uncertain — so the bar for the label is higher
+
+**Observed:** During the System-1 design cycle (2026-10-02), the orchestrator handed a worker a finding marked **verified**: that no release in the pinned `vllm>=0.6` range contained a cited file. Only three tags had been checked; the file exists from v0.16.0 through v0.30.0. The version offered as better evidence, v0.6.6, could not launch CLM's own recipe, since `--runner` first appears at v0.10.1. The stream caught both errors. Over the same cluster, brief options labelled "unverified candidates" were challenged and corrected as a matter of course — *because* the label invited it.
+
+**Rule:** "Verified" suppresses review; "unverified" invites it. Apply the label only to a claim checked exhaustively against its stated scope (every tag in a range, not a sample), with the check named alongside it. When a check was partial, say so and mark the claim unverified — that costs nothing and keeps the reviewer looking.
+
+**Codification candidate:** `.claude/agents/orchestrator.md`, where briefs hand findings to workers — a line that a finding marked verified carries its check (what was examined, at what ref), and that a sampled check is not verification.
+
+**Reference:** PR #716 (closed unmerged; its handoff snapshot was superseded), § 4 of its `HANDOFF-2026-10-02.md` revision; the stream that caught it is `.ai/tasks/completed/2026-10/system-one-design-antagonist/`.
+
+---
+
+### L42. A grep that returns zero is not evidence of absence until the pattern has been checked
+
+**Observed:** Same cycle. The orchestrator searched for `'--runner'` (single quotes), got no hits, and nearly contradicted a worker who was correct: the source used `"--runner"`. The zero result was an artifact of the quoting, not of the code.
+
+**Rule:** Before treating an empty search as "not present", confirm the pattern matches a known positive (search for something you know is there in the same file or form), or widen it to the bare token. A negative result from an unchecked pattern is not a finding.
+
+**Codification candidate:** the `code-reviewer` / `deep-reviewer` guidance on evidence, and `.claude/agents/orchestrator.md` beside L41 — the two are the same failure: an unexamined check treated as a result.
+
+**Reference:** PR #716 (closed unmerged), § 4 of its `HANDOFF-2026-10-02.md` revision.
+
+---
+
 ## Sweep history
 
 ### 2026-05-30 — Review-loop discipline triad (L31, L32, L33) codified
