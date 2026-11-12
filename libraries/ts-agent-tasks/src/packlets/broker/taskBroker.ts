@@ -238,6 +238,14 @@ export class TaskBroker {
   /**
    * Binds a subscription's delivery to one principal. The subscription must exist and belong to
    * `consumerId`; otherwise the answer is `not-found-or-denied`, the same for both.
+   *
+   * @remarks
+   * `principal` need not be the one that registered the subscription: a host may subscribe on an
+   * agent's behalf and bind the agent's delivery. Disclosure and acknowledgement are decided under
+   * the binding's own authority, so a binding is shown only what its principal may see — but it
+   * **drains** the subscription: what it acknowledges is no longer owed to `consumerId`, whoever reads
+   * it next. Nothing here checks which principal may drain which consumer; that is the host's to keep
+   * straight until the subscription records it.
    */
   public bindDelivery(params: IBoundTaskDeliveryParams): TaskResult<IBoundTaskDelivery> {
     const ids = this._core.converters.ids;

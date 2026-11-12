@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-agent-tasks",
+      "comment": "Document that TaskBroker.bindDelivery does not check which principal may drain a subscription.",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-agent-tasks",
+  "email": "noreply@anthropic.com"
+}

@@ -67,6 +67,31 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
 
 ## P2 — Fix before next major feature in affected area
 
+- **[P2] `ts-agent-tasks` `TaskBroker.bindDelivery` lets any principal drain any subscription whose `consumerId` it can name.**
+  `bindDelivery` checks only that the subscription exists under `consumerId`. A binding for `bob`
+  on `alice`'s subscription prepares and acknowledges her owed updates, and she is then owed
+  nothing. Disclosure stays under `bob`'s authority, so nothing he may not see is shown — the harm
+  is draining, not disclosure. Bindings are host-constructed and never model-reachable, which is
+  what keeps this out of P1.
+
+  **Why not simply require the registrant:** tried and reverted in `agent-tasks-delivery-and-deferral`
+  (#762, review round 3). The established pattern is a host subscribing and an agent draining
+  (`samples/testbed` `journey.ts`, lines 318, 602, 660, 1115), which that check breaks.
+
+  **Scope sketch:** record the principals allowed to drain at `subscribe` (default: the registrant;
+  the host may name others, e.g. the agent it subscribed for), and have `bindDelivery` refuse any
+  other with `not-found-or-denied`. The same design pass should close the sibling gap on the
+  unpromoted `integration/agent-tasks-host` branch: `disposeWithheld` can end tasks a policy denies
+  individually when the binding's policy grants scope-level `acknowledge` and `dispose-obligation`;
+  closing it needs a policy identity recorded on the subscription.
+
+  **Trigger:** before `TaskDeliveryPump` / `DeferredObligations` (#762) are promoted to `release` —
+  the pump drains through `bindDelivery` — or any consumer binding delivery for more than one
+  principal.
+
+  **Reference:** `.ai/tasks/completed/2026-10/agent-tasks-delivery-and-deferral/result.md` § review
+  round 3 (c), on `integration/agent-tasks-host`; #762.
+
 - **[P2] The Heft toolchain family is held at its 2026-09-14 pins.**
   `@rushstack/heft` 1.3.0, `heft-node-rig` 2.11.50, `heft-web-rig` 1.4.34, `heft-jest-plugin`
   2.0.17, `heft-lint-plugin` 1.2.27 and the api-extractor / sass / webpack5 plugins. The latest
