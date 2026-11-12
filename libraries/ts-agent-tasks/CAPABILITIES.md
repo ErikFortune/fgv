@@ -445,6 +445,12 @@ const { context } = (await delivery.prepare({ maxItems: 20, maxDepth: 3, maxChar
 await delivery.acknowledge(context.receipt); // only after the host's own success boundary
 ```
 
+**`bindDelivery` does not require the registering principal**: a host may subscribe on an agent's
+behalf and bind the agent's delivery. Disclosure and acknowledgement are decided under the binding's
+own authority, but a binding **drains** the subscription — what it acknowledges is no longer owed to
+that `consumerId` — so any host code that can name a `consumerId` can drain it. Which principal
+drains which consumer is the host's to keep straight; see `docs/TECH_DEBT.md`.
+
 **Audience is storage's.** An update is owed to an active subscription iff its category is in the
 subscription's `policy.categories` (`attention`, `lifecycle`, `result` are always included) and the
 selection matched the task **before or after** the commit — so an open-only or filtered subscription
