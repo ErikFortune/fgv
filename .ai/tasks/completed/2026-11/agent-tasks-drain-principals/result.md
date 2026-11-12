@@ -186,6 +186,20 @@ took both ways. It now compares the refusal's detail directly; the re-gate above
 
 Package-level: `heft test --clean` in `ts-agent-tasks` exit 0, 100% on all four measures.
 
+**Re-gate after the review fixes**, on `b3216d00a` (logs in scratchpad `drain-fix/`):
+
+| gate | exit | fail-grep | warnings |
+| --- | --- | --- | --- |
+| `install` | 0 | 0 | 0 |
+| `change --verify --target-branch origin/integration/agent-tasks-host` | 0 | 0 | 0 |
+| `rebuild` | 0 | 0 | 1 (tracked-symlink notice) |
+| `lint` | 0 | 0 | 1 (tracked-symlink notice) |
+| `test` | 0 | 0 | 1 (tracked-symlink notice) |
+
+fail-grep is `not met|Operations failed|error TS|Jest tests? failed|ERR_PNPM`; the test log has no
+NUL padding. Package-level `heft test --clean` in `ts-agent-tasks` before the commit: 100% on all
+four measures. `rushx fixlint` and prettier were run before the commit.
+
 ## Open questions
 
 - Should removing a drain principal also abandon receipts it prepared? Needs a "prepared by" field
