@@ -24,7 +24,8 @@ import {
   TaskResult,
   UpdateId,
   maxTaskPageLimit,
-  carriedStops
+  carriedStops,
+  drainPrincipalsOf
 } from '../types';
 import { ITaskRepositoryWriter } from '../storage';
 import { AccessContext, subjectOf } from './access';
@@ -50,23 +51,69 @@ function _denied<T>(what: string): TaskResult<T> {
   return taskFailure<T>(`${what}: not found or not permitted`, 'not-found-or-denied', 'after-host-action');
 }
 
-/** A retained subscription whose selection lies within the binding's selectors. */
+/**
+ * Who may end a subscription's obligations, or close it: its drain principals — the consumer, which
+ * is who those obligations are owed to — or, for a close that retains what it is owed, its
+ * registrant too.
+ */
+type SubscriptionActors = 'drainers' | 'drainers-or-registrant';
+
+/** Whether `access`'s principal is one of `actors` for a subscription with these principals. */
+function _actsOn(
+  access: AccessContext,
+  drainPrincipals: ReadonlyArray<string>,
+  registrant: string,
+  actors: SubscriptionActors
+): boolean {
+  return (
+    drainPrincipals.includes(access.principal) ||
+    (actors === 'drainers-or-registrant' && registrant === access.principal)
+  );
+}
+
+/**
+ * A retained subscription whose selection lies within the binding's selectors and whose `actors`
+ * include the binding's principal.
+ */
 function _subscription(
   core: BrokerCore,
   access: AccessContext,
   subscriptionId: SubscriptionId,
-  what: string
+  what: string,
+  actors: SubscriptionActors
 ): TaskResult<ITaskSubscription> {
-  const found: TaskResult<ITaskSubscription | undefined> = core.repository.subscription(subscriptionId);
-  if (found.isFailure()) {
-    return propagate(found);
-  }
-  // A binding acts only on what it could have subscribed to: a subscription over a scope it cannot
-  // select is not one it may end obligations of.
-  if (found.value === undefined || !found.value.selection.scopes.every((scope) => access.selects(scope))) {
-    return _denied(what);
-  }
-  return ok(found.value);
+  // A binding acts only on what it could have subscribed to — a subscription over a scope it cannot
+  // select is not one it may end obligations of — and only as the consumer it is owed to, so one
+  // consumer's binding cannot end another's obligations. Every refusal is the missing-subscription
+  // answer.
+  return core.repository
+    .subscription(subscriptionId)
+    .onSuccess((found) =>
+      found !== undefined &&
+      found.selection.scopes.every((scope) => access.selects(scope)) &&
+      _actsOn(access, found.drainPrincipals, found.principalKey, actors)
+        ? ok(found)
+        : _denied<ITaskSubscription>(what)
+    );
+}
+
+/**
+ * The subscription's record read through the writer, still naming the binding's principal among
+ * `actors` — the authority decided before the section, re-decided on the record the write is
+ * conditioned on.
+ */
+async function _recordActedOn(
+  writer: ITaskRepositoryWriter,
+  access: AccessContext,
+  subscriptionId: SubscriptionId,
+  what: string,
+  actors: SubscriptionActors
+): Promise<TaskResult<ITaskConsumerRecord>> {
+  return (await _recordIn(writer, subscriptionId)).onSuccess((record) =>
+    _actsOn(access, drainPrincipalsOf(record), record.registration.principalKey, actors)
+      ? ok(record)
+      : _denied<ITaskConsumerRecord>(what)
+  );
 }
 
 /**
@@ -134,7 +181,7 @@ async function _disposeOnce(
   if (epoch.isFailure()) {
     return propagate(epoch);
   }
-  const subscription = _subscription(core, access, request.subscriptionId, what);
+  const subscription = _subscription(core, access, request.subscriptionId, what, 'drainers');
   if (subscription.isFailure()) {
     return propagate(subscription);
   }
@@ -147,7 +194,7 @@ async function _disposeOnce(
   }
   const authorized: Map<TaskId, number> = fence.value;
   return core.gated(async (writer) => {
-    const record = await _recordIn(writer, request.subscriptionId);
+    const record = await _recordActedOn(writer, access, request.subscriptionId, what, 'drainers');
     if (record.isFailure()) {
       return propagate<ITaskDispositionResult | undefined>(record);
     }
@@ -215,7 +262,10 @@ async function _closeOnce(
   if (epoch.isFailure()) {
     return propagate(epoch);
   }
-  const subscription = _subscription(core, access, request.subscriptionId, what);
+  // Ending what it is owed is the consumer's to do; closing and retaining it, its registrant's too.
+  const actors: SubscriptionActors =
+    request.obligations === 'dispose' ? 'drainers' : 'drainers-or-registrant';
+  const subscription = _subscription(core, access, request.subscriptionId, what, actors);
   if (subscription.isFailure()) {
     return propagate(subscription);
   }
@@ -243,7 +293,7 @@ async function _closeOnce(
   }
   const authorized: Map<TaskId, number> = fence.value;
   return core.gated(async (writer) => {
-    const record = await _recordIn(writer, request.subscriptionId);
+    const record = await _recordActedOn(writer, access, request.subscriptionId, what, actors);
     if (record.isFailure()) {
       return propagate<ITaskSubscription | undefined>(record);
     }

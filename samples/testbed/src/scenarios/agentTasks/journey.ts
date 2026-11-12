@@ -154,12 +154,16 @@ async function owed(delivery: IBoundTaskDelivery): Promise<string[]> {
 
 const everyCategory: ReadonlyArray<UpdateCategory> = [...allUpdateCategories].sort();
 
-/** Subscribes a consumer over both scopes, every lifecycle class and category. */
+/**
+ * Subscribes a consumer over both scopes, every lifecycle class and category, as the host, naming
+ * `drainer` as the one principal that may bind and drain its delivery.
+ */
 async function subscribe(
   world: IWorld,
   id: string,
   consumer: string,
-  start: 'current' | 'from-now'
+  start: 'current' | 'from-now',
+  drainer: string
 ): Promise<void> {
   (
     await world.broker.subscribe(hostBinding(world), {
@@ -168,7 +172,8 @@ async function subscribe(
       consumerId: consumer,
       selection: { scopes: [projectScope, personalScope], lifecycleClass: 'all' },
       start,
-      policy: { categories: everyCategory }
+      policy: { categories: everyCategory },
+      drainPrincipals: [drainer]
     })
   ).orThrow();
 }
@@ -313,10 +318,22 @@ async function step2(seeded: ISeeded): Promise<{ step: IJourneyStep; state: IMai
     '2',
     'Two subscriptions; broker and snapshot-only rendering acknowledge nothing'
   );
-  await subscribe(world, 'sub-ada', 'ada-context', 'current');
-  await subscribe(world, 'sub-audit', 'audit-log', 'current');
+  await subscribe(world, 'sub-ada', 'ada-context', 'current', 'agent:ada');
+  await subscribe(world, 'sub-audit', 'audit-log', 'current', 'host');
   const deliveryA = deliveryOf(world, 'agent:ada', 'sub-ada', 'ada-context');
   const deliveryAudit = deliveryOf(world, 'host', 'sub-audit', 'audit-log');
+  const unnamed = world.broker.bindDelivery({
+    principal: 'agent:bob',
+    scopes: [projectScope, personalScope],
+    authorization: world.policy,
+    subscriptionId: 'sub-ada' as SubscriptionId,
+    consumerId: 'ada-context' as ConsumerId
+  });
+  // The refusal a missing subscription gets: nothing in it says the subscription exists.
+  s.check('a principal the subscription does not name cannot bind its delivery', unnamed.detail, {
+    code: 'not-found-or-denied',
+    retry: 'after-host-action'
+  });
   const owedA: string[] = await owed(deliveryA);
   const owedAudit: string[] = await owed(deliveryAudit);
   s.check(
@@ -598,7 +615,7 @@ async function step5(options?: IWorldOptions): Promise<IJourneyStep> {
   const { world, writerA } = await seededWorld(options);
   const s = new StepRecorder('5', 'Reassign the plan A→B while the external child runs');
   await run(world, writerA, 'plan', 'start', {});
-  await subscribe(world, 'sub-ada', 'ada-context', 'current');
+  await subscribe(world, 'sub-ada', 'ada-context', 'current', 'agent:ada');
   const deliveryA = deliveryOf(world, 'agent:ada', 'sub-ada', 'ada-context');
   const crawlBefore = await inspect(writerA, 'crawl');
   const reviewBefore = await inspect(writerA, 'review');
@@ -656,7 +673,7 @@ async function step5(options?: IWorldOptions): Promise<IJourneyStep> {
   );
 
   // B starts explicitly: a subscription baselined at the current state.
-  await subscribe(world, 'sub-bob', 'bob-context', 'current');
+  await subscribe(world, 'sub-bob', 'bob-context', 'current', 'agent:bob');
   const deliveryB = deliveryOf(world, 'agent:bob', 'sub-bob', 'bob-context');
   const preparedB = (await deliveryB.prepare()).orThrow();
   s.check(
@@ -979,7 +996,7 @@ async function step8(options?: IWorldOptions): Promise<IJourneyStep> {
   for (const job of ['j-done', 'j-away', 'j-lost']) {
     await registerJob(world, executor, job);
   }
-  await subscribe(world, 'sub-ada', 'ada-context', 'from-now');
+  await subscribe(world, 'sub-ada', 'ada-context', 'from-now', 'agent:ada');
 
   // Before the host stops, one command's outcome is lost: a non-idempotent advance on crawl.
   executor.loseNextResponse = true;
@@ -1110,8 +1127,8 @@ async function step9(options?: IWorldOptions): Promise<IJourneyStep> {
   const { world, writerA } = await seededWorld(options);
   const s = new StepRecorder('9', 'The final prompt: real composition, a captured request, exact receipts');
   await run(world, writerA, 'plan', 'set-progress', { progress: { completed: 2, total: 10 } });
-  await subscribe(world, 'sub-ada', 'ada-context', 'current');
-  await subscribe(world, 'sub-audit', 'audit-log', 'current');
+  await subscribe(world, 'sub-ada', 'ada-context', 'current', 'agent:ada');
+  await subscribe(world, 'sub-audit', 'audit-log', 'current', 'host');
   const deliveryA = deliveryOf(world, 'agent:ada', 'sub-ada', 'ada-context');
   const deliveryAudit = deliveryOf(world, 'host', 'sub-audit', 'audit-log');
   const library = await promptLibrary();

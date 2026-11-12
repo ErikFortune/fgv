@@ -5,6 +5,7 @@
 
 import {
   IArchiveTask,
+  IBoundTaskDueQuery,
   IBoundTaskPage,
   IBoundTaskQuery,
   IBoundTaskView,
@@ -40,7 +41,7 @@ import { BrokerCore } from './core';
 import { createNative, resumeNative } from './creation';
 import { resolveCommands } from './externalCommands';
 import { reconcileListCompletions } from './listCompletion';
-import { inspectView, queryView } from './reads';
+import { inspectView, queryDueView, queryView } from './reads';
 import { reconcileStop } from './stopPump';
 import { inspectStop, releaseStop, requestStop } from './stopRequests';
 
@@ -66,6 +67,10 @@ export class BoundTaskView implements IBoundTaskView {
 
   public query(request: IBoundTaskQuery): Promise<TaskResult<IBoundTaskPage>> {
     return queryView(this._core, this._access, request);
+  }
+
+  public queryDue(request: IBoundTaskDueQuery): Promise<TaskResult<IBoundTaskPage>> {
+    return queryDueView(this._core, this._access, request);
   }
 
   public inspect(id: TaskId): Promise<TaskResult<TaskInspection>> {

@@ -67,30 +67,13 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
 
 ## P2 — Fix before next major feature in affected area
 
-- **[P2] `ts-agent-tasks` `TaskBroker.bindDelivery` lets any principal drain any subscription whose `consumerId` it can name.**
-  `bindDelivery` checks only that the subscription exists under `consumerId`. A binding for `bob`
-  on `alice`'s subscription prepares and acknowledges her owed updates, and she is then owed
-  nothing. Disclosure stays under `bob`'s authority, so nothing he may not see is shown — the harm
-  is draining, not disclosure. Bindings are host-constructed and never model-reachable, which is
-  what keeps this out of P1.
-
-  **Why not simply require the registrant:** tried and reverted in `agent-tasks-delivery-and-deferral`
-  (#762, review round 3). The established pattern is a host subscribing and an agent draining
-  (`samples/testbed` `journey.ts`, lines 318, 602, 660, 1115), which that check breaks.
-
-  **Scope sketch:** record the principals allowed to drain at `subscribe` (default: the registrant;
-  the host may name others, e.g. the agent it subscribed for), and have `bindDelivery` refuse any
-  other with `not-found-or-denied`. The same design pass should close the sibling gap on the
-  unpromoted `integration/agent-tasks-host` branch: `disposeWithheld` can end tasks a policy denies
-  individually when the binding's policy grants scope-level `acknowledge` and `dispose-obligation`;
-  closing it needs a policy identity recorded on the subscription.
-
-  **Trigger:** before `TaskDeliveryPump` / `DeferredObligations` (#762) are promoted to `release` —
-  the pump drains through `bindDelivery` — or any consumer binding delivery for more than one
-  principal.
-
-  **Reference:** `.ai/tasks/completed/2026-10/agent-tasks-delivery-and-deferral/result.md` § review
-  round 3 (c), on `integration/agent-tasks-host`; #762.
+- **[P2] ~~`ts-agent-tasks` `TaskBroker.bindDelivery` lets any principal drain any subscription
+  whose `consumerId` it can name.~~ Resolved by #781 (`agent-tasks-drain-principals`): `subscribe`
+  records the principals allowed to drain (default the registrant), and `bindDelivery`, every bound
+  delivery operation, `dispose` and a disposing `closeSubscription` refuse any other with
+  `not-found-or-denied`. The sibling `disposeWithheld` gap is closed by a policy identity recorded on
+  the subscription. Promoted to `release` with #762 via #782. The one residual is the P3 below on
+  receipts a removed drain principal prepared.
 
 - **[P2] The Heft toolchain family is held at its 2026-09-14 pins.**
   `@rushstack/heft` 1.3.0, `heft-node-rig` 2.11.50, `heft-web-rig` 1.4.34, `heft-jest-plugin`
@@ -317,6 +300,19 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
   unacknowledged manifest as not pinning at prune time (disposal already does, since T8 PR 1's
   antagonist finding), or have `cleanup` evict expired manifests; and keep `prunable` consistent with
   what cleanup will do. **Reference**: `agent-tasks-t8b` `state.md` § *antagonist*.
+
+- **[P3] `ts-agent-tasks` a receipt a removed drain principal prepared stays acknowledgeable by
+  another.** After `TaskBroker.setSubscriptionDrain` removes a principal, a receipt it prepared stays
+  issued; a principal still named can acknowledge it under its own authority, discharging what the
+  removed principal was shown. Manifests (`IIssuedTaskReceipt`) do not record who prepared them, so
+  the broker cannot tell. Host-reachable only — the host holds the receipt object.
+
+  **Trigger**: a host that removes a drain principal while that principal has receipts in flight, or
+  hands receipts between principals. **Scope sketch**: record the preparing principal on the
+  manifest and either abandon a removed principal's receipts in `setSubscriptionDrain`'s write or
+  refuse to acknowledge a receipt prepared by another principal. **Not a P2**: it needs the host to
+  pass one principal's receipt to another, and every acknowledged id was shown to someone the host
+  named. **Reference**: `agent-tasks-drain-principals` `result.md` § *Open questions*.
 
 - **[P4] A baseline is never checked against `maxUpdateBytes`, and a profile may set `maxUpdateBytes`
   below an envelope plus framing.** `_checkBaseline` has no size check, so under such a profile a

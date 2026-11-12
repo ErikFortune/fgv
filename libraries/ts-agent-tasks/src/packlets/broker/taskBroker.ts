@@ -24,6 +24,7 @@ import {
   ITaskEnvironment,
   ITaskRecoveryOutcome,
   ITaskScope,
+  ITaskAuthorization,
   ITaskSource,
   ITaskSubscription,
   ITaskWriteGuard,
@@ -42,6 +43,7 @@ import {
   ITaskDeliveryDefaults,
   defaultMaxBaselineTasks,
   defaultReceiptLifetimeMs,
+  setSubscriptionDrain,
   subscribe
 } from './delivery';
 import { abandonCommand, cleanup, closeSubscription, disposeObligations } from './disposition';
@@ -158,6 +160,17 @@ export class TaskBroker {
    * Creates a subscription — a trusted host operation, recorded under `binding`'s principal, whose
    * `current` baseline holds only what that principal may see. See {@link ISubscribeRequest}.
    *
+   * The subscription records the principals that may bind its delivery (`drainPrincipals`, default
+   * the registering principal alone) and, optionally, the identity of the consumer's own policy that
+   * `disposeWithheld` requires. A retry must repeat both exactly.
+   *
+   * A retry is compared with the subscription **as it stands**: once its drain principals or identity
+   * have been changed through {@link TaskBroker.setSubscriptionDrain}, re-running the original
+   * request is `conflict`. A host that re-runs `subscribe` at boot treats drain changes as made through
+   * `setSubscriptionDrain` alone, and either retries with the current list or reads the subscription
+   * (`repository.subscription`) instead. A subscription recorded before drain principals existed is
+   * the same registration as a retry naming its registrant alone.
+   *
    * @remarks
    * The baseline is captured and authorized, then one writer section re-proves that no selected task
    * moved or appeared and that the policy epoch is unchanged before it writes the record and activates
@@ -177,10 +190,12 @@ export class TaskBroker {
    * with its reason in the subscription's exact history. See {@link IDisposeObligationsRequest}.
    *
    * @remarks
-   * `binding`'s policy must allow `dispose-obligation` on every task the ids name, and the
-   * subscription's selection must lie within its selectors; otherwise the answer is
-   * `not-found-or-denied`. Every id must be owed now or already discharged; an id an unacknowledged
-   * issued receipt names is refused until that receipt is acknowledged or abandoned. The obligation
+   * `binding`'s principal must be one of the subscription's drain principals — the consumer the
+   * obligations are owed to, so one consumer's binding cannot end another's — its policy must allow
+   * `dispose-obligation` on every task the ids name, and the subscription's selection must lie within
+   * its selectors; otherwise the answer is `not-found-or-denied`, the answer a missing subscription
+   * gets. The drain rule is decided again inside the writing section, on the record written. Every
+   * id must be owed now or already discharged; an id an unacknowledged issued receipt names is refused until that receipt is acknowledged or abandoned. The obligation
    * ends for this subscription alone and consumes the evidence slot it already reserved.
    */
   public async dispose(
@@ -198,7 +213,12 @@ export class TaskBroker {
    *
    * @remarks
    * `binding`'s policy must allow `dispose-obligation` over the subscription's scopes, and — for
-   * `dispose` — on every task it is owed an update of.
+   * `dispose` — on every task it is owed an update of. Its principal must be one of the
+   * subscription's drain principals; a close that `retain`s may also be made by the registering
+   * principal, since it ends nothing owed. Anything else is `not-found-or-denied`, the answer a missing
+   * subscription gets, decided again inside the writing section on the record written. A host that
+   * registered on an agent's behalf and must dispose names itself among the drain principals
+   * ({@link TaskBroker.setSubscriptionDrain}).
    */
   public async closeSubscription(
     binding: IBoundTaskViewParams,
@@ -236,41 +256,71 @@ export class TaskBroker {
   }
 
   /**
-   * Binds a subscription's delivery to one principal. The subscription must exist and belong to
-   * `consumerId`; otherwise the answer is `not-found-or-denied`, the same for both.
+   * Binds a subscription's delivery to one principal. The subscription must exist, belong to
+   * `consumerId`, and name `principal` among its drain principals; otherwise the answer is
+   * `not-found-or-denied`, the same for all three, so a refusal says nothing about which failed.
    *
    * @remarks
-   * `principal` need not be the one that registered the subscription: a host may subscribe on an
-   * agent's behalf and bind the agent's delivery. Disclosure and acknowledgement are decided under
-   * the binding's own authority, so a binding is shown only what its principal may see — but it
-   * **drains** the subscription: what it acknowledges is no longer owed to `consumerId`, whoever reads
-   * it next. Nothing here checks which principal may drain which consumer; that is the host's to keep
-   * straight until the subscription records it.
+   * A binding **drains** its subscription: what it acknowledges is no longer owed to `consumerId`,
+   * whoever reads it next. So only the principals the subscription names may bind it — by default its
+   * registering principal alone; a host that subscribes on an agent's behalf names the agent
+   * (`ISubscribeRequest.drainPrincipals`), and may change the list later with
+   * {@link TaskBroker.setSubscriptionDrain}. A subscription recorded before drain principals existed
+   * is drained by its registering principal alone.
+   *
+   * The rule is applied again by every operation of the bound delivery, against the subscription as
+   * it stands, so a principal removed after binding is refused from then on with the same answer.
+   * Disclosure and acknowledgement are still decided under the binding's own authority: a drain
+   * principal is shown only what its policy lets it see.
    */
   public bindDelivery(params: IBoundTaskDeliveryParams): TaskResult<IBoundTaskDelivery> {
     const ids = this._core.converters.ids;
-    const subscription: TaskResult<ITaskSubscription | undefined> = this._core.repository.subscription(
-      params.subscriptionId
-    );
-    const consumer = ids.consumerId.convert(params.consumerId);
-    if (subscription.isFailure()) {
-      return propagateTask(subscription);
-    }
-    if (
-      subscription.value === undefined ||
-      consumer.isFailure() ||
-      subscription.value.consumerId !== consumer.value
-    ) {
-      return taskFailure(
+    const denied = (): TaskResult<IBoundTaskDelivery> =>
+      taskFailure(
         `bindDelivery: no subscription ${params.subscriptionId} for this consumer`,
         'not-found-or-denied',
         'after-host-action'
       );
-    }
-    const found: ITaskSubscription = subscription.value;
+    // The binding itself is decided before the subscription is read, so a malformed binding gets the
+    // same answer whether or not the subscription exists; existence, consumer and drain membership
+    // are then decided together, with one answer.
     return this._access(params).onSuccess((access) =>
-      ok<IBoundTaskDelivery>(new BoundTaskDelivery(this._core, access, found.id))
+      this._core.repository
+        .subscription(params.subscriptionId)
+        .onSuccess((found) =>
+          found !== undefined &&
+          ids.consumerId.convert(params.consumerId).orDefault() === found.consumerId &&
+          found.drainPrincipals.includes(access.principal)
+            ? ok<IBoundTaskDelivery>(new BoundTaskDelivery(this._core, access, found.id))
+            : denied()
+        )
     );
+  }
+
+  /**
+   * Replaces a subscription's drain principals and its recorded policy identity — a trusted host
+   * operation. See {@link ISubscriptionDrainRequest}.
+   *
+   * @remarks
+   * Made through the **registering** principal's binding: its selectors must cover the
+   * subscription's selection and its policy must grant `subscribe` for the selection's scopes — what
+   * registering the subscription required. Anything else is `not-found-or-denied`. Active and closed
+   * subscriptions alike; a request that changes nothing writes nothing.
+   *
+   * Takes effect for bindings already made, too: every bound-delivery operation re-applies the drain
+   * rule to the subscription as it stands. A change makes a retry of the original `subscribe`
+   * `conflict`: the retry is compared with the subscription as it now stands (see
+   * {@link TaskBroker.subscribe}). A receipt a removed principal prepared stays issued until
+   * it is acknowledged by a principal still named, abandoned, or expires.
+   */
+  public async setSubscriptionDrain(
+    binding: IBoundTaskViewParams,
+    request: unknown
+  ): Promise<TaskResult<ITaskSubscription>> {
+    const access: TaskResult<AccessContext> = this._access(binding);
+    return access.isFailure()
+      ? propagateTask(access)
+      : setSubscriptionDrain(this._core, access.value, request);
   }
 
   /** Binds a read-only view to one principal. The returned object has no mutation method. */
@@ -383,6 +433,18 @@ export class TaskBroker {
     return extendReplayEnvelope(this._core, taskId, add);
   }
 
+  /**
+   * A policy's identity, read once and converted. A policy whose identity cannot be read or is not
+   * one line fails the binding rather than binding without it.
+   */
+  private _policyIdentity(authorization: ITaskAuthorization): Result<string | undefined> {
+    return captureResult(() => authorization.policyIdentity).onSuccess((identity) =>
+      identity === undefined
+        ? succeed(undefined)
+        : this._core.converters.delivery.policyIdentity.convert(identity)
+    );
+  }
+
   private _access(params: IBoundTaskViewParams): TaskResult<AccessContext> {
     const broker = this._core.converters.broker;
     const values = this._core.converters.values;
@@ -390,23 +452,26 @@ export class TaskBroker {
       .convert(params.principal)
       .onSuccess((principal) =>
         values.scopes.convert(params.scopes).onSuccess((scopes) =>
-          values.scopes.convert(params.creationScopes ?? scopes).onSuccess((creationScopes) => {
-            const access: AccessContext = new AccessContext({
-              view: this._core.nextView(),
-              principal,
-              scopes,
-              creationScopes,
-              authorization: params.authorization,
-              projector: params.projector ?? defaultTaskProjector,
-              logger: this._core.environment.logger
-            });
-            const outside: ITaskScope | undefined = creationScopes.find((scope) => !access.selects(scope));
-            return outside === undefined
-              ? succeed(access)
-              : fail<AccessContext>(
-                  `creation scope ${outside.namespace}/${outside.key} is outside the view's selectors`
-                );
-          })
+          values.scopes.convert(params.creationScopes ?? scopes).onSuccess((creationScopes) =>
+            this._policyIdentity(params.authorization).onSuccess((policyIdentity) => {
+              const access: AccessContext = new AccessContext({
+                view: this._core.nextView(),
+                principal,
+                scopes,
+                creationScopes,
+                authorization: params.authorization,
+                projector: params.projector ?? defaultTaskProjector,
+                ...(policyIdentity !== undefined ? { policyIdentity } : {}),
+                logger: this._core.environment.logger
+              });
+              const outside: ITaskScope | undefined = creationScopes.find((scope) => !access.selects(scope));
+              return outside === undefined
+                ? succeed(access)
+                : fail<AccessContext>(
+                    `creation scope ${outside.namespace}/${outside.key} is outside the view's selectors`
+                  );
+            })
+          )
         )
       );
     return checked.isSuccess()

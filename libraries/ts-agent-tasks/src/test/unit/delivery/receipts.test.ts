@@ -110,6 +110,7 @@ describe('exact-ID acknowledgement: the falsifier', () => {
       'consumerId',
       'createdAt',
       'disposed',
+      'drainPrincipals',
       'formatVersion',
       'id',
       'issued',

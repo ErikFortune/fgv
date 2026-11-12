@@ -62,6 +62,7 @@ export function brokerRegistry(): TaskKindRegistry {
  */
 export class TestPolicy implements ITaskAuthorization {
   public epoch: string = 'epoch-1';
+  public policyIdentity: string | undefined = undefined;
   public readonly deny: Array<(request: ITaskAccessRequest) => boolean> = [];
   public readonly calls: ITaskAccessRequest[] = [];
   public afterDecision: ((request: ITaskAccessRequest) => void | Promise<void>) | undefined = undefined;
@@ -326,6 +327,7 @@ export async function watch(
     readonly start?: 'current' | 'from-now';
     readonly history?: 'observed-state' | 'source-replay';
     readonly authorization?: ITaskAuthorization;
+    readonly drainPrincipals?: ReadonlyArray<string>;
   }
 ): Promise<ITaskSubscription> {
   const id: string = options?.id ?? watcher;
@@ -339,6 +341,7 @@ export async function watch(
         consumerId: options?.consumer ?? `consumer-${id}`,
         selection: { scopes, lifecycleClass: 'all', ...(options?.selection ?? {}) },
         start: options?.start ?? 'from-now',
+        ...(options?.drainPrincipals !== undefined ? { drainPrincipals: options.drainPrincipals } : {}),
         policy: {
           categories: options?.categories ?? [...allUpdateCategories].sort(),
           ...(options?.history !== undefined ? { history: options.history } : {})
