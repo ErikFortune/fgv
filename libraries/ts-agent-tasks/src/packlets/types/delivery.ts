@@ -175,6 +175,14 @@ export interface ITaskConsumerRecord {
   readonly selection: ITaskSelection;
   readonly start: SubscriptionStart;
   readonly policy: ITaskDeliveryPolicy;
+  /**
+   * The principals that may bind this subscription's delivery, unique and ascending. Absent on a
+   * record written before drain principals existed: such a subscription is drained by its
+   * registering principal only.
+   */
+  readonly drainPrincipals?: ReadonlyArray<string>;
+  /** The policy identity `disposeWithheld` requires of a binding, when one was recorded. */
+  readonly policyIdentity?: string;
   readonly state: TaskSubscriptionState;
   readonly createdAt: Instant;
   readonly baseline: ReadonlyArray<ITaskUpdate>;
@@ -185,7 +193,23 @@ export interface ITaskConsumerRecord {
 }
 
 /**
+ * The principals that may bind a subscription's delivery, as its record stands: the recorded list,
+ * or — for a record written before drain principals existed — its registering principal alone.
+ * @public
+ */
+export function drainPrincipalsOf(record: ITaskConsumerRecord): ReadonlyArray<string> {
+  return record.drainPrincipals ?? [record.registration.principalKey];
+}
+
+/**
  * What identifies a subscription registration: the specification a retry must repeat exactly.
+ *
+ * @remarks
+ * `drainPrincipals` and `policyIdentity` are the subscription's drain authority as it stands:
+ * {@link TaskBroker.setSubscriptionDrain} may change them later, after which a retry of the original
+ * registration no longer matches and is refused (`conflict`) rather than answered with a
+ * subscription that differs from what it asked for. A registration this release writes always
+ * carries `drainPrincipals`; only a record written before they existed lacks them.
  * @public
  */
 export interface ITaskSubscriptionSpecification {
@@ -193,6 +217,10 @@ export interface ITaskSubscriptionSpecification {
   readonly selection: ITaskSelection;
   readonly start: SubscriptionStart;
   readonly policy: ITaskDeliveryPolicy;
+  /** The principals that may bind the delivery, unique and ascending. */
+  readonly drainPrincipals?: ReadonlyArray<string>;
+  /** The policy identity `disposeWithheld` requires of a binding. */
+  readonly policyIdentity?: string;
 }
 
 /**
@@ -201,6 +229,17 @@ export interface ITaskSubscriptionSpecification {
  */
 export interface ITaskSubscription extends ITaskSubscriptionSpecification {
   readonly id: SubscriptionId;
+  /**
+   * The principal that registered the subscription: the one that may change its drain principals
+   * ({@link TaskBroker.setSubscriptionDrain}).
+   */
+  readonly principalKey: string;
+  /**
+   * The principals that may bind this subscription's delivery ({@link TaskBroker.bindDelivery}),
+   * unique and ascending. A subscription recorded without them reports its registering principal
+   * alone, which is the rule applied to it.
+   */
+  readonly drainPrincipals: ReadonlyArray<string>;
   readonly state: TaskSubscriptionState;
   readonly recordRevision: number;
   readonly createdAt: Instant;
@@ -358,6 +397,18 @@ export interface ITaskSubscriptionClosure {
 }
 
 /**
+ * Replaces one subscription's drain authority (storage level): its drain principals, and its policy
+ * identity (removed when omitted).
+ * @public
+ */
+export interface ITaskSubscriptionDrainChange {
+  readonly subscriptionId: SubscriptionId;
+  readonly expectedRecordRevision: number;
+  readonly drainPrincipals: ReadonlyArray<string>;
+  readonly policyIdentity?: string;
+}
+
+/**
  * A request to end obligations through {@link TaskBroker.dispose}.
  * @public
  */
@@ -441,6 +492,36 @@ export interface ISubscribeRequest {
   readonly selection: ITaskSelection;
   readonly start: SubscriptionStart;
   readonly policy?: Partial<Omit<ITaskDeliveryPolicy, 'schemaVersion'>>;
+  /**
+   * The principals that may bind this subscription's delivery and so drain it — and that may end
+   * or dispose of what it is owed (`TaskBroker.dispose`, `closeSubscription`). Each a valid principal
+   * key; duplicates are removed, then at least one and at most `maxDrainPrincipals` distinct
+   * principals must remain; stored ascending. Default: the registering principal alone. A host that
+   * subscribes on an agent's behalf names the agent here — the registering principal is not added
+   * implicitly.
+   */
+  readonly drainPrincipals?: ReadonlyArray<string>;
+  /**
+   * The identity of the consumer's own policy (`ITaskAuthorization.policyIdentity`). Without it,
+   * {@link IBoundTaskDelivery.disposeWithheld} refuses every binding of this subscription.
+   */
+  readonly policyIdentity?: string;
+}
+
+/**
+ * A request to {@link TaskBroker.setSubscriptionDrain}: the subscription's drain authority,
+ * replaced whole.
+ *
+ * @remarks
+ * `drainPrincipals` follows the rules of {@link ISubscribeRequest.drainPrincipals}. An omitted
+ * `policyIdentity` removes the recorded one. After a change, a retry of the original `subscribe` is
+ * `conflict`: it no longer matches the subscription as it stands.
+ * @public
+ */
+export interface ISubscriptionDrainRequest {
+  readonly subscriptionId: SubscriptionId;
+  readonly drainPrincipals: ReadonlyArray<string>;
+  readonly policyIdentity?: string;
 }
 
 /**
@@ -478,6 +559,29 @@ export interface IPreparedTaskContext {
 }
 
 /**
+ * What {@link IBoundTaskDelivery.prepare} renders beside the owed updates.
+ *
+ * @remarks
+ * - `'include'` — the default: the selection's current tasks too, so a context shows the work as it
+ *   is now as well as what changed. A current task the subscription is owed nothing for renders with
+ *   no update ids, and it ranks by its own state — attention and terminal outcomes above routine
+ *   changes — so under a small item budget it can take every slot and deliver nothing.
+ * - `'owed-only'` — only what is owed: each owed revision renders from its own frozen snapshot, and
+ *   no current state is a candidate. Every rendered entry then carries update ids unless the text
+ *   budget abbreviated it. For a consumer that decides one owed revision at a time.
+ * @public
+ */
+export type TaskPrepareCurrentState = 'include' | 'owed-only';
+
+/**
+ * Options for {@link IBoundTaskDelivery.prepare}.
+ * @public
+ */
+export interface ITaskPrepareOptions {
+  readonly currentState?: TaskPrepareCurrentState;
+}
+
+/**
  * A subscription's delivery, bound to one principal (design § 9, `IBoundTaskDelivery`).
  *
  * @remarks
@@ -489,11 +593,27 @@ export interface IPreparedTaskContext {
  */
 export interface IBoundTaskDelivery {
   readonly subscriptionId: SubscriptionId;
+  /**
+   * One page of what this subscription is owed, as this principal may be shown it now: an update is
+   * listed only when its task's committed record is one the principal may see and acknowledge; the
+   * rest are counted in `withheld`.
+   *
+   * @remarks
+   * Fails `conflict`, retry `safe`, when a task it decided on, or the policy epoch, moved before it
+   * answered — so a page never mixes two states. Retry the same call.
+   */
   pending(request?: {
     readonly limit?: number;
     readonly cursor?: PageCursor;
   }): Promise<TaskResult<ITaskDeliveryPage>>;
-  prepare(budget?: ITaskContextBudget): Promise<TaskResult<IPreparedTaskContext>>;
+  /**
+   * Renders a bounded context and issues its receipt. `options.currentState` chooses whether the
+   * selection's current tasks are rendered beside what is owed — see {@link TaskPrepareCurrentState}.
+   */
+  prepare(
+    budget?: ITaskContextBudget,
+    options?: ITaskPrepareOptions
+  ): Promise<TaskResult<IPreparedTaskContext>>;
   acknowledge(receipt: unknown): Promise<TaskResult<IAcknowledgementResult>>;
   /** Removes an issued manifest early. Its obligations stay owed; its history, if any, stays. */
   abandon(deliveryId: DeliveryId): Promise<TaskResult<DeliveryId>>;
@@ -514,6 +634,65 @@ export interface IBoundTaskDelivery {
    * takes a writer-queue slot and passes the broker's `writeGuard`, so a paused guard holds it.
    */
   issued(): Promise<TaskResult<ReadonlyArray<ITaskIssuedReceiptSummary>>>;
+  /**
+   * Ends, with `reason`, the obligations this subscription is owed that this principal is
+   * **withheld** — may no longer see or acknowledge, as each task's committed record stands — up to
+   * `limit` (default and maximum 200) per call.
+   *
+   * @remarks
+   * Not authorized per task — an obligation the principal can never be shown could otherwise never
+   * end, and would hold its task's archive for good — but by the subscription as a whole, and only
+   * when all of these hold: the binding's principal is one of the subscription's drain principals;
+   * the subscription recorded a policy identity (`ISubscribeRequest.policyIdentity`) and the
+   * binding's policy carries that same identity (`ITaskAuthorization.policyIdentity`, read when the
+   * binding was made); every scope of the subscription's selection lies within the binding's
+   * selectors (the rule `subscribe` applied); and the binding's policy grants both `acknowledge` and
+   * `dispose-obligation`, each asked for those scopes with no task named — only a binding that could
+   * have acknowledged these obligations may end them unseen. Each refusal is the same
+   * `not-found-or-denied`; a subscription that recorded no identity refuses every binding.
+   *
+   * **The binding's policy decides what counts as withheld**, which is why its identity must be the
+   * one recorded: the grant checks alone cannot tell a policy that withholds a task for good from one
+   * merely narrower about that task than the consumer's real policy. The identity is the host's
+   * statement of which policy is the consumer's own; the broker checks that the two agree, not that
+   * the host named them truthfully.
+   *
+   * The drain principals and identity are decided before anything is listed and decided again, on
+   * the record the write is conditioned on, inside the writer section.
+   *
+   * It answers **counts only**. An update id embeds its task id and revision, so a list of the ids
+   * ended would disclose the identity of tasks the principal may not read; the exact ids stay in the
+   * subscription's history, for the trusted host to read through the repository.
+   *
+   * Each id is decided on its task's committed record, and the writer section re-reads every such
+   * record and the policy epoch before it commits, so an id that became visible meanwhile is not
+   * ended. An id an unexpired issued receipt names is counted in `pinned` rather than ended. `more`
+   * says the limit stopped it. Fails `conflict`, retry `safe`, when what it decided kept moving.
+   */
+  disposeWithheld(request: IDisposeWithheldRequest): Promise<TaskResult<ITaskWithheldDisposal>>;
+}
+
+/**
+ * A request to {@link IBoundTaskDelivery.disposeWithheld}.
+ * @public
+ */
+export interface IDisposeWithheldRequest {
+  readonly reason: string;
+  readonly limit?: number;
+}
+
+/**
+ * What {@link IBoundTaskDelivery.disposeWithheld} did.
+ * @public
+ */
+export interface ITaskWithheldDisposal {
+  readonly subscriptionId: SubscriptionId;
+  /** How many withheld obligations this call ended. */
+  readonly disposed: number;
+  /** How many withheld obligations an unexpired issued receipt still names: left owed. */
+  readonly pinned: number;
+  /** Whether more withheld ids remain past `limit`. */
+  readonly more: boolean;
 }
 
 /**

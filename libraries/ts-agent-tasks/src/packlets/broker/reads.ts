@@ -12,7 +12,9 @@ import {
   IProjectedUnresolvedReference,
   ITaskCommitRecord,
   ITaskPage,
+  ITaskQuery,
   ITaskSelection,
+  Instant,
   PageCursor,
   TaskInspection,
   TaskRegistrationResult,
@@ -51,7 +53,33 @@ export async function queryView(
   if (converted.isFailure()) {
     return taskFailure(`query: ${converted.message}`, 'invalid', 'after-host-action');
   }
-  const request: IBoundTaskQuery = converted.value;
+  return _answerView(core, ctx, converted.value, undefined);
+}
+
+/**
+ * A bound view's due query: {@link queryView}'s contract over the repository's due index, so a due
+ * pass reads only what is due and never scans the view's tasks.
+ * @internal
+ */
+export async function queryDueView(
+  core: BrokerCore,
+  ctx: AccessContext,
+  input: unknown
+): Promise<TaskResult<IBoundTaskPage>> {
+  const converted = core.converters.broker.boundDueQuery.convert(input);
+  if (converted.isFailure()) {
+    return taskFailure(`queryDue: ${converted.message}`, 'invalid', 'after-host-action');
+  }
+  return _answerView(core, ctx, converted.value, converted.value.cutoff);
+}
+
+/** One page of a bound view: an ordinary page, or — with `cutoff` — a due page. */
+async function _answerView(
+  core: BrokerCore,
+  ctx: AccessContext,
+  request: IBoundTaskQuery,
+  cutoff: Instant | undefined
+): Promise<TaskResult<IBoundTaskPage>> {
   const epoch = ctx.epoch();
   if (epoch.isFailure()) {
     return propagate(epoch);
@@ -72,11 +100,15 @@ export async function queryView(
     ...(filter.responsibility !== undefined ? { responsibility: filter.responsibility } : {}),
     ...(filter.parentId !== undefined ? { parentId: filter.parentId } : {})
   };
-  const answered = await core.repository.query({
+  const query: ITaskQuery = {
     selection,
     ...(request.limit !== undefined ? { limit: request.limit } : {}),
     ...(inner !== undefined ? { cursor: inner } : {})
-  });
+  };
+  const answered =
+    cutoff === undefined
+      ? await core.repository.query(query)
+      : await core.repository.queryDue({ ...query, cutoff });
   if (answered.isFailure()) {
     return propagate(answered);
   }

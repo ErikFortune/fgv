@@ -293,6 +293,19 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
   antagonist finding), or have `cleanup` evict expired manifests; and keep `prunable` consistent with
   what cleanup will do. **Reference**: `agent-tasks-t8b` `state.md` § *antagonist*.
 
+- **[P3] `ts-agent-tasks` a receipt a removed drain principal prepared stays acknowledgeable by
+  another.** After `TaskBroker.setSubscriptionDrain` removes a principal, a receipt it prepared stays
+  issued; a principal still named can acknowledge it under its own authority, discharging what the
+  removed principal was shown. Manifests (`IIssuedTaskReceipt`) do not record who prepared them, so
+  the broker cannot tell. Host-reachable only — the host holds the receipt object.
+
+  **Trigger**: a host that removes a drain principal while that principal has receipts in flight, or
+  hands receipts between principals. **Scope sketch**: record the preparing principal on the
+  manifest and either abandon a removed principal's receipts in `setSubscriptionDrain`'s write or
+  refuse to acknowledge a receipt prepared by another principal. **Not a P2**: it needs the host to
+  pass one principal's receipt to another, and every acknowledged id was shown to someone the host
+  named. **Reference**: `agent-tasks-drain-principals` `result.md` § *Open questions*.
+
 - **[P4] A baseline is never checked against `maxUpdateBytes`, and a profile may set `maxUpdateBytes`
   below an envelope plus framing.** `_checkBaseline` has no size check, so under such a profile a
   baseline can exceed both `maxUpdateBytes` and `maximumUpdateBytes(profile)`. It is charged at its
