@@ -383,7 +383,11 @@ describe('the journey report', () => {
       ['7', 'released', 'released'],
       ['7', 'admission is ordinary again', 'succeeded'],
       ['7-uncertain', 'the next pass resolves it', ['satisfied', 'confirmed']],
-      ['2', 'a principal the subscription does not name cannot bind its delivery', 'not-found-or-denied']
+      [
+        '2',
+        'a principal the subscription does not name cannot bind its delivery',
+        { code: 'not-found-or-denied', retry: 'after-host-action' }
+      ]
     ];
     for (const [step, name, value] of pinned) {
       expect([step, name, observed(report, step, name)]).toEqual([step, name, value]);

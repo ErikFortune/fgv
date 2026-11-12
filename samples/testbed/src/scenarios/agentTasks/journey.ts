@@ -329,11 +329,11 @@ async function step2(seeded: ISeeded): Promise<{ step: IJourneyStep; state: IMai
     subscriptionId: 'sub-ada' as SubscriptionId,
     consumerId: 'ada-context' as ConsumerId
   });
-  s.check(
-    'a principal the subscription does not name cannot bind its delivery',
-    unnamed.isFailure() ? unnamed.detail?.code : 'bound',
-    'not-found-or-denied'
-  );
+  // The refusal a missing subscription gets: nothing in it says the subscription exists.
+  s.check('a principal the subscription does not name cannot bind its delivery', unnamed.detail, {
+    code: 'not-found-or-denied',
+    retry: 'after-host-action'
+  });
   const owedA: string[] = await owed(deliveryA);
   const owedAudit: string[] = await owed(deliveryAudit);
   s.check(

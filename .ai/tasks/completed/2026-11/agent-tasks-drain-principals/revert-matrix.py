@@ -3,7 +3,7 @@
 
 Each row removes one protection from the source, runs the targeted suites, and records how many
 tests went red. A protection whose row stays green has no test that pins it. Run from the repo root
-of the worktree: python3 .ai/tasks/active/agent-tasks-drain-principals/revert-matrix.py
+of the worktree: python3 .ai/tasks/completed/2026-11/agent-tasks-drain-principals/revert-matrix.py
 """
 import pathlib
 import re
