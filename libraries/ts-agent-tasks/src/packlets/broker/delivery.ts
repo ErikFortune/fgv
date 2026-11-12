@@ -14,6 +14,7 @@ import {
   IInclusionEntry,
   IPreparedTaskContext,
   ISubscribeRequest,
+  ISubscriptionDrainRequest,
   ITaskCommitRecord,
   ITaskConsumerRecord,
   ITaskContext,
@@ -40,6 +41,7 @@ import {
   UpdateId,
   baselineUpdateId,
   defaultDeliveryCategories,
+  drainPrincipalsOf,
   isTerminalTaskStatus,
   maxTaskPageLimit,
   taskContextLimits
@@ -275,7 +277,15 @@ async function _subscribeOnce(
       subscriptionId: req.subscriptionId,
       operationId: req.operationId,
       principalKey: access.principal,
-      specification: { consumerId: req.consumerId, selection: req.selection, start: req.start, policy },
+      specification: {
+        consumerId: req.consumerId,
+        selection: req.selection,
+        start: req.start,
+        policy,
+        // Default: the registering principal alone. The converted request is already canonical.
+        drainPrincipals: req.drainPrincipals ?? [access.principal],
+        ...(req.policyIdentity !== undefined ? { policyIdentity: req.policyIdentity } : {})
+      },
       baseline,
       createdAt: clock.value
     });
@@ -285,6 +295,73 @@ async function _subscribeOnce(
     return core.repository
       .subscription(req.subscriptionId)
       .onSuccess((descriptor) => ok<ITaskSubscription | undefined>(descriptor));
+  });
+}
+
+/**
+ * Replaces a subscription's drain principals and policy identity — a trusted host operation, made
+ * through the registering principal's binding (see `TaskBroker.setSubscriptionDrain`).
+ * @internal
+ */
+export async function setSubscriptionDrain(
+  core: BrokerCore,
+  access: AccessContext,
+  request: unknown
+): Promise<TaskResult<ITaskSubscription>> {
+  const converted: Result<ISubscriptionDrainRequest> = core.converters.delivery.drainRequest.convert(request);
+  if (converted.isFailure()) {
+    return taskFailure(`setSubscriptionDrain: ${converted.message}`, 'invalid', 'after-host-action');
+  }
+  const req: ISubscriptionDrainRequest = converted.value;
+  const epoch: TaskResult<string> = access.epoch();
+  if (epoch.isFailure()) {
+    return propagate(epoch);
+  }
+  const subscription: TaskResult<ITaskSubscription | undefined> = core.repository.subscription(
+    req.subscriptionId
+  );
+  if (subscription.isFailure()) {
+    return propagate(subscription);
+  }
+  // Only the subscription's owner re-delegates its drain: the registering principal, with selectors
+  // covering the selection, whose policy grants `subscribe` for it — what registering it required.
+  // The registrant and the selection never change, so this decision holds for the record the write
+  // is conditioned on; the policy is fenced by its epoch, checked after the section's last await.
+  const found: ITaskSubscription | undefined = subscription.value;
+  if (
+    found === undefined ||
+    found.principalKey !== access.principal ||
+    !found.selection.scopes.every((scope) => access.selects(scope)) ||
+    !(await access.allows({ action: 'subscribe', role: 'subject', scopes: found.selection.scopes }))
+  ) {
+    return taskFailure(
+      `setSubscriptionDrain ${req.subscriptionId}: not permitted`,
+      'not-found-or-denied',
+      'after-host-action'
+    );
+  }
+  return core.gated(async (writer) => {
+    const record: TaskResult<ITaskConsumerRecord | undefined> = await writer.readSubscription(
+      req.subscriptionId
+    );
+    if (record.isFailure()) {
+      return propagate<ITaskSubscription>(record);
+    }
+    if (!access.epochIs(epoch.value)) {
+      return changedSinceAuthorized<ITaskSubscription>(
+        `setSubscriptionDrain ${req.subscriptionId}: the policy`
+      );
+    }
+    // Bound to a retained subscription; records are never removed.
+    const changed: TaskResult<ITaskConsumerRecord> = await writer.setSubscriptionDrain({
+      subscriptionId: req.subscriptionId,
+      expectedRecordRevision: record.value!.recordRevision,
+      drainPrincipals: req.drainPrincipals,
+      ...(req.policyIdentity !== undefined ? { policyIdentity: req.policyIdentity } : {})
+    });
+    return changed.onSuccess(() =>
+      core.repository.subscription(req.subscriptionId).onSuccess((descriptor) => ok(descriptor!))
+    );
   });
 }
 
@@ -312,11 +389,52 @@ export class BoundTaskDelivery implements IBoundTaskDelivery {
     this.subscriptionId = subscriptionId;
   }
 
+  /** Whether this binding's principal is one of `drainPrincipals`. */
+  private _drains(drainPrincipals: ReadonlyArray<string>): boolean {
+    return drainPrincipals.includes(this._access.principal);
+  }
+
+  /**
+   * Whether this binding may end withheld obligations: a drain principal whose policy carries the
+   * identity the subscription recorded. A subscription that recorded none refuses every binding.
+   */
+  private _withheldAuthority(
+    drainPrincipals: ReadonlyArray<string>,
+    policyIdentity: string | undefined
+  ): boolean {
+    return (
+      this._drains(drainPrincipals) &&
+      policyIdentity !== undefined &&
+      policyIdentity === this._access.policyIdentity
+    );
+  }
+
+  /** The answer for a binding without the drain authority an operation needs: as for a missing one. */
+  private _denied<T>(operation: string): TaskResult<T> {
+    return taskFailure<T>(
+      `${operation} ${this.subscriptionId}: not permitted`,
+      'not-found-or-denied',
+      'after-host-action'
+    );
+  }
+
+  /** Whether this binding's principal is still a drain principal, as the committed descriptor stands. */
+  private _stillDrains(operation: string): TaskResult<true> {
+    return this._core.repository.subscription(this.subscriptionId).onSuccess((found) =>
+      // Bound to a retained subscription; records are never removed.
+      this._drains(found!.drainPrincipals) ? ok<true>(true) : this._denied<true>(operation)
+    );
+  }
+
   /** {@inheritDoc IBoundTaskDelivery.pending} */
   public async pending(request?: {
     readonly limit?: number;
     readonly cursor?: PageCursor;
   }): Promise<TaskResult<ITaskDeliveryPage>> {
+    const drains: TaskResult<true> = this._stillDrains('pending');
+    if (drains.isFailure()) {
+      return propagate(drains);
+    }
     const page = await this._core.repository.listOwed({
       subscription: this.subscriptionId,
       ...(request?.limit !== undefined ? { limit: request.limit } : {}),
@@ -341,6 +459,11 @@ export class BoundTaskDelivery implements IBoundTaskDelivery {
     }
     if (!held.value || !this._access.epochIs(epoch.value)) {
       return changedSinceAuthorized(`pending ${this.subscriptionId}: a task or the policy`);
+    }
+    // The drain principals may have changed while the page was decided.
+    const stillDrains: TaskResult<true> = this._stillDrains('pending');
+    if (stillDrains.isFailure()) {
+      return propagate(stillDrains);
     }
     return ok<ITaskDeliveryPage>({
       updates: disclosed.value.updates,
@@ -388,15 +511,16 @@ export class BoundTaskDelivery implements IBoundTaskDelivery {
       return propagate(subscription);
     }
     // "Withheld" is judged under this binding, so only a binding that could have discharged these
-    // obligations may end them unseen: the registering principal, with selectors covering the
-    // selection, whose policy grants both `acknowledge` and `dispose-obligation` for the selection —
-    // otherwise a narrower binding, on either axis, would withhold and so end more. Both are asked for
-    // the selection as a whole, never per task, since these are tasks it may not see.
+    // obligations may end them unseen: a drain principal, whose policy is the one the subscription
+    // recorded as the consumer's own, with selectors covering the selection, and whose policy grants
+    // both `acknowledge` and `dispose-obligation` for the selection — otherwise a narrower binding,
+    // on any axis, would withhold and so end more. Both are asked for the selection as a whole, never
+    // per task, since these are tasks it may not see.
     // Bound to a retained subscription; records are never removed.
     const found: ITaskSubscription = subscription.value!;
     const scopes: ReadonlyArray<ITaskScope> = found.selection.scopes;
     if (
-      found.principalKey !== this._access.principal ||
+      !this._withheldAuthority(found.drainPrincipals, found.policyIdentity) ||
       !scopes.every((scope) => this._access.selects(scope)) ||
       !(await this._access.allows({ action: 'acknowledge', role: 'subject', scopes })) ||
       !(await this._access.allows({ action: 'dispose-obligation', role: 'subject', scopes }))
@@ -451,6 +575,10 @@ export class BoundTaskDelivery implements IBoundTaskDelivery {
       }
       // Bound to a retained subscription; records are never removed.
       const live: ITaskConsumerRecord = record.value!;
+      // The drain authority decided above may have been replaced since.
+      if (!this._withheldAuthority(drainPrincipalsOf(live), live.policyIdentity)) {
+        return this._denied<ITaskWithheldDisposal | undefined>('disposeWithheld');
+      }
       // Each id was decided withheld on its task's committed record: one that moved may now be visible.
       const held: TaskResult<boolean> = await fenceHolds(writer, fence);
       if (held.isFailure() || !held.value) {
@@ -661,6 +789,9 @@ export class BoundTaskDelivery implements IBoundTaskDelivery {
     }
     // Bound to a retained subscription, active or closed; records are never removed.
     const live: ITaskConsumerRecord = record.value!;
+    if (!this._drains(drainPrincipalsOf(live))) {
+      return this._denied('acknowledge');
+    }
     const manifest = live.issued.find((m) => m.deliveryId === deliveryId);
     return manifest !== undefined && canonicallySame(manifest.receipt, presented)
       ? ok(live)
@@ -677,6 +808,9 @@ export class BoundTaskDelivery implements IBoundTaskDelivery {
       const record = await writer.readSubscription(this.subscriptionId);
       if (record.isFailure()) {
         return propagate<DeliveryId>(record);
+      }
+      if (record.value !== undefined && !this._drains(drainPrincipalsOf(record.value))) {
+        return this._denied<DeliveryId>('abandon');
       }
       if (record.value === undefined || !record.value.issued.some((m) => m.deliveryId === id.value)) {
         return _invalidReceipt(this.subscriptionId);
@@ -700,6 +834,8 @@ export class BoundTaskDelivery implements IBoundTaskDelivery {
               'not-found-or-denied',
               'after-host-action'
             )
+          : !this._drains(drainPrincipalsOf(record))
+          ? this._denied<ReadonlyArray<ITaskIssuedReceiptSummary>>('issued')
           : ok<ReadonlyArray<ITaskIssuedReceiptSummary>>(
               record.issued
                 .filter((manifest) => !manifest.acknowledged)
@@ -733,6 +869,11 @@ export class BoundTaskDelivery implements IBoundTaskDelivery {
     }
     // Bound to a retained subscription, active or closed; records are never removed.
     const captured: ITaskSubscription = subscription.value!;
+    // Decided on the captured record; the section that issues re-proves its revision unchanged, so a
+    // drain principal removed in between makes this capture stale and the next one refuses.
+    if (!this._drains(captured.drainPrincipals)) {
+      return this._denied('prepare');
+    }
     const input = await this._captureInput(captured, currentState);
     if (input.isFailure()) {
       return propagate(input);

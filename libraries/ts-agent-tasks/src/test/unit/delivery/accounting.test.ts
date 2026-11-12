@@ -109,7 +109,8 @@ describe('spend, never mint: acknowledgement evidence comes out of the claims th
   // top — every functional test would still pass, and the ledger would count it twice.
   test('a terminal transition owed to a subscription moves its evidence out of the closeout: one charge, not two', async () => {
     const h = await deliveryHarness();
-    await watch(h.broker);
+    // The host subscribes; alice drains.
+    await watch(h.broker, { drainPrincipals: ['alice'] });
     await track(h.writer, 't');
     const before = totals(h.repository);
     const closeoutBefore = await claimOf(h.repository, 't', 'terminal-closeout');

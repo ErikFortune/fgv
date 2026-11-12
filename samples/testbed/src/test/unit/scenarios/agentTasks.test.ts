@@ -382,13 +382,14 @@ describe('the journey report', () => {
       ['7', 'the controllable child really paused', 'paused'],
       ['7', 'released', 'released'],
       ['7', 'admission is ordinary again', 'succeeded'],
-      ['7-uncertain', 'the next pass resolves it', ['satisfied', 'confirmed']]
+      ['7-uncertain', 'the next pass resolves it', ['satisfied', 'confirmed']],
+      ['2', 'a principal the subscription does not name cannot bind its delivery', 'not-found-or-denied']
     ];
     for (const [step, name, value] of pinned) {
       expect([step, name, observed(report, step, name)]).toEqual([step, name, value]);
     }
     // A check added to the journey without a pin here changes this count, and must be pinned.
-    expect(report.steps.reduce((n, s) => n + s.checks.length, 0)).toBe(105);
+    expect(report.steps.reduce((n, s) => n + s.checks.length, 0)).toBe(106);
   });
 
   test('is deterministic: a second run observes exactly the same values', async () => {

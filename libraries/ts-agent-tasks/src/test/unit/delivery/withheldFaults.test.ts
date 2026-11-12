@@ -28,7 +28,9 @@ const storageDown = <T>(): TaskResult<T> =>
 
 async function harness(): Promise<IDeliveryHarness> {
   const h = await deliveryHarness();
-  await subscribed(h, 'sub');
+  // disposeWithheld needs the consumer's policy identity recorded and presented.
+  h.policy.policyIdentity = 'alice-policy';
+  await subscribed(h, 'sub', { policyIdentity: 'alice-policy' });
   await track(h.writer, 't');
   return h;
 }

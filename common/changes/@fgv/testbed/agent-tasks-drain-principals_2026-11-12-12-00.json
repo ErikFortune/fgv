@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/testbed",
+      "comment": "agent-tasks journey: the host names each subscription's drain principal, and step 2 checks that a principal the subscription does not name cannot bind its delivery.",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/testbed",
+  "email": "noreply@anthropic.com"
+}

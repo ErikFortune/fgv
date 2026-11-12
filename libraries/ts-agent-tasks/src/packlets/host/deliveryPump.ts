@@ -211,7 +211,11 @@ export class TaskDeliveryPump {
     this._budget = params.budget;
   }
 
-  /** Creates a pump over one subscription's delivery. Fails when the broker refuses the binding. */
+  /**
+   * Creates a pump over one subscription's delivery. Fails when the broker refuses the binding —
+   * including, with `not-found-or-denied`, when its principal is not one of the subscription's drain
+   * principals.
+   */
   public static create(params: ITaskDeliveryPumpParams): Result<TaskDeliveryPump> {
     const budget: ITaskContextBudget = {
       maxItems: 1,
@@ -443,8 +447,10 @@ export class TaskDeliveryPump {
    * come back (a policy that changes again, a task moved back), and a disposal cannot be undone. The
    * host decides when — on its own sweep, say — and this call is the bounded path, reporting how many
    * it ended, how many a receipt still pins, and whether more remain: counts, never ids, which would
-   * name tasks the principal may not read. It is refused unless the pump's binding is the one that
-   * registered the subscription, covers its whole selection, and is granted `dispose-obligation`.
+   * name tasks the principal may not read. It is refused unless the pump's binding is a drain
+   * principal whose policy carries the identity the subscription recorded, covers its whole
+   * selection, and is granted `acknowledge` and `dispose-obligation` — the rule
+   * `IBoundTaskDelivery.disposeWithheld` states.
    */
   public disposeWithheld(reason: string, limit?: number): Promise<Result<ITaskWithheldDisposal>> {
     return guarded(this._guard, async () =>

@@ -110,6 +110,19 @@ export interface ITaskAccessRequest {
 export interface ITaskAuthorization {
   check(request: ITaskAccessRequest): Promise<Result<boolean>>;
   policyEpoch(): string;
+  /**
+   * A stable, host-chosen name for **which** policy this is — the same for every instance of one
+   * consumer's policy, different for any other — when the host gives it one.
+   *
+   * @remarks
+   * Read once, when a binding is made, and converted (one non-empty line). The broker uses it in one
+   * place: `IBoundTaskDelivery.disposeWithheld` ends obligations only through a binding whose policy
+   * carries the identity the subscription recorded (`ISubscribeRequest.policyIdentity`), so a
+   * binding built with some other, narrower policy cannot decide what counts as withheld. It is a
+   * name, not a credential: the host constructs every binding, and a policy that claims another
+   * policy's identity is a host defect the broker cannot see.
+   */
+  readonly policyIdentity?: string;
 }
 
 /**

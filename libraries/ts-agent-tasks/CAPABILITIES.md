@@ -444,7 +444,8 @@ shown.** The host subscribes; a principal then works a bound delivery (`IBoundTa
 await broker.subscribe(
   { principal: 'host', scopes: [projectScope], authorization: policy },
   { subscriptionId, operationId, consumerId, selection: { scopes: [projectScope], lifecycleClass: 'all' },
-    start: 'current' /* or 'from-now' */, policy: { categories: ['attention', 'lifecycle', 'result'] } }
+    start: 'current' /* or 'from-now' */, policy: { categories: ['attention', 'lifecycle', 'result'] },
+    drainPrincipals: ['agent:ada'] /* who may bind and drain it; default: the registrant alone */ }
 );
 const delivery = broker.bindDelivery({ principal: 'agent:ada', scopes: [projectScope], authorization: policy,
   subscriptionId, consumerId }).orThrow();
@@ -452,6 +453,10 @@ const { context } = (await delivery.prepare({ maxItems: 20, maxDepth: 3, maxChar
 // … the host processes `context` (model call, etc.) …
 await delivery.acknowledge(context.receipt); // only after the host's own success boundary
 ```
+
+**Only the principals a subscription names may bind its delivery** — a binding drains it. See
+*Only a subscription's drain principals may bind its delivery* under the host helpers below, and
+`TaskBroker.setSubscriptionDrain` for changing them.
 
 **Audience is storage's.** An update is owed to an active subscription iff its category is in the
 subscription's `policy.categories` (`attention`, `lifecycle`, `result` are always included) and the
@@ -802,14 +807,18 @@ the policy epoch), so a task that moves between the decision and the issue is ca
 more }`, **counts only** — an update id embeds its task id, so a list would name tasks the principal
 may not read; the exact ids stay in the subscription's history for the trusted host. Ends up to
 `limit` owed updates the subscription holds that are withheld now. Not authorized per task, but by
-the subscription as a whole, and only when all three hold: the binding's principal **registered**
-the subscription; the binding's selectors **cover its whole selection**; and the binding's policy
-grants **both `acknowledge` and `dispose-obligation`**, each asked for the selection's scopes naming
-no task — only a binding that could have acknowledged these obligations may end them unseen.
-Otherwise `not-found-or-denied`. **The binding's policy decides what counts as withheld**: the checks
-refuse a binding narrower on principal, selectors or those grants, but not one merely narrower about
-a particular task than the consumer's real policy — so call it only through a binding built with
-**the consumer's own policy**.
+the subscription as a whole, and only when all of these hold: the binding's principal is a **drain
+principal**; the subscription **recorded a policy identity** (`subscribe`'s `policyIdentity`) and the
+binding's policy **carries the same one** (`ITaskAuthorization.policyIdentity`, read at binding); the
+binding's selectors **cover its whole selection**; and the binding's policy grants **both
+`acknowledge` and `dispose-obligation`**, each asked for the selection's scopes naming no task — only
+a binding that could have acknowledged these obligations may end them unseen. Otherwise
+`not-found-or-denied`; a subscription with no recorded identity refuses every binding. **The
+binding's policy decides what counts as withheld**, and the identity is what ties it to the
+consumer's own: the grant checks alone cannot tell a policy that withholds a task for good from one
+merely narrower about it. The identity is a name the host gives, not a credential — the broker checks
+that the recorded and presented names agree. The drain principals and identity are re-decided inside
+the writer, on the record the write is conditioned on.
 
 **For policy authors: a scope-only request is the broadest question, never a free pass.**
 `acknowledge` and `dispose-obligation` are also asked with **no task named**, carrying only a
@@ -821,10 +830,27 @@ obligations through `disposeWithheld`. Each withheld decision is re-checked in t
 writer before anything is written. An id an unexpired, unacknowledged receipt names is counted in
 `pinned`, not disposed; `more` says the listing went past `limit`.
 
-**`bindDelivery` does not require the registering principal**: a host may subscribe on an agent's
-behalf and bind the agent's delivery. Disclosure and acknowledgement are decided under the binding's
-own authority, but a binding **drains** the subscription — what it acknowledges is no longer owed to
-that `consumerId` — so which principal drains which consumer is the host's to keep straight.
+**Only a subscription's drain principals may bind its delivery.** A binding **drains** the
+subscription — what it acknowledges is no longer owed to that `consumerId` — so `subscribe` records
+who may: `drainPrincipals` (non-empty, at most `maxDrainPrincipals`, de-duplicated and stored
+ascending), by default the registering principal alone. A host that subscribes on an agent's behalf
+names the agent; the registrant is not added implicitly. `bindDelivery` refuses anyone else with
+`not-found-or-denied` — the answer a missing subscription or a wrong `consumerId` gets, so it
+discloses nothing — and so does `TaskDeliveryPump.create`. Every bound-delivery operation (`pending`,
+`prepare`, `acknowledge`, `abandon`, `issued`, `disposeWithheld`) applies the rule again to the
+subscription as it stands, so a principal removed after binding is refused from then on; a receipt it
+prepared stays issued until a principal still named acknowledges or abandons it, or it expires.
+Disclosure and acknowledgement are still decided under the binding's own authority.
+
+**`TaskBroker.setSubscriptionDrain(binding, { subscriptionId, drainPrincipals, policyIdentity? })`**
+replaces the drain principals and the recorded policy identity (an omitted identity removes it) — a
+trusted host operation through the **registering** principal's binding, whose selectors cover the
+selection and whose policy grants `subscribe` for it; anything else is `not-found-or-denied`. Active
+or closed; a request that changes nothing writes nothing. `subscribe` is not an update path: a retry
+must repeat the drain authority exactly, and a retry of the original registration after a change is
+`conflict`. A subscription recorded before drain principals existed is drained by its registrant
+alone (`drainPrincipalsOf(record)`; `ITaskSubscription.drainPrincipals` reports the rule applied),
+until `setSubscriptionDrain` gives it a list.
 
 **`DeferredObligations.create({ broker, principal, authorization, scope, idPrefix, roles, codes?,
 namespaces?, schedule?, operationBudget?, guard? })`** — a durable retry obligation is a

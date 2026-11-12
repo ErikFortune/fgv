@@ -324,6 +324,9 @@ export type DeferredObligationState = {
 export type DeliveryId = Brand<string, 'DeliveryId'>;
 
 // @public
+export function drainPrincipalsOf(record: ITaskConsumerRecord): ReadonlyArray<string>;
+
+// @public
 export function evaluateTrackedCommand(envelope: ITaskEnvelope, command: TrackedCommand, options: {
     readonly list: boolean;
 }): TrackedTransition;
@@ -952,11 +955,18 @@ export interface IDeliveryConverters {
     readonly disposition: Converter<ITaskObligationDisposition>;
     readonly dispositionReason: Converter<string>;
     // (undocumented)
+    readonly drainChange: Converter<ITaskSubscriptionDrainChange>;
+    readonly drainPrincipals: Converter<ReadonlyArray<string>>;
+    readonly drainPrincipalsRequest: Converter<ReadonlyArray<string>>;
+    // (undocumented)
+    readonly drainRequest: Converter<ISubscriptionDrainRequest>;
+    // (undocumented)
     readonly issued: Converter<IIssuedTaskReceipt>;
     // (undocumented)
     readonly obligationDisposal: Converter<ITaskObligationDisposal>;
     // (undocumented)
     readonly policy: Converter<ITaskDeliveryPolicy>;
+    readonly policyIdentity: Converter<string>;
     readonly policyOverrides: Converter<Partial<Omit<ITaskDeliveryPolicy, 'schemaVersion'>>>;
     // (undocumented)
     readonly receiptAbandonment: Converter<ITaskReceiptAbandonment>;
@@ -1754,14 +1764,26 @@ export type IStoredTaskOperation = IStoredCommandOperation | IStoredCatalogOpera
 export interface ISubscribeRequest {
     // (undocumented)
     readonly consumerId: ConsumerId;
+    readonly drainPrincipals?: ReadonlyArray<string>;
     // (undocumented)
     readonly operationId: OperationId;
     // (undocumented)
     readonly policy?: Partial<Omit<ITaskDeliveryPolicy, 'schemaVersion'>>;
+    readonly policyIdentity?: string;
     // (undocumented)
     readonly selection: ITaskSelection;
     // (undocumented)
     readonly start: SubscriptionStart;
+    // (undocumented)
+    readonly subscriptionId: SubscriptionId;
+}
+
+// @public
+export interface ISubscriptionDrainRequest {
+    // (undocumented)
+    readonly drainPrincipals: ReadonlyArray<string>;
+    // (undocumented)
+    readonly policyIdentity?: string;
     // (undocumented)
     readonly subscriptionId: SubscriptionId;
 }
@@ -1796,6 +1818,7 @@ export interface ITaskAuthorization {
     check(request: ITaskAccessRequest): Promise<Result<boolean>>;
     // (undocumented)
     policyEpoch(): string;
+    readonly policyIdentity?: string;
 }
 
 // @public
@@ -2013,6 +2036,7 @@ export interface ITaskConsumerRecord {
     readonly createdAt: Instant;
     // (undocumented)
     readonly disposed: ReadonlyArray<ITaskObligationDisposition>;
+    readonly drainPrincipals?: ReadonlyArray<string>;
     // (undocumented)
     readonly formatVersion: 1;
     // (undocumented)
@@ -2021,6 +2045,7 @@ export interface ITaskConsumerRecord {
     readonly issued: ReadonlyArray<IIssuedTaskReceipt>;
     // (undocumented)
     readonly policy: ITaskDeliveryPolicy;
+    readonly policyIdentity?: string;
     // (undocumented)
     readonly recordRevision: number;
     readonly registration: {
@@ -2975,6 +3000,7 @@ export interface ITaskRepositoryWriter {
     readSubscription(subscriptionId: SubscriptionId): Promise<TaskResult<ITaskConsumerRecord | undefined>>;
     register(request: ITaskRegistrationRequest): Promise<TaskResult<ITaskCommitRecord>>;
     registerSubscription(request: ITaskSubscriptionRegistration): Promise<TaskResult<ITaskConsumerRecord>>;
+    setSubscriptionDrain(request: ITaskSubscriptionDrainChange): Promise<TaskResult<ITaskConsumerRecord>>;
 }
 
 // @public
@@ -3089,6 +3115,7 @@ export interface ITaskStopToolTarget {
 export interface ITaskSubscription extends ITaskSubscriptionSpecification {
     // (undocumented)
     readonly createdAt: Instant;
+    readonly drainPrincipals: ReadonlyArray<string>;
     // (undocumented)
     readonly id: SubscriptionId;
     readonly principalKey: string;
@@ -3105,6 +3132,18 @@ export interface ITaskSubscriptionClosure {
     // (undocumented)
     readonly obligations: TaskSubscriptionClosureMode;
     readonly reason?: string;
+    // (undocumented)
+    readonly subscriptionId: SubscriptionId;
+}
+
+// @public
+export interface ITaskSubscriptionDrainChange {
+    // (undocumented)
+    readonly drainPrincipals: ReadonlyArray<string>;
+    // (undocumented)
+    readonly expectedRecordRevision: number;
+    // (undocumented)
+    readonly policyIdentity?: string;
     // (undocumented)
     readonly subscriptionId: SubscriptionId;
 }
@@ -3129,8 +3168,10 @@ export interface ITaskSubscriptionRegistration {
 export interface ITaskSubscriptionSpecification {
     // (undocumented)
     readonly consumerId: ConsumerId;
+    readonly drainPrincipals?: ReadonlyArray<string>;
     // (undocumented)
     readonly policy: ITaskDeliveryPolicy;
+    readonly policyIdentity?: string;
     // (undocumented)
     readonly selection: ITaskSelection;
     // (undocumented)
@@ -3206,6 +3247,7 @@ export interface ITrustedKindAuthorityParams {
     readonly actions: ReadonlyArray<TaskAction>;
     readonly epoch: string;
     readonly kinds?: ReadonlyArray<string>;
+    readonly policyIdentity?: string;
     readonly scopeMatch?: TrustedScopeMatch;
     readonly scopes?: ReadonlyArray<ITaskScope>;
 }
@@ -3322,6 +3364,9 @@ export const listRefusedCommands: ReadonlyArray<TrackedCommand['command']>;
 
 // @public
 export const mandatoryDeliveryCategories: ReadonlyArray<UpdateCategory>;
+
+// @public
+export const maxDrainPrincipals: number;
 
 // @public
 export function maximumClosureCharges(profile: ITaskCapacityProfile): Result<ReadonlyArray<ITaskCapacityCharge>>;
@@ -3544,6 +3589,7 @@ export class TaskBroker {
     recover(taskId: TaskId): Promise<TaskResult<ITaskRecoveryOutcome>>;
     registerExternal(principal: string, request: unknown): Promise<TaskResult<TaskRegistrationResult>>;
     resumePendingRegistration(taskId: TaskId): Promise<TaskResult<TaskRegistrationResult>>;
+    setSubscriptionDrain(binding: IBoundTaskViewParams, request: unknown): Promise<TaskResult<ITaskSubscription>>;
     subscribe(binding: IBoundTaskViewParams, request: unknown): Promise<TaskResult<ITaskSubscription>>;
     whenIdle(timeoutMs: number): Promise<TaskResult<true>>;
 }
