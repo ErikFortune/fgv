@@ -220,8 +220,9 @@ rushx build           # Builds only current project
 
 ## Runtime Requirements
 
-- **Node.js**: v20 LTS or later
-- **pnpm**: 8.15.9 (managed by Rush)
+- **Node.js**: `>=22.22.0 <23.0.0 || >=24.15.0 <25.0.0` (`rush.json` `nodeSupportedVersionRange`;
+  CI runs 24.15.0)
+- **pnpm**: 11.28.9 (`rush.json` `pnpmVersion`, managed by Rush)
 
 ---
 

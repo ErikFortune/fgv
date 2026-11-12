@@ -280,8 +280,13 @@ describe('isAdaptiveThinkingModel', () => {
 
   test('the real anthropic descriptor keeps legacy 4.x models on the legacy shape', () => {
     expect(AiAssist.isAdaptiveThinkingModel(descriptor, 'claude-sonnet-4-6')).toBe(false);
-    expect(AiAssist.isAdaptiveThinkingModel(descriptor, 'claude-opus-4-8')).toBe(false);
+    expect(AiAssist.isAdaptiveThinkingModel(descriptor, 'claude-opus-4-6')).toBe(false);
     expect(AiAssist.isAdaptiveThinkingModel(descriptor, 'claude-haiku-4-5-20251001')).toBe(false);
+  });
+
+  test('claude-opus-4-8 and claude-opus-4-7 take the adaptive shape (a budget 400s on both)', () => {
+    expect(AiAssist.isAdaptiveThinkingModel(descriptor, 'claude-opus-4-8')).toBe(true);
+    expect(AiAssist.isAdaptiveThinkingModel(descriptor, 'claude-opus-4-7')).toBe(true);
   });
 
   test('a dated Claude 5 snapshot id (dash-bounded) matches', () => {
@@ -306,18 +311,27 @@ describe('isAdaptiveThinkingModel', () => {
 });
 
 describe('usesMaxCompletionTokensField', () => {
-  test('returns true only for the real openai descriptor', () => {
-    const descriptor = AiAssist.getProviderDescriptor('openai').orThrow();
+  // Each of these API references marks max_tokens deprecated in favor of max_completion_tokens.
+  const declaring = ['openai', 'groq', 'xai-grok'];
+
+  test.each(declaring)('returns true for the registered %s descriptor', (providerId) => {
+    const descriptor = AiAssist.getProviderDescriptor(providerId as AiAssist.AiProviderId).orThrow();
     expect(AiAssist.usesMaxCompletionTokensField(descriptor)).toBe(true);
   });
 
   test('returns false for every other registered provider id', () => {
-    for (const providerId of AiAssist.getProviderDescriptors().map((d) => d.id)) {
-      if (providerId === 'openai') {
-        continue;
+    for (const descriptor of AiAssist.getProviderDescriptors()) {
+      if (!declaring.includes(descriptor.id)) {
+        expect(AiAssist.usesMaxCompletionTokensField(descriptor)).toBe(false);
       }
-      const descriptor = AiAssist.getProviderDescriptor(providerId).orThrow();
-      expect(AiAssist.usesMaxCompletionTokensField(descriptor)).toBe(false);
     }
+  });
+
+  test('reads the declaration, not the provider id', () => {
+    const openai = AiAssist.getProviderDescriptor('openai').orThrow();
+    const unset = { ...openai, chatOutputTokensField: undefined };
+    const legacy: AiAssist.IAiProviderDescriptor = { ...openai, chatOutputTokensField: 'max_tokens' };
+    expect(AiAssist.usesMaxCompletionTokensField(unset)).toBe(false);
+    expect(AiAssist.usesMaxCompletionTokensField(legacy)).toBe(false);
   });
 });

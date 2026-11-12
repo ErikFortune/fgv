@@ -363,6 +363,8 @@ describe('generic effort "none" — cross-provider "thinking off" spelling (anta
       apiKey: 'sk',
       temperature: 0.7,
       thinking: { effort: 'none' },
+      // Pinned to a model that has always turned thinking off with budget 0.
+      modelOverride: 'gemini-2.5-flash',
       ...testPrompt.toRequest()
     });
 

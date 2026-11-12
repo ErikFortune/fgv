@@ -20,6 +20,11 @@ import { Validators as Validators_3 } from '@fgv/ts-utils';
 function adaptSchemaKeywords(schema: JsonValue, capabilities: SchemaKeywordCapabilities): Result<JsonValue>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const allFsAbsolutePathPolicies: readonly ["unconfined", "confined", "verified"];
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
@@ -66,7 +71,12 @@ function arrayOf_2<T, TC = unknown>(validateElement: JsonCompatible_2.Validator<
 type ArrayValidator<T, TC = unknown> = Validation.Classes.ArrayValidator<JsonCompatibleType<T>, TC>;
 
 // @public
-type AtomicWriteGuarantee = 'session' | 'process-crash' | 'os-crash' | 'power-loss';
+type AtomicWriteGuarantee = (typeof atomicWriteGuarantees)[number];
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const atomicWriteGuarantees: readonly ["session", "process-crash", "os-crash", "power-loss"];
 
 // @public
 const boolean: Converter<boolean, IJsonConverterContext>;
@@ -232,6 +242,10 @@ class DirectoryItem<TCT extends string = string> implements IMutableBinaryFileTr
     //
     // (undocumented)
     getChildren(): Result<ReadonlyArray<FileTreeItem<TCT>>>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    getStorageIdentity(): IFileTreeStorageIdentity<TCT>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     protected readonly _hal: IFileTreeAccessors<TCT>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -374,6 +388,7 @@ declare namespace FileTree {
         IMutableFileTreeFileItem,
         IMutableBinaryFileTreeFileItem,
         IFileTreeDirectoryItem,
+        IFileTreeStorageIdentity,
         IMutableFileTreeDirectoryItem,
         IMutableBinaryFileTreeDirectoryItem,
         FileTreeItem,
@@ -385,6 +400,7 @@ declare namespace FileTree {
         IBinaryFileTreeAccessors,
         IMutableBinaryFileTreeAccessors,
         IPersistentFileTreeAccessors,
+        atomicWriteGuarantees,
         AtomicWriteGuarantee,
         IAtomicWriteCapabilities,
         IAtomicWriteOptions,
@@ -406,6 +422,9 @@ declare namespace FileTree {
         forFilesystem,
         IInMemoryFile,
         InMemoryTreeAccessors,
+        allFsAbsolutePathPolicies,
+        FsAbsolutePathPolicy,
+        IFsFileTreeInitParams,
         FsFileTreeAccessors
     }
 }
@@ -438,6 +457,7 @@ function foldedKeywordsText(folded: ReadonlyArray<readonly [SchemaFoldedKeyword,
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 function forFilesystem<TCT extends string = string>(prefix?: string): Result<FileTree_2<TCT>>;
@@ -445,12 +465,19 @@ function forFilesystem<TCT extends string = string>(prefix?: string): Result<Fil
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-function forFilesystem<TCT extends string = string>(params?: IFileTreeInitParams<TCT>): Result<FileTree_2<TCT>>;
+function forFilesystem<TCT extends string = string>(params?: IFsFileTreeInitParams<TCT>): Result<FileTree_2<TCT>>;
 
 // @public
 function fromJson(json: JsonObject, options?: IFromJsonOptions): Result<ISchemaValidator<JsonValue>>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+type FsAbsolutePathPolicy = StringOneOf<typeof allFsAbsolutePathPolicies>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -462,11 +489,18 @@ function fromJson(json: JsonObject, options?: IFromJsonOptions): Result<ISchemaV
 class FsFileTreeAccessors<TCT extends string = string> implements IMutableBinaryFileTreeAccessors<TCT>, IAtomicFileTreeAccessors<TCT> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    constructor(params?: IFileTreeInitParams<TCT>);
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    constructor(params?: IFsFileTreeInitParams<TCT>);
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly absolutePathPolicy: FsAbsolutePathPolicy;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
     cleanupAtomicTemporaries(directory: string): Result<ReadonlyArray<string>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static create<TCT extends string = string>(params?: IFsFileTreeInitParams<TCT>): Result<FsFileTreeAccessors<TCT>>;
     createDirectory(dirPath: string): Result<string>;
     deleteDirectory(dirPath: string): Result<boolean>;
     deleteFile(path: string): Result<boolean>;
@@ -490,8 +524,15 @@ class FsFileTreeAccessors<TCT extends string = string> implements IMutableBinary
     getItem(itemPath: string): Result<FileTreeItem<TCT>>;
     protected readonly _inferContentType: (filePath: string) => Result<TCT | undefined>;
     joinPaths(...paths: string[]): string;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly prefix: string | undefined;
+    readonly realPath: boolean;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     resolveAbsolutePath(...paths: string[]): string;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    resolveRealPath(itemPath: string): Result<string>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
@@ -552,6 +593,7 @@ interface IAtomicFileTreeDirectoryItem<TCT extends string = string> extends IMut
 interface IAtomicWriteCapabilities {
     readonly atomicReplace: boolean;
     readonly guarantees: ReadonlyArray<AtomicWriteGuarantee>;
+    readonly reason?: string;
 }
 
 // @public
@@ -629,12 +671,15 @@ interface IFileTreeAccessors<TCT extends string = string> {
     getItem(path: string): Result<FileTreeItem<TCT>>;
     joinPaths(...paths: string[]): string;
     resolveAbsolutePath(...paths: string[]): string;
+    resolveRealPath?(path: string): Result<string>;
 }
 
 // @public
 interface IFileTreeDirectoryItem<TCT extends string = string> {
     readonly absolutePath: string;
     getChildren(): Result<ReadonlyArray<FileTreeItem<TCT>>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    getStorageIdentity?(): IFileTreeStorageIdentity<TCT>;
     readonly name: string;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly type: 'directory';
@@ -666,6 +711,15 @@ interface IFileTreeInitParams<TCT extends string = string> {
     prefix?: string;
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IFileTreeStorageIdentity<TCT extends string = string> {
+    readonly accessors: IFileTreeAccessors<TCT>;
+    readonly path: string;
+    readonly realPath?: string;
+}
+
 // @public
 interface IFilterSpec {
     exclude?: (string | RegExp)[];
@@ -675,6 +729,15 @@ interface IFilterSpec {
 // @public
 interface IFromJsonOptions {
     readonly patternValidator?: SchemaPatternValidator;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IFsFileTreeInitParams<TCT extends string = string> extends IFileTreeInitParams<TCT> {
+    absolutePathPolicy?: FsAbsolutePathPolicy;
+    realPath?: boolean;
 }
 
 // @internal
@@ -1095,6 +1158,13 @@ interface IStringSchemaOptions extends ISchemaOptions {
 
 // @public
 type ItemNameTransformFunction<T> = (name: string, item: T) => Result<string>;
+
+// @internal
+export class _JsonActivePath {
+    container<R>(container: object, onCycle: (message: string) => R, body: () => R): R;
+    member<T>(member: string | number, body: () => T): T;
+    get path(): string;
+}
 
 // @public
 export interface JsonArray extends Array<JsonValue> {

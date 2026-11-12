@@ -353,6 +353,39 @@ export interface IFileTreeDirectoryItem<TCT extends string = string> {
    * or `Failure` with an error message otherwise.
    */
   getChildren(): Result<ReadonlyArray<FileTreeItem<TCT>>>;
+
+  /**
+   * Says what storage this directory names, so a consumer can tell whether two
+   * directory items reach the same place. Optional: an item that cannot say
+   * leaves it absent. See {@link FileTree.IFileTreeStorageIdentity}.
+   */
+  getStorageIdentity?(): IFileTreeStorageIdentity<TCT>;
+}
+
+/**
+ * What storage a {@link FileTree.IFileTreeDirectoryItem | directory item} names.
+ *
+ * @remarks
+ * Two items name the same directory when they share `accessors` and `path`, or
+ * when both carry a `realPath` and those are equal. Nothing else is detectable:
+ * two separate accessor objects over one non-filesystem backing store (two
+ * `localStorage` accessors over the same key, say) carry no `realPath` and look
+ * like different storage.
+ * @public
+ */
+export interface IFileTreeStorageIdentity<TCT extends string = string> {
+  /** The accessors object that serves the item. */
+  readonly accessors: IFileTreeAccessors<TCT>;
+
+  /** The item's absolute path, as its accessors resolve it. */
+  readonly path: string;
+
+  /**
+   * For a filesystem-backed item, its canonical path with every symbolic link
+   * resolved. Absent for storage that has no such notion, or when the path
+   * cannot be resolved (it does not exist).
+   */
+  readonly realPath?: string;
 }
 
 /**
@@ -519,6 +552,16 @@ export interface IFileTreeAccessors<TCT extends string = string> {
    * @returns The resolved absolute path.
    */
   resolveAbsolutePath(...paths: string[]): string;
+
+  /**
+   * Resolves a path to its canonical real path, with every symbolic link
+   * resolved. Optional: only storage that has symbolic links (a filesystem)
+   * implements it.
+   * @param path - The path to resolve.
+   * @returns `Success` with the real path, or `Failure` if it cannot be
+   * resolved (for example, it does not exist).
+   */
+  resolveRealPath?(path: string): Result<string>;
 
   /**
    * Gets the extension of a path.
@@ -717,6 +760,13 @@ export interface IPersistentFileTreeAccessors<TCT extends string = string>
 // ============================================================================
 
 /**
+ * Every {@link FileTree.AtomicWriteGuarantee | atomic write guarantee}, ordered
+ * weakest to strongest, so a consumer can rank one against another.
+ * @public
+ */
+export const atomicWriteGuarantees = ['session', 'process-crash', 'os-crash', 'power-loss'] as const;
+
+/**
  * Durability guarantee an atomic write claims to honor.
  *
  * @remarks
@@ -729,7 +779,7 @@ export interface IPersistentFileTreeAccessors<TCT extends string = string>
  * either today fails rather than silently downgrading.
  * @public
  */
-export type AtomicWriteGuarantee = 'session' | 'process-crash' | 'os-crash' | 'power-loss';
+export type AtomicWriteGuarantee = (typeof atomicWriteGuarantees)[number];
 
 /**
  * Reports what atomic replacement a directory's backing store can actually
@@ -758,6 +808,13 @@ export interface IAtomicWriteCapabilities {
    * weakest to strongest. Empty when `atomicReplace` is `false`.
    */
   readonly guarantees: ReadonlyArray<AtomicWriteGuarantee>;
+
+  /**
+   * Why the store answered as it did, in a form that can be shown to a caller
+   * whose durable write would be refused — for a capable store as well as an
+   * incapable one. Optional: a store that cannot say leaves it absent.
+   */
+  readonly reason?: string;
 }
 
 /**

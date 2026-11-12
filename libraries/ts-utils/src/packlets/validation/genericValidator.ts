@@ -20,7 +20,17 @@
  * SOFTWARE.
  */
 
-import { Brand, Failure, Result, fail, succeed } from '../base';
+import {
+  Brand,
+  Failure,
+  Result,
+  _errorMessage,
+  _isStackExhaustion,
+  _resultBoundary,
+  fail,
+  formatValueForMessage,
+  succeed
+} from '../base';
 import { ConstraintTrait, ValidatorTraits } from './traits';
 import {
   Constraint,
@@ -29,6 +39,12 @@ import {
   ValidatorFunc,
   ValidatorOptions
 } from './validator';
+
+/**
+ * The shared boundary state, held locally: reading it through the package's re-export chain costs
+ * a getter call per access on the hot path.
+ */
+const boundary: { depth: number } = _resultBoundary;
 
 /**
  * Options used to initialize a {@link Validation.Base.GenericValidator | GenericValidator}.
@@ -62,6 +78,17 @@ export class GenericValidator<T, TC = unknown> implements Validator<T, TC> {
 
   /**
    * Constructs a new {@link Validation.Base.GenericValidator | GenericValidator<T>}.
+   * @remarks
+   * The validator is a `Result` boundary, so it never throws: if the supplied validator function
+   * throws (a bug in a custom callback, or a getter or Proxy trap on the value being validated),
+   * validation fails with `validator threw: <message>` instead, and `guard` returns `false`. Stack
+   * exhaustion inside nested validators unwinds to the outermost one and fails once there; a
+   * `captureResult` (or any `try`) the caller places between two nested validators catches it there
+   * instead.
+   *
+   * The conversion to a `Failure` masks the error wherever a failure is expected: `guard`, `or` and
+   * `oneOf` (which try the alternative), and `orDefault` all treat a buggy callback like invalid
+   * input. `orThrow` re-raises the message, but not the original error's class or stack.
    * @param params - The {@link Validation.Base.GenericValidatorConstructorParams | constructor params}
    * used to configure validation.
    */
@@ -69,7 +96,24 @@ export class GenericValidator<T, TC = unknown> implements Validator<T, TC> {
     if (!params.validator) {
       throw new Error('No validator function supplied');
     }
-    this._validator = params.validator;
+    const validator = params.validator;
+    this._validator = (from: unknown, context?: TC, self?: Validator<T, TC>): boolean | Failure<T> => {
+      // written out rather than shared so the hot path allocates nothing; see _resultBoundary
+      const nested = boundary.depth > 0;
+      let result: boolean | Failure<T>;
+      boundary.depth++;
+      try {
+        result = validator(from, context, self);
+      } catch (err) {
+        if (nested && _isStackExhaustion(err)) {
+          throw err;
+        }
+        result = fail<T>(`validator threw: ${_errorMessage(err)}`);
+      } finally {
+        boundary.depth--;
+      }
+      return result;
+    };
     this._options = params.options ?? {};
     this.traits = new ValidatorTraits(params.traits);
   }
@@ -149,7 +193,7 @@ export class GenericValidator<T, TC = unknown> implements Validator<T, TC> {
           if (typeof constraintResult === 'boolean') {
             return constraintResult
               ? true
-              : fail(`Invalid value "${JSON.stringify(from)}":  does not meet constraint.`);
+              : fail(`Invalid value "${formatValueForMessage(from)}":  does not meet constraint.`);
           }
           return constraintResult;
         }

@@ -497,4 +497,31 @@ export interface IBoundTaskDelivery {
   acknowledge(receipt: unknown): Promise<TaskResult<IAcknowledgementResult>>;
   /** Removes an issued manifest early. Its obligations stay owed; its history, if any, stays. */
   abandon(deliveryId: DeliveryId): Promise<TaskResult<DeliveryId>>;
+  /**
+   * The subscription's issued receipts not yet acknowledged, oldest first — how a host finds the
+   * receipts a crash left behind, since a prepared context it never processed holds a manifest no
+   * one will acknowledge, and an id that manifest names cannot be disposed of until it is abandoned
+   * or expires.
+   *
+   * @remarks
+   * Read under the writer, so the list is one committed state of the subscription's record. It is a
+   * moment, not a hold: an acknowledgement or abandonment may commit right after it. Abandoning a
+   * listed receipt that was acknowledged meanwhile removes a manifest whose history is already
+   * committed — nothing is lost — and a later replay of that acknowledgement is then refused as an
+   * invalid receipt. Expired manifests not yet removed are listed with their `expiresAt`.
+   *
+   * Lists identities and times only, never what a receipt included. The read is a gated section: it
+   * takes a writer-queue slot and passes the broker's `writeGuard`, so a paused guard holds it.
+   */
+  issued(): Promise<TaskResult<ReadonlyArray<ITaskIssuedReceiptSummary>>>;
+}
+
+/**
+ * One unacknowledged issued receipt, as {@link IBoundTaskDelivery.issued} lists it.
+ * @public
+ */
+export interface ITaskIssuedReceiptSummary {
+  readonly deliveryId: DeliveryId;
+  readonly issuedAt: Instant;
+  readonly expiresAt: Instant;
 }

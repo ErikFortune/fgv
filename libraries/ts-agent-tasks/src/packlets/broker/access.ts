@@ -14,7 +14,8 @@ import {
   IUnresolvedTaskReference,
   TaskAccessRole,
   TaskAction,
-  TaskResult
+  TaskResult,
+  _taskScopeKey
 } from '../types';
 import { ok, taskFailure } from './failures';
 
@@ -42,11 +43,6 @@ function _scopesOf(subject: AccessSubject): ReadonlyArray<ITaskScope> {
   return subject.task !== undefined ? subject.task.envelope.scopes : subject.reference.scopes;
 }
 
-/** A collision-free key for a scope. */
-export function scopeKey(scope: ITaskScope): string {
-  return JSON.stringify([scope.namespace, scope.key]);
-}
-
 /**
  * One bound principal's standing: its identity, maximum selectors, policy and projector.
  *
@@ -61,7 +57,7 @@ export class AccessContext {
   public readonly scopes: ReadonlyArray<ITaskScope>;
   public readonly creationScopes: ReadonlyArray<ITaskScope>;
   public readonly projector: ITaskProjector;
-  private readonly _scopeKeys: ReadonlySet<string>;
+  private readonly _taskScopeKeys: ReadonlySet<string>;
   private readonly _authorization: ITaskAuthorization;
   private readonly _logger: Logging.ILogger;
 
@@ -79,14 +75,14 @@ export class AccessContext {
     this.scopes = params.scopes;
     this.creationScopes = params.creationScopes;
     this.projector = params.projector;
-    this._scopeKeys = new Set(params.scopes.map(scopeKey));
+    this._taskScopeKeys = new Set(params.scopes.map(_taskScopeKey));
     this._authorization = params.authorization;
     this._logger = params.logger;
   }
 
   /** Whether a scope lies within this view's maximum selectors. */
   public selects(scope: ITaskScope): boolean {
-    return this._scopeKeys.has(scopeKey(scope));
+    return this._taskScopeKeys.has(_taskScopeKey(scope));
   }
 
   /**

@@ -88,6 +88,134 @@ describe.each(atomicTestRoots())('FsFileTreeAccessors atomic writes on $label', 
     expect(isAtomicAccessors(accessors)).toBe(true);
   });
 
+  test('a directory reached through a symbolic link is qualified as its target', () => {
+    const link = path.join(container, 'link');
+    fs.symlinkSync(root, link);
+    const linked = new FsFileTreeAccessors({ prefix: link, mutable: true });
+    expect(linked.getAtomicWriteCapabilities(link)).toSucceedAndSatisfy((capabilities) => {
+      expect(capabilities.atomicReplace).toBe(qualified);
+    });
+    if (qualified) {
+      expect(
+        linked.writeFileAtomically(path.join(link, 'r.json'), NEW, { guarantee: 'process-crash' })
+      ).toSucceed();
+      expect(fs.readFileSync(path.join(root, 'r.json'), 'utf8')).toBe(NEW);
+    }
+  });
+
+  test('a directory inside the root that links outside it is refused, by inquiry, write and cleanup alike', () => {
+    const outside = path.join(container, 'outside');
+    fs.mkdirSync(outside);
+    const escape = path.join(root, 'escape');
+    fs.symlinkSync(outside, escape);
+    expect(accessors.getAtomicWriteCapabilities(escape)).toFailWith(
+      /resolves through a symbolic link to .*outside the tree root/i
+    );
+    expect(
+      accessors.writeFileAtomically(path.join(escape, 'r.json'), NEW, { guarantee: 'process-crash' })
+    ).toFailWithDetail(/resolves through a symbolic link to .*outside the tree root/i, {
+      code: 'not-writable',
+      stage: 'validate',
+      visibility: 'unchanged'
+    });
+    expect(accessors.cleanupAtomicTemporaries(escape)).toFailWith(/outside the tree root/i);
+    expect(fs.existsSync(path.join(outside, 'r.json'))).toBe(false);
+  });
+
+  test("a tree rooted at '/' confines nothing away and still writes atomically", () => {
+    const rooted = new FsFileTreeAccessors({ prefix: '/', mutable: true });
+    expect(rooted.getAtomicWriteCapabilities(root)).toSucceedAndSatisfy((capabilities) => {
+      expect(capabilities.atomicReplace).toBe(qualified);
+    });
+    expect(rooted.cleanupAtomicTemporaries(root)).toSucceedWith([]);
+    if (qualified) {
+      expect(
+        rooted.writeFileAtomically(path.join(root, 'r.json'), NEW, { guarantee: 'process-crash' })
+      ).toSucceed();
+      expect(fs.readFileSync(path.join(root, 'r.json'), 'utf8')).toBe(NEW);
+    }
+  });
+
+  test('commits through the real directory the confinement check accepted', () => {
+    fs.mkdirSync(path.join(root, 'target'));
+    const inner = path.join(root, 'inner');
+    fs.symlinkSync(path.join(root, 'target'), inner);
+    const renames: string[] = [];
+    const realRename = fs.renameSync;
+    jest.spyOn(fs, 'renameSync').mockImplementation((from: fs.PathLike, to: fs.PathLike) => {
+      renames.push(String(to));
+      realRename(from, to);
+    });
+    try {
+      const written = accessors.writeFileAtomically(path.join(inner, 'r.json'), NEW, {
+        guarantee: 'process-crash'
+      });
+      if (qualified) {
+        expect(written).toSucceed();
+        expect(renames).toEqual([path.join(fs.realpathSync(path.join(root, 'target')), 'r.json')]);
+      }
+    } finally {
+      jest.restoreAllMocks();
+    }
+  });
+
+  test('sweeps through the real directory the confinement check accepted', () => {
+    fs.mkdirSync(path.join(root, 'target'));
+    const inner = path.join(root, 'inner');
+    fs.symlinkSync(path.join(root, 'target'), inner);
+    // A spy without an implementation calls through; only its arguments are of interest.
+    const readdir = jest.spyOn(fs, 'readdirSync');
+    try {
+      expect(accessors.cleanupAtomicTemporaries(inner)).toSucceedWith([]);
+      expect(readdir.mock.calls.map((call) => String(call[0]))).toEqual([
+        fs.realpathSync(path.join(root, 'target'))
+      ]);
+    } finally {
+      jest.restoreAllMocks();
+    }
+  });
+
+  test('a directory inside the root that links elsewhere inside it is accepted', () => {
+    fs.mkdirSync(path.join(root, 'target'));
+    const inner = path.join(root, 'inner');
+    fs.symlinkSync(path.join(root, 'target'), inner);
+    expect(accessors.getAtomicWriteCapabilities(inner)).toSucceedAndSatisfy((capabilities) => {
+      expect(capabilities.atomicReplace).toBe(qualified);
+    });
+    if (qualified) {
+      expect(
+        accessors.writeFileAtomically(path.join(inner, 'r.json'), NEW, { guarantee: 'process-crash' })
+      ).toSucceed();
+      expect(fs.readFileSync(path.join(root, 'target', 'r.json'), 'utf8')).toBe(NEW);
+    }
+  });
+
+  test('resolves real paths through symbolic links, and fails for a path that does not exist', () => {
+    const link = path.join(container, 'link');
+    fs.symlinkSync(root, link);
+    expect(accessors.resolveRealPath(link)).toSucceedWith(fs.realpathSync(root));
+    expect(accessors.resolveRealPath(path.join(container, 'absent'))).toFailWith(/cannot resolve real path/i);
+  });
+
+  test('a directory item names its storage, real path included', () => {
+    const link = path.join(container, 'link');
+    fs.symlinkSync(root, link);
+    const direct = DirectoryItem.create(root, accessors).orThrow().getStorageIdentity();
+    const viaLink = DirectoryItem.create(link, new FsFileTreeAccessors({ mutable: true }))
+      .orThrow()
+      .getStorageIdentity();
+    expect(direct.accessors).toBe(accessors);
+    expect(direct.path).toBe(root);
+    expect(viaLink.path).toBe(link);
+    expect(viaLink.realPath).toBe(direct.realPath);
+    expect(
+      DirectoryItem.create(path.join(container, 'absent'), accessors).orThrow().getStorageIdentity()
+    ).toEqual({
+      accessors,
+      path: path.join(container, 'absent')
+    });
+  });
+
   test('reports capabilities for the root, and never claims more than process-crash', () => {
     expect(accessors.getAtomicWriteCapabilities(root)).toSucceedAndSatisfy((capabilities) => {
       expect(capabilities.atomicReplace).toBe(qualified);
@@ -95,6 +223,9 @@ describe.each(atomicTestRoots())('FsFileTreeAccessors atomic writes on $label', 
       expect(capabilities.guarantees).not.toContain('power-loss');
       if (qualified) {
         expect(capabilities.guarantees).toEqual(['session', 'process-crash']);
+        expect(capabilities.reason).toMatch(/on linux$/);
+      } else {
+        expect(capabilities.reason).toMatch(/not qualified|cannot identify/i);
       }
     });
   });
@@ -387,6 +518,7 @@ describe('FsFileTreeAccessors atomic writes and mutability policy', () => {
     expect(accessors.getAtomicWriteCapabilities('/proc')).toSucceedAndSatisfy((capabilities) => {
       expect(capabilities.atomicReplace).toBe(false);
       expect(capabilities.guarantees).toEqual([]);
+      expect(capabilities.reason).toMatch(/filesystem type 0x9fa0 .* is not qualified/);
     });
     expect(
       accessors.writeFileAtomically('/proc/fgv-atomic-probe.json', NEW, { guarantee: 'process-crash' })

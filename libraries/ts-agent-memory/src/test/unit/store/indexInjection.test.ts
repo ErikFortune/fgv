@@ -334,6 +334,7 @@ describe('FileTreeMemoryStore index injection', () => {
       const first = storeWith(undefined, root);
       (await first.put(knowledgeRecord('doc-a', 'alpha'))).orThrow();
 
+      first.dispose();
       const reopened = storeWith(undefined, root);
       expect(await reopened.list(scanEveryRecord())).toSucceedAndSatisfy(
         (records: ReadonlyArray<IMemoryRecord<unknown>>) => {
@@ -341,10 +342,11 @@ describe('FileTreeMemoryStore index injection', () => {
           expect(records[0].envelope.id).toBe('doc-a');
         }
       );
-      // seq resumes past the persisted high-water mark rather than restarting at 1.
+      // seq resumes past the persisted high-water mark rather than restarting at 1. It is strictly
+      // increasing, not dense: a reopen resumes past the last reservation, not the last record.
       expect(await reopened.put(knowledgeRecord('doc-b', 'beta'))).toSucceedAndSatisfy(
         (record: IMemoryRecord<unknown>) => {
-          expect(record.envelope.seq).toBe(2);
+          expect(record.envelope.seq).toBeGreaterThan(1);
         }
       );
     });
@@ -376,6 +378,7 @@ describe('FileTreeMemoryStore index injection', () => {
       (await seeded.put(knowledgeRecord('doc-b', 'beta'))).orThrow();
 
       const recording = RecordingMemoryIndex.create().orThrow();
+      seeded.dispose();
       const reopened = storeWith(recording, root);
 
       // create() rebuilt the injected index exactly once, with both persisted records.

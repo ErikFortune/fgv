@@ -60,6 +60,22 @@ export interface IRelatedTask {
 }
 
 /**
+ * What a catalog mutation tells the policy beyond its subject: fixed, or derived from the record.
+ * @internal
+ */
+export type CatalogAccess =
+  | Pick<ITaskAccessRequest, 'targetResponsibility' | 'scopes'>
+  | ((record: ITaskCommitRecord) => Pick<ITaskAccessRequest, 'targetResponsibility' | 'scopes'>);
+
+/** The access a mutation describes, for the record it is authorized against. */
+function _accessFor(
+  access: CatalogAccess | undefined,
+  record: ITaskCommitRecord
+): Pick<ITaskAccessRequest, 'targetResponsibility' | 'scopes'> | undefined {
+  return typeof access === 'function' ? access(record) : access;
+}
+
+/**
  * One catalog mutation of an existing task, described for the shared pipeline.
  * @internal
  */
@@ -70,8 +86,11 @@ export interface ICatalogMutation<TReceipt extends ITaskMutationResult> {
   /** The converted request, stored as the operation's dedup identity. */
   readonly request: JsonValue;
   readonly receiptConverter: Converter<TReceipt>;
-  /** What the policy is told beyond the subject. */
-  readonly access?: Pick<ITaskAccessRequest, 'targetResponsibility' | 'scopes'>;
+  /**
+   * What the policy is told beyond the subject — fixed, or derived from the record the operation
+   * authorizes against (a scope change's resulting scope set).
+   */
+  readonly access?: CatalogAccess;
   /** Checks on the visible, resolved, non-archived subject before anything is authorized. */
   readonly admit?: (record: IResolvedTaskCommitRecord) => TaskResult<true>;
   /**
@@ -307,7 +326,10 @@ export async function runCatalogMutation<TReceipt extends ITaskMutationResult>(
   }
   const replayed: IStoredTaskOperation | undefined = storedOperation(record, operationId);
   if (replayed !== undefined) {
-    const receipt = await replayCatalog(ctx, subject, replayed, mutation);
+    const receipt = await replayCatalog(ctx, subject, replayed, {
+      ...mutation,
+      access: _accessFor(mutation.access, record)
+    });
     if (receipt.isFailure()) {
       return receipt;
     }
@@ -318,7 +340,7 @@ export async function runCatalogMutation<TReceipt extends ITaskMutationResult>(
   }
   // Authority is decided before any mutation-specific fact about the task is disclosed: a
   // principal that may read but not perform this action learns nothing from the refusal.
-  if (!(await ctx.may(mutation.action, subject, 'subject', mutation.access))) {
+  if (!(await ctx.may(mutation.action, subject, 'subject', _accessFor(mutation.access, record)))) {
     return denied(taskId, mutation.action, operationId);
   }
   if (record.recordType === 'unresolved') {

@@ -1,0 +1,57 @@
+id: mcp-task-support-and-bounds
+status: shipped
+packages: ['@fgv/ts-extras-mcp', '@fgv/ts-extras', '@fgv/testbed']
+prs: [757]
+openPrs: []
+opened: 2026-10-26
+closed: 2026-10-26
+summary:
+  intended: >
+    Resolve personaility#689 and #690. Carry an MCP tool's execution.taskSupport onto
+    IMcpToolDescriptor (converter-read; an unknown value kept as undefined and logged, never failing
+    discovery) and have adaptMcpTools skip a 'required' tool structurally; add a closed
+    kind: 'schema' | 'wire' | 'task-support' to IMcpSkippedTool; lift maxResponseBytes out of the
+    guarded fetch's refused set as an opt-in counting stream that errors identifiably past the cap;
+    add opt-in maxPages and maxTotalMs bounds to listMcpTools (a new IListMcpToolsOptions), failing
+    rather than truncating, validated, and forwarded through adaptMcpTools; update the docs.
+  shipped: >
+    All five decisions. execution?: { taskSupport? } on the descriptor, read with enumeratedValue;
+    'required' tools skipped first with kind 'task-support'; McpSkipKind with 'wire' distinguished
+    from 'schema'. createGuardedFetch({ maxResponseBytes }) refuses a declared Content-Length over the
+    cap and otherwise wraps the body in a no-read-ahead counting stream that cancels upstream and
+    errors with a 'too-large' GuardedFetchError naming maxResponseBytes; through MCP it surfaces as
+    egress-blocked / too-large. listMcpTools takes IListMcpToolsOptions with maxPages and maxTotalMs,
+    failing with a new 'limit-exceeded' McpFailureReason ({ limit }); adaptMcpTools forwards them via
+    a discovery option. The testbed mcp-probe prints each skip's kind.
+  diverged: >
+    Through the real SDK an unknown taskSupport fails the listing page as protocol — the SDK's own
+    tools/list schema refuses it — so "never fails discovery" holds only for values that reach the
+    package; bypassing the SDK's list schema was declined because it would also skip the SDK's
+    tool-metadata cache. adaptMcpTools forwards a nested discovery option (a superset that also
+    carries timeoutMs and signal) rather than two flat fields; maxPages must be an integer; the
+    testbed sample was touched because its fixtures construct IMcpSkippedTool.
+  sourceLine: '**Shipped:** MCP tools that require task execution are skipped by `adaptMcpTools` with a structured `kind`, every skip says why in a closed `McpSkipKind`, a paged `listMcpTools` can be bounded by page count and total time, and a guarded fetch can cap the bytes a response delivers — each bound opt-in, and each failing loudly rather than truncating.'
+  headline: >
+    MCP tools that need task execution are skipped with a reason kind, tool listing can be bounded by
+    pages and total time, and a guarded fetch can cap response bytes — each opt-in, each failing loudly.
+keywords:
+  [
+    'MCP tasks',
+    'task-augmented execution',
+    'taskSupport',
+    'tool execution metadata',
+    'skip reason discriminator',
+    'pagination bound',
+    'nextCursor',
+    'overall deadline',
+    'response size cap',
+    'counting ReadableStream',
+    'egress bound',
+    'too-large',
+    'limit-exceeded',
+    'untrusted server'
+  ]
+relatedStreams:
+  - { id: mcp-round-2b, relationship: 'built the guarded-fetch MCP egress this bounds' }
+  - { id: mcp-client-cancellation, relationship: 'introduced McpFailureReason and the per-request options this extends' }
+sourceHash: 5a52434dde5d2a2b # first 16 hex of sha256 over brief.md, state.md and result.md concatenated in that order

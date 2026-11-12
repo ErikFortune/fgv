@@ -4,6 +4,7 @@
  */
 
 import { IEdge, IEdgeTarget, IMemoryEnvelope, IMemoryRecord, Kind, MemoryId, Tag } from '../types';
+import { IMemoryWriteConflict } from '../store';
 
 /**
  * A single unit of raw source material handed to the ingest pipeline. The host
@@ -127,11 +128,15 @@ export type ResolutionVerdict =
  * - `written` — persisted as a fresh record (verdict `new`), or as a superseding
  *   record (verdict `supersede`).
  * - `deduped` — not written; an existing record satisfied it (verdict
- *   `duplicate-of`, incl. every layer-1 exact `{ kind, body }` match).
+ *   `duplicate-of`, incl. every layer-1 exact `{ kind, body }` match; or a `merge-into` whose
+ *   merged content the store found already stored under another id — its `id` is that record's).
  * - `merged` — merged into an existing target entity (verdict `merge-into`).
+ * - `conflict` — not written: a `merge-into` whose target changed after the pre-ingest snapshot
+ *   the merge was planned from. The store refused the write; nothing is retried. See
+ *   {@link IIngestedRecordResult.conflict}.
  * @public
  */
-export type IngestDisposition = 'written' | 'deduped' | 'merged';
+export type IngestDisposition = 'written' | 'deduped' | 'merged' | 'conflict';
 
 /**
  * A stage-5 attributed edge proposal: the {@link ICandidateEdge.edge | edge} to
@@ -161,13 +166,18 @@ export interface IIngestedRecordResult {
   readonly disposition: IngestDisposition;
   /**
    * The stored record's id: the newly-written id (`written` / `merged`), or the
-   * existing target's id (`deduped`).
+   * existing target's id (`deduped`, and the merge target's for `conflict`).
    */
   readonly id: MemoryId;
   /** The persisted record, when a write happened (`written` / `merged`). */
   readonly record?: IMemoryRecord<unknown>;
   /** The stage-5 edges attached to this candidate before the write. */
   readonly edges: ReadonlyArray<ICandidateEdge>;
+  /**
+   * Set exactly when `disposition` is `conflict`: the `seq` the merge expected at its target and
+   * the `seq` the store found there (`'absent'` when the target had gone).
+   */
+  readonly conflict?: IMemoryWriteConflict;
   /**
    * Informational diagnostic, set to `'temporal-versioned'` when the
    * contradicts→temporal interlock is recognized: a `contradicts` edge was

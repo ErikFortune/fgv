@@ -3,6 +3,7 @@
 exports[`@fgv/testbed scenario registry registry exposes the expected scenario ids (snapshot) 1`] = `
 Array [
   "anthropic-client-tools",
+  "anthropic-client-tools-fable",
   "openai-client-tools",
   "gemini-client-tools",
   "xai-client-tools",

@@ -32,8 +32,10 @@
 - **N independent async `Result`-returning operations, with a concurrency bound?** → the **async `Result` family** in `@fgv/ts-utils/base`: `mapResultsAsync` / `mapDetailedResultsAsync` / `mapSuccessAsync` / `mapFailuresAsync` / `allSucceedAsync`. Same names, parameter order and folds as their sync siblings; add `{ concurrency }` (`IAsyncResultOptions`, defaulting to the exported finite `DEFAULT_RESULT_CONCURRENCY`) to bound in-flight work. **You cannot pass `Promise<Result<T>>[]` — and that is the whole point.** By the time a promise exists its operation has already started, so a collector handed materialized promises has nothing left to bound; every async member therefore takes *deferred* work. Two forms: **thunks** (`mapResultsAsync(work: Iterable<AsyncDeferredResult<T>>, options?)`) for N *different* operations or heterogeneous fan-out, and **`(items, fn)`** (`mapResultsAsync(items, (item, index) => Promise<Result<T>>, options?)`) for N applications of *one* operation — the `(items, fn)` form is the one to reach for when you want the mistake to be unsayable. Results come back **in input order**, not completion order. **Don't hand-roll `await Promise.all(xs.map(f))` + `mapResults`** — that is `mapResultsAsync` with unbounded concurrency spelled out longhand.
 - **Async operation that is *serial by contract*, not a fan-out?** → `populateObjectAsync` (keyed heterogeneous object; each initializer sees the `Partial<T>` populated before it — dependency sequencing) or `firstSuccessAsync` (ordered fallback: try each candidate in turn, stop at the first success — e.g. a local override before a default, or a search path in precedence order). Both are **transitively async** — the algorithm is the sync one, only the primitives it calls are async — so both take an optional `IMessageAggregator` and, deliberately, **no `IAsyncResultOptions`**: a `concurrency` field on a serial-by-definition operation would be a lie in the type signature. Reach for these instead of a hand-rolled `for`/`await` loop that forgets to aggregate the failed attempts.
 - **Branded ID type?** → `Brand<T>` from `@fgv/ts-utils/base`.
+- **Two-part composite ID (`collection:item`) whose one part may itself contain the separator?** → `Converters.compositeIdFromString` / `Converters.compositeId` with `{ split: 'first' | 'last' }`, or `Validators.compositeId({ …, split })`. `'exact'` (the default) refuses a second separator; `'first'` / `'last'` hand the remainder untouched to the item / collection part. For a nested composite, validate that part as a plain string and re-parse it with its own composite converter — don't hand-roll `indexOf` + `slice`.
 - **Generating a UUID?** → `generateUuid()` from `@fgv/ts-utils/base` for the call-site one-liner; `ICryptoProvider.generateUuid()` from `@fgv/ts-extras/crypto-utils` when you already hold a provider or want a deterministic test override. Never call `globalThis.crypto.randomUUID()` directly.
 - **Hashing / canonical hash of an object?** → `Crc32Normalizer` (`ts-utils/hash`) or `Md5Normalizer` (`ts-extras/hash` / `ts-web-extras/crypto-utils`).
+- **Putting an arbitrary value into a failure or diagnostic message?** → `formatValueForMessage(value, options?)` from `@fgv/ts-utils/base`. Never `JSON.stringify` it: that throws on a cycle or a `BigInt` and renders a function or symbol as `undefined`. See [below](#formatvalueformessage--failure-text-that-cannot-throw).
 - **Need stable canonical JSON (RFC 8785)?** → `Normalizer.canonicalize()` (available on `HashingNormalizer`, `Crc32Normalizer`, or any `Normalizer` subclass) from `@fgv/ts-utils` hash packlet.
 
 ---
@@ -71,12 +73,79 @@ would be a promise the library cannot keep.
 
 ---
 
+## `formatValueForMessage` — failure text that cannot throw
+
+`formatValueForMessage(value, { maxLength?, indent?, style? })` renders any value as text for an
+error or diagnostic message, and **never throws**. Every converter and validator in `ts-utils` and
+`ts-json-base` formats its failure messages with it.
+
+**Why it exists.** A converter that formats its own failure with `JSON.stringify(from)` throws on a
+cyclic input: `TypeError: Converting circular structure to JSON`. The throw escapes `convert`, skips
+every `Result` combinator downstream, and turns a clean failure into a crash. personaility#713 was a
+production 500 caused by a nested `Converters.object` over a live Node socket graph.
+
+**Compatibility contract.** For every value `JSON.stringify` renders without throwing, the output is
+`JSON.stringify(value, undefined, indent)`, cut to `maxLength` (default
+`DEFAULT_FORMAT_VALUE_MAX_LENGTH`, 200) with a trailing `…`. That covers dropped `undefined` and
+function members, `null` in arrays, `toJSON`, class instances, `Map`s, typed arrays and boxed
+primitives, and it holds above the bound as well: a cut rendering is a prefix of the
+`JSON.stringify` text. It departs only where `JSON.stringify` would throw or produce nothing:
+
+| input | renders as |
+|---|---|
+| a reference back to an object on the active ancestor path | `"[Circular]"` |
+| a `BigInt` | `"123n"` |
+| a value whose getter, Proxy trap or `toJSON` throws | `[Unreadable]`, in place |
+| a top-level `undefined` / symbol / function | `undefined` / `Symbol(s)` / `[Function name]` |
+
+**How, and what runs.** It calls `JSON.stringify` with a replacer that makes the first two
+substitutions. If that still throws, or the output is shown to exceed `maxLength`, a
+reimplementation of the same serialization renders instead. The reimplementation contains every read
+and stops once the bound is reached. Like `JSON.stringify`, both invoke getters, Proxy traps and
+`toJSON`. When the first attempt throws partway or is abandoned, the value is walked twice, so a
+getter with side effects can run twice. The work is proportional to `maxLength`, plus any members
+`JSON.stringify` omits.
+
+`style: 'string'` keeps the text of a message that has always interpolated the value directly
+(`"${from}": not a string`). It uses `String(value)`, which invokes `toString`. Where that throws, as
+for a null-prototype object or a trapping Proxy, it falls back to the JSON rendering. Its default
+bound is the larger `DEFAULT_FORMAT_VALUE_STRING_MAX_LENGTH` (1000), so `String()` of a huge array
+cannot produce a megabyte message.
+
+**The boundary holds as well.** `BaseConverter` and `GenericValidator` catch a throw from the
+function they wrap. They return it as a `Failure` reading `converter threw: <message>` or
+`validator threw: <message>`, so a bug in a callback reads differently from invalid input. As a
+result, `convert`, `convertOptional`, `validate` and `guard` never throw, even when a getter or
+Proxy trap on the input throws mid-conversion.
+
+Stack exhaustion is the exception. That means an `InternalError`, or a `RangeError` whose message
+names the call stack or too much recursion. Inside nested converters it is re-thrown until it
+reaches the outermost one, and fails once there. Converting it at every level would let each level
+move on to its next sibling and exhaust the stack again, which on a graph with shared references
+multiplies into a hang. A `captureResult` placed between two nested converters catches it there
+instead. Any other `RangeError`, such as an invalid date, is an ordinary error and is handled by the
+nearest boundary.
+
+**Be honest about the masking.** A buggy callback now produces a failure, so anything that expects
+failures will hide it:
+
+- `convertOptional` with `ignoreErrors`;
+- `oneOf`, `or` and `withAction` alternatives;
+- `orDefault`;
+- `guard`, which simply answers `false`.
+
+`orThrow` re-raises the message, but not the original error's class or stack. Search for the
+`threw:` prefix when a conversion fails for no visible reason.
+
 ## Recent additions
 
 *Newest first. **Generated** — see the repo index; do not hand-edit inside the markers.*
 
 <!-- BEGIN GENERATED: recent-additions -->
 
+- **2026-10-30** — A converter or validator handed a cyclic, BigInt or Proxy value now fails instead of throwing, via a new formatValueForMessage that matches JSON.stringify for ordinary values. ([#764](https://github.com/ErikFortune/fgv/pull/764))
+- **2026-10-26** — ICryptoProvider now generates and imports non-extractable HMAC-SHA256 keys itself, and composite ids can split at the first or last separator so one part may contain it. ([#754](https://github.com/ErikFortune/fgv/pull/754))
+- **2026-10-20** — mapSuccess and mapSuccessAsync now hand every failure to a supplied aggregator, even when some results succeeded, so a lenient fold can report what it dropped. ([#752](https://github.com/ErikFortune/fgv/pull/752))
 - **2026-09-26** — A converter handed an Object.create(null) value now returns a Result instead of throwing — isKeyOf, strictObject and six ts-json / ts-res-ui-components property probes stopped calling hasOwnProperty on the object itself. ([#700](https://github.com/ErikFortune/fgv/pull/700))
 - **2026-08-28** — A string can now declare that it must be one printable line — and the name says shape, not safety, because no converter can promise the latter.
 - **2026-06-05** — **Status:** COMPLETE ([#461](https://github.com/ErikFortune/fgv/pull/461))

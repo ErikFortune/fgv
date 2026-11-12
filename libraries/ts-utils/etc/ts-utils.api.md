@@ -89,6 +89,9 @@ class AggregatedResultMapValidator<TCOMPOSITEID extends string, TCOLLECTIONID ex
     update(key: string, value: unknown): DetailedResult<TITEM, ResultMapResultDetail>;
 }
 
+// @public
+const allCompositeIdSplitModes: readonly ["exact", "first", "last"];
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
@@ -581,7 +584,7 @@ class CollectorValidator<TITEM extends ICollectible<any, any>> implements IReadO
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-function compositeId<TCOLLECTIONID extends string, TITEMID extends string, TC = unknown>(collectionIdConverter: Converter<TCOLLECTIONID, TC> | Validator<TCOLLECTIONID, TC>, separator: string, itemIdConverter: Converter<TITEMID, TC> | Validator<TITEMID, TC>): Converter<ICompositeId<TCOLLECTIONID, TITEMID>, TC>;
+function compositeId<TCOLLECTIONID extends string, TITEMID extends string, TC = unknown>(collectionIdConverter: Converter<TCOLLECTIONID, TC> | Validator<TCOLLECTIONID, TC>, separator: string, itemIdConverter: Converter<TITEMID, TC> | Validator<TITEMID, TC>, options?: ICompositeIdOptions): Converter<ICompositeId<TCOLLECTIONID, TITEMID>, TC>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -599,7 +602,10 @@ function compositeIdFromObject<TCOLLECTIONID extends string, TITEMID extends str
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-function compositeIdFromString<TCOLLECTIONID extends string, TITEMID extends string, TC = unknown>(collectionIdConverter: Converter<TCOLLECTIONID, TC> | Validator<TCOLLECTIONID, TC>, separator: string, itemIdConverter: Converter<TITEMID, TC> | Validator<TITEMID, TC>): Converter<ICompositeId<TCOLLECTIONID, TITEMID>, TC>;
+function compositeIdFromString<TCOLLECTIONID extends string, TITEMID extends string, TC = unknown>(collectionIdConverter: Converter<TCOLLECTIONID, TC> | Validator<TCOLLECTIONID, TC>, separator: string, itemIdConverter: Converter<TITEMID, TC> | Validator<TITEMID, TC>, options?: ICompositeIdOptions): Converter<ICompositeId<TCOLLECTIONID, TITEMID>, TC>;
+
+// @public
+type CompositeIdSplitMode = (typeof allCompositeIdSplitModes)[number];
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -621,6 +627,8 @@ class CompositeIdValidator<T extends string = string, TCOLLECTIONID extends stri
     // (undocumented)
     protected readonly _separator: string;
     // (undocumented)
+    protected readonly _split: CompositeIdSplitMode;
+    // (undocumented)
     protected _validate(value: unknown, context?: TC): boolean | Failure<T>;
 }
 
@@ -634,6 +642,7 @@ interface CompositeIdValidatorConstructorParams<T extends string = string, TCOLL
     readonly itemId: Validator<TITEMID, TC>;
     // (undocumented)
     readonly separator: string;
+    readonly split?: CompositeIdSplitMode;
 }
 
 // @public
@@ -784,6 +793,7 @@ declare namespace Converters {
         tuple,
         ICompositeId,
         IPartialCompositeId,
+        ICompositeIdOptions,
         FieldTransformers,
         TransformObjectOptions
     }
@@ -884,6 +894,12 @@ class Crc32Normalizer extends HashingNormalizer {
     // (undocumented)
     static crc32Hash(parts: string[]): string;
 }
+
+// @public
+export const DEFAULT_FORMAT_VALUE_MAX_LENGTH: number;
+
+// @public
+export const DEFAULT_FORMAT_VALUE_STRING_MAX_LENGTH: number;
 
 // @public
 export const DEFAULT_RESULT_CONCURRENCY: number;
@@ -1111,6 +1127,9 @@ export function firstSuccessAsync<T>(work: Iterable<AsyncDeferredResult<T>>, agg
 
 // @internal
 export function _formatShouldNotFailMessage(originalMessage: string, label: string | undefined, frame: _IShouldNotFailFrame): string;
+
+// @public
+export function formatValueForMessage(value: unknown, options?: IFormatValueForMessageOptions): string;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -1381,6 +1400,11 @@ interface ICompositeId<TCOLLECTIONID extends string, TITEMID extends string> {
     readonly separator: string;
 }
 
+// @public
+interface ICompositeIdOptions {
+    readonly split?: CompositeIdSplitMode;
+}
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
@@ -1410,6 +1434,13 @@ interface IConvertingResultMapConstructorParams<TK extends string, TSRC, TTARGET
 interface IDetailLogger extends ILogger {
     errorWithDetail(message: string, detail: unknown): Success<string | undefined>;
     warnWithDetail(message: string, detail: unknown): Success<string | undefined>;
+}
+
+// @public
+export interface IFormatValueForMessageOptions {
+    readonly indent?: number;
+    readonly maxLength?: number;
+    readonly style?: 'json' | 'string';
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -1525,6 +1556,14 @@ interface IPartialCompositeId<TCOLLECTIONID extends string, TITEMID extends stri
     readonly itemId: TITEMID;
     // (undocumented)
     readonly separator?: string;
+}
+
+// Warning: (ae-internal-missing-underscore) The name "IRawJsonSupport" should be prefixed with an underscore because the declaration is marked as @internal
+//
+// @internal
+export interface IRawJsonSupport {
+    // (undocumented)
+    readonly isRawJSON?: (candidate: unknown) => boolean;
 }
 
 // @public
@@ -1781,6 +1820,9 @@ function isIterable<TE = unknown, TI extends Iterable<TE> = Iterable<TE>, TO = u
 
 // @public
 export function isKeyOf<T extends object>(key: string | number | symbol, item: T): key is keyof T;
+
+// @internal
+export function _isStackExhaustion(err: unknown): boolean;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -2398,6 +2440,9 @@ export interface PopulateObjectOptions<T> {
 // @public
 export function propagateWithDetail<T, TD>(result: Result<T>, detail: TD, successDetail?: TD): DetailedResult<T, TD>;
 
+// @internal
+export function _rawJsonText(value: object, json?: IRawJsonSupport): string | undefined;
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
@@ -2474,8 +2519,21 @@ type ReporterLogLevel = 'all' | 'detail' | 'info' | 'warning' | 'error' | 'silen
 // @public
 const reporterLogLevel: Converter<ReporterLogLevel, ReadonlyArray<ReporterLogLevel>>;
 
+// @internal
+export function _resolveResultBoundary(): {
+    depth: number;
+};
+
 // @public
 export type Result<T> = Success<T> | Failure<T>;
+
+// @internal
+export const _resultBoundary: {
+    depth: number;
+};
+
+// @internal
+export const _resultBoundaryKey: symbol;
 
 // @beta
 export type ResultDetailType<T> = T extends DetailedResult<unknown, infer TD> ? TD : never;
@@ -2945,6 +3003,8 @@ export class ValidatingResultMap<TK extends string = string, TV = unknown> exten
 
 declare namespace Validation {
     export {
+        allCompositeIdSplitModes,
+        CompositeIdSplitMode,
         Base,
         Classes,
         Validators,

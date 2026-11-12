@@ -6,3 +6,4 @@
 export * from './model';
 export { FileTreeTaskRepository } from './repository';
 export * from './conformance';
+export { ITaskRepositoryRootProbe, probeTaskRepositoryRoot } from './rootProbe';

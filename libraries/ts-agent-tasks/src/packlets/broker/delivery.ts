@@ -8,6 +8,7 @@ import {
   DeliveryId,
   IAcknowledgementResult,
   IBoundTaskDelivery,
+  ITaskIssuedReceiptSummary,
   IInclusionEntry,
   IPreparedTaskContext,
   ISubscribeRequest,
@@ -508,6 +509,31 @@ export class BoundTaskDelivery implements IBoundTaskDelivery {
       });
       return abandoned.onSuccess(() => ok(id.value));
     });
+  }
+
+  /** {@inheritDoc IBoundTaskDelivery.issued} */
+  public async issued(): Promise<TaskResult<ReadonlyArray<ITaskIssuedReceiptSummary>>> {
+    return this._core.gated(async (writer) =>
+      (await writer.readSubscription(this.subscriptionId)).onSuccess((record) =>
+        record === undefined
+          ? taskFailure<ReadonlyArray<ITaskIssuedReceiptSummary>>(
+              `issued ${this.subscriptionId}: no retained subscription`,
+              'not-found-or-denied',
+              'after-host-action'
+            )
+          : ok<ReadonlyArray<ITaskIssuedReceiptSummary>>(
+              record.issued
+                .filter((manifest) => !manifest.acknowledged)
+                .map((manifest) => ({
+                  deliveryId: manifest.deliveryId,
+                  issuedAt: manifest.issuedAt,
+                  expiresAt: manifest.expiresAt
+                }))
+                // Canonical UTC instants order as text; a tie keeps the record's order.
+                .sort((a, b) => a.issuedAt.localeCompare(b.issuedAt))
+            )
+      )
+    );
   }
 
   /** One capture-render-issue attempt; `undefined` when something moved and it should retry. */

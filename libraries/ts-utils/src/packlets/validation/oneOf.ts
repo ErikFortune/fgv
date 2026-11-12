@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { Failure, fail } from '../base';
+import { Failure, fail, formatValueForMessage } from '../base';
 import { Validator, ValidatorOptions } from './validator';
 import { ValidatorBase, ValidatorBaseConstructorParams } from './validatorBase';
 
@@ -73,6 +73,6 @@ export class OneOfValidator<T, TC = unknown> extends ValidatorBase<T, TC> {
     if (found) {
       return true;
     }
-    return fail(`value "${from}" does not match any validator.`);
+    return fail(`value "${formatValueForMessage(from, { style: 'string' })}" does not match any validator.`);
   }
 }

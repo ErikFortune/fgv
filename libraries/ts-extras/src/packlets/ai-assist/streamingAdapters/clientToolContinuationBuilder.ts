@@ -24,8 +24,8 @@
  *
  * Each provider requires a different wire format for the follow-up request:
  * - **Anthropic**: assistant turn reconstructed from the ordered accumulation
- *   buffer (thinking / redacted_thinking / text / tool_use in original stream
- *   order) + user turn with `tool_result` blocks. When thinking is active, the
+ *   buffer (thinking / redacted_thinking / text with its citations / tool_use / server_tool_use /
+ *   web_search_tool_result in original stream order) + user turn with `tool_result` blocks. When thinking is active, the
  *   follow-up request must NOT set `tool_choice: { type: 'any' }` or
  *   `tool_choice: { type: 'tool', ... }` (E3 / §5.4 of b4-spike-findings).
  * - **OpenAI / xAI Responses API**: `function_call` input items +
@@ -36,7 +36,18 @@
  * @packageDocumentation
  */
 
-import { captureAsyncResult, fail, type Logging, mapResults, Result, succeed } from '@fgv/ts-utils';
+import { resolveAnthropicThinkingOffType } from '../anthropicThinkingOff';
+import { resolveGeminiModelThinking } from '../geminiThinking';
+import { checkSamplingParams, temperatureAcceptedWithThinking } from '../samplingParams';
+import {
+  captureAsyncResult,
+  captureResult,
+  fail,
+  type Logging,
+  mapResults,
+  Result,
+  succeed
+} from '@fgv/ts-utils';
 import { type JsonArray, type JsonObject } from '@fgv/ts-json-base';
 
 import { type IAiCacheRequest } from '../cacheRequest';
@@ -51,21 +62,31 @@ import {
   type IChatRequest,
   type IAiProviderDescriptor,
   isAdaptiveThinkingModel,
+  isThinkingRequiredModel,
   resolveProviderModel
 } from '../model';
 import { adaptClientToolParameters, resolveToolConflicts } from '../toolFormats';
 import { type IAiVerifiedEndpoint, clientToolWireFormat, schemaWireProviderId } from '../schemaKeywords';
 import type { IAiCompletionUsage } from '../usageTypes';
-import { type IResolvedThinkingConfig } from '../thinkingOptionsResolver';
+import {
+  checkCallerGeminiThinking,
+  checkTemperatureConflict,
+  type IResolvedThinkingConfig,
+  providerDiscriminatorForId
+} from '../thinkingOptionsResolver';
 import { splitChatRequest } from '../chatRequestBuilders';
 import { resolveEffectiveBaseUrl } from '../endpoint';
-import { type IAccumulatedBlock } from './anthropic';
+import {
+  type IAccumulatedBlock,
+  type IAccumulatedServerToolUseBlock,
+  type IAccumulatedToolUseBlock
+} from './anthropic';
 import { type IAccumulatedFunctionCall } from './openaiResponses';
 import { type IAccumulatedGeminiFunctionCall } from './gemini';
 import { callAnthropicStream } from './anthropic';
 import { callOpenAiResponsesStream } from './openaiResponses';
 import { callGeminiStream } from './gemini';
-import { type IStreamApiConfig } from './common';
+import { type IStreamApiConfig, jsonObjectValidator } from './common';
 import {
   supportsCacheUsageReporting,
   supportsPromptCacheBreakpoints,
@@ -86,6 +107,41 @@ interface IToolCallResult {
   readonly args: JsonObject;
   readonly result: string;
   readonly isError: boolean;
+  readonly durationMs: number;
+}
+
+/**
+ * What deciding one client-tool call produced: the result text sent back to the model, whether it
+ * is an error, and whether it ends the turn (only a failing gate does).
+ * @internal
+ */
+interface IDispatchOutcome {
+  readonly result: string;
+  readonly isError: boolean;
+  readonly fatal: boolean;
+}
+
+/**
+ * The result reported for a call that was never dispatched because the turn's signal had aborted.
+ * @internal
+ */
+function abortedOutcome(toolName: string, callId: string | undefined): IDispatchOutcome {
+  return {
+    result: `${toolName} (callId=${callId}): tool not run: the turn was aborted`,
+    isError: true,
+    fatal: false
+  };
+}
+
+const defaultClock = (): number => performance.now();
+
+/**
+ * Reads the signal afresh. A function rather than an inline `signal?.aborted` so the compiler does
+ * not carry a narrowing of `aborted` across an `await`, after which the signal may have changed.
+ * @internal
+ */
+function isAborted(signal: AbortSignal | undefined): boolean {
+  return signal?.aborted === true;
 }
 
 // ============================================================================
@@ -104,6 +160,74 @@ interface IToolCallResult {
  */
 function isUsableId(id: string | undefined): id is string {
   return id !== undefined && id.length > 0;
+}
+
+/**
+ * A buffered `server_tool_use` block as it streamed: its `content_block_start` object, with `input`
+ * replaced by the parsed `input_json_delta` chunks when any arrived. Fails on unparseable chunks
+ * rather than replaying an input the model never sent.
+ */
+function replayServerToolUse(block: IAccumulatedServerToolUseBlock): Result<JsonObject> {
+  if (block.argsBuffer.length === 0) {
+    return succeed(block.block);
+  }
+  return captureResult(() => JSON.parse(block.argsBuffer) as unknown)
+    .onSuccess((parsed) => jsonObjectValidator.validate(parsed))
+    .onSuccess((input) => succeed({ ...block.block, input }))
+    .withErrorFormat(
+      (msg) => `Anthropic continuation: server_tool_use block has an unreadable input (${msg})`
+    );
+}
+
+/**
+ * A buffered client `tool_use` block, with its input parsed from the accumulated chunks. Fails on a
+ * block with no usable id, which no `tool_result` could reference.
+ */
+function replayToolUse(block: IAccumulatedToolUseBlock): Result<JsonObject> {
+  // A buffered tool_use with an empty id can never be referenced by a valid
+  // tool_result; emitting it would corrupt the assistant turn. Fail loud.
+  if (!isUsableId(block.id)) {
+    return fail(
+      `Anthropic continuation: buffered tool_use block for tool '${block.name}' has an empty id; ` +
+        `cannot build a valid continuation`
+    );
+  }
+  // The adapter has already parsed these chunks before dispatching the call; a malformed or
+  // non-object buffer is sent as an empty input, as the adapter dispatched it.
+  const input = captureResult(() => JSON.parse(block.argsBuffer || '{}') as unknown)
+    .onSuccess((parsed) => jsonObjectValidator.validate(parsed))
+    .orDefault({});
+  return succeed({ type: 'tool_use', id: block.id, name: block.name, input });
+}
+
+/**
+ * One buffered block as it goes back in the assistant turn, or `undefined` for a block that is not
+ * sent (an empty text block, which the API rejects on input). Text and thinking keep their
+ * `content_block_start` object with the accumulated fields laid over it.
+ */
+function replayAnthropicBlock(block: IAccumulatedBlock): Result<JsonObject | undefined> {
+  switch (block.type) {
+    case 'thinking':
+      return succeed({ ...block.block, thinking: block.thinking, signature: block.signature });
+    case 'redacted_thinking':
+      return succeed({ type: 'redacted_thinking', data: block.data });
+    case 'text':
+      return succeed(
+        block.text.length === 0
+          ? undefined
+          : {
+              ...block.block,
+              text: block.text,
+              ...(block.citations !== undefined ? { citations: block.citations } : {})
+            }
+      );
+    case 'server_tool_use':
+      return replayServerToolUse(block);
+    case 'server_tool_result':
+      return succeed(block.block);
+    case 'tool_use':
+      return replayToolUse(block);
+  }
 }
 
 /**
@@ -135,61 +259,30 @@ export function buildAnthropicContinuation(
   toolResults: IToolCallResult[],
   logger?: Logging.ILogger
 ): Result<IAiClientToolContinuation> {
-  // Reconstruct the assistant turn from the ordered accumulation buffer.
-  // Sort by buffer key (SSE index) to restore original stream order.
-  const sortedKeys = Array.from(accBuffer.keys()).sort((a, b) => a - b);
-  const assistantContent: JsonArray = [];
-  // The set of assistant tool_use ids — the single source of truth every
-  // tool_result.tool_use_id must be drawn from.
-  const bufferedToolUseIds = new Set<string>();
+  // Reconstruct the assistant turn from the ordered accumulation buffer, sorted by buffer key (SSE
+  // index) to restore the original stream order.
+  const blocks = Array.from(accBuffer.entries())
+    .sort(([a], [b]) => a - b)
+    .map(([, block]) => block);
+  return mapResults(blocks.map((block) => replayAnthropicBlock(block))).onSuccess((replayed) => {
+    const assistantContent: JsonArray = replayed.filter((b): b is JsonObject => b !== undefined);
+    // The set of assistant tool_use ids — the single source of truth every
+    // tool_result.tool_use_id must be drawn from.
+    const bufferedToolUseIds = new Set(blocks.flatMap((b) => (b.type === 'tool_use' ? [b.id] : [])));
+    return buildAnthropicToolResultTurn(assistantContent, bufferedToolUseIds, toolResults, logger);
+  });
+}
 
-  for (const key of sortedKeys) {
-    const block = accBuffer.get(key);
-    /* c8 ignore next 1 - defensive: key always exists in map since we iterate its keys */
-    if (!block) continue;
-    if (block.type === 'thinking') {
-      assistantContent.push({
-        type: 'thinking',
-        thinking: block.thinking,
-        signature: block.signature
-      });
-    } else if (block.type === 'redacted_thinking') {
-      assistantContent.push({
-        type: 'redacted_thinking',
-        data: block.data
-      });
-    } else if (block.type === 'text') {
-      if (block.text.length > 0) {
-        assistantContent.push({ type: 'text', text: block.text });
-      }
-    } else if (block.type === 'tool_use') {
-      // A buffered tool_use with an empty id can never be referenced by a valid
-      // tool_result; emitting it would corrupt the assistant turn. Fail loud.
-      if (!isUsableId(block.id)) {
-        return fail(
-          `Anthropic continuation: buffered tool_use block for tool '${block.name}' has an empty id; ` +
-            `cannot build a valid continuation`
-        );
-      }
-      let parsedInput: JsonObject;
-      try {
-        /* c8 ignore next 1 - defensive: argsBuffer is JSON-parsed in the adapter before emitting client-tool-call-done */
-        parsedInput = JSON.parse(block.argsBuffer || '{}') as JsonObject;
-        /* c8 ignore start - defensive: malformed argsBuffer defaults to empty object */
-      } catch {
-        parsedInput = {};
-      }
-      /* c8 ignore stop */
-      bufferedToolUseIds.add(block.id);
-      assistantContent.push({
-        type: 'tool_use',
-        id: block.id,
-        name: block.name,
-        input: parsedInput
-      });
-    }
-  }
-
+/**
+ * Builds the user turn of `tool_result` blocks for an Anthropic continuation and assembles the
+ * continuation around the replayed assistant turn.
+ */
+function buildAnthropicToolResultTurn(
+  assistantContent: JsonArray,
+  bufferedToolUseIds: ReadonlySet<string>,
+  toolResults: IToolCallResult[],
+  logger?: Logging.ILogger
+): Result<IAiClientToolContinuation> {
   // Build user turn with tool_result blocks for each tool call. Correlate each
   // result to a buffered tool_use id — the SAME id that keys the assistant
   // tool_use block — and fail loud on a missing / empty / mismatched id. A
@@ -242,7 +335,8 @@ export function buildAnthropicContinuation(
       callId: r.callId,
       args: r.args,
       result: r.result,
-      isError: r.isError
+      isError: r.isError,
+      durationMs: r.durationMs
     }))
   });
 }
@@ -328,7 +422,8 @@ export function buildOpenAiContinuation(
       callId: r.callId,
       args: r.args,
       result: r.result,
-      isError: r.isError
+      isError: r.isError,
+      durationMs: r.durationMs
     }))
   });
 }
@@ -400,7 +495,8 @@ export function buildGeminiContinuation(
       callId: r.callId,
       args: r.args,
       result: r.result,
-      isError: r.isError
+      isError: r.isError,
+      durationMs: r.durationMs
     }))
   };
 }
@@ -476,7 +572,14 @@ export interface IExecuteClientToolTurnParams extends IChatRequest {
   readonly continuationMessages?: ReadonlyArray<JsonObject>;
   /**
    * Sampling temperature. Sent to the provider only when explicitly provided; omitted otherwise
-   * so the provider's own default applies (current-gen models reject a caller-supplied default).
+   * so the provider's own default applies. Many current-gen models reject a non-default value;
+   * a model on `IAiProviderDescriptor.samplingParamsRejectedModelPrefixes` still accepts the
+   * descriptor's `samplingParamsAcceptedTemperature`, with or without thinking, and is refused
+   * any other value before the wire; a model on
+   * `IAiProviderDescriptor.samplingParamsRejectedWithThinkingModelPrefixes` applies the same rule
+   * unless the request turns thinking off (effort `'none'`), when any value is sent. Beside a
+   * `resolvedThinking` effort, a temperature the provider's thinking mode rejects is refused before
+   * the wire too, as on the completion and streaming paths, rather than dropped.
    */
   readonly temperature?: number;
   /** Server-side tools to include. */
@@ -508,7 +611,15 @@ export interface IExecuteClientToolTurnParams extends IChatRequest {
   readonly verifiedEndpoint?: IAiVerifiedEndpoint;
   /** Optional logger for diagnostics. */
   readonly logger?: Logging.ILogger;
-  /** Optional resolved thinking config (pre-resolved by the caller). */
+  /**
+   * Optional resolved thinking config (pre-resolved by the caller). Sent as built, except that a
+   * thinking-off value aimed at a model in `thinkingRequiredModelPrefixes` — `anthropicThinkingDisabled`
+   * with no `anthropicEffort`, an OpenAI-format `openAiEffort` / `xaiEffort` of `'none'`, or a Gemini
+   * `geminiThinkingBudget` of `0` — is refused before the wire, since the provider rejects it. On
+   * Gemini, a `geminiThinkingLevel` the model does not accept (one its level declaration does not
+   * list, or any level on a model in `geminiThinkingLevelRejectedModelPrefixes`), and a level and a
+   * budget together, are refused too.
+   */
   readonly resolvedThinking?: IResolvedThinkingConfig;
   /** Resolved model string (pre-resolved by the caller). When omitted, uses the descriptor's default model. */
   readonly model?: string;
@@ -564,6 +675,12 @@ export interface IExecuteClientToolTurnParams extends IChatRequest {
    * provider exactly as `IProviderCompletionParams.cache` is on the non-streaming path.
    */
   readonly cache?: IAiCacheRequest;
+  /**
+   * Monotonic clock in milliseconds that each call's `IAiClientToolCallSummary.durationMs` is
+   * measured with. Defaults to
+   * `performance.now`; inject one to make timing deterministic in tests.
+   */
+  readonly clock?: () => number;
 }
 
 /**
@@ -619,8 +736,15 @@ export interface IExecuteClientToolTurnResult {
  * - Forwards `text-delta`, `tool-event`, `client-tool-call-start`, and
  *   `client-tool-call-done` events through to the consumer.
  * - For each `client-tool-call-done` event: validates the raw args against the
- *   tool's `parametersSchema`, invokes `execute(typedArgs)`, and emits a
- *   `client-tool-result` event.
+ *   tool's `parametersSchema`, consults `onBeforeToolExecute`, invokes
+ *   `execute(typedArgs)`, and emits a `client-tool-result` event. The call's
+ *   `durationMs` is measured around that dispatch.
+ *
+ * **No dispatch after abort.** `signal` is checked before the gate and again
+ * before `execute`, so once it has aborted no tool starts: the call still gets
+ * its `client-tool-call-done` / `client-tool-result` pair, with an `isError`
+ * result saying the turn was aborted. A tool already running is handed the
+ * signal and may stop early; one that ignores it runs to completion.
  * - After stream completion: builds the per-provider continuation (or
  *   `{ continuation: undefined }` when no tool calls occurred) and resolves
  *   `nextTurn`.
@@ -669,7 +793,8 @@ export function executeClientToolTurn(
     onBeforeToolExecute,
     maxTokens,
     toolConflictPolicy,
-    cache
+    cache,
+    clock = defaultClock
   } = params;
 
   const splitResult = splitChatRequest(system, messages);
@@ -740,6 +865,67 @@ export function executeClientToolTurn(
     return fail(modelResult.message);
   }
   const resolvedModel = modelResult.value;
+  // The same order as the completion and streaming paths: the thinking/temperature conflict, then the
+  // model's own sampling rule. A caller-built resolvedThinking carries no degrade, so `noneDegraded`
+  // is false. Without this a temperature beside an effort would reach the adapter and be dropped.
+  const discriminator = providerDiscriminatorForId(descriptor.id);
+  if (resolvedThinking !== undefined && discriminator !== undefined) {
+    const conflictResult = checkTemperatureConflict(
+      resolvedThinking,
+      discriminator,
+      temperature,
+      false,
+      temperatureAcceptedWithThinking(descriptor, resolvedModel)
+    );
+    if (conflictResult.isFailure()) {
+      return fail(`executeClientToolTurn: ${conflictResult.message}`);
+    }
+  }
+  const samplingResult = checkSamplingParams(descriptor, resolvedModel, temperature, resolvedThinking);
+  if (samplingResult.isFailure()) {
+    return fail(`executeClientToolTurn: ${samplingResult.message}`);
+  }
+  // A caller-built resolvedThinking skips the resolver that degrades or refuses 'none', so the
+  // same rule is applied here: the flag would send the off value to a model that rejects it. Keyed on
+  // the Anthropic wire, the only adapter that reads the flag. A
+  // model with a per-model off value (anthropicThinkingOffTypes) is not thinking-required, so the
+  // flag goes through and the adapter sends that value.
+  if (
+    descriptor.apiFormat === 'anthropic' &&
+    resolvedThinking?.anthropicThinkingDisabled === true &&
+    resolvedThinking.anthropicEffort === undefined &&
+    isThinkingRequiredModel(descriptor, resolvedModel)
+  ) {
+    return fail(
+      `executeClientToolTurn: ${resolvedModel} cannot run with thinking off: ` +
+        `drop anthropicThinkingDisabled or set an anthropicEffort`
+    );
+  }
+  // The same rule for the OpenAI-format wire, which sends `openAiEffort ?? xaiEffort` as the
+  // reasoning effort: 'none' aimed at a model that cannot run with thinking off is a provider 400.
+  // Keyed on the wire the descriptor speaks — another format's adapter never reads these fields.
+  if (descriptor.apiFormat === 'openai' && isThinkingRequiredModel(descriptor, resolvedModel)) {
+    const effortField = resolvedThinking?.openAiEffort !== undefined ? 'openAiEffort' : 'xaiEffort';
+    if ((resolvedThinking?.openAiEffort ?? resolvedThinking?.xaiEffort) === 'none') {
+      return fail(
+        `executeClientToolTurn: ${resolvedModel} cannot run with thinking off: ` +
+          `set ${effortField} to an effort other than 'none'`
+      );
+    }
+  }
+  // The same rule for the Gemini wire: budget 0 on a model that cannot run with thinking off, a level
+  // the model does not accept, and a level beside a budget are each a provider 400.
+  if (descriptor.apiFormat === 'gemini') {
+    const geminiResult = checkCallerGeminiThinking(
+      resolvedThinking,
+      resolvedModel,
+      isThinkingRequiredModel(descriptor, resolvedModel),
+      resolveGeminiModelThinking(descriptor, resolvedModel)
+    );
+    if (geminiResult.isFailure()) {
+      return fail(`executeClientToolTurn: ${geminiResult.message}`);
+    }
+  }
   const baseUrlResult = resolveEffectiveBaseUrl(descriptor, endpoint);
   if (baseUrlResult.isFailure()) {
     return fail(baseUrlResult.message);
@@ -790,7 +976,9 @@ export function executeClientToolTurn(
           continuationMessages,
           isAdaptiveThinkingModel(descriptor, config.model),
           maxTokens,
-          cache
+          cache,
+          temperatureAcceptedWithThinking(descriptor, config.model),
+          resolveAnthropicThinkingOffType(descriptor, config.model)
         );
       case 'openai': {
         // Same gating as callProviderCompletion's 'openai' case in completionClient.ts — see the
@@ -849,6 +1037,111 @@ export function executeClientToolTurn(
     resolveNextTurn = resolve;
   });
 
+  // Decides one call's result: validates its args, consults the gate, and runs the tool —
+  // unless the turn's signal has aborted, which is re-checked after every `await` that precedes
+  // `execute`, so a stopped turn never *starts* a tool. Never throws; a gate failure is the one
+  // outcome that ends the turn (`fatal`).
+  async function dispatchCall(
+    toolName: string,
+    callId: string | undefined,
+    args: JsonObject
+  ): Promise<IDispatchOutcome> {
+    const tool = toolsByName.get(toolName);
+    if (!tool) {
+      // A model naming a tool the host never registered is a *model* error, and this
+      // module's taxonomy (see IToolExecutionDecision's remarks) puts model errors on the
+      // continue side: an arg-validation failure, an `execute` failure and a gate `deny`
+      // all yield an isError tool-result and let the model react. Only host-machinery
+      // errors — a gate `fail`/reject — terminate the turn. A model that emits one bad tool
+      // name (for instance, reading a prose trailer in the prompt as a tool) is told and can
+      // try again.
+      //
+      // Safe on the wire: both continuation builders correlate results by call id and
+      // explicitly never by tool name, so an unrecognized name cannot malform the
+      // continuation — the id is the one the model just emitted.
+      return { result: `model called unknown tool: ${toolName}`, isError: true, fatal: false };
+    }
+
+    const validationResult = tool.config.parametersSchema.validate(args);
+    if (validationResult.isFailure()) {
+      return {
+        result: `${toolName} (callId=${callId}): ${validationResult.message}`,
+        isError: true,
+        fatal: false
+      };
+    }
+
+    if (isAborted(signal)) {
+      return abortedOutcome(toolName, callId);
+    }
+
+    // Host gate: run after arg-validation, before execute. A `deny` decision
+    // synthesizes a denial tool-result and continues the turn; a `fail`/reject
+    // from the gate itself is a hard error (mirrors an execute failure), never
+    // a silent deny.
+    if (onBeforeToolExecute !== undefined) {
+      const decisionResult: Result<IToolExecutionDecision> = (
+        await captureAsyncResult(async () => onBeforeToolExecute(tool, validationResult.value))
+      ).onSuccess((decision) => decision);
+
+      if (decisionResult.isFailure()) {
+        return {
+          result: `${toolName} (callId=${callId}): ${decisionResult.message}`,
+          isError: true,
+          fatal: true
+        };
+      }
+
+      if (decisionResult.value.action === 'deny') {
+        return {
+          result: `${toolName} (callId=${callId}): tool execution denied: ${decisionResult.value.reason}`,
+          isError: true,
+          fatal: false
+        };
+      }
+
+      // The gate awaited; the turn may have been stopped while it decided.
+      if (isAborted(signal)) {
+        return abortedOutcome(toolName, callId);
+      }
+    }
+
+    const executeResult = await captureAsyncResult(async () =>
+      tool.execute(validationResult.value, { signal })
+    );
+    const executionResult: Result<unknown> = executeResult.isSuccess() ? executeResult.value : executeResult;
+
+    if (executionResult.isFailure()) {
+      return {
+        result: `${toolName} (callId=${callId}): ${executionResult.message}`,
+        isError: true,
+        fatal: false
+      };
+    }
+
+    // JSON.stringify can throw (circular references) or return undefined
+    // (e.g. for a bare `undefined` value, or a value of type `function`).
+    // Either outcome violates the client-tool-result event contract, so
+    // report an isError result with diagnostic context instead.
+    try {
+      const stringified = JSON.stringify(executionResult.value);
+      if (stringified === undefined) {
+        return {
+          result: `${toolName} (callId=${callId}): tool returned a non-serializable value (JSON.stringify produced undefined)`,
+          isError: true,
+          fatal: false
+        };
+      }
+      return { result: stringified, isError: false, fatal: false };
+    } catch (e) {
+      return {
+        result: `${toolName} (callId=${callId}): failed to serialize tool result: ${(e as Error).message}`,
+        isError: true,
+        fatal: false
+      };
+    }
+  }
+
   // The unified-event generator: opens the stream, proxies events, executes tools.
   async function* eventGenerator(): AsyncGenerator<IAiStreamEvent> {
     const streamResult = await streamPromise;
@@ -899,159 +1192,35 @@ export function executeClientToolTurn(
         yield event;
 
         const { toolName, callId, args } = event;
-        const tool = toolsByName.get(toolName);
-
-        if (!tool) {
-          const errMsg = `model called unknown tool: ${toolName}`;
-          const resultEvent: IAiStreamEvent = {
-            type: 'client-tool-result',
-            toolName,
-            callId,
-            result: errMsg,
-            isError: true
-          };
-          yield resultEvent;
-          toolResults.push({ toolName, callId, args, result: errMsg, isError: true });
-          // A model naming a tool the host never registered is a *model* error, and this
-          // module's taxonomy (see IToolExecutionDecision's remarks) puts model errors on the
-          // continue side: an arg-validation failure, an `execute` failure and a gate `deny`
-          // all yield an isError tool-result and let the model react. Only host-machinery
-          // errors — a gate `fail`/reject — terminate the turn. This branch used to terminate,
-          // which cost a recoverable turn: a model that emits one bad tool name (for instance,
-          // reading a prose trailer in the prompt as a tool) ended the stream instead of being
-          // told and trying again.
-          //
-          // Safe on the wire: both continuation builders correlate results by call id and
-          // explicitly never by tool name, so an unrecognized name cannot malform the
-          // continuation — the id is the one the model just emitted.
-          continue;
-        }
-
-        const validationResult = tool.config.parametersSchema.validate(args);
-        if (validationResult.isFailure()) {
-          const errMsg = `${toolName} (callId=${callId}): ${validationResult.message}`;
-          const resultEvent: IAiStreamEvent = {
-            type: 'client-tool-result',
-            toolName,
-            callId,
-            result: errMsg,
-            isError: true
-          };
-          yield resultEvent;
-          toolResults.push({ toolName, callId, args, result: errMsg, isError: true });
-          continue;
-        }
-
-        // Host gate: run after arg-validation, before execute. A `deny` decision
-        // synthesizes a denial tool-result and continues the turn; a `fail`/reject
-        // from the gate itself is a hard error (mirrors an execute failure), never
-        // a silent deny.
-        if (onBeforeToolExecute !== undefined) {
-          const decisionResult: Result<IToolExecutionDecision> = (
-            await captureAsyncResult(async () => onBeforeToolExecute(tool, validationResult.value))
-          ).onSuccess((decision) => decision);
-
-          if (decisionResult.isFailure()) {
-            const errMsg = `${toolName} (callId=${callId}): ${decisionResult.message}`;
-            const resultEvent: IAiStreamEvent = {
-              type: 'client-tool-result',
-              toolName,
-              callId,
-              result: errMsg,
-              isError: true
-            };
-            yield resultEvent;
-            // Gate-fail is a hard, turn-terminating error (unlike a non-fatal `deny`, whose
-            // generator continues). Emit an explicit `error` event so a consumer watching only
-            // `events` sees the fatal failure inline and can distinguish it from a deny — matching
-            // the stream-open / continuation hard-error paths.
-            yield { type: 'error', message: errMsg };
-            toolResults.push({ toolName, callId, args, result: errMsg, isError: true });
-            resolveNextTurn(fail(errMsg));
-            return;
-          }
-
-          if (decisionResult.value.action === 'deny') {
-            const denialMsg = `${toolName} (callId=${callId}): tool execution denied: ${decisionResult.value.reason}`;
-            const resultEvent: IAiStreamEvent = {
-              type: 'client-tool-result',
-              toolName,
-              callId,
-              result: denialMsg,
-              isError: true
-            };
-            yield resultEvent;
-            toolResults.push({ toolName, callId, args, result: denialMsg, isError: true });
-            continue;
-          }
-        }
-
-        const executeResult = await captureAsyncResult(async () =>
-          tool.execute(validationResult.value, { signal })
-        );
-        const executionResult: Result<unknown> = executeResult.isSuccess()
-          ? executeResult.value
-          : executeResult;
-
-        if (executionResult.isFailure()) {
-          const errMsg = `${toolName} (callId=${callId}): ${executionResult.message}`;
-          const resultEvent: IAiStreamEvent = {
-            type: 'client-tool-result',
-            toolName,
-            callId,
-            result: errMsg,
-            isError: true
-          };
-          yield resultEvent;
-          toolResults.push({ toolName, callId, args, result: errMsg, isError: true });
-          continue;
-        }
-
-        // JSON.stringify can throw (circular references) or return undefined
-        // (e.g. for a bare `undefined` value, or a value of type `function`).
-        // Either outcome violates the client-tool-result event contract, so
-        // emit an isError result with diagnostic context instead.
-        let resultStr: string;
-        try {
-          const stringified = JSON.stringify(executionResult.value);
-          if (stringified === undefined) {
-            const errMsg = `${toolName} (callId=${callId}): tool returned a non-serializable value (JSON.stringify produced undefined)`;
-            const resultEvent: IAiStreamEvent = {
-              type: 'client-tool-result',
-              toolName,
-              callId,
-              result: errMsg,
-              isError: true
-            };
-            yield resultEvent;
-            toolResults.push({ toolName, callId, args, result: errMsg, isError: true });
-            continue;
-          }
-          resultStr = stringified;
-        } catch (e) {
-          const errMsg = `${toolName} (callId=${callId}): failed to serialize tool result: ${
-            (e as Error).message
-          }`;
-          const resultEvent: IAiStreamEvent = {
-            type: 'client-tool-result',
-            toolName,
-            callId,
-            result: errMsg,
-            isError: true
-          };
-          yield resultEvent;
-          toolResults.push({ toolName, callId, args, result: errMsg, isError: true });
-          continue;
-        }
-        const resultEvent: IAiStreamEvent = {
+        // Timed from here, after the call-done has been handed to the consumer, so the time a
+        // consumer spends between events is never charged to the tool.
+        const startedAt = clock();
+        const outcome = await dispatchCall(toolName, callId, args);
+        const durationMs = Math.max(0, clock() - startedAt);
+        yield {
           type: 'client-tool-result',
           toolName,
           callId,
-          result: resultStr,
-          isError: false
+          result: outcome.result,
+          isError: outcome.isError
         };
-        yield resultEvent;
-        toolResults.push({ toolName, callId, args, result: resultStr, isError: false });
+        toolResults.push({
+          toolName,
+          callId,
+          args,
+          result: outcome.result,
+          isError: outcome.isError,
+          durationMs
+        });
+        if (outcome.fatal) {
+          // Gate-fail is a hard, turn-terminating error (unlike a non-fatal `deny`, whose
+          // generator continues). Emit an explicit `error` event so a consumer watching only
+          // `events` sees the fatal failure inline and can distinguish it from a deny — matching
+          // the stream-open / continuation hard-error paths.
+          yield { type: 'error', message: outcome.result };
+          resolveNextTurn(fail(outcome.result));
+          return;
+        }
         continue;
       }
 

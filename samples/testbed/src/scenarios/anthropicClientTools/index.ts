@@ -45,6 +45,8 @@
  *   text + tool_use blocks in stream order) is accepted by the API.
  * - **Typed schema validation:** Memory tool args are validated via `JsonSchema` before
  *   `execute` is called.
+ * - **The bounded runner:** the rounds are driven by `AiAssist.runClientToolLoop` rather than a
+ *   hand-written loop over `executeClientToolTurn`, with a round cap and a deadline.
  *
  * @packageDocumentation
  */
@@ -141,210 +143,232 @@ const SYSTEM_PROMPT: string =
   'When the user asks about current facts, use `web_search` to look them up. ' +
   'Combine both sources when the question spans both.';
 
+/** At most this many provider rounds: one to call the tools, one to answer, and headroom. */
+const MAX_ROUNDS: number = 4;
+
+/** Bound on the whole loop, so a stalled provider or tool cannot hold the scenario. */
+const LOOP_DEADLINE_MS: number = 120000;
+
+// ---------------------------------------------------------------------------
+// Run verdicts
+// ---------------------------------------------------------------------------
+
+/**
+ * What a run of the scenario actually did, as the verdicts need it.
+ * @public
+ */
+export interface IClientToolRunEvidence {
+  /** Provider rounds run. A continuation is sent back only from round 2 on. */
+  readonly rounds: number;
+  /** Client tool calls across all rounds. */
+  readonly clientToolCalls: number;
+  /** Server tool (`web_search`) events across all rounds. */
+  readonly serverToolEvents: number;
+  /** Rounds that had both a server tool event and a client tool call. */
+  readonly mixedRounds: number;
+}
+
+/**
+ * The scenario's header line and gate lines for a run.
+ * @public
+ */
+export interface IClientToolRunVerdicts {
+  readonly header: string;
+  readonly gates: ReadonlyArray<string>;
+}
+
+/**
+ * Turns what a run did into its verdicts.
+ * @public
+ */
+export function clientToolRunVerdicts(evidence: IClientToolRunEvidence): IClientToolRunVerdicts {
+  // A continuation is only sent back from round 2 on; with one round, the replay was never tried.
+  const replayed = evidence.rounds >= 2;
+  const oneRound = 'only one round ran, so no continuation was sent back';
+  const mixed = replayed && evidence.mixedRounds > 0;
+  return {
+    header: replayed
+      ? 'B-6 anthropic-client-tools scenario: PASS'
+      : `B-6 anthropic-client-tools scenario: NOT EXERCISED (${oneRound})`,
+    gates: [
+      replayed
+        ? '  [PASS] Continuation replay: the API accepted the replayed history without HTTP 400'
+        : `  [NOT EXERCISED] Continuation replay: ${oneRound}`,
+      replayed
+        ? '  [PASS] Thinking-block signature preserved (the API accepted the continuation)'
+        : `  [NOT EXERCISED] Thinking-block signature: ${oneRound}`,
+      `  [${evidence.clientToolCalls > 0 ? 'PASS' : 'SKIP'}] Client tool (recall_memory) invoked: ${
+        evidence.clientToolCalls > 0 ? 'YES' : 'not triggered in this run'
+      }`,
+      `  [${evidence.serverToolEvents > 0 ? 'PASS' : 'SKIP'}] Server tool (web_search) events: ${
+        evidence.serverToolEvents > 0 ? 'YES' : 'not triggered in this run'
+      }`,
+      mixed
+        ? '  [exercised] Server tool and client tool in one round, replayed (the server-tool replay path)'
+        : '  [not exercised] Server tool and client tool in one round, replayed (the server-tool replay path)'
+    ]
+  };
+}
+
 // ---------------------------------------------------------------------------
 // CLI implementation
 // ---------------------------------------------------------------------------
 
-const cliImpl: ICliScenarioImpl = {
-  webRunnable: true,
-  async run(context: IScenarioContext): Promise<Result<string>> {
-    // Resolve the API key via the shared secret pipeline (KeyStore -> session secrets store ->
-    // env var), so this scenario works identically on the CLI and the web runner panel.
-    const apiKeyResult = await resolveProviderApiKey(context, 'anthropic');
-    if (apiKeyResult.isFailure()) {
-      return fail(apiKeyResult.message);
-    }
-    const apiKey = apiKeyResult.value;
-
-    context.logger.info('B-6 scenario: Anthropic client tools + server tools + thinking');
-    context.logger.info(`User question: ${USER_QUESTION}`);
-
-    // Resolve the Anthropic provider descriptor.
-    const descriptorResult = AiAssist.getProviderDescriptor('anthropic');
-    if (descriptorResult.isFailure()) {
-      return fail(`Failed to get Anthropic provider descriptor: ${descriptorResult.message}`);
-    }
-    const descriptor = descriptorResult.value;
-
-    // Build the request (system + the current user turn).
-    const request: AiAssist.IChatRequest = {
-      system: SYSTEM_PROMPT,
-      messages: [{ role: 'user', content: USER_QUESTION }]
-    };
-
-    // Use the fgv `@anthropic:sonnet` alias (base tier) so the scenario follows registry
-    // rotations automatically — the alias layer supersedes raw version pins; the registry
-    // owns which concrete sonnet id is current.
-    const model = '@anthropic:sonnet';
-
-    // Construct the resolved thinking config directly (IResolvedThinkingConfig is the output
-    // of mergeThinkingConfig; we bypass the full IThinkingConfig pipeline here for simplicity).
-    // anthropicEffort: 'low' maps to the lowest thinking budget — sufficient for the scenario.
-    const resolvedThinking: AiAssist.IResolvedThinkingConfig = { anthropicEffort: 'low' };
-
-    // Server tool: web_search.
-    const serverTools: AiAssist.AiServerToolConfig[] = [{ type: 'web_search' }];
-
-    // First turn: execute with client tools + server tools + thinking.
-    context.logger.info('Starting first turn (client tools + server tools + thinking)...');
-
-    const turnResult = AiAssist.executeClientToolTurn({
-      descriptor,
-      apiKey,
-      ...request,
-      clientTools: [memoryTool],
-      tools: serverTools,
-      model,
-      resolvedThinking
-    });
-
-    if (turnResult.isFailure()) {
-      return fail(`executeClientToolTurn failed: ${turnResult.message}`);
-    }
-
-    const { events, nextTurn } = turnResult.value;
-
-    // Collect events from the first turn.
-    let firstTurnText = '';
-    let clientToolCallCount = 0;
-    let serverToolEventCount = 0;
-
-    for await (const event of events) {
-      if (event.type === 'text-delta') {
-        firstTurnText += event.delta;
-      } else if (event.type === 'client-tool-call-done') {
-        clientToolCallCount++;
-        context.logger.info(
-          `  [client-tool-call-done] toolName=${event.toolName}` +
-            (event.callId !== undefined ? ` callId=${event.callId}` : '')
-        );
-      } else if (event.type === 'client-tool-result') {
-        context.logger.info(
-          `  [client-tool-result] toolName=${event.toolName} isError=${String(event.isError)} ` +
-            `result=${event.result.slice(0, 80)}`
-        );
-      } else if (event.type === 'tool-event') {
-        serverToolEventCount++;
-        context.logger.info(
-          `  [tool-event] toolType=${event.toolType} phase=${event.phase}` +
-            (event.detail !== undefined ? ` detail=${event.detail.slice(0, 80)}` : '')
-        );
-      } else if (event.type === 'error') {
-        return fail(`Stream error during first turn: ${event.message}`);
+/**
+ * The CLI implementation, run against `model` (a registry alias, so the scenario follows registry
+ * rotations).
+ */
+function makeCliImpl(model: string): ICliScenarioImpl {
+  return {
+    webRunnable: true,
+    async run(context: IScenarioContext): Promise<Result<string>> {
+      // Resolve the API key via the shared secret pipeline (KeyStore -> session secrets store ->
+      // env var), so this scenario works identically on the CLI and the web runner panel.
+      const apiKeyResult = await resolveProviderApiKey(context, 'anthropic');
+      if (apiKeyResult.isFailure()) {
+        return fail(apiKeyResult.message);
       }
-    }
+      const apiKey = apiKeyResult.value;
 
-    // Await the first turn's completion.
-    const firstTurnCompletion = await nextTurn;
-    if (firstTurnCompletion.isFailure()) {
-      return fail(`First turn nextTurn failed: ${firstTurnCompletion.message}`);
-    }
+      context.logger.info(`B-6 scenario: Anthropic client tools + server tools + thinking on ${model}`);
+      context.logger.info(`User question: ${USER_QUESTION}`);
 
-    const firstTurnOutcome = firstTurnCompletion.value;
-    context.logger.info('');
-    context.logger.info('First turn complete.');
-    context.logger.info(`  client-tool-call-done events: ${clientToolCallCount}`);
-    context.logger.info(`  server tool-event events: ${serverToolEventCount}`);
-    context.logger.info(`  continuation present: ${String(firstTurnOutcome.continuation !== undefined)}`);
+      // Resolve the Anthropic provider descriptor.
+      const descriptorResult = AiAssist.getProviderDescriptor('anthropic');
+      if (descriptorResult.isFailure()) {
+        return fail(`Failed to get Anthropic provider descriptor: ${descriptorResult.message}`);
+      }
+      const descriptor = descriptorResult.value;
 
-    let finalResponse = firstTurnText;
+      // Build the request (system + the current user turn).
+      const request: AiAssist.IChatRequest = {
+        system: SYSTEM_PROMPT,
+        messages: [{ role: 'user', content: USER_QUESTION }]
+      };
 
-    // If the model issued client-tool calls, the continuation contains the reconstructed
-    // assistant turn (with thinking blocks) and the tool results. Send the follow-up request.
-    if (firstTurnOutcome.continuation !== undefined) {
-      const { continuation } = firstTurnOutcome;
-      context.logger.info('');
-      context.logger.info('Starting continuation turn (follow-up after tool results)...');
+      // Construct the resolved thinking config directly (IResolvedThinkingConfig is the output
+      // of mergeThinkingConfig; we bypass the full IThinkingConfig pipeline here for simplicity).
+      // anthropicEffort: 'low' is the lowest effort. On an adaptive-thinking model (the Claude 5
+      // family, which both scenario models resolve to) it is sent as `thinking: { type: 'adaptive' }`
+      // plus `output_config.effort: 'low'`, with no token budget; only an older model converts it to
+      // the lowest `budget_tokens`. Either way, sufficient for the scenario.
+      const resolvedThinking: AiAssist.IResolvedThinkingConfig = { anthropicEffort: 'low' };
 
-      // The continuation messages are the reconstructed assistant turn + tool results
-      // in Anthropic wire format. They are appended after the prompt's user message via
-      // `continuationMessages` so the follow-up request is:
-      //   [user: <question>, assistant: <thinking+text+tool_use>, user: <tool_result>]
-      const continuationTurnResult = AiAssist.executeClientToolTurn({
+      // Server tool: web_search.
+      const serverTools: AiAssist.AiServerToolConfig[] = [{ type: 'web_search' }];
+
+      // The rounds are driven by `runClientToolLoop`: it replaces the cumulative continuation
+      // each round, dispatches the memory tool while each round's stream drains, and stops at
+      // the round cap or the deadline. The observer sees each round's events as they arrive.
+      context.logger.info('Running the client-tool loop (client tools + server tools + thinking)...');
+
+      let serverToolEventCount = 0;
+      const roundsWithServerToolEvents = new Set<number>();
+      const observer: AiAssist.IClientToolLoopObserver = {
+        event: (round, event) => {
+          if (event.type === 'client-tool-call-done') {
+            context.logger.info(
+              `  [round ${round} client-tool-call-done] toolName=${event.toolName}` +
+                (event.callId !== undefined ? ` callId=${event.callId}` : '')
+            );
+          } else if (event.type === 'client-tool-result') {
+            const isError = String(event.isError);
+            context.logger.info(
+              `  [round ${round} client-tool-result] toolName=${event.toolName} isError=${isError} ` +
+                `result=${event.result.slice(0, 80)}`
+            );
+          } else if (event.type === 'tool-event') {
+            serverToolEventCount++;
+            roundsWithServerToolEvents.add(round);
+            context.logger.info(
+              `  [round ${round} tool-event] toolType=${event.toolType} phase=${event.phase}` +
+                (event.detail !== undefined ? ` detail=${event.detail.slice(0, 80)}` : '')
+            );
+          } else if (event.type === 'error') {
+            context.logger.warn(`  [round ${round} error] ${event.message}`);
+          }
+        },
+        round: (r) => {
+          context.logger.info(
+            `Round ${r.round} complete: ${r.calls.length} tool call(s), provider ${Math.round(
+              r.providerDurationMs
+            )} ms, truncated=${String(r.truncated)}`
+          );
+        }
+      };
+
+      const loopResult = await AiAssist.runClientToolLoop({
         descriptor,
         apiKey,
         ...request,
-        continuationMessages: continuation.messages,
         clientTools: [memoryTool],
         tools: serverTools,
         model,
-        resolvedThinking
+        resolvedThinking,
+        maxRounds: MAX_ROUNDS,
+        deadlineMs: LOOP_DEADLINE_MS,
+        logger: context.logger,
+        observer
       });
-
-      if (continuationTurnResult.isFailure()) {
-        return fail(`Continuation turn failed: ${continuationTurnResult.message}`);
+      if (loopResult.isFailure()) {
+        return fail(
+          `runClientToolLoop failed after ${loopResult.detail?.rounds.length ?? 0} round(s): ${
+            loopResult.message
+          }`
+        );
       }
 
-      const { events: continuationEvents, nextTurn: continuationNextTurn } = continuationTurnResult.value;
-
-      let continuationText = '';
-      for await (const event of continuationEvents) {
-        if (event.type === 'text-delta') {
-          continuationText += event.delta;
-        } else if (event.type === 'client-tool-call-done') {
-          context.logger.info(`  [continuation client-tool-call-done] toolName=${event.toolName}`);
-        } else if (event.type === 'client-tool-result') {
-          context.logger.info(
-            `  [continuation client-tool-result] toolName=${event.toolName} ` +
-              `isError=${String(event.isError)}`
-          );
-        } else if (event.type === 'error') {
-          return fail(`Stream error during continuation turn: ${event.message}`);
-        }
+      const outcome = loopResult.value;
+      if (outcome.state !== 'completed') {
+        return fail(`runClientToolLoop ended ${outcome.state} after ${outcome.rounds.length} round(s)`);
       }
 
-      const continuationCompletion = await continuationNextTurn;
-      if (continuationCompletion.isFailure()) {
-        return fail(`Continuation nextTurn failed: ${continuationCompletion.message}`);
-      }
+      const calls = outcome.rounds.flatMap((r) => r.calls);
+      const clientToolCallCount = calls.length;
+      // The final round's text, falling back to round 1's when the final round said nothing.
+      const lastText = outcome.rounds[outcome.rounds.length - 1]?.fullText ?? '';
+      const finalResponse = lastText.length > 0 ? lastText : outcome.rounds[0]?.fullText ?? '';
 
-      context.logger.info('Continuation turn complete.');
+      context.logger.info('');
+      context.logger.info('=== FINAL RESPONSE ===');
+      context.logger.info(finalResponse.slice(0, 500) + (finalResponse.length > 500 ? '...' : ''));
 
-      if (continuationText.length > 0) {
-        finalResponse = continuationText;
-      }
+      const verdicts = clientToolRunVerdicts({
+        rounds: outcome.rounds.length,
+        clientToolCalls: clientToolCallCount,
+        serverToolEvents: serverToolEventCount,
+        mixedRounds: outcome.rounds.filter(
+          (r) => r.calls.length > 0 && roundsWithServerToolEvents.has(r.round)
+        ).length
+      });
+      const summaryLines = [
+        verdicts.header,
+        '',
+        `Model: ${model} (${AiAssist.resolveProviderModel(descriptor, model, undefined).orDefault(model)})`,
+        'Thinking: enabled (effort=low)',
+        `Rounds: ${outcome.rounds.length} (state=${outcome.state})`,
+        `Client tools invoked: ${clientToolCallCount}`,
+        `Server tool events: ${serverToolEventCount}`,
+        `Tool calls summary (${calls.length}):`,
+        ...calls.map(
+          (s) =>
+            `  - ${s.toolName}` +
+            (s.callId !== undefined ? ` (callId=${s.callId})` : '') +
+            ` → isError=${String(s.isError)}, ${Math.round(s.durationMs)} ms`
+        ),
+        '',
+        'Empirical gates:',
+        ...verdicts.gates,
+        '  [PASS] Server + client tool coexistence: both tool types present in request',
+        '',
+        'Final response (first 300 chars):',
+        finalResponse.slice(0, 300) + (finalResponse.length > 300 ? '...' : '')
+      ];
+
+      return succeed(summaryLines.join('\n'));
     }
-
-    context.logger.info('');
-    context.logger.info('=== FINAL RESPONSE ===');
-    context.logger.info(finalResponse.slice(0, 500) + (finalResponse.length > 500 ? '...' : ''));
-
-    // Build the summary output.
-    const toolCallsSummary = firstTurnOutcome.continuation?.toolCallsSummary ?? [];
-
-    const summaryLines = [
-      'B-6 anthropic-client-tools scenario: PASS',
-      '',
-      `Model: ${model}`,
-      'Thinking: enabled (effort=low)',
-      `Client tools invoked: ${clientToolCallCount}`,
-      `Server tool events: ${serverToolEventCount}`,
-      `Tool calls summary (${toolCallsSummary.length}):`,
-      ...toolCallsSummary.map(
-        (s) =>
-          `  - ${s.toolName}` +
-          (s.callId !== undefined ? ` (callId=${s.callId})` : '') +
-          ` → isError=${String(s.isError)}`
-      ),
-      '',
-      'Empirical gates verified:',
-      '  [PASS] Live API round-trip completed without HTTP 400',
-      '  [PASS] Thinking-block signature preserved (server accepted continuation)',
-      `  [${clientToolCallCount > 0 ? 'PASS' : 'SKIP'}] Client tool (recall_memory) invoked: ${
-        clientToolCallCount > 0 ? 'YES' : 'not triggered in this run'
-      }`,
-      `  [${serverToolEventCount > 0 ? 'PASS' : 'SKIP'}] Server tool (web_search) events: ${
-        serverToolEventCount > 0 ? 'YES' : 'not triggered in this run'
-      }`,
-      '  [PASS] Server + client tool coexistence: both tool types present in request',
-      '',
-      'Final response (first 300 chars):',
-      finalResponse.slice(0, 300) + (finalResponse.length > 300 ? '...' : '')
-    ];
-
-    return succeed(summaryLines.join('\n'));
-  }
-};
+  };
+}
 
 // ---------------------------------------------------------------------------
 // Scenario export
@@ -381,5 +405,28 @@ export const anthropicClientToolsScenario: IScenario = {
       description: 'Anthropic API key for live round-trip verification'
     }
   ],
-  cli: cliImpl
+  cli: makeCliImpl('@anthropic:sonnet')
+};
+
+/**
+ * The same B-6 round-trip on `@anthropic:fable`.
+ *
+ * @remarks
+ * Claude Fable 5.2 and Claude Mythos 5.2 enforce the prefix check on every account: a replayed
+ * thinking block whose prefix (`system`, `tools`, or an earlier message) has changed returns a 400
+ * ("The block is bound to a different conversation"), where Claude Sonnet 5.5 errors only for
+ * accounts created on or after 2026-08-31. A clean run here is the live check that the replayed
+ * history is append-only.
+ *
+ * @public
+ */
+export const anthropicClientToolsFableScenario: IScenario = {
+  ...anthropicClientToolsScenario,
+  id: 'anthropic-client-tools-fable',
+  title: 'Anthropic Client Tools + Thinking (Fable)',
+  description:
+    'The anthropic-client-tools round-trip on @anthropic:fable, which enforces the preserved-thinking ' +
+    'prefix check on every account: a 400 naming "a different conversation" means a replayed turn was ' +
+    'edited. Requires an Anthropic API key.',
+  cli: makeCliImpl('@anthropic:fable')
 };

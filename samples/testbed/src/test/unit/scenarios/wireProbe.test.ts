@@ -371,13 +371,13 @@ describe('wireProbe', () => {
 
     test('wireSchemaKeywords reads the tool or the structured-output table', () => {
       const anthropic = descriptor('anthropic');
-      expect(wireSchemaKeywords(wire('anthropic-tools'), anthropic, 'claude-sonnet-5')).toBe(
-        AiAssist.clientToolSchemaKeywords(anthropic, { model: 'claude-sonnet-5' })
+      expect(wireSchemaKeywords(wire('anthropic-tools'), anthropic, 'claude-haiku-5-5')).toBe(
+        AiAssist.clientToolSchemaKeywords(anthropic, { model: 'claude-haiku-5-5' })
       );
       // JSON outputs on the model ai-assist sends them to: numeric constraints fold there.
-      expect(wireSchemaKeywords(wire('anthropic-json-outputs'), anthropic, 'claude-opus-5-5')?.minimum).toBe(
-        'fold'
-      );
+      expect(
+        wireSchemaKeywords(wire('anthropic-json-outputs'), anthropic, 'claude-sonnet-5-5')?.minimum
+      ).toBe('fold');
     });
 
     test('buildRawRequest: Anthropic tools and JSON outputs', () => {
@@ -425,7 +425,14 @@ describe('wireProbe', () => {
       expect(JSON.stringify(openaiOut.body)).toContain('"strict":true');
       const xaiOut = buildRawRequest(wire('xai-strict-output'), descriptor('xai-grok'), 'g', 'k', schema);
       expect(xaiOut.url).toBe('https://api.x.ai/v1/chat/completions');
-      expect(Object.keys(xaiOut.body)).toContain('max_tokens');
+      // xAI declares max_completion_tokens (its API reference deprecates max_tokens).
+      expect(Object.keys(xaiOut.body)).toContain('max_completion_tokens');
+      expect(Object.keys(xaiOut.body)).not.toContain('max_tokens');
+      // The field follows the descriptor's declaration, so a provider declaring none gets max_tokens.
+      const legacy = { ...descriptor('xai-grok'), chatOutputTokensField: undefined };
+      const legacyOut = buildRawRequest(wire('xai-strict-output'), legacy, 'g', 'k', schema);
+      expect(Object.keys(legacyOut.body)).toContain('max_tokens');
+      expect(Object.keys(legacyOut.body)).not.toContain('max_completion_tokens');
     });
   });
 
@@ -441,7 +448,7 @@ describe('wireProbe', () => {
         wire('gemini-tools')
       ]);
       expect(result).toSucceedAndSatisfy((report) => {
-        expect(report).toContain('--- Anthropic tools · anthropic · claude-sonnet-5 ---');
+        expect(report).toContain('--- Anthropic tools · anthropic · claude-haiku-5-5 ---');
         expect(report).toContain('SKIPPED: no google-gemini key');
         expect(report).toContain('UNSAFE (raw): none');
         expect(report).toContain('UNSAFE (end to end): none');

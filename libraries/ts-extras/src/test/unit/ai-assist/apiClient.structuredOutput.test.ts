@@ -1653,6 +1653,11 @@ describe('structured output', () => {
 
     test.each([
       {
+        label: '@anthropic:sonnet via the base tier',
+        route: {},
+        model: 'claude-sonnet-5-5'
+      },
+      {
         label: '@anthropic:opus via the advanced tier',
         route: { tier: 'advanced' as const },
         model: 'claude-opus-5-5'
@@ -1665,7 +1670,7 @@ describe('structured output', () => {
       {
         label: '@anthropic:fable via modelOverride',
         route: { modelOverride: '@anthropic:fable' },
-        model: 'claude-fable-5-1'
+        model: 'claude-fable-5-2'
       }
     ])(
       '$label sends output_config.format, no tool_choice, and reports "schema"',
@@ -1690,6 +1695,29 @@ describe('structured output', () => {
         expectOutputFormatWire(body, fooSchema.toJson());
       }
     );
+
+    test('@anthropic:haiku (claude-haiku-5-5) accepts forcing and still forces the synthetic tool', async () => {
+      mockFetchResponse(anthropicToolForcedResponse({ foo: 'bar' }));
+
+      const result = await AiAssist.callProviderCompletion({
+        descriptor: anthropic,
+        apiKey: 'test-key',
+        ...testPrompt.toRequest(),
+        modelOverride: '@anthropic:haiku',
+        structuredOutput: { mode: 'schema', schema: fooSchema, onUnsupported: 'fail' }
+      });
+
+      expect(result).toSucceedAndSatisfy((r) => {
+        expect(r.structuredOutput).toBe('tool-forced');
+      });
+      const body = lastRequestBody();
+      expect(body.model).toBe('claude-haiku-5-5');
+      expect(body.tool_choice).toEqual({
+        type: 'tool',
+        name: AiAssist.ANTHROPIC_STRUCTURED_OUTPUT_TOOL_NAME
+      });
+      expect('output_config' in body).toBe(false);
+    });
 
     test('the lines that accept forcing are unchanged: claude-opus-5 still forces the synthetic tool', async () => {
       mockFetchResponse(anthropicToolForcedResponse({ foo: 'bar' }));

@@ -22,12 +22,16 @@ import type { FetchFailureReason } from './failureReason';
 
 /**
  * The error a {@link SaferFetch.GuardedFetch} rejects with, for every failure: a guard refusal, a
- * rejected redirect, a headers timeout, a caller's abort, a network failure, or an unsupported
- * request.
+ * rejected redirect, a headers timeout, a caller's abort, a network failure, an unsupported
+ * request, or a declared body over `maxResponseBytes`. It is also the error a capped body stream
+ * errors with once the count passes `maxResponseBytes`.
  *
  * @remarks
  * **The message is fixed text** — `guarded fetch failed: <kind>` — so that a fetch-shaped caller
- * that logs or surfaces `error.message` does not leak the URL or the guard's detail by default.
+ * that logs or surfaces `error.message` does not leak the URL or the guard's detail by default. The
+ * one addition is for `'too-large'`, which names `maxResponseBytes` and the caller's own limit, so
+ * that the failure is identifiable from a body read that errors with it (see
+ * {@link SaferFetch.IGuardedFetchOptions.maxResponseBytes}). Nothing in it comes from the server.
  *
  * **`reason` holds URLs and guard detail.** It is the same `FetchFailureReason` the buffered entry
  * points return, and the same warning applies: it is an internal-network scanning oracle. Log it;
@@ -43,7 +47,11 @@ export class GuardedFetchError extends Error {
   public readonly reason: FetchFailureReason;
 
   public constructor(reason: FetchFailureReason) {
-    super(`guarded fetch failed: ${reason.kind}`);
+    super(
+      reason.kind === 'too-large'
+        ? `guarded fetch failed: too-large: the response body exceeded maxResponseBytes (${reason.limit} bytes)`
+        : `guarded fetch failed: ${reason.kind}`
+    );
     this.name = 'GuardedFetchError';
     this.reason = reason;
   }

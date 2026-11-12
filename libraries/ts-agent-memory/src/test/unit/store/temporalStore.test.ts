@@ -221,6 +221,7 @@ describe('FileTreeMemoryStore — temporal (versioned) path', () => {
       clockValue = 2000;
       expect(await store.put(factRecord('fact-1', 'v2 body'))).toSucceed();
 
+      store.dispose();
       const reopened = createStore(root);
       expect(await reopened.list({ kind: factKind })).toSucceedAndSatisfy((all) => {
         expect(all.map((r) => r.envelope.id).sort()).toEqual(['fact-1-v1', 'fact-1-v2']);

@@ -131,6 +131,7 @@ async function main() {
   for (let i = 0; i < STORE_N; i++) {
     (await seed.put(makeRecord(i))).orThrow();
   }
+  seed.dispose();
 
   const beforeOpen = sample();
   const store = FileTreeMemoryStore.create({ root, registry, codecs }).orThrow();

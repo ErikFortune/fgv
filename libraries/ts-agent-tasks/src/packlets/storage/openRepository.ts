@@ -22,6 +22,8 @@ import {
   ITaskKindRegistry,
   ITaskRecoveryReport,
   ITaskRepositoryManifest,
+  TaskRepositoryDurability,
+  allTaskRepositoryDurabilities,
   ITaskSourceRecord,
   OperationId,
   TaskId,
@@ -71,6 +73,7 @@ import {
   ITaskRepository,
   ITaskRepositoryOpenParams,
   TaskRepositoryMode,
+  TaskRepositoryOpenOrInitializeResult,
   TaskRepositoryOpenResult
 } from './model';
 import {
@@ -216,7 +219,7 @@ function _acquireWith(params: ITaskRepositoryOpenParams, converters: TaskConvert
     const checkpointStore: ITaskCheckpointStore =
       params.checkpoints ?? new FileTreeCheckpointStore(store.value);
     const durability: Result<string> = captureResult(() => checkpointStore.durability).onSuccess((d) =>
-      Converters.enumeratedValue<string>(['session', 'process-crash']).convert(d)
+      Converters.enumeratedValue<TaskRepositoryDurability>([...allTaskRepositoryDurabilities]).convert(d)
     );
     if (durability.isFailure() || (guarantee !== 'session' && durability.value !== 'process-crash')) {
       ownership.value.release();
@@ -261,115 +264,146 @@ export function initializeRepository(
   params: ITaskRepositoryOpenParams,
   factory: RepositoryFactory
 ): TaskResult<ITaskRepository> {
-  return _acquire(params).onSuccess((acquired) => {
-    const refuse = (message: string, code: 'conflict' | 'invalid'): TaskResult<ITaskRepository> => {
-      acquired.ownership.release();
-      return taskFailure(message, code, 'after-host-action');
-    };
-    if (acquired.names.includes(manifestName)) {
-      return refuse(`initialize: the root already holds a repository; open it instead`, 'conflict');
-    }
-    if (acquired.names.length > 0) {
-      return refuse(
-        `initialize: the root is not empty (${acquired.names.slice(0, 5).join(', ')}); a repository is ` +
-          `only ever initialized into an empty root`,
-        'invalid'
-      );
-    }
-    const converters: TaskConverters = acquired.converters;
-    const created: Result<{ manifest: ITaskRepositoryManifest; text: string; bytes: number }> =
-      converters.capacity.profile
-        .convert(params.profile ?? defaultTaskCapacityProfile)
-        // A profile under which no stop could be reserved is refused before anything is written.
-        .onSuccess((profile) => stopAttemptBundle(profile).onSuccess(() => succeed(profile)))
-        .onSuccess((profile) =>
-          mintId(params.environment)
-            .onSuccess((raw) => converters.ids.identifier.convert(raw))
-            .onSuccess((repositoryId) =>
-              converters.storage.manifest.convert({
-                formatVersion: taskStorageFormatVersion,
-                repositoryId,
-                manifestRevision: 1,
-                profile,
-                tasks: [],
-                consumers: [],
-                sources: []
-              })
-            )
+  return _acquire(params).onSuccess((acquired) => _initializeAcquired(params, acquired, factory));
+}
+
+/**
+ * Opens the repository a root holds, or initializes one when the root is empty — decided under the
+ * exclusive ownership both take, after interrupted writes' working files are reclaimed, by the same
+ * emptiness test `initialize` applies. Nothing can land in the root between the decision and the
+ * open or initialize it chooses.
+ * @internal
+ */
+export function openOrInitializeRepository(
+  params: ITaskRepositoryOpenParams,
+  factory: RepositoryFactory
+): TaskResult<TaskRepositoryOpenOrInitializeResult> {
+  return _acquire(params).onSuccess((acquired) =>
+    acquired.names.length === 0
+      ? _initializeAcquired(params, acquired, factory).onSuccess((repository) =>
+          ok<TaskRepositoryOpenOrInitializeResult>({ state: 'ready', repository, initialized: true })
         )
-        .onSuccess((manifest) => encodeRecord(manifest).onSuccess((encoded) => ok({ manifest, ...encoded })));
-    if (created.isFailure()) {
-      return refuse(`initialize: ${created.message}`, 'invalid');
-    }
-    const profile: ITaskCapacityProfile = created.value.manifest.profile;
-    // Seeded with an empty manifest, so the real one is admitted as growth against the profile.
-    const ledger: CapacityLedger = new CapacityLedger(profile, manifestEntry(0, profile));
-    const admitted: TaskResult<true> = ledger.admit(
-      new Map([['repository', manifestEntry(created.value.bytes, profile)]])
+      : _openAcquired(params, acquired, factory).onSuccess((opened) =>
+          ok<TaskRepositoryOpenOrInitializeResult>(
+            opened.state === 'ready' ? { ...opened, initialized: false } : opened
+          )
+        )
+  );
+}
+
+function _initializeAcquired(
+  params: ITaskRepositoryOpenParams,
+  acquired: IAcquired,
+  factory: RepositoryFactory
+): TaskResult<ITaskRepository> {
+  const refuse = (message: string, code: 'conflict' | 'invalid'): TaskResult<ITaskRepository> => {
+    acquired.ownership.release();
+    return taskFailure(message, code, 'after-host-action');
+  };
+  if (acquired.names.includes(manifestName)) {
+    return refuse(`initialize: the root already holds a repository; open it instead`, 'conflict');
+  }
+  if (acquired.names.length > 0) {
+    return refuse(
+      `initialize: the root is not empty (${acquired.names.slice(0, 5).join(', ')}); a repository is ` +
+        `only ever initialized into an empty root`,
+      'invalid'
     );
-    if (admitted.isFailure()) {
-      acquired.ownership.release();
-      return propagate(admitted);
-    }
-    const written = acquired.store.write(manifestName, created.value.text);
-    if (written.isFailure()) {
-      acquired.ownership.release();
-      return taskFailure<ITaskRepository>(
-        `initialize: ${written.message}`,
-        'storage-unavailable',
-        writeRetry(written.detail)
-      );
-    }
-    const listed: Result<ReadonlyArray<string>> = acquired.store.list();
-    if (listed.isFailure()) {
-      acquired.ownership.release();
-      return taskFailure<ITaskRepository>(
-        `initialize: ${listed.message}`,
-        'storage-unavailable',
-        'reconcile-first'
-      );
-    }
-    ledger.apply(new Map([['repository', manifestEntry(created.value.bytes, profile)]]));
-    return ok<ITaskRepository>(
-      factory({
-        store: acquired.store,
-        ownership: acquired.ownership,
-        converters,
-        registry: params.registry,
-        environment: params.environment,
-        mode: acquired.mode,
-        manifest: created.value.manifest,
-        manifestText: created.value.text,
-        tasks: new Map(),
-        pending: new Map(),
-        sources: new Map(),
-        ledger,
-        index: new TaskIndex(),
-        evidence: {
-          taskPassReads: 0,
-          consumerPassReads: 0,
-          sourcePassReads: 0,
-          selectedPassReads: 0,
-          graphMarks: 0,
-          owedDescriptors: 0
-        },
-        gate: new MaterializationGate(),
-        recordCache: params.recordCache,
-        book: new DeliveryBook(new Map(), new Map()),
-        checkpoints: acquired.checkpoints,
-        defaultCheckpoints: acquired.defaultCheckpoints,
-        report: {
-          repositoryId: created.value.manifest.repositoryId,
-          issues: [],
-          completedRegistrations: [],
-          pendingRegistrations: [],
-          completedSubscriptions: [],
-          pendingSubscriptions: [],
-          removedTemporaries: acquired.removed
-        }
-      })
+  }
+  const converters: TaskConverters = acquired.converters;
+  const created: Result<{ manifest: ITaskRepositoryManifest; text: string; bytes: number }> =
+    converters.capacity.profile
+      .convert(params.profile ?? defaultTaskCapacityProfile)
+      // A profile under which no stop could be reserved is refused before anything is written.
+      .onSuccess((profile) => stopAttemptBundle(profile).onSuccess(() => succeed(profile)))
+      .onSuccess((profile) =>
+        mintId(params.environment)
+          .onSuccess((raw) => converters.ids.identifier.convert(raw))
+          .onSuccess((repositoryId) =>
+            converters.storage.manifest.convert({
+              formatVersion: taskStorageFormatVersion,
+              repositoryId,
+              manifestRevision: 1,
+              profile,
+              tasks: [],
+              consumers: [],
+              sources: [],
+              initializedMode: _durabilityOf(acquired.mode)
+            })
+          )
+      )
+      .onSuccess((manifest) => encodeRecord(manifest).onSuccess((encoded) => ok({ manifest, ...encoded })));
+  if (created.isFailure()) {
+    return refuse(`initialize: ${created.message}`, 'invalid');
+  }
+  const profile: ITaskCapacityProfile = created.value.manifest.profile;
+  // Seeded with an empty manifest, so the real one is admitted as growth against the profile.
+  const ledger: CapacityLedger = new CapacityLedger(profile, manifestEntry(0, profile));
+  const admitted: TaskResult<true> = ledger.admit(
+    new Map([['repository', manifestEntry(created.value.bytes, profile)]])
+  );
+  if (admitted.isFailure()) {
+    acquired.ownership.release();
+    return propagate(admitted);
+  }
+  const written = acquired.store.write(manifestName, created.value.text);
+  if (written.isFailure()) {
+    acquired.ownership.release();
+    return taskFailure<ITaskRepository>(
+      `initialize: ${written.message}`,
+      'storage-unavailable',
+      writeRetry(written.detail)
     );
-  });
+  }
+  const listed: Result<ReadonlyArray<string>> = acquired.store.list();
+  if (listed.isFailure()) {
+    acquired.ownership.release();
+    return taskFailure<ITaskRepository>(
+      `initialize: ${listed.message}`,
+      'storage-unavailable',
+      'reconcile-first'
+    );
+  }
+  ledger.apply(new Map([['repository', manifestEntry(created.value.bytes, profile)]]));
+  return ok<ITaskRepository>(
+    factory({
+      store: acquired.store,
+      ownership: acquired.ownership,
+      converters,
+      registry: params.registry,
+      environment: params.environment,
+      mode: acquired.mode,
+      manifest: created.value.manifest,
+      manifestText: created.value.text,
+      tasks: new Map(),
+      pending: new Map(),
+      sources: new Map(),
+      ledger,
+      index: new TaskIndex(),
+      evidence: {
+        taskPassReads: 0,
+        consumerPassReads: 0,
+        sourcePassReads: 0,
+        selectedPassReads: 0,
+        graphMarks: 0,
+        owedDescriptors: 0
+      },
+      gate: new MaterializationGate(),
+      recordCache: params.recordCache,
+      book: new DeliveryBook(new Map(), new Map()),
+      checkpoints: acquired.checkpoints,
+      defaultCheckpoints: acquired.defaultCheckpoints,
+      report: {
+        repositoryId: created.value.manifest.repositoryId,
+        issues: [],
+        completedRegistrations: [],
+        pendingRegistrations: [],
+        completedSubscriptions: [],
+        pendingSubscriptions: [],
+        removedTemporaries: acquired.removed
+      }
+    })
+  );
 }
 
 /**
@@ -469,13 +503,24 @@ export function openRepository(
   params: ITaskRepositoryOpenParams,
   factory: RepositoryFactory
 ): TaskResult<TaskRepositoryOpenResult> {
-  return _acquire(params).onSuccess((acquired) => {
-    const result: TaskResult<TaskRepositoryOpenResult> = _scan(params, acquired, factory);
-    if (result.isFailure()) {
-      acquired.ownership.release();
-    }
-    return result;
-  });
+  return _acquire(params).onSuccess((acquired) => _openAcquired(params, acquired, factory));
+}
+
+function _openAcquired(
+  params: ITaskRepositoryOpenParams,
+  acquired: IAcquired,
+  factory: RepositoryFactory
+): TaskResult<TaskRepositoryOpenResult> {
+  const result: TaskResult<TaskRepositoryOpenResult> = _scan(params, acquired, factory);
+  if (result.isFailure()) {
+    acquired.ownership.release();
+  }
+  return result;
+}
+
+/** A repository mode's durability name. */
+function _durabilityOf(mode: TaskRepositoryMode): TaskRepositoryDurability {
+  return mode === 'session' ? 'session' : 'process-crash';
 }
 
 /**
@@ -487,7 +532,8 @@ function _completeRegistrations(
   converters: TaskConverters,
   scanned: { manifest: ITaskRepositoryManifest; text: string },
   done: ReadonlySet<string>,
-  doneConsumers: ReadonlySet<string>
+  doneConsumers: ReadonlySet<string>,
+  backfill: TaskRepositoryDurability | undefined
 ): TaskResult<{ manifest: ITaskRepositoryManifest; bytes: number; text: string }> {
   const manifest: ITaskRepositoryManifest = scanned.manifest;
   // The one write open performs is fenced like every other manifest rewrite: the manifest on
@@ -513,7 +559,8 @@ function _completeRegistrations(
     tasks: manifest.tasks.map((entry) => (done.has(entry.id) ? { id: entry.id, state: 'live' } : entry)),
     consumers: manifest.consumers.map((entry) =>
       doneConsumers.has(entry.id) ? { id: entry.id, state: 'live' } : entry
-    )
+    ),
+    ...(backfill !== undefined ? { initializedMode: backfill } : {})
   };
   return classify(
     encodeRecord(next)
@@ -569,6 +616,10 @@ function _scan(
     removed: acquired.removed,
     names: acquired.names,
     expectedProfile: params.profile,
+    openedAs: {
+      durability: _durabilityOf(acquired.mode),
+      allowSessionOverDurable: params.allowSessionOverDurable === true
+    },
     gate,
     checkpoints: acquired.checkpoints,
     defaultCheckpoints: acquired.defaultCheckpoints
@@ -607,6 +658,14 @@ export interface IScanInput {
   readonly names: ReadonlyArray<string>;
   /** On open, the profile the host expects; any difference refuses. Absent on rebuild. */
   readonly expectedProfile?: ITaskCapacityProfile;
+  /**
+   * On open, the durability the repository is being opened at, and whether opening a
+   * `process-crash`-initialized repository as `session` was explicitly permitted. Absent on rebuild.
+   */
+  readonly openedAs?: {
+    readonly durability: TaskRepositoryDurability;
+    readonly allowSessionOverDurable: boolean;
+  };
   readonly gate: MaterializationGate;
   readonly checkpoints: CheckpointPort;
   readonly defaultCheckpoints: boolean;
@@ -741,6 +800,23 @@ export function scanRoot(input: IScanInput): TaskResult<ScanOutcome> {
         'after-host-action'
       );
     }
+  }
+
+  // A durable repository is never silently carried on at a weaker durability: its records were
+  // committed against a crash, and a session open would keep committing without that guarantee.
+  const openedAs = input.openedAs;
+  if (
+    openedAs !== undefined &&
+    manifest.initializedMode === 'process-crash' &&
+    openedAs.durability === 'session' &&
+    !openedAs.allowSessionOverDurable
+  ) {
+    return taskFailure(
+      `open: the repository was initialized 'process-crash' and is being opened as 'session'; pass ` +
+        `allowSessionOverDurable to accept weaker commits over durable data`,
+      'unsupported',
+      'after-host-action'
+    );
   }
 
   const ledger: CapacityLedger = new CapacityLedger(profile, manifestEntry(manifestRead.bytes, profile));
@@ -1242,15 +1318,22 @@ export function scanRoot(input: IScanInput): TaskResult<ScanOutcome> {
   }
 
   // ---- complete registrations that died after their record was written ----
+  // A durable open of a manifest that predates the initialization mode records it now, so a later
+  // session open of the same repository is refused like one initialized with it.
+  const backfill: TaskRepositoryDurability | undefined =
+    input.openedAs?.durability === 'process-crash' && manifest.initializedMode === undefined
+      ? 'process-crash'
+      : undefined;
   const completion: TaskResult<{ manifest: ITaskRepositoryManifest; bytes: number; text: string }> =
-    completed.length === 0 && consumers.completed.length === 0
+    completed.length === 0 && consumers.completed.length === 0 && backfill === undefined
       ? ok({ manifest, bytes: manifestRead.bytes, text: manifestRead.text })
       : _completeRegistrations(
           store,
           converters,
           { manifest, text: manifestRead.text },
           new Set<string>(completed),
-          new Set<string>(consumers.completed)
+          new Set<string>(consumers.completed),
+          backfill
         );
   if (completion.isFailure()) {
     return propagate(completion);

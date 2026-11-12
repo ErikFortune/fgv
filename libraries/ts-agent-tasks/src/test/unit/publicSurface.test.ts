@@ -11,8 +11,12 @@ describe('public surface', () => {
     const names: ReadonlyArray<string> = Object.keys(TaskLib);
     // T3 adds exactly one repository implementation, over an injected FileTree root; T4 adds the
     // behavioural conformance runner a custom implementation is checked with.
-    expect(names.filter((n) => /repository/i.test(n))).toEqual([
+    // The host helpers add the root probe the repository itself uses, and one open-or-initialize.
+    expect(names.filter((n) => /repository/i.test(n)).sort()).toEqual([
       'FileTreeTaskRepository',
+      'allTaskRepositoryDurabilities',
+      'openOrInitializeTaskRepository',
+      'probeTaskRepositoryRoot',
       'runTaskRepositoryConformance'
     ]);
     // It does not re-export FileTree. T5 adds exactly one broker and its request converters.

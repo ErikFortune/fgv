@@ -796,6 +796,16 @@ describe('checkTemperatureConflict', () => {
       ).toFailWith(/thinking effort 'none' was sent as 'low'.*provider openai: remove temperature$/);
     });
 
+    test("leaves a restricted model's non-default temperature to the sampling check", () => {
+      // An acceptedTemperature means the model restricts temperature with or without thinking, so
+      // "disable thinking" would be wrong advice; checkSamplingParams refuses it instead.
+      const resolved = { anthropicEffort: 'low' as const };
+      expect(checkTemperatureConflict(resolved, 'anthropic', 0.3, false, 1)).toSucceed();
+      expect(checkTemperatureConflict(resolved, 'anthropic', 0.3, false, undefined)).toFailWith(
+        /remove temperature or disable thinking/
+      );
+    });
+
     test('an accepted none plus temperature still passes', () => {
       expect(
         resolveThinkingConfig({ effort: 'none' }, 'gpt-6-luna', 'openai', false).onSuccess((r) =>

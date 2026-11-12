@@ -118,6 +118,65 @@ the models and why are in `src/scenarios/wireProbe/wires.ts`. A wire whose contr
 keyword under test) is not accepted is reported as inconclusive — usually a bad key or a retired
 model. Re-run it whenever a table entry or a provider's schema support changes.
 
+## Model-tier canaries (`<provider>-model-tiers`)
+
+`openai-model-tiers`, `anthropic-model-tiers`, `google-gemini-model-tiers` and `xai-grok-model-tiers`
+resolve each provider's `base` / `advanced` / `frontier` tiers offline and log every `alias ->
+concrete` hop. With the provider key set they also fire one tiny completion per tier, plus the
+probes each scenario opts into. Without a key every live row is `PENDING` and the verdict is the
+STOP-FLAG state (`RESOLVER-VERIFIED; LIVE CANARY PENDING`). Keyless rows still state the outcome
+they expect, so a keyless run doubles as the list of what the keyed run will check.
+
+```bash
+rushx build
+ANTHROPIC_API_KEY=… node bin/testbed.js --scenario anthropic-model-tiers
+OPENAI_API_KEY=…    node bin/testbed.js --scenario openai-model-tiers
+GEMINI_API_KEY=…    node bin/testbed.js --scenario google-gemini-model-tiers
+XAI_API_KEY=…       node bin/testbed.js --scenario xai-grok-model-tiers
+```
+
+Most rows pass as `PASS`. Three more outcomes are passes too, because the probe stated them up front,
+and one row kind makes no claim at all:
+
+| tag                   | means                                                                                                                                                                            |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `[REFUSED-LOCALLY]`   | ai-assist refused the request before building it, so nothing was sent (a `temperature` the model rejects, or `'none'` with `onUnsupported: 'fail'` on a thinking-required model) |
+| `[EXPECTED-REJECT]`   | the provider returned the 400 the probe expected, for the expected reason (a raw thinking-off value on a thinking-required model; a raw `0.3` beside an effort on `gpt-6-luna`). The row prints the provider's own text; a 400 for another reason is a `FAIL`                    |
+| `[NO-RECORDED-LIMIT]` | a max-output probe on a model with no `maxOutputTokens` entry: nothing to check, no call                                                                                         |
+| `[OBSERVED]`          | report-only: the answer is not known yet, so the row prints `accepted` or `rejected: <provider text>` and neither passes nor fails |
+
+The probe families:
+
+- **Thinking** (`effort=none` / `effort=low`, on every tier and extra model): `'none'` on a
+  thinking-required model is sent as `'low'`; elsewhere it turns thinking off (on Anthropic,
+  `thinking: {type: 'disabled'}`, or the model's own value — `between_tools` on `claude-sonnet-5-5`).
+  Both must answer.
+- **Strict none** (`none+fail`): refused locally on a thinking-required model, answered on any other.
+  Each thinking-required model, and each model with its own off value, also gets a `none raw` row
+  that bypasses the library, sends the provider's default off value, and must be the provider's 400.
+  A raw row that answers means the `thinkingRequiredModelPrefixes` (or `anthropicThinkingOffTypes`)
+  entry is stale. `gemini-3.8-flash` (the Gemini base tier) is not thinking-required — budget 0 turns
+  its thinking off — so its `effort=none` is sent with thinking off, its `none+fail` passes, and it
+  gets no raw row.
+- **Temperature** (`temp=…`, Anthropic and OpenAI): each row names its expected outcome. Anthropic
+  accepts `1` with and without thinking and refuses `0.3` locally. OpenAI's `gpt-6-luna` restricts
+  temperature only while it reasons: `0.3` with effort `'none'` and `1` with no effort or beside
+  effort `low` answer,
+  and `0.3` with no effort (luna defaults to `medium`) or beside effort `low` is refused locally. One
+  more luna row (`[EXPECTED-REJECT] base temp=0.3+effort=low raw`) sends `0.3` past the library's
+  gate and must be the provider's "Only the default (1) value is supported" 400; if it answers, the
+  `samplingParamsRejectedWithThinkingModelPrefixes` entry is stale. On `gpt-6.1-sol` and
+  `gpt-6-astra` OpenAI accepts `1` with and without effort `low` (`temp=1`, `temp=1+effort=low`,
+  sent through the library) and refuses `0.3` locally.
+- **Max output** (`max=N`, Anthropic, OpenAI and Gemini): `maxTokens` set to
+  `resolveMaxOutputTokens` for that exact model. It must be accepted. A refusal naming the token cap
+  is `FAIL(param)`: the recorded limit is too high.
+
+`[REFUSED-LOCALLY]` rows prove ai-assist's own gate: nothing is sent, so they say nothing about
+whether the provider would still reject the value.
+
+A `FAIL` on any row fails the run. `BLOCKED` (access or a parameter incompatibility) does not.
+
 ## Adding a scenario
 
 See [`src/conventions.md`](./src/conventions.md). Short version: drop a file under

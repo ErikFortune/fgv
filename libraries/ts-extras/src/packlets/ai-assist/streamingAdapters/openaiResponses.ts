@@ -529,11 +529,12 @@ export async function callOpenAiResponsesStream(
   if (effort !== undefined && supportsReasoning) {
     body.reasoning = { effort };
   }
-  // Temperature is sent only when the caller explicitly provided one (see callOpenAiChatStream).
-  if (effort === undefined || effort === 'none') {
-    if (temperature !== undefined) {
-      body.temperature = temperature;
-    }
+  // Temperature is sent whenever the caller provided one, as in callOpenAiChatStream. Both callers
+  // refuse a conflicting one before reaching here (checkTemperatureConflict, then
+  // checkSamplingParams), so beside an effort the only temperature present is one the model accepts
+  // with thinking on — never one this adapter would have to drop silently.
+  if (temperature !== undefined) {
+    body.temperature = temperature;
   }
   // Shared by OpenAI and xAI — both route through the Responses API with the same field name.
   if (maxTokens !== undefined) {

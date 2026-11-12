@@ -181,6 +181,30 @@ describe('mapResults module', () => {
       }
       expect(aggregatedErrors.messages).toEqual(['earlier error', ...errors]);
     });
+
+    test('appends every failure to aggregatedErrors in input order when only some results failed', () => {
+      const aggregatedErrors = new MessageAggregator(['earlier error']);
+      const mixed = [fail<string>('Biff!'), succeed('one'), fail<string>('Pow!'), succeed('two')];
+      expect(mapSuccess(mixed, aggregatedErrors)).toSucceedWith(['one', 'two']);
+      expect(aggregatedErrors.messages).toEqual(['earlier error', 'Biff!', 'Pow!']);
+    });
+
+    test('adds nothing to aggregatedErrors when every result succeeded', () => {
+      const aggregatedErrors = new MessageAggregator();
+      expect(
+        mapSuccess(
+          strings.map((s) => succeed(s)),
+          aggregatedErrors
+        )
+      ).toSucceedWith(strings);
+      expect(aggregatedErrors.messages).toEqual([]);
+    });
+
+    test('adds nothing to aggregatedErrors and succeeds with an empty array for empty input', () => {
+      const aggregatedErrors = new MessageAggregator();
+      expect(mapSuccess<string>([], aggregatedErrors)).toSucceedWith([]);
+      expect(aggregatedErrors.messages).toEqual([]);
+    });
   });
 
   describe('mapFailures function', () => {

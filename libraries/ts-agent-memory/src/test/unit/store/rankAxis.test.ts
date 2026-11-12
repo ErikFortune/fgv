@@ -334,6 +334,7 @@ describe('FileTreeMemoryStore rank axis', () => {
       });
 
       // A brand-new store over the same root reloads rank from frontmatter WITHOUT any projector wired.
+      store.dispose();
       const reloaded = createStore({ root }).orThrow();
       expect(await reloaded.getById('knowledge' as MemoryScopeKey, 'doc-a' as never)).toSucceedAndSatisfy(
         (rec: IMemoryRecord<unknown> | undefined) => {
@@ -385,6 +386,7 @@ describe('FileTreeMemoryStore rank axis', () => {
       const before = createStore({ root }).orThrow();
       (await before.put(makeRecord({ id: 'long', body: 'xxxxxxxxxx' }))).orThrow();
       (await before.put(makeRecord({ id: 'short', body: 'x' }))).orThrow();
+      before.dispose();
       const store = createStore({ root, rankProjectors: knowledgeProjectors }).orThrow();
       return { root, store };
     }
@@ -397,6 +399,7 @@ describe('FileTreeMemoryStore rank axis', () => {
       const seed = createStore({ root }).orThrow();
       (await seed.put(makeRecord({ id: 'doc-a', body: 'abcd' }))).orThrow();
 
+      seed.dispose();
       const store = createStore({ root, rankProjectors: knowledgeProjectors }).orThrow();
       const file = persistedFile(root, 'doc-a.md');
       if (!FileTree.isMutableFileItem(file)) {
@@ -427,6 +430,7 @@ describe('FileTreeMemoryStore rank axis', () => {
       file.setRawContents(authored).orThrow();
       expect(file.getRawContents().orThrow()).toContain('\r\n');
 
+      seed.dispose();
       const store = createStore({ root, rankProjectors: knowledgeProjectors }).orThrow();
       expect(await store.reconcile(knowledgeKind, 'rank')).toSucceedAndSatisfy((r: ReconcileReport) => {
         expect(r.repaired).toBe(1);
@@ -508,6 +512,7 @@ describe('FileTreeMemoryStore rank axis', () => {
       (await seeded.put(makeRecord({ id: 'a', body: 'aaaa' }))).orThrow();
 
       const observations = MemoryObservationStore.create().orThrow();
+      seeded.dispose();
       const store = FileTreeMemoryStore.create({
         root,
         registry: registry(),
@@ -550,6 +555,7 @@ describe('FileTreeMemoryStore rank axis', () => {
       (await seeded.put(makeRecord({ id: 'k', body: 'kkkk' }))).orThrow();
       (await seeded.put(makeRecord({ id: 'p', kind: plainKind, body: 'pppppp' }))).orThrow();
 
+      seeded.dispose();
       const store = createStore({
         root,
         rankProjectors: new Map<Kind, RankProjector>([
@@ -574,6 +580,7 @@ describe('FileTreeMemoryStore rank axis', () => {
       const root = mutableRoot();
       const seeded = createStore({ root }).orThrow();
       (await seeded.put(makeRecord({ id: 'a', body: 'aaaa' }))).orThrow();
+      seeded.dispose();
       const store = createStore({ root, rankProjectors: knowledgeProjectors }).orThrow();
 
       const scopeDir = root
@@ -603,6 +610,7 @@ describe('FileTreeMemoryStore rank axis', () => {
       (await seeded.put(makeRecord({ id: 'a', body: 'aaaa' }))).orThrow();
 
       const logger = new Logging.InMemoryLogger();
+      seeded.dispose();
       const store = createStore({
         root,
         rankProjectors: new Map<Kind, RankProjector>([[knowledgeKind, throwingProjector]]),

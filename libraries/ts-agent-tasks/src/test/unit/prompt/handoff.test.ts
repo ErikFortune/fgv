@@ -34,7 +34,7 @@ import { library, recordWithBody, request, standardRecord } from '../../helpers/
 
 /** A real delivery, recording the receipt `prepare` issued, and optionally failing `prepare` or `abandon`. */
 class RecordingDelivery implements IBoundTaskDelivery {
-  public issued: ITaskInclusionReceipt | undefined;
+  public lastIssued: ITaskInclusionReceipt | undefined;
   public failPrepare: boolean = false;
   public failAbandon: boolean = false;
   public throwAcknowledge: boolean = false;
@@ -61,9 +61,13 @@ class RecordingDelivery implements IBoundTaskDelivery {
     }
     const prepared = await this._inner.prepare(budget);
     if (prepared.isSuccess()) {
-      this.issued = prepared.value.context.receipt;
+      this.lastIssued = prepared.value.context.receipt;
     }
     return prepared;
+  }
+
+  public issued(): ReturnType<IBoundTaskDelivery['issued']> {
+    return this._inner.issued();
   }
 
   public acknowledge(receipt: unknown): ReturnType<IBoundTaskDelivery['acknowledge']> {
@@ -118,7 +122,7 @@ describe('a checked handoff', () => {
       expect('receiptFor' in ready.prompt).toBe(false);
       expect(ready.prompt.system).not.toContain(ready.deliveryId);
       expect(JSON.stringify(ready)).not.toContain('"included"');
-      expect(delivery.issued?.deliveryId).toBe(ready.deliveryId);
+      expect(delivery.lastIssued?.deliveryId).toBe(ready.deliveryId);
     });
   });
 
@@ -158,7 +162,7 @@ describe('a checked handoff', () => {
 
   test('the receipt it issued is acknowledgeable directly too — the control for the refusals below', async () => {
     (await handoff()).orThrow();
-    expect(await delivery.acknowledge(delivery.issued)).toSucceed();
+    expect(await delivery.acknowledge(delivery.lastIssued)).toSucceed();
   });
 });
 
@@ -172,7 +176,7 @@ describe('a changed or dropped task slot prevents acknowledging the original rec
     expect(await ready.acknowledge(sent)).toFail();
     // Neither the exact text now, nor the receipt itself through the delivery, acknowledges anything.
     expect(await ready.acknowledge(ready.prompt.system)).toFailWith(/refused or abandoned earlier/);
-    expect(await delivery.acknowledge(delivery.issued)).toFailWith(/not a receipt this delivery issued/);
+    expect(await delivery.acknowledge(delivery.lastIssued)).toFailWith(/not a receipt this delivery issued/);
     expect(await pendingIds(delivery)).toEqual(owed);
   });
 
@@ -190,15 +194,15 @@ describe('a changed or dropped task slot prevents acknowledging the original rec
       /0 times.*the delivery was abandoned, so its receipt can never be acknowledged/
     );
     expect(refused.isFailure() && refused.detail?.code).toBe('invalid');
-    expect(delivery.issued).toBeDefined();
-    expect(await delivery.acknowledge(delivery.issued)).toFailWith(/not a receipt this delivery issued/);
+    expect(delivery.lastIssued).toBeDefined();
+    expect(await delivery.acknowledge(delivery.lastIssued)).toFailWith(/not a receipt this delivery issued/);
     expect(await pendingIds(delivery)).toEqual(owed);
   });
 
   test('a host abandoning the handoff leaves its receipt unacknowledgeable', async () => {
     const ready = (await handoff()).orThrow();
     expect(await ready.abandon()).toSucceedWith(ready.deliveryId);
-    expect(await delivery.acknowledge(delivery.issued)).toFailWith(/not a receipt this delivery issued/);
+    expect(await delivery.acknowledge(delivery.lastIssued)).toFailWith(/not a receipt this delivery issued/);
     expect(await ready.acknowledge(ready.prompt.system)).toFailWith(/refused or abandoned earlier/);
   });
 });

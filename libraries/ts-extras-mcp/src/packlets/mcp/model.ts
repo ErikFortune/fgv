@@ -25,7 +25,7 @@
  * @packageDocumentation
  */
 
-import { type Logging } from '@fgv/ts-utils';
+import { type Logging, type StringOneOf } from '@fgv/ts-utils';
 import { type AiAssist, type SaferFetch } from '@fgv/ts-extras';
 import { type JsonSchema, type JsonValue } from '@fgv/ts-json-base';
 
@@ -90,7 +90,9 @@ export interface IMcpHttpTransportParams {
    * refuses redirects (`redirect: 'error'`), because the platform would carry them to any origin. With
    * a guarded fetch, its default `redirectPolicy: 'reject'` holds; under `'validate-each-hop'` a
    * static header crosses a redirect to another origin unless it is listed in `sensitiveHeaders`. A
-   * consumer `fetch` of any other kind owns its redirect handling.
+   * consumer `fetch` of any other kind is called by the SDK with `redirect: 'manual'`. If it honours
+   * that, the SDK follows only a method-preserving redirect within the origin; if it ignores it, the
+   * fetch's own redirect handling applies.
    */
   readonly headers?: Record<string, string>;
   /**
@@ -118,9 +120,12 @@ export interface IMcpHttpTransportParams {
    * `'transport'`.
    *
    * **Any other `fetch` gets no protection from this package.** When omitted, the platform's
-   * `globalThis.fetch` is used, which follows redirects and connects to any address — including a
-   * private one — and the same is true of any function supplied here that does not guard. A custom
-   * `fetch` is still the right seam for a metered or pinned egress path.
+   * `globalThis.fetch` is used, which connects to any address — including a private one — and the
+   * same is true of any function supplied here that does not guard. A custom `fetch` is still the
+   * right seam for a metered or pinned egress path. Redirects are then bounded only by the SDK's
+   * own default `redirectPolicy: 'same-origin'`: it calls the fetch with `redirect: 'manual'` and,
+   * for a fetch that honours that, follows a redirect that keeps the method and the origin (or goes
+   * from http to https on the same host) and fails the request on any other.
    *
    * If the guarded fetch allows redirects, list the static credential headers above and
    * `mcp-session-id` in its `sensitiveHeaders`: `fetch` strips only `authorization` on a
@@ -409,6 +414,42 @@ export interface IMcpRequestOptions {
   readonly maxTotalTimeoutMs?: number;
 }
 
+/**
+ * Which bound of a paged tool listing was exceeded — the `limit` of the `'limit-exceeded'`
+ * {@link McpFailureReason}.
+ * @public
+ */
+export type McpListingLimit = 'maxPages' | 'maxTotalMs';
+
+/**
+ * Options for {@link listMcpTools}: the per-request options, applied to each page, plus bounds over
+ * the whole paged listing.
+ *
+ * @remarks
+ * Neither bound has a default: without them a server can page without end, or slowly, for as long
+ * as it likes. Exceeding either fails the whole listing with the `'limit-exceeded'`
+ * {@link McpFailureReason}, naming the bound in `limit`; the pages already read are discarded, never
+ * returned as a truncated catalog.
+ * @public
+ */
+export interface IListMcpToolsOptions extends IMcpRequestOptions {
+  /**
+   * The most pages the listing may read. A listing whose page number `maxPages` still carries a
+   * `nextCursor` fails without requesting another page; a catalog of exactly `maxPages` pages
+   * succeeds. Must be a positive integer; anything else fails with `'invalid-options'` before a
+   * request is sent.
+   */
+  readonly maxPages?: number;
+  /**
+   * An overall deadline, in milliseconds, over the whole paged listing, measured from the call. It
+   * is checked before each page is requested, and a page in flight when it elapses is aborted
+   * (the SDK sends the server a `notifications/cancelled` for it). A page that settled before the
+   * deadline fired is kept. It runs alongside each page's own `timeoutMs`, whichever fires first.
+   * The same range as `timeoutMs` applies.
+   */
+  readonly maxTotalMs?: number;
+}
+
 // ============================================================================
 // Failure classification
 // ============================================================================
@@ -434,7 +475,8 @@ export interface IMcpRequestOptions {
  * | `'protocol'` | The server answered with a JSON-RPC error (`code` is its code — including `-32000` on a session that is still open, which servers use as a generic error), or the SDK rejected a response that failed its result schema (no `code`). |
  * | `'transport'` | Anything else: a network or child-process I/O failure, a non-2xx HTTP status not listed above, or an error the SDK raised without a type — including the handshake's protocol-version refusal, which the SDK raises as a plain `Error`. This is the catch-all that makes the classification total. |
  * | `'invalid-handle'` | The session or transport handle did not come from this package, or the transport handle was already used by an earlier connect. A caller bug; retrying cannot help. |
- * | `'invalid-options'` | A `timeoutMs` / `maxTotalTimeoutMs` outside the accepted range. Reported before anything is sent. |
+ * | `'invalid-options'` | A `timeoutMs` / `maxTotalTimeoutMs` / `maxTotalMs` outside the accepted range, or a `maxPages` that is not a positive integer. Reported before anything is sent. |
+ * | `'limit-exceeded'` | A bound the caller set over a paged listing was exceeded: {@link IListMcpToolsOptions.maxPages} or {@link IListMcpToolsOptions.maxTotalMs}, named by `limit`. The listing fails whole; nothing is truncated. The session stays usable. |
  *
  * **HTTP-error and OAuth-error text never reaches a failure message.** A failure from an HTTP
  * error (a response's body or status text) or an OAuth error (an `error_description`), and every
@@ -479,7 +521,9 @@ export type McpFailureReason =
   /** `status` is the HTTP status, when the failure came as one. */
   | { readonly kind: 'transport'; readonly status?: number }
   | { readonly kind: 'invalid-handle' }
-  | { readonly kind: 'invalid-options' };
+  | { readonly kind: 'invalid-options' }
+  /** `limit` names the listing bound that was exceeded. */
+  | { readonly kind: 'limit-exceeded'; readonly limit: McpListingLimit };
 
 // ============================================================================
 // Tool discovery + invocation
@@ -511,6 +555,37 @@ export interface IMcpToolAnnotations {
   readonly idempotentHint?: boolean;
   /** Hint: the tool interacts with an open world of external entities. */
   readonly openWorldHint?: boolean;
+}
+
+/**
+ * Every MCP `Tool.execution.taskSupport` value, as a runtime list — the vocabulary of the SDK's own
+ * `ToolExecutionSchema`. {@link McpTaskSupport} is derived from it, so the two cannot diverge.
+ * @public
+ */
+export const MCP_TASK_SUPPORT_VALUES = ['forbidden', 'optional', 'required'] as const;
+
+/**
+ * Whether a tool may, must or must not be invoked as an MCP task (task-augmented execution) — the
+ * MCP `Tool.execution.taskSupport` vocabulary. Per the MCP spec an absent value means `'forbidden'`.
+ * @public
+ */
+export type McpTaskSupport = StringOneOf<typeof MCP_TASK_SUPPORT_VALUES>;
+
+/**
+ * Normalized MCP `Tool.execution` — the tool's execution metadata.
+ *
+ * @remarks
+ * Validated like {@link IMcpToolAnnotations}: each known field is converted on its own, and an
+ * unknown or malformed value that reaches this package is dropped (and logged at `info`), never
+ * failing discovery and never propagated raw. **Through the SDK, though, an unknown or malformed
+ * value fails the whole `tools/list` page as `'protocol'`** before it reaches this package: the SDK
+ * parses each page against its own schema, whose `execution` is closed. Only a value that gets past
+ * that parse is dropped and logged.
+ * @public
+ */
+export interface IMcpToolExecution {
+  /** The tool's task support, when it declared a known value. Absent means `'forbidden'`. */
+  readonly taskSupport?: McpTaskSupport;
 }
 
 /**
@@ -554,6 +629,17 @@ export interface IMcpToolDescriptor {
    * See {@link IMcpToolAnnotations}.
    */
   readonly annotations?: IMcpToolAnnotations;
+  /**
+   * The tool's normalized execution metadata, when the server declared any usable field. Absent
+   * when it declared none, or only unknown or malformed ones. See {@link IMcpToolExecution}.
+   *
+   * @remarks
+   * The SDK parses the tool list against its own schema first, and that schema rejects a
+   * `taskSupport` outside {@link McpTaskSupport}: through the SDK such a value fails the whole page
+   * as `'protocol'` before it reaches this package. The drop-and-log path covers any value that does
+   * reach it.
+   */
+  readonly execution?: IMcpToolExecution;
 }
 
 /**
@@ -755,18 +841,37 @@ export interface IMcpToolCallResult {
 // ============================================================================
 
 /**
- * A tool that was discovered but could NOT be adapted into an `AiAssist.IAiClientTool`,
- * because its `inputSchema` is outside the JSON Schema subset supported by
- * `JsonSchema.fromJson`. Surfaced structurally so callers/the probe can enumerate exactly which
- * subset features a server needs (with the raw schema in hand to extend `fromJson` later).
+ * Why {@link adaptMcpTools} skipped a tool — the `kind` of an {@link IMcpSkippedTool}.
+ *
+ * @remarks
+ * | kind | skipped because |
+ * |---|---|
+ * | `'schema'` | Its `inputSchema` is not a JSON object, or is outside the subset `JsonSchema.fromJson` supports (including a `pattern` with no {@link IAdaptMcpToolsOptions.patternValidator}). |
+ * | `'wire'` | Its schema parsed, but the target wire cannot carry it (see {@link IAdaptMcpToolsOptions.schemaKeywords}). |
+ * | `'task-support'` | It declares `execution.taskSupport: 'required'`: it must be invoked as an MCP task, which this client cannot drive, so every plain call to it would fail. Checked first, whatever its schema. |
+ * @public
+ */
+export type McpSkipKind = 'schema' | 'wire' | 'task-support';
+
+/**
+ * A tool that was discovered but could NOT be adapted into an `AiAssist.IAiClientTool`: its
+ * `inputSchema` is outside the JSON Schema subset supported by `JsonSchema.fromJson`, the target
+ * wire cannot carry it, or it requires task-augmented execution. Surfaced structurally so
+ * callers/the probe can enumerate exactly which subset features a server needs (with the raw schema
+ * in hand to extend `fromJson` later), branching on `kind` rather than parsing `reason`.
  * @public
  */
 export interface IMcpSkippedTool {
   /** The tool's name. */
   readonly name: string;
-  /** Why the tool was skipped — the JSON-pointer reason from `JsonSchema.fromJson`, or a structural reason. */
+  /** Why the tool was skipped. See {@link McpSkipKind}. */
+  readonly kind: McpSkipKind;
+  /** Why the tool was skipped, in words — the JSON-pointer reason from `JsonSchema.fromJson`, or a structural reason. */
   readonly reason: string;
-  /** The raw failing input schema, verbatim, in hand for additively widening `JsonSchema.fromJson`. */
+  /**
+   * The tool's raw input schema, verbatim, in hand for additively widening `JsonSchema.fromJson`. For
+   * a `'task-support'` skip it is the schema as declared, whether or not it would have adapted.
+   */
   readonly schema: JsonValue;
 }
 
@@ -822,6 +927,15 @@ export interface IAdaptMcpToolsOptions {
    * `new RegExp(source)` defeats the point of the option.
    */
   readonly patternValidator?: JsonSchema.SchemaPatternValidator;
+
+  /**
+   * Options for the tool discovery `adaptMcpTools` runs — passed to {@link listMcpTools} as given,
+   * including its bounds over the paged listing ({@link IListMcpToolsOptions.maxPages},
+   * {@link IListMcpToolsOptions.maxTotalMs}) and each page's `timeoutMs` and `signal`. A discovery
+   * failure, a bound exceeded included, fails the whole adaptation with its
+   * {@link McpFailureReason}. When omitted, discovery is unbounded, as {@link listMcpTools} is.
+   */
+  readonly discovery?: IListMcpToolsOptions;
 }
 
 /**
@@ -832,6 +946,6 @@ export interface IAdaptMcpToolsOptions {
 export interface IAdaptMcpToolsResult {
   /** Tools adapted into `IAiClientTool` — safe to hand to `AiAssist.executeClientToolTurn`. */
   readonly tools: ReadonlyArray<AiAssist.IAiClientTool>;
-  /** Tools excluded because their `inputSchema` is outside the supported JSON Schema subset. */
+  /** Tools excluded from `tools`, each with the {@link McpSkipKind} of why. */
   readonly skipped: ReadonlyArray<IMcpSkippedTool>;
 }

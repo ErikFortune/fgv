@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { Result, captureResult, fail, succeed } from '@fgv/ts-utils';
+import { Result, captureResult, fail, formatValueForMessage, succeed } from '@fgv/ts-utils';
 
 /**
  * Primitive (terminal) values allowed in by JSON.
@@ -176,14 +176,23 @@ export function isJsonArray(from: unknown): from is JsonArray {
  * @public
  */
 export function classifyJsonValue(from: unknown): Result<JsonValueType> {
-  if (isJsonPrimitive(from)) {
-    return succeed('primitive');
-  } else if (isJsonObject(from)) {
-    return succeed('object');
-  } else if (isJsonArray(from)) {
-    return succeed('array');
-  }
-  return fail(`Invalid JSON: ${from}`);
+  // the type guards read the value, so a Proxy whose traps throw makes them throw
+  return captureResult((): JsonValueType | undefined => {
+    if (isJsonPrimitive(from)) {
+      return 'primitive';
+    } else if (isJsonObject(from)) {
+      return 'object';
+    } else if (isJsonArray(from)) {
+      return 'array';
+    }
+    return undefined;
+  })
+    .withErrorFormat((msg) => `Invalid JSON: ${formatValueForMessage(from, { style: 'string' })}: ${msg}`)
+    .onSuccess((kind) =>
+      kind === undefined
+        ? fail<JsonValueType>(`Invalid JSON: ${formatValueForMessage(from, { style: 'string' })}`)
+        : succeed(kind)
+    );
 }
 
 /**

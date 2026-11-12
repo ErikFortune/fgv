@@ -741,6 +741,7 @@ describe('FileTreeMemoryStore', () => {
 
       // A fresh store over the same root must re-index the MTM record (verifyRoundTrip
       // exercises the multi-segment scope on load).
+      store.dispose();
       const reopened = memoryStore(root);
       expect(await reopened.get(mtmKind, 'conv-x:0' as EntityId)).toSucceedAndSatisfy((r) => {
         expect(r?.envelope.id).toBe('turn-0');
@@ -910,6 +911,7 @@ describe('FileTreeMemoryStore', () => {
         ).orThrow();
       }
 
+      seeded.dispose();
       const reopened = memoryStore(root, 2);
       clockValue = 2000;
       (
@@ -1016,6 +1018,7 @@ describe('FileTreeMemoryStore', () => {
 
       // A fresh store over the same root re-reads the persisted frontmatter: the
       // cleared key must not resurface.
+      store.dispose();
       const reopened = createStore({ root }).orThrow();
       expect(await reopened.get(knowledgeKind, 'doc-p' as EntityId)).toSucceedAndSatisfy((r) => {
         expect(r?.envelope.provenance).toEqual({ source: 'agent', confidence: 0.9 });

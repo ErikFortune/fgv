@@ -339,18 +339,22 @@ describe('structured-output scenarios', () => {
     }
     const result = await anthropicStructuredOutputScenario.cli.run(makeContext());
     expect(result).toFailWith(/no probe ran — every provider was skipped for want of an API key/i);
-    expect(result).toFailWith(/SKIPPED\s+anthropic tool-forced/);
+    expect(result).toFailWith(/SKIPPED\s+anthropic tool-forced \(@anthropic:haiku\)/);
+    expect(result).toFailWith(/SKIPPED\s+anthropic output_config\.format \(default\)/);
     expect(result).toFailWith(/SKIPPED\s+anthropic output_config\.format \(@anthropic:opus\)/);
     expect(result).toFailWith(/SKIPPED\s+anthropic output_config\.format \(@anthropic:fable\)/);
   });
 
-  test("the anthropic probes' expectations match the registry: forced tool on the default, output format on opus / fable", () => {
+  test("the anthropic probes' expectations match the registry: forced tool on haiku, output format on the default / opus / fable", () => {
     // The scenario hard-codes `expect` per probe; if the registry moves a line between formats,
     // this fails offline rather than as a confusing live mismatch.
     const anthropic = AiAssist.getProviderDescriptor('anthropic').orThrow();
     const defaultModel = AiAssist.resolveProviderModel(anthropic, undefined, undefined).orThrow();
-    expect(AiAssist.resolveStructuredOutputCapability(anthropic, defaultModel)?.format).toBe(
+    expect(AiAssist.resolveStructuredOutputCapability(anthropic, '@anthropic:haiku')?.format).toBe(
       'anthropic-tool-forced'
+    );
+    expect(AiAssist.resolveStructuredOutputCapability(anthropic, defaultModel)?.format).toBe(
+      'anthropic-output-format'
     );
     for (const alias of ['@anthropic:opus', '@anthropic:fable']) {
       expect(AiAssist.resolveStructuredOutputCapability(anthropic, alias)?.format).toBe(

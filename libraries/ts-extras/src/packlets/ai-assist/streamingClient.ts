@@ -27,6 +27,9 @@
  * @packageDocumentation
  */
 
+import { resolveAnthropicThinkingOffType } from './anthropicThinkingOff';
+import { resolveGeminiModelThinking } from './geminiThinking';
+import { checkSamplingParams, temperatureAcceptedWithThinking } from './samplingParams';
 import { fail, Result } from '@fgv/ts-utils';
 
 import { type IAiCacheRequest } from './cacheRequest';
@@ -167,7 +170,8 @@ export async function callProviderCompletionStream(
         thinking,
         model,
         discriminator,
-        isThinkingRequiredModel(descriptor, model)
+        isThinkingRequiredModel(descriptor, model),
+        resolveGeminiModelThinking(descriptor, model)
       );
       if (mergeResult.isFailure()) {
         return fail(mergeResult.message);
@@ -177,12 +181,17 @@ export async function callProviderCompletionStream(
         resolvedThinking,
         discriminator,
         temperature,
-        mergeResult.value.noneDegraded
+        mergeResult.value.noneDegraded,
+        temperatureAcceptedWithThinking(descriptor, model)
       );
       if (conflictResult.isFailure()) {
         return fail(conflictResult.message);
       }
     }
+  }
+  const samplingResult = checkSamplingParams(descriptor, model, temperature, resolvedThinking);
+  if (samplingResult.isFailure()) {
+    return fail(samplingResult.message);
   }
 
   const config: IStreamApiConfig = {
@@ -252,7 +261,9 @@ export async function callProviderCompletionStream(
         undefined,
         isAdaptiveThinkingModel(descriptor, config.model),
         maxTokens,
-        cache
+        cache,
+        temperatureAcceptedWithThinking(descriptor, config.model),
+        resolveAnthropicThinkingOffType(descriptor, config.model)
       );
     case 'gemini':
       return callGeminiStream(
