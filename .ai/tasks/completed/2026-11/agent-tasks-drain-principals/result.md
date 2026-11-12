@@ -2,7 +2,7 @@
 
 **Shipped:** a subscription now records the principals that may bind and drain its delivery — `bindDelivery` refuses anyone else exactly as it refuses a missing subscription, every bound-delivery operation re-applies the rule, the host can change the list through `TaskBroker.setSubscriptionDrain`, and `disposeWithheld` ends withheld obligations only through a binding whose policy carries the identity the subscription recorded as the consumer's own.
 
-Branch `agent-tasks-drain-principals`, into `integration/agent-tasks-host` (PR #TBD). Package
+Branch `agent-tasks-drain-principals`, into `integration/agent-tasks-host` (PR #781). Package
 `@fgv/ts-agent-tasks`; testbed journey updated. Change files: `@fgv/ts-agent-tasks` `minor`
 (`BREAKING:`), `@fgv/testbed` `none`.
 

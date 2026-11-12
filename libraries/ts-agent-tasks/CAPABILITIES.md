@@ -1525,7 +1525,7 @@ multi-process ownership, general event sourcing, and dependency DAGs.
 
 <!-- BEGIN GENERATED: recent-additions -->
 
-- **2026-11-12** — Only the principals an agent-task subscription names may bind and drain its delivery, and disposeWithheld ends withheld obligations only through the consumer's own policy, by identity.
+- **2026-11-12** — Only the principals an agent-task subscription names may bind and drain its delivery, and disposeWithheld ends withheld obligations only through the consumer's own policy, by identity. ([#781](https://github.com/ErikFortune/fgv/pull/781))
 - **2026-10-26** — An agent-task host can drain a subscription one revision at a time, acknowledging only after its own work commits, and keep a durable retry obligation for a busy recipient that a crash cannot duplicate. ([#762](https://github.com/ErikFortune/fgv/pull/762))
 - **2026-10-26** — An agent-task host can open or initialize its repository in the strongest mode its root qualifies for, give its own principal a fixed trusted authority, wait for the broker to go idle and gate every broker write. ([#758](https://github.com/ErikFortune/fgv/pull/758))
 - **2026-10-26** — A host can stop every write it routes through one AsyncControl.WriteGate, or hold them still for a snapshot until the writes under way drain, and hand the same gate to a task broker as its writeGuard. ([#761](https://github.com/ErikFortune/fgv/pull/761))

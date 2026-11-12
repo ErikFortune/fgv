@@ -1,6 +1,6 @@
 # agent-tasks-drain-principals — only named principals may drain a subscription
 
-**Shipped**: 2026-11-12 into `integration/agent-tasks-host` via #TBD, beside #762, whose promotion to
+**Shipped**: 2026-11-12 into `integration/agent-tasks-host` via #781, beside #762, whose promotion to
 `release` this unblocks. Package: `@fgv/ts-agent-tasks` (`broker`, `storage`, `converters`, `types`,
 `host`); `@fgv/testbed` journey. Change file `minor`, `BREAKING:`.
 
@@ -15,6 +15,9 @@ able to name a consumer could bind it and drain it. Now:
   subscription, and `TaskDeliveryPump.create` inherits it. **Every bound-delivery operation applies
   the rule again** to the subscription as it stands, so a binding made before a principal was removed
   is refused from then on.
+- **`dispose` and a disposing `closeSubscription` need a drain principal** (a retaining close also
+  accepts the registrant), decided again in the writing section — so one consumer's binding cannot
+  end another's obligations either.
 - **Records written before the field existed** are drained by their registrant alone
   (`drainPrincipalsOf`).
 - **`TaskBroker.setSubscriptionDrain`** replaces the list (and the policy identity), through the

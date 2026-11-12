@@ -132,14 +132,14 @@ detail. `· pkg` names the owning package.*
 - **Embedding text via a cloud or self-hosted provider?** → `callProviderEmbedding` · `ts-extras`
 - **Calling a self-hosted Ollama or OpenAI-compatible model?** → `executeClientToolTurn` · `ts-extras`
 - **Asking a System-1 model (CLM, Jev) a typed yes/no, choice or score question?** → `askSystemOne` `noul` `choice` `score`; never truncate the state yourself · `ts-extras-system-one`
-- **Recording agent work (lifecycle, observations, commands) without a runner?** → `ITaskEnvelope` `TaskLifecycle` `TaskKindRegistry` `TaskConverters` · `ts-agent-tasks`
+- **Recording agent work (lifecycle, observations, commands), no runner?** → `ITaskEnvelope` `TaskLifecycle` `TaskKindRegistry` `TaskConverters` · `ts-agent-tasks`
 - **Rendering task snapshots into bounded prompt context, with an inclusion receipt?** → `TaskContextRenderer` `ITaskInclusionReceipt` · `ts-agent-tasks`
 - **Persisting agent task state + owed updates so a process crash loses neither?** → `FileTreeTaskRepository` `FileTree` · `ts-agent-tasks`
 - **Selecting agent tasks by scope, due time or owed update without reading records?** → `FileTreeTaskRepository` `runTaskRepositoryConformance` · `ts-agent-tasks`
 - **Opening a task repository at a host root, durable only if the root qualifies?** → `openOrInitializeTaskRepository` `probeTaskRepositoryRoot` · `ts-agent-tasks`
 - **Giving a principal (tool, actor) authorized, projected access to agent tasks?** → `TaskBroker` `ITaskAuthorization` `defaultTaskProjector` · `ts-agent-tasks`
 - **Draining a task subscription, acknowledging after your work commits?** → `TaskDeliveryPump` `IBoundTaskDelivery` · `ts-agent-tasks`
-- **Crash-durable retries, no scheduler?** → `DeferredObligations` `trustedKindAuthority` · `ts-agent-tasks`
+- **Crash-durable retry, no scheduler?** → `DeferredObligations` `trustedKindAuthority` · `ts-agent-tasks`
 - **Tracking work an external executor runs — reconciled, never set optimistically?** → `ExternalTaskSource` `ITaskSource` `TaskBroker` · `ts-agent-tasks`
 - **Telling a consumer what changed in its tasks, acknowledging only what it was shown?** → `TaskBroker` `IBoundTaskDelivery` `ITaskCheckpointStore` · `ts-agent-tasks`
 - **Pausing or cancelling an agent task subtree, with an honest partial result?** → `requestStop` `reconcileStop` `releaseStop` `ISourceCapabilities` · `ts-agent-tasks`
@@ -212,7 +212,7 @@ markers.*
 
 <!-- BEGIN GENERATED: recent-additions -->
 
-- **2026-11-12** — Only the principals an agent-task subscription names may bind and drain its delivery, and disposeWithheld ends withheld obligations… · `ts-agent-tasks` `testbed`
+- **2026-11-12** — Only the principals an agent-task subscription names may bind and drain its delivery, and disposeWithheld ends withheld obligations… ([#781](https://github.com/ErikFortune/fgv/pull/781)) · `ts-agent-tasks` `testbed`
 - **2026-11-11** — ai-assist's @anthropic:fable alias now reaches Claude Fable 5.2, and Fable 5.2 and Mythos 5.2 get JSON-outputs structured output… ([#773](https://github.com/ErikFortune/fgv/pull/773)) · `ts-extras` `testbed`
 - **2026-11-11** — ai-assist sends Gemini's thinkingLevel from a declared per-model table — 'none' is minimal on Flash-Lite — and @google-gemini:pro… ([#775](https://github.com/ErikFortune/fgv/pull/775)) · `ts-extras` `testbed`
 - **2026-11-11** — ai-assist sends temperature 1 beside a reasoning effort on GPT-6 Luna and refuses any other value while it reasons, from a declared… ([#776](https://github.com/ErikFortune/fgv/pull/776)) · `ts-extras` `testbed`

@@ -1,7 +1,7 @@
 id: agent-tasks-drain-principals
 status: shipped
 packages: ['@fgv/ts-agent-tasks', '@fgv/testbed']
-prs: [] # PR #TBD — not yet opened; the orchestrator fills it in when it does
+prs: [781]
 openPrs: []
 opened: 2026-11-12
 closed: 2026-11-12
@@ -58,4 +58,4 @@ relatedStreams:
       id: agent-tasks-delivery-and-deferral,
       relationship: 'closes its review round 3 (c) escalation and its disposeWithheld accepted residual'
     }
-sourceHash: sha256:08d9f25f2b774304 # over brief.md + state.md + result.md
+sourceHash: sha256:db6fb0967c02c79e # over brief.md + state.md + result.md
