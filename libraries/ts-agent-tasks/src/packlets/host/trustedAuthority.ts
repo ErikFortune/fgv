@@ -43,6 +43,8 @@ export interface ITrustedKindAuthorityParams {
   readonly actions: ReadonlyArray<TaskAction>;
   /** The policy epoch the authority reports. It never changes: the answer never does. */
   readonly epoch: string;
+  /** The policy's identity (`ITaskAuthorization.policyIdentity`), when the host names it. */
+  readonly policyIdentity?: string;
 }
 
 /**
@@ -123,6 +125,7 @@ export function trustedKindAuthority(params: ITrustedKindAuthorityParams): Resul
 
   return succeed({
     check: async (request: ITaskAccessRequest): Promise<Result<boolean>> => succeed(allowed(request)),
-    policyEpoch: (): string => epoch
+    policyEpoch: (): string => epoch,
+    ...(params.policyIdentity !== undefined ? { policyIdentity: params.policyIdentity } : {})
   });
 }

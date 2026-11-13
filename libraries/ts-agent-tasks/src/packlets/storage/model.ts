@@ -30,6 +30,7 @@ import {
   ITaskDispositionResult,
   ITaskObligationDisposal,
   ITaskSubscriptionClosure,
+  ITaskSubscriptionDrainChange,
   ITaskReceiptAcknowledgement,
   ITaskReceiptIssue,
   ITaskSubscription,
@@ -304,6 +305,11 @@ export interface ITaskRepositoryWriter {
    * disposes everything it is owed, in one write. Its record, identity slot and history are retained.
    */
   closeSubscription(request: ITaskSubscriptionClosure): Promise<TaskResult<ITaskConsumerRecord>>;
+  /**
+   * Replaces a subscription's drain principals and policy identity, active or closed. Changes
+   * nothing — and writes nothing — when both already stand as asked.
+   */
+  setSubscriptionDrain(request: ITaskSubscriptionDrainChange): Promise<TaskResult<ITaskConsumerRecord>>;
   /**
    * Prunes every update of one task whose audience has discharged it, by each audience member's
    * durable checkpoint, in one maintenance replacement; returns the record unchanged when nothing

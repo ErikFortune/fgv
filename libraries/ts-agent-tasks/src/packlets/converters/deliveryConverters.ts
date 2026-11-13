@@ -8,6 +8,7 @@ import {
   IAbandonCommandRequest,
   ICloseSubscriptionRequest,
   IDisposeObligationsRequest,
+  IDisposeWithheldRequest,
   IIssuedTaskReceipt,
   ITaskObligationDisposal,
   ITaskObligationDisposition,
@@ -17,6 +18,7 @@ import {
   ILiveInventoryEntry,
   IPendingConsumerEntry,
   ISubscribeRequest,
+  ISubscriptionDrainRequest,
   ITaskConsumerInventoryEntry,
   ITaskConsumerRecord,
   ITaskDeliveryPolicy,
@@ -24,6 +26,7 @@ import {
   ITaskReceiptAbandonment,
   ITaskReceiptAcknowledgement,
   ITaskReceiptIssue,
+  ITaskSubscriptionDrainChange,
   ITaskSubscriptionRegistration,
   ITaskSubscriptionSpecification,
   ITaskUpdate,
@@ -58,6 +61,16 @@ export interface IDeliveryConverters {
   /** A partial policy — a subscribe request's overrides, or a broker's delivery defaults. */
   readonly policyOverrides: Converter<Partial<Omit<ITaskDeliveryPolicy, 'schemaVersion'>>>;
   readonly specification: Converter<ITaskSubscriptionSpecification>;
+  /**
+   * A requested drain-principal list: each entry a principal key. Duplicates are removed, then the
+   * result must name at least one and at most {@link maxDrainPrincipals} distinct principals, and is
+   * ascending. At most four times that many entries are read.
+   */
+  readonly drainPrincipalsRequest: Converter<ReadonlyArray<string>>;
+  /** A stored drain-principal list: non-empty, bounded, unique and ascending. */
+  readonly drainPrincipals: Converter<ReadonlyArray<string>>;
+  /** A policy identity: one non-empty line. */
+  readonly policyIdentity: Converter<string>;
   readonly issued: Converter<IIssuedTaskReceipt>;
   /** A consumer record, with every invariant a record this release writes must keep. */
   readonly consumerRecord: Converter<ITaskConsumerRecord>;
@@ -75,9 +88,22 @@ export interface IDeliveryConverters {
   readonly obligationDisposal: Converter<ITaskObligationDisposal>;
   readonly subscriptionClosure: Converter<ITaskSubscriptionClosure>;
   readonly disposeRequest: Converter<IDisposeObligationsRequest>;
+  /** A request to end a bound delivery's withheld obligations. */
+  readonly disposeWithheldRequest: Converter<IDisposeWithheldRequest>;
   readonly closeRequest: Converter<ICloseSubscriptionRequest>;
+  readonly drainRequest: Converter<ISubscriptionDrainRequest>;
+  readonly drainChange: Converter<ITaskSubscriptionDrainChange>;
   readonly abandonCommandRequest: Converter<IAbandonCommandRequest>;
 }
+
+/**
+ * The most principals one subscription may name as drain principals.
+ * @public
+ */
+export const maxDrainPrincipals: number = 32;
+
+/** How many entries a drain-principal request may hold per principal it can name, duplicates included. */
+const drainRequestEntriesPerPrincipal: number = 4;
 
 /** Whether values are strictly ascending — unique and in canonical order. */
 function _ascending(values: ReadonlyArray<string>): boolean {
@@ -159,12 +185,44 @@ export function buildDeliveryConverters(
   const closureMode: Converter<TaskSubscriptionClosureMode> =
     Converters.enumeratedValue<TaskSubscriptionClosureMode>(['retain', 'dispose']);
 
+  const principalList: Converter<ReadonlyArray<string>> = boundedArrayOf(
+    principalKey,
+    maxDrainPrincipals,
+    'drain principals'
+  );
+  // A request is de-duplicated before the cap applies, so the cap counts distinct principals; the
+  // entries read are bounded too, by a multiple of it, so a repetitive list cannot cost unbounded work.
+  const drainPrincipalsRequest: Converter<ReadonlyArray<string>> = boundedArrayOf(
+    principalKey,
+    maxDrainPrincipals * drainRequestEntriesPerPrincipal,
+    'drain principals'
+  ).withConstraint((value: ReadonlyArray<string>): Result<ReadonlyArray<string>> => {
+    const distinct: ReadonlyArray<string> = Array.from(new Set(value)).sort();
+    if (distinct.length === 0) {
+      return fail(`drain principals must name at least one principal`);
+    }
+    return distinct.length <= maxDrainPrincipals
+      ? succeed(distinct)
+      : fail(
+          `drain principals: ${distinct.length} distinct principals exceeds the maximum of ${maxDrainPrincipals}`
+        );
+  });
+  const drainPrincipals: Converter<ReadonlyArray<string>> = principalList.withConstraint(
+    (value: ReadonlyArray<string>): Result<ReadonlyArray<string>> =>
+      value.length > 0 && _ascending(value)
+        ? succeed(value)
+        : fail(`drain principals must be non-empty, unique and ascending`)
+  );
+  const policyIdentity: Converter<string> = boundedSingleLine(bounds.maxSummaryLength, 'policy identity');
+
   const specification: Converter<ITaskSubscriptionSpecification> =
     Converters.strictObject<ITaskSubscriptionSpecification>({
       consumerId: ids.consumerId,
       selection: queries.selection,
       start,
-      policy
+      policy,
+      drainPrincipals: drainPrincipals.optional(),
+      policyIdentity: policyIdentity.optional()
     });
 
   const issued: Converter<IIssuedTaskReceipt> = Converters.strictObject<IIssuedTaskReceipt>({
@@ -195,6 +253,8 @@ export function buildDeliveryConverters(
     selection: queries.selection,
     start,
     policy,
+    drainPrincipals: drainPrincipals.optional(),
+    policyIdentity: policyIdentity.optional(),
     state: subscriptionState,
     createdAt: instant,
     baseline: Converters.arrayOf(context.update),
@@ -283,7 +343,9 @@ export function buildDeliveryConverters(
     consumerId: ids.consumerId,
     selection: queries.selection,
     start,
-    policy: policyOverrides.optional()
+    policy: policyOverrides.optional(),
+    drainPrincipals: drainPrincipalsRequest.optional(),
+    policyIdentity: policyIdentity.optional()
   });
 
   const registration: Converter<ITaskSubscriptionRegistration> =
@@ -350,12 +412,31 @@ export function buildDeliveryConverters(
       updateIds,
       reason: dispositionReason
     });
+  const disposeWithheldRequest: Converter<IDisposeWithheldRequest> =
+    Converters.strictObject<IDisposeWithheldRequest>({
+      reason: dispositionReason,
+      limit: queries.limit.optional()
+    });
   const closeRequest: Converter<ICloseSubscriptionRequest> =
     Converters.strictObject<ICloseSubscriptionRequest>({
       subscriptionId: ids.subscriptionId,
       obligations: closureMode,
       reason: dispositionReason.optional()
     }).withConstraint(closureRule);
+
+  const drainRequest: Converter<ISubscriptionDrainRequest> =
+    Converters.strictObject<ISubscriptionDrainRequest>({
+      subscriptionId: ids.subscriptionId,
+      drainPrincipals: drainPrincipalsRequest,
+      policyIdentity: policyIdentity.optional()
+    });
+  const drainChange: Converter<ITaskSubscriptionDrainChange> =
+    Converters.strictObject<ITaskSubscriptionDrainChange>({
+      subscriptionId: ids.subscriptionId,
+      expectedRecordRevision: nonNegativeSafeInteger,
+      drainPrincipals,
+      policyIdentity: policyIdentity.optional()
+    });
 
   const abandonCommandRequest: Converter<IAbandonCommandRequest> =
     Converters.strictObject<IAbandonCommandRequest>({
@@ -371,7 +452,13 @@ export function buildDeliveryConverters(
     obligationDisposal,
     subscriptionClosure,
     disposeRequest,
+    disposeWithheldRequest,
     closeRequest,
+    drainRequest,
+    drainChange,
+    drainPrincipalsRequest,
+    drainPrincipals,
+    policyIdentity,
     start,
     categories,
     policy,

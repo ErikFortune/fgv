@@ -1,0 +1,61 @@
+id: agent-tasks-drain-principals
+status: shipped
+packages: ['@fgv/ts-agent-tasks', '@fgv/testbed']
+prs: [781]
+openPrs: []
+opened: 2026-11-12
+closed: 2026-11-12
+summary:
+  intended: >
+    Close the P2 that bindDelivery checks only consumerId, so any host code naming a consumer can
+    bind and drain it: record drain principals at subscribe (optional, default the registering
+    principal, converter-validated, persisted, visible on ITaskSubscription); refuse any other
+    principal at bindDelivery with not-found-or-denied; treat persisted subscriptions without the
+    field as registrant-only and give the host a trusted way to change the list; close the #762
+    disposeWithheld policy-identity residual if it fits cleanly, otherwise write the design down;
+    update the testbed's host-subscribes / agent-drains sites; merge origin/release in first and
+    gate the merged tree.
+  shipped: >
+    ISubscribeRequest.drainPrincipals (bounded by maxDrainPrincipals, de-duplicated, stored
+    ascending, default the registrant alone) on the subscription specification and descriptor;
+    bindDelivery and TaskDeliveryPump.create refuse an unnamed principal with the answer a missing
+    subscription gets, and every bound-delivery operation re-applies the rule; drainPrincipalsOf for
+    legacy records; TaskBroker.setSubscriptionDrain plus ITaskRepositoryWriter.setSubscriptionDrain;
+    ITaskAuthorization.policyIdentity and ISubscribeRequest.policyIdentity, which disposeWithheld now
+    requires to agree; trustedKindAuthority takes an identity; testbed journey names every drainer and
+    checks an unnamed one is refused; a 34-row revert matrix and a check-then-act table. After the
+    independent review, bindDelivery decides the binding before the subscription (no existence oracle),
+    dispose and a disposing closeSubscription require a drain principal (a retaining close, the
+    registrant or a drain principal), re-decided in the writer; a legacy registration replays for a
+    retry naming its registrant; the request list is de-duplicated before it is capped. Step 0 merged
+    release cleanly against #758 as the effective base and trimmed the capability router under its cap.
+  diverged: >
+    Decision 4 was built rather than deferred. Beyond the brief, every bound-delivery operation
+    re-checks the drain rule against the subscription as it stands, so a binding made before a
+    principal was removed cannot keep draining; and disposeWithheld's principal rule moved from the
+    registering principal to any drain principal. When a list is given the registrant is not added.
+    Re-subscribe was not an update path, so setSubscriptionDrain was added, and a retry of the
+    original subscribe after a change is conflict. Restricting dispose and closeSubscription to drain
+    principals was not in the brief; the independent review found the same cross-consumer harm there. The #780 TECH_DEBT entry was not on the branch
+    after Step 0, so its closure is recorded in result.md for the orchestrator to reconcile.
+  sourceLine: "**Shipped:** a subscription now records the principals that may bind and drain its delivery — `bindDelivery` refuses anyone else exactly as it refuses a missing subscription, every bound-delivery operation re-applies the rule, the host can change the list through `TaskBroker.setSubscriptionDrain`, and `disposeWithheld` ends withheld obligations only through a binding whose policy carries the identity the subscription recorded as the consumer's own."
+  headline: >
+    Only the principals an agent-task subscription names may bind and drain its delivery, and
+    disposeWithheld ends withheld obligations only through the consumer's own policy, by identity.
+keywords:
+  - drain principals
+  - delivery binding authorization
+  - host subscribes agent drains
+  - policy identity
+  - withheld obligations
+  - legacy subscription record
+  - check-then-act
+  - revert matrix
+  - release merge
+  - capability router cap
+relatedStreams:
+  - {
+      id: agent-tasks-delivery-and-deferral,
+      relationship: 'closes its review round 3 (c) escalation and its disposeWithheld accepted residual'
+    }
+sourceHash: sha256:db6fb0967c02c79e # over brief.md + state.md + result.md

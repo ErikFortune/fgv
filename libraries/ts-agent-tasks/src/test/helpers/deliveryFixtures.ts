@@ -283,6 +283,8 @@ export async function subscribeAs(
     readonly policy?: Record<string, unknown>;
     readonly authorization?: ITaskAuthorization;
     readonly operationId?: string;
+    readonly drainPrincipals?: ReadonlyArray<string>;
+    readonly policyIdentity?: string;
   }
 ): Promise<ReturnType<TaskBroker['subscribe']> extends Promise<infer R> ? R : never> {
   const scopes: ReadonlyArray<ITaskScope> = options?.scopes ?? [alpha];
@@ -294,6 +296,8 @@ export async function subscribeAs(
       consumerId: options?.consumer ?? `consumer-${id}`,
       selection: { scopes, lifecycleClass: 'all', ...(options?.selection ?? {}) },
       start: options?.start ?? 'from-now',
+      ...(options?.drainPrincipals !== undefined ? { drainPrincipals: options.drainPrincipals } : {}),
+      ...(options?.policyIdentity !== undefined ? { policyIdentity: options.policyIdentity } : {}),
       policy: {
         ...(options?.categories !== undefined
           ? { categories: options.categories }
@@ -381,6 +385,7 @@ export function bindAll(w: ITaskRepositoryWriter): ITaskRepositoryWriter {
     abandonReceipt: (r) => w.abandonReceipt(r),
     disposeObligations: (r) => w.disposeObligations(r),
     closeSubscription: (r) => w.closeSubscription(r),
+    setSubscriptionDrain: (r) => w.setSubscriptionDrain(r),
     pruneTask: (id) => w.pruneTask(id)
   };
 }
