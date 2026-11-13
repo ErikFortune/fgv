@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "bump version",
+      "type": "none",
+      "packageName": "@fgv/ts-http-storage"
+    }
+  ],
+  "packageName": "@fgv/ts-http-storage",
+  "email": "ErikFortune@outlook.com"
+}
