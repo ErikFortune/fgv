@@ -75,7 +75,9 @@ Commit `10cb6dc00`. No `docs/FUTURE.md` entry was needed (that was the not-repro
 
 ## 4. Change files
 
-`none`, comment "Regenerated API documentation.", named `docs-regen-5-1-0_2026-11-14-00-00.json`,
+`none` with an **empty comment** (Rush writes no CHANGELOG entry for an empty comment, so the 5.1.0
+changelogs carry no docs noise; the orchestrator emptied the original "Regenerated API documentation."
+text after merging the curated set), named `docs-regen-5-1-0_2026-11-14-00-00.json`,
 for the six packages whose `docs/` changed: `ts-extras`, `ts-http-storage`, `ts-json-base`,
 `ts-random`, `ts-utils`, `ts-web-extras`. `docs/api` is not inside a package. `rush change --verify
 --target-branch origin/integration/asks` → exit 0. Commit `7fb73e1b7`.
