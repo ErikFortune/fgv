@@ -3,23 +3,42 @@ on:
   push:
     branches: ['main']
   pull_request:
-    # 'integration/**' covers multi-version stream branches that collect several PRs
-    # and squash to 'release' as one landing. Without it those PRs get no CI at all,
-    # and the constituent work would be unverified until the final squash.
-    branches: ['main', 'release', 'prerelease', 'hotfix', 'integration/**']
+    # 'integration/**' covers multi-version stream branches that collect several PRs and land as
+    # one. 'release/**' is the release trains, 'publish/**' the publish children PR'd back into
+    # them. 'release' stays until the drain into 'main' is done; it is removed in the docs-sweep
+    # phase of .ai/notes/orchestrator/branch-migration-checklist.md.
+    branches: ['main', 'release', 'release/**', 'publish/**', 'prerelease', 'integration/**']
+
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           fetch-depth: 0
+          persist-credentials: false
+      # Every third-party action is pinned to a full commit SHA (a tag can be moved). Dependabot's
+      # github-actions ecosystem keeps the pins and their version comments current; this keeps the
+      # rule from eroding on the next workflow edit. Local ./ reusable workflows are exempt.
+      - name: Verify actions are pinned to a commit SHA
+        run: |
+          UNPINNED=$(grep -rnE '^[[:space:]]*(-[[:space:]]+)?uses:' .github/workflows \
+            | grep -vE "uses:[[:space:]]*['\"]?\./" \
+            | grep -vE "uses:[[:space:]]*['\"]?[^@[:space:]'\"]+@[0-9a-f]{40}['\"]?([[:space:]]|$)" || true)
+          if [ -n "$UNPINNED" ]; then
+            echo "::error title=Unpinned action::every uses: must name a 40-character commit SHA"
+            echo "$UNPINNED"
+            exit 1
+          fi
+          echo "All uses: references are pinned to a commit SHA."
       - name: Git config user
-        uses: snow-actions/git-config-user@v1.0.0
-        with:
-          name: ErikFortune
-          email: ErikFortune@outlook.com
-      - uses: actions/setup-node@v5
+        run: |
+          git config user.name "ErikFortune"
+          git config user.email "ErikFortune@outlook.com"
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
           node-version: 24.15.0
       - name: Verify Change Logs

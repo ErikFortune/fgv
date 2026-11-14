@@ -1,36 +1,54 @@
 name: Publish Alpha (Implementation)
 
+# Alpha publishes from `prerelease`. Called only from publish.yml (npm trusted publishing is bound to
+# that file). Publishes every base-utils package at its committed package.json version
+# (`<next minor>.0-N`, bumped on `prerelease` beforehand) under the `alpha` dist-tag, tags each
+# `<package>_v<version>-alpha`, and pushes the tags. With --include-all rush ignores change files and
+# --apply, so nothing is committed; a version already on npm is skipped.
+
 on:
   workflow_call:
+
+permissions:
+  contents: read
 
 jobs:
   publish:
     runs-on: ubuntu-latest
     environment: npm-publish-alpha
     permissions:
-      id-token: write
-      contents: write
+      id-token: write # npm OIDC
+      contents: write # per-package tags on prerelease
     steps:
-      - uses: actions/checkout@v5
+      - name: Guard (ref)
+        run: |
+          if [ "$GITHUB_REF" != "refs/heads/prerelease" ]; then
+            echo "::error title=Publish guard::an alpha publish runs only on refs/heads/prerelease; this run is on $GITHUB_REF"
+            exit 1
+          fi
+
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           fetch-depth: 2
 
       - name: Git config user
-        uses: snow-actions/git-config-user@v1.0.0
-        with:
-          name: ${{ secrets.GH_USER_NAME }}
-          email: ${{ secrets.GH_USER_EMAIL }}
+        env:
+          GH_USER_NAME: ${{ secrets.GH_USER_NAME }}
+          GH_USER_EMAIL: ${{ secrets.GH_USER_EMAIL }}
+        run: |
+          git config user.name "$GH_USER_NAME"
+          git config user.email "$GH_USER_EMAIL"
 
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
           node-version: 24.15.0
           registry-url: 'https://registry.npmjs.org'
 
       - name: Upgrade npm for OIDC support
-        run: npm install -g npm@latest && npm --version
+        run: npm install -g npm@11.21.2 && npm --version
 
       - name: Verify Change Logs
-        run: node common/scripts/install-run-rush.js change --verify --target-branch origin/${GITHUB_REF_NAME}
+        run: node common/scripts/install-run-rush.js change --verify --target-branch "origin/${GITHUB_REF_NAME}"
 
       - name: Rush Install
         run: node common/scripts/install-run-rush.js install
@@ -48,4 +66,4 @@ jobs:
         run: node common/scripts/verify-tarball-exports.mjs --verbose --timing
 
       - name: Rush Publish
-        run: node common/scripts/install-run-rush.js publish --apply --publish --include-all --set-access-level public --target-branch ${GITHUB_REF_NAME} --add-commit-details --ignore-git-hooks --tag alpha --prerelease-name alpha
+        run: node common/scripts/install-run-rush.js publish --apply --publish --include-all --set-access-level public --target-branch "${GITHUB_REF_NAME}" --add-commit-details --ignore-git-hooks --tag alpha --prerelease-name alpha

@@ -1,42 +1,180 @@
 name: Publish Release (Implementation)
 
+# Stable and major publishes. Called only from publish.yml (npm trusted publishing is bound to that
+# file). Runs on refs/heads/publish/<version>, a child of release/<major>, and in one run: guards,
+# installs, versions and writes CHANGELOGs, commits the bump, builds, tests, publishes, pushes the
+# commit and per-package tags, and opens the follow-up PRs.
+#
+# The version policy names the version this run publishes. `rush version --bump` always increments,
+# so the version step parks the policy on `<version>-0` and bumps `patch`, which semver resolves to
+# exactly `<version>`; that is the sequence that also writes every CHANGELOG from common/changes and
+# deletes the consumed change files. The experiment that established it is recorded in
+# .ai/tasks/completed/2026-11/publish-workflow-rework/result.md.
+
 on:
   workflow_call:
+    inputs:
+      release_kind:
+        description: "'release' (any X.Y.Z except X.0.0) or 'major' (X.0.0 only)"
+        required: true
+        type: string
+
+permissions:
+  contents: read
 
 jobs:
+  guard:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      version: ${{ steps.check.outputs.version }}
+      major: ${{ steps.check.outputs.major }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: 24.15.0
+
+      - name: Guard (ref, version policy, release train, npm)
+        id: check
+        env:
+          RELEASE_KIND: ${{ inputs.release_kind }}
+        run: |
+          set -euo pipefail
+          fail() { echo "::error title=Publish guard::$1"; exit 1; }
+
+          case "$GITHUB_REF" in
+            refs/heads/publish/*) ;;
+            *) fail "a $RELEASE_KIND publish runs only on refs/heads/publish/<version>; this run is on $GITHUB_REF" ;;
+          esac
+          BRANCH_VERSION="${GITHUB_REF#refs/heads/publish/}"
+
+          # version-policies.json carries // and /* */ comments and trailing commas.
+          # shellcheck disable=SC2016 # single quotes: the argument is JavaScript, not shell
+          VERSION=$(node -e '
+            const fs = require("fs");
+            const text = fs.readFileSync("common/config/rush/version-policies.json", "utf8")
+              .replace(/^\s*\/\/.*$/gm, "")
+              .replace(/\/\*[\s\S]*?\*\//g, "")
+              .replace(/,(\s*[\]}])/g, "$1");
+            const policy = JSON.parse(text).find((p) => p.policyName === "base-utils");
+            if (!policy) { console.error("no base-utils version policy"); process.exit(1); }
+            console.log(policy.version);
+          ') || fail "could not read the base-utils version policy from common/config/rush/version-policies.json"
+
+          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] \
+            || fail "a stable publish needs a plain X.Y.Z version policy; base-utils says '$VERSION'"
+          [ "$BRANCH_VERSION" = "$VERSION" ] \
+            || fail "branch publish/$BRANCH_VERSION names $BRANCH_VERSION but the base-utils version policy says $VERSION"
+          MAJOR="${VERSION%%.*}"
+
+          if [ "$RELEASE_KIND" = "major" ]; then
+            [ "$VERSION" = "$MAJOR.0.0" ] || fail "release_type major publishes only $MAJOR.0.0; the policy says $VERSION (use release_type release)"
+          else
+            [ "$VERSION" != "$MAJOR.0.0" ] || fail "$VERSION is a new major; dispatch with release_type major"
+          fi
+
+          git rev-parse --verify -q "refs/remotes/origin/release/$MAJOR" >/dev/null \
+            || fail "the policy major is $MAJOR, but origin/release/$MAJOR does not exist"
+          if ! git merge-base --is-ancestor "refs/remotes/origin/release/$MAJOR" HEAD; then
+            TRAINS=$(git for-each-ref --format='%(refname:lstrip=3)' refs/remotes/origin/release/ \
+              | while read -r t; do if git merge-base --is-ancestor "refs/remotes/origin/$t" HEAD; then echo "$t"; fi; done \
+              | tr '\n' ' ')
+            fail "HEAD must descend from origin/release/$MAJOR (policy major $MAJOR); it descends from: ${TRAINS:-no release/<n> branch}"
+          fi
+
+          PUBLISHED=$(npm view @fgv/ts-utils versions --json) \
+            || fail "could not read the published versions of @fgv/ts-utils from npm"
+          if PUBLISHED="$PUBLISHED" node -e 'process.exit(JSON.parse(process.env.PUBLISHED).includes(process.argv[1]) ? 0 : 1)' "$VERSION"; then
+            fail "@fgv/ts-utils@$VERSION is already on npm; refusing to publish it again"
+          fi
+
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "major=$MAJOR" >> "$GITHUB_OUTPUT"
+          echo "Guards passed: $RELEASE_KIND $VERSION on $GITHUB_REF, descends from origin/release/$MAJOR, not on npm."
+
   publish:
+    needs: guard
     runs-on: ubuntu-latest
     environment: npm-publish-release
     permissions:
-      id-token: write
-      contents: write
+      contents: write # bump commit and per-package tags on publish/<version>
+      id-token: write # npm OIDC
+      pull-requests: write # follow-up PRs
+    env:
+      VERSION: ${{ needs.guard.outputs.version }}
+      MAJOR: ${{ needs.guard.outputs.major }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
-          fetch-depth: 2
+          fetch-depth: 0
 
       - name: Git config user
-        uses: snow-actions/git-config-user@v1.0.0
-        with:
-          name: ${{ secrets.GH_USER_NAME }}
-          email: ${{ secrets.GH_USER_EMAIL }}
+        env:
+          GH_USER_NAME: ${{ secrets.GH_USER_NAME }}
+          GH_USER_EMAIL: ${{ secrets.GH_USER_EMAIL }}
+        run: |
+          git config user.name "$GH_USER_NAME"
+          git config user.email "$GH_USER_EMAIL"
 
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
           node-version: 24.15.0
           registry-url: 'https://registry.npmjs.org'
 
       - name: Upgrade npm for OIDC support
-        run: npm install -g npm@latest && npm --version
+        run: npm install -g npm@11.21.2 && npm --version
 
       - name: Verify Change Logs
-        run: node common/scripts/install-run-rush.js change --verify --target-branch origin/${GITHUB_REF_NAME}
+        run: node common/scripts/install-run-rush.js change --verify --target-branch "origin/${GITHUB_REF_NAME}"
 
       - name: Rush Install
         run: node common/scripts/install-run-rush.js install
 
+      # Writes the version policy, every package.json, CHANGELOG.json and CHANGELOG.md, and deletes
+      # the consumed change files. Leaves the policy at $VERSION with nextBump unchanged.
+      - name: Version and changelogs
+        run: |
+          set -euo pipefail
+          node common/scripts/install-run-rush.js version --ensure-version-policy --version-policy base-utils --override-version "$VERSION-0"
+          node common/scripts/install-run-rush.js version --bump --version-policy base-utils --override-bump patch
+          node common/scripts/install-run-rush.js list --json --version | sed -n '/^{/,$p' > "$RUNNER_TEMP/projects.json"
+          # shellcheck disable=SC2016 # single quotes: the argument is JavaScript, not shell
+          node -e '
+            const fs = require("fs");
+            const projects = JSON.parse(fs.readFileSync(process.argv[1], "utf8")).projects
+              .filter((p) => p.versionPolicyName === "base-utils");
+            const wrong = projects.filter((p) => p.version !== process.env.VERSION);
+            if (projects.length === 0 || wrong.length > 0) {
+              console.error(`expected every base-utils project at ${process.env.VERSION}; wrong: ` +
+                wrong.map((p) => `${p.name}@${p.version}`).join(", "));
+              process.exit(1);
+            }
+            fs.writeFileSync(process.argv[2], projects.map((p) => p.name).join("\n") + "\n");
+          ' "$RUNNER_TEMP/projects.json" "$RUNNER_TEMP/packages.txt"
+          echo "$(wc -l < "$RUNNER_TEMP/packages.txt") packages at $VERSION"
+
+      # Committed before the build so the build, the tests and the tarballs all come from this commit.
+      # --no-verify: the pre-commit hook would run prettier over the files rush just wrote.
+      - name: Commit the bump
+        run: |
+          set -euo pipefail
+          git add -A -- common/config/rush/version-policies.json common/changes \
+            ':(glob)**/package.json' ':(glob)**/CHANGELOG.json' ':(glob)**/CHANGELOG.md'
+          git commit --no-verify -m "Publish $VERSION"
+          git status --porcelain
+          git log -1 --stat --format='%H %s' | tail -3
+
       - name: Rush rebuild
         run: node common/scripts/install-run-rush.js rebuild --verbose
+
+      - name: Rush test
+        run: node common/scripts/install-run-rush.js test --verbose
 
       # The publish-time hard gate. Every path a manifest names must be present in the tarball
       # this publish would upload — @fgv 5.1.0-27 shipped only `src/`, and no tree-based
@@ -47,5 +185,72 @@ jobs:
       - name: Verify exports resolve inside the published tarball
         run: node common/scripts/verify-tarball-exports.mjs --verbose --timing
 
+      # Publishes every base-utils package at its package.json version (with --include-all, rush
+      # ignores change files and --apply), tags each, then pushes HEAD and the tags to this branch.
       - name: Rush Publish
-        run: node common/scripts/install-run-rush.js publish --publish --include-all --target-branch ${GITHUB_REF_NAME} --add-commit-details --ignore-git-hooks
+        run: node common/scripts/install-run-rush.js publish --publish --include-all --set-access-level public --target-branch "${GITHUB_REF_NAME}" --add-commit-details --ignore-git-hooks
+
+      - name: Confirm the bump commit reached the branch
+        run: |
+          set -euo pipefail
+          REMOTE=$(git ls-remote origin "refs/heads/$GITHUB_REF_NAME" | cut -f1)
+          [ "$REMOTE" = "$(git rev-parse HEAD)" ] \
+            || { echo "::error::origin/$GITHUB_REF_NAME is $REMOTE, expected the bump commit $(git rev-parse HEAD)"; exit 1; }
+          echo "$(git ls-remote --tags origin "refs/tags/@fgv/*_v$VERSION" | wc -l) tags for $VERSION on origin"
+
+      - name: Open follow-up PRs
+        id: prs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          BRANCH="$GITHUB_REF_NAME"
+          TRAIN="release/$MAJOR"
+
+          URL=$(gh pr list --base "$TRAIN" --head "$BRANCH" --state open --json url --jq '.[0].url // empty')
+          if [ -z "$URL" ]; then
+            URL=$(gh pr create --base "$TRAIN" --head "$BRANCH" \
+              --title "Publish $VERSION: merge $BRANCH into $TRAIN" \
+              --body "Published $VERSION to npm from \`$BRANCH\` (run $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID). This carries the bump commit: version policy, package.json versions, CHANGELOGs and the consumed change files.
+
+          **Merge with a merge commit, never squash**, so the published commit and its per-package tags stay in \`$TRAIN\`'s history. Then merge the back-merge PR into \`main\`.")
+          fi
+          echo "publish_pr=$URL" >> "$GITHUB_OUTPUT"
+
+          git fetch --quiet origin main "$TRAIN"
+          AHEAD=$(git rev-list --count "origin/main..origin/$TRAIN")
+          if [ "$AHEAD" = "0" ]; then
+            COMPARE="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/compare/main...$TRAIN?expand=1"
+            echo "::warning title=Back-merge PR not opened::$TRAIN has no commits ahead of main yet. Merge $URL first, then open $COMPARE"
+            echo "backmerge_pr=not opened yet — after merging the publish PR, open $COMPARE" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          BACK=$(gh pr list --base main --head "$TRAIN" --state open --json url --jq '.[0].url // empty')
+          if [ -z "$BACK" ]; then
+            BACK=$(gh pr create --draft --base main --head "$TRAIN" \
+              --title "Merge back $TRAIN into main after $VERSION" \
+              --body "Back-merge after publishing $VERSION. Wait for $URL to merge into \`$TRAIN\`, then mark ready and **merge with a merge commit**. Without it \`main\` keeps the consumed change files and the old version policy.")
+          fi
+          echo "backmerge_pr=$BACK" >> "$GITHUB_OUTPUT"
+
+      - name: Run summary
+        if: always()
+        env:
+          PUBLISH_PR: ${{ steps.prs.outputs.publish_pr }}
+          BACKMERGE_PR: ${{ steps.prs.outputs.backmerge_pr }}
+          JOB_STATUS: ${{ job.status }}
+        run: |
+          {
+            echo "## Publish $VERSION ($JOB_STATUS)"
+            echo
+            echo "- Branch: \`$GITHUB_REF_NAME\` at \`$(git rev-parse HEAD)\`"
+            echo "- Publish PR: ${PUBLISH_PR:-not opened}"
+            echo "- Back-merge PR: ${BACKMERGE_PR:-not opened}"
+            echo
+            echo "### Packages"
+            if [ -f "$RUNNER_TEMP/packages.txt" ]; then
+              sed "s/.*/- \`&@$VERSION\`/" "$RUNNER_TEMP/packages.txt"
+            else
+              echo "_The version step did not complete._"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

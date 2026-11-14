@@ -9,3 +9,9 @@ updates:
     directory: "/" # Location of package manifests
     schedule:
       interval: "weekly"
+  # Every workflow pins actions to a commit SHA with the version in a trailing comment; this
+  # ecosystem proposes the updated SHA and comment together.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
