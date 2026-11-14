@@ -16,7 +16,8 @@ publish: the first stable publish runs under the new model.
 
 **Why publish from a child, not from `release/<major>` directly.** The bump commit lands on a branch the
 workflow may write to, so `release/<major>` stays PR-only. The child also lets repo-side touch-ups to
-CHANGELOGs ride in before it merges. **Limit:** the changelog inside the npm tarball is the one the run
+CHANGELOGs ride in before it merges — **after** the run: the workflow refuses to start unless the child
+is exactly the train's tip, so nothing unreviewed is published. **Limit:** the changelog inside the npm tarball is the one the run
 writes at publish time (a dry `pnpm pack` of `ts-extras` on 2026-11-14 carried `CHANGELOG.json` and no
 `CHANGELOG.md`), so curation that must reach consumers happens **before** the publish, in
 `common/changes/`. Edits on the child after publishing fix the repo, not the shipped package.
@@ -30,8 +31,9 @@ own prefix (`publish/*`), never `release/5/...`.
 
 1. **Promote:** PR `main` → `release/<major>`. Merge commit. This is the release decision; test the
    promoted state on `release/<major>` (testbed run) before going further.
-2. **Branch** `publish/<version>` off `release/<major>`.
-3. **Dispatch** the stable publish on `publish/<version>` (see *Automated publish* below). One run does
+2. **Branch** `publish/<version>` off the tip of `release/<major>` and push nothing else to it.
+3. **Dispatch** the stable publish on `publish/<version>` straight away (see *Automated publish*
+   below); the guard requires `HEAD` to equal `origin/release/<major>`. One run does
    install, verify, build, version bump, changelog generation, commit, tag, publish, and opens both
    follow-up PRs.
 4. **Merge** `publish/<version>` → `release/<major>` with a **merge commit, never squash**, so the
@@ -62,10 +64,12 @@ Today the publish step is dispatched and then fixed up by hand — changelogs es
 
 1. **Guards** (fail loudly, before anything else):
    - stable and major run only on `refs/heads/publish/*`; alpha only on `refs/heads/prerelease`;
-   - the `publish/*` branch must descend from a `release/<n>` and the version policy's major must
-     equal `<n>`;
-   - the version about to be published must not already exist on npm (`npm view`), so a re-run
-     cannot half-publish.
+   - the `publish/*` branch must **equal** `origin/release/<n>` (not merely descend from it), the
+     version policy's major must equal `<n>`, and the branch name must equal the policy version;
+   - not every package may already be at the version on npm — a run that stopped part-way can be
+     finished, and the publish job skips what npm already has;
+   - if the version is older than npm's `latest` (a maintenance train), the run publishes under the
+     dist-tag `release-<n>` instead of `latest`, and says so in the summary.
 2. Verify change files, install, rebuild, run the tests (the stable path currently skips `rush test`),
    verify tarball exports.
 3. **Version and changelogs in-workflow:** `rush version --bump` (or `rush publish --apply`) so the
@@ -85,10 +89,18 @@ Today the publish step is dispatched and then fixed up by hand — changelogs es
    ```bash
    rush version --ensure-version-policy --version-policy base-utils --override-version <V>-0
    rush version --bump --version-policy base-utils --override-bump patch   # <V>-0 → <V>
-   # commit, rebuild, test, verify tarballs, then:
-   rush publish --publish --include-all --set-access-level public --target-branch publish/<V> \
-     --add-commit-details --ignore-git-hooks   # also tags and pushes HEAD + tags
+   # commit, rebuild, test, verify tarballs, then per project: pnpm pack (what rush --pack runs)
    ```
+
+   **As built, after the security review**, the run is three jobs so that no job holding npm or write
+   credentials runs repository dependency code: `guard` (read-only, no secrets), `build`
+   (read-only token, no OIDC: install → version → commit → rebuild → test → tarball check → `pnpm
+   pack` per package, each tarball checked for `<V>` and no `workspace:` range → uploads tarballs and
+   a `git bundle` of the bump commit), `publish` (environment `npm-publish-release`, OIDC, write
+   token, `persist-credentials: false`, installs nothing: pushes the bump commit **first**, then `npm
+   publish <tgz> --ignore-scripts` per package skipping versions npm has, then annotated tags
+   `<pkg>_v<V>` in rush's format, a tag-count check, and the PRs). Credentials are passed to the two
+   `git push` commands only.
 
    Result on the 5.1.0 tree: policy and all 34 `base-utils` `package.json`s at 5.1.0, every
    `CHANGELOG.json`/`.md` gains a populated 5.1.0 section (32 CHANGELOG files created where none existed),
@@ -97,10 +109,32 @@ Today the publish step is dispatched and then fixed up by hand — changelogs es
    `<n>.0.0`. **Consequence:** the next stable publish needs a PR that moves the policy to the next
    version (`rush version --ensure-version-policy --version-policy base-utils --override-version
    <next>`); the npm guard refuses a forgotten one.
-4. Commit the bump on `publish/<version>`; publish; push per-package tags.
+4. Commit the bump on `publish/<version>` and push it; publish; push per-package tags.
 5. Open the PR `publish/<version>` → `release/<major>`, and once that merges, the back-merge PR
    `release/<major>` → `main` (or open both, the second drafted, if sequencing in one run is awkward).
 6. Write a run summary (`$GITHUB_STEP_SUMMARY`): version, package list, PR links.
+
+### Recovery
+
+The bump commit is pushed before anything reaches npm, and a failed `publish` job uploads a `git
+bundle` of the bump commit and any tags it made (artifact `recovery-<V>-attempt-<n>`).
+
+- **`build` or `guard` failed** (flaky test, install): nothing was pushed or published. *Re-run
+  failed jobs* or dispatch again.
+- **`publish` failed** (npm, push, PR step): use **Re-run failed jobs**. It re-runs only `publish`,
+  reusing the `guard` outputs (version, dist-tag) and the `build` artifact (the same tarballs and bump
+  commit) from the first attempt. The push is a no-op if the branch already has the commit, npm
+  versions already published are skipped, existing tags are kept, the missing ones are made, and
+  open PRs are reused. Do **not** dispatch a fresh run instead: the branch now holds the bump commit,
+  so the exact-tip guard refuses it — by design, since a fresh run would rebuild and rewrite the
+  CHANGELOG dates.
+- **The push of the bump commit was rejected** (someone pushed to `publish/<V>` during the run):
+  nothing reached npm. Reset `publish/<V>` to `release/<major>` (maintainer), dispatch again.
+- **The build artifact is gone** (retention expired) **and** packages are partly on npm: reset
+  `publish/<V>` to `release/<major>` and dispatch again. The guard allows a partial publish; the new
+  run re-versions, skips the published packages, and creates only the missing tags. Packages already
+  published keep the first run's CHANGELOG date; their tags point at the first run's bump commit,
+  which the recovery bundle preserves.
 
 **Changelog curation stays upstream of the workflow.** The release-prep stream rewrites each package's
 pending change files into a few curated entries (with an "Upgrading from <previous>" note where the
@@ -140,6 +174,9 @@ every `uses:` floats — `actions/checkout@v5`, `actions/setup-node@v5`, third-p
       on, or the follow-up-PR step fails (403) after the packages are already published.
 - [ ] Know that PRs opened with the job's `GITHUB_TOKEN` do not trigger `ci.yml`; push to the
       branch, or close and reopen the PR, to get checks on it (or switch the step to an App token).
+- [ ] Before `publish/5.1.0`, dispatch **one alpha** as a smoke test: it exercises the pinned actions,
+      npm 11.21.2 and OIDC, and the alpha path is the only one still reading `.npmrc-publish`, whose
+      `NPM_TOKEN` line is now commented out.
 - [ ] Confirm npm trusted publishing (OIDC) is bound to repo + workflow file, not branch; verify on
       the first publish.
 

@@ -45,3 +45,20 @@
 - `ACTIVE_DEVELOPMENT.md` § "What the `type` actually does" says lockstep entries all render under
   `### Updates`. The experiment shows `rush version --bump` renders `### Minor changes` /
   `### Patches` / `### Updates` by change-file type. Not in this stream's scope; flagged.
+
+## Security review round (2026-11-14)
+
+Orchestrator relayed an independent review (no P1s; P2-1..4, P3-1..9). All applied; details and
+proofs in `result.md` § "Security review round". Judgement calls in that round:
+
+10. **Full job split, not the fallback subset.** `pnpm pack` per project reproduces rush's `--pack`
+    without passing `--publish` to rush, and could be proved locally, so the publish job installs no
+    repository dependencies. Item 9 above (deferring credentials) is therefore done.
+11. **Recovery is "Re-run failed jobs", not a fresh dispatch.** P2-1's exact-tip guard and P2-2's
+    "re-run can finish a partial publish" pull against each other once the bump commit is pushed; the
+    re-run path satisfies both (it reuses the build artifact), and a fresh dispatch after a reset is
+    the documented last resort.
+12. **Artifact actions** are the first Node 24 majors (upload v6.0.0, download v7.0.0), matching the
+    Node 24 checkout/setup-node already pinned, rather than the Node 20 v4 line.
+13. **`npm publish --ignore-scripts`** on the tarballs, so nothing from the package runs in the job
+    that holds OIDC.

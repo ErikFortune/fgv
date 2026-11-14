@@ -23,7 +23,14 @@ summary:
     permissions, persist-credentials false and a SHA-pin check proven to fail on an unpinned copy.
     checkout v5.1.0 and setup-node v5.0.0 pinned, npm 11.21.2, dependabot github-actions, legacy
     workflows deleted, .npmrc-publish token line commented out. actionlint 1.7.12 with ShellCheck:
-    zero findings. Migration checklist updated.
+    zero findings. Migration checklist updated. After an independent security review: guard requires
+    HEAD to equal origin/release/<major>, refuses only when every package is already at V, and picks
+    dist-tag release-<n> for an older train; the stable path is split into guard / build (no npm
+    credentials, pnpm pack per project, tarball checks, bundle) / publish (OIDC, installs nothing,
+    pushes the bump commit before npm, npm publish --ignore-scripts skipping published versions, tags
+    in rush's format with a count check, recovery bundle on failure); upload/download-artifact
+    pinned; pin check anchored and extended to composite actions; named secrets; recovery procedure
+    documented.
   diverged: >
     The brief's tree says 5.1.0 and must publish 5.1.0, which no single rush command does; the run
     adopts "the policy names the version to publish" and adds a branch-equals-policy guard the brief
@@ -31,7 +38,7 @@ summary:
     reuses the release workflow with a release_kind input and an X.0.0 guard. --apply was dropped
     from the stable rush publish (proved inert) and --set-access-level public added. The back-merge
     draft PR cannot be created on the first publish (release/5 has no commits ahead of main), so the
-    step warns with a compare link instead. .npmrc-publish was edited, which the brief did not name.
+    step warns with a compare link instead. .npmrc-publish was edited, which the brief did not name. The review round replaced rush publish on the stable path with pnpm pack plus npm publish in a separate job.
   sourceLine: '**Shipped:** one dispatch on `publish/<version>` now does the whole stable publish — guards, test, version and CHANGELOGs written in the run from `common/changes/`, bump commit, publish, per-package tags, a PR into `release/<major>` and a draft back-merge PR into `main` — and every action in `.github/workflows/` is pinned to a commit SHA.'
   headline: '' # release infrastructure; no library capability to announce
 keywords:
@@ -52,4 +59,4 @@ relatedStreams:
       id: branch-model-plan,
       relationship: 'implements Phase 0 (orchestrator) and Phase 1 of its migration checklist (#784)'
     }
-sourceHash: sha256:7322e39c512bd858 # over brief.md + state.md + result.md
+sourceHash: sha256:5aec9e51f3a03c3c # over brief.md + state.md + result.md

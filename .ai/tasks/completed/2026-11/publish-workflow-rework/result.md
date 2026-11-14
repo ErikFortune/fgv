@@ -63,6 +63,10 @@ rush publish --publish --include-all --set-access-level public --target-branch "
   --add-commit-details --ignore-git-hooks
 ```
 
+**Superseded by the review round below** for the last step: the build job packs with `pnpm pack`
+per project (what rush's `--pack` runs) and a separate job publishes the tarballs with `npm publish`.
+The version sequence is unchanged.
+
 `--override-bump patch` on `X.Y.Z-0` yields exactly `X.Y.Z` for any `X.Y.Z`, so the policy version
 is the version published. `--override-bump major` is not needed (C6/C7).
 
@@ -71,7 +75,7 @@ is the version published. `--override-bump major` is not needed (C6/C7).
 | file | change |
 |---|---|
 | `publish.yml` | top-level `contents: read`; `release` and `major` both call `publish-release-impl.yml` with `release_kind`; per-job `contents`/`id-token`/`pull-requests: write`; `concurrency` per ref |
-| `publish-release-impl.yml` | `guard` job (no secrets, `persist-credentials: false`): ref `publish/*`, policy `X.Y.Z`, branch == policy, `major` ⇔ `X.0.0`, `origin/release/<major>` is an ancestor, `@fgv/ts-utils@<V>` not on npm. `publish` job: install → version → assert all `base-utils` at `<V>` → commit → rebuild → **test** → tarball check → publish → confirm push → PRs → summary (`if: always()`) |
+| `publish-release-impl.yml` | three jobs — `guard`, `build`, `publish` — described under *Security review round* below. (First version: one job ending in `rush publish --publish --include-all`.) |
 | `publish-alpha-impl.yml` | `prerelease`-only guard step; pins; npm exact; `git config` in a run step |
 | `publish-major-impl.yml`, three `*-legacy.yml` | deleted |
 | `ci.yml` | triggers per brief (keeps `release`, drops `hotfix`); `contents: read`; `persist-credentials: false`; SHA-pin check step; pins; `git config` run step |
@@ -86,6 +90,8 @@ is the version published. `--override-bump major` is not needed (C6/C7).
 | `actions/checkout` | v5.1.0 (latest v5) | `fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09` | `git ls-remote https://github.com/actions/checkout 'refs/tags/v5*'`, lightweight tag (no `^{}`); `v5` points at the same commit |
 | `actions/setup-node` | v5.0.0 (only v5) | `a0853c24544627f65ddf259abe73b1d18a591444` | same method; `v5` points at the same commit |
 | `snow-actions/git-config-user` | — | removed | its v1.0.0 `action.yml` runs repo-local `git config user.name/email`; replaced by the same two lines |
+| `actions/upload-artifact` | v6.0.0 | `b7c566a772e6b6bfb58ed0dc250532a479d7789f` | added in the review round; `v6` = same commit; first Node 24 major (v4.6.2 is Node 20) |
+| `actions/download-artifact` | v7.0.0 | `37930b1c2abaa49bbe596cd826c3c89aef350131` | added in the review round; `v7` = same commit; first Node 24 major, the companion of upload v6 |
 | npm | 11.21.2 | — | newest 11.x, published 2026-11-04 (9.5 days old at the change; `next-11` tag); npm 12 is `latest` but the brief keeps the 11 line |
 
 Newer majors (checkout v6, setup-node v6) were not taken: neither is a verified drop-in and the first
@@ -137,19 +143,45 @@ stable publish runs on this file.
    `nextBump: prerelease` for alphas to continue at 5.2.0-N.
 7. **npm `latest` for `@fgv/repo-template` is `5.1.0-2`** (an alpha); the 5.1.0 publish moves it.
    `@fgv/repo-template`'s `package.json` says `5.1.0-6` on `release`; the version step corrects it.
-8. **Partial-failure recovery.** Rush pushes the commit and tags only after every `npm publish`. If
-   publishing stops part-way, nothing is pushed; a re-run passes the guard only if `@fgv/ts-utils`
-   was not among the published, re-bumps from the same tree, and rush skips packages already on npm.
-   If `@fgv/ts-utils` did publish, finish by hand.
+8. **Partial-failure recovery** — superseded by the review round: see the checklist's *Recovery*
+   section. Short form: if `publish` fails, use **Re-run failed jobs**, never a fresh dispatch.
 9. **`.npmrc-publish`** no longer has an active token line; uncomment it for a local token publish.
 10. **Stray change files**: 20 change files for unversioned projects (`ks`, `testbed`,
     `ts-res-tutorial`, `ts-res-ui-playground`) are never consumed and will accumulate.
 
 ## Follow-ups (not done)
 
-- Defer the job's write credentials until the push step (`persist-credentials: false` plus an
-  `extraheader` set just before `rush publish`), so `rush install`/`rebuild`/`test` never run with a
-  `contents: write` token in `.git/config`. Not done the night before the first publish.
 - `ACTIVE_DEVELOPMENT.md` § "What the `type` actually does" says lockstep entries all render under
   `### Updates`; `rush version --bump` renders `### Minor changes` / `### Patches` / `### Updates` by
   type (C1, C5). The doc is wrong on that point.
+
+## Security review round (2026-11-14)
+
+An independent ref-only security review found no P1s. Every finding is fixed on this branch:
+
+| finding | fix | proved by |
+|---|---|---|
+| P2-1 guard accepted any descendant of `release/<n>`, so commits pushed to `publish/*` would be published | guard requires `HEAD == origin/release/<n>`; checklist flow says cut at the tip and dispatch at once, touch-ups after | G16: HEAD one commit past the train → refused |
+| P2-2 bump commit pushed only after npm, so a failure or a rejected push lost it; npm guard then blocked re-runs | `publish` pushes the bump commit **before** any `npm publish` (idempotent); a failed `publish` uploads a bundle of the commit and its tags; the npm guard refuses only when **every** package is at V; publish skips versions npm has; tags skip ones on origin; recovery procedure in the checklist | publish job steps run twice against a scratch origin: attempt 1 pushes, publishes 34, tags 34; attempt 2 with all 34 "on npm" pushes nothing, publishes nothing, keeps 34 tags. A diverged `publish/5.1.0` → push rejected before publish. Recovery bundle holds the branch + 34 tags. G12 (3/34 on npm) passes with a warning; G13 (34/34) refused |
+| P2-3 OIDC and a write token live in the job that runs install/build/test | split into `guard` (read-only), `build` (read-only token, no OIDC; install → version → commit → rebuild → test → pack; uploads tarballs + bundle) and `publish` (environment, OIDC, write; `persist-credentials: false`; installs no repo dependencies; `npm publish <tgz> --ignore-scripts`; credentials passed only to the two `git push` commands) | build steps run in the scratch clone: 34 tarballs, each checked for `5.1.0` and no `workspace:` range (e.g. ts-extras → `@fgv/ts-json-base: 5.1.0`); tags created in rush's format `<pkg>_v<V>` annotated `<pkg> v<V>` (rush source: `PublishUtilities.createTagname`, separator `_`) |
+| P2-4 no `--tag`, so an older train would move `latest` back | guard compares V with `dist-tags.latest` of `@fgv/ts-utils`; older → `release-<n>`; summary says so | G15: latest 6.2.0 → `npm_tag=release-5`; G1 → `latest` |
+| P3-1 pin-check greps not anchored; composite actions not scanned | both greps anchored on `file:line:`; scans `.github/workflows/*` and `.github/actions/**/action.y(a)ml` | passes on the branch (4 files); fails on a copy, listing an unpinned composite `uses:` too, and ignoring a `run: echo uses: …` line |
+| P3-2 `${{ }}` in a `run:` in ci.yml | moved to `env:` | actionlint |
+| P3-3 change-verify compared the branch with itself | `build` compares with `origin/release/<n>`; alpha unchanged, commented | — |
+| P3-4 re-run semantics | checklist *Recovery* section: *Re-run failed jobs* reuses `guard` outputs and the `build` artifact; a fresh dispatch is refused by the exact-tip guard by design | — |
+| P3-5 tag count unchecked | `publish` asserts tags on origin == tarball count | 34 == 34 on both attempts |
+| P3-7 `secrets: inherit` | the two named secrets, declared in each `workflow_call` | actionlint |
+| P3-8 `npm view --json` returns a bare string for one version | `[].concat(JSON.parse(...))` | — |
+| P3-9 `.npmrc-publish` | see below | — |
+
+**`.npmrc-publish` now matters only for alpha.** The stable path no longer runs `rush publish`, so it
+never reads that file; the alpha path still does, and its `NPM_TOKEN` line is now commented out.
+Recommended: **dispatch one alpha as a smoke test before `publish/5.1.0`** — it also exercises the
+pinned actions, npm 11.21.2 and OIDC for real.
+
+**Assumptions not provable locally:** npm OIDC with `npm publish <tgz>` and setup-node's `.npmrc`
+(the npm trusted-publishing docs use exactly this setup); that *Re-run failed jobs* exposes the first
+attempt's artifact to `download-artifact` and reuses `guard`/`build` outputs (GitHub's documented
+re-run behaviour); the `gh` PR step. Validation after the round: actionlint 1.7.12 + ShellCheck
+0.11.0 zero findings; guard cases rerun this round — G1, G2, G4, G5, G7, G9–G16 (G16 and G13 replace the old G6 and G8) — via a
+stub `npm` on `PATH`.
