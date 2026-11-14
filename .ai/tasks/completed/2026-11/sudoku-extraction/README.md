@@ -1,6 +1,6 @@
 # sudoku-extraction — the sudoku packages leave fgv, with their history
 
-**Shipped**: 2026-11-14 into `integration/asks` via #TBD. History branch:
+**Shipped**: 2026-11-14 into `integration/asks` via #786. History branch:
 `extract/sudoku-history` @ `13772cfca`.
 
 ## Summary
@@ -43,4 +43,4 @@ the scratch clone had to be unshallowed from GitHub because the local clone is s
 - Brief: `brief.md`
 - Judgement calls: `state.md`
 - Exit artifact: `result.md`
-- PR: #TBD
+- PR: #786
