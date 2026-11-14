@@ -34,10 +34,130 @@ export interface IResultMapConstructorParams<TK extends string = string, TV = un
 }
 
 /**
- * Deferred constructor for the {@link Collections.ResultMap.(getOrAdd:2) | getOrAdd} method.
+ * Deferred constructor for the {@link Collections.ResultMap.getOrAdd | getOrAdd} method.
  * @public
  */
 export type ResultMapValueFactory<TK extends string = string, TV = unknown> = (key: TK) => Result<TV>;
+
+/**
+ * Interface for a mutable {@link Collections.ResultMap | ResultMap}.
+ * @public
+ */
+export interface IResultMap<TK extends string = string, TV = unknown> extends IReadOnlyResultMap<TK, TV> {
+  /**
+   * Sets a key/value pair in the map if the key does not already exist.
+   * @param key - The key to set.
+   * @param value - The value to set.
+   * @returns `Success` with the value and detail `added` if the key was added,
+   * `Failure` with detail `exists` if the key already exists. Fails with detail
+   * 'invalid-key' or 'invalid-value' and an error message if either is invalid.
+   */
+  add(key: TK, value: TV): DetailedResult<TV, ResultMapResultDetail>;
+
+  /**
+   * Sets a key/value pair in the map regardless of whether the key already exists.
+   * @param key - The key to set.
+   * @param value - The value to set.
+   * @returns `Success` with the new value and the detail `updated` if the
+   * key was found and updated, `Success` with the new value and detail
+   * `added` if the key was not found and added.  Fails with detail
+   * 'invalid-key' or 'invalid-value' and an error message if either is invalid.
+   */
+  set(key: TK, value: TV): DetailedResult<TV, ResultMapResultDetail>;
+
+  /**
+   * Updates the value associated with a key in the map.
+   * @param key - The key to update.
+   * @param value - The value to set.
+   * @returns `Success` with the value and detail 'updated' if the key was found
+   * and the value updated, `Failure` an error message and with detail `not-found`
+   * if the key was not found, or with detail 'invalid-key' or 'invalid-value'
+   * if either is invalid.
+   */
+  update(key: TK, value: TV): DetailedResult<TV, ResultMapResultDetail>;
+
+  /**
+   * Deletes a key from the map.
+   * @param key - The key to delete.
+   * @returns `Success` with the previous value and the detail 'deleted'
+   * if the key was found and deleted, `Failure` with detail 'not-found'
+   * if the key was not found, or with detail 'invalid-key' if the key is invalid.
+   */
+  delete(key: TK): DetailedResult<TV, ResultMapResultDetail>;
+
+  /**
+   * Gets a value from the map.
+   * @param key - The key to retrieve.
+   * @returns `Success` with the value and detail `exists` if the key was found,
+   * `Failure` with detail `not-found` if the key was not found or with detail
+   * `invalid-key` if the key is invalid.
+   */
+  get(key: TK): DetailedResult<TV, ResultMapResultDetail>;
+
+  /**
+   * Gets a value from the map, or adds a supplied value if it does not exist.
+   * @param key - The key to be retrieved or created.
+   * @param value - The value to add if the key does not exist.
+   * @returns `Success` with the value and detail `exists` if the key was found,
+   * `Success` with the value and detail `added` if the key was not found and added.
+   * Fails with detail 'invalid-key' or 'invalid-value' and an error message if either
+   * is invalid.
+   * {@label WITH_VALUE}
+   */
+  getOrAdd(key: TK, value: TV): DetailedResult<TV, ResultMapResultDetail>;
+
+  /**
+   * Gets a value from the map, or adds a value created by a factory function if it does not exist.
+   * @param key - The key of the element to be retrieved or created.
+   * @param factory - A {@link Collections.ResultMapValueFactory | factory function} to create the value if
+   * the key does not exist.
+   * @returns `Success` with the value and detail `exists` if the key was found, `Success` with
+   * the value and detail `added` if the key was not found and added. Fails with detail 'invalid-key'
+   * or 'invalid-value' and an error message if either is invalid.
+   * {@label WITH_FACTORY}
+   */
+  getOrAdd(key: TK, factory: ResultMapValueFactory<TK, TV>): DetailedResult<TV, ResultMapResultDetail>;
+
+  /**
+   * Returns an iterator over the map entries.
+   * @returns An iterator over the map entries.
+   */
+  entries(): IterableIterator<KeyValueEntry<TK, TV>>;
+
+  /**
+   * Returns the number of entries in the map.
+   */
+  readonly size: number;
+
+  /**
+   * Returns an iterator over the map keys.
+   * @returns An iterator over the map keys.
+   */
+  keys(): IterableIterator<TK>;
+
+  /**
+   * Returns an iterator over the map values.
+   * @returns An iterator over the map values.
+   */
+  values(): IterableIterator<TV>;
+
+  /**
+   * Calls a function for each entry in the map.
+   * @param cb - The function to call for each entry.
+   * @param arg - An optional argument to pass to the callback.
+   */
+  forEach(cb: ResultMapForEachCb<TK, TV>, arg?: unknown): void;
+
+  /**
+   * Clears all entries from the map.
+   */
+  clear(): void;
+
+  /**
+   * Gets a readonly version of this map.
+   */
+  toReadOnly(): IReadOnlyResultMap<TK, TV>;
+}
 
 /**
  * A {@link Collections.ResultMap | ResultMap} class as a `Map<TK, TV>`-like object which
@@ -45,7 +165,7 @@ export type ResultMapValueFactory<TK extends string = string, TV = unknown> = (k
  * {@link https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils#the-result-pattern | result pattern}.
  * @public
  */
-export class ResultMap<TK extends string = string, TV = unknown> implements IReadOnlyResultMap<TK, TV> {
+export class ResultMap<TK extends string = string, TV = unknown> implements IResultMap<TK, TV> {
   /**
    * Protected raw access to the inner `Map<TK, TV>` object.
    * @public

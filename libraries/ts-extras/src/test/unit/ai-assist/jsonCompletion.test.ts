@@ -1,0 +1,362 @@
+// Copyright (c) 2026 Erik Fortune
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
+import '@fgv/ts-utils-jest';
+
+import { Conversion, Converters as BaseConverters, fail, succeed } from '@fgv/ts-utils';
+import type { Converter, Result } from '@fgv/ts-utils';
+import { Converters as JsonConverters, JsonSchema } from '@fgv/ts-json-base';
+
+import { AiAssist } from '../../..';
+// eslint-disable-next-line @rushstack/packlets/mechanics
+import type { IAiProviderDescriptor } from '../../../packlets/ai-assist/model';
+
+interface IShape {
+  name: string;
+  value: number;
+}
+
+const shapeConverter = BaseConverters.object<IShape>({
+  name: BaseConverters.string,
+  value: BaseConverters.number
+});
+
+function makeDescriptor(): IAiProviderDescriptor {
+  return {
+    id: 'xai-grok',
+    label: 'xAI Grok',
+    buttonLabel: 'AI Assist | Grok',
+    needsSecret: true,
+    apiFormat: 'openai',
+    baseUrl: 'https://api.x.ai/v1',
+    defaultModel: 'grok-4-1-fast',
+    supportedTools: ['web_search'],
+    corsRestricted: true,
+    acceptsImageInput: true,
+    streamingCorsRestricted: false
+  };
+}
+
+function mockOpenAiContent(content: string): void {
+  const body = {
+    choices: [{ message: { content }, finish_reason: 'stop' }]
+  };
+  (global.fetch as jest.Mock).mockResolvedValue({
+    ok: true,
+    status: 200,
+    json: jest.fn().mockResolvedValue(body),
+    text: jest.fn().mockResolvedValue(JSON.stringify(body))
+  });
+}
+
+function lastRequestBody(): { messages: Array<{ role: string; content: string }> } {
+  const fetchMock = global.fetch as jest.Mock;
+  return JSON.parse(fetchMock.mock.calls[0][1].body);
+}
+
+describe('generateJsonCompletion', () => {
+  const originalFetch = global.fetch;
+
+  beforeEach(() => {
+    global.fetch = jest.fn();
+  });
+
+  afterEach(() => {
+    global.fetch = originalFetch;
+  });
+
+  test('returns the validated value, raw text, and underlying response on success', async () => {
+    mockOpenAiContent('{"name":"x","value":1}');
+    const result = await AiAssist.generateJsonCompletion({
+      descriptor: makeDescriptor(),
+      apiKey: 'k',
+      ...new AiAssist.AiPrompt('Generate a thing', 'You are a helpful assistant').toRequest(),
+      converter: shapeConverter
+    });
+    expect(result).toSucceedAndSatisfy((r) => {
+      expect(r.value).toEqual({ name: 'x', value: 1 });
+      expect(r.raw).toBe('{"name":"x","value":1}');
+      expect(r.response.content).toBe('{"name":"x","value":1}');
+      expect(r.response.truncated).toBe(false);
+    });
+  });
+
+  test('tolerates fences and prose in the model output by default', async () => {
+    mockOpenAiContent('Sure! Here\'s the JSON:\n```json\n{"name":"x","value":1}\n```\nThanks!');
+    const result = await AiAssist.generateJsonCompletion({
+      descriptor: makeDescriptor(),
+      apiKey: 'k',
+      ...new AiAssist.AiPrompt('Generate a thing', 'You are a helpful assistant').toRequest(),
+      converter: shapeConverter
+    });
+    expect(result).toSucceedAndSatisfy((r) => {
+      expect(r.value).toEqual({ name: 'x', value: 1 });
+    });
+  });
+
+  test('appends the smart prompt hint to the system message by default', async () => {
+    mockOpenAiContent('{"name":"x","value":1}');
+    await AiAssist.generateJsonCompletion({
+      descriptor: makeDescriptor(),
+      apiKey: 'k',
+      ...new AiAssist.AiPrompt('user request', 'system base').toRequest(),
+      converter: shapeConverter
+    });
+    const body = lastRequestBody();
+    const system = body.messages.find((m) => m.role === 'system');
+    expect(system).toBeDefined();
+    expect(system!.content).toContain('system base');
+    expect(system!.content).toContain(AiAssist.SMART_JSON_PROMPT_HINT);
+  });
+
+  test("does not modify the system prompt when promptHint is 'none'", async () => {
+    mockOpenAiContent('{"name":"x","value":1}');
+    await AiAssist.generateJsonCompletion({
+      descriptor: makeDescriptor(),
+      apiKey: 'k',
+      ...new AiAssist.AiPrompt('user request', 'system base').toRequest(),
+      converter: shapeConverter,
+      promptHint: 'none'
+    });
+    const body = lastRequestBody();
+    const system = body.messages.find((m) => m.role === 'system');
+    expect(system!.content).toBe('system base');
+  });
+
+  test('appends a custom string prompt hint when supplied', async () => {
+    mockOpenAiContent('{"name":"x","value":1}');
+    await AiAssist.generateJsonCompletion({
+      descriptor: makeDescriptor(),
+      apiKey: 'k',
+      ...new AiAssist.AiPrompt('user request', 'system base').toRequest(),
+      converter: shapeConverter,
+      promptHint: 'JSON only please.'
+    });
+    const body = lastRequestBody();
+    const system = body.messages.find((m) => m.role === 'system');
+    expect(system!.content).toContain('system base');
+    expect(system!.content).toContain('JSON only please.');
+  });
+
+  test('uses the smart hint as the entire system prompt when none was provided', async () => {
+    mockOpenAiContent('{"name":"x","value":1}');
+    await AiAssist.generateJsonCompletion({
+      descriptor: makeDescriptor(),
+      apiKey: 'k',
+      ...new AiAssist.AiPrompt('user request', '').toRequest(),
+      converter: shapeConverter
+    });
+    const body = lastRequestBody();
+    const system = body.messages.find((m) => m.role === 'system');
+    expect(system!.content).toBe(AiAssist.SMART_JSON_PROMPT_HINT);
+  });
+
+  test('honors a caller-supplied jsonConverter override', async () => {
+    mockOpenAiContent('Custom payload');
+
+    let called = 0;
+    const customPipeline: Converter<IShape> = new Conversion.BaseConverter<IShape>(
+      (from: unknown): Result<IShape> => {
+        called++;
+        if (from === 'Custom payload') {
+          return succeed({ name: 'custom', value: 99 });
+        }
+        return fail('unexpected payload');
+      }
+    );
+
+    const result = await AiAssist.generateJsonCompletion<IShape>({
+      descriptor: makeDescriptor(),
+      apiKey: 'k',
+      ...new AiAssist.AiPrompt('user request', 'system base').toRequest(),
+      jsonConverter: customPipeline
+    });
+    expect(result).toSucceedAndSatisfy((r) => {
+      expect(r.value).toEqual({ name: 'custom', value: 99 });
+      expect(r.raw).toBe('Custom payload');
+    });
+    expect(called).toBe(1);
+  });
+
+  test('fails when neither converter nor jsonConverter is supplied', async () => {
+    const result = await AiAssist.generateJsonCompletion({
+      descriptor: makeDescriptor(),
+      apiKey: 'k',
+      ...new AiAssist.AiPrompt('user request', 'system base').toRequest()
+    });
+    expect(result).toFailWith(/converter or jsonConverter must be provided/i);
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
+  test('propagates upstream completion failures', async () => {
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: false,
+      status: 500,
+      text: jest.fn().mockResolvedValue('boom')
+    });
+    const result = await AiAssist.generateJsonCompletion({
+      descriptor: makeDescriptor(),
+      apiKey: 'k',
+      ...new AiAssist.AiPrompt('user request', 'system base').toRequest(),
+      converter: shapeConverter
+    });
+    expect(result).toFailWith(/AI API returned 500/);
+  });
+
+  test('decorates downstream conversion failures with a generateJsonCompletion prefix', async () => {
+    mockOpenAiContent('not json at all');
+    const result = await AiAssist.generateJsonCompletion({
+      descriptor: makeDescriptor(),
+      apiKey: 'k',
+      ...new AiAssist.AiPrompt('user request', 'system base').toRequest(),
+      converter: shapeConverter
+    });
+    expect(result).toFailWith(/^generateJsonCompletion:/);
+  });
+
+  // ==========================================================================
+  // Automatic structured-output inference (I): a `JsonSchema.object(...)`
+  // converter is both the reply validator AND (when the resolved model can
+  // enforce it) the wire schema — no separate `structuredOutput` param needed.
+  // A plain `Converters.object(...)` converter carries no schema, so nothing
+  // is sent and existing callers are unaffected.
+  // ==========================================================================
+
+  describe('automatic structured-output inference from a JsonSchema converter', () => {
+    function makeStructuredDescriptor(): IAiProviderDescriptor {
+      return {
+        ...makeDescriptor(),
+        id: 'openai',
+        apiFormat: 'openai',
+        baseUrl: 'https://api.openai.com/v1',
+        structuredOutput: [{ modelPrefix: '', format: 'openai-json-schema' }]
+      };
+    }
+
+    const jsonSchemaConverter = JsonSchema.object({ name: JsonSchema.string(), value: JsonSchema.number() });
+
+    test('a JsonSchema.object converter automatically constrains the request to its own schema', async () => {
+      mockOpenAiContent('{"name":"x","value":1}');
+
+      const result = await AiAssist.generateJsonCompletion({
+        descriptor: makeStructuredDescriptor(),
+        apiKey: 'k',
+        ...new AiAssist.AiPrompt('Generate a thing', 'You are a helpful assistant').toRequest(),
+        converter: jsonSchemaConverter
+      });
+
+      expect(result).toSucceedAndSatisfy((r) => {
+        expect(r.value).toEqual({ name: 'x', value: 1 });
+        expect(r.response.structuredOutput).toBe('schema');
+      });
+      const body = lastRequestBody() as unknown as { response_format?: unknown };
+      expect(body.response_format).toEqual({
+        type: 'json_schema',
+        json_schema: { name: 'response', strict: true, schema: jsonSchemaConverter.toJson() }
+      });
+    });
+
+    test('a plain Converters.object converter sends nothing and reports "none" (unchanged)', async () => {
+      mockOpenAiContent('{"name":"x","value":1}');
+
+      const result = await AiAssist.generateJsonCompletion({
+        descriptor: makeStructuredDescriptor(),
+        apiKey: 'k',
+        ...new AiAssist.AiPrompt('Generate a thing', 'You are a helpful assistant').toRequest(),
+        converter: shapeConverter
+      });
+
+      expect(result).toSucceedAndSatisfy((r) => {
+        expect(r.value).toEqual({ name: 'x', value: 1 });
+        expect(r.response.structuredOutput).toBe('none');
+      });
+      const body = lastRequestBody() as unknown as { response_format?: unknown };
+      expect(body.response_format).toBeUndefined();
+      expect('response_format' in (body as object)).toBe(false);
+    });
+
+    test('a jsonConverter suppresses inference — the request is never constrained to a schema that does not validate the reply', async () => {
+      // `pipeline` prefers `jsonConverter` and ignores `converter` entirely when
+      // both are supplied. Inferring from `converter` anyway would constrain the
+      // REQUEST to a schema unrelated to what validates the REPLY — reintroducing
+      // the exact drift this design exists to remove, in the one place two
+      // validation paths coexist.
+      mockOpenAiContent('{"name":"x","value":1}');
+
+      const result = await AiAssist.generateJsonCompletion({
+        descriptor: makeStructuredDescriptor(),
+        apiKey: 'k',
+        ...new AiAssist.AiPrompt('Generate a thing', 'You are a helpful assistant').toRequest(),
+        converter: jsonSchemaConverter,
+        jsonConverter: JsonConverters.stringifiedJson(shapeConverter)
+      });
+
+      expect(result).toSucceedAndSatisfy((r) => {
+        expect(r.value).toEqual({ name: 'x', value: 1 });
+        expect(r.response.structuredOutput).toBe('none');
+      });
+      const body = lastRequestBody() as unknown as { response_format?: unknown };
+      expect('response_format' in (body as object)).toBe(false);
+    });
+
+    test('an explicit structuredOutput still applies alongside a jsonConverter', async () => {
+      // Suppressing INFERENCE is not suppressing the feature: a caller who wants a
+      // constraint alongside a jsonConverter states it, and gets it.
+      mockOpenAiContent('{"name":"x","value":1}');
+
+      const result = await AiAssist.generateJsonCompletion({
+        descriptor: makeStructuredDescriptor(),
+        apiKey: 'k',
+        ...new AiAssist.AiPrompt('Generate a thing', 'You are a helpful assistant').toRequest(),
+        converter: jsonSchemaConverter,
+        jsonConverter: JsonConverters.stringifiedJson(shapeConverter),
+        structuredOutput: { mode: 'json-object' }
+      });
+
+      expect(result).toSucceedAndSatisfy((r) => {
+        expect(r.response.structuredOutput).toBe('json-mode');
+      });
+      const body = lastRequestBody() as unknown as { response_format?: unknown };
+      expect(body.response_format).toEqual({ type: 'json_object' });
+    });
+
+    test('an explicit structuredOutput param overrides the inferred one', async () => {
+      // Content still validates against `jsonSchemaConverter` (the reply validator
+      // half of its job is unaffected by which wire request was sent).
+      mockOpenAiContent('{"name":"x","value":1}');
+
+      const result = await AiAssist.generateJsonCompletion({
+        descriptor: makeStructuredDescriptor(),
+        apiKey: 'k',
+        ...new AiAssist.AiPrompt('Generate a thing', 'You are a helpful assistant').toRequest(),
+        converter: jsonSchemaConverter,
+        structuredOutput: { mode: 'json-object' }
+      });
+
+      expect(result).toSucceedAndSatisfy((r) => {
+        expect(r.response.structuredOutput).toBe('json-mode');
+      });
+      const body = lastRequestBody() as unknown as { response_format?: unknown };
+      // The explicit json-object request wins over the schema that would
+      // otherwise have been inferred from `jsonSchemaConverter`.
+      expect(body.response_format).toEqual({ type: 'json_object' });
+    });
+  });
+});

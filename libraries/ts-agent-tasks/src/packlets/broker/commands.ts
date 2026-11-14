@@ -1,0 +1,333 @@
+/*
+ * Copyright (c) 2026 Erik Fortune
+ * SPDX-License-Identifier: MIT
+ */
+
+import { JsonValue } from '@fgv/ts-json-base';
+import { TrackedTransition, evaluateTrackedCommand, planUpdates } from '../implementations';
+import {
+  CommandRejectionReason,
+  CommandState,
+  ICommandReceipt,
+  ICommandRequest,
+  IResolvedTaskCommitRecord,
+  IStopCommandMarker,
+  IStoredCommandOperation,
+  IStoredTaskOperation,
+  ITaskCommandHandle,
+  ITaskCommitRecord,
+  ITaskEnvelope,
+  ITaskUpdate,
+  TaskResult,
+  TrackedCommand,
+  latchRefusesMove,
+  TrackedTaskCommandName,
+  taskListKind,
+  trackedTaskCommandNames
+} from '../types';
+import { ITaskRepositoryWriter } from '../storage';
+import { AccessContext, AccessSubject, subjectOf } from './access';
+import { advance, confirmUnchanged, nextDraft, readExisting } from './catalogMutation';
+import { isNativeKind } from './catalogOperations';
+import { BrokerCore, canonicallySame, revisionOf, storedOperation } from './core';
+import { changedSinceAuthorized, notFound, ok, propagate, taskFailure } from './failures';
+import { executeExternal, prepareExternal } from './externalCommands';
+
+/** A receipt that is returned but never stored. */
+function _rejected(request: ICommandRequest, reason: CommandRejectionReason): TaskResult<ICommandReceipt> {
+  return ok({
+    taskId: request.taskId,
+    operationId: request.operationId,
+    command: request.command,
+    result: { state: 'rejected', reason }
+  });
+}
+
+/** Whether a stored operation is this command request again, from this principal. */
+function _isSameCommand(
+  stored: IStoredTaskOperation,
+  principal: string,
+  request: ICommandRequest
+): stored is IStoredCommandOperation {
+  return (
+    stored.type === 'command' && stored.principalKey === principal && canonicallySame(stored.request, request)
+  );
+}
+
+/**
+ * The replay of a command already recorded under this id: the same request, re-authorized, gets
+ * its stored receipt — once the writer confirms the record and policy it was authorized against
+ * have not moved; a different request under the key is `idempotency-conflict`. Neither
+ * dispatches anything or stores anything.
+ */
+async function _replay(
+  core: BrokerCore,
+  ctx: AccessContext,
+  epoch: string,
+  record: ITaskCommitRecord,
+  stored: IStoredTaskOperation,
+  request: ICommandRequest
+): Promise<TaskResult<ICommandReceipt>> {
+  if (!_isSameCommand(stored, ctx.principal, request)) {
+    return _rejected(request, 'idempotency-conflict');
+  }
+  if (!(await ctx.may('command', subjectOf(record), 'subject', { command: request.command }))) {
+    return _rejected(request, 'denied');
+  }
+  return confirmUnchanged(core, ctx, epoch, request.taskId, record, stored.receipt, request.operationId);
+}
+
+/** A command converted for its task: through the tracked table, or its external kind's schema. */
+type Preparation =
+  | {
+      readonly kind: 'external';
+      readonly record: IResolvedTaskCommitRecord;
+      readonly result: TaskResult<{ readonly handle?: ITaskCommandHandle; readonly stored: ICommandRequest }>;
+    }
+  | {
+      readonly kind: 'native';
+      readonly result: TaskResult<{ readonly prepared: Prepared; readonly stored: ICommandRequest }>;
+    };
+
+/** What evaluation decided before the writer: a refusal to record, or a command to evaluate. */
+type Prepared =
+  | { readonly kind: 'refuse'; readonly reason: 'unsupported' | 'conflict' }
+  | { readonly kind: 'evaluate'; readonly command: TrackedCommand };
+
+/**
+ * Converts a native task's command. An unknown command name is a well-formed request the task
+ * does not support — a recorded refusal. Known command, malformed parameters: an invalid request,
+ * which records nothing.
+ */
+function _prepare(
+  core: BrokerCore,
+  record: ITaskCommitRecord,
+  request: ICommandRequest
+): TaskResult<{ readonly prepared: Prepared; readonly stored: ICommandRequest }> {
+  // An unresolved registration supports none; an external task's commands go to its source
+  // (`executeExternal`) and never reach here.
+  if (record.recordType === 'unresolved') {
+    return ok({ prepared: { kind: 'refuse', reason: 'unsupported' }, stored: request });
+  }
+  if (!trackedTaskCommandNames.includes(request.command as TrackedTaskCommandName)) {
+    return ok({ prepared: { kind: 'refuse', reason: 'unsupported' }, stored: request });
+  }
+  const command = core.converters.broker.trackedCommand.convert({
+    command: request.command,
+    parameters: request.parameters
+  });
+  if (command.isFailure()) {
+    return taskFailure(`execute ${request.command}: ${command.message}`, 'invalid', 'after-host-action', {
+      operationId: request.operationId
+    });
+  }
+  // The canonical converted parameters are what is stored and what a replay is compared with.
+  return core.toJson(command.value.parameters).onSuccess((parameters: JsonValue) =>
+    ok({
+      prepared:
+        revisionOf(record) !== request.expectedRevision
+          ? { kind: 'refuse', reason: 'conflict' }
+          : { kind: 'evaluate', command: command.value },
+      stored: { ...request, parameters }
+    })
+  );
+}
+
+/**
+ * Runs one command against a task.
+ *
+ * @remarks
+ * A hidden or foreign task fails `not-found-or-denied`. A visible task answers with a receipt:
+ * `denied` (not recorded — a principal without command authority cannot consume a task's
+ * capacity), `idempotency-conflict` for a reused key (not recorded — the key already holds
+ * evidence), `invalid-transition` for an archived tombstone (not recorded — a tombstone takes no
+ * write, so the key stays free), or an evaluated outcome that is recorded under the key:
+ * `unsupported`, a stale `conflict`, a table `invalid-transition`, or `applied`. A same-state no-op is `applied` at the current
+ * revision without advancing it. An external task's command goes to its source through
+ * {@link executeExternal}: accepted is not applied, and the broker never sets its status.
+ * @internal
+ */
+export async function execute(
+  core: BrokerCore,
+  ctx: AccessContext,
+  input: unknown
+): Promise<TaskResult<ICommandReceipt>> {
+  const converted = core.converters.commands.request.convert(input);
+  if (converted.isFailure()) {
+    return taskFailure(`execute: ${converted.message}`, 'invalid', 'after-host-action');
+  }
+  const request: ICommandRequest = converted.value;
+  const { taskId, operationId } = request;
+  const read = await readExisting(core, taskId);
+  if (read.isFailure()) {
+    return propagate(read);
+  }
+  const record: ITaskCommitRecord = read.value;
+  const subject: AccessSubject = subjectOf(record);
+  // Captured before the first question is put to the policy, so the recheck inside the writer
+  // covers every answer this command relies on.
+  const epoch = ctx.epoch();
+  if (epoch.isFailure()) {
+    return propagate(epoch);
+  }
+  if (!(await ctx.sees(subject))) {
+    return notFound(taskId, operationId);
+  }
+  // Replay compares the request as it was stored, so a task's parameters are converted first —
+  // a native task's through the tracked table, an external task's through its kind's registered
+  // schema; a request whose parameters cannot convert can never equal a stored one. An unresolved
+  // registration's one operation is its registration, so a reused key there can only conflict.
+  const preparation: Preparation =
+    record.recordType === 'resolved' && !isNativeKind(record.task.envelope)
+      ? { kind: 'external', record, result: prepareExternal(core, record, request) }
+      : { kind: 'native', result: _prepare(core, record, request) };
+  const storedForm: ICommandRequest = preparation.result.isSuccess()
+    ? preparation.result.value.stored
+    : request;
+  const stored: IStoredTaskOperation | undefined = storedOperation(record, operationId);
+  if (stored !== undefined) {
+    return _replay(core, ctx, epoch.value, record, stored, storedForm);
+  }
+  // Command authority is decided before anything else about the command is disclosed.
+  if (!(await ctx.may('command', subject, 'subject', { command: request.command }))) {
+    return _rejected(request, 'denied');
+  }
+  if (record.recordType === 'unresolved') {
+    // An unresolved registration never authorizes execution commands, and takes no write.
+    return _rejected(request, 'unsupported');
+  }
+  if (record.archived) {
+    // A tombstone takes no write at all, so this refusal cannot be recorded; it holds no key.
+    return _rejected(request, 'invalid-transition');
+  }
+  if (preparation.kind === 'external') {
+    if (preparation.result.isFailure()) {
+      return propagate(preparation.result);
+    }
+    const receipt = await executeExternal(
+      core,
+      ctx,
+      epoch.value,
+      preparation.record,
+      request,
+      preparation.result.value
+    );
+    if (receipt.isFailure()) {
+      return propagate(receipt);
+    }
+    return receipt.value !== undefined ? ok(receipt.value) : execute(core, ctx, input);
+  }
+  if (preparation.result.isFailure()) {
+    return propagate(preparation.result);
+  }
+  const { prepared: plan, stored: storedRequest } = preparation.result.value;
+
+  // `undefined` from the writer section means: the same command committed while this one waited.
+  const outcome = await core.gated(async (writer): Promise<TaskResult<ICommandReceipt | undefined>> => {
+    const reread = await writer.readCommit(taskId);
+    if (reread.isFailure()) {
+      return propagate<ICommandReceipt | undefined>(reread);
+    }
+    const found: ITaskCommitRecord | undefined = reread.value;
+    const concurrent = found !== undefined ? storedOperation(found, operationId) : undefined;
+    if (concurrent !== undefined) {
+      // Answered through the ordinary replay path, against the record as it is now.
+      return ok<ICommandReceipt | undefined>(undefined);
+    }
+    if (found === undefined || found.recordType !== 'resolved' || revisionOf(found) !== revisionOf(record)) {
+      return changedSinceAuthorized<ICommandReceipt | undefined>(`task ${taskId}`, operationId);
+    }
+    const evaluated: Outcome =
+      plan.kind === 'refuse'
+        ? { disposition: 'refused', reason: plan.reason }
+        : evaluateTrackedCommand(found.task.envelope, plan.command, {
+            list: found.task.envelope.kind === taskListKind
+          });
+    // The admission freeze, decided on the states under the writer where the latches are current: a
+    // start, a resume or a move out of the stopped set is refused however it is spelled (T9).
+    const outcome: Outcome =
+      evaluated.disposition === 'changed' &&
+      latchRefusesMove(
+        core.repository.stopLatches(taskId),
+        found.task.envelope.lifecycle.status,
+        evaluated.envelope.lifecycle.status
+      )
+        ? { disposition: 'refused', reason: 'stop-active' }
+        : evaluated;
+    // After the last await and immediately before the commit, which awaits nothing before it
+    // writes: the policy must still be the one the command was authorized under.
+    if (!ctx.epochIs(epoch.value)) {
+      return changedSinceAuthorized<ICommandReceipt | undefined>('the authorization policy', operationId);
+    }
+    return commitTrackedCommand(core, writer, ctx.principal, found, storedRequest, outcome);
+  });
+  if (outcome.isFailure()) {
+    return propagate(outcome);
+  }
+  return outcome.value !== undefined ? ok(outcome.value) : execute(core, ctx, input);
+}
+
+/**
+ * A transition, or a refusal decided before evaluation.
+ * @internal
+ */
+export type Outcome =
+  | TrackedTransition
+  | { readonly disposition: 'refused'; readonly reason: 'unsupported' | 'conflict' | 'stop-active' };
+
+/**
+ * Records a tracked command's outcome under its operation id, advancing the task only when it
+ * changed. A stop's command carries its intent's marker (T9).
+ * @internal
+ */
+export async function commitTrackedCommand(
+  core: BrokerCore,
+  writer: ITaskRepositoryWriter,
+  principal: string,
+  current: IResolvedTaskCommitRecord,
+  request: ICommandRequest,
+  outcome: Outcome,
+  stop?: IStopCommandMarker
+): Promise<TaskResult<ICommandReceipt>> {
+  const before: ITaskEnvelope = current.task.envelope;
+  let after: ITaskEnvelope = before;
+  let updates: ReadonlyArray<ITaskUpdate> = [];
+  let result: CommandState;
+  if (outcome.disposition === 'refused' || outcome.disposition === 'rejected') {
+    result = { state: 'rejected', reason: outcome.reason };
+  } else if (outcome.disposition === 'unchanged') {
+    result = { state: 'applied', appliedRevision: before.revision };
+  } else {
+    const clock = core.now();
+    if (clock.isFailure()) {
+      return propagate(clock);
+    }
+    after = advance(outcome.envelope, before, clock.value);
+    updates = planUpdates(before, after, outcome.categories, core.audience);
+    result = { state: 'applied', appliedRevision: after.revision };
+  }
+  const receipt: ICommandReceipt = {
+    taskId: request.taskId,
+    operationId: request.operationId,
+    command: request.command,
+    result
+  };
+  const operation: IStoredCommandOperation = {
+    type: 'command',
+    operationId: request.operationId,
+    request,
+    principalKey: principal,
+    dispatch: 'settled',
+    receipt,
+    ...(stop !== undefined ? { stop } : {})
+  };
+  const committed = await writer.commit({
+    purpose: 'operation',
+    operationId: request.operationId,
+    taskId: request.taskId,
+    expectedRevision: before.revision,
+    expectedRecordRevision: current.recordRevision,
+    record: nextDraft(core.repository, current, after, operation, updates, false)
+  });
+  return committed.isSuccess() ? ok(receipt) : propagate(committed);
+}

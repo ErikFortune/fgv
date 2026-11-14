@@ -1,5 +1,5 @@
 {
-  "extends": "@rushstack/heft-node-rig/profiles/default/config/jest.config.json",
+  "extends": "@fgv/heft-dual-rig/profiles/default/config/jest.config.json",
   "setupFilesAfterEnv": ["<rootDir>/lib/test/setupTests.js"],
   "testEnvironment": "jsdom",
   "coveragePathIgnorePatterns": ["index.js", "index.browser.js", "public.js", "internal.js"],
@@ -12,5 +12,8 @@
     }
   },
   "collectCoverage": true,
-  "coverageReporters": ["text", "lcov", "html"]
+  "coverageReporters": ["text", "lcov", "html"],
+  "moduleNameMapper": {
+    "^idb-keyval$": "<rootDir>/lib/test/mocks/idb-keyval.js"
+  }
 }

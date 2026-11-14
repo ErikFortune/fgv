@@ -1,0 +1,11 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/rushstack/main/apps/heft/src/schemas/heft-jest-plugin.schema.json",
+
+  // Inherit the node-rig shared Jest configuration, then add the coverage-gate
+  // enforcement that the upstream heft-jest-plugin omits. Consuming packages
+  // should `extends` THIS file (not the node-rig file directly) so they inherit
+  // the fix; see coverageResultsProcessor.js for the rationale.
+  "extends": "@rushstack/heft-node-rig/profiles/default/config/jest.config.json",
+
+  "testResultsProcessor": "<packageDir:@fgv/heft-dual-rig>/profiles/default/config/coverageResultsProcessor.js"
+}

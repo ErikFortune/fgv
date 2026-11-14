@@ -43,17 +43,17 @@ import { JsonCompatibleType, JsonObject, sanitizeJsonObject } from '@fgv/ts-json
  */
 export interface ITerritoryQualifierTypeCreateParams {
   /**
-   * {@inheritdoc QualifierTypes.IQualifierTypeCreateParams.name}
+   * {@inheritDoc QualifierTypes.IQualifierTypeCreateParams.name}
    */
   name?: string;
 
   /**
-   * {@inheritdoc QualifierTypes.IQualifierTypeCreateParams.allowContextList}
+   * {@inheritDoc QualifierTypes.IQualifierTypeCreateParams.allowContextList}
    */
   allowContextList?: boolean;
 
   /**
-   * {@inheritdoc QualifierTypes.IQualifierTypeCreateParams.index}
+   * {@inheritDoc QualifierTypes.IQualifierTypeCreateParams.index}
    */
   index?: number;
 
@@ -85,7 +85,7 @@ export class TerritoryQualifierType extends QualifierType<
   JsonCompatibleType<Config.ITerritoryQualifierTypeConfig>
 > {
   /**
-   * {@inheritdoc QualifierTypes.IQualifierType.systemTypeName}
+   * {@inheritDoc QualifierTypes.IQualifierType.systemTypeName}
    */
   public readonly systemTypeName: QualifierTypeName = Convert.qualifierTypeName
     .convert('territory')
@@ -149,7 +149,7 @@ export class TerritoryQualifierType extends QualifierType<
   }
 
   /**
-   * {@inheritdoc QualifierTypes.QualifierType.isValidConditionValue}
+   * {@inheritDoc QualifierTypes.QualifierType.isValidConditionValue}
    */
   public isValidConditionValue(value: string): value is QualifierConditionValue {
     const normalized = this.acceptLowercase ? value.toUpperCase() : value;
@@ -211,7 +211,7 @@ export class TerritoryQualifierType extends QualifierType<
   }
 
   /**
-   * {@inheritdoc QualifierTypes.IQualifierType.getConfigurationJson}
+   * {@inheritDoc QualifierTypes.IQualifierType.getConfigurationJson}
    */
   public getConfigurationJson(): Result<JsonCompatibleType<Config.ISystemTerritoryQualifierTypeConfig>> {
     const hierarchy: JsonObject = this.hierarchy ? { hierarchy: this.hierarchy.asRecord() } : {};
@@ -231,7 +231,7 @@ export class TerritoryQualifierType extends QualifierType<
   }
 
   /**
-   * {@inheritdoc QualifierTypes.IQualifierType.validateConfigurationJson}
+   * {@inheritDoc QualifierTypes.IQualifierType.validateConfigurationJson}
    */
   public validateConfigurationJson(
     from: unknown
@@ -252,7 +252,7 @@ export class TerritoryQualifierType extends QualifierType<
   }
 
   /**
-   * {@inheritdoc QualifierTypes.QualifierType._matchOne}
+   * {@inheritDoc QualifierTypes.QualifierType._matchOne}
    */
   protected _matchOne(
     condition: QualifierConditionValue,

@@ -54,7 +54,7 @@
       "ignoreMissingScript": true,
       "allowWarningsInSuccessfulBuild": false,
       "incremental": false
-    }
+    },
     // {
     //   /**
     //    * (Required) Determines the type of custom command.

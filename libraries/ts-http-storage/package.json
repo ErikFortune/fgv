@@ -1,0 +1,66 @@
+{
+  "name": "@fgv/ts-http-storage",
+  "version": "5.1.0",
+  "description": "Reusable HTTP storage services for FileTree-style backends",
+  "main": "lib/index.js",
+  "types": "dist/ts-http-storage.d.ts",
+  "exports": {
+    ".": {
+      "node": {
+        "import": "./lib/index.js",
+        "require": "./lib/index.js"
+      },
+      "default": {
+        "import": "./lib/index.js",
+        "require": "./lib/index.js"
+      },
+      "types": "./dist/ts-http-storage.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "heft build --clean",
+    "clean": "heft clean",
+    "test": "heft test --clean",
+    "api-report": "api-extractor run --config ./config/api-extractor.json",
+    "api-report:update": "api-extractor run --local --config ./config/api-extractor.json",
+    "build-docs": "typedoc --options ./config/typedoc.json",
+    "build-all": "rushx build; rushx build-docs",
+    "coverage": "heft test --clean --coverage",
+    "lint": "eslint src --ext .ts",
+    "fixlint": "eslint src --ext .ts --fix"
+  },
+  "sideEffects": false,
+  "author": "Erik Fortune",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ErikFortune/fgv.git"
+  },
+  "dependencies": {
+    "@fgv/ts-utils": "workspace:*",
+    "hono": "~4.13.16"
+  },
+  "devDependencies": {
+    "@microsoft/api-documenter": "^7.30.20",
+    "@microsoft/api-extractor": "^7.60.1",
+    "@fgv/ts-utils-jest": "workspace:*",
+    "@rushstack/heft": "1.3.0",
+    "@rushstack/heft-node-rig": "2.11.50",
+    "@rushstack/eslint-config": "4.7.0",
+    "@types/heft-jest": "1.0.6",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^22.20.5",
+    "@typescript-eslint/eslint-plugin": "^8.72.1",
+    "@typescript-eslint/parser": "^8.72.1",
+    "eslint": "^9.39.5",
+    "eslint-plugin-tsdoc": "~0.5.4",
+    "jest": "^30.5.2",
+    "ts-jest": "^29.4.15",
+    "typescript": "5.9.3",
+    "typedoc": "~0.28.20",
+    "typedoc-plugin-markdown": "~4.14.1",
+    "@rushstack/heft-jest-plugin": "2.0.17",
+    "@fgv/heft-dual-rig": "workspace:*",
+    "@fgv/typedoc-compact-theme": "workspace:*"
+  }
+}

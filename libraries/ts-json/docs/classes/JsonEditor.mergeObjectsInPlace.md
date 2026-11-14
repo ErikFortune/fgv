@@ -1,0 +1,28 @@
+[Home](../README.md) > [JsonEditor](./JsonEditor.md) > mergeObjectsInPlace
+
+## JsonEditor.mergeObjectsInPlace() method
+
+Merges multiple supplied source objects into a supplied target, updating the target
+object and using the default context supplied at creation time.
+
+**Signature:**
+
+```typescript
+mergeObjectsInPlace(target: JsonObject, srcObjects: JsonObject[]): Result<JsonObject>;
+```
+
+**Parameters:**
+
+<table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>target</td><td>JsonObject</td><td>The target `JsonObject` to be updated</td></tr>
+<tr><td>srcObjects</td><td>JsonObject[]</td><td>`JsonObject`s to be merged into the target object, in the order
+supplied.</td></tr>
+</tbody></table>
+
+**Returns:**
+
+Result&lt;JsonObject&gt;
+
+`Success` with the original source `JsonObject` if merge was successful.
+Returns `Failure` with details if an error occurs.

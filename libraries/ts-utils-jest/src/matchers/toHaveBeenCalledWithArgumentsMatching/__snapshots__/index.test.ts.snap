@@ -1,4 +1,4 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
 
 exports[`.toHaveBeenCalledWithArgumentsMatching reports a helpful message if a .not test fails with few calls 1`] = `
 "expect(received).not.toHaveBeenCalledWithArgumentsMatching(expected)

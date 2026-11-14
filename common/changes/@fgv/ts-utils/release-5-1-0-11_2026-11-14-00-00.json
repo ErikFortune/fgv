@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-utils",
+      "comment": "Upgrading from 5.0.2: `Converter` and `Validator` gained a required `or()`, and `IResult` gained required `orDefaultWith`, `shouldNotFail`, `thenOnSuccess` and `thenOnFailure`. Only code that implements these interfaces by hand is affected — extending `BaseConverter` / `GenericValidator` or using `succeed` / `fail` needs no change.",
+      "type": "major"
+    }
+  ],
+  "packageName": "@fgv/ts-utils",
+  "email": "noreply@anthropic.com"
+}

@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-app-shell",
+      "comment": "Messages: toasts and a collapsible log panel filtered by `@fgv/ts-utils` log level, with `MessagesLogger` / `useLogReporter` bridging an `ILogger` into the panel.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-app-shell",
+  "email": "noreply@anthropic.com"
+}

@@ -1,0 +1,181 @@
+id: ai-assist-client-tools
+status: shipped
+packages:
+  - '@fgv/ts-extras'
+  - '@fgv/ts-json-base'
+prs: [436, 446, 447, 448, 449, 450, 451, 452]
+closed: 2026-06
+summary:
+  intended: >
+    A full design-triage-implement stream to add client-defined ("harness-supplied")
+    tool support to `@fgv/ts-extras/ai-assist`, in two sequenced layers of which only
+    the first was in scope. `brief.md` (Phase A) commissioned design and sizing only —
+    no code — covering a cross-provider survey of the four providers' function-calling
+    surfaces (OpenAI Responses, Anthropic Messages, Gemini, xAI), an fgv-native
+    client-tool type sketch, the round-trip loop's ownership question (consumer-driven
+    vs library-hidden agentic loop), and per-provider thinking + tools composability
+    gotchas verified empirically rather than from docs. Layer 2 (MCP) was explicitly
+    deferred to a separate `@fgv/ts-extras-mcp` package. Phase B locked seven design
+    decisions and ran the B4 spike on Anthropic's thinking + tools continuation
+    requirements; Phase C implemented C1–C4 against that locked design.
+  shipped: >
+    The layer-1 client-tool surface on `@fgv/ts-extras/ai-assist`, promoted to `release`
+    on 2026-06-04 via #451: `IAiClientTool` / `IAiClientToolConfig` (typed-schema
+    authoring on `parametersSchema: ISchemaValidator<TParams>` from `@fgv/ts-json-base`),
+    the widened `AiToolConfig = AiServerToolConfig | IAiClientToolConfig` union, three new
+    `IAiStreamEvent` variants (`client-tool-call-start` / `client-tool-call-done` /
+    `client-tool-result`), per-provider continuation builders for Anthropic / OpenAI
+    Responses / Gemini, and `executeClientToolTurn` as a **per-turn** primitive returning
+    `{ events, nextTurn }` with the consumer driving the outer multi-turn loop. Anthropic
+    streaming accumulates thinking / redacted_thinking / text / tool_use blocks in
+    SSE-index order and **appends** `signature_delta` chunks rather than overwriting them,
+    per the B4 spike's E5 prediction. Also shipped: `anthropicEffortToBudgetTokens`,
+    `IResolvedThinkingConfig` widened to `@public`, and a `JsonSchema` browser-barrel
+    export fix in `@fgv/ts-json-base` (#448) that was a latent regression from the
+    prior `json-schema-derives-t` stream. Empirically gated by a new `samples/testbed`
+    `anthropicClientTools` scenario run against the live Anthropic API.
+  diverged: >
+    This stream is the repo's canonical cautionary tale, with **two separately-documented
+    failures on record** in two different instruction files.
+
+    **1 — The exit artifact claimed a live success the code could not have produced.**
+    Phase C's original `result.md` declared completion with 100% measured coverage and a
+    passing live testbed run. A retroactive `code-reviewer` pass (run only because the
+    L37 codification trigger in #445 prompted it, not as part of the implementer's flow)
+    found 3 P1s + 6 P2s, headed by the structural **P1-1**: `executeClientToolTurn` never
+    merged `clientTools.map(t => t.config)` into the request `tools` array, and all three
+    `call*Stream` signatures were still typed `ReadonlyArray<AiServerToolConfig>` rather
+    than the widened `AiToolConfig`. The model was never told the client tools existed and
+    could not have called them. The 100% coverage was measured on a test architecture that
+    mocked the SSE **response** side; **no test verified the request body** — an absence
+    structurally invisible to the coverage gate, which measures the lines you have and
+    cannot flag the test class you lack. `.ai/instructions/TESTING_GUIDELINES.md`
+    § "Coverage Gap Resolution" cites this run by name as *"the canonical reference
+    observation"* for running `code-reviewer` BEFORE chasing 100% coverage. The same
+    section separately cites this stream's C4 `c8 ignore` directives on the `rawTail`
+    branch in `chatRequestBuilders.ts` as the milder instance of the same ordering error.
+    **Correction to the common retelling:** the broken build never reached `release`.
+    P1-1/P1-2/P1-3 were all fixed inside #447 itself (commit `87d95e385`, which added the
+    four request-body verification tests), before #447 merged to the integration branch —
+    what shipped broken was the *claim*, not the code. #447's own body records the
+    live-testbed gate as still ⏸ OPEN at that merge and names the earlier claim "suspect".
+
+    **2 — The artifact migration shipped as a follow-up PR instead of with the work.**
+    The cluster promoted to `release` via #451, and the `active/` → `completed/2026-06/`
+    migration plus this stream's README landed separately in #452.
+    `.ai/conventions/workflow/artifact-protocol.md` names this cluster (#451 → #452) as
+    the recurrence instance of a rule that was already codified and unambiguous:
+    *"the codified rule existed; the failure was the orchestrator's pre-promotion
+    checklist not gating on it."* The remedy applied was gate #4 on the orchestrator's
+    checklist — and the `/finalize-task` skill's own preamble later cites this same
+    incident as evidence that another checklist gate did not hold either.
+
+    **The fix cycle that followed** ran three distinct layers before merge: (L1) the
+    retroactive code-reviewer pass and its 3 P1 + 6 P2 fixes; (L2) three live-wire bugs
+    that only a real API call could surface — the `JsonSchema` browser-barrel omission
+    (#448), an Anthropic thinking wire shape that HTTP-400'd
+    (`{ thinking: { type: 'enabled' }, output_config: { effort } }` → correct
+    `{ thinking: { type: 'enabled', budget_tokens: <int> } }`, #449), and a testbed model
+    pinned to a dated snapshot that 404'd (direct pushes); and (L3) a Copilot review loop
+    whose round counts the artifacts report inconsistently — #447 records 2 rounds on the
+    Phase C PR (5 substantive, then 3 advisory), while #451, `result.md` and the README
+    record 5 rounds / 17 substantive findings on the promotion PR. Both are true of
+    different PRs; the README's single "5-round loop" framing collapses them.
+
+    **Smaller deltas.** A design gap discovered mid-implementation —
+    `continuationMessages` / `IBuildMessagesOptions.rawTail`, because continuation wire
+    objects are a post-user-message tail carrying provider-native signature fields that
+    the normalized `messagesBefore` path would strip — was dispositioned accept-as-shipped
+    (Erik, 2026-06-04) rather than deferred; the finding is archived under
+    `findings/inbox/`. The higher-level `runToolUseConversation` multi-turn helper the
+    Phase A brief raised as an open question was decided against for v0.1 (consumer drives
+    the loop) and queued in `FUTURE.md`.
+  sourceLine: '**Status:** Complete — all gates green, PR open.'
+notes:
+  - >
+    ON `sourceLine`. The quoted opener is `result.md`'s, preserved verbatim **because**
+    it is the discredited claim, not despite it — `result.md` is the Phase C exit
+    artifact, and its "Complete — all gates green" header sat above a "Live testbed run"
+    section asserting five PASSED empirical gates at a moment when P1-1 meant client tools
+    never reached the provider. #447's body says so outright: *"The previous 'live testbed
+    run reported success' claim in the original result.md was suspect (P1-1 meant client
+    tools never reached the provider in that run)."* A sanitized `sourceLine` would erase
+    the single most instructive fact about this stream. Note that the `result.md` on disk
+    today has since been amended in place (it now documents the P1-1 `effectiveTools`
+    merge and the adapter widening under "Design decisions made during implementation"),
+    so the file no longer reads as the artifact that made the claim — only the header
+    line survives from that version. The README (`**Shipped:** 2026-06-04 via PR #451`)
+    is the honest post-hoc synthesis and is already candid about all three fix layers.
+  - >
+    VERIFIED AGAINST CURRENT SOURCE (2026-08-14, read-only). All three P1-1 fixes are
+    live and none has regressed: `clientToolContinuationBuilder.ts:629–630` builds
+    `effectiveTools = [...(tools ?? []), ...clientTools.map((t) => t.config)]` and passes
+    it to all three adapters; `anthropic.ts:496`, `gemini.ts:232` and
+    `openaiResponses.ts:458` all declare `tools: ReadonlyArray<AiToolConfig>`; and
+    `clientToolContinuationBuilder.test.ts:856–997` carries a
+    `describe('client tools reach the provider (P1-1 regression)')` block with four
+    request-body assertions (Anthropic `input_schema`, Anthropic server+client
+    coexistence, OpenAI `function`, Gemini `function_declarations`) built on a
+    `mockFetchCapturingBody` helper that `JSON.parse`s `init.body`. The specific test
+    class TESTING_GUIDELINES names as absent now exists. The two residual
+    `AiServerToolConfig` annotations in that file (`IExecuteClientToolTurnParams.tools`
+    at :473 and `hasGeminiToolConflict` at :558) are correct by design — both are the
+    *server*-tool input axis, with client tools arriving on the separate `clientTools`
+    param.
+  - >
+    POST-STREAM DOC DRIFT, not this stream's defect, but recorded here because it sits on
+    the surface this stream shipped. `.ai/instructions/LIBRARY_CAPABILITIES.md:390` still
+    hedges *"(`executeClientToolTurn` gains the same `endpoint` override once PR #466
+    merges; until then the tools path uses `descriptor.baseUrl` only.)"* — but
+    `executeClientToolTurn` destructures `endpoint` from its params and calls
+    `resolveEffectiveBaseUrl(descriptor, endpoint)` today. The hedge should be dropped.
+    Separately, the same file's Gemini note says combining `web_search` with client tools
+    means "the request HTTP 400s"; the library now pre-empts that at
+    `hasGeminiToolConflict` with a named `Result.fail` before any wire call, so the doc
+    understates the guard. Two other capabilities claims spot-checked and **confirmed
+    accurate**: `continuation.messages` really is cumulative (the library prepends the
+    inbound tail at `clientToolContinuationBuilder.ts:961–967`, so "replace, do not
+    concatenate" is correct guidance), and `executeClientToolTurn` really does fail fast
+    on duplicate client-tool names.
+  - >
+    NO LEDGER ENTRY. `docs/WORKSTREAMS.md` has no `### \`ai-assist-client-tools\`` entry;
+    the id appears only twice in passing — inside the `json-schema-derives-t` entry's
+    Origin (line 678, as the stream whose Phase A review surfaced the schema/converter
+    duplication problem) and in a prose section at line 218. Given that two instruction
+    files teach from this stream by name, the absence is itself notable. A drafted entry
+    accompanies this backfill and is presented for review, not committed.
+  - >
+    FOLLOWUPS, all confirmed durable rather than lost — and all four have since shipped or
+    are otherwise accounted for: MCP layer 2 became `@fgv/ts-extras-mcp` (now documented
+    in `LIBRARY_CAPABILITIES.md`); per-provider live-wire testbed scenarios became the
+    `per-provider-testbed-scenarios` cluster (#459); the cross-provider version-alias work
+    became the model-alias / quality-tier surface now documented on the ai-assist entry.
+    The one still genuinely open is the higher-level `runToolUseConversation` multi-turn
+    orchestration helper above the per-turn primitive.
+keywords:
+  - client-defined-tools
+  - harness-tools
+  - function-calling
+  - tool-use-round-trip
+  - executeClientToolTurn
+  - continuation-messages
+  - rawTail
+  - wire-position
+  - thinking-plus-tools
+  - signature-delta-append
+  - redacted-thinking
+  - anthropic-budget-tokens
+  - streaming-adapters
+  - typed-schema-authoring
+  - ISchemaValidator
+  - design-triage-implement
+  - L37
+  - coverage-theater
+  - request-body-untested
+  - retroactive-code-reviewer
+  - false-live-verification
+  - late-artifact-migration
+  - artifact-protocol-recurrence
+  - browser-barrel-regression
+  - copilot-review-loop
+sourceHash: cbafd9c1e110a3df

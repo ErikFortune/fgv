@@ -1,0 +1,194 @@
+/*
+ * @fgv/ts-app-shell — Default theme
+ *
+ * Defines all semantic design tokens as CSS custom properties.
+ * Import this file once at your application entry point:
+ *
+ *   import '@fgv/ts-app-shell/theme.css';
+ *
+ * Then add the Tailwind preset in your tailwind.config.js:
+ *
+ *   const appShellPreset = require('@fgv/ts-app-shell/tailwind-preset');
+ *   module.exports = { presets: [appShellPreset], ... };
+ *
+ * Dark mode: put class="dark" on <html> (or any ancestor).
+ * The ThemeProvider component handles this automatically.
+ *
+ * All variables use the --fgv- prefix and can be overridden by the consumer.
+ */
+
+/* ============================================================
+ * LIGHT MODE (default / :root)
+ * ============================================================ */
+:root {
+  /* --- Surfaces --- */
+  /* Base application surface (page background) */
+  --fgv-surface: #ffffff;
+  /* Slightly elevated surface (cards, panels) */
+  --fgv-surface-raised: #f3f4f6;
+  /* Alternate surface (zebra rows, secondary panels) */
+  --fgv-surface-alt: #f9fafb;
+  /* Modal / dialog backdrop overlay */
+  --fgv-backdrop: rgba(0, 0, 0, 0.45);
+  /* Hover highlight background (subtle, interactive rows) */
+  --fgv-hover: #f3f4f6;
+  /* Selected item background (listbox rows, picker items) */
+  --fgv-selected: #eff6ff;
+
+  /* --- Text --- */
+  /* High-emphasis body text — minimum 7:1 on --fgv-surface (WCAG AAA) */
+  --fgv-text-primary: #111827;
+  /* Medium-emphasis secondary text — ~5.4:1 on #fff (WCAG AA) */
+  --fgv-text-secondary: #374151;
+  /* De-emphasized muted text — ~3.5:1, use only for decorative / supporting copy */
+  --fgv-text-muted: #6b7280;
+  /* Faintest ghost text — intentionally low contrast, only for truly ornamental content */
+  --fgv-text-faint: #9ca3af;
+  /* Star / favorite accent (golden) */
+  --fgv-text-star: #d97706;
+
+  /* --- Borders --- */
+  /* Default divider / input border */
+  --fgv-border: #d1d5db;
+  /* Subtle divider (row separators, inner section borders) */
+  --fgv-border-subtle: #e5e7eb;
+
+  /* --- Brand colors --- */
+  /* Primary action color (buttons, active nav, links) */
+  --fgv-brand-primary: #2563eb;
+  /* Darker tonal variant (pressed state, dark top-bar) */
+  --fgv-brand-secondary: #1d4ed8;
+  /* Accent / highlight (hover text on dark surfaces, checkmarks) */
+  --fgv-brand-accent: #3b82f6;
+
+  /* --- Focus ring --- */
+  --fgv-focus-ring: #3b82f6;
+  /* Selected item left-border accent */
+  --fgv-selected-border: #2563eb;
+
+  /* --- Status: error / danger --- */
+  --fgv-status-error-bg: #fef2f2;
+  --fgv-status-error-surface: #fee2e2;
+  --fgv-status-error-btn: #dc2626;
+  --fgv-status-error-btn-hover: #b91c1c;
+  --fgv-status-error-icon: #dc2626;
+  --fgv-status-error-border: #fca5a5;
+  --fgv-status-error-accent: #ef4444;
+  --fgv-status-error-text: #b91c1c;
+  --fgv-status-error-strong: #991b1b;
+
+  /* --- Status: warning --- */
+  --fgv-status-warning-bg: #fffbeb;
+  --fgv-status-warning-surface: #fef3c7;
+  --fgv-status-warning-btn: #d97706;
+  --fgv-status-warning-btn-hover: #b45309;
+  --fgv-status-warning-icon: #d97706;
+  --fgv-status-warning-border: #fcd34d;
+  --fgv-status-warning-accent: #f59e0b;
+  --fgv-status-warning-text: #92400e;
+  --fgv-status-warning-strong: #78350f;
+
+  /* --- Status: info --- */
+  --fgv-status-info-bg: #eff6ff;
+  --fgv-status-info-surface: #dbeafe;
+  --fgv-status-info-btn: #2563eb;
+  --fgv-status-info-btn-hover: #1d4ed8;
+  --fgv-status-info-icon: #3b82f6;
+  --fgv-status-info-border: #93c5fd;
+  --fgv-status-info-accent: #60a5fa;
+  --fgv-status-info-text: #1e40af;
+  --fgv-status-info-strong: #1e3a8a;
+
+  /* --- Status: success --- */
+  --fgv-status-success-bg: #f0fdf4;
+  --fgv-status-success-surface: #dcfce7;
+  --fgv-status-success-btn: #16a34a;
+  --fgv-status-success-btn-hover: #15803d;
+  --fgv-status-success-icon: #16a34a;
+  --fgv-status-success-border: #86efac;
+  --fgv-status-success-accent: #4ade80;
+  --fgv-status-success-text: #166534;
+  --fgv-status-success-strong: #14532d;
+}
+
+/* ============================================================
+ * DARK MODE  (.dark on any ancestor element)
+ * ============================================================ */
+.dark {
+  /* --- Surfaces --- */
+  --fgv-surface: #1f2937;
+  --fgv-surface-raised: #374151;
+  --fgv-surface-alt: #111827;
+  --fgv-backdrop: rgba(0, 0, 0, 0.65);
+  --fgv-hover: #374151;
+  --fgv-selected: #1e3a5f;
+
+  /* --- Text --- */
+  /* ~14:1 on --fgv-surface dark (WCAG AAA) */
+  --fgv-text-primary: #f9fafb;
+  /* ~8:1 on dark surface (WCAG AA) */
+  --fgv-text-secondary: #d1d5db;
+  /* ~4.5:1 on dark surface (WCAG AA) */
+  --fgv-text-muted: #9ca3af;
+  /* Faint ghost text — intentionally low contrast */
+  --fgv-text-faint: #6b7280;
+  /* Star accent — brightened slightly for dark bg */
+  --fgv-text-star: #fbbf24;
+
+  /* --- Borders --- */
+  --fgv-border: #4b5563;
+  --fgv-border-subtle: #374151;
+
+  /* --- Brand colors --- */
+  --fgv-brand-primary: #3b82f6;
+  --fgv-brand-secondary: #1e3a5f;
+  --fgv-brand-accent: #60a5fa;
+
+  /* --- Focus ring --- */
+  --fgv-focus-ring: #60a5fa;
+  --fgv-selected-border: #3b82f6;
+
+  /* --- Status: error / danger --- */
+  --fgv-status-error-bg: #450a0a;
+  --fgv-status-error-surface: #7f1d1d;
+  --fgv-status-error-btn: #dc2626;
+  --fgv-status-error-btn-hover: #b91c1c;
+  --fgv-status-error-icon: #f87171;
+  --fgv-status-error-border: #7f1d1d;
+  --fgv-status-error-accent: #ef4444;
+  --fgv-status-error-text: #fca5a5;
+  --fgv-status-error-strong: #fecaca;
+
+  /* --- Status: warning --- */
+  --fgv-status-warning-bg: #451a03;
+  --fgv-status-warning-surface: #78350f;
+  --fgv-status-warning-btn: #d97706;
+  --fgv-status-warning-btn-hover: #b45309;
+  --fgv-status-warning-icon: #fbbf24;
+  --fgv-status-warning-border: #78350f;
+  --fgv-status-warning-accent: #f59e0b;
+  --fgv-status-warning-text: #fde68a;
+  --fgv-status-warning-strong: #fef3c7;
+
+  /* --- Status: info --- */
+  --fgv-status-info-bg: #0c1d3e;
+  --fgv-status-info-surface: #1e3a5f;
+  --fgv-status-info-btn: #3b82f6;
+  --fgv-status-info-btn-hover: #2563eb;
+  --fgv-status-info-icon: #60a5fa;
+  --fgv-status-info-border: #1e3a5f;
+  --fgv-status-info-accent: #93c5fd;
+  --fgv-status-info-text: #bfdbfe;
+  --fgv-status-info-strong: #dbeafe;
+
+  /* --- Status: success --- */
+  --fgv-status-success-bg: #052e16;
+  --fgv-status-success-surface: #14532d;
+  --fgv-status-success-btn: #16a34a;
+  --fgv-status-success-btn-hover: #15803d;
+  --fgv-status-success-icon: #4ade80;
+  --fgv-status-success-border: #14532d;
+  --fgv-status-success-accent: #86efac;
+  --fgv-status-success-text: #bbf7d0;
+  --fgv-status-success-strong: #dcfce7;
+}

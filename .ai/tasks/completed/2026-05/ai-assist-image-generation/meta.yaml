@@ -1,0 +1,135 @@
+id: ai-assist-image-generation
+status: shipped
+packages:
+  - '@fgv/ts-extras'
+prs: [327, 329]
+closed: 2026-05
+summary:
+  intended: >
+    A two-phase design-then-implement stream to complete image generation across all
+    four providers. Phase A was research and design only, explicitly forbidden from
+    touching production code: inventory each provider's real capabilities, analyse the
+    gap against the current implementation, and recommend a caller-facing type shape,
+    a registry shape, failure semantics, output unification, a streaming position, and
+    migration impact — writing only `design.md` and `state.md`. Phase B was commissioned
+    separately against eight signed-off decisions (D1–D8) as a binding contract, with a
+    Mission naming four workstreams: the layered options architecture, the registry
+    simplifications, the wire-encoder corrections, and the deprecated-model removals.
+    The proximate trigger was consumer-reported bugs, which the phase-A brief and the
+    README both frame as two — `gpt-image-1` HTTP 400 on `response_format` and `dall-e-3`
+    failing silently on `count > 1`.
+  shipped: >
+    A structural reshape rather than a bug fix, on the finding that the bugs shared one
+    cause — the types and registry did not model per-model capability divergence.
+    `IAiImageGenerationOptions` gained an optional `models?: ReadonlyArray<IModelFamilyConfig>`
+    of family-scoped blocks discriminated on `provider` + `family`, merged by
+    `resolveImageOptions` under four numbered precedence steps (generic → family-generic
+    → model-specific → other-block escape hatch, the last sharing tier 3's precedence, so
+    three effective tiers). Six per-family config types shipped, plus a reshaped
+    `IAiImageModelCapability` carrying `outputParamStyle` and a self-documenting
+    `supportsQualityParam` in place of the opaque `acceptedQualities: []`. Wire encoders
+    were fixed or added for all four providers, including a new xAI adapter pair sending
+    `aspect_ratio` rather than `size` and using a JSON edits body rather than OpenAI's
+    multipart. A **third** root-cause fix landed that the two-bug framing omits and the
+    ledger records: `dall-e-3`'s quality value is `'hd'`, not the `'high'` the type had.
+    Three deprecated models and one obsolete field (`imagen.negativePrompt`) were dropped
+    outright, and xAI's already-broken `defaultModel.image` was repointed. Merged to the
+    `claude/ai-assist-features` integration branch, which landed on `release` the same day
+    via cluster-merge #336 (`bffa7b690`).
+  diverged: >
+    The largest delta is architectural and happened at the signoff gate, not during
+    implementation: `design.md` §3.2's header is literally "Recommendation: Approach A"
+    (a single unified type with registry-driven validation), and `brief-phase-b.md` D1
+    states outright that "the unified-type approach (design's Approach A) is rejected" in
+    favour of layered options. The stream's own README draws the lesson — a design can be
+    correct on inventory and wrong on architecture, and the orchestrator+user review gate
+    is what catches that even when the design reads as polished.
+
+    Second, phase A flagged a missing Gemini `responseModalities: ["IMAGE"]` as a "High
+    priority fix" and "likely already broken in production"; the user empirically refuted
+    it against the live API and D5 became "do NOT add it" — the docs were stale, and the
+    recorded lesson is to live-verify any "this is currently broken" claim before acting
+    on its urgency.
+
+    Third — and this is scope the **phase-A** brief never framed, though the phase-B brief
+    names it in its Mission and D3, so it was pre-authorized rather than discovered
+    mid-implementation — the deprecated-model removals shipped with **no migration path**,
+    which is itself the divergence: `design.md` §8.7/§8.10 recommended migrate-with-notice
+    ("notify consumers to switch to `imagen-4.0-generate-001`"), and D3's instruction is
+    unconditional removal with no deprecation shim or notice mechanism.
+
+    Fourth, two review findings were declined and logged to `TECH_DEBT.md` with triggers.
+    Both triggers have since fired, with opposite outcomes — see the debt note below.
+  sourceLine: '**PR:** [#329](https://github.com/ErikFortune/fgv/pull/329) — `feat(ai-assist): layered image generation options architecture (Phase B)`'
+notes:
+  - >
+    CORRECTIONS to an earlier draft of this file (2026-08-14), all of which propagated an
+    error rather than tracing a claim to source:
+    (a) It said the merge function returns `Result<IResolvedImageOptions>`. It does not —
+    `resolveImageOptions` returns the bare interface; only the separate
+    `validateResolvedOptions` returns a `Result`. The README asserts the `Result` return
+    and was already wrong at authorship (verified against the cluster-merge blob, so this
+    is not later drift).
+    (b) It said "four deprecated models" were dropped, twice. It is three models plus one
+    field — `imagen.negativePrompt` is a field, and the README's own bullet list makes the
+    same category error by listing it under a "models" heading.
+    (c) It said "100 tests" from the README's 57 + 43. The README's second figure was off
+    by one at ship time (44, not 43), and both files have since been touched by four later
+    streams; the pair now runs 94. A test count is a snapshot, not a fact about a stream.
+    (d) It said the deprecated-model removal was "scope the brief never framed". The
+    phase-B brief's Mission names "the deprecated-model removals" explicitly and D3
+    specifies them, including the xAI default fix. Only the phase-A research brief is
+    silent. The real divergence is the missing migration path, not the scope.
+    (e) It said the work merged to an integration branch "not directly to release",
+    which read as still-unlanded. The integration branch landed on `release` the same day.
+  - >
+    TECH_DEBT disposition, both triggers fired, opposite outcomes. The **P2**
+    (`try/catch` + `instanceof Error` boilerplate at four `apiClient.ts` sites, whose
+    `c8 ignore` directives `captureAsyncResult` would make unnecessary) was **paid off and
+    removed** by #619, whose commit message states it collapsed three of the four catch
+    blocks and retired the fourth — the entry is correctly absent from `TECH_DEBT.md`
+    today, not lost. The **P3** (`resolveImageCapability` returning `| undefined` rather
+    than `Result`) is still open, and its trigger — "next substantive change to the
+    provider registry or capability resolution path" — demonstrably fired when the
+    quality-tier/alias work (#516) changed that very function to resolve aliases first.
+    The trigger fired and the debt was not paid. Its recorded line reference
+    (`registry.ts:328–339`) is also now stale; the function sits at 428–433.
+  - >
+    OPEN THREAD the stream closed over. `design.md` Q9 asks for a concrete pre-condition:
+    "before phase B finalizes the type, grep `personaility` and `ts-app-shell` for any
+    usage of `quality`... verify quality field usage in consumer repos before accepting
+    the migration path as zero-cost." No artifact records that this was done — not
+    `brief-phase-b.md`, not `state.md`, not the README, not the ledger — yet `state.md`
+    reports open questions as "(none)". This is the one question the design flagged as
+    needing an action before the breaking `quality: 'high'` → `'hd'` change could be
+    called zero-cost, and a blanket "none" is what buried it.
+  - >
+    LESSON LOST. The README's followups list three; two reached
+    `.ai/notes/orchestrator/lessons-pending.md` (branch auto-suffixing as L2, partially
+    codified into `orchestrator.md`; "don't trust docs over observed behavior" as L4).
+    The third — that signoff can substantially override a polished design, so trust the
+    review gate even when the design looks finished — appears nowhere: not in
+    lessons-pending, not in `.ai/instructions/`, not in `.claude/agents/orchestrator.md`.
+    It is adjacent to but distinct from L1, which is about serializing parallel phase-A
+    work rather than about the gate catching architecture drift.
+keywords:
+  - image-generation
+  - dall-e
+  - gpt-image-1
+  - grok-imagine
+  - imagen-4
+  - gemini-flash-image
+  - layered-options
+  - merge-precedence
+  - discriminated-config-blocks
+  - provider-capability-registry
+  - wire-encoder
+  - response-format-vs-output-format
+  - aspect-ratio
+  - deprecated-model-removal
+  - no-migration-path
+  - design-then-implement
+  - signoff-gate
+  - stale-docs
+  - tech-debt-trigger-fired
+sourceHash: 2fafbf3649cb23d5

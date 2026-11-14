@@ -1,0 +1,65 @@
+{
+  "name": "@fgv/ks",
+  "version": "5.1.0",
+  "description": "Command-line utility for managing ts-extras keystore files",
+  "files": [
+    "bin",
+    "lib",
+    "CHANGELOG.json",
+    "README.md",
+    "CAPABILITIES.md",
+    "LICENSE",
+    "!lib/test",
+    "!**/*.test.*"
+  ],
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "bin": {
+    "ks": "bin/ks.js"
+  },
+  "scripts": {
+    "build": "heft build --clean",
+    "test": "heft test --clean",
+    "coverage": "heft test --clean --coverage",
+    "clean": "heft clean",
+    "lint": "eslint src --ext .ts",
+    "fixlint": "eslint src --ext .ts --fix"
+  },
+  "keywords": [
+    "keystore",
+    "cli",
+    "tool",
+    "security",
+    "secrets"
+  ],
+  "author": "Erik Fortune",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22.22.0 <23.0.0 || >=24.15.0 <25.0.0"
+  },
+  "dependencies": {
+    "@fgv/ts-extras": "workspace:*",
+    "@fgv/ts-json-base": "workspace:*",
+    "@fgv/ts-utils": "workspace:*",
+    "clipboardy": "^3.0.0",
+    "commander": "^11.1.0"
+  },
+  "devDependencies": {
+    "@fgv/ts-utils-jest": "workspace:*",
+    "@rushstack/eslint-config": "4.7.0",
+    "@rushstack/heft": "1.3.0",
+    "@rushstack/heft-node-rig": "2.11.50",
+    "@rushstack/heft-jest-plugin": "2.0.17",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^22.20.5",
+    "eslint": "^9.39.5",
+    "jest": "^30.5.2",
+    "typescript": "5.9.3",
+    "@types/heft-jest": "1.0.6",
+    "ts-jest": "^29.4.15"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ErikFortune/fgv.git"
+  }
+}

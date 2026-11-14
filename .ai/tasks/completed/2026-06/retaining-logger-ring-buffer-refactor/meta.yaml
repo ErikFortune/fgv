@@ -1,0 +1,61 @@
+id: retaining-logger-ring-buffer-refactor
+status: shipped
+packages: ['@fgv/ts-utils']
+prs: [461]
+opened: 2026-06-05
+closed: 2026-06
+summary:
+  intended: >
+    Retire the hand-rolled circular buffer inside `RetainingLogger` and compose the
+    `RetainingRingBuffer<ILogRecord>` primitive that shipped from the
+    `ts-prompt-assist-observability` cluster. Framed by the brief as "a pure internal
+    refactor — no behavior change, no API change, no consumer impact", scoped to one
+    implementation file plus its tests, with a no-op `etc/ts-utils.api.md`
+    regeneration as the load-bearing public-surface-stability check. The stream also
+    exists to make Phase A's Q1 falsifiability argument sound retroactively: that
+    argument required an *existing* second consumer of `RetainingRingBuffer`, and
+    `RetainingLogger` is it.
+  shipped: >
+    `RetainingLogger` now composes `RetainingRingBuffer<ILogRecord>` — the `_buffer` /
+    `_head` / `_count` / `_capacity` fields and `_toOrderedArray()` are gone, `records`
+    / `lastSeq` / `clear()` / `getRecords()` delegate to the ring, and the logger keeps
+    only its own `_nextSeq` counter and injected clock. Reaching the primitive required
+    breaking a `logging → collections → logging` packlet cycle, resolved by factoring a
+    new pure-contract `logging-interface` packlet (`ILogger`, `IDetailLogger`,
+    `ReporterLogLevel`, `isDetailLogger`) that `logging` re-exports and `collections`
+    imports directly. `etc/ts-utils.api.md` regenerated as a true no-op (the only diff
+    vs `release` being the removal of a pre-existing `ae-unresolved-link` warning the
+    refactor incidentally resolved); every public-API test passed verbatim; build, lint
+    and coverage green; `code-reviewer` pass clean (0 P1, 0 P2, 1 dispositioned P3).
+  diverged: >
+    The brief's premise — "a pure internal refactor" touching one file — did not hold.
+    `collections/readOnlyConvertingResultMap.ts` already imported `ILogger` from
+    `logging`, so composing a `collections` primitive inside `logging` created a
+    circular packlet dependency the brief never anticipated, and the stream had to
+    change the packlet topology to land. The first shipped attempt extracted the
+    interfaces into `base/loggerInterface.ts`; Erik rejected it on 2026-06-05 because
+    it made `ILogger` a top-level package export alongside `Logging.ILogger` (a non-no-op
+    api.md and dual import paths forever), and a considered `import type` cycle-break
+    was rejected as a footgun. The delivered `logging-interface` packlet was the third
+    option. Net: the brief's declared package surface (one file + its test) was
+    exceeded by a new packlet and edits in `collections` and `base`, while the brief's
+    actual acceptance criterion — a byte-identical external surface — was met exactly.
+  sourceLine: '**Status:** COMPLETE  '
+keywords:
+  - RetainingRingBuffer
+  - RetainingLogger
+  - logging-interface packlet
+  - circular packlet dependency
+  - '@rushstack/packlets circular-deps'
+  - interface/implementation split
+  - api-extractor no-op
+  - published-primitives-reflex
+  - duplicate ring implementation
+  - falsifiability second consumer
+relatedStreams:
+  - id: ts-prompt-assist-observability
+    relationship: >
+      commissioning parent — its Phase A chose "hybrid C-minimal + D" and shipped
+      `RetainingRingBuffer<T>`, deferring this consolidation out of Phase C to keep the
+      blast radius additive. This stream is the commitment that made that deferral sound.
+sourceHash: 3ba7ab5d1a000875

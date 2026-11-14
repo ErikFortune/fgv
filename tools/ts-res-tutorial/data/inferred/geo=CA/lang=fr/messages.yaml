@@ -1,0 +1,17 @@
+# Stacked conditions across nested folders.
+#
+# File path:   data/inferred/geo=CA/lang=fr/messages.yaml
+# Resource id: inferred.messages.text
+# Conditions:  currentTerritory=CA, language=fr
+#
+# The parent folder "geo=CA" contributes currentTerritory=CA (via the
+# "geo" token). Its child "lang=fr" contributes language=fr (via the
+# "lang" token). Each folder in the tree stacks its conditions onto the
+# cumulative import context, so deep trees can encode any condition set
+# you like.
+candidates:
+  - id: text
+    resourceTypeName: json
+    json:
+      hello: Salut mon ami
+      source: 'BOTH: CA + fr (stacked across nested folders)'

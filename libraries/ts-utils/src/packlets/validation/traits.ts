@@ -77,17 +77,17 @@ export const defaultValidatorTraits: ValidatorTraitValues = {
  */
 export class ValidatorTraits implements ValidatorTraitValues {
   /**
-   * {@inheritdoc Validation.ValidatorTraitValues.isOptional}
+   * {@inheritDoc Validation.ValidatorTraitValues.isOptional}
    */
   public readonly isOptional: boolean;
 
   /**
-   * {@inheritdoc Validation.ValidatorTraitValues.brand}
+   * {@inheritDoc Validation.ValidatorTraitValues.brand}
    */
   public readonly brand?: string;
 
   /**
-   * {@inheritdoc Validation.ValidatorTraitValues.constraints}
+   * {@inheritDoc Validation.ValidatorTraitValues.constraints}
    */
   public readonly constraints: ConstraintTrait[];
 

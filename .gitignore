@@ -63,8 +63,12 @@ jspm_packages/
 .idea/
 *.iml
 
+# Root-level pnpm lockfile (stray artifact from ad-hoc pnpm installs; real lockfile is common/temp/pnpm-lock.yaml)
+pnpm-lock.yaml
+
 # Rush temporary files
 common/deploy/
+deploy/
 common/temp/
 common/autoinstallers/*/.npmrc
 **/.rush/temp/
@@ -72,6 +76,17 @@ common/autoinstallers/*/.npmrc
 # Heft temporary files
 .heft
 
+# TypeScript incremental build info
+*.tsbuildinfo
+
 # built output
 lib/
 dist/
+temp/
+.claude/scheduled_tasks.lock
+.claude/worktrees/
+
+# Scratch entry point written into a package folder by common/scripts/verify-bundler-resolution.mjs.
+# The script removes it in a `finally`, so this only catches the case where the process is killed
+# outright (OOM, SIGKILL) between writing and cleaning up.
+**/.verify-bundler-resolution.entry.mjs

@@ -1,0 +1,48 @@
+id: safer-fetch-walk-chain
+status: shipped
+packages: ['@fgv/ts-extras']
+prs: [748]
+openPrs: []
+opened: 2026-10-19
+closed: 2026-10-19
+summary:
+  intended: >
+    Followups D1 from the #729 deep review: convert safer-fetch's _walk (six stacked isFailure /
+    _propagate checks per hop) and _execute (three) to Result chains or recursion over hops, strictly
+    behaviour-preserving, with a before/after check-then-act enumeration and the mcp-round-2b revert
+    matrix re-run so that every row still turns its test red.
+  shipped: >
+    _walk recurses over hops through _walkHop (request guard, scheme re-check) → _clearAndConnect
+    (address guard, loop detection, connect) → _settleHop (final value, or _nextHop and the next
+    _walkHop), with a fresh never-mutated completed array per hop. _execute is a synchronous
+    validation chain that also builds the watch, then one thenOnSuccess into a new _runCall, and
+    _withReason wraps the whole chain. _propagate was removed. The before/after enumeration holds line
+    for line, because DetailedSuccess.thenOnSuccess runs its callback synchronously; the only new
+    interval is a few microtasks between the connect settling and _nextHop. All 28 mcp-round-2b
+    revert rows were re-run: 27 red, and R7 green as previously recorded. Seven new ordering rows
+    (S1–S7) target the walk itself.
+  diverged: >
+    Beyond the brief: seven revert rows aimed at the walk's own ordering (S6 and S7 added in review round 1, each closing a gap no existing test pinned — the walk-level credential carry-forward, and re-arming the headers deadline before the request guard). S1 (the scheme re-check
+    before the address guard) was green on the existing suite, before and after the rewrite, so a
+    test was strengthened to pin it. Two tests were added to keep the top-level escaped-throw branches
+    in _runCall and _walkGuarded covered, since the rewrite had made them unreachable from the
+    existing suite. One disclosed behaviour change, reachable only with garbage input: a watch.dispose()
+    throw (a non-AbortSignal signal such as { aborted: true }) now resolves 'unknown' instead of
+    rejecting.
+  sourceLine: '**Shipped:** the safer-fetch hop walk is a recursion over hops, each hop a Result chain with no stacked `isFailure`, and `_execute` is a synchronous validation chain followed by one `thenOnSuccess` — same checks, in the same order, with the same messages and failure reasons.'
+  headline: '' # internal refactor, no capability for a consumer to notice
+keywords:
+  - SSRF ordering
+  - check-then-act
+  - redirect hop walk
+  - Result chaining
+  - AsyncDetailedResult
+  - recursion over hops
+  - revert matrix
+  - behaviour-preserving refactor
+relatedStreams:
+  - {
+      id: mcp-round-2b,
+      relationship: 'source of the revert matrix re-run here, and the stream whose #729 deep review raised D1'
+    }
+sourceHash: sha256:1836dffd4535cc8f # over brief.md + result.md + state.md

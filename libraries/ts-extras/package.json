@@ -1,6 +1,6 @@
 {
   "name": "@fgv/ts-extras",
-  "version": "5.0.2",
+  "version": "5.1.0",
   "description": "Assorted Typescript Utilities",
   "main": "lib/index.js",
   "types": "dist/ts-extras.d.ts",
@@ -15,6 +15,36 @@
         "require": "./lib/index.browser.js"
       },
       "types": "./dist/ts-extras.d.ts"
+    },
+    "./crypto": {
+      "node": {
+        "import": "./lib/packlets/crypto-utils/index.js",
+        "require": "./lib/packlets/crypto-utils/index.js"
+      },
+      "default": {
+        "import": "./lib/packlets/crypto-utils/index.browser.js",
+        "require": "./lib/packlets/crypto-utils/index.browser.js"
+      }
+    },
+    "./crypto/keystore": {
+      "node": {
+        "import": "./lib/packlets/crypto-utils/keystore/index.js",
+        "require": "./lib/packlets/crypto-utils/keystore/index.js"
+      },
+      "default": {
+        "import": "./lib/packlets/crypto-utils/keystore/index.browser.js",
+        "require": "./lib/packlets/crypto-utils/keystore/index.browser.js"
+      }
+    },
+    "./safer-fetch": {
+      "node": {
+        "import": "./lib/packlets/safer-fetch/index.js",
+        "require": "./lib/packlets/safer-fetch/index.js"
+      },
+      "default": {
+        "import": "./lib/packlets/safer-fetch/index.browser.js",
+        "require": "./lib/packlets/safer-fetch/index.browser.js"
+      }
     },
     "./hash": {
       "node": {
@@ -31,7 +61,7 @@
     "build": "heft build --clean",
     "clean": "heft clean",
     "test": "heft test --clean",
-    "build-docs": "api-documenter markdown --input-folder ./temp --output-folder docs",
+    "build-docs": "typedoc --options ./config/typedoc.json",
     "build-all": "rushx build; rushx build-docs",
     "test-handles": "jest --runInBand --detectOpenHandles",
     "clean-jest": "jest --clear-cache",
@@ -52,44 +82,49 @@
   "homepage": "https://github.com/ErikFortune/fgv/tree/main/libraries/ts-extras#ts-utils",
   "devDependencies": {
     "@fgv/heft-dual-rig": "workspace:*",
-    "@jest/expect-utils": "^29.7.0",
-    "@microsoft/api-documenter": "^7.27.3",
-    "@microsoft/api-extractor": "^7.53.3",
-    "@types/jest": "^29.5.14",
-    "@types/luxon": "^3.7.1",
-    "@types/mustache": "^4.2.5",
-    "@types/node": "^20.14.9",
-    "@types/papaparse": "^5.3.14",
-    "@typescript-eslint/eslint-plugin": "^8.46.2",
-    "@typescript-eslint/parser": "^8.46.2",
-    "eslint": "^9.39.0",
+    "@fgv/typedoc-compact-theme": "workspace:*",
+    "@jest/expect-utils": "^30.5.2",
+    "@microsoft/api-documenter": "^7.30.20",
+    "@microsoft/api-extractor": "^7.60.1",
+    "@types/jest": "^30.0.0",
+    "@types/mustache": "^4.2.6",
+    "@types/node": "^22.20.5",
+    "@types/papaparse": "^5.5.2",
+    "@typescript-eslint/eslint-plugin": "^8.72.1",
+    "@typescript-eslint/parser": "^8.72.1",
+    "eslint": "^9.39.5",
     "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-node": "^11.1.0",
-    "eslint-plugin-promise": "^7.2.1",
-    "jest": "^29.7.0",
+    "eslint-plugin-promise": "^7.3.0",
+    "jest": "^30.5.2",
     "jest-extended": "^4.0.2",
-    "jest-matcher-utils": "^29.7.0",
-    "rimraf": "^6.1.0",
-    "ts-jest": "^29.4.5",
+    "jest-matcher-utils": "^30.5.2",
+    "rimraf": "^6.1.4",
+    "ts-jest": "^29.4.15",
     "ts-node": "^10.9.2",
     "typescript": "5.9.3",
-    "eslint-plugin-n": "^17.23.1",
-    "jest-snapshot": "~29.7.0",
-    "@rushstack/heft": "1.2.6",
-    "@rushstack/heft-node-rig": "2.11.26",
-    "@rushstack/eslint-config": "4.6.4",
+    "eslint-plugin-n": "^17.24.0",
+    "jest-snapshot": "~30.5.2",
+    "@rushstack/heft": "1.3.0",
+    "@rushstack/heft-node-rig": "2.11.50",
+    "@rushstack/eslint-config": "4.7.0",
     "@types/heft-jest": "1.0.6",
-    "@rushstack/heft-jest-plugin": "1.2.6",
-    "eslint-plugin-tsdoc": "~0.5.2",
+    "@rushstack/heft-jest-plugin": "2.0.17",
+    "eslint-plugin-tsdoc": "~0.5.4",
     "@fgv/ts-utils-jest": "workspace:*",
-    "@fgv/ts-utils": "workspace:*"
+    "@fgv/ts-utils": "workspace:*",
+    "@types/js-yaml": "~4.0.9",
+    "typedoc": "~0.28.20",
+    "typedoc-plugin-markdown": "~4.14.1"
   },
   "dependencies": {
+    "@types/luxon": "^3.7.6",
     "luxon": "^3.7.2",
     "mustache": "^4.2.0",
-    "papaparse": "^5.4.1",
-    "fflate": "~0.8.2",
-    "@fgv/ts-json-base": "workspace:*"
+    "papaparse": "^5.7.0",
+    "fflate": "~0.8.3",
+    "@fgv/ts-json-base": "workspace:*",
+    "js-yaml": "~4.3.2"
   },
   "peerDependencies": {
     "@fgv/ts-utils": "workspace:*"

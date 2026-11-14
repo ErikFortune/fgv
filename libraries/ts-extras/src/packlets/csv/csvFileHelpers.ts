@@ -21,7 +21,6 @@
  */
 
 import { Result, captureResult } from '@fgv/ts-utils';
-import { FileTree } from '@fgv/ts-json-base';
 import * as fs from 'fs';
 import * as path from 'path';
 import { parseCsvString, CsvOptions } from './csvHelpers';
@@ -42,21 +41,3 @@ export function readCsvFileSync(srcPath: string, options?: CsvOptions): Result<u
   });
 }
 
-/**
- * Reads a CSV file from a FileTree.
- * @param fileTree - The FileTree to read from.
- * @param filePath - Path of the file within the tree.
- * @param options - optional parameters to control the processing
- * @returns The parsed CSV data.
- * @beta
- */
-export function readCsvFromTree(
-  fileTree: FileTree.FileTree,
-  filePath: string,
-  options?: CsvOptions
-): Result<unknown> {
-  return fileTree
-    .getFile(filePath)
-    .onSuccess((file) => file.getRawContents())
-    .onSuccess((contents) => parseCsvString(contents, options));
-}

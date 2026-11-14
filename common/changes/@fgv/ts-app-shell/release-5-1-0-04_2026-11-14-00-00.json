@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-app-shell",
+      "comment": "A keyboard-shortcut registry (`KeyboardShortcutRegistry`, `useKeyboardShortcuts`), plus a default light/dark theme of CSS-variable tokens with a Tailwind preset.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-app-shell",
+  "email": "noreply@anthropic.com"
+}

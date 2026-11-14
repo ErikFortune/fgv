@@ -1,0 +1,51 @@
+id: fable-5-2
+status: shipped
+packages: ['@fgv/ts-extras', '@fgv/testbed']
+prs: [773]
+openPrs: []
+opened: 2026-11-11
+closed: 2026-11-11
+summary:
+  intended: >
+    Rotate the non-tier @anthropic:fable alias to claude-fable-5-2 and make every per-model
+    declaration cover claude-fable-5-2 and claude-mythos-5-2 from fetched, quoted Anthropic pages;
+    keep temperature 1 unless the docs say otherwise; answer whether the client-tool replay is
+    append-only with thinking blocks unchanged (fix if small); let the anthropic-client-tools
+    testbed check run on @anthropic:fable; prove each change red then green.
+  shipped: >
+    The alias rotation; explicit 5.2 entries on structuredOutput (JSON outputs), maxOutputTokens
+    (128000) and Mythos 5.2 capability detection; both ids in AnthropicThinkingModelNames; the
+    dash-bounded thinking-required, adaptive and sampling lists confirmed with 5.2 citations.
+    A request-body test pins the three-round replay as append-only with thinking blocks unchanged.
+    The Anthropic adapter and continuation builder now also replay web_search's server_tool_use and
+    web_search_tool_result blocks, text citations and text/thinking start objects in place, proven
+    with and without thinking; other block types are not replayed and are warned about once. The
+    testbed client-tool scenarios report PASS only when a continuation was actually sent.
+    New anthropic-client-tools-fable scenario and rotated testbed pins.
+  diverged: >
+    The replay trace found that server_tool_use, web_search_tool_result and text citations were
+    dropped from replayed turns, an edit that 400s on 5.2. It exceeded the brief's few-lines bound and
+    was first parked in TECH_DEBT; the orchestrator then directed the fix into this stream, and
+    citations were included since the same search round produces them. No explicit 5.2 entries were
+    added to the dash-bounded lists.
+  sourceLine: "**Shipped:** `@anthropic:fable` now resolves to `claude-fable-5-2`, and `claude-fable-5-2` and `claude-mythos-5-2` are covered by every per-model declaration in `ai-assist`, so structured output uses JSON outputs, `'none'` degrades to `'low'`, a non-default temperature is refused locally, and `resolveMaxOutputTokens` answers 128000 for both."
+  headline: >
+    ai-assist's @anthropic:fable alias now reaches Claude Fable 5.2, and Fable 5.2 and Mythos 5.2 get
+    JSON-outputs structured output, thinking and temperature guards, and a 128K output limit.
+keywords:
+  - claude-fable-5-2
+  - claude-mythos-5-2
+  - alias rotation
+  - preserved thinking
+  - prefix check
+  - append-only history
+  - thinking block replay
+  - server_tool_use replay
+  - web_search_tool_result
+  - citations_delta
+  - structured output JSON outputs
+  - forced tool_choice 400
+relatedStreams:
+  - { id: live-run-corrections, relationship: 'follows; same registry declarations' }
+  - { id: model-alias-refresh, relationship: 'earlier @anthropic:fable rotation to claude-fable-5-1' }
+sourceHash: sha256:e61e63f3e52e6708 # over brief.md + state.md + result.md

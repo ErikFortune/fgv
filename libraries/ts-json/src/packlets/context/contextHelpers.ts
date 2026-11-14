@@ -154,9 +154,9 @@ export class JsonContextHelper {
           vars: add.vars ?? baseContext.vars,
           refs: add.refs ?? baseContext.refs
         };
-        if (add.hasOwnProperty('extendVars')) {
+        if (Object.prototype.hasOwnProperty.call(add, 'extendVars')) {
           rtrn.extendVars = add.extendVars;
-        } else if (baseContext.hasOwnProperty('extendVars')) {
+        } else if (Object.prototype.hasOwnProperty.call(baseContext, 'extendVars')) {
           rtrn.extendVars = baseContext.extendVars;
         }
         return succeed(rtrn);
@@ -209,7 +209,7 @@ export class JsonContextHelper {
   /**
    * Applies static `JsonContextHelper.mergeContext` to the
    * {@link IJsonContext | IJsonContext} associated with this helper.
-   * @param add - Optional initializer containing {@link VariableValue | variable values} and/or
+   * @param merge - Optional initializer containing {@link VariableValue | variable values} and/or
    * {@link IJsonReferenceMap | reference maps} to be added to the {@link IJsonContext | context}.
    * @returns `Success` with a new {@link IJsonContext | IJsonContext} containing the variables and
    * references from the base context, merged with and overridden by any that were passed in, or

@@ -356,7 +356,7 @@ agent_invocation:
 
   input_format:
     structured: true
-    artifact_path: ".agents/tasks/active/{task-id}/"
+    artifact_path: ".ai/tasks/active/{task-id}/"
 
   expected_output:
     status: "success" | "partial" | "failure" | "blocked"
@@ -631,7 +631,7 @@ Presenting escalation batch for your review and decisions.
 - Exit criteria & validation results
 - Decision history & escalations
 - Process lessons learned
-- **Archive Location**: `.agents/tasks/completed/{YYYY-MM}/{task_id}/`
+- **Archive Location**: `.ai/tasks/completed/{YYYY-MM}/{task_id}/`
 
 **Task ID**: {task_id} (for future reference and learning)
 
@@ -1116,7 +1116,7 @@ Even for the simplest task, you MUST create:
 
 ### Task Artifacts Location
 ```
-.agents/tasks/active/{task-id}/
+.ai/tasks/active/{task-id}/
 ├── context.json              # Current TaskContext (REQUIRED)
 ├── requirements.md           # TPM output (REQUIRED)
 ├── design.md                # Senior Developer output
@@ -1232,7 +1232,7 @@ Before archiving, create a comprehensive documentary package:
 #### **Step 2: Archive Structure**
 
 ```
-.agents/tasks/completed/YYYY-MM/task-{id}/
+.ai/tasks/completed/YYYY-MM/task-{id}/
 ├── README.md                 # Quick summary of task and outcomes
 ├── requirements.md           # PRESERVED - Original requirements
 ├── execution-plan.md         # PRESERVED - Approved execution plan
@@ -1482,8 +1482,8 @@ interface TaskLogEntry {
 
 1. Generate unique task ID: `task-YYYYMMDD-NNN` (sequential daily counter)
 2. Create JSONL entry (one line, no formatting)
-3. Append to `.agents/task-log.jsonl`
-4. Update `.agents/task-log-index.json` indices
+3. Append to `.ai/tasks/task-log.jsonl`
+4. Update `.ai/tasks/task-log-index.json` indices
 
 ### Example Log Entry Creation
 
@@ -1511,7 +1511,7 @@ log_entry_creation:
       manual_validation_completed: true
 
 # Generate this JSONL entry:
-{"task_id":"task-20240120-001","timestamp":"2024-01-20T15:45:00Z","type":"feature","workflow":"standard-feature","summary":"Added Redis caching layer for user session data","business_rationale":"Improve API response times from 500ms to <100ms for user dashboard","user_impact":"medium","components_affected":["UserSessionService","RedisCache","SessionMiddleware"],"api_changes":{"breaking":false,"modified_endpoints":["/api/users/session"]},"risk_assessment":{"level":"medium","factors":["new_external_dependency","session_handling_changes"]},"validation":{"automated_tests":true,"manual_validation_completed":true,"performance_validated":true},"artifacts_path":".agents/tasks/completed/2024-01/task-20240120-001/","tags":["performance","caching","redis","session"]}
+{"task_id":"task-20240120-001","timestamp":"2024-01-20T15:45:00Z","type":"feature","workflow":"standard-feature","summary":"Added Redis caching layer for user session data","business_rationale":"Improve API response times from 500ms to <100ms for user dashboard","user_impact":"medium","components_affected":["UserSessionService","RedisCache","SessionMiddleware"],"api_changes":{"breaking":false,"modified_endpoints":["/api/users/session"]},"risk_assessment":{"level":"medium","factors":["new_external_dependency","session_handling_changes"]},"validation":{"automated_tests":true,"manual_validation_completed":true,"performance_validated":true},"artifacts_path":".ai/tasks/completed/2024-01/task-20240120-001/","tags":["performance","caching","redis","session"]}
 ```
 
 ### Task Log Benefits
@@ -1523,7 +1523,7 @@ log_entry_creation:
 
 ### Log Maintenance
 
-- **Active Log**: `.agents/task-log.jsonl` (current year)
+- **Active Log**: `.ai/tasks/task-log.jsonl` (current year)
 - **Archive Policy**: Rotate annually, keep 3 years
 - **Search Tools**: Command-line friendly (grep, jq)
 - **Index Updates**: Maintain searchable index for quick lookups

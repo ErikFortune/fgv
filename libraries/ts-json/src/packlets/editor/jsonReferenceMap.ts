@@ -132,7 +132,7 @@ export class ReferenceMapKeyPolicy<T> {
 
   /**
    * Validates a `Map\<string, T\>` using the validation rules for this policy.
-   * @param items - The `Map\<string, T\>` to be validated.
+   * @param map - The `Map\<string, T\>` to be validated.
    * @param options - Optional {@link IReferenceMapKeyPolicyValidateOptions | options} to control
    * validation.
    * @returns `Success` with a new `Map\<string, T\>`, or `Failure` with an error message
@@ -443,10 +443,9 @@ export interface IKeyPrefixOptions {
 export class PrefixedJsonMap extends SimpleJsonMap {
   /**
    * Constructs a new {@link PrefixedJsonMap | PrefixedJsonMap} from the supplied values
-   * @param prefix - A string prefix to be enforced for and added to key names as necessary
    * @param values - A string-keyed Map or Record of the `JsonValue` to be returned
    * @param context - Optional {@link IJsonContext | JSON Context} used to format returned values
-   * @param editor - Optional {@link JsonEditor | JsonEditor} used to format returned values
+   * @param options - Optional {@link ISimpleJsonMapOptions | options} to configure the map
    * @public
    */
   protected constructor(

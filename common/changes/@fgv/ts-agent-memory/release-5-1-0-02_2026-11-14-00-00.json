@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-agent-memory",
+      "comment": "`FileTreeMemoryStore`: typed record bodies per kind, attributed edges, dedup, write policies, compare-and-set writes, and crash-safe atomic record writes on filesystem roots.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-agent-memory",
+  "email": "noreply@anthropic.com"
+}

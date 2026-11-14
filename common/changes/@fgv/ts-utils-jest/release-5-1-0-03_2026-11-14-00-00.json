@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-utils-jest",
+      "comment": "Upgrading from 5.0.2: the runtime dependencies (`expect`, `jest-snapshot`, `jest-matcher-utils`, `@jest/expect-utils`) moved from Jest 29 to Jest 30. The Result matchers and snapshot matchers are verified working under Jest 29 as well.",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-utils-jest",
+  "email": "noreply@anthropic.com"
+}

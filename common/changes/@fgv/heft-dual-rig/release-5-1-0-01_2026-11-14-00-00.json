@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/heft-dual-rig",
+      "comment": "First release on the 5.x lockstep line (previously published separately as 0.1.0): a Heft rig that dual-emits CommonJS (`lib/`) and ESM (`dist/`), and fails the build when Jest coverage thresholds are missed.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/heft-dual-rig",
+  "email": "noreply@anthropic.com"
+}

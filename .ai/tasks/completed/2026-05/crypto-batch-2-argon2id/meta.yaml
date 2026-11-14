@@ -1,0 +1,127 @@
+id: crypto-batch-2-argon2id
+status: shipped
+packages:
+  - '@fgv/ts-extras-argon2'
+  - '@fgv/ts-web-extras-argon2'
+  - '@fgv/ts-extras'
+prs: [344, 346, 349]
+closed: 2026-05
+summary:
+  intended: >
+    Give a cross-repo consumer Argon2id (RFC 9106) for two key-derivation paths — recovery
+    rows (high-entropy machine phrase → key unwrapping an alternate master copy, where
+    memory-hardness defends against precomputation) and passphrase rows for hybrid auth,
+    replacing PBKDF2. Four decisions were settled with the user before phase A started and
+    bound the design: fgv owns Argon2id and it lives in two NEW packages rather than in
+    existing `crypto-utils`, because a ~200–400 KB WASM bundle must not be paid for by
+    consumers who don't use it (D1); the default `NodeCryptoProvider` /
+    `BrowserCryptoProvider` do not implement Argon2id and consumers compose instead — the
+    brief's illustrative shape was constructor injection,
+    `new NodeCryptoProvider({ argon2: new NodeArgon2Provider() })`, with the exact shape
+    left as a design deliverable (D2); cross-runtime byte-identical output is the
+    load-bearing correctness property, since keys derived in one runtime unwrap material
+    in the other, and phase A had to specify the equivalence test concretely enough for
+    phase B to codify as an acceptance criterion (D3); and fgv concentrates the ongoing
+    version-sync risk for a security-sensitive KDF (D4).
+  shipped: >
+    Both packages, at 100% coverage across all three touched packages.
+    `@fgv/ts-extras-argon2` ships `NodeArgon2Provider` over `argon2` (kelektiv v0.44.0);
+    `@fgv/ts-web-extras-argon2` ships `BrowserArgon2Provider` over `hash-wasm` v4.12.0.
+    `@fgv/ts-extras/crypto-utils` gained `IArgon2idProvider`, `IArgon2idParams`, the
+    `ARGON2ID_OWASP_MIN` / `ARGON2ID_PASSPHRASE` presets, three new converters, and
+    `KeyStore.addSecretFromPasswordArgon2id` / `verifySecretFromPasswordArgon2id`;
+    `IKeyDerivationParams` became a discriminated union on `'pbkdf2'` | `'argon2id'`.
+    D3 was discharged **partially**: both providers agree on
+    `03aab965c12001c9d7d0d2de33192c0494b684bb148196d73c1df1acaf6d0c2e` for a t=3/m=32/p=4
+    parameter set, backed by a seven-case sweep, and all three packages gate at 100%
+    coverage by config (not merely by a one-time run). Merged into the
+    `claude/crypto-batch-2-features` integration branch. See the D3 note below before
+    citing this as spec conformance — it is not.
+  diverged: >
+    The composition shape changed from what D2 illustrated. The brief sketched injecting an
+    Argon2id provider into the crypto provider's constructor; what shipped keeps
+    `IArgon2idProvider` standalone, passed explicitly at each call site — `KeyStore` holds
+    no provider by default and takes one per Argon2id call. D2 had reserved exactly this
+    ("the exact shape is part of this design's deliverable"), so this is the design
+    exercising its licence rather than overriding the decision, but the shipped idiom is
+    not the one a reader of the brief would predict. The browser library choice also did
+    more work than picking a WASM binding: `hash-wasm` runs in Node as well, which is what
+    made the cross-runtime equivalence suite (D3) a plain Jest test rather than needing a
+    browser harness. On the Node side the brief floated `@node-rs/argon2` or `argon2` and
+    the design took `argon2`. One limitation shipped documented rather than fixed:
+    `parallelism > 1` under WASM affects the hash value but the engine never spawns
+    threads, carried as a JSDoc warning with no runtime log. Fifth, and undisclosed
+    anywhere until this pass: the shipped `argon2` dependency is pinned `~0.44.0`, below
+    the floor `brief-phase-b.md` D1 set as binding ("`argon2` v0.45.0+"), and a tilde
+    range can never resolve to it. The pin *style* also changed from the signed-off
+    design's caret (`design.md` §8 recommends `^0.45.0` / `^4.12.0`, reasoning that caret
+    admits non-breaking patch and minor updates) to tilde on both new packages. Neither
+    the version miss nor the style change is explained in any artifact. Finally, the
+    README records none of the stream's three PRs — they survive only in the ledger.
+  sourceLine: 'Both implement `CryptoUtils.IArgon2idProvider` from `@fgv/ts-extras`. Output is byte-identical for the same inputs, verified by RFC 9106 §B.3 parameter set test vector and a 7-case parameter sweep.'
+notes:
+  - >
+    D3 IS NOT SPEC-ANCHORED, and an earlier draft of this file said it was "discharged
+    concretely", which reads as conformance. What the shipped suite proves is that fgv's
+    two implementations agree with each other — the test's own comment says so:
+    "Verified independently against both argon2 (kelektiv) and hash-wasm." That is a real
+    and useful check (it is exactly the property D3 names as load-bearing, since keys
+    derived in one runtime unwrap material in the other) but it is strictly weaker than
+    matching a published vector, because a shared upstream bug would agree with itself.
+    The true RFC 9106 Argon2id KAT binds a secret key (K) and associated data (X)
+    alongside password and salt, and the shipped seam `argon2id(password, salt, params)`
+    exposed neither — so the spec KAT structurally could not run through it. `FUTURE.md`
+    Ask A states this outright: "the consumer's Argon2id vector is captured-from-impl
+    instead of spec-anchored." PR #554 (2026-07-18) added the `secret` / `associatedData`
+    params and only then did any test here reproduce the published KAT.
+  - >
+    The RFC section citation "§B.3" is repeated in every artifact of this stream —
+    `design.md`, `brief-phase-b.md`, the README twice, and the test file comment — and is
+    probably wrong. Both `FUTURE.md` Ask A and PR #554's commit message, written later and
+    independently, cite **§5.3** for the Argon2id KAT. This meta record quotes the README's
+    "§B.3" verbatim in `sourceLine` deliberately, so the error stays visible rather than
+    being silently laundered. Not corrected in place: retroactive mode does not rewrite
+    historical artifacts, and confirming against the RFC text needs network access this
+    pass did not have.
+  - >
+    #346 is NOT this stream's own PR. It is a single consolidated phase-B-brief PR
+    ("docs(crypto-batch-2): consolidated phase B briefs for HPKE, Argon2id, WebAuthn")
+    shared across three sibling streams, and all three ledger entries cite it correctly.
+    Two independent antagonist passes raised the duplicate citation as a suspected ledger
+    error; both resolved it the same way. Read the `prs` list as "PRs this stream appears
+    in", not "PRs this stream owns".
+  - >
+    D4 LANDED NOWHERE ACTIONABLE. The brief made ongoing version-sync fgv's responsibility
+    for a security-sensitive KDF, and `design.md` §8 proposed a concrete cadence (quarterly
+    `rush update` + changelog review; immediate review on a security advisory). None of it
+    was operationalized: `docs/TECH_DEBT.md` does not mention argon2 at all,
+    `docs/FUTURE.md` carries only the later unrelated API-surface ask, and
+    `.github/dependabot.yml` is a generic repo-wide weekly npm config that predates this
+    stream and names neither library. An accepted standing obligation with no artifact is
+    indistinguishable from one nobody took — and the `~0.44.0` pin sitting below its own
+    binding floor is what that looks like in practice.
+  - >
+    D1's stated rationale is stale. The brief justified two separate packages on a
+    "~200-400 KB" WASM bundle that non-consumers must not pay for; the design's own library
+    survey then measured the chosen `hash-wasm` Argon2id module at **~11 kB gzipped**. The
+    qualitative conclusion still stands — a package boundary is the honest way to make the
+    cost opt-in — but the number that motivated it was off by more than an order of
+    magnitude, and the decision was never revisited against the real figure.
+keywords:
+  - argon2id
+  - rfc-9106
+  - memory-hard-kdf
+  - password-hashing
+  - key-derivation
+  - cross-runtime-equivalence
+  - byte-identical-output
+  - test-vector
+  - wasm
+  - hash-wasm
+  - native-binding
+  - keystore
+  - discriminated-union-params
+  - owasp-presets
+  - pay-for-what-you-use
+  - opt-in-dependency
+sourceHash: 7e777be8c8a7ebad

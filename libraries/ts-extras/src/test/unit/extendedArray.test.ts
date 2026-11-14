@@ -45,7 +45,7 @@ describe('ExtendedArray class', () => {
       let a: ExtendedArray<string> | undefined;
       expect(() => {
         a = new ExtendedArray('strings', ...strings0);
-      }).not.toThrowError();
+      }).not.toThrow();
       expect(a).toBeDefined();
       expect(ExtendedArray.isExtendedArray(a)).toBe(true);
     });

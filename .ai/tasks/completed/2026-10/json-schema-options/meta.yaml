@@ -1,0 +1,63 @@
+id: json-schema-options
+status: shipped
+packages: ['@fgv/ts-json-base', '@fgv/ts-extras', '@fgv/ts-extras-ollama']
+prs: [740]
+openPrs: []
+opened: 2026-10-18
+closed: 2026-10-18
+summary:
+  intended: >
+    Stop JsonSchema factories throwing on incoherent options without making every factory return a
+    Result: add JsonSchema.numberOptions / stringOptions (and any other fallible option family)
+    returning Result of branded validated options, make constraint-bearing factories accept only
+    those (a raw constraint literal a compile error, nullable overloads kept exact), give every
+    other throwing factory a non-throwing path, route fromJson through the validated path, and
+    sweep the consumers (user decision 6c, 2026-10-18).
+  shipped: >
+    numberOptions, integerOptions, stringOptions and schemaOptions each return a Result of a
+    nominal instance holding a frozen copy; the factories accept those or plain options holding only what cannot
+    be wrong (description, title, nullable, strict, format, additionalProperties), so a constraint
+    key, default or examples on a raw literal, a misspelt options key, and numberOptions output
+    passed to integer are compile errors. nullable: true keeps its literal type through validation.
+    numberEnumOf / integerEnumOf / booleanEnumOf return a Result. fromJson builds through the
+    validated path with unchanged messages. validateNumberOptions / validateStringOptions removed.
+    The builder contains no throw.
+  diverged: >
+    default and examples moved behind validation too: they are runtime-checked (NaN is a number and
+    not JSON) and every factory threw on them, so leaving them raw as the brief said would have kept
+    a throw. Integers got their own integerOptions, since an integer range is stricter than a number
+    range; the brief's integer(numberOptions(...)) example is deliberately a compile error. The
+    estimated ~32 constraint-bearing consumer call sites were all description-only; every change
+    outside ts-json-base was in tests.
+  sourceLine: '**Constraint-bearing factories accept only validated options.**'
+  headline: >
+    JsonSchema factories never throw: constraint keywords, default and examples arrive through
+    numberOptions / integerOptions / stringOptions / schemaOptions, each a Result of a nominal options instance,
+    and a raw constraint literal is a compile error.
+keywords:
+  [
+    'validated options',
+    'numberOptions',
+    'integerOptions',
+    'stringOptions',
+    'schemaOptions',
+    'nominal options',
+    'PlainSchemaOptions',
+    'never throw',
+    'shouldNotFail',
+    'nullable overload',
+    'numberEnumOf Result',
+    'compile-time constraint check',
+    'BREAKING'
+  ]
+relatedStreams:
+  - {
+      id: json-schema-constraints,
+      relationship: 'introduced the constraint options and the throwing factories this replaces'
+    }
+  - {
+      id: json-schema-shapes,
+      relationship: 'introduced the non-string enum factories, which now return a Result'
+    }
+  - { id: json-schema-pattern, relationship: 'next stream; builds pattern on the validated string options' }
+sourceHash: 0e1b8b56b1107a86 # first 16 hex of sha256 over brief.md, state.md and result.md concatenated in that order

@@ -7,7 +7,7 @@ export { MockFs };
 type JestGlobal = typeof global & { expect: jest.Expect };
 
 function isJestGlobal(g: typeof global): g is JestGlobal {
-  return g.hasOwnProperty('expect');
+  return Object.prototype.hasOwnProperty.call(g, 'expect');
 }
 
 /* c8 ignore else */

@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-random",
+      "comment": "Weighted choice: `pickWeighted` on the generator, and the pure `pickWeightedAt(unit, candidates)` for the same choice from a hash or stored draw.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-random",
+  "email": "noreply@anthropic.com"
+}

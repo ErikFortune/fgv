@@ -1,0 +1,288 @@
+// Copyright (c) 2026 Erik Fortune
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
+/**
+ * Streaming chat completion client. Public façade over the per-format
+ * adapters under `streamingAdapters/`: provider dispatch and pre-flight
+ * validation live here; format-specific request/translation logic and the
+ * typed event-payload validators live with each adapter.
+ *
+ * @packageDocumentation
+ */
+
+import { resolveAnthropicThinkingOffType } from './anthropicThinkingOff';
+import { resolveGeminiModelThinking } from './geminiThinking';
+import { checkSamplingParams, temperatureAcceptedWithThinking } from './samplingParams';
+import { fail, Result } from '@fgv/ts-utils';
+
+import { type IAiCacheRequest } from './cacheRequest';
+import { splitChatRequest } from './chatRequestBuilders';
+import { resolveEffectiveBaseUrl } from './endpoint';
+import { schemaWireProviderId } from './schemaKeywords';
+import {
+  type IAiStreamEvent,
+  type ModelSpecKey,
+  isAdaptiveThinkingModel,
+  isThinkingRequiredModel,
+  isResponsesOnlyModel,
+  resolveProviderModel,
+  usesMaxCompletionTokensField
+} from './model';
+import {
+  supportsCacheUsageReporting,
+  supportsPromptCacheBreakpoints,
+  supportsPromptCacheRouting,
+  supportsStreamUsageOption
+} from './streamUsageCapability';
+import { callAnthropicStream } from './streamingAdapters/anthropic';
+import { type IProviderCompletionStreamParams, type IStreamApiConfig } from './streamingAdapters/common';
+import { callGeminiStream } from './streamingAdapters/gemini';
+import { callOpenAiChatStream } from './streamingAdapters/openaiChat';
+import { callOpenAiResponsesStream } from './streamingAdapters/openaiResponses';
+import {
+  checkTemperatureConflict,
+  resolveThinkingConfig,
+  providerDiscriminatorForId,
+  type IResolvedThinkingConfig
+} from './thinkingOptionsResolver';
+
+export { callProxiedCompletionStream } from './streamingAdapters/proxy';
+export type { IProviderCompletionStreamParams } from './streamingAdapters/common';
+
+/**
+ * Re-export `executeClientToolTurn` from the continuation builder so callers
+ * can import it directly from the streaming-client surface.
+ *
+ * @remarks
+ * **Why `clientTools` does not flow through `callProviderCompletionStream`:**
+ * Client tools require a stateful per-stream accumulation buffer (for thinking
+ * blocks, tool-use args, Gemini functionCall accumulation) that is owned by the
+ * continuation builder's execution context. Passing `clientTools` through the
+ * generic `callProviderCompletionStream` entry would require the caller to manage
+ * the accumulation buffer externally. `executeClientToolTurn` is therefore the
+ * canonical (and only) call path for client tools in Phase C. Callers that need
+ * both server tools and client tools in the same request should use
+ * `executeClientToolTurn` with both `tools` (server) and `clientTools` present;
+ * `callProviderCompletionStream` is for server-tools-only or no-tools requests.
+ */
+/* c8 ignore next 5 - barrel re-export; function is covered by clientToolContinuationBuilder tests */
+export {
+  executeClientToolTurn,
+  type IExecuteClientToolTurnParams,
+  type IExecuteClientToolTurnResult,
+  type IToolExecutionDecision
+} from './streamingAdapters/clientToolContinuationBuilder';
+
+/**
+ * Calls the appropriate streaming chat completion API for a given provider.
+ *
+ * @remarks
+ * Pre-flight rejection: when `descriptor.streamingCorsRestricted === true`
+ * and the call isn't being routed through a proxy, this returns
+ * `Result.fail` before fetch is invoked. Callers should route through
+ * {@link AiAssist.callProxiedCompletionStream} or surface the failure to the user.
+ *
+ * This guard is applied **here only**. `executeClientToolTurn` is also a
+ * streaming entry point and does not pre-flight the flag, so a browser
+ * client-tool turn against a `streamingCorsRestricted` provider fails at the
+ * fetch with a CORS error rather than with this legible refusal.
+ *
+ * Connection-time failures (auth, network, non-2xx) surface as the outer
+ * `Result.fail`. Once iteration begins, errors mid-stream surface as a
+ * terminal error event ({@link AiAssist.IAiStreamError}) followed by the iterable
+ * ending. The final successful event is {@link AiAssist.IAiStreamDone}.
+ *
+ * @param params - Request parameters including descriptor, API key, prompt, and optional tools
+ * @returns A streaming iterable of unified events, or a Result.fail
+ * @public
+ */
+export async function callProviderCompletionStream(
+  params: IProviderCompletionStreamParams
+): Promise<Result<AsyncIterable<IAiStreamEvent>>> {
+  const {
+    descriptor,
+    apiKey,
+    system,
+    messages,
+    temperature,
+    modelOverride,
+    tier,
+    logger,
+    tools,
+    signal,
+    endpoint,
+    verifiedEndpoint,
+    thinking,
+    maxTokens,
+    cache
+  } = params;
+
+  const splitResult = splitChatRequest(system, messages);
+  if (splitResult.isFailure()) {
+    return fail(splitResult.message);
+  }
+  const { prompt, head } = splitResult.value;
+
+  const baseUrlResult = resolveEffectiveBaseUrl(descriptor, endpoint);
+  if (baseUrlResult.isFailure()) {
+    return fail(baseUrlResult.message);
+  }
+  if (descriptor.streamingCorsRestricted) {
+    return fail(`provider "${descriptor.id}" requires a proxy for streaming; none is configured`);
+  }
+  if (prompt.attachments.length > 0 && !descriptor.acceptsImageInput) {
+    return fail(`provider "${descriptor.id}" does not accept image input`);
+  }
+
+  const hasTools = tools !== undefined && tools.length > 0;
+  const discriminator = providerDiscriminatorForId(descriptor.id);
+  // The quality tier is the only completion-model selector; thinking and tools
+  // are orthogonal request params/capabilities and never pick a model.
+  const modelContext: ModelSpecKey | undefined = tier;
+
+  const modelResult = resolveProviderModel(descriptor, modelOverride, modelContext);
+  if (modelResult.isFailure()) {
+    return fail(modelResult.message);
+  }
+  const model = modelResult.value;
+
+  let resolvedThinking: IResolvedThinkingConfig | undefined;
+  if (thinking !== undefined) {
+    if (discriminator !== undefined) {
+      const mergeResult = resolveThinkingConfig(
+        thinking,
+        model,
+        discriminator,
+        isThinkingRequiredModel(descriptor, model),
+        resolveGeminiModelThinking(descriptor, model)
+      );
+      if (mergeResult.isFailure()) {
+        return fail(mergeResult.message);
+      }
+      resolvedThinking = mergeResult.value.resolved;
+      const conflictResult = checkTemperatureConflict(
+        resolvedThinking,
+        discriminator,
+        temperature,
+        mergeResult.value.noneDegraded,
+        temperatureAcceptedWithThinking(descriptor, model)
+      );
+      if (conflictResult.isFailure()) {
+        return fail(conflictResult.message);
+      }
+    }
+  }
+  const samplingResult = checkSamplingParams(descriptor, model, temperature, resolvedThinking);
+  if (samplingResult.isFailure()) {
+    return fail(samplingResult.message);
+  }
+
+  const config: IStreamApiConfig = {
+    baseUrl: baseUrlResult.value,
+    apiKey,
+    model,
+    // Trusted only on the provider's own endpoint — see `IAiApiConfig.providerId`.
+    providerId: schemaWireProviderId(descriptor, endpoint, verifiedEndpoint)
+  };
+
+  switch (descriptor.apiFormat) {
+    case 'openai': {
+      // Same gating as callProviderCompletion's 'openai' case in completionClient.ts — see the
+      // comment there for why breakpoints and the routing key are gated independently.
+      const routing = supportsPromptCacheRouting(descriptor);
+      const breakpoints = supportsPromptCacheBreakpoints(descriptor) ? cache?.systemBreakpoints : undefined;
+      const routedKey = routing !== undefined ? cache?.cacheKey : undefined;
+      const gatedCache: IAiCacheRequest | undefined =
+        breakpoints !== undefined || routedKey !== undefined
+          ? { systemBreakpoints: breakpoints, cacheKey: routedKey }
+          : undefined;
+      // Responses-API-only models (e.g. gpt-5.5-pro) 400 on /chat/completions, so they route
+      // to the Responses stream even with no tools requested — same path the tools case uses.
+      if (hasTools || isResponsesOnlyModel(descriptor, config.model)) {
+        return callOpenAiResponsesStream(
+          config,
+          prompt,
+          tools,
+          head,
+          temperature,
+          logger,
+          signal,
+          resolvedThinking,
+          undefined,
+          undefined,
+          maxTokens,
+          supportsCacheUsageReporting(descriptor),
+          gatedCache
+        );
+      }
+      return callOpenAiChatStream(
+        config,
+        prompt,
+        head,
+        temperature,
+        logger,
+        signal,
+        resolvedThinking,
+        maxTokens,
+        usesMaxCompletionTokensField(descriptor),
+        supportsStreamUsageOption(descriptor),
+        gatedCache,
+        routing?.chatCompletionsHeader
+      );
+    }
+    case 'anthropic':
+      return callAnthropicStream(
+        config,
+        prompt,
+        head,
+        temperature,
+        tools,
+        logger,
+        signal,
+        resolvedThinking,
+        undefined,
+        undefined,
+        isAdaptiveThinkingModel(descriptor, config.model),
+        maxTokens,
+        cache,
+        temperatureAcceptedWithThinking(descriptor, config.model),
+        resolveAnthropicThinkingOffType(descriptor, config.model)
+      );
+    case 'gemini':
+      return callGeminiStream(
+        config,
+        prompt,
+        head,
+        temperature,
+        tools,
+        logger,
+        signal,
+        resolvedThinking,
+        undefined,
+        undefined,
+        maxTokens
+      );
+    /* c8 ignore next 4 - defensive coding: exhaustive switch guaranteed by TypeScript */
+    default: {
+      const _exhaustive: never = descriptor.apiFormat;
+      return fail(`unsupported API format: ${String(_exhaustive)}`);
+    }
+  }
+}

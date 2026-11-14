@@ -23,6 +23,7 @@
 import {
   DetailedResult,
   failWithDetail,
+  formatValueForMessage,
   MessageAggregator,
   Result,
   succeed,
@@ -68,10 +69,7 @@ export class KeyValueConverters<TK extends string = string, TV = unknown> {
 
   /**
    * Constructs a new key-value validator.
-   * @param key - Required key {@link Validator | validator}, {@link Converter | converter},
-   * or {@link Conversion.ConverterFunc | converter function}.
-   * @param value - Required value {@link Validator | validator}, {@link Converter | converter},
-   * or {@link Conversion.ConverterFunc | converter function}.
+   * @param params - Key and value converters or validators.
    */
   public constructor({ key, value }: IKeyValueConverterConstructorParams<TK, TV>) {
     this.key = typeof key === 'function' ? Converters.generic(key) : key;
@@ -116,8 +114,7 @@ export class KeyValueConverters<TK extends string = string, TV = unknown> {
       const detail = key ? 'invalid-value' : 'invalid-key';
       return failWithDetail(`invalid entry: ${errors.toString()}`, detail);
     }
-    /* c8 ignore next 2 */
-    return failWithDetail(`malformed entry: "${JSON.stringify(entry)}"`, 'invalid-value');
+    return failWithDetail(`malformed entry: "${formatValueForMessage(entry)}"`, 'invalid-value');
   }
 
   /**

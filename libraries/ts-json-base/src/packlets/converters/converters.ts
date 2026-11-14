@@ -26,10 +26,14 @@ import {
   Converters as BaseConverters,
   Result,
   StringConverter,
+  Validator,
+  captureResult,
   fail,
+  formatValueForMessage,
   succeed
 } from '@fgv/ts-utils';
 import { JsonArray, JsonObject, JsonPrimitive, JsonValue, isJsonArray, isJsonObject } from '../json';
+import { activePath } from './activePath';
 
 /* eslint-disable @typescript-eslint/no-use-before-define */
 
@@ -64,7 +68,7 @@ export const jsonPrimitive: Converter<JsonPrimitive, IJsonConverterContext> = ne
         }
         break;
     }
-    return fail(`"${String(from)}": invalid JSON primitive.`);
+    return fail(`"${formatValueForMessage(from, { style: 'string' })}": invalid JSON primitive.`);
   }
 );
 
@@ -72,9 +76,12 @@ export const jsonPrimitive: Converter<JsonPrimitive, IJsonConverterContext> = ne
  * An copying converter which converts a supplied `unknown` value into
  * a valid {@link JsonObject | JsonObject}. Fails by default if any properties or array elements
  * are `undefined` - this default behavior can be overridden by supplying an appropriate
- * {@link Converters.IJsonConverterContext | context} at runtime.
+ * `IJsonConverterContext` at runtime.
  *
- * Guaranteed to return a new object.
+ * Guaranteed to return a new object whose prototype is `Object.prototype`. An own `"__proto__"`
+ * key (as `JSON.parse` produces) is dropped rather than copied: assigning it would replace the
+ * copy's prototype, and defining it as data would hand downstream code a key that `Object.assign`
+ * or a spread re-interprets the same way.
  * @public
  */
 export const jsonObject: Converter<JsonObject, IJsonConverterContext> = new Conversion.BaseConverter(
@@ -86,28 +93,34 @@ export const jsonObject: Converter<JsonObject, IJsonConverterContext> = new Conv
     if (!isJsonObject(from)) {
       return fail('invalid JSON object.');
     }
-    const obj: JsonObject = {};
-    const errors: string[] = [];
-    for (const [name, value] of Object.entries(from)) {
-      if (value === undefined && ctx?.ignoreUndefinedProperties === true) {
-        // optionally ignore undefined values
-        continue;
+    return activePath.container<Result<JsonObject>>(from, fail, () => {
+      const obj: JsonObject = {};
+      const errors: string[] = [];
+      for (const [name, value] of Object.entries(from)) {
+        if (value === undefined && ctx?.ignoreUndefinedProperties === true) {
+          // optionally ignore undefined values
+          continue;
+        }
+        if (name === '__proto__') {
+          // Never copied: see the doc comment.
+          continue;
+        }
+        activePath
+          .member(name, () => jsonValue.convert(value, ctx))
+          .onSuccess((v: JsonValue) => {
+            obj[name] = v;
+            return succeed(v);
+          })
+          .onFailure((m) => {
+            errors.push(`${name}: ${m}`);
+            return fail(m);
+          });
       }
-      jsonValue
-        .convert(value, ctx)
-        .onSuccess((v: JsonValue) => {
-          obj[name] = v;
-          return succeed(v);
-        })
-        .onFailure((m) => {
-          errors.push(`${name}: ${m}`);
-          return fail(m);
-        });
-    }
-    if (errors.length > 0) {
-      return fail(`invalid JSON object:\n${errors.join('\n')}`);
-    }
-    return succeed(obj);
+      if (errors.length > 0) {
+        return fail(`invalid JSON object:\n${errors.join('\n')}`);
+      }
+      return succeed(obj);
+    });
   }
 );
 
@@ -115,7 +128,7 @@ export const jsonObject: Converter<JsonObject, IJsonConverterContext> = new Conv
  * An copying converter which converts a supplied `unknown` value to
  * a valid {@link JsonArray | JsonArray}. Fails by default if any properties or array elements
  * are `undefined` - this default behavior can be overridden by supplying an appropriate
- * {@link Converters.IJsonConverterContext | context} at runtime.
+ * `IJsonConverterContext` at runtime.
  *
  * Guaranteed to return a new array.
  * @public
@@ -129,30 +142,32 @@ export const jsonArray: Converter<JsonArray, IJsonConverterContext> = new Conver
     if (!isJsonArray(from)) {
       return fail('not an array');
     }
-    const arr: JsonValue[] = [];
-    const errors: string[] = [];
-    for (let i = 0; i < from.length; i++) {
-      const value = from[i];
-      if (value === undefined && ctx?.ignoreUndefinedProperties === true) {
-        // convert undefined to 'null' for parity with JSON.stringify
-        arr.push(null);
-        continue;
+    return activePath.container<Result<JsonArray>>(from, fail, () => {
+      const arr: JsonValue[] = [];
+      const errors: string[] = [];
+      for (let i = 0; i < from.length; i++) {
+        const value = from[i];
+        if (value === undefined && ctx?.ignoreUndefinedProperties === true) {
+          // convert undefined to 'null' for parity with JSON.stringify
+          arr.push(null);
+          continue;
+        }
+        activePath
+          .member(i, () => jsonValue.convert(value, ctx))
+          .onSuccess((v) => {
+            arr.push(v);
+            return succeed(v);
+          })
+          .onFailure((m) => {
+            errors.push(`${i}: ${m}`);
+            return fail(m);
+          });
       }
-      jsonValue
-        .convert(value, ctx)
-        .onSuccess((v) => {
-          arr.push(v);
-          return succeed(v);
-        })
-        .onFailure((m) => {
-          errors.push(`${i}: ${m}`);
-          return fail(m);
-        });
-    }
-    if (errors.length > 0) {
-      return fail(`array contains non-json elements:\n${errors.join('\n')}`);
-    }
-    return succeed(arr);
+      if (errors.length > 0) {
+        return fail(`array contains non-json elements:\n${errors.join('\n')}`);
+      }
+      return succeed(arr);
+    });
   }
 );
 
@@ -160,7 +175,7 @@ export const jsonArray: Converter<JsonArray, IJsonConverterContext> = new Conver
  * An copying converter which converts a supplied `unknown` value to a
  * valid {@link JsonValue | JsonValue}. Fails by default if any properties or array elements
  * are `undefined` - this default behavior can be overridden by supplying an appropriate
- * {@link Converters.IJsonConverterContext | context} at runtime.
+ * `IJsonConverterContext` at runtime.
  * @public
  */
 export const jsonValue: Converter<JsonValue, IJsonConverterContext> = new Conversion.BaseConverter<
@@ -182,8 +197,8 @@ export const jsonValue: Converter<JsonValue, IJsonConverterContext> = new Conver
 );
 
 /**
- * A {@link Converter | Converter} which converts `unknown` to a `string`.
- * Accepts {@link Converters.IJsonConverterContext | IJsonConverterContext} but ignores it.
+ * A `StringConverter` which converts `unknown` to a `string`.
+ * Accepts `IJsonConverterContext` but ignores it.
  * @public
  */
 export const string: StringConverter<string, IJsonConverterContext> = new StringConverter<
@@ -192,8 +207,8 @@ export const string: StringConverter<string, IJsonConverterContext> = new String
 >();
 
 /**
- * A {@link Converter | Converter} which converts `unknown` to a `number`.
- * Accepts {@link Converters.IJsonConverterContext | IJsonConverterContext} but ignores it.
+ * A `Converter` which converts `unknown` to a `number`.
+ * Accepts `IJsonConverterContext` but ignores it.
  * Mirrors the behavior of `@fgv/ts-utils`.
  * @public
  */
@@ -203,8 +218,8 @@ export const number: Converter<number, IJsonConverterContext> = new Conversion.B
 >((from: unknown): Result<number> => BaseConverters.number.convert(from));
 
 /**
- * A {@link Converter | Converter} which converts `unknown` to a `boolean`.
- * Accepts {@link Converters.IJsonConverterContext | IJsonConverterContext} but ignores it.
+ * A `Converter` which converts `unknown` to a `boolean`.
+ * Accepts `IJsonConverterContext` but ignores it.
  * Mirrors the behavior of `@fgv/ts-utils`.
  * @public
  */
@@ -215,7 +230,7 @@ export const boolean: Converter<boolean, IJsonConverterContext> = new Conversion
 
 /**
  * Helper to create a converter for a literal value.
- * Accepts {@link Converters.IJsonConverterContext | IJsonConverterContext} but ignores it.
+ * Accepts `IJsonConverterContext` but ignores it.
  * Mirrors the behavior of `@fgv/ts-utils`.
  * @public
  */
@@ -224,17 +239,17 @@ export function literal<T>(value: T): Converter<T, IJsonConverterContext> {
 }
 
 /**
- * Helper function to create a {@link Converter | Converter} which converts `unknown` to one of a set of
+ * Helper function to create a `Converter` which converts `unknown` to one of a set of
  * supplied enumerated values. Anything else fails.
  *
  * @remarks
- * This JSON variant accepts an {@link Converters.IJsonConverterContext | IJsonConverterContext} OR
+ * This JSON variant accepts an `IJsonConverterContext` OR
  * a `ReadonlyArray<T>` as its conversion context. If the context is an array, it is used to override the
  * allowed values for that conversion; otherwise, the original `values` supplied at creation time are used.
  *
  * @param values - Array of allowed values.
  * @param message - Optional custom failure message.
- * @returns A new {@link Converter | Converter} returning `<T>`.
+ * @returns A new `Converter` returning `<T>`.
  * @public
  */
 export function enumeratedValue<T>(
@@ -252,7 +267,69 @@ export function enumeratedValue<T>(
       if (index >= 0) {
         return succeed(effectiveValues[index]);
       }
-      return fail(message ?? `Invalid enumerated value ${JSON.stringify(from)}`);
+      return fail(message ?? `Invalid enumerated value ${formatValueForMessage(from)}`);
     }
   );
+}
+
+/**
+ * Creates a converter that accepts a string and parses it as JSON, with no
+ * inner conversion step.
+ *
+ * @remarks
+ * Unlike {@link Converters.jsonConverter}, the inner step is optional. This form
+ * omits it, so the converter resolves to the parsed `JsonValue` (object, array,
+ * or primitive). The overload that takes an inner step accepts both
+ * `Converter<T>` and `Validator<T>`, because both expose
+ * `convert(unknown): Result<T>`.
+ *
+ * @returns Converter that parses a JSON string into a `JsonValue`.
+ * @public
+ */
+export function stringifiedJson(): Converter<JsonValue>;
+/**
+ * Creates a converter that accepts a string, parses it as JSON, and applies
+ * the supplied inner converter or validator to the parsed value.
+ *
+ * @param inner - `Converter<T>` or `Validator<T>` applied to the parsed JSON.
+ * @returns Converter that parses a JSON string into `T`.
+ * @public
+ */
+export function stringifiedJson<T>(inner: Converter<T> | Validator<T>): Converter<T>;
+export function stringifiedJson<T>(inner?: Converter<T> | Validator<T>): Converter<T | JsonValue> {
+  const step: { convert(from: unknown): Result<T | JsonValue> } = inner ?? jsonValue;
+  return new Conversion.BaseConverter<T | JsonValue>((from: unknown): Result<T | JsonValue> => {
+    if (typeof from !== 'string') {
+      return fail('stringifiedJson: input must be a string.');
+    }
+    return captureResult<unknown>(() => JSON.parse(from))
+      .withErrorFormat((msg) => `stringifiedJson: failed to parse JSON: ${msg}`)
+      .onSuccess((parsed) => step.convert(parsed));
+  });
+}
+
+/**
+ * Creates a converter that parses JSON string content and then applies the supplied converter.
+ * @param converter - Converter to apply to the parsed JSON
+ * @returns Converter that parses JSON then validates
+ * @public
+ */
+export function jsonConverter<T>(converter: Converter<T>): Converter<T> {
+  return new Conversion.BaseConverter<T>((from: unknown): Result<T> => {
+    if (typeof from !== 'string') {
+      return fail('Input must be a string');
+    }
+
+    const parseResult = captureResult(() => JSON.parse(from));
+    if (parseResult.isFailure()) {
+      return fail(`Failed to parse JSON: ${parseResult.message}`);
+    }
+
+    const parsed = parseResult.value;
+    if (typeof parsed !== 'object' || parsed === null) {
+      return fail('Failed to parse JSON: JSON content must be an object');
+    }
+
+    return converter.convert(parsed);
+  });
 }

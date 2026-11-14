@@ -1,0 +1,63 @@
+id: json-schema-pattern
+status: shipped
+packages: ['@fgv/ts-json-base', '@fgv/ts-extras', '@fgv/ts-extras-mcp']
+prs: [742]
+openPrs: []
+opened: 2026-10-18
+closed: 2026-10-18
+summary:
+  intended: >
+    Split pattern by trust (user decision 1, 2026-10-18): a pattern option on the validated
+    stringOptions (a RegExp or a source string, validated to compile with only wire-expressible
+    flags), enforced and emitted; fromJson refusing pattern by default and admitting it through an
+    injected patternValidator, the library never constructing a RegExp from untrusted input; a
+    pattern row in the per-wire tables (pass where documented, fold elsewhere); an optional
+    patternValidator on adaptMcpTools; pattern fixtures in the testbed wire probe; an RE2 default
+    recorded as the next, separate package.
+  shipped: >
+    stringOptions({ pattern }) takes a host RegExp with exactly the u flag, read through the
+    built-in accessors and matched with the built-in exec, emitted as its source, failing closed if
+    re-initialised; the library constructs no RegExp at all. fromJson(json, { patternValidator })
+    admits pattern on string nodes, with the default refusal unchanged and decided before the value
+    is read (pinned with a RegExp spy recording zero calls). The tables pass pattern on Anthropic
+    tools and Anthropic JSON outputs and fold it elsewhere, Gemini included (it documents the field but
+    not its dialect or anchoring). adaptMcpTools takes
+    patternValidator. The probe gains a host and a fromJson pattern fixture. FUTURE.md names
+    ts-extras-re2 as next.
+  diverged: >
+    The trusted path takes a RegExp only, and only with exactly the u flag (no flag is refused too,
+    since JSON Schema patterns are built with u), so nothing is recompiled; the source-string option
+    and a recompiling copy were both rejected because they need new RegExp in the library. OpenAI
+    documents pattern but the shared OpenAI/xAI table folds it, because xAI documents implicit
+    anchoring, and review round 1 folded it on Gemini too, which documents neither dialect nor
+    anchoring. pattern left FORBIDDEN_KEYWORDS for a per-conversion gate.
+  sourceLine: '**Shipped:** `pattern`, split by trust — a host''s own `RegExp` through `stringOptions({ pattern })` is enforced and sent where the wire documents `pattern`, and `fromJson` admits a server''s `pattern` only through an injected `patternValidator`, so the library never constructs a `RegExp` at all.'
+  headline: >
+    JsonSchema pattern: a host's /…/u RegExp via stringOptions is enforced and sent where the wire
+    documents pattern, and fromJson admits a server's pattern only through an injected
+    patternValidator — the library never compiles one.
+keywords:
+  [
+    'pattern',
+    'regular expression',
+    'RegExp',
+    'ReDoS',
+    'patternValidator',
+    'SchemaPatternValidator',
+    'IFromJsonOptions',
+    'trusted vs untrusted schema',
+    'u flag',
+    'implicit anchoring',
+    'RE2',
+    'MCP pattern tool',
+    'wire probe'
+  ]
+relatedStreams:
+  - { id: json-schema-options, relationship: 'introduced the validated stringOptions this extends' }
+  - {
+      id: json-schema-constraints,
+      relationship: 'introduced the per-wire keyword tables and fold text that gain the pattern row'
+    }
+  - { id: json-schema-shapes, relationship: 'introduced MCP wire admission; pattern_tool stays its refusal example' }
+  - { id: testbed-wire-probe, relationship: 'the probe that gains the two pattern fixtures' }
+sourceHash: 6bc58202fb7c2ab8 # first 16 hex of sha256 over brief.md, state.md and result.md concatenated in that order

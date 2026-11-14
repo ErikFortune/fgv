@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras",
+      "comment": "`CryptoUtils.KeyStore` (also at `@fgv/ts-extras/crypto/keystore`): a password-protected encrypted vault for secrets, API keys and key pairs, with PBKDF2 or Argon2id password secrets and pluggable private-key storage such as `EncryptedFilePrivateKeyStorage`.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-extras",
+  "email": "noreply@anthropic.com"
+}

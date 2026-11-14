@@ -1,0 +1,595 @@
+[@fgv/ts-extras](../../../README.md) &rsaquo; **ai-assist**
+
+# AI Assist
+
+LLM provider client + JSON-tolerant response handling. Provides `callProviderCompletion` /
+`callProviderCompletionStream` (OpenAI, xAI, Anthropic, Gemini), image generation, embeddings,
+harness-side client tools (`executeClientToolTurn` for one round, `runClientToolLoop` for a bounded
+multi-round loop), a provider/model registry, and the `AiPrompt` class. See the [`@fgv/ts-extras/ai-assist` entry in `LIBRARY_CAPABILITIES.md`](../../../../../.ai/instructions/LIBRARY_CAPABILITIES.md)
+for the full capability surface.
+
+## Model Aliases (`@<provider>:<role>`)
+
+Provider model snapshots churn — Google retires `gemini-2.5-flash`, OpenAI's undated `gpt-4o` is not
+reasoning-capable, etc. The alias layer puts **one fgv-owned indirection** between the model string a
+consumer (or `defaultModel`) references and the concrete id that goes to the wire, so a line rotation
+is a single central edit rather than a hunt-and-replace across consumers.
+
+### The scheme
+
+A model string is an fgv alias **iff it begins with the `@` sigil** (`MODEL_ALIAS_SIGIL`). The shape is
+`@<providerId>:<role>` — e.g. `@google-gemini:flash`, `@openai:reasoning`. `<role>` is a short,
+fgv-stable token (`flash`, `pro`, `flash-image`, `embedding`, …) that outlives provider snapshots.
+
+```typescript
+// Registered today (each provider descriptor's `aliases` map):
+'@google-gemini:flash'  ->  'gemini-3.8-flash'   // fgv alias → concrete id
+'@openai:flagship'      ->  'gpt-6.1-sol'
+'@anthropic:opus'       ->  'claude-opus-5-5'
+
+// When an RHS is itself a provider-native undated alias rather than a dated snapshot, resolution
+// follows one further `@fgv-alias → provider-native-alias` hop (cycle-guarded).
+```
+
+- **Raw-id passthrough (back-compat is structural).** Any string **without** a leading `@` is returned
+  verbatim — every existing `defaultModel`, every `modelOverride`, dated snapshots, and self-hosted
+  `model:tag` ids (`llama3.2:3b`) pass through untouched. The `@` sigil was chosen precisely so the
+  `:`-in-id ids of Ollama / openai-compat are never mis-parsed as aliases.
+- **Registry-gated, fails loudly.** An `@`-prefixed string that is not a registered alias fails with a
+  `Result.fail` naming the provider and alias — a typo or unknown alias never reaches the wire silently.
+
+### The map lives on the descriptor
+
+The alias map is an optional `aliases?: IModelAliasMap` field on `IAiProviderDescriptor`, alongside the
+existing `imageGeneration` / `embedding` capability arrays. It travels with custom descriptors a
+consumer constructs; absence means "this provider defines no aliases" (the layer is inert).
+
+```typescript
+export interface IModelAliasMap {
+  readonly [alias: string]: string;
+}
+```
+
+### Resolving
+
+| Function | Use for |
+|---|---|
+| `resolveModelAlias(descriptor, model)` | Resolve a single (possibly-aliased) string. No `@` → verbatim. `@` + registered → target, following the `@`-alias chain (one hop is typical; an alias may target another `@`-alias) until a non-`@` id is reached; cycle-guarded. `@` + unregistered → loud fail. |
+| `resolveProviderModel(descriptor, modelOverride, context?)` | The call-time chokepoint: the `ModelSpecKey` walk (`resolveModel`) **then** `resolveModelAlias`. Used by the completion, streaming, image, embedding, and client-tool paths. A spec outside the `ModelSpec` type (a key holding `undefined`, `null` or a number — untyped JSON or a cast) fails here with the provider id and the offending key's path (`provider "openai": model spec modelOverride.base is undefined: …`) instead of throwing; `resolveModel` itself resolves such a spec to `''`. |
+
+Resolution is **call-time**, not registry-build-time, so the registry stays a pure inspectable data
+structure and the proxy path resolves server-side via the reconstructed descriptor — **except for a
+tiered request**, which both `callProxiedCompletion` and `callProxiedCompletionStream` resolve
+client-side and send as a concrete `modelOverride`. Both halves of a tier resolution (the
+`ModelSpecKey` walk and the alias map) live on the descriptor, which the caller already holds; a
+`tier` body field would instead be ignored by every proxy that predates it, silently serving a
+frontier request from the base model.
+
+`endpoint` gets the opposite treatment, on **every** proxied entry point — completion, completion
+stream, embedding, image generation and list-models: it is **refused**, not forwarded and not
+dropped. It names where the request must go, the proxy is the one making that call, and no deployed
+proxy has ever been sent the field — so honoring it is unverifiable and ignoring it sends content
+somewhere the caller explicitly excluded. Use the direct entry point, or point the proxy itself at
+the intended upstream.
+
+The embedding path is where this bites hardest, and the reason is in this README's own embedding
+section: pointing `endpoint` at `http://localhost:11434/v1` is the *documented* way to reach a local
+Ollama. Dropping it there does not degrade an answer — it sends the text to OpenAI instead of the
+machine the caller named.
+
+`callProxiedListModels` also declares `capabilityConfig`, and that one stays a **disclosed no-op**
+rather than becoming a refusal. It overrides how a model id is classified, and the proxy returns
+models already classified, so a caller-supplied override could only ever arrive too late; ignoring
+it yields the default classification. The distinction is the consequence, not the mechanism: a
+worse classification is a degraded answer, where a wrong host is the request going somewhere it was
+told not to.
+
+## Quality Tiers (`base` / `advanced` / `frontier`)
+
+On top of the alias layer sits **one cross-provider quality axis** for completions. A caller asks for a
+tier and the registry picks the right *completion model* for that provider — a `base` request lands on a
+cheap/fast model, `advanced` on the flagship, `frontier` on the top-of-line model. The tier names are
+provider-agnostic; each descriptor's `defaultModel` map wires the tier slot to a provider-specific alias.
+
+### The axis and the request param
+
+`ModelSpecKey` is `'base' | 'advanced' | 'frontier' | 'image' | 'embedding'`. The three tier keys are the
+**only** completion-model selectors; `image`/`embedding` select the non-completion modalities. A completion
+or streaming call takes an optional `tier?: 'advanced' | 'frontier'` request param:
+
+```typescript
+// base (the default — omit tier, or the model floor when a tier isn't present):
+await AiAssist.callProviderCompletion({ descriptor, apiKey, request });
+// advanced / frontier — the tier drives which completion model is selected:
+await AiAssist.callProviderCompletion({ descriptor, apiKey, request, tier: 'advanced' });
+await AiAssist.callProviderCompletionStream({ descriptor, apiKey, request, tier: 'frontier' });
+```
+
+`base` is the required floor: every descriptor defines it, and it is the universal fallback (see the
+cascade below). Omitting `tier` resolves `base`.
+
+### The cascade — `frontier → advanced → base`
+
+A tier request walks an **ordered fallback list** and takes the first key present on the descriptor:
+
+| Requested tier | Fallback order | Notes |
+|---|---|---|
+| `frontier` | `frontier → advanced → base` | a descriptor with no `frontier` key cascades to `advanced` |
+| `advanced` | `advanced → base` | a descriptor with no `advanced` key cascades to `base` |
+| `base` | `base` | always present |
+
+This is why a provider only needs to declare the tiers it actually differentiates. OpenAI wires all
+three tiers (`frontier` → `gpt-6-astra`, which works on chat completions); Anthropic and Gemini omit
+`frontier`, so a `frontier` request cascades to their `advanced` model (opus / pro). (An earlier
+frontier target `gpt-5.5-pro` is Responses-API-only; it remains reachable via `modelOverride` and is
+routed to the Responses API via `responsesOnlyModelPrefixes`.)
+`image`/`embedding` are unaffected — they keep their flat `modality → base` behavior.
+
+### Composition — thinking and tools are orthogonal, not selectors
+
+The quality tier is the **only** thing that selects a completion model. **Thinking** (reasoning effort)
+and **tools** (server-side tools) are orthogonal request/capability concerns that ride *on top of*
+whatever model the tier picked — they never participate in model selection:
+
+- **Thinking** stays a per-request API param. `tier: 'base'` + a thinking config resolves the cheap base
+  model and sends the thinking param to it; `tier: 'advanced'` + thinking resolves the advanced model and
+  sends the same param. Every base model is thinking-capable, so thinking composes with any tier with zero
+  capability checks. (Callers who previously relied on Gemini routing *all* thinking calls to Pro now ask
+  for `tier: 'advanced'` explicitly — the same knob every other provider uses.)
+- **Tools** stay a capability + a per-request `tools[]` list, detected via the `idPattern` axis, never a
+  model selector.
+
+`ModelSpecKey` therefore carries **no** `thinking`/`tools` keys — they were removed when the tier axis
+landed. A `frontier + thinking` request is simply a frontier-tier completion with the thinking param set;
+there is no 2-D selection and no competition between the axes.
+
+### Cross-provider tier table
+
+| slot | OpenAI | Anthropic | Gemini |
+|---|---|---|---|
+| `base` | `@openai:mini` → `gpt-6-luna` | `@anthropic:sonnet` → `claude-sonnet-5-5` | `@google-gemini:flash` → `gemini-3.8-flash` |
+| `advanced` | `@openai:flagship` → `gpt-6.1-sol` | `@anthropic:opus` → `claude-opus-5-5` | `@google-gemini:pro` → `gemini-4-argon` |
+| `frontier` | `@openai:pro` → `gpt-6-astra` | *(unset → advanced/opus)* | *(unset → advanced/pro)* |
+
+**What moving to these targets changed for callers (2026-11).** Anthropic's base tier
+(`claude-sonnet-5-5`) sends structured output as `output_config.format` rather than a forced tool,
+returns text written between tool calls as progress-update `thinking` blocks, ties its thinking blocks
+to the model and conversation (edit history and a replayed block can 400), and turns thinking off
+only with its own value, `thinking: { type: 'between_tools' }` (see below). `@anthropic:haiku` (`claude-haiku-5-5`) thinks by default and counts the same text as
+~30% more tokens than Haiku 4.5. The OpenAI advanced tier (`gpt-6.1-sol`) has no `'none'` effort.
+
+**Per-model rules ai-assist now enforces.**
+
+- A generic `thinking: { effort: 'none' }` means thinking off on every Anthropic model: it sends
+  `thinking: { type: 'disabled' }` to an adaptive model that accepts it (`claude-sonnet-5`,
+  `claude-opus-5`, `claude-haiku-5-5`), no `thinking` field to an older model (already off), and
+  `'low'` — or a refusal under `onUnsupported: 'fail'` — to a model that cannot turn thinking off
+  (`claude-opus-5-5`, Fable and Mythos 5.x, `claude-mythos-preview`; declared in
+  `thinkingRequiredModelPrefixes`, alongside `gpt-6-astra`, `gpt-6.1-sol`, Gemini 4 and the Gemini
+  Pro ids).
+- **`claude-sonnet-5-5` (`@anthropic:sonnet`, the base tier) turns thinking off with `between_tools`.**
+  It rejects `disabled`, and its own off value is declared as data:
+  `IAiProviderDescriptor.anthropicThinkingOffTypes` (`[{ modelPrefix: 'claude-sonnet-5-5', type:
+  'between_tools' }]`, read through `AiAssist.resolveAnthropicThinkingOffType`). So a `'none'` there
+  now sends `thinking: { type: 'between_tools' }` on the completion, streaming and client-tool paths
+  (and a caller-built `anthropicThinkingDisabled` flag is sent the same way rather than refused). This
+  is the second change to the base tier's `'none'` in a row — it was degraded to `'low'` — and it is
+  real thinking-off: the model does not think before it responds, **but the short updates it writes
+  between tool calls still come back as `thinking` blocks**. A generic `'none'` never sends an
+  effort beside it; an explicit `'other'` block or caller-built `otherParams` can, and Anthropic
+  rejects `between_tools` (and `disabled`) above `high` (`between_tools` 400s at `xhigh` and `max`).
+- **Gemini 4 and the 3.x Flash-Lite / 3.6 Flash lines are sent `thinkingLevel`, not
+  `thinkingBudget`.** `IAiProviderDescriptor.geminiThinkingLevels` declares each such model and the
+  levels it accepts (read through `AiAssist.resolveGeminiThinkingLevels`): `gemini-4-argon` and
+  `gemini-4-carbon` take `low` / `medium` / `high`; `gemini-3.5-flash-lite` and `gemini-3.6-flash`
+  also take `minimal`. A generic effort maps 1:1 there, and `'none'` becomes `minimal` (Google: "Matches
+  the 'no thinking' setting for most queries", not a guarantee). Gemini 4 cannot turn thinking off,
+  so it is on `thinkingRequiredModelPrefixes`: `'none'` is sent as `low`, or refused naming that
+  lowest level under `onUnsupported: 'fail'`. An effort a model does not list is refused before the
+  wire. Every other Gemini model keeps the `thinkingBudget` wire exactly as before.
+- **`@google-gemini:pro` (the advanced tier, and the frontier cascade) is `gemini-4-argon`.** For
+  alias users this means levels instead of budgets, thinking always on, and a deprecated
+  `thinkingBudget` if one is sent explicitly (Google maps a lone budget to the nearest level with a
+  warning). Argon ignores `temperature` ("If provided, sampling parameters are ignored"); ai-assist
+  still sends a caller's value.
+- **Explicit Gemini blocks.** `{ provider: 'google', config: { thinkingLevel } }` is validated
+  (`AiAssist.geminiThinkingLevel`) and, on a model with a level declaration, must be one of its
+  levels; elsewhere it is sent verbatim. `thinkingLevel` and `thinkingBudget` in one block are
+  refused — Gemini 4 returns a 400 for the pair — and a later block's level replaces an earlier
+  budget (and vice versa), so the wire never carries both. The 2.5 line takes budgets only ("Gemini
+  2.5 series models don't support `thinkingLevel`"): an explicit level is refused there
+  (`geminiThinkingLevelRejectedModelPrefixes`, read through `AiAssist.rejectsGeminiThinkingLevel`).
+- **Level rules match longest prefix first.** `gemini-3.1-flash-lite-image` (levels `minimal` and
+  `high` only) has its own rule, longer than `gemini-3.1-flash-lite`'s, so it never inherits the
+  shorter rule's `low` / `medium`. A dated snapshot or `-preview` of a listed id takes that id's rule;
+  a new variant with a different level set needs its own longer rule.
+- **`gemini-4-argon`'s recorded output limit is 32,768**, the most a single non-streaming
+  `generateContent` request returns (its page's 65,536 is the streaming / default-synchronous figure,
+  and beyond that needs long decode, which ai-assist does not run).
+- **`gemini-3.8-flash` (`@google-gemini:flash`, the base tier) turns thinking off with budget 0.** A
+  live budget-0 request (2026-11-10) came back with no `thoughtsTokenCount` in `usageMetadata`, so
+  it is not listed, although Google's level table names no level below `low` for it: a generic
+  `'none'` sends `thinkingBudget: 0`, and `onUnsupported: 'fail'` has nothing to refuse. The list
+  is dash-bounded, so its entries deliberately match future variants of a listed id; with
+  `gemini-3.8-flash` off it, its variants (a `gemini-3.8-flash-lite`, a dated snapshot) are no
+  longer matched either. `gemini-3.5-flash` stays unlisted: it is not an alias target, and there is
+  no evidence it rejects or ignores budget 0. (`gemini-3.6-flash` is a level model, so `'none'` is
+  `minimal` there.)
+- A `temperature` aimed at a model in `samplingParamsRejectedModelPrefixes` is refused before the wire
+  on the completion, streaming and client-tool paths. On Anthropic (every Claude 5.x model,
+  `claude-mythos-preview`, `claude-opus-4-8`, `claude-opus-4-7`) only a non-default value is refused:
+  `samplingParamsAcceptedTemperature: 1` lets Anthropic's default through, with or without thinking,
+  as the provider does on the pinned API version. OpenAI (`gpt-6-astra`, `gpt-6.1-sol`) declares the
+  same `1`: both accepted `temperature: 1` live with thinking on (2026-11-10), so `1` is sent with or
+  without an effort and any other value is refused with the same message, with or without an effort
+  ("does not accept a non-default temperature (x): remove temperature, or send 1"; never "disable
+  thinking", which these models' rule does not depend on). The value is descriptor-wide; OpenAI's
+  list is exactly those two models. `AiAssist.rejectsSamplingParams` answers the
+  question for a concrete id.
+- **`samplingParamsRejectedWithThinkingModelPrefixes` restricts `temperature` only while the model
+  reasons.** A listed model reasons by default and, with thinking on, rejects every `temperature`
+  but `samplingParamsAcceptedTemperature`; with thinking off it takes any value. OpenAI lists
+  `gpt-6-luna` (`mini`, `nano`) alone, on live evidence (2026-11-11): `0.3` with effort `'none'` is
+  accepted, `0.3` beside effort `low` — or with no effort, since luna defaults to `medium` — is a
+  400 "Only the default (1) value is supported", and `1` beside effort `low` is accepted. So on all
+  three paths (completion, streaming, client-tool) luna sends `1` beside any effort, sends any value
+  with effort `'none'`, and refuses any other value before the wire with "does not accept a
+  non-default temperature (x) while reasoning: remove temperature, send 1, or set effort 'none'" —
+  including a call with no effort at all. Thinking counts as off when the request sends the
+  descriptor's wire format its off value: on the OpenAI format the effort the adapter sends
+  (`openAiEffort ?? xaiEffort`) is `'none'`; Anthropic and Gemini fields are not read there. A
+  verbatim `'other'` block that sets the wire's effort key (`reasoning_effort`, `reasoning`) is
+  merged last and decides — `{ reasoning_effort: 'none' }` counts as off, `{ reasoning_effort:
+  'low' }` as reasoning even beside a generic `'none'`. "set effort 'none'" is offered only where
+  `'none'` would turn thinking off (not on a thinking-required model, nor a Gemini level model). Luna is
+  deliberately **not** on `samplingParamsRejectedModelPrefixes`, which is effort-blind and would
+  refuse the documented `0.3` + `'none'`. `AiAssist.rejectsSamplingParamsWithThinking` answers the
+  question for a concrete id. `gpt-6-sol` (the older Sol, not `gpt-6.1-sol`; reachable by
+  `modelOverride` only) is on neither list — the evidence covers luna only — so beside any effort
+  other than `'none'` its `temperature`, `1` included, remains the thinking/temperature conflict,
+  refused before the wire on all three paths.
+- **`executeClientToolTurn` refuses a caller-built `'none'` effort on a model that cannot run with
+  thinking off.** A `resolvedThinking` skips the resolver that degrades or refuses `'none'`, so the
+  client-tool path applies the rule itself: on an OpenAI-format descriptor, `openAiEffort: 'none'`
+  (or `xaiEffort: 'none'`) aimed at a model on `thinkingRequiredModelPrefixes` (`gpt-6.1-sol`,
+  `gpt-6-astra`, `grok-4.7` / `-4.6` / `-4.5`) fails before the wire ("… cannot run with thinking off:
+  set openAiEffort to an effort other than 'none'"), as `anthropicThinkingDisabled` does on a
+  thinking-required Claude model. On a Gemini descriptor it refuses `geminiThinkingBudget: 0` on a
+  thinking-required model (Gemini 4, the Pro ids), a `geminiThinkingLevel` the model does not accept
+  (one its level rule does not list, or any level on the 2.5 line), and a level beside a budget — each
+  as a `Failure` before anything streams. Each refusal applies only on the wire that reads its field:
+  the Anthropic flag on an Anthropic-format descriptor, the effort on an OpenAI-format one, the Gemini
+  fields on a Gemini one.
+- **The Chat Completions output-token field is declared per provider.**
+  `IAiProviderDescriptor.chatOutputTokensField` (read through `usesMaxCompletionTokensField`) names
+  the field `maxTokens` is sent as on the OpenAI-format chat path: `max_completion_tokens` for OpenAI,
+  Groq and xAI Grok, whose API references mark `max_tokens` deprecated in its favor (Groq and xAI
+  switched from `max_tokens` here); `max_tokens`, the default, for Mistral, Ollama and `openai-compat`,
+  which document only that. xAI describes `max_completion_tokens` as bounding visible output only, not
+  reasoning tokens. The Responses path keeps `max_output_tokens`.
+
+Non-tier aliases, reachable through `modelOverride` only: `@openai:nano` → `gpt-6-luna` (the same
+model as `base`: OpenAI names it as the replacement for the deprecated `gpt-5.4-nano`, and GPT-6 has
+nothing smaller), `@anthropic:haiku` → `claude-haiku-5-5`, `@anthropic:fable` → `claude-fable-5-2`,
+`@google-gemini:flash-lite` → `gemini-3.5-flash-lite`. Groq and Mistral carry no aliases; their
+`defaultModel`s are `openai/gpt-oss-120b` and `{ base: 'mistral-large-4', embedding: 'mistral-embed' }`.
+
+### Maintenance loop — one map edit + a testbed run
+
+When a provider bumps a line (e.g. `gemini-3.8-flash` → `gemini-4-flash`) or re-slots a tier:
+
+1. **Edit one value.** For a line rotation, edit the map value in that descriptor's `aliases`
+   (`registry.ts`). For a tier re-slot (e.g. promoting a model to `advanced`), edit the one `defaultModel`
+   slot → alias mapping — no alias rename, so no ripple to `modelOverride` callers.
+2. **Run the per-provider testbed scenario** against the live API to confirm the new id answers.
+
+Zero consumer changes; consumers and `defaultModel` reference the stable alias / tier slot. The testbed
+scenario is the standing canary — it exercises each tier, pins the alias, and logs the resolved concrete
+id (`resolved @google-gemini:pro -> gemini-3.1-pro-preview`), so a green run proves each tier maps to a
+model that actually answers, and a frontier request logs the cascade target as live cascade proof.
+
+### What the alias layer does NOT cover
+
+It fixes **selection/default churn** only. Two axes remain manual on a provider line rotation (see
+`docs/TECH_DEBT.md`):
+
+1. **Capability-detection `idPattern` rules** (`registry.ts`) — classify the concrete ids a provider's
+   list endpoint returns; a new line needs a matching `idPattern` sibling or it is mis-classified.
+2. **The typed `*ModelNames` unions** (`GeminiThinkingModelNames`, etc.) used by the layered-options
+   `models?` filters — enumerate concrete ids for compile-time ergonomics and must track real ids.
+
+And the per-model capability declarations on each descriptor (`structuredOutput`, `imageGeneration`,
+`embedding`, `responsesOnlyModelPrefixes`, `adaptiveThinkingModelPrefixes`) must be re-checked against
+the new ids: a successor can change what a declared mechanism does. The 2026-09 rotation held
+`@anthropic:opus` at `claude-opus-5` for exactly this reason — `claude-opus-5-5` rejects the forced
+`tool_choice` that `anthropic-tool-forced` structured output is built on. The rotation shipped only
+once a non-forcing format (`anthropic-output-format`) was declared for it by a longer `modelPrefix`
+than the `''` catch-all. A catch-all is a claim about **every** future id. The 2026-11 rotation is the
+same lesson the other way round: `claude-sonnet-5-5` rejects forcing and needed its own entry, while
+`claude-haiku-5-5` accepts forcing and stays on the catch-all but needed an
+`adaptiveThinkingModelPrefixes` entry, because it rejects the budget thinking shape.
+
+### Gemini defaults (first migrated provider)
+
+`google-gemini`'s `defaultModel` references aliases that resolve to the Gemini 3.x line:
+
+| Alias | Resolves to | Role / tier slot |
+|---|---|---|
+| `@google-gemini:flash` | `gemini-3.8-flash` | `base` |
+| `@google-gemini:pro` | `gemini-3.1-pro-preview` | `advanced` (also the `frontier` cascade target) |
+| `@google-gemini:flash-image` | `gemini-nano-banana-2.1` | `image` |
+| `@google-gemini:embedding` | `gemini-embedding-001` | `embedding` |
+| `@google-gemini:flash-lite` | `gemini-3.5-flash-lite` | non-tier role (`modelOverride` only) |
+
+The per-role version split (flash at 3.8, flash-lite at 3.5, pro at 3.1, flash-image on the Nano Banana 2.1 line) follows Google's models page —
+consumers reference the role alias and never see these numbers. OpenAI and Anthropic have since adopted
+the scheme with the same tier vocabulary (see the cross-provider tier table above). Note the `pro` role
+serves both the `advanced` slot and (via the cascade) `frontier`, which is exactly why alias roles are
+model-line-semantic rather than tier-named — one role can back multiple slots without duplication.
+
+## Client-tool loops
+
+`executeClientToolTurn` is one provider round: it streams the model's turn, dispatches the client
+tools the model calls while you drain `events`, and resolves `nextTurn` with a **cumulative**
+continuation. `runClientToolLoop` drives those rounds for you:
+
+```typescript
+const result = await AiAssist.runClientToolLoop({
+  descriptor, apiKey, system, messages, clientTools, model,   // ride every round unchanged
+  maxRounds: 4,                                               // required
+  deadlineMs: 60_000,                                         // the whole loop
+  signal,                                                     // the caller's cancellation
+  observer: { event: (round, e) => render(round, e), round: (r) => trace(r) }
+});
+// result.value.state: 'completed' | 'round-limit' | 'aborted' | 'deadline'
+// result.value.rounds[i]: fullText, truncated, calls (each with durationMs), providerDurationMs, usage
+// result.value.continuationMessages: the latest cumulative tail, to resume after 'round-limit'
+// on failure, result.detail.rounds holds the rounds that completed
+```
+
+What it guarantees:
+
+- **The continuation is replaced, never appended** — each round sends exactly the tail the
+  previous one returned.
+- **Stops are outcomes.** The cap, an abort and the deadline succeed with every completed round; a
+  failed round fails the call with those rounds as detail, and is not retried.
+- **A stop releases the caller at once**, even when a tool ignores its signal. The round's signal
+  is aborted, its stream is no longer drained, and no further round starts. Side effects already
+  in flight may still land: a tool that was running keeps running unless it honours the signal.
+  The outcome's `orphanedRoundCalls` lists every call that round had handed off, each marked
+  `settled` when its result was seen; the host never receives any of them in a recorded round.
+  Resuming from `continuationMessages` after a stop may make the model request any of them again;
+  making that safe (idempotency) is the host's responsibility.
+- **No tool starts after an abort.** `executeClientToolTurn` checks its signal before the
+  `onBeforeToolExecute` gate and again before `execute`; a call it declines is reported as an
+  `isError` result saying the turn was aborted.
+- **Observer hooks are synchronous.** A hook that throws is logged at `warn` through `logger` and
+  does not change the outcome; a hook that aborts the caller's own signal is a caller-driven stop.
+
+Truncation is reported per round (`truncated`) and never acted on. Model resolution, the
+duplicate-name check and schema pre-flight are `executeClientToolTurn`'s, so they surface as a
+failure of round 1. The stop mechanics are `AsyncControl.raceStopConditions`, usable on their own
+for any `Result`-returning async work.
+
+## Structured output
+
+Every **non-streaming** completion request takes an optional `structuredOutput`, which asks
+the **provider** to constrain its output rather than only asking the model in the prompt. The
+streaming paths deliberately do not support it — see "Not in scope" below.
+
+```ts
+const schema = JsonSchema.object({ name: JsonSchema.string(), age: JsonSchema.integer() });
+
+const result = await callProviderCompletion({
+  descriptor, apiKey,
+  messages: [{ role: 'user', content: 'Describe the subject.' }],
+  structuredOutput: { mode: 'schema', schema }
+});
+
+result.onSuccess((r) => {
+  r.structuredOutput; // 'schema' | 'json-mode' | 'tool-forced' | 'none'
+  return schema.validate(JSON.parse(r.content));
+});
+```
+
+Two modes. `{ mode: 'schema', schema }` constrains generation to the schema;
+`{ mode: 'json-object' }` asks only for syntactically valid JSON of arbitrary shape.
+The weaker one is worth having on its own — the failure that motivated this surface
+(`Expected ',' or '}' after property value`, an unescaped quote closing a string
+early) is **syntactic**, so JSON mode removes it. Schema constraint is what
+additionally buys shape.
+
+**The schema is the same object you validate with**, so the wire schema and the
+check cannot drift. This is the cloud sibling of `@fgv/ts-extras-ollama`'s
+`chatStructured`.
+
+### The report is required, and that is the design
+
+`IAiCompletionResponse.structuredOutput` is **not optional**. Three questions hide
+inside *"did it honour my schema"*, and they have different owners:
+
+| question | answerable by |
+|---|---|
+| did we send a constraint? | this client, at request-build time |
+| which constraint did the provider apply? | this client, from the resolved model's capability |
+| does **this response** conform to my shape? | your converter, and nothing else |
+
+The library answers the first two and deliberately not the third — reporting
+conformance would mean re-validating against your own schema to re-derive an answer
+you already hold.
+
+It has to ride on the **response** rather than be a lookup you do yourself, because
+`resolveProviderModel` resolves aliases and tiers at *call* time and a `tier` request
+can cascade. The concrete model that will serve a request is not knowable to a caller
+up front, so requiring one to compute capability from its own side would be unsound.
+**You supply intent; the response reports outcome.**
+
+And it is required rather than optional because an optional field makes absence
+three-ways ambiguous — no capability / not requested / a build predating the feature
+— which is the exact thing the report exists to disambiguate. `'none'` already says
+*"no constraint sent"*, so always-present costs nothing.
+
+### Degradation is caller-chosen, lenient by default
+
+`onUnsupported` defaults to `'degrade'`. **That is only safe because the report is
+required** — degrade-and-tell-me is safe; degrade-silently is the failure this whole
+surface exists to remove. The two are one decision, not two independent ones.
+
+Pass `onUnsupported: 'fail'` when the output is persisted or put on a wire, where an
+unconstrained generation that happens to parse is worse than an error because it is
+wrong quietly. Leave it at `'degrade'` on paths *designed* to degrade — an extractor
+that may return nothing, a segmenter that floors to a mechanical chunker — where a
+hard failure would make this library less safe than the code it replaces.
+
+A **conflict** is not a degradation and does not obey `onUnsupported`. Three formats refuse
+structured output alongside server-side tools, for **three different reasons** — worth
+separating, because a reader who assumes one mechanism will reason wrongly about the others.
+`anthropic-tool-forced`'s mechanism *is* `tools` + `tool_choice`, so it is a wire-level clash.
+Gemini's `responseMimeType` / `responseSchema` live in `generationConfig`, nowhere near `tools`;
+the exclusion is one the API enforces. `anthropic-output-format` has neither problem — Anthropic
+documents JSON outputs combined with tools in one request — but it documents `output_config.format`
+as incompatible with **citations**, and web search (the one server tool this library sends to
+Anthropic) always returns citations. Every time, it fails rather than degrading.
+
+### Five wire formats, declared per model family
+
+`IAiProviderDescriptor.structuredOutput` is longest-prefix matched **after** alias
+resolution, exactly like `imageGeneration` and `embedding`.
+
+| format | where the constraint goes |
+|---|---|
+| `openai-json-schema` | `body.response_format` |
+| `openai-responses-format` | `body.text.format` |
+| `gemini-response-schema` | `generationConfig.responseMimeType` + `responseSchema` |
+| `anthropic-output-format` | `body.output_config.format` (merged beside any `output_config.effort`) |
+| `anthropic-tool-forced` | a forced synthetic tool + `tool_choice` |
+
+Gemini's schema is an OpenAPI-3.0 subset that **rejects** draft-07 keywords rather
+than ignoring them, so the schema goes through the same sanitizer the Gemini tool
+path uses.
+
+Anthropic has two mechanisms, split by model line. `claude-opus-5-5`, `claude-sonnet-5-5`,
+`claude-fable-5-1`, `claude-mythos-5-1`, `claude-fable-5-2` and `claude-mythos-5-2` return a 400 on a
+forced `tool_choice`, so they declare
+`anthropic-output-format`: Anthropic's JSON outputs, constrained decoding with the
+reply as text, reported as `'schema'`. (`tool_choice: auto` + a `strict` tool was the
+other documented option and was declined: `auto` lets the model answer in text
+instead, so a `T` would no longer be guaranteed to arrive.) Every other Claude line
+stays on forced tool use under the `''` catch-all —
+which is why `'tool-forced'` is a distinct enforcement value and not a spelling of
+`'schema'`: **the reply arrives in a `tool_use` block, not as text.** The library
+re-serializes that block's `input` into `content`, so `content` stays a JSON string
+on every provider and your converter is written once. A useful side effect: under
+this enforcement the string comes from `JSON.stringify`, not from the model, so it is
+syntactically valid by construction.
+
+`groq`, `ollama` and `openai-compat` declare **no** capability on purpose. Any model
+can sit behind a self-hosted endpoint, and a confidently wrong capability claim is
+worse than none — they report `'none'`, and the report is what makes that visible.
+
+### `generateJsonCompletion` adopts it for free
+
+`ISchemaValidator<T> extends Validator<T>`, so a caller could always pass
+`JsonSchema.object({...})` as `converter` — the library simply did not look. It does
+now: when the supplied validator is a schema, its `toJson()` goes on the wire.
+
+There is deliberately **no new parameter**, which would have reintroduced exactly the
+converter/schema drift `JsonSchema` exists to remove. A plain `Converter` carries no
+schema, so nothing is sent, the report reads `'none'`, and existing callers are
+byte-for-byte unchanged.
+
+### Not in scope
+
+`structuredOutput` is wired into `callProviderCompletion`, `callProxiedCompletion`
+and `generateJsonCompletion` only. **The streaming paths do not support it** —
+`callProviderCompletionStream`, the streaming adapters, and `executeClientToolTurn`
+ignore it, and `IAiStreamDone` carries no enforcement report.
+
+That is a decision, not an oversight, and worth stating because the neighbouring
+request surface (`tools`, `thinking`, `maxTokens`) *is* shared across both paths, so
+parity is the reasonable expectation. Streaming structured output is a different
+problem: the providers impose their own constraints on combining it with incremental
+delivery, and a per-chunk report has no obvious meaning. Also out: repair (the
+`jsonResponse` boundary stays — with `'json-mode'` or better the syntactic-repair
+question stops arising), injectable validation, and retry inside the client.
+
+## Prompt-cache token usage
+
+Every direct-provider completion — streaming and non-streaming alike, via
+`callProviderCompletion` / `callProviderCompletionStream` — can carry a normalized
+`usage?: IAiCompletionUsage` on `IAiCompletionResponse` / `IAiStreamDone`.
+
+`callProxiedCompletion` carries it too: the proxy relays an already-normalized
+`IAiCompletionUsage` (it ran `callProviderCompletion` itself), which is validated on
+arrival rather than cast — a proxy reporting nothing, or something missing the required
+`reports` level, yields `undefined` rather than a partially-trusted object. Unknown extra
+fields are tolerated, since the proxy may be running a newer build than the caller.
+
+`callProxiedCompletionStream` carries whatever the proxy puts on `done`, but on weaker
+terms: that adapter validates only the event-type discriminator and forwards the event
+as-is, so a `usage` block reaches the caller *typed* but not *checked*. That is the
+proxy-stream contract generally, not a `usage`-specific gap — the same blanket trust
+covers `fullText` and every other field on every forwarded event.
+
+In every case `usage` is optional, so a caller on an older build that predates the field
+sees an absent property, never a build error:
+
+```ts
+const result = await AiAssist.callProviderCompletion({ descriptor, apiKey, ...request });
+if (result.isSuccess() && result.value.usage) {
+  const { reports, cachedInputTokens, uncachedInputTokens, cacheWriteTokens } = result.value.usage;
+}
+```
+
+`reports: 'reads' | 'reads-and-writes'` is **required, not optional**, for the same
+reason `structuredOutput` is: an absent `cacheWriteTokens` is three-ways ambiguous (no
+write happened / this API cannot report writes / a build predating the field) unless
+something disambiguates it. Under `'reads-and-writes'` an absent `cacheWriteTokens`
+genuinely means zero were written this request; under `'reads'` it means the API cannot
+say, and the field is never present at all. There is no `'none'` member — "nothing was
+reported at all" is already `usage` itself being `undefined`, so check for that rather
+than for a `reports` value.
+
+Anthropic Messages always reports `'reads-and-writes'`; OpenAI/xAI Chat Completions and
+Gemini `generateContent` always report `'reads'` only — Chat Completions has no
+`cache_write_tokens` field on any provider reached through it, and Gemini's writes happen
+out-of-band via the explicit `cachedContents` resource (out of scope here). The OpenAI/xAI
+Responses route is one shared code path whose answer depends on which provider is on the
+other end: once a descriptor is confirmed to carry cache-relevant usage (see below),
+`reports` is derived from whether the wire response's `input_tokens_details.cache_write_tokens`
+is **present** (OpenAI always sends it, even as `0`, so that route is `'reads-and-writes'`;
+xAI never sends it, so that route is `'reads'`), not from provider identity.
+
+All four call sites above (Chat Completions and Responses, streaming and non-streaming)
+are shared by every `apiFormat: 'openai'` descriptor — Groq, Mistral, Ollama, and
+self-hosted `openai-compat`, not just OpenAI and xAI Grok. Only the latter two are
+confirmed to report cache-relevant `usage`; `AiAssist.supportsCacheUsageReporting(descriptor)`
+gates the four completion sites it governs on that before any normalization runs
+(see the two-gate note below — streaming Chat Completions is **not** one of them),
+so an unconfirmed
+`apiFormat: 'openai'` descriptor — including a future one — gets `usage: undefined`
+rather than a guess derived from whatever ordinary usage shape its wire happens to send.
+
+**Two separate gates, not one.** `supportsCacheUsageReporting` is the general
+"does this descriptor report cache-relevant usage at all" gate, checked on Responses
+(streaming and non-streaming) and Chat Completions non-streaming. Chat Completions
+*streaming* has its own narrower gate, `supportsStreamUsageOption` — `true` only for
+`'openai'` — because that path also decides whether to send the unconfirmed-tolerance-risk
+`stream_options: { include_usage: true }` request field (see below), not just whether to
+trust a response. Confirming a new provider's cache reporting means adding it to
+`supportsCacheUsageReporting`; that alone enables its non-streaming and Responses-streaming
+usage. Enabling its Chat-Completions-*streaming* usage additionally requires adding it to
+`supportsStreamUsageOption`, a separate, independent decision (a provider can be confirmed
+to report cache tokens correctly while its tolerance for an unrecognized request field is
+still unverified).
+
+Every derived field (`uncachedInputTokens`, `totalInputTokens`) stays `undefined` when an
+input it needs is itself unknown, rather than assuming the missing figure is zero — most
+notably on Gemini, where `cachedContentTokenCount` sits **inside** `promptTokenCount`
+(unlike OpenAI, where it sits in a sibling `…_details` object next to a separate total).
+`raw?: JsonObject` on `IAiCompletionUsage` carries the provider's own unnormalized usage
+block for anything this shape drops.
+
+This surface is read-only: it reports fields off responses already received and sends no
+new cache directive of its own — a caching *plan* (breakpoints, `prompt_cache_key`) is a
+separate, wire-changing surface.

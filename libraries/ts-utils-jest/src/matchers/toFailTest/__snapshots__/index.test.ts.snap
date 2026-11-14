@@ -1,4 +1,4 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
 
 exports[`.toFailTest logs details correctly for a failed .not result: toFailTestAndMatchSnapshot 1`] = `
 "expect(callback).not.toFailTest(expected)

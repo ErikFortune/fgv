@@ -21,6 +21,7 @@
  */
 
 export * from './common';
+export { allCompositeIdSplitModes, CompositeIdSplitMode } from './compositeId';
 export * from './traits';
 export * from './validator';
 

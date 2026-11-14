@@ -1,0 +1,944 @@
+# Coding Standards
+
+This document defines the coding standards for this repository. All AI assistants and human developers must follow these guidelines.
+
+## Table of Contents
+- [TypeScript Standards](#typescript-standards)
+- [Result Pattern](#result-pattern)
+- [Type-Safe Validation](#type-safe-validation)
+- [Error Handling](#error-handling)
+- [Extending Core Libraries Over Working Around Them](#extending-core-libraries-over-working-around-them)
+- [Code Style](#code-style)
+
+---
+
+## TypeScript Standards
+
+### Never Use `any` Type
+
+This rule is **absolute and non-negotiable**. The codebase has strict lint rules that will fail CI.
+
+```typescript
+// ❌ NEVER - Will fail CI/linting
+const data: any = something;
+function process(input: any): any { }
+const obj = value as any;
+
+// ✅ CORRECT alternatives
+const data: unknown = something;
+const data = something as unknown as SpecificType;
+function process(input: unknown): Result<Output> { }
+const obj: Record<string, unknown> = {};
+```
+
+### Type Assertions
+
+Use proper type assertion patterns:
+
+```typescript
+// ✅ For branded types
+const id = 'user-123' as unknown as UserId;
+
+// ✅ For test data with intentionally invalid types
+const corrupted = {
+  id: 'invalid' as unknown as ValidId,
+  type: 999 as unknown as TypeIndex
+};
+
+// ❌ NEVER double-cast through Record
+const bad = value as Record<string, unknown> as TargetType;
+```
+
+### Prefer Strict Types
+
+- Use `unknown` instead of `any` for truly unknown data
+- Use `Record<string, unknown>` for dynamic objects that need iteration
+- Define interfaces for structured data
+- Use branded types for domain identifiers
+
+---
+
+## Result Pattern
+
+All operations that can fail must return `Result<T>` objects from `@fgv/ts-utils`. This makes errors explicit and avoids exceptions.
+
+### Creating Results
+
+```typescript
+import { Result, succeed, fail, captureResult } from '@fgv/ts-utils';
+
+// Success case
+function divide(a: number, b: number): Result<number> {
+  if (b === 0) {
+    return fail('Division by zero');
+  }
+  return succeed(a / b);
+}
+
+// Wrap throwing code with captureResult
+function parseJson(text: string): Result<unknown> {
+  return captureResult(() => JSON.parse(text));
+}
+```
+
+### Extracting Values
+
+```typescript
+// ✅ Use orThrow() ONLY in setup/initialization
+const config = loadConfig().orThrow(); // OK in constructor/setup
+
+// ✅ Use orDefault() for safe fallbacks
+const port = getPort().orDefault(3000);
+const name = getName().orDefault(undefined);
+
+// ✅ Use orDefaultWith() for expensive defaults — the callback runs only on failure
+const data = loadData().orDefaultWith(() => computeExpensiveDefault());
+
+// ❌ AVOID - orDefault evaluates its argument before the call, so this pays the
+// cost on every success too. The two forms are one `() =>` apart and the defect
+// lives in the ARGUMENT, which is what makes it easy to miss in review.
+const bad = loadData().orDefault(computeExpensiveDefault());
+```
+
+### Result Chaining
+
+Prefer chaining over intermediate variables when it improves clarity:
+
+```typescript
+// ✅ GOOD - Chain operations
+function processData(input: string): Result<Output> {
+  return parseInput(input)
+    .onSuccess((parsed) => validate(parsed))
+    .onSuccess((valid) => transform(valid));
+}
+
+// ❌ AVOID - Unnecessary intermediate variables
+function processData(input: string): Result<Output> {
+  const parsed = parseInput(input);
+  if (parsed.isFailure()) return parsed;
+  const valid = validate(parsed.value);
+  if (valid.isFailure()) return valid;
+  return transform(valid.value);
+}
+```
+
+**Exception**: Complex conditional logic may be clearer with intermediate variables. Prioritize readability.
+
+### Async Result Chaining
+
+Use `thenOnSuccess()` and `thenOnFailure()` to chain async operations fluently. These bridge from `Result<T>` into `AsyncResult<T>`, which supports continued chaining of both sync and async steps and can be directly `await`ed.
+
+```typescript
+// ✅ GOOD - Fluent async chain
+async function processData(input: string): Promise<Result<SavedData>> {
+  return parseInput(input)
+    .onSuccess((parsed) => validate(parsed))
+    .thenOnSuccess(async (valid) => fetchRelatedData(valid.id))
+    .onSuccess((data) => transform(data))
+    .thenOnSuccess(async (transformed) => saveData(transformed))
+    .withErrorFormat((msg) => `pipeline failed: ${msg}`);
+}
+
+// ❌ AVOID - Breaking the chain for async calls
+async function processData(input: string): Promise<Result<SavedData>> {
+  const validated = parseInput(input).onSuccess((parsed) => validate(parsed));
+  if (validated.isFailure()) return validated;
+  const related = await fetchRelatedData(validated.value.id);
+  if (related.isFailure()) return related;
+  const transformed = transform(related.value);
+  if (transformed.isFailure()) return transformed;
+  return saveData(transformed.value);
+}
+```
+
+Use `captureAsyncResult()` to wrap async functions that might throw (analogous to `captureResult` for sync):
+
+```typescript
+const result = await captureAsyncResult(async () => {
+  const response = await fetch(url);
+  return response.json();
+});
+```
+
+Rejected promises in `thenOnSuccess`/`thenOnFailure` callbacks are automatically caught and converted to `Failure`.
+
+### Converting DetailedResult to Result
+
+When chaining from `MaterializedLibrary.get()` (which returns `DetailedResult`), use `.asResult` to convert:
+
+```typescript
+// ✅ CORRECT - Use .asResult to strip detail before chaining
+function resolveItem(id: ItemId): Result<ResolvedItem> {
+  return this._context.items.get(id)
+    .asResult
+    .withErrorFormat((msg) => `item ${id}: ${msg}`)
+    .onSuccess((item) => succeed({ id, item }));
+}
+
+// ❌ AVOID - Type errors when chaining DetailedResult
+function resolveItem(id: ItemId): Result<ResolvedItem> {
+  return this._context.items.get(id)
+    .withErrorFormat((msg) => `item ${id}: ${msg}`) // Type error!
+    .onSuccess((item) => succeed({ id, item }));
+}
+```
+
+### Array Processing with Per-Item Helpers
+
+When processing arrays, use `mapResults()` with dedicated per-item helper methods:
+
+```typescript
+// ✅ EXCELLENT - mapResults with per-item helper
+function getFillings(): Result<ReadonlyArray<IResolvedFillingSlot>> {
+  if (this._resolvedFillings === undefined) {
+    const slots = this._version.fillings ?? [];
+    return mapResults(slots.map((slot) => this._resolveFillingSlot(slot)))
+      .onSuccess((slots) => {
+        this._resolvedFillings = slots;
+        return succeed(slots);
+      });
+  }
+  return succeed(this._resolvedFillings);
+}
+
+private _resolveFillingSlot(slot: IFillingSlotEntity): Result<IResolvedFillingSlot> {
+  return this._resolveFillingOptions(slot.filling)
+    .withErrorFormat((msg) => `slot ${slot.name}: failed to resolve fillings: ${msg}`)
+    .onSuccess((filling) => succeed({
+      slotId: slot.slotId,
+      name: slot.name,
+      filling
+    }));
+}
+
+// ❌ AVOID - Imperative loop with manual error handling
+function getFillings(): Result<ReadonlyArray<IResolvedFillingSlot>> {
+  if (this._resolvedFillings === undefined) {
+    const slots = this._version.fillings ?? [];
+    const results: IResolvedFillingSlot[] = [];
+    for (const slot of slots) {
+      const fillingResult = this._resolveFillingOptions(slot.filling);
+      if (fillingResult.isFailure()) {
+        return fail(`Failed to resolve fillings for slot '${slot.name}': ${fillingResult.message}`);
+      }
+      results.push({
+        slotId: slot.slotId,
+        name: slot.name,
+        filling: fillingResult.value
+      });
+    }
+    this._resolvedFillings = results;
+  }
+  return succeed(this._resolvedFillings);
+}
+```
+
+**Benefits of per-item helpers:**
+- Isolates single-item resolution logic
+- Enables better error context with `.withErrorFormat()`
+- More testable (can unit test individual item resolution)
+- More readable (declarative vs imperative)
+
+### Chaining with Early Returns
+
+For optional fields, handle the undefined case early:
+
+```typescript
+// ✅ GOOD - Early return for undefined, then chain
+function getEnrobingChocolate(): Result<IResolvedChocolateSpec | undefined> {
+  if (this._resolvedEnrobingChocolate === undefined) {
+    const spec = this._version.enrobingChocolate;
+    if (!spec) {
+      this._resolvedEnrobingChocolate = null;
+      return succeed(undefined);
+    }
+
+    return this._context.ingredients.getWithAlternates(spec)
+      .withErrorFormat((msg) => `confection ${this._id}: failed to resolve enrobing chocolate: ${msg}`)
+      .onSuccess((resolved) => {
+        if (!resolved.primary.isChocolate()) {
+          return fail(`confection ${this._id}: primary ingredient is not a chocolate`);
+        }
+        this._resolvedEnrobingChocolate = {
+          chocolate: resolved.primary,
+          alternates: resolved.alternates.filter((i) => i.isChocolate()),
+          entity: spec
+        };
+        return succeed(this._resolvedEnrobingChocolate);
+      });
+  }
+  return succeed(this._resolvedEnrobingChocolate ?? undefined);
+}
+
+// ❌ AVOID - Nested conditionals with imperative checks
+function getEnrobingChocolate(): Result<IResolvedChocolateSpec | undefined> {
+  if (this._resolvedEnrobingChocolate === undefined) {
+    const spec = this._version.enrobingChocolate;
+    if (!spec) {
+      this._resolvedEnrobingChocolate = null;
+    } else {
+      const resolved = this._context.ingredients.getWithAlternates(spec);
+      if (resolved.isFailure()) {
+        return fail(`Failed to resolve: ${resolved.message}`);
+      }
+      if (!resolved.value.primary.isChocolate()) {
+        return fail('Not a chocolate');
+      }
+      this._resolvedEnrobingChocolate = { /* ... */ };
+    }
+  }
+  return succeed(this._resolvedEnrobingChocolate ?? undefined);
+}
+```
+
+### Avoid Result<void>
+
+**Never use `Result<void>`** - it's an anti-pattern. Operations should return meaningful values:
+
+```typescript
+// ❌ ANTI-PATTERN - Result<void>
+function updateUser(id: string, data: UserData): Result<void> {
+  // ...
+  return succeed(undefined);
+}
+
+// ✅ CORRECT - Return something meaningful
+function updateUser(id: string, data: UserData): Result<User> {
+  // ...
+  return succeed(updatedUser);
+}
+
+// ✅ CORRECT - Return computed/achieved value
+function scaleToTargetWeight(target: Measurement): Result<Measurement> {
+  // Scale ingredients...
+  const actualWeight = calculateActualWeight();
+  return succeed(actualWeight); // Actual achieved weight may differ from target
+}
+```
+
+### Error Context
+
+Add context as errors propagate:
+
+```typescript
+function loadUserProfile(userId: string): Result<UserProfile> {
+  return loadUser(userId)
+    .withErrorFormat((e) => `Failed to load user ${userId}: ${e}`)
+    .onSuccess((user) => loadProfile(user.profileId)
+      .withErrorFormat((e) => `Failed to load profile for user ${userId}: ${e}`)
+    );
+}
+```
+
+### Error Aggregation
+
+Use `MessageAggregator` for collecting multiple errors:
+
+```typescript
+import { MessageAggregator } from '@fgv/ts-utils';
+
+function validateAll(data: Data): Result<ValidatedData> {
+  const aggregator = new MessageAggregator();
+
+  validateField1(data.field1).aggregateError(aggregator);
+  validateField2(data.field2).aggregateError(aggregator);
+  validateField3(data.field3).aggregateError(aggregator);
+
+  if (aggregator.hasMessages) {
+    return fail(aggregator.toString('; '));
+  }
+  return succeed(createValidatedData(data));
+}
+```
+
+Use `mapResults()` for processing arrays:
+
+```typescript
+import { mapResults } from '@fgv/ts-utils';
+
+function processItems(items: Item[]): Result<ProcessedItem[]> {
+  const results = items.map(item => processItem(item));
+  return mapResults(results); // Returns all successes or aggregated errors
+}
+```
+
+### Factory Pattern
+
+Constructors that might throw should be private/protected with a static `create` method:
+
+```typescript
+class ResourceManager {
+  private constructor(private config: Config) {
+    if (!config.name) {
+      throw new Error('Config name is required');
+    }
+  }
+
+  public static create(params: Params): Result<ResourceManager> {
+    return validateParams(params)
+      .onSuccess(valid => loadConfig(valid))
+      .onSuccess(config => captureResult(() => new ResourceManager(config)));
+  }
+}
+
+// Usage
+const manager = ResourceManager.create(params).orThrow(); // In setup
+const result = ResourceManager.create(params); // In application code
+```
+
+---
+
+## Type-Safe Validation
+
+### Critical Anti-Patterns (MUST FIX)
+
+These patterns defeat TypeScript's type safety and must be replaced:
+
+```typescript
+// ❌ ANTI-PATTERN 1: Manual type checking in Converters.generic
+Converters.generic<unknown, MyType>((from: unknown) => {
+  if (typeof from !== 'object' || from === null) return fail('...');
+  const obj = from as Record<string, unknown>;
+  if (typeof obj.field !== 'string') return fail('...');
+  return succeed(obj as MyType); // UNSAFE CAST
+});
+
+// ❌ ANTI-PATTERN 2: Manual property checking with cast
+if ('id' in obj && 'name' in obj) {
+  return succeed(obj as IUser); // Properties could have wrong types!
+}
+
+// ❌ ANTI-PATTERN 3: Double casting
+const value = someValue as Record<string, unknown> as TargetType;
+```
+
+### Required Patterns
+
+Use Converters for data transformation:
+
+```typescript
+// ✅ CORRECT: Use Converters.object
+const converter = Converters.object<IConfig>({
+  name: Converters.string,
+  port: Converters.number,
+  options: Converters.optionalField(Converters.jsonObject)
+});
+return converter.convert(input);
+```
+
+Use Validators for complex objects with class instances:
+
+```typescript
+// ✅ CORRECT: Use Validators for objects with constructors
+const validator = Validators.object<IResource>({
+  id: Convert.resourceId,
+  type: Validators.isA((v): v is ResourceType => v instanceof ResourceType),
+  items: Validators.arrayOf(itemValidator)
+});
+return validator.validate(from);
+```
+
+### When to Use Each
+
+| Pattern | Use For |
+|---------|---------|
+| `Converters.object` | Plain data structures, JSON transformation |
+| `Validators.object` | Objects with class instances, complex validation |
+| `Converters.generic` | Custom conversion logic (but never with manual type checks!) |
+
+---
+
+## Error Handling
+
+### Prefer Results Over Exceptions
+
+```typescript
+// ❌ AVOID throwing in business logic
+function process(input: string): Output {
+  if (!valid) throw new Error('Invalid');
+  return output;
+}
+
+// ✅ CORRECT - Return Result
+function process(input: string): Result<Output> {
+  if (!valid) return fail('Invalid');
+  return succeed(output);
+}
+```
+
+### Error Messages
+
+Include context in error messages:
+
+```typescript
+// ✅ GOOD - Contextual error messages
+return fail(`Index ${index} out of bounds for array of length ${arr.length}`);
+return fail(`${resourceId}: Failed to load: ${underlyingError.message}`);
+
+// ❌ AVOID - Generic messages
+return fail('Invalid index');
+return fail('Load failed');
+```
+
+---
+
+## Extending Core Libraries Over Working Around Them
+
+**When in doubt, level up the core library instead of working around its limitations.**
+
+The repo ships a family of `@fgv/*` libraries that publish canonical primitives — `Result<T>`, `Converter`/`Validator`, `FileTree`, `MustacheTemplate`, `ICryptoProvider`, `Logger`, the collections in `ts-utils`, the resource machinery in `ts-res`, and so on. When you encounter a case where the existing primitive doesn't quite do what you need, there are two paths:
+
+1. **Work around the limitation** in your consumer code — reimplement a partial version, cast through `any`, monkey-patch a global, fork the behavior locally.
+2. **Extend the primitive** with an additive change — new option on a `create()` method, new mode flag, new sibling class, expanded interface.
+
+**Default to (2).** The repo expects this discipline of its external consumers (see `LIBRARY_CAPABILITIES.md` and the `/published-primitives-reflex` skill: "before writing utility-shaped code, check whether a primitive exists"). The same discipline applies internally — when one `@fgv/*` library hits a limitation in another `@fgv/*` library, the right move is to extend the lower library, not to layer a workaround on top.
+
+### Why this matters
+
+- **Workarounds compound.** A workaround in one consumer becomes a precedent. Future consumers copy the workaround instead of asking for the upstream extension. The primitive's surface stays artificially small; the ecosystem accumulates duplicate partial implementations.
+- **Consumers' trust depends on it.** External consumers won't trust our libraries if our own libraries don't trust each other. If `@fgv/ts-prompt-assist` hand-rolls Mustache escape logic because `@fgv/ts-extras/mustache` "didn't quite support it," that signals to external consumers that the canonical primitive isn't really canonical.
+- **Lockstep version policy makes additive extensions cheap.** Adding a new option to a `create()` method or a new sibling export ships in the same alpha as everything else. The cost of extending is small; the cost of accumulating workarounds across libraries grows over time.
+
+### What "extending" looks like (in priority order)
+
+1. **Additive option on an existing `create()` / factory method.** Default value preserves existing behavior. Example: `MustacheTemplate.create(template, { escapeStrategy?: 'html' | 'none' })` — existing callers unaffected; new callers opt into the new behavior.
+2. **Additive method on an existing class/interface.** Same compatibility property. Example: adding `sign()` / `verify()` to `ICryptoProvider` (this happened with the crypto-batch-2-misc stream).
+3. **New sibling primitive in the same packlet.** When the new behavior is structurally different enough that flagging it via an option would be misleading. Example: `PassthroughMustacheTemplate` as a sibling to `MustacheTemplate`.
+4. **New exported class/function.** When the concept is genuinely new.
+
+In all cases: the extension must preserve the existing surface (no removed/renamed/silently-changed exports unless the surface is on the "active development" list per `ACTIVE_DEVELOPMENT.md`).
+
+### When to ask first
+
+Extension scope expands a stream's PR footprint. Ask the orchestrator before extending if:
+
+- The extension would touch a library outside your stream's declared package surface (per the stream brief). Adding a packlet to scope warrants a brief amendment.
+- The extension would be **breaking** (removed/renamed exports) on a library whose surface is on the "established/stable" list per `ACTIVE_DEVELOPMENT.md`. Breaking changes on established surfaces require explicit signoff.
+- The extension is large enough that it deserves its own stream (e.g., adding a major new packlet, not just a new option on an existing class).
+
+For additive changes on the active-development surface, default to extending without asking — that's the whole point of the active surface designation.
+
+### What "working around" looks like (and why to avoid it)
+
+- Casting through `any` to bypass the type system. Almost always a sign that the primitive's type surface is missing something the consumer needs. The right move: extend the type surface, not bypass it.
+- Hand-rolled save/restore patterns for globals (`const originalX = globalThis.X; ...`) instead of using or extending a spy/mock primitive. Recently surfaced as a 23-instance contagion (see `TECH_DEBT.md`).
+- Reimplementing partial Mock shapes of canonical types (e.g., `{ isSuccess: () => true, value: x }` cast to `Result<T>`) instead of using `succeed()` / `fail()`. Recently surfaced as a 20-instance contagion in `ts-web-extras` tests.
+- Monkey-patching a primitive's behavior at runtime (mutating `Mustache.escape` globally, replacing global `fetch`, etc.) instead of using a per-instance / per-call API extension.
+- Duplicating a primitive's implementation in a consumer to add one missing feature. Almost always extending the primitive is cheaper, even after the orchestrator round-trip to expand scope.
+
+If you find yourself reaching for one of these, **stop**. Either the primitive needs extension, or you've misread what the primitive provides and there's already a way. Both outcomes are useful surfacing.
+
+---
+
+## We Build General Capabilities; a Driving Consumer Shapes Priorities, Not Designs
+
+Every `@fgv/*` library exists to be **useful to applications in general**. Most of them acquire a
+first or dominant consumer early, and that consumer is genuinely valuable: they exercise the surface,
+they report real bugs, and they produce measurements nobody else will. What they are **not** is the
+design authority.
+
+The failure mode is subtle because it looks like diligence. You have a design question, the consumer
+is right there and is clearly invested, so you ask them — and their answer arrives, and you build it.
+Nothing about that feels like a mistake. But you have just let one deployment's preference decide a
+published contract, and you have added a round trip to your own critical path to obtain an answer you
+already had.
+
+### The test, before any question goes to a consumer
+
+> **How will their answer change what we build?**
+
+If you cannot name a concrete fork — *"answer A gives us this signature, answer B gives us that
+one"* — **do not send it**. Decide it from the design, and tell them what you decided and why.
+
+There are exactly two legitimate reasons to ask:
+
+1. **We lack usage information a correct design depends on.** Not preferences — *facts about how the
+   thing is used* that we cannot observe from inside this repo. "How many kinds does a typical vault
+   carry?" is usage information. "Would you rather have counts or a list?" is a preference.
+2. **The proper solution is too large to implement in one go**, and their needs can sequence it. Note
+   what this does and does not license: it lets a consumer choose **which correct piece ships first**.
+   It never lets them choose a smaller design.
+
+### The tell that you got it wrong
+
+**You asked a question whose answer was derivable from a principle already written down in this
+repo.** When a consumer's reply arrives and your reaction is *"yes, that is what we would have said"*,
+that is not agreement — that is evidence the question should not have been sent.
+
+Worked example, 2026-08-15, the `agent-memory-index-coverage-accessor` exchange. Three questions went
+to the driving consumer, and all three failed the test:
+
+| question sent | already answerable from |
+|---|---|
+| Should the accessor persist across restarts? | our own index-conformance rule — a derived value that can disagree with its source is a second source of truth |
+| Counts, or an enumeration of stale records? | the same principle — a list the consumer holds is a second source of truth about *our* index |
+| Should the repair operation name its lane? | the record and fragment lanes are independently wirable, have incommensurable units, and are siblings-not-subtypes by explicit design |
+
+The consumer answered all three correctly, by the same reasoning we would have used. That cost a
+round trip and produced nothing. Meanwhile the three things of real value in the same exchange were
+all **volunteered**, not asked for: a bug report, a measurement (68 fragments and ~69 embedding
+round-trips for one 56 KB record), and a correction to a lazy premise we had stated.
+
+### What to send instead
+
+State the decision and its reasoning, and name the one thing their evidence could still change.
+A consumer who disagrees with a *stated* design will say so — and that disagreement is worth more
+than an answer to a question, because it comes with the reason attached.
+
+---
+
+## Code Style
+
+### Avoid Over-Engineering
+
+- Only make changes that are directly requested
+- Don't add features beyond what was asked
+- Don't refactor surrounding code during bug fixes
+- Three similar lines is better than a premature abstraction
+
+### Clean Up Unused Code
+
+- Delete unused code completely
+- Don't leave `// removed` comments
+- Don't rename unused variables to `_var`
+- Don't add backwards-compatibility shims
+
+### Null Coalescing
+
+```typescript
+// ✅ Use ?? for undefined/null checks
+const value = input ?? 'default';
+
+// ❌ Don't use || when ?? is appropriate
+const value = input || 'default'; // Wrong if 0 or '' are valid
+```
+
+### Prefer Existing Patterns
+
+- Look for similar code in the codebase and follow its patterns
+- Use existing helper functions rather than creating new ones
+- Check if a Converter, Validator, or type guard already exists
+
+---
+
+## Pre-PR Validation Checklist
+
+**Before opening any PR, run the full local validation suite** in every modified package:
+
+```bash
+rushx build    # compile + emit
+rushx lint     # ESLint
+rushx test     # Jest with coverage gates
+```
+
+All three must pass. CI catches what's left, but the local feedback loop is faster and catches issues before reviewers see them.
+
+### A local warning is a CI failure — `rushx build` exit 0 is not the gate
+
+CI runs `rush rebuild`, which exits **non-zero on "SUCCESS WITH WARNINGS"**. A per-project
+`rushx build` (Heft) exits **0** on the same warning and prints it as a passing build. So a warning
+you can see and shrug at locally is a red X on the PR.
+
+Observed on the PersonAIlity Stream A stack: `fileTreeMemoryStore.ts` crossed the 2000-line
+`max-lines` limit. Local `heft build` said `Finished` with `Encountered 1 warning`, exit 0; the same
+tree failed CI outright. The warning had been dispositioned as advisory tech debt on that basis — a
+disposition that was simply wrong about the facts.
+
+**Rule:** treat *every* warning in `rushx build` / `rushx lint` output as blocking. There is no
+advisory tier in this repo's CI. When you catch yourself writing "warning, not error, so no gate is
+red", verify it by running `rush rebuild` (or reading the PR's check) before believing it.
+
+### Every touched package needs a change file — CI's first gate, before any build
+
+CI's `build` job runs `rush change --verify --target-branch origin/release` **before it compiles
+anything**. Touch a file in a package and ship no `common/changes/@fgv/<pkg>/*.json` entry for it and
+the job fails in ~30 seconds, having built nothing. The failure names only the package, so it reads
+like an infrastructure problem rather than a missing artifact.
+
+Two things make this easy to miss. It is invisible to the whole local suite — `rushx build`, `rushx
+lint`, `rushx test` and even a full `rush rebuild` all pass, because none of them consults the change
+files. And **the gate keys off files touched, not surface changed**: a docstring correction, a
+move-only refactor, and a comment-only edit each need one, even when the change file's own `type` is
+`"none"` and the `.api.md` is byte-identical.
+
+Observed 2026-08-13, three PRs at once: #619 (an internal ai-assist refactor, `@fgv/ts-extras`) and
+#617 (a docstring correction, `@fgv/ts-web-extras`) both red on this and nothing else, and #620 was
+carrying the same latent defect behind a branch base that suppressed its checks.
+
+**Rule:** the last step before opening a PR is `git diff --name-only origin/release... | cut -d/ -f2`
+against the change files you are shipping — or just run `rush change --verify --target-branch
+origin/release` locally, which is the same check CI runs and takes about a second. A PR whose only
+red check is `rush change` has not been reviewed for anything yet; fix it before reading further.
+
+### A dependency bump can be green locally and rejected by CI, because `update` resolves and `install` verifies
+
+pnpm enforces a **minimum release age** (a supply-chain control: packages younger than ~24h are
+rejected). The asymmetry that matters is *which command enforces it*. `rush update` **resolves**
+and writes the lockfile, and will happily pin a package published an hour ago. CI runs `rush
+install`, which **verifies** the committed lockfile against the active policies and fails with
+*"The lockfile contains entries that the active policies reject."*
+
+So a dependency bump can pass `rush update`, `rush rebuild` and a repo-wide `rush test` locally —
+all exit 0, zero warnings — and still fail CI at its install step, **before any build or test
+runs**. Nothing local will tell you, for the same structural reason the change-file gate is
+invisible locally: the check lives in a command your local loop doesn't run the same way.
+
+Observed 2026-09-19 on the Jest 30 / Heft 1.3 upgrade: `jest@30.5.2` and its family had been
+published the previous afternoon. Every local gate was green; CI's `rush install` rejected 28
+packages and the job died in 49 seconds having compiled nothing.
+
+**Rule:** when a bump takes a package published within the last day or so, either wait for it to
+age out and re-run CI, or pin to the previous patch. Do **not** reach for
+`minimumReleaseAgeExclude` to force it through — the control is doing its job, and a four-hour
+wait is cheaper than an exemption that outlives its reason. The tell that you are in this case:
+CI fails at *install*, names a list of packages with publish timestamps, and your local run was
+clean.
+
+### Widening a shared interface needs a repo-wide build, not a per-package one
+
+**This is now an acceptance-criteria checkbox, because four consecutive streams proved advice was
+not enough.** `samples/testbed` broke on the `IVectorIndex` / `IFragmentVectorIndex` /
+`IMemoryIndex` family in four streams running — #614, `vector-rebuild-report-by-kind`,
+`agent-memory-index-partial-read`, and `derived-state-phase1` — each time caught only by the
+repo-wide build, after the per-package gates were green and the implementer reasonably believed they
+were done. The rule below was **written from that very file** after the first break and did not
+prevent the second, third or fourth.
+
+The instructive part is what the casualties were. Two were hand-rolled test doubles, which a shared
+exported double would have fixed. One was `scenarios/memoryToolsGate/index.ts` — **a source file**,
+which it would not. So the shared-double remedy covers half the observed cases and the checkbox
+covers all of them, which is why the checkbox is what got adopted.
+
+
+`rushx build` / `rushx test` in the packages you edited cannot see a consumer you did not edit. When a
+change makes an **interface member required** — or renames/removes one — every implementation in the
+monorepo has to be found, including test doubles in `samples/` and `tools/`.
+
+Observed on the PersonAIlity Stream A stack: promoting `size` and `rebuild` onto `IVectorIndex` was
+verified green in `ts-agent-memory` and `ts-agent-memory-sqlite-vec`, and failed CI on a fake index
+in `samples/testbed` that nothing in either package references.
+
+**Rule:** for any change that widens or narrows a shared contract, before pushing either
+(a) run `node common/scripts/install-run-rush.js rebuild` (optionally `--to <a downstream project>`),
+or (b) `grep -rl '<TheInterface>' --include=*.ts libraries/ tools/ samples/` and check every hit.
+Test doubles are the usual casualty: they implement the interface structurally and are invisible to
+the package's own suite.
+
+### `rush rebuild` covers a widened *type*. Only a repo-wide `rush test` covers a widened *behaviour*
+
+The rule above sends you to `rush rebuild`, and for the case it describes — a member becomes
+required, an export is renamed — that is exactly right: the casualty is a **compile** error, and a
+repo-wide compile finds every one of them.
+
+**A widened *accepted set* is invisible to it.** When a change makes a function *accept more* than
+it used to — a validator admitting a new shape, a parser admitting a new keyword, a guard returning
+`true` where it used to return `false` — no signature moves. Every consumer still compiles, because
+nothing about the types changed. What changed is which branch a consumer takes at runtime, and the
+only thing that can see that is **that consumer's tests**.
+
+Observed 2026-08-23 on `json-schema-nullable` (#655). Widening `JsonSchema.fromJson` to admit the
+`['string', 'null']` union made a tool schema that `@fgv/ts-extras-mcp` had always classified as
+**unadaptable** become adaptable. That package has a fixture pinning exactly that classification, and
+it went red. The repo-wide `rush rebuild` for this stream passed **exit 0 with zero warnings** — and
+could not have done otherwise, since it is a compiler and no type had moved. The break was found by
+CI running the suite.
+
+Note this is the *desirable* direction of the change — a tool the model previously could not be
+offered now can be. The defect was never the behaviour; it was shipping it while a downstream
+assertion still described the old world.
+
+**Rule:** if a change widens or narrows what a function *accepts, returns, or classifies* — as
+opposed to what it is *typed* as — `rush rebuild` is not the gate. Run `node
+common/scripts/install-run-rush.js test` (or at minimum `--to` each package that consumes the
+symbol). The tell that you are in this case: **your diff touched no signature, and you cannot name a
+line that would fail to compile.** That is precisely when the compiler has nothing to say and the
+suites do.
+
+The usual casualty is a test that pins the *old* boundary — a fixture list of "things we reject", a
+snapshot of a capability report, a count of skipped items. Those assertions are correct until the
+day the boundary moves, they live in a package you never opened, and they are invisible to every
+gate except running them.
+
+### `rushx lint` is a first-class gate
+
+`rushx build` does **not** transitively run lint in this monorepo's Heft config. Lint is a separate gate. PRs have repeatedly merged with passing build + tests but failing lint, blocking downstream cluster merges. Treat lint as mandatory, not optional.
+
+If `rushx lint` reports rule violations:
+- **Run `rushx fixlint` first.** It autofixes the mechanical class of errors (formatting, unused-import sort, missing semicolons, many style rules).
+- For violations the autofix can't resolve, fix manually — **do not disable rules to make lint pass**. If a rule genuinely shouldn't apply, surface as an open question to the orchestrator rather than adding an inline disable directive.
+
+### Acceptance criteria for any stream's exit
+
+Every stream's acceptance criteria list must include:
+
+- [ ] `rushx build` passes in every modified package
+- [ ] **`rushx lint` passes in every modified package** *(load-bearing — not transitively run by build)*
+- [ ] `rushx test` passes with 100% coverage in every modified package
+- [ ] **`rushx fixlint` was run before the final commit** *(catches the mechanical class)*
+- [ ] **Every package the branch touches has a change file** — verify with `rush change --verify --target-branch origin/release` *(CI's first gate, and invisible to the entire local build/test suite)*
+- [ ] **If the stream changes a shared contract (an interface others implement), `node common/scripts/install-run-rush.js rebuild` passes** *(not a remembered practice — a checked box; see below)*
+- [ ] **If the stream widens or narrows what a function accepts / returns / classifies — as opposed to how it is typed — `node common/scripts/install-run-rush.js test` passes** *(a rebuild is a compiler and cannot see this class; see below)*
+- [ ] No `any` types; all fallible operations return `Result<T>`
+- [ ] **`code-reviewer` agent run on the final diff; findings resolved or dispositioned** *(see "Review-loop discipline" below)*
+- [ ] **Copilot review loop driven by implementer; stopped on diminishing returns or 10-round cap** *(see "Review-loop discipline" below)*
+- [ ] **Every doc whose accuracy this stream changes is updated in the same PR** — design docs, READMEs, `LIBRARY_CAPABILITIES.md`, the streams ledger. Docs ship with the code that makes them true, never as a follow-up *(see "Docs ship with the code" below)*
+
+The bolded items above are the gap recently codified — multiple recent streams had lint failures escape into PR-open state, blocking cluster merges, and multi-round Copilot ping-pong on PRs that hadn't been internally reviewed first.
+
+### Docs ship with the code
+
+A stream that implements a design **updates that design's status in its own PR**. A stream that adds
+a public surface **adds its `LIBRARY_CAPABILITIES.md` entry in its own PR**. Never as a follow-up,
+never as a separate docs PR.
+
+**Why this is load-bearing.** The failure is not that the doc is briefly stale — it is that the
+correction becomes its own commit on `release`, and the repo accumulates doc-only commits that
+carry no code. Worse, the stale doc is *read as input by the next stream*: the safer-fetch threat
+model still opened with "design only — no implementation" while S1, S2a and S2b had shipped, and
+that same file was on the next stream's required-reading list. A fresh agent would have started
+from a document asserting that nothing had been built.
+
+The tell that this rule was skipped is a PR whose diff is only `.md` files correcting status lines.
+When you find yourself opening one, the question to ask is not "is this worth merging" but "which
+stream should have carried this, and is that stream still open?" If it is, fold it in and close the
+docs PR. Deferring is what created the cleanup in the first place.
+
+This applies to the streams ledger too: a stream that ships changes `docs/WORKSTREAMS.md`'s entry
+for itself. A ledger describing a shipped stream as "in flight — do not merge" is the same defect
+in a different file.
+
+**And a PR anticipates its own merge.** Write `status: shipped` / `prs: [<n>]` / `openPrs: []` and
+the `✅ (shipped <date> via #<n>)` ledger marker **in the PR itself** — not `in-flight` with a
+"flip on merge" comment. A PR cannot observe its own merge, so an author-time-accurate marker is
+*guaranteed* to be wrong on landing, and correcting it costs a commit; anticipating is wrong only
+in the rare case the PR never merges, which is visible and self-correcting. #657 existed solely to
+flip five such markers, three stale for over a month. Full reasoning, and the one genuinely
+provisional case, in `.ai/conventions/workflow/artifact-protocol.md` § *"A PR anticipates its own
+merge"*.
+
+### Why this gate is load-bearing
+
+Lint errors break CI. When a cluster integration branch tries to merge to `release`, a single per-stream lint failure blocks the whole cluster. The cost compounds: the cluster-close prep PR can't merge, the integration-to-release PR can't merge, and any downstream consumer waiting for the alpha gets delayed.
+
+The local cost of running lint is ~5-10 seconds per package. The downstream cost of skipping it is potentially hours of orchestrator + agent time unwinding a blocked merge.
+
+### For orchestrators
+
+When reviewing an implementing agent's PR before merge (or before bundling into a cluster-close prep), call `mcp__github__pull_request_read` with `method: get_check_runs` and refuse to advance the workflow if any check is `conclusion: failure`. Do this **before** opening downstream prep/promotion PRs — once a failed-CI commit is in the integration branch, unwinding is painful.
+
+---
+
+## Review-loop discipline
+
+PR review is a three-layer stack:
+
+1. **Internal pre-push pass** — implementing agent runs the `code-reviewer` agent on the final diff *before* the first push.
+2. **External post-push loop** — implementing agent drives Copilot's automated review on the open PR, capped and managed.
+3. **Orchestrator gating** — orchestrator confirms CI green + Copilot pass addressed before advancing the workflow.
+
+Each layer has a different purpose; skipping any one compounds cost into the next. Layer 2 in particular bloats into 5-6 ad-hoc rounds when layer 1 hasn't run, because the internal reviewer catches the repo-pattern class of finding that Copilot would otherwise surface piecemeal.
+
+### Layer 1 — `code-reviewer` agent on the final diff (pre-PR)
+
+**Before opening the PR**, run the `code-reviewer` agent on the final diff. Resolve or disposition every finding:
+
+- **P1** findings (CI-blocking — `any` types, Result-pattern violations, manual type checks with unsafe casts): must be fixed.
+- **P2** findings (should-fix — chaining over intermediate variables, missing error context, missed cascade): fix or explicitly disposition (e.g. "intentional; would need a separate refactor").
+- **P3** findings (advisory — style, naming consistency): apply or note.
+
+Summarize the run in the PR description: which findings were found at which priority, what was resolved, what was dispositioned with reasoning. This is part of the standard PR-description gate — not a freeform addendum.
+
+**Why this matters.** A `private-key-storage` style six-round Copilot loop (PR #427) is almost always evidence that layer 1 was skipped. The internal reviewer is built for repo-pattern + edge-case classes (browser-barrel `node:crypto` leaks, types/JS mismatches, JWK cast safety, IDB durability chains, doc-accuracy drift) — exactly what Copilot catches one-at-a-time over several rounds. A single internal pass up front converts multi-round external ping-pong into one round.
+
+**Run `code-reviewer` BEFORE chasing 100% measured coverage (load-bearing within layer 1).** The internal layer-1 sequence is: scenario-driven tests (positive, negative, edge cases) → `code-reviewer` pass → coverage-gap closure. The trigger for running `code-reviewer` is the moment you're about to run `rushx coverage` with the intent to identify and close gaps — coverage-chasing is the trigger, not the stream cadence (mid-stream or final-prep, same rule applies). Reversing the order produces imperative tests that should have been declarative, `c8 ignore` directives that should have been refactors, and branches that should not have existed. See `.ai/instructions/TESTING_GUIDELINES.md` § "Coverage Gap Resolution" for the full sequence and the concrete failure mode this prevents.
+
+### Layer 2 — Copilot review loop, agent-driven with cap
+
+After the first complete commit (gates green, layer-1 findings resolved), the implementing agent **drives** the Copilot loop:
+
+1. **Request Copilot review on the first complete commit** — when the PR is ready, the agent considers it ready, and layer 1 has been run.
+2. **Re-request Copilot review after each round** of resolved comments, for as long as the agent believes Copilot is adding **substantive value** (real findings, not nitpicks or repetition).
+3. **Cap at 10 rounds total.** Most PRs converge well before this; the cap is a safety net to prevent runaway loops.
+4. **Stop conditions: diminishing returns OR cap.** When either fires, the agent stops requesting reviews and surfaces the stop to the orchestrator (or to the user, if no orchestrator is in the loop) with a one-line note: "stopping the Copilot loop after N rounds because [diminishing returns / 10-round cap]; latest round's findings resolved or dispositioned."
+
+The "agent judges diminishing returns" step is load-bearing: agents have full diff + commit-history context and are well-positioned to call when each round is still surfacing substantive findings vs. surfacing ever-smaller issues. The cap exists as a safety net, not the expected stop point.
+
+Include in the PR description: `Copilot review loop driven by implementer; stopped at <N> rounds on [diminishing returns / cap]`.
+
+### Layer 3 — Orchestrator gating (already codified in `.claude/agents/orchestrator.md`)
+
+When reviewing an implementing agent's PR before merge or bundling, the orchestrator:
+
+1. Calls `mcp__github__pull_request_read` with `method: get_check_runs` and refuses to advance if any check is `conclusion: failure`.
+2. Waits for Copilot's automated review pass before merging — the unified-delta pass catches structural findings that per-PR reviews miss (half-cascades, runtime-soundness gaps, TSDoc/impl drift). Allocate ~1–2 rounds at this layer; yield curves down beyond that.
+3. Once CI is green and Copilot's pass is addressed, advances the workflow.
+
+This layer doesn't replace layers 1 and 2 — it audits that they ran and catches the unified-delta class of finding that only emerges when constituent PRs are bundled.
+
+### Why the cap matters
+
+A 10-round cap on layer 2 is the safety net against runaway loops on PRs where Copilot finds ever-smaller issues. The expected stop is the **diminishing-returns judgment**, which fires earlier — typically after 2–4 rounds on a well-prepared PR. If a PR is running into round 5+, that's a signal worth surfacing to the orchestrator: either layer 1 wasn't run thoroughly, or the change is genuinely large enough to warrant the rounds, or Copilot is in nitpick territory and the agent should call diminishing returns.
+
+### Round count is not the signal — substantive value per round is
+
+A common implementer mistake: stopping the Copilot loop at round 3 because "three rounds feels like enough" when round 3 surfaced a substantive structural finding. Round count is a safety net, not a stop criterion. The correct stop signal is **the finding profile of the most recent round** — was it substantive (real correctness or anti-pattern issues) or nitpicky (style, doc-drift, advisory observations)?
+
+Concrete patterns from observed loops:
+
+- **Round 3 surfaces a load-bearing structural bug** (e.g. a validator/convert symmetry hole invisible to top-level tests but real when nested) → don't stop; commission round 4 because the system clearly still has substance to surface. If round 4 then surfaces only doc-drift and judgment calls, *that* is the diminishing-returns signal.
+- **Round 2 surfaces only "missed an `ae-unresolved-link` warning" and "rename test file header"** → stop now; the loop is in nitpick territory regardless of round count.
+- **Round 5+ on a PR that has been mostly nitpicks since round 3** → stop and surface to the orchestrator with the diagnosis ("rounds 3–5 produced only doc and naming items; treating as diminishing returns at round N").
+
+The orchestrator handles edge cases: PRs that legitimately need 5+ rounds (large surface, novel patterns), PRs that should have stopped at 2 (one substantive round + one cleanup), PRs that hit the 10-round cap (those almost always indicate layer 1 was skipped or the PR is too large for the loop and should be decomposed). Implementing agents should call the stop and surface the reasoning; the orchestrator decides whether to push back or accept.
+
+### Native-boundary packages are a known layer-1 blind spot — expect a substantive layer-2 loop
+
+For **Result-integration-boundary packages wrapping a native library with subtle runtime modes** (safe-integer mode, typed/auxiliary columns, driver-specific coercions, WASM/native shape quirks — e.g. `better-sqlite3`, `sqlite-vec`), layer 1 systematically under-covers the runtime-edge class of finding. The internal reviewer reads against intent and repo patterns; it does not know that an integer column returns `bigint` under `defaultSafeIntegers`, or that a driver coerces a non-integer write into a value the read path later rejects.
+
+Observed on #562 (`SqliteVecFragmentIndex`): layer 1 approved clean with no P1/P2 and independently re-derived the correctness-critical logic, yet Copilot then surfaced three real persisted-data robustness gaps across two rounds (a `bigint` leak into a `number`-typed public field; a corrupt-key parse that silently fabricated a wrong result instead of failing loudly; an unvalidated write-side offset that either threw or persisted an unreadable value). All three were runtime-mode specifics, invisible to a reads-against-intent pass.
+
+**Rule:** on a native-boundary package, do **not** treat a clean layer-1 pass as license to expect a nitpick-only Copilot loop. Budget for layer 2 to be *substantive* on rounds 1–2, and don't call diminishing returns until the finding profile actually goes nitpicky. This is the inverse of the well-prepared pure-TS PR where layer 1 catches everything and Copilot only polishes — and a substantive Copilot round here is not evidence that layer 1 was skipped.
+
+### Authorization boundaries are the same blind spot, and the loop runs longer
+
+The section above generalizes. **Any surface whose correctness is a property of *ordering* rather
+than of values under-covers at layer 1**, for the same structural reason: the internal reviewer
+reads against intent and repo patterns, and an authorization defect is usually not visible in the
+intent. Every check is present; one of them runs at the wrong moment.
+
+Observed on #691 (`ts-agent-tasks` T5, the broker's bound-authority slice). Layer 1 returned **no
+P1s and one code P2** (a second P2 concerned the exit artifact), and the implementation already had authorization on every entry point. The
+Copilot loop then ran **seven rounds**, of which the first six each found a real disclosure or
+liveness defect:
+
+| round | what was actually wrong |
+|---|---|
+| 1 | the policy epoch was captured *after* a question it needed to cover |
+| 2 | a replayed receipt was not re-authorized the way the original operation was |
+| 3 | a caller-chosen operation id could claim the pump's key; host code was handed resident state rather than copies |
+| 4 | the in-writer epoch recheck sat before the section's last `await` instead of immediately before the write |
+| 5 | a query was not fenced by the index generation it had authorized |
+| 6 | an inspection answered from a record it had not re-read |
+
+None of those is a missing check. Every one is a check in the wrong place relative to an `await`, a
+replay, or a read. That is precisely the class a reads-against-intent pass cannot see, because the
+intent — "authorize, then act" — is satisfied by the broken version too.
+
+**Rule:** treat a surface as an authorization boundary when a wrong answer *discloses* something or
+*acts on stale permission* — brokers, projections, policy epochs, replay and idempotency paths,
+anything with a check-then-commit window. On such a surface, a clean layer-1 pass carries even less
+information than it does on a native boundary, and the expected layer-2 loop is **longer than two
+rounds**. Do not call diminishing returns while rounds are still finding real ordering defects; #691
+correctly ran to seven and stopped when round 7 produced a lone surface-hygiene item.
+
+**The corollary matters as much:** a long Copilot loop on this kind of surface is *not* evidence
+that layer 1 was skipped or that the implementer was careless. Elsewhere in this document a round-5+
+loop is flagged as a signal worth surfacing; here it is the expected shape, and the thing worth
+surfacing would be a *short* one.
+
+**What to ask for at layer 1 instead**, since "run code-reviewer" under-delivers here: have the
+implementer enumerate, in `result.md`, every check-then-act window in the diff — each `await`
+between an authorization and its write, each replay path, each cached read — and say what re-checks
+after it. #691 did this and it is why its threat-model section reads as a list of ordering
+guarantees rather than a list of checks. A protection that cannot be named this way is one nobody
+has located precisely enough to test.

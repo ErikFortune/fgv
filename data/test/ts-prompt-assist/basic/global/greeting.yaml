@@ -1,0 +1,12 @@
+id: greeting
+title: Greeting
+schemaVersion: '1'
+surface: chat
+slots:
+  - name: audience
+    description: the person being greeted
+output:
+  kind: free-text
+candidates:
+  - conditions: {}
+    body: 'Hello, {{{audience}}}!'

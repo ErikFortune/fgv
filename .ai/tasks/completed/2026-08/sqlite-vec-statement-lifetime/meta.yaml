@@ -1,0 +1,72 @@
+id: sqlite-vec-statement-lifetime
+status: shipped
+packages:
+  - '@fgv/ts-agent-memory-sqlite-vec'
+prs: [651]
+openPrs: []
+opened: 2026-08-21
+summary:
+  intended: >
+    Fix a latent defect a PersonAIlity report identified by reading source:
+    close() closes the connection and leaves the index's prepared statements
+    alive, so live Statement objects reference a closed Database and their
+    native destructors run whenever GC reaches them — potentially after the
+    environment has torn down, which is the frame their reported abort fires
+    in. Verified before filing, and found to be one class wider than reported:
+    SqliteVecFragmentIndex has the identical wiring, so a shared-connection
+    deployment carries two instances of the shape rather than one.
+  shipped: >
+    release() on both index classes. It drops the prepared statements and marks
+    the index unusable, and never touches the connection — which is what makes
+    it safe to expose on a create()-made index that owns none, without
+    disturbing the property that such an index is structurally incapable of
+    closing a consumer's connection. open()'s handle calls it before closing.
+    Nine tests, at 100% coverage, plus perf/statementTeardown.js.
+  diverged: >
+    Nothing diverged from the brief; two things it predicted were confirmed by
+    doing them. The naive fix (this._stmts = undefined) is wrong because that
+    is already the "no dimension established" sentinel — a released index would
+    answer size === 0, a confident lie — and the tests were watched failing
+    against exactly that shape first: 5 of 6 red on the record index, 4 of 5 on
+    the fragment index, the survivor being the one test that does not depend on
+    the flag. And size throws rather than failing because IVectorIndex declares
+    it a synchronous number; a probe confirmed a count statement against a
+    closed better-sqlite3 connection already threw TypeError, so the explicit
+    released state preserves that behaviour rather than introducing it.
+    The platform question is NOT closed and the release note says so.
+    perf/statementTeardown.js drives the real adapter through three passes,
+    holding every index to process exit so destructors run during teardown:
+    exit 0 on linux-x64 under Node 22.22.2 and Node 24.19.0 (better-sqlite3
+    rebuilt from source against Node 24 headers). With the maintainer's green
+    darwin-arm64 / Node 24.18.0 suite, that clears Node 24, arm64, and both
+    together; the suspect is linux/arm64 specifically. The deciding measurement
+    — pass 1 aborting where pass 2 survives — can only be made there.
+  sourceLine: >
+    **Shipped:** `release()` on both index classes — it drops the index's
+    prepared statements and marks it unusable, and **never touches the
+    connection**. A released index fails, or for the synchronous counts throws,
+    rather than answering as an empty one.
+keywords:
+  - prepared statement lifetime
+  - native destructor at teardown
+  - explicit closed state vs dimensionless sentinel
+  - a sentinel with two meanings
+  - watched-it-fail gate
+  - coverage cannot see a native destructor
+  - measurement harness under perf/
+  - linux/arm64 suspect
+  - better-sqlite3 has no public finalize
+relatedStreams:
+  - id: sqlite-vec-path-open
+    relationship: >
+      predecessor; introduced open() and the handle-carried disposer this
+      stream extends, and established the ownership asymmetry (a create()-made
+      index must stay incapable of closing a connection it does not own) that
+      constrained release()'s design to touching statements only
+  - id: fragment-query-scoping
+    relationship: >
+      predecessor on the same package; its SqliteVecFragmentIndex work is where
+      the second instance of this defect was introduced, unnoticed
+  - id: personaility-asks-2026-08
+    relationship: >
+      origin; same consumer channel

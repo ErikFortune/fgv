@@ -1,0 +1,1914 @@
+// Copyright (c) 2026 Erik Fortune
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
+/**
+ * Core types for AI assist: prompt class, provider descriptors, settings, and chat messages.
+ * @packageDocumentation
+ */
+
+import { fail, type Result, succeed } from '@fgv/ts-utils';
+import { type JsonObject } from '@fgv/ts-json-base';
+import type { IAiStructuredOutputCapability, StructuredOutputEnforcement } from './structuredOutputTypes';
+import type { IAiCompletionUsage } from './usageTypes';
+import type { IAnthropicThinkingOffRule } from './anthropicThinkingOff';
+import type { IGeminiThinkingConfig, IGeminiThinkingLevelRule } from './geminiThinking';
+import { walkModelSpec } from './modelSpecResolver';
+import type {
+  AiServerToolType,
+  IAiStreamToolUseComplete,
+  IAiStreamToolUseDelta,
+  IAiStreamToolUseStart,
+  IAiToolEnablement
+} from './toolTypes';
+
+// ============================================================================
+// Image Data
+// ============================================================================
+
+/**
+ * Universal image representation used for both image input (vision prompts)
+ * and image output (generation responses).
+ *
+ * @remarks
+ * The base64 string is raw — no `data:` URL prefix. Use {@link AiAssist.toDataUrl} to
+ * format it for browser-display contexts.
+ *
+ * @public
+ */
+export interface IAiImageData {
+  /** MIME type, e.g. `'image/png'`, `'image/jpeg'`, `'image/webp'`. */
+  readonly mimeType: string;
+  /** Base64-encoded image bytes (no `data:` prefix). */
+  readonly base64: string;
+}
+
+/**
+ * Formats an {@link IAiImageData} as a `data:` URL suitable for browser display.
+ * @param image - The image to format
+ * @returns A `data:<mime>;base64,<data>` URL string
+ * @public
+ */
+export function toDataUrl(image: IAiImageData): string {
+  return `data:${image.mimeType};base64,${image.base64}`;
+}
+
+/**
+ * Image attachment for a vision (image-input) prompt.
+ *
+ * @remarks
+ * Extends {@link IAiImageData} with an OpenAI-specific `detail` hint that is
+ * silently ignored by Anthropic, Gemini, and other providers.
+ *
+ * @public
+ */
+export interface IAiImageAttachment extends IAiImageData {
+  /**
+   * OpenAI vision detail hint:
+   * - `'low'`: faster, cheaper, lower fidelity
+   * - `'high'`: slower, more expensive, higher fidelity
+   * - `'auto'` (default): provider chooses
+   *
+   * Ignored by providers other than OpenAI.
+   */
+  readonly detail?: 'low' | 'high' | 'auto';
+}
+
+// ============================================================================
+// AiPrompt
+// ============================================================================
+
+/**
+ * A structured AI prompt with system/user split for direct API calls,
+ * and a lazily-constructed combined version for copy/paste workflows.
+ * @public
+ */
+export class AiPrompt {
+  /** System instructions: schema documentation, format rules, general guidance. */
+  public readonly system: string;
+  /** User request: the specific entity generation request. */
+  public readonly user: string;
+  /**
+   * Optional image attachments. When present, vision-capable providers will
+   * include them in the user message; non-vision providers will reject the
+   * call up front (see {@link AiAssist.IAiProviderDescriptor.acceptsImageInput}).
+   */
+  public readonly attachments: ReadonlyArray<IAiImageAttachment>;
+
+  public constructor(user: string, system: string, attachments?: ReadonlyArray<IAiImageAttachment>) {
+    this.system = system;
+    this.user = user;
+    this.attachments = attachments ?? [];
+  }
+
+  /**
+   * Combined single-string version (user + system joined) for copy/paste.
+   * When attachments are present, includes a sentinel noting they aren't
+   * part of the copied text.
+   */
+  public get combined(): string {
+    const sentinel =
+      this.attachments.length > 0
+        ? `\n\n[${this.attachments.length} image attachment(s) — not included in copied text]`
+        : '';
+    return `${this.user}${sentinel}\n\n${this.system}`;
+  }
+
+  /**
+   * Lowers this prompt to the unified {@link AiAssist.IChatRequest} shape consumed
+   * by the turn entry points (`callProviderCompletion`,
+   * `callProviderCompletionStream`, `generateJsonCompletion`,
+   * `executeClientToolTurn`). The prompt becomes a single current `user` turn
+   * (carrying any attachments) with the system instructions in the distinct
+   * `system` field.
+   */
+  public toRequest(): IChatRequest {
+    return {
+      system: this.system,
+      messages: [
+        {
+          role: 'user',
+          content: this.user,
+          ...(this.attachments.length > 0 ? { attachments: this.attachments } : {})
+        }
+      ]
+    };
+  }
+}
+
+// ============================================================================
+// Chat Message
+// ============================================================================
+
+/**
+ * A single chat message in OpenAI format.
+ * @public
+ */
+export interface IChatMessage {
+  /** Message role */
+  readonly role: 'system' | 'user' | 'assistant';
+  /** Message content */
+  readonly content: string;
+  /**
+   * Optional image attachments. Only honoured on the **current turn** (the last
+   * message of an {@link AiAssist.IChatRequest}); vision-capable providers include
+   * them in that user message, non-vision providers reject the call up front (see
+   * {@link AiAssist.IAiProviderDescriptor.acceptsImageInput}). Attachments on
+   * history (non-final) messages are ignored.
+   */
+  readonly attachments?: ReadonlyArray<IAiImageAttachment>;
+}
+
+// ============================================================================
+// Chat Request
+// ============================================================================
+
+/**
+ * An ordered chat request: optional system instructions plus the conversation
+ * turns. The **last** entry in `messages` is the current turn (always a `user`
+ * turn); everything before it is prior conversation history.
+ *
+ * @remarks
+ * This is the unified shape accepted by every turn entry point. Both the
+ * completion path and the client-tool turn path linearize it identically:
+ * `[system, ...history, current user turn, ...continuation]`. Keeping `system`
+ * as a distinct field (rather than a `system`-role message) matches how the
+ * per-provider request builders already separate system from the turn list
+ * (Anthropic top-level `system`, Gemini `systemInstruction`, OpenAI a leading
+ * `system`-role message). `messages` should therefore carry only `user` /
+ * `assistant` turns.
+ *
+ * @public
+ */
+export interface IChatRequest {
+  /** System instructions (schema docs, format rules, general guidance). */
+  readonly system?: string;
+  /**
+   * The ordered conversation turns. Must be non-empty; the last entry is the
+   * current `user` turn and the preceding entries are history.
+   */
+  readonly messages: ReadonlyArray<IChatMessage>;
+}
+
+// ============================================================================
+// Tool Types (re-exported)
+// ============================================================================
+
+// Server-side tools, client-defined tools, their streaming events, the
+// provider-exclusion vocabulary and the client-tool round-trip results all live
+// in `toolTypes.ts`. They are re-exported here so `model` remains the single
+// import site every consumer already uses; the split exists only to keep this
+// file under its line ceiling.
+export type {
+  AiServerToolType,
+  IAiWebSearchToolConfig,
+  AiServerToolConfig,
+  IAiToolEnablement,
+  IAiToolAnnotations,
+  IAiClientToolConfig,
+  AiToolConfig,
+  IAiClientTool,
+  IAiClientToolExecuteContext,
+  IAiStreamToolUseStart,
+  IAiStreamToolUseDelta,
+  IAiStreamToolUseComplete,
+  AiToolConflictPolicy,
+  IAiToolConflictReport,
+  IAiClientToolCallSummary,
+  IAiClientToolContinuation,
+  IAiClientToolTurnResult,
+  McpTaskSupport
+} from './toolTypes';
+export { MCP_TASK_SUPPORT_VALUES } from './toolTypes';
+
+// ============================================================================
+// Model Specification
+// ============================================================================
+
+/**
+ * Known context keys for model specification maps.
+ *
+ * @remarks
+ * Two axes live here and nothing else: the **quality tier** (`base` / `advanced`
+ * / `frontier`) selects the *completion* model, and `image` / `embedding` select
+ * the non-completion modalities.
+ *
+ * There is deliberately **no `tools` or `thinking` key**. Both existed before the
+ * quality-tier axis landed and were removed with it: server-side tools and
+ * reasoning effort are orthogonal *request* params that ride on top of whatever
+ * model the tier already selected — they never select a model. A tool-using or
+ * thinking-enabled call passes a tier like any other call (omit → `base`, or
+ * `'advanced'` / `'frontier'`) and sets the tools / thinking request params
+ * independently. Thinking composes with any tier without a tier-level capability
+ * check — but that is a statement about the tier axis, not a claim that every
+ * provider supports thinking, or that every model of a thinking-capable provider
+ * does: the descriptor itself declares no thinking-availability field at all.
+ * `AiModelCapability`'s `'thinking'` entry (per-model, RegExp-matched on model id
+ * in `DEFAULT_MODEL_CAPABILITY_CONFIG`) is a listing/filtering signal only — the
+ * call path does not gate a thinking request on it, so an unlisted model is not
+ * rejected, merely absent from a capability-filtered menu. (`adaptiveThinkingModelPrefixes`
+ * is per-model but selects a wire *shape*, not availability.) What the tier axis
+ * guarantees is therefore narrow and exact: a tier selects a model within one
+ * provider and never changes the provider.
+ *
+ * Do not add a `'tools'` or `'thinking'` key here, and do not hand-roll a
+ * `resolveModel` + `resolveModelAlias` walk to emulate one — call
+ * `resolveProviderModel` with the tier you want.
+ * @public
+ */
+export type ModelSpecKey = 'base' | 'advanced' | 'frontier' | 'image' | 'embedding';
+
+/**
+ * All valid {@link ModelSpecKey} values.
+ * @public
+ */
+export const allModelSpecKeys: ReadonlyArray<ModelSpecKey> = [
+  'base',
+  'advanced',
+  'frontier',
+  'image',
+  'embedding'
+];
+
+/**
+ * A model specification: either a simple model string or a record mapping
+ * context keys to nested model specs.
+ *
+ * @remarks
+ * A bare string is equivalent to `{ base: string }`. This keeps the simple
+ * case simple while allowing context-aware model selection (e.g. different
+ * models for different quality tiers).
+ *
+ * @example
+ * ```typescript
+ * // Simple — same model for all contexts:
+ * const simple: ModelSpec = 'grok-4.3';
+ *
+ * // Context-aware — different model per quality tier:
+ * const split: ModelSpec = { base: 'gpt-5.6-luna', advanced: 'gpt-5.6-terra', frontier: 'gpt-5.6-sol' };
+ *
+ * // Nested — a tier branch is itself a spec:
+ * const nested: ModelSpec = { base: 'grok-fast', advanced: { base: 'grok-r', image: 'grok-v' } };
+ * ```
+ * @public
+ */
+export interface IModelSpecMap {
+  readonly [key: string]: ModelSpec;
+}
+
+/**
+ * @public
+ */
+export type ModelSpec = string | IModelSpecMap;
+
+// ============================================================================
+// Model Alias Layer
+// ============================================================================
+
+/**
+ * Canonical fgv alias → concrete provider model map.
+ *
+ * @remarks
+ * Keys are full fgv aliases (`@<providerId>:<role>`, e.g. `@google-gemini:flash`);
+ * values are the current concrete provider model id (or a provider-native alias,
+ * which is resolved with one further indirection hop). Additive; absence of an
+ * `aliases` field on a descriptor means "this provider defines no aliases" and
+ * every model string passes through verbatim.
+ * @public
+ */
+export interface IModelAliasMap {
+  readonly [alias: string]: string;
+}
+
+/**
+ * Marker prefix for an fgv model alias.
+ *
+ * @remarks
+ * A model string is an fgv alias **iff** it begins with this sigil. Everything
+ * else is a raw provider model id and passes through {@link resolveModelAlias}
+ * untouched — this is what keeps the alias layer back-compatible (no current
+ * `defaultModel`, `modelOverride`, or self-hosted `model:tag` id starts with `@`).
+ * @public
+ */
+export const MODEL_ALIAS_SIGIL: '@' = '@';
+
+function resolveModelAliasInner(
+  descriptor: IAiProviderDescriptor,
+  model: string,
+  visited: Set<string>
+): Result<string> {
+  // No sigil → raw provider id; return verbatim (back-compat passthrough).
+  if (!model.startsWith(MODEL_ALIAS_SIGIL)) {
+    return succeed(model);
+  }
+  // Cycle guard: an `@`→`@` loop would otherwise recurse forever.
+  if (visited.has(model)) {
+    return fail(`provider "${descriptor.id}": cyclic model alias "${model}"`);
+  }
+  visited.add(model);
+  const target = descriptor.aliases?.[model];
+  if (target === undefined) {
+    return fail(`provider "${descriptor.id}": unknown model alias "${model}"`);
+  }
+  // Follow the target. A concrete (non-sigil) target terminates the recursion on
+  // the next call; an aliased target (the canonical case: fgv alias → provider-
+  // native alias) is followed in turn, with the visited-set guarding against an
+  // `@`→`@` cycle.
+  return resolveModelAliasInner(descriptor, target, visited);
+}
+
+/**
+ * Resolves a single (possibly-aliased) model string against a provider descriptor.
+ *
+ * @remarks
+ * Resolution rules:
+ * 1. No leading {@link MODEL_ALIAS_SIGIL} → raw provider id, returned verbatim.
+ * 2. Leading sigil + registered in `descriptor.aliases` → the registered target,
+ *    which is itself resolved — so a chain of `@` aliases is followed until a
+ *    non-`@` (concrete provider) id is reached. The canonical case is a single
+ *    hop (an fgv alias targeting a provider-native alias), but longer chains
+ *    resolve too.
+ * 3. Leading sigil + unregistered → fails loudly, naming the provider and alias.
+ *
+ * An `@`→`@` cycle is guarded by a visited-set and fails rather than exhausting
+ * the stack.
+ *
+ * @param descriptor - The provider descriptor whose `aliases` map is consulted.
+ * @param model - The (possibly-aliased) model string to resolve.
+ * @returns `Result` with the concrete provider model id, or a failure.
+ * @public
+ */
+export function resolveModelAlias(descriptor: IAiProviderDescriptor, model: string): Result<string> {
+  return resolveModelAliasInner(descriptor, model, new Set<string>());
+}
+
+/**
+ * The full provider model-resolution chokepoint: the {@link ModelSpecKey} walk
+ * (via {@link resolveModel}) THEN {@link resolveModelAlias}.
+ *
+ * @remarks
+ * Replaces the bare `resolveModel(modelOverride ?? descriptor.defaultModel, context)`
+ * call plus the duplicated empty-result check at each call-time chokepoint. The
+ * `ModelSpec` branch is selected first; the resulting string — which may itself
+ * be an fgv alias — is then resolved to a concrete id.
+ *
+ * **This is the whole model-selection surface — do not hand-roll the walk.**
+ * Callers should pass the `ModelSpecKey` they want and use the concrete id
+ * this returns; a manual `resolveModel` + `resolveModelAlias` sequence is
+ * both redundant and easy to get wrong (it is how alias-form ids leak into
+ * capability lookups such as `resolveImageCapability`).
+ *
+ * **`context` carries the quality tier and the modality — never tools or
+ * thinking.** `ModelSpecKey` has no `tools` / `thinking` key: server-side
+ * tools and reasoning effort are orthogonal request params that ride on top of
+ * whatever model the tier selected, and never select a model. A tool-path caller
+ * passes a tier like any other caller — omit `context` for `base`, or pass
+ * `'advanced'` / `'frontier'` — and sets the tools / thinking request params
+ * separately.
+ *
+ * @param descriptor - The provider descriptor (supplies `defaultModel` and `aliases`).
+ * @param modelOverride - An optional caller-supplied `ModelSpec` that takes precedence
+ * over `descriptor.defaultModel`. May itself contain or be an alias.
+ * @param context - Optional {@link ModelSpecKey} selecting the spec branch.
+ * @returns `Result` with the concrete provider model id, or a failure. A spec outside the
+ * {@link AiAssist.ModelSpec} type fails with the provider id and the dotted path of the offending key
+ * (`provider "openai": model spec modelOverride.base is undefined: …`).
+ * @public
+ */
+export function resolveProviderModel(
+  descriptor: IAiProviderDescriptor,
+  modelOverride: ModelSpec | undefined,
+  context?: ModelSpecKey
+): Result<string> {
+  const spec = modelOverride ?? descriptor.defaultModel;
+  return walkModelSpec(spec, context, modelOverride !== undefined ? 'modelOverride' : 'defaultModel')
+    .withErrorFormat((msg) => `provider "${descriptor.id}": ${msg}`)
+    .onSuccess((resolved) =>
+      resolved.length === 0
+        ? fail<string>(
+            `provider "${descriptor.id}": no model resolved; pass modelOverride or set descriptor.defaultModel`
+          )
+        : resolveModelAlias(descriptor, resolved)
+    );
+}
+
+/**
+ * Determines whether a concrete (already-resolved) model id must be invoked via
+ * the OpenAI Responses API rather than chat completions.
+ *
+ * @remarks
+ * Matches `modelId` against the descriptor's
+ * {@link IAiProviderDescriptor.responsesOnlyModelPrefixes} by prefix. A provider
+ * that declares no list (the common case) always returns `false`. Consulted by
+ * both the completion (`callProviderCompletion`) and streaming
+ * (`callProviderCompletionStream`) OpenAI dispatch branches so a Responses-only
+ * model (e.g. `gpt-5.5-pro`) routes correctly even with no tools requested.
+ *
+ * @param descriptor - The provider descriptor supplying the prefix list.
+ * @param modelId - The resolved concrete model id to test.
+ * @returns `true` when `modelId` starts with any declared Responses-only prefix.
+ * @public
+ */
+export function isResponsesOnlyModel(descriptor: IAiProviderDescriptor, modelId: string): boolean {
+  return descriptor.responsesOnlyModelPrefixes?.some((p) => modelId.startsWith(p)) ?? false;
+}
+
+/**
+ * Returns true when `modelId` equals `prefix` or starts with `prefix` followed by a `-`
+ * (versioned/dated-snapshot ids, e.g. `'claude-sonnet-5'` matches `'claude-sonnet-5-20260115'`
+ * but not `'claude-sonnet-50'`). @internal
+ */
+export function isExactOrDashBoundedPrefix(modelId: string, prefix: string): boolean {
+  return modelId === prefix || modelId.startsWith(`${prefix}-`);
+}
+
+/**
+ * Determines whether a concrete (already-resolved) Anthropic model id uses the adaptive
+ * thinking wire shape (`thinking: { type: 'adaptive' }` + top-level `output_config.effort`)
+ * rather than the legacy manual-budget shape (`thinking: { type: 'enabled', budget_tokens }`).
+ *
+ * @remarks
+ * Matches `modelId` against the descriptor's
+ * {@link IAiProviderDescriptor.adaptiveThinkingModelPrefixes} using the same
+ * exact-or-dash-bounded matcher semantics as the model-specific blocks in
+ * `mergeThinkingConfig` (an entry matches when it equals the resolved model or when the
+ * resolved model starts with the entry followed by a `-`) — a plain prefix match would risk a
+ * false positive against an unrelated model sharing the same leading characters. A provider
+ * that declares no list (the common case — this is Anthropic-specific) always returns `false`.
+ * Consulted by the completion (`callProviderCompletion`), streaming
+ * (`callProviderCompletionStream`), and client-tool (`executeClientToolTurn`) Anthropic
+ * dispatch sites so every Anthropic wire-request path picks the correct thinking shape for the
+ * resolved model.
+ *
+ * @param descriptor - The provider descriptor supplying the prefix list.
+ * @param modelId - The resolved concrete model id to test.
+ * @returns `true` when `modelId` exactly matches or is dash-bounded-prefixed by any declared
+ * adaptive-thinking prefix.
+ * @public
+ */
+export function isAdaptiveThinkingModel(descriptor: IAiProviderDescriptor, modelId: string): boolean {
+  return (
+    descriptor.adaptiveThinkingModelPrefixes?.some((p) => isExactOrDashBoundedPrefix(modelId, p)) ?? false
+  );
+}
+
+/**
+ * Whether a concrete (already-resolved) model cannot run with thinking off, per the descriptor's
+ * {@link IAiProviderDescriptor.thinkingRequiredModelPrefixes} (exact-or-dash-bounded match).
+ *
+ * @param descriptor - The provider descriptor supplying the prefix list.
+ * @param modelId - The resolved concrete model id to test.
+ * @returns `true` when a generic `effort: 'none'` would be rejected by `modelId`.
+ * @public
+ */
+export function isThinkingRequiredModel(descriptor: IAiProviderDescriptor, modelId: string): boolean {
+  return (
+    descriptor.thinkingRequiredModelPrefixes?.some((p) => isExactOrDashBoundedPrefix(modelId, p)) ?? false
+  );
+}
+
+/**
+ * The Chat Completions request field that caps output length (see
+ * {@link AiAssist.IAiProviderDescriptor.chatOutputTokensField}).
+ * @public
+ */
+export type ChatOutputTokensField = 'max_tokens' | 'max_completion_tokens';
+
+/**
+ * Determines whether a provider's OpenAI-compatible Chat Completions request
+ * should use the modern `max_completion_tokens` field instead of the legacy
+ * `max_tokens` field for capping output length.
+ *
+ * @remarks
+ * Reads the descriptor's {@link AiAssist.IAiProviderDescriptor.chatOutputTokensField} declaration.
+ * In the shipped registry OpenAI, Groq and xAI Grok declare `'max_completion_tokens'` (each
+ * API reference marks `max_tokens` deprecated in its favor); Mistral, Ollama and self-hosted
+ * `openai-compat` servers declare nothing and keep `max_tokens`. Consulted
+ * by both the completion (`callProviderCompletion`) and streaming
+ * (`callProviderCompletionStream`) chat-completions dispatch branches. Not
+ * consulted on the Responses API path — `max_output_tokens` applies uniformly
+ * there for both OpenAI and xAI (see `isResponsesOnlyModel`) —
+ * nor by any non-`'openai'`-format provider (Anthropic, Gemini).
+ *
+ * @param descriptor - The provider descriptor.
+ * @returns `true` when the descriptor declares `'max_completion_tokens'`.
+ * @public
+ */
+export function usesMaxCompletionTokensField(descriptor: IAiProviderDescriptor): boolean {
+  return descriptor.chatOutputTokensField === 'max_completion_tokens';
+}
+
+// ============================================================================
+// Provider Descriptor
+// ============================================================================
+
+/**
+ * All known AI provider identifiers.
+ * @public
+ */
+export type AiProviderId =
+  | 'copy-paste'
+  | 'xai-grok'
+  | 'openai'
+  | 'openai-compat'
+  | 'anthropic'
+  | 'google-gemini'
+  | 'groq'
+  | 'mistral'
+  | 'ollama';
+
+/**
+ * API format categories for provider routing.
+ * @public
+ */
+export type AiApiFormat = 'openai' | 'anthropic' | 'gemini';
+
+/**
+ * API format categories for image-generation provider routing.
+ *
+ * @remarks
+ * - `'openai-images'` — OpenAI Images API. Routes to `/images/generations`
+ *   (text-only) or `/images/edits` (when reference images are present).
+ * - `'xai-images'` — xAI Images API. Text-only JSON generation request.
+ * - `'xai-images-edits'` — xAI Images API for Grok Imagine models. Uses JSON
+ *   body with `{ type: "image_url" }` objects (not multipart).
+ * - `'gemini-image-out'` — Google Gemini chat-style `:generateContent`
+ *   endpoint that returns image parts (Gemini Flash Image / "Nano
+ *   Banana"). Accepts reference images.
+ *
+ * @public
+ */
+export type AiImageApiFormat = 'openai-images' | 'xai-images' | 'xai-images-edits' | 'gemini-image-out';
+
+/**
+ * API format categories for embedding provider routing.
+ *
+ * @remarks
+ * - `'openai-embeddings'` — OpenAI `/v1/embeddings` shape. Serves OpenAI,
+ *   Ollama (via `/v1`), openai-compat self-hosted servers (vLLM, LM Studio,
+ *   llama.cpp's openai-server), and Mistral (`mistral-embed`) — all of which
+ *   speak the same request/response shape.
+ * - `'gemini-embeddings'` — Google Gemini `:batchEmbedContents` endpoint. A
+ *   genuinely divergent shape (different route, auth header, request body, and
+ *   the `taskType` retrieval-asymmetry knob that has no OpenAI analog).
+ *
+ * Named with the `ApiFormat` suffix for symmetry with `AiApiFormat` and
+ * `AiImageApiFormat`.
+ *
+ * @public
+ */
+export type AiEmbeddingApiFormat = 'openai-embeddings' | 'gemini-embeddings';
+
+// ============================================================================
+// Completion Response
+// ============================================================================
+
+/**
+ * Result of an AI provider completion call.
+ * @public
+ */
+export interface IAiCompletionResponse {
+  /** The generated text content */
+  readonly content: string;
+  /** Whether the response was truncated due to token limits */
+  readonly truncated: boolean;
+  /**
+   * Which structured-output constraint the provider was **asked** to apply.
+   *
+   * @remarks
+   * **Required, not optional, and that is the point.** An optional field would
+   * make absence three-ways ambiguous — no capability / not requested / a build
+   * predating the feature — and disambiguating exactly that is what this field
+   * exists for. `'none'` already expresses *"no constraint sent"*, so
+   * always-present costs nothing and removes the ambiguity by construction. The
+   * same remedy as `MemoryEmbedOutcome` in `@fgv/ts-agent-memory`, applied to the
+   * same defect.
+   *
+   * It reports what was *sent*, never whether **this** response conforms — that
+   * is the caller's converter's answer and re-deriving it here would be a second
+   * source of truth. See `StructuredOutputEnforcement` for the three-question
+   * split.
+   */
+  readonly structuredOutput: StructuredOutputEnforcement;
+  /** Token usage, when the provider reports it. */
+  readonly usage?: IAiCompletionUsage;
+}
+
+/**
+ * Default `max_tokens` sent to the Anthropic Messages API when the caller does
+ * not supply an explicit `maxTokens` override.
+ *
+ * @remarks
+ * Anthropic's Messages API requires `max_tokens` on every request — there is
+ * no provider-side default the way there is for OpenAI Chat/Responses,
+ * Gemini, or xAI, all of which accept a request with no cap and apply their
+ * own default. Anthropic is therefore the only provider that needs — or
+ * gets — a library-supplied fallback; every other provider omits the field
+ * entirely when the caller doesn't set `maxTokens` (see
+ * `IProviderCompletionParams.maxTokens`).
+ *
+ * Callers whose structured/JSON output scales with input size and hits this
+ * ceiling see a silent truncation that often surfaces downstream as a
+ * confusing `extractJsonText` parse failure rather than an obvious "too
+ * short" error — pass `maxTokens` explicitly to raise the cap for those
+ * requests.
+ * @public
+ */
+export const DEFAULT_ANTHROPIC_MAX_TOKENS: number = 4096;
+
+// ============================================================================
+// Streaming Events
+// ============================================================================
+
+/**
+ * A text-content delta arriving during a streaming completion.
+ * @public
+ */
+export interface IAiStreamTextDelta {
+  readonly type: 'text-delta';
+  /** The newly arrived text fragment. */
+  readonly delta: string;
+}
+
+/**
+ * A server-side tool progress event arriving during a streaming completion.
+ * Surfaced for providers that emit explicit tool-progress markers (OpenAI
+ * Responses API, Anthropic). Gemini's grounding doesn't emit these.
+ * @public
+ */
+export interface IAiStreamToolEvent {
+  readonly type: 'tool-event';
+  /** Which server-side tool this event describes. */
+  readonly toolType: AiServerToolType;
+  /** Tool lifecycle phase. */
+  readonly phase: 'started' | 'completed';
+  /**
+   * Optional provider-specific detail. For web_search this is typically the
+   * search query when available; format varies by provider.
+   */
+  readonly detail?: string;
+}
+
+/**
+ * Terminal success event for a streaming completion. Carries the aggregated
+ * full text and truncation status for callers that want both the progressive
+ * UI and the complete result.
+ * @public
+ */
+export interface IAiStreamDone {
+  readonly type: 'done';
+  /** Whether the response was truncated due to token limits. */
+  readonly truncated: boolean;
+  /** The full concatenated text from all `text-delta` events. */
+  readonly fullText: string;
+  /**
+   * Provider-reported reason a truncated response was cut short (e.g.
+   * `'max_output_tokens'`, `'content_filter'`), when the provider supplies one.
+   * Currently populated only by the OpenAI / xAI Responses adapter, from the
+   * completed payload's `incomplete_details.reason`. Meaningful only when
+   * `truncated === true`; `undefined` otherwise (and whenever the provider
+   * reports truncation without a reason).
+   */
+  readonly incompleteReason?: string;
+  /** Token usage, when the provider reports it on this stream. */
+  readonly usage?: IAiCompletionUsage;
+}
+
+/**
+ * Terminal failure event for a streaming completion. After this event no
+ * further events are emitted.
+ *
+ * @remarks
+ * Connection-time failures (auth, network, pre-flight CORS rejection) are
+ * surfaced via the outer `Result.fail` returned by
+ * `callProviderCompletionStream` rather than as an `error` event, so callers
+ * can distinguish "didn't start" from "started but errored mid-stream."
+ *
+ * @public
+ */
+export interface IAiStreamError {
+  readonly type: 'error';
+  readonly message: string;
+}
+
+/**
+ * Discriminated union of events emitted by a streaming completion.
+ *
+ * @remarks
+ * **Exhaustive-switch consumers must handle all variants.** The three
+ * `client-tool-*` variants were added when client-tool support shipped;
+ * update every exhaustive switch over this union in lockstep.
+ *
+ * @public
+ */
+export type IAiStreamEvent =
+  | IAiStreamTextDelta
+  | IAiStreamToolEvent
+  | IAiStreamToolUseStart
+  | IAiStreamToolUseDelta
+  | IAiStreamToolUseComplete
+  | IAiStreamDone
+  | IAiStreamError;
+
+/**
+ * Describes a single AI provider — single source of truth for all metadata.
+ * @public
+ */
+export interface IAiProviderDescriptor {
+  /** Provider identifier (e.g. 'xai-grok', 'anthropic') */
+  readonly id: AiProviderId;
+  /** Human-readable label (e.g. "xAI Grok") */
+  readonly label: string;
+  /** Button label for action buttons (e.g. "AI Assist | Grok") */
+  readonly buttonLabel: string;
+  /** Whether this provider requires an API key secret */
+  readonly needsSecret: boolean;
+  /** Which API adapter format to use */
+  readonly apiFormat: AiApiFormat;
+  /** Base URL for the API (e.g. 'https://api.x.ai/v1') */
+  readonly baseUrl: string;
+  /** Default model specification — string or context-aware map. */
+  readonly defaultModel: ModelSpec;
+  /**
+   * Canonical fgv alias → concrete model map for this provider. Absent means the
+   * provider defines no aliases and every model string passes through verbatim.
+   *
+   * @remarks
+   * Keys are full fgv aliases (`@<providerId>:<role>`); values are the current
+   * concrete model id (or a provider-native alias). Consulted by
+   * {@link resolveModelAlias} / {@link resolveProviderModel} at each call-time
+   * resolution chokepoint, downstream of the {@link ModelSpecKey} walk. Additive
+   * and optional — composes with the existing per-descriptor `imageGeneration` /
+   * `embedding` capability arrays.
+   */
+  readonly aliases?: IModelAliasMap;
+  /** Which server-side tools this provider supports (empty = none). */
+  readonly supportedTools: ReadonlyArray<AiServerToolType>;
+  /**
+   * Server tools this provider's API refuses to accept in the *same request* as
+   * client (function) tools. Absent or empty means the provider imposes no such
+   * constraint and any supported server tool may be mixed with client tools.
+   *
+   * @remarks
+   * This is a narrower statement than {@link AiAssist.IAiProviderDescriptor.supportedTools}:
+   * a tool listed here is genuinely supported, just not *together* with function
+   * calling. Only Gemini declares anything today — its `generateContent` API
+   * HTTP-400s (`INVALID_ARGUMENT`) when built-in grounding (`web_search` →
+   * `google_search`) and `function_declarations` appear in one request.
+   *
+   * Declaring the rule here rather than enforcing it at the call site is the
+   * point: {@link AiAssist.resolveToolConflicts} applies it generically, so a host
+   * never writes `if (descriptor.apiFormat === 'gemini')` in its tool assembly,
+   * and the day a provider lifts its limit only this line changes.
+   *
+   * Optional because most providers have nothing to say. The library's own
+   * registry descriptors are the ones that reach the wire and are pinned by test;
+   * a hand-built descriptor that omits this simply gets the unconstrained
+   * behavior, which is the correct reading of "declares no constraint".
+   */
+  readonly serverToolsExclusiveWithClientTools?: ReadonlyArray<AiServerToolType>;
+  /** Whether this provider's API enforces CORS restrictions that prevent direct browser calls. */
+  readonly corsRestricted: boolean;
+  /**
+   * Whether this provider's streaming completion endpoint requires a proxy
+   * for direct browser calls. Some providers gate streaming separately from
+   * non-streaming (rare), so this is tracked independently from
+   * {@link IAiProviderDescriptor.corsRestricted}.
+   *
+   * @remarks
+   * When `true`, `callProviderCompletionStream` rejects up front unless the
+   * call is being routed through a proxy.
+   */
+  readonly streamingCorsRestricted: boolean;
+  /**
+   * Whether this provider's chat completions API accepts image input
+   * (i.e. supports vision prompts). When false, calls with
+   * `prompt.attachments` are rejected up front.
+   */
+  readonly acceptsImageInput: boolean;
+  /**
+   * Image-generation capabilities, scoped to model id prefixes. Empty or
+   * undefined means the provider does not support image generation.
+   *
+   * @remarks
+   * The dispatcher matches the resolved model id against each rule's
+   * `modelPrefix` and selects the longest match (see
+   * {@link AiAssist.resolveImageCapability}). An empty `modelPrefix` is the
+   * catch-all and matches every model id.
+   *
+   * Multiple entries support providers that host more than one image-API
+   * surface under one baseUrl. The dispatcher selects the longest-matching
+   * prefix, so a provider can list a specific-prefix surface alongside an
+   * empty-prefix catch-all and the right model routes to the right API.
+   *
+   * Image-model selection reuses the existing `image` {@link ModelSpecKey}.
+   * Providers that declare `imageGeneration` should declare a model in
+   * `defaultModel.image`, e.g. `{ base: '@openai:mini', image: '@openai:image' }`.
+   */
+  readonly imageGeneration?: ReadonlyArray<IAiImageModelCapability>;
+  /**
+   * Embedding capabilities, scoped to model id prefixes. Empty or undefined
+   * means the provider does not support embeddings.
+   *
+   * @remarks
+   * The dispatcher matches the resolved embedding model id against each rule's
+   * `modelPrefix` and selects the longest match (see
+   * {@link AiAssist.resolveEmbeddingCapability}). An empty `modelPrefix` is the
+   * catch-all and matches every model id.
+   *
+   * Embedding-model selection uses the `embedding` {@link ModelSpecKey}.
+   * Providers that declare `embedding` should declare a model in
+   * `defaultModel.embedding`, e.g. `{ base: '@openai:mini', embedding: '@openai:embedding' }`.
+   * Self-hosted providers (`ollama`, `openai-compat`) leave it unset — the
+   * caller supplies the embedding model via `modelOverride`.
+   */
+  readonly embedding?: ReadonlyArray<IAiEmbeddingModelCapability>;
+  /**
+   * Per-model-family structured-output capability, longest-prefix matched against
+   * the **resolved** completion model id. Absent (or no matching entry) means the
+   * model can enforce nothing, and a request against it reports `'none'`.
+   *
+   * @remarks
+   * Same declaration idiom as `imageGeneration` and
+   * `embedding`, resolved through the same
+   * alias-first helper — a capability lookup on an unresolved alias is the defect
+   * `resolveImageCapability` once had, where a catch-all `modelPrefix: ''` turned
+   * an unknown alias into a confidently wrong answer.
+   *
+   * Note this declares which wire format a model *family* supports, not which
+   * OpenAI endpoint a given call will take — that also depends on whether the
+   * call carries server tools, so the dispatcher supplies it.
+   */
+  readonly structuredOutput?: ReadonlyArray<IAiStructuredOutputCapability>;
+  /**
+   * Per-model maximum output tokens — the largest `maxTokens` the provider accepts for a
+   * completion on that model. Absent (or no matching entry) means the limit is unknown.
+   *
+   * @remarks
+   * Read through {@link AiAssist.resolveMaxOutputTokens}, which resolves the model the same way a
+   * completion call does (the `ModelSpec` walk, then aliases) before matching.
+   *
+   * Unlike `imageGeneration`, `embedding` and `structuredOutput`, entries are **not**
+   * prefix-matched. An output limit is a fact about one model, and the sibling a prefix would
+   * also catch (a `-mini` or `-nano` variant, a later point release) is exactly where the limit
+   * changes, and a dated snapshot is a separate model id. An entry applies only to the model whose
+   * resolved id equals its `modelId`. A wrong number is worse than none: a value above the real
+   * limit is refused by Anthropic and OpenAI, and a value below it silently truncates.
+   *
+   * Each value is the limit a request **as ai-assist sends it** gets: a higher limit available only
+   * behind an opt-in beta header or a batch endpoint that ai-assist does not use is not recorded.
+   */
+  readonly maxOutputTokens?: ReadonlyArray<IAiMaxOutputTokensCapability>;
+  /**
+   * The Chat Completions request field that carries `maxTokens` on this provider's
+   * OpenAI-format chat path: `'max_completion_tokens'`, or the legacy `'max_tokens'` (the
+   * default when undefined). Declare `'max_completion_tokens'` only where the provider's API
+   * reference accepts it; a server that does not know the field ignores it and the cap is lost.
+   * Read through {@link AiAssist.usesMaxCompletionTokensField}. Not consulted on the Responses API
+   * path (`max_output_tokens`) or by a non-`'openai'` `apiFormat`.
+   */
+  readonly chatOutputTokensField?: ChatOutputTokensField;
+  /**
+   * Concrete model ids (prefix-matched) that must be invoked via the OpenAI
+   * Responses API rather than chat completions — e.g. `gpt-5.5-pro`. Non-OpenAI
+   * `apiFormat`s ignore this.
+   *
+   * @remarks
+   * Some current-generation OpenAI models (the `-pro` tier) are Responses-API-only
+   * and 400 on `/chat/completions`. The completion and streaming dispatch consult
+   * this list (via the sibling predicate {@link AiAssist.isResponsesOnlyModel})
+   * and route a matching model to the Responses path
+   * even when no tools are requested. Mirrors the prefix-matching shape of the
+   * `imageGeneration` / `embedding` capability arrays; adding a new Responses-only
+   * line is a one-entry descriptor edit. Empty or undefined means no model is
+   * Responses-only.
+   */
+  readonly responsesOnlyModelPrefixes?: ReadonlyArray<string>;
+  /**
+   * Concrete Anthropic model ids (exact-or-dash-bounded-prefix-matched) that require the
+   * adaptive thinking wire shape (`thinking: { type: 'adaptive' }` + top-level
+   * `output_config: { effort }`) rather than the legacy manual-budget shape
+   * (`thinking: { type: 'enabled', budget_tokens }`). Non-Anthropic `apiFormat`s ignore this.
+   *
+   * @remarks
+   * The Claude 5 family (`claude-sonnet-5`, `claude-opus-5`, `claude-fable-5`, including their
+   * dated snapshots) rejects `thinking.type: 'enabled'` with an HTTP 400 and requires the
+   * adaptive shape; older models (`claude-sonnet-4-6`, `claude-opus-4-8`, `claude-haiku-4-5`,
+   * etc.) keep the legacy shape. The completion (`callProviderCompletion`), streaming
+   * (`callProviderCompletionStream`), and client-tool (`executeClientToolTurn`) Anthropic
+   * dispatch sites consult this list (via the sibling predicate
+   * `isAdaptiveThinkingModel`) to pick the correct wire shape for the resolved
+   * model. Mirrors the prefix-matching shape of `responsesOnlyModelPrefixes`, but with
+   * exact-or-dash-bounded matching (an entry matches a resolved model that equals it or starts
+   * with it followed by `-`) rather than a plain prefix, since Anthropic model families share
+   * numeric leading characters (`claude-sonnet-5` vs. a hypothetical `claude-sonnet-50`).
+   * Empty or undefined means no model uses the adaptive shape.
+   */
+  readonly adaptiveThinkingModelPrefixes?: ReadonlyArray<string>;
+  /**
+   * Concrete model ids (exact-or-dash-bounded-prefix-matched, like
+   * {@link IAiProviderDescriptor.adaptiveThinkingModelPrefixes}) that cannot run with thinking off.
+   * The provider rejects the off value ai-assist would send for a generic `effort: 'none'`:
+   * `reasoning_effort: 'none'` (OpenAI, xAI), `thinkingBudget: 0` (Gemini on the budget wire; on
+   * the level wire, a model with no `'minimal'` level — see
+   * {@link AiAssist.IAiProviderDescriptor.geminiThinkingLevels}), or the model's off
+   * `thinking` value (Anthropic adaptive-thinking models; see
+   * {@link IAiProviderDescriptor.anthropicThinkingOffTypes}). A model that accepts the off value but
+   * ignores it, still thinking, is listed too, so that `'none'` never claims an effect it lacks.
+   *
+   * @remarks
+   * A generic `'none'` on a listed model is handled by {@link IThinkingConfig.onUnsupported}. It
+   * is sent as `'low'` by default, or refused before the wire. Provider-specific blocks in
+   * {@link IThinkingConfig.providers} are sent verbatim and are not checked, and the `'none'`
+   * handling stands aside entirely when an applicable block sets the provider's effort (a typed
+   * block's `effort`, `thinkingBudget` or `thinkingLevel`, or an `'other'` block's wire field). Empty or undefined means every model accepts `'none'`.
+   */
+  readonly thinkingRequiredModelPrefixes?: ReadonlyArray<string>;
+  /**
+   * Per-model Anthropic thinking-off values for adaptive-thinking models that turn thinking off
+   * with something other than `thinking: { type: 'disabled' }`, the default. Each rule's
+   * `modelPrefix` is matched exact-or-dash-bounded, like
+   * {@link IAiProviderDescriptor.adaptiveThinkingModelPrefixes}; the first match wins. Like those
+   * lists, a rule deliberately also matches future variants of its id (`claude-sonnet-5-5-<date>`).
+   *
+   * @remarks
+   * Read by the completion, streaming and client-tool Anthropic emit sites (via
+   * {@link AiAssist.resolveAnthropicThinkingOffType}) when a generic `effort: 'none'` (or a
+   * caller-built `anthropicThinkingDisabled` flag) turns thinking off on an adaptive model. Empty
+   * or undefined means every model uses `'disabled'`.
+   */
+  readonly anthropicThinkingOffTypes?: ReadonlyArray<IAnthropicThinkingOffRule>;
+  /**
+   * Gemini models sent `thinkingLevel` rather than `thinkingBudget`, each with the levels it
+   * accepts, lowest first; matched exact-or-dash-bounded, longest prefix wins (see
+   * {@link AiAssist.resolveGeminiThinkingLevels}). On a matching model a generic `'none'` is sent as
+   * `'minimal'` where listed (otherwise handled like a thinking-required model, or refused), other
+   * efforts map 1:1 or are refused when unlisted. Unmatched models keep the budget wire.
+   */
+  readonly geminiThinkingLevels?: ReadonlyArray<IGeminiThinkingLevelRule>;
+  /**
+   * Gemini models (exact-or-dash-bounded) that do not support `thinkingLevel` at all and take only
+   * `thinkingBudget`. An explicit `thinkingLevel` aimed at one — in a `google` block, or in a
+   * caller-built `resolvedThinking` on `executeClientToolTurn` — is refused before the wire (see
+   * {@link AiAssist.rejectsGeminiThinkingLevel}). Models on neither this list nor
+   * {@link AiAssist.IAiProviderDescriptor.geminiThinkingLevels} are sent an explicit level verbatim.
+   */
+  readonly geminiThinkingLevelRejectedModelPrefixes?: ReadonlyArray<string>;
+  /**
+   * Concrete model ids (exact-or-dash-bounded-prefix-matched, like
+   * {@link IAiProviderDescriptor.thinkingRequiredModelPrefixes}) that reject a caller-supplied
+   * `temperature` with or without thinking — every value, or every value but
+   * {@link IAiProviderDescriptor.samplingParamsAcceptedTemperature} when the descriptor declares
+   * one. A call that sets a rejected `temperature` on a listed model is refused before the wire (see
+   * {@link AiAssist.rejectsSamplingParams}). Empty or undefined means every model accepts
+   * `temperature` (subject to the thinking-mode conflict).
+   */
+  readonly samplingParamsRejectedModelPrefixes?: ReadonlyArray<string>;
+  /**
+   * Concrete model ids (exact-or-dash-bounded-prefix-matched, like
+   * {@link IAiProviderDescriptor.samplingParamsRejectedModelPrefixes}) that reason by default and
+   * reject a caller-supplied `temperature` only while reasoning — every value, or every value but
+   * {@link IAiProviderDescriptor.samplingParamsAcceptedTemperature} when the descriptor declares
+   * one. With thinking off they accept any `temperature`.
+   *
+   * @remarks
+   * Thinking counts as off when the request sends the descriptor's wire format its off value: on
+   * the OpenAI format an effort of `'none'`, on Anthropic thinking disabled, on Gemini a budget of
+   * `0`. A verbatim `'other'` block that sets the wire's effort key decides, since it is merged last;
+   * otherwise the typed effort does. A request with no effort runs at the model's default, which for a
+   * listed model reasons. A generic `effort: 'none'` turns thinking off only where it is sent as off —
+   * not on a thinking-required model, which degrades it, nor on a Gemini level model, which sends a
+   * level. A rejected `temperature` on a listed model is refused before
+   * the wire on the completion, streaming and client-tool paths (see
+   * {@link AiAssist.rejectsSamplingParamsWithThinking}). A model on both lists follows
+   * {@link IAiProviderDescriptor.samplingParamsRejectedModelPrefixes}.
+   */
+  readonly samplingParamsRejectedWithThinkingModelPrefixes?: ReadonlyArray<string>;
+  /**
+   * The one `temperature` that the models on
+   * {@link IAiProviderDescriptor.samplingParamsRejectedModelPrefixes} still accept, with or without
+   * thinking, and that the models on
+   * {@link IAiProviderDescriptor.samplingParamsRejectedWithThinkingModelPrefixes} still accept while
+   * reasoning — the provider's own default, which a provider that rejects only non-default values
+   * lets through. Undefined means those models accept no `temperature` where they restrict it.
+   * Descriptor-wide, not per model: declare it only when the evidence covers every listed model
+   * (OpenAI lists `gpt-6.1-sol` and `gpt-6-astra` on the first list and `gpt-6-luna` on the second,
+   * and all three accepted `temperature: 1` live with thinking on).
+   */
+  readonly samplingParamsAcceptedTemperature?: number;
+}
+
+/**
+ * Image-generation capability for a model family within a provider. Used as
+ * an entry in `imageGeneration`.
+ *
+ * @public
+ */
+export interface IAiImageModelCapability {
+  /**
+   * Prefix matched against the resolved image model id. The empty string is
+   * the catch-all and matches every model. When multiple rules' prefixes
+   * match a model id, the longest prefix wins; ties are broken by
+   * first-encountered.
+   */
+  readonly modelPrefix: string;
+  /** API format used to dispatch requests for matching models. */
+  readonly format: AiImageApiFormat;
+  /**
+   * Whether matching models accept reference images via
+   * {@link AiAssist.IAiImageGenerationParams.referenceImages}. When false or
+   * undefined, calls that include reference images are rejected up front.
+   */
+  readonly acceptsImageReferenceInput?: boolean;
+  /** Accepted size strings. When present, dispatcher pre-validates. */
+  readonly acceptedSizes?: ReadonlyArray<string>;
+  /** When true, quality param is sent. When false/undefined, don't send quality. */
+  readonly supportsQualityParam?: boolean;
+  /** Accepted quality values when supportsQualityParam is true. */
+  readonly acceptedQualities?: ReadonlyArray<string>;
+  /** Maximum count (n). When present, dispatcher pre-validates. */
+  readonly maxCount?: number;
+  /**
+   * How to encode the output format on the wire:
+   * - 'response-format': send response_format: 'b64_json' (openai-images catch-all)
+   * - 'output-format': send output_format (gpt-image-1)
+   * - 'none': send neither (Gemini Flash)
+   */
+  readonly outputParamStyle?: 'response-format' | 'output-format' | 'none';
+  /** Default MIME type for response images. */
+  readonly defaultOutputMimeType?: string;
+}
+
+// ============================================================================
+// Embedding — capability + request/result types
+// ============================================================================
+
+/**
+ * Embedding capability for a model family within a provider. Used as an entry
+ * in `embedding`.
+ *
+ * @public
+ */
+export interface IAiEmbeddingModelCapability {
+  /**
+   * Prefix matched against the resolved embedding model id. The empty string is
+   * the catch-all and matches every model. When multiple rules' prefixes match
+   * a model id, the longest prefix wins; ties are broken by first-encountered.
+   */
+  readonly modelPrefix: string;
+  /** API format used to dispatch requests for matching models. */
+  readonly format: AiEmbeddingApiFormat;
+  /**
+   * Whether matching models honor a requested output `dimensions`
+   * (OpenAI `text-embedding-3-*`, Gemini `gemini-embedding-001` via MRL
+   * truncation). When false/undefined, a caller-supplied `dimensions` is a
+   * no-op (logged, not failed — see {@link AiAssist.IAiEmbeddingParams}).
+   */
+  readonly supportsDimensions?: boolean;
+  /**
+   * Whether matching models honor a `taskType` hint (Gemini only today). When
+   * false/undefined, a caller-supplied `taskType` is a no-op (logged, not
+   * failed).
+   */
+  readonly supportsTaskType?: boolean;
+  /** Native fixed output dimension, when the model has one (metadata only). */
+  readonly defaultDimensions?: number;
+  /**
+   * Maximum number of inputs accepted per request. When present, the dispatcher
+   * rejects batches larger than this up front (no auto-chunking in v1).
+   */
+  readonly maxBatchSize?: number;
+}
+
+/**
+ * Maximum output tokens for one model within a provider. Used as an entry in
+ * `IAiProviderDescriptor.maxOutputTokens`.
+ *
+ * @public
+ */
+export interface IAiMaxOutputTokensCapability {
+  /**
+   * The concrete model id this limit belongs to. It matches only a resolved model id equal to it:
+   * a dated snapshot (`claude-haiku-4-5-20251001`) needs an entry of its own, and no other id
+   * inherits this one by prefix.
+   */
+  readonly modelId: string;
+  /** The largest `maxTokens` the provider accepts for a completion on this model. */
+  readonly maxOutputTokens: number;
+}
+
+/**
+ * A single embedding task-type hint (Gemini-style). Cross-provider; providers
+ * that don't support task typing ignore it (logged, not failed). Open string
+ * union so new Gemini task types don't force a churn, with the known set
+ * enumerated for ergonomics.
+ *
+ * @remarks
+ * Values are the kebab-case cross-provider form; the Gemini adapter maps them to
+ * `SCREAMING_SNAKE_CASE` on the wire (e.g. `'retrieval-document'` →
+ * `RETRIEVAL_DOCUMENT`).
+ *
+ * @public
+ */
+export type AiEmbeddingTaskType =
+  | 'retrieval-query'
+  | 'retrieval-document'
+  | 'semantic-similarity'
+  | 'classification'
+  | 'clustering'
+  | 'code-retrieval-query'
+  | 'question-answering'
+  | 'fact-verification'
+  | (string & {});
+
+/**
+ * Parameters for an embedding request. Batch is the norm: `input` accepts a
+ * single string or an array; the result always exposes a vector array aligned
+ * by index to the input.
+ *
+ * @public
+ */
+export interface IAiEmbeddingParams {
+  /** One or more input strings. A bare string is treated as a single-element batch. */
+  readonly input: string | ReadonlyArray<string>;
+  /**
+   * Requested output dimensionality. Honored only by models whose capability
+   * declares `supportsDimensions` (OpenAI `text-embedding-3-*`, Gemini
+   * `gemini-embedding-001` via MRL truncation). Ignored — with a `logger.info`
+   * note — by models that don't.
+   */
+  readonly dimensions?: number;
+  /**
+   * Task-type hint. Mapped to Gemini `taskType`; a no-op (with a `logger.info`
+   * note) on OpenAI/Ollama/compat/Mistral. Preserves Gemini's
+   * query-vs-document retrieval asymmetry.
+   */
+  readonly taskType?: AiEmbeddingTaskType;
+}
+
+/**
+ * Token-usage accounting for an embedding call, when the provider reports it.
+ * @public
+ */
+export interface IAiEmbeddingUsage {
+  /** Tokens consumed by the input(s). */
+  readonly promptTokens?: number;
+  /** Total tokens billed. */
+  readonly totalTokens?: number;
+}
+
+/**
+ * Result of an embedding call. `vectors[i]` is the embedding for `input[i]`,
+ * in request order.
+ *
+ * @remarks
+ * Vectors are plain `number[]` (not `Float32Array`) for JSON-wire fidelity and
+ * validator-friendliness — consumers who want a typed array call
+ * `Float32Array.from(vector)` at the vector-store / WebGPU boundary. The
+ * library does not L2-normalize; Gemini's MRL truncation (when
+ * `dimensions < native`) returns un-normalized vectors that the consumer should
+ * normalize if their similarity metric requires it.
+ *
+ * @public
+ */
+export interface IAiEmbeddingResult {
+  /** One vector per input, aligned by index to the request order. */
+  readonly vectors: ReadonlyArray<ReadonlyArray<number>>;
+  /** The resolved provider-native model id that produced the vectors. */
+  readonly model: string;
+  /** Dimensionality of each returned vector (`vectors[0].length`; `0` for empty input). */
+  readonly dimensions: number;
+  /** Token usage, when the provider reports it (OpenAI-format; absent for Gemini). */
+  readonly usage?: IAiEmbeddingUsage;
+}
+
+// ============================================================================
+// Image Generation — Layered Options Types
+// ============================================================================
+
+/** Pixel dimension sizes accepted by gpt-image-1. @public */
+export type GptImageSize = '1024x1024' | '1536x1024' | '1024x1536' | 'auto';
+
+/** All accepted image size strings across all providers. @public */
+export type AiImageSize = GptImageSize;
+
+/** Quality values for gpt-image-1. @public */
+export type GptImageQuality = 'low' | 'medium' | 'high' | 'auto';
+
+/** All accepted quality strings across all providers. @public */
+export type AiImageQuality = GptImageQuality;
+
+/** Model names in the GPT Image family. @public */
+export type GptImageModelNames =
+  | 'gpt-image-1'
+  | 'gpt-image-1.5'
+  | 'gpt-image-2'
+  | 'gpt-image-2.5-sunburst'
+  | 'gpt-image-2.5-flare';
+
+/** Model names in the xAI Grok Imagine family. @public */
+export type GrokImagineModelNames =
+  | 'grok-imagine-image'
+  | 'grok-imagine-image-quality'
+  | 'grok-imagine-image-2.0';
+
+/** Model names in the Gemini Flash Image family. @public */
+export type GeminiFlashImageModelNames = 'gemini-3.1-flash-image' | 'gemini-nano-banana-2.1';
+
+// ---- Family-level config shapes ----
+
+/**
+ * Provider-specific config for gpt-image-1.
+ * @public
+ */
+export interface IGptImageGenerationConfig {
+  /** Image dimensions. */
+  readonly size?: GptImageSize;
+  /** Quality tier. */
+  readonly quality?: GptImageQuality;
+  /** Output format (replaces response_format for this model). */
+  readonly outputFormat?: 'png' | 'jpeg' | 'webp';
+  /** JPEG/WebP compression level 0–100. */
+  readonly outputCompression?: number;
+  /** Background transparency control. */
+  readonly background?: 'transparent' | 'opaque' | 'auto';
+  /** Content moderation strictness. */
+  readonly moderation?: 'low' | 'auto';
+}
+
+/**
+ * Provider-specific config for xAI Grok Imagine models.
+ * @public
+ */
+export interface IGrokImagineImageGenerationConfig {
+  /** Aspect ratio string (xAI uses aspect ratios, not pixel dimensions). */
+  readonly aspectRatio?: string;
+  /** Resolution hint. */
+  readonly resolution?: string;
+}
+
+/**
+ * Provider-specific config for Gemini Flash Image.
+ * @public
+ */
+export interface IGeminiFlashImageGenerationConfig {
+  /** Aspect ratio string. */
+  readonly aspectRatio?: string;
+}
+
+// ---- Model-family option blocks ----
+
+/**
+ * Base shape shared by all named family option blocks.
+ * Provides a typed `models` field for applicability filtering without unsafe casts.
+ * @internal
+ */
+export interface INamedModelFamilyConfig {
+  readonly models?: readonly string[];
+}
+
+/**
+ * Options block scoped to GPT Image family models.
+ * @public
+ */
+export interface IGptImageModelOptions extends INamedModelFamilyConfig {
+  readonly provider: 'openai';
+  readonly family: 'gpt-image';
+  readonly models?: GptImageModelNames[];
+  readonly config: IGptImageGenerationConfig;
+}
+
+/**
+ * Options block scoped to xAI Grok Imagine family models.
+ * @public
+ */
+export interface IGrokImagineModelOptions extends INamedModelFamilyConfig {
+  readonly provider: 'xai';
+  readonly family: 'grok-imagine';
+  readonly models?: GrokImagineModelNames[];
+  readonly config: IGrokImagineImageGenerationConfig;
+}
+
+/**
+ * Options block scoped to Gemini Flash Image models.
+ * @public
+ */
+export interface IGeminiFlashImageModelOptions extends INamedModelFamilyConfig {
+  readonly provider: 'google';
+  readonly family: 'gemini-flash-image';
+  readonly models?: GeminiFlashImageModelNames[];
+  readonly config: IGeminiFlashImageGenerationConfig;
+}
+
+/**
+ * Escape-hatch options block for models not covered by a named family.
+ * @remarks
+ * `models` is required — there is no implicit "all" for unknown model families.
+ * `config` is `JsonObject` — passed verbatim to the wire request with no validation.
+ * This is the "trust me, I know what I'm doing" path for callers who need to send
+ * wire params our typed configs don't yet expose.
+ * @public
+ */
+export interface IOtherModelOptions {
+  readonly provider: 'other';
+  readonly models: string[];
+  readonly config: JsonObject;
+}
+
+/**
+ * Discriminated union of all model-family option blocks.
+ * Discriminated on `provider` + `family` fields.
+ * @public
+ */
+export type IModelFamilyConfig =
+  | IGptImageModelOptions
+  | IGrokImagineModelOptions
+  | IGeminiFlashImageModelOptions
+  | IOtherModelOptions;
+
+// ============================================================================
+// Image Generation
+// ============================================================================
+
+/**
+ * Options for image generation requests.
+ *
+ * @remarks
+ * Uses a layered architecture:
+ * 1. Generic top-level options (size, count, quality, seed) apply across providers
+ *    via the resolved model's registry mapping.
+ * 2. Optional `models` array contains model-family-scoped blocks; the resolver
+ *    picks applicable blocks based on the resolved model and applies them in
+ *    declaration order.
+ *
+ * **Merge precedence (later wins):**
+ * 1. Generic top-level options (lowest precedence)
+ * 2. Family-generic blocks (matching family, models field omitted)
+ * 3. Model-specific blocks (models array includes resolved model name)
+ * 4. Other blocks (provider: 'other', models array includes resolved model name)
+ *
+ * Provider-mismatch: blocks whose provider doesn't match the dispatcher's
+ * provider lineage are silently skipped.
+ *
+ * @public
+ */
+export interface IAiImageGenerationOptions {
+  /**
+   * Image dimensions for OpenAI models (mapped to `size` field).
+   * For xAI or Gemini Flash aspect ratio, use the corresponding `models` family block.
+   */
+  readonly size?: AiImageSize;
+  /** Number of images. Default 1. Some models enforce a maximum. */
+  readonly count?: number;
+  /**
+   * Quality tier. Accepted values differ per model:
+   * - gpt-image-1: 'low' | 'medium' | 'high' | 'auto'
+   * Other models ignore this field.
+   */
+  readonly quality?: AiImageQuality;
+  /** Reproducibility seed, where supported. */
+  readonly seed?: number;
+  /**
+   * Optional precision via model-family-scoped blocks. The resolver picks
+   * applicable blocks dynamically based on the resolved model.
+   */
+  readonly models?: ReadonlyArray<IModelFamilyConfig>;
+}
+
+/**
+ * Parameters for an image-generation request.
+ * @public
+ */
+export interface IAiImageGenerationParams {
+  /** The text prompt describing the desired image. */
+  readonly prompt: string;
+  /** Optional generation options. */
+  readonly options?: IAiImageGenerationOptions;
+  /**
+   * Optional reference images. When present, the provider will use them as
+   * visual context (e.g. to preserve a character's appearance across multiple
+   * generations). The dispatcher resolves the
+   * {@link AiAssist.IAiImageModelCapability} for the requested model and
+   * rejects the call up front if `acceptsImageReferenceInput` is not set on
+   * the matching capability. An empty array is treated identically to
+   * `undefined`.
+   */
+  readonly referenceImages?: ReadonlyArray<IAiImageAttachment>;
+}
+
+/**
+ * A single generated image.
+ * @public
+ */
+export interface IAiGeneratedImage extends IAiImageData {
+  /**
+   * The prompt as rewritten by the provider, if any. OpenAI's image models
+   * commonly rewrite prompts; other providers do not.
+   */
+  readonly revisedPrompt?: string;
+}
+
+// ============================================================================
+// Model Catalog (listModels)
+// ============================================================================
+
+/**
+ * Capability vocabulary used to describe what a model can do. Used as both
+ * a filter and as a tag in {@link AiAssist.IAiModelInfo.capabilities}.
+ *
+ * @remarks
+ * Adding a new capability is cheap; adding the *first* one after consumers
+ * already exist forces churn. The initial vocabulary is intentionally broad
+ * even though only `image-generation` is fully exercised today.
+ *
+ * @public
+ */
+export type AiModelCapability = 'chat' | 'tools' | 'vision' | 'image-generation' | 'thinking' | 'embedding';
+
+/**
+ * All valid `AiModelCapability` values — the single source of truth for
+ * the capability vocabulary (used by validators and capability filters).
+ * @public
+ */
+export const allModelCapabilities: ReadonlyArray<AiModelCapability> = [
+  'chat',
+  'tools',
+  'vision',
+  'image-generation',
+  'thinking',
+  'embedding'
+];
+
+/**
+ * Information about a single model returned by a provider's list endpoint,
+ * with capabilities already resolved (native + config rules).
+ * @public
+ */
+export interface IAiModelInfo {
+  /** Provider-native model identifier. */
+  readonly id: string;
+  /** Resolved capability set — union of native declarations and config rules. */
+  readonly capabilities: ReadonlySet<AiModelCapability>;
+  /** Friendly name for display, when known. */
+  readonly displayName?: string;
+}
+
+/**
+ * One rule in an {@link IAiModelCapabilityConfig}. Multiple rules can match
+ * a single model — their capability arrays are unioned.
+ * @public
+ */
+export interface IAiModelCapabilityRule {
+  /** RegExp tested against the model id (using `.test`). */
+  readonly idPattern: RegExp;
+  /** Capabilities this rule attributes to matching models. */
+  readonly capabilities: ReadonlyArray<AiModelCapability>;
+  /**
+   * Friendly display-name override for matching models. The function form
+   * lets one rule format many ids (e.g. `(id) => id.toUpperCase()`).
+   * If multiple matching rules supply `displayName`, the first match wins.
+   */
+  readonly displayName?: string | ((id: string) => string);
+}
+
+/**
+ * Configuration that maps model id patterns to capabilities. Used to
+ * augment (or, where the provider supplies no capability info, fully
+ * derive) the capability set for each listed model.
+ * @public
+ */
+export interface IAiModelCapabilityConfig {
+  /** Per-provider rules. Tried before {@link AiAssist.IAiModelCapabilityConfig.global}. */
+  readonly perProvider?: { readonly [P in AiProviderId]?: ReadonlyArray<IAiModelCapabilityRule> };
+  /** Cross-provider fallback rules. */
+  readonly global?: ReadonlyArray<IAiModelCapabilityRule>;
+}
+
+/**
+ * Result of an image-generation call.
+ * @public
+ */
+export interface IAiImageGenerationResponse {
+  /** The generated images, in provider-returned order. */
+  readonly images: ReadonlyArray<IAiGeneratedImage>;
+}
+
+// ============================================================================
+// Thinking / Reasoning Config — Layered Options Types
+// ============================================================================
+
+/**
+ * Model IDs for Anthropic thinking-capable models.
+ *
+ * @remarks
+ * Only thinking-capable lines are listed. The non-tier `@anthropic:haiku` alias (reachable via
+ * `modelOverride` only) is deliberately omitted — it is not documented as thinking-capable, so
+ * naming it in a thinking-model filter would be misleading. The Fable ids (`claude-fable-5-2` is the
+ * `@anthropic:fable` non-tier alias, reachable via `modelOverride`) are thinking-capable, so they are
+ * listed; so are `claude-mythos-5-1` and `claude-mythos-5-2`, which no alias reaches but which are
+ * documented adaptive-thinking models (covered by `adaptiveThinkingModelPrefixes`).
+ * @public
+ */
+export type AnthropicThinkingModelNames =
+  | 'claude-sonnet-4-5'
+  | 'claude-sonnet-4-6'
+  | 'claude-sonnet-5'
+  | 'claude-sonnet-5-5'
+  | 'claude-haiku-5-5'
+  | 'claude-opus-4-6'
+  | 'claude-opus-4-7'
+  | 'claude-opus-4-8'
+  | 'claude-opus-5'
+  | 'claude-opus-5-5'
+  | 'claude-fable-5'
+  | 'claude-fable-5-1'
+  | 'claude-fable-5-2'
+  | 'claude-mythos-5-1'
+  | 'claude-mythos-5-2';
+
+/**
+ * Model IDs for OpenAI thinking-capable models.
+ * @public
+ */
+export type OpenAiThinkingModelNames =
+  | 'o3'
+  | 'o4-mini'
+  | 'gpt-5'
+  | 'gpt-5.1'
+  | 'gpt-5.2'
+  | 'gpt-5.4-mini'
+  | 'gpt-5.5'
+  | 'gpt-5.5-pro'
+  | 'gpt-5.6-sol'
+  | 'gpt-5.6-terra'
+  | 'gpt-5.6-luna'
+  | 'gpt-5-pro'
+  | 'gpt-6-astra'
+  | 'gpt-6-sol'
+  | 'gpt-6.1-sol'
+  | 'gpt-6-luna';
+
+/**
+ * Model IDs for Google Gemini thinking-capable models.
+ * @public
+ */
+export type GeminiThinkingModelNames =
+  | 'gemini-4-argon'
+  | 'gemini-4-carbon'
+  | 'gemini-3.6-flash'
+  | 'gemini-3-pro-preview'
+  | 'gemini-3.1-pro-preview'
+  | 'gemini-3.8-flash'
+  | 'gemini-3.5-flash'
+  | 'gemini-3.5-flash-lite'
+  | 'gemini-3.1-flash-lite';
+
+/**
+ * Model IDs for xAI thinking-capable models.
+ * @public
+ */
+export type XAiThinkingModelNames =
+  | 'grok-3-mini'
+  | 'grok-4.3'
+  | 'grok-4'
+  | 'grok-4.5'
+  | 'grok-4.6'
+  | 'grok-4.7';
+
+/**
+ * Anthropic-specific thinking configuration.
+ * @public
+ */
+export interface IAnthropicThinkingConfig {
+  /**
+   * Anthropic effort level, emitted as one of **two** wire shapes chosen by
+   * {@link AiAssist.isAdaptiveThinkingModel}:
+   *
+   * - **Claude 5 family** (`claude-sonnet-5`, `claude-opus-5`, `claude-fable-5`
+   *   — which includes the `base` and `advanced` tiers, so this is the default
+   *   path): an adaptive `thinking` block plus an `output_config` block
+   *   carrying `effort`. The effort string goes on the wire verbatim and
+   *   **no token budget is sent**.
+   * - **Older thinking-capable models**: an enabled `thinking` block carrying
+   *   `budget_tokens`, converted by `anthropicEffortToBudgetTokens` — low =
+   *   2048, medium = 8192, high = 24000, max = 32000.
+   *
+   * So the budget mapping is not a description of what a default Anthropic
+   * call sends; size a budget from it only when you have pinned a pre-Claude-5
+   * model.
+   *
+   * `'max'` is accepted on every thinking-capable model here — the library
+   * applies no model restriction of its own, and whether a given model accepts
+   * it is the provider's to enforce.
+   */
+  readonly effort?: 'low' | 'medium' | 'high' | 'max';
+}
+
+/**
+ * OpenAI-specific thinking configuration.
+ * @remarks
+ * Maps to `reasoning_effort` (Chat Completions path) or `reasoning.effort`
+ * (Responses API path) on the wire. The adapter selects the correct field.
+ * @public
+ */
+export interface IOpenAiThinkingConfig {
+  /**
+   * OpenAI reasoning effort. Maps 1:1 to the wire field.
+   * - 'none': disables reasoning (gpt-5.x only; rejected by o-series)
+   * - 'minimal': fastest (gpt-5.x)
+   * - 'low' | 'medium' | 'high': standard tiers
+   * - 'xhigh': highest (select gpt-5.x models only)
+   *
+   * @remarks
+   * When effective effort is 'none', reasoning is disabled and temperature is
+   * accepted by gpt-5.x models. This is the only case where temperature and
+   * thinking config co-exist without a Result.fail.
+   */
+  readonly effort?: 'none' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh';
+}
+
+/**
+ * xAI-specific thinking configuration.
+ * @public
+ */
+export interface IXAiThinkingConfig {
+  /**
+   * xAI reasoning effort. Maps 1:1 to `reasoning_effort` on the wire.
+   * For grok-4, the adapter omits this field (grok-4 always reasons and
+   * rejects the parameter).
+   */
+  readonly effort?: 'none' | 'low' | 'medium' | 'high';
+}
+
+/**
+ * Anthropic-specific thinking options block.
+ * @public
+ */
+export interface IAnthropicThinkingOptions {
+  readonly provider: 'anthropic';
+  readonly models?: ReadonlyArray<AnthropicThinkingModelNames>;
+  readonly config: IAnthropicThinkingConfig;
+}
+
+/**
+ * OpenAI-specific thinking options block.
+ * @public
+ */
+export interface IOpenAiThinkingOptions {
+  readonly provider: 'openai';
+  readonly models?: ReadonlyArray<OpenAiThinkingModelNames>;
+  readonly config: IOpenAiThinkingConfig;
+}
+
+/**
+ * Google Gemini-specific thinking options block.
+ * @public
+ */
+export interface IGeminiThinkingOptions {
+  readonly provider: 'google';
+  readonly models?: ReadonlyArray<GeminiThinkingModelNames>;
+  readonly config: IGeminiThinkingConfig;
+}
+
+/**
+ * xAI-specific thinking options block.
+ * @public
+ */
+export interface IXAiThinkingOptions {
+  readonly provider: 'xai';
+  readonly models?: ReadonlyArray<XAiThinkingModelNames>;
+  readonly config: IXAiThinkingConfig;
+}
+
+/**
+ * Escape-hatch options block for providers not covered by typed configs.
+ * @remarks
+ * `models` is required — no implicit "all" for unknown providers.
+ * `config` fields are merged verbatim into the wire request.
+ * @public
+ */
+export interface IOtherThinkingOptions {
+  readonly provider: 'other';
+  readonly models: ReadonlyArray<string>;
+  readonly config: JsonObject;
+}
+
+/**
+ * Discriminated union of per-provider thinking config blocks.
+ * @public
+ */
+export type IThinkingProviderConfig =
+  | IAnthropicThinkingOptions
+  | IOpenAiThinkingOptions
+  | IGeminiThinkingOptions
+  | IXAiThinkingOptions
+  | IOtherThinkingOptions;
+
+/**
+ * Thinking/reasoning mode configuration for a completion request.
+ *
+ * @remarks
+ * The generic `effort` field covers the common-subset cross-provider vocabulary.
+ * For provider-specific precision (Anthropic 'max', OpenAI 'xhigh', Gemini token
+ * budgets, xAI effort-level tuning), use the `providers` array.
+ *
+ * Absence (or undefined) means "no thinking mode" — existing callers are unaffected.
+ *
+ * @public
+ */
+export interface IThinkingConfig {
+  /**
+   * Cross-provider effort level. Common-subset mapping:
+   * - 'none': Anthropic — the model's thinking-off value (see remarks) | OpenAI effort:none | Gemini thinkingLevel:minimal or thinkingBudget:0 | xAI reasoning_effort:none
+   * - 'low': Anthropic effort:low | OpenAI effort:low | Gemini thinkingLevel:low or thinkingBudget:1024 | xAI reasoning_effort:low
+   * - 'medium': Anthropic effort:medium | OpenAI effort:medium | Gemini thinkingLevel:medium or thinkingBudget:4096 | xAI reasoning_effort:medium
+   * - 'high': Anthropic effort:high | OpenAI effort:high | Gemini thinkingLevel:high or thinkingBudget:8192 | xAI reasoning_effort:high
+   *
+   * Gemini takes `thinkingLevel` on the models in {@link AiAssist.IAiProviderDescriptor.geminiThinkingLevels}
+   * (where an effort the model does not list is refused) and `thinkingBudget` on every other model.
+   *
+   * @remarks
+   * `'none'` is the one cross-provider spelling for "thinking off". Anthropic has no
+   * off value in its own effort vocabulary, so `'none'` maps to a `thinking` value rather than
+   * an effort: on an adaptive-thinking model (see {@link AiAssist.isAdaptiveThinkingModel}),
+   * where thinking is on by default, it sends the model's off value — `thinking: { type: 'disabled' }`,
+   * or the per-model value in {@link IAiProviderDescriptor.anthropicThinkingOffTypes} (for example
+   * `{ type: 'between_tools' }` on `claude-sonnet-5-5`); a generic `'none'` never sends an
+   * `output_config.effort` beside it (an explicit `'other'` block or caller-built `otherParams` can,
+   * and Anthropic rejects `between_tools` and `disabled` above `high`); on an older model, where
+   * thinking is off by default, it omits the `thinking` field.
+   * On a model that accepts `'none'`, whichever provider is in play, `'none'` also re-enables
+   * `temperature` (see `checkTemperatureConflict` in `thinkingOptionsResolver.ts`). On a model
+   * listed in {@link IAiProviderDescriptor.thinkingRequiredModelPrefixes} it does not: there
+   * `'none'` is sent as `'low'` (or refused), and on OpenAI and xAI that rejects `temperature`
+   * (but not a model's accepted default, `IAiProviderDescriptor.samplingParamsAcceptedTemperature`).
+   *
+   * The mapping is not model-aware, with one exception: `'none'`. Thinking *availability* is still
+   * not gated at the call path (see `ModelSpecKey`'s remarks), but some models cannot run with
+   * thinking off at all. For example, Gemini Pro rejects
+   * `thinkingBudget: 0`, Gemini 4 has no off level, and `gpt-6-astra` and `grok-4.7` reject
+   * `reasoning_effort: 'none'`.
+   * Each descriptor lists these in
+   * {@link IAiProviderDescriptor.thinkingRequiredModelPrefixes}, and a `'none'` sent to one of
+   * them is handled by {@link IThinkingConfig.onUnsupported}. An explicit `providers` block
+   * (e.g. `{ provider: 'google', config: { thinkingBudget: 0 } }`) is still sent verbatim.
+   */
+  readonly effort?: 'none' | 'low' | 'medium' | 'high';
+  /**
+   * What to do when `effort` is `'none'` and the resolved model cannot run with thinking off
+   * (see {@link IAiProviderDescriptor.thinkingRequiredModelPrefixes}).
+   * - `'degrade'` (default): send `'low'`, the least thinking the model accepts.
+   * - `'fail'`: refuse the call with a `Result.fail` before anything is sent.
+   *
+   * @remarks
+   * Pass `'fail'` when `'none'` is a correctness requirement (for example, a latency budget or a
+   * reply that must not carry reasoning tokens), rather than a preference. Has no effect on any
+   * other effort, or on a model that accepts `'none'`. A degraded `'none'` is thinking mode, so on
+   * OpenAI and xAI it cannot be combined with `temperature`. That call fails with a message saying
+   * `'none'` was sent as `'low'`.
+   */
+  readonly onUnsupported?: 'degrade' | 'fail';
+  /**
+   * Optional per-provider precision blocks. Blocks for providers that don't
+   * match the resolved model's provider are silently skipped.
+   */
+  readonly providers?: ReadonlyArray<IThinkingProviderConfig>;
+}
+
+// ============================================================================
+// Settings
+// ============================================================================
+
+/**
+ * Configuration for a single AI assist provider.
+ * @public
+ */
+export interface IAiAssistProviderConfig {
+  /** Which provider this configures */
+  readonly provider: AiProviderId;
+  /** For API-based providers: the keystore secret name holding the API key */
+  readonly secretName?: string;
+  /** Optional model override — string or context-aware map. */
+  readonly model?: ModelSpec;
+  /** Tool enablement/configuration. Tools are disabled unless explicitly enabled. */
+  readonly tools?: ReadonlyArray<IAiToolEnablement>;
+  /**
+   * Optional caller-supplied endpoint URL (http/https). Overrides
+   * `descriptor.baseUrl` for this provider. Used to point a provider at a
+   * self-hosted server (Ollama, LM Studio, llama.cpp's openai-server) or a
+   * local proxy. Validation lives in `@fgv/ts-extras` — query strings,
+   * fragments, and userinfo are rejected.
+   */
+  readonly endpoint?: string;
+}
+
+/**
+ * AI assist settings — which providers are enabled and their configuration.
+ * @public
+ */
+export interface IAiAssistSettings {
+  /** Enabled providers and their configuration. */
+  readonly providers: ReadonlyArray<IAiAssistProviderConfig>;
+  /** Which enabled provider is the default for the main button. Falls back to first in list. */
+  readonly defaultProvider?: AiProviderId;
+  /** Optional proxy URL for routing API requests through a backend server (e.g. `http://localhost:3002`). */
+  readonly proxyUrl?: string;
+  /** When true, route all providers through the proxy. When false (default), only CORS-restricted providers use the proxy. */
+  readonly proxyAllProviders?: boolean;
+}
+
+/**
+ * Default AI assist settings (copy-paste only).
+ * @public
+ */
+export const DEFAULT_AI_ASSIST: IAiAssistSettings = {
+  providers: [{ provider: 'copy-paste' }]
+};
+
+// ============================================================================
+// Keystore Interface
+// ============================================================================
+
+/**
+ * Minimal keystore interface for AI assist API key resolution.
+ * Satisfied structurally by the concrete `KeyStore` class from `@fgv/ts-extras`.
+ * @public
+ */
+export interface IAiAssistKeyStore {
+  /** Whether the keystore is currently unlocked */
+  readonly isUnlocked: boolean;
+  /** Check if a named secret exists */
+  hasSecret(name: string): Result<boolean>;
+  /** Get an API key by secret name */
+  getApiKey(name: string): Result<string>;
+}
+
+/**
+ * Returns the canonical `CryptoUtils.KeyStore.KeyStore` secret name for a provider's API key,
+ * of the form `provider:<providerId>`. Apps that store provider API keys in a `KeyStore`
+ * should use this name (rather than inventing their own) so that a single keystore vault
+ * works consistently across every fgv app.
+ *
+ * @param providerId - The provider whose API key secret name is requested.
+ * @returns The canonical keystore secret name, e.g. `'provider:openai'`.
+ * @public
+ */
+export function providerApiKeySecretName(providerId: AiProviderId): string {
+  return `provider:${providerId}`;
+}

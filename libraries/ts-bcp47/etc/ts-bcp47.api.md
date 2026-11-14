@@ -183,8 +183,10 @@ const extendedLanguageRange_2: TagValidationHelpers<ExtendedLanguageRange, unkno
 // @public (undocumented)
 const extendedLanguageRange_3: Converter<ExtendedLanguageRange, unknown>;
 
+// Warning: (ae-forgotten-export) The symbol "Iana_2" needs to be exported by the entry point index.d.ts
+//
 // @public (undocumented)
-type ExtensionSingleton = Iana.LanguageTagExtensions.Model.ExtensionSingleton;
+type ExtensionSingleton = Iana_2.LanguageTagExtensions.Model.ExtensionSingleton;
 
 // @public (undocumented)
 const extensionSingleton: Converter<Model_2.ExtensionSingleton, unknown>;
@@ -198,7 +200,7 @@ type ExtensionSingleton_2 = Brand<string, 'ExtensionSingleton'>;
 const extensionSingleton_2: RegExpValidationHelpers<Model_2.ExtensionSingleton>;
 
 // @public (undocumented)
-const extensionSingleton_3: RegExpValidationHelpers<Iana.LanguageTagExtensions.Model.ExtensionSingleton, unknown>;
+const extensionSingleton_3: RegExpValidationHelpers<Iana_2.LanguageTagExtensions.Model.ExtensionSingleton, unknown>;
 
 // @public (undocumented)
 type ExtensionSubtag = Brand<string, 'ExtensionSubtag'>;
@@ -271,11 +273,11 @@ export { Iana }
 // @public (undocumented)
 interface ICountryOrArea {
     // (undocumented)
-    code: Iana.Model.UnM49RegionCode;
+    code: Iana_2.Model.UnM49RegionCode;
     // (undocumented)
-    isoAlpha2?: Iana.Model.IsoAlpha2RegionCode;
+    isoAlpha2?: Iana_2.Model.IsoAlpha2RegionCode;
     // (undocumented)
-    isoAlpha3?: Iana.Model.IsoAlpha3RegionCode;
+    isoAlpha3?: Iana_2.Model.IsoAlpha3RegionCode;
     // (undocumented)
     landlockedDevelopingCountry: boolean;
     // (undocumented)
@@ -343,7 +345,7 @@ interface IGlobalRegion {
     // (undocumented)
     areas: ICountryOrArea[];
     // (undocumented)
-    code: Iana.Model.UnM49RegionCode;
+    code: Iana_2.Model.UnM49RegionCode;
     // (undocumented)
     name: string;
     // (undocumented)
@@ -375,7 +377,7 @@ interface IIntermediateRegion {
     // (undocumented)
     areas: ICountryOrArea[];
     // (undocumented)
-    code: Iana.Model.UnM49RegionCode;
+    code: Iana_2.Model.UnM49RegionCode;
     // (undocumented)
     name: string;
     // (undocumented)
@@ -447,7 +449,7 @@ interface ILanguageTagExtension {
 // @public
 interface ILanguageTagInitOptions {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    iana?: Iana.LanguageRegistries;
+    iana?: Iana_2.LanguageRegistries;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     normalization?: TagNormalization;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -459,31 +461,31 @@ interface IM49CsvRow {
     // (undocumented)
     countryOrArea: string;
     // (undocumented)
-    globalCode: Iana.Model.UnM49RegionCode;
+    globalCode: Iana_2.Model.UnM49RegionCode;
     // (undocumented)
     globalName: string;
     // (undocumented)
-    intermediateRegionCode?: Iana.Model.UnM49RegionCode;
+    intermediateRegionCode?: Iana_2.Model.UnM49RegionCode;
     // (undocumented)
     intermediateRegionName?: string;
     // (undocumented)
-    isoAlpha2RegionCode?: Iana.Model.IsoAlpha2RegionCode;
+    isoAlpha2RegionCode?: Iana_2.Model.IsoAlpha2RegionCode;
     // (undocumented)
-    isoAlpha3RegionCode?: Iana.Model.IsoAlpha3RegionCode;
+    isoAlpha3RegionCode?: Iana_2.Model.IsoAlpha3RegionCode;
     // (undocumented)
     landLockedDevelopingCountry: boolean;
     // (undocumented)
     leastDevelopedCountry: boolean;
     // (undocumented)
-    m49Code: Iana.Model.UnM49RegionCode;
+    m49Code: Iana_2.Model.UnM49RegionCode;
     // (undocumented)
-    regionCode?: Iana.Model.UnM49RegionCode;
+    regionCode?: Iana_2.Model.UnM49RegionCode;
     // (undocumented)
     regionName?: string;
     // (undocumented)
     smallIslandDevelopingState: boolean;
     // (undocumented)
-    subRegionCode?: Iana.Model.UnM49RegionCode;
+    subRegionCode?: Iana_2.Model.UnM49RegionCode;
     // (undocumented)
     subRegionName?: string;
 }
@@ -768,19 +770,19 @@ interface ISubtags {
     // (undocumented)
     extensions?: IExtensionSubtagValue[];
     // (undocumented)
-    extlangs?: Iana.LanguageSubtags.ExtLangSubtag[];
+    extlangs?: Iana_2.LanguageSubtags.ExtLangSubtag[];
     // (undocumented)
-    grandfathered?: Iana.LanguageSubtags.GrandfatheredTag;
+    grandfathered?: Iana_2.LanguageSubtags.GrandfatheredTag;
     // (undocumented)
-    primaryLanguage?: Iana.LanguageSubtags.LanguageSubtag;
+    primaryLanguage?: Iana_2.LanguageSubtags.LanguageSubtag;
     // (undocumented)
-    privateUse?: Iana.LanguageSubtags.ExtendedLanguageRange[];
+    privateUse?: Iana_2.LanguageSubtags.ExtendedLanguageRange[];
     // (undocumented)
-    region?: Iana.LanguageSubtags.RegionSubtag;
+    region?: Iana_2.LanguageSubtags.RegionSubtag;
     // (undocumented)
-    script?: Iana.LanguageSubtags.ScriptSubtag;
+    script?: Iana_2.LanguageSubtags.ScriptSubtag;
     // (undocumented)
-    variants?: Iana.LanguageSubtags.VariantSubtag[];
+    variants?: Iana_2.LanguageSubtags.VariantSubtag[];
 }
 
 declare namespace Items {
@@ -931,9 +933,9 @@ class LanguageRegistries {
 
 // @public
 class LanguageSimilarityMatcher {
-    constructor(iana?: Iana.LanguageRegistries);
+    constructor(iana?: Iana_2.LanguageRegistries);
     // (undocumented)
-    iana: Iana.LanguageRegistries;
+    iana: Iana_2.LanguageRegistries;
     // (undocumented)
     matchExtensions(lt1: LanguageTag, lt2: LanguageTag): number;
     // (undocumented)
@@ -1075,7 +1077,7 @@ class LanguageTag {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // @internal
-    protected constructor(subtags: ISubtags, validity: TagValidity, normalization: TagNormalization, iana: Iana.LanguageRegistries);
+    protected constructor(subtags: ISubtags, validity: TagValidity, normalization: TagNormalization, iana: Iana_2.LanguageRegistries);
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -1106,16 +1108,16 @@ class LanguageTag {
     // @internal
     protected static _createTransformed(subtags: ISubtags, fromValidity: TagValidity, fromNormalization: TagNormalization, partialOptions?: ILanguageTagInitOptions): Result<LanguageTag>;
     get description(): string;
-    get effectiveScript(): Iana.LanguageSubtags.ScriptSubtag | undefined;
+    get effectiveScript(): Iana_2.LanguageSubtags.ScriptSubtag | undefined;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // @internal
     protected static _getOptions(options?: ILanguageTagInitOptions): Required<ILanguageTagInitOptions>;
-    getSuppressedScript(): Iana.LanguageSubtags.ScriptSubtag | undefined;
+    getSuppressedScript(): Iana_2.LanguageSubtags.ScriptSubtag | undefined;
     // @internal (undocumented)
-    protected readonly _iana: Iana.LanguageRegistries;
+    protected readonly _iana: Iana_2.LanguageRegistries;
     get isCanonical(): boolean;
     // @internal (undocumented)
     protected _isCanonical: undefined | boolean;
@@ -1137,7 +1139,7 @@ class LanguageTag {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly subtags: Readonly<ISubtags>;
     // @internal (undocumented)
-    protected _suppressedScript: undefined | Iana.LanguageSubtags.ScriptSubtag | false;
+    protected _suppressedScript: undefined | Iana_2.LanguageSubtags.ScriptSubtag | false;
     readonly tag: string;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     toCanonical(): Result<LanguageTag>;
@@ -1423,7 +1425,7 @@ class OverridesRegistry {
     // Warning: (ae-forgotten-export) The symbol "ILanguageOverride" needs to be exported by the entry point index.d.ts
     //
     // (undocumented)
-    readonly overrides: Map<Iana.LanguageSubtags.LanguageSubtag, ILanguageOverride>;
+    readonly overrides: Map<Iana_2.LanguageSubtags.LanguageSubtag, ILanguageOverride>;
 }
 
 // @internal (undocumented)
@@ -1484,7 +1486,7 @@ class RegionCodes {
     // (undocumented)
     readonly regions: Regions;
     // (undocumented)
-    tryGetRegionOrArea(code: Iana.Model.UnM49RegionCode): Region | ICountryOrArea | undefined;
+    tryGetRegionOrArea(code: Iana_2.Model.UnM49RegionCode): Region | ICountryOrArea | undefined;
 }
 
 // @public
