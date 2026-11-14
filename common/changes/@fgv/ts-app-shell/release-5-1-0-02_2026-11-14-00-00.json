@@ -2,7 +2,7 @@
   "changes": [
     {
       "packageName": "@fgv/ts-app-shell",
-      "comment": "Layout: top bar, compact sidebar with filter rows and flyout selectors, master-detail column cascade, modal, drop zone and responsive helpers.",
+      "comment": "Layout: top bar, compact sidebar with filter rows and flyout selectors, master-detail column cascade, modal and confirm dialogs, drop zone and responsive helpers.",
       "type": "minor"
     }
   ],

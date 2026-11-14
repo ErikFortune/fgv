@@ -2,7 +2,7 @@
   "changes": [
     {
       "packageName": "@fgv/ts-app-shell",
-      "comment": "Command palette and keybinding registry, plus a default light/dark theme of CSS-variable tokens with a Tailwind preset.",
+      "comment": "A keyboard-shortcut registry (`KeyboardShortcutRegistry`, `useKeyboardShortcuts`), plus a default light/dark theme of CSS-variable tokens with a Tailwind preset.",
       "type": "minor"
     }
   ],

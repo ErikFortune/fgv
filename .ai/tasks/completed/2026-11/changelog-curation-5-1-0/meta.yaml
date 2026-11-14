@@ -1,0 +1,36 @@
+id: changelog-curation-5-1-0
+status: shipped
+packages: ['@fgv/*'] # change files only, for all 32 published projects
+prs: [] # PR #TBD — the orchestrator opens it
+openPrs: []
+opened: 2026-11-14
+closed: 2026-11-14
+summary:
+  intended: >
+    Release prep for 5.1.0: replace the ~760 pending change files with a few curated entries per
+    package describing what 5.1.0 changes relative to 5.0.2, including every "Upgrading from 5.0.2"
+    caveat from the semver audit, verified against origin/main, with the full rendered changelog in
+    result.md for review.
+  shipped: >
+    760 change files deleted and 110 curated entries added across the 32 published projects,
+    rendered with the release version sequence on a throwaway clone (all projects at 5.1.0, every
+    change file consumed); 5.0.2 claims checked against main and against the published 5.0.2
+    tarballs.
+  diverged: >
+    The brief's premise that lockstep types are inert and all render under "Updates" was false:
+    rush renders by type and rush publish --apply bumps by type. Types were therefore chosen per
+    entry (feature minor, fix patch, 5.0.2-breaking caveat major, informational caveat none). The
+    four unpublished projects got no curated file, since rush never consumes theirs.
+  sourceLine: '**Shipped:** every pending change file (760, across 36 projects) is replaced by 110 curated entries across the 32 published projects, describing what 5.1.0 changes for someone upgrading from 5.0.2, with every "Upgrading from 5.0.2" caveat from the semver audit; the full rendered text is below.'
+  headline: '' # release-prep curation of change files, not a capability
+keywords:
+  - changelog curation
+  - release notes
+  - change files
+  - rush version
+  - lockstep version policy
+  - change type rendering
+  - semver audit
+  - upgrading from 5.0.2
+  - release prep
+sourceHash: sha256:b3dc09ca01b6fd49 # over brief.md + state.md + result.md
