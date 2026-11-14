@@ -28,7 +28,7 @@ durable).
 | C2 | `rush version --bump --override-bump patch` | 5.1.1 | 34 × 5.1.1 | 5.1.1, populated | 20 | wrong version |
 | C3 | `rush publish --apply --include-all --pack --release-folder <dir> --target-branch … --add-commit-details --ignore-git-hooks` | 5.1.0 (untouched) | unchanged (repo-template still 5.1.0-6) | 5.0.2 (untouched) | 791 | no-op: `--include-all` ignores change files and `--apply`; `--pack` without `--publish` is a dry run (0 tarballs) |
 | C4 | `rush publish --apply --target-branch … --add-commit-details --ignore-git-hooks` (no `--include-all`) | 5.1.0 (untouched) | **20 × 5.2.0, 12 × 5.1.1, 2 × 5.1.0** | 5.2.0 / 5.1.1 per package | 29 | breaks lockstep; also committed and pushed |
-| C5 | `rush version --ensure-version-policy --version-policy base-utils --override-version 5.1.0-0` then `rush version --bump --version-policy base-utils --override-bump patch` | **5.1.0 / minor** | **34 × 5.1.0** (repo-template corrected) | **5.1.0, populated**; 32 CHANGELOG.json/.md created for packages that had none | **20** (all on projects with no version policy: ks, testbed, ts-res-tutorial, ts-res-ui-playground) | **matches** |
+| C5 | `rush version --ensure-version-policy --version-policy base-utils --override-version 5.1.0-0` then `rush version --bump --version-policy base-utils --override-bump patch` | **5.1.0 / minor** | **34 × 5.1.0** (repo-template corrected) | **5.1.0, populated**; 32 CHANGELOG files created where none existed | **20** (all on projects with no version policy: ks, testbed, ts-res-tutorial, ts-res-ui-playground) | **matches** |
 | C5c | after C5: `rush publish --include-all --set-access-level public --target-branch … --add-commit-details --ignore-git-hooks` (dry) | — | — | — | — | would `pnpm publish` 34 packages, tag 34 × `<pkg>_v5.1.0`, nothing skipped |
 | C6 | `rush version --bump --override-bump major` (the old major impl) | 6.0.0 | 34 × 6.0.0 | 6.0.0 | 20 | publishes `<policy major>+1` |
 | C7 | tree with policy 6.0.0, then the C5 sequence with `6.0.0-0` | 6.0.0 | 34 × 6.0.0 | 6.0.0, populated | 20 | major works without `--override-bump major` |
@@ -112,6 +112,9 @@ stable publish runs on this file.
 - **Alpha guard**: passes on `prerelease`, fails on `main` and `publish/5.1.0`.
 - **Not exercisable locally**: npm OIDC, `gh pr create`/`gh pr list`, the step summary, environment
   approvals. The PR step's shell is covered by ShellCheck only.
+- `NPM_TOKEN` grep after the change: the legacy workflows are gone; what remains is the commented
+  example in `.npmrc-publish`, a code comment in `common/scripts/install-run.js` (generic env-var
+  handling, untouched), and prose in the brief and the checklist.
 - `rush change --verify --target-branch origin/integration/asks`: no relevant package changes.
 - `npx -y prettier@2.8.8 --check` on every touched `.yml`/`.md`: clean.
 - No package or `common/scripts/*` file changed, so no rebuild/test gate.

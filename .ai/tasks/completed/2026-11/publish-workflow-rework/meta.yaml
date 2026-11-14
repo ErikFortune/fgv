@@ -1,0 +1,55 @@
+id: publish-workflow-rework
+status: shipped
+packages: []
+prs: [] # PR not yet opened (#TBD); add its number when it is
+openPrs: []
+opened: 2026-11-14
+closed: 2026-11-14
+summary:
+  intended: >
+    Rework the GitHub publish workflows so one dispatch on publish/<version> does the whole stable
+    publish (guards on ref, release-train ancestry, policy major and npm; rush test; version and
+    CHANGELOGs written in the run by a rush sequence proved by experiment first; bump commit, tags,
+    a PR into release/<major> and a draft back-merge PR into main; a run summary), keep the alpha
+    behaviour but add a prerelease-only guard, update CI triggers, delete the three legacy workflows
+    and resolve every NPM_TOKEN reference, and apply the supply-chain pinning items (SHA pins,
+    no snow-actions, exact npm, dependabot github-actions, least-privilege permissions,
+    persist-credentials false where nothing pushes, a CI pin check).
+  shipped: >
+    The experiment table (C1-C7 plus alpha runs) and the encoded sequence: ensure the policy at
+    <V>-0, bump patch, commit, rebuild, test, tarball check, rush publish --include-all. Guard job
+    with eleven exercised cases; publish job with an all-packages-at-<V> assertion, push
+    confirmation, follow-up PRs and an always-on summary. Alpha guard and pins. ci.yml triggers,
+    permissions, persist-credentials false and a SHA-pin check proven to fail on an unpinned copy.
+    checkout v5.1.0 and setup-node v5.0.0 pinned, npm 11.21.2, dependabot github-actions, legacy
+    workflows deleted, .npmrc-publish token line commented out. actionlint 1.7.12 with ShellCheck:
+    zero findings. Migration checklist updated.
+  diverged: >
+    The brief's tree says 5.1.0 and must publish 5.1.0, which no single rush command does; the run
+    adopts "the policy names the version to publish" and adds a branch-equals-policy guard the brief
+    did not ask for. --override-bump major was dropped and publish-major-impl.yml deleted: major
+    reuses the release workflow with a release_kind input and an X.0.0 guard. --apply was dropped
+    from the stable rush publish (proved inert) and --set-access-level public added. The back-merge
+    draft PR cannot be created on the first publish (release/5 has no commits ahead of main), so the
+    step warns with a compare link instead. .npmrc-publish was edited, which the brief did not name.
+  sourceLine: '**Shipped:** one dispatch on `publish/<version>` now does the whole stable publish — guards, test, version and CHANGELOGs written in the run from `common/changes/`, bump commit, publish, per-package tags, a PR into `release/<major>` and a draft back-merge PR into `main` — and every action in `.github/workflows/` is pinned to a commit SHA.'
+  headline: '' # release infrastructure; no library capability to announce
+keywords:
+  - rush publish include-all
+  - rush version override-bump
+  - lockstep version policy
+  - changelog generation
+  - change files consumed
+  - npm trusted publishing OIDC
+  - GitHub Actions SHA pinning
+  - supply chain
+  - dependabot github-actions
+  - release train
+  - back-merge
+  - actionlint
+relatedStreams:
+  - {
+      id: branch-model-plan,
+      relationship: 'implements Phase 0 (orchestrator) and Phase 1 of its migration checklist (#784)'
+    }
+sourceHash: sha256:7322e39c512bd858 # over brief.md + state.md + result.md

@@ -91,7 +91,7 @@ Today the publish step is dispatched and then fixed up by hand — changelogs es
    ```
 
    Result on the 5.1.0 tree: policy and all 34 `base-utils` `package.json`s at 5.1.0, every
-   `CHANGELOG.json`/`.md` gains a populated 5.1.0 section (32 created for packages that had none),
+   `CHANGELOG.json`/`.md` gains a populated 5.1.0 section (32 CHANGELOG files created where none existed),
    771 change files deleted (the 20 left belong to projects with no version policy), policy
    `nextBump` unchanged. `--override-bump major` is no longer used: a major is a policy that says
    `<n>.0.0`. **Consequence:** the next stable publish needs a PR that moves the policy to the next
