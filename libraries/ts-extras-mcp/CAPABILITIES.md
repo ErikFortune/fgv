@@ -66,7 +66,7 @@ A Result-integration boundary over [`@modelcontextprotocol/sdk`](https://github.
 
 <!-- BEGIN GENERATED: recent-additions -->
 
-- **2026-11-14** — MCP's taskSupport vocabulary and a converter for it now ship in ai-assist, so a browser consumer can use them without the Node-only MCP package, which reuses the same declarations.
+- **2026-11-14** — MCP's taskSupport vocabulary and a converter for it now ship in ai-assist, so a browser consumer can use them without the Node-only MCP package, which reuses the same declarations. ([#783](https://github.com/ErikFortune/fgv/pull/783))
 - **2026-11-11** — ai-assist sends max_completion_tokens to Groq and xAI, refuses a hand-built 'none' effort on models that cannot turn thinking off, and fails rather than throws on a malformed model spec. ([#774](https://github.com/ErikFortune/fgv/pull/774))
 - **2026-10-26** — MCP tools that need task execution are skipped with a reason kind, tool listing can be bounded by pages and total time, and a guarded fetch can cap response bytes — each opt-in, each failing loudly. ([#757](https://github.com/ErikFortune/fgv/pull/757))
 - **2026-10-19** — New @fgv/ts-extras-re2: re2PatternValidator lets fromJson and adaptMcpTools accept an untrusted JSON Schema pattern — linear-time RE2 matching, ECMA-262 meaning or a named refusal. ([#746](https://github.com/ErikFortune/fgv/pull/746))

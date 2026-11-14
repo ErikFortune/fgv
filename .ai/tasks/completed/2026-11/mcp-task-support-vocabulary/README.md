@@ -1,6 +1,6 @@
 # mcp-task-support-vocabulary — MCP's taskSupport vocabulary, declared once and browser-safe
 
-**Shipped**: 2026-11-14 into `integration/asks` via #TBD.
+**Shipped**: 2026-11-14 into `integration/asks` via #783.
 Packages: `@fgv/ts-extras` (`ai-assist`, change file `minor`), `@fgv/ts-extras-mcp` (change file
 `none`). Origin: personaility#725 (fgv-ask).
 

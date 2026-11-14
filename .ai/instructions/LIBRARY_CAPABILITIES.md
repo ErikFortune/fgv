@@ -212,7 +212,7 @@ markers.*
 
 <!-- BEGIN GENERATED: recent-additions -->
 
-- **2026-11-14** — MCP's taskSupport vocabulary and a converter for it now ship in ai-assist, so a browser consumer can use them without the Node-only… · `ts-extras` `ts-extras-mcp`
+- **2026-11-14** — MCP's taskSupport vocabulary and a converter for it now ship in ai-assist, so a browser consumer can use them without the Node-only… ([#783](https://github.com/ErikFortune/fgv/pull/783)) · `ts-extras` `ts-extras-mcp`
 - **2026-11-12** — Only the principals an agent-task subscription names may bind and drain its delivery, and disposeWithheld ends withheld obligations… ([#781](https://github.com/ErikFortune/fgv/pull/781)) · `ts-agent-tasks` `testbed`
 - **2026-11-11** — ai-assist's @anthropic:fable alias now reaches Claude Fable 5.2, and Fable 5.2 and Mythos 5.2 get JSON-outputs structured output… ([#773](https://github.com/ErikFortune/fgv/pull/773)) · `ts-extras` `testbed`
 - **2026-11-11** — ai-assist sends Gemini's thinkingLevel from a declared per-model table — 'none' is minimal on Flash-Lite — and @google-gemini:pro… ([#775](https://github.com/ErikFortune/fgv/pull/775)) · `ts-extras` `testbed`

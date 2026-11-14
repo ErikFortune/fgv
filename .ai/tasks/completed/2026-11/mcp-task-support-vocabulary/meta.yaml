@@ -1,7 +1,7 @@
 id: mcp-task-support-vocabulary
 status: shipped
 packages: ['@fgv/ts-extras', '@fgv/ts-extras-mcp']
-prs: []
+prs: [783]
 openPrs: []
 opened: 2026-11-14
 closed: 2026-11-14
