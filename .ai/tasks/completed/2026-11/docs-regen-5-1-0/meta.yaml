@@ -9,7 +9,7 @@ packages:
     '@fgv/ts-utils',
     '@fgv/ts-web-extras'
   ]
-prs: [] # PR #TBD — fill in when the PR is opened
+prs: [789]
 openPrs: []
 opened: 2026-11-14
 closed: 2026-11-14

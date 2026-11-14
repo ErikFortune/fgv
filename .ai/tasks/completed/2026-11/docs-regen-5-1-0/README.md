@@ -1,6 +1,6 @@
 # docs-regen-5-1-0 — generated API docs regenerated for 5.1.0
 
-**Shipped**: 2026-11-14 into `integration/asks` via #TBD.
+**Shipped**: 2026-11-14 into `integration/asks` via #789.
 
 ## Summary
 
