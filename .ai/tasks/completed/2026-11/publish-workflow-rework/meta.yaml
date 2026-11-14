@@ -1,7 +1,7 @@
 id: publish-workflow-rework
 status: shipped
 packages: []
-prs: [] # PR not yet opened (#TBD); add its number when it is
+prs: [788]
 openPrs: []
 opened: 2026-11-14
 closed: 2026-11-14

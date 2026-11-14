@@ -1,7 +1,7 @@
 # publish-workflow-rework — one dispatch publishes a stable release, with pinned actions
 
 **Shipped**: 2026-11-14 on branch `publish-workflow-rework` (based on `branch-model-plan`, #784), PR
-#TBD. No package changed; `.github/` and `common/config/rush/.npmrc-publish` only.
+#788. No package changed; `.github/` and `common/config/rush/.npmrc-publish` only.
 
 ## Summary
 

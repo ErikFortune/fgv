@@ -5,7 +5,7 @@ version and CHANGELOGs written in the run from `common/changes/`, bump commit, p
 tags, a PR into `release/<major>` and a draft back-merge PR into `main` — and every action in
 `.github/workflows/` is pinned to a commit SHA.
 
-Branch `publish-workflow-rework`, based on `branch-model-plan` (#784). PR: #TBD. Nothing was
+Branch `publish-workflow-rework`, based on `branch-model-plan` (#784). PR: #788. Nothing was
 published, dispatched or pushed anywhere but this branch.
 
 ## The experiment
