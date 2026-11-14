@@ -1,6 +1,6 @@
 # Branch-migration checklist — `main` as trunk, `release/<major>` trains, publish from a child
 
-**Status: PLANNED — target model locked with Erik 2026-11-14; not started.** This replaces the
+**Status: Phase 0 (orchestrator) and Phase 1 done on `publish-workflow-rework`; Phases 2–4 pending.** Target model locked with Erik 2026-11-14. This replaces the
 2026-07-20 plan (PR #566), which had `main` publishing stable releases and a `published` pointer
 branch. That plan was never executed. The rework is a prerequisite for the 5.1.0 non-alpha
 publish: the first stable publish runs under the new model.
@@ -16,8 +16,9 @@ publish: the first stable publish runs under the new model.
 
 **Why publish from a child, not from `release/<major>` directly.** The bump commit lands on a branch the
 workflow may write to, so `release/<major>` stays PR-only. The child also lets repo-side touch-ups to
-CHANGELOGs ride in before it merges. **Limit:** the CHANGELOG.md inside the npm tarball is the one rush
-writes at publish time, so curation that must reach consumers happens **before** the publish, in
+CHANGELOGs ride in before it merges. **Limit:** the changelog inside the npm tarball is the one the run
+writes at publish time (a dry `pnpm pack` of `ts-extras` on 2026-11-14 carried `CHANGELOG.json` and no
+`CHANGELOG.md`), so curation that must reach consumers happens **before** the publish, in
 `common/changes/`. Edits on the child after publishing fix the repo, not the shipped package.
 
 **Git ref constraint.** A branch named `release` and a branch named `release/5` cannot coexist
@@ -73,6 +74,29 @@ Today the publish step is dispatched and then fixed up by hand — changelogs es
    runs `rush publish --publish --include-all` **without `--apply`** while the alpha impl has it. Prove
    with a local dry run (`rush publish --apply --pack` on a throwaway clone) which flags produce
    5.1.0 versions, populated CHANGELOGs and deleted change files, then encode exactly that.
+
+   **Proven 2026-11-14** (throwaway clone, no `--publish`; full table in
+   `.ai/tasks/completed/2026-11/publish-workflow-rework/result.md`). `--include-all` ignores change
+   files and `--apply` entirely — it publishes whatever `package.json` says — which is why the stable
+   path never wrote changelogs. Plain `rush version --bump` always increments (5.1.0 → 5.2.0), and
+   `rush publish --apply` without `--include-all` breaks lockstep (mixed 5.1.1 / 5.2.0). The encoded
+   sequence treats **the policy version as the version to publish**:
+
+   ```bash
+   rush version --ensure-version-policy --version-policy base-utils --override-version <V>-0
+   rush version --bump --version-policy base-utils --override-bump patch   # <V>-0 → <V>
+   # commit, rebuild, test, verify tarballs, then:
+   rush publish --publish --include-all --set-access-level public --target-branch publish/<V> \
+     --add-commit-details --ignore-git-hooks   # also tags and pushes HEAD + tags
+   ```
+
+   Result on the 5.1.0 tree: policy and all 34 `base-utils` `package.json`s at 5.1.0, every
+   `CHANGELOG.json`/`.md` gains a populated 5.1.0 section (32 created for packages that had none),
+   771 change files deleted (the 20 left belong to projects with no version policy), policy
+   `nextBump` unchanged. `--override-bump major` is no longer used: a major is a policy that says
+   `<n>.0.0`. **Consequence:** the next stable publish needs a PR that moves the policy to the next
+   version (`rush version --ensure-version-policy --version-policy base-utils --override-version
+   <next>`); the npm guard refuses a forgotten one.
 4. Commit the bump on `publish/<version>`; publish; push per-package tags.
 5. Open the PR `publish/<version>` → `release/<major>`, and once that merges, the back-merge PR
    `release/<major>` → `main` (or open both, the second drafted, if sequencing in one run is awkward).
@@ -89,21 +113,21 @@ every `uses:` floats — `actions/checkout@v5`, `actions/setup-node@v5`, third-p
 `snow-actions/git-config-user@v1.0.0` (a tag, mutable) — and the three publish impls run
 `npm install -g npm@latest`. `dependabot.yml` covers `npm` only.
 
-- [ ] Pin **every** `uses:` to a full 40-character commit SHA with the version in a trailing comment
+- [x] Pin **every** `uses:` to a full 40-character commit SHA with the version in a trailing comment
       (`uses: actions/checkout@<sha> # v5.x.y`). Resolve SHAs from the action's release tag at the
       time of the change and record the source.
-- [ ] Replace the third-party `snow-actions/git-config-user` with two `git config` lines in a `run:`
+- [x] Replace the third-party `snow-actions/git-config-user` with two `git config` lines in a `run:`
       step — it does nothing a shell line can't, and removes a third-party dependency from the publish
       path entirely.
-- [ ] Replace `npm install -g npm@latest` with an exact version (`npm@<x.y.z>`), bumped deliberately.
-- [ ] Add a `github-actions` ecosystem to `.github/dependabot.yml` so pinned SHAs get update PRs
+- [x] Replace `npm install -g npm@latest` with an exact version (`npm@<x.y.z>`), bumped deliberately.
+- [x] Add a `github-actions` ecosystem to `.github/dependabot.yml` so pinned SHAs get update PRs
       (dependabot updates SHA pins and their version comments).
-- [ ] Set top-level `permissions: contents: read` on every workflow and grant `contents: write`,
+- [x] Set top-level `permissions: contents: read` on every workflow and grant `contents: write`,
       `id-token: write`, `pull-requests: write` only on the publish jobs that need them. `ci.yml` has
       no `permissions` block today.
-- [ ] `actions/checkout`: `persist-credentials: false` on jobs that never push.
-- [ ] Keep Node pinned exactly (`24.15.0`), as today.
-- [ ] Optional: a CI check that fails on any `uses:` not pinned to a SHA (a short `grep` in `ci.yml`
+- [x] `actions/checkout`: `persist-credentials: false` on jobs that never push.
+- [x] Keep Node pinned exactly (`24.15.0`), as today.
+- [x] Optional: a CI check that fails on any `uses:` not pinned to a SHA (a short `grep` in `ci.yml`
       is enough), so the rule survives the next workflow edit.
 
 ## Phase 0 — Pre-flight
@@ -112,23 +136,30 @@ every `uses:` floats — `actions/checkout@v5`, `actions/setup-node@v5`, third-p
 - [ ] `npm-publish-release` environment → deployment branches: allow the pattern `publish/*`.
 - [ ] `npm-publish-alpha` → allow `prerelease` as a branch-**name** rule (survives recreation).
 - [ ] Branch protection: `main` and `release/*` PR-only; `publish/*` writable by the workflow.
+- [ ] Settings → Actions → General: **"Allow GitHub Actions to create and approve pull requests"**
+      on, or the follow-up-PR step fails (403) after the packages are already published.
+- [ ] Know that PRs opened with the job's `GITHUB_TOKEN` do not trigger `ci.yml`; push to the
+      branch, or close and reopen the PR, to get checks on it (or switch the step to an App token).
 - [ ] Confirm npm trusted publishing (OIDC) is bound to repo + workflow file, not branch; verify on
       the first publish.
 
 **Orchestrator/agent:**
-- [ ] The `--apply` dry run in *Automated publish* step 3.
+- [x] The `--apply` dry run in *Automated publish* step 3.
 - [ ] Reconcile root-tooling strays between `main` and `release` (the 2026-07 plan's Phase 2: root
       `package.json` / rush dependency, #464 deltas) so the drain merge is conflict-free.
 
 ## Phase 1 — Workflow rework (PR into the current `release` line, so it rides the drain)
 
-- [ ] `publish.yml` + impls per *Automated publish* (guards, test step, in-workflow version and
+- [x] `publish.yml` + impls per *Automated publish* (guards, test step, in-workflow version and
       changelog, child-branch commit, tags, follow-up PRs, summary).
-- [ ] `ci.yml` triggers: push `['main']`; pull_request `['main', 'release/**', 'publish/**',
+- [x] `ci.yml` triggers: push `['main']`; pull_request `['main', 'release/**', 'publish/**',
       'prerelease', 'integration/**']` (drop `release`, `hotfix`). Change-verify keys off `base_ref`.
-- [ ] Delete `publish-legacy.yml`, `publish-alpha-legacy.yml`, `publish-major-legacy.yml`; confirm
-      nothing references `NPM_TOKEN`.
-- [ ] All *Supply-chain pinning* items.
+      Done, with `release` **kept** in the pull_request list while the current PR flow still targets
+      it; drop it in Phase 4.
+- [x] Delete `publish-legacy.yml`, `publish-alpha-legacy.yml`, `publish-major-legacy.yml`; confirm
+      nothing references `NPM_TOKEN`. (`publish-major-impl.yml` also deleted — `major` reuses the
+      release impl. The `.npmrc-publish` token line is now commented out.)
+- [x] All *Supply-chain pinning* items.
 
 ## Phase 2 — The drain
 
@@ -144,8 +175,13 @@ every `uses:` floats — `actions/checkout@v5`, `actions/setup-node@v5`, third-p
 - [ ] Create `release/5` from `main` (the promotion), `publish/5.1.0` from `release/5`.
 - [ ] Dispatch the stable publish on `publish/5.1.0`. Verify: versions 5.1.0, CHANGELOGs populated,
       change files consumed, tags pushed, npm `latest` = 5.1.0, both follow-up PRs opened.
-- [ ] Merge `publish/5.1.0` → `release/5` (merge commit), then the back-merge → `main`.
-- [ ] Recreate `prerelease` from `main` (only now); confirm the next alpha is 5.2.0-0.
+- [ ] Merge `publish/5.1.0` → `release/5` (merge commit), then the back-merge → `main`. On this
+      first run `release/5` has no commits ahead of `main`, so the workflow cannot open the draft
+      back-merge PR; it prints a warning with the compare link — open it after the first merge.
+- [ ] Recreate `prerelease` from `main` (only now) and set its policy to `5.2.0-0` / `nextBump:
+      prerelease` (the stable publish leaves `5.1.0` / `minor`); confirm the next alpha is 5.2.0-N.
+- [ ] PR to `main` moving the policy to the next stable version (`5.2.0`) so the next
+      `publish/5.2.0` passes the branch-equals-policy guard.
 - [ ] Bump `.ai/BASELINE.md`.
 
 ## Phase 4 — Docs sweep (PR → `main`)
@@ -159,12 +195,14 @@ every `uses:` floats — `actions/checkout@v5`, `actions/setup-node@v5`, third-p
 - [ ] `LIBRARY_CAPABILITIES.md` and package `CAPABILITIES.md` links: `tree/release/...` →
       `tree/main/...` (the router's `Repository:` line too).
 - [ ] Integration branches (`integration/*`) re-base on `main`.
+- [ ] Drop `release` from `ci.yml`'s pull_request branches.
 
 ## Open questions
 
 1. `hotfix` in CI triggers is dropped above; hotfixes are PRs into `release/<n>`. Confirm.
-2. Major releases: the same flow with a new `release/<n+1>` created at promotion — confirm the
-   `major` publish job keeps `--override-bump major` or moves to the version policy.
+2. ~~Major releases: keep `--override-bump major`?~~ Resolved by the experiment: no. The `major`
+   dispatch runs the same workflow as `release`, requires the policy to say `<n>.0.0`, and
+   `release` refuses `<n>.0.0`.
 
 ## Superseded
 
